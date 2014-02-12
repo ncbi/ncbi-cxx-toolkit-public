@@ -1163,6 +1163,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
      unsigned i=0;
      if (gene_feat.empty()) {
          /* no genes - just do all exons and introns present */
+cerr << "111\n";
          if (!exon_feat.empty() && !intron_feat.empty()) {
             for (i=0; i< exon_feat.size(); i++) {
                  m_e_exist.push_back(1);
@@ -1175,11 +1176,15 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
      }
      else {
         ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
-           if ((*it)->CanGetExcept_text() 
-                 && (*it)->GetExcept_text() != "trans-splicing"){
+           if (!(*it)->CanGetExcept_text() 
+                 || !NStr::EqualNocase((*it)->GetExcept_text(),
+                                       0, 14, "trans-splicing")){
+cerr << "222\n";
+              m_e_exist.clear();
+              m_i_exist.clear();
               GetFeatureList4Gene( *it, exon_feat, m_e_exist);
               GetFeatureList4Gene( *it, intron_feat, m_i_exist);
-              if (!exon_feat.empty() && !intron_feat.empty()) {
+              if (!m_e_exist.empty() && !m_i_exist.empty()) {
                    CompareIntronExonList(seq_id_desc, exon_feat, intron_feat);
               }
            }
@@ -1902,9 +1907,11 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
 {
    string setting_name = GetName_ei();
    unsigned e_idx=0, i_idx=0, exon_start, exon_stop, intron_start, intron_stop;
-   unsigned e_sz = exon_ls.size(), i_sz = intron_ls.size();
+   unsigned e_sz= exon_ls.size(), i_sz = intron_ls.size(), pre_e_idx, pre_i_idx;
    bool has_exon = true, has_intron = true;
-   while (e_idx < e_sz && !m_e_exist[e_idx]) e_idx++;
+   while (e_idx < e_sz && !m_e_exist[e_idx]) {
+        e_idx++;
+   }
    if (e_idx < e_sz) {
       exon_start = exon_ls[e_idx]->GetLocation().GetStart(eExtreme_Biological);
       exon_stop =  exon_ls[e_idx]->GetLocation().GetStop(eExtreme_Biological);
@@ -1913,17 +1920,20 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
    while (i_idx < i_sz && !m_i_exist[i_idx]) {
          i_idx ++;
    }
-   if (i_idx < e_sz) {
+   if (i_idx < i_sz) {
      intron_start
          = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
      intron_stop = intron_ls[i_idx]->GetLocation().GetStop(eExtreme_Biological);
    }
    else has_intron = false;
 
+ cerr << "start " << exon_start << "  " << exon_stop << " " << intron_start
+ << "  " << intron_stop << endl;
    if (!has_exon || !has_intron) return;
 
    if (intron_start < exon_start) {
       if (intron_stop != exon_start - 1) {
+cerr << "added both \n";
         thisInfo.test_item_list[setting_name].push_back(
                           seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
         thisInfo.test_item_list[setting_name].push_back(
@@ -1934,9 +1944,7 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
         thisInfo.test_item_objs[setting_name + "$" + seq_id_desc].push_back(
                                       CConstRef <CObject>(intron_ls[e_idx]));
       }
-      while (i_idx < i_sz && !m_i_exist[i_idx]) {
-           i_idx ++;
-      }
+      while (i_idx < i_sz && !m_i_exist[i_idx]) i_idx ++;
       if (i_idx < i_sz) {
         intron_start 
             = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
@@ -1945,26 +1953,32 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
       }
   };
 
+  pre_e_idx = e_idx;
+  pre_i_idx = i_idx;
   unsigned next_exon_start, next_exon_stop;
+  while ( ++ e_idx < e_sz && !m_e_exist[e_idx]);
   while (e_idx < e_sz && i_idx < i_sz) {
-      while ( ++ e_idx < e_sz && !m_e_exist[e_idx]);
       next_exon_start 
            = exon_ls[e_idx]->GetLocation().GetStart(eExtreme_Biological);
       next_exon_stop 
            = exon_ls[e_idx]->GetLocation().GetStop(eExtreme_Biological);
+cerr << "next_exon_start  " << next_exon_start << "  " << next_exon_stop << endl;
       while (i_idx < i_sz && intron_start < next_exon_start) {
         if (intron_start !=exon_stop + 1 || intron_stop != next_exon_start - 1){
           if (intron_start != exon_stop + 1) {
+cerr << "added exon1\n";
               thisInfo.test_item_list[setting_name].push_back(
-                         seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
+                      seq_id_desc + "$" + GetDiscItemText(*exon_ls[pre_e_idx]));
               thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
-                      .push_back(CConstRef <CObject>(exon_ls[e_idx]));
+                      .push_back(CConstRef <CObject>(exon_ls[pre_e_idx]));
           }
+cerr << "added intron\n";
           thisInfo.test_item_list[setting_name].push_back(
                         seq_id_desc + "$" + GetDiscItemText(*intron_ls[i_idx]));
           thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
                   .push_back(CConstRef <CObject>(intron_ls[i_idx]));
           if (intron_stop != next_exon_start - 1) {
+cerr << "added next\n";
               thisInfo.test_item_list[setting_name].push_back(
                           seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
               thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
@@ -1977,13 +1991,19 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
                = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
           intron_stop 
                = intron_ls[i_idx]->GetLocation().GetStop(eExtreme_Biological);
+cerr << "next_intron " << intron_start << intron_stop << endl;
         }
       }
-      exon_start = next_exon_start;
-      exon_stop = next_exon_stop;
+      pre_e_idx = e_idx;
+      while ( ++ e_idx < e_sz && !m_e_exist[e_idx]);
+      if (e_idx < e_sz) {
+        exon_start = next_exon_start;
+        exon_stop = next_exon_stop;
+      }
   }
   if (i_idx < i_sz) {
       if (intron_start != exon_stop + 1) {
+cerr << "added last\n";
           thisInfo.test_item_list[setting_name].push_back(
                           seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
           thisInfo.test_item_list[setting_name].push_back(
@@ -1997,26 +2017,36 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
 };
 
 
-void CBioseq_on_Aa :: GetFeatureList4Gene(const CSeq_feat* gene, const vector <const CSeq_feat*> feats, vector <unsigned> exist_ls)
+void CBioseq_on_Aa :: GetFeatureList4Gene(const CSeq_feat* gene, const vector <const CSeq_feat*> feats, vector <unsigned>& exist_ls)
 {
    unsigned i=0;
-   ITERATE (vector <const CSeq_feat*>, it, feats) {
-      const CGene_ref* feat_gene_ref = (*it)->GetGeneXref();
-      if (feat_gene_ref) {
-         CConstRef <CSeq_feat> 
-            feat_gene 
-               = sequence::GetBestOverlappingFeat((*it)->GetLocation(), 
+   for (i=0; i< feats.size(); i++) exist_ls.push_back(0);
+   if (!gene) {
+     for (i=0; i< feats.size(); i++) exist_ls[i] = 1;
+   }
+   else {
+     i = 0;
+     ITERATE (vector <const CSeq_feat*>, it, feats) {
+        const CGene_ref* feat_gene_xref = (*it)->GetGeneXref();
+        if (!feat_gene_xref) {
+           CConstRef <CSeq_feat> 
+              feat_gene 
+                 = sequence::GetBestOverlappingFeat((*it)->GetLocation(), 
                                                    CSeqFeatData::e_Gene,
                                                    sequence::eOverlap_Contained,
                                                    *thisInfo.scope);
-         if (feat_gene.GetPointer() == *it) { // ? need to check the pointers
+           if (feat_gene.GetPointer() == gene) {
                exist_ls[i] = 1; 
-         }
-         else {
-             exist_ls[i] = 0;
-         }
-      }
+           }
+        }
+        else if (!feat_gene_xref->IsSuppressed() 
+                   && GeneRefMatch(*feat_gene_xref, gene->GetData().GetGene())){
+           exist_ls[i] = 1;
+        }
+        i++;
+     }
    }
+cerr << exist_ls.size() << endl;
 };
 
 
@@ -4989,7 +5019,8 @@ bool CBioseq_FEATURE_LOCATION_CONFLICT :: IsGeneLocationOk(const CSeq_feat* seq_
  
 
 
-bool CBioseq_FEATURE_LOCATION_CONFLICT :: GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2)
+//bool CBioseq_FEATURE_LOCATION_CONFLICT :: GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2)
+bool CBioseqTestAndRepData :: GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2)
 {
    if (gene1.GetPseudo() != gene2.GetPseudo()) return false;
 
