@@ -324,23 +324,26 @@ static const char* s_StrErrorInternal(int error)
 
     if (!error)
         return 0;
+
 #if defined(NCBI_OS_LINUX)  ||  defined(NCBI_OS_CYGWIN)
     for (i = 0;  i < sizeof(errsup) / sizeof(errsup[0]) - 1/*dummy*/;  ++i) {
         if (errsup[i].erroff < error) {
-            const char* errtxt = errsup[i].errfun(error - errsup[i].erroff);
-            if (errtxt  &&  *errtxt)
-                return errtxt;
+            const char* errstr = errsup[i].errfun(error - errsup[i].erroff);
+            if (errstr  &&  *errstr)
+                return errstr;
         }
     }
 #endif /*NCBI_OS_LINUX || NCBI_OS_CYGWIN*/
+
     for (i = 0;  i < sizeof(errmap) / sizeof(errmap[0]) - 1/*dummy*/;  ++i) {
         if (errmap[i].errnum == error)
             return MSWIN_STRDUP(errmap[i].errstr);
     }
+
 #  if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
-    return UTIL_TcharToUtf8(error > 0 ? _wcserror(error) : L"");
+    return UTIL_TcharToUtf8(_wcserror(error));
 #  else
-    return error > 0 ? strerror(error) : "";
+    return strerror(error);
 #  endif /*NCBI_OS_MSWIN && _UNICODE*/
 }
 
