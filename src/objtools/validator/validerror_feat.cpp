@@ -7644,7 +7644,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                                                 num_n++;
                                             }
                                         } else {
-                                            if (isalpha(*it)) {
+                                            if ((unsigned)(*it + 1) <= 256 && isalpha(*it)) {
                                               real_bases++;
                                             }
                                         }
