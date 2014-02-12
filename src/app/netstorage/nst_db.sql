@@ -40,28 +40,29 @@ SET ANSI_WARNINGS ON;
 GO
 
 
-
 -- Modify the condition below when ready for the deployment
 IF 1 = 0
 BEGIN
     IF (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')) OR
        (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')) OR
-       (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObjectWithIDs')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnReadByKey')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnReadByLoc')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnWriteByKey')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnWriteByLoc')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObject')) OR
-       (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateClientOwnerGroup')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObjectWithClientID')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateClient')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'ObjectIdGen')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'GetNextObjectID')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'AttrValues')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Objects')) OR
-       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Owners')) OR
-       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Groups')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Clients')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes'))
     BEGIN
         RAISERROR( 'Do not run the script on existing database', 11, 1 )
-        SET noexec on
+        SET NOEXEC ON
     END
 END
-
-
 
 
 
@@ -70,70 +71,42 @@ IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')
     DROP USER netstorage_read
 IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')
     DROP USER netstorage_write
-IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObjectWithIDs')
-    DROP PROCEDURE CreateObjectWithIDs
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnReadByKey')
+    DROP PROCEDURE UpdateObjectOnReadByKey
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnReadByLoc')
+    DROP PROCEDURE UpdateObjectOnReadByLoc
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnWriteByKey')
+    DROP PROCEDURE UpdateObjectOnWriteByKey
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnWriteByLoc')
+    DROP PROCEDURE UpdateObjectOnWriteByLoc
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObject')
     DROP PROCEDURE CreateObject
-IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateClientOwnerGroup')
-    DROP PROCEDURE CreateClientOwnerGroup
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObjectWithClientID')
+    DROP PROCEDURE CreateObjectWithClientID
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'GetNextObjectID')
+    DROP PROCEDURE GetNextObjectID
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateClient')
+    DROP PROCEDURE CreateClient
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'AttrValues')
     DROP TABLE AttrValues
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Objects')
     DROP TABLE Objects
-IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Owners')
-    DROP TABLE Owners
-IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Groups')
-    DROP TABLE Groups
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Clients')
     DROP TABLE Clients
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes')
     DROP TABLE Attributes
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'ObjectIdGen')
+    DROP TABLE ObjectIdGen
 GO
 
-
-
--- Create the Owners table
-CREATE TABLE Owners
-(
-    owner_id        bigint NOT NULL IDENTITY (1, 1),
-    name            varchar(128) NOT NULL,
-    description     varchar(512) NULL
-)
-GO
-
-ALTER TABLE Owners ADD CONSTRAINT
-PK_Owners PRIMARY KEY CLUSTERED ( owner_id )
-GO
-
-ALTER TABLE Owners ADD CONSTRAINT
-IX_Owners_name UNIQUE NONCLUSTERED ( name )
-GO
-
-
--- Create the Groups table
-CREATE TABLE Groups
-(
-    group_id        bigint NOT NULL IDENTITY (1, 1),
-    name            varchar(128) NOT NULL,
-    description     varchar(512) NULL
-)
-GO
-
-ALTER TABLE Groups ADD CONSTRAINT
-PK_Groups PRIMARY KEY CLUSTERED ( group_id )
-GO
-
-ALTER TABLE Groups ADD CONSTRAINT
-IX_Groups_name UNIQUE NONCLUSTERED ( name )
-GO
 
 
 -- Create the Clients table
 CREATE TABLE Clients
 (
-    client_id       bigint NOT NULL IDENTITY (1, 1),
-    name            varchar(256) NOT NULL,
-    description     varchar(512) NULL
+    client_id       BIGINT NOT NULL IDENTITY (1, 1),
+    name            VARCHAR(256) NOT NULL,
+    description     VARCHAR(512) NULL
 )
 GO
 
@@ -148,9 +121,9 @@ GO
 -- Create the Attributes table
 CREATE TABLE Attributes
 (
-    attr_id         bigint NOT NULL IDENTITY (1, 1),
-    name            varchar(256) NOT NULL,
-    description     varchar(512) NULL
+    attr_id         BIGINT NOT NULL IDENTITY (1, 1),
+    name            VARCHAR(256) NOT NULL,
+    description     VARCHAR(512) NULL
 )
 GO
 
@@ -166,15 +139,14 @@ GO
 -- Create the Objects table
 CREATE TABLE Objects
 (
-    object_id       bigint NOT NULL IDENTITY (1, 1),
-    name            varchar(256) NOT NULL,
-    owner_id        bigint NULL,
-    group_id        bigint NULL,
-    client_id       bigint NOT NULL,
-    tm_create       datetime NOT NULL,
-    tm_write        datetime NULL,
-    tm_read         datetime NULL,
-    size            bigint NOT NULL
+    object_id       BIGINT NOT NULL,
+    object_key      VARCHAR(256) NOT NULL,       -- to underlying storage
+    object_loc      VARCHAR(256) NOT NULL,       -- full key
+    client_id       BIGINT NOT NULL,
+    tm_create       DATETIME NOT NULL,
+    tm_write        DATETIME NULL,
+    tm_read         DATETIME NULL,
+    size            BIGINT NOT NULL
 )
 GO
 
@@ -183,17 +155,11 @@ PK_Objects PRIMARY KEY CLUSTERED ( object_id )
 GO
 
 ALTER TABLE Objects ADD CONSTRAINT
-IX_Objects_name UNIQUE NONCLUSTERED ( name )
+IX_Objects_object_key UNIQUE NONCLUSTERED ( object_key )
 GO
 
 ALTER TABLE Objects ADD CONSTRAINT
-FK_Objects_Owner FOREIGN KEY ( owner_id )
-REFERENCES Owners ( owner_id )
-GO
-
-ALTER TABLE Objects ADD CONSTRAINT
-FK_Objects_Group FOREIGN KEY ( group_id )
-REFERENCES Groups ( group_id )
+IX_Objects_object_loc UNIQUE NONCLUSTERED ( object_loc )
 GO
 
 ALTER TABLE Objects ADD CONSTRAINT
@@ -207,9 +173,9 @@ GO
 -- Create the AttrValues table
 CREATE TABLE AttrValues
 (
-    object_id       bigint NOT NULL,
-    attr_id         bigint NOT NULL,
-    value           varchar(1024) NOT NULL
+    object_id       BIGINT NOT NULL,
+    attr_id         BIGINT NOT NULL,
+    value           VARCHAR(1024) NOT NULL
 )
 
 ALTER TABLE AttrValues ADD CONSTRAINT
@@ -227,17 +193,36 @@ REFERENCES Attributes ( attr_id )
 GO
 
 
+-- Create the ObjectIdGen table
+CREATE TABLE ObjectIdGen
+(
+    next_object_id      BIGINT NOT NULL
+)
+GO
+INSERT INTO ObjectIdGen ( next_object_id ) VALUES ( 1 )
+GO
+
 
 
 -- Returns 0 if everything is fine
-CREATE PROCEDURE CreateClientOwnerGroup
-    @client_name    varchar(256),
-    @owner_name     varchar(128) = NULL,
-    @group_name     varchar(128) = NULL,
+CREATE PROCEDURE GetNextObjectID
+    @next_id_    BIGINT OUT
+AS
+BEGIN
+    SET NOCOUNT ON
+    UPDATE ObjectIdGen SET @next_id_ = next_object_id = next_object_id + 1
+    IF @@ERROR = 0
+        RETURN 0
+    RETURN 1
+END
+GO
 
-    @client_id_     bigint OUT,
-    @owner_id_      bigint OUT,
-    @group_id_      bigint OUT
+
+
+-- Returns 0 if everything is fine
+CREATE PROCEDURE CreateClient
+    @client_name    VARCHAR(256),
+    @client_id_     BIGINT OUT
 AS
 BEGIN
     DECLARE @ret_val INT
@@ -246,11 +231,11 @@ BEGIN
     DECLARE @error_state INT
     DECLARE @error_number INT
 
+    SET NOCOUNT ON
+
     -- Initialize return values
     SET @ret_val = 0
     SET @client_id_ = NULL
-    SET @owner_id_ = NULL
-    SET @group_id_ = NULL
 
 
     -- Handle the Clients table
@@ -270,61 +255,11 @@ BEGIN
                 IF @error_number != 2627   -- Already exists
                 BEGIN
                     RAISERROR( @error_message, @error_severity, @error_state )
-                    SET @ret_val = @ret_val + 1
+                    SET @ret_val = 1
                 END
             END CATCH
         END
         SELECT @client_id_ = client_id FROM Clients WHERE name = @client_name
-    END
-
-
-    -- Handle the Owners table
-    IF ((@owner_name IS NOT NULL) AND (@owner_name != ''))
-    BEGIN
-        IF NOT EXISTS (SELECT owner_id FROM Owners WHERE name = @owner_name)
-        BEGIN
-            BEGIN TRY
-                INSERT INTO Owners (name) VALUES (@owner_name)
-            END TRY
-            BEGIN CATCH
-                SET @error_message = ERROR_MESSAGE()
-                SET @error_severity = ERROR_SEVERITY()
-                SET @error_state = ERROR_STATE()
-                SET @error_number = ERROR_NUMBER()
-
-                IF @error_number != 2627   -- Already exists
-                BEGIN
-                    RAISERROR( @error_message, @error_severity, @error_state )
-                    SET @ret_val = @ret_val + 1
-                END
-            END CATCH
-        END
-        SELECT @owner_id_ = owner_id FROM Owners WHERE name = @owner_name
-    END
-
-
-    -- Handle the Groups table
-    IF ((@group_name IS NOT NULL) AND (@group_name != ''))
-    BEGIN
-        IF NOT EXISTS (SELECT group_id FROM Groups WHERE name = @group_name)
-        BEGIN
-            BEGIN TRY
-                INSERT INTO Groups (name) VALUES (@group_name)
-            END TRY
-            BEGIN CATCH
-                SET @error_message = ERROR_MESSAGE()
-                SET @error_severity = ERROR_SEVERITY()
-                SET @error_state = ERROR_STATE()
-                SET @error_number = ERROR_NUMBER()
-
-                IF @error_number != 2627   -- Already exists
-                BEGIN
-                    RAISERROR( @error_message, @error_severity, @error_state )
-                    SET @ret_val = @ret_val + 1
-                END
-            END CATCH
-        END
-        SELECT @group_id_ = group_id FROM Groups WHERE name = @group_name
     END
 
     RETURN @ret_val
@@ -334,17 +269,19 @@ GO
 
 -- Returns 0 if everything is fine
 CREATE PROCEDURE CreateObject
-    @object_name    varchar(256),
-    @object_size    bigint,
-    @client_name    varchar(256),
-    @owner_name     varchar(128) = NULL,
-    @group_name     varchar(128) = NULL
+    @object_id      BIGINT,
+    @object_key     VARCHAR(256),
+    @object_loc     VARCHAR(256),
+    @object_size    BIGINT,
+    @client_name    VARCHAR(256)
 AS
 BEGIN
-    INSERT INTO Objects (name, owner_id, group_id, client_id, tm_create, size)
-    VALUES (@object_name,
-            (SELECT owner_id FROM Owners WHERE name = @owner_name),
-            (SELECT group_id FROM Groups WHERE name = @group_name),
+    SET NOCOUNT ON
+
+    INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
+    VALUES (@object_id,
+            @object_key,
+            @object_loc,
             (SELECT client_id FROM Clients WHERE name = @client_name),
             GETDATE(),
             @object_size)
@@ -356,21 +293,87 @@ GO
 
 
 -- Returns 0 if everything is fine
-CREATE PROCEDURE CreateObjectWithIDs
-    @object_name    varchar(256),
-    @object_size    bigint,
-    @client_id      bigint,
-    @owner_id       bigint = NULL,
-    @group_id       bigint = NULL
+CREATE PROCEDURE CreateObjectWithClientID
+    @object_id      BIGINT,
+    @object_key     VARCHAR(256),
+    @object_loc     VARCHAR(256),
+    @object_size    BIGINT,
+    @client_id      BIGINT
 AS
 BEGIN
-    INSERT INTO Objects (name, owner_id, group_id, client_id, tm_create, size)
-    VALUES (@object_name, @owner_id, @group_id, @client_id, GETDATE(), @object_size)
+    SET NOCOUNT ON
+
+    INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
+    VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
     IF @@ERROR = 0
         RETURN 0
     RETURN 1
 END
 GO
+
+
+
+-- Returns 0 if everything is fine
+CREATE PROCEDURE UpdateObjectOnWriteByKey
+    @object_key     VARCHAR(256),
+    @object_size    BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    UPDATE Objects SET size = @object_size, tm_write = GETDATE() WHERE object_key = @object_key
+    IF @@ERROR = 0
+        RETURN 0
+    RETURN 1
+END
+GO
+
+
+-- Returns 0 if everything is fine
+CREATE PROCEDURE UpdateObjectOnWriteByLoc
+    @object_loc     VARCHAR(256),
+    @object_size    BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    UPDATE Objects SET size = @object_size, tm_write = GETDATE() WHERE object_loc = @object_loc
+    IF @@ERROR = 0
+        RETURN 0
+    RETURN 1
+END
+GO
+
+
+-- Returns 0 if everything is fine
+CREATE PROCEDURE UpdateObjectOnReadByKey
+    @object_key     VARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    UPDATE Objects SET tm_read = GETDATE() WHERE object_key = @object_key
+    IF @@ERROR = 0
+        RETURN 0
+    RETURN 1
+END
+GO
+
+
+-- Returns 0 if everything is fine
+CREATE PROCEDURE UpdateObjectOnReadByLoc
+    @object_loc     VARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    UPDATE Objects SET tm_read = GETDATE() WHERE object_loc = @object_loc
+    IF @@ERROR = 0
+        RETURN 0
+    RETURN 1
+END
+GO
+
 
 
 
@@ -391,6 +394,6 @@ GO
 
 
 -- Restore if it was changed
-SET noexec off
+SET NOEXEC OFF
 GO
 

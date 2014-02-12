@@ -60,71 +60,170 @@ void CNSTDatabase::Connect(void)
 }
 
 
-void CNSTDatabase::ExecSP_CreateClientOwnerGroup(
-            const string &  client,
-            const CJsonNode &  message,
-            Int8 &  client_id, Int8 &  owner_id, Int8 &  group_id)
+void CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
 {
     CQuery      query = x_NewQuery();
-    query.SetParameter("@client_name", client);
 
-    if (message.HasKey("Owner"))
-        query.SetParameter("@owner_name", message.GetString("Owner"));
-    else
-        query.SetNullParameter("@owner_name", eSDB_String);
-    if (message.HasKey("Group"))
-        query.SetParameter("@group_name", message.GetString("Group"));
-    else
-        query.SetNullParameter("@group_name", eSDB_String);
-    query.SetParameter("@client_id_", 0, eSDB_Int8, eSP_InOut);
-    query.SetParameter("@owner_id_", 0, eSDB_Int8, eSP_InOut);
-    query.SetParameter("@group_id_", 0, eSDB_Int8, eSP_InOut);
-
-    query.ExecuteSP("CreateClientOwnerGroup");
+    object_id = 0;
+    query.SetParameter("@next_id_", 0, eSDB_Int8, eSP_InOut);
+    query.ExecuteSP("GetNextObjectID");
     query.VerifyDone();
 
     int     status = query.GetStatus();
     if (status != 0)
         NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing CreateClientOwnerGroup stored "
+                   "Error executing GetNextObjectID stored "
+                   "procedure (return code " + NStr::NumericToString(status) +
+                   "). See MS SQL log for details.");
+
+    object_id = query.GetParameter("@next_id_").AsInt8();
+}
+
+
+void CNSTDatabase::ExecSP_CreateClient(
+            const string &  client, Int8 &  client_id)
+{
+    CQuery      query = x_NewQuery();
+
+    client_id = 0;
+    query.SetParameter("@client_name", client);
+    query.SetParameter("@client_id_", 0, eSDB_Int8, eSP_InOut);
+
+    query.ExecuteSP("CreateClient");
+    query.VerifyDone();
+
+    int     status = query.GetStatus();
+    if (status != 0)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "Error executing CreateClient stored "
                    "procedure (return code " + NStr::NumericToString(status) +
                    "). See MS SQL log for details.");
 
     client_id = query.GetParameter("@client_id_").AsInt8();
-    owner_id = query.GetParameter("@owner_id_").AsInt8();
-    group_id = query.GetParameter("@group_id_").AsInt8();
 }
 
 
-void CNSTDatabase::ExecSP_CreateObjectWithIDs(
-            const string &  name, Int8  size,
-            Int8  client_id, Int8  owner_id, Int8  group_id)
+void CNSTDatabase::ExecSP_CreateObject(
+            Int8  object_id, const string &  object_key,
+            const string &  object_loc, Int8  size,
+            const string &  client_name)
 {
     CQuery      query = x_NewQuery();
-    query.SetParameter("@object_name", name);
+    query.SetParameter("@object_id", object_id);
+    query.SetParameter("@object_key", object_key);
+    query.SetParameter("@object_loc", object_loc);
     query.SetParameter("@object_size", size);
-    query.SetParameter("@client_id", client_id);
+    query.SetParameter("@client_name", client_name);
 
-    if (owner_id == 0)
-        query.SetNullParameter("@owner_id", eSDB_Int8);
-    else
-        query.SetParameter("@owner_id", owner_id);
-
-    if (group_id == 0)
-        query.SetNullParameter("@group_id", eSDB_Int8);
-    else
-        query.SetParameter("@group_id", group_id);
-
-    query.ExecuteSP("CreateObjectWithIDs");
+    query.ExecuteSP("CreateObject");
     query.VerifyDone();
 
     int     status = query.GetStatus();
     if (status != 0)
         NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing CreateObjectWithIDs stored "
+                   "Error executing CreateObject stored "
                    "procedure (return code " + NStr::NumericToString(status) +
                    "). See MS SQL log for details.");
 }
+
+
+void CNSTDatabase::ExecSP_CreateObjectWithClientID(
+            Int8  object_id, const string &  object_key,
+            const string &  object_loc, Int8  size,
+            Int8  client_id)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_id", object_id);
+    query.SetParameter("@object_key", object_key);
+    query.SetParameter("@object_loc", object_loc);
+    query.SetParameter("@object_size", size);
+    query.SetParameter("@client_id", client_id);
+
+    query.ExecuteSP("CreateObjectWithClientID");
+    query.VerifyDone();
+
+    int     status = query.GetStatus();
+    if (status != 0)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "Error executing CreateObjectWithClientID stored "
+                   "procedure (return code " + NStr::NumericToString(status) +
+                   "). See MS SQL log for details.");
+}
+
+
+void CNSTDatabase::ExecSP_UpdateObjectOnWriteByKey(
+            const string &  object_key, Int8  size)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_key", object_key);
+    query.SetParameter("@object_size", size);
+
+    query.ExecuteSP("UpdateObjectOnWriteByKey");
+    query.VerifyDone();
+
+    int     status = query.GetStatus();
+    if (status != 0)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "Error executing UpdateObjectOnWriteByKey stored "
+                   "procedure (return code " + NStr::NumericToString(status) +
+                   "). See MS SQL log for details.");
+}
+
+
+void CNSTDatabase::ExecSP_UpdateObjectOnWriteByLoc(
+            const string &  object_loc, Int8  size)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_loc", object_loc);
+    query.SetParameter("@object_size", size);
+
+    query.ExecuteSP("UpdateObjectOnWriteByLoc");
+    query.VerifyDone();
+
+    int     status = query.GetStatus();
+    if (status != 0)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "Error executing UpdateObjectOnWriteByLoc stored "
+                   "procedure (return code " + NStr::NumericToString(status) +
+                   "). See MS SQL log for details.");
+}
+
+
+void CNSTDatabase::ExecSP_UpdateObjectOnReadByKey(
+            const string &  object_key)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_key", object_key);
+
+    query.ExecuteSP("UpdateObjectOnReadByKey");
+    query.VerifyDone();
+
+    int     status = query.GetStatus();
+    if (status != 0)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "Error executing UpdateObjectOnReadByKey stored "
+                   "procedure (return code " + NStr::NumericToString(status) +
+                   "). See MS SQL log for details.");
+}
+
+
+void CNSTDatabase::ExecSP_UpdateObjectOnReadByLoc(
+            const string &  object_loc)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_loc", object_loc);
+
+    query.ExecuteSP("UpdateObjectOnReadByLoc");
+    query.VerifyDone();
+
+    int     status = query.GetStatus();
+    if (status != 0)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "Error executing UpdateObjectOnReadByLoc stored "
+                   "procedure (return code " + NStr::NumericToString(status) +
+                   "). See MS SQL log for details.");
+}
+
 
 
 CQuery CNSTDatabase::x_NewQuery(void)

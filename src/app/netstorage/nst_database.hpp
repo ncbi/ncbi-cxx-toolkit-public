@@ -58,13 +58,25 @@ public:
 
     void Connect(void);
 
-    void ExecSP_CreateClientOwnerGroup(
-            const string &  client,
-            const CJsonNode &  message,
-            Int8 &  client_id, Int8 &  owner_id, Int8 &  group_id);
-    void ExecSP_CreateObjectWithIDs(
-            const string &  name, Int8  size,
-            Int8  client_id, Int8  owner_id, Int8  group_id);
+    void ExecSP_GetNextObjectID(Int8 &  object_id);
+    void ExecSP_CreateClient(const string &  client,
+                             Int8 &  client_id);
+    void ExecSP_CreateObject(
+            Int8  object_id, const string &  object_key,
+            const string &  object_loc, Int8  size,
+            const string &  client_name);
+    void ExecSP_CreateObjectWithClientID(
+            Int8  object_id, const string &  object_key,
+            const string &  object_loc, Int8  size,
+            Int8  client_id);
+    void ExecSP_UpdateObjectOnWriteByKey(
+            const string &  object_key, Int8  size);
+    void ExecSP_UpdateObjectOnWriteByLoc(
+            const string &  object_loc, Int8  size);
+    void ExecSP_UpdateObjectOnReadByKey(
+            const string &  object_key);
+    void ExecSP_UpdateObjectOnReadByLoc(
+            const string &  object_loc);
 
 private:
     const SDbAccessInfo &  x_GetDbAccessInfo(void);

@@ -144,8 +144,14 @@ private:
     vector<CJsonNode>       m_OutputQueue;
 
 private:
+    // Asynchronous write support
     CNetStorageObject       m_ObjectStream;
     Int8                    m_DataMessageSN;
+    bool                    m_NeedMetaInfo;
+    bool                    m_CreateRequest;
+    Int8                    m_DBClientID;
+    Int8                    m_DBObjectID;
+    Int8                    m_ObjectSize;
 
 private:
     bool                    m_ByeReceived;
@@ -205,9 +211,9 @@ private:
 
 private:
     string
-    x_GetObjectKey(const CJsonNode &  message);
+    x_GetObjectLoc(const CJsonNode &  message);
     void x_CheckNonAnonymousClient(void);
-    void x_CheckObjectID(const string &  object_id);
+    void x_CheckObjectLoc(const string &  object_loc);
     void x_CheckICacheSettings(const SICacheSettings &  icache_settings);
     void x_CheckUserKey(const SUserKey &  user_key);
     void x_GetStorageParams(const CJsonNode &   message,
