@@ -430,7 +430,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     virtual ~SNetStorageObjectRPC();
 
-    virtual string GetID();
+    virtual string GetLoc();
     virtual size_t Read(void* buffer, size_t buf_size);
     virtual bool Eof();
     virtual void Write(const void* buffer, size_t buf_size);
@@ -453,7 +453,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     const char* m_CurrentChunk;
     size_t m_CurrentChunkSize;
     EObjectIdentification m_ObjectIdentification;
-    string m_ID;
+    string m_Locator;
     string m_UniqueKey;
     TNetStorageFlags m_Flags;
     EState m_State;
@@ -476,7 +476,7 @@ SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc,
     m_State(initial_state)
 {
     if (object_identification == eByGeneratedID)
-        m_ID = object_loc_or_key;
+        m_Locator = object_loc_or_key;
     else
         m_UniqueKey = object_loc_or_key;
 }
@@ -730,9 +730,9 @@ CNetStorage::CNetStorage(const string& init_string,
 {
 }
 
-string SNetStorageObjectRPC::GetID()
+string SNetStorageObjectRPC::GetLoc()
 {
-    return m_ID;
+    return m_Locator;
 }
 
 size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
@@ -843,7 +843,7 @@ size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
         default:
             NCBI_THROW_FMT(CNetStorageException, eIOError,
                     "NetStorage API: invalid UTTP status "
-                    "while reading " << m_ID);
+                    "while reading " << m_Locator);
         }
     }
 
@@ -872,7 +872,7 @@ void SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size)
         {
             m_OriginalRequest = x_MkRequest("WRITE");
 
-            m_ID = m_NetStorageRPC->Exchange(m_OriginalRequest,
+            m_Locator = m_NetStorageRPC->Exchange(m_OriginalRequest,
                     &m_Connection).GetString("ObjectLoc");
 
             m_State = eWriting;
@@ -921,7 +921,7 @@ CNetStorageObjectInfo SNetStorageObjectRPC::GetInfo()
 {
     CJsonNode request(x_MkRequest("GETOBJECTINFO"));
 
-    return CNetStorageObjectInfo(m_ID, m_NetStorageRPC->Exchange(request));
+    return CNetStorageObjectInfo(m_Locator, m_NetStorageRPC->Exchange(request));
 }
 
 void SNetStorageObjectRPC::Close()
@@ -945,7 +945,7 @@ void SNetStorageObjectRPC::Close()
             if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
                     NCBI_THROW_FMT(CNetStorageException, eIOError,
                             "Extra bytes past confirmation message "
-                            "while reading " << m_ID << " from " <<
+                            "while reading " << m_Locator << " from " <<
                             sock->GetPeerAddress() << '.');
             }
 
@@ -979,7 +979,7 @@ void SNetStorageObjectRPC::Close()
 CJsonNode SNetStorageObjectRPC::x_MkRequest(const string& request_type)
 {
     if (m_ObjectIdentification == eByGeneratedID)
-        return m_NetStorageRPC->MkFileRequest(request_type, m_ID);
+        return m_NetStorageRPC->MkFileRequest(request_type, m_Locator);
     else
         return m_NetStorageRPC->MkFileRequest(request_type,
                 m_UniqueKey, m_Flags);

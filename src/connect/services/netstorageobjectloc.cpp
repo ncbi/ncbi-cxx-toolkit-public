@@ -99,26 +99,26 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     x_SetUniqueKeyFromUserDefinedKey();
 }
 
-#define THROW_INVALID_ID_ERROR(packed_id) \
+#define THROW_INVALID_LOC_ERROR(object_loc) \
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg, \
-                "Invalid NetStorage object ID '" << (packed_id) << '\'')
+                "Invalid NetStorage object locator '" << (object_loc) << '\'')
 
 #define VERIFY_FIELD_EXISTS(field) \
         if (!(field)) { \
-            THROW_INVALID_ID_ERROR(packed_id); \
+            THROW_INVALID_LOC_ERROR(object_loc); \
         }
 
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
-        const string& packed_id) :
+        const string& object_loc) :
     m_CompoundIDPool(cid_pool),
     m_Dirty(false),
-    m_PackedID(packed_id)
+    m_Locator(object_loc)
 {
-    CCompoundID cid = m_CompoundIDPool.FromString(packed_id);
+    CCompoundID cid = m_CompoundIDPool.FromString(object_loc);
 
     // 1. Check the ID class.
     if (cid.GetClass() != eCIC_NetStorageObjectLoc) {
-        THROW_INVALID_ID_ERROR(packed_id);
+        THROW_INVALID_LOC_ERROR(object_loc);
     }
 
     // 2. Restore the storage flags.
@@ -312,7 +312,7 @@ void CNetStorageObjectLoc::x_Pack()
         cid.AppendInteger((Int8) m_TTL);
 
     // Now pack it all up.
-    m_PackedID = cid.ToString();
+    m_Locator = cid.ToString();
 
     m_Dirty = false;
 }

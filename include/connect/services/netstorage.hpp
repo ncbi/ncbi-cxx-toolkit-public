@@ -160,8 +160,8 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
 {
     NCBI_NET_COMPONENT(NetStorageObject);
 
-    /// Return unique ID of the object
-    string GetID(void);
+    /// Return object locator
+    string GetLoc(void);
 
     /// Read no more than 'buf_size' bytes of the object contents
     /// (starting at the current position)

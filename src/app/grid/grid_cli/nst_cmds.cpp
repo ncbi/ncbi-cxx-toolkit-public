@@ -247,7 +247,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
     netstorage_object.Close();
 
     if (!IsOptionSet(eOptionalID))
-        PrintLine(netstorage_object.GetID());
+        PrintLine(netstorage_object.GetLoc());
 
     return 0;
 }
@@ -333,7 +333,7 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
     if (IsOptionSet(eTTL))
         object_loc->SetTTL(m_Opts.ttl);
 
-    PrintLine(object_loc->GetID());
+    PrintLine(object_loc->GetLoc());
 
     return 0;
 }

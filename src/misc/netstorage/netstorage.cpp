@@ -177,7 +177,7 @@ struct SNetStorageObjectAPIImpl : public SNetStorageObjectImpl
     {
     }
 
-    virtual string GetID();
+    virtual string GetLoc();
     virtual size_t Read(void* buffer, size_t buf_size);
     virtual bool Eof();
     virtual void Write(const void* buffer, size_t buf_size);
@@ -446,7 +446,7 @@ ERW_Result SNetStorageObjectAPIImpl::BeginOrContinueReading(
         }
 
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                "Cannot open \"" << m_ObjectLoc.GetID() << "\" for reading.");
+                "Cannot open \"" << m_ObjectLoc.GetLoc() << "\" for reading.");
 
     case eNFS_ReadingFromNetCache:
         return s_ReadFromNetCache(reinterpret_cast<char*>(buf),
@@ -584,7 +584,7 @@ void SNetStorageObjectAPIImpl::Locate()
     case eNFL_NotFound:
         {
             NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                    "NetStorageObject \"" << m_ObjectLoc.GetID() <<
+                    "NetStorageObject \"" << m_ObjectLoc.GetLoc() <<
                     "\" could not be found.");
         }
         break;
@@ -679,7 +679,7 @@ Uint8 SNetStorageObjectAPIImpl::GetSize()
     }
 
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetStorageObject \"" << m_ObjectLoc.GetID() <<
+            "NetStorageObject \"" << m_ObjectLoc.GetLoc() <<
             "\" could not be found in any of the designated locations.");
 }
 
@@ -750,7 +750,7 @@ string SNetStorageObjectAPIImpl::GetAttribute(const string& attr_name)
 
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "Failed to retrieve attribute \"" << attr_name <<
-            "\" of \"" << m_ObjectLoc.GetID() << "\".");
+            "\" of \"" << m_ObjectLoc.GetLoc() << "\".");
 }
 
 void SNetStorageObjectAPIImpl::SetAttribute(const string& attr_name,
@@ -806,7 +806,7 @@ bool SNetStorageObjectAPIImpl::x_TryGetInfoFromLocation(
                 blob_size = m_NetICacheClient.GetSize(
                         m_ObjectLoc.GetUniqueKey(), 0, kEmptyStr);
 
-            *file_info = CNetStorageObjectInfo(m_ObjectLoc.GetID(),
+            *file_info = CNetStorageObjectInfo(m_ObjectLoc.GetLoc(),
                     eNFL_NetCache, m_ObjectLoc, blob_size, blob_info);
 
             m_CurrentLocation = eNFL_NetCache;
@@ -827,7 +827,7 @@ bool SNetStorageObjectAPIImpl::x_TryGetInfoFromLocation(
             if (size_node)
                 file_size = (Uint8) size_node.AsInteger();
 
-            *file_info = CNetStorageObjectInfo(m_ObjectLoc.GetID(),
+            *file_info = CNetStorageObjectInfo(m_ObjectLoc.GetLoc(),
                     eNFL_FileTrack, m_ObjectLoc, file_size, file_info_node);
 
             m_CurrentLocation = eNFL_FileTrack;
@@ -868,7 +868,7 @@ CNetStorageObjectInfo SNetStorageObjectAPIImpl::GetInfo()
         }
     }
 
-    return CNetStorageObjectInfo(m_ObjectLoc.GetID(),
+    return CNetStorageObjectInfo(m_ObjectLoc.GetLoc(),
             eNFL_NotFound, m_ObjectLoc, 0, NULL);
 }
 
@@ -991,9 +991,9 @@ SNetStorageObjectAPIImpl::~SNetStorageObjectAPIImpl()
     NCBI_CATCH_ALL("Error while implicitly closing a NetStorage file.");
 }
 
-string SNetStorageObjectAPIImpl::GetID()
+string SNetStorageObjectAPIImpl::GetLoc()
 {
-    return m_ObjectLoc.GetID();
+    return m_ObjectLoc.GetLoc();
 }
 
 size_t SNetStorageObjectAPIImpl::Read(void* buffer, size_t buf_size)
@@ -1097,7 +1097,7 @@ string SNetStorageAPIImpl::MoveFile(SNetStorageObjectAPIImpl* orig_file,
         orig_file->Remove();
     }
 
-    return new_file->m_ObjectLoc.GetID();
+    return new_file->m_ObjectLoc.GetLoc();
 }
 
 string SNetStorageAPIImpl::Relocate(const string& object_loc,

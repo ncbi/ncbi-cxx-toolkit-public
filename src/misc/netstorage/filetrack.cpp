@@ -285,7 +285,7 @@ void SFileTrackPostRequest::FinishUpload()
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while uploading \"" << m_ObjectLoc->GetID() <<
+                "Error while uploading \"" << m_ObjectLoc->GetLoc() <<
                 "\" (storage key \"" << m_ObjectLoc->GetUniqueKey() <<
                 "\"); HTTP status " << m_HTTPStatus);
     }
@@ -296,7 +296,7 @@ void SFileTrackPostRequest::FinishUpload()
 
     if (filetrack_file_id != unique_key) {
         NCBI_THROW_FMT(CNetStorageException, eIOError,
-                "Error while uploading \"" << m_ObjectLoc->GetID() <<
+                "Error while uploading \"" << m_ObjectLoc->GetLoc() <<
                 "\" to FileTrack: the file has been stored as \"" <<
                 filetrack_file_id << "\" instead of "
                 "\"" << unique_key << "\" as requested.");
@@ -315,7 +315,7 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while accessing \"" << m_ObjectLoc->GetID() <<
+                "Error while accessing \"" << m_ObjectLoc->GetLoc() <<
                 "\" (storage key \"" << m_ObjectLoc->GetUniqueKey() <<
                 "\"); HTTP status " << m_HTTPStatus);
     }
@@ -328,7 +328,7 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
     }
     catch (CStringException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while accessing \"" << m_ObjectLoc->GetID() <<
+                "Error while accessing \"" << m_ObjectLoc->GetLoc() <<
                 "\" (storage key \"" << m_ObjectLoc->GetUniqueKey() << "\"): " <<
                 s_RemoveHTMLTags(http_response.c_str()) <<
                 " (HTTP status " << m_HTTPStatus << ')');
@@ -381,7 +381,7 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
     if (m_FirstRead) {
         if (m_HTTPStatus >= 400) {
             NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                    "Cannot open \"" << m_ObjectLoc->GetID() <<
+                    "Cannot open \"" << m_ObjectLoc->GetLoc() <<
                     "\" for reading (HTTP status " << m_HTTPStatus << ").");
         }
         m_FirstRead = false;
@@ -505,7 +505,7 @@ string SFileTrackAPI::GetFileAttribute(CNetStorageObjectLoc* object_loc,
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
                 "Error while reading attribute \"" << attr_name <<
-                "\" of \"" << object_loc->GetID() <<
+                "\" of \"" << object_loc->GetLoc() <<
                 "\" (storage key \"" << object_loc->GetUniqueKey() <<
                 "\"); HTTP status " << request.m_HTTPStatus);
     }
@@ -514,7 +514,7 @@ string SFileTrackAPI::GetFileAttribute(CNetStorageObjectLoc* object_loc,
             request.m_HTTPStatus != CRequestStatus::e200_Ok) {
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
                 "Error while reading attribute \"" << attr_name <<
-                "\" of \"" << object_loc->GetID() <<
+                "\" of \"" << object_loc->GetLoc() <<
                 "\" (storage key \"" << object_loc->GetUniqueKey() <<
                 "\"); HTTP status " << request.m_HTTPStatus <<
                 ": " << s_RemoveHTMLTags(http_response.c_str()));
@@ -562,7 +562,7 @@ void SFileTrackAPI::SetFileAttribute(CNetStorageObjectLoc* object_loc,
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while uploading \"" << object_loc->GetID() <<
+                "Error while uploading \"" << object_loc->GetLoc() <<
                 "\" (storage key \"" << object_loc->GetUniqueKey() <<
                 "\"); HTTP status " << request.m_HTTPStatus);
     }
@@ -577,7 +577,7 @@ void SFileTrackAPI::SetFileAttribute(CNetStorageObjectLoc* object_loc,
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while accessing \"" << object_loc->GetID() <<
+                "Error while accessing \"" << object_loc->GetLoc() <<
                 "\" (storage key \"" << object_loc->GetUniqueKey() <<
                 "\"); HTTP status " << request.m_HTTPStatus);
     }

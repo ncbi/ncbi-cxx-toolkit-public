@@ -84,7 +84,7 @@ static string s_WriteAndRead(CNetStorageObject new_netstorage_object)
     // Make sure the data is not corrupted.
     BOOST_CHECK_MESSAGE(data == s_TestData, "Read(string*) is broken");
 
-    return new_netstorage_object.GetID();
+    return new_netstorage_object.GetLoc();
 }
 
 void g_TestNetStorage(CNetStorage netstorage)

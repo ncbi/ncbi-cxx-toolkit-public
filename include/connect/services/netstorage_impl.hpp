@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject
 {
-    virtual string GetID() = 0;
+    virtual string GetLoc() = 0;
     virtual size_t Read(void* buffer, size_t buf_size) = 0;
     virtual void Read(string* data);
     virtual bool Eof() = 0;
@@ -54,9 +54,9 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject
     virtual void Close() = 0;
 };
 
-inline string CNetStorageObject::GetID()
+inline string CNetStorageObject::GetLoc()
 {
-    return m_Impl->GetID();
+    return m_Impl->GetLoc();
 }
 
 inline size_t CNetStorageObject::Read(void* buffer, size_t buf_size)
@@ -290,11 +290,11 @@ public:
 
     Uint8 GetTTL() const {return m_TTL;}
 
-    string GetID()
+    string GetLoc()
     {
         if (m_Dirty)
             x_Pack();
-        return m_PackedID;
+        return m_Locator;
     }
 
     // Serialize to a JSON object.
@@ -331,7 +331,7 @@ private:
 
     bool m_Dirty;
 
-    string m_PackedID;
+    string m_Locator;
 };
 
 END_NCBI_SCOPE
