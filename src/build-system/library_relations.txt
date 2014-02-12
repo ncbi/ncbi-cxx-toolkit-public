@@ -212,7 +212,6 @@ fastme needs3party $(ORIG_LIBS)
 fbsdstd_g needs3party $(ORIG_LIBS)
 fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
-fgi needs3party $(ORIG_LIBS)
 freetype needs3party $(ORIG_LIBS)
 ftgl needs3party $(FREETYPE_LIBS)
 ftgl needs3party $(OPENGL_LIBS)
@@ -551,7 +550,9 @@ ncbi includes tables
 ncbi needs3party $(ORIG_LIBS)
 ncbi-vdb-read needs3party $(ORIG_LIBS)
 ncbi-vdb-read needs3party $(SRA_SDK_SYSLIBS)
+ncbiCacc includes3party ncbiacc
 ncbiCacc needs3party netentr
+ncbiNacc includes3party ncbiacc
 ncbiNacc needs3party netentr
 ncbi_xblobstorage_netcache needs xconnserv
 ncbi_xcache_bdb needs bdb
@@ -1032,6 +1033,7 @@ xalntool needs xhtml
 xalntool needs xobjutil
 xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
+xblast includes blast
 xblast needs xalgoblastdbindex
 xblast needs xalgodustmask
 xblast needs xalgowinmask
@@ -1217,6 +1219,7 @@ xsvcgi needs ncbi_xloader_wgs
 xsvcgi needs uudutil
 xsvcgi needs xcgi
 xsvcgi needs3party $(SYBASE_LIBS)
+xsvdata includes gencoll_client
 xsvdata needs $(BLAST_INPUT_LIBS)
 xsvdata needs $(DBAPI_CTLIB)
 xsvdata needs $(ncbi_xreader_pubseqos2)
