@@ -259,28 +259,55 @@ public:
                                                  const SAnnotSelector* sel);
 
     typedef vector<CSeq_id_Handle> TIds;
+    /// Request for a list of all Seq-ids of a sequence.
+    /// The result container should not change if sequence with requested id
+    /// is not known.
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
+    /// Request for a accession.version Seq-id of a sequence.
+    /// Returns null CSeq_id_Handle if sequence with requested id is not known.
     virtual CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
+    /// Request for a gi of a sequence.
+    /// Returns zero gi if sequence with requested id is not known.
     virtual TGi GetGi(const CSeq_id_Handle& idh);
+    /// Request for a label string of a sequence.
+    /// Returns empty string if sequence with requested id is not known.
     virtual string GetLabel(const CSeq_id_Handle& idh);
+    /// Request for a taxonomy id of a sequence.
+    /// Returns -1 if sequence with requested id is not known.
     virtual int GetTaxId(const CSeq_id_Handle& idh);
+    /// Request for a length of a sequence.
+    /// Returns kInvalidSeqPos if sequence with requested id is not known.
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
+    /// Request for a type of a sequence
+    /// Returns CSeq_inst::eMol_not_set if sequence is not known.
     virtual CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
 
-    // bulk interface
+    /// Bulk loading interface for a small pieces of information per id.
+    /// The 'loaded' bit set (in/out) marks ids that already processed.
+    /// If an element in 'loaded' is set on input then bulk methods
+    /// should skip corresponding id, as it's already processed.
+    /// Othewise, if the id is known and processed, the 'loaded' element
+    /// will be set to true.
+    /// Othewise, the 'loaded' element will remain false.
     typedef vector<bool> TLoaded;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
     typedef vector<TSeqPos> TSequenceLengths;
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
+    /// Bulk request for accession.version Seq-ids of a set of sequences.
     virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
+    /// Bulk request for gis of a set of sequences.
     virtual void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
+    /// Bulk request for label strings of a set of sequences.
     virtual void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);
+    /// Bulk request for taxonomy ids of a set of sequences.
     virtual void GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
+    /// Bulk request for lengths of a set of sequences.
     virtual void GetSequenceLengths(const TIds& ids, TLoaded& loaded,
                                     TSequenceLengths& ret);
+    /// Bulk request for types of a set of sequences.
     virtual void GetSequenceTypes(const TIds& ids, TLoaded& loaded,
                                   TSequenceTypes& ret);
 
