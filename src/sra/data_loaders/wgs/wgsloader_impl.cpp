@@ -513,9 +513,18 @@ CWGSFileInfo::CWGSFileInfo(CWGSDataLoader_Impl& impl,
     try {
         x_Initialize(impl, prefix);
     }
+    catch ( CSraException& exc ) {
+        if ( GetDebugLevel() >= 1 ) {
+            ERR_POST_X(1, "Exception while opening WGS DB "<<prefix<<": "<<exc);
+        }
+        if ( exc.GetParam().find(prefix) == NPOS ) {
+            exc.SetParam(exc.GetParam()+" acc="+string(prefix));
+        }
+        throw exc;
+    }
     catch ( CException& exc ) {
         if ( GetDebugLevel() >= 1 ) {
-            ERR_POST_X(1, "Exception while opeining WGS DB "<<prefix<<": "<<exc);
+            ERR_POST_X(1, "Exception while opening WGS DB "<<prefix<<": "<<exc);
         }
         NCBI_RETHROW_FMT(exc, CSraException, eOtherError,
                          "CWGSDataLoader: exception while opening WGS DB "<<prefix);

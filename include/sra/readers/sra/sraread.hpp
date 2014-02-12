@@ -165,6 +165,10 @@ public:
         {
             return m_Param;
         }
+    void SetParam(const string& param)
+        {
+            m_Param = param;
+        }
 
     static void ReportError(const char* msg, rc_t rc);
 
