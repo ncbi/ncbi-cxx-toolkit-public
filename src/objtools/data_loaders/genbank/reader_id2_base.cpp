@@ -420,7 +420,7 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
     size_t packet_start = 0;
     
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         locks[i].reset(new CLoadLockSeq_ids(result, ids[i]));
@@ -444,7 +444,7 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
             x_ProcessPacket(result, packet, 0);
             size_t count = i+1;
             for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] ) {
+                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
                     continue;
                 }
                 _ASSERT(locks[i].get());
@@ -463,7 +463,7 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
         x_ProcessPacket(result, packet, 0);
 
         for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] ) {
+            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
                 continue;
             }
             _ASSERT(locks[i].get());
@@ -494,7 +494,7 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
     size_t packet_start = 0;
     
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         locks[i].reset(new CLoadLockSeq_ids(result, ids[i]));
@@ -518,7 +518,7 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
             x_ProcessPacket(result, packet, 0);
             size_t count = i+1;
             for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] ) {
+                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
                     continue;
                 }
                 _ASSERT(locks[i].get());
@@ -537,7 +537,7 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
         x_ProcessPacket(result, packet, 0);
 
         for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] ) {
+            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
                 continue;
             }
             _ASSERT(locks[i].get());
@@ -568,7 +568,7 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
     size_t packet_start = 0;
     
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         locks[i].reset(new CLoadLockSeq_ids(result, ids[i]));
@@ -597,7 +597,7 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
             x_ProcessPacket(result, packet, 0);
             size_t count = i+1;
             for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] ) {
+                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
                     continue;
                 }
                 _ASSERT(locks[i].get());
@@ -620,7 +620,7 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
         x_ProcessPacket(result, packet, 0);
 
         for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] ) {
+            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
                 continue;
             }
             _ASSERT(locks[i].get());
@@ -656,7 +656,7 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
     size_t packet_start = 0;
     
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_taxid ) {
@@ -684,7 +684,7 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
             x_ProcessPacket(result, packet, 0);
             size_t count = i+1;
             for ( size_t i = packet_start; i < count; ++i ) {
-                if ( loaded[i] ) {
+                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
                     continue;
                 }
                 _ASSERT(locks[i].get());
@@ -707,7 +707,7 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
         x_ProcessPacket(result, packet, 0);
 
         for ( size_t i = packet_start; i < count; ++i ) {
-            if ( loaded[i] ) {
+            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
                 continue;
             }
             _ASSERT(locks[i].get());

@@ -725,7 +725,7 @@ bool CCacheReader::LoadAccVers(CReaderRequestResult& result,
     }
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);
@@ -753,7 +753,7 @@ bool CCacheReader::LoadGis(CReaderRequestResult& result,
     }
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);
@@ -778,7 +778,7 @@ bool CCacheReader::LoadLabels(CReaderRequestResult& result,
     }
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);
@@ -803,7 +803,7 @@ bool CCacheReader::LoadTaxIds(CReaderRequestResult& result,
     }
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);

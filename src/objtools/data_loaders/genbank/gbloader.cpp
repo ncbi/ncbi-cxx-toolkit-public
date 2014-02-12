@@ -734,6 +734,9 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id& id)
 
 CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
 {
+    if ( CReadDispatcher::CannotProcess(sih) ) {
+        return TBlobId();
+    }
     CGBReaderRequestResult result(this, sih);
     CLoadLockSeq_ids seq_ids(result, sih);
     CLoadLockBlob_ids blobs(result, sih, 0);
@@ -768,6 +771,9 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromSatSatKey(int sat,
 
 void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
+    if ( CReadDispatcher::CannotProcess(idh) ) {
+        return;
+    }
     CGBReaderRequestResult result(this, idh);
     CLoadLockSeq_ids seq_ids(result, idh);
     if ( !seq_ids.IsLoaded() ) {
@@ -779,6 +785,9 @@ void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 
 CSeq_id_Handle CGBDataLoader::GetAccVer(const CSeq_id_Handle& idh)
 {
+    if ( CReadDispatcher::CannotProcess(idh) ) {
+        return null;
+    }
     CGBReaderRequestResult result(this, idh);
     CLoadLockSeq_ids seq_ids(result, idh);
     if ( !seq_ids.IsLoadedAccVer() ) {
@@ -790,6 +799,9 @@ CSeq_id_Handle CGBDataLoader::GetAccVer(const CSeq_id_Handle& idh)
 
 TGi CGBDataLoader::GetGi(const CSeq_id_Handle& idh)
 {
+    if ( CReadDispatcher::CannotProcess(idh) ) {
+        return ZERO_GI;
+    }
     CGBReaderRequestResult result(this, idh);
     CLoadLockSeq_ids seq_ids(result, idh);
     if ( !seq_ids.IsLoadedGi() ) {
@@ -801,6 +813,9 @@ TGi CGBDataLoader::GetGi(const CSeq_id_Handle& idh)
 
 string CGBDataLoader::GetLabel(const CSeq_id_Handle& idh)
 {
+    if ( CReadDispatcher::CannotProcess(idh) ) {
+        return string();
+    }
     CGBReaderRequestResult result(this, idh);
     CLoadLockSeq_ids seq_ids(result, idh);
     if ( !seq_ids.IsLoadedLabel() ) {
@@ -812,6 +827,9 @@ string CGBDataLoader::GetLabel(const CSeq_id_Handle& idh)
 
 int CGBDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 {
+    if ( CReadDispatcher::CannotProcess(idh) ) {
+        return -1;
+    }
     CGBReaderRequestResult result(this, idh);
     CLoadLockSeq_ids seq_ids(result, idh);
     if ( !seq_ids.IsLoadedTaxId() ) {
@@ -827,36 +845,52 @@ int CGBDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 
 void CGBDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
-    if ( std::find(loaded.begin(), loaded.end(), false) != loaded.end() ) {
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
         CGBReaderRequestResult result(this, ids[0]);
         m_Dispatcher->LoadAccVers(result, ids, loaded, ret);
+        return;
     }
 }
 
 
 void CGBDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 {
-    if ( std::find(loaded.begin(), loaded.end(), false) != loaded.end() ) {
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
         CGBReaderRequestResult result(this, ids[0]);
         m_Dispatcher->LoadGis(result, ids, loaded, ret);
+        return;
     }
 }
 
 
 void CGBDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 {
-    if ( std::find(loaded.begin(), loaded.end(), false) != loaded.end() ) {
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
         CGBReaderRequestResult result(this, ids[0]);
         m_Dispatcher->LoadLabels(result, ids, loaded, ret);
+        return;
     }
 }
 
 
 void CGBDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
-    if ( std::find(loaded.begin(), loaded.end(), false) != loaded.end() ) {
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
         CGBReaderRequestResult result(this, ids[0]);
         m_Dispatcher->LoadTaxIds(result, ids, loaded, ret);
+        return;
     }
 }
 
@@ -1238,7 +1272,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
 {
     TTSE_LockSet locks;
 
-    if ( mask == 0 ) {
+    if ( mask == 0 || CReadDispatcher::CannotProcess(sih) ) {
         return locks;
     }
 
@@ -1407,14 +1441,21 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
     TBlobContentsMask mask = fBlobHasCore;
     CReadDispatcher::TIds ids;
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
-        CLoadLockSeq_ids seq_ids_lock(result, tse_set->first);
-        CLoadLockBlob_ids blob_ids_lock(result, tse_set->first, 0);
-        ids.push_back(tse_set->first);
+        const CSeq_id_Handle& id = tse_set->first;
+        if ( CReadDispatcher::CannotProcess(id) ) {
+            continue;
+        }
+        CLoadLockSeq_ids seq_ids_lock(result, id);
+        CLoadLockBlob_ids blob_ids_lock(result, id, 0);
+        ids.push_back(id);
     }
     m_Dispatcher->LoadBlobSet(result, ids);
 
     NON_CONST_ITERATE(TTSE_LockSets, tse_set, tse_sets) {
         const CSeq_id_Handle& id = tse_set->first;
+        if ( CReadDispatcher::CannotProcess(id) ) {
+            continue;
+        }
         CLoadLockBlob_ids blob_ids_lock(result, id, 0);
         CFixedBlob_ids blob_ids = blob_ids_lock->GetBlob_ids();
         ITERATE ( CFixedBlob_ids, it, blob_ids ) {

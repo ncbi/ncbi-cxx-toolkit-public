@@ -532,7 +532,7 @@ bool CReader::LoadAccVers(CReaderRequestResult& result,
 {
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CLoadLockSeq_ids seq_ids(result, ids[i]);
@@ -553,7 +553,7 @@ bool CReader::LoadGis(CReaderRequestResult& result,
 {
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CLoadLockSeq_ids seq_ids(result, ids[i]);
@@ -574,7 +574,7 @@ bool CReader::LoadLabels(CReaderRequestResult& result,
 {
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CLoadLockSeq_ids seq_ids(result, ids[i]);
@@ -595,7 +595,7 @@ bool CReader::LoadTaxIds(CReaderRequestResult& result,
 {
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
         CLoadLockSeq_ids seq_ids(result, ids[i]);

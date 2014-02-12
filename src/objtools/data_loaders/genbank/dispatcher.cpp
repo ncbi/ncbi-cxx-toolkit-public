@@ -543,6 +543,21 @@ namespace {
         TLock m_Lock;
     };
 
+    static
+    bool sx_BulkIsDone(const vector<CSeq_id_Handle>& ids,
+                       const vector<bool>& loaded)
+    {
+        for ( size_t i = 0; i < ids.size(); ++i ) {
+            if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+                continue;
+            }
+            if ( !loaded[i] ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     class CCommandLoadAccVers : public CReadDispatcherCommand
     {
     public:
@@ -558,8 +573,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return std::find(m_Loaded.begin(), m_Loaded.end(), false) ==
-                    m_Loaded.end();
+                return sx_BulkIsDone(m_Key, m_Loaded);
             }
         bool Execute(CReader& reader)
             {
@@ -602,8 +616,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return std::find(m_Loaded.begin(), m_Loaded.end(), false) ==
-                    m_Loaded.end();
+                return sx_BulkIsDone(m_Key, m_Loaded);
             }
         bool Execute(CReader& reader)
             {
@@ -646,8 +659,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return std::find(m_Loaded.begin(), m_Loaded.end(), false) ==
-                    m_Loaded.end();
+                return sx_BulkIsDone(m_Key, m_Loaded);
             }
         bool Execute(CReader& reader)
             {
@@ -690,8 +702,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return std::find(m_Loaded.begin(), m_Loaded.end(), false) ==
-                    m_Loaded.end();
+                return sx_BulkIsDone(m_Key, m_Loaded);
             }
         bool Execute(CReader& reader)
             {
