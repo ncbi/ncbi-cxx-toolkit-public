@@ -940,6 +940,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
     size_t num_sep = 0, prev_start = 0;
     int prec = 0;
     bool seen_period = false;
+    bool last_is_sep = false;
     while (pos < token.length()) {
         char ch = token.c_str()[pos];
         if (ch == ' ' || ch == ':' || ch == '-') {
@@ -964,6 +965,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
             num_sep++;
             pos++;
             prev_start = pos;
+            last_is_sep = true;
         } else if (ch == '\'') {
             string num_str = token.substr(prev_start, pos - prev_start);
             double this_val = NStr::StringToDouble (num_str);
@@ -980,15 +982,15 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
                     prec += 2;
                 }
                 pos++;
-                num_sep = 2;
+                num_sep ++;
             } else {
                 if (num_sep > 1) {
-                    // already found seconds
+                    // already found minutes
                     return "";
                 }
                 val += (this_val) / (60.0);
                 prec += 2;
-                num_sep = 1;
+                num_sep ++;
             }
             size_t p_pos = NStr::Find (num_str, ".");
             if (p_pos != string::npos) {
@@ -999,17 +1001,25 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
                 pos++;
             }
             prev_start = pos;
+            last_is_sep = true;
         } else if (isdigit(ch)) {
             pos++;
+            last_is_sep = false;
         } else if (ch == '.') {
             if (seen_period) {
                 return "";
             }
             seen_period = true;
             pos++;
+            last_is_sep = false;
         } else {
             return "";
         }
+    }
+    if (num_sep > 0 && !last_is_sep) {
+        // if there have been separators, but the last value is not a separator,
+        // this is a bad format
+        return "";
     }
 
     if (prev_start == 0) {
