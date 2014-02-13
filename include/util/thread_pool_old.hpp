@@ -703,10 +703,6 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
                    "CBlockingQueue<>::Put: "
                    "attempt to insert into a full queue");
     }
-    if (q.empty()) {
-        m_GetSem.TryWait(); // is this still needed?
-        m_GetSem.Post();
-    }
     if (m_RequestCounter == 0) {
         m_RequestCounter = 0xFFFFFF;
         NON_CONST_ITERATE (typename TRealQueue, it, q) {
@@ -722,6 +718,8 @@ CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority,
     TPriority real_priority = (priority << 24) | m_RequestCounter--;
     TItemHandle handle(new CQueueItem(real_priority, data));
     q.insert(handle);
+    m_GetSem.TryWait();
+    m_GetSem.Post();
     if (q.size() == m_MaxSize) {
         m_PutSem.TryWait();
     }
@@ -788,6 +786,10 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
 
     TItemHandle handle(*q.begin());
     q.erase(q.begin());
+    if (m_HungerCnt > q.size()) {
+        m_HungerSem.TryWait();
+        m_HungerSem.Post();
+    }
     if ( ! q.empty() ) {
         m_GetSem.TryWait();
         m_GetSem.Post();
@@ -946,6 +948,10 @@ CThreadInPool<TRequest>::CAutoUnregGuard::~CAutoUnregGuard(void)
 template <typename TRequest>
 void CThreadInPool<TRequest>::x_UnregisterThread(void)
 {
+    if (m_Counter != NULL) {
+        m_Counter->Add(-1);
+        m_Counter = NULL;
+    }
     m_Pool->UnRegister(*this);
 }
 
