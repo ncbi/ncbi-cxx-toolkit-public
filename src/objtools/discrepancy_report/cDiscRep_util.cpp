@@ -1228,9 +1228,14 @@ void CTestAndRepData :: GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label
      }
      strtmp = "/number=";
      if (!label.empty() 
-            && seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon 
+            && (seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon 
+                   || seq_feat.GetData().GetSubtype() 
+                              == CSeqFeatData::eSubtype_intron)
             && (string::npos != (pos = label.find(strtmp)))) {
           label = CTempString(label).substr(pos + strtmp.size());
+          if (label.find("exon") == 0 || label.find("intron") == 0) { // pos
+             label = CTempString(label).substr(0, label.find(' '));
+          }
      }
      strtmp = kEmptyStr;
 };
@@ -1357,7 +1362,7 @@ void CTestAndRepData :: GetTestItemList(const vector <string>& itemlist, Str2Str
    }
 };
 
-void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const string& sub_grp_nm, const vector <string>* itemlist, const string& desc1, const string& desc2, ECommentTp comm, bool copy2parent, const string& desc3, bool halfsize, unsigned input_cnt)
+void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const string& sub_grp_nm, const vector <string>* itemlist, const string& desc1, const string& desc2, ECommentTp comm, bool copy2parent, const string& desc3, bool halfsize, unsigned input_cnt, bool rm_redundancy)
 {    
      size_t pos;
      CRef <CClickableItem> c_sub (new CClickableItem);
@@ -1370,11 +1375,9 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
      if (itemlist) {
          c_sub->item_list = *itemlist;
          c_sub->obj_list = thisInfo.test_item_objs[sub_grp_nm];
-/*
          if (rm_redundancy) {
-             RmvRedundancy(c_sub->item_list, c_sub->obj_list);
+            RmvRedundancy(c_sub->item_list, c_sub->obj_list);
          }
-*/
      }
      unsigned cnt = itemlist ? c_sub->item_list.size() : input_cnt;
      cnt = halfsize ? cnt/2 : cnt; 

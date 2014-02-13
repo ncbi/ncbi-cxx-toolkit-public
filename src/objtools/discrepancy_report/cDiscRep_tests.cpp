@@ -1148,7 +1148,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                                                    CSeqFeatData::e_Gene, 
                                                    sequence::eOverlap_Contained,
                                                    *thisInfo.scope);
-         if (rbs_gene.NotEmpty()) {
+         if (rbs_gene.Empty()) {
              thisInfo.test_item_list[GetName_rbs()]
                          .push_back( GetDiscItemText(**it));
              thisInfo.test_item_objs[GetName_rbs()]
@@ -1163,7 +1163,6 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
      unsigned i=0;
      if (gene_feat.empty()) {
          /* no genes - just do all exons and introns present */
-cerr << "111\n";
          if (!exon_feat.empty() && !intron_feat.empty()) {
             for (i=0; i< exon_feat.size(); i++) {
                  m_e_exist.push_back(1);
@@ -1179,7 +1178,6 @@ cerr << "111\n";
            if (!(*it)->CanGetExcept_text() 
                  || !NStr::EqualNocase((*it)->GetExcept_text(),
                                        0, 14, "trans-splicing")){
-cerr << "222\n";
               m_e_exist.clear();
               m_i_exist.clear();
               GetFeatureList4Gene( *it, exon_feat, m_e_exist);
@@ -1438,7 +1436,8 @@ void CBioseq_DISC_EXON_INTRON_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, seq2cflts) {
      AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
-        "introns and exon", "location conflicts on " + it->first, e_HasComment);
+        "introns and exon", "location conflicts on " + it->first, e_HasComment,
+         true, "", false, 0, true);
    }
    c_item->description 
          = GetIsComment(c_item->item_list.size(), "introns and exon")
@@ -1927,24 +1926,21 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
    }
    else has_intron = false;
 
- cerr << "start " << exon_start << "  " << exon_stop << " " << intron_start
- << "  " << intron_stop << endl;
    if (!has_exon || !has_intron) return;
 
    if (intron_start < exon_start) {
       if (intron_stop != exon_start - 1) {
-cerr << "added both \n";
         thisInfo.test_item_list[setting_name].push_back(
                           seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
         thisInfo.test_item_list[setting_name].push_back(
-                        seq_id_desc + "$" + GetDiscItemText(*intron_ls[e_idx]));
+                        seq_id_desc + "$" + GetDiscItemText(*intron_ls[i_idx]));
 
         thisInfo.test_item_objs[setting_name + "$" + seq_id_desc].push_back(
                                       CConstRef <CObject>(exon_ls[e_idx]));
         thisInfo.test_item_objs[setting_name + "$" + seq_id_desc].push_back(
-                                      CConstRef <CObject>(intron_ls[e_idx]));
+                                      CConstRef <CObject>(intron_ls[i_idx]));
       }
-      while (i_idx < i_sz && !m_i_exist[i_idx]) i_idx ++;
+      while (++i_idx < i_sz && !m_i_exist[i_idx]);
       if (i_idx < i_sz) {
         intron_start 
             = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
@@ -1962,23 +1958,20 @@ cerr << "added both \n";
            = exon_ls[e_idx]->GetLocation().GetStart(eExtreme_Biological);
       next_exon_stop 
            = exon_ls[e_idx]->GetLocation().GetStop(eExtreme_Biological);
-cerr << "next_exon_start  " << next_exon_start << "  " << next_exon_stop << endl;
       while (i_idx < i_sz && intron_start < next_exon_start) {
         if (intron_start !=exon_stop + 1 || intron_stop != next_exon_start - 1){
           if (intron_start != exon_stop + 1) {
-cerr << "added exon1\n";
               thisInfo.test_item_list[setting_name].push_back(
                       seq_id_desc + "$" + GetDiscItemText(*exon_ls[pre_e_idx]));
               thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
                       .push_back(CConstRef <CObject>(exon_ls[pre_e_idx]));
           }
-cerr << "added intron\n";
+
           thisInfo.test_item_list[setting_name].push_back(
                         seq_id_desc + "$" + GetDiscItemText(*intron_ls[i_idx]));
           thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
                   .push_back(CConstRef <CObject>(intron_ls[i_idx]));
           if (intron_stop != next_exon_start - 1) {
-cerr << "added next\n";
               thisInfo.test_item_list[setting_name].push_back(
                           seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
               thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
@@ -1991,7 +1984,6 @@ cerr << "added next\n";
                = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
           intron_stop 
                = intron_ls[i_idx]->GetLocation().GetStop(eExtreme_Biological);
-cerr << "next_intron " << intron_start << intron_stop << endl;
         }
       }
       pre_e_idx = e_idx;
@@ -2003,15 +1995,15 @@ cerr << "next_intron " << intron_start << intron_stop << endl;
   }
   if (i_idx < i_sz) {
       if (intron_start != exon_stop + 1) {
-cerr << "added last\n";
           thisInfo.test_item_list[setting_name].push_back(
                           seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
           thisInfo.test_item_list[setting_name].push_back(
                         seq_id_desc + "$" + GetDiscItemText(*intron_ls[i_idx]));
+
           thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
                   .push_back(CConstRef <CObject>(exon_ls[e_idx]));
           thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
-                  .push_back(CConstRef <CObject>(exon_ls[i_idx]));
+                  .push_back(CConstRef <CObject>(intron_ls[i_idx]));
       }
   }
 };
@@ -2046,7 +2038,6 @@ void CBioseq_on_Aa :: GetFeatureList4Gene(const CSeq_feat* gene, const vector <c
         i++;
      }
    }
-cerr << exist_ls.size() << endl;
 };
 
 
