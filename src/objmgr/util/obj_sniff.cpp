@@ -244,7 +244,7 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
         LOG_POST_X(3, Info << "Exception reading "
                    << format_name << " " << e.what());
     }
-    input.SetStreamPos(start_pos);
+    //input.SetStreamPos(start_pos);
 }
 
 
@@ -288,7 +288,7 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
             ++it; // trying the next type.
         }
     }
-    input.SetStreamPos(start_pos);
+    //input.SetStreamPos(start_pos);
 }
 
 
