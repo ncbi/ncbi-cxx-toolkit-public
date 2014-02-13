@@ -281,7 +281,7 @@ typedef struct BlastSeqSrcGetSeqArg {
 } BlastSeqSrcGetSeqArg;
 
 /* Return values from BlastSeqSrcGetSequence */
-
+#define BLAST_SEQSRC_EXCLUDED	-3  /**< Sequence excluded due to filtering */
 #define BLAST_SEQSRC_ERROR      -2  /**< Error while retrieving sequence */
 #define BLAST_SEQSRC_EOF        -1  /**< No more sequences available */
 #define BLAST_SEQSRC_SUCCESS     0  /**< Successful sequence retrieval */

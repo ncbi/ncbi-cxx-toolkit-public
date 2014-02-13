@@ -304,7 +304,7 @@ s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
             list< CRef<CSeq_id> > seqids = seqdb.GetSeqIDs(oid);
             
             if (seqids.empty()) {
-                return BLAST_SEQSRC_ERROR;
+                return BLAST_SEQSRC_EXCLUDED;
             }
         }
     }

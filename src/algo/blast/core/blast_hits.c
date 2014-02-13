@@ -2345,8 +2345,16 @@ Blast_HSPListReevaluateUngapped(EBlastProgramType program,
       	/* Return the packed sequence to the database */
       	BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
       	/* Get the unpacked sequence */
-      	if ((status=BlastSeqSrcGetSequence(seq_src, &seq_arg)))
+      	if (( BLAST_SEQSRC_EXCLUDED == BlastSeqSrcGetSequence(seq_src, &seq_arg))) {
+      		for (index = 0; index < hspcnt; ++index) {
+      			 hsp_array[index] = Blast_HSPFree(hsp_array[index]);
+      		}
+      		Blast_HSPListPurgeNullHSPs(hsp_list);
+      		return 0;
+      	}
+      	else if (status < 0){
           return status;
+      	}
        }
    }
 
