@@ -500,6 +500,9 @@ public:
     static SIZE_TYPE ParseIDs(CBioseq::TId& ids, const CTempString& s,
                               TParseFlags flags = fParse_Default);
 
+    static bool IsValid(const CBioseq::TId& ids, TParseFlags flags = fParse_Default);
+    static bool IsValid(const CSeq_id& id, TParseFlags flags = fParse_Default);
+
     /// Parse an entire set of |-delimited FASTA-style IDs, appending
     /// the results to IDS.
     /// @param ids

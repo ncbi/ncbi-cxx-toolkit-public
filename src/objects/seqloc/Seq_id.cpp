@@ -66,6 +66,21 @@
 
 
 #define NCBI_USE_ERRCODE_X   Objects_SeqId
+namespace
+{
+struct CSeq_id_find_pred
+{
+    const char* kSymbols;
+    bool operator()(const char ch)
+    {
+        if (ch<32 || ch>127) // non-ASCII is not allowed
+            return true;
+        return strchr(kSymbols, ch) != 0;
+    }
+};
+
+};
+
 
 // generated classes
 
@@ -1699,12 +1714,16 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
     }
 }
 
-
 bool CSeq_id::IsValidLocalID(const CTempString& s)
 {
-    static const char* const kLegal =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:*#";
-    return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
+    //static const char* const kLegalOther ="!\"#$%&'()*+,-./:;<=>?@[\]^_`{||}~";
+    //static const char* const kLegal =
+    //    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:*#~";
+    //return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
+
+    static const char* kIllegal = " |[]{}()=\"";
+    CSeq_id_find_pred pred; pred.kSymbols = kIllegal;
+    return (!s.empty() && find_if(s.begin(), s.end(), pred) == s.end());
 }
 
 SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const CTempString& s,
@@ -2194,6 +2213,17 @@ int CSeq_id::AdjustScore(int base_score) const
     }
     return score;
 }
+
+bool CSeq_id::IsValid(const CBioseq::TId& ids, TParseFlags flags)
+{
+    return false;
+}
+
+bool CSeq_id::IsValid(const CSeq_id& id, TParseFlags flags)
+{
+    return false;
+}
+
 
 
 SSeqIdRange::SSeqIdRange(const CTempString& s, TFlags flags)
