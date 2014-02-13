@@ -51,10 +51,13 @@ protected:
 void CStdPoolOfThreads::KillAllThreads(TKillFlags flags)
 {
     TACValue n, old_max;
+    bool queuing_was_forbidden;
     {{
         CMutexGuard guard(m_Mutex);
         old_max = m_MaxThreads;
+        queuing_was_forbidden = m_QueuingForbidden;
         m_MaxThreads = 0;  // Forbid spawning new threads
+        m_QueuingForbidden = false; // Always queue normally here.
         n = m_ThreadCount.Get(); // Capture for use without mutex
     }}
 
@@ -88,8 +91,9 @@ void CStdPoolOfThreads::KillAllThreads(TKillFlags flags)
         }
     }
     m_Threads.clear();
+    CMutexGuard guard(m_Mutex);
+    m_QueuingForbidden = queuing_was_forbidden;
     if ((flags & fKill_Reopen) != 0) {
-        CMutexGuard guard(m_Mutex);
         m_MaxThreads = old_max;
     }
 }
