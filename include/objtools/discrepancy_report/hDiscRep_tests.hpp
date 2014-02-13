@@ -691,7 +691,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
                           bool copy2parent = true, 
                           const string& desc3="",
                           bool halfsize = false, 
-                          unsigned input_cnt = 0);
+                          unsigned input_cnt = 0,
+                          bool rm_redundancy = false);
       void GetTestItemList(const vector <string>& itemlist, 
                            Str2Strs& setting2list, 
                            const string& delim = "$");
