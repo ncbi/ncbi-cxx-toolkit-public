@@ -1333,9 +1333,15 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         return data_str;
     }
 
+    CNcbiOstrstream result;
     if( label_str == "GOLD Stamp ID" && NStr::StartsWith(data_str, "Gi") ) {
-        CNcbiOstrstream result;
         result << "<a href=\"http://genomesonline.org/cgi-bin/GOLD/bin/GOLDCards.cgi?goldstamp=" << data_str 
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
+    }
+    if ( label_str == "Annotation Software Version") {
+        result << "<a href=\"http://www.ncbi.nlm.nih.gov/genome/annotation_euk/release_notes/#version"
+               << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
     } else {
