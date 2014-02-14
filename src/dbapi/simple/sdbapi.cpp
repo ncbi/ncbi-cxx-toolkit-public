@@ -2254,7 +2254,7 @@ CQueryImpl::HasMoreResultSets(void)
     if (m_RowCount == 0) {
         if (m_CurRowNo != 0) {
             m_RowCount = m_CurRowNo;
-            m_CurRowNo = 0;
+            // m_CurRowNo = 0;
         }
         else {
             m_RowCount = stmt->GetRowCount();
@@ -2273,7 +2273,7 @@ CQueryImpl::BeginNewRS(void)
         Execute();
     }
     if (!HasMoreResultSets()) {
-        if (m_IgnoreBounds  &&  m_CurRowNo == 0  &&  m_RowCount == -1) {
+        if (m_IgnoreBounds  &&  m_CurRowNo == 0) {
             // OK to have no results whatsoever in SingleSet mode.
             return;
         }
