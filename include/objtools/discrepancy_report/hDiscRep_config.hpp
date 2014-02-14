@@ -216,12 +216,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static Str2UInt                           desired_aaList;
         static Str2Str                            state_abbrev;
         static Str2Str                            cds_prod_find;
-        static vector <string>                    s_pseudoweasels;
-        static vector <string>                    suspect_rna_product_names;
         static vector <string>                    new_exceptions;
         static Str2Str		                  srcqual_keywords;
         static vector <string>                    kIntergenicSpacerNames;
-        static vector <string>                    taxnm_env;
         static vector <string>                    virus_lineage;
         static vector <string>                    strain_tax;
         static Str2CombDt                         fix_data;

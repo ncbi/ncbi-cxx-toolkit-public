@@ -746,8 +746,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CBioseqSet_on_class : public CBioseqSetTestAndRepData
   {
     public:
-      CBioseqSet_on_class () 
-             { m_has_rearranged = m_has_sat_feat = m_has_non_sat_feat = false;};
       virtual ~CBioseqSet_on_class () {};
 
       virtual void TestOnObj(const CBioseq_set& bioseq_set);
@@ -755,13 +753,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const = 0;
    
     protected:
-      bool m_has_rearranged, m_has_sat_feat, m_has_non_sat_feat;
 
-      string GetName_nonwgs() const {return string("DISC_NONWGS_SETS_PRESENT"); }
+      string GetName_nonwgs() const {return string("DISC_NONWGS_SETS_PRESENT");}
       string GetName_segset() const {return string("DISC_SEGSETS_PRESENT"); }
       string GetName_wrap() const {return string("TEST_UNWANTED_SET_WRAPPER"); }
 
-      void FindUnwantedSetWrappers (const CBioseq_set& set);
+      void FindUnwantedSetWrappers (const CBioseq_set& set, const string& desc);
       bool IsMicrosatelliteRepeatRegion (const CSeq_feat& seq_feat);
   };
 
@@ -1050,8 +1047,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
                     CConstRef <CObject> obj_ref);
       bool AuthNoFirstLastNames(const CAuth_list& auths);
       bool CorrectUSAStates(CConstRef <CCit_sub>& cit_sub);
-      void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub,
-                              const string& desc, CConstRef <CObject> obj_ref);
+      //void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub,
+      void CheckTitleAndAuths(CRef <CPub> pub,
+                              const string& desc, CConstRef <CObject>& obj_ref);
   };
 
   class CSeqEntry_DISC_CHECK_AUTH_NAME :  public CSeqEntry_test_on_pub
@@ -1362,16 +1360,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_mcul() const {
                     return string("ONCALLER_MULTIPLE_CULTURE_COLLECTION");}
       string GetName_human() const {return string("DISC_HUMAN_HOST");}
-      string GetName_env() const {
-                    return string("TEST_UNNECESSARY_ENVIRONMENTAL");}
       string GetName_amp() const {
                return string("TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE");}
 
       bool m_run_mism, m_run_cul, m_run_cbs, m_run_atcc, m_run_sp, m_run_meta;
-      bool m_run_auth, m_run_mcul, m_run_human, m_run_env, m_run_amp;
+      bool m_run_auth, m_run_mcul, m_run_human, m_run_amp;
 
       bool AmpPrimersNoEnvSample(const CBioSource& biosrc);
-      bool HasUnnecessaryEnvironmental(const CBioSource& biosrc);
       bool HasMultipleCultureCollection (const CBioSource& biosrc, 
                                          string& cul_vlus);
       bool DoAuthorityAndTaxnameConflict(const CBioSource& biosrc);
@@ -1401,17 +1396,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {
                       return CSeqEntry_test_on_biosrc_orgmod::GetName_amp();}
-  };
-
-  class CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL 
-                                   : public CSeqEntry_test_on_biosrc_orgmod
-  {
-    public:
-      virtual ~CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL () {};
-
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {
-                 return CSeqEntry_test_on_biosrc_orgmod::GetName_env();}
   };
 
   class CSeqEntry_DISC_HUMAN_HOST : public CSeqEntry_test_on_biosrc_orgmod
@@ -1622,7 +1606,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool m_run_trin, m_run_iso, m_run_mult, m_run_tmiss, m_run_tbad;
       bool m_run_flu, m_run_quals, m_run_div, m_run_map;
       bool m_run_clone, m_run_meta, m_run_sp, m_run_prim, m_run_cty, m_run_pcr;
-      bool m_run_strain;
+      bool m_run_strain, m_run_env;
 
       string GetName_trin() const {
                       return string("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"); }
@@ -1643,7 +1627,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_pcr() const {
                            return string("ONCALLER_DUPLICATE_PRIMER_SET");}
       string GetName_strain() const {return string("DISC_REQUIRED_STRAIN"); }
+      string GetName_env() const {
+                    return string("TEST_UNNECESSARY_ENVIRONMENTAL");}
 
+      bool x_HasUnnecessaryEnvironmental(const CBioSource& biosrc);
       bool x_IsMissingRequiredStrain(const CBioSource& biosrc);
       void IniMap(const list <CRef <CPCRPrimer> >& ls, Str2Int& map);
       bool SamePrimerList(const list <CRef <CPCRPrimer> >& ls1, 
@@ -1668,6 +1655,17 @@ BEGIN_SCOPE(DiscRepNmSpc)
                      const string& desc, 
                      CConstRef <CObject> obj_ref,
                      int idx = -1);
+  };
+
+  class CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL 
+                                   : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {
+                 return CSeqEntry_test_on_biosrc :: GetName_env();}
   };
 
   class CSeqEntry_DISC_REQUIRED_STRAIN : public CSeqEntry_test_on_biosrc
