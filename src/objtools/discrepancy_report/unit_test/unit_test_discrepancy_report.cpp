@@ -200,9 +200,9 @@ BOOST_AUTO_TEST_CASE(DISC_RBS_WITHOUT_GENE)
    AddGoodImpFeat(entry, "RBS");
    int gene_fm = entry->GetSeq().GetAnnot().front()->GetData().GetFtable().front()->GetLocation().GetInt().GetFrom();
    int gene_to = entry->GetSeq().GetAnnot().front()->GetData().GetFtable().front()->GetLocation().GetInt().GetTo();
-   entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetLocation().SetInt().SetFrom(gene_fm);
+   entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetLocation().SetInt().SetFrom(gene_fm + 1);
    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetLocation
-().SetInt().SetTo(gene_to);
+().SetInt().SetTo(gene_to +10);
 
    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
    CRef <CScope> scope(new CScope(*objmgr));
@@ -213,8 +213,6 @@ BOOST_AUTO_TEST_CASE(DISC_RBS_WITHOUT_GENE)
    CRef <CClickableItem> c_item(0);
    RunTest(c_item, "DISC_RBS_WITHOUT_GENE");
    CheckReport(c_item, "1 RBS feature does not have overlapping genes");
-
-
 };
 
 BOOST_AUTO_TEST_CASE(ONCALLER_HIV_RNA_INCONSISTENT)
