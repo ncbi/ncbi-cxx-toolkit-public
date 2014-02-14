@@ -1,4 +1,4 @@
->!@#$%^&* Invalid, will get a fresh local ID
+>#$%^&*() Invalid, will get a fresh local ID
 >two      Local string ID
 >3        Local numeric ID
 # CFastaOstream will reorder these IDs as necessary, but testing that would
