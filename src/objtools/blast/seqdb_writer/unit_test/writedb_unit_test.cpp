@@ -2545,13 +2545,13 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestDirectoryCreation)
     bd.Reset(new CBuildDatabase(kOutput, "foo", true, 
                                 CWriteDB::eNoIndex, false, &log));
                                 //CWriteDB::eDefault, false, &cerr));
-    CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
+    CRef<CTaxIdSet> tid(new CTaxIdSet(9301));
     bd->SetTaxids(*tid);
     bd->StartBuild();
     bd->SetSourceDb("nr");
     //bd->SetVerbosity(true);
     bd->SetUseRemote(true);
-    vector<string> ids(1, "405833");
+    vector<string> ids(1, "129295");
     bd->AddIds(ids);
     bd->EndBuild();
     CFile f1(kOutput + ".pin");
@@ -2574,13 +2574,13 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestBasicDatabaseCreation)
     bd.Reset(new CBuildDatabase(kOutput, "foo", true, 
                                 CWriteDB::eNoIndex, false, &log));
                                 //CWriteDB::eDefault, false, &cerr));
-    CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
+    CRef<CTaxIdSet> tid(new CTaxIdSet(9301));
     bd->SetTaxids(*tid);
     bd->StartBuild();
     bd->SetSourceDb("nr");
     //bd->SetVerbosity(true);
     bd->SetUseRemote(true);
-    vector<string> ids(1, "405833");
+    vector<string> ids(1, "129295");
     bd->AddIds(ids);
     bd->EndBuild();
     CFile f1(kOutput + ".pin");
