@@ -513,10 +513,6 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
     bool bDeleteOnClose = false;
     if (args["i"]) {
         pInputStream = new CNcbiIfstream(infile, ios::binary);
-        if (pInputStream->fail()) {
-            NCBI_THROW(CObjWriterException, eArgErr, 
-                "annotwriter: Unable to open input file");
-        }
         bDeleteOnClose = true;
     }
     CObjectIStream* pI = CObjectIStream::Open( 
