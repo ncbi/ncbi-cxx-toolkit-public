@@ -124,11 +124,10 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "URL has to be supplied on the command line");
     if (argc > 3)
         CORE_LOG(eLOG_Fatal, "Cannot take more than 2 arguments");
-    if (argc == 3
-        &&  !(fp = strcmp(argv[2], "-") == 0 ? stdin : fopen(argv[2], "rb"))) {
-        CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"", argv[2]));
-    } else
+    if (argc < 3)
         fp = 0;
+    else if (!(fp = strcmp(argv[2], "-") == 0 ? stdin : fopen(argv[2], "rb")))
+        CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"",argv[2]));
 
     ConnNetInfo_GetValue(0, "RECONNECT", blk, 32, 0);
     if (ConnNetInfo_Boolean(blk)) {
