@@ -300,7 +300,11 @@ gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_property needs gpipe_common
 gpipe_property needs xregexp
 gpipe_resource_req needs xncbi
-gpipe_sadb needs $(GPIPE_GENCOLL_LIBS)
+gpipe_sadb needs $(COMPRESS_LIBS)
+gpipe_sadb needs genome_collection
+gpipe_sadb needs gpipe_common
+gpipe_sadb needs seqset
+gpipe_sadb needs taxon1
 gpipe_val needs $(SEQ_LIBS)
 gpipe_val needs gpipe_common
 gpipe_val needs pub
