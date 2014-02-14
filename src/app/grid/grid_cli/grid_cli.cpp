@@ -78,8 +78,10 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eAppUID), "APP_UID", NULL, {-1}},
 
-    {OPT_DEF(ePositionalArgument, eNetStorageObjectLoc),
-            "OBJECT_LOC", NULL, {-1}},
+    {OPT_DEF(ePositionalArgument, eObjectLoc), "OBJECT_LOC", NULL, {-1}},
+
+    {OPT_DEF(eOptionalPositional, eOptionalObjectLoc),
+        "OBJECT_LOC", NULL, {-1}},
 
     {OPT_DEF(ePositionalArgument, eAttrName), "ATTR_NAME", NULL, {-1}},
 
@@ -476,8 +478,8 @@ struct SCommandCategoryDefinition {
     "following format: \"key,version,subkey\"."
 
 #define MAY_REQUIRE_LOCATION_HINTING \
-    "Some object IDs may require additional options " \
-    "to hint at the current object location."
+    "Some object locators may require additional options " \
+    "to hint at the actual object location."
 
 #define ABOUT_NETSTORAGE_OPTION \
     "\n\nIf a NetStorage service (or server) is specified " \
@@ -585,9 +587,9 @@ struct SCommandDefinition {
         "specified combination of the '--" PERSISTENT_OPTION "', '--"
         FAST_STORAGE_OPTION "', '--" MOVABLE_OPTION "', and '--"
         CACHEABLE_OPTION "' options. After the data has been written, "
-        "the generated object ID is printed to the standard output."
+        "the generated object locator is printed to the standard output."
         ABOUT_NETSTORAGE_OPTION,
-        {eOptionalID, eNetStorage, ePersistent, eFastStorage,
+        {eOptionalObjectLoc, eNetStorage, ePersistent, eFastStorage,
             eNetCache, eCache, eTTL, eMovable, eCacheable, eNoMetaData,
             eInput, eInputFile, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
@@ -595,8 +597,8 @@ struct SCommandDefinition {
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
         "download", "Retrieve a NetStorage object.",
-        "Read the object identified by ID and send its contents to the "
-        "standard output (or to the specified output file)."
+        "Read the object pointed to by the specified locator and "
+        "send its contents to the standard output or a file."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eCache, eOffset, eSize,
             eOutputFile, eLoginToken, eAuth, eDebugHTTP,
@@ -607,7 +609,7 @@ struct SCommandDefinition {
         "Transfer object contents to the new location hinted by "
         "a combination of the '--" PERSISTENT_OPTION "', '--"
         FAST_STORAGE_OPTION "', and '--" CACHEABLE_OPTION "' options. "
-        "After the data has been transferred, a new object ID "
+        "After the data has been transferred, a new object locator "
         "will be generated, which can be used instead of the old "
         "one for faster object access."
         ABOUT_NETSTORAGE_OPTION,
@@ -617,20 +619,20 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectLoc,
-        "mkobjectloc", "Turn a user-defined key into a NetStorage object ID.",
+        "mkobjectloc", "Turn a user-defined key into an object locator.",
         "Take a unique user-defined key/namespace pair (or an "
-        "existing object ID) and make a new object ID. The resulting "
-        "object ID will reflect storage preferences specified by the "
-        "'--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION "', '--"
-        MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
-        {eOptionalID, eObjectKey, eNamespace, ePersistent, eFastStorage,
+        "existing object locator) and make a new object locator. "
+        "The resulting object locator will reflect storage preferences "
+        "specified by the '--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION
+        "', '--" MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
+        {eOptionalObjectLoc, eObjectKey, eNamespace, ePersistent, eFastStorage,
             eNetCache, eCache, eTTL, eMovable, eCacheable, eNoMetaData,
             eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
             &CGridCommandLineInterfaceApp::Cmd_NetStorageObjectInfo,
-        "objectinfo", "Print information about a NetStorage object ID.",
+        "objectinfo", "Print information about a NetStorage object.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
@@ -638,7 +640,7 @@ struct SCommandDefinition {
 
     {eNetStorageCommand,
             &CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject,
-        "rmobject", "Remove a NetStorage object by its ID.",
+        "rmobject", "Remove a NetStorage object by its locator.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
@@ -648,7 +650,7 @@ struct SCommandDefinition {
         "getattr", "Get a NetStorage object attribute value.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eNetStorageObjectLoc, eAttrName, eNetStorage,
+        {eObjectLoc, eAttrName, eNetStorage,
             eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -656,7 +658,7 @@ struct SCommandDefinition {
         "setattr", "Set a NetStorage object attribute value.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eNetStorageObjectLoc, eAttrName, eAttrValue, eNetStorage,
+        {eObjectLoc, eAttrName, eAttrValue, eNetStorage,
             eNetCache, eCache, eLoginToken, eAuth,
             eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -1251,10 +1253,12 @@ int CGridCommandLineInterfaceApp::Run()
             case eUntypedArg:
                 /* FALL THROUGH */
             case eOptionalID:
+            case eOptionalObjectLoc:
                 MarkOptionAsExplicitlySet(eID);
+                MarkOptionAsExplicitlySet(eObjectLoc);
                 /* FALL THROUGH */
             case eID:
-            case eNetStorageObjectLoc:
+            case eObjectLoc:
             case eObjectKey:
             case eJobId:
             case eTargetQueueArg:
