@@ -166,8 +166,8 @@ void CCheckingClass :: x_Clean()
 
 void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h)
 {
+   const CSeq_entry* entry_pt= seq_entry_h.GetCompleteObject().GetPointer();
    for (CSeqdesc_CI seqdesc_it(seq_entry_h, sel_seqdesc, 1); seqdesc_it; ++seqdesc_it) {
-       const CSeq_entry* entry_pt= seq_entry_h.GetCompleteObject().GetPointer();
        if (seqdesc_it->IsOrg()) {
            if (seqdesc_it->GetOrg().IsSetOrgMod()) {
                CTestAndRepData::org_orgmod_seqdesc.push_back( &(*seqdesc_it) );
@@ -210,7 +210,8 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
    if (seq_entry_h.IsSet()) {
        const CBioseq_set& bioseq_set = *(seq_entry_h.GetSet().GetCompleteObject());
        ITERATE (list <CRef <CSeq_entry> >, it, bioseq_set.GetSeq_set()) {
-          CSeq_entry_Handle subseq_hl = thisInfo.scope->GetSeq_entryHandle( **it );
+          CSeq_entry_Handle 
+              subseq_hl = thisInfo.scope->GetSeq_entryHandle( **it );
           CollectSeqdescFromSeqEntry(subseq_hl);
        }
    } 
@@ -468,6 +469,7 @@ void CCheckingClass :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp) 
                                     != thisInfo.test_item_list.end()) {
+cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             if ( strtmp != "LOCUS_TAGS"

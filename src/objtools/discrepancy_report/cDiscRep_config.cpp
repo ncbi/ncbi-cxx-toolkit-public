@@ -83,12 +83,9 @@ vector <string>                     CDiscRepInfo :: rrna_standard_name;
 Str2UInt                            CDiscRepInfo :: desired_aaList;
 Str2Str                             CDiscRepInfo :: state_abbrev;
 Str2Str                             CDiscRepInfo :: cds_prod_find;
-vector <string>                     CDiscRepInfo :: s_pseudoweasels;
-vector <string>                     CDiscRepInfo :: suspect_rna_product_names;
 vector <string>                     CDiscRepInfo :: new_exceptions;
 Str2Str	                            CDiscRepInfo :: srcqual_keywords;
 vector <string>                     CDiscRepInfo :: kIntergenicSpacerNames;
-vector <string>                     CDiscRepInfo :: taxnm_env;
 vector <string>                     CDiscRepInfo :: virus_lineage;
 vector <string>                     CDiscRepInfo :: strain_tax;
 Str2CombDt                          CDiscRepInfo :: fix_data;
@@ -234,15 +231,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     thisInfo.srcqual_keywords["sub-species"] = " subsp.";
     thisInfo.srcqual_keywords["variety"] = " var.";
     thisInfo.srcqual_keywords["pathovar"] = " pv.";
-
-    // ini. of s_pseudoweasels
-    strtmp = "pseudouridine,pseudoazurin,pseudouridylate";
-    thisInfo.s_pseudoweasels 
-        = NStr::Tokenize(strtmp, ",", thisInfo.s_pseudoweasels);
-
-    // ini. of suspect_rna_product_names
-    thisInfo.suspect_rna_product_names.push_back("gene");
-    thisInfo.suspect_rna_product_names.push_back("genes");
 
     // ini. of new_exceptions
     strtmp = "annotated by transcript or proteomic data,heterogeneous population sequenced,low-quality sequence region,unextendable partial coding region";
@@ -425,10 +413,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     thisInfo.cds_prod_find["faecal"] = "ContainsWholeWord";
     thisInfo.cds_prod_find["frame"] = "Empty";
     thisInfo.cds_prod_find["related"] = "EndsWithPattern";
-
-    // ini. of taxnm_env
-    strtmp = "uncultured,enrichment culture,metagenome,environmental,unidentified";
-    thisInfo.taxnm_env = NStr::Tokenize(strtmp, ",", thisInfo.taxnm_env);
 
     // ini. of virus_lineage
     strtmp = "Picornaviridae,Potyviridae,Flaviviridae,Togaviridae";

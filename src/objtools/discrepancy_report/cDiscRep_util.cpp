@@ -192,18 +192,27 @@ bool CTestAndRepData :: ContainsDoubleSpace(const string& pattern, const string&
   else return false;
 }
 
+static const char* s_pseudoweasels[] = {
+  "pseudouridine",
+  "pseudoazurin",
+  "pseudouridylate"
+};
 bool CTestAndRepData :: ContainsPseudo(const string& pattern, const list <string>& strs)
 {
   bool right_pseudo;
   size_t pos;
+  unsigned i;
+  string weasel;
   ITERATE (list <string>, it, strs) {
     strtmp = *it;
     while ( !strtmp.empty() && (pos = strtmp.find("pseudo")) != string::npos) {
         right_pseudo = true;
-        ITERATE (vector <string>, jt, thisInfo.s_pseudoweasels) {
-           if ( CTempString(strtmp).substr(pos, (*jt).size()) == *jt) {
+        for (i=0; i< ArraySize(s_pseudoweasels); i++) {
+           weasel = s_pseudoweasels[i]; 
+           if ( CTempString(strtmp).substr(pos, weasel.size()) 
+                   == s_pseudoweasels[i]) {
                right_pseudo = false;
-               strtmp = CTempString(strtmp).substr(pos + (*jt).size());
+               strtmp = CTempString(strtmp).substr(pos + weasel.size());
                break;
            }
         }

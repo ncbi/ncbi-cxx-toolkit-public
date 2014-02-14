@@ -723,8 +723,9 @@ void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
    // also look for coding regions
    //SAnnotSelector annot_sel;
    ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+     if (!(*it)->CanGetProduct()) continue;
      CFeat_CI feat_ci(*thisInfo.scope, 
-                      (*it)->GetLocation(), 
+                      (*it)->GetProduct(), 
                       CSeqFeatData :: eSubtype_prot);   // why using CFeat_CI?
      if (feat_ci) {
        const CProt_ref& 
@@ -940,8 +941,10 @@ void CBioseq_TEST_UNWANTED_SPACER :: TestOnObj(const CBioseq& bioseq)
 
 bool CBioseqTestAndRepData :: HasUnculturedNonOrganelleName (const string& tax_nm)
 {
-  if (tax_nm == "uncultured organism" || tax_nm == "uncultured microorganism"
-        || tax_nm == "uncultured bacterium" || tax_nm == "uncultured archaeon"){
+  if (tax_nm == "uncultured organism" 
+          || tax_nm == "uncultured microorganism"
+          || tax_nm == "uncultured bacterium" 
+          || tax_nm == "uncultured archaeon"){
       return true;
   }
   else {
@@ -1827,21 +1830,25 @@ void CBioseq_test_on_suspect_phrase :: GetRepOfSuspPhrase(CRef <CClickableItem>&
 };
 
 
+static const char* suspect_rna_product_names[] = {
+   "gene", "genes"
+};
 void CBioseq_test_on_suspect_phrase :: CheckForProdAndComment(const CSeq_feat& seq_feat)
 {
    string prod_str = GetRNAProductString(seq_feat);                   
    string desc(GetDiscItemText(seq_feat));
    CConstRef <CObject> sf_ref(&seq_feat);
-   string comm;
-   ITERATE (vector <string>, it, thisInfo.suspect_rna_product_names) {
-      if (DoesStringContainPhrase(prod_str, *it, false)) {
-        thisInfo.test_item_list[GetName_rna_comm()].push_back(*it + "$" + desc);
-        thisInfo.test_item_objs[GetName_rna_comm() +"$"+ *it].push_back(sf_ref);
+   string comm, name;
+   for (unsigned i=0; i< ArraySize(suspect_rna_product_names); i++) {
+      name = suspect_rna_product_names[i]; 
+      if (DoesStringContainPhrase(prod_str, name, false)){
+       thisInfo.test_item_list[GetName_rna_comm()].push_back(name + "$" + desc);
+       thisInfo.test_item_objs[GetName_rna_comm() +"$"+ name].push_back(sf_ref);
       }
       else if (seq_feat.CanGetComment() 
-                 && DoesStringContainPhrase(seq_feat.GetComment(), *it, false)){
-        thisInfo.test_item_list[GetName_rna_comm()].push_back(*it + "$" + desc);
-        thisInfo.test_item_objs[GetName_rna_comm() +"$"+ *it].push_back(sf_ref);
+                && DoesStringContainPhrase(seq_feat.GetComment(), name, false)){
+       thisInfo.test_item_list[GetName_rna_comm()].push_back(name + "$" + desc);
+       thisInfo.test_item_objs[GetName_rna_comm() +"$"+ name].push_back(sf_ref);
       }
    }
 };
@@ -6180,19 +6187,28 @@ void CBioseq_INCONSISTENT_PROTEIN_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
+#define INT4_MAX 2147483647
 void CBioseq_test_on_cd_4_transl :: TranslExceptOfCDs (const CSeq_feat& cd, bool& has_transl, bool& too_long)
 {
   has_transl = too_long = false;
   unsigned len, tmp_len;
   tmp_len = len = sequence::GetCoverage(cd.GetLocation(), thisInfo.scope);
   switch ( cd.GetData().GetCdregion().GetFrame() ) {
-     case CCdregion::eFrame_two: tmp_len -=1; break;
-     case CCdregion::eFrame_three: tmp_len -= 2; break;
+     case CCdregion::eFrame_two: 
+            tmp_len -=1; 
+            break;
+     case CCdregion::eFrame_three: 
+            tmp_len -= 2; 
+            break;
      default: break;
   }
 
-  unsigned codon_start, codon_stop, pos, i, codon_len;
-  ITERATE (list <CRef <CCode_break> >, it, cd.GetData().GetCdregion().GetCode_break()) {
+  if ((tmp_len % 3) == 0) return;
+  int codon_start, codon_stop, pos, i, codon_len;
+  codon_start = INT4_MAX;
+  codon_stop = -10;
+  ITERATE (list <CRef <CCode_break> >, it, 
+                cd.GetData().GetCdregion().GetCode_break()) {
     if ( !((*it)->GetAa().IsNcbieaa()) || (*it)->GetAa().GetNcbieaa() != 42) {
          continue;
     }
@@ -6201,22 +6217,25 @@ void CBioseq_test_on_cd_4_transl :: TranslExceptOfCDs (const CSeq_feat& cd, bool
          too_long = true;
     }
 
-    if (!has_transl && (tmp_len % 3)) {
+    if (!has_transl) {
        i=0;
-       for (CSeq_loc_CI loc_ci( (*it)->GetLoc() ); loc_ci && !has_transl; ++loc_ci, i++) {
+       for (CSeq_loc_CI loc_ci( (*it)->GetLoc() ); loc_ci && !has_transl; 
+                   ++loc_ci, i++) {
           pos = sequence::LocationOffset(cd.GetLocation(), 
                                          loc_ci.GetEmbeddingSeq_loc(),
-                                         sequence::eOffset_FromLeft, 
+                                         sequence::eOffset_FromStart, 
                                          thisInfo.scope);
-          
-          if ( (int)pos > -1 &&  (!i || pos <= codon_start)) {
-            codon_start = pos;
-            codon_len = loc_ci.GetRange().GetLength() - 1;// codon_len=codon_stop - codon_start
-            codon_stop = codon_len + codon_start;
-            if (codon_len >= 0 && codon_len <= 1 && codon_stop == len - 1) { 
+          if (pos <= codon_start) {
+             codon_start = pos;
+          }
+          codon_len 
+            =sequence::GetCoverage(loc_ci.GetEmbeddingSeq_loc(),thisInfo.scope)
+               -1;
+          codon_stop = codon_len + codon_start;
+          if (codon_len >= 0 && codon_len <= 1 && codon_stop == len - 1) { 
+               /*  a codon, allowing a partial codon at the end */
                has_transl = true;
-            }
-          } 
+          }
        }
     }
     
@@ -6239,36 +6258,53 @@ void CBioseq_test_on_cd_4_transl :: TestOnObj(const CBioseq& bioseq)
    bool run_long = (thisTest.tests_run.find(GetName_long()) != end_it);
    ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
      desc = GetDiscItemText(**it); 
+     CConstRef <CObject> obj_ref (*it);
      comment = (*it)->CanGetComment()? (*it)->GetComment() : kEmptyStr;
      if ( (*it)->GetData().GetCdregion().CanGetCode_break() ) {
         TranslExceptOfCDs(**it, has_transl, too_long); 
         if (has_transl) {
-            if (run_note && comment.find(note_txt.substr(0, 3)) == string::npos) 
-                 thisInfo.test_item_list[GetName_note()].push_back(desc);
+            // TRANSL_NO_NOTE
+            if (run_note && comment.find(note_txt) == string::npos) {
+               thisInfo.test_item_list[GetName_note()].push_back(desc);
+               thisInfo.test_item_objs[GetName_note()].push_back(obj_ref);
+            }
         }
-        else if (run_transl && comment.find(note_txt) != string::npos)
-                    thisInfo.test_item_list[GetName_transl()].push_back(desc);
-        if (run_long && too_long) thisInfo.test_item_list[GetName_long()].push_back(desc);
+        else if (run_transl && comment.find(note_txt) != string::npos) {
+             // NOTE_NO_TRANSL
+             thisInfo.test_item_list[GetName_transl()].push_back(desc);
+             thisInfo.test_item_objs[GetName_transl()].push_back(obj_ref);
+        }
+        if (run_long && too_long) {
+            // TRANSL_TOO_LONG
+            thisInfo.test_item_list[GetName_long()].push_back(desc);
+            thisInfo.test_item_objs[GetName_long()].push_back(obj_ref);
+        }
      }
-     else if (run_transl && comment.find(note_txt) != string::npos)
-                    thisInfo.test_item_list[GetName_transl()].push_back(desc);
+     else if (run_transl && comment.find(note_txt) != string::npos) {
+          // NOTE_NO_TRANSL
+          thisInfo.test_item_list[GetName_transl()].push_back(desc);
+          thisInfo.test_item_objs[GetName_transl()].push_back(obj_ref);
+     }
    }  
 };
 
 void CBioseq_TRANSL_NO_NOTE :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "feature") 
                              + "a translation exception but no note";
 };
 
 void CBioseq_NOTE_NO_TRANSL :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "feature")
                             + "a note but not translation exception";
 };
 
 void CBioseq_TRANSL_TOO_LONG :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "feature")
                              + "translation exceptions longer than 3 bp";
 };
@@ -7770,37 +7806,48 @@ void CBioseq_DUPLICATE_GENE_LOCUS :: GetReport(CRef <CClickableItem>& c_item)
 // new comb
 bool CBioseqSet_on_class :: IsMicrosatelliteRepeatRegion (const CSeq_feat& seq_feat)
 {
-   if (seq_feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region) return false;
+   if (seq_feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region){
+      return false;
+   }
    if (seq_feat.CanGetQual()) {
       ITERATE (vector <CRef < CGb_qual > >, it, seq_feat.GetQual()) {
         if ( NStr::EqualNocase((*it)->GetQual(), "satellite")
-                         && NStr::EqualNocase( (*it)->GetVal(), "microsatellite"))
+               && NStr::EqualNocase( (*it)->GetVal(), 0, 14, "microsatellite")){
            return true;
+        }
       }
    }
    return false;
 };
 
 
-void CBioseqSet_on_class :: FindUnwantedSetWrappers (const CBioseq_set& set)
+void CBioseqSet_on_class :: FindUnwantedSetWrappers (const CBioseq_set& set, const string& desc)
 {
-  ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
-    if ( (*it)->IsSeq() ) {
-       const CBioseq& bioseq = (*it)->GetSeq();
-       CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
-       if (!bioseq_hl) continue;
-       for (CSeqdesc_CI ci(bioseq_hl, CSeqdesc::e_Source); ci && !m_has_rearranged; ++ci) {
-         m_has_rearranged = IsSubSrcPresent( ci->GetSource(), CSubSource::eSubtype_rearranged);
-       }
-       for (CFeat_CI feat_it(bioseq_hl); feat_it && (!m_has_sat_feat || !m_has_non_sat_feat); 
-                                                                                 ++feat_it) {
-          if (IsMicrosatelliteRepeatRegion(feat_it->GetOriginalFeature())) 
-                  m_has_sat_feat = true;
-          else m_has_non_sat_feat = true; 
-       }
-    } 
-    else if (!m_has_rearranged || !m_has_sat_feat || !m_has_non_sat_feat)
-            FindUnwantedSetWrappers( (*it)->GetSet() );
+  bool has_rearranged, has_sat_feat, has_non_sat_feat;
+  has_rearranged = has_sat_feat = has_non_sat_feat = false;
+  CBioseq_set_Handle set_hl = thisInfo.scope->GetBioseq_setHandle(set);
+  for (CBioseq_CI bci(set_hl); bci; ++bci) {
+        if (!bci->IsAa()) {
+            const CBioSource* biosrc = sequence::GetBioSource(*bci);
+            if (biosrc && !has_rearranged) {
+               has_rearranged 
+                  = IsSubSrcPresent(*biosrc, CSubSource::eSubtype_rearranged);
+            }
+            for (CFeat_CI fci(*bci); fci && (!has_sat_feat|| !has_non_sat_feat);
+                        ++fci) {
+               if (IsMicrosatelliteRepeatRegion(fci->GetOriginalFeature())) {
+                  has_sat_feat = true;
+               }
+               else has_non_sat_feat = true;
+            }
+        }
+        if (has_rearranged && has_sat_feat && has_non_sat_feat) {
+           break;
+        }
+  } 
+  if (has_rearranged || (has_sat_feat && !has_non_sat_feat)) {
+    thisInfo.test_item_list[GetName_wrap()].push_back(desc);
+    thisInfo.test_item_objs[GetName_wrap()].push_back(CConstRef<CObject>(&set));
   }
 };
 
@@ -7826,18 +7873,16 @@ void CBioseqSet_on_class :: TestOnObj(const CBioseq_set& bioseq_set)
  
       // TEST_UNWANTED_SET_WRAPPER
       if (thisTest.tests_run.find(GetName_wrap()) != end_it) {
-         FindUnwantedSetWrappers(bioseq_set);
-         if (m_has_rearranged || (m_has_sat_feat && !m_has_non_sat_feat) ) {
-            thisInfo.test_item_list[GetName_wrap()].push_back(desc);
-            thisInfo.test_item_objs[GetName_wrap()].push_back(set_ref);
-         }
+         FindUnwantedSetWrappers(bioseq_set, desc);
       }
    }
-   else if (thisTest.tests_run.find(GetName_segset()) != end_it) {
+   else {
       // DISC_SEGSETS_PRESENT
-      if ( e_cls == CBioseq_set :: eClass_segset) {
+      if (thisTest.tests_run.find(GetName_segset()) != end_it) {
+         if ( e_cls == CBioseq_set :: eClass_segset) {
             thisInfo.test_item_list[GetName_segset()].push_back(desc);
             thisInfo.test_item_objs[GetName_segset()].push_back(set_ref);
+         }
       }
    }
 };
@@ -7847,7 +7892,8 @@ void CBioseqSet_TEST_UNWANTED_SET_WRAPPER :: GetReport(CRef <CClickableItem>& c_
 {
    c_item->obj_list = thisInfo.test_item_objs[GetName()];
    unsigned cnt = c_item->item_list.size();
-   c_item->description = NStr :: UIntToString(cnt) + GetNoun(cnt, "unwanted set wrapper");
+   c_item->description 
+      = NStr :: UIntToString(cnt) + GetNoun(cnt, " unwanted set wrapper");
 };
 
 
@@ -9068,12 +9114,6 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
      arr.clear();
   }
 
-  // TEST_UNNECESSARY_ENVIRONMENTAL
-  if (m_run_env && has_tax && HasUnnecessaryEnvironmental(biosrc)) {
-      thisInfo.test_item_list[GetName_env()].push_back(desc);
-      thisInfo.test_item_objs[GetName_env()].push_back(obj_ref);
-   }
-
   // TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE
   if (m_run_amp && AmpPrimersNoEnvSample(biosrc)) {
      thisInfo.test_item_list[GetName_amp()].push_back(desc);
@@ -9103,8 +9143,14 @@ void CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE :: GetReport(CRef 
      + "'amplified with species-specific primers' note but no environmental-sample qualifier.";
 };
 
-
-bool CSeqEntry_test_on_biosrc_orgmod :: HasUnnecessaryEnvironmental(const CBioSource& biosrc)
+static const char* taxnm_env[]= {
+  "uncultured",
+  "enrichment culture",
+  "metagenome",
+  "environmental",
+  "unidentified"
+};
+bool CSeqEntry_test_on_biosrc :: x_HasUnnecessaryEnvironmental(const CBioSource& biosrc)
 {
    bool found = false, has_note = false, has_metagenomic = false;
 
@@ -9112,21 +9158,32 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasUnnecessaryEnvironmental(const CBioSo
    found = IsSubSrcPresent(biosrc, CSubSource::eSubtype_environmental_sample);
    vector <string> arr;
    GetSubSrcValues(biosrc, CSubSource::eSubtype_other, arr);
-   ITERATE (vector <string>, it, arr)
-     if (NStr::FindNoCase(*it, "amplified with species-specific primers")!=string::npos){
-          has_note = true; break;
+   ITERATE (vector <string>, it, arr) {
+     if (NStr::FindNoCase(*it, "amplified with species-specific primers")
+             != string::npos){
+        has_note = true; 
+        break;
      }
+   }
+   arr.clear();
    has_metagenomic = IsSubSrcPresent(biosrc, CSubSource::eSubtype_metagenomic);
 
-   if (!found || has_note) return false;
+   if (!found || has_note || has_metagenomic) {
+     return false;
+   }
    strtmp = biosrc.GetTaxname();
-   ITERATE (vector <string>, it, thisInfo.taxnm_env) 
-       if (NStr::FindNoCase(strtmp, *it) != string::npos) return false;
-   arr.clear();
+   for (unsigned i=0; i < ArraySize(taxnm_env); i++) {
+      if (NStr::FindNoCase(strtmp, taxnm_env[i]) != string::npos) {
+           return false;
+      }
+   }
    GetOrgModValues(biosrc, COrgMod::eSubtype_other, arr);
-   ITERATE (vector <string>, it, arr)
-     if ( NStr::FindNoCase(*it, "amplified with species-specific primers")!=string::npos)
-             return false;
+   ITERATE (vector <string>, it, arr) {
+     if ( NStr::FindNoCase(*it, "amplified with species-specific primers")
+             != string::npos) {
+        return false;
+     }
+   }
    return true;
 };
 
@@ -9263,10 +9320,10 @@ void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
    m_run_auth = (thisTest.tests_run.find(GetName_auth()) != end_it);
    m_run_mcul = (thisTest.tests_run.find(GetName_mcul()) != end_it);
    m_run_human = (thisTest.tests_run.find(GetName_human()) != end_it);
-   m_run_env = (thisTest.tests_run.find(GetName_env()) != end_it);
    m_run_amp = (thisTest.tests_run.find(GetName_amp()) != end_it);
 
    string desc;
+   //ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
    ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
      RunTests((*it)->GetData().GetBiosrc(), 
                GetDiscItemText(**it), 
@@ -9274,8 +9331,9 @@ void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
    }
 
    unsigned i=0;
-   ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
-      desc = GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i]));
+//   ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
+   ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
+      desc = GetDiscItemText(**it, *(biosrc_seqdesc_seqentry[i]));
       RunTests((*it)->GetSource(), desc, CConstRef <CObject>(*it));
       i++;
    }
@@ -9522,6 +9580,14 @@ bool CSeqEntry_test_on_biosrc :: IsMissingRequiredClone (const CBioSource& biosr
 
 void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string& desc, CConstRef <CObject> obj_ref, int idx)
 {
+  // TEST_UNNECESSARY_ENVIRONMENTAL
+  if (m_run_env 
+          && biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty()
+          && x_HasUnnecessaryEnvironmental(biosrc)) {
+      thisInfo.test_item_list[GetName_env()].push_back(desc);
+      thisInfo.test_item_objs[GetName_env()].push_back(obj_ref);
+  }
+
   // DISC_REQUIRED_STRAIN
   if (m_run_strain && x_IsMissingRequiredStrain(biosrc)) {
       thisInfo.test_item_list[GetName_strain()].push_back(desc);
@@ -9902,6 +9968,7 @@ void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
    m_run_tbad = (thisTest.tests_run.find(GetName_tbad()) != end_it);
    m_run_tmiss = (thisTest.tests_run.find(GetName_tmiss()) != end_it);
    m_run_trin = (thisTest.tests_run.find(GetName_trin()) != end_it);
+   m_run_env = (thisTest.tests_run.find(GetName_env()) != end_it);
 
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, biosrc_feat) {
@@ -12013,31 +12080,34 @@ string CSeqEntry_test_on_pub :: GetAuthNameList(const CAuthor& auth, bool use_in
 };
 
 
-void CSeqEntry_test_on_pub :: CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc, CConstRef <CObject> obj_ref)
+void CSeqEntry_test_on_pub :: CheckTitleAndAuths(CRef <CPub> pub,const string& desc, CConstRef <CObject>& obj_ref)
 {
-   string title = cit_sub->CanGetDescr()? cit_sub->GetDescr() : kEmptyStr;
-   string authors(kEmptyStr);
-   switch (cit_sub->GetAuthors().GetNames().Which()) {
+   // get title
+   string title = GetTitleFromPub(*pub);
+   string authors(kEmptyStr);  
+   if (pub->IsSetAuthors()) {
+     switch (pub->GetAuthors().GetNames().Which()) {
         case CAuth_list::C_Names::e_Std:
                 ITERATE (list <CRef <CAuthor> >, it, 
-                            cit_sub->GetAuthors().GetNames().GetStd()) {
+                            pub->GetAuthors().GetNames().GetStd()) {
                       authors += ", " + GetAuthNameList(**it);
                 }
                 break;
         case CAuth_list::C_Names::e_Ml:
                 ITERATE (list <string>, it, 
-                               cit_sub->GetAuthors().GetNames().GetMl()) {
+                               pub->GetAuthors().GetNames().GetMl()) {
                       authors += ", " + *it; 
                 }
                 break;
         case CAuth_list::C_Names::e_Str:
                 ITERATE (list <string>, it, 
-                             cit_sub->GetAuthors().GetNames().GetStr()) {
+                             pub->GetAuthors().GetNames().GetStr()) {
                       authors += ", " + *it; 
                 }
                 break;
         default: break;
-   };
+     };
+   }
 
    if (!authors.empty())  {
           authors = CTempString(authors).substr(2);
@@ -12073,12 +12143,6 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
          thisInfo.test_item_objs[GetName_usa()].push_back(obj_ref);
       }
   
-      // DISC_TITLE_AUTHOR_CONFLICT;
-      if (m_run_tlt) {
-            CheckTitleAndAuths(cit_sub, desc, obj_ref);
-      }
-
-
       // DISC_CITSUBAFFIL_CONFLICT: need attention
       if (m_run_aff) {
           string affil_str, grp_str;   // either affil_str or grp_str is unnecessary
@@ -12099,6 +12163,11 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
             thisInfo.test_item_objs[GetName_noaff()].push_back(obj_ref);
          }
       } 
+   }
+   else if (m_run_tlt) { // DISC_TITLE_AUTHOR_CONFLICT;
+       ITERATE (list <CRef <CPub> >, it, pubs) {
+         CheckTitleAndAuths(*it, desc, obj_ref);
+       }
    }
 
    // DISC_CHECK_AUTH_CAPS, DISC_CHECK_AUTH_NAME
@@ -12240,7 +12309,7 @@ string CSeqEntry_test_on_pub :: GetTitleFromPub(const CPub& pub)
     case CPub::e_Article:
       if (pub.GetArticle().CanGetTitle() 
                && !pub.GetArticle().GetTitle().Get().empty()) {
-         Get1stTitle(**(pub.GetArticle().GetTitle().Get().begin()));  
+         return (Get1stTitle(**(pub.GetArticle().GetTitle().Get().begin())));  
       }  
       else {
          return kEmptyStr;
@@ -12504,30 +12573,28 @@ void CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT :: GetReport(CRef <CClickableItem>& c_
    Str2Strs tlt2auths, auth2feats;
    GetTestItemList(c_item->item_list, tlt2auths);
    c_item->item_list.clear();
+   unsigned cnt;
    ITERATE (Str2Strs, it, tlt2auths) {
       auth2feats.clear();
-      GetTestItemList(it->second, auth2feats);
+      GetTestItemList(it->second, auth2feats, "#");
       if (auth2feats.size() > 1) {
          CRef <CClickableItem> c_tlt (new CClickableItem);
          c_tlt->setting_name = GetName();
+         cnt = 0;
          ITERATE (Str2Strs, jt, auth2feats) {
+           cnt += jt->second.size();
            AddSubcategory(c_tlt, GetName() + "$" + it->first + "#" + jt->first,
                 &(jt->second), "article", 
                 "title '" + it->first + "' and author list '" + jt->first + "'",
-                e_HasComment, true);
+                e_HasComment, false);
          }
          c_tlt->description 
-             = NStr::UIntToString((unsigned)c_tlt->item_list.size()) 
-               + " articles have title '" + it->first 
+             = NStr::UIntToString(cnt) + " articles have title '" + it->first 
                + " but do not have the same author list";
-         copy(c_tlt->item_list.begin(), c_tlt->item_list.end(),
-                 back_inserter(c_item->item_list));
-         copy(c_tlt->obj_list.begin(), c_tlt->obj_list.end(),
-                 back_inserter(c_item->obj_list));
          c_item->subcategories.push_back(c_tlt);
       } 
    };
-   if (!c_item->item_list.empty()) {
+   if (!c_item->subcategories.empty()) {
       c_item->description = "Publication Title/Author Inconsistencies";
    }
 };
