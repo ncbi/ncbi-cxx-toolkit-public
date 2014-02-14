@@ -170,6 +170,7 @@ void CDeflineGenerator::x_SetFlags (
     m_IsNR = false;
     m_IsPatent = false;
     m_IsPDB = false;
+    m_IsWP = false;
     m_ThirdParty = false;
     m_WGSMaster = false;
     m_TSAMaster = false;
