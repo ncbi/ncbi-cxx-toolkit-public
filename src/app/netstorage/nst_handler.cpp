@@ -980,7 +980,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
     string            object_loc = x_GetObjectLoc(message);
-    CNetStorage       net_storage(g_CreateNetStorage(0));
+    CNetStorage       net_storage(g_CreateNetStorage(
+                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
     CNetStorageObject net_storage_object = net_storage.Open(object_loc, 0);
 
     CJsonNode         object_info = net_storage_object.GetInfo().ToJSON();
@@ -1112,7 +1113,8 @@ CNetStorageHandler::x_ProcessWrite(
                    "None of them was found.");
 
     string          object_loc = x_GetObjectLoc(message);
-    CNetStorage     net_storage(g_CreateNetStorage(0));
+    CNetStorage     net_storage(g_CreateNetStorage(
+                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
 
     m_ObjectStream = net_storage.Open(object_loc, 0);
 
@@ -1158,7 +1160,8 @@ CNetStorageHandler::x_ProcessRead(
     x_CheckNonAnonymousClient();
 
     string              object_loc = x_GetObjectLoc(message);
-    CNetStorage         net_storage(g_CreateNetStorage(0));
+    CNetStorage         net_storage(g_CreateNetStorage(
+                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
     CNetStorageObject   net_storage_object = net_storage.Open(object_loc, 0);
 
 
@@ -1212,7 +1215,8 @@ CNetStorageHandler::x_ProcessDelete(
     x_CheckNonAnonymousClient();
 
     string          object_loc = x_GetObjectLoc(message);
-    CNetStorage     net_storage(g_CreateNetStorage(0));
+    CNetStorage     net_storage(g_CreateNetStorage(
+                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
 
     net_storage.Remove(object_loc);
     m_ClientRegistry.AddObjectsDeleted(m_Client, 1);
@@ -1248,7 +1252,8 @@ CNetStorageHandler::x_ProcessRelocate(
 
 
     string          object_loc = x_GetObjectLoc(message);
-    CNetStorage     net_storage(g_CreateNetStorage(0));
+    CNetStorage     net_storage(g_CreateNetStorage(
+                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
     string          new_object_id = net_storage.Relocate(object_loc,
                                                          new_location_flags);
 
@@ -1276,7 +1281,8 @@ CNetStorageHandler::x_ProcessExists(
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
     string          object_loc = x_GetObjectLoc(message);
-    CNetStorage     net_storage(g_CreateNetStorage(0));
+    CNetStorage     net_storage(g_CreateNetStorage(
+                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
     bool            exists = net_storage.Exists(object_loc);
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
@@ -1294,7 +1300,8 @@ CNetStorageHandler::x_ProcessGetSize(
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
     string            object_loc = x_GetObjectLoc(message);
-    CNetStorage       net_storage(g_CreateNetStorage(0));
+    CNetStorage       net_storage(g_CreateNetStorage(
+                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
     CNetStorageObject net_storage_object = net_storage.Open(object_loc, 0);
     Uint8             object_size = net_storage_object.GetSize();
     CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1426,7 +1433,8 @@ CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
 {
     CNetStorage     net_storage;
     if (icache_settings.m_ServiceName.empty())
-        net_storage = g_CreateNetStorage(0);
+        net_storage = g_CreateNetStorage(
+                CNetICacheClient(CNetICacheClient::eAppRegistry), 0);
     else {
         CNetICacheClient icache_client(icache_settings.m_ServiceName,
                 icache_settings.m_CacheName, m_Client);

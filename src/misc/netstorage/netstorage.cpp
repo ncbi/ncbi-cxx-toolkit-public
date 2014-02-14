@@ -1226,41 +1226,26 @@ void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
 CNetStorage g_CreateNetStorage(CNetICacheClient::TInstance icache_client,
         TNetStorageFlags default_flags)
 {
-    if (icache_client != NULL)
-        return new SNetStorageAPIImpl(icache_client, default_flags);
-    else {
-        CNetICacheClient new_ic_client(CNetICacheClient::eAppRegistry);
-
-        return new SNetStorageAPIImpl(new_ic_client, default_flags);
-    }
+    return new SNetStorageAPIImpl(icache_client, default_flags);
 }
 
 CNetStorage g_CreateNetStorage(TNetStorageFlags default_flags)
 {
-    return new SNetStorageAPIImpl(
-            CNetICacheClient(CNetICacheClient::eAppRegistry), default_flags);
+    return new SNetStorageAPIImpl(NULL, default_flags);
 }
 
 CNetStorageByKey g_CreateNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
         const string& domain_name, TNetStorageFlags default_flags)
 {
-    if (icache_client != NULL)
-        return new SNetStorageByKeyAPIImpl(icache_client,
-                domain_name, default_flags);
-    else {
-        CNetICacheClient new_ic_client(CNetICacheClient::eAppRegistry);
-
-        return new SNetStorageByKeyAPIImpl(new_ic_client,
-                domain_name, default_flags);
-    }
+    return new SNetStorageByKeyAPIImpl(icache_client,
+            domain_name, default_flags);
 }
 
 CNetStorageByKey g_CreateNetStorageByKey(const string& domain_name,
         TNetStorageFlags default_flags)
 {
-    return new SNetStorageByKeyAPIImpl(
-            CNetICacheClient(CNetICacheClient::eAppRegistry),
+    return new SNetStorageByKeyAPIImpl(NULL,
             domain_name, default_flags);
 }
 
