@@ -1,6 +1,3 @@
-#ifndef NETSTORAGE_EXCEPTION__HPP
-#define NETSTORAGE_EXCEPTION__HPP
-
 /*  $Id$
  * ===========================================================================
  *
@@ -26,48 +23,34 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: Network Storage middleman server exception
+ * File Description: Network Storage middleman server warnings
  *
  */
 
 
-#include <corelib/ncbiexpt.hpp>
+#include <ncbi_pch.hpp>
+
+#include "nst_warning.hpp"
 
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 
 
-class CNetStorageServerException : public CException
+string GetWarningCodeString(EWarningCode  code)
 {
-    public:
-        enum EErrCode {
-            eInvalidArgument        = 1,
-            eMandatoryFieldsMissed  = 2,
-            eHelloRequired          = 3,
-            eInvalidMessageType     = 4,
-            eInvalidIncomingMessage = 5,
-            ePrivileges             = 6,
-            eInvalidMessageHeader   = 7,
-            eShuttingDown           = 8,
-            eMessageAfterBye        = 9,
-            eStorageError           = 10,
-            eWriteError             = 11,
-            eReadError              = 12,
-            eInternalError          = 13,
-            eObjectNotFound         = 14,
-            eDatabaseError          = 15,
-            eInvalidConfig          = 16
-        };
-        virtual const char *  GetErrCodeString(void) const;
-        unsigned int ErrCodeToHTTPStatusCode(void) const;
-        NCBI_EXCEPTION_DEFAULT(CNetStorageServerException, CException);
-};
-
-
-END_NCBI_SCOPE
-
-
-#endif /* NETSTORAGE_EXCEPTION__HPP */
+    switch (code) {
+        case eDatabaseWarning:
+            return "eDatabaseWarning";
+        case eAlertNotFoundWarning:
+            return "eAlertNotFoundWarning";
+        case eAlertAlreadyAcknowledgedWarning:
+            return "eAlertAlreadyAcknowledgedWarning";
+        case eAlertUnknownAcknowledgeResultWarning:
+            return "eAlertUnknownAcknowledgeResultWarning";
+        default:
+            return "UnknownNetStorageWarning";
+    }
+}
 

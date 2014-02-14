@@ -73,16 +73,21 @@ public:
             const string &  object_key, Int8  size);
     void ExecSP_UpdateObjectOnWriteByLoc(
             const string &  object_loc, Int8  size);
-    void ExecSP_UpdateObjectOnReadByKey(
-            const string &  object_key);
-    void ExecSP_UpdateObjectOnReadByLoc(
-            const string &  object_loc);
+    void ExecSP_UpdateObjectOnReadByKey(const string &  object_key);
+    void ExecSP_UpdateObjectOnReadByLoc(const string &  object_loc);
+    void ExecSP_RemoveObjectByKey(const string &  object_key);
+    void ExecSP_RemoveObjectByLoc(const string &  object_loc);
+    void ExecSP_AddAttributeByLoc(const string &  object_loc,
+                                  const string &  attr_name,
+                                  const string &  attr_value);
 
 private:
     const SDbAccessInfo &  x_GetDbAccessInfo(void);
     CDatabase *            x_GetDatabase(void);
     CQuery x_NewQuery(void);
     CQuery x_NewQuery(const string &  sql);
+    void x_CheckStatus(CQuery &  query,
+                       const string &  procedure);
 
 private:
     CNcbiApplication &          m_App;

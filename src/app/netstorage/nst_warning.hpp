@@ -1,5 +1,5 @@
-#ifndef NETSTORAGE_EXCEPTION__HPP
-#define NETSTORAGE_EXCEPTION__HPP
+#ifndef NETSTORAGE_WARNING__HPP
+#define NETSTORAGE_WARNING__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,48 +26,27 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: Network Storage middleman server exception
+ * File Description: Network Storage middleman server warnings
  *
  */
 
-
-#include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbistl.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-
-class CNetStorageServerException : public CException
-{
-    public:
-        enum EErrCode {
-            eInvalidArgument        = 1,
-            eMandatoryFieldsMissed  = 2,
-            eHelloRequired          = 3,
-            eInvalidMessageType     = 4,
-            eInvalidIncomingMessage = 5,
-            ePrivileges             = 6,
-            eInvalidMessageHeader   = 7,
-            eShuttingDown           = 8,
-            eMessageAfterBye        = 9,
-            eStorageError           = 10,
-            eWriteError             = 11,
-            eReadError              = 12,
-            eInternalError          = 13,
-            eObjectNotFound         = 14,
-            eDatabaseError          = 15,
-            eInvalidConfig          = 16
-        };
-        virtual const char *  GetErrCodeString(void) const;
-        unsigned int ErrCodeToHTTPStatusCode(void) const;
-        NCBI_EXCEPTION_DEFAULT(CNetStorageServerException, CException);
+enum EWarningCode {
+    eDatabaseWarning                      = 1,
+    eAlertNotFoundWarning                 = 2,
+    eAlertAlreadyAcknowledgedWarning      = 3,
+    eAlertUnknownAcknowledgeResultWarning = 4
 };
 
+string GetWarningCodeString(EWarningCode  code);
 
 END_NCBI_SCOPE
 
-
-#endif /* NETSTORAGE_EXCEPTION__HPP */
+#endif /* NETSTORAGE_WARNING__HPP */
 

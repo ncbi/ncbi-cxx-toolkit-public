@@ -65,18 +65,12 @@ void CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
     CQuery      query = x_NewQuery();
 
     object_id = 0;
-    query.SetParameter("@next_id_", 0, eSDB_Int8, eSP_InOut);
+    query.SetParameter("@next_id", 0, eSDB_Int8, eSP_InOut);
     query.ExecuteSP("GetNextObjectID");
     query.VerifyDone();
+    x_CheckStatus(query, "GetNextObjectID");
 
-    int     status = query.GetStatus();
-    if (status != 0)
-        NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing GetNextObjectID stored "
-                   "procedure (return code " + NStr::NumericToString(status) +
-                   "). See MS SQL log for details.");
-
-    object_id = query.GetParameter("@next_id_").AsInt8();
+    object_id = query.GetParameter("@next_id").AsInt8();
 }
 
 
@@ -87,19 +81,13 @@ void CNSTDatabase::ExecSP_CreateClient(
 
     client_id = 0;
     query.SetParameter("@client_name", client);
-    query.SetParameter("@client_id_", 0, eSDB_Int8, eSP_InOut);
+    query.SetParameter("@client_id", 0, eSDB_Int8, eSP_InOut);
 
     query.ExecuteSP("CreateClient");
     query.VerifyDone();
+    x_CheckStatus(query, "CreateClient");
 
-    int     status = query.GetStatus();
-    if (status != 0)
-        NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing CreateClient stored "
-                   "procedure (return code " + NStr::NumericToString(status) +
-                   "). See MS SQL log for details.");
-
-    client_id = query.GetParameter("@client_id_").AsInt8();
+    client_id = query.GetParameter("@client_id").AsInt8();
 }
 
 
@@ -117,13 +105,7 @@ void CNSTDatabase::ExecSP_CreateObject(
 
     query.ExecuteSP("CreateObject");
     query.VerifyDone();
-
-    int     status = query.GetStatus();
-    if (status != 0)
-        NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing CreateObject stored "
-                   "procedure (return code " + NStr::NumericToString(status) +
-                   "). See MS SQL log for details.");
+    x_CheckStatus(query, "CreateObject");
 }
 
 
@@ -141,13 +123,7 @@ void CNSTDatabase::ExecSP_CreateObjectWithClientID(
 
     query.ExecuteSP("CreateObjectWithClientID");
     query.VerifyDone();
-
-    int     status = query.GetStatus();
-    if (status != 0)
-        NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing CreateObjectWithClientID stored "
-                   "procedure (return code " + NStr::NumericToString(status) +
-                   "). See MS SQL log for details.");
+    x_CheckStatus(query, "CreateObjectWithClientID");
 }
 
 
@@ -160,13 +136,7 @@ void CNSTDatabase::ExecSP_UpdateObjectOnWriteByKey(
 
     query.ExecuteSP("UpdateObjectOnWriteByKey");
     query.VerifyDone();
-
-    int     status = query.GetStatus();
-    if (status != 0)
-        NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing UpdateObjectOnWriteByKey stored "
-                   "procedure (return code " + NStr::NumericToString(status) +
-                   "). See MS SQL log for details.");
+    x_CheckStatus(query, "UpdateObjectOnWriteByKey");
 }
 
 
@@ -179,13 +149,7 @@ void CNSTDatabase::ExecSP_UpdateObjectOnWriteByLoc(
 
     query.ExecuteSP("UpdateObjectOnWriteByLoc");
     query.VerifyDone();
-
-    int     status = query.GetStatus();
-    if (status != 0)
-        NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing UpdateObjectOnWriteByLoc stored "
-                   "procedure (return code " + NStr::NumericToString(status) +
-                   "). See MS SQL log for details.");
+    x_CheckStatus(query, "UpdateObjectOnWriteByLoc");
 }
 
 
@@ -197,13 +161,7 @@ void CNSTDatabase::ExecSP_UpdateObjectOnReadByKey(
 
     query.ExecuteSP("UpdateObjectOnReadByKey");
     query.VerifyDone();
-
-    int     status = query.GetStatus();
-    if (status != 0)
-        NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing UpdateObjectOnReadByKey stored "
-                   "procedure (return code " + NStr::NumericToString(status) +
-                   "). See MS SQL log for details.");
+    x_CheckStatus(query, "UpdateObjectOnReadByKey");
 }
 
 
@@ -215,20 +173,62 @@ void CNSTDatabase::ExecSP_UpdateObjectOnReadByLoc(
 
     query.ExecuteSP("UpdateObjectOnReadByLoc");
     query.VerifyDone();
+    x_CheckStatus(query, "UpdateObjectOnReadByLoc");
+}
 
+
+void CNSTDatabase::ExecSP_RemoveObjectByKey(const string &  object_key)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_key", object_key);
+
+    query.ExecuteSP("RemoveObjectByKey");
+    query.VerifyDone();
+    x_CheckStatus(query, "RemoveObjectByKey");
+}
+
+
+void CNSTDatabase::ExecSP_RemoveObjectByLoc(const string &  object_loc)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_loc", object_loc);
+
+    query.ExecuteSP("RemoveObjectByLoc");
+    query.VerifyDone();
+    x_CheckStatus(query, "RemoveObjectByLoc");
+}
+
+
+void CNSTDatabase::ExecSP_AddAttributeByLoc(const string &  object_loc,
+                                            const string &  attr_name,
+                                            const string &  attr_value)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_loc", object_loc);
+    query.SetParameter("@attr_name", attr_name);
+    query.SetParameter("@attr_value", attr_value);
+
+    query.ExecuteSP("AddAttributeByLoc");
+    query.VerifyDone();
+    x_CheckStatus(query, "AddAttributeByLoc");
+}
+
+
+void CNSTDatabase::x_CheckStatus(CQuery &  query,
+                                 const string &  procedure)
+{
     int     status = query.GetStatus();
     if (status != 0)
         NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                   "Error executing UpdateObjectOnReadByLoc stored "
+                   "Error executing " + procedure + " stored "
                    "procedure (return code " + NStr::NumericToString(status) +
                    "). See MS SQL log for details.");
 }
 
 
-
 CQuery CNSTDatabase::x_NewQuery(void)
 {
-    if (!m_Connected)
+//    if (!m_Connected)
         Connect();
     return x_GetDatabase()->NewQuery();
 }

@@ -53,6 +53,7 @@ const char *  CNetStorageServerException::GetErrCodeString(void) const
     case eWriteError:                   return "eWriteError";
     case eReadError:                    return "eReadError";
     case eInternalError:                return "eInternalError";
+    case eObjectNotFound:               return "eObjectNotFound";
     case eDatabaseError:                return "eDatabaseError";
     case eInvalidConfig:                return "eInvalidConfig";
     default:                            return CException::GetErrCodeString();

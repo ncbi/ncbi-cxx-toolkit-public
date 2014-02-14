@@ -47,6 +47,7 @@
 #include "nst_exception.hpp"
 #include "nst_version.hpp"
 #include "nst_application.hpp"
+#include "nst_warning.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -537,9 +538,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                         m_ObjectSize);
             } catch (const CException &  ex) {
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
-                AppendWarning(response,
-                              CNetStorageServerException::eDatabaseError,
-                              ex.what());
+                AppendWarning(response, eDatabaseWarning, ex.what());
                 x_SendSyncMessage(response);
                 x_PrintMessageRequestStop();
 
@@ -549,8 +548,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 return;
             } catch (...) {
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
-                AppendWarning(response,
-                              CNetStorageServerException::eDatabaseError,
+                AppendWarning(response, eDatabaseWarning,
                               "Unknown updating object meta info error");
                 x_SendSyncMessage(response);
                 x_PrintMessageRequestStop();
@@ -890,9 +888,26 @@ CNetStorageHandler::x_ProcessAckAlert(
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
-//    EAlertAckResult     ack_result = m_Server->AcknowledgeAlert(message.GetString("Name"));
-//    if (ack_result == 
-
+    EAlertAckResult     ack_result = m_Server->AcknowledgeAlert(message.GetString("Name"));
+    CJsonNode           reply = CreateResponseMessage(common_args.m_SerialNumber);
+    switch (ack_result) {
+        case eAcknowledged:
+            // No warning needed, everything is fine
+            break;
+        case eNotFound:
+            AppendWarning(reply, eAlertNotFoundWarning,
+                          "Alert has not been found");
+            break;
+        case eAlreadyAcknowledged:
+            AppendWarning(reply, eAlertAlreadyAcknowledgedWarning,
+                          "Alert has already been acknowledged");
+            break;
+        default:
+            AppendWarning(reply, eAlertUnknownAcknowledgeResultWarning,
+                          "Unknown acknowledge result");
+    }
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 
@@ -1082,12 +1097,12 @@ CNetStorageHandler::x_ProcessCreate(
     x_SendSyncMessage(reply);
 
     if (m_ConnContext.NotNull() && !message.HasKey("ObjectLoc")) {
-        CNetStorageObjectLoc    object_id_struct(m_Server->GetCompoundIDPool(),
-                                                 locator);
+        CNetStorageObjectLoc    object_loc_struct(m_Server->GetCompoundIDPool(),
+                                                  locator);
 
         GetDiagContext().Extra()
             .Print("ObjectLoc", locator)
-            .Print("ObjectKey", object_id_struct.GetUniqueKey());
+            .Print("ObjectKey", object_loc_struct.GetUniqueKey());
     }
 
     // Inform the message receiving loop that raw data are to follow
@@ -1107,9 +1122,9 @@ CNetStorageHandler::x_ProcessWrite(
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
-    if (!message.HasKey("ObjectID") && !message.HasKey("UserKey"))
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
-                   "WRITE message must have ObjectID or UserKey. "
+                   "WRITE message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
     string          object_loc = x_GetObjectLoc(message);
@@ -1134,11 +1149,9 @@ CNetStorageHandler::x_ProcessWrite(
             .Print("ObjectKey", object_loc_struct.GetUniqueKey());
     }
 
-    if ((flags & fNST_NoMetaData) == 0) {
-        // Touch Objects table
-
+    if ((flags & fNST_NoMetaData) == 0)
         m_NeedMetaInfo = true;
-    } else
+    else
         m_NeedMetaInfo = false;
 
     // Inform the message receiving loop that raw data are to follow
@@ -1254,19 +1267,19 @@ CNetStorageHandler::x_ProcessRelocate(
     string          object_loc = x_GetObjectLoc(message);
     CNetStorage     net_storage(g_CreateNetStorage(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
-    string          new_object_id = net_storage.Relocate(object_loc,
-                                                         new_location_flags);
+    string          new_object_loc = net_storage.Relocate(object_loc,
+                                                          new_location_flags);
 
     m_ClientRegistry.AddObjectsRelocated(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
-    reply.SetString("ObjectID", new_object_id);
+    reply.SetString("ObjectLoc", new_object_loc);
     x_SendSyncMessage(reply);
 
     if (m_ConnContext.NotNull()) {
         GetDiagContext().Extra()
-            .Print("NewObjectID", new_object_id);
+            .Print("NewObjectLoc", new_object_loc);
     }
 
     x_PrintMessageRequestStop();
@@ -1448,7 +1461,7 @@ CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
         app->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
 
         return g_CreateNetStorageObject(net_storage,
-                m_DBObjectID, flags);
+                                        m_DBObjectID, flags);
     }
 
     return net_storage.Create(flags);

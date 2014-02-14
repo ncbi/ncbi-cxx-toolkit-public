@@ -45,6 +45,9 @@ IF 1 = 0
 BEGIN
     IF (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')) OR
        (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'AddAttributeByLoc')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'RemoveObjectByLoc')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'RemoveObjectByKey')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnReadByKey')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnReadByLoc')) OR
        (EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnWriteByKey')) OR
@@ -71,6 +74,12 @@ IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')
     DROP USER netstorage_read
 IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')
     DROP USER netstorage_write
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'AddAttributeByLoc')
+    DROP PROCEDURE AddAttributeByLoc
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'RemoveObjectByKey')
+    DROP PROCEDURE RemoveObjectByKey
+IF EXISTS (SELECT * FROM sysobjects WHERE name = 'RemoveObjectByLoc')
+    DROP PROCEDURE RemoveObjectByLoc
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnReadByKey')
     DROP PROCEDURE UpdateObjectOnReadByKey
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'UpdateObjectOnReadByLoc')
@@ -206,11 +215,11 @@ GO
 
 -- Returns 0 if everything is fine
 CREATE PROCEDURE GetNextObjectID
-    @next_id_    BIGINT OUT
+    @next_id     BIGINT OUT
 AS
 BEGIN
     SET NOCOUNT ON
-    UPDATE ObjectIdGen SET @next_id_ = next_object_id = next_object_id + 1
+    UPDATE ObjectIdGen SET @next_id = next_object_id = next_object_id + 1
     IF @@ERROR = 0
         RETURN 0
     RETURN 1
@@ -218,51 +227,31 @@ END
 GO
 
 
-
--- Returns 0 if everything is fine
 CREATE PROCEDURE CreateClient
-    @client_name    VARCHAR(256),
-    @client_id_     BIGINT OUT
+    @client_name        VARCHAR(256),
+    @client_id          BIGINT OUT
 AS
 BEGIN
-    DECLARE @ret_val INT
-    DECLARE @error_message NVARCHAR(4000)
-    DECLARE @error_severity INT
-    DECLARE @error_state INT
-    DECLARE @error_number INT
-
-    SET NOCOUNT ON
-
-    -- Initialize return values
-    SET @ret_val = 0
-    SET @client_id_ = NULL
-
-
-    -- Handle the Clients table
-    IF ((@client_name IS NOT NULL) AND (@client_name != ''))
+    BEGIN TRANSACTION
+    IF NOT EXISTS (SELECT client_id FROM Clients WHERE name = @client_name)
     BEGIN
-        IF NOT EXISTS (SELECT client_id FROM Clients WHERE name = @client_name)
-        BEGIN
-            BEGIN TRY
-                INSERT INTO Clients (name) VALUES (@client_name)
-            END TRY
-            BEGIN CATCH
-                SET @error_message = ERROR_MESSAGE()
-                SET @error_severity = ERROR_SEVERITY()
-                SET @error_state = ERROR_STATE()
-                SET @error_number = ERROR_NUMBER()
+        BEGIN TRY
+            INSERT INTO Clients (name) VALUES (@client_name)
+        END TRY
+        BEGIN CATCH
+            ROLLBACK TRANSACTION
 
-                IF @error_number != 2627   -- Already exists
-                BEGIN
-                    RAISERROR( @error_message, @error_severity, @error_state )
-                    SET @ret_val = 1
-                END
-            END CATCH
-        END
-        SELECT @client_id_ = client_id FROM Clients WHERE name = @client_name
+            DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+            DECLARE @error_severity INT = ERROR_SEVERITY()
+            DECLARE @error_state INT = ERROR_STATE()
+
+            RAISERROR( @error_message, @error_severity, @error_state )
+            RETURN 1
+        END CATCH
     END
-
-    RETURN @ret_val
+    SELECT @client_id = client_id FROM Clients WHERE name = @client_name
+    COMMIT TRANSACTION
+    RETURN 0
 END
 GO
 
@@ -373,6 +362,147 @@ BEGIN
     RETURN 1
 END
 GO
+
+
+-- Returns 0 if everything is fine
+CREATE PROCEDURE RemoveObjectByLoc
+    @object_loc     VARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    DECLARE @object_id      BIGINT
+    SET @object_id = NULL
+
+    BEGIN TRANSACTION
+    BEGIN TRY
+        SELECT @object_id = object_id FROM Objects WHERE object_loc = @object_loc
+        IF @object_id = NULL or @@ERROR != 0
+            ROLLBACK TRANSACTION
+            RETURN 1
+
+        DELETE FROM AttrValues WHERE object_id = @object_id
+        DELETE FROM Objects WHERE object_id = @object_id
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
+-- Returns 0 if everything is fine
+CREATE PROCEDURE RemoveObjectByKey
+    @object_key     VARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    DECLARE @object_id      BIGINT
+    SET @object_id = NULL
+
+    BEGIN TRANSACTION
+    BEGIN TRY
+        SELECT @object_id = object_id FROM Objects WHERE object_key = @object_key
+        IF @object_id = NULL or @@ERROR != 0
+            ROLLBACK TRANSACTION
+            RETURN 1
+
+        DELETE FROM AttrValues WHERE object_id = @object_id
+        DELETE FROM Objects WHERE object_id = @object_id
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+        DECLARE @error_message NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state INT = ERROR_STATE()
+
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
+
+CREATE PROCEDURE AddAttributeByLoc
+    @object_loc     VARCHAR(256),
+    @attr_name      VARCHAR(256),
+    @attr_value     VARCHAR(1024)
+AS
+BEGIN
+    DECLARE @object_id      BIGINT
+    DECLARE @attr_id        BIGINT
+
+    SET @object_id = NULL
+    SET @attr_id = NULL
+
+    BEGIN TRANSACTION
+
+    -- Get the object ID
+    SELECT @object_id = object_id FROM Objects WHERE object_loc = @object_loc
+    IF @object_id IS NULL OR @@ERROR != 0
+    BEGIN
+        ROLLBACK TRANSACTION
+        RETURN 1
+    END
+
+    BEGIN TRY
+        -- Get the attribute ID
+        SELECT @attr_id = attr_id FROM Attributes WHERE name = @attr_name
+        IF @attr_id IS NULL
+        BEGIN
+            INSERT INTO Attributes (name) VALUES (@attr_name)
+            SET @attr_id = SCOPE_IDENTITY()
+        END
+
+        -- Create or update the attribute
+        UPDATE AttrValues SET value = @attr_value WHERE object_id = @object_id AND attr_id = @attr_id
+        IF @@ROWCOUNT = 0
+            INSERT INTO AttrValues (object_id, attr_id, value) VALUES (@object_id, @attr_id, @attr_value)
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION
+
+        DECLARE @error_message  NVARCHAR(4000) = ERROR_MESSAGE()
+        DECLARE @error_severity INT = ERROR_SEVERITY()
+        DECLARE @error_state    INT = ERROR_STATE()
+        RAISERROR( @error_message, @error_severity, @error_state )
+        RETURN 1
+    END CATCH
+
+    COMMIT TRANSACTION
+    RETURN 0
+END
+GO
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
