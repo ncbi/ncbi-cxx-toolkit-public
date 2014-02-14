@@ -73,6 +73,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_CompoundIDPool(cid_pool),
     m_StorageFlags(flags),
     m_Fields(0),
+    m_ObjectID(0),
     m_Timestamp(time(NULL)),
     m_Random(random_number),
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
@@ -90,6 +91,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_CompoundIDPool(cid_pool),
     m_StorageFlags(flags),
     m_Fields(fNFID_KeyAndNamespace),
+    m_ObjectID(0),
     m_AppDomain(app_domain),
     m_UserKey(unique_key),
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
@@ -129,6 +131,11 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     // 3. Restore the field flags.
     VERIFY_FIELD_EXISTS(field = field.GetNextHomogeneous());
     m_Fields = (TNetStorageObjectLocFields) field.GetFlags();
+
+    if ((m_StorageFlags & fNST_NoMetaData) == 0) {
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_ObjectID = field.GetID();
+    }
 
     // 4. Restore file identification.
     if (m_Fields & fNFID_KeyAndNamespace) {
@@ -280,6 +287,9 @@ void CNetStorageObjectLoc::x_Pack()
     cid.AppendFlags(m_Fields);
 
     // 4. Save file identification.
+    if ((m_StorageFlags & fNST_NoMetaData) == 0)
+        cid.AppendID(m_ObjectID);
+
     if (m_Fields & fNFID_KeyAndNamespace) {
         // 4.1. Save the unique file key.
         cid.AppendString(m_UserKey);
@@ -337,6 +347,9 @@ CJsonNode CNetStorageObjectLoc::ToJSON() const
             (m_StorageFlags & fNST_NoMetaData) != 0);
 
     root.SetByKey("StorageFlags", storage_flags);
+
+    if ((m_StorageFlags & fNST_NoMetaData) == 0)
+        root.SetInteger("ObjectID", (Int8) m_ObjectID);
 
     if (m_Fields & fNFID_KeyAndNamespace) {
         root.SetString("AppDomain", m_AppDomain);

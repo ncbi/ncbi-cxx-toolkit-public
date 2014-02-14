@@ -98,7 +98,7 @@ CNetStorageByKey g_CreateNetStorageByKey(
 
 /// @internal
 CNetStorageObject g_CreateNetStorageObject(
-        CNetStorage::TInstance netstorage_api,
+        CNetStorage netstorage_api,
         Int8 object_loc,
         TNetStorageFlags flags);
 

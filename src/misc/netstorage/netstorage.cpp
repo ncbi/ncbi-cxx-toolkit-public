@@ -1250,11 +1250,16 @@ CNetStorageByKey g_CreateNetStorageByKey(const string& domain_name,
 }
 
 CNetStorageObject g_CreateNetStorageObject(
-        CNetStorage::TInstance netstorage_api,
+        CNetStorage netstorage_api,
         Int8 object_loc,
         TNetStorageFlags flags)
 {
-    return NULL;
+    CNetStorageObject result = netstorage_api.Create(flags);
+
+    static_cast<SNetStorageObjectAPIImpl*>((SNetStorageObjectImpl*) result)->
+            m_ObjectLoc.SetObjectID((Uint8) object_loc);
+
+    return result;
 }
 
 END_NCBI_SCOPE

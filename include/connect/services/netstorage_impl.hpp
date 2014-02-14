@@ -243,6 +243,15 @@ public:
     TNetStorageFlags GetStorageFlags() const {return m_StorageFlags;}
     TNetStorageObjectLocFields GetFields() const {return m_Fields;}
 
+    void SetObjectID(Uint8 object_id)
+    {
+        m_StorageFlags &= ~(int) fNST_NoMetaData;
+        m_ObjectID = object_id;
+        m_Dirty = true;
+    }
+
+    Uint8 GetObjectID() const {return m_ObjectID;}
+
     Int8 GetTimestamp() const {return m_Timestamp;}
     Uint8 GetRandom() const {return m_Random;}
 
@@ -313,6 +322,8 @@ private:
 
     TNetStorageFlags m_StorageFlags;
     TNetStorageObjectLocFields m_Fields;
+
+    Uint8 m_ObjectID;
 
     Int8 m_Timestamp;
     Uint8 m_Random;
