@@ -994,12 +994,11 @@ CTreeNode<TValue, TKeyGetter>::CountNodes(unsigned int depth,
     return number_of_nodes;
 }
 
-template <class TValue, class TNodeComparator,
-          class TKeyGetter = CDefaultNodeKeyGetter<TValue> >
-void SortTree(CTreeNode<TValue, TKeyGetter> &root,
+template <class TValue, class TNodeComparator>
+void SortTree(CTreeNode<TValue> &root,
               const TNodeComparator &compare)
 {
-    typename CTreeNode<TValue, TKeyGetter>::template CSorter<TNodeComparator>
+    typename CTreeNode<TValue>::template CSorter<TNodeComparator>
         sorter(compare);
     TreeDepthFirstTraverse(root, sorter);
 }
