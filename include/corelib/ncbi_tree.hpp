@@ -46,6 +46,15 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+/// Tree traverse code returned by the traverse predicate function
+enum ETreeTraverseCode
+{
+    eTreeTraverse,           ///< Keep traversal
+    eTreeTraverseStop,       ///< Stop traversal (return form algorithm)
+    eTreeTraverseStepOver    ///< Do not traverse current node (pick the next one)
+};
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -335,6 +344,28 @@ public:
     ///        itself.
     unsigned int CountNodes(unsigned int depth = 1, TCountNodes how = 0) const;
 
+    template<class TNodeComparator>
+    void SortChildren(const TNodeComparator &compare)
+    { m_Nodes.sort(compare); }
+
+    template<class TNodeComparator>
+    class CSorter {
+    public:
+        CSorter(const TNodeComparator &compare) : m_Compare(compare) {}
+
+        ETreeTraverseCode operator()(TTreeType &node,
+                                     int delta_level)
+        {
+            if (delta_level >= 0) {
+                node.SortChildren(m_Compare);
+            }
+            return eTreeTraverse;
+        }
+
+    private:
+        const TNodeComparator &m_Compare;
+    };
+
 protected:
     void CopyFrom(const TTreeType& tree);
     void SetParent(TTreeType* parent_node) { m_Parent = parent_node; }
@@ -401,15 +432,6 @@ struct CTreePair
 //
 //  Tree algorithms
 //
-
-
-/// Tree traverse code returned by the traverse predicate function
-enum ETreeTraverseCode
-{
-    eTreeTraverse,           ///< Keep traversal
-    eTreeTraverseStop,       ///< Stop traversal (return form algorithm)
-    eTreeTraverseStepOver    ///< Do not traverse current node (pick the next one)
-};
 
 
 /// Depth-first tree traversal algorithm.
@@ -971,6 +993,39 @@ CTreeNode<TValue, TKeyGetter>::CountNodes(unsigned int depth,
 
     return number_of_nodes;
 }
+
+template <class TValue, class TNodeComparator,
+          class TKeyGetter = CDefaultNodeKeyGetter<TValue> >
+void SortTree(CTreeNode<TValue, TKeyGetter> &root,
+              const TNodeComparator &compare)
+{
+    typename CTreeNode<TValue, TKeyGetter>::template CSorter<TNodeComparator>
+        sorter(compare);
+    TreeDepthFirstTraverse(root, sorter);
+}
+
+
+template <class TValue, class TKeyGetter = CDefaultNodeKeyGetter<TValue> >
+class CCompareByLeafCount
+{
+public:
+    typedef CTreeNode<TValue, TKeyGetter> TNodeType;
+
+    CCompareByLeafCount(bool ascending = false) : m_Ascending(ascending) {}
+
+    bool operator()(const TNodeType *node1, const TNodeType *node2) const
+    {
+        unsigned node1_leaves = node1->CountNodes(UINT_MAX,
+                TNodeType::fOnlyLeafs | TNodeType::fCumulative),
+                 node2_leaves = node2->CountNodes(UINT_MAX,
+                TNodeType::fOnlyLeafs | TNodeType::fCumulative);
+        return m_Ascending ? node1_leaves < node2_leaves
+                           : node2_leaves < node1_leaves;
+    }
+
+private:
+    bool m_Ascending;
+};
 
 /* @} */
 
