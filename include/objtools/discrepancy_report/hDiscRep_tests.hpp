@@ -114,6 +114,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   typedef map <string, Str2Strs> Str2MapStr2Strs;
   typedef map <string, vector <CConstRef <CBioseq> > > Str2Seqs;
   typedef map <string, CConstRef <CObject> > Str2Obj;
+  typedef map <string, vector <CConstRef <CObject> > > Str2Objs;
   typedef map <string, bool> Str2Bool;
 
   enum ESuspectNameType {
@@ -3037,12 +3038,17 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_lnc() const {return string("TEST_SHORT_LNCRNA"); }
 
       void FindMissingRNAsInList();
-      bool RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2);
-      void FindDupRNAsInList();
+      bool RnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2);
+      void FindDupRNAsInList(vector <const CSeq_feat*> feats, 
+                             const string& setting_name);
       void GetReport_trna(CRef <CClickableItem>& c_item);
       void FindtRNAsOnSameStrand();
 
+      void x_GetReport_dup(CRef <CClickableItem>& c_item, 
+                            const string& setting_name);
+
       string m_bioseq_desc, m_best_id_str;
+      CConstRef <CObject> m_bioseq_obj;
   };
 
   class CBioseq_TEST_SHORT_LNCRNA : public CBioseq_test_on_rna
