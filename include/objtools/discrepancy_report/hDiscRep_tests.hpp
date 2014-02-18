@@ -630,21 +630,24 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       void RmvChar (string& in_out_str, string rm_chars);
 
-      static vector <const CSeq_feat*> mix_feat, gene_feat, cd_feat, rna_feat, prot_feat;
-      static vector <const CSeq_feat*> pub_feat, biosrc_feat, biosrc_orgmod_feat;
-      static vector <const CSeq_feat*> rbs_feat, biosrc_subsrc_feat, repeat_region_feat;
-      static vector <const CSeq_feat*> D_loop_feat, rna_not_mrna_feat, intron_feat;
-      static vector <const CSeq_feat*> all_feat, non_prot_feat, rrna_feat, miscfeat_feat;
+      static vector <const CSeq_feat*> mix_feat, gene_feat, cd_feat, rna_feat;
+      static vector <const CSeq_feat*> prot_feat, intron_feat, miscfeat_feat;
+      static vector <const CSeq_feat*> biosrc_feat, biosrc_orgmod_feat;
+      static vector <const CSeq_feat*> rbs_feat, biosrc_subsrc_feat, pub_feat;
+      static vector <const CSeq_feat*> D_loop_feat, rna_not_mrna_feat; 
+      static vector <const CSeq_feat*> all_feat, non_prot_feat, rrna_feat;
       static vector <const CSeq_feat*> otherRna_feat, org_orgmod_feat, gap_feat;
-      static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat, promoter_feat;
+      static vector <const CSeq_feat*> utr3_feat, utr5_feat, exon_feat;
+      static vector <const CSeq_feat*> promoter_feat;
       static vector <const CSeq_feat*> mrna_feat, trna_feat, bioseq_biosrc_feat;
 
+      static vector <const CSeqdesc*>  bioseq_genbank;
       static vector <const CSeqdesc*>  pub_seqdesc,comm_seqdesc, biosrc_seqdesc;
       static vector <const CSeqdesc*>  title_seqdesc, biosrc_orgmod_seqdesc;
       static vector <const CSeqdesc*>  user_seqdesc, org_orgmod_seqdesc;
       static vector <const CSeqdesc*>  molinfo_seqdesc, biosrc_subsrc_seqdesc;
       static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc;
-      static vector <const CSeqdesc*>  bioseq_title, bioseq_user, bioseq_genbank;
+      static vector <const CSeqdesc*>  bioseq_title, bioseq_user;
 
       static vector <const CSeq_entry*> pub_seqdesc_seqentry, comm_seqdesc_seqentry;
       static vector <const CSeq_entry*> biosrc_seqdesc_seqentry, title_seqdesc_seqentry;
@@ -2873,7 +2876,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_mprot() const {return string("MISSING_GENPRODSET_PROTEIN");}
       string GetName_dprot() const {return string("DUP_GENPRODSET_PROTEIN");}
       string GetName_mtid() const {return string("MISSING_GENPRODSET_TRANSCRIPT_ID");}
-      string GetName_dtid() const {return string("DUP_GENPRODSET_TRANSCRIPT_ID");}
+      string GetName_dtid() const {return string("DISC_DUP_GENPRODSET_TRANSCRIPT_ID");}
 
       void x_GetReport_dup(CRef <CClickableItem>& c_item, 
                          const string& setting_name, 
