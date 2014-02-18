@@ -74,6 +74,7 @@
 
 #include <serial/objostrxml.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
+#include <util/compress/zlib.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -110,7 +111,7 @@ private:
     void Setup(const CArgs& args);
 
     CObjectIStream* OpenFile(const CArgs& args);
-    CObjectIStream* OpenFile(string fname, const CArgs& args);
+    CObjectIStream* OpenFile(const string& fname, const CArgs& args);
 
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
     CConstRef<CValidError> ProcessSeqEntry(void);
@@ -762,12 +763,25 @@ CObjectIStream* CAsnvalApp::OpenFile
 
 
 CObjectIStream* CAsnvalApp::OpenFile
-(string fname, const CArgs& args)
+(const string& fname, const CArgs& args)
 {
     // file format 
     ESerialDataFormat format = args["b"].AsBoolean() ? eSerial_AsnBinary : eSerial_AsnText;
 
-    return CObjectIStream::Open(fname, format);
+    CObjectIStream* pI = 0;
+    if ( args["c"] ) {
+        CNcbiIfstream* pInputStream = new CNcbiIfstream (fname.c_str(), ios::binary);
+        CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
+            5120, 5120, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
+        CCompressionIStream* pUnzipStream = new CCompressionIStream(
+            *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
+        pI = CObjectIStream::Open( format, *pUnzipStream);
+    }
+    else {
+        pI = CObjectIStream::Open(fname, format);
+    }
+
+    return pI;
 }
 
 void CAsnvalApp::PrintValidError
@@ -869,17 +883,17 @@ void CValXMLStream::Print(const CValidErrItem& item)
     m_Output.PutString("  <message severity=\"");
        m_Output.PutString(s_GetSeverityLabel(item.GetSeverity()));
     m_Output.PutString("\" seq-id=\"");
-       m_Output.PutString(item.GetAccnver());
+       WriteString(item.GetAccnver(), eStringTypeVisible);
 
     if (item.IsSetFeatureId()) {
-        m_Output.PutString("\" feat-id=\"");
-           m_Output.PutString(item.GetFeatureId());
+       m_Output.PutString("\" feat-id=\"");
+       WriteString(item.GetFeatureId(), eStringTypeVisible);
     }
 
     m_Output.PutString("\" code=\"");
-        m_Output.PutString(item.GetErrGroup());
+        WriteString(item.GetErrGroup(), eStringTypeVisible);
         m_Output.PutString("_");
-        m_Output.PutString(item.GetErrCode());
+        WriteString(item.GetErrCode(), eStringTypeVisible);
     m_Output.PutString("\">");
 
     WriteString(item.GetMsg(), eStringTypeVisible);
