@@ -6350,10 +6350,8 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
        strtmp = "Sequence " + m_best_id_str + " is missing trna-" + it->first; 
        thisInfo.test_item_list[GetName_tcnt()]
                   .push_back(strtmp + "$" + m_bioseq_desc);
-/*
        thisInfo.test_item_objs[GetName_tcnt() + "$" + strtmp]
                   .push_back(m_bioseq_obj);
-*/
     }
     else if (num_present[i] > it->second) {
        strtmp 
@@ -6362,10 +6360,8 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
               + (num_present[i]==1 ? " feature." : " features.");
        thisInfo.test_item_list[GetName_tcnt()]
                   .push_back(strtmp + "$" + m_bioseq_desc);
-/*
        thisInfo.test_item_objs[GetName_tcnt() + "$" + strtmp]
-                 .push_bakc(m_bioseq_obj);
-*/
+                 .push_back(m_bioseq_obj);
        ITERATE (vector <string>, jt, aa_seqfeat[it->first]) {
           thisInfo.test_item_list[GetName_tcnt()].push_back(strtmp + "$" + *jt);
        }
@@ -6375,7 +6371,7 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
 };
 
 
-bool CBioseq_test_on_rna :: RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2)
+bool CBioseq_test_on_rna :: RnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2)
 {
   if (!rna1.CanGetExt() && !rna2.CanGetExt()) {
         return true;
@@ -6486,41 +6482,48 @@ bool CBioseq_test_on_rna :: RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2
 
 };
 
-void CBioseq_test_on_rna :: FindDupRNAsInList()
+void CBioseq_test_on_rna :: FindDupRNAsInList(vector <const CSeq_feat*> feats, const string& setting_name)
 {
   unsigned i, j;
   vector <unsigned> is_dup;
-  is_dup.reserve(rrna_feat.size());
-  for (i=0; i< rrna_feat.size(); i++) {
+  is_dup.reserve(feats.size());
+  for (i=0; i< feats.size(); i++) {
       is_dup.push_back(0);
   }
-  Str2Strs label2dup_rrna;
-  string label;
+  Str2Objs label2dup_objs;
 
-  for (i=0; (int) i < (int)rrna_feat.size() -1; i++) {
+  string label;
+  for (i=0; (int) i < (int)feats.size() -1; i++) {
     if (is_dup[i]) continue;
-    GetSeqFeatLabel(*rrna_feat[i], label);  // context_label in C
-    label2dup_rrna[label].push_back(GetDiscItemText(*rrna_feat[i]));
+    GetSeqFeatLabel(*feats[i], label);  // context_label in C
+    label2dup_objs[label].push_back(CConstRef <CObject> (feats[i]));
     is_dup[i] = 1;
-    for (j=i+1; j< rrna_feat.size(); j++) {
-      if (!is_dup[j] 
-           && RRnaMatch(rrna_feat[i]->GetData().GetRna(), rrna_feat[j]->GetData().GetRna())) {
-         label2dup_rrna[label].push_back(GetDiscItemText(*rrna_feat[j]));
+    for (j=i+1; j< feats.size(); j++) {
+      if (!is_dup[j] && RnaMatch(feats[i]->GetData().GetRna(), 
+                                  feats[j]->GetData().GetRna())) {
+         label2dup_objs[label].push_back(CConstRef <CObject> (feats[j]));
          is_dup[j] = 1;
       }      
     }
   }
 
   unsigned cnt;
-  ITERATE (Str2Strs, it, label2dup_rrna) 
-    ITERATE (vector <string>, jt, it->second) {
-      cnt = it->second.size();
-      if (cnt > 1) {
-         strtmp = NStr::UIntToString(cnt) + " rRNA features on " + m_best_id_str
-                    + " have the same name (" + it->first + ").";
-         thisInfo.test_item_list[GetName_rdup()].push_back(strtmp + "$" + *jt);
-      }
+  string desc, rna_type;
+  rna_type = (setting_name == GetName_tdup())? " tRNA " : " rRNA ";
+  ITERATE (Str2Objs, it, label2dup_objs) {
+    cnt = it->second.size();
+    if (cnt > 1) {
+       strtmp 
+         = NStr::UIntToString(cnt) + rna_type + "features on " + m_best_id_str
+            + " have the same name '" + it->first + "'.";
+       ITERATE (vector <CConstRef <CObject> >, jt, it->second) {
+          desc = GetDiscItemText(*((const CSeq_feat*)((*jt).GetPointer())));
+          thisInfo.test_item_list[setting_name].push_back(strtmp + "$" + desc);
+          thisInfo.test_item_objs[setting_name + "$" + strtmp]
+                  .push_back(*jt);
+       }
     }
+  }
 };
 
 
@@ -6627,13 +6630,12 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
   if (bioseq.IsAa()) return;
   m_best_id_str = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank);
   m_bioseq_desc = GetDiscItemText(bioseq);
-//  m_bioseq_obj = CConstRef <CObject> (&bioseq);
+  m_bioseq_obj = CConstRef <CObject> (&bioseq);
 
   bool run_test = false;
   int src_genome;
   // check all biosrc
   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-cerr << MSerial_AsnText << **it << endl;
       src_genome = (*it)->GetSource().GetGenome(); 
       if ( src_genome == CBioSource ::eGenome_plastid
            || src_genome == CBioSource ::eGenome_mitochondrion
@@ -6652,12 +6654,12 @@ cerr << MSerial_AsnText << **it << endl;
           string cnt_str = NStr::UIntToString(cnt);
           thisInfo.test_item_list[GetName_tcnt()]
                       .push_back(cnt_str + "$" + m_bioseq_desc);
-          //thisInfo.test_item_objs[GetName_tcnt + "$" + cnt_str]
-           //           .push_back(m_bioseq_obj);
-//          FindMissingRNAsInList();
+          thisInfo.test_item_objs[GetName_tcnt() + "$" + cnt_str]
+                      .push_back(m_bioseq_obj);
+          FindMissingRNAsInList();
        }
        if (run_tdup) {
-         //FindDupRNAsInList(trna_feat);
+         FindDupRNAsInList(trna_feat, GetName_tdup());
        }
        if (run_strand) FindtRNAsOnSameStrand(); // FIND_STRAND_TRNAS
     }
@@ -6669,7 +6671,7 @@ cerr << MSerial_AsnText << **it << endl;
                     .push_back(NStr::UIntToString(cnt) + "$" + m_bioseq_desc);
        }
        if (run_rdup) {
-           //FindDupRNAsInList(rna_feat);
+           FindDupRNAsInList(rna_feat, GetName_rdup());
        }
     }
   }
@@ -6712,22 +6714,32 @@ void CBioseq_FIND_BADLEN_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
-void CBioseq_FIND_DUP_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
+void CBioseq_test_on_rna :: x_GetReport_dup(CRef <CClickableItem>& c_item, const string& setting_name)
 {
-  Str2Strs label2rrna;
-  GetTestItemList(c_item->item_list, label2rrna);
+  Str2Strs label2rnas;
+  GetTestItemList(c_item->item_list, label2rnas);
   c_item->item_list.clear();
-  ITERATE (Str2Strs, it, label2rrna) {
-    if (it != label2rrna.begin()) {
+  ITERATE (Str2Strs, it, label2rnas) {
+    if (it != label2rnas.begin()) {
          c_item.Reset(new CClickableItem);
-         c_item->setting_name = GetName();
+         c_item->setting_name = setting_name;
          thisInfo.disc_report_data.push_back(c_item);
     }
     c_item->item_list = it->second;
+    c_item->obj_list = thisInfo.test_item_objs[setting_name + "$" + it->first];
     c_item->description = it->first;
   }
 };
 
+void CBioseq_FIND_DUP_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   x_GetReport_dup(c_item, GetName());
+};
+
+void CBioseq_FIND_DUP_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
+{
+    x_GetReport_dup(c_item, GetName());
+};
 
 void CBioseq_test_on_rna :: GetReport_trna(CRef <CClickableItem>& c_item)
 {
@@ -6742,17 +6754,14 @@ void CBioseq_test_on_rna :: GetReport_trna(CRef <CClickableItem>& c_item)
      }
      c_item->item_list = it->second;
      if (isInt(it->first)) {
-         c_item->description = GetHasComment(c_item->item_list.size(), "sequence") + it->first 
-                               + " tRNA " + ((it->first== "1")? "feature." : "features.");
+         c_item->description 
+             = GetHasComment(c_item->item_list.size(), "sequence") + it->first 
+               + " tRNA " + ((it->first== "1")? "feature." : "features.");
      }
      else c_item->description = it->first;
    } 
 };
 void CBioseq_COUNT_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
-{
-    GetReport_trna(c_item);
-};
-void CBioseq_FIND_DUP_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
 {
     GetReport_trna(c_item);
 };
@@ -6772,8 +6781,9 @@ void CBioseq_COUNT_RRNAS :: GetReport(CRef <CClickableItem>& c_item)
      }
      c_item->item_list = it->second;
      if (isInt(it->first)) {
-         c_item->description = GetHasComment(c_item->item_list.size(), "sequence") + it->first
-                               + " rRNA " + ((it->first== "1")? "feature." : "features.");
+         c_item->description 
+              = GetHasComment(c_item->item_list.size(), "sequence") + it->first
+                 + " rRNA " + ((it->first== "1")? "feature." : "features.");
      }
      else c_item->description = it->first;
    }

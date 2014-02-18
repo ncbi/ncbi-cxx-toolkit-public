@@ -164,7 +164,7 @@ void RunAndCheckTest(CRef <CSeq_entry>& entry, const string& test_name, const st
    CDiscRepOutput output_obj;
    output_obj.Export(c_item, test_name);
    if (msg == "print") {
-//      cerr << "desc " << c_item->description << endl;
+      cerr << "desc " << c_item->description << endl;
       return;
    }
    if (c_item.Empty() || (c_item->description).empty()) {
@@ -207,7 +207,6 @@ CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_
 };
 
 
-/*
 BOOST_AUTO_TEST_CASE(FIND_DUP_TRNAS)
 {
    CRef <CSeq_entry> entry (new CSeq_entry);
@@ -220,12 +219,10 @@ BOOST_AUTO_TEST_CASE(FIND_DUP_TRNAS)
    
    AddGoodSource(entry);
    entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
-cerr << MSerial_AsnText << *entry << endl;
-OutBlob(*entry, "FIND_DUP_TRNAS.sqn");
   
-   RunAndCheckTest(entry, "FIND_DUP_TRNAS", "print");
+   RunAndCheckTest(entry, "FIND_DUP_TRNAS", 
+      "2 tRNA features on LocusCollidesWithLocusTag have the same name 'Phe'.");
 };
-*/
 
 BOOST_AUTO_TEST_CASE(TEST_SHORT_LNCRNA)
 {
