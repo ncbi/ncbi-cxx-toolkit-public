@@ -1729,15 +1729,19 @@ void CBioseq_DISC_MITOCHONDRION_REQUIRED :: GetReport(CRef <CClickableItem>& c_i
 
 void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: TestOnObj(const CBioseq& bioseq)
 {
-   bool is_microsatellite = false, is_tandem = false;
+   bool is_microsatellite, is_tandem;
    string qual_qual, qual_val;
-   ITERATE (vector <const CSeq_feat*>, it, repeat_region_feat) {
-     if ( (*it)->CanGetQual()) {
-        ITERATE (vector <CRef <CGb_qual> >, jt, (*it)->GetQual()) {
+   for (CFeat_CI fci(thisInfo.scope->GetBioseqHandle(bioseq), 
+                      SAnnotSelector(CSeqFeatData::eSubtype_repeat_region)); 
+          fci; ++fci) {
+     is_microsatellite = is_tandem = false;
+     const CSeq_feat& feat = fci->GetOriginalFeature();
+     if ( feat.CanGetQual()) {
+        ITERATE (vector <CRef <CGb_qual> >, jt, feat.GetQual()) {
           qual_qual = (*jt)->GetQual();
           qual_val = (*jt)->GetVal(); 
           if ( qual_qual == "satellite"
-                && (NStr::EqualNocase(qual_val, "microsatellite") //please check all FindNoCase
+                && (NStr::EqualNocase(qual_val, "microsatellite")
                      || NStr::EqualNocase(qual_val, 0, 15, "microsatellite:"))){
               is_microsatellite = true;
           }
@@ -1750,8 +1754,8 @@ void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: TestOnObj(const CBioseq& bioseq)
         }
      }
      if (is_microsatellite && !is_tandem) {
-        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
-        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
+       thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(feat));
+       thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&feat));
      }
    }
 };
@@ -1801,6 +1805,8 @@ void CBioseq_test_on_suspect_phrase :: FindBadMiscFeatures(const CSeq_feat& seq_
                                       bad_misc_comment_phrases, false, false)) {
     thisInfo.test_item_list[GetName_misc()].push_back(
                    bad_misc_comment_phrases + "$" + GetDiscItemText(seq_feat));
+    thisInfo.test_item_objs[GetName_misc() + "$" + bad_misc_comment_phrases]
+                .push_back(CConstRef <CObject> (&seq_feat));
   }
 };
 
@@ -2079,8 +2085,11 @@ void CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->obj_list = thisInfo.test_item_objs[GetName()];
-   c_item->description = GetHasComment(c_item->item_list.size(), "sequence") 
-                         + "rRNA or misc_RNA features but are not genomic DNA.";
+   unsigned cnt = c_item->item_list.size();
+   c_item->description 
+       = GetHasComment(cnt, "sequence") 
+          + "rRNA or misc_RNA features but " + (cnt>1? "are": "is")
+          + " not genomic DNA.";
 };
 
 
@@ -6017,7 +6026,7 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
             thisInfo.test_item_list[GetName_mtid()].push_back(desc);
             thisInfo.test_item_objs[GetName_mtid()].push_back(feat_ref);
        }
-       else if (run_dtid) { // DUP_GENPRODSET_TRANSCRIPT_ID
+       else if (run_dtid) { // DISC_DUP_GENPRODSET_TRANSCRIPT_ID
           const CSeq_id& 
               seq_id = sequence::GetId((*it)->GetProduct(), thisInfo.scope);
           prod_id = kEmptyStr;
@@ -6338,16 +6347,27 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
   ITERATE (Str2UInt, it, thisInfo.desired_aaList) {
     if (num_present[i] < it->second)  {
        //   it->first + "_missing$" + m_bioseq_desc);
-       strtmp = "Sequence " + m_best_id_str + " is missing trna-" + it->first + "$" + m_bioseq_desc;
-       thisInfo.test_item_list[GetName_tcnt()].push_back(strtmp);
+       strtmp = "Sequence " + m_best_id_str + " is missing trna-" + it->first; 
+       thisInfo.test_item_list[GetName_tcnt()]
+                  .push_back(strtmp + "$" + m_bioseq_desc);
+/*
+       thisInfo.test_item_objs[GetName_tcnt() + "$" + strtmp]
+                  .push_back(m_bioseq_obj);
+*/
     }
     else if (num_present[i] > it->second) {
-       strtmp = "Sequence " + m_best_id_str + " has " + NStr::UIntToString(num_present[i]) 
-              + " trna-" + it->first + (num_present[i]==1 ? " feature." : " features.") + "$";
-       thisInfo.test_item_list[GetName_tcnt()].push_back(
-                                               strtmp + m_bioseq_desc);
+       strtmp 
+         = "Sequence " + m_best_id_str + " has " 
+              + NStr::UIntToString(num_present[i]) + " trna-" + it->first 
+              + (num_present[i]==1 ? " feature." : " features.");
+       thisInfo.test_item_list[GetName_tcnt()]
+                  .push_back(strtmp + "$" + m_bioseq_desc);
+/*
+       thisInfo.test_item_objs[GetName_tcnt() + "$" + strtmp]
+                 .push_bakc(m_bioseq_obj);
+*/
        ITERATE (vector <string>, jt, aa_seqfeat[it->first]) {
-           thisInfo.test_item_list[GetName_tcnt()].push_back(strtmp + *jt);
+          thisInfo.test_item_list[GetName_tcnt()].push_back(strtmp + "$" + *jt);
        }
     }
     i++;    
@@ -6607,11 +6627,13 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
   if (bioseq.IsAa()) return;
   m_best_id_str = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank);
   m_bioseq_desc = GetDiscItemText(bioseq);
+//  m_bioseq_obj = CConstRef <CObject> (&bioseq);
 
   bool run_test = false;
   int src_genome;
   // check all biosrc
   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+cerr << MSerial_AsnText << **it << endl;
       src_genome = (*it)->GetSource().GetGenome(); 
       if ( src_genome == CBioSource ::eGenome_plastid
            || src_genome == CBioSource ::eGenome_mitochondrion
@@ -6626,10 +6648,16 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
   if (run_test) {
     cnt = trna_feat.size();
     if (cnt) {
-       if (run_tcnt || run_tdup) {
+       if (run_tcnt) { 
+          string cnt_str = NStr::UIntToString(cnt);
           thisInfo.test_item_list[GetName_tcnt()]
-                      .push_back(NStr::UIntToString(cnt) + "$" + m_bioseq_desc);
-          FindMissingRNAsInList();
+                      .push_back(cnt_str + "$" + m_bioseq_desc);
+          //thisInfo.test_item_objs[GetName_tcnt + "$" + cnt_str]
+           //           .push_back(m_bioseq_obj);
+//          FindMissingRNAsInList();
+       }
+       if (run_tdup) {
+         //FindDupRNAsInList(trna_feat);
        }
        if (run_strand) FindtRNAsOnSameStrand(); // FIND_STRAND_TRNAS
     }
@@ -6641,7 +6669,7 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
                     .push_back(NStr::UIntToString(cnt) + "$" + m_bioseq_desc);
        }
        if (run_rdup) {
-           FindDupRNAsInList();
+           //FindDupRNAsInList(rna_feat);
        }
     }
   }

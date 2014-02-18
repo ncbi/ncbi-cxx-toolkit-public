@@ -111,7 +111,6 @@ CCheckingClass :: CCheckingClass() : num_bioseq(0)
    m_vec_sf.push_back(&CTestAndRepData :: pub_feat);
    m_vec_sf.push_back(&CTestAndRepData :: rbs_feat);
    m_vec_sf.push_back(&CTestAndRepData :: rna_feat);
-   m_vec_sf.push_back(&CTestAndRepData :: repeat_region_feat);
    m_vec_sf.push_back(&CTestAndRepData :: rna_not_mrna_feat);
    m_vec_sf.push_back(&CTestAndRepData :: rrna_feat);
    m_vec_sf.push_back(&CTestAndRepData :: trna_feat);

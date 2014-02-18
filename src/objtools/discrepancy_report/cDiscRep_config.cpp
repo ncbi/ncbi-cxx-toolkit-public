@@ -1901,17 +1901,17 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("COUNT_TRNAS") != end_it) {
-       thisGrp.tests_on_Bioseq_CFeat.push_back(
+       thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData> (new CBioseq_COUNT_TRNAS));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("FIND_DUP_TRNAS") != end_it) {
-       thisGrp.tests_on_Bioseq_CFeat.push_back(
+       thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_DUP_TRNAS));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("COUNT_RRNAS") != end_it) {
-       thisGrp.tests_on_Bioseq_CFeat.push_back(
+       thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData> (new CBioseq_COUNT_RRNAS));
         if (++i >= sz) return;
    }

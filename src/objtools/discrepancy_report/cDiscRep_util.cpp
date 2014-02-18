@@ -108,7 +108,6 @@ vector <const CSeq_feat*> CTestAndRepData :: promoter_feat;
 vector <const CSeq_feat*> CTestAndRepData :: mrna_feat;
 vector <const CSeq_feat*> CTestAndRepData :: trna_feat;
 vector <const CSeq_feat*> CTestAndRepData :: bioseq_biosrc_feat;
-vector <const CSeq_feat*> CTestAndRepData :: repeat_region_feat;
 vector <const CSeq_feat*> CTestAndRepData :: D_loop_feat;
 vector <const CSeq_feat*> CTestAndRepData :: org_orgmod_feat;
 vector <const CSeq_feat*> CTestAndRepData :: gap_feat;
@@ -1274,9 +1273,9 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
         if (cds) seq_feat_p = const_cast<CSeq_feat*>(cds);
       }
       string location = SeqLocPrintUseBestID (seq_feat_p->GetLocation());
-      location = (location.empty()) ? "Unknown location": location;
+     // location = (location.empty()) ? "Unknown location": location;
       string label = seq_feat_p->GetData().GetKey();
-      if (label.empty()) label = "Unknown label";
+      // if (label.empty()) label = "Unknown label";
       string locus_tag = GetLocusTagForFeature (*seq_feat_p);
       string context_label(kEmptyStr);
       if (seq_feat_p->GetData().IsCdregion()) { 
@@ -1296,8 +1295,15 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
       } 
       else GetSeqFeatLabel(*seq_feat_p, context_label);
 
-      if (context_label.empty()) context_label = "Unknown context label";
-      strtmp = label+"\t" + context_label + "\t" + location + "\t" + locus_tag;
+/*
+      if (context_label.empty()) {
+          context_label = "Unknown context label";
+      }
+*/
+      if (!label.empty()) label += "\t";
+      if (!context_label.empty()) context_label += "\t";
+      if (!location.empty()) location += "\t";
+      strtmp = label + context_label + location + locus_tag;
       if (thisInfo.infile.empty()) {
          return strtmp;
       }
