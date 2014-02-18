@@ -148,16 +148,25 @@ NCBITEST_AUTO_FINI()
     cout << "Finalization function executed" << endl;
 }
 
-void RunTest(CRef <CClickableItem>& c_item, const string& setting_name)
+static CRef <CObjectManager> objmgr = CObjectManager::GetInstance();
+static CRef <CScope> scope (new CScope(*objmgr));
+void RunAndCheckTest(CRef <CSeq_entry>& entry, const string& test_name, const string& msg)
 {
+   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
+   scope.Reset(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+
+   config->SetArg("e", test_name);
+   CRef <CClickableItem> c_item(0);
    config->CollectTests();
    config->Run();
    CDiscRepOutput output_obj;
-   output_obj.Export(c_item, setting_name);
-};
-
-void CheckReport(CRef <CClickableItem>& c_item, const string& msg)
-{
+   output_obj.Export(c_item, test_name);
+   if (msg == "print") {
+//      cerr << "desc " << c_item->description << endl;
+      return;
+   }
    if (c_item.Empty() || (c_item->description).empty()) {
       NCBITEST_CHECK_MESSAGE(!c_item.Empty(), "no report");
    }
@@ -167,6 +176,14 @@ void CheckReport(CRef <CClickableItem>& c_item, const string& msg)
      NCBITEST_CHECK_MESSAGE(c_item->description == msg,
               "Test report is incorrect: " + c_item->description);
    }
+};
+
+void RunTest(CRef <CClickableItem>& c_item, const string& setting_name)
+{
+   config->CollectTests();
+   config->Run();
+   CDiscRepOutput output_obj;
+   output_obj.Export(c_item, setting_name);
 };
 
 CRef <CSeq_entry> BuildGoodRnaSeq()
@@ -181,14 +198,80 @@ CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_
    CRef <CSeq_feat> rna_feat(new CSeq_feat);
    CRef <CRNA_ref::C_Ext> rna_ext (new CRNA_ref::C_Ext);
    rna_ext->SetName(ext_name);
-   CRef <CRNA_ref> rna_ref(new CRNA_ref);
-   rna_ref->SetType(type);
-   rna_ref->SetExt(*rna_ext);
-   rna_feat->SetData().SetRna(*rna_ref);
+   rna_feat->SetData().SetRna().SetType(type);
+   rna_feat->SetData().SetRna().SetExt(*rna_ext);
    rna_feat->SetLocation().SetInt().SetId().Assign(*(nuc_entry->GetSeq().GetId().front()));
    rna_feat->SetLocation().SetInt().SetFrom(0);
    rna_feat->SetLocation().SetInt().SetTo(nuc_entry->GetSeq().GetInst().GetLength()-1);
    return rna_feat;
+};
+
+
+/*
+BOOST_AUTO_TEST_CASE(FIND_DUP_TRNAS)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
+   istr >> MSerial_AsnText >> *entry;
+   CRef <CSeq_feat> tRNA = BuildGoodtRNA(entry->GetSeq().GetId().front());
+   AddFeat(tRNA, entry);
+   tRNA = BuildGoodtRNA(entry->GetSeq().GetId().front());
+   AddFeat(tRNA, entry);
+   
+   AddGoodSource(entry);
+   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
+cerr << MSerial_AsnText << *entry << endl;
+OutBlob(*entry, "FIND_DUP_TRNAS.sqn");
+  
+   RunAndCheckTest(entry, "FIND_DUP_TRNAS", "print");
+};
+*/
+
+BOOST_AUTO_TEST_CASE(TEST_SHORT_LNCRNA)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
+   istr >> MSerial_AsnText >> *entry;
+
+   // make ncRNA with gen.class
+   CRef <CSeq_feat> rna_feat(new CSeq_feat);
+   CRef <CRNA_ref::C_Ext> rna_ext (new CRNA_ref::C_Ext);
+   rna_ext->SetGen().SetClass("lncrna");
+   rna_feat->SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
+   rna_feat->SetData().SetRna().SetExt(*rna_ext);
+   rna_feat->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+   rna_feat->SetLocation().SetInt().SetFrom(0);
+   rna_feat->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength()-1);
+   AddFeat(rna_feat, entry);
+   RunAndCheckTest(entry, "TEST_SHORT_LNCRNA", 
+                      "1 feature is suspiciously short");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_SUSPECT_MISC_FEATURES)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
+   istr >> MSerial_AsnText >> *entry;
+   AddGoodImpFeat(entry, "misc_feature");
+   entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetComment("potential frameshift: catalytic intron");
+
+   RunAndCheckTest(entry, 
+                   "DISC_SUSPECT_MISC_FEATURES", 
+                   "1 misc_feature comment contains suspect phrase");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_MICROSATELLITE_REPEAT_TYPE)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
+   istr >> MSerial_AsnText >> *entry;
+   AddGoodImpFeat(entry, "repeat_region");
+   entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->AddQualifier("satellite", "microsatellite");
+   entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->AddQualifier("rpt_type", "not_tandem");
+ 
+   RunAndCheckTest(entry, 
+                   "DISC_MICROSATELLITE_REPEAT_TYPE",
+                   "1 microsatellite does not have a repeat type of tandem");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_RBS_WITHOUT_GENE)
@@ -204,15 +287,9 @@ BOOST_AUTO_TEST_CASE(DISC_RBS_WITHOUT_GENE)
    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetLocation
 ().SetInt().SetTo(gene_to +10);
 
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-
-   config->SetArg("e", "DISC_RBS_WITHOUT_GENE");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "DISC_RBS_WITHOUT_GENE");
-   CheckReport(c_item, "1 RBS feature does not have overlapping genes");
+   RunAndCheckTest(entry, 
+                    "DISC_RBS_WITHOUT_GENE",
+                    "1 RBS feature does not have overlapping genes");
 };
 
 BOOST_AUTO_TEST_CASE(ONCALLER_HIV_RNA_INCONSISTENT)
@@ -226,15 +303,8 @@ BOOST_AUTO_TEST_CASE(ONCALLER_HIV_RNA_INCONSISTENT)
    SetTaxname(entry, "Human immunodeficiency virus");
    SetBiomol(entry, CMolInfo::eBiomol_mRNA);
 
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-
-   config->SetArg("e", "ONCALLER_HIV_RNA_INCONSISTENT");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "ONCALLER_HIV_RNA_INCONSISTENT");
-   CheckReport(c_item, "1 HIV RNA bioseq has inconsistent location/moltype");
+   RunAndCheckTest(entry, "ONCALLER_HIV_RNA_INCONSISTENT",
+                   "1 HIV RNA bioseq has inconsistent location/moltype");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_mRNA_ON_WRONG_SEQUENCE_TYPE)
@@ -251,15 +321,8 @@ BOOST_AUTO_TEST_CASE(DISC_mRNA_ON_WRONG_SEQUENCE_TYPE)
     new_mRNA = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_mRNA, "fake");
    AddFeat(new_mRNA, entry);
    
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-
-   config->SetArg("e", "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE");
-   CheckReport(c_item, "1 mRNA is located on eukaryotic sequences that do not have genomic or plasmid source");
+   RunAndCheckTest(entry, "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE",
+       "1 mRNA is located on eukaryotic sequences that do not have genomic or plasmid source");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_FEATURE_MOLTYPE_MISMATCH)
@@ -271,41 +334,19 @@ BOOST_AUTO_TEST_CASE(DISC_FEATURE_MOLTYPE_MISMATCH)
    CRef <CSeq_feat>
      new_rna = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA,"5s_rRNA");
    AddFeat(new_rna, entry);
-
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-
-   config->SetArg("e", "DISC_FEATURE_MOLTYPE_MISMATCH");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "DISC_FEATURE_MOLTYPE_MISMATCH");
-   CheckReport(c_item, "1 sequence has rRNA or misc_RNA features but are not genomic DNA.");
+   RunAndCheckTest(entry, "DISC_FEATURE_MOLTYPE_MISMATCH",
+          "1 sequence has rRNA or misc_RNA features but is not genomic DNA.");
  
    // changed to miscRNA
    entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
-
-   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
-   scope.Reset(new CScope(*objmgr));
-   seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("e", "DISC_FEATURE_MOLTYPE_MISMATCH");
-   c_item.Reset(0);
-   RunTest(c_item, "DISC_FEATURE_MOLTYPE_MISMATCH");
-   CheckReport(c_item, "1 sequence has rRNA or misc_RNA features but are not genomic DNA.");
-
+   RunAndCheckTest(entry, "DISC_FEATURE_MOLTYPE_MISMATCH",
+          "1 sequence has rRNA or misc_RNA features but is not genomic DNA.");
+   
    // changed to dna of eBiomol_unknown
    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
    entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_unknown);
-
-   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
-   scope.Reset(new CScope(*objmgr));
-   seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("e", "DISC_FEATURE_MOLTYPE_MISMATCH");
-   c_item.Reset(0);
-   RunTest(c_item, "DISC_FEATURE_MOLTYPE_MISMATCH");
-   CheckReport(c_item, "1 sequence has rRNA or misc_RNA features but are not genomic DNA.");
+   RunAndCheckTest(entry, "DISC_FEATURE_MOLTYPE_MISMATCH",
+          "1 sequence has rRNA or misc_RNA features but is not genomic DNA.");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_SUSPECT_RRNA_PRODUCTS)
@@ -334,33 +375,17 @@ BOOST_AUTO_TEST_CASE(DISC_SUSPECT_RRNA_PRODUCTS)
    // change protein name
    SetNucProtSetProductName(entry, "fake domain");
 
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-
-   config->SetArg("e", "DISC_SUSPECT_RRNA_PRODUCTS");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "DISC_FLATFILE_FIND_ONCALLER");
-   CheckReport(c_item, "7 rRNA product names contain suspect phrase");
+   RunAndCheckTest(entry, "DISC_SUSPECT_RRNA_PRODUCTS",
+                     "7 rRNA product names contain suspect phrase");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_FLATFILE_FIND_ONCALLER)
 {
-  CRef <CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
-
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-   
+   CRef <CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
    CRef <CSeq_entry> prot_entry = entry->SetSet().SetSeq_set().back();
    prot_entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("SHAEMNVV");
-
-   config->SetArg("e", "DISC_FLATFILE_FIND_ONCALLER");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "DISC_FLATFILE_FIND_ONCALLER");
-   CheckReport(c_item, "1 object contains haem");
+   RunAndCheckTest(entry, "DISC_FLATFILE_FIND_ONCALLER",
+                    "1 object contains haem");
 };
 
 BOOST_AUTO_TEST_CASE(DUP_GENPRODSET_PROTEIN)
@@ -384,25 +409,30 @@ BOOST_AUTO_TEST_CASE(DUP_GENPRODSET_PROTEIN)
          break;
       }
    }
+   RunAndCheckTest(entry, "DUP_GENPRODSET_PROTEIN", 
+                    "2 coding regions have protein ID prot");
+};
 
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("e", "DUP_GENPRODSET_PROTEIN");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "DUP_GENPRODSET_PROTEIN");
-   CheckReport(c_item, "2 coding regions have protein ID prot");
+BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_PROTEIN)
+{
+   CRef <CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
+   // reset Product of cdregion
+   CRef <CSeq_entry>
+     genomic_entry = unit_test_util::GetGenomicFromGenProdSet(entry);
+   genomic_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->ResetProduct();
+  RunAndCheckTest(entry, "MISSING_GENPRODSET_PROTEIN", 
+                   "1 coding region has missing protein ID.");
 };
 
 BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
 {
    CRef <CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
+
+   // good gen-prod-set
    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
    CRef <CScope> scope(new CScope(*objmgr));
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
  
-   // good gen-prod-set
    config->SetTopLevelSeqEntry(&seh);
    config->SetArg("e", "MISSING_GENPRODSET_TRANSCRIPT_ID");
    CRef <CClickableItem> c_item(0);   
@@ -416,7 +446,6 @@ BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
    CRef <CSeq_entry> 
         genomic_entry = unit_test_util::GetGenomicFromGenProdSet(entry);
    list <CRef <CSeq_annot> >& annots = genomic_entry->SetSeq().SetAnnot();
-   list <CRef <CSeq_feat> > & feats =(*(annots.begin()))->SetData().SetFtable();
    NON_CONST_ITERATE(list <CRef <CSeq_feat> >, it, 
                         (*(annots.begin()))->SetData().SetFtable()) {
       if ( (*it)->SetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
@@ -424,15 +453,31 @@ BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
          break;
       }
    }
-   
-   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
-   scope.Reset(new CScope(*objmgr));
-   seh = scope->AddTopLevelSeqEntry(*entry);
-   config->SetTopLevelSeqEntry(&seh);
-   RunTest(c_item, "MISSING_GENPRODSET_TRANSCRIPT_ID");
-   CheckReport(c_item, "1 mRNA has missing transcript ID.");
+   RunAndCheckTest(entry, "MISSING_GENPRODSET_TRANSCRIPT_ID",
+                    "1 mRNA has missing transcript ID.");  
 };
 
+BOOST_AUTO_TEST_CASE(DISC_DUP_GENPRODSET_TRANSCRIPT_ID) 
+{
+   CRef <CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
+   CRef <CSeq_entry>
+        genomic_entry = unit_test_util::GetGenomicFromGenProdSet(entry);
+   CRef <CSeq_feat> new_feat(new CSeq_feat);
+   ITERATE(list <CRef <CSeq_feat> >, it, 
+         genomic_entry->GetSeq().GetAnnot().front()->GetData().GetFtable()){
+      if ( (*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+         new_feat->SetData().SetRna().Assign(((*it)->GetData().GetRna()));
+         new_feat->SetLocation().SetInt().SetId().Assign(*(genomic_entry->GetSeq().GetId().front()));
+         new_feat->SetLocation().SetInt().SetFrom(0);
+         new_feat->SetLocation().SetInt().SetTo(genomic_entry->GetSeq().GetInst().GetLength()-1);
+         new_feat->SetProduct().Assign((*it)->GetProduct());
+         unit_test_util::AddFeat(new_feat, genomic_entry );
+         break;
+      }
+   }
+   RunAndCheckTest(entry, "DISC_DUP_GENPRODSET_TRANSCRIPT_ID", 
+                   "2 mRNAs have non-unique transcript ID nuc");
+};
 
 BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
 {
@@ -446,16 +491,7 @@ BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
    CGene_ref& gene_ref= (*(feats.begin()))->SetData().SetGene();
    string strtmp(kEmptyStr);
    gene_ref.SetLocus_tag("");
-
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-   
-   config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("e", "MISSING_LOCUS_TAGS");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "MISSING_LOCUS_TAGS");
-   CheckReport(c_item, "1 gene has no locus tags.");
+   RunAndCheckTest(entry, "MISSING_LOCUS_TAGS", "1 gene has no locus tags.");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
@@ -463,16 +499,8 @@ BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
    CRef <CSeq_entry> entry (new CSeq_entry);
    CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
    istr >> MSerial_AsnText >> *entry;
-
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
-   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-
-   config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("e", "DISC_COUNT_NUCLEOTIDES");
-   CRef <CClickableItem> c_item(0);
-   RunTest(c_item, "DISC_COUNT_NUCLEOTIDES");
-   CheckReport(c_item, "1 nucleotide Bioseq is present.");
+   RunAndCheckTest(entry, "DISC_COUNT_NUCLEOTIDES",
+                   "1 nucleotide Bioseq is present.");
 };
 
 
