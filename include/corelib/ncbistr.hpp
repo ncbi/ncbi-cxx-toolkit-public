@@ -2852,7 +2852,10 @@ enum EEncoding {
     eEncoding_Unknown,
     eEncoding_UTF8,
     eEncoding_Ascii,
-    eEncoding_ISO8859_1,
+    eEncoding_ISO8859_1,    ///< Note:  From the point of view of the C++
+                            ///< Toolkit, the ISO 8859-1 character set includes
+                            ///< symbols 0x00 through 0xFF except 0x80 through
+                            ///< 0x9F.
     eEncoding_Windows_1252
 };
 

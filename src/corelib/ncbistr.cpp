@@ -5730,6 +5730,8 @@ EEncoding CUtf8::GuessEncoding( const CTempString& src)
         if (ch > 0x7F) {
             ascii = false;
 // http://en.wikipedia.org/wiki/ISO/IEC_8859-1
+// Note:  From the point of view of the C++ Toolkit, the ISO 8859-1
+// character set includes symbols 0x00 through 0xFF except 0x80 through 0x9F.
             if (ch < 0xA0) {
                 iso1 = false;
 // http://en.wikipedia.org/wiki/Windows-1252
