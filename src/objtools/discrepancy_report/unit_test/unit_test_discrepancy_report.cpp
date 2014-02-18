@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(FIND_DUP_TRNAS)
    entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
   
    RunAndCheckTest(entry, "FIND_DUP_TRNAS", 
-      "2 tRNA features on LocusCollidesWithLocusTag have the same name 'Phe'.");
+      "2 tRNA features on LocusCollidesWithLocusTag have the same name (Phe).");
 };
 
 BOOST_AUTO_TEST_CASE(TEST_SHORT_LNCRNA)

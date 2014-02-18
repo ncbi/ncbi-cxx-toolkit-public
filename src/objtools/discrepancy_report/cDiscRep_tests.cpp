@@ -6515,7 +6515,7 @@ void CBioseq_test_on_rna :: FindDupRNAsInList(vector <const CSeq_feat*> feats, c
     if (cnt > 1) {
        strtmp 
          = NStr::UIntToString(cnt) + rna_type + "features on " + m_best_id_str
-            + " have the same name '" + it->first + "'.";
+            + " have the same name (" + it->first + ").";
        ITERATE (vector <CConstRef <CObject> >, jt, it->second) {
           desc = GetDiscItemText(*((const CSeq_feat*)((*jt).GetPointer())));
           thisInfo.test_item_list[setting_name].push_back(strtmp + "$" + desc);
