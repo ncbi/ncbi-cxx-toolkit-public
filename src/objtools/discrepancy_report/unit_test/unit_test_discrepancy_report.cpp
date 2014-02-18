@@ -206,6 +206,24 @@ CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_
    return rna_feat;
 };
 
+BOOST_AUTO_TEST_CASE(FIND_DUP_RRNAS)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
+   istr >> MSerial_AsnText >> *entry;
+   CRef <CSeq_feat> 
+    rrna = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA, 
+                      "Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA");
+   AddFeat(rrna, entry);
+
+   rrna = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA, 
+                      "Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA");
+   AddFeat(rrna, entry);
+   AddGoodSource(entry);
+   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
+   RunAndCheckTest(entry, "FIND_DUP_RRNAS", 
+     "2 rRNA features on LocusCollidesWithLocusTag have the same name (Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA)."); 
+};
 
 BOOST_AUTO_TEST_CASE(FIND_DUP_TRNAS)
 {
