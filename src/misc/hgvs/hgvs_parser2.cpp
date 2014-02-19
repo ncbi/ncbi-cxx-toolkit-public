@@ -138,9 +138,6 @@ const char* CHgvsParser::SGrammar::s_rule_names[CHgvsParser::SGrammar::eNodeIds_
 };
 
 
-
-
-
 CVariantPlacement& SetFirstPlacement(CVariation& v)
 {
     if(v.SetPlacements().size() == 0) {
@@ -239,9 +236,24 @@ void CHgvsParser::s_SetStartOffset(CVariantPlacement& p, const CHgvsParser::SFuz
     if(fint.value || fint.fuzz) {
         p.SetStart_offset(fint.value);
     }
+
     if(fint.fuzz) {
         p.SetStart_offset_fuzz().Assign(*fint.fuzz);
     }
+
+#if 0
+    if(!fint.value 
+       && fint.fuzz 
+       && fint.fuzz->IsLim() 
+       && (   fint.fuzz->GetLim() == CInt_fuzz::eLim_lt
+           || fint.fuzz->GetLim() == CInt_fuzz::eLim_tl))
+    {
+        // VAR-832
+        // interpret c.x-? as c.x-(?_1), not as c.x+(?_0)
+        p.SetStart_offset(-1);
+    }
+#endif
+
 }
 
 void CHgvsParser::s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzzyInt& fint)
@@ -251,9 +263,23 @@ void CHgvsParser::s_SetStopOffset(CVariantPlacement& p, const CHgvsParser::SFuzz
     if(fint.value || fint.fuzz) {
         p.SetStop_offset(fint.value);
     }
+
     if(fint.fuzz) {
         p.SetStop_offset_fuzz().Assign(*fint.fuzz);
     }
+
+#if 0
+    if(!fint.value 
+       && fint.fuzz 
+       && fint.fuzz->IsLim() 
+       && (   fint.fuzz->GetLim() == CInt_fuzz::eLim_gt 
+           || fint.fuzz->GetLim() == CInt_fuzz::eLim_tr))
+    {
+        // VAR-832
+        // interpret c.x+? as c.x+(1_?), not as c.x+(0_?)
+        p.SetStop_offset(1);
+    }
+#endif
 }
 
 
@@ -404,27 +430,25 @@ CHgvsParser::SFuzzyInt CHgvsParser::x_int_fuzz(TIterator const& i, const CContex
     HGVS_ASSERT_RULE(i, eID_int_fuzz);
     TIterator it = i->children.begin();
 
-    CRef<CInt_fuzz> fuzz(new CInt_fuzz);
-    int value = 0;
+    CHgvsParser::SFuzzyInt fint;
+    fint.fuzz.Reset(new CInt_fuzz);
 
     if(i->children.size() == 1) { //e.g. '5' or '?'
         string s(it->value.begin(), it->value.end());
         if(s == "?") {
-            value = 0;
-            fuzz->SetLim(CInt_fuzz::eLim_unk);
+            fint.SetPureFuzz();
         } else {
-            value = NStr::StringToInt(s);
-            fuzz.Reset();
+            fint.value = NStr::StringToInt(s);
+            fint.fuzz.Reset();
         }
     } else if(i->children.size() == 3) { //e.g. '(5)' or '(?)'
         ++it;
         string s(it->value.begin(), it->value.end());
         if(s == "?") {
-            value = 0;
-            fuzz->SetLim(CInt_fuzz::eLim_unk);
+            fint.SetPureFuzz();
         } else {
-            value = NStr::StringToInt(s);
-            fuzz->SetLim(CInt_fuzz::eLim_unk);
+            fint.value = NStr::StringToInt(s);
+            fint.fuzz->SetLim(CInt_fuzz::eLim_unk);
         }
     } else if(i->children.size() == 5) { //e.g. '(5_7)' or '(?_10)'
         ++it;
@@ -434,37 +458,23 @@ CHgvsParser::SFuzzyInt CHgvsParser::x_int_fuzz(TIterator const& i, const CContex
         string s2(it->value.begin(), it->value.end());
 
         if(s1 == "?" && s2 == "?") {
-            value = 0;
-            fuzz->SetLim(CInt_fuzz::eLim_unk);
+            fint.SetPureFuzz();
         } else if(s1 != "?" && s2 != "?") {
-            value = NStr::StringToInt(s1);
-            fuzz->SetRange().SetMin(NStr::StringToInt(s1));
-            fuzz->SetRange().SetMax(NStr::StringToInt(s2));
+            fint.value = NStr::StringToInt(s1);
+            fint.fuzz->SetRange().SetMin(NStr::StringToInt(s1));
+            fint.fuzz->SetRange().SetMax(NStr::StringToInt(s2));
         } else if(s2 == "?") {
-            value = NStr::StringToInt(s1);
-            fuzz->SetLim(CInt_fuzz::eLim_gt);
+            fint.value = NStr::StringToInt(s1);
+            fint.fuzz->SetLim(CInt_fuzz::eLim_gt);
         } else if(s1 == "?") {
-            value = NStr::StringToInt(s2);
-            fuzz->SetLim(CInt_fuzz::eLim_lt);
+            fint.value = NStr::StringToInt(s2);
+            fint.fuzz->SetLim(CInt_fuzz::eLim_lt);
         } else {
             HGVS_THROW(eLogic, "Unreachable code");
         }
     }
 
-    CHgvsParser::SFuzzyInt fuzzy_int;
-    fuzzy_int.value = value;
-    fuzzy_int.fuzz = fuzz;
-
-#if 0
-    NcbiCerr << "Fuzzy int: " << value << " ";
-    if(fuzz) {
-        NcbiCerr << MSerial_AsnText << *fuzz;
-    } else {
-        NcbiCerr << "\n";
-    }
-#endif
-
-    return fuzzy_int;
+    return fint;
 }
 
 
@@ -524,7 +534,11 @@ CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& cont
 
         pnt->SetId().Assign(context.GetId());
         pnt->SetStrand(eNa_strand_plus);
-        pnt->SetPoint(AdjustHgvsCoord(int_fuzz.value, offset, adjust));
+        if(int_fuzz.IsPureFuzz()) {
+            pnt->SetPoint(kInvalidSeqPos);
+        } else {
+            pnt->SetPoint(AdjustHgvsCoord(int_fuzz.value, offset, adjust));
+        }
 
         if(!int_fuzz.fuzz.IsNull()) {
             pnt->SetFuzz(*int_fuzz.fuzz);
@@ -537,6 +551,14 @@ CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& cont
     }}
 
     return pnt;
+}
+
+bool IsPureFuzzPoint(const CSeq_point& p)
+{
+    return p.GetPoint() == kInvalidSeqPos 
+        && p.IsSetFuzz() 
+        && p.GetFuzz().IsLim() 
+        && p.GetFuzz().GetLim() == CInt_fuzz::eLim_other;
 }
 
 
@@ -573,11 +595,7 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_general_pos(TIterator const& i, const C
         if(ofpnt.offset.fuzz && ofpnt.offset.fuzz->IsRange()) {
             ofpnt.offset.fuzz->SetRange().SetMin() *= sign1;
             ofpnt.offset.fuzz->SetRange().SetMax() *= sign1;
-        } else if(ofpnt.offset.fuzz &&
-           ofpnt.offset.value == 0 &&     
-           ofpnt.offset.fuzz->IsLim() &&
-           ofpnt.offset.fuzz->GetLim() == CInt_fuzz::eLim_unk)
-        {
+        } else if(ofpnt.offset.IsPureFuzz()) {
             ofpnt.offset.fuzz->SetLim(sign1 < 0 ? CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt);
         }
 
@@ -623,7 +641,10 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_general_pos(TIterator const& i, const C
     //e.g. NM_000518:c.-78A>G, where codon-start is at 51. In this case the resulting
     //coordinate will be negative; we'll convert it to offset-format (27 bases upstream of pos 0)
 
-    if(context.GetPlacement().GetMol()== CVariantPlacement::eMol_cdna || context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna) {
+    if(!IsPureFuzzPoint(*ofpnt.pnt) 
+       && (   context.GetPlacement().GetMol() == CVariantPlacement::eMol_cdna 
+           || context.GetPlacement().GetMol() == CVariantPlacement::eMol_rna))
+    {
         if(static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint()) < 0) {
             ofpnt.offset.value += static_cast<TSignedSeqPos>(ofpnt.pnt->GetPoint());
             ofpnt.pnt->SetPoint(0);
@@ -659,7 +680,6 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_fuzzy_pos(TIterator const& i, const CCo
 {
     HGVS_ASSERT_RULE(i, eID_fuzzy_pos);
 
-    SOffsetPoint pnt;
     SOffsetPoint pnt1 = x_general_pos(i->children.begin(), context);
     SOffsetPoint pnt2 = x_general_pos(i->children.begin() + 1, context);
 
@@ -671,22 +691,21 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_fuzzy_pos(TIterator const& i, const CCo
         HGVS_THROW(eSemantic, "Range-loc start/stop are on different strands.");
     }
 
-    //If One is empty, copy from the other and set TL for loc1 and TR for loc2
-    if(pnt1.pnt->GetPoint() == kInvalidSeqPos && pnt2.pnt->GetPoint() != kInvalidSeqPos) {
-        pnt1.pnt->Assign(*pnt2.pnt);
-        pnt1.pnt->SetFuzz().SetLim(CInt_fuzz::eLim_tl);
-    } else if(pnt1.pnt->GetPoint() != kInvalidSeqPos && pnt2.pnt->GetPoint() == kInvalidSeqPos) {
-        pnt2.pnt->Assign(*pnt1.pnt);
-        pnt2.pnt->SetFuzz().SetLim(CInt_fuzz::eLim_tr);
+    if(IsPureFuzzPoint(*pnt1.pnt) || IsPureFuzzPoint(*pnt2.pnt)) {
+        if(IsPureFuzzPoint(*pnt2.pnt)) {
+            pnt1.pnt->SetFuzz().SetLim(CInt_fuzz::eLim_tr);
+            return pnt1;
+        } else {
+            pnt2.pnt->SetFuzz().SetLim(CInt_fuzz::eLim_tl);
+            return pnt2;
+        }
     }
 
     if((pnt1.offset.value != 0 || pnt2.offset.value != 0) && !pnt1.pnt->Equals(*pnt2.pnt)) {
         HGVS_THROW(eSemantic, "Base-points in an intronic fuzzy position must be equal");
     }
 
-    pnt.pnt = pnt1.pnt;
-    pnt.offset = pnt1.offset;
-
+    SOffsetPoint pnt = pnt1;
     if(pnt1.offset.value != pnt2.offset.value) {
         pnt.offset.fuzz.Reset(new CInt_fuzz);
         pnt.offset.fuzz->SetRange().SetMin(pnt1.offset.value);
@@ -1044,7 +1063,7 @@ CRef<CSeq_literal> CHgvsParser::x_raw_seq_or_len(TIterator const& i, const CCont
         literal->SetLength(int_fuzz.value);
         if(int_fuzz.fuzz.IsNull()) {
             ;//no-fuzz;
-        } else if(int_fuzz.fuzz->IsLim() && int_fuzz.fuzz->GetLim() == CInt_fuzz::eLim_unk) {
+        } else if(int_fuzz.IsPureFuzz()) {
             //unknown length (no value) - will represent as length=0 with gt fuzz
             literal->SetFuzz().SetLim(CInt_fuzz::eLim_gt);
         } else {

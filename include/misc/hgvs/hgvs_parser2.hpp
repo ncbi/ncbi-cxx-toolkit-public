@@ -183,8 +183,29 @@ protected:
             fuzz.Reset();
         }
 
+        void SetPureFuzz()
+        {   
+            if(!fuzz) {
+                fuzz.Reset(new CInt_fuzz);
+            }   
+            fuzz->SetLim(CInt_fuzz::eLim_other);
+            value = 0;
+        }   
+
+        bool IsPureFuzz() const
+        {   
+            return value == 0 
+                && fuzz
+                && fuzz->IsLim()
+                && fuzz->GetLim() == CInt_fuzz::eLim_other;
+        }   
+
         long value;
         CRef<CInt_fuzz> fuzz; //can be null;
+             // can be null;   
+             // value CInt_fuzz::eLim_other indicates 
+             // that there's no value, just fuzz, e.g. "?" or "(?)"
+             // CInt_fuzz::eLim_unk corresponds to fuzzy values, e.g. "(5)" 
     };
 
     //an hgvs-offset-point (used for pointing into introns from cDNA coordinates, as in NM_1234.5:c.100+10A>G
