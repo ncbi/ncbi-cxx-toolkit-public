@@ -242,11 +242,24 @@ CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm, int to)
 };
 
 
+void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome = CBioSource::eGenome_unknown);
+void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome)
+{
+   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(genome);
+};
+
+BOOST_AUTO_TEST_CASE(RNA_PROVIRAL)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   MakeBioSource(entry, CBioSource::eGenome_proviral);
+   RunAndCheckTest(entry, "RNA_PROVIRAL", "1 RNA bioseq is proviral");
+};
+
 BOOST_AUTO_TEST_CASE(TEST_EXON_ON_MRNA)
 {
    // mRNA
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
-   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+   SetBiomol(entry, CMolInfo::eBiomol_mRNA);
 
    CRef <CSeq_feat> 
       exon = MakeNewFeat(entry, (CSeqFeatData::E_Choice)0, CSeqFeatData::eSubtype_exon);
@@ -259,7 +272,7 @@ BOOST_AUTO_TEST_CASE(TEST_BAD_MRNA_QUAL)
 {
    // mRNA
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
-   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+   SetBiomol(entry, CMolInfo::eBiomol_mRNA);
 
    SetSubSource(entry, CSubSource::eSubtype_germline, "normal");
    SetSubSource(entry, CSubSource::eSubtype_rearranged, "normal");
@@ -270,7 +283,7 @@ BOOST_AUTO_TEST_CASE(TEST_BAD_MRNA_QUAL)
 BOOST_AUTO_TEST_CASE(TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 {
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
-   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+   SetBiomol(entry, CMolInfo::eBiomol_mRNA);
    
    // cd
    CRef <CSeq_feat> cds = MakeCDs(entry);
@@ -283,7 +296,7 @@ BOOST_AUTO_TEST_CASE(TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 BOOST_AUTO_TEST_CASE(MULTIPLE_CDS_ON_MRNA)
 {
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
-   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+   SetBiomol(entry, CMolInfo::eBiomol_mRNA);
    unsigned len = entry->GetSeq().GetInst().GetLength();
    // cd1
    CRef <CSeq_feat> cds = MakeCDs(entry, 0, (int)(len/2));
@@ -338,13 +351,6 @@ BOOST_AUTO_TEST_CASE(PSEUDO_MISMATCH)
 
    // cd
    CRef <CSeq_feat> cds = MakeCDs(entry, (int)fm2+2, (int)to2);
-/*
-   new_feat.Reset(new CSeq_feat);
-   new_feat->SetData().SetCdregion();
-   new_feat->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
-   new_feat->SetLocation().SetInt().SetFrom(fm2 + 2);
-   new_feat->SetLocation().SetInt().SetTo(to2);
-*/
    cds->SetPseudo(true);
    AddFeat(cds, entry);
 
@@ -367,7 +373,8 @@ BOOST_AUTO_TEST_CASE(FIND_DUP_RRNAS)
                       "Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA");
    AddFeat(rrna, entry);
    AddGoodSource(entry);
-   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
+   MakeBioSource(entry, CBioSource::eGenome_plastid);
+//   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
    RunAndCheckTest(entry, "FIND_DUP_RRNAS", 
      "2 rRNA features on LocusCollidesWithLocusTag have the same name (Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA)."); 
 };
@@ -383,7 +390,8 @@ BOOST_AUTO_TEST_CASE(FIND_DUP_TRNAS)
    AddFeat(tRNA, entry);
    
    AddGoodSource(entry);
-   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
+   MakeBioSource(entry, CBioSource::eGenome_plastid);
+//   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
   
    RunAndCheckTest(entry, "FIND_DUP_TRNAS", 
       "2 tRNA features on LocusCollidesWithLocusTag have the same name (Phe).");
