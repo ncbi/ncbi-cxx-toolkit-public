@@ -14,7 +14,7 @@
 # The DLL: statement describes shared objects
 # The ETC: statement describes configuration files
 # It is allowed to have more than one of each statements
-APP: igblastp igblastn
+APP: igblastp igblastn makeblastdb
 
 POSTBUILD: $srcdir/scripts/projects/igblast/post_build/make_installers.py -v $version $platform $installdir
 

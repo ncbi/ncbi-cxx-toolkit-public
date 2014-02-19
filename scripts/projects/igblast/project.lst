@@ -73,7 +73,7 @@ algo/align/util
 -algo/align/util/demo
 -algo/align/util/unit_test
 app$
-app/blast
+app/blastdb
 app/igblast
 objtools/simple$
 -objects/.*/test
