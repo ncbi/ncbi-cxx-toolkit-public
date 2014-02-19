@@ -140,6 +140,12 @@ protected:
 
     virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
+#ifdef VIRTUAL_MID_LEVEL_IO
+    virtual void ReadClassSequential(const CClassTypeInfo* classType,
+                                     TObjectPtr classPtr);
+    virtual void SkipClassSequential(const CClassTypeInfo* classType);
+#endif
+
     // container
     virtual void BeginContainer(const CContainerTypeInfo* containerType);
     virtual void EndContainer(void);

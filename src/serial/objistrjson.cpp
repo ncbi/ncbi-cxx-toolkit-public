@@ -636,6 +636,19 @@ TEnumValueType CObjectIStreamJson::ReadEnum(const CEnumeratedTypeValues& values)
     return value;
 }
 
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectIStreamJson::ReadClassSequential(
+    const CClassTypeInfo* classType, TObjectPtr classPtr)
+{
+    ReadClassRandom( classType, classPtr);
+}
+
+void CObjectIStreamJson::SkipClassSequential(const CClassTypeInfo* classType)
+{
+    SkipClassSequential(classType);
+}
+#endif
+
 // container
 void CObjectIStreamJson::BeginContainer(const CContainerTypeInfo* containerType)
 {
