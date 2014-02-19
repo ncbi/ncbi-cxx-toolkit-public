@@ -434,6 +434,7 @@ static bool x_IsBadBioSampleFormat (
 {
     char  ch;
     int   i;
+    int   skip = 4;
 
     if (str.length() < 5) return true;
 
@@ -442,7 +443,14 @@ static bool x_IsBadBioSampleFormat (
     if (str [2] != 'M') return true;
     if (str [3] != 'E' && str [3] != 'N' && str [3] != 'D') return true;
 
-    for (i = 4; i < str.length(); i++) {
+    if (str [3] == 'E') {
+        ch = str [4];
+        if (isalpha (ch)) {
+            skip++;
+        }
+    }
+
+    for (i = skip; i < str.length(); i++) {
         ch = str [i];
         if (! isdigit (ch)) return true;
     }
