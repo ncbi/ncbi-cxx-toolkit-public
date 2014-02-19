@@ -48,6 +48,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+const string kOrganismName = "Organism Name";
+const string kTaxId = "Tax ID";
+
 class CSrcTableColumnBase : public CObject
 {
 public:
@@ -70,8 +73,22 @@ public:
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
         const objects::CBioSource & in_out_bioSource ) const;
-    virtual string GetLabel() const { return "Organism Name"; }
+    virtual string GetLabel() const { return kOrganismName; }
 };
+
+
+class CSrcTableTaxonIdColumn : public CSrcTableColumnBase
+{
+public:
+    virtual void AddToBioSource(
+        objects::CBioSource & in_out_bioSource, const string & newValue );
+    virtual void ClearInBioSource(
+        objects::CBioSource & in_out_bioSource );
+    virtual string GetFromBioSource(
+        const objects::CBioSource & in_out_bioSource ) const;
+    virtual string GetLabel() const { return kTaxId; }
+};
+
 
 class CSrcTableGenomeColumn : public CSrcTableColumnBase
 {
@@ -95,7 +112,7 @@ public:
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
         const objects::CBioSource & in_out_bioSource ) const;
-    virtual string GetLabel() const { return objects::CSubSource::GetSubtypeName(m_Subtype); }
+    virtual string GetLabel() const;
 private:
     objects::CSubSource::TSubtype m_Subtype;
 };
@@ -110,7 +127,7 @@ public:
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
         const objects::CBioSource & in_out_bioSource ) const;
-    virtual string GetLabel() const { return objects::COrgMod::GetSubtypeName(m_Subtype); }
+    virtual string GetLabel() const;
 private:
     objects::COrgMod::TSubtype m_Subtype;
 };

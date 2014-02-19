@@ -162,20 +162,25 @@ vector<string> GetBioProjectIDs(CBioseq_Handle bh)
 }
 
 
-void CBiosampleFieldDiff::PrintHeader(ncbi::CNcbiOstream & stream)
+void CBiosampleFieldDiff::PrintHeader(ncbi::CNcbiOstream & stream, bool show_seq_id)
 {
-    stream << "#Sample ID\tQualifier\tSequenceID\tOld Value\tNew Value" << endl;
+    stream << "#sample\tattribute";
+    if (show_seq_id) {
+        stream << "\tSequenceID";
+    }
+    stream << "\told_value\tnew_value" << endl;
 }
 
     
-void CBiosampleFieldDiff::Print(CNcbiOstream& stream) const
+void CBiosampleFieldDiff::Print(CNcbiOstream& stream, bool show_seq_id) const
 {
     stream << m_BiosampleID << "\t";
     stream << m_FieldName << "\t";
-    stream << m_SequenceID << "\t";
-    stream << m_SampleVal << "\t";
-    stream << m_SrcVal << "\t";
-    stream << endl;
+    if (show_seq_id) {
+        stream << m_SequenceID << "\t";
+    }
+    stream << (NStr::IsBlank(m_SampleVal) ? "[[add]]" : m_SampleVal) << "\t";
+    stream << (NStr::IsBlank(m_SrcVal) ? "[[delete]]" : m_SrcVal) << endl;
 }
 
 
@@ -355,8 +360,8 @@ static IgnoreConflictData sIgnoreConflictList[] = {
   { "rearranged", eConflictIgnoreMissingInBioSample } ,
   { "segment", eConflictIgnoreMissingInBioSample } ,
   { "transgenic", eConflictIgnoreMissingInBioSample } ,
-  { "old lineage", eConflictIgnoreMissingInBioSample } ,
-  { "old name", eConflictIgnoreMissingInBioSample } ,
+  { "old-lineage", eConflictIgnoreMissingInBioSample } ,
+  { "old-name", eConflictIgnoreMissingInBioSample } ,
   { "lineage", eConflictIgnoreAll } ,
   { "biovar", eConflictIgnoreAll } ,
   { "chemovar", eConflictIgnoreAll } ,
@@ -581,6 +586,47 @@ void AddValueToTable (CRef<CSeq_table> table, string column_name, string value, 
 		AddValueToColumn(new_col, value, row);
         table->SetColumns().push_back(new_col);
     }
+}
+
+
+string GetValueFromColumn(const CSeqTable_column& column, size_t row)
+{
+    string val = "";
+
+    if (column.IsSetData() && column.GetData().IsString() && column.GetData().GetString().size() > row) {
+        val = column.GetData().GetString()[row];
+    }
+    return val;
+}
+
+
+string GetValueFromTable(const CSeq_table& table, string column_name, size_t row)
+{
+    string val = "";
+    ITERATE (CSeq_table::TColumns, cit, table.GetColumns()) {
+        if ((*cit)->IsSetHeader() && (*cit)->GetHeader().IsSetTitle()
+            && NStr::EqualNocase((*cit)->GetHeader().GetTitle(), column_name)) {
+            val = GetValueFromColumn((**cit), row);
+            break;
+        }
+    }
+    return val;
+}
+
+
+void HarmonizeAttributeName(string& attribute_name)
+{
+    NStr::ReplaceInPlace (attribute_name, " ", "");
+    NStr::ReplaceInPlace (attribute_name, "_", "");
+    NStr::ReplaceInPlace (attribute_name, "-", "");
+}
+
+
+bool AttributeNamesAreEquivalent (string name1, string name2)
+{
+    HarmonizeAttributeName(name1);
+    HarmonizeAttributeName(name2);
+    return NStr::EqualNocase(name1, name2);
 }
 
 

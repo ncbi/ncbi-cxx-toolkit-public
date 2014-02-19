@@ -84,6 +84,48 @@ string CSrcTableOrganismNameColumn::GetFromBioSource(
 }
 
 
+void CSrcTableTaxonIdColumn::AddToBioSource(
+        objects::CBioSource & in_out_bioSource, const string & newValue )
+{
+    try {
+        int val = NStr::StringToInt(newValue);
+        in_out_bioSource.SetOrg().SetTaxId(val);
+    } catch (...) {
+    }
+}
+
+
+void CSrcTableTaxonIdColumn::ClearInBioSource(
+      objects::CBioSource & in_out_bioSource )
+{
+    if (in_out_bioSource.IsSetOrg() && in_out_bioSource.GetOrg().IsSetDb()) {
+        COrg_ref::TDb::iterator it = in_out_bioSource.SetOrg().SetDb().begin();
+        while (it != in_out_bioSource.SetOrg().SetDb().end()) {
+            if ((*it)->IsSetDb() && NStr::EqualNocase((*it)->GetDb(), "taxon")) {
+                it = in_out_bioSource.SetOrg().SetDb().erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+}
+
+
+string CSrcTableTaxonIdColumn::GetFromBioSource(
+      const objects::CBioSource & in_out_bioSource ) const
+{
+    string val = "";
+    if (in_out_bioSource.IsSetOrg()) {
+        try {
+            int taxid = in_out_bioSource.GetOrg().GetTaxId();
+            val = NStr::NumericToString(taxid);
+        } catch (...) {
+        }
+    }
+    return val;
+}
+
+
 void CSrcTableGenomeColumn::AddToBioSource(
         objects::CBioSource & in_out_bioSource, const string & newValue )
 {
@@ -160,6 +202,15 @@ string CSrcTableSubSourceColumn::GetFromBioSource(
 }
 
 
+string CSrcTableSubSourceColumn::GetLabel() const 
+{ 
+    if (m_Subtype == objects::CSubSource::eSubtype_other) {
+        return "subsrc_note";
+    } else {
+        return objects::CSubSource::GetSubtypeName(m_Subtype); 
+    }
+}
+
 
 void CSrcTableOrgModColumn::AddToBioSource(
         objects::CBioSource & in_out_bioSource, const string & newValue )
@@ -201,6 +252,16 @@ string CSrcTableOrgModColumn::GetFromBioSource(
         }
     }
     return val;
+}
+
+
+string CSrcTableOrgModColumn::GetLabel() const 
+{ 
+    if (m_Subtype == objects::COrgMod::eSubtype_other) {
+        return "orgmod_note";
+    } else {
+        return objects::COrgMod::GetSubtypeName(m_Subtype); 
+    }
 }
 
 
@@ -461,8 +522,12 @@ CSrcTableColumnBaseFactory::Create(string sTitle)
         return CRef<CSrcTableColumnBase>( new CSrcTableColumnBase );
     }
 
-    if( NStr::EqualNocase(sTitle, "Organism Name") || NStr::EqualNocase(sTitle, "org") || NStr::EqualNocase(sTitle, "taxname") ) {
+    if( NStr::EqualNocase(sTitle, kOrganismName) || NStr::EqualNocase(sTitle, "org") || NStr::EqualNocase(sTitle, "taxname") ) {
         return CRef<CSrcTableColumnBase>( new CSrcTableOrganismNameColumn );
+    }
+
+    if (NStr::EqualNocase(sTitle, kTaxId)) {
+        return CRef<CSrcTableColumnBase>( new CSrcTableTaxonIdColumn );
     }
 
     if (NStr::EqualNocase( sTitle, "genome" )) {
@@ -528,6 +593,11 @@ TSrcTableColumnList GetSourceFields(const CBioSource& src)
     if (src.IsSetOrg()) {
         if (src.GetOrg().IsSetTaxname()) {
             fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableOrganismNameColumn()));
+            try {
+                src.GetOrg().GetTaxId();
+                fields.push_back(CRef<CSrcTableColumnBase>(new CSrcTableTaxonIdColumn()));
+            } catch (...) {
+            }
         }
         if (src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
             ITERATE(COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {

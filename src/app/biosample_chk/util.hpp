@@ -63,8 +63,8 @@ public:
 
     ~CBiosampleFieldDiff(void) {};
 
-    static void PrintHeader(ncbi::CNcbiOstream & stream);
-    void Print(ncbi::CNcbiOstream & stream) const;
+    static void PrintHeader(ncbi::CNcbiOstream & stream, bool show_seq_id = true);
+    void Print(ncbi::CNcbiOstream & stream, bool show_seq_id = true) const;
     void Print(ncbi::CNcbiOstream & stream, const CBiosampleFieldDiff& prev);
     const string& GetSequenceId() const { return m_SequenceID; };
     void SetSequenceId(string id) { m_SequenceID = id; };
@@ -93,6 +93,12 @@ TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, C
 CRef<objects::CSeqTable_column> FindSeqTableColumnByName (CRef<objects::CSeq_table> values_table, string column_name);
 void AddValueToColumn (CRef<CSeqTable_column> column, string value, size_t row);
 void AddValueToTable (CRef<CSeq_table> table, string column_name, string value, size_t row);
+
+string GetValueFromColumn(const CSeqTable_column& column, size_t row);
+string GetValueFromTable(const CSeq_table& table, string column_name, size_t row);
+
+
+bool AttributeNamesAreEquivalent (string name1, string name2);
 
 
 END_SCOPE(objects)
