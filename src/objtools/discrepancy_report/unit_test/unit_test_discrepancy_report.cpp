@@ -242,6 +242,18 @@ CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm, int to)
 };
 
 
+BOOST_AUTO_TEST_CASE(TEST_BAD_MRNA_QUAL)
+{
+   // mRNA
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+
+   SetSubSource(entry, CSubSource::eSubtype_germline, "normal");
+   SetSubSource(entry, CSubSource::eSubtype_rearranged, "normal");
+   RunAndCheckTest(entry, "TEST_BAD_MRNA_QUAL", 
+                     "1 mRNA sequence has germline or rearranged qualifier");
+};
+
 BOOST_AUTO_TEST_CASE(TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 {
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
