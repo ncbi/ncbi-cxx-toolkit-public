@@ -241,11 +241,24 @@ CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm, int to)
                          (CSeqFeatData::ESubtype)0, fm, to));
 };
 
-
 void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome = CBioSource::eGenome_unknown);
 void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome)
 {
    entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(genome);
+};
+
+
+BOOST_AUTO_TEST_CASE(NON_RETROVIRIDAE_PROVIRAL)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq(); // dna
+   SetLineage(entry, "Eukaryota");
+   NON_CONST_ITERATE (list <CRef <CSeqdesc> >, it, entry->SetDescr().Set()) {
+     if ( (*it)->IsSource()) {
+       (*it)->SetSource().SetGenome(CBioSource::eGenome_proviral);
+     }
+   }
+   RunAndCheckTest(entry, "NON_RETROVIRIDAE_PROVIRAL", 
+                     "1 non-Retroviridae biosource is proviral.");
 };
 
 BOOST_AUTO_TEST_CASE(RNA_PROVIRAL)
