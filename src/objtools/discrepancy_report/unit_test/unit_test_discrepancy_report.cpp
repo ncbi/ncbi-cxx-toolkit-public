@@ -206,6 +206,128 @@ CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_
    return rna_feat;
 };
 
+CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice choice = CSeqFeatData::e_not_set, CSeqFeatData::ESubtype = CSeqFeatData::eSubtype_bad, int fm = -1, int to = -1);
+CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice choice, CSeqFeatData::ESubtype subtype, int fm, int to)
+{
+   CRef <CSeq_feat> new_feat (new CSeq_feat);
+   switch (choice) {
+     case CSeqFeatData::e_Cdregion:
+         new_feat->SetData().SetCdregion();
+         break;
+     default: break;
+   }
+
+   switch(subtype) {
+     case CSeqFeatData::eSubtype_primer_bind:
+      {
+        new_feat->SetData().SetImp().SetKey("primer_bind");
+        break;
+      }
+     default: break;        
+ 
+   }
+   new_feat->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+   fm = (fm < 0) ? 0 : fm;
+   to = (to < 0) ? (entry->GetSeq().GetInst().GetLength()-1) : to;
+   new_feat->SetLocation().SetInt().SetFrom(fm);
+   new_feat->SetLocation().SetInt().SetTo(to);
+   return new_feat;
+};
+
+CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm = -1, int to = -1);
+CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm, int to)
+{
+   return(MakeNewFeat(entry, CSeqFeatData::e_Cdregion, 
+                         (CSeqFeatData::ESubtype)0, fm, to));
+};
+
+
+BOOST_AUTO_TEST_CASE(TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+   
+   // cd
+   CRef <CSeq_feat> cds = MakeCDs(entry);
+   cds->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+   AddFeat(cds, entry);
+   RunAndCheckTest(entry, "TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES", 
+                      "1 mRNA sequence has features on the complement strand.");
+};
+
+BOOST_AUTO_TEST_CASE(MULTIPLE_CDS_ON_MRNA)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+   unsigned len = entry->GetSeq().GetInst().GetLength();
+   // cd1
+   CRef <CSeq_feat> cds = MakeCDs(entry, 0, (int)(len/2));
+   cds->SetComment("comment: coding region disrupted by sequencing gap");
+   AddFeat(cds, entry);
+   
+   // cd2 
+   cds.Reset(MakeCDs(entry, (int)(len/2+1), len-1));
+   cds->SetComment("comment: coding region disrupted by sequencing gap");
+   AddFeat(cds, entry);
+   RunAndCheckTest(entry, "MULTIPLE_CDS_ON_MRNA", 
+                    "1 mRNA bioseq has multiple CDS features");
+};
+
+BOOST_AUTO_TEST_CASE(SHORT_SEQUENCES_200)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   RunAndCheckTest(entry, "SHORT_SEQUENCES_200", 
+                      "1 sequence is shorter than 200 bp.");
+};
+
+BOOST_AUTO_TEST_CASE(NON_GENE_LOCUS_TAG)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_feat> 
+    rrna = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA, "artificial");
+   rrna->AddQualifier("locus_tag", "fake");
+   AddFeat(rrna, entry);
+   RunAndCheckTest(entry, "NON_GENE_LOCUS_TAG", 
+                      "1 non-gene feature has locus tags.");
+};
+
+BOOST_AUTO_TEST_CASE(PSEUDO_MISMATCH)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
+   istr >> MSerial_AsnText >> *entry;
+   unsigned fm1, fm2, to1, to2;
+   fm1 = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetFrom();
+   to1 = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetLocation().SetInt().SetTo();
+   fm2 = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetLocation().SetInt().SetFrom();
+   to2 = entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetLocation().SetInt().SetTo();
+
+   // rna
+   CRef <CSeq_feat>
+    rrna = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA,
+                      "Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA");
+   rrna->SetLocation().SetInt().SetFrom(fm1 + 1);
+   rrna->SetLocation().SetInt().SetTo(to1);
+   rrna->SetPseudo(true);
+   AddFeat(rrna, entry);
+
+   // cd
+   CRef <CSeq_feat> cds = MakeCDs(entry, (int)fm2+2, (int)to2);
+/*
+   new_feat.Reset(new CSeq_feat);
+   new_feat->SetData().SetCdregion();
+   new_feat->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+   new_feat->SetLocation().SetInt().SetFrom(fm2 + 2);
+   new_feat->SetLocation().SetInt().SetTo(to2);
+*/
+   cds->SetPseudo(true);
+   AddFeat(cds, entry);
+
+   RunAndCheckTest(entry, "PSEUDO_MISMATCH", 
+                    "4 CDSs, RNAs, and genes have mismatching pseudos.");
+};
+
+
 BOOST_AUTO_TEST_CASE(FIND_DUP_RRNAS)
 {
    CRef <CSeq_entry> entry (new CSeq_entry);

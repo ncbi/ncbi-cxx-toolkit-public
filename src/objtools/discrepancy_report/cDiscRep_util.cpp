@@ -1279,7 +1279,10 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
       string locus_tag = GetLocusTagForFeature (*seq_feat_p);
       string context_label(kEmptyStr);
       if (seq_feat_p->GetData().IsCdregion()) { 
-              context_label = GetProdNmForCD(*seq_feat_p);
+          context_label = GetProdNmForCD(*seq_feat_p);
+          if (context_label.empty()) {
+             GetSeqFeatLabel(*seq_feat_p, context_label);
+          }
       }
       else if (seq_feat_p->GetData().IsPub()) {
                seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label);

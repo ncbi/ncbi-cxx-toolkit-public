@@ -1215,7 +1215,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
           thisInfo.test_item_objs[GetName_contig()].push_back(seq_ref);
       }
 
-      // SHORT_SEQUENCES
+      // SHORT_SEQUENCES, SHORT_SEQUENCES_200
       if (bioseq_set.Empty() || bioseq_set->GetClass() != CBioseq_set::eClass_parts) {
           if (len < 200 && thisTest.tests_run.find(GetName_200seq()) != end_it){
               thisInfo.test_item_list[GetName_200seq()].push_back(bioseq_desc);
@@ -1368,7 +1368,7 @@ void CBioseq_SHORT_SEQUENCES_200 :: GetReport(CRef <CClickableItem>& c_item)
 { 
    c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetIsComment(c_item->item_list.size(), "sequence") 
-                          + "shorter than 200 nt."; 
+                          + "shorter than 200 bp."; 
 }; 
 
 
@@ -1529,10 +1529,11 @@ void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
     ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
       if ( (!(*it)->CanGetPseudo() || !(*it)->GetPseudo())
                 && ( !(*it)->CanGetComment() 
-                        || (*it)->GetComment().find(strtmp) == string::npos) ){
+                        || (*it)->GetComment().find(strtmp) != string::npos) ){
          if (cnt) {
               thisInfo.test_item_list[GetName_mcds()].push_back(desc);
               thisInfo.test_item_objs[GetName_mcds()].push_back(seq_ref);
+              break;
          }
          else {
             cnt++;
@@ -2730,7 +2731,7 @@ void CBioseq_NON_GENE_LOCUS_TAG :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->obj_list = thisInfo.test_item_objs[GetName()]; 
    c_item->description 
-       = GetHasComment(c_item->item_list.size(), "non_gene feature") 
+       = GetHasComment(c_item->item_list.size(), "non-gene feature") 
          + "locus tags.";
 };
 
