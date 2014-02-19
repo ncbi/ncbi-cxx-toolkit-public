@@ -1978,15 +1978,17 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+        return xAssignFeatureAttributeParentGene(record, fc ,mf);
+    }
     switch (mf.GetFeatSubtype()) {
-
     default:
         return true;
 
     case CSeqFeatData::eSubtype_cdregion:
     case CSeqFeatData::eSubtype_exon:
         return (xAssignFeatureAttributeParentMrna(record, fc,mf)  ||
-            xAssignFeatureAttributeParentGene(record, fc,mf));
+            xAssignFeatureAttributeParentGene(record, fc, mf));
 
     case CSeqFeatData::eSubtype_mRNA:
     case CSeqFeatData::eSubtype_C_region:
