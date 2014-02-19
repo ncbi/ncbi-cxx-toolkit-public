@@ -333,12 +333,10 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wron
 
 // Variation Normalization
 #ifdef SEQVEC_CACHE
-CSeqVector CVariationNormalization_base_cache::m_seq_vec;
+CCache<string,CSeqVector> CVariationNormalization_base_cache::m_cache(23);
 #else
-string CVariationNormalization_base_cache::m_Sequence;
+CCache<string, string>  CVariationNormalization_base_cache::m_cache(23);
 #endif
-string CVariationNormalization_base_cache::m_Accession;
-int CVariationNormalization_base_cache::m_Type;         
 
 
 void CVariationNormalization_base_cache::x_rotate_left(string &v)
@@ -374,47 +372,43 @@ string CVariationNormalization_base_cache::x_CompactifySeq(string a)
     return result;
 }
 
-void CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id, ENa_strand strand)
+void CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope,  CRef<CSeq_id> seq_id, string accession, ENa_strand strand)
 {
-    string accession;
-    seq_id->GetLabel(&accession);
-    if (accession != m_Accession)
+    if ( m_cache.Get(accession).empty() ) 
     {
-        m_Accession = accession;
         const CBioseq_Handle& bsh = scope.GetBioseqHandle( *seq_id );
+        CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand);       
 #ifdef SEQVEC_CACHE
-        m_seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand);
+        m_cache.Add(accession, seq_vec);
 #else
-        m_Sequence.clear();     
-        CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand);
-        seq_vec.GetSeqData(0, seq_vec.size(), m_Sequence);
+        string seq;
+        seq_vec.GetSeqData(0, seq_vec.size(), seq);
+        m_cache.Add(accession, seq);
 #endif
     }
 }
 
-string CVariationNormalization_base_cache::x_GetSeq(int pos, int length)
+string CVariationNormalization_base_cache::x_GetSeq(int pos, int length, string accession)
 {
+    _ASSERT(!m_cache.Get(accession).empty());   
+
 #ifdef SEQVEC_CACHE
     string seq;
-    m_seq_vec.GetSeqData(pos, pos+length, seq);
+    m_cache[accession].GetSeqData(pos, pos+length, seq);
     return seq;
 #else
-    _ASSERT(!m_Sequence.empty());   
-    return m_Sequence.substr(pos,length);
+    return m_cache[accession].substr(pos,length);
 #endif
 }
 
-int CVariationNormalization_base_cache::x_GetSeqSize()
+int CVariationNormalization_base_cache::x_GetSeqSize(string accession)
 {
-#ifdef SEQVEC_CACHE
-    return m_seq_vec.size();
-#else
-    return m_Sequence.size();
-#endif
+    _ASSERT(!m_cache.Get(accession).empty());  
+    return m_cache[accession].size();
 } 
 
-template<class T>
-void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &scope)
+
+void CVariationNormalization_base::x_Shift(CRef<CVariation>& v_orig, CScope &scope)
 {
     CRef<CVariation> v = v_orig;
     if (!v_orig->IsSetPlacements() && v_orig->IsSetData() && v_orig->GetData().IsSet() && v_orig->GetData().GetSet().IsSetVariations())
@@ -486,8 +480,8 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &
         }
 }
 
-template<class T>
-void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right)
+//template<class T>
+void CVariationNormalization_base::x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right)
 {
     int type = inst.SetType(); 
     if (type != CVariation_inst::eType_identity)
@@ -531,8 +525,8 @@ void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, C
 }
 
 
-template<class T>
-void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &scope)
+//template<class T>
+void CVariationNormalization_base::x_Shift(CRef<CSeq_annot>& annot, CScope &scope)
 {
     if (!annot->IsSetData() || !annot->GetData().IsFtable())
         NCBI_THROW(CException, eUnknown, "Ftable is not set in input Seq-annot");
@@ -599,8 +593,8 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
     }
 }
 
-template<class T>
-bool CVariationNormalization_base<T>::x_IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type)
+//template<class T>
+bool CVariationNormalization_base::x_IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type)
 {
     if (type != CVariation_inst::eType_ins && type != CVariation_inst::eType_del)
         NCBI_THROW(CException, eUnknown, "Only insertions or deletions can currently be processed");
@@ -657,8 +651,8 @@ bool CVariationNormalization_base<T>::x_IsShiftable(CSeq_loc &loc, string &ref, 
     return !unchanged;
 }
 
-template<class T>
-void CVariationNormalization_base<T>::x_ExpandLocation(CSeq_loc &loc, int pos_left, int pos_right) 
+//template<class T>
+void CVariationNormalization_base::x_ExpandLocation(CSeq_loc &loc, int pos_left, int pos_right) 
 {
     if (pos_left == pos_right)
     {
@@ -922,47 +916,47 @@ void CVariationNormalizationLeftInt::x_ModifyLocation(CSeq_loc &loc, CSeq_litera
 
 
 
-void CVariationNormalization::AlterToVCFVar(CRef<CVariation>& var, CScope &scope)
+void CVariationNormalizationVCFandHGVS::AlterToVCFVar(CRef<CVariation>& var, CScope &scope)
 {
     CVariationNormalizationLeft::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToVCFVar(CRef<CSeq_annot>& var, CScope& scope)
+void CVariationNormalizationVCFandHGVS::AlterToVCFVar(CRef<CSeq_annot>& var, CScope& scope)
 {
     CVariationNormalizationLeft::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToHGVSVar(CRef<CVariation>& var, CScope& scope)
+void CVariationNormalizationVCFandHGVS::AlterToHGVSVar(CRef<CVariation>& var, CScope& scope)
 {
     CVariationNormalizationRight::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToHGVSVar(CRef<CSeq_annot>& var, CScope& scope)
+void CVariationNormalizationVCFandHGVS::AlterToHGVSVar(CRef<CSeq_annot>& var, CScope& scope)
 {
     CVariationNormalizationRight::x_Shift(var,scope);
 }
 
-void CVariationNormalization::NormalizeAmbiguousVars(CRef<CVariation>& var, CScope &scope)
+void CVariationNormalizationIntAndLeftInt::NormalizeAmbiguousVars(CRef<CVariation>& var, CScope &scope)
 {
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
-bool CVariationNormalization::IsShiftable(CSeq_loc &loc, string &a, CScope &scope, int type)
+bool CVariationNormalizationIntAndLeftInt::IsShiftable(CSeq_loc &loc, string &a, CScope &scope, int type)
 {
     return CVariationNormalizationInt::x_IsShiftable(loc,a,scope,type);
 }
 
-void CVariationNormalization::NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CScope &scope)
+void CVariationNormalizationIntAndLeftInt::NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CScope &scope)
 {
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToVarLoc(CRef<CVariation>& var, CScope& scope)
+void CVariationNormalizationIntAndLeftInt::AlterToVarLoc(CRef<CVariation>& var, CScope& scope)
 {
     CVariationNormalizationLeftInt::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToVarLoc(CRef<CSeq_annot>& var, CScope& scope)
+void CVariationNormalizationIntAndLeftInt::AlterToVarLoc(CRef<CSeq_annot>& var, CScope& scope)
 {
     CVariationNormalizationLeftInt::x_Shift(var,scope);
 }

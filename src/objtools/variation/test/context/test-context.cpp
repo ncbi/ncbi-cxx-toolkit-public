@@ -290,7 +290,8 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
         cerr << endl << "Input Variation" << endl;
         cerr <<  MSerial_AsnText << *v1;
     }
-    CVariationNormalization::NormalizeVariation(v1,context,*scope);
+    CVariationNormalization normalizer;
+    normalizer.NormalizeVariation(v1,context,*scope);
 
     if (verbose)
     {
@@ -328,7 +329,8 @@ void CContextApp::CheckShiftable(AutoPtr<CObjectIStream>& var_in1, CRef<CScope> 
         GetAlleles(vr1.SetData().SetSet().SetVariations(),alleles,ref,&type);
         if (ref.empty() && alleles.size() == 1)
             ref = *alleles.begin();
-        bool r = CVariationNormalization::IsShiftable((*feat1)->SetLocation(),ref, *scope, type);
+        CVariationNormalization normalizer;
+        bool r = normalizer.IsShiftable((*feat1)->SetLocation(),ref, *scope, type);
         if (r)
             cerr << "Yes" << endl;
         else
