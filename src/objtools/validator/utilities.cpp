@@ -1026,7 +1026,14 @@ string GetBioseqIdLabel(const CBioseq& sq, bool limited)
     }
     /* find first accession */
     FOR_EACH_SEQID_ON_BIOSEQ (id_it, sq) {
-        if ((*id_it)->IsGenbank() || (*id_it)->IsDdbj() || (*id_it)->IsEmbl()) {
+        if ((*id_it)->IsGenbank()
+            || (*id_it)->IsDdbj() 
+            || (*id_it)->IsEmbl()
+            || (*id_it)->IsSwissprot()
+            || (*id_it)->IsOther()
+            || (*id_it)->IsTpd()
+            || (*id_it)->IsTpe()
+            || (*id_it)->IsTpg()) {
             if (num_ids_found > 0) {
                 content += "|";
             }
