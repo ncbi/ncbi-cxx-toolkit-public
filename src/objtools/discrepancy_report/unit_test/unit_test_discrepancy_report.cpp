@@ -219,10 +219,10 @@ CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice cho
 
    switch(subtype) {
      case CSeqFeatData::eSubtype_primer_bind:
-      {
         new_feat->SetData().SetImp().SetKey("primer_bind");
         break;
-      }
+     case CSeqFeatData::eSubtype_exon:
+        new_feat->SetData().SetImp().SetKey("exon");
      default: break;        
  
    }
@@ -241,6 +241,19 @@ CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm, int to)
                          (CSeqFeatData::ESubtype)0, fm, to));
 };
 
+
+BOOST_AUTO_TEST_CASE(TEST_EXON_ON_MRNA)
+{
+   // mRNA
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+
+   CRef <CSeq_feat> 
+      exon = MakeNewFeat(entry, (CSeqFeatData::E_Choice)0, CSeqFeatData::eSubtype_exon);
+   AddFeat(exon, entry);
+   RunAndCheckTest(entry, "TEST_EXON_ON_MRNA", 
+                    "1 mRNA bioseq has exon features");
+};
 
 BOOST_AUTO_TEST_CASE(TEST_BAD_MRNA_QUAL)
 {
