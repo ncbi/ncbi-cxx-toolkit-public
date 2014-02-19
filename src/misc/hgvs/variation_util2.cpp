@@ -1923,6 +1923,59 @@ CRef<CVariation> CVariationUtil::x_CreateUnknownVariation(const CSeq_id& id, CVa
     return v;
 }
 
+CRef<CVariation> CreateUnknownProtConsequenceVariation(
+        const CVariantPlacement& nuc_p, 
+        const CSeq_feat& cds_feat,
+        CScope& scope)
+{
+    CRef<CSeq_loc> prot_loc;
+    CRef<CSeq_loc> codons_loc;
+    try {
+        CRef<CSeq_loc_Mapper> nuc2prot_mapper;
+        CRef<CSeq_loc_Mapper> prot2nuc_mapper;
+        nuc2prot_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eLocationToProduct, &scope));
+        prot2nuc_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eProductToLocation, &scope));
+
+        prot_loc = nuc2prot_mapper->Map(nuc_p.GetLoc());
+        codons_loc = prot2nuc_mapper->Map(*prot_loc);
+        if(codons_loc->IsNull()) {
+            // normally shouldn't happen, but may happen with 
+            // dubious annotation, e.g. BC149603.1:c.1A>G.
+            // Mapping to protein coordinates returns NULL, 
+            // probably because protein and cds lengths are inconsistent.
+            NCBI_THROW(CException, eUnknown, "");
+        }
+    } catch (CException&) {
+        // may legitimately throw if feature is not good for mapping (e.g. partial).
+        prot_loc.Reset(new CSeq_loc());
+        prot_loc->SetWhole().Assign(sequence::GetId(cds_feat.GetProduct(), NULL));
+        codons_loc.Reset(SerialClone(nuc_p.GetLoc()));
+    }
+
+    CRef<CVariation> v(new CVariation);
+    v->SetData().SetUnknown();
+
+    CRef<CVariantPlacement> prot_p(new CVariantPlacement);
+    prot_p->SetLoc(*prot_loc);
+    prot_p->SetMol(CVariantPlacement::eMol_protein);
+    prot_p->SetExceptions().push_back(CreateException("Cannot infer consequence; projecting location only", 
+                                                       CVariationException::eCode_inconsistent_consequence));
+    v->SetPlacements().push_back(prot_p);
+
+    CRef<CVariantPlacement> codons_p(new CVariantPlacement);
+    codons_p->SetLoc(*codons_loc);
+    codons_p->SetMol(nuc_p.GetMol());
+    v->SetPlacements().push_back(codons_p);
+
+    ChangeIdsInPlace(*v, sequence::eGetId_ForceAcc, scope);
+
+    CVariationMethod& m = v->SetMethod();
+    m.SetMethod().push_back(CVariationMethod::eMethod_E_computational);
+
+    return v;
+}
+
+
 size_t GetCommonPrefixLen(const string& a, const string& b)
 {
     size_t i(0);
@@ -1955,13 +2008,12 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         NCBI_THROW(CException, eUnknown, "Placement and CDS are on different seqs");
     }
 
-
     //if placement is not a proper subset of CDS, create and return "unknown effect" variation
     if(nuc_p.IsSetStart_offset()
       || nuc_p.IsSetStop_offset()
       || !Contains(cds_feat.GetLocation(), nuc_p.GetLoc(), m_scope))
     {
-        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope);
     }
 
     //create an inst-variation from the provided inst with the single specified placement
@@ -1999,7 +2051,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     if(verbose) NcbiCerr << "Normalized variation: " << MSerial_AsnText << *v;
 
     if(!nuc_delta.GetSeq().IsLiteral() || !nuc_delta.GetSeq().GetLiteral().IsSetSeq_data()) {
-        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope); 
     }
 
     //Map to protein and back to get the affected codons.
@@ -2012,7 +2064,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         prot2nuc_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eProductToLocation, m_scope));
     } catch (CException&) {
         //may legitimately throw if feature is not good for mapping (e.g. partial).
-        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope); 
     }
 
     CRef<CSeq_loc> prot_loc = nuc2prot_mapper->Map(p->GetLoc());
@@ -2021,7 +2073,8 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     if(codons_loc->IsNull()) {
         //normally shouldn't happen, but may happen with dubious annotation, e.g. BC149603.1:c.1A>G.
         //Mapping to protein coordinates returns NULL, probably because protein and cds lengths are inconsistent.
-        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+
+        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope); 
     }
 
     string downstream_cds_suffix_seq_str; //cds sequence downstream of affected codons
@@ -2059,7 +2112,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     x_AdjustDelinsToInterval(*v, *codons_loc);
     AttachSeq(*v, 100000); //need enough sequnece to get create reference and variant translations downstream
     if(!v->GetPlacements().front()->GetSeq().IsSetSeq_data()) {
-        return x_CreateUnknownVariation(sequence::GetId(cds_feat.GetProduct(), NULL), CVariantPlacement::eMol_protein);
+        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope); 
     }
     if(verbose) NcbiCerr << "Adjusted-for-codons " << MSerial_AsnText << *v;
 
