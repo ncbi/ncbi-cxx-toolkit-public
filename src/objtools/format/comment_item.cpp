@@ -1054,6 +1054,28 @@ string CCommentItem::GetStringForModelEvidance
     text << "MODEL " << *refseq << ":  " << "This record is predicted by "
          << "automated computational analysis. This record is derived from "
          << "a genomic sequence (" << me_name << ")";
+
+    if ( !me.assembly.empty() ) {
+        int num_assm = me.assembly.size();
+        text << " and transcript sequence";
+        if (num_assm > 1) {
+            text << "s";
+        }
+        text << " (";
+        int count = 0;
+        string prefix = "";
+        FOR_EACH_STRING_IN_LIST (str, me.assembly) {
+            text << prefix << *str;
+            count++;
+            if (num_assm == count + 1) {
+                prefix = " and ";
+            } else {
+                prefix = ", ";
+            }
+        }
+        text << ")";
+    }
+
     if ( !me.method.empty() ) {
         text << " annotated using gene prediction method: " << me.method;
     }

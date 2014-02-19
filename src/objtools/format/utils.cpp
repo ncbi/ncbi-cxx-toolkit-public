@@ -53,6 +53,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objects/general/general_macros.hpp>
 #include <algorithm>
 #include "utils.hpp"
 
@@ -1021,6 +1022,25 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
                 ufp = &(moduop->GetField("Contig Name"));
                 if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsStr() ) {
                     me.name = ufp->GetData().GetStr();
+                }
+            }
+            if( moduop->HasField("Assembly") ) {
+                ufp = &(moduop->GetField("Assembly"));
+                if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsFields() ) {
+                    ITERATE(CUser_field::C_Data::TFields, fld_itr, ufp->GetData().GetFields()) {
+                        const CUser_field& field = **fld_itr;
+                        ITERATE(CUser_field::C_Data::TFields, inr_itr, field.GetData().GetFields()) {
+                            const CUser_field& ufld = **inr_itr;
+                            if ( !ufld.IsSetLabel()  ||  !ufld.GetLabel().IsStr() ) continue;
+                            const string& label = ufld.GetLabel().GetStr();
+                            if (label != "accession") continue;
+                            const CUser_field::C_Data& data = ufld.GetData();
+                            if (data.IsStr()) {
+                                const string& accn = data.GetStr();
+                                me.assembly.push_back(accn);
+                            }
+                        }
+                    }
                 }
             }
             if ( moduop->HasField("Method") ) {

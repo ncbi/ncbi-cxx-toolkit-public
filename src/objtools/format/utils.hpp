@@ -115,12 +115,13 @@ struct SModelEvidance
 {
     typedef std::pair<Int8, Int8> TSpanType;
 
-    string     name;
-    string     method;
-    bool       mrnaEv;
-    bool       estEv;
-    TGi        gi;
-    TSpanType  span; // start, then end. 0-based
+    string        name;
+    list<string>  assembly;
+    string        method;
+    bool          mrnaEv;
+    bool          estEv;
+    TGi           gi;
+    TSpanType     span; // start, then end. 0-based
 
     SModelEvidance(void) :
         name(kEmptyStr), method(kEmptyStr), mrnaEv(false), estEv(false), gi(TGi(-1)), span(-1, -1)
