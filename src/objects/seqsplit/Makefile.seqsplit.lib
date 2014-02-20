@@ -5,5 +5,4 @@ WATCHERS = vasilche
 
 
 USES_LIBRARIES =  \
-    biblio general medline pub seq seqcode seqset sequtil xncbi xser \
-    xutil
+    seqset

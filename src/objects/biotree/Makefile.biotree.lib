@@ -5,4 +5,4 @@ SRC = biotree__ biotree___
 
 
 USES_LIBRARIES =  \
-    general xncbi xser xutil
+    general

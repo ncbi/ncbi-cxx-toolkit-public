@@ -7,5 +7,4 @@ WATCHERS = vasilche
 
 
 USES_LIBRARIES =  \
-    biblio connect general id2 medline pub seq seqcode seqset seqsplit \
-    sequtil xconnect xncbi xser xutil
+    id2 xconnect

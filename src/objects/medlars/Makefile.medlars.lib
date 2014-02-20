@@ -3,4 +3,4 @@ SRC = medlars__ medlars___
 
 
 USES_LIBRARIES =  \
-    biblio general xncbi xser xutil
+    biblio

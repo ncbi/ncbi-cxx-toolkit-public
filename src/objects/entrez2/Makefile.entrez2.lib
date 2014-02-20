@@ -5,4 +5,4 @@ SRC = entrez2__ entrez2___
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

@@ -16,4 +16,4 @@ WATCHERS = vasilche grichenk
 
 
 USES_LIBRARIES =  \
-    biblio general medline pub seqcode sequtil xncbi xser xutil
+    pub seqcode sequtil

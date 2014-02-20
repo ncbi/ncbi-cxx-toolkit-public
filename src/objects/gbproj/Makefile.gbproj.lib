@@ -7,5 +7,4 @@ LIB_OR_DLL = lib
 
 
 USES_LIBRARIES =  \
-    biblio connect general medline pub seq seqcode seqset sequtil \
-    submit xconnect xncbi xser xutil
+    submit xconnect

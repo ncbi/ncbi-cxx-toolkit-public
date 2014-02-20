@@ -3,4 +3,4 @@ SRC = insdseq__ insdseq___
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

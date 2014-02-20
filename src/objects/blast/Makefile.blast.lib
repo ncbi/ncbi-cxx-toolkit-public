@@ -5,5 +5,4 @@ WATCHERS = camacho
 
 
 USES_LIBRARIES =  \
-    biblio general medline pub scoremat seq seqcode seqset sequtil \
-    xncbi xser xutil
+    scoremat

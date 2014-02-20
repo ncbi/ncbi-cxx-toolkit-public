@@ -7,5 +7,4 @@ WATCHERS = domrach
 
 
 USES_LIBRARIES =  \
-    biblio connect general medline pub seq seqcode sequtil xconnect \
-    xncbi xser xutil
+    $(SEQ_LIBS) pub xconnect

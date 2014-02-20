@@ -3,4 +3,4 @@ SRC = pcsubstance__ pcsubstance___
 
 
 USES_LIBRARIES =  \
-    biblio general medline pub xncbi xser xutil
+    pub

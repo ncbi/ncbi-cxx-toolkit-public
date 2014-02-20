@@ -6,4 +6,4 @@ LIB = objcoords
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

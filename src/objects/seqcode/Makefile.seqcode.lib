@@ -3,4 +3,4 @@ SRC = seqcode__ seqcode___
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

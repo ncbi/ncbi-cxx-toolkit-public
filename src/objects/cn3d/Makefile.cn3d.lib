@@ -4,5 +4,4 @@ SRC = cn3d__ cn3d___
 
 
 USES_LIBRARIES =  \
-    biblio general medline mmdb pub seq seqcode sequtil xncbi xser \
-    xutil
+    mmdb

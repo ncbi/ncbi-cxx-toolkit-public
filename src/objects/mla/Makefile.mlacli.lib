@@ -5,5 +5,4 @@ SRC = mla_client mla_client_
 
 
 USES_LIBRARIES =  \
-    biblio connect general medlars medline mla pub pubmed xconnect \
-    xncbi xser xutil
+    mla xconnect

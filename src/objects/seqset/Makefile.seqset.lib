@@ -3,4 +3,4 @@ SRC = seqset__ seqset___ gb_release_file
 
 
 USES_LIBRARIES =  \
-    biblio general medline pub seq seqcode sequtil xncbi xser xutil
+    $(SEQ_LIBS) pub

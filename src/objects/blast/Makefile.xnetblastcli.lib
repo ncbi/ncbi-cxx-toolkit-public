@@ -5,5 +5,4 @@ SRC = blastclient blastclient_
 
 
 USES_LIBRARIES =  \
-    biblio connect general medline pub scoremat seq seqcode seqset \
-    sequtil xconnect xncbi xnetblast xser xutil
+    xconnect xnetblast

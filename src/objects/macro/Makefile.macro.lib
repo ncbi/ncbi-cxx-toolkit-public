@@ -5,4 +5,4 @@ SRC = macro__ macro___
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

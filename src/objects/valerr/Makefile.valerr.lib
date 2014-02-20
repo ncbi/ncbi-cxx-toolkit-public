@@ -5,4 +5,4 @@ ASN_DEP = seqset
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

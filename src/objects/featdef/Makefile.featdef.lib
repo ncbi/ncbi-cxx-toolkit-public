@@ -3,4 +3,4 @@ SRC = featdef__ featdef___
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

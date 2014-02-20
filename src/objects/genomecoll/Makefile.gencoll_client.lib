@@ -16,5 +16,4 @@ WATCHERS = kumarv2 dicuccio
 
 
 USES_LIBRARIES =  \
-    biblio connect general genome_collection medline pub seq seqcode \
-    sequtil xconnect xncbi xser xutil
+    genome_collection xconnect

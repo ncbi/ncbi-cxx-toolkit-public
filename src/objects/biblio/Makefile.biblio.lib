@@ -3,4 +3,4 @@ SRC = biblio__ biblio___ citation_base
 
 
 USES_LIBRARIES =  \
-    general xncbi xser xutil
+    general

@@ -3,4 +3,4 @@ SRC = medline__ medline___
 
 
 USES_LIBRARIES =  \
-    biblio general xncbi xser xutil
+    biblio

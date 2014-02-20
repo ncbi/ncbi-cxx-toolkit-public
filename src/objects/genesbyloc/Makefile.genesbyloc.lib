@@ -4,4 +4,4 @@ SRC = genesbyloc__ genesbyloc___
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

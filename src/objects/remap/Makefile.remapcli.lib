@@ -7,5 +7,4 @@ SRC = remap_client remap_client_
 
 
 USES_LIBRARIES =  \
-    biblio connect general medline pub remap seq seqcode sequtil \
-    xconnect xncbi xser xutil
+    remap xconnect
