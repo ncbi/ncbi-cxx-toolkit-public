@@ -15,4 +15,4 @@ WATCHERS = vakatov
 
 
 USES_LIBRARIES =  \
-    xncbi xutil
+    $(FASTCGI_LIBS) xutil
