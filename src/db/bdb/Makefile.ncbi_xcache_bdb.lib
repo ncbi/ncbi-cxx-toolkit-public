@@ -17,4 +17,4 @@ WATCHERS = kuznets
 
 
 USES_LIBRARIES =  \
-    bdb xncbi xutil
+    bdb

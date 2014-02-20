@@ -17,4 +17,4 @@ WATCHERS = kuznets
 
 
 USES_LIBRARIES =  \
-    xncbi xutil
+    $(BERKELEYDB_LIBS) xutil

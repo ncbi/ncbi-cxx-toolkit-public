@@ -11,4 +11,4 @@ WATCHERS = vakatov
 
 
 USES_LIBRARIES =  \
-    xncbi
+    $(SQLITE3_LIBS) xncbi
