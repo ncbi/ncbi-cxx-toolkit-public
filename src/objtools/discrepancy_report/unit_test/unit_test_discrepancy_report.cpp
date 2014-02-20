@@ -211,9 +211,11 @@ CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice cho
 {
    CRef <CSeq_feat> new_feat (new CSeq_feat);
    switch (choice) {
-     case CSeqFeatData::e_Cdregion:
+     case CSeqFeatData :: e_Cdregion:
          new_feat->SetData().SetCdregion();
          break;
+     case CSeqFeatData :: e_Biosrc:
+         new_feat->SetData().SetBiosrc();
      default: break;
    }
 
@@ -247,6 +249,54 @@ void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome)
    entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(genome);
 };
 
+/*
+BOOST_AUTO_TEST_CASE(DISC_METAGENOMIC)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   SetSubSource(entry, CSubSource::eSubtype_metagenomic, "good");
+cerr << MSerial_AsnText << *entry << endl;
+OutBlob(*entry, "DISC_METAGENOMIC.sqn");
+   
+};
+*/
+
+BOOST_AUTO_TEST_CASE(DISC_TITLE_ENDS_WITH_SEQUENCE)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   entry->SetSeq().SetDescr().Set().front()->SetTitle("DISC_TITLE_ENDS_WITH_SEQUENCE: ACTGACTGACTGACTGACTGACTG");
+   RunAndCheckTest(entry, "DISC_TITLE_ENDS_WITH_SEQUENCE",
+                    "1 defline appears to end with sequence characters");
+};
+
+BOOST_AUTO_TEST_CASE(ONCALLER_SUSPECTED_ORG_COLLECTED)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   SetSubSource(entry, CSubSource::eSubtype_collected_by, "money");
+   SetTaxname(entry, "Homo sapiens");
+   RunAndCheckTest(entry, "ONCALLER_SUSPECTED_ORG_COLLECTED", 
+                       "1 biosource has collected-by and suspect organism"); 
+};
+
+BOOST_AUTO_TEST_CASE(END_COLON_IN_COUNTRY)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   SetSubSource(entry, CSubSource::eSubtype_country, "USA:");
+   CRef <CSeq_feat> source = MakeNewFeat(entry, CSeqFeatData::e_Biosrc);
+   SetSubSource(source->SetData().SetBiosrc(), CSubSource::eSubtype_country, "China:");
+   AddFeat(source, entry);
+   RunAndCheckTest(entry, "END_COLON_IN_COUNTRY", 
+                      "2 country sources end with a colon.");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_POSSIBLE_LINKER)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   SetBiomol(entry, CMolInfo::eBiomol_mRNA);
+   entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAAATTGGCCAAAATTAAAAAAAAAAAAAAAAAAAAAAATCG");
+   entry->SetSeq().SetInst().SetLength(60);
+   RunAndCheckTest(entry, "DISC_POSSIBLE_LINKER", 
+                    "1 bioseq may have linker sequence after the poly-A tail");
+};
 
 BOOST_AUTO_TEST_CASE(NON_RETROVIRIDAE_PROVIRAL)
 {

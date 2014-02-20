@@ -6839,35 +6839,39 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
           }
         }
      }
-   }
-   else if (run_link && bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+     if (run_link && bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
       // DISC_POSSIBLE_LINKER
-      if (!IsMrnaSequence(bioseq) 
+        if (!IsMrnaSequence(bioseq) 
               || (bioseq.IsSetLength() && bioseq.GetLength() < 30)){
            return;
-      }
-      else {
-        CSeqVector 
+        }
+        else {
+          CSeqVector 
             seq_vec = thisInfo.scope->GetBioseqHandle(bioseq).GetSeqVector(
                                 CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
-        unsigned tail_len = 0;
-        bool found_linker = false;
-        for (CSeqVector_CI seq_ci(seq_vec.end());  
-                !found_linker && (seq_ci > seq_vec.end() - 30); 
-                -- seq_ci) {
-           if (*seq_ci == 'A') {
+          unsigned tail_len = 0, len = bioseq.GetLength(), idx = 0;
+          bool found_linker = false;
+        
+          for (CSeqVector_CI seq_ci(seq_vec.begin()); 
+                                    !found_linker && seq_ci; ++ seq_ci, idx++) {
+             if (idx < len - 30) continue;
+             if (idx >= len - 1) break;
+            
+             if (*seq_ci == 'A') {
                   tail_len++;
-           }
-           else if (tail_len > 20) {
+             }
+             else if (tail_len > 20) {
                  found_linker = true;
-           }
-           else {
-              tail_len = 0;
-           }
-        }
-        if (!found_linker) {
-           thisInfo.test_item_list[GetName_link()].push_back(desc);
-           thisInfo.test_item_objs[GetName_link()].push_back(seq_ref);
+                 break;
+             }
+             else {
+                tail_len = 0;
+             }
+          }
+          if (found_linker) {
+             thisInfo.test_item_list[GetName_link()].push_back(desc);
+             thisInfo.test_item_objs[GetName_link()].push_back(seq_ref);
+          }
         }
       }
    }
@@ -6877,8 +6881,9 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_DISC_POSSIBLE_LINKER :: GetReport(CRef <CClickableItem>& c_item)
 { 
   c_item->obj_list = thisInfo.test_item_objs[GetName()];
-  c_item->description = GetHasComment(c_item->item_list.size(), "bioseq") 
-                         + "linker sequence after the poly-A tail";
+  unsigned cnt = c_item->item_list.size();
+  c_item->description = NStr::UIntToString(cnt) + GetNoun(cnt, " bioseq") 
+                         + " may have linker sequence after the poly-A tail";
 };
 
 
@@ -11819,8 +11824,7 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
       GetSubSrcValues(biosrc, CSubSource::eSubtype_country, arr);
       size_t pos;
       ITERATE (vector <string>, it, arr) {
-        if ( ( (pos = (*it).find_last_of(":")) != string::npos ) 
-                 && pos == (*it).size()-1) {
+        if ( (*it)[ (*it).size() - 1 ] == ':') {
            thisInfo.test_item_list[GetName_end()].push_back(desc);
            thisInfo.test_item_objs[GetName_end()].push_back(obj_ref);
         }
@@ -12857,8 +12861,10 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
 
 void CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description
-     = GetOtherComment(c_item->item_list.size(), "defline appears", "deflines appear")
+     = GetOtherComment(c_item->item_list.size(), "defline appears", 
+                        "deflines appear")
        + " to end with sequence characters";
 };
 
