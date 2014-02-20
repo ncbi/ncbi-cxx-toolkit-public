@@ -872,8 +872,7 @@ static bool s_IsCitSub (const CSeqdesc& desc)
 string GetBestBioseqLabel(CBioseq_Handle bsh)
 {
     string label = "";
-    bool have_accession = false;
-
+ 
     CConstRef<CSeq_id> id(NULL);
     vector<CRef <CSeq_id> > id_list;
     ITERATE(CBioseq_Handle::TId, it, bsh.GetId()) {
