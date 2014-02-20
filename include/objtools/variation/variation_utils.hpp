@@ -39,7 +39,7 @@ USING_SCOPE(objects);
 using namespace std;
 
 #define MAX_LEN 1000
-
+#define CCACHE_SIZE 64
 
 class CVariationUtilities
 {

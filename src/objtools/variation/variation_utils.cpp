@@ -275,7 +275,7 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
 }
 
 // Variation Normalization
-CCache<string,CRef<CSeqVector> > CVariationNormalization_base_cache::m_cache(4);
+CCache<string,CRef<CSeqVector> > CVariationNormalization_base_cache::m_cache(CCACHE_SIZE);
 
 void CVariationNormalization_base_cache::x_rotate_left(string &v)
 {
