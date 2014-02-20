@@ -792,6 +792,10 @@ string CMsvc7RegSettings::GetTopBuilddir(void)
     string top( GetApp().GetConfig().GetString(section, "TopBuilddir", ""));
     if (!top.empty()) {
         top = CDirEntry::ConcatPath(CDirEntry(GetApp().m_Solution).GetDir(), top);
+        if (!CFile(top).Exists()) {
+            top.clear();
+        }
+
     }
     return top;
 }
