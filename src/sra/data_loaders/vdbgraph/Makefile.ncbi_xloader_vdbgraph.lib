@@ -22,5 +22,4 @@ WATCHERS = vasilche
 
 
 USES_LIBRARIES =  \
-    biblio general genome_collection medline ncbi-vdb-read pub seq \
-    seqcode seqedit seqset sequtil sraread xncbi xobjmgr xser xutil
+    $(SOBJMGR_LIBS) $(SRAREAD_LIBS) $(SRA_SDK_SYSLIBS)

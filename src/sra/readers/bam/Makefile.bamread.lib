@@ -17,5 +17,4 @@ WATCHERS = vasilche
 
 
 USES_LIBRARIES =  \
-    biblio general medline ncbi-vdb-read pub seq seqcode seqset sequtil \
-    xncbi xser xutil
+    $(SRA_LIBS) $(SRA_SDK_SYSLIBS) seqset
