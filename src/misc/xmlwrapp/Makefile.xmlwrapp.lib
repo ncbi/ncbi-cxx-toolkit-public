@@ -16,3 +16,5 @@ LIB_OR_DLL = lib
 
 USE_PCH = no
 WATCHERS = satskyse
+USES_LIBRARIES =  \
+    $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(ORIG_LIBS)

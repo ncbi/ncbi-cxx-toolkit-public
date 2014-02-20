@@ -12,4 +12,4 @@ WATCHERS = vakatov kazimird
 
 
 USES_LIBRARIES =  \
-    connect xcgi xconnect xconnserv xhtml xncbi xthrserv xutil
+    xcgi xconnserv xhtml

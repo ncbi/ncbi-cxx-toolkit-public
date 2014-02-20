@@ -10,4 +10,4 @@ WATCHERS = ivanov
 
 
 USES_LIBRARIES =  \
-    xcgi xhtml xncbi xutil
+    xcgi xhtml

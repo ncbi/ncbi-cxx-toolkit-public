@@ -2,3 +2,5 @@
 
 LIB = xmlreaders
 SRC = rfam_tool
+USES_LIBRARIES =  \
+    xmlwrapp xncbi

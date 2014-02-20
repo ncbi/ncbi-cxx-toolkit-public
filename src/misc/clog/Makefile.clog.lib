@@ -9,3 +9,5 @@ LIBS = $(ORIG_C_LIBS)
 # CPPFLAGS = $(ORIG_CPPFLAGS) -D NCBI_C_LOG_APPNAME=test_clog_ctx
 
 WATCHERS = ivanov 
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)
