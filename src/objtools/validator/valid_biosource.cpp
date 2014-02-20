@@ -1086,8 +1086,6 @@ void CValidError_imp::ValidateBioSource
     bool rearranged = false;
     bool transgenic = false;
     bool env_sample = false;
-    bool has_strain = false;
-    bool has_isolate = false;
     bool metagenomic = false;
     bool sex = false;
     bool mating_type = false;
@@ -1482,13 +1480,10 @@ void CValidError_imp::ValidateBioSource
         if (subtype == COrgMod::eSubtype_nat_host) {
             specific_host = true;
         } else if (subtype == COrgMod::eSubtype_strain) {
-            has_strain = true;
             if (env_sample) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, "Strain should not be present in an environmental sample",
                            obj, ctx);
             }
-        } else if (subtype == COrgMod::eSubtype_isolate) {
-            has_isolate = true;
         } else if (subtype == COrgMod::eSubtype_metagenome_source) {
             if (!metagenomic) {
                 PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, "Metagenome source should also have metagenomic qualifier",
