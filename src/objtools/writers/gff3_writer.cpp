@@ -2422,10 +2422,12 @@ bool CGff3Writer::xWriteFeatureRna(
             CRef<CGffFeatureRecord> pChild(
                 new CGffFeatureRecord(*pRna));
             pChild->SetRecordId(xNextGenericId());
+            pChild->DropAttributes("Name"); //explicitely not inherited
+            pChild->DropAttributes("start_range");
+            pChild->DropAttributes("end_range");
+            pChild->SetAttribute("Parent", rnaId);
             pChild->SetType("exon");
             pChild->SetLocation(subint);
-            pChild->DropAttributes("Name"); //explicitely not inherited
-            pChild->SetAttribute("Parent", rnaId);
             if (!xWriteRecord(*pChild)) {
                 return false;
             }
