@@ -14,4 +14,4 @@ WATCHERS = ivanov
 
 
 USES_LIBRARIES =  \
-    xncbi xutil
+    $(CMPRS_LIB) $(CMPRS_LIBS) xutil

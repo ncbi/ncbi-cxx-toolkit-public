@@ -13,4 +13,4 @@ WATCHERS = ivanov
 
 
 USES_LIBRARIES =  \
-    xncbi
+    $(PCRE_LIB) $(PCRE_LIBS) xncbi

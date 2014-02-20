@@ -17,4 +17,4 @@ WATCHERS = dicuccio
 
 
 USES_LIBRARIES =  \
-    xncbi
+    $(IMAGE_LIBS) xncbi

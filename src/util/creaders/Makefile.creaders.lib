@@ -4,3 +4,5 @@ LIB = creaders
 SRC = alnread
 
 WATCHERS = bollin
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)
