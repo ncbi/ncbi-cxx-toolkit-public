@@ -9121,8 +9121,16 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
   // DISC_METAGENOME_SOURCE
   if (m_run_meta 
           && IsOrgModPresent(biosrc, COrgMod::eSubtype_metagenome_source)) {
-      thisInfo.test_item_list[GetName_meta()].push_back(desc); 
-      thisInfo.test_item_objs[GetName_meta()].push_back(obj_ref); 
+      vector <string> arr;
+      GetOrgModValues(biosrc, COrgMod::eSubtype_metagenome_source, arr);
+      ITERATE (vector <string>, it, arr) {
+         if ( !(*it).empty()) {
+            thisInfo.test_item_list[GetName_meta()].push_back(desc); 
+            thisInfo.test_item_objs[GetName_meta()].push_back(obj_ref); 
+            break;
+         };
+      }
+      arr.clear();
   }
 
   // ONCALLER_CHECK_AUTHORITY
@@ -9757,6 +9765,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
           break;
         }
       }
+      arr.clear();
   }
 
   // TEST_SP_NOT_UNCULTURED

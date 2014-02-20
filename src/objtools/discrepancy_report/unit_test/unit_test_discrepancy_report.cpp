@@ -274,6 +274,14 @@ BOOST_AUTO_TEST_CASE(TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
     "2 biosources have 'amplified with species-specific primers' note but no environmental-sample qualifier.");
 };
 
+BOOST_AUTO_TEST_CASE(DISC_METAGENOME_SOURCE)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "good");
+   RunAndCheckTest(entry, "DISC_METAGENOME_SOURCE",
+                     "1 biosource has metagenome_source qualifier");
+};
+
 BOOST_AUTO_TEST_CASE(DISC_METAGENOMIC)
 {
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
