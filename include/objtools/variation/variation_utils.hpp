@@ -39,7 +39,7 @@ USING_SCOPE(objects);
 using namespace std;
 
 #define MAX_LEN 1000
-#define SEQVEC_CACHE
+
 
 class CVariationUtilities
 {
@@ -68,11 +68,7 @@ protected:
     static void x_rotate_right(string &v);
     static string x_CompactifySeq(string a);
 
-#ifdef SEQVEC_CACHE
     static CCache<string,CRef<CSeqVector> > m_cache;
-#else
-    static CCache<string, string> m_cache;
-#endif
 };
 
 template<class T>
