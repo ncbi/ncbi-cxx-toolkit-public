@@ -14,6 +14,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 
 USES_LIBRARIES =  \
-    biblio blast composition_adjustment connect general genome_collection \
-    medline pub seq seqcode seqedit seqset sequtil tables xncbi xobjmgr \
-    xser xutil
+    $(DL_LIBS) $(SOBJMGR_LIBS) blast

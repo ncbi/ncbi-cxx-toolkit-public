@@ -9,3 +9,5 @@ SRC   = $(SRC_C)
 LIB = composition_adjustment
 
 WATCHERS = gertz schaffer
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)

@@ -38,12 +38,4 @@ WATCHERS = madden camacho
 
 
 USES_LIBRARIES =  \
-    align_format biblio blast blast_services blastdb composition_adjustment \
-    connect connext creaders dbapi_driver gene_info general genome_collection \
-    id1 id2 medline ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt \
-    ncbi_xloader_genbank ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 \
-    ncbi_xreader_id2 ncbi_xreader_pubseqos pub scoremat seq seqcode \
-    seqdb seqedit seqmasks_io seqset seqsplit sequtil submit tables \
-    variation xalgoblastdbindex xalgodustmask xalgowinmask xalnmgr \
-    xblast xcgi xcompress xconnect xconnext xhtml xncbi xnetblast \
-    xnetblastcli xobjmgr xobjread xobjutil xser xutil
+    $(BLAST_DB_DATA_LOADER_LIBS) $(BLAST_LIBS) align_format

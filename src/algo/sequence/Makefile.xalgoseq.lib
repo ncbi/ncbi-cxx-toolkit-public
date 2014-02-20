@@ -18,6 +18,4 @@ WATCHERS = dicuccio
 
 
 USES_LIBRARIES =  \
-    biblio connect general genome_collection medline pub seq seqcode \
-    seqedit seqset sequtil tables taxon1 xalnmgr xconnect xncbi xobjmgr \
-    xobjutil xregexp xser xutil
+    taxon1 xalnmgr xregexp

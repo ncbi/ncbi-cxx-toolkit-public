@@ -14,4 +14,4 @@ WATCHERS = boratyng madden camacho
 
 
 USES_LIBRARIES =  \
-    tables xncbi xutil
+    tables xutil

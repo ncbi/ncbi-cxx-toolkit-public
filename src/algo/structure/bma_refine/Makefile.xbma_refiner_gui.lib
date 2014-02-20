@@ -18,4 +18,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(WXWIDGETS_INCLUDE)
 
 
 USES_LIBRARIES =  \
-    wx_tools xncbi
+    wx_tools

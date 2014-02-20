@@ -15,7 +15,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE)
 
 
 USES_LIBRARIES =  \
-    biblio connect entrez2 entrez2cli general genome_collection medline \
-    pub seq seqcode seqedit seqset seqtest sequtil tables taxon1 \
-    xalgognomon xalgoseq xalnmgr xconnect xncbi xobjmgr xobjutil \
-    xregexp xser xutil
+    entrez2cli seqtest xalgognomon

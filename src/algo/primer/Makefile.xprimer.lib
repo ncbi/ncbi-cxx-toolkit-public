@@ -17,8 +17,4 @@ SRC = primercheck
 WATCHERS = jianye
 
 USES_LIBRARIES =  \
-    biblio connect connext dbapi_driver gene_info general genome_collection \
-    id1 id2 medline ncbi_xloader_genbank ncbi_xreader ncbi_xreader_cache \
-    ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos pub seq \
-    seqcode seqedit seqset seqsplit sequtil tables xalgoalignnw xalnmgr \
-    xcompress xconnect xconnext xncbi xobjmgr xobjutil xser xutil
+    $(OBJMGR_LIBS) gene_info xalgoalignnw xalnmgr

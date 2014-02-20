@@ -24,6 +24,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 
 USES_LIBRARIES =  \
-    biblio blastdb creaders general genome_collection medline pub \
-    seq seqcode seqdb seqedit seqmasks_io seqset sequtil submit variation \
-    xncbi xobjmgr xobjread xobjutil xser xutil
+    seqmasks_io

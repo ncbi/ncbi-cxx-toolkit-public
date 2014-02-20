@@ -16,6 +16,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 
 USES_LIBRARIES =  \
-    biblio biotree fastme general genome_collection medline pub seq \
-    seqcode seqedit seqset sequtil tables xalnmgr xncbi xobjmgr xobjutil \
-    xser xutil
+    biotree fastme xalnmgr

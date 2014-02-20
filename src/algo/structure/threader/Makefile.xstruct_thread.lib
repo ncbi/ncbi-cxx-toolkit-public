@@ -13,4 +13,4 @@ LIB = xstruct_thread
 
 
 USES_LIBRARIES =  \
-    xncbi xutil
+    xutil

@@ -11,4 +11,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 
 USES_LIBRARIES =  \
-    xcompress xncbi xutil
+    $(COMPRESS_LIBS) xutil

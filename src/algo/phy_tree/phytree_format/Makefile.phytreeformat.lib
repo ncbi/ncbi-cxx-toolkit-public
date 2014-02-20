@@ -13,6 +13,4 @@ WATCHERS = boratyng
 
 
 USES_LIBRARIES =  \
-    biblio biotree connect fastme general genome_collection medline \
-    pub seq seqcode seqedit seqset sequtil tables taxon1 xalgophytree \
-    xalnmgr xconnect xncbi xobjmgr xobjutil xser xutil
+    taxon1 xalgophytree

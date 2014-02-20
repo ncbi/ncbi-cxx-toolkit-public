@@ -96,8 +96,5 @@ LDFLAGS  = $(FAST_LDFLAGS)
 WATCHERS = morgulis boratyng madden camacho fongah2
 
 USES_LIBRARIES =  \
-    biblio blastdb composition_adjustment connect creaders general \
-    genome_collection medline pub scoremat seq seqcode seqdb seqedit \
-    seqmasks_io seqset sequtil submit tables variation xalgoblastdbindex \
-    xalgodustmask xalgowinmask xconnect xncbi xnetblast xnetblastcli \
-    xobjmgr xobjread xobjutil xser xutil
+    composition_adjustment connect tables xalgoblastdbindex xalgodustmask \
+    xalgowinmask xnetblastcli
