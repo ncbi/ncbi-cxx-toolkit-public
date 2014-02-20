@@ -13,4 +13,4 @@ WATCHERS = gouriano
 
 
 USES_LIBRARIES =  \
-    connect tables xhtml xncbi
+    $(NCBI_C_ncbi) xhtml

@@ -9,4 +9,4 @@ WATCHERS = gouriano
 
 
 USES_LIBRARIES =  \
-    connect tables xncbi
+    $(NCBI_C_ncbi) xncbi
