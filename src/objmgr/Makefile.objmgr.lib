@@ -34,5 +34,4 @@ WATCHERS = vasilche kornbluh
 
 
 USES_LIBRARIES =  \
-    biblio general genome_collection medline pub seq seqcode seqedit \
-    seqset sequtil xncbi xser xutil
+    $(DL_LIBS) genome_collection seqedit
