@@ -39,7 +39,7 @@ USING_SCOPE(objects);
 using namespace std;
 
 #define MAX_LEN 1000
-//#define SEQVEC_CACHE
+#define SEQVEC_CACHE
 
 class CVariationUtilities
 {
@@ -69,7 +69,7 @@ protected:
     static string x_CompactifySeq(string a);
 
 #ifdef SEQVEC_CACHE
-    static CCache<string,CSeqVector> m_cache;
+    static CCache<string,CRef<CSeqVector> > m_cache;
 #else
     static CCache<string, string> m_cache;
 #endif
