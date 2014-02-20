@@ -13,4 +13,4 @@ WATCHERS = vasilche
 
 
 USES_LIBRARIES =  \
-    connect tables xncbi xser xutil
+    $(NCBI_C_ncbi) xser

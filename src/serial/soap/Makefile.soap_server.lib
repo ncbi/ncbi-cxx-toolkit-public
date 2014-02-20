@@ -12,4 +12,4 @@ WATCHERS = gouriano
 
 
 USES_LIBRARIES =  \
-    connect xcgi xconnect xncbi xser xsoap xutil
+    xcgi xsoap

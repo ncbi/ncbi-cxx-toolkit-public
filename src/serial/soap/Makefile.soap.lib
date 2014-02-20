@@ -11,4 +11,4 @@ WATCHERS = gouriano
 
 
 USES_LIBRARIES =  \
-    connect xconnect xncbi xser xutil
+    xconnect xser
