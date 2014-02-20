@@ -23,3 +23,5 @@ ncbiatomic_workshop.o: $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbiatomic_works
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL:-O%=) $(srcdir)/ncbicntr_workshop.il $(srcdir)/ncbiatomic_workshop.c -o $@ $(CC_FILTER)
 
 WATCHERS = vakatov
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)

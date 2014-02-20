@@ -9,3 +9,5 @@ DLL_TYPE = plugin
 DLL_UNDEF_FLAGS = $(FORBID_UNDEF)
 
 WATCHERS = ivanov
+USES_LIBRARIES =  \
+    $(ORIG_LIBS)
