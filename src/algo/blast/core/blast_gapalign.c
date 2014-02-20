@@ -4434,7 +4434,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
 
         gap_align->edit_script = esp;
         if (esp) {
-            if (esp->size && esp->op_type[0] != eGapAlignSub) {
+            while (esp->size && esp->op_type[0] != eGapAlignSub) {
                 score_left += score_params->gap_open +
                              esp->num[0] * score_params->gap_extend;
     
@@ -4450,7 +4450,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
                 esp->size--;
             }
             i = esp->size;
-            if (esp->size && esp->op_type[i-1] != eGapAlignSub) {
+            while (esp->size && esp->op_type[i-1] != eGapAlignSub) {
                 score_right += score_params->gap_open +
                              esp->num[i-1] * score_params->gap_extend;
     
