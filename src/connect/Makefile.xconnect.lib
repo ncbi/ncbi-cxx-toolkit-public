@@ -20,4 +20,4 @@ WATCHERS = lavr
 
 
 USES_LIBRARIES =  \
-    xncbi
+    $(NETWORK_LIBS) $(ORIG_LIBS) xncbi

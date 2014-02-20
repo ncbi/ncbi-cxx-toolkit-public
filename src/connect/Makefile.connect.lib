@@ -16,3 +16,5 @@ PROJ_TAG = core mod_loadinfo
 LIBS     = $(NETWORK_LIBS) $(ORIG_C_LIBS)
 
 WATCHERS = lavr
+USES_LIBRARIES =  \
+    $(NETWORK_LIBS) $(ORIG_LIBS)

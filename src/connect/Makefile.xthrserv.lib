@@ -10,4 +10,4 @@ WATCHERS = vakatov
 
 
 USES_LIBRARIES =  \
-    connect xconnect xncbi xutil
+    xconnect xutil

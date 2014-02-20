@@ -25,4 +25,4 @@ WATCHERS = kazimird
 
 
 USES_LIBRARIES =  \
-    connect xconnect xncbi xthrserv xutil
+    xthrserv
