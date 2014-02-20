@@ -139,6 +139,9 @@ else
 	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
 	@$(RM) $(status_dir)/.$(LIB).disabled
  endif
+ ifeq "$(LIB_OR_DLL)$(DLL)" "dll-dll"
+	$(LN_S) $(XDLL) $(XDLL_LINK)
+ endif
  ifneq "$(BINCOPY)" "@:"
   ifneq "$(srcdir)" "."
    ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
@@ -186,7 +189,7 @@ all: export-headers export-dlldep
 unlink: unlink-dll
 
 unlink-dll:
-	-$(RM) $(XDLL) $(XDLLDEP) .$(XDLL).stamp
+	-$(RM) $(XDLL) $(XDLL_LINK) $(XDLLDEP) .$(XDLL).stamp
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 
 clean: clean-common clean-dll
