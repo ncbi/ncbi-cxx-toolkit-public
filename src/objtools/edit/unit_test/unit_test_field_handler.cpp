@@ -397,7 +397,7 @@ BOOST_AUTO_TEST_CASE(Test_ReorderFields)
     BOOST_CHECK_EQUAL(user->GetData()[1]->GetLabel().GetStr(), "Assembly Provider");
     BOOST_CHECK_EQUAL(user->GetData()[2]->GetLabel().GetStr(), "Assembly Method");
     BOOST_CHECK_EQUAL(user->GetData()[3]->GetLabel().GetStr(), "Sequencing Technology");
-    BOOST_CHECK_EQUAL(user->GetData()[0]->GetLabel().GetStr(), "StructuredCommentSuffix");
+    BOOST_CHECK_EQUAL(user->GetData()[4]->GetLabel().GetStr(), "StructuredCommentSuffix");
     BOOST_CHECK_EQUAL(rule.ReorderFields(*user), false);
 
 }
