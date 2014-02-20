@@ -13,4 +13,4 @@ WATCHERS = gouriano
 
 
 USES_LIBRARIES =  \
-    general xncbi xser xutil
+    general
