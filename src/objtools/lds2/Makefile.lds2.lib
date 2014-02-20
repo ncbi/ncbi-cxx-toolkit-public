@@ -18,5 +18,4 @@ WATCHERS = grichenk
 
 
 USES_LIBRARIES =  \
-    biblio creaders general medline pub seq seqcode seqset sequtil \
-    sqlitewrapp submit variation xcompress xncbi xobjread xser xutil
+    $(COMPRESS_LIBS) $(OBJREAD_LIBS) sqlitewrapp

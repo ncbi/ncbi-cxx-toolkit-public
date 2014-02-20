@@ -13,5 +13,4 @@ WATCHERS = bollin kornbluh
 
 
 USES_LIBRARIES =  \
-    biblio general genome_collection medline pub seq seqcode seqedit \
-    seqset sequtil xncbi xobjmgr xobjutil xser xutil
+    xobjutil

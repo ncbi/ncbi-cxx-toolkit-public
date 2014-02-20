@@ -17,6 +17,4 @@ WATCHERS = camacho fongah2 rackerst
 
 
 USES_LIBRARIES =  \
-    biblio blastdb creaders general genome_collection medline pub \
-    seq seqcode seqdb seqedit seqset sequtil submit variation xncbi \
-    xobjmgr xobjread xser xutil
+    $(OBJREAD_LIBS) seqdb

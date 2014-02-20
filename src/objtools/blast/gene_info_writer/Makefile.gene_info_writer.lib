@@ -10,5 +10,4 @@ ASN_DEP = blastdb
 
 
 USES_LIBRARIES =  \
-    biblio blastdb gene_info general genome_collection medline pub \
-    seq seqcode seqdb seqedit seqset sequtil xncbi xobjmgr xser xutil
+    gene_info seqdb

@@ -9,5 +9,4 @@ SRC = alngraphic
 
 
 USES_LIBRARIES =  \
-    biblio general genome_collection medline pub seq seqcode seqedit \
-    seqset sequtil xhtml xncbi xobjmgr xobjutil xser xutil
+    xhtml xobjutil

@@ -13,5 +13,4 @@ WATCHERS = rudnev
 
 
 USES_LIBRARIES =  \
-    biblio general genome_collection medline pub seq seqcode seqedit \
-    seqset sequtil variation xncbi xobjmgr xser xutil
+    $(DL_LIBS) $(SOBJMGR_LIBS) variation

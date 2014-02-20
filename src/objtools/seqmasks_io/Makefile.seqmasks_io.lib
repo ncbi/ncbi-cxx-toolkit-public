@@ -18,6 +18,4 @@ WATCHERS = morgulis camacho
 
 
 USES_LIBRARIES =  \
-    biblio blastdb creaders general genome_collection medline pub \
-    seq seqcode seqdb seqedit seqset sequtil submit variation xncbi \
-    xobjmgr xobjread xobjutil xser xutil
+    $(OBJREAD_LIBS) seqdb xobjutil

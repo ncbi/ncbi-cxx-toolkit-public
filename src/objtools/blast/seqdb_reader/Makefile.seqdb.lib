@@ -33,5 +33,4 @@ WATCHERS = camacho
 
 
 USES_LIBRARIES =  \
-    biblio blastdb general genome_collection medline pub seq seqcode \
-    seqedit seqset sequtil xncbi xobjmgr xser xutil
+    $(DL_LIBS) $(SOBJMGR_LIBS) blastdb

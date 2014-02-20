@@ -7,4 +7,4 @@ WATCHERS = grichenk
 
 
 USES_LIBRARIES =  \
-    xncbi xser xutil
+    xser

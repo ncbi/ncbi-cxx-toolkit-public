@@ -11,6 +11,4 @@ CPPFLAGS = $(LZO_INCLUDE) $(ORIG_CPPFLAGS)
 
 
 USES_LIBRARIES =  \
-    biblio connect gbproj general medline pub seq seqcode seqset \
-    sequtil submit xcompress xconnect xconnserv xncbi xser xthrserv \
-    xutil
+    $(COMPRESS_LIBS) gbproj xconnserv

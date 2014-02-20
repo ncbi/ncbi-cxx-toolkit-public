@@ -15,5 +15,4 @@ WATCHERS = todorov dicuccio grichenk
 
 
 USES_LIBRARIES =  \
-    biblio general genome_collection medline pub seq seqcode seqedit \
-    seqset sequtil tables xncbi xobjmgr xobjutil xser xutil
+    tables xobjutil

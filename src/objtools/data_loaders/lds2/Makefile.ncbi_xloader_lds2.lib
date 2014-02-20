@@ -17,6 +17,4 @@ WATCHERS = grichenk
 
 
 USES_LIBRARIES =  \
-    biblio creaders general genome_collection lds2 medline pub seq \
-    seqcode seqedit seqset sequtil sqlitewrapp submit variation xcompress \
-    xncbi xobjmgr xobjread xser xutil
+    $(DL_LIBS) $(SOBJMGR_LIBS) lds2

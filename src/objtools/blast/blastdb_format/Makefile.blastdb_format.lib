@@ -20,5 +20,4 @@ CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
 
 
 USES_LIBRARIES =  \
-    biblio blastdb general genome_collection medline pub seq seqcode \
-    seqdb seqedit seqset sequtil xncbi xobjmgr xobjutil xser xutil
+    seqdb xobjutil

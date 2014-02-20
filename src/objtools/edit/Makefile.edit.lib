@@ -18,6 +18,4 @@ WATCHERS = bollin kornbluh gotvyans
 
 
 USES_LIBRARIES =  \
-    biblio connect general genome_collection medline pub seq seqcode valid \
-    seqedit seqset sequtil taxon3 xconnect xncbi xobjmgr xobjutil \
-    xser xutil
+    taxon3 valid xobjutil

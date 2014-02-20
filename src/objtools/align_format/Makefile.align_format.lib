@@ -23,10 +23,5 @@ WATCHERS = zaretska jianye madden camacho fongah2
 
 
 USES_LIBRARIES =  \
-    biblio blast_services blastdb connect connext creaders dbapi_driver \
-    gene_info general genome_collection id1 id2 medline ncbi_xloader_genbank \
-    ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2 \
-    ncbi_xreader_pubseqos pub scoremat seq seqcode seqdb seqedit \
-    seqset seqsplit sequtil submit tables variation xalnmgr xcgi \
-    xcompress xconnect xconnext xhtml xncbi xnetblast xnetblastcli \
-    xobjmgr xobjread xobjutil xser xutil
+    $(OBJMGR_LIBS) $(OBJREAD_LIBS) blast_services gene_info seqdb \
+    xalnmgr xcgi xhtml

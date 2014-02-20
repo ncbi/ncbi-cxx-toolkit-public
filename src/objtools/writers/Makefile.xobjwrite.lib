@@ -20,5 +20,4 @@ SRC = agp_write \
 WATCHERS = ludwigf boukn kornbluh
 
 USES_LIBRARIES =  \
-    biblio general genome_collection medline pub seq seqcode seqedit \
-    seqset sequtil tables xalnmgr xncbi xobjmgr xobjutil xser xutil
+    $(OBJREAD_LIBS) xalnmgr

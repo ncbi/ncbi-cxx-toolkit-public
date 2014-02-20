@@ -9,4 +9,4 @@ WATCHERS = dicuccio
 
 
 USES_LIBRARIES =  \
-    general xncbi xser xutil
+    general

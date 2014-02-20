@@ -13,5 +13,5 @@ WATCHERS = grichenk
 
 
 USES_LIBRARIES =  \
-    connect egquery ehistory einfo elink epost esearch espell esummary \
-    uilist xconnect xncbi xser xutil
+    egquery ehistory einfo elink epost esearch espell esummary uilist \
+    xconnect

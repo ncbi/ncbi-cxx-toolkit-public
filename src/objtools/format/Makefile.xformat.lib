@@ -22,6 +22,4 @@ WATCHERS = ludwigf dicuccio kornbluh
 
 
 USES_LIBRARIES =  \
-    biblio connect gbseq general genome_collection medlars medline \
-    mla mlacli pub pubmed seq seqcode seqedit seqset sequtil submit \
-    tables xalnmgr xconnect xncbi xobjmgr xobjutil xser xutil
+    gbseq mlacli submit valid xalnmgr

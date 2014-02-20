@@ -25,5 +25,4 @@ DLL_LIB = creaders
 
 
 USES_LIBRARIES =  \
-    biblio creaders general medline pub seq seqcode seqset sequtil \
-    submit xncbi xser xutil
+    creaders submit

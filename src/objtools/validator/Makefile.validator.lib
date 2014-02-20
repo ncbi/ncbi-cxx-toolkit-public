@@ -15,7 +15,4 @@ WATCHERS = bollin kornbluh
 
 
 USES_LIBRARIES =  \
-    biblio connect gbseq general genome_collection medlars medline \
-    mla mlacli pub pubmed seq seqcode seqedit seqset sequtil submit \
-    tables taxon3 valerr xalnmgr xconnect xformat xncbi xobjmgr \
-    xobjutil xregexp xser xutil
+    $(XFORMAT_LIBS) taxon3 valerr valid xalnmgr
