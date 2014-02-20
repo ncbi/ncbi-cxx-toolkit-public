@@ -9748,8 +9748,15 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
 
   // DISC_METAGENOMIC
   if (m_run_meta && IsSubSrcPresent(biosrc, CSubSource::eSubtype_metagenomic)) {
-      thisInfo.test_item_list[GetName_meta()].push_back(desc); 
-      thisInfo.test_item_objs[GetName_meta()].push_back(obj_ref);
+      vector <string> arr;
+      GetSubSrcValues(biosrc, CSubSource::eSubtype_metagenomic, arr);
+      ITERATE (vector <string>, it, arr) {
+        if ( !(*it).empty()) {
+          thisInfo.test_item_list[GetName_meta()].push_back(desc); 
+          thisInfo.test_item_objs[GetName_meta()].push_back(obj_ref);
+          break;
+        }
+      }
   }
 
   // TEST_SP_NOT_UNCULTURED
@@ -10893,7 +10900,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
 {
-if (block_text.find("CDS") != string::npos && block_text.find("protein_id") != string::npos) {
+if (block_text.find("CDS") != string::npos && block_text.find("protein_id") != string::npos){
 cerr << block_text << endl;
 }
 

@@ -249,16 +249,38 @@ void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome)
    entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(genome);
 };
 
-/*
+
+BOOST_AUTO_TEST_CASE(TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   // biosource 1
+   SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "good");
+
+   // biosrc 2
+   CRef <CBioSource> new_src (new CBioSource);
+   SetSubSource(*new_src, CSubSource::eSubtype_other, "note: amplified with species-specific primers");
+   CRef <CSeqdesc> new_desc(new CSeqdesc);
+   new_desc->SetSource(*new_src);
+   entry->SetSeq().SetDescr().Set().push_back(new_desc);
+  
+   // biosrc 3
+   new_src.Reset(new CBioSource);
+   SetOrgMod(*new_src, COrgMod::eSubtype_other, "note: amplified with species-specific primers");
+   new_desc.Reset(new CSeqdesc);
+   new_desc->SetSource(*new_src);
+   entry->SetSeq().SetDescr().Set().push_back(new_desc);
+
+   RunAndCheckTest(entry, "TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE", 
+    "2 biosources have 'amplified with species-specific primers' note but no environmental-sample qualifier.");
+};
+
 BOOST_AUTO_TEST_CASE(DISC_METAGENOMIC)
 {
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
    SetSubSource(entry, CSubSource::eSubtype_metagenomic, "good");
-cerr << MSerial_AsnText << *entry << endl;
-OutBlob(*entry, "DISC_METAGENOMIC.sqn");
-   
+   RunAndCheckTest(entry, "DISC_METAGENOMIC", 
+                     "1 biosource has metagenomic qualifier");
 };
-*/
 
 BOOST_AUTO_TEST_CASE(DISC_TITLE_ENDS_WITH_SEQUENCE)
 {
