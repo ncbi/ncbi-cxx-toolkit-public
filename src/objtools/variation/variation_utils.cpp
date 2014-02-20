@@ -310,28 +310,31 @@ string CVariationNormalization_base_cache::x_CompactifySeq(string a)
     return result;
 }
 
-void CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope,  CRef<CSeq_id> seq_id, string accession, ENa_strand strand)
+CRef<CSeqVector> CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope,  CRef<CSeq_id> seq_id, ENa_strand strand)
 {
+    string accession;
+    seq_id->GetLabel(&accession);
     if ( !m_cache.Get(accession) || m_cache.Get(accession)->empty() ) 
     {
         const CBioseq_Handle& bsh = scope.GetBioseqHandle( *seq_id );
         m_cache.Add(accession, Ref(new CSeqVector(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand))));
     }
+    return m_cache[accession];
 }
 
-string CVariationNormalization_base_cache::x_GetSeq(int pos, int length, string accession)
+string CVariationNormalization_base_cache::x_GetSeq(int pos, int length, CRef<CSeqVector> seqvec)
 {
-    _ASSERT(m_cache.Get(accession) && !m_cache.Get(accession)->empty());   
+    _ASSERT(seqvec && !seqvec->empty());   
 
     string seq;
-    m_cache[accession]->GetSeqData(pos, pos+length, seq);
+    seqvec->GetSeqData(pos, pos+length, seq);
     return seq;
 }
 
-int CVariationNormalization_base_cache::x_GetSeqSize(string accession)
+int CVariationNormalization_base_cache::x_GetSeqSize(CRef<CSeqVector> seqvec)
 {
-    _ASSERT(m_cache.Get(accession) && !m_cache.Get(accession)->empty());  
-    return m_cache[accession]->size();
+    _ASSERT(seqvec && !seqvec->empty());  
+    return seqvec->size();
 } 
 
 template<class T>
@@ -369,21 +372,19 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &
                 int new_pos_right = -1;
                 bool is_deletion = false;
                 CSeq_literal *refref = NULL;
-                string accession;
-                int type;
-                seq_id->GetLabel(&accession);
-                x_PrefetchSequence(scope,seq_id,accession);
+                int type;              
+                CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id);
                 if (v->IsSetData() && v->SetData().IsInstance())
-                    x_ProcessInstance(v->SetData().SetInstance(),(*vp1)->SetLoc(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,accession,type);
+                    x_ProcessInstance(v->SetData().SetInstance(),(*vp1)->SetLoc(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,seqvec,type);
                 else if (v->IsSetData() && v->GetData().IsSet() && v->GetData().GetSet().IsSetVariations())
                     for ( CVariation::TData::TSet::TVariations::iterator var2 = v->SetData().SetSet().SetVariations().begin(); var2 != v->SetData().SetSet().SetVariations().end();  ++var2 )
                         if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance())
-                            x_ProcessInstance((*var2)->SetData().SetInstance(),(*vp1)->SetLoc(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,accession,type);
+                            x_ProcessInstance((*var2)->SetData().SetInstance(),(*vp1)->SetLoc(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,seqvec,type);
 
                 if (!ref.empty() && is_deletion)
                 {
                     int pos = pos_right - ref.size() + 1;
-                    bool found = x_ProcessShift(ref, pos_left,pos, accession, type);
+                    bool found = x_ProcessShift(ref, pos_left,pos, seqvec, type);
                     pos_right = pos + ref.size()-1;
                     if (found)
                     {
@@ -407,7 +408,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &
 
 template<class T>
 void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right,
-                                                        string accession, int &rtype)
+                                                        CRef<CSeqVector> seqvec, int &rtype)
 {
     int type = inst.SetType();
     if (type != CVariation_inst::eType_identity)
@@ -428,7 +429,7 @@ void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, C
         {
             string compact = x_CompactifySeq(a);
             string orig_compact = compact;
-            bool found = x_ProcessShift(compact, pos_left,pos_right, accession,type);
+            bool found = x_ProcessShift(compact, pos_left,pos_right, seqvec,type);
             if (found)
             {
                 while (orig_compact != compact)
@@ -481,23 +482,20 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                 bool is_deletion = false;
                 string ref;
                 CSeq_literal *refref = NULL;
-                string accession;
                 int type;
-                seq_id->GetLabel(&accession);
-                x_PrefetchSequence(scope,seq_id,accession);
-//                cout << "Sequence: " <<x_GetSeq(5510,3) << endl;
+                CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id);
                 CVariation_ref& vr = (*feat)->SetData().SetVariation();
                 if (vr.IsSetData() && vr.GetData().IsInstance())
-                    x_ProcessInstance(vr.SetData().SetInstance(),(*feat)->SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right, accession,type);
+                    x_ProcessInstance(vr.SetData().SetInstance(),(*feat)->SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right, seqvec,type);
                 else if (vr.IsSetData() && vr.GetData().IsSet())
                     for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
                         if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
-                            x_ProcessInstance((*inst)->SetData().SetInstance(),(*feat)->SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,accession,type);
+                            x_ProcessInstance((*inst)->SetData().SetInstance(),(*feat)->SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,seqvec,type);
                 
                 if (!ref.empty() && is_deletion)
                 {
                     int pos = pos_right - ref.size() + 1;
-                    bool found = x_ProcessShift(ref, pos_left,pos,accession,type);
+                    bool found = x_ProcessShift(ref, pos_left,pos,seqvec,type);
                     pos_right = pos + ref.size()-1;
                     if (found)
                     {
@@ -517,7 +515,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
     }
 }
 
-bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right, string accession, int type)
+bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right, CRef<CSeqVector> seqvec, int type)
 {
     string orig_a = a;
     int length = a.size();
@@ -526,16 +524,16 @@ bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_ri
     bool found_left = false;
 
     string b;
-    if (pos >=0 && pos+length < x_GetSeqSize(accession))
-        b = x_GetSeq(pos,length,accession);
+    if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
+        b = x_GetSeq(pos,length,seqvec);
     if (type == CVariation_inst::eType_ins)
     {
         while (a != b && pos >= orig_pos - length) // Should be >= here in contrast to the right shifting because the insertion can be after the sequence.
         {
             pos--;
             x_rotate_right(a);
-            if (pos >=0 && pos+length < x_GetSeqSize(accession))
-                b = x_GetSeq(pos,length,accession);
+            if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
+                b = x_GetSeq(pos,length,seqvec);
         }
     }
     if (a != b) 
@@ -545,13 +543,13 @@ bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_ri
         return false;
     }   
 
-    while (pos >= 0 && pos+length < x_GetSeqSize(accession))
+    while (pos >= 0 && pos+length < x_GetSeqSize(seqvec))
     {
         pos--; 
         x_rotate_right(a);
         string b;
-        if (pos >=0 && pos+length < x_GetSeqSize(accession))
-            b = x_GetSeq(pos,length,accession);
+        if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
+            b = x_GetSeq(pos,length,seqvec);
         if (a != b) 
         {
             pos++;
@@ -582,23 +580,23 @@ void CVariationNormalizationLeft::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &
     literal.SetSeq_data().SetIupacna().Set(a);
 }
 
-bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int &pos, string accession, int type) // pos here should already point to the beginning of the seq to be inserted or deleted
+bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int &pos, CRef<CSeqVector> seqvec, int type) // pos here should already point to the beginning of the seq to be inserted or deleted
 {
     string orig_a = a;
     int orig_pos = pos;
     int length = a.size(); 
 
     string b;
-    if (pos >=0 && pos+length < x_GetSeqSize(accession))
-        b = x_GetSeq(pos,length,accession);
+    if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
+        b = x_GetSeq(pos,length,seqvec);
     if (type == CVariation_inst::eType_ins)
     {
         while (a != b && pos > orig_pos - length)
         {
             pos--;
             x_rotate_right(a);
-            if (pos >=0 && pos+length < x_GetSeqSize(accession))
-                b = x_GetSeq(pos,length,accession);
+            if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
+                b = x_GetSeq(pos,length,seqvec);
         }
     }
     if (a != b) 
@@ -609,13 +607,13 @@ bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int 
     }
 
     bool found_right = false;
-    while (pos >=0 && pos+length < x_GetSeqSize(accession))
+    while (pos >=0 && pos+length < x_GetSeqSize(seqvec))
     {
         pos++; 
         x_rotate_left(a);
         string b;
-        if (pos >=0 && pos+length < x_GetSeqSize(accession))
-            b = x_GetSeq(pos,length,accession);
+        if (pos >=0 && pos+length < x_GetSeqSize(seqvec))
+            b = x_GetSeq(pos,length,seqvec);
         if (a != b) 
         {
             pos--;
@@ -685,21 +683,21 @@ void CVariationNormalizationInt::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &l
     literal.SetSeq_data().SetIupacna().Set(a);
 }
 
-bool CVariationNormalizationInt::x_ProcessShift(string &a, int &pos_left, int &pos_right, string accession, int type)
+bool CVariationNormalizationInt::x_ProcessShift(string &a, int &pos_left, int &pos_right, CRef<CSeqVector> seqvec, int type)
 {
     string a_left = a;
-    bool found_left = CVariationNormalizationLeft::x_ProcessShift(a_left, pos_left, pos_right,accession,type);
-    bool found_right = CVariationNormalizationRight::x_ProcessShift(a, pos_left, pos_right,accession,type);
+    bool found_left = CVariationNormalizationLeft::x_ProcessShift(a_left, pos_left, pos_right,seqvec,type);
+    bool found_right = CVariationNormalizationRight::x_ProcessShift(a, pos_left, pos_right,seqvec,type);
     a = a_left;
     return found_left | found_right;
 }
 
 
-bool CVariationNormalizationLeftInt::x_ProcessShift(string &a, int &pos_left, int &pos_right, string accession, int type)
+bool CVariationNormalizationLeftInt::x_ProcessShift(string &a, int &pos_left, int &pos_right, CRef<CSeqVector> seqvec, int type)
 {
     int orig_pos_left = pos_left;
     string orig_a = a;
-    bool r = CVariationNormalizationLeft::x_ProcessShift(a,pos_left,pos_right,accession,type);
+    bool r = CVariationNormalizationLeft::x_ProcessShift(a,pos_left,pos_right,seqvec,type);
     if (type == CVariation_inst::eType_ins)
     {
         if (!r)
