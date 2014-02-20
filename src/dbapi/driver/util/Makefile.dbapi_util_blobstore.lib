@@ -17,4 +17,4 @@ WATCHERS = ucko
 
 
 USES_LIBRARIES =  \
-    dbapi_driver xcompress xncbi xutil
+    $(COMPRESS_LIBS) dbapi_driver xutil

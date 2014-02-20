@@ -25,4 +25,4 @@ WATCHERS = ucko
 
 
 USES_LIBRARIES =  \
-    xncbi
+    $(DL_LIBS) xncbi

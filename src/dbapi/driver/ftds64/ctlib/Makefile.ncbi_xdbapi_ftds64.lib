@@ -18,4 +18,4 @@ WATCHERS = ucko
 
 
 USES_LIBRARIES =  \
-    ct_ftds64 dbapi_driver tds_ftds64 xncbi
+    $(FTDS_LIB) $(FTDS_LIBS) dbapi_driver

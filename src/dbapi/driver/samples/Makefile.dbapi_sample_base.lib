@@ -9,4 +9,4 @@ WATCHERS = ucko
 
 
 USES_LIBRARIES =  \
-    connect connext dbapi_driver xconnect xconnext xncbi xutil
+    $(XCONNEXT) dbapi_driver xconnect xutil

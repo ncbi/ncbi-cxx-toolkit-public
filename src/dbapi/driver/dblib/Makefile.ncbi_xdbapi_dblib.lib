@@ -20,4 +20,4 @@ WATCHERS = ucko
 
 
 USES_LIBRARIES =  \
-    dbapi_driver xncbi
+    $(NETWORK_LIBS) $(SYBASE_DBLIBS) dbapi_driver

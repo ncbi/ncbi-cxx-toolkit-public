@@ -17,4 +17,4 @@ WATCHERS = ucko
 
 
 USES_LIBRARIES =  \
-    dbapi_driver
+    $(NETWORK_LIBS) $(ORIG_LIBS) $(PYTHON_LIBS) dbapi_driver

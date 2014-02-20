@@ -15,4 +15,4 @@ WATCHERS = kuznets
 
 
 USES_LIBRARIES =  \
-    dbapi dbapi_driver xncbi
+    dbapi
