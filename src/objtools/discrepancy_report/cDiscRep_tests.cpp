@@ -10893,6 +10893,10 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
 {
+if (block_text.find("CDS") != string::npos && block_text.find("protein_id") != string::npos) {
+cerr << block_text << endl;
+}
+
   block_text 
     =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
 
