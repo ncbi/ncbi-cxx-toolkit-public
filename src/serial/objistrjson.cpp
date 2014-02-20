@@ -645,7 +645,7 @@ void CObjectIStreamJson::ReadClassSequential(
 
 void CObjectIStreamJson::SkipClassSequential(const CClassTypeInfo* classType)
 {
-    SkipClassSequential(classType);
+    SkipClassRandom(classType);
 }
 #endif
 
