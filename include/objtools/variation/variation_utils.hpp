@@ -33,15 +33,12 @@
 
 #include <objects/variation/Variation.hpp>
 #include <objects/variation/VariantPlacement.hpp>
-#include <objects/variation/Variation.hpp>
-#include <objects/variation/VariantPlacement.hpp>
 #include <util/ncbi_cache.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using namespace std;
 
-#define CCACHE_SIZE 64
 
 class CVariationUtilities
 {
@@ -72,6 +69,7 @@ protected:
     static string x_CompactifySeq(string a);
 
     static CCache<string,CRef<CSeqVector> > m_cache;
+    static const unsigned int CCACHE_SIZE = 64;
 };
 
 template<class T>
