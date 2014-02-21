@@ -746,6 +746,16 @@ BEGIN_SCOPE(DiscRepNmSpc)
        virtual string GetName() const = 0;
   };
 
+  class CBioseqSet_TEST_SMALL_GENOME_SET_PROBLEM : public CBioseqSetTestAndRepData
+  {
+    public:
+      virtual ~CBioseqSet_TEST_SMALL_GENOME_SET_PROBLEM () {};
+
+      virtual void TestOnObj(const CBioseq_set& bioseq_set);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { 
+               return string("TEST_SMALL_GENOME_SET_PROBLEM");}
+  };
 
   class CBioseqSet_on_class : public CBioseqSetTestAndRepData
   {
@@ -1934,20 +1944,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
     private:
       bool StrainConflictsTaxname(const COrg_ref& org);
   };
-
-  class CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return string("TEST_SMALL_GENOME_SET_PROBLEM");}
-
-    private:
-      bool HasSmallSeqset(const CSeq_entry& seq_entry);
-  };
-
 
   class CSeqEntry_DISC_SUBMITBLOCK_CONFLICT : public CSeqEntryTestAndRepData
   {

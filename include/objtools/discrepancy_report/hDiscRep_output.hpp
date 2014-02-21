@@ -85,6 +85,7 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     void Export();
     void Export(vector <CRef <CClickableText> >& item_list);
     void Export(CRef <CClickableItem>& c_item, const string& setting_name);
+    void Export(vector <CRef <CClickableItem> >& c_item, const string& setting_name);
     
   private:
     Str2Int m_sOnCallerToolPriorities;
