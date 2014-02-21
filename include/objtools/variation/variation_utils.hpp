@@ -59,9 +59,9 @@ private:
 class CVariationNormalization_base_cache
 {
 public:
-    static int x_GetSeqSize(CRef<CSeqVector> seqvec);
-    static CRef<CSeqVector> x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id,ENa_strand strand = eNa_strand_unknown);
-    static string x_GetSeq(int pos, int length, CRef<CSeqVector> seqvec);
+    static int x_GetSeqSize(CSeqVector &seqvec);
+    static CRef<CSeqVector> x_PrefetchSequence(CScope &scope, const CSeq_id &seq_id,ENa_strand strand = eNa_strand_unknown);
+    static string x_GetSeq(int pos, int length, CSeqVector &seqvec);
 
 protected:
     static void x_rotate_left(string &v);
@@ -77,38 +77,37 @@ class CVariationNormalization_base : public CVariationNormalization_base_cache
 public:
     static void x_Shift(CRef<CVariation>& var, CScope &scope);
     static void x_Shift(CRef<CSeq_annot>& var, CScope &scope);
-    static void x_Shift(CRef<CVariation_ref>& var, CScope &scope);
     static void x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right, 
-                                  CRef<CSeqVector> seqvec, int &rtype);    
-    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CRef<CSeqVector> seqvec, int type) {return T::x_ProcessShift(a,pos_left,pos_right,seqvec,type);}
+                                  CSeqVector &seqvec, int &rtype);    
+    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type) {return T::x_ProcessShift(a,pos_left,pos_right,seqvec,type);}
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type) {T::x_ModifyLocation(loc,literal,a,pos_left,pos_right,type);}
 };
 
 class CVariationNormalizationLeft : public CVariationNormalization_base<CVariationNormalizationLeft>
 {
 public:
-    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CRef<CSeqVector> seqvec, int type);
+    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type);
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type);
 };
 
 class CVariationNormalizationInt : public CVariationNormalization_base<CVariationNormalizationInt>
 {
 public:
-    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CRef<CSeqVector> seqvec, int type);
+    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type);
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type);
 };
 
 class CVariationNormalizationRight : public CVariationNormalization_base<CVariationNormalizationRight>
 {
 public:
-    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CRef<CSeqVector> seqvec, int type);
+    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type);
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type);
 };
 
 class CVariationNormalizationLeftInt :  public CVariationNormalization_base<CVariationNormalizationLeftInt>
 {
 public:
-    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CRef<CSeqVector> seqvec, int type);
+    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type);
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type);
 };
 
