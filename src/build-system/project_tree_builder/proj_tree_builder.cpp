@@ -2408,7 +2408,7 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
         }
 	}
     ResolveDefs(resolver, subtree_makefiles);
-//    GetApp().UpdateDepGraph( subtree_makefiles.m_Lib);
+    GetApp().UpdateDepGraph( subtree_makefiles.m_Lib);
 
     // Build projects tree
     CProjectItemsTree::CreateFrom(root_src_path,
