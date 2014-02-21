@@ -140,7 +140,7 @@ else
 	@$(RM) $(status_dir)/.$(LIB).disabled
  endif
  ifeq "$(LIB_OR_DLL)$(DLL)" "dll-dll"
-	$(LN_S) $(XDLL) $(XDLL_LINK)
+	$(RM) $(XDLL_LINK)  &&  $(LN_S) $(XDLL) $(XDLL_LINK)
  endif
  ifneq "$(BINCOPY)" "@:"
   ifneq "$(srcdir)" "."
