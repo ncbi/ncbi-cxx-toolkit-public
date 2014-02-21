@@ -292,6 +292,14 @@ void RunAndCheckMultiReports(CRef <CSeq_entry>& entry, const string& test_name, 
    }
 };
 
+
+BOOST_AUTO_TEST_CASE(DISC_SEGSETS_PRESENT)
+{
+   CRef <CSeq_entry> entry = BuildGoodEcoSet();
+   entry->SetSet().SetClass(CBioseq_set::eClass_segset);
+   RunAndCheckTest(entry, "DISC_SEGSETS_PRESENT", "1 segset is present.");
+};
+
 BOOST_AUTO_TEST_CASE(TEST_SMALL_GENOME_SET_PROBLEM)
 {
    CRef <CSeq_entry> entry = BuildGoodEcoSet();
