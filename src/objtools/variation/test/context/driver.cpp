@@ -340,8 +340,8 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
     stringstream strstr;
     strstr << "Input Variation"<<endl;;
     strstr <<  MSerial_AsnText << *v1;
-    CVariationNormalization normalizer;
-    normalizer.NormalizeVariation(v1,context,*scope);
+
+    CVariationNormalization::NormalizeVariation(*v1,context,*scope);
 
     strstr<< endl << "Output Variation" << endl;
     strstr <<  MSerial_AsnText << *v1;

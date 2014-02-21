@@ -31,14 +31,16 @@
 * ===========================================================================
 */
 
+#include <objects/variation/Variation.hpp>
+#include <objects/variation/VariantPlacement.hpp>
+#include <objects/variation/Variation.hpp>
+#include <objects/variation/VariantPlacement.hpp>
 #include <util/ncbi_cache.hpp>
-
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using namespace std;
 
-#define MAX_LEN 1000
 #define CCACHE_SIZE 64
 
 class CVariationUtilities
@@ -48,19 +50,20 @@ public:
     static void CorrectRefAllele(CRef<CVariation_ref>& var, CScope& scope);    
     static void CorrectRefAllele(CRef<CSeq_annot>& v, CScope& scope);
     static void CorrectRefAllele(CVariation_ref& var, CScope& scope, const string& new_ref); 
+    static bool IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope);
 private:
     static string GetRefAlleleFromVP(CRef<CVariantPlacement> vp, CScope& scope, TSeqPos length);
     static string GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
     static void FixAlleles(CRef<CVariation> v, string old_ref, string new_ref);
     static void FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) ;
+    static const unsigned int MAX_LEN=1000;
 };
-
 
 class CVariationNormalization_base_cache
 {
 public:
     static int x_GetSeqSize(CSeqVector &seqvec);
-    static CRef<CSeqVector> x_PrefetchSequence(CScope &scope, const CSeq_id &seq_id,ENa_strand strand = eNa_strand_unknown);
+    static CRef<CSeqVector> x_PrefetchSequence(CScope &scope, const CSeq_id &seq_id,ENa_strand strand);
     static string x_GetSeq(int pos, int length, CSeqVector &seqvec);
 
 protected:
@@ -75,12 +78,14 @@ template<class T>
 class CVariationNormalization_base : public CVariationNormalization_base_cache
 {
 public:
-    static void x_Shift(CRef<CVariation>& var, CScope &scope);
-    static void x_Shift(CRef<CSeq_annot>& var, CScope &scope);
+    static void x_Shift(CVariation& var, CScope &scope);
+    static void x_Shift(CSeq_annot& var, CScope &scope);
     static void x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right, 
                                   CSeqVector &seqvec, int &rtype);    
     static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type) {return T::x_ProcessShift(a,pos_left,pos_right,seqvec,type);}
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type) {T::x_ModifyLocation(loc,literal,a,pos_left,pos_right,type);}
+    static bool x_IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type);
+    static void x_ExpandLocation(CSeq_loc &loc, int pos_left, int pos_right);
 };
 
 class CVariationNormalizationLeft : public CVariationNormalization_base<CVariationNormalizationLeft>
@@ -124,8 +129,8 @@ public:
 /////////////////////////////////////////////////////////
  //For later creation, as thin wrappers on the logic below
     //ASSUME scope has everything you need, but that lookups *can* fail so handle gracefully.
-    static void NormalizeVariation(CRef<CVariation>& var, ETargetContext target_ctxt, CScope& scope);     
-    static void  NormalizeVariation(CRef<CSeq_annot>& var, ETargetContext target_ctxt, CScope& scope);
+    static void NormalizeVariation(CVariation& var, ETargetContext target_ctxt, CScope& scope);     
+    static void  NormalizeVariation(CSeq_annot& var, ETargetContext target_ctxt, CScope& scope);
 
 /////////////////////////////////////////////////////////
  
@@ -136,8 +141,8 @@ public:
     //These methods search out ambiguous ins/del, and alter SeqLoc
     //to a Seq-equiv: the first is the original SeqLoc
     //the second is an interval representing the IOA
-    static void NormalizeAmbiguousVars(CRef<CVariation>& var, CScope &scope);
-    static void NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CScope &scope);
+    static void NormalizeAmbiguousVars(CVariation& var, CScope &scope);
+    static void NormalizeAmbiguousVars(CSeq_annot& var, CScope &scope);
  
     //HGVS
     //*Assume* Seq-equiv's are present and second one is 'IOA'
@@ -147,19 +152,20 @@ public:
     //For an insert, this is a SeqLoc-Point
     //For a deletion, this is either a point or interval, depending on the size of the deletion.
     // and precisely why we are breaking up alleles into separate HGVS expressions
-    static void AlterToHGVSVar(CRef<CVariation>& var, CScope& scope);
-    static void AlterToHGVSVar(CRef<CSeq_annot>& var, CScope& scope);
+    static void AlterToHGVSVar(CVariation& var, CScope& scope);
+    static void AlterToHGVSVar(CSeq_annot& var, CScope& scope);
  
     //VCF business logic
-    static void AlterToVCFVar(CRef<CVariation>& var, CScope& scope);
-    static void AlterToVCFVar(CRef<CSeq_annot>& var, CScope& scope);
+    static void AlterToVCFVar(CVariation& var, CScope& scope);
+    static void AlterToVCFVar(CSeq_annot& var, CScope& scope);
 
     //Future thoughts:
     // Combine/collapse objects with same SeqLoc/Type
     // Simplify objects with common prefix in ref and all alts.
     // Identify mixed type objects, and split.
 
-    static void AlterToVarLoc(CRef<CVariation>& var, CScope& scope);
-    static void AlterToVarLoc(CRef<CSeq_annot>& var, CScope& scope);
- 
+    static void AlterToVarLoc(CVariation& var, CScope& scope);
+    static void AlterToVarLoc(CSeq_annot& var, CScope& scope);
+
+    static bool IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type); 
 };

@@ -79,7 +79,9 @@ void CVariationUtilities::CorrectRefAllele(CRef<CVariation>& v, CScope& scope)
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna() 
-                && (*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference))
+                //&& (*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
+                && (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity
+                )
             {
                 old_ref = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
                 new_ref = GetRefAlleleFromVP(v->SetData().SetSet().SetVariations().front()->SetPlacements().front(), scope, old_ref.length());
@@ -107,7 +109,7 @@ void CVariationUtilities::CorrectRefAllele(CRef<CVariation_ref>& var, CScope& sc
 {
     CVariation_ref& vr = *var;
     if (!vr.IsSetLocation())
-        NCBI_THROW(CException, eUnknown, "Location is not set in input Seq-annot");
+        NCBI_THROW(CException, eUnknown, "Location is not set in input Variation-ref");
     string new_ref = GetAlleleFromLoc(vr.GetLocation(),scope);
     CorrectRefAllele(vr,scope,new_ref);
 }
@@ -121,7 +123,9 @@ void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, CScope& scope, co
     {
         if (!(*inst)->IsSetData() || !(*inst)->GetData().IsInstance())
             NCBI_THROW(CException, eUnknown, "Variation-inst is not set in input Seq-annot");
-        if ((*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference) &&
+        if (
+             (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity && 
+             //(*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference) &&
             (*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
             && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
             && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
@@ -149,7 +153,10 @@ void CVariationUtilities::FixAlleles(CVariation_ref& vr, string old_ref, string 
             && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
         {
             string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-            if (!((*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)))
+            if (!(
+                    (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
+                    //(*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
+                    ))
             {
                 type = (*inst)->SetData().SetInstance().SetType();
                 if (old_ref  == a) add_old_ref = false;
@@ -240,7 +247,10 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
             {
                 string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-                if (!((*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)))
+                if (!(
+                         (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
+                         //(*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
+                        ))
                 {
                     type = (*inst)->SetData().SetInstance().SetType();
                     if (old_ref  == a) add_old_ref = false;
@@ -273,6 +283,53 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
     }
 
 }
+
+bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope)
+{
+    wrong_ref.clear();
+    correct_ref.clear();
+    bool found_allele_in_inst = false;
+    if (feat.IsSetData() && feat.GetData().IsVariation() && feat.IsSetLocation())
+    {
+        const CSeq_loc& loc = feat.GetLocation(); 
+        correct_ref = GetAlleleFromLoc(loc,scope);
+   
+        const CVariation_ref& vr = feat.GetData().GetVariation();
+        if (!vr.IsSetData() || !vr.GetData().IsSet() || !vr.GetData().GetSet().IsSetVariations())
+            NCBI_THROW(CException, eUnknown, "Set of Variation-inst is not set in input Seq-feat");
+
+        for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = vr.GetData().GetSet().GetVariations().begin(); inst != vr.GetData().GetSet().GetVariations().end(); ++inst)
+        {
+            if ((*inst)->IsSetData() && (*inst)->GetData().IsInstance() && 
+                (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity && 
+                // (*inst)->GetData().GetInstance().IsSetObservation() && 
+                //(int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference) &&
+                (*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
+                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
+                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+            {
+                wrong_ref  = (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get(); 
+                found_allele_in_inst = true;
+            }
+        }
+        
+    }
+    else
+        NCBI_THROW(CException, eUnknown, "Feature is not a Variation or Location is not set");
+    
+    if (correct_ref.empty())
+        NCBI_THROW(CException, eUnknown, "Cannot access correct reference allele at given location");
+    
+    if (found_allele_in_inst && wrong_ref.empty())
+        NCBI_THROW(CException, eUnknown, "Old reference allele not found in input Seq-feat");
+    
+    if (!found_allele_in_inst)
+        return true;
+    else
+        return (wrong_ref == correct_ref);
+}
+
 
 // Variation Normalization
 CCache<string,CRef<CSeqVector> > CVariationNormalization_base_cache::m_cache(CCACHE_SIZE);
@@ -338,14 +395,12 @@ int CVariationNormalization_base_cache::x_GetSeqSize(CSeqVector &seqvec)
 } 
 
 template<class T>
-void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &scope)
+void CVariationNormalization_base<T>::x_Shift(CVariation& v_orig, CScope &scope)
 {
-    if (!v_orig)
-        NCBI_THROW(CException, eUnknown, "Input variation is NULL");
-
-    CRef<CVariation> v = v_orig;
-    if (!v_orig->IsSetPlacements() && v_orig->IsSetData() && v_orig->GetData().IsSet() && v_orig->GetData().GetSet().IsSetVariations())
-        v = v_orig->SetData().SetSet().SetVariations().front();
+    CRef<CVariation> v = Ref(&v_orig);
+    if (!v_orig.IsSetPlacements() && v_orig.IsSetData() && v_orig.GetData().IsSet() && v_orig.GetData().GetSet().IsSetVariations()) 
+        v = v_orig.SetData().SetSet().SetVariations().front();
+        
     for (CVariation::TPlacements::iterator ivp =  v->SetPlacements().begin(); ivp != v->SetPlacements().end(); ++ivp)
         {
             CVariantPlacement & vp = **ivp;
@@ -364,7 +419,10 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &
             bool is_deletion = false;
             CSeq_literal *refref = NULL;
             int type;              
-            CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id);
+            ENa_strand strand = eNa_strand_unknown;
+            if (vp.GetLoc().IsSetStrand())
+                strand = vp.GetLoc().GetStrand();
+            CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
             if (v->IsSetData())
             {
                 switch (v->SetData().Which())
@@ -383,7 +441,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &
             if (!ref.empty() && is_deletion)
             {
                 int pos = pos_right - ref.size() + 1;
-                bool found = x_ProcessShift(ref, pos_left,pos, *seqvec, type);
+                const bool found = x_ProcessShift(ref, pos_left,pos, *seqvec, type);
                 pos_right = pos + ref.size()-1;
                 if (found)
                 {
@@ -450,14 +508,13 @@ void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, C
     }
 }
 
-
 template<class T>
-void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &scope)
+void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
 {
-    if (!annot || !annot->IsSetData() || !annot->GetData().IsFtable())
+    if (!annot.IsSetData() || !annot.GetData().IsFtable())
         NCBI_THROW(CException, eUnknown, "Ftable is not set in input Seq-annot");
 
-    CSeq_annot::TData::TFtable ftable = annot->SetData().SetFtable();
+    CSeq_annot::TData::TFtable ftable = annot.SetData().SetFtable();
     for (CSeq_annot::TData::TFtable::iterator ifeat = ftable.begin(); ifeat != ftable.end(); ++ifeat)
     {
         CSeq_feat &feat = **ifeat;
@@ -473,7 +530,10 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
         string ref;
         CSeq_literal *refref = NULL;
         int type;
-        CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id);
+        ENa_strand strand = eNa_strand_unknown;
+        if (feat.GetLocation().IsSetStrand())
+            strand = feat.GetLocation().GetStrand();
+        CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
         CVariation_ref& vr = feat.SetData().SetVariation();
         if (vr.IsSetData())
         {
@@ -495,7 +555,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
         if (!ref.empty() && is_deletion)
         {
             int pos = pos_right - ref.size() + 1;
-            bool found = x_ProcessShift(ref, pos_left,pos,*seqvec,type);
+            const bool found = x_ProcessShift(ref, pos_left,pos,*seqvec,type);
             pos_right = pos + ref.size()-1;
             if (found)
             {
@@ -514,12 +574,91 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
     }
 }
 
+template<class T>
+bool CVariationNormalization_base<T>::x_IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type)
+{
+    if (type != CVariation_inst::eType_ins && type != CVariation_inst::eType_del)
+        NCBI_THROW(CException, eUnknown, "Only insertions or deletions can currently be processed");
+
+    const CSeq_id &seq_id = *loc.GetId();
+    int pos_left = loc.GetStart(eExtreme_Positional);
+    int pos_right = loc.GetStop(eExtreme_Positional);
+
+    ENa_strand strand = eNa_strand_unknown;
+    if (loc.IsSetStrand())
+        strand = loc.GetStrand();
+    CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
+    int old_pos_left = pos_left;
+    int old_pos_right = pos_right;
+    if (!ref.empty()) 
+    {
+        if (type == CVariation_inst::eType_del)
+        {
+            int pos = pos_right - ref.size() + 1;
+            x_ProcessShift(ref, pos_left,pos,*seqvec,type);
+            pos_right = pos + ref.size()-1;
+        }
+        else
+        {  
+            string compact = x_CompactifySeq(ref);
+            string orig_compact = compact;
+            x_ProcessShift(compact, pos_left,pos_right,*seqvec,type);
+            while (orig_compact != compact)
+            {
+                x_rotate_left(ref);
+                x_rotate_left(orig_compact);
+            }
+        }
+    }
+    else
+        NCBI_THROW(CException, eUnknown, "Submitted allele is empty");
+    bool unchanged = (pos_left == old_pos_left) && (pos_right == old_pos_right);
+    x_ExpandLocation(loc,pos_left,pos_right);
+    return !unchanged;
+}
+
+template<class T>
+void CVariationNormalization_base<T>::x_ExpandLocation(CSeq_loc &loc, int pos_left, int pos_right) 
+{
+    if (pos_left == pos_right)
+    {
+        if (loc.IsPnt())
+            loc.SetPnt().SetPoint(pos_left);
+        else
+        {
+            CSeq_point pnt;
+            pnt.SetPoint(pos_left);
+            if (loc.GetInt().IsSetStrand())
+                pnt.SetStrand( loc.GetInt().GetStrand() );
+            pnt.SetId().Assign(loc.GetInt().GetId());
+            loc.SetPnt().Assign(pnt);
+        }
+    }
+    else
+    {
+        if (loc.IsInt())
+        {
+            loc.SetInt().SetFrom(pos_left);
+            loc.SetInt().SetTo(pos_right);
+        }
+        else
+        {
+            CSeq_interval interval;
+            interval.SetFrom(pos_left);
+            interval.SetTo(pos_right);
+            if (loc.GetPnt().IsSetStrand())
+                interval.SetStrand( loc.GetPnt().GetStrand() );
+            interval.SetId().Assign(loc.GetPnt().GetId());
+            loc.SetInt().Assign(interval);
+        }
+    }
+}
+
 bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right, CSeqVector &seqvec, int type)
 {
     string orig_a = a;
     int length = a.size();
     int orig_pos = pos;
-                            
     bool found_left = false;
 
     string b;
@@ -647,38 +786,7 @@ void CVariationNormalizationRight::x_ModifyLocation(CSeq_loc &loc, CSeq_literal 
 
 void CVariationNormalizationInt::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type) 
 {
-    if (pos_left == pos_right)
-    {
-        if (loc.IsPnt())
-            loc.SetPnt().SetPoint(pos_left);
-        else
-        {
-            CSeq_point pnt;
-            pnt.SetPoint(pos_left);
-            if (loc.GetInt().IsSetStrand())
-                pnt.SetStrand( loc.GetInt().GetStrand() );
-            pnt.SetId().Assign(loc.GetInt().GetId());
-            loc.SetPnt().Assign(pnt);
-        }
-    }
-    else
-    {
-        if (loc.IsInt())
-        {
-            loc.SetInt().SetFrom(pos_left);
-            loc.SetInt().SetTo(pos_right);
-        }
-        else
-        {
-            CSeq_interval interval;
-            interval.SetFrom(pos_left);
-            interval.SetTo(pos_right);
-            if (loc.GetPnt().IsSetStrand())
-                interval.SetStrand( loc.GetPnt().GetStrand() );
-            interval.SetId().Assign(loc.GetPnt().GetId());
-            loc.SetInt().Assign(interval);
-        }
-    }
+    x_ExpandLocation(loc, pos_left, pos_right);
     literal.SetSeq_data().SetIupacna().Set(a);
 }
 
@@ -774,47 +882,52 @@ void CVariationNormalizationLeftInt::x_ModifyLocation(CSeq_loc &loc, CSeq_litera
 
 
 
-void CVariationNormalization::AlterToVCFVar(CRef<CVariation>& var, CScope &scope)
+void CVariationNormalization::AlterToVCFVar(CVariation& var, CScope &scope)
 {
     CVariationNormalizationLeft::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToVCFVar(CRef<CSeq_annot>& var, CScope& scope)
+void CVariationNormalization::AlterToVCFVar(CSeq_annot& var, CScope& scope)
 {
     CVariationNormalizationLeft::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToHGVSVar(CRef<CVariation>& var, CScope& scope)
+void CVariationNormalization::AlterToHGVSVar(CVariation& var, CScope& scope)
 {
     CVariationNormalizationRight::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToHGVSVar(CRef<CSeq_annot>& var, CScope& scope)
+void CVariationNormalization::AlterToHGVSVar(CSeq_annot& var, CScope& scope)
 {
     CVariationNormalizationRight::x_Shift(var,scope);
 }
 
-void CVariationNormalization::NormalizeAmbiguousVars(CRef<CVariation>& var, CScope &scope)
+void CVariationNormalization::NormalizeAmbiguousVars(CVariation& var, CScope &scope)
 {
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
-void CVariationNormalization::NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CScope &scope)
+bool CVariationNormalization::IsShiftable(CSeq_loc &loc, string &a, CScope &scope, int type)
+{
+    return CVariationNormalizationInt::x_IsShiftable(loc,a,scope,type);
+}
+
+void CVariationNormalization::NormalizeAmbiguousVars(CSeq_annot& var, CScope &scope)
 {
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToVarLoc(CRef<CVariation>& var, CScope& scope)
+void CVariationNormalization::AlterToVarLoc(CVariation& var, CScope& scope)
 {
     CVariationNormalizationLeftInt::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToVarLoc(CRef<CSeq_annot>& var, CScope& scope)
+void CVariationNormalization::AlterToVarLoc(CSeq_annot& var, CScope& scope)
 {
     CVariationNormalizationLeftInt::x_Shift(var,scope);
 }
 
-void CVariationNormalization::NormalizeVariation(CRef<CVariation>& var, ETargetContext target_ctxt, CScope& scope)
+void CVariationNormalization::NormalizeVariation(CVariation& var, ETargetContext target_ctxt, CScope& scope)
 {
     switch(target_ctxt) {
     case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
@@ -825,7 +938,7 @@ void CVariationNormalization::NormalizeVariation(CRef<CVariation>& var, ETargetC
     }
 }
 
-void CVariationNormalization::NormalizeVariation(CRef<CSeq_annot>& var, ETargetContext target_ctxt, CScope& scope)
+void CVariationNormalization::NormalizeVariation(CSeq_annot& var, ETargetContext target_ctxt, CScope& scope)
 {
     switch(target_ctxt) {
     case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
