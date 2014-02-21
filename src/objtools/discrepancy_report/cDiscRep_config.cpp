@@ -1541,7 +1541,6 @@ static const s_test_property test_list[] = {
    {"ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY", fAsndisc | fOncaller | fMegaReport},
    {"ONCALLER_MORE_NAMES_COLLECTED_BY", fAsndisc | fOncaller | fMegaReport},
    {"ONCALLER_STRAIN_TAXNAME_CONFLICT", fAsndisc | fOncaller | fMegaReport},
-   {"TEST_SMALL_GENOME_SET_PROBLEM", fAsndisc | fOncaller | fMegaReport},
    {"DISC_INCONSISTENT_MOLTYPES", fOncaller | fMegaReport},
    {"DISC_BIOMATERIAL_TAXNAME_MISMATCH", fAsndisc | fOncaller | fMegaReport},
    {"DISC_CULTURE_TAXNAME_MISMATCH", fAsndisc | fOncaller | fMegaReport},
@@ -1602,6 +1601,7 @@ static const s_test_property test_list[] = {
    {"DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE", fAsndisc | fOncaller | fMegaReport},
 
 // tests_on_BioseqSet   // redundant because of nested set?
+   {"TEST_SMALL_GENOME_SET_PROBLEM", fAsndisc | fOncaller | fMegaReport},
    {"DISC_SEGSETS_PRESENT", fDiscrepancy | fAsndisc | fMegaReport},
    {"TEST_UNWANTED_SET_WRAPPER", fAsndisc | fOncaller | fMegaReport},
    {"DISC_NONWGS_SETS_PRESENT", fDiscrepancy | fAsndisc | fMegaReport}
@@ -2374,8 +2374,9 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("TEST_SMALL_GENOME_SET_PROBLEM") != end_it) {
-       thisGrp.tests_on_SeqEntry_feat_desc.push_back( 
-           CRef <CTestAndRepData>(new CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM));
+       //thisGrp.tests_on_SeqEntry_feat_desc.push_back( 
+       thisGrp.tests_on_BioseqSet.push_back( 
+          CRef <CTestAndRepData>(new CBioseqSet_TEST_SMALL_GENOME_SET_PROBLEM));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_INCONSISTENT_MOLTYPES") != end_it) {

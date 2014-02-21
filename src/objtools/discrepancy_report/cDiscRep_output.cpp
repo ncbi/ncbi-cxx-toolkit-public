@@ -838,11 +838,25 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
 */
 };
 
+void CDiscRepOutput :: Export(vector <CRef <CClickableItem> >& c_item, const string& setting_name)
+{
+   if (!thisInfo.disc_report_data.empty()) {
+      ITERATE ( vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data){
+         if ( (*it)->setting_name == setting_name) {
+            c_item.push_back((*it));
+         }
+      }
+   }
+
+   thisInfo.disc_report_data.clear();
+   thisInfo.test_item_list.clear();
+   thisInfo.test_item_objs.clear();
+};
+
 void CDiscRepOutput :: Export(CRef <CClickableItem>& c_item, const string& setting_name)
 {
    if (!thisInfo.disc_report_data.empty()) {
       if (thisInfo.disc_report_data.size() == 1) {
-//         c_item.Reset(thisInfo.disc_report_data[0].GetPointer());
            c_item = thisInfo.disc_report_data[0];
       }
       else {

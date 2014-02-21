@@ -249,6 +249,75 @@ void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome)
    entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(genome);
 };
 
+void RunAndCheckMultiReports(CRef <CSeq_entry>& entry, const string& test_name, const set <string>& msgs)
+{
+   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
+   scope.Reset(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+
+   config->SetArg("e", test_name);
+   vector <CRef <CClickableItem> > c_items;
+   config->CollectTests();
+   config->Run();
+   CDiscRepOutput output_obj;
+   output_obj.Export(c_items, test_name);
+   if (msgs.find("print") != msgs.end()) {
+      ITERATE (vector <CRef <CClickableItem> > , it, c_items) {
+        cerr << "desc " << (*it)->description << endl;
+      }
+      return;
+   }
+   if (c_items.empty()) {
+      NCBITEST_CHECK_MESSAGE(!c_items.empty(), "no report");
+   }
+   else if (c_items.size() != msgs.size()) {
+      ITERATE(vector <CRef <CClickableItem> >, it, c_items) {
+         cerr << "desc " << (*it)->description << endl;
+      }
+      NCBITEST_CHECK_MESSAGE(c_items.size() == msgs.size(), 
+                              "wrong report: report size is in correct");
+   }
+   else {
+     ITERATE (vector <CRef <CClickableItem> >, it, c_items) {
+        if ( (*it)->description.find("should have segment qualifier but do not")
+             != string::npos) {
+           NCBITEST_CHECK_MESSAGE(
+              (*it)->item_list.size() == (*it)->obj_list.size(),
+               "The sizes of item_list and obj_list are not equal");
+        }
+        NCBITEST_CHECK_MESSAGE(msgs.find((*it)->description) != msgs.end(),
+              "Test report is incorrect: " + (*it)->description);
+     }
+   }
+};
+
+BOOST_AUTO_TEST_CASE(TEST_SMALL_GENOME_SET_PROBLEM)
+{
+   CRef <CSeq_entry> entry = BuildGoodEcoSet();
+   entry->SetSet().SetClass(CBioseq_set::eClass_small_genome_set);
+   unsigned i=0;
+   string i_str;
+   NON_CONST_ITERATE (list <CRef <CSeq_entry> >, it, 
+                             entry->SetSet().SetSeq_set()) {
+     SetLineage( (*it), "Viruses");
+     if (i) {
+        SetSubSource( (*it), CSubSource::eSubtype_segment, "exist");
+     }
+     i_str = NStr::UIntToString(i+1);
+     SetTaxname( (*it), "tax" + i_str);
+     SetOrgMod((*it), COrgMod::eSubtype_isolate, "isolate" + i_str);
+     SetOrgMod((*it), COrgMod::eSubtype_strain, "strain" + i_str);
+     i++;
+   }
+   set <string> msgs;
+   msgs.insert("Not all biosources have same isolate");
+   msgs.insert("1 biosourc should have segment qualifier but does not");
+   msgs.insert("Not all biosources have same strain");
+   msgs.insert("Not all biosources have same taxname");
+   RunAndCheckMultiReports(entry, "TEST_SMALL_GENOME_SET_PROBLEM", msgs); 
+};
+
 
 BOOST_AUTO_TEST_CASE(TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
 {

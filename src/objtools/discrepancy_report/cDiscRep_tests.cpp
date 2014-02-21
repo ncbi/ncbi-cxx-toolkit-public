@@ -346,10 +346,9 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
    c_item->item_list.clear();
 
    string test_name, fixtp_name, summ;
-   unsigned rule_idx, fixtp;
+   unsigned rule_idx;
    vector <string> arr;
    ITERATE (Str2Strs, fit, fixtp2rule_feats) {
-     fixtp = NStr::StringToUInt(fit->first); 
      CRef <CClickableItem> name_cat_citem (new CClickableItem);
 
      rule2feats.clear();
@@ -585,17 +584,17 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
    const CSeq_feat* feat_in_use = 0;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
      const CProt_ref& prot = (*it)->GetData().GetProt();
+     feat_in_use = *it;
      if (prot.CanGetName() && !prot.GetName().empty()) {
        check_val = *(prot.GetName().begin());
        if ((*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
           CBioseq_Handle seq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
           feat_in_use = sequence::GetCDSForProduct(seq_hl); 
        }
-       else feat_in_use = *it; 
      }
-     sf_text = GetDiscItemText(**it);
-      rule_idx = 0;
-      ITERATE (list <CRef <CSuspect_rule> >, rit,
+     sf_text = GetDiscItemText(*feat_in_use);
+     rule_idx = 0;
+     ITERATE (list <CRef <CSuspect_rule> >, rit,
                                        thisInfo.suspect_rna_rules->Get()) {
          if (rule_check.MatchesSuspectProductRule(check_val, **rit)) {
             if (!(*rit)->CanGetFeat_constraint()
@@ -610,16 +609,10 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
             }
          }
          rule_idx ++;
-      }
+     }
    }
    ITERATE (vector <const CSeq_feat*>, it, rrna_feat) {
       check_val = GetRNAProductString(**it); 
-/* fix?
-      check_val 
-         = (check_val == "5s_rRNA")? "5S ribosomal RNA":
-              ((check_val == "16s_rRNA") ? "16S ribosomal RNA" :
-                 ((check_val == "23s_rRNA") ? "23S ribosomal RNA":check_val));
-*/
       sf_text = GetDiscItemText(**it);
       rule_idx = 0;
       ITERATE (list <CRef <CSuspect_rule> >, rit, 
@@ -1124,7 +1117,6 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
 
    // TEST_UNNECESSARY_VIRUS_GENE
    if (thisTest.tests_run.find(GetName_vir()) != end_it) {
-      bool has_virus = false;
       if (biosrc) {
          ITERATE (vector <string>, jt, thisInfo.virus_lineage) {
             if (HasLineage(*biosrc, *jt)) {
@@ -1134,7 +1126,6 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                     thisInfo.test_item_objs[GetName_vir()]
                                .push_back(CConstRef <CObject>(*kt));
                 }
-                has_virus = true;
                 break;
             }
          }
@@ -1920,7 +1911,7 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
 {
    string setting_name = GetName_ei();
    unsigned e_idx=0, i_idx=0, exon_start, exon_stop, intron_start, intron_stop;
-   unsigned e_sz= exon_ls.size(), i_sz = intron_ls.size(), pre_e_idx, pre_i_idx;
+   unsigned e_sz= exon_ls.size(), i_sz = intron_ls.size(), pre_e_idx;
    bool has_exon = true, has_intron = true;
    while (e_idx < e_sz && !m_e_exist[e_idx]) {
         e_idx++;
@@ -1964,7 +1955,6 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
   };
 
   pre_e_idx = e_idx;
-  pre_i_idx = i_idx;
   unsigned next_exon_start, next_exon_stop;
   while ( ++ e_idx < e_sz && !m_e_exist[e_idx]);
   while (e_idx < e_sz && i_idx < i_sz) {
@@ -5279,7 +5269,6 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
   bool run_glodup = (thisTest.tests_run.find(GetName_glodup()) != end_it);
 
   set <string> sent_gene;
-  bool has_locus_tag;
   vector <string> missing_texts;
   vector <CConstRef <CObject> > missing_objs;
   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
@@ -5290,7 +5279,6 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
      if (gene.CanGetLocus_tag()) {
         locus_tag = gene.GetLocus_tag();
         if (!locus_tag.empty()) {
-           has_locus_tag = true;
            if (run_dup) { // DUPLICATE_LOCUS_TAGS
               thisInfo.test_item_list[GetName_dup()]
                         .push_back(locus_tag + "$" + test_desc);
@@ -5372,7 +5360,7 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
      }
   }
   
-  if (has_locus_tag && !missing_texts.empty()) {
+  if (!missing_texts.empty()) {
      copy(missing_texts.begin(), missing_texts.end(), 
            back_inserter(thisInfo.test_item_list[GetName_miss()]));
      copy(missing_objs.begin(), missing_objs.end(), 
@@ -6242,7 +6230,7 @@ void CBioseq_test_on_cd_4_transl :: TranslExceptOfCDs (const CSeq_feat& cd, bool
             =sequence::GetCoverage(loc_ci.GetEmbeddingSeq_loc(),thisInfo.scope)
                -1;
           codon_stop = codon_len + codon_start;
-          if (codon_len >= 0 && codon_len <= 1 && codon_stop == len - 1) { 
+          if (codon_len >= 0 && codon_len <= 1 && codon_stop == (int)(len - 1)){
                /*  a codon, allowing a partial codon at the end */
                has_transl = true;
           }
@@ -9134,9 +9122,7 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
   }
 
   // ONCALLER_CHECK_AUTHORITY
-  bool has_tax = false;
   if (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty()) {
-      has_tax = true;
       if (m_run_auth && DoAuthorityAndTaxnameConflict(biosrc)) {
           thisInfo.test_item_list[GetName_auth()].push_back(desc);
           thisInfo.test_item_objs[GetName_auth()].push_back(obj_ref);
@@ -9867,19 +9853,22 @@ bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const
          return (
              SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
       }
+      return true;
     }
     else return false;
   }
   else if (has_rev1) {
      return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
   };
+
+  return true;
 };
 
 void CSeqEntry_DISC_REQUIRED_STRAIN :: GetReport(CRef <CClickableItem>& c_item)
 {
   c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetIsComment(c_item->item_list.size(), "biosource")
-                                                         + "missing required strain value";
+                          + "missing required strain value";
 };
 
 void CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET :: GetReport(CRef <CClickableItem>& c_item)
@@ -11114,87 +11103,70 @@ void CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: GetReport(CRef <CClickableIte
                            + "conflicts between type strain and organism name.";
 };
 
-bool CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: HasSmallSeqset(const CSeq_entry& seq_entry)
+void CBioseqSet_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CBioseq_set& bioseq_set)
 {
-   if (seq_entry.IsSet()) {
-     if (seq_entry.GetSet().GetClass() == CBioseq_set::eClass_small_genome_set){
-          return true;
-     }
-     else {
-        ITERATE(list <CRef <CSeq_entry> >, it, seq_entry.GetSet().GetSeq_set()){
-            if (HasSmallSeqset(**it)) {
-                return true;
-            }
-        }
-     }
-   } 
-
-   return false;
-};
-
-void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_entry)
-{
-   if (!HasSmallSeqset(seq_entry)) {
-        return;
+   if (bioseq_set.GetClass() !=  CBioseq_set::eClass_small_genome_set){
+      return;
    }
-   string pre_taxname, pre_isolate, pre_strain;
+   string pre_taxname, pre_isolate, pre_strain, desc;
    pre_taxname = pre_isolate = pre_strain = kEmptyStr;
    bool all_taxnames_same, all_isolates_same, all_strains_same;
    all_taxnames_same = all_isolates_same = all_strains_same = true;
-   unsigned i=0;
-   string desc, desc_entry(GetDiscItemText(seq_entry));
    vector <string> arr;
-   ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
-      const CBioSource& biosrc = (*it)->GetSource();
-      desc = GetDiscItemText(**it, *biosrc_seqdesc_seqentry[i]);
-      CConstRef <CObject> obj_ref(*it);
-      if (HasLineage(biosrc, "Viruses")) {
-         if (!IsSubSrcPresent(biosrc, CSubSource::eSubtype_segment)) {
+   for (CBioseq_CI seq_ci(thisInfo.scope->GetBioseq_setHandle(bioseq_set)); 
+           seq_ci; ++seq_ci) {
+      for (CSeqdesc_CI d_ci(*seq_ci, CSeqdesc::e_Source); d_ci; ++d_ci) {
+        const CBioSource& biosrc = d_ci->GetSource();
+        desc = GetDiscItemText(*d_ci, *(seq_ci->GetCompleteBioseq()));
+        CConstRef <CObject> obj_ref(&(*d_ci));
+        /* look for segment when required */
+        if (HasLineage(biosrc, "Viruses")) {
+           if (!IsSubSrcPresent(biosrc, CSubSource::eSubtype_segment)) {
              thisInfo.test_item_list[GetName()].push_back("missing$" + desc);
              thisInfo.test_item_objs[GetName() + "$missing"].push_back(obj_ref);
-         }
-      }
-      if (all_taxnames_same) {
-         desc = GetSrcQualValue(biosrc, "taxname");
-         if (pre_taxname.empty() && !desc.empty()) {
+           }
+        }
+
+        /* are taxnames all the same */
+        if (all_taxnames_same) {
+           desc = GetSrcQualValue(biosrc, "taxname");
+           if (pre_taxname.empty() && !desc.empty()) {
                 pre_taxname = desc;
-         }
-         else if (desc != pre_taxname) {
-             all_taxnames_same = false;  
-         }
-      }
-      if (all_isolates_same) {
-         arr.clear();
-         GetOrgModValues(biosrc, COrgMod::eSubtype_isolate, arr);
-         if (!arr.empty()) {
-            all_isolates_same = AllVecElementsSame(arr);
-            if (all_isolates_same) {
+           }
+           else if (desc != pre_taxname) {
+               all_taxnames_same = false;
+           }
+        }
+        /* are isolates all the same */
+        if (all_isolates_same) {
+           arr.clear();
+           GetOrgModValues(biosrc, COrgMod::eSubtype_isolate, arr);
+           if (!arr.empty()) {
               if (pre_isolate.empty() && !arr[0].empty()) {
                    pre_isolate = arr[0];
               }
               else if (arr[0] != pre_isolate) {
                   all_isolates_same = false;
               }
-            }
-         }
-      }
-      if (all_strains_same) {
-         arr.clear();
-         GetOrgModValues(biosrc, COrgMod::eSubtype_strain, arr);
-         if (!arr.empty()) {
-            all_strains_same = AllVecElementsSame(arr);
-            if (all_strains_same) {
+              arr.clear();
+           }
+        }
+        /* are strains all the same */
+        if (all_strains_same) {
+           arr.clear();
+           GetOrgModValues(biosrc, COrgMod::eSubtype_strain, arr);
+           if (!arr.empty()) {
                if (pre_strain.empty() && !arr[0].empty()) {
                      pre_strain = arr[0];
                }
                else if (arr[0] != pre_strain) {
                   all_strains_same = false;
                }
-            }
-         }
+           }
+        }
       }
-   }
- 
+   } 
+
    if (!all_taxnames_same) {
        thisInfo.test_item_list[GetName()].push_back("taxname$1");
    }
@@ -11206,7 +11178,7 @@ void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_
    }
 };
 
-void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: GetReport(CRef <CClickableItem>& c_item)
+void CBioseqSet_TEST_SMALL_GENOME_SET_PROBLEM :: GetReport(CRef <CClickableItem>& c_item)
 {
    Str2Strs qual2ls;
    GetTestItemList(c_item->item_list, qual2ls);
@@ -11842,7 +11814,6 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
    // END_COLON_IN_COUNTRY
    if (m_run_end) {
       GetSubSrcValues(biosrc, CSubSource::eSubtype_country, arr);
-      size_t pos;
       ITERATE (vector <string>, it, arr) {
         if ( (*it)[ (*it).size() - 1 ] == ':') {
            thisInfo.test_item_list[GetName_end()].push_back(desc);
