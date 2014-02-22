@@ -5316,7 +5316,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SDM<USA-CA>	s	San Diego Mesa College, Botany Department",
 "SDMP	s	Shandong Institute of Traditional Chinese Medicine and Materia Medica",
 "SDN	s	Borough of Thamesdown Museum and Art Gallery",
-"SDNCU	b	Nagoya City University",
+"SDNCU	cb	Nagoya City University",
 "SDNH<SWZ>	s	Malkerns Agricultural Research Station",
 "SDNHM	s	San Diego Natural History Museum",
 "SDNU	s	Shandong Normal University, Biology Department",
