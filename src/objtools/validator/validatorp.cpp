@@ -2103,6 +2103,7 @@ bool CValidError_imp::x_CheckSeqInt
 void CValidError_imp::ValidateSeqLoc
 (const CSeq_loc& loc,
  const CBioseq_Handle&  seq,
+ bool  report_abutting,
  const string&   prefix,
  const CSerialObject& obj)
 {
@@ -2289,7 +2290,7 @@ void CValidError_imp::ValidateSeqLoc
     }
 
     string loc_lbl;
-    if (adjacent) {
+    if (adjacent && report_abutting) {
         loc_lbl = GetValidatorLocationLabel(loc);
 
         EDiagSev sev = exception ? eDiag_Warning : eDiag_Error;
@@ -3060,6 +3061,18 @@ void CValidError_imp::Setup(const CSeq_annot_Handle& sah)
 }
 
 
+CSeq_entry_Handle CValidError_imp::Setup(const CBioseq& seq)
+{
+    m_Scope.Reset(new CScope(*m_ObjMgr));  
+    CRef<CSeq_entry> tmp_entry(new CSeq_entry());
+    tmp_entry->SetSeq().Assign(seq);
+    m_TSE.Reset(tmp_entry);
+    m_TSEH = m_Scope->AddTopLevelSeqEntry(*m_TSE);
+    Setup(m_TSEH);
+    return m_TSEH;
+}
+
+
 void CValidError_imp::ValidateSeqLocIds
 (const CSeq_loc& loc,
  const CSerialObject& obj)
@@ -3100,6 +3113,76 @@ bool CValidError_imp::x_IsFarFetchFailure (const CSeq_loc& loc)
         }
     }
     return rval;
+}
+
+
+bool CValidError_imp::GetTSANStretchErrors(const CSeq_entry_Handle& se)
+{
+    bool rval = false;
+    Setup(se);
+    CValidError_bioseq bioseq_validator(*this);
+    CBioseq_CI bi(se, CSeq_inst::eMol_na);
+    while (bi) {
+        rval |= bioseq_validator.GetTSANStretchErrors(*(bi->GetCompleteBioseq()));
+        ++bi;
+    }
+    return rval;
+}
+
+
+bool CValidError_imp::GetTSANStretchErrors(const CBioseq& seq)
+{
+    CSeq_entry_Handle seh = Setup(seq);
+    CValidError_bioseq bioseq_validator(*this);
+    return bioseq_validator.GetTSANStretchErrors(*(seh.GetSeq().GetCompleteBioseq()));
+}
+
+
+bool CValidError_imp::GetTSACDSOnMinusStrandErrors (const CSeq_entry_Handle& se)
+{
+    bool rval = false;
+    Setup(se);
+    CValidError_feat feat_validator(*this);
+    CFeat_CI fi(se);
+    while (fi) {
+        CBioseq_Handle bsh = se.GetScope().GetBioseqHandle(fi->GetLocation());
+        if (bsh) {
+            rval |= feat_validator.GetTSACDSOnMinusStrandErrors(*(fi->GetSeq_feat()), *(bsh.GetCompleteBioseq()));
+        }
+        ++fi;
+    }
+
+    return rval;
+}
+
+
+bool CValidError_imp::GetTSACDSOnMinusStrandErrors (const CSeq_feat& f, const CBioseq& seq)
+{
+    CSeq_entry_Handle seh = Setup(seq);
+    CValidError_feat feat_validator(*this);
+    return feat_validator.GetTSACDSOnMinusStrandErrors(f, *(seh.GetSeq().GetCompleteBioseq()));
+}
+
+
+bool CValidError_imp::GetTSAConflictingBiomolTechErrors (const CSeq_entry_Handle& se)
+{
+    bool rval = false;
+    Setup(se);
+    CValidError_bioseq bioseq_validator(*this);
+    CBioseq_CI bi(se, CSeq_inst::eMol_na);
+    while (bi) {
+        rval |= bioseq_validator.GetTSAConflictingBiomolTechErrors(*(bi->GetCompleteBioseq()));
+        ++bi;
+    }
+    return rval;
+}
+
+
+bool CValidError_imp::GetTSAConflictingBiomolTechErrors (const CBioseq& seq)
+{
+    CSeq_entry_Handle seh = Setup(seq);
+    CValidError_bioseq bioseq_validator(*this);
+    return bioseq_validator.GetTSAConflictingBiomolTechErrors(*(seh.GetSeq().GetCompleteBioseq()));
 }
 
 

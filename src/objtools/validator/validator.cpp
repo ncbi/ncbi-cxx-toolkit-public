@@ -101,6 +101,79 @@ CConstRef<CValidError> CValidator::Validate
 }
 
 
+CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CSeq_entry_Handle& se)
+{
+    CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
+    imp.SetProgressCallback(m_PrgCallback, m_UserData);
+    if ( !imp.GetTSANStretchErrors(se) ) {
+        errors.Reset();
+    }
+    return errors;
+}
+
+
+CConstRef<CValidError> CValidator::GetTSACDSOnMinusStrandErrors (const CSeq_entry_Handle& se)
+{
+    CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
+    imp.SetProgressCallback(m_PrgCallback, m_UserData);
+    if ( !imp.GetTSACDSOnMinusStrandErrors(se) ) {
+        errors.Reset();
+    }
+    return errors;
+}
+
+
+CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CSeq_entry_Handle& se)
+{
+    CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
+    imp.SetProgressCallback(m_PrgCallback, m_UserData);
+    if ( !imp.GetTSAConflictingBiomolTechErrors(se) ) {
+        errors.Reset();
+    }
+    return errors;
+}
+
+
+CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CBioseq& seq)
+{
+
+    CRef<CValidError> errors(new CValidError(&seq));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
+    imp.SetProgressCallback(m_PrgCallback, m_UserData);
+    if ( !imp.GetTSANStretchErrors(seq) ) {
+        errors.Reset();
+    }
+    return errors;
+}
+
+
+CConstRef<CValidError> CValidator::GetTSACDSOnMinusStrandErrors (const CSeq_feat& f, const CBioseq& seq)
+{
+    CRef<CValidError> errors(new CValidError(&f));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
+    imp.SetProgressCallback(m_PrgCallback, m_UserData);
+    if ( !imp.GetTSACDSOnMinusStrandErrors(f, seq) ) {
+        errors.Reset();
+    }
+    return errors;
+}
+
+
+CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CBioseq& seq)
+{
+    CRef<CValidError> errors(new CValidError(&seq));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
+    imp.SetProgressCallback(m_PrgCallback, m_UserData);
+    if ( !imp.GetTSAConflictingBiomolTechErrors(seq) ) {
+        errors.Reset();
+    }
+    return errors;
+}
+
+
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_submit& ss,
  CScope* scope,

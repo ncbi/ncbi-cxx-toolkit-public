@@ -2380,6 +2380,84 @@ static EDiagSev GetBioseqEndWarning (bool is_NC, bool isPatent, bool only_local,
 }
 
 
+void CValidError_bioseq::x_CalculateNsStretchAndTotal(const CBioseq& seq, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3)
+{
+    num_ns = 0;
+    max_stretch = 0;
+    n5 = false;
+    n3 = false;
+
+    if (HasAssemblyOrNullGap (seq)) return;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( !bsh ) {
+        return;
+    }
+
+    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);                        
+
+    TSeqPos this_stretch = 0; 
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (vec[i] == 'N') {
+            num_ns++;
+            if (vec.IsInGap(i)) {
+                if (max_stretch < this_stretch) {
+                    max_stretch = this_stretch;
+                }
+                this_stretch = 0;
+            } else {
+                this_stretch++;
+                if (this_stretch >= 10) {
+                    if (i < 20) {
+                        n5 = true;
+                    } 
+                    if (vec.size() > 20 && i > vec.size() - 10) {
+                        n3 = true;
+                    }
+                }
+            }
+        } else {
+            if (max_stretch < this_stretch) {
+                max_stretch = this_stretch;
+            }
+            this_stretch = 0;
+        }
+    }
+    if (max_stretch < this_stretch) {
+        max_stretch = this_stretch;
+    }
+}
+
+
+bool CValidError_bioseq::GetTSANStretchErrors(const CBioseq& seq)
+{
+    TSeqPos num_ns = 0;
+    TSeqPos max_stretch = 0;
+    bool n5 = false;
+    bool n3 = false;
+    bool rval = false;
+
+    x_CalculateNsStretchAndTotal(seq, num_ns, max_stretch, n5, n3);
+
+    if (max_stretch >= 15) {
+        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                    "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
+        rval = true;
+    } else {
+        if (n5) {
+            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                        "Sequence has a stretch of at least 10 Ns within the first 20 bases", seq);
+            rval = true;
+        }
+        if (n3) {
+            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                        "Sequence has a stretch of at least 10 Ns within the last 20 bases", seq);
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
     // don't bother checking if length is less than 10
@@ -2451,39 +2529,10 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         // if TSA, check for percentage of Ns and max stretch of Ns
         if (IsBioseqTSA(seq, m_Scope)) {
             ReportBadAssemblyGap (seq);
-            if (HasAssemblyOrNullGap (seq)) return;
             bool n5 = false;
             bool n3 = false;
-            TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
-            for (size_t i = 0; i < vec.size(); i++) {
-                if (vec[i] == 'N') {
-                    num_ns++;
-                    if (vec.IsInGap(i)) {
-                        if (max_stretch < this_stretch) {
-                            max_stretch = this_stretch;
-                        }
-                        this_stretch = 0;
-                    } else {
-                        this_stretch++;
-                        if (this_stretch >= 10) {
-                            if (i < 20) {
-                                n5 = true;
-                            } 
-                            if (vec.size() > 20 && i > vec.size() - 10) {
-                                n3 = true;
-                            }
-                        }
-                    }
-                } else {
-                    if (max_stretch < this_stretch) {
-                        max_stretch = this_stretch;
-                    }
-                    this_stretch = 0;
-                }
-            }
-            if (max_stretch < this_stretch) {
-                max_stretch = this_stretch;
-            }
+            TSeqPos num_ns = 0, max_stretch = 0;
+            x_CalculateNsStretchAndTotal(seq, num_ns, max_stretch, n5, n3);
 
             int pct_n = (num_ns * 100) / seq.GetLength();
             if (pct_n > 10) {
@@ -2896,7 +2945,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
     CRef<CSeq_loc> loc = GetLocFromSeq(seq);
     if (loc) {
         if (inst.IsSetRepr() && inst.GetRepr() == CSeq_inst::eRepr_seg) {
-            m_Imp.ValidateSeqLoc(*loc, bsh, "Segmented Bioseq", seq);
+            m_Imp.ValidateSeqLoc(*loc, bsh, true, "Segmented Bioseq", seq);
         }
 
         // Validate Length
@@ -3951,13 +4000,14 @@ void CValidError_bioseq::x_ValidateCompletness
 
         if (!reported) {
             // for SQD-1484
-            // warn if completeness = complete, organism not viral, no location set or location is genomic
+            // warn if completeness = complete, organism not viral and origin not artificial, no location set or location is genomic
             CSeqdesc_CI src_desc(m_CurrentHandle, CSeqdesc::e_Source);
             if (src_desc) {
                 const CBioSource& biosrc = src_desc->GetSource();
                 if ((!biosrc.IsSetLineage() 
                      || (NStr::FindNoCase(biosrc.GetLineage(), "Viruses") == string::npos
                          && NStr::FindNoCase(biosrc.GetLineage(), "Viroids") == string::npos)) // not viral
+                    && (!biosrc.IsSetOrigin() || biosrc.GetOrigin() != CBioSource::eOrigin_artificial) // not artificial
                     && (!src_desc->GetSource().IsSetGenome()
                         || src_desc->GetSource().GetGenome() == CBioSource::eGenome_genomic)) { // location not set or genomic
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_UnwantedCompleteFlag,
@@ -7475,6 +7525,18 @@ void CValidError_bioseq::ValidateGBBlock
 }
 
 
+bool CValidError_bioseq::GetTSAConflictingBiomolTechErrors(const CBioseq& seq)
+{
+    bool rval = false;
+    if (seq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
+        PostErr(eDiag_Warning, eErr_SEQ_INST_ConflictingBiomolTech,
+            "TSA sequence should not be DNA", seq);
+        rval = true;
+    }
+    return rval;
+}
+
+
 void CValidError_bioseq::ValidateMolInfoContext
 (const CMolInfo& minfo,
  int& seq_biomol,
@@ -7632,10 +7694,7 @@ void CValidError_bioseq::ValidateMolInfoContext
             }
             break;
         case CMolInfo::eTech_tsa:
-            if (seq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
-                PostErr(eDiag_Warning, eErr_SEQ_INST_ConflictingBiomolTech,
-                    "TSA sequence should not be DNA", seq);
-            }
+            GetTSAConflictingBiomolTechErrors(seq);
             break;
         default:
             break;

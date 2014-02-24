@@ -473,6 +473,14 @@ public:
     void Validate(const CPubdesc& pubdesc, CScope* scope = 0);
     void ValidateSubAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
 
+    bool GetTSANStretchErrors(const CSeq_entry_Handle& se); 
+    bool GetTSACDSOnMinusStrandErrors (const CSeq_entry_Handle& se);
+    bool GetTSAConflictingBiomolTechErrors (const CSeq_entry_Handle& se);
+    bool GetTSANStretchErrors(const CBioseq& seq); 
+    bool GetTSACDSOnMinusStrandErrors (const CSeq_feat& f, const CBioseq& seq);
+    bool GetTSAConflictingBiomolTechErrors (const CBioseq& seq);
+
+
     void SetProgressCallback(CValidator::TProgressCallback callback,
         void* user_data);
 public:
@@ -530,8 +538,8 @@ public:
     bool IsOrganelle (int genome);
     bool IsOrganelle (CBioseq_Handle seq);
     bool IsOtherDNA(const CBioseq_Handle& bsh) const;
-    void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq,
-    const string& prefix, const CSerialObject& obj);
+    void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq, bool report_abutting,
+                        const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
     bool biosource = false, const CSeq_entry *ctx = 0);
@@ -702,6 +710,7 @@ private:
 
     void Setup(const CSeq_entry_Handle& seh);
     void Setup(const CSeq_annot_Handle& sa);
+    CSeq_entry_Handle Setup(const CBioseq& seq);
     void SetScope(const CSeq_entry& se);
 
     void InitializeSourceQualTags();
@@ -1038,6 +1047,7 @@ public:
     bool DoesCDSHaveShortIntrons(const CSeq_feat& feat);
     bool IsIntronShort(const CSeq_feat& feat);
     void ValidatemRNAGene (const CSeq_feat &feat);
+    bool GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq);
 
 private:
     void x_ValidateSeqFeatLoc(const CSeq_feat& feat);
@@ -1329,6 +1339,8 @@ public:
     void ValidateInst(const CBioseq& seq);
     void ValidateBioseqContext(const CBioseq& seq);
     void ValidateHistory(const CBioseq& seq);
+    bool GetTSANStretchErrors(const CBioseq& seq);
+    bool GetTSAConflictingBiomolTechErrors(const CBioseq& seq);
 
     // DBLink user object counters
     int m_dblink_count;
@@ -1353,6 +1365,7 @@ private:
     void x_ValidateTitle(const CBioseq& seq);
     void x_ValidateBarcode(const CBioseq& seq);
     void ValidateRawConst(const CBioseq& seq);
+    void x_CalculateNsStretchAndTotal(const CBioseq& seq, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3);
     void ValidateNsAndGaps(const CBioseq& seq);
     void ReportBadAssemblyGap (const CBioseq& seq);
     

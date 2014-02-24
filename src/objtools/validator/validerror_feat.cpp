@@ -201,7 +201,9 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
 
     if (m_Scope) {
         CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
-        m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh, "Location", feat);
+        m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh, 
+                             (feat.GetData().IsGene() || !m_Imp.IsGpipe()),
+                             "Location", feat);
 
         if ( feat.CanGetProduct() ) {
             ValidateSeqFeatProduct(feat.GetProduct(), feat);
@@ -327,6 +329,32 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
 }
 
 
+bool CValidError_feat::GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq)
+{
+    bool rval = false;
+    // check for CDSonMinusStrandTranscribedRNA
+    if (feat.IsSetData()
+        && feat.GetData().IsCdregion()
+        && feat.IsSetLocation()
+        && feat.GetLocation().GetStrand() == eNa_strand_minus) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        if ( bsh ) {
+            CSeqdesc_CI di(bsh, CSeqdesc::e_Molinfo);
+            if (di 
+                && di->GetMolinfo().IsSetTech() 
+                && di->GetMolinfo().GetTech() == CMolInfo::eTech_tsa
+                && di->GetMolinfo().IsSetBiomol()
+                && di->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSonMinusStrandTranscribedRNA,
+                        "Coding region on TSA transcribed RNA should not be on the minus strand", feat);
+                rval = true;
+            }
+        }
+    }                
+    return rval;
+}
+
+
 void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBioseq& seq)
 {
     CSeqFeatData::E_Choice ftype = feat.GetData().Which();
@@ -365,24 +393,7 @@ void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBios
     }
 
     // check for CDSonMinusStrandTranscribedRNA
-    if (feat.IsSetData()
-        && feat.GetData().IsCdregion()
-        && feat.IsSetLocation()
-        && feat.GetLocation().GetStrand() == eNa_strand_minus) {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-        if ( bsh ) {
-            CSeqdesc_CI di(bsh, CSeqdesc::e_Molinfo);
-            if (di 
-                && di->GetMolinfo().IsSetTech() 
-                && di->GetMolinfo().GetTech() == CMolInfo::eTech_tsa
-                && di->GetMolinfo().IsSetBiomol()
-                && di->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSonMinusStrandTranscribedRNA,
-                        "Coding region on TSA transcribed RNA should not be on the minus strand", feat);
-            }
-        }
-    }                
-
+    GetTSACDSOnMinusStrandErrors(feat, seq);               
 }
 
 
@@ -660,7 +671,7 @@ void CValidError_feat::ValidateSeqFeatProduct
     
     CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
     if (bsh) {
-        m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh, "Product", feat);
+        m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh, true, "Product", feat);
 
         FOR_EACH_SEQID_ON_BIOSEQ (id, *(bsh.GetCompleteBioseq())) {
             switch ( (*id)->Which() ) {

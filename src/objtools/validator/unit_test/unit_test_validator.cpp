@@ -1930,6 +1930,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "TSA sequence should not be DNA"));  
+    eval = validator.GetTSAConflictingBiomolTechErrors(seh);
+    CheckErrors (*eval, expected_errors);
+    eval = validator.GetTSAConflictingBiomolTechErrors(*(seh.GetSeq().GetCompleteBioseq()));
+    CheckErrors (*eval, expected_errors);
 }
 
 
@@ -3480,6 +3486,14 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     
     CLEAR_ERRORS
 
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of 16 Ns"));
+    eval = validator.GetTSANStretchErrors(seh);
+    CheckErrors (*eval, expected_errors);
+    eval = validator.GetTSANStretchErrors(entry->GetSeq());
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AANNNNNNNNNNGGGCCCCCAAAAATTTTTGGGGGCCCCCAAAAATTTTTGGGGGTTTTTGGGGGCCCCCAAAAATTTTTGGGGGCCNNNNNNNNNNAAA");
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -3487,6 +3501,15 @@ BOOST_AUTO_TEST_CASE(Test_HighNContentPercent_and_HighNContentStretch)
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
     eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the first 20 bases"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentStretch", "Sequence has a stretch of at least 10 Ns within the last 20 bases"));
+    eval = validator.GetTSANStretchErrors(seh);
+    CheckErrors (*eval, expected_errors);
+    eval = validator.GetTSANStretchErrors(entry->GetSeq());
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
@@ -5100,6 +5123,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnwantedCompleteFlag)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    // suppress if artificial
+    unit_test_util::SetLineage(entry, "Bacteria");
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_artificial);
+    CheckErrors (*eval, expected_errors);
 }
 
 
@@ -18123,6 +18150,10 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1309)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    eval = validator.GetTSACDSOnMinusStrandErrors(seh);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
