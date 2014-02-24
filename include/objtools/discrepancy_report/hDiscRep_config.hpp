@@ -154,8 +154,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
         virtual void Run();
      
       private:
-        void x_ReadAsn1(ESerialDataFormat datafm = eSerial_AsnText);
-        void x_ReadFasta();
+        void x_Asn1(ESerialDataFormat datafm = eSerial_AsnText);
+        void x_Fasta();
         void x_GuessFile();
         void x_BatchSet(ESerialDataFormat datafm = eSerial_AsnText);
         void x_BatchSeqSubmit(ESerialDataFormat datafm = eSerial_AsnText);

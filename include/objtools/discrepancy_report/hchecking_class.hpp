@@ -65,8 +65,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
          void CheckSeqEntry ( CRef <CSeq_entry> seq_entry);
          void CheckBioseqSet ( CBioseq_set& bioseq_set);
 
-         void CollectRepData();
-
          bool HasLocusTag (void) {
                return has_locus_tag;
          };
@@ -82,8 +80,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                   (*it)->TestOnObj(obj);
             }
          };
-
-         void GoGetRep(vector < CRef < CTestAndRepData> >& test_category);
 
          static bool SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* seqfeat2);
 

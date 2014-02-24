@@ -82,6 +82,8 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
   public:
     ~CDiscRepOutput () {};
 
+    void CollectRepData();
+    void GoGetRep(vector < CRef < CTestAndRepData> >& test_category);
     void Export();
     void Export(vector <CRef <CClickableText> >& item_list);
     void Export(CRef <CClickableItem>& c_item, const string& setting_name);
