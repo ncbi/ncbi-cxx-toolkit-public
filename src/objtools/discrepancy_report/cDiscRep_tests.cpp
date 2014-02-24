@@ -10887,7 +10887,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
      pos = CTempString(strtmp).substr(14).find("\"");
      if (pos != string::npos) {
        if (pos < strtmp.size() - 1) {
-           block_text += CTempString(strtmp).substr(pos+1);
+           block_text += CTempString(strtmp).substr(pos+15);
        }
      }
    }
@@ -10898,10 +10898,6 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
 {
-if (block_text.find("CDS") != string::npos && block_text.find("protein_id") != string::npos){
-cerr << block_text << endl;
-}
-
   block_text 
     =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
 
@@ -11207,15 +11203,35 @@ void CBioseqSet_TEST_SMALL_GENOME_SET_PROBLEM :: GetReport(CRef <CClickableItem>
 
 bool CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: CitSubMatchExceptDate(const CCit_sub& cit1, const CCit_sub& cit2)
 {
-   if (Blob2Str(cit1.GetAuthors()) != Blob2Str(cit2.GetAuthors())) {
+   string str1 = Blob2Str(cit1.GetAuthors());
+   vector <string> arr;
+   arr = NStr::Tokenize(str1, "\n\r, ", arr, NStr::eMergeDelims);
+   str1 = NStr::Join(arr, " ");
+   arr.clear();
+
+   string str2 = Blob2Str(cit2.GetAuthors());
+   arr = NStr::Tokenize(str2, "\n\r, ", arr, NStr::eMergeDelims);
+   str2 = NStr::Join(arr, " ");
+   arr.clear();
+   if (str1 != str2) {
        return false; 
    }
    if (cit1.CanGetImp() != cit2.CanGetImp()) {
        return false;
    }
-   else if (cit1.CanGetImp() 
-               && Blob2Str(cit1.GetImp()) != Blob2Str(cit2.GetImp())) {
+   else if (cit1.CanGetImp()) {
+      str1 = Blob2Str(cit1.GetImp());
+      arr = NStr::Tokenize(str1, "\n\r, ", arr, NStr::eMergeDelims);
+      str1 = NStr::Join(arr, " ");
+      arr.clear();
+      string str2 = Blob2Str(cit2.GetAuthors());
+      arr = NStr::Tokenize(str2, "\n\r, ", arr, NStr::eMergeDelims);
+      str2 = NStr::Join(arr, " ");
+      arr.clear();
+      
+      if (str1 != str2) {
          return false;
+      }
    }
    string desc1 = cit1.CanGetDescr()? cit1.GetDescr() : kEmptyStr;
    string desc2 = cit2.CanGetDescr()? cit2.GetDescr() : kEmptyStr;
@@ -11237,7 +11253,8 @@ bool CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: DateMatch(const CSubmit_block& blk1,
        return false;
    }
    else if (blk1.CanGetReldate()
-              && CDate::eCompare_same != blk1.GetReldate().Compare(blk2.GetReldate())) {
+              && CDate::eCompare_same 
+                    != blk1.GetReldate().Compare(blk2.GetReldate())) {
       return false;
    }
 
@@ -11250,15 +11267,24 @@ string CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: SubmitBlockMatchExceptDate(const C
 {
    CSubmit_block blk_in_ls;
    bool match;
-   string ctat, this_ctat, str1, str2;
-   this_ctat = Blob2Str(this_blk.GetContact());
+   string str1, str2;
+   vector <string> arr;
+   str1 = Blob2Str(this_blk.GetContact());
+   arr = NStr::Tokenize(str1, "\n\r, ", arr, NStr::eMergeDelims);
+   str1 = NStr::Join(arr, " ");
+   arr.clear();
+
    int subtp1, subtp2;
    unsigned i=0;
    ITERATE (vector <string>, it, SUBMIT_BLKs) {
       blk_in_ls.Reset();
       Str2Blob(*it, blk_in_ls);
-      ctat = Blob2Str(blk_in_ls.GetContact());
-      if (this_ctat != ctat
+      str2 = Blob2Str(blk_in_ls.GetContact());
+      arr = NStr::Tokenize(str2, "\n\r, ", arr, NStr::eMergeDelims);
+      str2 =  NStr::Join(arr, " ");
+      arr.clear();
+    
+      if (str1 != str2
              || !CitSubMatchExceptDate(this_blk.GetCit(), blk_in_ls.GetCit())
              || (this_blk.GetHup() != blk_in_ls.GetHup())
              || ( this_blk.GetHup() && !DateMatch(this_blk, blk_in_ls))) {

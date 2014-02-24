@@ -461,6 +461,7 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
 
 } // CheckBioseq
 
+/*
 void CCheckingClass :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category)
 {
    NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
@@ -502,5 +503,6 @@ void CCheckingClass :: CollectRepData()
   x_Clean();
 
 } // CollectRepData()
+*/
 
 END_NCBI_SCOPE

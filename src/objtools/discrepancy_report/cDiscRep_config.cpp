@@ -1252,7 +1252,10 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     m_dorecurse = (args["u"] == "1") ? true : false;
     if ((m_indir.empty() || !CDir(m_indir).Exists()) 
          && thisInfo.infile.empty()) {
-         NCBI_USER_THROW("Input path or input file must be specified");
+        if (m_indir.empty() || !CDir(m_indir).Exists()) {
+          NCBI_USER_THROW("input path does not exist: " + m_indir);
+        }
+        NCBI_USER_THROW("Input path or input file must be specified");
     }
     m_file_tp = args["a"];
 
@@ -1305,7 +1308,9 @@ void CRepConfig :: ReadArgs(const CArgs& args)
 {
     Str2Str arg_map;
     // input file
-    if (args["i"]) arg_map["i"] = args["i"].AsString();
+    if (args["i"]) {
+       arg_map["i"] = args["i"].AsString();
+    }
     arg_map["a"] = args["a"].AsString();
 
     // report_tp
@@ -1376,9 +1381,6 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     // go through tests
     CAutoDiscClass autoDiscClass( *(thisInfo.scope), myChecker );
     autoDiscClass.LookAtSeqEntry( *seq_entry );
-
-    // collect disc report
-    myChecker.CollectRepData();
 };  // CheckThisSeqEntry()
 
 static const s_test_property test_list[] = {
@@ -2693,7 +2695,7 @@ void CRepConfig :: GetTestList()
    NCBI_USER_THROW("Some requested tests are unrecognizable.");
 };
 
-void CRepConfAsndisc :: x_ReadAsn1(ESerialDataFormat datafm)
+void CRepConfAsndisc :: x_Asn1(ESerialDataFormat datafm)
 {
     auto_ptr <CObjectIStream> 
         ois (CObjectIStream::Open(datafm, thisInfo.infile));
@@ -2701,7 +2703,9 @@ void CRepConfAsndisc :: x_ReadAsn1(ESerialDataFormat datafm)
     strtmp = ois->ReadFileHeader();
     ois->SetStreamPos(0);
     if (strtmp == "Seq-submit") {
+       thisInfo.seq_submit.Reset(new CSeq_submit);
        *ois >> thisInfo.seq_submit.GetObject();
+OutBlob(*thisInfo.seq_submit, "sub1");
        if (thisInfo.seq_submit->IsEntrys()) {
          ITERATE (list <CRef <CSeq_entry> >, it, 
                                   thisInfo.seq_submit->GetData().GetEntrys()) {
@@ -2710,6 +2714,7 @@ void CRepConfAsndisc :: x_ReadAsn1(ESerialDataFormat datafm)
        }
     }
     else {
+      thisInfo.seq_submit.Reset(0);
       thisInfo.seq_submit.Reset(0);
       if (strtmp == "Seq-entry") {
          *ois >> *seq_entry;
@@ -2735,7 +2740,7 @@ void CRepConfAsndisc :: x_ReadAsn1(ESerialDataFormat datafm)
     ois->Close();
 };
 
-void CRepConfAsndisc :: x_ReadFasta()
+void CRepConfAsndisc :: x_Fasta()
 {
    auto_ptr <CReaderBase> reader (CReaderBase::GetReader(CFormatGuess::eFasta)); // flags?
    if (!reader.get()) {
@@ -2756,15 +2761,15 @@ void CRepConfAsndisc :: x_GuessFile()
    CFormatGuess::EFormat f_fmt = CFormatGuess::Format(thisInfo.infile);
    switch (f_fmt) {
       case CFormatGuess :: eBinaryASN:
-          x_ReadAsn1(eSerial_AsnBinary);
+          x_Asn1(eSerial_AsnBinary);
           break;
       case CFormatGuess :: eTextASN:
-          x_ReadAsn1(); 
+          x_Asn1(); 
           break;
       case CFormatGuess :: eFlatFileSequence:
           break;
       case CFormatGuess :: eFasta:
-          x_ReadFasta();
+          x_Fasta();
           break;
       default:
          NCBI_USER_THROW("File format: " + NStr::UIntToString((unsigned)f_fmt) + " not supported");
@@ -2780,6 +2785,7 @@ void CSeqEntryReadHook :: SkipClassMember(CObjectIStream& in, const CObjectTypeI
    for ( ; iter; ++iter ) {
       iter >> *entry; // Read a single Seq-entry from the stream.
       CRepConfig::CheckThisSeqEntry(entry);  // Process the Seq-entry
+      output_obj.CollectRepData();
       output_obj.Export(); 
       thisInfo.disc_report_data.clear();
       thisInfo.test_item_list.clear();
@@ -2835,7 +2841,7 @@ void CRepConfAsndisc :: x_ProcessOneFile()
       case 'b': 
       case 's':
       case 'm':
-         x_ReadAsn1(); 
+         x_Asn1(); 
          break;
 // binary, compressed & batch ??? ### 
       case 't': x_BatchSet(); 
@@ -2861,6 +2867,7 @@ void CRepConfAsndisc :: x_ProcessDir(const CDir& dir, bool one_ofile)
           thisInfo.output_config.output_f 
              = new CNcbiOfstream(
                     ( strtmp + (*it)->GetBase() + m_outsuffix ).c_str());     
+          output_obj.CollectRepData();
           output_obj.Export();
           thisInfo.disc_report_data.clear();
           thisInfo.test_item_list.clear(); 
@@ -2920,12 +2927,14 @@ void CRepConfAsndisc :: Run()
    CDir dir(m_indir);
    if (!dir.Exists()) {
        x_ProcessOneFile();
+       output_obj.CollectRepData();
        output_obj.Export();
    }
    else {
        bool one_ofile = (bool)thisInfo.output_config.output_f; 
        x_ProcessDir(dir, one_ofile);
        if (one_ofile) {
+          output_obj.CollectRepData();
           output_obj.Export(); // run a global check 
        }
    }

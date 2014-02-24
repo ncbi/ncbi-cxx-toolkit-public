@@ -194,6 +194,47 @@ void CDiscRepOutput :: x_AddListOutputTags()
   } 
 };
 
+
+void CDiscRepOutput :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category)
+{
+   NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
+       CRef < CClickableItem > c_item (new CClickableItem);
+       strtmp = (*it)->GetName();
+       if (thisInfo.test_item_list.find(strtmp) 
+                                    != thisInfo.test_item_list.end()) {
+cerr << "GoGetRep " << strtmp << endl;
+            c_item->setting_name = strtmp;
+            c_item->item_list = thisInfo.test_item_list[strtmp];
+            if ( strtmp != "LOCUS_TAGS"
+                        && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX") {
+                  thisInfo.disc_report_data.push_back(c_item);
+            }
+            (*it)->GetReport(c_item); 
+       }
+       else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
+           (*it)->GetReport(c_item); 
+       } 
+   }
+};
+
+void CDiscRepOutput :: CollectRepData()
+{
+  GoGetRep(thisGrp.tests_on_SubmitBlk);
+  GoGetRep(thisGrp.tests_on_Bioseq);
+  GoGetRep(thisGrp.tests_on_Bioseq_aa);
+  GoGetRep(thisGrp.tests_on_Bioseq_na);
+  GoGetRep(thisGrp.tests_on_Bioseq_CFeat);
+  GoGetRep(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet);
+  GoGetRep(thisGrp.tests_on_Bioseq_NotInGenProdSet);
+  GoGetRep(thisGrp.tests_on_SeqEntry);
+  GoGetRep(thisGrp.tests_on_SeqEntry_feat_desc);
+  GoGetRep(thisGrp.tests_4_once);
+  GoGetRep(thisGrp.tests_on_BioseqSet);
+  GoGetRep(thisGrp.tests_on_Bioseq_CFeat_CSeqdesc);
+
+} // CollectRepData()
+
+
 void CDiscRepOutput :: Export()
 {
   if (oc.add_output_tag || oc.add_extra_output_tag) {
