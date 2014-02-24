@@ -94,7 +94,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
    	}
 
    	m_SeqRange = m_OrigSeqRange;
-	if((TSeqPos)length < m_SeqRange.GetTo())
+	if((TSeqPos)length <= m_SeqRange.GetTo())
 	{
 		m_SeqRange.SetTo(length-1);
 	}
