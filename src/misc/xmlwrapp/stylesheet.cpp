@@ -412,19 +412,15 @@ xmlDocPtr apply_stylesheet(xslt::impl::stylesheet_impl *s_impl,
 
 void xslt::stylesheet::attach_refcount(void)
 {
-    // Reference counting needed only for non-xml result treatment
-    if (!impl::is_xml_output_method(pimpl_->ss_)) {
-        // Reference counting needed only for non-xml result treatment
-        impl::stylesheet_refcount *  refcount;
-        try {
-            refcount = new impl::stylesheet_refcount;
-        } catch (...) {
-            xsltFreeStylesheet(pimpl_->ss_);
-            throw;
-        }
-        refcount->inc_ref();
-        pimpl_->ss_->_private = refcount;
+    impl::stylesheet_refcount *  refcount;
+    try {
+        refcount = new impl::stylesheet_refcount;
+    } catch (...) {
+        xsltFreeStylesheet(pimpl_->ss_);
+        throw;
     }
+    refcount->inc_ref();
+    pimpl_->ss_->_private = refcount;
 }
 
 
