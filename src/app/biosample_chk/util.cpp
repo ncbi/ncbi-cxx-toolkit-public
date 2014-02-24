@@ -355,23 +355,29 @@ static IgnoreConflictData sIgnoreConflictList[] = {
   { "plasmid-name", eConflictIgnoreMissingInBioSample } ,
   { "plastid-name", eConflictIgnoreMissingInBioSample } ,
   { "chromosome", eConflictIgnoreMissingInBioSample } ,
-  { "map", eConflictIgnoreMissingInBioSample } ,
   { "linkage-group", eConflictIgnoreMissingInBioSample } ,
   { "rearranged", eConflictIgnoreMissingInBioSample } ,
   { "segment", eConflictIgnoreMissingInBioSample } ,
   { "transgenic", eConflictIgnoreMissingInBioSample } ,
   { "old-lineage", eConflictIgnoreMissingInBioSample } ,
   { "old-name", eConflictIgnoreMissingInBioSample } ,
-  { "lineage", eConflictIgnoreAll } ,
+  { "acronym", eConflictIgnoreAll },
   { "biovar", eConflictIgnoreAll } ,
   { "chemovar", eConflictIgnoreAll } ,
   { "forma", eConflictIgnoreAll } ,
   { "forma-specialis", eConflictIgnoreAll } ,
+  { "gb-synonym", eConflictIgnoreAll } ,
+  { "lineage", eConflictIgnoreAll } ,
   { "pathovar", eConflictIgnoreAll } ,
   { "serotype", eConflictIgnoreAll } ,
   { "serovar", eConflictIgnoreAll } ,
   { "subspecies", eConflictIgnoreAll } ,
-  { "variety", eConflictIgnoreAll } };
+  { "sub-species", eConflictIgnoreAll } ,
+  { "synonym", eConflictIgnoreAll } ,
+  { "variety", eConflictIgnoreAll } ,
+  { "StructuredCommentPrefix", eConflictIgnoreAll} ,
+  { "StructuredCommentSuffix", eConflictIgnoreAll}
+};
 
 static const int kNumIgnoreConflictList = sizeof (sIgnoreConflictList) / sizeof (IgnoreConflictData);
 
