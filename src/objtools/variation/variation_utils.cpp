@@ -446,13 +446,23 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& v_orig, CScope &scope)
                 if (found)
                 {
                     if (new_pos_left == -1)
+                    {
                         new_pos_left = pos_left;
+                    }
                     else if (new_pos_left != pos_left)
-                        NCBI_THROW(CException, eUnknown, "Left position is ambiguous due to different leaf alleles");
+                    {
+                        ERR_POST(Error <<  "Left position is ambiguous due to different leaf alleles" << Endm);
+                        continue;
+                    }
                     if (new_pos_right == -1)
+                    {
                         new_pos_right = pos_right;
+                    }
                     else if (new_pos_right != pos_right)
-                        NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
+                    {
+                        ERR_POST(Error <<  "Right position is ambiguous due to different leaf alleles" << Endm);
+                        continue;
+                    }
                     if (vp.IsSetSeq() && vp.GetSeq().IsSetSeq_data() && vp.GetSeq().GetSeq_data().IsIupacna()) 
                         x_ModifyLocation(vp.SetLoc(),vp.SetSeq(),ref,pos_left,pos_right,type);
                     x_ModifyLocation(vp.SetLoc(),*refref,ref,pos_left,pos_right,type);
@@ -486,7 +496,7 @@ void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, C
         {
             string compact = x_CompactifySeq(a);
             string orig_compact = compact;
-            bool found = x_ProcessShift(compact, pos_left,pos_right, seqvec,type);
+            const bool found = x_ProcessShift(compact, pos_left,pos_right, seqvec,type);
             if (found)
             {
                 while (orig_compact != compact)
@@ -495,13 +505,23 @@ void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, C
                     x_rotate_left(orig_compact);
                 }
                 if (new_pos_left == -1)
+                {
                     new_pos_left = pos_left;
+                }
                 else if (new_pos_left != pos_left)
-                    NCBI_THROW(CException, eUnknown, "Left position is ambiguous due to different leaf alleles");
+                {
+                    ERR_POST(Error <<   "Left position is ambiguous due to different leaf alleles" << Endm);
+                    return;
+                }
                 if (new_pos_right == -1)
+                {
                     new_pos_right = pos_right;
+                }
                 else if (new_pos_right != pos_right)
-                    NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
+                {
+                    ERR_POST(Error <<  "Right position is ambiguous due to different leaf alleles" << Endm);
+                    return;
+                }
                 x_ModifyLocation(loc,inst.SetDelta().front()->SetSeq().SetLiteral(),a,pos_left,pos_right,type);
             }
         }
@@ -562,11 +582,17 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
                 if (new_pos_left == -1)
                     new_pos_left = pos_left;
                 else if (new_pos_left != pos_left)
-                    NCBI_THROW(CException, eUnknown, "Left position is ambiguous due to different leaf alleles");
+                {
+                    ERR_POST(Error <<   "Left position is ambiguous due to different leaf alleles" << Endm);
+                    continue;
+                }
                 if (new_pos_right == -1)
                     new_pos_right = pos_right;
                 else if (new_pos_right != pos_right)
-                    NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
+                {
+                    ERR_POST(Error <<   "Right position is ambiguous due to different leaf alleles" << Endm);
+                    continue;
+                }
                 x_ModifyLocation(feat.SetLocation(),*refref,ref,pos_left,pos_right,type);
             }
         }
