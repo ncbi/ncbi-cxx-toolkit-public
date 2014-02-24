@@ -1994,31 +1994,28 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
         } else if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
             //trim terminal exons only
-            bool first_exon = true;
-            TSegment *last_exon = NULL;
+            //first exon
             NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
                 if(ii->m_exon) {
-                    //first exon
-                    if(first_exon) {
-                        if(test_type == kTestType_20_28_90_cut20) {
-                            ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
-                        } else {
-                            ii->ImproveFromLeft(Seq1, Seq2, m_aligner);                
-                        }
-                        first_exon = false;
+                    if(test_type == kTestType_20_28_90_cut20) {
+                        ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                    } else {
+                        ii->ImproveFromLeft(Seq1, Seq2, m_aligner);                
                     }
-                    last_exon = &*ii;//single exon is being trimmed from both sides.            
+                    break;    
                 }
             }
             //last exon
-            if( last_exon != 0 ) {
-                if(test_type == kTestType_20_28_90_cut20) {
-                    last_exon->ImproveFromRight1(Seq1, Seq2, m_aligner);                
-                } else {
-                    last_exon->ImproveFromRight(Seq1, Seq2, m_aligner);                
+            NON_CONST_REVERSE_ITERATE(TSegmentDeque, ii, segments) {
+                if(ii->m_exon) {
+                    if(test_type == kTestType_20_28_90_cut20) {
+                        ii->ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                    } else {
+                        ii->ImproveFromRight(Seq1, Seq2, m_aligner);                
+                    }
+                    break;    
                 }
             }
-
         } else {
               string msg = "test type \"" + test_type + "\" is not supported.";
               NCBI_THROW(CAlgoAlignException, eBadParameter, msg.c_str());
