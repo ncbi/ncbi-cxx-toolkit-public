@@ -1,0 +1,50 @@
+Seq-annot ::= {
+  desc {
+    title "Clone Paired Reads",
+    name "pairedReads",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "useScore",
+          data str "1"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 4
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "NC_000008.10",
+      location int {
+        from 19813522,
+        to 19813528,
+        id other {
+          accession "NC_000008",
+          version 10
+        }
+      },
+      title "rs268",
+      exts {
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}

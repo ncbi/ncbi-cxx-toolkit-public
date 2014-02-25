@@ -100,7 +100,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CBedReader::CBedReader(
     unsigned int flags ) :
 //  ----------------------------------------------------------------------------
-    CReaderBase(flags | CReaderBase::fAllIdsAsLocal),
+    CReaderBase(flags),
     m_currentId(""),
     m_columncount(0),
     m_usescore(false),
