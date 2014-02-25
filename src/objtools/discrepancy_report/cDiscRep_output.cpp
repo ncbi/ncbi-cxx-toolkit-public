@@ -202,7 +202,6 @@ void CDiscRepOutput :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp) 
                                     != thisInfo.test_item_list.end()) {
-cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             if ( strtmp != "LOCUS_TAGS"

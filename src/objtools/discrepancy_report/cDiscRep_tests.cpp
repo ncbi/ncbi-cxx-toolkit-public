@@ -5271,6 +5271,7 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
   set <string> sent_gene;
   vector <string> missing_texts;
   vector <CConstRef <CObject> > missing_objs;
+  bool has_locus_tag = false;
   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
      const CGene_ref& gene = (*jt)->GetData().GetGene();
      if (gene.GetPseudo()) continue;  
@@ -5279,6 +5280,7 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
      if (gene.CanGetLocus_tag()) {
         locus_tag = gene.GetLocus_tag();
         if (!locus_tag.empty()) {
+           has_locus_tag = true;
            if (run_dup) { // DUPLICATE_LOCUS_TAGS
               thisInfo.test_item_list[GetName_dup()]
                         .push_back(locus_tag + "$" + test_desc);
@@ -5360,7 +5362,7 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
      }
   }
   
-  if (!missing_texts.empty()) {
+  if (has_locus_tag && !missing_texts.empty()) {
      copy(missing_texts.begin(), missing_texts.end(), 
            back_inserter(thisInfo.test_item_list[GetName_miss()]));
      copy(missing_objs.begin(), missing_objs.end(), 
