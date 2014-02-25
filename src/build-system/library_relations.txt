@@ -97,6 +97,8 @@ biosample needs $(SDBAPI_LIB)
 biosample needs xconnect
 biosample needs xmlwrapp
 biosample needs xutil
+bioscgi needs biosample
+bioscgi needs xcgi
 biosconvert needs biosample
 biosconvert needs xvalidate
 biotree needs general
