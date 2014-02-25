@@ -1,2 +1,5 @@
 track name=pairedReads description="Clone Paired Reads" useScore=1
 NC_000008.10    19813522        19813529        rs268
+8       144804319       145668487       22524
+1000       144804319       145668487       22524
+chr8    144804319       145668487       22524

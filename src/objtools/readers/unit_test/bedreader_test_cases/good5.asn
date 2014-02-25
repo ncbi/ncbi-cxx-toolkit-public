@@ -48,3 +48,144 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  desc {
+    title "Clone Paired Reads",
+    name "pairedReads",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "useScore",
+          data str "1"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 4
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "8",
+      location int {
+        from 144804319,
+        to 145668486,
+        id local str "8"
+      },
+      title "22524",
+      exts {
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    title "Clone Paired Reads",
+    name "pairedReads",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "useScore",
+          data str "1"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 4
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "1000",
+      location int {
+        from 144804319,
+        to 145668486,
+        id gi 1000
+      },
+      title "22524",
+      exts {
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    title "Clone Paired Reads",
+    name "pairedReads",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "useScore",
+          data str "1"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 4
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "chr8",
+      location int {
+        from 144804319,
+        to 145668486,
+        id local str "chr8"
+      },
+      title "22524",
+      exts {
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}
