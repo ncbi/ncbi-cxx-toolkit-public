@@ -324,8 +324,12 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     conf.m_Strand = m_Strand;
     conf.m_TargetOnly = m_TargetOnly;
     conf.m_UseCtrlA = args["ctrl_a"];
-    conf.m_FiltAlgoId = (args["mask_sequence_with"].HasValue()) 
-                      ? args["mask_sequence_with"].AsInteger() : -1;
+    if (args["mask_sequence_with"].HasValue()) {
+    	 conf.m_FiltAlgoId = -1;
+    	 conf.m_FiltAlgoId = NStr::StringToInt(args["mask_sequence_with"].AsString(), NStr::fConvErr_NoThrow);
+    	 if(errno)
+    		 conf.m_FiltAlgoId = m_BlastDb->GetMaskAlgorithmId(args["mask_sequence_with"].AsString());
+    }
 
     string outfmt;
     if (args["outfmt"].HasValue()) {
@@ -538,7 +542,7 @@ void CBlastDBCmdApp::Init()
     arg_desc->AddOptionalKey("mask_sequence_with", "mask_algo_id",
                              "Produce lower-case masked FASTA using the "
                              "algorithm ID specified", 
-                             CArgDescriptions::eInteger);
+                             CArgDescriptions::eString);
 
     arg_desc->SetCurrentGroup("Output configuration options");
     arg_desc->AddDefaultKey(kArgOutput, "output_file", "Output file name", 
