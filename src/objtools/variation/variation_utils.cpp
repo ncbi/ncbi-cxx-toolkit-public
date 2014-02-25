@@ -371,12 +371,20 @@ CRef<CSeqVector> CVariationNormalization_base_cache::x_PrefetchSequence(CScope &
 {
     string accession;
     seq_id.GetLabel(&accession);
-    if ( !m_cache.Get(accession) || m_cache.Get(accession)->empty() ) 
+
+    //this is the magical thread safe line that 
+    // makes sure to get a reference count on the object in the cache
+    // and now the actual object in memory can not be deleted
+    // until that object's counter is down to zero.
+    // and that will not happen until the caller's CRef is dstroyed.
+    CRef<CSeqVector> seqvec_ref = m_cache.Get(accession);
+    if ( !seqvec_ref || seqvec_ref->empty() ) 
     {
         const CBioseq_Handle& bsh = scope.GetBioseqHandle( seq_id );
-        m_cache.Add(accession, Ref(new CSeqVector(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand))));
+        seqvec_ref = Ref(new CSeqVector(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand)));
+        m_cache.Add(accession, seqvec_ref);
     }
-    return m_cache[accession];
+    return seqvec_ref;
 }
 
 string CVariationNormalization_base_cache::x_GetSeq(int pos, int length, CSeqVector &seqvec)
@@ -390,7 +398,6 @@ string CVariationNormalization_base_cache::x_GetSeq(int pos, int length, CSeqVec
 
 int CVariationNormalization_base_cache::x_GetSeqSize(CSeqVector &seqvec)
 {
-    _ASSERT(!seqvec.empty());  
     return seqvec.size();
 } 
 
@@ -538,8 +545,12 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
     for (CSeq_annot::TData::TFtable::iterator ifeat = ftable.begin(); ifeat != ftable.end(); ++ifeat)
     {
         CSeq_feat &feat = **ifeat;
-        if (!feat.IsSetLocation()) continue;
-            
+
+        if (!feat.IsSetLocation()           || 
+            !feat.IsSetData()               || 
+            !feat.GetData().IsVariation()   || 
+            !feat.GetData().GetVariation().IsSetData()) continue;
+        
         const CSeq_id &seq_id = *feat.GetLocation().GetId();
         int pos_left = feat.GetLocation().GetStart(eExtreme_Positional);
         int pos_right = feat.GetLocation().GetStop(eExtreme_Positional);
@@ -555,22 +566,20 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
             strand = feat.GetLocation().GetStrand();
         CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
         CVariation_ref& vr = feat.SetData().SetVariation();
-        if (vr.IsSetData())
+  
+        switch(vr.GetData().Which())
         {
-            switch(vr.GetData().Which())
-            {
-                case  CVariation_Base::C_Data::e_Instance : x_ProcessInstance(vr.SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right, *seqvec,type); break;
-                case  CVariation_Base::C_Data::e_Set : 
-                    for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
-                    {
-                        if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
-                            x_ProcessInstance((*inst)->SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,*seqvec,type);
-                    }
-                    break;
-                default: break;
-                
-            }
+            case  CVariation_Base::C_Data::e_Instance : x_ProcessInstance(vr.SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right, *seqvec,type); break;
+            case  CVariation_Base::C_Data::e_Set : 
+                for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
+                {
+                    if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
+                        x_ProcessInstance((*inst)->SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,*seqvec,type);
+                }
+                break;
+            default: break;            
         }
+        
         
         if (!ref.empty() && is_deletion)
         {
