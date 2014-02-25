@@ -265,7 +265,6 @@ int main(int argc, const char* argv[])
                                      "/toolbox/ncbi_tools++/DATA",
                                      0/*port = default*/, flag, 0/*cmcb*/,
                                      1024/*offset*/, net_info->timeout);
-
     size_t pos1 = (size_t) download.tellg();
     size = NcbiStreamToString(0, download);
     if (!size)
