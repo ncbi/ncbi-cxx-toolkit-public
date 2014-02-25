@@ -547,13 +547,7 @@ CSeqdesc* CPromote::x_MakeMolinfoDesc(const CSeq_feat& feat) const
     // set completeness
     bool partial_left  = feat.GetLocation().IsPartialStart(eExtreme_Biological);
     bool partial_right = feat.GetLocation().IsPartialStop(eExtreme_Biological);
-    if ( partial_left  &&  partial_right ) {
-        mi.SetCompleteness(CMolInfo::eCompleteness_no_ends);
-    } else if ( partial_left ) {
-        mi.SetCompleteness(CMolInfo::eCompleteness_no_left);
-    } else if ( partial_right ) {
-        mi.SetCompleteness(CMolInfo::eCompleteness_no_right);
-    }
+    SetMolInfoCompleteness(mi, partial_left, partial_right);
 
     return desc.Release();
 }
@@ -664,6 +658,27 @@ void PromoteRna(CBioseq_Handle& seq, CSeq_feat_Handle& feat)
 void PromotePub(CBioseq_Handle& seq, CSeq_feat_Handle& feat)
 {
     CPromote(seq, 0, CPromote::eFeatType_Pub).PromotePub(feat);
+}
+
+
+bool SetMolInfoCompleteness (CMolInfo& mi, bool partial5, bool partial3)
+{
+    bool changed = false;
+    CMolInfo::ECompleteness new_val;
+    if ( partial5  &&  partial3 ) {
+        new_val = CMolInfo::eCompleteness_no_ends;
+    } else if ( partial5 ) {
+        new_val = CMolInfo::eCompleteness_no_left;
+    } else if ( partial3 ) {
+        new_val = CMolInfo::eCompleteness_no_right;
+    } else {
+        new_val = CMolInfo::eCompleteness_complete;
+    }
+    if (!mi.IsSetCompleteness() || mi.GetCompleteness() != new_val) {
+        mi.SetCompleteness(new_val);
+        changed = true;
+    }
+    return changed;
 }
 
 

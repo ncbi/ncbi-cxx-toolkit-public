@@ -49,6 +49,7 @@ class CProt_ref;
 
 BEGIN_SCOPE(edit)
 
+NCBI_XOBJEDIT_EXPORT bool SetMolInfoCompleteness (CMolInfo& mi, bool partial5, bool partial3);
 
 class NCBI_XOBJEDIT_EXPORT CPromote
 {
