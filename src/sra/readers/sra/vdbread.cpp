@@ -142,7 +142,7 @@ string CVResolver::Resolve(const string& acc_or_path) const
     rc_t rc = VResolverLocal(*this, CVPath(acc_or_path), ret.x_InitPtr());
     if ( rc ) {
         rc = VResolverRemote(*this, eProtocolHttp, CVPath(acc_or_path),
-                             ret.x_InitPtr(), 0);
+                             ret.x_InitPtr());
     }
     if ( rc ) {
         *ret.x_InitPtr() = 0;
