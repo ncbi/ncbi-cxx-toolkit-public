@@ -92,7 +92,7 @@ void CGC_Assembly_Parser::x_InitSeq_entry(CRef<CSeq_entry> entry,
 
 
 void CGC_Assembly_Parser::x_CopyData(const CGC_AssemblyDesc& assm_desc,
-                                       CSeq_entry&              entry)
+                                     CSeq_entry&             entry)
 {
     if (assm_desc.IsSetDescr()  &&  (m_Flags & fIgnoreDescr) == 0) {
         const CSeq_descr& descr = assm_desc.GetDescr();
@@ -240,7 +240,9 @@ void CGC_Assembly_Parser::x_ParseGCSequence(const CGC_Sequence& gc_seq,
                 }
                 break;
             case CGC_TypedSeqId::e_External:
-                if ((m_Flags & fIgnoreExternalIds) == 0) {
+                if ((m_Flags & fIgnoreExternalIds) == 0 &&
+                    ((m_Flags & fIgnoreLocalIds) == 0 ||
+                    !it_id.GetExternal().GetId().IsLocal())) {
                     synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetExternal().GetId()));
                 }
                 break;

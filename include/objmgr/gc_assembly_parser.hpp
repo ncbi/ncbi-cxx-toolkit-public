@@ -67,7 +67,7 @@ class NCBI_XOBJMGR_EXPORT CGC_Assembly_Parser : public CObject
 public:
     /// Parser options.
     enum FParserFlags {
-        /// Do not add local private ids to bioseqs.
+        /// Do not add local private and external ids to bioseqs.
         fIgnoreLocalIds             = 1 << 0,
         /// Do not add external ids to bioseqs.
         fIgnoreExternalIds          = 1 << 1,
