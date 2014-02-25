@@ -43,22 +43,22 @@ class CNetStorageServerException : public CException
 {
     public:
         enum EErrCode {
-            eInvalidArgument        = 1,
-            eMandatoryFieldsMissed  = 2,
-            eHelloRequired          = 3,
-            eInvalidMessageType     = 4,
-            eInvalidIncomingMessage = 5,
-            ePrivileges             = 6,
-            eInvalidMessageHeader   = 7,
-            eShuttingDown           = 8,
-            eMessageAfterBye        = 9,
-            eStorageError           = 10,
-            eWriteError             = 11,
-            eReadError              = 12,
-            eInternalError          = 13,
-            eObjectNotFound         = 14,
-            eDatabaseError          = 15,
-            eInvalidConfig          = 16
+            eInvalidArgument        = 1001,
+            eMandatoryFieldsMissed  = 1002,
+            eHelloRequired          = 1003,
+            eInvalidMessageType     = 1004,
+            eInvalidIncomingMessage = 1005,
+            ePrivileges             = 1006,
+            eInvalidMessageHeader   = 1007,
+            eShuttingDown           = 1008,
+            eMessageAfterBye        = 1009,
+            eStorageError           = 1010,
+            eWriteError             = 1011,
+            eReadError              = 1012,
+            eInternalError          = 1013,
+            eObjectNotFound         = 1014,
+            eDatabaseError          = 1015,
+            eInvalidConfig          = 1016
         };
         virtual const char *  GetErrCodeString(void) const;
         unsigned int ErrCodeToHTTPStatusCode(void) const;
