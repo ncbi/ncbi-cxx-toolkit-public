@@ -1220,14 +1220,24 @@ bool CGff3Writer::xAssignFeatureEndpoints(
     }
     else {
         seqStart = record.Location().GetStart(eExtreme_Positional);
-        if (record.Location().IsPartialStart(eExtreme_Biological)) {
-            string min = NStr::IntToString(seqStart + 1);
-            record.SetAttribute("start_range", string(".,") + min);
-        }
         seqStop = record.Location().GetStop(eExtreme_Positional);
+        string min = NStr::IntToString(seqStart + 1);
+        string max = NStr::IntToString(seqStop + 1);
+        if (record.Location().IsPartialStart(eExtreme_Biological)) {
+            if (record.Location().GetStrand() == eNa_strand_minus) {
+                record.SetAttribute("end_range", max + string(",."));
+            }
+            else {
+                record.SetAttribute("start_range", string(".,") + min);
+            }
+        }
         if (record.Location().IsPartialStop(eExtreme_Biological)) {
-            string max = NStr::IntToString(seqStop + 1);
-            record.SetAttribute("end_range", max + string(",."));
+            if (record.Location().GetStrand() == eNa_strand_minus) {
+                record.SetAttribute("start_range", string(".,") + min);
+            }
+            else {
+                record.SetAttribute("end_range", max + string(",."));
+            }
         }
         baseRecord.SetLocation(seqStart, seqStop);
         //return true;
@@ -2372,6 +2382,8 @@ bool CGff3Writer::xWriteFeatureCds(
                 new CGffFeatureRecord(*pCds));
             pExon->SetRecordId(cdsId);
             pExon->SetType("CDS");
+            pExon->DropAttributes("start_range");
+            pExon->DropAttributes("end_range");
             pExon->SetLocation(subint);
             pExon->SetPhase( bStrandAdjust ? (3-iPhase) : iPhase );
             if (!xWriteRecord(*pExon)) {

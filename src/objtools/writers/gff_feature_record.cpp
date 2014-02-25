@@ -83,17 +83,30 @@ void CGffFeatureRecord::SetLocation(
     if ( interval.CanGetFrom() ) {
         mSeqStart = interval.GetFrom();
     }
-    if (interval.IsPartialStart(eExtreme_Biological)) {
-        string min = NStr::IntToString(mSeqStart + 1);
-        SetAttribute("start_range", string(".,") + min);
-    }
     if ( interval.CanGetTo() ) {
         mSeqStop = interval.GetTo();
     }
-    if (interval.IsPartialStop(eExtreme_Biological)) {
-        string max = NStr::IntToString(mSeqStop + 1);
-        SetAttribute("end_range", max + string(",."));
+    unsigned int seqStart = Location().GetStart(eExtreme_Positional);
+    unsigned int seqStop = Location().GetStop(eExtreme_Positional);
+    string min = NStr::IntToString(seqStart + 1);
+    string max = NStr::IntToString(seqStop + 1);
+    if (Location().IsPartialStart(eExtreme_Biological)) {
+        if (Location().GetStrand() == eNa_strand_minus) {
+            SetAttribute("end_range", max + string(",."));
+        }
+        else {
+            SetAttribute("start_range", string(".,") + min);
+        }
     }
+    if (Location().IsPartialStop(eExtreme_Biological)) {
+        if (Location().GetStrand() == eNa_strand_minus) {
+            SetAttribute("start_range", string(".,") + min);
+        }
+        else {
+            SetAttribute("end_range", max + string(",."));
+        }
+    }
+
     if ( interval.IsSetStrand() ) {
         SetStrand(interval.GetStrand());
     }
