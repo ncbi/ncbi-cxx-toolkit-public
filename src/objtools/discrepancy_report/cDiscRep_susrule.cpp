@@ -34,6 +34,27 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include <objects/seqblock/GB_block.hpp>
+#include <objects/seqloc/Giimport_id.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/RNA_qual_set.hpp>
+#include <objects/seqfeat/RNA_qual.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/biblio/Affil.hpp>
+#include <objects/biblio/Cit_pat.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Cit_gen.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Cit_proc.hpp>
+#include <objects/biblio/Cit_let.hpp>
+#include <objects/biblio/Imprint.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/macro/CDSGenePr_pseudo_constrain.hpp>
 #include <objects/macro/CDSGenePr_constraint_field.hpp>
 #include <objects/macro/CDSGenePro_qual_constraint.hpp>

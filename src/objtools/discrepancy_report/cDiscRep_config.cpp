@@ -35,6 +35,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <serial/objhook.hpp>

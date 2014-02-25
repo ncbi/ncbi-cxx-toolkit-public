@@ -44,6 +44,10 @@
 #include <objects/valid/Comment_rule.hpp>
 #include <objects/valid/Comment_set.hpp>
 #include <objects/submit/Contact_info.hpp>
+#include <objects/submit/Submit_block.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -74,6 +78,8 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/biblio/ArticleId.hpp>
+#include <objects/biblio/ArticleIdSet.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Cit_gen.hpp>

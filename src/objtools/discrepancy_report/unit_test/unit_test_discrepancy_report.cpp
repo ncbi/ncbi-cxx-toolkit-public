@@ -39,6 +39,10 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>

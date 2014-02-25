@@ -60,6 +60,7 @@
 #include <objects/biblio/citation_base.hpp>
 #include <objects/biblio/Imprint.hpp>
 #include <objects/pub/Pub_equiv.hpp>
+#include <objects/submit/Seq_submit.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
