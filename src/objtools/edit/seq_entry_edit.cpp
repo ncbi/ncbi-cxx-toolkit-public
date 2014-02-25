@@ -30,6 +30,7 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_ext.hpp>
@@ -1164,6 +1165,54 @@ void BioseqSetDescriptorPropagateDown(
     // remove all descs from the parent
     bioseq_set_h.GetEditHandle().ResetDescr();
 }
+
+
+void AddLocalIdUserObjects(CSeq_entry& entry)
+{
+    if (entry.IsSeq()) {
+        bool need_object = true;
+        CBioseq& seq = entry.SetSeq();
+        if (seq.IsSetDescr()) {
+            ITERATE(CBioseq::TDescr::Tdata, d, seq.GetDescr().Get()) {
+                if ((*d)->IsUser()
+                    && (*d)->GetUser().GetObjectType() == CUser_object::eObjectType_OriginalId) {
+                    need_object = false;
+                    break;
+                }
+            }
+        }
+        if (need_object) {
+            CRef<CUser_object> obj(new CUser_object());
+            obj->SetObjectType(CUser_object::eObjectType_OriginalId);
+            ITERATE(CBioseq::TId, id, entry.GetSeq().GetId()) {
+                if ((*id)->IsLocal()) {
+                    string val = "";
+                    if ((*id)->GetLocal().IsStr()) {
+                        val = (*id)->GetLocal().GetStr();
+                    } else if ((*id)->GetLocal().IsId()) {
+                        val = NStr::NumericToString((*id)->GetLocal().GetId());
+                    }
+                    if (!NStr::IsBlank(val)) {
+                        CRef<CUser_field> field(new CUser_field());
+                        field->SetLabel().SetStr("LocalId");
+                        field->SetData().SetStr(val);
+                        obj->SetData().push_back(field);
+                    }
+                }
+            }
+            if (obj->IsSetData()) {
+                CRef<CSeqdesc> desc(new CSeqdesc());
+                desc->SetUser(*obj);
+                seq.SetDescr().Set().push_back(desc);
+            }
+        }
+    } else if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+        NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, entry.SetSet().SetSeq_set()) {
+            AddLocalIdUserObjects(**s);
+        }
+    }
+}
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

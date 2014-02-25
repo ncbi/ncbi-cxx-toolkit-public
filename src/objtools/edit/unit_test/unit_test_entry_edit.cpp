@@ -41,12 +41,14 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <objects/misc/sequence_macros.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <map>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -292,6 +294,58 @@ BOOST_AUTO_TEST_CASE(SegregateSetsByBioseqList)
         BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
     }
 }
+
+
+void CheckLocalId(const CBioseq& seq, const string& expected)
+{
+    if (!seq.IsSetDescr()) {
+        BOOST_CHECK_EQUAL("No descriptors", "Expected descriptors");
+        return;
+    }
+    int num_user_descriptors_found = 0;
+    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+        if ((*it)->IsUser()) {
+            const CUser_object& usr = (*it)->GetUser();
+            BOOST_CHECK_EQUAL(usr.GetObjectType(), CUser_object::eObjectType_OriginalId);
+            BOOST_CHECK_EQUAL(usr.GetData()[0]->GetLabel().GetStr(), "LocalId");
+            BOOST_CHECK_EQUAL(usr.GetData()[0]->GetData().GetStr(), expected);
+            num_user_descriptors_found++;;
+        }
+    }
+    BOOST_CHECK_EQUAL(num_user_descriptors_found, 1);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(FixCollidingIds)
+{
+    CRef<CSeq_entry> entry1 = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetDrosophila_melanogaster(entry1);
+    CRef<CSeq_entry> entry2 = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetSebaea_microphylla(entry2);
+    CRef<CSeq_entry> set_entry(new CSeq_entry());
+    set_entry->SetSet().SetClass(CBioseq_set::eClass_phy_set);
+    set_entry->SetSet().SetSeq_set().push_back(entry1);
+    set_entry->SetSet().SetSeq_set().push_back(entry2);
+    edit::AddLocalIdUserObjects(*set_entry);
+    CheckLocalId(entry1->GetSeq(), "good");
+    CheckLocalId(entry2->GetSeq(), "good");
+
+    set_entry->ReassignConflictingIds();
+    BOOST_CHECK_EQUAL(entry1->GetSeq().GetId().front()->GetLocal().GetStr(), "good");
+    BOOST_CHECK_EQUAL(entry2->GetSeq().GetId().front()->GetLocal().GetStr(), "good_1");
+    CRef<CSeq_entry> entry3 = unit_test_util::BuildGoodSeq();
+    set_entry->SetSet().SetSeq_set().push_back(entry3);
+    edit::AddLocalIdUserObjects(*set_entry);
+    CheckLocalId(entry1->GetSeq(), "good");
+    CheckLocalId(entry2->GetSeq(), "good");
+    CheckLocalId(entry3->GetSeq(), "good");
+    set_entry->ReassignConflictingIds();
+    BOOST_CHECK_EQUAL(entry1->GetSeq().GetId().front()->GetLocal().GetStr(), "good");
+    BOOST_CHECK_EQUAL(entry2->GetSeq().GetId().front()->GetLocal().GetStr(), "good_1");
+    BOOST_CHECK_EQUAL(entry3->GetSeq().GetId().front()->GetLocal().GetStr(), "good_2");
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -578,6 +578,49 @@ CUser_object& CUser_object::SetExperiment(EExperiment category)
 }
 
 
+const string kDBLink = "DBLink";
+const string kStructuredComment = "StructuredComment";
+const string kOriginalId = "OrginalID";
+
+CUser_object::EObjectType CUser_object::GetObjectType() const
+{
+    if (!IsSetType() || !GetType().IsStr()) {
+        return eObjectType_Unknown;
+    }
+    EObjectType rval = eObjectType_Unknown;
+
+    string label = GetType().GetStr();
+    if (NStr::Equal(label, kDBLink)) {
+        rval = eObjectType_DBLink;
+    } else if (NStr::Equal(label, kStructuredComment)) {
+        rval = eObjectType_StructuredComment;
+    } else if (NStr::Equal(label, kOriginalId)) {
+        rval = eObjectType_OriginalId;
+    }
+    return rval;
+}
+
+
+void CUser_object::SetObjectType(EObjectType obj_type)
+{
+    switch (obj_type) {
+        case eObjectType_DBLink:
+            SetType().SetStr(kDBLink);
+            break;
+        case eObjectType_StructuredComment:
+            SetType().SetStr(kStructuredComment);
+            break;
+        case eObjectType_OriginalId:
+            SetType().SetStr(kOriginalId);
+            break;
+        case eObjectType_Unknown:
+            ResetType();
+            break;
+    }
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

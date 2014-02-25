@@ -148,6 +148,17 @@ public:
     /// that is suitable for containing whatever specifics might be needed
     CUser_object& SetExperiment(EExperiment category);
 
+    /// Object Type
+    enum EObjectType {
+        eObjectType_Unknown = -1,
+        eObjectType_DBLink,
+        eObjectType_StructuredComment,
+        eObjectType_OriginalId
+    };
+
+    EObjectType GetObjectType() const;
+    void SetObjectType(EObjectType obj_type);
+
 private:
     /// Prohibit copy constructor and assignment operator
     CUser_object(const CUser_object& value);

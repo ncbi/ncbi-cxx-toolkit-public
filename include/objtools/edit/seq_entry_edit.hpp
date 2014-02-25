@@ -133,6 +133,12 @@ void BioseqSetDescriptorPropagateDown(
     const vector<CSeqdesc::E_Choice> &choices_to_delete = 
         vector<CSeqdesc::E_Choice>() );
 
+/// Creates a User-object descriptor on every sequence that has a local ID
+/// Contains the original local ID
+NCBI_XOBJEDIT_EXPORT
+void AddLocalIdUserObjects(CSeq_entry& entry);
+   
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
