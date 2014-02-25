@@ -55,10 +55,12 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objtools/cleanup/cleanup.hpp>
@@ -399,5 +401,81 @@ BOOST_AUTO_TEST_CASE(Test_CornerCaseFiles)
 
         // process this set of inputs and expected outputs:
         BOOST_CHECK_NO_THROW( s_ProcessInputFile(input_file_name) );
+    }
+}
+
+
+const char *sc_TestEntryCleanAssemblyDate = "\
+Seq-entry ::= seq {\
+          id {\
+            local\
+              str \"cleanassemblydate\" } ,\
+          descr {\
+            source { \
+              org { \
+                taxname \"Homo sapiens\" } } , \
+                user { \
+                  type str \"StructuredComment\" , \
+                  data { \
+                    { \
+                      label str \"StructuredCommentPrefix\" , \
+                      data str \"##Genome-Assembly-Data-START##\" } , \
+                    { \
+                      label  str \"Assembly Date\" , \
+                      data  str \"Feb 1 2014\" } , \
+                    { \
+                      label  str \"Assembly Date\" , \
+                      data  str \"Feb 2014\" } , \
+                    { \
+                      label  str \"Assembly Date\" , \
+                      data  str \"2014\" } , \
+                    { \
+                      label  str \"StructuredCommentSuffix\" , \
+                      data str \"##Genome-Assembly-Data-END##\" } } } , \
+            molinfo {\
+              biomol genomic } } ,\
+          inst {\
+            repr raw ,\
+            mol dna ,\
+            length 27 ,\
+            seq-data\
+              iupacna \"TTGCCCTAAAAATAAGAGTAAAACTAA\" } } \
+";
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanAssemblyDate)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntryCleanAssemblyDate);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
+    entry.Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.BasicCleanup (entry);
+    // look for expected change flags
+	vector<string> changes_str = changes->GetAllDescriptions();
+	if (changes_str.size() < 1) {
+        BOOST_CHECK_EQUAL("missing cleanup", "Clean User-Object Or -Field");
+	} else {
+        BOOST_CHECK_EQUAL (changes_str[0], "Clean User-Object Or -Field");
+        for (size_t i = 2; i < changes_str.size(); i++) {
+            BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+        }
+	}
+    // make sure change was actually made
+    CSeqdesc_CI d(scope->GetBioseqHandle(entry.GetSeq()), CSeqdesc::e_User);
+    if (d) {
+        const CUser_object& usr = d->GetUser();
+        BOOST_CHECK_EQUAL(usr.GetData()[1]->GetData().GetStr(), "2014-FEB-1");
+        BOOST_CHECK_EQUAL(usr.GetData()[2]->GetData().GetStr(), "2014-FEB");
+        BOOST_CHECK_EQUAL(usr.GetData()[3]->GetData().GetStr(), "2014");
     }
 }

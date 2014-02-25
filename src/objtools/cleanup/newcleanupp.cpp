@@ -6654,25 +6654,55 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                 continue;
             }
 
-            if( GET_FIELD( field.GetLabel(), Str) != "Finishing Goal" &&
-                GET_FIELD( field.GetLabel(), Str) != "Current Finishing Status" )
+            if( GET_FIELD( field.GetLabel(), Str) == "Finishing Goal" ||
+                GET_FIELD( field.GetLabel(), Str) == "Current Finishing Status" )
             {
-                continue;
-            }
 
-            string &field_str = GET_MUTABLE( field.SetData(), Str );
-            if( field_str == "High Quality Draft" ) {
-                field_str = "High-Quality Draft";
-                ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-            } else if( field_str == "Improved High Quality Draft" ) {
-                field_str = "Improved High-Quality Draft";
-                ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-            } else if( field_str == "Annotation Directed" ) {
-                field_str = "Annotation-Directed Improvement";
-                ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-            } else if( field_str == "Non-contiguous Finished" ) {
-                field_str = "Noncontiguous Finished";
-                ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+                string &field_str = GET_MUTABLE( field.SetData(), Str );
+                if( field_str == "High Quality Draft" ) {
+                    field_str = "High-Quality Draft";
+                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+                } else if( field_str == "Improved High Quality Draft" ) {
+                    field_str = "Improved High-Quality Draft";
+                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+                } else if( field_str == "Annotation Directed" ) {
+                    field_str = "Annotation-Directed Improvement";
+                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+                } else if( field_str == "Non-contiguous Finished" ) {
+                    field_str = "Noncontiguous Finished";
+                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+                }
+            }
+            else if( GET_FIELD( field.GetLabel(), Str) == "Assembly Date" ) {
+                string &field_str = GET_MUTABLE( field.SetData(), Str );
+                string altered = CSubSource::FixDateFormat (field_str);
+                if (!NStr::IsBlank(altered)) {
+                    CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (altered);
+                    if (coll_date && coll_date->IsStd() && coll_date->GetStd().IsSetYear()) {
+                        string day = "";
+                        string month = "";
+                        string new_date = "";
+                        if (coll_date->GetStd().IsSetDay()) {
+                            coll_date->GetDate(&day, "%D");
+                        }
+                        if (coll_date->GetStd().IsSetMonth()) {
+                            coll_date->GetDate(&month, "%N");
+                            month = month.substr(0, 3);
+                            NStr::ToUpper(month);
+                        }
+                        coll_date->GetDate(&new_date, "%Y");
+                        if (!NStr::IsBlank(month)) {
+                            new_date += "-" + month;
+                            if (!NStr::IsBlank(day)) {
+                                new_date += "-" + day;
+                            }
+                        }
+                        if (!NStr::Equal(field_str, new_date)) {
+                            field_str = new_date;
+                            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
+                        }
+                    }
+                }
             }
         }
     }
