@@ -2948,6 +2948,7 @@ void CRepConfig :: Run()
   CRef <CSeq_entry> 
     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
+  output_obj.CollectRepData();
 };
 
 END_NCBI_SCOPE
