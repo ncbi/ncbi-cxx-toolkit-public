@@ -41,7 +41,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/validator/validatorp.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/objhook.hpp>
@@ -247,7 +247,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static map <ETechnique_type, CMolInfo::ETech>   techtp_mitech;
         static map <ETechnique_type, string>            techtp_name;
         static vector <string>                          s_putative_replacements;
-        static vector <string>                          fix_type_names;
+//        static vector <string>                          fix_type_names;
         static map <ECDSGeneProt_field, string>         cgp_field_name;
         static map <ECDSGeneProt_feature_type_constraint, string>          cgp_feat_name;
         static map <EMolecule_type, string>             moltp_name;
