@@ -43,7 +43,7 @@
  * @{
  */
 
-/** Revision 6.260 */
+/** Revision 6.270 */
 #define SERV_CLIENT_REVISION_MAJOR  6
 #define SERV_CLIENT_REVISION_MINOR  270
 
