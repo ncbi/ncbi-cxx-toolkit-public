@@ -246,21 +246,21 @@ void CGffBaseRecord::SetParent(
 string CGffBaseRecord::StrSeqId() const
 //  ----------------------------------------------------------------------------
 {
-    return mSeqId;
+    return xEscapedString(mSeqId);
 }
 
 //  ----------------------------------------------------------------------------
 string CGffBaseRecord::StrMethod() const
 //  ----------------------------------------------------------------------------
 {
-    return mMethod;
+    return xEscapedString(mMethod);
 }
 
 //  ----------------------------------------------------------------------------
 string CGffBaseRecord::StrType() const
 //  ----------------------------------------------------------------------------
 {
-    return mType;
+    return xEscapedString(mType);
 }
 
 //  ----------------------------------------------------------------------------
@@ -414,7 +414,7 @@ string CGffBaseRecord::StrAttributes() const
         if (!attributes.empty()) {
             attributes += ATTR_SEPARATOR;
         }
-        attributes += key;
+        attributes += xEscapedString(key);
         attributes += "=";
 		
         vector<string> escapedValues;
@@ -432,7 +432,7 @@ string CGffBaseRecord::StrAttributes() const
         if (!attributes.empty()) {
             attributes += ATTR_SEPARATOR;
         }
-        attributes += key;
+        attributes += xEscapedString(key);
         attributes += "=";
 		
         string value = it->second;
@@ -442,6 +442,15 @@ string CGffBaseRecord::StrAttributes() const
         attributes = ".";
     }
     return attributes;
+}
+
+//  ----------------------------------------------------------------------------
+string CGffBaseRecord::xEscapedString(
+    const string& str) const
+//  ----------------------------------------------------------------------------
+{
+    string escapedStr = xEscapedValue("", str);
+    return escapedStr;
 }
 
 //  ----------------------------------------------------------------------------

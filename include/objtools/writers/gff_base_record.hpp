@@ -115,6 +115,8 @@ protected:
     string xEscapedValue(
         const string&,
         const string&) const;
+    string xEscapedString(
+        const string&) const;
 
     static const char* ATTR_SEPARATOR;
     CRef<CSeq_loc> m_pLoc;
