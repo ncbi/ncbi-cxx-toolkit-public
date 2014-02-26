@@ -90,6 +90,7 @@ public:
         string External; // outside organization name, like UCSC
         string Pattern;  // pattern matching, like chr%s to find 'chrMT' matches replicon named 'MT'
         int Role;  // EGC_SequenceRole
+        bool Top;  // if has Sequence Role Top, but do not block out the Role value 
 
         enum
         {

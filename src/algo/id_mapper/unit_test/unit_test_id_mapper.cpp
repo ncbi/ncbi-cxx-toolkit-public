@@ -536,7 +536,7 @@ BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
 
     CGencollIdMapper::SIdSpec GuessSpec;
     Mapper.Guess(*OrigLoc, GuessSpec);
-    BOOST_CHECK_EQUAL(GuessSpec.ToString(), "NotPrim:Private:NotSet::LG%s:CHRO");
+    BOOST_CHECK_EQUAL(GuessSpec.ToString(), "NotPrim:Private:NotSet::LG%s:CHRO:TOP");
 
     CRef<CSeq_loc> RoundTrip = Mapper.Map(*Result, GuessSpec);
 
@@ -616,7 +616,7 @@ BOOST_AUTO_TEST_CASE(TestCaseSpecPrimaryGuess)
         bool Result = Mapper.Guess(*OrigLoc, GuessSpec);
         // Check that Guess results meet expectations
         BOOST_CHECK_EQUAL(Result, true);
-        BOOST_CHECK_EQUAL(GuessSpec.ToString(), "Prim:RefSeq:Gi:::CHRO");
+        BOOST_CHECK_EQUAL(GuessSpec.ToString(), "Prim:RefSeq:Gi:::CHRO:TOP");
     }}
 
 
@@ -633,7 +633,7 @@ BOOST_AUTO_TEST_CASE(TestCaseSpecPrimaryGuess)
         bool Result = Mapper.Guess(*OrigLoc, GuessSpec);
         // Check that Map results meet expectations
         BOOST_CHECK_EQUAL(Result, true);
-        BOOST_CHECK_EQUAL(GuessSpec.ToString(), "NotPrim:RefSeq:Gi:::CHRO");
+        BOOST_CHECK_EQUAL(GuessSpec.ToString(), "NotPrim:RefSeq:Gi:::CHRO:TOP");
     }}
 
 }
@@ -672,6 +672,111 @@ BOOST_AUTO_TEST_CASE(TestCaseGetSynonyms)
 }
 
 
+// dont actually upmap test
+BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_AltsDontUpmap)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000001405.25",
+                              CGCClient_GetAssemblyRequest::eLevel_component,
+                              0,
+                              0,
+                              2048, // pseudo
+                              0
+                             )
+    );
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_top_level;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    CSeq_loc OrigLoc;
+    CSeq_interval& orig_ival = OrigLoc.SetInt();
+    orig_ival.SetId().Set("gi|224515577");
+    orig_ival.SetFrom(3478538);
+    orig_ival.SetTo(3478538);
+    orig_ival.SetStrand(eNa_strand_plus);
+
+    CConstRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+
+    CSeq_loc ExpectLoc;
+    CSeq_interval& expect_ival = ExpectLoc.SetInt();
+    expect_ival.SetId().Set("NT_113891.2");
+    expect_ival.SetFrom(3478538);
+    expect_ival.SetTo(3478538);
+    expect_ival.SetStrand(eNa_strand_plus);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK(Result->Equals(ExpectLoc));
+}
+
+// guess top over scaffold
+BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_GuessTopOverScaffold)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> OldGenColl(
+        GCService.GetAssembly("GCF_000001405.11",
+                              CGCClient_GetAssemblyRequest::eLevel_component,
+                              0,
+                              0,
+                              2048, // pseudo
+                              0
+                             )
+    );
+ 
+    CConstRef<CGC_Assembly> NewGenColl(
+        GCService.GetAssembly("GCF_000001405.25",
+                              CGCClient_GetAssemblyRequest::eLevel_component,
+                              0,
+                              0,
+                              2048, // pseudo
+                              0
+                             )
+    );
+
+
+    CGencollIdMapper OldMapper(OldGenColl);
+    CGencollIdMapper NewMapper(NewGenColl);
+    
+    
+    CSeq_loc OrigLoc;
+    CSeq_interval& orig_ival = OrigLoc.SetInt();
+    orig_ival.SetId().Set("NT_078074.1");
+    orig_ival.SetFrom(95619);
+    orig_ival.SetTo(146371);
+    orig_ival.SetStrand(eNa_strand_plus);
+    
+    CGencollIdMapper::SIdSpec GuessSpec;
+    OldMapper.Guess(OrigLoc, GuessSpec);
+
+    CSeq_loc RemapLoc;
+    CSeq_interval& remap_ival = RemapLoc.SetInt();
+    remap_ival.SetId().Set("gi|224589821");
+    remap_ival.SetFrom(40301888);
+    remap_ival.SetTo(40507252);
+    remap_ival.SetStrand(eNa_strand_plus);
+    
+    // Do a Map
+    
+    CConstRef<CSeq_loc> Result = NewMapper.Map(RemapLoc, GuessSpec);
+
+
+    CSeq_loc ExpectLoc;
+    CSeq_interval& expect_ival = ExpectLoc.SetInt();
+    expect_ival.SetId().Set("NC_000009.11");
+    expect_ival.SetFrom(40301888);
+    expect_ival.SetTo(40507252);
+    expect_ival.SetStrand(eNa_strand_plus);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK(Result->Equals(ExpectLoc));
+}
 
 
 BOOST_AUTO_TEST_SUITE_END();

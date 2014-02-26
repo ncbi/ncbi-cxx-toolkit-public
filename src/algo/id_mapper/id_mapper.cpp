@@ -1033,14 +1033,19 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
         }
     }
     if (HasId) {
-        if (Spec.Role == SIdSpec::e_Role_NotSet || Seq.HasRole(Spec.Role)) {
-            // Has the ID match, and the Role either doesn't matter, or is matched
-            return e_Yes;
+        if(Spec.Top) {
+            if(Spec.Top == Seq.HasRole(eGC_SequenceRole_top_level))
+                return e_Yes;
+        } else {
+            if (Spec.Role == SIdSpec::e_Role_NotSet || Seq.HasRole(Spec.Role)) {
+                // Has the ID match, and the Role either doesn't matter, or is matched
+                return e_Yes;
+            }
         }
     }
     CConstRef<CGC_Sequence> ParentSeq = Seq.GetParent();
     if (ParentSeq.NotNull()) {
-        if ((Spec.Role != SIdSpec::e_Role_NotSet && 
+        if (((Spec.Role != SIdSpec::e_Role_NotSet || Spec.Top) && 
             (Spec.Role >= eGC_SequenceRole_top_level || Spec.Role <= x_GetRole(*ParentSeq)))
            ) {
             const int Parent = x_CanSeqMeetSpec(*ParentSeq, Spec, Level + 1);
@@ -1075,6 +1080,7 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
     Spec.TypedChoice = CGC_TypedSeqId::e_not_set;
     Spec.Alias = CGC_SeqIdAlias::e_None;
     Spec.Role = SIdSpec::e_Role_NotSet;
+    Spec.Top = false;
     Spec.External.clear();
     Spec.Pattern.clear();
 
@@ -1083,6 +1089,7 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
 
     if (Seq.CanGetRoles()) {
         Spec.Role = x_GetRole(Seq);
+        Spec.Top = Seq.HasRole(eGC_SequenceRole_top_level);
     }
     // Loop over the IDs, find which matches the given ID
     if (Seq.CanGetSeq_id_synonyms()) {
@@ -1547,7 +1554,8 @@ CGencollIdMapper::SIdSpec::SIdSpec()
       Alias(objects::CGC_SeqIdAlias::e_None),
       External(kEmptyStr),
       Pattern(kEmptyStr), 
-      Role(e_Role_NotSet)
+      Role(e_Role_NotSet),
+      Top(false)
 {
 }
 
@@ -1570,7 +1578,8 @@ CGencollIdMapper::SIdSpec::operator==(const SIdSpec& Other) const
           Alias == Other.Alias &&
           External == Other.External &&
           Pattern == Other.Pattern &&
-          Role == Other.Role 
+          Role == Other.Role &&
+          Top == Other.Top
          )
        ) {
         return false;
@@ -1647,20 +1656,33 @@ CGencollIdMapper::SIdSpec::ToString(void) const
         Result += NStr::IntToString(Role);
     }
 
+    Result += ":";
+    if(Top)
+        Result += "TOP";
+    else
+        Result += "NOTOP";
+
     return Result;
 }
 
 bool
 CGencollIdMapper::SIdSpec::IsSpecMet(const SIdSpec& Guessed) const 
 {
+    bool RoleTop = false;
+    if(Guessed.Top) {
+        RoleTop = (Top == Guessed.Top);
+    } else {
+        RoleTop = (Role == Guessed.Role);
+    }
+
     if(Primary) {
-        return (Guessed.Primary  && Role == Guessed.Role );
+        return (Guessed.Primary  && RoleTop  );
     } else {
         return (TypedChoice == Guessed.TypedChoice &&
                 Alias == Guessed.Alias &&
                 External == Guessed.External &&
                 Pattern == Guessed.Pattern  &&
-                Role == Guessed.Role  );
+                RoleTop );
     }
 
 
