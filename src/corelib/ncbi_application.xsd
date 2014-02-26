@@ -202,6 +202,7 @@
           <xs:element name="mandatorySeparator" minOccurs="0"/>
           <xs:element name="createPath" minOccurs="0"/>
           <xs:element name="optionalSeparatorAllowConflict" minOccurs="0"/>
+          <xs:element name="hidden" minOccurs="0"/>
         </xs:sequence>
       </xs:complexType>
     </xs:element>

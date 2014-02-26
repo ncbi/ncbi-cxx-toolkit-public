@@ -941,6 +941,9 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
         if (flags & CArgDescriptions::fOptionalSeparatorAllowConflict) {
             out << "<" << "optionalSeparatorAllowConflict" << "/>";
         }
+        if (flags & CArgDescriptions::fHidden) {
+            out << "<" << "hidden" << "/>";
+        }
         out << "</" << "flags" << ">" << endl;
     }
     const CArgDescDefault* def = dynamic_cast<const CArgDescDefault*>(this);
