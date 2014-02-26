@@ -133,7 +133,11 @@ void CObjectStreamCopier::CopyClassRandom(const CClassTypeInfo* classType)
 inline
 void CObjectStreamCopier::CopyClassSequential(const CClassTypeInfo* classType)
 {
-    Out().CopyClassSequential(classType, *this);
+    if (In().GetDataFormat() == eSerial_Json) {
+        Out().CopyClassRandom(classType, *this);
+    } else {
+        Out().CopyClassSequential(classType, *this);
+    }
 }
 
 inline
