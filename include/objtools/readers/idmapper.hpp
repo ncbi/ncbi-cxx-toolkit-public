@@ -36,7 +36,10 @@
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/iidmapper.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/scope.hpp>
 #include <objtools/readers/message_listener.hpp>
+#include <objects/genomecoll/GC_Assembly.hpp>
+#include <objects/genomecoll/GC_Sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -276,6 +279,61 @@ protected:
     const std::string m_strServer;
     const std::string m_strDatabase;
 };
+
+
+/// IdMapper implementation using a GC-Assembly
+///
+/// Ids are mapped to the selected alias type.
+///
+class NCBI_XOBJREAD_EXPORT CIdMapperGCAssembly : public CIdMapper
+{
+public:
+    /// Mapping destination type.
+    enum EAliasMapping {
+        eGenBank,    ///< GenBank GI
+        eGenBankAcc, ///< GenBank accession
+        eRefSeq,     ///< RefSeq GI
+        eRefSeqAcc,  ///< RefSeq accession
+        eUCSC,       ///< External UCSC id
+        eOther,      ///< Private id
+        eAccVer      ///< Find versioned accession
+    };
+
+    /// Establish mappings based on a GC-Assembly
+    ///
+    /// Inputs for this are a full assembly and a concept of what you are
+    /// mapping to.  "map to" means "convert to another ID space", defined by
+    /// the enum above.  To allow for future extension, eOther maps to the
+    /// GC-Assembly concept of "private" or the named scope provided in the
+    /// extra string parameter (i.e., "UCSC")
+    CIdMapperGCAssembly(CScope& scope,
+                        const CGC_Assembly& assm,
+                        EAliasMapping       mapping,
+                        const string&       alias_scope = kEmptyStr);
+
+    CIdMapperGCAssembly(CScope& scope);
+
+    void AddAliasMappings(const CGC_Assembly& assm,
+                          EAliasMapping       mapping,
+                          const string&       alias_scope = kEmptyStr);
+
+private:
+    void x_AddUnversionedMapping(const CSeq_id&        src_id,
+                                 const CSeq_id_Handle& dst_id);
+    void x_AddAccessionMapping(const CSeq_id& id);
+    void x_AddAliasMappings(const CGC_Assembly& seq,
+                            EAliasMapping mapping,
+                            const string& alias_scope);
+    void x_AddAliasMappings(const CGC_AssemblyUnit& seq,
+                            EAliasMapping mapping,
+                            const string& alias_scope);
+    void x_AddAliasMappings(const CGC_Sequence& seq,
+                            EAliasMapping mapping,
+                            const string& alias_scope);
+
+    CRef<CScope> m_Scope;
+};
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

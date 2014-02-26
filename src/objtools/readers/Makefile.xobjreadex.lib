@@ -6,7 +6,7 @@ ASN_DEP = seq seqset
 
 LIB = xobjreadex
 SRC = glimmer_reader idmapper idmapper_builtin idmapper_config \
-	  idmapper_database source_mod_parser_wrapper
+	  idmapper_database idmapper_gcassembly source_mod_parser_wrapper
 
 DLL_LIB = xobjread
 
