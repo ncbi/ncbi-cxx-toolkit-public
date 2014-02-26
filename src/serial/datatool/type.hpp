@@ -60,7 +60,7 @@ class CDataMember;
 struct AnyType {
     union {
         bool booleanValue;
-        Int4 integerValue;
+        Int8 integerValue;
         void* pointerValue;
     };
     AnyType(void)

@@ -483,114 +483,94 @@ bool CDataTool::ProcessData(void)
         outFormat = eSerial_None;
     }
 
-    if ( args["F"] ) {
-        // read fully in memory
-        AnyType value;
-        in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
-        if ( outFormat != eSerial_None ) {
-            // store data
-            auto_ptr<CObjectOStream>
-                out(CObjectOStream::Open(outFormat, outFileName,
-                                         eSerial_StdWhenAny));
-            if ( outFormat == eSerial_Xml ) {
-                CObjectOStreamXml *os = dynamic_cast<CObjectOStreamXml*>(out.get());
-                if (stdXmlOut) {
-                    os->SetEnforcedStdXml(true);
-                }
-                os->SetDefaultStringEncoding(eEncoding_Unknown);
-                if (use_nsName) {
-                    os->SetReferenceSchema(true);
-                    if (!nsName.empty()) {
-                        os->SetDefaultSchemaNamespace(nsName);
-                    }
-                }
-                // Set DTD file name (default prefix is added in any case)
-                if( const CArgValue& dn = args["dn"] ) {
-                    const string& name = dn.AsString();
-                    if ( name.empty() ) {
-                        os->SetReferenceDTD(false);
-                    }
-                    else {
-                        os->SetReferenceDTD(true);
-                        os->SetDTDFileName(name);
-                    }
+    bool readFull = bool(args["F"]);
+    if ( outFormat != eSerial_None ) {
+        // copy
+        auto_ptr<CObjectOStream>
+            out(CObjectOStream::Open(outFormat, outFileName,
+                                        eSerial_StdWhenAny));
+        if ( outFormat == eSerial_Xml ) {
+            CObjectOStreamXml *os = dynamic_cast<CObjectOStreamXml*>(out.get());
+            if (stdXmlOut) {
+                os->SetEnforcedStdXml(true);
+            }
+            os->SetDefaultStringEncoding(eEncoding_Unknown);
+            if (use_nsName) {
+                os->SetReferenceSchema(true);
+                if (!nsName.empty()) {
+                    os->SetDefaultSchemaNamespace(nsName);
                 }
             }
+            // Set DTD file name (default prefix is added in any case)
+            if( const CArgValue& dn = args["dn"] ) {
+                const string& name = dn.AsString();
+                if ( name.empty() ) {
+                    os->SetReferenceDTD(false);
+                }
+                else {
+                    os->SetReferenceDTD(true);
+                    os->SetDTDFileName(name);
+                }
+            }
+        }
+        CObjectStreamCopier copier(*in, *out);
+        if (readFull) {
+            AnyType value;
+            in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
             out->Write(&value, typeInfo);
+        } else {
+            copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
+        }
+        // In case the input stream has more than one object,
+        // keep converting them
+        if (!in->EndOfData()) {
+
+            set<TTypeInfo> known_types;
+            generator.GetMainModules().CollectAllTypeinfo(known_types);
+            set<TTypeInfo> matching;
+
+            set<TTypeInfo> prev;
+            prev.insert(typeInfo);
+
+            for (bool go=true; go && !in->EndOfData(); ) {
+                try {
+                    matching = in->GuessDataType(prev,2);
+                    if (matching.empty()) {
+                        matching = in->GuessDataType(known_types,16);
+                    }
+                    if (matching.size() == 1) {
+                        typeInfo = *matching.begin();
+                        prev.clear();
+                        prev.insert(typeInfo);
+                        if (readFull) {
+                            AnyType value;
+                            in->Read(&value, typeInfo);
+                            out->Write(&value, typeInfo);
+                        } else {
+                            copier.Copy(typeInfo);
+                        }
+                    } else {
+                        NCBI_THROW(CNotFoundException,eType,"No typeinfo matches: some data was not copied");
+                    }
+                } catch (CSerialException& se) {
+                    if (se.GetErrCode() == CSerialException::eEOF) {
+                        go = false;
+                    } else {
+                        NCBI_RETHROW_SAME(se,kEmptyStr);
+                    }
+                } catch (CEofException&) {
+                    go = false;
+                }
+            }
         }
     }
     else {
-        if ( outFormat != eSerial_None ) {
-            // copy
-            auto_ptr<CObjectOStream>
-                out(CObjectOStream::Open(outFormat, outFileName,
-                                         eSerial_StdWhenAny));
-            if ( outFormat == eSerial_Xml ) {
-                CObjectOStreamXml *os = dynamic_cast<CObjectOStreamXml*>(out.get());
-                if (stdXmlOut) {
-                    os->SetEnforcedStdXml(true);
-                }
-                os->SetDefaultStringEncoding(eEncoding_Unknown);
-                if (use_nsName) {
-                    os->SetReferenceSchema(true);
-                    if (!nsName.empty()) {
-                        os->SetDefaultSchemaNamespace(nsName);
-                    }
-                }
-                // Set DTD file name (default prefix is added in any case)
-                if( const CArgValue& dn = args["dn"] ) {
-                    const string& name = dn.AsString();
-                    if ( name.empty() ) {
-                        os->SetReferenceDTD(false);
-                    }
-                    else {
-                        os->SetReferenceDTD(true);
-                        os->SetDTDFileName(name);
-                    }
-                }
-            }
-            CObjectStreamCopier copier(*in, *out);
-            copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
-            // In case the input stream has more than one object,
-            // keep converting them
-            if (!in->EndOfData()) {
-
-                set<TTypeInfo> known_types;
-                generator.GetMainModules().CollectAllTypeinfo(known_types);
-                set<TTypeInfo> matching;
-
-                set<TTypeInfo> prev;
-                prev.insert(typeInfo);
-
-                for (bool go=true; go && !in->EndOfData(); ) {
-                    try {
-                        matching = in->GuessDataType(prev,2);
-                        if (matching.empty()) {
-                            matching = in->GuessDataType(known_types,16);
-                        }
-                        if (matching.size() == 1) {
-                            typeInfo = *matching.begin();
-                            prev.clear();
-                            prev.insert(typeInfo);
-                            copier.Copy(typeInfo);
-                        } else {
-                            NCBI_THROW(CNotFoundException,eType,"No typeinfo matches: some data was not copied");
-                        }
-                    } catch (CSerialException& se) {
-                        if (se.GetErrCode() == CSerialException::eEOF) {
-                            go = false;
-                        } else {
-                            NCBI_RETHROW_SAME(se,kEmptyStr);
-                        }
-                    } catch (CEofException&) {
-                        go = false;
-                    }
-                }
-            }
-        }
-        else {
-            // skip
-            if (!type_guessed) {
+        // skip
+        if (!type_guessed) {
+            if (readFull) {
+                AnyType value;
+                in->Read(&value, typeInfo, CObjectIStream::eNoFileHeader);
+            } else {
                 in->Skip(typeInfo, CObjectIStream::eNoFileHeader);
             }
         }
