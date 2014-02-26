@@ -508,10 +508,10 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
 {
     ESerialDataFormat serial = eSerial_AsnText;
     CNcbiIstream* pInputStream = &NcbiCin;
-    const char* infile = args["i"].AsString().c_str();
-    
+		
     bool bDeleteOnClose = false;
     if (args["i"]) {
+    	const char* infile = args["i"].AsString().c_str();
         pInputStream = new CNcbiIfstream(infile, ios::binary);
         bDeleteOnClose = true;
     }
