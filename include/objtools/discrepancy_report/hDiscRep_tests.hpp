@@ -36,6 +36,9 @@
 // macros
 #include <objects/macro/CDSGen_featur_type_constra_.hpp>
 #include <objects/macro/CDSGeneProt_field_.hpp>
+#include <objects/macro/CDSGenePr_pseudo_constrain.hpp>
+#include <objects/macro/CDSGenePr_constraint_field.hpp>
+#include <objects/macro/CDSGenePro_qual_constraint.hpp>
 #include <objects/macro/Completedness_type_.hpp>
 #include <objects/macro/Constraint_choice.hpp>
 #include <objects/macro/Constraint_choice_set.hpp>
@@ -73,24 +76,69 @@
 #include <objects/macro/Technique_type_.hpp>
 #include <objects/macro/Topology_type_.hpp>
 
-#include <objects/biblio/Auth_list.hpp>
-#include <objects/biblio/Title.hpp>
-#include <objects/general/Person_id.hpp>
+#include <objects/seqblock/GB_block.hpp>
+
+#include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/seqport_util.hpp>
+#include <objects/seq/Seqdesc.hpp>
+
+
+#include <objects/seqloc/Giimport_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/PCRPrimer.hpp>
 #include <objects/seqfeat/PCRReaction.hpp>
+#include <objects/seqfeat/RNA_qual_set.hpp>
+#include <objects/seqfeat/RNA_qual.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>      
+#include <objects/seqfeat/Trna_ext.hpp>
+
+#include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
+
+#include <objects/biblio/Affil.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Cit_pat.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Cit_gen.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Cit_proc.hpp>
+#include <objects/biblio/Cit_let.hpp>
+#include <objects/biblio/Imprint.hpp>
+#include <objects/biblio/Title.hpp>
+
+#include <objects/general/Date.hpp>
+#include <objects/general/Date_std.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Name_std.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Person_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 
 #include <objmgr/align_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -98,6 +146,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 

@@ -41,11 +41,16 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/objhook.hpp>
 #include <serial/serial.hpp>
+
+#include <objects/submit/Contact_info.hpp>
+#include <objects/submit/Submit_block.hpp>
+#include <objects/submit/Seq_submit.hpp>
+
+#include <objects/seqfeat/RNA_ref.hpp>
 
 #include <objtools/discrepancy_report/hDiscRep_tests.hpp>
 #include <objtools/discrepancy_report/hDiscRep_output.hpp>
@@ -133,6 +138,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         void GetTestList();
         void CollectTests();
         virtual void Run();
+        void RunMultiObjects();
         static CSeq_entry_Handle* m_TopSeqEntry;
         static CRepConfig* factory(string report_tp,CSeq_entry_Handle* tse_p=0);
 
@@ -140,10 +146,15 @@ BEGIN_SCOPE(DiscRepNmSpc)
            m_TopSeqEntry = tse;
         };
 
+        void SetMultiObjects(vector <CConstRef <CObject> >* objs) {
+             m_objs = objs; 
+        };
+   
      protected:
         vector <string> m_enabled, m_disabled;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
         bool m_dorecurse;
+        vector <CConstRef <CObject> >* m_objs;
    };
 
    class CRepConfAsndisc : public CRepConfig
