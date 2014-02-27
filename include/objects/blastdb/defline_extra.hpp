@@ -43,7 +43,7 @@ BEGIN_objects_SCOPE
 
 /** Linkout bit definitions */
 enum LinkoutTypes {
-  eLocuslink              = (1<<0),  ///< NCBI_DEPRECATED, replaced by eGene
+  eFromType               = (1<<0),  ///< Identifies sequences from type (Entrez query: sequence from type[filter])
   eUnigene                = (1<<1),  ///< Add Linkout for UniGene
   eStructure              = (1<<2),  ///< Add Linkout for structure.
   eGeo                    = (1<<3),  ///< Add Linkout for Geo

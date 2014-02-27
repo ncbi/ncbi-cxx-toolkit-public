@@ -216,6 +216,7 @@ void GetLinkoutTypes(vector<TLinkoutTypeString>& rv)
 {
     rv.clear();
     // N.B.: only add those linkout types that are actively supported
+    rv.push_back(make_pair(eFromType, string("eFromType")));
     rv.push_back(make_pair(eUnigene, string("eUnigene")));
     rv.push_back(make_pair(eStructure, string("eStructure")));
     rv.push_back(make_pair(eGeo, string("eGeo")));
