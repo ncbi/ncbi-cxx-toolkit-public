@@ -253,8 +253,7 @@ ftgl needs3party $(ORIG_LIBS)
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
-gc_ftp_ctl needs gpipe_common
-gc_ftp_ctl needs taxon1
+gc_ftp_ctl needs gpipe_objutil
 gc_load_utils needs gc_utils
 gc_load_utils needs xid_utils
 gc_utils needs gpipe_objutil
