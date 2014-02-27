@@ -29133,7 +29133,7 @@ else
          ;;
       * )
                    WithPackages="$WithPackages${WithPackagesSep}wx2.8"; WithPackagesSep=" "
-         wxlibs=std,richtext,aui
+         wxlibs=std,richtext,aui,propgrid
          ;;
    esac
    # The "yes" may have been cached; get the actual settings again if needed

@@ -5465,7 +5465,7 @@ else
          ;;
       * )
          NCBI_PACKAGE(wx2.8)
-         wxlibs=std,richtext,aui
+         wxlibs=std,richtext,aui,propgrid
          ;;
    esac
    # The "yes" may have been cached; get the actual settings again if needed
