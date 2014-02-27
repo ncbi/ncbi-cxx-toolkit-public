@@ -2445,7 +2445,8 @@ CTaxon1::GetDisplayCommonName( int tax_id, string& disp_name_out )
 	    return false;
 	}
     }
-    if( m_plCache->LookupAndAdd( tax_id, &pNode ) && pNode ) {
+    if( m_plCache->LookupAndAdd( tax_id, &pNode ) && pNode &&
+        m_plCache->InitNameClasses() ) {
 	tax_id = pNode->GetTaxId(); // get rid of secondary taxid
 	short cn = m_plCache->GetPreferredCommonNameClass();
 	list< CRef< CTaxon1_name > > lNames;
