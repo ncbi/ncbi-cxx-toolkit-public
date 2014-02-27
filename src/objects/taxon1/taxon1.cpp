@@ -1035,7 +1035,7 @@ CTaxon1::GetSpecies(int id_tax, ESpeciesMode mode)
 	}
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
-        && pNode ) {
+        && pNode && m_plCache->InitRanks() ) {
     if( mode == eSpeciesMode_RankOnly ) {
         int species_rank(m_plCache->GetSpeciesRank());
         while( !pNode->IsRoot() ) {
@@ -1090,7 +1090,7 @@ CTaxon1::GetGenus(int id_tax)
 	}
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
-        && pNode ) {
+        && pNode && m_plCache->InitRanks() ) {
         int genus_rank(m_plCache->GetGenusRank());
         while( !pNode->IsRoot() ) {
             int rank( pNode->GetRank() );
@@ -1121,7 +1121,7 @@ CTaxon1::GetSuperkingdom(int id_tax)
 	}
     }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
-        && pNode ) {
+        && pNode && m_plCache->InitRanks() ) {
         int sk_rank(m_plCache->GetSuperkingdomRank());
         while( !pNode->IsRoot() ) {
             int rank( pNode->GetRank() );
