@@ -56,6 +56,8 @@
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>
 #include <objtools/discrepancy_report/hUtilib.hpp>
 
+#include <objects/submit/Contact_info.hpp>
+#include <objects/biblio/Author.hpp>
 
 const char* sc_TestEntryCollidingLocusTags ="Seq-entry ::= seq {\
      id {\
@@ -171,15 +173,12 @@ void RunAndCheckTest(CRef <CSeq_entry>& entry, const string& test_name, const st
       cerr << "desc " << c_item->description << endl;
       return;
    }
-   if (c_item.Empty() || (c_item->description).empty()) {
-      NCBITEST_CHECK_MESSAGE(!c_item.Empty(), "no report");
-   }
-   else {
-     NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
+   NCBITEST_CHECK_MESSAGE(!c_item.Empty() && !(c_item->description).empty(),
+                               "no report");
+   NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
               "The sizes of item_list and obj_list are not equal");
-     NCBITEST_CHECK_MESSAGE(c_item->description == msg,
+   NCBITEST_CHECK_MESSAGE(c_item->description == msg,
               "Test report is incorrect: " + c_item->description);
-   }
 };
 
 void RunTest(CRef <CClickableItem>& c_item, const string& setting_name)
@@ -272,10 +271,8 @@ void RunAndCheckMultiReports(CRef <CSeq_entry>& entry, const string& test_name, 
       }
       return;
    }
-   if (c_items.empty()) {
-      NCBITEST_CHECK_MESSAGE(!c_items.empty(), "no report");
-   }
-   else if (c_items.size() != msgs.size()) {
+   NCBITEST_CHECK_MESSAGE(!c_items.empty(), "no report");
+   if (c_items.size() != msgs.size()) {
       ITERATE(vector <CRef <CClickableItem> >, it, c_items) {
          cerr << "desc " << (*it)->description << endl;
       }
@@ -297,21 +294,107 @@ void RunAndCheckMultiReports(CRef <CSeq_entry>& entry, const string& test_name, 
 };
 
 
-/*
+
+void AddToSeqSubmitForSubmitBlkConflict(CRef <CSeq_submit>& seq_submit, string id)
+{
+   CRef <CSubmit_block> submit_blk(new CSubmit_block);
+
+   submit_blk->SetContact().SetEmail("a@x.com");
+   CRef <CAuthor> auth (new CAuthor);
+   CRef <CPerson_id> name (new CPerson_id);
+   name->SetName().SetLast("a");
+   name->SetName().SetFirst("a");
+   name->SetName().SetInitials("a");
+   auth->SetName(*name);
+   CRef <CAffil> affil (new CAffil); 
+   affil->SetStd().SetAffil("a");
+   affil->SetStd().SetCity("a");
+   affil->SetStd().SetCountry("a");
+   auth->SetAffil(*affil);
+   submit_blk->SetContact().SetContact(*auth);
+
+   CRef <CCit_sub> cit(new CCit_sub);
+   CRef <CAuth_list> auths(new CAuth_list);
+   auth.Reset(new CAuthor);
+   auth->SetName(*name);
+   auths->SetNames().SetStd().push_back(auth);
+   auths->SetAffil(*affil);
+   cit->SetAuthors(*auths);
+   cit->SetDate().SetStd().SetYear(2013);
+   cit->SetDate().SetStd().SetMonth(2);
+   cit->SetDate().SetStd().SetDay(29);
+   submit_blk->SetCit(*cit);
+
+   seq_submit->SetSub(*submit_blk);
+
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_id> seq_id(new CSeq_id);
+   seq_id->SetLocal().SetStr("good" + id);
+   ChangeId(entry, seq_id);
+   seq_submit->SetData().SetEntrys().push_back(entry);
+};
+
 BOOST_AUTO_TEST_CASE(DISC_SUBMITBLOCK_CONFLICT)
 {
-   CRef <CSeq_submit> seq_submit (new CSeq_submit);
-   CRef <CSubmit_block> submit_blk(new submit_blk);
-   submit_blk->SetContact_info->SetEmail("a@x.com");
-   CRef <CAuthor> auths (new CAuthor);
-   CRef <CPerson_id> name (new CPerson_id);
-   name->SetName()->SetLast("a");
-   name->SetName()->SetFirst("a");
-   name->SetName()->SetInitials("a");
-   CRef <CAffil> affil (new CAffil); 
+   vector <CConstRef <CObject> > strs;
 
+   CRef <CSeq_submit> seq_submit (new CSeq_submit);
+   AddToSeqSubmitForSubmitBlkConflict(seq_submit, "1");
+   strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
+
+   seq_submit.Reset(new CSeq_submit);
+   AddToSeqSubmitForSubmitBlkConflict(seq_submit, "2");
+   // set hup
+   seq_submit->SetSub().SetHup(true);
+   strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
+   
+   seq_submit.Reset(new CSeq_submit);
+   AddToSeqSubmitForSubmitBlkConflict(seq_submit, "3");
+   // change date:
+   seq_submit->SetSub().SetCit().SetDate().SetStd().SetDay(20);
+   strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
+
+   // entry no seq-submit
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_id> seq_id (new CSeq_id);
+   seq_id->SetLocal().SetStr("good4");
+   ChangeId(entry, seq_id);
+   strs.push_back(CConstRef <CObject> (entry.GetPointer()));
+   config->SetMultiObjects(&strs);
+   config->SetArg("e", "DISC_SUBMITBLOCK_CONFLICT");
+
+   config->CollectTests();
+   config->RunMultiObjects(); 
+   CRef <CClickableItem> c_item;
+   CDiscRepOutput output_obj;
+   output_obj.Export(c_item, "DISC_SUBMITBLOCK_CONFLICT");
+  
+   bool has_report = !c_item.Empty() && !(c_item->description).empty() 
+                       && !(c_item->subcategories).empty();
+   NCBITEST_CHECK_MESSAGE(has_report, "no report"); 
+   NCBITEST_CHECK_MESSAGE(c_item->description == "SubmitBlock Conflicts",
+                           "Test report is incorrect: " + c_item->description);
+   unsigned i=0;
+   string strtmp;
+   ITERATE (vector <CRef <CClickableItem> >, it, c_item->subcategories) {
+       NCBITEST_CHECK_MESSAGE(!(*it).Empty() && !((*it)->description).empty(),
+                                "subcategory has no report");
+       switch (i) {
+         case 0: strtmp = "2 records have identical submit-blocks";
+                 break;
+         case 1: strtmp = "1 record has identical submit-block";
+                 break;
+         case 2: strtmp = "1 record has no submit-block";
+                 break;
+         default: break;
+       } 
+       NCBITEST_CHECK_MESSAGE((*it)->description == strtmp,
+                          "subcategory has incorrect report: " + strtmp);
+       NCBITEST_CHECK_MESSAGE((*it)->item_list.size() == (*it)->obj_list.size(),
+              "The sizes of item_list and obj_list are not equal");
+       i++;
+   }
 };
-*/
 
 BOOST_AUTO_TEST_CASE(DISC_SEGSETS_PRESENT)
 {
@@ -743,9 +826,9 @@ BOOST_AUTO_TEST_CASE(DISC_FLATFILE_FIND_ONCALLER)
 {
    CRef <CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
    CRef <CSeq_entry> prot_entry = entry->SetSet().SetSeq_set().back();
-   prot_entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("SHAEMNVV");
-//   RunAndCheckTest(entry, "DISC_FLATFILE_FIND_ONCALLER", "print");
-//                    "1 object contains haem");
+   prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().push_back("fake protien name");
+   RunAndCheckTest(entry, "DISC_FLATFILE_FIND_ONCALLER", 
+                     "2 objects contain protien");
 };
 
 BOOST_AUTO_TEST_CASE(DUP_GENPRODSET_PROTEIN)

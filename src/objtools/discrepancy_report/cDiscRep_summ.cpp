@@ -33,16 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-/*
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-*/
 
-#include <objects/macro/CDSGenePr_pseudo_constrain.hpp>
-#include <objects/macro/CDSGenePr_constraint_field.hpp>
-#include <objects/macro/CDSGenePro_qual_constraint.hpp>
 #include <objects/macro/Field_type.hpp>
 #include <objects/macro/Field_constraint.hpp>
 #include <objects/macro/Fix_type_.hpp>
@@ -60,7 +51,6 @@
 #include <objects/macro/Translation_constraint.hpp>
 #include <objects/macro/Word_substitution.hpp>
 #include <objects/macro/Word_substitution_set.hpp>
-#include <objects/seq/MolInfo.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>

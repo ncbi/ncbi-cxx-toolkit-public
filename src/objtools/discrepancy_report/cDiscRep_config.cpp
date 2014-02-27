@@ -68,7 +68,7 @@ COutputConfig                       CDiscRepInfo :: output_config;
 CConstRef <CSuspect_rule_set >      CDiscRepInfo :: suspect_prod_rules(new CSuspect_rule_set);
 vector < vector <string> >          CDiscRepInfo :: susrule_summ;
 vector <string> 	            CDiscRepInfo :: weasels;
-CRef <CSeq_submit>                  CDiscRepInfo :: seq_submit(new CSeq_submit);
+CRef <CSeq_submit>             CDiscRepInfo :: seq_submit(new CSeq_submit);
 bool                                CDiscRepInfo :: expand_defline_on_set;
 bool                                CDiscRepInfo :: expand_srcqual_report;
 string                              CDiscRepInfo :: report_lineage;
@@ -2716,7 +2716,6 @@ OutBlob(*thisInfo.seq_submit, "sub1");
     }
     else {
       thisInfo.seq_submit.Reset(0);
-      thisInfo.seq_submit.Reset(0);
       if (strtmp == "Seq-entry") {
          *ois >> *seq_entry;
          CheckThisSeqEntry(seq_entry);
@@ -2950,6 +2949,45 @@ void CRepConfig :: Run()
     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
   output_obj.CollectRepData();
+};
+
+void CRepConfig :: RunMultiObjects()
+{
+   ITERATE (vector <CConstRef <CObject> >, it, *m_objs) {
+      const CObject* ptr = (*it).GetPointer();
+
+      const CSeq_submit* seq_submit = dynamic_cast<const CSeq_submit*>(ptr);
+      const CSeq_entry* entry = dynamic_cast<const CSeq_entry*>(ptr);
+      const CBioseq* bioseq = dynamic_cast<const CBioseq*>(ptr);
+      const CBioseq_set* seq_set = dynamic_cast<const CBioseq_set*>(ptr);
+      
+      if (seq_submit) {
+         thisInfo.seq_submit = CRef <CSeq_submit> ((CSeq_submit*)seq_submit);
+         if (thisInfo.seq_submit->IsEntrys()) {
+           ITERATE (list <CRef <CSeq_entry> >, it,
+                                  thisInfo.seq_submit->GetData().GetEntrys()) {
+              CheckThisSeqEntry(*it);
+           }
+         }
+      }
+      else {
+         thisInfo.seq_submit.Reset(0);
+         CRef <CSeq_entry> entry_ref (new CSeq_entry);
+         if (entry) {
+            entry_ref.Reset((CSeq_entry*)entry);
+            CheckThisSeqEntry(CRef <CSeq_entry>(entry_ref));
+         }
+         else if (bioseq) {
+            entry_ref->SetSeq(* ((CBioseq*)bioseq));
+            CheckThisSeqEntry(CRef <CSeq_entry>(entry_ref));
+         }
+         else if (seq_set) {
+            entry_ref->SetSet(* ((CBioseq_set*)seq_set));
+            CheckThisSeqEntry(CRef <CSeq_entry>(entry_ref));
+         }
+      }
+   }
+   output_obj.CollectRepData();
 };
 
 END_NCBI_SCOPE

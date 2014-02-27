@@ -30,17 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Seg_ext.hpp>
-#include <objects/seq/seqport_util.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Delta_ext.hpp>
-#include <objects/seq/Delta_seq.hpp>
-#include <objects/seqfeat/RNA_gen.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Date.hpp>
@@ -404,8 +393,11 @@ string CTestAndRepData :: Get1OrgModValue(const CBioSource& biosrc, const string
 void CTestAndRepData :: GetOrgModValues(const COrg_ref& org, COrgMod::ESubtype subtype, vector <string>& strs)
 {
    if (!org.IsSetOrgMod()) return;
-   ITERATE (list <CRef <COrgMod> >, it, org.GetOrgname().GetMod() )
-      if ((*it)->GetSubtype() == subtype) strs.push_back((*it)->GetSubname());
+   ITERATE (list <CRef <COrgMod> >, it, org.GetOrgname().GetMod() ) {
+      if ((*it)->GetSubtype() == subtype) {
+          strs.push_back((*it)->GetSubname());
+      }
+   }
 };
 
 void CTestAndRepData :: GetOrgModValues(const CBioSource& biosrc, const string& type_name, vector <string>& strs)

@@ -43,57 +43,21 @@
 #include <objects/taxon3/T3Data.hpp>
 #include <objects/valid/Comment_rule.hpp>
 #include <objects/valid/Comment_set.hpp>
-#include <objects/submit/Contact_info.hpp>
-#include <objects/submit/Submit_block.hpp>
-#include <objects/submit/Seq_submit.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Seg_ext.hpp>
-#include <objects/seq/seqport_util.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Delta_ext.hpp>
-#include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
-#include <objects/seq/MolInfo.hpp>
-#include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objects/seqfeat/PCRPrimerSet.hpp>
-#include <objects/seqfeat/RNA_gen.hpp>
-#include <objects/seqfeat/RNA_qual.hpp>
-#include <objects/seqfeat/RNA_qual_set.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
-#include <objects/seqblock/GB_block.hpp>
 #include <objects/macro/Field_type.hpp>
-#include <objects/general/Name_std.hpp>
-#include <objects/general/Date.hpp>
-#include <objects/general/Date_std.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
-#include <objects/general/Object_id.hpp>
 #include <objects/biblio/ArticleId.hpp>
 #include <objects/biblio/ArticleIdSet.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Author.hpp>
-#include <objects/biblio/Cit_gen.hpp>
 #include <objects/biblio/Cit_sub.hpp>
-#include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/Cit_book.hpp>
-#include <objects/biblio/Cit_proc.hpp>
-#include <objects/biblio/Cit_let.hpp>
 #include <objects/biblio/Cit_pat.hpp>
-#include <objects/biblio/Cit_jour.hpp>
 #include <objects/biblio/citation_base.hpp>
-#include <objects/biblio/Title.hpp>
-#include <objects/biblio/Imprint.hpp>
-#include <objects/pub/Pub_equiv.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -11393,6 +11357,9 @@ void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: GetReport(CRef <CClickableItem>& c_i
    ITERATE (Str2Strs, it, blk2objs) {
       strtmp = (it->first =="missing")? "no submit-block" 
                                       : "identical submit-blocks";
+      if (it->second.size() == 1 && strtmp[strtmp.size()-1] == 's') {
+         strtmp = strtmp.substr(0, strtmp.size()-1);
+      }
       AddSubcategory(c_item, 
                      GetName() + "$" + it->first,
                      &(it->second), 
