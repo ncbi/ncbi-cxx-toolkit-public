@@ -1710,6 +1710,10 @@ TGeneModelList GetParts(const CGeneModel& algn) {
         if (!algn.Exons()[i-1].m_ssplice || !algn.Exons()[i].m_fsplice) {
             CGeneModel m = algn;
             m.Clip(TSignedSeqRange(left,algn.Exons()[i-1].GetTo()),CGeneModel::eRemoveExons);
+            if(!parts.empty()) {
+                parts.back().Status() &= ~CGeneModel::eRightTrimmed;
+                m.Status() &= ~CGeneModel::eLeftTrimmed;
+            }
             parts.push_back(m);
             left = algn.Exons()[i].GetFrom();
         }
@@ -1717,6 +1721,8 @@ TGeneModelList GetParts(const CGeneModel& algn) {
     if(!parts.empty()) {
         CGeneModel m = algn;
         m.Clip(TSignedSeqRange(left,algn.Limits().GetTo()),CGeneModel::eRemoveExons);
+        parts.back().Status() &= ~CGeneModel::eRightTrimmed;
+        m.Status() &= ~CGeneModel::eLeftTrimmed;
         parts.push_back(m);
     }
 
@@ -5230,7 +5236,8 @@ public:
 
     virtual void transform_align(CAlignModel& align)
     {
-        TSignedSeqRange limits = align.Limits();
+        TSignedSeqRange flimits = align.Exons().front().Limits();
+        TSignedSeqRange blimits = align.Exons().back().Limits();
         CAlignMap alignmap(align.GetAlignMap());
 
         if ((align.Type() & CAlignModel::eProt)!=0) {
@@ -5239,8 +5246,9 @@ public:
             TrimTranscript(align, alignmap);
         }
 
-        if(align.Limits().GetFrom() > limits.GetFrom()) align.Status() |= CAlignModel::eLeftTrimmed;
-        if(align.Limits().GetTo() < limits.GetTo()) align.Status() |= CAlignModel::eRightTrimmed;
+        // don't mark trimmed if trim was to the next exon
+        if(align.Limits().GetFrom() > flimits.GetFrom() && align.Limits().GetFrom() <= flimits.GetTo()) align.Status() |= CAlignModel::eLeftTrimmed;
+        if(align.Limits().GetTo() < blimits.GetTo() && align.Limits().GetTo() >= blimits.GetFrom()) align.Status() |= CAlignModel::eRightTrimmed;
     }
 
     void TrimProtein(CAlignModel& align, CAlignMap& alignmap)
