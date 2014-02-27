@@ -1716,12 +1716,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
 
 bool CSeq_id::IsValidLocalID(const CTempString& s)
 {
-    //static const char* const kLegalOther ="!\"#$%&'()*+,-./:;<=>?@[\]^_`{||}~";
-    //static const char* const kLegal =
-    //    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.:*#~";
-    //return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
-
-    static const char* kIllegal = " |[]{}()=\"";
+    static const char* kIllegal = " |=\"";
     CSeq_id_find_pred pred; pred.kSymbols = kIllegal;
     return (!s.empty() && find_if(s.begin(), s.end(), pred) == s.end());
 }
