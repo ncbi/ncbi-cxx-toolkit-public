@@ -63,8 +63,8 @@ EOF
   exit 1
 }
 
-if [ -f /etc/redhat-release -a -d $NCBI/c++/GCC442-Debug64/build ]; then
-    def_builddir=$NCBI/c++/GCC442-Debug64/build
+if [ -f /etc/redhat-release -a -d $NCBI/c++/DebugMT/build ]; then
+    def_builddir=$NCBI/c++/DebugMT/build
 fi
 
 #################################
