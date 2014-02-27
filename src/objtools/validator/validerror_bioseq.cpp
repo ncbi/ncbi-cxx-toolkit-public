@@ -8019,6 +8019,24 @@ static bool s_ReportableCollision (const CGene_ref& g1, const CGene_ref& g2)
 }
 
 
+bool s_HastRNAXref(const CSeq_feat& feat)
+{
+    if (!feat.IsSetXref()) {
+        return false;
+    }
+    bool rval = false;
+    ITERATE(CSeq_feat::TXref, x, feat.GetXref()) {
+        if ((*x)->IsSetData() && (*x)->GetData().IsRna()
+            && (*x)->GetData().GetRna().IsSetType()
+            && (*x)->GetData().GetRna().GetType() == CRNA_ref::eType_tRNA) {
+            rval = true;
+            break;
+        }
+    }
+    return rval;
+}
+
+
 void CValidError_bioseq::x_CompareStrings
 (const TStrFeatMap& str_feat_map,
  const string& type,
@@ -8060,12 +8078,13 @@ void CValidError_bioseq::x_CompareStrings
                     && NStr::FindNoCase (feat->GetExcept_text(), "trans-splicing") != string::npos &&
                     it->second->IsSetExcept() && it->second->IsSetExcept_text()
                     && NStr::FindNoCase (it->second->GetExcept_text(), "trans-splicing") != string::npos) {
+                    // suppress for trans-spliced genes on small genome set
                     suppress_message = true;
                 }
             }
 
             if (suppress_message) {
-                /* suppress for trans-spliced genes on small genome set */
+                // suppress for trans-spliced genes on small genome set
             } else if (is_gene_locus && sequence::Compare(feat->GetLocation(),
                                                    (*it->second).GetLocation(),
                                                    m_Scope) == eSame) {
@@ -8073,20 +8092,33 @@ void CValidError_bioseq::x_CompareStrings
                          message + ", but feature locations are identical", *it->second);
             } else if (is_gene_locus 
                        && NStr::Equal (GetSequenceStringFromLoc(feat->GetLocation(), *m_Scope),
-                                       GetSequenceStringFromLoc((*it->second).GetLocation(), *m_Scope))) {
-                PostErr (eDiag_Info, eErr_SEQ_FEAT_ReplicatedGeneSequence,
-                         message + ", but underlying sequences are identical", *it->second);
+                                       GetSequenceStringFromLoc((*it->second).GetLocation(), *m_Scope))) {                
+                const CSeq_feat* nfeat = it->second;
+                if (m_Imp.IsGpipe() && s_HastRNAXref(*feat) && s_HastRNAXref(*nfeat)) {
+                    // suppress for GPIPE if both features have tRNA xrefs
+                } else {
+                    PostErr (eDiag_Info, eErr_SEQ_FEAT_ReplicatedGeneSequence,
+                             message + ", but underlying sequences are identical", *it->second);
+                }
             } else { 
                 const CSeq_feat* nfeat = it->second;
                 bool isSplit = (bool) (nfeat->IsSetExcept() &&
                                       nfeat->IsSetExcept_text() &&
                                       NStr::FindNoCase (nfeat->GetExcept_text(), "gene split at ") != string::npos);
-                if (is_gene_locus || (! isSplit) || (! lastIsSplit)) {
+
+                if (err == eErr_SEQ_FEAT_CollidingGeneNames && m_Imp.IsGpipe()
+                    && s_HastRNAXref(*feat)
+                    && s_HastRNAXref(*nfeat)) {
+                    suppress_message = true;
+                }
+
+                if (!suppress_message && (is_gene_locus || (! isSplit) || (! lastIsSplit))) {                    
                     if (!reported_first) {
                         // for now, don't report first colliding gene - C Toolkit doesn't
                         // PostErr(sev, err, message, *feat);
                         reported_first = true;
                     }
+
 
                     PostErr(sev, err, message, *it->second);
                 }
@@ -8138,24 +8170,27 @@ void CValidError_bioseq::ValidateCollidingGenes(const CBioseq& seq)
                 eDiag_Warning);
             x_CompareStrings(locus_tag_map, "locus_tags", eErr_SEQ_FEAT_CollidingLocusTags,
                 eDiag_Error);
-            // look for synonyms on genes that match locus of different genes
-            ITERATE (TStrFeatMap, syngene_it, syn_map) {
-                TStrFeatMap::iterator gene_it = locus_map.find(syngene_it->first);
-                if (gene_it != locus_map.end()) {
-                    bool found = false;
-                    FOR_EACH_SYNONYM_ON_GENEREF (syn_it, gene_it->second->GetData().GetGene()) {
-                        if (NStr::Equal (*syn_it, syngene_it->first)) {
-                            found = true;
-                            break;
+            // look for synonyms on genes that match locus of different genes,
+            // but not if gpipe
+            if (!m_Imp.IsGpipe()) {
+                ITERATE (TStrFeatMap, syngene_it, syn_map) {
+                    TStrFeatMap::iterator gene_it = locus_map.find(syngene_it->first);
+                    if (gene_it != locus_map.end()) {
+                        bool found = false;
+                        FOR_EACH_SYNONYM_ON_GENEREF (syn_it, gene_it->second->GetData().GetGene()) {
+                            if (NStr::Equal (*syn_it, syngene_it->first)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_IdenticalGeneSymbolAndSynonym, 
+                                    "gene synonym has same value (" + syngene_it->first + ") as locus of another gene feature",
+                                    *syngene_it->second);
                         }
                     }
-                    if (!found) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_IdenticalGeneSymbolAndSynonym, 
-                                "gene synonym has same value (" + syngene_it->first + ") as locus of another gene feature",
-                                *syngene_it->second);
-                    }
-                }
-            }                
+                }   
+            }
         }
 
     } catch ( const exception& e ) {

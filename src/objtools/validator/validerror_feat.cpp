@@ -704,7 +704,7 @@ void CValidError_feat::ValidateSeqFeatProduct
         }
     }
     // look for accession IDs in location
-    if (m_Imp.DoesAnyProductLocHaveGI() && s_SeqLocHasAccession (prod)) {
+    if (m_Imp.DoesAnyProductLocHaveGI() && s_SeqLocHasAccession (prod) && !m_Imp.IsGpipe()) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureRefersToAccession, "Feature product refers to accession", feat);
     }
 }
@@ -1368,26 +1368,28 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
     if (m_Imp.IsRefSeq()) {
         FOR_EACH_SYNONYM_ON_GENEREF (it, gene) {
             if (sc_BadGeneSyn.find (it->c_str()) != sc_BadGeneSyn.end()) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym, 
+                PostErr (m_Imp.IsGpipe() ? eDiag_Info : eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym, 
                          "Uninformative gene synonym '" + *it + "'",
                          feat);
             }
             if (gene.IsSetLocus() && !NStr::IsBlank(gene.GetLocus())
                 && NStr::Equal(gene.GetLocus(), *it)) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
+                PostErr (m_Imp.IsGpipe() ? eDiag_Info : eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
                          "gene synonym has same value as gene locus",
                          feat);
             }
         }
     }
 
-    if (gene.IsSetLocus() && gene.IsSetDesc() && NStr::EqualCase (gene.GetLocus(), gene.GetDesc())) {
+    if (gene.IsSetLocus() && gene.IsSetDesc() 
+        && NStr::EqualCase (gene.GetLocus(), gene.GetDesc())
+        && !m_Imp.IsGpipe()) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
                  "gene description has same value as gene locus", feat);
     }
 
     if (!gene.IsSetLocus() && !gene.IsSetDesc() && gene.IsSetSyn() && gene.GetSyn().size() > 0) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
+        PostErr (m_Imp.IsGpipe() ? eDiag_Info : eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
                  "gene synonym without gene locus or description", feat);
     }
                  
@@ -7451,7 +7453,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
     }
 
     // look for accession IDs in location
-    if (m_Imp.DoesAnyFeatLocHaveGI() && s_SeqLocHasAccession (feat.GetLocation())) {
+    if (m_Imp.DoesAnyFeatLocHaveGI() && s_SeqLocHasAccession (feat.GetLocation()) && !m_Imp.IsGpipe()) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureRefersToAccession, "Feature location refers to accession", feat);
     }
                     
