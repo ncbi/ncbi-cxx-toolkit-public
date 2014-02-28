@@ -941,7 +941,8 @@ COrgRefCache::SCacheEntry::GetData2()
 int
 COrgRefCache::FindRankByName( const char* pchName ) const
 {
-    for( TRankMapCI ci = m_rankStorage.begin();
+    if( InitRanks() )
+      for( TRankMapCI ci = m_rankStorage.begin();
          ci != m_rankStorage.end();
          ++ci )
         if( ci->second.compare( pchName ) == 0 )
@@ -953,9 +954,11 @@ COrgRefCache::FindRankByName( const char* pchName ) const
 const char*
 COrgRefCache::GetRankName( int rank ) const
 {
-    TRankMapCI ci( m_rankStorage.find( rank ) );
-    if( ci != m_rankStorage.end() ) {
-        return ci->second.c_str();
+    if( InitRanks() ) {
+        TRankMapCI ci( m_rankStorage.find( rank ) );
+        if( ci != m_rankStorage.end() ) {
+            return ci->second.c_str();
+        }
     }
     return NULL;
 }
@@ -1046,6 +1049,7 @@ COrgRefCache::InitRanks()
 const char*
 COrgRefCache::GetNameClassName( short nc ) const
 {
+    if( !InitNameClasses() ) return NULL;
     TNameClassMapCI ci( m_ncStorage.find( nc ) );
     if( ci != m_ncStorage.end() ) {
         return ci->second.c_str();
@@ -1056,6 +1060,7 @@ COrgRefCache::GetNameClassName( short nc ) const
 short
 COrgRefCache::FindNameClassByName( const char* pchName ) const
 {
+    if( !InitNameClasses() ) return -1;
     for( TNameClassMapCI ci = m_ncStorage.begin();
          ci != m_ncStorage.end();
          ++ci )
@@ -1130,6 +1135,7 @@ COrgRefCache::InitNameClasses()
 short
 COrgRefCache::FindDivisionByCode( const char* pchCode ) const
 {
+    if( !InitDivisions() ) return -1;
     for( TDivisionMapCI ci = m_divStorage.begin();
          ci != m_divStorage.end();
          ++ci ) {
@@ -1144,6 +1150,7 @@ COrgRefCache::FindDivisionByCode( const char* pchCode ) const
 const char*
 COrgRefCache::GetDivisionCode( short div_id ) const
 {
+    if( !InitDivisions() ) return NULL;
     TDivisionMapCI ci( m_divStorage.find( div_id ) );
     if( ci != m_divStorage.end() ) {
         return ci->second.m_sCode.c_str();
@@ -1154,6 +1161,7 @@ COrgRefCache::GetDivisionCode( short div_id ) const
 const char*
 COrgRefCache::GetDivisionName( short div_id ) const
 {
+    if( !InitDivisions() ) return NULL;
     TDivisionMapCI ci( m_divStorage.find( div_id ) );
     if( ci != m_divStorage.end() ) {
         return ci->second.m_sName.c_str();
