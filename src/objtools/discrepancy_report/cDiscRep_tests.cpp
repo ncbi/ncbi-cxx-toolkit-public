@@ -2220,11 +2220,17 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: GetReport(CRef <CClickableItem>& c_ite
 
 void CBioseq_CDS_TRNA_OVERLAP :: TestOnObj(const CBioseq& bioseq)
 {
-   string bioseq_cd_desc, bioseq_desc(GetDiscItemText(bioseq));
+   string bioseq_cd_desc_list, bioseq_desc(GetDiscItemText(bioseq));
+   string bioseq_cd_desc_obj;
    ENa_strand cd_str, trna_str;
+   bool cd_added;
    ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
-     bioseq_cd_desc = bioseq_desc + "$" + GetDiscItemText(**it);
+     strtmp = GetDiscItemText(**it);;
+     bioseq_cd_desc_list = bioseq_desc + "$" + strtmp;
+     bioseq_cd_desc_obj = bioseq_desc + "#" + strtmp;
+     CConstRef <CObject> cd_obj(*it); 
      cd_str = (*it)->GetLocation().GetStrand();
+     cd_added = false;
      ITERATE (vector <const CSeq_feat*>, jt, trna_feat) {
        trna_str = (*jt)->GetLocation().GetStrand();
        sequence::ECompare 
@@ -2233,8 +2239,15 @@ void CBioseq_CDS_TRNA_OVERLAP :: TestOnObj(const CBioseq& bioseq)
        if ( ((cd_str == eNa_strand_minus && trna_str == eNa_strand_minus )
                   || (cd_str !=eNa_strand_minus && trna_str !=eNa_strand_minus))
              && ovlp != sequence::eNoOverlap) {
+          if (!cd_added) {
+             thisInfo.test_item_objs[GetName() + "$" + bioseq_cd_desc_obj]
+                       .push_back(cd_obj);
+             cd_added = true;
+          }
           thisInfo.test_item_list[GetName()].push_back(
-                          bioseq_cd_desc + "#" + GetDiscItemText(**jt));
+                          bioseq_cd_desc_list + "#" + GetDiscItemText(**jt));
+          thisInfo.test_item_objs[GetName() + "$" + bioseq_cd_desc_obj]
+                    .push_back(CConstRef <CObject> (*jt));
        }
      }
   }
@@ -2246,21 +2259,37 @@ void CBioseq_CDS_TRNA_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
    Str2Strs bioseq_cd2trnas, cd2trnas;
    GetTestItemList(c_item->item_list, bioseq_cd2trnas);
    c_item->item_list.clear();
+   string bioseq_desc, cd_desc;
    ITERATE (Str2Strs, it, bioseq_cd2trnas) {
       CRef <CClickableItem> c_sub (new CClickableItem);
       c_sub->setting_name = GetName();
       cd2trnas.clear();
       GetTestItemList(it->second, cd2trnas, "#");
+      bioseq_desc = it->first.substr(0, it->first.find("$"));
       ITERATE (Str2Strs, jt, cd2trnas) {
-          c_sub->item_list.push_back(jt->first);
-          AddSubcategory(c_sub, GetName(), &(jt->second), 
-                         "Coding region overlaps tRNAs", 
-                         "Coding region overlaps tRNAs", e_OtherComment); 
+          cd_desc = jt->first;
+          CRef <CClickableItem> c_sub2(new CClickableItem);
+          c_sub2->item_list.push_back(jt->first);
+          copy(jt->second.begin(), jt->second.end(),
+                back_inserter(c_sub2->item_list));
+          strtmp = GetName() + "$" + bioseq_desc + "#" + cd_desc;
+          c_sub2->obj_list = thisInfo.test_item_objs[strtmp];
+          c_sub2->description
+             = GetOtherComment(c_sub2->item_list.size()/2, 
+                                "Coding region overlaps tRNAs", 
+                                "Coding region overlaps tRNAs"); 
+        copy(c_sub2->item_list.begin(), c_sub2->item_list.end(),
+           back_inserter( c_sub->item_list));
+        copy(c_sub2->obj_list.begin(), c_sub2->obj_list.end(),
+           back_inserter( c_sub->obj_list));
+        c_sub->subcategories.push_back(c_sub2);
       }
       c_sub->description = GetHasComment(cd2trnas.size(), "coding region") 
                             + "overlapping tRNAs";
       copy(c_sub->item_list.begin(), c_sub->item_list.end(),
            back_inserter( c_item->item_list));
+      copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
+           back_inserter( c_item->obj_list));
       c_item->subcategories.push_back(c_sub);
    }
    c_item->description = GetHasComment(bioseq_cd2trnas.size(), "Bioseq") 
@@ -6284,6 +6313,7 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
 {
   vector <unsigned>  num_present;
   Str2Strs aa_seqfeat;
+  Str2Objs aa_featobj;
   num_present.reserve(thisInfo.desired_aaList.size());
   for (unsigned i=0; i< thisInfo.desired_aaList.size(); i++) {
           num_present.push_back(0);
@@ -6298,6 +6328,7 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
         if (context_label.find(jt->first) != string::npos) {
               num_present[i]++;
               aa_seqfeat[jt->first].push_back(GetDiscItemText(**it));
+              aa_featobj[jt->first].push_back(CConstRef <CObject> (*it));
               break;
         }
         i++;
@@ -6319,12 +6350,18 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
          = "Sequence " + m_best_id_str + " has " 
               + NStr::UIntToString(num_present[i]) + " trna-" + it->first 
               + (num_present[i]==1 ? " feature." : " features.");
+/*
        thisInfo.test_item_list[GetName_tcnt()]
                   .push_back(strtmp + "$" + m_bioseq_desc);
        thisInfo.test_item_objs[GetName_tcnt() + "$" + strtmp]
                  .push_back(m_bioseq_obj);
+*/
        ITERATE (vector <string>, jt, aa_seqfeat[it->first]) {
           thisInfo.test_item_list[GetName_tcnt()].push_back(strtmp + "$" + *jt);
+       }
+       ITERATE (vector <CConstRef <CObject> >, jt, aa_featobj[it->first]) {
+         thisInfo.test_item_objs[GetName_tcnt() + "$" + strtmp]
+                    .push_back(*jt);
        }
     }
     i++;    
@@ -6714,6 +6751,7 @@ void CBioseq_test_on_rna :: GetReport_trna(CRef <CClickableItem>& c_item)
          thisInfo.disc_report_data.push_back(c_item);
      }
      c_item->item_list = it->second;
+     c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
      if (isInt(it->first)) {
          c_item->description 
              = GetHasComment(c_item->item_list.size(), "sequence") + it->first 
