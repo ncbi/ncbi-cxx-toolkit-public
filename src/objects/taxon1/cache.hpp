@@ -66,7 +66,7 @@ public:
     bool Insert2( CTaxon1Node& node );
 
     // Rank stuff
-    const char* GetRankName( int rank ) const;
+    const char* GetRankName( int rank );
 
     int GetSuperkingdomRank() const { return m_nSuperkingdomRank; }
     int GetFamilyRank() const { return m_nFamilyRank; }
@@ -79,7 +79,7 @@ public:
     int GetFormaRank() const { return m_nFormaRank; }
     int GetVarietyRank() const { return m_nVarietyRank; }
 
-    const char* GetNameClassName( short nc ) const;
+    const char* GetNameClassName( short nc );
     short GetPreferredCommonNameClass() const { return m_ncPrefCommon; }
     short GetCommonNameClass() const { return m_ncCommon; }
     short GetSynonymNameClass() const { return m_ncSynonym; }
@@ -87,8 +87,8 @@ public:
     short GetGBSynonymNameClass() const { return m_ncGBSynonym; }
     short GetGBAnamorphNameClass() const { return m_ncGBAnamorph; }
 
-    const char* GetDivisionName( short div_id ) const;
-    const char* GetDivisionCode( short div_id ) const;
+    const char* GetDivisionName( short div_id );
+    const char* GetDivisionCode( short div_id );
     short GetVirusesDivision() const { return m_divViruses; }
     short GetPhagesDivision() const { return m_divPhages; }
 
@@ -148,7 +148,7 @@ private:
     TRankMap m_rankStorage;
 
     bool     InitRanks();
-    int      FindRankByName( const char* pchName ) const;
+    int      FindRankByName( const char* pchName );
 
     // Name classes stuff
     short m_ncPrefCommon; // now called "genbank common name"
@@ -164,7 +164,7 @@ private:
     TNameClassMap m_ncStorage;
 
     bool     InitNameClasses();
-    short    FindNameClassByName( const char* pchName ) const;
+    short    FindNameClassByName( const char* pchName );
     // Division stuff
     short m_divViruses;
     short m_divPhages;
@@ -178,7 +178,7 @@ private:
     TDivisionMap m_divStorage;
 
     bool     InitDivisions();
-    short    FindDivisionByCode( const char* pchCode ) const;
+    short    FindDivisionByCode( const char* pchCode );
 
     // forbidden
     COrgRefCache(const COrgRefCache&);

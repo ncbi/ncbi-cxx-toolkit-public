@@ -2348,7 +2348,8 @@ CTaxon1::GetTypeMaterial( int tax_id, TNameList& type_material_list_out )
     }
     type_material_list_out.clear();
     if( m_plCache->LookupAndAdd( tax_id, &pNode )
-        && pNode ) {
+        && pNode &&
+	m_plCache->InitRanks() ) {
 	list< CRef< CTaxon1_name > > lNames;
 
         int species_rank(m_plCache->GetSpeciesRank());

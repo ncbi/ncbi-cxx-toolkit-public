@@ -939,7 +939,7 @@ COrgRefCache::SCacheEntry::GetData2()
 }
 
 int
-COrgRefCache::FindRankByName( const char* pchName ) const
+COrgRefCache::FindRankByName( const char* pchName )
 {
     if( InitRanks() )
       for( TRankMapCI ci = m_rankStorage.begin();
@@ -952,7 +952,7 @@ COrgRefCache::FindRankByName( const char* pchName ) const
 
 
 const char*
-COrgRefCache::GetRankName( int rank ) const
+COrgRefCache::GetRankName( int rank )
 {
     if( InitRanks() ) {
         TRankMapCI ci( m_rankStorage.find( rank ) );
@@ -1047,7 +1047,7 @@ COrgRefCache::InitRanks()
 }
 
 const char*
-COrgRefCache::GetNameClassName( short nc ) const
+COrgRefCache::GetNameClassName( short nc )
 {
     if( !InitNameClasses() ) return NULL;
     TNameClassMapCI ci( m_ncStorage.find( nc ) );
@@ -1058,7 +1058,7 @@ COrgRefCache::GetNameClassName( short nc ) const
 }
 
 short
-COrgRefCache::FindNameClassByName( const char* pchName ) const
+COrgRefCache::FindNameClassByName( const char* pchName )
 {
     if( !InitNameClasses() ) return -1;
     for( TNameClassMapCI ci = m_ncStorage.begin();
@@ -1133,7 +1133,7 @@ COrgRefCache::InitNameClasses()
 }
 
 short
-COrgRefCache::FindDivisionByCode( const char* pchCode ) const
+COrgRefCache::FindDivisionByCode( const char* pchCode )
 {
     if( !InitDivisions() ) return -1;
     for( TDivisionMapCI ci = m_divStorage.begin();
@@ -1148,7 +1148,7 @@ COrgRefCache::FindDivisionByCode( const char* pchCode ) const
 
 
 const char*
-COrgRefCache::GetDivisionCode( short div_id ) const
+COrgRefCache::GetDivisionCode( short div_id )
 {
     if( !InitDivisions() ) return NULL;
     TDivisionMapCI ci( m_divStorage.find( div_id ) );
@@ -1159,7 +1159,7 @@ COrgRefCache::GetDivisionCode( short div_id ) const
 }
 
 const char*
-COrgRefCache::GetDivisionName( short div_id ) const
+COrgRefCache::GetDivisionName( short div_id )
 {
     if( !InitDivisions() ) return NULL;
     TDivisionMapCI ci( m_divStorage.find( div_id ) );
