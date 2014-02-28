@@ -40,6 +40,7 @@
 #include "nst_server_parameters.hpp"
 #include "nst_precise_time.hpp"
 #include "nst_alert.hpp"
+#include "nst_database.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -53,7 +54,8 @@ public:
     virtual ~CNetStorageServer();
 
     void AddDefaultListener(IServer_ConnectionFactory *  factory);
-    void SetParameters(const SNetStorageServerParameters &  new_params);
+    CJsonNode SetParameters(const SNetStorageServerParameters &  new_params,
+                            bool                                 reconfigure);
 
     virtual bool ShutdownRequested(void);
     void SetShutdownFlag(int signum = 0);
@@ -84,6 +86,11 @@ public:
     enum EAlertAckResult AcknowledgeAlert(EAlertType  alert_type);
     void RegisterAlert(EAlertType  alert_type);
     CJsonNode SerializeAlerts(void) const;
+    CNSTDatabase &  GetDb(void);
+
+    // Metainfo support
+    bool NeedMetadata(const string &  service) const;
+    CJsonNode ReadMetadataConfiguration(const IRegistry &  reg);
 
     static CNetStorageServer *  GetInstance(void);
 
@@ -99,16 +106,26 @@ private:
     string                      m_SessionID;
     unsigned int                m_NetworkTimeout;
     CNSTPreciseTime             m_StartTime;
-    vector<string>              m_AdminClientNames;
     string                      m_CommandLine;
     CCompoundIDPool             m_CompoundIDPool;
     CNSTAlerts                  m_Alerts;
+    auto_ptr<CNSTDatabase>      m_Db;   // Access to NST attributes DB
 
     static CNetStorageServer *  sm_netstorage_server;
 
+    // Administrators
+    mutable CFastMutex          m_AdminClientNamesLock;
+    set<string>                 m_AdminClientNames;
+
+    // Metadata services support
+    mutable CFastMutex          m_MetadataServicesLock;
+    set<string>                 m_MetadataServices;
+
 private:
     string  x_GenerateGUID(void) const;
-    void x_SetAdminClientNames(const string &  client_names);
+    set<string> x_GetAdminClientNames(const string &  client_names);
+    CJsonNode  x_diffInJson(const vector<string> &  added,
+                            const vector<string> &  deleted) const;
 };
 
 

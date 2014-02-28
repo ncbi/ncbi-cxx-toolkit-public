@@ -33,15 +33,16 @@
 #include <connect/services/json_over_uttp.hpp>
 #include "nst_database.hpp"
 #include "nst_exception.hpp"
+#include "nst_application.hpp"
+#include "nst_server.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
-CNSTDatabase::CNSTDatabase(CNcbiApplication &  app)
-    : m_App(app), m_Connected(false)
-{
-}
+CNSTDatabase::CNSTDatabase(CNetStorageServer *  server)
+    : m_Server(server), m_Connected(false)
+{}
 
 
 CNSTDatabase::~CNSTDatabase(void)
@@ -60,175 +61,277 @@ void CNSTDatabase::Connect(void)
 }
 
 
-void CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
+int
+CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
 {
-    CQuery      query = x_NewQuery();
+    int     status;
+    try {
+        CQuery      query = x_NewQuery();
 
-    object_id = 0;
-    query.SetParameter("@next_id", 0, eSDB_Int8, eSP_InOut);
-    query.ExecuteSP("GetNextObjectID");
-    query.VerifyDone();
-    x_CheckStatus(query, "GetNextObjectID");
+        object_id = 0;
+        query.SetParameter("@next_id", 0, eSDB_Int8, eSP_InOut);
+        query.ExecuteSP("GetNextObjectID");
+        query.VerifyDone();
+        status = x_CheckStatus(query, "GetNextObjectID");
 
-    object_id = query.GetParameter("@next_id").AsInt8();
+        if (status == 0)
+            object_id = query.GetParameter("@next_id").AsInt8();
+        else
+            object_id = -1;
+        return status;
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_CreateClient(
+int
+CNSTDatabase::ExecSP_CreateClient(
             const string &  client, Int8 &  client_id)
 {
-    CQuery      query = x_NewQuery();
+    int     status;
+    try {
+        CQuery      query = x_NewQuery();
 
-    client_id = 0;
-    query.SetParameter("@client_name", client);
-    query.SetParameter("@client_id", 0, eSDB_Int8, eSP_InOut);
+        client_id = 0;
+        query.SetParameter("@client_name", client);
+        query.SetParameter("@client_id", 0, eSDB_Int8, eSP_InOut);
 
-    query.ExecuteSP("CreateClient");
-    query.VerifyDone();
-    x_CheckStatus(query, "CreateClient");
+        query.ExecuteSP("CreateClient");
+        query.VerifyDone();
+        status = x_CheckStatus(query, "CreateClient");
 
-    client_id = query.GetParameter("@client_id").AsInt8();
+        if (status == 0)
+            client_id = query.GetParameter("@client_id").AsInt8();
+        else
+            client_id = -1;
+        return status;
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_CreateObject(
+int
+CNSTDatabase::ExecSP_CreateObject(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
             const string &  client_name)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_id", object_id);
-    query.SetParameter("@object_key", object_key);
-    query.SetParameter("@object_loc", object_loc);
-    query.SetParameter("@object_size", size);
-    query.SetParameter("@client_name", client_name);
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_id", object_id);
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@object_loc", object_loc);
+        query.SetParameter("@object_size", size);
+        query.SetParameter("@client_name", client_name);
 
-    query.ExecuteSP("CreateObject");
-    query.VerifyDone();
-    x_CheckStatus(query, "CreateObject");
+        query.ExecuteSP("CreateObject");
+        query.VerifyDone();
+        return x_CheckStatus(query, "CreateObject");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_CreateObjectWithClientID(
+int
+CNSTDatabase::ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
             Int8  client_id)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_id", object_id);
-    query.SetParameter("@object_key", object_key);
-    query.SetParameter("@object_loc", object_loc);
-    query.SetParameter("@object_size", size);
-    query.SetParameter("@client_id", client_id);
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_id", object_id);
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@object_loc", object_loc);
+        query.SetParameter("@object_size", size);
+        query.SetParameter("@client_id", client_id);
 
-    query.ExecuteSP("CreateObjectWithClientID");
-    query.VerifyDone();
-    x_CheckStatus(query, "CreateObjectWithClientID");
+        query.ExecuteSP("CreateObjectWithClientID");
+        query.VerifyDone();
+        return x_CheckStatus(query, "CreateObjectWithClientID");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_UpdateObjectOnWriteByKey(
-            const string &  object_key, Int8  size)
+int
+CNSTDatabase::ExecSP_UpdateObjectOnWrite(
+            const string &  object_key,
+            const string &  object_loc, Int8  size, Int8  client_id)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_key", object_key);
-    query.SetParameter("@object_size", size);
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@object_loc", object_loc);
+        query.SetParameter("@object_size", size);
+        query.SetParameter("@client_id", client_id);
 
-    query.ExecuteSP("UpdateObjectOnWriteByKey");
-    query.VerifyDone();
-    x_CheckStatus(query, "UpdateObjectOnWriteByKey");
+        query.ExecuteSP("UpdateObjectOnWrite");
+        query.VerifyDone();
+        return x_CheckStatus(query, "UpdateObjectOnWrite");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_UpdateObjectOnWriteByLoc(
-            const string &  object_loc, Int8  size)
+int
+CNSTDatabase::ExecSP_UpdateObjectOnRead(
+            const string &  object_key,
+            const string &  object_loc, Int8  size, Int8  client_id)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_loc", object_loc);
-    query.SetParameter("@object_size", size);
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@object_loc", object_loc);
+        query.SetParameter("@object_size", size);
+        query.SetParameter("@client_id", client_id);
 
-    query.ExecuteSP("UpdateObjectOnWriteByLoc");
-    query.VerifyDone();
-    x_CheckStatus(query, "UpdateObjectOnWriteByLoc");
+        query.ExecuteSP("UpdateObjectOnRead");
+        query.VerifyDone();
+        return x_CheckStatus(query, "UpdateObjectOnRead");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_UpdateObjectOnReadByKey(
-            const string &  object_key)
+int
+CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
+            const string &  object_key,
+            const string &  object_loc, Int8  client_id)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_key", object_key);
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@object_loc", object_loc);
+        query.SetParameter("@client_id", client_id);
 
-    query.ExecuteSP("UpdateObjectOnReadByKey");
-    query.VerifyDone();
-    x_CheckStatus(query, "UpdateObjectOnReadByKey");
+        query.ExecuteSP("UpdateObjectOnRelocate");
+        query.VerifyDone();
+        return x_CheckStatus(query, "UpdateObjectOnRelocate");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_UpdateObjectOnReadByLoc(
-            const string &  object_loc)
+int
+CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_loc", object_loc);
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
 
-    query.ExecuteSP("UpdateObjectOnReadByLoc");
-    query.VerifyDone();
-    x_CheckStatus(query, "UpdateObjectOnReadByLoc");
+        query.ExecuteSP("RemoveObject");
+        query.VerifyDone();
+        return x_CheckStatus(query, "RemoveObject");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_RemoveObjectByKey(const string &  object_key)
+int
+CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
+                                  const string &  object_loc,
+                                  const string &  attr_name,
+                                  const string &  attr_value,
+                                  Int8  client_id)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_key", object_key);
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@object_loc", object_loc);
+        query.SetParameter("@attr_name", attr_name);
+        query.SetParameter("@attr_value", attr_value);
+        query.SetParameter("@client_id", client_id);
 
-    query.ExecuteSP("RemoveObjectByKey");
-    query.VerifyDone();
-    x_CheckStatus(query, "RemoveObjectByKey");
+        query.ExecuteSP("AddAttribute");
+        query.VerifyDone();
+        return x_CheckStatus(query, "AddAttribute");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_RemoveObjectByLoc(const string &  object_loc)
+int
+CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
+                                  const string &  attr_name,
+                                  string &        value)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_loc", object_loc);
+    int     status;
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@attr_name", attr_name);
+        query.SetParameter("@attr_value", "", eSDB_String, eSP_InOut);
 
-    query.ExecuteSP("RemoveObjectByLoc");
-    query.VerifyDone();
-    x_CheckStatus(query, "RemoveObjectByLoc");
+        query.ExecuteSP("GetAttribute");
+        query.VerifyDone();
+        status = x_CheckStatus(query, "GetAttribute");
+
+        if (status == 0)
+            value = query.GetParameter("@attr_value").AsString();
+        else
+            value = "";
+        return status;
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::ExecSP_AddAttributeByLoc(const string &  object_loc,
-                                            const string &  attr_name,
-                                            const string &  attr_value)
+int
+CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
+                                  const string &  attr_name)
 {
-    CQuery      query = x_NewQuery();
-    query.SetParameter("@object_loc", object_loc);
-    query.SetParameter("@attr_name", attr_name);
-    query.SetParameter("@attr_value", attr_value);
+    try {
+        CQuery      query = x_NewQuery();
+        query.SetParameter("@object_key", object_key);
+        query.SetParameter("@attr_name", attr_name);
 
-    query.ExecuteSP("AddAttributeByLoc");
-    query.VerifyDone();
-    x_CheckStatus(query, "AddAttributeByLoc");
+        query.ExecuteSP("DelAttribute");
+        query.VerifyDone();
+        return x_CheckStatus(query, "DelAttribute");
+    } catch (...) {
+        m_Server->RegisterAlert(eDB);
+        throw;
+    }
 }
 
 
-void CNSTDatabase::x_CheckStatus(CQuery &  query,
+int  CNSTDatabase::x_CheckStatus(CQuery &  query,
                                  const string &  procedure)
 {
     int     status = query.GetStatus();
-    if (status != 0)
+    if (status > 0)
         NCBI_THROW(CNetStorageServerException, eDatabaseError,
                    "Error executing " + procedure + " stored "
                    "procedure (return code " + NStr::NumericToString(status) +
                    "). See MS SQL log for details.");
+    return status;
 }
 
 
 CQuery CNSTDatabase::x_NewQuery(void)
 {
-//    if (!m_Connected)
+    if (!m_Connected)
         Connect();
     return x_GetDatabase()->NewQuery();
 }
@@ -249,14 +352,17 @@ const SDbAccessInfo &  CNSTDatabase::x_GetDbAccessInfo(void)
 
     m_DbAccessInfo.reset(new SDbAccessInfo);
 
+    CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
+                                    (CNcbiApplication::Instance());
+
     m_DbAccessInfo->m_Service =
-        m_App.GetConfig().GetString("database", "service", "");
+        app->GetConfig().GetString("database", "service", "");
     m_DbAccessInfo->m_UserName =
-        m_App.GetConfig().GetString("database", "user_name", "");
+        app->GetConfig().GetString("database", "user_name", "");
     m_DbAccessInfo->m_Password =
-        m_App.GetConfig().GetString("database", "password", "");
+        app->GetConfig().GetString("database", "password", "");
     m_DbAccessInfo->m_Database =
-        m_App.GetConfig().GetString("database", "database", "");
+        app->GetConfig().GetString("database", "database", "");
 
     return *m_DbAccessInfo;
 }

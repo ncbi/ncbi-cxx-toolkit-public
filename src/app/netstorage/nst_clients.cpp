@@ -69,6 +69,7 @@ CJsonNode  CNSTClient::serialize(void) const
     CJsonNode       client(CJsonNode::NewObjectNode());
 
     client.SetString("Application", m_Application);
+    client.SetString("Service", m_Service);
     client.SetBoolean("TicketProvided", !m_Ticket.empty());
     client.SetString("Type", x_TypeAsString());
     client.SetString("PeerAddress", CSocketAPI::gethostbyaddr(m_Addr));
@@ -128,6 +129,7 @@ size_t CNSTClientRegistry::size(void) const
 void  CNSTClientRegistry::Touch(const string &  client,
                                 const string &  applications,
                                 const string &  ticket,
+                                const string &  service,
                                 unsigned int    peer_address)
 {
     if (client.empty())
@@ -141,6 +143,7 @@ void  CNSTClientRegistry::Touch(const string &  client,
         found->second.Touch();
         found->second.SetApplication(applications);
         found->second.SetTicket(ticket);
+        found->second.SetService(service);
         found->second.SetPeerAddress(peer_address);
         return;
     }
@@ -148,6 +151,7 @@ void  CNSTClientRegistry::Touch(const string &  client,
     CNSTClient      new_client;
     new_client.SetApplication(applications);
     new_client.SetTicket(ticket);
+    new_client.SetService(service);
     new_client.SetPeerAddress(peer_address);
     m_Clients[client] = new_client;
 }

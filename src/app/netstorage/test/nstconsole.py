@@ -13,7 +13,8 @@ import sys
 import socket
 import errno
 from optparse import OptionParser
-from ncbi_grid_dev.ncbi import json_over_uttp, uttp
+from ncbi_grid_dev import json_over_uttp, uttp
+#from ncbi_grid_1_0.ncbi import json_over_uttp, uttp
 import pprint
 import readline
 #import rlcompleter
@@ -41,6 +42,8 @@ try:
 except:
     hostIP = "127.0.0.1"
 
+SESSIONID = '1111111111111111_0000SID'
+
 
 
 class NetStorageConsole:
@@ -59,6 +62,7 @@ class NetStorageConsole:
              'getclientsinfo': self.sendGetClientsInfo,
              'getobjectinfo':  self.sendGetObjectInfo,
              'getattr':        self.sendGetAttr,
+             'delattr':        self.sendDelAttr,
              'setattr':        self.sendSetAttr,
              'no-type':        self.sendNoType,
              'no-dict':        self.sendNoDictionary,
@@ -268,7 +272,7 @@ class NetStorageConsole:
             client = arguments[ 0 ]
 
         message = { 'Type':         'HELLO',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
                     'Client':       client,
                     'Application':  'test/nstconsole.py',
@@ -283,7 +287,7 @@ class NetStorageConsole:
             return
 
         message = { 'Type':         'BYE',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -295,7 +299,7 @@ class NetStorageConsole:
             return
 
         message = { 'Type':         'INFO',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -307,7 +311,7 @@ class NetStorageConsole:
             return
 
         message = { 'Type':         'CONFIGURATION',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -327,7 +331,7 @@ class NetStorageConsole:
                 return
 
         message = { 'Type':         'SHUTDOWN',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
                     'Mode':         mode }
         self.exchange( message )
@@ -340,14 +344,14 @@ class NetStorageConsole:
             return
 
         message = { 'Type':         'GETCLIENTSINFO',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
 
     def sendNoType( self, arguments ):
         " Sends a malformed request without a type "
-        message = { 'SessionID':    '1111111111111111_0000SID',
+        message = { 'SessionID':    SESSIONID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -362,7 +366,49 @@ class NetStorageConsole:
 
     def create( self, arguments ):
         " Sends the create command "
-        print "Not implemented yet"
+        if len( arguments ) < 1:
+            print "At least one argument is required "
+            return
+
+        fileName = arguments[ 0 ]
+
+        if not os.path.exists( fileName ):
+            print "File '" + fileName + "' is not found"
+            return
+
+        try:
+            f = open( fileName, "r" )
+            content = f.read()
+        except Exception, ex:
+            print "File operation error: " + str( ex )
+            return
+
+        message = { 'Type':         'CREATE',
+                    'SessionID':    SESSIONID,
+                    'ClientIP':     hostIP }
+        if len( arguments ) > 1:
+            print "are we there yet?", ' '.join( arguments[ 1 : ] )
+            message.update( json.loads( ' '.join( arguments[ 1 : ] ) ) )
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed, no data will be transferred"
+            return
+
+        uttp_writer = self.__nst.get_uttp_writer()
+        data = uttp_writer.send_chunk(content)
+        if data:
+            self.__sock.send(data)
+        data = uttp_writer.send_control_symbol('\n')
+        if data:
+            self.__sock.send(data)
+        data = uttp_writer.flush_buf()
+        if data:
+            self.__sock.send(data)
+
+        response = self.receive()
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed, the blob has not been written [completely]"
         return
 
     def upload( self, arguments ):
@@ -385,7 +431,7 @@ class NetStorageConsole:
             return
 
         message = { 'Type':         'WRITE',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP }
         if len( arguments ) > 1:
             message.update( json.loads( ' '.join( arguments[ 1 : ] ) ) )
@@ -418,12 +464,12 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        objectID = arguments[ 0 ]
+        objectLoc = arguments[ 0 ]
 
         message = { 'Type':         'DELETE',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
-                    'ObjectID':     objectID }
+                    'ObjectLoc':    objectLoc }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -437,12 +483,12 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        objectID = arguments[ 0 ]
+        objectLoc = arguments[ 0 ]
 
         message = { 'Type':         'READ',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
-                    'ObjectID':     objectID }
+                    'ObjectLoc':    objectLoc }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -478,11 +524,11 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        objectID = arguments[ 0 ]
+        objectLoc = arguments[ 0 ]
         message = { 'Type':         'EXISTS',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
-                    'ObjectID':     objectID }
+                    'ObjectLoc':    objectLoc }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -495,11 +541,11 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        objectID = arguments[ 0 ]
+        objectLoc = arguments[ 0 ]
         message = { 'Type':         'GETSIZE',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
-                    'ObjectID':     objectID }
+                    'ObjectLoc':    objectLoc }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -512,11 +558,11 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        objectID = arguments[ 0 ]
+        objectLoc = arguments[ 0 ]
         message = { 'Type':         'GETOBJECTINFO',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
-                    'ObjectID':     objectID }
+                    'ObjectLoc':    objectLoc }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -525,21 +571,44 @@ class NetStorageConsole:
 
     def sendGetAttr( self, arguments ):
         " Sends GETATTR message "
-        if len( arguments ) != 1:
-            print "Exactly one argument is required "
+        if len( arguments ) != 2:
+            print "Exactly 2 arguments are required: locator and attribute name "
             return
 
-        objectID = arguments[ 0 ]
+        objectLoc = arguments[ 0 ]
+        attrName = arguments[ 1 ]
 
         message = { 'Type':         'GETATTR',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
-                    'ObjectID':     objectID }
+                    'ObjectLoc':    objectLoc,
+                    'AttrName':     attrName }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
             print "Command failed"
         return
+
+    def sendDelAttr( self, arguments ):
+        " Sends DELATTR message "
+        if len( arguments ) != 2:
+            print "Exactly 2 arguments are required: locator and attribute name "
+            return
+
+        objectLoc = arguments[ 0 ]
+        attrName = arguments[ 1 ]
+
+        message = { 'Type':         'DELATTR',
+                    'SessionID':    SESSIONID,
+                    'ClientIP':     hostIP,
+                    'ObjectLoc':    objectLoc,
+                    'AttrName':     attrName }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+        return
+
 
     def relocate( self, arguments ):
         " Sends RELOCATE message "
@@ -547,11 +616,11 @@ class NetStorageConsole:
             print "At least two arguments are required "
             return
 
-        srcID = arguments[ 0 ]
+        srcLoc = arguments[ 0 ]
         message = { 'Type':         'RELOCATE',
-                    'SessionID':    '1111111111111111_0000SID',
+                    'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
-                    'ObjectID':     srcID,
+                    'ObjectLoc':    srcLoc,
                     'NewLocation':  json.loads( ' '.join( arguments[ 1 : ] ) ) }
 
         response = self.exchange( message )
@@ -568,19 +637,57 @@ class NetStorageConsole:
 
     def reconfigure( self, arguments ):
         " Sends RECONFIGURE message "
-        print "Not implemented yet"
+        if len( arguments ) != 0:
+            print "The 'reconfigure' command does not accept any arguments"
+            return
+
+        message = { 'Type':         'RECONFIGURE',
+                    'SessionID':    SESSIONID,
+                    'ClientIP':     hostIP }
+        self.exchange( message )
         return
 
 
     def ackalert( self, arguments ):
         " Sends ACLALERT message "
-        print "Not implemented yet"
+        if len( arguments ) != 1:
+            print "Exactly one argument is required "
+            return
+
+        alertName = arguments[ 0 ]
+
+        message = { 'Type':         'ACKALERT',
+                    'SessionID':    SESSIONID,
+                    'ClientIP':     hostIP,
+                    'Name':         alertName }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
         return
 
 
     def sendSetAttr( self, arguments ):
         " Sends SETATTR message "
-        print "Not implemented yet"
+        if len( arguments ) != 3:
+            print "Exactly 3 arguments are required: locator, " \
+                  "attribute name and atrribute value"
+            return
+
+        objectLoc = arguments[ 0 ]
+        attrName = arguments[ 1 ]
+        attrValue = arguments[ 2 ]
+
+        message = { 'Type':         'SETATTR',
+                    'SessionID':    SESSIONID,
+                    'ClientIP':     hostIP,
+                    'ObjectLoc':    objectLoc,
+                    'AttrName':     attrName,
+                    'AttrValue':    attrValue }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
         return
 
 

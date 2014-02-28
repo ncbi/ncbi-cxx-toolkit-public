@@ -54,8 +54,11 @@ const char *  CNetStorageServerException::GetErrCodeString(void) const
     case eReadError:                    return "eReadError";
     case eInternalError:                return "eInternalError";
     case eObjectNotFound:               return "eObjectNotFound";
+    case eAttributeNotFound:            return "eAttributeNotFound";
+    case eAttributeValueNotFound:       return "eAttributeValueNotFound";
     case eDatabaseError:                return "eDatabaseError";
     case eInvalidConfig:                return "eInvalidConfig";
+    case eInvalidMetaInfoRequest:       return "eInvalidMetaInfoRequest";
     default:                            return CException::GetErrCodeString();
     }
 }
@@ -73,6 +76,10 @@ unsigned int CNetStorageServerException::ErrCodeToHTTPStatusCode(void) const
     case eInvalidMessageHeader:         return 400;
     case eShuttingDown:                 return 503;
     case eMessageAfterBye:              return 400;
+    case eObjectNotFound:               return 404;
+    case eAttributeNotFound:            return 404;
+    case eAttributeValueNotFound:       return 404;
+    case eInvalidMetaInfoRequest:       return 400;
 
     /* The rest of codes convert to status 500. */
     default:                            return 500;

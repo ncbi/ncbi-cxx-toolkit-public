@@ -57,8 +57,13 @@ class CNetStorageServerException : public CException
             eReadError              = 1012,
             eInternalError          = 1013,
             eObjectNotFound         = 1014,
-            eDatabaseError          = 1015,
-            eInvalidConfig          = 1016
+            eAttributeNotFound      = 1015,
+            eAttributeValueNotFound = 1016,
+            eDatabaseError          = 1017,
+            eInvalidConfig          = 1018,
+            eInvalidMetaInfoRequest = 1019      // Meta info involving operation
+                                                // requested while the service
+                                                // is not configured for meta
         };
         virtual const char *  GetErrCodeString(void) const;
         unsigned int ErrCodeToHTTPStatusCode(void) const;

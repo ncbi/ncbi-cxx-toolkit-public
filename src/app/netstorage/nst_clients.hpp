@@ -79,6 +79,8 @@ class CNSTClient
         { m_Application = application; }
         void SetTicket(const string &  ticket)
         { m_Ticket = ticket; }
+        void SetService(const string &  service)
+        { m_Service = service; }
         void SetPeerAddress(unsigned int  peer_address)
         { m_Addr = peer_address; }
         void  AddBytesWritten(size_t  count)
@@ -102,6 +104,7 @@ class CNSTClient
     private:
         string          m_Application;    // Absolute exec path
         string          m_Ticket;         // Optional auth ticket
+        string          m_Service;        // Optional service
 
         unsigned int    m_Type;           // bit mask of ENSTClientType
         unsigned int    m_Addr;           // Client peer address
@@ -134,6 +137,7 @@ class CNSTClientRegistry
         void  Touch(const string &  client,
                     const string &  applications,
                     const string &  ticket,
+                    const string &  service,
                     unsigned int    peer_address);
         void  Touch(const string &  client);
         void  RegisterSocketWriteError(const string &  client);

@@ -48,6 +48,7 @@
 #include "nst_version.hpp"
 #include "nst_application.hpp"
 #include "nst_warning.hpp"
+#include "nst_config.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -70,6 +71,7 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
     { "GETOBJECTINFO",  & CNetStorageHandler::x_ProcessGetObjectInfo },
     { "GETATTR",        & CNetStorageHandler::x_ProcessGetAttr },
     { "SETATTR",        & CNetStorageHandler::x_ProcessSetAttr },
+    { "DELATTR",        & CNetStorageHandler::x_ProcessDelAttr },
     { "READ",           & CNetStorageHandler::x_ProcessRead },
     { "CREATE",         & CNetStorageHandler::x_ProcessCreate },
     { "WRITE",          & CNetStorageHandler::x_ProcessWrite },
@@ -464,7 +466,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 // x_OnData gets control when raw data are received.
 void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
 {
-    if (!m_ObjectStream) {
+    if (!m_ObjectBeingWritten) {
         if (data_size > 0) {
             ERR_POST("Received " << data_size << " bytes after "
                      "an error has been reported to the client");
@@ -473,12 +475,12 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
     }
 
     try {
-        m_ObjectStream.Write(data, data_size);
+        m_ObjectBeingWritten.Write(data, data_size);
         m_ClientRegistry.AddBytesWritten(m_Client, data_size);
         m_ObjectSize += data_size;
     }
     catch (const std::exception &  ex) {
-        string  message = "Error writing into " + m_ObjectStream.GetLoc() +
+        string  message = "Error writing into " + m_ObjectBeingWritten.GetLoc() +
                           ": " + ex.what();
         ERR_POST(message);
 
@@ -488,9 +490,8 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
                                     CNetStorageServerException::eWriteError,
                                     message);
         x_SendSyncMessage(response);
-        m_ObjectStream = NULL;
+        m_ObjectBeingWritten = NULL;
         m_DataMessageSN = -1;
-        m_NeedMetaInfo = false;
         return;
     }
 }
@@ -498,7 +499,7 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
 
 void CNetStorageHandler::x_SendWriteConfirmation()
 {
-    if (!m_ObjectStream) {
+    if (!m_ObjectBeingWritten) {
         x_SetCmdRequestStatus(eStatus_ServerError);
         x_PrintMessageRequestStop();
         return;
@@ -507,9 +508,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
     if (m_NeedMetaInfo) {
         // Update of the meta DB is required. It differs depending it was an
         // object creation or writing into an existing one.
-        CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
-                                        (CNcbiApplication::Instance());
-        string object_loc = m_ObjectStream.GetLoc();
+        string object_loc = m_ObjectBeingWritten.GetLoc();
         CNetStorageObjectLoc      object_loc_struct(
                 m_Server->GetCompoundIDPool(),
                 object_loc);
@@ -519,32 +518,27 @@ void CNetStorageHandler::x_SendWriteConfirmation()
             // In case of problems the response must be ERROR which will be
             // automatically sent in case of an exception.
             try {
-                app->GetDb().ExecSP_CreateObjectWithClientID(
-                        m_DBObjectID,
-                        object_loc_struct.GetUniqueKey(),
-                        object_loc,
-                        m_ObjectSize,
-                        m_DBClientID);
+                m_Server->GetDb().ExecSP_CreateObjectWithClientID(
+                        m_DBObjectID, object_loc_struct.GetUniqueKey(),
+                        object_loc, m_ObjectSize, m_DBClientID);
             } catch (...) {
-                m_ObjectStream = NULL;
-                m_NeedMetaInfo = false;
+                m_ObjectBeingWritten = NULL;
                 throw;
             }
         } else {
             // It was writing into existing object
             try {
-                app->GetDb().ExecSP_UpdateObjectOnWriteByKey(
+                m_Server->GetDb().ExecSP_UpdateObjectOnWrite(
                         object_loc_struct.GetUniqueKey(),
-                        m_ObjectSize);
+                        object_loc, m_ObjectSize, m_DBClientID);
             } catch (const CException &  ex) {
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
                 AppendWarning(response, eDatabaseWarning, ex.what());
                 x_SendSyncMessage(response);
                 x_PrintMessageRequestStop();
 
-                m_ObjectStream = NULL;
+                m_ObjectBeingWritten = NULL;
                 m_DataMessageSN = -1;
-                m_NeedMetaInfo = false;
                 return;
             } catch (...) {
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
@@ -553,9 +547,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 x_SendSyncMessage(response);
                 x_PrintMessageRequestStop();
 
-                m_ObjectStream = NULL;
+                m_ObjectBeingWritten = NULL;
                 m_DataMessageSN = -1;
-                m_NeedMetaInfo = false;
                 return;
             }
         }
@@ -563,9 +556,8 @@ void CNetStorageHandler::x_SendWriteConfirmation()
 
     x_SendSyncMessage(CreateResponseMessage(m_DataMessageSN));
     x_PrintMessageRequestStop();
-    m_ObjectStream = NULL;
+    m_ObjectBeingWritten = NULL;
     m_DataMessageSN = -1;
-    m_NeedMetaInfo = false;
 }
 
 
@@ -786,9 +778,18 @@ CNetStorageHandler::x_ProcessHello(
         application = message.GetString("Application");
     if (message.HasKey("Ticket"))
         ticket = message.GetString("Ticket");
+    if (message.HasKey("Service")) {
+        m_Service = NStr::TruncateSpaces(message.GetString("Service"));
+        m_NeedMetaInfo = m_Server->NeedMetadata(m_Service);
+    }
+    else {
+        m_Service = "";
+        m_NeedMetaInfo = false;
+    }
 
     // Memorize the client in the registry
-    m_ClientRegistry.Touch(m_Client, application, ticket, x_GetPeerAddress());
+    m_ClientRegistry.Touch(m_Client, application,
+                           ticket, m_Service, x_GetPeerAddress());
 
     // Send success response
     x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
@@ -928,9 +929,61 @@ CNetStorageHandler::x_ProcessReconfigure(
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
+    CJsonNode               reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CNcbiApplication *      app = CNcbiApplication::Instance();
+    bool                    reloaded = app->ReloadConfig(
+                                            CMetaRegistry::fReloadIfChanged);
+    if (!reloaded) {
+        AppendWarning(reply, eConfigNotChangedWarning,
+                      "Configuration file has not been changed, RECONFIGURE ignored");
+        x_SendSyncMessage(reply);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    const CNcbiRegistry &   reg = app->GetConfig();
+    bool                    well_formed = NSTValidateConfigFile(reg);
+
+    if (!well_formed) {
+        m_Server->RegisterAlert(eReconfigure);
+        NCBI_THROW(CNetStorageServerException, eInvalidConfig,
+                   "Configuration file is not well formed");
+    }
 
 
+    // Reconfigurable at runtime:
+    // [server]: logging and admin name list
+    // [metadata_conf]
+    SNetStorageServerParameters     params;
+    params.Read(reg, "server");
 
+    CJsonNode   server_diff = m_Server->SetParameters(params, true);
+    CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
+
+    m_Server->AcknowledgeAlert(eConfig);
+    m_Server->AcknowledgeAlert(eReconfigure);
+
+    if (server_diff.IsNull() && metadata_diff.IsNull()) {
+        if (m_ConnContext.NotNull())
+             GetDiagContext().Extra().Print("accepted_changes", "none");
+        AppendWarning(reply, eConfigNotChangedWarning,
+                      "No changeable parameters were identified "
+                      "in the new configuration file");
+        reply.SetByKey("What", CJsonNode::NewObjectNode());
+        x_SendSyncMessage(reply);
+        x_PrintMessageRequestStop();
+        return;
+    }
+
+    CJsonNode   total_changes = CJsonNode::NewObjectNode();
+    if (!server_diff.IsNull())
+        total_changes.SetByKey("server", server_diff);
+    if (!metadata_diff.IsNull())
+        total_changes.SetByKey("metadata_conf", metadata_diff);
+
+    reply.SetByKey("What", total_changes);
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 
@@ -994,10 +1047,11 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    string            object_loc = x_GetObjectLoc(message);
+    SObjectID         object_id = x_GetObjectKey(message);
     CNetStorage       net_storage(g_CreateNetStorage(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
-    CNetStorageObject net_storage_object = net_storage.Open(object_loc, 0);
+    CNetStorageObject net_storage_object = net_storage.Open(
+                                                object_id.object_loc, 0);
 
     CJsonNode         object_info = net_storage_object.GetInfo().ToJSON();
     CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1022,15 +1076,52 @@ CNetStorageHandler::x_ProcessGetAttr(
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "Mandatory field 'AttrName' is missed");
 
-    /*
-    string              object_loc = x_GetObjectLoc(message);
-    string              attr_name = message.GetString("AttrName");
-    CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
-                                        (CNcbiApplication::Instance());
-    IConnection *       conn = app->GetDb().GetDbConn();
-    */
+    string      attr_name = message.GetString("AttrName");
+    if (attr_name.empty())
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Attribute name must not be empty");
 
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETATTR message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
 
+    if (!m_NeedMetaInfo)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "Client service is not configured for meta info");
+
+    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+
+    SObjectID   object_id = x_GetObjectKey(message);
+    string      value;
+    int         status = m_Server->GetDb().ExecSP_GetAttribute(
+                                            object_id.object_key,
+                                            attr_name, value);
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    if (status == 0) {
+        // Everything is fine, the attribute is found
+        reply.SetString("AttrValue", value);
+    } else if (status == -1) {
+        // Object is not found
+        NCBI_THROW(CNetStorageServerException, eObjectNotFound,
+                   "Object not found");
+    } else if (status == -2) {
+        // Attribute is not found
+        NCBI_THROW(CNetStorageServerException, eAttributeNotFound,
+                   "Attribute not found");
+    } else if (status == -3) {
+        // Attribute value is not found
+        NCBI_THROW(CNetStorageServerException, eAttributeValueNotFound,
+                   "Attribute value not found");
+    } else {
+        // Unknown status
+        NCBI_THROW(CNetStorageServerException, eInternalError,
+                   "Unknown GetAttributeValue status");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 
@@ -1045,21 +1136,93 @@ CNetStorageHandler::x_ProcessSetAttr(
     if (!message.HasKey("AttrName"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "Mandatory field 'AttrName' is missed");
+
+    string      attr_name = message.GetString("AttrName");
+    if (attr_name.empty())
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                    "Attribute name must not be empty");
+
     if (!message.HasKey("AttrValue"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "Mandatory field 'AttrValue' is missed");
 
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "SETATTR message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
 
-    /*
-    string              object_loc = x_GetObjectLoc(message);
-    string              attr_name = message.GetString("AttrName");
-    string              attr_value = message.GetString("AttrValue");
-    CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
-                                        (CNcbiApplication::Instance());
-    IConnection *       conn = app->GetDb().GetDbConn();
-    */
+    if (!m_NeedMetaInfo)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "Client service is not configured for meta info");
+
+    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+
+    SObjectID               object_id = x_GetObjectKey(message);
+    string                  value = message.GetString("AttrValue");
+
+    // The SP will throw an exception if an error occured
+    m_Server->GetDb().ExecSP_AddAttribute(object_id.object_key,
+                                          object_id.object_loc,
+                                          attr_name, value,
+                                          m_DBClientID);
+    x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
+    x_PrintMessageRequestStop();
+}
 
 
+void
+CNetStorageHandler::x_ProcessDelAttr(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    x_CheckNonAnonymousClient();
+
+    if (!message.HasKey("AttrName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'AttrName' is missed");
+
+    string      attr_name = message.GetString("AttrName");
+    if (attr_name.empty())
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                    "Attribute name must not be empty");
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "DELATTR message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (!m_NeedMetaInfo)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "Client service is not configured for meta info");
+
+    m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+
+    SObjectID   object_id = x_GetObjectKey(message);
+    int         status = m_Server->GetDb().ExecSP_DelAttribute(
+                                            object_id.object_key, attr_name);
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    if (status == -1) {
+        // Object is not found
+        AppendWarning(reply, eObjectNotFoundWarning,
+                      "Object not found");
+    } else if (status == -2) {
+        // Attribute is not found
+        AppendWarning(reply, eAttributeNotFoundWarning,
+                      "Attribute not found in meta info DB");
+    } else if (status == -3) {
+        // Attribute value is not found
+        AppendWarning(reply, eAttributeValueNotFoundWarning,
+                      "Attribute value not found in meta info DB");
+    } else if (status != 0) {
+        // Unknown status
+        NCBI_THROW(CNetStorageServerException, eInternalError,
+                   "Unknown DelAttributeValue status");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 
@@ -1076,22 +1239,16 @@ CNetStorageHandler::x_ProcessCreate(
 
     x_CheckICacheSettings(icache_settings);
 
-    if ((flags & fNST_NoMetaData) == 0) {
+    if (m_NeedMetaInfo) {
         // Meta information is required so check the DB
-        CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
-                                        (CNcbiApplication::Instance());
-
-        app->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
-        m_NeedMetaInfo = true;
-    } else
-        m_NeedMetaInfo = false;
-
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    }
 
     // Create the object stream depending on settings
-    m_ObjectStream = x_CreateObjectStream(icache_settings, flags);
+    m_ObjectBeingWritten = x_CreateObjectStream(icache_settings, flags);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
-    string          locator = m_ObjectStream.GetLoc();
+    string          locator = m_ObjectBeingWritten.GetLoc();
 
     reply.SetString("ObjectLoc", locator);
     x_SendSyncMessage(reply);
@@ -1127,32 +1284,28 @@ CNetStorageHandler::x_ProcessWrite(
                    "WRITE message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
-    string          object_loc = x_GetObjectLoc(message);
+    if (m_NeedMetaInfo) {
+        // Meta information is required so check the DB
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    }
+
+    SObjectID       object_id = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
 
-    m_ObjectStream = net_storage.Open(object_loc, 0);
+    m_ObjectBeingWritten = net_storage.Open(object_id.object_loc, 0);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
-    string          locator = m_ObjectStream.GetLoc();
+    string          locator = m_ObjectBeingWritten.GetLoc();
 
     reply.SetString("ObjectLoc", locator);
     x_SendSyncMessage(reply);
 
-    CNetStorageObjectLoc    object_loc_struct(m_Server->GetCompoundIDPool(),
-                                              locator);
-    TNetStorageFlags        flags = object_loc_struct.GetStorageFlags();
-
     if (m_ConnContext.NotNull() && !message.HasKey("ObjectLoc")) {
         GetDiagContext().Extra()
             .Print("ObjectLoc", locator)
-            .Print("ObjectKey", object_loc_struct.GetUniqueKey());
+            .Print("ObjectKey", object_id.object_key);
     }
-
-    if ((flags & fNST_NoMetaData) == 0)
-        m_NeedMetaInfo = true;
-    else
-        m_NeedMetaInfo = false;
 
     // Inform the message receiving loop that raw data are to follow
     m_ReadMode = eReadRawData;
@@ -1169,14 +1322,23 @@ CNetStorageHandler::x_ProcessRead(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
-
     x_CheckNonAnonymousClient();
 
-    string              object_loc = x_GetObjectLoc(message);
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "READ message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (m_NeedMetaInfo) {
+        // Meta information is required so check the DB
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    }
+
+    SObjectID           object_id = x_GetObjectKey(message);
     CNetStorage         net_storage(g_CreateNetStorage(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
-    CNetStorageObject   net_storage_object = net_storage.Open(object_loc, 0);
-
+    CNetStorageObject   net_storage_object = net_storage.Open(
+                                                    object_id.object_loc, 0);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
     x_SendSyncMessage(reply);
@@ -1185,6 +1347,7 @@ CNetStorageHandler::x_ProcessRead(
 
     char            buffer[kReadBufferSize];
     size_t          bytes_read;
+    Int8            total_bytes = 0;
 
     try {
         while (!net_storage_object.Eof()) {
@@ -1196,6 +1359,7 @@ CNetStorageHandler::x_ProcessRead(
                 return;
 
             m_ClientRegistry.AddBytesRead(m_Client, bytes_read);
+            total_bytes += bytes_read;
         }
 
         net_storage_object.Close();
@@ -1213,6 +1377,12 @@ CNetStorageHandler::x_ProcessRead(
     if (x_SendOverUTTP() != eIO_Success)
         return;
 
+    if (m_NeedMetaInfo) {
+        m_Server->GetDb().ExecSP_UpdateObjectOnRead(
+                object_id.object_key,
+                object_id.object_loc, total_bytes, m_DBClientID);
+    }
+
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
 }
@@ -1224,17 +1394,34 @@ CNetStorageHandler::x_ProcessDelete(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
-
     x_CheckNonAnonymousClient();
 
-    string          object_loc = x_GetObjectLoc(message);
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "DELETE message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    SObjectID       object_id = x_GetObjectKey(message);
+    int             status = 0;
+
+    if (m_NeedMetaInfo) {
+        // Meta information is required so delete from the DB first
+        status = m_Server->GetDb().ExecSP_RemoveObject(object_id.object_key);
+    }
+
     CNetStorage     net_storage(g_CreateNetStorage(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
 
-    net_storage.Remove(object_loc);
+    net_storage.Remove(object_id.object_loc);
     m_ClientRegistry.AddObjectsDeleted(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    if (m_NeedMetaInfo && status == -1) {
+        // Stored procedure return -1 if the object is not found in the meta DB
+        AppendWarning(reply, eObjectNotFoundWarning,
+                      "Object not found in meta info DB");
+    }
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
@@ -1247,7 +1434,6 @@ CNetStorageHandler::x_ProcessRelocate(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
-
     x_CheckNonAnonymousClient();
 
     // Take the arguments
@@ -1263,12 +1449,23 @@ CNetStorageHandler::x_ProcessRelocate(
 
     x_CheckICacheSettings(new_location_icache_settings);
 
+    if (m_NeedMetaInfo) {
+        // Meta information is required so check the DB
+        m_Server->GetDb().ExecSP_CreateClient(m_Client, m_DBClientID);
+    }
 
-    string          object_loc = x_GetObjectLoc(message);
+    SObjectID       object_id = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
-    string          new_object_loc = net_storage.Relocate(object_loc,
+    string          new_object_loc = net_storage.Relocate(object_id.object_loc,
                                                           new_location_flags);
+
+    if (m_NeedMetaInfo) {
+        m_Server->GetDb().ExecSP_UpdateObjectOnRelocate(
+                                    object_id.object_key,
+                                    object_id.object_loc,
+                                    m_DBClientID);
+    }
 
     m_ClientRegistry.AddObjectsRelocated(m_Client, 1);
 
@@ -1291,12 +1488,13 @@ CNetStorageHandler::x_ProcessExists(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    // It was decided not to touch the DB even if meta info is required
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    string          object_loc = x_GetObjectLoc(message);
+    SObjectID       object_id = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(
                           CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
-    bool            exists = net_storage.Exists(object_loc);
+    bool            exists = net_storage.Exists(object_id.object_loc);
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
     reply.SetBoolean("Exists", exists);
@@ -1310,12 +1508,14 @@ CNetStorageHandler::x_ProcessGetSize(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
+    // It was decided not to touch the DB even if meta info is required
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    string            object_loc = x_GetObjectLoc(message);
+    SObjectID         object_id = x_GetObjectKey(message);
     CNetStorage       net_storage(g_CreateNetStorage(
-                          CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
-    CNetStorageObject net_storage_object = net_storage.Open(object_loc, 0);
+                        CNetICacheClient(CNetICacheClient::eAppRegistry), 0));
+    CNetStorageObject net_storage_object = net_storage.Open(
+                        object_id.object_loc, 0);
     Uint8             object_size = net_storage_object.GetSize();
     CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
 
@@ -1325,20 +1525,24 @@ CNetStorageHandler::x_ProcessGetSize(
 }
 
 
-string
-CNetStorageHandler::x_GetObjectLoc(const CJsonNode &  message)
+SObjectID
+CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
 {
+    SObjectID       ret_val;
+
     if (message.HasKey("ObjectLoc")) {
         string  object_loc = message.GetString("ObjectLoc");
         x_CheckObjectLoc(object_loc);
 
-        if (m_ConnContext.NotNull()) {
-            CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
-                                  object_loc);
+        CNetStorageObjectLoc  object_loc_struct(m_Server->GetCompoundIDPool(),
+                              object_loc);
+        if (m_ConnContext.NotNull())
             GetDiagContext().Extra()
                 .Print("ObjectKey", object_loc_struct.GetUniqueKey());
-        }
-        return object_loc;
+
+        ret_val.object_key = object_loc_struct.GetUniqueKey();
+        ret_val.object_loc = object_loc;
+        return ret_val;
     }
 
     // Take the arguments
@@ -1361,16 +1565,17 @@ CNetStorageHandler::x_GetObjectLoc(const CJsonNode &  message)
                                        TFileTrack_Site::GetDefault().c_str());
     g_SetNetICacheParams(object_loc_struct, icache_client);
 
-    string              object_loc = object_loc_struct.GetLoc();
+    ret_val.object_key = object_loc_struct.GetUniqueKey();
+    ret_val.object_loc = object_loc_struct.GetLoc();
 
     // Log if needed
     if (m_ConnContext.NotNull()) {
         GetDiagContext().Extra()
-            .Print("ObjectLoc", object_loc)
-            .Print("ObjectKey", object_loc_struct.GetUniqueKey());
+            .Print("ObjectLoc", ret_val.object_loc)
+            .Print("ObjectKey", ret_val.object_key);
     }
 
-    return object_loc;
+    return ret_val;
 }
 
 
@@ -1455,10 +1660,7 @@ CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
     }
 
     if (m_NeedMetaInfo) {
-        CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
-                                        (CNcbiApplication::Instance());
-
-        app->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
+        m_Server->GetDb().ExecSP_GetNextObjectID(m_DBObjectID);
 
         return g_CreateNetStorageObject(net_storage,
                                         m_DBObjectID, flags);

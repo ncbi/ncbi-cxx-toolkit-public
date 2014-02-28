@@ -32,7 +32,7 @@
  */
 
 #include <corelib/ncbiapp.hpp>
-#include "nst_database.hpp"
+#include <connect/ncbi_types.h>
 
 
 USING_NCBI_SCOPE;
@@ -47,9 +47,6 @@ public:
     void Init(void);
     int Run(void);
 
-    // Singleton for CNSTDatabase, used for meta information
-    CNSTDatabase &  GetDb(void);
-
 protected:
     EPreparseArgs PreparseArgs(int                argc,
                                const char* const* argv);
@@ -57,7 +54,6 @@ protected:
 private:
     STimeout                m_ServerAcceptTimeout;
     string                  m_CommandLine;
-    auto_ptr<CNSTDatabase>  m_Db;   // Access to NST attributes DB
 
     bool x_WritePid(void) const;
 };

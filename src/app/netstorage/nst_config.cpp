@@ -42,6 +42,7 @@ const string    g_LogPrefix = "Validating config file: ";
 
 static bool NSTValidateServerSection(const IRegistry &  reg);
 static bool NSTValidateDatabaseSection(const IRegistry &  reg);
+static bool NSTValidateMetadataSection(const IRegistry &  reg);
 static bool NSTValidateBool(const IRegistry &  reg,
                             const string &  section, const string &  entry);
 static bool NSTValidateInt(const IRegistry &  reg,
@@ -61,7 +62,10 @@ bool NSTValidateConfigFile(const IRegistry &  reg)
 {
     bool    server_well_formed = NSTValidateServerSection(reg);
     bool    database_well_formed = NSTValidateDatabaseSection(reg);
-    return server_well_formed && database_well_formed;
+    bool    metadata_well_formed = NSTValidateMetadataSection(reg);
+    return server_well_formed &&
+           database_well_formed &&
+           metadata_well_formed;
 }
 
 
@@ -228,6 +232,35 @@ bool NSTValidateDatabaseSection(const IRegistry &  reg)
     return well_formed;
 }
 
+
+bool NSTValidateMetadataSection(const IRegistry &  reg)
+{
+    const string    section = "metadata_conf";
+    bool            well_formed = true;
+    list<string>    entries;
+
+    reg.EnumerateEntries(section, &entries);
+    for (list<string>::const_iterator  k = entries.begin();
+         k != entries.end(); ++k) {
+        string      entry = *k;
+
+        if (!NStr::StartsWith(entry, "service_name_", NStr::eCase))
+            continue;
+
+        bool    entry_ok = NSTValidateString(reg, section, entry);
+        well_formed = well_formed && entry_ok;
+        if (entry_ok) {
+            string      value = reg.GetString(section, entry, "");
+            if (value.empty()) {
+                well_formed = false;
+                LOG_POST(Warning << g_LogPrefix << " value "
+                                 << NSTRegValName(section, entry)
+                                 << " must not be empty");
+            }
+        }
+    }
+    return well_formed;
+}
 
 
 // Forms the ini file value name for logging

@@ -52,6 +52,13 @@ struct SICacheSettings;
 struct SUserKey;
 
 
+struct SObjectID
+{
+    string      object_key;
+    string      object_loc;
+};
+
+
 class CNetStorageHandler : public IServer_ConnectionHandler
 {
 public:
@@ -124,6 +131,7 @@ private:
     // The client identification. It appears after HELLO.
     string                      m_Client;
     CNSTClientRegistry          m_ClientRegistry;
+    string                      m_Service;
 
 private:
     enum EReadMode {
@@ -145,7 +153,7 @@ private:
 
 private:
     // Asynchronous write support
-    CNetStorageObject       m_ObjectStream;
+    CNetStorageObject       m_ObjectBeingWritten;
     Int8                    m_DataMessageSN;
     bool                    m_NeedMetaInfo;
     bool                    m_CreateRequest;
@@ -194,6 +202,8 @@ private:
                           const SCommonRequestArguments &  common_args);
     void x_ProcessSetAttr(const CJsonNode &                message,
                           const SCommonRequestArguments &  common_args);
+    void x_ProcessDelAttr(const CJsonNode &                message,
+                          const SCommonRequestArguments &  common_args);
     void x_ProcessRead(const CJsonNode &                message,
                        const SCommonRequestArguments &  common_args);
     void x_ProcessCreate(const CJsonNode &                message,
@@ -210,8 +220,7 @@ private:
                           const SCommonRequestArguments &  common_args);
 
 private:
-    string
-    x_GetObjectLoc(const CJsonNode &  message);
+    SObjectID x_GetObjectKey(const CJsonNode &  message);
     void x_CheckNonAnonymousClient(void);
     void x_CheckObjectLoc(const string &  object_loc);
     void x_CheckICacheSettings(const SICacheSettings &  icache_settings);

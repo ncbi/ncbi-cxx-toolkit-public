@@ -79,16 +79,6 @@ extern "C" void Threaded_Server_SignalHandler(int signum)
 }
 
 
-CNSTDatabase &  CNetStorageDApp::GetDb(void)
-{
-    if (m_Db.get())
-        return *m_Db;
-
-    m_Db.reset(new CNSTDatabase(*this));
-    return *m_Db;
-}
-
-
 CNetStorageDApp::CNetStorageDApp()
     : CNcbiApplication()
 {
@@ -150,18 +140,6 @@ int CNetStorageDApp::Run(void)
     signal(SIGTERM, Threaded_Server_SignalHandler);
 
     bool    config_well_formed = NSTValidateConfigFile(reg);
-    bool    db_connect_ok = false;
-
-    try {
-        GetDb().Connect();
-        db_connect_ok = true;
-    } catch (const CException &  ex) {
-        ERR_POST(ex);
-    } catch (const std::exception &  ex) {
-        ERR_POST("Exception while connecting to the database: " << ex.what());
-    } catch (...) {
-        ERR_POST("Unknown exception while connecting to the database");
-    }
 
 
     // [server] section
@@ -177,7 +155,19 @@ int CNetStorageDApp::Run(void)
     auto_ptr<CNetStorageServer>     server(new CNetStorageServer());
     server->SaveCommandLine(m_CommandLine);
     server->SetCustomThreadSuffix("_h");
-    server->SetParameters(params);
+    server->SetParameters(params, false);
+    server->ReadMetadataConfiguration(reg);
+
+    // Connect to the database
+    try {
+        server->GetDb().Connect();
+    } catch (const CException &  ex) {
+        ERR_POST(ex);
+    } catch (const std::exception &  ex) {
+        ERR_POST("Exception while connecting to the database: " << ex.what());
+    } catch (...) {
+        ERR_POST("Unknown exception while connecting to the database");
+    }
 
     // Use port passed through parameters
     server->AddDefaultListener(new CNetStorageConnectionFactory(&*server));
@@ -208,8 +198,6 @@ int CNetStorageDApp::Run(void)
         server->RegisterAlert(ePidFile);
     if (!config_well_formed)
         server->RegisterAlert(eConfig);
-    if (!db_connect_ok)
-        server->RegisterAlert(eDB);
 
     if (args[kNodaemonArgName])
         NcbiCout << "Server started" << NcbiEndl;

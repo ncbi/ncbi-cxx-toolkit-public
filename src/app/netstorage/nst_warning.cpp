@@ -49,6 +49,14 @@ string GetWarningCodeString(EWarningCode  code)
             return "eAlertAlreadyAcknowledgedWarning";
         case eAlertUnknownAcknowledgeResultWarning:
             return "eAlertUnknownAcknowledgeResultWarning";
+        case eAttributeNotFoundWarning:
+            return "eAttributeNotFoundWarning";
+        case eAttributeValueNotFoundWarning:
+            return "eAttributeValueNotFoundWarning";
+        case eObjectNotFoundWarning:
+            return "eObjectNotFoundWarning";
+        case eConfigNotChangedWarning:
+            return "eConfigNotChangedWarning";
         default:
             return "UnknownNetStorageWarning";
     }

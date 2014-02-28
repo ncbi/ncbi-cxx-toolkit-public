@@ -41,7 +41,11 @@ enum EWarningCode {
     eDatabaseWarning                      = 1,
     eAlertNotFoundWarning                 = 2,
     eAlertAlreadyAcknowledgedWarning      = 3,
-    eAlertUnknownAcknowledgeResultWarning = 4
+    eAlertUnknownAcknowledgeResultWarning = 4,
+    eAttributeNotFoundWarning             = 5,
+    eAttributeValueNotFoundWarning        = 6,
+    eObjectNotFoundWarning                = 7,
+    eConfigNotChangedWarning              = 8
 };
 
 string GetWarningCodeString(EWarningCode  code);

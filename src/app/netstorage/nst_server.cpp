@@ -67,15 +67,62 @@ CNetStorageServer::AddDefaultListener(IServer_ConnectionFactory *  factory)
 }
 
 
-void
-CNetStorageServer::SetParameters(const SNetStorageServerParameters &  params)
+CJsonNode
+CNetStorageServer::SetParameters(
+                        const SNetStorageServerParameters &  params,
+                        bool                                 reconfigure)
 {
-    CServer::SetParameters(params);
+    if (!reconfigure) {
+        CServer::SetParameters(params);
 
-    m_Port = params.port;
-    m_Log = params.log;
-    m_NetworkTimeout = params.network_timeout;
-    x_SetAdminClientNames(params.admin_client_names);
+        m_Port = params.port;
+        m_Log = params.log;
+        m_NetworkTimeout = params.network_timeout;
+        m_AdminClientNames = x_GetAdminClientNames(params.admin_client_names);
+        return CJsonNode::NewNullNode();
+    }
+
+    // Here: it is reconfiguration. Need to consider log and admin names only.
+
+    set<string>     new_admins = x_GetAdminClientNames(
+                                        params.admin_client_names);
+    vector<string>  added;
+    vector<string>  deleted;
+
+    {
+        CFastMutexGuard     guard(m_AdminClientNamesLock);
+
+        // Compare the old and the new sets of administrators
+        set_difference(new_admins.begin(), new_admins.end(),
+                       m_AdminClientNames.begin(), m_AdminClientNames.end(),
+                       inserter(added, added.begin()));
+        set_difference(m_AdminClientNames.begin(), m_AdminClientNames.end(),
+                       new_admins.begin(), new_admins.end(),
+                       inserter(deleted, deleted.begin()));
+
+        m_AdminClientNames = new_admins;
+    }
+
+    if (m_Log == params.log && added.empty() && deleted.empty())
+        return CJsonNode::NewNullNode();
+
+    // Here: there is a difference
+    CJsonNode       diff = CJsonNode::NewObjectNode();
+
+    if (m_Log != params.log) {
+        CJsonNode   values = CJsonNode::NewObjectNode();
+
+        values.SetByKey("old", CJsonNode::NewBooleanNode(m_Log));
+        values.SetByKey("old", CJsonNode::NewBooleanNode(params.log));
+        diff.SetByKey("log", values);
+
+        m_Log = params.log;
+    }
+
+    if (!added.empty() || !deleted.empty())
+        diff.SetByKey("admin_client_name", x_diffInJson(added, deleted));
+
+    return diff;
 }
 
 
@@ -116,19 +163,20 @@ string  CNetStorageServer::x_GenerateGUID(void) const
 
 bool CNetStorageServer::IsAdminClientName(const string &  name) const
 {
-    for (vector<string>::const_iterator  k(m_AdminClientNames.begin());
-         k != m_AdminClientNames.end(); ++k)
-        if (*k == name)
-            return true;
-    return false;
+    set<string>::const_iterator     found;
+    CFastMutexGuard                 guard(m_AdminClientNamesLock);
+
+    found = m_AdminClientNames.find(name);
+    return found != m_AdminClientNames.end();
 }
 
 
-void CNetStorageServer::x_SetAdminClientNames(const string &  client_names)
+set<string>
+CNetStorageServer::x_GetAdminClientNames(const string &  client_names)
 {
-    m_AdminClientNames.clear();
-    NStr::Tokenize(client_names, ";, ", m_AdminClientNames,
-                   NStr::eMergeDelims);
+    vector<string>      admins;
+    NStr::Tokenize(client_names, ";, ", admins, NStr::eMergeDelims);
+    return set<string>(admins.begin(), admins.end());
 }
 
 
@@ -153,5 +201,96 @@ void CNetStorageServer::RegisterAlert(EAlertType  alert_type)
 CJsonNode CNetStorageServer::SerializeAlerts(void) const
 {
     return m_Alerts.Serialize();
+}
+
+
+CNSTDatabase &  CNetStorageServer::GetDb(void)
+{
+    if (m_Db.get())
+        return *m_Db;
+
+    m_Db.reset(new CNSTDatabase(this));
+    return *m_Db;
+}
+
+
+bool  CNetStorageServer::NeedMetadata(const string &  service) const
+{
+    set<string>::const_iterator     found;
+    CFastMutexGuard                 guard(m_MetadataServicesLock);
+
+    found = m_MetadataServices.find(service);
+    return found != m_MetadataServices.end();
+}
+
+
+CJsonNode
+CNetStorageServer::ReadMetadataConfiguration(const IRegistry &  reg)
+{
+    const string    section = "metadata_conf";
+    set<string>     new_services;
+    list<string>    entries;
+
+    reg.EnumerateEntries(section, &entries);
+    for (list<string>::const_iterator  k = entries.begin();
+         k != entries.end(); ++k) {
+        string      entry = *k;
+
+        if (!NStr::StartsWith(entry, "service_name_", NStr::eCase))
+            continue;
+
+        string      value = reg.GetString(section, entry, "");
+        if (!value.empty())
+            new_services.insert(value);
+    }
+
+    vector<string>      added;
+    vector<string>      deleted;
+    {
+        CFastMutexGuard     guard(m_MetadataServicesLock);
+
+        // Compare the new and the old set of services
+        set_difference(new_services.begin(), new_services.end(),
+                       m_MetadataServices.begin(), m_MetadataServices.end(),
+                       inserter(added, added.begin()));
+        set_difference(m_MetadataServices.begin(), m_MetadataServices.end(),
+                       new_services.begin(), new_services.end(),
+                       inserter(deleted, deleted.begin()));
+
+        m_MetadataServices = new_services;
+    }
+
+    if (added.empty() && deleted.empty())
+        return CJsonNode::NewNullNode();
+
+    CJsonNode       diff = CJsonNode::NewObjectNode();
+    diff.SetByKey("services", x_diffInJson(added, deleted));
+    return diff;
+}
+
+
+CJsonNode
+CNetStorageServer::x_diffInJson(const vector<string> &  added,
+                                const vector<string> &  deleted) const
+{
+    CJsonNode       diff = CJsonNode::NewObjectNode();
+
+    if (!added.empty()) {
+        CJsonNode       add_node = CJsonNode::NewArrayNode();
+        for (vector<string>::const_iterator  k = added.begin();
+                k != added.end(); ++k)
+            add_node.AppendString(*k);
+        diff.SetByKey("added", add_node);
+    }
+
+    if (!deleted.empty()) {
+        CJsonNode       del_node = CJsonNode::NewArrayNode();
+        for (vector<string>::const_iterator  k = deleted.begin();
+                k != deleted.end(); ++k)
+            del_node.AppendString(*k);
+        diff.SetByKey("deleted", del_node);
+    }
+
+    return diff;
 }
 

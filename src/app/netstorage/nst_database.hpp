@@ -39,6 +39,7 @@ BEGIN_NCBI_SCOPE
 // Forward declarations
 struct SCommonRequestArguments;
 class CJsonNode;
+class CNetStorageServer;
 
 
 struct SDbAccessInfo
@@ -53,49 +54,57 @@ struct SDbAccessInfo
 class CNSTDatabase
 {
 public:
-    CNSTDatabase(CNcbiApplication &  app);
+    CNSTDatabase(CNetStorageServer *  server);
     ~CNSTDatabase(void);
 
     void Connect(void);
 
-    void ExecSP_GetNextObjectID(Int8 &  object_id);
-    void ExecSP_CreateClient(const string &  client,
+    int  ExecSP_GetNextObjectID(Int8 &  object_id);
+    int  ExecSP_CreateClient(const string &  client,
                              Int8 &  client_id);
-    void ExecSP_CreateObject(
+    int  ExecSP_CreateObject(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
             const string &  client_name);
-    void ExecSP_CreateObjectWithClientID(
+    int  ExecSP_CreateObjectWithClientID(
             Int8  object_id, const string &  object_key,
             const string &  object_loc, Int8  size,
             Int8  client_id);
-    void ExecSP_UpdateObjectOnWriteByKey(
-            const string &  object_key, Int8  size);
-    void ExecSP_UpdateObjectOnWriteByLoc(
-            const string &  object_loc, Int8  size);
-    void ExecSP_UpdateObjectOnReadByKey(const string &  object_key);
-    void ExecSP_UpdateObjectOnReadByLoc(const string &  object_loc);
-    void ExecSP_RemoveObjectByKey(const string &  object_key);
-    void ExecSP_RemoveObjectByLoc(const string &  object_loc);
-    void ExecSP_AddAttributeByLoc(const string &  object_loc,
-                                  const string &  attr_name,
-                                  const string &  attr_value);
+    int  ExecSP_UpdateObjectOnWrite(
+            const string &  object_key,
+            const string &  object_loc, Int8  size, Int8  client_id);
+    int  ExecSP_UpdateObjectOnRead(
+            const string &  object_key,
+            const string &  object_loc, Int8  size, Int8  client_id);
+    int  ExecSP_UpdateObjectOnRelocate(
+            const string &  object_key,
+            const string &  object_loc, Int8  client_id);
+    int  ExecSP_RemoveObject(const string &  object_key);
+    int  ExecSP_AddAttribute(const string &  object_key,
+                             const string &  object_loc,
+                             const string &  attr_name,
+                             const string &  attr_value,
+                             Int8  client_id);
+    int  ExecSP_GetAttribute(const string &  object_key,
+                             const string &  attr_name,
+                             string &        value);
+    int  ExecSP_DelAttribute(const string &  object_key,
+                             const string &  attr_name);
 
 private:
     const SDbAccessInfo &  x_GetDbAccessInfo(void);
     CDatabase *            x_GetDatabase(void);
     CQuery x_NewQuery(void);
     CQuery x_NewQuery(const string &  sql);
-    void x_CheckStatus(CQuery &  query,
+    int  x_CheckStatus(CQuery &  query,
                        const string &  procedure);
 
 private:
-    CNcbiApplication &          m_App;
+    CNetStorageServer *         m_Server;
     auto_ptr<SDbAccessInfo>     m_DbAccessInfo;
     auto_ptr<CDatabase>         m_Db;
     bool                        m_Connected;
 
-    CNSTDatabase(void);
     CNSTDatabase(const CNSTDatabase &  conn);
     CNSTDatabase & operator= (const CNSTDatabase &  conn);
 };
