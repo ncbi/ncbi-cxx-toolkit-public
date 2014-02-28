@@ -51,10 +51,10 @@ CTMgr_ItemResolverRequest::~CTMgr_ItemResolverRequest(void)
 void
 CTMgr_ItemResolverRequest::AddDisplayTracks(const CTMgr_DisplayTrackReply& dtrack_reply)
 {
-    auto& idlist = SetDtrack_ids();
-    for (auto& dt : dtrack_reply.GetDisplay_tracks()) {
-        auto dtrack_id = Ref(new CTMgr_DTrackId());
-        dtrack_id->Assign(dt->GetDtrack_id());
+    TDtrack_ids& idlist = SetDtrack_ids();
+    ITERATE (CTMgr_DisplayTrackReply::TDisplay_tracks, it, dtrack_reply.GetDisplay_tracks()) {
+        CRef<CTMgr_DTrackId> dtrack_id(new CTMgr_DTrackId());
+        dtrack_id->Assign((*it)->GetDtrack_id());
         idlist.push_back(dtrack_id);
     }
 }
