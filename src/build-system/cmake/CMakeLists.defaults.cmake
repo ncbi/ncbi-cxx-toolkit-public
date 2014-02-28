@@ -1,0 +1,21 @@
+
+#set (ARCHIVE_OUTPUT_DIRECTORY ${NCBI_BUILD_ROOT}/../lib)
+#set (LIBRARY_OUTPUT_DIRECTORY ${NCBI_BUILD_ROOT}/../lib)
+#set (RUNTIME_OUTPUT_DIRECTORY ${NCBI_BUILD_ROOT}/../bin)
+#set (PDB_OUTPUT_DIRECTORY     ${NCBI_BUILD_ROOT}/../bin)
+
+#set (LIBRARY_OUTPUT_PATH     ${NCBI_BUILD_ROOT}/../lib)
+#set (EXECUTABLE_OUTPUT_PATH  ${NCBI_BUILD_ROOT}/../bin)
+set (LIBRARY_OUTPUT_PATH     ${NCBI_CMAKE_ROOT}/lib)
+set (EXECUTABLE_OUTPUT_PATH  ${NCBI_CMAKE_ROOT}/bin)
+
+set (NCBI_BUILD_BIN ${EXECUTABLE_OUTPUT_PATH})
+
+#set (NCBI_DATATOOL $NCBI/bin/datatool)
+set (NCBI_DATATOOL /netopt/ncbi_tools64/bin/datatool)
+
+ENABLE_TESTING()
+
+include(CMakeChecks)
+include_directories(${NCBI_BUILD_ROOT}/../inc ${NCBI_TREE_ROOT}/include)
+
