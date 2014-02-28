@@ -290,7 +290,7 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     out << "Database: " << m_BlastDb->GetTitle() << endl
         << "\t" << NStr::IntToString(m_BlastDb->GetNumSeqs(), kFlags) 
         << " sequences; "
-        << NStr::UInt8ToString(m_BlastDb->GetTotalLength(), kFlags)
+        << NStr::UInt8ToString(m_BlastDb->GetExactTotalLength(), kFlags)
         << " total " << kLetters << endl << endl
         << "Date: " << m_BlastDb->GetDate() 
         << "\tLongest sequence: " 

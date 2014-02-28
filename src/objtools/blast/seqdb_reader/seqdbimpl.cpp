@@ -69,6 +69,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
       m_NumSeqsStats    (0),
       m_NumOIDs         (0),
       m_TotalLength     (0),
+      m_ExactTotalLength(0),
       m_TotalLengthStats(0),
       m_VolumeLength    (0),
       m_MaxLength       (0),
@@ -136,7 +137,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
             // This is a whole-database scan; it's always done in
             // approximate length mode.
             
-            x_ScanTotals(true, & m_NumSeqs, & m_TotalLength, 
+            x_ScanTotals(false, & m_NumSeqs, & m_TotalLength, 
                                & m_MaxLength, & m_MinLength, locked);
             m_Atlas.Verify(locked);
         } else {
@@ -176,6 +177,7 @@ CSeqDBImpl::CSeqDBImpl()
       m_NumSeqs         (0),
       m_NumOIDs         (0),
       m_TotalLength     (0),
+      m_ExactTotalLength(0),
       m_VolumeLength    (0),
       m_SeqType         ('-'),
       m_OidListSetup    (true),
@@ -765,6 +767,25 @@ Uint8 CSeqDBImpl::GetTotalLength() const
     CHECK_MARKER();
     return m_TotalLength;
 }
+
+Uint8 CSeqDBImpl::GetExactTotalLength()
+{
+    CHECK_MARKER();
+    if(m_ExactTotalLength)
+    	return m_ExactTotalLength;
+
+    if(m_NeedTotalsScan) {
+    	 CSeqDBLockHold locked(m_Atlas);
+    	 x_ScanTotals(false, &m_NumSeqs, &m_ExactTotalLength,
+    			 	  &m_MaxLength, &m_MinLength, locked);
+    	m_Atlas.Verify(locked);
+    }
+    else {
+    	m_ExactTotalLength = m_TotalLength;
+    }
+     return m_ExactTotalLength;
+}
+
 
 Uint8 CSeqDBImpl::GetTotalLengthStats() const
 {

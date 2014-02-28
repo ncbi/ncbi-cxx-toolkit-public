@@ -465,10 +465,18 @@ public:
     /// Returns the sum of the lengths of all available sequences.
     ///
     /// This uses summary information stored in the database volumes
-    /// or alias files.  It provides an exact value, without iterating
-    /// over individual sequences.
+    /// or alias files.  It provides an approx value without iterating
+    /// over individual sequences for cases when scanning the db is
+    /// the only way to determine the exact total length
     Uint8 GetTotalLength() const;
     
+    /// Returns the exact sum of the lengths of all available sequences.
+    ///
+    /// Calling this function may trigger a complete db scan if the
+    /// total length of a db cannot be determined without iterating
+    /// thorugh the sequences i.e. a db with gi list
+    Uint8 GetExactTotalLength();
+
     /// Returns the sum of the lengths of all available sequences.
     ///
     /// This uses summary information stored in the database volumes
@@ -1309,6 +1317,9 @@ private:
     /// Total length of database (in bases).
     Uint8 m_TotalLength;
     
+    /// Total length of database (in bases).
+    Uint8 m_ExactTotalLength;
+
     /// Total length of database (in bases).
     Uint8 m_TotalLengthStats;
     

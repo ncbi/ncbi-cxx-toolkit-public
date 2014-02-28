@@ -552,6 +552,11 @@ Uint8 CSeqDB::GetTotalLength() const
     return m_Impl->GetTotalLength();
 }
 
+Uint8 CSeqDB::GetExactTotalLength()
+{
+    return m_Impl->GetExactTotalLength();
+}
+
 Uint8 CSeqDB::GetTotalLengthStats() const
 {
     return m_Impl->GetTotalLengthStats();
