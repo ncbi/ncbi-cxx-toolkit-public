@@ -219,6 +219,92 @@ private:
     CProjectTreeFolders& operator= (const CProjectTreeFolders&);
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+class CMakeNode
+{
+public:
+    CMakeNode(void);
+    ~CMakeNode(void);
+    CMakeNode(const CMakeNode& other);
+    CMakeNode& operator=(const CMakeNode& other);
+
+    void AddHeader(const string& name);
+    void AddDefinition(const string& key, const string& value);
+    void AddInclude(const string& name);
+    void AddProject( const string& prj);
+    void AddSubdir( const string& dir);
+
+    void Write(const string& dirname) const;
+
+private:
+    vector<string> m_NodeHeaders;
+    vector<string> m_NodeDefinitions;
+    vector<string> m_NodeIncludes;
+    set<string> m_NodeProjects;
+    set<string> m_NodeSubdirs;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+class CMakeProperty
+{
+public:
+    CMakeProperty(const string& name);
+    ~CMakeProperty(void);
+    CMakeProperty(const CMakeProperty& other);
+    CMakeProperty operator=(const CMakeProperty& other);
+
+    CMakeProperty& AddValue(const string& value);
+    void Write(CNcbiOstream& out) const; 
+private:
+    string m_Propname;
+    vector<string> m_Propvalue;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+class CMakeProject
+{
+public:
+    CMakeProject(void);
+    ~CMakeProject(void);
+    CMakeProject(const CMakeProject& other);
+    CMakeProject& operator=(const CMakeProject& other);
+
+    void SetProjKey(const CProjKey& prj_key);
+    void AddDefinition(const string& key, const string& value);
+    void AddSourceFile(const string& folder, const string& name);
+    void AddIncludeDirectory(const string& name);
+    void AddLibrary(const string& name);
+    void AddDependency(const string& name);
+    void AddProperty(const CMakeProperty& prop);
+
+    void Write(const string& dirname) const;
+
+private:
+    CProjKey m_Prj_key;
+    vector<string> m_Definitions;
+//    set<string> m_Sources;
+    map<string, set<string> > m_Sources;
+    set<string> m_IncludeDir;
+    vector<string> m_Libraries;
+    vector<string> m_Dependencies;
+    vector<CMakeProperty> m_Properties;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+class CMakeGenerator
+{
+public:
+    static void GenerateCMakeTree(CProjectItemsTree& projects_tree);
+};
+
+/////////////////////////////////////////////////////////////////////////////
+class CMakefilePatch
+{
+public:
+    static void PatchTreeMakefiles(const CProjectItemsTree& prj_tree);
+};
+
 END_NCBI_SCOPE
 
 #endif //PROJECT_TREE_BUILDER__PROJ_TREE__HPP

@@ -717,7 +717,7 @@ int CProjBulderApp::Run(void)
     }
     PTB_INFO("Creating projects...");
     if (IsCMakeMode()) {
-//        CMakeGenerator::GenerateCMakeTree(prj_tree);
+        CMakeGenerator::GenerateCMakeTree(prj_tree);
     } else {
         if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
             GenerateMsvcProjects(prj_tree);
