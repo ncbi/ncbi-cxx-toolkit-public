@@ -5463,10 +5463,13 @@ void CChainer::CChainerImpl::DropAlignmentInfo(TAlignModelList& alignments, TGen
 {
     NON_CONST_ITERATE (TAlignModelCluster, i, alignments) {
         CGeneModel aa = *i;
+        if(!(aa.Type() & CGeneModel::eProt)) {
+            aa.FrameShifts().clear();
+        }
 
         if(aa.Status()&CGeneModel::eUnmodifiedAlign) {
             unmodified_aligns[aa.ID()] = aa;
-        } else {        
+        } else { 
             models.push_back(aa);
             orig_aligns[aa.ID()]=&(*i);
         }
