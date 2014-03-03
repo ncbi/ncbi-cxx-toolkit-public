@@ -3,6 +3,7 @@
 LIB = macro
 SRC = macro__ macro___
 
+WATCHERS = bollin kans
 
 USES_LIBRARIES =  \
     xser
