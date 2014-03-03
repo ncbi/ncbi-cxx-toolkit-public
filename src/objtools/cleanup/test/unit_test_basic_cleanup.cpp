@@ -474,8 +474,8 @@ BOOST_AUTO_TEST_CASE(Test_CleanAssemblyDate)
     CSeqdesc_CI d(scope->GetBioseqHandle(entry.GetSeq()), CSeqdesc::e_User);
     if (d) {
         const CUser_object& usr = d->GetUser();
-        BOOST_CHECK_EQUAL(usr.GetData()[1]->GetData().GetStr(), "2014-FEB-1");
-        BOOST_CHECK_EQUAL(usr.GetData()[2]->GetData().GetStr(), "2014-FEB");
+        BOOST_CHECK_EQUAL(usr.GetData()[1]->GetData().GetStr(), "01-FEB-2014");
+        BOOST_CHECK_EQUAL(usr.GetData()[2]->GetData().GetStr(), "FEB-2014");
         BOOST_CHECK_EQUAL(usr.GetData()[3]->GetData().GetStr(), "2014");
     }
 }

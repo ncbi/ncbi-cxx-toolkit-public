@@ -6681,21 +6681,25 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                     if (coll_date && coll_date->IsStd() && coll_date->GetStd().IsSetYear()) {
                         string day = "";
                         string month = "";
+                        string year = "";
                         string new_date = "";
                         if (coll_date->GetStd().IsSetDay()) {
-                            coll_date->GetDate(&day, "%D");
+                            coll_date->GetDate(&day, "%2D");
                         }
                         if (coll_date->GetStd().IsSetMonth()) {
                             coll_date->GetDate(&month, "%N");
                             month = month.substr(0, 3);
                             NStr::ToUpper(month);
                         }
-                        coll_date->GetDate(&new_date, "%Y");
-                        if (!NStr::IsBlank(month)) {
-                            new_date += "-" + month;
-                            if (!NStr::IsBlank(day)) {
-                                new_date += "-" + day;
-                            }
+                        coll_date->GetDate(&year, "%Y");
+                        if (!NStr::IsBlank(day)) {
+                            new_date += day + "-";
+                        }
+                        if (!NStr::IsBlank(month)) {                           
+                            new_date += month + "-";
+                        }
+                        if (!NStr::IsBlank(year)) {
+                            new_date += year;
                         }
                         if (!NStr::Equal(field_str, new_date)) {
                             field_str = new_date;
