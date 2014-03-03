@@ -1032,7 +1032,7 @@ CAutoTrans::CSubject DBAPI_MakeTrans(CDB_Connection& connection)
 /// Resource Acquisition Is Initialization (RAII) programming style in intended 
 /// to revert a transaction automatically if any exception occurs in a code block.
 #define DBAPI_TRANSACTION(connection) \
-for(ncbi::CAutoTrans auto_trans = ncbi::DBAPI_MakeTrans(connection); \
+for(ncbi::CAutoTrans auto_trans(ncbi::DBAPI_MakeTrans(connection)); \
     auto_trans.Continue(); \
     auto_trans.Finish())
 
