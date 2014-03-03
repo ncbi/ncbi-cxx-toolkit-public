@@ -191,6 +191,7 @@ private:
 	string m_StructuredCommentPrefix;
     bool m_CompareStructuredComments;
     bool m_UseDevServer;
+    bool m_FirstSeqOnly;
 
     size_t m_Processed;
     size_t m_Unprocessed;
@@ -208,7 +209,8 @@ private:
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
     m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0), m_LogStream(0), m_Mode(e_report_diffs),
-    m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), m_Processed(0), m_Unprocessed(0)
+    m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), m_FirstSeqOnly(false),
+    m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
@@ -246,6 +248,7 @@ void CBiosampleChkApp::Init(void)
 
     arg_desc->AddFlag("b", "Input is in binary format");
     arg_desc->AddFlag("c", "Batch File is Compressed");
+    arg_desc->AddFlag("M", "Process only first sequence in file (master)");
 
     arg_desc->AddOptionalKey(
         "L", "OutFile", "Log File",
@@ -256,7 +259,7 @@ void CBiosampleChkApp::Init(void)
         CArgDescriptions::eInteger, "1");
     CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_take_from_biosample_force);
     arg_desc->SetConstraint("m", constraint);
-
+    
 	arg_desc->AddOptionalKey(
 		"P", "Prefix", "StructuredCommentPrefix", CArgDescriptions::eString);
 
@@ -548,6 +551,7 @@ int CBiosampleChkApp::Run(void)
     Setup(args);
 
     m_Mode = args["m"].AsInteger();
+    m_FirstSeqOnly = args["M"].AsBoolean();
 
     if (args["o"]) {
         if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
@@ -1268,6 +1272,7 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
         string path = sequence_id;
         NStr::ReplaceInPlace(path, "|", "_");
         NStr::ReplaceInPlace(path, ".", "_");
+        NStr::ReplaceInPlace(path, ":", "_");
 
         path = path + ".xml";
         CNcbiOstream* xml_out = new CNcbiOfstream(path.c_str());
@@ -1443,6 +1448,9 @@ void CBiosampleChkApp::ProcessSeqEntry(CRef<CSeq_entry> se)
     CBioseq_CI bi(seh, CSeq_inst::eMol_na);
     while (bi) {
         ProcessBioseqHandle(*bi);
+        if (m_FirstSeqOnly) {
+            break;
+        }
         ++bi;
     }
     scope->RemoveTopLevelSeqEntry(seh);
