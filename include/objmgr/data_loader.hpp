@@ -391,7 +391,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 3, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 3, 4, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>
