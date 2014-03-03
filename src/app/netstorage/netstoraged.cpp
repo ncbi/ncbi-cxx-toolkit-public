@@ -160,7 +160,7 @@ int CNetStorageDApp::Run(void)
 
     // Connect to the database
     try {
-        server->GetDb().Connect();
+        server->GetDb().InitialConnect();
     } catch (const CException &  ex) {
         ERR_POST(ex);
     } catch (const std::exception &  ex) {

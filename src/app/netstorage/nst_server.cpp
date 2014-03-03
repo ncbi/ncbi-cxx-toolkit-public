@@ -270,6 +270,19 @@ CNetStorageServer::ReadMetadataConfiguration(const IRegistry &  reg)
 
 
 CJsonNode
+CNetStorageServer::serializeMetadataInfo(void) const
+{
+    CJsonNode                   services = CJsonNode::NewArrayNode();
+    set<string>::const_iterator k;
+    CFastMutexGuard             guard(m_MetadataServicesLock);
+
+    for (k = m_MetadataServices.begin(); k != m_MetadataServices.end(); ++k)
+        services.AppendString(*k);
+    return services;
+}
+
+
+CJsonNode
 CNetStorageServer::x_diffInJson(const vector<string> &  added,
                                 const vector<string> &  deleted) const
 {

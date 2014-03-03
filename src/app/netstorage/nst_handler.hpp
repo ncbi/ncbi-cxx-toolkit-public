@@ -196,6 +196,8 @@ private:
                            const SCommonRequestArguments &  common_args);
     void x_ProcessGetClientsInfo(const CJsonNode &                message,
                                  const SCommonRequestArguments &  common_args);
+    void x_ProcessGetMetadataInfo(const CJsonNode &                message,
+                                  const SCommonRequestArguments &  common_args);
     void x_ProcessGetObjectInfo(const CJsonNode &                message,
                                 const SCommonRequestArguments &  common_args);
     void x_ProcessGetAttr(const CJsonNode &                message,

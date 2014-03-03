@@ -35,35 +35,59 @@
 #include "nst_exception.hpp"
 #include "nst_application.hpp"
 #include "nst_server.hpp"
+#include "nst_dbconnection_thread.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
 CNSTDatabase::CNSTDatabase(CNetStorageServer *  server)
-    : m_Server(server), m_Connected(false)
-{}
+    : m_Server(server), m_Db(NULL), m_Connected(false),
+      m_RestoreConnectionThread(NULL)
+{
+    x_CreateDatabase();
+    try {
+        m_RestoreConnectionThread = new CNSTDBConnectionThread(
+                                                m_Connected, m_Db);
+        m_RestoreConnectionThread->Run();
+    } catch (...) {
+        delete m_Db;
+        throw;
+    }
+}
+
+
+void CNSTDatabase::InitialConnect(void)
+{
+    if (!m_Connected) {
+        try {
+            m_Db->Connect();
+            m_Connected = true;
+        } catch (...) {
+            m_RestoreConnectionThread->Wakeup();
+            throw;
+        }
+    }
+}
 
 
 CNSTDatabase::~CNSTDatabase(void)
 {
+    m_RestoreConnectionThread->Stop();
+    m_RestoreConnectionThread->Join();
+    delete m_RestoreConnectionThread;
+
     if (m_Connected)
-        x_GetDatabase()->Close();
-}
-
-
-void CNSTDatabase::Connect(void)
-{
-    if (!m_Connected) {
-        x_GetDatabase()->Connect();
-        m_Connected = true;
-    }
+        m_Db->Close();
+    delete m_Db;
 }
 
 
 int
 CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
 {
+    x_PreCheckConnection();
+
     int     status;
     try {
         CQuery      query = x_NewQuery();
@@ -81,6 +105,7 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id)
         return status;
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -90,6 +115,8 @@ int
 CNSTDatabase::ExecSP_CreateClient(
             const string &  client, Int8 &  client_id)
 {
+    x_PreCheckConnection();
+
     int     status;
     try {
         CQuery      query = x_NewQuery();
@@ -109,6 +136,7 @@ CNSTDatabase::ExecSP_CreateClient(
         return status;
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -120,6 +148,7 @@ CNSTDatabase::ExecSP_CreateObject(
             const string &  object_loc, Int8  size,
             const string &  client_name)
 {
+    x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_id", object_id);
@@ -133,6 +162,7 @@ CNSTDatabase::ExecSP_CreateObject(
         return x_CheckStatus(query, "CreateObject");
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -144,6 +174,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             const string &  object_loc, Int8  size,
             Int8  client_id)
 {
+    x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_id", object_id);
@@ -157,6 +188,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
         return x_CheckStatus(query, "CreateObjectWithClientID");
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -167,6 +199,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id)
 {
+    x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
@@ -179,6 +212,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
         return x_CheckStatus(query, "UpdateObjectOnWrite");
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -189,6 +223,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
             const string &  object_key,
             const string &  object_loc, Int8  size, Int8  client_id)
 {
+    x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
@@ -201,6 +236,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
         return x_CheckStatus(query, "UpdateObjectOnRead");
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -211,6 +247,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             const string &  object_key,
             const string &  object_loc, Int8  client_id)
 {
+    x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
@@ -222,6 +259,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
         return x_CheckStatus(query, "UpdateObjectOnRelocate");
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -230,6 +268,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
 int
 CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
 {
+    x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
@@ -239,6 +278,7 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key)
         return x_CheckStatus(query, "RemoveObject");
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -251,6 +291,7 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
                                   const string &  attr_value,
                                   Int8  client_id)
 {
+    x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
@@ -264,6 +305,7 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
         return x_CheckStatus(query, "AddAttribute");
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -274,6 +316,8 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
                                   const string &  attr_name,
                                   string &        value)
 {
+    x_PreCheckConnection();
+
     int     status;
     try {
         CQuery      query = x_NewQuery();
@@ -292,6 +336,7 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
         return status;
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
     }
 }
@@ -301,6 +346,7 @@ int
 CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
                                   const string &  attr_name)
 {
+    x_PreCheckConnection();
     try {
         CQuery      query = x_NewQuery();
         query.SetParameter("@object_key", object_key);
@@ -311,7 +357,28 @@ CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
         return x_CheckStatus(query, "DelAttribute");
     } catch (...) {
         m_Server->RegisterAlert(eDB);
+        x_PostCheckConnection();
         throw;
+    }
+}
+
+
+void CNSTDatabase::x_PreCheckConnection(void)
+{
+    if (!m_Connected)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "There is no connection to metadata information database");
+}
+
+
+void CNSTDatabase::x_PostCheckConnection(void)
+{
+    // TODO: Replace with the real isAlive()
+    // if (!m_Db->IsAlive()) {
+    if (true) {
+        m_Connected = false;
+        ERR_POST("Database connection has been lost");
+        m_RestoreConnectionThread->Wakeup();
     }
 }
 
@@ -331,57 +398,35 @@ int  CNSTDatabase::x_CheckStatus(CQuery &  query,
 
 CQuery CNSTDatabase::x_NewQuery(void)
 {
-    if (!m_Connected)
-        Connect();
-    return x_GetDatabase()->NewQuery();
+    x_PreCheckConnection();
+    return m_Db->NewQuery();
 }
 
 
-CQuery CNSTDatabase::x_NewQuery(const string &  sql)
+void  CNSTDatabase::x_ReadDbAccessInfo(void)
 {
-    if (!m_Connected)
-        Connect();
-    return x_GetDatabase()->NewQuery(sql);
+    CNetStorageDApp *       app = dynamic_cast<CNetStorageDApp*>
+                                        (CNcbiApplication::Instance());
+    const CNcbiRegistry &   reg  = app->GetConfig();
+
+    m_DbAccessInfo.m_Service = reg.GetString("database", "service", "");
+    m_DbAccessInfo.m_UserName = reg.GetString("database", "user_name", "");
+    m_DbAccessInfo.m_Password = reg.GetString("database", "password", "");
+    m_DbAccessInfo.m_Database = reg.GetString("database", "database", "");
 }
 
 
-const SDbAccessInfo &  CNSTDatabase::x_GetDbAccessInfo(void)
+void  CNSTDatabase::x_CreateDatabase(void)
 {
-    if (m_DbAccessInfo.get())
-        return *m_DbAccessInfo;
+    x_ReadDbAccessInfo();
 
-    m_DbAccessInfo.reset(new SDbAccessInfo);
+    string  uri = "dbapi://" + m_DbAccessInfo.m_UserName +
+                  ":" + m_DbAccessInfo.m_Password +
+                  "@" + m_DbAccessInfo.m_Service +
+                  "/" + m_DbAccessInfo.m_Database;
 
-    CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
-                                    (CNcbiApplication::Instance());
-
-    m_DbAccessInfo->m_Service =
-        app->GetConfig().GetString("database", "service", "");
-    m_DbAccessInfo->m_UserName =
-        app->GetConfig().GetString("database", "user_name", "");
-    m_DbAccessInfo->m_Password =
-        app->GetConfig().GetString("database", "password", "");
-    m_DbAccessInfo->m_Database =
-        app->GetConfig().GetString("database", "database", "");
-
-    return *m_DbAccessInfo;
-}
-
-
-CDatabase *  CNSTDatabase::x_GetDatabase(void)
-{
-    if (m_Db.get() == NULL) {
-        const SDbAccessInfo &   access_info = x_GetDbAccessInfo();
-        string                  uri = "dbapi://" + access_info.m_UserName +
-                                      ":" + access_info.m_Password +
-                                      "@" + access_info.m_Service +
-                                      "/" + access_info.m_Database;
-        CSDB_ConnectionParam    db_params(uri);
-
-        m_Db.reset(new CDatabase(db_params));
-    }
-
-    return m_Db.get();
+    CSDB_ConnectionParam    db_params(uri);
+    m_Db = new CDatabase(db_params);
 }
 
 END_NCBI_SCOPE

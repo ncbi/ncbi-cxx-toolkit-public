@@ -91,6 +91,7 @@ public:
     // Metainfo support
     bool NeedMetadata(const string &  service) const;
     CJsonNode ReadMetadataConfiguration(const IRegistry &  reg);
+    CJsonNode serializeMetadataInfo(void) const;
 
     static CNetStorageServer *  GetInstance(void);
 

@@ -7,7 +7,7 @@ WATCHERS = satskyse
 APP = netstoraged
 SRC = netstoraged nst_server_parameters nst_exception nst_connection_factory \
       nst_server nst_handler nst_clients nst_protocol_utils nst_database \
-      nst_alert nst_config nst_warning
+      nst_alert nst_config nst_warning nst_dbconnection_thread
 
 REQUIRES = MT Linux
 

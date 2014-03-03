@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 struct SCommonRequestArguments;
 class CJsonNode;
 class CNetStorageServer;
+class CNSTDBConnectionThread;
 
 
 struct SDbAccessInfo
@@ -57,7 +58,7 @@ public:
     CNSTDatabase(CNetStorageServer *  server);
     ~CNSTDatabase(void);
 
-    void Connect(void);
+    void InitialConnect(void);
 
     int  ExecSP_GetNextObjectID(Int8 &  object_id);
     int  ExecSP_CreateClient(const string &  client,
@@ -92,18 +93,20 @@ public:
                              const string &  attr_name);
 
 private:
-    const SDbAccessInfo &  x_GetDbAccessInfo(void);
-    CDatabase *            x_GetDatabase(void);
+    void x_ReadDbAccessInfo(void);
+    void x_CreateDatabase(void);
     CQuery x_NewQuery(void);
-    CQuery x_NewQuery(const string &  sql);
+    void x_PreCheckConnection(void);
+    void x_PostCheckConnection(void);
     int  x_CheckStatus(CQuery &  query,
                        const string &  procedure);
 
 private:
+    SDbAccessInfo               m_DbAccessInfo;
     CNetStorageServer *         m_Server;
-    auto_ptr<SDbAccessInfo>     m_DbAccessInfo;
-    auto_ptr<CDatabase>         m_Db;
+    CDatabase *                 m_Db;
     bool                        m_Connected;
+    CNSTDBConnectionThread *    m_RestoreConnectionThread;
 
     CNSTDatabase(const CNSTDatabase &  conn);
     CNSTDatabase & operator= (const CNSTDatabase &  conn);

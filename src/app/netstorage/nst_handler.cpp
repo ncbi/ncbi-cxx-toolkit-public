@@ -68,6 +68,7 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
     { "RECONFIGURE",    & CNetStorageHandler::x_ProcessReconfigure },
     { "SHUTDOWN",       & CNetStorageHandler::x_ProcessShutdown },
     { "GETCLIENTSINFO", & CNetStorageHandler::x_ProcessGetClientsInfo },
+    { "GETMETADATAINFO",& CNetStorageHandler::x_ProcessGetMetadataInfo },
     { "GETOBJECTINFO",  & CNetStorageHandler::x_ProcessGetObjectInfo },
     { "GETATTR",        & CNetStorageHandler::x_ProcessGetAttr },
     { "SETATTR",        & CNetStorageHandler::x_ProcessSetAttr },
@@ -1035,6 +1036,21 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
     reply.SetByKey("Clients", m_ClientRegistry.serialize());
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetMetadataInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    reply.SetByKey("Services", m_Server->serializeMetadataInfo());
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
 }
