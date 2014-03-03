@@ -93,6 +93,8 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     Str2Int m_sOnCallerToolPriorities;
     map <string, EOnCallerGrp> m_sOnCallerToolGroups;
 
+    void x_SortReport();
+    void x_Clean();
     void x_WriteDiscRepSummary();
     bool x_NeedsTag(const string& setting_name, const string& desc, 
                             const s_fataltag* tags, const unsigned& cnt);

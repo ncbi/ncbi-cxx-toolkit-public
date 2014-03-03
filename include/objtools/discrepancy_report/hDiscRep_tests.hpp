@@ -731,7 +731,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string x_GetUserObjType(const CUser_object& user_obj);
       bool CommentHasPhrase(string comment, const string& phrase);
       bool HasLineage(const CBioSource& biosrc, const string& type);
-      bool IsBiosrcEukaryotic(const CBioSource& biosrc);
+      bool IsEukaryotic(const CBioseq& bioseq);
       bool IsBioseqHasLineage(const CBioseq& bioseq,const string& type, bool has_biosrc=true);
       bool HasTaxonomyID(const CBioSource& biosec);
       void GetProperCItem(CRef <CClickableItem>& c_item, bool* citem1_used);
