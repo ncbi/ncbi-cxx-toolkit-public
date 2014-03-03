@@ -3097,7 +3097,40 @@ CSeq_inst::TMol CScope_Impl::GetSequenceType(const CSeq_id_Handle& idh,
     }
     return CSeq_inst::eMol_not_set;
 }
-                                  
+
+
+int CScope_Impl::GetSequenceState(const CSeq_id_Handle& idh,
+                                  bool force_load)
+{
+    const int kNotFound = (CBioseq_Handle::fState_not_found |
+                           CBioseq_Handle::fState_no_data);
+
+    TConfReadLockGuard rguard(m_ConfLock);
+
+    if ( !force_load ) {
+        SSeqMatch_Scope match;
+        CRef<CBioseq_ScopeInfo> info =
+            x_FindBioseq_Info(idh, CScope::eGetBioseq_Resolved, match);
+        if ( info ) {
+            if ( info->HasBioseq() ) {
+                TBioseq_Lock bioseq = info->GetLock(null);
+                return info->GetObjectInfo().GetInst_Mol();
+            }
+            return kNotFound;
+        }
+    }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CPrefetchManager::IsActive();
+        int state = it->GetDataSource().GetSequenceState(idh);
+        if ( state != kNotFound ) {
+            return state;
+        }
+    }
+    return kNotFound;
+}
+
 
 void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
                                      const TIds& ids,
@@ -3180,6 +3213,52 @@ void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
         }
         CPrefetchManager::IsActive();
         it->GetDataSource().GetSequenceTypes(ids, loaded, ret);
+        remaining = sx_CountFalse(loaded);
+    }
+}
+
+
+void CScope_Impl::GetSequenceStates(TSequenceStates& ret,
+                                    const TIds& ids,
+                                    bool force_load)
+{
+    const int kNotFound = (CBioseq_Handle::fState_not_found |
+                           CBioseq_Handle::fState_no_data);
+
+    size_t count = ids.size(), remaining = count;
+    ret.assign(count, kNotFound);
+    vector<bool> loaded(count);
+    
+    TConfReadLockGuard rguard(m_ConfLock);
+    
+    if ( !force_load ) {
+        for ( size_t i = 0; i < count; ++i ) {
+            if ( loaded[i] ) {
+                continue;
+            }
+            SSeqMatch_Scope match;
+            CRef<CBioseq_ScopeInfo> info =
+                x_FindBioseq_Info(ids[i],
+                                  CScope::eGetBioseq_Resolved,
+                                  match);
+            if ( info ) {
+                if ( info->HasBioseq() ) {
+                    TBioseq_Lock bioseq = info->GetLock(null);
+                    ret[i] = info->GetBlobState();
+                    loaded[i] = true;
+                    --remaining;
+                }
+            }
+        }
+    }
+    
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( !remaining ) {
+            break;
+        }
+        CPrefetchManager::IsActive();
+        it->GetDataSource().GetSequenceStates(ids, loaded, ret);
         remaining = sx_CountFalse(loaded);
     }
 }

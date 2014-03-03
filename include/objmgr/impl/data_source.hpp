@@ -223,6 +223,7 @@ public:
     int GetTaxId(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
+    int GetSequenceState(const CSeq_id_Handle& idh);
 
     // bulk interface
     typedef vector<bool> TLoaded;
@@ -231,6 +232,7 @@ public:
     typedef vector<int> TTaxIds;
     typedef vector<TSeqPos> TSequenceLengths;
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
+    typedef vector<int> TSequenceStates;
     void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     void GetGis(const TIds& ids, TLoaded& loaded, TGis& ret);
     void GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret);
@@ -239,6 +241,8 @@ public:
                             TSequenceLengths& ret);
     void GetSequenceTypes(const TIds& ids, TLoaded& loaded,
                           TSequenceTypes& ret);
+    void GetSequenceStates(const TIds& ids, TLoaded& loaded,
+                           TSequenceStates& ret);
 
     typedef map<CSeq_id_Handle, SSeqMatch_DS>       TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);

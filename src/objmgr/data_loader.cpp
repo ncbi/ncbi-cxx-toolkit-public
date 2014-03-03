@@ -42,6 +42,7 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
 
@@ -298,6 +299,24 @@ CSeq_inst::TMol CDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
 }
 
 
+int CDataLoader::GetSequenceState(const CSeq_id_Handle& idh)
+{
+    try {
+        TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
+        ITERATE(TTSE_LockSet, it, locks) {
+            CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
+            if ( bs_info ) {
+                return (*it)->GetBlobState();
+            }
+        }
+        return CBioseq_Handle::fState_not_found|CBioseq_Handle::fState_no_data;
+    }
+    catch ( CBlobStateException& exc ) {
+        return exc.GetBlobState();
+    }
+}
+
+
 void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     size_t count = ids.size();
@@ -427,6 +446,29 @@ void CDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
                 loaded[i] = true;
                 break;
             }
+        }
+    }
+}
+
+
+void CDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded,
+                                   TSequenceStates& ret)
+{
+    const int kNotFound = (CBioseq_Handle::fState_not_found |
+                           CBioseq_Handle::fState_no_data);
+
+    size_t count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+
+        int state = GetSequenceState(ids[i]);
+        if ( state != kNotFound ) {
+            ret[i] = state;
+            loaded[i] = true;
         }
     }
 }

@@ -1764,6 +1764,7 @@ CBioseq_ScopeInfo::GetLock(CConstRef<CBioseq_Info> bioseq)
 void CBioseq_ScopeInfo::x_AttachTSE(CTSE_ScopeInfo* tse)
 {
     BIOSEQ_TRACE("CBioseq_ScopeInfo: "<<this<<" x_AttachTSE "<<tse);
+    m_BlobState = tse->GetTSE_Lock()->GetBlobState();
     CScopeInfo_Base::x_AttachTSE(tse);
     ITERATE ( TIds, it, GetIds() ) {
         tse->x_IndexBioseq(*it, this);

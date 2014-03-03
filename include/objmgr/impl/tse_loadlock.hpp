@@ -74,6 +74,10 @@ public:
         {
             return &*m_Info;
         }
+    const CTSE_Info* operator->(void) const
+        {
+            return &*m_Info;
+        }
     
     bool IsLoaded(void) const;
     void SetLoaded(void);

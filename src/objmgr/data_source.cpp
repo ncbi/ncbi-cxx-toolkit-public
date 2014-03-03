@@ -1290,6 +1290,21 @@ CSeq_inst::TMol CDataSource::GetSequenceType(const CSeq_id_Handle& idh)
 }
 
 
+int CDataSource::GetSequenceState(const CSeq_id_Handle& idh)
+{
+    int ret = CBioseq_Handle::fState_not_found|CBioseq_Handle::fState_no_data;
+    TTSE_LockSet locks;
+    SSeqMatch_DS match = x_GetSeqMatch(idh, locks);
+    if ( match ) {
+        ret = match.m_Bioseq->GetTSE_Info().GetBlobState();
+    }
+    else if ( m_Loader ) {
+        ret = m_Loader->GetSequenceState(idh);
+    }
+    return ret;
+}
+
+
 void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     size_t count = ids.size(), remaining = 0;
@@ -1438,6 +1453,32 @@ void CDataSource::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
     }
     if ( remaining && m_Loader ) {
         m_Loader->GetSequenceTypes(ids, loaded, ret);
+    }
+}
+
+
+void CDataSource::GetSequenceStates(const TIds& ids, TLoaded& loaded,
+                                    TSequenceStates& ret)
+{
+    size_t count = ids.size(), remaining = 0;
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    TTSE_LockSet locks;
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        SSeqMatch_DS match = x_GetSeqMatch(ids[i], locks);
+        if ( match ) {
+            ret[i] = match.m_Bioseq->GetTSE_Info().GetBlobState();
+            loaded[i] = true;
+        }
+        else {
+            ++remaining;
+        }
+    }
+    if ( remaining && m_Loader ) {
+        m_Loader->GetSequenceStates(ids, loaded, ret);
     }
 }
 

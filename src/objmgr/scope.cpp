@@ -765,5 +765,42 @@ CScope::TSequenceTypes CScope::GetSequenceTypes(const TSeq_id_Handles& ids,
 }
 
 
+CBioseq_Handle::TBioseqStateFlags
+CScope::GetSequenceState(const CSeq_id& id,
+                         EForceLoad force_load)
+{
+    return GetSequenceState(CSeq_id_Handle::GetHandle(id), force_load);
+}
+
+
+CBioseq_Handle::TBioseqStateFlags
+CScope::GetSequenceState(const CSeq_id_Handle& id,
+                         EForceLoad force_load)
+{
+    return m_Impl->GetSequenceState(id, force_load == eForceLoad);
+}
+
+
+void CScope::GetSequenceStates(TSequenceStates* results,
+                               const TSeq_id_Handles& ids,
+                               EForceLoad force_load)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetSequenceTypes: null results pointer");
+    }
+    return m_Impl->GetSequenceStates(*results, ids, force_load == eForceLoad);
+}
+
+
+CScope::TSequenceStates CScope::GetSequenceStates(const TSeq_id_Handles& ids,
+                                                  EForceLoad force_load)
+{
+    TSequenceStates results;
+    GetSequenceStates(&results, ids, force_load);
+    return results;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

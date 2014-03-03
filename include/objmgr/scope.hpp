@@ -422,6 +422,12 @@ public:
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id,
                                     EForceLoad force_load = eNoForceLoad);
 
+    // returns (fState_not_found|fState_no_data) if sequence is not known
+    CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id& id,
+                                                       EForceLoad force_load = eNoForceLoad);
+    CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id_Handle& id,
+                                                       EForceLoad force_load = eNoForceLoad);
+
     /// Bulk retrieval methods
     typedef vector<CSeq_id_Handle> TSeq_id_Handles;
     TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs,
@@ -460,6 +466,12 @@ public:
     void GetSequenceTypes(TSequenceTypes* results,
                           const TSeq_id_Handles& idhs,
                           EForceLoad force_load = eNoForceLoad);
+    typedef vector<CBioseq_Handle::TBioseqStateFlags> TSequenceStates;
+    TSequenceStates GetSequenceStates(const TSeq_id_Handles& idhs,
+                                      EForceLoad force_load = eNoForceLoad);
+    void GetSequenceStates(TSequenceStates* results,
+                           const TSeq_id_Handles& idhs,
+                           EForceLoad force_load = eNoForceLoad);
 
     /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id&        id);

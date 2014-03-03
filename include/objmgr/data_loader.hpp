@@ -282,6 +282,10 @@ public:
     /// Request for a type of a sequence
     /// Returns CSeq_inst::eMol_not_set if sequence is not known.
     virtual CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
+    /// Request for a state of a sequence.
+    /// Returns fState_not_found|fState_no_data if sequence
+    /// with requested id is not known.
+    virtual int GetSequenceState(const CSeq_id_Handle& idh);
 
     /// Bulk loading interface for a small pieces of information per id.
     /// The 'loaded' bit set (in/out) marks ids that already processed.
@@ -296,6 +300,7 @@ public:
     typedef vector<int> TTaxIds;
     typedef vector<TSeqPos> TSequenceLengths;
     typedef vector<CSeq_inst::TMol> TSequenceTypes;
+    typedef vector<int> TSequenceStates;
     /// Bulk request for accession.version Seq-ids of a set of sequences.
     virtual void GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret);
     /// Bulk request for gis of a set of sequences.
@@ -310,6 +315,9 @@ public:
     /// Bulk request for types of a set of sequences.
     virtual void GetSequenceTypes(const TIds& ids, TLoaded& loaded,
                                   TSequenceTypes& ret);
+    /// Bulk request for states of a set of sequences.
+    virtual void GetSequenceStates(const TIds& ids, TLoaded& loaded,
+                                   TSequenceStates& ret);
 
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
     // with choise set to eBlob. The map should be initialized with
