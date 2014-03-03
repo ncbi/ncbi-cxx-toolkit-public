@@ -216,6 +216,237 @@ void CDiscRepOutput :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category
    }
 };
 
+
+
+typedef struct sDiscInfo {
+   string conf_name;
+   string setting_name;
+} DiscInfoData;
+
+static const DiscInfoData disc_info_list [] = {
+  { "Missing Genes", "MISSING_GENES"},
+  { "Extra Genes", "EXTRA_GENES"},
+  { "Missing Locus Tags", "MISSING_LOCUS_TAGS"},
+  { "Duplicate Locus Tags", "DUPLICATE_LOCUS_TAGS"},
+  { "Bad Locus Tag Format", "BAD_LOCUS_TAG_FORMAT"},
+  { "Inconsistent Locus Tag Prefix", "INCONSISTENT_LOCUS_TAG_PREFIX"},
+  { "Nongene Locus Tag", "NON_GENE_LOCUS_TAG"},
+  { "Count nucleotide sequences", "DISC_COUNT_NUCLEOTIDES"},
+  { "Missing Protein ID", "MISSING_PROTEIN_ID"},
+  { "Inconsistent Protein ID", "INCONSISTENT_PROTEIN_ID"},
+  { "Feature Location Conflict", "FEATURE_LOCATION_CONFLICT"},
+  { "Gene Product Conflict", "GENE_PRODUCT_CONFLICT"},
+  { "Duplicate Gene Locus", "DUPLICATE_GENE_LOCUS"},
+  { "EC Number Note", "EC_NUMBER_NOTE"},
+  { "Pseudo Mismatch", "PSEUDO_MISMATCH"},
+  { "Joined Features: on when non-eukaryote", "JOINED_FEATURES"},
+  { "Overlapping Genes", "OVERLAPPING_GENES"},
+  { "Overlapping CDS", "OVERLAPPING_CDS"},
+  { "Contained CDS", "CONTAINED_CDS"},
+  { "CDS RNA Overlap", "RNA_CDS_OVERLAP"},
+  { "Short Contig", "SHORT_CONTIG"},
+  { "Inconsistent BioSource", "INCONSISTENT_BIOSOURCE"},
+  { "Suspect Product Name", "SUSPECT_PRODUCT_NAMES"},
+  { "Suspect Product Name Typo", "DISC_PRODUCT_NAME_TYPO"},
+  { "Suspect Product Name QuickFix", "DISC_PRODUCT_NAME_QUICKFIX"},
+  { "Inconsistent Source And Definition Line", "INCONSISTENT_SOURCE_DEFLINE"},
+  { "Partial CDSs in Complete Sequences", "PARTIAL_CDS_COMPLETE_SEQUENCE"},
+  { "Hypothetical or Unknown Protein with EC Number", "EC_NUMBER_ON_UNKNOWN_PROTEIN"},
+  { "Find Missing Tax Lookups", "TAX_LOOKUP_MISSING"} ,
+  { "Find Tax Lookup Mismatches", "TAX_LOOKUP_MISMATCH"},
+  { "Find Short Sequences", "SHORT_SEQUENCES"},
+  { "Suspect Phrases", "SUSPECT_PHRASES"},
+  { "Find Suspicious Phrases in Note Text", "DISC_SUSPICIOUS_NOTE_TEXT"},
+  { "Count tRNAs", "COUNT_TRNAS"},
+  { "Find Duplicate tRNAs", "FIND_DUP_TRNAS"},
+  { "Find short and long tRNAs", "FIND_BADLEN_TRNAS"},
+  { "Find tRNAs on the same strand", "FIND_STRAND_TRNAS"},
+  { "Count rRNAs", "COUNT_RRNAS"},
+  { "Find Duplicate rRNAs", "FIND_DUP_RRNAS"},
+  { "Find RNAs without Products", "RNA_NO_PRODUCT"},
+  { "Transl_except without Note", "TRANSL_NO_NOTE"},
+  { "Note without Transl_except", "NOTE_NO_TRANSL"},
+  { "Transl_except longer than 3", "TRANSL_TOO_LONG"},
+  { "CDS tRNA overlaps", "CDS_TRNA_OVERLAP"},
+  { "Count Proteins", "COUNT_PROTEINS"},
+  { "Features Intersecting Source Features", "DISC_FEAT_OVERLAP_SRCFEAT"},
+  { "CDS on GenProdSet without protein", "MISSING_GENPRODSET_PROTEIN"},
+  { "Multiple CDS on GenProdSet, same protein", "DUP_GENPRODSET_PROTEIN"},
+  { "mRNA on GenProdSet without transcript ID", "MISSING_GENPRODSET_TRANSCRIPT_ID"},
+  { "mRNA on GenProdSet with duplicate ID", "DISC_DUP_GENPRODSET_TRANSCRIPT_ID"},
+  { "Greater than 5 percent Ns", "DISC_PERCENT_N"},
+  { "Runs of 10 or more Ns", "N_RUNS"},
+  { "Zero Base Counts", "ZERO_BASECOUNT"},
+  { "Adjacent PseudoGenes with Identical Text", "ADJACENT_PSEUDOGENES"},
+  { "Bioseqs longer than 5000nt without Annotations", "DISC_LONG_NO_ANNOTATION"},
+  { "Bioseqs without Annotations", "NO_ANNOTATION"},
+  { "Influenza Strain/Collection Date Mismatch", "DISC_INFLUENZA_DATE_MISMATCH"},
+  { "Introns shorter than 10 nt", "DISC_SHORT_INTRON"},
+  { "Viruses should specify collection-date, country, and specific-host", "DISC_MISSING_VIRAL_QUALS"},
+  { "Source Qualifier Report", "DISC_SRC_QUAL_PROBLEM"},
+  { "All sources in a record should have the same qualifier set", "DISC_MISSING_SRC_QUAL"},
+  { "Each source in a record should have unique values for qualifiers", "DISC_DUP_SRC_QUAL"},
+  { "Each qualifier on a source should have different values", "DISC_DUP_SRC_QUAL_DATA"},
+  { "Sequences with the same haplotype should match", "DISC_HAPLOTYPE_MISMATCH"},
+  { "Sequences with rRNA or misc_RNA features should be genomic DNA", "DISC_FEATURE_MOLTYPE_MISMATCH"},
+  { "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products", "DISC_CDS_WITHOUT_MRNA"},
+  { "Exon and intron locations should abut (unless gene is trans-spliced)", "DISC_EXON_INTRON_CONFLICT"},
+  { "Count features present or missing from sequences", "DISC_FEATURE_COUNT"},
+  { "BioSources with the same specimen voucher should have the same taxname", "DISC_SPECVOUCHER_TAXNAME_MISMATCH"},
+  { "Feature partialness should agree with gene partialness if endpoints match", "DISC_GENE_PARTIAL_CONFLICT"},
+  { "Flatfile representation of object contains suspect text", "DISC_FLATFILE_FIND_ONCALLER"},
+  { "Flatfile representation of object contains fixable suspect text", "DISC_FLATFILE_FIND_ONCALLER"},
+  { "Flatfile representation of object contains unfixable suspect text", "DISC_FLATFILE_FIND_ONCALLER"},
+  { "Coding region product contains suspect text", "DISC_CDS_PRODUCT_FIND"},
+  { "Definition lines should be unique", "DISC_DUP_DEFLINE"},
+  { "ATCC strain should also appear in culture collection", "DUP_DISC_ATCC_CULTURE_CONFLICT"},
+  { "For country USA, state should be present and abbreviated", "DISC_USA_STATE"},
+  { "All non-protein sequences in a set should have the same moltype", "DISC_INCONSISTENT_MOLTYPES"},
+  { "Records should have identical submit-blocks", "DISC_SUBMITBLOCK_CONFLICT"},
+  { "Possible linker sequence after poly-A tail", "DISC_POSSIBLE_LINKER"},
+  { "Publications with the same titles should have the same authors", "DISC_TITLE_AUTHOR_CONFLICT"},
+  { "Genes and features that share endpoints should be on the same strand", "DISC_BAD_GENE_STRAND"},
+  { "Eukaryotic sequences with a map source qualifier should also have a chromosome source qualifier", "DISC_MAP_CHROMOSOME_CONFLICT"},
+  { "RBS features should have an overlapping gene", "DISC_RBS_WITHOUT_GENE"},
+  { "All Cit-subs should have identical affiliations", "DISC_CITSUBAFFIL_CONFLICT"},
+  { "Uncultured or environmental sources should have clone", "DISC_REQUIRED_CLONE"},
+  { "Source Qualifier test for Asndisc", "DISC_SOURCE_QUALS_ASNDISC"},
+  { "Eukaryotic sequences that are not genomic or macronuclear should not have mRNA features", "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE"},
+  { "When the organism lineage contains 'Retroviridae' and the molecule type is 'DNA', the location should be set as 'proviral'", "DISC_RETROVIRIDAE_DNA"},
+  { "Check for correct capitalization in author names", "DISC_CHECK_AUTH_CAPS"},
+  { "Check for gene or genes in rRNA and tRNA products and comments", "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS"},
+  { "Microsatellites must have repeat type of tandem", "DISC_MICROSATELLITE_REPEAT_TYPE"},
+  { "If D-loop or control region misc_feat is present, source must be mitochondrial", "DISC_MITOCHONDRION_REQUIRED"},
+  { "Unpublished pubs should have titles", "DISC_UNPUB_PUB_WITHOUT_TITLE"},
+  { "Check for Quality Scores", "DISC_QUALITY_SCORES"},
+  { "rRNA product names should not contain 'internal', 'transcribed', or 'spacer'", "DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA"},
+  { "Find partial feature ends on sequences that could be extended", "DISC_PARTIAL_PROBLEMS"},
+  { "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote", "DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS"},
+  { "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote", "DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION"},
+  { "rRNA product names should not contain 'partial' or 'domain'", "DISC_SUSPECT_RRNA_PRODUCTS"},
+  { "suspect misc_feature comments", "DISC_SUSPECT_MISC_FEATURES"},
+  { "Missing strain on bacterial 'Genus sp. strain'", "DISC_BACTERIA_MISSING_STRAIN"},
+  { "Missing definition lines", "DISC_MISSING_DEFLINES"},
+  { "Missing affiliation", "DISC_MISSING_AFFIL"},
+  { "Bacterial sources should not have isolate", "DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE"},
+  { "Bacterial sequences should not have mRNA features", "DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA"},
+  { "Coding region has new exception", "DISC_CDS_HAS_NEW_EXCEPTION"},
+  { "Trinomial sources should have corresponding qualifier", "DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"},
+  { "Source has metagenomic qualifier", "DISC_METAGENOMIC"},
+  { "Source has metagenome_source qualifier", "DISC_METAGENOME_SOURCE"},
+  { "Missing genes", "ONCALLER_GENE_MISSING"},
+  { "Superfluous genes", "ONCALLER_SUPERFLUOUS_GENE"},
+  { "Short rRNA Features", "DISC_SHORT_RRNA"},
+  { "Authority and Taxname should match first two words", "ONCALLER_CHECK_AUTHORITY"},
+  { "Submitter blocks and publications have consortiums", "ONCALLER_CONSORTIUM"},
+  { "Strain and culture-collection values conflict", "ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH"},
+  { "Comma or semicolon appears in strain or isolate", "ONCALLER_MULTISRC"} ,
+  { "Multiple culture-collection quals", "ONCALLER_MULTIPLE_CULTURE_COLLECTION"},
+  { "Segsets present", "DISC_SEGSETS_PRESENT"},
+  { "Eco, mut, phy or pop sets present", "DISC_NONWGS_SETS_PRESENT"},
+  { "Feature List", "DISC_FEATURE_LIST"},
+  { "Category Header", "DISC_CATEGORY_HEADER"},
+  { "Mismatched Comments", "DISC_MISMATCHED_COMMENTS"},
+  { "BioSources with the same strain should have the same taxname", "DISC_STRAIN_TAXNAME_MISMATCH"},
+  { "'Human' in host should be 'Homo sapiens'", "DISC_HUMAN_HOST"},
+  { "Genes on bacterial sequences should start with lowercase letters: on when non-eukaryote", "DISC_BAD_BACTERIAL_GENE_NAME"},
+  { "Bad gene names", "TEST_BAD_GENE_NAME"},
+  { "Location is ordered (intervals interspersed with gaps)", "ONCALLER_ORDERED_LOCATION"},
+  { "Comment descriptor present", "ONCALLER_COMMENT_PRESENT"},
+  { "Titles on sets", "ONCALLER_DEFLINE_ON_SET"},
+  { "HIV RNA location or molecule type inconsistent", "ONCALLER_HIV_RNA_INCONSISTENT"},
+  { "Protein sequences should be at least 50 aa, unless they are partial", "SHORT_PROT_SEQUENCES"},
+  { "mRNA sequences should not have exons", "TEST_EXON_ON_MRNA"},
+  { "Sequences with project IDs", "TEST_HAS_PROJECT_ID"},
+  { "Feature has standard_name qualifier", "ONCALLER_HAS_STANDARD_NAME"},
+  { "Missing structured comments", "ONCALLER_MISSING_STRUCTURED_COMMENTS"},
+  { "Bacteria should have strain", "DISC_REQUIRED_STRAIN"},
+  { "Bioseqs should have GenomeAssembly structured comments", "MISSING_GENOMEASSEMBLY_COMMENTS"},
+  { "Bacterial taxnames should end with strain", "DISC_BACTERIAL_TAX_STRAIN_MISMATCH"},
+  { "CDS has CDD Xref", "TEST_CDS_HAS_CDD_XREF"},
+  { "Sequence contains unusual nucleotides", "TEST_UNUSUAL_NT"},
+  { "Sequence contains regions of low quality", "TEST_LOW_QUALITY_REGION"},
+  { "Organelle location should have genomic moltype", "TEST_ORGANELLE_NOT_GENOMIC"},
+  { "Intergenic spacer without plastid location", "TEST_UNWANTED_SPACER"},
+  { "Organelle products on non-organelle sequence: on when neither bacteria nor virus", "TEST_ORGANELLE_PRODUCTS"},
+  { "Organism ending in sp. needs tax consult", "TEST_SP_NOT_UNCULTURED"},
+  { "mRNA sequence contains rearranged or germline", "TEST_BAD_MRNA_QUAL"},
+  { "Unnecessary environmental qualifier present", "TEST_UNNECESSARY_ENVIRONMENTAL"},
+  { "Unnecessary gene features on virus: on when lineage is not Picornaviridae,Potyviridae,Flaviviridae and Togaviridae", "TEST_UNNECESSARY_VIRUS_GENE"},
+  { "Set wrapper on microsatellites or rearranged genes", "TEST_UNWANTED_SET_WRAPPER"},
+  { "Missing values in primer set", "TEST_MISSING_PRIMER"},
+  { "Unexpected misc_RNA features", "TEST_UNUSUAL_MISC_RNA"},
+  { "Species-specific primers, no environmental sample", "TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE"},
+  { "Duplicate genes on opposite strands", "TEST_DUP_GENES_OPPOSITE_STRANDS"},
+  { "Problems with small genome sets", "TEST_SMALL_GENOME_SET_PROBLEM"},
+  { "Overlapping rRNA features", "TEST_OVERLAPPING_RRNAS"},
+  { "mRNA sequences have CDS/gene on the complement strand", "TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES"},
+  { "Complete taxname should be present in definition line", "TEST_TAXNAME_NOT_IN_DEFLINE"},
+  { "Count number of unverified sequences", "TEST_COUNT_UNVERIFIED"},
+  { "Show translation exception", "SHOW_TRANSL_EXCEPT"},
+  { "Show hypothetic protein having a gene name", "SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME"},
+  { "Test defline existence", "TEST_DEFLINE_PRESENT"},
+  { "Remove mRNA overlapping a pseudogene", "TEST_MRNA_OVERLAPPING_PSEUDO_GENE"},
+  { "Find completely overlapped genes", "FIND_OVERLAPPED_GENES"},
+  { "Test BioSources with the same biomaterial but different taxname", "DISC_BIOMATERIAL_TAXNAME_MISMATCH"},
+  { "Test BioSources with the same culture collection but different taxname", "DISC_CULTURE_TAXNAME_MISMATCH"},
+  { "Test author names missing first and/or last names", "DISC_CHECK_AUTH_NAME"},
+  {"Non-Retroviridae biosources are proviral", "NON_RETROVIRIDAE_PROVIRAL"},
+  {"RNA bioseqs are proviral", "RNA_PROVIRAL"},
+  {"Find sequences Less Than 200 bp", "SHORT_SEQUENCES_200"},
+  {"Greater than 10 percent Ns", "DISC_10_PERCENTN"},
+  {"Runs of more than 14 Ns", "N_RUNS_14"},
+  {"Moltype not mRNA", "MOLTYPE_NOT_MRNA"},
+  {"Technique not set as TSA", "TECHNIQUE_NOT_TSA"},
+  {"Structured comment not included",  "MISSING_STRUCTURED_COMMENT"},
+  {"Project not included", "MISSING_PROJECT"},
+  {"Multiple CDS on mRNA", "MULTIPLE_CDS_ON_MRNA"},
+  {"CBS strain should also appear in culture collection", "DUP_DISC_CBS_CULTURE_CONFLICT"},
+  {"Division code conflicts found", "DIVISION_CODE_CONFLICTS"},
+  {"rRNA Standard name conflicts found", "RRNA_NAME_CONFLICTS"},
+  {"Eukaryote should have mRNA", "EUKARYOTE_SHOULD_HAVE_MRNA"},
+  {"mRNA should have both protein_id and transcript_id", "MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS"},
+  {"Country discription should only have 1 colon.", "ONCALLER_COUNTRY_COLON"},
+  {"Sequences with BioProject IDs","ONCALLER_BIOPROJECT_ID"},
+  {"Type strain comment in OrgMod does not agree with organism name", "ONCALLER_STRAIN_TAXNAME_CONFLICT"},
+  {"SubSource collected-by contains more than 3 names", "ONCALLER_MORE_NAMES_COLLECTED_BY"},
+  {"SubSource identified-by contains more than 3 names", "ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY"},
+  {"Suspected organism in identified-by SubSource", "ONCALLER_SUSPECTED_ORG_IDENTIFIED"},
+  {"Suspected organism in collected-by SubSource", "ONCALLER_SUSPECTED_ORG_COLLECTED"},
+  {"Suspicious structured comment prefix", "ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX"},
+  {"Cit-sub affiliation street contains text from other affiliation fields", "DISC_CITSUB_AFFIL_DUP_TEXT"},
+  {"Duplicate PCR primer pair", "ONCALLER_DUPLICATE_PRIMER_SET"},
+  {"Country name end with colon", "END_COLON_IN_COUNTRY"},
+  {"Frequently appearing proteins", "DISC_PROTEIN_NAMES"},
+  {"Sequence characters at end of defline", "DISC_TITLE_ENDS_WITH_SEQUENCE"},
+  {"Inconsistent structured comments", "DISC_INCONSISTENT_STRUCTURED_COMMENTS"},
+  {"Inconsistent DBLink fields", "DISC_INCONSISTENT_DBLINK"},
+  {"Inconsistent Molinfo Techniqueq", "DISC_INCONSISTENT_MOLINFO_TECH"},
+  {"Sequences with gaps", "DISC_GAPS"},
+  {"Bad BGPIPE qualifiers", "DISC_BAD_BGPIPE_QUALS"},
+  {"Short lncRNA sequences", "TEST_SHORT_LNCRNA"},
+  {"Ns at end of sequences", "TEST_TERMINAL_NS"},
+  {"Alignment has score attribute", "TEST_ALIGNMENT_HAS_SCORE"},
+  {"Uncultured Notes", "UNCULTURED_NOTES_ONCALLER"}
+};
+
+typedef map <int, vector <unsigned> > UInt2UInts;
+UInt2UInts m_PrtOrd;
+void CDiscRepOutput :: x_SortReport()
+{
+   // ini.
+   Str2UInt  list_ord;
+   unsigned i;
+   for (i=0; i< ArraySize(disc_info_list); i++) {
+       list_ord[disc_info_list[i].setting_name] = i;
+   }
+
+   i=0;
+   ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
+      m_PrtOrd[list_ord[(*it)->setting_name]].push_back(i++);
+   }
+};
+
 void CDiscRepOutput :: CollectRepData()
 {
   GoGetRep(thisGrp.tests_on_SubmitBlk);
@@ -230,12 +461,21 @@ void CDiscRepOutput :: CollectRepData()
   GoGetRep(thisGrp.tests_4_once);
   GoGetRep(thisGrp.tests_on_BioseqSet);
   GoGetRep(thisGrp.tests_on_Bioseq_CFeat_CSeqdesc);
-
 } // CollectRepData()
 
 
+void CDiscRepOutput :: x_Clean()
+{
+   thisInfo.test_item_list.clear();
+   thisInfo.test_item_objs.clear();
+   thisInfo.disc_report_data.clear();
+};
+
+// for asndisc
 void CDiscRepOutput :: Export()
 {
+   x_SortReport();
+
   if (oc.add_output_tag || oc.add_extra_output_tag) {
        x_AddListOutputTags();
   }
@@ -246,11 +486,7 @@ void CDiscRepOutput :: Export()
   *(oc.output_f) << "\n\nDetailed Report\n";
   x_WriteDiscRepDetails(thisInfo.disc_report_data, oc.use_flag);
 
-   // clearn
-   thisInfo.test_item_list.clear();
-   thisInfo.test_item_objs.clear();
-   thisInfo.disc_report_data.clear();
-
+  x_Clean();
 };  // Asndisc:: Export
 
 bool CDiscRepOutput :: x_RmTagInDescp(string& str, const string& tag)
@@ -272,16 +508,21 @@ void CDiscRepOutput :: x_WriteDiscRepSummary()
 {
   string desc;
 
-  ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
-      desc = (*it)->description;
+  //ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
+  CRef <CClickableItem> c_item;
+  ITERATE (UInt2UInts, it, m_PrtOrd) {
+    ITERATE (vector <unsigned>, jt, it->second) {
+      c_item = thisInfo.disc_report_data[*jt];
+      desc = c_item->description;
       if ( desc.empty()) continue;
 
       // FATAL tag
       if (x_RmTagInDescp(desc, "FATAL: ")) *(oc.output_f)  << "FATAL:";
-      *(oc.output_f) << (*it)->setting_name << ": " << desc << endl;
-      if ("SUSPECT_PRODUCT_NAMES" == (*it)->setting_name) {
-            x_WriteDiscRepSubcategories((*it)->subcategories);
+      *(oc.output_f) << c_item->setting_name << ": " << desc << endl;
+      if ("SUSPECT_PRODUCT_NAMES" == c_item->setting_name) {
+            x_WriteDiscRepSubcategories(c_item->subcategories);
       }
+    }
   }
   
 } // WriteDiscrepancyReportSummary
@@ -316,16 +557,31 @@ bool CDiscRepOutput :: x_OkToExpand(CRef < CClickableItem > c_item)
 void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, bool use_flag, bool IsSubcategory)
 {
   string prefix, desc;
-  unsigned i;
-  NON_CONST_ITERATE (vector < CRef < CClickableItem > >, it, disc_rep_dt) {
-      desc = (*it)->description;
+  unsigned i, j;
+  vector <unsigned> prt_idx;
+  if (IsSubcategory) {
+    for (i=0; i< disc_rep_dt.size(); i++) {
+       prt_idx.push_back(i);
+    }
+  }
+  else {
+     ITERATE (UInt2UInts, it, m_PrtOrd) {
+       ITERATE (vector <unsigned>, jt, it->second) {
+          prt_idx.push_back(*jt);
+       }
+     }
+  }
+  CRef <CClickableItem> c_item;
+  for (j=0; j< prt_idx.size(); j++) {
+      c_item = disc_rep_dt[prt_idx[j]];
+      desc = c_item->description;
       if ( desc.empty() ) continue;
 
       // prefix
       if (use_flag) {
           prefix = "DiscRep_";
           prefix += IsSubcategory ? "SUB:" : "ALL:";
-          strtmp = (*it)->setting_name;
+          strtmp = c_item->setting_name;
           prefix += strtmp.empty()? " " : strtmp + ": ";
       }
  
@@ -349,18 +605,18 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
             if (ptr == NULL || ptr != prefix)
               SetStringValue (&prefix, "FATAL", ExistingTextOption_prefix_colon 
 */
-         x_WriteDiscRepItems((*it), prefix);
+         x_WriteDiscRepItems(c_item, prefix);
       }
-      if ( x_OkToExpand ((*it)) ) {
-        for (i = 0; i< (*it)->subcategories.size() -1; i++) {
-              (*it)->subcategories[i]->next_sibling = true;
+      if ( x_OkToExpand (c_item) ) {
+        for (i = 0; i< c_item->subcategories.size() -1; i++) {
+              c_item->subcategories[i]->next_sibling = true;
         }
         if (use_flag 
-               && (*it)->setting_name == "DISC_INCONSISTENT_BIOSRC_DEFLINE") {
-           x_WriteDiscRepDetails ( (*it)->subcategories, false, false);
+               && c_item->setting_name == "DISC_INCONSISTENT_BIOSRC_DEFLINE") {
+           x_WriteDiscRepDetails (c_item->subcategories, false, false);
         } 
         else {
-           x_WriteDiscRepDetails ( (*it)->subcategories, oc.use_flag, true);
+           x_WriteDiscRepDetails (c_item->subcategories, oc.use_flag, true);
         }
       } 
   }
@@ -388,7 +644,7 @@ bool CDiscRepOutput :: x_SuppressItemListForFeatureTypeForOutputFiles(const stri
 void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix)
 {
    if (oc.use_flag && 
-         x_SuppressItemListForFeatureTypeForOutputFiles (c_item->setting_name)) {
+          x_SuppressItemListForFeatureTypeForOutputFiles(c_item->setting_name)){
        if (!prefix.empty()) {
             *(oc.output_f) << prefix;
        }
@@ -422,7 +678,9 @@ void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const s
 
 void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat)
 {
-  if (!prefix.empty())  *(oc.output_f) << prefix;
+  if (!prefix.empty()) {
+     *(oc.output_f) << prefix;
+  }
   string desc = c_item->description;
   x_RmTagInDescp(desc, "FATAL: ");
   *(oc.output_f) << desc << endl;
@@ -482,107 +740,105 @@ void CDiscRepOutput :: x_OutputRepToGbenchItem(const CClickableItem& c_item,  CC
 };
 
 
-void CDiscRepOutput :: x_InitializeOnCallerToolPriorities()
-{
-  m_sOnCallerToolPriorities["DISC_COUNT_NUCLEOTIDES"] = 1;
-  m_sOnCallerToolPriorities["DISC_DUP_DEFLINE"] = 2;
-  m_sOnCallerToolPriorities["DISC_MISSING_DEFLINES"] = 3;
-  m_sOnCallerToolPriorities["TEST_TAXNAME_NOT_IN_DEFLINE"] = 4;
-  m_sOnCallerToolPriorities["TEST_HAS_PROJECT_ID"] = 5;
-  m_sOnCallerToolPriorities["ONCALLER_BIOPROJECT_ID"] = 6;
-  m_sOnCallerToolPriorities["ONCALLER_DEFLINE_ON_SET"] = 7;
-  m_sOnCallerToolPriorities["TEST_UNWANTED_SET_WRAPPER"] = 8;
-  m_sOnCallerToolPriorities["TEST_COUNT_UNVERIFIED"] = 9;
-  m_sOnCallerToolPriorities["DISC_SRC_QUAL_PROBLEM"] = 10;
-  m_sOnCallerToolPriorities["DISC_FEATURE_COUNT_oncaller"] = 11;
-  m_sOnCallerToolPriorities["NO_ANNOTATION"] = 12;
-  m_sOnCallerToolPriorities["DISC_FEATURE_MOLTYPE_MISMATCH"] = 13;
-  m_sOnCallerToolPriorities["TEST_ORGANELLE_NOT_GENOMIC"] = 14;
-  m_sOnCallerToolPriorities["DISC_INCONSISTENT_MOLTYPES"] = 15;
-  m_sOnCallerToolPriorities["DISC_CHECK_AUTH_CAPS"] = 16;
-  m_sOnCallerToolPriorities["ONCALLER_CONSORTIUM"] = 17;
-  m_sOnCallerToolPriorities["DISC_UNPUB_PUB_WITHOUT_TITLE"] = 18;
-  m_sOnCallerToolPriorities["DISC_TITLE_AUTHOR_CONFLICT"] = 19;
-  m_sOnCallerToolPriorities["DISC_SUBMITBLOCK_CONFLICT"] = 20;
-  m_sOnCallerToolPriorities["DISC_CITSUBAFFIL_CONFLICT"] = 21;
-  m_sOnCallerToolPriorities["DISC_CHECK_AUTH_NAME"] = 22;
-  m_sOnCallerToolPriorities["DISC_MISSING_AFFIL"] = 23;
-  m_sOnCallerToolPriorities["DISC_USA_STATE"] = 24;
-  m_sOnCallerToolPriorities["DISC_CITSUB_AFFIL_DUP_TEXT"] = 25;
-  m_sOnCallerToolPriorities["DISC_DUP_SRC_QUAL"] = 26;
-  m_sOnCallerToolPriorities["DISC_MISSING_SRC_QUAL"] = 27; 
-  m_sOnCallerToolPriorities["DISC_DUP_SRC_QUAL_DATA"] = 28;
-  m_sOnCallerToolPriorities["ONCALLER_DUPLICATE_PRIMER_SET"] = 29; 
-  m_sOnCallerToolPriorities["ONCALLER_MORE_NAMES_COLLECTED_BY"] = 30;
-  m_sOnCallerToolPriorities["ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY"] = 31;
-  m_sOnCallerToolPriorities["ONCALLER_SUSPECTED_ORG_IDENTIFIED"] = 32;
-  m_sOnCallerToolPriorities["ONCALLER_SUSPECTED_ORG_COLLECTED"] = 33;
-  m_sOnCallerToolPriorities["DISC_MISSING_VIRAL_QUALS"] = 34;
-  m_sOnCallerToolPriorities["DISC_INFLUENZA_DATE_MISMATCH"] = 35; 
-  m_sOnCallerToolPriorities["DISC_HUMAN_HOST"] = 36;
-  m_sOnCallerToolPriorities["DISC_SPECVOUCHER_TAXNAME_MISMATCH"] = 37;
-  m_sOnCallerToolPriorities["DISC_BIOMATERIAL_TAXNAME_MISMATCH"] = 38;
-  m_sOnCallerToolPriorities["DISC_CULTURE_TAXNAME_MISMATCH"] = 39;
-  m_sOnCallerToolPriorities["DISC_STRAIN_TAXNAME_MISMATCH"] = 40;
-  m_sOnCallerToolPriorities["DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE"] = 41;
-  m_sOnCallerToolPriorities["DISC_BACTERIA_MISSING_STRAIN"] = 42;
-  m_sOnCallerToolPriorities["ONCALLER_STRAIN_TAXNAME_CONFLICT"] = 43; 
-  m_sOnCallerToolPriorities["TEST_SP_NOT_UNCULTURED"] = 44;
-  m_sOnCallerToolPriorities["DISC_REQUIRED_CLONE"] = 45; 
-  m_sOnCallerToolPriorities["TEST_UNNECESSARY_ENVIRONMENTAL"] = 46;
-  m_sOnCallerToolPriorities["TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE"] =47;
-  m_sOnCallerToolPriorities["ONCALLER_MULTISRC"] = 48;
-  m_sOnCallerToolPriorities["ONCALLER_COUNTRY_COLON"] = 49;
-  m_sOnCallerToolPriorities["END_COLON_IN_COUNTRY"] = 50;
-  m_sOnCallerToolPriorities["DUP_DISC_ATCC_CULTURE_CONFLICT"] = 51;
-  m_sOnCallerToolPriorities["DUP_DISC_CBS_CULTURE_CONFLICT"] = 52;
-  m_sOnCallerToolPriorities["ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH"] = 53; 
-  m_sOnCallerToolPriorities["ONCALLER_MULTIPLE_CULTURE_COLLECTION"] = 54;
-  m_sOnCallerToolPriorities["DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"] = 55;
-  m_sOnCallerToolPriorities["ONCALLER_CHECK_AUTHORITY"] = 56;
-  m_sOnCallerToolPriorities["DISC_MAP_CHROMOSOME_CONFLICT"] = 57; 
-  m_sOnCallerToolPriorities["DISC_METAGENOMIC"] = 58;
-  m_sOnCallerToolPriorities["DISC_METAGENOME_SOURCE"] = 59; 
-  m_sOnCallerToolPriorities["DISC_RETROVIRIDAE_DNA"] = 60;
-  m_sOnCallerToolPriorities["NON_RETROVIRIDAE_PROVIRAL"] = 61;
-  m_sOnCallerToolPriorities["ONCALLER_HIV_RNA_INCONSISTENT"] = 62;
-  m_sOnCallerToolPriorities["RNA_PROVIRAL"] = 63;
-  m_sOnCallerToolPriorities["TEST_BAD_MRNA_QUAL"] = 64; 
-  m_sOnCallerToolPriorities["DISC_MITOCHONDRION_REQUIRED"] = 65;
-  m_sOnCallerToolPriorities["TEST_UNWANTED_SPACER"] = 66;
-  m_sOnCallerToolPriorities["TEST_SMALL_GENOME_SET_PROBLEM"] = 67;
-  m_sOnCallerToolPriorities["ONCALLER_SUPERFLUOUS_GENE"] = 68;
-  m_sOnCallerToolPriorities["ONCALLER_GENE_MISSING"] = 69;
-  m_sOnCallerToolPriorities["DISC_GENE_PARTIAL_CONFLICT"] = 70;
-  m_sOnCallerToolPriorities["DISC_BAD_GENE_STRAND"] = 71;
-  m_sOnCallerToolPriorities["TEST_UNNECESSARY_VIRUS_GENE"] = 72;
-  m_sOnCallerToolPriorities["NON_GENE_LOCUS_TAG"] = 73;
-  m_sOnCallerToolPriorities["DISC_RBS_WITHOUT_GENE"] = 74;
-  m_sOnCallerToolPriorities["ONCALLER_ORDERED_LOCATION"] = 75;
-  m_sOnCallerToolPriorities["MULTIPLE_CDS_ON_MRNA"] = 76;
-  m_sOnCallerToolPriorities["DISC_CDS_WITHOUT_MRNA"] = 77;
-  m_sOnCallerToolPriorities["DISC_mRNA_ON_WRONG_SEQUENCE_TYPE"] = 78;
-  m_sOnCallerToolPriorities["DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA"] = 79;
-  m_sOnCallerToolPriorities["TEST_MRNA_OVERLAPPING_PSEUDO_GENE"] = 80;
-  m_sOnCallerToolPriorities["TEST_EXON_ON_MRNA"] = 81;
-  m_sOnCallerToolPriorities["DISC_CDS_HAS_NEW_EXCEPTION"] = 82; 
-  m_sOnCallerToolPriorities["DISC_SHORT_INTRON"] = 83;
-  m_sOnCallerToolPriorities["DISC_EXON_INTRON_CONFLICT"] = 84;
-  m_sOnCallerToolPriorities["PSEUDO_MISMATCH"] = 85;
-  m_sOnCallerToolPriorities["RNA_NO_PRODUCT"] = 86;
-  m_sOnCallerToolPriorities["FIND_BADLEN_TRNAS"] = 87;
-  m_sOnCallerToolPriorities["DISC_MICROSATELLITE_REPEAT_TYPE"] = 88; 
-  m_sOnCallerToolPriorities["DISC_SHORT_RRNA"] = 89;
-  m_sOnCallerToolPriorities["DISC_POSSIBLE_LINKER"] = 90; 
-  m_sOnCallerToolPriorities["DISC_HAPLOTYPE_MISMATCH"] = 91;
-  m_sOnCallerToolPriorities["DISC_FLATFILE_FIND_ONCALLER"] = 92;
-  m_sOnCallerToolPriorities["DISC_CDS_PRODUCT_FIND"] = 93;
-  m_sOnCallerToolPriorities["DISC_SUSPICIOUS_NOTE_TEXT"] = 94;
-  m_sOnCallerToolPriorities["DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS"] = 95; 
-  m_sOnCallerToolPriorities["DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA"] = 96;
-  m_sOnCallerToolPriorities["ONCALLER_COMMENT_PRESENT"] = 97;
-  m_sOnCallerToolPriorities["SUSPECT_PRODUCT_NAMES"] = 98;
-  m_sOnCallerToolPriorities["UNCULTURED_NOTES_ONCALLER"] = 99;
+static const char* sOnCallerToolPriorities[] = {
+  "DISC_DUP_DEFLINE",
+  "DISC_MISSING_DEFLINES",
+  "TEST_TAXNAME_NOT_IN_DEFLINE",
+  "TEST_HAS_PROJECT_ID",
+  "ONCALLER_BIOPROJECT_ID",
+  "ONCALLER_DEFLINE_ON_SET",
+  "TEST_UNWANTED_SET_WRAPPER",
+  "TEST_COUNT_UNVERIFIED",
+  "DISC_SRC_QUAL_PROBLEM",
+  "DISC_FEATURE_COUNT_oncaller",
+  "NO_ANNOTATION",
+  "DISC_FEATURE_MOLTYPE_MISMATCH",
+  "TEST_ORGANELLE_NOT_GENOMIC",
+  "DISC_INCONSISTENT_MOLTYPES",
+  "DISC_CHECK_AUTH_CAPS",
+  "ONCALLER_CONSORTIUM",
+  "DISC_UNPUB_PUB_WITHOUT_TITLE",
+  "DISC_TITLE_AUTHOR_CONFLICT",
+  "DISC_SUBMITBLOCK_CONFLICT",
+  "DISC_CITSUBAFFIL_CONFLICT",
+  "DISC_CHECK_AUTH_NAME",
+  "DISC_MISSING_AFFIL",
+  "DISC_USA_STATE",
+  "DISC_CITSUB_AFFIL_DUP_TEXT",
+  "DISC_DUP_SRC_QUAL",
+  "DISC_MISSING_SRC_QUAL",
+  "DISC_DUP_SRC_QUAL_DATA",
+  "ONCALLER_DUPLICATE_PRIMER_SET",
+  "ONCALLER_MORE_NAMES_COLLECTED_BY",
+  "ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY",
+  "ONCALLER_SUSPECTED_ORG_IDENTIFIED",
+  "ONCALLER_SUSPECTED_ORG_COLLECTED",
+  "DISC_MISSING_VIRAL_QUALS",
+  "DISC_INFLUENZA_DATE_MISMATCH",
+  "DISC_HUMAN_HOST",
+  "DISC_SPECVOUCHER_TAXNAME_MISMATCH",
+  "DISC_BIOMATERIAL_TAXNAME_MISMATCH",
+  "DISC_CULTURE_TAXNAME_MISMATCH",
+  "DISC_STRAIN_TAXNAME_MISMATCH",
+  "DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE",
+  "DISC_BACTERIA_MISSING_STRAIN",
+  "ONCALLER_STRAIN_TAXNAME_CONFLICT",
+  "TEST_SP_NOT_UNCULTURED",
+  "DISC_REQUIRED_CLONE",
+  "TEST_UNNECESSARY_ENVIRONMENTAL",
+  "TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE",
+  "ONCALLER_MULTISRC",
+  "ONCALLER_COUNTRY_COLON",
+  "END_COLON_IN_COUNTRY",
+  "DUP_DISC_ATCC_CULTURE_CONFLICT",
+  "DUP_DISC_CBS_CULTURE_CONFLICT",
+  "ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH",
+  "ONCALLER_MULTIPLE_CULTURE_COLLECTION",
+  "DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER",
+  "ONCALLER_CHECK_AUTHORITY",
+  "DISC_MAP_CHROMOSOME_CONFLICT",
+  "DISC_METAGENOMIC",
+  "DISC_METAGENOME_SOURCE",
+  "DISC_RETROVIRIDAE_DNA",
+  "NON_RETROVIRIDAE_PROVIRAL",
+  "ONCALLER_HIV_RNA_INCONSISTENT",
+  "RNA_PROVIRAL",
+  "TEST_BAD_MRNA_QUAL",
+  "DISC_MITOCHONDRION_REQUIRED",
+  "TEST_UNWANTED_SPACER",
+  "TEST_SMALL_GENOME_SET_PROBLEM",
+  "ONCALLER_SUPERFLUOUS_GENE",
+  "ONCALLER_GENE_MISSING",
+  "DISC_GENE_PARTIAL_CONFLICT",
+  "DISC_BAD_GENE_STRAND",
+  "TEST_UNNECESSARY_VIRUS_GENE",
+  "NON_GENE_LOCUS_TAG",
+  "DISC_RBS_WITHOUT_GENE",
+  "ONCALLER_ORDERED_LOCATION",
+  "MULTIPLE_CDS_ON_MRNA",
+  "DISC_CDS_WITHOUT_MRNA",
+  "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE",
+  "DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA",
+  "TEST_MRNA_OVERLAPPING_PSEUDO_GENE",
+  "TEST_EXON_ON_MRNA",
+  "DISC_CDS_HAS_NEW_EXCEPTION",
+  "DISC_SHORT_INTRON",
+  "DISC_EXON_INTRON_CONFLICT",
+  "PSEUDO_MISMATCH",
+  "RNA_NO_PRODUCT",
+  "FIND_BADLEN_TRNAS",
+  "DISC_MICROSATELLITE_REPEAT_TYPE",
+  "DISC_SHORT_RRNA",
+  "DISC_POSSIBLE_LINKER",
+  "DISC_HAPLOTYPE_MISMATCH",
+  "DISC_FLATFILE_FIND_ONCALLER",
+  "DISC_CDS_PRODUCT_FIND",
+  "DISC_SUSPICIOUS_NOTE_TEXT",
+  "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS",
+  "DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA",
+  "ONCALLER_COMMENT_PRESENT",
+  "SUSPECT_PRODUCT_NAMES",
+  "UNCULTURED_NOTES_ONCALLER"
 };
 
 void CDiscRepOutput :: x_InitializeOnCallerToolGroups()
@@ -716,7 +972,12 @@ void CDiscRepOutput :: x_GroupResult(map <EOnCallerGrp, string>& grp_idx_str)
 
 void CDiscRepOutput :: x_ReorderAndGroupOnCallerResults(Int2Int& ord2i_citem, map <EOnCallerGrp, string>& grp_idx_str)
 {
-   x_InitializeOnCallerToolPriorities();
+   // x_InitializeOnCallerToolPriorities();
+   m_sOnCallerToolPriorities.clear();
+   m_sOnCallerToolGroups.clear();
+   for (unsigned i=0; i< ArraySize(sOnCallerToolPriorities); i++) {
+     m_sOnCallerToolPriorities[sOnCallerToolPriorities[i]] = i;
+   }
    x_InitializeOnCallerToolGroups();
    x_OrderResult(ord2i_citem);
    x_GroupResult(grp_idx_str);
@@ -814,6 +1075,7 @@ void CDiscRepOutput :: x_SendItemToGbench(CRef <CClickableItem> citem, vector <C
    item_list.push_back(item);
 };
 
+// for gbench
 void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
 {
    if (!thisInfo.disc_report_data.empty()) {
@@ -850,34 +1112,19 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
           }
       }
       else {
-        ITERATE (vector <CRef <CClickableItem> >, it,thisInfo.disc_report_data){
-           x_SendItemToGbench(*it, item_list);
+        x_SortReport();
+        ITERATE (UInt2UInts, it, m_PrtOrd) {
+          ITERATE (vector <unsigned>, jt, it->second) {
+              x_SendItemToGbench(thisInfo.disc_report_data[*jt], item_list);
+          }
         } 
       }
-      thisInfo.disc_report_data.clear();
    };
 
-   thisInfo.test_item_list.clear();
-   thisInfo.test_item_objs.clear();
- 
-   // moved to CollectTestList
-   // clean for gbench usage. 
-/*
-   thisGrp.tests_on_Bioseq.clear();
-   thisGrp.tests_on_Bioseq_na.clear();
-   thisGrp.tests_on_Bioseq_aa.clear();
-   thisGrp.tests_on_Bioseq_CFeat.clear();
-   thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.clear();
-   thisGrp.tests_on_Bioseq_NotInGenProdSet.clear();
-   thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.clear();
-   thisGrp.tests_on_SeqEntry.clear();
-   thisGrp.tests_on_SeqEntry_feat_desc.clear();
-   thisGrp.tests_4_once.clear();
-   thisGrp.tests_on_BioseqSet.clear();
-   thisGrp.tests_on_SubmitBlk.clear();
-*/
+   x_Clean();
 };
 
+// for unit test
 void CDiscRepOutput :: Export(vector <CRef <CClickableItem> >& c_item, const string& setting_name)
 {
    if (!thisInfo.disc_report_data.empty()) {
@@ -888,11 +1135,10 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableItem> >& c_item, const str
       }
    }
 
-   thisInfo.disc_report_data.clear();
-   thisInfo.test_item_list.clear();
-   thisInfo.test_item_objs.clear();
+   x_Clean();
 };
 
+// for unit test
 void CDiscRepOutput :: Export(CRef <CClickableItem>& c_item, const string& setting_name)
 {
    if (!thisInfo.disc_report_data.empty()) {
@@ -908,9 +1154,7 @@ void CDiscRepOutput :: Export(CRef <CClickableItem>& c_item, const string& setti
       }
    }
 
-   thisInfo.disc_report_data.clear();
-   thisInfo.test_item_list.clear();
-   thisInfo.test_item_objs.clear();
+   x_Clean();
 } 
 
 END_NCBI_SCOPE

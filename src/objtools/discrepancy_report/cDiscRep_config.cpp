@@ -1394,7 +1394,7 @@ static const s_test_property test_list[] = {
    {"TEST_TERMINAL_NS", fDiscrepancy | fAsndisc | fMegaReport},
    
 // tests_on_Bioseq_aa
-   {"COUNT_PROTEINS", fMegaReport},
+   {"COUNT_PROTEINS", fMegaReport | fDiscrepancy},
    {"MISSING_PROTEIN_ID", fDiscrepancy | fAsndisc | fMegaReport| fMegaReport},
    {"INCONSISTENT_PROTEIN_ID", fAsndisc | fDiscrepancy},
 
@@ -1442,7 +1442,7 @@ static const s_test_property test_list[] = {
    {"FIND_BADLEN_TRNAS", fOncaller | fMegaReport},
    {"COUNT_TRNAS", fMegaReport | fDiscrepancy},
    {"FIND_DUP_TRNAS", 0},
-   {"COUNT_RRNAS", fMegaReport},
+   {"COUNT_RRNAS", fMegaReport | fDiscrepancy},
    {"FIND_DUP_RRNAS", 0 },
    {"PARTIAL_CDS_COMPLETE_SEQUENCE", fDiscrepancy | fAsndisc | fMegaReport},
    {"CONTAINED_CDS", fDiscrepancy | fAsndisc | fMegaReport},

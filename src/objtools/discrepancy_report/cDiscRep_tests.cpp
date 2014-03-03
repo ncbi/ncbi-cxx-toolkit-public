@@ -148,7 +148,7 @@ bool CBioseq_on_SUSPECT_RULE :: CategoryOkForBioSource(const CBioSource* biosrc_
   else if (!HasTaxonomyID (*biosrc_p)) {
       return true;
   }
-  else if (IsBiosrcEukaryotic(*biosrc_p)) {
+  else if (HasLineage(*biosrc_p, "Eukaryota")) {
       return false;
   }
   else {
@@ -1002,7 +1002,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
       // EUKARYOTE_SHOULD_HAVE_MRNA
       bool has_CDs = false, has_mrna = false;
       if (thisTest.tests_run.find(GetName_eu_mrna()) != end_it
-               && IsBioseqHasLineage(bioseq, "Eukaryota")) {
+               && IsEukaryotic(bioseq)) {
         bool stop = false;
         if (thisInfo.test_item_list.find(GetName_eu_mrna()) 
               != thisInfo.test_item_list.end()) {
@@ -1163,7 +1163,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
       ReportPartialConflictsForFeatureType (rna_feat, "RNA");
       ReportPartialConflictsForFeatureType (utr3_feat, "3' URT");
       ReportPartialConflictsForFeatureType (utr5_feat, "5' URT");
-      if (!IsBioseqHasLineage(bioseq, "Eukaryota") || IsMrnaSequence (bioseq)) {
+      if (!IsEukaryotic(bioseq) || IsMrnaSequence (bioseq)) {
           ReportPartialConflictsForFeatureType (cd_feat, "coding region", true);
       }
       ReportPartialConflictsForFeatureType (miscfeat_feat, "misc_feature");
@@ -1836,7 +1836,7 @@ void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq
   if (bioseq.GetInst().GetMol() != CSeq_inst :: eMol_dna) {
           return;
   }
-  if (!IsBioseqHasLineage(bioseq, "Eukaryota")) {
+  if (!IsEukaryotic(bioseq)) {
         return;
   }
   bool is_genomic = false;
@@ -2490,9 +2490,7 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    unsigned i=0, j=0;
    string desc1, desc2;
 
-   if (IsBioseqHasLineage(bioseq, "Eukaryota", false)) {
-      return;
-   }
+   if (IsEukaryotic(bioseq)) return;
 
    // IgnoreContainedCDS
    vector <int> ignore;
@@ -3208,7 +3206,7 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
 
   bool has_qual_ids = false;
   if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna 
-           || !IsBioseqHasLineage(bioseq, "Eukaryota", false)) {
+           || !IsEukaryotic(bioseq)) {
          return;
   }
   const CBioSource* 
@@ -3558,7 +3556,7 @@ void CBioseq_DISC_PARTIAL_PROBLEMS :: TestOnObj(const CBioseq& bioseq)
         partialL = partial5;
         partialR = partial3;
     }
-    if ( (partialL && CouldExtendLeft(bioseq, seq_loc.GetTotalRange().GetFrom()))
+    if ((partialL && CouldExtendLeft(bioseq, seq_loc.GetTotalRange().GetFrom()))
           || (partialR && CouldExtendRight(bioseq,(int)seq_loc.GetTotalRange().GetTo()))) {
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
         thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
@@ -3647,17 +3645,18 @@ void CBioseq_test_on_bac_partial :: TestOnObj(const CBioseq& bioseq)
           desc = GetDiscItemText(**it);
           CConstRef <CObject> seq_ref (*it);
           // DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS
-          if (!(*it)->CanGetExcept_text() 
-                 || NStr::FindNoCase((*it)->GetExcept_text(), 
-                                      kNonExtendableException)
-                        == string::npos) {
-              if (run_noexc) {
+          if (run_noexc && (!(*it)->CanGetExcept_text()
+                                || NStr::FindNoCase((*it)->GetExcept_text(),
+                                                        kNonExtendableException)
+                                     == string::npos)) {
                  thisInfo.test_item_list[GetName_noexc()].push_back(desc);
-                 thisInfo.test_item_objs[GetName_exc()].push_back(seq_ref);
-              }
+                 thisInfo.test_item_objs[GetName_noexc()].push_back(seq_ref);
           }
           else { // DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION 
-             if (run_exc) { 
+             if (run_exc && (*it)->CanGetExcept_text()
+                         && NStr::FindNoCase((*it)->GetExcept_text(),
+                                                  kNonExtendableException)
+                              != string::npos) { 
                  thisInfo.test_item_list[GetName_exc()].push_back(desc);
                  thisInfo.test_item_objs[GetName_exc()].push_back(seq_ref);
              }
@@ -5151,7 +5150,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: TestOnObj(const CBioseq& bioseq)
   if (!bioseq.IsNa()) {
       return;
   }
-  if (!IsBioseqHasLineage(bioseq, "Eukaryota", false)) {
+  if (!IsEukaryotic(bioseq)) {
      CheckFeatureTypeForLocationDiscrepancies(cd_feat, "Coding region");
   }
   CheckFeatureTypeForLocationDiscrepancies(rna_feat, "RNA feature");
@@ -6972,8 +6971,8 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
      }
    
     // JOINED_FEATURES
-    if (thisTest.tests_run.find(GetName_joined()) == end_it
-             || IsBioseqHasLineage(bioseq, "Eukaryota", false)) {
+    if (thisTest.tests_run.find(GetName_joined()) == end_it 
+            || IsEukaryotic(bioseq)) {
          return;
     }
     ITERATE (vector <const CSeq_feat*>, it, all_feat) {
@@ -7153,7 +7152,7 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
 {
   string text_i, text_j, subcat_tp;
   ENa_strand strand_i, strand_j;
-  bool ignore_trna = IsBioseqHasLineage(bioseq, "Eukaryota", false);
+  bool ignore_trna = IsEukaryotic(bioseq);
 
   ITERATE (vector <const CSeq_feat*>, it, rna_not_mrna_feat) {
     CSeqFeatData::ESubtype subtp = (*it)->GetData().GetSubtype();
@@ -9733,7 +9732,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
                    ++b_ci){
             if (b_ci->IsAa()) continue;
             CConstRef <CBioseq> bioseq = b_ci->GetCompleteBioseq();
-            if (IsBioseqHasLineage(*bioseq, "Eukaryota", false)) {
+            if (IsEukaryotic(*bioseq)) {
                   thisInfo.test_item_list[GetName_map()]
                               .push_back( GetDiscItemText(*bioseq)); 
                   thisInfo.test_item_objs[GetName_map()]

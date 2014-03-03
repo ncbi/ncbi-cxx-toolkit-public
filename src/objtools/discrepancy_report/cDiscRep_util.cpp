@@ -608,7 +608,26 @@ bool CTestAndRepData :: HasLineage(const CBioSource& biosrc, const string& type)
 };
 
 
-bool CTestAndRepData :: IsBiosrcEukaryotic(const CBioSource& biosrc)
+bool CTestAndRepData :: IsEukaryotic(const CBioseq& bioseq)
+{
+   const CBioSource* 
+       biosrc = sequence::GetBioSource(thisInfo.scope->GetBioseqHandle(bioseq));
+   if (biosrc) {
+      CBioSource :: EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
+      if (genome != CBioSource :: eGenome_mitochondrion
+                  && genome != CBioSource :: eGenome_chloroplast
+                  && genome != CBioSource :: eGenome_plastid
+                  && genome != CBioSource :: eGenome_apicoplast
+                  && HasLineage(*biosrc, "Eukaryota")) {
+         return true;
+     }
+   }
+   return false;
+};
+
+
+/*
+bool CTestAndRepData :: IsEukaryotic(const CBioSource& biosrc)
 {
    CBioSource :: EGenome genome = (CBioSource::EGenome) biosrc.GetGenome();
    if (genome != CBioSource :: eGenome_mitochondrion
@@ -620,38 +639,31 @@ bool CTestAndRepData :: IsBiosrcEukaryotic(const CBioSource& biosrc)
    }
    else return false;
 };
+*/
 
 
 bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc)
 {
-   CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
-   if (!bioseq_handle) return false;
-   if (type == "Eukaryota") {
-      if (has_biosrc) {
-         ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) 
-             if (IsBiosrcEukaryotic( (*it)->GetSource())) return true;            
-         return false;
-      }
-      else {
-         for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
-               if (IsBiosrcEukaryotic(it->GetSource())) return true;
+   if (has_biosrc) { 
+      ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
+         if (HasLineage( (*it)->GetSource(), type)) {
+            return true;
          }
-         return false;
       }
-   } 
-   else if (type == "Bacteria") {
-      if (has_biosrc) { 
-          ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc)
-              if (HasLineage( (*it)->GetSource(), type)) return true;
+      return false;
+   }
+   else {
+      CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
+      if (!bioseq_handle) {
           return false;
       }
-      else {
-         for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) 
-             if (HasLineage(it->GetSource(), type)) return true;
-         return false;
+      for (CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source); it; ++it) {
+          if (HasLineage(it->GetSource(), type)) {
+                return true;
+          }
       }
+      return false;
    }
-   else return false;
 };
 
 
@@ -776,14 +788,20 @@ bool CTestAndRepData :: IsmRNASequenceInGenProdSet(const CBioseq& bioseq)
    return rval;
 };
 
+
 string CTestAndRepData :: GetDiscItemText(const CSeq_entry& seq_entry)
 {
    string desc;
-   if (seq_entry.IsSeq())
+   if (seq_entry.IsSeq()) {
         desc =  BioseqToBestSeqIdString(seq_entry.GetSeq(), CSeq_id::e_Genbank);
+   }
    else desc = GetDiscItemTextForBioseqSet(seq_entry.GetSet());
-   if (thisInfo.infile.empty()) return desc;
-   else return (thisInfo.infile + ": " + desc);
+   if (thisInfo.infile.empty()) {
+       return desc;
+   }
+   else {
+      return (thisInfo.infile + ": " + desc);
+   }
 };
 
 
@@ -1257,6 +1275,7 @@ const CSeq_feat* CTestAndRepData :: GetCDFeatFromProtFeat(const CSeq_feat& prot)
 };
 
 
+static const string spaces("     ");
 string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
 {
       CSeq_feat* seq_feat_p = const_cast <CSeq_feat*>(&seq_feat);
@@ -1296,9 +1315,9 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
           context_label = "Unknown context label";
       }
 */
-      if (!label.empty()) label += "\t";
-      if (!context_label.empty()) context_label += "\t";
-      if (!location.empty()) location += "\t";
+      if (!label.empty()) label += spaces ;
+      if (!context_label.empty()) context_label +=  spaces;
+      if (!location.empty() && !locus_tag.empty()) location += spaces;
       strtmp = label + context_label + location + locus_tag;
       if (thisInfo.infile.empty()) {
          return strtmp;
