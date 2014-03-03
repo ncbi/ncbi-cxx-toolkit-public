@@ -1,4 +1,5 @@
->#$%^&*() Invalid, will get a fresh local ID
+# | not allowed either, but triggers type gnl.
+>with=or" Invalid, will get a fresh local ID
 >two      Local string ID
 >3        Local numeric ID
 # CFastaOstream will reorder these IDs as necessary, but testing that would
