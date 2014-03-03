@@ -731,11 +731,6 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     }
                     blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
                 }
-                if ( !with_named_accs || named_gi == ZERO_GI ) {
-                    // no need to read named annot accessions
-                    SetAndSaveSeq_idBlob_ids(result, seq_id, with_named_accs, 0,
-                                             CFixedBlob_ids(eTakeOwnership, blob_ids));
-                }
             }
         }
 
@@ -801,24 +796,17 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     annot_info->AddNamedAnnotName(nameGot.Value());
                     info.SetAnnotInfo(annot_info);
                     blob_ids.push_back(info);
-                    /*
-                    CRef<CID2S_Feat_type_Info> feat(new CID2S_Feat_type_Info);
-                    feat->SetType(typeGot.Value());
-                    CRef<CID2S_Seq_annot_Info> annot(new CID2S_Seq_annot_Info);
-                    annot->SetName(nameGot.Value());
-                    annot->SetFeat().push_back(feat);
-                    list<CRef<CID2S_Seq_annot_Info> > annot_info(1, annot);
-                    SetAndSaveBlobAnnotInfo(result, blob_id, annot_info);
-                    */
                 }
             }
-            SetAndSaveSeq_idBlob_ids(result, seq_id, with_named_accs, 0,
-                                     CFixedBlob_ids(eTakeOwnership, blob_ids));
         }
 
         if ( result_count == 0 ) {
             SetAndSaveNoSeq_idSeq_ids(result, seq_id, 0);
             SetAndSaveNoSeq_idBlob_ids(result, seq_id, with_named_accs, 0);
+        }
+        else {
+            SetAndSaveSeq_idBlob_ids(result, seq_id, with_named_accs, 0,
+                                     CFixedBlob_ids(eTakeOwnership, blob_ids));
         }
     }}
 
@@ -912,6 +900,29 @@ bool CPubseqReader::LoadGiSeq_ids(CReaderRequestResult& result,
 }
 
 
+void CPubseqReader::GetBlobState(CReaderRequestResult& result, 
+                                 const CBlob_id& blob_id)
+{
+    CConn conn(result, this);
+    {{
+        CDB_Connection* db_conn = x_GetConnection(conn);
+        AutoPtr<I_BaseCmd> cmd
+            (x_SendRequest2(blob_id, db_conn, RPC_GET_BLOB_INFO));
+        SReceiveData data = x_ReceiveData(result, blob_id, *cmd, false);
+        if ( data.dbr ) {
+            ERR_POST_X(5, "CPubseqReader: unexpected blob data");
+        }
+    }}
+    conn.Release();
+    if ( !blob_id.IsMainBlob() ) {
+        CLoadLockBlobState lock(result, blob_id);
+        if ( !lock.IsLoadedBlobState() ) {
+            SetAndSaveBlobState(result, blob_id, 0);
+        }
+    }
+}
+
+
 void CPubseqReader::GetBlobVersion(CReaderRequestResult& result, 
                                    const CBlob_id& blob_id)
 {
@@ -921,9 +932,8 @@ void CPubseqReader::GetBlobVersion(CReaderRequestResult& result,
             CDB_Connection* db_conn = x_GetConnection(conn);
             AutoPtr<I_BaseCmd> cmd
                 (x_SendRequest2(blob_id, db_conn, RPC_GET_BLOB_INFO));
-            pair<AutoPtr<CDB_Result>, int> dbr
-                (x_ReceiveData(result, blob_id, *cmd, false));
-            if ( dbr.first ) {
+            SReceiveData data = x_ReceiveData(result, blob_id, *cmd, false);
+            if ( data.dbr ) {
                 ERR_POST_X(5, "CPubseqReader: unexpected blob data");
             }
         }}
@@ -960,10 +970,9 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
         AutoPtr<I_BaseCmd> cmd(x_SendRequest(blob_id, db_conn, RPC_GET_ASN));
-        pair<AutoPtr<CDB_Result>, int> dbr
-            (x_ReceiveData(result, blob_id, *cmd, true));
-        if ( dbr.first ) {
-            CDB_Result_Reader reader(dbr.first);
+        SReceiveData data = x_ReceiveData(result, blob_id, *cmd, true);
+        if ( data.dbr ) {
+            CDB_Result_Reader reader(data.dbr);
             CRStream stream(&reader);
             CProcessor::EType processor_type;
             if ( blob_id.GetSubSat() == eSubSat_SNP ) {
@@ -972,7 +981,7 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
             else {
                 processor_type = CProcessor::eType_Seq_entry;
             }
-            if ( dbr.second & fZipType_gzipped ) {
+            if ( data.zip_type & fZipType_gzipped ) {
                 CCompressionIStream unzip(stream,
                                           new CZipStreamDecompressor,
                                           CCompressionIStream::fOwnProcessor);
@@ -990,7 +999,7 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
             cmd->DumpResults();
         }
         else {
-            SetAndSaveNoBlob(result, blob_id, chunk_id);
+            SetAndSaveNoBlob(result, blob_id, chunk_id, data.blob_state);
         }
     }}
     conn.Release();
@@ -1016,23 +1025,20 @@ I_BaseCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
 }
 
 
-pair<AutoPtr<CDB_Result>, int>
+CPubseqReader::SReceiveData
 CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
                              const TBlobId& blob_id,
                              I_BaseCmd& cmd,
                              bool force_blob)
 {
-    pair<AutoPtr<CDB_Result>, int> ret;
+    SReceiveData ret;
 
     enum {
         kState_dead = 125
     };
-    TBlobState blob_state = 0;
-
-    CLoadLockBlob blob(result, blob_id);
 
     // new row
-    while( !ret.first && cmd.HasMoreResults() ) {
+    while( !ret.dbr && cmd.HasMoreResults() ) {
         _TRACE("next result");
         if ( cmd.HasFailed() ) {
             break;
@@ -1049,7 +1055,7 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
             continue;
         }
         
-        while ( !ret.first && dbr->Fetch() ) {
+        while ( !ret.dbr && dbr->Fetch() ) {
             _TRACE("next fetch: " << dbr->NofItems() << " items");
             for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
                 const string& name = dbr->ItemName(pos);
@@ -1059,7 +1065,7 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
                     dbr->GetItem(&v);
                     _TRACE("confidential: "<<v.Value());
                     if ( v.Value() ) {
-                        blob_state |= CBioseq_Handle::fState_confidential;
+                        ret.blob_state |= CBioseq_Handle::fState_confidential;
                     }
                 }
                 else if ( name == "suppress" ) {
@@ -1067,7 +1073,7 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
                     dbr->GetItem(&v);
                     _TRACE("suppress: "<<v.Value());
                     if ( v.Value() ) {
-                        blob_state |= (v.Value() & 4)
+                        ret.blob_state |= (v.Value() & 4)
                             ? CBioseq_Handle::fState_suppress_temp
                             : CBioseq_Handle::fState_suppress_perm;
                     }
@@ -1077,32 +1083,31 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
                     dbr->GetItem(&v);
                     _TRACE("withdrawn: "<<v.Value());
                     if ( v.Value() ) {
-                        blob_state |= CBioseq_Handle::fState_withdrawn;
+                        ret.blob_state |= CBioseq_Handle::fState_withdrawn;
                     }
                 }
                 else if ( name == "last_touched_m" ) {
                     CDB_Int v;
                     dbr->GetItem(&v);
                     _TRACE("version: " << v.Value());
-                    m_Dispatcher->SetAndSaveBlobVersion(result, blob_id,
-                                                        v.Value());
+                    ret.blob_version = v.Value();
                 }
                 else if ( name == "state" ) {
                     CDB_Int v;
                     dbr->GetItem(&v);
                     _TRACE("state: "<<v.Value());
                     if ( v.Value() == kState_dead ) {
-                        blob_state |= CBioseq_Handle::fState_dead;
+                        ret.blob_state |= CBioseq_Handle::fState_dead;
                     }
                 }
                 else if ( name == "zip_type" ) {
                     CDB_Int v;
                     dbr->GetItem(&v);
                     _TRACE("zip_type: "<<v.Value());
-                    ret.second = v.Value();
+                    ret.zip_type = v.Value();
                 }
                 else if ( name == "asn1" ) {
-                    ret.first.reset(dbr.release());
+                    ret.dbr.reset(dbr.release());
                     break;
                 }
                 else {
@@ -1136,12 +1141,13 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
             }
         }
     }
-    if ( !ret.first && force_blob ) {
+    if ( !ret.dbr && force_blob ) {
         // no data
         _TRACE("actually no data");
-        blob_state |= CBioseq_Handle::fState_no_data;
+        ret.blob_state |= CBioseq_Handle::fState_no_data;
     }
-    m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
+    m_Dispatcher->SetAndSaveBlobState(result, blob_id, ret.blob_state);
+    m_Dispatcher->SetAndSaveBlobVersion(result, blob_id, ret.blob_version);
     return ret;
 }
 

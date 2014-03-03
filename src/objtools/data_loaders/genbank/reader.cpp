@@ -508,10 +508,10 @@ bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
         }
         CLoadLockBlob blob(result, blob_id);
         _ASSERT(blob.IsLoaded());
-        if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
+        if ( !blob ) {
             continue;
         }
-            
+        
         CConstRef<CBioseq_Info> bs_info = blob->FindMatchingBioseq(seq_id);
         if ( bs_info ) {
             ids.SetLoadedTaxId(bs_info->GetTaxId());
@@ -779,15 +779,6 @@ void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
 }
 
 
-void CReader::SetAndSaveNoBlob(CReaderRequestResult& result,
-                               const TBlobId& blob_id,
-                               TChunkId chunk_id,
-                               const CLoadLockBlob& lock)
-{
-    SetAndSaveNoBlob(result, blob_id, chunk_id, lock.GetBlobState());
-}
-
-
 void CReader::SetAndSaveNoStringSeq_ids(CReaderRequestResult& result,
                                         const string& seq_id,
                                         TBlobState state) const
@@ -889,6 +880,20 @@ void CReader::SetAndSaveNoSeq_idBlob_ids(CReaderRequestResult& result,
 {
     CLoadLockBlob_ids lock(result, seq_id, sel);
     SetAndSaveNoSeq_idBlob_ids(result, seq_id, sel, lock, state);
+}
+
+
+void CReader::SetAndSaveBlobState(CReaderRequestResult& result,
+                                  const TBlobId& blob_id,
+                                  TBlobVersion blob_state) const
+{
+    CLoadLockBlobState lock(result, blob_id);
+    if ( lock.SetLoadedBlobState(blob_state) ) {
+        CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
+        if( writer ) {
+            writer->SaveBlobState(result, blob_id, blob_state);
+        }
+    }
 }
 
 

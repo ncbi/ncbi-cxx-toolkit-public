@@ -105,8 +105,11 @@ public:
     virtual bool LoadTaxIds(CReaderRequestResult& result,
                             const TIds& ids, TLoaded& loaded, TTaxIds& ret);
 
+    virtual bool LoadBlobState(CReaderRequestResult& result,
+                               const TBlobId& blob_id) = 0;
     virtual bool LoadBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id) = 0;
+
     virtual bool LoadBlobs(CReaderRequestResult& result,
                            const string& seq_id,
                            TContentsMask mask,
@@ -169,17 +172,16 @@ public:
                                     const CSeq_id_Handle& seq_id,
                                     const SAnnotSelector* sel,
                                     TBlobState state) const;
+    void SetAndSaveBlobState(CReaderRequestResult& result,
+                             const TBlobId& blob_id,
+                             TBlobState blob_state) const;
     void SetAndSaveBlobVersion(CReaderRequestResult& result,
                                const TBlobId& blob_id,
                                TBlobVersion version) const;
     void SetAndSaveNoBlob(CReaderRequestResult& result,
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
-                          TBlobState blob_state = 0);
-    void SetAndSaveNoBlob(CReaderRequestResult& result,
-                          const TBlobId& blob_id,
-                          TChunkId chunk_id,
-                          const CLoadLockBlob& lock);
+                          TBlobState blob_state);
 
     void SetAndSaveNoStringSeq_ids(CReaderRequestResult& result,
                                    const string& seq_id,
@@ -230,7 +232,6 @@ public:
                                     const SAnnotSelector* sel,
                                     CLoadLockBlob_ids& lock,
                                     TBlobState state) const;
-    typedef CLoadLockBlob::TAnnotInfo TAnnotInfo;
 
     int SetMaximumConnections(int max);
     void SetMaximumConnections(int max, int default_max);

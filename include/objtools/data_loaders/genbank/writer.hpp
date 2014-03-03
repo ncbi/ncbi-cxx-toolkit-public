@@ -85,10 +85,12 @@ public:
     virtual void SaveSeq_idBlob_ids(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
                                     const SAnnotSelector* sel) = 0;
+    virtual void SaveBlobState(CReaderRequestResult& result,
+                               const TBlobId& blob_id,
+                               TBlobState blob_state) = 0;
     virtual void SaveBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id,
                                  TBlobVersion version) = 0;
-    typedef CLoadLockBlob::TAnnotInfo TAnnotInfo;
 
     class NCBI_XREADER_EXPORT CBlobStream : public CObject {
     public:

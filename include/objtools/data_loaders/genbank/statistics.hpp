@@ -49,6 +49,7 @@ public:
         eStat_Seq_idLabel,
         eStat_Seq_idTaxId,
         eStat_Seq_idBlob_ids,
+        eStat_BlobState,
         eStat_BlobVersion,
         eStat_LoadBlob,
         eStat_LoadSNPBlob,

@@ -63,86 +63,6 @@ bool CId1ReaderBase::LoadStringSeq_ids(CReaderRequestResult& /*result*/,
     return false;
 }
 
-/*
-bool CId1ReaderBase::LoadSeq_idSeq_ids(CReaderRequestResult& result,
-                                       const CSeq_id_Handle& seq_id)
-{
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids.IsLoaded() ) {
-        return true;
-    }
-    
-    TSeqIds seq_ids;
-    try {
-        GetSeq_idSeq_ids(result, seq_id, seq_ids);
-    }
-    catch ( CLoaderException& exc ) {
-        if ( exc.GetErrCode() == exc.ePrivateData ) {
-            // leave ids empty
-            ids.SetNoSeq_ids(CBioseq_Handle::fState_confidential|
-                              CBioseq_Handle::fState_no_data);
-        }
-        else if ( exc.GetErrCode() == exc.eNoData ) {
-            // leave ids empty
-            ids.SetNoSeq_ids(CBioseq_Handle::fState_no_data);
-        }
-        else if ( exc.GetErrCode() == exc.eNoConnection ) {
-            return false;
-        }
-        else {
-            throw;
-        }
-    }
-    SetAndSaveSeq_idSeq_ids(result, seq_id, ids, 0, seq_ids);
-    return true;
-}
-
-
-bool CId1ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
-                                        const CSeq_id_Handle& seq_id,
-                                        const SAnnotSelector* sel)
-{
-    CLoadLockBlob_ids ids(result, seq_id, sel);
-    if ( ids.IsLoaded() ) {
-        return true;
-    }
-
-    try {
-        if ( !GetSeq_idBlob_ids(result, ids, seq_id, sel) ) {
-            return CReader::LoadSeq_idBlob_ids(result, seq_id, sel);
-        }
-    }
-    catch ( CLoaderException& exc ) {
-        if (exc.GetErrCode() == exc.ePrivateData) {
-            // leave ids empty
-            SetAndSaveNoSeq_idBlob_ids(result,
-                                       seq_id,
-                                       sel,
-                                       ids,
-                                       CBioseq_Handle::fState_confidential|
-                                       CBioseq_Handle::fState_no_data);
-            return true;
-        }
-        else if (exc.GetErrCode() == exc.eNoData) {
-            // leave ids empty
-            SetAndSaveNoSeq_idBlob_ids(result,
-                                       seq_id,
-                                       sel,
-                                       ids,
-                                       CBioseq_Handle::fState_no_data);
-            return true;
-        }
-        else if ( exc.GetErrCode() == exc.eNoConnection ) {
-            return false;
-        }
-        else {
-            throw;
-        }
-    }
-    SetAndSaveSeq_idBlob_ids(result, seq_id, sel, 0, seq_id, ids);
-    return true;
-}
-*/
 
 bool CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                               const TBlobId& blob_id)
@@ -163,28 +83,21 @@ bool CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
         return true;
     }
 
-    try {
-        GetBlob(result, blob_id, CProcessor::kMain_ChunkId);
-    }
-    catch ( CLoaderException& exc ) {
-        if ( exc.GetErrCode() == exc.ePrivateData ) {
-            // leave tse empty
-            CLoadLockBlob blob(result, blob_id);
-            blob.SetBlobState(CBioseq_Handle::fState_confidential);
-            SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId, blob);
-        }
-        else if ( exc.GetErrCode() == exc.eNoData ) {
-            // leave tse empty
-            SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId);
-        }
-        else if ( exc.GetErrCode() == exc.eNoConnection ) {
-            return false;
-        }
-        else {
-            throw;
-        }
-    }
+    GetBlob(result, blob_id, CProcessor::kMain_ChunkId);
     _ASSERT(result.IsBlobLoaded(blob_id));
+    return true;
+}
+
+
+bool CId1ReaderBase::LoadBlobState(CReaderRequestResult& result,
+                                   const TBlobId& blob_id)
+{
+    CLoadLockBlobState lock(result, blob_id);
+    if ( lock.IsLoadedBlobState() ) {
+        return true;
+    }
+
+    GetBlobState(result, blob_id);
     return true;
 }
 
@@ -192,29 +105,12 @@ bool CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
 bool CId1ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
                                      const TBlobId& blob_id)
 {
-    CLoadLockBlob blob(result, blob_id);
-    if ( blob.IsSetBlobVersion() ) {
+    CLoadLockBlobState blob(result, blob_id);
+    if ( blob.IsLoadedBlobVersion() ) {
         return true;
     }
 
-    try {
-        GetBlobVersion(result, blob_id);
-    }
-    catch ( CLoaderException& exc ) {
-        if ( exc.GetErrCode() == exc.ePrivateData ||
-             exc.GetErrCode() == exc.eNoData ) {
-            // leave version zero
-            if ( !blob.IsSetBlobVersion() ) {
-                SetAndSaveBlobVersion(result, blob_id, 0);
-            }
-        }
-        else if ( exc.GetErrCode() == exc.eNoConnection ) {
-            return false;
-        }
-        else {
-            throw;
-        }
-    }
+    GetBlobVersion(result, blob_id);
     return true;
 }
 

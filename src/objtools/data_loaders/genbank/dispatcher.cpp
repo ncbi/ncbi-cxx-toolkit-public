@@ -62,6 +62,7 @@ static CGBRequestStatistics sx_Statistics[CGBRequestStatistics::eStats_Count] =
     CGBRequestStatistics("resolved", "labels"),
     CGBRequestStatistics("resolved", "taxids"),
     CGBRequestStatistics("resolved", "blob ids"),
+    CGBRequestStatistics("resolved", "blob state"),
     CGBRequestStatistics("resolved", "blob versions"),
     CGBRequestStatistics("loaded", "blob data"),
     CGBRequestStatistics("loaded", "SNP data"),
@@ -730,11 +731,50 @@ namespace {
         TRet& m_Ret;
     };
 
+    class CCommandLoadBlobState : public CReadDispatcherCommand
+    {
+    public:
+        typedef CBlob_id TKey;
+        typedef CLoadLockBlobState TLock;
+        CCommandLoadBlobState(CReaderRequestResult& result,
+                              const TKey& key)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Lock(result, key)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return m_Lock.IsLoadedBlobState();
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadBlobState(GetResult(), m_Key);
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadBlobVersion("+m_Key.ToString()+"): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_BlobState;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "blob-version("+m_Key.ToString()+")";
+            }
+        
+    private:
+        TKey m_Key;
+        TLock m_Lock;
+    };
+
     class CCommandLoadBlobVersion : public CReadDispatcherCommand
     {
     public:
         typedef CBlob_id TKey;
-        typedef CLoadLockBlob TLock;
+        typedef CLoadLockBlobState TLock;
         CCommandLoadBlobVersion(CReaderRequestResult& result,
                                 const TKey& key)
             : CReadDispatcherCommand(result),
@@ -744,7 +784,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return m_Lock.IsSetBlobVersion();
+                return m_Lock.IsLoadedBlobVersion();
             }
         bool Execute(CReader& reader)
             {
@@ -1315,6 +1355,13 @@ void CReadDispatcher::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
+void CReadDispatcher::LoadBlobState(CReaderRequestResult& result,
+                                    const TBlobId& blob_id)
+{
+    CCommandLoadBlobState command(result, blob_id);
+    Process(command);
+}
+
 void CReadDispatcher::LoadBlobVersion(CReaderRequestResult& result,
                                       const TBlobId& blob_id,
                                       const CReader* asking_reader)
@@ -1388,20 +1435,24 @@ void CReadDispatcher::SetAndSaveBlobState(CReaderRequestResult& result,
                                           const TBlobId& blob_id,
                                           TBlobState state) const
 {
-    CLoadLockBlob blob(result, blob_id);
-    SetAndSaveBlobState(result, blob_id, blob, state);
+    CLoadLockBlobState lock(result, blob_id);
+    SetAndSaveBlobState(result, blob_id, lock, state);
 }
 
 
-void CReadDispatcher::SetAndSaveBlobState(CReaderRequestResult& /*result*/,
-                                          const TBlobId& /*blob_id*/,
-                                          CLoadLockBlob& blob,
+void CReadDispatcher::SetAndSaveBlobState(CReaderRequestResult& result,
+                                          const TBlobId& blob_id,
+                                          CLoadLockBlobState& lock,
                                           TBlobState state) const
 {
-    if ( (blob.GetBlobState() & state) == state ) {
+    if ( lock.IsLoadedBlobState() && lock->GetBlobState() == state ) {
         return;
     }
-    blob.SetBlobState(state);
+    lock.SetLoadedBlobState(state);
+    CWriter *writer = GetWriter(result, CWriter::eIdWriter);
+    if( writer ) {
+        writer->SaveBlobState(result, blob_id, state);
+    }
 }
 
 
@@ -1409,20 +1460,20 @@ void CReadDispatcher::SetAndSaveBlobVersion(CReaderRequestResult& result,
                                             const TBlobId& blob_id,
                                             TBlobVersion version) const
 {
-    CLoadLockBlob blob(result, blob_id);
-    SetAndSaveBlobVersion(result, blob_id, blob, version);
+    CLoadLockBlobState lock(result, blob_id);
+    SetAndSaveBlobVersion(result, blob_id, lock, version);
 }
 
 
 void CReadDispatcher::SetAndSaveBlobVersion(CReaderRequestResult& result,
                                             const TBlobId& blob_id,
-                                            CLoadLockBlob& blob,
+                                            CLoadLockBlobState& lock,
                                             TBlobVersion version) const
 {
-    if ( blob.IsSetBlobVersion() && blob.GetBlobVersion() == version ) {
+    if ( lock.IsLoadedBlobVersion() && lock->GetBlobVersion() == version ) {
         return;
     }
-    blob.SetBlobVersion(version);
+    lock.SetLoadedBlobVersion(version);
     CWriter *writer = GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
         writer->SaveBlobVersion(result, blob_id, version);

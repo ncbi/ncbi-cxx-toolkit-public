@@ -382,6 +382,21 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
+void CCacheWriter::SaveBlobState(CReaderRequestResult& /*result*/,
+                                 const TBlobId& blob_id,
+                                 TBlobState blob_state)
+{
+    if( !m_IdCache ) {
+        return;
+    }
+
+    _ASSERT(blob_state >= 0);
+    CStoreBuffer str;
+    str.StoreInt4(blob_state);
+    x_WriteId(GetBlobKey(blob_id), GetBlobStateSubkey(), str);
+}
+
+
 void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
                                    const TBlobId& blob_id,
                                    TBlobVersion version)

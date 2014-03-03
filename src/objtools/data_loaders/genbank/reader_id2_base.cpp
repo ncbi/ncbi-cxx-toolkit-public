@@ -752,6 +752,27 @@ bool CId2ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
+bool CId2ReaderBase::LoadBlobState(CReaderRequestResult& result,
+                                   const CBlob_id& blob_id)
+{
+    CID2_Request req;
+    CID2_Request_Get_Blob_Info& req2 = req.SetRequest().SetGet_blob_info();
+    x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
+    x_ProcessRequest(result, req, 0);
+    if ( blob_id.GetSat() == CProcessor_ExtAnnot::eSat_ANNOT &&
+         blob_id.GetSubSat() != CID2_Blob_Id::eSub_sat_main ) {
+        // workaround for possible incorrect reply on request for non-existent
+        // external annotations
+        CLoadLockBlobState lock(result, blob_id);
+        if ( !lock.IsLoadedBlobState() ) {
+            ERR_POST_X(2, "ExtAnnot blob state is not loaded: "<<blob_id);
+            lock.SetLoadedBlobState(0);
+        }
+    }
+    return true;
+}
+
+
 bool CId2ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
                                      const CBlob_id& blob_id)
 {
@@ -763,10 +784,10 @@ bool CId2ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
          blob_id.GetSubSat() != CID2_Blob_Id::eSub_sat_main ) {
         // workaround for possible incorrect reply on request for non-existent
         // external annotations
-        CLoadLockBlob blob(result, blob_id);
-        if ( !blob.IsSetBlobVersion() ) {
+        CLoadLockBlobState state(result, blob_id);
+        if ( !state.IsLoadedBlobVersion() ) {
             ERR_POST_X(2, "ExtAnnot blob version is not loaded: "<<blob_id);
-            blob.SetBlobVersion(0);
+            state.SetLoadedBlobVersion(0);
         }
     }
     return true;
@@ -1890,11 +1911,12 @@ void CId2ReaderBase::x_ProcessGetBlobId(
         SetAndSaveNoSeq_idBlob_ids(result, idh, 0, blob_state);
         return;
     }
+    if ( (blob_state == 0) && (errors & fError_warning) ) {
+        blob_state |= CBioseq_Handle::fState_other_error;
+    }
     
     SId2LoadedSet::TBlob_idsInfo& ids = loaded_set.m_Blob_ids[idh];
-    if ( errors & fError_warning ) {
-        ids.first |= CBioseq_Handle::fState_other_error;
-    }
+    ids.first |= blob_state;
     const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
     CBlob_id blob_id = GetBlobId(src_blob_id);
     if ( blob_state ) {
@@ -1984,10 +2006,7 @@ void CId2ReaderBase::x_ProcessGetBlob(
 
     TBlobState blob_state = x_GetBlobState(main_reply);
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
-        CLoadLockBlob blob(result, blob_id);
-        blob.SetBlobState(blob_state);
-        SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
-        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
+        SetAndSaveNoBlob(result, blob_id, chunk_id, blob_state);
         return;
     }
 
@@ -2010,9 +2029,7 @@ void CId2ReaderBase::x_ProcessGetBlob(
         }
         ERR_POST_X(6, "CId2ReaderBase: ID2-Reply-Get-Blob: "
                    "no data in reply: "<<blob_id);
-        CLoadLockBlob blob(result, blob_id);
-        SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
-        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
+        SetAndSaveNoBlob(result, blob_id, chunk_id, blob_state);
         return;
     }
 
@@ -2043,7 +2060,7 @@ void CId2ReaderBase::x_ProcessGetBlob(
     }
 
     if ( blob_state ) {
-        m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
+        m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob_state);
     }
 
     if ( reply.GetBlob_id().GetSub_sat() == CID2_Blob_Id::eSub_sat_snp ) {
@@ -2104,9 +2121,7 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
         }
     }}
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
-        blob.SetBlobState(blob_state);
-        SetAndSaveNoBlob(result, blob_id, chunk_id, blob);
-        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
+        SetAndSaveNoBlob(result, blob_id, chunk_id, blob_state);
         return;
     }
 
@@ -2120,12 +2135,12 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
     }}
 
     if ( blob_state ) {
-        m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
+        m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob_state);
     }
 
     dynamic_cast<const CProcessor_ID2&>
         (m_Dispatcher->GetProcessor(CProcessor::eType_ID2))
-        .ProcessData(result, blob_id, blob->GetBlobState(), chunk_id,
+        .ProcessData(result, blob_id, blob_state, chunk_id,
                      reply.GetData(), reply.GetSplit_version(), skel);
 
     _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));

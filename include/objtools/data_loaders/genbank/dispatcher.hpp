@@ -113,6 +113,8 @@ public:
     void LoadTaxIds(CReaderRequestResult& result,
                     const TIds ids, TLoaded& loaded, TTaxIds& ret);
  
+    void LoadBlobState(CReaderRequestResult& result,
+                       const TBlobId& blob_id);
     void LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id,
                          const CReader* asking_reader = 0);
@@ -141,14 +143,14 @@ public:
                              TBlobState state) const;
     void SetAndSaveBlobState(CReaderRequestResult& result,
                              const TBlobId& blob_id,
-                             CLoadLockBlob& blob,
+                             CLoadLockBlobState& lock,
                              TBlobState state) const;
     void SetAndSaveBlobVersion(CReaderRequestResult& result,
                                const TBlobId& blob_id,
                                TBlobVersion version) const;
     void SetAndSaveBlobVersion(CReaderRequestResult& result,
                                const TBlobId& blob_id,
-                               CLoadLockBlob& blob,
+                               CLoadLockBlobState& lock,
                                TBlobVersion version) const;
 
     void CheckReaders(void) const;

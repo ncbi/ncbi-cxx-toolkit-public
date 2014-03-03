@@ -70,6 +70,7 @@ class CHandleRange;
 class CSeq_entry;
 class CLoadInfoSeq_ids;
 class CLoadInfoBlob_ids;
+class CLoadInfoBlobState;
 class CLoadInfoBlob;
 
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
@@ -191,11 +192,14 @@ public:
     virtual TGi GetGi(const CSeq_id_Handle& idh);
     virtual string GetLabel(const CSeq_id_Handle& idh);
     virtual int GetTaxId(const CSeq_id_Handle& idh);
+    virtual int GetSequenceState(const CSeq_id_Handle& idh);
 
     virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret);
     virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret);
     virtual void GetLabels(const TIds& ids, TLoaded& loader, TLabels& ret);
     virtual void GetTaxIds(const TIds& ids, TLoaded& loader, TTaxIds& ret);
+    //virtual void GetSequenceStates(const TIds& ids, TLoaded& loader,
+    //                               TSequenceStates& ret);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
@@ -287,6 +291,7 @@ public:
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const CSeq_id_Handle& key);
     typedef pair<CSeq_id_Handle, string>                      TLoadKeyBlob_ids;
     CRef<CLoadInfoBlob_ids> GetLoadInfoBlob_ids(const TLoadKeyBlob_ids& key);
+    CRef<CLoadInfoBlobState> GetLoadInfoBlobState(const CBlob_id& key);
 
     // params modifying access methods
     // argument params should be not-null
@@ -359,6 +364,7 @@ private:
     typedef CLoadInfoMap<string, CLoadInfoSeq_ids>            TLoadMapSeq_ids;
     typedef CLoadInfoMap<CSeq_id_Handle, CLoadInfoSeq_ids>    TLoadMapSeq_ids2;
     typedef CLoadInfoMap<TLoadKeyBlob_ids, CLoadInfoBlob_ids> TLoadMapBlob_ids;
+    typedef CLoadInfoMap<CBlob_id, CLoadInfoBlobState>        TLoadMapBlobStates;
 
     CInitMutexPool          m_MutexPool;
 
@@ -367,6 +373,7 @@ private:
     TLoadMapSeq_ids         m_LoadMapSeq_ids;
     TLoadMapSeq_ids2        m_LoadMapSeq_ids2;
     TLoadMapBlob_ids        m_LoadMapBlob_ids;
+    TLoadMapBlobStates      m_LoadMapBlobStates;
 
     //CTimer                  m_Timer;
 

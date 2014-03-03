@@ -64,10 +64,11 @@ public:
                           CObjectIStream& obj_stream) const;
 
     TBlobVersion GetVersion(const CID1server_back& reply) const;
-    CRef<CSeq_entry> GetSeq_entry(CReaderRequestResult& result,
-                                  const TBlobId& blob_id,
-                                  CLoadLockBlob& blob,
-                                  CID1server_back& reply) const;
+    typedef pair<CRef<CSeq_entry>, int> TSeqEntryInfo; // entry & state
+    TSeqEntryInfo GetSeq_entry(CReaderRequestResult& result,
+                               const TBlobId& blob_id,
+                               CLoadLockBlob& blob,
+                               CID1server_back& reply) const;
 
     void SaveBlob(CReaderRequestResult& result,
                   const TBlobId& blob_id,
@@ -111,6 +112,11 @@ public:
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
                           CObjectIStream& obj_stream) const;
+
+protected:
+    CWriter* x_GetWriterToSaveBlob(CReaderRequestResult& result,
+                                   const CBlob_id& blob_id,
+                                   const char* processor_name) const;
 };
 
 

@@ -507,13 +507,22 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
     }
 
     const CID1blob_info& info = id1_reply.GetGotblobinfo();
+    if ( info.GetBlob_state() < 0 ) {
+        state |= CBioseq_Handle::fState_dead;
+    }
+    if ( info.GetSuppress() > 0 ) {
+        state |=
+            (info.GetSuppress() & 4)
+            ? CBioseq_Handle::fState_suppress_temp
+            : CBioseq_Handle::fState_suppress_perm;
+    }
     if (info.GetWithdrawn() > 0) {
-        state = CBioseq_Handle::fState_withdrawn;
+        state |= CBioseq_Handle::fState_withdrawn;
         SetAndSaveNoSeq_idBlob_ids(result, seq_id, 0, ids, state);
         return true;
     }
     if (info.GetConfidential() > 0) {
-        state = CBioseq_Handle::fState_confidential;
+        state |= CBioseq_Handle::fState_confidential;
         SetAndSaveNoSeq_idBlob_ids(result, seq_id, 0, ids, state);
         return true;
     }
@@ -563,6 +572,13 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
 }
 
 
+void CId1Reader::GetBlobState(CReaderRequestResult& result,
+                              const CBlob_id& blob_id)
+{
+    GetBlobVersion(result, blob_id);
+}
+
+
 void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
                                 const CBlob_id& blob_id)
 {
@@ -575,9 +591,15 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
     TBlobVersion version = -1;
     switch ( reply.Which() ) {
     case CID1server_back::e_Gotblobinfo:
+        if ( reply.GetGotblobinfo().GetBlob_state() < 0 ) {
+            state |= CBioseq_Handle::fState_dead;
+        }
         version = abs(reply.GetGotblobinfo().GetBlob_state());
         break;
     case CID1server_back::e_Gotsewithinfo:
+        if ( reply.GetGotblobinfo().GetBlob_state() < 0 ) {
+            state |= CBioseq_Handle::fState_dead;
+        }
         version = abs(reply.GetGotsewithinfo().GetBlob_info().GetBlob_state());
         break;
     case CID1server_back::e_Error:
@@ -594,9 +616,7 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
     if ( version >= 0 ) {
         SetAndSaveBlobVersion(result, blob_id, version);
     }
-    if ( state ) {
-        SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId, state);
-    }
+    SetAndSaveBlobState(result, blob_id, state);
 }
 
 

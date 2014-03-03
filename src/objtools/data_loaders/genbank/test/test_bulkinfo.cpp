@@ -84,6 +84,7 @@ public:
     typedef vector<int> TTaxIds;
     typedef vector<TSeqPos> TLengths;
     typedef vector<CSeq_inst::TMol> TTypes;
+    typedef vector<CBioseq_Handle::TBioseqStateFlags> TStates;
 
     vector<CSeq_id_Handle> m_Ids;
     enum EBulkType {
@@ -92,7 +93,8 @@ public:
         eBulk_label,
         eBulk_taxid,
         eBulk_length,
-        eBulk_type
+        eBulk_type,
+        eBulk_state
     };
     EBulkType m_Type;
     bool m_Verbose;
@@ -140,7 +142,7 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
          CArgDescriptions::eString, "gi");
     args.SetConstraint("type",
                        &(*new CArgAllow_Strings,
-                         "gi", "acc", "label", "taxid", "length", "type"));
+                         "gi", "acc", "label", "taxid", "length", "type", "state"));
     args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("verbose", "Verbose results");
     args.AddFlag("single", "Use single id queries (non-bulk)");
@@ -235,6 +237,9 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     else if ( args["type"].AsString() == "type" ) {
         m_Type = eBulk_type;
     }
+    else if ( args["type"].AsString() == "state" ) {
+        m_Type = eBulk_state;
+    }
     m_ForceLoad = args["no-force"]? CScope::eNoForceLoad: CScope::eForceLoad;
     m_ForceLabelLoad = args["no-force"]?
         CScope::eNoForceLabelLoad: CScope::eForceLabelLoad;
@@ -295,6 +300,7 @@ int CTestApplication::Run(void)
         TTaxIds taxids, taxids2, taxidsv;
         TLengths lengths, lengths2, lengthsv;
         TTypes types, types2, typesv;
+        TStates states, states2, statesv;
 
         if ( !m_Single ) {
             CRef<CScope> scope = s_MakeScope();
@@ -317,6 +323,9 @@ int CTestApplication::Run(void)
             case eBulk_type:
                 types = scope->GetSequenceTypes(m_Ids, m_ForceLoad);
                 break;
+            case eBulk_state:
+                states = scope->GetSequenceStates(m_Ids, m_ForceLoad);
+                break;
             }
             for ( size_t i = 0; i < count; ++i ) {
                 _ASSERT(!scope->GetBioseqHandle(m_Ids[i], CScope::eGetBioseq_Loaded));
@@ -332,7 +341,8 @@ int CTestApplication::Run(void)
             case eBulk_label: labels2.resize(count); break;
             case eBulk_taxid: taxids2.resize(count); break;
             case eBulk_length: lengths2.resize(count); break;
-            case eBulk_type: types2.resize(count); break;
+            case eBulk_type:  types2.resize(count); break;
+            case eBulk_state: states2.resize(count); break;
             }
             for ( size_t i = 0; i < count; ++i ) {
                 switch ( m_Type ) {
@@ -354,6 +364,9 @@ int CTestApplication::Run(void)
                 case eBulk_type:
                     types2[i] = scope->GetSequenceType(m_Ids[i], m_ForceLoad);
                     break;
+                case eBulk_state:
+                    states2[i] = scope->GetSequenceState(m_Ids[i], m_ForceLoad);
+                    break;
                 }
             }
             for ( size_t i = 0; i < count; ++i ) {
@@ -368,7 +381,8 @@ int CTestApplication::Run(void)
             case eBulk_label: labels = labels2; break;
             case eBulk_taxid: taxids = taxids2; break;
             case eBulk_length: lengths = lengths2; break;
-            case eBulk_type: types = types2; break;
+            case eBulk_type:  types = types2; break;
+            case eBulk_state: states = states2; break;
             }
         }
 
@@ -381,7 +395,8 @@ int CTestApplication::Run(void)
             case eBulk_label: labelsv.resize(count); break;
             case eBulk_taxid: taxidsv.resize(count); break;
             case eBulk_length: lengthsv.resize(count); break;
-            case eBulk_type: typesv.resize(count); break;
+            case eBulk_type:  typesv.resize(count); break;
+            case eBulk_state: statesv.resize(count); break;
             }
             for ( size_t i = 0; i < count; ++i ) {
                 CBioseq_Handle h = scope->GetBioseqHandle(m_Ids[i]);
@@ -405,14 +420,19 @@ int CTestApplication::Run(void)
                     }
                     break;
                 case eBulk_taxid:
-                    taxidsv[i] = h? GetTaxId(h): 0;
-                        break;
+                    taxidsv[i] = (h? GetTaxId(h): 0);
+                    break;
                 case eBulk_length:
-                    lengthsv[i] = h? h.GetBioseqLength(): kInvalidSeqPos;
-                        break;
+                    lengthsv[i] = (h? h.GetBioseqLength():
+                                   kInvalidSeqPos);
+                    break;
                 case eBulk_type:
-                    typesv[i] = h? h.GetSequenceType(): CSeq_inst::eMol_not_set;
-                        break;
+                    typesv[i] = (h? h.GetSequenceType():
+                                 CSeq_inst::eMol_not_set);
+                    break;
+                case eBulk_state:
+                    statesv[i] = h.GetState();
+                    break;
                 }
                 if ( h ) {
                     scope->RemoveFromHistory(h);
@@ -426,7 +446,8 @@ int CTestApplication::Run(void)
             case eBulk_label: labelsv = labels2; break;
             case eBulk_taxid: taxidsv = taxids2; break;
             case eBulk_length: lengthsv = lengths2; break;
-            case eBulk_type: typesv = types2; break;
+            case eBulk_type:  typesv = types2; break;
+            case eBulk_state: statesv = states2; break;
             }
         }
 
@@ -436,7 +457,8 @@ int CTestApplication::Run(void)
             Display(i, "label", labels, labels2, labelsv);
             Display(i, "taxid", taxids, taxids2, taxidsv);
             Display(i, "length", lengths, lengths2, lengthsv);
- Display(i, "type", types, types2, typesv);
+            Display(i, "type", types, types2, typesv);
+            Display(i, "state", states, states2, statesv);
         }
 
         switch ( m_Type ) {
@@ -445,7 +467,8 @@ int CTestApplication::Run(void)
         case eBulk_label: _ASSERT(labels == labels2); break;
         case eBulk_taxid: _ASSERT(taxids == taxids2); break;
         case eBulk_length: _ASSERT(lengths == lengths2); break;
-        case eBulk_type: _ASSERT(types == types2); break;
+        case eBulk_type:  _ASSERT(types == types2); break;
+        case eBulk_state: _ASSERT(states == states2); break;
         }
         switch ( m_Type ) {
         case eBulk_gi:    _ASSERT(gis == gisv); break;
@@ -453,7 +476,8 @@ int CTestApplication::Run(void)
         case eBulk_label: _ASSERT(labels == labelsv); break;
         case eBulk_taxid: _ASSERT(taxids == taxidsv); break;
         case eBulk_length: _ASSERT(lengths == lengthsv); break;
-        case eBulk_type: _ASSERT(types == typesv); break;
+        case eBulk_type:  _ASSERT(types == typesv); break;
+        case eBulk_state: _ASSERT(states == statesv); break;
         }
     }
     LOG_POST("Passed");

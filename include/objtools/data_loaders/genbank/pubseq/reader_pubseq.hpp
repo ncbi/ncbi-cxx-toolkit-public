@@ -74,6 +74,8 @@ public:
                         const CSeq_id_Handle& seq_id,
                         const SAnnotSelector* with_named_accs);
 
+    void GetBlobState(CReaderRequestResult& result,
+                      const CBlob_id& blob_id);
     void GetBlobVersion(CReaderRequestResult& result,
                         const CBlob_id& blob_id);
 
@@ -92,10 +94,19 @@ protected:
     I_BaseCmd* x_SendRequest(const CBlob_id& blob_id,
                              CDB_Connection* db_conn,
                              const char* rpc);
-    pair<AutoPtr<CDB_Result>, int> x_ReceiveData(CReaderRequestResult& result,
-                                                 const TBlobId& blob_id,
-                                                 I_BaseCmd& cmd,
-                                                 bool force_blob);
+
+    struct SReceiveData {
+        SReceiveData() : zip_type(0), blob_state(0), blob_version(0) {}
+
+        AutoPtr<CDB_Result> dbr;
+        int zip_type;
+        TBlobState blob_state;
+        TBlobVersion blob_version;
+    };
+    SReceiveData x_ReceiveData(CReaderRequestResult& result,
+                               const TBlobId& blob_id,
+                               I_BaseCmd& cmd,
+                               bool force_blob);
     
 private:
     string                    m_Server;

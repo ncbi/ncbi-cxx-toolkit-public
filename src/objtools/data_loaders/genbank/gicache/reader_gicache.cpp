@@ -179,6 +179,13 @@ bool CGICacheReader::LoadSeq_idSeq_ids(CReaderRequestResult& /*result*/,
 }
 
 
+bool CGICacheReader::LoadBlobState(CReaderRequestResult& /*result*/,
+                                   const TBlobId& /*blob_id*/)
+{
+    return false;
+}
+
+
 bool CGICacheReader::LoadBlobVersion(CReaderRequestResult& /*result*/,
                                      const TBlobId& /*blob_id*/)
 {

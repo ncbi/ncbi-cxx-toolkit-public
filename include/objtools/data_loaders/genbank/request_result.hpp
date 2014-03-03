@@ -366,6 +366,44 @@ private:
 };
 
 
+class NCBI_XREADER_EXPORT CLoadInfoBlobState : public CLoadInfo
+{
+public:
+    typedef int TBlobState;
+    typedef int TBlobVersion;
+
+    CLoadInfoBlobState(const CBlob_id& blob_id);
+    ~CLoadInfoBlobState(void);
+
+    const CBlob_id& GetBlob_id(void) const
+        {
+            return m_Blob_id;
+        }
+
+    bool IsLoadedBlobState(const CReaderRequestResult& rr);
+    bool SetLoadedBlobState(TBlobState blob_state,
+                            TExpirationTime expiration_time);
+    TBlobState GetBlobState(void) const
+        {
+            return m_BlobState;
+        }
+
+    bool IsLoadedBlobVersion(const CReaderRequestResult& rr);
+    bool SetLoadedBlobVersion(TBlobVersion blob_version,
+                              TExpirationTime expiration_time);
+    TBlobVersion GetBlobVersion(void) const
+        {
+            return m_BlobVersion;
+        }
+
+private:
+    CBlob_id        m_Blob_id;
+    TBlobState      m_BlobState;
+    TBlobVersion    m_BlobVersion;
+    TExpirationTime m_ExpirationTimeBlobVersion;
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 // resolved information locks
 /////////////////////////////////////////////////////////////////////////////
@@ -570,6 +608,55 @@ private:
 };
 
 
+class NCBI_XREADER_EXPORT CLoadLockBlobState : public CLoadLock_Base
+{
+public:
+    typedef CLoadInfoBlobState TInfo;
+
+    CLoadLockBlobState(TMutexSource& src, const CBlob_id& blob_id);
+
+    TInfo& Get(void)
+        {
+            return static_cast<TInfo&>(CLoadLock_Base::Get());
+        }
+    const TInfo& Get(void) const
+        {
+            return static_cast<const TInfo&>(CLoadLock_Base::Get());
+        }
+    TInfo& operator*(void)
+        {
+            return Get();
+        }
+    TInfo* operator->(void)
+        {
+            return &Get();
+        }
+    const TInfo& operator*(void) const
+        {
+            return Get();
+        }
+    const TInfo* operator->(void) const
+        {
+            return &Get();
+        }
+
+    bool SetLoadedBlobState(TInfo::TBlobState blob_state);
+    bool SetLoadedBlobVersion(TInfo::TBlobVersion blob_version);
+
+    bool IsLoadedBlobState(void)
+        {
+            return IsLoaded();
+        }
+    bool IsLoadedBlobVersion(void)
+        {
+            return Get().IsLoadedBlobVersion(*m_RequestResult);
+        }
+
+protected:
+    TExpirationTime GetNewExpirationTime(void) const;
+};
+
+
 class NCBI_XREADER_EXPORT CLoadLockBlob : public CTSE_LoadLock
 {
 public:
@@ -578,10 +665,11 @@ public:
 
     typedef int TBlobState;
     typedef int TBlobVersion;
-    typedef list< CRef<CID2S_Seq_annot_Info> > TAnnotInfo;
 
+    bool IsSetBlobState(void) const;
     TBlobState GetBlobState(void) const;
-    void SetBlobState(TBlobState state);
+    void SetBlobState(TBlobVersion);
+
     bool IsSetBlobVersion(void) const;
     TBlobVersion GetBlobVersion(void) const;
     void SetBlobVersion(TBlobVersion);
@@ -590,41 +678,6 @@ private:
     CReaderRequestResult* m_Result;
     CBlob_id m_BlobId;
 };
-
-/*
-  class NCBI_XREADER_EXPORT CLoadLockBlob : public CLoadLock_Base
-  {
-  public:
-  typedef CLoadInfoBlob TInfo;
-
-  CLoadLockBlob(TMutexSource& src, const CBlob_id& blob_id);
-    
-  TInfo& Get(void)
-  {
-  return static_cast<TInfo&>(CLoadLock_Base::Get());
-  }
-  const TInfo& Get(void) const
-  {
-  return static_cast<const TInfo&>(CLoadLock_Base::Get());
-  }
-  TInfo& operator*(void)
-  {
-  return Get();
-  }
-  TInfo* operator->(void)
-  {
-  return &Get();
-  }
-  const TInfo& operator*(void) const
-  {
-  return Get();
-  }
-  const TInfo* operator->(void) const
-  {
-  return &Get();
-  }
-  };
-*/
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -646,6 +699,8 @@ public:
     typedef CLoadInfoSeq_ids TInfoSeq_ids;
     typedef pair<CSeq_id_Handle, string> TKeyBlob_ids;
     typedef CLoadInfoBlob_ids TInfoBlob_ids;
+    typedef CBlob_id TKeyBlobState;
+    typedef CLoadInfoBlobState TInfoBlobState;
     typedef CBlob_id TKeyBlob;
     typedef CTSE_Lock TTSE_Lock;
     //typedef CLoadInfoBlob TInfoBlob;
@@ -660,6 +715,7 @@ public:
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id) = 0;
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids2& seq_id) = 0;
     virtual CRef<TInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& seq_id) = 0;
+    virtual CRef<TInfoBlobState> GetInfoBlobState(const TKeyBlobState& blob_id) = 0;
     //virtual CRef<TInfoBlob>     GetInfoBlob(const TKeyBlob& blob_id) = 0;
     CTSE_LoadLock GetBlobLoadLock(const TKeyBlob& blob_id);
     bool IsBlobLoaded(const TKeyBlob& blob_id);
@@ -671,9 +727,19 @@ public:
     virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                    TLoadedBlob_ids& blob_ids) const;
 
+    bool SetBlobState(const TKeyBlob& blob_id, TBlobState state);
+    bool IsSetBlobState(const TKeyBlob& blob_id);
+    TBlobState GetBlobState(const TKeyBlob& blob_id);
+
     bool SetBlobVersion(const TKeyBlob& blob_id, TBlobVersion version);
     bool IsSetBlobVersion(const TKeyBlob& blob_id);
     TBlobVersion GetBlobVersion(const TKeyBlob& blob_id);
+
+    void SetBlobBlobState(const CLoadLockBlobState& lock,
+                          TBlobState blob_state);
+    void SetBlobBlobVersion(const CLoadLockBlobState& lock,
+                            TBlobVersion blob_version);
+
     bool SetNoBlob(const TKeyBlob& blob_id, TBlobState blob_state);
     void ReleaseNotLoadedBlobs(void);
 
@@ -728,7 +794,7 @@ private:
     void ReleaseLoadLock(const CRef<CLoadInfo>& info);
 
     typedef map<CRef<CLoadInfo>, CRef<CLoadInfoLock> > TLockMap;
-    typedef pair<TBlobVersion, CTSE_LoadLock> TBlobLoadInfo;
+    typedef pair<CLoadLockBlobState, CTSE_LoadLock> TBlobLoadInfo;
     typedef map<CBlob_id, TBlobLoadInfo> TBlobLoadLocks;
 
     TBlobLoadInfo& x_GetBlobLoadInfo(const TKeyBlob& blob_id);
@@ -761,6 +827,7 @@ public:
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids& seq_id);
     virtual CRef<TInfoSeq_ids>  GetInfoSeq_ids(const TKeySeq_ids2& seq_id);
     virtual CRef<TInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& seq_id);
+    virtual CRef<TInfoBlobState> GetInfoBlobState(const TKeyBlobState& blob_id);
 
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
     virtual CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id);
@@ -780,6 +847,7 @@ public:
     map<TKeySeq_ids, CRef<TInfoSeq_ids> >   m_InfoSeq_ids;
     map<TKeySeq_ids2, CRef<TInfoSeq_ids> >  m_InfoSeq_ids2;
     map<TKeyBlob_ids, CRef<TInfoBlob_ids> > m_InfoBlob_ids;
+    map<TKeyBlobState, CRef<TInfoBlobState> > m_InfoBlobStates;
 };
 
 
@@ -826,6 +894,14 @@ CLoadLockSeq_ids::GetNewExpirationTime(void) const
 inline
 CLoadInfo::TExpirationTime
 CLoadLockBlob_ids::GetNewExpirationTime(void) const
+{
+    return m_RequestResult->GetNewIdExpirationTime();
+}
+
+
+inline
+CLoadInfo::TExpirationTime
+CLoadLockBlobState::GetNewExpirationTime(void) const
 {
     return m_RequestResult->GetNewIdExpirationTime();
 }

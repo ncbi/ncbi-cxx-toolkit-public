@@ -182,6 +182,12 @@ const char* SCacheInfo::GetSeq_idsSubkey(void)
 }
 
 
+const char* SCacheInfo::GetBlobStateSubkey(void)
+{
+    return "state4";
+}
+
+
 const char* SCacheInfo::GetBlobVersionSubkey(void)
 {
     return "ver4";
@@ -927,6 +933,25 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
+bool CCacheReader::LoadBlobState(CReaderRequestResult& result,
+                                 const TBlobId& blob_id)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+    
+    CParseBuffer str(result, m_IdCache, GetBlobKey(blob_id), GetBlobStateSubkey());
+    if ( str.Found() ) {
+        int state = str.ParseInt4();
+        if ( str.Done() ) {
+            SetAndSaveBlobState(result, blob_id, state);
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CCacheReader::LoadBlobVersion(CReaderRequestResult& result,
                                    const TBlobId& blob_id)
 {
@@ -978,6 +1003,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     }
 
     CLoadLockBlob blob(result, blob_id);
+    _ASSERT(blob);
     if ( CProcessor::IsLoaded(result, blob_id, chunk_id, blob) ) {
         return true;
     }
@@ -1029,7 +1055,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                     m_Dispatcher->LoadBlobVersion(result, blob_id, this);
                     if ( !blob.IsSetBlobVersion() ||
                          blob.GetBlobVersion() != version ) {
-                        // Cannot determine the blob verion or
+                        // Cannot determine the blob version or
                         // cached blob version is outdated ->
                         // pass the request to the next reader.
                         return false;
@@ -1072,7 +1098,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
             }
         }
         if ( !blob.IsSetBlobVersion() ) {
-            // Cannot determine the blob verion ->
+            // Cannot determine the blob version ->
             // pass the request to the next reader.
             return false;
         }

@@ -70,6 +70,8 @@ public:
     bool LoadGiBlob_ids(CReaderRequestResult& result,
                         const CSeq_id_Handle& seq_id);
 
+    void GetBlobState(CReaderRequestResult& result,
+                      const CBlob_id& blob_id);
     void GetBlobVersion(CReaderRequestResult& result,
                         const CBlob_id& blob_id);
 

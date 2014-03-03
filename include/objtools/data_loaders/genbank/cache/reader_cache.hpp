@@ -81,6 +81,8 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static const char* GetTaxIdSubkey(void);
     // Seq-id -> list of Seq-id, binary ASN.1
     static const char* GetSeq_idsSubkey(void);
+    // blob_id -> blob state (1 int)
+    static const char* GetBlobStateSubkey(void);
     // blob_id -> blob version (1 int)
     static const char* GetBlobVersionSubkey(void);
 
@@ -180,6 +182,8 @@ public:
     bool LoadTaxIds(CReaderRequestResult& result,
                     const TIds& ids, TLoaded& loaded, TTaxIds& ret);
 
+    bool LoadBlobState(CReaderRequestResult& result,
+                       const TBlobId& blob_id);
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
 

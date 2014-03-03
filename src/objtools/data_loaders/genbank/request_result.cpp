@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+static const CReaderRequestResult::TBlobState kBlobStateNotSet = -1;
 static const CReaderRequestResult::TBlobVersion kBlobVersionNotSet = -1;
 
 
@@ -786,6 +787,98 @@ CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
 
 
 /////////////////////////////////////////////////////////////////////////////
+// CLoadInfoBlobState
+/////////////////////////////////////////////////////////////////////////////
+
+
+CLoadInfoBlobState::CLoadInfoBlobState(const CBlob_id& blob_id)
+    : m_Blob_id(blob_id),
+      m_BlobState(kBlobStateNotSet),
+      m_BlobVersion(kBlobVersionNotSet),
+      m_ExpirationTimeBlobVersion(0)
+{
+}
+
+
+CLoadInfoBlobState::~CLoadInfoBlobState(void)
+{
+}
+
+
+bool CLoadInfoBlobState::SetLoadedBlobState(TBlobState blob_state,
+                                            TExpirationTime expiration_time)
+{
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= GetExpirationTime() ) {
+        return false;
+    }
+    m_BlobState = blob_state;
+    x_SetLoaded(expiration_time);
+    return true;
+}
+
+
+bool CLoadInfoBlobState::IsLoadedBlobState(const CReaderRequestResult& rr)
+{
+    return IsLoaded(rr);
+}
+
+
+bool CLoadInfoBlobState::IsLoadedBlobVersion(const CReaderRequestResult& rr)
+{
+    if ( rr.GetStartTime() < m_ExpirationTimeBlobVersion ) {
+        return true;
+    }
+    if ( IsLoaded(rr) && (m_BlobState & CBioseq_Handle::fState_no_data) ) {
+        // update no blob version for unknown sequences
+        SetLoadedBlobVersion(0, GetExpirationTime());
+        return true;
+    }
+    return false;
+}
+
+
+bool CLoadInfoBlobState::SetLoadedBlobVersion(TBlobVersion blob_version,
+                                              TExpirationTime expiration_time)
+{
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= m_ExpirationTimeBlobVersion ) {
+        return false;
+    }
+    m_BlobVersion = blob_version;
+    m_ExpirationTimeBlobVersion = expiration_time;
+    return true;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CLoadLockBlobState
+/////////////////////////////////////////////////////////////////////////////
+
+
+CLoadLockBlobState::CLoadLockBlobState(TMutexSource& src,
+                                       const CBlob_id& blob_id)
+{
+    CRef<TInfo> info = src.GetInfoBlobState(blob_id);
+    Lock(*info, src);
+}
+
+
+bool CLoadLockBlobState::SetLoadedBlobState(TInfo::TBlobState blob_state)
+{
+    m_RequestResult->SetBlobBlobState(*this, blob_state);
+    return Get().SetLoadedBlobState(blob_state, GetNewExpirationTime());
+}
+
+
+bool CLoadLockBlobState::SetLoadedBlobVersion(TInfo::TBlobVersion blob_version)
+{
+    m_RequestResult->SetBlobBlobVersion(*this, blob_version);
+    return Get().SetLoadedBlobVersion(blob_version, GetNewExpirationTime());
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CLoadLockBlob
 /////////////////////////////////////////////////////////////////////////////
 #if 0
@@ -840,17 +933,21 @@ CLoadLockBlob::CLoadLockBlob(CReaderRequestResult& src,
 }
 
 
+bool CLoadLockBlob::IsSetBlobState(void) const
+{
+    return m_Result->IsSetBlobState(m_BlobId);
+}
+
+
 CLoadLockBlob::TBlobState CLoadLockBlob::GetBlobState(void) const
 {
-    return *this ? (**this).GetBlobState() : 0;
+    return m_Result->GetBlobState(m_BlobId);
 }
 
 
 void CLoadLockBlob::SetBlobState(TBlobState state)
 {
-    if ( *this ) {
-        (**this).SetBlobState(state);
-    }
+    m_Result->SetBlobState(m_BlobId, state);
 }
 
 
@@ -939,7 +1036,7 @@ CReaderRequestResult::x_GetBlobLoadInfo(const CBlob_id& blob_id)
     TBlobLoadLocks::iterator iter = m_BlobLoadLocks.lower_bound(blob_id);
     if ( iter == m_BlobLoadLocks.end() || iter->first != blob_id ) {
         TBlobLoadLocks::value_type node(blob_id,
-                                        TBlobLoadInfo(kBlobVersionNotSet,
+                                        TBlobLoadInfo(CLoadLockBlobState(*this, blob_id),
                                                       CTSE_LoadLock()));
         iter = m_BlobLoadLocks.insert(iter, node);
     }
@@ -952,8 +1049,22 @@ CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
     TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
     if ( !info.second ) {
         info.second = GetTSE_LoadLock(blob_id);
-        if ( info.first != kBlobVersionNotSet ) {
-            info.second->SetBlobVersion(info.first);
+        if ( info.first.IsLoadedBlobState() ) {
+            info.second->SetBlobState(info.first->GetBlobState());
+        }
+        else if ( info.second.IsLoaded() ) {
+            TBlobState state = info.second->GetBlobState();
+            _ASSERT(state != kBlobStateNotSet);
+            info.first.SetLoadedBlobState(state);
+        }
+        if ( info.first.IsLoadedBlobVersion() ) {
+            info.second->SetBlobVersion(info.first->GetBlobVersion());
+        }
+        else if ( info.second.IsLoaded() ) {
+            TBlobVersion version = info.second->GetBlobVersion();
+            if ( version != kBlobVersionNotSet ) {
+                info.first.SetLoadedBlobVersion(version);
+            }
         }
     }
     return info.second;
@@ -968,6 +1079,18 @@ bool CReaderRequestResult::IsBlobLoaded(const CBlob_id& blob_id)
         if ( !info.second ) {
             return false;
         }
+        _ASSERT(info.second.IsLoaded());
+        if ( !info.first.IsLoadedBlobState() ) {
+            TBlobState state = info.second->GetBlobState();
+            _ASSERT(state != kBlobStateNotSet);
+            info.first.SetLoadedBlobState(state);
+        }
+        if ( !info.first.IsLoadedBlobVersion() ) {
+            TBlobVersion version = info.second->GetBlobVersion();
+            if ( version != kBlobVersionNotSet ) {
+                info.first.SetLoadedBlobVersion(version);
+            }
+        }
     }
     if ( info.second.IsLoaded() ) {
         return true;
@@ -976,13 +1099,52 @@ bool CReaderRequestResult::IsBlobLoaded(const CBlob_id& blob_id)
 }
 
 
-bool CReaderRequestResult::SetBlobVersion(const CBlob_id& blob_id,
-                                          TBlobState blob_version)
+bool CReaderRequestResult::SetBlobState(const CBlob_id& blob_id,
+                                        TBlobState blob_state)
 {
     bool changed = false;
     TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
-    if ( info.first != blob_version ) {
-        info.first = blob_version;
+    if ( info.first.SetLoadedBlobState(blob_state) ) {
+        changed = true;
+    }
+    if ( info.second && info.second->GetBlobState() != blob_state ) {
+        info.second->SetBlobState(blob_state);
+        changed = true;
+    }
+    return changed;
+}
+
+
+void CReaderRequestResult::SetBlobBlobState(const CLoadLockBlobState& lock,
+                                            TBlobState blob_state)
+{
+    TBlobLoadInfo& info = x_GetBlobLoadInfo(lock->GetBlob_id());
+    if ( info.second && info.second->GetBlobState() != blob_state ) {
+        info.second->SetBlobState(blob_state);
+    }
+}
+
+
+bool CReaderRequestResult::IsSetBlobState(const CBlob_id& blob_id)
+{
+    return x_GetBlobLoadInfo(blob_id).first.IsLoadedBlobState();
+}
+
+
+CReaderRequestResult::TBlobState
+CReaderRequestResult::GetBlobState(const CBlob_id& blob_id)
+{
+    _ASSERT(IsSetBlobState(blob_id));
+    return x_GetBlobLoadInfo(blob_id).first->GetBlobState();
+}
+
+
+bool CReaderRequestResult::SetBlobVersion(const CBlob_id& blob_id,
+                                          TBlobVersion blob_version)
+{
+    bool changed = false;
+    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
+    if ( info.first.SetLoadedBlobVersion(blob_version) ) {
         changed = true;
     }
     if ( info.second && info.second->GetBlobVersion() != blob_version ) {
@@ -993,30 +1155,27 @@ bool CReaderRequestResult::SetBlobVersion(const CBlob_id& blob_id,
 }
 
 
+void CReaderRequestResult::SetBlobBlobVersion(const CLoadLockBlobState& lock,
+                                              TBlobVersion blob_version)
+{
+    TBlobLoadInfo& info = x_GetBlobLoadInfo(lock->GetBlob_id());
+    if ( info.second && info.second->GetBlobVersion() != blob_version ) {
+        info.second->SetBlobVersion(blob_version);
+    }
+}
+
+
 bool CReaderRequestResult::IsSetBlobVersion(const CBlob_id& blob_id)
 {
-    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
-    if ( info.first != kBlobVersionNotSet ) {
-        return true;
-    }
-    if ( info.second && info.second->GetBlobVersion() != kBlobVersionNotSet ) {
-        return true;
-    }
-    return false;
+    return x_GetBlobLoadInfo(blob_id).first.IsLoadedBlobVersion();
 }
 
 
 CReaderRequestResult::TBlobVersion
 CReaderRequestResult::GetBlobVersion(const CBlob_id& blob_id)
 {
-    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
-    if ( info.first != kBlobVersionNotSet ) {
-        return info.first;
-    }
-    if ( info.second ) {
-        return info.second->GetBlobVersion();
-    }
-    return kBlobVersionNotSet;
+    _ASSERT(IsSetBlobVersion(blob_id));
+    return x_GetBlobLoadInfo(blob_id).first->GetBlobVersion();
 }
 
 
@@ -1027,10 +1186,7 @@ bool CReaderRequestResult::SetNoBlob(const CBlob_id& blob_id,
     if ( blob.IsLoaded() ) {
         return false;
     }
-    if ( blob.GetBlobState() == blob_state ) {
-        return false;
-    }
-    blob.SetBlobState(blob_state);
+    SetBlobState(blob_id, blob_state);
     blob.SetLoaded();
     return true;
 }
@@ -1241,6 +1397,17 @@ CStandaloneRequestResult::GetInfoBlob_ids(const TKeyBlob_ids& key)
     CRef<CLoadInfoBlob_ids>& ret = m_InfoBlob_ids[key];
     if ( !ret ) {
         ret = new CLoadInfoBlob_ids(key.first, 0);
+    }
+    return ret;
+}
+
+
+CRef<CLoadInfoBlobState>
+CStandaloneRequestResult::GetInfoBlobState(const TKeyBlobState& key)
+{
+    CRef<CLoadInfoBlobState>& ret = m_InfoBlobStates[key];
+    if ( !ret ) {
+        ret = new CLoadInfoBlobState(key);
     }
     return ret;
 }

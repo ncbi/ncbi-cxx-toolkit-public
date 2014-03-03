@@ -59,11 +59,15 @@ public:
     */
     bool LoadBlob(CReaderRequestResult& result,
                   const TBlobId& blob_id);
+    bool LoadBlobState(CReaderRequestResult& result,
+                       const TBlobId& blob_id);
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
     bool LoadChunk(CReaderRequestResult& result,
                    const TBlobId& blob_id, TChunkId chunk_id);
 
+    virtual void GetBlobState(CReaderRequestResult& result,
+                              const CBlob_id& blob_id) = 0;
     virtual void GetBlobVersion(CReaderRequestResult& result,
                                 const CBlob_id& blob_id) = 0;
 

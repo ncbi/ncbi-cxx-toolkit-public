@@ -66,6 +66,9 @@ public:
     virtual void SaveSeq_idBlob_ids(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
                                     const SAnnotSelector* sel);
+    virtual void SaveBlobState(CReaderRequestResult& result,
+                               const TBlobId& blob_id,
+                               TBlobState blob_state);
     virtual void SaveBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id,
                                  TBlobVersion version);

@@ -103,6 +103,8 @@ public:
     bool LoadTaxIds(CReaderRequestResult& result,
                     const TIds& ids, TLoaded& loaded, TTaxIds& ret);
 
+    bool LoadBlobState(CReaderRequestResult& result,
+                       const TBlobId& blob_id);
     bool LoadBlobVersion(CReaderRequestResult& result,
                          const TBlobId& blob_id);
 

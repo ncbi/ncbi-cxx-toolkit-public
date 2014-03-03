@@ -62,6 +62,8 @@ public:
                                    const string& seq_id);
     virtual bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
                                    const CSeq_id_Handle& seq_id);
+    virtual bool LoadBlobState(CReaderRequestResult& result,
+                               const TBlobId& blob_id);
     virtual bool LoadBlobVersion(CReaderRequestResult& result,
                                  const TBlobId& blob_id);
     virtual bool LoadBlob(CReaderRequestResult& result,

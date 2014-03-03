@@ -117,6 +117,7 @@ public:
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const string& id);
     virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const CSeq_id_Handle& id);
     virtual CRef<CLoadInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& id);
+    virtual CRef<CLoadInfoBlobState> GetInfoBlobState(const TKeyBlobState& id);
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
     virtual CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id);
     virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
@@ -483,6 +484,7 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
     m_LoadMapSeq_ids.SetMaxSize(queue_size);
     m_LoadMapSeq_ids2.SetMaxSize(queue_size);
     m_LoadMapBlob_ids.SetMaxSize(queue_size);
+    m_LoadMapBlobStates.SetMaxSize(queue_size);
 
     m_IdExpirationTimeout = DEFAULT_ID_EXPIRATION_TIMEOUT;
     if ( gb_params ) {
@@ -843,6 +845,29 @@ int CGBDataLoader::GetTaxId(const CSeq_id_Handle& idh)
 }
 
 
+int CGBDataLoader::GetSequenceState(const CSeq_id_Handle& sih)
+{
+    const int kNotFound = (CBioseq_Handle::fState_not_found |
+                           CBioseq_Handle::fState_no_data);
+
+    if ( CReadDispatcher::CannotProcess(sih) ) {
+        return kNotFound;
+    }
+    CGBReaderRequestResult result(this, sih);
+    CLoadLockSeq_ids seq_ids(result, sih);
+    CLoadLockBlob_ids blobs(result, sih, 0);
+    m_Dispatcher->LoadSeq_idBlob_ids(result, sih, 0);
+
+    CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
+    ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+        if ( it->Matches(fBlobHasCore, 0) ) {
+            return blobs->GetState();
+        }
+    }
+    return kNotFound;
+}
+
+
 void CGBDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     for ( size_t i = 0; i < ids.size(); ++i ) {
@@ -899,11 +924,11 @@ CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const TRealBlobId& blob_id = GetRealBlobId(id);
     CGBReaderRequestResult result(this, CSeq_id_Handle());
-    CLoadLockBlob blob(result, blob_id);
-    if ( !blob.IsSetBlobVersion() ) {
+    CLoadLockBlobState lock(result, blob_id);
+    if ( !lock.IsLoadedBlobVersion() ) {
         m_Dispatcher->LoadBlobVersion(result, blob_id);
     }
-    return blob.GetBlobVersion();
+    return lock->GetBlobVersion();
 }
 
 
@@ -1303,10 +1328,10 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
         if ( info.Matches(mask, sel) ) {
             CLoadLockBlob blob(result, blob_id);
             _ASSERT(blob.IsLoaded());
-            if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
+            if ( blob->GetBlobState() & CBioseq_Handle::fState_no_data ) {
                 NCBI_THROW2(CBlobStateException, eBlobStateError,
                             "blob state error for "+blob_id.ToString(),
-                            blob.GetBlobState());
+                            blob->GetBlobState());
             }
             locks.insert(blob);
         }
@@ -1545,6 +1570,13 @@ CGBDataLoader::GetLoadInfoBlob_ids(const TLoadKeyBlob_ids& key)
 }
 
 
+CRef<CLoadInfoBlobState>
+CGBDataLoader::GetLoadInfoBlobState(const CBlob_id& key)
+{
+    return m_LoadMapBlobStates.Get(key);
+}
+
+
 CGBReaderRequestResult::
 CGBReaderRequestResult(CGBDataLoader* loader,
                        const CSeq_id_Handle& requested_id)
@@ -1583,6 +1615,13 @@ CRef<CLoadInfoBlob_ids>
 CGBReaderRequestResult::GetInfoBlob_ids(const TKeyBlob_ids& key)
 {
     return GetLoader().GetLoadInfoBlob_ids(key);
+}
+
+
+CRef<CLoadInfoBlobState>
+CGBReaderRequestResult::GetInfoBlobState(const TKeyBlobState& key)
+{
+    return GetLoader().GetLoadInfoBlobState(key);
 }
 
 
