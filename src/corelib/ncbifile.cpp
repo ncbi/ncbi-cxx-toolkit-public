@@ -4124,7 +4124,7 @@ bool CDir::SetMode(TMode user_mode,  TMode group_mode,
                 return false;
             }
         } else if (item.IsDir(eIgnoreLinks)) {
-            // Non-recursive directory removal
+            // Non-recursive directory processing
             if (flags & fDir_Subdirs) {
                 // Clear all flags to go inside directory,
                 // and try to change modes for entry only.
