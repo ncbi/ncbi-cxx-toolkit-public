@@ -76,6 +76,7 @@ class NetStorageConsole:
              'health':         self.health,
              'reconfigure':    self.reconfigure,
              'ackalert':       self.ackalert,
+             'getmetadatainfo':self.getMetadataInfo,
            }
 
         self.__commandSN = 0
@@ -263,18 +264,24 @@ class NetStorageConsole:
 
     def sendHello( self, arguments ):
         " Sends the HELLO message "
-        if len( arguments ) > 1:
-            print "The 'hello' command accepts 0 or 1 argument (client name)"
+        if len( arguments ) > 2:
+            print "The 'hello' command accepts 0 or 1 argument (client name) " \
+                  "or 2 arguments (client name and service name)"
             return
 
         client = "nstconsole - debugging NetStorage console"
+        service = "no-service"
         if len( arguments ) == 1:
             client = arguments[ 0 ]
+        if len( arguments ) == 2:
+            client = arguments[ 0 ]
+            service = arguments[ 1 ]
 
         message = { 'Type':         'HELLO',
                     'SessionID':    SESSIONID,
                     'ClientIP':     hostIP,
                     'Client':       client,
+                    'Service':      service,
                     'Application':  'test/nstconsole.py',
                     'Ticket':       'No ticket at all' }
         self.exchange( message )
@@ -631,7 +638,27 @@ class NetStorageConsole:
 
     def health( self, arguments ):
         " Sends HEALTH message "
-        print "Not implemented yet"
+        if len( arguments ) != 0:
+            print "The 'health' command does not accept any arguments"
+            return
+
+        message = { 'Type':         'HEALTH',
+                    'SessionID':    SESSIONID,
+                    'ClientIP':     hostIP }
+        self.exchange( message )
+        return
+
+
+    def getMetadataInfo( self, arguments ):
+        " Sends GETMETADATAINFO message "
+        if len( arguments ) != 0:
+            print "The 'getmetadatainfo' command does not accept any arguments"
+            return
+
+        message = { 'Type':         'GETMETADATAINFO',
+                    'SessionID':    SESSIONID,
+                    'ClientIP':     hostIP }
+        self.exchange( message )
         return
 
 
