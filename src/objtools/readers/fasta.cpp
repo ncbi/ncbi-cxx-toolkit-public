@@ -1015,7 +1015,7 @@ void CFastaReader::ParseDataLine(
             ( ! bIsNuc &&  ( s_ASCII_IsAlpha(c) ||  c == '*' ) ) ||
             c == '-' ) 
         {
-            CloseGap();
+            CloseGap(pos == 0);
             if (s_ASCII_IsLower(c)) {
                 m_SeqData[m_CurrentPos] = s_ASCII_ToUpper(c);
                 OpenMask();
@@ -1029,7 +1029,7 @@ void CFastaReader::ParseDataLine(
                 bad_pos_line_num = LineNumber();
             }
             bad_pos_vec.push_back(pos);
-        } 
+        }
     }
 
     m_SeqData.resize(m_CurrentPos);
@@ -1066,7 +1066,7 @@ void CFastaReader::ParseDataLine(
 }
 
 void CFastaReader::x_CloseGap(
-    TSeqPos len, IMessageListener * pMessageListener)
+    TSeqPos len, bool atStartOfLine, IMessageListener * pMessageListener)
 {
     _ASSERT(len > 0  &&  TestFlag(fParseGaps));
     if (TestFlag(fAligning)) {
@@ -1082,7 +1082,8 @@ void CFastaReader::x_CloseGap(
         // (do NOT treat a lone 'N' or 'X' as unknown length)
         if (len == 1 && m_CurrentGapChar == '-' ) {
             TSeqPos l = m_SeqData.length();
-            if (l == pos  ||  l == pos + (*GetLineReader()).length()) {
+            if ((l == pos  ||  l == pos + (*GetLineReader()).length())  && atStartOfLine) {
+                //and it's not the first col of the line
                 len = 0;
                 eKnownSize = SGap::eKnownSize_No;
             }

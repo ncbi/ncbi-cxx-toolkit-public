@@ -241,7 +241,7 @@ protected:
     virtual void   GenerateID    (void);
     virtual void   ParseDataLine (const TStr& s, IMessageListener * pMessageListener);
     virtual void   CheckDataLine (const TStr& s, IMessageListener * pMessageListener);
-    virtual void   x_CloseGap    (TSeqPos len, IMessageListener * pMessageListener);
+    virtual void   x_CloseGap    (TSeqPos len, bool atStartOfLine, IMessageListener * pMessageListener);
     virtual void   x_OpenMask    (void);
     virtual void   x_CloseMask   (void);
     virtual bool   ParseGapLine  (const TStr& s, IMessageListener * pMessageListener);
@@ -264,7 +264,7 @@ protected:
     void             x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids);
 
     // inline utilities 
-    void CloseGap(IMessageListener * pMessageListener = 0);
+    void CloseGap(bool atStartOfLine=true, IMessageListener * pMessageListener = 0);
     void OpenMask(void);
     void CloseMask(void)
         { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
@@ -479,10 +479,10 @@ void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner,
 
 
 inline
-void CFastaReader::CloseGap(IMessageListener * pMessageListener)
+void CFastaReader::CloseGap(bool atStartOfLine, IMessageListener * pMessageListener)
 {
     if (m_CurrentGapLength > 0) {
-        x_CloseGap(m_CurrentGapLength, pMessageListener);
+        x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
     }
     m_CurrentGapLength = 0;
 }
