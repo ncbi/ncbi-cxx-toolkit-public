@@ -654,15 +654,20 @@ size_t CSeq_id_Gi_Tree::Dump(CNcbiOstream& out,
 NCBI_PARAM_DECL(bool, OBJECTS, PACK_TEXTID);
 NCBI_PARAM_DEF_EX(bool, OBJECTS, PACK_TEXTID, true,
                   eParam_NoThread, OBJECTS_PACK_TEXTID);
-static const bool s_PackTextid =
-    NCBI_PARAM_TYPE(OBJECTS, PACK_TEXTID)::GetDefault();
+static inline bool s_PackTextidEnabled(void)
+{
+    static const bool value = NCBI_PARAM_TYPE(OBJECTS, PACK_TEXTID)::GetDefault();
+    return value;
+}
 
 NCBI_PARAM_DECL(bool, OBJECTS, PACK_GENERAL);
 NCBI_PARAM_DEF_EX(bool, OBJECTS, PACK_GENERAL, true,
                   eParam_NoThread, OBJECTS_PACK_GENERAL);
-static const bool s_PackGeneral =
-    NCBI_PARAM_TYPE(OBJECTS, PACK_GENERAL)::GetDefault();
-
+static inline bool s_PackGeneralEnabled(void)
+{
+    static const bool value = NCBI_PARAM_TYPE(OBJECTS, PACK_GENERAL)::GetDefault();
+    return value;
+}
 
 static inline
 void s_RestoreNumber(string& str, size_t pos, size_t len, TIntId number)
@@ -920,7 +925,7 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindInfo(const CSeq_id& id) const
     const CTextseq_id& tid = x_Get(id);
     // Can not compare if no accession given
     TReadLockGuard guard(m_TreeLock);
-    if ( s_PackTextid &&
+    if ( s_PackTextidEnabled() &&
          tid.IsSetAccession() && !tid.IsSetName() && !tid.IsSetRelease() ) {
         TPackedKey key =
             CSeq_id_Textseq_Info::ParseAcc(tid.GetAccession(), &tid);
@@ -940,7 +945,7 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
     _ASSERT(x_Check(id));
     const CTextseq_id& tid = x_Get(id);
     TWriteLockGuard guard(m_TreeLock);
-    if ( s_PackTextid &&
+    if ( s_PackTextidEnabled() &&
          tid.IsSetAccession() && !tid.IsSetName() && !tid.IsSetRelease() ) {
         TPackedKey key =
             CSeq_id_Textseq_Info::ParseAcc(tid.GetAccession(), &tid);
@@ -2022,7 +2027,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT( id.IsGeneral() );
     const CDbtag& dbid = id.GetGeneral();
     TReadLockGuard guard(m_TreeLock);
-    if ( s_PackGeneral ) {
+    if ( s_PackGeneralEnabled() ) {
         switch ( dbid.GetTag().Which() ) {
         case CObject_id::e_Str:
         {
@@ -2056,7 +2061,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
     _ASSERT( id.IsGeneral() );
     const CDbtag& dbid = id.GetGeneral();
     TWriteLockGuard guard(m_TreeLock);
-    if ( s_PackGeneral ) {
+    if ( s_PackGeneralEnabled() ) {
         switch ( dbid.GetTag().Which() ) {
         case CObject_id::e_Str:
         {
