@@ -305,7 +305,7 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
         string msg = CNcbiOstrstreamToString(oss);
         NCBI_THROW(CMultisourceException, eArg, msg);
     }
-    
+
     try {
         const CDelta_ext & dext = bs->GetInst().GetExt().GetDelta();
         
@@ -326,6 +326,11 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
         string na8;
         
         ITERATE(TItems, item, dext.Get()) {
+        	if(((**item).IsLoc()) && ((**item).GetLoc().IsNull())) {
+                seq8na.append(1, 0x0f);
+        		continue;
+        	}
+
             const CSeq_literal & L = (**item).GetLiteral();
 
             if (!L.CanGetSeq_data()) {
