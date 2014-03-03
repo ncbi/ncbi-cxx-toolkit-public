@@ -629,27 +629,72 @@ public:
                 TCopyFlags    copyflags   = fCF_Default,
                 size_t        copybufsize = 0);
 
-    /// Directory remove mode.
-    enum EDirRemoveMode {
-        eOnlyEmpty,     ///< Remove only empty directory
-        eNonRecursive,  ///< Remove all files in the directory, but do not
-                        ///< remove non-empty subdirectories and files in them
-                        ///< (it removes empty child directories though)
-        eRecursive,     ///< Remove all files and subdirectories
-        eTopDirOnly,    ///< Same as eNonRecursive but preserves
-                        ///< empty child directories
-        eRecursiveIgnoreMissing ///< Remove all files and subdirectories;
-                                ///< do not report an error for disappeared
-                                ///< files (e.g. if the same directory is
-                                ///< being removed in a parallel thread)
+
+    /// Entries processing flags.
+    /// @note
+    ///   Different methods use different sets of flags,
+    ///   and ignore all other. Refer to method descriptions for details.
+    enum EProcessingFlags {
+   
+        /// Current entry only
+        fEntry         = (1 << 0),
+
+        // --- directory processing flags ---------------------------
+        
+        fDir_Self      = fEntry,    ///< Top directory entry
+        fDir_Files     = (1 << 1),  ///< Non-directory entries
+        fDir_Subdirs   = (1 << 2),  ///< Subdirectory entries (non recursive)
+        fDir_Recursive = (1 << 3),  ///< Add an recursion
+        
+        /// Mask to check what should be processed in a directory
+        fDir_All = fDir_Self + fDir_Files + fDir_Subdirs,
+        
+        // --- additional flags -------------------------------------
+        
+        fIgnoreMissing   = (1 << 4),
+
+        // --- directory processing modes ---------------------------
+        // "Enums", retained for backward compatibility.
+
+        /// Directory entry only, no any files or subdirestories
+        eOnlyEmpty    = fDir_Self,
+        eEntryOnly    = fDir_Self,
+        
+        /// All files in the top directory only, no subdirectories
+        /// and any files in them.
+        eTopDirOnly   = fDir_Self | fDir_Files,
+        
+        /// All files and subdirectories in the top directory,
+        /// but no any files in subdirectories
+        eNonRecursive = fDir_All,
+        
+        /// Process all files and subdirectories recursively.
+        eRecursive    = fDir_All | fDir_Recursive,
+        
+        /// Same as eRecursive, but do not report an error for
+        /// disappeared entries (e.g. if the same directory is being
+        /// removed in a parallel thread for example).
+        eRecursiveIgnoreMissing = eRecursive | fIgnoreMissing
     };
+    typedef unsigned int TProcessingFlags;  ///< Binary OR of "EProcessingFlags"
+    
+    /// Flags based on TProcessingFlags
+    typedef TProcessingFlags TRemoveFlags;  
+    typedef TProcessingFlags TSetModeFlags;
+
+    /// Directory remove mode.
+    /// @deprecated  Use TRemoveFlags instead
+    NCBI_DEPRECATED typedef TRemoveFlags EDirRemoveMode;
+    
 
     /// Remove a directory entry.
     ///
-    /// Removes directory using the specified "mode".
+    /// @flags
+    ///   Entry processing flags.
+    ///   See EProcessingFlags and CDir::Remove() for details.
     /// @sa
-    ///   EDirRemoveMode
-    virtual bool Remove(EDirRemoveMode mode = eRecursive) const;
+    ///   CDir::Remove(), EProcessingFlags
+    virtual bool Remove(TRemoveFlags flags = eRecursive) const;
     
     /// Directory entry type.
     enum EType {
@@ -1024,6 +1069,8 @@ public:
         fExecute = 1,       ///< Execute / List(directory) permission
         fWrite   = 2,       ///< Write permission
         fRead    = 4,       ///< Read permission
+        fDefault = 8,       ///< Special flag: ignore all other flags, use current default mode
+        
         // initial defaults for directories
         fDefaultDirUser  = fRead | fExecute | fWrite,
                             ///< Default user permission for a dir.
@@ -1031,15 +1078,14 @@ public:
                             ///< Default group permission for a dir.
         fDefaultDirOther = fRead | fExecute,
                             ///< Default other permission for a dir.
+        
         // initial defaults for non-dir entries (files, etc.)
         fDefaultUser     = fRead | fWrite,
                             ///< Default user permission for a file
         fDefaultGroup    = fRead,
                             ///< Default group permission for a file
-        fDefaultOther    = fRead,
+        fDefaultOther    = fRead
                             ///< Default other permission for a file
-        fDefault = 8        ///< Special flag:  ignore all other flags,
-                            ///< use current default mode
     };
     typedef unsigned int TMode;  ///< Bitwise OR of "EMode"
 
@@ -1049,6 +1095,17 @@ public:
         fSetUID = 4
     };
     typedef unsigned int TSpecialModeBits; ///< Bitwise OR of ESpecialModeBits
+
+    /// Relative permissions change modes.
+    /// Can be combined with TMode or TSpecialModeBits.
+    /// Only one of these flags is allowed for each mode.
+    enum EModeRelative {
+        fModeAdd      = 16,  ///< Adds the argument permission mode to
+                             ///< the entry's current mode.
+        fModeRemove   = 32,  ///< Removes the argument permission mode
+                             ///< from the entriy's current mode.
+        fModeNoChange = 64   ///< Do not change permission mode.
+    };
 
     /// Get permission mode(s) of a directory entry.
     ///
@@ -1068,22 +1125,39 @@ public:
 
     /// Set permission mode(s) of a directory entry.
     ///
-    /// Permissions are set as specified by the passed values for user_mode,
-    /// group_mode and other_mode. Passing "fDefault" will cause the
-    /// corresponding mode to be taken and set from its default setting.
+    /// Permissions are set as specified by the passed values for
+    /// user_mode, group_mode and other_mode. This method rewrites
+    /// each user/group/other/special permission by default. 
+    /// @note
+    ///   Adding one of the EModeRelative flags to mode change default
+    ///   behavior that replace modes with passed values and allow
+    ///   for relative mode change for any of user/group/other/special.
+    ///   It is possble to keep it as is, or add/remove some permission
+    ///   modes specified in parameters.
+    /// @note
+    ///   Passing fDefault will cause the corresponding mode
+    ///   to be taken and set from its default setting.
+    /// @flags
+    ///   Entry processing flags. Affect directories only,
+    ///   see CDir::SetMode() for details. For other type entris
+    ///   dont have any effect.
     /// @return
     ///   TRUE if permission successfully set;  FALSE, otherwise.
     /// @sa
-    ///   SetDefaultMode, SetDefaultModeGlobal, GetMode
-    bool SetMode(TMode            user_mode,  // e.g. fDefault
-                 TMode            group_mode  = fDefault,
-                 TMode            other_mode  = fDefault,
-                 TSpecialModeBits special     = 0) const;
-    
+    ///   SetDefaultMode, SetDefaultModeGlobal, GetMode, EMode,
+    ///   EModeRelative, ESpecialModeBits, CDir::SetMode, EProcessingFlags
+    virtual bool SetMode(
+                 TMode            user_mode, // e.g. fDefault
+                 TMode            group_mode = fDefault,
+                 TMode            other_mode = fDefault,
+                 TSpecialModeBits special    = 0,
+                 TSetModeFlags    flags      = eEntryOnly) const;
+
     /// Set default permission modes globally for all CDirEntry objects.
     ///
-    /// The default mode is set globally for all CDirEntry objects except for
-    /// those having their own mode set with individual SetDefaultMode().
+    /// The default mode is set globally for all CDirEntry objects except
+    /// for those having their own mode set with individual
+    /// SetDefaultMode().
     ///
     /// When "fDefault" is passed as a value of the mode parameters,
     /// the default mode takes places for the value as defined in EType:
@@ -1099,11 +1173,12 @@ public:
     /// If other_mode is "fDefault", then the default is to take
     /// - "fDefaultDirOther" if this is a directory, or
     /// - "fDefaultOther" if this is a file.
-    static void SetDefaultModeGlobal(EType            entry_type,
-                                     TMode            user_mode, // e.g. fDefault
-                                     TMode            group_mode = fDefault,
-                                     TMode            other_mode = fDefault,
-                                     TSpecialModeBits special    = 0);
+    static void SetDefaultModeGlobal(
+                                EType            entry_type,
+                                TMode            user_mode, // e.g. fDefault
+                                TMode            group_mode = fDefault,
+                                TMode            other_mode = fDefault,
+                                TSpecialModeBits special    = 0);
 
     /// Set default mode(s) for this entry only.
     ///
@@ -1676,20 +1751,71 @@ public:
 
     /// Delete existing directory.
     ///
-    /// @param mode
-    ///   - If set to "eOnlyEmpty" the directory can be removed only if it
-    ///   is empty.
-    ///   - If set to "eNonRecursive" remove only files in directory, but do
-    ///   not remove subdirectories and files in them.
-    ///   - If set to "eRecursive" remove all files in directory, and
-    ///   subdirectories.
+    /// @param flags
+    ///   Directory processing flags. Some popular sets of flags
+    ///   combined together and listed below:
+    ///   - eOnlyEmpty
+    ///        directory can be removed only if it is empty;
+    ///   - eTopDirOnly
+    ///        remove all files in the top directory only,
+    ///        no any subdirectory or files in it;
+    ///   - eNonRecursive
+    ///        same as eTopDirOnly, but removes also empty
+    ///        subdirectories in the top directory only;
+    ///   - eRecursive
+    ///        remove all files in directory and all its subdirectories;
+    ///   - eRecursiveIgnoreMissing
+    ///        same as eRecursive, but do not report an error
+    ///        for missed entries.
     /// @return
     ///   TRUE if operation successful; FALSE otherwise.
     /// @sa
-    ///   EDirRemoveMode
-    virtual bool Remove(EDirRemoveMode mode = eRecursive) const;
-};
+    ///   CDirEntry::Remove, EProcessingFlags
+    virtual bool Remove(TRemoveFlags flags = eRecursive) const;
 
+
+    /// Set permission mode(s) for a directory.
+    ///
+    /// Permissions are set as specified by the passed values for
+    /// user_mode, group_mode and other_mode. This method rewrites
+    /// each user/group/other/special permission by default.
+    /// @note
+    ///   Adding one of the EModeRelative flags to mode change default
+    ///   behavior that replace modes with passed values and allow
+    ///   for relative mode change for any of user/group/other/special.
+    ///   It is possble to keep it as is, or add/remove some permission
+    ///   modes specified in parameters.
+    /// @note
+    ///   Passing "fDefault" will cause the corresponding mode
+    ///   to be taken and set from its default setting.
+    /// @param flags
+    ///   Directory processing flags. Some popular sets of flags
+    ///   combined together and listed below:
+    ///   - eEntryOnly
+    ///        change modes for the directory entry itself;
+    ///   - eTopDirOnly
+    ///        change modes for all files in the top directory only,
+    ///        no for any subdirectory or files in it;
+    ///   - eNonRecursive
+    ///        change modes for all entries in the top directory only,
+    ///        including subdirectory entries, but do not for any files
+    ///        in them;
+    ///   - eRecursive
+    ///         change modes for all files and subdirectories recursively;
+    ///   - eRecursiveIgnoreMissing
+    ///        same as eRecursive, but do not report an error
+    ///        for missed entries.
+    /// @return
+    ///   TRUE if permissions successfully set for all entries;  FALSE, otherwise.
+    /// @sa
+    ///   SetMode, SetDefaultMode, SetDefaultModeGlobal,
+    ///   EMode, EModeRelative, EProcessingFlags 
+    virtual bool SetMode(TMode            user_mode,  // e.g. fDefault
+                         TMode            group_mode  = fDefault,
+                         TMode            other_mode  = fDefault,
+                         TSpecialModeBits special     = 0,
+                         TSetModeFlags    flags       = eEntryOnly) const;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////

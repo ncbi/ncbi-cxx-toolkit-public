@@ -460,7 +460,7 @@ static const SStrToModeTest s_StrToMode[] = {
     { 1,0,0,5, "------r-t",  "1005",  "1005",  "o=rt",              "u=,g=,o=rt"        },
     { 1,0,0,4, "------r-T",  "1004",  "1004",  "o=rT",              "u=,g=,o=rT"        },
     { 7,7,4,1, "rwsr-S--t",  "7741",  "7741",  "u=rws,g=rS,o=t",    "u=rws,g=rS,o=t"    },
-    { 0, 0, 0, NULL, NULL, NULL, NULL, NULL  }
+    { 0,0,0,0, NULL, NULL, NULL, NULL, NULL }
 };
 
 static void s_TEST_StrToMode(void)
@@ -847,7 +847,6 @@ static void s_TEST_Dir(void)
         assert( dir.Exists() );
         assert( CDir("dir3/subdir1").Exists() );
         assert( CFile("dir3/subdir1/file").Exists() );
-        assert( !CFile("dir3/file").Exists() );
 
         assert( dir.Remove(CDir::eRecursive) );
         assert( !dir.Exists() );
