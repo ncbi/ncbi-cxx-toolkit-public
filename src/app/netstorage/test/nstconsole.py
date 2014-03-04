@@ -512,7 +512,8 @@ class NetStorageConsole:
                 if event == uttp.Reader.END_OF_BUFFER:
                     break
 
-                if event == uttp.Reader.CHUNK:
+                if event == uttp.Reader.CHUNK_PART or \
+                        event == uttp.Reader.CHUNK:
                     print uttp_reader.get_chunk(),
                 elif event == uttp.Reader.CONTROL_SYMBOL:
                     if uttp_reader.get_control_symbol() != '\n':
