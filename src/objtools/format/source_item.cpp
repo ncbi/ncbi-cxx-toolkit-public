@@ -71,6 +71,17 @@ CSourceItem::CSourceItem(CBioseqContext& ctx) :
 }
 
 
+CSourceItem::CSourceItem(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj) :
+    CFlatItem(&ctx),
+    m_Taxname(&scm_Unknown), m_Common(&kEmptyStr),
+    m_Organelle(&kEmptyStr), m_Lineage(scm_Unclassified),
+    m_SourceLine(&kEmptyStr), m_Mod(&scm_EmptyList), m_Taxid(kInvalidTaxid),
+    m_UsingAnamorph(false)
+{
+    x_GatherInfo(ctx, bsrc, obj);
+}
+
+
 void CSourceItem::Format
 (IFormatter& formatter,
  IFlatTextOStream& text_os) const
@@ -104,7 +115,39 @@ void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
             }
         }
     }
+
+    // find a biosource descriptor
+    CSeqdesc_CI dsrc_it(ctx.GetHandle(), CSeqdesc::e_Source);
+    if ( dsrc_it ) {
+        x_SetSource(dsrc_it->GetSource(), *dsrc_it);
+        return;
+    } 
     
+    // if no descriptor was found, try a source feature
+    CFeat_CI fsrc_it(ctx.GetHandle(), CSeqFeatData::e_Biosrc);
+    if ( fsrc_it ) {
+        const CSeq_feat& src_feat = fsrc_it->GetOriginalFeature();
+        x_SetSource(src_feat.GetData().GetBiosrc(), src_feat);
+    }   
+}
+
+void CSourceItem::x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj)
+{
+    // For DDBJ format first try a GB-Block descriptor (old style)
+    if ( ctx.Config().IsFormatDDBJ() ) {
+        CSeqdesc_CI gb_it(ctx.GetHandle(), CSeqdesc::e_Genbank);
+        if ( gb_it ) {
+            const CGB_block& gb = gb_it->GetGenbank();
+            if ( gb.CanGetSource()  &&  !gb.GetSource().empty() ) {
+                x_SetSource(gb, *gb_it);
+                return;
+            }
+        }
+    }
+
+    x_SetSource(bsrc, obj);
+    return;
+
     // find a biosource descriptor
     CSeqdesc_CI dsrc_it(ctx.GetHandle(), CSeqdesc::e_Source);
     if ( dsrc_it ) {

@@ -63,6 +63,7 @@ public:
     static const TTaxid kInvalidTaxid;
 
     CSourceItem(CBioseqContext& ctx);
+    CSourceItem(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const string&       GetTaxname      (void) const;
@@ -76,6 +77,7 @@ public:
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj);
 
     // Populate the object based on the source of the data
     void x_SetSource(const CGB_block&  gb, const CSeqdesc& desc);

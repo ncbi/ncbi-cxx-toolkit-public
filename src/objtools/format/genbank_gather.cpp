@@ -171,7 +171,8 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     if ( ctx.IsPart() ) {
         GATHER_BLOCK(Segment, CSegmentItem);
     }
-    GATHER_BLOCK(Source, CSourceItem);
+    // GATHER_BLOCK(Source, CSourceItem);
+    GATHER_VIA_FUNC(Sourcefeat, x_GatherSourceOrganism);
     GATHER_VIA_FUNC(Reference, x_GatherReferences);
     GATHER_ANCHOR(Comment, "comment");
     GATHER_VIA_FUNC(Comment, x_GatherComments);

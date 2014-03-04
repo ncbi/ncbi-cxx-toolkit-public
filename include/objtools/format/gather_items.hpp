@@ -96,6 +96,9 @@ protected:
         return new CFeatureItem( feat, ctx, loc, mapped, parentFeatureItem );
     };
 
+    // source/organism
+    void x_GatherSourceOrganism(void) const;
+
     // references
     typedef CBioseqContext::TReferences TReferences;
     void x_GatherReferences(void) const;

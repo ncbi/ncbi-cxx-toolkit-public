@@ -397,6 +397,31 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
     
 /////////////////////////////////////////////////////////////////////////////
 //
+// SOURCE/ORGANISM
+
+void CFlatGatherer::x_GatherSourceOrganism(void) const
+{
+    CBioseqContext& ctx = *m_Current;
+
+    CBioseq_Handle& hnd = ctx.GetHandle();
+    const CFlatFileConfig& cfg = ctx.Config();
+
+    CConstRef<IFlatItem> item;
+    for (CSeqdesc_CI dit(hnd, CSeqdesc::e_Source); dit;  ++dit) {
+        const CBioSource& bsrc = dit->GetSource();
+        if (bsrc.IsSetOrg()) {
+            if( cfg.IsShownGenbankBlock(CFlatFileConfig::fGenbankBlocks_Source) ) {
+                item.Reset( new CSourceItem(ctx, bsrc, *dit) );
+                ItemOS() << item;
+                if (! ctx.IsCrossKingdom()) break;
+                if (! ctx.IsRSUniqueProt()) break;
+            }
+        }
+    }
+}
+    
+/////////////////////////////////////////////////////////////////////////////
+//
 // REFERENCES
 
 bool s_IsJustUids( const CPubdesc& pubdesc ) 
@@ -1460,7 +1485,8 @@ void CFlatGatherer::x_CollectSourceDescriptors
     TRange print_range(0, GetLength(loc, scope) - 1);
 
     // if SWISS-PROT, may have multiple source descriptors
-    bool loop = ctx.IsSP(), okay = false;
+    bool loop = (bool) (ctx.IsSP() || (ctx.IsCrossKingdom() && ctx.IsRSUniqueProt()));
+    bool okay = false;
 
     // collect biosources on bioseq
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
