@@ -184,6 +184,7 @@ int CRemoteCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
         ConfigureDiagnostics(*cgi_context);
         ret = ProcessRequest(*cgi_context);
         OnEvent(ret == 0 ? eSuccess : eError, ret);
+        cgi_context->GetResponse().Finalize();
         OnEvent(eExit, ret);
     } catch (exception& ex) {
         ret = OnException(ex, os);
