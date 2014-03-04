@@ -86,7 +86,8 @@ public:
             eLstatSyntax,           /**< Error parsing the length statistics file */
             eLstatParam,            /**< Error deducing parameters from lstat or command line */
             eScoreAllocFail,        /**< Error allocating the score function object */
-            eScoreP3AllocFail       /**< Error allocating the score function object for merging pass */
+            eScoreP3AllocFail,      /**< Error allocating the score function object for merging pass */
+            eValidation             /**< Insconsistent internal parameters */
         };
 
         /**

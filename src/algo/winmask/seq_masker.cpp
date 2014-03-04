@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <algorithm>
 #include <memory>
+#include <sstream>
 
 #include <corelib/ncbi_limits.h>
 
@@ -95,6 +96,13 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
 {
     if( window_size == 0 )
         window_size = ustat->UnitSize() + 4;
+    else if( window_size < ustat->UnitSize() ) {
+        std::ostringstream os;
+        os << "window size (" << (int)window_size << ") "
+              "must be greater or equal to unit size (" <<
+              (int)ustat->UnitSize() << ")";
+        NCBI_THROW( CSeqMaskerException, eValidation, os.str() );
+    }
 
     trigger_score = score = new CSeqMaskerScoreMean( ustat );
 
@@ -439,6 +447,10 @@ const char * CSeqMasker::CSeqMaskerException::GetErrCodeString() const
     case eScoreP3AllocFail:
 
         return "merge pass score function object allocation failed";
+
+    case eValidation:
+
+        return "validation error";
 
     default: 
 
