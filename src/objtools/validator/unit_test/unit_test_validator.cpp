@@ -6456,6 +6456,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
+    // also, can ignore text after semicolon
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Homo sapiens; sex: female");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
@@ -6501,6 +6507,9 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 
+    host = "Homo sapiens; sex: female";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 }
 
 
@@ -6525,7 +6534,7 @@ BOOST_AUTO_TEST_CASE(Test_FixSpecificHost)
 	
 	host = "Avian";
 	hostfix = FixSpecificHost(host);
-	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+	BOOST_CHECK_EQUAL(hostfix, host);
 	
 	host = "";
 	hostfix = FixSpecificHost(host);
@@ -6547,6 +6556,9 @@ BOOST_AUTO_TEST_CASE(Test_FixSpecificHost)
 	hostfix = FixSpecificHost(host);
 	BOOST_CHECK_EQUAL(hostfix, string("Chicken"));
 	
+    host = "Homo sapiens; sex: female";
+	hostfix = FixSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, host);
 }
 
 

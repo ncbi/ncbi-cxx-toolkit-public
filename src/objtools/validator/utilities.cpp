@@ -1953,8 +1953,13 @@ string SpecificHostValueToCheck(const string& val)
     }
 
     string host = val;
+    // ignore portion before semicolon
+    size_t pos = NStr::Find(host, ";");
+    if (pos != string::npos) {
+        host = host.substr(0, pos);
+    }
     // must have at least two words to check
-    size_t pos = NStr::Find(host, " ");
+    pos = NStr::Find(host, " ");
     if (pos == string::npos) {
         return "";
     }
@@ -2043,6 +2048,11 @@ string FixSpecificHost(const string& val)
 	if (NStr::IsBlank(val)) {
 		return hostfix;
 	}
+    NStr::TruncateSpacesInPlace(hostfix);
+    string errormsg;
+    if (IsSpecificHostValid(hostfix, errormsg)) {
+        return hostfix;
+    }
 	
 	string host = val;
 	
