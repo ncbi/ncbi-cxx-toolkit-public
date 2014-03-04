@@ -218,10 +218,11 @@ namespace {
 
             {
                 { ILineError::eProblem_UnexpectedAminoAcids, "defline",    1 },
-                { ILineError::eProblem_Missing, "sequence", 1 },
+//                { ILineError::eProblem_Missing, "sequence", 1 },
             },
 
-            kDefaultFastaReaderFlags, // CFastaReader flags
+            //kDefaultFastaReaderFlags, // CFastaReader flags
+            kDefaultFastaReaderFlags | CFastaReader::fDisableNoResidues, // CFastaReader flags
             "> blah ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ\n"
         },
 
@@ -280,30 +281,6 @@ namespace {
                 ">blahblah2 \n"
                 "GCACAACGTACGTACGTAAAATACGTACGTACGTACGTACGTACGTA\n"
                 "ACAACGTACGTACGTAAATACGTACGTACGTACGTACGTACGTACGT\n"
-        },
-
-        {
-            "Test that we get a no-residues warning (1 seq).",
-
-            {
-                { ILineError::eProblem_Missing, "sequence", 1 },
-            },
-                kDefaultFastaReaderFlags, // CFastaReader flags
-                ">blah \n"
-        },
-
-        {
-            "Test that we get a no-residues warning (multiple seqs).",
-
-            {
-                { ILineError::eProblem_Missing, "sequence", 3 },
-            },
-                kDefaultFastaReaderFlags, // CFastaReader flags
-                ">blah \n"
-                "ACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
-                ">blah2 \n"
-                ">blah3 \n"
-                "ACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
         },
 
         {
