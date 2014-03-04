@@ -60,7 +60,6 @@ an_euk_pipeline needs gpipe_jira
 an_euk_pipeline needs gpipe_val
 an_euk_pipeline needs gpipe_xml
 an_prok_pipeline needs an_core
-an_prok_pipeline needs xalgophytree
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
 asn_cache includes id_dump
