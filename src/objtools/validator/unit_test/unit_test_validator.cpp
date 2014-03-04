@@ -18024,6 +18024,25 @@ BOOST_AUTO_TEST_CASE(Fix_Structured_Voucher)
     COrgMod::FixStructuredVoucher(val, "s");
     BOOST_CHECK_EQUAL(val, "ABS<CHN>:12345");
 
+    // add structure when missing
+    val = "AMNH 12345";
+    COrgMod::FixStructuredVoucher(val, "s");
+    BOOST_CHECK_EQUAL(val, "AMNH:12345");
+
+    val = "AMNH FISH 12345";
+    COrgMod::FixStructuredVoucher(val, "s");
+    BOOST_CHECK_EQUAL(val, "AMNH:Fish:12345");
+
+    // note, add structure and also eliminate unnecessary country code
+    val = "USNM<USA>12345";
+    COrgMod::FixStructuredVoucher(val, "s");
+    BOOST_CHECK_EQUAL(val, "USNM:12345");
+
+    val = "MCZ1234";
+    COrgMod::FixStructuredVoucher(val, "s");
+    BOOST_CHECK_EQUAL(val, "MCZ:1234");
+
+
 }
 
 

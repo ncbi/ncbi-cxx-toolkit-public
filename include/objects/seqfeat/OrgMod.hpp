@@ -87,6 +87,7 @@ public:
     static string IsStructuredVoucherValid(const string& val, const string& voucher_type);
     static string MakeStructuredVoucher(const string& inst, const string& coll, const string& id);
     static bool FixStructuredVoucher(string& val, const string& voucher_type);
+    static bool AddStructureToVoucher(string& val, const string& voucher_type);
 
     //e.g. "DMNS:Bird" to "Denver Museum of Nature and Science, Ornithology Collections"
     // returns empty string if not found
