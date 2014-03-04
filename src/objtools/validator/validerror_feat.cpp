@@ -3578,7 +3578,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                 }
             }
             if (! is_far_delta) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GapFeatureProblem,
                         "An assembly_gap feature should only be on a contig record", feat);
             }
             if (location.IsInt()) {
