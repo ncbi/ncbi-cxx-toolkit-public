@@ -25,15 +25,12 @@ test_case() {
 # test_case -in $data/empty.fsa # CMemoryFile fails
 test_case -in $data/simple_nuc.fsa
 test_case -in $data/simple_prot.fsa
-# fNoSeqData | fNoUserObjs
-test_case -in $data/id_normalization.fsa -inflags 0x80080 \
+# fNoUserObjs
+test_case -in $data/id_normalization.fsa -inflags 0x4080000 \
     -expected $data/id_normalization.fsa2
-# fNoSeqData | fNoUserObjs
-# test_case -in $data/title_symbols.fsa -inflags 0x80080 \
+# test_case -in $data/title_symbols.fsa -inflags 0x80000 \
 #     -expected $data/title_symbols.fsa2 # title descriptors differ too
-# in:  fNoSeqData | fNoUserObjs
-# out: fKeepGTSigns
-test_case -in $data/title_symbols.fsa -inflags 0x80080 -outflags 16
+test_case -in $data/title_symbols.fsa -inflags 0x4000000 -outflags 16 # fKeepGTSigns
 test_case -in $data/reflow.fsa -expected $data/reflow.fsa2
 # fAllSeqIDs | fNoUserObjs
 test_case -in $data/merged_sequences.fsa -inflags 0x80040 \
@@ -41,19 +38,17 @@ test_case -in $data/merged_sequences.fsa -inflags 0x80040 \
 # fDLOptional | fNoUserObjs
 test_case -in $data/no_defline.fsa -inflags 0x80200 \
     -expected $data/no_defline.fsa2
-# fNoSeqData | fParseRawID | fNoUserObjs
-test_case -in $data/raw_accessions.fsa -inflags 0x80480 \
+# fParseRawID | fNoUserObjs
+test_case -in $data/raw_accessions.fsa -inflags 0x4080400 \
     -expected $data/raw_accessions.fsa2
-# fNoSeqData | fAddMods, fShowModifiers
-test_case -in $data/modifiers.fsa -inflags 0x20080 -outflags 256
-# in:  fNoSeqData | fAddMods | fNoUserObjs
-# out: fShowModifiers
-test_case -in $data/modifier_normalization.fsa -inflags 0xa0080 -outflags 256 \
+# fAddMods, fShowModifiers
+test_case -in $data/modifiers.fsa -inflags 0x4020000 -outflags 256
+# fAddMods | fNoUserObjs, fShowModifiers
+test_case -in $data/modifier_normalization.fsa -inflags 0x40a0000 -outflags 256 \
     -expected $data/modifier_normalization.fsa2
-# fNoSeqData | fNoUserObjs
-test_case -in $data/modifier_normalization.fsa -inflags 0x80080
-# fNoSeqData | fQuickIDCheck | fNoUserObjs
-test_case -in $data/dubious_id.fsa -inflags 0x880080 \
+test_case -in $data/modifier_normalization.fsa -inflags 0x4000000
+# fQuickIDCheck | fNoUserObjs
+test_case -in $data/dubious_id.fsa -inflags 0x4880000 \
     -expected $data/dubious_id.fsa2
 
 # Can't usefully test range handling here.

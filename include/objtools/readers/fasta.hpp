@@ -106,6 +106,7 @@ public:
         fQuickIDCheck         = 1<<23, ///< Just check local IDs' first characters
         fUseIupacaa           = 1<<24, ///< If Prot, use iupacaa instead of the default ncbieaa.
         fHyphensIgnoreAndWarn = 1<<25, ///< When a hyphen is encountered in seq data, ignore it but warn.
+        fDisableNoResidues    = 1<<26  ///< If no residues found do not raise an error
     };
     typedef int TFlags; ///< binary OR of EFlags
 

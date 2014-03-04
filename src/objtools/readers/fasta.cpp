@@ -1434,7 +1434,8 @@ void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
             inst.SetLength(0);
             inst.SetRepr(CSeq_inst::eRepr_virtual);
             // empty sequence triggers warning if seq data was expected
-            if( ! TestFlag(fNoSeqData) ) {
+            if( ! TestFlag(fDisableNoResidues) &&
+                ! TestFlag(fNoSeqData) ) {
                 FASTA_ERROR(LineNumber(),
                     "FASTA-Reader: No residues given",
                     eNoResidues);
