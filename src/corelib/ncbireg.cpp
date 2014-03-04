@@ -204,7 +204,9 @@ void IRegistry::SetModifiedFlag(bool modified, TFlags flags)
 bool IRegistry::Write(CNcbiOstream& os, TFlags flags) const
 {
     x_CheckFlags("IRegistry::Write", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared |fSectionlessEntries);
+                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared
+                 | fSectionlessEntries);
+
     if ( !(flags & fTransient) ) {
         flags |= fPersistent;
     }
@@ -285,7 +287,9 @@ bool IRegistry::HasEntry(const string& section, const string& name,
                          TFlags flags) const
 {
     x_CheckFlags("IRegistry::HasEntry", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared |fSectionlessEntries);
+                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared
+                 | fSections | fSectionlessEntries);
+
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -428,7 +432,9 @@ void IRegistry::EnumerateSections(list<string>* sections, TFlags flags) const
 {
     // Should clear fSectionlessEntries if set
     x_CheckFlags("IRegistry::EnumerateSections", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared | fSectionlessEntries);
+                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared
+                 | fSectionlessEntries);
+
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -443,7 +449,9 @@ void IRegistry::EnumerateEntries(const string& section, list<string>* entries,
                                  TFlags flags) const
 {
     x_CheckFlags("IRegistry::EnumerateEntries", flags,
-                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared | fSectionlessEntries |fSections);
+                 (TFlags)fLayerFlags | fInternalSpaces | fCountCleared
+                 | fSectionlessEntries | fSections);
+
     if ( !(flags & fTPFlags) ) {
         flags |= fTPFlags;
     }
@@ -533,7 +541,8 @@ IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags,
 {
     x_CheckFlags("IRWRegistry::Read", flags,
                  fTransient | fNoOverride | fIgnoreErrors | fInternalSpaces
-                 | fWithNcbirc | fJustCore | fCountCleared | fSectionlessEntries);
+                 | fWithNcbirc | fJustCore | fCountCleared
+                 | fSectionlessEntries);
 
     if ( !is ) {
         return NULL;
@@ -687,7 +696,7 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                                 + in_path + ": '" + str + "'", line);
 
                 }
-                TFlags set_flags = flags;
+                TFlags set_flags = flags & ~fJustCore;
                 if (NStr::EqualNocase(section, "NCBI")
                     &&  NStr::EqualNocase(name, ".Inherits")
                     &&  HasEntry(section, name, flags)) {
@@ -880,11 +889,13 @@ const string& CMemoryRegistry::x_GetComment(const string& section,
 void CMemoryRegistry::x_Enumerate(const string& section, list<string>& entries,
                                   TFlags flags) const
 {
-    if (section.empty() && ( (flags & IRegistry::fSections) || !(flags & IRegistry::fSectionlessEntries))) {
+    if (section.empty() &&
+        ( (flags & IRegistry::fSections)
+          || !(flags & IRegistry::fSectionlessEntries))) {
         // Enumerate sections
         if(!(flags & (IRegistry::fSections | IRegistry::fSectionlessEntries)))
-            _TRACE(string("Deprecated call to x_Enumerate with empty section name, but")+
-           " with no fSections flag set");
+            _TRACE("Deprecated call to x_Enumerate with empty section name, "
+                   " but with no fSections flag set");
 
         ITERATE (TSections, it, m_Sections) {
             if (s_IsNameSection(it->first, flags)
@@ -1169,11 +1180,9 @@ void CCompoundRegistry::x_Enumerate(const string& section,
         if ((flags & fJustCore)  &&  (it->first < m_CoreCutoff)) {
             break;
         }
+
         list<string> tmp;
-        if(flags & fSections)
-            it->second->EnumerateEntries(section, &tmp, (flags & ~fJustCore)|fSections);
-        else
-            it->second->EnumerateEntries(section, &tmp, (flags & ~fJustCore));
+        it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
 
         ITERATE (list<string>, it2, tmp) {
             accum.insert(*it2);
@@ -1419,7 +1428,8 @@ CNcbiRegistry::CNcbiRegistry(CNcbiIstream& is, TFlags flags,
     : m_RuntimeOverrideCount(0), m_Flags(flags)
 {
     x_CheckFlags("CNcbiRegistry::CNcbiRegistry", flags,
-                 fTransient | fInternalSpaces | fWithNcbirc | fCaseFlags | fSectionlessEntries);
+                 fTransient | fInternalSpaces | fWithNcbirc | fCaseFlags
+                 | fSectionlessEntries);
     x_Init();
     m_FileRegistry->Read(is, flags & ~(fWithNcbirc | fCaseFlags));
     LoadBaseRegistries(flags, 0, path);
@@ -1486,7 +1496,7 @@ IRWRegistry* CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags,
     // file portion so that environment settings can take priority.
     CConstRef<IRegistry> main_reg(FindByName(sm_MainRegName));
     if (main_reg->Empty()  &&  m_FileRegistry->Empty()) {
-        m_FileRegistry->Read(is, flags);
+        m_FileRegistry->Read(is, flags & ~fWithNcbirc);
         LoadBaseRegistries(flags, 0, path);
         IncludeNcbircIfAllowed(flags);
         return NULL;
@@ -1752,12 +1762,9 @@ void CCompoundRWRegistry::x_Enumerate(const string& section,
         if ((flags & fJustCore)  &&  (it->first < GetCoreCutoff())) {
             break;
         }
-        list<string> tmp;
 
-        if(flags & fSections)
-            it->second->EnumerateEntries(section, &tmp, (flags & ~fJustCore)|fSections);
-        else
-            it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
+        list<string> tmp;
+        it->second->EnumerateEntries(section, &tmp, flags & ~fJustCore);
 
         ITERATE (list<string>, it2, tmp) {
             // avoid reporting cleared entries
