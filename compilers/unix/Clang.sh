@@ -26,7 +26,7 @@ case "$1" in
      elif $CXX-$1 -dumpversion >/dev/null 2>&1; then
        CXX="$CXX-$1"
        CC="$CC-$1"
-     elif "$CXX -dumpversion 2>/dev/null" | fgrep -q " $1"; then
+     elif $CXX -v 2>&1 | fgrep -q " $1"; then
        :
      else
        cat <<EOF
