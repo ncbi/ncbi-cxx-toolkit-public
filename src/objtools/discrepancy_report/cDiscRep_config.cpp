@@ -162,7 +162,6 @@ static list <string>  strs;
 static vector <string> arr;
 static CDiscTestInfo thisTest;
 static CTestGrp  thisGrp;
-static CDiscRepOutput output_obj;
 
 const char* fix_type_names[] = {
   "None",
@@ -2781,14 +2780,14 @@ void CSeqEntryReadHook :: SkipClassMember(CObjectIStream& in, const CObjectTypeI
    CRef <CSeq_entry> entry (new CSeq_entry);
 
    // Iterate through the set of Seq-entry's in container Bioseq-set
+   CDiscRepOutput output_obj;
+   CRepConfig config;
    CIStreamContainerIterator iter(in, passed_info.GetMemberType());
    for ( ; iter; ++iter ) {
       iter >> *entry; // Read a single Seq-entry from the stream.
-      CRepConfig::CheckThisSeqEntry(entry);  // Process the Seq-entry
-      output_obj.CollectRepData();
+      config.CheckThisSeqEntry(entry);  // Process the Seq-entry
+      config.CollectRepData();
       output_obj.Export(); 
-      thisInfo.disc_report_data.clear();
-      thisInfo.test_item_list.clear();
    }
 };
 
@@ -2803,11 +2802,15 @@ void CSeqEntryChoiceHook :: SkipChoiceVariant(CObjectIStream& in,const CObjectTy
 {
    CRef <CSeq_entry> entry (new CSeq_entry);
 
+   CDiscRepOutput output_obj;
+   CRepConfig config;
    // Iterate through the set of Seq-entry's in container Seq-submit
    CIStreamContainerIterator iter(in, passed_info.GetVariantType());
    for ( ; iter; ++iter ) {
      iter >> *entry; // Read a single Seq-entry from the stream.
-     CRepConfig::CheckThisSeqEntry(entry);  // Process the Seq-entry
+     config.CheckThisSeqEntry(entry);  // Process the Seq-entry
+     config.CollectRepData(); 
+     output_obj.Export(); 
    }
 };
 
@@ -2856,6 +2859,8 @@ void CRepConfAsndisc :: x_ProcessOneFile()
 
 void CRepConfAsndisc :: x_ProcessDir(const CDir& dir, bool one_ofile)
 {
+   CDiscRepOutput output_obj;
+
    CDir::TGetEntriesFlags flag = m_dorecurse ? 0 : CDir::fIgnoreRecursive ;
    list <AutoPtr <CDirEntry> > entries = dir.GetEntries(kEmptyStr, flag);
    ITERATE (list <AutoPtr <CDirEntry> >, it, entries) {
@@ -2867,10 +2872,8 @@ void CRepConfAsndisc :: x_ProcessDir(const CDir& dir, bool one_ofile)
           thisInfo.output_config.output_f 
              = new CNcbiOfstream(
                     ( strtmp + (*it)->GetBase() + m_outsuffix ).c_str());     
-          output_obj.CollectRepData();
+          CollectRepData();
           output_obj.Export();
-          thisInfo.disc_report_data.clear();
-          thisInfo.test_item_list.clear(); 
         }
      }
    }
@@ -2921,20 +2924,59 @@ void CRepConfig :: CollectTests()
    GetTestList();
 };
 
+void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
+{
+   NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
+       CRef < CClickableItem > c_item (new CClickableItem);
+       strtmp = (*it)->GetName();
+       if (thisInfo.test_item_list.find(strtmp)
+                                    != thisInfo.test_item_list.end()) {
+            c_item->setting_name = strtmp;
+            c_item->item_list = thisInfo.test_item_list[strtmp];
+            if ( strtmp != "LOCUS_TAGS"
+                        && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX") {
+                  thisInfo.disc_report_data.push_back(c_item);
+            }
+            (*it)->GetReport(c_item);
+       }
+       else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
+           (*it)->GetReport(c_item);
+       }
+   }
+};
+
+void CRepConfig :: CollectRepData()
+{
+  x_GoGetRep(thisGrp.tests_on_SubmitBlk);
+  x_GoGetRep(thisGrp.tests_on_Bioseq);
+  x_GoGetRep(thisGrp.tests_on_Bioseq_aa);
+  x_GoGetRep(thisGrp.tests_on_Bioseq_na);
+  x_GoGetRep(thisGrp.tests_on_Bioseq_CFeat);
+  x_GoGetRep(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet);
+  x_GoGetRep(thisGrp.tests_on_Bioseq_NotInGenProdSet);
+  x_GoGetRep(thisGrp.tests_on_SeqEntry);
+  x_GoGetRep(thisGrp.tests_on_SeqEntry_feat_desc);
+  x_GoGetRep(thisGrp.tests_4_once);
+  x_GoGetRep(thisGrp.tests_on_BioseqSet);
+  x_GoGetRep(thisGrp.tests_on_Bioseq_CFeat_CSeqdesc);
+};
+
 void CRepConfAsndisc :: Run()
 {
+   CDiscRepOutput output_obj;
+
    // read input file/path and go tests
    CDir dir(m_indir);
    if (!dir.Exists()) {
        x_ProcessOneFile();
-       output_obj.CollectRepData();
+       CollectRepData();
        output_obj.Export();
    }
    else {
        bool one_ofile = (bool)thisInfo.output_config.output_f; 
        x_ProcessDir(dir, one_ofile);
        if (one_ofile) {
-          output_obj.CollectRepData();
+          CollectRepData();
           output_obj.Export(); // run a global check 
        }
    }
@@ -2944,11 +2986,11 @@ void CRepConfAsndisc :: Run()
 
 void CRepConfig :: Run()
 {
-  thisInfo.seq_submit.Reset(0); //temp
+  thisInfo.seq_submit.Reset(0);
   CRef <CSeq_entry> 
     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
-  output_obj.CollectRepData();
+  CollectRepData();
 };
 
 void CRepConfig :: RunMultiObjects()
@@ -2987,7 +3029,8 @@ void CRepConfig :: RunMultiObjects()
          }
       }
    }
-   output_obj.CollectRepData();
+
+   CollectRepData();
 };
 
 END_NCBI_SCOPE

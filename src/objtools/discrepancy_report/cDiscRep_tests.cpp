@@ -2465,8 +2465,8 @@ bool CBioseq_CONTAINED_CDS :: x_IgnoreContainedCDS(const CSeq_feat* sft)
 {
   if (sft->CanGetComment()) {
      const string& comment = sft->GetComment();
-     if (NStr::EqualNocase(comment, "alternative")
-          || NStr::EqualNocase(comment, "completely contained in another CDS")){
+     if (NStr::EqualNocase(comment, "alternative")) {
+       // || NStr::EqualNocase(comment, "completely contained in another CDS")){
        return true;
      }
   }
@@ -2486,6 +2486,7 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
 {
    set <string> contained_this_strand;
    set <string> contained_other_strand;
+   set <string> contained_note;
    ENa_strand str1, str2;
    unsigned i=0, j=0;
    string desc1, desc2;
@@ -2504,8 +2505,9 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
       }
    }
 
+   string note("completely contained in another CDS");
    unsigned left1, right1, left2, right2;
-   bool span_circular;
+   bool span_circular, has_note1, has_note2;
    for (i=0; (int)i< (int)(cd_feat.size()-1); i++) {
      if (ignore[i]) continue;
      CConstRef <CObject> cdi_ref(cd_feat[i]);
@@ -2514,6 +2516,9 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
      left1 = loc1.GetStart(eExtreme_Positional);
      right1 = loc1.GetStop(eExtreme_Positional);
      span_circular = (left1 > right1);
+     has_note1 = (cd_feat[i]->CanGetComment() 
+                      && NStr::EqualNocase(cd_feat[i]->GetComment(), note)); 
+     desc1 = GetDiscItemText(*cd_feat[i]);
      for (j=i+1; j< cd_feat.size(); j++) {
         if (ignore[j]) continue;
         CConstRef <CObject> cdj_ref (cd_feat[j]);
@@ -2521,39 +2526,60 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
         str2 = loc2.GetStrand();
         left2 = loc2.GetStart(eExtreme_Positional);
         right2 = loc2.GetStop(eExtreme_Positional);
-        if (!span_circular && (right1 < left2 || right2 < left1)) {
-            continue;
+        has_note2  = (cd_feat[j]->CanGetComment()
+                        && NStr::EqualNocase(cd_feat[j]->GetComment(), note));
+        if (!span_circular) {
+           if (right1 < left2) break;
+           if (right2 < left1) continue;
         }
         sequence::ECompare 
             loc_cmp = sequence::Compare(loc1, loc2, thisInfo.scope);
-        if (loc_cmp == sequence::eSame 
-              || loc_cmp == sequence::eContained 
-              || loc_cmp == sequence::eContains) {
-          desc1 = GetDiscItemText(*cd_feat[i]);
+        if (loc_cmp == sequence::eSame || loc_cmp == sequence::eContained 
+                                       || loc_cmp == sequence::eContains) {
           desc2 = GetDiscItemText(*cd_feat[j]);
+          if (has_note1) {
+              if (contained_note.find(desc1) == contained_note.end()) {
+                thisInfo.test_item_list[GetName()].push_back("note$" + desc1);
+                thisInfo.test_item_objs[GetName() + "$note"].push_back(cdi_ref);
+                contained_note.insert(desc1);
+              }
+          }
+          if (has_note2) {
+              if (contained_note.find(desc2) == contained_note.end()) {
+                thisInfo.test_item_list[GetName()].push_back("note$" + desc2);
+                thisInfo.test_item_objs[GetName() + "$note"].push_back(cdj_ref);
+                contained_note.insert(desc2);
+              }
+          }
+          if (has_note1 && has_note2) continue;
           if (StrandOk(str1, str2)) {
-             if (contained_this_strand.find(desc1) 
-                      == contained_this_strand.end()) {
+            if (contained_note.find(desc1) == contained_note.end()
+                   && contained_this_strand.find(desc1) 
+                               == contained_this_strand.end()) {
                 thisInfo.test_item_list[GetName()].push_back("same$" + desc1);
                 thisInfo.test_item_objs[GetName() + "$same"].push_back(cdi_ref);
                 contained_this_strand.insert(desc1); 
-             }
-             if (contained_this_strand.find(desc2) == contained_this_strand.end()){
+            }
+            if (contained_note.find(desc2) == contained_note.end()
+                  && contained_this_strand.find(desc2)
+                                      == contained_this_strand.end()) {
                 thisInfo.test_item_list[GetName()].push_back("same$" + desc2);
                 thisInfo.test_item_objs[GetName() + "$same"].push_back(cdj_ref);
                 contained_this_strand.insert(desc2);
-             }
+            }
           } 
           else {
-             if (contained_other_strand.find(desc1) 
+             if (contained_note.find(desc1) == contained_note.end()
+                   && contained_other_strand.find(desc1) 
                                  == contained_other_strand.end()) {
                 thisInfo.test_item_list[GetName()].push_back("opposite$"+desc1);
                 thisInfo.test_item_objs[GetName() +"$opposite"]
                            .push_back(cdi_ref);
                 contained_other_strand.insert(desc1);
              }
-             if (contained_other_strand.find(desc2) 
-                              == contained_other_strand.end()) {
+             if (contained_note.find(desc2) == contained_note.end()
+                   && contained_other_strand.find(desc2) 
+                                     == contained_other_strand.end()) {
                 thisInfo.test_item_list[GetName()].push_back("opposite$"+desc2);
                 thisInfo.test_item_objs[GetName()+"$opposite"]
                              .push_back(cdj_ref);
@@ -2565,6 +2591,7 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    }
    contained_this_strand.clear();
    contained_other_strand.clear();
+   contained_note.clear();
 };
 
 
@@ -2574,22 +2601,31 @@ void CBioseq_CONTAINED_CDS :: GetReport(CRef <CClickableItem>& c_item)
    GetTestItemList(c_item->item_list, list_tp2items);
    c_item->item_list.clear();
    if (list_tp2items.size() == 1) {
+      strtmp = list_tp2items.begin()->first;
       c_item->item_list = list_tp2items.begin()->second;
-      c_item->obj_list 
-            = thisInfo.test_item_objs[GetName() + "$" + list_tp2items.begin()->first];
-      c_item->description 
+      c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + strtmp];
+      if (strtmp != "note") {
+        c_item->description 
           = GetIsComment(c_item->item_list.size(), "coding region")
             + "completely contained in another coding region on the " 
-            + list_tp2items.begin()->first + " strand.";
+            + strtmp + " strand.";
+      }
+      else {
+        c_item->description
+          = GetIsComment(c_item->item_list.size(), "coding region")
+            + "completely contained in another coding region but have note.";
+      }
    }
    else {
       ITERATE (Str2Strs, it, list_tp2items) {
+        strtmp = "completely contained in another coding region ";
+        strtmp += ((it->first != "note") ?  
+                     "on the " + it->first + " strand." : "but have note.");
         AddSubcategory(c_item, 
                        GetName()+"$" + it->first, 
                        &(it->second), 
                        "coding region", 
-            "completely contained in another coding region on the " + it->first + " strand.");
-           
+                       strtmp);
       }
       c_item->description 
           = GetIsComment(c_item->item_list.size(), "coding region") 

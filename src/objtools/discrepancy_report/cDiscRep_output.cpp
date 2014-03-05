@@ -57,6 +57,7 @@ static const s_fataltag extra_fatal [] = {
 
 static const s_fataltag disc_fatal[] = {
         {"BAD_LOCUS_TAG_FORMAT", NULL, NULL},
+        {"CONTAINED_CDS", NULL, "coding regions are completely contained in another coding region but have note"},
         {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS", NULL, NULL},
         {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", NULL, NULL},
         {"DISC_BAD_BGPIPE_QUALS", NULL, NULL},
@@ -193,30 +194,6 @@ void CDiscRepOutput :: x_AddListOutputTags()
      }
   } 
 };
-
-
-void CDiscRepOutput :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category)
-{
-   NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
-       CRef < CClickableItem > c_item (new CClickableItem);
-       strtmp = (*it)->GetName();
-       if (thisInfo.test_item_list.find(strtmp) 
-                                    != thisInfo.test_item_list.end()) {
-            c_item->setting_name = strtmp;
-            c_item->item_list = thisInfo.test_item_list[strtmp];
-            if ( strtmp != "LOCUS_TAGS"
-                        && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX") {
-                  thisInfo.disc_report_data.push_back(c_item);
-            }
-            (*it)->GetReport(c_item); 
-       }
-       else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
-           (*it)->GetReport(c_item); 
-       } 
-   }
-};
-
-
 
 typedef struct sDiscInfo {
    string conf_name;
@@ -430,7 +407,6 @@ static const DiscInfoData disc_info_list [] = {
   {"Uncultured Notes", "UNCULTURED_NOTES_ONCALLER"}
 };
 
-typedef map <int, vector <unsigned> > UInt2UInts;
 UInt2UInts m_PrtOrd;
 void CDiscRepOutput :: x_SortReport()
 {
@@ -446,23 +422,6 @@ void CDiscRepOutput :: x_SortReport()
       m_PrtOrd[list_ord[(*it)->setting_name]].push_back(i++);
    }
 };
-
-void CDiscRepOutput :: CollectRepData()
-{
-  GoGetRep(thisGrp.tests_on_SubmitBlk);
-  GoGetRep(thisGrp.tests_on_Bioseq);
-  GoGetRep(thisGrp.tests_on_Bioseq_aa);
-  GoGetRep(thisGrp.tests_on_Bioseq_na);
-  GoGetRep(thisGrp.tests_on_Bioseq_CFeat);
-  GoGetRep(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet);
-  GoGetRep(thisGrp.tests_on_Bioseq_NotInGenProdSet);
-  GoGetRep(thisGrp.tests_on_SeqEntry);
-  GoGetRep(thisGrp.tests_on_SeqEntry_feat_desc);
-  GoGetRep(thisGrp.tests_4_once);
-  GoGetRep(thisGrp.tests_on_BioseqSet);
-  GoGetRep(thisGrp.tests_on_Bioseq_CFeat_CSeqdesc);
-} // CollectRepData()
-
 
 void CDiscRepOutput :: x_Clean()
 {
@@ -517,7 +476,9 @@ void CDiscRepOutput :: x_WriteDiscRepSummary()
       if ( desc.empty()) continue;
 
       // FATAL tag
-      if (x_RmTagInDescp(desc, "FATAL: ")) *(oc.output_f)  << "FATAL:";
+      if (x_RmTagInDescp(desc, "FATAL: ")) {
+          *(oc.output_f)  << "FATAL:";
+      }
       *(oc.output_f) << c_item->setting_name << ": " << desc << endl;
       if ("SUSPECT_PRODUCT_NAMES" == c_item->setting_name) {
             x_WriteDiscRepSubcategories(c_item->subcategories);
@@ -554,6 +515,7 @@ bool CDiscRepOutput :: x_OkToExpand(CRef < CClickableItem > c_item)
   }
 };
 
+
 void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, bool use_flag, bool IsSubcategory)
 {
   string prefix, desc;
@@ -586,16 +548,17 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
       }
  
       // FATAL tag
-      if (x_RmTagInDescp(desc, "FATAL: ")) prefix = "FATAL:" + prefix;
+      if (x_RmTagInDescp(desc, "FATAL: ")) {
+         prefix = "FATAL:" + prefix;
+      }
 
+      if ( ( oc.add_output_tag || oc.add_extra_output_tag) 
+                 && !prefix.empty()) {
+            c_item->expanded = true;
+      }
       // summary report
       if (oc.summary_report) {
          *(oc.output_f) << prefix << desc << endl;
-/*
-         if ( ( oc.add_output_tag || oc.add_extra_output_tag) 
-               && SubsHaveTags((*it), oc))
-            oc.expand_report_categories[(*it)->setting_name] = TRUE;
-*/
       }
       else {
 /*
