@@ -603,6 +603,7 @@ public:
     inline bool IsNS(void) const { return m_IsNS; }
     inline bool IsNT(void) const { return m_IsNT; }
     inline bool IsNW(void) const { return m_IsNW; }
+    inline bool IsWP(void) const { return m_IsWP; }
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
     inline bool IsGpipe(void) const { return m_IsGpipe; }
@@ -820,6 +821,7 @@ private:
     bool m_IsNS;
     bool m_IsNT;
     bool m_IsNW;
+    bool m_IsWP;
     bool m_IsXR;
     bool m_IsGI;
     bool m_IsGB;
