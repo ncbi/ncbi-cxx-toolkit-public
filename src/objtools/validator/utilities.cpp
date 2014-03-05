@@ -1046,7 +1046,7 @@ string GetBioseqIdLabel(const CBioseq& sq, bool limited)
         }
     }
 
-    if (!limited || num_ids_found == 0) {
+    if (num_ids_found == 0) {
         /* find first general */
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, sq) {
             if ((*id_it)->IsGeneral()) {

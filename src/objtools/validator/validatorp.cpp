@@ -811,11 +811,13 @@ void CValidError_imp::PostErr
             CBioseq_Handle hnd = /* m_Scope->GetBioseqHandle(ft.GetLocation()) */ BioseqHandleFromLocation (m_Scope, ft.GetLocation());
             if( hnd ) {
                 CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
+                string bc_label = GetBioseqIdLabel(*(hnd.GetCompleteBioseq()), false);
+                string bc_type = "";
+                bc->GetLabel(&bc_type, CBioseq::eType);
                 desc += " [";
-                string bc_label = "";
-                bc->GetLabel(&bc_label, CBioseq::eBoth);
-                s_FixBioseqLabelProblems(bc_label);
                 desc += bc_label;
+                desc += ": ";
+                desc += bc_type;
                 desc += "]";
             }
         } catch (CException ) {
