@@ -77,13 +77,12 @@ enum EOnCallerGrp {
     eSuspectText
 };
 
+typedef map <int, vector <unsigned> > UInt2UInts;
 class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
 {
   public:
     ~CDiscRepOutput () {};
 
-    void CollectRepData();
-    void GoGetRep(vector < CRef < CTestAndRepData> >& test_category);
     void Export();
     void Export(vector <CRef <CClickableText> >& item_list);
     void Export(CRef <CClickableItem>& c_item, const string& setting_name);
@@ -121,7 +120,7 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     void x_OrderResult(Int2Int& ord2i_citem);
     void x_GroupResult(map <EOnCallerGrp, string>& grp_idx_str);
     void x_ReorderAndGroupOnCallerResults(Int2Int& ord2i_citem, 
-                                        map <EOnCallerGrp, string>& grp_idx_str);
+                                       map <EOnCallerGrp, string>& grp_idx_str);
     string x_GetGrpName(EOnCallerGrp e_grp);
     CRef <CClickableItem> x_CollectSameGroupToGbench(Int2Int& ord2i_citem, 
                                              EOnCallerGrp e_grp, 

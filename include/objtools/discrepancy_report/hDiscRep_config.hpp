@@ -130,7 +130,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         string GetDirStr(const string& src_dir);
         void ProcessArgs(Str2Str& args);
         void SetArg(const string& arg, const string& val);
-        static void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
+        void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
         void GetOrgModSubtpName(unsigned num1, unsigned num2,
                               map <string, COrgMod::ESubtype>& orgmodnm_subtp);
         CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
@@ -138,6 +138,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
         void GetTestList();
         void CollectTests();
         virtual void Run();
+        void CollectRepData();
+
         void RunMultiObjects();
         static CSeq_entry_Handle* m_TopSeqEntry;
         static CRepConfig* factory(string report_tp,CSeq_entry_Handle* tse_p=0);
@@ -155,6 +157,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
         bool m_dorecurse;
         vector <CConstRef <CObject> >* m_objs;
+
+        void x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category);
    };
 
    class CRepConfAsndisc : public CRepConfig
