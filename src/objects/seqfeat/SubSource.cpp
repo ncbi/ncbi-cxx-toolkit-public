@@ -282,7 +282,7 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
     if (!NStr::IsBlank(day)) {
         try {
             day_val = NStr::StringToInt (day);
-            if (day_val < 1 || day_val > dpm) {
+            if (day_val < 1) {
                 NCBI_THROW (CException, eUnknown,
                                 "collection-date string has invalid day value");
             }

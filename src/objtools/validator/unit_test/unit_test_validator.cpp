@@ -6119,6 +6119,11 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
+    bool bad_format = false, in_future = false;
+    CSubSource::IsCorrectDateFormat("29-Feb-2012", bad_format, in_future);
+    BOOST_CHECK_EQUAL(bad_format, false);
+    BOOST_CHECK_EQUAL(in_future, false);
+
 }
 
 
