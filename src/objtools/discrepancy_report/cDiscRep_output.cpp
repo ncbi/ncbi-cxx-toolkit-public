@@ -628,7 +628,7 @@ void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const s
 */
   } 
   else {
-     x_StandardWriteDiscRepItems (oc, c_item, prefix, true);
+     x_StandardWriteDiscRepItems (oc, c_item, prefix, !c_item->expanded);
   }
   if ((!c_item->next_sibling && c_item->subcategories.empty()) 
         || (!c_item->subcategories.empty() && !c_item->item_list.empty()) ) {// for !OkToExpand
