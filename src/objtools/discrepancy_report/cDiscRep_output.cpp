@@ -57,7 +57,7 @@ static const s_fataltag extra_fatal [] = {
 
 static const s_fataltag disc_fatal[] = {
         {"BAD_LOCUS_TAG_FORMAT", NULL, NULL},
-        {"CONTAINED_CDS", NULL, "coding regions are completely contained in another coding region but have note"},
+        {"CONTAINED_CDS", NULL, "completely contained in another coding region but have note"},
         {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS", NULL, NULL},
         {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", NULL, NULL},
         {"DISC_BAD_BGPIPE_QUALS", NULL, NULL},
@@ -111,9 +111,9 @@ bool CDiscRepOutput :: x_NeedsTag(const string& setting_name, const string& desc
    unsigned i;
    for (i =0; i< cnt; i++) {
      if (setting_name == tags[i].setting_name
-          && (!tags[i].notag_description 
+          && (tags[i].notag_description == NULL
                  || NStr::FindNoCase(desc, tags[i].notag_description) == string::npos)
-          && (!tags[i].description 
+          && (tags[i].description == NULL
                  || NStr::FindNoCase(desc, tags[i].description) != string::npos) ) {
         return true;
      }
