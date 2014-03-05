@@ -63,7 +63,15 @@ CTMgr_LengthStats::Add(const TSeqPos length, const Uint8 prior_count)
         SetMin(min(GetMin(), length));
         SetMax(max(GetMax(), length));
         // adjust mean by weighted adjustment of current value
-        SetMean(GetMean() + (length - GetMean()) / (prior_count + 1));
+        const TSeqPos curr_mean = GetMean();
+        if (length > curr_mean) {
+            const TSeqPos len_diff = length - curr_mean;
+            SetMean(curr_mean + len_diff / (prior_count + 1));
+        }
+        else {
+            const TSeqPos len_diff = curr_mean - length;
+            SetMean(curr_mean - len_diff / (prior_count + 1));
+        }
     }
 }
 
