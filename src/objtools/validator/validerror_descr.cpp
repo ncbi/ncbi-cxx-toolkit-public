@@ -140,8 +140,6 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
                 const CBioSource& src = desc.GetSource();
                 if ( src.IsSetTaxname() ) {
                     const string& currname = src.GetTaxname();
-printf ("currname %s\n", currname.c_str());
-printf ("lastname %s\n", lastname);
                     if ( lastname != kEmptyCStr && NStr::EqualNocase (currname, lastname) ) {
                         same_taxnames = true;
                     }
