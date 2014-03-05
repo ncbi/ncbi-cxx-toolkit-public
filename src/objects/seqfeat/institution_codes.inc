@@ -2576,6 +2576,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IM<IND>	s	Indian Museum",
 "IMAGE	b	The I.M.A.G.E Consortium",
 "IMARPE	s	Instituto del Mar del Peru",
+"IMAS	c	Institute for Marine and Antarctic Studies",
 "IMAU	c	Inner Mongolia Agricultural University, Key Laboratory of Dairy Biotechnology and Engineering",
 "IMC	s	Sichuan Academy of Traditional Chinese Medicine and Pharmacy",
 "IMCC	c	Inha Microbe Culture Collection, Inha University",
