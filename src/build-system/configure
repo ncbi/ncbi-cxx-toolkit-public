@@ -5706,11 +5706,19 @@ case "$host_os:$compiler" in
       LDFLAGS="-flat_namespace $LDFLAGS"
 
       if test "$with_ncbi_public" = yes; then
-         TARGET='-mmacosx-version-min=10.5'
-         sdks='/Developer/SDKs/MacOSX10.6.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk'
-         if test "$with_64:${with_universal-no}" != "yes:no"; then
-            sdks="/Developer/SDKs/MacOSX10.5.sdk $sdks"
-         fi
+         sdks='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk'
+         case "$HOST_OS" in
+            darwin?.* | darwin10.* ) # Mac OS X 10.6.x or older
+               TARGET='-mmacosx-version-min=10.5'
+               sdks="/Developer/SDKs/MacOSX10.6.sdk $sdks"
+               if test "$with_64:${with_universal-no}" != "yes:no"; then
+                  sdks="/Developer/SDKs/MacOSX10.5.sdk $sdks"
+               fi
+               ;;
+            * )
+               TARGET='-mmacosx-version-min=10.7'
+               ;;
+         esac
          for sdk in $sdks; do
             if test -d "$sdk"; then
                TARGET="-isysroot $sdk $TARGET"
