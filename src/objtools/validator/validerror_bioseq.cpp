@@ -7994,10 +7994,25 @@ void CValidError_bioseq::ValidateOrgContext
 {
     if ( this_org.IsSetTaxname()  &&  org.IsSetTaxname() ) {
         if ( this_org.GetTaxname() != org.GetTaxname() ) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-                "Inconsistent taxnames [" + this_org.GetTaxname() + 
-                "] and [" + org.GetTaxname() + "]",
-                *seq.GetParentEntry(), desc);
+			bool is_wp = false;
+			FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, seq) {
+				const CSeq_id& sid = **sid_itr;
+				CSeq_id::E_Choice typ = sid.Which();
+				if (typ == CSeq_id::e_Other) {
+					if (sid.GetOther().IsSetAccession()) {
+						string acc =sid.GetOther().GetAccession().substr(0, 3);
+						if (acc == "WP_") {
+							is_wp = true;
+						}
+					}
+				}
+			}
+			if (! is_wp) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                    "Inconsistent taxnames [" + this_org.GetTaxname() + 
+                    "] and [" + org.GetTaxname() + "]",
+                    *seq.GetParentEntry(), desc);
+			}
         }
     }
 }

@@ -1416,8 +1416,10 @@ void CValidError_imp::ValidateBioSource
             if (IsEmbl() || IsDdbj()) {
                 sev = eDiag_Warning;
             }
+            if (! IsWP()) {
                 PostObjErr(sev, eErr_SEQ_DESCR_MissingLineage, 
                          "No lineage for this BioSource.", obj, ctx);
+            }
         }
     } else {
         const COrgName& orgname = orgref.GetOrgname();
@@ -3176,7 +3178,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                         }
                     }
                     (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
-                    if (!is_species_level) {
+                    if (!is_species_level && ! IsWP()) {
                         PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem, 
                                 "Taxonomy lookup reports is_species_level FALSE",
                                 **desc_it, *ctx_it);
@@ -3222,7 +3224,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                     bool force_consult = false;
                     bool has_nucleomorphs = false;
                     (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
-                    if (!is_species_level) {
+                    if (!is_species_level && ! IsWP()) {
                         PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
                                 "Taxonomy lookup reports is_species_level FALSE",
                                 **feat_it);
@@ -3324,7 +3326,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                     }
                 }
                 (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
-                if (!is_species_level) {
+                if (!is_species_level && ! IsWP()) {
                     PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem, 
                             "Taxonomy lookup reports is_species_level FALSE", org);
                 }

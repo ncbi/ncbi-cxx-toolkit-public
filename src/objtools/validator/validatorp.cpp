@@ -223,6 +223,7 @@ void CValidError_imp::Reset(void)
     m_IsNS  = false;
     m_IsNT = false;
     m_IsNW = false;
+    m_IsWP = false;
     m_IsXR = false;
     m_IsGI = false;
     m_IsGB = false;
@@ -811,13 +812,11 @@ void CValidError_imp::PostErr
             CBioseq_Handle hnd = /* m_Scope->GetBioseqHandle(ft.GetLocation()) */ BioseqHandleFromLocation (m_Scope, ft.GetLocation());
             if( hnd ) {
                 CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
-                string bc_label = GetBioseqIdLabel(*(hnd.GetCompleteBioseq()), false);
-                string bc_type = "";
-                bc->GetLabel(&bc_type, CBioseq::eType);
                 desc += " [";
+                string bc_label = "";
+                bc->GetLabel(&bc_label, CBioseq::eBoth);
+                s_FixBioseqLabelProblems(bc_label);
                 desc += bc_label;
-                desc += ": ";
-                desc += bc_type;
                 desc += "]";
             }
         } catch (CException ) {
@@ -1716,8 +1715,8 @@ bool CValidError_imp::Validate
             *m_TSE);
     }
 
-    if ( m_MultTaxIDs && IsRefSeq() ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTaxonIDs, 
+    if ( m_MultTaxIDs && IsRefSeq() && ! IsWP() ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTaxonIDs,
                 "There are multiple taxonIDs in this RefSeq record.",
                 *m_TSE);
     }
@@ -2907,6 +2906,8 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
                             m_IsNT = true;
                         } else if (acc == "NW_") {
                             m_IsNW = true;
+                        } else if (acc == "WP_") {
+                            m_IsWP = true;
                         } else if (acc == "XR_") {
                             m_IsXR = true;
                         }

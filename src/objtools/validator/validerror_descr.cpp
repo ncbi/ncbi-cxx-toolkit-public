@@ -62,6 +62,8 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
             num_titles = 0;
     CConstRef<CSeqdesc> last_source;
     const CSeqdesc* first_title = NULL;
+    const char* lastname = kEmptyCStr;
+    bool same_taxnames = false;
 
     FOR_EACH_DESCRIPTOR_ON_DESCR (dt, descr) {
         const CSeqdesc& desc = **dt;
@@ -132,8 +134,20 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
         case CSeqdesc::e_Het:
             break;
         case CSeqdesc::e_Source:
-            num_sources++;
-            last_source = &desc;
+            {
+                num_sources++;
+                last_source = &desc;
+                const CBioSource& src = desc.GetSource();
+                if ( src.IsSetTaxname() ) {
+                    const string& currname = src.GetTaxname();
+printf ("currname %s\n", currname.c_str());
+printf ("lastname %s\n", lastname);
+                    if ( lastname != kEmptyCStr && NStr::EqualNocase (currname, lastname) ) {
+                        same_taxnames = true;
+                    }
+                    lastname = currname.c_str();
+                }
+            }
             break;
         case CSeqdesc::e_Org:
             break;
@@ -145,7 +159,7 @@ void CValidError_descr::ValidateSeqDescr(const CSeq_descr& descr, const CSeq_ent
         }
     }
 
-    if ( num_sources > 1 ) {
+    if ( num_sources > 1 && same_taxnames ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleBioSources,
             "Undesired multiple source descriptors", ctx, *last_source);
     }
