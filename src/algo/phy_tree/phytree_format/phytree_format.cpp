@@ -32,6 +32,7 @@
 #include <corelib/hash_set.hpp>
 
 #include <objects/taxon1/taxon1.hpp>
+#include <objects/blastdb/defline_extra.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/create_defline.hpp>
 
@@ -44,9 +45,13 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+
 // query node colors
 static const string s_kQueryNodeColor = "255 0 0";
 static const string s_kQueryNodeBgColor = "255 255 0";
+static const string s_kSeqOfTypeNodeBgColor = "204 255 204";
+
+map<int,string> linkotTypeToBGColor{{eFromType,s_kSeqOfTypeNodeBgColor}};
 
 // tree leaf label for unknown taxonomy
 static const string s_kUnknown = "unknown";
@@ -60,9 +65,9 @@ const string CPhyTreeFormatter::kNodeInfoQuery = "query";
 CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                                      ELabelType label_type,
                                      bool mark_query_node)
+                                     
 {
     x_Init();
-    
 
     CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();
     vector<int> mark_leaves;
@@ -73,6 +78,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
                        m_BlastNameColorMap);
+                       
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
 }
@@ -88,7 +94,9 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
     x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
-                       m_BlastNameColorMap);
+                       m_BlastNameColorMap,
+                       m_LinkoutDB,
+                       m_LinkoutType);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, *btc, true);
 }
@@ -96,16 +104,24 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
 
 CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                                      vector<string>& seq_ids,
-                                     ELabelType label_type)
+                                     ELabelType label_type,
+                                     ILinkoutDB* linkoutDB,
+                                     int linkoutType,
+                                     string mv_build_name)
 {
     x_Init();
     vector<int> mark_leaves;
+    m_LinkoutDB = linkoutDB;
+    m_LinkoutType = linkoutType;
+    m_MapViewerBuildName = mv_build_name;
 
     CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();
     x_InitTreeFeatures(*btc, guide_tree_calc.GetSeqIds(),
                        *guide_tree_calc.GetScope(), 
                        label_type, mark_leaves,
-                       m_BlastNameColorMap);
+                       m_BlastNameColorMap,
+                       m_LinkoutDB,
+                       m_LinkoutType);
 
     x_MarkLeavesBySeqId(*btc, seq_ids, *guide_tree_calc.GetScope());
 
@@ -135,7 +151,9 @@ CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
         mark_leaves.push_back(0);
     }
     x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_leaves,
-                       m_BlastNameColorMap);
+                       m_BlastNameColorMap,
+                       m_LinkoutDB,
+                       m_LinkoutType);
 
     BioTreeConvertContainer2Dynamic(m_Dyntree, btc, true);
 }
@@ -418,6 +436,8 @@ bool CPhyTreeFormatter::IsSingleBlastName(void)
 void CPhyTreeFormatter::x_Init(void)
 {
     m_SimplifyMode = eNone;
+    m_LinkoutDB = NULL;
+    m_LinkoutType = 0;
 }
 
 
@@ -693,7 +713,9 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                                     CScope& scope,
                                     CPhyTreeFormatter::ELabelType label_type,
                                     const vector<int>& mark_leaves,
-                                    TBlastNameColorMap& bcolormap)
+                                    TBlastNameColorMap& bcolormap,
+                                    ILinkoutDB* linkoutDB,
+                                    int linkoutType)
 {
     CTaxon1 tax;
 
@@ -716,8 +738,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
     vector<CBioseq_Handle> bio_seq_handles(num_rows);
 
     for (int i=0;i < num_rows;i++) {
-        bio_seq_handles[i] = scope.GetBioseqHandle(*seqids[i]);
-
+        bio_seq_handles[i] = scope.GetBioseqHandle(*seqids[i]);        
         int tax_id = 0;
         try{
             const COrg_ref& org_ref = sequence::GetOrg_ref(bio_seq_handles[i]);                                
@@ -886,6 +907,16 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                         //Not sure if needed
                         //m_QueryAccessionNbr = accession_nbrs[seq_number];
                     }
+                    if(linkoutDB) {
+                        int seqLinkout = linkoutDB->GetLinkout(*seqids[seq_number],"");
+                        if(seqLinkout & linkoutType) {
+                            // color for "linkout" node
+                            string bgColor = linkotTypeToBGColor[linkoutType];
+                            if(!bgColor.empty()) {
+                                x_AddFeature(eLabelBgColorId,bgColor, node); 
+                            }
+                        }
+                    }
                     
                     // done with this node
                     break;
@@ -995,5 +1026,4 @@ CPhyTreeFormatter::CExpander::operator()(CBioTreeDynamic::CBioNode& node,
     }
     return eTreeTraverse;
 }
-
 END_NCBI_SCOPE
