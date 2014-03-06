@@ -1311,10 +1311,10 @@ case "$host_os:$compiler" in
 
       if test "$with_ncbi_public" = yes; then
          sdks='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk'
-         case "$HOST_OS" in
+         case "$host_os" in
             darwin?.* | darwin10.* ) # Mac OS X 10.6.x or older
                TARGET='-mmacosx-version-min=10.5'
-               sdks="/Developer/SDKs/MacOSX10.6.sdk $sdks"
+               sdks="/Developer/SDKs/MacOSX10.6.sdk"
                if test "$with_64:${with_universal-no}" != "yes:no"; then
                   sdks="/Developer/SDKs/MacOSX10.5.sdk $sdks"
                fi
