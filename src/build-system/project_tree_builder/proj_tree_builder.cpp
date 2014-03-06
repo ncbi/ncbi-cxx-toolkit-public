@@ -1753,6 +1753,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         item_dll.m_External = true;
         item_dll.m_StyleObjcpp = style_objcpp;
         item_dll.m_MkName = applib_mfilepath;
+        item_dll.m_DataSource = CSimpleMakeFileContents(applib_mfilepath);
         item_dll.m_ProjTags = tree->m_Projects[proj_key].m_ProjTags;
         item_dll.m_ProjTags.push_back("dll");
         tree->m_Projects[proj_dll] = item_dll;

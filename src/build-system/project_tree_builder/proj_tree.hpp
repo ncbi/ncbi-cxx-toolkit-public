@@ -285,7 +285,7 @@ private:
     vector<string> m_Definitions;
 //    set<string> m_Sources;
     map<string, set<string> > m_Sources;
-    set<string> m_IncludeDir;
+    vector<string> m_IncludeDir;
     vector<string> m_Libraries;
     vector<string> m_Dependencies;
     vector<CMakeProperty> m_Properties;

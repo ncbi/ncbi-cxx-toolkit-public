@@ -804,7 +804,7 @@ void CMakeProject::AddSourceFile(const string& folder, const string& name)
 }
 void CMakeProject::AddIncludeDirectory(const string& name)
 {
-    m_IncludeDir.insert(name);
+    m_IncludeDir.push_back(name);
 }
 void CMakeProject::AddLibrary(const string& name)
 {
@@ -893,7 +893,7 @@ void CMakeProject::Write(const string& dirname) const
 
     if (!m_IncludeDir.empty()) {
         out << "include_directories( " << endl;
-        ITERATE (set<string>, s,  m_IncludeDir) {
+        ITERATE (vector<string>, s,  m_IncludeDir) {
             out << "    " << *s << endl;
         }
         out << ")" << endl;
@@ -998,6 +998,8 @@ void CMakeGenerator::GenerateCMakeTree(CProjectItemsTree& projects_tree)
 // sources 
         mkPrj[prj_path].AddDefinition("NCBI_PROJECT_SRC_DIR", "${NCBI_TREE_ROOT}/src/" + relpath);
         mkPrj[prj_path].AddDefinition("NCBI_PROJECT_BUILD_DIR", "${NCBI_BUILD_ROOT}/" + relpath);
+        mkPrj[prj_path].AddDefinition("srcdir", "${NCBI_PROJECT_SRC_DIR}");
+        
         list<string> prj_sources;
         if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
             prj.m_DataSource.GetValue("UNIX_SRC", prj_sources);
@@ -1040,8 +1042,9 @@ void CMakeGenerator::GenerateCMakeTree(CProjectItemsTree& projects_tree)
                 }
                 mkPrj[prj_path].AddSourceFile(location, relname);
 #if 0
-//            } else if (CSymResolver::IsDefine(*s)) {
+            } else if (CSymResolver::IsDefine(*s)) {
 //                mkPrj[prj_path].AddSourceFile( location_default, "${" + CSymResolver::StripDefine(FilterDefine(*s)) + "}");
+cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
             } else if (SMakeProjectT::IsConfigurableDefine(*s)) {
 //                mkPrj[prj_path].AddSourceFile( location_default, "${" + SMakeProjectT::StripConfigurableDefine(*s) + "}");
 cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
@@ -1093,19 +1096,6 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
             }
         }
 // dependencies
-#if 0
-// wrong lib order - does not work on Unix
-        ITERATE( list<CProjKey>, d, prj.m_Depends) {
-            if (projects_tree.m_Projects.find(*d)  != projects_tree.m_Projects.end()) {
-                mkPrj[prj_path].AddLibrary( d->Id());
-            } else {
-                mkPrj[prj_path].AddLibrary( "${" + d->Id() + "}");
-            }
-        }
-        ITERATE( list<string>, d, prj.m_Libs3Party) {
-            mkPrj[prj_path].AddLibrary( "${" + *d + "}");
-        }
-#else
         vector<string> to_process;
         list<string> tmp_list;
         string value;
@@ -1117,8 +1107,14 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
             if (deptype == 0) {
                 if (p->first.Type() == CProjKey::eLib ||
                     p->first.Type() == CProjKey::eDll) {
+#if 1
+// this works
                     to_process.push_back("DLL_LIB");
                     to_process.push_back("LIBS");
+#else
+// this could be better.. or not..
+                    to_process.push_back("USES_LIBRARIES");
+#endif
                 } else if (p->first.Type() == CProjKey::eApp) {
                     to_process.clear();
                     to_process.push_back("LIB");
@@ -1170,42 +1166,61 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
                 }
             }
         }
-#endif
 
 //include dirs
         to_process.clear();
         to_process.push_back("CPPFLAGS");
         ITERATE(vector<string>, top, to_process) {
-            if (prj.m_DataSource.GetValue(*top, tmp_list)) {
-                set<string> defines;
-                ITERATE( list<string>, s, tmp_list) {
-                    if (CSymResolver::IsDefine(*s)) {
-                        value = CSymResolver::StripDefine(FilterDefine(*s));
-                        if (NStr::EndsWith(value, "_INCLUDE")) {
-                            mkPrj[prj_path].AddIncludeDirectory("${" + value + "}");
-                        }
-                    } else if (CSymResolver::HasDefine(*s)) {
+            tmp_list.clear();
+            prj.m_DataSource.GetValue(*top, tmp_list);
+            set<string> defines;
+            defines.insert("${ORIG_CPPFLAGS}");
+            ITERATE( list<string>, s, tmp_list) {
+                if (CSymResolver::IsDefine(*s)) {
+                    value = CSymResolver::StripDefine(FilterDefine(*s));
+                    if (NStr::EndsWith(value, "_INCLUDE")) {
+                        mkPrj[prj_path].AddIncludeDirectory("${" + value + "}");
+                    }
+                    else {
+                        defines.insert("${" + value + "}");
+                    }
+                } else if (CSymResolver::HasDefine(*s)) {
 //cerr << "Found smth has define: " << *s << " in " << prj.m_Name << endl;
-                        if (NStr::StartsWith(*s, "-I")) {
-                            string val = SMakeProjectT::GetOneIncludeDir(*s, "-I");
-                            if (NStr::StartsWith(val,"$(srcdir)")) {
-                                mkPrj[prj_path].AddIncludeDirectory(NStr::Replace(val, "$(srcdir)", "${NCBI_PROJECT_SRC_DIR}"));
-                            } else if (NStr::StartsWith(val,"$(top_srcdir)")) {
-                                mkPrj[prj_path].AddIncludeDirectory(NStr::Replace(val, "$(top_srcdir)", "${NCBI_TREE_ROOT}"));
-                            }
+                    if (NStr::StartsWith(*s, "-I")) {
+                        string val = SMakeProjectT::GetOneIncludeDir(*s, "-I");
+#if 0
+                        if (NStr::StartsWith(val,"$(srcdir)")) {
+                            mkPrj[prj_path].AddIncludeDirectory(NStr::Replace(val, "$(srcdir)", "${NCBI_PROJECT_SRC_DIR}"));
+                        } else if (NStr::StartsWith(val,"$(top_srcdir)")) {
+                            mkPrj[prj_path].AddIncludeDirectory(NStr::Replace(val, "$(top_srcdir)", "${NCBI_TREE_ROOT}"));
                         }
-                    } else if (NStr::StartsWith(*s, "-D")) {
-                        defines.insert(*s);
+#else
+                        NStr::ReplaceInPlace(val,"$(", "${");
+                        NStr::ReplaceInPlace(val,")", "}");
+                        mkPrj[prj_path].AddIncludeDirectory(val);
+#endif
                     }
-                }
-                if (!defines.empty()) {
-                    CMakeProperty def( "add_definitions");
-                    ITERATE( set<string>, d, defines) {
-                        def.AddValue( *d);
-                    }
-                    mkPrj[prj_path].AddProperty( def);
+                } else if (NStr::StartsWith(*s, "-D")) {
+                    defines.insert(*s);
                 }
             }
+#if 1
+            if (!defines.empty()) {
+                CMakeProperty def( "add_definitions");
+                ITERATE( set<string>, d, defines) {
+                    def.AddValue( *d);
+                }
+                mkPrj[prj_path].AddProperty( def);
+            }
+#else
+            if (!prj.m_Defines.empty()) {
+                CMakeProperty def( "add_definitions");
+                ITERATE( list<string>, d, prj.m_Defines) {
+                    def.AddValue( "-D" + *d);
+                }
+                mkPrj[prj_path].AddProperty( def);
+            }
+#endif
         }
 
 // tests
