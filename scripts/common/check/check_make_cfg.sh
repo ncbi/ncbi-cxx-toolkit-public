@@ -279,6 +279,7 @@ esac
 
 ## Run
 
+
 # Set log_site for tests
 export NCBI_APPLOG_SITE=testcxx
 
@@ -286,7 +287,7 @@ export NCBI_APPLOG_SITE=testcxx
 export top_srcdir="\$root_dir"
 
 # Add current, build and scripts directories to PATH
-export PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl:\${PATH}"
+export PATH=".:\${build_dir}:\${root_dir}/scripts/common/impl::\${root_dir}/scripts/common/check:\${PATH}"
 
 # Define time-guard script to run tests from other scripts
 export CHECK_EXEC="\${root_dir}/scripts/common/check/check_exec_test.sh"
@@ -300,6 +301,11 @@ export DIAG_SILENT_ABORT="Y"
 
 # Use AppLog-style output format in the testsuite by default
 test -z "\$DIAG_OLD_POST_FORMAT"  &&  export DIAG_OLD_POST_FORMAT=false
+
+# Default check tools
+if test -z "\$NCBI_CHECK_TOOLS"; then
+    NCBI_CHECK_TOOLS="regular"
+fi
 
 # Check timeout multiplier (increase default check timeout in x times)
 if test -z "\$NCBI_CHECK_TIMEOUT_MULT"; then
@@ -334,190 +340,231 @@ fi
 ##  Run one test
 
 RunTest() {
-   # Parameters
-   x_wdir="\$1"
-   x_test="\$2"
-   x_app="\$3"
-   x_run="\${4:-\$x_app}"
-   x_real_name="\$5"
-   x_name="\${5:-\$x_run}"  
-   x_ext="\$6"
-   x_timeout="\$7"
-   x_authors="\$8"
+    # Parameters
+    x_wdir="\$1"
+    x_test="\$2"
+    x_app="\$3"
+    x_run="\${4:-\$x_app}"
+    x_real_name="\$5"
+    x_name="\${5:-\$x_run}"  
+    x_ext="\$6"
+    x_timeout="\$7"
+    x_authors="\$8"
  
-   x_work_dir="\$check_dir/\$x_wdir"
-   mkdir -p "\$x_work_dir" > /dev/null 2>&1 
+    x_work_dir="\$check_dir/\$x_wdir"
+    mkdir -p "\$x_work_dir" > /dev/null 2>&1 
 
-   # Determine test application name
-   x_path_run="\$build_dir/\${build_tree}/bin/\$build_cfg"
-   result=1
-   x_path_app="\$x_path_run/\$x_app"
-   if test ! -f "\$x_path_app"; then
-      x_path_app="\$x_path_run/\$x_test"
-      if test ! -f "\$x_path_app"; then
-         result=0
-      fi
-   fi
+    # Determine test application name
+    x_path_run="\$build_dir/\${build_tree}/bin/\$build_cfg"
+    result=1
+    x_path_app="\$x_path_run/\$x_app"
+    if test ! -f "\$x_path_app"; then
+       x_path_app="\$x_path_run/\$x_test"
+       if test ! -f "\$x_path_app"; then
+          result=0
+       fi
+    fi
 
-   # Generate name of the output file
-   x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext"
-   x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext"
-   x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
-   x_applog_sh="\$x_work_dir/\$x_app.applog.sh"
+    # Run test under all specified check tools   
+    for tool in \$NCBI_CHECK_TOOLS; do
 
-   if \$is_db_load; then
-      echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
-      case "$x_compiler" in
-         MSVC )
-            test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" "\$(cygpath -w "\$x_applog_sh")" >> "\$build_dir/test_stat_load.log" 2>&1
-            ;;        
-         XCODE ) 
-            $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
-            ;;
-      esac
-      if test -f \$x_applog_sh; then
-         chmod a+x \$x_applog_sh
-         ##\$x_applog_sh >> "\$build_dir/test_stat_load_applog.log" 2>&1
-      fi
-      return 0
-   fi
+        tool_lo=\`echo \$tool | tr '[A-Z]' '[a-z]'\`
+        tool_up=\`echo \$tool | tr '[a-z]' '[A-Z]'\`
+        
+        case "\$tool_lo" in
+           regular | inspxe ) ;;
+                          * ) continue ;;
+        esac
+        if test \$tool_lo = "regular"; then
+           x_cmd="[\$build_tree/\$build_cfg/\$x_wdir] \$x_name"
+           x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext"
+           x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext"
+           x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
+           x_applog_sh="\$x_work_dir/\$x_app.applog.sh"
+        else
+           x_cmd="[\$build_tree/\$build_cfg/\$x_wdir] \$tool_up \$x_name"
+           x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext.\$tool_lo"
+           x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext.\$tool_lo"
+           x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext.\$tool_lo"
+           x_applog_sh="\$x_work_dir/\$x_app.applog.\$tool_lo.sh"
+        fi
+
+        if \$is_db_load; then
+           echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
+           case "$x_compiler" in
+             MSVC )
+                test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" "\$(cygpath -w "\$x_applog_sh")" >> "\$build_dir/test_stat_load.log" 2>&1
+                ;;        
+             XCODE ) 
+                $NCBI/bin/_production/CPPCORE/test_stat_load "\$x_test_rep" "\$x_test_out" "\$x_boost_rep" "\$top_srcdir/build_info" >> "\$build_dir/test_stat_load.log" 2>&1
+                ;;
+           esac
+           if test -f \$x_applog_sh; then
+              chmod a+x \$x_applog_sh
+              ##\$x_applog_sh >> "\$build_dir/test_stat_load_applog.log" 2>&1
+           fi
+           continue
+        fi
    
-   if test -n "\$NCBI_AUTOMATED_BUILD"; then
-      echo "\$signature"   >> "\$x_test_rep"
-      echo "\$x_wdir"      >> "\$x_test_rep"
-      echo "\$x_run"       >> "\$x_test_rep"
-      echo "\$x_real_name" >> "\$x_test_rep"
-      case "$x_compiler" in
-         MSVC )
-            export NCBI_BOOST_REPORT_FILE="\$(cygpath -w "\$x_boost_rep")"
-            ;;        
-         XCODE ) 
-            export NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
-            ;;
-      esac
-   fi
+        if test -n "\$NCBI_AUTOMATED_BUILD"; then
+           echo "\$signature"   >> "\$x_test_rep"
+           echo "\$x_wdir"      >> "\$x_test_rep"
+           echo "\$x_run"       >> "\$x_test_rep"
+           echo "\$x_real_name" >> "\$x_test_rep"
+           case "$x_compiler" in
+              MSVC )
+                 export NCBI_BOOST_REPORT_FILE="\$(cygpath -w "\$x_boost_rep")"
+                 ;;        
+              XCODE ) 
+                 export NCBI_BOOST_REPORT_FILE="\$x_boost_rep"
+                 ;;
+           esac
+        fi
 
-   x_cmd="[\$build_tree/\$build_cfg/\$x_wdir]"
+        # Check existence of the test application
+        if test \$result -eq 1; then
 
-   if test \$result -eq 0; then
-      echo "ABS --  \$x_cmd - \$x_test"
-      echo "ABS --  \$x_cmd - \$x_test" >> \$res_log
-      count_absent=\`expr \$count_absent + 1\`
-      if test -n "\$NCBI_AUTOMATED_BUILD"; then
-         echo "ABS" >> "\$x_test_rep"
-         echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
-      fi
-      return 0
-   fi
+           # Goto the work directory 
+           cd "\$x_work_dir"
 
-   # Write header to output file 
-   echo "\$x_test_out" >> \$res_journal
-   (
-       echo "======================================================================"
-       echo "\$build_tree/\$build_cfg - \$x_name"
-       echo "======================================================================"
-       echo 
-   ) > \$x_test_out 2>&1
+           # Fix empty parameters (replace "" to \"\", '' to \'\')
+           x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
+           # Fix empty parameters (put each in '' or "")
+           x_run_fix=\`echo "\$x_run" | sed -e 's/""/'"'&'/g" -e "s/''/\\\\'\\\\'/g"\`
 
-   # Goto the work directory 
-   cd "\$x_work_dir"
+           # Define check tool variables
+           case "\$tool_lo" in
+           regular  ) ;;
+           inspxe   ) NCBI_CHECK_TOOL="inspxe.sh" 
+                      NCBI_CHECK_TIMEOUT_MULT=20
+                      ;;
+           esac
+           export NCBI_CHECK_TOOL
+           CHECK_TIMEOUT=\`expr \$x_timeout \* \$NCBI_CHECK_TIMEOUT_MULT\`
+           export CHECK_TIMEOUT
 
-   # Fix empty parameters (replace "" to \"\", '' to \'\')
-   x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
-   # Fix empty parameters (put each in '' or "")
-   x_run_fix=\`echo "\$x_run" | sed -e 's/""/'"'&'/g" -e "s/''/\\\\'\\\\'/g"\`
+           echo \$x_run | grep '\.sh' > /dev/null 2>&1 
+           if test \$? -eq 0;  then
+              # Run script without any check tools.
+              # It will be applied inside script using \$CHECK_EXEC.
+              xx_run="\$x_run_fix"
+           else
+              # Run under check tool
+              xx_run="\$NCBI_CHECK_TOOL \$x_run_fix"
+           fi
 
-   # Run check
-   CHECK_TIMEOUT=\`expr \$x_timeout \* \$NCBI_CHECK_TIMEOUT_MULT\`
-   export CHECK_TIMEOUT
-   rm -f check_exec.pid > /dev/null 2>&1
-   start_time="\`date +'$x_date_format'\`"
-   check_exec="\$root_dir/scripts/common/check/check_exec.sh"
-   \$check_exec $x_time \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
-   result=\$?
-   stop_time="\`date +'$x_date_format'\`"
-   load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
+           # Write header to output file 
+           echo "\$x_test_out" >> \$res_journal
+           (
+              echo "======================================================================"
+              echo "\$build_tree/\$build_cfg - \$x_name"
+              echo "======================================================================"
+              echo 
+           ) > \$x_test_out 2>&1
 
-   sed -e '/ ["][$][@]["].*\$/ {
-       s/^.*: //
-       s/ ["][$][@]["].*$//
-    }' \$x_test_out.\$\$ >> \$x_test_out
 
-   # RunID
-   runpid='?'
-   test -f check_exec.pid  &&  runpid="\`cat check_exec.pid\`"
-   runid="\`date -u +%y%m%d%H%M%S\`-\$runpid-\`uname -n\`"
-   runid="\`echo \$runid | tr -d '\n\r'\`"
-   rm -f check_exec.pid > /dev/null 2>&1
+           # Run check
+           rm -f check_exec.pid > /dev/null 2>&1
+           start_time="\`date +'$x_date_format'\`"
+           check_exec="\$root_dir/scripts/common/check/check_exec.sh"
+           \$check_exec $x_time \`eval echo \$xx_run\` > \$x_test_out.\$\$ 2>&1
+           result=\$?
+           stop_time="\`date +'$x_date_format'\`"
+           load_avg="\`uptime | sed -e 's/.*averages*: *\(.*\) *$/\1/' -e 's/[, ][, ]*/ /g'\`"
+
+           sed -e '/ ["][$][@]["].*\$/ {
+               s/^.*: //
+               s/ ["][$][@]["].*$//
+            }' \$x_test_out.\$\$ >> \$x_test_out
+
+           # RunID
+           runpid='?'
+           test -f check_exec.pid  &&  runpid="\`cat check_exec.pid\`"
+           runid="\`date -u +%y%m%d%H%M%S\`-\$runpid-\`uname -n\`"
+           runid="\`echo \$runid | tr -d '\n\r'\`"
+           rm -f check_exec.pid > /dev/null 2>&1
                 
-   # Get application execution time
-   exec_time=\`tail -3 \$x_test_out.\$\$\`
-   exec_time=\`echo "\$exec_time" | tr '\n\r' '%%'\`
-   echo \$exec_time | grep 'real [0-9]\|Maximum execution .* is exceeded' > /dev/null 2>&1 
-   if test \$? -eq 0;  then
-      exec_time=\`echo \$exec_time | sed -e 's/^%*//' -e 's/%*$//' -e 's/%%/%/g' -e 's/%/, /g' -e 's/[ ] */ /g'\`
-   else
-      exec_time='unparsable timing stats'
-   fi
-   rm -f $x_tmp/\$\$.out
-   rm -f \$x_test_out.\$\$
+           # Get application execution time
+           exec_time=\`tail -3 \$x_test_out.\$\$\`
+           exec_time=\`echo "\$exec_time" | tr '\n\r' '%%'\`
+           echo \$exec_time | grep 'real [0-9]\|Maximum execution .* is exceeded' > /dev/null 2>&1 
+           if test \$? -eq 0;  then
+              exec_time=\`echo \$exec_time | sed -e 's/^%*//' -e 's/%*$//' -e 's/%%/%/g' -e 's/%/, /g' -e 's/[ ] */ /g'\`
+           else
+              exec_time='unparsable timing stats'
+           fi
+           rm -f $x_tmp/\$\$.out
+           rm -f \$x_test_out.\$\$
 
-   # Write result of the test into the his output file
-   echo "Start time   : \$start_time"   >> \$x_test_out
-   echo "Stop time    : \$stop_time"    >> \$x_test_out
-   echo "Load averages: \$load_avg"     >> \$x_test_out
-   echo >> \$x_test_out
-   echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
-   echo "@@@ EXIT CODE: \$result" >> \$x_test_out
+           # Write result of the test into the his output file
+           echo "Start time   : \$start_time"   >> \$x_test_out
+           echo "Stop time    : \$stop_time"    >> \$x_test_out
+           echo "Load averages: \$load_avg"     >> \$x_test_out
+           echo >> \$x_test_out
+           echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
+           echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
-   # And write result also on the screen and into the log
-   x_cmd="\$x_cmd \$x_name"
-   if grep -q NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
-      echo "DIS --  \$x_cmd"
-      echo "DIS --  \$x_cmd" >> \$res_log
-      count_absent=\`expr \$count_absent + 1\`
-      test -n "\$NCBI_AUTOMATED_BUILD" && echo "DIS" >> "\$x_test_rep"
+           # And write result also on the screen and into the log
+           if grep -q NCBI_UNITTEST_DISABLED \$x_test_out >/dev/null; then
+              echo "DIS --  \$x_cmd"
+              echo "DIS --  \$x_cmd" >> \$res_log
+              count_absent=\`expr \$count_absent + 1\`
+              test -n "\$NCBI_AUTOMATED_BUILD" && echo "DIS" >> "\$x_test_rep"
       
-   elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
-      echo "SKP --  \$x_cmd"
-      echo "SKP --  \$x_cmd" >> \$res_log
-      count_absent=\`expr \$count_absent + 1\`
-      test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
+           elif grep NCBI_UNITTEST_SKIPPED \$x_test_out >/dev/null; then
+              echo "SKP --  \$x_cmd"
+              echo "SKP --  \$x_cmd" >> \$res_log
+              count_absent=\`expr \$count_absent + 1\`
+              test -n "\$NCBI_AUTOMATED_BUILD" && echo "SKP" >> "\$x_test_rep"
       
-   elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$x_test_out >/dev/null; then
-      echo "TO  --  \$x_cmd"
-      echo "TO  --  \$x_cmd" >> \$res_log
-      count_timeout=\`expr \$count_timeout + 1\`
-      test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
+           elif grep NCBI_UNITTEST_TIMEOUTS_BUT_NO_ERRORS \$x_test_out >/dev/null; then
+              echo "TO  --  \$x_cmd"
+              echo "TO  --  \$x_cmd" >> \$res_log
+              count_timeout=\`expr \$count_timeout + 1\`
+              test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
 
-   elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
-      echo "TO  --  \$x_cmd     (\$exec_time)"
-      echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
-      count_timeout=\`expr \$count_timeout + 1\`
-      test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
+           elif egrep "Maximum execution .* is exceeded" \$x_test_out >/dev/null; then
+              echo "TO  --  \$x_cmd     (\$exec_time)"
+              echo "TO  --  \$x_cmd     (\$exec_time)" >> \$res_log
+              count_timeout=\`expr \$count_timeout + 1\`
+              test -n "\$NCBI_AUTOMATED_BUILD" && echo "TO" >> "\$x_test_rep"
 
-   elif test \$result -eq 0; then
-      echo "OK  --  \$x_cmd     (\$exec_time)"
-      echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
-      count_ok=\`expr \$count_ok + 1\`
-      test -n "\$NCBI_AUTOMATED_BUILD" && echo "OK" >> "\$x_test_rep"
+           elif test \$result -eq 0; then
+              echo "OK  --  \$x_cmd     (\$exec_time)"
+              echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
+              count_ok=\`expr \$count_ok + 1\`
+              test -n "\$NCBI_AUTOMATED_BUILD" && echo "OK" >> "\$x_test_rep"
 
-   else
-       echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
-       echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
-       count_err=\`expr \$count_err + 1\`
-       test -n "\$NCBI_AUTOMATED_BUILD" && echo "ERR" >> "\$x_test_rep"
-   fi
+           else
+               echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
+               echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
+               count_err=\`expr \$count_err + 1\`
+               test -n "\$NCBI_AUTOMATED_BUILD" && echo "ERR" >> "\$x_test_rep"
+           fi
    
-   if test -n "\$NCBI_AUTOMATED_BUILD"; then
-      echo "\$start_time" >> "\$x_test_rep"
-      echo "\$result"     >> "\$x_test_rep"
-      echo "\$exec_time"  >> "\$x_test_rep"
-      echo "\$x_authors"  >> "\$x_test_rep"
-      echo "\$load_avg"   >> "\$x_test_rep"
-      echo "\$runid"      >> "\$x_test_rep"
-   fi
+           if test -n "\$NCBI_AUTOMATED_BUILD"; then
+              echo "\$start_time" >> "\$x_test_rep"
+              echo "\$result"     >> "\$x_test_rep"
+              echo "\$exec_time"  >> "\$x_test_rep"
+              echo "\$x_authors"  >> "\$x_test_rep"
+              echo "\$load_avg"   >> "\$x_test_rep"
+              echo "\$runid"      >> "\$x_test_rep"
+           fi
+
+        else  # Check existence of the test's application directory
+           # Test application is absent
+           echo "ABS --  \$x_cmd - \$x_test"
+           echo "ABS --  \$x_cmd - \$x_test" >> \$res_log
+           count_absent=\`expr \$count_absent + 1\`
+           if test -n "\$NCBI_AUTOMATED_BUILD"; then
+              echo "ABS" >> "\$x_test_rep"
+              echo "\`date +'$x_date_format'\`" >> "\$x_test_rep"
+           fi
+        fi
+        
+    done  # Run test under all specified check tools   
 }
+
 
 # Save value of PATH environment variable
 saved_path="\$PATH"
