@@ -59,6 +59,7 @@ const char *  CNetStorageServerException::GetErrCodeString(void) const
     case eDatabaseError:                return "eDatabaseError";
     case eInvalidConfig:                return "eInvalidConfig";
     case eInvalidMetaInfoRequest:       return "eInvalidMetaInfoRequest";
+    case eUnknownError:                 return "eUnknownError";
     default:                            return CException::GetErrCodeString();
     }
 }

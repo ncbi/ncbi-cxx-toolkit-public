@@ -420,11 +420,12 @@ class NetStorageConsole:
 
     def upload( self, arguments ):
         " Uploads a file "
-        if len( arguments ) < 1:
-            print "At least one argument is required "
+        if len( arguments ) < 2:
+            print "Two arguments required: locator and file"
             return
 
-        fileName = arguments[ 0 ]
+        locator = arguments[ 0 ]
+        fileName = arguments[ 1 ]
 
         if not os.path.exists( fileName ):
             print "File '" + fileName + "' is not found"
@@ -438,10 +439,9 @@ class NetStorageConsole:
             return
 
         message = { 'Type':         'WRITE',
+                    'ObjectLoc':    locator,
                     'SessionID':    SESSIONID,
                     'ClientIP':     hostIP }
-        if len( arguments ) > 1:
-            message.update( json.loads( ' '.join( arguments[ 1 : ] ) ) )
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":

@@ -35,7 +35,6 @@
 #include "nst_exception.hpp"
 #include "nst_application.hpp"
 #include "nst_server.hpp"
-#include "nst_dbconnection_thread.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -47,8 +46,8 @@ CNSTDatabase::CNSTDatabase(CNetStorageServer *  server)
 {
     x_CreateDatabase();
     try {
-        m_RestoreConnectionThread = new CNSTDBConnectionThread(
-                                                m_Connected, m_Db);
+        m_RestoreConnectionThread.Reset(new CNSTDBConnectionThread(
+                                                m_Connected, m_Db));
         m_RestoreConnectionThread->Run();
     } catch (...) {
         delete m_Db;
@@ -75,7 +74,7 @@ CNSTDatabase::~CNSTDatabase(void)
 {
     m_RestoreConnectionThread->Stop();
     m_RestoreConnectionThread->Join();
-    delete m_RestoreConnectionThread;
+    m_RestoreConnectionThread.Reset(0);
 
     if (m_Connected)
         m_Db->Close();
@@ -121,9 +120,9 @@ CNSTDatabase::ExecSP_CreateClient(
     try {
         CQuery      query = x_NewQuery();
 
-        client_id = 0;
+        client_id = -1;
         query.SetParameter("@client_name", client);
-        query.SetParameter("@client_id", 0, eSDB_Int8, eSP_InOut);
+        query.SetParameter("@client_id", client_id, eSDB_Int8, eSP_InOut);
 
         query.ExecuteSP("CreateClient");
         query.VerifyDone();

@@ -394,7 +394,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 
 
     if (m_ByeReceived) {
-        // BYE message has been received before. Send error responce
+        // BYE message has been received before. Send error response
         // and close the connection.
         ERR_POST(Warning << "Received a message after BYE. "
                  "The connection will be closed.");
@@ -448,6 +448,12 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         http_error_code = eStatus_ServerError;
         error_code = CNetStorageServerException::eInternalError;
         error_client_message = ex.what();
+    }
+    catch (...) {
+        ERR_POST("Unknown exception");
+        http_error_code = eStatus_ServerError;
+        error_code = CNetStorageServerException::eInternalError;
+        error_client_message = "Unknown exception";
     }
 
     if (error) {
@@ -522,9 +528,33 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 m_Server->GetDb().ExecSP_CreateObjectWithClientID(
                         m_DBObjectID, object_loc_struct.GetUniqueKey(),
                         object_loc, m_ObjectSize, m_DBClientID);
-            } catch (...) {
+            } catch (const CException &  ex) {
+                x_SetCmdRequestStatus(eStatus_ServerError);
+                CJsonNode   response = CreateErrorResponseMessage(
+                                            m_DataMessageSN,
+                                            ex.GetErrCode(),
+                                            ex.what());
+
+                x_SendSyncMessage(response);
+                ERR_POST(ex);
+                x_PrintMessageRequestStop();
+
                 m_ObjectBeingWritten = NULL;
-                throw;
+                m_DataMessageSN = -1;
+                return;
+            } catch (...) {
+                x_SetCmdRequestStatus(eStatus_ServerError);
+                CJsonNode   response = CreateErrorResponseMessage(
+                                            m_DataMessageSN,
+                                            CNetStorageServerException::eUnknownError,
+                                            "Unknown metadata information DB error");
+                x_SendSyncMessage(response);
+                ERR_POST("Unknown metadata information DB error");
+                x_PrintMessageRequestStop();
+
+                m_ObjectBeingWritten = NULL;
+                m_DataMessageSN = -1;
+                return;
             }
         } else {
             // It was writing into existing object
@@ -536,6 +566,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
                 AppendWarning(response, eDatabaseWarning, ex.what());
                 x_SendSyncMessage(response);
+                ERR_POST(ex);
                 x_PrintMessageRequestStop();
 
                 m_ObjectBeingWritten = NULL;
@@ -546,6 +577,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 AppendWarning(response, eDatabaseWarning,
                               "Unknown updating object meta info error");
                 x_SendSyncMessage(response);
+                ERR_POST("Unknown updating object meta info error");
                 x_PrintMessageRequestStop();
 
                 m_ObjectBeingWritten = NULL;

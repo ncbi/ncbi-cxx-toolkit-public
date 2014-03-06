@@ -33,6 +33,9 @@
 #include <corelib/ncbiapp.hpp>
 #include <dbapi/simple/sdbapi.hpp>
 
+#include "nst_dbconnection_thread.hpp"
+
+
 
 BEGIN_NCBI_SCOPE
 
@@ -102,11 +105,11 @@ private:
                        const string &  procedure);
 
 private:
-    SDbAccessInfo               m_DbAccessInfo;
-    CNetStorageServer *         m_Server;
-    CDatabase *                 m_Db;
-    bool                        m_Connected;
-    CNSTDBConnectionThread *    m_RestoreConnectionThread;
+    SDbAccessInfo                   m_DbAccessInfo;
+    CNetStorageServer *             m_Server;
+    CDatabase *                     m_Db;
+    bool                            m_Connected;
+    CRef<CNSTDBConnectionThread>    m_RestoreConnectionThread;
 
     CNSTDatabase(const CNSTDatabase &  conn);
     CNSTDatabase & operator= (const CNSTDatabase &  conn);
