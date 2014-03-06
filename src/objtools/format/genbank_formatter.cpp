@@ -1800,7 +1800,10 @@ void CGenbankFormatter::FormatSequence
     CSeqVector_CI iter(vec, vec_pos, CSeqVector_CI::eCaseConversion_lower);
     if( ! bGapsHiddenUntilClicked ) {
         // normal case: print entire sequence, including all the N's in any gap.
-        s_FormatRegularSequencePiece( seq, text_os, iter, total, base_count );
+        try {
+            s_FormatRegularSequencePiece( seq, text_os, iter, total, base_count );
+        } catch (CSeqVectorException) {
+        }
     } else {
         // special case: instead of showing the N's in a gap right away, we have the 
         // "Expand Ns" link that users can click to show the Ns
@@ -1845,8 +1848,11 @@ void CGenbankFormatter::FormatSequence
             } else {
                 // create a fake total so we stop before the next gap
                 TSeqPos fake_total = distance_until_next_significant_gap;
-                s_FormatRegularSequencePiece( seq, text_os, iter, fake_total, base_count);
-                const TSeqPos amount_to_subtract_from_total = 
+                try {
+                    s_FormatRegularSequencePiece( seq, text_os, iter, fake_total, base_count);
+                } catch (CSeqVectorException) {
+                }
+                const TSeqPos amount_to_subtract_from_total =
                     ( distance_until_next_significant_gap - fake_total );
                 if( total >= amount_to_subtract_from_total ) {
                     total -= amount_to_subtract_from_total;
