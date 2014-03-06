@@ -249,6 +249,11 @@ def main():
                 return log( BASE_NO_ACTION_ALERT_CODE + 3,
                             "default queue class has not been found" )
             createTestQueue( nsConnect )
+
+        if not testQueueAcceptSubmit( nsConnect ):
+            return log( BASE_NO_ACTION_ALERT_CODE + 3,
+                            "test queue refuses submits" )
+
         start = datetime.datetime.now()
         operationTest( nsConnect, serviceName )
         end = datetime.datetime.now()
@@ -377,6 +382,15 @@ def testQueueExists( nsConnect ):
             return True
     return False
 
+def testQueueAcceptSubmit( nsConnect ):
+    " True id the LBSMD test queue is not in the refuse submits state "
+    printVerbose( "Testing if " + DYNAMIC_QUEUE_TO_TEST + " queue accepts submits" )
+    output = nsConnect.execute( "QINF2 " + DYNAMIC_QUEUE_TO_TEST )
+    values = cgi.parse_qs( output )
+    if 'refuse_submits' in values:
+        return values[ 'refuse_submits' ][ 0 ] == 'false'
+    return True
+
 def testDefaultQueueClassExists( nsConnect ):
     " True if 'default' queue class exists "
     printVerbose( "Testing if 'default' queue class exists" )
@@ -409,9 +423,9 @@ def operationTest( nsConnect, serviceName ):
 
     # affinity = str( os.getpid() )
     # Use service name as a test job affinity to avoid overflooding the
-    # affinity registry when many instances of the script test the sane NS
+    # affinity registry when many instances of the script test the same NS
     # instance via different services
-    affinity = serviceName
+    affinity = "LBSMDTest_via_" + serviceName
 
     jobKey = nsConnect.execute( "SUBMIT NoInput aff=" + affinity )
     printVerbose( "Getting job status (WST2)" )
