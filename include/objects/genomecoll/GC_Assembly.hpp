@@ -117,7 +117,7 @@ public:
     TAssemblyUnits GetAssemblyUnits() const;
 
     /// Retrieve a list of all full assemblies contained in this assembly
-    /// Note that, if the assemblu is a full assembly, then it will be the only
+    /// Note that, if the assembly is a full assembly, then it will be the only
     /// assembly returned; also, if the assembly is not an assembly set, then
     /// the base assembly will be returned.
     TFullAssemblies GetFullAssemblies() const;
