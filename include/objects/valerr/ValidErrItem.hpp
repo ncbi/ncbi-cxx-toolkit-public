@@ -505,6 +505,7 @@ enum EErrType {
     eErr_SEQ_FEAT_FeatureIsMostlyNs,
     eErr_SEQ_FEAT_CDSonMinusStrandTranscribedRNA,
     eErr_SEQ_FEAT_MultipleGenCodes,
+    eErr_SEQ_FEAT_InvalidFuzz,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,

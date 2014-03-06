@@ -2067,6 +2067,26 @@ bool CValidError_imp::x_CheckSeqInt
         int_cur->GetStrand() : eNa_strand_unknown;
     id_cur = &int_cur->GetId();
     bool chk = IsValid(*int_cur, m_Scope);
+    // check for invalid fuzz on Point represented by Interval
+    if (int_cur->IsSetFrom() && int_cur->IsSetTo()
+        && int_cur->GetFrom() == int_cur->GetTo()
+        && int_cur->IsSetFuzz_from() 
+        && int_cur->GetFuzz_from().IsLim()
+        && int_cur->IsSetFuzz_to()
+        && int_cur->GetFuzz_to().IsLim()
+        && int_cur->GetFuzz_from().GetLim() == int_cur->GetFuzz_to().GetLim()) {
+        CInt_fuzz::TLim lim = int_cur->GetFuzz_from().GetLim();
+        if (lim == CInt_fuzz::eLim_tl) {
+            PostErr(eDiag_Error,
+                eErr_SEQ_FEAT_InvalidFuzz,
+                "Should not specify 'space to left' for both ends of interval", obj);
+        } else if (lim == CInt_fuzz::eLim_tr) {        
+            PostErr(eDiag_Error,
+                eErr_SEQ_FEAT_InvalidFuzz,
+                "Should not specify 'space to right' for both ends of interval", obj);
+        }
+    }        
+    
     if (chk  &&  int_prv  && id_prv) {
         if (IsSameBioseq(*id_prv, *id_cur, m_Scope)) {
             if (strand_cur == eNa_strand_minus) {

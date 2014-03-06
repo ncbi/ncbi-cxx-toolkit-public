@@ -1569,7 +1569,9 @@ same id type" } },
    { eErr_SEQ_FEAT_MultipleGenCodes,
    { "MultipleGenCodes",
 "The genetic codes are the same for all CDS features on one Bioseq." } },
-
+   { eErr_SEQ_FEAT_InvalidFuzz,
+   { "InvalidFuzz",
+   "Incorrect use of Int-fuzz.lim" } },
 
 /* SEQ_ALIGN */
 
