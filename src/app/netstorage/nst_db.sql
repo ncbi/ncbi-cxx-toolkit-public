@@ -236,9 +236,12 @@ CREATE PROCEDURE GetNextObjectID
     @next_id     BIGINT OUT
 AS
 BEGIN
+    DECLARE @row_count  INT
+
     SET @next_id = NULL
     UPDATE ObjectIdGen SET @next_id = next_object_id = next_object_id + 1
-    IF @@ERROR != 0 OR @@ROWCOUNT = 0 OR @next_id IS NULL
+    SET @row_count = @@ROWCOUNT
+    IF @@ERROR != 0 OR @row_count = 0 OR @next_id IS NULL
         RETURN 1
     RETURN 0
 END
@@ -252,6 +255,7 @@ AS
 BEGIN
     BEGIN TRANSACTION
     BEGIN TRY
+        SET @client_id = NULL
         SELECT @client_id = client_id FROM Clients WHERE name = @client_name
         IF @client_id IS NULL
         BEGIN
@@ -285,6 +289,7 @@ CREATE PROCEDURE CreateObject
 AS
 BEGIN
     BEGIN TRY
+        DECLARE @row_count  INT
         INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
         VALUES (@object_id,
                 @object_key,
@@ -292,7 +297,8 @@ BEGIN
                 (SELECT client_id FROM Clients WHERE name = @client_name),
                 GETDATE(),
                 @object_size)
-        IF @@ERROR != 0 OR @@ROWCOUNT = 0
+        SET @row_count = @@ROWCOUNT
+        IF @@ERROR != 0 OR @row_count = 0
             RETURN 1
         RETURN 0
     END TRY
@@ -317,9 +323,11 @@ CREATE PROCEDURE CreateObjectWithClientID
 AS
 BEGIN
     BEGIN TRY
+        DECLARE @row_count  INT
         INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
         VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
-        IF @@ERROR != 0 OR @@ROWCOUNT = 0
+        SET @row_count = @@ROWCOUNT
+        IF @@ERROR != 0 OR @row_count = 0
             RETURN 1
         RETURN 0
     END TRY
@@ -346,20 +354,23 @@ BEGIN
     BEGIN TRANSACTION
     BEGIN TRY
 
+        DECLARE @row_count  INT
+
         UPDATE Objects SET size = @object_size, tm_write = GETDATE() WHERE object_key = @object_key
+        SET @row_count = @@ROWCOUNT
         IF @@ERROR != 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
         END
 
-        IF @@ROWCOUNT = 0       -- object is not found; create it
+        IF @row_count = 0       -- object is not found; create it
         BEGIN
             DECLARE @object_id  BIGINT
-            DECLARE @ret_val    BIGINT
-            EXECUTE @ret_val = GetNextObjectID @object_id OUTPUT
+            DECLARE @ret_code   BIGINT
+            EXECUTE @ret_code = GetNextObjectID @object_id OUTPUT
 
-            IF @ret_val != 0
+            IF @ret_code != 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -367,7 +378,8 @@ BEGIN
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write, size)
             VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
-            IF @@ERROR != 0 OR @@ROWCOUNT = 0
+            SET @row_count = @@ROWCOUNT
+            IF @@ERROR != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -401,20 +413,23 @@ BEGIN
     BEGIN TRANSACTION
     BEGIN TRY
 
+        DECLARE @row_count  INT
+
         UPDATE Objects SET tm_read = GETDATE() WHERE object_key = @object_key
+        SET @row_count = @@ROWCOUNT
         IF @@ERROR != 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
         END
 
-        IF @@ROWCOUNT = 0       -- object is not found; create it
+        IF @row_count = 0       -- object is not found; create it
         BEGIN
             DECLARE @object_id  BIGINT
-            DECLARE @ret_val    BIGINT
-            EXECUTE @ret_val = GetNextObjectID @object_id OUTPUT
+            DECLARE @ret_code   BIGINT
+            EXECUTE @ret_code = GetNextObjectID @object_id OUTPUT
 
-            IF @ret_val != 0
+            IF @ret_code != 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -422,7 +437,8 @@ BEGIN
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_read, size)
             VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
-            IF @@ERROR != 0 OR @@ROWCOUNT = 0
+            SET @row_count = @@ROWCOUNT
+            IF @@ERROR != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -455,20 +471,23 @@ BEGIN
     BEGIN TRANSACTION
     BEGIN TRY
 
+        DECLARE @row_count  INT
+
         UPDATE Objects SET object_loc = @object_loc WHERE object_key = @object_key
+        SET @row_count = @@ROWCOUNT
         IF @@ERROR != 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
         END
 
-        IF @@ROWCOUNT = 0       -- object is not found; create it
+        IF @row_count = 0       -- object is not found; create it
         BEGIN
             DECLARE @object_id  BIGINT
-            DECLARE @ret_val    BIGINT
-            EXECUTE @ret_val = GetNextObjectID @object_id OUTPUT
+            DECLARE @ret_code   BIGINT
+            EXECUTE @ret_code = GetNextObjectID @object_id OUTPUT
 
-            IF @ret_val != 0
+            IF @ret_code != 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -476,7 +495,8 @@ BEGIN
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write)
             VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE())
-            IF @@ERROR != 0 OR @@ROWCOUNT = 0
+            SET @row_count = @@ROWCOUNT
+            IF @@ERROR != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -550,6 +570,7 @@ AS
 BEGIN
     DECLARE @object_id      BIGINT = NULL
     DECLARE @attr_id        BIGINT = NULL
+    DECLARE @row_count      INT
 
     BEGIN TRANSACTION
     BEGIN TRY
@@ -563,10 +584,10 @@ BEGIN
         END
         IF @object_id IS NULL       -- object is not found; create it
         BEGIN
-            DECLARE @ret_val    BIGINT
-            EXECUTE @ret_val = GetNextObjectID @object_id OUTPUT
+            DECLARE @ret_code   BIGINT
+            EXECUTE @ret_code = GetNextObjectID @object_id OUTPUT
 
-            IF @ret_val != 0
+            IF @ret_code != 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -574,7 +595,8 @@ BEGIN
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_attr_write)
             VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE())
-            IF @@ERROR != 0 OR @@ROWCOUNT = 0
+            SET @row_count = @@ROWCOUNT
+            IF @@ERROR != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -601,7 +623,8 @@ BEGIN
 
         -- Create or update the attribute
         UPDATE AttrValues SET value = @attr_value WHERE object_id = @object_id AND attr_id = @attr_id
-        IF @@ROWCOUNT = 0
+        SET @row_count = @@ROWCOUNT
+        IF @row_count = 0
             INSERT INTO AttrValues (object_id, attr_id, value) VALUES (@object_id, @attr_id, @attr_value)
     END TRY
     BEGIN CATCH
@@ -628,6 +651,7 @@ AS
 BEGIN
     DECLARE @object_id      BIGINT = NULL
     DECLARE @attr_id        BIGINT = NULL
+    DECLARE @row_count      INT
 
     BEGIN TRANSACTION
     BEGIN TRY
@@ -646,7 +670,8 @@ BEGIN
         END
 
         UPDATE Objects SET tm_attr_write = GETDATE() WHERE object_id = @object_id
-        IF @@ERROR != 0 OR @@ROWCOUNT = 0
+        SET @row_count = @@ROWCOUNT
+        IF @@ERROR != 0 OR @row_count = 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
@@ -665,7 +690,8 @@ BEGIN
         END
 
         DELETE FROM AttrValues WHERE object_id = @object_id AND attr_id = @attr_id
-        IF @@ROWCOUNT = 0
+        SET @row_count = @@ROWCOUNT
+        IF @row_count = 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN -3           -- attribute value is not found
@@ -694,6 +720,9 @@ AS
 BEGIN
     DECLARE @object_id      BIGINT = NULL
     DECLARE @attr_id        BIGINT = NULL
+    DECLARE @row_count      INT
+
+    SET @attr_value = NULL
 
     BEGIN TRANSACTION
     BEGIN TRY
@@ -737,7 +766,8 @@ BEGIN
 
         -- Update attribute timestamp for the existing object
         UPDATE Objects SET tm_attr_read = GETDATE() WHERE object_id = @object_id
-        IF @@ERROR != 0 OR @@ROWCOUNT = 0
+        SET @row_count = @@ROWCOUNT
+        IF @@ERROR != 0 OR @row_count = 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
