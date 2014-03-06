@@ -156,7 +156,7 @@ NCBITEST_AUTO_FINI()
 
 static CRef <CObjectManager> objmgr = CObjectManager::GetInstance();
 static CRef <CScope> scope (new CScope(*objmgr));
-void RunAndCheckTest(CRef <CSeq_entry>& entry, const string& test_name, const string& msg)
+void RunAndCheckTest(CRef <CSeq_entry> entry, const string& test_name, const string& msg)
 {
    objmgr.Reset(CObjectManager::GetInstance().GetPointer());
    scope.Reset(new CScope(*objmgr));
@@ -164,24 +164,23 @@ void RunAndCheckTest(CRef <CSeq_entry>& entry, const string& test_name, const st
    config->SetTopLevelSeqEntry(&seh);
 
    config->SetArg("e", test_name);
-   CRef <CClickableItem> c_item(0);
    config->CollectTests();
    config->Run();
    CDiscRepOutput output_obj;
+   CClickableItem c_item;
    output_obj.Export(c_item, test_name);
+   NCBITEST_CHECK_MESSAGE(!(c_item.description).empty(), "no report");
    if (msg == "print") {
-      cerr << "desc " << c_item->description << endl;
+      cerr << "desc " << c_item.description << endl;
       return;
    }
-   NCBITEST_CHECK_MESSAGE(!c_item.Empty() && !(c_item->description).empty(),
-                               "no report");
-   NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
+   NCBITEST_CHECK_MESSAGE(c_item.item_list.size() == c_item.obj_list.size(),
               "The sizes of item_list and obj_list are not equal");
-   NCBITEST_CHECK_MESSAGE(c_item->description == msg,
-              "Test report is incorrect: " + c_item->description);
+   NCBITEST_CHECK_MESSAGE(c_item.description == msg,
+              "Test report is incorrect: " + c_item.description);
 };
 
-void RunTest(CRef <CClickableItem>& c_item, const string& setting_name)
+void RunTest(CClickableItem& c_item, const string& setting_name)
 {
    config->CollectTests();
    config->Run();
@@ -196,7 +195,7 @@ CRef <CSeq_entry> BuildGoodRnaSeq()
    return entry; 
 };
 
-CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_ref::EType type, const string ext_name)
+CRef <CSeq_feat> MakeRNAFeatWithExtName(CRef <CSeq_entry> nuc_entry, CRNA_ref::EType type, const string ext_name)
 {
    CRef <CSeq_feat> rna_feat(new CSeq_feat);
    CRef <CRNA_ref::C_Ext> rna_ext (new CRNA_ref::C_Ext);
@@ -246,13 +245,13 @@ CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm, int to)
                          (CSeqFeatData::ESubtype)0, fm, to));
 };
 
-void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome = CBioSource::eGenome_unknown);
-void MakeBioSource(CRef <CSeq_entry>& entry, CBioSource::EGenome genome)
+void MakeBioSource(CRef <CSeq_entry> entry, CBioSource::EGenome genome = CBioSource::eGenome_unknown);
+void MakeBioSource(CRef <CSeq_entry> entry, CBioSource::EGenome genome)
 {
    entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(genome);
 };
 
-void RunAndCheckMultiReports(CRef <CSeq_entry>& entry, const string& test_name, const set <string>& msgs)
+void RunAndCheckMultiReports(CRef <CSeq_entry> entry, const string& test_name, const set <string>& msgs)
 {
    objmgr.Reset(CObjectManager::GetInstance().GetPointer());
    scope.Reset(new CScope(*objmgr));
@@ -295,7 +294,7 @@ void RunAndCheckMultiReports(CRef <CSeq_entry>& entry, const string& test_name, 
 
 
 
-void AddToSeqSubmitForSubmitBlkConflict(CRef <CSeq_submit>& seq_submit, string id)
+void AddToSeqSubmitForSubmitBlkConflict(CRef <CSeq_submit> seq_submit, string id)
 {
    CRef <CSubmit_block> submit_blk(new CSubmit_block);
 
@@ -336,47 +335,47 @@ void AddToSeqSubmitForSubmitBlkConflict(CRef <CSeq_submit>& seq_submit, string i
 
 BOOST_AUTO_TEST_CASE(DISC_SUBMITBLOCK_CONFLICT)
 {
-   vector <CConstRef <CObject> > strs;
+    vector <CConstRef <CObject> > strs;
 
-   CRef <CSeq_submit> seq_submit (new CSeq_submit);
-   AddToSeqSubmitForSubmitBlkConflict(seq_submit, "1");
-   strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
+    CRef <CSeq_submit> seq_submit (new CSeq_submit);
+    AddToSeqSubmitForSubmitBlkConflict(seq_submit, "1");
+    strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
 
-   seq_submit.Reset(new CSeq_submit);
-   AddToSeqSubmitForSubmitBlkConflict(seq_submit, "2");
-   // set hup
-   seq_submit->SetSub().SetHup(true);
-   strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
+    seq_submit.Reset(new CSeq_submit);
+    AddToSeqSubmitForSubmitBlkConflict(seq_submit, "2");
+    // set hup
+    seq_submit->SetSub().SetHup(true);
+    strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
    
-   seq_submit.Reset(new CSeq_submit);
-   AddToSeqSubmitForSubmitBlkConflict(seq_submit, "3");
-   // change date:
-   seq_submit->SetSub().SetCit().SetDate().SetStd().SetDay(20);
-   strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
+    seq_submit.Reset(new CSeq_submit);
+    AddToSeqSubmitForSubmitBlkConflict(seq_submit, "3");
+    // change date:
+    seq_submit->SetSub().SetCit().SetDate().SetStd().SetDay(20);
+    strs.push_back(CConstRef <CObject>(seq_submit.GetPointer()));
 
-   // entry no seq-submit
-   CRef <CSeq_entry> entry = BuildGoodSeq();
-   CRef <CSeq_id> seq_id (new CSeq_id);
-   seq_id->SetLocal().SetStr("good4");
-   ChangeId(entry, seq_id);
-   strs.push_back(CConstRef <CObject> (entry.GetPointer()));
-   config->SetMultiObjects(&strs);
-   config->SetArg("e", "DISC_SUBMITBLOCK_CONFLICT");
+    // entry no seq-submit
+    CRef <CSeq_entry> entry = BuildGoodSeq();
+    CRef <CSeq_id> seq_id (new CSeq_id);
+    seq_id->SetLocal().SetStr("good4");
+    ChangeId(entry, seq_id);
+    strs.push_back(CConstRef <CObject> (entry.GetPointer()));
+    config->SetMultiObjects(&strs);
+    config->SetArg("e", "DISC_SUBMITBLOCK_CONFLICT");
 
-   config->CollectTests();
-   config->RunMultiObjects(); 
-   CRef <CClickableItem> c_item;
-   CDiscRepOutput output_obj;
-   output_obj.Export(c_item, "DISC_SUBMITBLOCK_CONFLICT");
+    config->CollectTests();
+    config->RunMultiObjects(); 
+    CDiscRepOutput output_obj;
+    CClickableItem c_item;
+    output_obj.Export(c_item, "DISC_SUBMITBLOCK_CONFLICT");
   
-   bool has_report = !c_item.Empty() && !(c_item->description).empty() 
-                       && !(c_item->subcategories).empty();
-   NCBITEST_CHECK_MESSAGE(has_report, "no report"); 
-   NCBITEST_CHECK_MESSAGE(c_item->description == "SubmitBlock Conflicts",
-                           "Test report is incorrect: " + c_item->description);
-   unsigned i=0;
-   string strtmp;
-   ITERATE (vector <CRef <CClickableItem> >, it, c_item->subcategories) {
+    bool has_report 
+          = !(c_item.description.empty()) && !(c_item.subcategories.empty());
+    NCBITEST_CHECK_MESSAGE(has_report, "no report"); 
+    NCBITEST_CHECK_MESSAGE(c_item.description == "SubmitBlock Conflicts",
+                           "Test report is incorrect: " + c_item.description);
+    unsigned i=0;
+    string strtmp;
+    ITERATE (vector <CRef <CClickableItem> >, it, c_item.subcategories) {
        NCBITEST_CHECK_MESSAGE(!(*it).Empty() && !((*it)->description).empty(),
                                 "subcategory has no report");
        switch (i) {
@@ -393,8 +392,9 @@ BOOST_AUTO_TEST_CASE(DISC_SUBMITBLOCK_CONFLICT)
        NCBITEST_CHECK_MESSAGE((*it)->item_list.size() == (*it)->obj_list.size(),
               "The sizes of item_list and obj_list are not equal");
        i++;
-   }
+    }
 };
+
 
 BOOST_AUTO_TEST_CASE(DISC_SEGSETS_PRESENT)
 {
@@ -878,12 +878,10 @@ BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
  
    config->SetTopLevelSeqEntry(&seh);
    config->SetArg("e", "MISSING_GENPRODSET_TRANSCRIPT_ID");
-   CRef <CClickableItem> c_item(0);   
+   CClickableItem c_item;
    RunTest(c_item, "MISSING_GENPRODSET_TRANSCRIPT_ID"); 
-   if (!c_item.Empty()) {
-      NCBITEST_CHECK_MESSAGE(c_item.Empty(), 
-               "Wrong report: " + c_item->description);
-   }
+   NCBITEST_CHECK_MESSAGE(c_item.description.empty(), 
+                           "Wrong report: " + c_item.description);
 
    // reset Product of mRNA
    CRef <CSeq_entry> 
@@ -943,7 +941,7 @@ BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
    CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
    istr >> MSerial_AsnText >> *entry;
    RunAndCheckTest(entry, "DISC_COUNT_NUCLEOTIDES",
-                   "1 nucleotide Bioseq is present.");
+                        "1 nucleotide Bioseq is present.");
 };
 
 

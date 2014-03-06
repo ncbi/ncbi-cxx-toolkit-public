@@ -477,7 +477,7 @@ void CDiscRepOutput :: x_WriteDiscRepSummary()
 
       // FATAL tag
       if (x_RmTagInDescp(desc, "FATAL: ")) {
-          *(oc.output_f)  << "FATAL:";
+          *(oc.output_f)  << "FATAL: ";
       }
       *(oc.output_f) << c_item->setting_name << ": " << desc << endl;
       if ("SUSPECT_PRODUCT_NAMES" == c_item->setting_name) {
@@ -516,6 +516,24 @@ bool CDiscRepOutput :: x_OkToExpand(CRef < CClickableItem > c_item)
 };
 
 
+bool CDiscRepOutput :: x_SubsHaveTags(CRef <CClickableItem> c_item)
+{
+  if (c_item->subcategories.empty()) {
+      return false;
+  }
+  size_t pos;
+  ITERATE (vector <CRef <CClickableItem> >, sit, c_item->subcategories) {
+    pos = (*sit)->description.find("FATAL: ");
+     if ( (pos != string::npos) && !pos) {
+         return true;
+     }
+     else if (x_SubsHaveTags(*sit)) {
+          return true;
+     }
+  }
+  return false;
+};
+
 void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, bool use_flag, bool IsSubcategory)
 {
   string prefix, desc;
@@ -549,11 +567,11 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
  
       // FATAL tag
       if (x_RmTagInDescp(desc, "FATAL: ")) {
-         prefix = "FATAL:" + prefix;
+         prefix = "FATAL: " + prefix;
       }
 
-      if ( ( oc.add_output_tag || oc.add_extra_output_tag) 
-                 && !prefix.empty()) {
+      if ( (oc.add_output_tag || oc.add_extra_output_tag) 
+               && (!prefix.empty() || x_SubsHaveTags(c_item)) ) {
             c_item->expanded = true;
       }
       // summary report
@@ -631,7 +649,8 @@ void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const s
      x_StandardWriteDiscRepItems (oc, c_item, prefix, !c_item->expanded);
   }
   if ((!c_item->next_sibling && c_item->subcategories.empty()) 
-        || (!c_item->subcategories.empty() && !c_item->item_list.empty()) ) {// for !OkToExpand
+        || (!c_item->subcategories.empty() && !c_item->item_list.empty()
+                &&  !c_item->expanded) ) {
 
       *(oc.output_f) << endl;
  }
@@ -1102,16 +1121,16 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableItem> >& c_item, const str
 };
 
 // for unit test
-void CDiscRepOutput :: Export(CRef <CClickableItem>& c_item, const string& setting_name)
+void CDiscRepOutput :: Export(CClickableItem& c_item, const string& setting_name)
 {
    if (!thisInfo.disc_report_data.empty()) {
       if (thisInfo.disc_report_data.size() == 1) {
-           c_item = thisInfo.disc_report_data[0];
+          c_item = thisInfo.disc_report_data[0].GetObject();
       }
       else {
          ITERATE ( vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
             if ( (*it)->setting_name == setting_name) {
-              c_item = (*it);
+               c_item = (*it).GetObject();
             }
          }
       }

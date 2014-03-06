@@ -584,7 +584,7 @@ void CTestAndRepData :: RmvRedundancy(vector <string>& items, vector <CConstRef 
 
 
 
-void CTestAndRepData :: GetProperCItem(CRef <CClickableItem>& c_item, bool* citem1_used)
+void CTestAndRepData :: GetProperCItem(CRef <CClickableItem> c_item, bool* citem1_used)
 {
    if (*citem1_used) {
      c_item = CRef <CClickableItem> (new CClickableItem);
@@ -1392,7 +1392,7 @@ void CTestAndRepData :: GetTestItemList(const vector <string>& itemlist, Str2Str
    }
 };
 
-void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const string& sub_grp_nm, const vector <string>* itemlist, const string& desc1, const string& desc2, ECommentTp comm, bool copy2parent, const string& desc3, bool halfsize, unsigned input_cnt, bool rm_redundancy)
+void CTestAndRepData :: AddSubcategory(CRef <CClickableItem> c_item, const string& sub_grp_nm, const vector <string>* itemlist, const string& desc1, const string& desc2, ECommentTp comm, bool copy2parent, const string& desc3, bool halfsize, unsigned input_cnt, bool rm_redundancy)
 {    
      size_t pos;
      CRef <CClickableItem> c_sub (new CClickableItem);

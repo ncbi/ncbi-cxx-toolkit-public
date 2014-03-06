@@ -3023,7 +3023,7 @@ bool CSuspectRuleCheck :: DoesObjectMatchRnaQualConstraint (const CSeq_feat& seq
   return rval;
 };
 
-void CSuspectRuleCheck :: MakeFeatureField(CRef <CFeature_field>& f, CFeat_qual_choice& f_qual, EMacro_feature_type f_tp, EFeat_qual_legal legal_qual)
+void CSuspectRuleCheck :: MakeFeatureField(CRef <CFeature_field> f, CFeat_qual_choice& f_qual, EMacro_feature_type f_tp, EFeat_qual_legal legal_qual)
 {
    f->SetType(f_tp);
    f_qual.SetLegal_qual(legal_qual);
@@ -3331,7 +3331,7 @@ CConstRef <CSeq_feat> CSuspectRuleCheck::AddProtFeatForCds(const CSeq_feat& cd_f
 };
 
 // part of BuildCGPSetFromCodingRegion
-void CSuspectRuleCheck :: GetProtFromCodingRegion (CRef <CCGPSetData>& cgp, const CSeq_feat& cd_feat)
+void CSuspectRuleCheck :: GetProtFromCodingRegion (CRef <CCGPSetData> cgp, const CSeq_feat& cd_feat)
 {
   if (cd_feat.CanGetProduct()) {
     CBioseq_Handle 
