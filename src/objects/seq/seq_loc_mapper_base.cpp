@@ -208,7 +208,7 @@ CMappingRange::CMappingRange(CSeq_id_Handle     src_id,
       m_Dst_total_len(dst_total_len),
       m_Src_bioseq_len(src_bioseq_len),
       m_Dst_len(dst_len),
-      m_Group(0)      
+      m_Group(0)
 {
     return;
 }
@@ -1784,20 +1784,29 @@ void CSeq_loc_Mapper_Base::x_InitSparse(const CSparse_seg& sparse,
 //
 
 
+const CSeq_id_Handle&
+CSeq_loc_Mapper_Base::x_GetPrimaryId(const CSeq_id_Handle& synonym) const
+{
+    TSynonymMap::const_iterator primary_it = m_SynonymMap.find(synonym);
+    return primary_it != m_SynonymMap.end() ? primary_it->second : synonym;
+}
+
+
 CSeq_loc_Mapper_Base::ESeqType
 CSeq_loc_Mapper_Base::GetSeqType(const CSeq_id_Handle& idh) const
 {
+    // NOTE: Maping synonyms to the main id should be done by the caller.
     _ASSERT(m_SeqInfo);
+    // Check cached types.
+    TSeqTypeById::const_iterator found = m_SeqTypes.find(idh);
+    if (found != m_SeqTypes.end()) {
+        return found->second;
+    }
+    // New sequence - check the type and cache it.
     ESeqType seqtype = m_SeqInfo->GetSequenceType(idh);
     if (seqtype != eSeq_unknown) {
         // Cache sequence type for all synonyms if any
-        TSynonyms synonyms;
-        CollectSynonyms(idh, synonyms);
-        if (synonyms.size() > 1) {
-            ITERATE(TSynonyms, syn_it, synonyms) {
-                SetSeqTypeById(*syn_it, seqtype);
-            }
-        }
+        SetSeqTypeById(idh, seqtype);
     }
     return seqtype;
 }
@@ -1809,16 +1818,39 @@ void CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id,
     _ASSERT(m_SeqInfo);
     m_SeqInfo->CollectSynonyms(id, synonyms);
     if ( synonyms.empty() ) {
-        // Add at least the original id
         synonyms.insert(id);
     }
+}
+
+
+const CSeq_id_Handle&
+CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id) const
+{
+    TSynonymMap::const_iterator primary_it = m_SynonymMap.find(id);
+    if (primary_it != m_SynonymMap.end()) {
+        return primary_it->second;
+    }
+    _ASSERT(m_SeqInfo);
+    TSynonyms synonyms;
+    m_SeqInfo->CollectSynonyms(id, synonyms);
+    ITERATE(TSynonyms, syn, synonyms) {
+        m_SynonymMap[*syn] = id;
+    }
+    return id;
 }
 
 
 TSeqPos CSeq_loc_Mapper_Base::GetSequenceLength(const CSeq_id& id)
 {
     _ASSERT(m_SeqInfo);
-    return m_SeqInfo->GetSequenceLength(CSeq_id_Handle::GetHandle(id));
+    CSeq_id_Handle idh = CollectSynonyms(CSeq_id_Handle::GetHandle(id));
+    TLengthMap::const_iterator it = m_LengthMap.find(idh);
+    if (it != m_LengthMap.end()) {
+        return it->second;
+    }
+    TSeqPos len = m_SeqInfo->GetSequenceLength(idh);
+    m_LengthMap[idh] = len;
+    return len;
 }
 
 
@@ -1827,7 +1859,8 @@ void CSeq_loc_Mapper_Base::SetSeqTypeById(const CSeq_id_Handle& idh,
 {
     // Do not store unknown types
     if (seqtype == eSeq_unknown) return;
-    TSeqTypeById::const_iterator it = m_SeqTypes.find(idh);
+    CSeq_id_Handle primary_id = CollectSynonyms(idh);
+    TSeqTypeById::const_iterator it = m_SeqTypes.find(primary_id);
     if (it != m_SeqTypes.end()) {
         // If the type is already known and different from the new one,
         // throw the exception.
@@ -1837,7 +1870,7 @@ void CSeq_loc_Mapper_Base::SetSeqTypeById(const CSeq_id_Handle& idh,
         }
         return;
     }
-    m_SeqTypes[idh] = seqtype;
+    m_SeqTypes[primary_id] = seqtype;
 }
 
 
@@ -1887,6 +1920,7 @@ CSeq_loc_Mapper_Base::x_ForceSeqTypes(const CSeq_loc& loc) const
     for (CSeq_loc_CI it(loc); it; ++it) {
         CSeq_id_Handle idh = it.GetSeq_id_Handle();
         if ( !idh ) continue; // NULL?
+        idh = CollectSynonyms(idh);
         TSeqTypeById::iterator st = m_SeqTypes.find(idh);
         if (st != m_SeqTypes.end()  &&  st->second != eSeq_unknown) {
             // New sequence type could be detected.
@@ -1925,10 +1959,11 @@ void CSeq_loc_Mapper_Base::x_AdjustSeqTypesToProt(const CSeq_id_Handle& idh)
     // We need to check a lot of conditions not to spoil the mapping data.
     bool have_id = false;    // Is the id known to the mapper?
     bool have_known = false; // Are there known sequence types?
+    CSeq_id_Handle primary_id = x_GetPrimaryId(idh);
     // Make sure all ids have unknown types (could not be detected during
     // the initialization).
     ITERATE(CMappingRanges::TIdMap, id_it, m_Mappings->GetIdMap()) {
-        if (id_it->first == idh) {
+        if (id_it->first == primary_id) {
             have_id = true;
         }
         if (GetSeqTypeById(id_it->first) != eSeq_unknown) {
@@ -2125,18 +2160,13 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
     if (m_DstRanges.size() <= size_t(dst_strand)) {
         m_DstRanges.resize(size_t(dst_strand) + 1);
     }
-    // Collect all source id synonyms and create mapping range for each
-    // of them. CollectSynonyms must add the original id to the list.
-    TSynonyms syns;
-    CollectSynonyms(CSeq_id_Handle::GetHandle(src_id), syns);
-    ITERATE(TSynonyms, syn_it, syns) {
-        CRef<CMappingRange> rg = m_Mappings->AddConversion(
-            *syn_it, src_start, length, src_strand,
-            CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
-            ext_right, frame, dst_total_len, src_bioseq_len, dst_len );
-        if ( m_CurrentGroup ) {
-            rg->SetGroup(m_CurrentGroup);
-        }
+    CSeq_id_Handle main_id = CollectSynonyms(CSeq_id_Handle::GetHandle(src_id));
+    CRef<CMappingRange> rg = m_Mappings->AddConversion(
+        main_id, src_start, length, src_strand,
+        CSeq_id_Handle::GetHandle(dst_id), dst_start, dst_strand,
+        ext_right, frame, dst_total_len, src_bioseq_len, dst_len );
+    if ( m_CurrentGroup ) {
+        rg->SetGroup(m_CurrentGroup);
     }
     // Add destination range.
     m_DstRanges[size_t(dst_strand)][CSeq_id_Handle::GetHandle(dst_id)]
@@ -2153,8 +2183,7 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
     // a bioseq handle or a seq-map).
     for (size_t str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
         NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
-            TSynonyms syns;
-            CollectSynonyms(id_it->first, syns);
+            CSeq_id_Handle main_id = CollectSynonyms(id_it->first);
             // Sort the ranges so that they can be merged.
             id_it->second.sort();
             TSeqPos dst_start = kInvalidSeqPos;
@@ -2185,16 +2214,13 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
                     dst_stop = max(dst_stop, rg_stop);
                     continue;
                 }
-                // Add mapping for each synonym.
-                ITERATE(TSynonyms, syn_it, syns) {
-                    // Separate ranges, add conversion and restart collecting
-                    m_Mappings->AddConversion(
-                        *syn_it, dst_start,
-                        dst_stop == kInvalidSeqPos
-                        ? kInvalidSeqPos : dst_stop - dst_start + 1,
-                        ENa_strand(str_idx),
-                        id_it->first, dst_start, ENa_strand(str_idx));
-                }
+                // Separate ranges, add conversion and restart collecting
+                m_Mappings->AddConversion(
+                    main_id, dst_start,
+                    dst_stop == kInvalidSeqPos
+                    ? kInvalidSeqPos : dst_stop - dst_start + 1,
+                    ENa_strand(str_idx),
+                    id_it->first, dst_start, ENa_strand(str_idx));
                 // Do we have the whole sequence already?
                 if (dst_stop == kInvalidSeqPos) {
                     // Prevent the range to be added one more time.
@@ -2207,14 +2233,12 @@ void CSeq_loc_Mapper_Base::x_PreserveDestinationLocs(void)
             }
             // Add any remaining range.
             if (dst_start < dst_stop) {
-                ITERATE(TSynonyms, syn_it, syns) {
-                    m_Mappings->AddConversion(
-                        *syn_it, dst_start,
-                        dst_stop == kInvalidSeqPos
-                        ? kInvalidSeqPos : dst_stop - dst_start + 1,
-                        ENa_strand(str_idx),
-                        id_it->first, dst_start, ENa_strand(str_idx));
-                }
+                m_Mappings->AddConversion(
+                    main_id, dst_start,
+                    dst_stop == kInvalidSeqPos
+                    ? kInvalidSeqPos : dst_stop - dst_start + 1,
+                    ENa_strand(str_idx),
+                    id_it->first, dst_start, ENa_strand(str_idx));
             }
         }
     }
@@ -2593,7 +2617,7 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
                                          TRangeFuzz       orig_fuzz)
 {
     bool res = false;
-    CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
+    CSeq_id_Handle src_idh = x_GetPrimaryId(CSeq_id_Handle::GetHandle(src_id));
     ESeqType src_type = GetSeqTypeById(src_idh);
     if (src_type == eSeq_prot  &&  !(src_rg.IsWhole() || src_rg.Empty()) ) {
         src_rg = TRange(src_rg.GetFrom()*3, src_rg.GetTo()*3 + 2);
@@ -2789,7 +2813,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         bool res = false;
         // Check if the id can be mapped at all.
         TRangeIterator mit = m_Mappings->BeginMappingRanges(
-            CSeq_id_Handle::GetHandle(src_loc.GetEmpty()),
+            x_GetPrimaryId(CSeq_id_Handle::GetHandle(src_loc.GetEmpty())),
             TRange::GetWhole().GetFrom(),
             TRange::GetWhole().GetTo());
         for ( ; mit; ++mit) {

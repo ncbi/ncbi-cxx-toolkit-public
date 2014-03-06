@@ -996,7 +996,8 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
 
     // Find all matching mappings.
     const CMappingRanges::TIdMap& idmap = m_LocMapper.m_Mappings->GetIdMap();
-    CMappingRanges::TIdIterator id_it = idmap.find(aln_row.m_Id);
+    CMappingRanges::TIdIterator id_it =
+        idmap.find(m_LocMapper.x_GetPrimaryId(aln_row.m_Id));
     if (id_it == idmap.end()) {
         // Id not found in the segment, leave the row unchanged.
         return aln_row.m_Id;

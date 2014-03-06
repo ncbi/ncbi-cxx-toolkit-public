@@ -451,15 +451,14 @@ public:
     /// Check if the last mapping resulted in partial location
     /// (not all ranges from the original location could be mapped
     /// to the target).
-    bool             LastIsPartial(void);
+    bool LastIsPartial(void);
 
-    typedef set<CSeq_id_Handle>        TSynonyms;
+    typedef set<CSeq_id_Handle> TSynonyms;
 
-    // Collect synonyms for the given seq-id and put them in the container.
-    // The default implementation just adds the id to the list of synonyms.
-    // Any overriden method should do at least the same.
-    void CollectSynonyms(const CSeq_id_Handle& id,
-                         TSynonyms&            synonyms) const;
+    // Collect synonyms for the id, store mapping of each synonym
+    // to the primary id. Returns primary id for the argument or the
+    // argument itself.
+    const CSeq_id_Handle& CollectSynonyms(const CSeq_id_Handle& id) const;
 
     // Sequence type - to recalculate coordinates.
     enum ESeqType {
@@ -767,6 +766,13 @@ private:
     void x_Map_PackedInt_Element(const CSeq_interval& si);
     void x_Map_PackedPnt_Element(const CPacked_seqpnt& pp, TSeqPos p);
 
+    // Get main seq-id for a synonym. If no mapping exists, returns the
+    // original id.
+    const CSeq_id_Handle& x_GetPrimaryId(const CSeq_id_Handle& synonym) const;
+
+    typedef map<CSeq_id_Handle, CSeq_id_Handle> TSynonymMap;
+    typedef map<CSeq_id_Handle, TSeqPos> TLengthMap;
+
     // How to merge mapped locations.
     EMergeFlags          m_MergeFlag;
     // How to treat gaps (Null sub-locations) if any.
@@ -786,6 +792,12 @@ private:
 
     // Collected ranges for mapped graph. Used to adjust mapped graph data.
     CRef<CGraphRanges>   m_GraphRanges;
+
+    // Map each synonym to a primary seq-id.
+    mutable TSynonymMap  m_SynonymMap;
+
+    // Map each primary seq-id to sequence length.
+    mutable TLengthMap   m_LengthMap;
 
 protected:
     // Storage for sequence types.
@@ -836,6 +848,13 @@ public:
 
     /// Get mapping ranges.
     const CMappingRanges& GetMappingRanges(void) const { return *m_Mappings; }
+
+    /// NOTE: In most cases CollectSynonyms(const CSeq_id_Handle& id) should
+    /// be used instead, since it takes care of synonym storage and mapping.
+    /// This method does nothing but storing synonyms in the container.
+    void CollectSynonyms(const CSeq_id_Handle& id,
+                         TSynonyms&            synonyms) const;
+
 };
 
 
@@ -1041,11 +1060,12 @@ inline
 CSeq_loc_Mapper_Base::ESeqType
 CSeq_loc_Mapper_Base::GetSeqTypeById(const CSeq_id_Handle& idh) const
 {
-    TSeqTypeById::const_iterator it = m_SeqTypes.find(idh);
+    CSeq_id_Handle primary_id = CollectSynonyms(idh);
+    TSeqTypeById::const_iterator it = m_SeqTypes.find(primary_id);
     if (it != m_SeqTypes.end()) {
         return it->second;
     }
-    return GetSeqType(idh);
+    return GetSeqType(primary_id);
 }
 
 
