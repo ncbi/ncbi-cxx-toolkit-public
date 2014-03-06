@@ -51,7 +51,7 @@ static const string s_kQueryNodeColor = "255 0 0";
 static const string s_kQueryNodeBgColor = "255 255 0";
 static const string s_kSeqOfTypeNodeBgColor = "204 255 204";
 
-map<int,string> linkotTypeToBGColor{{eFromType,s_kSeqOfTypeNodeBgColor}};
+map<int,string> linkotTypeToBGColor;
 
 // tree leaf label for unknown taxonomy
 static const string s_kUnknown = "unknown";
@@ -435,6 +435,8 @@ bool CPhyTreeFormatter::IsSingleBlastName(void)
 
 void CPhyTreeFormatter::x_Init(void)
 {
+    linkotTypeToBGColor[eFromType] = s_kSeqOfTypeNodeBgColor;
+
     m_SimplifyMode = eNone;
     m_LinkoutDB = NULL;
     m_LinkoutType = 0;
