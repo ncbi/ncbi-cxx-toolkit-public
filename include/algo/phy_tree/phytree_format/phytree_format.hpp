@@ -33,10 +33,11 @@
 #include <corelib/ncbiexpt.hpp>
 #include <algo/phy_tree/bio_tree.hpp>
 #include <algo/phy_tree/phytree_calc.hpp>
+#include <objtools/align_format/align_format_util.hpp>
 
 
 BEGIN_NCBI_SCOPE
-
+USING_SCOPE(align_format);
 // forward declaration
 class CPhyTreeNodeGroupper;
 
@@ -103,6 +104,8 @@ public:
     CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                       ELabelType lbl_type = eSeqId,
                       bool mark_query_node = true);
+                      
+        
 
     /// Constructor
     /// @param guide_tree_calc GuideTreeCalc object [in]
@@ -121,7 +124,10 @@ public:
     ///
     CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                       vector<string>& seq_ids,
-                      ELabelType lbl_type = eSeqId);
+                      ELabelType lbl_type = eSeqId,
+                      ILinkoutDB* linkoutDB = NULL,
+                      int linkoutType = 0,
+                      string mv_build_name = "");
 
     /// Constructor
     /// @param btc BioTreeContainer object [in]
@@ -165,7 +171,6 @@ public:
     /// @return Reference to Blast Name to color map
     ///
     TBlastNameColorMap& SetBlastNameColorMap(void) {return m_BlastNameColorMap;}
-
 
     // --- Getters ---
 
@@ -402,7 +407,9 @@ private:
                                  CScope& scope,
                                  ELabelType label_type,
                                  const vector<int>& mark_leaves,
-                                 TBlastNameColorMap& bcolormap);
+                                 TBlastNameColorMap& bcolormap,
+                                 ILinkoutDB* linkoutDB = NULL,
+                                 int linkoutType = 0);
 
     /// Add feature descriptor to tree
     /// @param id Feature id [in]
@@ -609,6 +616,11 @@ protected:
 
     /// Blast Name to color map
     TBlastNameColorMap m_BlastNameColorMap;
+
+    ILinkoutDB* m_LinkoutDB;
+    int m_LinkoutType;
+    string m_MapViewerBuildName;
+        
 
 public:
     /// Node feature "node-info" value for query nodes
