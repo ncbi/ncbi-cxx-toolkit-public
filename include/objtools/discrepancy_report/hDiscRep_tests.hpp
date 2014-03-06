@@ -254,7 +254,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   template < typename T >
   struct SCompareCRefs
   {
-     bool operator() (const CRef < T >& x, const CRef < T >& y) const {
+     bool operator() (const CRef < T > x, const CRef < T > y) const {
          if ( !(y.GetPointer()) ) return false;
          else if ( (!x.GetPointer()) ) return true;
          else return ((*x).str) <  ((*y).str) ;
@@ -450,7 +450,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                 const CString_constraint* str_cons = 0);
       bool DoesFeatureMatchRnaType(const CSeq_feat& seq_feat, 
                                    const CRna_feat_type& rna_type);
-      void MakeFeatureField(CRef <CFeature_field>& f, 
+      void MakeFeatureField(CRef <CFeature_field> f, 
                             CFeat_qual_choice& f_qual, 
                             EMacro_feature_type f_tp, 
                             EFeat_qual_legal legal_qual);
@@ -465,7 +465,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool AllowSourceQualMulti(const CSource_qual_choice* src_cons = 0);
       bool DoesFeatureMatchCGPQualConstraint (const CSeq_feat& feat, 
                                      const CCDSGeneProt_qual_constraint& cons);
-      void GetProtFromCodingRegion (CRef <CCGPSetData>& cgp, 
+      void GetProtFromCodingRegion (CRef <CCGPSetData> cgp, 
                                     const CSeq_feat& cd_feat);
       CConstRef <CSeq_feat> AddProtFeatForCds(const CSeq_feat& cd_feat, 
                                               const CBioseq_Handle& protbsp);
@@ -581,7 +581,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void TestOnObj(const CBioseq& bioseq) = 0;
       virtual void TestOnObj(const CSeq_feat& seq_feat) = 0;
 
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
 
       virtual string GetName() const =0;
 
@@ -734,8 +734,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool IsEukaryotic(const CBioseq& bioseq);
       bool IsBioseqHasLineage(const CBioseq& bioseq,const string& type, bool has_biosrc=true);
       bool HasTaxonomyID(const CBioSource& biosec);
-      void GetProperCItem(CRef <CClickableItem>& c_item, bool* citem1_used);
-      void AddSubcategory(CRef <CClickableItem>& c_item, 
+      void GetProperCItem(CRef <CClickableItem> c_item, bool* citem1_used);
+      void AddSubcategory(CRef <CClickableItem> c_item, 
                           const string& setting_name, 
                           const vector <string>* itemlist, 
                           const string& desc1, 
@@ -790,7 +790,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
        virtual void TestOnObj(const CBioseq& bioseq) {};
        virtual void TestOnObj(const CSeq_feat& seq_feat) {};
 
-       virtual void GetReport(CRef <CClickableItem>& c_item)=0;
+       virtual void GetReport(CRef <CClickableItem> c_item)=0;
 
        virtual string GetName() const = 0;
   };
@@ -801,7 +801,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseqSet_TEST_SMALL_GENOME_SET_PROBLEM () {};
 
       virtual void TestOnObj(const CBioseq_set& bioseq_set);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                return string("TEST_SMALL_GENOME_SET_PROBLEM");}
   };
@@ -812,7 +812,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseqSet_on_class () {};
 
       virtual void TestOnObj(const CBioseq_set& bioseq_set);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
    
     protected:
@@ -830,7 +830,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseqSet_TEST_UNWANTED_SET_WRAPPER () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string(CBioseqSet_on_class::GetName_wrap()); }
   };
 
@@ -839,7 +839,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseqSet_DISC_NONWGS_SETS_PRESENT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string(CBioseqSet_on_class::GetName_nonwgs()); }
   };
 
@@ -848,7 +848,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseqSet_DISC_SEGSETS_PRESENT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string(CBioseqSet_on_class::GetName_segset()); }
   };
 
@@ -866,7 +866,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
        virtual void TestOnObj(const CBioseq& bioseq) {};
        virtual void TestOnObj(const CSeq_feat& seq_feat) {};
 
-       virtual void GetReport(CRef <CClickableItem>& c_item)=0;
+       virtual void GetReport(CRef <CClickableItem> c_item)=0;
 
        virtual string GetName() const = 0;
 
@@ -904,7 +904,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_on_incnst_user () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
 
     protected:
@@ -925,7 +925,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                           const string& setting_name, 
                           const CBioseq& bsq);
  
-      void x_GetIncnstTestReport (CRef <CClickableItem>& c_item, 
+      void x_GetIncnstTestReport (CRef <CClickableItem> c_item, 
                                   const string& setting_name, 
                                   const string& title, 
                                   const string& item_type);
@@ -940,7 +940,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual string GetName() const { 
                      return CSeqEntry_on_incnst_user::GetName_comm();}
-      virtual void GetReport(CRef <CClickableItem>& c_item)
+      virtual void GetReport(CRef <CClickableItem> c_item)
       {
           x_GetIncnstTestReport(c_item,GetName(), 
                                 "Structured Comment Report",
@@ -954,7 +954,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_INCONSISTENT_DBLINK () {};
 
       virtual string GetName() const { return CSeqEntry_on_incnst_user::GetName_db();}
-      virtual void GetReport(CRef <CClickableItem>& c_item)
+      virtual void GetReport(CRef <CClickableItem> c_item)
       {
           x_GetIncnstTestReport(c_item,GetName(), "DBLink Report", "");
       };
@@ -966,7 +966,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_on_biosrc_subsrc () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
 
     protected:
@@ -998,7 +998,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CSeqEntry_UNCULTURED_NOTES_ONCALLER () {};
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_uncul();}
   };
 
@@ -1007,7 +1007,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_END_COLON_IN_COUNTRY () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_end();}
   };
 
@@ -1016,7 +1016,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_orgc();}
   };
 
@@ -1025,7 +1025,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_orgi();}
   };
 
@@ -1034,7 +1034,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_on_biosrc_subsrc::GetName_col();}
   };
 
@@ -1043,7 +1043,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY() {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                          return CSeqEntry_on_biosrc_subsrc::GetName_iden();}
   };
@@ -1055,7 +1055,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_test_on_pub () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
 
       static string GetAuthNameList(const CAuthor& auth, 
@@ -1102,17 +1102,16 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool AffilStreetEndsWith(const string& street, const string& end_str);
       bool IsNameCapitalizationOk(const string& name);
       bool IsAuthorInitialsCapitalizationOk(const string& nm_init);
-      bool NameIsBad(const CRef <CAuthor>& auth_nm);
+      bool NameIsBad(CRef <CAuthor> auth_nm);
       bool HasBadAuthorName(const CAuth_list& auths);
       void CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(
                     const list <CRef <CPub> >& pubs, 
                     const string& desc,
                     CConstRef <CObject> obj_ref);
       bool AuthNoFirstLastNames(const CAuth_list& auths);
-      bool CorrectUSAStates(CConstRef <CCit_sub>& cit_sub);
-      //void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub,
+      bool CorrectUSAStates(CConstRef <CCit_sub> cit_sub);
       void CheckTitleAndAuths(CRef <CPub> pub,
-                              const string& desc, CConstRef <CObject>& obj_ref);
+                              const string& desc, CConstRef <CObject> obj_ref);
   };
 
   class CSeqEntry_DISC_CHECK_AUTH_NAME :  public CSeqEntry_test_on_pub
@@ -1120,7 +1119,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_CHECK_AUTH_NAME () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_missing();}
   };
 
@@ -1129,7 +1128,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_CONSORTIUM () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_cons();}
   };
 
@@ -1138,7 +1137,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_MISSING_AFFIL () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_noaff();}
   };
 
@@ -1149,7 +1148,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_unp();}
   };
 
@@ -1159,7 +1158,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_CITSUBAFFIL_CONFLICT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_aff();}
   };
 
@@ -1169,7 +1168,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_tlt();}
   };
 
@@ -1179,7 +1178,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_USA_STATE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_usa();}
   };
 
@@ -1189,7 +1188,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_dup();}
   };
 
@@ -1199,7 +1198,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_CHECK_AUTH_CAPS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_pub::GetName_cap();}
   };
 
@@ -1210,7 +1209,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_test_on_defline () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
 
    protected:
@@ -1225,7 +1224,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_test_on_defline::GetName_seqch();}
   };
 
@@ -1234,7 +1233,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_DEFLINE_ON_SET () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_defline::GetName_set();}
   };
  
@@ -1245,7 +1244,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_test_on_tax_cflts () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
 
    protected:
@@ -1264,7 +1263,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       void RunTests(const CBioSource& biosrc, 
                       const string& desc, 
                       CConstRef <CObject> obj_ref);
-      void GetReport_cflts(CRef <CClickableItem>& c_item, 
+      void GetReport_cflts(CRef <CClickableItem> c_item, 
                            const string& setting_name, const string& qual_nm);
   };
 
@@ -1275,7 +1274,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual string GetName() const {
                       return CSeqEntry_test_on_tax_cflts::GetName_biom();}
-      virtual void GetReport(CRef <CClickableItem>& c_item) {
+      virtual void GetReport(CRef <CClickableItem> c_item) {
           GetReport_cflts(c_item, GetName(), "biomaterial");
       };
   }; 
@@ -1287,7 +1286,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual string GetName() const { 
                          return CSeqEntry_test_on_tax_cflts::GetName_cul();}
-      virtual void GetReport(CRef <CClickableItem>& c_item) {
+      virtual void GetReport(CRef <CClickableItem> c_item) {
           GetReport_cflts(c_item, GetName(), "culture collection");
       };
   };
@@ -1300,7 +1299,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual string GetName() const { 
                        return CSeqEntry_test_on_tax_cflts::GetName_str();}
-      virtual void GetReport(CRef <CClickableItem>& c_item) {
+      virtual void GetReport(CRef <CClickableItem> c_item) {
           GetReport_cflts(c_item, GetName(), "strain");
       };
   };
@@ -1313,7 +1312,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual string GetName() const { 
                             return CSeqEntry_test_on_tax_cflts::GetName_vou();}
-      virtual void GetReport(CRef <CClickableItem>& c_item) {
+      virtual void GetReport(CRef <CClickableItem> c_item) {
           GetReport_cflts(c_item, GetName(), "specimen voucher");
       };
   };
@@ -1325,7 +1324,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_test_on_quals () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
 
     protected:
@@ -1341,7 +1340,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                              const string& setting_name,
                              unsigned pre_cnt, 
                              unsigned tot_cnt);
-      void GetReport_quals(CRef <CClickableItem>& c_item, 
+      void GetReport_quals(CRef <CClickableItem> c_item, 
                            const string& setting_name);
       bool GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, 
                   const vector <string>& desc_ls, Str2Ints& qual2src_idx, 
@@ -1361,7 +1360,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       void GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc,
                             vector <string>& multi_vlus, bool is_subsrc);
       void ProcessUniQuals(const Str2Strs& qvlu2src, const string& setting_nm, 
-                          const string& qual_nm, CRef <CClickableItem>& c_item);
+                          const string& qual_nm, CRef <CClickableItem> c_item);
   };
 
 
@@ -1370,7 +1369,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_SRC_QUAL_PROBLEM () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                               return CSeqEntry_test_on_quals::GetName_bad();}
   };
@@ -1381,7 +1380,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_SOURCE_QUALS_ASNDISC () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                         return CSeqEntry_test_on_quals::GetName_sq();}
   };
@@ -1392,7 +1391,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                       return CSeqEntry_test_on_quals::GetName_sq_oncall();}
   };
@@ -1404,7 +1403,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_test_on_biosrc_orgmod () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
  
     protected:
@@ -1456,7 +1455,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                       return CSeqEntry_test_on_biosrc_orgmod::GetName_amp();}
   };
@@ -1466,7 +1465,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_HUMAN_HOST () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                  return CSeqEntry_test_on_biosrc_orgmod::GetName_human();}
   };
@@ -1477,7 +1476,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                      return CSeqEntry_test_on_biosrc_orgmod::GetName_mcul();}
   };
@@ -1488,7 +1487,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_CHECK_AUTHORITY () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                     return CSeqEntry_test_on_biosrc_orgmod::GetName_auth();}
   };
@@ -1499,7 +1498,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_METAGENOME_SOURCE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                       return CSeqEntry_test_on_biosrc_orgmod::GetName_meta();}
   };
@@ -1510,7 +1509,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_BACTERIA_MISSING_STRAIN () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                  return CSeqEntry_test_on_biosrc_orgmod::GetName_sp_strain();}
   };
@@ -1520,7 +1519,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                     return CSeqEntry_test_on_biosrc_orgmod::GetName_atcc();}
   };
@@ -1531,7 +1530,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                     return CSeqEntry_test_on_biosrc_orgmod::GetName_cbs();}
   };
@@ -1542,7 +1541,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                return CSeqEntry_test_on_biosrc_orgmod::GetName_mism();}
   }; 
@@ -1553,7 +1552,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                       return CSeqEntry_test_on_biosrc_orgmod::GetName_cul();}
   };
@@ -1566,7 +1565,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_test_on_user () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
 
     protected:
@@ -1593,7 +1592,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
      public:
       virtual ~CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_user::GetName_prefix();}
   };
 
@@ -1602,7 +1601,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
      public:
       virtual ~CSeqEntry_MISSING_STRUCTURED_COMMENT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_user::GetName_scomm();}
   };
 
@@ -1611,7 +1610,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
      public:
       virtual ~CSeqEntry_ONCALLER_BIOPROJECT_ID () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_user::GetName_bproj();}
   };
 
@@ -1621,7 +1620,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
      public:
       virtual ~CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_user::GetName_gcomm();}
   };
 
@@ -1630,7 +1629,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_TEST_HAS_PROJECT_ID () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_test_on_user::GetName_proj();}
   };
 
@@ -1640,7 +1639,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_user::GetName_oncall_scomm();}
   };
 
@@ -1650,7 +1649,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_MISSING_PROJECT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_user::GetName_mproj();}
   };
 
@@ -1662,7 +1661,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_test_on_biosrc () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const =0;
 
     protected:
@@ -1700,7 +1699,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                           const list <CRef <CPCRPrimer> >& ls2);
       bool SamePCRReaction(const CPCRReaction& pcr1, const CPCRReaction& pcr2);
       bool MissingPrimerValue(const CBioSource& biosrc);
-      void IsFwdRevDataPresent(const CRef <CPCRPrimer>& primer, 
+      void IsFwdRevDataPresent(CRef <CPCRPrimer> primer, 
                                bool& has_seq, bool& has_name);
       bool FindTrinomialWithoutQualifier(const CBioSource& biosrc);
       bool IsMissingRequiredClone (const CBioSource& biosrc);
@@ -1726,7 +1725,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                  return CSeqEntry_test_on_biosrc :: GetName_env();}
   };
@@ -1736,7 +1735,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_REQUIRED_STRAIN () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { 
                        return CSeqEntry_test_on_biosrc::GetName_strain();}
   };
@@ -1746,7 +1745,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                               return CSeqEntry_test_on_biosrc::GetName_pcr();}
   };
@@ -1756,7 +1755,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_COUNTRY_COLON () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                             return CSeqEntry_test_on_biosrc::GetName_cty();}
   };
@@ -1766,7 +1765,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_TEST_MISSING_PRIMER () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                              return CSeqEntry_test_on_biosrc::GetName_prim();}
   };
@@ -1776,7 +1775,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_TEST_SP_NOT_UNCULTURED () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                            return CSeqEntry_test_on_biosrc::GetName_sp();}
   };
@@ -1786,7 +1785,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_METAGENOMIC () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                          return CSeqEntry_test_on_biosrc::GetName_meta();}
   };
@@ -1796,7 +1795,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                           return CSeqEntry_test_on_biosrc::GetName_trin();}
   };
@@ -1806,7 +1805,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_REQUIRED_CLONE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                             return CSeqEntry_test_on_biosrc::GetName_clone();}
   };
@@ -1816,7 +1815,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return 
                              CSeqEntry_test_on_biosrc::GetName_map();}
   };
@@ -1826,7 +1825,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DIVISION_CODE_CONFLICTS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                           return CSeqEntry_test_on_biosrc::GetName_div();}
   };
@@ -1836,7 +1835,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_MISSING_VIRAL_QUALS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_quals();}
   };
 
@@ -1845,7 +1844,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_INFLUENZA_DATE_MISMATCH () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_flu();}
   };
 
@@ -1854,7 +1853,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_TAX_LOOKUP_MISSING () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_tmiss();}
   };
 
@@ -1864,7 +1863,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_TAX_LOOKUP_MISMATCH () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_tbad();}
   };
 
@@ -1874,7 +1873,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_iso();}
   };
 
@@ -1884,23 +1883,11 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_MULTISRC () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_mult();}
   };
 // new comb
 
-
-/*
-  class CSeqEntry_DISC_SUSPECT_RRNA_PRODUCTS : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_DISC_SUSPECT_RRNA_PRODUCTS () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_SUSPECT_RRNA_PRODUCTS");}
-  };
-*/
 
   class CFlatfileTextFind: public CFlatFileConfig::CGenbankBlockCallback, CTestAndRepData
   {
@@ -1932,7 +1919,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
        virtual void TestOnObj(const CBioseq& bioseq) { };
        virtual void TestOnObj(const CSeq_feat& seq_feat) { };
 
-       virtual void GetReport(CRef <CClickableItem>& c_item) { };
+       virtual void GetReport(CRef <CClickableItem> c_item) { };
 
        virtual string GetName() const {return kEmptyStr ;}
 
@@ -1949,7 +1936,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_TEST_ALIGNMENT_HAS_SCORE () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("TEST_ALIGNMENT_HAS_SCORE");}
 
     protected:
@@ -1965,7 +1952,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_FLATFILE_FIND_ONCALLER () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_FLATFILE_FIND_ONCALLER");}
     
     private:
@@ -1974,7 +1961,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       void AddCItemToReport(const string& ls_type, 
                             const string& setting_name, 
-                            CRef <CClickableItem>& c_item);
+                            CRef <CClickableItem> c_item);
       string GetName_nofix() const {
                         return string("DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE");}
       string GetName_fix() const {
@@ -1987,7 +1974,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("ONCALLER_STRAIN_TAXNAME_CONFLICT");}
 
     private:
@@ -2000,7 +1987,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_SUBMITBLOCK_CONFLICT () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return string("DISC_SUBMITBLOCK_CONFLICT");}
 
     private:
@@ -2017,7 +2004,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_INCONSISTENT_MOLTYPES () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return string("DISC_INCONSISTENT_MOLTYPES");}
 
     private:
@@ -2031,16 +2018,16 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_HAPLOTYPE_MISMATCH () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_HAPLOTYPE_MISMATCH");}
 
     private:
       Str2Seqs m_tax_hap2seqs;
       unsigned m_entry_cnt;
 
-      bool SubSeqsMatch(const CConstRef <CBioseq>& seq1, 
+      bool SubSeqsMatch(CConstRef <CBioseq> seq1, 
                     unsigned beg1, 
-                    const CConstRef <CBioseq>& seq2,
+                    CConstRef <CBioseq> seq2,
                     unsigned beg2, 
                     unsigned& len, 
                     bool Ndiff = true);
@@ -2049,51 +2036,15 @@ BEGIN_SCOPE(DiscRepNmSpc)
       void ReportSameTaxHaplotypeDiffSequenceMismatch(
                        Str2Seqs::const_iterator& iter, bool allow_Ndiff=true);
       void ReportHaplotypeSequenceMismatchForList();
-      void MakeCitem4DiffSeqs(CRef <CClickableItem>& c_item, 
+      void MakeCitem4DiffSeqs(CRef <CClickableItem> c_item, 
                               const vector <string> tax_hap_seqs, 
                               const string& match_tp, 
                               bool Ndiff = true);
-      void MakeCitem4SameSeqs(CRef <CClickableItem>& c_item, 
+      void MakeCitem4SameSeqs(CRef <CClickableItem> c_item, 
                               const vector <string>& idx_seqs, 
                               const string& match_tp, 
                               bool Ndiff = true);
   };
-
-
-/*
-  class CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT : public CSeqEntryTestAndRepData
-  {
-    public:
-      virtual ~CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return string("DISC_CITSUB_AFFIL_DUP_TEXT");}
-
-    protected:
-      CConstRef <CCit_sub> CitSubFromPubEquiv(const list <CRef <CPub> >& pubs);
-      bool AffilStreetContainsDuplicateText(const CAffil& affil);       
-      bool AffilStreetEndsWith(const string& street, const string& end_str);
-  };
-*/
-
-
-
-/*
-  class CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE : public CSeqEntryTestAndRepData
-  {
-      friend class CSeqEntryTestAndRepData;
-    public:
-      virtual ~CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE () {};
-
-      virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {
-                               return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE");}
-      virtual void Check(const string& desc) {cerr << "check1 " << desc << endl;}
-  };
-*/
-
 
   class CSeqEntry_INCONSISTENT_BIOSOURCE : public CSeqEntryTestAndRepData
   {
@@ -2101,7 +2052,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_INCONSISTENT_BIOSOURCE () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("INCONSISTENT_BIOSOURCE"); }
    
     private:
@@ -2131,7 +2082,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_on_comment () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2146,7 +2097,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_ONCALLER_COMMENT_PRESENT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_on_comment::GetName_has(); }
   };
 
@@ -2155,7 +2106,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_MISMATCHED_COMMENTS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CSeqEntry_on_comment::GetName_mix(); }
   };  
 
@@ -2173,7 +2124,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
        virtual void TestOnObj(const CBioseq& bioseq) = 0;
        virtual void TestOnObj(const CSeq_feat& seq_feat) {}; 
          
-       virtual void GetReport(CRef <CClickableItem>& c_item)=0;
+       virtual void GetReport(CRef <CClickableItem> c_item)=0;
 
        virtual string GetName() const = 0;
 
@@ -2220,7 +2171,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_base() {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2232,7 +2183,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_non_nt() const {return string("TEST_UNUSUAL_NT"); }
 
       bool x_IsDeltaSeqWithFarpointers(const CBioseq& bioseq);
-      void x_AddNsReport(CRef <CClickableItem>& c_item);
+      void x_AddNsReport(CRef <CClickableItem> c_item);
   };
 
   class CBioseq_N_RUNS : public CBioseq_on_base
@@ -2240,7 +2191,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_N_RUNS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_base::GetName_n10();}
   };
 
@@ -2249,7 +2200,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_N_RUNS_14 () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_base::GetName_n14();}
   };
 
@@ -2258,7 +2209,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_ZERO_BASECOUNT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_base::GetName_0();}
   };
 
@@ -2267,7 +2218,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_PERCENT_N () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_base::GetName_5perc();}
   };
 
@@ -2276,7 +2227,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_10_PERCENTN () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_base::GetName_10perc();}
   };
 
@@ -2285,7 +2236,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_UNUSUAL_NT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_base::GetName_non_nt();}
   };
 
@@ -2295,7 +2246,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_SUSPECT_RULE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return string("SUSPECT_PRODUCT_NAMES");};
 
       static string GetName_typo() { return string("DISC_PRODUCT_NAME_TYPO");};
@@ -2310,8 +2261,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       void FindSuspectProductNamesCallback();
       void FindSuspectProductNamesWithStaticList();
       void FindSuspectProductNamesWithRules();
-      void GetReportForStaticList (CRef <CClickableItem>& c_item);
-      void GetReportForRules (CRef <CClickableItem>& c_Item);
+      void GetReportForStaticList (CRef <CClickableItem> c_item);
+      void GetReportForRules (CRef <CClickableItem> c_Item);
   };
 
   class CBioseq_on_tax_def :  public CBioseqTestAndRepData
@@ -2320,7 +2271,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_tax_def () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2335,7 +2286,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_DUP_DEFLINE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_tax_def::GetName_dup();}
   };
 
@@ -2344,7 +2295,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_INCONSISTENT_SOURCE_DEFLINE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_tax_def::GetName_inc();}
   };
 
@@ -2353,7 +2304,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_TAXNAME_NOT_IN_DEFLINE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_tax_def::GetName_missing();}
   };
 
@@ -2366,7 +2317,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_Aa () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2408,7 +2359,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_eu_mrna();}
   };
 
@@ -2417,7 +2368,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_RNA_PROVIRAL () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_rnapro();}
   };
 
@@ -2426,7 +2377,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_RETROVIRIDAE_DNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_retro();}
   };
 
@@ -2435,7 +2386,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_NON_RETROVIRIDAE_PROVIRAL () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_nonr();}
   };
 
@@ -2444,7 +2395,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_COUNT_UNVERIFIED () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_unv();}
   };
 
@@ -2453,7 +2404,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_DUP_GENES_OPPOSITE_STRANDS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_dupg();}
   };
 
@@ -2462,7 +2413,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_SHORT_PROT_SEQUENCES () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_shtprt();}
   };
 
@@ -2472,7 +2423,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_ORGANELLE_NOT_GENOMIC () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_orgl();}
   };
 
@@ -2482,7 +2433,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_UNNECESSARY_VIRUS_GENE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_vir();}
   };
 
@@ -2492,7 +2443,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_RBS_WITHOUT_GENE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_rbs();}
   };
 
@@ -2502,7 +2453,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_EXON_INTRON_CONFLICT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_ei();}
   };
 
@@ -2512,7 +2463,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_GENE_PARTIAL_CONFLICT () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_pgene();}
   };
 
@@ -2522,7 +2473,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_SHORT_CONTIG () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_contig();}
   };
 
@@ -2532,7 +2483,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_SHORT_SEQUENCES_200 () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_200seq();}
   };
 
@@ -2542,7 +2493,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_SHORT_SEQUENCES () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_Aa::GetName_50seq();}
   };
 
@@ -2554,7 +2505,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_mRNA () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2570,7 +2521,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_MULTIPLE_CDS_ON_MRNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_mRNA::GetName_mcds();}
   };
 
@@ -2579,7 +2530,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_mRNA::GetName_str();}
   };
 
@@ -2588,7 +2539,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_EXON_ON_MRNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_mRNA::GetName_exon();}
   };
 
@@ -2598,7 +2549,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_BAD_MRNA_QUAL () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_mRNA::GetName_qual();}
   };
 
@@ -2609,7 +2560,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_cd_feat () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2623,7 +2574,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_CDS_HAS_CDD_XREF () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_cd_feat::GetName_cdd();}
   };
 
@@ -2633,7 +2584,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_CDS_HAS_NEW_EXCEPTION () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_cd_feat::GetName_exc();}
   };
 
@@ -2644,7 +2595,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_missing_genes () {};
 
       virtual void TestOnObj(const CBioseq& bioseq) = 0;
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2664,7 +2615,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_missing_genes_regular () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2679,7 +2630,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_MISSING_GENES () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_missing_genes_regular::GetName_missing();}
   };
 
@@ -2689,7 +2640,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_EXTRA_GENES () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_missing_genes_regular::GetName_extra();}
   };
 
@@ -2700,7 +2651,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_missing_genes_oncaller () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2716,7 +2667,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
      virtual ~CBioseq_ONCALLER_GENE_MISSING () {};
 
-     virtual void GetReport(CRef <CClickableItem>& c_item);
+     virtual void GetReport(CRef <CClickableItem> c_item);
      virtual string GetName() const {return CBioseq_missing_genes_oncaller::GetName_missing();}
   };
 
@@ -2726,7 +2677,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
      virtual ~CBioseq_ONCALLER_SUPERFLUOUS_GENE () {};
 
-     virtual void GetReport(CRef <CClickableItem>& c_item);
+     virtual void GetReport(CRef <CClickableItem> c_item);
      virtual string GetName() const {return CBioseq_missing_genes_oncaller::GetName_extra();}
   };
 
@@ -2737,7 +2688,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_bac_partial () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2756,7 +2707,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION () {};
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_bac_partial::GetName_exc();}
   };
 
@@ -2767,7 +2718,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CBioseq_DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS () {};
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_bac_partial::GetName_noexc();}
   };
 
@@ -2778,7 +2729,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_rrna () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2795,7 +2746,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_SHORT_RRNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CBioseq_test_on_rrna::GetName_short(); }
   };
 
@@ -2806,7 +2757,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CBioseq_test_on_rrna::GetName_its(); }
   };
 
@@ -2816,7 +2767,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_RRNA_NAME_CONFLICTS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CBioseq_test_on_rrna::GetName_nm(); }
   };
 
@@ -2827,14 +2778,14 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_suspect_phrase () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
       string GetName_rna_comm() const {return string("DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS");}
       string GetName_misc() const {return string("DISC_SUSPECT_MISC_FEATURES"); }
       
-      void GetRepOfSuspPhrase(CRef <CClickableItem>& c_item, 
+      void GetRepOfSuspPhrase(CRef <CClickableItem> c_item, 
                               const string& setting_name, 
                               const string& phrase_loc_4_1, 
                               const string& phrase_loc_4_mul);
@@ -2848,7 +2799,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_SUSPECT_MISC_FEATURES () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return CBioseq_test_on_suspect_phrase::GetName_misc(); }
   };
 
@@ -2858,7 +2809,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                    return CBioseq_test_on_suspect_phrase::GetName_rna_comm(); }
   };
@@ -2869,7 +2820,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_protfeat () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
    
     protected:
@@ -2885,7 +2836,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_PROTEIN_NAMES () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_protfeat::GetName_pnm(); }
   };
 
@@ -2894,7 +2845,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_CDS_PRODUCT_FIND () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_protfeat::GetName_cds(); }
   };
 
@@ -2904,7 +2855,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_EC_NUMBER_ON_UNKNOWN_PROTEIN () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_protfeat::GetName_ec(); }
   };
 
@@ -2915,7 +2866,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_genprod_set() {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2924,7 +2875,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_mtid() const {return string("MISSING_GENPRODSET_TRANSCRIPT_ID");}
       string GetName_dtid() const {return string("DISC_DUP_GENPRODSET_TRANSCRIPT_ID");}
 
-      void x_GetReport_dup(CRef <CClickableItem>& c_item, 
+      void x_GetReport_dup(CRef <CClickableItem> c_item, 
                          const string& setting_name, 
                          const string& desc1, 
                          const string& desc2, 
@@ -2937,7 +2888,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_MISSING_GENPRODSET_PROTEIN () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_genprod_set::GetName_mprot(); }
   };
 
@@ -2947,7 +2898,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DUP_GENPRODSET_PROTEIN () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_genprod_set::GetName_dprot(); }
   };
 
@@ -2957,7 +2908,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_genprod_set::GetName_mtid(); }
   };
 
@@ -2967,7 +2918,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_genprod_set::GetName_dtid(); }
   };
 
@@ -2978,7 +2929,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_prot() {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -2993,7 +2944,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_COUNT_PROTEINS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_prot::GetName_cnt(); }
   };
 
@@ -3003,7 +2954,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_MISSING_PROTEIN_ID () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_prot::GetName_id(); }
   };
 
@@ -3013,7 +2964,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_INCONSISTENT_PROTEIN_ID() {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_prot::GetName_prefix(); }
   };
 
@@ -3024,7 +2975,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_cd_4_transl() {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
     
     protected:
@@ -3039,7 +2990,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TRANSL_NO_NOTE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_cd_4_transl::GetName_note(); }
   };
 
@@ -3049,7 +3000,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_NOTE_NO_TRANSL () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_cd_4_transl::GetName_transl(); }
   };
 
@@ -3059,7 +3010,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TRANSL_TOO_LONG () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_cd_4_transl::GetName_long(); }
   };
 
@@ -3070,7 +3021,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_rna() {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -3086,10 +3037,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool RnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2);
       void FindDupRNAsInList(vector <const CSeq_feat*> feats, 
                              const string& setting_name);
-      void GetReport_trna(CRef <CClickableItem>& c_item);
+      void GetReport_trna(CRef <CClickableItem> c_item);
       void FindtRNAsOnSameStrand();
 
-      void x_GetReport_dup(CRef <CClickableItem>& c_item, 
+      void x_GetReport_dup(CRef <CClickableItem> c_item, 
                             const string& setting_name);
 
       string m_bioseq_desc, m_best_id_str;
@@ -3101,7 +3052,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_SHORT_LNCRNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_rna::GetName_lnc(); }
   };
 
@@ -3110,7 +3061,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_FIND_STRAND_TRNAS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_rna::GetName_strand(); }
   };
 
@@ -3120,7 +3071,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_FIND_BADLEN_TRNAS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_rna::GetName_len(); }
   };
 
@@ -3130,7 +3081,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_FIND_DUP_TRNAS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_rna::GetName_tdup();}
   };
 
@@ -3139,7 +3090,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_COUNT_TRNAS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_rna::GetName_tcnt();}
   };
 
@@ -3149,7 +3100,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_COUNT_RRNAS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_rna::GetName_rcnt();}
   };
 
@@ -3159,7 +3110,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_FIND_DUP_RRNAS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_rna::GetName_rdup();}
   };
 
@@ -3171,7 +3122,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_molinfo () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -3187,7 +3138,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_POSSIBLE_LINKER () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_molinfo::GetName_link();}
   };
 
@@ -3197,7 +3148,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_molinfo::GetName_part();}
   };
 
@@ -3207,7 +3158,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_MOLTYPE_NOT_MRNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_molinfo::GetName_mrna();}
   };
 
@@ -3217,7 +3168,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TECHNIQUE_NOT_TSA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_molinfo::GetName_tsa();}
   };
 
@@ -3228,7 +3179,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_test_on_all_annot () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
     
     protected:
@@ -3247,7 +3198,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_ONCALLER_HAS_STANDARD_NAME () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_std();}
   };
 
@@ -3257,7 +3208,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_FEATURE_LIST () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_ls();}
   };
 
@@ -3266,7 +3217,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_ONCALLER_ORDERED_LOCATION () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_loc();}
   };
 
@@ -3275,7 +3226,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_JOINED_FEATURES () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_joined();}
   };
 
@@ -3285,7 +3236,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_NO_ANNOTATION () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_no();}
   };
 
@@ -3294,7 +3245,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_LONG_NO_ANNOTATION () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_test_on_all_annot::GetName_long_no();}
   };
 
@@ -3307,7 +3258,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_TEST_TERMINAL_NS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("TEST_TERMINAL_NS");}
   };
 
@@ -3317,7 +3268,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_MISSING_DEFLINES () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_MISSING_DEFLINES");}
   };
 
@@ -3327,7 +3278,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_BAD_BGPIPE_QUALS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_BAD_BGPIPE_QUALS"); }
 
     private:
@@ -3343,7 +3294,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_SUSPECT_PHRASES () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("SUSPECT_PHRASES"); }
 
     private:
@@ -3356,7 +3307,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_SUSPECT_RRNA_PRODUCTS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_SUSPECT_RRNA_PRODUCTS"); }
   };
 
@@ -3366,7 +3317,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_TEST_ORGANELLE_PRODUCTS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("TEST_ORGANELLE_PRODUCTS");}
     
     private:
@@ -3379,7 +3330,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_GAPS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_GAPS"); }
   };
 
@@ -3389,7 +3340,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_INCONSISTENT_MOLINFO_TECH () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_INCONSISTENT_MOLINFO_TECH"); }
   };
 
@@ -3399,7 +3350,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                          return string("TEST_MRNA_OVERLAPPING_PSEUDO_GENE"); }
   };
@@ -3410,7 +3361,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_TEST_UNWANTED_SPACER () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("TEST_UNWANTED_SPACER"); }
  
     private:
@@ -3424,7 +3375,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_ONCALLER_HIV_RNA_INCONSISTENT () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("ONCALLER_HIV_RNA_INCONSISTENT"); }
   };
 
@@ -3435,7 +3386,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_MITOCHONDRION_REQUIRED () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_MITOCHONDRION_REQUIRED"); }
   };
 
@@ -3446,7 +3397,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_MICROSATELLITE_REPEAT_TYPE"); }
   };
 
@@ -3457,7 +3408,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_mRNA_ON_WRONG_SEQUENCE_TYPE"); }
   };
 
@@ -3468,7 +3419,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_FEATURE_MOLTYPE_MISMATCH"); }
 
     private:
@@ -3482,7 +3433,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_ADJACENT_PSEUDOGENES () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("ADJACENT_PSEUDOGENES"); }
 
     private:
@@ -3496,7 +3447,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_FEAT_OVERLAP_SRCFEAT () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_FEAT_OVERLAP_SRCFEAT"); }
   };
 
@@ -3507,7 +3458,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_CDS_TRNA_OVERLAP () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("CDS_TRNA_OVERLAP"); }
   };
 
@@ -3518,7 +3469,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_CONTAINED_CDS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("CONTAINED_CDS"); }
 
     private:
@@ -3531,7 +3482,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_PSEUDO_MISMATCH () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("PSEUDO_MISMATCH"); }
 
     private:
@@ -3545,7 +3496,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_EC_NUMBER_NOTE () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("EC_NUMBER_NOTE"); }
   };
 
@@ -3557,7 +3508,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_NON_GENE_LOCUS_TAG () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("NON_GENE_LOCUS_TAG"); }
   };
 
@@ -3568,7 +3519,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_SHOW_TRANSL_EXCEPT () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("SHOW_TRANSL_EXCEPT");}
   };
 
@@ -3579,7 +3530,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA");}
   };
 
@@ -3590,7 +3541,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_mrna () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -3605,7 +3556,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_mrna :: GetName_ids();}
   };
 
@@ -3614,7 +3565,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_CDS_WITHOUT_MRNA () {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_mrna :: GetName_cds();}
   };
 
@@ -3624,7 +3575,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_GENE_PRODUCT_CONFLICT () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("GENE_PRODUCT_CONFLICT");}
   };
 
@@ -3635,7 +3586,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_TEST_UNUSUAL_MISC_RNA () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("TEST_UNUSUAL_MISC_RNA");}
 
     private:
@@ -3650,7 +3601,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_PARTIAL_PROBLEMS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_PARTIAL_PROBLEMS");}
 
     private:
@@ -3665,7 +3616,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_SUSPICIOUS_NOTE_TEXT () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_SUSPICIOUS_NOTE_TEXT");}
 
     private:
@@ -3680,7 +3631,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME");}
   };
 
@@ -3692,7 +3643,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_TEST_OVERLAPPING_RRNAS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("TEST_OVERLAPPING_RRNAS");}
   };
 
@@ -3704,7 +3655,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_TEST_LOW_QUALITY_REGION () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("TEST_LOW_QUALITY_REGION");}
   };
 
@@ -3715,7 +3666,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_bad_gene_name () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
 
     protected:
@@ -3728,7 +3679,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CBioseq_TEST_BAD_GENE_NAME () {};
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
            return CBioseq_on_bad_gene_name::GetName_gnm(); }
 
@@ -3742,7 +3693,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CBioseq_DISC_BAD_BACTERIAL_GENE_NAME () {};
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
               return CBioseq_on_bad_gene_name::GetName_bgnm(); }
    
@@ -3757,7 +3708,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_BAD_GENE_STRAND () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_BAD_GENE_STRAND");}
 
     private:
@@ -3776,7 +3727,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_SHORT_INTRON () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_SHORT_INTRON");}
 
     private:
@@ -3790,7 +3741,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_RNA_NO_PRODUCT () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("RNA_NO_PRODUCT");}
   };
 
@@ -3800,7 +3751,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_FEATURE_LOCATION_CONFLICT () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("FEATURE_LOCATION_CONFLICT");}
 
     private:
@@ -3820,7 +3771,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_locus_tags () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const {return string("LOCUS_TAGS"); };
 
     protected:
@@ -3834,7 +3785,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
     protected:
       bool x_IsLocationDirSub(const CSeq_loc& seq_location);
-      void x_GetReport_dup(CRef <CClickableItem>& c_item, 
+      void x_GetReport_dup(CRef <CClickableItem> c_item, 
                            const string& setting_name);
   };
 
@@ -3843,7 +3794,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_MISSING_LOCUS_TAGS() { };
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
               return CBioseq_on_locus_tags::GetName_miss(); }
 
@@ -3855,7 +3806,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DUPLICATE_LOCUS_TAGS_global() { };
       virtual string GetName() const {
                            return CBioseq_on_locus_tags::GetName_glodup();}
-      virtual void GetReport(CRef <CClickableItem>& c_item) {
+      virtual void GetReport(CRef <CClickableItem> c_item) {
            CBioseq_on_locus_tags :: x_GetReport_dup(c_item, GetName());
       }
   };
@@ -3866,7 +3817,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DUPLICATE_LOCUS_TAGS() { };
       virtual string GetName() const {
                                return CBioseq_on_locus_tags::GetName_dup();}
-      virtual void GetReport(CRef <CClickableItem>& c_item) {
+      virtual void GetReport(CRef <CClickableItem> c_item) {
            CBioseq_on_locus_tags :: x_GetReport_dup(c_item, GetName());
       }
   };
@@ -3875,7 +3826,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX() { };
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
 
       virtual string GetName() const {
                             return CBioseq_on_locus_tags::GetName_incons();}
@@ -3885,7 +3836,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CBioseq_BAD_LOCUS_TAG_FORMAT() { };
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
 
       virtual string GetName() const {
                             return CBioseq_on_locus_tags::GetName_badtag();}
@@ -3897,7 +3848,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_feat_cnt () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual void GetReport(CRef <CClickableItem> c_item) = 0;
       virtual string GetName() const = 0;
  
     protected:
@@ -3911,7 +3862,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public: 
       virtual ~CBioseq_DISC_FEATURE_COUNT_oncaller () {};
     
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                      return CBioseq_on_feat_cnt::GetName_oncaller(); }
   };
@@ -3921,7 +3872,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_FEATURE_COUNT() {};
 
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_feat_cnt::GetName_gen();}
   };
 
@@ -3931,7 +3882,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_OVERLAPPING_GENES () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("OVERLAPPING_GENES");}
   };
 
@@ -3942,7 +3893,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_FIND_OVERLAPPED_GENES () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("FIND_OVERLAPPED_GENES");}
   };
 
@@ -3952,7 +3903,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_TEST_DEFLINE_PRESENT () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("TEST_DEFLINE_PRESENT");}
   };
 
@@ -3962,7 +3913,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_QUALITY_SCORES () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_QUALITY_SCORES");}
   };
 
@@ -3972,7 +3923,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_RNA_CDS_OVERLAP () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("RNA_CDS_OVERLAP");}
   };
 
@@ -3982,7 +3933,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DISC_COUNT_NUCLEOTIDES () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_COUNT_NUCLEOTIDES");}
 unsigned m_cnt;
   };
@@ -3993,7 +3944,7 @@ unsigned m_cnt;
       virtual ~CBioseq_DUPLICATE_GENE_LOCUS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DUPLICATE_GENE_LOCUS");}
   };
 
@@ -4004,7 +3955,7 @@ unsigned m_cnt;
       virtual ~CBioseq_OVERLAPPING_CDS () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("OVERLAPPING_CDS");}
 
     private:
@@ -4027,7 +3978,7 @@ unsigned m_cnt;
        virtual void TestOnObj(const CBioseq& bioseq) {};
        virtual void TestOnObj(const CSeq_feat& seq_feat) = 0; 
 
-       virtual void GetReport(CRef <CClickableItem>& c_item)=0; 
+       virtual void GetReport(CRef <CClickableItem> c_item)=0; 
 
        virtual string GetName() const  = 0;
   };

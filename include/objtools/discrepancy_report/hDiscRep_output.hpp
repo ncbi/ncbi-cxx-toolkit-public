@@ -85,7 +85,7 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
 
     void Export();
     void Export(vector <CRef <CClickableText> >& item_list);
-    void Export(CRef <CClickableItem>& c_item, const string& setting_name);
+    void Export(CClickableItem& c_item, const string& setting_name);
     void Export(vector <CRef <CClickableItem> >& c_item, const string& setting_name);
     
   private:
@@ -105,6 +105,7 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     void x_WriteDiscRepSubcategories(
                 const vector <CRef <CClickableItem> >& subcategories, 
                 unsigned ident = 1);
+    bool x_SubsHaveTags(CRef <CClickableItem> c_item);
     bool x_OkToExpand(CRef < CClickableItem > c_item);
     bool x_SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
     void x_WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix); 
