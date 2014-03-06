@@ -902,6 +902,29 @@ void SeqDB_ReadMemorySiList(const char                   * fbeginp,
                             vector<CSeqDBGiList::SSiOid> & sis,
                             bool                         * in_order = 0);
 
+/// Read an ID list (mixed type) from an area of memory.
+///
+/// The Seq ids in a memory region are read into the provided SSeqIdOid
+/// vector.  The gi, ti or seqid half of each element of the vector is assigned,
+/// but the OID half will be left as -1.  If the in_order parameter is
+/// not null, the function will test the SeqIds for orderedness.  It will
+/// set the bool to which in_order points to true if so, false if not.
+///
+/// @param fbeginp The start of the memory region holding the SeqId list. [in]
+/// @param fendp   The end of the memory region holding the SeqId list. [in]
+/// @param gis     The gis returned by this function. [out]
+/// @param tis     The tis returned by this function. [out]
+/// @param sis     The seqids returned by this function. [out]
+/// @param in_order If non-null, returns true iff the seqids were in order. [out]
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadMemoryMixList(const char * fbeginp,
+                            const char * fendp,
+                            vector<CSeqDBGiList::SGiOid> & gis,
+                            vector<CSeqDBGiList::STiOid> & tis,
+                            vector<CSeqDBGiList::SSiOid> & sis,
+                            bool * in_order);
+
 /// Combine and quote a list of database names.
 ///
 /// SeqDB permits multiple databases to be opened by a single CSeqDB
@@ -987,6 +1010,7 @@ void SeqDB_ReadTiList(const string                 & fname,
 /// bool to which in_order points to true if so, false if not.
 ///
 /// @param fname    The name of the SeqId list file. [in]
+/// @param gis      The GIs returned by this function. [out]
 /// @param sis      The SeqIds returned by this function. [out]
 /// @param in_order If non-null, returns true iff the SeqIds were in order. [out]
 
@@ -994,6 +1018,26 @@ NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadSiList(const string                 & fname,
                       vector<CSeqDBGiList::SSiOid> & sis,
                       bool                         * in_order = 0);
+
+/// Read a text SeqId list from a file.
+///
+/// The Seqids in a file are read into the provided SSeqIdOid vector.  The
+/// Gi/Ti/Si half of each element of the vector is assigned, but the OID
+/// half will be left as -1.  If the in_order parameter is not null,
+/// the function will test the SeqIds for orderedness.  It will set the
+/// bool to which in_order points to true if so, false if not.
+///
+/// @param fname    The name of the SeqId list file. [in]
+/// @param tis      The TIs returned by this function. [out]
+/// @param sis      The SeqIds returned by this function. [out]
+/// @param in_order If non-null, returns true iff the SeqIds were in order. [out]
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadMixList(const string & fname,
+		               vector<CSeqDBGiList::SGiOid> & gis,
+		               vector<CSeqDBGiList::STiOid> & tis,
+		               vector<CSeqDBGiList::SSiOid> & sis,
+		               bool * in_order);
 
 /// Read a text or binary GI list from a file.
 ///
@@ -1052,7 +1096,8 @@ public:
     enum EIdType {
         eGiList,
         eTiList,
-        eSiList
+        eSiList,
+        eMixList
     };
 
     /// Build a GI list from a file.

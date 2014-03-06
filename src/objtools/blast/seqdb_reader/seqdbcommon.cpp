@@ -1245,6 +1245,58 @@ void SeqDB_ReadMemorySiList(const char * fbeginp,
     if (in_order) *in_order = false;
 }
 
+void SeqDB_ReadMemoryMixList(const char * fbeginp,
+                            const char * fendp,
+                            vector<CSeqDBGiList::SGiOid> & gis,
+                            vector<CSeqDBGiList::STiOid> & tis,
+                            vector<CSeqDBGiList::SSiOid> & sis,
+                            bool * in_order)
+{
+    Int8 file_size = fendp - fbeginp;
+
+    // We would prefer to do only one allocation, so assume
+    // average seqid is 6 digits plus newline.  A few extra will be
+    // allocated, but this is preferable to letting the vector
+    // double itself (which it still will do if needed).
+
+    sis.reserve(sis.size() + int(file_size / 7));
+
+    const char * p = fbeginp;
+    const char * head;
+    while ( p < fendp) {
+        // find the head of the seqid
+        while (p< fendp && (*p=='>' || *p==' ' || *p=='\t' || *p=='\n' || *p=='\r')) ++p;
+        if (p< fendp && *p == '#') {
+            // anything beyond this point in the line is a comment
+            while (p< fendp && *p!='\n') ++p;
+            continue;
+        }
+        head = p;
+        while (p< fendp && *p!=' ' && *p!='\t' && *p!='\n' && *p!='\r') ++p;
+        if (p > head) {
+            string acc(head, p);
+            string str_id;
+            Int8 num_id;
+            bool simpler;
+            ESeqDBIdType id_type = SeqDB_SimplifyAccession(acc, num_id, str_id, simpler);
+            if (eStringId == id_type) {
+                sis.push_back(NStr::ToLower(str_id));
+            }
+            else if (eTiId == id_type) {
+            	tis.push_back(num_id);
+            }
+            else if (eGiId == id_type) {
+            	gis.push_back(num_id);
+            }
+            else {
+                cerr << "WARNING:  " << acc
+                     << " is not a valid seqid string." << endl;
+            }
+        }
+    }
+    if (in_order) *in_order = false;
+}
+
 static bool s_ContainsBinaryNumericIdList(const string& fname, CSeqDBFileGiList::EIdType type)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
@@ -1297,7 +1349,8 @@ void SeqDB_ReadTiList(const string & fname, vector<CSeqDBGiList::STiOid> & tis, 
     SeqDB_ReadMemoryTiList(fbeginp, fendp, tis, in_order);
 }
 
-void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, bool * in_order) 
+void SeqDB_ReadMixList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis,
+		vector<CSeqDBGiList::STiOid> & tis, vector<CSeqDBGiList::SSiOid> & sis, bool * in_order)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
 
@@ -1305,7 +1358,7 @@ void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, 
     const char *fbeginp = (char*) mfile.GetPtr();
     const char *fendp   = fbeginp + (int) file_size;
 
-    SeqDB_ReadMemorySiList(fbeginp, fendp, sis, in_order);
+    SeqDB_ReadMemoryMixList(fbeginp, fendp, gis, tis, sis, in_order);
 }
 
 void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
@@ -1320,6 +1373,17 @@ void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
     ITERATE(TPairList, iter, pairs) {
         gis.push_back(iter->gi);
     }
+}
+
+void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, bool * in_order)
+{
+    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
+
+    Int8 file_size = mfile.GetSize();
+    const char *fbeginp = (char*) mfile.GetPtr();
+    const char *fendp   = fbeginp + (int) file_size;
+
+    SeqDB_ReadMemorySiList(fbeginp, fendp, sis, in_order);
 }
 
 bool CSeqDBNegativeList::FindGi(int gi)
@@ -1438,6 +1502,9 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
         case eSiList:
             SeqDB_ReadSiList(fname, m_SisOids, & in_order);
             break;
+        case eMixList:
+        	SeqDB_ReadMixList(fname, m_GisOids, m_TisOids, m_SisOids, & in_order);
+        	break;
     }
     m_CurrentOrder = in_order ? eGi : eNone;
 }
@@ -1454,6 +1521,11 @@ CSeqDBFileGiList::CSeqDBFileGiList(vector<string> fnames, EIdType idtype)
         case eSiList:
             ITERATE(vector<string>, iter, fnames) {
                 SeqDB_ReadSiList(*iter, m_SisOids, & in_order);
+            }
+            break;
+        case eMixList:
+            ITERATE(vector<string>, iter, fnames) {
+            	SeqDB_ReadMixList(*iter, m_GisOids, m_TisOids, m_SisOids, & in_order);
             }
             break;
     }

@@ -1809,7 +1809,7 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
         } else if (args.Exist(kArgSeqIdList) && args[kArgSeqIdList]) {
             string fn(SeqDB_ResolveDbPath(args[kArgSeqIdList].AsString()));
             m_SearchDb->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,
-                             CSeqDBFileGiList::eSiList)));
+                             CSeqDBFileGiList::eMixList)));
         }
 
         if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])
