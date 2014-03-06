@@ -2,6 +2,7 @@
 LIB = valid
 SRC = valid__ valid___
 
+ASN_DEP = general
 
 USES_LIBRARIES =  \
     general xregexp
