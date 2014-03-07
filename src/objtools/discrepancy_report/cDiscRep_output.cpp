@@ -428,6 +428,7 @@ void CDiscRepOutput :: x_Clean()
    thisInfo.test_item_list.clear();
    thisInfo.test_item_objs.clear();
    thisInfo.disc_report_data.clear();
+   m_PrtOrd.clear();
 };
 
 // for asndisc

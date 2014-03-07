@@ -129,12 +129,7 @@ typedef map <string, CRef < GeneralDiscSubDt > > Str2SubDt;
 typedef map <int, vector <string> > Int2Strs;
 
 static vector <CRef < GeneralDiscSubDt > > INCONSISTENT_BIOSOURCE_biosrc;
-static vector < CRef < CClickableItem > > DUPLICATE_GENE_LOCUS_locuss;
-static vector < CRef < GeneralDiscSubDt > > SUSPECT_PROD_NAMES_feat;
-static unsigned DISC_QUALITY_SCORES_graph=0;
-static Int2Strs PROJECT_ID_prot;
-static Int2Strs PROJECT_ID_nuc;
-static Str2Strs JOINED_FEATURES_sfs;
+//static unsigned DISC_QUALITY_SCORES_graph=0; 
 
 static Str2MapStr2Strs biosrc2qualvlu_nm;
 Str2QualVlus qual_nm2qual_vlus;
@@ -300,6 +295,8 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
                    + GetDiscItemText(*feat_in_use));
               test_name = thisInfo.susrule_summ[rule_idx][0];
               summ = thisInfo.susrule_summ[rule_idx][2];
+if (summ.find("underscore") != string::npos) {
+}
               thisInfo.test_item_objs[test_name + "$" + summ].push_back(
                                              CConstRef<CObject>(feat_in_use));
          }
@@ -315,7 +312,7 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem> c_item)
    GetTestItemList(c_item->item_list, fixtp2rule_feats);
    c_item->item_list.clear();
 
-   string test_name, fixtp_name, summ;
+   string test_name, fixtp_name, summ, summ2;
    unsigned rule_idx;
    vector <string> arr;
    ITERATE (Str2Strs, fit, fixtp2rule_feats) {
@@ -337,10 +334,10 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem> c_item)
           else if (arr[0][arr[0].size()-1] == 's') {
             arr[0] = arr[0].substr(0, arr[0].size()-1);
           }
-          summ = NStr::Join(arr, " ");
+          summ2 = NStr::Join(arr, " ");
        }
-       AddSubcategory(name_cat_citem, test_name+"$"+summ, &(rit->second), 
-                      "feature " + summ, "features " + summ,  e_OtherComment);
+       AddSubcategory(name_cat_citem, test_name + "$" + summ, &(rit->second), 
+                   "feature " + summ2, "features " + summ2,  e_OtherComment);
      } 
      name_cat_citem->setting_name = GetName();
      name_cat_citem->description = fixtp_name;
@@ -7009,10 +7006,6 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
           else excpt = false;
           desc = GetDiscItemText(**it);
           strtmp = excpt ? excpt_txt : "no";
-/*
-          if (excpt)  JOINED_FEATURES_sfs[excpt_txt].push_back(desc);
-          else JOINED_FEATURES_sfs["no"].push_back(desc);
-*/
           thisInfo.test_item_list[GetName_joined()].push_back(strtmp + "$" + desc);
           thisInfo.test_item_objs[GetName_joined() + "$" + strtmp].push_back(
                                                                 CConstRef <CObject>(*it));
@@ -7126,14 +7119,14 @@ void CBioseq_DISC_QUALITY_SCORES :: TestOnObj(const CBioseq& bioseq)
     unsigned cnt = 0;
     ITERATE (list <CRef <CSeq_annot> >, it, bioseq.GetAnnot()) {
        if ( (*it)->GetData().IsGraph() ) { 
-             DISC_QUALITY_SCORES_graph |= 1; 
+             m_DISC_QUALITY_SCORES_graph |= 1; 
              break; 
        }
        cnt ++;
     }
 
     if (cnt == bioseq.GetAnnot().size()) {
-              DISC_QUALITY_SCORES_graph |= 2; 
+              m_DISC_QUALITY_SCORES_graph |= 2; 
     }
   }
 };
@@ -7141,13 +7134,13 @@ void CBioseq_DISC_QUALITY_SCORES :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_DISC_QUALITY_SCORES ::  GetReport(CRef <CClickableItem> c_item)
 {
-  if (DISC_QUALITY_SCORES_graph == 1) {
+  if (m_DISC_QUALITY_SCORES_graph == 1) {
     c_item->description = "Quality scores are present on all sequences.";
   }
-  else if (DISC_QUALITY_SCORES_graph == 2) {
+  else if (m_DISC_QUALITY_SCORES_graph == 2) {
     c_item->description = "Quality scores are missing on all sequences.";
   }
-  else if (DISC_QUALITY_SCORES_graph == 3) {
+  else if (m_DISC_QUALITY_SCORES_graph == 3) {
     c_item->description = "Quality scores are missing on some sequences.";
   }
 };
@@ -10433,26 +10426,6 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
    }
 };
 
-void CSeqEntry_test_on_user :: GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id)
-{
-  string desc;
-  ITERATE (list < CRef < CSeq_entry > >, it, bioseq_set.GetSeq_set()) {
-     if ((*it)->IsSeq()) {
-         const CBioseq& bioseq = (*it)->GetSeq();
-         desc = GetDiscItemText(bioseq);
-         if ( bioseq.IsAa() ) {
-              PROJECT_ID_prot[id].push_back(desc);
-              thisInfo.test_item_list[GetName_proj()].push_back("prot$" + desc);
-         }
-         else {
-              PROJECT_ID_nuc[id].push_back(desc);
-              thisInfo.test_item_list[GetName_proj()].push_back("nuc$" + desc);
-         }
-     }
-     else GroupAllBioseqs((*it)->GetSet(), id);
-  }
-};
-
 
 void CSeqEntry_test_on_user :: CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, Str2Int& bioseq2cnt)
 {
@@ -10463,13 +10436,19 @@ void CSeqEntry_test_on_user :: CheckCommentCountForSet(const CBioseq_set& set, c
           if (!bioseq.IsAa()) {
               desc =  GetDiscItemText( (*it)->GetSeq());
               if (bioseq2cnt.find(desc) != bioseq2cnt.end()) {
-                   if (cnt) 
-                       bioseq2cnt[desc] = bioseq2cnt[desc] ? bioseq2cnt[desc]++ : cnt;
+                if (cnt) { 
+                   bioseq2cnt[desc] 
+                       = bioseq2cnt[desc] ? bioseq2cnt[desc]++ : cnt;
+                }
               }
-              else bioseq2cnt[desc] = cnt;
+              else {
+                 bioseq2cnt[desc] = cnt;
+              }
           }
      }
-     else CheckCommentCountForSet((*it)->GetSet(), cnt, bioseq2cnt);
+     else {
+        CheckCommentCountForSet((*it)->GetSet(), cnt, bioseq2cnt);
+     }
    }
 };
 
@@ -10550,14 +10529,12 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
          bioseq_desc = GetDiscItemText(*(bb_ci->GetCompleteBioseq()));
          CConstRef <CObject> seq_ref(bb_ci->GetCompleteBioseq().GetPointer());
          if (bb_ci->IsAa()) {
-       //       PROJECT_ID_prot[id].push_back(bioseq_desc);
               thisInfo.test_item_list[GetName_proj()]
                          .push_back("prot$" + id + "#" + bioseq_desc);
               thisInfo.test_item_objs[GetName_proj() + "$prot#" + id]
                          .push_back(seq_ref);
          }
          else {
-        //      PROJECT_ID_nuc[id].push_back(bioseq_desc);
               thisInfo.test_item_list[GetName_proj()]
                          .push_back("nuc$" + id + "#" + bioseq_desc);
               thisInfo.test_item_objs[GetName_proj() + "$nuc#" + id]
@@ -10835,11 +10812,6 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem> c_item)
 
        c_item->expanded = true; 
    }
-
-/*
-   PROJECT_ID_prot.clear();
-   PROJECT_ID_nuc.clear();
-*/
 };
 
 // new method
