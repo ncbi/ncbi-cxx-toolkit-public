@@ -1012,10 +1012,23 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             const TStd& std_segs = map_align.GetSegs().GetStd();
             ITERATE(TStd, std_seg, std_segs) {
                 size_t to_row = size_t(-1);
-                for (size_t i = 0; i < (*std_seg)->GetIds().size(); ++i) {
-                    if ((*std_seg)->GetIds()[i]->Equals(to_id)) {
-                        to_row = i;
-                        break;
+                if ((*std_seg)->IsSetIds()  &&  !(*std_seg)->GetIds().empty()) {
+                    for (size_t i = 0; i < (*std_seg)->GetIds().size(); ++i) {
+                        if ((*std_seg)->GetIds()[i]->Equals(to_id)) {
+                            to_row = i;
+                            break;
+                        }
+                    }
+                }
+                if (to_row == size_t(-1)) {
+                    // The id is not found or 'ids' is missing in the std-seg.
+                    // Try to parse seq-locs.
+                    for (size_t i = 0; i < (*std_seg)->GetLoc().size(); ++i) {
+                        const CSeq_id* row_id = (*std_seg)->GetLoc()[i]->GetId();
+                        if (row_id  &&  row_id->Equals(to_id)) {
+                            to_row = i;
+                            break;
+                        }
                     }
                 }
                 if (to_row == size_t(-1)) {
