@@ -1171,18 +1171,31 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
         to_process.clear();
         to_process.push_back("CPPFLAGS");
         ITERATE(vector<string>, top, to_process) {
-            tmp_list.clear();
             prj.m_DataSource.GetValue(*top, tmp_list);
-            set<string> defines;
-            defines.insert("${ORIG_CPPFLAGS}");
+            vector<string> defines;
+            if (tmp_list.empty()) {
+                defines.push_back("${ORIG_CPPFLAGS}");
+            }
             ITERATE( list<string>, s, tmp_list) {
                 if (CSymResolver::IsDefine(*s)) {
                     value = CSymResolver::StripDefine(FilterDefine(*s));
                     if (NStr::EndsWith(value, "_INCLUDE")) {
                         mkPrj[prj_path].AddIncludeDirectory("${" + value + "}");
+// also look for additional definitions
+                        const CMsvcSite& site = GetApp().GetSite();
+                        string resolved;
+                        site.ResolveDefine(value, resolved);
+                        list<string> resolved_list;
+                        NStr::Split(resolved, " ", resolved_list);
+                        ITERATE( list<string>, r, resolved_list) {
+                            if (NStr::StartsWith(*r, "-D")) {
+                                defines.push_back(*r);
+                            }
+                        }
+
                     }
                     else {
-                        defines.insert("${" + value + "}");
+                        defines.push_back("${" + value + "}");
                     }
                 } else if (CSymResolver::HasDefine(*s)) {
 //cerr << "Found smth has define: " << *s << " in " << prj.m_Name << endl;
@@ -1201,26 +1214,16 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
 #endif
                     }
                 } else if (NStr::StartsWith(*s, "-D")) {
-                    defines.insert(*s);
+                    defines.push_back(*s);
                 }
             }
-#if 1
             if (!defines.empty()) {
                 CMakeProperty def( "add_definitions");
-                ITERATE( set<string>, d, defines) {
+                ITERATE( vector<string>, d, defines) {
                     def.AddValue( *d);
                 }
                 mkPrj[prj_path].AddProperty( def);
             }
-#else
-            if (!prj.m_Defines.empty()) {
-                CMakeProperty def( "add_definitions");
-                ITERATE( list<string>, d, prj.m_Defines) {
-                    def.AddValue( "-D" + *d);
-                }
-                mkPrj[prj_path].AddProperty( def);
-            }
-#endif
         }
 
 // tests
