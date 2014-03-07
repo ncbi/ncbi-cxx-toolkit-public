@@ -4717,8 +4717,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
                               "Create date has error - BAD_DAY"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDate",
                               "Update date has error - BAD_DAY"));
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MultipleBioSources",
                               "Undesired multiple source descriptors"));
+    */
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
