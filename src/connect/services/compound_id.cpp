@@ -43,8 +43,8 @@
 #include <iomanip>
 
 #define CIC_GENERICID_CLASS_NAME "CompoundID"
-#define CIC_NETCACHEKEY_CLASS_NAME "NetCacheKey"
-#define CIC_NETSCHEDULEKEY_CLASS_NAME "NetScheduleKey"
+#define CIC_NETCACHEBLOBKEY_CLASS_NAME "NetCacheBlobKey"
+#define CIC_NETSCHEDULEJOBKEY_CLASS_NAME "NetScheduleJobKey"
 #define CIC_NETSTORAGEOBJECTLOC_CLASS_NAME "NetStorageObjectLoc"
 
 #define CIT_ID_TYPE_NAME "id"
@@ -71,8 +71,8 @@ BEGIN_NCBI_SCOPE
 
 static const char* s_ClassNames[eCIC_NumberOfClasses] = {
     /* eCIC_GenericID           */  CIC_GENERICID_CLASS_NAME,
-    /* eCIC_NetCacheKey         */  CIC_NETCACHEKEY_CLASS_NAME,
-    /* eCIC_NetScheduleKey      */  CIC_NETSCHEDULEKEY_CLASS_NAME,
+    /* eCIC_NetCacheKey         */  CIC_NETCACHEBLOBKEY_CLASS_NAME,
+    /* eCIC_NetScheduleKey      */  CIC_NETSCHEDULEJOBKEY_CLASS_NAME,
     /* eCIC_NetStorageObjectLoc */  CIC_NETSTORAGEOBJECTLOC_CLASS_NAME
 };
 
@@ -474,10 +474,10 @@ CCompoundID CCompoundIDDumpParser::ParseID()
             new_id_class = eCIC_GenericID;
         break;
     case 'N':
-        if (new_id_class_name == CIC_NETCACHEKEY_CLASS_NAME)
-            new_id_class = eCIC_NetCacheKey;
-        else if (new_id_class_name == CIC_NETSCHEDULEKEY_CLASS_NAME)
-            new_id_class = eCIC_NetScheduleKey;
+        if (new_id_class_name == CIC_NETCACHEBLOBKEY_CLASS_NAME)
+            new_id_class = eCIC_NetCacheBlobKey;
+        else if (new_id_class_name == CIC_NETSCHEDULEJOBKEY_CLASS_NAME)
+            new_id_class = eCIC_NetScheduleJobKey;
         else if (new_id_class_name == CIC_NETSTORAGEOBJECTLOC_CLASS_NAME)
             new_id_class = eCIC_NetStorageObjectLoc;
     }

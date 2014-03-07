@@ -49,8 +49,8 @@ struct SCompoundIDFieldImpl;    ///< @internal
 // Registered CompoundID Classes
 enum ECompoundIDClass {
     eCIC_GenericID,
-    eCIC_NetCacheKey,
-    eCIC_NetScheduleKey,
+    eCIC_NetCacheBlobKey,
+    eCIC_NetScheduleJobKey,
     eCIC_NetStorageObjectLoc,
 
     eCIC_NumberOfClasses
