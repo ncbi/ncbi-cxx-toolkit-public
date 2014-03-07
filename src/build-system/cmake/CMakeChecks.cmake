@@ -1,4 +1,4 @@
-if ("${CMAKE_BUILDTYPE}" EQUAL "Debug")
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     add_definitions(-D_DEBUG)
 ELSE()
     add_definitions(-DNDEBUG)
@@ -135,7 +135,9 @@ endif (CMAKE_USE_PTHREADS_INIT)
 if(HAVE_LIBDL)
     set(DL_LIBS -ldl)
 endif(HAVE_LIBDL)
-set (ORIG_LIBS -lrt -lm  -lpthread)
+
+set(ORIG_LIBS   -lrt -lm  -lpthread)
+set(ORIG_C_LIBS      -lm  -lpthread)
 
 if (HAVE_LIBPCRE AND NOT USE_LOCAL_PCRE)
     set(PCRE_LIBS -lpcre)
@@ -268,8 +270,6 @@ set(KRB5_LIBS   -lgssapi_krb5 -lkrb5 -lk5crypto -lcom_err)
 # Sybase stuff
 set(SYBASE_INCLUDE /export/home/sybase/clients/12.5-64bit/include)
 set(SYBASE_LIBS   -L/export/home/sybase/clients/12.5-64bit/lib64 -Wl,-rpath,/export/home/sybase/clients/12.5-64bit/lib64 -lblk_r64 -lct_r64 -lcs_r64 -lsybtcl_r64 -lcomn_r64 -lintl_r64)
-# HACK: this should not be a global definition; it should be restricted to only places in which FreeTDS / Sybase is used
-add_definitions(-DSYB_LP64)
 set(SYBASE_DLLS)
 set(SYBASE_DBLIBS  -L/export/home/sybase/clients/12.5-64bit/lib64 -Wl,-rpath,/export/home/sybase/clients/12.5-64bit/lib64 -lsybdb64)
 
@@ -278,7 +278,7 @@ set(SYBASE_DBLIBS  -L/export/home/sybase/clients/12.5-64bit/lib64 -Wl,-rpath,/ex
 set(ftds64   ftds)
 set(FTDS64_CTLIB_LIBS  ${ICONV_LIBS} ${KRB5_LIBS})
 set(FTDS64_CTLIB_LIB   ct_ftds64 tds_ftds64)
-set(FTDS64_CTLIB_INCLUDE ${includedir}/dbapi/driver/ftds64/freetds ${includedir0}/dbapi/driver/ftds64/freetds)
+set(FTDS64_CTLIB_INCLUDE ${includedir}/dbapi/driver/ftds64/freetds)
 set(FTDS64_LIBS        ${FTDS64_CTLIB_LIBS})
 set(FTDS64_LIB        ${FTDS64_CTLIB_LIB})
 set(FTDS64_INCLUDE    ${FTDS64_CTLIB_INCLUDE})
@@ -312,7 +312,7 @@ set(PYTHON25_LIBS     -L/opt/python-2.5/lib -L/opt/python-2.5/lib/python2.5/conf
 
 # Perl: executable, headers and libs
 set(PERL          /opt/perl-5.8.8/bin/perl)
-set(PERL_INCLUDE  /opt/perl-5.8.8/lib/5.8.8/x86_64-linux/CORE -DDEBUGGING /usr/include/gdbm)
+set(PERL_INCLUDE  /opt/perl-5.8.8/lib/5.8.8/x86_64-linux/CORE /usr/include/gdbm)
 set(PERL_LIBS     -L/opt/perl-5.8.8/lib/5.8.8/x86_64-linux/CORE -Wl,-rpath,/opt/perl-5.8.8/lib/5.8.8/x86_64-linux/CORE -lperl -lnsl -lgdbm -ldb -ldl -lm -lcrypt -lutil -lc)
 
 # Java
@@ -367,7 +367,7 @@ set(OSMESA_LIBS         -L${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -Wl,-rpath,/
 set(OSMESA_STATIC_LIBS  -L${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -Wl,-rpath,/opt/ncbi/64/Mesa-7.0.2-ncbi2/lib64:${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64   -lOSMesa-static -lGLU-static -lGL-static -lXmu -lXt -lXext  -lSM -lICE -lX11 )
 set(GLUT_INCLUDE       )
 set(GLUT_LIBS          )
-set(GLEW_INCLUDE       ${NCBI_TOOLS_ROOT}/glew-1.5.8/GCC401-Debug64/include -DGLEW_MX)
+set(GLEW_INCLUDE       ${NCBI_TOOLS_ROOT}/glew-1.5.8/GCC401-Debug64/include)
 set(GLEW_LIBS          -L${NCBI_TOOLS_ROOT}/glew-1.5.8/GCC401-Debug64/lib64 -Wl,-rpath,/opt/ncbi/64/glew-1.5.8/GCC401-Debug64/lib64:${NCBI_TOOLS_ROOT}/glew-1.5.8/GCC401-Debug64/lib64 -lGLEW)
 set(GLEW_STATIC_LIBS   ${NCBI_TOOLS_ROOT}/glew-1.5.8/GCC401-Debug64/lib/libGLEW-static.a)
 
@@ -387,7 +387,7 @@ set(WXWIDGETS_STATIC_LIBS    -L${NCBI_TOOLS_ROOT}/wxWidgets-2.9.5-ncbi1/GCC442-D
 set(WXWIDGETS_GL_LIBS        -L${NCBI_TOOLS_ROOT}/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib -pthread   -lwx_gtk2_gl-2.9 -lwx_base-2.9 )
 set(WXWIDGETS_GL_STATIC_LIBS -L${NCBI_TOOLS_ROOT}/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib -pthread   ${NCBI_TOOLS_ROOT}/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib/libwx_gtk2_gl-2.9.a ${NCBI_TOOLS_ROOT}/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib/libwx_base-2.9.a -L${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64 -Wl,-rpath,/opt/ncbi/64/Mesa-7.0.2-ncbi2/lib64:${NCBI_TOOLS_ROOT}/Mesa-7.0.2-ncbi2/lib64   -lGLU-static -lGL-static -lXmu -lXt -lXext  -lSM -lICE -lX11  -lz -ldl -lm )
 
-set(WXWIDGETS_INCLUDE     /usr/include/gtk-2.0 /usr/lib64/gtk-2.0/include /usr/include/atk-1.0 /usr/include/cairo /usr/include/pango-1.0 /usr/include/glib-2.0 /usr/lib64/glib-2.0/include /usr/include/pixman-1 /usr/include/freetype2 /usr/include/libpng12   /netopt/ncbi_tools64/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib/wx/include/gtk2-ansi-2.9 /netopt/ncbi_tools64/wxWidgets-2.9.5-ncbi1/include/wx-2.9 -D_FILE_OFFSET_BITS=64 -DWXUSINGDLL -D__WXGTK__ -pthread)
+set(WXWIDGETS_INCLUDE     /usr/include/gtk-2.0 /usr/lib64/gtk-2.0/include /usr/include/atk-1.0 /usr/include/cairo /usr/include/pango-1.0 /usr/include/glib-2.0 /usr/lib64/glib-2.0/include /usr/include/pixman-1 /usr/include/freetype2 /usr/include/libpng12   /netopt/ncbi_tools64/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib/wx/include/gtk2-ansi-2.9 /netopt/ncbi_tools64/wxWidgets-2.9.5-ncbi1/include/wx-2.9)
 set(WXWIDGETS_LIBS        -L/netopt/ncbi_tools64/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib -Wl,-rpath,/opt/ncbi/64/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib:/netopt/ncbi_tools64/wxWidgets-2.9.5-ncbi1/GCC442-DebugMT64/lib -pthread -lwx_gtk2_richtext-2.9 -lwx_gtk2_aui-2.9 -lwx_gtk2_xrc-2.9 -lwx_gtk2_html-2.9 -lwx_gtk2_qa-2.9 -lwx_gtk2_adv-2.9 -lwx_gtk2_core-2.9 -lwx_base_xml-2.9 -lwx_base_net-2.9 -lwx_base-2.9 -pthread -lgthread-2.0 -lX11 -lSM -lgtk-x11-2.0 -lgdk-x11-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lpangocairo-1.0 -lpango-1.0 -lcairo -lgobject-2.0 -lgmodule-2.0 -lglib-2.0 -lpng -ljpeg -ltiff -lexpat -lz -ldl)
 
 
