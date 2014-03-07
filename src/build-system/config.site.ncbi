@@ -156,6 +156,9 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    FreeBSD32 )
+        : ${PYTHON=/usr/local/bin/python2.7}
+        ;;
     *MAC )
         : ${PYTHON_PATH=/usr}
         : ${PYTHON24=/usr/bin/false}
