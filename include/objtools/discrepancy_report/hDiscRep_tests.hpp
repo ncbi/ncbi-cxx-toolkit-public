@@ -1578,9 +1578,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_mproj() const {return string("MISSING_PROJECT"); }
       string GetName_bproj() const {return string("ONCALLER_BIOPROJECT_ID"); }
       string GetName_prefix() const {
-                       return string("ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX"); }
+                 return string("ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX"); }
 
-      void GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id);
       void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, 
                                                                         Str2Int& bioseq2cnt);
       Str2Obj m_bioseq2geno_comm;
@@ -3910,11 +3909,15 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CBioseq_DISC_QUALITY_SCORES : public CBioseqTestAndRepData
   {
     public:
+      CBioseq_DISC_QUALITY_SCORES () {m_DISC_QUALITY_SCORES_graph = 0;}
       virtual ~CBioseq_DISC_QUALITY_SCORES () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_QUALITY_SCORES");}
+
+    private:
+      unsigned m_DISC_QUALITY_SCORES_graph;
   };
 
   class CBioseq_RNA_CDS_OVERLAP : public CBioseqTestAndRepData
@@ -3935,7 +3938,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DISC_COUNT_NUCLEOTIDES");}
-unsigned m_cnt;
   };
 
   class CBioseq_DUPLICATE_GENE_LOCUS : public CBioseqTestAndRepData
