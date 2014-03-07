@@ -205,7 +205,7 @@ void CNetScheduleKeyGenerator::Generate(string* key, unsigned id) const
 string CNetScheduleKeyGenerator::GenerateCompoundID(unsigned id,
         CCompoundIDPool id_pool) const
 {
-    CCompoundID ns_key_cid = id_pool.NewID(eCIC_NetScheduleKey);
+    CCompoundID ns_key_cid = id_pool.NewID(eCIC_NetScheduleJobKey);
 
     ns_key_cid.AppendID(id);
 

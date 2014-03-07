@@ -340,7 +340,7 @@ string CNetCacheKey::KeyToCompoundID(const string& key_str,
 {
     CNetCacheKey key_obj(key_str, id_pool);
 
-    CCompoundID nc_key_cid(id_pool.NewID(eCIC_NetCacheKey));
+    CCompoundID nc_key_cid(id_pool.NewID(eCIC_NetCacheBlobKey));
 
     nc_key_cid.AppendID(key_obj.GetId());
 

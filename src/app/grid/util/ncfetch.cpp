@@ -161,7 +161,7 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
         }
 
         switch (compound_id.GetClass()) {
-        case eCIC_NetCacheKey:
+        case eCIC_NetCacheBlobKey:
             x_FetchNetCacheBlob(request, reply, key);
             break;
         case eCIC_NetStorageObjectLoc:
