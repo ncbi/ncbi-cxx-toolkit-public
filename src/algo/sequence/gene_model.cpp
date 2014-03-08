@@ -3471,54 +3471,26 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
     }
 
     if (m_is_best_refseq) {
-        size_t indel_count = 0, frameshift_count = 0;
-        ITERATE (CRangeCollection<TSeqPos>, it, insert_locs) {
-            ++(it->GetLength() % 3 ? frameshift_count : indel_count);
-        }
-        ITERATE (CRangeCollection<TSeqPos>, it, delete_locs) {
-            ++(delete_sizes[it->GetFrom()] % 3 ? frameshift_count : indel_count);
-        }
+        size_t indel_count = insert_locs.size() + delete_locs.size();
+        size_t frameshift_count = 0;
         unsigned pct_coverage = 100, cds_pct_coverage = 100;
-        rna_comment = "The RefSeq transcript";
-        if (!mismatch_locs.empty()) {
-            rna_comment += " has " +
-                s_Count(mismatch_locs.GetCoveredLength(), "substitution");
-        }
-        if (frameshift_count) {
-            rna_comment += (mismatch_locs.empty() ? " has " : ", ") +
-                           s_Count(frameshift_count, "frameshift");
-        }
-        if (indel_count) {
-            rna_comment += (mismatch_locs.empty() && !frameshift_count? " has " : ", ") +
-                           s_Count(indel_count, "non-frameshifting indel");
-        }
         if (partial_unaligned_section) {
             pct_coverage =
                 CScoreBuilderBase().GetPercentCoverage(*m_scope, *align);
             cds_pct_coverage =
                 CScoreBuilderBase().GetPercentCoverage(*m_scope, *align,
                                                        cds_ranges);
-            if (!mismatch_locs.empty() || indel_count || frameshift_count) {
-                rna_comment += " and";
-            }
-            rna_comment += " aligns at "
-                         + NStr::NumericToString(pct_coverage)
-                         + "% coverage";
-        }
-        if (rna_comment == "The RefSeq transcript") {
-            rna_comment.clear();
-        } else {
-            rna_comment += " compared to this genomic sequence";
         }
         if (cds_feat && cds_feat_on_mrna) {
-            size_t cds_indel_count = 0, cds_frameshift_count = 0;
+            size_t cds_indel_count = 0;
             ITERATE (CRangeCollection<TSeqPos>, it, inserts_in_cds) {
-              ++(it->GetLength() % 3 ? cds_frameshift_count : cds_indel_count);
+              ++(it->GetLength() % 3 ? frameshift_count : cds_indel_count);
             }
             ITERATE (CRangeCollection<TSeqPos>, it, deletes_in_cds) {
-              ++(delete_sizes[it->GetFrom()] % 3 ? cds_frameshift_count
+              ++(delete_sizes[it->GetFrom()] % 3 ? frameshift_count
                                                  : cds_indel_count);
             }
+            indel_count -= frameshift_count;
             size_t cds_mismatch_count = 0;
             CSeqVector prot(cds_feat->GetProduct(), *m_scope,
                             CBioseq_Handle::eCoding_Iupac);
@@ -3556,23 +3528,23 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                     }
                 }
             }
-            if (cds_mismatch_count || cds_indel_count || cds_frameshift_count || cds_pct_coverage < 100)
+            if (cds_mismatch_count || cds_indel_count || frameshift_count || cds_pct_coverage < 100)
             {
                 cds_comment = "The RefSeq protein";
                 if (cds_mismatch_count) {
                     cds_comment += " has "
                                  + s_Count(cds_mismatch_count, "substitution");
                 }
-                if (cds_frameshift_count) {
+                if (frameshift_count) {
                     cds_comment += (cds_mismatch_count ? ", " : " has ")
-                                 + s_Count(cds_frameshift_count, "frameshift");
+                                 + s_Count(frameshift_count, "frameshift");
                 }
                 if (cds_indel_count) {
-                    cds_comment += (cds_mismatch_count || cds_frameshift_count ? ", " : " has ")
+                    cds_comment += (cds_mismatch_count || frameshift_count ? ", " : " has ")
                                  + s_Count(cds_indel_count, "non-frameshifting indel");
                 }
                 if (cds_pct_coverage < 100) {
-                    if (cds_mismatch_count || cds_indel_count || cds_frameshift_count) {
+                    if (cds_mismatch_count || cds_indel_count || frameshift_count) {
                         cds_comment += " and";
                     }
                     cds_comment += " aligns at "
@@ -3581,6 +3553,32 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                     }
                 cds_comment += " compared to this genomic sequence";
             }
+        }
+        rna_comment = "The RefSeq transcript";
+        if (!mismatch_locs.empty()) {
+            rna_comment += " has " +
+                s_Count(mismatch_locs.GetCoveredLength(), "substitution");
+        }
+        if (frameshift_count) {
+            rna_comment += (mismatch_locs.empty() ? " has " : ", ") +
+                           s_Count(frameshift_count, "frameshift");
+        }
+        if (indel_count) {
+            rna_comment += (mismatch_locs.empty() && !frameshift_count? " has " : ", ") +
+                           s_Count(indel_count, "non-frameshifting indel");
+        }
+        if (partial_unaligned_section) {
+            if (!mismatch_locs.empty() || indel_count || frameshift_count) {
+                rna_comment += " and";
+            }
+            rna_comment += " aligns at "
+                         + NStr::NumericToString(pct_coverage)
+                         + "% coverage";
+        }
+        if (rna_comment == "The RefSeq transcript") {
+            rna_comment.clear();
+        } else {
+            rna_comment += " compared to this genomic sequence";
         }
     } else if (m_is_gnomon) {
         set<TSeqPos> insert_codons, delete_codons;

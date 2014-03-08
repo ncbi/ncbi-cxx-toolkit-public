@@ -40,8 +40,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 1 frameshift, 2 non-frameshifting
- indels compared to this genomic sequence",
+      comment "The RefSeq transcript has 3 non-frameshifting indels compared
+ to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -184,7 +184,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 17 substitutions, 4 frameshifts, 7
+      comment "The RefSeq transcript has 17 substitutions, 3 frameshifts, 8
  non-frameshifting indels compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
@@ -398,7 +398,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 17 substitutions, 4 frameshifts, 7
+      comment "The RefSeq transcript has 17 substitutions, 3 frameshifts, 8
  non-frameshifting indels compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
