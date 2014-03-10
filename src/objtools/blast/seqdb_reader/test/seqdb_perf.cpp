@@ -145,8 +145,9 @@ CSeqDBPerfApp::x_ScanDatabase()
     #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
                          shared(oids2iterate) if(m_DbHandles.size() > 1)
     { 
+        int thread_id = 0;
 #ifdef _OPENMP
-        int thread_id = omp_get_thread_num();
+        thread_id = omp_get_thread_num();
 #endif
         #pragma omp for schedule(static, (oids2iterate.size()/m_DbHandles.size())) nowait
         for (size_t i = 0; i < oids2iterate.size(); i++) {
