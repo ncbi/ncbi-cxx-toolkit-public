@@ -51,6 +51,10 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
+class CIntDeltaSumCache;
+
+
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_SEQ_EXPORT CSeqTable_multi_data : public CSeqTable_multi_data_Base
 {
@@ -63,11 +67,23 @@ public:
 
     size_t GetSize(void) const;
 
-    bool GetRowBit(size_t row_index) const
-        {
-            x_EnsurePreprocessed();
-            return x_GetRowBit(row_index);
-        }
+    // return true if there is a value at the row
+    bool IsSet(size_t row_index) const {
+        return row_index < GetSize();
+    }
+
+    // get bool value for the row, return false if there is no a value
+    bool TryGetBool(size_t row, bool& v) const;
+    // get int value for the row, return false if there is no a value
+    bool TryGetInt(size_t row, int& v) const;
+    // get double value for the row, return false if there is no a value
+    bool TryGetReal(size_t row, double& v) const;
+
+    // get pointer to a string value for the row, or null if there is none
+    const string* GetStringPtr(size_t row) const;
+    // get pointer to a byte vector value for the row, or null if there is none
+    typedef vector<char> TBytesValue;
+    const TBytesValue* GetBytesPtr(size_t row) const;
 
     // reserve memory for multi-row data vectors
     class NCBI_SEQ_EXPORT CReserveHook : public CPreReadChoiceVariantHook
@@ -76,21 +92,38 @@ public:
                                           const CObjectInfoCV& variant);
     };
     
-private:
-    void x_Preprocess(void) const;
-    void x_EnsurePreprocessed(void) const {
-        E_Choice type = Which();
-        if ( (type == e_Int_delta) ||
-             (type == e_Int_scaled) ||
-             (type == e_Real_scaled) ||
-             (type == e_Bit_bvector && !m_BitVector) ) {
-            x_Preprocess();
-        }
+    // change the representation of data
+    void ChangeTo(E_Choice type);
+    void ChangeToBit(void); // convert int data with values 0/1 to bits
+    void ChangeToBit_bvector(void);
+    void ChangeToInt(void);
+    void ChangeToInt_delta(void);
+    void ChangeToInt_scaled(int mul, int add);
+    void ChangeToReal(void);
+    void ChangeToReal_scaled(double mul, double add);
+    void ChangeToString(const string* omitted_value = 0);
+    void ChangeToCommon_string(const string* omit_value = 0);
+    void ChangeToBytes(const TBytesValue* omitted_value = 0);
+    void ChangeToCommon_bytes(const TBytesValue* omit_value = 0);
+
+    // Overload base ResetSelection() to reset extra data fields
+    void ResetSelection(void) {
+        x_ResetCache();
+        Tparent::ResetSelection();
     }
-    bool x_GetRowBit(size_t row_index) const;
-    
-    mutable AutoPtr<bm::bvector<> > m_BitVector;
-    
+
+    void PostRead(void) {
+        x_ResetCache();
+    }
+
+protected:
+
+    void x_ResetCache(void);
+
+    CIntDeltaSumCache& x_GetIntDeltaCache(void) const;
+
+    mutable CRef<CIntDeltaSumCache> m_Cache;
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeqTable_multi_data(const CSeqTable_multi_data& value);
@@ -100,18 +133,14 @@ private:
 
 /////////////////// CSeqTable_multi_data inline methods
 
-// constructor
-inline
-CSeqTable_multi_data::CSeqTable_multi_data(void)
-{
-}
-
-
 /////////////////// end of CSeqTable_multi_data inline methods
 
 
 NCBISER_HAVE_GLOBAL_READ_VARIANT_HOOK(CSeqTable_multi_data, "*",
                                       new CSeqTable_multi_data::CReserveHook)
+
+NCBISER_HAVE_POST_READ(CSeqTable_multi_data)
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

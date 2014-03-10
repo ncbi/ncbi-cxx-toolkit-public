@@ -114,7 +114,7 @@ CommonString-table ::= SEQUENCE {
     -- set of possible values
     strings     SEQUENCE OF UTF8String,
 
-    -- indexes of values
+    -- indexes of values in array 'strings' for each data row
     indexes     SEQUENCE OF INTEGER
 }
 
@@ -123,7 +123,7 @@ CommonBytes-table ::= SEQUENCE {
     -- set of possible values
     bytes       SEQUENCE OF OCTET STRING,
 
-    -- indexes of values
+    -- indexes of values in array 'bytes' for each data row
     indexes     SEQUENCE OF INTEGER
 }
 
@@ -141,6 +141,15 @@ Scaled-real-multi-data ::= SEQUENCE {
     mul     REAL,
     add     REAL,
     data    SeqTable-multi-data
+}
+
+
+-- Class for serializing bm::bvector<>
+-- see include/util/bitset/bm.h
+-- Since bvector<> serialization doesn't keep size we have to add it explicitly
+BVector-data ::= SEQUENCE {
+    size    INTEGER,
+    data    OCTET STRING
 }
 
 
@@ -164,7 +173,7 @@ SeqTable-multi-data ::= CHOICE {
     common-bytes    CommonBytes-table,
 
     -- a set of bits, one per row
-    -- this uses bm::bvector<> as its storage mechanism
+    -- Most-significant bit in each octet comes first.
     bit         OCTET STRING,
 
     -- a set of locations, one per row
@@ -183,7 +192,7 @@ SeqTable-multi-data ::= CHOICE {
 
     -- a set of bit, represented as serialized bvector,
     -- see include/util/bitset/bm.h
-    bit-bvector OCTET STRING
+    bit-bvector BVector-data
 }
 
 
@@ -215,7 +224,7 @@ SeqTable-sparse-index ::= CHOICE {
     indexes SEQUENCE OF INTEGER,
 
     -- Bitset of rows with values, set bit means the row has value.
-    -- Most-significant bit in an octet comes first.
+    -- Most-significant bit in each octet comes first.
     bit-set OCTET STRING,
 
     -- Indexes of rows with values, delta-encoded
@@ -223,7 +232,7 @@ SeqTable-sparse-index ::= CHOICE {
     
     -- Bitset of rows with values, as serialized bvector<>,
     -- see include/util/bitset/bm.h
-    bit-set-bvector OCTET STRING
+    bit-set-bvector BVector-data
 }
 
 

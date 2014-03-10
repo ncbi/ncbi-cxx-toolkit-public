@@ -105,10 +105,11 @@ const CSeqTable_column& CSeq_table::GetColumn(TColumnId column_id,
 const char* CSeqTableException::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {
-    case eColumnNotFound:   return "eColumnNotFound";
-    case eRowNotFound:      return "eRowNotFound";
-    case eOtherError:       return "eOtherError";
-    default:                return CException::GetErrCodeString();
+    case eColumnNotFound:       return "eColumnNotFound";
+    case eRowNotFound:          return "eRowNotFound";
+    case eOtherError:           return "eOtherError";
+    case eIncompatibleRowType:  return "eIncompatibleRowType";
+    default:                    return CException::GetErrCodeString();
     }
 }
 

@@ -46,12 +46,22 @@
 #include <corelib/ncbi_param.hpp>
 
 #include <util/bitset/ncbi_bitset.hpp>
+#include <objects/seqtable/seq_table_exception.hpp>
+#include <cmath>
+
+#include <objects/seqtable/impl/delta_cache.hpp>
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+// constructor
+CSeqTable_multi_data::CSeqTable_multi_data(void)
+{
+}
+
 
 // destructor
 CSeqTable_multi_data::~CSeqTable_multi_data(void)
@@ -62,172 +72,299 @@ CSeqTable_multi_data::~CSeqTable_multi_data(void)
 DEFINE_STATIC_MUTEX(sx_PrepareMutex_multi_data);
 
 
-void CSeqTable_multi_data::x_Preprocess(void) const
+void CSeqTable_multi_data::x_ResetCache(void)
 {
-    CMutexGuard guard(sx_PrepareMutex_multi_data);
-    if ( IsInt_delta() ) {
-        CSeqTable_multi_data* nc_this =
-            const_cast<CSeqTable_multi_data*>(this);
-        TInt arr;
-        const CSeqTable_multi_data& data = GetInt_delta();
-        size_t size = data.GetSize();
-        E_Choice data_type = data.Which();
-        if ( data_type == e_Bit ) {
-            arr.reserve(size);
-            const TBit& src = data.GetBit();
-            TInt::value_type v = 0;
-            ITERATE ( TBit, it, src ) {
-                Uint1 bb = *it;
-                for ( size_t i = 0; i < 8; ++i, bb <<= 1 ) {
-                    if ( bb&0x80 ) {
-                        ++v;
-                    }
-                    arr.push_back(v);
-                }
+    m_Cache.Reset();
+}
+
+
+CIntDeltaSumCache& CSeqTable_multi_data::x_GetIntDeltaCache(void) const
+{
+    CIntDeltaSumCache* info = m_Cache.GetNCPointerOrNull();
+    if ( !info ) {
+        m_Cache = info = new CIntDeltaSumCache(GetInt_delta().GetSize());
+    }
+    return *info;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CIntDeltaSumCache
+/////////////////////////////////////////////////////////////////////////////
+
+#define USE_DELTA_CACHE
+const size_t CIntDeltaSumCache::kBlockSize = 128;
+
+
+CIntDeltaSumCache::CIntDeltaSumCache(size_t size)
+    : m_Blocks(new TValue[(size+kBlockSize-1)/kBlockSize]),
+      m_BlocksFilled(0),
+#ifdef USE_DELTA_CACHE
+      m_CacheBlockInfo(new TValue[kBlockSize]),
+#endif
+      m_CacheBlockIndex(size_t(0)-1)
+{
+}
+
+
+CIntDeltaSumCache::~CIntDeltaSumCache(void)
+{
+}
+
+
+inline
+CIntDeltaSumCache::TValue
+CIntDeltaSumCache::x_GetDeltaSum2(const TDeltas& deltas,
+                                  size_t block_index,
+                                  size_t block_offset)
+{
+#ifdef USE_DELTA_CACHE
+    _ASSERT(block_index <= m_BlocksFilled);
+    if ( block_index != m_CacheBlockIndex ) {
+        size_t size = deltas.GetSize();
+        size_t block_pos = block_index*kBlockSize;
+        _ASSERT(block_pos < size);
+        size_t block_size = min(kBlockSize, size-block_pos);
+        _ASSERT(block_offset < block_size);
+        TValue sum = block_index == 0? 0: m_Blocks[block_index-1];
+        for ( size_t i = 0; i < block_size; ++i ) {
+            int v;
+            if ( deltas.TryGetInt(block_pos+i, v) ) {
+                sum += v;
+            }
+            m_CacheBlockInfo[i] = sum;
+        }
+        m_CacheBlockIndex = block_index;
+        if ( block_index == m_BlocksFilled ) {
+            m_Blocks[block_index] = sum;
+            m_BlocksFilled = block_index+1;
+        }
+    }
+    return m_CacheBlockInfo[block_offset];
+#else
+    size_t size = deltas.GetSize();
+    size_t block_pos = block_index*kBlockSize;
+    _ASSERT(block_pos < size);
+    size_t block_size = min(kBlockSize, size-block_pos);
+    _ASSERT(block_offset < block_size);
+    TValue sum = block_index == 0? 0: m_Blocks[block_index-1];
+    for ( size_t i = 0; i <= block_offset; ++i ) {
+        int v;
+        if ( deltas.TryGetInt(block_pos+i, v) ) {
+            sum += v;
+        }
+    }
+    if ( block_index == m_BlocksFilled ) {
+        TValue sum2 = sum;
+        for ( size_t i = block_offset+1; i < block_size; ++i ) {
+            int v;
+            if ( deltas.TryGetInt(block_pos+i, v) ) {
+                sum2 += v;
             }
         }
-        else if ( data_type == e_Bit_bvector ) {
-            arr.reserve(size);
-            const bm::bvector<>& src = *data.m_BitVector;
-            TInt::value_type v = 0;
-            if ( src.any() ) {
-                for ( bm::id_t i = src.get_first(); (i=src.get_next(i)); ) {
-                    arr.resize(i, v);
-                    ++v;
-                    arr.push_back(v);
-                }
-            }
-            arr.resize(size, v);
+        m_Blocks[block_index] = sum2;
+        m_BlocksFilled = block_index+1;
+    }
+    return sum;
+#endif
+}
+
+
+CIntDeltaSumCache::TValue
+CIntDeltaSumCache::GetDeltaSum(const TDeltas& deltas,
+                               size_t index)
+{
+    _ASSERT(index < deltas.GetSize());
+    size_t block_index  = index / kBlockSize;
+    size_t block_offset = index % kBlockSize;
+    while ( block_index >= m_BlocksFilled ) {
+        x_GetDeltaSum2(deltas, m_BlocksFilled, 0);
+    }
+    return x_GetDeltaSum2(deltas, block_index, block_offset);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+bool CSeqTable_multi_data::TryGetBool(size_t row, bool& v) const
+{
+    if ( IsBit() ) {
+        const TBit& bits = GetBit();
+        size_t i = row/8;
+        if ( i >= bits.size() ) {
+            return false;
         }
-        else {
-            swap(const_cast<TInt&>(data.GetInt()), arr);
-            TInt::value_type v = 0;
-            NON_CONST_ITERATE ( TInt, it, arr ) {
-                v += *it;
-                *it = v;
-            }
+        size_t j = row%8;
+        Uint1 bb = bits[i];
+        v = ((bb<<j)&0x80) != 0;
+        return true;
+    }
+    else if ( IsBit_bvector() ) {
+        const bm::bvector<>& bv = GetBit_bvector().GetBitVector();
+        if ( row >= bv.size() ) {
+            return false;
         }
-        swap(nc_this->SetInt(), arr);
+        v = bv.get_bit(row);
+        return true;
+    }
+    else if ( IsInt() ) {
+        const TInt& arr = GetInt();
+        if ( row >= arr.size() ) {
+            return false;
+        }
+        v = arr[row] != 0;
+        return true;
+    }
+    NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+               "CSeqTable_multi_data::TryGetBool(): "
+               "data cannot be converted to bool");
+}
+
+
+bool CSeqTable_multi_data::TryGetInt(size_t row, int& v) const
+{
+    if ( IsInt() ) {
+        const TInt& arr = GetInt();
+        if ( row >= arr.size() ) {
+            return false;
+        }
+        v = arr[row];
+        return true;
+    }
+    else if ( IsInt_delta() ) {
+        const CSeqTable_multi_data& deltas = GetInt_delta();
+        if ( row >= deltas.GetSize() ) {
+            return false;
+        }
+        CMutexGuard guard(sx_PrepareMutex_multi_data);
+        v = x_GetIntDeltaCache().GetDeltaSum(deltas, row);
+        return true;
     }
     else if ( IsInt_scaled() ) {
-        CSeqTable_multi_data* nc_this =
-            const_cast<CSeqTable_multi_data*>(this);
-        TInt arr;
-        const TInt_scaled& scale = GetInt_scaled();
-        TInt::value_type value0 = scale.GetAdd();
-        const CSeqTable_multi_data& data = scale.GetData();
-        size_t size = data.GetSize();
-        E_Choice data_type = data.Which();
-        if ( data_type == e_Bit ) {
-            const TBit& src = data.GetBit();
-            arr.reserve(size);
-            TInt::value_type value1 = value0 + scale.GetMul();
-            ITERATE ( TBit, it, src ) {
-                Uint1 bb = *it;
-                for ( size_t i = 0; i < 8; ++i, bb <<= 1 ) {
-                    arr.push_back((bb&0x80)? value1: value0);
-                }
-            }
+        const TInt_scaled& scaled = GetInt_scaled();
+        if ( !scaled.GetData().TryGetInt(row, v) ) {
+            return false;
         }
-        else if ( data_type == e_Bit_bvector ) {
-            arr.reserve(size);
-            const bm::bvector<>& src = *data.m_BitVector;
-            if ( src.any() ) {
-                TInt::value_type value1 = value0 + scale.GetMul();
-                for ( bm::id_t i = src.get_first(); (i=src.get_next(i)); ) {
-                    arr.resize(i, value0);
-                    arr.push_back(value1);
-                }
-            }
-            arr.resize(size, value0);
-        }
-        else {
-            swap(const_cast<TInt&>(data.GetInt()), arr);
-            TInt_scaled::TMul mul = scale.GetMul();
-            NON_CONST_ITERATE ( TInt, it, arr ) {
-                *it = *it*mul + value0;
-            }
-        }
-        swap(nc_this->SetInt(), arr);
+        v = v*scaled.GetMul()+scaled.GetAdd();
+        return true;
     }
-    else if ( IsReal_scaled() ) {
-        CSeqTable_multi_data* nc_this =
-            const_cast<CSeqTable_multi_data*>(this);
-        TReal arr;
-        const TReal_scaled& scale = GetReal_scaled();
-        TReal::value_type value0 = scale.GetAdd();
-        const CSeqTable_multi_data& data = scale.GetData();
-        size_t size = data.GetSize();
-        E_Choice data_type = data.Which();
-        if ( data_type == e_Bit ) {
-            const TBit& src = data.GetBit();
-            arr.reserve(size);
-            TReal::value_type value1 = value0 + scale.GetMul();
-            ITERATE ( TBit, it, src ) {
-                Uint1 bb = *it;
-                for ( size_t i = 0; i < 8; ++i, bb <<= 1 ) {
-                    arr.push_back((bb&0x80)? value1: value0);
-                }
-            }
+    // up cast from bool
+    bool v1;
+    try {
+        if ( !TryGetBool(row, v1) ) {
+            return false;
         }
-        else if ( data_type == e_Bit_bvector ) {
-            arr.reserve(size);
-            const bm::bvector<>& src = *data.m_BitVector;
-            if ( src.any() ) {
-                TReal::value_type value1 = value0 + scale.GetMul();
-                for ( bm::id_t i = src.get_first(); (i=src.get_next(i)); ) {
-                    arr.resize(i, value0);
-                    arr.push_back(value1);
-                }
-            }
-            arr.resize(size, value0);
-        }
-        else if ( data_type == e_Int ) {
-            const TInt& src = data.GetInt();
-            arr.reserve(size);
-            TReal_scaled::TMul mul = scale.GetMul();
-            ITERATE ( TInt, it, src ) {
-                arr.push_back(*it*mul + value0);
-            }
-        }
-        else {
-            swap(const_cast<TReal&>(data.GetReal()), arr);
-            TReal_scaled::TMul mul = scale.GetMul();
-            NON_CONST_ITERATE ( TReal, it, arr ) {
-                *it = *it*mul + value0;
-            }
-        }
-        swap(nc_this->SetReal(), arr);
+        v = v1;
+        return true;
     }
-    else if ( IsBit_bvector() && !m_BitVector ) {
-        AutoPtr<bm::bvector<> > bv(new bm::bvector<>());
-        bm::deserialize(*bv, (const unsigned char*)&GetBit_bvector()[0]);
-        m_BitVector = bv;
+    catch ( CSeqTableException& exc ) {
+        if ( exc.GetErrCode() == exc.eIncompatibleRowType ) {
+            NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                       "CSeqTable_multi_data::TryGetInt(): "
+                       "data cannot be converted to int");
+        }
+        throw;
     }
 }
 
 
-bool CSeqTable_multi_data::x_GetRowBit(size_t row_index) const
+bool CSeqTable_multi_data::TryGetReal(size_t row, double& v) const
 {
-    if ( IsBit() ) {
-        const TBit& bits = GetBit();
-        size_t i = row_index/8;
-        if ( i >= bits.size() ) {
-            return 0;
+    if ( IsReal() ) {
+        const TReal& arr = GetReal();
+        if ( row >= arr.size() ) {
+            return false;
         }
-        size_t j = row_index%8;
-        Uint1 bb = bits[i];
-        return ((bb<<j)&0x80) != 0;
+        v = arr[row];
+        return true;
+    }
+    else if ( IsReal_scaled() ) {
+        const TReal_scaled& scaled = GetReal_scaled();
+        if ( !scaled.GetData().TryGetReal(row, v) ) {
+            return false;
+        }
+        v = v*scaled.GetMul()+scaled.GetAdd();
+        return true;
+    }
+    // up cast from int
+    int v1;
+    try {
+        if ( !TryGetInt(row, v1) ) {
+            return false;
+        }
+        v = v1;
+        return true;
+    }
+    catch ( CSeqTableException& exc ) {
+        if ( exc.GetErrCode() == exc.eIncompatibleRowType ) {
+            NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                       "CSeqTable_multi_data::TryGetReal() "
+                       "data cannot be converted to real");
+        }
+        throw;
+    }
+}
+
+
+const string* CSeqTable_multi_data::GetStringPtr(size_t row) const
+{
+    if ( IsString() ) {
+        const CSeqTable_multi_data::TString& arr = GetString();
+        if ( row < arr.size() ) {
+            return &arr[row];
+        }
+    }
+    else if ( IsCommon_string() ) {
+        const CCommonString_table& common = GetCommon_string();
+        const CCommonString_table::TIndexes& indexes = common.GetIndexes();
+        if ( row < indexes.size() ) {
+            const CCommonString_table::TStrings& arr = common.GetStrings();
+            size_t arr_index = indexes[row];
+            if ( arr_index < arr.size() ) {
+                return &arr[arr_index];
+            }
+        }
     }
     else {
-        return m_BitVector->get_bit(row_index);
+        NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                   "CSeqTable_multi_data::GetStringPtr() "
+                   "data cannot be converted to string");
     }
+    return 0;
+}
+
+
+const vector<char>* CSeqTable_multi_data::GetBytesPtr(size_t row) const
+{
+    if ( IsBytes() ) {
+        const CSeqTable_multi_data::TBytes& arr = GetBytes();
+        if ( row < arr.size() ) {
+            return arr[row];
+        }
+    }
+    else if ( IsCommon_bytes() ) {
+        const CCommonBytes_table& common = GetCommon_bytes();
+        const CCommonBytes_table::TIndexes& indexes = common.GetIndexes();
+        if ( row < indexes.size() ) {
+            const CCommonBytes_table::TBytes& arr = common.GetBytes();
+            size_t arr_index = indexes[row];
+            if ( arr_index < arr.size() ) {
+                return arr[arr_index];
+            }
+        }
+    }
+    else {
+        NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                   "CSeqTable_multi_data::GetBytesPtr() "
+                   "data cannot be converted to OCTET STRING");
+    }
+    return 0;
 }
 
 
 size_t CSeqTable_multi_data::GetSize(void) const
 {
-    x_EnsurePreprocessed();
     switch ( Which() ) {
     case e_Int:
         return GetInt().size();
@@ -249,8 +386,14 @@ size_t CSeqTable_multi_data::GetSize(void) const
         return GetId().size();
     case e_Interval:
         return GetInterval().size();
-    case e_Bit_bvector:
-        return m_BitVector->size();
+    case e_Bit_bvector: 
+        return GetBit_bvector().GetSize();
+    case e_Int_delta:
+        return GetInt_delta().GetSize();
+    case e_Int_scaled:
+        return GetInt_scaled().GetData().GetSize();
+    case e_Real_scaled:
+        return GetReal_scaled().GetData().GetSize();
     default:
         break;
     }
@@ -272,7 +415,7 @@ void CSeqTable_multi_data::CReserveHook::PreReadChoiceVariant(
     if ( !s_Reserve ) {
         return;
     }
-    if ( CSeq_table* table = CType<CSeq_table>::GetParent(in, 2, 2) ) {
+    if ( CSeq_table* table = CType<CSeq_table>::GetParent(in, 5, 2) ) {
         size_t size = table->GetNum_rows();
         CSeqTable_multi_data* data =
             CType<CSeqTable_multi_data>::Get(variant.GetChoiceObject());
@@ -311,6 +454,452 @@ void CSeqTable_multi_data::CReserveHook::PreReadChoiceVariant(
             break;
         }
     }
+}
+
+
+void CSeqTable_multi_data::ChangeTo(E_Choice type)
+{
+    if ( Which() == type ) {
+        return;
+    }
+    switch ( type ) {
+    case e_Int:
+        ChangeToInt();
+        break;
+    case e_Real:
+        ChangeToReal();
+        break;
+    case e_String:
+        ChangeToString();
+        break;
+    case e_Common_string:
+        ChangeToCommon_string();
+        break;
+    case e_Bytes:
+        ChangeToBytes();
+        break;
+    case e_Common_bytes:
+        ChangeToCommon_bytes();
+        break;
+    case e_Bit:
+        ChangeToBit();
+        break;
+    case e_Int_delta:
+        ChangeToInt_delta();
+        break;
+    case e_Bit_bvector:
+        ChangeToBit_bvector();
+        break;
+    case e_Int_scaled: // scaling requires extra parameters
+        NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                   "CSeqTable_multi_data::ChangeTo(e_Int_scaled): "
+                   "scaling parameters are unknown");
+    case e_Real_scaled: // scaling requires extra parameters
+        NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                   "CSeqTable_multi_data::ChangeTo(e_Real_scaled): "
+                   "scaling parameters are unknown");
+    default:
+        NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                   "CSeqTable_multi_data::ChangeTo(): "
+                   "requested multi-data type is invalid");
+    }
+}
+
+
+void CSeqTable_multi_data::ChangeToString(const string* omitted_value)
+{
+    if ( IsString() ) {
+        return;
+    }
+    if ( IsCommon_string() ) {
+        const CCommonString_table& common = GetCommon_string();
+        const CCommonString_table::TIndexes& indexes = common.GetIndexes();
+        size_t size = indexes.size();
+        TString arr;
+        arr.reserve(size);
+        const CCommonString_table::TStrings& src = common.GetStrings();
+        ITERATE ( CCommonString_table::TIndexes, it, indexes ) {
+            size_t index = *it;
+            if ( index < src.size() ) {
+                arr.push_back(src[index]);
+            }
+            else if ( omitted_value ) {
+                arr.push_back(*omitted_value);
+            }
+            else {
+                NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                           "CSeqTable_multi_data::ChangeToString(): "
+                           "common string table is sparse");
+            }
+        }
+        swap(SetString(), arr);
+        return;
+    }
+    NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+               "CSeqTable_multi_data::ChangeToString(): "
+               "requested mult-data type is invalid");
+}
+
+
+void CSeqTable_multi_data::ChangeToCommon_string(const string* omit_value)
+{
+    if ( IsCommon_string() ) {
+        return;
+    }
+    if ( IsString() ) {
+        CRef<CCommonString_table> common(new CCommonString_table);
+        CCommonString_table::TIndexes& indexes = common->SetIndexes();
+        CCommonString_table::TStrings& arr = common->SetStrings();
+        const TString& src = GetString();
+        indexes.reserve(src.size());
+        typedef map<string, size_t> TIndexMap;
+        TIndexMap index_map;
+        if ( omit_value ) {
+            index_map[*omit_value] = -1;
+        }
+        ITERATE ( TString, it, src ) {
+            const string& key = *it;
+            TIndexMap::iterator iter = index_map.lower_bound(key);
+            if ( iter == index_map.end() || iter->first != key ) {
+                iter = index_map.insert(iter, TIndexMap::value_type(key, arr.size()));
+                arr.push_back(key);
+            }
+            indexes.push_back(iter->second);
+        }
+        SetCommon_string(*common);
+        return;
+    }
+    NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+               "CSeqTable_multi_data::ChangeToCommon_string(): "
+               "requested mult-data type is invalid");
+}
+
+
+void CSeqTable_multi_data::ChangeToBytes(const TBytesValue* omitted_value)
+{
+    if ( IsBytes() ) {
+        return;
+    }
+    if ( IsCommon_bytes() ) {
+        const CCommonBytes_table& common = GetCommon_bytes();
+        const CCommonBytes_table::TIndexes& indexes = common.GetIndexes();
+        size_t size = indexes.size();
+        TBytes arr;
+        arr.reserve(size);
+        const CCommonBytes_table::TBytes& src = common.GetBytes();
+        ITERATE ( CCommonBytes_table::TIndexes, it, indexes ) {
+            size_t index = *it;
+            const TBytesValue* value;
+            if ( index < src.size() ) {
+                value = src[index];
+            }
+            else if ( omitted_value ) {
+                value = omitted_value;
+            }
+            else {
+                NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                           "CSeqTable_multi_data::ChangeToBytes(): "
+                           "common bytes table is sparse");
+            }
+            arr.push_back(new TBytesValue(*value));
+        }
+        swap(SetBytes(), arr);
+        return;
+    }
+    NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+               "CSeqTable_multi_data::ChangeToBytes(): "
+               "requested mult-data type is invalid");
+}
+
+
+void CSeqTable_multi_data::ChangeToCommon_bytes(const TBytesValue* omit_value)
+{
+    if ( IsCommon_bytes() ) {
+        return;
+    }
+    if ( IsBytes() ) {
+        CRef<CCommonBytes_table> common(new CCommonBytes_table);
+        CCommonBytes_table::TIndexes& indexes = common->SetIndexes();
+        CCommonBytes_table::TBytes& arr = common->SetBytes();
+        const TBytes& src = GetBytes();
+        indexes.reserve(src.size());
+        typedef map<const TBytesValue*, size_t, PPtrLess<const TBytesValue*> > TIndexMap;
+        TIndexMap index_map;
+        if ( omit_value ) {
+            index_map[omit_value] = -1;
+        }
+        ITERATE ( TBytes, it, src ) {
+            const TBytesValue* key = *it;
+            TIndexMap::iterator iter = index_map.lower_bound(key);
+            if ( iter == index_map.end() || *iter->first != *key ) {
+                iter = index_map.insert(iter, TIndexMap::value_type(key, arr.size()));
+                arr.push_back(new TBytesValue(*key));
+            }
+            indexes.push_back(iter->second);
+        }
+        SetCommon_bytes(*common);
+        return;
+    }
+    NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+               "CSeqTable_multi_data::ChangeToBytes(): "
+               "requested mult-data type is invalid");
+}
+
+
+void CSeqTable_multi_data::ChangeToReal_scaled(double mul, double add)
+{
+    if ( IsReal_scaled() ) {
+        return;
+    }
+    TReal arr;
+    if ( IsReal() ) {
+        // in-place
+        swap(arr, SetReal());
+        NON_CONST_ITERATE ( TReal, it, arr ) {
+            TInt::value_type value = *it;
+            value -= add;
+            *it = value/mul;
+        }
+    }
+    else {
+        for ( size_t row = 0; ; ++row ) {
+            TReal::value_type value;
+            if ( !TryGetReal(row, value) ) {
+                break;
+            }
+            value -= add;
+            arr.push_back(value/mul);
+        }
+    }
+    swap(SetReal_scaled().SetData().SetReal(), arr);
+}
+
+
+void CSeqTable_multi_data::ChangeToInt_scaled(int mul, int add)
+{
+    if ( IsInt_scaled() ) {
+        return;
+    }
+    TInt arr;
+    if ( IsInt() ) {
+        // in-place
+        swap(arr, SetInt());
+        NON_CONST_ITERATE ( TInt, it, arr ) {
+            TInt::value_type value = *it;
+            value -= add;
+            if ( value % mul != 0 ) {
+                // restore already scaled values
+                while ( it != arr.begin() ) {
+                    TInt::value_type value = *--it;
+                    *it = value*mul+add;
+                }
+                swap(arr, SetInt());
+                NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                           "CSeqTable_multi_data::ChangeToInt_scaled(): "
+                           "value is not round for scaling");
+            }
+            *it = value/mul;
+        }
+    }
+    else {
+        for ( size_t row = 0; ; ++row ) {
+            TInt::value_type value;
+            if ( !TryGetInt(row, value) ) {
+                break;
+            }
+            value -= add;
+            if ( value % mul != 0 ) {
+                NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                           "CSeqTable_multi_data::ChangeToInt_scaled(): "
+                           "value is not round for scaling");
+            }
+            arr.push_back(value/mul);
+        }
+    }
+    swap(SetInt_scaled().SetData().SetInt(), arr);
+}
+
+
+void CSeqTable_multi_data::ChangeToInt_delta(void)
+{
+    if ( IsInt_delta() ) {
+        return;
+    }
+    TInt arr;
+    if ( IsInt() ) {
+        // in-place
+        swap(arr, SetInt());
+        TInt::value_type prev_value = 0;
+        NON_CONST_ITERATE ( TInt, it, arr ) {
+            TInt::value_type value = *it;
+            *it = value - prev_value;
+            prev_value = value;
+        }
+    }
+    else {
+        TInt::value_type prev_value = 0;
+        for ( size_t row = 0; ; ++row ) {
+            TInt::value_type value;
+            if ( !TryGetInt(row, value) ) {
+                break;
+            }
+            arr.push_back(value-prev_value);
+            prev_value = value;
+        }
+    }
+    Reset();
+    swap(SetInt_delta().SetInt(), arr);
+}
+
+
+void CSeqTable_multi_data::ChangeToInt(void)
+{
+    if ( IsInt() ) {
+        return;
+    }
+    if ( IsInt_delta() ) {
+        TInt arr;
+        size_t size = GetSize();
+        arr.reserve(size);
+        for ( size_t row = 0; row < size; ++row ) {
+            int value;
+            if ( !TryGetInt(row, value) ) {
+                break;
+            }
+            arr.push_back(value);
+        }
+        SetInt().swap(arr);
+        return;
+    }
+    TInt arr;
+    if ( IsReal() || IsReal_scaled() ) {
+        for ( size_t row = 0; ; ++row ) {
+            double value;
+            if ( !TryGetReal(row, value) ) {
+                break;
+            }
+            arr.push_back(TInt::value_type(round(value)));
+        }
+    }
+    else {
+        for ( size_t row = 0; ; ++row ) {
+            TInt::value_type value;
+            if ( !TryGetInt(row, value) ) {
+                break;
+            }
+            arr.push_back(value);
+        }
+    }
+    Reset();
+    swap(SetInt(), arr);
+}
+
+
+void CSeqTable_multi_data::ChangeToReal(void)
+{
+    if ( IsReal() ) {
+        return;
+    }
+    TReal arr;
+    for ( size_t row = 0; ; ++row ) {
+        double value;
+        if ( !TryGetReal(row, value) ) {
+            break;
+        }
+        arr.push_back(TInt::value_type(value));
+    }
+    Reset();
+    swap(SetReal(), arr);
+}
+
+
+void CSeqTable_multi_data::ChangeToBit(void)
+{
+    if ( IsBit() ) {
+        return;
+    }
+    TBit arr;
+    if ( IsBit_bvector() ) {
+        const bm::bvector<>& bv = GetBit_bvector().GetBitVector();
+        arr.reserve((bv.size()+7)/8);
+        if ( bv.any() ) {
+            size_t last_byte_index = 0;
+            Uint1 last_byte = 0;
+            bm::id_t i = bv.get_first();
+            do {
+                size_t byte_index = i / 8;
+                if ( byte_index != last_byte_index ) {
+                    arr.resize(last_byte_index);
+                    arr.push_back(last_byte);
+                    last_byte_index = byte_index;
+                    last_byte = 0;
+                }
+                size_t bit_index = i % 8;
+                last_byte |= 0x80 >> bit_index;
+            } while ( (i=bv.get_next(i)) );
+            if ( last_byte ) {
+                arr.resize(last_byte_index);
+                arr.push_back(last_byte);
+            }
+        }
+        arr.resize((bv.size()+7)/8);
+    }
+    else if ( IsInt() ) {
+        const TInt& src = GetInt();
+        size_t size = src.size();
+        arr.resize((size+7)/8);
+        for ( size_t i = 0; i < size; ++i ) {
+            if ( src[i] ) {
+                arr[i/8] |= 0x80 >> i%8;
+            }
+        }
+    }
+    else {
+        NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                   "CSeqTable_multi_data::ChangeToBit(): "
+                   "requested mult-data type is invalid");
+    }
+    Reset();
+    swap(SetBit(), arr);
+}
+
+
+void CSeqTable_multi_data::ChangeToBit_bvector(void)
+{
+    if ( IsBit_bvector() ) {
+        return;
+    }
+    AutoPtr<bm::bvector<> > bv(new bm::bvector<>(GetSize()));
+    if ( IsBit() ) {
+        const TBit& src = GetBit();
+        size_t size = src.size();
+        for ( size_t i = 0; i < size; ++i ) {
+            if ( Uint1 b = src[i] ) {
+                // the following cycle assumes that Uint1 is exactly 8-bit
+                for ( size_t j = 0; b; ++j, b <<= 1 ) {
+                    if ( b&0x80 ) {
+                        bv->set_bit(i*8+j);
+                    }
+                }
+            }
+        }
+    }
+    else if ( IsInt() ) {
+        const TInt& src = GetInt();
+        size_t size = src.size();
+        for ( size_t i = 0; i < size; ++i ) {
+            if ( src[i] ) {
+                bv->set_bit(i);
+            }
+        }
+    }
+    else {
+        NCBI_THROW(CSeqTableException, eIncompatibleRowType,
+                   "CSeqTable_multi_data::ChangeToBit_bvector(): "
+                   "requested mult-data type is invalid");
+    }
+    bv->optimize();
+    SetBit_bvector().SetBitVector(bv.release());
 }
 
 
