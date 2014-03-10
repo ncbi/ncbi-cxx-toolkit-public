@@ -1572,6 +1572,9 @@ same id type" } },
    { eErr_SEQ_FEAT_InvalidFuzz,
    { "InvalidFuzz",
    "Incorrect use of Int-fuzz.lim" } },
+   { eErr_SEQ_FEAT_BadComment,
+   { "BadComment",
+   "Comment is inconsistent with content of feature." } },
 
 /* SEQ_ALIGN */
 

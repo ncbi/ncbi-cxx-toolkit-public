@@ -120,11 +120,11 @@ TSeqPos GetLastPartialCodonLength(const objects::CSeq_feat& cds, objects::CScope
 }
 
 
-CRef<CSeq_loc> GetLastPartialCodonLoc(const CSeq_feat& cds, CScope& scope)
+CRef<CSeq_loc> GetLastCodonLoc(const CSeq_feat& cds, CScope& scope)
 {
     TSeqPos except_len = GetLastPartialCodonLength(cds, scope);
     if (except_len == 0) {
-        return CRef<CSeq_loc>(NULL);
+        except_len = 3;
     }
     const CSeq_loc& cds_loc = cds.GetLocation();
     TSeqPos stop = cds_loc.GetStop(eExtreme_Biological);
@@ -146,7 +146,7 @@ CRef<CSeq_loc> GetLastPartialCodonLoc(const CSeq_feat& cds, CScope& scope)
 
 bool AddTerminalCodeBreak(CSeq_feat& cds, CScope& scope)
 {
-    CRef<CSeq_loc> codon_loc = GetLastPartialCodonLoc(cds, scope);
+    CRef<CSeq_loc> codon_loc = GetLastCodonLoc(cds, scope);
     if (!codon_loc) {
         return false;
     }
@@ -255,7 +255,7 @@ TSeqPos ExtendLocationForTranslExcept(objects::CSeq_loc& loc, objects::CScope& s
 
 bool IsOverhangOkForTerminalCodeBreak(const CSeq_feat& cds, CScope& scope, bool strict)
 {
-    CRef<CSeq_loc> loc = GetLastPartialCodonLoc(cds, scope);
+    CRef<CSeq_loc> loc = GetLastCodonLoc(cds, scope);
     if (!loc) {
         return false;
     }

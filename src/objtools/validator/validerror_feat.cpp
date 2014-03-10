@@ -82,6 +82,8 @@
 
 #include <objects/misc/sequence_macros.hpp>
 
+#include <objtools/edit/cds_fix.hpp>
+
 #include <util/static_set.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sgml_entity.hpp>
@@ -7310,6 +7312,7 @@ void CValidError_feat::ValidateFeatCit
     }
 }
 
+
 void CValidError_feat::ValidateFeatComment
 (const string& comment,
  const CSeq_feat& feat)
@@ -7324,6 +7327,31 @@ void CValidError_feat::ValidateFeatComment
         PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
                  "feature comment " + comment + " has SGML",
                  feat);
+    }
+    if (feat.IsSetData() && feat.GetData().IsCdregion()
+        && NStr::Find(comment, "ambiguity in stop codon") != string::npos
+        && edit::DoesCodingRegionHaveTerminalCodeBreak(feat.GetData().GetCdregion())
+        && m_Scope) {        
+        CRef<CSeq_loc> stop_codon_loc = edit::GetLastCodonLoc(feat, *m_Scope);
+        if (stop_codon_loc) {
+            TSeqPos len = sequence::GetLength(*stop_codon_loc, m_Scope);
+            CSeqVector vec(*stop_codon_loc, m_Scope, CBioseq_Handle::eCoding_Iupac);
+            string seq_string;
+            vec.GetSeqData(0, len - 1, seq_string);  
+            bool found_ambig = false;
+            string::iterator it = seq_string.begin();
+            while (it != seq_string.end() && !found_ambig) {
+                if (*it != 'A' && *it != 'T' && *it != 'C' && *it != 'G' && *it != 'U') {
+                    found_ambig = true;
+                }
+                ++it;
+            }
+            if (!found_ambig) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_BadComment,
+                    "Feature comment indicates ambiguity in stop codon "
+                    "but no ambiguities are present in stop codon.", feat);                
+            }
+        }
     }
 }
 

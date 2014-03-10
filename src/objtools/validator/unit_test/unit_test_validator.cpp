@@ -111,6 +111,7 @@
 #include <common/ncbi_export.h>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <objtools/edit/struc_comm_field.hpp>
+#include <objtools/edit/cds_fix.hpp>
 
 // for writing out tmp files
 #include <serial/objostrasn.hpp>
@@ -18031,25 +18032,25 @@ BOOST_AUTO_TEST_CASE(Fix_Structured_Voucher)
     COrgMod::FixStructuredVoucher(val, "s");
     BOOST_CHECK_EQUAL(val, "ABS<CHN>:12345");
 
-#if 0
-    // add structure when missing
+    // add structure when space instead of colon
     val = "AMNH 12345";
-    COrgMod::FixStructuredVoucher(val, "s");
+    BOOST_CHECK_EQUAL(COrgMod::FixStructuredVoucher(val, "s"), true);
     BOOST_CHECK_EQUAL(val, "AMNH:12345");
 
-    val = "AMNH FISH 12345";
-    COrgMod::FixStructuredVoucher(val, "s");
-    BOOST_CHECK_EQUAL(val, "AMNH:Fish:12345");
+    // add structure when letters and numbers
+    val = "ABB666";
+    BOOST_CHECK_EQUAL(COrgMod::FixStructuredVoucher(val, "c"), true);
+    BOOST_CHECK_EQUAL(val, "ABB:666");
 
-    // note, add structure and also eliminate unnecessary country code
-    val = "USNM<USA>12345";
-    COrgMod::FixStructuredVoucher(val, "s");
-    BOOST_CHECK_EQUAL(val, "USNM:12345");
+    // can also fix biomaterial
+    val = "CNWGRGL123";
+    BOOST_CHECK_EQUAL(COrgMod::FixStructuredVoucher(val, "b"), true);
+    BOOST_CHECK_EQUAL(val, "CNWGRGL:123");
 
-    val = "MCZ1234";
-    COrgMod::FixStructuredVoucher(val, "s");
-    BOOST_CHECK_EQUAL(val, "MCZ:1234");
-#endif
+    // will not fix for too short code
+    val = "A12345";
+    BOOST_CHECK_EQUAL(COrgMod::FixStructuredVoucher(val, "s"), false);
+    BOOST_CHECK_EQUAL(val, "A12345");
 
 }
 
@@ -18114,6 +18115,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_313)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
 }
 
 
@@ -18141,6 +18143,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_292)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
 }
 
 
@@ -18169,6 +18172,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1470)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
@@ -18191,6 +18196,37 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1309)
     CheckErrors (*eval, expected_errors);
 
     eval = validator.GetTSACDSOnMinusStrandErrors(seh);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadComment)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nentry = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+
+    STANDARD_SETUP
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetComment("ambiguity in stop codon");
+    edit::AddTerminalCodeBreak(*cds, seh.GetScope());
+    scope.RemoveTopLevelSeqEntry(seh);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "BadComment",
+                              "Feature comment indicates ambiguity in stop codon but no ambiguities are present in stop codon."));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+    scope.RemoveTopLevelSeqEntry(seh);
+    nentry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCAGAAAAACAGAGATAAACTNAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
 }

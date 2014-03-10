@@ -45,6 +45,9 @@ BEGIN_SCOPE(edit)
 
 NCBI_XOBJEDIT_EXPORT bool SetTranslExcept(objects::CSeq_feat& cds, const string& comment, bool strict, bool extend, objects::CScope& scope);
 NCBI_XOBJEDIT_EXPORT void ExtendStop(CSeq_loc& loc, TSeqPos len, CScope& scope);
+NCBI_XOBJEDIT_EXPORT bool DoesCodingRegionHaveTerminalCodeBreak(const objects::CCdregion& cdr);
+NCBI_XOBJEDIT_EXPORT CRef<CSeq_loc> GetLastCodonLoc(const CSeq_feat& cds, CScope& scope);
+NCBI_XOBJEDIT_EXPORT bool AddTerminalCodeBreak(CSeq_feat& cds, CScope& scope);
 
 
 END_SCOPE(edit)
