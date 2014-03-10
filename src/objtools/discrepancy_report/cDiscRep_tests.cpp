@@ -6595,7 +6595,7 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
           thisInfo.test_item_objs[GetName_len() + "$long"].push_back(trna_ref);
        }
        else if (len < 50) {
-         if ( (*it)->CanGetPartial() && !(*it)->GetPartial()) {
+         if ( !(*it)->CanGetPartial() || !(*it)->GetPartial()) {
            thisInfo.test_item_list[GetName_len()].push_back("short$"+trna_desc);
            thisInfo.test_item_objs[GetName_len() +"$short"].push_back(trna_ref);
          }

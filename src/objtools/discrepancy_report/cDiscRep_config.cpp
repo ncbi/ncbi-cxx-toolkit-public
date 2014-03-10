@@ -1438,7 +1438,7 @@ static const s_test_property test_list[] = {
    {"TRANSL_TOO_LONG", 0},
    {"TEST_SHORT_LNCRNA", fDiscrepancy | fOncaller | fMegaReport},
    {"FIND_STRAND_TRNAS", fDiscrepancy | fMegaReport},
-   {"FIND_BADLEN_TRNAS", fOncaller | fMegaReport},
+   {"FIND_BADLEN_TRNAS", fDiscrepancy | fOncaller | fMegaReport},
    {"COUNT_TRNAS", fMegaReport | fDiscrepancy},
    {"FIND_DUP_TRNAS", 0},
    {"COUNT_RRNAS", fMegaReport | fDiscrepancy},
@@ -2931,6 +2931,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp)
                                     != thisInfo.test_item_list.end()) {
+cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             if ( strtmp != "LOCUS_TAGS"
@@ -2941,6 +2942,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            (*it)->GetReport(c_item);
+cerr << "GoGetRep " << (*it)->GetName() << endl;
        }
    }
 };
