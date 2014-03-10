@@ -270,7 +270,14 @@ CBlastFastaInputSource::x_InitInputReader()
     }
     // This is necessary to enable the ignoring of gaps in classes derived from
     // CFastaReader
-    flags += CFastaReader::fParseGaps;
+    if(m_ReadProteins) {
+    	flags+= CFastaReader::fHyphensIgnoreAndWarn;
+    }
+    else {
+    	flags+= CFastaReader::fParseGaps;
+    }
+
+    flags+= CFastaReader::fDisableNoResidues;
 
     if (m_Config.GetDataLoaderConfig().UseDataLoaders()) {
         m_InputReader.reset
@@ -363,7 +370,7 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
     // Get the sequence length
     const TSeqPos seqlen = seq_entry->GetSeq().GetInst().GetLength();
     //if (seqlen == 0) {
-    //    NCBI_THROW(CInputException, eEmptyUserInput, 
+    //    NCBI_THROW(CInputException, eEmptyUserInput,
     //               "Query contains no sequence data");
     //}
     _ASSERT(seqlen != numeric_limits<TSeqPos>::max());
