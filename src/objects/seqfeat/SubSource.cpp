@@ -239,7 +239,6 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
     string year = "";
     string month = "";
     string day = "";
-    int dpm = 0;
 
     if (pos == string::npos) {
         year = str;
@@ -267,7 +266,6 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
     if (!NStr::IsBlank(month)) {
         for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
             if (NStr::Equal(month, sm_LegalMonths[i])) {
-                dpm = sm_daysPerMonth [i];
                 month_val = i + 1;
                 break;
             }
