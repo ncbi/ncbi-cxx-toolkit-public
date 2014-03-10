@@ -778,7 +778,8 @@ void CSeqTable_multi_data::ChangeToInt(void)
             if ( !TryGetReal(row, value) ) {
                 break;
             }
-            arr.push_back(TInt::value_type(round(value)));
+            TInt::value_type int_value = value > 0? floor(value+.5): ceil(value-.5);
+            arr.push_back(int_value);
         }
     }
     else {
