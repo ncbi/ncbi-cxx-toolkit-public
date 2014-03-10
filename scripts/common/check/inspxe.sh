@@ -24,8 +24,12 @@ inspxe=`echo $(cygpath -u $INSPECTOR_XE_2013_DIR) | sed 's| |\ |g'`/bin32/inspxe
 # Result directory name
 
 rd="${1}.i"
-rm -rf $rd > /dev/null 2>&1 
 
+n=0
+while [ -d "$rd" ]; do
+  n="`expr $n + 1`"
+  rd="${1}.i_$n"
+done
 
 # Run test
 
