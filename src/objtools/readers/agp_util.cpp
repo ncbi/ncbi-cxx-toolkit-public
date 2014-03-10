@@ -1148,15 +1148,15 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
         else if(i==E_MustBePositive) {
             out << " (X: object_beg, object_end, part_num, gap_length, component_beg, component_end)";
         }
-        else if(i==E_InvalidBarInId) {
-            out << " in object_id/component_id";
-        }
         out << "\n";
     }
 
     out << "### Errors that may involve several lines ###\n";
     for(int i=E_LastToSkipLine+1; i<E_Last; i++) {
         out << GetPrintableCode(i) << "\t" << GetMsg(i);
+        if(i==E_InvalidBarInId) {
+            out << " in object_id/component_id";
+        }
         out << "\n";
     }
 
