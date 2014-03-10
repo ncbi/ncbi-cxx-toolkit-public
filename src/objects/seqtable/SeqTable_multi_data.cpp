@@ -656,7 +656,7 @@ void CSeqTable_multi_data::ChangeToReal_scaled(double mul, double add)
         // in-place
         swap(arr, SetReal());
         NON_CONST_ITERATE ( TReal, it, arr ) {
-            TInt::value_type value = *it;
+            TReal::value_type value = *it;
             value -= add;
             *it = value/mul;
         }
@@ -778,7 +778,8 @@ void CSeqTable_multi_data::ChangeToInt(void)
             if ( !TryGetReal(row, value) ) {
                 break;
             }
-            TInt::value_type int_value = value > 0? floor(value+.5): ceil(value-.5);
+            TInt::value_type int_value =
+                TInt::value_type(value > 0? floor(value+.5): ceil(value-.5));
             arr.push_back(int_value);
         }
     }
