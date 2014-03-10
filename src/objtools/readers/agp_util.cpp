@@ -75,7 +75,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "scaffold X is not used in any of \"Chromosome from scaffold\" files",
     //"expecting X gaps per chromosome", // => expecting {2 telomere,1 centromere,not more than 1 short_arm)..., found 3
     "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)",
-    kEmptyCStr,
+    // "'|' character can only follow a recognized Seq-id type",
+    "invalid use of '|' character",
     kEmptyCStr,
 
     kEmptyCStr,
@@ -1146,6 +1147,9 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
         }
         else if(i==E_MustBePositive) {
             out << " (X: object_beg, object_end, part_num, gap_length, component_beg, component_end)";
+        }
+        else if(i==E_InvalidBarInId) {
+            out << " in object_id/component_id";
         }
         out << "\n";
     }

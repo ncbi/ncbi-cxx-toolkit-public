@@ -4,28 +4,36 @@
 2:chr22	11330001	13570000	2	N	2240000	centromere	no
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
-No errors, 1 warning, 4 notes; 3 not printed.
+8171:scaffold1.1|size2787216	1	509	1	W	Contig_1	1	509	+
+	ERROR: invalid use of '|' character in object_id (column 1)
+
+8179:scaffold1.1|size2787216	63757	98299	9	W	Contig_5|test5	1	34543	+
+	ERROR: invalid use of '|' character in component_id (column 6)
+
+2 errors, 1 warning, 4 notes; 3 not printed.
   Count Code  Description
+      2  e24  invalid use of '|' character
       1  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
       3  w52  gap shorter than 10 bp
          (Use -show w52 to print lines with short gaps.)
       1  w58  assuming AGP version X
 
 
-Objects                :    1
+Objects                :    2
 - with single component:    0
 
-Scaffolds              :  349
+Scaffolds              :  350
 - with single component:   54
 
-Components                   : 4084 (W)
-  orientation +              : 2663
+Components                   : 4089 (W)
+  orientation +              : 2668
   orientation -              : 1421
   orientation ? (formerly 0) :    0
   orientation na             :    0
 
-Gaps                   : 4086 (N)
-- do not break scaffold: 3735
+Gaps                   : 4090 (N)
+- do not break scaffold: 3739
+  clone   , linkage yes:    4
   fragment, linkage yes: 3735
 - break it, linkage no :  351
 	contig         :  348
@@ -33,14 +41,17 @@ Gaps                   : 4086 (N)
 	short_arm      :    1
 	telomere       :    1
 
-Most frequent N gap_length (23.1% or 943 lines):   10
+Most frequent N gap_length (23.1% or 944 lines):   10
 
-Object names:  1
-  chr22     :  1
+Object names             :  2
+  scaffold1.1|size2787216:  1
+  chr22                  :  1
 
-Component names                      :  4084
+Component names                      :  4089
   ABGA[01001503..01404031].[1,111111]:  4055 (some local or misspelled)
   ABGA[01409238..01410146].1.1       :    26 (local or misspelled)
+  Contig_[1..4]                      :     4 (local or misspelled)
   AAA[00027,28].1                    :     2 (some look like protein accessions)
+  Contig_5|test5                     :     1 (local or misspelled)
   .1                                 :     1 (local or misspelled)
 Use -g or "-show all" to print lines with suspicious accessions.

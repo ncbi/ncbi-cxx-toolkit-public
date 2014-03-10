@@ -328,6 +328,8 @@ void CAgpValidateReader::OnGapOrComponent()
     if(m_this_row->GetComponentId()==m_this_row->GetObject()) m_AgpErr->Msg(CAgpErrEx::W_ObjEqCompId);
 
     CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession( m_this_row->GetComponentId() );
+    if( acc_inf==CSeq_id::eAcc_other && m_this_row->GetComponentId().find("|")!=NPOS )
+      m_AgpErr->Msg(CAgpErrEx::E_InvalidBarInId, " in component_id (column 6)");
     int div = acc_inf & CSeq_id::eAcc_division_mask;
     if(m_CheckCompNames) {
       string msg;
@@ -511,6 +513,9 @@ void CAgpValidateReader::OnObjectChange()
   }
 
   if(!m_at_end) {
+    if( CSeq_id::IdentifyAccession( m_this_row->GetObject() )==CSeq_id::eAcc_other && m_this_row->GetObject().find("|")!=NPOS ) {
+      m_AgpErr->Msg(CAgpErrEx::E_InvalidBarInId, " in object_id (column 1)");
+    }
     // m_this_row = the first line of the new object
     TObjSetResult obj_insert_result = m_ObjIdSet.insert(m_this_row->GetObject());
     if (obj_insert_result.second == false) {

@@ -532,9 +532,10 @@ public:
         E_ScafBreakingGap,
         E_WithinScafGap,
 
-        E_UnknownScaf,       // CAgpValidateReader
-        E_UnusedScaf,        // CAgpValidateReader
-        E_SameGapLength,     // CAgpValidateReader
+        E_UnknownScaf,          // CAgpValidateReader
+        E_UnusedScaf,           // CAgpValidateReader
+        E_SameGapLength,        // CAgpValidateReader
+        E_InvalidBarInId,       // CAgpValidateReader
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.
