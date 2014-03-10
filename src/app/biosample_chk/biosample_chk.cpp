@@ -60,6 +60,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Cit_sub.hpp>
+#include <objects/biblio/Cit_gen.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Affil.hpp>
@@ -192,6 +193,8 @@ private:
     bool m_CompareStructuredComments;
     bool m_UseDevServer;
     bool m_FirstSeqOnly;
+    string m_IDPrefix;
+    string m_HUPDate;
 
     size_t m_Processed;
     size_t m_Unprocessed;
@@ -208,8 +211,10 @@ private:
 
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
-    m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0), m_LogStream(0), m_Mode(e_report_diffs),
-    m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), m_FirstSeqOnly(false),
+    m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0), 
+    m_LogStream(0), m_Mode(e_report_diffs),
+    m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), 
+    m_FirstSeqOnly(false), m_IDPrefix(""), m_HUPDate(""),
     m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
@@ -249,6 +254,8 @@ void CBiosampleChkApp::Init(void)
     arg_desc->AddFlag("b", "Input is in binary format");
     arg_desc->AddFlag("c", "Batch File is Compressed");
     arg_desc->AddFlag("M", "Process only first sequence in file (master)");
+    arg_desc->AddOptionalKey("R", "BioSampleIDPrefix", "BioSample ID Prefix", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("HUP", "HUPDate", "Hold Until Publish Date", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey(
         "L", "OutFile", "Log File",
@@ -552,6 +559,8 @@ int CBiosampleChkApp::Run(void)
 
     m_Mode = args["m"].AsInteger();
     m_FirstSeqOnly = args["M"].AsBoolean();
+    m_IDPrefix = args["R"] ? args["R"].AsString() : "";
+    m_HUPDate = args["HUP"] ? args["HUP"].AsString() : "";
 
     if (args["o"]) {
         if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
@@ -1123,12 +1132,23 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
 		++comm_desc_ci;
 	}
 
+    CConstRef<CAuth_list> auth_list(NULL);
     CSeqdesc_CI pub_desc_ci(bh, CSeqdesc::e_Pub);
-    while (pub_desc_ci && !s_IsCitSub(*pub_desc_ci)) {
+    while (pub_desc_ci){
+        if (pub_desc_ci->GetPub().IsSetPub()) {
+            ITERATE(CPubdesc::TPub::Tdata, it, pub_desc_ci->GetPub().GetPub().Get()) {
+                if ((*it)->IsSub() && (*it)->GetSub().IsSetAuthors()) {
+                    auth_list = &((*it)->GetSub().GetAuthors());
+                    break;
+                } else if ((*it)->IsGen() && (*it)->GetGen().IsSetAuthors()) {
+                    auth_list = &((*it)->GetGen().GetAuthors());
+                }
+            }
+        }
         ++pub_desc_ci;
     }
 
-    if (!src_desc_ci && !comm_desc_ci && bioproject_ids.size() == 0 && !pub_desc_ci) {
+    if (!src_desc_ci && !comm_desc_ci && bioproject_ids.size() == 0) {
         string label = GetBestBioseqLabel(bh);
         *m_LogStream << label << " has no BioSample information" << endl;
         return;
@@ -1148,17 +1168,6 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
     description->insert(node("Comment", title.c_str()));
 
     node::iterator node_iter = description->insert(node("Submitter"));
-
-    CConstRef<CAuth_list> auth_list(NULL);
-
-    if (pub_desc_ci) {
-        ITERATE(CPubdesc::TPub::Tdata, it, pub_desc_ci->GetPub().GetPub().Get()) {
-            if ((*it)->IsSub() && (*it)->GetSub().IsSetAuthors()) {
-                auth_list = &((*it)->GetSub().GetAuthors());
-                break;
-            }
-        }
-    }
 
     CConstRef<CAffil> affil(NULL);
     if (auth_list && auth_list->IsSetAffil()) {
@@ -1181,7 +1190,9 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
             if (affil->GetStd().IsSetAffil()) {
                 sbm_info.push_back(affil->GetStd().GetAffil());
             }
-            if (affil->GetStd().IsSetDiv()) {
+            if (affil->GetStd().IsSetDiv() 
+                && (!affil->GetStd().IsSetAffil() 
+                    || !NStr::EqualNocase(affil->GetStd().GetDiv(), affil->GetStd().GetAffil()))) {
                 sbm_info.push_back(affil->GetStd().GetDiv());
             }
         } else if (affil->IsStr()) {
@@ -1194,6 +1205,12 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
     owner.insert(node("Name", NStr::Join(sbm_info, ", ").c_str()));
 
     AddContact(organization, auth_list);
+
+    if (!NStr::IsBlank(m_HUPDate)) {
+        node hup("Hold");
+        hup.get_attributes().insert("release_date", m_HUPDate.c_str());
+        description->insert(hup);
+    }
 
     node_iter = root.insert(node("Action"))->insert(node("AddData"));
     node_iter->get_attributes().insert("target_db", "BioSample");
@@ -1209,11 +1226,18 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
     sample->get_attributes().insert("xsi:noNamespaceSchemaLocation", "http://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/submit/public-docs/biosample/biosample.xsd?view=co");
     
     node::iterator ids = sample->insert(node("SampleId"));
-    node_iter = ids->insert(node("SPUID", sequence_id.c_str()));
+    string sample_id = sequence_id;
+    if (!NStr::IsBlank(m_IDPrefix)) {
+        if (m_FirstSeqOnly) {
+            sample_id = m_IDPrefix;
+        } else {
+            sample_id = m_IDPrefix + ":" + sequence_id;
+        }
+    }
+    node_iter = ids->insert(node("SPUID", sample_id.c_str()));
     node_iter->get_attributes().insert( "spuid_namespace", "GenBank");
 
     node::iterator descr = sample->insert(node("Descriptor"));
-    descr->insert(node("Title", title.c_str()));
 
     node::iterator organism = sample->insert(node("Organism"));
 

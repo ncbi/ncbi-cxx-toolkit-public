@@ -79,8 +79,8 @@ BEGIN_SCOPE(objects)
 CRef< CSeq_descr >
 GetBiosampleData(string accession, bool use_dev_server)
 {
-    string host = use_dev_server ? "iwebdev2" : "intranet";
-    string path = use_dev_server ? "/biosample/dev/fetch.cgi" : "/biosample/fetch.cgi";
+    string host = use_dev_server ? "dev-api-int" : "api-int";
+    string path = "/biosample/fetch.cgi";
     string args = "accession=" + accession + "&format=asn1";
     CConn_HttpStream http_stream(host, path, args);
     auto_ptr<CObjectIStream> in_stream;
