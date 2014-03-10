@@ -293,7 +293,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Clean CitonFeat List",
     "Clean Keywords List",
     "Clean Subsource List",
-    "Clean Orgmod List",
+    "Clean Orgmod List", 
     // Set when fields are moved or have content changes
     "Repair BioseqMol", //10
     "Change Feature Key", 

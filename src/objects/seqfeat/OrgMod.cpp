@@ -412,7 +412,12 @@ string COrgMod::MakeStructuredVoucher(const string& inst, const string& coll, co
 }
 
 
-bool FindInstAndColl(TInstitutionCodeMap& code_map, string& val)
+// As described in SQD-1655, we can only rescue an unstructured
+// structured voucher if it consists of a series of three or
+// more letters followed by a series of digits, optionally separated
+// by space, and if the series of letters looks up as a valid
+// institution code.
+bool FindInstCodeAndSpecID(TInstitutionCodeMap& code_map, string& val)
 {
     // nothing to do if value is blank
     if (NStr::IsBlank(val)) {
@@ -422,57 +427,38 @@ bool FindInstAndColl(TInstitutionCodeMap& code_map, string& val)
     // find first non-letter position
     size_t len = 0;
     string::iterator sit = val.begin();
-    while (sit != val.end() && (*sit == '<' || *sit == '>' || isalpha(*sit))) {
+    while (sit != val.end() && isalpha(*sit)) {
         len++;
         sit++;
     }
-    if (len == 0 || len == val.length()) {
-        // bad start
+    if (len < 3 || len == val.length()) {
+        // institution code too short or no second token
         return false;
     }
     string inst_code = val.substr(0, len);
     string remainder = val.substr(len);
-    NStr::TruncateSpacesInPlace(remainder);        
-
-    string new_inst_code = "";
-    string new_spec_id = "";
-
-    bool found_exact_inst = false;
-    bool found_coll = false;
-    TInstitutionCodeMap::iterator it = code_map.begin();
-    while (!found_coll && (it != code_map.end())) {
-        // does institution code match?
-        if (!found_coll && NStr::EqualNocase (it->first, inst_code)) {
-            new_inst_code = it->first; 
-            new_spec_id = remainder;
-            found_exact_inst = true;
-        } else if (NStr::StartsWith(it->first, inst_code, NStr::eNocase)
-                   && it->first.c_str()[inst_code.length()] == ':') {
-            string coll = it->first.substr(inst_code.length() + 1);
-            if (NStr::StartsWith(remainder, coll, NStr::eNocase)
-                && (isspace(remainder.c_str()[coll.length()])
-                    || isdigit(remainder.c_str()[coll.length()]))) {
-                new_inst_code = it->first;
-                new_spec_id = remainder.substr(coll.length());
-                NStr::TruncateSpacesInPlace(new_spec_id);
-                found_exact_inst = true;
-                found_coll = true;
-            }
-        } else if (!found_exact_inst
-                   && NStr::StartsWith(inst_code, it->first, NStr::eNocase)
-                   && inst_code.c_str()[it->first.length()] == '<') {
-            new_inst_code = it->first;
-            new_spec_id = remainder;           
-        }
-        ++it;
-    }
-
-    if (!NStr::IsBlank(new_inst_code)) {
-        val = new_inst_code + ":" + new_spec_id;
-        return true;
-    } else {
+    NStr::TruncateSpacesInPlace(remainder); 
+    if (NStr::IsBlank(remainder)) {
+        // no second token
         return false;
     }
+    // remainder must be all digits
+    sit = remainder.begin();
+    while (sit != remainder.end()) {
+        if (!isdigit(*sit)) {
+            return false;
+        }
+        sit++;
+    }
+
+    bool rval = false;
+    TInstitutionCodeMap::iterator it = code_map.find(inst_code);
+    if (it != code_map.end()) {
+        val = inst_code + ":" + remainder;
+        rval = true;
+    }
+
+    return rval;
 }
 
 
@@ -484,11 +470,11 @@ bool COrgMod::AddStructureToVoucher(string& val, const string& v_type)
     }    
 
     s_InitializeInstitutionCollectionCodeMaps();
-    if (NStr::Find(v_type, "b") != string::npos && FindInstAndColl(s_BiomaterialInstitutionCodeMap, val)) {
+    if (NStr::Find(v_type, "b") != string::npos && FindInstCodeAndSpecID(s_BiomaterialInstitutionCodeMap, val)) {
         return true;
-    } else if (NStr::Find(v_type, "c") != string::npos && FindInstAndColl(s_CultureCollectionInstitutionCodeMap, val)) {
+    } else if (NStr::Find(v_type, "c") != string::npos && FindInstCodeAndSpecID(s_CultureCollectionInstitutionCodeMap, val)) {
         return true;
-    } else if (NStr::Find(v_type, "s") != string::npos && FindInstAndColl(s_SpecimenVoucherInstitutionCodeMap, val)) {
+    } else if (NStr::Find(v_type, "s") != string::npos && FindInstCodeAndSpecID(s_SpecimenVoucherInstitutionCodeMap, val)) {
         return true;
     } else {
         return false;
@@ -504,8 +490,7 @@ COrgMod::FixStructuredVoucher(string& val, const string& v_type)
     string id = "";
     if (!ParseStructuredVoucher(val, inst_code, coll_code, id)
         || NStr::IsBlank(inst_code)) {
-        //return AddStructureToVoucher(val, v_type);
-        return false;
+        return AddStructureToVoucher(val, v_type);
     }
     bool rval = false;
     bool found = false;

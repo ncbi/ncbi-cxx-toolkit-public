@@ -63,8 +63,8 @@ public:
         eCleanSubsource,
         eCleanOrgmod,
         // Set when fields are moved or have content changes
-        eRepairBioseqMol,
-        eChangeFeatureKey, //10
+        eRepairBioseqMol, //10
+        eChangeFeatureKey, 
         eNormalizeAuthors,
         eChangePublication,
         eChangeQualifiers,

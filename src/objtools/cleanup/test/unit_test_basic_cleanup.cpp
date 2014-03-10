@@ -479,3 +479,86 @@ BOOST_AUTO_TEST_CASE(Test_CleanAssemblyDate)
         BOOST_CHECK_EQUAL(usr.GetData()[3]->GetData().GetStr(), "2014");
     }
 }
+
+
+const char *sc_TestEntryCleanStructuredVoucher = "\
+Seq-entry ::= seq {\
+          id {\
+            local\
+              str \"cleanstructuredvoucher\" } ,\
+          descr {\
+            source { \
+              org { \
+                taxname \"Homo sapiens\" ,\
+                orgname { \
+                  mod { \
+                    { \
+                      subtype specimen-voucher ,\
+                      subname \"USNM<USA>:12345\" } ,\
+                    { \
+                      subtype bio-material ,\
+                      subname \"CNWGRGL123\" } ,\
+                    { \
+                      subtype culture-collection ,\
+                      subname \"ABB 666\" } } } } } , \
+            molinfo {\
+              biomol genomic } } ,\
+          inst {\
+            repr raw ,\
+            mol dna ,\
+            length 27 ,\
+            seq-data\
+              iupacna \"TTGCCCTAAAAATAAGAGTAAAACTAA\" } } \
+";
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntryCleanStructuredVoucher);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
+    entry.Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.BasicCleanup (entry);
+    // look for expected change flags
+	vector<string> changes_str = changes->GetAllDescriptions();
+	if (changes_str.size() < 1) {
+        BOOST_CHECK_EQUAL("missing cleanup", "Clean Orgmod List");
+    } else {
+        BOOST_CHECK_EQUAL (changes_str[0], "Clean Orgmod List");
+    }
+    if (changes_str.size() < 2) {
+        BOOST_CHECK_EQUAL("missing cleanup", "Change Orgmod");
+    } else {
+        BOOST_CHECK_EQUAL (changes_str[1], "Change Orgmod");
+    }
+
+    for (size_t i = 3; i < changes_str.size(); i++) {
+        BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+	}
+
+    // make sure change was actually made
+    CSeqdesc_CI d(scope->GetBioseqHandle(entry.GetSeq()), CSeqdesc::e_Source);
+    if (d) {
+        const COrgName& on = d->GetSource().GetOrg().GetOrgname();
+        ITERATE(COrgName::TMod, it, on.GetMod()) {
+            if ((*it)->GetSubtype() == COrgMod::eSubtype_specimen_voucher) {
+                BOOST_CHECK_EQUAL((*it)->GetSubname(), "USNM:12345");
+            } else if ((*it)->GetSubtype() == COrgMod::eSubtype_bio_material) {
+                BOOST_CHECK_EQUAL((*it)->GetSubname(), "CNWGRGL:123");
+            } else if ((*it)->GetSubtype() == COrgMod::eSubtype_culture_collection) {
+                BOOST_CHECK_EQUAL((*it)->GetSubname(), "ABB:666");
+            }
+        }
+    }
+}
+

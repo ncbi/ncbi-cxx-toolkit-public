@@ -1849,6 +1849,30 @@ void CNewCleanup_imp::OrgnameBC (
         }
     }
 
+    // special value fixes
+    EDIT_EACH_ORGMOD_ON_ORGNAME (it, onm) {
+        COrgMod& omd = **it;
+        switch (omd.GetSubtype()) {
+            case COrgMod::eSubtype_bio_material:
+                if (COrgMod::FixStructuredVoucher(omd.SetSubname(), "b")) {
+                    ChangeMade (CCleanupChange::eChangeOrgmod);
+                }
+                break;
+            case COrgMod::eSubtype_culture_collection:
+                if (COrgMod::FixStructuredVoucher(omd.SetSubname(), "c")) {
+                    ChangeMade (CCleanupChange::eChangeOrgmod);
+                }
+                break;
+            case COrgMod::eSubtype_specimen_voucher:
+                if (COrgMod::FixStructuredVoucher(omd.SetSubname(), "s")) {
+                    ChangeMade (CCleanupChange::eChangeOrgmod);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
     // erase structured notes that already match value
     // (Note: This is O(N^2).  Maybe worth converting to a faster algo?)
     EDIT_EACH_ORGMOD_ON_ORGNAME (it, onm) {
