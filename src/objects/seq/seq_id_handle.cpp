@@ -353,8 +353,11 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CSeq_id_Handle& idh)
     if ( idh.IsGi() ) {
         out << "gi|" << idh.GetPacked();
     }
-    else {
+    else if ( idh ) {
         idh.GetSeqId()->WriteAsFasta(out);
+    }
+    else {
+        out << "null";
     }
     return out;
 }
