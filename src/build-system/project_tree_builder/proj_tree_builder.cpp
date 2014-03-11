@@ -2820,9 +2820,11 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 subprojects_dirs[dir_entry->GetPath()] =
                     is_root ? eMakeType_Undefined : eMakeType_Excluded;
             }
+            if (GetApp().IsScanningWholeTree() || is_root || !GetApp().IsCMakeMode()) {
             if (find(ordered_subprojects_dirs.begin(), ordered_subprojects_dirs.end(), name) == 
                         ordered_subprojects_dirs.end()) {
                 ordered_subprojects_dirs.push_back(name);
+            }
             }
         }
         {
