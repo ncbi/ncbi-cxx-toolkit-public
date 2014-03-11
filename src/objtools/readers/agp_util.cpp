@@ -76,7 +76,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     //"expecting X gaps per chromosome", // => expecting {2 telomere,1 centromere,not more than 1 short_arm)..., found 3
     "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)",
     // "'|' character can only follow a recognized Seq-id type",
-    "invalid use of '|' character",
+    "invalid use of \"|\" character",
     kEmptyCStr,
 
     kEmptyCStr,
@@ -144,7 +144,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "component_id X is not an HTG accession, but is used with component_type A, D, or F",
     "all objects are singletons with component_beg=1",
 
-    kEmptyCStr,
+    "\"gnl|\" prefix in X is deprecated inside AGP files (no \"prefix|\" is best)",
     kEmptyCStr,
     kEmptyCStr,
     kEmptyCStr,
@@ -1162,10 +1162,18 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
 
     out << "### Warnings ###\n";
     for(int i=W_First; i<W_Last; i++) {
-        out << GetPrintableCode(i) << "\t" << GetMsg(i);
+        out << GetPrintableCode(i) << "\t";
         if(i==W_GapLineMissingCol9) {
-            out << " (no longer reported)";
+            out << GetMsg(i) << " (no longer reported)";
             //out << " (only the total count is printed unless you specify: -only " << GetPrintableCode(i) << ")";
+        }
+        else if(i==W_GnlId) {
+            string s;
+            NStr::Replace( GetMsg(i), " X ", " object_id ", s); // component_id or
+            out << s;
+        }
+        else {
+          out << GetMsg(i);
         }
         out << "\n";
     }

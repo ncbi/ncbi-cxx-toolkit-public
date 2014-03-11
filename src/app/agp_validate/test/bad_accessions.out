@@ -5,36 +5,54 @@
 	WARNING: two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
 
 8171:scaffold1.1|size2787216	1	509	1	W	Contig_1	1	509	+
-	ERROR: invalid use of '|' character in object_id (column 1)
+	ERROR: invalid use of "|" character in object_id (column 1)
 
-8179:scaffold1.1|size2787216	63757	98299	9	W	Contig_5|test5	1	34543	+
-	ERROR: invalid use of '|' character in component_id (column 6)
+8180:gnl|AAJN|scaffold_1	1	256777	1	W	AAJN01000001	1	256777	+
+	WARNING: "gnl|" prefix in object_id (column 1) is deprecated inside AGP files (no "prefix|" is best)
 
-2 errors, 1 warning, 4 notes; 3 not printed.
+8183:gnl|AAJN|scaffold_1|gb|CH476594	1	256777	1	W	AAJN01000001	1	256777	+
+	ERROR: invalid use of "|" character in object_id (column 1): FASTA-style ID gnl|AAJN|scaffold_1|gb|CH476594 has too many parts.
+	WARNING: the span overlaps a previous span for this component: 1..256777 at line 8180
+	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 8180, in another object
+
+8185:gnl|AAJN|scaffold_1|gb|CH476594	256878	593219	3	W	AAJN01000002	1	336342	+
+	WARNING: the span overlaps a previous span for this component: 1..336342 at line 8182
+	WARNING: component lines with the same component_id found on different scaffolds; previous occurance at line 8182, in another object
+
+8186:
+	ERROR, line skipped: empty line
+
+3 errors, 6 warnings, 4 notes; 3 not printed.
   Count Code  Description
-      2  e24  invalid use of '|' character
+      1  e03  empty line
+      2  e24  invalid use of "|" character
       1  w33  two consequtive gap lines (e.g. a gap at the end of a scaffold, two non scaffold-breaking gaps, ...)
+      2  w35  the span overlaps a previous span for this component
+      2  w49  component lines with the same component_id found on different scaffolds
       3  w52  gap shorter than 10 bp
          (Use -show w52 to print lines with short gaps.)
       1  w58  assuming AGP version X
+      1  w66  "gnl|" prefix in X is deprecated inside AGP files (no "prefix|" is best)
+
+NOTE: 1 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
 
-Objects                :    2
+Objects                :    4
 - with single component:    0
 
-Scaffolds              :  350
+Scaffolds              :  352
 - with single component:   54
 
-Components                   : 4089 (W)
-  orientation +              : 2668
+Components                   : 4093 (W)
+  orientation +              : 2672
   orientation -              : 1421
   orientation ? (formerly 0) :    0
   orientation na             :    0
 
-Gaps                   : 4090 (N)
-- do not break scaffold: 3739
+Gaps                   : 4092 (N)
+- do not break scaffold: 3741
   clone   , linkage yes:    4
-  fragment, linkage yes: 3735
+  fragment, linkage yes: 3737
 - break it, linkage no :  351
 	contig         :  348
 	centromere     :    1
@@ -43,11 +61,16 @@ Gaps                   : 4090 (N)
 
 Most frequent N gap_length (23.1% or 944 lines):   10
 
-Object names             :  2
-  scaffold1.1|size2787216:  1
-  chr22                  :  1
+Object names                     :  4
+  scaffold1.1|size2787216        :  1
+  gnl|AAJN|scaffold_1|gb|CH476594:  1
+  gnl|AAJN|scaffold_1            :  1
+  chr22                          :  1
 
-Component names                      :  4089
+Component names                      :  4091
+--------------- Nucleotide accessions:     2
+  AAJN[01000001,01000002]            :     2
+--------------- OTHER identifiers    :  4089
   ABGA[01001503..01404031].[1,111111]:  4055 (some local or misspelled)
   ABGA[01409238..01410146].1.1       :    26 (local or misspelled)
   Contig_[1..4]                      :     4 (local or misspelled)

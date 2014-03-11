@@ -36,6 +36,7 @@
 #include <objtools/readers/agp_validate_reader.hpp>
 #include <algorithm>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Dbtag.hpp>
 
 using namespace ncbi;
 using namespace objects;
@@ -328,8 +329,24 @@ void CAgpValidateReader::OnGapOrComponent()
     if(m_this_row->GetComponentId()==m_this_row->GetObject()) m_AgpErr->Msg(CAgpErrEx::W_ObjEqCompId);
 
     CSeq_id::EAccessionInfo acc_inf = CSeq_id::IdentifyAccession( m_this_row->GetComponentId() );
-    if( acc_inf==CSeq_id::eAcc_other && m_this_row->GetComponentId().find("|")!=NPOS )
-      m_AgpErr->Msg(CAgpErrEx::E_InvalidBarInId, " in component_id (column 6)");
+    /*
+    if( acc_inf==CSeq_id::eAcc_other && m_this_row->GetComponentId().find("|")!=NPOS ) {
+      bool gnl = false;
+      try{
+        CSeq_id seq_id( m_this_row->GetComponentId() ); // CDbtag
+        gnl = seq_id.GetGeneral().GetDb().size();
+      }
+      catch(exception e){
+        gnl = false;
+      }
+      if(gnl) {
+        m_AgpErr->Msg(CAgpErrEx::W_GnlId, "component_id (column 6)");
+      }
+      else {
+        m_AgpErr->Msg(CAgpErrEx::E_InvalidBarInId, " in component_id (column 6)");
+      }
+    }
+    */
     int div = acc_inf & CSeq_id::eAcc_division_mask;
     if(m_CheckCompNames) {
       string msg;
@@ -513,8 +530,35 @@ void CAgpValidateReader::OnObjectChange()
   }
 
   if(!m_at_end) {
-    if( CSeq_id::IdentifyAccession( m_this_row->GetObject() )==CSeq_id::eAcc_other && m_this_row->GetObject().find("|")!=NPOS ) {
-      m_AgpErr->Msg(CAgpErrEx::E_InvalidBarInId, " in object_id (column 1)");
+    if( CSeq_id::IdentifyAccession( m_this_row->GetObject() )==CSeq_id::eAcc_other ) {
+      SIZE_TYPE p = m_this_row->GetObject().find("|");
+      if(p!=NPOS) {
+        bool gnl = false;
+        string parsing_error;
+        if( m_this_row->GetObject().find("|", p+1) == NPOS ) {
+          // a single bar
+          // m_AgpErr->Msg(CAgpErrEx::E_InvalidBarInId, " in object_id (column 1)");
+        }
+        else {
+          try{
+            CSeq_id seq_id( m_this_row->GetObject() ); // CDbtag
+            const CDbtag& id_gen = seq_id.GetGeneral();
+            gnl = id_gen.GetDb().size();
+          }
+          catch(CException e){
+            gnl = false;
+            parsing_error = e.GetMsg();
+          }
+        }
+        if(gnl) {
+          m_AgpErr->Msg(CAgpErrEx::W_GnlId, "object_id (column 1)");
+        }
+        else {
+          m_AgpErr->Msg( CAgpErrEx::E_InvalidBarInId,
+            string(" in object_id (column 1)") + (parsing_error.size()?": ":"") + parsing_error );
+        }
+
+      }
     }
     // m_this_row = the first line of the new object
     TObjSetResult obj_insert_result = m_ObjIdSet.insert(m_this_row->GetObject());
