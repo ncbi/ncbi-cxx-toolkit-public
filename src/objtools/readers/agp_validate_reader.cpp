@@ -541,9 +541,13 @@ void CAgpValidateReader::OnObjectChange()
         }
         else {
           try{
-            CSeq_id seq_id( m_this_row->GetObject() ); // CDbtag
-            const CDbtag& id_gen = seq_id.GetGeneral();
-            gnl = id_gen.GetDb().size();
+            /*
+             * CSeq_id seq_id( m_this_row->GetObject() ); // CDbtag
+             * const CDbtag& id_gen = seq_id.GetGeneral();
+             * gnl = id_gen.GetDb().size();
+            */
+            CBioseq::TId ids;
+            gnl = CSeq_id::ParseFastaIds( ids, m_this_row->GetObject() ) > 0;
           }
           catch(CException e){
             gnl = false;
