@@ -176,8 +176,9 @@ struct SNetScheduleAPIImpl : public CObject
     long m_ServerParamsAskCount;
     CFastMutex m_FastMutex;
 
-    list<string> m_AffinityList;
     CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
+    list<string> m_AffinityList;
+    list<string> m_AffinitySequence;
 
     bool m_UseEmbeddedStorage;
 
@@ -212,10 +213,11 @@ struct SNetScheduleExecutorImpl : public CObject
     SNetScheduleExecutorImpl(CNetScheduleAPI::TInstance ns_api_impl) :
         m_API(ns_api_impl),
         m_AffinityPreference(ns_api_impl->m_AffinityPreference),
-        m_PreferredAffinities(ns_api_impl->m_AffinityList.begin(),
-                ns_api_impl->m_AffinityList.end()),
         m_WorkerNodeMode(false)
     {
+        copy(ns_api_impl->m_AffinityList.begin(),
+             ns_api_impl->m_AffinityList.end(),
+             inserter(m_PreferredAffinities, m_PreferredAffinities.end()));
     }
 
     void ClaimNewPreferredAffinity(CNetServer orig_server,

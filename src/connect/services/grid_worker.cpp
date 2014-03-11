@@ -1451,6 +1451,35 @@ void CGridWorkerNode::x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
     }
 }
 
+bool CGridWorkerNode::x_GetJobWithAffinityList(SNetServerImpl* server,
+        const CDeadline* timeout, CNetScheduleJob& job,
+        const string& affinity_list)
+{
+    return m_NSExecutor->ExecGET(server, m_NSExecutor->
+            m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
+                    CNetScheduleNotificationHandler::MkBaseGETCmd(
+                            m_NSExecutor->m_AffinityPreference, affinity_list),
+                    timeout), job);
+}
+
+bool CGridWorkerNode::x_GetJobWithAffinitySequence(SNetServerImpl* server,
+        const CDeadline* timeout, CNetScheduleJob& job)
+{
+    if (m_NSExecutor->m_API->m_AffinitySequence.empty())
+        return x_GetJobWithAffinityList(server, timeout, job, kEmptyStr);
+
+    list<string>::const_iterator it =
+            m_NSExecutor->m_API->m_AffinitySequence.begin();
+
+    for (;;) {
+        string affinity_list = *it;
+        if (++it == m_NSExecutor->m_API->m_AffinitySequence.end())
+            return x_GetJobWithAffinityList(server, timeout, job, affinity_list);
+        else if (x_GetJobWithAffinityList(server, NULL, job, affinity_list))
+            return true;
+    }
+}
+
 // Action on a *detached* timeline entry.
 bool CGridWorkerNode::x_PerformTimelineAction(
         CGridWorkerNode::SNotificationTimelineEntry* timeline_entry,
@@ -1495,11 +1524,8 @@ bool CGridWorkerNode::x_PerformTimelineAction(
     timeline_entry->ResetTimeout(m_NSTimeout);
 
     try {
-        if (m_NSExecutor->ExecGET(server, m_NSExecutor->
-                m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
-                        CNetScheduleNotificationHandler::MkBaseGETCmd(
-                                m_NSExecutor->m_AffinityPreference, kEmptyStr),
-                        &timeline_entry->GetTimeout()), job)) {
+        if (x_GetJobWithAffinitySequence(server,
+                &timeline_entry->GetTimeout(), job)) {
             // A job has been returned; add the server to
             // m_ImmediateActions because there can be more
             // jobs in the queue.
@@ -1507,7 +1533,7 @@ bool CGridWorkerNode::x_PerformTimelineAction(
             return true;
         } else {
             // No job has been returned by this server;
-            // query it later.
+            // query the server later.
             m_Timeline.Push(timeline_entry);
             return false;
         }

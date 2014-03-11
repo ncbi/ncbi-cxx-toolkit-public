@@ -784,6 +784,13 @@ private:
 
     SNotificationTimelineEntry m_TimelineSearchPattern;
 
+    bool x_GetJobWithAffinityList(SNetServerImpl* server,
+            const CDeadline* timeout,
+            CNetScheduleJob& job,
+            const string& affinity_list);
+    bool x_GetJobWithAffinitySequence(SNetServerImpl* server,
+            const CDeadline* timeout,
+            CNetScheduleJob& job);
     bool x_PerformTimelineAction(SNotificationTimelineEntry* action,
             CNetScheduleJob& job);
     void x_ProcessRequestJobNotification();

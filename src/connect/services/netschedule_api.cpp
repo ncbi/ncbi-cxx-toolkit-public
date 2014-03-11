@@ -300,6 +300,15 @@ void CNetScheduleServerListener::OnInit(
                     SNetScheduleAPIImpl::VerifyAffinityAlphabet(*it);
                 }
             }
+
+            string affinity_sequence = config->GetString(config_section,
+                    "affinity_sequence", CConfig::eErr_NoThrow, kEmptyStr);
+
+            NStr::ReplaceInPlace(affinity_sequence, " ", "");
+
+            if (!affinity_sequence.empty())
+                NStr::Split(affinity_sequence, ";",
+                        ns_impl->m_AffinitySequence);
         }
 
         ns_impl->m_ClientNode = config->GetString(config_section,
