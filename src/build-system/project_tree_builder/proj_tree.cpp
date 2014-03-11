@@ -808,9 +808,6 @@ void CMakeProject::AddIncludeDirectory(const string& name)
 }
 void CMakeProject::AddLibrary(const string& name)
 {
-    if (name == ")") {
-cout << endl;
-    }
     m_Libraries.push_back(name);
 }
 void CMakeProject::AddDependency(const string& name)
@@ -1107,13 +1104,13 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
             if (deptype == 0) {
                 if (p->first.Type() == CProjKey::eLib ||
                     p->first.Type() == CProjKey::eDll) {
-#if 1
+#if 0
 // this works
                     to_process.push_back("DLL_LIB");
                     to_process.push_back("LIBS");
 #else
 // this could be better.. or not..
-                    to_process.push_back("USES_LIBRARIES");
+//                    to_process.push_back("USES_LIBRARIES");
 #endif
                 } else if (p->first.Type() == CProjKey::eApp) {
                     to_process.clear();
@@ -1138,6 +1135,16 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
                                     if (CSymResolver::HasDefine(value)) {
                                         NStr::ReplaceInPlace(value, "$(", "${");
                                         NStr::ReplaceInPlace(value, ")", "}");
+                                    }
+                                    if (NStr::FindCase( value,"general") != NPOS) {
+                                        list<string> vv_lst;
+                                        NStr::Split(value, LIST_SEPARATOR_LIBS, vv_lst);
+                                        NON_CONST_ITERATE( list<string>, vv, vv_lst) {
+                                            if (*vv == "general") {
+                                                *vv = "general-lib";
+                                            }
+                                        }
+                                        value = NStr::Join(vv_lst, " ");
                                     }
                                     mkPrj[prj_path].AddDefinition(key, value);
                                     prj_libs.push_back( "${" + key + "}");
