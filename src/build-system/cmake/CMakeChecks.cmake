@@ -293,8 +293,7 @@ set(BERKELEYDB_INCLUDE ${NCBI_TOOLS_ROOT}/BerkeleyDB/include)
 set(BERKELEYDB_LIBS    -L"${NCBI_TOOLS_ROOT}/BerkeleyDB/${CMAKE_BUILD_TYPE}" -ldb)
 set(BERKELEYDB_STATIC_LIBS      -L${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1/${buildconf0} -ldb-static)
 set(BERKELEYDB_CXX_STATIC_LIBS  -L${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1/${buildconf0} -ldb_cxx-static -ldb-static)
-set(BERKELEYDB_CXX_LIBS         -L/netopt/ncbi_tools
-64/BerkeleyDB-4.6.21.1/${buildconf0} -Wl,-rpath,/opt/ncbi/64/BerkeleyDB-4.6.21.1/${buildconf0}:${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1/${buildconf0} -ldb_cxx -ldb)
+set(BERKELEYDB_CXX_LIBS         -L${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1/${buildconf0} -Wl,-rpath,/opt/ncbi/64/BerkeleyDB-4.6.21.1/${buildconf0}:${NCBI_TOOLS_ROOT}/BerkeleyDB-4.6.21.1/${buildconf0} -ldb_cxx -ldb)
 
 # ODBC
 set(ODBC_INCLUDE  ${includedir}/dbapi/driver/odbc/unix_odbc ${includedir0}/dbapi/driver/odbc/unix_odbc)
