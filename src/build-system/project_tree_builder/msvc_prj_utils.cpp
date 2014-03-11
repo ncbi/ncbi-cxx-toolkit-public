@@ -1665,6 +1665,21 @@ IsProducedByDatatool(const string&    src_path_abs,
             return &(*p);
         }
     }
+
+    try {
+        ITERATE(list<CDataToolGeneratedSrc>, p, project.m_DatatoolSources) {
+            const CDataToolGeneratedSrc& asn = *p;
+            string def( CDirEntry::ConcatPath(asn.m_SourceBaseDir, CDirEntry(asn.m_SourceFile).GetBase()) + ".def");
+            if (CFile(def).Exists()) {
+                CNcbiIfstream in(def.c_str(), IOS_BASE::in | IOS_BASE::binary);
+                CNcbiRegistry reg(in);
+                if (reg.GetString("-", "-oc", "") == asn_base) {
+                    return &(*p);
+                } 
+            }
+        }
+    } catch (...) {
+    }
     return NULL;
 }
 
