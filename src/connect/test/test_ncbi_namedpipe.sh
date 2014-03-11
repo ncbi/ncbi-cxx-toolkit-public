@@ -23,7 +23,7 @@ client_log=test_ncbi_namedpipe_client.log
 
 rm -f $server_log $client_log
 
-$CHECK_EXE test_ncbi_namedpipe -suffix $$ server </dev/null >$server_log 2>&1 &
+test_ncbi_namedpipe -suffix $$ server </dev/null >$server_log 2>&1 &
 spid=$!
 trap 'kill -9 $spid 2>/dev/null; rm -f ./.ncbi_test_pipename_$$; echo "`date`."' 0 1 2 3 15
 

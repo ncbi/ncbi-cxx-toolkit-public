@@ -4,7 +4,7 @@
 status=0
 port="565`expr $$ % 100`"
 
-$CHECK_EXEC test_threaded_server -port $port </dev/null &
+test_threaded_server -port $port </dev/null &
 server_pid=$!
 trap 'kill $server_pid' 0 1 2 3 15
 

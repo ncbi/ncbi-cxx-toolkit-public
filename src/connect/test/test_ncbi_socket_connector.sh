@@ -27,7 +27,7 @@ rm -f $port $server_log $client_log
 CONN_DEBUG_PRINTOUT=SOME;  export CONN_DEBUG_PRINTOUT
 
 # NB: socket_io_bouncer opens the log, too
-$CHECK_EXEC socket_io_bouncer $port </dev/null >>$server_log 2>&1 &
+socket_io_bouncer $port </dev/null >>$server_log 2>&1 &
 spid=$!
 trap 'kill -9 $spid 2>/dev/null; rm -f $port; echo "`date`."' 0 1 2 3 15
 
