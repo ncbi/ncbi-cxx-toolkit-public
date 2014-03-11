@@ -261,8 +261,10 @@ void g_VerifyAlphabet(const string& str, const CTempString& param_name,
 
     if (!g_CheckAlphabet(str, param_name, char_class, &bad_char)) {
         NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                "Invalid character #" << unsigned(bad_char) << " in the " <<
-                param_name << " \"" << NStr::PrintableString(str) << "\".");
+                "Invalid character '" <<
+                NStr::PrintableString(CTempString(&bad_char, 1)) <<
+                "' in the " << param_name << " \"" <<
+                NStr::PrintableString(str) << "\".");
     }
 }
 

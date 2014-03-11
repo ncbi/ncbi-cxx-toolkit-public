@@ -265,6 +265,7 @@ void CNetScheduleServerListener::OnInit(
         else
             ns_impl->m_Queue = "noname";
     }
+
     if (config == NULL) {
         ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
         ns_impl->m_UseEmbeddedStorage = true;
@@ -283,12 +284,23 @@ void CNetScheduleServerListener::OnInit(
         bool claim_new_affinities = config->GetBool(config_section,
                 "claim_new_affinities", CConfig::eErr_NoThrow, false);
 
-        ns_impl->m_AffinityPreference =
-                !use_affinities && !claim_new_affinities ?
-                        CNetScheduleExecutor::eAnyJob :
-                claim_new_affinities ?
-                        CNetScheduleExecutor::eClaimNewPreferredAffs :
-                        CNetScheduleExecutor::ePreferredAffsOrAnyJob;
+        if (!use_affinities)
+            ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
+        else {
+            ns_impl->m_AffinityPreference = claim_new_affinities ?
+                    CNetScheduleExecutor::eClaimNewPreferredAffs :
+                    CNetScheduleExecutor::ePreferredAffinities;
+
+            string affinity_list = config->GetString(config_section,
+                    "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
+
+            if (!affinity_list.empty()) {
+                NStr::Split(affinity_list, ", ", ns_impl->m_AffinityList);
+                ITERATE(list<string>, it, ns_impl->m_AffinityList) {
+                    SNetScheduleAPIImpl::VerifyAffinityAlphabet(*it);
+                }
+            }
+        }
 
         ns_impl->m_ClientNode = config->GetString(config_section,
             "client_node", CConfig::eErr_NoThrow, kEmptyStr);
