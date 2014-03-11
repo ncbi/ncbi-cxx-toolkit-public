@@ -49,6 +49,7 @@ objtools/blast/services
 objtools/blast/blastdb_format
 objtools/blast/seqdb_writer
 objtools/cleanup$
+objtools/edit$
 objtools/format$
 objtools/format/items$
 objtools/align_format
