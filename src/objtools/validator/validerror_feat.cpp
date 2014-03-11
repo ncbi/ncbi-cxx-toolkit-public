@@ -1050,7 +1050,7 @@ string CValidError_feat::MapToNTCoords
     tmp.SetPnt(pnt);
     CRef<CSeq_loc> loc = ProductToSource(feat, tmp, 0, m_Scope);
     
-    result = GetValidatorLocationLabel(*loc);
+    result = GetValidatorLocationLabel(*loc, *m_Scope);
 
     return result;
 }
@@ -1638,7 +1638,7 @@ void CValidError_feat::x_ValidateCdregionCodebreak
         if ( prev_cbr != 0 ) {
             if ( Compare(cbr_loc, prev_cbr->GetLoc(), m_Scope) == eSame ) {
                 string msg = "Multiple code-breaks at same location ";
-                string str = GetValidatorLocationLabel (cbr_loc);
+                string str = GetValidatorLocationLabel (cbr_loc, *m_Scope);
                 if ( !str.empty() ) {
                     msg += "[" + str + "]";
                 }

@@ -137,7 +137,7 @@ void GetPubdescLabels
 bool IsNCBIFILESeqId (const CSeq_id& id);
 bool IsRefGeneTrackingObject (const CUser_object& user);
 
-string GetValidatorLocationLabel (const CSeq_loc& loc);
+string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope);
 void AppendBioseqLabel(string& str, const CBioseq& sq, bool supress_context);
 string GetBioseqIdLabel(const CBioseq& sq, bool limited = false);
 

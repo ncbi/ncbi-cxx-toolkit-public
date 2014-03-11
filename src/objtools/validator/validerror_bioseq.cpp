@@ -8590,7 +8590,7 @@ bool CValidError_bioseq::ValidateGraphLocation (const CSeq_graph& graph)
         TSeqPos stop = loc.GetStop(eExtreme_Positional);
         if (start >= bsh.GetBioseqLength() || stop >= bsh.GetBioseqLength()
             || !loc.IsInt() || loc.GetStrand() == eNa_strand_minus) {
-            string label = GetValidatorLocationLabel (loc);
+            string label = GetValidatorLocationLabel (loc, *m_Scope);
             PostErr (eDiag_Error, eErr_SEQ_GRAPH_GraphLocInvalid, 
                      "SeqGraph location (" + label + ") is invalid", graph);
             return false;

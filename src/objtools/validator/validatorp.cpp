@@ -796,9 +796,9 @@ void CValidError_imp::PostErr
             CSeq_loc loc;
             loc.Assign(ft.GetLocation());
             ChangeSeqLocId(&loc, false, m_Scope.GetPointer());
-            loc_label = "[" + GetValidatorLocationLabel(loc) + "]";
+            loc_label = "[" + GetValidatorLocationLabel(loc, *m_Scope) + "]";
         } else {
-            loc_label = "[" + GetValidatorLocationLabel(ft.GetLocation()) + "]";
+            loc_label = "[" + GetValidatorLocationLabel(ft.GetLocation(), *m_Scope) + "]";
         }
         if (loc_label.size() > 800) {
             loc_label.replace(796, NPOS, "...]");
@@ -831,9 +831,9 @@ void CValidError_imp::PostErr
             CSeq_loc loc;
             loc.Assign(ft.GetProduct());
             ChangeSeqLocId(&loc, false, m_Scope.GetPointer());
-            loc_label = GetValidatorLocationLabel(loc);
+            loc_label = GetValidatorLocationLabel(loc, *m_Scope);
         } else {
-            loc_label = GetValidatorLocationLabel (ft.GetProduct());
+            loc_label = GetValidatorLocationLabel (ft.GetProduct(), *m_Scope);
         }
         if (loc_label.size() > 800) {
             loc_label.replace(797, NPOS, "...");
@@ -2196,7 +2196,7 @@ void CValidError_imp::ValidateSeqLoc
                 break;
             }
             if (!chk) {
-                string lbl = GetValidatorLocationLabel (*lit);
+                string lbl = GetValidatorLocationLabel (*lit, *m_Scope);
                 PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
                     prefix + ": SeqLoc [" + lbl + "] out of range", obj);
             }
@@ -2312,7 +2312,7 @@ void CValidError_imp::ValidateSeqLoc
 
     string loc_lbl;
     if (adjacent && report_abutting) {
-        loc_lbl = GetValidatorLocationLabel(loc);
+        loc_lbl = GetValidatorLocationLabel(loc, *m_Scope);
 
         EDiagSev sev = exception ? eDiag_Warning : eDiag_Error;
         PostErr(sev, eErr_SEQ_FEAT_AbuttingIntervals,

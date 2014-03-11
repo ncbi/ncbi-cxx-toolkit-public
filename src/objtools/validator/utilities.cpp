@@ -990,18 +990,28 @@ bool IsRefGeneTrackingObject (const CUser_object& user)
 }
 
 
-string GetValidatorLocationLabel (const CSeq_loc& loc)
+string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope)
 {
     string loc_label = "";
-    loc.GetLabel(&loc_label);
-    NStr::ReplaceInPlace(loc_label, ":plus", ":");
-    NStr::ReplaceInPlace(loc_label, ", plus", ", ");
-    NStr::ReplaceInPlace(loc_label, ":both", ":");
-    NStr::ReplaceInPlace(loc_label, ", both", ", ");
-    NStr::ReplaceInPlace(loc_label, ":minus", ":c");
-    NStr::ReplaceInPlace(loc_label, ", minus", ", c");
-    NStr::ReplaceInPlace(loc_label, "[", "(");
-    NStr::ReplaceInPlace(loc_label, "]", ")");
+    if (loc.IsWhole()) {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(loc.GetWhole());
+        if (bsh) {
+            loc_label = GetBioseqIdLabel(*(bsh.GetCompleteBioseq()));
+            NStr::ReplaceInPlace(loc_label, "[", "");
+            NStr::ReplaceInPlace(loc_label, "]", "");
+        }
+    }
+    if (NStr::IsBlank(loc_label)) {
+        loc.GetLabel(&loc_label);
+        NStr::ReplaceInPlace(loc_label, ":plus", ":");
+        NStr::ReplaceInPlace(loc_label, ", plus", ", ");
+        NStr::ReplaceInPlace(loc_label, ":both", ":");
+        NStr::ReplaceInPlace(loc_label, ", both", ", ");
+        NStr::ReplaceInPlace(loc_label, ":minus", ":c");
+        NStr::ReplaceInPlace(loc_label, ", minus", ", c");
+        NStr::ReplaceInPlace(loc_label, "[", "(");
+        NStr::ReplaceInPlace(loc_label, "]", ")");
+    }
     return loc_label;
 }
 
