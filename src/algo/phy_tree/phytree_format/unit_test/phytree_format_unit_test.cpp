@@ -159,8 +159,10 @@ BOOST_AUTO_TEST_CASE(TestInitTreeFeaturesWithBadInput)
     CRef<CSeq_id> seq_id(new CSeq_id("gi|129295"));
     vector< CRef<CSeq_id> > ids(num - 1, seq_id);
 
+    CRef<CPhyTreeFormatter> tree;
+
     // number of seq-ids must be the same as number of leaves in btc
-    BOOST_REQUIRE_THROW(CPhyTreeFormatter(btc, ids, *scope),
+    BOOST_REQUIRE_THROW(tree.Reset(new CPhyTreeFormatter(btc, ids, *scope)),
                         CPhyTreeFormatterException);
 
     istr.open("data/bare_tree.asn");
@@ -169,7 +171,7 @@ BOOST_AUTO_TEST_CASE(TestInitTreeFeaturesWithBadInput)
 
     // number of seq-ids must be the same as number of leaves in btc
     ids.resize(num + 1, seq_id);
-    BOOST_REQUIRE_THROW(CPhyTreeFormatter(btc, ids, *scope),
+    BOOST_REQUIRE_THROW(tree.Reset(new CPhyTreeFormatter(btc, ids, *scope)),
                         CPhyTreeFormatterException);
 }
 
