@@ -6754,11 +6754,18 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                 if (curr_start > prev_end) {
                     break;
                 }
-                x_ReportDupOverlapFeaturePair (prev_it->GetSeq_feat_Handle(), 
-                                               *prev_feat, 
-                                               curr_it->GetSeq_feat_Handle(), 
-                                               *curr_feat,
-                                               fruit_fly, viral, htgs);
+                EDuplicateFeatureType dup_type = IsDuplicate (prev_it->GetSeq_feat_Handle(),
+                                                              *prev_feat,
+                                                              curr_it->GetSeq_feat_Handle(), 
+                                                              *curr_feat, *m_Scope);
+                if (dup_type != eDuplicate_Not) {
+                    x_ReportDupOverlapFeaturePair (prev_it->GetSeq_feat_Handle(), 
+                                                   *prev_feat, 
+                                                   curr_it->GetSeq_feat_Handle(), 
+                                                   *curr_feat,
+                                                   fruit_fly, viral, htgs);
+                    break;
+                }
                 ++curr_it;
             }
             ++prev_it;
