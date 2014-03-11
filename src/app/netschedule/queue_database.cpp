@@ -1220,6 +1220,7 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
             k->second.first.qclass = old_class;
             k->second.first.position = old_pos;
             k->second.first.description = old_description;
+            k->second.first.kind = CQueue::eKindDynamic;
 
             if (section_started == false) {
                 section_started = true;
