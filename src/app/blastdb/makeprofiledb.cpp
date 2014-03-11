@@ -1270,6 +1270,24 @@ void CMakeProfileDBApp::Init(void)
 	x_InitProgramParameters();
 }
 
+static bool s_HasDefline(const CBioseq & bio)
+{
+    if (bio.CanGetDescr()) {
+        return true;
+    }
+
+    return false;
+}
+
+static CRef<CBlast_def_line_set> s_GenerateBlastDefline(const CBioseq & bio)
+{
+	 CRef<CBlast_def_line_set> defline_set(new CBlast_def_line_set());
+	 CRef<CBlast_def_line> defline(new CBlast_def_line());
+	 defline->SetSeqid() = bio.GetId();
+	 defline_set->Set().push_back(defline);
+	 return defline_set;
+}
+
 int CMakeProfileDBApp::Run(void)
 {
 	vector<string> smpFilenames = (op_delta == m_op_mode )? x_CreateDeltaList():x_GetSMPFilenames();
@@ -1312,7 +1330,14 @@ int CMakeProfileDBApp::Run(void)
 		int seq_size = pssm.GetQueryLength();
 
 		const CBioseq & bioseq = pssm.GetQuery().GetSeq();
-		CRef<CBlast_def_line_set> deflines = CWriteDB::ExtractBioseqDeflines(bioseq);
+		CRef<CBlast_def_line_set> deflines;
+		if(s_HasDefline(bioseq)) {
+			deflines = CWriteDB::ExtractBioseqDeflines(bioseq);
+		}
+		else {
+			deflines = s_GenerateBlastDefline(bioseq);
+		}
+
 		m_Taxids->FixTaxId(deflines);
 		m_OutputDb->AddSequence(bioseq);
 		m_OutputDb->SetDeflines(*deflines);
