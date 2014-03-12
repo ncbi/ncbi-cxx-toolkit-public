@@ -82,6 +82,7 @@ USING_SCOPE(validator);
 #include "process_defline.hpp"
 #include "process_eutils.hpp"
 #include "process_fasta.hpp"
+#include "process_flatfile.hpp"
 #include "process_gene_overlap.hpp"
 #include "process_macrotest.hpp"
 #include "process_prosplign.hpp"
@@ -168,6 +169,7 @@ void CStreamTestApp::Init()
                                         "deprecated-title",
                                         "eutils",
                                         "fasta",
+                                        "flatfile",
                                         "gene-overlap",
                                         "gpipe-defline",
                                         "macrotest",
@@ -226,6 +228,9 @@ void CStreamTestApp::Init()
 
     arg_desc->AddFlag("show-mods",
         "Show FASTA header mods (e.g. [strain=abc])");
+
+    arg_desc->AddFlag("flat-set",
+        "Generate flatfile for each component");
 
     arg_desc->AddFlag("debug",
         "Show debugging information");
@@ -300,6 +305,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "fasta" ) {
         pProcess = new CFastaProcess;
+    }
+    if ( testcase == "flatfile" ) {
+        pProcess = new CFlatfileProcess;
     }
     if ( testcase == "gene-overlap" ) {
         pProcess = new CGeneOverlapProcess;
