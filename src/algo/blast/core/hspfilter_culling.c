@@ -82,18 +82,18 @@ static LinkedHSP * s_HSPFree(LinkedHSP *x) {
 
 /** return true if p dominates y  */
 static Boolean s_DominateTest(LinkedHSP *p, LinkedHSP *y, Boolean drop_y_if_tie) {
-    int b1 = p->begin;
-    int b2 = y->begin;
-    int e1 = p->end;
-    int e2 = y->end;
-    int s1 = p->hsp->score;
-    int s2 = y->hsp->score;
-    int l1 = e1 - b1;
-    int l2 = e2 - b2;
+    Int8 b1 = p->begin;
+    Int8 b2 = y->begin;
+    Int8 e1 = p->end;
+    Int8 e2 = y->end;
+    Int8 s1 = p->hsp->score;
+    Int8 s2 = y->hsp->score;
+    Int8 l1 = e1 - b1;
+    Int8 l2 = e2 - b2;
 
     /* the main criterion:
        2 * (%diff in score) + 1 * (%diff in length) */
-    int d  = 3*s1*l1 + s1*l2 - s2*l1 - 3*s2*l2; 
+    Int8 d  = 3*s1*l1 + s1*l2 - s2*l1 - 3*s2*l2;
 
     if (d < 0 ||  
          /* the following is the 50% overlap condition */
