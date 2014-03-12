@@ -301,6 +301,8 @@ void CBioseq_Info::x_SetObject(const CBioseq_Info& info,
 {
     _ASSERT(!m_Object);
 
+    // update Seq-inst object with split data
+    info.x_Update(fNeedUpdate_seq_data);
     m_Object = sx_ShallowCopy(*info.m_Object);
     if ( HasDataSource() ) {
         x_DSMapObject(m_Object, GetDataSource());
