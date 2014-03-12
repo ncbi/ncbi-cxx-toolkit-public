@@ -78,8 +78,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
    };
 
    struct s_test_property {
-      string name;
+      string setting_name;
       int category;
+      string conf_name;
    };
 
    class CSeqEntryReadHook : public CSkipClassMemberHook
@@ -139,6 +140,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         void CollectTests();
         virtual void Run();
         void CollectRepData();
+        void CollectDefaultConfig(Str2Str& test_nm2conf_nm, const string& report_type);
 
         void RunMultiObjects();
         static CSeq_entry_Handle* m_TopSeqEntry;
