@@ -66,6 +66,8 @@ class NCBI_XOBJMGR_EXPORT CSeqVector : public CObject, public CSeqVectorTypes
 public:
     typedef CBioseq_Handle::EVectorCoding EVectorCoding;
     typedef CSeqVector_CI const_iterator;
+    typedef CMutex TMutex;
+    typedef TMutex::TWriteLockGuard TMutexGuard;
 
     CSeqVector(void);
     explicit
@@ -96,11 +98,27 @@ public:
 
     bool empty(void) const;
     TSeqPos size(void) const;
+
+    /// Get mutex for a few non-MT-safe methods to make them MT-safe at a cost
+    /// of performance.
+    TMutex& GetMutex(void) const;
+
     /// 0-based array of residues
+    /// Note: this method is not MT-safe,
+    /// do not call it in parallel with other, even MT-safe method.
+    /// It will be MT-safe to call this method after locking GetMutex().
     TResidue operator[] (TSeqPos pos) const;
 
     /// true if sequence at 0-based position 'pos' has gap
+    /// Note: this method is not MT-safe,
+    /// do not call it in parallel with other, even MT-safe method.
+    /// It will be MT-safe to call this method after locking GetMutex().
     bool IsInGap(TSeqPos pos) const;
+
+    /// returns number of gap symbols ahead including base at position 'pos'
+    /// returns 0 if the position is not in gap
+    TSeqPos GetGapSizeForward(TSeqPos pos) const;
+
     /// returns gap Seq-literal object ref
     /// returns null if it's not a gap or an unspecified gap
     CConstRef<CSeq_literal> GetGapSeq_literal(TSeqPos pos) const;
@@ -161,8 +179,14 @@ private:
     friend class CSeqVector_CI;
 
     void x_InitSequenceType(void);
+
+    // this internal method is not MT-safe and must be guarded if necessary
     CSeqVector_CI& x_GetIterator(TSeqPos pos) const;
+    // this internal method is not MT-safe and must be guarded if necessary
     CSeqVector_CI* x_CreateIterator(TSeqPos pos) const;
+
+    void x_ResetIterator(void) const;
+
     void x_InitRandomizer(CRandom& random_gen);
 
     void x_GetPacked8SeqData(string& dst_str,
@@ -181,7 +205,8 @@ private:
     TCoding                  m_Coding;
     CRef<INcbi2naRandomizer> m_Randomizer;
 
-    mutable auto_ptr<CSeqVector_CI> m_Iterator;
+    mutable TMutex                  m_IteratorMutex;
+    mutable AutoPtr<CSeqVector_CI>  m_Iterator;
 };
 
 
@@ -235,6 +260,13 @@ CSeqVector_CI& CSeqVector::x_GetIterator(TSeqPos pos) const
 
 
 inline
+CSeqVector::TMutex& CSeqVector::GetMutex(void) const
+{
+    return m_IteratorMutex;
+}
+
+
+inline
 CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
 {
     return *x_GetIterator(pos);
@@ -245,13 +277,6 @@ inline
 bool CSeqVector::IsInGap(TSeqPos pos) const
 {
     return x_GetIterator(pos).IsInGap();
-}
-
-
-inline
-CConstRef<CSeq_literal> CSeqVector::GetGapSeq_literal(TSeqPos pos) const
-{
-    return x_GetIterator(pos).GetGapSeq_literal();
 }
 
 
@@ -340,13 +365,6 @@ bool CSeqVector::CanGetRange(const const_iterator& start,
                              const const_iterator& stop) const
 {
     return CanGetRange(start.GetPos(), stop.GetPos());
-}
-
-
-inline
-void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
-{
-    x_GetIterator(start).GetSeqData(start, stop, buffer);
 }
 
 

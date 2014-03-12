@@ -244,6 +244,7 @@ CSeqVector::~CSeqVector(void)
 CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
 {
     if ( &vec != this ) {
+        TMutexGuard guard(GetMutex());
         m_Scope  = vec.m_Scope;
         m_SeqMap = vec.m_SeqMap;
         m_TSE    = vec.m_TSE;
@@ -265,14 +266,45 @@ CSeqVector_CI* CSeqVector::x_CreateIterator(TSeqPos pos) const
 }
 
 
+void CSeqVector::x_ResetIterator(void) const
+{
+    if ( m_Iterator.get() ) {
+        TMutexGuard guard(GetMutex());
+        m_Iterator.reset();
+    }
+}
+
+
+TSeqPos CSeqVector::GetGapSizeForward(TSeqPos pos) const
+{
+    TMutexGuard guard(GetMutex());
+    return x_GetIterator(pos).GetGapSizeForward();
+}
+
+
+CConstRef<CSeq_literal> CSeqVector::GetGapSeq_literal(TSeqPos pos) const
+{
+    TMutexGuard guard(GetMutex());
+    return x_GetIterator(pos).GetGapSeq_literal();
+}
+
+
 bool CSeqVector::CanGetRange(TSeqPos start, TSeqPos stop) const
 {
     try {
+        TMutexGuard guard(GetMutex());
         return x_GetIterator(start).CanGetRange(start, stop);
     }
     catch ( CException& /*ignored*/ ) {
         return false;
     }
+}
+
+
+void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
+{
+    TMutexGuard guard(GetMutex());
+    x_GetIterator(start).GetSeqData(start, stop, buffer);
 }
 
 
@@ -1229,7 +1261,7 @@ void CSeqVector::SetStrand(ENa_strand strand)
 {
     if ( strand != m_Strand ) {
         m_Strand = strand;
-        m_Iterator.reset();
+        x_ResetIterator();
     }
 }
 
@@ -1238,7 +1270,7 @@ void CSeqVector::SetCoding(TCoding coding)
 {
     if (m_Coding != coding) {
         m_Coding = coding;
-        m_Iterator.reset();
+        x_ResetIterator();
     }
 }
 
@@ -1302,7 +1334,7 @@ void CSeqVector::SetRandomizeAmbiguities(CRef<INcbi2naRandomizer> randomizer)
 {
     if ( m_Randomizer != randomizer ) {
         m_Randomizer = randomizer;
-        m_Iterator.reset();
+        x_ResetIterator();
     }
 }
 
