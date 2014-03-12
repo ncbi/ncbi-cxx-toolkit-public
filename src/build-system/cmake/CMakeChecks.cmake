@@ -283,6 +283,10 @@ set(FTDS64_LIBS        ${FTDS64_CTLIB_LIBS})
 set(FTDS64_LIB        ${FTDS64_CTLIB_LIB})
 set(FTDS64_INCLUDE    ${FTDS64_CTLIB_INCLUDE})
 
+set(FTDS_LIBS     ${FTDS64_LIBS})
+set(FTDS_LIB      ${FTDS64_LIB})
+set(FTDS_INCLUDE  ${FTDS64_INCLUDE})
+
 # MySQL: headers and libs
 set(MYSQL_INCLUDE /usr/include/mysql)
 set(MYSQL_LIBS    -rdynamic -L/usr/lib64/mysql -Wl,-rpath,/usr/lib64/mysql -lmysqlclient_r -lz -lpthread -lcrypt -lnsl -lm -lpthread -lssl -lcrypto)
