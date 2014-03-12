@@ -969,6 +969,10 @@ void CMakeGenerator::GenerateCMakeTree(CProjectItemsTree& projects_tree)
 
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         const CProjItem& prj = p->second;
+        if (prj.m_MakeType >= eMakeType_Expendable) {
+// expendables can and do fail to compile
+            continue;
+        }
         string relpath =
             CDirEntry::DeleteTrailingPathSeparator(
                 CDirEntry::CreateRelativePath(src_root, 
@@ -1147,8 +1151,8 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
                                         value = NStr::Join(vv_lst, " ");
                                     }
                                     mkPrj[prj_path].AddDefinition(key, value);
-                                    prj_libs.push_back( "${" + key + "}");
                                 }
+                                prj_libs.push_back( "${" + key + "}");
                             } else {
                                 prj_libs.push_back( CSymResolver::TrimDefine(*s));
                             }
@@ -1163,6 +1167,9 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
                             prj_libs.push_back( *s);
                         }
                     }
+                }
+                else if (deptype == 0 && *top == "LIBS") {
+                    prj_libs.push_back("${ORIG_LIBS}");
                 }
             }
             ITERATE( list<string>, d, prj_libs) {
@@ -1239,13 +1246,22 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
         if (p->first.Type() == CProjKey::eApp) {
             prj_id += ".exe";
         }
-        if (prj.m_DataSource.GetValue("CHECK_COPY", tmp_list) && !tmp_list.empty()) {
-            CMakeProperty cust_build("add_custom_command");
-            cust_build.AddValue("TARGET " +  prj_id + " POST_BUILD");
+        if (prj.m_DataSource.GetValue("CHECK_COPY", tmp_list)) {
+            list<string> ttmp;
             ITERATE( list<string>, s, tmp_list) {
-                cust_build.AddValue( "COMMAND  cp -rf ${NCBI_PROJECT_SRC_DIR}/" + *s + " ${NCBI_PROJECT_BUILD_DIR}/");
+                if (CDirEntry(CDirEntry::ConcatPath(prj.m_SourcesBaseDir, *s)).Exists()) {
+                    ttmp.push_back(*s);
+                }
             }
-            mkPrj[prj_path].AddProperty(cust_build);
+            tmp_list = ttmp;
+            if (!tmp_list.empty()) {
+                CMakeProperty cust_build("add_custom_command");
+                cust_build.AddValue("TARGET " +  prj_id + " POST_BUILD");
+                ITERATE( list<string>, s, tmp_list) {
+                    cust_build.AddValue( "COMMAND  test -e ${NCBI_PROJECT_SRC_DIR}/"+ *s + " && cp -rf ${NCBI_PROJECT_SRC_DIR}/" + *s + " ${NCBI_PROJECT_BUILD_DIR}/");
+                }
+                mkPrj[prj_path].AddProperty(cust_build);
+            }
         }
         if (prj.m_DataSource.GetValue("CHECK_CMD", tmp_list)) {
             {
