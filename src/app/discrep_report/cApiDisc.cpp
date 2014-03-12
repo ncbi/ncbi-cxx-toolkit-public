@@ -41,8 +41,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
-#include "/home/chenj/DisRepLib/trunk/c++/include/objtools/discrepancy_report/hDiscRep_config.hpp"
-// #include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
@@ -95,14 +94,14 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     CRef <CScope> scope (new CScope(*object_manager));
     CSeq_entry_Handle seq_handle = scope->AddTopLevelSeqEntry(*seq_entry);   
 
-/*
     CRef <CRepConfig> 
           config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
+/*
     CRef <CRepConfig> 
           config (CRepConfig::factory((string)"Oncaller", &seq_handle));
-*/
     CRef <CRepConfig> 
           config (CRepConfig::factory((string)"Mega", &seq_handle));
+*/
 
     CRef <IRWRegistry> reg(0); 
     if (CFile("disc_report.ini").Exists()) {
