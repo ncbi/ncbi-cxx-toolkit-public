@@ -80,7 +80,7 @@ CRef< CSeq_descr >
 GetBiosampleData(string accession, bool use_dev_server)
 {
     string host = use_dev_server ? "dev-api-int" : "api-int";
-    string path = "/biosample/fetch.cgi";
+    string path = "/biosample/fetch/";
     string args = "accession=" + accession + "&format=asn1";
     CConn_HttpStream http_stream(host, path, args);
     auto_ptr<CObjectIStream> in_stream;
