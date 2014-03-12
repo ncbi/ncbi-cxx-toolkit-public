@@ -133,6 +133,7 @@ boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs $(GPIPE_GENCOLL_LIBS)
 build_config needs gpinit
 build_config needs gpinit_access
+build_config needs gpipe_xml
 bz2 needs3party $(ORIG_LIBS)
 cache_blob needs $(COMPRESS_LIBS)
 cache_blob needs xser
@@ -1371,10 +1372,9 @@ xthrserv needs xutil
 xunittestutil needs xobjutil
 xutil needs xncbi
 xvalidate needs $(XFORMAT_LIBS)
-xvalidate needs taxon3
 xvalidate needs valerr
-xvalidate needs valid
 xvalidate needs xalnmgr
+xvalidate needs xobjedit
 xxconnect needs connect
 xxconnect needs xncbi
 z needs3party $(ORIG_LIBS)
