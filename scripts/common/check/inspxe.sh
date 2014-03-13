@@ -25,7 +25,7 @@ inspxe=`echo $(cygpath -u $INSPECTOR_XE_2013_DIR) | sed 's| |\ |g'`/bin32/inspxe
 
 rd="${1}.i"
 
-n=0
+n=1
 while [ -d "$rd" ]; do
   n="`expr $n + 1`"
   rd="${1}.i_$n"
