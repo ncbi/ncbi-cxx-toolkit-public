@@ -48,8 +48,10 @@ class IFlatTextOStream;
 class CFlatItemOStream;
 class CSeq_submit;
 class CSeq_entry;
+class CBioseq;
 class CSeq_loc;
 class CSeq_entry_Handle;
+class CBioseq_Handle;
 class CSeq_id;
 
 
@@ -75,15 +77,19 @@ public:
     SAnnotSelector& SetAnnotSelector(void);
 
     void Generate(CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
+    void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os);
+    void Generate(const CBioseq_Handle& bsh, CNcbiOstream& os);
     void Generate(const CSeq_id& id, const TRange& range, 
         ENa_strand strand, CScope& scope, CNcbiOstream& os);
 
     // NB: the item ostream should be allocated on the heap!
-    void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os);
     void Generate(CSeq_submit& submit, CScope& scope, CFlatItemOStream& item_os);
+    void Generate(const CBioseq& bioseq, CScope& scope, CFlatItemOStream& item_os);
     void Generate(const CSeq_loc& loc, CScope& scope, CFlatItemOStream& item_os);
+    void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os);
+    void Generate(const CBioseq_Handle& bsh, CFlatItemOStream& item_os);
     void Generate(const CSeq_id& id, const TRange& range,
         ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
 

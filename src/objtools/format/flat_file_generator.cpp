@@ -181,6 +181,17 @@ void CFlatFileGenerator::Generate
 
 
 void CFlatFileGenerator::Generate
+(const CBioseq& bioseq,
+CScope& scope,
+ CFlatItemOStream& item_os)
+{
+    const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
+    Generate(entry, item_os);
+}
+
+
+void CFlatFileGenerator::Generate
 (const CSeq_loc& loc,
  CScope& scope,
  CFlatItemOStream& item_os)
@@ -197,6 +208,15 @@ void CFlatFileGenerator::Generate
     location->Assign(loc);
     m_Ctx->SetLocation(location);
 
+    Generate(entry, item_os);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CBioseq_Handle& bsh,
+ CFlatItemOStream& item_os)
+{
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
     Generate(entry, item_os);
 }
 
@@ -236,12 +256,38 @@ void CFlatFileGenerator::Generate
 
 
 void CFlatFileGenerator::Generate
+(const CBioseq& bioseq,
+ CScope& scope,
+ CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream> 
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
+    Generate(entry, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate
 (const CSeq_entry_Handle& entry,
  CNcbiOstream& os)
 {
     CRef<CFlatItemOStream> 
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
+    Generate(entry, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CBioseq_Handle& bsh,
+ CNcbiOstream& os)
+{
+    CRef<CFlatItemOStream> 
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
     Generate(entry, *item_os);
 }
 
