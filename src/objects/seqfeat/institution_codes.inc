@@ -6852,6 +6852,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "YFTC	s	Yale Fish Tissue Collection",
 "YH	s	Lutheran College",
 "YHB<CAN>	s	Yukon Heritage Board , Paleontology Collections",
+"YIM	c	Yunnan Institute of Microbiology",
 "YIM<herbarium>	s	Yunnan Institute of Pharmacology",
 "YIO	s	Yamashina Institute for Ornithology",
 "YK	s	Bootham School",
