@@ -99,9 +99,21 @@ public:
                 VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                     const CBioseq& bioseq = *bit;
                     const CBioseq_Handle bsh = (*m_scope).GetBioseqHandle(bioseq);
+
+                    if ( bsh.GetInst_Mol() == CSeq_inst::eMol_aa ) continue;
+                    if ( bsh.GetInst_Repr() == CSeq_inst::eRepr_seg ) continue;
+
+                    int gi = FindGi(bsh.GetBioseqCore()->GetId());
+                    CRef<CSeq_loc> loc(new CSeq_loc());
+                    CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, gi));
+                    loc->SetWhole(*seqid);
+                    gen.Generate(*loc, *m_scope, *m_out);
+
+                    /*
                     const CSeq_entry_Handle seh = bsh.GetSeq_entry_Handle();
 
                     gen.Generate (seh, *m_out);
+                    */
                 }
             } else {
                 gen.Generate (m_topseh, *m_out);
