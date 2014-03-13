@@ -2934,14 +2934,31 @@ void CRepConfig :: CollectTests()
       else if (thisInfo.report ==  "Mega") {
           cate_flag = fMegaReport;
       }
+      else if (thisInfo.report == "TSA") {
+          cate_flag = fTSA;
+      }
       else {
           cate_flag = fUnknown;
       }
 
+      string strtmp;
       for (unsigned i=0; i< ArraySize(test_list); i++) {
-         if (test_list[i].category & cate_flag) {
-                thisTest.tests_run.insert(test_list[i].setting_name);
-         }
+        if (test_list[i].category & cate_flag) {
+          if (thisInfo.report == "Discrepancy") {
+                strtmp = test_list[i].setting_name;
+                if (strtmp != "N_RUNS_14"
+                       && strtmp != "DISC_10_PERCENTN"
+                       && strtmp != "SHORT_SEQUENCES_200"
+                       && strtmp != "MOLTYPE_NOT_MRNA"
+                       && strtmp != "TECHNIQUE_NOT_TSA"
+                       && strtmp != "MISSING_STRUCTURED_COMMENT"
+                       && strtmp != "MISSING_PROJECT"
+                       && strtmp != "DISC_PROTEIN_NAMES"){
+                    thisTest.tests_run.insert(test_list[i].setting_name);
+                }
+          }
+          else thisTest.tests_run.insert(test_list[i].setting_name);
+        }
       }
    
       if (!m_disabled.empty() && !thisTest.tests_run.empty()) {
