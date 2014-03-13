@@ -279,17 +279,17 @@ void CNetScheduleServerListener::OnInit(
                 "use_embedded_input", CConfig::eErr_NoThrow, true);
         }
 
-        bool use_affinities = config->GetBool(config_section,
-                "use_affinities", CConfig::eErr_NoThrow, false);
-        bool claim_new_affinities = config->GetBool(config_section,
-                "claim_new_affinities", CConfig::eErr_NoThrow, false);
-
-        if (!use_affinities)
+        if (!config->GetBool(config_section, "use_affinities",
+                CConfig::eErr_NoThrow, false))
             ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
         else {
-            ns_impl->m_AffinityPreference = claim_new_affinities ?
-                    CNetScheduleExecutor::eClaimNewPreferredAffs :
-                    CNetScheduleExecutor::ePreferredAffinities;
+            ns_impl->m_AffinityPreference = config->GetBool(config_section,
+                    "claim_new_affinities", CConfig::eErr_NoThrow, false) ?
+                CNetScheduleExecutor::eClaimNewPreferredAffs :
+                config->GetBool(config_section,
+                    "process_any_job", CConfig::eErr_NoThrow, false) ?
+                        CNetScheduleExecutor::ePreferredAffsOrAnyJob :
+                        CNetScheduleExecutor::ePreferredAffinities;
 
             string affinity_list = config->GetString(config_section,
                     "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
@@ -301,14 +301,22 @@ void CNetScheduleServerListener::OnInit(
                 }
             }
 
-            string affinity_sequence = config->GetString(config_section,
-                    "affinity_sequence", CConfig::eErr_NoThrow, kEmptyStr);
+            string affinity_ladder = config->GetString(config_section,
+                    "affinity_ladder", CConfig::eErr_NoThrow, kEmptyStr);
+            list<CTempString> affinities;
+            NStr::Split(affinity_ladder, ", ", affinities);
 
-            NStr::ReplaceInPlace(affinity_sequence, " ", "");
-
-            if (!affinity_sequence.empty())
-                NStr::Split(affinity_sequence, ";",
-                        ns_impl->m_AffinitySequence);
+            if (!affinities.empty()) {
+                list<CTempString>::const_iterator it = affinities.begin();
+                affinity_list = *it;
+                for (;;) {
+                    ns_impl->m_AffinityLadder.push_back(affinity_list);
+                    if (++it == affinities.end())
+                        break;
+                    affinity_list += ',';
+                    affinity_list += *it;
+                }
+            }
         }
 
         ns_impl->m_ClientNode = config->GetString(config_section,

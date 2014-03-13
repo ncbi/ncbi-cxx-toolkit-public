@@ -1453,29 +1453,33 @@ void CGridWorkerNode::x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
 
 bool CGridWorkerNode::x_GetJobWithAffinityList(SNetServerImpl* server,
         const CDeadline* timeout, CNetScheduleJob& job,
+        CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list)
 {
     return m_NSExecutor->ExecGET(server, m_NSExecutor->
             m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
                     CNetScheduleNotificationHandler::MkBaseGETCmd(
-                            m_NSExecutor->m_AffinityPreference, affinity_list),
+                            affinity_preference, affinity_list),
                     timeout), job);
 }
 
-bool CGridWorkerNode::x_GetJobWithAffinitySequence(SNetServerImpl* server,
+bool CGridWorkerNode::x_GetJobWithAffinityLadder(SNetServerImpl* server,
         const CDeadline* timeout, CNetScheduleJob& job)
 {
-    if (m_NSExecutor->m_API->m_AffinitySequence.empty())
-        return x_GetJobWithAffinityList(server, timeout, job, kEmptyStr);
+    if (m_NSExecutor->m_API->m_AffinityLadder.empty())
+        return x_GetJobWithAffinityList(server, timeout, job,
+                m_NSExecutor->m_AffinityPreference, kEmptyStr);
 
     list<string>::const_iterator it =
-            m_NSExecutor->m_API->m_AffinitySequence.begin();
+            m_NSExecutor->m_API->m_AffinityLadder.begin();
 
     for (;;) {
         string affinity_list = *it;
-        if (++it == m_NSExecutor->m_API->m_AffinitySequence.end())
-            return x_GetJobWithAffinityList(server, timeout, job, affinity_list);
-        else if (x_GetJobWithAffinityList(server, NULL, job, affinity_list))
+        if (++it == m_NSExecutor->m_API->m_AffinityLadder.end())
+            return x_GetJobWithAffinityList(server, timeout, job,
+                    m_NSExecutor->m_AffinityPreference, affinity_list);
+        else if (x_GetJobWithAffinityList(server, NULL, job,
+                CNetScheduleExecutor::ePreferredAffinities, affinity_list))
             return true;
     }
 }
@@ -1524,7 +1528,7 @@ bool CGridWorkerNode::x_PerformTimelineAction(
     timeline_entry->ResetTimeout(m_NSTimeout);
 
     try {
-        if (x_GetJobWithAffinitySequence(server,
+        if (x_GetJobWithAffinityLadder(server,
                 &timeline_entry->GetTimeout(), job)) {
             // A job has been returned; add the server to
             // m_ImmediateActions because there can be more

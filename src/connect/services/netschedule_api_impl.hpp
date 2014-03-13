@@ -178,7 +178,7 @@ struct SNetScheduleAPIImpl : public CObject
 
     CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
     list<string> m_AffinityList;
-    list<string> m_AffinitySequence;
+    list<string> m_AffinityLadder;
 
     bool m_UseEmbeddedStorage;
 

@@ -787,8 +787,9 @@ private:
     bool x_GetJobWithAffinityList(SNetServerImpl* server,
             const CDeadline* timeout,
             CNetScheduleJob& job,
+            CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
             const string& affinity_list);
-    bool x_GetJobWithAffinitySequence(SNetServerImpl* server,
+    bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
             const CDeadline* timeout,
             CNetScheduleJob& job);
     bool x_PerformTimelineAction(SNotificationTimelineEntry* action,

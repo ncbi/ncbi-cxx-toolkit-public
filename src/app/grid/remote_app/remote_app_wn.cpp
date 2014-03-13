@@ -139,6 +139,9 @@ public:
             string job_key_env("NCBI_NS_JID=" + job.job_id);
             env.insert(env.begin(), job_key_env.c_str());
 
+            string job_affinity_env("NCBI_JOB_AFFINITY=" + job.affinity);
+            env.insert(env.begin(), job_affinity_env.c_str());
+
             std::string client_ip(kEmptyStr);
             if (!job.client_ip.empty()) {
                 client_ip = "NCBI_LOG_CLIENT_IP=" + job.client_ip;
