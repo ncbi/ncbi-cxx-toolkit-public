@@ -13,6 +13,10 @@
 -^/c++/compilers
 -^/c++/include
 -^/c++/src
--^/c++/scripts/common
 -^/c++/configure
+-^/scripts
 
+# Leave a bit less projects
+-^/c++/scripts/common
+-^/c++/scripts/internal
+-^/c++/scripts/.*lst$
