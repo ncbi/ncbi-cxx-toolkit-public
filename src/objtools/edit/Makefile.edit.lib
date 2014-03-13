@@ -8,7 +8,7 @@ SRC = seq_entry_edit promote autodef_available_modifier autodef \
       autodef_source_desc autodef_source_group \
       field_handler string_constraint seqid_guesser dblink_field \
       struc_comm_field text_desc_field gb_block_field \
-      link_cds_mrna cds_fix
+      link_cds_mrna cds_fix capitalization_string
 
 LIB    = xobjedit
 
