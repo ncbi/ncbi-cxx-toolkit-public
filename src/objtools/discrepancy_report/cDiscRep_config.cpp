@@ -2944,20 +2944,14 @@ void CRepConfig :: CollectTests()
       string strtmp;
       for (unsigned i=0; i< ArraySize(test_list); i++) {
         if (test_list[i].category & cate_flag) {
+          strtmp = test_list[i].setting_name;
           if (thisInfo.report == "Discrepancy") {
-                strtmp = test_list[i].setting_name;
-                if (strtmp != "N_RUNS_14"
-                       && strtmp != "DISC_10_PERCENTN"
-                       && strtmp != "SHORT_SEQUENCES_200"
-                       && strtmp != "MOLTYPE_NOT_MRNA"
-                       && strtmp != "TECHNIQUE_NOT_TSA"
-                       && strtmp != "MISSING_STRUCTURED_COMMENT"
-                       && strtmp != "MISSING_PROJECT"
+                if ( !(test_list[i].category & (fTSA | fUnknown))
                        && strtmp != "DISC_PROTEIN_NAMES"){
                     thisTest.tests_run.insert(test_list[i].setting_name);
                 }
           }
-          else thisTest.tests_run.insert(test_list[i].setting_name);
+          else thisTest.tests_run.insert(strtmp);
         }
       }
    
