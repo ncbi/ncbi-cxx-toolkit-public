@@ -1401,11 +1401,11 @@ static const s_test_property test_list[] = {
    {"DISC_COUNT_NUCLEOTIDES", fAsndisc | fOncaller| fMegaReport, "Count nucleotide sequences"},
    {"TEST_DEFLINE_PRESENT", fDiscrepancy | fAsndisc| fMegaReport, "Test defline existence"},
    {"N_RUNS", fDiscrepancy | fAsndisc| fMegaReport, "Runs of 10 or more Ns"},
-   {"N_RUNS_14", fTSA, "Runs of more than 14 Ns"},
+   {"N_RUNS_14", fDiscrepancy | fTSA, "Runs of more than 14 Ns"},
    {"ZERO_BASECOUNT", fDiscrepancy, "Zero Base Counts"},
    {"TEST_LOW_QUALITY_REGION", fDiscrepancy | fAsndisc| fMegaReport, "Sequence contains regions of low quality"},
    {"DISC_PERCENT_N", fDiscrepancy | fAsndisc| fMegaReport, "Greater than 5 percent Ns"},
-   {"DISC_10_PERCENTN", fTSA, "Greater than 10 percent Ns"},
+   {"DISC_10_PERCENTN", fDiscrepancy | fTSA, "Greater than 10 percent Ns"},
    {"TEST_UNUSUAL_NT", fDiscrepancy | fAsndisc | fMegaReport, "Sequence contains unusual nucleotides"},
 
 // tests_on_Bioseq_CFeat
@@ -1430,19 +1430,19 @@ static const s_test_property test_list[] = {
    {"MISSING_GENPRODSET_PROTEIN", fDiscrepancy | fAsndisc | fMegaReport, "CDS on GenProdSet without protein"},
    {"DUP_GENPRODSET_PROTEIN", fDiscrepancy, "Multiple CDS on GenProdSet, same protein"},
    {"MISSING_GENPRODSET_TRANSCRIPT_ID", fDiscrepancy, "mRNA on GenProdSet without transcript ID"},
-   {"DISC_DUP_GENPRODSET_TRANSCRIPT_ID", fAsndisc, "mRNA on GenProdSet with duplicate ID"},
-   {"DISC_FEAT_OVERLAP_SRCFEAT", fAsndisc | fMegaReport, "Features Intersecting Source Features"},
+   {"DISC_DUP_GENPRODSET_TRANSCRIPT_ID", fDiscrepancy | fAsndisc, "mRNA on GenProdSet with duplicate ID"},
+   {"DISC_FEAT_OVERLAP_SRCFEAT", fDiscrepancy | fAsndisc | fMegaReport, "Features Intersecting Source Features"},
    {"CDS_TRNA_OVERLAP", fMegaReport | fDiscrepancy, "CDS tRNA overlaps"},
-   {"TRANSL_NO_NOTE", fMegaReport, "Transl_except without Note"},
-   {"NOTE_NO_TRANSL", 0, "Note without Transl_except"},
-   {"TRANSL_TOO_LONG", 0, "Transl_except longer than 3"},
+   {"TRANSL_NO_NOTE", fDiscrepancy | fMegaReport, "Transl_except without Note"},
+   {"NOTE_NO_TRANSL", fDiscrepancy, "Note without Transl_except"},
+   {"TRANSL_TOO_LONG", fDiscrepancy, "Transl_except longer than 3"},
    {"TEST_SHORT_LNCRNA", fDiscrepancy | fOncaller | fMegaReport, "Short lncRNA sequences"},
    {"FIND_STRAND_TRNAS", fDiscrepancy | fMegaReport, "Find tRNAs on the same strand"},
    {"FIND_BADLEN_TRNAS", fDiscrepancy | fOncaller | fMegaReport, "Find short and long tRNAs"},
    {"COUNT_TRNAS", fMegaReport | fDiscrepancy, "Count tRNAs"},
-   {"FIND_DUP_TRNAS", 0, "Find Duplicate tRNAs"},
+   {"FIND_DUP_TRNAS", fDiscrepancy, "Find Duplicate tRNAs"},
    {"COUNT_RRNAS", fMegaReport | fDiscrepancy, "Count rRNAs"},
-   {"FIND_DUP_RRNAS", 0 , "Find Duplicate rRNAs"},
+   {"FIND_DUP_RRNAS", fDiscrepancy, "Find Duplicate rRNAs"},
    {"PARTIAL_CDS_COMPLETE_SEQUENCE", fDiscrepancy | fAsndisc | fMegaReport, "Partial CDSs in Complete Sequences"},
    {"CONTAINED_CDS", fDiscrepancy | fAsndisc | fMegaReport, "Contained CDS"},
    {"PSEUDO_MISMATCH", fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Pseudo Mismatch"},
@@ -1483,7 +1483,7 @@ static const s_test_property test_list[] = {
    {"DUPLICATE_GENE_LOCUS", fDiscrepancy | fAsndisc | fMegaReport, "Duplicate Gene Locus"},
    {"MISSING_LOCUS_TAGS", fDiscrepancy | fMegaReport, "Missing Locus Tags"},
    {"DUPLICATE_LOCUS_TAGS", fDiscrepancy | fAsndisc, "Duplicate Locus Tags"},
-   {"DUPLICATE_LOCUS_TAGS_global", fDiscrepancy | fAsndisc, "Duplicate Locus Tags"},
+   {"DUPLICATE_LOCUS_TAGS_global", fAsndisc, "Duplicate Locus Tags"},
    {"INCONSISTENT_LOCUS_TAG_PREFIX", fAsndisc | fDiscrepancy, "Inconsistent Locus Tag Prefix"},
    {"BAD_LOCUS_TAG_FORMAT", fDiscrepancy | fAsndisc, "Bad Locus Tag Format"},
    {"FEATURE_LOCATION_CONFLICT", fDiscrepancy | fAsndisc | fMegaReport, "Feature Location Conflict"},
@@ -1495,7 +1495,7 @@ static const s_test_property test_list[] = {
    {"DISC_INCONSISTENT_MOLINFO_TECH", fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent Molinfo Techniqueq"},
    {"SHORT_CONTIG", fDiscrepancy | fAsndisc | fMegaReport, "Short Contig"},
    {"SHORT_SEQUENCES", fDiscrepancy | fAsndisc | fMegaReport, "Find Short Sequences"},
-   {"SHORT_SEQUENCES_200", fTSA, "Find sequences Less Than 200 bp"},
+   {"SHORT_SEQUENCES_200", fDiscrepancy | fTSA, "Find sequences Less Than 200 bp"},
    {"TEST_UNWANTED_SPACER", fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Intergenic spacer without plastid location"},
    {"TEST_UNNECESSARY_VIRUS_GENE", fAsndisc | fOncaller | fMegaReport, "Unnecessary gene features on virus: on when lineage is not Picornaviridae,Potyviridae,Flaviviridae and Togaviridae"},
    {"TEST_ORGANELLE_NOT_GENOMIC", fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Organelle location should have genomic moltype"},
@@ -1519,8 +1519,8 @@ static const s_test_property test_list[] = {
    {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", fAsndisc | fOncaller | fMegaReport, "Bacterial sequences should not have mRNA features"},
    {"DISC_BAD_BACTERIAL_GENE_NAME", fDiscrepancy | fAsndisc | fMegaReport, "Genes on bacterial sequences should start with lowercase letters: on when non-eukaryote"},
    {"TEST_BAD_GENE_NAME", fDiscrepancy | fAsndisc, "Bad gene names"},
-   {"MOLTYPE_NOT_MRNA", fTSA, "Moltype not mRNA"},
-   {"TECHNIQUE_NOT_TSA", fTSA, "Technique not set as TSA"},
+   {"MOLTYPE_NOT_MRNA", fDiscrepancy | fTSA, "Moltype not mRNA"},
+   {"TECHNIQUE_NOT_TSA", fDiscrepancy | fTSA, "Technique not set as TSA"},
    {"DISC_POSSIBLE_LINKER", fOncaller | fMegaReport, "Possible linker sequence after poly-A tail"},
    {"SHORT_PROT_SEQUENCES", fDiscrepancy | fAsndisc | fMegaReport, "Protein sequences should be at least 50 aa, unless they are partial"},
    {"TEST_COUNT_UNVERIFIED", fAsndisc | fOncaller | fMegaReport, "Count number of unverified sequences"},
@@ -1553,7 +1553,7 @@ static const s_test_property test_list[] = {
    {"DISC_INFLUENZA_DATE_MISMATCH", fDiscrepancy | fOncaller | fMegaReport, "Influenza Strain/Collection Date Mismatch"},
    {"TAX_LOOKUP_MISSING", fDiscrepancy | fMegaReport, "Find Missing Tax Lookups"},
    {"TAX_LOOKUP_MISMATCH", fDiscrepancy, "Find Tax Lookup Mismatches"},
-   {"MISSING_STRUCTURED_COMMENT", fTSA, "Structured comment not included"},
+   {"MISSING_STRUCTURED_COMMENT", fDiscrepancy | fTSA, "Structured comment not included"},
    {"ONCALLER_MISSING_STRUCTURED_COMMENTS", fOncaller | fMegaReport, "Missing structured comments"},
    {"DISC_MISSING_AFFIL", fAsndisc | fOncaller | fMegaReport, "Missing affiliation"},
    {"DISC_CITSUBAFFIL_CONFLICT", fOncaller | fMegaReport, "All Cit-subs should have identical affiliations"},
@@ -1599,7 +1599,7 @@ static const s_test_property test_list[] = {
    {"DISC_METAGENOME_SOURCE", fAsndisc | fOncaller | fMegaReport, "Source has metagenome_source qualifier"},
    {"DISC_BACTERIA_MISSING_STRAIN", fAsndisc | fOncaller | fMegaReport, "Missing strain on bacterial 'Genus sp. strain'"},
    {"DISC_REQUIRED_STRAIN", fDiscrepancy | fAsndisc | fMegaReport, "Bacteria should have strain"},
-   {"MISSING_PROJECT", fTSA, "Project not included"},
+   {"MISSING_PROJECT", fDiscrepancy | fTSA, "Project not included"},
    {"DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE", fAsndisc | fOncaller | fMegaReport, "Bacterial sources should not have isolate"},
 
 // tests_on_BioseqSet   // redundant because of nested set?
@@ -2910,44 +2910,46 @@ void CRepConfig :: CollectDefaultConfig(Str2Str& test_nm2conf_nm, const string& 
 
 void CRepConfig :: CollectTests()
 {
-   ETestCategoryFlags cate_flag;
-   if (thisInfo.report == "Asndisc") {
-       cate_flag = fAsndisc;
-       thisInfo.output_config.use_flag = true;
-   }
-   else if (thisInfo.report == "Discrepancy") {
-       cate_flag = fDiscrepancy;
-       thisInfo.output_config.use_flag = true;
-   }
-   else if(thisInfo.report ==  "Oncaller") {
-       cate_flag = fOncaller;
-   }
-   else if (thisInfo.report ==  "Mega") {
-       cate_flag = fMegaReport;
-   }
-   else {
-       cate_flag = fUnknown;
-   }
-
    thisTest.tests_run.clear();
-   for (unsigned i=0; i< ArraySize(test_list); i++) {
-      if (test_list[i].category & cate_flag) {
-                thisTest.tests_run.insert(test_list[i].setting_name);
-      }
-   }
-   
-   if (!m_disabled.empty() && !thisTest.tests_run.empty()) {
-     ITERATE (vector <string>, it, m_disabled) {
-        if (thisTest.tests_run.find(*it) != thisTest.tests_run.end()) {
-           thisTest.tests_run.erase(*it);
-        }
-     }
-   }
 
    if (!m_enabled.empty()) {  // only run enabled tests.
       thisTest.tests_run.clear();
       ITERATE (vector <string>, it, m_enabled) {
             thisTest.tests_run.insert(*it);
+      }
+   }
+   else {
+      ETestCategoryFlags cate_flag;
+      if (thisInfo.report == "Asndisc") {
+          cate_flag = fAsndisc;
+          thisInfo.output_config.use_flag = true;
+      }
+      else if (thisInfo.report == "Discrepancy") {
+          cate_flag = fDiscrepancy;
+          thisInfo.output_config.use_flag = true;
+      }
+      else if(thisInfo.report ==  "Oncaller") {
+          cate_flag = fOncaller;
+      }
+      else if (thisInfo.report ==  "Mega") {
+          cate_flag = fMegaReport;
+      }
+      else {
+          cate_flag = fUnknown;
+      }
+
+      for (unsigned i=0; i< ArraySize(test_list); i++) {
+         if (test_list[i].category & cate_flag) {
+                thisTest.tests_run.insert(test_list[i].setting_name);
+         }
+      }
+   
+      if (!m_disabled.empty() && !thisTest.tests_run.empty()) {
+        ITERATE (vector <string>, it, m_disabled) {
+           if (thisTest.tests_run.find(*it) != thisTest.tests_run.end()) {
+              thisTest.tests_run.erase(*it);
+           }
+        }
       }
    }
 
