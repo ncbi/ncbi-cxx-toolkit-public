@@ -103,7 +103,9 @@ install_dirs="include compilers scripts"
 if test -f "$top_srcdir/build_info"; then
     install_dirs="$install_dirs build_info"
 fi
-if test "$with_src" != "no"; then 
+if test "$with_src" = "no"; then
+    install_dirs="$install_dirs src/build-system"
+else
     install_dirs="$install_dirs src configure"
 fi
 if test "$with_doc" != "no" -a -d "$top_srcdir/doc"; then
