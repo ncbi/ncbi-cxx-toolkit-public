@@ -98,8 +98,11 @@ EOF
 #####  INSTALL
 
 
-# Directories to install
-install_dirs="include compilers scripts build_info"
+# Top-level entities (mostly directories) to install
+install_dirs="include compilers scripts"
+if test -f "$top_srcdir/build_info"; then
+    install_dirs="$install_dirs build_info"
+fi
 if test "$with_src" != "no"; then 
     install_dirs="$install_dirs src configure"
 fi
