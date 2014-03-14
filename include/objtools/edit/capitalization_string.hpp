@@ -54,6 +54,8 @@ NCBI_XOBJEDIT_EXPORT void FixAbbreviationsInElement(string& result);
 NCBI_XOBJEDIT_EXPORT void FixOrgNames(objects::CSeq_entry_Handle seh, string& result);
 NCBI_XOBJEDIT_EXPORT void FindOrgNames(objects::CSeq_entry_Handle seh, vector<string>& taxnames);
 
+NCBI_XOBJEDIT_EXPORT void RemoveFieldNameFromString( const string& field_name, string& str);
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

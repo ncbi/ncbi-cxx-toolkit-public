@@ -214,6 +214,20 @@ void FindOrgNames(objects::CSeq_entry_Handle seh, vector<string>& taxnames)
     }
 }
 
+void RemoveFieldNameFromString( const string& field_name, string& str)
+{
+    if (NStr::IsBlank(field_name) || NStr::IsBlank(str)) {
+        return;
+    }
+    
+    NStr::TruncateSpacesInPlace(str);
+    if (NStr::StartsWith(str, field_name, NStr::eNocase) && str.length() > field_name.length()
+        && str[field_name.length()] == ' ') {
+        NStr::ReplaceInPlace(str, field_name, kEmptyStr, 0, 1);
+        NStr::TruncateSpacesInPlace(str);
+    }
+}
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
