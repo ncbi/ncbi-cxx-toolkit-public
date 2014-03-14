@@ -724,6 +724,7 @@ void CDiscRepOutput :: x_OutputRepToGbenchItem(const CClickableItem& c_item,  CC
 
 
 static const char* sOnCallerToolPriorities[] = {
+  "DISC_COUNT_NUCLEOTIDES",
   "DISC_DUP_DEFLINE",
   "DISC_MISSING_DEFLINES",
   "TEST_TAXNAME_NOT_IN_DEFLINE",
@@ -929,7 +930,9 @@ void CDiscRepOutput :: x_OrderResult(Int2Int& ord2i_citem)
             != m_sOnCallerToolPriorities.end()) {
          pri = m_sOnCallerToolPriorities[(*it)->setting_name];
       }
-      else pri = m_sOnCallerToolPriorities.size() + i + 1;
+      else {
+         pri = m_sOnCallerToolPriorities.size() + i + 1;
+      }
       ord2i_citem[pri] = i;
       i++;
    }

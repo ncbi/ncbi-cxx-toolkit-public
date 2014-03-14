@@ -2327,7 +2327,6 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
    }
 
    string lookfor, desc, strtmp;
-   bool add = false;
    if (!taxnm.empty() && !bioseq_title.empty()) {
       desc = GetDiscItemText(*(bioseq_title[0]), bioseq);
       CConstRef <CObject> title_ref(bioseq_title[0]);
@@ -2337,7 +2336,8 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
 
       // DISC_DUP_DEFLINE 
       if (run_dup && !bioseq.IsAa() && !title.empty()) {
-          strtmp = NStr::ToUpper(title);
+          strtmp = title;
+          strtmp = NStr::ToUpper(strtmp);
           thisInfo.test_item_list[GetName_dup()].push_back(strtmp + "$" + desc);
           thisInfo.test_item_objs[GetName_dup() +"$" + strtmp]
                      .push_back(title_ref);
@@ -2368,6 +2368,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
         string pattern("\\b" + CRegexp::Escape(lookfor) + "\\b"); // ??? check CRegexpUtil
         CRegexp :: ECompile comp_flag = CRegexp::fCompile_ignore_case;
         CRegexp rx(pattern, comp_flag);
+        bool add = false;
         if (rx.IsMatch(title)) {
             // capitalization must match for all but the first letter */
             size_t pos = NStr::FindNoCase(title, lookfor);
