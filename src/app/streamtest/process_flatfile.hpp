@@ -98,6 +98,20 @@ public:
             if (  m_flat_set ) {
                 VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                     const CBioseq& bioseq = *bit;
+
+                    if (bioseq.IsSetInst()) {
+                        const CSeq_inst& inst = bioseq.GetInst();
+                        if (inst.IsSetMol() && inst.GetMol() == CSeq_inst::eMol_aa) {
+                            continue;
+                        }
+                        if (inst.IsSetRepr() && inst.GetRepr() == CSeq_inst::eRepr_seg) {
+                            continue;
+                        }
+                    }
+
+                    gen.Generate (bioseq, *m_scope, *m_out);
+
+                    /*
                     const CBioseq_Handle bsh = (*m_scope).GetBioseqHandle(bioseq);
 
                     if ( bsh.GetInst_Mol() == CSeq_inst::eMol_aa ) continue;
@@ -108,11 +122,6 @@ public:
                     CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, gi));
                     loc->SetWhole(*seqid);
                     gen.Generate(*loc, *m_scope, *m_out);
-
-                    /*
-                    const CSeq_entry_Handle seh = bsh.GetSeq_entry_Handle();
-
-                    gen.Generate (seh, *m_out);
                     */
                 }
             } else {
