@@ -125,8 +125,8 @@ public:
     CArgAllowValuesBetween(int min, int max, bool inclusive = false) 
         : m_MinValue(min), m_MaxValue(max), m_Inclusive(inclusive) {}
     /// Constructor taking a double
-    CArgAllowValuesBetween(double min, double max) 
-        : m_MinValue(min), m_MaxValue(max) {}
+    CArgAllowValuesBetween(double min, double max, bool inclusive = false)
+        : m_MinValue(min), m_MaxValue(max), m_Inclusive(inclusive) {}
 
 protected:
     /// Overloaded method from CArgAllow

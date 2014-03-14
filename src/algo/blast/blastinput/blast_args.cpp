@@ -139,14 +139,16 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     // word size
     // Default values: blastn=11, megablast=28, others=3
-    const string description = m_QueryIsProtein 
-        ? "Word size for wordfinder algorithm"
-        : "Word size for wordfinder algorithm (length of best perfect match)";
-    arg_desc.AddOptionalKey(kArgWordSize, "int_value", description,
-                            CArgDescriptions::eInteger);
-    arg_desc.SetConstraint(kArgWordSize, m_QueryIsProtein 
-                           ? new CArgAllowValuesGreaterThanOrEqual(2)
-                           : new CArgAllowValuesGreaterThanOrEqual(4));
+    if(!m_IsRpsBlast) {
+        const string description = m_QueryIsProtein
+            ? "Word size for wordfinder algorithm"
+            : "Word size for wordfinder algorithm (length of best perfect match)";
+        arg_desc.AddOptionalKey(kArgWordSize, "int_value", description,
+                                CArgDescriptions::eInteger);
+        arg_desc.SetConstraint(kArgWordSize, m_QueryIsProtein
+                               ? new CArgAllowValuesGreaterThanOrEqual(2)
+                               : new CArgAllowValuesGreaterThanOrEqual(4));
+    }
 
     if ( !m_IsRpsBlast && !m_IsTblastx) {
         // gap open penalty
@@ -254,7 +256,7 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         opt.SetGapXDropoffFinal(args[kArgFinalGappedXDropoff].AsDouble());
     }
 
-    if (args[kArgWordSize]) {
+    if ( args.Exist(kArgWordSize) && args[kArgWordSize]) {
         if (m_QueryIsProtein && args[kArgWordSize].AsInteger() > 5)
            opt.SetLookupTableType(eCompressedAaLookupTable);
         opt.SetWordSize(args[kArgWordSize].AsInteger());
