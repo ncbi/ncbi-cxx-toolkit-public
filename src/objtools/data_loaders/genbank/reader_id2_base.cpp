@@ -2000,14 +2000,26 @@ void CId2ReaderBase::x_ProcessGetBlob(
     const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
     TBlobId blob_id = GetBlobId(src_blob_id);
 
+    TBlobVersion blob_version = 0;
     if ( src_blob_id.IsSetVersion() && src_blob_id.GetVersion() > 0 ) {
-        SetAndSaveBlobVersion(result, blob_id, src_blob_id.GetVersion());
+        blob_version = src_blob_id.GetVersion();
+        SetAndSaveBlobVersion(result, blob_id, blob_version);
     }
 
     TBlobState blob_state = x_GetBlobState(main_reply);
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob_state);
         return;
+    }
+    
+    if ( !blob_version ) {
+        CLoadLockBlobState state(result, blob_id);
+        if ( !state.IsLoadedBlobVersion() ) {
+            // need some reference blob version to work with
+            // but not save it into cache
+            SetAndSaveBlobVersion(result, blob_id, 0);
+            //state.SetLoadedBlobVersion(0);
+        }
     }
 
     if ( !reply.IsSetData() ) {
@@ -2085,13 +2097,25 @@ void CId2ReaderBase::x_ProcessGetSplitInfo(
     TChunkId chunk_id = CProcessor::kMain_ChunkId;
     const CID2_Blob_Id& src_blob_id = reply.GetBlob_id();
     TBlobId blob_id = GetBlobId(src_blob_id);
+    TBlobVersion blob_version = 0;
     if ( src_blob_id.IsSetVersion() && src_blob_id.GetVersion() > 0 ) {
-        SetAndSaveBlobVersion(result, blob_id, src_blob_id.GetVersion());
+        blob_version = src_blob_id.GetVersion();
+        SetAndSaveBlobVersion(result, blob_id, blob_version);
     }
     if ( !reply.IsSetData() ) {
         ERR_POST_X(11, "CId2ReaderBase: ID2S-Reply-Get-Split-Info: "
                        "no data in reply: "<<blob_id);
         return;
+    }
+
+    if ( !blob_version ) {
+        CLoadLockBlobState state(result, blob_id);
+        if ( !state.IsLoadedBlobVersion() ) {
+            // need some reference blob version to work with
+            // but not save it into cache
+            SetAndSaveBlobVersion(result, blob_id, 0);
+            //state.SetLoadedBlobVersion(0);
+        }
     }
 
     CLoadLockBlob blob(result, blob_id);

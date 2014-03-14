@@ -405,7 +405,7 @@ void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
         return;
     }
 
-    _ASSERT(version);
+    _ASSERT(version >= 0);
     CStoreBuffer str;
     str.StoreInt4(version);
     x_WriteId(GetBlobKey(blob_id), GetBlobVersionSubkey(), str);
@@ -422,7 +422,7 @@ public:
         : m_Cache(cache), m_Key(key), m_Version(version), m_Subkey(subkey),
           m_Writer(cache->GetWriteStream(key, version, subkey))
         {
-            _ASSERT(version);
+            _ASSERT(version >= 0);
             if ( SCacheInfo::GetDebugLevel() ) {
                 LOG_POST(Info<<"Cache:Write: "<<key<<","<<subkey<<","<<version);
             }
@@ -499,7 +499,7 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
 
     try {
         CLoadLockBlob blob(result, blob_id);
-        _ASSERT(blob.GetBlobVersion());
+        _ASSERT(blob.GetBlobVersion() >= 0);
         CRef<CBlobStream> stream
             (new CCacheBlobStream(m_BlobCache, GetBlobKey(blob_id),
                                   blob.GetBlobVersion(),

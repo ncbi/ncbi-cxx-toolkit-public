@@ -504,7 +504,7 @@ namespace {
                                int* get_current_version)
         : m_Descr(m_Buffer, sizeof(m_Buffer)), m_Ptr(0), m_Size(0)
     {
-        x_Init(result, cache, key, subkey, 0, get_current_version, true);
+        x_Init(result, cache, key, subkey, -1, get_current_version, true);
     }
     
     string CParseBuffer::ParseString(void)
@@ -1109,7 +1109,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
         }
     }
     TBlobVersion version = blob.GetBlobVersion();
-    _ASSERT(version);
+    _ASSERT(version >= 0);
 
     CConn conn(result, this);
     CParseBuffer buffer(result, m_BlobCache, key, subkey, version);
