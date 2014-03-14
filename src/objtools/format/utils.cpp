@@ -1465,5 +1465,6 @@ CommentHasSuspiciousHtml( const string &str )
     return false;
 }
 
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
