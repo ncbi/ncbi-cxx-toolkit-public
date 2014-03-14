@@ -243,8 +243,29 @@ CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
     try {
         m_Db = CVDB(mgr, csra_path);
     }
-    catch ( CSraException& /*exc*/ ) {
-        CRef<SSeqTableCursor> seq(Seq());
+    catch ( CSraException& exc ) {
+        // We want to open old SRA schema files too.
+        // In this case the DB object is not found.
+        if ( exc.GetErrCode() != CSraException::eNotFoundDb ) {
+            // report all other exceptions as is
+            throw;
+        }
+        // They are opened with direct table access,
+        // but the caller expects to see 'no data' error as eNotFoundDb.
+        CRef<SSeqTableCursor> seq;
+        try {
+            seq = Seq();
+        }
+        catch ( CSraException& exc ) {
+            // missing table is reported as eNotFoundTable
+            if ( exc.GetErrCode() == CSraException::eNotFoundTable ) {
+                // replace with eNotFoundDb, expected by caller
+                NCBI_THROW3(CSraException, eNotFoundDb,
+                            exc.GetMsg(), exc.GetRC(), exc.GetParam());
+            }
+            // report all other excetions as is
+            throw;
+        }
         Put(seq);
     }
     CRef<SRefTableCursor> ref;

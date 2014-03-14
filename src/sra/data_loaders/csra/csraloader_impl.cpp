@@ -522,6 +522,10 @@ CRef<CCSRAFileInfo> CCSRADataLoader_Impl::GetSRRFile(const string& acc)
         info = new CCSRAFileInfo(*this, acc, CCSraDb::eRefId_gnl_NAME);
     }
     catch ( CSraException& exc ) {
+        if ( exc.GetErrCode() == CSraException::eNotFoundDb ) {
+            // no such SRA table
+            return null;
+        }
         ERR_POST_X(4, "CCSRADataLoader::GetSRRFile("<<acc<<"): accession not found: "<<exc);
         return null;
     }
