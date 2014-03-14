@@ -1332,6 +1332,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_sq_oncall() const {
                         return string("DISC_SOURCE_QUALS_ASNDISC_oncaller"); }
       string GetName_bad() const {return string("DISC_SRC_QUAL_PROBLEM"); }
+      string GetName_dup() const {return string("DISC_DUP_SRC_QUAL");}
+      string GetName_dt() const {return string("DISC_DUP_SRC_QUAL_DATA");}
+      string GetName_miss() const {
+                         return string("DISC_MISSING_SRC_QUAL"); }
 
       void GetQualDistribute(Str2Ints& qual2src_idx, 
                              const vector <string>& desc_ls, 
@@ -1361,8 +1365,40 @@ BEGIN_SCOPE(DiscRepNmSpc)
                             vector <string>& multi_vlus, bool is_subsrc);
       void ProcessUniQuals(const Str2Strs& qvlu2src, const string& setting_nm, 
                           const string& qual_nm, CRef <CClickableItem> c_item);
+      void x_GetRep4DupSrcQualAndData(CRef <CClickableItem> c_item, 
+                                        const string& setting_name);
+
   };
 
+  class CSeqEntry_DISC_MISSING_SRC_QUAL :  public CSeqEntry_test_on_quals
+  {
+    public:
+      virtual ~CSeqEntry_DISC_MISSING_SRC_QUAL() {};
+
+      virtual void GetReport(CRef <CClickableItem> c_item);
+      virtual string GetName() const {
+                          return CSeqEntry_test_on_quals::GetName_miss();}
+  };
+
+  class CSeqEntry_DISC_DUP_SRC_QUAL_DATA :  public CSeqEntry_test_on_quals
+  {
+    public:
+      virtual ~CSeqEntry_DISC_DUP_SRC_QUAL_DATA() {};
+
+      virtual void GetReport(CRef <CClickableItem> c_item);
+      virtual string GetName() const {
+                              return CSeqEntry_test_on_quals::GetName_dt();}
+  };
+
+  class CSeqEntry_DISC_DUP_SRC_QUAL :  public CSeqEntry_test_on_quals
+  {
+    public:
+      virtual ~CSeqEntry_DISC_DUP_SRC_QUAL() {};
+
+      virtual void GetReport(CRef <CClickableItem> c_item);
+      virtual string GetName() const {
+                              return CSeqEntry_test_on_quals::GetName_dup();}
+  };
 
   class CSeqEntry_DISC_SRC_QUAL_PROBLEM : public CSeqEntry_test_on_quals
   {
@@ -1374,7 +1410,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                               return CSeqEntry_test_on_quals::GetName_bad();}
   };
 
-
   class CSeqEntry_DISC_SOURCE_QUALS_ASNDISC : public CSeqEntry_test_on_quals
   {
     public:
@@ -1385,7 +1420,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                         return CSeqEntry_test_on_quals::GetName_sq();}
   };
 
-
   class CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller : public CSeqEntry_test_on_quals
   {
     public:
@@ -1395,7 +1429,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const { 
                       return CSeqEntry_test_on_quals::GetName_sq_oncall();}
   };
-
 
   class CSeqEntry_test_on_biosrc_orgmod : public CSeqEntryTestAndRepData
   {
