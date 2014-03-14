@@ -1155,7 +1155,7 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
     for(int i=E_LastToSkipLine+1; i<E_Last; i++) {
         out << GetPrintableCode(i) << "\t" << GetMsg(i);
         if(i==E_InvalidBarInId) {
-            out << " in object_id/component_id";
+            out << " in object_id";
         }
         out << "\n";
     }
