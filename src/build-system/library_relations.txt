@@ -41,6 +41,8 @@ align_format needs seqdb
 align_format needs xalnmgr
 align_format needs xcgi
 align_format needs xhtml
+aligndb_client needs $(SEQ_LIBS)
+aligndb_client needs pub
 aligndb_reader needs $(COMPRESS_LIBS)
 aligndb_reader needs $(SDBAPI_LIB)
 aligndb_reader needs taxon1
