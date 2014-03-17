@@ -15304,3 +15304,39 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 53933279,
+    genomic-id gi 568815275,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 920,
+        genomic-start 49972873,
+        genomic-end 49973793,
+        parts {
+          match 179,
+          mismatch 1,
+          match 741
+        }
+      }
+    },
+    product-length 921
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 2087 -- 0x827: fTrustProteinSeq | fForceTranslateCds | fCreateGene | fCreateMrna | fCreateCdregion
+        }
+      }
+    }
+  }
+}

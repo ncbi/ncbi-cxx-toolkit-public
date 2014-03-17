@@ -10249,3 +10249,97 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "OR4C45",
+        desc "olfactory receptor, family 4, subfamily C, member 45"
+      },
+      location int {
+        from 49972873,
+        to 49973793,
+        strand plus,
+        id gi 568815275
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 403257
+        },
+        {
+          db "HGNC",
+          tag id 31270
+        },
+        {
+          db "HPRD",
+          tag id 17723
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "olfactory receptor, family 4, subfamily C, member 45"
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 1 substitution compared to this
+ genomic sequence",
+      product whole gi 53933279,
+      location packed-int {
+        {
+          from 49972873,
+          to 49973793,
+          strand plus,
+          id gi 568815275
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same
+ species):RefSeq:NM_001005513.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        code {
+          id 1
+        },
+        code-break {
+          {
+            loc int {
+              from 49973050,
+              to 49973052,
+              strand plus,
+              id gi 568815275
+            },
+            aa ncbieaa 89
+          }
+        }
+      },
+      comment "The RefSeq protein has 1 substitution compared to this genomic
+ sequence",
+      product whole gi 53933280,
+      location packed-int {
+        {
+          from 49972873,
+          to 49973793,
+          strand plus,
+          id gi 568815275
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "olfactory receptor 4C45"
+            }
+          }
+        }
+      }
+    }
+  }
+}

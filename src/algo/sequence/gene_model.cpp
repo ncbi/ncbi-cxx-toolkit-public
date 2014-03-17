@@ -3177,31 +3177,25 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
         CRef<CSeq_loc> mapped = s_MapSingleAA(it1 - actual.begin(),
              mapped_protein_id, product_ranges, to_mrna, to_genomic);
-        if (*it2 == '*' && mapped) {
-            /// Inte5rnal stop codon; annotate with a code-break instead
-            /// of an exception
-            TSeqPos mapped_total_bases = 0;
-            ITERATE (CSeq_loc, loc_it, *mapped) {
-                mapped_total_bases += loc_it.GetRange().GetLength();
+        CRef<CCode_break> code_break;
+        if (mapped && feat.GetData().GetCdregion().IsSetCode_break()) {
+            if (!mapped->IsInt()) {
+                mapped->ChangeToPackedInt();
             }
-            if (mapped_total_bases == 3) {
-                if (!mapped->IsInt()) {
-                    mapped->ChangeToPackedInt();
+            NON_CONST_ITERATE (CCdregion::TCode_break, it, feat.SetData().SetCdregion().SetCode_break()) {
+                CCode_break & cb = **it;
+                if (cb.GetLoc().Compare(*mapped)==0) {
+                    code_break = *it;
+                    break;
                 }
-                char actual_aa = *it1;
-                if (!(m_flags & fTrustProteinSeq)) {
-                    actual_aa = 'X';
-                    if (*it1 != 'X') {
-                        ++mismatch_count;
-                    }
-                }
-                AddCodeBreak(feat, *mapped, actual_aa);
-                if (transcribed_mrna_seqloc_refs) {
-                    transcribed_mrna_seqloc_refs->push_back(mapped);
-                }
-            } else {
-                has_gap = true;
             }
+        }
+        if ((m_flags & fTrustProteinSeq) && *it2 == 'X' && code_break) {
+            /// internal stop codon; change the code-break to actual aa 
+
+            char actual_aa = *it1;
+            code_break->SetAa().SetNcbieaa(actual_aa);
+
         } else if (*it2 == '-' || *it2 == '*') {
             has_gap = true;
         } else if (*it1 != *it2) {
