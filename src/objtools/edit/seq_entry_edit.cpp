@@ -1214,6 +1214,69 @@ void AddLocalIdUserObjects(CSeq_entry& entry)
 }
 
 
+bool HasRepairedIDs(const CUser_object& user, const CBioseq::TId& ids)
+{
+    bool rval = false;
+    if (user.IsSetData()) {
+        ITERATE(CUser_object::TData, it, user.GetData()) {
+            if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr()
+                && NStr::EqualNocase((*it)->GetLabel().GetStr(), "LocalId")
+                && (*it)->IsSetData()
+                && (*it)->GetData().IsStr()) {
+                string orig_id = (*it)->GetData().GetStr();
+                bool found = false;
+                bool any_local = false;
+                ITERATE(CBioseq::TId, id_it, ids) {
+                    if ((*id_it)->IsLocal()) {
+                        any_local = true;
+                        if ((*id_it)->GetLocal().IsStr()
+                            && NStr::EqualNocase((*id_it)->GetLocal().GetStr(), orig_id)) {
+                            found = true;
+                        } else if ((*id_it)->GetLocal().IsId()
+                            && NStr::EqualNocase(NStr::NumericToString((*id_it)->GetLocal().GetId()), orig_id)) {
+                            found = true;
+                        }
+                    }
+                }
+                if (any_local && !found) {
+                    rval = true;
+                    break;
+                }
+            }
+        }
+    }
+    return rval;
+}
+
+
+bool HasRepairedIDs(const CSeq_entry& entry)
+{
+    bool rval = false;
+    if (entry.IsSeq()) {
+        const CBioseq& seq = entry.GetSeq();
+        if (seq.IsSetDescr() && seq.IsSetId()) {
+            ITERATE(CBioseq::TDescr::Tdata, d, seq.GetDescr().Get()) {
+                if ((*d)->IsUser()
+                    && (*d)->GetUser().GetObjectType() == CUser_object::eObjectType_OriginalId) {
+                    rval = HasRepairedIDs((*d)->GetUser(), seq.GetId());
+                    if (rval) {
+                        break;
+                    }
+                }
+            }
+        }
+    } else if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+        ITERATE(CBioseq_set::TSeq_set, s, entry.GetSet().GetSeq_set()) {
+            rval = HasRepairedIDs(**s);
+            if (rval) {
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

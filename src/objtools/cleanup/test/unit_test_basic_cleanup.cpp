@@ -512,6 +512,31 @@ Seq-entry ::= seq {\
 ";
 
 
+const char *sc_TestEntryCleanStructuredVoucher2 = "\
+Seq-entry ::= seq {\
+          id {\
+            local\
+              str \"cleanstructuredvoucher\" } ,\
+          descr {\
+            source { \
+              org { \
+                taxname \"Homo sapiens\" ,\
+                orgname { \
+                  mod { \
+                    { \
+                      subtype culture-collection ,\
+                      subname \"a:b\" } } } } } , \
+            molinfo {\
+              biomol genomic } } ,\
+          inst {\
+            repr raw ,\
+            mol dna ,\
+            length 27 ,\
+            seq-data\
+              iupacna \"TTGCCCTAAAAATAAGAGTAAAACTAA\" } } \
+";
+
+
 BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher)
 {
     CSeq_entry entry;
@@ -562,3 +587,40 @@ BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher)
     }
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher2)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntryCleanStructuredVoucher2);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
+    entry.Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.BasicCleanup (entry);
+    // look for expected change flags
+	vector<string> changes_str = changes->GetAllDescriptions();
+    BOOST_CHECK_EQUAL(changes_str.size(), 0);
+
+    for (size_t i = 3; i < changes_str.size(); i++) {
+        BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+	}
+
+    // make sure change was not actually made
+    CSeqdesc_CI d(scope->GetBioseqHandle(entry.GetSeq()), CSeqdesc::e_Source);
+    if (d) {
+        const COrgName& on = d->GetSource().GetOrg().GetOrgname();
+        ITERATE(COrgName::TMod, it, on.GetMod()) {
+            if ((*it)->GetSubtype() == COrgMod::eSubtype_specimen_voucher) {
+                BOOST_CHECK_EQUAL((*it)->GetSubname(), "a:b");
+            }
+        }
+    }
+}

@@ -334,6 +334,7 @@ BOOST_AUTO_TEST_CASE(FixCollidingIds)
     set_entry->ReassignConflictingIds();
     BOOST_CHECK_EQUAL(entry1->GetSeq().GetId().front()->GetLocal().GetStr(), "good");
     BOOST_CHECK_EQUAL(entry2->GetSeq().GetId().front()->GetLocal().GetStr(), "good_1");
+    BOOST_CHECK_EQUAL(true, edit::HasRepairedIDs(*set_entry));
     CRef<CSeq_entry> entry3 = unit_test_util::BuildGoodSeq();
     set_entry->SetSet().SetSeq_set().push_back(entry3);
     edit::AddLocalIdUserObjects(*set_entry);
@@ -344,6 +345,15 @@ BOOST_AUTO_TEST_CASE(FixCollidingIds)
     BOOST_CHECK_EQUAL(entry1->GetSeq().GetId().front()->GetLocal().GetStr(), "good");
     BOOST_CHECK_EQUAL(entry2->GetSeq().GetId().front()->GetLocal().GetStr(), "good_1");
     BOOST_CHECK_EQUAL(entry3->GetSeq().GetId().front()->GetLocal().GetStr(), "good_2");
+    BOOST_CHECK_EQUAL(true, edit::HasRepairedIDs(*set_entry));
+
+    CRef<CSeq_entry> good_set = unit_test_util::BuildGoodEcoSet();
+    BOOST_CHECK_EQUAL(false, edit::HasRepairedIDs(*good_set));
+    edit::AddLocalIdUserObjects(*good_set);
+    BOOST_CHECK_EQUAL(false, edit::HasRepairedIDs(*good_set));
+    good_set->ReassignConflictingIds();
+    BOOST_CHECK_EQUAL(false, edit::HasRepairedIDs(*good_set));
+
 }
 
 

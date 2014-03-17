@@ -137,6 +137,11 @@ void BioseqSetDescriptorPropagateDown(
 /// Contains the original local ID
 NCBI_XOBJEDIT_EXPORT
 void AddLocalIdUserObjects(CSeq_entry& entry);
+
+/// Detects whether colliding IDs were fixed by comparing sequence IDs to
+/// the contents of the OriginalID User-object descriptor
+NCBI_XOBJEDIT_EXPORT
+bool HasRepairedIDs(const CSeq_entry& entry);
    
 
 END_SCOPE(edit)
