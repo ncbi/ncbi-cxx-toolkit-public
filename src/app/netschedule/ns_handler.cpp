@@ -2017,7 +2017,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
     if (!what.empty() && what != "QCLASSES" && what != "QUEUES" &&
         what != "JOBS" && what != "ALL" && what != "CLIENTS" &&
         what != "NOTIFICATIONS" && what != "AFFINITIES" &&
-        what != "GROUPS" && what != "WNODE") {
+        what != "GROUPS" && what != "WNODE" && what != "SERVICES") {
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Unsupported '" + what +
                    "' parameter for the STAT command.");
@@ -2048,6 +2048,20 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             x_WriteMessage(info);
 
         x_WriteMessage("OK:END");
+        x_PrintCmdRequestStop();
+        return;
+    }
+    if (what == "SERVICES") {
+        string                  output;
+        map<string, string>     services;
+        m_Server->GetServices(services);
+        for (map<string, string>::const_iterator  k = services.begin();
+                k != services.end(); ++k) {
+            if (!output.empty())
+                output += "&";
+            output += k->first + "=" + k->second;
+        }
+        x_WriteMessage("OK:" + output);
         x_PrintCmdRequestStop();
         return;
     }

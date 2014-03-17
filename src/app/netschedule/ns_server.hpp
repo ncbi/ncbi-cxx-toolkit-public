@@ -101,6 +101,7 @@ public:
     string GetLinkedSectionConfig(void) const;
     string GetServiceToQueueSectionConfig(void) const;
     string ResolveService(const string &  service) const;
+    void GetServices(map<string, string> &  services) const;
 
     bool GetRefuseSubmits() const               { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }

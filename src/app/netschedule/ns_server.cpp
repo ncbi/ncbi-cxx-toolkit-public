@@ -239,7 +239,6 @@ string CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
             continue;
 
         // Config line is fine, memorize it
-        NStr::ToUpper(service_name);
         new_services[service_name] = qname;
     }
 
@@ -250,8 +249,11 @@ string CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
 
     for (map< string, string>::const_iterator  k = new_services.begin();
          k != new_services.end(); ++k) {
-        map< string, string>::const_iterator    found =
-                                                    m_Services.find(k->first);
+        map< string, string>::const_iterator    found;
+        for (found = m_Services.begin(); found != m_Services.end(); ++found)
+            if (NStr::CompareNocase(found->first, k->first) == 0)
+                break;
+
         if (found == m_Services.end()) {
             if (!new_items.empty())
                 new_items += ", ";
@@ -268,8 +270,11 @@ string CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
 
     for (map< string, string>::const_iterator  k = m_Services.begin();
          k != m_Services.end(); ++k) {
-        map< string, string>::const_iterator    found =
-                                                    new_services.find(k->first);
+        map< string, string>::const_iterator    found;
+        for (found = new_services.begin(); found != new_services.end(); ++found)
+            if (NStr::CompareNocase(found->first, k->first) == 0)
+                break;
+
         if (found == new_services.end()) {
             if (!deleted_items.empty())
                 deleted_items += ", ";
@@ -461,6 +466,13 @@ string CNetScheduleServer::ResolveService(const string &  service) const
             return k->second;
     }
     return "";
+}
+
+
+void CNetScheduleServer::GetServices(map<string, string> &  services) const
+{
+    CFastMutexGuard     guard(m_ServicesLock);
+    services = m_Services;
 }
 
 
