@@ -171,13 +171,13 @@ void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
                     display = true;
                 } else if (f1.GetData().GetCdregion().IsSetCode_break()) {
                     CNcbiOstrstream stream1;
-                    for (const auto& cb : f1.GetData().GetCdregion().GetCode_break())
-                        stream1 << MSerial_AsnText << *cb;
+                    ITERATE (CCdregion::TCode_break, cb, f1.GetData().GetCdregion().GetCode_break())
+                        stream1 << MSerial_AsnText << **cb;
                     string code_break1 = CNcbiOstrstreamToString(stream1);
 
                     CNcbiOstrstream stream2;
-                    for (const auto& cb : f2.GetData().GetCdregion().GetCode_break())
-                        stream2 << MSerial_AsnText << *cb;
+                    ITERATE (CCdregion::TCode_break, cb, f2.GetData().GetCdregion().GetCode_break())
+                        stream2 << MSerial_AsnText << **cb;
                     string code_break2 = CNcbiOstrstreamToString(stream2);
 
                     BOOST_CHECK_EQUAL(code_break1, code_break2);
