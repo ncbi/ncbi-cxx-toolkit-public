@@ -8938,7 +8938,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
    string strtmp = run_bad? GetName_bad() 
                       : (run_dup? GetName_dup()
                           : (run_dt? GetName_dt(): GetName_miss()));
-   if (run_bad || run_dup || run_dt || run_miss
+   if ((run_bad || run_dup || run_dt || run_miss)
           && (thisInfo.test_item_list.find(strtmp) 
                    == thisInfo.test_item_list.end())) { 
         thisInfo.test_item_list[strtmp].push_back("yes");
@@ -8957,6 +8957,11 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 
 void CSeqEntry_test_on_quals :: x_GetRep4DupSrcQualAndData(CRef <CClickableItem> c_item, const string& setting_name)
 {
+   bool run_sq = (thisTest.tests_run.find(GetName_sq()) != end_it);
+   bool run_oncall= (thisTest.tests_run.find(GetName_sq_oncall())!=end_it);
+   bool run_bad = (thisTest.tests_run.find(GetName_bad()) != end_it);
+   if (run_sq || run_oncall || run_bad) return;
+ 
    string strtmp = CSeqEntry_test_on_quals::GetName_bad();
    if (thisInfo.test_item_list.find(strtmp) != thisInfo.test_item_list.end()) {
       GetReport_quals(c_item, strtmp); 
@@ -12282,13 +12287,13 @@ void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const st
   
       // DISC_CITSUBAFFIL_CONFLICT: need attention
       if (m_run_aff) {
-          string affil_str, grp_str;   // either affil_str or grp_str is unnecessary
+          string affil_str, grp_str; // affil_str isn't needed
           GetGroupedAffilString(cit_sub->GetAuthors(), affil_str, grp_str);
           if (!grp_str.empty()) {
-             thisInfo.test_item_list[GetName_aff()].push_back(
-                                                     grp_str + "$" + desc);
+             thisInfo.test_item_list[GetName_aff()]
+                        .push_back(grp_str + "$" + desc);
              thisInfo.test_item_objs[GetName_aff() + "$" + grp_str]
-                       .push_back(obj_ref);
+                        .push_back(obj_ref);
              m_has_cit = true;
           }
       }
@@ -12502,11 +12507,11 @@ void CSeqEntry_DISC_CITSUBAFFIL_CONFLICT :: GetReport(CRef <CClickableItem> c_it
      return;
    }
     
-   Str2Strs affil2pubs;
-   GetTestItemList(c_item->item_list, affil2pubs);
+   Str2Strs affil_grp2pubs;
+   GetTestItemList(c_item->item_list, affil_grp2pubs);
    c_item->item_list.clear();
-   if (affil2pubs.size() == 1) {
-      if ( affil2pubs.begin()->first != "no affil" ) { 
+   if (affil_grp2pubs.size() == 1) {
+      if ( affil_grp2pubs.begin()->first != "no affil" ) { 
          // Make no report if all values match
          c_item->description = kEmptyStr;
       }
@@ -12515,38 +12520,86 @@ void CSeqEntry_DISC_CITSUBAFFIL_CONFLICT :: GetReport(CRef <CClickableItem> c_it
       }
    }
    else {
-      vector <string> subcat_pub, no_affil_pubs, arr;
-      ITERATE (Str2Strs, it, affil2pubs) {
+      set <string> subcat, affil;
+      vector <string> no_affil_pubs, arr, arr2;
+      string strtmp;
+      Str2Strs subcat2pubs, affil2pubs; 
+      Str2Objs subcat2objs, affil2objs;
+      ITERATE (Str2Strs, it, affil_grp2pubs) {
+         strtmp.clear();
          if (it->first == "no affil") {
              no_affil_pubs = it->second;
          }
          else {
+            vector <CConstRef <CObject> >* 
+               v_objs = &(thisInfo.test_item_objs[GetName() + "$" + it->first]);
             arr.clear();
-            arr = NStr::Tokenize(it->first, ",", arr);  
+            arr = NStr::Tokenize(it->first, "#", arr);  
             ITERATE (vector <string>, jt, arr) {
-                 subcat_pub.push_back((*jt) + "$" + it->second[0]);
+               arr2.clear();
+               arr2 = NStr::Tokenize(*jt, "&", arr2);
+               strtmp += arr2[1] + ", "; 
+               
+               //subcat_pub.push_back((*jt) + "$" + it->second[0]);
+               if (subcat.find(*jt) == subcat.end()) {
+                  subcat.insert(*jt);
+               }
+               copy(it->second.begin(), it->second.end(),
+                      back_inserter(subcat2pubs[*jt]));
+               copy((*v_objs).begin(), (*v_objs).end(),
+                     back_inserter(subcat2objs[*jt]));
             }
+            strtmp = strtmp.substr(0, strtmp.size()-2);
+            if (affil.find(strtmp) == affil.end()) {
+                 affil.insert(strtmp);
+            }
+            copy(it->second.begin(), it->second.end(),
+                  back_inserter(affil2pubs[strtmp]));
+            copy((*v_objs).begin(), (*v_objs).end(),
+                  back_inserter(affil2objs[strtmp]));
          }
       }
+      affil_grp2pubs.clear();
+
       if (!no_affil_pubs.empty()) { 
           AddSubcategory(c_item, GetName() + "$" + "no affil", 
                          &no_affil_pubs, "Cit-sub", "no affiliation", 
                          e_HasComment, false);
       }
-      Str2Strs subcat2pubs, subvlu2pubs;
-      GetTestItemList(subcat_pub, subcat2pubs, "@");
-      subcat_pub.clear();
-      ITERATE (Str2Strs, it, subcat2pubs) {
-         subvlu2pubs.clear();
-         GetTestItemList(it->second, subvlu2pubs);
-         if (subvlu2pubs.size() > 1) {
+      ITERATE (set <string>, it, affil) {
+        CRef <CClickableItem> c_sub (new CClickableItem);
+        c_sub->setting_name = GetName();
+        c_sub->item_list = affil2pubs[*it];
+        c_sub->obj_list = affil2objs[*it];
+        c_sub->description = GetHasComment(c_sub->item_list.size(), "CitSub") 
+                                + "affiliation " + *it;
+        c_item->subcategories.push_back(c_sub);
+      }
+      affil.clear();
+      affil2pubs.clear();
+      affil2objs.clear();
+
+      Str2Strs subcat2vlus;
+      GetTestItemList(subcat, subcat2vlus, "&");
+      ITERATE (Str2Strs, it, subcat2vlus) {
+         if (subcat2vlus.size() > 1) {
             CRef <CClickableItem> c_sub (new CClickableItem);
             c_sub->setting_name = GetName();
-            ITERATE (Str2Strs, jt, subvlu2pubs)
-               AddSubcategory(c_sub, GetName() + "$" + it->first, 
-                              &(jt->second), "affiliation", 
-                                      it->first + " value '" + jt->first + "'", e_HasComment);
-            c_sub->description = "Affiliations have different values for " + it->first;
+            ITERATE (vector <string>, jt, it->second) {
+               if (it->second.size() == 1) {
+                    continue;
+               }
+               CRef <CClickableItem> c_vlu (new CClickableItem);
+               c_vlu->setting_name = GetName();
+               c_vlu->item_list = subcat2pubs[it->first + "&" + *jt];
+               c_vlu->obj_list = subcat2objs[it->first + "&" + *jt];
+               c_vlu->description
+                   = GetHasComment(c_vlu->item_list.size(), "affiliation")
+                      + it->first + "value '" +  *jt  + "'";
+               c_sub->subcategories.push_back(c_vlu);
+               c_sub->description 
+                 = "Affiliations have different values for " + it->first;
+            }
             c_item->subcategories.push_back(c_sub);
          } 
       }
@@ -12571,8 +12624,8 @@ void CSeqEntry_test_on_pub :: GetGroupedAffilString(const CAuth_list& authors, s
  #define ADD_AFFIL_FIELD(X, Y) \
          if (affil.GetStd().CanGet##X()  &&  !(affil.GetStd().Get##X().empty())) { \
              string value = NStr::Replace(affil.GetStd().Get##X(), "\"", "'"); \
-             affil_str += "," + value; \
-             grp_str += "," #Y "@" + value; \
+             affil_str += ", " + value; \
+             grp_str += "#" #Y "&" + value; \
          }
          ADD_AFFIL_FIELD(Div, department)
          ADD_AFFIL_FIELD(Affil, institution)
@@ -12655,10 +12708,10 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
       // DISC_CITSUBAFFIL_CONFLICT: need attention
       if (m_run_aff) {
          string affil_str, grp_str;
-         GetGroupedAffilString(auths, affil_str, grp_str); // one of affil_str/grp_str unused
+         GetGroupedAffilString(auths, affil_str, grp_str); 
          if (!grp_str.empty()) {
-            thisInfo.test_item_list[GetName_aff()].push_back(
-                                               grp_str + "$" + desc);
+            thisInfo.test_item_list[GetName_aff()]
+                       .push_back(grp_str + "$" + desc);
             thisInfo.test_item_objs[GetName_aff() + "$" + grp_str]
                        .push_back(obj_ref);
             m_has_cit = true;
@@ -12969,10 +13022,13 @@ void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem> c_item
      = GetOtherComment(c_item->item_list.size(), "title on sets was", "titles on sets were") 
           + " found";
 
+   c_item->item_list.clear();
+   unsigned i=0;
    ITERATE (vector <string>, it, thisInfo.test_item_list[GetName()]) {   // for oncaller left window display
       CRef <CClickableItem> c_sub (new CClickableItem);
       c_sub->description = *it;
       c_sub->item_list.push_back(*it);
+      c_sub->obj_list.push_back(thisInfo.test_item_objs[GetName()][i++]);
       c_item->subcategories.push_back(c_sub); 
    }
 
@@ -13017,19 +13073,21 @@ void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
       }
    }
    if (thisTest.tests_run.find(GetName_oncaller()) != end_it) {
-      if (feat_cnt_ls.empty()) {
+     if (feat_cnt_ls.empty()) {
         strtmp = bioseq.IsAa() ? "missing_A" : "missing_nA";
         thisInfo.test_item_list[GetName_oncaller()]
                     .push_back(strtmp +"$" + desc);
         thisInfo.test_item_objs[GetName_oncaller() + "$" +strtmp]
                    .push_back(seq_ref);
-      }
-      ITERATE (Str2Int, it, feat_cnt_ls) { // feat$cnt@bsq;
+     }
+     else {
+        ITERATE (Str2Int, it, feat_cnt_ls) { // feat$cnt@bsq;
          strtmp = it->first + "$" + NStr::UIntToString(it->second) + "@" + desc;
          thisInfo.test_item_list[GetName_oncaller()].push_back(strtmp);
          strtmp = "$" + it->first + "@" + NStr::UIntToString(it->second);
          thisInfo.test_item_objs[GetName_oncaller() +strtmp].push_back(seq_ref);
-      }
+       }
+     }
    }
 };
 
@@ -13051,7 +13109,7 @@ void CBioseq_DISC_FEATURE_COUNT_oncaller :: GetReport(CRef <CClickableItem> c_it
           na_ls = &(thisInfo.test_item_objs[GetName() + "$" + it->first]);
       }
    }
-   string cnt, strtmp;
+   string strtmp;
    ITERATE (Str2Strs, it, feat2cnt_seq) {
       if (it->first.find("missing") == string::npos) { // feat$cnt@seq
          cnt2seq.clear();
@@ -13070,13 +13128,17 @@ void CBioseq_DISC_FEATURE_COUNT_oncaller :: GetReport(CRef <CClickableItem> c_it
               missing_ls = a_ls;
            }
          }
-         if (cnt2seq.size() ==1 ) {
-            cnt = cnt2seq.begin()->first;
-            strtmp = GetName() + "$" + it->first + "@" + cnt;
-            AddSubcategory(c_item, strtmp, &(cnt2seq.begin()->second), 
-                           feat_nm + ": " + cnt + " presents", 
-                           feat_nm + ": " + cnt + " present", 
-                           e_OtherComment, false);
+         if (cnt2seq.size() == 1) {
+            i_cnt = NStr::StringToUInt(cnt2seq.begin()->first) 
+                        * cnt2seq.begin()->second.size() ;
+            strtmp = GetName() + "$" + it->first + "@" + cnt2seq.begin()->first;
+            CRef <CClickableItem> c_sub (new CClickableItem);
+            c_sub->setting_name = GetName();
+            c_sub->item_list = cnt2seq.begin()->second;
+            c_sub->obj_list = thisInfo.test_item_objs[strtmp];
+            c_sub->description = feat_nm + ": " + NStr::UIntToString(i_cnt) 
+                                     + (i_cnt >1? " present" : " presents");
+            c_item->subcategories.push_back(c_sub);
          }  
          else {
             CRef <CClickableItem> c_sub (new CClickableItem);
@@ -13110,8 +13172,7 @@ void CBioseq_DISC_FEATURE_COUNT_oncaller :: GetReport(CRef <CClickableItem> c_it
          }
       }
    }
-
-   c_item->description = "Feature Count";
+   c_item->description = "Feature Counts";
    c_item->expanded = true;
 };
 

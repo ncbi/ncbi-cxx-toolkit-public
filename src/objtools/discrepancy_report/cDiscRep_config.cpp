@@ -217,7 +217,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
         }
     }
     else { // default
-       thisInfo.expand_defline_on_set = thisInfo.expand_srcqual_report = true;
+       thisInfo.expand_defline_on_set = thisInfo.expand_srcqual_report = false;
 
        // ini of orga_prod_rules:
        thisInfo.orga_prod_rules.Reset(CSuspect_rule_set::GetOrganelleProductRules());

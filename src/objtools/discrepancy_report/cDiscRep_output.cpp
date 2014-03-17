@@ -922,10 +922,12 @@ void CDiscRepOutput :: x_InitializeOnCallerToolGroups()
 
 void CDiscRepOutput :: x_OrderResult(Int2Int& ord2i_citem)
 {
-   unsigned i=0;
+   int i=-1;
    int pri;
 
    ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
+      i++;
+      if ((*it)->description.empty()) continue;
       if (m_sOnCallerToolPriorities.find((*it)->setting_name)
             != m_sOnCallerToolPriorities.end()) {
          pri = m_sOnCallerToolPriorities[(*it)->setting_name];
@@ -934,7 +936,6 @@ void CDiscRepOutput :: x_OrderResult(Int2Int& ord2i_citem)
          pri = m_sOnCallerToolPriorities.size() + i + 1;
       }
       ord2i_citem[pri] = i;
-      i++;
    }
 };
 

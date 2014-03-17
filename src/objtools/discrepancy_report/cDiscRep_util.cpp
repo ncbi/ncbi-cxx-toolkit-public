@@ -130,16 +130,6 @@ static CDiscRepInfo thisInfo;
 static string strtmp;
 static CSuspectRuleCheck rule_check;
 
-int CTestAndRepData :: GetTestItemList(const string& setting_name, vector <string>& test_item_list)
-{
-   if (thisInfo.test_item_list.find(setting_name) 
-            != thisInfo.test_item_list.end()) {
-      test_item_list = thisInfo.test_item_list[setting_name];
-      return 0;
-   }
-   return 1;
-};
-
 // CTestAndRepData
 string CTestAndRepData :: x_GetUserObjType(const CUser_object& user_obj)
 {
@@ -1384,6 +1374,18 @@ void CTestAndRepData :: GetTestItemList(const vector <string>& itemlist, Str2Str
 {
    vector <string> rep_dt;
    ITERATE (vector <string>, it, itemlist) {
+     rep_dt = NStr::Tokenize(*it, delim, rep_dt, NStr::eMergeDelims);
+     if (rep_dt.size() == 2) {
+          setting2list[rep_dt[0]].push_back(rep_dt[1]);
+     }
+     rep_dt.clear();
+   }
+};
+
+void CTestAndRepData :: GetTestItemList(const set <string>& itemlist, Str2Strs& setting2list, const string& delim)
+{
+   vector <string> rep_dt;
+   ITERATE (set <string>, it, itemlist) {
      rep_dt = NStr::Tokenize(*it, delim, rep_dt, NStr::eMergeDelims);
      if (rep_dt.size() == 2) {
           setting2list[rep_dt[0]].push_back(rep_dt[1]);
