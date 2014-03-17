@@ -3399,18 +3399,20 @@ CAlignFormatUtil::DbType CAlignFormatUtil::GetDbType(const CSeq_align_set& actua
     DbType type = eDbTypeNotSet;
     CRef<CSeq_align> first_aln = actual_aln_list.Get().front();
     const CSeq_id& subject_id = first_aln->GetSeq_id(1);
-    const CBioseq_Handle& handleTemp  = scope.GetBioseqHandle(subject_id);
-    if(handleTemp){
-        TGi giTemp = FindGi(handleTemp.GetBioseqCore()->GetId());
-        if (giTemp > ZERO_GI) { 
-            type = eDbGi;
-        } else if (subject_id.Which() == CSeq_id::e_General){
-            const CDbtag& dtg = subject_id.GetGeneral();
-            const string& dbName = dtg.GetDb();
-            if(NStr::CompareNocase(dbName, "TI") == 0){
-                type = eDbGeneral;
-            }
-        }   
+    if (subject_id.Which() != CSeq_id::e_Local){
+        const CBioseq_Handle& handleTemp  = scope.GetBioseqHandle(subject_id);
+        if(handleTemp){
+            TGi giTemp = FindGi(handleTemp.GetBioseqCore()->GetId());
+            if (giTemp > ZERO_GI) { 
+                type = eDbGi;
+            } else if (subject_id.Which() == CSeq_id::e_General){
+                const CDbtag& dtg = subject_id.GetGeneral();
+                const string& dbName = dtg.GetDb();
+                if(NStr::CompareNocase(dbName, "TI") == 0){
+                    type = eDbGeneral;
+                }
+            }   
+        }
     }
     return type;
 }
