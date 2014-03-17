@@ -15334,7 +15334,7 @@ Seq-align ::= {
       data {
         {
           label str "Flags", 
-          data int 2087 -- 0x827: fTrustProteinSeq | fForceTranslateCds | fCreateGene | fCreateMrna | fCreateCdregion
+          data int 2055 -- 0x807: fTrustProteinSeq | fCreateGene | fCreateMrna | fCreateCdregion
         }
       }
     }

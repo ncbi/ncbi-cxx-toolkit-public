@@ -3191,7 +3191,13 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
             }
         }
         if ((m_flags & fTrustProteinSeq) && *it2 == 'X' && code_break) {
-            /// internal stop codon; change the code-break to actual aa 
+            /// internal stop codon; change the code-break to actual aa
+
+            if ((m_flags & fForceTranslateCds)) {
+                // it's too late to change generated protein
+                NCBI_THROW(CException, eUnknown,
+                           "fTrustProteinSeq & fForceTranslateCds combination not implemented");
+            }
 
             char actual_aa = *it1;
             code_break->SetAa().SetNcbieaa(actual_aa);
