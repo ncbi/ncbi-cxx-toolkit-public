@@ -724,9 +724,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                     const CString_constraint* str_cons = 0);
       static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& seq_feat);
 
-      int GetTestItemList(const string& setting_name,  
-                             vector <string>& test_item_list);
-
     protected:
       string x_GetUserObjType(const CUser_object& user_obj);
       bool CommentHasPhrase(string comment, const string& phrase);
@@ -747,6 +744,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
                           unsigned input_cnt = 0,
                           bool rm_redundancy = false);
       void GetTestItemList(const vector <string>& itemlist, 
+                           Str2Strs& setting2list, 
+                           const string& delim = "$");
+      void GetTestItemList(const set <string>& itemlist, 
                            Str2Strs& setting2list, 
                            const string& delim = "$");
       void RmvRedundancy(vector <string>& items, 
