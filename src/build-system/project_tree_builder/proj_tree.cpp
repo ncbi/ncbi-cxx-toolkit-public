@@ -762,6 +762,8 @@ CMakeProject::CMakeProject(const CMakeProject& other)
 {
     m_Prj_key = other.m_Prj_key;
     m_Definitions = other.m_Definitions;
+    m_CompDefines = other.m_CompDefines;
+    m_CompFlags = other.m_CompFlags;
     m_Sources = other.m_Sources;
     m_IncludeDir = other.m_IncludeDir;
     m_Libraries = other.m_Libraries;
@@ -773,6 +775,8 @@ CMakeProject& CMakeProject::operator=(const CMakeProject& other)
     if (&other != this) {
         m_Prj_key = other.m_Prj_key;
         m_Definitions = other.m_Definitions;
+        m_CompDefines = other.m_CompDefines;
+        m_CompFlags = other.m_CompFlags;
         m_Sources = other.m_Sources;
         m_IncludeDir = other.m_IncludeDir;
         m_Libraries = other.m_Libraries;
@@ -802,6 +806,15 @@ void CMakeProject::AddSourceFile(const string& folder, const string& name)
     m_Sources[folder].insert(name);
 #endif
 }
+
+void CMakeProject::AddCompilationDefine(const string& value)
+{
+    m_CompDefines.push_back(value);
+}
+void CMakeProject::AddCompilationFlag(const string& value)
+{
+    m_CompFlags.push_back(value);
+}
 void CMakeProject::AddIncludeDirectory(const string& name)
 {
     m_IncludeDir.push_back(name);
@@ -824,9 +837,17 @@ void CMakeProject::Write(const string& dirname) const
 {
     string prj_name(CreateProjectName(m_Prj_key));
     string prj_id(m_Prj_key.Id());
+    string target_output_name(prj_id);
+
     if (m_Prj_key.Type() == CProjKey::eApp) {
         prj_id += ".exe";
+    } else  if (m_Prj_key.Type() == CProjKey::eLib) {
+        if (prj_id == "general") {
+            target_output_name = prj_id = "general-lib";
+        }
     }
+
+
     CDir(dirname).CreatePath();
     string outname(CDirEntry::ConcatPath(dirname, "CMakeLists." + prj_name + ".txt"));
     CNcbiOfstream out(outname.c_str());
@@ -841,9 +862,6 @@ void CMakeProject::Write(const string& dirname) const
     out << endl;
 
     if (m_Prj_key.Type() == CProjKey::eLib) {
-        if (prj_id == "general") {
-            prj_id = "general-lib";
-        }
         out << "add_library( "  << prj_id << " STATIC" << endl;
     } else if (m_Prj_key.Type() == CProjKey::eDll) {
         out << "add_library( " << prj_id << " SHARED" << endl;
@@ -888,6 +906,7 @@ void CMakeProject::Write(const string& dirname) const
     }
 #endif
 
+#if 0
     if (!m_IncludeDir.empty()) {
         out << "include_directories( " << endl;
         ITERATE (vector<string>, s,  m_IncludeDir) {
@@ -895,6 +914,23 @@ void CMakeProject::Write(const string& dirname) const
         }
         out << ")" << endl;
     }
+#endif
+    out << "set_target_properties( " << prj_id << " PROPERTIES" << endl;
+    if (target_output_name != prj_id) {
+        out << "    " << "OUTPUT_NAME " << target_output_name << endl;
+    }
+    if (!m_CompDefines.empty()) {
+        out << "    " << "COMPILE_DEFINITIONS \"" << NStr::Join(m_CompDefines,";") << "\"" << endl;
+    }
+#if 1
+    if (!m_IncludeDir.empty()) {
+        out << "    " << "INCLUDE_DIRECTORIES \"" << NStr::Join(m_IncludeDir, ";") << "\"" << endl;
+    }
+    out << "    " << "COMPILE_FLAGS \""  << NStr::Join(m_CompFlags, " ") << "\"" << endl;
+#else
+    out << "    " << "COMPILE_FLAGS \"" << NStr::Join(m_IncludeDir, " ") << " " << NStr::Join(m_CompFlags, " ") << "\"" << endl;
+#endif
+    out << ")" << endl;
 
     if (!m_Dependencies.empty()) {
         out << "add_dependencies( " << prj_id << endl;
@@ -1128,10 +1164,7 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
             ITERATE(vector<string>, top, to_process) {
                 if (prj.m_DataSource.GetValue(*top, tmp_list)) {
                     ITERATE( list<string>, s, tmp_list) {
-                        if (CSymResolver::IsDefine(*s)) {
-                            value = CSymResolver::StripDefine(FilterDefine(*s));
-                            prj_libs.push_back( "${" + value + "}");
-                        } else if (CSymResolver::HasDefine(*s)) {
+                        if (CSymResolver::HasDefine(*s)) {
                             string key = FilterDefine(*s);
                             if (CSymResolver::IsDefine(key)) {
                                 key = CSymResolver::StripDefine(key);
@@ -1154,7 +1187,11 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
                                 }
                                 prj_libs.push_back( "${" + key + "}");
                             } else {
-                                prj_libs.push_back( CSymResolver::TrimDefine(*s));
+//                                prj_libs.push_back( CSymResolver::TrimDefine(*s));
+                                value = *s;
+                                NStr::ReplaceInPlace(value, "$(", "${");
+                                NStr::ReplaceInPlace(value, ")", "}");
+                                prj_libs.push_back(value);
                             }
                         } else if (SMakeProjectT::IsConfigurableDefine(*s)) {
                             value = SMakeProjectT::StripConfigurableDefine(*s);
@@ -1187,8 +1224,9 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
         ITERATE(vector<string>, top, to_process) {
             prj.m_DataSource.GetValue(*top, tmp_list);
             vector<string> defines;
+            vector<string> compflags;
             if (tmp_list.empty()) {
-                defines.push_back("${ORIG_CPPFLAGS}");
+                compflags.push_back("${ORIG_CPPFLAGS}");
             }
             ITERATE( list<string>, s, tmp_list) {
                 if (CSymResolver::IsDefine(*s)) {
@@ -1209,7 +1247,7 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
 
                     }
                     else {
-                        defines.push_back("${" + value + "}");
+                        compflags.push_back("${" + value + "}");
                     }
                 } else if (CSymResolver::HasDefine(*s)) {
 //cerr << "Found smth has define: " << *s << " in " << prj.m_Name << endl;
@@ -1232,20 +1270,33 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
                 }
             }
             if (!defines.empty()) {
+#if 0
                 CMakeProperty def( "add_definitions");
                 ITERATE( vector<string>, d, defines) {
                     def.AddValue( *d);
                 }
                 mkPrj[prj_path].AddProperty( def);
+#else
+                ITERATE( vector<string>, d, defines) {
+                    mkPrj[prj_path].AddCompilationDefine( NStr::Replace(*d, "-D", ""));
+                }
+#endif
+            }
+            if (!compflags.empty()) {
+                ITERATE( vector<string>, d, compflags) {
+                    mkPrj[prj_path].AddCompilationFlag( *d);
+                }
             }
         }
 
 // tests
         string prj_id0(p->first.Id());
         string prj_id(p->first.Id());
+#if 0
         if (p->first.Type() == CProjKey::eApp) {
             prj_id += ".exe";
         }
+#endif
         if (prj.m_DataSource.GetValue("CHECK_COPY", tmp_list)) {
             list<string> ttmp;
             ITERATE( list<string>, s, tmp_list) {

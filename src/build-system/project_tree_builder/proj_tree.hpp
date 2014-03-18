@@ -273,6 +273,8 @@ public:
     void SetProjKey(const CProjKey& prj_key);
     void AddDefinition(const string& key, const string& value);
     void AddSourceFile(const string& folder, const string& name);
+    void AddCompilationDefine(const string& value);
+    void AddCompilationFlag(const string& value);
     void AddIncludeDirectory(const string& name);
     void AddLibrary(const string& name);
     void AddDependency(const string& name);
@@ -283,7 +285,8 @@ public:
 private:
     CProjKey m_Prj_key;
     vector<string> m_Definitions;
-//    set<string> m_Sources;
+    vector<string> m_CompDefines;
+    vector<string> m_CompFlags;
     map<string, set<string> > m_Sources;
     vector<string> m_IncludeDir;
     vector<string> m_Libraries;

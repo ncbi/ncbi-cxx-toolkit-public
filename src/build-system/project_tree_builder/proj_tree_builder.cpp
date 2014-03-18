@@ -2390,7 +2390,9 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     list<string> metadata_files;
     GetApp().GetMetaDataFiles(&metadata_files);
     CSymResolver resolver;
-    resolver.Append( GetApp().GetSite().GetMacros());
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+        resolver.Append( GetApp().GetSite().GetMacros());
+    }
     ITERATE(list<string>, p, metadata_files) {
 	    string fileloc(CDirEntry::ConcatPath(
 	                root_src_path, CDirEntry::ConvertToOSPath(*p)));
