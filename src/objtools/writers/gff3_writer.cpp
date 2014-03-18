@@ -82,6 +82,8 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+//bool bDebugHere = false;
+
 #define IS_INSERTION(sf, tf) \
     ( ((sf) &  CAlnMap::fSeq) && !((tf) &  CAlnMap::fSeq) )
 #define IS_DELETION(sf, tf) \
@@ -817,6 +819,9 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     unsigned int srcRow)
 //  ----------------------------------------------------------------------------
 {
+    //if (bDebugHere == true) {
+    //    bDebugHere = false;
+    //}
     const CSeq_id& sourceId = alnMap.GetSeqId(0);
     CBioseq_Handle sourceH = m_pScope->GetBioseqHandle(sourceId);
     CSeq_id_Handle sourceIdH = sourceH.GetSeq_id_Handle();
@@ -833,14 +838,20 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     string target;
     pSourceId->GetLabel(&target, CSeq_id::eContent);
     CAlnMap::TSignedRange range = alnMap.GetSeqAlnRange(srcRow);
-    unsigned int start2 = alnMap.GetStart(0, 0);
-    unsigned int stop2 = alnMap.GetSeqAlnStop(srcRow)-start2;
-    target += " " + NStr::IntToString(start2 + 1);
-    target += " " + NStr::IntToString(stop2 + 1);
+    int start2 = alnMap.GetStart(0, 0);
+    int stop2 = alnMap.GetSeqAlnStop(srcRow);
     ENa_strand strand = eNa_strand_plus;
     if (alnMap.StrandSign(0) == -1) {
         strand = eNa_strand_minus;
     }
+    if (start2 > stop2) {
+        stop2 = start2 - stop2;
+    }
+    else {
+        stop2 -= start2;
+    }
+    target += " " + NStr::IntToString(start2 + 1);
+    target += " " + NStr::IntToString(stop2 + 1);
     target += " " + string(strand == eNa_strand_plus ? "+" : "-");
     record.SetTarget(target); 
     return true;
@@ -2590,7 +2601,8 @@ bool CGff3Writer::xWriteRecord(
 string CGff3Writer::xNextGenericId()
 //  ----------------------------------------------------------------------------
 {
-    return (string("id") + NStr::UIntToString(m_uPendingGenericId++));
+    string nextId = string("id") + NStr::UIntToString(m_uPendingGenericId++);
+    return nextId;
 }
 
 //  ----------------------------------------------------------------------------
@@ -2604,7 +2616,11 @@ string CGff3Writer::xNextGeneId()
 string CGff3Writer::xNextAlignId()
 //  ----------------------------------------------------------------------------
 {
-    return (string("aln") + NStr::UIntToString(m_uPendingAlignId++));
+    string nextId = string("aln") + NStr::UIntToString(m_uPendingAlignId++);
+    //if (nextId == "aln3") {
+    //    bDebugHere = true;
+    //}
+    return nextId;
 }
 
 //  ----------------------------------------------------------------------------
