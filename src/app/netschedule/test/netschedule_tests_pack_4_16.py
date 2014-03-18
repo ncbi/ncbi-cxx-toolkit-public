@@ -882,7 +882,7 @@ class Scenario1109( TestBase ):
     @staticmethod
     def getScenario():
         " Provides the scenario "
-        return "Checks that the linked sections are provides in the QINF2 command "
+        return "Checks that the linked sections are provides in the QINF2 command"
 
     def execute( self ):
         " Should return True if the execution completed successfully "
@@ -897,6 +897,38 @@ class Scenario1109( TestBase ):
             raise Exception( "Unexpected nc.one" )
         if values[ 'nc.two' ][ 0 ] != 'value 2':
             raise Exception( "Unexpected nc.two" )
+
+        return True
+
+
+class Scenario1110( TestBase ):
+    " Scenario1110 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks that HEALTH informs about a reinit after crash alert"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        self.ns.kill( "SIGKILL" )
+        time.sleep( 1 )
+        self.ns.start()
+        time.sleep( 1 )
+
+        ns_client = self.getNetScheduleService( '', 'scenario1110' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'HEALTH' )
+        values = parse_qs( output, True, True )
+        if values[ 'alert_startaftercrash' ][ 0 ] != '1':
+            raise Exception( "Unexpected alert_startaftercrash alert value" )
 
         return True
 
