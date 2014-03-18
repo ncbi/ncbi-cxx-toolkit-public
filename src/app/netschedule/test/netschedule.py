@@ -418,13 +418,13 @@ class NetSchedule:
         self.__localOperationAssert()
 
         try:
-            self.kill( "SIGKILL", 7 )
+            self.kill( "SIGTERM", 7 )
         except:
             pass
 
         try:
             if self.isRunning():
-                self.kill( "SIGTERM", 7 )
+                self.kill( "SIGKILL", 7 )
         except:
             pass
 

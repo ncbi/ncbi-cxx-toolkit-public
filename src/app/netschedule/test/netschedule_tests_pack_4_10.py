@@ -197,7 +197,7 @@ class Scenario101( TestBase ):
         firstSession = self.getSession( result )
         firstNode = self.getNode( result )
 
-        self.ns.kill( "SIGKILL" )
+        self.ns.safeStop()
         time.sleep( 1 )
         self.ns.start()
         time.sleep( 1 )

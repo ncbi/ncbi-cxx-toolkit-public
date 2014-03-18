@@ -835,3 +835,69 @@ class Scenario1107( TestBase ):
         self.ns.disconnect()
         return True
 
+
+class Scenario1108( TestBase ):
+    " Scenario1108 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Check that the service_to_queue section is processed"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1200 )
+
+        ns_client = self.getNetScheduleService( '', 'scenario1108' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'STAT SERVICES' )
+        values = parse_qs( output, True, True )
+        if values[ 'service1' ][ 0 ] != 'TEST1':
+            raise Exception( "Unexpected service1" )
+        if values[ 'service11' ][ 0 ] != 'TEST1':
+            raise Exception( "Unexpected service11" )
+        if values[ 'service2' ][ 0 ] != 'TEST2':
+            raise Exception( "Unexpected service2" )
+
+        output = execAny( ns_client, "QINF2 service=service1" )
+        values = parse_qs( output, True, True )
+        if values[ 'queue_name' ][ 0 ] != 'TEST1':
+            raise Exception( "Unexpected QINF2 for service1" )
+
+        return True
+
+
+class Scenario1109( TestBase ):
+    " Scenario1109 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks that the linked sections are provides in the QINF2 command "
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 8 )
+
+        ns_client = self.getNetScheduleService( '', 'scenario1109' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'QINF2 TEST1' )
+        values = parse_qs( output, True, True )
+        if values[ 'nc.one' ][ 0 ] != 'value 1':
+            raise Exception( "Unexpected nc.one" )
+        if values[ 'nc.two' ][ 0 ] != 'value 2':
+            raise Exception( "Unexpected nc.two" )
+
+        return True
+
+

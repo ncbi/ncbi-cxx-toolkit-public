@@ -274,6 +274,15 @@ private:
     void  x_SetSignallingFile(bool  drained);
     bool  x_IsDBDrained(void) const;
 
+    // Crash detect support:
+    // - upon start the server creates NEEDREINIT file
+    // - when grafully finished the file is deleted
+    // - at the start it is checked if the file is there. If it is then
+    //   it means the server crashed and reinit must be done
+    void  x_CreateNeedReinitFile(void);
+    bool  x_DoesNeedReinitFileExist(void) const;
+    void  x_RemoveNeedReinitFile(void);
+
     bool  x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
                                   string &              diff);
     bool  x_ConfigureQueues(const TQueueParams &  queues_from_ini,

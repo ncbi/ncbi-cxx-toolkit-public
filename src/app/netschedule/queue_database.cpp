@@ -173,9 +173,7 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
     const string &   db_path     = params.db_path;
     const string &   db_log_path = params.db_log_path;
     if (reinit) {
-        CDir    dir(db_path);
-
-        dir.Remove();
+        CDir(db_path).Remove();
         LOG_POST(Message << Warning
                          << "Reinitialization. " << db_path << " removed.");
     }
@@ -183,9 +181,7 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
     m_Path = CDirEntry::AddTrailingPathSeparator(db_path);
 
     if (x_IsDBDrained()) {
-        CDir    dir(db_path);
-
-        dir.Remove();
+        CDir(db_path).Remove();
         LOG_POST(Message << Warning
                          << "Reinitialization due to the DB was drained "
                             "on last shutdown. " << db_path << " removed.");
@@ -200,12 +196,25 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
     bool        fresh_db(false);
     {{
         CDir    dir(m_Path);
-        if ( !dir.Exists() ) {
+        if (!dir.Exists()) {
             fresh_db = true;
             dir.Create();
         }
     }}
-    x_SetSignallingFile(false);
+
+    if (!fresh_db) {
+        // Check for the last instance crash
+        if (x_DoesNeedReinitFileExist()) {
+            CDir(db_path).Remove();
+            CDir(m_Path).Create();
+            fresh_db = true;
+
+            ERR_POST("Reinitialization due to the server "
+                     "did not stop gracefully last time. "
+                     << db_path << " removed.");
+            m_Server->RegisterAlert(eStartAfterCrash);
+        }
+    }
 
     string      db_storage_ver;
     CFile       ver_file(CFile::MakePath(m_Path, "DB_STORAGE_VER"));
@@ -344,6 +353,9 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
     // The initialization must be done before the queues are created but after
     // the directory is possibly re-created
     m_Server->InitNodeID(db_path);
+
+    x_SetSignallingFile(false);
+    x_CreateNeedReinitFile();
 }
 
 
@@ -1595,6 +1607,7 @@ void CQueueDataBase::Close(bool  drained_shutdown)
                  "Drained shutdown: DB is not closed gracefully.");
         m_QueueDescriptionDB.Close();
         x_SetSignallingFile(true);  // Create/update signalling file
+        x_RemoveNeedReinitFile();
     } else {
         m_Env->ForceTransactionCheckpoint();
         m_Env->CleanLog();
@@ -1613,10 +1626,12 @@ void CQueueDataBase::Close(bool  drained_shutdown)
             else
                 LOG_POST(Message << Warning << "JS: '" << m_Name
                                  << "' environment still in use.");
+            x_RemoveNeedReinitFile();
         }
         catch (exception &  ex) {
             ERR_POST("JS: '" << m_Name << "' Exception in Close() " <<
-                     ex.what() << " (ignored.)");
+                     ex.what() <<
+                     " (ignored; DB will be reinitialized at next start)");
         }
     }
 
@@ -2134,7 +2149,7 @@ void  CQueueDataBase::x_SetSignallingFile(bool  drained)
         }
     }
     catch (...) {
-        ERR_POST("Error creating signalling file. "
+        ERR_POST("Error creating drained DB signalling file. "
                  "The server might not start correct with this DB.");
     }
 }
@@ -2144,6 +2159,48 @@ bool  CQueueDataBase::x_IsDBDrained(void) const
 {
     CFile       drained_file(CFile::MakePath(m_Path, drained_file_name));
     return drained_file.Exists();
+}
+
+
+static const char *     need_reinit_file_name = "NEED_REINIT";
+
+void  CQueueDataBase::x_CreateNeedReinitFile(void)
+{
+    try {
+        CFile       reinit_file(CFile::MakePath(m_Path, need_reinit_file_name));
+        if (!reinit_file.Exists()) {
+            CFileIO     f;
+            f.Open(CFile::MakePath(m_Path, need_reinit_file_name),
+                   CFileIO_Base::eCreate,
+                   CFileIO_Base::eReadWrite);
+            f.Close();
+        }
+    }
+    catch (...) {
+        ERR_POST("Error creating crash detection file.");
+    }
+}
+
+
+void  CQueueDataBase::x_RemoveNeedReinitFile(void)
+{
+    try {
+        CFile       reinit_file(CFile::MakePath(m_Path, need_reinit_file_name));
+        if (reinit_file.Exists()) {
+            reinit_file.Remove();
+        }
+    }
+    catch (...) {
+        ERR_POST("Error removing crash detection file. When the server "
+                 "restarts it will re-initialize the database.");
+    }
+}
+
+
+bool  CQueueDataBase::x_DoesNeedReinitFileExist(void) const
+{
+    CFile   reinit_file(CFile::MakePath(m_Path, need_reinit_file_name));
+    return reinit_file.Exists();
 }
 
 

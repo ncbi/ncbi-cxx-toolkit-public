@@ -1,0 +1,120 @@
+
+; General purpose server parameters
+[server]
+
+;no_default_queues=true
+
+; TCP/IP port number server responds on
+port=$PORT
+
+; maximum simultaneous connections
+max_connections=1000
+
+; maximum number of clients(threads) can be served simultaneously
+max_threads=5
+
+; initial number of threads created for incoming requests
+init_threads=2
+
+; Server side logging
+log=true
+log_batch_each_job=true
+log_notification_thread=false
+log_cleaning_thread=false
+log_statistics_thread=false
+log_execution_watcher_thread=false
+
+; Network inactivity timeout in seconds
+network_timeout=180
+
+; When true server recreates the [bdb].path directory and reinits the
+; database
+reinit=false
+
+; List of network hosts allowed admin access to netschedule
+;admin_host=localhost;service1;widget2
+
+admin_client_name=netschedule_admin, netschedule_control
+
+node_id=dev_4_10_0
+
+[log]
+file=netscheduled.log
+
+; BerkeleyDB related parameters
+
+[bdb]
+
+; directory to keep the database. It is important that this
+; directory resides on local drive (not NFS)
+;
+; WARNING: the database directory sometimes can be recursively deleted
+;          (when netcached started with -reinit). 
+;          DO NOT keep any of your files(besides the database) in it.
+path=$DBPATH
+
+transaction_log_path=./tlog
+
+mutex_max=100000
+
+; amount of memory allocated by BerkeleyDB for the database cache
+; Berkeley DB page cache) (More is better)
+mem_size=15M
+
+private_env=true
+
+; maximum number of lockers and lock objects
+; should be increased for bulk transactions (or large number queues)
+max_locks=100000
+
+max_lockers=25000
+
+max_lockobjects=100000
+
+; when non 0 transaction LOG will be placed to memory for better performance
+; as a result transactions become non-durable and there is a risk of
+; loosing the data if server fails
+; (set to at least 100M if planned to have bulk transactions)
+;
+;log_mem_size=150M
+direct_db=false
+direct_log=false
+
+max_queues=5
+
+
+[queue_TEST1]
+failed_retries=3
+timeout=30
+notif_timeout=0.1
+run_timeout=7
+run_timeout_precision=5
+max_input_size=1M
+max_output_size=1M
+wnode_timeout=10
+blacklist_time=5
+notif_handicap=5
+notif_hifreq_interval=160
+notif_hifreq_period=320
+notif_lofreq_mult=2
+
+[queue_TEST2]
+failed_retries=3
+timeout=30
+notif_timeout=0.1
+run_timeout=7
+run_timeout_precision=5
+max_input_size=1M
+max_output_size=1M
+wnode_timeout=10
+blacklist_time=5
+notif_handicap=5
+notif_hifreq_interval=160
+notif_hifreq_period=320
+notif_lofreq_mult=2
+
+[service_to_queue]
+service1=TEST1
+service2=TEST2
+service11=TEST1
+
