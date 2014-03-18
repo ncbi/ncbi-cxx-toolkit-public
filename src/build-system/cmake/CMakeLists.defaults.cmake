@@ -1,3 +1,8 @@
+set(CMAKE_C_COMPILER   /usr/local/gcc/4.8.1/bin/gcc)
+set(CMAKE_CXX_COMPILER /usr/local/gcc/4.8.1/bin/g++)
+
+
+
 set(top_srcdir   ${NCBI_TREE_ROOT})
 set(build_root   ${NCBI_BUILD_ROOT}/..)
 set(builddir     ${NCBI_BUILD_ROOT})
@@ -9,10 +14,14 @@ set(incinternal  ${includedir0}/internal)
 set(buildconf    GCC401-DebugMT64)
 set(buildconf0   GCC401-DebugMT)
 
-set(CONF_CXXFLAGS   -Wall -Wno-format-y2k  -pthread -fPIC  -gdwarf-3)
+set(CONF_CFLAGS    " -Wall -Wno-format-y2k  -pthread -fPIC  -gdwarf-3")
+set(CONF_CXXFLAGS  " -Wall -Wno-format-y2k  -pthread -fPIC  -gdwarf-3")
 set(CONF_CPPFLAGS  )
-set(STD_INCLUDE   -I${incdir} -I${includedir0} -I${incinternal})
-set(ORIG_CPPFLAGS  ${CONF_CXXFLAGS} ${CONF_CPPFLAGS} ${STD_INCLUDE})
+set(STD_INCLUDE    " -I${incdir} -I${includedir0} -I${incinternal}")
+set(ORIG_CPPFLAGS  " ${CONF_CXXFLAGS} ${CONF_CPPFLAGS} ${STD_INCLUDE}")
+
+#set(CMAKE_CXX_FLAGS "${CONF_CXXFLAGS} ${CONF_CPPFLAGS} ${STD_INCLUDE}")
+#set(CMAKE_C_FLAGS   "${CONF_CFLAGS}                    ${STD_INCLUDE}")
 
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
 
