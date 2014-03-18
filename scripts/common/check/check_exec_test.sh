@@ -13,7 +13,7 @@
 #
 #    -stdin   - option used when application from <cmd-line> attempt
 #               to read from std input (cgi applications for example).
-#    cmd-line - command line to execute.
+#    cmd-line - command line to execute (shell scripts not allowed).
 #
 # Note:
 #    The <cmd-line> should be presented with one application with
@@ -29,11 +29,13 @@
 #
 ###########################################################################
 
+
 # Get parameters
 timeout="${CHECK_TIMEOUT:-200}"
 script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
+is_stdin=false
 tmp=./$2.stdin.$$
 
 # Reinforce timeout
@@ -47,12 +49,22 @@ esac
 
 # Run command.
 if [ "X$1" = "X-stdin" ]; then
-  trap 'rm -f $tmp' 1 2 15
-  cat - > $tmp
-  shift
-  $NCBI_CHECK_TOOL "$@" < $tmp &
+   is_stdin=true
+   trap 'rm -f $tmp' 1 2 15
+   cat - > $tmp
+   shift
+fi
+
+echo $1 | grep '\.sh' > /dev/null 2>&1 
+if test $? -eq 0;  then
+   echo "Error: Using CHECK_EXEC macro to run shell scripts is prohibited"
+   exit 1
+fi
+
+if $is_stdin; then
+   $NCBI_CHECK_TOOL "$@" < $tmp &
 else
-  $NCBI_CHECK_TOOL "$@" &
+   $NCBI_CHECK_TOOL "$@" &
 fi
 pid=$!
 trap "$kill $pid; rm -f $tmp" 1 2 15
