@@ -19,7 +19,7 @@ LIB     = xconnserv
 PROJ_TAG = core
 LIBS    = $(NETWORK_LIBS)
 
-DLL_LIB = xthrserv xconnect xutil
+DLL_LIB = xthrserv xconnect xutil xncbi
 
 WATCHERS = kazimird
 
