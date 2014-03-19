@@ -10,8 +10,8 @@ CPPFLAGS = -DFTDS_IN_USE -I$(includedir)/dbapi/driver/ftds64 $(FTDS64_INCLUDE) $
 
 CHECK_REQUIRES = connext in-house-resources
 # CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64
-CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S DBAPI_MS_TEST /CHECK_NAME=ctl_lang_ftds64 -S MS_TEST
-CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S DBAPI_SYB_TEST -v 50 /CHECK_NAME=ctl_lang_ftds64 -S SYB_TEST -v 50
-CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S DBAPI_SYB155_TEST -v 50 /CHECK_NAME=ctl_lang_ftds64 -S SYB155_TEST -v 50
+CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S DBAPI_MS_TEST /CHECK_NAME=ctl_lang_ftds64-MS
+CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S DBAPI_SYB_TEST -v 50 /CHECK_NAME=ctl_lang_ftds64-SYB
+CHECK_CMD = run_sybase_app.sh ctl_lang_ftds64 -S DBAPI_SYB155_TEST -v 50 /CHECK_NAME=ctl_lang_ftds64-SYB155
 
 WATCHERS = ucko
