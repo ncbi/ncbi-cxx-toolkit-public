@@ -1225,9 +1225,11 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
             prj.m_DataSource.GetValue(*top, tmp_list);
             vector<string> defines;
             vector<string> compflags;
+#if 0
             if (tmp_list.empty()) {
                 compflags.push_back("${ORIG_CPPFLAGS}");
             }
+#endif
             ITERATE( list<string>, s, tmp_list) {
                 if (CSymResolver::IsDefine(*s)) {
                     value = CSymResolver::StripDefine(FilterDefine(*s));
@@ -1269,6 +1271,7 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
                     defines.push_back(*s);
                 }
             }
+            compflags.push_back("${ORIG_CPPFLAGS}");
             if (!defines.empty()) {
 #if 0
                 CMakeProperty def( "add_definitions");

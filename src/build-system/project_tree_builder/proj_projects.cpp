@@ -89,6 +89,9 @@ void CProjectsLstFileFilter::InitFromString(const string& subtree)
         }
         m_listEnabled.push_back( s );
     }
+    if (GetApp().IsCMakeMode()) {
+        return;
+    }
 //    m_ExcludePotential = true;
     m_ExcludePotential = GetApp().GetBuildRoot().empty();
 }
