@@ -1,6 +1,10 @@
 #! /bin/sh
 #$Id$
 
+GENBANK_LOADER_METHOD="$1"
+export GENBANK_LOADER_METHOD
+shift
+
 NCBI_ABORT_ON_NULL=1
 export NCBI_ABORT_ON_NULL
 
