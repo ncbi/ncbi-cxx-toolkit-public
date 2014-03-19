@@ -8458,7 +8458,9 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
      strtmp = "$missing#";
      for (i = cur_idx + 1; i < (int)tot_cnt; i++) {
           strtmp = qual_name + "$missing#" + desc_ls[i];
-          thisInfo.test_item_list[GetName_miss()].push_back(strtmp);
+          thisInfo.test_item_list[setting_name].push_back(strtmp);
+ 
+          // GetName_miss(): put missing objs into the correct subcategory.
           strtmp = GetName_miss() + "$" + qual_name + "#missing";
           thisInfo.test_item_objs[strtmp].push_back(objs[i]); 
      }
