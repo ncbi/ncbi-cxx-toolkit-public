@@ -69,21 +69,24 @@ BEGIN_SCOPE(DiscRepNmSpc)
                return has_locus_tag;
          };
 
-         int GetNumBioseq(void) {
-             return num_bioseq;
-         };
+         void SetNumEntry(unsigned num_entry) { m_num_entry = num_entry; }
+         unsigned GetNumEntry() {return m_num_entry; }
 
          template < class T >
-         void GoTests(vector <CRef < CTestAndRepData> >& test_category, const T& obj) 
-         {
-            NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
+         void GoTests(vector <CRef < CTestAndRepData> >& test_category, 
+                         const T& obj) {
+            NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, 
+                                 test_category) {
+                  (*it)->SetNumEntry(GetNumEntry());
                   (*it)->TestOnObj(obj);
             }
          };
 
-         static bool SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* seqfeat2);
+         static bool SortByFrom(const CSeq_feat* seqfeat1, 
+                                      const CSeq_feat* seqfeat2);
 
       private:
+         unsigned m_num_entry;
          void x_Clean();
 
          bool CanGetOrgMod(const CBioSource& biosrc);
@@ -92,7 +95,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
          SAnnotSelector sel_seqfeat_4_seq_entry;
          vector <CSeqdesc :: E_Choice> sel_seqdesc, sel_seqdesc_4_bioseq;
 
-         int num_bioseq;
          bool has_locus_tag;
 
          vector < vector <const CSeq_feat*> * >  m_vec_sf;

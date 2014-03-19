@@ -122,6 +122,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         CRepConfig() { 
             m_enabled.clear();
             m_disabled.clear();
+            m_num_entry = 0;
         }
         virtual ~CRepConfig() { };
 
@@ -154,7 +155,11 @@ BEGIN_SCOPE(DiscRepNmSpc)
              m_objs = objs; 
         };
    
+        void AddNumEntry() {m_num_entry ++ ;}
+        unsigned GetNumEntry() {return m_num_entry; }
+
      protected:
+        unsigned m_num_entry;
         vector <string> m_enabled, m_disabled;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
         bool m_dorecurse;

@@ -724,7 +724,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                     const CString_constraint* str_cons = 0);
       static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& seq_feat);
 
+      void SetNumEntry(unsigned num_entry) { m_num_entry = num_entry; };
+      unsigned GetNumEntry() { return m_num_entry; };
+
     protected:
+      unsigned m_num_entry;
+
       string x_GetUserObjType(const CUser_object& user_obj);
       bool CommentHasPhrase(string comment, const string& phrase);
       bool HasLineage(const CBioSource& biosrc, const string& type);
@@ -3981,6 +3986,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("DUPLICATE_GENE_LOCUS");}
+
+   private:
+      string m_parent;
   };
 
 
