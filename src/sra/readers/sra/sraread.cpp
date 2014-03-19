@@ -69,6 +69,9 @@ CSraException::CSraException(void)
 }
 
 
+static const bool report_all_exceptions = false;
+
+
 CSraException::CSraException(const CDiagCompileInfo& info,
                              const CException* prev_exc,
                              EErrCode err_code,
@@ -79,6 +82,9 @@ CSraException::CSraException(const CDiagCompileInfo& info,
 {
     this->x_Init(info, message, prev_exc, severity);
     this->x_InitErrCode(CException::EErrCode(err_code));
+    if ( report_all_exceptions ) {
+        ERR_POST(info.GetFile()<<":"<<info.GetLine()<<": "<<*this);
+    }
 }
 
 
@@ -93,6 +99,9 @@ CSraException::CSraException(const CDiagCompileInfo& info,
 {
     this->x_Init(info, message, prev_exc, severity);
     this->x_InitErrCode(CException::EErrCode(err_code));
+    if ( report_all_exceptions ) {
+        ERR_POST(info.GetFile()<<":"<<info.GetLine()<<": "<<*this);
+    }
 }
 
 
@@ -109,6 +118,9 @@ CSraException::CSraException(const CDiagCompileInfo& info,
 {
     this->x_Init(info, message, prev_exc, severity);
     this->x_InitErrCode(CException::EErrCode(err_code));
+    if ( report_all_exceptions ) {
+        ERR_POST(info.GetFile()<<":"<<info.GetLine()<<": "<<*this);
+    }
 }
 
 
@@ -125,6 +137,9 @@ CSraException::CSraException(const CDiagCompileInfo& info,
 {
     this->x_Init(info, message, prev_exc, severity);
     this->x_InitErrCode(CException::EErrCode(err_code));
+    if ( report_all_exceptions ) {
+        ERR_POST(info.GetFile()<<":"<<info.GetLine()<<": "<<*this);
+    }
 }
 
 

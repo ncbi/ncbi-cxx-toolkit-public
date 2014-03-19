@@ -17,8 +17,14 @@ REQUIRES = objects
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
 CHECK_REQUIRES = in-house-resources -MSWin -Solaris
+# default - old fixed SRA
 CHECK_CMD = vdb_test
-CHECK_CMD = vdb_test -acc SRR035417
-CHECK_CMD = vdb_test -acc SRR749060 -scan_reads
+CHECK_CMD = vdb_test -refseq_table -q GL000207.1:0-10000 -ref_seq -stat_graph -quality_graph -seq_entry -scan_reads /CHECK_NAME=vdb_test_SRA_fixed
+# old SRA
+CHECK_CMD = vdb_test -acc SRR035417 -refseq_table -quality_graph -seq_entry  -scan_reads /CHECK_NAME=vdb_test_SRA
+# new cSRA w/o REFERENCE
+CHECK_CMD = vdb_test -acc SRR749060 -refseq_table -quality_graph -seq_entry  -scan_reads /CHECK_NAME=vdb_test_cSRA_no_REF
+# new cSRA
+CHECK_CMD = vdb_test -acc SRR413273 -refseq_table -q NM_004119.2:0-10000 -ref_seq -stat_graph -quality_graph -seq_entry -scan_reads /CHECK_NAME=vdb_test_cSRA
 
 WATCHERS = vasilche ucko

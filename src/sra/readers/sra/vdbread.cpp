@@ -215,8 +215,15 @@ void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
     if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0,
                                         s_FixPath(acc_or_path).c_str()) ) {
         *x_InitPtr() = 0;
-        NCBI_THROW3(CSraException, eNotFoundDb,
-                    "Cannot open VDB", rc, acc_or_path);
+        if ( GetRCObject(rc) == rcDirectory &&
+             GetRCState(rc) == rcNotFound ) {
+            NCBI_THROW3(CSraException, eNotFoundDb,
+                        "Cannot open VDB", rc, acc_or_path);
+        }
+        else {
+            NCBI_THROW3(CSraException, eDataError,
+                        "Cannot open VDB", rc, acc_or_path);
+        }
     }
 }
 
