@@ -85,6 +85,7 @@ void CSRATestApp::Init(void)
                             "Accession to get and test set of SRA sequences",
                             CArgDescriptions::eString,
                             "SRR000010.1.2");
+    arg_desc->AddFlag("no_sra", "Check for a missing SRA accession");
 
     arg_desc->AddFlag("noclip", "Do not clip reads by quality");
 
@@ -126,7 +127,24 @@ int CSRATestApp::Run(void)
     
     if ( args["sra"] ) {
         string sra = args["sra"].AsString();
-        CRef<CSeq_entry> entry = mgr.GetSpotEntry(args["sra"].AsString());
+        if ( args["no_sra"] ) {
+            try {
+                mgr.GetSpotEntry(sra);
+                ERR_POST(Fatal<<
+                         "GetSpotEntry("<<sra<<") unexpectedly succeeded");
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() != CSraException::eNotFoundDb ) {
+                    ERR_POST(Fatal<<
+                             "Wrong exception for a missing SRA acc: "<<
+                             sra<<": "<<exc);
+                }
+            }
+            NcbiCout << "Correctly detected missing SRA acc: " << sra
+                     << NcbiEndl;
+            return 0;
+        }
+        CRef<CSeq_entry> entry = mgr.GetSpotEntry(sra);
         args["o"].AsOutputFile() << MSerial_AsnText << *entry << NcbiFlush;
     }
     else {
@@ -140,6 +158,28 @@ int CSRATestApp::Run(void)
             CScope scope(*om);
             scope.AddDefaults();
             CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+            if ( args["no_sra"] ) {
+                if ( bh ) {
+                    ERR_POST(Fatal<<
+                             "GetBioseqHandle("<<idh<<") unexpectedly succeeded");
+                }
+                string sar = sra.substr(0, sra.rfind('.'));
+                try {
+                    mgr.GetSpotEntry(sar);
+                    ERR_POST(Fatal<<
+                             "GetSpotEntry("<<sar<<") unexpectedly succeeded");
+                }
+                catch ( CSraException& exc ) {
+                    if ( exc.GetErrCode() != CSraException::eNotFoundDb ) {
+                        ERR_POST(Fatal<<
+                                 "Wrong exception for a missing SRA acc: "<<
+                                 sar<<": "<<exc);
+                    }
+                }
+                NcbiCout << "Correctly detected missing SRA acc: " << sra
+                         << NcbiEndl;
+                return 0;
+            }
             if ( !bh ) {
                 ERR_POST(Fatal <<
                          "Cannot load reference SRA sequences from GenBank.");
