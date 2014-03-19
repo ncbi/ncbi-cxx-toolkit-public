@@ -215,13 +215,21 @@ void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
     if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0,
                                         s_FixPath(acc_or_path).c_str()) ) {
         *x_InitPtr() = 0;
-        if ( GetRCObject(rc) == rcDirectory &&
+        if ( GetRCObject(rc) == RCObject(rcDirectory) &&
              GetRCState(rc) == rcNotFound ) {
+            // no SRA accession
             NCBI_THROW3(CSraException, eNotFoundDb,
                         "Cannot open VDB", rc, acc_or_path);
         }
-        else {
+        else if ( GetRCObject(rc) == RCObject(rcDatabase) &&
+                  GetRCState(rc) == rcIncorrect ) {
+            // invalid SRA database
             NCBI_THROW3(CSraException, eDataError,
+                        "Cannot open VDB", rc, acc_or_path);
+        }
+        else {
+            // other errors
+            NCBI_THROW3(CSraException, eOtherError,
                         "Cannot open VDB", rc, acc_or_path);
         }
     }
@@ -233,8 +241,17 @@ void CVDBTable::Init(const CVDB& db, const char* table_name)
     DECLARE_SDK_GUARD();
     if ( rc_t rc = VDatabaseOpenTableRead(db, x_InitPtr(), table_name) ) {
         *x_InitPtr() = 0;
-        NCBI_THROW3(CSraException, eNotFoundTable,
-                    "Cannot open VDB table", rc, table_name);
+        if ( GetRCObject(rc) == rcParam &&
+             GetRCState(rc) == rcNotFound ) {
+            // missing table in the DB
+            NCBI_THROW3(CSraException, eNotFoundTable,
+                        "Cannot open VDB table", rc, table_name);
+        }
+        else {
+            // other errors
+            NCBI_THROW3(CSraException, eOtherError,
+                        "Cannot open VDB table", rc, table_name);
+        }
     }
 }
 
@@ -253,8 +270,23 @@ void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
                                            s_FixPath(acc_or_path).c_str()) ) {
         *x_InitPtr() = 0;
         VSchemaRelease(schema);
-        NCBI_THROW3(CSraException, eNotFoundTable,
-                    "Cannot open SRA table", rc, acc_or_path);
+        if ( GetRCObject(rc) == RCObject(rcDirectory) &&
+             GetRCState(rc) == rcNotFound ) {
+            // no SRA accession
+            NCBI_THROW3(CSraException, eNotFoundTable,
+                        "Cannot open SRA table", rc, acc_or_path);
+        }
+        else if ( GetRCObject(rc) == RCObject(rcDatabase) &&
+                  GetRCState(rc) == rcIncorrect ) {
+            // invalid SRA database
+            NCBI_THROW3(CSraException, eDataError,
+                        "Cannot open SRA table", rc, acc_or_path);
+        }
+        else {
+            // other errors
+            NCBI_THROW3(CSraException, eOtherError,
+                        "Cannot open SRA table", rc, acc_or_path);
+        }
     }
     VSchemaRelease(schema);
 }

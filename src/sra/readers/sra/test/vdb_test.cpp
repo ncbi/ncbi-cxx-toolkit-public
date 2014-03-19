@@ -102,6 +102,7 @@ void CCSRATestApp::Init(void)
     arg_desc->AddOptionalKey("acc", "SRZAccession",
                              "SRZ accession to the cSRA file",
                              CArgDescriptions::eString);
+    arg_desc->AddFlag("no_acc", "SRZ accession is supposed to be absent");
 
     arg_desc->AddOptionalKey("mapfile", "MapFile",
                              "IdMapper config filename",
@@ -501,7 +502,28 @@ int CCSRATestApp::Run(void)
         CStopWatch sw;
         
         sw.Restart();
-        CCSraDb csra_db(mgr, acc_or_path);
+        CCSraDb csra_db;
+        if ( args["no_acc"] ) {
+            try {
+                csra_db = CCSraDb(mgr, acc_or_path);
+                ERR_POST(Fatal<<
+                         "CCSraDb succeeded for an absent SRA acc: "<<
+                         acc_or_path);
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() != CSraException::eNotFoundDb ) {
+                    ERR_POST(Fatal<<
+                             "CSraException is wrong for an absent SRA acc: "<<
+                             acc_or_path<<": "<<exc);
+                }
+                out << "Correctly detected absent SRA acc: "<<acc_or_path
+                    << NcbiEndl;
+                return 0;
+            }
+        }
+        else {
+            csra_db = CCSraDb(mgr, acc_or_path);
+        }
         out << "Opened CSRA in "<<sw.Elapsed()
             << NcbiEndl;
         

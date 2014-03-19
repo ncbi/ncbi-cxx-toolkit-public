@@ -26,5 +26,6 @@ CHECK_CMD = vdb_test -acc SRR035417 -refseq_table -quality_graph -seq_entry  -sc
 CHECK_CMD = vdb_test -acc SRR749060 -refseq_table -quality_graph -seq_entry  -scan_reads /CHECK_NAME=vdb_test_cSRA_no_REF
 # new cSRA
 CHECK_CMD = vdb_test -acc SRR413273 -refseq_table -q NM_004119.2:0-10000 -ref_seq -stat_graph -quality_graph -seq_entry -scan_reads /CHECK_NAME=vdb_test_cSRA
+CHECK_CMD = vdb_test -acc SRR000000 -no_acc /CHECK_NAME=vdb_test_none
 
 WATCHERS = vasilche ucko
