@@ -554,6 +554,10 @@ RunTest()
                     echo "\$x_name"
                     echo "======================================================================"
                     echo 
+                    if test "\$x_run" != "\$x_name"; then
+                       echo "Command line: \$x_run"
+                       echo 
+                    fi
                 ) > \$x_test_out 2>&1
 
                 # Remove old core file if it exist (for clarity of the test)
