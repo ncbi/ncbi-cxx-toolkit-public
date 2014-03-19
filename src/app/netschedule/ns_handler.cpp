@@ -2017,7 +2017,8 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
     if (!what.empty() && what != "QCLASSES" && what != "QUEUES" &&
         what != "JOBS" && what != "ALL" && what != "CLIENTS" &&
         what != "NOTIFICATIONS" && what != "AFFINITIES" &&
-        what != "GROUPS" && what != "WNODE" && what != "SERVICES") {
+        what != "GROUPS" && what != "WNODE" && what != "SERVICES" &&
+        what != "ALERTS") {
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Unsupported '" + what +
                    "' parameter for the STAT command.");
@@ -2065,7 +2066,14 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         x_PrintCmdRequestStop();
         return;
     }
-
+    if (what == "ALERTS") {
+        string  output = m_Server->SerializeAlerts();
+        if (!output.empty())
+            x_WriteMessage(output);
+        x_WriteMessage("OK:END");
+        x_PrintCmdRequestStop();
+        return;
+    }
 
     if (q == NULL) {
         if (what == "JOBS")

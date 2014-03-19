@@ -74,6 +74,8 @@ struct SNSAlertAttributes
         m_LastDetectedTimestamp(CNSPreciseTime::Current()),
         m_AcknowledgedTimestamp(), m_On(true), m_Count(1)
     {}
+
+    string Serialize(void) const;
 };
 
 
@@ -86,6 +88,7 @@ class CNSAlerts
         enum EAlertAckResult Acknowledge(const string &  alert_id);
         enum EAlertAckResult Acknowledge(enum EAlertType alert_type);
         string GetURLEncoded(void) const;
+        string Serialize(void) const;
 
     private:
         mutable CFastMutex          m_Lock;

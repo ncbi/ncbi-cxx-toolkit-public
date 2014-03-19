@@ -932,4 +932,45 @@ class Scenario1110( TestBase ):
 
         return True
 
+class Scenario1111( TestBase ):
+    " Scenario1111 "
 
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks STAT ALERTS output"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( '', 'scenario1111' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+
+        output = execAny( ns_client, 'STAT ALERTS', isMultiline = True )
+        if len( output ) != 0:
+            raise Exception( "Expected no alerts, received some:\n" + output )
+
+        self.ns.kill( "SIGKILL" )
+        time.sleep( 1 )
+        self.ns.start()
+        time.sleep( 1 )
+
+        ns_client1 = self.getNetScheduleService( '', 'scenario1111' )
+        ns_client1.set_client_identification( 'node1', 'session1' )
+
+        output = "\n".join( execAny( ns_client1, 'STAT ALERTS', isMultiline = True ) )
+        if '[alert startaftercrash]' not in output:
+            raise Exception( "Alert startaftercrash is not found" )
+        if 'acknowledged_time: n/a' not in output:
+            raise Exception( "Acknowledge time is not found" )
+        if 'on: true' not in output:
+            raise Exception( "On status is not found" )
+        if 'count: 1' not in output:
+            raise Exception( "Count is not found" )
+
+        return True

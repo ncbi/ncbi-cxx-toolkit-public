@@ -144,6 +144,7 @@ public:
     CCompoundIDPool GetCompoundIDPool(void) const { return m_CompoundIDPool; }
 
     string GetAlerts(void) const;
+    string SerializeAlerts(void) const;
     enum EAlertAckResult AcknowledgeAlert(const string &  id);
     enum EAlertAckResult AcknowledgeAlert(EAlertType  alert_type);
     void RegisterAlert(EAlertType  alert_type);

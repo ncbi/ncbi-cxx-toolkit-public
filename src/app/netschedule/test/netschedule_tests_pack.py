@@ -15,9 +15,11 @@ class TestBase:
     " Base class for tests "
 
     def getNetScheduleService( self, queueName, clientName ):
-        return ns.NetScheduleService( self.ns.getHost() + ":" + \
+        return ns.NetScheduleService( self.ns.getHost() + ":" +
                                         str( self.ns.getPort() ),
-                                        queueName, clientName )
+                                        queueName, clientName,
+#                                        rpc_server=ipc.RPCServer(protocol_dump_file='/export/home/satskyse/ns_testsuite/protocol_dump.txt')
+                                    )
 
     def __init__( self, netschedule ):
         self.ns = netschedule

@@ -51,6 +51,24 @@ const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 
 
 
+string SNSAlertAttributes::Serialize(void) const
+{
+    string      acknowledged;
+
+    if (m_AcknowledgedTimestamp.tv_sec == 0 &&
+        m_AcknowledgedTimestamp.tv_nsec == 0)
+        acknowledged = "n/a";
+    else
+        acknowledged = NS_FormatPreciseTime(m_AcknowledgedTimestamp);
+
+    return "OK:last_detected_time: " +
+                        NS_FormatPreciseTime(m_LastDetectedTimestamp) + "\n"
+           "OK:acknowledged_time: " + acknowledged + "\n"
+           "OK:on: " + NStr::BoolToString(m_On) + "\n"
+           "OK:count: " + NStr::NumericToString(m_Count);
+}
+
+
 void CNSAlerts::Register(enum EAlertType alert_type)
 {
     map< enum EAlertType,
@@ -139,6 +157,25 @@ string CNSAlerts::GetURLEncoded(void) const
     }
     return result;
 }
+
+
+// Provides the alerts for the STAT ALERTS command
+string CNSAlerts::Serialize(void) const
+{
+    string                                      result;
+    map< enum EAlertType,
+         SNSAlertAttributes >::const_iterator   k;
+    CFastMutexGuard                             guard(m_Lock);
+
+    for (k = m_Alerts.begin(); k != m_Alerts.end(); ++k) {
+        if (!result.empty())
+            result += "\n";
+        result += "OK:[alert " + x_TypeToId(k->first) + "]\n" +
+                  k->second.Serialize();
+    }
+    return result;
+}
+
 
 END_NCBI_SCOPE
 

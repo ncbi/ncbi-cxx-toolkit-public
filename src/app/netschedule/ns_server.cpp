@@ -514,6 +514,12 @@ string CNetScheduleServer::GetAlerts(void) const
 }
 
 
+string CNetScheduleServer::SerializeAlerts(void) const
+{
+    return m_Alerts.Serialize();
+}
+
+
 enum EAlertAckResult CNetScheduleServer::AcknowledgeAlert(const string &  id)
 {
     return m_Alerts.Acknowledge(id);
