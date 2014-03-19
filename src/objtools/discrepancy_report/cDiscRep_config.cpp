@@ -1376,6 +1376,7 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     thisInfo.scope->AddDefaults();
 
     CCheckingClass myChecker;
+    myChecker.SetNumEntry(GetNumEntry());
     myChecker.CheckSeqEntry(seq_entry);
 
     // go through tests
@@ -2727,6 +2728,7 @@ OutBlob(*thisInfo.seq_submit, "sub1");
        if (thisInfo.seq_submit->IsEntrys()) {
          ITERATE (list <CRef <CSeq_entry> >, it, 
                                   thisInfo.seq_submit->GetData().GetEntrys()) {
+            AddNumEntry(); 
             CheckThisSeqEntry(*it);
          }
        }
@@ -2735,18 +2737,21 @@ OutBlob(*thisInfo.seq_submit, "sub1");
       thisInfo.seq_submit.Reset(0);
       if (strtmp == "Seq-entry") {
          *ois >> *seq_entry;
+         AddNumEntry();
          CheckThisSeqEntry(seq_entry);
       }
       else if (strtmp == "Bioseq") {
          CRef <CBioseq> bioseq (new CBioseq);
          *ois >> *bioseq;
          seq_entry->SetSeq(*bioseq);
+         AddNumEntry();
          CheckThisSeqEntry(seq_entry);
       }
       else if (strtmp == "Bioseq-set") {
          CRef <CBioseq_set> seq_set(new CBioseq_set);
          *ois >> *seq_set;
          seq_entry->SetSet(*seq_set);
+         AddNumEntry();
          CheckThisSeqEntry(seq_entry);
       }
       else {
@@ -2770,6 +2775,7 @@ void CRepConfAsndisc :: x_Fasta()
    }
    CSeq_entry& seq_entry = dynamic_cast <CSeq_entry&>(obj.GetObject());
    seq_entry.ResetParentEntry();
+   AddNumEntry();
    CheckThisSeqEntry(CRef <CSeq_entry> (&seq_entry));
 };
 
@@ -2803,6 +2809,7 @@ void CSeqEntryReadHook :: SkipClassMember(CObjectIStream& in, const CObjectTypeI
    CIStreamContainerIterator iter(in, passed_info.GetMemberType());
    for ( ; iter; ++iter ) {
       iter >> *entry; // Read a single Seq-entry from the stream.
+      config.AddNumEntry();
       config.CheckThisSeqEntry(entry);  // Process the Seq-entry
       config.CollectRepData();
       output_obj.Export(); 
@@ -2826,7 +2833,9 @@ void CSeqEntryChoiceHook :: SkipChoiceVariant(CObjectIStream& in,const CObjectTy
    CIStreamContainerIterator iter(in, passed_info.GetVariantType());
    for ( ; iter; ++iter ) {
      iter >> *entry; // Read a single Seq-entry from the stream.
+     config.AddNumEntry();
      config.CheckThisSeqEntry(entry);  // Process the Seq-entry
+
      config.CollectRepData(); 
      output_obj.Export(); 
    }
@@ -2846,6 +2855,7 @@ void CRepConfAsndisc :: x_CatenatedSeqEntry()
    while (!ois->EndOfData()) {
         CRef <CSeq_entry> seq_entry;
         *ois >> *seq_entry;
+        AddNumEntry();
         CheckThisSeqEntry(seq_entry); 
    }
 };
@@ -3054,6 +3064,7 @@ void CRepConfig :: Run()
   thisInfo.seq_submit.Reset(0);
   CRef <CSeq_entry> 
     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
+  AddNumEntry();
   CheckThisSeqEntry(seq_ref);
   CollectRepData();
 };
@@ -3073,6 +3084,7 @@ void CRepConfig :: RunMultiObjects()
          if (thisInfo.seq_submit->IsEntrys()) {
            ITERATE (list <CRef <CSeq_entry> >, it,
                                   thisInfo.seq_submit->GetData().GetEntrys()) {
+              AddNumEntry();
               CheckThisSeqEntry(*it);
            }
          }
@@ -3082,14 +3094,17 @@ void CRepConfig :: RunMultiObjects()
          CRef <CSeq_entry> entry_ref (new CSeq_entry);
          if (entry) {
             entry_ref.Reset((CSeq_entry*)entry);
+            AddNumEntry();
             CheckThisSeqEntry(CRef <CSeq_entry>(entry_ref));
          }
          else if (bioseq) {
             entry_ref->SetSeq(* ((CBioseq*)bioseq));
+            AddNumEntry();
             CheckThisSeqEntry(CRef <CSeq_entry>(entry_ref));
          }
          else if (seq_set) {
             entry_ref->SetSet(* ((CBioseq_set*)seq_set));
+            AddNumEntry();
             CheckThisSeqEntry(CRef <CSeq_entry>(entry_ref));
          }
       }

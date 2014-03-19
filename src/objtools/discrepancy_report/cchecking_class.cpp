@@ -58,8 +58,9 @@ void CCheckingClass :: CheckSeqInstMol (CSeq_inst& seq_inst,
 
 } // CheckSeqInstMol
 
-CCheckingClass :: CCheckingClass() : num_bioseq(0)
+CCheckingClass :: CCheckingClass()
 {
+   m_num_entry = 0;
 /*
    // subtypes cover type: RBS, exon and intron for IMP;
    sel_seqfeat.IncludeFeatType(CSeqFeatData::e_Gene)

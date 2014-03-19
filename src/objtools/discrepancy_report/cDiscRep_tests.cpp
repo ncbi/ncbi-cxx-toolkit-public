@@ -6769,18 +6769,36 @@ void CBioseq_test_on_rna :: GetReport_trna(CRef <CClickableItem> c_item)
    Str2Strs cnt2bioseq;
    GetTestItemList(c_item->item_list, cnt2bioseq);
    c_item->item_list.size();
+   string strtmp;
    ITERATE (Str2Strs, it, cnt2bioseq) {
      if (it != cnt2bioseq.begin()) {
          c_item.Reset(new CClickableItem);
          c_item->setting_name = GetName_tcnt(); 
          thisInfo.disc_report_data.push_back(c_item);
      }
-     c_item->item_list = it->second;
-     c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
+     if (it->second.size() > 1) {
+        unsigned i=0;
+        ITERATE (vector <string>, sit, it->second) {
+           CRef <CClickableItem> c_sub(new CClickableItem);
+           c_sub->setting_name = GetName();
+           c_sub->item_list.push_back(*sit);
+           c_sub->obj_list.push_back(
+                     thisInfo.test_item_objs[GetName() + "$" + it->first][i++]);
+           c_sub->description
+               = it->first + " tRNA " 
+                    + ((it->first== "1")? "feature" : "features")
+                    + " found on " + (*sit).substr(0, (*sit).find(" (length"));
+           c_item->subcategories.push_back(c_sub);
+        }
+     } 
+     else {
+        c_item->item_list = it->second;
+        c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
+     }
      if (isInt(it->first)) {
-         c_item->description 
-             = GetHasComment(c_item->item_list.size(), "sequence") + it->first 
-               + " tRNA " + ((it->first== "1")? "feature." : "features.");
+            c_item->description 
+               = GetHasComment(it->second.size(), "sequence") + it->first
+                 + " tRNA " + ((it->first== "1")? "feature." : "features.");
      }
      else c_item->description = it->first;
    } 
@@ -7790,26 +7808,27 @@ void CBioseq_DISC_COUNT_NUCLEOTIDES :: GetReport(CRef <CClickableItem> c_item)
 
 }; // DISC_COUNT_NUCLEOTIDES :: GetReport()
 
+
 void CBioseq_DUPLICATE_GENE_LOCUS :: TestOnObj(const CBioseq& bioseq)
 {
   Str2SubDt locus_list;
   Str2SubDt :: iterator it;
-  string locus, location;
+  string locus, location, i_num, strtmp;
+  i_num = NStr::UIntToString(m_num_entry);
   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
      if ((*jt)->GetData().GetGene().CanGetLocus()) {
         locus = (*jt)->GetData().GetGene().GetLocus();
         if (!locus.empty()) {
             location 
-                = BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank).AsFastaString();
+                = i_num + BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank).AsFastaString();
             thisInfo.test_item_list[GetName()] .push_back(
-                         location + "$" + locus + "#" + GetDiscItemText(**jt));
+                location + "$" + locus + "#" + GetDiscItemText(**jt));
             thisInfo.test_item_objs[GetName() + "$" + location + "#" + locus]
                     .push_back(CConstRef <CObject>(*jt));
         }
      }
   }   
 };
-
 
 void CBioseq_DUPLICATE_GENE_LOCUS :: GetReport(CRef <CClickableItem> c_item)
 {
