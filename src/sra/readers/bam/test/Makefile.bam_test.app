@@ -18,6 +18,7 @@ REQUIRES = objects
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
 CHECK_CMD = bam_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam -refseq 20 /CHECK_NAME=bam_test
+CHECK_CMD = bam_test -refseq GL000207.1 -refwindow 1 /CHECK_NAME=bam_test_none
 CHECK_REQUIRES = in-house-resources -MSWin -Solaris
 
 WATCHERS = vasilche ucko

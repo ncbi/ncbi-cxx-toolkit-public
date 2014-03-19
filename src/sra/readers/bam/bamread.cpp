@@ -683,7 +683,7 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
     if ( !m_LocateRC ) {
         m_Iter.SetReferencedPointer(ptr);
     }
-    else if ( !(GetRCObject(m_LocateRC) == rcRow /*RCObject(rcData)*/ &&
+    else if ( !(GetRCObject(m_LocateRC) == RCObject(rcData) &&
                 GetRCState(m_LocateRC) == rcNotFound) ) {
         NCBI_THROW2(CBamException, eOtherError,
                     "Cannot find first alignment", m_LocateRC);
