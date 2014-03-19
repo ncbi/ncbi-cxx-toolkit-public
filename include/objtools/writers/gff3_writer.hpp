@@ -88,13 +88,17 @@ protected:
         CSeq_annot_Handle );
 
     bool xWriteAlign( 
-        const CSeq_align&);
+        const CSeq_align&,
+        const string& = "");
     virtual bool xWriteAlignDenseg(
-        const CSeq_align&);
+        const CSeq_align&,
+        const string& = "");
     bool xWriteAlignSpliced(
-        const CSeq_align&);
+        const CSeq_align&,
+        const string& = "");
     virtual bool xWriteAlignDisc(
-        const CSeq_align&);
+        const CSeq_align&,
+        const string& = "");
 
     virtual bool xAssignFeatureAttributeParentGene(
         CGffFeatureRecord&,

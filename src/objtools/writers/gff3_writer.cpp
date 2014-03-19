@@ -396,30 +396,36 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteAlign( 
-    const CSeq_align& align)
+    const CSeq_align& align,
+    const string& alignId)
 //  ----------------------------------------------------------------------------
 {
     if (!align.IsSetSegs()) {
         cerr << "Object type not supported." << endl;
         return true;
     }
-
+    
+    string id = alignId;
+    if (id.empty()) {
+        id = xNextAlignId();
+    }
     switch(align.GetSegs().Which()) {
         default:
             break;
         case CSeq_align::TSegs::e_Denseg:
-            return xWriteAlignDenseg(align);
+            return xWriteAlignDenseg(align, id);
         case CSeq_align::TSegs::e_Spliced:
-            return xWriteAlignSpliced(align);
+            return xWriteAlignSpliced(align, id);
         case CSeq_align::TSegs::e_Disc:
-            return xWriteAlignDisc(align);
+            return xWriteAlignDisc(align, id);
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteAlignDisc( 
-    const CSeq_align& align)
+    const CSeq_align& align,
+    const string& alignId)
 //  ----------------------------------------------------------------------------
 {
     typedef list<CRef<CSeq_align> > ALIGNS;
@@ -432,7 +438,7 @@ bool CGff3Writer::xWriteAlignDisc(
         if (!sInheritScores(align, *pA)) {
             return false;
         }
-        if (!xWriteAlign(*pA)) {
+        if (!xWriteAlign(*pA, alignId)) {
             return false;
         }
     }
@@ -441,7 +447,8 @@ bool CGff3Writer::xWriteAlignDisc(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteAlignSpliced( 
-    const CSeq_align& align)
+    const CSeq_align& align,
+    const string& alignId)
 //  ----------------------------------------------------------------------------
 {
     _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
@@ -450,10 +457,10 @@ bool CGff3Writer::xWriteAlignSpliced(
     const EXONS& exons = align.GetSegs().GetSpliced().GetExons();
 
     const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
-    string recordId = xNextAlignId();
+    //string recordId = xNextAlignId();
     for (EXONS::const_iterator cit = exons.begin(); cit != exons.end(); ++cit) {
         const CSpliced_exon& exon = **cit;
-        CRef<CGffAlignRecord> pRecord(new CGffAlignRecord(recordId));      
+        CRef<CGffAlignRecord> pRecord(new CGffAlignRecord(alignId));      
         if (!xAssignAlignmentSpliced(*pRecord, spliced, exon)) {
             return false;
         }  
@@ -677,7 +684,8 @@ bool CGff3Writer::xAssignAlignmentScores(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteAlignDenseg( 
-    const CSeq_align& align)
+    const CSeq_align& align,
+    const string& alignId)
 //  ----------------------------------------------------------------------------
 {
     CRef<CDense_seg> dsFilled = align.GetSegs().GetDenseg().FillUnaligned();
@@ -688,8 +696,9 @@ bool CGff3Writer::xWriteAlignDenseg(
     CBioseq_Handle sourceH = m_pScope->GetBioseqHandle(sourceId);
 
     size_t numRows = alnMap.GetNumRows();
+    //string nextAlignId = xNextAlignId();
     for (size_t sourceRow = 1; sourceRow < numRows; ++sourceRow) {
-        CRef<CGffAlignRecord> pSource(new CGffAlignRecord(xNextAlignId()));
+        CRef<CGffAlignRecord> pSource(new CGffAlignRecord(alignId));
         const CSeq_id& targetId = alnMap.GetSeqId(sourceRow);
         CBioseq_Handle targetH = m_pScope->GetBioseqHandle(targetId);
         if (!xAssignAlignmentScores(*pSource, align)) {
