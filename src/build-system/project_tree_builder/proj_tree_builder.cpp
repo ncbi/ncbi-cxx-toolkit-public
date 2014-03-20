@@ -1594,7 +1594,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         lib_or_dll = k->second.front();
     }
     if (NStr::CompareNocase(lib_or_dll,"dll") == 0 ||
-        NStr::CompareNocase(lib_or_dll,"both") == 0) {
+        NStr::CompareNocase(lib_or_dll,"both") == 0 ||
+        NStr::CompareNocase(lib_or_dll,"@USUAL_AND_DLL@") == 0) {
 		dll_host = proj_id;
     }
     bool need_dll = (!dll_host.empty() &&
