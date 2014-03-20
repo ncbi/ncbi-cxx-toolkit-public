@@ -22,9 +22,9 @@ do_test() {
     src="$d/$1"
     ref="$r/$1"
     dst="$t/$1.res"
-    cmd="$CHECK_EXEC $tool -i $src -o $dst"
+    cmd="$tool -i $src -o $dst"
     echo $cmd
-    if time $cmd; then
+    if time $CHECK_EXEC $cmd; then
         :
     else
         echo "failed: $cmd"
