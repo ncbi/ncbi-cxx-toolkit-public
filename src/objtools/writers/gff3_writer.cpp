@@ -2130,12 +2130,20 @@ bool CGff3Writer::xAssignSourceSeqId(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
+    string bestId(".");
+
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*pId);
-    string bestId;
-    if (!pId  ||  !CWriteUtil::GetBestId(idh, bsh.GetScope(), bestId)) {
-        bestId = ".";
+    if (!pId) {
+        record.SetSeqId(bestId);
+        return true;
     }
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*pId);
+    if (!CWriteUtil::GetBestId(idh, bsh.GetScope(), bestId)) {
+        bestId = ".";
+        return true;
+    }
+
     record.SetSeqId(bestId);
     return true;
 }
