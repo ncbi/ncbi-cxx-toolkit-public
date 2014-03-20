@@ -28,7 +28,8 @@ configFiles = [ "netscheduled.ini.1", "netscheduled.ini.2",
                 "netscheduled.ini.505-1", "netscheduled.ini.505-2",
                 "netscheduled.ini.505-3", "netscheduled.ini.505-4",
                 "netscheduled.ini.505-5",
-                "netscheduled.ini.1.1000", "netscheduled.ini.1100" ]
+                "netscheduled.ini.1.1000", "netscheduled.ini.1100",
+                "netscheduled.ini.1200" ]
 scripts = [ "make_ncbi_grid_module_tree.sh", "netschedule.py",
             "netschedule_tests_pack.py", "netschedule_tests_pack_4_10.py",
             "netschedule_tests_pack_4_11.py", "netschedule_tests_pack_4_13.py",
