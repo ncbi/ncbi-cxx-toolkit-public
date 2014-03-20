@@ -160,25 +160,29 @@ string NSnp::ClinSigAsString(TClinSigID ClinSigID, ELetterCase LetterCase)
 			sResult = "Benign";
 			break;
 		case CPhenotype::eClinical_significance_probable_non_pathogenic:
-			sResult = "Uncertain - likely benign";
+			sResult = "Likely benign";
 			break;
 		case CPhenotype::eClinical_significance_probable_pathogenic:
-			sResult = "Uncertain - likely pathogenic";
+			sResult = "Likely pathogenic";
 			break;
 		case CPhenotype::eClinical_significance_pathogenic:
 			sResult = "Pathogenic";
 			break;
 		case CPhenotype::eClinical_significance_drug_response:
-			sResult = "Drug Rresponse";
+			sResult = "Drug response";
 			break;
 		case CPhenotype::eClinical_significance_histocompatibility:
 			sResult = "Histocompatibility";
 			break;
 		case CPhenotype::eClinical_significance_unknown:
+			sResult = "Uncertain significance";
+			break;
 		case CPhenotype::eClinical_significance_untested:
+			sResult = "Not tested";
+			break;
 		case CPhenotype::eClinical_significance_other:
 		default:
-			sResult = "Uncertain";
+			sResult = "Other";
 			break;
     }
     return LetterCase == eLetterCase_ForceLower ? NStr::ToLower(sResult) : sResult;
