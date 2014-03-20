@@ -174,6 +174,19 @@ if (APPLE)
 endif(APPLE)
 
 
+#################################
+# Some platform-specific system libs that can be linked eventually
+set(THREAD_LIBS   -lpthread)
+set(NETWORK_LIBS  -lnsl)
+set(MATH_LIBS     -lm)
+set(KSTAT_LIBS    )
+set(RPCSVC_LIBS   )
+set(CRYPT_LIBS   -lcrypt)
+set(RT_LIBS      -lrt)
+set(DEMANGLE_LIBS )
+set(ICONV_LIBS    )
+set(UUID_LIBS     -luuid)
+
 
 # ############################################################
 # Specialized libs settings
