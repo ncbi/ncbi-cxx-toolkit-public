@@ -1142,6 +1142,7 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
             list<string> prj_libs;
             to_process.clear();
             if (deptype == 0) {
+#if 0
                 if (p->first.Type() == CProjKey::eLib ||
                     p->first.Type() == CProjKey::eDll) {
 #if 0
@@ -1150,7 +1151,13 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
                     to_process.push_back("LIBS");
 #else
 // this could be better.. or not..
-//                    to_process.push_back("USES_LIBRARIES");
+                    if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+                        to_process.push_back("USES_LIBRARIES");
+                    }
+#endif
+#else
+                if (p->first.Type() == CProjKey::eDll) {
+                    to_process.push_back("DLL_LIB");
 #endif
                 } else if (p->first.Type() == CProjKey::eApp) {
                     to_process.clear();
