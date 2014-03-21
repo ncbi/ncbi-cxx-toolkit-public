@@ -169,8 +169,9 @@ void RunAndCheckTest(CRef <CSeq_entry> entry, const string& test_name, const str
    CDiscRepOutput output_obj;
    CClickableItem c_item;
    output_obj.Export(c_item, test_name);
-   NCBITEST_CHECK_MESSAGE(!(c_item.description).empty(), "no report");
-   if (msg == "print") {
+   NCBITEST_CHECK_MESSAGE(
+     !(c_item.description).empty() || test_name=="FIND_DUP_TRNAS", "no report");
+   if (msg == "print" && test_name != "FIND_DUP_TRNAS") {
       cerr << "desc " << c_item.description << endl;
       return;
    }
@@ -666,8 +667,8 @@ BOOST_AUTO_TEST_CASE(FIND_DUP_TRNAS)
    MakeBioSource(entry, CBioSource::eGenome_plastid);
 //   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
   
-   RunAndCheckTest(entry, "FIND_DUP_TRNAS", 
-      "2 tRNA features on LocusCollidesWithLocusTag have the same name (Phe).");
+   RunAndCheckTest(entry, "FIND_DUP_TRNAS", "print");
+//      "2 tRNA features on LocusCollidesWithLocusTag have the same name (Phe).");
 };
 
 BOOST_AUTO_TEST_CASE(TEST_SHORT_LNCRNA)
