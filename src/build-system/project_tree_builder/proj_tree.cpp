@@ -1212,7 +1212,7 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
                         }
                     }
                 }
-                else if (deptype == 0 && *top == "LIBS") {
+                if (deptype == 0 && *top == "LIBS") {
                     prj_libs.push_back("${ORIG_LIBS}");
                 }
             }
@@ -1262,6 +1262,15 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
 //cerr << "Found smth has define: " << *s << " in " << prj.m_Name << endl;
                     if (NStr::StartsWith(*s, "-I")) {
                         string val = SMakeProjectT::GetOneIncludeDir(*s, "-I");
+                        if (CSymResolver::HasDefine(val)) {
+                            string key = FilterDefine(val);
+                            if (CSymResolver::IsDefine(key)) {
+                                key = CSymResolver::StripDefine(key);
+                                if (prj.m_DataSource.GetValue(key, value)) {
+                                    mkPrj[prj_path].AddDefinition(key, value);
+                                }
+                            }
+                        }
 #if 0
                         if (NStr::StartsWith(val,"$(srcdir)")) {
                             mkPrj[prj_path].AddIncludeDirectory(NStr::Replace(val, "$(srcdir)", "${NCBI_PROJECT_SRC_DIR}"));
