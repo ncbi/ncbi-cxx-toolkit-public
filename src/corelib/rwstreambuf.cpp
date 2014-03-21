@@ -46,13 +46,14 @@
   case fLeakExceptions:                                                 \
       call;                                                             \
       break;                                                            \
-  case 0: /* Only execute 'action' in the exception handler */          \
+  case 0: /* Invoke 'action' only if exception was (silently) caught */ \
       try {                                                             \
           call;                                                         \
+          break;                                                        \
       }                                                                 \
       catch (...) {                                                     \
-          action;                                                       \
       }                                                                 \
+      action;                                                           \
       break;                                                            \
   default: /* Exception logging (and maybe re-throwing) */              \
       try {                                                             \
@@ -87,6 +88,7 @@
               throw;                                                    \
       }                                                                 \
       action;                                                           \
+      break;                                                            \
   }
 
 
