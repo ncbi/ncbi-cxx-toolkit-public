@@ -327,7 +327,7 @@ string CStatisticsCounters::PrintTransitions(void) const
            NStr::NumericToString(m_ToFailedDueToClearCounter.Get()) + "\n"
            "OK:Running_Pending_new_session: " +
            NStr::NumericToString(m_ToPendingDueToNewSessionCounter.Get()) + "\n"
-           "OK:Runnin_Pending_without_blacklist: " +
+           "OK:Running_Pending_without_blacklist: " +
            NStr::NumericToString(m_ToPendingWithoutBlacklist.Get()) + "\n"
            "OK:Running_Failed_new_session: " +
            NStr::NumericToString(m_ToFailedDueToNewSessionCounter.Get()) + "\n"
