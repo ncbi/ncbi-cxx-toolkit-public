@@ -991,6 +991,7 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
                 return;
         }
     }
+    // usleep() detects errors (such as EINTR) but can't tell unslept time :-/
     usleep(usec);
 #  else
     // Portable but ugly.
