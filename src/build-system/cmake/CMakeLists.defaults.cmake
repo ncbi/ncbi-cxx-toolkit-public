@@ -15,7 +15,7 @@ set(buildconf    GCC401-DebugMT64)
 set(buildconf0   GCC401-DebugMT)
 
 set(CONF_CFLAGS    " -Wall -Wno-format-y2k  -pthread -fPIC  -gdwarf-3")
-set(CONF_CXXFLAGS  " -Wall -Wno-format-y2k  -pthread -fPIC  -gdwarf-3")
+set(CONF_CXXFLAGS  " -Wall -Wno-format-y2k  -pthread -fPIC  -gdwarf-3 -std=gnu++11 -Wno-unused-local-typedefs")
 set(CONF_CPPFLAGS  )
 set(STD_INCLUDE    " -I${incdir} -I${includedir0} -I${incinternal}")
 set(ORIG_CPPFLAGS  " ${CONF_CXXFLAGS} ${CONF_CPPFLAGS} ${STD_INCLUDE}")
