@@ -2336,11 +2336,14 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
 
       // DISC_DUP_DEFLINE 
       if (run_dup && !bioseq.IsAa() && !title.empty()) {
-          strtmp = title;
-          strtmp = NStr::ToUpper(strtmp);
-          thisInfo.test_item_list[GetName_dup()].push_back(strtmp + "$" + desc);
-          thisInfo.test_item_objs[GetName_dup() +"$" + strtmp]
-                     .push_back(title_ref);
+        strtmp = NStr::UIntToString(m_num_entry) + title;
+        strtmp = NStr::ToUpper(strtmp);
+        thisInfo.test_item_list[GetName_dup()].push_back(strtmp + "$" + desc);
+        thisInfo.test_item_objs[GetName_dup() +"$" + strtmp]
+                        .push_back(title_ref);
+      }
+      else {
+         thisInfo.test_item_list[GetName_dup()].push_back("no_title$" + desc);
       }
 
       // INCONSISTENT_SOURCE_DEFLINE
@@ -2389,51 +2392,69 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
 };
 
 
+void CBioseq_DISC_DUP_DEFLINE :: x_AddUniDef(CRef <CClickableItem> c_item)
+{
+   CRef <CClickableItem> c_uni (new CClickableItem);
+   c_uni->setting_name = GetName();
+   c_uni->item_list = m_uniseqs;
+   c_uni->obj_list = m_uniobjs;
+   c_uni->description
+      = GetIsComment(c_uni->item_list.size(), "definition line") + "unique";
+   c_item->subcategories.push_back(c_uni);
+};
+
 void CBioseq_DISC_DUP_DEFLINE :: GetReport(CRef <CClickableItem> c_item)
 {
    Str2Strs def2ls;
    GetTestItemList(c_item->item_list, def2ls);
    c_item->item_list.clear();
 
-   vector <string> unique;
+   m_uniseqs.clear();
+   m_uniobjs.clear();
    unsigned dup_cnt = 0;
    Str2Strs::const_iterator iit;
+   string strtmp;
    ITERATE (Str2Strs, it, def2ls) {
       if (it->second.size() > 1) {
+           if (it->first != "no_title") {
               dup_cnt++;
               iit = it;
+           }
       }
-      else unique.push_back(it->second[0]);
+      else {
+         m_uniseqs.push_back(it->second[0]);
+         strtmp = GetName()+ "$" + it->first;
+         m_uniobjs.push_back(thisInfo.test_item_objs[strtmp][0]);
+      }
    }  
    if (!dup_cnt) {
         c_item->description = "All deflines are unique";
    }
    else {
       if (dup_cnt == 1) { 
-          if ( unique.empty()) {
+          if ( m_uniseqs.empty()) {
              c_item->item_list = iit->second;
+             c_item->obj_list 
+                  = thisInfo.test_item_objs[GetName() + "$" + iit->first];
              c_item->description 
                    = GetIsComment(c_item->item_list.size(), "definition line") 
                       + "identical";
           }
           else {
-              AddSubcategory(c_item, GetName(), &(iit->second), 
-                            "definition line", "identical", e_IsComment, false);
-              AddSubcategory(c_item, GetName(), &unique, 
-                             "definition line", "unique", e_IsComment, false);
+              AddSubcategory(c_item, GetName() + "$" + iit->first, 
+                     &(iit->second), "definition line", "identical", 
+                     e_IsComment, false);
+              x_AddUniDef(c_item);
               c_item->description = "Defline Problem Report";
           }
       }
       else {
          ITERATE (Str2Strs, it, def2ls) {
             if (it->second.size() > 1)
-              AddSubcategory(c_item, GetName(), &(it->second), 
+              AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),
                             "definition line", "identical", e_IsComment, false);
          }
-         if (!unique.empty()) {
-             AddSubcategory(c_item, GetName(), &unique, "definition line",
-                            "unique", e_IsComment, false);
-         }
+         if (!m_uniseqs.empty()) x_AddUniDef(c_item);
          c_item->description = "Defline Problem Report";
       }
    }
@@ -6691,11 +6712,9 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
                       .push_back(m_bioseq_obj);
           FindMissingRNAsInList();
        }
-/*
        if (run_tdup) {
-         FindDupRNAsInList(trna_feat, GetName_tdup());
+       //  FindDupRNAsInList(trna_feat, GetName_tdup());
        }
-*/
        if (run_strand) FindtRNAsOnSameStrand(); // FIND_STRAND_TRNAS
     }
 
@@ -6792,24 +6811,18 @@ void CBioseq_test_on_rna :: GetReport_trna(CRef <CClickableItem> c_item)
          thisInfo.disc_report_data.push_back(c_item);
      }
      if (isInt(it->first)) {
-       if (it->second.size() > 1) {
-          unsigned i=0;
-          ITERATE (vector <string>, sit, it->second) {
-             CRef <CClickableItem> c_sub(new CClickableItem);
-             c_sub->setting_name = GetName();
-             c_sub->item_list.push_back(*sit);
-             c_sub->obj_list.push_back(
+       unsigned i=0;
+       ITERATE (vector <string>, sit, it->second) {
+          CRef <CClickableItem> c_sub(new CClickableItem);
+          c_sub->setting_name = GetName();
+          c_sub->item_list.push_back(*sit);
+          c_sub->obj_list.push_back(
                      thisInfo.test_item_objs[GetName() + "$" + it->first][i++]);
-             c_sub->description
+          c_sub->description
                  = it->first + " tRNA " 
                     + ((it->first== "1")? "feature" : "features")
                     + " found on " + (*sit).substr(0, (*sit).find(" (length"));
-             c_item->subcategories.push_back(c_sub);
-          }
-       } 
-       else {
-        c_item->item_list = it->second;
-        c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
+          c_item->subcategories.push_back(c_sub);
        }
        c_item->description 
           = GetHasComment(it->second.size(), "sequence") + it->first
@@ -6843,24 +6856,18 @@ void CBioseq_COUNT_RRNAS :: GetReport(CRef <CClickableItem> c_item)
          thisInfo.disc_report_data.push_back(c_item);
      }
      if (isInt(it->first)) {
-       if (it->second.size() > 1) {
-          unsigned i=0;
-          ITERATE (vector <string>, sit, it->second) {
-             CRef <CClickableItem> c_sub(new CClickableItem);
-             c_sub->setting_name = GetName();
-             c_sub->item_list.push_back(*sit);
-             c_sub->obj_list.push_back(
+       unsigned i=0;
+       ITERATE (vector <string>, sit, it->second) {
+          CRef <CClickableItem> c_sub(new CClickableItem);
+          c_sub->setting_name = GetName();
+          c_sub->item_list.push_back(*sit);
+          c_sub->obj_list.push_back(
                      thisInfo.test_item_objs[GetName() + "$" + it->first][i++]);
-             c_sub->description
+          c_sub->description
                  = it->first + " rRNA "
                     + ((it->first== "1")? "feature" : "features")
                     + " found on " + (*sit).substr(0, (*sit).find(" (length"));
-             c_item->subcategories.push_back(c_sub);
-          }
-       }
-       else {
-        c_item->item_list = it->second;
-        c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
+          c_item->subcategories.push_back(c_sub);
        }
        c_item->description
           = GetHasComment(it->second.size(), "sequence") + it->first
