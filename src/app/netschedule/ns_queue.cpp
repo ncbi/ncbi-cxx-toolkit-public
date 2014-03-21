@@ -1262,7 +1262,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
                               const string &          job_key,
                               const string &          auth_token,
                               string &                warning,
-                              bool                    is_ns_rollback)
+                              TJobReturnOption        how)
 {
     CJob                job;
     CNSPreciseTime      current_time = CNSPreciseTime::Current();
@@ -1313,10 +1313,17 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
         event = &job.AppendEvent();
         event->SetNodeAddr(client.GetAddress());
         event->SetStatus(CNetScheduleAPI::ePending);
-        if (is_ns_rollback)
-            event->SetEvent(CJobEvent::eNSGetRollback);
-        else
-            event->SetEvent(CJobEvent::eReturn);
+        switch (how) {
+            case eWithBlacklist:
+                event->SetEvent(CJobEvent::eReturn);
+                break;
+            case eWithoutBlacklist:
+                event->SetEvent(CJobEvent::eReturnNoBlacklist);
+                break;
+            case eRollback:
+                event->SetEvent(CJobEvent::eNSGetRollback);
+                break;
+        }
         event->SetTimestamp(current_time);
         event->SetClientNode(client.GetNode());
         event->SetClientSession(client.GetSession());
@@ -1332,14 +1339,21 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
     }}
 
     m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
-    if (is_ns_rollback)
-        m_StatisticsCounters.CountNSGetRollback(1);
-    else
-        m_StatisticsCounters.CountTransition(old_status,
-                                             CNetScheduleAPI::ePending);
+    switch (how) {
+        case eWithBlacklist:
+            m_StatisticsCounters.CountTransition(old_status,
+                                                 CNetScheduleAPI::ePending);
+            break;
+        case eWithoutBlacklist:
+            m_StatisticsCounters.CountToPendingWithoutBlacklist(1);
+            break;
+        case eRollback:
+            m_StatisticsCounters.CountNSGetRollback(1);
+            break;
+    }
     TimeLineRemove(job_id);
     m_ClientsRegistry.ClearExecuting(job_id);
-    if (is_ns_rollback == false)
+    if (how == eWithBlacklist)
         m_ClientsRegistry.AddToBlacklist(client, job_id);
     m_GCRegistry.UpdateLifetime(job_id,
                                 job.GetExpirationTime(m_Timeout,

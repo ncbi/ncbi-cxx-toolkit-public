@@ -80,6 +80,8 @@ void SNSCommandArguments::x_Reset()
     mode = false;
     drain = false;
     effective = false;
+    pullback = false;
+    blacklist = true;
 
     return;
 }
@@ -134,6 +136,15 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
             }
             else if (key == "alert") {
                 alert = NStr::ParseEscapes(val);
+            }
+            break;
+        case 'b':
+            if (key == "blacklist") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "blacklist accepted values are 0 and 1.");
+                blacklist = (tmp == 1);
             }
             break;
         case 'c':
@@ -236,6 +247,13 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
             else if (key == "progress_msg") {
                 progress_msg = NStr::ParseEscapes(val);
                 size_to_check = progress_msg.size();
+            }
+            else if (key == "pullback") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "pullback accepted values are 0 and 1.");
+                pullback = (tmp == 1);
             }
             break;
         case 'q':

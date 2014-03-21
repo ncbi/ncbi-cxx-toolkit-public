@@ -187,6 +187,8 @@ private:
     void x_ProcessClearWorkerNode(CQueue*);
     void x_ProcessCancelQueue(CQueue*);
     void x_ProcessRefuseSubmits(CQueue*);
+    void x_ProcessPause(CQueue*);
+    void x_ProcessResume(CQueue*);
     void x_CmdNotImplemented(CQueue*);
     void x_CmdObsolete(CQueue*);
     void x_CheckNonAnonymousClient(const string &  message);

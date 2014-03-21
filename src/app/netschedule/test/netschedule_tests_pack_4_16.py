@@ -32,7 +32,7 @@ class Scenario600( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch( 5 )
-        origJobID = self.ns.submitJob( 'TEST', 'bla' )
+        origJobID = self.ns.submitJob( 'TEST', 'blah' )
 
         jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
                                                            "node1", "session1" )
@@ -974,3 +974,232 @@ class Scenario1111( TestBase ):
             raise Exception( "Count is not found" )
 
         return True
+
+
+class Scenario1112( TestBase ):
+    " Scenario1112 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks QPAUSE/QRESUME commands"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1112' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+        ns_client.on_warning = self.report_warning
+
+        output = execAny( ns_client, 'QINF2 TEST' )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "nopause":
+            raise Exception( "Unexpected pause value. Expected: no pause" )
+
+        output = execAny( ns_client, "QPAUSE" )
+
+        output = execAny( ns_client, 'QINF2 TEST' )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "nopullback":
+            raise Exception( "Unexpected pause value. Expected: nopullback" )
+
+        output = execAny( ns_client, "QPAUSE pullback=1" )
+
+        output = execAny( ns_client, 'QINF2 TEST' )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "pullback":
+            raise Exception( "Unexpected pause value. Expected: pullback" )
+
+        output = execAny( ns_client, "QRESUME" )
+
+        output = execAny( ns_client, 'QINF2 TEST' )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "nopause":
+            raise Exception( "Unexpected pause value. Expected: no pause" )
+
+        return True
+
+
+class Scenario1113( TestBase ):
+    " Scenario1113 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks GET2 for paused queue"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1113' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        output = execAny( ns_client, "QPAUSE pullback=0" )
+
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "nopullback":
+            raise Exception( "Unexpected GET2 output" )
+        if "job_key" in values:
+            raise Exception( "Expected no jobs, got one" )
+
+        output = execAny( ns_client, "QPAUSE pullback=1" )
+
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "pullback":
+            raise Exception( "Unexpected GET2 output" )
+        if "job_key" in values:
+            raise Exception( "Expected no jobs, got one" )
+
+        output = execAny( ns_client, "QRESUME" )
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ]
+        if jobKey[ 0 ] != jobID:
+            raise Exception( "Unexpected job key after QRESUME" )
+        return True
+
+
+class Scenario1114( TestBase ):
+    " Scenario1114 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks SST2, WST2, STATUS2 for paused queue"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1114' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ]
+        if jobKey[ 0 ] != jobID:
+            raise Exception( "Unexpected job key" )
+
+        output = execAny( ns_client, "QPAUSE pullback=0" )
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "nopullback":
+            raise Exception( "Unexpected SST2 output, expected nopullback" )
+        output = execAny( ns_client, 'WST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "nopullback":
+            raise Exception( "Unexpected WST2 output, expected nopullback" )
+        output = execAny( ns_client, 'STATUS2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "nopullback":
+            raise Exception( "Unexpected STATUS2 output, expected nopullback" )
+
+        output = execAny( ns_client, "QPAUSE pullback=1" )
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "pullback":
+            raise Exception( "Unexpected SST2 output, expected pullback" )
+        output = execAny( ns_client, 'WST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "pullback":
+            raise Exception( "Unexpected WST2 output, expected pullback" )
+        output = execAny( ns_client, 'STATUS2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ "pause" ][ 0 ] != "pullback":
+            raise Exception( "Unexpected STATUS2 output, expected pullback" )
+
+        output = execAny( ns_client, "QRESUME" )
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if 'pause' in values:
+            raise Exception( "Unexpected SST2 after QRESUME" )
+        output = execAny( ns_client, 'WST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if 'pause' in values:
+            raise Exception( "Unexpected WST2 after QRESUME" )
+        output = execAny( ns_client, 'STATUS2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if 'pause' in values:
+            raise Exception( "Unexpected STATUS2 after QRESUME" )
+
+        return True
+
+
+class Scenario1115( TestBase ):
+    " Scenario1115 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Checks RETURN2 blacklist=0|1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 5 )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1115' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        jobID1 = self.ns.submitJob( 'TEST', 'blah' )
+        jobID2, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                                             "node", "session" )
+        if jobID1 != jobID2:
+            raise Exception( "Unexpected jobID" )
+
+        execAny( ns_client, 'RETURN2 job_key=' + jobID1 + " auth_token=" +
+                            authToken + " blacklist=0" )
+
+        jobID3, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                                             "node", "session" )
+        if jobID1 != jobID3:
+            raise Exception( "Unexpected jobID" )
+
+        execAny( ns_client, 'RETURN2 job_key=' + jobID1 + " auth_token=" +
+                            authToken + " blacklist=1" )
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        if output.strip() != '':
+            raise Exception( "No job expected, received one" )
+        return True
+
+

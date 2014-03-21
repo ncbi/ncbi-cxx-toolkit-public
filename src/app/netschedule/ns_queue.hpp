@@ -99,6 +99,22 @@ public:
     typedef int TQueueKind;
 
 public:
+    enum EPauseStatus {
+        eNoPause              = 0,
+        ePauseWithPullback    = 1,
+        ePauseWithoutPullback = 2
+    };
+    typedef int TPauseStatus;
+
+public:
+    enum EJobReturnOption {
+        eWithBlacklist    = 0,
+        eWithoutBlacklist = 1,
+        eRollback         = 2
+    };
+    typedef int TJobReturnOption;
+
+public:
     // Constructor/destructor
     CQueue(CRequestExecutor&     executor,
            const string&         queue_name,
@@ -218,7 +234,7 @@ public:
                           const string &          job_key,
                           const string &          auth_token,
                           string &                warning,
-                          bool                    is_ns_rollback = false);
+                          TJobReturnOption        how);
 
     TJobStatus  ReadAndTouchJob(unsigned int      job_id,
                                 const string &    job_key,
@@ -382,6 +398,11 @@ public:
 
     void MarkForTruncating(void)
     { m_TruncateAtDetach = true; }
+
+    TPauseStatus GetPauseStatus(void) const
+    { return m_PauseStatus; }
+    void SetPauseStatus(TPauseStatus  status)
+    { m_PauseStatus = status; }
 
 private:
     void x_Detach(void);
@@ -581,6 +602,8 @@ private:
 
     // Garbage collector registry
     CJobGCRegistry              m_GCRegistry;
+
+    TPauseStatus                m_PauseStatus;
 };
 
 

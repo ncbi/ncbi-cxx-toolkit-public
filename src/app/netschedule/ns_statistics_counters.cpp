@@ -61,6 +61,7 @@ static CAtomicCounter_WithAutoInit  s_ToPendingDueToTimeoutCounterTotal;
 static CAtomicCounter_WithAutoInit  s_ToPendingDueToFailCounterTotal;
 static CAtomicCounter_WithAutoInit  s_ToPendingDueToClearCounterTotal;
 static CAtomicCounter_WithAutoInit  s_ToPendingDueToNewSessionCounterTotal;
+static CAtomicCounter_WithAutoInit  s_ToPendingWithoutBlacklistTotal;
 
 // From reading
 static CAtomicCounter_WithAutoInit  s_ToDoneDueToTimeoutCounterTotal;
@@ -264,6 +265,8 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
                 m_ToFailedDueToClearCounter.Get())
          .Print("Running_Pending_new_session",
                 m_ToPendingDueToNewSessionCounter.Get())
+         .Print("Running_Pending_without_blacklist",
+                m_ToPendingWithoutBlacklist.Get())
          .Print("Running_Failed_new_session",
                 m_ToFailedDueToNewSessionCounter.Get())
          .Print("Running_Failed_timeout",
@@ -324,6 +327,8 @@ string CStatisticsCounters::PrintTransitions(void) const
            NStr::NumericToString(m_ToFailedDueToClearCounter.Get()) + "\n"
            "OK:Running_Pending_new_session: " +
            NStr::NumericToString(m_ToPendingDueToNewSessionCounter.Get()) + "\n"
+           "OK:Runnin_Pending_without_blacklist: " +
+           NStr::NumericToString(m_ToPendingWithoutBlacklist.Get()) + "\n"
            "OK:Running_Failed_new_session: " +
            NStr::NumericToString(m_ToFailedDueToNewSessionCounter.Get()) + "\n"
            "OK:Running_Failed_timeout: " +
@@ -496,6 +501,13 @@ void CStatisticsCounters::CountOutdatedPick(void)
 }
 
 
+void CStatisticsCounters::CountToPendingWithoutBlacklist(size_t  count)
+{
+    m_ToPendingWithoutBlacklist.Add(count);
+    s_ToPendingWithoutBlacklistTotal.Add(count);
+}
+
+
 void  CStatisticsCounters::PrintTotal(size_t  affinities)
 {
     CRef<CRequestContext>   ctx;
@@ -538,6 +550,8 @@ void  CStatisticsCounters::PrintTotal(size_t  affinities)
                 s_ToFailedDueToClearCounterTotal.Get())
          .Print("Running_Pending_new_session",
                 s_ToPendingDueToNewSessionCounterTotal.Get())
+         .Print("Running_Pending_without_blacklist",
+                s_ToPendingWithoutBlacklistTotal.Get())
          .Print("Running_Failed_new_session",
                 s_ToFailedDueToNewSessionCounterTotal.Get())
          .Print("Running_Failed_timeout",

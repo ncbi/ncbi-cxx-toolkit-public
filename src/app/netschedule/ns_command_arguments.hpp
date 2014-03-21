@@ -83,6 +83,8 @@ struct SNSCommandArguments
     bool            mode;
     bool            drain;
     bool            effective;
+    bool            pullback;
+    bool            blacklist;  // RETURN2 only: add or not to blacklist
 
     void AssignValues(const TNSProtoParams &     params,
                       const string &             command,

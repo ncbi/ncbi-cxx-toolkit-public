@@ -370,6 +370,13 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
         prefix + "groups" + suffix + NStr::NumericToString(groups) + separator +
         prefix + "gc_backlog" + suffix + NStr::NumericToString(gc_backlog) + separator +
         prefix + "notif_count" + suffix + NStr::NumericToString(notif_count) + separator;
+
+        if (pause_status == CQueue::ePauseWithPullback)
+            result += prefix + "pause" + suffix + "pullback" + separator;
+        else if (pause_status == CQueue::ePauseWithoutPullback)
+            result += prefix + "pause" + suffix + "nopullback" + separator;
+        else
+            result += prefix + "pause" + suffix + "nopause" + separator;
     }
 
     result +=

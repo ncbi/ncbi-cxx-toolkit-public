@@ -1568,6 +1568,7 @@ CQueueDataBase::x_SingleQueueInfo(TQueueInfo::const_iterator  found) const
     // The fields below are used as a transport.
     // Usually used by QINF2 and STAT QUEUES
     params.refuse_submits = found->second.second->GetRefuseSubmits();
+    params.pause_status = found->second.second->GetPauseStatus();
     params.max_aff_slots = m_Server->GetMaxAffinities();
     params.aff_slots_used = found->second.second->GetAffSlotsUsed();
     params.clients = found->second.second->GetClientsCount();

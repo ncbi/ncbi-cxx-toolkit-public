@@ -88,7 +88,7 @@ void CNSGetJobRollback::Rollback(CQueue *  queue)
 
         // true -> returned due to rollback
         queue->ReturnJob(m_Client, m_JobId, queue->MakeJobKey(m_JobId),
-                         "", warning, true);
+                         "", warning, CQueue::eRollback);
     } catch (const exception &  ex) {
         ERR_POST("Error while rolling back requested job: " << ex.what());
     } catch (...) {

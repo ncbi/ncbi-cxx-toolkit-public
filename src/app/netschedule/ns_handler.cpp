@@ -78,18 +78,27 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
 
     { "SHUTDOWN",      { &CNetScheduleHandler::x_ProcessShutdown,
                          eNS_Admin },
-        { { "drain",             eNSPT_Int, eNSPA_Optional, 0   },
+        { { "drain",             eNSPT_Int, eNSPA_Optional, "0" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETCONF",       { &CNetScheduleHandler::x_ProcessGetConf,
                          eNS_Admin },
-        { { "effective",         eNSPT_Int, eNSPA_Optional, 0   },
+        { { "effective",         eNSPT_Int, eNSPA_Optional, "0" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "REFUSESUBMITS", { &CNetScheduleHandler::x_ProcessRefuseSubmits,
                          eNS_Admin },
         { { "mode",              eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "QPAUSE",        { &CNetScheduleHandler::x_ProcessPause,
+                         eNS_Queue },
+        { { "pullback",          eNSPT_Int, eNSPA_Optional, "0" },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "QRESUME",       { &CNetScheduleHandler::x_ProcessResume,
+                         eNS_Queue },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RECO",          { &CNetScheduleHandler::x_ProcessReloadConfig,
                          eNS_Admin },
@@ -296,7 +305,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETAFF",        { &CNetScheduleHandler::x_ProcessSetAffinity,
                          eNS_Queue | eNS_Worker | eNS_Program },
-        { { "aff",              eNSPT_Str, eNSPA_Optional, ""  },
+        { { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GET",           { &CNetScheduleHandler::x_ProcessGetJob,
@@ -307,9 +316,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GET2",          { &CNetScheduleHandler::x_ProcessGetJob,
                          eNS_Queue | eNS_Worker | eNS_Program },
-        { { "wnode_aff",         eNSPT_Int, eNSPA_Required, 0   },
-          { "any_aff",           eNSPT_Int, eNSPA_Required, 0   },
-          { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, 0   },
+        { { "wnode_aff",         eNSPT_Int, eNSPA_Required, "0" },
+          { "any_aff",           eNSPT_Int, eNSPA_Required, "0" },
+          { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, "0" },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "port",              eNSPT_Int, eNSPA_Optional      },
           { "timeout",           eNSPT_Int, eNSPA_Optional      },
@@ -339,6 +348,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
+          { "blacklist",         eNSPT_Int, eNSPA_Optional, "1" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "WGET",          { &CNetScheduleHandler::x_ProcessGetJob,
@@ -1283,10 +1293,20 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
         else
             x_WriteMessage("OK:" + NStr::NumericToString((int) status));
     } else {
-        if (cmdv2)
+        if (cmdv2) {
+            string                  pause_status_msg;
+            CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
+
+            if (pause_status == CQueue::ePauseWithPullback)
+                pause_status_msg = "&pause=pullback";
+            else if (pause_status == CQueue::ePauseWithoutPullback)
+                pause_status_msg = "&pause=nopullback";
+
             x_WriteMessage("OK:job_status=" +
                            CNetScheduleAPI::StatusToString(status) +
-                           "&job_exptime=" + NStr::NumericToString(lifetime.Sec()));
+                           "&job_exptime=" + NStr::NumericToString(lifetime.Sec()) +
+                           pause_status_msg);
+        }
         else
             x_WriteMessage("OK:" + NStr::NumericToString((int) status));
     }
@@ -1313,10 +1333,20 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
         else
             x_WriteMessage("OK:" + NStr::NumericToString((int) status));
     } else {
-        if (cmdv2)
+        if (cmdv2) {
+            string                  pause_status_msg;
+            CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
+
+            if (pause_status == CQueue::ePauseWithPullback)
+                pause_status_msg = "&pause=pullback";
+            else if (pause_status == CQueue::ePauseWithoutPullback)
+                pause_status_msg = "&pause=nopullback";
+
             x_WriteMessage("OK:job_status=" +
                            CNetScheduleAPI::StatusToString(status) +
-                           "&job_exptime=" + NStr::NumericToString(lifetime.Sec()));
+                           "&job_exptime=" + NStr::NumericToString(lifetime.Sec()) +
+                           pause_status_msg);
+        }
         else
             x_WriteMessage("OK:" + NStr::NumericToString((int) status));
     }
@@ -1565,7 +1595,15 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
     }
 
     // Here: the job was found
-    if (cmdv2)
+    if (cmdv2) {
+        string                  pause_status_msg;
+        CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
+
+        if (pause_status == CQueue::ePauseWithPullback)
+            pause_status_msg = "&pause=pullback";
+        else if (pause_status == CQueue::ePauseWithoutPullback)
+            pause_status_msg = "&pause=nopullback";
+
         x_WriteMessage("OK:"
                        "job_status=" +
                        CNetScheduleAPI::StatusToString(job.GetStatus()) +
@@ -1573,9 +1611,10 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
                        "&ret_code=" + NStr::NumericToString(job.GetRetCode()) +
                        "&output=" + NStr::URLEncode(job.GetOutput()) +
                        "&err_msg=" + NStr::URLEncode(job.GetErrorMsg()) +
-                       "&input=" + NStr::URLEncode(job.GetInput())
+                       "&input=" + NStr::URLEncode(job.GetInput()) +
+                       pause_status_msg
                       );
-
+    }
     else
         x_WriteMessage("OK:" + NStr::NumericToString((int) job.GetStatus()) +
                        " " + NStr::NumericToString(job.GetRetCode()) +
@@ -1606,6 +1645,31 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
         // depending on the explicit affinity - to conform the old behavior
         m_CommandArguments.any_affinity = m_CommandArguments.affinity_token.empty();
     }
+
+    // Check if the queue is paused
+    CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
+    if (pause_status != CQueue::eNoPause) {
+        string      pause_status_str;
+
+        if (pause_status == CQueue::ePauseWithPullback)
+            pause_status_str = "pullback";
+        else
+            pause_status_str = "nopullback";
+
+        if (cmdv2)
+            x_WriteMessage("OK:pause=" + pause_status_str);
+        else
+            x_WriteMessage("OK:");
+
+        if (m_ConnContext.NotNull())
+            GetDiagContext().Extra().Print("job_key", "None")
+                                    .Print("reason",
+                                           "pause: " + pause_status_str);
+
+        x_PrintCmdRequestStop();
+        return;
+    }
+
 
     list<string>    aff_list;
     NStr::Split(m_CommandArguments.affinity_token,
@@ -1751,6 +1815,25 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 
 
     // Get part
+    CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
+    if (pause_status != CQueue::eNoPause) {
+        x_WriteMessage("OK:");
+        if (m_ConnContext.NotNull()) {
+            string      pause_status_str;
+
+            if (pause_status == CQueue::ePauseWithPullback)
+                pause_status_str = "pullback";
+            else
+                pause_status_str = "nopullback";
+
+            GetDiagContext().Extra().Print("job_key", "None")
+                                    .Print("reason",
+                                           "pause: " + pause_status_str);
+        }
+        x_PrintCmdRequestStop();
+        return;
+    }
+
     list<string>        aff_list;
     NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_list, NStr::eNoMergeDelims);
@@ -1894,11 +1977,17 @@ void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 {
-    bool    cmdv2(m_CommandArguments.cmd == "RETURN2");
+    bool                        cmdv2(m_CommandArguments.cmd == "RETURN2");
+    CQueue::TJobReturnOption    return_option = CQueue::eWithBlacklist;
 
     if (cmdv2) {
         x_CheckNonAnonymousClient("use RETURN2 command");
         x_CheckAuthorizationToken();
+
+        if (m_CommandArguments.blacklist)
+            return_option = CQueue::eWithBlacklist;
+        else
+            return_option = CQueue::eWithoutBlacklist;
     }
 
     string          warning;
@@ -1906,7 +1995,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
                                               m_CommandArguments.job_id,
                                               m_CommandArguments.job_key,
                                               m_CommandArguments.auth_token,
-                                              warning);
+                                              warning, return_option);
 
     if (old_status == CNetScheduleAPI::eRunning) {
         if (warning.empty())
@@ -2910,6 +2999,46 @@ void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
     if (m_CommandArguments.mode == false &&
             m_Server->GetRefuseSubmits() == true)
         x_WriteMessage("OK:WARNING:Submits are disabled on the server level;");
+    else
+        x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
+}
+
+
+void CNetScheduleHandler::x_ProcessPause(CQueue* q)
+{
+    CQueue::TPauseStatus    current = q->GetPauseStatus();
+    CQueue::TPauseStatus    new_value;
+
+    if (m_CommandArguments.pullback)
+        new_value = CQueue::ePauseWithPullback;
+    else
+        new_value = CQueue::ePauseWithoutPullback;
+
+    q->SetPauseStatus(new_value);
+    if (current == CQueue::eNoPause)
+        x_WriteMessage("OK:");
+    else {
+        string  reply = "OK:WARNING:The queue has "
+                        "already been paused (previous pullback value is ";
+        if (current == CQueue::ePauseWithPullback)  reply += "true";
+        else                                        reply += "false";
+        reply += ", new pullback value is ";
+        if (m_CommandArguments.pullback)            reply += "true";
+        else                                        reply += "false";
+        x_WriteMessage(reply + ");");
+    }
+    x_PrintCmdRequestStop();
+}
+
+
+void CNetScheduleHandler::x_ProcessResume(CQueue* q)
+{
+    CQueue::TPauseStatus    current = q->GetPauseStatus();
+
+    q->SetPauseStatus(CQueue::eNoPause);
+    if (current == CQueue::eNoPause)
+        x_WriteMessage("OK:WARNING:The queue is not paused;");
     else
         x_WriteMessage("OK:");
     x_PrintCmdRequestStop();

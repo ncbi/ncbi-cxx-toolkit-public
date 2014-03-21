@@ -90,6 +90,7 @@ struct SQueueParameters
     // together with the queue parameters. So it is handy to have it here and
     // set when parameters are retrieved.
     bool            refuse_submits;
+    int             pause_status;
     size_t          max_aff_slots;
     size_t          aff_slots_used;
     size_t          clients;

@@ -74,6 +74,7 @@ public:
     void CountNSGetRollback(size_t  count);
     void CountNSReadRollback(size_t  count);
     void CountOutdatedPick(void);
+    void CountToPendingWithoutBlacklist(size_t  count);
 
     static void  PrintTotal(size_t  affinities);
 
@@ -95,6 +96,7 @@ private:
     CAtomicCounter_WithAutoInit     m_ToPendingDueToFailCounter;
     CAtomicCounter_WithAutoInit     m_ToPendingDueToClearCounter;
     CAtomicCounter_WithAutoInit     m_ToPendingDueToNewSessionCounter;
+    CAtomicCounter_WithAutoInit     m_ToPendingWithoutBlacklist;
     CAtomicCounter_WithAutoInit     m_ToDoneDueToTimeoutCounter;
     CAtomicCounter_WithAutoInit     m_ToDoneDueToFailCounter;
     CAtomicCounter_WithAutoInit     m_ToDoneDueToClearCounter;
