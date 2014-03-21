@@ -2325,6 +2325,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return CBioseq_on_tax_def::GetName_dup();}
+ 
+    private:
+      vector <string> m_uniseqs;
+      vector <CConstRef <CObject> > m_uniobjs;
+
+      void x_AddUniDef(CRef <CClickableItem> c_item);
   };
 
   class CBioseq_INCONSISTENT_SOURCE_DEFLINE : public CBioseq_on_tax_def
