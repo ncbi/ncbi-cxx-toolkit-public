@@ -275,14 +275,18 @@ CSpliced_seg::GetSeqRange(TDim row) const
 TSeqPos
 CSpliced_seg::GetSeqStart(TDim row) const
 {
-    return GetSeqRange(row).GetFrom();
+    const CSpliced_exon &first_exon = *(GetSeqStrand(row) == eNa_strand_minus
+        ? GetExons().back() : GetExons().front());
+    return first_exon.GetRowSeq_range(row, false).GetFrom();
 }
 
 
 TSeqPos
 CSpliced_seg::GetSeqStop (TDim row) const
 {
-    return GetSeqRange(row).GetTo();
+    const CSpliced_exon &last_exon = *(GetSeqStrand(row) == eNa_strand_minus
+        ? GetExons().front() : GetExons().back());
+    return last_exon.GetRowSeq_range(row, false).GetTo();
 }
 
 

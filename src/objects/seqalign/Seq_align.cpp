@@ -240,9 +240,10 @@ TSeqPos CSeq_align::GetSeqStart(TDim row) const
         return GetSegs().GetDenseg().GetSeqStart(row);
     case C_Segs::e_Sparse:
         return GetSegs().GetSparse().GetSeqStart(row);
+    case C_Segs::e_Spliced:
+        return GetSegs().GetSpliced().GetSeqStart(row);
     case C_Segs::e_Dendiag:
     case C_Segs::e_Std:
-    case C_Segs::e_Spliced:
     case C_Segs::e_Disc:
         return GetSeqRange(row).GetFrom();
     default:
@@ -260,9 +261,10 @@ TSeqPos CSeq_align::GetSeqStop (TDim row) const
         return GetSegs().GetDenseg().GetSeqStop(row);
     case C_Segs::e_Sparse:
         return GetSegs().GetSparse().GetSeqStop(row);
+    case C_Segs::e_Spliced:
+        return GetSegs().GetSpliced().GetSeqStop(row);
     case C_Segs::e_Dendiag:
     case C_Segs::e_Std:
-    case C_Segs::e_Spliced:
     case C_Segs::e_Disc:
         return GetSeqRange(row).GetTo();
     default:
@@ -1655,7 +1657,9 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
                         lower_exon.GetProduct_end().AsSeqPos() + 1;
                     TSeqPos gap_end =
                         higher_exon.GetProduct_start().AsSeqPos();
-                    if ((gap_end - gap_start + last_edge_insertions[0]) % 3) {
+                    if (gap_end >= gap_start &&
+                        (gap_end - gap_start + last_edge_insertions[0]) % 3)
+                    {
                         ++retval;
                     }
                 }
@@ -2074,12 +2078,17 @@ CSeq_align::TLengthRange CSeq_align::IntronLengthRange() const
     }
     SLengthRange length_range;
     const CSpliced_exon* previous_exon = NULL;
+    bool minus_strand = GetSeqStrand(1) == eNa_strand_minus;
     ITERATE (CSpliced_seg::TExons, iter,
              GetSegs().GetSpliced().GetExons()) {
         const CSpliced_exon* exon = &**iter;
         if (previous_exon) {
-            bool minus_strand = exon->GetGenomic_end() <
+            bool descending_pos = exon->GetGenomic_end() <
                                 previous_exon->GetGenomic_start();
+            if (descending_pos != minus_strand) {
+                /// Crossed origins; don't count as intron size
+                continue;
+            }
             TSeqRange intron((minus_strand ? exon : previous_exon)->GetGenomic_end() + 1,
                              (minus_strand ? previous_exon : exon)->GetGenomic_start() - 1);
             length_range.AddLength(intron.GetLength());
