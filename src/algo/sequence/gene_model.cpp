@@ -2095,12 +2095,12 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
     
     CRef<CSeq_loc> mapped_loc;
 
-    ///
-    /// mapping is complex
-    /// we try to map each segment of the CDS
-    /// in general, there will be only one; there are some corner cases
+    /// 
+    /// in general, feature has only one segment on mRNA; there are some corner cases
     /// (OAZ1, OAZ2, PAZ3, PEG10) in which there are more than one
     /// segment.
+    /// we map each segment separately because we want to stitch genomic insertions,
+    /// but not segment boundaries.
     ///
     for (CSeq_loc_CI loc_it(feature_on_mrna->GetLocation());
          loc_it;  ++loc_it) {
@@ -2140,16 +2140,6 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
                      feature_on_mrna->GetLocation().GetTotalRange().GetFrom();
         }
 
-        /// we take the extreme bounds of the interval only;
-        /// internal details will be recomputed based on intersection
-        /// with the mRNA location
-        ENa_strand strand = this_loc_mapped->GetStrand();
-        CSeq_loc sub;
-        sub.SetInt().SetFrom(this_loc_mapped->GetTotalRange().GetFrom());
-        sub.SetInt().SetTo(this_loc_mapped->GetTotalRange().GetTo());
-        sub.SetInt().SetStrand(loc->GetStrand());
-        sub.SetInt().SetId().Assign(*this_loc_mapped->GetId());
-
         bool is_partial_5prime =
             this_loc_mapped->IsPartialStart(eExtreme_Biological);
         bool is_partial_3prime =
@@ -2171,6 +2161,34 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
                 /// completed by poly-a tail. This should not be annotated as partial
                 is_partial_3prime = false;
             }
+        }
+
+        /// stitch genomic insertions
+        /// we take the extreme bounds of the interval only;
+        /// internal details will be recomputed based on intersection
+        /// with the mRNA location
+
+        ENa_strand strand = this_loc_mapped->GetStrand();
+        CSeq_loc sub;
+        sub.SetInt().SetFrom(this_loc_mapped->GetStart(eExtreme_Positional));
+        sub.SetInt().SetTo(this_loc_mapped->GetStop(eExtreme_Positional));
+        sub.SetInt().SetStrand(loc->GetStrand());
+        sub.SetInt().SetId().Assign(*this_loc_mapped->GetId());
+
+        int left = sub.GetInt().GetFrom();
+        int right = sub.GetInt().GetTo();
+        bool cross_origin = (left > right);
+        if (cross_origin) {
+
+            TSeqPos genomic_size = m_scope->GetSequenceLength(*this_loc_mapped->GetId());
+            
+            CRef<CSeq_interval> half(new CSeq_interval);
+            half->Assign(sub.GetInt());
+            half->SetTo(genomic_size-1);
+            sub.SetPacked_int().AddInterval(*half);
+            half->SetFrom(0);
+            half->SetTo(right);
+            sub.SetPacked_int().AddInterval(*half);
         }
 
         this_loc_mapped = loc->Intersect(sub,
@@ -2210,6 +2228,10 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
             }
         }
 
+        if (cross_origin) {
+            this_loc_mapped = FixOrderOfCrossTheOriginSeqloc(*this_loc_mapped,
+                                                             (left+right)/2);
+        }
         this_loc_mapped->SetPartialStart(is_partial_5prime, eExtreme_Biological);
         this_loc_mapped->SetPartialStop(is_partial_3prime, eExtreme_Biological);
 

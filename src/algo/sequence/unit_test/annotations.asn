@@ -10343,3 +10343,88 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      partial TRUE,
+      location packed-int {
+        {
+          from 30743,
+          to 30749,
+          strand plus,
+          id gi 6382081,
+          fuzz-from lim lt,
+          fuzz-to lim circle
+        },
+        {
+          from 0,
+          to 1288,
+          strand plus,
+          id gi 6382081,
+          fuzz-from lim circle
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      product whole local str "MRNA_19",
+      location packed-int {
+        {
+          from 30743,
+          to 30749,
+          strand plus,
+          id gi 6382081,
+          fuzz-from lim lt
+        },
+        {
+          from 0,
+          to 1288,
+          strand plus,
+          id gi 6382081
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      product whole gi 488735231,
+      location packed-int {
+        {
+          from 30743,
+          to 30749,
+          strand plus,
+          id gi 6382081,
+          fuzz-from lim lt,
+          fuzz-to lim circle
+        },
+        {
+          from 0,
+          to 1288,
+          strand plus,
+          id gi 6382081,
+          fuzz-from lim circle
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "phage portal protein"
+            }
+          }
+        }
+      },
+      except-text "mismatches in translation"
+    }
+  }
+}

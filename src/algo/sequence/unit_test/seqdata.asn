@@ -19983,3 +19983,116 @@ Bioseq-set ::= {
   seq-set {
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "MRNA_19"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness no-left
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 1296,
+        seq-data ncbi2na 'FEC0FF3E10033CBFF9CD31370FC30220B002BBB8FC20010070C8
+C030BD1C81CC40C7433FFC80F13E00EC9208FB7420687CF7E22E79510EF2E2BE07E72BC0AC49F0
+839DE7C3ECF309C5BFD3A8FA73BFCB001408C570C8DD81056F0CC83C5CFAFF8317E3CE0CEC223F
+A8BE3FE34CC17302C0350430810F7F2192F00C4C02D87CD333801FE3CCDF00233BD6EF316027FF
+1C8CFCFCFE008CC6C80C8086CF801443F7EFF3023837F2C41C42191DDCB9041F7F0B91F1D22430
+E32A82E93FCDF7FFE200403D010D32C08CFDC3F0805F0E1D3CD1289F9CA7002437030E2A0EFF31
+A51572E72FC8AF3C0C637C9C7C0A29FC93C3C29003EB9231C0895F0520BFC38929C0A1CA038EB0
+2B8CA2C3CF18FF740AEC42042F881DFB0FC01F102CFFA9F8CE0BF0F778F3BC2E081002E8088CC0
+9C3E27F12C0CC149F3102C9D3F0C38A27263BC02203CF74FF8'H,
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_19",
+                genomic-id gi 6382081,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 6,
+                    genomic-start 30743,
+                    genomic-end 30749,
+                    parts {
+                      diag 7
+                    },
+                    partial FALSE
+                  },
+                  {
+                    product-start nucpos 7,
+                    product-end nucpos 1295,
+                    genomic-start 0,
+                    genomic-end 1288,
+                    parts {
+                      diag 1286,
+                      match 3
+                    },
+                    partial FALSE
+                  }
+                },
+                product-length 1296,
+                modifiers {
+                  stop-codon-found TRUE
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              product whole gi 488735231,
+              location int {
+                from 0,
+                to 1295,
+                id local str "MRNA_19",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 488735231
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness partial
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 431,
+        seq-data iupacaa "FVNFIDKNISFCYHTSNLIKRSKKVCDLRKTKLIDKISSLELYKYSIFFRNY
+IENVAEDCLKNGLILESAAHNVSEVELARLKVQLKNALLNCIISYRFHGIGYVLVKTKDTLIDLEQPVNIELPIGFEY
+LDYEYVRDLGVDFDHITYKVKSNNKNNSLDAVKIHKSRLIIYENFDYILKRYVPCYTESFLLDIYLFEKIYVEIERRI
+ENHNFLFYKDESLVQLQDALSSATTSLSALTQSNNDRGSGILSSFLRKQNSNNHSKDISNLRNLNDSLSQELARLKSN
+LNNEGMFYTATPSASLEVIKYDLSYLKEALALIKAKIGADTKEPLTRSFNEQAKGLGNDGKGDRSNYYDFLKGVQEQV
+ENSCNLKLTKYFGLDMKFNSLIMLSEEQKVERDIKLIELYSKYNQLIQSSSFNNEELAMLKEKLFSF"
+      }
+    }
+  }
+}

@@ -15340,3 +15340,51 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type disc,
+  dim 2,
+  segs spliced {
+    product-id gi 488735231,
+    genomic-id gi 6382081,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 2,
+          frame 1
+        },
+        genomic-start 30743,
+        genomic-end 30749,
+        parts {
+          diag 7
+        },
+        partial FALSE
+      },
+      {
+        product-start protpos {
+          amin 2,
+          frame 2
+        },
+        product-end protpos {
+          amin 430,
+          frame 3
+        },
+        genomic-start 0,
+        genomic-end 1285,
+        parts {
+          diag 1286
+        },
+        partial FALSE
+      }
+    },
+    product-length 431,
+    modifiers {
+      stop-codon-found TRUE
+    }
+  }
+}
