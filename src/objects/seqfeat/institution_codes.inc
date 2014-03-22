@@ -3667,6 +3667,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MHNES	s	Museo de Historia Natural de El Salvador",
 "MHNG	s	Natural History Museum of Geneva",
 "MHNG:Herp	s	Natural History Museum of Geneva, Herpetology collection",
+"MHNG:Invertebrate	s	Natural History Museum of Geneva, Invertebrate collection",
 "MHNI	s	Museu Hist. Naturales Universidade Federal Minas Gerais",
 "MHNJP	s	Universidad Nacional Mayor de San Marcos",
 "MHNL	s	Musee Guimet d'Histoire Naturelle de Lyon",
