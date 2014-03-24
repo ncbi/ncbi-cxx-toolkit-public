@@ -638,7 +638,7 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
                 &&  isdigit((unsigned char) p[sizeof(used_server_info) - 1])) {
                 p += sizeof(used_server_info) - 1;
                 if (sscanf(p, "%u: %n", &d1, &d2) >= 1
-                    &&  (info = SERV_ReadInfoEx(p + d2, "")) != 0) {
+                    &&  (info = SERV_ReadInfoEx(p + d2, "", 0)) != 0) {
                     if (!s_AddSkipInfo(iter, "", info))
                         free(info);
                     else
