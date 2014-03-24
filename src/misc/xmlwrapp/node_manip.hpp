@@ -164,6 +164,17 @@ namespace impl {
 
     //####################################################################
     /**
+     * Searches for a default namspace definition in the given node and above
+     *
+     * @param node The node to start the search from.
+     * @return pointer to the namespace definition or NULL if not found
+     * @author Sergey Satskiy, NCBI
+    **/
+    //####################################################################
+    xmlNsPtr lookup_default_ns_above (xmlNodePtr node);
+
+    //####################################################################
+    /**
      * Replaces old namspace with a new one in nodes and attributes all
      * the way down in the hierarchy
      *

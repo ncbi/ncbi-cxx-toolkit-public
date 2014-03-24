@@ -568,18 +568,38 @@ xml::ns xml::node::lookup_namespace (const char *prefix, xml::ns::ns_safety_type
     return xml::ns(found);
 }
 //####################################################################
-void xml::node::erase_namespace_definition (const char *prefix) {
-    if (prefix && prefix[0] == '\0') prefix = NULL;
+void xml::node::erase_namespace_definition (const char *prefix,
+                                            ns_definition_erase_type how) {
+    if (prefix && prefix[0] == '\0')
+        prefix = NULL;
 
     // Search for the ns definition
     xmlNs *definition(lookup_ns_definition(pimpl_->xmlnode_, prefix));
-    if (!definition) return;    // Not found
+    if (!definition)
+        return;    // Not found
 
-    if (is_ns_used(pimpl_->xmlnode_, definition))
-        throw xml::exception( "Namespace is in use" );
+    if (how == type_ns_def_erase_if_not_used) {
+        // Here: remove if not in use
+        if (is_ns_used(pimpl_->xmlnode_, definition))
+            throw xml::exception( "Namespace is in use" );
 
-    // Update the linked list pointers and free the namespace
+        // Update the linked list pointers and free the namespace
+        erase_ns_definition(pimpl_->xmlnode_, definition);
+        return;
+    }
+
+    // Here: remove namespace even if in use
+
+    // It is safe to remove the namespace definition because the places where
+    // it is used are adjusted below anyway
     erase_ns_definition(pimpl_->xmlnode_, definition);
+
+    // find a default namespace above. Could be null if no definition above
+    // is found.
+    xmlNs *default_namespace(lookup_default_ns_above(pimpl_->xmlnode_));
+
+    // Replace the old ns with a new one recursively
+    replace_ns(pimpl_->xmlnode_, definition, default_namespace);
     return;
 }
 //####################################################################

@@ -183,6 +183,19 @@ xmlNsPtr xml::impl::lookup_ns_definition (xmlNodePtr node, const char *prefix) {
     return NULL;
 }
 //####################################################################
+xmlNsPtr xml::impl::lookup_default_ns_above (xmlNodePtr node) {
+    if (!node)
+        return NULL;
+
+    xmlNs *current(node->nsDef);
+    while (current) {
+        if (!current->prefix)
+            return current;
+        current = current->next;
+    }
+    return lookup_default_ns_above(node->parent);
+}
+//####################################################################
 void xml::impl::replace_ns (xmlNodePtr node, xmlNsPtr oldNs, xmlNsPtr newNs) {
     if (!node) return;
 
@@ -191,7 +204,13 @@ void xml::impl::replace_ns (xmlNodePtr node, xmlNsPtr oldNs, xmlNsPtr newNs) {
 
     // Do the node attributes use namespace
     for (xmlAttrPtr current = node->properties; current; current = current->next)
-        if (current->ns == oldNs) current->ns = newNs;
+        if (current->ns == oldNs) {
+            // Attributes may not have a default namspace
+            if (newNs && newNs->prefix)
+                current->ns = newNs;
+            else
+                current->ns = NULL;
+        }
 
     node = node->children;
     while (node) {

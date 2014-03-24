@@ -135,6 +135,22 @@ public:
         type_throw_if_exists    ///< throw exception if ns with the same prefix exists
     };
 
+    /// emun to specify how to remove namespace definitions
+    enum ns_definition_erase_type {
+        type_ns_def_erase_if_not_used,  ///< Remove the definition only if it
+                                        ///< is not in use.
+                                        ///< If the definition is in use then
+                                        ///< throw an exception.
+        type_ns_def_erase_enforce       ///< Remove the definition regardless
+                                        ///< if it is used or not. If any
+                                        ///< attribute or node uses the
+                                        ///< definition then its namespace will
+                                        ///< be adjusted to a default one (if
+                                        ///< defined above) or will be set to
+                                        ///< no namespace (otherwise).
+    };
+
+
     /**
      * Helper struct for creating a xml::node of type_cdata.
      *
@@ -569,10 +585,14 @@ public:
       *  definitions.
       *  For the default namespace use NULL or empty string.
       *  If there is no such namespace definition, then do nothing.
+      * @param how
+      *  Specifies what to do if the given namespace is in use.
       * @author Sergey Satskiy, NCBI
      **/
     //####################################################################
-    void erase_namespace_definition (const char* prefix);
+    void erase_namespace_definition (const char* prefix,
+                                     ns_definition_erase_type how =
+                                         type_ns_def_erase_if_not_used);
 
     //####################################################################
     /**
