@@ -1412,7 +1412,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 }
 
 
-const char* sm_ValidSexQualifierValues[] = {
+const char* sm_ValidSexQualifierTokens[] = {
   "asexual",
   "bisexual",
   "diecious",
@@ -1430,11 +1430,35 @@ const char* sm_ValidSexQualifierValues[] = {
 };
 
 
+const char* sm_ValidSexQualifierPhrases[] = {
+  "pooled males and females",
+};
+
+
+bool s_IsValidSexQualifierPhrase(const string& value)
+{
+    size_t max = sizeof(sm_ValidSexQualifierPhrases) / sizeof(const char*);
+
+    const char* *begin = sm_ValidSexQualifierPhrases;
+    const char* *end = &(sm_ValidSexQualifierPhrases[max]);
+
+    if (find(begin, end, value) != end) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool CSubSource::IsValidSexQualifierValue (const string& value)
 
 {
     string str = value;
     NStr::ToLower(str);
+
+    if (s_IsValidSexQualifierPhrase(str)) {
+        return true;
+    }
 
     vector<string> words;
     NStr::Tokenize(str," ,/",words);
@@ -1442,10 +1466,10 @@ bool CSubSource::IsValidSexQualifierValue (const string& value)
         return false;
     }
 
-    size_t max = sizeof(sm_ValidSexQualifierValues) / sizeof(const char*);
+    size_t max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
 
-    const char* *begin = sm_ValidSexQualifierValues;
-    const char* *end = &(sm_ValidSexQualifierValues[max]);
+    const char* *begin = sm_ValidSexQualifierTokens;
+    const char* *end = &(sm_ValidSexQualifierTokens[max]);
 
     bool is_good = false;
 
@@ -1470,16 +1494,20 @@ string CSubSource::FixSexQualifierValue (const string& value)
     string str = value;
     NStr::ToLower(str);
 
+    if (s_IsValidSexQualifierPhrase(str)) {
+        return str;
+    }
+
     vector<string> words;
     NStr::Tokenize(str," ,/",words);
 
     if (words.size() == 0) {
         return "";
     }
-    size_t max = sizeof(sm_ValidSexQualifierValues) / sizeof(const char*);
+    size_t max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
 
-    const char* *begin = sm_ValidSexQualifierValues;
-    const char* *end = &(sm_ValidSexQualifierValues[max]);
+    const char* *begin = sm_ValidSexQualifierTokens;
+    const char* *end = &(sm_ValidSexQualifierTokens[max]);
 
     vector<string> good_values;
 
