@@ -97,7 +97,8 @@ CArchiveZip::~CArchiveZip(void)
             Close();
             delete m_Handle;
         }
-    } catch (CCoreException&) {}
+    }
+    COMPRESS_HANDLE_EXCEPTIONS(94, "CArchiveZip::~CArchiveZip");
 }
 
 

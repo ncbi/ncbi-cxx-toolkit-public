@@ -41,6 +41,7 @@
  * @{
  */
 
+
 BEGIN_NCBI_SCOPE
 
 
@@ -49,6 +50,31 @@ const streamsize kCompressionDefaultBufSize = 16*1024;
 
 /// Macro to report errors in compression API.
 #define ERR_COMPRESS(subcode, message) ERR_POST_X(subcode, Warning << message)
+
+/// Macro to catch and handle exceptions (from streams in the destructor)
+#define COMPRESS_HANDLE_EXCEPTIONS(subcode, message)                  \
+    catch (CException& e) {                                           \
+        try {                                                         \
+            NCBI_REPORT_EXCEPTION_X(subcode, message, e);             \
+        } catch (...) {                                               \
+        }                                                             \
+    }                                                                 \
+    catch (exception& e) {                                            \
+        try {                                                         \
+            ERR_POST_X(subcode, Error                                 \
+                       << "[" << message                              \
+                       << "] Exception: " << e.what());               \
+        } catch (...) {                                               \
+        }                                                             \
+    }                                                                 \
+    catch (...) {                                                     \
+        try {                                                         \
+            ERR_POST_X(subcode, Error                                 \
+                       << "[" << message << "] Unknown exception");   \
+        } catch (...) {                                               \
+        }                                                             \
+    }                                                                 \
+
 
 // Forward declaration
 class CCompressionFile;

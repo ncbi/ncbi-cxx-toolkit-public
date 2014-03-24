@@ -704,7 +704,10 @@ CZipCompressionFile::CZipCompressionFile(
 
 CZipCompressionFile::~CZipCompressionFile(void)
 {
-    Close();
+    try {
+        Close();
+    }
+    COMPRESS_HANDLE_EXCEPTIONS(92, "CZipCompressionFile::~CZipCompressionFile");
     return;
 }
 

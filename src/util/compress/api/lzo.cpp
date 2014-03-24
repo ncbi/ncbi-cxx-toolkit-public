@@ -819,7 +819,10 @@ CLZOCompressionFile::CLZOCompressionFile(
 
 CLZOCompressionFile::~CLZOCompressionFile(void)
 {
-    Close();
+    try {
+        Close();
+    }
+    COMPRESS_HANDLE_EXCEPTIONS(90, "CLZOCompressionFile::~CLZOCompressionFile");
     return;
 }
 

@@ -30,8 +30,12 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <util/error_codes.hpp>
 #include "streambuf.hpp"
 #include <memory>
+
+
+#define NCBI_USE_ERRCODE_X   Util_Compress
 
 
 BEGIN_NCBI_SCOPE
@@ -61,9 +65,12 @@ CCompressionStreamProcessor::CCompressionStreamProcessor(
 
 CCompressionStreamProcessor::~CCompressionStreamProcessor(void)
 {
-    if ( m_Processor  &&  m_NeedDelete == eDelete ) {
-        delete m_Processor;
+    try {
+        if ( m_Processor  &&  m_NeedDelete == eDelete ) {
+            delete m_Processor;
+        }
     }
+    COMPRESS_HANDLE_EXCEPTIONS(87, "CCompressionStreamProcessor::~CCompressionStreamProcessor");
     m_Processor = 0;
 }
 
@@ -138,28 +145,31 @@ void CCompressionStream::Create(CNcbiIos&                    stream,
 
 CCompressionStream::~CCompressionStream(void)
 {
-    delete m_StreamBuf;
+    try {
+        delete m_StreamBuf;
 
-    // Delete owned objects
-    if ( m_Stream   &&   m_Ownership & fOwnStream ) {
+        // Delete owned objects
+        if ( m_Stream   &&   m_Ownership & fOwnStream ) {
 #if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 300
-        // On GCC 2.9x ios::~ios() is protected
+            // On GCC 2.9x ios::~ios() is protected
 #else
-        delete m_Stream;
-        m_Stream = 0;
+            delete m_Stream;
+            m_Stream = 0;
 #endif
-    }
-    if ( m_Reader  &&  m_Ownership & fOwnReader ) {
-        if ( m_Reader == m_Writer  &&  m_Ownership & fOwnWriter ) {
+        }
+        if ( m_Reader  &&  m_Ownership & fOwnReader ) {
+            if ( m_Reader == m_Writer  &&  m_Ownership & fOwnWriter ) {
+                m_Writer = 0;
+            }
+            delete m_Reader;
+            m_Reader = 0;
+        }
+        if ( m_Writer  &&  m_Ownership & fOwnWriter ) {
+            delete m_Writer;
             m_Writer = 0;
         }
-        delete m_Reader;
-        m_Reader = 0;
     }
-    if ( m_Writer  &&  m_Ownership & fOwnWriter ) {
-        delete m_Writer;
-        m_Writer = 0;
-    }
+    COMPRESS_HANDLE_EXCEPTIONS(88, "CCompressionStream::~CCompressionStream");
 }
 
 
@@ -237,10 +247,13 @@ unsigned long CCompressionStream::x_GetOutputSize(
 
 CTransparentProcessor::~CTransparentProcessor()
 {
-    if ( IsBusy() ) {
-        // Abnormal session termination
-        End();
+    try {
+        if ( IsBusy() ) {
+            // Abnormal session termination
+            End();
+        }
     }
+    COMPRESS_HANDLE_EXCEPTIONS(89, "CTransparentProcessor::~CTransparentProcessor");
 }
 
 CCompressionProcessor::EStatus CTransparentProcessor::Init(void)

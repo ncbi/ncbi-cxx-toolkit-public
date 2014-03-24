@@ -223,13 +223,16 @@ CArchive::CArchive(EFormat format)
 
 CArchive::~CArchive()
 {
-    Close();
-    // Archive interface should be closed on this moment, just delete it.
-    if ( ARCHIVE ) {
-        m_Archive.reset();
+    try {
+        Close();
+        // Archive interface should be closed on this moment, just delete it.
+        if ( ARCHIVE ) {
+            m_Archive.reset();
+        }
+        // Delete owned masks
+        UnsetMask();
     }
-    // Delete owned masks
-    UnsetMask();
+    COMPRESS_HANDLE_EXCEPTIONS(93, "CArchive::~CArchive");
 }
 
 

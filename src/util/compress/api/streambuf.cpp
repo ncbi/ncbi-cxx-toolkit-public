@@ -117,36 +117,40 @@ CCompressionStreambuf::~CCompressionStreambuf()
                          "through call Finalize()"
     #define msg_error    "Finalize() failed"
 
-    // Read processor
-    sp = GetStreamProcessor(CCompressionStream::eRead);
-    if ( sp ) {
-        bool abandon = IsStreamProcessorHaveData(CCompressionStream::eRead);
-        sp->m_Processor->End(abandon);
-        sp->m_State = CSP::eDone;
-    }
-    // Write processor
-    sp = GetStreamProcessor(CCompressionStream::eWrite);
-    if ( sp ) {
-        if ( sp->m_State == CSP::eInit  ||
-             sp->m_State == CSP::eActive ) {
-            Finalize(CCompressionStream::eWrite);
-            if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
-                ERR_COMPRESS(72, msg_where << msg_overflow);
-            }
-            if ( sp->m_LastStatus == CP::eStatus_Error ) {
-                ERR_COMPRESS(73, msg_where << msg_error);
-            }
-        }
-        if (IsStreamProcessorHaveData(CCompressionStream::eWrite)) {
-            sp->m_Processor->End(); 
-            sp->m_State = CSP::eDone;
-            // Write remaining data from buffers to underlying stream
-            WriteOutBufToStream(true /*force write*/);
-        } else {
-            sp->m_Processor->End(1 /*abandon state*/); 
+    try {
+        // Read processor
+        sp = GetStreamProcessor(CCompressionStream::eRead);
+        if ( sp ) {
+            bool abandon = IsStreamProcessorHaveData(CCompressionStream::eRead);
+            sp->m_Processor->End(abandon);
             sp->m_State = CSP::eDone;
         }
+        // Write processor
+        sp = GetStreamProcessor(CCompressionStream::eWrite);
+        if ( sp ) {
+            if ( sp->m_State == CSP::eInit  ||
+                 sp->m_State == CSP::eActive ) {
+                Finalize(CCompressionStream::eWrite);
+                if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
+                    ERR_COMPRESS(72, msg_where << msg_overflow);
+                }
+                if ( sp->m_LastStatus == CP::eStatus_Error ) {
+                    ERR_COMPRESS(73, msg_where << msg_error);
+                }
+            }
+            if (IsStreamProcessorHaveData(CCompressionStream::eWrite)) {
+                sp->m_Processor->End(); 
+                sp->m_State = CSP::eDone;
+                // Write remaining data from buffers to underlying stream
+                WriteOutBufToStream(true /*force write*/);
+            } else {
+                sp->m_Processor->End(1 /*abandon state*/); 
+                sp->m_State = CSP::eDone;
+            }
+        }
     }
+    COMPRESS_HANDLE_EXCEPTIONS(86, msg_where);
+
     // Delete buffers
     delete[] m_Buf;
 }

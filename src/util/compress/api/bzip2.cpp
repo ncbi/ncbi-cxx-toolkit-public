@@ -331,7 +331,10 @@ CBZip2CompressionFile::CBZip2CompressionFile(
 
 CBZip2CompressionFile::~CBZip2CompressionFile(void)
 {
-    Close();
+    try {
+        Close();
+    }
+    COMPRESS_HANDLE_EXCEPTIONS(91, "CBZip2CompressionFile::~CBZip2CompressionFile");
     return;
 }
 
