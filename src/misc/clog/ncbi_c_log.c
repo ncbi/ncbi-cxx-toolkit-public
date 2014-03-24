@@ -1383,8 +1383,11 @@ static void s_SetHost(const char* host)
     if (host  &&  *host) {
         size_t len;
         len = strlen(host);
-        memcpy((char*)sx_Info->host, host, len > NCBILOG_HOST_MAX ? NCBILOG_HOST_MAX : len);
-        sx_Info->host[NCBILOG_HOST_MAX] = '\0';
+        if (len> NCBILOG_HOST_MAX) {
+            len = NCBILOG_HOST_MAX;
+        }
+        memcpy((char*)sx_Info->host, host, len);
+        sx_Info->host[len] = '\0';
     } else {
         sx_Info->host[0] = '\0';
     }
@@ -1396,8 +1399,11 @@ static void s_SetClient(TNcbiLog_Context ctx, const char* client)
     if (client  &&  *client) {
         size_t len;
         len = strlen(client);
-        memcpy((char*)ctx->client, client, len > NCBILOG_CLIENT_MAX ? NCBILOG_CLIENT_MAX : len);
-        ctx->client[NCBILOG_CLIENT_MAX] = '\0';
+        if (len > NCBILOG_CLIENT_MAX) { 
+            len = NCBILOG_CLIENT_MAX;
+        }
+        memcpy((char*)ctx->client, client, len);
+        ctx->client[len] = '\0';
     } else {
         ctx->client[0] = '\0';
     }
