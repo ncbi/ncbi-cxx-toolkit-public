@@ -47,7 +47,7 @@
  * @{
  */
 
-#define SERV_DEFAULT_FLAG   fSERV_Regular
+#define SERV_DEFAULT_FLAG   eSERV_Regular
 #define SERV_MINIMAL_RATE   0.001
 #define SERV_MAXIMAL_RATE   100000.0
 #define SERV_MINIMAL_BONUS  0.01
@@ -72,12 +72,20 @@ typedef enum {
 } ESERV_Type;
 
 
-/* Flags to specify the algorithm for selecting the most preferred
- * server from the set of available servers
+/* Algos to specify an algorithm for selecting the most preferred server from
+ * a set of available servers (NB: binary properties of the enumerated values
+ * may be in use!).  Should have been named ESERV_Algo, but since it's now
+ * adding the "Inter" feature (also misplaced, and to be moved away to the part
+ * of "locl" area, the mis-name is still retained.
  */
 typedef enum {
-    fSERV_Regular = 0,
-    fSERV_Blast   = 1
+    eSERV_Regular      = 0,  /* Server either tied up to lavg or static    */
+    eSERV_Blast        = 1,  /* Server is tied up to an instant host load  */
+    eSERV_RegularInter = 2,  /* Regular server shared between LBSM domains */
+    eSERV_BlastInter   = 3,  /* ... same for Blast-type server             */
+    /* compatibility only, deprecated */
+    fSERV_Regular      = eSERV_Regular,
+    fSERV_Blast        = eSERV_Blast
 } ESERV_Flag;
 
 
@@ -149,7 +157,7 @@ typedef struct {
     EMIME_Type          mime_t; /* type,                                     */
     EMIME_SubType       mime_s; /*     subtype,                              */
     EMIME_Encoding      mime_e; /*         and encoding for content-type     */
-    ESERV_Flag            flag; /* algorithm flag for the server             */
+    ESERV_Flag            flag; /* rate algorithm for the server (NB: algo!) */
     unsigned char reserved[14]; /* zeroed reserved area - do not use!        */
     unsigned short      quorum; /* quorum required to override this entry    */
     USERV_Info               u; /* server type-specific data/params          */
@@ -260,7 +268,7 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *    Content type indication:
  *       C=type/subtype [no default]
  *           specification of Content-Type (including encoding), which server
- *           accepts. The value of this flag gets added automatically to any
+ *           accepts.  The value of this flag gets added automatically to any
  *           HTTP packet sent to the server by SERVICE connector. However, in
  *           order to communicate, a client still has to know and generate the
  *           data type accepted by the server, i.e. a protocol, which server
@@ -312,11 +320,10 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *           file means "default" and gets replaced with the value 1000.0).
  *           Values less than 0.01 define standby server entries, which are
  *           used by the clients only if there are no working entries with a
- *           higher initial rate available (the final rate, which takes load
- *           into account can make it smaller than 0.01 for such entries).
- *           Standby entries are not governed by the host load but the values
- *           of rates in the descending order (for same-rate entries, an entry
- *           is taken at random).
+ *           higher initial rate available.  Standby entries are not governed
+ *           by the host load but servers are used up according to the values
+ *           of rates in descending order (for same-rate entries, an entry is
+ *           taken at random).
  *
  *    Stateful server:
  *       S=no           (default)
