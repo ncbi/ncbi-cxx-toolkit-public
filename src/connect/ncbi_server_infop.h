@@ -84,7 +84,8 @@ SSERV_Info* SERV_CreateDnsInfoEx
 
 SSERV_Info* SERV_ReadInfoEx
 (const char*       info_str,
- const char*       name
+ const char*       name,
+ int/*bool*/       lazy
  );
 
 
