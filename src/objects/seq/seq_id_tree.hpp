@@ -916,7 +916,7 @@ private:
 
 
 // Seq-id mapper exception
-class NCBI_SEQ_EXPORT CIdMapperException : public CException
+class NCBI_SEQ_EXPORT CSeq_id_MapperException : public CException
 {
 public:
     enum EErrCode {
@@ -926,7 +926,7 @@ public:
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CIdMapperException,CException);
+    NCBI_EXCEPTION_DEFAULT(CSeq_id_MapperException,CException);
 };
 
 

@@ -211,7 +211,7 @@ void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
 
 CSeq_id_Handle CSeq_id_Which_Tree::GetGiHandle(TGi /*gi*/)
 {
-    NCBI_THROW(CIdMapperException, eTypeError, "Invalid seq-id type");
+    NCBI_THROW(CSeq_id_MapperException, eTypeError, "Invalid seq-id type");
 }
 
 
@@ -1682,7 +1682,7 @@ CSeq_id_Handle CSeq_id_Local_Tree::FindOrCreate(const CSeq_id& id)
                                                     info)).second);
         }
         else {
-            NCBI_THROW(CIdMapperException, eEmptyError,
+            NCBI_THROW(CSeq_id_MapperException, eEmptyError,
                        "Can not create index for an empty local seq-id");
         }
     }
@@ -2107,7 +2107,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                                                                 info)).second);
         }
         else {
-            NCBI_THROW(CIdMapperException, eEmptyError,
+            NCBI_THROW(CSeq_id_MapperException, eEmptyError,
                        "Can not create index for an empty db-tag");
         }
     }
@@ -2569,7 +2569,7 @@ CSeq_id_Handle CSeq_id_Patent_Tree::FindOrCreate(const CSeq_id& id)
         }
         else {
             // Can not index empty patent number
-            NCBI_THROW(CIdMapperException, eEmptyError,
+            NCBI_THROW(CSeq_id_MapperException, eEmptyError,
                        "Cannot index empty patent number");
         }
     }
@@ -2921,7 +2921,7 @@ size_t CSeq_id_PDB_Tree::Dump(CNcbiOstream& out,
 }
 
 
-const char* CIdMapperException::GetErrCodeString(void) const
+const char* CSeq_id_MapperException::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {
     case eTypeError:   return "eTypeError";

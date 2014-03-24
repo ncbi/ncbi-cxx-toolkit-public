@@ -275,7 +275,7 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                                            TSeq_id_HandleSet& h_set)
 {
     if (sid.find('|') != string::npos) {
-        NCBI_THROW(CIdMapperException, eSymbolError,
+        NCBI_THROW(CSeq_id_MapperException, eSymbolError,
                    "Symbol \'|\' is not supported here");
     }
 
