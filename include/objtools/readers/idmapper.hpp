@@ -288,6 +288,8 @@ protected:
 class NCBI_XOBJREAD_EXPORT CIdMapperGCAssembly : public CIdMapper
 {
 public:
+    typedef CIdMapper TParent;
+
     /// Mapping destination type.
     enum EAliasMapping {
         eGenBank,    ///< GenBank GI
@@ -317,6 +319,9 @@ public:
                           EAliasMapping       mapping,
                           const string&       alias_scope = kEmptyStr);
 
+    /// Map seq-id, throw CIdMapperException if mapping fails.
+    virtual CSeq_id_Handle Map(const CSeq_id_Handle&);
+
 private:
     void x_AddUnversionedMapping(const CSeq_id&        src_id,
                                  const CSeq_id_Handle& dst_id);
@@ -332,6 +337,18 @@ private:
                             const string& alias_scope);
 
     CRef<CScope> m_Scope;
+};
+
+
+class NCBI_XOBJREAD_EXPORT CIdMapperException : public CException
+{
+public:
+    enum EErrCode {
+        eBadSeqId,
+        eOther
+    };
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CIdMapperException, CException);
 };
 
 

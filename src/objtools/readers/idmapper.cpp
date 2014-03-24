@@ -223,5 +223,15 @@ void CIdMapper::MapObject(CSerialObject& object)
 };
 
 
+const char* CIdMapperException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eBadSeqId:      return "eBadSeqId";
+    case eOther:         return "eOther";
+    default:             return CException::GetErrCodeString();
+    }
+}
+
+
 END_NCBI_SCOPE
 

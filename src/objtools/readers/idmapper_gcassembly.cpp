@@ -80,6 +80,16 @@ void CIdMapperGCAssembly::AddAliasMappings(const CGC_Assembly& assm,
 }
 
 
+CSeq_id_Handle CIdMapperGCAssembly::Map(const CSeq_id_Handle& from)
+{
+    CSeq_id_Handle id = TParent::Map(from);
+    if ( !id ) {
+        NCBI_THROW(CIdMapperException, eBadSeqId, MapErrorString(from));
+    }
+    return id;
+}
+
+
 void CIdMapperGCAssembly::x_AddUnversionedMapping(const CSeq_id&        src_id,
                                                   const CSeq_id_Handle& dst_id)
 {
@@ -271,7 +281,13 @@ void CIdMapperGCAssembly::x_AddAliasMappings(const CGC_Sequence& seq,
 
                 default:
                     _ASSERT(false);
-                    NCBI_THROW(CException, eUnknown, "unhandled ID type");
+                    CNcbiOstrstream str;
+                    str << MSerial_AsnText << **it;
+                    NCBI_THROW(CIdMapperException, eBadSeqId,
+                        "Unhandled ID type in GC-Assembly: " +
+                        NStr::PrintableString(
+                        CTempString(str.str(), str.pcount()),
+                        NStr::fNewLine_Quote));
                 }
             }
         }
