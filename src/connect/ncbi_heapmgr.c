@@ -917,7 +917,7 @@ HEAP HEAP_Trim(HEAP heap)
     b = s_HEAP_Collect(heap, 0);
 
     if (b) {
-        assert(HEAP_ISFREE(b)  &&  (b->head.flag & 2));
+        assert(HEAP_ISFREE(b)  &&  (b->head.flag & 2/*HEAP_LAST*/));
         prev = HEAP_BLOCKS(b->head.flag);
         b->head.flag = HEAP_FREE | HEAP_LAST;
     } else
@@ -1119,7 +1119,7 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
         /* check that a used block is not within the chain of free
            blocks but ignore any inconsistencies in the chain */
         for (i = 0;  c < e  &&  i < heap->size;  ++i) {
-            if (e <= c  ||  !HEAP_ISFREE(c))
+            if (!HEAP_ISFREE(c))
                 break;
             if (c <= b  &&  b < HEAP_NEXT(c)) {
                 CORE_LOGF_X(20, eLOG_Error,
