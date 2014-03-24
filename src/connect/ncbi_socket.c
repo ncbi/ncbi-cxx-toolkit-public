@@ -982,14 +982,14 @@ extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
  */
 
 
-static int s_gethostname(char* name, size_t namelen, ESwitch log)
+static int s_gethostname(char* name, size_t namesize, ESwitch log)
 {
     int/*bool*/ failed;
 
     CORE_TRACE("[SOCK::gethostname]");
 
-    name[0] = name[namelen - 1] = '\0';
-    if (gethostname(name, (int) namelen) != 0) {
+    name[0] = name[namesize - 1] = '\0';
+    if (gethostname(name, (int) namesize) != 0) {
         if (log) {
             int error = SOCK_ERRNO;
             const char* strerr = SOCK_STRERROR(error);
@@ -1000,7 +1000,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
             UTIL_ReleaseBuffer(strerr);
         }
         failed = 1/*true*/;
-    } else if (name[namelen - 1]) {
+    } else if (name[namesize - 1]) {
         if (log) {
             CORE_LOG_X(104, eLOG_Error,
                        "[SOCK_gethostname] "
@@ -1011,7 +1011,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
         failed = 0/*false*/;
 
     CORE_TRACEF(("[SOCK::gethostname] "
-                 " \"%.*s\"%s", (int) namelen, name,
+                 " \"%.*s\"%s", (int) namesize, name,
                  failed ? " (failed)" : ""));
     if (failed)
         *name = '\0';
@@ -1196,7 +1196,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 
 
 static char* s_gethostbyaddr_(unsigned int host, char* name,
-                              size_t namelen, ESwitch log)
+                              size_t namesize, ESwitch log)
 {
     char addr[40];
 
@@ -1220,8 +1220,8 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         sin.sin_family      = AF_INET; /* we only handle IPv4 currently */
         sin.sin_addr.s_addr = host;
         if ((error = getnameinfo((struct sockaddr*) &sin, sizeof(sin),
-                                 name, namelen, 0, 0, 0)) != 0  ||  !*name) {
-            if (SOCK_ntoa(host, name, namelen) != 0) {
+                                 name, namesize, 0, 0, 0)) != 0  ||  !*name) {
+            if (SOCK_ntoa(host, name, namesize) != 0) {
                 if (error == EAI_SYSTEM)
                     error  = SOCK_ERRNO;
                 else if (error)
@@ -1288,8 +1288,8 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         error = he ? 0 : h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
-        if (!he  ||  strlen(he->h_name) >= namelen) {
-            if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
+        if (!he  ||  strlen(he->h_name) >= namesize) {
+            if (he  ||  SOCK_ntoa(host, name, namesize) != 0) {
 #ifdef ENOSPC
                 error = ENOSPC;
 #else
@@ -1341,10 +1341,10 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 
 
 static const char* s_gethostbyaddr(unsigned int host, char* name,
-                                   size_t namelen, ESwitch log)
+                                   size_t namesize, ESwitch log)
 {
     static int once = 1/*true*/;
-    const char* retval = s_gethostbyaddr_(host, name, namelen, log);
+    const char* retval = s_gethostbyaddr_(host, name, namesize, log);
 
     if (once  &&  retval
         &&  ((SOCK_IsLoopbackAddress(host)
@@ -8034,9 +8034,10 @@ extern unsigned int SOCK_GetLocalHostAddress(ESwitch reget)
 }
 
 
-extern const char* SOCK_StringToHostPort(const char*     str,
-                                         unsigned int*   host,
-                                         unsigned short* port)
+const char* SOCK_StringToHostPortEx(const char*     str,
+                                    unsigned int*   host,
+                                    unsigned short* port,
+                                    int/*bool*/     flag)
 {
     char x_buf[MAXHOSTNAMELEN + 1];
     unsigned short p;
@@ -8082,14 +8083,25 @@ extern const char* SOCK_StringToHostPort(const char*     str,
     if (len) {
         memcpy(x_buf, str, len);
         x_buf[len] = '\0';
-        if (!(h = s_gethostbyname(x_buf, s_Log)))
-            return str;
+        if (!(h = s_gethostbyname(x_buf, s_Log))) {
+            if (!flag)
+                return str;
+            h = htonl(INADDR_NONE);
+        }
         if ( host )
             *host = h;
     }
     if (port  &&  p)
         *port = p;
     return s + n;
+}
+
+
+extern const char* SOCK_StringToHostPort(const char*     str,
+                                         unsigned int*   host,
+                                         unsigned short* port)
+{
+    return SOCK_StringToHostPortEx(str, host, port, 0/*false*/);
 }
 
 

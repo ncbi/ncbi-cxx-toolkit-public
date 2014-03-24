@@ -353,7 +353,11 @@ typedef struct SOCK_tag {
 #endif /*NCBI_OS_MSWIN && _WIN64*/
 
 
-/* initial socket data & respective private ctors */
+/* Global data */
+extern const char g_kNcbiSockNameAbbr[];
+
+
+/* Initial socket data & respective private ctors */
 typedef struct {
     const void* data;
     size_t      size;
@@ -376,8 +380,13 @@ EIO_Status SOCK_CreateOnTopInternal(const void* handle,
                                     TSOCK_Flags flags);
 
 
-/* Global data */
-extern const char g_kNcbiSockNameAbbr[];
+/* Addtl socket API for internal use:  if flag != 0 and host is nonexitent,
+ * return it as INADDR_NONE (-1) rather than an error.
+ */
+const char* SOCK_StringToHostPortEx(const char*     str,
+                                    unsigned int*   host,
+                                    unsigned short* port,
+                                    int/*bool*/     flag);
 
 
 #ifdef __cplusplus
