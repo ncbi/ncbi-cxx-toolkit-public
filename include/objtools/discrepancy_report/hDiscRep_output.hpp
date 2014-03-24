@@ -118,12 +118,12 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
                                  CClickableText& item);
     void x_InitializeOnCallerToolPriorities();
     void x_InitializeOnCallerToolGroups();
-    void x_OrderResult(Int2Int& ord2i_citem);
+    void x_OrderResult(UInt2UInts& ord2i_citem);
     void x_GroupResult(map <EOnCallerGrp, string>& grp_idx_str);
-    void x_ReorderAndGroupOnCallerResults(Int2Int& ord2i_citem, 
+    void x_ReorderAndGroupOnCallerResults(UInt2UInts& ord2i_citem, 
                                        map <EOnCallerGrp, string>& grp_idx_str);
     string x_GetGrpName(EOnCallerGrp e_grp);
-    CRef <CClickableItem> x_CollectSameGroupToGbench(Int2Int& ord2i_citem, 
+    CRef <CClickableItem> x_CollectSameGroupToGbench(UInt2UInts& ord2i_citem, 
                                              EOnCallerGrp e_grp, 
                                              const string& grp_idxes);
     void x_SendItemToGbench(CRef <CClickableItem> citem, 
