@@ -9014,6 +9014,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 */
    }
 
+   i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
       desc = GetDiscItemText(**it, *(biosrc_seqdesc_seqentry[i]));
       comb_desc_ls.push_back(desc);
