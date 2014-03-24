@@ -50,7 +50,7 @@ NCBI_DEFINE_ERRCODE_X(Util_ByteSrc,      206,  1);
 NCBI_DEFINE_ERRCODE_X(Util_File,         207,  1);
 NCBI_DEFINE_ERRCODE_X(Util_QParse,       208,  2);
 NCBI_DEFINE_ERRCODE_X(Util_Image,        209, 29);
-NCBI_DEFINE_ERRCODE_X(Util_Compress,     210, 86);
+NCBI_DEFINE_ERRCODE_X(Util_Compress,     210, 94);
 NCBI_DEFINE_ERRCODE_X(Util_BlobStore,    211,  2);
 NCBI_DEFINE_ERRCODE_X(Util_StaticArray,  212,  3);
 NCBI_DEFINE_ERRCODE_X(Util_Scheduler,    213,  1);
