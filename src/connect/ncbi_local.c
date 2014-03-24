@@ -113,16 +113,16 @@ static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
         if (!(svc = ConnNetInfo_GetValue(name, key, buf, sizeof(buf), 0)))
             continue;
         if (!(info = SERV_ReadInfoEx
-              (svc, iter->ismask  ||  iter->reverse_dns ? name : ""))) {
+              (svc, iter->ismask  ||  iter->reverse_dns ? name : "", 0))) {
             continue;
         }
         if (iter->external  &&  info->locl)
             continue;  /* external mapping for local server not allowed */
-        if (!info->host  ||  (info->locl & 0xF0)) {
+        if (!info->host  ||  (info->locl & 0x10)) {
             unsigned int localhost = SOCK_GetLocalHostAddress(eDefault);
             if (!info->host)
                 info->host = localhost;
-            if ((info->locl & 0xF0)  &&  info->host != localhost)
+            if ((info->locl & 0x10)  &&  info->host != localhost)
                 continue;  /* private server */
         }
         if (!iter->reverse_dns  &&  info->type != fSERV_Dns) {
@@ -301,7 +301,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
                     dns_info_seen = 1/*true*/;
                 if (iter->external  &&  temp->locl)
                     continue; /* external mapping req'd; local server */
-                assert(!(temp->locl & 0xF0)); /* no private DNS */
+                assert(!(temp->locl & 0x10)); /* no private DNS */
                 if (temp->rate > 0.0  ||  iter->ok_down) {
                     data->cand[i].status = data->cand[n].status;
                     info = temp;

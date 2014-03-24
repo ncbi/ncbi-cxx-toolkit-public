@@ -245,7 +245,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
             s = 0;
             name = "";
         }
-        info = SERV_ReadInfoEx(text + d2, name);
+        info = SERV_ReadInfoEx(text + d2, name, 0);
         if (s)
             free(s);
         if (info) {
