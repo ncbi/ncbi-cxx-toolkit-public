@@ -852,15 +852,40 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
             
                 if (indel.Loc()-last_chunk > 0) {
                     CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                    if(is_align)
-                        chunk->SetDiag(indel.Loc()-last_chunk);
-                    else
+                    if(is_align) {
+                        if(is_protalign)
+                            chunk->SetDiag(indel.Loc()-last_chunk);
+                        else
+                            chunk->SetMatch(indel.Loc()-last_chunk);
+                    } else
                         chunk->SetMatch(indel.Loc()-last_chunk);
                     se->SetParts().push_back(chunk);
                     last_chunk = indel.Loc();
                 }
 
-                if (indel.IsInsertion()) {
+                TInDels::const_iterator next = indel_i+1;
+                int mism = 0;
+                if(next != indels.end())
+                    mism = indel.IsMismatch(*next);
+                if(mism > 0) {
+                    _ASSERT(next->Loc() <= e->GetTo()+1);
+
+                    CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
+                    chunk->SetMismatch(mism);
+                    se->SetParts().push_back(chunk);
+                    if(indel.Len() > mism) {
+                        CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
+                        chunk->SetGenomic_ins(indel.Len()-mism);
+                        se->SetParts().push_back(chunk);
+                    } else if(next->Len() > mism) {
+                        CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
+                        chunk->SetProduct_ins(next->Len()-mism);
+                        se->SetParts().push_back(chunk);
+                    }
+
+                    last_chunk += indel.Len();
+                    indel_i = next;
+                } else if (indel.IsInsertion()) {
                     CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
                     chunk->SetGenomic_ins(indel.Len());
                     se->SetParts().push_back(chunk);
@@ -875,17 +900,23 @@ CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid,
             }
             if (e->GetFrom() <= last_chunk && last_chunk <= e->GetTo()) {
                 CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                if(is_align)
-                    chunk->SetDiag(e->GetTo()-last_chunk+1);
-                else
+                if(is_align) {
+                    if(is_protalign)
+                        chunk->SetDiag(e->GetTo()-last_chunk+1);
+                    else
+                        chunk->SetMatch(e->GetTo()-last_chunk+1);
+                } else
                     chunk->SetMatch(e->GetTo()-last_chunk+1);
                 se->SetParts().push_back(chunk);
             }
         }  else  {   // gap filler
             CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-            if(is_align)
-                chunk->SetDiag(e->m_source.m_range.GetLength());
-            else
+            if(is_align) {
+                if(is_protalign)
+                    chunk->SetDiag(e->m_source.m_range.GetLength());
+                else
+                    chunk->SetMatch(e->m_source.m_range.GetLength());
+            } else
                 chunk->SetMatch(e->m_source.m_range.GetLength());
             se->SetParts().push_back(chunk);
         }
@@ -927,7 +958,7 @@ CRef<objects::CSeq_align> CAlignModel::MakeSeqAlign(const string& contig) const 
         CSpliced_seg& spliced_seg = seq_align->SetSegs().SetSpliced();
 
         if(Ident() > 0) {
-            int matches = Ident()*seq_align->GetAlignLength()/100.+0.5;
+            int matches = Ident()*seq_align->GetAlignLength()+0.5;
             seq_align->SetNamedScore("matches", matches);
         }
 

@@ -118,6 +118,13 @@ public:
     int Len() const { return m_len; }
     bool IsInsertion() const { return m_is_insert; }
     bool IsDeletion() const { return !m_is_insert; }
+    int IsMismatch(const CInDelInfo& next) const 
+    { 
+        if(IsInsertion() && next.IsDeletion() && Loc()+Len() == next.Loc())
+            return min(Len(),next.Len()); 
+        else
+            return 0;
+    }
     bool IntersectingWith(TSignedSeqPos a, TSignedSeqPos b) const    // insertion at least partially inside, deletion inside or flanking
     {
         return (IsDeletion() && Loc() >= a && Loc() <= b+1) ||
@@ -776,6 +783,61 @@ class NCBI_XALGOGNOMON_EXPORT CModelClusterSet : public set<Cluster> {
 
 typedef CModelClusterSet<TGeneModelCluster> TGeneModelClusterSet;
 typedef CModelClusterSet<TAlignModelCluster> TAlignModelClusterSet;
+
+
+enum EResidueNames { enA, enC, enG, enT, enN };
+
+class EResidue {
+public :
+    EResidue() : data(enN) {}
+    EResidue(EResidueNames e) : data(e) {}
+
+    operator int() const { return int(data); }
+
+private:
+    unsigned char data;
+};
+
+inline TResidue Complement(TResidue c)
+{
+    switch(c)
+    {
+        case 'A': 
+            return 'T';
+        case 'a': 
+            return 't';
+        case 'C':
+            return 'G'; 
+        case 'c': 
+            return 'g';
+        case 'G':
+            return 'C'; 
+        case 'g': 
+            return 'c';
+        case 'T':
+            return 'A'; 
+        case 't': 
+            return 'a';
+        default:
+            return 'N';
+    }
+}
+
+extern const EResidue    k_toMinus[5];
+extern const char *const k_aa_table;
+
+inline EResidue Complement(EResidue c)
+{
+    return k_toMinus[c];
+}
+
+template <class BidirectionalIterator>
+void ReverseComplement(const BidirectionalIterator& first, const BidirectionalIterator& last)
+{
+    for (BidirectionalIterator i( first ); i != last; ++i)
+        *i = Complement(*i);
+    reverse(first, last);
+}
 
 
 END_SCOPE(gnomon)

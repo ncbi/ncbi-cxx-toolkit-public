@@ -575,7 +575,6 @@ void CAlignCollapser::ClipProteinToStartStop(CAlignModel& align) {
                 CAlignMap editedamap(editedmodel.Exons(), transcript_exons, indels, align.Orientation(), align.GetAlignMap().TargetLen());
                 CAlignModel editedalign(editedmodel, editedamap);
                 editedalign.SetTargetId(*align.GetTargetId());
-                TSignedSeqRange editedtlim = editedalign.TranscriptLimits();
                 editedalign.SetCdsInfo(cds);
 #ifdef _DEBUG 
                 editedalign.AddComment(comment);
@@ -1645,7 +1644,14 @@ void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& tr
     TInDels indels;   // indels without mismatches
     for(TInDels::iterator i = all_indels.begin(); i != all_indels.end(); ++i) {
         TInDels::iterator next = i+1;
-        if(next != all_indels.end() && i->IsInsertion() && next->IsDeletion() && i->Loc()+i->Len() == next->Loc() && i->Len() == next->Len()) {  // mismatch pair
+        int mism = 0;
+        if(next != all_indels.end())
+            mism = i->IsMismatch(*next);
+        if(mism > 0) {  // mismatch pair and possibly indel
+            if(i->Len() > mism)
+                indels.push_back(CInDelInfo(i->Loc(),i->Len()-mism,true));
+            else if(next->Len() > mism)
+                indels.push_back(CInDelInfo(next->Loc(),next->Len()-mism,false));
             i = next;
         } else {
             indels.push_back(*i);

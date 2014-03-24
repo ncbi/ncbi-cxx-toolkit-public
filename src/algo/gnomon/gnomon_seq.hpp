@@ -41,19 +41,6 @@ BEGIN_SCOPE(gnomon)
 
 typedef vector<double> TDVec;
 
-enum EResidueNames { enA, enC, enG, enT, enN };
-
-class EResidue {
-public :
-    EResidue() : data(enN) {}
-    EResidue(EResidueNames e) : data(e) {}
-
-    operator int() const { return int(data); }
-
-private:
-    unsigned char data;
-};
-
 class CEResidueVec : public vector<EResidue> {};
 
 class CDoubleStrandSeq {
@@ -91,47 +78,6 @@ inline EResidue fromACGT(TResidue c)
             return enN;
     }
     
-}
-
-inline TResidue Complement(TResidue c)
-{
-    switch(c)
-    {
-        case 'A': 
-            return 'T';
-        case 'a': 
-            return 't';
-        case 'C':
-            return 'G'; 
-        case 'c': 
-            return 'g';
-        case 'G':
-            return 'C'; 
-        case 'g': 
-            return 'c';
-        case 'T':
-            return 'A'; 
-        case 't': 
-            return 'a';
-        default:
-            return 'N';
-    }
-}
-
-extern const EResidue    k_toMinus[5];
-extern const char *const k_aa_table;
-
-inline EResidue Complement(EResidue c)
-{
-    return k_toMinus[c];
-}
-
-template <class BidirectionalIterator>
-void ReverseComplement(const BidirectionalIterator& first, const BidirectionalIterator& last)
-{
-    for (BidirectionalIterator i( first ); i != last; ++i)
-        *i = Complement(*i);
-    reverse(first, last);
 }
 
 inline TResidue toACGT(EResidue c)

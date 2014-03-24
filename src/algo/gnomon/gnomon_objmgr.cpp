@@ -264,21 +264,24 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                 int mismatch_len = chunk.GetMismatch();
                 pos += mismatch_len;
                 prod_pos += mismatch_len;
+
+                string v(mismatch_len,'N');
                 if(!mismatches.empty()) {
-                    string v = mismatches.substr(0,mismatch_len);
-                    if(Strand() == ePlus) {
-                        CInDelInfo gins(nuc_cur_start+pos-mismatch_len, mismatch_len, true);
-                        CInDelInfo gdel(nuc_cur_start+pos, mismatch_len, false, v);
-                        indels.push_back(gins);
-                        indels.push_back(gdel);
-                    } else {
-                        reverse(v.begin(),v.end());
-                        CInDelInfo gins(nuc_cur_end-pos+1, mismatch_len, true);
-                        CInDelInfo gdel(nuc_cur_end-pos+1+mismatch_len, mismatch_len, false, v);
-                        indels.insert(indels.begin(), gdel);
-                        indels.insert(indels.begin(), gins);
-                    }
+                    _ASSERT(mismatch_len <= (int)mismatches.length());
+                    v = mismatches.substr(0,mismatch_len);
                     mismatches = mismatches.substr(mismatch_len);
+                }
+                if(Strand() == ePlus) {
+                    CInDelInfo gins(nuc_cur_start+pos-mismatch_len, mismatch_len, true);
+                    CInDelInfo gdel(nuc_cur_start+pos, mismatch_len, false, v);
+                    indels.push_back(gins);
+                    indels.push_back(gdel);
+                } else {
+                    reverse(v.begin(),v.end());
+                    CInDelInfo gins(nuc_cur_end-pos+1, mismatch_len, true);
+                    CInDelInfo gdel(nuc_cur_end-pos+1+mismatch_len, mismatch_len, false, v);
+                    indels.insert(indels.begin(), gdel);
+                    indels.insert(indels.begin(), gins);
                 }
             } else { // if (chunk.IsDiag())
                 pos += chunk.GetDiag();
@@ -412,7 +415,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             if((*it)->CanGetId() && (*it)->GetId().IsStr()) {
                 string scr = (*it)->GetId().GetStr();
                 if((scr == "N of matches") || (scr == "num_ident") || (scr == "matches")) {
-                    double ident = (*it)->GetValue().GetInt()*100;
+                    double ident = (*it)->GetValue().GetInt();
                     ident /= seq_align.GetAlignLength();
                     SetIdent(ident);
                 } else if(scr == "rank" && (*it)->GetValue().GetInt() == 1) {
