@@ -957,6 +957,12 @@ void CMakeProject::Write(const string& dirname) const
         }
     }
     out << ")" << endl;
+
+    string custname("${NCBI_PROJECT_SRC_DIR}/CMakeLists." + prj_name + ".cmake");
+    out << "if(EXISTS "    << custname << ")" << endl;
+    out << "    include( "     << custname << ")" << endl;
+    out << "endif(EXISTS " << custname << ")" << endl;
+    out << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////
