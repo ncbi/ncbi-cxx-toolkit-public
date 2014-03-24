@@ -117,7 +117,8 @@ CGffAlignRecord::CGffAlignRecord(
     const string& id):
 //  ----------------------------------------------------------------------------
     CGffBaseRecord(id),
-    mGapIsTrivial(true)
+    mGapIsTrivial(true),
+    mAccumulatedMatches(0)
 {
 }
 
@@ -164,6 +165,7 @@ void CGffAlignRecord::AddInsertion(
     unsigned int size)
 //  ----------------------------------------------------------------------------
 {
+    FinalizeMatches();
     if (!mAttrGap.empty()) {
         mAttrGap += " ";
     }
@@ -177,6 +179,7 @@ void CGffAlignRecord::AddDeletion(
     unsigned int size)
 //  ----------------------------------------------------------------------------
 {
+    FinalizeMatches();
     if (!mAttrGap.empty()) {
         mAttrGap += " ";
     }
@@ -190,11 +193,27 @@ void CGffAlignRecord::AddMatch(
     unsigned int size)
 //  ----------------------------------------------------------------------------
 {
+//    if (!mAttrGap.empty()) {
+//        mAttrGap += " ";
+//    }
+//    mAttrGap += "M";
+//    mAttrGap += NStr::IntToString(size);
+    mAccumulatedMatches += size;
+}
+
+//  -----------------------------------------------------------------------------
+void CGffAlignRecord::FinalizeMatches()
+//  -----------------------------------------------------------------------------
+{
+    if (mAccumulatedMatches == 0) {
+        return;
+    }
     if (!mAttrGap.empty()) {
         mAttrGap += " ";
     }
     mAttrGap += "M";
-    mAttrGap += NStr::IntToString(size);
+    mAttrGap += NStr::IntToString(mAccumulatedMatches);
+    mAccumulatedMatches = 0;
 }
 
 END_objects_SCOPE

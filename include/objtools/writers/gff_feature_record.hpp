@@ -100,6 +100,9 @@ public:
     AddMatch(
         unsigned int);
 
+    void
+    FinalizeMatches();
+
     string StrAttributes() const;
     string StrTarget() const;
     string StrGap() const;
@@ -108,6 +111,7 @@ protected:
     string mAttrGap;
     string mAttrTarget;
     bool mGapIsTrivial;
+    unsigned int mAccumulatedMatches;
 };
 
 END_objects_SCOPE

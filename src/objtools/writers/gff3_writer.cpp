@@ -604,6 +604,12 @@ bool CGff3Writer::xAssignAlignmentSplicedGap(
         switch (chunk.Which()) {
         default:
             break;
+        case CSpliced_exon_chunk::e_Mismatch:
+            record.AddMatch(chunk.GetMismatch());
+            break;
+        case CSpliced_exon_chunk::e_Diag:
+            record.AddMatch(chunk.GetDiag());
+            break;
         case CSpliced_exon_chunk::e_Match:
             record.AddMatch(chunk.GetMatch());
             break;
@@ -615,6 +621,7 @@ bool CGff3Writer::xAssignAlignmentSplicedGap(
             break;
         }
     }
+    record.FinalizeMatches();
     return true;
 }
 
@@ -828,9 +835,6 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     unsigned int srcRow)
 //  ----------------------------------------------------------------------------
 {
-    //if (bDebugHere == true) {
-    //    bDebugHere = false;
-    //}
     const CSeq_id& sourceId = alnMap.GetSeqId(0);
     CBioseq_Handle sourceH = m_pScope->GetBioseqHandle(sourceId);
     CSeq_id_Handle sourceIdH = sourceH.GetSeq_id_Handle();
@@ -852,12 +856,13 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     ENa_strand strand = eNa_strand_plus;
     if (alnMap.StrandSign(0) == -1) {
         strand = eNa_strand_minus;
-    }
-    if (start2 > stop2) {
-        stop2 = start2 - stop2;
+        stop2 = start2 + stop2;
     }
     else {
-        stop2 -= start2;
+        stop2 = start2 + stop2;
+    }
+    if (start2 < 0  ||  stop2 < 0) {
+        cerr << "";
     }
     target += " " + NStr::IntToString(start2 + 1);
     target += " " + NStr::IntToString(stop2 + 1);
@@ -873,6 +878,9 @@ bool CGff3Writer::xAssignAlignmentDensegGap(
     unsigned int srcRow)
 //  ----------------------------------------------------------------------------
 {
+//    if (bDebugHere == true) {
+//        bDebugHere = false;
+//    }
     const CDense_seg& denseSeg = alnMap.GetDenseg();
     int srcWidth = 1; //could be 1 or 3, depending on nuc or prot
     if (srcRow < denseSeg.GetWidths().size()) {
@@ -902,6 +910,7 @@ bool CGff3Writer::xAssignAlignmentDensegGap(
             record.AddMatch(tgtPiece.GetLength()/tgtWidth);
         } 
     }
+    record.FinalizeMatches();
     return true;
 }
 
@@ -2635,9 +2644,9 @@ string CGff3Writer::xNextAlignId()
 //  ----------------------------------------------------------------------------
 {
     string nextId = string("aln") + NStr::UIntToString(m_uPendingAlignId++);
-    //if (nextId == "aln3") {
-    //    bDebugHere = true;
-    //}
+//    if (nextId == "aln0") {
+//        bDebugHere = true;
+//    }
     return nextId;
 }
 
