@@ -920,10 +920,10 @@ void CDiscRepOutput :: x_InitializeOnCallerToolGroups()
    m_sOnCallerToolGroups["UNCULTURED_NOTES_ONCALLER"] = eSuspectText;
 };
 
-void CDiscRepOutput :: x_OrderResult(Int2Int& ord2i_citem)
+void CDiscRepOutput :: x_OrderResult(UInt2UInts& ord2i_citem)
 {
    int i=-1;
-   int pri;
+   unsigned pri;
 
    ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
       i++;
@@ -935,7 +935,8 @@ void CDiscRepOutput :: x_OrderResult(Int2Int& ord2i_citem)
       else {
          pri = m_sOnCallerToolPriorities.size() + i + 1;
       }
-      ord2i_citem[pri] = i;
+      ord2i_citem[pri].push_back((unsigned)i);
+      //ord2i_citem[pri] = i;
    }
 };
 
@@ -957,7 +958,7 @@ void CDiscRepOutput :: x_GroupResult(map <EOnCallerGrp, string>& grp_idx_str)
    }
 };
 
-void CDiscRepOutput :: x_ReorderAndGroupOnCallerResults(Int2Int& ord2i_citem, map <EOnCallerGrp, string>& grp_idx_str)
+void CDiscRepOutput :: x_ReorderAndGroupOnCallerResults(UInt2UInts& ord2i_citem, map <EOnCallerGrp, string>& grp_idx_str)
 {
    // x_InitializeOnCallerToolPriorities();
    m_sOnCallerToolPriorities.clear();
@@ -984,11 +985,11 @@ string CDiscRepOutput :: x_GetGrpName(EOnCallerGrp e_grp)
    return kEmptyStr;
 };
 
-CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(Int2Int& ord2i_citem, EOnCallerGrp e_grp, const string& grp_idxes)
+CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(UInt2UInts& ord2i_citem, EOnCallerGrp e_grp, const string& grp_idxes)
 {
     vector <string> arr;
     arr = NStr::Tokenize(grp_idxes, ",", arr);
-    Int2Int sub_ord2idx;
+    UInt2UInts sub_ord2idxes;
     unsigned idx;
     CRef <CClickableItem> new_item (new CClickableItem);
     new_item->description = x_GetGrpName(e_grp);
@@ -996,7 +997,8 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(Int2Int& ord2
     ITERATE (vector <string>, it, arr) {
         idx = NStr::StringToUInt(*it);
         strtmp = thisInfo.disc_report_data[idx]->setting_name;
-        sub_ord2idx[m_sOnCallerToolPriorities[strtmp]] = idx;
+        // sub_ord2idx[m_sOnCallerToolPriorities[strtmp]] = idx;
+        sub_ord2idxes[m_sOnCallerToolPriorities[strtmp]].push_back(idx);
     }
     switch (e_grp) {
        case eMol: 
@@ -1004,22 +1006,27 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(Int2Int& ord2
        case eSource:
        case eFeature:
        {
-          ITERATE (Int2Int, it, sub_ord2idx) {
-             new_item->subcategories.push_back(
-                                      thisInfo.disc_report_data[it->second]);
-             ord2i_citem[it->first] = -1;
+          ITERATE (UInt2UInts, it, sub_ord2idxes) {
+            ITERATE (vector <unsigned>, iit, it->second) {
+                new_item->subcategories
+                           .push_back(thisInfo.disc_report_data[*iit]);
+                                      //thisInfo.disc_report_data[it->second]);
+            }
+            ord2i_citem[it->first].clear(); //  = -1;
           }  
           break;
        }
        case eSuspectText:
        {
           unsigned typo_cnt = 0;
-          ITERATE (Int2Int, it, sub_ord2idx) {
-             if (thisInfo.disc_report_data[it->second]->setting_name
+          ITERATE (UInt2UInts, it, sub_ord2idxes) {
+             if (thisInfo.disc_report_data[it->second[0]]->setting_name
                      == "SUSPECT_PRODUCT_NAMES") {
-                NON_CONST_ITERATE (vector <CRef <CClickableItem> >, 
-                         sit, 
-                         thisInfo.disc_report_data[it->second]->subcategories) {
+                ITERATE (vector <unsigned>, iit, it->second) {
+                  NON_CONST_ITERATE (vector <CRef <CClickableItem> >, 
+                                     sit, 
+                               thisInfo.disc_report_data[*iit]->subcategories){
+//                       thisInfo.disc_report_data[it->second]->subcategories) {
                     if ((*sit)->description == "Typo") {
                         ITERATE (vector <CRef <CClickableItem> >, ssit, 
                                     (*sit)->subcategories) {
@@ -1033,13 +1040,17 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(Int2Int& ord2
                        new_item->subcategories.push_back(*sit);
                        break;
                     }
+                  }
                 }
              }
              else {
-                new_item->subcategories.push_back(
-                                        thisInfo.disc_report_data[it->second]);
+                ITERATE (vector <unsigned>, iit, it->second) {
+                    new_item->subcategories
+                            .push_back(thisInfo.disc_report_data[*iit]);
+                                      //thisInfo.disc_report_data[it->second]);
+                }
              }
-             ord2i_citem[it->first] = -1;
+             ord2i_citem[it->first].clear(); //  = -1;
              if (new_item->subcategories.empty()) {
                 new_item.Reset(0);
              }
@@ -1071,16 +1082,17 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
       }
       string desc;
       if (thisInfo.report == "Oncaller") {
-          Int2Int ord2i_citem, sub_ord2idx;
+          UInt2UInts ord2i_citem;
           map <EOnCallerGrp, string> grp_idx_str;
           vector <string> arr;
           x_ReorderAndGroupOnCallerResults(ord2i_citem, grp_idx_str);
-          ITERATE (Int2Int, it, ord2i_citem) {
-             if (it->second < 0) {
+          NON_CONST_ITERATE (UInt2UInts, it, ord2i_citem) {
+             //if (it->second < 0) {
+             if (it->second.empty()) {
                  continue;
              }
              CRef <CClickableItem> this_item 
-                 = thisInfo.disc_report_data[it->second];
+                 = thisInfo.disc_report_data[it->second[0]];
              if (m_sOnCallerToolGroups.find(this_item->setting_name) 
                     != m_sOnCallerToolGroups.end()){
                 EOnCallerGrp 
@@ -1094,7 +1106,11 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
                 }
              }
              else {
-                x_SendItemToGbench(this_item, item_list);
+                ITERATE (vector <unsigned>, iit, it->second) {
+                   CRef <CClickableItem> this_item 
+                       = thisInfo.disc_report_data[*iit];
+                   x_SendItemToGbench(this_item, item_list);
+                }
              }
           }
       }

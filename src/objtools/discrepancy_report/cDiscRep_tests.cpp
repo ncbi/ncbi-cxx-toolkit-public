@@ -8593,7 +8593,6 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
 //   setting_name = GetName_bad();   // output purpose
 
    Str2Strs qnm2qvlu_src;
-
    GetTestItemList(c_item->item_list, qnm2qvlu_src);
    c_item->item_list.clear();
 
@@ -8946,17 +8945,47 @@ bool CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSour
    return has_newqual;
 };
 
-
-/*
-static vector <string> comb_desc_ls;  // global in C
-static vector <CConstRef <CBioSource> > comb_src_ls;  // global in C
-static vector <CConstRef <CObject> > objs;
-static Str2Ints comb_qual2src_idx;
-*/
 void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_Quals_run) return;
    thisTest.is_Quals_run = true;
+
+   unsigned i;
+   if (m_num_entry > 1) {
+     vector <string> tests;
+     tests.push_back(GetName_sq());
+     tests.push_back(GetName_sq_oncall());
+     tests.push_back(GetName_bad());
+     tests.push_back(GetName_dt());
+     tests.push_back(GetName_dup());
+     tests.push_back(GetName_miss());
+     for (i=0; i< tests.size(); i++) {
+         if (thisInfo.test_item_list.find(tests[i]) 
+                 != thisInfo.test_item_list.end()) {
+            break;
+         }
+     }
+     if (i < tests.size()) {
+        if (i >= 2) {
+           CRef <CClickableItem> c_item (new CClickableItem);
+           thisInfo.disc_report_data.push_back(c_item);
+           c_item->setting_name = tests[i];
+           GetReport_quals(c_item, tests[i]);
+           thisInfo.test_item_list.erase(tests[i]);
+           comb_desc_ls.clear();
+           comb_src_ls.clear();
+           objs.clear();
+        }
+        comb_qual2src_idx.clear();
+     }
+     tests.clear();
+   }
+   else {  // clean global
+     comb_desc_ls.clear();
+     comb_src_ls.clear();
+     objs.clear();
+     comb_qual2src_idx.clear();
+   }
 
    vector <string> this_desc_ls;
 /* why is the 'local' needed?
@@ -8985,7 +9014,6 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 */
    }
 
-   unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
       desc = GetDiscItemText(**it, *(biosrc_seqdesc_seqentry[i]));
       comb_desc_ls.push_back(desc);

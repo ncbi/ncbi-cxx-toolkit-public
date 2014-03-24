@@ -171,9 +171,11 @@ void RunAndCheckTest(CRef <CSeq_entry> entry, const string& test_name, const str
    output_obj.Export(c_item, test_name);
    NCBITEST_CHECK_MESSAGE(
      !(c_item.description).empty() || test_name=="FIND_DUP_TRNAS", "no report");
-   if (msg == "print" && test_name != "FIND_DUP_TRNAS") {
-      cerr << "desc " << c_item.description << endl;
-      return;
+   if (msg == "print") {
+     if ( test_name != "FIND_DUP_TRNAS") {
+          cerr << "desc " << c_item.description << endl;
+     }
+     return;
    }
    NCBITEST_CHECK_MESSAGE(c_item.item_list.size() == c_item.obj_list.size(),
               "The sizes of item_list and obj_list are not equal");
