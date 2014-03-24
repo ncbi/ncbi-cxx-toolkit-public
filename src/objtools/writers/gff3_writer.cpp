@@ -646,6 +646,10 @@ bool CGff3Writer::xAssignAlignmentSplicedTarget(
     string seqStart = NStr::IntToString(exon.GetProduct_start().AsSeqPos()+1);
     string seqStop = NStr::IntToString(exon.GetProduct_end().AsSeqPos()+1);
     string seqStrand = "+";
+    if (spliced.CanGetProduct_strand()  &&  
+            spliced.GetProduct_strand() == objects::eNa_strand_minus) {
+         seqStrand = "-";
+    }
     target += " " + seqStart;
     target += " " + seqStop;
     target += " " + seqStrand;
