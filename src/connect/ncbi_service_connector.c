@@ -794,6 +794,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         return s_SocketConnectorBuilder(net_info, status, &uuu->ticket,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0);
     }
+    ConnNetInfo_DeleteUserHeader(net_info, "Host:");
     return HTTP_CreateConnectorEx(net_info,
                                   (uuu->params.flags
                                    & (fHTTP_Flushable | fHTTP_NoAutoRetry))
