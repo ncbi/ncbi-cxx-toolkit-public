@@ -45,9 +45,6 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
 
-#include <objtools/readers/idmapper.hpp>
-#include <objtools/simple/simple_om.hpp>
-
 #include <klib/rc.h>
 #include <klib/writer.h>
 #include <align/align-access.h>

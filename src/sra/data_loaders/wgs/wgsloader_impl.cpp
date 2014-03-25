@@ -47,7 +47,6 @@
 #include <corelib/plugin_manager_store.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
-#include <objtools/readers/idmapper.hpp>
 
 #include <sra/error_codes.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>

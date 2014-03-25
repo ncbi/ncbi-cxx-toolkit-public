@@ -43,8 +43,8 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
 
-#include <objtools/readers/idmapper.hpp>
-#include <objtools/simple/simple_om.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include <klib/rc.h>
 #include <klib/writer.h>

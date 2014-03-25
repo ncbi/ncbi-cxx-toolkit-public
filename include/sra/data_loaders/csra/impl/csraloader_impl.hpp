@@ -38,7 +38,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <sra/data_loaders/csra/csraloader.hpp>
 #include <sra/readers/sra/csraread.hpp>
-#include <objtools/readers/idmapper.hpp>
+#include <objtools/readers/iidmapper.hpp>
 #include <util/limited_size_map.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -306,7 +306,6 @@ protected:
     CCSraDb::ERefIdType m_RefIdType;
     string m_AnnotName;
     int m_MinMapQuality;
-    AutoPtr<CIdMapper> m_IdMapper;
     mutable CMutex m_CSRAMutex;
     CCSraDb m_CSRADb;
     vector<string> m_SeparateSpotGroups;
