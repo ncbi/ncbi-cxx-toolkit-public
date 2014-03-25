@@ -193,11 +193,6 @@ void CGffAlignRecord::AddMatch(
     unsigned int size)
 //  ----------------------------------------------------------------------------
 {
-//    if (!mAttrGap.empty()) {
-//        mAttrGap += " ";
-//    }
-//    mAttrGap += "M";
-//    mAttrGap += NStr::IntToString(size);
     mAccumulatedMatches += size;
 }
 

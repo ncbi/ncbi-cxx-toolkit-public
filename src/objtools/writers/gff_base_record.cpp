@@ -342,9 +342,7 @@ void CGffBaseRecord::SetScore(
     if (key == "score") {
         mScore = value;
     }
-    else {
-        mExtraScores[key] = value;
-    }
+    mExtraScores[key] = value;
 }
 
 //  ----------------------------------------------------------------------------
