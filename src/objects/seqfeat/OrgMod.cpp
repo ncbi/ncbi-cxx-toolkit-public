@@ -490,7 +490,8 @@ COrgMod::FixStructuredVoucher(string& val, const string& v_type)
     string id = "";
     if (!ParseStructuredVoucher(val, inst_code, coll_code, id)
         || NStr::IsBlank(inst_code)) {
-        return AddStructureToVoucher(val, v_type);
+        //return AddStructureToVoucher(val, v_type);
+        return false;
     }
     bool rval = false;
     bool found = false;

@@ -539,6 +539,8 @@ Seq-entry ::= seq {\
 
 BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher)
 {
+    // change removed from basic cleanup
+#if 0
     CSeq_entry entry;
     {{
          CNcbiIstrstream istr(sc_TestEntryCleanStructuredVoucher);
@@ -585,6 +587,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher)
             }
         }
     }
+#endif
 }
 
 
