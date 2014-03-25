@@ -42,6 +42,8 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqres/Int_graph.hpp>
+#include <objects/seqres/Seq_graph.hpp>
 
 
 // This header must be included before all Boost.Test headers if there are any
@@ -296,6 +298,50 @@ void RunAndCheckMultiReports(CRef <CSeq_entry> entry, const string& test_name, c
 };
 
 
+BOOST_AUTO_TEST_CASE(DISC_QUALITY_SCORES)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_annot> graph = BuildGoodGraphAnnot("Phrap Graph");
+   graph->SetData().SetGraph().front()->SetNumval(10);
+   CRef <CInt_graph> int_gph (new CInt_graph);
+   int_gph->SetMax(9);
+   int_gph->SetMin(1);
+   int_gph->SetAxis(0); 
+   int_gph->SetValues().push_back(1);
+   int_gph->SetValues().push_back(1);
+   int_gph->SetValues().push_back(2);
+   int_gph->SetValues().push_back(3);
+   int_gph->SetValues().push_back(4);
+   int_gph->SetValues().push_back(5);
+   int_gph->SetValues().push_back(6);
+   int_gph->SetValues().push_back(7);
+   int_gph->SetValues().push_back(8);
+   int_gph->SetValues().push_back(9);
+   graph->SetData().SetGraph().front()->SetGraph().SetInt(*int_gph);
+   entry->SetSeq().SetAnnot().push_back(graph);
+   RunAndCheckTest(entry, "DISC_QUALITY_SCORES", 
+                      "Quality scores are present on all sequences.");
+
+   CRef <CSeq_entry> entry2 = BuildGoodSeq();
+   CRef <CSeq_feat> src= AddGoodSourceFeature(entry2);
+   RunAndCheckTest(entry2, "DISC_QUALITY_SCORES", 
+                       "Quality scores are missing on all sequences.");
+
+   src.Reset(AddGoodSourceFeature(entry));
+   CRef <CSeq_entry> set_entry (new CSeq_entry);
+   ChangeId(entry, "good too");
+   set_entry->SetSet().SetSeq_set().push_back(entry);
+   set_entry->SetSet().SetSeq_set().push_back(entry2);
+   RunAndCheckTest(set_entry, "DISC_QUALITY_SCORES", 
+                       "Quality scores are missing on some sequences.");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_MISSING_DEFLINES)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   RunAndCheckTest(entry, "DISC_MISSING_DEFLINES", 
+                         "1 bioseq has no definition line");
+};
 
 void AddToSeqSubmitForSubmitBlkConflict(CRef <CSeq_submit> seq_submit, string id)
 {

@@ -128,7 +128,6 @@ typedef map <string, CRef < GeneralDiscSubDt > > Str2SubDt;
 typedef map <int, vector <string> > Int2Strs;
 
 static vector <CRef < GeneralDiscSubDt > > INCONSISTENT_BIOSOURCE_biosrc;
-//static unsigned DISC_QUALITY_SCORES_graph=0; 
 
 static Str2MapStr2Strs biosrc2qualvlu_nm;
 Str2QualVlus qual_nm2qual_vlus;
