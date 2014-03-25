@@ -477,7 +477,7 @@ string CGffBaseRecord::xEscapedValue(
     NStr::ReplaceInPlace(escapedValue, original, "%00");
     original[0] = 0x7F;
     NStr::ReplaceInPlace(escapedValue, original, "%7F");
-    NStr::ReplaceInPlace(escapedValue, ";", "%23");
+    NStr::ReplaceInPlace(escapedValue, ";", "%3B");
     NStr::ReplaceInPlace(escapedValue, "=", "%3D");
     NStr::ReplaceInPlace(escapedValue, "&", "%26");
     if (key != "start_range"  &&  key != "end_range") {
