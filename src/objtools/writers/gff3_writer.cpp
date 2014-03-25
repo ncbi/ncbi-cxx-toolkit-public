@@ -1888,7 +1888,7 @@ bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
     for (; it != code_breaks.end(); ++it) {
         string cbString;
         if (CWriteUtil::GetCodeBreak(**it, cbString)) {
-            record.SetAttribute("transl_except", cbString);
+            record.AddAttribute("transl_except", cbString);
         }
     }
     return true; 
