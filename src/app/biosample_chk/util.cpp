@@ -465,6 +465,13 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
             rval = true;
         }
     }
+    // special handling for altitude
+    if (!rval && NStr::EqualNocase(label, "altitude")) {
+        if (NStr::EndsWith(src_val, ".") && !NStr::EndsWith(sample_val, ".")
+            && NStr::EqualNocase(src_val.substr(0, src_val.length() - 1), sample_val)) {
+            rval = true;
+        }
+    }
     return rval;
 }
 
