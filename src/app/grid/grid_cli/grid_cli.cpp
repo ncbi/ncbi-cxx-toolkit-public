@@ -697,9 +697,11 @@ struct SCommandDefinition {
         "Special characters in all quoted strings must be properly "
         "escaped. It is OK to omit quotation marks for a string that "
         "doesn't contain spaces. The \"input\" attribute is required "
-        "unless the \"args\" attribute is specified. The latter "
-        "enables remote_app mode, in which case the \"input\" "
-        "attribute is ignored.\n\n"
+        "unless the \"args\" attribute is specified. The latter enables "
+        "remote_app mode and defines command line arguments for a "
+        "remote_app job, in which case the \"input\" attribute becomes "
+        "optional and defines the standard input stream for the "
+        "remote_app job.\n\n"
         "Examples:\n\n"
         "  input=\"db, 8548@394.701\" exclusive\n"
         "  args=\"checkout p1/d2\" affinity=\"bin1\"\n\n"
@@ -1162,6 +1164,7 @@ int CGridCommandLineInterfaceApp::Run()
     const SCommandDefinition* cmd_def;
     const int* cmd_opt;
 
+    ifstream input_file;
     COutputFileHelper output_file_helper;
 
     {
@@ -1440,10 +1443,12 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.command = opt_value;
                 break;
             case eInputFile:
-                if ((m_Opts.input_stream = fopen(opt_value, "rb")) == NULL) {
+                input_file.open(opt_value, ifstream::binary);
+                if (input_file.fail()) {
                     fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
                     return 2;
                 }
+                m_Opts.input_stream = &input_file;
                 break;
             case eRemoteAppArgs:
                 m_Opts.remote_app_args = opt_value;
@@ -1508,7 +1513,7 @@ int CGridCommandLineInterfaceApp::Run()
             m_Opts.auth = GRID_APP_NAME;
 
         if (IsOptionAcceptedButNotSet(eInputFile)) {
-            m_Opts.input_stream = stdin;
+            m_Opts.input_stream = &NcbiCin;
 #ifdef WIN32
             setmode(fileno(stdin), O_BINARY);
 #endif
@@ -1555,12 +1560,6 @@ int CGridCommandLineInterfaceApp::Run()
         fprintf(stderr, "%s\n", s.c_str());
         return 4;
     }
-}
-
-CGridCommandLineInterfaceApp::~CGridCommandLineInterfaceApp()
-{
-    if (IsOptionSet(eInputFile) && m_Opts.input_stream != NULL)
-        fclose(m_Opts.input_stream);
 }
 
 void CGridCommandLineInterfaceApp::PrintLine(const string& line)

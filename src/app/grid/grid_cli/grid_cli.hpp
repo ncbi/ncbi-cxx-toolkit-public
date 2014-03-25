@@ -264,8 +264,6 @@ public:
 
     virtual int Run();
 
-    virtual ~CGridCommandLineInterfaceApp();
-
     static void PrintLine(const string& line);
 
 private:
@@ -313,7 +311,7 @@ private:
         string remote_app_args;
         string aggregation_interval;
         string command;
-        FILE* input_stream;
+        istream* input_stream;
         FILE* output_stream;
         FILE* protocol_dump;
         TNetStorageFlags netstorage_flags;
@@ -508,6 +506,7 @@ private:
             const string& server_host);
     void CheckJobInputStream(CNcbiOstream& job_input_stream);
     void PrepareRemoteAppJobInput(const string& args,
+            CNcbiIstream& remote_app_stdin,
             CNcbiOstream& job_input_stream);
     void SubmitJob_Batch();
     int DumpJobInputOutput(const string& data_or_blob_id);

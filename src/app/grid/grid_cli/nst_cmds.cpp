@@ -234,14 +234,18 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
         netstorage_object.Write(m_Opts.input);
     else {
         char buffer[IO_BUFFER_SIZE];
-        size_t bytes_read;
 
-        while ((bytes_read = fread(buffer, 1,
-                sizeof(buffer), m_Opts.input_stream)) > 0) {
-            netstorage_object.Write(buffer, bytes_read);
-            if (feof(m_Opts.input_stream))
-                break;
-        }
+        do {
+            m_Opts.input_stream->read(buffer, sizeof(buffer));
+
+            if (m_Opts.input_stream->fail()) {
+                NCBI_THROW(CIOException, eRead,
+                        "Error while reading input data");
+            }
+
+            netstorage_object.Write(buffer,
+                    (size_t) m_Opts.input_stream->gcount());
+        } while (!m_Opts.input_stream->eof());
     }
 
     netstorage_object.Close();

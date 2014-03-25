@@ -407,16 +407,17 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
             goto ErrorExit;
     } else {
         char buffer[IO_BUFFER_SIZE];
-        size_t bytes_read;
 
-        while ((bytes_read = fread(buffer, 1,
-                sizeof(buffer), m_Opts.input_stream)) > 0) {
+        do {
+            m_Opts.input_stream->read(buffer, sizeof(buffer));
+            if (m_Opts.input_stream->fail()) {
+                NCBI_USER_THROW("Error while reading from input stream");
+            }
+            size_t bytes_read = (size_t) m_Opts.input_stream->gcount();
             if (writer->Write(buffer, bytes_read, &bytes_written) !=
                     eRW_Success || bytes_written != bytes_read)
                 goto ErrorExit;
-            if (feof(m_Opts.input_stream))
-                break;
-        }
+        } while (!m_Opts.input_stream->eof());
     }
 
     writer->Close();

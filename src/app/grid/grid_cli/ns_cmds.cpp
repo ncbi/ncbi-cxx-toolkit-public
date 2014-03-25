@@ -220,7 +220,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
 class CBatchSubmitAttrParser
 {
 public:
-    CBatchSubmitAttrParser(FILE* input_stream) :
+    CBatchSubmitAttrParser(istream* input_stream) :
         m_InputStream(input_stream),
         m_LineNumber(0)
     {
@@ -230,10 +230,9 @@ public:
     EOption GetAttributeType() const {return m_JobAttribute;}
     const string& GetAttributeValue() const {return m_JobAttributeValue;}
     size_t GetLineNumber() const {return m_LineNumber;}
-    void ReportInvalidJobInputAttr();
 
 private:
-    FILE* m_InputStream;
+    istream* m_InputStream;
     size_t m_LineNumber;
     string m_Line;
     CAttrListParser m_AttrParser;
@@ -247,30 +246,22 @@ bool CBatchSubmitAttrParser::NextLine()
         return false;
 
     ++m_LineNumber;
-    m_Line.resize(0);
 
-    char buffer[IO_BUFFER_SIZE];
-    size_t bytes_read;
+    getline(*m_InputStream, m_Line);
 
-    while (fgets(buffer, sizeof(buffer), m_InputStream) != NULL)
-        if ((bytes_read = strlen(buffer)) > 0) {
-            if (buffer[bytes_read - 1] != '\n')
-                m_Line.append(buffer, bytes_read);
-            else {
-                m_Line.append(buffer, bytes_read - 1);
-                m_AttrParser.Reset(m_Line);
-                return true;
-            }
-        }
-
-    m_InputStream = NULL;
-
-    if (m_Line.empty())
+    if (m_InputStream->fail()) {
+        m_InputStream = NULL;
         return false;
-    else {
-        m_AttrParser.Reset(m_Line);
-        return true;
     }
+
+    if (m_InputStream->eof()) {
+        m_InputStream = NULL;
+        if (m_Line.empty())
+            return false;
+    }
+
+    m_AttrParser.Reset(m_Line);
+    return true;
 }
 
 bool CBatchSubmitAttrParser::NextAttribute()
@@ -327,13 +318,6 @@ bool CBatchSubmitAttrParser::NextAttribute()
     return true;
 }
 
-void CBatchSubmitAttrParser::ReportInvalidJobInputAttr()
-{
-    NCBI_THROW_FMT(CArgException, eInvalidArg, "Exactly one of "
-        "either \"input\" or \"args\" attribute is required "
-        "at line " << GetLineNumber());
-}
-
 static const string s_NotificationTimestampFormat("Y/M/D h:m:s.l");
 
 void CGridCommandLineInterfaceApp::PrintJobStatusNotification(
@@ -362,12 +346,13 @@ void CGridCommandLineInterfaceApp::PrintJobStatusNotification(
 void CGridCommandLineInterfaceApp::CheckJobInputStream(
         CNcbiOstream& job_input_stream)
 {
-    if (job_input_stream.bad()) {
+    if (job_input_stream.fail()) {
         NCBI_THROW(CIOException, eWrite, "Error while writing job input");
     }
 }
 
 void CGridCommandLineInterfaceApp::PrepareRemoteAppJobInput(const string& args,
+        CNcbiIstream& remote_app_stdin,
         CNcbiOstream& job_input_stream)
 {
     CRemoteAppRequest request(m_GridClient->GetNetCacheAPI());
@@ -378,55 +363,103 @@ void CGridCommandLineInterfaceApp::PrepareRemoteAppJobInput(const string& args,
             input_size - input_size / 10);
 
     request.SetCmdLine(args);
-    request.Send(job_input_stream);
+    NcbiStreamCopy(request.GetStdIn(), remote_app_stdin);
 
-    CheckJobInputStream(job_input_stream);
+    request.Send(job_input_stream);
+}
+
+struct SBatchSubmitRecord {
+    CBatchSubmitAttrParser attr_parser;
+
+    string job_input;
+    bool job_input_defined;
+    string remote_app_args;
+    bool remote_app_args_defined;
+    string affinity;
+    bool exclusive_job;
+
+    SBatchSubmitRecord(istream* input_stream) : attr_parser(input_stream) {}
+
+    bool LoadNextRecord();
+};
+
+bool SBatchSubmitRecord::LoadNextRecord()
+{
+    if (!attr_parser.NextLine())
+        return false;
+
+    job_input_defined = remote_app_args_defined = exclusive_job = false;
+    affinity = kEmptyStr;
+
+    while (attr_parser.NextAttribute())
+        switch (attr_parser.GetAttributeType()) {
+        case eInput:
+            if (job_input_defined) {
+                NCBI_THROW_FMT(CArgException, eInvalidArg,
+                        "More than one \"input\" attribute is defined "
+                        "at line " << attr_parser.GetLineNumber());
+            }
+            job_input = attr_parser.GetAttributeValue();
+            job_input_defined = true;
+            break;
+        case eRemoteAppArgs:
+            if (remote_app_args_defined) {
+                NCBI_THROW_FMT(CArgException, eInvalidArg,
+                        "More than one \"args\" attribute is defined "
+                        "at line " << attr_parser.GetLineNumber());
+            }
+            remote_app_args = attr_parser.GetAttributeValue();
+            remote_app_args_defined = true;
+            break;
+        case eAffinity:
+            affinity = attr_parser.GetAttributeValue();
+            break;
+        case eExclusiveJob:
+            exclusive_job = true;
+            break;
+        default:
+            _ASSERT(0);
+            break;
+        }
+
+    if (!job_input_defined && !remote_app_args_defined) {
+        NCBI_THROW_FMT(CArgException, eInvalidArg, "\"input\" "
+                "(and/or \"args\") attribute is required "
+                "at line " << attr_parser.GetLineNumber());
+    }
+
+    return true;
 }
 
 void CGridCommandLineInterfaceApp::SubmitJob_Batch()
 {
-    CBatchSubmitAttrParser attr_parser(m_Opts.input_stream);
+    SBatchSubmitRecord job_input_record(m_Opts.input_stream);
 
     if (m_Opts.batch_size <= 1) {
-        while (attr_parser.NextLine()) {
-            bool input_defined = false;
-            while (attr_parser.NextAttribute()) {
-                const string& attr_value(attr_parser.GetAttributeValue());
-                switch (attr_parser.GetAttributeType()) {
-                case eInput:
-                    if (input_defined)
-                        attr_parser.ReportInvalidJobInputAttr();
-                    input_defined = true;
-                    {
-                        CNcbiOstream& job_input_stream(
-                            m_GridClient->GetOStream());
-                        job_input_stream.write(attr_value.data(),
-                            attr_value.length());
-                        CheckJobInputStream(job_input_stream);
-                    }
-                    break;
-                case eRemoteAppArgs:
-                    if (input_defined)
-                        attr_parser.ReportInvalidJobInputAttr();
-                    input_defined = true;
-                    PrepareRemoteAppJobInput(attr_value,
-                            m_GridClient->GetOStream());
-                    break;
-                case eAffinity:
-                    m_GridClient->SetJobAffinity(attr_value);
-                    break;
-                case eExclusiveJob:
-                    m_GridClient->SetJobMask(CNetScheduleAPI::eExclusiveJob);
-                    break;
-                default:
-                    _ASSERT(0);
-                    break;
-                }
+        while (job_input_record.LoadNextRecord()) {
+            CNcbiOstream& job_input_stream(m_GridClient->GetOStream());
+
+            if (job_input_record.remote_app_args_defined) {
+                CNcbiStrstream remote_app_stdin;
+                remote_app_stdin << job_input_record.job_input << NcbiEnds;
+                PrepareRemoteAppJobInput(job_input_record.remote_app_args,
+                        remote_app_stdin, job_input_stream);
+            } else {
+                job_input_stream.write(job_input_record.job_input.data(),
+                        job_input_record.job_input.length());
             }
-            if (!input_defined)
-                attr_parser.ReportInvalidJobInputAttr();
+
+            CheckJobInputStream(job_input_stream);
+
+            if (!job_input_record.affinity.empty())
+                m_GridClient->SetJobAffinity(job_input_record.affinity);
+
+            if (job_input_record.exclusive_job)
+                m_GridClient->SetJobMask(CNetScheduleAPI::eExclusiveJob);
+
             if (IsOptionSet(eGroup))
                 m_GridClient->SetJobGroup(m_Opts.job_group);
+
             fprintf(m_Opts.output_stream,
                 "%s\n", m_GridClient->Submit(m_Opts.affinity).c_str());
         }
@@ -435,7 +468,7 @@ void CGridCommandLineInterfaceApp::SubmitJob_Batch()
             m_GridClient->GetJobBatchSubmitter());
         unsigned remaining_batch_size = m_Opts.batch_size;
 
-        while (attr_parser.NextLine()) {
+        while (job_input_record.LoadNextRecord()) {
             if (remaining_batch_size == 0) {
                 batch_submitter.Submit(m_Opts.job_group);
                 const vector<CNetScheduleJob>& jobs =
@@ -447,42 +480,26 @@ void CGridCommandLineInterfaceApp::SubmitJob_Batch()
                 remaining_batch_size = m_Opts.batch_size;
             }
             batch_submitter.PrepareNextJob();
-            bool input_defined = false;
-            while (attr_parser.NextAttribute()) {
-                const string& attr_value(attr_parser.GetAttributeValue());
-                switch (attr_parser.GetAttributeType()) {
-                case eInput:
-                    if (input_defined)
-                        attr_parser.ReportInvalidJobInputAttr();
-                    input_defined = true;
-                    {
-                        CNcbiOstream& job_input_stream(
-                                batch_submitter.GetOStream());
-                        job_input_stream.write(attr_value.data(),
-                                attr_value.length());
-                        CheckJobInputStream(job_input_stream);
-                    }
-                    break;
-                case eRemoteAppArgs:
-                    if (input_defined)
-                        attr_parser.ReportInvalidJobInputAttr();
-                    input_defined = true;
-                    PrepareRemoteAppJobInput(attr_value,
-                            batch_submitter.GetOStream());
-                    break;
-                case eAffinity:
-                    batch_submitter.SetJobAffinity(attr_value);
-                    break;
-                case eExclusiveJob:
-                    batch_submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
-                    break;
-                default:
-                    _ASSERT(0);
-                    break;
-                }
-            }
-            if (!input_defined)
-                attr_parser.ReportInvalidJobInputAttr();
+
+            CNcbiOstream& job_input_stream(batch_submitter.GetOStream());
+
+            if (job_input_record.remote_app_args_defined) {
+                CNcbiStrstream remote_app_stdin;
+                remote_app_stdin << job_input_record.job_input << NcbiEnds;
+                PrepareRemoteAppJobInput(job_input_record.remote_app_args,
+                        remote_app_stdin, job_input_stream);
+            } else
+                job_input_stream.write(job_input_record.job_input.data(),
+                        job_input_record.job_input.length());
+
+            CheckJobInputStream(job_input_stream);
+
+            if (!job_input_record.affinity.empty())
+                batch_submitter.SetJobAffinity(job_input_record.affinity);
+
+            if (job_input_record.exclusive_job)
+                batch_submitter.SetJobMask(CNetScheduleAPI::eExclusiveJob);
+
             --remaining_batch_size;
         }
         if (remaining_batch_size < m_Opts.batch_size) {
@@ -505,23 +522,22 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
     else {
         CNcbiOstream& job_input_stream = m_GridClient->GetOStream();
 
-        if (IsOptionSet(eRemoteAppArgs))
-            PrepareRemoteAppJobInput(m_Opts.remote_app_args, job_input_stream);
-        else if (IsOptionSet(eInput)) {
-            job_input_stream.write(m_Opts.input.data(), m_Opts.input.length());
-            CheckJobInputStream(job_input_stream);
-        } else {
-            char buffer[IO_BUFFER_SIZE];
-            size_t bytes_read;
-
-            while ((bytes_read = fread(buffer, 1,
-                    sizeof(buffer), m_Opts.input_stream)) > 0) {
-                job_input_stream.write(buffer, bytes_read);
-                CheckJobInputStream(job_input_stream);
-                if (feof(m_Opts.input_stream))
-                    break;
+        if (IsOptionSet(eRemoteAppArgs)) {
+            if (!IsOptionSet(eInput))
+                PrepareRemoteAppJobInput(m_Opts.remote_app_args,
+                        NcbiCin, job_input_stream);
+            else {
+                CNcbiStrstream remote_app_stdin;
+                remote_app_stdin << m_Opts.input << NcbiEnds;
+                PrepareRemoteAppJobInput(m_Opts.remote_app_args,
+                        remote_app_stdin, job_input_stream);
             }
-        }
+        } else if (IsOptionSet(eInput))
+            job_input_stream.write(m_Opts.input.data(), m_Opts.input.length());
+        else
+            NcbiStreamCopy(job_input_stream, *m_Opts.input_stream);
+
+        CheckJobInputStream(job_input_stream);
 
         m_GridClient->SetJobGroup(m_Opts.job_group);
         m_GridClient->SetJobAffinity(m_Opts.affinity);
@@ -659,7 +675,7 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
 
         while (!std_stream.eof()) {
             std_stream.read(buffer, sizeof(buffer));
-            if (std_stream.bad())
+            if (std_stream.fail())
                 goto Error;
             bytes_read = (size_t) std_stream.gcount();
             if (fwrite(buffer, 1, bytes_read,
@@ -921,18 +937,18 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
                 m_NetScheduleAPI.GetServerParams().max_output_size,
                 m_NetCacheAPI, job.output));
 
-        char buffer[IO_BUFFER_SIZE];
-        size_t bytes_read;
+        if (!IsOptionSet(eJobOutput)) {
+            char buffer[IO_BUFFER_SIZE];
 
-        if (!IsOptionSet(eJobOutput))
-            while ((bytes_read = fread(buffer, 1,
-                    sizeof(buffer), m_Opts.input_stream)) > 0) {
-                if (writer->Write(buffer, bytes_read) != eRW_Success)
+            do {
+                m_Opts.input_stream->read(buffer, sizeof(buffer));
+                if (m_Opts.input_stream->fail())
                     goto ErrorExit;
-                if (feof(m_Opts.input_stream))
-                    break;
-            }
-        else
+                if (writer->Write(buffer,
+                        (size_t) m_Opts.input_stream->gcount()) != eRW_Success)
+                    goto ErrorExit;
+            } while (!m_Opts.input_stream->eof());
+        } else
             if (writer->Write(m_Opts.job_output.data(),
                     m_Opts.job_output.length()) != eRW_Success)
                 goto ErrorExit;
