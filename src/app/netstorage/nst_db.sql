@@ -237,11 +237,13 @@ CREATE PROCEDURE GetNextObjectID
 AS
 BEGIN
     DECLARE @row_count  INT
+    DECLARE @error      INT
 
     SET @next_id = NULL
     UPDATE ObjectIdGen SET @next_id = next_object_id = next_object_id + 1
-    SET @row_count = @@ROWCOUNT
-    IF @@ERROR != 0 OR @row_count = 0 OR @next_id IS NULL
+    SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+    IF @error != 0 OR @row_count = 0 OR @next_id IS NULL
         RETURN 1
     RETURN 0
 END
@@ -290,6 +292,8 @@ AS
 BEGIN
     BEGIN TRY
         DECLARE @row_count  INT
+        DECLARE @error      INT
+
         INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
         VALUES (@object_id,
                 @object_key,
@@ -297,8 +301,9 @@ BEGIN
                 (SELECT client_id FROM Clients WHERE name = @client_name),
                 GETDATE(),
                 @object_size)
-        SET @row_count = @@ROWCOUNT
-        IF @@ERROR != 0 OR @row_count = 0
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+        IF @error != 0 OR @row_count = 0
             RETURN 1
         RETURN 0
     END TRY
@@ -324,10 +329,13 @@ AS
 BEGIN
     BEGIN TRY
         DECLARE @row_count  INT
+        DECLARE @error      INT
+
         INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_create, size)
         VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
-        SET @row_count = @@ROWCOUNT
-        IF @@ERROR != 0 OR @row_count = 0
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+        IF @error != 0 OR @row_count = 0
             RETURN 1
         RETURN 0
     END TRY
@@ -355,10 +363,12 @@ BEGIN
     BEGIN TRY
 
         DECLARE @row_count  INT
+        DECLARE @error      INT
 
         UPDATE Objects SET size = @object_size, tm_write = GETDATE() WHERE object_key = @object_key
-        SET @row_count = @@ROWCOUNT
-        IF @@ERROR != 0
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+        IF @error != 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
@@ -378,8 +388,9 @@ BEGIN
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write, size)
             VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
-            SET @row_count = @@ROWCOUNT
-            IF @@ERROR != 0 OR @row_count = 0
+            SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+            IF @error != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -414,10 +425,12 @@ BEGIN
     BEGIN TRY
 
         DECLARE @row_count  INT
+        DECLARE @error      INT
 
         UPDATE Objects SET tm_read = GETDATE() WHERE object_key = @object_key
-        SET @row_count = @@ROWCOUNT
-        IF @@ERROR != 0
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+        IF @error != 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
@@ -437,8 +450,9 @@ BEGIN
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_read, size)
             VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE(), @object_size)
-            SET @row_count = @@ROWCOUNT
-            IF @@ERROR != 0 OR @row_count = 0
+            SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+            IF @error != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -472,10 +486,12 @@ BEGIN
     BEGIN TRY
 
         DECLARE @row_count  INT
+        DECLARE @error      INT
 
         UPDATE Objects SET object_loc = @object_loc WHERE object_key = @object_key
-        SET @row_count = @@ROWCOUNT
-        IF @@ERROR != 0
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+        IF @error != 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
@@ -495,8 +511,9 @@ BEGIN
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_write)
             VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE())
-            SET @row_count = @@ROWCOUNT
-            IF @@ERROR != 0 OR @row_count = 0
+            SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+            IF @error != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -571,6 +588,7 @@ BEGIN
     DECLARE @object_id      BIGINT = NULL
     DECLARE @attr_id        BIGINT = NULL
     DECLARE @row_count      INT
+    DECLARE @error          INT
 
     BEGIN TRANSACTION
     BEGIN TRY
@@ -595,8 +613,9 @@ BEGIN
 
             INSERT INTO Objects (object_id, object_key, object_loc, client_id, tm_attr_write)
             VALUES (@object_id, @object_key, @object_loc, @client_id, GETDATE())
-            SET @row_count = @@ROWCOUNT
-            IF @@ERROR != 0 OR @row_count = 0
+            SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+            IF @error != 0 OR @row_count = 0
             BEGIN
                 ROLLBACK TRANSACTION
                 RETURN 1
@@ -652,6 +671,7 @@ BEGIN
     DECLARE @object_id      BIGINT = NULL
     DECLARE @attr_id        BIGINT = NULL
     DECLARE @row_count      INT
+    DECLARE @error          INT
 
     BEGIN TRANSACTION
     BEGIN TRY
@@ -670,8 +690,9 @@ BEGIN
         END
 
         UPDATE Objects SET tm_attr_write = GETDATE() WHERE object_id = @object_id
-        SET @row_count = @@ROWCOUNT
-        IF @@ERROR != 0 OR @row_count = 0
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+        IF @error != 0 OR @row_count = 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
@@ -721,6 +742,7 @@ BEGIN
     DECLARE @object_id      BIGINT = NULL
     DECLARE @attr_id        BIGINT = NULL
     DECLARE @row_count      INT
+    DECLARE @error          INT
 
     SET @attr_value = NULL
 
@@ -766,8 +788,9 @@ BEGIN
 
         -- Update attribute timestamp for the existing object
         UPDATE Objects SET tm_attr_read = GETDATE() WHERE object_id = @object_id
-        SET @row_count = @@ROWCOUNT
-        IF @@ERROR != 0 OR @row_count = 0
+        SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
+
+        IF @error != 0 OR @row_count = 0
         BEGIN
             ROLLBACK TRANSACTION
             RETURN 1
