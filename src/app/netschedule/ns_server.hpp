@@ -145,8 +145,10 @@ public:
 
     string GetAlerts(void) const;
     string SerializeAlerts(void) const;
-    enum EAlertAckResult AcknowledgeAlert(const string &  id);
-    enum EAlertAckResult AcknowledgeAlert(EAlertType  alert_type);
+    enum EAlertAckResult AcknowledgeAlert(const string &  id,
+                                          const string &  user);
+    enum EAlertAckResult AcknowledgeAlert(EAlertType  alert_type,
+                                          const string &  user);
     void RegisterAlert(EAlertType  alert_type);
 
 protected:

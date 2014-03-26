@@ -76,6 +76,7 @@ struct SNSCommandArguments
     string          group;
     string          alert;
     string          service;
+    string          user;
 
     bool            any_affinity;
     bool            wnode_affinity;

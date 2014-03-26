@@ -69,6 +69,7 @@ struct SNSAlertAttributes
     CNSPreciseTime      m_AcknowledgedTimestamp;
     bool                m_On;
     size_t              m_Count;
+    string              m_User;
 
     SNSAlertAttributes() :
         m_LastDetectedTimestamp(CNSPreciseTime::Current()),
@@ -85,8 +86,10 @@ class CNSAlerts
 {
     public:
         void Register(enum EAlertType alert_type);
-        enum EAlertAckResult Acknowledge(const string &  alert_id);
-        enum EAlertAckResult Acknowledge(enum EAlertType alert_type);
+        enum EAlertAckResult Acknowledge(const string &  alert_id,
+                                         const string &  user);
+        enum EAlertAckResult Acknowledge(enum EAlertType alert_type,
+                                         const string &  user);
         string GetURLEncoded(void) const;
         string Serialize(void) const;
 

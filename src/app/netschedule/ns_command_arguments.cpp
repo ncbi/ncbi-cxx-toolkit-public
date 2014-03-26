@@ -73,6 +73,7 @@ void SNSCommandArguments::x_Reset()
     group.erase();
     alert.erase();
     service.erase();
+    user.erase();
 
     any_affinity = false;
     wnode_affinity = false;
@@ -289,6 +290,10 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
         case 't':
             if (key == "timeout")
                 timeout = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
+            break;
+        case 'u':
+            if (key == "user")
+                user = NStr::ParseEscapes(val);
             break;
         case 'w':
             if (key == "wnode_aff") {

@@ -65,7 +65,8 @@ string SNSAlertAttributes::Serialize(void) const
                         NS_FormatPreciseTime(m_LastDetectedTimestamp) + "\n"
            "OK:acknowledged_time: " + acknowledged + "\n"
            "OK:on: " + NStr::BoolToString(m_On) + "\n"
-           "OK:count: " + NStr::NumericToString(m_Count);
+           "OK:count: " + NStr::NumericToString(m_Count) + "\n"
+           "OK:user: " + m_User;
 }
 
 
@@ -89,17 +90,19 @@ void CNSAlerts::Register(enum EAlertType alert_type)
 }
 
 
-enum EAlertAckResult CNSAlerts::Acknowledge(const string &  alert_id)
+enum EAlertAckResult CNSAlerts::Acknowledge(const string &  alert_id,
+                                            const string &  user)
 {
     EAlertType  type = x_IdToType(alert_id);
     if (type == eUnknown)
         return eNotFound;
 
-    return Acknowledge(type);
+    return Acknowledge(type, user);
 }
 
 
-enum EAlertAckResult CNSAlerts::Acknowledge(enum EAlertType alert_type)
+enum EAlertAckResult CNSAlerts::Acknowledge(enum EAlertType alert_type,
+                                            const string &  user)
 {
     map< enum EAlertType,
          SNSAlertAttributes >::iterator     found;
@@ -114,6 +117,7 @@ enum EAlertAckResult CNSAlerts::Acknowledge(enum EAlertType alert_type)
 
     found->second.m_AcknowledgedTimestamp = CNSPreciseTime::Current();
     found->second.m_On = false;
+    found->second.m_User = user;
     return eAcknowledged;
 }
 

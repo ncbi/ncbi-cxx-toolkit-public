@@ -520,15 +520,19 @@ string CNetScheduleServer::SerializeAlerts(void) const
 }
 
 
-enum EAlertAckResult CNetScheduleServer::AcknowledgeAlert(const string &  id)
+enum EAlertAckResult
+CNetScheduleServer::AcknowledgeAlert(const string &  id,
+                                     const string &  user)
 {
-    return m_Alerts.Acknowledge(id);
+    return m_Alerts.Acknowledge(id, user);
 }
 
 
-enum EAlertAckResult CNetScheduleServer::AcknowledgeAlert(EAlertType  alert_type)
+enum EAlertAckResult
+CNetScheduleServer::AcknowledgeAlert(EAlertType      alert_type,
+                                     const string &  user)
 {
-    return m_Alerts.Acknowledge(alert_type);
+    return m_Alerts.Acknowledge(alert_type, user);
 }
 
 

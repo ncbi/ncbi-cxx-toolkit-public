@@ -112,9 +112,10 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
-    { "ACKALERT",      { &CNetScheduleHandler::x_ProcessAclAlert,
+    { "ACKALERT",      { &CNetScheduleHandler::x_ProcessAckAlert,
                          eNS_NoChecks },
         { { "alert",             eNSPT_Id,  eNSPA_Required      },
+          { "user",              eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QUIT",          { &CNetScheduleHandler::x_ProcessQuitSession,
@@ -2331,8 +2332,8 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         string      services_changed = m_Server->ReadServicesConfig(reg);
 
         if (what_changed.empty() && diff.empty() && services_changed.empty()) {
-            m_Server->AcknowledgeAlert(eConfig);
-            m_Server->AcknowledgeAlert(eReconfigure);
+            m_Server->AcknowledgeAlert(eConfig, "NSAcknowledge");
+            m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
             if (m_ConnContext.NotNull())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
             x_WriteMessage("OK:WARNING:No changeable parameters were "
@@ -2356,8 +2357,8 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         if (m_ConnContext.NotNull())
             GetDiagContext().Extra().Print("config_changes", total_changes);
 
-        m_Server->AcknowledgeAlert(eConfig);
-        m_Server->AcknowledgeAlert(eReconfigure);
+        m_Server->AcknowledgeAlert(eConfig, "NSAcknowledge");
+        m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
         x_WriteMessage("OK:" + total_changes);
     }
     else
@@ -2555,10 +2556,11 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
 }
 
 
-void CNetScheduleHandler::x_ProcessAclAlert(CQueue*)
+void CNetScheduleHandler::x_ProcessAckAlert(CQueue*)
 {
     enum EAlertAckResult    result =
-                m_Server->AcknowledgeAlert(m_CommandArguments.alert);
+                m_Server->AcknowledgeAlert(m_CommandArguments.alert,
+                                           m_CommandArguments.user);
     switch (result) {
         case eNotFound:
             x_WriteMessage("OK:WARNING:Alert has not been found;");
