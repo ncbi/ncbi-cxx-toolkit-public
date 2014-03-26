@@ -72,6 +72,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ACA	s	Agricultural University of Athens",
 "ACA-DC	c	Greek Coordinated Collections of Microorganisms",
 "ACAD	s	Acadia University, K. C. Irving Environmental Science Centre & Harriet Irving Botanical Gardens",
+"ACAD<AUS>	sb	Australian Centre for Ancient DNA",
 "ACAM	c	The Australian Collection of Antarctic Microorganisms, Cooperative Research Center for the Antarctic and Southern Ocean Environment",
 "ACAP	s	Aquaculture Center of Aomori Prefecture",
 "ACBC	s	Agriculture Canada Research Station",
