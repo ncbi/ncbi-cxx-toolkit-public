@@ -220,7 +220,7 @@ void CBlastTabularInfo::x_PrintQueryAccessionVersion()
 
 void CBlastTabularInfo::x_PrintSubjectSeqId()
 {
-    m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eFullId);
+    m_Ostream << s_GetSeqIdListString(m_SubjectId, eFullId);
 }
 
 void CBlastTabularInfo::x_PrintSubjectAllSeqIds(void)
@@ -464,15 +464,20 @@ void CBlastTabularInfo::SetQueryId(const CBioseq_Handle& bh)
         
 void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
 {
+    m_SubjectId.clear();
 
-    const CRef<CBlast_def_line_set> bdlRef = 
-        CSeqDB::ExtractBlastDefline(bh);
-
-    x_SetSubjectId(bh, bdlRef);
-    
+    vector<CConstRef<objects::CSeq_id> > subject_id_list;
+    ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
+    	bool parse_local_id = (itr->GetSeqId()->IsLocal() &&
+    			               itr->GetSeqId()->GetLocal().IsStr() &&
+    			               (itr->GetSeqId()->GetLocal().GetStr().find("Subject_") == NPOS));
+    	CRef<CSeq_id> next_id = s_ReplaceLocalId(bh, itr->GetSeqId(), parse_local_id);
+    	subject_id_list.push_back(next_id);
+    }
+    CShowBlastDefline::GetSeqIdList(bh, subject_id_list, m_SubjectId);
 }
 
-void CBlastTabularInfo::x_SetSubjectId(const CBioseq_Handle& bh, const CRef<CBlast_def_line_set> & bdlRef)
+void CBlastTabularInfo::x_SetSubjectIds(const CBioseq_Handle& bh, const CRef<CBlast_def_line_set> & bdlRef)
 {
     m_SubjectIds.clear();
 
@@ -683,8 +688,7 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     	x_SetQueryCovSubject(align);
 
     // Extract the full list of subject ids
-    bool setSubjectIds =  (x_IsFieldRequested(eSubjectSeqId) ||
-        x_IsFieldRequested(eSubjectAllSeqIds) ||
+    bool setSubjectIds = (x_IsFieldRequested(eSubjectAllSeqIds) ||
         x_IsFieldRequested(eSubjectGi) ||
         x_IsFieldRequested(eSubjectAllGis) ||
         x_IsFieldRequested(eSubjectAccession) ||
@@ -701,23 +705,31 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
 			  	  	  	  	x_IsFieldRequested(eSubjectAllTitles));
 
     if(setSubjectIds || setSubjectTaxInfo || setSubjectTitle ||
-       x_IsFieldRequested(eSubjectStrand))
+       x_IsFieldRequested(eSubjectStrand) || x_IsFieldRequested(eSubjectSeqId))
     {
         try {
-            const CBioseq_Handle& subject_bh = 
+       		const CBioseq_Handle& subject_bh =
                 scope.GetBioseqHandle(align.GetSeq_id(1));
-            CRef<CBlast_def_line_set> bdlRef =
-                CSeqDB::ExtractBlastDefline(subject_bh);
-            x_SetSubjectId(subject_bh, bdlRef);
+            if(x_IsFieldRequested(eSubjectSeqId)) {
+            	SetSubjectId(subject_bh);
+            }
             subject_is_na = subject_bh.IsNa();
             m_SubjectLength = subject_bh.GetBioseqLength();
-            if(setSubjectTaxInfo)
-            	x_SetTaxInfo(subject_bh, bdlRef);
-            if(setSubjectTitle)
-            {
-            	m_SubjectDefline.Reset();
-            	if(bdlRef.NotEmpty())
-            		m_SubjectDefline = bdlRef;
+
+            if(setSubjectIds || setSubjectTaxInfo || setSubjectTitle) {
+            	CRef<CBlast_def_line_set> bdlRef =
+            			CSeqDB::ExtractBlastDefline(subject_bh);
+            	if(setSubjectIds) {
+            		x_SetSubjectIds(subject_bh, bdlRef);
+            	}
+            	if(setSubjectTaxInfo) {
+            		x_SetTaxInfo(subject_bh, bdlRef);
+            	}
+            	if(setSubjectTitle) {
+            		m_SubjectDefline.Reset();
+            		if(bdlRef.NotEmpty())
+            			m_SubjectDefline = bdlRef;
+            	}
             }
 
         } catch (const CException&) {

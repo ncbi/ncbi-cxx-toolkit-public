@@ -285,7 +285,7 @@ protected:
     void x_PrintSeqalignCoverage();
     void x_PrintSubjectCoverage();
     void x_SetTaxInfo(const objects::CBioseq_Handle & handle, const CRef<objects::CBlast_def_line_set> & bdlRef);
-    void x_SetSubjectId(const objects::CBioseq_Handle& bh, const CRef<objects::CBlast_def_line_set> & bdlRef);
+    void x_SetSubjectIds(const objects::CBioseq_Handle& bh, const CRef<objects::CBlast_def_line_set> & bdlRef);
     void x_SetQueryCovSubject(const objects::CSeq_align & align);
     void x_SetQueryCovSeqalign(const CSeq_align & align, int query_len);
     void x_CheckTaxDB();
@@ -305,6 +305,7 @@ protected:
 private:
 
     list<CRef<objects::CSeq_id> > m_QueryId;  ///< List of query ids for this HSP
+    list<CRef<objects::CSeq_id> > m_SubjectId;
     /// All subject sequence ids for this HSP
     vector<list<CRef<objects::CSeq_id> > > m_SubjectIds;
     TSeqPos m_QueryLength;   ///< Length of query sequence
