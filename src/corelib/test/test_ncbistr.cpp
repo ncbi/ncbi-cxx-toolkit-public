@@ -3041,11 +3041,11 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
     BOOST_CHECK_EQUAL(38u,  CUtf8::GetValidBytesCount(CTempString(u8str.data(), u8str.length())));
     BOOST_CHECK_EQUAL(38u,  CUtf8::GetValidBytesCount(u8str));
 
-    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("UtF-8"),        eEncoding_UTF8);
-    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("Windows-1252"), eEncoding_Windows_1252);
-    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("cp367"),        eEncoding_Ascii);
-    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("csISOLatin1"),  eEncoding_ISO8859_1);
-    BOOST_CHECK_EQUAL( CUtf8::StringToEncoding("ISO-2022-CN-EXT"), eEncoding_Unknown);
+    BOOST_CHECK_EQUAL( (int)CUtf8::StringToEncoding("UtF-8"),           (int)eEncoding_UTF8);
+    BOOST_CHECK_EQUAL( (int)CUtf8::StringToEncoding("Windows-1252"),    (int)eEncoding_Windows_1252);
+    BOOST_CHECK_EQUAL( (int)CUtf8::StringToEncoding("cp367"),           (int)eEncoding_Ascii);
+    BOOST_CHECK_EQUAL( (int)CUtf8::StringToEncoding("csISOLatin1"),     (int)eEncoding_ISO8859_1);
+    BOOST_CHECK_EQUAL( (int)CUtf8::StringToEncoding("ISO-2022-CN-EXT"), (int)eEncoding_Unknown);
 
     TStringUnicode uus = CUtf8::AsBasicString<TUnicodeSymbol>(u8sample);
     TStringUCS4    u4s = CUtf8::AsBasicString<TCharUCS4>(u8sample);
