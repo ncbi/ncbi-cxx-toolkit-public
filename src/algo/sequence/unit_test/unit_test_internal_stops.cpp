@@ -184,3 +184,125 @@ Seq-align ::= { \
     BOOST_CHECK_EQUAL( stops.size(), 9U );
 }
 
+BOOST_AUTO_TEST_CASE(TestStartStopProteinWithPadding)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CScope scope(*om);
+    scope.AddDefaults();
+
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 148225248, \
+    genomic-id gi 224514980, \
+    genomic-strand plus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { \
+          amin 22, \
+          frame 1 \
+        }, \
+        product-end protpos { \
+          amin 277, \
+          frame 3 \
+        }, \
+        genomic-start 30641728, \
+        genomic-end 30642468, \
+        parts { \
+          diag 69, \
+          product-ins 3, \
+          diag 30, \
+          product-ins 4, \
+          diag 494, \
+          product-ins 2, \
+          diag 85, \
+          product-ins 18, \
+          diag 63 \
+        }, \
+        partial TRUE \
+      } \
+    }, \
+    product-length 278, \
+    modifiers { \
+      stop-codon-found TRUE \
+    } \
+  } \
+} \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CSeq_align align;
+    *istr >> align;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CInternalStopFinder int_stop_finder(scope);
+
+    pair<set<TSeqPos>, set<TSeqPos> > starts_stops = int_stop_finder.FindStartsStops(align,3);
+
+    BOOST_CHECK_EQUAL( starts_stops.first.size(), 10U );
+    BOOST_CHECK_EQUAL( starts_stops.second.size(), 3U );
+}
+
+BOOST_AUTO_TEST_CASE(TestStartAcrossTheOrigin)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CScope scope(*om);
+    scope.AddDefaults();
+
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 488735231, \
+    genomic-id gi 6382081, \
+    genomic-strand plus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { \
+          amin 2, \
+          frame 3 \
+        }, \
+        product-end protpos { \
+          amin 430, \
+          frame 3 \
+        }, \
+        genomic-start 1, \
+        genomic-end 1285, \
+        parts { \
+          diag 1285 \
+        }, \
+        partial FALSE \
+      } \
+    }, \
+    product-length 431, \
+    modifiers { \
+      stop-codon-found TRUE \
+    } \
+  } \
+} \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CSeq_align align;
+    *istr >> align;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CInternalStopFinder int_stop_finder(scope);
+
+    pair<set<TSeqPos>, set<TSeqPos> > starts_stops = int_stop_finder.FindStartsStops(align,11);
+
+    BOOST_CHECK_EQUAL( *starts_stops.first.rbegin(), 30740U );
+}

@@ -38,8 +38,10 @@
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
-#include <objmgr/util/sequence.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -50,13 +52,44 @@ CInternalStopFinder::CInternalStopFinder(CScope& a_scope)
     generator.SetAllowedUnaligned(10);
 }
 
-string CInternalStopFinder::GetProtein(const CSeq_align& align)
+pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSeq_align& align, int padding)
 {
-    const string seq = GetCDSNucleotideSequence(align);
-
     CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
+    CConstRef<CSeq_align> clean_align;
+    {{
+        CConstRef<CSeq_align> padded_align(&align);
+        if (padding > 0) {
+            CRef<CSeq_loc> loc = align.CreateRowSeq_loc(1);
+            int start = loc->GetStart(eExtreme_Positional) - padding;
+            int stop = loc->GetStop(eExtreme_Positional) + padding;
 
-    int gcode = 11;
+            bool is_circular = (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular);
+            int genomic_length = bsh.GetBioseqLength();
+            
+            if (start < 0) {
+                start = is_circular ? start + genomic_length : 0;
+            }
+            if (stop >= genomic_length) {
+                stop = is_circular ? stop - genomic_length : genomic_length-1;
+            }
+            padded_align = generator.AdjustAlignment(align, TSeqRange(start, stop));
+        }
+
+        clean_align = generator.CleanAlignment(*padded_align);
+    }}
+
+    CSeq_loc_Mapper mapper(*clean_align, 1);
+
+    CRef<CSeq_loc> query_loc(new CSeq_loc);
+    const CSpliced_seg& spl = clean_align->GetSegs().GetSpliced();
+    query_loc->SetInt(*spl.GetExons().front()->CreateRowSeq_interval(0, spl));
+
+    const bool is_protein = (spl.GetProduct_type() == CSpliced_seg::eProduct_type_protein);
+
+    const string seq = GetCDSNucleotideSequence(*clean_align, padding);
+
+
+    int gcode = 1;
     try {
         gcode = sequence::GetOrg_ref(bsh).GetGcode();
     } catch (CException&) {
@@ -66,48 +99,57 @@ string CInternalStopFinder::GetProtein(const CSeq_align& align)
     CRef<CGenetic_code> code(new CGenetic_code);
     code->Set().push_back(c_e);
 
-    string prot;
-    CSeqTranslator::Translate(seq,
-              prot,
-              CSeqTranslator::fIs5PrimePartial,
-              code.GetPointer());
-    return prot;
+    const CTrans_table & tbl = CGen_code_table::GetTransTable(*code);
+    const size_t kUnknownState = tbl.SetCodonState('N', 'N', 'N');
+
+    set<TSeqPos> starts, stops;
+
+    size_t state = 0;
+    int k = 0;
+
+    for (auto s : seq) {
+        state = tbl.NextCodonState(state, s);
+        
+        if (++k%3)
+            continue;
+
+        if (state == kUnknownState)
+            continue;
+
+        if (tbl.IsAnyStart(state) || tbl.IsOrfStop(state)) {
+            if (is_protein) {
+                query_loc->SetInt().SetFrom((k-3)/3);
+                query_loc->SetInt().SetTo((k-3)/3);
+            } else {
+                query_loc->SetInt().SetFrom(k-3);
+                query_loc->SetInt().SetTo(k-3);
+            }
+            TSeqPos mapped_pos = mapper.Map(*query_loc)->GetStart(eExtreme_Biological);
+            if (mapped_pos == kInvalidSeqPos)
+                continue;
+
+            if (tbl.IsAnyStart(state)) {
+                starts.insert(mapped_pos);
+            }
+            if (tbl.IsOrfStop(state)) {
+                stops.insert(mapped_pos);
+            }
+        }
+    }
+    return make_pair(starts, stops);
 }
 
 set<TSeqPos> CInternalStopFinder::FindStops(const CSeq_align& align)
 {
-    CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
-    string prot = GetProtein(*clean_align);
-
-    CSeq_loc_Mapper mapper(*clean_align, 1);
-
-    CRef<CSeq_loc> query_loc(new CSeq_loc);
-    const CSpliced_seg& spl = align.GetSegs().GetSpliced();
-    query_loc->SetInt(*spl.GetExons().front()->CreateRowSeq_interval(0, spl));
-
-    set<TSeqPos> stops;
-
-    int pos = -1;
-    while (size_t(pos = prot.find('*', pos+1)) != NPOS) {
-        query_loc->SetInt().SetFrom(pos);
-        query_loc->SetInt().SetTo(pos);
-
-        CRef<CSeq_loc> stop_codon = mapper.Map(*query_loc);
-
-        stops.insert(stop_codon->GetStart(eExtreme_Biological));
-    }
-
-    return stops;
+    return FindStartsStops(align).second;
 }
 
 bool CInternalStopFinder::HasInternalStops(const CSeq_align& align)
 {
-    CConstRef<CSeq_align> clean_align = generator.CleanAlignment(align);
-    string prot = GetProtein(*clean_align);
-    return  prot.find('*') != NPOS;
+    return !FindStops(align).empty();
 }
 
-string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
+string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align, int padding)
 {
     if (!align.GetSegs().IsSpliced()) {
         NCBI_THROW(CException, eUnknown, "CInternalStopFinder supports Spliced-seg alignments only");

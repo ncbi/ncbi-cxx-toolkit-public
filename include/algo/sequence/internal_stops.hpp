@@ -50,9 +50,11 @@ public:
     set<TSeqPos> FindStops(const CSeq_align& align);
 
     bool HasInternalStops(const CSeq_align& align);
+
+    pair<set<TSeqPos>, set<TSeqPos> > FindStartsStops(const CSeq_align& align, int padding=0);
+
 private:
-    string GetCDSNucleotideSequence(const CSeq_align& align);
-    string GetProtein(const CSeq_align& align);
+    string GetCDSNucleotideSequence(const CSeq_align& align, int padding);
 };
 
 // pair(genomic, product)
