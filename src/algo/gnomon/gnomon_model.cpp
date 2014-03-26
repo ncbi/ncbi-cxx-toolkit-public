@@ -297,9 +297,12 @@ CCDSInfo CCDSInfo::MapFromOrigToEdited(const CAlignMap& amap) const
 
 void CCDSInfo::SetReadingFrame(TSignedSeqRange r, bool protein)
 {
-    if (r.Empty())
-        Clear();
-    else {
+    if (r.Empty()) {
+        if(protein)
+            m_reading_frame_from_proteins = r;
+        else
+            Clear();
+    } else {
         m_reading_frame = r;
         if (protein)
             m_reading_frame_from_proteins = r;

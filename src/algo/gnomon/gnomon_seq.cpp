@@ -199,7 +199,7 @@ bool Partial5pCodonIsStop(const CEResidueVec& seq_strand, int start, int frame) 
     return false;
 }
 
-void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& frame)
+void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& frame, bool obeystart)
 {
     int left_cds_limit = -1;
     int reading_frame_start = mrna.size();
@@ -282,8 +282,12 @@ void FindStartsStops(const CGeneModel& model, const CEResidueVec& contig_seq, co
         left_cds_limit = 0;
     }
 
-    if(reading_frame_start-left_cds_limit >= 3)
+    if(obeystart && model.HasStart()) {
+        TSignedSeqRange start = mrnamap.MapRangeOrigToEdited(model.GetCdsInfo().Start(),false);
+        starts[frame].push_back(start.GetFrom());
+    } else if(reading_frame_start-left_cds_limit >= 3) {
         FindAllStarts(starts,mrna,mrnamap,TSignedSeqRange(left_cds_limit,reading_frame_start-1),frame);
+    }
 
     if (frame==-1) {
         FindAllStops(stops,mrna,mrnamap,TSignedSeqRange(0,mrna.size()-1),frame);
