@@ -410,7 +410,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 
         do {
             m_Opts.input_stream->read(buffer, sizeof(buffer));
-            if (m_Opts.input_stream->fail()) {
+            if (m_Opts.input_stream->fail() && !m_Opts.input_stream->eof()) {
                 NCBI_USER_THROW("Error while reading from input stream");
             }
             size_t bytes_read = (size_t) m_Opts.input_stream->gcount();

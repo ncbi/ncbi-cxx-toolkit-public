@@ -574,7 +574,7 @@ CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
 }
 
 CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
-    CTempString& attr_name, string& attr_value)
+    CTempString* attr_name, string* attr_value, size_t* attr_column)
 {
     while (isspace(*m_Position))
         ++m_Position;
@@ -582,14 +582,15 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
     if (*m_Position == '\0')
         return eNoMoreAttributes;
 
-    const char* start_pos = m_Position;
+    const char* attr_start = m_Position;
+    *attr_column = attr_start - m_Start + 1;
 
     for (;;)
         if (*m_Position == '=') {
-            attr_name.assign(start_pos, m_Position - start_pos);
+            attr_name->assign(attr_start, m_Position - attr_start);
             break;
         } else if (isspace(*m_Position)) {
-            attr_name.assign(start_pos, m_Position - start_pos);
+            attr_name->assign(attr_start, m_Position - attr_start);
             while (isspace(*++m_Position))
                 ;
             if (*m_Position == '=')
@@ -597,7 +598,7 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
             else
                 return eStandAloneAttribute;
         } else if (*++m_Position == '\0') {
-            attr_name.assign(start_pos, m_Position - start_pos);
+            attr_name->assign(attr_start, m_Position - attr_start);
             return eStandAloneAttribute;
         }
 
@@ -605,7 +606,7 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
     while (isspace(*++m_Position))
         ;
 
-    start_pos = m_Position;
+    attr_start = m_Position;
 
     switch (*m_Position) {
     case '\0':
@@ -616,16 +617,16 @@ CAttrListParser::ENextAttributeType CAttrListParser::NextAttribute(
     case '"':
         {
             size_t n_read;
-            attr_value = NStr::ParseQuoted(CTempString(start_pos,
-                m_EOL - start_pos), &n_read);
+            *attr_value = NStr::ParseQuoted(CTempString(attr_start,
+                m_EOL - attr_start), &n_read);
             m_Position += n_read;
         }
         break;
     default:
         while (*++m_Position != '\0' && !isspace(*m_Position))
             ;
-        attr_value = NStr::ParseEscapes(
-            CTempString(start_pos, m_Position - start_pos));
+        *attr_value = NStr::ParseEscapes(
+            CTempString(attr_start, m_Position - attr_start));
     }
 
     return eAttributeWithValue;
@@ -728,10 +729,11 @@ void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
                         CAttrListParser::ENextAttributeType next_attr_type;
                         CTempString attr_name;
                         string attr_value;
+                        size_t attr_column;
 
                         while ((next_attr_type = attr_parser.NextAttribute(
-                                attr_name, attr_value)) !=
-                                CAttrListParser::eNoMoreAttributes)
+                                &attr_name, &attr_value, &attr_column)) !=
+                                        CAttrListParser::eNoMoreAttributes)
                             if (next_attr_type ==
                                     CAttrListParser::eAttributeWithValue)
                                 processor->ProcessJobEventField(attr_name,

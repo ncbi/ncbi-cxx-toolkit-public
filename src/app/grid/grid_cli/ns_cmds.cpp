@@ -276,9 +276,11 @@ bool CBatchSubmitAttrParser::NextAttribute()
     }
 
     CTempString attr_name;
+    size_t attr_column;
 
     CAttrListParser::ENextAttributeType next_attr_type =
-        m_AttrParser.NextAttribute(attr_name, m_JobAttributeValue);
+            m_AttrParser.NextAttribute(&attr_name,
+                    &m_JobAttributeValue, &attr_column);
 
     if (next_attr_type == CAttrListParser::eNoMoreAttributes)
         return false;
@@ -295,14 +297,12 @@ bool CBatchSubmitAttrParser::NextAttribute()
         ATTR_CHECK_SET("exclusive", eExclusiveJob);
     }
 
-#define AT_POS(pos) " at line " << m_LineNumber << \
-    ", column " << (pos - m_Line.data() + 1)
+#define ATTR_POS " at line " << m_LineNumber << ", column " << attr_column
 
     switch (m_JobAttribute) {
     case eUntypedArg:
         NCBI_THROW_FMT(CArgException, eInvalidArg,
-            "unknown attribute " << attr_name <<
-                AT_POS(attr_name.data()));
+            "unknown attribute " << attr_name << ATTR_POS);
 
     case eExclusiveJob:
         break;
@@ -310,8 +310,7 @@ bool CBatchSubmitAttrParser::NextAttribute()
     default:
         if (next_attr_type != CAttrListParser::eAttributeWithValue) {
             NCBI_THROW_FMT(CArgException, eInvalidArg,
-                "attribute " << attr_name <<
-                    " requires a value" << AT_POS(attr_name.data()));
+                "attribute " << attr_name << " requires a value" << ATTR_POS);
         }
     }
 
@@ -363,7 +362,10 @@ void CGridCommandLineInterfaceApp::PrepareRemoteAppJobInput(const string& args,
             input_size - input_size / 10);
 
     request.SetCmdLine(args);
-    NcbiStreamCopy(request.GetStdIn(), remote_app_stdin);
+
+    remote_app_stdin.peek();
+    if (!remote_app_stdin.eof())
+        NcbiStreamCopy(request.GetStdIn(), remote_app_stdin);
 
     request.Send(job_input_stream);
 }
@@ -388,8 +390,10 @@ bool SBatchSubmitRecord::LoadNextRecord()
     if (!attr_parser.NextLine())
         return false;
 
-    job_input_defined = remote_app_args_defined = exclusive_job = false;
+    job_input = kEmptyStr;
+    remote_app_args = kEmptyStr;
     affinity = kEmptyStr;
+    job_input_defined = remote_app_args_defined = exclusive_job = false;
 
     while (attr_parser.NextAttribute())
         switch (attr_parser.GetAttributeType()) {
@@ -441,7 +445,7 @@ void CGridCommandLineInterfaceApp::SubmitJob_Batch()
 
             if (job_input_record.remote_app_args_defined) {
                 CNcbiStrstream remote_app_stdin;
-                remote_app_stdin << job_input_record.job_input << NcbiEnds;
+                remote_app_stdin << job_input_record.job_input;
                 PrepareRemoteAppJobInput(job_input_record.remote_app_args,
                         remote_app_stdin, job_input_stream);
             } else {
@@ -485,7 +489,7 @@ void CGridCommandLineInterfaceApp::SubmitJob_Batch()
 
             if (job_input_record.remote_app_args_defined) {
                 CNcbiStrstream remote_app_stdin;
-                remote_app_stdin << job_input_record.job_input << NcbiEnds;
+                remote_app_stdin << job_input_record.job_input;
                 PrepareRemoteAppJobInput(job_input_record.remote_app_args,
                         remote_app_stdin, job_input_stream);
             } else
@@ -942,8 +946,11 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
 
             do {
                 m_Opts.input_stream->read(buffer, sizeof(buffer));
-                if (m_Opts.input_stream->fail())
-                    goto ErrorExit;
+                if (m_Opts.input_stream->fail() &&
+                        !m_Opts.input_stream->eof()) {
+                    NCBI_THROW(CIOException, eRead,
+                            "Error while reading job output data");
+                }
                 if (writer->Write(buffer,
                         (size_t) m_Opts.input_stream->gcount()) != eRW_Success)
                     goto ErrorExit;
@@ -964,7 +971,7 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
     return 0;
 
 ErrorExit:
-    fprintf(stderr, GRID_APP_NAME ": error while submitting job output.\n");
+    fprintf(stderr, GRID_APP_NAME ": error while sending job output.\n");
     return 3;
 }
 

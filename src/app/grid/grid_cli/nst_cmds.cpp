@@ -238,7 +238,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
         do {
             m_Opts.input_stream->read(buffer, sizeof(buffer));
 
-            if (m_Opts.input_stream->fail()) {
+            if (m_Opts.input_stream->fail() && !m_Opts.input_stream->eof()) {
                 NCBI_THROW(CIOException, eRead,
                         "Error while reading input data");
             }

@@ -123,7 +123,7 @@ public:
 
     void Reset(const char* position, const char* eol)
     {
-        m_Position = position;
+        m_Position = m_Start = position;
         m_EOL = eol;
     }
 
@@ -133,10 +133,11 @@ public:
         Reset(line_buf, line_buf + line.size());
     }
 
-    ENextAttributeType NextAttribute(CTempString& attr_name,
-        string& attr_value);
+    ENextAttributeType NextAttribute(CTempString* attr_name,
+            string* attr_value, size_t* attr_column);
 
 private:
+    const char* m_Start;
     const char* m_Position;
     const char* m_EOL;
 };
