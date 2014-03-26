@@ -107,8 +107,8 @@ pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSe
     size_t state = 0;
     int k = 0;
 
-    for (auto s : seq) {
-        state = tbl.NextCodonState(state, s);
+    ITERATE(string, s, seq) {
+        state = tbl.NextCodonState(state, *s);
         
         if (++k%3)
             continue;
