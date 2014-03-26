@@ -47,29 +47,35 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
-    string queue(!m_Opts.queue.empty() ? m_Opts.queue : "noname");
+    string queue = m_Opts.queue;
 
     if (!IsOptionSet(eID) && !IsOptionSet(eJobId))
         m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
             m_Opts.auth, queue);
-    else if (IsOptionExplicitlySet(eNetSchedule)) {
-        string host, port;
-
-        if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
-            NCBI_THROW(CArgException, eInvalidArg,
-                    "When job ID is given, '--" NETSCHEDULE_OPTION "' "
-                    "must be a host:port server address.");
-        }
-
-        m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
-            m_Opts.auth, queue);
-        m_NetScheduleAPI.GetService().GetServerPool().StickToServer(host,
-            (unsigned short) NStr::StringToInt(port));
-    } else {
+    else {
         CNetScheduleKey key(m_Opts.id, m_CompoundIDPool);
-        key.host.push_back(':');
-        key.host.append(NStr::NumericToString(key.port));
-        m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
+
+        if (queue.empty())
+            queue = key.queue;
+
+        if (IsOptionExplicitlySet(eNetSchedule)) {
+            string host, port;
+
+            if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
+                NCBI_THROW(CArgException, eInvalidArg,
+                        "When job ID is given, '--" NETSCHEDULE_OPTION "' "
+                        "must be a host:port server address.");
+            }
+
+            m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
+                m_Opts.auth, queue);
+            m_NetScheduleAPI.GetService().GetServerPool().StickToServer(host,
+                (unsigned short) NStr::StringToInt(port));
+        } else {
+            key.host.push_back(':');
+            key.host.append(NStr::NumericToString(key.port));
+            m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
+        }
     }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT

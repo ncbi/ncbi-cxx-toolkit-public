@@ -255,15 +255,11 @@ void CNetScheduleServerListener::OnInit(
 
     if (!ns_impl->m_Queue.empty())
         SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
-    else if (config == NULL)
-        ns_impl->m_Queue = "noname";
-    else {
+    else if (config != NULL) {
         ns_impl->m_Queue = config->GetString(config_section,
             "queue_name", CConfig::eErr_NoThrow, kEmptyStr);
         if (!ns_impl->m_Queue.empty())
             SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
-        else
-            ns_impl->m_Queue = "noname";
     }
 
     if (config == NULL) {
