@@ -86,7 +86,7 @@ pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSe
 
     const bool is_protein = (spl.GetProduct_type() == CSpliced_seg::eProduct_type_protein);
 
-    const string seq = GetCDSNucleotideSequence(*clean_align, padding);
+    const string seq = GetCDSNucleotideSequence(*clean_align);
 
 
     int gcode = 1;
@@ -149,7 +149,7 @@ bool CInternalStopFinder::HasInternalStops(const CSeq_align& align)
     return !FindStops(align).empty();
 }
 
-string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align, int padding)
+string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
 {
     if (!align.GetSegs().IsSpliced()) {
         NCBI_THROW(CException, eUnknown, "CInternalStopFinder supports Spliced-seg alignments only");
