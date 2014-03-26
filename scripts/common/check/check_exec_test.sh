@@ -58,7 +58,7 @@ fi
 echo $1 | grep '\.sh' > /dev/null 2>&1 
 if test $? -eq 0;  then
    echo "Error: Using CHECK_EXEC macro to run shell scripts is prohibited!"
-#   exit 1
+   exit 1
 fi
 
 if $is_stdin; then
