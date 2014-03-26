@@ -2848,6 +2848,7 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const TStringUCS2& str)
 ///      Microsoft Windows code page 1252
 ///      UCS-2, UCS-4 (no surrogates)
 
+#if defined(NCBI_CUTF8_ENCODING_CLASSIC)  ||  !defined(NCBI_HAVE_CXX11)
 enum EEncoding {
     eEncoding_Unknown,
     eEncoding_UTF8,
@@ -2858,6 +2859,24 @@ enum EEncoding {
                             ///< 0x9F.
     eEncoding_Windows_1252
 };
+#else
+// Temporary safeguard to protect against implicit conversion of EEncoding
+// to size_t, etc
+// @attention  Do not use "EEncoding::Xxx" values directly, as they will go
+//             away eventually! Use the "eEncoding_Xxx" values instead.
+enum class EEncoding {
+    Unknown,      ///< Do not use this directly!  It will go away eventually!
+    UTF8,         ///< Do not use this directly!  It will go away eventually!
+    Ascii,        ///< Do not use this directly!  It will go away eventually!
+    ISO8859_1,    ///< Do not use this directly!  It will go away eventually!
+    Windows_1252  ///< Do not use this directly!  It will go away eventually!
+};
+#define eEncoding_Unknown      EEncoding::Unknown
+#define eEncoding_UTF8         EEncoding::UTF8
+#define eEncoding_Ascii        EEncoding::Ascii
+#define eEncoding_ISO8859_1    EEncoding::ISO8859_1
+#define eEncoding_Windows_1252 EEncoding::Windows_1252
+#endif
 
 
 class NCBI_XNCBI_EXPORT CUtf8
