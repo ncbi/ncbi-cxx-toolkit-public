@@ -120,6 +120,13 @@
 #    define HAVE_IS_SORTED 1
 #    define HAVE_NULLPTR 1
 #  endif
+#  if defined(NCBI_HAVE_CXX11) /* or recent MSVC too? */
+#    if !defined(NCBI_COMPILER_ICC)  ||  NCBI_COMPILER_VERSION >= 1400
+       /* Exclude ICC 13.x and below, which don't support using "enum class"
+        * in conjunction with switch. */
+#      define HAVE_ENUM_CLASS 1
+#    endif
+#  endif
 #endif
 
 #include <common/ncbi_skew_guard.h>

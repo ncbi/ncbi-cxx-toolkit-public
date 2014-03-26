@@ -2848,7 +2848,7 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const TStringUCS2& str)
 ///      Microsoft Windows code page 1252
 ///      UCS-2, UCS-4 (no surrogates)
 
-#if defined(NCBI_CUTF8_ENCODING_CLASSIC)  ||  !defined(NCBI_HAVE_CXX11)
+#if defined(NCBI_CUTF8_ENCODING_CLASSIC)  ||  !defined(HAVE_ENUM_CLASS)
 enum EEncoding {
     eEncoding_Unknown,
     eEncoding_UTF8,
