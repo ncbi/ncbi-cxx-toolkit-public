@@ -53,6 +53,10 @@ public:
 
     pair<set<TSeqPos>, set<TSeqPos> > FindStartsStops(const CSeq_align& align, int padding=0);
 
+    //in presence of frameshifts start and stops not always are triplets
+    //ranges are biological, i.e. inverted if minus strand or cross-origin  
+    pair<set<TSeqRange>, set<TSeqRange> > FindStartStopRanges(const CSeq_align& align, int padding=0);
+
 private:
     string GetCDSNucleotideSequence(const CSeq_align& align);
 };

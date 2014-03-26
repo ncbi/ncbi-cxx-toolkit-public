@@ -54,6 +54,18 @@ CInternalStopFinder::CInternalStopFinder(CScope& a_scope)
 
 pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSeq_align& align, int padding)
 {
+    pair<set<TSeqRange>, set<TSeqRange> > start_stop_ranges = FindStartStopRanges(align, padding);
+    set<TSeqPos> starts, stops;
+    ITERATE (set<TSeqRange>, r, start_stop_ranges.first) {
+        starts.insert(r->GetFrom());
+    }
+    ITERATE (set<TSeqRange>, r, start_stop_ranges.second) {
+        stops.insert(r->GetTo());
+    }
+    return make_pair(starts, stops);
+}
+pair<set<TSeqRange>, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CSeq_align& align, int padding)
+{
     CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
     CConstRef<CSeq_align> clean_align;
     {{
@@ -102,7 +114,7 @@ pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSe
     const CTrans_table & tbl = CGen_code_table::GetTransTable(*code);
     const size_t kUnknownState = tbl.SetCodonState('N', 'N', 'N');
 
-    set<TSeqPos> starts, stops;
+    set<TSeqRange> starts, stops;
 
     size_t state = 0;
     int k = 0;
@@ -127,12 +139,13 @@ pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSe
             TSeqPos mapped_pos = mapper.Map(*query_loc)->GetStart(eExtreme_Biological);
             if (mapped_pos == kInvalidSeqPos)
                 continue;
+            TSeqPos mapped_pos2 = mapper.Map(*query_loc)->GetStop(eExtreme_Biological);
 
             if (tbl.IsAnyStart(state)) {
-                starts.insert(mapped_pos);
+                starts.insert(TSeqRange(mapped_pos, mapped_pos2));
             }
             if (tbl.IsOrfStop(state)) {
-                stops.insert(mapped_pos);
+                stops.insert(TSeqRange(mapped_pos, mapped_pos2));
             }
         }
     }
