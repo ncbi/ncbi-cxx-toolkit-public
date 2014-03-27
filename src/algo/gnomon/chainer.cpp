@@ -158,6 +158,8 @@ private:
     int m_idnext;
     int m_idinc;
 
+    TInDels all_frameshifts;
+
     friend class CChainer;
     friend class CChainerArgUtil;
 };
@@ -3078,7 +3080,16 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
             }
             m_gnomon->GetScore(unma);
 
-            if(unma.Exons() != palign.Exons() && unma.FrameShifts() == palign.FrameShifts()) {
+
+            TInDels overlapping_fshifts;
+            ITERATE(TInDels, fs, all_frameshifts) {
+                ITERATE(CGeneModel::TExons, e, unma.Exons()) {
+                    if(fs->IntersectingWith(e->GetFrom(),e->GetTo()))
+                        overlapping_fshifts.push_back(*fs);
+                }
+            }
+            
+            if(unma.Exons() != palign.Exons() && unma.FrameShifts() == palign.FrameShifts() && unma.FrameShifts() == overlapping_fshifts) {
                 TGeneModelList unmacl;
                 unmacl.push_back(unma);
                 CutParts(unmacl);
@@ -5512,9 +5523,9 @@ void CChainer::ReplicateFrameShifts(TGeneModelList& models)
 
 void CChainer::CChainerImpl::ReplicateFrameShifts(TGeneModelList& models)
 {
-    TInDels fshifts;
-    CollectFShifts(models, fshifts);
-    AddFShifts(models, fshifts);
+    all_frameshifts.clear();
+    CollectFShifts(models, all_frameshifts);
+    AddFShifts(models, all_frameshifts);
 }
 
 
