@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="12.0">
+  <PropertyGroup Label="Globals"><ProjectGuid>{FCA4C590-AB16-40F4-8C05-C41EF2A0F2FB}</ProjectGuid><Keyword>Win32Proj</Keyword><ProjectName>msbuild_dataobj.lib</ProjectName>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="ReleaseDLL|Win32">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseDLL|x64">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;" Label="Configuration"><ConfigurationType>StaticLibrary</ConfigurationType><CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+  <ImportGroup Label="ExtensionSettings"></ImportGroup>
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;" Label="PropertySheets">
+    <Import Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Label="LocalAppDataPlatform"/>
+  </ImportGroup>
+  <ImportGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;" Label="PropertySheets">
+    <Import Condition="exists(&apos;$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props&apos;)" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Label="LocalAppDataPlatform"/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros"></PropertyGroup>
+  <PropertyGroup><_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+      <OutDir Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">..\..\..\..\lib\$(Configuration)\</OutDir>
+      <IntDir Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">$(Configuration)\</IntDir>
+      <TargetName Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">msbuild_dataobj</TargetName>
+      <OutDir Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">..\..\..\..\lib\$(Configuration)\</OutDir>
+      <IntDir Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">$(Configuration)\</IntDir>
+      <TargetName Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">msbuild_dataobj</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\..\..\..\..\include\</AdditionalIncludeDirectories>
+      <AdditionalOptions/>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BrowseInformation>false</BrowseInformation>
+      <BufferSecurityCheck>TRUE</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <CompileAs>Default</CompileAs>
+      <DebugInformationFormat/>
+      <DisableSpecificWarnings/>
+      <EnableFunctionLevelLinking>TRUE</EnableFunctionLevelLinking>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <IgnoreStandardIncludePath>FALSE</IgnoreStandardIncludePath>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <MinimalRebuild>FALSE</MinimalRebuild>
+      <OmitFramePointers>TRUE</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader></PrecompiledHeader>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;</PreprocessorDefinitions>
+      <ProgramDataBaseFileName>$(IntDir)msbuild_dataobj.pdb</ProgramDataBaseFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>TRUE</RuntimeTypeInfo>
+      <StringPooling>FALSE</StringPooling>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <UndefinePreprocessorDefinitions/>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories/>
+      <AdditionalOptions/>
+      <IgnoreAllDefaultLibraries>FALSE</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries/>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Lib>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories/>
+      <AdditionalOptions/>
+      <PreprocessorDefinitions/>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\..\..\..\..\include\</AdditionalIncludeDirectories>
+      <AdditionalOptions/>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BrowseInformation>false</BrowseInformation>
+      <BufferSecurityCheck>TRUE</BufferSecurityCheck>
+      <CallingConvention>Cdecl</CallingConvention>
+      <CompileAs>Default</CompileAs>
+      <DebugInformationFormat/>
+      <DisableSpecificWarnings/>
+      <EnableFunctionLevelLinking>TRUE</EnableFunctionLevelLinking>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <IgnoreStandardIncludePath>FALSE</IgnoreStandardIncludePath>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <MinimalRebuild>FALSE</MinimalRebuild>
+      <OmitFramePointers>TRUE</OmitFramePointers>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader></PrecompiledHeader>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;</PreprocessorDefinitions>
+      <ProgramDataBaseFileName>$(IntDir)msbuild_dataobj.pdb</ProgramDataBaseFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>TRUE</RuntimeTypeInfo>
+      <StringPooling>FALSE</StringPooling>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <UndefinePreprocessorDefinitions/>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Lib>
+      <AdditionalLibraryDirectories/>
+      <AdditionalOptions/>
+      <IgnoreAllDefaultLibraries>FALSE</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries/>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Lib>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories/>
+      <AdditionalOptions/>
+      <PreprocessorDefinitions/>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\..\..\src\build-system\project_tree_builder\msbuild\msbuild_dataobj__.cpp">
+      <PreprocessorDefinitions Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\src\build-system\project_tree_builder\msbuild\msbuild_dataobj___.cpp">
+      <PreprocessorDefinitions Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\..\..\..\..\..\src\build-system\project_tree_builder\msbuild\msbuild_dataobj.xsd">
+      <FileType>Document</FileType>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">Using datatool to create a C++ object from ASN/DTD/Schema %(FullPath)</Message>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">set DATATOOL_PATH=$(ProjectDir)..\..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\..&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\msvc1000_prj&#xa;call &quot;%BUILD_TREE_ROOT%\datatool.bat&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;%(FullPath)&quot; -oA -oc &quot;%(Filename)&quot; -od &quot;%(RootDir)%(Directory)%(Filename).def&quot; -odi -ocvs -or build-system\project_tree_builder\msbuild\ -oR ..\..\..\..\..\..\..\&#xa;if errorlevel 1 exit 1</Command>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">%(RootDir)%(Directory)%(Filename).def;</AdditionalInputs>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|Win32&apos;">%(RootDir)%(Directory)%(Filename).files;%(RootDir)%(Directory)%(Filename)__.cpp;%(RootDir)%(Directory)%(Filename)___.cpp</Outputs>
+      <Message Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">Using datatool to create a C++ object from ASN/DTD/Schema %(FullPath)</Message>
+      <Command Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">set DATATOOL_PATH=$(ProjectDir)..\..\..\..\..\static\bin\ReleaseDLL&#xa;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\..&#xa;set PTB_PLATFORM=$(PlatformName)&#xa;set BUILD_TREE_ROOT=$(ProjectDir)..\..\..\..\..\..\msvc1000_prj&#xa;call &quot;%BUILD_TREE_ROOT%\datatool.bat&quot; -oex &quot;&quot; -pch ncbi_pch.hpp -m &quot;%(FullPath)&quot; -oA -oc &quot;%(Filename)&quot; -od &quot;%(RootDir)%(Directory)%(Filename).def&quot; -odi -ocvs -or build-system\project_tree_builder\msbuild\ -oR ..\..\..\..\..\..\..\&#xa;if errorlevel 1 exit 1</Command>
+      <AdditionalInputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">%(RootDir)%(Directory)%(Filename).def;</AdditionalInputs>
+      <Outputs Condition="&apos;$(Configuration)|$(Platform)&apos;==&apos;ReleaseDLL|x64&apos;">%(RootDir)%(Directory)%(Filename).files;%(RootDir)%(Directory)%(Filename)__.cpp;%(RootDir)%(Directory)%(Filename)___.cpp</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+  <ImportGroup Label="ExtensionTargets"></ImportGroup>
+</Project>
