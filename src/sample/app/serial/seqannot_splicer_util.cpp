@@ -509,6 +509,8 @@ static void s_DeleteContext(TContextPtr context)
 }
 
 
+// The following function could be used for debugging.
+#if 0
 // This function prints out the context tree.
 static void s_DumpContext(TContextPtr context)
 {
@@ -537,6 +539,7 @@ static void s_DumpContext(TContextPtr context)
 
     NcbiCout << s1 << "}" << NcbiEndl;
 }
+#endif
 
 
 // This function returns the user selection for the Seq-annot choice type.
