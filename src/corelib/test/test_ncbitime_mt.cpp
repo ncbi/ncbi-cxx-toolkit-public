@@ -396,35 +396,40 @@ static void s_TestFormats(void)
         try {
             CTime t("2001/2 00:00", "Y/M h:m");
             _TROUBLE; // day is not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001/2 00:00", "Y/D h:m");
             _TROUBLE; // month is not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001/2", "Y/D");
             _TROUBLE; // month is not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001 00:00", "Y h:m");
             _TROUBLE; // month and day are not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2 00:00", "M h:m");
             _TROUBLE; // year and day are not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
     }}
 
-    // Strict/weak time assignment from a astring
+    // Strict/weak time assignment from a string
     {{
         string s;
         {{
@@ -453,11 +458,13 @@ static void s_TestFormats(void)
             try {
                 CTime t("2001", "Y/M/D");
                 _TROUBLE;  // by default used strict format matching
+                assert(t.IsValid());
             }
             catch (CTimeException&) {}
             try {
                 CTime t("2001/01/02", "Y");
                 _TROUBLE;  // by default used strict format matching
+                assert(t.IsValid());
             }
             catch (CTimeException&) {}
         }}

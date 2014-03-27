@@ -707,35 +707,40 @@ static void s_TestFormats(void)
         try {
             CTime t("2001/2 00:00", "Y/M h:m");
             _TROUBLE; // day is not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001/2 00:00", "Y/D h:m");
             _TROUBLE; // month is not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001/2", "Y/D");
             _TROUBLE; // month is not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2001 00:00", "Y h:m");
             _TROUBLE; // month and day are not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
 
         try {
             CTime t("2 00:00", "M h:m");
             _TROUBLE; // year and day are not defined
+            assert(t.IsValid());
         }
         catch (CTimeException&) {}
     }}
 
-    // Strict/weak time assignment from a astring
+    // Strict/weak time assignment from a string
     {{
         string s;
         {{
@@ -764,11 +769,13 @@ static void s_TestFormats(void)
             try {
                 CTime t("2001", "Y/M/D");
                 _TROUBLE;  // by default used strict format matching
+                assert(t.IsValid());
             }
             catch (CTimeException&) {}
             try {
                 CTime t("2001/01/02", "Y");
                 _TROUBLE;  // by default used strict format matching
+                assert(t.IsValid());
             }
             catch (CTimeException&) {}
         }}
@@ -1919,7 +1926,7 @@ static void s_TestTimeout(void)
         }
         catch (CTimeException&) {}
         try {
-            (t1 < tmo_default);
+            assert(t1 < tmo_default);
             _TROUBLE;
         }
         catch (CTimeException&) {}
@@ -1929,37 +1936,37 @@ static void s_TestTimeout(void)
         }
         catch (CTimeException&) {}
         try {
-            (tmo_default == tmo_infinite);
+            assert(tmo_default == tmo_infinite);
             _TROUBLE;
         }
         catch (CTimeException&) {}
         try {
-            (tmo_default != tmo_infinite);
+            assert(tmo_default != tmo_infinite);
             _TROUBLE;
         }
         catch (CTimeException&) {}
         try {
-            (t1 != tmo_default);
+            assert(t1 != tmo_default);
             _TROUBLE;
         }
         catch (CTimeException&) {}
         try {
-            (tmo_default > tmo_zero);
+            assert(tmo_default > tmo_zero);
             _TROUBLE;
         }
         catch (CTimeException&) {}
         try {
-            (tmo_default < tmo_infinite);
+            assert(tmo_default < tmo_infinite);
             _TROUBLE;
         }
         catch (CTimeException&) {}
         try {
-            (tmo_zero < tmo_default);
+            assert(tmo_zero < tmo_default);
             _TROUBLE;
         }
         catch (CTimeException&) {}
         try {
-            (tmo_infinite > tmo_default);
+            assert(tmo_infinite > tmo_default);
             _TROUBLE;
         }
         catch (CTimeException&) {}
@@ -2045,8 +2052,6 @@ int main()
 
     // Run tests
     try {
-        s_TestTimeSpan_AsSmartString();
-return 0;
         s_TestMisc();
         s_TestFormats();
         s_TestGMT();
