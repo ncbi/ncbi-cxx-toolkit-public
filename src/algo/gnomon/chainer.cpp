@@ -3721,6 +3721,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
 
     TSignedSeqRange conf_start;
     TSignedSeqPos rf=0; 
+    bool trusted = false;
 
     CAlignMap amap = GetAlignMap();
     ITERATE(TOrigAligns, it, orig_aligns) {
@@ -3782,6 +3783,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
                     
                 if(found && amap.FShiftedLen(rf,GetCdsInfo().Cds().GetTo()) > 75) {
                     conf_start = start;
+                    trusted = true;
                 }
             }
         } else {
@@ -3801,6 +3803,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
 
                 if(found && amap.FShiftedLen(GetCdsInfo().Cds().GetFrom(),rf) > 75) {
                     conf_start = start;
+                    trusted = true;
                 }
             }
         }            
@@ -3813,14 +3816,22 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
             _ASSERT(orig_align);
         
             if(orig_align->ConfirmedStart() && Include((*it)->m_align->Limits(),orig_align->GetCdsInfo().Start())) {    // right part of orig is included
+                TSignedSeqRange start = orig_align->GetCdsInfo().Start();
+                int l = GetCdsInfo().Cds().GetFrom();
+                int r = start.GetFrom();
+                if(l > r)
+                    swap(l,r);
+                if(!Include(GetCdsInfo().MaxCdsLimits(),start) || amap.FShiftedLen(l,r)%3 != 1) // orig_align could be dropped beacause it was modified and have frameshifts between its start and 'best' start
+                    continue;
+                
                 if(Strand() == ePlus) {
-                    if(conf_start.Empty() || orig_align->GetCdsInfo().Start().GetFrom() < conf_start.GetFrom()) {
-                        conf_start = orig_align->GetCdsInfo().Start();
+                    if(conf_start.Empty() || start.GetFrom() < conf_start.GetFrom()) {
+                        conf_start = start;
                         rf = orig_align->ReadingFrame().GetFrom();
                     }
                 } else {
-                    if(conf_start.Empty() || orig_align->GetCdsInfo().Start().GetTo() > conf_start.GetTo()) {
-                        conf_start = orig_align->GetCdsInfo().Start();
+                    if(conf_start.Empty() || start.GetTo() > conf_start.GetTo()) {
+                        conf_start = start;
                         rf = orig_align->ReadingFrame().GetTo();
                     }
                 }
@@ -3877,7 +3888,7 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
             if(new_lim != Limits())
                 ClipChain(new_lim);   // remove holes from new UTRs            
           
-            gnomon.GetScore(*this, false, true);
+            gnomon.GetScore(*this, false, trusted);
             RemoveFshiftsFromUTRs();
             AddComment("Restored confirmed start");
         }
