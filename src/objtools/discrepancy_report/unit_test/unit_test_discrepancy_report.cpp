@@ -1005,10 +1005,10 @@ BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
                         "1 nucleotide Bioseq is present.");
 };
 
-CRef <CSeq_id> MakeSeqIdWithDbAndId(const string& db, const int& id)
+CRef <CSeq_id> MakeSeqIdWithDbAndIdStr(const string& db, const string& id)
 {
    CRef <CObject_id> obj_id (new CObject_id);
-   obj_id->SetId(id);
+   obj_id->SetStr(id);
    CRef <CDbtag> db_tag (new CDbtag);
    db_tag->SetDb(db);
    db_tag->SetTag(*obj_id);
@@ -1023,25 +1023,37 @@ BOOST_AUTO_TEST_CASE(MISSING_PROTEIN_ID)
    CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(nuc_prot_set);
 
    // skippable db.
-   CRef <CSeq_id> seq_id  = MakeSeqIdWithDbAndId("TMSMART", 18938);
+   CRef <CSeq_id> seq_id  = MakeSeqIdWithDbAndIdStr("TMSMART", "18938");
    prot->SetSeq().SetId().push_back(seq_id);
  
-   seq_id = MakeSeqIdWithDbAndId("BankIt", 12345);
+   seq_id = MakeSeqIdWithDbAndIdStr("BankIt", "12345");
    prot->SetSeq().SetId().push_back(seq_id);
 
-   seq_id = MakeSeqIdWithDbAndId("NCBIFILE", 67890);
+   seq_id = MakeSeqIdWithDbAndIdStr("NCBIFILE", "67890");
    prot->SetSeq().SetId().push_back(seq_id);
    
    RunAndCheckTest(entry, "MISSING_PROTEIN_ID", "1 protein has invalid ID.");
 };
 
-/*
 BOOST_AUTO_TEST_CASE(INCONSISTENT_PROTEIN_ID)
 {
    CRef <CSeq_entry> entry = BuildGoodGenProdSet();
    CRef <CSeq_entry> nuc_prot_set = GetNucProtSetFromGenProdSet(entry);
    CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(nuc_prot_set);
+   // add seq_id
+   CRef <CSeq_id> seq_id = MakeSeqIdWithDbAndIdStr("WGS:AFMK", "PVBG_08000T0");
+   prot->SetSeq().SetId().push_back(seq_id);
+
+   // add prot seq.
+   CRef <CSeq_entry> prot2 = MakeProteinForGoodNucProtSet("prot2");
+   seq_id = MakeSeqIdWithDbAndIdStr("WGS:AFNJ", "PVBG_08011T0");
+   prot2->SetSeq().SetId().push_back(seq_id);
+   nuc_prot_set->SetSet().SetSeq_set().push_back(prot2);
+
+   set <string> msg;
+   msg.insert("1 sequence has protein ID prefix WGS:AFMK.");
+   msg.insert("1 sequence has protein ID prefix WGS:AFNJ.");
+   RunAndCheckMultiReports(entry, "INCONSISTENT_PROTEIN_ID", msg);
 };
-*/
 
 END_NCBI_SCOPE
