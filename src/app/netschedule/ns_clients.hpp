@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 class CQueue;
 class CNSAffinityRegistry;
 class CJobStatusTracker;
+class CNetScheduleServer;
 
 
 // The CClientId serves two types of clients:
@@ -103,7 +104,8 @@ class CNSClientId
         { if (IsAdmin()) { m_PassedChecks = 0; SetPassedChecks(eNS_Admin); }
           else           { m_PassedChecks = 0; } }
 
-        void CheckAccess(TNSCommandChecks  cmd_reqs);
+        void CheckAccess(TNSCommandChecks  cmd_reqs,
+                         CNetScheduleServer * server);
 
     private:
         unsigned int        m_Addr;           // Client peer address

@@ -952,7 +952,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         }
     }
 
-    m_ClientId.CheckAccess(extra.checks);
+    m_ClientId.CheckAccess(extra.checks, m_Server);
 
     if (queue_ptr) {
         bool        client_was_found = false;

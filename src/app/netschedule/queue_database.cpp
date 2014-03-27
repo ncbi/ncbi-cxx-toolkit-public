@@ -1470,9 +1470,11 @@ void CQueueDataBase::CreateDynamicQueue(const CNSClientId &  client,
         if (!queue_class->second.subm_hosts.empty()) {
             CNetScheduleAccessList  acl;
             acl.SetHosts(queue_class->second.subm_hosts);
-            if (!acl.IsAllowed(client.GetAddress()))
+            if (!acl.IsAllowed(client.GetAddress())) {
+                m_Server->RegisterAlert(eAccess);
                 NCBI_THROW(CNetScheduleException, eAccessDenied,
                            "Access denied: submitter privileges required");
+            }
         }
         if (!queue_class->second.program_name.empty()) {
             CQueueClientInfoList    acl;
@@ -1490,9 +1492,11 @@ void CQueueDataBase::CreateDynamicQueue(const CNSClientId &  client,
                 ok = false;
             }
 
-            if (!ok)
+            if (!ok) {
+                m_Server->RegisterAlert(eAccess);
                 NCBI_THROW(CNetScheduleException, eAccessDenied,
                            "Access denied: program privileges required");
+            }
         }
     }
 

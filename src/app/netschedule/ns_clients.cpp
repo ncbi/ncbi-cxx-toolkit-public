@@ -41,6 +41,7 @@
 #include "queue_vc.hpp"
 #include "ns_affinity.hpp"
 #include "job_status.hpp"
+#include "ns_server.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -135,39 +136,48 @@ void CNSClientId::SetClientName(const string &  client_name)
 }
 
 
-void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs)
+void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
+                              CNetScheduleServer *  server)
 {
     if (cmd_reqs & eNS_Queue) {
         if ((m_PassedChecks & eNS_Queue) == 0)
-            NCBI_THROW(CNetScheduleException, eAccessDenied,
-                       "Access denied: queue required");
+            NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                       "Invalid parameter: queue required");
     }
 
     if (IsAdmin())
         return;     // Admin can do everything
 
     if (cmd_reqs & eNS_Admin) {
-        if ((m_PassedChecks & eNS_Admin) == 0)
+        if ((m_PassedChecks & eNS_Admin) == 0) {
+            server->RegisterAlert(eAccess);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: admin privileges required");
+        }
     }
 
     if (cmd_reqs & eNS_Submitter) {
-        if ((m_PassedChecks & eNS_Submitter) == 0)
+        if ((m_PassedChecks & eNS_Submitter) == 0) {
+            server->RegisterAlert(eAccess);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: submitter privileges required");
+        }
     }
 
     if (cmd_reqs & eNS_Worker) {
-        if ((m_PassedChecks & eNS_Worker) == 0)
+        if ((m_PassedChecks & eNS_Worker) == 0) {
+            server->RegisterAlert(eAccess);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: worker node privileges required");
+        }
     }
 
     if (cmd_reqs & eNS_Program) {
-        if ((m_PassedChecks & eNS_Program) == 0)
+        if ((m_PassedChecks & eNS_Program) == 0) {
+            server->RegisterAlert(eAccess);
             NCBI_THROW(CNetScheduleException, eAccessDenied,
                        "Access denied: program privileges required");
+        }
     }
 }
 

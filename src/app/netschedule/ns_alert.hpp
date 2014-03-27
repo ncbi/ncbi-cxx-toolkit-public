@@ -53,7 +53,8 @@ enum EAlertType {
     eConfig = 0,
     eReconfigure = 1,
     ePidFile = 2,
-    eStartAfterCrash = 3
+    eStartAfterCrash = 3,
+    eAccess = 4
 };
 
 enum EAlertAckResult {
