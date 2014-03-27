@@ -5,6 +5,9 @@
 [Configuration.1100]
 PlatformToolset=v110
 
+[Configuration.1200]
+PlatformToolset=v120
+
 
 [Compiler]
 PreprocessorDefinitions=
@@ -36,6 +39,9 @@ Detect64BitPortabilityProblems=false
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 
 [Compiler.1100]
+PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
+
+[Compiler.1200]
 PreprocessorDefinitions=_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)
 
 
@@ -95,6 +101,9 @@ FixedBaseAddress=0
 AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
 
 [Linker.1100]
+AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
+
+[Linker.1200]
 AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
 
 [Linker.x64]
