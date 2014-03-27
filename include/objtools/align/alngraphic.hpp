@@ -126,7 +126,6 @@ private:
     typedef list<TAlnInfoList*> TAlnInfoListList;
     CConstRef <CSeq_align_set> m_AlnSet; 
     CRef <CScope> m_Scope;
-    int m_FormNum;
     int m_NumAlignToShow; 
     int m_View;
     int m_BarHeight;
