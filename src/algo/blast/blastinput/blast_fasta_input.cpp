@@ -270,12 +270,8 @@ CBlastFastaInputSource::x_InitInputReader()
     }
     // This is necessary to enable the ignoring of gaps in classes derived from
     // CFastaReader
-    if(m_ReadProteins) {
-    	flags+= CFastaReader::fHyphensIgnoreAndWarn;
-    }
-    else {
-    	flags+= CFastaReader::fParseGaps;
-    }
+
+   	flags+= CFastaReader::fHyphensIgnoreAndWarn;
 
     flags+= CFastaReader::fDisableNoResidues;
 
