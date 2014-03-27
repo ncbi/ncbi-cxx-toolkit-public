@@ -1056,4 +1056,20 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_PROTEIN_ID)
    RunAndCheckMultiReports(entry, "INCONSISTENT_PROTEIN_ID", msg);
 };
 
+void LookAndSave(CRef <CSeq_entry> entry, const string& file)
+{
+   cerr << MSerial_AsnText << *entry << endl;
+   OutBlob(*entry, file);
+};
+
+BOOST_AUTO_TEST_CASE(TEST_DEFLINE_PRESENT)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeqdesc> title_desc (new CSeqdesc());
+   title_desc->SetTitle("title is defline");
+   entry->SetSeq().SetDescr().Set().push_back(title_desc);
+
+   RunAndCheckTest(entry, "TEST_DEFLINE_PRESENT", "1 Bioseq has definition line");
+};
+
 END_NCBI_SCOPE

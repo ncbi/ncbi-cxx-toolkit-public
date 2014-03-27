@@ -7171,13 +7171,16 @@ void CBioseq_DISC_LONG_NO_ANNOTATION :: GetReport(CRef <CClickableItem> c_item)
 
 void CBioseq_TEST_DEFLINE_PRESENT :: TestOnObj(const CBioseq& bioseq)
 {
-  CConstRef <CSeqdesc> seqdesc_title = bioseq.GetClosestDescriptor(CSeqdesc::e_Title);
+  CConstRef <CSeqdesc> 
+     seqdesc_title = bioseq.GetClosestDescriptor(CSeqdesc::e_Title);
   if (seqdesc_title.NotEmpty()) {
      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
      thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
-     ITERATE(vector < CRef < CTestAndRepData > >, it, thisGrp.tests_on_Bioseq_na) {
+     ITERATE(vector < CRef < CTestAndRepData > >, it, 
+                                 thisGrp.tests_on_Bioseq_na) {
        if ( (*it)->GetName() == GetName()) {
-             thisGrp.tests_4_once.push_back(*it);
+              // test only run once; how about concatenated seq_entry?
+             thisGrp.tests_4_once.push_back(*it);  
              break;
        }
      }
