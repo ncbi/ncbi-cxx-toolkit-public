@@ -575,7 +575,11 @@ string CMsvc7RegSettings::sm_MsvcPlatformName = "ppc";
 
 #elif defined(NCBI_COMPILER_MSVC)
 
-#if _MSC_VER >= 1700
+#if _MSC_VER >= 1800
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
+CMsvc7RegSettings::eMsvc1200;
+string CMsvc7RegSettings::sm_MsvcVersionName = "1200";
+#elif _MSC_VER >= 1700
 CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
     CMsvc7RegSettings::eMsvc1100;
 string CMsvc7RegSettings::sm_MsvcVersionName = "1100";
@@ -678,6 +682,10 @@ void CMsvc7RegSettings::IdentifyPlatform()
             sm_MsvcVersion = eMsvc1100;
             sm_MsvcVersionName = "1100";
             break;
+        case 1200:
+            sm_MsvcVersion = eMsvc1200;
+            sm_MsvcVersionName = "1200";
+            break;
         default:
             NCBI_THROW(CProjBulderAppException, eBuildConfiguration, "Unsupported IDE version");
             break;
@@ -737,7 +745,8 @@ string CMsvc7RegSettings::GetProjectFileFormatVersion(void)
     } else if (GetMsvcVersion() == eMsvc900) {
         return "9.00";
     } else if (GetMsvcVersion() == eMsvc1000 ||
-               GetMsvcVersion() == eMsvc1100) {
+               GetMsvcVersion() == eMsvc1100 ||
+               GetMsvcVersion() == eMsvc1200) {
         return "10.0.30319.1";
     }
     return "";
@@ -754,6 +763,8 @@ string CMsvc7RegSettings::GetSolutionFileFormatVersion(void)
         return "11.00\n# Visual Studio 2010";
     } else if (GetMsvcVersion() == eMsvc1100) {
         return "12.00\n# Visual Studio 2012";
+    } else if (GetMsvcVersion() == eMsvc1200) {
+        return "12.00\n# Visual Studio 2013";
     }
     return "";
 }
