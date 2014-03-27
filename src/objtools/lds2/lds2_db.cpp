@@ -33,6 +33,8 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbistre.hpp>
 #include <db/sqlite/sqlitewrapp.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
 #include <objtools/error_codes.hpp>
 #include <objtools/lds2/lds2_expt.hpp>
 #include <objtools/lds2/lds2_db.hpp>
@@ -563,14 +565,167 @@ Int8 CLDS2_Database::AddBlob(Int8                   file_id,
 
 typedef vector<Int8> TLdsIds;
 
+typedef set<CSeq_id_Handle> TIdMatches;
+
+// Helper functions to collect matching seq-ids (e.g. accession
+// without version).
+// CSeq_id_Handle's methods do not work here - they require the
+// matching ids to be currently in use somewhere, which may be
+// not true.
+
+CTextseq_id* s_GetTextseq_id(const CSeq_id::E_Choice& choice, CSeq_id& match)
+{
+    switch ( choice ) {
+    case CSeq_id::e_Genbank:
+        return &match.SetGenbank();
+    case CSeq_id::e_Embl:
+        return &match.SetEmbl();
+    case CSeq_id::e_Pir:
+        return &match.SetPir();
+    case CSeq_id::e_Swissprot:
+        return &match.SetSwissprot();
+    case CSeq_id::e_Other:
+        return &match.SetOther();
+    case CSeq_id::e_Ddbj:
+        return &match.SetDdbj();
+    case CSeq_id::e_Prf:
+        return &match.SetPrf();
+    case CSeq_id::e_Tpg:
+        return &match.SetTpg();
+    case CSeq_id::e_Tpe:
+        return &match.SetTpe();
+    case CSeq_id::e_Tpd:
+        return &match.SetTpd();
+    case CSeq_id::e_Gpipe:
+        return &match.SetGpipe();
+    case CSeq_id::e_Named_annot_track:
+        return &match.SetNamed_annot_track();
+    }
+    return 0;
+}
+
+
+void s_GetMatchingTextIds(const CSeq_id& id,
+                          TIdMatches&    matches)
+{
+    const CTextseq_id* orig = id.GetTextseq_Id();
+    if ( !orig ) return;
+
+    bool A = orig->IsSetAccession();
+    CTextseq_id::TAccession av = A ? orig->GetAccession() : kEmptyStr;
+    bool v = orig->IsSetVersion();
+    CTextseq_id::TVersion vv = v ? orig->GetVersion() : 0;
+    bool N = orig->IsSetName();
+    CTextseq_id::TName nv = N ? orig->GetName() : kEmptyStr;
+    bool r = orig->IsSetRelease();
+    CTextseq_id::TRelease rv = r ? orig->GetRelease() : kEmptyStr;
+
+    CSeq_id match;
+    CTextseq_id& ti = *s_GetTextseq_id(id.Which(), match);
+
+    if (A  &&  (v  ||  N  ||  r)) {
+        // Accession only
+        ti.SetAccession(av);
+        matches.insert(CSeq_id_Handle::GetHandle(match));
+        if (v  &&  (N  ||  r)) {
+            // A.v
+            ti.SetVersion(vv);
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+        }
+        if ( N ) {
+            // Name only
+            ti.Reset();
+            ti.SetName(nv);
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+            if (v  ||  r) {
+                if ( r ) {
+                    // N.r
+                    ti.SetRelease(rv);
+                    matches.insert(CSeq_id_Handle::GetHandle(match));
+                    ti.ResetRelease();
+                }
+                // A + N
+                ti.SetAccession(av);
+                matches.insert(CSeq_id_Handle::GetHandle(match));
+                if (v  &&  r) {
+                    // A.v + N
+                    ti.SetVersion(vv);
+                    matches.insert(CSeq_id_Handle::GetHandle(match));
+                    // A + N.r
+                    ti.ResetVersion();
+                    ti.SetRelease(rv);
+                    matches.insert(CSeq_id_Handle::GetHandle(match));
+                }
+            }
+        }
+    }
+    else if (N  &&  (v  ||  r)) {
+        // N only
+        ti.Reset();
+        ti.SetName(nv);
+        matches.insert(CSeq_id_Handle::GetHandle(match));
+        if (v  &&  r) {
+            // N.r
+            ti.SetRelease(rv);
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+        }
+    }
+}
+
+
+void s_GetMatchingIds(const CSeq_id_Handle& idh,
+                      TIdMatches&           matches)
+{
+    matches.insert(idh);
+    switch ( idh.Which() ) {
+    // CTextseq_id
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Pir:
+    case CSeq_id::e_Swissprot:
+    case CSeq_id::e_Other:
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Prf:
+    case CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpd:
+    case CSeq_id::e_Gpipe:
+    case CSeq_id::e_Named_annot_track:
+        s_GetMatchingTextIds(*idh.GetSeqId(), matches);
+        break;
+
+    // CPDB_seq_id
+    case CSeq_id::e_Pdb:
+        // 'rel' is optional
+        if ( idh.GetSeqId()->GetPdb().IsSetRel() ) {
+            CSeq_id match;
+            match.Assign(*idh.GetSeqId());
+            match.SetPdb().ResetRel();
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+        }
+        break;
+
+    // Other types have no matching versions.
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Local:     // CObject_id
+    case CSeq_id::e_Gibbsq:    // int
+    case CSeq_id::e_Gibbmt:    // int
+    case CSeq_id::e_Giim:      // CGiimport_id
+    case CSeq_id::e_Patent:    // CPatent_seq_id
+    case CSeq_id::e_General:   // CDbtag
+    case CSeq_id::e_Gi:        // TGi
+        return;
+    }
+}
+
 
 Int8 CLDS2_Database::AddBioseq(Int8 blob_id, const TSeqIdSet& ids)
 {
     // Convert ids to lds-ids
     TLdsIds lds_ids;
     ITERATE(TSeqIdSet, id, ids) {
-        CSeq_id_Handle::TMatches matches;
-        id->GetReverseMatchingHandles(matches);
+        TIdMatches matches;
+        s_GetMatchingIds(*id, matches);
         ITERATE(CSeq_id_Handle::TMatches, match, matches) {
             Int8 lds_id = x_GetLdsSeqId(*match);
             lds_ids.push_back(lds_id);
