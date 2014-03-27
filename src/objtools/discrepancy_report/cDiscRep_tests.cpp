@@ -4553,7 +4553,7 @@ bool CBioseq_on_base :: x_IsDeltaSeqWithFarpointers(const CBioseq& bioseq)
   return rval;
 };
 
-//void CBioseqTestAndRepData :: TestOnBasesN(const CBioseq& bioseq)
+
 void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
 {
     if (thisTest.is_Bases_N_run) return;

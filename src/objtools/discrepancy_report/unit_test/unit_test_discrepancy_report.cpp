@@ -1069,7 +1069,27 @@ BOOST_AUTO_TEST_CASE(TEST_DEFLINE_PRESENT)
    title_desc->SetTitle("title is defline");
    entry->SetSeq().SetDescr().Set().push_back(title_desc);
 
-   RunAndCheckTest(entry, "TEST_DEFLINE_PRESENT", "1 Bioseq has definition line");
+   RunAndCheckTest(entry, "TEST_DEFLINE_PRESENT", 
+                      "1 Bioseq has definition line");
 };
 
+void ChangeSequence(CRef <CSeq_entry> entry, const string& seq)
+{
+   entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(seq);
+   entry->SetSeq().SetInst().SetLength(seq.size());
+};
+
+BOOST_AUTO_TEST_CASE(N_RUNS)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   ChangeSequence(entry, "AATTCCNNNNNNNNNNNNNNNNNNNNNAATTCC");
+   RunAndCheckTest(entry, "N_RUNS", "1 sequence has runs of 10 or more Ns.");
+};
+
+BOOST_AUTO_TEST_CASE(N_RUNS_14)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   ChangeSequence(entry, "AATTCCNNNNNNNNNNNNNNNNNNNNNAATTCC");
+   RunAndCheckTest(entry, "N_RUNS_14", "1 sequence has runs of 15 or more Ns.");
+};
 END_NCBI_SCOPE
