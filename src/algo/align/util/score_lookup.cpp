@@ -440,7 +440,6 @@ public:
 
 private:
     int m_Row;
-    bool m_Start;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1090,9 +1089,6 @@ public:
                    "last_splice_site score inapplicable");
         return 0;
     }
-
-private:
-    int m_Row;
 };
 
 
