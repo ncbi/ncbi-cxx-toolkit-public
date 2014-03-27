@@ -297,6 +297,18 @@ void RunAndCheckMultiReports(CRef <CSeq_entry> entry, const string& test_name, c
    }
 };
 
+BOOST_AUTO_TEST_CASE(COUNT_PROTEINS)
+{
+   CRef <CSeq_entry> entry = BuildGoodGenProdSet();
+   RunAndCheckTest(entry, "COUNT_PROTEINS", "1 protein sequence in record");
+};
+
+BOOST_AUTO_TEST_CASE(TEST_TERMINAL_NS)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+   RunAndCheckTest(entry, "TEST_TERMINAL_NS",  "1 sequence has terminal Ns");
+};
 
 BOOST_AUTO_TEST_CASE(DISC_QUALITY_SCORES)
 {
@@ -993,5 +1005,43 @@ BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
                         "1 nucleotide Bioseq is present.");
 };
 
+CRef <CSeq_id> MakeSeqIdWithDbAndId(const string& db, const int& id)
+{
+   CRef <CObject_id> obj_id (new CObject_id);
+   obj_id->SetId(id);
+   CRef <CDbtag> db_tag (new CDbtag);
+   db_tag->SetDb(db);
+   db_tag->SetTag(*obj_id);
+   CRef <CSeq_id> seq_id (new CSeq_id(*db_tag));
+   return seq_id;
+};
+
+BOOST_AUTO_TEST_CASE(MISSING_PROTEIN_ID)
+{
+   CRef <CSeq_entry> entry = BuildGoodGenProdSet();
+   CRef <CSeq_entry> nuc_prot_set = GetNucProtSetFromGenProdSet(entry);
+   CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(nuc_prot_set);
+
+   // skippable db.
+   CRef <CSeq_id> seq_id  = MakeSeqIdWithDbAndId("TMSMART", 18938);
+   prot->SetSeq().SetId().push_back(seq_id);
+ 
+   seq_id = MakeSeqIdWithDbAndId("BankIt", 12345);
+   prot->SetSeq().SetId().push_back(seq_id);
+
+   seq_id = MakeSeqIdWithDbAndId("NCBIFILE", 67890);
+   prot->SetSeq().SetId().push_back(seq_id);
+   
+   RunAndCheckTest(entry, "MISSING_PROTEIN_ID", "1 protein has invalid ID.");
+};
+
+/*
+BOOST_AUTO_TEST_CASE(INCONSISTENT_PROTEIN_ID)
+{
+   CRef <CSeq_entry> entry = BuildGoodGenProdSet();
+   CRef <CSeq_entry> nuc_prot_set = GetNucProtSetFromGenProdSet(entry);
+   CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(nuc_prot_set);
+};
+*/
 
 END_NCBI_SCOPE

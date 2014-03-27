@@ -6196,6 +6196,7 @@ void CBioseq_COUNT_PROTEINS :: GetReport(CRef <CClickableItem> c_item)
    GetTestItemList(c_item->item_list, entry2seqs);
    c_item->item_list.clear();
 
+   unsigned cnt = 0;
    ITERATE (Str2Strs, it, entry2seqs) {
      if (it != entry2seqs.begin()) {
         c_item.Reset(new CClickableItem);
@@ -6204,8 +6205,10 @@ void CBioseq_COUNT_PROTEINS :: GetReport(CRef <CClickableItem> c_item)
      }
      c_item->item_list = it->second;
      c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
+     cnt = c_item->item_list.size();
      c_item->description 
-       = NStr::UIntToString((unsigned)c_item->item_list.size()) + " protein sequences in record";
+       = NStr::UIntToString(cnt) + " protein " 
+          + ( (cnt>1)? "sequences": "sequence") + " in record";
    }
 };
 
