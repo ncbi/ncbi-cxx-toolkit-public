@@ -1092,4 +1092,13 @@ BOOST_AUTO_TEST_CASE(N_RUNS_14)
    ChangeSequence(entry, "AATTCCNNNNNNNNNNNNNNNNNNNNNAATTCC");
    RunAndCheckTest(entry, "N_RUNS_14", "1 sequence has runs of 15 or more Ns.");
 };
+
+BOOST_AUTO_TEST_CASE(ZERO_BASECOUNT)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   ChangeSequence(entry, "XXYYZZNNNNNNNNNNNNNNNNNNNNNNNNNN");
+   RunAndCheckTest(entry, "ZERO_BASECOUNT", 
+                     "4 sequences have a zero basecount for a nucleotide");
+};
+
 END_NCBI_SCOPE
