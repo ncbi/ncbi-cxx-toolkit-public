@@ -94,7 +94,10 @@ typedef struct SContext_tag {
 
 static void s_DeleteContext(TContextPtr context);
 
+// The following function could be used for debugging.
+#if 0
 static void s_DumpContext(TContextPtr context);
+#endif
 
 static TSeqAnnotChoiceMaskFlags s_GetSeqAnnotChoiceMask(const CSeq_annot* annot);
 
