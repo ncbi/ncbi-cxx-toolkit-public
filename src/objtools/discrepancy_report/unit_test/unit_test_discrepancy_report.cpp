@@ -1101,4 +1101,14 @@ BOOST_AUTO_TEST_CASE(ZERO_BASECOUNT)
                      "4 sequences have a zero basecount for a nucleotide");
 };
 
+BOOST_AUTO_TEST_CASE(TEST_LOW_QUALITY_REGION)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   ChangeSequence(entry, "ACTGXXYYZZNNNNNNAAGCAGTGGTATCAACGCAGAGTGGCCACCGGGACAGACCCAGCAACAACCGTGTGCCCAGAGGGCTGCCAACATCTCTACACTTACTGCCGCTGTGATTTCTGCAGACCGCTTGTCTTCGTTGTGTGACA");
+   RunAndCheckTest(entry, "TEST_LOW_QUALITY_REGION", 
+                       "1 sequence contains low quality region");
+};
+
+
+
 END_NCBI_SCOPE
