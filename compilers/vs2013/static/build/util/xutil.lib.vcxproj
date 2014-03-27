@@ -1,0 +1,309 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="ReleaseDLL|Win32">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseDLL|x64">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1DCE18CD-4A7E-43B8-B7AF-48972EFE51E7}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">..\..\lib\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">..\..\lib\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">$(Configuration)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">xutil</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">xutil</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <ClCompile>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories>..\..\..\..\..\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
+      <StringPooling>false</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <ProgramDataBaseFileName>$(IntDir)xutil.pdb</ProgramDataBaseFileName>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <BrowseInformation>
+      </BrowseInformation>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <CallingConvention>Cdecl</CallingConvention>
+      <CompileAs>Default</CompileAs>
+      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>FALSE;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories>..\..\..\..\..\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
+      <StringPooling>false</StringPooling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <ProgramDataBaseFileName>$(IntDir)xutil.pdb</ProgramDataBaseFileName>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <BrowseInformation>
+      </BrowseInformation>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <CallingConvention>Cdecl</CallingConvention>
+      <CompileAs>Default</CompileAs>
+      <DisableSpecificWarnings>%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>FALSE;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\src\util\ascii85.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\bytesrc.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\checksum.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\ddump_viewer.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\dictionary.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\file_obsolete.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\format_guess.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\itree.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\logrotate.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\md5.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\random_gen.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\smalldns.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\strbuffer.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\strsearch.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\thread_nonstop.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\thread_pool.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\unicode.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\utf8.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\src\util\util_exception.cpp">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ncbi_pch.hpp</PrecompiledHeaderFile>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">NCBI_USE_PCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ncbi_pch.hpp</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\include\util\ascii85.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\bytesrc.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\checksum.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\ddump_viewer.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\dictionary.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\file_obsolete.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\format_guess.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\itree.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\lightstr.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\linkedset.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\logrotate.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\md5.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\ncbi_table.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\random_gen.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\range.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\range_coll.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\rangemap.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\reader_writer.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\regexp.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\resize_iter.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\resource_pool.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\rwstream.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\smalldns.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\static_map.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\static_set.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\strbuffer.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\strsearch.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\thread_nonstop.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\thread_pool.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\unicode.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\utf8.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\util_exception.hpp" />
+    <ClInclude Include="..\..\..\..\..\include\util\weakmap.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\include\util\checksum.inl" />
+    <None Include="..\..\..\..\..\include\util\itree.inl" />
+    <None Include="..\..\..\..\..\include\util\rangemap.inl" />
+    <None Include="..\..\..\..\..\include\util\strbuffer.inl" />
+    <None Include="..\..\..\..\..\include\util\weakmap.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
