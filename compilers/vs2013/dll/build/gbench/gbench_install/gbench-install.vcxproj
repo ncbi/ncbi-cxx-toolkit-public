@@ -1,0 +1,218 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DebugDLL|Win32">
+      <Configuration>DebugDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="DebugDLL|x64">
+      <Configuration>DebugDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseDLL|Win32">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseDLL|x64">
+      <Configuration>ReleaseDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_DebugDLL|Win32">
+      <Configuration>Unicode_DebugDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_DebugDLL|x64">
+      <Configuration>Unicode_DebugDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_ReleaseDLL|Win32">
+      <Configuration>Unicode_ReleaseDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode_ReleaseDLL|x64">
+      <Configuration>Unicode_ReleaseDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VTune_DebugDLL|Win32">
+      <Configuration>VTune_DebugDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VTune_DebugDLL|x64">
+      <Configuration>VTune_DebugDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VTune_ReleaseDLL|Win32">
+      <Configuration>VTune_ReleaseDLL</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="VTune_ReleaseDLL|x64">
+      <Configuration>VTune_ReleaseDLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{6C23686B-1522-4B44-8D48-7E3176C36247}</ProjectGuid>
+    <RootNamespace>gbench-install</RootNamespace>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">DebugDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">DebugDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">DebugDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">DebugDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ReleaseDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ReleaseDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ReleaseDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ReleaseDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">Unicode_DebugDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">Unicode_DebugDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">Unicode_DebugDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">Unicode_DebugDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">Unicode_ReleaseDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">Unicode_ReleaseDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">Unicode_ReleaseDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">Unicode_ReleaseDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">VTune_DebugDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">VTune_DebugDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">VTune_DebugDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">VTune_DebugDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">VTune_ReleaseDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">VTune_ReleaseDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">gbench-install.exe</NMakeOutput>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">VTune_ReleaseDLL\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">VTune_ReleaseDLL\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">gbench-install.exe</NMakeOutput>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
