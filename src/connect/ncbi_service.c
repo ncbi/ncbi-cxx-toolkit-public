@@ -729,8 +729,8 @@ static void s_SetDefaultReferer(SERV_ITER iter, SConnNetInfo* net_info)
 
 char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
 {
-    static const char kClientRevision[] = "Client-Revision: %hu.%hu\r\n";
     static const char kAcceptedServerTypes[] = "Accepted-Server-Types:";
+    static const char kClientRevision[] = "Client-Revision: %u.%u\r\n";
     static const char kUsedServerInfo[] = "Used-Server-Info: ";
     static const char kNcbiFWPorts[] = "NCBI-Firewall-Ports: ";
     static const char kServerCount[] = "Server-Count: ";
