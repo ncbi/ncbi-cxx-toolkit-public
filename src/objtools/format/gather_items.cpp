@@ -2411,6 +2411,33 @@ static void s_CleanCDDFeature(const CSeq_feat& feat)
                 f.SetData().SetSite(sc_Pairs[i].second);
             }
         }
+    } else if ( feat.GetData().IsRegion() && feat.GetNamedDbxref("CDD") && feat.IsSetComment() ) {
+        string s;
+        s = feat.GetComment();
+        if ( NStr::Find (s, "&apos;") != NPOS) {
+            string x = NStr::Replace (s, "&apos;", "'");
+            CSeq_feat& f = const_cast<CSeq_feat&>(feat);
+            f.SetComment(x);
+            s = x;
+        }
+        if ( NStr::Find (s, "&quot;") != NPOS) {
+            string x = NStr::Replace (s, "&quot;", "\"");
+            CSeq_feat& f = const_cast<CSeq_feat&>(feat);
+            f.SetComment(x);
+            s = x;
+        }
+        if ( NStr::Find (s, "&amp;") != NPOS) {
+            string x = NStr::Replace (s, "&amp;", "&");
+            CSeq_feat& f = const_cast<CSeq_feat&>(feat);
+            f.SetComment(x);
+            s = x;
+        }
+        if ( NStr::Find (s, "&gt;") != NPOS) {
+            string x = NStr::Replace (s, "&gt;", ">");
+            CSeq_feat& f = const_cast<CSeq_feat&>(feat);
+            f.SetComment(x);
+            s = x;
+        }
     }
 }
 
