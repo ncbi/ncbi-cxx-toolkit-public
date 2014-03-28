@@ -557,22 +557,26 @@ void
 CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
               CConstRef<blast::CBlastQueryVector> queries)
 {
-   CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
 
     // ASN.1 formatting is straightforward
     if (m_FormatType == CFormattingArgs::eAsnText) {
         if (results.HasAlignments()) {
+    	    CRef<CSeq_align_set> aln_set (new CSeq_align_set);
+            CBlastFormatUtil::PruneSeqalign(*(results.GetSeqAlign()), *aln_set, m_HitlistSize);
             m_Outfile << MSerial_AsnText << *x_WrapAlignmentInSeqAnnot(aln_set);
         }
         return;
     } else if (m_FormatType == CFormattingArgs::eAsnBinary) {
         if (results.HasAlignments()) {
+            CRef<CSeq_align_set> aln_set (new CSeq_align_set);
+            CBlastFormatUtil::PruneSeqalign(*(results.GetSeqAlign()), *aln_set, m_HitlistSize);
             m_Outfile << MSerial_AsnBinary <<
                 *x_WrapAlignmentInSeqAnnot(aln_set);
         }
         return;
     } else if (m_FormatType == CFormattingArgs::eXml) {
         CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
+        res->TrimSeqAlign(m_HitlistSize);
         m_AccumulatedResults.push_back(res);
         CConstRef<CSeq_id> query_id = results.GetSeqId();
         // FIXME: this can be a bottleneck with large numbers of queries
