@@ -60,6 +60,19 @@
 
 namespace xml {
 
+int size_t_to_int_conversion (std::size_t  value,
+                              const std::string &  msg)
+{
+    int     as_int = static_cast<int>(value);
+
+    if (value < 0)
+        throw xml::exception(msg);
+    if (value != static_cast<std::size_t>(as_int))
+        throw xml::exception(msg);
+    return as_int;
+}
+
+
 namespace impl {
 
     //####################################################################

@@ -171,8 +171,9 @@ xml::document::document (const char *               data,
     if (!data)
         throw xml::exception("invalid data pointer");
 
-    xmlParserCtxtPtr    ctxt = xmlCreateMemoryParserCtxt(
-                                    data, static_cast<int>(size));
+    xmlParserCtxtPtr    ctxt = xmlCreateMemoryParserCtxt(data,
+                                    size_t_to_int_conversion(size,
+                                        "memory buffer is too large"));
     if (ctxt == 0)
         throw std::bad_alloc();
 

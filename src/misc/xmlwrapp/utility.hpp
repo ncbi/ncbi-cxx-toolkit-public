@@ -53,6 +53,17 @@
 
 namespace xml {
 
+    /*
+     * In some cases libxml2 accepts int values for size of objects.
+     * XmlWrapp in turn accepts them as size_t.
+     * The function checks if a size_t value could be converted into
+     * int without loosing the value. It throws xml::exception
+     * if the conversion looses the value.
+     */
+    int size_t_to_int_conversion (std::size_t  value,
+                                  const std::string &  msg);
+
+
 namespace impl {
 
     /*
@@ -61,16 +72,16 @@ namespace impl {
      */
     class xmlchar_helper {
     public:
-	xmlchar_helper (xmlChar *ptr) : ptr_(ptr)
-	{ }
+        xmlchar_helper (xmlChar *ptr) : ptr_(ptr)
+        {}
 
-	~xmlchar_helper (void)
-	{ if (ptr_) xmlFree(ptr_); }
+        ~xmlchar_helper (void)
+        { if (ptr_) xmlFree(ptr_); }
 
-	const char* get (void) const
-	{ return reinterpret_cast<const char*>(ptr_); }
+        const char* get (void) const
+        { return reinterpret_cast<const char*>(ptr_); }
     private:
-	xmlChar *ptr_;
+        xmlChar *ptr_;
     };
 
     void printf2string (std::string &s, const char *message, va_list ap);

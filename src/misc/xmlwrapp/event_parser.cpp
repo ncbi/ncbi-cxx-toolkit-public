@@ -380,7 +380,9 @@ bool event_parser::parse_chunk (const char *chunk, size_type length,
                                  "after the parser has finished");
     }
 
-    xmlParseChunk(pimpl_->parser_context_, chunk, static_cast<int>(length), 0);
+    xmlParseChunk(pimpl_->parser_context_, chunk,
+                  size_t_to_int_conversion(length,
+                                           "chunk is too large to parse"), 0);
     if (!pimpl_->parser_status_)
         return false;
     if (is_failure(temp, how))

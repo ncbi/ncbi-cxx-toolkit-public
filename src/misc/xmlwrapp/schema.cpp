@@ -154,9 +154,11 @@ void schema::construct (const char* file_or_data, size_type size,
         }
     } else {
         // This is a memory parsing request
-        if ((ctxt = xmlSchemaNewMemParserCtxt(file_or_data, size)) == NULL) {
+        ctxt = xmlSchemaNewMemParserCtxt(file_or_data,
+                                         size_t_to_int_conversion(size,
+                                            "memory buffer is too large"));
+        if (ctxt == NULL)
             throw std::bad_alloc();
-        }
     }
 
     messages->get_messages().clear();
