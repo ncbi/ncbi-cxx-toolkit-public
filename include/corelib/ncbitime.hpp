@@ -140,6 +140,9 @@ public:
         /// in the time object.
         fMatch_ShortTime   = (1 << 6),       ///< eg "Y/M/D h:m:s" and "1997"
         fMatch_ShortFormat = (1 << 7),       ///< eg "Y" and "1997/07/16"
+        /// Time API tries to get what it can from time string using specified
+        /// time format. It not guaranties that format or time strings will be
+        /// processed fully, it allow that time string can have a garbage at the end. 
         fMatch_Weak        = fMatch_ShortFormat | fMatch_ShortTime,
         /// Default flags
         fDefault           = fFormat_Simple | fMatch_Strict,
