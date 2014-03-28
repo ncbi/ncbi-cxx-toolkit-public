@@ -2677,7 +2677,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     NON_CONST_ITERATE(TChainList, it, tmp_chains) {
         it->RestoreTrimmedEnds(trim);
         if(it->Score() != BadScore()) 
-            m_gnomon->GetScore(*it,no5pextension,false); // this will return CDS to best/longest depending on no5pextension
+            m_gnomon->GetScore(*it,!no5pextension,false); // this will return CDS to best/longest depending on no5pextension
         chains.push_back(*it);
     }
 
