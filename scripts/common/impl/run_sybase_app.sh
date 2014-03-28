@@ -16,4 +16,9 @@ if test -z "$SYBASE"; then
    SYBASE="C:\\Sybase"
    export SYBASE
 fi
+
+if [ ".$1" = ".-run-script" ]; then
+   shift
+   exec "$@"
+fi
 exec $CHECK_EXEC "$@"

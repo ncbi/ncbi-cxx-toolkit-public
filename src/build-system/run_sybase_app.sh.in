@@ -9,4 +9,8 @@ if test -d "$syb" -o -z "$SYBASE"; then
     export SYBASE
 fi
 
+if [ ".$1" = ".-run-script" ]; then
+   shift
+   exec "$@"
+fi
 exec $CHECK_EXEC "$@"
