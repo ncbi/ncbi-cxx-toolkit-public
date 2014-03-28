@@ -1017,7 +1017,12 @@ void CMsvcProjectGenerator::GenerateMsbuild(
         // File version
         CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
         project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
-        __SET_PROPGROUP_ELEMENT( t, "_ProjectFileVersion", GetApp().GetRegSettings().GetProjectFileFormatVersion());
+        {
+            string prj_ver(GetApp().GetRegSettings().GetProjectFileFormatVersion());
+            if (!prj_ver.empty()) {
+                __SET_PROPGROUP_ELEMENT(t, "_ProjectFileVersion", prj_ver);
+            }
+        }
 
         // OutDir/IntDir/TargetName
         ITERATE(list<SConfigInfo>, c , all_cfgs) {
