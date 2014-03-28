@@ -1109,6 +1109,19 @@ BOOST_AUTO_TEST_CASE(TEST_LOW_QUALITY_REGION)
                        "1 sequence contains low quality region");
 };
 
+BOOST_AUTO_TEST_CASE(DISC_PERCENT_N)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   ChangeSequence(entry, "ACTGXXYYZZNNNNNNAAGCA");
+   RunAndCheckTest(entry, "DISC_PERCENT_N", "1 sequence has > 5% Ns.");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_10_PERCENTN)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   ChangeSequence(entry, "ACTGXXYYZZNNNNNNAAGCA");
+   RunAndCheckTest(entry, "DISC_10_PERCENTN", "1 sequence has > 10% Ns.");
+};
 
 
 END_NCBI_SCOPE
