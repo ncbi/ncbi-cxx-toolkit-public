@@ -20,5 +20,6 @@ REQUIRES = objects Boost.Test.Included
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = blastinput_unit_test
 CHECK_COPY = data blastinput_unit_test.ini
+CHECK_TIMEOUT = 600
 
 WATCHERS = madden camacho fongah2
