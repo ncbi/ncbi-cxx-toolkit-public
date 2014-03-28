@@ -78,6 +78,7 @@ public:
         eTooManyPendingJobs,
         eDataTooLong,
         eInvalidClient,
+        eClientDataVersionMismatch,
         eAccessDenied,
         eSubmitsDisabled,
         eShuttingDown,
@@ -107,6 +108,8 @@ public:
         case eTooManyPendingJobs:  return "eTooManyPendingJobs";
         case eDataTooLong:         return "eDataTooLong";
         case eInvalidClient:       return "eInvalidClient";
+        case eClientDataVersionMismatch:
+                                   return "eClientDataVersionMismatch";
         case eAccessDenied:        return "eAccessDenied";
         case eSubmitsDisabled:     return "eSubmitsDisabled";
         case eShuttingDown:        return "eShuttingDown";

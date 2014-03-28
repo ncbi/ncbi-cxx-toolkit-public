@@ -94,6 +94,7 @@ unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
     case eTooManyPendingJobs:                   return 503;
     case eDataTooLong:                          return 413;
     case eInvalidClient:                        return 400;
+    case eClientDataVersionMismatch:            return 304;
     case eAccessDenied:                         return 401;
     case eSubmitsDisabled:                      return 503;
     case eShuttingDown:                         return 400;
