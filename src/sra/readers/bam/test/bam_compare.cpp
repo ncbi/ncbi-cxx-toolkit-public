@@ -459,10 +459,21 @@ int CBAMCompareApp::Run(void)
         }
         TShortIds short_ids;
         vector<samtools::SBamAlignment> alns1, alnsout1;
+        size_t unaligned_count = 0;
         for ( ; it; ++it ) {
             try {
                 ++count;
-                TSeqPos ref_pos = it.GetRefSeqPos();
+                TSeqPos ref_pos;
+                try {
+                    ref_pos = it.GetRefSeqPos();
+                }
+                catch ( CBamException& exc ) {
+                    if ( exc.GetErrCode() != exc.eNoData ) {
+                        throw;
+                    }
+                    ref_pos = kInvalidSeqPos;
+                    ++unaligned_count;
+                }
                 if ( range_only ) {
                     TSeqPos ref_end = ref_pos;
                     if ( !no_ref_size ) {
@@ -478,14 +489,24 @@ int CBAMCompareApp::Run(void)
                 }
                 TSeqPos ref_size = it.GetCIGARRefSize();
                 Uint8 qual = it.GetMapQuality();
-                string ref_seq_id = it.GetRefSeqId();
-                if ( verbose ) {
-                    out << count << ": Ref: " << ref_seq_id
-                        << " at [" << ref_pos
-                        << " - " << (ref_pos+ref_size-1)
-                        << "] = " << ref_size
-                        << " Qual = " << qual
-                        << '\n';
+                string ref_seq_id;
+                if ( ref_pos == kInvalidSeqPos ) {
+                    _ASSERT(ref_size == 0);
+                    _ASSERT(qual == 0);
+                    if ( verbose ) {
+                        out << count << ": Unaligned\n";
+                    }
+                }
+                else {
+                    ref_seq_id = it.GetRefSeqId();
+                    if ( verbose ) {
+                        out << count << ": Ref: " << ref_seq_id
+                            << " at [" << ref_pos
+                            << " - " << (ref_pos+ref_size-1)
+                            << "] = " << ref_size
+                            << " Qual = " << qual
+                            << '\n';
+                    }
                 }
                 string short_seq_id = it.GetShortSeqId();
                 string short_seq_acc = it.GetShortSeqAcc();
@@ -526,7 +547,12 @@ int CBAMCompareApp::Run(void)
 
                 {{
                     samtools::SBamAlignment aln;
-                    aln.ref_seq_index = ref_seq_index[ref_seq_id];
+                    if ( ref_pos == kInvalidSeqPos ) {
+                        aln.ref_seq_index = -1;
+                    }
+                    else {
+                        aln.ref_seq_index = ref_seq_index[ref_seq_id];
+                    }
                     aln.ref_range.SetFrom(ref_pos).SetLength(ref_size);
                     aln.short_seq_id = short_seq_id;
                     aln.short_range.SetFrom(short_pos).SetLength(short_size);
@@ -557,8 +583,9 @@ int CBAMCompareApp::Run(void)
                         }
                     }}
                     aln.flags = flags;
-                    aln.quality = it.GetMapQuality();
-                    if ( aln.ref_range.IntersectingWith(query_range) ) {
+                    aln.quality = qual;
+                    if ( query_range == CRange<TSeqPos>::GetWhole() ||
+                         aln.ref_range.IntersectingWith(query_range) ) {
                         alns1.push_back(aln);
                     }
                     else {
@@ -566,7 +593,8 @@ int CBAMCompareApp::Run(void)
                     }
                 }}
                 
-                if ( !(ref_seq_id != p_ref_seq_id || 
+                if ( ref_pos != kInvalidSeqPos &&
+                     !(ref_seq_id != p_ref_seq_id || 
                        ref_pos != p_ref_pos ||
                        ref_size != p_ref_size ||
                        short_seq_id != p_short_seq_id ||
@@ -775,6 +803,7 @@ int CBAMCompareApp::Run(void)
                 }
             }
             sort(alnsout1.begin(), alnsout1.end());
+            diff_count = alnsout1.size() + alnsout2.size();
             if ( !alnsout1.empty() ) {
                 if ( alnsout1 == alnsout2 ) {
                     out << "Both API returned the same "<<alnsout1.size()
@@ -794,6 +823,11 @@ int CBAMCompareApp::Run(void)
                 out << "SamTools API returned "<<alnsout1.size()
                     << " non-overlapping alignments." << NcbiEndl;
                 ret_code = 1;
+            }
+            if ( unaligned_count != 0 ) {
+                out << "SRA SDK returned "
+                    << unaligned_count << " unaligned reads."
+                    << NcbiEndl;
             }
             if ( diff_count == 0 ) {
                 out << "SRA SDK and SamTools results are exactly the same."

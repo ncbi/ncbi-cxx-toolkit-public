@@ -445,6 +445,7 @@ int CBAMTestApp::Run(void)
             out << bam_db.GetHeaderText() << '\n';
         }
         if ( args["refseq_table"] ) {
+            out << "RefSeq table:\n";
             for ( CBamRefSeqIterator it(bam_db); it; ++it ) {
                 out << "RefSeq: " << it.GetRefSeqId() << " " << it.GetLength()
                     << '\n';
@@ -530,7 +531,17 @@ int CBAMTestApp::Run(void)
                 if ( limit_count > 0 && count == limit_count ) break;
                 try {
                     ++count;
-                    TSeqPos ref_pos = it.GetRefSeqPos();
+                    TSeqPos ref_pos;
+                    try {
+                        ref_pos = it.GetRefSeqPos();
+                        _ASSERT(ref_pos != kInvalidSeqPos);
+                    }
+                    catch ( CBamException& exc ) {
+                        if ( exc.GetErrCode() != exc.eNoData ) {
+                            throw;
+                        }
+                        ref_pos = kInvalidSeqPos;
+                    }
                     if ( range_only ) {
                         TSeqPos ref_end = ref_pos;
                         if ( !no_ref_size ) {
@@ -546,14 +557,24 @@ int CBAMTestApp::Run(void)
                     }
                     TSeqPos ref_size = it.GetCIGARRefSize();
                     int qual = it.GetMapQuality();
-                    string ref_seq_id = it.GetRefSeqId();
-                    if ( verbose ) {
-                        out << count << ": Ref: " << ref_seq_id
-                            << " at [" << ref_pos
-                            << " - " << (ref_pos+ref_size-1)
-                            << "] = " << ref_size
-                            << " Qual = " << qual
-                            << '\n';
+                    string ref_seq_id;
+                    if ( ref_pos == kInvalidSeqPos ) {
+                        _ASSERT(ref_size == 0);
+                        _ASSERT(qual == 0);
+                        if ( verbose ) {
+                            out << count << ": Unaligned\n";
+                        }
+                    }
+                    else {
+                        ref_seq_id = it.GetRefSeqId();
+                        if ( verbose ) {
+                            out << count << ": Ref: " << ref_seq_id
+                                << " at [" << ref_pos
+                                << " - " << (ref_pos+ref_size-1)
+                                << "] = " << ref_size
+                                << " Qual = " << qual
+                                << '\n';
+                        }
                     }
                     string short_seq_id = it.GetShortSeqId();
                     string short_seq_acc = it.GetShortSeqAcc();

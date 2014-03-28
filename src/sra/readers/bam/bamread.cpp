@@ -493,11 +493,14 @@ CBamRefSeqIterator::CBamRefSeqIterator(const CBamDb& bam_db)
 {
     AlignAccessRefSeqEnumerator* ptr = 0;
     m_LocateRC = AlignAccessDBEnumerateRefSequences(bam_db, &ptr);
-    if ( !m_LocateRC ) {
+    if ( m_LocateRC == 0 ) {
         m_Iter.SetReferencedPointer(ptr);
     }
-    else if ( !(GetRCObject(m_LocateRC) == rcRow &&
-                GetRCState(m_LocateRC) == rcNotFound) ) {
+    else if ( GetRCObject(m_LocateRC) == rcRow &&
+              GetRCState(m_LocateRC) == rcNotFound ) {
+        // no reference sequences found
+    }
+    else {
         NCBI_THROW2(CBamException, eOtherError,
                     "Cannot find first refseq", m_LocateRC);
     }
@@ -657,12 +660,15 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db)
 {
     AlignAccessAlignmentEnumerator* ptr = 0;
     m_LocateRC = AlignAccessDBEnumerateAlignments(bam_db, &ptr);
-    if ( !m_LocateRC ) {
+    if ( m_LocateRC == 0 ) {
         m_Iter.SetReferencedPointer(ptr);
     }
-    else if ( !(GetRCObject(m_LocateRC) == RCObject(rcData) &&
-                GetRCState(m_LocateRC) == rcNotFound) ) {
-        NCBI_THROW2(CBamException, eOtherError,
+    else if ( GetRCObject(m_LocateRC) == rcRow &&
+              GetRCState(m_LocateRC) == rcNotFound ) {
+        // header only
+    }
+    else {
+        NCBI_THROW2(CBamException, eNoData,
                     "Cannot find first alignment", m_LocateRC);
     }
     x_AllocBuffers();
@@ -680,11 +686,14 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
     m_LocateRC = AlignAccessDBWindowedAlignments(bam_db, &ptr,
                                                  ref_id.c_str(),
                                                  ref_pos, window);
-    if ( !m_LocateRC ) {
+    if ( m_LocateRC == 0 ) {
         m_Iter.SetReferencedPointer(ptr);
     }
-    else if ( !(GetRCObject(m_LocateRC) == RCObject(rcData) &&
-                GetRCState(m_LocateRC) == rcNotFound) ) {
+    else if ( GetRCObject(m_LocateRC) == RCObject(rcData) &&
+           GetRCState(m_LocateRC) == rcNotFound ) {
+        // no alignments found
+    }
+    else {
         NCBI_THROW2(CBamException, eOtherError,
                     "Cannot find first alignment", m_LocateRC);
     }
