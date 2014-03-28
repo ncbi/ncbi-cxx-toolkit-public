@@ -322,6 +322,8 @@ public:
     /// Map seq-id, throw CIdMapperException if mapping fails.
     virtual CSeq_id_Handle Map(const CSeq_id_Handle&);
 
+    using TParent::Map;
+
 private:
     void x_AddUnversionedMapping(const CSeq_id&        src_id,
                                  const CSeq_id_Handle& dst_id);
