@@ -355,6 +355,9 @@
 /* Define to 1 if you have the `lutimes' function. */
 /* #undef HAVE_LUTIMES */
 
+/* Define to 1 if you have the `madvise' function. */
+#define HAVE_MADVISE 1
+
 /* Define to 1 if you have the <malloc.h> header file. */
 /* #undef HAVE_MALLOC_H */
 
@@ -585,6 +588,9 @@
 
 /* Define to 1 if you have the <windows.h> header file. */
 /* #undef HAVE_WINDOWS_H */
+
+/* Define to 1 if you have the `writev' function. */
+#define HAVE_WRITEV 1
 
 /* Define to 1 if the system has the type `wstring'. */
 #define HAVE_WSTRING 1
