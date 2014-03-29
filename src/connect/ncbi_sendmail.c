@@ -304,16 +304,16 @@ extern SSendMailInfo* SendMailInfo_InitEx(SSendMailInfo* info,
 {
     if (info) {
         x_Sendmail_InitEnv();
-        info->cc              = 0;
-        info->bcc             = 0;
+        info->cc           = 0;
+        info->bcc          = 0;
         s_MakeFrom(info->from, sizeof(info->from), from, user);
-        info->header          = 0;
-        info->body_size       = 0;
-        info->mx_timeout      = s_MxTimeout;
-        info->mx_host         = s_MxHost;
-        info->mx_port         = s_MxPort;
-        info->mx_options      = 0;
-        info->magic_cookie    = MX_MAGIC_COOKIE;
+        info->header       = 0;
+        info->body_size    = 0;
+        info->mx_timeout   = s_MxTimeout;
+        info->mx_host      = s_MxHost;
+        info->mx_port      = s_MxPort;
+        info->mx_options   = 0;
+        info->magic_cookie = MX_MAGIC_COOKIE;
     }
     return info;
 }
