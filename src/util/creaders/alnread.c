@@ -189,11 +189,11 @@ extern void ErrorInfoFree (TErrorInfoPtr eip)
  */
 static void 
 s_ReportCharCommentError 
-(char * expected,
- char    seen,
- char * val_name,
+(const char * expected,
+ char         seen,
+ const char * val_name,
  FReportErrorFunction errfunc,
- void *             errdata)
+ void *               errdata)
 {
     TErrorInfoPtr eip;
     const char * errformat = "Specified %s character does not match NEXUS"
@@ -226,7 +226,7 @@ s_ReportBadCharError
  int     num_bad,
  int     offset,
  int     line_number,
- char *  reason,
+ const char *  reason,
  FReportErrorFunction errfunc,
  void *             errdata)
 {
@@ -1550,7 +1550,7 @@ static TIntLinkPtr GetSegmentOffsetList (TBracketedCommentListPtr comment_list)
     return offset_list;
 }
 
-static char * s_TokenizeString (char * str, char *delimiter, char **last)
+static char * s_TokenizeString (char * str, const char *delimiter, char **last)
 {
     int skip;
     int length;
@@ -2161,9 +2161,9 @@ static EBool s_IsTwoNumbersSeparatedBySpace (char * str)
  */
 static EBool 
 s_GetOneNexusSizeComment 
-(char * str,
- char * valname, 
- int  * val)
+(char       * str,
+ const char * valname, 
+ int        * val)
 {
     char   buf[MAX_PRINTED_INT_LEN_PLUS_ONE];
     char * cpstart;
@@ -2249,7 +2249,7 @@ s_GetNexusSizeComments
  * will return the first non-whitespace character following the equals sign,
  * otherwise the function will return a 0.
  */
-static char GetNexusTypechar (char * str, char * val_name)
+static char GetNexusTypechar (char * str, const char * val_name)
 {
     char * cp;
     char * cpend;
@@ -4170,7 +4170,7 @@ s_CreateSequencesBasedOnTokenPatterns
         }
         if (lip != NULL) {
             if (gen_local_ids) {
-                char * replacement_id = malloc(32 +strlen(lip->data));
+                char * replacement_id = (char *) malloc(32 +strlen(lip->data));
                 sprintf(replacement_id, "lcl|%d %s", next_local_id++, lip->data+1);
                 free(lip->data);
                 lip->data = replacement_id; 
@@ -5539,9 +5539,9 @@ static int
 s_ReportRepeatedBadCharsInSequence
 (TLineInfoReaderPtr   lirp,
  char *               id,
- char *               reason,
+ const char *         reason,
  FReportErrorFunction report_error,
- void *              report_error_userdata)
+ void *               report_error_userdata)
 {
     int  bad_line_num, bad_line_offset;
     int  num_bad_chars;
