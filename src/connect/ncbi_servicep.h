@@ -221,19 +221,25 @@ extern NCBI_XCONNECT_EXPORT const char* SERV_MapperName(SERV_ITER iter);
  * NOTE:  This procedure can detect simple cyclical redefinitions, and
  * is limited to a search depth of 8.
  */
-extern NCBI_XCONNECT_EXPORT char* SERV_ServiceName(const char* service);
+char* SERV_ServiceName(const char* service);
 
 
-extern NCBI_XCONNECT_EXPORT void SERV_InitFirewallMode(void);
+void SERV_InitFirewallMode(void);
 
 
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_AddFirewallPort
+int/*bool*/ SERV_AddFirewallPort
 (unsigned short port
 );
 
 
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_IsFirewallPort
+int/*bool*/ SERV_IsFirewallPort
 (unsigned short port
+);
+
+void SERV_PrintFirewallPorts
+(char*   buf,
+ size_t  bufsize,
+ EFWMode mode
 );
 
 

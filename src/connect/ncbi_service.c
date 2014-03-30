@@ -56,13 +56,7 @@
 #define CONN_SERVICE_NAME  DEF_CONN_REG_SECTION "_" REG_CONN_SERVICE_NAME
 
 
-#define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
-
-
 static ESwitch s_Fast = eOff;
-
-
-static TNCBI_BigCount s_FWPorts[1024 / sizeof(TNCBI_BigCount)] = { 0 };
 
 
 ESwitch SERV_DoFastOpens(ESwitch on)
@@ -71,36 +65,6 @@ ESwitch SERV_DoFastOpens(ESwitch on)
     if (on != eDefault)
         s_Fast = on;
     return retval;
-}
-
-
-void SERV_InitFirewallMode(void)
-{
-    memset(s_FWPorts, 0, sizeof(s_FWPorts));
-}
-
-
-int/*bool*/ SERV_AddFirewallPort(unsigned short port)
-{
-    unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
-    unsigned int m = port % (sizeof(s_FWPorts[0]) << 3);
-    if ((size_t) n < SizeOf(s_FWPorts)) {
-        s_FWPorts[n] |= (TNCBI_BigCount) 1 << m;
-        return 1/*true*/;
-    }
-    return 0/*false*/;
-}
-
-
-int/*bool*/ SERV_IsFirewallPort(unsigned short port)
-{
-    unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
-    unsigned int m = port % (sizeof(s_FWPorts[0]) << 3);
-    if ((size_t) n < SizeOf(s_FWPorts)
-        &&  (s_FWPorts[n] & ((TNCBI_BigCount) 1 << m))) {
-        return 1/*true*/;
-    }
-    return 0/*false*/;
 }
 
 
@@ -324,7 +288,7 @@ static SERV_ITER s_Open(const char*         service,
 }
 
 
-SERV_ITER SERV_OpenSimple(const char* service)
+extern SERV_ITER SERV_OpenSimple(const char* service)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(service);
     SERV_ITER iter = SERV_Open(service, fSERV_Any, SERV_ANYHOST, net_info);
@@ -333,10 +297,10 @@ SERV_ITER SERV_OpenSimple(const char* service)
 }
 
 
-SERV_ITER SERV_Open(const char*         service,
-                    TSERV_Type          types,
-                    unsigned int        preferred_host,
-                    const SConnNetInfo* net_info)
+extern SERV_ITER SERV_Open(const char*         service,
+                           TSERV_Type          types,
+                           unsigned int        preferred_host,
+                           const SConnNetInfo* net_info)
 {
     return s_Open(service, 0/*not mask*/, types,
                   preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
@@ -346,12 +310,12 @@ SERV_ITER SERV_Open(const char*         service,
 }
 
 
-SERV_ITER SERV_OpenEx(const char*         service,
-                      TSERV_Type          types,
-                      unsigned int        preferred_host,
-                      const SConnNetInfo* net_info,
-                      SSERV_InfoCPtr      skip[],
-                      size_t              n_skip)
+extern SERV_ITER SERV_OpenEx(const char*         service,
+                             TSERV_Type          types,
+                             unsigned int        preferred_host,
+                             const SConnNetInfo* net_info,
+                             SSERV_InfoCPtr      skip[],
+                             size_t              n_skip)
 {
     return s_Open(service, 0/*not mask*/, types,
                   preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
@@ -472,10 +436,10 @@ static SSERV_Info* s_GetInfo(const char*         service,
 }
 
 
-SSERV_Info* SERV_GetInfo(const char*         service,
-                         TSERV_Type          types,
-                         unsigned int        preferred_host,
-                         const SConnNetInfo* net_info)
+extern SSERV_Info* SERV_GetInfo(const char*         service,
+                                TSERV_Type          types,
+                                unsigned int        preferred_host,
+                                const SConnNetInfo* net_info)
 {
     return s_GetInfo(service, types,
                      preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
@@ -485,13 +449,13 @@ SSERV_Info* SERV_GetInfo(const char*         service,
 }
 
 
-SSERV_Info* SERV_GetInfoEx(const char*         service,
-                           TSERV_Type          types,
-                           unsigned int        preferred_host,
-                           const SConnNetInfo* net_info,
-                           SSERV_InfoCPtr      skip[],
-                           size_t              n_skip,
-                           HOST_INFO*          host_info)
+extern SSERV_Info* SERV_GetInfoEx(const char*         service,
+                                  TSERV_Type          types,
+                                  unsigned int        preferred_host,
+                                  const SConnNetInfo* net_info,
+                                  SSERV_InfoCPtr      skip[],
+                                  size_t              n_skip,
+                                  HOST_INFO*          host_info)
 {
     return s_GetInfo(service, types,
                      preferred_host, 0/*preferred_host*/, 0.0/*preference*/,
@@ -522,15 +486,15 @@ SSERV_Info* SERV_GetInfoP(const char*         service,
 }
 
 
-SSERV_InfoCPtr SERV_GetNextInfoEx(SERV_ITER  iter,
-                                  HOST_INFO* host_info)
+extern SSERV_InfoCPtr SERV_GetNextInfoEx(SERV_ITER  iter,
+                                         HOST_INFO* host_info)
 {
     assert(!iter  ||  iter->op);
     return iter ? s_GetNextInfo(iter, host_info, 0) : 0;
 }
 
 
-SSERV_InfoCPtr SERV_GetNextInfo(SERV_ITER iter)
+extern SSERV_InfoCPtr SERV_GetNextInfo(SERV_ITER iter)
 {
     assert(!iter  ||  iter->op);
     return iter ? s_GetNextInfo(iter, 0,         0) : 0;
@@ -560,13 +524,13 @@ int/*bool*/ SERV_PenalizeEx(SERV_ITER iter, double fine, TNCBI_Time time)
 }
 
 
-int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
+extern int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 {
     return SERV_PenalizeEx(iter, fine, 0);
 }
 
 
-int/*bool*/ SERV_Rerate(SERV_ITER iter, double rate)
+extern int/*bool*/ SERV_Rerate(SERV_ITER iter, double rate)
 {
     assert(!iter  ||  iter->op);
     if (!iter  ||  !iter->op->Feedback  ||  !iter->last)
@@ -575,7 +539,7 @@ int/*bool*/ SERV_Rerate(SERV_ITER iter, double rate)
 }
 
 
-void SERV_Reset(SERV_ITER iter)
+extern void SERV_Reset(SERV_ITER iter)
 {
     if (!iter)
         return;
@@ -587,7 +551,7 @@ void SERV_Reset(SERV_ITER iter)
 }
 
 
-void SERV_Close(SERV_ITER iter)
+extern void SERV_Close(SERV_ITER iter)
 {
     size_t i;
     if (!iter)
@@ -649,45 +613,6 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
         }
     }
     return retval;
-}
-
-
-static void s_PrintFirewallPorts(char* buf, size_t bufsize,
-                                 const SConnNetInfo* net_info)
-{
-    EFWMode mode = net_info ? (EFWMode) net_info->firewall : eFWMode_Legacy;
-    size_t  len, n;
-    unsigned int m;
-
-    assert(buf  &&  bufsize > 1);
-    switch (mode) {
-    case eFWMode_Legacy:
-        *buf = '\0';
-        return;
-    case eFWMode_Firewall:
-        memcpy(buf, "0", 2);
-        return;
-    default:
-        break;
-    }
-    len = 0;
-    for (n = m = 0; n < SizeOf(s_FWPorts); n++, m += sizeof(s_FWPorts[0])<<3) {
-        unsigned short p;
-        TNCBI_BigCount mask = s_FWPorts[n];
-        for (p = m;  mask;  p++, mask >>= 1) {
-            if (mask & 1) {
-                char port[10];
-                int  k = sprintf(port, " %hu" + !len, p);
-                if (len + k < bufsize) {
-                    memcpy(buf + len, port, k);
-                    len += k;
-                }
-                if (!p)
-                    break;
-            }
-        }
-    }
-    buf[len] = '\0';
 }
 
 
@@ -789,7 +714,9 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         }
         if (iter->types & fSERV_Firewall) {
             /* Firewall */
-            s_PrintFirewallPorts(buffer, sizeof(buffer), net_info);
+            EFWMode mode
+                = net_info ? (EFWMode) net_info->firewall : eFWMode_Legacy;
+            SERV_PrintFirewallPorts(buffer, sizeof(buffer), mode);
             if (*buffer
                 &&  (!BUF_Write(&buf, kNcbiFWPorts, sizeof(kNcbiFWPorts)-1)  ||
                      !BUF_Write(&buf, buffer, strlen(buffer))                ||
@@ -870,8 +797,8 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
 }
 
 
-unsigned short SERV_ServerPort(const char*  name,
-                               unsigned int host)
+extern unsigned short SERV_ServerPort(const char*  name,
+                                      unsigned int host)
 {
     SSERV_Info*    info;
     unsigned short port;
