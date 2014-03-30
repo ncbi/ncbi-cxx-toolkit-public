@@ -43,6 +43,12 @@
 #define NCBI_USE_ERRCODE_X   Connect_Util
 
 
+#define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
+
+
+static TNCBI_BigCount s_FWPorts[1024 / sizeof(TNCBI_BigCount)] = { 0 };
+
+
 static char* x_StrcatCRLF(char* dst, const char* src)
 {
     size_t dstlen = dst  &&  *dst ? strlen(dst) : 0;
@@ -2267,4 +2273,71 @@ extern int/*bool*/ MIME_ParseContentTypeEx
 
     free(x_buf);
     return 1/*true*/;
+}
+
+
+void SERV_InitFirewallMode(void)
+{
+    memset(s_FWPorts, 0, sizeof(s_FWPorts));
+}
+
+
+int/*bool*/ SERV_AddFirewallPort(unsigned short port)
+{
+    unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
+    unsigned int m = port % (sizeof(s_FWPorts[0]) << 3);
+    if ((size_t) n < SizeOf(s_FWPorts)) {
+        s_FWPorts[n] |= (TNCBI_BigCount) 1 << m;
+        return 1/*true*/;
+    }
+    return 0/*false*/;
+}
+
+
+int/*bool*/ SERV_IsFirewallPort(unsigned short port)
+{
+    unsigned int n = port / (sizeof(s_FWPorts[0]) << 3);
+    unsigned int m = port % (sizeof(s_FWPorts[0]) << 3);
+    if ((size_t) n < SizeOf(s_FWPorts)
+        &&  (s_FWPorts[n] & ((TNCBI_BigCount) 1 << m))) {
+        return 1/*true*/;
+    }
+    return 0/*false*/;
+}
+
+
+void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
+{
+    size_t len, n;
+    unsigned int m;
+
+    assert(buf  &&  bufsize > 1);
+    switch (mode) {
+    case eFWMode_Legacy:
+        *buf = '\0';
+        return;
+    case eFWMode_Firewall:
+        memcpy(buf, "0", 2);
+        return;
+    default:
+        break;
+    }
+    len = 0;
+    for (n = m = 0; n < SizeOf(s_FWPorts); ++n, m += sizeof(s_FWPorts[0])<<3) {
+        unsigned short p;
+        TNCBI_BigCount mask = s_FWPorts[n];
+        for (p = m;  mask;  p++, mask >>= 1) {
+            if (mask & 1) {
+                char port[10];
+                int  k = sprintf(port, " %hu" + !len, p);
+                if (len + k < bufsize) {
+                    memcpy(buf + len, port, k);
+                    len += k;
+                }
+                if (!p)
+                    break;
+            }
+        }
+    }
+    buf[len] = '\0';
 }
