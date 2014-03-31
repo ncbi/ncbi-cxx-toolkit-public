@@ -5,7 +5,7 @@
 #
 
 ###  BASIC PROJECT SETTINGS
-APP = asndisc
+APP = asndisc_cpp
 SRC = cAsndisc
 
 LIB = xdiscrepancy_report xvalidate xobjedit valid valerr \
