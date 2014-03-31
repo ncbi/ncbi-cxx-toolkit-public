@@ -134,20 +134,21 @@ public:
         fFormat_Ncbi       = (1 << 1),
         /// A time string should strictly match the format string.
         fMatch_Strict      = (1 << 5),       ///< eg "Y" and "1997"
-        /// A format string can have extra leading format symbols,
+        /// A time/format string can have extra trailing format symbols,
         /// that do not have matching symbols in the time string.
         /// Corresponding time components will be initialized by default
         /// in the time object.
         fMatch_ShortTime   = (1 << 6),       ///< eg "Y/M/D h:m:s" and "1997"
         fMatch_ShortFormat = (1 << 7),       ///< eg "Y" and "1997/07/16"
-        /// Time API tries to get what it can from time string using specified
-        /// time format. It not guaranties that format or time strings will be
-        /// processed fully, it allow that time string can have a garbage at the end. 
-        fMatch_Weak        = fMatch_ShortFormat | fMatch_ShortTime,
+        /// Combination of both modes above.
+        /// Note that it matches until time or format string have symbols.
+        /// It not allow unprocessed symbols left in both time and format
+        /// strings at the same time.
+        fMatch_Weak        = fMatch_ShortTime | fMatch_ShortFormat,
         /// Default flags
         fDefault           = fFormat_Simple | fMatch_Strict,
 
-        /// "Enums", used for backward compatibility. Please use flags instead.
+        /// "Enum"s, used for backward compatibility. Please use flags instead.
         eNcbiSimple        = fFormat_Simple,
         eNcbi              = fFormat_Ncbi,
         eDefault           = fDefault

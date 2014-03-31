@@ -391,7 +391,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     if ( str.empty() ) {
         return;
     }
-    // For partialy defined times use default values
+    // For partially defined times use default values
     bool is_year_present  = false;
     bool is_month_present = false;
     bool is_day_present   = false;
@@ -659,8 +659,14 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
                    "Time string '" + str +
                    "' is too long for time format '" + fmt + "'");
     }
+    if (*fff != '\0'  &&  *sss != '\0'  && 
+        ((format.GetFlags() & CTimeFormat::fMatch_Weak) == CTimeFormat::fMatch_Weak)) {
+            NCBI_THROW(CTimeException, eFormat, 
+                "Time string '" + str +
+                "' do not match time format '" + fmt + "'");
+    }
 
-    // For partialy defined times use default values
+    // For partially defined times use default values
     int ptcache = 0;
     ptcache += (is_year_present  ? 2000 : 1000);
     ptcache += (is_month_present ? 200 : 100);

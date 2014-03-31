@@ -760,11 +760,22 @@ static void s_TestFormats(void)
             assert(s.compare("01/01/2001 00:00:00") == 0);
         }}
         {{
-            // Note that day and month changed
-            CTime t("2001/01/02", CTimeFormat("Y", CTimeFormat::fMatch_Weak));
-            s = t.AsString("M/D/Y h:m:s");
-            assert(s.compare("01/01/2001 00:00:00") == 0);
+            try {
+                CTime t("2001...", CTimeFormat("Y/M/D", CTimeFormat::fMatch_Weak));
+                s = t.AsString("M/D/Y h:m:s");
+                assert(s.compare("01/01/2001 00:00:00") == 0);
+            }
+            catch (CTimeException&) {}
         }}
+        {{
+            try {
+                CTime t("2001/01/02", CTimeFormat("Y...", CTimeFormat::fMatch_Weak));
+                s = t.AsString("M/D/Y h:m:s");
+                assert(s.compare("01/01/2001 00:00:00") == 0);
+            }
+            catch (CTimeException&) {}
+        }}
+        // Check that strict matching is by default.
         {{  
             try {
                 CTime t("2001", "Y/M/D");
