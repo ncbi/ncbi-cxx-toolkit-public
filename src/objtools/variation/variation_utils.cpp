@@ -377,13 +377,20 @@ CRef<CSeqVector> CVariationNormalization_base_cache::x_PrefetchSequence(CScope &
     // and now the actual object in memory can not be deleted
     // until that object's counter is down to zero.
     // and that will not happen until the caller's CRef is dstroyed.
+    LOG_POST(Trace << "Try to get from cache for accession: " << accession );
     CRef<CSeqVector> seqvec_ref = m_cache.Get(accession);
+    LOG_POST(Trace << "Got CRef for acc : " << accession );
     if ( !seqvec_ref || seqvec_ref->empty() ) 
     {
+        LOG_POST(Trace << "Acc was empty or null: " << accession );
         const CBioseq_Handle& bsh = scope.GetBioseqHandle( seq_id );
+        LOG_POST(Trace << "Got BioseqHandle, now get SeqVecRef: " << accession );
         seqvec_ref = Ref(new CSeqVector(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand)));
+        LOG_POST(Trace << "Add it to the cache: " << accession );
         m_cache.Add(accession, seqvec_ref);
+        LOG_POST(Trace << "Added to cache: " << accession );
     }
+    LOG_POST(Trace << "Return the seqvec ref for : " << accession );
     return seqvec_ref;
 }
 
@@ -545,7 +552,7 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
     for (CSeq_annot::TData::TFtable::iterator ifeat = ftable.begin(); ifeat != ftable.end(); ++ifeat)
     {
         CSeq_feat &feat = **ifeat;
-
+        LOG_POST(Trace << "This Feat: " << MSerial_AsnText << feat << Endm);
         if (!feat.IsSetLocation()           || 
             !feat.IsSetData()               || 
             !feat.GetData().IsVariation()   || 
@@ -554,7 +561,6 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
         const CSeq_id &seq_id = *feat.GetLocation().GetId();
         int pos_left = feat.GetLocation().GetStart(eExtreme_Positional);
         int pos_right = feat.GetLocation().GetStop(eExtreme_Positional);
-
         int new_pos_left = -1;
         int new_pos_right = -1;
         bool is_deletion = false;
@@ -564,9 +570,22 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
         ENa_strand strand = eNa_strand_unknown;
         if (feat.GetLocation().IsSetStrand())
             strand = feat.GetLocation().GetStrand();
-        CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
+
+        CRef<CSeqVector> seqvec ;
+        try {
+            seqvec = x_PrefetchSequence(scope,seq_id,strand);
+            ERR_POST(Trace << "Prefetch success for : " << seq_id.AsFastaString());
+        } catch(CException& e) {
+            ERR_POST(Error << "Prefetch failed for " << seq_id.AsFastaString() );
+            ERR_POST(Error << e.ReportAll());
+            continue;
+        }
+
+        //CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
+
         CVariation_ref& vr = feat.SetData().SetVariation();
   
+        try {
         switch(vr.GetData().Which())
         {
             case  CVariation_Base::C_Data::e_Instance : x_ProcessInstance(vr.SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right, *seqvec,type); break;
@@ -579,13 +598,16 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
                 break;
             default: break;            
         }
-        
-        
+        } catch(CException &e) {
+            ERR_POST(Error << "Exception while shifting: " << e.ReportAll() << ".  Continuing on" << Endm);
+            //Ideally this would make it into the service msg'ing system.
+            continue;
+        }
         if (!ref.empty() && is_deletion)
         {
             int pos = pos_right - ref.size() + 1;
             const bool found = x_ProcessShift(ref, pos_left,pos,*seqvec,type);
-            pos_right = pos + ref.size()-1;
+            pos_right = pos + ref.size()-1; 
             if (found)
             {
                 if (new_pos_left == -1)
