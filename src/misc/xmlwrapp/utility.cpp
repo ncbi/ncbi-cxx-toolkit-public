@@ -65,7 +65,7 @@ int size_t_to_int_conversion (std::size_t  value,
 {
     int     as_int = static_cast<int>(value);
 
-    if (value < 0)
+    if (as_int < 0)
         throw xml::exception(msg);
     if (value != static_cast<std::size_t>(as_int))
         throw xml::exception(msg);
