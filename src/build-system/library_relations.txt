@@ -377,6 +377,7 @@ gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs gpipe_xml
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
+gpipe_meta_access needs gpipe_common
 gpipe_objutil needs $(GPIPE_COMMON_LIBS)
 gpipe_objutil needs $(GPIPE_LOADER_LIBS)
 gpipe_objutil needs $(OBJMGR_LIBS)
