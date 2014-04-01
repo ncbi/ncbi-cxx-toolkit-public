@@ -41,10 +41,14 @@
 #include <build-system/project_tree_builder/property_list__.hpp>
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+class CPlist;
+END_SCOPE(objects)
+
 USING_SCOPE(objects);
 
 /////////////////////////////////////////////////////////////////////////////
-class ncbi::objects::CPlist;
 
 class CMacProjectGenerator
 {
