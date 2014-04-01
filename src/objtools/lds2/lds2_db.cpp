@@ -96,6 +96,7 @@ const char* kLDS2_CreateDB[] = {
     "lds_id integer primary key on conflict abort autoincrement,"
     "txt_id text not null,"
     "int_id integer(8) default null,"
+    "orig boolean,"
     "blob_size integer(8),"
     "blob_data blob not null);",
     // seq-id vs lds-id
@@ -177,6 +178,9 @@ const char* kLDS2_CreateDBIdx[] = {
     // index by lds_id
     "create index if not exists idx_bioseq_lds_id on bioseq_id (lds_id);",
 
+    // index of original (not matching) ids
+    "create index if not exists idx_orig_id on seq_id (orig);",
+
     // blobs
     // index by file_id
     "create index if not exists idx_blob_file_id on blob (file_id);",
@@ -207,6 +211,7 @@ const char* kLDS2_DropDBIdx[] = {
     "drop index if exists idx_blob_id;",
     "drop index if exists idx_bioseq_id;",
     "drop index if exists idx_bioseq_lds_id;",
+    "drop index if exists idx_orig_id;",
     "drop index if exists idx_blob_file_id;",
     "drop index if exists idx_annot_blob_id;",
     "drop index if exists idx_annot_name;",
@@ -290,8 +295,8 @@ static const char* s_LDS2_SQL[] = {
     "(file_name, file_format, file_handler, file_size, "
     "file_time, file_crc) values (?1, ?2, ?3, ?4, ?5, ?6);",
     // eSt_AddLdsSeqId
-    "insert into seq_id (txt_id, int_id, blob_size, blob_data) "
-    "values (?1, ?2, ?3, ?4);",
+    "insert into seq_id (txt_id, int_id, orig, blob_size, blob_data) "
+    "values (?1, ?2, ?3, ?4, ?5);",
     // eSt_AddBlob
     "insert into blob (blob_type, file_id, file_pos) "
     "values (?1, ?2, ?3);",
@@ -321,9 +326,9 @@ static const char* s_LDS2_SQL[] = {
 
     // eSt_GetSeq_idForLdsSeqId
     "select blob_size, blob_data from seq_id where lds_id=?1;",
-    // eSt_GetSeq_id_Synonyms
+    // eSt_GetSeq_idSynonyms
     "select blob_size, blob_data from seq_id inner join bioseq_id "
-    "using(lds_id) where bioseq_id=?1;"
+    "using(lds_id) where orig=?1 and bioseq_id=?2;"
 };
 
 
@@ -506,7 +511,8 @@ void CLDS2_Database::DeleteFile(Int8 file_id)
 }
 
 
-Int8 CLDS2_Database::x_GetLdsSeqId(const CSeq_id_Handle& id)
+Int8 CLDS2_Database::x_GetLdsSeqId(const CSeq_id_Handle& id,
+                                   EIdType               id_type)
 {
     CSQLITE_Statement* st = NULL;
     if ( id.IsGi() ) {
@@ -535,11 +541,13 @@ Int8 CLDS2_Database::x_GetLdsSeqId(const CSeq_id_Handle& id)
         // HACK: reset GI to null if not available.
         st->Bind(2, (void*)NULL, 0);
     }
+    st->Bind(3, id_type == eIdOriginal);
+
     CNcbiOstrstream out;
     out << MSerial_AsnBinary << *id.GetSeqId();
     string buf = CNcbiOstrstreamToString(out);
-    st->Bind(3, buf.size());
-    st->Bind(4, buf.data(), buf.size());
+    st->Bind(4, buf.size());
+    st->Bind(5, buf.data(), buf.size());
 
     st->Execute();
     Int8 ret = st->GetLastInsertedRowid();
@@ -600,6 +608,8 @@ CTextseq_id* s_GetTextseq_id(const CSeq_id::E_Choice& choice, CSeq_id& match)
         return &match.SetGpipe();
     case CSeq_id::e_Named_annot_track:
         return &match.SetNamed_annot_track();
+    default:
+        break;
     }
     return 0;
 }
@@ -676,7 +686,6 @@ void s_GetMatchingTextIds(const CSeq_id& id,
 void s_GetMatchingIds(const CSeq_id_Handle& idh,
                       TIdMatches&           matches)
 {
-    matches.insert(idh);
     switch ( idh.Which() ) {
     // CTextseq_id
     case CSeq_id::e_Genbank:
@@ -724,11 +733,11 @@ Int8 CLDS2_Database::AddBioseq(Int8 blob_id, const TSeqIdSet& ids)
     // Convert ids to lds-ids
     TLdsIds lds_ids;
     ITERATE(TSeqIdSet, id, ids) {
+        lds_ids.push_back(x_GetLdsSeqId(*id, eIdOriginal));
         TIdMatches matches;
         s_GetMatchingIds(*id, matches);
         ITERATE(CSeq_id_Handle::TMatches, match, matches) {
-            Int8 lds_id = x_GetLdsSeqId(*match);
-            lds_ids.push_back(lds_id);
+            lds_ids.push_back(x_GetLdsSeqId(*match, eIdMatch));
         }
     }
 
@@ -773,7 +782,7 @@ Int8 CLDS2_Database::AddAnnot(SLDS2_Annot& annot)
     // Link annot to its seq-ids
     CSQLITE_Statement& st2 = x_GetStatement(eSt_AddAnnotIds);
     NON_CONST_ITERATE(SLDS2_Annot::TIdMap, ref_id, annot.ref_ids) {
-        Int8 lds_id = x_GetLdsSeqId(ref_id->first);
+        Int8 lds_id = x_GetLdsSeqId(ref_id->first, eIdOriginal);
         st2.Bind(1, annot.id);
         st2.Bind(2, lds_id);
         st2.Bind(3, ref_id->second.external);
@@ -838,7 +847,8 @@ void CLDS2_Database::GetSynonyms(const CSeq_id_Handle& idh, TSeqIds& ids)
         return;
     }
     CSQLITE_Statement& st = x_GetStatement(eSt_GetSeq_idSynonyms);
-    st.Bind(1, bioseq_id);
+    st.Bind(1, true); // Fetch only original ids, skip matched ones.
+    st.Bind(2, bioseq_id);
     while ( st.Step() ) {
         CRef<CSeq_id> id = x_BlobToSeq_id(st, 0, 1);
         if ( id ) {

@@ -402,8 +402,13 @@ private:
     // Initialize 'get bioseqs' sql statement for the id handle.
     CSQLITE_Statement& x_InitGetBioseqsSql(const CSeq_id_Handle& idh) const;
 
+    enum EIdType {
+        eIdOriginal, // Seq-id is present in the original data.
+        eIdMatch     // Seq-id was created as a match for an original one.
+    };
+
     // Return lds-id for the seq-id. Adds new lds-id if necessary.
-    Int8 x_GetLdsSeqId(const CSeq_id_Handle& id);
+    Int8 x_GetLdsSeqId(const CSeq_id_Handle& id, EIdType id_type);
 
     // Load seq-id from the blob.
     CRef<CSeq_id> x_BlobToSeq_id(CSQLITE_Statement& st,
