@@ -3242,12 +3242,20 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                                 "Taxonomy lookup reports taxonomy consultation needed",
                                 **feat_it);
                     }
-                    if ((*feat_it)->GetData().GetBiosrc().IsSetGenome()
-                        && (*feat_it)->GetData().GetBiosrc().GetGenome() == CBioSource::eGenome_nucleomorph
-                        && !has_nucleomorphs) {
-                        PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem, 
-                                "Taxonomy lookup does not have expected nucleomorph flag",
-                                **feat_it);
+                    if ((*feat_it)->GetData().GetBiosrc().IsSetGenome()) {
+                        CBioSource::TGenome genome = (*feat_it)->GetData().GetBiosrc().GetGenome();
+                        if (genome == CBioSource::eGenome_nucleomorph
+                            && !has_nucleomorphs) {
+                            PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyNucleomorphProblem, 
+                                    "Taxonomy lookup does not have expected nucleomorph flag",
+                                    **feat_it);
+                        } else if (genome == CBioSource::eGenome_plastid
+                                   && (!(*reply_it)->GetData().HasPlastids())) {
+                            PostErr (eDiag_Warning, eErr_SEQ_DESCR_TaxonomyPlastidsProblem, 
+                                    "Taxonomy lookup does not have expected plastid flag",
+                                    **feat_it);
+                        }
+
                     }
                 }
                 ++reply_it;
