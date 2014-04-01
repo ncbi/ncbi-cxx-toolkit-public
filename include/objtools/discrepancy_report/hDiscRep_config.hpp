@@ -74,7 +74,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       fOncaller = 1 << 1,
       fMegaReport = 1 << 2,
       fTSA = 1 << 3,
-      fAsndisc = 1 << 4
+      fAsndisc = 1 << 4,
+      fBigSequence = 1 << 5
    };
 
    struct s_test_property {
@@ -123,7 +124,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
             m_enabled.clear();
             m_disabled.clear();
             m_num_entry = 0;
+            m_all_expanded = false;
+            m_expanded.clear();
         }
+
         virtual ~CRepConfig() { };
 
         // removed from *_app.hpp
@@ -161,10 +165,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
      protected:
         unsigned m_num_entry;
         vector <string> m_enabled, m_disabled;
+        set <string> m_expanded;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
-        bool m_dorecurse;
+        bool m_dorecurse, m_all_expanded;
         vector <CConstRef <CObject> >* m_objs;
 
+        bool x_IsExpandable(const string& setting_name);
         void x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category);
    };
 
@@ -290,7 +296,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static map <EStrand_type, string>               strand_names;
         static CRef < CSuspect_rule_set>                suspect_rna_rules;
         static vector <string>                          rna_rule_summ;
-        static vector <string>                          suspect_phrases;
         static map <int, string>                        genome_names;
 
         static const s_SuspectProductNameData *         suspect_prod_terms;
