@@ -51,7 +51,7 @@
 #define NCBI_TRACES04_PATH NETAPP_TRACES_PATH("04")
 
 #define NCBI_SRA_REP_PATH NCBI_TRACES04_PATH ":" NCBI_TRACES01_PATH
-#define NCBI_SRA_VOL_PATH "sra5:sra4:sra3:sra2:sra1:sra0:era1:era0:dra0:refseq"
+#define NCBI_SRA_VOL_PATH "sra18:sra17:sra16:sra15:sra14:sra13:sra12:sra11:sra10:sra9:sra8:sra7:sra6:sra5:sra4:sra3:sra2:sra1:sra0:era8:era7:era6:era5:era4:era3:era2:era1:era0:dra0:refseq"
 
 #define NCBI_SRZ_REP_PATH NCBI_TRACES04_PATH ":" NCBI_TRACES01_PATH
 #define NCBI_SRZ_VOL_PATH "sra8:srz0"
