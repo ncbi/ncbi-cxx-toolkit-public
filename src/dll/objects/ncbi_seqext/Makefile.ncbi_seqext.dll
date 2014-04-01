@@ -30,7 +30,7 @@ HOSTED_LIBS    = xalnmgr   \
                  uudutil \
                  xunittestutil
 
-DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
+DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_web
 
 CPPFLAGS = -DNCBI_SEQEXT_EXPORTS
 
