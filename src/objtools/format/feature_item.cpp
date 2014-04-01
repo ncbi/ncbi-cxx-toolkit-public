@@ -948,8 +948,9 @@ bool s_GetGbValue( CConstRef<CSeq_feat> feat, const string& key, string& value )
 CFeatureItemBase::CFeatureItemBase
 (const CMappedFeat& feat,
  CBioseqContext& ctx,
+ CRef<feature::CFeatTree> ftree,
  const CSeq_loc* loc) :
-    CFlatItem(&ctx), m_Feat(feat), m_Loc(loc ? loc :
+    CFlatItem(&ctx), m_Feat(feat), m_Feat_Tree(ftree), m_Loc(loc ? loc :
                                          (feat ? &feat.GetLocation() : NULL))
 {
     if (m_Feat) {
@@ -1039,10 +1040,11 @@ string CFeatureItem::GetKey(void) const
 CFeatureItem::CFeatureItem
 (const CMappedFeat& feat,
  CBioseqContext& ctx,
+ CRef<feature::CFeatTree> ftree,
  const CSeq_loc* loc,
  EMapped mapped,
  CConstRef<CFeatureItem> parentFeatureItem) :
-    CFeatureItemBase(feat, ctx, loc), m_Mapped(mapped)
+    CFeatureItemBase(feat, ctx, ftree, loc), m_Mapped(mapped)
 {
     x_GatherInfoWithParent(ctx, parentFeatureItem);
 }
@@ -1521,6 +1523,10 @@ void CFeatureItem::x_AddQuals(
         x_AddFTableQuals( ctx );
         return;
     }
+
+    m_Feat_Tree->AddGenesForFeat (m_Feat);
+
+
     //
     //  Collect/Compute data that will be shared between several qualifier
     //  collectors:
@@ -1570,12 +1576,20 @@ void CFeatureItem::x_AddQuals(
          subtype != CSeqFeatData::eSubtype_gap && 
          (  ! gene_forbidden_if_genbank || is_not_genbank ) )
     {
+        CMappedFeat mapped_gene = GetBestGeneForFeat (m_Feat, m_Feat_Tree);
+        if (mapped_gene) {
+            const CSeq_feat& gene_feat = mapped_gene.GetOriginalFeature();
+            gene_ref = &gene_feat.GetData().GetGene();
+        }
+
+        /*
         CSeq_feat_Handle parent_feat_handle;
         if( parentFeatureItem ) {
             parent_feat_handle = parentFeatureItem->GetFeat();
         }
         CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
             gene_feat, parent_feat_handle );
+        */
     } else if( ! is_not_genbank && gene_forbidden_if_genbank ) {
         // We include a gene_ref on the genbank-forbidden features if there's
         // an explicit xref and the referenced gene does not exist
@@ -5030,8 +5044,9 @@ void CFeatureItem::x_AddFTableBiosrcQuals(
 CSourceFeatureItem::CSourceFeatureItem
 (const CMappedFeat& feat,
  CBioseqContext& ctx,
+ CRef<feature::CFeatTree> ftree,
  const CSeq_loc* loc)
-    : CFeatureItemBase(feat, ctx, loc ? loc : &feat.GetLocation()),
+    : CFeatureItemBase(feat, ctx, ftree, loc ? loc : &feat.GetLocation()),
       m_WasDesc(false), m_IsFocus(false), m_IsSynthetic(false)
 {
     x_GatherInfo(ctx);
@@ -5577,8 +5592,9 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 CSourceFeatureItem::CSourceFeatureItem
 (const CBioSource& src,
  TRange range,
- CBioseqContext& ctx)
-    : CFeatureItemBase(CMappedFeat(), ctx),
+ CBioseqContext& ctx,
+ CRef<feature::CFeatTree> ftree)
+    : CFeatureItemBase(CMappedFeat(), ctx, ftree),
       m_WasDesc(true), m_IsFocus(false), m_IsSynthetic(false)
 {
     if (!src.IsSetOrg()) {

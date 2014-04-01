@@ -38,6 +38,8 @@
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/feature_item.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <deque>
 
@@ -90,10 +92,11 @@ protected:
         const CMappedFeat& feat,
         CBioseqContext& ctx,
         const CSeq_loc* loc,
+        CRef<feature::CFeatTree> ftree,
         CFeatureItem::EMapped mapped = CFeatureItem::eMapped_not_mapped,
         CConstRef<CFeatureItem> parentFeatureItem = CConstRef<CFeatureItem>() ) const
     {
-        return new CFeatureItem( feat, ctx, loc, mapped, parentFeatureItem );
+        return new CFeatureItem( feat, ctx, ftree, loc, mapped, parentFeatureItem );
     };
 
     // source/organism
@@ -185,6 +188,10 @@ protected:
 
     // Raw pointer because we do NOT own it
     const ICanceled * m_pCanceledCallback;
+
+    // internal feature tree for parent mapping
+    mutable CRef<feature::CFeatTree> m_Feat_Tree;
+    mutable CSeq_entry_Handle m_TopSEH;
 
 private:
     CFlatGatherer(const CFlatGatherer&);

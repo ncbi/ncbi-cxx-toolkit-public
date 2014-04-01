@@ -39,6 +39,8 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
 #include <objtools/format/items/flat_qual_slots.hpp>
 #include <objtools/format/items/qualifiers.hpp>
 #include <objtools/format/formatter.hpp>
@@ -126,13 +128,14 @@ protected:
 
     // constructor
     CFeatureItemBase(const CMappedFeat& feat, CBioseqContext& ctx,
-                     const CSeq_loc* loc = 0);
+                     CRef<feature::CFeatTree> ftree, const CSeq_loc* loc = 0);
 
     virtual void x_AddQuals(CBioseqContext& ctx) = 0;
     virtual void x_FormatQuals(CFlatFeature& ff) const = 0;
 
     CMappedFeat         m_Feat;
     CConstRef<CSeq_loc> m_Loc;
+    CRef<feature::CFeatTree> m_Feat_Tree;
 };
 
 
@@ -151,7 +154,9 @@ public:
     };
 
     // constructors
-    CFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
+    CFeatureItem(const CMappedFeat& feat,
+                 CBioseqContext& ctx,
+                 CRef<feature::CFeatTree> ftree,
                  const CSeq_loc* loc,
                  EMapped mapped = eMapped_not_mapped,
                  CConstRef<CFeatureItem> parentFeatureItem = CConstRef<CFeatureItem>() );
@@ -355,8 +360,9 @@ public:
         const CMappedFeat& feat,
         CBioseqContext& ctx,
         const CSeq_loc* loc,
+        CRef<feature::CFeatTree> ftree,
         EMapped mapped )
-        : CFeatureItem( feat, ctx, loc, mapped ) {};
+        : CFeatureItem( feat, ctx, ftree, loc, mapped ) {};
 
     virtual ~CFeatureItemGff() {};
 
@@ -373,9 +379,10 @@ class NCBI_FORMAT_EXPORT CSourceFeatureItem:
 public:
     typedef CRange<TSeqPos> TRange;
 
-    CSourceFeatureItem(const CBioSource& src, TRange range, CBioseqContext& ctx);
+    CSourceFeatureItem(const CBioSource& src, TRange range,
+        CBioseqContext& ctx, CRef<feature::CFeatTree> ftree);
     CSourceFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
-        const CSeq_loc* loc = NULL);
+        CRef<feature::CFeatTree> ftree, const CSeq_loc* loc = NULL);
 
     bool WasDesc(void) const { return m_WasDesc; }
     const CBioSource& GetSource(void) const {
@@ -420,6 +427,7 @@ private:
     mutable TQuals m_Quals;
     bool           m_IsFocus;
     bool           m_IsSynthetic;
+    CRef<feature::CFeatTree> m_Feat_Tree;
 };
 
 

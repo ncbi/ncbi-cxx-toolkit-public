@@ -243,6 +243,11 @@ CFlatGatherer::~CFlatGatherer(void)
 void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry,
     CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext) const
 {
+    m_TopSEH = entry;
+    CFeat_CI iter (m_TopSEH);
+    m_Feat_Tree.Reset (new feature::CFeatTree (iter));
+
+
     // visit bioseqs in the entry (excluding segments)
     CGather_Iter seq_iter(entry, Config());
     CBioseq_Handle prev_seq;
@@ -1494,7 +1499,7 @@ void CFlatGatherer::x_CollectSourceDescriptors
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
         const CBioSource& bsrc = dit->GetSource();
         if (bsrc.IsSetOrg()) {
-            sf.Reset(new CSourceFeatureItem(bsrc, print_range, ctx));
+            sf.Reset(new CSourceFeatureItem(bsrc, print_range, ctx, m_Feat_Tree));
             srcs.push_back(sf);
             okay = true;
         }
@@ -1521,7 +1526,7 @@ void CFlatGatherer::x_CollectSourceDescriptors
                 // collect descriptors only from the segment 
                 const CBioSource& bsrc = src_it->GetSource();
                 if (bsrc.IsSetOrg()) {
-                    sf.Reset(new CSourceFeatureItem(bsrc, seg_range, ctx));
+                    sf.Reset(new CSourceFeatureItem(bsrc, seg_range, ctx, m_Feat_Tree));
                     srcs.push_back(sf);
                 }
             }
@@ -1546,7 +1551,7 @@ void CFlatGatherer::x_CollectSourceFeatures
     for ( CFeat_CI fi(bh, range, as); fi; ++fi ) {
         TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
         if ( stop >= range.GetFrom()  &&  stop  <= range.GetTo() ) {
-            CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx));
+            CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx, m_Feat_Tree));
             srcs.push_back(sf);
         }
     }
@@ -1610,7 +1615,7 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     if ( srcs.empty()  &&  ! cfg.IsFormatFTable()  &&  ! cfg.IsModeDump() ) {
         CRef<CBioSource> bsrc(new CBioSource);
         bsrc->SetOrg();
-        CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*bsrc, CRange<TSeqPos>::GetWhole(), ctx));
+        CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*bsrc, CRange<TSeqPos>::GetWhole(), ctx, m_Feat_Tree));
         srcs.push_back(sf);
     }
 }
@@ -2428,7 +2433,7 @@ static void s_CleanCDDFeature(const CSeq_feat& feat)
             CSeq_feat& f = const_cast<CSeq_feat&>(feat);
             f.SetData().SetRegion(x);
         }
-     }
+    }
 }
 
 //  ============================================================================
@@ -2616,7 +2621,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
             }
 
             // format feature
-            item.Reset( x_NewFeatureItem(*it, ctx, feat_loc) );
+            item.Reset( x_NewFeatureItem(*it, ctx, feat_loc, m_Feat_Tree) );
             out << item;
 
             // Add more features depending on user preferences
@@ -2705,7 +2710,7 @@ void CFlatGatherer::x_CopyCDSFromCDNA
         CRef<CSeq_loc> cds_loc = mapper.Map(cds->GetLocation());
 
         CConstRef<IFlatItem> item( 
-            x_NewFeatureItem(*cds, ctx, cds_loc,
+            x_NewFeatureItem(*cds, ctx, cds_loc, m_Feat_Tree,
                              CFeatureItem::eMapped_from_cdna) );
         *m_ItemOS << item;
     }
@@ -2747,7 +2752,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->SetWhole(*ctx.GetPrimaryId());
                 item.Reset( 
-                    x_NewFeatureItem(gene, ctx, loc,
+                    x_NewFeatureItem(gene, ctx, loc, m_Feat_Tree,
                                      CFeatureItem::eMapped_from_genomic) );
                 out << item;
             }
@@ -2832,7 +2837,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
             cds_prod->SetPartialStop ( false, eExtreme_Positional );
 
             item.Reset(
-                x_NewFeatureItem(cds, ctx, &*cds_prod, 
+                x_NewFeatureItem(cds, ctx, &*cds_prod, m_Feat_Tree,
                     CFeatureItem::eMapped_from_cdna) );
 
             out << item;
@@ -2851,6 +2856,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
                 item.Reset(x_NewFeatureItem(*it,
                                             ctx,
                                             &it->GetProduct(),
+                                            m_Feat_Tree,
                                             CFeatureItem::eMapped_from_prot) );
                 out << item;
             }
@@ -3071,7 +3077,8 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct(
 
         CConstRef<IFlatItem> item
             ( x_NewFeatureItem(*it, ctx, 
-                               s_NormalizeNullsBetween(loc), CFeatureItem::eMapped_from_prot,
+                               s_NormalizeNullsBetween(loc), m_Feat_Tree,
+                               CFeatureItem::eMapped_from_prot,
                                cdsFeatureItem ) );
         *m_ItemOS << item;
 

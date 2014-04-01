@@ -42,6 +42,8 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -344,12 +346,18 @@ string CFlatFileGenerator::GetSeqFeatText
     item_os.SetFormatter(formatter);
 
     CBioseqContext bctx(seq, *ctx);
+
+    CSeq_entry_Handle tseh = seq.GetTopLevelEntry();
+    CFeat_CI iter (tseh);
+    CRef<feature::CFeatTree> ftree;
+    ftree.Reset (new feature::CFeatTree (iter));
+
     CConstRef<IFlatItem> item;
     if (feat.GetData().IsBiosrc()) {
-        item.Reset( new CSourceFeatureItem(feat, bctx, &feat.GetLocation()) );
+        item.Reset( new CSourceFeatureItem(feat, bctx, ftree, &feat.GetLocation()) );
         item_os << item;
     } else {
-        item.Reset( new CFeatureItem(feat, bctx, &feat.GetLocation()) );
+        item.Reset( new CFeatureItem(feat, bctx, ftree, &feat.GetLocation()) );
         item_os << item;
     }
 
