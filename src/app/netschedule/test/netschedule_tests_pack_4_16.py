@@ -1233,7 +1233,7 @@ class Scenario1116( TestBase ):
                              "'version=2', received: " + output )
 
         output = "\n".join( execAny( ns_client, 'STAT CLIENTS', isMultiline = True ) )
-        if 'DATA: 123 456' not in output:
+        if "DATA: '123 456'" not in output:
             raise Exception( "Cannot find expected client data" )
         if 'DATA VERSION: 2' not in output:
             raise Exception( "Cannot find expected client data version" )
