@@ -94,9 +94,8 @@ public:
     string ExtractSeqData();
     string ExtractSeqLen();
     string ExtractHash();
-    string ExtractLinkoutInteger();
+    string ExtractLinksInteger();
     string ExtractMembershipInteger();
-    string ExtractLinkoutTokens();
     string ExtractAsn1Defline();
     string ExtractAsn1Bioseq();
     string ExtractFasta(const CBlastDBSeqId &seq_id);
@@ -123,24 +122,25 @@ protected:
     bool m_TargetOnly;
     /// Replace with ctrl_a? (used only with %f)
     bool m_UseCtrlA;
+    typedef CSeqDB::TOID TOID;
     /// OID of the record
-    int m_Oid;
+    TOID m_Oid;
     /// the target gi
-    int m_Gi;
+    TGi m_Gi;
     /// bioseq
     CRef<CBioseq> m_Bioseq;
     /// Cache the defline (for membership bits)
     CRef<CBlast_def_line_set> m_Defline; 
     /// Pair with a gi2taxid map for one Oid
-    pair< int, map<int, int> > m_Gi2TaxidMap;
+    pair<TOID, map<TGi, int> > m_Gi2TaxidMap;
     /// Pair with a gi2accesion map for one Oid
-    pair< int, map<int, string> > m_Gi2AccMap;
+    pair<TOID, map<TGi, string> > m_Gi2AccMap;
     /// Pair with a gi2title map for one Oid
-    pair< int, map<int, string> > m_Gi2TitleMap;
+    pair<TOID, map<TGi, string> > m_Gi2TitleMap;
     /// Pair with a pig for one Oid.
-    pair<int, int> m_Oid2Pig;
+    pair<TOID, CSeqDB::TPIG> m_Oid2Pig;
     // Pair with a gi2seqid for one Oid.
-    pair< int, map<int, string> > m_Gi2SeqIdMap;
+    pair<TOID, map<TGi, string> > m_Gi2SeqIdMap;
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
     int x_ExtractTaxId();

@@ -52,7 +52,7 @@ USING_SCOPE(objects);
 
 void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     m_Defline.Reset();
-    m_Gi = 0;
+    m_Gi = ZERO_GI;
     m_Oid = -1;
     CRef<CSeq_id> seq_id;
 
@@ -70,7 +70,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     } else if (id.IsStringId()) {
         string acc(id.GetStringId());
         NStr::ToUpper(acc);
-        vector<int> oids;
+        vector<TOID> oids;
         m_BlastDb.AccessionToOids(acc, oids);
         if (!oids.empty()) {
             m_Oid = oids[0];
@@ -133,10 +133,10 @@ string CBlastDBExtractor::ExtractOid() {
 string CBlastDBExtractor::ExtractPig() {
     if (m_Oid2Pig.first != m_Oid)
     {
-    	int pig;
+        CSeqDB::TPIG pig;
     	m_BlastDb.OidToPig(m_Oid, pig);
-	m_Oid2Pig.first = m_Oid;
-	m_Oid2Pig.second = pig;
+        m_Oid2Pig.first = m_Oid;
+        m_Oid2Pig.second = pig;
     }
     return NStr::IntToString(m_Oid2Pig.second);
 }
@@ -150,7 +150,7 @@ void CBlastDBExtractor::x_SetGi() {
     if (m_Gi) return;
     ITERATE(list<CRef<CSeq_id> >, itr, m_Bioseq->GetId()) {
         if ((*itr)->IsGi()) {
-            m_Gi = GI_TO(int, (*itr)->GetGi());
+            m_Gi = (*itr)->GetGi();
             return;
         }
     } 
@@ -170,12 +170,43 @@ void CBlastDBExtractor::x_InitDefline()
     }
 }
 
+string CBlastDBExtractor::ExtractLinksInteger()
+{
+    x_InitDefline();
+    string retval;
+
+    ITERATE(CBlast_def_line_set::Tdata, itr, m_Defline->Get()) {
+        const CRef<CSeq_id> seqid = FindBestChoice((*itr)->GetSeqid(),
+                                                   CSeq_id::BestRank);
+        _ASSERT(seqid.NotEmpty());
+        if ((*itr)->IsSetLinks()) {
+            if (seqid->IsGi()) {
+                if (seqid->GetGi() == m_Gi) {
+                    ITERATE(CBlast_def_line::TLinks, links_int, (*itr)->GetLinks()) {
+                        retval += NStr::IntToString(*links_int) + ",";
+                    }
+                    break;
+                }
+            } else {
+                ITERATE(CBlast_def_line::TLinks, links_int, (*itr)->GetLinks()) {
+                    retval += NStr::IntToString(*links_int) + ",";
+                }
+            }
+        }
+    }
+    if (retval.size()) {
+        retval.erase(retval.size()-1, 1);   // remove the last comma
+    }
+
+    return (retval.empty() ? NOT_AVAILABLE : retval);
+}
+
 string CBlastDBExtractor::ExtractMembershipInteger()
 {
     x_InitDefline();
     int retval = 0;
 
-    if (m_Gi == 0) {
+    if (m_Gi == ZERO_GI) {
         return NStr::IntToString(0);
     }
 
@@ -184,7 +215,7 @@ string CBlastDBExtractor::ExtractMembershipInteger()
                                                    CSeq_id::BestRank);
         _ASSERT(seqid.NotEmpty());
 
-        if (seqid->IsGi() && (GI_TO(int, seqid->GetGi()) == m_Gi) &&
+        if (seqid->IsGi() && (seqid->GetGi() == m_Gi) &&
             (*itr)->IsSetMemberships()) {
             ITERATE(CBlast_def_line::TMemberships, memb_int, 
                     (*itr)->GetMemberships()) {
@@ -218,21 +249,21 @@ void CBlastDBExtractor::x_SetGi2AccMap()
 	if (m_Gi2AccMap.first == m_Oid)
 		return;
 
-	map<TGi, string> gi2acc;
-        x_InitDefline();
-        ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
-	    TGi gi=0;
-            ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
-                if ((*id)->IsGi()) {
-			gi = (*id)->GetGi();
-			break;
-		}
-	    }
-	    CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
-	    string acc;
-	    theId->GetLabel(&acc, CSeq_id::eContent);
-	    gi2acc[gi] = acc;
+    map<TGi, string> gi2acc;
+    x_InitDefline();
+    ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
+        TGi gi;
+        ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
+            if ((*id)->IsGi()) {
+                gi = (*id)->GetGi();
+                break;
+            }
         }
+        CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
+        string acc;
+        theId->GetLabel(&acc, CSeq_id::eContent);
+        gi2acc[gi] = acc;
+    }
 	m_Gi2AccMap.first = m_Oid;
 	m_Gi2AccMap.second.swap(gi2acc);
 	return;
@@ -244,18 +275,18 @@ void CBlastDBExtractor::x_SetGi2SeqIdMap()
 		return;
 
 	map<TGi, string> gi2id;
-        x_InitDefline();
-        ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
-	    TGi gi=0;
-            ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
-                if ((*id)->IsGi()) {
-			gi = (*id)->GetGi();
-			break;
-		}
-	    }
-	    CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
-	    gi2id[gi] = theId->AsFastaString();
+    x_InitDefline();
+    ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
+        TGi gi;
+        ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
+            if ((*id)->IsGi()) {
+                gi = (*id)->GetGi();
+                break;
+            }
         }
+        CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
+        gi2id[gi] = theId->AsFastaString();
+    }
 	m_Gi2SeqIdMap.first = m_Oid;
 	m_Gi2SeqIdMap.second.swap(gi2id);
 	return;
@@ -268,13 +299,13 @@ void CBlastDBExtractor::x_SetGi2TitleMap()
 
 	map<TGi, string> gi2title;
 	x_InitDefline();
-        ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
-	    TGi gi=0;
-            ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
-                if ((*id)->IsGi()) {
-			gi = (*id)->GetGi();
-			break;
-		}
+    ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
+	    TGi gi;
+        ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
+            if ((*id)->IsGi()) {
+                gi = (*id)->GetGi();
+                break;
+            }
 	    }
 	    gi2title[gi] = (*bd)->GetTitle();	
 	}
@@ -292,7 +323,7 @@ string CBlastDBExtractor::ExtractAccession() {
 
     CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
     if (theId->IsGeneral() && theId->GetGeneral().GetDb() == "BL_ORD_ID") {
-        return "No ID available";
+        return NOT_AVAILABLE;
     }
     string acc;
     theId->GetLabel(&acc, CSeq_id::eContent);
@@ -302,13 +333,13 @@ string CBlastDBExtractor::ExtractAccession() {
 string CBlastDBExtractor::ExtractSeqId() {
     if (m_Gi)
     {
-	x_SetGi2SeqIdMap();
+        x_SetGi2SeqIdMap();
         return m_Gi2SeqIdMap.second[m_Gi];
     }
 
     CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
     if (theId->IsGeneral() && theId->GetGeneral().GetDb() == "BL_ORD_ID") {
-        	return "No ID available";
+        	return NOT_AVAILABLE;
     }
     string retval = theId->AsFastaString();
     return retval;
@@ -317,8 +348,8 @@ string CBlastDBExtractor::ExtractSeqId() {
 string CBlastDBExtractor::ExtractTitle() {
     if (m_Gi)
     {
-	x_SetGi2TitleMap();
-	return m_Gi2TitleMap.second[m_Gi];
+        x_SetGi2TitleMap();
+        return m_Gi2TitleMap.second[m_Gi];
     }
 
     ITERATE(list <CRef <CSeqdesc> >, itr, m_Bioseq->GetDescr().Get()) {
@@ -517,12 +548,12 @@ int CBlastDBExtractor::x_ExtractTaxId()
     x_SetGi();
 
     if (m_Gi) {
-	if (m_Gi2TaxidMap.first != m_Oid)
-	{
-		m_Gi2TaxidMap.first = m_Oid;
-        	m_BlastDb.GetTaxIDs(m_Oid, m_Gi2TaxidMap.second);
-	}
-	return m_Gi2TaxidMap.second[m_Gi];
+        if (m_Gi2TaxidMap.first != m_Oid)
+        {
+            m_Gi2TaxidMap.first = m_Oid;
+            m_BlastDb.GetTaxIDs(m_Oid, m_Gi2TaxidMap.second);
+        }
+        return m_Gi2TaxidMap.second[m_Gi];
     }
     // for database without Gi:
     vector <int> taxid;

@@ -548,6 +548,8 @@ void CBlastDBCmdApp::Init()
     arg_desc->AddDefaultKey(kArgOutput, "output_file", "Output file name", 
                             CArgDescriptions::eOutputFile, "-");
 
+    // The format specifiers below should be handled in
+    // CSeqFormatter::x_Builder
     arg_desc->AddDefaultKey("outfmt", "format",
             "Output format, where the available format specifiers are:\n"
             "\t\t%f means sequence in FASTA format\n"
@@ -565,6 +567,7 @@ void CBlastDBCmdApp::Init()
             "\t\t%S means scientific name\n"
 #if _BLAST_DEBUG
             "\t\t%B means BLAST name\n"     /* Is this useful outside NCBI? */
+            "\t\t%n means a comma separated list of links integers\n"
 #endif /* _BLAST_DEBUG */
             "\t\t%K means taxonomic super kingdom\n"
             "\t\t%P means PIG\n"
