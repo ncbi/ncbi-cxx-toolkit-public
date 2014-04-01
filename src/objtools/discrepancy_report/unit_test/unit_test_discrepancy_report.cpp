@@ -44,13 +44,6 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqres/Int_graph.hpp>
 #include <objects/seqres/Seq_graph.hpp>
-
-
-// This header must be included before all Boost.Test headers if there are any
-#include <corelib/test_boost.hpp>
-
-#include <corelib/test_boost.hpp>
-
 #include <objtools/unit_test_util/unit_test_util.hpp>
 
 #include <objtools/discrepancy_report/hDiscRep_tests.hpp>
@@ -60,6 +53,14 @@
 
 #include <objects/submit/Contact_info.hpp>
 #include <objects/biblio/Author.hpp>
+
+// This header must be included before all Boost.Test headers if there are any
+#include <corelib/test_boost.hpp>
+
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+USING_SCOPE(DiscRepNmSpc);
+USING_SCOPE(unit_test_util);
 
 const char* sc_TestEntryCollidingLocusTags ="Seq-entry ::= seq {\
      id {\
@@ -124,14 +125,8 @@ const char* sc_TestEntryCollidingLocusTags ="Seq-entry ::= seq {\
                      local str \"LocusCollidesWithLocusTag\" } } } } } }\
  ";
 
-
-BEGIN_NCBI_SCOPE
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-USING_SCOPE(DiscRepNmSpc);
-USING_SCOPE(unit_test_util);
-
 static CRef <CRepConfig> config(new CRepConfig);
+
 NCBITEST_AUTO_INIT()
 {
     // Your application initialization code here (optional)
@@ -170,7 +165,12 @@ void RunAndCheckTest(CRef <CSeq_entry> entry, const string& test_name, const str
    config->Run();
    CDiscRepOutput output_obj;
    CClickableItem c_item;
-   output_obj.Export(c_item, test_name);
+   if (test_name == "SUSPECT_PHRASES") {
+      output_obj.Export(c_item, "SUSPECT_PRODUCT_NAMES");
+   }
+   else { 
+      output_obj.Export(c_item, test_name);
+   }
    NCBITEST_CHECK_MESSAGE(
      !(c_item.description).empty() || test_name=="FIND_DUP_TRNAS", "no report");
    if (msg == "print") {
@@ -203,15 +203,18 @@ CRef <CSeq_entry> BuildGoodRnaSeq()
 CRef <CSeq_feat> MakeRNAFeatWithExtName(CRef <CSeq_entry> nuc_entry, CRNA_ref::EType type, const string ext_name)
 {
    CRef <CSeq_feat> rna_feat(new CSeq_feat);
-   CRef <CRNA_ref::C_Ext> rna_ext (new CRNA_ref::C_Ext);
-   rna_ext->SetName(ext_name);
+   if (!ext_name.empty()) {
+     CRef <CRNA_ref::C_Ext> rna_ext (new CRNA_ref::C_Ext);
+     rna_ext->SetName(ext_name);
+     rna_feat->SetData().SetRna().SetExt(*rna_ext);
+   }
    rna_feat->SetData().SetRna().SetType(type);
-   rna_feat->SetData().SetRna().SetExt(*rna_ext);
    rna_feat->SetLocation().SetInt().SetId().Assign(*(nuc_entry->GetSeq().GetId().front()));
    rna_feat->SetLocation().SetInt().SetFrom(0);
    rna_feat->SetLocation().SetInt().SetTo(nuc_entry->GetSeq().GetInst().GetLength()-1);
    return rna_feat;
 };
+
 
 CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice choice = CSeqFeatData::e_not_set, CSeqFeatData::ESubtype = CSeqFeatData::eSubtype_bad, int fm = -1, int to = -1);
 CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice choice, CSeqFeatData::ESubtype subtype, int fm, int to)
@@ -232,6 +235,13 @@ CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice cho
         break;
      case CSeqFeatData::eSubtype_exon:
         new_feat->SetData().SetImp().SetKey("exon");
+        break;
+     case CSeqFeatData::eSubtype_rRNA:
+        new_feat->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+        break;
+     case CSeqFeatData::eSubtype_tRNA:
+        new_feat->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+        break;
      default: break;        
  
    }
@@ -247,11 +257,10 @@ CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm = -1, int to = -1);
 CRef <CSeq_feat> MakeCDs(CRef <CSeq_entry> entry, int fm, int to)
 {
    return(MakeNewFeat(entry, CSeqFeatData::e_Cdregion, 
-                         (CSeqFeatData::ESubtype)0, fm, to));
+                         CSeqFeatData::eSubtype_bad, fm, to));
 };
 
-void MakeBioSource(CRef <CSeq_entry> entry, CBioSource::EGenome genome = CBioSource::eGenome_unknown);
-void MakeBioSource(CRef <CSeq_entry> entry, CBioSource::EGenome genome)
+void AddBioSource(CRef <CSeq_entry> entry, CBioSource::EGenome genome)
 {
    entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(genome);
 };
@@ -295,6 +304,12 @@ void RunAndCheckMultiReports(CRef <CSeq_entry> entry, const string& test_name, c
               "Test report is incorrect: " + (*it)->description);
      }
    }
+};
+
+void LookAndSave(CRef <CSeq_entry> entry, const string& file)
+{
+   cerr << MSerial_AsnText << *entry << endl;
+   OutBlob(*entry, file);
 };
 
 BOOST_AUTO_TEST_CASE(COUNT_PROTEINS)
@@ -585,7 +600,7 @@ BOOST_AUTO_TEST_CASE(NON_RETROVIRIDAE_PROVIRAL)
 BOOST_AUTO_TEST_CASE(RNA_PROVIRAL)
 {
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
-   MakeBioSource(entry, CBioSource::eGenome_proviral);
+   AddBioSource(entry, CBioSource::eGenome_proviral);
    RunAndCheckTest(entry, "RNA_PROVIRAL", "1 RNA bioseq is proviral");
 };
 
@@ -627,20 +642,29 @@ BOOST_AUTO_TEST_CASE(TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
                       "1 mRNA sequence has features on the complement strand.");
 };
 
+
+void AddCDsWithComment(CRef <CSeq_entry> entry, const string& comment, int fm= -1, int to = -1);
+void AddCDsWithComment(CRef <CSeq_entry> entry, const string& comment, int fm, int to)
+{
+   CRef <CSeq_feat> cds = MakeCDs(entry, fm, to);
+   cds->SetComment(comment);
+   AddFeat(cds, entry);
+};
+
 BOOST_AUTO_TEST_CASE(MULTIPLE_CDS_ON_MRNA)
 {
    CRef <CSeq_entry> entry = BuildGoodRnaSeq();
    SetBiomol(entry, CMolInfo::eBiomol_mRNA);
    unsigned len = entry->GetSeq().GetInst().GetLength();
    // cd1
-   CRef <CSeq_feat> cds = MakeCDs(entry, 0, (int)(len/2));
-   cds->SetComment("comment: coding region disrupted by sequencing gap");
-   AddFeat(cds, entry);
+   AddCDsWithComment(entry, 
+        "comment: coding region disrupted by sequencing gap", 0, (int)(len/2));
    
    // cd2 
-   cds.Reset(MakeCDs(entry, (int)(len/2+1), len-1));
-   cds->SetComment("comment: coding region disrupted by sequencing gap");
-   AddFeat(cds, entry);
+   AddCDsWithComment(entry, 
+                        "comment: coding region disrupted by sequencing gap", 
+                        (int)(len/2+1), len-1);
+
    RunAndCheckTest(entry, "MULTIPLE_CDS_ON_MRNA", 
                     "1 mRNA bioseq has multiple CDS features");
 };
@@ -707,8 +731,7 @@ BOOST_AUTO_TEST_CASE(FIND_DUP_RRNAS)
                       "Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA");
    AddFeat(rrna, entry);
    AddGoodSource(entry);
-   MakeBioSource(entry, CBioSource::eGenome_plastid);
-//   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
+   AddBioSource(entry, CBioSource::eGenome_plastid);
    RunAndCheckTest(entry, "FIND_DUP_RRNAS", 
      "2 rRNA features on LocusCollidesWithLocusTag have the same name (Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA)."); 
 };
@@ -724,11 +747,10 @@ BOOST_AUTO_TEST_CASE(FIND_DUP_TRNAS)
    AddFeat(tRNA, entry);
    
    AddGoodSource(entry);
-   MakeBioSource(entry, CBioSource::eGenome_plastid);
-//   entry->SetSeq().SetDescr().Set().front()->SetSource().SetGenome(CBioSource::eGenome_plastid);
+   AddBioSource(entry, CBioSource::eGenome_plastid);
   
    RunAndCheckTest(entry, "FIND_DUP_TRNAS", "print");
-//      "2 tRNA features on LocusCollidesWithLocusTag have the same name (Phe).");
+//  "2 tRNA features on LocusCollidesWithLocusTag have the same name (Phe).");
 };
 
 BOOST_AUTO_TEST_CASE(TEST_SHORT_LNCRNA)
@@ -870,16 +892,29 @@ BOOST_AUTO_TEST_CASE(DISC_SUSPECT_RRNA_PRODUCTS)
       = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"partial 16S");
    AddFeat(new_rna, nuc_entry);
    new_rna 
-    = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"12S rRNA domain");
+    =MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"5.8S ribosomal RNA");
+   AddFeat(new_rna, nuc_entry);
+
+   // rna with "product" qual
+   new_rna 
+     = MakeNewFeat(nuc_entry, CSeqFeatData::e_not_set, CSeqFeatData::eSubtype_rRNA);
+   new_rna->AddQualifier("product", 
+                        "vacuolar protein domain sorting 26 homolog A");
    AddFeat(new_rna, nuc_entry);
    new_rna 
-    =MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"8S ribosomal RNA");
+      = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA, "tmRNA");
+   new_rna->AddQualifier("product", "12S rRNA domain");
+   AddFeat(new_rna, nuc_entry);
+  
+   // rrna for  ext.General.
+   new_rna
+     = MakeNewFeat(nuc_entry, CSeqFeatData::e_not_set, CSeqFeatData::eSubtype_rRNA);
+   CRef <CRNA_ref::C_Ext> rna_ext(new CRNA_ref::C_Ext);
+   rna_ext->SetGen().SetProduct("8S ribosomal RNA");
+   new_rna->SetData().SetRna().SetExt(*rna_ext);
    AddFeat(new_rna, nuc_entry);
 
-   // change protein name
-   SetNucProtSetProductName(entry, "fake domain");
-
-   RunAndCheckTest(entry, "DISC_SUSPECT_RRNA_PRODUCTS",
+   RunAndCheckTest(entry, "DISC_SUSPECT_RRNA_PRODUCTS", 
                      "7 rRNA product names contain suspect phrase");
 };
 
@@ -1018,8 +1053,7 @@ CRef <CSeq_id> MakeSeqIdWithDbAndIdStr(const string& db, const string& id)
 
 BOOST_AUTO_TEST_CASE(MISSING_PROTEIN_ID)
 {
-   CRef <CSeq_entry> entry = BuildGoodGenProdSet();
-   CRef <CSeq_entry> nuc_prot_set = GetNucProtSetFromGenProdSet(entry);
+   CRef <CSeq_entry> nuc_prot_set = BuildGoodNucProtSet();
    CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(nuc_prot_set);
 
    // skippable db.
@@ -1032,13 +1066,12 @@ BOOST_AUTO_TEST_CASE(MISSING_PROTEIN_ID)
    seq_id = MakeSeqIdWithDbAndIdStr("NCBIFILE", "67890");
    prot->SetSeq().SetId().push_back(seq_id);
    
-   RunAndCheckTest(entry, "MISSING_PROTEIN_ID", "1 protein has invalid ID.");
+   RunAndCheckTest(nuc_prot_set, "MISSING_PROTEIN_ID", "1 protein has invalid ID.");
 };
 
 BOOST_AUTO_TEST_CASE(INCONSISTENT_PROTEIN_ID)
 {
-   CRef <CSeq_entry> entry = BuildGoodGenProdSet();
-   CRef <CSeq_entry> nuc_prot_set = GetNucProtSetFromGenProdSet(entry);
+   CRef <CSeq_entry> nuc_prot_set = BuildGoodNucProtSet();
    CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(nuc_prot_set);
    // add seq_id
    CRef <CSeq_id> seq_id = MakeSeqIdWithDbAndIdStr("WGS:AFMK", "PVBG_08000T0");
@@ -1053,13 +1086,7 @@ BOOST_AUTO_TEST_CASE(INCONSISTENT_PROTEIN_ID)
    set <string> msg;
    msg.insert("1 sequence has protein ID prefix WGS:AFMK.");
    msg.insert("1 sequence has protein ID prefix WGS:AFNJ.");
-   RunAndCheckMultiReports(entry, "INCONSISTENT_PROTEIN_ID", msg);
-};
-
-void LookAndSave(CRef <CSeq_entry> entry, const string& file)
-{
-   cerr << MSerial_AsnText << *entry << endl;
-   OutBlob(*entry, file);
+   RunAndCheckMultiReports(nuc_prot_set, "INCONSISTENT_PROTEIN_ID", msg);
 };
 
 BOOST_AUTO_TEST_CASE(TEST_DEFLINE_PRESENT)
@@ -1123,5 +1150,52 @@ BOOST_AUTO_TEST_CASE(DISC_10_PERCENTN)
    RunAndCheckTest(entry, "DISC_10_PERCENTN", "1 sequence has > 10% Ns.");
 };
 
+BOOST_AUTO_TEST_CASE(TEST_UNUSUAL_NT)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   ChangeSequence(entry, "ACTGXXYYZZNNNNNNAAGCA");
+   RunAndCheckTest(entry, "TEST_UNUSUAL_NT", 
+                  "1 sequence contains nucleotides that are not ATCG or N.");
+};
 
-END_NCBI_SCOPE
+
+void AddProtSeqWithDesc(CRef <CSeq_entry> entry, const string& name, const string& desc)
+{
+   CRef <CSeq_entry> prot_entry = MakeProteinForGoodNucProtSet(name);
+   NON_CONST_ITERATE (list <CRef <CSeq_feat> >, fit,
+              prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable()) {
+       (*fit)->SetData().SetProt().SetDesc(desc);
+   }
+   entry->SetSet().SetSeq_set().push_back(prot_entry);
+};
+
+BOOST_AUTO_TEST_CASE(SUSPECT_PHRASES) 
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+
+   // prot1
+   CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+   NON_CONST_ITERATE (list <CRef <CSeq_feat> >, fit, 
+                prot->SetSeq().SetAnnot().front()->SetData().SetFtable()) {
+       (*fit)->SetData().SetProt().SetDesc("fragment");        
+   }
+
+   // add prot
+   AddProtSeqWithDesc(entry, "prot2", "frameshift");
+   AddProtSeqWithDesc(entry, "prot7", "...");
+
+   
+   // cds1
+   NON_CONST_ITERATE (list <CRef <CSeq_feat> >, it, 
+                    entry->SetSet().SetAnnot().front()->SetData().SetFtable()) {
+      (*it)->SetComment("E-value");
+   };
+
+   CRef <CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   // add cds
+   AddCDsWithComment(nuc, "E value", 0, 10);
+   AddCDsWithComment(nuc, "Evalue", 20, 30);
+   AddCDsWithComment(nuc, "The RefSeq protein has 1 substitution and aligns at 50% coverage compared to this genomic sequence", 40, 50);
+   RunAndCheckTest(entry, "SUSPECT_PHRASES", 
+            "7 cds comments or protein descriptions contain suspect phrases.");
+};

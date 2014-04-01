@@ -353,11 +353,14 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
                    CTestAndRepData::rna_not_mrna_feat.push_back(&seq_feat);
                    switch (subtp) {
                      case CSeqFeatData::eSubtype_rRNA:
-                          CTestAndRepData::rrna_feat.push_back(&seq_feat); break;
+                          CTestAndRepData::rrna_feat.push_back(&seq_feat); 
+                          break;
                      case CSeqFeatData::eSubtype_otherRNA:
-                          CTestAndRepData::otherRna_feat.push_back(&seq_feat); break;
-                     case  CSeqFeatData::eSubtype_tRNA:
-                          CTestAndRepData::trna_feat.push_back(&seq_feat); break;
+                          CTestAndRepData::otherRna_feat.push_back(&seq_feat); 
+                          break;
+                     case CSeqFeatData::eSubtype_tRNA:
+                          CTestAndRepData::trna_feat.push_back(&seq_feat); 
+                          break;
                      default: break;
                    }
                 }

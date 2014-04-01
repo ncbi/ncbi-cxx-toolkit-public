@@ -477,15 +477,26 @@ void CBioseq_DISC_BAD_BGPIPE_QUALS :: GetReport(CRef <CClickableItem> c_item)
                          + "invalid BGPIPE qualifiers";
 };
 
+static const char* suspect_phrases[] = {
+   "fragment",
+   "frameshift",
+   "%",
+   "E-value",
+   "E value",
+   "Evalue",
+   "..."
+};
 
 void CBioseq_SUSPECT_PHRASES :: FindSuspectPhrases(const string& check_str, const CSeq_feat& seq_feat)
 {
-   ITERATE (vector <string>, it, thisInfo.suspect_phrases) {
-     if (NStr::FindNoCase(check_str, *it) != string::npos) { 
+   string strtmp;
+   for (unsigned i=0; i< ArraySize(suspect_phrases); i++) {
+     strtmp = suspect_phrases[i];
+     if (NStr::FindNoCase(check_str, strtmp) != string::npos) { 
         thisInfo.test_item_list[GetName()].push_back(
-                                  *it + "$" + GetDiscItemText(seq_feat));
-        thisInfo.test_item_objs[GetName()+"$"+*it].push_back(
-                                   CConstRef <CObject>(&seq_feat));
+                                  strtmp + "$" + GetDiscItemText(seq_feat));
+        thisInfo.test_item_objs[GetName() + "$" + strtmp]
+                  .push_back(CConstRef <CObject>(&seq_feat));
      }
    }
 };
@@ -550,6 +561,7 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
    unsigned rule_idx;
    const CSeq_feat* feat_in_use = 0;
    string strtmp;
+/*
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
      const CProt_ref& prot = (*it)->GetData().GetProt();
      feat_in_use = *it;
@@ -579,6 +591,7 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
          rule_idx ++;
      }
    }
+*/
    ITERATE (vector <const CSeq_feat*>, it, rrna_feat) {
       check_val = GetRNAProductString(**it); 
       sf_text = GetDiscItemText(**it);
@@ -2862,6 +2875,7 @@ string CBioseqTestAndRepData :: GetRNAProductString(const CSeq_feat& seq_feat)
              break;
        case CRNA_ref::C_Ext::e_TRNA:
               GetSeqFeatLabel(seq_feat, rna_str);
+              rna_str = "tRNA-" + rna_str;
               break;
        case CRNA_ref::C_Ext::e_Gen:
               if (ext.GetGen().CanGetProduct()) {

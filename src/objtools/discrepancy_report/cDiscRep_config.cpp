@@ -136,7 +136,6 @@ map <EStrand_type, string>          CDiscRepInfo :: strand_names;
 map <ESource_origin, string>        CDiscRepInfo :: srcori_names;
 CRef < CSuspect_rule_set>           CDiscRepInfo :: suspect_rna_rules (new CSuspect_rule_set);
 vector <string>                     CDiscRepInfo :: rna_rule_summ;
-vector <string>                     CDiscRepInfo :: suspect_phrases;
 const s_SuspectProductNameData*     CDiscRepInfo :: suspect_prod_terms;
 unsigned                            CDiscRepInfo :: num_suspect_prod_terms;
 
@@ -157,7 +156,6 @@ set <string> CDiscTestInfo :: tests_run;
 CSeq_entry_Handle* CRepConfig::m_TopSeqEntry=0;
 
 static CDiscRepInfo thisInfo;
-static string       strtmp, tmp;
 static list <string>  strs;
 static vector <string> arr;
 static CDiscTestInfo thisTest;
@@ -184,6 +182,7 @@ const char* fix_type_names[] = {
 void CRepConfig :: InitParams(const IRWRegistry* reg)
 {
     int i;
+    string strtmp, tmp;
 
     // get other parameters from *.ini
     CSuspect_rule_set rule_set, rule_set2;
@@ -1193,8 +1192,8 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
      CRef <CSuspect_rule> this_rule ( new CSuspect_rule);
      this_rule->SetFind(*sch_func);
      thisInfo.suspect_rna_rules->Set().push_back(this_rule);
-     thisInfo.rna_rule_summ.push_back(
-                             summ_susrule.SummarizeSuspectRuleEx(*this_rule));
+     thisInfo.rna_rule_summ 
+                .push_back(summ_susrule.SummarizeSuspectRuleEx(*this_rule));
    }
    CRef <CSearch_func> sch_func = MakeSimpleSearchFunc("8S", true);
    CRef <CSearch_func> except = MakeSimpleSearchFunc("5.8S", true);
@@ -1202,13 +1201,8 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
    this_rule->SetFind(*sch_func);
    this_rule->SetExcept(*except);
    thisInfo.suspect_rna_rules->Set().push_back(this_rule); 
-   thisInfo.rna_rule_summ.push_back(
-                              summ_susrule.SummarizeSuspectRuleEx(*this_rule));
-
-   // ini. of suspect_phrases
-   strtmp = "fragment,frameshift,%,E-value,E value,Evalue,...";
-   thisInfo.suspect_phrases 
-       = NStr::Tokenize(strtmp, ",", thisInfo.suspect_phrases); 
+   thisInfo.rna_rule_summ
+               .push_back(summ_susrule.SummarizeSuspectRuleEx(*this_rule));
 
    strs.clear();
    arr.clear();
@@ -1245,6 +1239,7 @@ void CRepConfig :: SetArg(const string& arg, const string& vlu)
 
 void CRepConfig :: ProcessArgs(Str2Str& args)
 {
+    string strtmp;
     // input file/path
     thisInfo.infile = (args.find("i") != args.end()) ? args["i"] : kEmptyStr;
     m_indir = (args.find("p") != args.end()) ? args["p"] : kEmptyStr;
@@ -1259,12 +1254,18 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     }
     m_file_tp = args["a"];
 
+    bool big_sequence_report = false;
     // report category
     if (args.find("P") != args.end()) {
-      thisInfo.output_config.add_output_tag = (args["P"] == "t");
-      thisInfo.output_config.add_extra_output_tag = (args["P"] == "s");
+      strtmp == args["P"];
+      thisInfo.output_config.add_output_tag 
+             = ( (strtmp == "t") || (strtmp == "bt"));
+      thisInfo.output_config.add_extra_output_tag = (strtmp == "s");
       if (args["P"] == "t" || args["P"] == "s") {
           thisInfo.report = "Asndisc";
+      }
+      else if (strtmp == "bt") {
+          thisInfo.report = "BigSequence";
       }
     }
 
@@ -1301,6 +1302,25 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     if (!strtmp.empty()) {
         m_disabled= NStr::Tokenize(strtmp,", ", m_disabled, NStr::eMergeDelims);
     }
+
+    strtmp = (args.find("X") != args.end())? args["X"] : kEmptyStr;
+    if (strtmp == "ALL") {
+       m_all_expanded = true;     
+    }
+    else if (!strtmp.empty()) {
+       vector <string> arr;
+       arr = NStr::Tokenize(strtmp,", ", m_disabled, NStr::eMergeDelims);
+       ITERATE (vector <string>, it, arr) {
+          m_expanded.insert(*it); 
+       }
+    }
+
+    if (!big_sequence_report) {
+        big_sequence_report = (args["B"] == "true");
+    }
+    if (m_enabled.empty() && big_sequence_report) {
+      thisInfo.report = "BigSequence"; 
+    }
 };
 
 
@@ -1309,27 +1329,47 @@ void CRepConfig :: ReadArgs(const CArgs& args)
     Str2Str arg_map;
     // input file
     if (args["i"]) {
-       arg_map["i"] = args["i"].AsString();
+      arg_map["i"] = args["i"].AsString();
     }
     arg_map["a"] = args["a"].AsString();
 
     // report_tp
-    if (args["P"]) arg_map["P"] = args["P"].AsString();
+    if (args["P"]) {
+      arg_map["P"] = args["P"].AsString();
+    }
 
     // output
-    if (args["o"]) arg_map["o"] = args["o"].AsString();
-    if (args["r"]) arg_map["r"] = args["r"].AsString();
+    if (args["o"]) {
+      arg_map["o"] = args["o"].AsString();
+    }
+    if (args["r"]) {
+      arg_map["r"] = args["r"].AsString();
+    }
     arg_map["S"] = args["S"].AsBoolean();
     arg_map["s"] = args["s"].AsString();
 
     // enabled and disabled tests
-    if (args["e"]) arg_map["e"] = args["e"].AsString();
-    if (args["d"]) arg_map["d"] = args["d"].AsString();
+    if (args["e"]) {
+      arg_map["e"] = args["e"].AsString();
+    }
+    if (args["d"]) {
+      arg_map["d"] = args["d"].AsString();
+    }
 
     // input directory
-    if (args["p"]) arg_map["p"] = args["p"].AsString();
+    if (args["p"]) {
+      arg_map["p"] = args["p"].AsString();
+    }
     arg_map["x"] = args["x"].AsString();
     arg_map["u"] = args["u"].AsString();
+
+    // expand
+    if (args["X"]) {
+       arg_map["X"] = args["X"].AsString();
+    }
+
+    // Big sequence report
+    arg_map["B"] = args["B"].AsBoolean();
 
     ProcessArgs(arg_map);
 };
@@ -1350,6 +1390,7 @@ CRef <CSearch_func> CRepConfig :: MakeSimpleSearchFunc(const string& match_text,
 void CRepConfig :: GetOrgModSubtpName(unsigned num1, unsigned num2, map <string, COrgMod::ESubtype>& orgmodnm_subtp)
 {
     unsigned i;
+    string strtmp;
     for (i = num1; i <= num2; i++) {
        strtmp = COrgMod::ENUM_METHOD_NAME(ESubtype)()->FindName(i, true);
        if (!strtmp.empty()) {
@@ -1399,13 +1440,13 @@ static const s_test_property test_list[] = {
    {"INCONSISTENT_PROTEIN_ID", fAsndisc | fDiscrepancy | fMegaReport, "Inconsistent Protein ID"},
 
 // tests_on_Bioseq_na
-   {"DISC_COUNT_NUCLEOTIDES", fAsndisc | fOncaller| fMegaReport, "Count nucleotide sequences"},
+   {"DISC_COUNT_NUCLEOTIDES", fBigSequence | fAsndisc | fOncaller| fMegaReport, "Count nucleotide sequences"},
    {"TEST_DEFLINE_PRESENT", fDiscrepancy | fAsndisc| fMegaReport, "Test defline existence"},
-   {"N_RUNS", fDiscrepancy | fAsndisc| fMegaReport, "Runs of 10 or more Ns"},
+   {"N_RUNS", fBigSequence | fDiscrepancy | fAsndisc| fMegaReport, "Runs of 10 or more Ns"},
    {"N_RUNS_14", fDiscrepancy | fTSA | fMegaReport, "Runs of more than 14 Ns"},
-   {"ZERO_BASECOUNT", fDiscrepancy | fMegaReport, "Zero Base Counts"},
+   {"ZERO_BASECOUNT", fBigSequence | fDiscrepancy | fMegaReport, "Zero Base Counts"},
    {"TEST_LOW_QUALITY_REGION", fDiscrepancy | fAsndisc| fMegaReport, "Sequence contains regions of low quality"},
-   {"DISC_PERCENT_N", fDiscrepancy | fAsndisc| fMegaReport, "Greater than 5 percent Ns"},
+   {"DISC_PERCENT_N", fBigSequence | fDiscrepancy | fAsndisc| fMegaReport, "Greater than 5 percent Ns"},
    {"DISC_10_PERCENTN", fDiscrepancy | fTSA | fMegaReport, "Greater than 10 percent Ns"},
    {"TEST_UNUSUAL_NT", fDiscrepancy | fAsndisc | fMegaReport, "Sequence contains unusual nucleotides"},
 
@@ -1416,7 +1457,7 @@ static const s_test_property test_list[] = {
    {"DISC_PRODUCT_NAME_TYPO", fDiscrepancy | fMegaReport, "Suspect Product Name Typo"},
    {"DISC_PRODUCT_NAME_QUICKFIX", fDiscrepancy | fMegaReport, "Suspect Product Name QuickFix"},
    {"TEST_ORGANELLE_PRODUCTS", fOncaller | fMegaReport, "Organelle products on non-organelle sequence: on when neither bacteria nor virus"},
-   {"DISC_GAPS", fDiscrepancy | fAsndisc | fMegaReport, "Sequences with gaps"},
+   {"DISC_GAPS", fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Sequences with gaps"},
    {"TEST_MRNA_OVERLAPPING_PSEUDO_GENE", fAsndisc | fOncaller | fMegaReport, "Remove mRNA overlapping a pseudogene"},
    {"ONCALLER_HAS_STANDARD_NAME", fAsndisc | fOncaller | fMegaReport, "Feature has standard_name qualifier"},
    {"ONCALLER_ORDERED_LOCATION", fAsndisc | fOncaller | fMegaReport, "Location is ordered (intervals interspersed with gaps)"},
@@ -1424,7 +1465,7 @@ static const s_test_property test_list[] = {
    {"TEST_CDS_HAS_CDD_XREF", fDiscrepancy | fAsndisc | fMegaReport, "CDS has CDD Xref"},
    {"DISC_CDS_HAS_NEW_EXCEPTION", fAsndisc | fOncaller | fMegaReport, "Coding region has new exception"},
    {"DISC_MICROSATELLITE_REPEAT_TYPE", fAsndisc | fOncaller | fMegaReport, "Microsatellites must have repeat type of tandem"},
-   {"DISC_SUSPECT_MISC_FEATURES", fDiscrepancy | fAsndisc | fMegaReport, "suspect misc_feature comments"},
+   {"DISC_SUSPECT_MISC_FEATURES", fDiscrepancy | fAsndisc | fMegaReport, "Suspect misc_feature comments"},
    {"DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS", fAsndisc | fOncaller | fMegaReport, "Check for gene or genes in rRNA and tRNA products and comments"},
    {"DISC_FEATURE_MOLTYPE_MISMATCH", fOncaller | fMegaReport, "Sequences with rRNA or misc_RNA features should be genomic DNA"},
    {"ADJACENT_PSEUDOGENES", fDiscrepancy | fAsndisc | fMegaReport, "Adjacent PseudoGenes with Identical Text"},
@@ -1473,8 +1514,8 @@ static const s_test_property test_list[] = {
    {"TEST_OVERLAPPING_RRNAS", fDiscrepancy | fAsndisc | fMegaReport, "Overlapping rRNA features"},
    {"SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME", fDiscrepancy | fAsndisc | fMegaReport, "Show hypothetic protein having a gene name"},
    {"DISC_SUSPICIOUS_NOTE_TEXT", fAsndisc | fOncaller | fMegaReport, "Find Suspicious Phrases in Note Text"},
-   {"NO_ANNOTATION", fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Bioseqs longer than 5000nt without Annotations"},
-   {"DISC_LONG_NO_ANNOTATION", fDiscrepancy | fAsndisc | fMegaReport, "Bioseqs longer than 5000nt without Annotations"},
+   {"NO_ANNOTATION", fBigSequence | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Bioseqs longer than 5000nt without Annotations"},
+   {"DISC_LONG_NO_ANNOTATION", fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Bioseqs longer than 5000nt without Annotations"},
    {"DISC_PARTIAL_PROBLEMS", fDiscrepancy | fAsndisc | fMegaReport, "Find partial feature ends on sequences that could be extended"},
    {"TEST_UNUSUAL_MISC_RNA", fDiscrepancy | fAsndisc | fMegaReport, "Unexpected misc_RNA features"},
    {"GENE_PRODUCT_CONFLICT", fDiscrepancy | fAsndisc | fMegaReport, "Gene Product Conflict"},
@@ -1494,8 +1535,8 @@ static const s_test_property test_list[] = {
    {"DISC_FEATURE_COUNT", fAsndisc | fMegaReport, "Count features present or missing from sequences"}, // asndisc version   
    {"DISC_BAD_BGPIPE_QUALS", fDiscrepancy | fAsndisc | fMegaReport, "Bad BGPIPE qualifiers"},
    {"DISC_INCONSISTENT_MOLINFO_TECH", fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent Molinfo Techniqueq"},
-   {"SHORT_CONTIG", fDiscrepancy | fAsndisc | fMegaReport, "Short Contig"},
-   {"SHORT_SEQUENCES", fDiscrepancy | fAsndisc | fMegaReport, "Find Short Sequences"},
+   {"SHORT_CONTIG", fDiscrepancy | fAsndisc | fMegaReport | fBigSequence, "Short Contig"},
+   {"SHORT_SEQUENCES", fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Find Short Sequences"},
    {"SHORT_SEQUENCES_200", fDiscrepancy | fTSA | fMegaReport, "Find sequences Less Than 200 bp"},
    {"TEST_UNWANTED_SPACER", fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Intergenic spacer without plastid location"},
    {"TEST_UNNECESSARY_VIRUS_GENE", fAsndisc | fOncaller | fMegaReport, "Unnecessary gene features on virus: on when lineage is not Picornaviridae,Potyviridae,Flaviviridae and Togaviridae"},
@@ -1582,10 +1623,10 @@ static const s_test_property test_list[] = {
    {"ONCALLER_DEFLINE_ON_SET", fAsndisc | fOncaller | fMegaReport, "Titles on sets"},
    {"DISC_BACTERIAL_TAX_STRAIN_MISMATCH", fDiscrepancy | fAsndisc | fMegaReport, "Bacterial taxnames should end with strain"},
    {"DUP_DISC_CBS_CULTURE_CONFLICT", fAsndisc | fOncaller | fMegaReport, "CBS strain should also appear in culture collection"},
-   {"INCONSISTENT_BIOSOURCE", fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent BioSource"},
+   {"INCONSISTENT_BIOSOURCE", fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent BioSource"},
    {"ONCALLER_BIOPROJECT_ID", fAsndisc | fOncaller | fMegaReport, "Sequences with BioProject IDs"},
    {"ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX", fAsndisc | fOncaller | fMegaReport, "Suspicious structured comment prefix"},
-   {"MISSING_GENOMEASSEMBLY_COMMENTS", fDiscrepancy | fAsndisc | fMegaReport, "Bioseqs should have GenomeAssembly structured comments"},
+   {"MISSING_GENOMEASSEMBLY_COMMENTS", fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Bioseqs should have GenomeAssembly structured comments"},
    {"TEST_HAS_PROJECT_ID", fAsndisc | fOncaller | fMegaReport, "Sequences with project IDs"},
    {"DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER", fAsndisc | fOncaller | fMegaReport, "Trinomial sources should have corresponding qualifier"},
    {"ONCALLER_DUPLICATE_PRIMER_SET", fAsndisc | fOncaller | fMegaReport, "Duplicate PCR primer pair"},
@@ -2716,6 +2757,7 @@ void CRepConfig :: GetTestList()
 
 void CRepConfAsndisc :: x_Asn1(ESerialDataFormat datafm)
 {
+    string strtmp;
     auto_ptr <CObjectIStream> 
         ois (CObjectIStream::Open(datafm, thisInfo.infile));
     CRef <CSeq_entry> seq_entry (new CSeq_entry);
@@ -2888,6 +2930,7 @@ void CRepConfAsndisc :: x_ProcessOneFile()
 void CRepConfAsndisc :: x_ProcessDir(const CDir& dir, bool one_ofile)
 {
    CDiscRepOutput output_obj;
+   string strtmp;
 
    CDir::TGetEntriesFlags flag = m_dorecurse ? 0 : CDir::fIgnoreRecursive ;
    list <AutoPtr <CDirEntry> > entries = dir.GetEntries(kEmptyStr, flag);
@@ -2965,6 +3008,9 @@ void CRepConfig :: CollectTests()
       else if (thisInfo.report == "TSA") {
           cate_flag = fTSA;
       }
+      else if (thisInfo.report == "BigSequence") {
+          cate_flag = fBigSequence;
+      }
       else {
           cate_flag = fUnknown;
       }
@@ -2997,8 +3043,21 @@ void CRepConfig :: CollectTests()
    GetTestList();
 };
 
+bool CRepConfig :: x_IsExpandable(const string& setting_name)
+{
+   if (m_all_expanded) {
+      return true;
+   }
+   else if (!m_expanded.empty()
+                 && m_expanded.find(setting_name) != m_expanded.end()) {
+      return true; 
+   }
+   else return false;
+};
+
 void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
 {
+   string strtmp;
    NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
        CRef < CClickableItem > c_item (new CClickableItem);
        strtmp = (*it)->GetName();
@@ -3007,6 +3066,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
  cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
+            c_item->expanded = x_IsExpandable(strtmp);
             if ( strtmp != "LOCUS_TAGS"
                         && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX") {
                   thisInfo.disc_report_data.push_back(c_item);
@@ -3014,6 +3074,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
             (*it)->GetReport(c_item);
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
+           c_item->expanded = x_IsExpandable(strtmp);
            (*it)->GetReport(c_item);
  cerr << "GoGetRep " << (*it)->GetName() << endl;
        }
