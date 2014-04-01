@@ -4,12 +4,19 @@
 
 include ./Makefile.mk
 
+SDK = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
+ifneq "" "$(wildcard ${SDK})"
+  SDKFLAG = -sdk ${SDK}
+else
+  SDKFLAG =
+endif
+
 all :
-	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION}
+	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION} ${SDKFLAG}
 	cd ..; echo ${BUILT_CFGS} > cfgs.log
 
 clean :
-	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION} clean
+	xcodebuild -project ${SLN_NAME}.xcodeproj -target ${MTARGET} -configuration ${CONFIGURATION} ${SDKFLAG} clean
 
 check :
 	@cd .. || exit $$?; ./check.sh run; status=$$?; \

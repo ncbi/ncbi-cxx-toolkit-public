@@ -162,9 +162,14 @@ test -z "$PTB_PROJECT" && PTB_PROJECT=${PTB_PROJECT_REQ}
 if test ! -x "$PTB_EXE"; then
   echo "=============================================================================="
   echo Building project tree builder locally, please wait
-  echo "xcodebuild -project $PTB_SLN -target $ptbname -configuration ReleaseDLL"
+  cmd="xcodebuild -project $PTB_SLN -target $ptbname -configuration ReleaseDLL"
+  sdk=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
+  if [ -d "$sdk" ]; then
+    cmd="$cmd -sdk $sdk"
+  fi
+  echo "$cmd"
   echo "=============================================================================="
-  xcodebuild -project $PTB_SLN -target $ptbname -configuration ReleaseDLL
+  $cmd
 else
   echo "=============================================================================="
   echo "Using PREBUILT $ptbname at $PTB_EXE"

@@ -33,7 +33,7 @@
           <key>ARCHS</key>
           <array>
             <string>i386</string>
-            <string>ppc</string>
+            <string>x86_64</string>
           </array>
           <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
           <string>YES</string>
@@ -82,7 +82,7 @@
           <key>ARCHS</key>
           <array>
             <string>i386</string>
-            <string>ppc</string>
+            <string>x86_64</string>
           </array>
           <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
           <string>YES</string>
@@ -131,7 +131,7 @@
           <key>ARCHS</key>
           <array>
             <string>i386</string>
-            <string>ppc</string>
+            <string>x86_64</string>
           </array>
           <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
           <string>YES</string>
@@ -174,7 +174,7 @@
           <key>ARCHS</key>
           <array>
             <string>i386</string>
-            <string>ppc</string>
+            <string>x86_64</string>
           </array>
           <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
           <string>YES</string>
