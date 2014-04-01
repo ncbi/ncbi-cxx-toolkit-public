@@ -39,12 +39,9 @@
 #include <objmgr/scope.hpp>
 
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>
-#include <objtools/discrepancy_report/hUtilib.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
-
-static string       strtmp, tmp;
 
 class CDiscRepApp : public CNcbiApplication
 {
@@ -63,34 +60,43 @@ void CDiscRepApp::Init(void)
 
     // Pass argument descriptions to the application
     //
-    arg_desc->AddOptionalKey("p", "InPath", "Path to ASN.1 Files", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("i", "InputFile", "Single input file (mandatory)", 
-                                               CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("o", "OutputFile","Single output file",CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", 
-                                                        CArgDescriptions::eString, ".sqn");
-    arg_desc->AddDefaultKey("u", "Recurse", "Recurse", CArgDescriptions::eString, "0");
-    arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, seperated by ','",
-                              CArgDescriptions::eString); 
-    arg_desc->AddOptionalKey("d", "DisableTests", "List of disabled tests, seperated by ','",
-                              CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", 
-                              CArgDescriptions::eString, ".dr");
-    arg_desc->AddOptionalKey("r", "OutPath", "Output Directory", CArgDescriptions::eString);
- 
     arg_desc->AddDefaultKey("a", "Asn1Type", 
                  "Asn.1 Type: a: Any, e: Seq-entry, b: Bioseq, s: Bioseq-set, m: Seq-submit, t: Batch Bioseq-set, u: Batch Seq-submit, c: Catenated seq-entry",
                  CArgDescriptions::eString, "a");
-    arg_desc->AddDefaultKey("b", "BatchBinary", "Batch File is Binary: 'T' = true, 'F' = false", 
+    arg_desc->AddDefaultKey("b", "BatchBinary", 
+                              "Batch File is Binary: 'T' = true, 'F' = false", 
                               CArgDescriptions::eBoolean, "F");
+    arg_desc->AddDefaultKey("B", "BigSequenceReport", "Big Sequence Report",
+                              CArgDescriptions::eBoolean, "F");
+    arg_desc->AddOptionalKey("d", "DisableTests", 
+                               "List of disabled tests, seperated by ','",
+                               CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("e", "EnableTests", 
+                              "List of enabled tests, seperated by ','",
+                              CArgDescriptions::eString); 
+    arg_desc->AddOptionalKey("i", "InputFile", "Single input file (mandatory)", 
+                                CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("o", "OutputFile", "Single output file",
+                                CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("p", "InPath", "Path to ASN.1 Files", 
+                                 CArgDescriptions::eString);
     arg_desc->AddDefaultKey("P", "ReportType",
                    "Report type: Asndisc, Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
                    CArgDescriptions::eString, "Asndisc");
-
+    arg_desc->AddOptionalKey("r", "OutPath", "Output Directory", 
+                              CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", 
+                              CArgDescriptions::eString, ".dr");
     arg_desc->AddDefaultKey("S", "SummaryReport", 
                             "Summary Report: 'T'=true, 'F' =false", 
                             CArgDescriptions::eBoolean, "F");
-
+    arg_desc->AddDefaultKey("u", "Recurse", "Recurse", 
+                               CArgDescriptions::eString, "0");
+    arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", 
+                              CArgDescriptions::eString, ".sqn");
+    arg_desc->AddOptionalKey("X", "ExpandCategories", 
+         "Expand Report Categories (comma-delimited list of test names or ALL)",
+                                CArgDescriptions::eString);                
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 };
 
@@ -102,6 +108,8 @@ int CDiscRepApp :: Run(void)
     try {
        string report = args["P"].AsString();
        if (report == "t" || report == "s") report = "Asndisc";
+       if (report == "bt") report = "BigSequence";
+
        CRef <DiscRepNmSpc::CRepConfig> 
            config( DiscRepNmSpc::CRepConfig :: factory(report) );
        CRef <IRWRegistry> reg(0);
@@ -125,8 +133,6 @@ int CDiscRepApp :: Run(void)
        ERR_POST(err_msg);
        return 1;
     } 
-
-    return 1;
 }
 
 
@@ -143,6 +149,6 @@ int main(int argc, const char* argv[])
     return CDiscRepApp().AppMain(argc, argv);
   } catch(CException& eu) {
      ERR_POST(eu.GetMsg());
+     return 1;
   }
-  return 1;
 }
