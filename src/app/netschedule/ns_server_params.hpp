@@ -66,6 +66,7 @@ struct SNS_Parameters : SServer_Parameters
     unsigned int    stat_interval;      // Interval between statistics output
     unsigned int    max_affinities;     // Max number of affinities a client
                                         // can report as preferred.
+    unsigned int    max_client_data;    // Max (transient) client data size
 
     string          admin_hosts;
     string          admin_client_names;

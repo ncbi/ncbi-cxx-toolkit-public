@@ -72,6 +72,7 @@ const double            default_purge_timeout = 0.1;
 const unsigned int      default_stat_interval = 10;
 
 const unsigned int      default_max_affinities = 10000;
+const unsigned int      default_max_client_data = 2048;
 
 const unsigned int      default_affinity_high_mark_percentage = 90;
 const unsigned int      default_affinity_low_mark_percentage = 50;

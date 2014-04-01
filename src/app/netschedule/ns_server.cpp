@@ -67,6 +67,7 @@ CNetScheduleServer::CNetScheduleServer()
       m_PurgeTimeout(default_purge_timeout),
       m_StatInterval(default_stat_interval),
       m_MaxAffinities(default_max_affinities),
+      m_MaxClientData(default_max_client_data),
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID())
 {
@@ -164,6 +165,13 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     }
     m_StatInterval = params.stat_interval;
 
+    if (m_MaxClientData != params.max_client_data) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"max_client_data\" [" +
+                        NStr::NumericToString(m_MaxClientData) +
+                        ", " + NStr::NumericToString(params.max_client_data) + "]";
+    }
+    m_MaxClientData = params.max_client_data;
 
     string  accepted_hosts = m_AdminHosts.SetHosts(params.admin_hosts);
     if (!accepted_hosts.empty()) {

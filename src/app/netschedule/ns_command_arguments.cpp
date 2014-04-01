@@ -41,14 +41,15 @@ USING_NCBI_SCOPE;
 
 void SNSCommandArguments::x_Reset()
 {
-    job_id             = 0;
-    job_return_code    = 0;
-    port               = 0;
-    timeout            = 0;
-    job_mask           = 0;
-    start_after_job_id = 0;
-    count              = 0;
-    job_status         = CNetScheduleAPI::eJobNotFound;
+    job_id              = 0;
+    job_return_code     = 0;
+    port                = 0;
+    timeout             = 0;
+    job_mask            = 0;
+    start_after_job_id  = 0;
+    count               = 0;
+    client_data_version = -1;
+    job_status          = CNetScheduleAPI::eJobNotFound;
 
     cmd.erase();
     auth_token.erase();
@@ -74,6 +75,7 @@ void SNSCommandArguments::x_Reset()
     alert.erase();
     service.erase();
     user.erase();
+    client_data.erase();
 
     any_affinity = false;
     wnode_affinity = false;
@@ -168,6 +170,8 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                 description = NStr::ParseEscapes(val);
                 size_to_check = description.size();
             }
+            else if (key == "data")
+                client_data = NStr::ParseEscapes(val);
             break;
         case 'e':
             if (key == "exclusive_new_aff") {
@@ -295,6 +299,10 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
             if (key == "user")
                 user = NStr::ParseEscapes(val);
             break;
+        case 'v':
+            if (key == "version")
+                client_data_version = NStr::StringToInt(val);
+            break;
         case 'w':
             if (key == "wnode_aff") {
                 int tmp = NStr::StringToInt(val);
@@ -303,6 +311,7 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                                "wnode_aff accepted values are 0 and 1.");
                 wnode_affinity = (tmp == 1);
             }
+            break;
         default:
             break;
         }

@@ -398,6 +398,12 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "SETCLIENTDATA", { &CNetScheduleHandler::x_ProcessSetClientData,
+                         eNS_Queue },
+        { { "data",              eNSPT_Str, eNSPA_Required       },
+          { "version",           eNSPT_Int, eNSPA_Optional, "-1" },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""   },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""   } } },
 
     // Obsolete commands
     { "REGC",          { &CNetScheduleHandler::x_CmdObsolete,
@@ -2936,6 +2942,33 @@ void CNetScheduleHandler::x_ProcessGetAffinityList(CQueue* q)
 }
 
 
+void CNetScheduleHandler::x_ProcessSetClientData(CQueue* q)
+{
+    unsigned int    limit = m_Server->GetMaxClientData();
+    unsigned int    data_size = m_CommandArguments.client_data.size();
+
+    if (data_size > limit) {
+        ERR_POST(Warning << "Client data is too long. It must be <= "
+                         << limit
+                         << " bytes. Received "
+                         << data_size
+                         << " bytes.");
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInvalidParameter:Client data is too long. "
+                       "It must be <= " + NStr::NumericToString(limit) +
+                       " bytes. Received " + NStr::NumericToString(data_size) +
+                       " bytes.");
+    } else {
+        int     current_data_version = q->SetClientData(m_ClientId,
+                                        m_CommandArguments.client_data,
+                                        m_CommandArguments.client_data_version);
+        x_WriteMessage("OK:version=" +
+                       NStr::NumericToString(current_data_version));
+    }
+    x_PrintCmdRequestStop();
+}
+
+
 void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 {
     bool        client_found = false;
@@ -3389,6 +3422,7 @@ string CNetScheduleHandler::x_GetServerSection(void) const
            "purge_timeout=\"" + NStr::NumericToString(m_Server->GetPurgeTimeout()) + "\"\n"
            "stat_interval=\"" + NStr::NumericToString(m_Server->GetStatInterval()) + "\"\n"
            "max_affinities=\"" + NStr::NumericToString(m_Server->GetMaxAffinities()) + "\"\n"
+           "max_client_data=\"" + NStr::NumericToString(m_Server->GetMaxClientData()) + "\"\n"
            "admin_host=\"" + m_Server->GetAdminHosts().GetAsFromConfig() + "\"\n"
            "admin_client_name=\"" + m_Server->GetAdminClientNames() + "\"\n"
            "affinity_high_mark_percentage=\"" + NStr::NumericToString(m_Server->GetAffinityHighMarkPercentage()) + "\"\n"

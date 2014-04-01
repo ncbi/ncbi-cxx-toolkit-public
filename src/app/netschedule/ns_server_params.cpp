@@ -112,6 +112,10 @@ void SNS_Parameters::Read(const IRegistry &  reg)
     if (max_affinities <= 0)
         max_affinities = default_max_affinities;
 
+    max_client_data = GetIntNoErr("max_client_data", default_max_client_data);
+    if (max_client_data <= 0)
+        max_client_data = default_max_client_data;
+
     admin_hosts        = reg.GetString(sname, "admin_host", kEmptyStr);
     admin_client_names = reg.GetString(sname, "admin_client_name", kEmptyStr);
 }

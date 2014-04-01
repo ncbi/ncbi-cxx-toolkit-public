@@ -1086,6 +1086,13 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
 }
 
 
+int CQueue::SetClientData(const CNSClientId &  client,
+                          const string &  data, int  data_version)
+{
+    return m_ClientsRegistry.SetClientData(client, data, data_version);
+}
+
+
 TJobStatus  CQueue::JobDelayExpiration(unsigned int            job_id,
                                        const CNSPreciseTime &  tm)
 {

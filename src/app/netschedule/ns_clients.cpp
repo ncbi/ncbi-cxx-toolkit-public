@@ -214,7 +214,8 @@ CNSClient::CNSClient() :
     m_ReadingJobsOpCount(0),
     m_BlacklistedJobsOpCount(0),
     m_AffinitiesOpCount(0),
-    m_WaitAffinitiesOpCount(0)
+    m_WaitAffinitiesOpCount(0),
+    m_ClientDataVersion(0)
 {}
 
 
@@ -247,7 +248,8 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     m_ReadingJobsOpCount(0),
     m_BlacklistedJobsOpCount(0),
     m_AffinitiesOpCount(0),
-    m_WaitAffinitiesOpCount(0)
+    m_WaitAffinitiesOpCount(0),
+    m_ClientDataVersion(0)
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -579,7 +581,10 @@ string CNSClient::Print(const string &               node_name,
     }
 
     buffer += "OK:  NUMBER OF SOCKET WRITE ERRORS: " +
-              NStr::NumericToString(m_NumberOfSockErrors) + "\n";
+              NStr::NumericToString(m_NumberOfSockErrors) + "\n"
+              "OK:  DATA: " + NStr::URLEncode(m_ClientData) + "\n"
+              "OK:  DATA VERSION: " +
+                    NStr::NumericToString(m_ClientDataVersion) + "\n";
 
     return buffer;
 }
@@ -700,6 +705,19 @@ void  CNSClient::CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
         x_BlacklistedOp();
         m_BlacklistLimits.erase(m_BlacklistLimits.find(*j));
     }
+}
+
+
+int  CNSClient::SetClientData(const string &  data, int  data_version)
+{
+    if (data_version != -1 && data_version != m_ClientDataVersion)
+        NCBI_THROW(CNetScheduleException, eClientDataVersionMismatch,
+                   "client data version does not match");
+    m_ClientData = data;
+    ++m_ClientDataVersion;
+    if (m_ClientDataVersion < 0)
+        m_ClientDataVersion = 0;
+    return m_ClientDataVersion;
 }
 
 

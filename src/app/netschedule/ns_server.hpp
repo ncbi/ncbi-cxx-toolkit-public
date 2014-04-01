@@ -119,6 +119,7 @@ public:
     CBackgroundHost&  GetBackgroundHost()       { return m_BackgroundHost; }
     CRequestExecutor& GetRequestExecutor()      { return m_RequestExecutor; }
     unsigned GetMaxAffinities(void) const       { return m_MaxAffinities; }
+    unsigned int  GetMaxClientData(void) const  { return m_MaxClientData; }
     string GetNodeID(void) const                { return m_NodeID; }
     string GetSessionID(void) const             { return m_SessionID; }
     unsigned GetAffinityHighMarkPercentage(void) const  { return m_AffinityHighMarkPercentage; }
@@ -192,6 +193,8 @@ private:
     unsigned int                                m_StatInterval;
 
     unsigned int                                m_MaxAffinities;
+    unsigned int                                m_MaxClientData;
+
     string                                      m_NodeID;           // From the ini file
     string                                      m_SessionID;        // Generated
 

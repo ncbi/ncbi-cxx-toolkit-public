@@ -237,6 +237,7 @@ class CNSClient
         { return m_Addr; }
 
         void  CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
+        int  SetClientData(const string &  data, int  data_version);
 
     private:
         bool            m_Cleared;        // Set to true when CLRN is received
@@ -293,6 +294,9 @@ class CNSClient
         mutable size_t  m_BlacklistedJobsOpCount;
         size_t  m_AffinitiesOpCount;
         size_t  m_WaitAffinitiesOpCount;
+
+        string  m_ClientData;
+        int     m_ClientDataVersion;
 
         void x_RunningJobsOp(void);
         void x_ReadingJobsOp(void);

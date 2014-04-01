@@ -139,6 +139,8 @@ class CNSClientsRegistry
         void AppendType(const CNSClientId &  client,
                         unsigned int         type_to_append);
         void CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
+        int  SetClientData(const CNSClientId &  client,
+                           const string &  data, int  data_version);
 
     private:
         map< string, CNSClient >    m_Clients;  // All the queue clients

@@ -315,6 +315,19 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         }
     }
 
+    bool    max_client_data_ok = NS_ValidateInt(reg, section,
+                                                "max_client_data");
+    well_formed = well_formed && max_client_data_ok;
+    if (max_client_data_ok) {
+        unsigned int    max_client_data_val = reg.GetInt(section, "max_client_data",
+                                                         default_max_client_data);
+        if (max_client_data_val <= 0) {
+            well_formed = false;
+            LOG_POST(Warning << g_LogPrefix << " value "
+                             << NS_RegValName(section, "max_client_data")
+                             << " must be > 0");
+        }
+    }
 
     bool    affinity_high_mark_percentage_ok =
                     NS_ValidateInt(reg, section,

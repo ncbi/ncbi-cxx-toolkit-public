@@ -51,6 +51,7 @@ struct SNSCommandArguments
     unsigned int    job_mask;
     unsigned int    start_after_job_id;
     unsigned int    count;
+    int             client_data_version;
     TJobStatus      job_status;
 
     string          cmd;
@@ -77,6 +78,7 @@ struct SNSCommandArguments
     string          alert;
     string          service;
     string          user;
+    string          client_data;
 
     bool            any_affinity;
     bool            wnode_affinity;

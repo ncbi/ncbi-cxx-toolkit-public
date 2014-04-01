@@ -154,6 +154,27 @@ CNSClientsRegistry::CheckBlacklistedJobsExisted(const CJobStatusTracker &  track
 }
 
 
+int
+CNSClientsRegistry::SetClientData(const CNSClientId &  client,
+                                  const string &  data, int  data_version)
+{
+    // Check if it is an old-style client
+    if (!client.IsComplete())
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "only non-anonymous clients may set their data");
+
+    CMutexGuard                         guard(m_Lock);
+    map< string, CNSClient >::iterator  found = m_Clients.find(client.GetNode());
+
+    if (found == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to set client data");
+
+    return found->second.SetClientData(data, data_version);
+}
+
+
 // Updates the submitter job.
 // No need to check session id, it's done in Touch()
 void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,
