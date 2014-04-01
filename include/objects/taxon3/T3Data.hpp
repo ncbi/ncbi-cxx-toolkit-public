@@ -60,6 +60,7 @@ public:
     ~CT3Data(void);
 
     void GetTaxFlags (bool& is_species_level, bool& force_consult, bool& has_nucleomorphs) const;
+    bool HasPlastids (void) const;
 
 private:
     // Prohibit copy constructor and assignment operator

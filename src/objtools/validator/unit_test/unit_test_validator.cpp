@@ -4470,6 +4470,21 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrganelle)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    unit_test_util::SetDrosophila_melanogaster(entry);
+    unit_test_util::SetGenome (entry, CBioSource::eGenome_plastid);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyPlastidsProblem",
+                              "Taxonomy lookup does not have expected plastid flag"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no plastid error if flag is present
+    unit_test_util::SetSebaea_microphylla(entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 

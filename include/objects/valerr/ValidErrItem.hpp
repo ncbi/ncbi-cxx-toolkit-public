@@ -244,6 +244,7 @@ enum EErrType {
     eErr_SEQ_DESCR_MultipleTaxonIDs,
     eErr_SEQ_DESCR_ScaffoldLacksBioProject,
     eErr_SEQ_DESCR_CompleteGenomeLacksBioProject,
+    eErr_SEQ_DESCR_TaxonomyPlastidsProblem,
     ERR_CODE_END(SEQ_DESCR),
 
 

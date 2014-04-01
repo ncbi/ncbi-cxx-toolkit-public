@@ -649,6 +649,9 @@ other. Please make them consistent." } },
    { eErr_SEQ_DESCR_CompleteGenomeLacksBioProject,
    { "CompleteGenomeLacksBioProject",
 "There is no BioProject database link for this complete genome record." } },
+   { eErr_SEQ_DESCR_TaxonomyPlastidsProblem,
+   { "TaxonomyPlastidsProblem",
+"Taxonomy lookup indicates that the plastids flag should be set for this organism." } },
 
 /* SEQ_GENERIC */
 

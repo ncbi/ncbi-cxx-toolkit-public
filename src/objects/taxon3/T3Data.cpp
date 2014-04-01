@@ -90,6 +90,25 @@ void CT3Data::GetTaxFlags (bool& is_species_level, bool& force_consult, bool& ha
 }
 
 
+bool CT3Data::HasPlastids (void) const
+{
+    bool rval = false;
+    if (IsSetStatus()) {
+        ITERATE (CT3Reply::TData::TStatus, status_it, GetStatus()) {
+            if ((*status_it)->IsSetProperty()
+                && NStr::EqualNocase((*status_it)->GetProperty(), "has_plastids")
+                && (*status_it)->IsSetValue()
+                && (*status_it)->GetValue().IsBool()
+                && (*status_it)->GetValue().GetBool()) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
