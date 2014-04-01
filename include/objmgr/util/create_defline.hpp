@@ -161,6 +161,10 @@ private:
         const CBioseq_Handle& bsh
     );
 
+    void x_AdjustProteinTitleSuffix (
+        const CBioseq_Handle& bsh
+    );
+
 private:
     /// internal feature tree for parent mapping
     CRef<feature::CFeatTree> m_Feat_Tree;

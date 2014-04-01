@@ -1493,7 +1493,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
         if (! m_MainTitle.empty()) {
             // strip trailing periods, commas, and spaces
             SIZE_TYPE pos = m_MainTitle.find_last_not_of (".,;~ ");
-            if (pos != string::npos) {
+            if (pos != NPOS) {
                 m_MainTitle.erase (pos + 1);
             }
 
@@ -1580,7 +1580,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
 
     // strip trailing periods, commas, and spaces
     SIZE_TYPE pos = m_MainTitle.find_last_not_of (".,;~ ");
-    if (pos != string::npos) {
+    if (pos != NPOS) {
         m_MainTitle.erase (pos + 1);
     }
 
@@ -1965,6 +1965,109 @@ void CDeflineGenerator::x_SetSuffix (
     }
 }
 
+static inline void s_TrimMainTitle (string& str)
+{
+    size_t pos = str.find_last_not_of (".,;~ ");
+    if (pos != NPOS) {
+        str.erase (pos + 1);
+    }
+}
+
+void CDeflineGenerator::x_AdjustProteinTitleSuffix (
+    const CBioseq_Handle& bsh
+)
+
+{
+    size_t                pos;
+    int                   len;
+    bool                  partial = false;
+    CConstRef<CBioSource> src;
+
+    if (m_Source.Empty()) return;
+
+    if (m_Source->IsSetTaxname()) {
+        m_Taxname = m_Source->GetTaxname();
+    }
+    if (m_Source->IsSetGenome()) {
+        m_Genome = m_Source->GetGenome();
+    }
+
+    switch (m_MICompleteness) {
+        case NCBI_COMPLETENESS(partial):
+        case NCBI_COMPLETENESS(no_left):
+        case NCBI_COMPLETENESS(no_right):
+        case NCBI_COMPLETENESS(no_ends):
+            partial = true;
+            break;
+        default:
+            break;
+    }
+
+    s_TrimMainTitle (m_MainTitle);
+
+    len = m_MainTitle.length();
+
+    // remove [taxname]
+    if (len > 2 && m_MainTitle [len - 1] == ']') {
+        pos = m_MainTitle.find_last_of ("[");
+        if (pos != NPOS) {
+            m_MainTitle.erase (pos);
+        }
+        s_TrimMainTitle (m_MainTitle);
+        len = m_MainTitle.length();
+    }
+
+    // remove (organelle)
+    if (len > 2 && m_MainTitle [len - 1] == ')') {
+        pos = m_MainTitle.find_last_of ("(");
+        if (pos != NPOS) {
+            m_MainTitle.erase (pos);
+        }
+        s_TrimMainTitle (m_MainTitle);
+        len = m_MainTitle.length();
+    }
+
+    if ( NStr::EndsWith (m_MainTitle, ", partial")) {
+        m_MainTitle.erase(m_MainTitle.length() - 9);
+        s_TrimMainTitle (m_MainTitle);
+    }
+
+    // then reconstruct partial (organelle) [taxname] suffix
+
+    if (partial) {
+        m_MainTitle += ", partial";
+    }
+
+    CTempString taxname = m_Taxname;
+
+    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+        const char * organelle = s_proteinOrganellePrefix [m_Genome];
+        if ( organelle[0] != '\0'  &&  ! taxname.empty()
+            /* &&  NStr::Find (taxname, organelle) == NPOS */) {
+            m_MainTitle += " (";
+            m_MainTitle += organelle;
+            m_MainTitle += ")";
+        }
+    }
+
+    // check for special taxname, go to overlapping source feature
+    if ((taxname.empty()  ||
+         (!NStr::EqualNocase (taxname, "synthetic construct")  &&
+          !NStr::EqualNocase (taxname, "artificial sequence")  &&
+          taxname.find ("vector") == NPOS  &&
+          taxname.find ("Vector") == NPOS))  &&
+        !m_LocalAnnotsOnly) {
+        src = x_GetSourceFeatViaCDS (bsh);
+        if (src.NotEmpty()  &&  src->IsSetTaxname()) {
+            taxname = src->GetTaxname();
+        }
+    }
+
+    if (! taxname.empty() /* && m_MainTitle.find(taxname) == NPOS */) {
+        m_MainTitle += " [" + string(taxname) + "]";
+    }
+}
+
 // main method
 string CDeflineGenerator::GenerateDefline (
     const CBioseq_Handle& bsh,
@@ -1982,9 +2085,14 @@ string CDeflineGenerator::GenerateDefline (
         // x_SetFlags set m_MainTitle from a suitable descriptor, if any;
         // now strip trailing periods, commas, semicolons, and spaces.
         size_t pos = m_MainTitle.find_last_not_of (".,;~ ");
-        if (pos != string::npos) {
+        if (pos != NPOS) {
             m_MainTitle.erase (pos + 1);
         }
+    }
+
+    // adjust protein partial/organelle/taxname suffix, if necessary
+    if ( m_IsAA && ! m_MainTitle.empty() ) {
+        x_AdjustProteinTitleSuffix (bsh);
     }
 
     // use appropriate algorithm if title needs to be generated
@@ -2072,7 +2180,7 @@ string CDeflineGenerator::GenerateDefline (
     // strip trailing commas, semicolons, and spaces (period may be an sp.
     // species)
     size_t pos = m_MainTitle.find_last_not_of (",;~ ");
-    if (pos != string::npos) {
+    if (pos != NPOS) {
         m_MainTitle.erase (pos + 1);
     }
 
