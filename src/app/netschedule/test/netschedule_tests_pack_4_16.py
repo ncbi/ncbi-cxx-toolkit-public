@@ -1203,3 +1203,78 @@ class Scenario1115( TestBase ):
         return True
 
 
+class Scenario1116( TestBase ):
+    " Scenario1116 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SETCLIENTDATA and check the version"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1116' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        output = execAny( ns_client, 'SETCLIENTDATA data="abc cde"' )
+        if "version=1" not in output:
+            raise Exception( "Unexpected version of the client data. Expected: "
+                             "'version=1', received: " + output )
+
+        output = execAny( ns_client, 'SETCLIENTDATA data="123 456"' )
+        if "version=2" not in output:
+            raise Exception( "Unexpected version of the client data. Expected: "
+                             "'version=2', received: " + output )
+
+        output = "\n".join( execAny( ns_client, 'STAT CLIENTS', isMultiline = True ) )
+        if 'DATA: 123+456' not in output:
+            raise Exception( "Cannot find expected client data" )
+        if 'DATA VERSION: 2' not in output:
+            raise Exception( "Cannot find expected client data version" )
+        return True
+
+
+class Scenario1117( TestBase ):
+    " Scenario1117 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SETCLIENTDATA and the version mismatch"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1117' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        output = execAny( ns_client, 'SETCLIENTDATA data="abc cde"' )
+        if "version=1" not in output:
+            raise Exception( "Unexpected version of the client data. Expected: "
+                             "'version=1', received: " + output )
+
+        output = execAny( ns_client, 'SETCLIENTDATA data="123 456" version=1' )
+        if "version=2" not in output:
+            raise Exception( "Unexpected version of the client data. Expected: "
+                             "'version=2', received: " + output )
+
+        try:
+            output = execAny( ns_client, 'SETCLIENTDATA data="123 456" version=1' )
+        except Exception, exc:
+            if 'client data version does not match' in str( exc ):
+                return True
+            raise
+
+        raise Exception( "Expected data mismatch exception, received output: " +
+                         output )
