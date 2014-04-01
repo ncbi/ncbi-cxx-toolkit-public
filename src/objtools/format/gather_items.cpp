@@ -108,6 +108,8 @@
 #include <objtools/error_codes.hpp>
 #include "utils.hpp"
 
+#include <html/htmlhelper.hpp>
+
 #include <connect/ncbi_socket.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Fmt_Gather
@@ -2411,34 +2413,22 @@ static void s_CleanCDDFeature(const CSeq_feat& feat)
                 f.SetData().SetSite(sc_Pairs[i].second);
             }
         }
-    } else if ( feat.GetData().IsRegion() && feat.GetNamedDbxref("CDD") && feat.IsSetComment() ) {
-        string s;
-        s = feat.GetComment();
-        if ( NStr::Find (s, "&apos;") != NPOS) {
-            string x = NStr::Replace (s, "&apos;", "'");
-            CSeq_feat& f = const_cast<CSeq_feat&>(feat);
-            f.SetComment(x);
-            s = x;
+    } else if ( feat.GetData().IsRegion() && feat.GetNamedDbxref("CDD") ) {
+        if ( feat.IsSetComment() ) {
+            string s = feat.GetComment();
+            CStringUTF8 x = CHTMLHelper::HTMLDecode (s);
+            if (! NStr::Equal (s, x)) {
+                CSeq_feat& f = const_cast<CSeq_feat&>(feat);
+                f.SetComment(x);
+            }
         }
-        if ( NStr::Find (s, "&quot;") != NPOS) {
-            string x = NStr::Replace (s, "&quot;", "\"");
+        string s = feat.GetData().GetRegion();
+        CStringUTF8 x = CHTMLHelper::HTMLDecode (s);
+        if (! NStr::Equal (s, x)) {
             CSeq_feat& f = const_cast<CSeq_feat&>(feat);
-            f.SetComment(x);
-            s = x;
+            f.SetData().SetRegion(x);
         }
-        if ( NStr::Find (s, "&amp;") != NPOS) {
-            string x = NStr::Replace (s, "&amp;", "&");
-            CSeq_feat& f = const_cast<CSeq_feat&>(feat);
-            f.SetComment(x);
-            s = x;
-        }
-        if ( NStr::Find (s, "&gt;") != NPOS) {
-            string x = NStr::Replace (s, "&gt;", ">");
-            CSeq_feat& f = const_cast<CSeq_feat&>(feat);
-            f.SetComment(x);
-            s = x;
-        }
-    }
+     }
 }
 
 //  ============================================================================
