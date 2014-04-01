@@ -47,7 +47,7 @@ USING_SCOPE(Njn);
 
 bool StringUtil::isAlpha (const char *symbols_) // Is every symbol in symbols_ alphabetic ?
 {
-    const char *c = '\0';
+    const char *c = 0;
     for (c = symbols_; *c; c++) {
         if (! isalpha (*c)) return false;
     }
@@ -58,7 +58,7 @@ bool StringUtil::isAlpha (const char *symbols_) // Is every symbol in symbols_ a
 
 bool StringUtil::isNoWhiteSpace (const char *symbols_) // Is there no white space ?
 {
-    const char *c = '\0';
+    const char *c = 0;
 
     for (c = symbols_; *c; c++) { // find next whitespace
         if (isspace (*c)) return false;
@@ -79,7 +79,7 @@ bool StringUtil::isAllWhiteSpace (const std::string &symbols_) // Is everything 
 
 bool StringUtil::isLower (const char *symbols_) // Is every symbol in symbols_ lower-case ?
 {
-    const char *c = '\0';
+    const char *c = 0;
     for (c = symbols_; *c; c++) {
         if (! islower (*c)) return false;
     }
@@ -90,7 +90,7 @@ bool StringUtil::isLower (const char *symbols_) // Is every symbol in symbols_ l
 
 bool StringUtil::isUpper (const char *symbols_) // Is every symbol in symbols_ upper-case ?
 {
-    const char *c = '\0';
+    const char *c = 0;
     for (c = symbols_; *c; c++) {
         if (! isupper (*c)) return false;
     }
@@ -126,8 +126,8 @@ bool upperEqualsLower_) // Does case matter?, i.e., a == A ?
 void StringUtil::eraseInitialWhiteSpace (char *symbols_)
 // returns a char * symbols_ without initial white-space
 { 
-    char *i = '\0';
-    char *j = '\0';
+    char *i = 0;
+    char *j = 0;
 
 
     for (i = symbols_; *i && isspace (*i); i++) ;
@@ -175,8 +175,8 @@ void StringUtil::eraseFinalWhiteSpace (std::string &symbols_) // erases initial 
 void StringUtil::eraseWhiteSpace (char *symbols_, bool eraseBlankOnly_)
 // returns a char * symbols_ without white-space
 { 
-    char *i = '\0';
-    char *j = '\0';
+    char *i = 0;
+    char *j = 0;
 
     for (i = j = symbols_; *i; i++) {
         if (!isspace(*i) || (*i != ' ' && eraseBlankOnly_)) { // copy unless white space
@@ -200,9 +200,9 @@ void StringUtil::eraseWhiteSpace (std::string &symbols_, bool eraseBlankOnly_) /
 
 void StringUtil::eraseInitialChar (char *symbols_, const char *c_) // removes initial char's c_
 { 
-    char *i = '\0';
-    char *j = '\0';
-    const char *s = '\0';
+    char *i = 0;
+    char *j = 0;
+    const char *s = 0;
 
     for (i = symbols_; *i; i++) 
     {
@@ -261,9 +261,9 @@ void StringUtil::eraseFinalChar (std::string &symbols_, const std::string &c_) /
 
 void StringUtil::eraseChar (char *symbols_, const char *c_) // removes char's c_
 { 
-    char *i = '\0';
-    char *j = '\0';
-    const char *s = '\0';
+    char *i = 0;
+    char *j = 0;
+    const char *s = 0;
 
     for (i = j = symbols_; *i; i++) 
     {
@@ -300,7 +300,7 @@ void StringUtil::eraseChar (std::string &symbols_, const std::string &c_) // rem
 
 void StringUtil::substituteChar (char *symbols_, char cOut_, const char cIn_) // replaces all occurrences of cIn_ with cOut_
 { 
-    char *i = '\0';
+    char *i = 0;
 
     for (i = symbols_; *i; i++) 
     {

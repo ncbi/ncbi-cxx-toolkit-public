@@ -173,7 +173,7 @@ alp_data::alp_data(//constructor
 
 
                 //randomization
-                Uint4 random_factor;
+                Uint4 random_factor = 0;
 
                 CRef<CGumbelParamsRandDiagnostics> AdvancedParams_tmp
                     = rand_params_;

@@ -335,8 +335,8 @@ bool &area_is_1_flag_)
 
 
 
-        double m_li_y_error;
-        double m_li_y;
+        double m_li_y_error = 0.0;
+        double m_li_y = 0.0;
 
         bool flag_Mi=true;
 
@@ -354,8 +354,8 @@ bool &area_is_1_flag_)
                 m_li_y=m_-tmp;
         };
         
-        double vi_y_error;
-        double vi_y;
+        double vi_y_error = 0.0;
+        double vi_y = 0.0;
 
         bool flag_Mii=true;
 
@@ -406,8 +406,8 @@ bool &area_is_1_flag_)
         double p1=m_li_y_P_m_F-sqrt_vi_y_E_m_F;
 
 
-        double n_lj_y_error;
-        double n_lj_y;
+        double n_lj_y_error = 0.0;
+        double n_lj_y = 0.0;
 
         bool flag_Mj=true;
 
@@ -427,8 +427,8 @@ bool &area_is_1_flag_)
 
         };
 
-        double vj_y_error;
-        double vj_y;
+        double vj_y_error = 0.0;
+        double vj_y = 0.0;
 
         bool flag_Mjj=true;
 
@@ -484,8 +484,8 @@ bool &area_is_1_flag_)
 
 
 
-        double c_y_error;
-        double c_y;
+        double c_y_error = 0.0;
+        double c_y = 0.0;
 
         bool flag_Mij=true;
 
@@ -629,7 +629,7 @@ bool &area_is_1_flag_)
         double eps=0.000001;
 
 
-        double m_li_y;
+        double m_li_y = 0.0;
 
         bool flag_Mi=true;
 
@@ -646,7 +646,7 @@ bool &area_is_1_flag_)
                 m_li_y=m_-tmp;
         };
         
-        double vi_y;
+        double vi_y = 0.0;
 
         bool flag_Mii=true;
 
@@ -687,7 +687,7 @@ bool &area_is_1_flag_)
         double p1=m_li_y_P_m_F-sqrt_vi_y_E_m_F;
 
 
-        double n_lj_y;
+        double n_lj_y = 0.0;
 
         bool flag_Mj=true;
 
@@ -705,8 +705,8 @@ bool &area_is_1_flag_)
                 };
 
         };
-
-        double vj_y;
+	
+        double vj_y = 0.0;
 
         bool flag_Mjj=true;
 
@@ -752,7 +752,7 @@ bool &area_is_1_flag_)
 
 
 
-        double c_y;
+        double c_y = 0.0;
 
         bool flag_Mij=true;
 

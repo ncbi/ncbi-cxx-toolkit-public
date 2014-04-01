@@ -237,7 +237,6 @@ BEGIN_SCOPE(Njn)
    {
       assert (istr_);
 
-      size_t i = 0;
       std::vector <T> v;
       T value;
 

@@ -500,7 +500,6 @@ BEGIN_SCOPE(Sls)
                         if(sum_distr_[v3-1]==value_)
                         {
                                 v1=v3-1;
-                                v2=v2;
                                 break;
                         };
 
