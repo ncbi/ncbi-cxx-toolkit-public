@@ -582,7 +582,7 @@ string CNSClient::Print(const string &               node_name,
 
     buffer += "OK:  NUMBER OF SOCKET WRITE ERRORS: " +
               NStr::NumericToString(m_NumberOfSockErrors) + "\n"
-              "OK:  DATA: " + NStr::URLEncode(m_ClientData) + "\n"
+              "OK:  DATA: " + NStr::PrintableString(m_ClientData) + "\n"
               "OK:  DATA VERSION: " +
                     NStr::NumericToString(m_ClientDataVersion) + "\n";
 
