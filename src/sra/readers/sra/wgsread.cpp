@@ -628,6 +628,9 @@ void sx_MakeGap(CDelta_seq& seg,
     if ( gap_type || gap_linkage ) {
         CSeq_gap& gap = literal.SetSeq_data().SetGap();
         switch ( gap_type ) {
+        case 0:
+            gap.SetType(CSeq_gap::eType_unknown);
+            break;
         case NCBI_WGS_gap_scaffold:
             gap.SetType(CSeq_gap::eType_scaffold);
             break;
