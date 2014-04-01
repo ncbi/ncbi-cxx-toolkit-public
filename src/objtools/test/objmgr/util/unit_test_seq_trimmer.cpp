@@ -772,5 +772,26 @@ BOOST_AUTO_TEST_CASE(SequenceAmbigTrimmer_GeneralTests)
             string(1000, 'N') + k100GoodBases,
             eCurrMeaning );
     }
+
+   
+
 }
 
+BOOST_AUTO_TEST_CASE(SequenceAmbigTrimmer_TestSeqInstRepr)
+{
+    string file_name = "test_data/KF927036-na.asn";
+    ifstream file_in(file_name.c_str());
+    BOOST_REQUIRE(file_in);
+    AutoPtr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, file_in));
+    BOOST_REQUIRE(!in->EndOfData());
+    BOOST_REQUIRE_EQUAL(in->GetStreamPos(), NcbiInt8ToStreampos(0));
+    CBioseq bioseq;
+    *in >> bioseq;
+    CRef<CScope> pScope( new CScope(*CObjectManager::GetInstance()));
+    pScope->AddDefaults();
+    CBioseq_Handle bsh = pScope->AddBioseq(bioseq);
+    
+    CSequenceAmbigTrimmer trimmer( CSequenceAmbigTrimmer::eMeaningOfAmbig_OnlyCompletelyUnknown, CSequenceAmbigTrimmer::fFlags_DoNotTrimSeqGap );
+    trimmer.DoTrim(bsh);
+    BOOST_CHECK_EQUAL(bioseq.GetInst().GetRepr(), CSeq_inst::eRepr_raw);
+}
