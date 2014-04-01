@@ -33,5 +33,5 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:Bdb4520-Release
 Linux64-Centos : Bdb4520-Release : GCC.sh 4.4.2 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 Linux64-Centos : Bdb4520-Debug   : GCC.sh 4.4.2 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-4.5.20.dio.SuSE-ONLY
 
-USE_COMPONENTS
+# USE_COMPONENTS
 

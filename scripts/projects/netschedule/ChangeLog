@@ -1,3 +1,24 @@
+Release 4.17.0 based on TRUNK (2014-04-01)
+
+Improvements:
+    * NetSchedule: job status where a list of jobs is provided (JIRA: CXX-4556)
+    * NetSchedule to provide the same information for QINF2 as it does for
+      GETP2 (JIRA: CXX-4575)
+    * NetSchedule QINF2 to return client-side queue configuration by an
+      associated with it service name (JIRA: CXX-4576)
+    * NetSchedule: max_input_size and max_output_size do not respect 'k' and
+     'M' suffixes (JIRA: CXX-4592)
+    * Changes in NetSchedule significant error handling (JIRA: CXX-4606)
+    * NetSchedule: crash detect to reinit the DB (JIRA: CXX-4648)
+    * Implement NetSchedule feature to stop/resume processing jobs in a queue
+      without deleting them (JIRA: CXX-4721)
+    * NetSchedule: dynamic queues and reconfiguring (JIRA: CXX-4725)
+    * NS -- pause, resume and pullback jobs (JIRA: CXX-4744)
+    * NetSchedule: transient client data (JIRA: CXX-4780)
+    * STAT ALERTS introduced
+    * A few alerts introduced
+
+
 Release 4.16.11 based on SC-11 (2013-11-25)
 
 Improvements:
