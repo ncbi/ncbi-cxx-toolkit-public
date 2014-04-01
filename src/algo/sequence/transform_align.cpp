@@ -625,8 +625,6 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     int range_left = plus_strand ? int(range.GetFrom()) : -int(range.GetTo());
     int range_right = plus_strand ? int(range.GetTo()) : -int(range.GetFrom());
 
-    TSignedSeqRange expected_genomic_range(max(range_left, exons.front().genomic_from), min(range_right, exons.back().genomic_to));
-
     for(;;++right_exon_it, ++right_spl_exon_it) {
 
         vector<SExon>::reverse_iterator left_exon_it(right_exon_it); 
@@ -653,12 +651,6 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
 
         if (right_exon_it == exons.end())
             break;
-    }
-
-    if (exons.front().genomic_from != expected_genomic_range.GetFrom() || exons.back().genomic_to != expected_genomic_range.GetTo()) {
-        NCBI_THROW(CException, eUnknown,
-                   "AdjustAlignment(): "
-                   "result's ends do not match the range, most likely indel(s) outside or right at range border(s)");
     }
 
     CSpliced_exon& first_exon = *spliced_seg.SetExons().front();
