@@ -1205,6 +1205,14 @@ protected:
     x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                           const CArgs& args) = 0;
 
+    /** Creates the BLAST options handle based on the task argument 
+     * @param locality whether the search will be executed locally or remotely [in]
+     * @param task program-specific BLAST named parameter set [in]
+     */
+    CRef<CBlastOptionsHandle>
+    x_CreateOptionsHandleWithTask(CBlastOptions::EAPILocality locality,
+                                  const string& task);
+
     /// Issue warnings when recovering from a search strategy (command line
     /// applications only)
     void x_IssueWarningsForIgnoredOptions(const CArgs& args);

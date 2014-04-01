@@ -133,9 +133,8 @@ CRef<CBlastOptionsHandle>
 CIgBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
-    CRef<CBlastOptionsHandle> retval;
-    SetTask("blastn");
-    retval.Reset(CBlastOptionsFactory::CreateTask(GetTask(), locality));
+    CRef<CBlastOptionsHandle> retval = 
+        x_CreateOptionsHandleWithTask(locality, "blastn");
     _ASSERT(retval.NotEmpty());
 
     retval->SetFilterString("F");

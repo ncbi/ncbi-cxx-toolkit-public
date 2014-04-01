@@ -225,6 +225,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("rpsblast");
         retval.insert("rpstblastn");
         retval.insert("blastx");
+        retval.insert("blastx-fast");
         retval.insert("tblastn");
         retval.insert("psitblastn");
         retval.insert("tblastx");
@@ -258,6 +259,9 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
     } else if (task == "blastx") {
         retval.assign("Search of a (translated) nucleotide query against a ");
         retval += "protein database";
+    } else if (task == "blastx-fast") {
+        retval.assign("Search of a (translated) nucleotide query against a ");
+        retval += "protein database with parameters optimized for speed";
     } else if (task == "dc-megablast") {
         retval.assign("Discontiguous megablast used to find more distant ");
         retval += "(e.g., interspecies) sequences";
@@ -375,9 +379,18 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
     {
          retval = CBlastOptionsFactory::Create(eRPSTblastn, locality);
     }
-    else if (!NStr::CompareNocase(task, "blastx"))
+    else if (!NStr::CompareNocase(task, "blastx") ||
+             !NStr::CompareNocase(task, "blastx-fast"))
     {
-         retval = CBlastOptionsFactory::Create(eBlastx, locality);
+        CBlastxOptionsHandle* opts =
+            dynamic_cast<CBlastxOptionsHandle*>
+            (CBlastOptionsFactory::Create(eBlastx, locality));
+        if (task == "blastx-fast") {
+            opts->SetWordSize(6);
+            opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
+            opts->SetWordThreshold(21.0);
+        }
+        retval = opts;
     }
     else if (!NStr::CompareNocase(task, "tblastn"))
     {

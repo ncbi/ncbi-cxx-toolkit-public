@@ -58,6 +58,11 @@ CBlastxAppArgs::CBlastxAppArgs()
 
     static const string kDefaultTask = "blastx";
     SetTask(kDefaultTask);
+    set<string> tasks;
+    tasks.insert(kDefaultTask);
+    tasks.insert("blastx-fast");
+    arg.Reset(new CTaskCmdLineArgs(tasks, kDefaultTask));
+    m_Args.push_back(arg);
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
     m_BlastDbArgs->SetDatabaseMaskingSupport(true);
@@ -131,9 +136,11 @@ CBlastxAppArgs::CBlastxAppArgs()
 
 CRef<CBlastOptionsHandle> 
 CBlastxAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
-                                      const CArgs& /*args*/)
+                                      const CArgs& args)
 {
-    return CRef<CBlastOptionsHandle>(new CBlastxOptionsHandle(locality));
+    _ASSERT(args.Exist(kTask));
+    _ASSERT(args[kTask].HasValue());
+    return x_CreateOptionsHandleWithTask(locality, args[kTask].AsString());
 }
 
 int

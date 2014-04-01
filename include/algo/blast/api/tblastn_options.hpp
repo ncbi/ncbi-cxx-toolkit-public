@@ -97,15 +97,15 @@ protected:
     }
     
     /// Sets LookupTableDefaults for tblastn options
-    void SetLookupTableDefaults();
+    virtual void SetLookupTableDefaults();
     /// Sets ScoringOptionsDefaults for tblastn options
-    void SetScoringOptionsDefaults();
+    virtual void SetScoringOptionsDefaults();
     /// Sets HitSavingOptionsDefaults for tblastn options
-    void SetHitSavingOptionsDefaults();
+    virtual void SetHitSavingOptionsDefaults();
     /// Sets SubjectSequenceOptionsDefaults for tblastn options
-    void SetSubjectSequenceOptionsDefaults();
+    virtual void SetSubjectSequenceOptionsDefaults();
     /// Overrides  SetGappedExtensionDefaults for tblastn options
-    void  SetGappedExtensionDefaults();
+    virtual void  SetGappedExtensionDefaults();
 
 private:
     /// Disallow copy constructor

@@ -122,11 +122,9 @@ CRef<CBlastOptionsHandle>
 CBlastpAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality, 
                                       const CArgs& args)
 {
-   CRef<CBlastOptionsHandle> retval;
-    SetTask(args[kTask].AsString());
-    retval.Reset(CBlastOptionsFactory::CreateTask(GetTask(), locality));
-    _ASSERT(retval.NotEmpty());
-    return retval;
+    _ASSERT(args.Exist(kTask));
+    _ASSERT(args[kTask].HasValue());
+    return x_CreateOptionsHandleWithTask(locality, args[kTask].AsString());
 }
 
 int

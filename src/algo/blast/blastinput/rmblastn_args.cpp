@@ -110,10 +110,8 @@ CRef<CBlastOptionsHandle>
 CRMBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
-    CRef<CBlastOptionsHandle> retval;
-    SetTask(args[kTask].AsString());
-    retval.Reset(CBlastOptionsFactory::CreateTask(GetTask(), locality));
-    _ASSERT(retval.NotEmpty());
+    CRef<CBlastOptionsHandle> retval =
+        x_CreateOptionsHandleWithTask(locality, args[kTask].AsString());
     return retval;
 }
 

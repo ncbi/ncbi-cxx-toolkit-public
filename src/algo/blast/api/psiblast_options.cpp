@@ -71,6 +71,7 @@ void CPSIBlastOptionsHandle::SetPSITblastnDefaults(void)
     m_Opts->SetProgram(ePSITblastn);
     m_Opts->SetSmithWatermanMode(false);
     m_Opts->SetDbGeneticCode(BLAST_GENETIC_CODE);
+    m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_TBLASTN);
 }
  
 END_SCOPE(blast)

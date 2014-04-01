@@ -537,13 +537,32 @@ CWordThresholdArg::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("");
 }
 
+static bool
+s_IsDefaultWordThreshold(EProgram program, double threshold)
+{
+    int word_threshold = static_cast<int>(threshold);
+    bool retval = true;
+    if (program == eBlastp &&
+        word_threshold != BLAST_WORD_THRESHOLD_BLASTP) {
+        retval = false;
+    } else if (program == eBlastx &&
+        word_threshold != BLAST_WORD_THRESHOLD_BLASTX) {
+        retval = false;
+    } else if (program == eTblastn &&
+               word_threshold != BLAST_WORD_THRESHOLD_TBLASTN) {
+        retval = false;
+    }
+    return false;
+}
+
 void
 CWordThresholdArg::ExtractAlgorithmOptions(const CArgs& args, 
                                            CBlastOptions& opt)
 {
     if (args[kArgWordScoreThreshold]) {
         opt.SetWordThreshold(args[kArgWordScoreThreshold].AsDouble());
-    } else {
+    } else if (s_IsDefaultWordThreshold(opt.GetProgram(),
+                                        opt.GetWordThreshold())) {
         double threshold = -1;
         BLAST_GetSuggestedThreshold(opt.GetProgramType(),
                                     opt.GetMatrixName(),
@@ -2550,6 +2569,18 @@ SetUpCommandLineArguments(TBlastCmdLineArgs& args)
         (*arg)->SetArgumentDescriptions(*retval);
     }
     return retval.release();
+}
+
+CRef<CBlastOptionsHandle>
+CBlastAppArgs::x_CreateOptionsHandleWithTask
+    (CBlastOptions::EAPILocality locality, const string& task)
+{
+    _ASSERT(!task.empty());
+    CRef<CBlastOptionsHandle> retval;
+    SetTask(task);
+    retval.Reset(CBlastOptionsFactory::CreateTask(GetTask(), locality));
+    _ASSERT(retval.NotEmpty());
+    return retval;
 }
 
 void

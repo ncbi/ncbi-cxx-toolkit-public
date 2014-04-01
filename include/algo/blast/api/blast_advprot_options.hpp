@@ -88,10 +88,10 @@ public:
 
 protected:
     /// Overrides  SetGappedExtensionDefaults for advanced blastp options
-    void  SetGappedExtensionDefaults();
+    virtual void  SetGappedExtensionDefaults();
 
     /// Overrides SetQueryOptionDefaults for advanced blastp options to disable filtering
-    void SetQueryOptionDefaults();
+    virtual void SetQueryOptionDefaults();
 
 private:
     /// Disallow copy constructor
