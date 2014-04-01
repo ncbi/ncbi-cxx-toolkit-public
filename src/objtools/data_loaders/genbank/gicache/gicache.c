@@ -60,6 +60,7 @@
 #define kFullOffsetMask      0x7fffffff
 #define kTopBit              0x80000000
 #define kUint4Mask           0xffffffff
+#define kTopPageMask         0x0000007f
 
 #define INDEX_CACHE_SIZE     32768
 #define DATA_CACHE_SIZE      8192
@@ -79,12 +80,12 @@
 
 // If offset for top-level page corresponding to a given gi is not set ( = 0),
 // go back to previous top-level pages until a non-zero offset is found.
-#define GET_TOP_PAGE_OFFSET(gi) GET_INT8(&data_index->m_GiIndex[2*((gi)>>25)])
+#define GET_TOP_PAGE_OFFSET(gi) GET_INT8(&data_index->m_GiIndex[2*((((Uint4)gi)>>25)&kTopPageMask)])
 
 
 #define SET_TOP_PAGE_OFFSET(gi,off) \
-    data_index->m_GiIndex[2*((gi)>>25)] = (Uint4)((off)>>32);\
-    data_index->m_GiIndex[2*((gi)>>25)+1] = (Uint4)((off)&kUint4Mask);
+    data_index->m_GiIndex[2*((((Uint4)gi)>>25)&kTopPageMask)] = (Uint4)((off)>>32);\
+    data_index->m_GiIndex[2*((((Uint4)gi)>>25)&kTopPageMask)+1] = (Uint4)((off)&kUint4Mask);
 
 typedef struct {
     Uint4*  m_GiIndex;
