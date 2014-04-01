@@ -749,6 +749,7 @@ CSequenceAmbigTrimmer::x_SliceBioseq(
     if( pDeltaExt->Set().empty() ) {
         seq_inst.SetRepr( CSeq_inst::eRepr_virtual );
     } else if( pDeltaExt->Set().size() == 1 ) {
+        seq_inst.SetRepr( CSeq_inst::eRepr_raw ); 
         CRef<CDelta_seq> pDeltaSeq = *pDeltaExt->Set().begin();
         CSeq_data & seq_data = pDeltaSeq->SetLiteral().SetSeq_data();
         seq_inst.SetSeq_data( seq_data );
