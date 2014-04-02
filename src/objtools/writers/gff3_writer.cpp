@@ -1201,8 +1201,8 @@ bool CGff3Writer::xAssignFeatureMethod(
         }
     }
         
-    CSeq_id_Handle idh = mf.GetLocationId();
-    if (!CWriteUtil::GetIdType(*idh.GetSeqId(), method)) {
+    CBioseq_Handle bsh = fc.BioseqHandle();
+    if (!CWriteUtil::GetIdType(bsh, method)) {
         return false;
     }
     if (method == "Local") {
