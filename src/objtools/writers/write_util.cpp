@@ -162,6 +162,9 @@ bool CWriteUtil::GetIdType(
     string& idType )
 //  ----------------------------------------------------------------------------
 {
+    if (!bsh) {
+        return false;
+    }
     CSeq_id_Handle best_idh;
     try {
         best_idh = sequence::GetId(bsh, sequence::eGetId_Best);

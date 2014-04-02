@@ -1200,14 +1200,23 @@ bool CGff3Writer::xAssignFeatureMethod(
             }
         }
     }
-        
+    
     CBioseq_Handle bsh = fc.BioseqHandle();
-    if (!CWriteUtil::GetIdType(bsh, method)) {
-        return false;
+    if (bsh) {
+        if (!CWriteUtil::GetIdType(bsh, method)) {
+            return false;
+        }
+    }
+    else {
+        CSeq_id_Handle idh = mf.GetLocationId();
+        if (!CWriteUtil::GetIdType(*idh.GetSeqId(), method)) {
+            return false;
+        }
     }
     if (method == "Local") {
         method = ".";
     }
+
     record.SetMethod(method);
     return true;
 }
