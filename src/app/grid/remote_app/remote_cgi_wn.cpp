@@ -201,7 +201,8 @@ public:
                 CCgiRequest::fIgnoreQueryString |
                 CCgiRequest::fDoNotParseContent));
         }
-        catch (...) {
+        catch (exception&) {
+            ERR_POST("Cannot deserialize remote_cgi job");
             job_context.CommitJobWithFailure(
                 "Error while parsing CGI request stream");
             return -1;

@@ -84,6 +84,7 @@ public:
             m_Request.Deserialize(context.GetIStream());
         }
         catch (exception&) {
+            ERR_POST("Cannot deserialize remote_app job");
             context.CommitJobWithFailure("Error while "
                     "unpacking remote_app arguments");
             return -1;
