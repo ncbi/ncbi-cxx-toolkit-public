@@ -121,8 +121,8 @@ void CCompoundIDTestRequest::Process()
             RANDOM_ROOT.AppendIPv4SockAddr(
                     (Uint4) m_Random.GetRand(), (Uint2) m_Random.GetRand());
             break;
-        case eCIT_Path:
-            RANDOM_ROOT.AppendPath(x_GenerateRandomString());
+        case eCIT_ObjectRef:
+            RANDOM_ROOT.AppendObjectRef(x_GenerateRandomString());
             break;
         case eCIT_String:
             RANDOM_ROOT.AppendString(x_GenerateRandomString());
