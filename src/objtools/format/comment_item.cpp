@@ -721,9 +721,9 @@ string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
         FIELD_IS_SET_AND_IS(*pCategoryField, Data, Str) ) 
     {
         const string & sCategory = pCategoryField->GetData().GetStr();
-        result_oss << sCategory << endl;
+        result_oss << sCategory << '\n';
     } else {
-        result_oss << "(?UNKNOWN?)" << endl;
+        result_oss << "(?UNKNOWN?)" << '\n';
     }
 
     // get details field
@@ -762,7 +762,7 @@ string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
             }
 
             result_oss << sFieldName << ": "
-                       << find_iter->second->GetData().GetStr() << endl;
+                       << find_iter->second->GetData().GetStr() << '\n';
         }
     }
 
@@ -1631,7 +1631,7 @@ void CCommentItem::x_GetStringForOpticalMap_WriteFragmentLine(
     ostream & str, TSeqPos prevEndPos, TSeqPos thisEndPos, 
     TSeqPos uBioseqLength, EFragmentType eFragmentType)
 {
-    str << endl;
+    str << '\n';
     str << "*  " 
         << setw(7) << (1 + prevEndPos) 
         << ' ' 
@@ -1833,7 +1833,7 @@ string s_CreateHistCommentString
         text << " gi:";
         NcbiId(text, gis[count], do_html);
     }
-    text << '.' << endl;
+    text << '.' << '\n';
 
     return CNcbiOstrstreamToString(text);
 }

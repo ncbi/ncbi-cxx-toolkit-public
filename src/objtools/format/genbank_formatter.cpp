@@ -1132,7 +1132,7 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
     }
 
     // wrapping up here
-    result << "</div>" << endl;
+    result << "</div>" << '\n';
     result << "<pre class=\"genbank\">";
 
     result << first_line;

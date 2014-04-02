@@ -123,7 +123,7 @@ string CSAM_CIGAR_Formatter::x_GetTargetIdString(void) const
 void CSAM_CIGAR_Formatter::x_AddLines(const TLines& lines)
 {
     ITERATE(TLines, it, lines) {
-        m_Out << *it << endl;
+        m_Out << *it << '\n';
     }
 }
 
