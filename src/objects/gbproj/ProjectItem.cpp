@@ -60,7 +60,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // constructor
 CProjectItem::CProjectItem(void)
-    : m_ParentFolder(NULL)
 {
 }
 
@@ -198,22 +197,6 @@ bool CProjectItem::IsEnabled() const
     return true;
 }
 
-
-void CProjectItem::SetParentFolder(CProjectFolder* parent)
-{
-    m_ParentFolder = parent;
-}
-
-
-CProjectFolder* CProjectItem::GetParentFolder()
-{
-    return m_ParentFolder;
-}
-
-const CProjectFolder* CProjectItem::GetParentFolder() const
-{
-    return m_ParentFolder;
-}
 
 void CProjectItem::SetUserObject(CObject* object)
 {

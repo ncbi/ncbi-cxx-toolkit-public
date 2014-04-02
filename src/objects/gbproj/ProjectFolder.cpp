@@ -39,6 +39,7 @@
 
 // generated includes
 #include <objects/gbproj/ProjectFolder.hpp>
+#include <serial/iterator.hpp>
 
 // generated classes
 
@@ -53,17 +54,6 @@ CProjectFolder::~CProjectFolder(void)
 {
 }
 
-
-CProjectFolder* CProjectFolder::GetParentFolder()
-{
-    return m_ParentFolder;
-}
-
-
-void CProjectFolder::SetParentFolder(CProjectFolder* parent)
-{
-    m_ParentFolder = parent;
-}
 
 /// CIdSelector finds a Project Item by Id
 class CPrjItemSelector_Id : public CProjectFolder::IProjectItemVisitor
@@ -138,12 +128,64 @@ CProjectItem* CProjectFolder::FindProjectItemByLabel(const string& label)
 }
 
 
-CProjectItem* CProjectFolder::FindProjectItemById(CProjectItem::TId id,
-                                                  bool recursive)
+const CProjectItem* CProjectFolder::GetProjectItem(CProjectItem::TId id) const
 {
-    CPrjItemSelector_Id selector(id);
-    ForEachProjectItem(selector, recursive);
-    return selector.m_Item;
+    if (!CanGetItems())
+        return 0;
+
+    ITERATE (TItems, it, GetItems()) {
+        if ((*it)->GetId() == id) {
+            return *it;
+        }
+    }
+    return 0;
+}
+
+
+CProjectItem* CProjectFolder::GetProjectItem(CProjectItem::TId id)
+{
+    const CProjectItem* item = const_cast<const CProjectFolder&>(*this).GetProjectItem(id);
+    return const_cast<CProjectItem*>(item);
+}
+
+
+const CProjectFolder* CProjectFolder::GetProjectFolder(CProjectFolder::TId id) const
+{
+    if (!CanGetFolders())
+        return 0;
+
+    ITERATE (TFolders, it, GetFolders()) {
+        if ((*it)->GetId() == id) {
+            return *it;
+        }
+    }
+    return 0;
+}
+
+
+CProjectFolder* CProjectFolder::GetProjectFolder(CProjectFolder::TId id)
+{
+    const CProjectFolder* item = const_cast<const CProjectFolder&>(*this).GetProjectFolder(id);
+    return const_cast<CProjectFolder*>(item);
+}
+
+
+const CProjectItem* CProjectFolder::FindProjectItemById(CProjectItem::TId id) const
+{
+    const CProjectItem* item = 0;
+    for (CTypeConstIterator<CProjectItem> it(*this);  it;  ++it) {
+        if (it->GetId() == id) {
+            item = &*it;
+            break;
+        }
+    }
+    return item;
+}
+
+CProjectItem* CProjectFolder::FindProjectItemById(CProjectItem::TId id)
+{
+    const CProjectItem* item = const_cast<const CProjectFolder&>(*this).FindProjectItemById(id);
+    return const_cast<CProjectItem*>(item);
 }
 
 
@@ -156,20 +198,26 @@ CProjectItem* CProjectFolder::FindProjectItemByData(const CSerialObject& object,
 }
 
 
-CProjectFolder* CProjectFolder::FindChildFolderById(TId id, bool recursive)
+const CProjectFolder* CProjectFolder::FindChildFolderById(TId id) const
 {
-    NON_CONST_ITERATE(TFolders, it, SetFolders())    {
-        CProjectFolder& child = **it;
-        if(child.GetId() == id) {
-            return &child;
-        } else if(recursive)    {
-            CProjectFolder* res = child.FindChildFolderById(id, true);
-            if(res) {
-                return res;
-            }
+    const CProjectFolder* folder = 0;
+    for (CTypeConstIterator<CProjectFolder> it(*this);  it;  ++it) {
+        if (this == &*it)
+            continue;
+        if (it->GetId() == id) {
+            folder = &*it;
+            break;
         }
     }
-    return NULL;
+
+    return folder;
+}
+
+
+CProjectFolder* CProjectFolder::FindChildFolderById(TId id)
+{
+    const CProjectFolder* parent = const_cast<const CProjectFolder&>(*this).FindChildFolderById(id);
+    return const_cast<CProjectFolder*>(parent);
 }
 
 
@@ -184,15 +232,42 @@ CProjectFolder* CProjectFolder::FindChildFolderByTitle(const string& title)
     return NULL; // not found
 }
 
+const CProjectFolder* CProjectFolder::FindProjectItemFolder(CProjectItem::TId id) const
+{
+    for (CTypeConstIterator<CProjectFolder> it(*this);  it;  ++it) {
+        if (it->GetProjectItem(id)) {
+            return &*it;
+        }
+    }
+    return 0;
+}
+
+CProjectFolder* CProjectFolder::FindProjectItemFolder(CProjectItem::TId id)
+{
+    const CProjectFolder* parent = const_cast<const CProjectFolder&>(*this).FindProjectItemFolder(id);
+    return const_cast<CProjectFolder*>(parent);
+}
+
+CRef<CProjectFolder> CProjectFolder::RemoveProjectFolder(CProjectFolder::TId id)
+{
+    for (CTypeIterator<CProjectFolder> it(*this);  it;  ++it) {
+        CProjectFolder::TFolders& folders = it->SetFolders();
+        for (CProjectFolder::TFolders::iterator it2 = folders.begin(); it2 != folders.end(); ++it2) {
+            if ((*it2)->GetId() == id) {
+                CRef<CProjectFolder> removed(*it2);
+                folders.erase(it2);
+                return removed;
+            }
+        }
+    }
+    return CRef<CProjectFolder>();
+}
 
 void CProjectFolder::AddChildItem(CProjectItem& child_item)
 {
-    _ASSERT(child_item.GetParentFolder() == NULL);
-
     CRef<CProjectItem> ref(&child_item);
     TItems& items = SetItems();
     items.push_back(ref);
-    child_item.SetParentFolder(this);
 }
 
 
@@ -203,7 +278,6 @@ bool CProjectFolder::RemoveChildItem(CProjectItem& child_item)
         TItems& items = SetItems();
         TItems::iterator it = std::find(items.begin(), items.end(), ref);
         if(it != items.end())   {
-            child_item.SetParentFolder(NULL);
             items.erase(it);
             return true;
         }
@@ -219,7 +293,6 @@ bool CProjectFolder::RemoveChildItem(CProjectItem::TId id)
         NON_CONST_ITERATE(TItems, it, items)    {
             CProjectItem& item = **it;
             if(item.GetId() == id)   {
-                item.SetParentFolder(NULL);
                 items.erase(it);
                 return true;
             }
@@ -235,7 +308,6 @@ void CProjectFolder::RemoveAllChildItems()
         TItems& items = SetItems();
         NON_CONST_ITERATE(TItems, it, items)    {
             CProjectItem& item = **it;
-            item.SetParentFolder(NULL);
         }
         items.clear();
     }
@@ -244,25 +316,19 @@ void CProjectFolder::RemoveAllChildItems()
 
 void CProjectFolder::AddChildFolder(CProjectFolder& child_folder)
 {
-    _ASSERT(child_folder.GetParentFolder() == NULL);
-
     CRef<CProjectFolder> ref(&child_folder);
     TFolders& folders = SetFolders();
     folders.push_back(ref);
-    child_folder.SetParentFolder(this);
 }
 
 
 void CProjectFolder::RemoveChildFolder(CProjectFolder& child_folder)
 {
-    _ASSERT(child_folder.GetParentFolder() == this);
-
     TFolders& folders = SetFolders();
     CRef<CProjectFolder> ref(&child_folder);
     TFolders::iterator it = std::find(folders.begin(), folders.end(), ref);
 
     if(it !=  folders.end())    {
-        child_folder.SetParentFolder(NULL);
         folders.erase(it);
     } else {
         NCBI_THROW(CException, eUnknown, "Folder is not found.");
@@ -276,8 +342,6 @@ void CProjectFolder::RemoveChildFolder(CProjectFolder::TId folder_id)
     NON_CONST_ITERATE(TFolders, it, folders)  {
         CProjectFolder& sub_folder = **it;
         if(sub_folder.GetId() == folder_id) {
-            _ASSERT(sub_folder.GetParentFolder() == this);
-            sub_folder.SetParentFolder(NULL);
             folders.erase(it);
             return;
         }

@@ -83,10 +83,6 @@ public:
     /// enabled flag
     bool IsEnabled(void) const;
 
-    void    SetParentFolder(CProjectFolder* parent);
-    CProjectFolder* GetParentFolder();
-    const CProjectFolder* GetParentFolder() const;
-
     void     SetUserObject(CObject* object);
     CObject* GetUserObject();
 
@@ -96,7 +92,6 @@ private:
     CProjectItem& operator=(const CProjectItem& value);
 
 protected:
-    CProjectFolder* m_ParentFolder;
 	CRef<CObject>   m_UserObject;
 };
 

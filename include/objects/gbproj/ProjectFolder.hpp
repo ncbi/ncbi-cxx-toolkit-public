@@ -73,15 +73,27 @@ public:
 
     TId GetId() const { return m_Id; }
 
-    void    SetParentFolder(CProjectFolder* parent);
-    CProjectFolder* GetParentFolder();
+    const CProjectItem*   GetProjectItem(CProjectItem::TId id) const;
+    CProjectItem*         GetProjectItem(CProjectItem::TId id);
 
-    CProjectItem*   FindProjectItemById(CProjectItem::TId id, bool recursive);
+    const CProjectFolder* GetProjectFolder(CProjectFolder::TId id) const;
+    CProjectFolder*       GetProjectFolder(CProjectFolder::TId id);
+
+    CProjectItem*         FindProjectItemById(CProjectItem::TId id);
+    const CProjectItem*   FindProjectItemById(CProjectItem::TId id) const;
+
     CProjectItem*   FindProjectItemByLabel(const string& label);
     CProjectItem*   FindProjectItemByData(const CSerialObject& object, bool recursive);
 
-    CProjectFolder* FindChildFolderById(TId id, bool recursive);
     CProjectFolder* FindChildFolderByTitle(const string& title);
+
+    const CProjectFolder* FindChildFolderById(TId id) const;
+    CProjectFolder* FindChildFolderById(TId id);
+
+    const CProjectFolder* FindProjectItemFolder(CProjectItem::TId id) const;
+    CProjectFolder*       FindProjectItemFolder(CProjectItem::TId id);
+
+    CRef<CProjectFolder>  RemoveProjectFolder(CProjectFolder::TId id);
 
     void    AddChildItem(CProjectItem& child_item);
     bool    RemoveChildItem(CProjectItem& child_item);
@@ -104,7 +116,6 @@ protected:
     static CAtomicCounter   m_IdCounter;
 
     TId m_Id;
-    CProjectFolder* m_ParentFolder;
 };
 
 /////////////////// CProjectFolder inline methods
@@ -112,7 +123,6 @@ protected:
 // constructor
 inline
 CProjectFolder::CProjectFolder(void)
-:   m_ParentFolder(NULL)
 {
     m_Id = m_IdCounter.Add(1) - 1;
 }
