@@ -992,6 +992,7 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(UInt2UInts& o
     UInt2UInts sub_ord2idxes;
     unsigned idx;
     CRef <CClickableItem> new_item (new CClickableItem);
+    new_item->setting_name = "DISC_CATEGORY_HEADER";
     new_item->description = x_GetGrpName(e_grp);
     new_item->expanded = true;
     ITERATE (vector <string>, it, arr) {
@@ -1081,7 +1082,7 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
          x_AddListOutputTags(); 
       }
       string desc;
-      if (thisInfo.report == "Oncaller") {
+      if (thisInfo.report == fOncaller) {
           UInt2UInts ord2i_citem;
           map <EOnCallerGrp, string> grp_idx_str;
           vector <string> arr;

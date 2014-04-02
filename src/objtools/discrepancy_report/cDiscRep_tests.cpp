@@ -5457,7 +5457,7 @@ void CBioseq_on_locus_tags :: x_GetReport_dup(CRef <CClickableItem> c_item, cons
             cnt += it->second.size();
         }
      }
-     if (thisInfo.report != "Discrepancy" 
+     if (thisInfo.report != fDiscrepancy 
                && !c_item->subcategories.empty()) {
         if (setting_name == GetName_glodup()) {
           c_item->description = GetIsComment(cnt, "gene") 
