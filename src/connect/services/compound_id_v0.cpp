@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 #define CIT_HOST_FIELD_CODE 'H'
 #define CIT_PORT_FIELD_CODE ':'
 #define CIT_IPV4_SOCK_ADDR_FIELD_CODE '&'
-#define CIT_PATH_FIELD_CODE '/'
+#define CIT_OBJECTREF_FIELD_CODE '/'
 #define CIT_STRING_FIELD_CODE '"'
 #define CIT_BOOLEAN_FIELD_CODE 'Y' or 'N'
 #define CIT_FLAGS_FIELD_CODE '|'
@@ -74,7 +74,7 @@ static const char s_TypePrefix[eCIT_NumberOfTypes] = {
     /* eCIT_Host                */  CIT_HOST_FIELD_CODE,
     /* eCIT_Port                */  CIT_PORT_FIELD_CODE,
     /* eCIT_IPv4SockAddr        */  CIT_IPV4_SOCK_ADDR_FIELD_CODE,
-    /* eCIT_Path                */  CIT_PATH_FIELD_CODE,
+    /* eCIT_ObjectRef           */  CIT_OBJECTREF_FIELD_CODE,
     /* eCIT_String              */  CIT_STRING_FIELD_CODE,
     /* eCIT_Boolean             */  0,
     /* eCIT_Flags               */  CIT_FLAGS_FIELD_CODE,
@@ -174,7 +174,7 @@ void SIDPackingBuffer::PackCompoundID(SCompoundIDImpl* cid_impl)
         case eCIT_ServiceName:
         case eCIT_DatabaseName:
         case eCIT_Host:
-        case eCIT_Path:
+        case eCIT_ObjectRef:
         case eCIT_String:
         case eCIT_Label:
         case eCIT_SeqID:
@@ -390,8 +390,8 @@ CCompoundID SIDUnpacking::ExtractCID(SCompoundIDPoolImpl* pool_impl)
                 new_cid.AppendIPv4SockAddr(host, port);
             }
             break;
-        case CIT_PATH_FIELD_CODE:
-            new_cid.AppendPath(ExtractString());
+        case CIT_OBJECTREF_FIELD_CODE:
+            new_cid.AppendObjectRef(ExtractString());
             break;
         case CIT_STRING_FIELD_CODE:
             new_cid.AppendString(ExtractString());

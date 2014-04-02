@@ -57,7 +57,7 @@
 #define CIT_HOST_TYPE_NAME "host"
 #define CIT_PORT_TYPE_NAME "port"
 #define CIT_IPV4_SOCK_ADDR_TYPE_NAME "ipv4_sock_addr"
-#define CIT_PATH_TYPE_NAME "path"
+#define CIT_OBJECTREF_TYPE_NAME "object"
 #define CIT_STRING_TYPE_NAME "str"
 #define CIT_BOOLEAN_TYPE_NAME "bool"
 #define CIT_FLAGS_TYPE_NAME "flags"
@@ -87,7 +87,7 @@ static const char* s_TypeNames[eCIT_NumberOfTypes] = {
     /* eCIT_Host                */  CIT_HOST_TYPE_NAME,
     /* eCIT_Port                */  CIT_PORT_TYPE_NAME,
     /* eCIT_IPv4SockAddr        */  CIT_IPV4_SOCK_ADDR_TYPE_NAME,
-    /* eCIT_Path                */  CIT_PATH_TYPE_NAME,
+    /* eCIT_ObjectRef           */  CIT_OBJECTREF_TYPE_NAME,
     /* eCIT_String              */  CIT_STRING_TYPE_NAME,
     /* eCIT_Boolean             */  CIT_BOOLEAN_TYPE_NAME,
     /* eCIT_Flags               */  CIT_FLAGS_TYPE_NAME,
@@ -157,7 +157,7 @@ CIF_GET_IMPL(Uint4, GetIPv4Address, eCIT_IPv4Address &&
 CIF_GET_IMPL(string, GetHost, eCIT_Host, m_StringValue);
 CIF_GET_IMPL(Uint2, GetPort, eCIT_Port &&
         m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_Port);
-CIF_GET_IMPL(string, GetPath, eCIT_Path, m_StringValue);
+CIF_GET_IMPL(string, GetObjectRef, eCIT_ObjectRef, m_StringValue);
 CIF_GET_IMPL(string, GetString, eCIT_String, m_StringValue);
 CIF_GET_IMPL(bool, GetBoolean, eCIT_Boolean, m_BoolValue);
 CIF_GET_IMPL(Uint8, GetFlags, eCIT_Flags, m_Uint8Value);
@@ -270,7 +270,7 @@ void CCompoundID::AppendIPv4SockAddr(Uint4 ipv4_address, Uint2 port_number)
     new_field->m_IPv4SockAddr.m_Port = port_number;
 }
 
-CID_APPEND_IMPL(AppendPath, eCIT_Path, const string&, m_StringValue);
+CID_APPEND_IMPL(AppendObjectRef, eCIT_ObjectRef, const string&, m_StringValue);
 CID_APPEND_IMPL(AppendString, eCIT_String, const string&, m_StringValue);
 CID_APPEND_IMPL(AppendBoolean, eCIT_Boolean, bool, m_BoolValue);
 CID_APPEND_IMPL(AppendFlags, eCIT_Flags, Uint8, m_Uint8Value);
@@ -326,7 +326,7 @@ static void s_DumpCompoundID(CNcbiOstrstream& sstr, SCompoundIDImpl* cid_impl,
             case eCIT_ServiceName:
             case eCIT_DatabaseName:
             case eCIT_Host:
-            case eCIT_Path:
+            case eCIT_ObjectRef:
             case eCIT_String:
             case eCIT_Label:
             case eCIT_SeqID:
@@ -549,8 +549,8 @@ CCompoundID CCompoundIDDumpParser::ParseID()
                     field_type = eCIT_Cue;
                 break;
             case 'p':
-                if (field_type_name == CIT_PATH_TYPE_NAME)
-                    field_type = eCIT_Path;
+                if (field_type_name == CIT_OBJECTREF_TYPE_NAME)
+                    field_type = eCIT_ObjectRef;
                 else if (field_type_name == CIT_PORT_TYPE_NAME)
                     field_type = eCIT_Port;
                 break;
@@ -629,8 +629,8 @@ CCompoundID CCompoundIDDumpParser::ParseID()
                     result.AppendIPv4SockAddr(ipv4_address, x_ReadPortNumber());
                 }
                 break;
-            case eCIT_Path:
-                result.AppendPath(x_ReadString());
+            case eCIT_ObjectRef:
+                result.AppendObjectRef(x_ReadString());
                 break;
             case eCIT_String:
                 result.AppendString(x_ReadString());

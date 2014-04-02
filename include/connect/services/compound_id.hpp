@@ -69,8 +69,8 @@ enum ECompoundIDFieldType {
     eCIT_Host,          /* Host name or literal IPv4 or IPv6 address          */
     eCIT_Port,          /* 16-bit port number                                 */
     eCIT_IPv4SockAddr,  /* 32-bit IPv4 address followed by 16-bit port number */
-    eCIT_Path,          /* Pathname or URI                                    */
-    eCIT_String,        /* Arbitrary single byte character string             */
+    eCIT_ObjectRef,     /* Object or resource: URI (URL, URN), OID, pathname  */
+    eCIT_String,        /* Arbitrary single-byte character string             */
     eCIT_Boolean,       /* Boolean value                                      */
     eCIT_Flags,         /* Combination of binary flags stored as a number     */
     eCIT_Label,         /* Application-specific field prefix, tag, label      */
@@ -159,9 +159,9 @@ class NCBI_XCONNECT_EXPORT CCompoundIDField
     /// eCIT_Port nor eCIT_IPv4SockAddr.
     Uint2 GetPort() const;
 
-    /// Return the path or URI that this field contains.
-    /// @throw CCompoundIDException if GetType() != eCIT_Path.
-    string GetPath() const;
+    /// Return the object or resource ID that this field contains.
+    /// @throw CCompoundIDException if GetType() != eCIT_ObjectRef.
+    string GetObjectRef() const;
 
     /// Return the string value that this field contains.
     /// @throw CCompoundIDException if GetType() != eCIT_String.
@@ -258,8 +258,8 @@ class NCBI_XCONNECT_EXPORT CCompoundID
     /// Append an eCIT_IPv4SockAddr field at the end of this compound ID.
     void AppendIPv4SockAddr(Uint4 ipv4_address, Uint2 port_number);
 
-    /// Append an eCIT_Path field at the end of this compound ID.
-    void AppendPath(const string& path);
+    /// Append an eCIT_ObjectRef field at the end of this compound ID.
+    void AppendObjectRef(const string& loc);
 
     /// Append an eCIT_String field at the end of this compound ID.
     void AppendString(const string& string_value);
