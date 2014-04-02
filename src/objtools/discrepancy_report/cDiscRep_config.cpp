@@ -1304,6 +1304,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     }
 
     strtmp = (args.find("X") != args.end())? args["X"] : kEmptyStr;
+cerr << "X  " << strtmp << endl;
     if (strtmp == "ALL") {
        m_all_expanded = true;     
     }
@@ -3194,7 +3195,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
             // adjustment of setting_name
             if (strtmp.find("global") != string::npos 
                    || strtmp.find("oncaller") != string::npos) {
-               (*it)->setting_name = strtmp.substr(0, strtmp.find_last_of("_"));
+               c_item->setting_name= strtmp.substr(0, strtmp.find_last_of("_"));
             }
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
