@@ -66,7 +66,8 @@ void CDiscRepApp::Init(void)
     arg_desc->AddDefaultKey("b", "BatchBinary", 
                               "Batch File is Binary: 'T' = true, 'F' = false", 
                               CArgDescriptions::eBoolean, "F");
-    arg_desc->AddDefaultKey("B", "BigSequenceReport", "Big Sequence Report",
+    arg_desc->AddDefaultKey("B", "BigSequenceReport", 
+                             "Big Sequence Report: 'T' = true, 'F' = false",
                               CArgDescriptions::eBoolean, "F");
     arg_desc->AddOptionalKey("d", "DisableTests", 
                                "List of disabled tests, seperated by ','",
@@ -85,6 +86,9 @@ void CDiscRepApp::Init(void)
                    CArgDescriptions::eString, "Asndisc");
     arg_desc->AddOptionalKey("r", "OutPath", "Output Directory", 
                               CArgDescriptions::eString);
+     arg_desc->AddDefaultKey("R", "Remote", 
+                          "Allow GenBank data loader: 'T' = true, 'F' = false",
+                           CArgDescriptions::eBoolean, "T");
     arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", 
                               CArgDescriptions::eString, ".dr");
     arg_desc->AddDefaultKey("S", "SummaryReport", 
@@ -107,15 +111,20 @@ int CDiscRepApp :: Run(void)
     
     try {
        string report = args["P"].AsString();
-       if (report == "t" || report == "s") report = "Asndisc";
-       if (report == "bt") report = "BigSequence";
+       ETestCategoryFlags test_cate = fAsndisc;
+        if (report == "t" || report == "s") {
+           test_cate = fAsndisc;
+        }
+        if (report == "bt") {
+            test_cate = fBigSequence;
+        }
 
        CRef <DiscRepNmSpc::CRepConfig> 
-           config( DiscRepNmSpc::CRepConfig :: factory(report) );
+           config( DiscRepNmSpc::CRepConfig :: factory(test_cate) );
        CRef <IRWRegistry> reg(0);
        if (CFile("disc_report.ini").Exists()) {
            CMetaRegistry:: SEntry 
-                    entry = CMetaRegistry :: Load("disc_report.ini");
+                 entry = CMetaRegistry :: Load("disc_report.ini");
            reg.Reset(entry.registry);
        }
        config->InitParams(reg);
