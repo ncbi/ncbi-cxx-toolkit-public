@@ -153,6 +153,8 @@ private:
     CRef<CScope> BuildScope(void);
 	bool x_IsReportableStructuredComment(const CSeqdesc& desc);
 
+    bool x_ResolveSuppliedBioSampleAccession(vector<string>& biosample_ids);
+
     // for mode 3, biosample_push
     void UpdateBioSource (CBioseq_Handle bh, const CBioSource& src);
     void x_ClearCoordinatedSubSources(CBioSource& src);
@@ -195,6 +197,8 @@ private:
     bool m_FirstSeqOnly;
     string m_IDPrefix;
     string m_HUPDate;
+    string m_BioSampleAccession;
+    string m_BioProjectAccession;
 
     size_t m_Processed;
     size_t m_Unprocessed;
@@ -215,6 +219,7 @@ CBiosampleChkApp::CBiosampleChkApp(void) :
     m_LogStream(0), m_Mode(e_report_diffs),
     m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), 
     m_FirstSeqOnly(false), m_IDPrefix(""), m_HUPDate(""),
+    m_BioSampleAccession(""), m_BioProjectAccession(""),
     m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
@@ -269,6 +274,11 @@ void CBiosampleChkApp::Init(void)
     
 	arg_desc->AddOptionalKey(
 		"P", "Prefix", "StructuredCommentPrefix", CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey(
+        "biosample", "BioSampleAccession", "BioSample Accession to use for sequences in record. Report error if sequences contain a reference to a different BioSample accession.", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey(
+        "bioproject", "BioProjectAccession", "BioProject Accession to use for sequences in record. Report error if sequences contain a reference to a different BioProject accession.", CArgDescriptions::eString);
 
 
     // Program description
@@ -561,6 +571,8 @@ int CBiosampleChkApp::Run(void)
     m_FirstSeqOnly = args["M"].AsBoolean();
     m_IDPrefix = args["R"] ? args["R"].AsString() : "";
     m_HUPDate = args["HUP"] ? args["HUP"].AsString() : "";
+    m_BioSampleAccession = args["biosample"] ? args["biosample"].AsString() : "";
+    m_BioProjectAccession = args["bioproject"] ? args["bioproject"].AsString() : "";
 
     if (args["o"]) {
         if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
@@ -1125,6 +1137,27 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
 		return;
 	}
 	vector<string> bioproject_ids = GetBioProjectIDs(bh);
+    if (bioproject_ids.size() > 0) {
+        if (!NStr::IsBlank(m_BioProjectAccession)) {
+            bool found = false;
+            ITERATE(vector<string>, it, bioproject_ids) {
+                if (NStr::EqualNocase(*it, m_BioProjectAccession)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                // error
+                string label = GetBestBioseqLabel(bh);
+                *m_LogStream << label << " has conflicting BioProject ID " << bioproject_ids[0] << endl;
+		        return;
+	        }
+            bioproject_ids.clear();
+            bioproject_ids.push_back(m_BioProjectAccession);
+        }
+    } else if (!NStr::IsBlank(m_BioProjectAccession)) {
+        bioproject_ids.push_back(m_BioProjectAccession);
+    }
 
     CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
 	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
@@ -1309,6 +1342,32 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
 }
 
 
+bool CBiosampleChkApp::x_ResolveSuppliedBioSampleAccession(vector<string>& biosample_ids)
+{
+    if (!NStr::IsBlank(m_BioSampleAccession)) {
+        if (biosample_ids.size() == 0) {
+            // use supplied BioSample accession
+            biosample_ids.push_back(m_BioSampleAccession);
+        } else {
+            // make sure supplied BioSample accession is listed
+            bool found = false;
+            ITERATE(vector<string>, it, biosample_ids) {
+                if (NStr::EqualNocase(*it, m_BioSampleAccession)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+	        }
+            biosample_ids.clear();
+            biosample_ids.push_back(m_BioSampleAccession);
+        }
+    }
+    return true;
+}
+
+
 void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 {
     CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
@@ -1330,6 +1389,13 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
     }
 
     vector<string> biosample_ids = GetBiosampleIDs(bh);
+
+    if (!x_ResolveSuppliedBioSampleAccession(biosample_ids)) {
+        // error
+        string label = GetBestBioseqLabel(bh);
+        *m_LogStream << label << " has conflicting BioSample Accession " << biosample_ids[0] << endl;
+        return;
+    }
 
     if (biosample_ids.size() == 0) {
         // for report mode, do not report if no biosample ID
@@ -1415,6 +1481,13 @@ void CBiosampleChkApp::PushToRecord(CBioseq_Handle bh)
 void CBiosampleChkApp::ProcessBioseqForUpdate(CBioseq_Handle bh)
 {
     vector<string> biosample_ids = GetBiosampleIDs(bh);
+
+    if (!x_ResolveSuppliedBioSampleAccession(biosample_ids)) {
+        // error
+        string label = GetBestBioseqLabel(bh);
+        *m_LogStream << label << " has conflicting BioSample Accession " << biosample_ids[0] << endl;
+        return;
+    }
 
     if (biosample_ids.size() == 0) {
         // for report mode, do not report if no biosample ID
@@ -1583,6 +1656,7 @@ void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src
     } else {
         const CBioSource& bs = src_desc_ci->GetSource();
         CBioSource* old_src = const_cast<CBioSource *> (&bs);
+
         if (src.IsSetOrg()) {
             old_src->SetOrg().Assign(src.GetOrg());
         } else {
