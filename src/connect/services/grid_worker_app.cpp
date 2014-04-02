@@ -152,6 +152,14 @@ void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
             "File to save the process ID and the control port number to.",
             CArgDescriptions::eOutputFile);
 
+    arg_desc->AddOptionalKey("offline-input-dir", "in_dir_path",
+            "Directory populated with job inputs - one file per job.",
+            CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("offline-output-dir", "out_dir_path",
+            "Directory to store job outputs. Requires '-offline-input-dir'",
+            CArgDescriptions::eString);
+
     CNcbiApplication::SetupArgDescriptions(arg_desc);
 }
 
@@ -167,7 +175,8 @@ int CGridWorkerApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    return m_WorkerNode->Run(
+    return args["offline-input-dir"] ? m_WorkerNode->OfflineRun() :
+        m_WorkerNode->Run(
 #ifdef NCBI_OS_UNIX
             args["nodaemon"] ? eOff :
                     args["daemon"] ? eOn : eDefault,

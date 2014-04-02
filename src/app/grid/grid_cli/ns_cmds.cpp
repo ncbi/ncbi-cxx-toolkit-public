@@ -36,6 +36,7 @@
 
 #include <connect/services/remote_app.hpp>
 #include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/ns_job_serializer.hpp>
 
 #include <corelib/rwstream.hpp>
 
@@ -316,7 +317,7 @@ bool CBatchSubmitAttrParser::NextAttribute()
     default:
         if (next_attr_type != CAttrListParser::eAttributeWithValue) {
             NCBI_THROW_FMT(CArgException, eInvalidArg,
-                "attribute " << attr_name << " requires a value" << ATTR_POS);
+                "attribute " << attr_name << " requires a value" ATTR_POS);
         }
     }
 
@@ -349,23 +350,25 @@ void CGridCommandLineInterfaceApp::PrintJobStatusNotification(
 }
 
 void CGridCommandLineInterfaceApp::CheckJobInputStream(
-        CNcbiOstream& job_input_stream)
+        CNcbiOstream& job_input_ostream)
 {
-    if (job_input_stream.fail()) {
+    if (job_input_ostream.fail()) {
         NCBI_THROW(CIOException, eWrite, "Error while writing job input");
     }
 }
 
-void CGridCommandLineInterfaceApp::PrepareRemoteAppJobInput(const string& args,
+void CGridCommandLineInterfaceApp::PrepareRemoteAppJobInput(
+        size_t max_embedded_input_size,
+        const string& args,
         CNcbiIstream& remote_app_stdin,
-        CNcbiOstream& job_input_stream)
+        CNcbiOstream& job_input_ostream)
 {
     CRemoteAppRequest request(m_GridClient->GetNetCacheAPI());
 
     // Roughly estimate the maximum embedded input size.
-    size_t input_size = m_GridClient->GetMaxServerInputSize();
-    request.SetMaxInlineSize(input_size == 0 ? kMax_UInt :
-            input_size - input_size / 10);
+    request.SetMaxInlineSize(max_embedded_input_size == 0 ?
+            numeric_limits<size_t>().max() :
+            max_embedded_input_size - max_embedded_input_size / 10);
 
     request.SetCmdLine(args);
 
@@ -373,7 +376,7 @@ void CGridCommandLineInterfaceApp::PrepareRemoteAppJobInput(const string& args,
     if (!remote_app_stdin.eof())
         NcbiStreamCopy(request.GetStdIn(), remote_app_stdin);
 
-    request.Send(job_input_stream);
+    request.Send(job_input_ostream);
 }
 
 struct SBatchSubmitRecord {
@@ -441,25 +444,53 @@ bool SBatchSubmitRecord::LoadNextRecord()
     return true;
 }
 
+void CGridCommandLineInterfaceApp::x_LoadJobInput(
+        size_t max_embedded_input_size, CNcbiOstream &job_input_ostream)
+{
+    if (IsOptionSet(eRemoteAppArgs)) {
+        if (!IsOptionSet(eInput))
+            PrepareRemoteAppJobInput(max_embedded_input_size,
+                    m_Opts.remote_app_args,
+                    *m_Opts.input_stream, job_input_ostream);
+        else {
+            CNcbiStrstream remote_app_stdin;
+            remote_app_stdin.write(m_Opts.input.data(),
+                    m_Opts.input.length());
+            PrepareRemoteAppJobInput(max_embedded_input_size,
+                    m_Opts.remote_app_args,
+                    remote_app_stdin, job_input_ostream);
+        }
+    } else if (IsOptionSet(eInput))
+        job_input_ostream.write(m_Opts.input.data(), m_Opts.input.length());
+    else
+        NcbiStreamCopy(job_input_ostream, *m_Opts.input_stream);
+
+    CheckJobInputStream(job_input_ostream);
+}
+
 void CGridCommandLineInterfaceApp::SubmitJob_Batch()
 {
     SBatchSubmitRecord job_input_record(m_Opts.input_stream);
 
+    size_t max_embedded_input_size = m_GridClient->GetMaxServerInputSize();
+
     if (m_Opts.batch_size <= 1) {
         while (job_input_record.LoadNextRecord()) {
-            CNcbiOstream& job_input_stream(m_GridClient->GetOStream());
+            CNcbiOstream& job_input_ostream(m_GridClient->GetOStream());
 
             if (job_input_record.remote_app_args_defined) {
                 CNcbiStrstream remote_app_stdin;
-                remote_app_stdin << job_input_record.job_input;
-                PrepareRemoteAppJobInput(job_input_record.remote_app_args,
-                        remote_app_stdin, job_input_stream);
+                remote_app_stdin.write(job_input_record.job_input.data(),
+                        job_input_record.job_input.length());
+                PrepareRemoteAppJobInput(max_embedded_input_size,
+                        job_input_record.remote_app_args,
+                        remote_app_stdin, job_input_ostream);
             } else {
-                job_input_stream.write(job_input_record.job_input.data(),
+                job_input_ostream.write(job_input_record.job_input.data(),
                         job_input_record.job_input.length());
             }
 
-            CheckJobInputStream(job_input_stream);
+            CheckJobInputStream(job_input_ostream);
 
             if (!job_input_record.affinity.empty())
                 m_GridClient->SetJobAffinity(job_input_record.affinity);
@@ -491,18 +522,20 @@ void CGridCommandLineInterfaceApp::SubmitJob_Batch()
             }
             batch_submitter.PrepareNextJob();
 
-            CNcbiOstream& job_input_stream(batch_submitter.GetOStream());
+            CNcbiOstream& job_input_ostream(batch_submitter.GetOStream());
 
             if (job_input_record.remote_app_args_defined) {
                 CNcbiStrstream remote_app_stdin;
-                remote_app_stdin << job_input_record.job_input;
-                PrepareRemoteAppJobInput(job_input_record.remote_app_args,
-                        remote_app_stdin, job_input_stream);
+                remote_app_stdin.write(job_input_record.job_input.data(),
+                        job_input_record.job_input.length());
+                PrepareRemoteAppJobInput(max_embedded_input_size,
+                        job_input_record.remote_app_args,
+                        remote_app_stdin, job_input_ostream);
             } else
-                job_input_stream.write(job_input_record.job_input.data(),
+                job_input_ostream.write(job_input_record.job_input.data(),
                         job_input_record.job_input.length());
 
-            CheckJobInputStream(job_input_stream);
+            CheckJobInputStream(job_input_ostream);
 
             if (!job_input_record.affinity.empty())
                 batch_submitter.SetJobAffinity(job_input_record.affinity);
@@ -527,27 +560,41 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 {
     SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
-    if (IsOptionSet(eBatch))
+    if (IsOptionSet(eBatch)) {
+        if (IsOptionSet(eJobInputDir)) {
+            NCBI_THROW(CArgException, eInvalidArg, "'--" JOB_INPUT_DIR_OPTION
+                "' option is not supported in batch mode");
+        }
         SubmitJob_Batch();
-    else {
-        CNcbiOstream& job_input_stream = m_GridClient->GetOStream();
+    } else if (IsOptionSet(eJobInputDir)) {
+        CNetScheduleJob job;
 
-        if (IsOptionSet(eRemoteAppArgs)) {
-            if (!IsOptionSet(eInput))
-                PrepareRemoteAppJobInput(m_Opts.remote_app_args,
-                        NcbiCin, job_input_stream);
-            else {
-                CNcbiStrstream remote_app_stdin;
-                remote_app_stdin << m_Opts.input << NcbiEnds;
-                PrepareRemoteAppJobInput(m_Opts.remote_app_args,
-                        remote_app_stdin, job_input_stream);
-            }
-        } else if (IsOptionSet(eInput))
-            job_input_stream.write(m_Opts.input.data(), m_Opts.input.length());
-        else
-            NcbiStreamCopy(job_input_stream, *m_Opts.input_stream);
+        job.affinity = m_Opts.affinity;
+        job.group = m_Opts.job_group;
 
-        CheckJobInputStream(job_input_stream);
+        CCompoundID job_key = m_CompoundIDPool.NewID(eCIC_GenericID);
+        job_key.AppendCurrentTime();
+        job_key.AppendRandom();
+        job.job_id = job_key.ToString();
+
+        {{
+            CStringOrBlobStorageWriter job_input_writer(
+                    numeric_limits<size_t>().max(), NULL, job.input);
+            CWStream job_input_ostream(&job_input_writer, 0, NULL);
+
+            x_LoadJobInput(0, job_input_ostream);
+        }}
+
+        CNetScheduleJobSerializer job_serializer(job, m_CompoundIDPool);
+        job_serializer.SaveJobInput(m_Opts.job_input_dir, m_NetCacheAPI);
+
+        PrintLine(job.job_id);
+    } else {
+        CNcbiOstream& job_input_ostream = m_GridClient->GetOStream();
+
+        size_t max_embedded_input_size = m_GridClient->GetMaxServerInputSize();
+
+        x_LoadJobInput(max_embedded_input_size, job_input_ostream);
 
         m_GridClient->SetJobGroup(m_Opts.job_group);
         m_GridClient->SetJobAffinity(m_Opts.affinity);

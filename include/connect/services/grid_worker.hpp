@@ -231,8 +231,8 @@ public:
 
     /// Put progress message
     ///
-    void          PutProgressMessage(const string& msg,
-                                     bool send_immediately = false);
+    virtual void PutProgressMessage(const string& msg,
+            bool send_immediately = false);
 
     /// Get a stream where a job can write its result
     ///
@@ -295,7 +295,7 @@ public:
     ///    successfully finished.
     /// 3. The job has expired.
     ///
-    CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
+    virtual CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
 
     /// Get a name of a queue where this node is connected to.
     ///
@@ -316,7 +316,7 @@ public:
     /// @param runtime_inc
     ///    Estimated time in seconds(from the current moment) to
     ///    finish the job.
-    void JobDelayExpiration(unsigned runtime_inc);
+    virtual void JobDelayExpiration(unsigned runtime_inc);
 
     /// Check if logging was requested in config file
     ///
@@ -331,8 +331,6 @@ public:
     const string& GetJobOutput() const { return m_Job.output; }
 
     CNetScheduleAPI::TJobMask GetJobMask() const { return m_Job.mask; }
-
-    size_t GetMaxServerOutputSize();
 
     unsigned int GetJobNumber() const  { return m_JobNumber; }
 
@@ -356,12 +354,7 @@ public:
 
     CWorkerNodeJobContext(CGridWorkerNode& worker_node);
 
-private:
-    string& SetJobOutput()             { return m_Job.output; }
-    size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
-    bool IsJobExclusive() const        { return m_ExclusiveJob; }
-    const string& GetErrMsg() const    { return m_Job.error_msg; }
-
+protected:
     friend class CJobCommitterThread;
     friend class CWorkerNodeRequest;
     /// Only a CGridWorkerNode can create an instance of this class
@@ -371,8 +364,7 @@ private:
     void CheckIfCanceled();
 
     void x_PrintRequestStop();
-    void x_RunJob();
-    void x_SendJobResults();
+    virtual void x_RunJob();
 
     void Reset();
 
@@ -401,6 +393,30 @@ private:
     /// are prohibited
     CWorkerNodeJobContext(const CWorkerNodeJobContext&);
     CWorkerNodeJobContext& operator=(const CWorkerNodeJobContext&);
+};
+
+class NCBI_XCONNECT_EXPORT COfflineJobContext : public CWorkerNodeJobContext
+{
+public:
+    COfflineJobContext(CGridWorkerNode& worker_node,
+            const string& output_dir_name,
+            CCompoundIDPool::TInstance compound_id_pool) :
+        CWorkerNodeJobContext(worker_node),
+        m_OutputDirName(output_dir_name),
+        m_CompoundIDPool(compound_id_pool)
+    {
+    }
+
+protected:
+    virtual void PutProgressMessage(const string& msg,
+        bool send_immediately = false);
+    virtual CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
+    virtual void JobDelayExpiration(unsigned runtime_inc);
+    virtual void x_RunJob();
+
+private:
+    string m_OutputDirName;
+    CCompoundIDPool m_CompoundIDPool;
 };
 
 class CWorkerNodeIdleThread;
@@ -630,6 +646,8 @@ public:
 #endif
             string procinfo_file_name = kEmptyStr);
 
+    int OfflineRun();
+
     void RequestShutdown();
 
     void ForceSingleThread() { m_SingleThreadForced = true; }
@@ -705,11 +723,16 @@ public:
     IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
 private:
+    void x_WNCoreInit();
+    void x_StopWorkerThreads();
+    int x_WNCleanUp();
+
     auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
 
     CNetCacheAPI m_NetCacheAPI;
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleExecutor m_NSExecutor;
+    auto_ptr<CStdPoolOfThreads> m_ThreadPool;
 
     unsigned int                 m_MaxThreads;
     unsigned int                 m_NSTimeout;
@@ -733,6 +756,7 @@ private:
     IWorkerNodeJob* GetJobProcessor();
 
     friend class CWorkerNodeJobContext;
+    friend class COfflineJobContext;
 
     void x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
                             IWorkerNodeJobWatcher::EEvent event);
@@ -800,9 +824,11 @@ private:
 
     friend class CWNJobWatcher;
     friend class CWorkerNodeRequest;
+public:
     void x_ReturnJob(const CNetScheduleJob& job);
-    bool x_AreMastersBusy() const;
 
+private:
+    bool x_AreMastersBusy() const;
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 
     CRef<CJobCommitterThread> m_JobCommitterThread;
@@ -815,6 +841,7 @@ private:
     bool m_LogRequested;
     bool m_ProgressLogRequested;
     size_t m_QueueEmbeddedOutputSize;
+    unsigned m_ThreadPoolTimeout;
 };
 
 inline const string& CGridWorkerNode::GetQueueName() const

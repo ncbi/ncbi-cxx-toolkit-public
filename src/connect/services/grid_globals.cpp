@@ -31,8 +31,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include "grid_debug_context.hpp"
-
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/error_codes.hpp>
 
@@ -194,15 +192,11 @@ void CWNJobWatcher::x_KillNode(CGridWorkerNode& worker)
         if (!it->second.flag) {
             worker.x_ReturnJob(job);
         } else {
-            CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-            if (!debug_context || debug_context->GetDebugMode() !=
-                    CGridDebugContext::eGDC_Execute) {
-                job.error_msg = "Job execution time exceeded " +
-                        NStr::NumericToString(
-                                unsigned(it->second.elasped_time.Elapsed()));
-                job.error_msg += " seconds.";
-                worker.GetNSExecutor().PutFailure(job);
-            }
+            job.error_msg = "Job execution time exceeded " +
+                    NStr::NumericToString(
+                            unsigned(it->second.elasped_time.Elapsed()));
+            job.error_msg += " seconds.";
+            worker.GetNSExecutor().PutFailure(job);
         }
     }
     TPid cpid = CProcess::GetCurrentPid();

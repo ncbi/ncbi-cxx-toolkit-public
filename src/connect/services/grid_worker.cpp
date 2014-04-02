@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 
 #include "wn_commit_thread.hpp"
-#include "grid_debug_context.hpp"
 #include "netschedule_api_impl.hpp"
 
 #include <connect/services/grid_globals.hpp>
@@ -41,6 +40,7 @@
 #include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/ns_job_serializer.hpp>
 
 #include <connect/ncbi_socket.hpp>
 
@@ -191,7 +191,6 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node) :
     m_NetCacheAPI(worker_node.GetNetCacheAPI()),
     m_CommitExpiration(0, 0)
 {
-    m_NetScheduleExecutor->m_WorkerNodeMode = true;
 }
 
 const string& CWorkerNodeJobContext::GetQueueName() const
@@ -205,23 +204,18 @@ const string& CWorkerNodeJobContext::GetClientName() const
 
 CNcbiIstream& CWorkerNodeJobContext::GetIStream()
 {
-    if (m_NetCacheAPI) {
-        IReader* reader = new CStringOrBlobStorageReader(GetJobInput(),
-                m_NetCacheAPI, &SetJobInputBlobSize());
-        m_RStream.reset(new CRStream(reader, 0, 0,
-                CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions));
-        m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
-        return *m_RStream;
-    }
-    NCBI_THROW(CBlobStorageException, eReader, "Reader is not set.");
+    IReader* reader = new CStringOrBlobStorageReader(GetJobInput(),
+            m_NetCacheAPI, &m_InputBlobSize);
+    m_RStream.reset(new CRStream(reader, 0, 0,
+            CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions));
+    m_RStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+    return *m_RStream;
 }
 CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 {
-    if (!m_NetCacheAPI) {
-        NCBI_THROW(CBlobStorageException, eWriter, "Writer is not set.");
-    }
-    m_Writer.reset(new CStringOrBlobStorageWriter(GetMaxServerOutputSize(),
-            m_NetCacheAPI, SetJobOutput()));
+    m_Writer.reset(new CStringOrBlobStorageWriter(
+            m_WorkerNode.GetServerOutputSize(),
+                    m_NetCacheAPI, GetJob().output));
     m_WStream.reset(new CWStream(m_Writer.get(), 0, 0,
             CRWStreambuf::fLeakExceptions));
     m_WStream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
@@ -230,21 +224,20 @@ CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 
 void CWorkerNodeJobContext::CloseStreams()
 {
-    m_ProgressMsgThrottler.Reset(1);
-    m_StatusThrottler.Reset(1,
-            CTimeSpan(m_WorkerNode.GetCheckStatusPeriod(), 0));
+    try {
+        m_ProgressMsgThrottler.Reset(1);
+        m_StatusThrottler.Reset(1,
+                CTimeSpan(m_WorkerNode.GetCheckStatusPeriod(), 0));
 
-    m_RStream.reset();
-    m_WStream.reset();
+        m_RStream.reset();
+        m_WStream.reset();
 
-    if (m_Writer.get() != NULL) {
-        m_Writer->Close();
-        m_Writer.reset();
+        if (m_Writer.get() != NULL) {
+            m_Writer->Close();
+            m_Writer.reset();
+        }
     }
-
-    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-    if (debug_context)
-        debug_context->DumpOutput(GetJobKey(), GetJobOutput(), GetJobNumber());
+    NCBI_CATCH_ALL_X(61, "Could not close IO streams");
 }
 
 void CWorkerNodeJobContext::CommitJob()
@@ -283,29 +276,16 @@ void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
     }
 
     try {
-        CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-        if (!debug_context ||
-            debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-
-            if (m_Job.progress_msg.empty() ) {
-                m_NetScheduleExecutor.GetProgressMsg(m_Job);
-            }
-            if (m_NetCacheAPI) {
-                if (!m_Job.progress_msg.empty())
-                    m_NetCacheAPI.PutData(m_Job.progress_msg,
-                            msg.data(), msg.length());
-                else {
-                    m_Job.progress_msg =
-                            m_NetCacheAPI.PutData(msg.data(), msg.length());
-
-                    m_NetScheduleExecutor.PutProgressMsg(m_Job);
-                }
-            }
+        if (m_Job.progress_msg.empty() ) {
+            m_NetScheduleExecutor.GetProgressMsg(m_Job);
         }
-        if (debug_context) {
-            debug_context->DumpProgressMessage(GetJobKey(),
-                                               msg,
-                                               GetJobNumber());
+        if (!m_Job.progress_msg.empty())
+            m_NetCacheAPI.PutData(m_Job.progress_msg, msg.data(), msg.length());
+        else {
+            m_Job.progress_msg =
+                    m_NetCacheAPI.PutData(msg.data(), msg.length());
+
+            m_NetScheduleExecutor.PutProgressMsg(m_Job);
         }
     }
     catch (exception& ex) {
@@ -318,7 +298,7 @@ void CWorkerNodeJobContext::JobDelayExpiration(unsigned runtime_inc)
     try {
         m_NetScheduleExecutor.JobDelayExpiration(GetJobKey(), runtime_inc);
     }
-    catch(exception& ex) {
+    catch (exception& ex) {
         ERR_POST_X(8, "CWorkerNodeJobContext::JobDelayExpiration: " <<
                 ex.what());
     }
@@ -331,10 +311,7 @@ bool CWorkerNodeJobContext::IsLogRequested() const
 
 CNetScheduleAdmin::EShutdownLevel CWorkerNodeJobContext::GetShutdownLevel()
 {
-    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-    if ((!debug_context || debug_context->GetDebugMode() !=
-                CGridDebugContext::eGDC_Execute) &&
-            m_StatusThrottler.Approve(CRequestRateControl::eErrCode))
+    if (m_StatusThrottler.Approve(CRequestRateControl::eErrCode))
         try {
             switch (m_NetScheduleExecutor.GetJobStatus(GetJobKey())) {
             case CNetScheduleAPI::eRunning:
@@ -370,7 +347,7 @@ void CWorkerNodeJobContext::Reset()
 
     m_JobCommitted = eNotCommitted;
     m_InputBlobSize = 0;
-    m_ExclusiveJob = m_Job.mask & CNetScheduleAPI::eExclusiveJob;
+    m_ExclusiveJob = (m_Job.mask & CNetScheduleAPI::eExclusiveJob) != 0;
 
     m_RequestContext->Reset();
 }
@@ -384,11 +361,6 @@ void CWorkerNodeJobContext::RequestExclusiveMode()
         }
         m_ExclusiveJob = true;
     }
-}
-
-size_t CWorkerNodeJobContext::GetMaxServerOutputSize()
-{
-    return m_WorkerNode.GetServerOutputSize();
 }
 
 const char* CWorkerNodeJobContext::GetCommitStatusDescription(
@@ -457,10 +429,6 @@ void CWorkerNodeJobContext::x_PrintRequestStop()
 
 void CWorkerNodeJobContext::x_RunJob()
 {
-    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-    if (debug_context != NULL)
-        debug_context->DumpInput(GetJobInput(), GetJobNumber());
-
     m_RequestContext->SetRequestID((int) GetJobNumber());
 
     if (!m_Job.client_ip.empty())
@@ -520,12 +488,9 @@ void CWorkerNodeJobContext::x_RunJob()
             CommitJobWithFailure(e.what());
     }
 
-    try {
-        CloseStreams();
-    }
-    NCBI_CATCH_ALL_X(61, "Could not close IO streams");
+    CloseStreams();
 
-    if (m_WorkerNode.IsExclusiveMode() && IsJobExclusive())
+    if (m_WorkerNode.IsExclusiveMode() && m_ExclusiveJob)
         m_WorkerNode.LeaveExclusiveMode();
 
     switch (GetCommitStatus()) {
@@ -568,39 +533,6 @@ void CWorkerNodeJobContext::x_RunJob()
                 GetCleanupEventSource())->CallEventHandlers();
 
     m_WorkerNode.m_JobCommitterThread->PutJobContextBackAndCommitJob(this);
-}
-
-void CWorkerNodeJobContext::x_SendJobResults()
-{
-    switch (GetCommitStatus()) {
-    case eDone:
-        {
-            CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-
-            if (!debug_context || debug_context->GetDebugMode() !=
-                    CGridDebugContext::eGDC_Execute) {
-                m_NetScheduleExecutor.PutResult(m_Job);
-            }
-        }
-        break;
-
-    case eFailure:
-        {
-            CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-
-            if (!debug_context || debug_context->GetDebugMode() !=
-                    CGridDebugContext::eGDC_Execute)
-                m_NetScheduleExecutor.PutFailure(m_Job);
-        }
-        break;
-
-    case eReturn:
-        m_WorkerNode.x_ReturnJob(m_Job);
-        break;
-
-    default: // Always eCanceled; eNotCommitted is overridden in x_RunJob().
-        ERR_POST("Job " << GetJobKey() << " has been canceled");
-    }
 }
 
 void CWorkerNodeRequest::Process()
@@ -928,21 +860,11 @@ void CGridWorkerNode::Init()
     m_NetCacheAPI = CNetCacheAPI(reg, kEmptyStr, m_NetScheduleAPI);
 }
 
-int CGridWorkerNode::Run(
-#ifdef NCBI_OS_UNIX
-    ESwitch daemonize,
-#endif
-    string procinfo_file_name)
+void CGridWorkerNode::x_WNCoreInit()
 {
     const string kServerSec("server");
 
-    LOG_POST_X(50, Info << GetJobFactory().GetJobVersion() <<
-            " build " WN_BUILD_DATE);
-
     const IRegistry& reg = m_App.GetConfig();
-    CConfig conf(reg);
-
-    unsigned init_threads = 1;
 
     if (!m_SingleThreadForced) {
         string max_threads = reg.GetString(kServerSec, "max_threads", "auto");
@@ -959,17 +881,68 @@ int CGridWorkerNode::Run(
                     "Using \'auto\' option (" << m_MaxThreads << ").");
             }
         }
-        init_threads = reg.GetInt(kServerSec,
-                "init_threads", 1, 0, IRegistry::eReturn);
     }
-    if (init_threads > m_MaxThreads)
-        init_threads = m_MaxThreads;
-
     m_NSTimeout = reg.GetInt(kServerSec,
             "job_wait_timeout", DEFAULT_NS_TIMEOUT, 0, IRegistry::eReturn);
 
-    unsigned thread_pool_timeout = reg.GetInt(kServerSec,
-            "thread_pool_timeout", 30, 0, IRegistry::eReturn);
+    {{
+        string memlimitstr(reg.GetString(kServerSec,
+                "total_memory_limit", kEmptyStr, IRegistry::eReturn));
+
+        if (!memlimitstr.empty())
+            m_TotalMemoryLimit = NStr::StringToUInt8_DataSize(memlimitstr);
+    }}
+
+    m_TotalTimeLimit = reg.GetInt(kServerSec,
+            "total_time_limit", 0, 0, IRegistry::eReturn);
+
+    m_StartupTime = time(0);
+
+    _ASSERT(m_MaxThreads > 0);
+
+    if (m_MaxThreads > 1) {
+        m_ThreadPool.reset(new CStdPoolOfThreads(m_MaxThreads, 0));
+        try {
+            unsigned init_threads = reg.GetInt(kServerSec,
+                    "init_threads", 1, 0, IRegistry::eReturn);
+
+            m_ThreadPool->Spawn(init_threads <= m_MaxThreads ?
+                    init_threads : m_MaxThreads);
+        }
+        catch (exception& ex) {
+            ERR_POST_X(26, ex.what());
+            CGridGlobals::GetInstance().RequestShutdown(
+                CNetScheduleAdmin::eShutdownImmediate);
+            throw;
+        }
+    }
+
+    CGridGlobals::GetInstance().SetReuseJobObject(reg.GetBool(kServerSec,
+        "reuse_job_object", false, 0, CNcbiRegistry::eReturn));
+    CGridGlobals::GetInstance().SetWorker(*this);
+
+    m_LogRequested = reg.GetBool(kServerSec,
+        "log", false, 0, IRegistry::eReturn);
+    m_ProgressLogRequested = reg.GetBool(kServerSec,
+        "log_progress", false, 0, IRegistry::eReturn);
+    m_ThreadPoolTimeout = reg.GetInt(kServerSec,
+        "thread_pool_timeout", 30, 0, IRegistry::eReturn);
+}
+
+int CGridWorkerNode::Run(
+#ifdef NCBI_OS_UNIX
+    ESwitch daemonize,
+#endif
+    string procinfo_file_name)
+{
+    x_WNCoreInit();
+
+    const string kServerSec("server");
+
+    LOG_POST_X(50, Info << GetJobFactory().GetJobVersion() <<
+            " build " WN_BUILD_DATE);
+
+    const IRegistry& reg = m_App.GetConfig();
 
     const CArgs& args = m_App.GetArgs();
 
@@ -993,19 +966,6 @@ int CGridWorkerNode::Run(
     bool is_daemon = daemonize != eDefault ? daemonize == eOn :
             reg.GetBool(kServerSec, "daemon", false, 0, CNcbiRegistry::eReturn);
 #endif
-
-    {{
-        string memlimitstr(reg.GetString(kServerSec,
-                "total_memory_limit", kEmptyStr, IRegistry::eReturn));
-
-        if (!memlimitstr.empty())
-            m_TotalMemoryLimit = NStr::StringToUInt8_DataSize(memlimitstr);
-    }}
-
-    m_TotalTimeLimit = reg.GetInt(kServerSec,
-            "total_time_limit", 0, 0, IRegistry::eReturn);
-
-    m_StartupTime = time(0);
 
     vector<string> vhosts;
 
@@ -1041,40 +1001,11 @@ int CGridWorkerNode::Run(
     if (m_CheckStatusPeriod == 0)
         m_CheckStatusPeriod = 1;
 
-    if (reg.HasEntry(kServerSec,"wait_server_timeout")) {
+    if (reg.HasEntry(kServerSec, "wait_server_timeout")) {
         ERR_POST_X(52, "[" << kServerSec <<
             "] \"wait_server_timeout\" is not used anymore.\n"
             "Use [" << kNetScheduleAPIDriverName <<
             "] \"communication_timeout\" parameter instead.");
-    }
-
-    unsigned max_total_jobs = reg.GetInt(kServerSec,
-            "max_total_jobs", 0, 0, IRegistry::eReturn);
-
-    CGridDebugContext::eMode debug_mode = CGridDebugContext::eGDC_NoDebug;
-    string dbg_mode = reg.GetString("gw_debug", "mode", kEmptyStr);
-    if (NStr::CompareNocase(dbg_mode, "gather")==0) {
-        debug_mode = CGridDebugContext::eGDC_Gather;
-    } else if (NStr::CompareNocase(dbg_mode, "execute")==0) {
-        debug_mode = CGridDebugContext::eGDC_Execute;
-    }
-    if (debug_mode != CGridDebugContext::eGDC_NoDebug) {
-        CGridDebugContext& debug_context = CGridDebugContext::Create(
-            debug_mode, m_NetCacheAPI);
-        debug_context.SetRunName(reg.GetString("gw_debug",
-                "run_name", m_App.GetProgramDisplayName()));
-        if (debug_mode == CGridDebugContext::eGDC_Gather) {
-            max_total_jobs =
-                reg.GetInt("gw_debug","gather_nrequests",1,0,IRegistry::eReturn);
-        } else if (debug_mode == CGridDebugContext::eGDC_Execute) {
-            string files =
-                reg.GetString("gw_debug", "execute_requests", kEmptyStr);
-            max_total_jobs = 0;
-            debug_context.SetExecuteList(files);
-        }
-#ifdef NCBI_OS_UNIX
-        is_daemon = false;
-#endif
     }
 
     if (!procinfo_file_name.empty()) {
@@ -1187,6 +1118,7 @@ int CGridWorkerNode::Run(
     request_context.SetSessionID(m_NetScheduleAPI->m_ClientSession);
 
     m_NSExecutor = m_NetScheduleAPI.GetExecutor();
+    m_NSExecutor->m_WorkerNodeMode = true;
 
     CDeadline max_wait_for_servers(
             TWorkerNode_MaxWaitForServers::GetDefault());
@@ -1215,15 +1147,13 @@ int CGridWorkerNode::Run(
         }
     }
 
-    CGridGlobals::GetInstance().SetReuseJobObject(reg.GetBool(kServerSec,
-            "reuse_job_object", false, 0, CNcbiRegistry::eReturn));
     CWNJobWatcher& watcher(CGridGlobals::GetInstance().GetJobWatcher());
-    watcher.SetMaxJobsAllowed(max_total_jobs);
+    watcher.SetMaxJobsAllowed(reg.GetInt(kServerSec,
+            "max_total_jobs", 0, 0, IRegistry::eReturn));
     watcher.SetMaxFailuresAllowed(reg.GetInt(kServerSec,
             "max_failed_jobs", 0, 0, IRegistry::eReturn));
     watcher.SetInfiniteLoopTime(reg.GetInt(kServerSec,
             "infinite_loop_time", 0, 0, IRegistry::eReturn));
-    CGridGlobals::GetInstance().SetWorker(*this);
     CGridGlobals::GetInstance().SetUDPPort(
             m_NSExecutor->m_NotificationHandler.GetPort());
 
@@ -1259,31 +1189,9 @@ int CGridWorkerNode::Run(
 
     m_Listener->OnGridWorkerStart();
 
-    auto_ptr<CStdPoolOfThreads> thread_pool;
-
-    _ASSERT(m_MaxThreads > 0);
-
-    if (m_MaxThreads > 1) {
-        thread_pool.reset(new CStdPoolOfThreads(m_MaxThreads, 0));
-        try {
-            thread_pool->Spawn(init_threads);
-        }
-        catch (exception& ex) {
-            ERR_POST_X(26, ex.what());
-            CGridGlobals::GetInstance().RequestShutdown(
-                CNetScheduleAdmin::eShutdownImmediate);
-            return 2;
-        }
-    }
-
     CNetScheduleJob job;
     max_wait_for_servers = CDeadline(
             TWorkerNode_MaxWaitForServers::GetDefault());
-
-    m_LogRequested = reg.GetBool(kServerSec,
-            "log", false, 0, IRegistry::eReturn);
-    m_ProgressLogRequested = reg.GetBool(kServerSec,
-            "log_progress", false, 0, IRegistry::eReturn);
 
     auto_ptr<CWorkerNodeJobContext> job_context(
             m_JobCommitterThread->AllocJobContext());
@@ -1293,7 +1201,7 @@ int CGridWorkerNode::Run(
         try {
             if (m_MaxThreads > 1) {
                 try {
-                    thread_pool->WaitForRoom(thread_pool_timeout);
+                    m_ThreadPool->WaitForRoom(m_ThreadPoolTimeout);
                 } catch (CBlockingQueueException&) {
                     // threaded pool is busy
                     continue;
@@ -1305,7 +1213,7 @@ int CGridWorkerNode::Run(
 
                 if (m_MaxThreads > 1) {
                     try {
-                        thread_pool->AcceptRequest(CRef<CStdRequest>(
+                        m_ThreadPool->AcceptRequest(CRef<CStdRequest>(
                                 new CWorkerNodeRequest(job_context.get())));
                     } catch (CBlockingQueueException& ex) {
                         ERR_POST_X(28, ex);
@@ -1350,23 +1258,16 @@ int CGridWorkerNode::Run(
         try_count = 0;
     }
     LOG_POST_X(31, Info << "Shutting down...");
-    LOG_POST(Info << "Stopping Control thread...");
+    LOG_POST(Info << "Stopping the socket server thread...");
     control_thread->Stop();
+
     if (reg.GetBool(kServerSec,
             "force_exit", false, 0, CNcbiRegistry::eReturn)) {
         ERR_POST_X(45, "Force exit");
-    } else if (m_MaxThreads > 1) {
-        try {
-            LOG_POST_X(32, Info << "Stopping worker threads...");
-            thread_pool->KillAllThreads(true);
-            thread_pool.reset(0);
-        }
-        catch (exception& ex) {
-            ERR_POST_X(33, "Could not stop worker threads: " << ex.what());
-        }
-    }
+    } else
+        x_StopWorkerThreads();
 
-    LOG_POST_X(55, Info << "Stopping Committer threads...");
+    LOG_POST_X(55, Info << "Stopping the job committer thread...");
     m_JobCommitterThread->Stop();
 
     CNcbiOstrstream os;
@@ -1402,12 +1303,31 @@ int CGridWorkerNode::Run(
 
     LOG_POST_X(38, Info << "Worker Node has been stopped.");
 
+    return x_WNCleanUp();
+}
+
+void CGridWorkerNode::x_StopWorkerThreads()
+{
+    if (m_MaxThreads > 1) {
+        try {
+            LOG_POST_X(32, Info << "Stopping worker threads...");
+            m_ThreadPool->KillAllThreads(true);
+            m_ThreadPool.reset(NULL);
+        }
+        catch (exception& ex) {
+            ERR_POST_X(33, "Could not stop worker threads: " << ex.what());
+        }
+    }
+}
+
+int CGridWorkerNode::x_WNCleanUp()
+{
     CRef<CGridCleanupThread> cleanup_thread(
         new CGridCleanupThread(this, m_Listener.get()));
 
     cleanup_thread->Run();
 
-    if (cleanup_thread->Wait(thread_pool_timeout)) {
+    if (cleanup_thread->Wait(m_ThreadPoolTimeout)) {
         cleanup_thread->Join();
         LOG_POST_X(58, Info << "Cleanup thread finished");
     } else {
@@ -1415,6 +1335,207 @@ int CGridWorkerNode::Run(
     }
 
     return CGridGlobals::GetInstance().GetExitCode();
+}
+
+void COfflineJobContext::PutProgressMessage(const string& msg,
+        bool send_immediately)
+{
+}
+
+CNetScheduleAdmin::EShutdownLevel COfflineJobContext::GetShutdownLevel()
+{
+    return CGridGlobals::GetInstance().GetShutdownLevel();
+}
+
+void COfflineJobContext::JobDelayExpiration(unsigned runtime_inc)
+{
+}
+
+void COfflineJobContext::x_RunJob()
+{
+    m_RequestContext->SetRequestID((int) GetJobNumber());
+    m_RequestContext->SetAppState(eDiagAppState_RequestBegin);
+
+    CRequestContextSwitcher request_state_guard(m_RequestContext);
+
+    if (s_ReqEventsDisabled == CGridWorkerNode::eEnableStartStop)
+        GetDiagContext().PrintRequestStart().Print("jid", m_Job.job_id);
+
+    m_RequestContext->SetAppState(eDiagAppState_Request);
+
+    try {
+        SetJobRetCode(m_WorkerNode.GetJobProcessor()->Do(*this));
+    }
+    catch (CGridWorkerNodeException& ex) {
+        switch (ex.GetErrCode()) {
+        case CGridWorkerNodeException::eJobIsCanceled:
+            x_SetCanceled();
+            break;
+
+        case CGridWorkerNodeException::eExclusiveModeIsAlreadySet:
+            if (IsLogRequested()) {
+                LOG_POST_X(21, "Job " << GetJobKey() <<
+                    " will be returned back to the queue "
+                    "because it requested exclusive mode while "
+                    "another job already has the exclusive status.");
+            }
+            if (!IsJobCommitted())
+                ReturnJob();
+            break;
+
+        default:
+            ERR_POST_X(62, ex);
+            if (!IsJobCommitted())
+                ReturnJob();
+        }
+    }
+    catch (exception& e) {
+        ERR_POST_X(18, "job" << GetJobKey() << " failed: " << e.what());
+        if (!IsJobCommitted())
+            CommitJobWithFailure(e.what());
+    }
+
+    CloseStreams();
+
+    if (m_WorkerNode.IsExclusiveMode() && m_ExclusiveJob)
+        m_WorkerNode.LeaveExclusiveMode();
+
+    if (!m_OutputDirName.empty()) {
+        CNetScheduleJobSerializer job_serializer(m_Job, m_CompoundIDPool);
+
+        CNetScheduleAPI::EJobStatus job_status = CNetScheduleAPI::eFailed;
+
+        switch (GetCommitStatus()) {
+        case eDone:
+            job_serializer.SaveJobOutput(CNetScheduleAPI::eDone,
+                    m_OutputDirName, m_NetCacheAPI);
+            break;
+
+        case eNotCommitted:
+            CommitJobWithFailure("Job was not explicitly committed");
+            /* FALL THROUGH */
+
+        case eFailure:
+            job_serializer.SaveJobOutput(CNetScheduleAPI::eFailed,
+                    m_OutputDirName, m_NetCacheAPI);
+            break;
+
+        default: // eReturn and eCanceled - results won't be saved
+            break;
+        }
+    }
+
+    x_PrintRequestStop();
+
+    delete this;
+}
+
+int CGridWorkerNode::OfflineRun()
+{
+    x_WNCoreInit();
+
+    m_QueueEmbeddedOutputSize = numeric_limits<size_t>().max();
+
+    const CArgs& args = m_App.GetArgs();
+
+    string input_dir_name(args["offline-input-dir"].AsString());
+    string output_dir_name;
+
+    if (args["offline-output-dir"])
+        output_dir_name = args["offline-output-dir"].AsString();
+
+    CDir input_dir(input_dir_name);
+
+    auto_ptr<CDir::TEntries> dir_contents(input_dir.GetEntriesPtr(kEmptyStr,
+            CDir::fIgnoreRecursive | CDir::fIgnorePath));
+
+    if (dir_contents.get() == NULL) {
+        ERR_POST("Cannot read input directory '" << input_dir_name << '\'');
+        return 4;
+    }
+
+    m_Listener->OnGridWorkerStart();
+    
+    LOG_POST("Reading job input files (*.in)...");
+
+    string path;
+    if (!input_dir_name.empty())
+        path = CDirEntry::AddTrailingPathSeparator(input_dir_name);
+
+    unsigned job_count = 0;
+
+    ITERATE(CDir::TEntries, it, *dir_contents) {
+        CDirEntry& dir_entry = **it;
+
+        string name = dir_entry.GetName();
+
+        if (!NStr::EndsWith(name, ".in"))
+            continue;
+
+        dir_entry.Reset(CDirEntry::MakePath(path, name));
+
+        if (dir_entry.IsFile()) {
+            try {
+                auto_ptr<CWorkerNodeJobContext> job_context(
+                        new COfflineJobContext(*this, output_dir_name,
+                        m_NetScheduleAPI.GetCompoundIDPool()));
+
+                job_context->Reset();
+
+                CNetScheduleJobSerializer job_serializer(job_context->GetJob(),
+                        m_NetScheduleAPI.GetCompoundIDPool());
+
+                job_serializer.LoadJobInput(dir_entry.GetPath());
+
+                if (m_MaxThreads > 1) {
+                    for (;;) {
+                        try {
+                            m_ThreadPool->WaitForRoom(m_ThreadPoolTimeout);
+                            break;
+                        }
+                        catch (CBlockingQueueException&) {
+                            if (CGridGlobals::GetInstance().IsShuttingDown())
+                                break;
+                        }
+                    }
+
+                    if (CGridGlobals::GetInstance().IsShuttingDown())
+                        break;
+
+                    try {
+                        m_ThreadPool->AcceptRequest(CRef<CStdRequest>(
+                                new CWorkerNodeRequest(job_context.get())));
+                    } catch (CBlockingQueueException& ex) {
+                        ERR_POST(ex);
+                        // that must not happen after CBlockingQueue is fixed
+                        _ASSERT(0);
+                    }
+                } else
+                    job_context->x_RunJob();
+
+                job_context.release();
+
+                if (CGridGlobals::GetInstance().IsShuttingDown())
+                    break;
+            } catch (exception& ex) {
+                ERR_POST(ex.what());
+                if (TWorkerNode_StopOnJobErrors::GetDefault())
+                    CGridGlobals::GetInstance().RequestShutdown(
+                            CNetScheduleAdmin::eShutdownImmediate);
+            }
+            ++job_count;
+        }
+    }
+
+    x_StopWorkerThreads();
+
+    if (job_count == 1) {
+        LOG_POST("Processed 1 job input file.");
+    } else {
+        LOG_POST("Processed " << job_count << " job input files.");
+    }
+
+    return x_WNCleanUp();
 }
 
 void CGridWorkerNode::RequestShutdown()
@@ -1607,36 +1728,22 @@ bool CGridWorkerNode::x_WaitForNewJob(CNetScheduleJob& job)
 
 bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
 {
-    bool job_exists = false;
+    if (!x_AreMastersBusy()) {
+        SleepSec(m_NSTimeout);
+        return false;
+    }
 
-    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
+    if (!WaitForExclusiveJobToFinish())
+        return false;
 
-    if (debug_context &&
-            debug_context->GetDebugMode() == CGridDebugContext::eGDC_Execute) {
-        job_exists = debug_context->GetNextJob(job.job_id, job.input);
-        if (!job_exists) {
-            CGridGlobals::GetInstance().
-                RequestShutdown(CNetScheduleAdmin::eNormalShutdown);
-            return false;
-        }
-    } else {
-        if (!x_AreMastersBusy()) {
-            SleepSec(m_NSTimeout);
-            return false;
-        }
+    bool job_exists = x_WaitForNewJob(job);
 
-        if (!WaitForExclusiveJobToFinish())
-            return false;
-
-        job_exists = x_WaitForNewJob(job);
-
-        if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob) {
-            if (EnterExclusiveMode())
-                job_exists = true;
-            else {
-                x_ReturnJob(job);
-                job_exists = false;
-            }
+    if (job_exists && job.mask & CNetScheduleAPI::eExclusiveJob) {
+        if (EnterExclusiveMode())
+            job_exists = true;
+        else {
+            x_ReturnJob(job);
+            job_exists = false;
         }
     }
     if (job_exists && CGridGlobals::GetInstance().IsShuttingDown()) {
@@ -1648,11 +1755,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
 
 void CGridWorkerNode::x_ReturnJob(const CNetScheduleJob& job)
 {
-    CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
-    if (!debug_context ||
-            debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
-         GetNSExecutor().ReturnJob(job.job_id, job.auth_token);
-    }
+    GetNSExecutor().ReturnJob(job.job_id, job.auth_token);
 }
 
 size_t CGridWorkerNode::GetServerOutputSize()

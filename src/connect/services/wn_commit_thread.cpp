@@ -32,7 +32,6 @@
 #include <ncbi_pch.hpp>
 
 #include "wn_commit_thread.hpp"
-#include "grid_debug_context.hpp"
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_globals.hpp>
@@ -155,7 +154,24 @@ bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
     bool recycle_job_context = false;
 
     try {
-        job_context->x_SendJobResults();
+        switch (job_context->GetCommitStatus()) {
+        case CWorkerNodeJobContext::eDone:
+            m_WorkerNode->GetNSExecutor().PutResult(job_context->GetJob());
+            break;
+
+        case CWorkerNodeJobContext::eFailure:
+            m_WorkerNode->GetNSExecutor().PutFailure(job_context->GetJob());
+            break;
+
+        case CWorkerNodeJobContext::eReturn:
+            m_WorkerNode->x_ReturnJob(job_context->GetJob());
+            break;
+
+        default: // Always eCanceled; eNotCommitted is overridden in x_RunJob().
+            ERR_POST("Job " << job_context->GetJob().job_id <<
+                    " has been canceled");
+        }
+
         recycle_job_context = true;
     }
     catch (CNetScheduleException& e) {

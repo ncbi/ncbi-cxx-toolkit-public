@@ -2,7 +2,7 @@
 
 SRC     = grid_worker ns_client_factory grid_worker_app \
           grid_client grid_client_app wn_commit_thread \
-          grid_debug_context grid_control_thread \
+          grid_control_thread \
           grid_globals grid_rw_impl remote_app \
           srv_connections netservice_api \
           balancing netservice_params \
@@ -13,7 +13,7 @@ SRC     = grid_worker ns_client_factory grid_worker_app \
           netservice_protocol_parser util clparser \
           json_over_uttp netstorage_rpc \
           netstorageobjectloc netstorageobjectinfo pack_int ns_output_parser \
-          compound_id compound_id_v0
+          ns_job_serializer compound_id compound_id_v0
 
 LIB     = xconnserv
 PROJ_TAG = core

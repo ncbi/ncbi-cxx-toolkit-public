@@ -34,6 +34,7 @@
 #include "grid_cli.hpp"
 
 #include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/ns_job_serializer.hpp>
 
 #include <cgi/ncbicgi.hpp>
 
@@ -43,17 +44,19 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
 {
     SetUp_NetScheduleCmd(eNetScheduleSubmitter);
 
+    CNetScheduleJob job;
+    job.job_id = m_Opts.id;
+
+    CNetScheduleAPI::EJobStatus job_status =
+            m_NetScheduleAPI.GetJobDetails(job);
+
+    if (job_status == CNetScheduleAPI::eJobNotFound) {
+        fprintf(stderr, GRID_APP_NAME ": job %s has expired.\n",
+            job.job_id.c_str());
+        return 3;
+    }
+
     if (IsOptionSet(eDumpCGIEnv)) {
-        CNetScheduleJob job;
-        job.job_id = m_Opts.id;
-
-        if (m_NetScheduleAPI.GetJobDetails(job) ==
-                CNetScheduleAPI::eJobNotFound) {
-            fprintf(stderr, GRID_APP_NAME ": job %s has expired.\n",
-                    job.job_id.c_str());
-            return 3;
-        }
-
         auto_ptr<CNcbiIstream> input_stream(new CRStream(
                 new CStringOrBlobStorageReader(job.input, m_NetCacheAPI), 0, 0,
                     CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions));
@@ -84,6 +87,30 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
             printf("%s=%s\n", var->c_str(), env.Get(*var).c_str());
         }
     }
+
+    CNetScheduleJobSerializer job_serializer(job, m_CompoundIDPool);
+
+    if (IsOptionSet(eJobInputDir))
+        job_serializer.SaveJobInput(m_Opts.job_input_dir, m_NetCacheAPI);
+
+    if (IsOptionSet(eJobOutputDir))
+        switch (job_status) {
+        case CNetScheduleAPI::eCanceled:
+        case CNetScheduleAPI::eFailed:
+        case CNetScheduleAPI::eDone:
+        case CNetScheduleAPI::eReading:
+        case CNetScheduleAPI::eConfirmed:
+        case CNetScheduleAPI::eReadFailed:
+            job_serializer.SaveJobOutput(job_status,
+                    m_Opts.job_output_dir, m_NetCacheAPI);
+            break;
+
+        default:
+            fprintf(stderr, GRID_APP_NAME
+                ": cannot retrieve job output while the job is %s.\n",
+                CNetScheduleAPI::StatusToString(job_status).c_str());
+            return 4;
+        }
 
     return 0;
 }

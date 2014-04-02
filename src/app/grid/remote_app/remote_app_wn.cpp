@@ -91,7 +91,7 @@ public:
         }
 
         s_SetParam(m_Request, m_Result);
-        size_t output_size = context.GetMaxServerOutputSize();
+        size_t output_size = context.GetWorkerNode().GetServerOutputSize();
         if (output_size == 0) {
             // this means that NS internal storage is not supported and 
             // we all input params will be save into NC anyway. So we are 

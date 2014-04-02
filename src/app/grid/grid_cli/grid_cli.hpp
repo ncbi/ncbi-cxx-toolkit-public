@@ -109,6 +109,8 @@
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
 #define DRAIN_OPTION "drain"
+#define JOB_INPUT_DIR_OPTION "job-input-dir"
+#define JOB_OUTPUT_DIR_OPTION "job-output-dir"
 #define PROTOCOL_DUMP_OPTION "protocol-dump"
 
 #define LOGIN_COMMAND "login"
@@ -224,6 +226,8 @@ enum EOption {
     eDie,
     eDrain,
     eCompatMode,
+    eJobInputDir,
+    eJobOutputDir,
     eDumpCGIEnv,
     eAggregationInterval,
     ePreviousInterval,
@@ -309,6 +313,8 @@ private:
         string error_message;
         string input;
         string remote_app_args;
+        string job_input_dir;
+        string job_output_dir;
         string aggregation_interval;
         string command;
         istream* input_stream;
@@ -504,10 +510,15 @@ private:
             CNetScheduleNotificationHandler& submit_job_handler,
             const string& job_key,
             const string& server_host);
-    void CheckJobInputStream(CNcbiOstream& job_input_stream);
-    void PrepareRemoteAppJobInput(const string& args,
+    void CheckJobInputStream(CNcbiOstream& job_input_ostream);
+    void PrepareRemoteAppJobInput(
+            size_t max_embedded_input_size,
+            const string& args,
             CNcbiIstream& remote_app_stdin,
-            CNcbiOstream& job_input_stream);
+            CNcbiOstream& job_input_ostream);
+    void x_LoadJobInput(
+            size_t max_embedded_input_size,
+            CNcbiOstream &job_input_ostream);
     void SubmitJob_Batch();
     int DumpJobInputOutput(const string& data_or_blob_id);
     int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);

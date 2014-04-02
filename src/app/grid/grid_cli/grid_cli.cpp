@@ -389,6 +389,12 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eCompatMode),
         "compat-mode", "Enable backward compatibility tweaks.", {-1}},
 
+    {OPT_DEF(eOptionWithParameter, eJobInputDir),
+        JOB_INPUT_DIR_OPTION, "Job input directory.", {-1}},
+
+    {OPT_DEF(eOptionWithParameter, eJobOutputDir),
+        JOB_OUTPUT_DIR_OPTION, "Job output directory.", {-1}},
+
     {OPT_DEF(eSwitch, eDumpCGIEnv),
         "dump-cgi-env", "Dump CGI environment prepared by cgi2rcgi.", {-1}},
 
@@ -729,7 +735,8 @@ struct SCommandDefinition {
         {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
             eRemoteAppArgs, eGroup, eAffinity, eExclusiveJob, eOutputFile,
             eWaitTimeout, eLoginToken, eAuth, eClientNode, eClientSession,
-            ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications, -1}},
+            ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications,
+            eJobInputDir, -1}},
 
     {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_WatchJob,
         WATCHJOB_COMMAND, "Wait for a job to change status.",
@@ -976,10 +983,13 @@ struct SCommandDefinition {
 
     {eWorkerNodeCommand, &CGridCommandLineInterfaceApp::Cmd_Replay,
         "replay", "Rerun a job in debugging environment.",
-        "This command facilitates debugging of remote_cgi and "
-        "remote_app jobs.",
-        {eID, eQueue, eDumpCGIEnv, eCompatMode, eLoginToken,
-            eAuth, eClientNode, eClientSession,
+        "This command facilitates debugging of remote_cgi and remote_app "
+        "jobs as well as \"native\" worker nodes. By using this command, "
+        "job input can be preserved for later re-run in debugging or "
+        "testing environment. Job output can also be preserved to compare "
+        "it with \"reference\" runs.",
+        {eID, eQueue, eJobInputDir, eJobOutputDir, eDumpCGIEnv, eCompatMode,
+            eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eGeneralCommand, &CGridCommandLineInterfaceApp::Cmd_ServerInfo,
@@ -1452,6 +1462,12 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eRemoteAppArgs:
                 m_Opts.remote_app_args = opt_value;
+                break;
+            case eJobInputDir:
+                m_Opts.job_input_dir = opt_value;
+                break;
+            case eJobOutputDir:
+                m_Opts.job_output_dir = opt_value;
                 break;
             case eOutputFile:
                 m_Opts.output_stream =
