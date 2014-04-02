@@ -572,7 +572,8 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
       }
 
       if ( (oc.add_output_tag || oc.add_extra_output_tag) 
-               && (!prefix.empty() || x_SubsHaveTags(c_item)) ) {
+               && (prefix.find("FATAL: ") != string::npos 
+                        || x_SubsHaveTags(c_item)) ) {
             c_item->expanded = true;
       }
       // summary report
