@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  .......
+ * Author:  Thomas W. Rackers (current versions of SetTaxIds/GetTaxIds)
  *
  * File Description:
  *   .......
@@ -51,37 +51,73 @@ CBlast_def_line::~CBlast_def_line(void)
 {
 }
 
-void 
+void
 CBlast_def_line::SetTaxIds(const CBlast_def_line::TTaxIds& t)
 {
+    // Clear the 'links' field.  We may be setting new values there anyway.
     ResetLinks();
-    ITERATE(TTaxIds, itr, t) {
-        if (t.size() == 1) {
-            SetTaxid(*itr);
-            break;
-        } else {
+
+    // Next step depends on size of input set.
+    if (t.empty()) {
+        // If it's empty, clear the 'taxid' field too.
+        ResetTaxid();
+    } else if (t.size() == 1) {
+        // Or if it has a single value, set 'taxid' to that value.
+        SetTaxid(*t.begin());
+    } else {
+        // Otherwise, set the 'taxid' field to the FIRST value in the set,
+        // UNLESS the following conditions are all met:
+        // (1) 'taxid' has a value;
+        // (2) that value is non-zero;
+        // (3) it's already present in the input set.
+        bool overwrite = true;
+        if (CanGetTaxid()) {
+            const TTaxid taxid = GetTaxid();
+            if (taxid != 0) {
+                TTaxIds::iterator it = t.find(taxid);
+                if (it != t.end()) {
+                    overwrite = false;
+                }
+            }
+        }
+        // If the above conditions were not met, overwrite the existing
+        // 'taxid'.
+        if (overwrite) {
+            SetTaxid(*t.begin());
+        }
+        // Save all of the input set to the 'links' field.
+        ITERATE(TTaxIds, itr, t) {
             SetLinks().push_back(*itr);
         }
     }
-    if (IsSetLinks()) {
-        ResetTaxid();
-    }
 }
 
-CBlast_def_line::TTaxIds 
+CBlast_def_line::TTaxIds
 CBlast_def_line::GetTaxIds() const
 {
-    TTaxIds retval;
+    TTaxIds retval;                 // set<int>, initially empty
+
+    // If there's a non-zero 'taxid' value, add it to the result set.
     if (CanGetTaxid()) {
-        _ASSERT(IsSetLinks() == false);
-        retval.insert(GetTaxid());
-    } else if (IsSetLinks()) {
-        _ASSERT(IsSetTaxid() == false);
-        TLinks taxids = GetLinks();  // see ASN.1 spec comment
-        ITERATE(TLinks, itr, taxids) {
-            retval.insert(*itr);
+        TTaxid taxid = GetTaxid();
+        if (taxid != 0) {
+            retval.insert(taxid);
         }
     }
+    // If there are any non-zero 'links' values, add them to the result set.
+    if (IsSetLinks()) {
+        TLinks taxids = GetLinks();  // see ASN.1 spec comment
+        ITERATE(TLinks, itr, taxids) {
+            if (*itr != 0) {
+                retval.insert(*itr);
+            }
+        }
+    }
+    // Remember, set containers guarantee that all members are unique,
+    // so if the 'taxid' and 'links' fields share a value, it will not
+    // be returned twice.
+
+    // Return result set.
     return retval;
 }
 
