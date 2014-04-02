@@ -1455,7 +1455,7 @@ static const s_test_property test_list[] = {
      fGlobal | fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
      "Missing Protein ID" },
    {"INCONSISTENT_PROTEIN_ID", 
-     fGlobal | fGenomes | fAsndisc | fDiscrepancy | fMegaReport, 
+     fGlobal | fAsndisc | fDiscrepancy | fMegaReport, 
      "Inconsistent Protein ID"},
 
 // tests_on_Bioseq_na
