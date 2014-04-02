@@ -85,7 +85,7 @@ public:
 
     void    SetParentFolder(CProjectFolder*) {}
     CProjectFolder* GetParentFolder() { return 0; }
-    const CProjectFolder* GetParentFolder() const return 0; }
+    const CProjectFolder* GetParentFolder() const { return 0; }
 
     void     SetUserObject(CObject* object);
     CObject* GetUserObject();
