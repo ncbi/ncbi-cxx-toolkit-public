@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Dmitry Kazimirov
  *
  * File Description:  NetSchedule worker node sample
  *
@@ -106,7 +106,12 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
                                     CNcbiRegistry::eReturn);
     }
 
-    m_AppPath = reg.GetString(sec_name, "app_path", "" );
+    m_AppPath = reg.GetString(sec_name, "app_path", kEmptyStr);
+    if (m_AppPath.empty()) {
+        NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                "Missing configuration parameter [" << sec_name <<
+                "].app_path");
+    }
     if (!CDirEntry::IsAbsolutePath(m_AppPath)) {
         string tmp = CDir::GetCwd() 
             + CDirEntry::GetPathSeparator() 
@@ -114,7 +119,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
         m_AppPath = CDirEntry::NormalizePath(tmp);
     }
 
-    m_MonitorAppPath = reg.GetString(sec_name, "monitor_app_path", "" );
+    m_MonitorAppPath = reg.GetString(sec_name, "monitor_app_path", kEmptyStr);
     if (!m_MonitorAppPath.empty()) {
         if (!CDirEntry::IsAbsolutePath(m_MonitorAppPath)) {
             string tmp = CDir::GetCwd() 
@@ -123,10 +128,10 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
             m_MonitorAppPath = CDirEntry::NormalizePath(tmp);
         }
         CFile f(m_MonitorAppPath);
-        if (!f.Exists() || !CanExecRemoteApp(f) ) {
+        if (!f.Exists() || !CanExecRemoteApp(f)) {
             ERR_POST("Can not execute \"" << m_MonitorAppPath 
                      << "\". The Monitor application will not run!");
-            m_MonitorAppPath = "";
+            m_MonitorAppPath = kEmptyStr;
         }
     }
 
