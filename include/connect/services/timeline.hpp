@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 class CWorkerNodeTimeline_Base;
 
-class CWorkerNodeTimelineEntry
+class NCBI_XCONNECT_EXPORT CWorkerNodeTimelineEntry
 {
 public:
     friend class CWorkerNodeTimeline_Base;
@@ -74,7 +74,7 @@ private:
     CDeadline                 m_Deadline;
 };
 
-class CWorkerNodeTimeline_Base
+class NCBI_XCONNECT_EXPORT CWorkerNodeTimeline_Base
 {
 public:
     friend class CWorkerNodeTimelineEntry;
