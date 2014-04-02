@@ -1403,8 +1403,6 @@ void COfflineJobContext::x_RunJob()
     if (!m_OutputDirName.empty()) {
         CNetScheduleJobSerializer job_serializer(m_Job, m_CompoundIDPool);
 
-        CNetScheduleAPI::EJobStatus job_status = CNetScheduleAPI::eFailed;
-
         switch (GetCommitStatus()) {
         case eDone:
             job_serializer.SaveJobOutput(CNetScheduleAPI::eDone,

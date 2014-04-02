@@ -47,7 +47,7 @@ string CNetScheduleJobSerializer::SaveJobInput(const string& target_dir,
     string target_file = CDirEntry::ConcatPath(target_dir,
             m_Job.job_id + ".in");
 
-    CNcbiOfstream output_stream(target_file, CNcbiOfstream::binary);
+    CNcbiOfstream output_stream(target_file.c_str(), CNcbiOfstream::binary);
 
     bool need_space = false;
 
@@ -82,7 +82,7 @@ string CNetScheduleJobSerializer::SaveJobInput(const string& target_dir,
 
 void CNetScheduleJobSerializer::LoadJobInput(const string& source_file)
 {
-    CNcbiIfstream input_stream(source_file, CNcbiIfstream::binary);
+    CNcbiIfstream input_stream(source_file.c_str(), CNcbiIfstream::binary);
 
     if (input_stream.fail() && !input_stream.eof()) {
         NCBI_THROW_FMT(CIOException, eRead,
@@ -142,7 +142,7 @@ string CNetScheduleJobSerializer::SaveJobOutput(
     string target_file = CDirEntry::ConcatPath(target_dir,
             m_Job.job_id + ".out");
 
-    CNcbiOfstream output_stream(target_file, CNcbiOfstream::binary);
+    CNcbiOfstream output_stream(target_file.c_str(), CNcbiOfstream::binary);
 
     output_stream <<
             "job_status=" << CNetScheduleAPI::StatusToString(job_status) <<
