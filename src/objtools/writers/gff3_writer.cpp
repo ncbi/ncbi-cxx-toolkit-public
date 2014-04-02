@@ -198,19 +198,6 @@ bool sGetTranssplicedOutPoint(const CSeq_loc& loc, unsigned int& outPoint)
 }
 
 //  ----------------------------------------------------------------------------
-static CConstRef<CSeq_id> sGetSourceId(
-    const CSeq_id& id, CScope& scope )
-//  ----------------------------------------------------------------------------
-{
-    try {
-        return sequence::GetId(id, scope, sequence::eGetId_ForceAcc).GetSeqId();
-    }
-    catch (CException&) {
-    }
-    return CConstRef<CSeq_id>(&id);
-}
-
-//  ----------------------------------------------------------------------------
 bool
 sInheritScores(
     const CSeq_align& alignFrom,
@@ -632,6 +619,9 @@ bool CGff3Writer::xAssignAlignmentSplicedTarget(
     const CSpliced_exon& exon)
 //  ----------------------------------------------------------------------------
 {
+    //if (bDebugHere == true) {
+    //    bDebugHere = false;
+    //}
     string target;
     const CSeq_id& productId = spliced.GetProduct_id();
     CSeq_id_Handle bestH = sequence::GetId(
@@ -787,7 +777,6 @@ bool CGff3Writer::xAssignAlignmentDensegType(
     }
     catch(std::exception&) {};
     CConstRef<CSeq_id> pSourceId = sourceIdH.GetSeqId();
-    CSeq_id::EAccessionInfo targetInfo = pSourceId->IdentifyAccession();
 
     const CSeq_id& targetId = alnMap.GetSeqId(srcRow);
     CBioseq_Handle targetH = m_pScope->GetBioseqHandle(targetId);
@@ -801,7 +790,6 @@ bool CGff3Writer::xAssignAlignmentDensegType(
     }
     catch(std::exception&) {};
     CConstRef<CSeq_id> pTargetId = targetIdH.GetSeqId();
-    CSeq_id::EAccessionInfo sourceInfo = pTargetId->IdentifyAccession();
     record.SetType(sBestMatchType(*pSourceId, *pTargetId));
     return true;
 }
@@ -839,6 +827,10 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     unsigned int srcRow)
 //  ----------------------------------------------------------------------------
 {
+    //if (bDebugHere == true) {
+    //    bDebugHere = false;
+    //}
+
     const CSeq_id& sourceId = alnMap.GetSeqId(0);
     CBioseq_Handle sourceH = m_pScope->GetBioseqHandle(sourceId);
     CSeq_id_Handle sourceIdH = sourceH.GetSeq_id_Handle();
@@ -854,20 +846,18 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
 
     string target;
     pSourceId->GetLabel(&target, CSeq_id::eContent);
-    CAlnMap::TSignedRange range = alnMap.GetSeqAlnRange(srcRow);
+
+    ENa_strand strand = 
+        (alnMap.StrandSign(0) == -1) ? eNa_strand_minus : eNa_strand_plus;
+    int numSegs = alnMap.GetNumSegs();
     int start2 = alnMap.GetStart(0, 0);
-    int stop2 = alnMap.GetSeqAlnStop(srcRow);
-    ENa_strand strand = eNa_strand_plus;
-    if (alnMap.StrandSign(0) == -1) {
-        strand = eNa_strand_minus;
-        stop2 = start2 + stop2;
+    //int stop2 = start2 + seqStop + seqDiff - seqStart;
+    int stop2 = alnMap.GetStart(0, numSegs-1) + alnMap.GetLen(numSegs-1) - 1;
+    if (strand == eNa_strand_minus) {
+        start2 = alnMap.GetStart(0, numSegs-1);
+        stop2 = alnMap.GetStart(0, 0) + alnMap.GetLen(0) - 1;
     }
-    else {
-        stop2 = start2 + stop2;
-    }
-    if (start2 < 0  ||  stop2 < 0) {
-        cerr << "";
-    }
+
     target += " " + NStr::IntToString(start2 + 1);
     target += " " + NStr::IntToString(stop2 + 1);
     target += " " + string(strand == eNa_strand_plus ? "+" : "-");
@@ -882,9 +872,6 @@ bool CGff3Writer::xAssignAlignmentDensegGap(
     unsigned int srcRow)
 //  ----------------------------------------------------------------------------
 {
-//    if (bDebugHere == true) {
-//        bDebugHere = false;
-//    }
     const CDense_seg& denseSeg = alnMap.GetDenseg();
     int srcWidth = 1; //could be 1 or 3, depending on nuc or prot
     if (srcRow < denseSeg.GetWidths().size()) {
@@ -925,7 +912,6 @@ bool CGff3Writer::xAssignAlignmentDensegLocation(
     unsigned int srcRow)
 //  ----------------------------------------------------------------------------
 {
-    CAlnMap::TSignedRange range = alnMap.GetSeqAlnRange(srcRow);
     unsigned int seqStart = alnMap.GetSeqStart(srcRow);
     unsigned int seqStop = alnMap.GetSeqStop(srcRow);
     ENa_strand seqStrand = (alnMap.StrandSign(srcRow) == 1 ? 
@@ -1127,11 +1113,6 @@ bool CGff3Writer::xWriteFeatureTrna(
         return false;
     }
     const CSeq_loc& PackedInt = pRna->Location();
-    unsigned int seqLength = 0;
-    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle()) &&
-            fc.BioseqHandle( )) {
-        seqLength = fc.BioseqHandle().GetInst().GetLength();
-    }
 
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
@@ -1817,7 +1798,6 @@ bool CGff3Writer::xAssignFeatureAttributePartial(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CSeqFeatData::ESubtype subtype = mf.GetData().GetSubtype();
     if (mf.IsSetPartial()) {
         if (mf.GetPartial() == true) {
             record.SetAttribute("partial", "true");
@@ -2409,11 +2389,6 @@ bool CGff3Writer::xWriteFeatureCds(
     if (bStrandAdjust && iPhase) {
         iPhase = 3-iPhase;
     }
-    unsigned int seqLength = 0;
-    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle()) &&
-        fc.BioseqHandle() ) {
-        seqLength = fc.BioseqHandle().GetInst().GetLength();
-    }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         list< CRef< CSeq_interval > > sublocs( PackedInt.GetPacked_int().Get() );
         list< CRef< CSeq_interval > >::const_iterator it;
@@ -2463,11 +2438,6 @@ bool CGff3Writer::xWriteFeatureRna(
     }    
 
     const CSeq_loc& PackedInt = pRna->Location();
-    unsigned int seqLength = 0;
-    if (CWriteUtil::IsSequenceCircular(fc.BioseqHandle()) &&
-        fc.BioseqHandle() ) {
-        seqLength = fc.BioseqHandle().GetInst().GetLength();
-    }
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
         list< CRef< CSeq_interval > >::const_iterator it;
@@ -2648,9 +2618,9 @@ string CGff3Writer::xNextAlignId()
 //  ----------------------------------------------------------------------------
 {
     string nextId = string("aln") + NStr::UIntToString(m_uPendingAlignId++);
-//    if (nextId == "aln0") {
-//        bDebugHere = true;
-//    }
+    //if (nextId == "aln2"  ||  nextId == "aln6") {
+    //    bDebugHere = true;
+    //}
     return nextId;
 }
 
