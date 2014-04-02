@@ -73,6 +73,9 @@ public:
 
     TId GetId() const { return m_Id; }
 
+    void    SetParentFolder(CProjectFolder*) {}
+    CProjectFolder* GetParentFolder() { return 0; }
+
     const CProjectItem*   GetProjectItem(CProjectItem::TId id) const;
     CProjectItem*         GetProjectItem(CProjectItem::TId id);
 
