@@ -75,7 +75,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
       fMegaReport = 1 << 2,
       fTSA = 1 << 3,
       fAsndisc = 1 << 4,
-      fBigSequence = 1 << 5
+      fBigSequence = 1 << 5,
+      fGenomes = 1 << 6,
+      fTRNA = 1 << 7
    };
 
    struct s_test_property {
@@ -145,11 +147,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
         void CollectTests();
         virtual void Run();
         void CollectRepData();
-        void CollectDefaultConfig(Str2Str& test_nm2conf_nm, const string& report_type);
+        void CollectDefaultConfig(Str2Str& test_nm2conf_nm, 
+                                    ETestCategoryFlags report);
 
         void RunMultiObjects();
         static CSeq_entry_Handle* m_TopSeqEntry;
-        static CRepConfig* factory(string report_tp,CSeq_entry_Handle* tse_p=0);
+        static CRepConfig* factory(ETestCategoryFlags report,
+                                     CSeq_entry_Handle* tse_p=0);
 
         void SetTopLevelSeqEntry(CSeq_entry_Handle* tse) {
            m_TopSeqEntry = tse;
@@ -167,7 +171,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         vector <string> m_enabled, m_disabled;
         set <string> m_expanded;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
-        bool m_dorecurse, m_all_expanded;
+        bool m_dorecurse, m_all_expanded, m_genbank_loader;
         vector <CConstRef <CObject> >* m_objs;
 
         bool x_IsExpandable(const string& setting_name);
@@ -218,7 +222,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
         static CRef < CScope >                    scope;
         static string                             infile;
-        static string                             report;
+//        static string                             report
+        static ETestCategoryFlags                 report;
         static COutputConfig                      output_config;
         static CRef <CRepConfig>                  config;
         static vector < CRef < CClickableItem > > disc_report_data;
