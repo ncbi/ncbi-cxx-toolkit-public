@@ -188,6 +188,8 @@ class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext :
         public CWorkerNodeTimelineEntry
 {
 public:
+    virtual ~CWorkerNodeJobContext() { }
+
     /// Get the associated job structure to access all of its fields.
     const CNetScheduleJob& GetJob() const {return m_Job;}
     CNetScheduleJob& GetJob() {return m_Job;}
@@ -417,6 +419,11 @@ protected:
 private:
     string m_OutputDirName;
     CCompoundIDPool m_CompoundIDPool;
+
+    /// The copy constructor and the assignment operator
+    /// are prohibited
+    COfflineJobContext(const COfflineJobContext&);
+    COfflineJobContext& operator=(const COfflineJobContext&);
 };
 
 class CWorkerNodeIdleThread;
