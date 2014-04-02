@@ -2662,13 +2662,13 @@ bool CDirEntry::GetOwner(string* owner, string* group,
     if ( owner ) {
         CUnixFeature::GetUserNameByUID(st.st_uid).swap(*owner);
         if (owner->empty()) {
-            *owner = NStr::NumericToString(st.st_uid);
+            NStr::NumericToString(*owner, st.st_uid, 0 /* flags */, 10);
         }
     }
     if ( group ) {
         CUnixFeature::GetGroupNameByGID(st.st_gid).swap(*group);
         if (group->empty()) {
-            *group = NStr::NumericToString(st.st_gid);
+            NStr::NumericToString(*group, st.st_gid, 0 /* flags */, 10);
         }
     }
 
