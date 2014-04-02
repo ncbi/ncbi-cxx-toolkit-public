@@ -47,6 +47,9 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
+    if (api_class == eNetScheduleSubmitter)
+        SetUp_NetCacheCmd(eNetCacheAPI);
+
     string queue = m_Opts.queue;
 
     if (!IsOptionSet(eID) && !IsOptionSet(eJobId))
@@ -146,9 +149,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     if (!m_Opts.client_session.empty())
         m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
-
-    if (api_class == eNetScheduleSubmitter)
-        SetUp_NetCacheCmd(eNetCacheAPI);
 }
 
 void CGridCommandLineInterfaceApp::JobInfo_PrintStatus(
