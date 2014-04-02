@@ -12,6 +12,9 @@ Sends all the NetSchedule supported commands
 import re, socket, sys
 from optparse import OptionParser
 
+# Works for python 2.5. Python 2.7 has it in urlparse module
+from cgi import parse_qs
+
 
 VERBOSE = False
 COMMUNICATION_TIMEOUT = 1
@@ -19,7 +22,7 @@ COMMUNICATION_TIMEOUT = 1
 
 def printStderr( msg ):
     " Prints onto stderr with a prefix "
-    print >> sys.stderr, "NetSchedule check script. " + msg
+    print >> sys.stderr, "NetSchedule commands script. " + msg
     return
 
 def printVerbose( msg ):
@@ -92,14 +95,14 @@ class NSDirectConnect:
                           self.__queue + "\n" )
         return
 
-    def execute( self, cmd, multiline = False):
+    def execute( self, cmd, multiline = False ):
         " Sends the given command to NS "
         self.__sock.sendall( cmd + "\n" )
         if multiline:
             return self.readMultiLineReply()
         return self.readSingleLineReply()
 
-    def readSingleLineReply( self ):
+    def readSingleLineReply( self, multilinePart = False ):
         " Reads a single line reply "
         while True:
             parts = self.__replyDelimiter.split( self.__readBuf, 1 )
@@ -115,24 +118,30 @@ class NSDirectConnect:
                 raise UnexpectedNSResponse( "Unexpected NS response: None" )
             self.__readBuf += buf
 
-        if reply.startswith( "OK:" ):
-            return reply.split( ':', 1 )[ 1 ].strip()
         if reply.startswith( "ERR:" ):
             if "shuttingdown" in reply.lower():
                 raise NSShuttingDown( "Server is shutting down" )
             elif "access denied" in reply.lower():
                 raise NSAccessDenied( reply.split( ':', 1 )[ 1 ].strip() )
             raise NSError( reply.split( ':', 1 )[ 1 ].strip() )
+
+        if reply.startswith( "OK:" ):
+            return reply.split( ':', 1 )[ 1 ].strip()
+
+        if multilinePart:
+            # In a multiline case it could be anything, e.g. GETCONF
+            return reply
+
         raise UnexpectedNSResponse( "Unexpected NS response: " + reply.strip() )
 
     def readMultiLineReply( self ):
         " Reads a multi line reply "
         lines = []
-        oneLine = self.readSingleLineReply()
+        oneLine = self.readSingleLineReply( True )
         while oneLine != "END":
             if oneLine:
                 lines.append( oneLine )
-            oneLine = self.readSingleLineReply()
+            oneLine = self.readSingleLineReply( True )
         return lines
 
 
@@ -153,6 +162,7 @@ class NSCommandsSender:
             "DROPQ":                self.__dropq,
             "QCRE":                 self.__qcre,
             "QDEL":                 self.__qdel,
+            "HEALTH":               self.__health,
             "STATUS":               self.__status,
             "STATUS2":              self.__status2,
             "STAT":                 self.__stat,
@@ -163,12 +173,19 @@ class NSCommandsSender:
             "STAT GROUPS":          self.__statGroups,
             "STAT QCLASSES":        self.__statQClasses,
             "STAT QUEUES":          self.__statQueues,
+            "STAT ALERTS":          self.__statAlerts,
+            "STAT ALL":             self.__statAll,
+            "STAT SERVICES":        self.__statServices,
+            "ACKALERT":             self.__ackAlert,
             "DUMP":                 self.__dump,
             "AFLS":                 self.__afls,
             "GETP":                 self.__getp,
+            "GETP2":                self.__getp2,
             "GETC":                 self.__getc,
             "CANCELQ":              self.__cancelq,
             "REFUSESUBMITS":        self.__refusesubmits,
+            "QPAUSE":               self.__queuePause,
+            "QRESUME":              self.__queueResume,
             "SETQUEUE":             self.__setqueue,
             "MGET":                 self.__mget,
             "SST":                  self.__sst,
@@ -191,6 +208,7 @@ class NSCommandsSender:
             "RETURN2":              self.__return2,
             "WGET":                 self.__wget,
             "CWGET":                self.__cwget,
+            "SETCLIENTDATA":        self.__setclientdata,
             "FPUT":                 self.__fput,
             "FPUT2":                self.__fput2,
             "JXCG":                 self.__jxcg,
@@ -266,6 +284,10 @@ class NSCommandsSender:
     def __qdel( self ):
         pass
 
+    def __health( self ):
+        self.__nsConnect.execute( "HEALTH", False )
+        return
+
     def __status( self ):
         jobKey = self.__submit()
         self.__nsConnect.execute( "STATUS " + jobKey, False )
@@ -280,139 +302,268 @@ class NSCommandsSender:
 
     def __stat( self ):
         self.__nsConnect.execute( "STAT", True )
+        return
 
     def __statClients( self ):
-        pass
+        self.__nsConnect.execute( "STAT CLIENTS VERBOSE", True )
+        return
 
     def __statNotifications( self ):
-        pass
+        self.__submit()
+        self.__nsConnect.execute( "STAT NOTIFICATIONS VERBOSE", True )
+        return
 
     def __statAffinities( self ):
-        pass
+        self.__submit()
+        self.__nsConnect.execute( "STAT AFFINITIES VERBOSE", True )
+        return
 
     def __statJobs( self ):
-        pass
+        self.__submit()
+        self.__nsConnect.execute( "STAT JOBS", True )
+        return
 
     def __statGroups( self ):
-        pass
+        self.__submit()
+        self.__nsConnect.execute( "STAT GROUPS VERBOSE", True )
+        return
 
     def __statQClasses( self ):
-        pass
+        self.__nsConnect.execute( "STAT QCLASSES", True )
+        return
 
     def __statQueues( self ):
-        pass
+        self.__nsConnect.execute( "STAT QUEUES", True )
+        return
+
+    def __statAlerts( self ):
+        self.__nsConnect.execute( "STAT ALERTS", True )
+        return
+
+    def __statAll( self ):
+        self.__nsConnect.execute( "STAT ALL", True )
+        return
+
+    def __statServices( self ):
+        self.__nsConnect.execute( "STAT SERVICES", False )
+        return
+
+    def __ackAlert( self ):
+        self.__nsConnect.execute( "ACKALERT config somebody", False )
+        return
 
     def __dump( self ):
-        pass
+        self.__submit()
+        self.__nsConnect.execute( "DUMP", True )
+        return
 
     def __afls( self ):
-        pass
+        self.__submit()
+        self.__nsConnect.execute( "AFLS", False )
+        return
 
     def __getp( self ):
-        pass
+        self.__nsConnect.execute( "GETP", False )
+        return
+
+    def __getp2( self ):
+        self.__nsConnect.execute( "GETP2", False )
+        return
 
     def __getc( self ):
-        pass
+        self.__nsConnect.execute( "GETC", True )
+        return
 
     def __cancelq( self ):
-        pass
+        self.__nsConnect.execute( "CANCELQ", False )
+        return
 
     def __refusesubmits( self ):
-        pass
+        self.__nsConnect.execute( "REFUSESUBMITS 1", False )
+        self.__nsConnect.execute( "REFUSESUBMITS 0", False )
+        return
+
+    def __queuePause( self ):
+        self.__nsConnect.execute( "QPAUSE pullback=0", False )
+        self.__nsConnect.execute( "QRESUME", False )
+        return
+
+    def __queueResume( self ):
+        self.__nsConnect.execute( "QPAUSE pullback=1", False )
+        self.__nsConnect.execute( "QRESUME", False )
+        return
 
     def __setqueue( self ):
-        pass
+        self.__nsConnect.execute( "SETQUEUE " + self.__nsConnect.getQueueName(),
+                                  False )
+        return
 
     def __mget( self ):
-        pass
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "MGET " + jobKey, False )
+        return
 
     def __sst( self ):
-        pass
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "SST " + jobKey, False )
+        return
 
     def __sst2( self ):
-        pass
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "SST2 " + jobKey, False )
+        return
 
     def __submit( self ):
-        output = self.__nsConnect.execute( "SUBMIT testJob", False )
-        if not output.startswith( "OK:" ):
-            raise UnexpectedNSResponse( "Submit does not return job key" )
-        return output.replace( "OK:", "", 1 ).strip()
+        output = self.__nsConnect.execute( "SUBMIT input=testJob "
+                                           "port=9877 timeout=5 "
+                                           "aff=a1 group=g1", False )
+        return output
 
     def __listen( self ):
-        pass
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "LISTEN " + jobKey + " 9878 5", False )
+        return
 
     def __cancel( self ):
-        pass
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "CANCEL " + jobKey, False )
+        return
 
     def __batch( self ):
-        pass
+        self.__nsConnect.execute( "BSUB", False )
+        self.__nsConnect.execute( "BTCH 2\ninput1\ninput2\nENDB", False )
+        self.__nsConnect.execute( "ENDS", False )
+        return
 
     def __mput( self ):
-        pass
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "MPUT " + jobKey + " MyMessage", False )
+        return
 
     def __clrn( self ):
-        pass
+        self.__nsConnect.execute( "CLRN", False )
+        return
 
     def __wst( self ):
-        pass
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "WST " + jobKey, False )
+        return
 
     def __wst2( self ):
-        pass
+        jobKey = self.__submit()
+        self.__nsConnect.execute( "WST2 " + jobKey, False )
+        return
 
     def __chaff( self ):
-        pass
+        self.__nsConnect.execute( "CHAFF add=a1,a2,a3 del=d1,d2,d3", False )
+        return
 
     def __setaff( self ):
-        pass
+        self.__nsConnect.execute( "SETAFF aff=a11,a12,a13", False )
+        return
 
     def __get( self ):
-        pass
+        self.__submit()
+        output = self.__nsConnect.execute( "GET", False )
+        return output.split( ' ' )[ 0 ]
 
     def __get2( self ):
-        pass
+        self.__submit()
+        output = self.__nsConnect.execute( "GET2 wnode_aff=0 any_aff=0 "
+                                           "exclusive_new_aff=0 aff=a1", False )
+
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ][ 0 ]
+        authToken = values[ 'auth_token' ][ 0 ]
+        return jobKey, authToken
 
     def __put( self ):
-        pass
+        jobKey = self.__get()
+        self.__nsConnect.execute( "PUT " + jobKey + " 0 MyOutput", False )
+        return jobKey
 
     def __put2( self ):
-        pass
+        jobKey, authToken = self.__get2()
+        self.__nsConnect.execute( "PUT2 job_key=" + jobKey +
+                                  " auth_token=" + authToken +
+                                  " job_return_code=0 output=nooutput", False )
+        return jobKey
 
     def __return( self ):
-        pass
+        jobKey = self.__get()
+        self.__nsConnect.execute( "RETURN job_key=" + jobKey, False )
+        return
 
     def __return2( self ):
-        pass
+        jobKey, authToken = self.__get2()
+        self.__nsConnect.execute( "RETURN2 job_key=" + jobKey +
+                                  " auth_token=" + authToken, False )
+        return
 
     def __wget( self ):
-        pass
+        self.__nsConnect.execute( "WGET 9978 5 aff=nonexisting", False )
+        return
 
     def __cwget( self ):
-        pass
+        self.__nsConnect.execute( "CWGET", False )
+        return
+
+    def __setclientdata( self ):
+        self.__nsConnect.execute( "SETCLIENTDATA data=something", False )
+        return
 
     def __fput( self ):
-        pass
+        jobKey = self.__get()
+        self.__nsConnect.execute( "FPUT job_key=" + jobKey + 
+                                  " err_msg=nomessage output=nooutput "
+                                  "job_return_code=1", False )
+        return
 
     def __fput2( self ):
-        pass
+        jobKey, authToken = self.__get2()
+        self.__nsConnect.execute( "FPUT2 job_key=" + jobKey +
+                                  " auth_token=" + authToken +
+                                  " err_msg=nomessage output=nooutput"
+                                  " job_return_code=1", False )
+        return
 
     def __jxcg( self ):
-        pass
+        jobKey, authToken = self.__get2()
+        self.__nsConnect.execute( "JXCG job_key=" + jobKey +
+                                  " job_return_code=1 output=nooutput", False )
+        return
 
     def __jdex( self ):
-        pass
+        jobKey, authToken = self.__get2()
+        self.__nsConnect.execute( "JDEX job_key=" + jobKey + " 5", False )
+        return
 
     def __read( self ):
-        pass
+        self.__put2()
+        output = self.__nsConnect.execute( "READ", False )
+
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ][ 0 ]
+        authToken = values[ 'auth_token' ][ 0 ]
+        return jobKey, authToken
 
     def __cfrm( self ):
-        pass
+        jobKey, authToken = self.__read()
+        self.__nsConnect.execute( "CFRM job_key=" + jobKey +
+                                  " auth_token=" + authToken, False )
+        return
 
     def __fred( self ):
-        pass
+        jobKey, authToken = self.__read()
+        self.__nsConnect.execute( "FRED job_key=" + jobKey +
+                                  " auth_token=" + authToken, False )
+        return
 
     def __rdrb( self ):
-        pass
-
+        jobKey, authToken = self.__read()
+        self.__nsConnect.execute( "RDRB job_key=" + jobKey +
+                                  " auth_token=" + authToken, False )
+        return
 
 
 
@@ -427,11 +578,24 @@ def main():
     parser.add_option( "-v", "--verbose",
                        action="store_true", dest="verbose", default=False,
                        help="be verbose (default: False)" )
+    parser.add_option( "-c", "--count",
+                       dest="count", default="1",
+                       help="number of loops (default: 1)" )
 
     # parse the command line options
     options, args = parser.parse_args()
     global VERBOSE
     VERBOSE = options.verbose
+
+    try:
+        count = int( options.count )
+    except:
+        printStderr( "Loop count must be integer" )
+        return 4
+
+    if count <= 0:
+        printStderr( "Loop count must be > 0" )
+        return 4
 
     if len( args ) < 2:
         printStderr( "Incorrect number of arguments" )
@@ -445,15 +609,18 @@ def main():
     queueName = args[ 1 ]
 
     printVerbose( "Connection point: " + connectionPoint + "\n"
-                  "Queue: " + queueName )
+                  "Queue: " + queueName + "\n"
+                  "Loop count: " + str( count ) )
 
 
     nsConnect = NSDirectConnect( connectionPoint, queueName )
     nsConnect.connect( COMMUNICATION_TIMEOUT )
     nsConnect.login()
 
-    commandsSender = NSCommandsSender( nsConnect, True )
-    commandsSender.visitAll()
+    while count > 0:
+        commandsSender = NSCommandsSender( nsConnect, True )
+        commandsSender.visitAll()
+        count -= 1
     return 0
 
 
