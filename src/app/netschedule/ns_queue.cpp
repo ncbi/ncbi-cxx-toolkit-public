@@ -118,7 +118,8 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_DumpClientBufferSize(default_dump_client_buffer_size),
     m_DumpAffBufferSize(default_dump_aff_buffer_size),
     m_DumpGroupBufferSize(default_dump_group_buffer_size),
-    m_ScrambleJobKeys(default_scramble_job_keys)
+    m_ScrambleJobKeys(default_scramble_job_keys),
+    m_PauseStatus(eNoPause)
 {
     _ASSERT(!queue_name.empty());
 }
