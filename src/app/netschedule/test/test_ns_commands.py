@@ -17,7 +17,7 @@ from cgi import parse_qs
 
 
 VERBOSE = False
-COMMUNICATION_TIMEOUT = 1
+COMMUNICATION_TIMEOUT = 5
 
 
 def printStderr( msg ):
