@@ -306,3 +306,72 @@ Seq-align ::= { \
 
     BOOST_CHECK_EQUAL( *starts_stops.first.rbegin(), 30740U );
 }
+
+BOOST_AUTO_TEST_CASE(TestStopInGap)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CScope scope(*om);
+    scope.AddDefaults();
+
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 487809918, \
+    genomic-id gi 341576043, \
+    genomic-strand minus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { \
+          amin 10, \
+          frame 1 \
+        }, \
+        product-end protpos { \
+          amin 165, \
+          frame 3 \
+        }, \
+        genomic-start 84235, \
+        genomic-end 84618, \
+        parts { \
+          diag 6, \
+          genomic-ins 6, \
+          diag 48, \
+          product-ins 3, \
+          diag 12, \
+          product-ins 15, \
+          diag 18, \
+          product-ins 72, \
+          diag 294 \
+        }, \
+        partial TRUE \
+      } \
+    }, \
+    product-length 166, \
+    modifiers { \
+      start-codon-found TRUE, \
+      stop-codon-found TRUE \
+    } \
+  } \
+} \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CSeq_align align;
+    *istr >> align;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CInternalStopFinder int_stop_finder(scope);
+
+    CFeatureGenerator fg(scope);
+    fg.SetFlags(CFeatureGenerator::fMaximizeTranslation);
+    CConstRef<CSeq_align> clean_alignment = fg.CleanAlignment(align);
+    set<TSeqPos> stops = int_stop_finder.FindStops(*clean_alignment);
+
+    BOOST_CHECK_EQUAL( *stops.begin(), 84609 );
+}

@@ -60,7 +60,7 @@ pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSe
         starts.insert(r->GetFrom());
     }
     ITERATE (set<TSeqRange>, r, start_stop_ranges.second) {
-        stops.insert(r->GetTo());
+        stops.insert(r->GetFrom());
     }
     return make_pair(starts, stops);
 }
