@@ -77,7 +77,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       fAsndisc = 1 << 4,
       fBigSequence = 1 << 5,
       fGenomes = 1 << 6,
-      fTRNA = 1 << 7
+      fTRNA = 1 << 7,
+      fGlobal = 1 << 8
    };
 
    struct s_test_property {
