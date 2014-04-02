@@ -239,8 +239,10 @@ void CRemoteAppRequest::Deserialize(CNcbiIstream& is)
 {
     Reset();
 
-    string cmdline; ReadStrWithLen(is,cmdline); SetCmdLine(cmdline);
-    ReadStrWithLen(is,m_InBlobIdOrData);
+    string cmdline;
+    ReadStrWithLen(is, cmdline);
+    SetCmdLine(cmdline);
+    ReadStrWithLen(is, m_InBlobIdOrData);
 
     int fcount = 0;
     vector<string> args;
