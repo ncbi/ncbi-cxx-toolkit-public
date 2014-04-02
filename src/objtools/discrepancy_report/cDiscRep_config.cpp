@@ -1257,7 +1257,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     bool big_sequence_report = false;
     // report category
     if (args.find("P") != args.end()) {
-      strtmp == args["P"];
+      strtmp = args["P"];
       thisInfo.output_config.add_output_tag 
              = ( (strtmp == "t") || (strtmp == "bt"));
       thisInfo.output_config.add_extra_output_tag = (strtmp == "s");
@@ -1451,8 +1451,12 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq_aa
    {"COUNT_PROTEINS", 
      fTRNA | fMegaReport | fDiscrepancy, "Count Proteins"},
-   {"MISSING_PROTEIN_ID", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Missing Protein ID" },
-   {"INCONSISTENT_PROTEIN_ID", fGenomes | fAsndisc | fDiscrepancy | fMegaReport, "Inconsistent Protein ID"},
+   {"MISSING_PROTEIN_ID", 
+     fGlobal | fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Missing Protein ID" },
+   {"INCONSISTENT_PROTEIN_ID", 
+     fGlobal | fGenomes | fAsndisc | fDiscrepancy | fMegaReport, 
+     "Inconsistent Protein ID"},
 
 // tests_on_Bioseq_na
    {"DISC_COUNT_NUCLEOTIDES", fGenomes | fBigSequence | fAsndisc | fOncaller| fMegaReport, "Count nucleotide sequences"},
@@ -1490,10 +1494,18 @@ static const s_test_property test_list[] = {
      fOncaller | fMegaReport, 
      "Sequences with rRNA or misc_RNA features should be genomic DNA"},
    {"ADJACENT_PSEUDOGENES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Adjacent PseudoGenes with Identical Text"},
-   {"MISSING_GENPRODSET_PROTEIN", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "CDS on GenProdSet without protein"},
-   {"DUP_GENPRODSET_PROTEIN", fGenomes | fDiscrepancy | fMegaReport, "Multiple CDS on GenProdSet, same protein"},
-   {"MISSING_GENPRODSET_TRANSCRIPT_ID", fGenomes | fDiscrepancy | fMegaReport, "mRNA on GenProdSet without transcript ID"},
-   {"DISC_DUP_GENPRODSET_TRANSCRIPT_ID", fGenomes | fMegaReport | fDiscrepancy | fAsndisc, "mRNA on GenProdSet with duplicate ID"},
+   {"MISSING_GENPRODSET_PROTEIN", 
+     fGlobal | fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "CDS on GenProdSet without protein"},
+   {"DUP_GENPRODSET_PROTEIN", 
+     fGlobal | fGenomes | fDiscrepancy | fMegaReport, 
+     "Multiple CDS on GenProdSet, same protein"},
+   {"MISSING_GENPRODSET_TRANSCRIPT_ID", 
+     fGlobal | fGenomes | fDiscrepancy | fMegaReport, 
+     "mRNA on GenProdSet without transcript ID"},
+   {"DISC_DUP_GENPRODSET_TRANSCRIPT_ID", 
+     fGlobal | fGenomes | fMegaReport | fDiscrepancy | fAsndisc, 
+     "mRNA on GenProdSet with duplicate ID"},
    {"DISC_FEAT_OVERLAP_SRCFEAT", 
      fDiscrepancy | fAsndisc | fMegaReport, 
      "Features Intersecting Source Features"},
@@ -1557,11 +1569,17 @@ static const s_test_property test_list[] = {
 
 // tests_on_Bioseq_CFeat_NotInGenProdSet
    {"DUPLICATE_GENE_LOCUS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Duplicate Gene Locus"},
-   {"MISSING_LOCUS_TAGS", fGenomes | fDiscrepancy | fMegaReport, "Missing Locus Tags"},
+   {"MISSING_LOCUS_TAGS", 
+     fGlobal | fGenomes | fDiscrepancy | fMegaReport, "Missing Locus Tags"},
    {"DUPLICATE_LOCUS_TAGS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Duplicate Locus Tags"},
-   {"DUPLICATE_LOCUS_TAGS_global", fGenomes | fAsndisc, "Duplicate Locus Tags"},
-   {"INCONSISTENT_LOCUS_TAG_PREFIX", fGenomes | fAsndisc | fDiscrepancy | fMegaReport, "Inconsistent Locus Tag Prefix"},
-   {"BAD_LOCUS_TAG_FORMAT", fGenomes | fMegaReport | fDiscrepancy | fAsndisc, "Bad Locus Tag Format"},
+   {"DUPLICATE_LOCUS_TAGS_global", 
+     fGlobal | fGenomes | fAsndisc, "Duplicate Locus Tags"},
+   {"INCONSISTENT_LOCUS_TAG_PREFIX", 
+     fGlobal | fGenomes | fAsndisc | fDiscrepancy | fMegaReport, 
+     "Inconsistent Locus Tag Prefix"},
+   {"BAD_LOCUS_TAG_FORMAT", 
+     fGlobal | fGenomes | fMegaReport | fDiscrepancy | fAsndisc, 
+     "Bad Locus Tag Format"},
    {"FEATURE_LOCATION_CONFLICT", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Feature Location Conflict"},
 
 // tests_on_Bioseq_CFeat_CSeqdesc
@@ -1569,7 +1587,9 @@ static const s_test_property test_list[] = {
    {"DISC_FEATURE_COUNT_oncaller", 
      fOncaller, 
      "Count features present or missing from sequences"}, 
-   {"DISC_FEATURE_COUNT", fGenomes | fAsndisc | fMegaReport, "Count features present or missing from sequences"}, // asndisc version   
+   {"DISC_FEATURE_COUNT", 
+     fGlobal | fGenomes | fAsndisc | fMegaReport, 
+     "Count features present or missing from sequences"}, // asndisc version   
    {"DISC_BAD_BGPIPE_QUALS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Bad BGPIPE qualifiers"},
    {"DISC_INCONSISTENT_MOLINFO_TECH", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent Molinfo Techniqueq"},
    {"SHORT_CONTIG", fGenomes | fDiscrepancy | fAsndisc | fMegaReport | fBigSequence, "Short Contig"},
@@ -1688,7 +1708,9 @@ static const s_test_property test_list[] = {
    {"DISC_SRC_QUAL_PROBLEM", 
      fOncaller | fMegaReport, 
      "Source Qualifier Report"},  // oncaller =DISC_SOURCE_QUALS_ASNDISC
-   {"DISC_SOURCE_QUALS_ASNDISC", fGenomes | fAsndisc | fMegaReport, "Source Qualifier test for Asndisc"}, // asndisc version of *_PROBLEM
+   {"DISC_SOURCE_QUALS_ASNDISC", 
+     fGlobal | fGenomes | fAsndisc | fMegaReport, 
+     "Source Qualifier test for Asndisc"}, // asndisc version of *_PROBLEM
 //   {"DISC_SOURCE_QUALS_ASNDISC_oncaller", fGenomes | fAsndisc | fOncaller | fMegaReport}, // needed?
    {"DISC_UNPUB_PUB_WITHOUT_TITLE", fGenomes | fAsndisc | fOncaller | fMegaReport, "Unpublished pubs should have titles"},
    {"ONCALLER_CONSORTIUM", 
@@ -3168,6 +3190,12 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
                   thisInfo.disc_report_data.push_back(c_item);
             }
             (*it)->GetReport(c_item);
+
+            // adjustment of setting_name
+            if (strtmp.find("global") != string::npos 
+                   || strtmp.find("oncaller") != string::npos) {
+               (*it)->setting_name = strtmp.substr(0, strtmp.find_last_of("_"));
+            }
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            c_item->expanded = x_IsExpandable(strtmp);
