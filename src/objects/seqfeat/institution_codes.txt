@@ -1933,7 +1933,7 @@ GHG	s	Council for Geosciences
 GHPG	s	Harold Porter National Botanical Garden
 GHRI	s	Guy Harvey Research Institute
 GHS	s	George Heriot's School, Biology Department
-GI	s	Justus-Liebig-Universitaet Giessen
+GI	s	Justus-Liebig-Universitat Giessen
 GI-SPS	s	Geological Institute, Section of Palaeontology and Stratigraphy
 GIFU<JPN>	s	Herbarium of Gifu Pharmaceutical University
 GIUV	s	Geological Institute, University of Vienna
@@ -2793,6 +2793,7 @@ JBAG	s	Jardin Botanico Atlantico, Ayuntamiento de Gijon
 JBC<MEX>	b	Francisco Javier Clavijero Botanic Garden
 JBG	s	Johannesburg Botanic Garden
 JBGP	s	Jardin Botanico Guillermo Pineres
+JBL	s	Jardin Botanico Lankester, Universidad de Costa Rica
 JBN	s	Jardin Botanico Nacional
 JBSD	s	Jardin Botanico Nacional Dr. Rafael M. Moscoso
 JBVN	s	Jardin Botanique de la Ville de Nice, Service des Espaces Verts
@@ -3344,7 +3345,7 @@ LYAC	s	Laiyang Agricultural College, Department of Basic Courses
 LYCC	c	Lallemand Yeast Culture Collection
 LycoCC	c	The Lycoming College Culture Collection
 LYD	s	Mpumalanga Parks Board
-LYJB	s	Jardin Botanique
+LYJB	s	Jardin Botanique de Lyon
 LYN	s	Lynchburg College, Biology Department
 LZ	s	Universitaet Leipzig
 LZAH	s	Lanzhou Institute of Animal Science, Chinese Academy of Agricultural Sciences
