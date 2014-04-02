@@ -243,7 +243,7 @@ inline numeric_limits<T> get_limits(const T&)
     return numeric_limits<T>();
 }
 
-/// Macro to declare specilized get_limits
+/// Macro to declare specialized get_limits
 #  define NCBI_GET_NUMERIC_LIMITS(type) \
     EMPTY_TEMPLATE \
     inline numeric_limits<type> get_limits(const type&) \
