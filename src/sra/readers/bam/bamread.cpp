@@ -689,8 +689,7 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
     if ( m_LocateRC == 0 ) {
         m_Iter.SetReferencedPointer(ptr);
     }
-    else if ( GetRCObject(m_LocateRC) == RCObject(rcData) &&
-           GetRCState(m_LocateRC) == rcNotFound ) {
+    else if ( AlignAccessAlignmentEnumeratorIsEOF(m_LocateRC) ) {
         // no alignments found
     }
     else {
