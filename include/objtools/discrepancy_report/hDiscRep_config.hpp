@@ -115,7 +115,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_CSeqdesc;
         static vector < CRef < CTestAndRepData > > tests_on_SeqEntry;
         static vector < CRef < CTestAndRepData > > tests_on_SeqEntry_feat_desc;
-        static vector < CRef < CTestAndRepData > > tests_4_once;
         static vector < CRef < CTestAndRepData > > tests_on_BioseqSet;
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
    };
@@ -129,6 +128,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
             m_num_entry = 0;
             m_all_expanded = false;
             m_expanded.clear();
+            m_genbank_loader = true;
         }
 
         virtual ~CRepConfig() { };

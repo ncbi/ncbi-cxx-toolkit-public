@@ -1221,7 +1221,22 @@ BEGIN_SCOPE(DiscRepNmSpc)
       set <string> m_aa_bioseqs;
 
       string GetName_set() const {return string("ONCALLER_DEFLINE_ON_SET");}
-      string GetName_seqch() const {return string("DISC_TITLE_ENDS_WITH_SEQUENCE"); }
+      string GetName_seqch() const {
+                 return string("DISC_TITLE_ENDS_WITH_SEQUENCE"); }
+      string GetName_def() const {return string("TEST_DEFLINE_PRESENT"); }
+
+      bool x_HasDefline(const CBioseq& bioseq);
+      bool x_FindOneDefline(const CSeq_entry& entry);
+  };
+
+  class CSeqEntry_TEST_DEFLINE_PRESENT: public CSeqEntry_test_on_defline
+  {
+    public:
+      virtual ~CSeqEntry_TEST_DEFLINE_PRESENT () {};
+
+      virtual void GetReport(CRef <CClickableItem> c_item);
+      virtual string GetName() const {
+                  return CSeqEntry_test_on_defline::GetName_def();}
   };
 
   class CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE : public CSeqEntry_test_on_defline
@@ -3938,16 +3953,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("FIND_OVERLAPPED_GENES");}
-  };
-
-  class CBioseq_TEST_DEFLINE_PRESENT : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_TEST_DEFLINE_PRESENT () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem> c_item);
-      virtual string GetName() const {return string("TEST_DEFLINE_PRESENT");}
   };
 
   class CBioseq_DISC_QUALITY_SCORES : public CBioseqTestAndRepData
