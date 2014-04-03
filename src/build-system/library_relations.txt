@@ -358,6 +358,7 @@ gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gpinit_buildinfo
 gpipe_ftp needs xalgoalignutil
+gpipe_ftp needs xhtml
 gpipe_ftp needs xobjedit
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
@@ -365,6 +366,7 @@ gpipe_ftp_new needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp_new needs $(XFORMAT_LIBS)
 gpipe_ftp_new needs gpinit_buildinfo
 gpipe_ftp_new needs xalgoalignutil
+gpipe_ftp_new needs xhtml
 gpipe_ftp_new needs xobjedit
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
@@ -1213,6 +1215,7 @@ xformat needs mlacli
 xformat needs submit
 xformat needs valid
 xformat needs xalnmgr
+xformat needs xhtml
 xgdsapi needs $(CONNEXT)
 xgdsapi needs connect
 xgdsapi needs dbapi
@@ -1378,6 +1381,7 @@ xutil needs xncbi
 xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
+xvalidate needs xhtml
 xvalidate needs xobjedit
 xxconnect needs connect
 xxconnect needs xncbi
