@@ -489,7 +489,7 @@ public:
     void SetMask(CMask*      mask,
                  EOwnership  own   = eNoOwnership,
                  EMaskType   type  = eExtractMask,
-                 NStr::ECase acase = NStr::eNocase);
+                 NStr::ECase acase = NStr::eCase);
 
     /// Get base directory to use for files while extracting from/adding to
     /// the archive, and in the latter case used only for relative paths.
