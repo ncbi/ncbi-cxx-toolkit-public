@@ -55,9 +55,11 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi::objects);
 
 const char GAP_CHAR='-'; // used in dna and protein text
-const char SPACE_CHAR=' '; // translation and protein
 const char INTRON_CHAR='.'; // protein
+#ifdef _DEBUG
+const char SPACE_CHAR=' '; // translation and protein
 const char INTRON_OR_GAP[] = {INTRON_CHAR,GAP_CHAR,0};
+#endif
 
 // used in match text
 const char BAD_PIECE_CHAR='X';
@@ -622,6 +624,7 @@ list<TSeqRange> InvertPartList(const list<CNPiece>& good_parts, TSeqRange total_
     return bad_parts;
 }
     
+#ifdef _DEBUG
 void TestExonLength(const CSpliced_exon& exon)
 {
         int nuc_len = 0;
@@ -647,17 +650,16 @@ void TestExonLength(const CSpliced_exon& exon)
                 nuc_len += chunk.GetGenomic_ins();
             }
         }
-
-#ifdef _DEBUG
                 int prot_cur_start = exon.GetProduct_start().AsSeqPos();
                 int prot_cur_end = exon.GetProduct_end().AsSeqPos();
                 int nuc_cur_end = exon.GetGenomic_end();
                 int nuc_cur_start = exon.GetGenomic_start();
-#endif
 
         _ASSERT( nuc_cur_end-nuc_cur_start+1 == nuc_len );
         _ASSERT( prot_cur_end-prot_cur_start+1 == prot_len );
 }
+#endif
+
 
 void SplitChunk(TAliChunkCollection& chunks, TAliChunkIterator iter, TSeqPos start_of_second_chunk, bool genomic_plus)
 {
