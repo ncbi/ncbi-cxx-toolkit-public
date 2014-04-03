@@ -64,8 +64,8 @@ NW_001838553.2	BestRefSeq	CDS	92849	92938	.	+	0	ID=cds2;Parent=rna3;Dbxref=GeneI
 NW_001838553.2	BestRefSeq	CDS	95542	95604	.	+	0	ID=cds2;Parent=rna3;Dbxref=GeneID:64216,Genbank:NP_071761.1,HGNC:18559,HPRD:09520,MIM:607055;Name=NP_071761.1;gbkey=CDS;gene=TFB2M;product=dimethyladenosine transferase 2%2C mitochondrial;protein_id=NP_071761.1
 NW_001838553.2	BestRefSeq	CDS	99464	99624	.	+	0	ID=cds2;Parent=rna3;Dbxref=GeneID:64216,Genbank:NP_071761.1,HGNC:18559,HPRD:09520,MIM:607055;Name=NP_071761.1;gbkey=CDS;gene=TFB2M;product=dimethyladenosine transferase 2%2C mitochondrial;protein_id=NP_071761.1
 NW_001838553.2	BestRefSeq	CDS	102944	103115	.	+	1	ID=cds2;Parent=rna3;Dbxref=GeneID:64216,Genbank:NP_071761.1,HGNC:18559,HPRD:09520,MIM:607055;Name=NP_071761.1;gbkey=CDS;gene=TFB2M;product=dimethyladenosine transferase 2%2C mitochondrial;protein_id=NP_071761.1
-NW_001838553.2	RefSeq	STS	83836	84624	.	+	.	ID=id30;Dbxref=UniSTS:149144,GeneID:64216,HGNC:18559,HPRD:09520,MIM:607055;gbkey=STS;gene=TFB2M
-NW_001838553.2	RefSeq	STS	103228	103413	.	+	.	ID=id31;Dbxref=UniSTS:97721,GeneID:64216,HGNC:18559,HPRD:09520,MIM:607055;gbkey=STS;gene=TFB2M
+NW_001838553.2	BestRefSeq	STS	83836	84624	.	+	.	ID=id30;Dbxref=UniSTS:149144,GeneID:64216,HGNC:18559,HPRD:09520,MIM:607055;gbkey=STS;gene=TFB2M
+NW_001838553.2	BestRefSeq	STS	103228	103413	.	+	.	ID=id31;Dbxref=UniSTS:97721,GeneID:64216,HGNC:18559,HPRD:09520,MIM:607055;gbkey=STS;gene=TFB2M
 NW_001838553.2	BestRefSeq	gene	119899	127282	.	+	.	ID=gene5;Dbxref=GeneID:255654;Name=LOC255654;description=uncharacterized LOC255654;gbkey=Gene;gene=LOC255654
 NW_001838553.2	BestRefSeq	transcript	119899	127282	.	+	.	ID=rna4;Parent=gene5;Dbxref=GeneID:255654,Genbank:NR_040002.1;Name=NR_040002.1;Note=The RefSeq transcript has 1 substitution and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=misc_RNA;gene=LOC255654;product=uncharacterized LOC255654;transcript_id=NR_040002.1
 NW_001838553.2	BestRefSeq	exon	119899	119989	.	+	.	ID=id32;Parent=rna4;Dbxref=GeneID:255654,Genbank:NR_040002.1;Note=The RefSeq transcript has 1 substitution and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=misc_RNA;gene=LOC255654;product=uncharacterized LOC255654;transcript_id=NR_040002.1
@@ -97,7 +97,7 @@ NW_001838553.2	BestRefSeq	CDS	778044	778131	.	+	0	ID=cds3;Parent=rna5;Dbxref=Gen
 NW_001838553.2	BestRefSeq	CDS	783260	783434	.	+	2	ID=cds3;Parent=rna5;Dbxref=GeneID:64754,Genbank:NP_001161212.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_001161212.1;Note=isoform 1 is encoded by transcript variant 1%3B The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 1;protein_id=NP_001161212.1
 NW_001838553.2	BestRefSeq	CDS	878205	878313	.	+	1	ID=cds3;Parent=rna5;Dbxref=GeneID:64754,Genbank:NP_001161212.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_001161212.1;Note=isoform 1 is encoded by transcript variant 1%3B The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 1;protein_id=NP_001161212.1
 NW_001838553.2	BestRefSeq	CDS	892679	892780	.	+	0	ID=cds3;Parent=rna5;Dbxref=GeneID:64754,Genbank:NP_001161212.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_001161212.1;Note=isoform 1 is encoded by transcript variant 1%3B The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 1;protein_id=NP_001161212.1
-NW_001838553.2	RefSeq	STS	210054	210148	.	+	.	ID=id47;Dbxref=UniSTS:18515,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	210054	210148	.	+	.	ID=id47;Dbxref=UniSTS:18515,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	BestRefSeq	mRNA	226049	893003	.	+	.	ID=rna6;Parent=gene6;Dbxref=GeneID:64754,Genbank:NM_022743.2,HGNC:15513,HPRD:12297,MIM:608783;Name=NM_022743.2;Note=The RefSeq transcript has 1 substitution and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SMYD3;product=SET and MYND domain containing 3%2C transcript variant 2;transcript_id=NM_022743.2
 NW_001838553.2	BestRefSeq	exon	226049	226164	.	+	.	ID=id48;Parent=rna6;Dbxref=GeneID:64754,Genbank:NM_022743.2,HGNC:15513,HPRD:12297,MIM:608783;Note=The RefSeq transcript has 1 substitution and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SMYD3;product=SET and MYND domain containing 3%2C transcript variant 2;transcript_id=NM_022743.2
 NW_001838553.2	BestRefSeq	exon	286852	286915	.	+	.	ID=id49;Parent=rna6;Dbxref=GeneID:64754,Genbank:NM_022743.2,HGNC:15513,HPRD:12297,MIM:608783;Note=The RefSeq transcript has 1 substitution and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SMYD3;product=SET and MYND domain containing 3%2C transcript variant 2;transcript_id=NM_022743.2
@@ -111,11 +111,11 @@ NW_001838553.2	BestRefSeq	exon	778044	778131	.	+	.	ID=id56;Parent=rna6;Dbxref=Ge
 NW_001838553.2	BestRefSeq	exon	783260	783434	.	+	.	ID=id57;Parent=rna6;Dbxref=GeneID:64754,Genbank:NM_022743.2,HGNC:15513,HPRD:12297,MIM:608783;Note=The RefSeq transcript has 1 substitution and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SMYD3;product=SET and MYND domain containing 3%2C transcript variant 2;transcript_id=NM_022743.2
 NW_001838553.2	BestRefSeq	exon	878205	878313	.	+	.	ID=id58;Parent=rna6;Dbxref=GeneID:64754,Genbank:NM_022743.2,HGNC:15513,HPRD:12297,MIM:608783;Note=The RefSeq transcript has 1 substitution and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SMYD3;product=SET and MYND domain containing 3%2C transcript variant 2;transcript_id=NM_022743.2
 NW_001838553.2	BestRefSeq	exon	892679	893003	.	+	.	ID=id59;Parent=rna6;Dbxref=GeneID:64754,Genbank:NM_022743.2,HGNC:15513,HPRD:12297,MIM:608783;Note=The RefSeq transcript has 1 substitution and 1 indel compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SMYD3;product=SET and MYND domain containing 3%2C transcript variant 2;transcript_id=NM_022743.2
-NW_001838553.2	RefSeq	STS	226355	226671	.	+	.	ID=id60;Dbxref=UniSTS:135349,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	248423	248992	.	+	.	ID=id61;Dbxref=UniSTS:132905,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	248711	248992	.	+	.	ID=id62;Dbxref=UniSTS:132905,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	249033	249348	.	+	.	ID=id63;Dbxref=UniSTS:133244,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	276006	276123	.	+	.	ID=id64;Dbxref=UniSTS:57352,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	226355	226671	.	+	.	ID=id60;Dbxref=UniSTS:135349,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	248423	248992	.	+	.	ID=id61;Dbxref=UniSTS:132905,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	248711	248992	.	+	.	ID=id62;Dbxref=UniSTS:132905,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	249033	249348	.	+	.	ID=id63;Dbxref=UniSTS:133244,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	276006	276123	.	+	.	ID=id64;Dbxref=UniSTS:57352,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	BestRefSeq	CDS	286865	286915	.	+	0	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
 NW_001838553.2	BestRefSeq	CDS	306365	306472	.	+	0	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
 NW_001838553.2	BestRefSeq	CDS	311302	311359	.	+	0	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
@@ -127,32 +127,32 @@ NW_001838553.2	BestRefSeq	CDS	778044	778131	.	+	0	ID=cds4;Parent=rna6;Dbxref=Gen
 NW_001838553.2	BestRefSeq	CDS	783260	783434	.	+	2	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
 NW_001838553.2	BestRefSeq	CDS	878205	878313	.	+	1	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
 NW_001838553.2	BestRefSeq	CDS	892679	892780	.	+	0	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
-NW_001838553.2	RefSeq	STS	321094	321318	.	+	.	ID=id65;Dbxref=UniSTS:940,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	321094	321318	.	+	.	ID=id66;Dbxref=UniSTS:941,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	327926	328063	.	+	.	ID=id67;Dbxref=UniSTS:98271,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	327929	328057	.	+	.	ID=id68;Dbxref=UniSTS:80721,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	353580	353699	.	+	.	ID=id69;Dbxref=UniSTS:82524,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	361717	362033	.	+	.	ID=id70;Dbxref=UniSTS:102324,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	382449	382603	.	+	.	ID=id71;Dbxref=UniSTS:93781,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	438651	438859	.	+	.	ID=id72;Dbxref=UniSTS:174749,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	480722	481022	.	+	.	ID=id73;Dbxref=UniSTS:171547,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	321094	321318	.	+	.	ID=id65;Dbxref=UniSTS:940,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	321094	321318	.	+	.	ID=id66;Dbxref=UniSTS:941,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	327926	328063	.	+	.	ID=id67;Dbxref=UniSTS:98271,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	327929	328057	.	+	.	ID=id68;Dbxref=UniSTS:80721,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	353580	353699	.	+	.	ID=id69;Dbxref=UniSTS:82524,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	361717	362033	.	+	.	ID=id70;Dbxref=UniSTS:102324,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	382449	382603	.	+	.	ID=id71;Dbxref=UniSTS:93781,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	438651	438859	.	+	.	ID=id72;Dbxref=UniSTS:174749,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	480722	481022	.	+	.	ID=id73;Dbxref=UniSTS:171547,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	Gnomon	gene	527506	530294	.	-	.	ID=gene7;Dbxref=GeneID:101928089;Name=LOC101928089;gbkey=Gene;gene=LOC101928089
 NW_001838553.2	Gnomon	transcript	527506	530294	.	-	.	ID=rna7;Parent=gene7;Dbxref=GeneID:101928089,Genbank:XR_248741.1;Name=XR_248741.1;gbkey=misc_RNA;gene=LOC101928089;product=uncharacterized LOC101928089;transcript_id=XR_248741.1
 NW_001838553.2	Gnomon	exon	529826	530294	.	-	.	ID=id74;Parent=rna7;Dbxref=GeneID:101928089,Genbank:XR_248741.1;gbkey=misc_RNA;gene=LOC101928089;product=uncharacterized LOC101928089;transcript_id=XR_248741.1
 NW_001838553.2	Gnomon	exon	527506	527686	.	-	.	ID=id75;Parent=rna7;Dbxref=GeneID:101928089,Genbank:XR_248741.1;gbkey=misc_RNA;gene=LOC101928089;product=uncharacterized LOC101928089;transcript_id=XR_248741.1
-NW_001838553.2	RefSeq	STS	529629	529948	.	+	.	ID=id76;Dbxref=UniSTS:178077,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	532162	532290	.	+	.	ID=id77;Dbxref=UniSTS:82035,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	539985	540233	.	+	.	ID=id78;Dbxref=UniSTS:20193,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	591389	591677	.	+	.	ID=id79;Dbxref=UniSTS:132248,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	630084	630247	.	+	.	ID=id80;Dbxref=UniSTS:70878,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	637055	637236	.	+	.	ID=id81;Dbxref=UniSTS:51604,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	774186	774388	.	+	.	ID=id82;Dbxref=UniSTS:14874,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	805682	805995	.	+	.	ID=id83;Dbxref=UniSTS:132338,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	831739	832041	.	+	.	ID=id84;Dbxref=UniSTS:103864,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	874675	874951	.	+	.	ID=id85;Dbxref=UniSTS:175926,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	529629	529948	.	+	.	ID=id76;Dbxref=UniSTS:178077,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	532162	532290	.	+	.	ID=id77;Dbxref=UniSTS:82035,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	539985	540233	.	+	.	ID=id78;Dbxref=UniSTS:20193,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	591389	591677	.	+	.	ID=id79;Dbxref=UniSTS:132248,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	630084	630247	.	+	.	ID=id80;Dbxref=UniSTS:70878,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	637055	637236	.	+	.	ID=id81;Dbxref=UniSTS:51604,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	774186	774388	.	+	.	ID=id82;Dbxref=UniSTS:14874,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	805682	805995	.	+	.	ID=id83;Dbxref=UniSTS:132338,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	831739	832041	.	+	.	ID=id84;Dbxref=UniSTS:103864,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	874675	874951	.	+	.	ID=id85;Dbxref=UniSTS:175926,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	RefSeq	STS	892722	893130	.	+	.	ID=id86;Dbxref=UniSTS:468707;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	892735	892960	.	+	.	ID=id87;Dbxref=UniSTS:40196,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	RefSeq	STS	892735	892960	.	+	.	ID=id88;Dbxref=UniSTS:40197,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	892735	892960	.	+	.	ID=id87;Dbxref=UniSTS:40196,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	892735	892960	.	+	.	ID=id88;Dbxref=UniSTS:40197,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	RefSeq	STS	933254	933499	.	+	.	ID=id89;Dbxref=UniSTS:60388;gbkey=STS
 NW_001838553.2	RefSeq	STS	936989	937116	.	+	.	ID=id90;Dbxref=UniSTS:38207;gbkey=STS
 NW_001838553.2	BestRefSeq	gene	939212	1491823	.	-	.	ID=gene8;Dbxref=GeneID:55083,HGNC:25484,MIM:614026;Name=KIF26B;description=kinesin family member 26B;gbkey=Gene;gene=KIF26B
@@ -344,24 +344,24 @@ NW_001838553.2	BestRefSeq	CDS	1790622	1790876	.	+	2	ID=cds9;Parent=rna15;Dbxref=
 NW_001838553.2	BestRefSeq	CDS	1791172	1791356	.	+	2	ID=cds9;Parent=rna15;Dbxref=GeneID:3192,Genbank:NP_004492.2,HGNC:5048,MIM:602869;Name=NP_004492.2;Note=isoform b is encoded by transcript variant 2;gbkey=CDS;gene=HNRNPU;product=heterogeneous nuclear ribonucleoprotein U isoform b;protein_id=NP_004492.2
 NW_001838553.2	BestRefSeq	CDS	1791736	1791807	.	+	0	ID=cds9;Parent=rna15;Dbxref=GeneID:3192,Genbank:NP_004492.2,HGNC:5048,MIM:602869;Name=NP_004492.2;Note=isoform b is encoded by transcript variant 2;gbkey=CDS;gene=HNRNPU;product=heterogeneous nuclear ribonucleoprotein U isoform b;protein_id=NP_004492.2
 NW_001838553.2	BestRefSeq	CDS	1792277	1792330	.	+	0	ID=cds9;Parent=rna15;Dbxref=GeneID:3192,Genbank:NP_004492.2,HGNC:5048,MIM:602869;Name=NP_004492.2;Note=isoform b is encoded by transcript variant 2;gbkey=CDS;gene=HNRNPU;product=heterogeneous nuclear ribonucleoprotein U isoform b;protein_id=NP_004492.2
-NW_001838553.2	RefSeq	STS	1790280	1790738	.	+	.	ID=id211;Dbxref=UniSTS:267386,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1790291	1790440	.	+	.	ID=id212;Dbxref=UniSTS:3545,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1790771	1791317	.	+	.	ID=id213;Dbxref=UniSTS:207257,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1791307	1792303	.	+	.	ID=id214;Dbxref=UniSTS:10169,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1791749	1792295	.	+	.	ID=id215;Dbxref=UniSTS:546820,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1791756	1792440	.	+	.	ID=id216;Dbxref=UniSTS:268469,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1791764	1792401	.	+	.	ID=id217;Dbxref=UniSTS:49593,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1791796	1792288	.	+	.	ID=id218;Dbxref=UniSTS:514316,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1792351	1793221	.	+	.	ID=id219;Dbxref=UniSTS:277316,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1792525	1793026	.	+	.	ID=id220;Dbxref=UniSTS:268990,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1792627	1792885	.	+	.	ID=id221;Dbxref=UniSTS:42376,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1792676	1793020	.	+	.	ID=id222;Dbxref=UniSTS:31692,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1792752	1793020	.	+	.	ID=id223;Dbxref=UniSTS:60734,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1792864	1793015	.	+	.	ID=id224;Dbxref=UniSTS:506402,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1794695	1794850	.	+	.	ID=id225;Dbxref=UniSTS:46824,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1795155	1795266	.	+	.	ID=id226;Dbxref=UniSTS:36278,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1795401	1795582	.	+	.	ID=id227;Dbxref=UniSTS:72191,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
-NW_001838553.2	RefSeq	STS	1796259	1796414	.	+	.	ID=id228;Dbxref=UniSTS:84894,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1790280	1790738	.	+	.	ID=id211;Dbxref=UniSTS:267386,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1790291	1790440	.	+	.	ID=id212;Dbxref=UniSTS:3545,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1790771	1791317	.	+	.	ID=id213;Dbxref=UniSTS:207257,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1791307	1792303	.	+	.	ID=id214;Dbxref=UniSTS:10169,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1791749	1792295	.	+	.	ID=id215;Dbxref=UniSTS:546820,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1791756	1792440	.	+	.	ID=id216;Dbxref=UniSTS:268469,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1791764	1792401	.	+	.	ID=id217;Dbxref=UniSTS:49593,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1791796	1792288	.	+	.	ID=id218;Dbxref=UniSTS:514316,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1792351	1793221	.	+	.	ID=id219;Dbxref=UniSTS:277316,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1792525	1793026	.	+	.	ID=id220;Dbxref=UniSTS:268990,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1792627	1792885	.	+	.	ID=id221;Dbxref=UniSTS:42376,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1792676	1793020	.	+	.	ID=id222;Dbxref=UniSTS:31692,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1792752	1793020	.	+	.	ID=id223;Dbxref=UniSTS:60734,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1792864	1793015	.	+	.	ID=id224;Dbxref=UniSTS:506402,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1794695	1794850	.	+	.	ID=id225;Dbxref=UniSTS:46824,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1795155	1795266	.	+	.	ID=id226;Dbxref=UniSTS:36278,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1795401	1795582	.	+	.	ID=id227;Dbxref=UniSTS:72191,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
+NW_001838553.2	BestRefSeq	STS	1796259	1796414	.	+	.	ID=id228;Dbxref=UniSTS:84894,GeneID:3192,HGNC:5048,MIM:602869;gbkey=STS;gene=HNRNPU
 NW_001838553.2	BestRefSeq	gene	1799838	1806142	.	+	.	ID=gene12;Dbxref=GeneID:284702,HGNC:27651;Name=HNRNPU-AS1;description=HNRNPU antisense RNA 1;end_range=1806142,.;gbkey=Gene;gene=HNRNPU-AS1;gene_synonym=C1orf199,NCRNA00201;partial=true
 NW_001838553.2	BestRefSeq	transcript	1799838	1806142	.	+	.	ID=rna16;Parent=gene12;Dbxref=GeneID:284702,Genbank:NR_026778.1,HGNC:27651;Name=NR_026778.1;end_range=1806142,.;gbkey=misc_RNA;gene=HNRNPU-AS1;product=HNRNPU antisense RNA 1;transcript_id=NR_026778.1
 NW_001838553.2	BestRefSeq	exon	1799838	1800175	.	+	.	ID=id229;Parent=rna16;Dbxref=GeneID:284702,Genbank:NR_026778.1,HGNC:27651;gbkey=misc_RNA;gene=HNRNPU-AS1;product=HNRNPU antisense RNA 1;transcript_id=NR_026778.1
@@ -372,13 +372,13 @@ NW_001838553.2	BestRefSeq	exon	1811024	1811443	.	-	.	ID=id231;Parent=rna17;Dbxre
 NW_001838553.2	BestRefSeq	exon	1804722	1804836	.	-	.	ID=id232;Parent=rna17;Dbxref=GeneID:116228,Genbank:NM_198076.4,HGNC:26970,HPRD:13307,MIM:614698;gbkey=mRNA;gene=COX20;product=COX20 cytochrome C oxidase assembly factor;transcript_id=NM_198076.4
 NW_001838553.2	BestRefSeq	exon	1804522	1804585	.	-	.	ID=id233;Parent=rna17;Dbxref=GeneID:116228,Genbank:NM_198076.4,HGNC:26970,HPRD:13307,MIM:614698;gbkey=mRNA;gene=COX20;product=COX20 cytochrome C oxidase assembly factor;transcript_id=NM_198076.4
 NW_001838553.2	BestRefSeq	exon	1801723	1803739	.	-	.	ID=id234;Parent=rna17;Dbxref=GeneID:116228,Genbank:NM_198076.4,HGNC:26970,HPRD:13307,MIM:614698;gbkey=mRNA;gene=COX20;product=COX20 cytochrome C oxidase assembly factor;transcript_id=NM_198076.4
-NW_001838553.2	RefSeq	STS	1801878	1802000	.	+	.	ID=id235;Dbxref=UniSTS:83706,GeneID:284702,HGNC:27651;gbkey=STS;gene=HNRNPU-AS1
-NW_001838553.2	RefSeq	STS	1802418	1802545	.	+	.	ID=id236;Dbxref=UniSTS:3868,GeneID:284702,HGNC:27651;gbkey=STS;gene=HNRNPU-AS1
+NW_001838553.2	BestRefSeq	STS	1801878	1802000	.	+	.	ID=id235;Dbxref=UniSTS:83706,GeneID:284702,HGNC:27651;gbkey=STS;gene=HNRNPU-AS1
+NW_001838553.2	BestRefSeq	STS	1802418	1802545	.	+	.	ID=id236;Dbxref=UniSTS:3868,GeneID:284702,HGNC:27651;gbkey=STS;gene=HNRNPU-AS1
 NW_001838553.2	BestRefSeq	CDS	1811024	1811065	.	-	0	ID=cds10;Parent=rna17;Dbxref=GeneID:116228,Genbank:NP_932342.1,HGNC:26970,HPRD:13307,MIM:614698;Name=NP_932342.1;gbkey=CDS;gene=COX20;product=cytochrome c oxidase protein 20 homolog;protein_id=NP_932342.1
 NW_001838553.2	BestRefSeq	CDS	1804722	1804836	.	-	0	ID=cds10;Parent=rna17;Dbxref=GeneID:116228,Genbank:NP_932342.1,HGNC:26970,HPRD:13307,MIM:614698;Name=NP_932342.1;gbkey=CDS;gene=COX20;product=cytochrome c oxidase protein 20 homolog;protein_id=NP_932342.1
 NW_001838553.2	BestRefSeq	CDS	1804522	1804585	.	-	2	ID=cds10;Parent=rna17;Dbxref=GeneID:116228,Genbank:NP_932342.1,HGNC:26970,HPRD:13307,MIM:614698;Name=NP_932342.1;gbkey=CDS;gene=COX20;product=cytochrome c oxidase protein 20 homolog;protein_id=NP_932342.1
 NW_001838553.2	BestRefSeq	CDS	1803604	1803739	.	-	1	ID=cds10;Parent=rna17;Dbxref=GeneID:116228,Genbank:NP_932342.1,HGNC:26970,HPRD:13307,MIM:614698;Name=NP_932342.1;gbkey=CDS;gene=COX20;product=cytochrome c oxidase protein 20 homolog;protein_id=NP_932342.1
-NW_001838553.2	RefSeq	STS	1803634	1804538	.	+	.	ID=id237;Dbxref=UniSTS:77932,GeneID:284702,HGNC:27651;gbkey=STS;gene=HNRNPU-AS1
+NW_001838553.2	BestRefSeq	STS	1803634	1804538	.	+	.	ID=id237;Dbxref=UniSTS:77932,GeneID:284702,HGNC:27651;gbkey=STS;gene=HNRNPU-AS1
 NW_001838553.2	RefSeq	STS	1809951	1810131	.	+	.	ID=id238;Dbxref=UniSTS:90591;gbkey=STS;gene=COX20
 NW_001838553.2	RefSeq	STS	1936102	1936233	.	+	.	ID=id239;Dbxref=UniSTS:38811;gbkey=STS
 NW_001838553.2	BestRefSeq	gene	1937738	1993695	.	-	.	ID=gene14;Dbxref=GeneID:51029,HGNC:24264,HPRD:15153,MIM:614638;Name=DESI2;description=desumoylating isopeptidase 2;gbkey=Gene;gene=DESI2;gene_synonym=C1orf121,CGI-146,DESI,DeSI-2,DESI1,FAM152A,PNAS-4,PPPDE1
@@ -556,12 +556,12 @@ NW_001838553.2	BestRefSeq	CDS	2228989	2229113	.	+	0	ID=cds15;Parent=rna22;Dbxref
 NW_001838553.2	BestRefSeq	CDS	2230663	2230760	.	+	1	ID=cds15;Parent=rna22;Dbxref=GeneID:159,Genbank:NP_001117.2,HGNC:292,MIM:103060;Name=NP_001117.2;gbkey=CDS;gene=ADSS;product=adenylosuccinate synthetase isozyme 2;protein_id=NP_001117.2
 NW_001838553.2	BestRefSeq	CDS	2235308	2235457	.	+	2	ID=cds15;Parent=rna22;Dbxref=GeneID:159,Genbank:NP_001117.2,HGNC:292,MIM:103060;Name=NP_001117.2;gbkey=CDS;gene=ADSS;product=adenylosuccinate synthetase isozyme 2;protein_id=NP_001117.2
 NW_001838553.2	BestRefSeq	CDS	2237105	2237157	.	+	2	ID=cds15;Parent=rna22;Dbxref=GeneID:159,Genbank:NP_001117.2,HGNC:292,MIM:103060;Name=NP_001117.2;gbkey=CDS;gene=ADSS;product=adenylosuccinate synthetase isozyme 2;protein_id=NP_001117.2
-NW_001838553.2	RefSeq	STS	2198580	2198907	.	+	.	ID=id330;Dbxref=UniSTS:101927,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
-NW_001838553.2	RefSeq	STS	2208355	2208687	.	+	.	ID=id331;Dbxref=UniSTS:102728,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
-NW_001838553.2	RefSeq	STS	2229007	2229322	.	+	.	ID=id332;Dbxref=UniSTS:168955,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
-NW_001838553.2	RefSeq	STS	2237173	2237372	.	+	.	ID=id333;Dbxref=UniSTS:22913,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
-NW_001838553.2	RefSeq	STS	2237269	2237539	.	+	.	ID=id334;Dbxref=UniSTS:49018,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
-NW_001838553.2	RefSeq	STS	2237618	2237744	.	+	.	ID=id335;Dbxref=UniSTS:17427,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
+NW_001838553.2	BestRefSeq	STS	2198580	2198907	.	+	.	ID=id330;Dbxref=UniSTS:101927,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
+NW_001838553.2	BestRefSeq	STS	2208355	2208687	.	+	.	ID=id331;Dbxref=UniSTS:102728,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
+NW_001838553.2	BestRefSeq	STS	2229007	2229322	.	+	.	ID=id332;Dbxref=UniSTS:168955,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
+NW_001838553.2	BestRefSeq	STS	2237173	2237372	.	+	.	ID=id333;Dbxref=UniSTS:22913,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
+NW_001838553.2	BestRefSeq	STS	2237269	2237539	.	+	.	ID=id334;Dbxref=UniSTS:49018,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
+NW_001838553.2	BestRefSeq	STS	2237618	2237744	.	+	.	ID=id335;Dbxref=UniSTS:17427,GeneID:159,HGNC:292,MIM:103060;gbkey=STS;gene=ADSS
 NW_001838553.2	Curated Genomic	gene	2239578	2251635	.	+	.	ID=gene19;Dbxref=GeneID:126826,HGNC:33317;Name=TGIF2P1;description=TGFB-induced factor homeobox 2 pseudogene 1;gbkey=Gene;gene=TGIF2P1;pseudo=true
 NW_001838553.2	BestRefSeq	gene	2257536	2293876	.	-	.	ID=gene20;Dbxref=GeneID:200159,HGNC:30435;Name=C1orf100;description=chromosome 1 open reading frame 100;gbkey=Gene;gene=C1orf100;gene_synonym=RP11-518L10.1
 NW_001838553.2	BestRefSeq	mRNA	2257536	2293876	.	-	.	ID=rna23;Parent=gene20;Dbxref=GeneID:200159,Genbank:NM_001276349.1,HGNC:30435;Name=NM_001276349.1;gbkey=mRNA;gene=C1orf100;product=chromosome 1 open reading frame 100%2C transcript variant 3;transcript_id=NM_001276349.1
@@ -726,31 +726,31 @@ NW_001838553.2	BestRefSeq	CDS	3096600	3096814	.	+	0	ID=cds24;Parent=rna33;Dbxref
 NW_001838553.2	BestRefSeq	CDS	3103953	3104040	.	+	1	ID=cds24;Parent=rna33;Dbxref=GeneID:10000,Genbank:NP_005456.1,HGNC:393,HPRD:06441,MIM:611223;Name=NP_005456.1;Note=isoform 1 is encoded by transcript variant 1;gbkey=CDS;gene=AKT3;product=RAC-gamma serine/threonine-protein kinase isoform 1;protein_id=NP_005456.1
 NW_001838553.2	BestRefSeq	CDS	3137480	3137582	.	+	0	ID=cds24;Parent=rna33;Dbxref=GeneID:10000,Genbank:NP_005456.1,HGNC:393,HPRD:06441,MIM:611223;Name=NP_005456.1;Note=isoform 1 is encoded by transcript variant 1;gbkey=CDS;gene=AKT3;product=RAC-gamma serine/threonine-protein kinase isoform 1;protein_id=NP_005456.1
 NW_001838553.2	BestRefSeq	CDS	3144564	3144649	.	+	2	ID=cds24;Parent=rna33;Dbxref=GeneID:10000,Genbank:NP_005456.1,HGNC:393,HPRD:06441,MIM:611223;Name=NP_005456.1;Note=isoform 1 is encoded by transcript variant 1;gbkey=CDS;gene=AKT3;product=RAC-gamma serine/threonine-protein kinase isoform 1;protein_id=NP_005456.1
-NW_001838553.2	RefSeq	STS	2849630	2849846	.	+	.	ID=id429;Dbxref=UniSTS:55936,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	2883704	2884023	.	+	.	ID=id430;Dbxref=UniSTS:138266,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	2849630	2849846	.	+	.	ID=id429;Dbxref=UniSTS:55936,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	2883704	2884023	.	+	.	ID=id430;Dbxref=UniSTS:138266,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	Gnomon	gene	2908642	2911045	.	+	.	ID=gene25;Dbxref=GeneID:101930248;Name=LOC101930248;gbkey=Gene;gene=LOC101930248
 NW_001838553.2	Gnomon	transcript	2908642	2911045	.	+	.	ID=rna34;Parent=gene25;Dbxref=GeneID:101930248,Genbank:XR_248742.1;Name=XR_248742.1;gbkey=misc_RNA;gene=LOC101930248;product=uncharacterized LOC101930248;transcript_id=XR_248742.1
 NW_001838553.2	Gnomon	exon	2908642	2908718	.	+	.	ID=id431;Parent=rna34;Dbxref=GeneID:101930248,Genbank:XR_248742.1;gbkey=misc_RNA;gene=LOC101930248;product=uncharacterized LOC101930248;transcript_id=XR_248742.1
 NW_001838553.2	Gnomon	exon	2909827	2909964	.	+	.	ID=id432;Parent=rna34;Dbxref=GeneID:101930248,Genbank:XR_248742.1;gbkey=misc_RNA;gene=LOC101930248;product=uncharacterized LOC101930248;transcript_id=XR_248742.1
 NW_001838553.2	Gnomon	exon	2910955	2911045	.	+	.	ID=id433;Parent=rna34;Dbxref=GeneID:101930248,Genbank:XR_248742.1;gbkey=misc_RNA;gene=LOC101930248;product=uncharacterized LOC101930248;transcript_id=XR_248742.1
-NW_001838553.2	RefSeq	STS	2912084	2912165	.	+	.	ID=id434;Dbxref=UniSTS:93703,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3013409	3013529	.	+	.	ID=id435;Dbxref=UniSTS:43697,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3019299	3019547	.	+	.	ID=id436;Dbxref=UniSTS:151125,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3019474	3019573	.	+	.	ID=id437;Dbxref=UniSTS:30601,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	2912084	2912165	.	+	.	ID=id434;Dbxref=UniSTS:93703,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3013409	3013529	.	+	.	ID=id435;Dbxref=UniSTS:43697,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3019299	3019547	.	+	.	ID=id436;Dbxref=UniSTS:151125,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3019474	3019573	.	+	.	ID=id437;Dbxref=UniSTS:30601,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	Curated Genomic	gene	3025438	3026174	.	+	.	ID=gene26;Dbxref=GeneID:100506953,HGNC:41951;Name=FABP7P1;description=fatty acid binding protein 7%2C brain pseudogene 1;gbkey=Gene;gene=FABP7P1;pseudo=true
-NW_001838553.2	RefSeq	STS	3032624	3032941	.	+	.	ID=id438;Dbxref=UniSTS:169284,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3050483	3050605	.	+	.	ID=id439;Dbxref=UniSTS:73813,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3102786	3102913	.	+	.	ID=id440;Dbxref=UniSTS:49850,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3127957	3128244	.	+	.	ID=id441;Dbxref=UniSTS:135295,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3144121	3144212	.	+	.	ID=id442;Dbxref=UniSTS:27057,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3145170	3146028	.	+	.	ID=id443;Dbxref=UniSTS:276985,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3146755	3146863	.	+	.	ID=id444;Dbxref=UniSTS:62756,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3146894	3147118	.	+	.	ID=id445;Dbxref=UniSTS:44066,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3147271	3147343	.	+	.	ID=id446;Dbxref=UniSTS:472991,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3147673	3148017	.	+	.	ID=id447;Dbxref=UniSTS:172568,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3147881	3148018	.	+	.	ID=id448;Dbxref=UniSTS:16743,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3149091	3149320	.	+	.	ID=id449;Dbxref=UniSTS:7651,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3149494	3149581	.	+	.	ID=id450;Dbxref=UniSTS:43005,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3032624	3032941	.	+	.	ID=id438;Dbxref=UniSTS:169284,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3050483	3050605	.	+	.	ID=id439;Dbxref=UniSTS:73813,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3102786	3102913	.	+	.	ID=id440;Dbxref=UniSTS:49850,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3127957	3128244	.	+	.	ID=id441;Dbxref=UniSTS:135295,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3144121	3144212	.	+	.	ID=id442;Dbxref=UniSTS:27057,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3145170	3146028	.	+	.	ID=id443;Dbxref=UniSTS:276985,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3146755	3146863	.	+	.	ID=id444;Dbxref=UniSTS:62756,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3146894	3147118	.	+	.	ID=id445;Dbxref=UniSTS:44066,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3147271	3147343	.	+	.	ID=id446;Dbxref=UniSTS:472991,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3147673	3148017	.	+	.	ID=id447;Dbxref=UniSTS:172568,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3147881	3148018	.	+	.	ID=id448;Dbxref=UniSTS:16743,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3149091	3149320	.	+	.	ID=id449;Dbxref=UniSTS:7651,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3149494	3149581	.	+	.	ID=id450;Dbxref=UniSTS:43005,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	BestRefSeq	gene	3149807	3394035	.	-	.	ID=gene27;Dbxref=GeneID:10806,HGNC:10671,HPRD:10215,MIM:613524;Name=SDCCAG8;description=serologically defined colon cancer antigen 8;gbkey=Gene;gene=SDCCAG8;gene_synonym=BBS16,CCCAP,CCCAP SLSN7,hCCCAP,HSPC085,NPHP10,NY-CO-8,SLSN7
 NW_001838553.2	BestRefSeq	mRNA	3149807	3394035	.	-	.	ID=rna35;Parent=gene27;Dbxref=GeneID:10806,Genbank:NM_006642.3,HGNC:10671,HPRD:10215,MIM:613524;Name=NM_006642.3;Note=The RefSeq transcript has 2 substitutions compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;transcript_id=NM_006642.3
 NW_001838553.2	BestRefSeq	exon	3393800	3394035	.	-	.	ID=id451;Parent=rna35;Dbxref=GeneID:10806,Genbank:NM_006642.3,HGNC:10671,HPRD:10215,MIM:613524;Note=The RefSeq transcript has 2 substitutions compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;transcript_id=NM_006642.3
@@ -771,8 +771,8 @@ NW_001838553.2	BestRefSeq	exon	3232177	3232285	.	-	.	ID=id465;Parent=rna35;Dbxre
 NW_001838553.2	BestRefSeq	exon	3223695	3223826	.	-	.	ID=id466;Parent=rna35;Dbxref=GeneID:10806,Genbank:NM_006642.3,HGNC:10671,HPRD:10215,MIM:613524;Note=The RefSeq transcript has 2 substitutions compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;transcript_id=NM_006642.3
 NW_001838553.2	BestRefSeq	exon	3160758	3160884	.	-	.	ID=id467;Parent=rna35;Dbxref=GeneID:10806,Genbank:NM_006642.3,HGNC:10671,HPRD:10215,MIM:613524;Note=The RefSeq transcript has 2 substitutions compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;transcript_id=NM_006642.3
 NW_001838553.2	BestRefSeq	exon	3149807	3150142	.	-	.	ID=id468;Parent=rna35;Dbxref=GeneID:10806,Genbank:NM_006642.3,HGNC:10671,HPRD:10215,MIM:613524;Note=The RefSeq transcript has 2 substitutions compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;transcript_id=NM_006642.3
-NW_001838553.2	RefSeq	STS	3149885	3150061	.	+	.	ID=id469;Dbxref=UniSTS:18932,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
-NW_001838553.2	RefSeq	STS	3150031	3150154	.	+	.	ID=id470;Dbxref=UniSTS:63839,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3149885	3150061	.	+	.	ID=id469;Dbxref=UniSTS:18932,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3150031	3150154	.	+	.	ID=id470;Dbxref=UniSTS:63839,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	BestRefSeq	CDS	3393800	3393866	.	-	0	ID=cds25;Parent=rna35;Dbxref=GeneID:10806,Genbank:NP_006633.1,HGNC:10671,HPRD:10215,MIM:613524;Name=NP_006633.1;Note=The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;protein_id=NP_006633.1
 NW_001838553.2	BestRefSeq	CDS	3379780	3379932	.	-	2	ID=cds25;Parent=rna35;Dbxref=GeneID:10806,Genbank:NP_006633.1,HGNC:10671,HPRD:10215,MIM:613524;Name=NP_006633.1;Note=The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;protein_id=NP_006633.1
 NW_001838553.2	BestRefSeq	CDS	3378974	3379059	.	-	2	ID=cds25;Parent=rna35;Dbxref=GeneID:10806,Genbank:NP_006633.1,HGNC:10671,HPRD:10215,MIM:613524;Name=NP_006633.1;Note=The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;protein_id=NP_006633.1
@@ -791,7 +791,7 @@ NW_001838553.2	BestRefSeq	CDS	3232177	3232285	.	-	2	ID=cds25;Parent=rna35;Dbxref
 NW_001838553.2	BestRefSeq	CDS	3223695	3223826	.	-	1	ID=cds25;Parent=rna35;Dbxref=GeneID:10806,Genbank:NP_006633.1,HGNC:10671,HPRD:10215,MIM:613524;Name=NP_006633.1;Note=The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;protein_id=NP_006633.1
 NW_001838553.2	BestRefSeq	CDS	3160758	3160884	.	-	1	ID=cds25;Parent=rna35;Dbxref=GeneID:10806,Genbank:NP_006633.1,HGNC:10671,HPRD:10215,MIM:613524;Name=NP_006633.1;Note=The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;protein_id=NP_006633.1
 NW_001838553.2	BestRefSeq	CDS	3150113	3150142	.	-	0	ID=cds25;Parent=rna35;Dbxref=GeneID:10806,Genbank:NP_006633.1,HGNC:10671,HPRD:10215,MIM:613524;Name=NP_006633.1;Note=The RefSeq protein has 1 substitution compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=SDCCAG8;product=serologically defined colon cancer antigen 8;protein_id=NP_006633.1
-NW_001838553.2	RefSeq	STS	3158555	3158896	.	+	.	ID=id471;Dbxref=UniSTS:181992,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
+NW_001838553.2	BestRefSeq	STS	3158555	3158896	.	+	.	ID=id471;Dbxref=UniSTS:181992,GeneID:10000,HGNC:393,HPRD:06441,MIM:611223;gbkey=STS;gene=AKT3
 NW_001838553.2	RefSeq	STS	3260673	3260821	.	+	.	ID=id472;Dbxref=UniSTS:31541;gbkey=STS;gene=SDCCAG8
 NW_001838553.2	BestRefSeq	gene	3303984	3304063	.	-	.	ID=gene28;Dbxref=GeneID:100616343,HGNC:41844,miRBase:MI0017308;Name=MIR4677;description=microRNA 4677;gbkey=Gene;gene=MIR4677
 NW_001838553.2	BestRefSeq	primary_transcript	3303984	3304063	.	-	.	ID=rna36;Parent=gene28;Dbxref=GeneID:100616343,Genbank:NR_039824.1,HGNC:41844,miRBase:MI0017308;Name=NR_039824.1;gbkey=precursor_RNA;gene=MIR4677;product=microRNA 4677;transcript_id=NR_039824.1
@@ -852,7 +852,7 @@ NW_001838553.2	BestRefSeq	CDS	3449182	3449240	.	+	2	ID=cds28;Parent=rna41;Dbxref
 NW_001838553.2	BestRefSeq	CDS	3449337	3449501	.	+	0	ID=cds28;Parent=rna41;Dbxref=GeneID:9859,Genbank:NP_001035864.1,HGNC:28920,MIM:613023;Name=NP_001035864.1;Note=isoform gamma is encoded by transcript variant gamma%3B The RefSeq protein has 2 substitutions and aligns at 22%25 coverage compared to this genomic sequence;end_range=3449501,.;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=CEP170;partial=true;product=centrosomal protein of 170 kDa isoform gamma;protein_id=NP_001035864.1
 NW_001838553.2	BestRefSeq	CDS	3451354	3451382	.	+	0	ID=cds28;Parent=rna41;Dbxref=GeneID:9859,Genbank:NP_001035864.1,HGNC:28920,MIM:613023;Name=NP_001035864.1;Note=isoform gamma is encoded by transcript variant gamma%3B The RefSeq protein has 2 substitutions and aligns at 22%25 coverage compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=CEP170;partial=true;product=centrosomal protein of 170 kDa isoform gamma;protein_id=NP_001035864.1;start_range=.,3451354
 NW_001838553.2	BestRefSeq	CDS	3458953	3459432	.	+	1	ID=cds28;Parent=rna41;Dbxref=GeneID:9859,Genbank:NP_001035864.1,HGNC:28920,MIM:613023;Name=NP_001035864.1;Note=isoform gamma is encoded by transcript variant gamma%3B The RefSeq protein has 2 substitutions and aligns at 22%25 coverage compared to this genomic sequence;end_range=3459432,.;exception=annotated by transcript or proteomic data;gbkey=CDS;gene=CEP170;partial=true;product=centrosomal protein of 170 kDa isoform gamma;protein_id=NP_001035864.1
-NW_001838553.2	RefSeq	STS	3458678	3458991	.	+	.	ID=id502;Dbxref=UniSTS:133193,GeneID:9859,HGNC:28920,MIM:613023;gbkey=STS;gene=CEP170
+NW_001838553.2	BestRefSeq	STS	3458678	3458991	.	+	.	ID=id502;Dbxref=UniSTS:133193,GeneID:9859,HGNC:28920,MIM:613023;gbkey=STS;gene=CEP170
 NW_001838553.2	RefSeq	match	6007	7248	1233	+	.	ID=aln0;bit_score=2278.04;blast_aligner=1;common_component=0;e_value=0;filter_score=0;for_remapping=1;gap_count=0;matchable_bases=0;matched_bases=0;num_ident=1239;num_mismatch=3;pct_coverage=100;pct_coverage_hiqual=100;pct_identity_gap=99.7585;pct_identity_gapopen_only=99.7585;pct_identity_ungap=99.7585;rank=1;score=1233;weighted_identity=1;Target=NG_032725.1 1 1242 +
 NW_001838553.2	RefSeq	match	119899	119989	91	+	.	ID=aln1;consensus_splices=4;exon_identity=0.997925;for_remapping=1;gap_count=1;identity=0.997925;idty=1;matches=962;num_ident=962;num_mismatch=1;pct_coverage=99.8963;pct_coverage_hiqual=99.8963;pct_identity_gap=99.7925;pct_identity_ungap=99.8962;product_coverage=1;rank=1;score=91;splices=4;weighted_identity=0.996942;Target=NR_040002.1 1 91 +
 NW_001838553.2	RefSeq	match	125543	125623	81	+	.	ID=aln1;consensus_splices=4;exon_identity=0.997925;for_remapping=1;gap_count=1;identity=0.997925;idty=1;matches=962;num_ident=962;num_mismatch=1;pct_coverage=99.8963;pct_coverage_hiqual=99.8963;pct_identity_gap=99.7925;pct_identity_ungap=99.8962;product_coverage=1;rank=1;score=81;splices=4;weighted_identity=0.996942;Target=NR_040002.1 92 172 +

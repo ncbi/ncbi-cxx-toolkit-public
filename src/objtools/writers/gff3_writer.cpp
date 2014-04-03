@@ -1174,15 +1174,11 @@ bool CGff3Writer::xAssignFeatureSeqId(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureMethod(
-    CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
-    CMappedFeat mf )
+bool sGetMethodFromModelEvidence(
+    CMappedFeat mf,
+    string& method)
 //  ----------------------------------------------------------------------------
 {
-    string method(".");
-
-    //if feature got a ModelEvidence object, try to get metgod from there
     if ( mf.IsSetExt() ) {
         CConstRef<CUser_object> model_evidence = sGetUserObjectByType( 
             mf.GetExt(), "ModelEvidence" );
@@ -1191,7 +1187,6 @@ bool CGff3Writer::xAssignFeatureMethod(
             if ( model_evidence->HasField( "Method" ) ) {
                 method = model_evidence->GetField( 
                     "Method" ).GetData().GetStr();
-                record.SetMethod(method);
                 return true;
             }
         }
@@ -1205,14 +1200,38 @@ bool CGff3Writer::xAssignFeatureMethod(
             if ( model_evidence->HasField( "Method" ) ) {
                 method = model_evidence->GetField( 
                     "Method" ).GetData().GetStr();
-                record.SetMethod(method);
                 return true;
             }
         }
     }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureMethod(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    CMappedFeat mf )
+//  ----------------------------------------------------------------------------
+{
+    string method(".");
+
+    //if feature got a ModelEvidence object, try to get metgod from there
+    if (sGetMethodFromModelEvidence(mf, method)) {
+        record.SetMethod(method);
+        return true;
+    }
     
     //if parent feature got a ModelEvidence object, use that.
-
+    try {
+        CMappedFeat parent = fc.FeatTree().GetParent(mf);
+        if (parent && sGetMethodFromModelEvidence(parent, method)) {
+            record.SetMethod(method);
+            return true;
+        }
+    }
+    catch (const CException&) {};
+    
     //if a default method has been set, use that.
     if (!m_sDefaultMethod.empty()) {
         record.SetMethod(m_sDefaultMethod);
