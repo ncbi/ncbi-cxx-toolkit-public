@@ -294,7 +294,8 @@ CGff3Writer::CGff3Writer(
     CNcbiOstream& ostr,
     unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGff2Writer( scope, ostr, uFlags )
+    CGff2Writer( scope, ostr, uFlags ),
+    m_sDefaultMethod("")
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -507,6 +508,10 @@ bool CGff3Writer::xAssignAlignmentSplicedMethod(
 //  ----------------------------------------------------------------------------
 {
     string method;
+    if (!m_sDefaultMethod.empty()) {
+        record.SetMethod(m_sDefaultMethod);
+        return true;
+    }
     const CSeq_id& genomicId = spliced.GetGenomic_id();
     CSeq_id_Handle bestH = sequence::GetId(
         genomicId, *m_pScope, sequence::eGetId_Best);
@@ -815,6 +820,10 @@ bool CGff3Writer::xAssignAlignmentDensegMethod(
     CConstRef<CSeq_id> pSourceId = sourceIdH.GetSeqId();
 
     string method;
+    if (!m_sDefaultMethod.empty()) {
+        record.SetMethod(m_sDefaultMethod);
+        return true;
+    }
     CWriteUtil::GetIdType(*pSourceId, method);
     record.SetMethod(method);
     return true;
@@ -1173,6 +1182,7 @@ bool CGff3Writer::xAssignFeatureMethod(
 {
     string method(".");
 
+    //if feature got a ModelEvidence object, try to get metgod from there
     if ( mf.IsSetExt() ) {
         CConstRef<CUser_object> model_evidence = sGetUserObjectByType( 
             mf.GetExt(), "ModelEvidence" );
@@ -1201,6 +1211,15 @@ bool CGff3Writer::xAssignFeatureMethod(
         }
     }
     
+    //if parent feature got a ModelEvidence object, use that.
+
+    //if a default method has been set, use that.
+    if (!m_sDefaultMethod.empty()) {
+        record.SetMethod(m_sDefaultMethod);
+        return true;
+    }
+
+    //last resort: derive method from ID.
     CBioseq_Handle bsh = fc.BioseqHandle();
     if (bsh) {
         if (!CWriteUtil::GetIdType(bsh, method)) {
@@ -1216,7 +1235,6 @@ bool CGff3Writer::xAssignFeatureMethod(
     if (method == "Local") {
         method = ".";
     }
-
     record.SetMethod(method);
     return true;
 }

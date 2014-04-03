@@ -201,6 +201,12 @@ void CAnnotWriterApp::Init()
         "Assembly accession",
         CArgDescriptions::eString,
         "" );
+    arg_desc->AddDefaultKey(
+        "default-method",
+        "STRING",
+        "GFF3 default method",
+        CArgDescriptions::eString,
+        "" );
     }}
     
 
@@ -570,6 +576,9 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         }
         CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args));
         xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
+        if (args["default-method"]) {
+            pWriter->SetDefaultMethod(args["default-method"].AsString());
+        }
         return pWriter;
     }
     if (strFormat == "gtf") {

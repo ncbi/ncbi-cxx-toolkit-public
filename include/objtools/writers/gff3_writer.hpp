@@ -72,6 +72,8 @@ public:
         unsigned int = fNormal );
     virtual ~CGff3Writer();
 
+    void SetDefaultMethod(
+        const string& defaultMethod) { m_sDefaultMethod = defaultMethod; };
     virtual bool WriteHeader();
     virtual bool WriteHeader(
         const CSeq_annot& annot) { return CGff2Writer::WriteHeader(annot); };
@@ -428,6 +430,7 @@ protected:
 
 protected:
     unsigned int m_uRecordId;
+    string m_sDefaultMethod;
  
     typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TGeneMapNew;
     TGeneMapNew m_GeneMapNew;
