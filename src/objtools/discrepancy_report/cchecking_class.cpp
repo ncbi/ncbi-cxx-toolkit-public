@@ -430,7 +430,7 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
           GoTests(thisGrp.tests_on_Bioseq_CFeat, bioseq);
      }
      if (!thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
-                        && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq)) {
+                      && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq)) {
          GoTests(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
      }
    }
@@ -439,21 +439,8 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
        GoTests(thisGrp.tests_on_Bioseq_NotInGenProdSet, bioseq);
    }
 
-   unsigned prev_len = thisGrp.tests_4_once.size();
    if ( bioseq.IsNa() && !thisGrp.tests_on_Bioseq_na.empty()) {
         GoTests(thisGrp.tests_on_Bioseq_na, bioseq);        
-
-        unsigned cur_len = thisGrp.tests_4_once.size();
-        if (cur_len > prev_len) {
-            NON_CONST_ITERATE(vector < CRef < CTestAndRepData > >, 
-                              it, 
-                              thisGrp.tests_on_Bioseq_na) {
-                if (thisGrp.tests_4_once[cur_len - 1].GetPointer() == *it) {
-                    thisGrp.tests_on_Bioseq_na.erase(it);
-                    break;
-                }
-            }
-       }
    }
 
    if (bioseq.IsAa() && !thisGrp.tests_on_Bioseq_aa.empty()) {

@@ -148,7 +148,6 @@ vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_Bioseq_NotInGenProdSet;
 vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_Bioseq_CFeat_CSeqdesc;
 vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_SeqEntry;
 vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_SeqEntry_feat_desc;
-vector < CRef <CTestAndRepData> >   CTestGrp :: tests_4_once;
 vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_BioseqSet;
 vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_SubmitBlk;
 
@@ -1304,7 +1303,6 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     }
 
     strtmp = (args.find("X") != args.end())? args["X"] : kEmptyStr;
-cerr << "X  " << strtmp << endl;
     if (strtmp == "ALL") {
        m_all_expanded = true;     
     }
@@ -1446,8 +1444,12 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq
    {"DISC_MISSING_DEFLINES", 
      fOncaller | fMegaReport, "Missing definition lines"},
-   {"DISC_QUALITY_SCORES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Check for Quality Scores"},
-   {"TEST_TERMINAL_NS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Ns at end of sequences"},
+   {"DISC_QUALITY_SCORES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Check for Quality Scores"},
+   {"TEST_TERMINAL_NS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Ns at end of sequences"},
    
 // tests_on_Bioseq_aa
    {"COUNT_PROTEINS", 
@@ -1460,17 +1462,27 @@ static const s_test_property test_list[] = {
      "Inconsistent Protein ID"},
 
 // tests_on_Bioseq_na
-   {"DISC_COUNT_NUCLEOTIDES", fGenomes | fBigSequence | fAsndisc | fOncaller| fMegaReport, "Count nucleotide sequences"},
-   {"TEST_DEFLINE_PRESENT", fGenomes | fDiscrepancy | fAsndisc| fMegaReport, "Test defline existence"},
-   {"N_RUNS", fGenomes | fBigSequence | fDiscrepancy | fAsndisc| fMegaReport, "Runs of 10 or more Ns"},
+   {"DISC_COUNT_NUCLEOTIDES", 
+     fGenomes | fBigSequence | fAsndisc | fOncaller| fMegaReport, 
+     "Count nucleotide sequences"},
+   {"N_RUNS", 
+     fGenomes | fBigSequence | fDiscrepancy | fAsndisc| fMegaReport, 
+     "Runs of 10 or more Ns"},
    {"N_RUNS_14", 
      fDiscrepancy | fTSA | fMegaReport, "Runs of more than 14 Ns"},
-   {"ZERO_BASECOUNT", fGenomes | fBigSequence | fDiscrepancy | fMegaReport, "Zero Base Counts"},
-   {"TEST_LOW_QUALITY_REGION", fGenomes | fDiscrepancy | fAsndisc| fMegaReport, "Sequence contains regions of low quality"},
-   {"DISC_PERCENT_N", fGenomes | fBigSequence | fDiscrepancy | fAsndisc| fMegaReport, "Greater than 5 percent Ns"},
+   {"ZERO_BASECOUNT", 
+     fGenomes | fBigSequence | fDiscrepancy | fMegaReport, "Zero Base Counts"},
+   {"TEST_LOW_QUALITY_REGION", 
+     fGenomes | fDiscrepancy | fAsndisc| fMegaReport, 
+     "Sequence contains regions of low quality"},
+   {"DISC_PERCENT_N", 
+     fGenomes | fBigSequence | fDiscrepancy | fAsndisc| fMegaReport, 
+     "Greater than 5 percent Ns"},
    {"DISC_10_PERCENTN", 
      fDiscrepancy | fTSA | fMegaReport, "Greater than 10 percent Ns"},
-   {"TEST_UNUSUAL_NT", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Sequence contains unusual nucleotides"},
+   {"TEST_UNUSUAL_NT", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Sequence contains unusual nucleotides"},
 
 // tests_on_Bioseq_CFeat
    {"SUSPECT_PHRASES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Suspect Phrases"},
@@ -1572,7 +1584,8 @@ static const s_test_property test_list[] = {
    {"DUPLICATE_GENE_LOCUS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Duplicate Gene Locus"},
    {"MISSING_LOCUS_TAGS", 
      fGlobal | fGenomes | fDiscrepancy | fMegaReport, "Missing Locus Tags"},
-   {"DUPLICATE_LOCUS_TAGS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Duplicate Locus Tags"},
+   {"DUPLICATE_LOCUS_TAGS", 
+     fDiscrepancy | fAsndisc | fMegaReport, "Duplicate Locus Tags"},
    {"DUPLICATE_LOCUS_TAGS_global", 
      fGlobal | fGenomes | fAsndisc, "Duplicate Locus Tags"},
    {"INCONSISTENT_LOCUS_TAG_PREFIX", 
@@ -1637,24 +1650,48 @@ static const s_test_property test_list[] = {
      fDiscrepancy | fTSA | fMegaReport, "Technique not set as TSA"},
    {"DISC_POSSIBLE_LINKER", 
      fOncaller | fMegaReport, "Possible linker sequence after poly-A tail"},
-   {"SHORT_PROT_SEQUENCES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Protein sequences should be at least 50 aa, unless they are partial"},
-   {"TEST_COUNT_UNVERIFIED", fGenomes | fAsndisc | fOncaller | fMegaReport, "Count number of unverified sequences"},
-   {"TEST_DUP_GENES_OPPOSITE_STRANDS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Duplicate genes on opposite strands"},
-   {"DISC_GENE_PARTIAL_CONFLICT", fGenomes | fOncaller | fAsndisc | fMegaReport, "Feature partialness should agree with gene partialness if endpoints match"},
+   {"SHORT_PROT_SEQUENCES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Protein sequences should be at least 50 aa, unless they are partial"},
+   {"TEST_COUNT_UNVERIFIED", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Count number of unverified sequences"},
+   {"TEST_DUP_GENES_OPPOSITE_STRANDS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Duplicate genes on opposite strands"},
+   {"DISC_GENE_PARTIAL_CONFLICT", 
+     fGenomes | fOncaller | fAsndisc | fMegaReport, 
+   "Feature partialness should agree with gene partialness if endpoints match"},
 
 // tests_on_SeqEntry
+   {"TEST_DEFLINE_PRESENT", 
+     fGenomes | fDiscrepancy | fAsndisc| fMegaReport, "Test defline existence"},
    {"DISC_FLATFILE_FIND_ONCALLER", 
      fAsndisc | fOncaller | fMegaReport, 
      "Flatfile representation of object contains suspect text"},
-   {"DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE", fGenomes | fMegaReport | fOncaller, "Flatfile representation of object contains unfixable suspect text"},
-   {"DISC_FLATFILE_FIND_ONCALLER_FIXABLE", fGenomes | fMegaReport | fOncaller, "Flatfile representation of object contains suspect text"},
-   {"TEST_ALIGNMENT_HAS_SCORE", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Alignment has score attribute"},
+   {"DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE", 
+     fGenomes | fMegaReport | fOncaller, 
+     "Flatfile representation of object contains unfixable suspect text"},
+   {"DISC_FLATFILE_FIND_ONCALLER_FIXABLE", 
+     fGenomes | fMegaReport | fOncaller, 
+     "Flatfile representation of object contains suspect text"},
+   {"TEST_ALIGNMENT_HAS_SCORE", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Alignment has score attribute"},
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
-   {"DISC_INCONSISTENT_STRUCTURED_COMMENTS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent structured comments"},
-   {"DISC_INCONSISTENT_DBLINK", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent DBLink fields"},
-   {"END_COLON_IN_COUNTRY", fGenomes | fAsndisc | fOncaller | fMegaReport, "Country name end with colon"},
-   {"ONCALLER_SUSPECTED_ORG_COLLECTED", fGenomes | fAsndisc | fOncaller | fMegaReport, "Suspected organism in collected-by SubSource"},
+   {"DISC_INCONSISTENT_STRUCTURED_COMMENTS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Inconsistent structured comments"},
+   {"DISC_INCONSISTENT_DBLINK", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Inconsistent DBLink fields"},
+   {"END_COLON_IN_COUNTRY", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Country name end with colon"},
+   {"ONCALLER_SUSPECTED_ORG_COLLECTED", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Suspected organism in collected-by SubSource"},
    {"ONCALLER_SUSPECTED_ORG_IDENTIFIED", fGenomes | fAsndisc | fOncaller | fMegaReport, "Suspected organism in identified-by SubSource"},
    {"UNCULTURED_NOTES_ONCALLER", fGenomes | fAsndisc | fOncaller | fMegaReport, "Uncultured Notes"}, 
    {"ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY", fGenomes | fAsndisc | fOncaller | fMegaReport, "SubSource identified-by contains more than 3 names"},
@@ -1699,9 +1736,11 @@ static const s_test_property test_list[] = {
      fOncaller | fMegaReport, 
      "Uncultured or environmental sources should have clone"},
    {"ONCALLER_MULTISRC", fGenomes | fAsndisc | fOncaller | fMegaReport, "Comma or semicolon appears in strain or isolate"},
-   {"DISC_DUP_SRC_QUAL", fGenomes | fOncaller | fMegaReport, "Each source in a record should have unique values for qualifiers"}, 
-   {"DISC_DUP_SRC_QUAL_DATA", 
+   {"DISC_DUP_SRC_QUAL", 
      fOncaller | fMegaReport, 
+     "Each source in a record should have unique values for qualifiers"}, 
+   {"DISC_DUP_SRC_QUAL_DATA", 
+     fGenomes | fOncaller | fMegaReport, 
      "Each qualifier on a source should have different values"},
    {"DISC_MISSING_SRC_QUAL", 
      fOncaller | fMegaReport, 
@@ -1831,7 +1870,6 @@ void CRepConfig :: GetTestList()
    thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.clear();   
    thisGrp.tests_on_SeqEntry.clear();   
    thisGrp.tests_on_SeqEntry_feat_desc.clear();   
-   thisGrp.tests_4_once.clear();   
    thisGrp.tests_on_BioseqSet.clear();   
    thisGrp.tests_on_SubmitBlk.clear();   
 
@@ -1890,8 +1928,8 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("TEST_DEFLINE_PRESENT") != end_it) {
-         thisGrp.tests_on_Bioseq_na.push_back(
-                     CRef <CTestAndRepData>(new CBioseq_TEST_DEFLINE_PRESENT));
+         thisGrp.tests_on_SeqEntry.push_back(
+                    CRef <CTestAndRepData>(new CSeqEntry_TEST_DEFLINE_PRESENT));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("N_RUNS") != end_it) {
@@ -3192,11 +3230,13 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
             }
             (*it)->GetReport(c_item);
 
+/*
             // adjustment of setting_name
             if (strtmp.find("global") != string::npos 
                    || strtmp.find("oncaller") != string::npos) {
                c_item->setting_name= strtmp.substr(0, strtmp.find_last_of("_"));
             }
+*/
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            c_item->expanded = x_IsExpandable(strtmp);
@@ -3217,7 +3257,6 @@ void CRepConfig :: CollectRepData()
   x_GoGetRep(thisGrp.tests_on_Bioseq_NotInGenProdSet);
   x_GoGetRep(thisGrp.tests_on_SeqEntry);
   x_GoGetRep(thisGrp.tests_on_SeqEntry_feat_desc);
-  x_GoGetRep(thisGrp.tests_4_once);
   x_GoGetRep(thisGrp.tests_on_BioseqSet);
   x_GoGetRep(thisGrp.tests_on_Bioseq_CFeat_CSeqdesc);
 };

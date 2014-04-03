@@ -7180,34 +7180,8 @@ void CBioseq_DISC_LONG_NO_ANNOTATION :: GetReport(CRef <CClickableItem> c_item)
   c_item->obj_list = thisInfo.test_item_objs[GetName()];
   unsigned len = c_item->item_list.size();
   c_item->description = GetIsComment(len, "bioseq") + "longer than 5000nt and " 
-                               + ( (len == 1)? "has" : "have") + " no features.";
+                         + ( (len == 1)? "has" : "have") + " no features.";
 };
-
-void CBioseq_TEST_DEFLINE_PRESENT :: TestOnObj(const CBioseq& bioseq)
-{
-  CConstRef <CSeqdesc> 
-     seqdesc_title = bioseq.GetClosestDescriptor(CSeqdesc::e_Title);
-  if (seqdesc_title.NotEmpty()) {
-     thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
-     thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
-     ITERATE(vector < CRef < CTestAndRepData > >, it, 
-                                 thisGrp.tests_on_Bioseq_na) {
-       if ( (*it)->GetName() == GetName()) {
-              // test only run once; how about concatenated seq_entry?
-             thisGrp.tests_4_once.push_back(*it);  
-             break;
-       }
-     }
-  } 
-};
-
-
-void CBioseq_TEST_DEFLINE_PRESENT :: GetReport(CRef <CClickableItem> c_item)
-{
-   c_item->obj_list = thisInfo.test_item_objs[GetName()];
-   c_item->description =GetHasComment(c_item->item_list.size(), "Bioseq") + "definition line";
-}
-
 
 
 void CBioseq_DISC_QUALITY_SCORES :: TestOnObj(const CBioseq& bioseq)
@@ -8466,14 +8440,17 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
   pre_idx = (int)pre_cnt - 1;
   ITERATE (Str2Ints, it, qual2src_idx) {
      qual_name = it->first;
+cerr << "GetQualDistribute: qual_name " << qual_name << endl;
      is_subsrc = false;
      if ( (pos = qual_name.find("$subsrc")) != string::npos) {
         is_subsrc = true;
         qual_name = qual_name.substr(0, pos);
      }
      pre_idx = -1;
+cerr << "it->second.sz " << it->second.size() << endl;
      ITERATE (vector <int>, jt, it->second) {
        cur_idx = *jt;
+cerr << "cur_idx  " << *jt << " tot " << tot_cnt << endl;
        if (cur_idx < pre_idx || cur_idx > (int)tot_cnt -1) {
             continue; 
        }
@@ -8489,8 +8466,11 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
        src_qual_vlu= GetSrcQualValue(*src_ls[cur_idx], 
                                       qual_name, 
                                       is_subsrc);
+cerr << "src_qual_val " << src_qual_vlu << endl;
        src_txt = desc_ls[cur_idx];
+       // qualnm_srcvlu_biosrc
        strtmp = qual_name + "$" + src_qual_vlu + "#" + src_txt;
+cerr << "strtmp " << strtmp << endl;
        thisInfo.test_item_list[setting_name].push_back(strtmp);
        strtmp = setting_name + "$" + qual_name + "#" + src_qual_vlu;
        thisInfo.test_item_objs[strtmp].push_back(objs[cur_idx]);
@@ -8638,8 +8618,11 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
    string strtmp;
    ITERATE (Str2Strs, it, qnm2qvlu_src) {
      qual_nm_ori = qual_nm = it->first;
+cerr << "qual_nm_ori " << qual_nm_ori << endl;
      qvlu2src.clear();
      GetTestItemList(it->second, qvlu2src, "#");
+cerr << "qvlu2src.size " << qvlu2src.size() << endl;
+cerr << "qvlu2src.begin.second.size " << qvlu2src.begin()->second.size() << endl;
 
      if (qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1) {
            all_same = true;
@@ -10715,8 +10698,9 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
                       == "##Genome-Assembly-Data-START##") {
             // has comment, rm bioseqs from map
             for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
-               if (bb_ci->IsNa()) 
+               if (bb_ci->IsNa()) {
                   m_bioseq2geno_comm[GetDiscItemText(*bb_ci->GetCompleteBioseq())].Reset(); 
+               }
             }
     }
 
@@ -10916,6 +10900,7 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickabl
 void CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS :: GetReport(CRef <CClickableItem> c_item)
 {
   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  RmvRedundancy(c_item->item_list, c_item->obj_list);
   c_item->description = GetIsComment(c_item->item_list.size(), "bioseq")
                             + "missing GenomeAssembly structured comments.";
 };
@@ -13092,6 +13077,34 @@ void CBioseq_DISC_MISSING_DEFLINES :: GetReport(CRef <CClickableItem> c_item)
           + "no definition line";
 };
 
+bool CSeqEntry_test_on_defline :: x_HasDefline(const CBioseq& bioseq)
+{
+  CConstRef <CSeqdesc>
+     seqdesc_title = bioseq.GetClosestDescriptor(CSeqdesc::e_Title);
+  if (seqdesc_title.NotEmpty()) {
+     thisInfo.test_item_list[GetName_def()].push_back(GetDiscItemText(bioseq));
+     thisInfo.test_item_objs[GetName_def()]
+                .push_back(CConstRef <CObject>(&bioseq));
+     return true;
+  }
+  return false;
+};
+
+bool CSeqEntry_test_on_defline :: x_FindOneDefline(const CSeq_entry& entry)
+{
+   if (entry.IsSeq()) {
+      if (!(entry.GetSeq().IsAa())) {
+         return (x_HasDefline(entry.GetSeq()));
+      }
+   }
+   else {
+     ITERATE (list <CRef <CSeq_entry> >, it, entry.GetSet().GetSeq_set()) {
+        if (x_FindOneDefline(**it)) return true;
+     }
+   }
+   return false;
+};
+
 void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
 {
     if (thisTest.is_Defl_run) return;
@@ -13101,6 +13114,12 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
     string desc, title;
     bool run_set = (thisTest.tests_run.find(GetName_set()) != end_it);
     bool run_seqch = (thisTest.tests_run.find(GetName_seqch()) != end_it);
+    bool run_def = (thisTest.tests_run.find(GetName_def()) != end_it);
+
+    // TEST_DEFLINE_PRESENT
+    if (run_def) {
+          x_FindOneDefline(seq_entry);
+    }
 
     ITERATE ( vector <const CSeqdesc*>, it, title_seqdesc) {
        if ((title = (*it)->GetTitle()).empty()) continue; 
@@ -13125,6 +13144,12 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
        i++;
     }
 };
+
+void CSeqEntry_TEST_DEFLINE_PRESENT :: GetReport(CRef <CClickableItem> c_item)
+{
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+   c_item->description =GetHasComment(c_item->item_list.size(), "Bioseq") + "definition line";
+}
 
 void CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE :: GetReport(CRef <CClickableItem> c_item)
 {
