@@ -64,10 +64,12 @@
 #define NCBI_USE_ERRCODE_X   Connect_Pipe
 
 
+#define IS_SET(flags, mask)  (((flags) & (mask)) == (mask))
+
+
 BEGIN_NCBI_SCOPE
 
 
-#define IS_SET(flags, mask)  (((flags) & (mask)) == (mask))
 
 #if defined(NCBI_OS_MSWIN)
     // Predefined timeout (in milliseconds)
