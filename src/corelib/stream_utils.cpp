@@ -570,8 +570,9 @@ ERW_Result CStreamReader::Read(void*   buf,
                                size_t  count,
                                size_t* bytes_read)
 {
-    streamsize r = m_Stream->good()
-        ? m_Stream->rdbuf()->sgetn(static_cast<char*>(buf), count) : 0;
+    streambuf* sb = m_Stream->rdbuf();
+    bool       ok = sb  &&  m_Stream->good();
+    streamsize r  = ok ? sb->sgetn(static_cast<char*>(buf), count) : 0;
 #ifdef NCBI_COMPILER_WORKSHOP
     if (r < 0) {
         r = 0; // NB: WS6 is known to return -1 from sgetn() :-/
@@ -581,8 +582,10 @@ ERW_Result CStreamReader::Read(void*   buf,
         *bytes_read = (size_t) r;
     }
     if (!r) {
-        m_Stream->setstate(NcbiEofbit);
-        return eRW_Eof;
+        m_Stream->setstate(!sb
+                           ? NcbiBadbit
+                           : NcbiFailbit | (ok ? NcbiEofbit : NcbiGoodbit));
+        return ok ? eRW_Eof : eRW_Error;
     }
     return eRW_Success;
 }
@@ -606,13 +609,14 @@ ERW_Result CStreamWriter::Write(const void* buf,
                                 size_t      count,
                                 size_t*     bytes_written)
 {
-    streamsize w = m_Stream->good()
-        ? m_Stream->rdbuf()->sputn(static_cast<const char*>(buf), count) : 0;
+    streambuf* sb = m_Stream->rdbuf();
+    bool       ok = sb  &&  m_Stream->good();
+    streamsize w = ok ? sb->sputn(static_cast<const char*>(buf), count) : 0;
     if ( bytes_written ) {
         *bytes_written = (size_t) w;
     }
     if (!w) {
-        m_Stream->setstate(NcbiBadbit);
+        m_Stream->setstate(!sb ? NcbiBadbit : NcbiFailbit);
         return eRW_Error;
     }
     return eRW_Success;
