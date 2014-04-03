@@ -215,7 +215,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
     if (choice == eProtProt || choice == eAll) {
         retval.insert("blastp");
         retval.insert("blastp-short");
-        retval.insert("deltablast");
+        retval.insert("blastp-fast");
     }
 
     if (choice == eAll) {
@@ -226,6 +226,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("rpstblastn");
         retval.insert("blastx");
         retval.insert("blastx-fast");
+        retval.insert("deltablast");
         retval.insert("tblastn");
         retval.insert("psitblastn");
         retval.insert("tblastx");
@@ -256,12 +257,14 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
         retval += "protein database";
     } else if (task == "blastp-short") {
         retval.assign("BLASTP optimized for queries shorter than 30 residues");
+    } else if (task == "blastp-fast") {
+        retval.assign("BLASTP optimized for faster runtime");
     } else if (task == "blastx") {
         retval.assign("Search of a (translated) nucleotide query against a ");
         retval += "protein database";
     } else if (task == "blastx-fast") {
         retval.assign("Search of a (translated) nucleotide query against a ");
-        retval += "protein database with parameters optimized for speed";
+        retval += "protein database with parameters optimized for faster runtime";
     } else if (task == "dc-megablast") {
         retval.assign("Discontiguous megablast used to find more distant ");
         retval += "(e.g., interspecies) sequences";
@@ -343,19 +346,23 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
          retval = CBlastOptionsFactory::Create(eDiscMegablast, locality);
     }
     else if (!NStr::CompareNocase(task, "blastp") || 
-             !NStr::CompareNocase(task, "blastp-short"))
+             !NStr::CompareNocase(task, "blastp-short") ||
+             !NStr::CompareNocase(task, "blastp-fast"))
     {
          CBlastAdvancedProteinOptionsHandle* opts =
                dynamic_cast<CBlastAdvancedProteinOptionsHandle*> 
                 (CBlastOptionsFactory::Create(eBlastp, locality));
-         if (task == "blastp-short")
-         {
+         if (task == "blastp-short") {
             opts->SetMatrixName("PAM30");
             opts->SetGapOpeningCost(9);
             opts->SetGapExtensionCost(1);
             opts->SetEvalueThreshold(20000);
             opts->SetWordSize(2);
             opts->ClearFilterOptions();
+         } else if (task == "blastp-fast") {
+            opts->SetWordSize(6);
+            opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
+            opts->SetWordThreshold(21.0);
          }
          retval = opts;
     }
