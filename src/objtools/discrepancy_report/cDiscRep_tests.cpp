@@ -13117,8 +13117,10 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
     bool run_def = (thisTest.tests_run.find(GetName_def()) != end_it);
 
     // TEST_DEFLINE_PRESENT
-    if (run_def) {
+    if (!title_seqdesc.empty()) {
+       if (run_def) {
           x_FindOneDefline(seq_entry);
+       }
     }
 
     ITERATE ( vector <const CSeqdesc*>, it, title_seqdesc) {

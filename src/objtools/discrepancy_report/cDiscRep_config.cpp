@@ -1928,7 +1928,7 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("TEST_DEFLINE_PRESENT") != end_it) {
-         thisGrp.tests_on_SeqEntry.push_back(
+         thisGrp.tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_TEST_DEFLINE_PRESENT));
         if (++i >= sz) return;
    }
