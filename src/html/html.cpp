@@ -47,7 +47,6 @@ BEGIN_NCBI_SCOPE
 const char* kTagStart = "<@";   ///< Tag start
 const char* kTagEnd   = "@>";   ///< Tag end
 const SIZE_TYPE kTagStartLen = 2;
-const SIZE_TYPE kTagEndLen   = 2;
 
 
 #define INIT_STREAM_WRITE  \

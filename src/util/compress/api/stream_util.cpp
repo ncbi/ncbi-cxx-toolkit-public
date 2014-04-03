@@ -36,7 +36,9 @@ BEGIN_NCBI_SCOPE
 
 // Algorithm-specific defaults
 const ICompression::TFlags kDefault_BZip2    = 0;
+#if defined(HAVE_LIBLZO)
 const ICompression::TFlags kDefault_LZO      = 0;
+#endif
 const ICompression::TFlags kDefault_Zip      = 0;
 const ICompression::TFlags kDefault_GZipFile = CZipCompression::fGZip;
 
