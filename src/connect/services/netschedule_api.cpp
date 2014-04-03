@@ -62,10 +62,13 @@ void g_AppendClientIPAndSessionID(string& cmd, const string* default_session)
         cmd += '"';
     }
 
-    if (req.IsSetSessionID() || default_session != NULL) {
+    if (req.IsSetSessionID()) {
         cmd += " sid=\"";
-        cmd += NStr::PrintableString(default_session != NULL ?
-                *default_session : req.GetSessionID());
+        cmd += NStr::PrintableString(req.GetSessionID());
+        cmd += '"';
+    } else if (default_session != NULL) {
+        cmd += " sid=\"";
+        cmd += NStr::PrintableString(*default_session);
         cmd += '"';
     }
 }
