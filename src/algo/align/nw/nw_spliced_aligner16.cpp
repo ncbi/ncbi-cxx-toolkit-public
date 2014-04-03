@@ -54,10 +54,11 @@ namespace {
         ('?' << 8) | '?'    // ??
     };
 
+/*
     const unsigned char g_nwspl_acceptor[splice_type_count_16][2] = {
         {'A','G'}, {'A','G'}, {'A','C'}, {'?','?'}
     };
-
+*/
     const unsigned short g_nwspl_acceptor_16[splice_type_count_16] = {
         ('A' << 8) | 'G',  // AG
         ('A' << 8) | 'G',  // AG
