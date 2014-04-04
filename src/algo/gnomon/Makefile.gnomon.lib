@@ -4,7 +4,7 @@ ASN_DEP = seqset
 ASN = gnomon
 SRC = $(ASN:%=%__) $(ASN:%=%___) \
     gnomon_engine gnomon_objmgr score gnomon_model parse hmm gnomon_seq asn1 chainer id_handler \
-    annot select_alignments_alt aligncollapser
+    annot select_alignments_alt aligncollapser glb_align
 LIB = xalgognomon
 DLL_LIB = xobjutil $(SOBJMGR_LIBS)
 
