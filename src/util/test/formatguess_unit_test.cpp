@@ -106,9 +106,9 @@ static const char* kData_Gtf =
     "381 Twinscan  start_codon  380   382   .   +   0  "
     "gene_id \"001\"; transcript_id \"001.1\";\n";
 static const char* kData_Gvf =
-	"NC_000008.9	dbVar	CNV	151699	186841	.	.	.	ID=nsv6034;Name=nsv6034(CNV);Start_range=151699,152699;End_range=185641,186841\n"
-	"NC_000008.9	dbVar	SNV	212185	257141	.	.	.	ID=nsv6035;Name=nsv6035(CNV)\n"
-    "NC_000008.9	dbVar	CNV	577296	606629	.	.	.	ID=nsv6036;Name=nsv6036(CNV)\n";
+	"NC_000008.9	dbVar	CNV	151699	186841	.	.	.	ID=nsv6034;Variant_seq=A;Name=nsv6034(CNV);Start_range=151699,152699;End_range=185641,186841\n"
+	"NC_000008.9	dbVar	SNV	212185	257141	.	.	.	ID=nsv6035;Variant_seq=A;Name=nsv6035(CNV)\n"
+    "NC_000008.9	dbVar	CNV	577296	606629	.	.	.	ID=nsv6036;Variant_seq=A;Name=nsv6036(CNV)\n";
 static const char* kData_Gff3 =
 	"NC_000008.9	dbVar	misc	151699	186841	.	.	.	ID=nsv6034;Name=nsv6034(CNV)\n"
 	"NC_000008.9	dbVar	misc	212185	257141	.	.	.	ID=nsv6035;Name=nsv6035(CNV)\n"
