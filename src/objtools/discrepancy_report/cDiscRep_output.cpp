@@ -141,6 +141,7 @@ void CDiscRepOutput :: x_AddListOutputTags()
   NON_CONST_ITERATE (vector <CRef <CClickableItem> > , it, thisInfo.disc_report_data) {
      setting_name = (*it)->setting_name;
      desc = (*it)->description; 
+     if (desc.empty()) continue;
 
      // check subcategories first;
      NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, (*it)->subcategories) {

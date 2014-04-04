@@ -5044,10 +5044,10 @@ bool CBioseq_FEATURE_LOCATION_CONFLICT :: IsGeneLocationOk(const CSeq_feat* seq_
     const CSeq_loc& gene_loc = gene->GetLocation();
     ENa_strand feat_strand =  feat_loc.GetStrand();
     ENa_strand gene_strand = gene_loc.GetStrand();
-    int gene_left = gene_loc.GetStart(eExtreme_Biological);
-    int gene_right = gene_loc.GetStop(eExtreme_Biological);
-    int feat_left = feat_loc.GetStart(eExtreme_Biological);
-    int feat_right = feat_loc.GetStop(eExtreme_Biological);
+    int gene_left = gene_loc.GetStart(eExtreme_Positional);
+    int gene_right = gene_loc.GetStop(eExtreme_Positional);
+    int feat_left = feat_loc.GetStart(eExtreme_Positional);
+    int feat_right = feat_loc.GetStop(eExtreme_Positional);
     
     if ( (feat_strand == eNa_strand_minus && gene_strand != eNa_strand_minus)
              || (feat_strand != eNa_strand_minus 
@@ -5190,12 +5190,12 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: CheckFeatureTypeForLocationDiscrepanci
         }
      }
      else {
+          // eOverlap_Contains: in case gene_olp no positions.
          CConstRef <CSeq_feat> 
             gene_olp= sequence::GetBestOverlappingFeat(feat_loc,
                                                    CSeqFeatData::e_Gene,
-                                                   sequence::eOverlap_Contained,
+                                                   sequence::eOverlap_Contains,
                                                    *thisInfo.scope);
-
          if (gene_olp.NotEmpty() 
                   && !IsGeneLocationOk(*it, gene_olp.GetPointer())) {
               strtmp = feat_type + "$";
@@ -12955,7 +12955,7 @@ CRef <GeneralDiscSubDt> CSeqEntry_INCONSISTENT_BIOSOURCE :: AddSeqEntry(const CS
     new_biosrc_ls->obj_text.clear();
     new_biosrc_ls->obj_ls.clear();
 
-    string biosrc_txt =  GetDiscItemText(seqdesc, seq_entry);
+    string biosrc_txt = GetDiscItemText(seqdesc, seq_entry);
     for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
        if (bb_ci->IsNa()) {
           new_biosrc_ls->obj_text.push_back(biosrc_txt);
@@ -12970,8 +12970,16 @@ CRef <GeneralDiscSubDt> CSeqEntry_INCONSISTENT_BIOSOURCE :: AddSeqEntry(const CS
 
 void CSeqEntry_INCONSISTENT_BIOSOURCE :: TestOnObj(const CSeq_entry& seq_entry)
 {
+   if (m_num_entry > 1) {
+     CRef <CClickableItem> c_item (new CClickableItem);
+     c_item->setting_name = GetName();
+     GetReport(c_item);
+     INCONSISTENT_BIOSOURCE_biosrc.clear(); 
+   }
+
    bool found, has_na;
    unsigned i=0;
+//   string num_entry_str = "Entry" + NStr::UIntToString(m_num_entry);
    string biosrc_txt;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
       found = has_na = false;

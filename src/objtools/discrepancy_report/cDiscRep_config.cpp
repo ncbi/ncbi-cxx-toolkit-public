@@ -1259,7 +1259,10 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
              = (strtmp.find("t") != string::npos);
       thisInfo.output_config.add_extra_output_tag 
              = (strtmp.find("s") != string::npos);
-      if (strtmp.find("g") != string::npos) {
+      if (strtmp == "Asndisc") {
+        thisInfo.report = fUnknown;
+      }
+      else if (strtmp.find("g") != string::npos) {
         if (big_sequence_report) {
            NCBI_USER_THROW("Cannot combine -B with another report type");
         }
