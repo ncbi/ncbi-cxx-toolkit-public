@@ -1515,6 +1515,9 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
             lit.SetSeq_data(const_cast<CSeq_data&>(x_GetSeq_data(seg)));
             lit.ResetFuzz();
         }
+        else if ( seg.m_SegType == eSeqGap && seg.m_ObjType == eSeqLiteral ) {
+            dseq.SetLiteral(const_cast<CSeq_literal&>(*x_GetSeq_literal(seg)));
+        }
         else if ( seg.m_SegType == eSeqGap ) {
             CSeq_literal& lit = dseq.SetLiteral();
             lit.SetLength(x_GetSegmentLength(index, 0));
