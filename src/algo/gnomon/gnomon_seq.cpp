@@ -167,26 +167,6 @@ void FindAllStops(TIVec stops[], const CEResidueVec& mrna, const CAlignMap& mrna
         sort(stops[f].begin(), stops[f].end());
 }
 
-namespace {
-    EResidue ag[2] = { enA, enG };
- 	
-bool UpstreamStartOrSplice(const CEResidueVec& seq_strand, int start, int frame) {
-    int cds_start = start+frame;
-    for(int k = cds_start-2; k >= 0; k -= 1) {
-        if(k < start-1 && equal(ag,ag+2,&seq_strand[k]))
-            return true;   // splice must be outside of alignment
-        if((cds_start-k)%3 != 0)
-            continue;
-        if(IsStartCodon(&seq_strand[k]))
-            return true;
-        if(IsStopCodon(&seq_strand[k]))
-            return false;
-    }
- 	
-    return false;
-}
-
-}
 
 bool Partial5pCodonIsStop(const CEResidueVec& seq_strand, int start, int frame) {
     if(frame == 0)      // no partial codon

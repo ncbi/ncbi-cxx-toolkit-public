@@ -58,25 +58,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 USING_SCOPE(ncbi::objects);
 
-namespace {
-int GetCompartmentNum(const CSeq_align& sa)
-{
-    if (sa.CanGetExt()) {
-        ITERATE(CSeq_align::TExt, e, sa.GetExt()) {
-            const CUser_object& uo = **e;
-            if (uo.CanGetData()) {
-                ITERATE(CUser_object::TData, field, uo.GetData()) {
-                    if ((*field)->CanGetLabel() && (*field)->GetLabel().IsStr() && (*field)->GetLabel().GetStr()=="CompartmentId") {
-                        return (*field)->GetData().GetInt();
-                    }
-                }
-            }
-        }
-    }
-    return 0;
-}
-}
-
 void debug()
 {
 }
