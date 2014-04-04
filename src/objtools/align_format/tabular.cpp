@@ -621,11 +621,13 @@ void CBlastTabularInfo::x_SetQueryCovSubject(const CSeq_align & align)
 
 void CBlastTabularInfo::x_SetQueryCovSeqalign(const CSeq_align & align, int query_len)
 {
-	int len = abs((int) (align.GetSeqStop(0) - align.GetSeqStart(0))) + 1;
-	double tmp = 100.0 * len/(double) query_len;
-	if(tmp  < 99)
-		tmp +=0.5;
-
+	double tmp = 0;
+	if(!align.GetNamedScore("hsp_percent_coverage", tmp)) {
+		int len = abs((int) (align.GetSeqStop(0) - align.GetSeqStart(0))) + 1;
+		tmp = 100.0 * len/(double) query_len;
+		if(tmp  < 99)
+			tmp +=0.5;
+	}
 	m_QueryCovSeqalign = (int)tmp;
 }
 

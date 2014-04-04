@@ -2698,6 +2698,20 @@ BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
     arg.Reset(new CTaskCmdLineArgs(tasks, "blastp-short"));
 }
 
+BOOST_AUTO_TEST_CASE(CheckQueryCoveragePercent) {
+    auto_ptr<CArgs> args;
+    CBlastxAppArgs blast_args;
+
+    // invalid value
+    CString2Args s2a("-db ecoli -qcov_hsp_perc 100.3");
+    BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(blast_args)),
+                      CArgException);
+
+    // valid combination
+    s2a.Reset("-db ecoli -qcov_hsp_perc 15");
+    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
+}
+
 BOOST_AUTO_TEST_SUITE_END() // end of blastargs test suite
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

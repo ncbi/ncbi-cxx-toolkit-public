@@ -260,6 +260,8 @@ CBlastNucleotideOptionsHandle::SetMBHitSavingOptionsDefaults()
     // and passed to the engine in the params structure
 
     SetLowScorePerc(0.15);
+
+    SetQueryCovHspPerc(0);
 }
 
 void

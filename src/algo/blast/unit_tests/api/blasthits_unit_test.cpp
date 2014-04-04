@@ -585,6 +585,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         (*hsplist_ptr)->hspcnt = 1;
     }
 
+
     static void 
     s_SetupSequencesForUngappedReevaluateTransl(BLAST_SequenceBlk* * query_blk, 
                                                 BLAST_SequenceBlk* * subject_blk)
@@ -1314,6 +1315,69 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE_EQUAL(60, (int) hit_list->low_score);
         BOOST_REQUIRE(hit_list->hsplist_array != NULL);
         hit_list = Blast_HitListFree(hit_list);
+    }
+
+   static void
+   s_SetupHSPListTransl(BlastHSPList* * hsplist_ptr)
+   {
+       *hsplist_ptr = Blast_HSPListNew(4);
+       for(unsigned int i = 0; i < 4; i++ ){
+    	   unsigned int factor = i+1;
+    	   BlastHSP* hsp = Blast_HSPNew();
+
+       		hsp->query.offset = 0;
+       		hsp->query.end = 12/factor;
+       		hsp->subject.offset = 0;
+       		hsp->subject.frame = 1;
+       		hsp->subject.end = 12/factor;
+       		hsp->score = 45/factor;
+       		(*hsplist_ptr)->hsp_array[i] = hsp;
+       		(*hsplist_ptr)->hspcnt ++;
+   		}
+   }
+
+    BOOST_AUTO_TEST_CASE(testQueryCoverage)
+    {
+
+        BlastHSPList* hsp_list = NULL;
+        BLAST_SequenceBlk* query_blk = NULL;
+        BLAST_SequenceBlk* subject_blk = NULL;
+        BlastQueryInfo* query_info = NULL;
+        EBlastProgramType program_number = eBlastTypeTblastn;
+        const Uint4 kDbLength = 100000000;
+        BlastScoringOptions* scoring_options = NULL;
+        BlastHitSavingOptions* hit_options = NULL;
+
+        s_SetupSequencesForUngappedReevaluateTransl(&query_blk, &subject_blk);
+        s_SetupQueryInfoForReevaluateTest(program_number,
+                                          query_blk, kDbLength, &query_info);
+        s_SetupScoringOptionsForReevaluateHSP(&scoring_options, false, true);
+
+        BlastHitSavingOptionsNew(program_number, &hit_options,
+                                 scoring_options->gapped_calculation);
+
+        QuerySetUpOptions* query_options = NULL;
+        BlastQuerySetUpOptionsNew(&query_options);
+        s_SetupHSPListTransl(&hsp_list);
+
+        BOOST_REQUIRE_EQUAL(4, (int) hsp_list->hspcnt);
+        hit_options->query_cov_hsp_perc = 30;
+        Blast_HSPListReapByQueryCoverage(hsp_list, hit_options, query_info,  program_number);
+        BOOST_REQUIRE_EQUAL(3, (int) hsp_list->hspcnt);
+        hit_options->query_cov_hsp_perc = 50;
+        Blast_HSPListReapByQueryCoverage(hsp_list, hit_options, query_info,  program_number);
+        BOOST_REQUIRE_EQUAL(2, (int) hsp_list->hspcnt);
+
+        BOOST_REQUIRE_EQUAL(50.5,Blast_HSPGetQueryCoverage(hsp_list->hsp_array[1], query_info->contexts[0].query_length));
+        BOOST_REQUIRE_EQUAL(100,Blast_HSPGetQueryCoverage(hsp_list->hsp_array[0], query_info->contexts[0].query_length));
+
+        BOOST_REQUIRE(!Blast_HSPQueryCoverageTest(hsp_list->hsp_array[0], 99,query_info->contexts[0].query_length));
+        BOOST_REQUIRE(Blast_HSPQueryCoverageTest(hsp_list->hsp_array[1], 99,query_info->contexts[0].query_length));
+        Blast_HSPListFree(hsp_list);
+        BlastSequenceBlkFree(query_blk);
+        BlastSequenceBlkFree(subject_blk);
+        BlastHitSavingOptionsFree(hit_options);
+        BlastQueryInfoFree(query_info);
     }
 
 BOOST_AUTO_TEST_SUITE_END()

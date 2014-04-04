@@ -879,6 +879,17 @@ BOOST_FIXTURE_TEST_CASE(Set_Get_WordSize_DiscNucleotide, DiscNucleotideOptionsHa
         }
 }
 
+BOOST_FIXTURE_TEST_CASE(Set_Get_QueryCoverageHspPercentage, BlastNuclOptionsHandleFixture) {
+
+        int value = m_OptsHandle->GetQueryCovHspPerc();
+        //Test default
+        BOOST_REQUIRE(value == 0);
+        m_OptsHandle->SetQueryCovHspPerc(52);
+        value = m_OptsHandle->GetQueryCovHspPerc();
+        BOOST_REQUIRE(value == 52);
+}
+
+
 
 
 //BOOST_AUTO_TEST_SUITE_END()

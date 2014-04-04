@@ -251,6 +251,12 @@ public:
     /// @param p PercentIdentity [in]
     void SetPercentIdentity(double p) { m_Opts->SetPercentIdentity(p); }
 
+    /// Returns QueryCovHspPerc
+    double GetQueryCovHspPerc() const { return m_Opts->GetQueryCovHspPerc(); }
+    /// Sets QueryCovHspPerc
+    /// @param p QueryCovHspPerc [in]
+    void SetQueryCovHspPerc(double p) { m_Opts->SetQueryCovHspPerc(p); }
+
     /// Returns MinDiagSeparation
     int GetMinDiagSeparation() const { return m_Opts->GetMinDiagSeparation(); }
     /// Sets MinDiagSeparation

@@ -202,6 +202,9 @@ public:
     double GetPercentIdentity() const;
     void SetPercentIdentity(double p);
 
+    double GetQueryCovHspPerc() const;
+    void SetQueryCovHspPerc(double p);
+
     int GetMinDiagSeparation() const;
     void SetMinDiagSeparation(int d);
 
@@ -1224,6 +1227,18 @@ inline void
 CBlastOptionsLocal::SetPercentIdentity(double p)
 {
     m_HitSaveOpts->percent_identity = p;
+}
+
+inline double
+CBlastOptionsLocal::GetQueryCovHspPerc() const
+{
+    return m_HitSaveOpts->query_cov_hsp_perc;
+}
+
+inline void
+CBlastOptionsLocal::SetQueryCovHspPerc(double p)
+{
+    m_HitSaveOpts->query_cov_hsp_perc = p;
 }
 
 inline int

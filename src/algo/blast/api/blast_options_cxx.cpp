@@ -560,6 +560,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
         x_SetParam(CBlast4Field::Get(opt), v);
         return;
 
+    case eBlastOpt_QueryCovHspPerc:
+        x_SetParam(CBlast4Field::Get(opt), v);
+        return;
+
     case eBlastOpt_InclusionThreshold:
         x_SetParam(CBlast4Field::Get(opt), v);
         return;
@@ -1718,6 +1722,26 @@ CBlastOptions::SetPercentIdentity(double p)
         m_Remote->SetValue(eBlastOpt_PercentIdentity, p);
     }
 }
+
+double
+CBlastOptions::GetQueryCovHspPerc() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetQueryCovHspPerc() not available.");
+    }
+    return m_Local->GetQueryCovHspPerc();
+}
+void
+CBlastOptions::SetQueryCovHspPerc(double p)
+{
+    if (m_Local) {
+        m_Local->SetQueryCovHspPerc(p);
+    }
+    if (m_Remote) {
+        m_Remote->SetValue(eBlastOpt_QueryCovHspPerc, p);
+    }
+}
+
 
 int 
 CBlastOptions::GetMinDiagSeparation() const

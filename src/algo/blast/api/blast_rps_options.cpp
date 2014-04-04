@@ -116,6 +116,8 @@ CBlastRPSOptionsHandle::SetHitSavingOptionsDefaults()
     SetCutoffScore(0); // will be calculated based on evalue threshold,
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
     // and passed to the engine in the params structure
+
+    SetQueryCovHspPerc(0);
 }
 
 void

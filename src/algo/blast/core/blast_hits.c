@@ -896,6 +896,26 @@ Boolean Blast_HSPTest(BlastHSP* hsp,
 	return s_HSPTest(hsp, hit_options, align_length);
 }
 
+double Blast_HSPGetQueryCoverage(const BlastHSP* hsp, Int4 query_length)
+{
+	double pct = 0;
+    if(query_length > 0) {
+            pct = 100.0 * (double) (hsp->query.end - hsp->query.offset)/ (double) query_length;
+            if(pct < 99)
+            	pct +=0.5;
+    }
+    return pct;
+}
+
+Boolean Blast_HSPQueryCoverageTest(BlastHSP* hsp,
+        						   double min_query_coverage_pct,
+        						   Int4 query_length)
+{
+     double hsp_coverage = Blast_HSPGetQueryCoverage( hsp, query_length);
+     return (hsp_coverage < min_query_coverage_pct);
+}
+
+
 void 
 Blast_HSPCalcLengthAndGaps(const BlastHSP* hsp, Int4* length_out,
                            Int4* gaps_out, Int4* gap_opens_out)
@@ -1831,6 +1851,39 @@ Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list,
    return 0;
 }
 
+Int2 Blast_HSPListReapByQueryCoverage(BlastHSPList* hsp_list,
+                                      const BlastHitSavingOptions* hit_options,
+                                      const BlastQueryInfo* query_info,
+                                      EBlastProgramType program_number)
+
+{
+   BlastHSP* hsp;
+   BlastHSP** hsp_array;
+   Int4 hsp_cnt = 0;
+   Int4 index;
+
+   if ((hsp_list == NULL) || (hsp_list->hspcnt == 0))
+      return 0;
+
+   hsp_array = hsp_list->hsp_array;
+   for (index = 0; index < hsp_list->hspcnt; index++) {
+      hsp = hsp_array[index];
+      ASSERT(hsp != NULL);
+      if ( Blast_HSPQueryCoverageTest(hsp, hit_options->query_cov_hsp_perc,
+			                          query_info->contexts[hsp->context].query_length)) {
+         hsp_array[index] = Blast_HSPFree(hsp_array[index]);
+      } else {
+         if (index > hsp_cnt)
+            hsp_array[hsp_cnt] = hsp_array[index];
+         hsp_cnt++;
+      }
+   }
+
+   hsp_list->hspcnt = hsp_cnt;
+
+   return 0;
+}
+
 /** Same as Blast_HSPListReapByEvalue() except that it uses
  *  the raw score of the hit and the HitSavingOptions->cutoff_score
  *  to filter out hits. -RMH- 
@@ -2405,7 +2458,9 @@ Blast_HSPListReevaluateUngapped(EBlastProgramType program,
                                					&align_length,
                                					sbp);
 
-           delete_hsp = Blast_HSPTest(hsp, hit_params->options, align_length);
+           delete_hsp = Blast_HSPTest(hsp, hit_params->options, align_length) ||
+        		        Blast_HSPQueryCoverageTest(hsp, hit_params->options->query_cov_hsp_perc,
+        		           						   query_info->contexts[context].query_length);
       }
       if (delete_hsp) { /* This HSP is now below the cutoff */
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);

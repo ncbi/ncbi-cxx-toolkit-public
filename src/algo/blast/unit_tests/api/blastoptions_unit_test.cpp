@@ -1306,6 +1306,7 @@ BOOST_AUTO_TEST_CASE( testOptionsDeepCopy )
     optsHandle->SetFilterString("L;m;"); /* NCBI_FAKE_WARNING */
     optsHandle->SetDbLength(10000);
     optsHandle->SetOptions().SetPHIPattern("Y-S-[SA]-X-[LVIM]", false);
+    optsHandle->SetOptions().SetQueryCovHspPerc(55.4);
     //optsHandle->GetOptions().DebugDumpText(NcbiCerr, "BLAST options - original", 1);
 
     CRef<CBlastOptions> optsClone = optsHandle->GetOptions().Clone();
@@ -1315,6 +1316,7 @@ BOOST_AUTO_TEST_CASE( testOptionsDeepCopy )
     BOOST_CHECK_EQUAL(optsClone->GetDbLength(), 10000);
     BOOST_CHECK_EQUAL(string(optsClone->GetFilterString()), string("L;m;")); /* NCBI_FAKE_WARNING */
     BOOST_CHECK_EQUAL(string(optsClone->GetPHIPattern()), string("Y-S-[SA]-X-[LVIM]"));
+    BOOST_CHECK_EQUAL(optsClone->GetQueryCovHspPerc(), 55.4);
 
     // try setting and unsetting the best hit options (SB-339, issue #4)
     optsClone->SetBestHitScoreEdge(kBestHit_ScoreEdgeDflt);

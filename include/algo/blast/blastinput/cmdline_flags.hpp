@@ -346,6 +346,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgRid;
 /// Argument to blast_formatter to request BLAST archive file name
 NCBI_BLASTINPUT_EXPORT extern const string kArgArchive;
 
+/// Argument to specify min query coverage percentage for each hsp
+NCBI_BLASTINPUT_EXPORT extern const string kArgQueryCovHspPerc;
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -378,6 +378,8 @@ typedef struct BlastHitSavingOptions {
     */
    double low_score_perc;
 
+   double query_cov_hsp_perc; /**< Min query coverage hsp percentage */
+
 } BlastHitSavingOptions;
 
 /** Scoring options block 

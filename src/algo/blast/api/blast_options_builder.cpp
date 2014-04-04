@@ -366,6 +366,8 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
     case 'Q':
         if (CBlast4Field::Get(eBlastOpt_QueryGeneticCode).Match(p)) {
             bo.SetQueryGeneticCode(v.GetInteger());
+        }else if (CBlast4Field::Get(eBlastOpt_QueryCovHspPerc).Match(p)) {
+            opts.SetQueryCovHspPerc(v.GetReal());
         } else {
             found = false;
         }

@@ -1339,5 +1339,8 @@ BOOST_AUTO_TEST_CASE(GetBlast4Parameters)
     BOOST_REQUIRE(p.GetName() == kUnknown);
     p = CBlast4Field::Get(eBlastOpt_Program);
     BOOST_REQUIRE(p.GetName() == kUnknown);
+
+    p = CBlast4Field::Get(eBlastOpt_QueryCovHspPerc);
+    BOOST_REQUIRE(p.GetName() != kUnknown);
 }
 BOOST_AUTO_TEST_SUITE_END()

@@ -172,6 +172,13 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                new CArgAllow_Doubles(0.0, 100.0));
     }
 
+    arg_desc.SetCurrentGroup("Restrict search or results");
+    arg_desc.AddOptionalKey(kArgQueryCovHspPerc, "float_value",
+                            "Percent query coverage per hsp",
+                            CArgDescriptions::eDouble);
+    arg_desc.SetConstraint(kArgQueryCovHspPerc,
+                           new CArgAllow_Doubles(0.0, 100.0));
+
     arg_desc.SetCurrentGroup("Extension options");
     // ungapped X-drop
     // Default values: blastn=20, megablast=10, others=7
@@ -270,6 +277,10 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     if (args.Exist(kArgPercentIdentity) && args[kArgPercentIdentity]) {
         opt.SetPercentIdentity(args[kArgPercentIdentity].AsDouble());
+    }
+
+    if (args.Exist(kArgQueryCovHspPerc) && args[kArgQueryCovHspPerc]) {
+        opt.SetQueryCovHspPerc(args[kArgQueryCovHspPerc].AsDouble());
     }
 
     if (args[kArgMaxHSPsPerSubject]) {

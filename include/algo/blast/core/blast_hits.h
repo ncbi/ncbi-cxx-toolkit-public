@@ -339,6 +339,26 @@ Blast_HSPTestIdentityAndLength(EBlastProgramType program_number,
                                const BlastScoringOptions* score_options,
                                const BlastHitSavingOptions* hit_options);
 
+/** Calculate query coverage percentage of an hsp
+ *  @param hsp An HSP structure [in]
+ *  @param query_length	Length of query [in]
+ *  @return percentage query coverage of the input hsp
+ */
+NCBI_XBLAST_EXPORT
+double
+Blast_HSPGetQueryCoverage(const BlastHSP* hsp, Int4 query_length);
+
+/** Calculate query coverage percentage of an hsp
+ *  @param hsp An HSP structure [in]
+ *  @param min_query_coverage_pct Min query coverage pct for saving the hsp[in]
+ *  @param query_length	Length of query [in]
+ *  @return true if hsp's query coverage pct  < min_query_coverage_pct (delete hsp)
+ */
+NCBI_XBLAST_EXPORT
+Boolean Blast_HSPQueryCoverageTest(BlastHSP* hsp,
+        						   double min_query_coverage_pct,
+        						   Int4 query_length);
+
 /** Calculated the number of HSPs that should be saved.
  * @param gapped_calculation ungapped if false [in]
  * @param options HitSavingoptions object [in]
@@ -530,6 +550,18 @@ Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list,
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListReapByRawScore(BlastHSPList* hsp_list,
                                const BlastHitSavingOptions* hit_options);
+
+/** Discard the HSPs below the min query coverage pct from the HSP list
+ * @param hsp_list List of HSPs for one subject sequence [in] [out]
+ * @param hit_options Options block containing the min query coverage pct [in]
+ * @param query_info Structure containing information about the queries  [in]
+ * @param program_number Type of BLAST program.
+*/
+NCBI_XBLAST_EXPORT
+Int2 Blast_HSPListReapByQueryCoverage(BlastHSPList* hsp_list,
+                                      const BlastHitSavingOptions* hit_options,
+                                      const BlastQueryInfo* query_info,
+                                      EBlastProgramType program_number);
 
 /** Cleans out the NULLed out HSP's from the HSP array that
  * is part of the BlastHSPList.

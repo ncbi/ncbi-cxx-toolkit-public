@@ -213,6 +213,8 @@ const string kArgShowDomainHits("show_domain_hits");
 const string kArgRid("rid");
 const string kArgArchive("archive");
 
+const string kArgQueryCovHspPerc("qcov_hsp_perc");
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

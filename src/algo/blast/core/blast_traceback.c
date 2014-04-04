@@ -590,7 +590,9 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                        							   &align_length,
                        							   sbp);
   
-               delete_hsp = Blast_HSPTest(hsp, hit_options, align_length);
+               delete_hsp = Blast_HSPTest(hsp, hit_options, align_length) ||
+       		                Blast_HSPQueryCoverageTest(hsp, hit_options->query_cov_hsp_perc,
+       		           						           query_length);;
            }
            if (!delete_hsp) {
               Blast_HSPAdjustSubjectOffset(hsp, start_shift);
@@ -656,7 +658,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                        score_params, sbp);
           if (!delete_hsp) 
               delete_hsp = Blast_HSPTestIdentityAndLength(program_number, hsp, query_nomask, 
-                                                       subject, score_options, hit_options);
+                                                       subject, score_options, hit_options) ||
+                           Blast_HSPQueryCoverageTest( hsp, hit_options->query_cov_hsp_perc, query_length) ;
           if (delete_hsp) 
               hsp_array[index] = Blast_HSPFree(hsp);
        }

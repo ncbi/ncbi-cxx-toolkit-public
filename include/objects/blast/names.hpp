@@ -88,6 +88,7 @@ enum EBlastOptIdx {
     eBlastOpt_EvalueThreshold,
     eBlastOpt_CutoffScore,
     eBlastOpt_PercentIdentity,
+    eBlastOpt_QueryCovHspPerc,
     eBlastOpt_SumStatisticsMode,
     eBlastOpt_LongestIntronLength,
     eBlastOpt_GappedMode,

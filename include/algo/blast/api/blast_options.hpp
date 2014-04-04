@@ -302,6 +302,9 @@ public:
     double GetPercentIdentity() const;
     void SetPercentIdentity(double p);
 
+    double GetQueryCovHspPerc() const;
+    void SetQueryCovHspPerc(double p);
+
     int GetMinDiagSeparation() const;
     void SetMinDiagSeparation(int d);
 

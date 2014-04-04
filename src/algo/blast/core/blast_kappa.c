@@ -419,6 +419,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
     }
     if (status == 0) {
         Blast_HSPListReapByEvalue(hsp_list, hitParams->options);
+        Blast_HSPListReapByQueryCoverage(hsp_list,hitParams->options, queryInfo, program_number );
         if (hsp_list->hspcnt > 0) {
             *pbestEvalue = hsp_list->best_evalue;
             *pbestScore  = hsp_list->hsp_array[0]->score;

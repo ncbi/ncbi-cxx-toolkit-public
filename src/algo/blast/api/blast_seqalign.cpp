@@ -894,7 +894,8 @@ static size_t
 s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<int>  & gi_list)
 {
     _ASSERT(hsp);
-    size_t retval = 0;
+    // query coverage hsp
+    size_t retval = 1;
 
     if (hsp->score) {
         retval++;
@@ -938,7 +939,8 @@ s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<int>  & gi_list)
 static void
 s_BuildScoreList(const BlastHSP     * hsp,
                  CSeq_align::TScore & scores,
-                 const vector<int>  & gi_list)
+                 const vector<int>  & gi_list,
+                 Int4 query_length)
 {
     if (!hsp)
         return;
@@ -992,6 +994,12 @@ s_BuildScoreList(const BlastHSP     * hsp,
             static const string kNumPositives("num_positives");
             scores.push_back(s_MakeScore(kNumPositives, 0.0, hsp->num_positives, true));
     }
+
+    if(query_length > 0) {
+            static const string kQueryCovHsp("hsp_percent_coverage");
+            double hsp_coverage = Blast_HSPGetQueryCoverage( hsp, query_length);
+            scores.push_back(s_MakeScore(kQueryCovHsp, hsp_coverage, 0, false));
+    }
     return;
 }
 
@@ -1004,11 +1012,12 @@ s_BuildScoreList(const BlastHSP     * hsp,
 static void
 s_AddScoresToSeqAlign(CRef<CSeq_align>  & seqalign,
                       const BlastHSP    * hsp,
-                      const vector<int> & gi_list)
+                      const vector<int> & gi_list,
+                      Int4 query_length)
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
-    s_BuildScoreList(hsp, score_list, gi_list);
+    s_BuildScoreList(hsp, score_list, gi_list, query_length);
 }
 
 
@@ -1057,7 +1066,7 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, CRef<CSeq_id> query_id,
     }
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    s_BuildScoreList(hsp, score_list, gi_list);
+    s_BuildScoreList(hsp, score_list, gi_list, query_length);
 
     return retval;
 }
@@ -1131,7 +1140,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id,
     retval->SetLoc().push_back(subject_loc);
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    s_BuildScoreList(hsp, score_list, gi_list);
+    s_BuildScoreList(hsp, score_list, gi_list, query_length);
 
     return retval;
 }
@@ -1242,7 +1251,7 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
         	if(hsp->num_ident == 0)
         		hsp->num_ident = -1;
         }
-        s_AddScoresToSeqAlign(seqalign, hsp, gi_list);
+        s_AddScoresToSeqAlign(seqalign, hsp, gi_list, query_length);
         sa_vector.push_back(seqalign);
     }
     
@@ -1808,7 +1817,7 @@ x_NonTranslatedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id,
     retval->SetLoc().push_back(subject_loc);
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    s_BuildScoreList(hsp, score_list, gi_list);
+    s_BuildScoreList(hsp, score_list, gi_list, query_length);
 
     return retval;
 }
