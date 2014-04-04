@@ -4155,7 +4155,7 @@ BOOST_AUTO_TEST_CASE(MultiTaxidBlastDefLine)
     BOOST_CHECK(bdl.IsSetLinks() == false);
 
     bdl.SetTaxIds(taxids);
-    BOOST_REQUIRE(bdl.IsSetTaxid() == false);
+    BOOST_REQUIRE(bdl.IsSetTaxid() == true);
     BOOST_CHECK(bdl.IsSetLinks() == true);
     CBlast_def_line::TTaxIds returned = bdl.GetTaxIds();
     BOOST_REQUIRE_EQUAL_COLLECTIONS(taxids.begin(), taxids.end(),
