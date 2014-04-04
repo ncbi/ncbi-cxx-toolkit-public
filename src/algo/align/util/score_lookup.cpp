@@ -51,6 +51,7 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
 #include <objmgr/object_manager.hpp>
@@ -1480,6 +1481,43 @@ private:
     EInfoType m_InfoType;
 };
 
+class CScore_GeneID : public CScoreLookup::IScore
+{
+public:
+    CScore_GeneID(int row)
+    : m_Row(row)
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr << "Gene ID of " << (m_Row == 0 ? "query" : "subject");
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope* scope) const
+    {
+        CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(m_Row));
+        CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
+        if (!gene_it) {
+            NCBI_THROW(CException, eUnknown, "No gene feature");
+        }
+
+        CMappedFeat gene = *gene_it;
+        if (++gene_it) {
+            NCBI_THROW(CException, eUnknown, "Multiple gene features");
+        }
+
+        return gene.GetNamedDbxref("GeneID")->GetTag().GetId();
+    }
+
+private:
+    int m_Row;
+};
+
 void CScoreLookup::x_Init()
 {
     m_Scores.insert
@@ -1706,6 +1744,15 @@ void CScoreLookup::x_Init()
           CIRef<IScore>(new CScore_EdgeExonInfo(
                             CScore_EdgeExonInfo::e3Prime,
                             CScore_EdgeExonInfo::ePercentIdentity))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_geneid",
+          CIRef<IScore>(new CScore_GeneID(0))));
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_geneid",
+          CIRef<IScore>(new CScore_GeneID(1))));
 }
 
 

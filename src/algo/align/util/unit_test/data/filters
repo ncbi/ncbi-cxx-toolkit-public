@@ -148,3 +148,5 @@ subject_refseq_status = model
 0
 HAS_DESC_KEYWORD(query, aldolase)
 11
+query_geneid = 54020
+1
