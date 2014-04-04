@@ -42,6 +42,7 @@ CGridCommandLineInterfaceApp::EAPIClass
         CGridCommandLineInterfaceApp::SetUp_AdminCmd(
                 CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
+    // For commands that accept only one type of server.
     switch (IsOptionAccepted(eNetCache, OPTION_N(0)) |
             IsOptionAccepted(eNetSchedule, OPTION_N(1)) |
             IsOptionAccepted(eWorkerNode, OPTION_N(2)) |
@@ -66,6 +67,7 @@ CGridCommandLineInterfaceApp::EAPIClass
         break;
     }
 
+    // For commands that accept multiple types of servers.
     switch (IsOptionExplicitlySet(eNetCache, OPTION_N(0)) |
             IsOptionExplicitlySet(eNetSchedule, OPTION_N(1)) |
             IsOptionExplicitlySet(eWorkerNode, OPTION_N(2)) |
@@ -423,6 +425,53 @@ int CGridCommandLineInterfaceApp::Cmd_Drain()
         return 2;
     }
     return 0;
+}
+
+void CGridCommandLineInterfaceApp::NetSchedule_SuspendResume(bool suspend)
+{
+    if (IsOptionAcceptedAndSetImplicitly(eQueue)) {
+        NCBI_THROW(CArgException, eNoValue,
+                "missing option '--" QUEUE_OPTION "'");
+    }
+
+    string cmd(suspend ? IsOptionSet(ePullback) ?
+            "QPAUSE pullback=1" : "QPAUSE" : "QRESUME");
+
+    g_AppendClientIPAndSessionID(cmd);
+
+    m_NetScheduleAPI.GetService().ExecOnAllServers(cmd);
+}
+
+int CGridCommandLineInterfaceApp::Cmd_Suspend()
+{
+    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    case eNetScheduleAdmin:
+        NetSchedule_SuspendResume(true);
+        return 0;
+
+    case eWorkerNodeAdmin:
+        m_NetScheduleAPI.GetService().ExecOnAllServers("SUSPEND");
+        return 0;
+
+    default:
+        return 2;
+    }
+}
+
+int CGridCommandLineInterfaceApp::Cmd_Resume()
+{
+    switch (SetUp_AdminCmd(eSevereAdminCmd)) {
+    case eNetScheduleAdmin:
+        NetSchedule_SuspendResume(false);
+        return 0;
+
+    case eWorkerNodeAdmin:
+        m_NetScheduleAPI.GetService().ExecOnAllServers("RESUME");
+        return 0;
+
+    default:
+        return 2;
+    }
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Shutdown()

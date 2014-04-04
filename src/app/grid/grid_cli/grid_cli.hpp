@@ -106,6 +106,8 @@
 #define QUEUE_CLASS_OPTION "queue-class"
 #define QUEUE_ARG "QUEUE"
 #define SWITCH_ARG "SWITCH"
+#define PULLBACK_OPTION "pullback"
+#define WAIT_FOR_JOB_COMPLETION_OPTION "wait-for-job-completion"
 #define NOW_OPTION "now"
 #define DIE_OPTION "die"
 #define DRAIN_OPTION "drain"
@@ -118,6 +120,7 @@
 #define READJOB_COMMAND "readjob"
 #define WATCHJOB_COMMAND "watchjob"
 #define QUEUEINFO_COMMAND "queueinfo"
+#define SUSPEND_COMMAND "suspend"
 
 #define HUMAN_READABLE_OUTPUT_FORMAT "human-readable"
 #define RAW_OUTPUT_FORMAT "raw"
@@ -222,6 +225,8 @@ enum EOption {
     eQueueClass,
     eQueueDescription,
     eSwitchArg,
+    ePullback,
+    eWaitForJobCompletion,
     eNow,
     eDie,
     eDrain,
@@ -472,6 +477,8 @@ public:
     int Cmd_GetConf();
     int Cmd_Reconf();
     int Cmd_Drain();
+    int Cmd_Suspend();
+    int Cmd_Resume();
     int Cmd_Shutdown();
     int Cmd_Exec();
     int Cmd_Automate();
@@ -523,10 +530,11 @@ private:
     int DumpJobInputOutput(const string& data_or_blob_id);
     int PrintJobAttrsAndDumpInput(const CNetScheduleJob& job);
 
+    void NetSchedule_SuspendResume(bool suspend);
     int PrintNetScheduleStats();
     void PrintNetScheduleStats_Generic(ENetScheduleStatTopic topic);
-    void SetUp_NetStorageCmd(EAPIClass api_class);
 
+    void SetUp_NetStorageCmd(EAPIClass api_class);
     void NetStorage_PrintServerReply(CJsonNode& server_reply);
     int PrintNetStorageServerInfo();
     int PrintNetStorageServerConfig();

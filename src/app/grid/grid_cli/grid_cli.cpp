@@ -376,6 +376,13 @@ struct SOptionDefinition {
 
     {OPT_DEF(eOptionalPositional, eSwitchArg), SWITCH_ARG, NULL, {-1}},
 
+    {OPT_DEF(eSwitch, ePullback),
+        PULLBACK_OPTION, "Pause job queue with pullback.", {-1}},
+
+    {OPT_DEF(eSwitch, eWaitForJobCompletion),
+        WAIT_FOR_JOB_COMPLETION_OPTION, "Do not return until all "
+            "running jobs are completed.", {-1}},
+
     {OPT_DEF(eSwitch, eNow),
         NOW_OPTION, "Take action immediately.", {-1}},
 
@@ -1083,6 +1090,32 @@ struct SCommandDefinition {
         ABOUT_SWITCH_ARG,
         {eSwitchArg, eNetSchedule, eQueue, eLoginToken,
             eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Suspend,
+        SUSPEND_COMMAND "|pause", "Pause job processing.",
+        "Depending on whether the command is applied to a worker node "
+        "or a NetSchedule service, the worker node or the entire "
+        "NetSchedule queue will be paused.\n\n"
+        "For worker nodes, two additional options can be specified. "
+        "The '--" WAIT_FOR_JOB_COMPLETION_OPTION "' option makes sure "
+        "that when '" GRID_APP_NAME "' returns, no jobs are runnings. "
+        "The '--" TIMEOUT_OPTION "' option indicates how long the "
+        "worker node must wait for the running jobs to complete.\n\n"
+        "For NetSchedule servers, the '--" PULLBACK_OPTION "' option "
+        "instructs the worker nodes connected to the specified queue "
+        "to stop processing and return all running jobs.",
+        {eWorkerNode, eTimeout, eWaitForJobCompletion,
+            eNetSchedule, eQueue, ePullback,
+            eLoginToken, eAuth, eClientNode, eClientSession,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Resume,
+        "resume", "Continue job processing.",
+        "This command undoes the effect of the '" SUSPEND_COMMAND
+        "' command.",
+        {eWorkerNode, eNetSchedule, eQueue,
+            eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Shutdown,
