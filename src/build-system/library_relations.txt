@@ -333,7 +333,6 @@ gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
 gpipe_align_format needs $(XFORMAT_LIBS)
 gpipe_align_format needs gpipe_objutil
 gpipe_align_format needs prosplign
-gpipe_align_format needs valid
 gpipe_align_format needs xobjwrite
 gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
@@ -358,7 +357,6 @@ gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gpinit_buildinfo
 gpipe_ftp needs xalgoalignutil
-gpipe_ftp needs xhtml
 gpipe_ftp needs xobjedit
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
@@ -366,7 +364,6 @@ gpipe_ftp_new needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp_new needs $(XFORMAT_LIBS)
 gpipe_ftp_new needs gpinit_buildinfo
 gpipe_ftp_new needs xalgoalignutil
-gpipe_ftp_new needs xhtml
 gpipe_ftp_new needs xobjedit
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
@@ -1381,7 +1378,6 @@ xutil needs xncbi
 xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
-xvalidate needs xhtml
 xvalidate needs xobjedit
 xxconnect needs connect
 xxconnect needs xncbi
