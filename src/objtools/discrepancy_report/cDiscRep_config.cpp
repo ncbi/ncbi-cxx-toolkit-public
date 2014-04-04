@@ -1246,26 +1246,51 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     m_dorecurse = (args["u"] == "1") ? true : false;
     if ((m_indir.empty() || !CDir(m_indir).Exists()) 
          && thisInfo.infile.empty()) {
-        if (m_indir.empty() || !CDir(m_indir).Exists()) {
-          NCBI_USER_THROW("input path does not exist: " + m_indir);
-        }
         NCBI_USER_THROW("Input path or input file must be specified");
     }
     m_file_tp = args["a"];
 
-    bool big_sequence_report = false;
     // report category
+    thisInfo.report = fUnknown;
+    bool big_sequence_report = (args["B"] == "true");
     if (args.find("P") != args.end()) {
       strtmp = args["P"];
       thisInfo.output_config.add_output_tag 
-             = ( (strtmp == "t") || (strtmp == "bt"));
-      thisInfo.output_config.add_extra_output_tag = (strtmp == "s");
-      if (args["P"] == "t" || args["P"] == "s") {
-          thisInfo.report = fAsndisc;
+             = (strtmp.find("t") != string::npos);
+      thisInfo.output_config.add_extra_output_tag 
+             = (strtmp.find("s") != string::npos);
+      if (strtmp.find("g") != string::npos) {
+        if (big_sequence_report) {
+           NCBI_USER_THROW("Cannot combine -B with another report type");
+        }
+        if (strtmp == "g") {
+           thisInfo.report = fGenomes;
+        }
       }
-      else if (strtmp == "bt") {
-          thisInfo.report = fBigSequence;
+      else if (strtmp.find("m") != string::npos) {
+        if (big_sequence_report) {
+           NCBI_USER_THROW("Cannot combine -B with another report type");
+        }
+        if (strtmp == "m") {
+           thisInfo.report = fMegaReport;
+           m_disable_tRNA_tests = true;
+        }
       }
+      else if (strtmp.find("b") != string::npos) {
+        thisInfo.report = fBigSequence;
+      }
+      else if (strtmp != "t" && strtmp != "s") {
+         NCBI_USER_THROW("Unknown report type");
+      }
+    }
+    // no -P
+    if (thisInfo.report == fUnknown) {
+       if ( big_sequence_report) {
+            thisInfo.report = fBigSequence;
+       }
+       else {
+           thisInfo.report = fGenomes;
+       }
     }
 
     // output
@@ -1312,18 +1337,6 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
        ITERATE (vector <string>, it, arr) {
           m_expanded.insert(*it); 
        }
-    }
-
-    if (!big_sequence_report) {
-        big_sequence_report = (args["B"] == "true");
-    }
-    if (m_enabled.empty()) {
-      if ( big_sequence_report) {
-          thisInfo.report = fBigSequence; 
-      }
-      else if (thisInfo.report == fAsndisc) {
-         thisInfo.report = fGenomes;
-      }
     }
 
     m_genbank_loader = (args["R"] == "true");
@@ -1468,8 +1481,7 @@ static const s_test_property test_list[] = {
    {"N_RUNS", 
      fGenomes | fBigSequence | fDiscrepancy | fAsndisc| fMegaReport, 
      "Runs of 10 or more Ns"},
-   {"N_RUNS_14", 
-     fDiscrepancy | fTSA | fMegaReport, "Runs of more than 14 Ns"},
+   {"N_RUNS_14", fTSA, "Runs of more than 14 Ns"},
    {"ZERO_BASECOUNT", 
      fGenomes | fBigSequence | fDiscrepancy | fMegaReport, "Zero Base Counts"},
    {"TEST_LOW_QUALITY_REGION", 
@@ -1478,35 +1490,60 @@ static const s_test_property test_list[] = {
    {"DISC_PERCENT_N", 
      fGenomes | fBigSequence | fDiscrepancy | fAsndisc| fMegaReport, 
      "Greater than 5 percent Ns"},
-   {"DISC_10_PERCENTN", 
-     fDiscrepancy | fTSA | fMegaReport, "Greater than 10 percent Ns"},
+   {"DISC_10_PERCENTN", fTSA, "Greater than 10 percent Ns"},
    {"TEST_UNUSUAL_NT", 
      fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
      "Sequence contains unusual nucleotides"},
 
 // tests_on_Bioseq_CFeat
-   {"SUSPECT_PHRASES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Suspect Phrases"},
-   {"DISC_SUSPECT_RRNA_PRODUCTS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "rRNA product names should not contain 'partial' or 'domain'"},
-   {"SUSPECT_PRODUCT_NAMES", fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Suspect Product Name"},
-   {"DISC_PRODUCT_NAME_TYPO", fGenomes | fDiscrepancy | fMegaReport, "Suspect Product Name Typo"},
-   {"DISC_PRODUCT_NAME_QUICKFIX", fGenomes | fDiscrepancy | fMegaReport, "Suspect Product Name QuickFix"},
+   {"SUSPECT_PHRASES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Suspect Phrases"},
+   {"DISC_SUSPECT_RRNA_PRODUCTS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "rRNA product names should not contain 'partial' or 'domain'"},
+   {"SUSPECT_PRODUCT_NAMES", 
+     fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, 
+     "Suspect Product Name"},
+   {"DISC_PRODUCT_NAME_TYPO",  
+     fGenomes | fDiscrepancy | fMegaReport, "Suspect Product Name Typo"},
+   {"DISC_PRODUCT_NAME_QUICKFIX", 
+     fGenomes | fDiscrepancy | fMegaReport, "Suspect Product Name QuickFix"},
    {"TEST_ORGANELLE_PRODUCTS", 
      fOncaller | fMegaReport, 
      "Organelle products on non-organelle sequence: on when neither bacteria nor virus"},
-   {"DISC_GAPS", fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Sequences with gaps"},
-   {"TEST_MRNA_OVERLAPPING_PSEUDO_GENE", fGenomes | fAsndisc | fOncaller | fMegaReport, "Remove mRNA overlapping a pseudogene"},
-   {"ONCALLER_HAS_STANDARD_NAME", fGenomes | fAsndisc | fOncaller | fMegaReport, "Feature has standard_name qualifier"},
-   {"ONCALLER_ORDERED_LOCATION", fGenomes | fAsndisc | fOncaller | fMegaReport, "Location is ordered (intervals interspersed with gaps)"},
+   {"DISC_GAPS", 
+     fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Sequences with gaps"},
+   {"TEST_MRNA_OVERLAPPING_PSEUDO_GENE", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Remove mRNA overlapping a pseudogene"},
+   {"ONCALLER_HAS_STANDARD_NAME", 
+    fGenomes | fAsndisc | fOncaller | fMegaReport, 
+    "Feature has standard_name qualifier"},
+   {"ONCALLER_ORDERED_LOCATION", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Location is ordered (intervals interspersed with gaps)"},
    {"DISC_FEATURE_LIST", fDiscrepancy | fMegaReport, "Feature List"},
-   {"TEST_CDS_HAS_CDD_XREF", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "CDS has CDD Xref"},
-   {"DISC_CDS_HAS_NEW_EXCEPTION", fGenomes | fAsndisc | fOncaller | fMegaReport, "Coding region has new exception"},
-   {"DISC_MICROSATELLITE_REPEAT_TYPE", fGenomes | fAsndisc | fOncaller | fMegaReport, "Microsatellites must have repeat type of tandem"},
-   {"DISC_SUSPECT_MISC_FEATURES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Suspect misc_feature comments"},
-   {"DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS", fGenomes | fAsndisc | fOncaller | fMegaReport, "Check for gene or genes in rRNA and tRNA products and comments"},
+   {"TEST_CDS_HAS_CDD_XREF", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "CDS has CDD Xref"},
+   {"DISC_CDS_HAS_NEW_EXCEPTION",
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Coding region has new exception"},
+   {"DISC_MICROSATELLITE_REPEAT_TYPE", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Microsatellites must have repeat type of tandem"},
+   {"DISC_SUSPECT_MISC_FEATURES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Suspect misc_feature comments"},
+   {"DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Check for gene or genes in rRNA and tRNA products and comments"},
    {"DISC_FEATURE_MOLTYPE_MISMATCH", 
      fOncaller | fMegaReport, 
      "Sequences with rRNA or misc_RNA features should be genomic DNA"},
-   {"ADJACENT_PSEUDOGENES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Adjacent PseudoGenes with Identical Text"},
+   {"ADJACENT_PSEUDOGENES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Adjacent PseudoGenes with Identical Text"},
    {"MISSING_GENPRODSET_PROTEIN", 
      fGlobal | fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
      "CDS on GenProdSet without protein"},
@@ -1531,7 +1568,9 @@ static const s_test_property test_list[] = {
    {"TRANSL_TOO_LONG", 
      fTRNA | fDiscrepancy | fMegaReport, 
      "Transl_except longer than 3"},
-   {"TEST_SHORT_LNCRNA", fGenomes | fDiscrepancy | fOncaller | fMegaReport, "Short lncRNA sequences"},
+   {"TEST_SHORT_LNCRNA", 
+     fGenomes | fDiscrepancy | fOncaller | fMegaReport, 
+     "Short lncRNA sequences"},
    {"FIND_STRAND_TRNAS", 
      fDiscrepancy | fMegaReport, "Find tRNAs on the same strand"},
    {"FIND_BADLEN_TRNAS", 
@@ -1543,45 +1582,103 @@ static const s_test_property test_list[] = {
    {"COUNT_RRNAS", fTRNA | fMegaReport | fDiscrepancy, "Count rRNAs"},
    {"FIND_DUP_RRNAS", 
      fTRNA | fDiscrepancy | fMegaReport, "Find Duplicate rRNAs"},
-   {"PARTIAL_CDS_COMPLETE_SEQUENCE", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Partial CDSs in Complete Sequences"},
-   {"CONTAINED_CDS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Contained CDS"},
-   {"PSEUDO_MISMATCH", fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Pseudo Mismatch"},
-   {"EC_NUMBER_NOTE", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "EC Number Note"},
-   {"NON_GENE_LOCUS_TAG", fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Nongene Locus Tag"},
-   {"JOINED_FEATURES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Joined Features: on when non-eukaryote"},
-   {"SHOW_TRANSL_EXCEPT", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Show translation exception"},
-   {"MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "mRNA should have both protein_id and transcript_id"},
-   {"RRNA_NAME_CONFLICTS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "rRNA Standard name conflicts found"},
+   {"PARTIAL_CDS_COMPLETE_SEQUENCE", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Partial CDSs in Complete Sequences"},
+   {"CONTAINED_CDS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Contained CDS"},
+   {"PSEUDO_MISMATCH", 
+     fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, 
+     "Pseudo Mismatch"},
+   {"EC_NUMBER_NOTE", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "EC Number Note"},
+   {"NON_GENE_LOCUS_TAG", 
+     fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, 
+     "Nongene Locus Tag"},
+   {"JOINED_FEATURES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Joined Features: on when non-eukaryote"},
+   {"SHOW_TRANSL_EXCEPT", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Show translation exception"},
+   {"MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "mRNA should have both protein_id and transcript_id"},
+   {"RRNA_NAME_CONFLICTS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "rRNA Standard name conflicts found"},
    {"ONCALLER_GENE_MISSING", fOncaller | fMegaReport, "Missing genes"},
    {"ONCALLER_SUPERFLUOUS_GENE", fOncaller | fMegaReport, "Superfluous genes"},
-   {"MISSING_GENES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Missing Genes"},
-   {"EXTRA_GENES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Extra Genes"},
+   {"MISSING_GENES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Missing Genes"},
+   {"EXTRA_GENES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Extra Genes"},
    //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES"));
-   {"OVERLAPPING_CDS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Overlapping CDS"},
-   {"RNA_CDS_OVERLAP", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "CDS RNA Overlap"},
-   {"FIND_OVERLAPPED_GENES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Find completely overlapped genes"},
-   {"OVERLAPPING_GENES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Overlapping Genes"},
-   {"DISC_PROTEIN_NAMES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Frequently appearing proteins"},
+   {"OVERLAPPING_CDS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Overlapping CDS"},
+   {"RNA_CDS_OVERLAP", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "CDS RNA Overlap"},
+   {"FIND_OVERLAPPED_GENES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Find completely overlapped genes"},
+   {"OVERLAPPING_GENES", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Overlapping Genes"},
+   {"DISC_PROTEIN_NAMES", 
+     fGenomes | fAsndisc | fMegaReport, 
+     "Frequently appearing proteins"},
    {"DISC_CDS_PRODUCT_FIND", 
      fOncaller | fMegaReport, "Coding region product contains suspect text"},
-   {"EC_NUMBER_ON_UNKNOWN_PROTEIN", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Hypothetical or Unknown Protein with EC Number"},
-   {"RNA_NO_PRODUCT", fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Find RNAs without Products"},
-   {"DISC_SHORT_INTRON", fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Introns shorter than 10 nt"},
-   {"DISC_BAD_GENE_STRAND", fGenomes | fAsndisc | fOncaller | fMegaReport | fMegaReport, "Genes and features that share endpoints should be on the same strand"},
-   {"DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA", fGenomes | fAsndisc | fOncaller | fMegaReport, "rRNA product names should not contain 'internal', 'transcribed', or 'spacer'"},
-   {"DISC_SHORT_RRNA", fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Short rRNA Features"},
-   {"TEST_OVERLAPPING_RRNAS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Overlapping rRNA features"},
-   {"SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Show hypothetic protein having a gene name"},
-   {"DISC_SUSPICIOUS_NOTE_TEXT", fGenomes | fAsndisc | fOncaller | fMegaReport, "Find Suspicious Phrases in Note Text"},
-   {"NO_ANNOTATION", fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Bioseqs longer than 5000nt without Annotations"},
-   {"DISC_LONG_NO_ANNOTATION", fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Bioseqs longer than 5000nt without Annotations"},
-   {"DISC_PARTIAL_PROBLEMS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Find partial feature ends on sequences that could be extended"},
-   {"TEST_UNUSUAL_MISC_RNA", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Unexpected misc_RNA features"},
-   {"GENE_PRODUCT_CONFLICT", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Gene Product Conflict"},
-   {"DISC_CDS_WITHOUT_MRNA", fGenomes | fAsndisc | fOncaller| fMegaReport, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products"},
+   {"EC_NUMBER_ON_UNKNOWN_PROTEIN", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Hypothetical or Unknown Protein with EC Number"},
+   {"RNA_NO_PRODUCT", 
+     fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, 
+     "Find RNAs without Products"},
+   {"DISC_SHORT_INTRON", 
+     fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, 
+     "Introns shorter than 10 nt"},
+   {"DISC_BAD_GENE_STRAND", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport | fMegaReport, 
+     "Genes and features that share endpoints should be on the same strand"},
+   {"DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "rRNA product names should not contain 'internal', 'transcribed', or 'spacer'"},
+   {"DISC_SHORT_RRNA", 
+     fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, 
+     "Short rRNA Features"},
+   {"TEST_OVERLAPPING_RRNAS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Overlapping rRNA features"},
+   {"SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Show hypothetic protein having a gene name"},
+   {"DISC_SUSPICIOUS_NOTE_TEXT", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Find Suspicious Phrases in Note Text"},
+   {"NO_ANNOTATION", 
+    fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fOncaller | fMegaReport,
+    "Bioseqs longer than 5000nt without Annotations"},
+   {"DISC_LONG_NO_ANNOTATION", 
+     fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Bioseqs longer than 5000nt without Annotations"},
+   {"DISC_PARTIAL_PROBLEMS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Find partial feature ends on sequences that could be extended"},
+   {"TEST_UNUSUAL_MISC_RNA", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Unexpected misc_RNA features"},
+   {"GENE_PRODUCT_CONFLICT", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Gene Product Conflict"},
+   {"DISC_CDS_WITHOUT_MRNA", 
+     fGenomes | fAsndisc | fOncaller| fMegaReport, 
+     "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products"},
 
 // tests_on_Bioseq_CFeat_NotInGenProdSet
-   {"DUPLICATE_GENE_LOCUS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Duplicate Gene Locus"},
+   {"DUPLICATE_GENE_LOCUS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Duplicate Gene Locus"},
    {"MISSING_LOCUS_TAGS", 
      fGlobal | fGenomes | fDiscrepancy | fMegaReport, "Missing Locus Tags"},
    {"DUPLICATE_LOCUS_TAGS", 
@@ -1594,7 +1691,9 @@ static const s_test_property test_list[] = {
    {"BAD_LOCUS_TAG_FORMAT", 
      fGlobal | fGenomes | fMegaReport | fDiscrepancy | fAsndisc, 
      "Bad Locus Tag Format"},
-   {"FEATURE_LOCATION_CONFLICT", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Feature Location Conflict"},
+   {"FEATURE_LOCATION_CONFLICT", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Feature Location Conflict"},
 
 // tests_on_Bioseq_CFeat_CSeqdesc
      // oncaller tool version
@@ -1604,50 +1703,86 @@ static const s_test_property test_list[] = {
    {"DISC_FEATURE_COUNT", 
      fGlobal | fGenomes | fAsndisc | fMegaReport, 
      "Count features present or missing from sequences"}, // asndisc version   
-   {"DISC_BAD_BGPIPE_QUALS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Bad BGPIPE qualifiers"},
-   {"DISC_INCONSISTENT_MOLINFO_TECH", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent Molinfo Techniqueq"},
-   {"SHORT_CONTIG", fGenomes | fDiscrepancy | fAsndisc | fMegaReport | fBigSequence, "Short Contig"},
+   {"DISC_BAD_BGPIPE_QUALS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Bad BGPIPE qualifiers"},
+   {"DISC_INCONSISTENT_MOLINFO_TECH", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Inconsistent Molinfo Techniqueq"},
+   {"SHORT_CONTIG", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport | fBigSequence, 
+     "Short Contig"},
    {"SHORT_SEQUENCES", 
      fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, 
      "Find Short Sequences"},
-   {"SHORT_SEQUENCES_200", 
-     fDiscrepancy | fTSA | fMegaReport, 
-     "Find sequences Less Than 200 bp"},
-   {"TEST_UNWANTED_SPACER", fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Intergenic spacer without plastid location"},
-   {"TEST_UNNECESSARY_VIRUS_GENE", fGenomes | fAsndisc | fOncaller | fMegaReport, "Unnecessary gene features on virus: on when lineage is not Picornaviridae,Potyviridae,Flaviviridae and Togaviridae"},
-   {"TEST_ORGANELLE_NOT_GENOMIC", fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, "Organelle location should have genomic moltype"},
-   {"MULTIPLE_CDS_ON_MRNA", fGenomes | fAsndisc | fOncaller | fMegaReport, "Multiple CDS on mRNA"},
-   {"TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES", fGenomes | fAsndisc | fOncaller | fMegaReport, "mRNA sequences have CDS/gene on the complement strand"},
-   {"TEST_BAD_MRNA_QUAL", fGenomes | fAsndisc | fOncaller | fMegaReport, "mRNA sequence contains rearranged or germline"},
-   {"TEST_EXON_ON_MRNA", fGenomes | fAsndisc | fOncaller | fMegaReport, "mRNA sequences should not have exons"},
-   {"ONCALLER_HIV_RNA_INCONSISTENT", fGenomes | fAsndisc | fOncaller | fMegaReport, "HIV RNA location or molecule type inconsistent"},
-   {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote"},
-   {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote"},
-   {"DISC_MITOCHONDRION_REQUIRED", fGenomes | fAsndisc | fOncaller | fMegaReport, "If D-loop or control region misc_feat is present, source must be mitochondrial"},
-   {"EUKARYOTE_SHOULD_HAVE_MRNA", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Eukaryote should have mRNA"},
-   {"RNA_PROVIRAL", fGenomes | fAsndisc | fOncaller | fMegaReport, "RNA bioseqs are proviral"},
-   {"NON_RETROVIRIDAE_PROVIRAL", fGenomes | fAsndisc | fOncaller | fMegaReport, "Non-Retroviridae biosources are proviral"},
+   {"SHORT_SEQUENCES_200", fTSA, "Find sequences Less Than 200 bp"},
+   {"TEST_UNWANTED_SPACER", 
+     fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, 
+     "Intergenic spacer without plastid location"},
+   {"TEST_UNNECESSARY_VIRUS_GENE", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Unnecessary gene features on virus: on when lineage is not Picornaviridae,Potyviridae,Flaviviridae and Togaviridae"},
+   {"TEST_ORGANELLE_NOT_GENOMIC", 
+     fGenomes | fDiscrepancy | fAsndisc | fOncaller | fMegaReport, 
+     "Organelle location should have genomic moltype"},
+   {"MULTIPLE_CDS_ON_MRNA", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, "Multiple CDS on mRNA"},
+   {"TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "mRNA sequences have CDS/gene on the complement strand"},
+   {"TEST_BAD_MRNA_QUAL", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "mRNA sequence contains rearranged or germline"},
+   {"TEST_EXON_ON_MRNA", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "mRNA sequences should not have exons"},
+   {"ONCALLER_HIV_RNA_INCONSISTENT", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "HIV RNA location or molecule type inconsistent"},
+   {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote"},
+   {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote"},
+   {"DISC_MITOCHONDRION_REQUIRED", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "If D-loop or control region misc_feat is present, source must be mitochondrial"},
+   {"EUKARYOTE_SHOULD_HAVE_MRNA", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Eukaryote should have mRNA"},
+   {"RNA_PROVIRAL", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, "RNA bioseqs are proviral"},
+   {"NON_RETROVIRIDAE_PROVIRAL", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Non-Retroviridae biosources are proviral"},
    {"DISC_RETROVIRIDAE_DNA", 
      fOncaller | fMegaReport, 
      "When the organism lineage contains 'Retroviridae' and the molecule type is 'DNA', the location should be set as 'proviral'"},
    {"DISC_mRNA_ON_WRONG_SEQUENCE_TYPE", 
      fOncaller | fMegaReport, 
      "Eukaryotic sequences that are not genomic or macronuclear should not have mRNA features"},
-   {"DISC_RBS_WITHOUT_GENE", fGenomes | fAsndisc | fOncaller | fMegaReport, "RBS features should have an overlapping gene"},
-   {"DISC_EXON_INTRON_CONFLICT", fGenomes | fAsndisc | fOncaller | fMegaReport, "Exon and intron locations should abut (unless gene is trans-spliced)"},
+   {"DISC_RBS_WITHOUT_GENE", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "RBS features should have an overlapping gene"},
+   {"DISC_EXON_INTRON_CONFLICT", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Exon and intron locations should abut (unless gene is trans-spliced)"},
    {"TEST_TAXNAME_NOT_IN_DEFLINE", 
      fOncaller | fMegaReport, 
      "Complete taxname should be present in definition line"},
    {"INCONSISTENT_SOURCE_DEFLINE", 
      fDiscrepancy | fMegaReport, 
      "Inconsistent Source And Definition Line"},
-   {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", fGenomes | fAsndisc | fOncaller | fMegaReport, "Bacterial sequences should not have mRNA features"},
-   {"DISC_BAD_BACTERIAL_GENE_NAME", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Genes on bacterial sequences should start with lowercase letters: on when non-eukaryote"},
-   {"TEST_BAD_GENE_NAME", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Bad gene names"},
-   {"MOLTYPE_NOT_MRNA", 
-     fDiscrepancy | fTSA | fMegaReport, "Moltype not mRNA"},
-   {"TECHNIQUE_NOT_TSA", 
-     fDiscrepancy | fTSA | fMegaReport, "Technique not set as TSA"},
+   {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Bacterial sequences should not have mRNA features"},
+   {"DISC_BAD_BACTERIAL_GENE_NAME", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Genes on bacterial sequences should start with lowercase letters: on when non-eukaryote"},
+   {"TEST_BAD_GENE_NAME", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Bad gene names"},
+   {"MOLTYPE_NOT_MRNA", fTSA, "Moltype not mRNA"},
+   {"TECHNIQUE_NOT_TSA", fTSA, "Technique not set as TSA"},
    {"DISC_POSSIBLE_LINKER", 
      fOncaller | fMegaReport, "Possible linker sequence after poly-A tail"},
    {"SHORT_PROT_SEQUENCES", 
@@ -1692,16 +1827,29 @@ static const s_test_property test_list[] = {
    {"ONCALLER_SUSPECTED_ORG_COLLECTED", 
      fGenomes | fAsndisc | fOncaller | fMegaReport, 
      "Suspected organism in collected-by SubSource"},
-   {"ONCALLER_SUSPECTED_ORG_IDENTIFIED", fGenomes | fAsndisc | fOncaller | fMegaReport, "Suspected organism in identified-by SubSource"},
-   {"UNCULTURED_NOTES_ONCALLER", fGenomes | fAsndisc | fOncaller | fMegaReport, "Uncultured Notes"}, 
-   {"ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY", fGenomes | fAsndisc | fOncaller | fMegaReport, "SubSource identified-by contains more than 3 names"},
-   {"ONCALLER_MORE_NAMES_COLLECTED_BY", fGenomes | fAsndisc | fOncaller | fMegaReport, "SubSource collected-by contains more than 3 names"},
-   {"ONCALLER_STRAIN_TAXNAME_CONFLICT", fGenomes | fAsndisc | fOncaller | fMegaReport, "Type strain comment in OrgMod does not agree with organism name"},
+   {"ONCALLER_SUSPECTED_ORG_IDENTIFIED", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Suspected organism in identified-by SubSource"},
+   {"UNCULTURED_NOTES_ONCALLER", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, "Uncultured Notes"}, 
+   {"ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "SubSource identified-by contains more than 3 names"},
+   {"ONCALLER_MORE_NAMES_COLLECTED_BY", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "SubSource collected-by contains more than 3 names"},
+   {"ONCALLER_STRAIN_TAXNAME_CONFLICT", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Type strain comment in OrgMod does not agree with organism name"},
    {"DISC_INCONSISTENT_MOLTYPES", 
      fOncaller | fMegaReport, 
      "All non-protein sequences in a set should have the same moltype"},
-   {"DISC_BIOMATERIAL_TAXNAME_MISMATCH", fGenomes | fAsndisc | fOncaller | fMegaReport, "Test BioSources with the same biomaterial but different taxname"},
-   {"DISC_CULTURE_TAXNAME_MISMATCH", fGenomes | fAsndisc | fOncaller | fMegaReport, "Test BioSources with the same culture collection but different taxname"},
+   {"DISC_BIOMATERIAL_TAXNAME_MISMATCH", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Test BioSources with the same biomaterial but different taxname"},
+   {"DISC_CULTURE_TAXNAME_MISMATCH", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Test BioSources with the same culture collection but different taxname"},
    {"DISC_STRAIN_TAXNAME_MISMATCH", 
      fOncaller | fMegaReport, 
      "BioSources with the same strain should have the same taxname"},
@@ -1709,7 +1857,8 @@ static const s_test_property test_list[] = {
      fOncaller | fMegaReport, 
      "BioSources with the same specimen voucher should have the same taxname"},
    {"DISC_HAPLOTYPE_MISMATCH", 
-     fOncaller | fMegaReport, "Sequences with the same haplotype should match"},
+     fOncaller | fMegaReport, 
+     "Sequences with the same haplotype should match"},
    {"DISC_MISSING_VIRAL_QUALS", 
      fOncaller | fMegaReport, 
      "Viruses should specify collection-date, country, and specific-host"},
@@ -1720,22 +1869,29 @@ static const s_test_property test_list[] = {
      fDiscrepancy | fMegaReport, "Find Missing Tax Lookups"},
    {"TAX_LOOKUP_MISMATCH", 
      fDiscrepancy | fMegaReport, "Find Tax Lookup Mismatches"},
-   {"MISSING_STRUCTURED_COMMENT", 
-     fDiscrepancy | fTSA | fMegaReport, "Structured comment not included"},
-   {"ONCALLER_MISSING_STRUCTURED_COMMENTS", fGenomes | fOncaller | fMegaReport, "Missing structured comments"},
-   {"DISC_MISSING_AFFIL", fGenomes | fAsndisc | fOncaller | fMegaReport, "Missing affiliation"},
+   {"MISSING_STRUCTURED_COMMENT", fTSA, "Structured comment not included"},
+   {"ONCALLER_MISSING_STRUCTURED_COMMENTS", 
+     fGenomes | fOncaller | fMegaReport, "Missing structured comments"},
+   {"DISC_MISSING_AFFIL", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, "Missing affiliation"},
    {"DISC_CITSUBAFFIL_CONFLICT", 
      fOncaller | fMegaReport, 
      "All Cit-subs should have identical affiliations"},
    {"DISC_TITLE_AUTHOR_CONFLICT", 
      fOncaller | fMegaReport, 
      "Publications with the same titles should have the same authors"},
-   {"DISC_USA_STATE", fGenomes | fAsndisc | fOncaller | fMegaReport, "For country USA, state should be present and abbreviated"},
-   {"DISC_CITSUB_AFFIL_DUP_TEXT", fGenomes | fAsndisc | fOncaller | fMegaReport, "Cit-sub affiliation street contains text from other affiliation fields"},
+   {"DISC_USA_STATE", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "For country USA, state should be present and abbreviated"},
+   {"DISC_CITSUB_AFFIL_DUP_TEXT", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Cit-sub affiliation street contains text from other affiliation fields"},
    {"DISC_REQUIRED_CLONE", 
      fOncaller | fMegaReport, 
      "Uncultured or environmental sources should have clone"},
-   {"ONCALLER_MULTISRC", fGenomes | fAsndisc | fOncaller | fMegaReport, "Comma or semicolon appears in strain or isolate"},
+   {"ONCALLER_MULTISRC", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Comma or semicolon appears in strain or isolate"},
    {"DISC_DUP_SRC_QUAL", 
      fOncaller | fMegaReport, 
      "Each source in a record should have unique values for qualifiers"}, 
@@ -1752,38 +1908,80 @@ static const s_test_property test_list[] = {
      fGlobal | fGenomes | fAsndisc | fMegaReport, 
      "Source Qualifier test for Asndisc"}, // asndisc version of *_PROBLEM
 //   {"DISC_SOURCE_QUALS_ASNDISC_oncaller", fGenomes | fAsndisc | fOncaller | fMegaReport}, // needed?
-   {"DISC_UNPUB_PUB_WITHOUT_TITLE", fGenomes | fAsndisc | fOncaller | fMegaReport, "Unpublished pubs should have titles"},
+   {"DISC_UNPUB_PUB_WITHOUT_TITLE", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Unpublished pubs should have titles"},
    {"ONCALLER_CONSORTIUM", 
      fOncaller | fMegaReport, 
      "Submitter blocks and publications have consortiums"},
-   {"DISC_CHECK_AUTH_NAME", fGenomes | fAsndisc | fOncaller | fMegaReport, "Test author names missing first and/or last names"},
-   {"DISC_CHECK_AUTH_CAPS", fGenomes | fAsndisc | fOncaller | fMegaReport, "Check for correct capitalization in author names"},
-   {"DISC_MISMATCHED_COMMENTS", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Mismatched Comments"},
-   {"ONCALLER_COMMENT_PRESENT", fGenomes | fAsndisc | fOncaller | fMegaReport, "Comment descriptor present"},
-   {"DUP_DISC_ATCC_CULTURE_CONFLICT", fGenomes | fAsndisc | fOncaller | fMegaReport, "ATCC strain should also appear in culture collection"},
-   {"ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH", fGenomes | fAsndisc | fOncaller | fMegaReport, "Strain and culture-collection values conflict"},
+   {"DISC_CHECK_AUTH_NAME", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Test author names missing first and/or last names"},
+   {"DISC_CHECK_AUTH_CAPS", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Check for correct capitalization in author names"},
+   {"DISC_MISMATCHED_COMMENTS", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Mismatched Comments"},
+   {"ONCALLER_COMMENT_PRESENT", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Comment descriptor present"},
+   {"DUP_DISC_ATCC_CULTURE_CONFLICT", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "ATCC strain should also appear in culture collection"},
+   {"ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Strain and culture-collection values conflict"},
    {"DISC_DUP_DEFLINE", 
      fOncaller | fMegaReport, "Definition lines should be unique"},
-   {"DISC_TITLE_ENDS_WITH_SEQUENCE", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Sequence characters at end of defline"},
-   {"ONCALLER_DEFLINE_ON_SET", fGenomes | fAsndisc | fOncaller | fMegaReport, "Titles on sets"},
-   {"DISC_BACTERIAL_TAX_STRAIN_MISMATCH", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Bacterial taxnames should end with strain"},
-   {"DUP_DISC_CBS_CULTURE_CONFLICT", fGenomes | fAsndisc | fOncaller | fMegaReport, "CBS strain should also appear in culture collection"},
-   {"INCONSISTENT_BIOSOURCE", fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Inconsistent BioSource"},
-   {"ONCALLER_BIOPROJECT_ID", fGenomes | fAsndisc | fOncaller | fMegaReport, "Sequences with BioProject IDs"},
-   {"ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX", fGenomes | fAsndisc | fOncaller | fMegaReport, "Suspicious structured comment prefix"},
-   {"MISSING_GENOMEASSEMBLY_COMMENTS", fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, "Bioseqs should have GenomeAssembly structured comments"},
-   {"TEST_HAS_PROJECT_ID", fGenomes | fAsndisc | fOncaller | fMegaReport, "Sequences with project IDs"},
-   {"DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER", fGenomes | fAsndisc | fOncaller | fMegaReport, "Trinomial sources should have corresponding qualifier"},
-   {"ONCALLER_DUPLICATE_PRIMER_SET", fGenomes | fAsndisc | fOncaller | fMegaReport, "Duplicate PCR primer pair"},
-   {"ONCALLER_COUNTRY_COLON", fGenomes | fAsndisc | fOncaller | fMegaReport, "Country discription should only have 1 colon"},
-   {"TEST_MISSING_PRIMER", fGenomes | fAsndisc | fOncaller | fMegaReport, "Missing values in primer set"},
+   {"DISC_TITLE_ENDS_WITH_SEQUENCE", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Sequence characters at end of defline"},
+   {"ONCALLER_DEFLINE_ON_SET", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, "Titles on sets"},
+   {"DISC_BACTERIAL_TAX_STRAIN_MISMATCH", 
+     fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Bacterial taxnames should end with strain"},
+   {"DUP_DISC_CBS_CULTURE_CONFLICT", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "CBS strain should also appear in culture collection"},
+   {"INCONSISTENT_BIOSOURCE", 
+     fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Inconsistent BioSource"},
+   {"ONCALLER_BIOPROJECT_ID", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Sequences with BioProject IDs"},
+   {"ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Suspicious structured comment prefix"},
+   {"MISSING_GENOMEASSEMBLY_COMMENTS", 
+     fGenomes | fBigSequence | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Bioseqs should have GenomeAssembly structured comments"},
+   {"TEST_HAS_PROJECT_ID", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Sequences with project IDs"},
+   {"DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Trinomial sources should have corresponding qualifier"},
+   {"ONCALLER_DUPLICATE_PRIMER_SET", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Duplicate PCR primer pair"},
+   {"ONCALLER_COUNTRY_COLON", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Country discription should only have 1 colon"},
+   {"TEST_MISSING_PRIMER", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Missing values in primer set"},
    {"TEST_SP_NOT_UNCULTURED", 
      fOncaller | fMegaReport, "Organism ending in sp. needs tax consult"},
-   {"DISC_METAGENOMIC", fGenomes | fAsndisc | fOncaller | fMegaReport, "Source has metagenomic qualifier"},
+   {"DISC_METAGENOMIC", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Source has metagenomic qualifier"},
    {"DISC_MAP_CHROMOSOME_CONFLICT", 
      fOncaller | fMegaReport, 
      "Eukaryotic sequences with a map source qualifier should also have a chromosome source qualifier"},
-   {"DIVISION_CODE_CONFLICTS", fGenomes | fAsndisc | fOncaller | fMegaReport, "Division code conflicts found"},
+   {"DIVISION_CODE_CONFLICTS", 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
+     "Division code conflicts found"},
    {"TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE", 
      fGenomes | fAsndisc | fOncaller | fMegaReport, 
      "Species-specific primers, no environmental sample"},
@@ -1808,8 +2006,7 @@ static const s_test_property test_list[] = {
    {"DISC_REQUIRED_STRAIN", 
      fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
      "Bacteria should have strain"},
-   {"MISSING_PROJECT",
-     fDiscrepancy | fTSA | fMegaReport, "Project not included"},
+   {"MISSING_PROJECT", fTSA, "Project not included"},
    {"DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE", 
      fGenomes | fAsndisc | fOncaller | fMegaReport, 
      "Bacterial sources should not have isolate"},
@@ -3128,32 +3325,16 @@ void CRepConfAsndisc :: x_ProcessDir(const CDir& dir, bool one_ofile)
 // void CRepConfig :: CollectDefaultConfig(Str2Str& test_nm2conf_nm, const string& report)
 void CRepConfig :: CollectDefaultConfig(Str2Str& test_nm2conf_nm, ETestCategoryFlags report)
 {
-/*
-   ETestCategoryFlags cate_flag;
-   if (report== "Asndisc") {
-       cate_flag = fAsndisc;
-   }
-   else if (report == "Discrepancy") {
-       cate_flag = fDiscrepancy;
-   }
-   else if(report ==  "Oncaller") {
-       cate_flag = fOncaller;
-   }
-   else if (report ==  "Mega") {
-       cate_flag = fMegaReport;
-   }
-   else {
-       cate_flag = fUnknown;
-   }
-*/
-
    for (unsigned i=0; i< ArraySize(test_list); i++) {
       //if (test_list[i].category & cate_flag) {
-      if (test_list[i].category & report) {
+      if (test_list[i].category & (report | fTSA)) {
+          test_nm2conf_nm[test_list[i].setting_name] = test_list[i].conf_name;
+      }
+      if (report & fDiscrepancy 
+               && test_list[i].setting_name == "DISC_PROTEIN_NAMES") {
           test_nm2conf_nm[test_list[i].setting_name] = test_list[i].conf_name;
       }
    }
-
 };
 
 
@@ -3168,7 +3349,7 @@ void CRepConfig :: CollectTests()
       }
    }
    else {
-      if (thisInfo.report & (fAsndisc | fDiscrepancy)) {
+      if (thisInfo.report & fDiscrepancy) {
           thisInfo.output_config.use_flag = true;
       }
 
@@ -3176,13 +3357,11 @@ void CRepConfig :: CollectTests()
       for (unsigned i=0; i< ArraySize(test_list); i++) {
         if (test_list[i].category & thisInfo.report) {
           strtmp = test_list[i].setting_name;
-          if (thisInfo.report & (fDiscrepancy | fMegaReport) ) {
-                if ( !(test_list[i].category & (fTSA | fUnknown))) {
-                   if (thisInfo.report != fDiscrepancy
-                             || strtmp != "DISC_PROTEIN_NAMES"){
-                      thisTest.tests_run.insert(test_list[i].setting_name);
-                   }
-                }
+          if (thisInfo.report & fMegaReport) {
+             if ( m_disable_tRNA_tests  
+                       && (!(test_list[i].category & (fTRNA | fUnknown))) ) {
+                thisTest.tests_run.insert(test_list[i].setting_name);
+             }
           }
           else thisTest.tests_run.insert(strtmp);
         }

@@ -5263,7 +5263,6 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem> c_item
         = GetHasComment(cnt, "feature") + "inconsistent gene locations";
 };
 
-
 void CBioseq_MISSING_LOCUS_TAGS :: GetReport(CRef <CClickableItem> c_item)
 {
    c_item->obj_list = thisInfo.test_item_objs[GetName()];
@@ -5335,6 +5334,7 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
   bool run_incons = (thisTest.tests_run.find(GetName_incons()) != end_it);
   bool run_badtag = (thisTest.tests_run.find(GetName_badtag()) != end_it);
   bool run_glodup = (thisTest.tests_run.find(GetName_glodup()) != end_it);
+  bool run_miss = (thisTest.tests_run.find(GetName_miss()) !=  end_it);
 
   set <string> sent_gene;
   vector <string> missing_texts;
@@ -5423,11 +5423,31 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
            }
         }
         else { // MISSING_LOCUS_TAGS
-          if (!exclude_dirsub || !x_IsLocationDirSub((*jt)->GetLocation())) {
-             missing_texts.push_back(test_desc);
-             missing_objs.push_back(gene_ref); 
+          if (run_miss) {
+             if (thisInfo.report & (fGlobal | fGenomes) ) {
+                thisInfo.test_item_list[GetName_miss()].push_back(test_desc);
+                thisInfo.test_item_objs[GetName_miss()].push_back(gene_ref);
+             } 
+             else if (!exclude_dirsub 
+                          || !x_IsLocationDirSub((*jt)->GetLocation())){
+                missing_texts.push_back(test_desc);
+                missing_objs.push_back(gene_ref); 
+             }
           }
         }
+     }
+     else {  // MISSING_LOCUS_TAGS
+       if (run_miss) {
+          if (thisInfo.report & (fGenomes) ) {
+                thisInfo.test_item_list[GetName_miss()].push_back(test_desc);
+                thisInfo.test_item_objs[GetName_miss()].push_back(gene_ref);
+          }          
+          else if (!exclude_dirsub
+                          || !x_IsLocationDirSub((*jt)->GetLocation())){
+                missing_texts.push_back(test_desc);
+                missing_objs.push_back(gene_ref);
+          } 
+       }
      }
   }
   
@@ -8440,17 +8460,14 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
   pre_idx = (int)pre_cnt - 1;
   ITERATE (Str2Ints, it, qual2src_idx) {
      qual_name = it->first;
-cerr << "GetQualDistribute: qual_name " << qual_name << endl;
      is_subsrc = false;
      if ( (pos = qual_name.find("$subsrc")) != string::npos) {
         is_subsrc = true;
         qual_name = qual_name.substr(0, pos);
      }
      pre_idx = -1;
-cerr << "it->second.sz " << it->second.size() << endl;
      ITERATE (vector <int>, jt, it->second) {
        cur_idx = *jt;
-cerr << "cur_idx  " << *jt << " tot " << tot_cnt << endl;
        if (cur_idx < pre_idx || cur_idx > (int)tot_cnt -1) {
             continue; 
        }
@@ -8466,11 +8483,9 @@ cerr << "cur_idx  " << *jt << " tot " << tot_cnt << endl;
        src_qual_vlu= GetSrcQualValue(*src_ls[cur_idx], 
                                       qual_name, 
                                       is_subsrc);
-cerr << "src_qual_val " << src_qual_vlu << endl;
        src_txt = desc_ls[cur_idx];
        // qualnm_srcvlu_biosrc
        strtmp = qual_name + "$" + src_qual_vlu + "#" + src_txt;
-cerr << "strtmp " << strtmp << endl;
        thisInfo.test_item_list[setting_name].push_back(strtmp);
        strtmp = setting_name + "$" + qual_name + "#" + src_qual_vlu;
        thisInfo.test_item_objs[strtmp].push_back(objs[cur_idx]);
@@ -8618,13 +8633,13 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
    string strtmp;
    ITERATE (Str2Strs, it, qnm2qvlu_src) {
      qual_nm_ori = qual_nm = it->first;
-cerr << "qual_nm_ori " << qual_nm_ori << endl;
      qvlu2src.clear();
      GetTestItemList(it->second, qvlu2src, "#");
-cerr << "qvlu2src.size " << qvlu2src.size() << endl;
-cerr << "qvlu2src.begin.second.size " << qvlu2src.begin()->second.size() << endl;
 
-     if (qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1) {
+     all_present = (qvlu2src.find("missing") == qvlu2src.end());
+
+     if ( (qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1)
+              || (qvlu2src.size() == 2 && !all_present)) {
            all_same = true;
      }
      else {
@@ -8642,7 +8657,6 @@ cerr << "qvlu2src.begin.second.size " << qvlu2src.begin()->second.size() << endl
         }
      } 
      
-     all_present = (qvlu2src.find("missing") == qvlu2src.end());
 
      multi_same = (qvlu2src.find("multi_same") != qvlu2src.end());
      multi_dup = (qvlu2src.find("multi_dup") != qvlu2src.end());
@@ -8851,10 +8865,10 @@ cerr << "qvlu2src.begin.second.size " << qvlu2src.begin()->second.size() << endl
 bool CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, const vector <string>& desc_ls, Str2Ints& qual2src_idx, unsigned pre_cnt, unsigned tot_cnt)
 {
    bool fwd_nm, fwd_seq, rev_nm, rev_seq;
-   unsigned i = pre_cnt ? pre_cnt-1: 0;
+   unsigned i;
    bool has_newqual = false;
    string strtmp;
-   for (i; i < tot_cnt; i++) { 
+   for (i = pre_cnt; i < tot_cnt; i++) { 
       CBioSource* it = (CBioSource*)(src_ls[i].GetPointer());
       if ( it->IsSetTaxname() ) {
            has_newqual = true;
@@ -8968,7 +8982,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
          }
      }
      if (i < tests.size()) {
-        if (i >= 2) {
+        if (i >= 2) {   // not asndisc version
            CRef <CClickableItem> c_item (new CClickableItem);
            thisInfo.disc_report_data.push_back(c_item);
            c_item->setting_name = tests[i];
@@ -8977,8 +8991,8 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
            comb_desc_ls.clear();
            comb_src_ls.clear();
            objs.clear();
+           comb_qual2src_idx.clear();
         }
-        comb_qual2src_idx.clear();
      }
      tests.clear();
    }
