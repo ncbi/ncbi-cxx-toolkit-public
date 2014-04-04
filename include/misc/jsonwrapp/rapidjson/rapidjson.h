@@ -50,7 +50,12 @@ typedef unsigned __int64 uint64_t;
 
 // NCBI: added alignment tweaks
 #ifdef NCBI_PLATFORM_BITS
+#if defined(NCBI_OS_SOLARIS) && defined(WORDS_BIGENDIAN)
+// on 32bit platform Sparc (64bits hardware), we still need align to 8 bytes
+#define NCBI_DATA_ALIGN 7
+#else
 #define NCBI_DATA_ALIGN (NCBI_PLATFORM_BITS/8-1)
+#endif
 #else
 #define NCBI_DATA_ALIGN  3
 #endif
@@ -250,7 +255,13 @@ public:
 		if (chunkHead_->size + size > chunkHead_->capacity)
 			AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size);
 
+// NCBI 
+#if defined(NCBI_OS_SOLARIS) && defined(WORDS_BIGENDIAN)
+        size_t chunkHead_size = (sizeof(ChunkHeader) + NCBI_DATA_ALIGN) & ~(NCBI_DATA_ALIGN);
+		char *buffer = (char *)(chunkHead_) + chunkHead_size + chunkHead_->size;
+#else
 		char *buffer = (char *)(chunkHead_ + 1) + chunkHead_->size;
+#endif
 		RAPIDJSON_ASSERT(((uintptr_t)buffer & NCBI_DATA_ALIGN) == 0);	// returned buffer is aligned to 4
 		chunkHead_->size += size;
 
