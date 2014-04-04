@@ -2053,6 +2053,7 @@ bool CFormatGuess::IsLineGtf(
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::IsLineGvf(
     const string& line )
+//  ----------------------------------------------------------------------------
 {
     vector<string> tokens;
     if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
@@ -2064,7 +2065,10 @@ bool CFormatGuess::IsLineGvf(
     if ( ! s_IsTokenPosInt( tokens[4] ) ) {
         return false;
     }
+
+    //make sure that "type" is a GVF admissible value:
 	{{
+        bool typeOk = false;
 		list<string> terms;
 		terms.push_back("snv");
 		terms.push_back("cnv");
@@ -2092,9 +2096,14 @@ bool CFormatGuess::IsLineGvf(
 		terms.push_back("structural_variation");
 		terms.push_back("sequence_alteration");
 		ITERATE(list<string>, termiter, terms) {
-			if(NStr::EqualNocase(*termiter, tokens[2]))
-				return true;
+			if(NStr::EqualNocase(*termiter, tokens[2])) {
+				typeOk = true;
+                break;
+            }
 		}
+        if (!typeOk) {
+            return false;
+        }
 	}}
 	if ( ! s_IsTokenDouble( tokens[5] ) ) {
         return false;
@@ -2105,19 +2114,15 @@ bool CFormatGuess::IsLineGvf(
     if ( tokens[7].size() != 1 || NPOS == tokens[7].find_first_of( ".0123" ) ) {
         return false;
     }
-	if(tokens.size() >= 9) {
-		list<string> terms;
-		terms.push_back("start_range");
-		terms.push_back("end_range");
-		terms.push_back("variant_seq");
-		terms.push_back("genotype");
-		ITERATE(list<string>, termiter, terms) {
-			if(NStr::EqualNocase(*termiter, tokens[8]))
-				return true;
-		}
-	}
 
-    return false;
+    //make sure all the mandatory attributes are present:
+    string attrs = tokens[8];
+    if (string::npos == attrs.find("ID="))
+        return false;
+    if (string::npos == attrs.find("Variant_seq=")) {
+        return false;
+    }
+    return true;
 }
 
 
