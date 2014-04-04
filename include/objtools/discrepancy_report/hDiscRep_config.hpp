@@ -129,6 +129,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
             m_all_expanded = false;
             m_expanded.clear();
             m_genbank_loader = true;
+            m_disable_tRNA_tests = false;
         }
 
         virtual ~CRepConfig() { };
@@ -172,7 +173,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         vector <string> m_enabled, m_disabled;
         set <string> m_expanded;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
-        bool m_dorecurse, m_all_expanded, m_genbank_loader;
+        bool m_dorecurse, m_all_expanded, m_genbank_loader,m_disable_tRNA_tests;
         vector <CConstRef <CObject> >* m_objs;
 
         bool x_IsExpandable(const string& setting_name);
