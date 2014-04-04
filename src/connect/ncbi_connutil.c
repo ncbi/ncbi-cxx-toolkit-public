@@ -1117,8 +1117,10 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     x_info->http_user_header = 0;
     x_info->http_referer = 0;
 
-    if (info->timeout)
+    if (info->timeout) {
+        x_info->tmo = *info->timeout;
         x_info->timeout = &x_info->tmo;
+    }
     if (info->http_user_header
         &&  !(x_info->http_user_header = strdup(info->http_user_header))) {
         ConnNetInfo_Destroy(x_info);
