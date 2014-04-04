@@ -735,7 +735,7 @@ string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
             CUser_field::fFieldMapFlags_ExcludeThis);
 
         const static char * arrFieldNames[] = {
-            "CALC", "COM", "PRT", "UPR"
+            "CALC", "CCA", "CLI", "COM", "FGS", "MOD", "PHY", "PRT", "QfO", "TYS", "UPR"
         };
 
         ITERATE_0_IDX(field_idx, ArraySize(arrFieldNames) ) {
