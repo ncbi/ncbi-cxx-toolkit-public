@@ -434,7 +434,7 @@ void CGffRecord::DumpRecord(
     out << m_strScore << '\t';
     out << m_strStrand << '\t';
     out << m_strPhase << '\t';
-    out << m_strAttributes << endl;
+    out << m_strAttributes << '\n';
 }
 
 //  ----------------------------------------------------------------------------

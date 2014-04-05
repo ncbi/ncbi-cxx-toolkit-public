@@ -232,7 +232,7 @@ bool CBedFeatureRecord::Write(
     if ( columnCount >= 12 ) {
         ostr << "\t" << BlockStarts();
     }
-    ostr << endl;
+    ostr << '\n';
     return true;
 }
 END_NCBI_SCOPE

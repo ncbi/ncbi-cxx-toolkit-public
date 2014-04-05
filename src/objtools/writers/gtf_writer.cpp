@@ -87,7 +87,7 @@ bool CGtfWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     if (!m_bHeaderWritten) {
-        m_Os << "#gtf-version 2.2" << endl;
+        m_Os << "#gtf-version 2.2" << '\n';
         m_bHeaderWritten = true;
     }
     return true;
@@ -108,10 +108,10 @@ bool CGtfWriter::x_WriteRecord(
     m_Os << pRecord->StrPhase() << '\t';
 
     if ( m_uFlags & fStructibutes ) {
-        m_Os << pRecord->StrStructibutes() << endl;
+        m_Os << pRecord->StrStructibutes() << '\n';
     }
     else {
-        m_Os << pRecord->StrAttributes() << endl;
+        m_Os << pRecord->StrAttributes() << '\n';
     }
     return true;
 }

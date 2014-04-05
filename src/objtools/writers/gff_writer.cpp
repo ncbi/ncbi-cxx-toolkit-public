@@ -357,7 +357,7 @@ bool CGff2Writer::x_WriteBrowserLine(
         strBrowserLine += " ";
         strBrowserLine += (*cit)->GetData().GetStr();
     } 
-    m_Os << strBrowserLine << endl;   
+    m_Os << strBrowserLine << '\n';   
     return true;
 }
 
@@ -386,7 +386,7 @@ bool CGff2Writer::x_WriteTrackLine(
         strTrackLine += "=";
         strTrackLine += strValue;
     } 
-    m_Os << strTrackLine << endl;   
+    m_Os << strTrackLine << '\n';   
     return true;
 }
 
@@ -403,7 +403,7 @@ bool CGff2Writer::x_WriteRecord(
     m_Os << pRecord->StrScore() << '\t';
     m_Os << pRecord->StrStrand() << '\t';
     m_Os << pRecord->StrPhase() << '\t';
-    m_Os << pRecord->StrAttributes() << endl;
+    m_Os << pRecord->StrAttributes() << '\n';
     return true;
 }
 
@@ -412,7 +412,7 @@ bool CGff2Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     if (!m_bHeaderWritten) {
-        m_Os << "##gff-version 2" << endl;
+        m_Os << "##gff-version 2" << '\n';
         m_bHeaderWritten = true;
     }
     return true;
@@ -422,7 +422,7 @@ bool CGff2Writer::WriteHeader()
 bool CGff2Writer::WriteFooter()
 //  ----------------------------------------------------------------------------
 {
-    m_Os << "###" << endl;
+    m_Os << "###" << '\n';
     return true;
 }
 
@@ -433,10 +433,10 @@ bool CGff2Writer::x_WriteAssemblyInfo(
 //  ----------------------------------------------------------------------------
 {
     if ( !strName.empty() ) {
-        m_Os << "##assembly name=" << strName << endl;
+        m_Os << "##assembly name=" << strName << '\n';
     }
     if ( !strAccession.empty() ) {
-        m_Os << "##assembly accession=" << strAccession << endl;
+        m_Os << "##assembly accession=" << strAccession << '\n';
     }
     return true;
 }

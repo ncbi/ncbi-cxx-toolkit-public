@@ -92,7 +92,7 @@ bool CWiggleWriter::WriteAnnot(
 bool CWiggleWriter::WriteFooter()
 //  ----------------------------------------------------------------------------
 {
-    m_Os << endl;
+    m_Os << '\n';
     return true;
 }
 
@@ -150,7 +150,7 @@ bool CWiggleWriter::xWriteSingleGraph( const CSeq_graph& graph )
 bool CWiggleWriter::xWriteDefaultTrackLine()
 //  ----------------------------------------------------------------------------
 {
-    m_Os << "track type=wiggle_0" << endl;
+    m_Os << "track type=wiggle_0" << '\n';
     return true;
 }
 
@@ -196,7 +196,7 @@ bool CWiggleWriter::xWriteTrackLine( const CAnnot_descr& descr )
         ++it;
     }
 
-    m_Os << strTrackLine << endl;
+    m_Os << strTrackLine << '\n';
     return true;
 }
 
@@ -256,7 +256,7 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
     strSpan += strComp;
     strFixedStep += strSpan;
    
-    m_Os << strFixedStep << endl;
+    m_Os << strFixedStep << '\n';
     return true;
 }
 
@@ -282,9 +282,9 @@ bool CWiggleWriter::xWriteSingleGraphRecords(
 
     for ( size_t u=0; u + uStartRecord < uNumVals && u < m_uTrackSize; ++u ) {
         int iVal = (unsigned char)values[u + uStartRecord];
-        m_Os << ROUND( dA*iVal+dB ) << endl;
+        m_Os << ROUND( dA*iVal+dB ) << '\n';
     }
-//    m_Os << endl;
+//    m_Os << '\n';
     return true;
 }
 
@@ -439,7 +439,7 @@ bool CWiggleWriter::xWriteTableFixedStep(
 {
     //write fixedStep directive
     m_Os << "fixedStep chrom=" << chrom << " span=" << span << 
-        " start=" << (start+1) << " step=" << step << endl;
+        " start=" << (start+1) << " step=" << step << '\n';
 
     //write "value" lines
     int numRows = table.GetNum_rows();
@@ -448,7 +448,7 @@ bool CWiggleWriter::xWriteTableFixedStep(
         if (!xTableGetValue(table, i, value)) {
             return false;
         }
-        m_Os << value << endl;
+        m_Os << value << '\n';
     }
     return true;
 }
@@ -466,7 +466,7 @@ bool CWiggleWriter::xWriteTableVariableStep(
 //  ----------------------------------------------------------------------------
 {
     //write variableStep directive
-    m_Os << "variableStep chrom=" << chrom << " span=" << span << endl;
+    m_Os << "variableStep chrom=" << chrom << " span=" << span << '\n';
 
     //write "posIn value pairs"
     int numRows = table.GetNum_rows();
@@ -479,7 +479,7 @@ bool CWiggleWriter::xWriteTableVariableStep(
         if (!xTableGetValue(table, i, value)) {
             return false;
         }
-        m_Os << (posIn+1) << '\t' << value << endl;
+        m_Os << (posIn+1) << '\t' << value << '\n';
     }
     return true;
 }
@@ -516,7 +516,7 @@ bool CWiggleWriter::xWriteTableBedStyle(
         if (!xTableGetValue(table, i, value)) {
             return false;
         }
-        m_Os << '\t' << value << endl;
+        m_Os << '\t' << value << '\n';
     }
     return true;
 }

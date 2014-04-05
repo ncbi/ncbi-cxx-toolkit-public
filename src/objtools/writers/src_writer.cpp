@@ -672,7 +672,7 @@ bool CSrcWriter::xFormatTabDelimited(
         string columnName = column.GetHeader().GetTitle();
         out << columnName << CSrcWriter::mDelimiter;
     }
-    out << endl;
+    out << '\n';
     unsigned int numRows = mSrcTable->GetNum_rows();
     for (unsigned int u=0; u < numRows; ++u) {
         for (COLUMNS::const_iterator cit = columns.begin(); 
@@ -688,7 +688,7 @@ bool CSrcWriter::xFormatTabDelimited(
                 out << "\"";
             }
         }
-        out << endl;
+        out << '\n';
     }
     return true;
 }

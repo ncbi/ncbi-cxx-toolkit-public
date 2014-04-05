@@ -147,7 +147,7 @@ bool CBedTrackRecord::Write(
     if (!Visibility().empty()) {
         ostr << " visibility=" << Visibility();
     }
-    ostr << endl;
+    ostr << '\n';
     return true;
 }
 

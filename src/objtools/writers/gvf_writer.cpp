@@ -164,7 +164,7 @@ bool CGvfWriter::WriteHeader(
         if ( key == "gff-version" || key == "gvf-version" ) {
             continue;
         }
-        m_Os << "##" << key << " " << value << endl;
+        m_Os << "##" << key << " " << value << '\n';
     } 
     return true;
 }
@@ -174,8 +174,8 @@ bool CGvfWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     if (!m_bHeaderWritten) {
-        m_Os << "##gff-version 3" << endl;
-        m_Os << "##gvf-version 1.05" << endl;
+        m_Os << "##gff-version 3" << '\n';
+        m_Os << "##gvf-version 1.05" << '\n';
         m_bHeaderWritten = true;
     }
     return true;

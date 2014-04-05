@@ -254,7 +254,7 @@ static void s_AgpWrite(CNcbiOstream& os,
         default:
             break;
         }
-        os << endl;
+        os << '\n';
     }
 }
 

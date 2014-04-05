@@ -951,9 +951,9 @@ bool CGff3Writer::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     if (!m_bHeaderWritten) {
-        m_Os << "##gff-version 3" << endl;
-        m_Os << "#!gff-spec-version 1.20" << endl;
-        m_Os << "#!processor NCBI annotwriter" << endl;
+        m_Os << "##gff-version 3" << '\n';
+        m_Os << "#!gff-spec-version 1.20" << '\n';
+        m_Os << "#!processor NCBI annotwriter" << '\n';
         m_bHeaderWritten = true;
     }
     return true;
@@ -968,7 +968,7 @@ bool CGff3Writer::xWriteSequenceHeader(
     if (!CWriteUtil::GetBestId(idh, *m_pScope, id)) {
         id = "<unknown>";
     }
-    m_Os << "##sequence-region " << id << endl;
+    m_Os << "##sequence-region " << id << '\n';
     return true;
 }
 
@@ -988,7 +988,7 @@ bool CGff3Writer::xWriteSequenceHeader(
 
     string start = "1";
     string stop = NStr::IntToString(bsh.GetBioseqLength());
-    m_Os << "##sequence-region " << id << " " << start << " " << stop << endl;
+    m_Os << "##sequence-region " << id << " " << start << " " << stop << '\n';
 
     //species
     const string base_url = 
@@ -998,11 +998,11 @@ bool CGff3Writer::xWriteSequenceHeader(
         const CBioSource& bs = sdi->GetSource();
         if (bs.IsSetOrg()) {
             string tax_id = NStr::IntToString(bs.GetOrg().GetTaxId());
-            m_Os << "##species " << base_url << "id=" << tax_id << endl;
+            m_Os << "##species " << base_url << "id=" << tax_id << '\n';
         }
         else if (bs.IsSetOrgname()) {
             string orgname = NStr::URLEncode(bs.GetTaxname());
-            m_Os << "##species " << base_url << "name=" << orgname << endl;        
+            m_Os << "##species " << base_url << "name=" << orgname << '\n';        
         }
     }
 
@@ -2572,7 +2572,7 @@ void CGff3Writer::xWriteAlignment(
     m_Os << record.StrScore() << '\t';
     m_Os << record.StrStrand() << '\t';
     m_Os << record.StrPhase() << '\t';
-    m_Os << record.StrAttributes() << endl;
+    m_Os << record.StrAttributes() << '\n';
 }
 
 //  ============================================================================
@@ -2640,7 +2640,7 @@ bool CGff3Writer::xWriteRecord(
     m_Os << record.StrScore() << '\t';
     m_Os << record.StrStrand() << '\t';
     m_Os << record.StrPhase() << '\t';
-    m_Os << record.StrAttributes() << endl;
+    m_Os << record.StrAttributes() << '\n';
     return true;
 }
 

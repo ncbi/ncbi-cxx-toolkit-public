@@ -66,13 +66,13 @@ bool CGff3FlybaseWriter::WriteHeader()
 //  ----------------------------------------------------------------------------
 {
     if (!m_bHeaderWritten) {
-        m_Os << "##gff-version 3" << endl;
-        m_Os << "#!gff-spec-version 1.20" << endl;
-        m_Os << "##!gff-variant flybase" << endl;
-        m_Os << "# This variant of GFF3 interprets ambiguities in the" << endl;
-        m_Os << "# GFF3 specifications in accordance with the views of Flybase." << endl;
-        m_Os << "# This impacts the feature tag set, and meaning of the phase." << endl;
-        m_Os << "#!processor NCBI annotwriter" << endl;
+        m_Os << "##gff-version 3" << '\n';
+        m_Os << "#!gff-spec-version 1.20" << '\n';
+        m_Os << "##!gff-variant flybase" << '\n';
+        m_Os << "# This variant of GFF3 interprets ambiguities in the" << '\n';
+        m_Os << "# GFF3 specifications in accordance with the views of Flybase." << '\n';
+        m_Os << "# This impacts the feature tag set, and meaning of the phase." << '\n';
+        m_Os << "#!processor NCBI annotwriter" << '\n';
         m_bHeaderWritten = true;
     }
     return true;
@@ -84,7 +84,7 @@ bool CGff3FlybaseWriter::x_WriteAlignDisc(
 //  ----------------------------------------------------------------------------
 {
     CGff3Writer::xWriteAlignDisc(align);
-    m_Os << "###" << endl;
+    m_Os << "###" << '\n';
     return true;
 }
 

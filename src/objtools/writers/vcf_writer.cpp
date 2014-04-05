@@ -163,7 +163,7 @@ bool CVcfWriter::x_WriteMeta(
         meta.GetFieldRef("meta-information")->GetData().GetStrs();
     for (CUser_field::C_Data::TStrs::const_iterator cit = directives.begin();
             cit != directives.end(); ++cit ) {
-        m_Os << "##" << *cit << endl;
+        m_Os << "##" << *cit << '\n';
     }
     return true;
 }
@@ -189,24 +189,24 @@ bool CVcfWriter::x_WriteMetaCreateNew(
     }
 
     m_Os << "##fileformat=VCFv4.1" 
-         << endl;
+         << '\n';
     if ( ! datestr.empty() ) {
-        m_Os << "##filedate=" << datestr << endl;
+        m_Os << "##filedate=" << datestr << '\n';
     }
     m_Os << "##INFO=<ID=DB,Number=0,Type=Flag,Description=\"dbSNP Membership\">"
-         << endl;
+         << '\n';
     m_Os << "##INFO=<ID=H2,Number=0,Type=Flag,Description=\"Hapmap2 Membership\">"
-         << endl;
+         << '\n';
     m_Os << "##INFO=<ID=H3,Number=0,Type=Flag,Description=\"Hapmap3 Membership\">"
-         << endl;
+         << '\n';
     m_Os << "##INFO=<ID=RL,Number=1,Type=String,Description=\"Resource Link\">"
-         << endl;
+         << '\n';
     m_Os << "##INFO=<ID=FBV,Number=1,Type=String,Description=\"Frequency Based Validation\">"
-         << endl;
+         << '\n';
     m_Os << "##INFO=<ID=GTP,Number=1,Type=String,Description=\"Genotype\">"
-         << endl;
+         << '\n';
     m_Os << "##INFO=<ID=QC,Number=1,Type=String,Description=\"Quality Check\">"
-         << endl;
+         << '\n';
     return true;
 }
 
@@ -220,7 +220,7 @@ bool CVcfWriter::x_WriteHeader(
     
     CConstRef<CUser_object> pVcfMetaInfo = s_GetVcfMetaInfo( annot );
     if (m_GenotypeHeaders.empty()) {
-        m_Os << endl;
+        m_Os << '\n';
         return true;
     }
     m_Os << "\tFORMAT";
@@ -228,7 +228,7 @@ bool CVcfWriter::x_WriteHeader(
             cit != m_GenotypeHeaders.end(); ++cit ) {
         m_Os << '\t' << *cit;
     }
-    m_Os << endl;
+    m_Os << '\n';
     return true;
 }
 
@@ -285,7 +285,7 @@ bool CVcfWriter::x_WriteFeature(
     if (!x_WriteFeatureGenotypeData(context, mf)) {
         return false;
     }
-    m_Os << endl;
+    m_Os << '\n';
     return true;
 }
 
