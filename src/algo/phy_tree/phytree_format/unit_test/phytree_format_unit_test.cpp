@@ -142,8 +142,10 @@ BOOST_AUTO_TEST_CASE(TestMultipleQueries)
     CPhyTreeCalc calc(seq_align, scope);
     BOOST_REQUIRE(calc.CalcBioTree());
 
-    vector<string> queries = {"gb|KC128904.1", "dbj|AB682225.1",
-                              "gb|HM748810.1"};
+    vector<string> queries;
+    queries.push_back("gb|KC128904.1");
+    queries.push_back("dbj|AB682225.1");
+    queries.push_back("gb|HM748810.1");
 
     CPhyTreeFormatter tree(calc, queries);
     CRef<CBioTreeContainer> btc = tree.GetSerialTree();
