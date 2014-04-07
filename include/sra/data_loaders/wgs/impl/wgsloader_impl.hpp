@@ -82,6 +82,7 @@ public:
         }
 
     bool IsValidRowId(bool scaffold, Uint8 row, SIZE_TYPE row_digits);
+    bool IsCorrectVersion(bool scaffold, Uint8 row, int version);
 
     CMutex& GetMutex(void) const
         {
@@ -125,12 +126,17 @@ public:
     CRef<CWGSFileInfo> GetWGSFile(const string& acc);
 
     CRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
-    CRef<CWGSFileInfo> GetFileInfo(const string& acc,
-                                   bool* scaffold_ptr = 0,
-                                   Uint8* row_id_ptr = 0);
-    CRef<CWGSFileInfo> GetFileInfo(const CSeq_id_Handle& idh,
-                                   bool* scaffold_ptr = 0,
-                                   Uint8* row_id_ptr = 0);
+    struct SAccFileInfo {
+        DECLARE_OPERATOR_BOOL_REF(file);
+
+        CRef<CWGSFileInfo> file;
+        Uint8 row_id;
+        bool is_scaffold;
+        bool has_version;
+        int version;
+    };
+    SAccFileInfo GetFileInfo(const string& acc);
+    SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
 
     CWGSSeqIterator GetSeqIterator(const CSeq_id_Handle& id,
                                    CWGSScaffoldIterator* iter2_ptr = 0);
