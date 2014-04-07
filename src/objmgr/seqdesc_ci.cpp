@@ -69,7 +69,8 @@ bool CSeqdesc_CI::x_ValidDesc(void) const
 inline
 bool CSeqdesc_CI::x_RequestedType(void) const
 {
-    _ASSERT(CSeqdesc::e_MaxChoice < 32);
+    TDescTypeMask maxval = 1 << CSeqdesc::e_MaxChoice;
+    _ASSERT(maxval);
     _ASSERT(x_ValidDesc());
     return m_Choice & (1<<(**m_Desc_CI).Which()) ? true : false;
 }
@@ -204,8 +205,9 @@ CSeqdesc_CI& CSeqdesc_CI::operator= (const CSeqdesc_CI& iter)
 void CSeqdesc_CI::x_AddChoice(CSeqdesc::E_Choice choice)
 {
     if ( choice != CSeqdesc::e_not_set ) {
-        _ASSERT(choice < 32);
-        m_Choice |= (1<<choice);
+        TDescTypeMask mask = 1 << choice;
+        _ASSERT(mask);
+        m_Choice |= (mask);
     }
     else {
         // set all bits
@@ -217,8 +219,9 @@ void CSeqdesc_CI::x_AddChoice(CSeqdesc::E_Choice choice)
 void CSeqdesc_CI::x_RemoveChoice(CSeqdesc::E_Choice choice)
 {
     if ( choice != CSeqdesc::e_not_set ) {
-        _ASSERT(choice < 32);
-        m_Choice &= ~(1<<choice);
+        TDescTypeMask mask = 1 << choice;
+        _ASSERT(mask);
+        m_Choice &= ~(mask);
     }
 }
 
