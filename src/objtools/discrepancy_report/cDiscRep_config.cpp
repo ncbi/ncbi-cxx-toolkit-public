@@ -1239,21 +1239,23 @@ void CRepConfig :: SetArg(const string& arg, const string& vlu)
 void CRepConfig :: ProcessArgs(Str2Str& args)
 {
     string strtmp;
+    Str2Str :: iterator end = args.end();
     // input file/path
-    thisInfo.infile = (args.find("i") != args.end()) ? args["i"] : kEmptyStr;
-    m_indir = (args.find("p") != args.end()) ? args["p"] : kEmptyStr;
-    m_insuffix = args["x"];
-    m_dorecurse = (args["u"] == "1") ? true : false;
+    thisInfo.infile = (args.find("i") != end) ? args["i"] : kEmptyStr;
+    m_indir = (args.find("p") != end) ? args["p"] : kEmptyStr;
+    m_insuffix = (args.find("x") != end) ? args["x"] : kEmptyStr;
+    m_dorecurse = (args.find("u") != end) ? (args["u"] == "1") : false;
     if ((m_indir.empty() || !CDir(m_indir).Exists()) 
          && thisInfo.infile.empty()) {
         NCBI_USER_THROW("Input path or input file must be specified");
     }
-    m_file_tp = args["a"];
+    m_file_tp = (args.find("a") != end) ? args["a"] : ".sqn";
 
     // report category
     thisInfo.report = fUnknown;
-    bool big_sequence_report = (args["B"] == "true");
-    if (args.find("P") != args.end()) {
+    bool big_sequence_report 
+            = (args.find("B") != end) ? (args["B"] == "true") : false;
+    if (args.find("P") != end) {
       strtmp = args["P"];
       thisInfo.output_config.add_output_tag 
              = (strtmp.find("t") != string::npos);
@@ -1297,9 +1299,9 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     }
 
     // output
-    m_outsuffix = args["s"];
-    string output_f = (args.find("o") != args.end()) ? args["o"] : kEmptyStr;
-    m_outdir= (args.find("r") != args.end()) ? GetDirStr(args["r"]) : kEmptyStr;
+    m_outsuffix = (args.find("s") != end) ? args["s"] : ".dr";
+    string output_f = (args.find("o") != end) ? args["o"] : kEmptyStr;
+    m_outdir= (args.find("r") != end) ? GetDirStr(args["r"]) : kEmptyStr;
     if (!output_f.empty() && !m_outdir.empty()) {
         NCBI_USER_THROW("-o and -r are incompatible: specify the output file name with the full path.");
     }
@@ -1311,26 +1313,26 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     if (m_outdir.empty() && m_indir.empty()) m_outdir = "./";
     if (!m_outdir.empty() 
                && !CDir(m_outdir).Exists() && !CDir(m_outdir).Create()) {
-         NCBI_USER_THROW("Unable to create output directory " + m_outdir);
-   }
+       NCBI_USER_THROW("Unable to create output directory " + m_outdir);
+    }
 
     thisInfo.output_config.output_f 
       = output_f.empty() ? 0 : new CNcbiOfstream((m_outdir + output_f).c_str());
-    strtmp = args["S"];
+    strtmp = (args.find("S") != end) ? args["S"] : "false";
     thisInfo.output_config.summary_report 
        = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t"));
 
     // enabled and disabled tests
-    strtmp = (args.find("e") != args.end()) ? args["e"] : kEmptyStr;
+    strtmp = (args.find("e") != end) ? args["e"] : kEmptyStr;
     if (!strtmp.empty()) {
         m_enabled = NStr::Tokenize(strtmp, ", ", m_enabled, NStr::eMergeDelims);
     }
-    strtmp = (args.find("d") != args.end()) ? args["d"] : kEmptyStr;
+    strtmp = (args.find("d") != end) ? args["d"] : kEmptyStr;
     if (!strtmp.empty()) {
         m_disabled= NStr::Tokenize(strtmp,", ", m_disabled, NStr::eMergeDelims);
     }
 
-    strtmp = (args.find("X") != args.end())? args["X"] : kEmptyStr;
+    strtmp = (args.find("X") != end) ? args["X"] : kEmptyStr;
     if (strtmp == "ALL") {
        m_all_expanded = true;     
     }
@@ -1342,7 +1344,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
        }
     }
 
-    m_genbank_loader = (args["R"] == "true");
+    m_genbank_loader = (args.find("R") != end) ?(args["R"] == "true") : false;
 };
 
 
