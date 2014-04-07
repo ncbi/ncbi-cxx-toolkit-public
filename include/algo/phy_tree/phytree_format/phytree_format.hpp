@@ -362,8 +362,9 @@ protected:
     /// Mark node. The function sets node feature that colors the node label
     /// background.
     /// @param node Node to mark
+    /// @param color Color to mark with
     ///
-    void x_MarkNode(CBioTreeDynamic::CBioNode* node);
+    void x_MarkNode(CBioTreeDynamic::CBioNode* node, const string& color);
 
     /// Collapse given subtrees
     /// @param groupper Object groupping nodes that contains a list of subtrees
@@ -550,7 +551,8 @@ private:
 
         /// Constructor
         CQueryNodeChecker(CBioTreeDynamic& tree)
-            : m_HasQueryNode(false) 
+            : m_HasQueryNode(false),
+              m_HasSeqFromType(false)
         {
             const CBioTreeFeatureDictionary& fdict
                 = tree.GetFeatureDict();
@@ -568,6 +570,14 @@ private:
         /// false otherwise
         bool HasQueryNode(void) const {return m_HasQueryNode;}
 
+        /// Check if an examined subtree has a sequence from type
+        ///
+        /// Meaningless if invoked before tree traversing
+        /// @return True if examined subtree contains a sequence from type,
+        /// false if not or query node was found before sequence from type
+        /// was reached
+        bool HasSeqFromType(void) const { return m_HasSeqFromType;}
+
         /// Expamine node: check if query node. Function invoked on each
         /// node by traversal function.
         /// @param node Tree root [in]
@@ -583,7 +593,15 @@ private:
                         == kNodeInfoQuery) {
 
                         m_HasQueryNode = true;
+
+                        // stop searching further if a query node is found
                         return eTreeTraverseStop;
+                    }
+
+                    if (node.GetFeature(GetFeatureTag(eNodeInfoId))
+                        == kNodeInfoSeqFromType) {
+
+                        m_HasSeqFromType = true;
                     }
                 }
             }
@@ -592,6 +610,7 @@ private:
 
     private:
         bool m_HasQueryNode;
+        bool m_HasSeqFromType;
     };
 
 
@@ -625,6 +644,9 @@ protected:
 public:
     /// Node feature "node-info" value for query nodes
     static const string kNodeInfoQuery;
+
+    /// Node feature "node-info" value for sequences from type
+    static const string kNodeInfoSeqFromType;
 };
 
 

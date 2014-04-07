@@ -62,6 +62,10 @@ static const string s_kSubtreeDisplayed = "0";
 // feature value for query nodes
 const string CPhyTreeFormatter::kNodeInfoQuery = "query";
 
+// feature value for sequences from type
+const string CPhyTreeFormatter::kNodeInfoSeqFromType = "sequence_from_type";
+
+
 CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                                      ELabelType label_type,
                                      bool mark_query_node)
@@ -308,7 +312,10 @@ bool CPhyTreeFormatter::ExpandCollapseSubtree(int node_id)
                              tracker.Begin()->second);
         }
         if (tracker.FoundQueryNode()) {
-            x_MarkNode(node);
+            x_MarkNode(node, s_kQueryNodeBgColor);
+        }
+        else if (tracker.FoundSeqFromType()) {
+            x_MarkNode(node, s_kSeqOfTypeNodeBgColor);
         }
     }
     else {
@@ -495,14 +502,18 @@ void CPhyTreeFormatter::x_CollapseSubtrees(CPhyTreeNodeGroupper& groupper)
                                      CQueryNodeChecker(m_Dyntree));
 
         if (query_checker.HasQueryNode()) {
-            x_MarkNode(it->GetNode());
+            x_MarkNode(it->GetNode(), s_kQueryNodeBgColor);
+        }
+        else if (query_checker.HasSeqFromType()) {
+            x_MarkNode(it->GetNode(), s_kSeqOfTypeNodeBgColor);
         }
     }
 }
 
-void CPhyTreeFormatter::x_MarkNode(CBioTreeDynamic::CBioNode* node)
+void CPhyTreeFormatter::x_MarkNode(CBioTreeDynamic::CBioNode* node,
+                                   const string& color)
 {
-    node->SetFeature(GetFeatureTag(eLabelBgColorId), s_kQueryNodeBgColor);
+    node->SetFeature(GetFeatureTag(eLabelBgColorId), color);
 }
 
 
@@ -893,6 +904,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                     x_AddFeature(eNodeColorId,
                                  tax_node_colors[seq_number], node);
 
+                    // mark query node
                     if (!mark_leaves.empty()
                         && binary_search(mark_leaves.begin(),
                                          mark_leaves.end(), seq_number)) {
@@ -906,16 +918,17 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
 
                         x_AddFeature(eNodeInfoId, kNodeInfoQuery, node);
 
-                        //Not sure if needed
-                        //m_QueryAccessionNbr = accession_nbrs[seq_number];
                     }
-                    if(linkoutDB) {
+                    // mark sequence of type, unless the node represents query
+                    else if(linkoutDB) {
                         int seqLinkout = linkoutDB->GetLinkout(*seqids[seq_number],"");
                         if(seqLinkout & linkoutType) {
                             // color for "linkout" node
                             string bgColor = linkotTypeToBGColor[linkoutType];
                             if(!bgColor.empty()) {
                                 x_AddFeature(eLabelBgColorId,bgColor, node); 
+                                x_AddFeature(eNodeInfoId, kNodeInfoSeqFromType,
+                                             node);
                             }
                         }
                     }

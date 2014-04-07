@@ -120,9 +120,11 @@ public:
     TLabelColorMap_I End(void) {return m_LabelsColors.end();}
     unsigned int GetNumLabels(void) const {return m_LabelsColors.size();}
     bool FoundQueryNode(void) const {return m_FoundQueryNode;}
+    bool FoundSeqFromType(void) const { return m_FoundSeqFromType;}
 
 protected:
     bool x_IsQuery(const CBioTreeDynamic::CBioNode& node) const;
+    bool x_IsSeqFromType(const CBioTreeDynamic::CBioNode& node) const;
 
 protected:
     string m_LabelFeatureTag;
@@ -130,6 +132,7 @@ protected:
     TLabelColorMap m_LabelsColors;
     string m_Error;
     bool m_FoundQueryNode;
+    bool m_FoundSeqFromType;
 };
 
 

@@ -255,7 +255,8 @@ CPhyTreeLabelTracker::CPhyTreeLabelTracker(const string& label_feature,
                                            CBioTreeDynamic& tree)
     : m_LabelFeatureTag(label_feature),
       m_ColorFeatureTag(color_feature),
-      m_FoundQueryNode(false)
+      m_FoundQueryNode(false),
+      m_FoundSeqFromType(false)
 {
     const CBioTreeFeatureDictionary& fdict = tree.GetFeatureDict();
     if (!fdict.HasFeature(label_feature) || !fdict.HasFeature(color_feature)) {
@@ -280,6 +281,10 @@ ETreeTraverseCode CPhyTreeLabelTracker::operator() (
             m_FoundQueryNode = true;
         }
 
+        if (!m_FoundSeqFromType && x_IsSeqFromType(node)) {
+            m_FoundSeqFromType = true;
+        }
+
         if (node.IsLeaf()) {
             const string& label = node.GetFeature(m_LabelFeatureTag);
             const string& color = node.GetFeature(m_ColorFeatureTag);
@@ -298,5 +303,14 @@ bool CPhyTreeLabelTracker::x_IsQuery(const CBioTreeDynamic::CBioNode& node) cons
                                             CPhyTreeFormatter::eNodeInfoId))
         == CPhyTreeFormatter::kNodeInfoQuery;
 }
+
+bool CPhyTreeLabelTracker::x_IsSeqFromType(
+                                  const CBioTreeDynamic::CBioNode& node) const
+{
+    return node.GetFeature(CPhyTreeFormatter::GetFeatureTag(
+                                            CPhyTreeFormatter::eNodeInfoId))
+        == CPhyTreeFormatter::kNodeInfoSeqFromType;
+}
+
 
 END_NCBI_SCOPE
