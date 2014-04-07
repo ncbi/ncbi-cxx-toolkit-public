@@ -3141,7 +3141,6 @@ void CRepConfAsndisc :: x_Asn1(ESerialDataFormat datafm)
     if (strtmp == "Seq-submit") {
        thisInfo.seq_submit.Reset(new CSeq_submit);
        *ois >> thisInfo.seq_submit.GetObject();
-OutBlob(*thisInfo.seq_submit, "sub1");
        if (thisInfo.seq_submit->IsEntrys()) {
          ITERATE (list <CRef <CSeq_entry> >, it, 
                                   thisInfo.seq_submit->GetData().GetEntrys()) {
