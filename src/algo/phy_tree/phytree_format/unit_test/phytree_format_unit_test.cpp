@@ -131,6 +131,80 @@ BOOST_AUTO_TEST_CASE(TestInitTreeFeatures)
     s_TestTreeContainer(*tree.GetSerialTree(), num);
 }
 
+BOOST_AUTO_TEST_CASE(TestMultipleQueries)
+{
+    CRef<CScope> scope = s_CreateScope();
+    CNcbiIfstream istr("data/mole_seqalign.asn");
+    BOOST_REQUIRE(istr);
+    CSeq_align seq_align;
+    istr >> MSerial_AsnText >> seq_align;
+
+    CPhyTreeCalc calc(seq_align, scope);
+    BOOST_REQUIRE(calc.CalcBioTree());
+
+    vector<string> queries = {"gb|KC128904.1", "dbj|AB682225.1",
+                              "gb|HM748810.1"};
+
+    CPhyTreeFormatter tree(calc, queries);
+    CRef<CBioTreeContainer> btc = tree.GetSerialTree();
+    s_TestTreeContainer(*btc, calc.GetSeqAlign()->GetDim());
+
+    // find query nodes and check that node info is set properly
+    size_t num_queries_found = 0;
+    ITERATE (CNodeSet::Tdata, node, btc->GetNodes().Get()) {
+
+        // if root node
+        if (!(*node)->IsSetParent()) {
+            continue;
+        }
+
+        // skip non-leaf nodes
+        if (!s_IsLeaf(**node)) {
+            continue;
+        }
+
+        string accession;
+        string node_info;
+        
+        // iterate over node features
+        ITERATE (CNodeFeatureSet::Tdata, it, (*node)->GetFeatures().Get()) {
+
+            // collect sequence accesion
+            if ((*it)->GetFeatureid() == CPhyTreeFormatter::eAccessionNbrId) {
+                accession = (*it)->GetValue();
+            }
+
+            // collect node info
+            if ((*it)->GetFeatureid() == CPhyTreeFormatter::eNodeInfoId) {
+                node_info = (*it)->GetValue();
+            }
+        }
+
+        // accession must always be set
+        BOOST_REQUIRE(!accession.empty());
+        bool found_query = false;
+
+        // check if the accession is for a query
+        ITERATE (vector<string>, q, queries) {
+            // if this is a query
+            if (accession == *q) {
+                // node info feature must be set to kNodeInfoQuery
+                BOOST_REQUIRE_EQUAL(node_info,
+                                    CPhyTreeFormatter::kNodeInfoQuery);
+                num_queries_found++;
+                found_query = true;
+            }
+        }
+        // node info must be different from kNodeInfoQuery for other nodes
+        BOOST_REQUIRE(found_query ||
+                      node_info != CPhyTreeFormatter::kNodeInfoQuery);
+    }
+
+    // check that all query nodes were found
+    BOOST_REQUIRE_EQUAL(num_queries_found, queries.size());    
+}
+
+
 // Check that exceptions are thrown for incorrect constructor arguments
 BOOST_AUTO_TEST_CASE(TestInitTreeFeaturesWithBadInput)
 {
@@ -728,6 +802,8 @@ static bool s_IsLeaf(const CNode& node)
 static bool s_TestNode(const CNode& node, bool is_leaf)
 {
     vector<bool> features(CPhyTreeFormatter::eLastId + 1, false);
+    string node_info;
+    string color;
     ITERATE (CNodeFeatureSet::Tdata, it, node.GetFeatures().Get()) {
         int id = (*it)->GetFeatureid();
         BOOST_REQUIRE(id >= 0 && id <= CPhyTreeFormatter::eLastId);
@@ -737,9 +813,23 @@ static bool s_TestNode(const CNode& node, bool is_leaf)
                          || id == CPhyTreeFormatter::eTreeSimplificationTagId);
         }
 
+        if (is_leaf && id == CPhyTreeFormatter::eNodeInfoId) {
+            node_info = (*it)->GetValue();            
+        }
+
+        if (is_leaf && id == CPhyTreeFormatter::eLabelBgColorId) {
+            color = (*it)->GetValue(); 
+        }
+
         BOOST_REQUIRE((*it)->GetValue() != "");
         BOOST_REQUIRE(!features[id]);
         features[id] = true;
+    }    
+    // only nodes with node info feature set may have colored labels
+    BOOST_REQUIRE_EQUAL(node_info.empty(), color.empty());
+    // query nodes must be marked with label background color
+    if (node_info == CPhyTreeFormatter::kNodeInfoQuery) {
+        BOOST_REQUIRE_EQUAL(color, "255 255 0");
     }
 
     if (is_leaf) {

@@ -112,6 +112,10 @@ BioTreeContainer ::= {
         {
           featureid 12,
           value "0"
+        },
+	{
+          featureid 13,
+          value "query"
         }
       }
     },
