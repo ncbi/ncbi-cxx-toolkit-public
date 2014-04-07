@@ -287,7 +287,7 @@ s_ComputeNumSequencesAndDbLength(const string& dbname,
     CSeqDB::ESeqType dbtype(is_prot ? CSeqDB::eProtein : CSeqDB::eNucleotide);
     try {
         CRef<CSeqDB> dbhandle(new CSeqDB(dbname, dbtype));
-        dbhandle->GetTotals(CSeqDB::eFilteredAll, num_seqs_found, dbsize, true);
+        dbhandle->GetTotals(CSeqDB::eFilteredAll, num_seqs_found, dbsize, false);
     } catch(...) {
         return false;
     }
