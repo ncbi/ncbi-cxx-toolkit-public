@@ -187,6 +187,39 @@ inline const char* impl_ToCString(const string& s) { return s.c_str(); }
 #endif
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+
+#if defined(NCBI_CUTF8_ENCODING_CLASSIC)  ||  !defined(HAVE_ENUM_CLASS)
+enum EEncoding {
+    eEncoding_Unknown,
+    eEncoding_UTF8,
+    eEncoding_Ascii,
+    eEncoding_ISO8859_1,    ///< Note:  From the point of view of the C++
+    ///< Toolkit, the ISO 8859-1 character set includes
+    ///< symbols 0x00 through 0xFF except 0x80 through
+    ///< 0x9F.
+    eEncoding_Windows_1252
+};
+#else
+// Temporary safeguard to protect against implicit conversion of EEncoding
+// to size_t, etc
+// @attention  Do not use "EEncoding::Xxx" values directly, as they will go
+//             away eventually! Use the "eEncoding_Xxx" values instead.
+enum class EEncoding {
+    Unknown,      ///< Do not use this directly!  It will go away eventually!
+    UTF8,         ///< Do not use this directly!  It will go away eventually!
+    Ascii,        ///< Do not use this directly!  It will go away eventually!
+    ISO8859_1,    ///< Do not use this directly!  It will go away eventually!
+    Windows_1252  ///< Do not use this directly!  It will go away eventually!
+};
+#define eEncoding_Unknown      EEncoding::Unknown
+#define eEncoding_UTF8         EEncoding::UTF8
+#define eEncoding_Ascii        EEncoding::Ascii
+#define eEncoding_ISO8859_1    EEncoding::ISO8859_1
+#define eEncoding_Windows_1252 EEncoding::Windows_1252
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -2486,10 +2519,36 @@ public:
     static string XmlEncode(const CTempString& str,
                             EXmlEncode flags = eXmlEnc_Contents);
 
+
+    /// HTML-decode flags
+    enum EHtmlEncode {
+        fHtmlEnc_EncodeAll           = 0,       ///< Encode all symbols
+        fHtmlEnc_SkipLiteralEntities = 1 << 1,  ///< Skip "&entity;"
+        fHtmlEnc_SkipNumericEntities = 1 << 2,  ///< Skip "&#NNNN;"
+        fHtmlEnc_SkipEntities        = fHtmlEnc_SkipLiteralEntities | fHtmlEnc_SkipNumericEntities,
+        fHtmlEnc_CheckPreencoded     = 1 << 3   ///< Print warning if some preencoded
+                                                ///< entity found in the string
+    };
+    typedef int THtmlEncode;   //<  bitwise OR of "EHtmlEncode"
+
     /// Encode a string for HTML.
     ///
     /// Replace relevant characters by predefined entities.
-    static string HtmlEncode(const CTempString& str);
+    static string HtmlEncode(const CTempString& str,
+                             THtmlEncode flags = fHtmlEnc_EncodeAll);
+
+    /// HTML-decode flags
+    enum EHtmlDecode {
+        fHtmlDec_CharRef_Entity   = 1,       ///< Character entity reference(s) was found
+        fHtmlDec_CharRef_Numeric  = 1 << 1,  ///< Numeric character reference(s) was found
+        fHtmlDec_Encoding_Changed = 1 << 2   ///< Character encoding changed
+    };
+    typedef int THtmlDecode;   //<  bitwise OR of "EHtmlDecode"
+
+    /// Decode HTML entities and character references.
+    static string HtmlDecode(const CTempString& str,
+                             EEncoding encoding = eEncoding_Unknown,
+                             THtmlDecode* result_flags = NULL);
 
     /// Encode a string for JSON.
     static string JsonEncode(const CTempString& str);
@@ -2848,37 +2907,6 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const TStringUCS2& str)
 ///      Microsoft Windows code page 1252
 ///      UCS-2, UCS-4 (no surrogates)
 
-#if defined(NCBI_CUTF8_ENCODING_CLASSIC)  ||  !defined(HAVE_ENUM_CLASS)
-enum EEncoding {
-    eEncoding_Unknown,
-    eEncoding_UTF8,
-    eEncoding_Ascii,
-    eEncoding_ISO8859_1,    ///< Note:  From the point of view of the C++
-                            ///< Toolkit, the ISO 8859-1 character set includes
-                            ///< symbols 0x00 through 0xFF except 0x80 through
-                            ///< 0x9F.
-    eEncoding_Windows_1252
-};
-#else
-// Temporary safeguard to protect against implicit conversion of EEncoding
-// to size_t, etc
-// @attention  Do not use "EEncoding::Xxx" values directly, as they will go
-//             away eventually! Use the "eEncoding_Xxx" values instead.
-enum class EEncoding {
-    Unknown,      ///< Do not use this directly!  It will go away eventually!
-    UTF8,         ///< Do not use this directly!  It will go away eventually!
-    Ascii,        ///< Do not use this directly!  It will go away eventually!
-    ISO8859_1,    ///< Do not use this directly!  It will go away eventually!
-    Windows_1252  ///< Do not use this directly!  It will go away eventually!
-};
-#define eEncoding_Unknown      EEncoding::Unknown
-#define eEncoding_UTF8         EEncoding::UTF8
-#define eEncoding_Ascii        EEncoding::Ascii
-#define eEncoding_ISO8859_1    EEncoding::ISO8859_1
-#define eEncoding_Windows_1252 EEncoding::Windows_1252
-#endif
-
-
 class NCBI_XNCBI_EXPORT CUtf8
 {
 public:
@@ -3036,8 +3064,8 @@ public:
     ///   Only for TStringUnicode, TStringUCS4, TStringUCS2, wstring types
     template <typename TChar>
     static basic_string<TChar> AsBasicString
-    (const CTempString& src,
-     const TChar* substitute_on_error, EValidate validate = eNoValidate);
+        (const CTempString& src,
+         const TChar* substitute_on_error, EValidate validate = eNoValidate);
     template <typename TChar>
     static basic_string<TChar> AsBasicString(const CTempString& src);
 
@@ -3248,6 +3276,8 @@ private:
 
 // deprecated CStringUTF8 is there
 #include <corelib/impl/stringutf8_deprecated.hpp>
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -3706,7 +3736,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  Predicates
 //
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -5220,12 +5249,6 @@ list<string>& NStr::Justify(const CTempString& str, SIZE_TYPE width,
                             const CTempString& pfx1)
 {
     return Justify(str, width, par, &pfx, &pfx1);
-}
-
-inline
-string NStr::HtmlEncode(const CTempString& str)
-{
-    return XmlEncode(str);
 }
 
 
