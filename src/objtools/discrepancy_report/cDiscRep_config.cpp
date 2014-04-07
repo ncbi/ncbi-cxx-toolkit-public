@@ -3403,7 +3403,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp)
                                     != thisInfo.test_item_list.end()) {
- cerr << "GoGetRep " << strtmp << endl;
+// cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             c_item->expanded = x_IsExpandable(strtmp);
@@ -3413,18 +3413,16 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
             }
             (*it)->GetReport(c_item);
 
-/*
             // adjustment of setting_name
             if (strtmp.find("global") != string::npos 
                    || strtmp.find("oncaller") != string::npos) {
                c_item->setting_name= strtmp.substr(0, strtmp.find_last_of("_"));
             }
-*/
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            c_item->expanded = x_IsExpandable(strtmp);
            (*it)->GetReport(c_item);
- cerr << "GoGetRep " << (*it)->GetName() << endl;
+// cerr << "GoGetRep " << (*it)->GetName() << endl;
        }
    }
 };
