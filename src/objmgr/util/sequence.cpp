@@ -3976,6 +3976,43 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
 }
 
 
+CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& scope)
+{
+    if (!cds.IsSetLocation() || !cds.IsSetData() || !cds.GetData().IsCdregion()) {
+        return CCdregion::eFrame_not_set;
+    }
+    const CCdregion& cdr = cds.GetData().GetCdregion();
+
+    CCdregion::EFrame orig_frame = cdr.IsSetFrame() ? cdr.GetFrame() : CCdregion::eFrame_one;
+    if (orig_frame == CCdregion::eFrame_not_set) {
+        orig_frame = CCdregion::eFrame_one;
+    }
+
+    CRef<CSeq_feat> tmp_cds(new CSeq_feat());
+    tmp_cds->Assign(cds);
+    vector<CCdregion::EFrame> frames;
+    frames.push_back(CCdregion::eFrame_one);
+    frames.push_back(CCdregion::eFrame_two);
+    frames.push_back(CCdregion::eFrame_three);
+    size_t best = 0;
+    CCdregion::EFrame best_frame = orig_frame;
+    ITERATE(vector<CCdregion::EFrame>, it, frames) {
+        tmp_cds->SetData().SetCdregion().SetFrame(*it);
+        string prot;
+        CSeqTranslator::Translate(*tmp_cds, scope, prot, true, false, NULL);
+        size_t pos = NStr::Find(prot, "*");
+        if (pos == string::npos) {
+            pos = prot.length();
+        }
+        if (pos > best || (pos == best && *it == orig_frame)) {
+            best = pos;
+            best_frame = *it;
+        }        
+    }
+    
+    return best_frame;
+}
+
 
 void CCdregion_translate::TranslateCdregion (string& prot,
                                              const CBioseq_Handle& bsh,

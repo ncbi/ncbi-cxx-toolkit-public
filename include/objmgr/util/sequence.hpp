@@ -40,6 +40,7 @@
 #include <serial/objostr.hpp>
 
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -1059,6 +1060,11 @@ public:
                                               CScope& scope);
 
     static bool ChangeDeltaProteinToRawProtein(CRef<CBioseq> protein);
+
+    /// Find "best" frame for a coding region. "Best" frame has no
+    /// internal stop codons.
+    static CCdregion::EFrame FindBestFrame(const CSeq_feat& cds, CScope& scope);
+
 };
 
 

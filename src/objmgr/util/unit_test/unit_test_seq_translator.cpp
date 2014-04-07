@@ -1175,6 +1175,28 @@ BOOST_AUTO_TEST_CASE(Test_Translate_CodeBreakForStopCodon)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_FindBestFrame)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntry);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CSeq_feat> cds = entry.SetSet().SetAnnot().front()->SetData().SetFtable().front();
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    
+    BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope), CCdregion::eFrame_one);
+    cds->SetLocation().SetInt().SetFrom(15);
+    BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope), CCdregion::eFrame_three);
+    cds->SetLocation().SetInt().SetFrom(16);
+    BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope), CCdregion::eFrame_two);
+}
+
+
+
 const char * sc_MinusOrigin = "\
 Seq-entry ::= seq {\
   id { \
