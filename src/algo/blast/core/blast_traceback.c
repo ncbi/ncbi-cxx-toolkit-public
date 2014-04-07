@@ -1378,7 +1378,6 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
     BlastScoringParameters* score_params = NULL;
     const BlastExtensionParameters* ext_params = NULL;
     const BlastHitSavingParameters* hit_params = NULL;
-    const BlastEffectiveLengthsParameters* eff_len_params = NULL;
     BlastGapAlignStruct *gap_align = NULL;
     const BlastSeqSrc* seq_src = NULL;
     Int4 default_db_genetic_code = db_options->genetic_code;
@@ -1393,7 +1392,6 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
     score_params = thread_data->tld[0]->score_params;
     ext_params = thread_data->tld[0]->ext_params;
     hit_params = thread_data->tld[0]->hit_params;
-    eff_len_params = thread_data->tld[0]->eff_len_params;
 
     s_SThreadLocalDataArraySetGapXDropoffFinal(thread_data);
 

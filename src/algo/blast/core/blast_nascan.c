@@ -107,13 +107,11 @@ static Int4 s_BlastNaScanSubject_8_4(const LookupTableWrap * lookup_wrap,
     BlastNaLookupTable *lookup;
     Int4 num_hits;
     Int4 total_hits = 0;
-    Int4 lut_word_length;
 
     ASSERT(lookup_wrap->lut_type == eNaLookupTable);
     lookup = (BlastNaLookupTable *) lookup_wrap->lut;
 
-    lut_word_length = lookup->lut_word_length;
-    ASSERT(lut_word_length == 8);
+    ASSERT(lookup->lut_word_length == 8);
 
     abs_start = subject->sequence;
     s = abs_start + scan_range[0] / COMPRESSION_RATIO;
