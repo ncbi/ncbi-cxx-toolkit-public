@@ -1520,7 +1520,7 @@ void CBlastFormat::ResetScopeHistory()
     // output formats.
     
     if (m_FormatType != CFormattingArgs::eXml) {
-        m_Scope->ResetHistory();
+        m_Scope->ResetDataAndHistory();
     }
 }
 
