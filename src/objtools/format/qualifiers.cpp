@@ -1284,6 +1284,18 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
     }
 }
 
+struct SSortReferenceByName
+{
+    bool operator()(const CRef< CDbtag >& sfp1,
+                    const CRef< CDbtag >& sfp2) 
+    {
+        if (NStr::CompareNocase(sfp1->GetDb().c_str(), sfp2->GetDb().c_str()) < 0)
+            return true;
+        else
+            return false;
+    }
+};
+
 
 void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
                          CBioseqContext& ctx, IFlatQVal::TFlags flags) const
@@ -1291,7 +1303,10 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
     // to avoid duplicates, keep track of ones we've already done
     set<string> quals_already_done;
 
-    ITERATE (TXref, it, m_Value) {
+    vector< CRef< CDbtag > > temp(m_Value);
+    sort(temp.begin(), temp.end(), SSortReferenceByName());
+
+    ITERATE (TXref, it, temp) {
         const CDbtag& dbt = **it;
         if (!m_Quals.Empty()  &&  x_XrefInGeneXref(dbt)) {
             continue;
