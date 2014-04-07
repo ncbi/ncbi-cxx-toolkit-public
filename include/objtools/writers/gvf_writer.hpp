@@ -66,10 +66,10 @@ public:
         const CSeq_annot& );
 
 protected:
-    virtual bool x_WriteFeature(
+    virtual bool xWriteFeature(
         CGffFeatureContext&,
         CMappedFeat );
-    virtual bool x_WriteFeatureVariationRef(
+    virtual bool xWriteFeatureVariationRef(
         CGffFeatureContext&,
         CMappedFeat );
 };

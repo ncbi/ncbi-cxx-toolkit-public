@@ -182,7 +182,7 @@ bool CGvfWriter::WriteHeader()
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriter::x_WriteFeature(
+bool CGvfWriter::xWriteFeature(
     CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
@@ -193,12 +193,12 @@ bool CGvfWriter::x_WriteFeature(
         return true;
 
     case CSeqFeatData::eSubtype_variation_ref:
-        return x_WriteFeatureVariationRef( fc, mf );
+        return xWriteFeatureVariationRef( fc, mf );
     }
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfWriter::x_WriteFeatureVariationRef(
+bool CGvfWriter::xWriteFeatureVariationRef(
     CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
