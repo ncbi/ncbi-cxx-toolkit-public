@@ -67,6 +67,8 @@
 #include <objects/general/Person_id.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/submit/Submit_block.hpp>
+#include <objects/submit/Contact_info.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objects/seqtable/SeqTable_multi_data.hpp>
@@ -155,6 +157,9 @@ private:
 
     bool x_ResolveSuppliedBioSampleAccession(vector<string>& biosample_ids);
 
+    string x_OwnerFromAffil(const CAffil& affil);
+    string x_OwnerFromPub(const CPub& pub);
+
     // for mode 3, biosample_push
     void UpdateBioSource (CBioseq_Handle bh, const CBioSource& src);
     void x_ClearCoordinatedSubSources(CBioSource& src);
@@ -199,6 +204,7 @@ private:
     string m_HUPDate;
     string m_BioSampleAccession;
     string m_BioProjectAccession;
+    string m_Owner;
 
     size_t m_Processed;
     size_t m_Unprocessed;
@@ -220,6 +226,7 @@ CBiosampleChkApp::CBiosampleChkApp(void) :
     m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), 
     m_FirstSeqOnly(false), m_IDPrefix(""), m_HUPDate(""),
     m_BioSampleAccession(""), m_BioProjectAccession(""),
+    m_Owner(""),
     m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
@@ -1217,25 +1224,16 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
     // same info for sample structure
     node owner("Owner");
 
-    list<string> sbm_info;
+    string owner_str = "";
     if (affil) {
-        if (affil->IsStd()) {
-            if (affil->GetStd().IsSetAffil()) {
-                sbm_info.push_back(affil->GetStd().GetAffil());
-            }
-            if (affil->GetStd().IsSetDiv() 
-                && (!affil->GetStd().IsSetAffil() 
-                    || !NStr::EqualNocase(affil->GetStd().GetDiv(), affil->GetStd().GetAffil()))) {
-                sbm_info.push_back(affil->GetStd().GetDiv());
-            }
-        } else if (affil->IsStr()) {
-            sbm_info.push_back(affil->GetStr());
-        }
+        owner_str = x_OwnerFromAffil(*affil);
     }
-
+    if (NStr::IsBlank(owner_str)) {
+        owner_str = m_Owner;
+    }
         
-    organization->insert(node("Name", NStr::Join(sbm_info, ", ").c_str()));
-    owner.insert(node("Name", NStr::Join(sbm_info, ", ").c_str()));
+    organization->insert(node("Name", owner_str.c_str()));
+    owner.insert(node("Name", owner_str.c_str()));
 
     AddContact(organization, auth_list);
 
@@ -1585,12 +1583,57 @@ void CBiosampleChkApp::ProcessSet(void)
 }
 
 
+string CBiosampleChkApp::x_OwnerFromAffil(const CAffil& affil)
+{
+    list<string> sbm_info;
+    if (affil.IsStd()) {
+        if (affil.GetStd().IsSetAffil()) {
+            sbm_info.push_back(affil.GetStd().GetAffil());
+        }
+        if (affil.GetStd().IsSetDiv() 
+            && (!affil.GetStd().IsSetAffil() 
+                || !NStr::EqualNocase(affil.GetStd().GetDiv(), affil.GetStd().GetAffil()))) {
+            sbm_info.push_back(affil.GetStd().GetDiv());
+        }
+    } else if (affil.IsStr()) {
+        sbm_info.push_back(affil.GetStr());
+    }
+
+    return NStr::Join(sbm_info, ", ");
+}
+
+
+string CBiosampleChkApp::x_OwnerFromPub(const CPub& pub)
+{
+    string owner = "";
+    if (pub.IsSub() && pub.IsSetAuthors() && pub.GetAuthors().IsSetAffil()) {
+        owner = x_OwnerFromAffil(pub.GetAuthors().GetAffil());
+    } else if (pub.IsGen() && pub.GetGen().IsSetAuthors() && pub.GetGen().GetAuthors().IsSetAffil()) {
+        owner = x_OwnerFromAffil(pub.GetAuthors().GetAffil());
+    }
+    return owner;
+}
+
+
 void CBiosampleChkApp::ProcessSeqSubmit(void)
 {
     CRef<CSeq_submit> ss(new CSeq_submit);
 
     // Get seq-submit to process
     m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
+
+    m_Owner = "";
+    // get owner from Seq-submit to use if no pub is found
+    if (ss->IsSetSub()) {
+        if (ss->GetSub().IsSetCit() 
+            && ss->GetSub().GetCit().IsSetAuthors()
+            && ss->GetSub().GetCit().GetAuthors().IsSetAffil()) {
+            m_Owner = x_OwnerFromAffil(ss->GetSub().GetCit().GetAuthors().GetAffil());
+        } else if (ss->GetSub().IsSetContact() && ss->GetSub().GetContact().IsSetContact()
+            && ss->GetSub().GetContact().GetContact().IsSetAffil()) {
+            m_Owner = x_OwnerFromAffil(ss->GetSub().GetContact().GetContact().GetAffil());
+        }
+    }
 
     // Process Seq-submit
     CRef<CScope> scope = BuildScope();
