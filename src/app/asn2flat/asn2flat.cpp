@@ -151,7 +151,7 @@ void CAsn2FlatApp::Init(void)
          arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
                                   CArgDescriptions::eString, "any" );
          arg_desc->SetConstraint( "type",
-                                  &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
+                                  &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set", "seq-submit" ) );
 
          // output
          arg_desc->AddOptionalKey("o", "OutputFile",
@@ -431,9 +431,12 @@ int CAsn2FlatApp::Run(void)
         }
         HandleSeqEntry(seh);
     }
+    else if ( asn_type == "seq-submit" ) {
+        HandleSeqSubmit( *is );
+    }
     else if ( asn_type == "any" ) {
         //
-        //  Try the first three in turn:
+        //  Try the first four in turn:
         //
         string strNextTypeName = is->PeekNextTypeName();
 
@@ -447,10 +450,25 @@ int CAsn2FlatApp::Run(void)
                 is.reset( x_OpenIStream( args ) );
                 seh = ObtainSeqEntryFromBioseq(*is);
                 if ( !seh ) {
-                    NCBI_THROW(
-                               CException, eUnknown,
-                               "Unable to construct Seq-entry object"
-                              );
+                    is->Close();
+                    is.reset( x_OpenIStream( args ) );
+                    CRef<CSeq_submit> sub(new CSeq_submit);
+                    *is >> *sub;
+                    if (sub->IsSetSub()  &&  sub->IsSetData()) {
+                        CRef<CScope> scope(new CScope(*m_Objmgr));
+                        scope->AddDefaults();
+                        if ( m_do_cleanup ) {
+                            CCleanup cleanup;
+                            cleanup.BasicCleanup( *sub );
+                        }
+                        m_FFGenerator->Generate(*sub, *scope, *m_Os);
+                        return 0;
+                    } else {
+                        NCBI_THROW(
+                                   CException, eUnknown,
+                                   "Unable to construct Seq-entry object"
+                                  );
+                    }
                 }
             }
         }
