@@ -307,19 +307,9 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
             deResult.Copy(testInfo.mOutFile.GetPath() + "." + extKeep, 
                 CDirEntry::fCF_Overwrite);
         }
-        BOOST_ERROR("Error: " << sTestName << " failed due to post processing diffs.");
-        {{
-             cout << "result:" << endl;
-             CNcbiIfstream istr(resultName.c_str());
-             NcbiStreamCopy(cout, istr);
-         }}
-        {{
-             cout << "expected:" << endl;
-             CNcbiIfstream istr(testInfo.mOutFile.GetPath().c_str());
-             NcbiStreamCopy(cout, istr);
-         }}
         deResult.Remove();
         CDirEntry(logName).Remove();
+        BOOST_ERROR("Error: " << sTestName << " failed due to post processing diffs.");
     }
     CDirEntry(resultName).Remove();
 
@@ -328,20 +318,10 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     if (!success  &&  keep) {
         deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
     }
+    deErrors.Remove();
     if (!success) {
         BOOST_ERROR("Error: " << sTestName << " failed due to error handling diffs.");
-        {{
-             cout << "result:" << endl;
-             CNcbiIfstream istr(logName.c_str());
-             NcbiStreamCopy(cout, istr);
-         }}
-        {{
-             cout << "expected:" << endl;
-             CNcbiIfstream istr(testInfo.mErrorFile.GetPath().c_str());
-             NcbiStreamCopy(cout, istr);
-         }}
     }
-    deErrors.Remove();
 };
 NCBITEST_AUTO_INIT()
 {
