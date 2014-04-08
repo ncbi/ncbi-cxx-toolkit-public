@@ -3922,8 +3922,11 @@ case "$with_gnutls" in
 esac
 if test -d "$GNUTLS_PATH"; then
    NCBI_FIX_DIR(GNUTLS_PATH)
+   gnutls_config_path=${GNUTLS_BIN-$GNUTLS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/bin}:$GNUTLS_PATH/bin${bit64_sfx}:$GNUTLS_PATH/bin
+else
+   gnutls_config_path=$PATH
 fi
-AC_PATH_PROG(LIBGNUTLS_CONFIG, libgnutls-config, [], [${GNUTLS_BIN-$GNUTLS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/bin}:$GNUTLS_PATH/bin${bit64_sfx}:$GNUTLS_PATH/bin:$PATH])
+AC_PATH_PROG(LIBGNUTLS_CONFIG, libgnutls-config, [], [$gnutls_config_path])
 
 if test "x$with_gnutls" != xno; then
    if test -x "$LIBGNUTLS_CONFIG"; then
@@ -3932,7 +3935,7 @@ if test "x$with_gnutls" != xno; then
          test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
       fi
    else
-      LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls"
+      LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls --static"
       $LIBGNUTLS_CONFIG --exists >/dev/null 2>&1 ||  LIBGNUTLS_CONFIG=no
    fi
    case "$LIBGNUTLS_CONFIG" in
@@ -3961,6 +3964,10 @@ NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
  $GNUTLS_CONFIG_LIBS $GCRYPT_LIBS)
 if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
    NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS], [$no_usr_lib])
+   # Conservatively build against gcrypt if available even when gnutls
+   # uses nettle instead, because gcrypt needs explicit initialization
+   # to be thread-safe, but gnutls's headers don't indicate which
+   # underlying crypto library it's actually using.
    case "$GNUTLS_INCLUDE" in
        *$GCRYPT_INCLUDE* ) ;;
        *                 ) GNUTLS_INCLUDE="$GNUTLS_INCLUDE $GCRYPT_INCLUDE" ;;
