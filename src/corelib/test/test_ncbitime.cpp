@@ -2063,6 +2063,7 @@ int main()
 
     // Run tests
     try {
+        s_TestTimeSpan_AsSmartString();
         s_TestMisc();
         s_TestFormats();
         s_TestGMT();
