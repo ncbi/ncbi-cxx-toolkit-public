@@ -920,15 +920,15 @@ typedef TWriteLockGuard                             CWriteLockGuard;
 ///
 /// CRWLock --
 ///
-/// Read/Write lock related data and methods.
+/// Read/Write lock.
+/// Allows multiple readers or single writer.
 ///
-/// Allows multiple readers or single writer with recursive locks.
-/// R-after-W is considered to be a recursive Write-lock. W-after-R is not
-/// allowed.
-///
-/// NOTE: When _DEBUG is not defined, does not always detect W-after-R
-/// correctly, so that deadlock may happen. Test your application
-/// in _DEBUG mode first!
+/// NOTE about recursive locks by the same thread:
+///  - W-after-W and R-after-R are okay.
+///  - R-after-W is considered to be a recursive Write-lock.
+///  - W-after-R is not allowed; note that if  _DEBUG is not defined we do not
+///    always catch W-after-R, and deadlock may happen. Test your application
+///    in _DEBUG mode first!
 
 class NCBI_XNCBI_EXPORT CRWLock
 {
