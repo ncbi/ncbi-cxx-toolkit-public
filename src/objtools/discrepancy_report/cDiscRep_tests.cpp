@@ -281,6 +281,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
        prot_nm = *(prot.GetName().begin()); 
        rule_idx = 0;
        string test_name, summ;
+//prot_nm = "phi X174 lysis protein";
        ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                    thisInfo.suspect_prod_rules->Get()) {
 
@@ -293,8 +294,6 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
                    + GetDiscItemText(*feat_in_use));
               test_name = thisInfo.susrule_summ[rule_idx][0];
               summ = thisInfo.susrule_summ[rule_idx][2];
-if (summ.find("underscore") != string::npos) {
-}
               thisInfo.test_item_objs[test_name + "$" + summ].push_back(
                                              CConstRef<CObject>(feat_in_use));
          }
@@ -334,12 +333,15 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem> c_item)
           }
           summ2 = NStr::Join(arr, " ");
        }
+       else summ2 = summ;
        AddSubcategory(name_cat_citem, test_name + "$" + summ, &(rit->second), 
                    "feature " + summ2, "features " + summ2,  e_OtherComment);
      } 
      name_cat_citem->setting_name = GetName();
      name_cat_citem->description = fixtp_name;
-     name_cat_citem->expanded = true;
+     if (thisInfo.report & (fDiscrepancy | fOncaller | fMegaReport)) {
+        name_cat_citem->expanded = true;
+     }
      copy(name_cat_citem->item_list.begin(), name_cat_citem->item_list.end(),
           back_inserter(c_item->item_list));
      c_item->subcategories.push_back(name_cat_citem);
@@ -11060,13 +11062,24 @@ CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bi
 
 CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CSourceItem& source_item)
 {
-  block_text = block_text.substr(0, block_text.find("ORGANISM")); // double check  
+  block_text =block_text.substr(0, block_text.find("ORGANISM")); // double check
   return unified_notify(block_text, ctx, source_item, 
-                                       CFlatFileConfig::fGenbankBlocks_Source);
+                         CFlatFileConfig::fGenbankBlocks_Source);
 };
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CFeatureItem& feature_item)
 {
+/*
+if (block_text.find("CDS")!=string::npos 
+      && block_text.find("1..365") != string::npos
+      && block_text.find("LTSEBAI_0430") != string::npos) {
+cerr << "000block_test \n" << block_text << endl;
+const CSeq_feat& sf = feature_item.GetFeat().GetOriginalFeature();
+cerr << "000 sf\n"
+ << MSerial_AsnText << sf << endl;
+exit(1);
+}
+*/
    size_t pos = block_text.find("/translation=\"");
    string trans_str, strtmp;
    if (pos != string::npos) {
@@ -11089,12 +11102,24 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
   block_text 
     =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
 
+/*
+if (block_text.find("flagellar basal body P-ring biosynthesis") != string::npos) 
+cerr << "block:  \n" << block_text << endl;
+
+if (block_text.find("1..365") != string::npos) 
+cerr << "block111\n" << block_text << endl;
+*/
+
   //ITERATE (Str2UInt, it, thisInfo.whole_word) {
-  string strtmp;
   ITERATE (Str2CombDt, it, thisInfo.fix_data) {
+     string strtmp;
      CConstRef <CObject> obj_ref;
      if (CTestAndRepData :: DoesStringContainPhrase( 
-                           block_text, it->first, false,  it->second.b_val)){
+                           block_text, it->first, false,  it->second.b_val)) {
+/*
+if (block_text.find("1..365") != string::npos) 
+cerr << "block333\n" << block_text << endl;
+*/
        switch (which_block) {
          case CFlatFileConfig::fGenbankBlocks_Locus: {
                  strtmp = m_mol_desc; 
@@ -11127,6 +11152,10 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
               const CFeatureItemBase& feat_item 
                             = dynamic_cast<const CFeatureItemBase&> (flat_item);
               const CSeq_feat& sf = feat_item.GetFeat().GetOriginalFeature();
+/*
+if (block_text.find("1..365") != string::npos)
+cerr << "sf \n" << MSerial_AsnText << sf << endl;
+*/
               strtmp = GetDiscItemText(sf);
               obj_ref.Reset(&sf);
               break;
@@ -11136,6 +11165,11 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
        };
        strtmp 
          = thisInfo.fix_data[it->first].s_val + "$" + it->first + "#" + strtmp;
+if (strtmp.find("flagellar basal body P-ring biosynthesis") != string::npos) {
+cerr << "Which block " << which_block << endl;
+cerr << "strtmp " << strtmp << endl;
+cerr << "222block \n" << block_text << endl;
+}
        thisInfo.test_item_list[m_setting_name].push_back(strtmp);
        strtmp = m_setting_name + "$" + thisInfo.fix_data[it->first].s_val 
                  + "#" + it->first;
@@ -13378,16 +13412,20 @@ void CSeqEntry_on_comment :: TestOnObj(const CSeq_entry& seq_entry)
   thisTest.is_Comment_run = true;
 
   unsigned i=0;
-  string desc, strtmp;
+  string desc, strtmp, comm1;
   bool run_has = (thisTest.tests_run.find(GetName_has()) != end_it);
   bool run_mix = (thisTest.tests_run.find(GetName_mix()) != end_it);
 
+  m_all_same = true;
+  if (!comm_seqdesc.empty()) {
+     comm1 = comm_seqdesc[0]->GetComment();
+  }
   ITERATE (vector <const CSeqdesc*>, it, comm_seqdesc) {
      CConstRef <CObject> feat_ref (*it);
      desc = GetDiscItemText(**it, *(comm_seqdesc_seqentry[i])); 
      // ONCALLER_COMMENT_PRESENT
      if (run_has) {
-        if (m_all_same && comm_seqdesc[0]->GetComment() != (*it)->GetComment()){
+        if (m_all_same && comm1 != (*it)->GetComment()){
              m_all_same  = false; 
         }
         thisInfo.test_item_list[GetName_has()].push_back(desc);
@@ -13440,7 +13478,7 @@ bool CSeqEntry_test_on_pub :: IsNameCapitalizationOk(const string& name)
   bool need_cap = true, rval = true, found;
   bool needed_lower = false, found_lower = false;
 
-  size_t pos;
+  size_t pos, pos2;
   pos = 0;
   while (pos < name.size() && rval) {
     if (isalpha (name[pos])) {
@@ -13458,10 +13496,10 @@ bool CSeqEntry_test_on_pub :: IsNameCapitalizationOk(const string& name)
           ITERATE (vector <string>, it, thisInfo.short_auth_nms) {
             len = (*it).size();
             if (name.size() > len 
-                  && ((pos = name.find(*it, pos)) != string::npos) 
+                  && ((pos2 = name.find(*it, pos)) != string::npos) 
                   && name[len] == ' ') {
                found = true;
-               pos += len -1; //in order to set need_cap correctly
+               pos = pos2 + len -1; //in order to set need_cap correctly
                break;
             }
           }

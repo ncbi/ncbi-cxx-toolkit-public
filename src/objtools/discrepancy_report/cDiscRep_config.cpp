@@ -534,6 +534,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     // ini. summ_susrule
     CSummarizeSusProdRule summ_susrule;
 
+//unsigned ridx = 0;
     ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                        thisInfo.suspect_prod_rules->Get()) {
        arr.clear();
@@ -550,7 +551,13 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
        arr.push_back(strtmp);  // test_name
        arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
        arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));
-
+/*
+if (arr[2].find("Three") != string::npos) {
+  cerr << "arr.sz " << arr.size() << endl;
+cerr << "ridx " << ridx  << endl;
+}
+ridx ++;
+*/
        thisInfo.susrule_summ.push_back(arr);
     }
 
@@ -1807,13 +1814,13 @@ static const s_test_property test_list[] = {
    {"TEST_DEFLINE_PRESENT", 
      fGenomes | fDiscrepancy | fAsndisc| fMegaReport, "Test defline existence"},
    {"DISC_FLATFILE_FIND_ONCALLER", 
-     fAsndisc | fOncaller | fMegaReport, 
+     fGenomes | fAsndisc | fOncaller | fMegaReport, 
      "Flatfile representation of object contains suspect text"},
    {"DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE", 
-     fGenomes | fMegaReport | fOncaller, 
+     fMegaReport | fOncaller, 
      "Flatfile representation of object contains unfixable suspect text"},
    {"DISC_FLATFILE_FIND_ONCALLER_FIXABLE", 
-     fGenomes | fMegaReport | fOncaller, 
+     fMegaReport | fOncaller, 
      "Flatfile representation of object contains suspect text"},
    {"TEST_ALIGNMENT_HAS_SCORE", 
      fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
@@ -3403,7 +3410,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp)
                                     != thisInfo.test_item_list.end()) {
-// cerr << "GoGetRep " << strtmp << endl;
+ cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             c_item->expanded = x_IsExpandable(strtmp);
@@ -3413,16 +3420,18 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
             }
             (*it)->GetReport(c_item);
 
+/*
             // adjustment of setting_name
             if (strtmp.find("global") != string::npos 
                    || strtmp.find("oncaller") != string::npos) {
                c_item->setting_name= strtmp.substr(0, strtmp.find_last_of("_"));
             }
+*/
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            c_item->expanded = x_IsExpandable(strtmp);
            (*it)->GetReport(c_item);
-// cerr << "GoGetRep " << (*it)->GetName() << endl;
+ cerr << "GoGetRep " << (*it)->GetName() << endl;
        }
    }
 };
