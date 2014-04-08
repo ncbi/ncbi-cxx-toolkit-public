@@ -2130,7 +2130,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CSeqEntry_on_comment : public CSeqEntryTestAndRepData
   {
     public:
-      CSeqEntry_on_comment () { m_all_same = true; };
       virtual ~CSeqEntry_on_comment () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
