@@ -49,6 +49,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/fasta.hpp>
 
+#include <objtools/cleanup/cleanup.hpp>
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/flat_expt.hpp>
@@ -112,6 +113,7 @@ private:
     CNcbiOstream*               m_Os;           // Output stream
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
     auto_ptr<ICanceled>         m_pCanceledCallback;
+    bool                        m_do_cleanup;
 };
 
 
@@ -344,6 +346,8 @@ int CAsn2FlatApp::Run(void)
         m_FFGenerator->SetAnnotSelector().SetResolveAll();
     }
 
+    m_do_cleanup = ( ! args["nocleanup"]);
+
     auto_ptr<CObjectIStream> is;
     is.reset( x_OpenIStream( args ) );
     if (is.get() == NULL) {
@@ -465,6 +469,10 @@ void CAsn2FlatApp::HandleSeqSubmit(CObjectIStream& is )
     if (sub->IsSetSub()  &&  sub->IsSetData()) {
         CRef<CScope> scope(new CScope(*m_Objmgr));
         scope->AddDefaults();
+        if ( m_do_cleanup ) {
+            CCleanup cleanup;
+            cleanup.BasicCleanup( *sub );
+        }
         m_FFGenerator->Generate(*sub, *scope, *m_Os);
     }
 }
@@ -514,6 +522,22 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
+
+    CSeq_entry_EditHandle seeh = seh.GetEditHandle();
+    CRef<CSeq_entry> tmp_se (new CSeq_entry);
+    tmp_se->Assign(*seeh.GetCompleteSeq_entry());
+
+    if ( m_do_cleanup ) {
+        CCleanup cleanup;
+        cleanup.BasicCleanup( *tmp_se );
+
+        seeh.SelectNone();
+        switch (tmp_se->Which()) {
+            case CSeq_entry::e_Seq:  seeh.SelectSeq(tmp_se->SetSeq());  break;
+            case CSeq_entry::e_Set:  seeh.SelectSet(tmp_se->SetSet());  break;
+            default:                 _TROUBLE;
+        }
+    }
 
     // generate flat file
     if ( args["from"]  ||  args["to"] ) {
