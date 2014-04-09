@@ -826,6 +826,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCF<CUB>	c	Colleccion de Cuttivos Finlay",
 "CCF<CZE>	c	Culture Collection of Fungi",
 "CCFC	c	Canadian Collection of Fungal Cultures",
+"CCFEE	c	Culture Collection of Fungi From Extreme Environments",
 "CCFHE	s	Cornwall College of Further and Higher Education, Natural Sciences Department",
 "CCFL	s	Chad National Museum",
 "CCFVB	c	Facultat de Veterinaria, Universitat Autonoma de Barcelona",
