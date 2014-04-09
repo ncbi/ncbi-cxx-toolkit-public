@@ -55,7 +55,13 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/PCRReactionSet.hpp>
+#include <objects/seqfeat/PCRReaction.hpp>
+#include <objects/seqfeat/PCRPrimer.hpp>
+#include <objects/seqfeat/PCRPrimerSet.hpp>
+#include <objects/seqfeat/PCRPrimerName.hpp>
+#include <objects/seqfeat/PCRPrimerSeq.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -1091,6 +1097,75 @@ void AddContact(node::iterator& organization, CConstRef<CAuth_list> auth_list)
 }
 
 
+void s_AddSamplePair(node& sample_attrs, string attribute_name, string val)
+{
+    sample_attrs.insert(node("Attribute", val.c_str()))
+                    ->get_attributes().insert("attribute_name", attribute_name.c_str());
+
+}
+
+
+void AddBioSourceToAttributes(node& organism, node& sample_attrs, const CBioSource& src)
+{
+    if (src.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
+            if ((*it)->IsSetSubtype() && (*it)->IsSetName()) {
+                string attribute_name = "";
+                if ((*it)->GetSubtype() == CSubSource::eSubtype_other) {
+                    attribute_name = "subsrc_note";
+                } else {
+                    attribute_name = CSubSource::GetSubtypeName((*it)->GetSubtype()); 
+                }
+                s_AddSamplePair(sample_attrs, attribute_name, (*it)->GetName());
+            }
+        }
+        if (src.IsSetPcr_primers()) {
+            ITERATE(CBioSource::TPcr_primers::Tdata, it, src.GetPcr_primers().Get()) {
+                if ((*it)->IsSetForward()) {
+                    ITERATE(CPCRReaction::TForward::Tdata, fit, (*it)->GetForward().Get()) {
+                        if ((*fit)->IsSetName()) {
+                            s_AddSamplePair(sample_attrs, kPcrForwardName, (*fit)->GetName().Get());
+                        }
+                        if ((*fit)->IsSetSeq()) {
+                            s_AddSamplePair(sample_attrs, kPcrForwardSeq, (*fit)->GetSeq().Get());
+                        }                        
+                    }
+                }
+                if ((*it)->IsSetReverse()) {
+                    ITERATE(CPCRReaction::TForward::Tdata, rit, (*it)->GetReverse().Get()) {
+                        if ((*rit)->IsSetName()) {
+                            s_AddSamplePair(sample_attrs, kPcrReverseName, (*rit)->GetName().Get());
+                        }
+                        if ((*rit)->IsSetSeq()) {
+                            s_AddSamplePair(sample_attrs, kPcrReverseSeq, (*rit)->GetSeq().Get());
+                        }                        
+                    }
+                }
+            }
+        }
+
+        if (src.IsSetOrg()) {
+            if (src.GetOrg().IsSetTaxname()) {
+                organism.insert(node("OrganismName", src.GetOrg().GetTaxname().c_str()));
+            }
+            if (src.GetOrg().IsSetOrgMod()) {
+                ITERATE(COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
+                    if ((*it)->IsSetSubtype() && (*it)->IsSetSubname()) {
+                        string attribute_name = "";
+                        if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
+                            attribute_name = "orgmod_note";
+                        } else {
+                            attribute_name = COrgMod::GetSubtypeName((*it)->GetSubtype()); 
+                        }
+                        s_AddSamplePair(sample_attrs, attribute_name, (*it)->GetSubname());
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 void AddStructuredCommentToAttributes(node& sample_attrs, const CUser_object& usr)
 {
 	TStructuredCommentTableColumnList comm_fields = GetStructuredCommentFields(usr);
@@ -1286,27 +1361,11 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
 
     sample->insert(node("Package", "Generic.1.0"));
 
-    string tax_id = "";
-    string taxname = "";
     node sample_attrs("Attributes");
 	if (src_desc_ci) {
 		const CBioSource& src = src_desc_ci->GetSource();
-	    TSrcTableColumnList src_fields = GetSourceFields(src);
-		ITERATE(TSrcTableColumnList, it, src_fields) {
-            if (NStr::EqualNocase((*it)->GetLabel(), kTaxId)) {
-                tax_id = (*it)->GetFromBioSource(src);
-            } else if (NStr::EqualNocase((*it)->GetLabel(), kOrganismName)) {
-                taxname = (*it)->GetFromBioSource(src);
-            } else {
-                string attribute_name = (*it)->GetLabel();
-                string val = (*it)->GetFromBioSource(src);
-                sample_attrs.insert(node("Attribute", val.c_str()))
-                    ->get_attributes().insert("attribute_name", attribute_name.c_str());
-            }
-		}
+        AddBioSourceToAttributes(*organism, sample_attrs, src);
     }
-
-    organism->insert(node("OrganismName", taxname.c_str()));
     
     if (m_CompareStructuredComments) {
 	    while (comm_desc_ci) {

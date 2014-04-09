@@ -50,6 +50,11 @@ BEGIN_SCOPE(objects)
 
 const string kOrganismName = "Organism Name";
 const string kTaxId = "Tax ID";
+const string kPcrForwardName = "fwd-primer-name";
+const string kPcrForwardSeq = "fwd-primer-seq";
+const string kPcrReverseName = "rev-primer-name";
+const string kPcrReverseSeq = "rev-primer-seq";
+
 
 class CSrcTableColumnBase : public CObject
 {
@@ -143,7 +148,7 @@ public:
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
         const objects::CBioSource & in_out_bioSource ) const;
-    virtual string GetLabel() const { return "fwd-primer-seq"; }
+    virtual string GetLabel() const { return kPcrForwardSeq; }
 };
 
 
@@ -157,7 +162,7 @@ public:
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
         const objects::CBioSource & in_out_bioSource ) const;
-    virtual string GetLabel() const { return "rev-primer-seq"; }
+    virtual string GetLabel() const { return kPcrReverseSeq; }
 };
 
 
@@ -171,7 +176,7 @@ public:
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
         const objects::CBioSource & in_out_bioSource ) const;
-    virtual string GetLabel() const { return "fwd-primer-name"; }
+    virtual string GetLabel() const { return kPcrForwardName; }
 };
 
 
@@ -185,7 +190,7 @@ public:
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
         const objects::CBioSource & in_out_bioSource ) const;
-    virtual string GetLabel() const { return "rev-primer-name"; }
+    virtual string GetLabel() const { return kPcrReverseName; }
 };
 
 
