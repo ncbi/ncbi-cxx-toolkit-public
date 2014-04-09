@@ -283,6 +283,9 @@ void CAsn2FlatApp::Init(void)
 
     // misc
     {{
+         // cleanup
+         arg_desc->AddFlag("cleanup",
+                           "Do internal data cleanup prior to formatting");
          // no-cleanup
          arg_desc->AddFlag("nocleanup",
                            "Do not perform data cleanup prior to formatting");
@@ -703,7 +706,8 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
 
     CFlatFileConfig cfg(
         format, mode, style, flags, view, gff_options, genbank_blocks, 
-        genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get() );
+        genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get(),
+        args["cleanup"] );
     return new CFlatFileGenerator(cfg);
 }
 
@@ -839,7 +843,9 @@ CAsn2FlatApp::TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
             TFlagDescr(CFlatFileConfig::fHideGapFeatures,
                        "CFlatFileConfig::fHideGapFeatures"),
             TFlagDescr(CFlatFileConfig::fNeverTranslateCDS,
-                       "CFlatFileConfig::fNeverTranslateCDS")
+                       "CFlatFileConfig::fNeverTranslateCDS"),
+            TFlagDescr(CFlatFileConfig::fShowSeqSpans,
+                       "CFlatFileConfig::fShowSeqSpans")
         };
         static size_t kArraySize = sizeof(kDescrTable) / sizeof(TFlagDescr);
         for (size_t i = 0;  i < kArraySize;  ++i) {
