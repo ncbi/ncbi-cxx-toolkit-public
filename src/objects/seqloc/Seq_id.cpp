@@ -47,6 +47,7 @@
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
@@ -2219,6 +2220,150 @@ bool CSeq_id::IsValid(const CSeq_id& id, TParseFlags flags)
     return false;
 }
 
+
+CTextseq_id* s_GetTextseq_id(const CSeq_id::E_Choice& choice, CSeq_id& match)
+{
+    switch ( choice ) {
+    case CSeq_id::e_Genbank:
+        return &match.SetGenbank();
+    case CSeq_id::e_Embl:
+        return &match.SetEmbl();
+    case CSeq_id::e_Pir:
+        return &match.SetPir();
+    case CSeq_id::e_Swissprot:
+        return &match.SetSwissprot();
+    case CSeq_id::e_Other:
+        return &match.SetOther();
+    case CSeq_id::e_Ddbj:
+        return &match.SetDdbj();
+    case CSeq_id::e_Prf:
+        return &match.SetPrf();
+    case CSeq_id::e_Tpg:
+        return &match.SetTpg();
+    case CSeq_id::e_Tpe:
+        return &match.SetTpe();
+    case CSeq_id::e_Tpd:
+        return &match.SetTpd();
+    case CSeq_id::e_Gpipe:
+        return &match.SetGpipe();
+    case CSeq_id::e_Named_annot_track:
+        return &match.SetNamed_annot_track();
+    default:
+        break;
+    }
+    return 0;
+}
+
+
+void CSeq_id::GetMatchingTextseqIds(TSeqIdHandles& matches) const
+{
+    const CTextseq_id* orig = GetTextseq_Id();
+    if ( !orig ) return;
+
+    bool A = orig->IsSetAccession();
+    CTextseq_id::TAccession av = A ? orig->GetAccession() : kEmptyStr;
+    bool v = orig->IsSetVersion();
+    CTextseq_id::TVersion vv = v ? orig->GetVersion() : 0;
+    bool N = orig->IsSetName();
+    CTextseq_id::TName nv = N ? orig->GetName() : kEmptyStr;
+    bool r = orig->IsSetRelease();
+    CTextseq_id::TRelease rv = r ? orig->GetRelease() : kEmptyStr;
+
+    CSeq_id match;
+    CTextseq_id& ti = *s_GetTextseq_id(Which(), match);
+
+    if (A  &&  (v  ||  N  ||  r)) {
+        // Accession only
+        ti.SetAccession(av);
+        matches.insert(CSeq_id_Handle::GetHandle(match));
+        if (v  &&  (N  ||  r)) {
+            // A.v
+            ti.SetVersion(vv);
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+        }
+        if ( N ) {
+            // Name only
+            ti.Reset();
+            ti.SetName(nv);
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+            if (v  ||  r) {
+                if ( r ) {
+                    // N.r
+                    ti.SetRelease(rv);
+                    matches.insert(CSeq_id_Handle::GetHandle(match));
+                    ti.ResetRelease();
+                }
+                // A + N
+                ti.SetAccession(av);
+                matches.insert(CSeq_id_Handle::GetHandle(match));
+                if (v  &&  r) {
+                    // A.v + N
+                    ti.SetVersion(vv);
+                    matches.insert(CSeq_id_Handle::GetHandle(match));
+                    // A + N.r
+                    ti.ResetVersion();
+                    ti.SetRelease(rv);
+                    matches.insert(CSeq_id_Handle::GetHandle(match));
+                }
+            }
+        }
+    }
+    else if (N  &&  (v  ||  r)) {
+        // N only
+        ti.Reset();
+        ti.SetName(nv);
+        matches.insert(CSeq_id_Handle::GetHandle(match));
+        if (v  &&  r) {
+            // N.r
+            ti.SetRelease(rv);
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+        }
+    }
+}
+
+
+void CSeq_id::GetMatchingIds(TSeqIdHandles& matches) const
+{
+    switch ( Which() ) {
+    // CTextseq_id
+    case CSeq_id::e_Genbank:
+    case CSeq_id::e_Embl:
+    case CSeq_id::e_Pir:
+    case CSeq_id::e_Swissprot:
+    case CSeq_id::e_Other:
+    case CSeq_id::e_Ddbj:
+    case CSeq_id::e_Prf:
+    case CSeq_id::e_Tpg:
+    case CSeq_id::e_Tpe:
+    case CSeq_id::e_Tpd:
+    case CSeq_id::e_Gpipe:
+    case CSeq_id::e_Named_annot_track:
+        GetMatchingTextseqIds(matches);
+        break;
+
+    // CPDB_seq_id
+    case CSeq_id::e_Pdb:
+        // 'rel' is optional
+        if ( GetPdb().IsSetRel() ) {
+            CSeq_id match;
+            match.Assign(*this);
+            match.SetPdb().ResetRel();
+            matches.insert(CSeq_id_Handle::GetHandle(match));
+        }
+        break;
+
+    // Other types have no matching versions.
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Local:     // CObject_id
+    case CSeq_id::e_Gibbsq:    // int
+    case CSeq_id::e_Gibbmt:    // int
+    case CSeq_id::e_Giim:      // CGiimport_id
+    case CSeq_id::e_Patent:    // CPatent_seq_id
+    case CSeq_id::e_General:   // CDbtag
+    case CSeq_id::e_Gi:        // TGi
+        return;
+    }
+}
 
 
 SSeqIdRange::SSeqIdRange(const CTempString& s, TFlags flags)

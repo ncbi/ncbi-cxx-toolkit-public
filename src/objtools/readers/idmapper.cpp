@@ -223,6 +223,40 @@ void CIdMapper::MapObject(CSerialObject& object)
 };
 
 
+// Composite mapper
+
+CAtomicCounter_WithAutoInit CIdMapperComposite::SNode::sm_Counter(0);
+
+void CIdMapperComposite::AddMapper(IIdMapper* mapper,
+                                    TPriority  priority,
+                                    EOwnership ownership)
+{
+    m_Mappers.insert(SNode(mapper, priority, ownership));
+}
+
+
+CSeq_id_Handle CIdMapperComposite::Map(const CSeq_id_Handle& idh)
+{
+    CSeq_id_Handle ret;
+    ITERATE(TMappers, it, m_Mappers) {
+        ret = it->m_Mapper->Map(idh);
+        if (ret  &&  ret != idh) break;
+    }
+    return ret ? ret : idh;
+}
+
+
+CRef<CSeq_loc> CIdMapperComposite::Map(const CSeq_loc& loc)
+{
+    CRef<CSeq_loc> ret;
+    ITERATE(TMappers, it, m_Mappers) {
+        ret = it->m_Mapper->Map(loc);
+        if ( ret ) break;
+    }
+    return ret;
+}
+
+
 const char* CIdMapperException::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {

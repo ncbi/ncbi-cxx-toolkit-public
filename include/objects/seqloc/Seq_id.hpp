@@ -46,6 +46,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 
+#include <set>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -61,6 +63,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
 class CBioseq;
+class CSeq_id_Handle;
 
 
 class NCBI_SEQLOC_EXPORT CSeq_id : public CSeq_id_Base,
@@ -558,6 +561,14 @@ public:
     /// not so efficient.
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
+
+    typedef set<CSeq_id_Handle> TSeqIdHandles;
+    /// Collect partially matching seq-ids: no-version, no-name etc.
+    /// The original id is not added to the set.
+    void GetMatchingIds(TSeqIdHandles& matches) const;
+    /// Collect partially matching textseq-ids.
+    /// @sa GetMatchingIds
+    void GetMatchingTextseqIds(TSeqIdHandles& matches) const;
 
 private:
     // returns next type if determined along the way

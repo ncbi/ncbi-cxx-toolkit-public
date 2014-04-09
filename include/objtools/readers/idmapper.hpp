@@ -119,6 +119,66 @@ protected:
 };
 
 
+/// IdMapper implementation combining multiple id mappers with the selected
+/// priorities.
+///
+class NCBI_XOBJREAD_EXPORT CIdMapperComposite : public CIdMapper
+{
+public:
+
+    /// Sub-mapper priority. Default is zero, positive values are for
+    /// higher priorities. Mappers with the same priorities are checked
+    /// in the order of their addition to the composite mapper.
+    enum EPriority {
+        kPriority_Default = 0
+    };
+    typedef int TPriority;
+
+    CIdMapperComposite(void) {}
+
+    /// Add sub-mapper. By default the composite mapper owns the added
+    /// object.
+    void AddMapper(IIdMapper* mapper,
+                   TPriority  priority = kPriority_Default,
+                   EOwnership ownership = eTakeOwnership);
+
+    virtual CSeq_id_Handle Map(const CSeq_id_Handle&);
+
+    virtual CRef<CSeq_loc> Map(const CSeq_loc& loc);
+
+private:
+    typedef int TOrder;
+    struct SNode {
+        typedef CIdMapperComposite::TPriority TPriority;
+        typedef CIdMapperComposite::TOrder TOrder;
+
+        AutoPtr<IIdMapper>    m_Mapper;
+        TPriority             m_Priority;
+        TOrder                m_Order;
+        static CAtomicCounter_WithAutoInit sm_Counter;
+
+        SNode(IIdMapper* mapper, TPriority priority, EOwnership ownership)
+            : m_Mapper(mapper, ownership),
+              m_Priority(priority)
+        {
+            m_Order = sm_Counter.Add(1);
+        }
+
+        bool operator<(const SNode& node) const
+        {
+            // Higher priority goes first
+            if (m_Priority != node.m_Priority) return m_Priority > node.m_Priority;
+            // Lower order goes first
+            return m_Order < node.m_Order;
+        }
+    };
+
+    typedef set<SNode> TMappers;
+
+    TMappers m_Mappers;
+};
+
+
 /// IdMapper implementation using an external configuration file
 ///
 /// The internal mapping table will be initialized during IdMapper construction
@@ -271,13 +331,33 @@ public:
           m_strDatabase(strDatabase)
     {};
 
-    virtual CSeq_id_Handle
-    Map(
-        const CSeq_id_Handle& from );
+    virtual CSeq_id_Handle Map(const CSeq_id_Handle& from);
 
 protected:
     const std::string m_strServer;
     const std::string m_strDatabase;
+};
+
+
+/// IdMapper implementaion using CScope.
+///
+/// Non-versioned ids are mapped to versioned ones referencing the focus
+/// sequence or its parts.
+///
+class NCBI_XOBJREAD_EXPORT CIdMapperScope : public CIdMapper
+{
+public:
+    /// Initialize the mapper using the scope and the focus seq-id handle.
+    CIdMapperScope(CScope& scope, const CSeq_id_Handle& focus_idh);
+
+    /// Initialize the mapper using the scope and the focus seq-id.
+    CIdMapperScope(CScope& scope, const CSeq_id& focus_id);
+
+private:
+    void x_Init(const CSeq_id_Handle& focus_idh);
+    void x_AddMappings(const CBioseq_Handle& bh);
+
+    CRef<CScope> m_Scope;
 };
 
 
