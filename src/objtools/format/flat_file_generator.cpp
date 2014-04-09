@@ -45,6 +45,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 
+#include <objtools/cleanup/cleanup.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/item_formatter.hpp>
@@ -111,6 +112,22 @@ void CFlatFileGenerator::Generate
  CFlatItemOStream& item_os)
 {
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
+
+    CSeq_entry_EditHandle seeh = entry.GetEditHandle();
+    CRef<CSeq_entry> tmp_se (new CSeq_entry);
+    tmp_se->Assign(*seeh.GetCompleteSeq_entry());
+
+    if ( m_Ctx->GetConfig().BasicCleanup() ) {
+        CCleanup cleanup;
+        cleanup.BasicCleanup( *tmp_se );
+
+        seeh.SelectNone();
+        switch (tmp_se->Which()) {
+            case CSeq_entry::e_Seq:  seeh.SelectSeq(tmp_se->SetSeq());  break;
+            case CSeq_entry::e_Set:  seeh.SelectSet(tmp_se->SetSet());  break;
+            default:                 _TROUBLE;
+        }
+    }
 
     CRef<CFlatItemOStream> pItemOS( & item_os );
     // If there is a ICancel callback, wrap the item_os so

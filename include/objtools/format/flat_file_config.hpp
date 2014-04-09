@@ -331,7 +331,8 @@ public:
                     TGffOptions gff_options = fGffGTFCompat,
                     TGenbankBlocks genbank_blocks = fGenbankBlocks_All,
                     CGenbankBlockCallback* pGenbankBlockCallback = NULL,
-                    const ICanceled * pCanceledCallback = NULL );
+                    const ICanceled * pCanceledCallback = NULL,
+                    bool basicCleanup = false );
     // destructor
     ~CFlatFileConfig(void);
 
@@ -583,6 +584,12 @@ public:
         return m_pCanceledCallback;
     }
 
+    // -- BasicCleanup
+    // getters
+    const bool BasicCleanup(void) const { return m_BasicCleanup; }
+    // setters
+    void BasicCleanup(bool clean) { m_BasicCleanup = clean; }
+
     /// This throws a CFlatException if 
     /// flatfile generation cancellation has been requested via ICanceled.
     void ThrowIfCanceled(void) const {
@@ -612,6 +619,7 @@ private:
     TGenbankBlocks m_fGenbankBlocks;
     CRef<CGenbankBlockCallback> m_GenbankBlockCallback;
     const ICanceled * m_pCanceledCallback; // instance does NOT own it
+    bool        m_BasicCleanup;
 };
 
 

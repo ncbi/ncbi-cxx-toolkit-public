@@ -304,12 +304,14 @@ CFlatFileConfig::CFlatFileConfig(
     TGffOptions gff_options,
     TGenbankBlocks genbank_blocks,
     CGenbankBlockCallback* pGenbankBlockCallback,
-    const ICanceled * pCanceledCallback ) :
+    const ICanceled * pCanceledCallback,
+    bool basicCleanup ) :
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
     m_Flags(flags), m_RefSeqConventions(false), m_GffOptions(gff_options),
     m_fGenbankBlocks(genbank_blocks),
     m_GenbankBlockCallback(pGenbankBlockCallback),
-    m_pCanceledCallback(pCanceledCallback)
+    m_pCanceledCallback(pCanceledCallback),
+    m_BasicCleanup(basicCleanup)
 {
     // GFF/GFF3 and FTable always require master style
     if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
