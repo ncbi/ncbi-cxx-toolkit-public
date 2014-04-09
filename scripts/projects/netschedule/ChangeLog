@@ -1,6 +1,9 @@
-Release 4.17.0 based on TRUNK (2014-04-01)
+Release 4.17.0 based on TRUNK (2014-04-09)
 
 Improvements:
+    * NetSchedule -- make SID, IP and HID an attribute of a job
+      (JIRA: CXX-4803)
+    * NetSchedule -- accept and log (P)HID (JIRA: CXX-4799)
     * NetSchedule: job status where a list of jobs is provided (JIRA: CXX-4556)
     * NetSchedule to provide the same information for QINF2 as it does for
       GETP2 (JIRA: CXX-4575)
