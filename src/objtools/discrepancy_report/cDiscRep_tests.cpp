@@ -4148,7 +4148,8 @@ void CBioseq_TEST_BAD_GENE_NAME :: GetReport(CRef <CClickableItem> c_item)
   Str2Strs nm2genes;
   GetTestItemList(c_item->item_list, nm2genes);
   c_item->item_list.clear();
-  if ((thisTest.tests_run.find(GetName_bgnm()) != end_it)) {
+  if ((thisInfo.test_item_list.find(GetName_bgnm()) 
+          != thisInfo.test_item_list.end())) {
      AddSubcategory(c_item, 
                     GetName_bgnm(), 
                     &thisInfo.test_item_list[GetName_bgnm()],
@@ -11165,11 +11166,13 @@ cerr << "sf \n" << MSerial_AsnText << sf << endl;
        };
        strtmp 
          = thisInfo.fix_data[it->first].s_val + "$" + it->first + "#" + strtmp;
+/*
 if (strtmp.find("flagellar basal body P-ring biosynthesis") != string::npos) {
 cerr << "Which block " << which_block << endl;
 cerr << "strtmp " << strtmp << endl;
 cerr << "222block \n" << block_text << endl;
 }
+*/
        thisInfo.test_item_list[m_setting_name].push_back(strtmp);
        strtmp = m_setting_name + "$" + thisInfo.fix_data[it->first].s_val 
                  + "#" + it->first;
@@ -11233,14 +11236,14 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem> c_
    GetTestItemList(c_item->item_list, m_fixable2ls); 
    c_item->item_list.clear();
    m_citem1 = true;
-   if (thisTest.tests_run.find(GetName()) != end_it
-          || thisTest.tests_run.find(GetName_nofix()) != end_it) {
+   if (thisTest.tests_run.find(GetName()) != end_it) {
        AddCItemToReport("no", GetName(), c_item);
+       AddCItemToReport("yes", GetName(), c_item); 
+   }
+   if (thisTest.tests_run.find(GetName_nofix()) != end_it) {
        AddCItemToReport("no", GetName_nofix(), c_item);
    }
-   if (thisTest.tests_run.find(GetName()) != end_it
-          || thisTest.tests_run.find(GetName_fix()) != end_it) {
-      AddCItemToReport("yes", GetName(), c_item); 
+   if (thisTest.tests_run.find(GetName_fix()) != end_it) {
       AddCItemToReport("yes", GetName_fix(), c_item); 
    }
 };
