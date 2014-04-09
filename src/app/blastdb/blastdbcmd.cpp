@@ -567,7 +567,7 @@ void CBlastDBCmdApp::Init()
             "\t\t%S means scientific name\n"
 #if _BLAST_DEBUG
             "\t\t%B means BLAST name\n"     /* Is this useful outside NCBI? */
-            "\t\t%n means a comma separated list of links integers\n"
+            "\t\t%n means a list of links integers separated by ';'\n"
 #endif /* _BLAST_DEBUG */
             "\t\t%K means taxonomic super kingdom\n"
             "\t\t%P means PIG\n"

@@ -49,6 +49,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 #define NOT_AVAILABLE "N/A"
+#define SEPARATOR ";"
 
 void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     m_Defline.Reset();
@@ -183,19 +184,19 @@ string CBlastDBExtractor::ExtractLinksInteger()
             if (seqid->IsGi()) {
                 if (seqid->GetGi() == m_Gi) {
                     ITERATE(CBlast_def_line::TLinks, links_int, (*itr)->GetLinks()) {
-                        retval += NStr::IntToString(*links_int) + ",";
+                        retval += NStr::IntToString(*links_int) + SEPARATOR;
                     }
                     break;
                 }
             } else {
                 ITERATE(CBlast_def_line::TLinks, links_int, (*itr)->GetLinks()) {
-                    retval += NStr::IntToString(*links_int) + ",";
+                    retval += NStr::IntToString(*links_int) + SEPARATOR;
                 }
             }
         }
     }
     if (retval.size()) {
-        retval.erase(retval.size()-1, 1);   // remove the last comma
+        retval.erase(retval.size()-1, 1);   // remove the last separator
     }
 
     return (retval.empty() ? NOT_AVAILABLE : retval);
@@ -424,7 +425,7 @@ string CBlastDBExtractor::ExtractMaskingData() {
 
     CNcbiOstrstream out;
     ITERATE(CSeqDB::TSequenceRanges, range, masked_ranges) {
-        out << range->first << "-" << range->second << ";";
+        out << range->first << "-" << range->second << SEPARATOR;
     }
     return CNcbiOstrstreamToString(out);
 #endif
