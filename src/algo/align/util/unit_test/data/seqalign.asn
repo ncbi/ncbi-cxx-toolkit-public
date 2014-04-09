@@ -4281,3 +4281,439 @@ Seq-align ::= {
     product-length 2084
   }
 }
+Seq-align ::= {
+  type global,
+  dim 2,
+  score { -- SEQUENCE OF Score --
+    { -- Score --
+      id str "matches",
+      value int 676
+    },
+    { -- Score --
+      id str "identity",
+      value real { 971264367816092, 10, -15 }
+    },
+    { -- Score --
+      id str "splices",
+      value int 6
+    },
+    { -- Score --
+      id str "consensus_splices",
+      value int 6
+    },
+    { -- Score --
+      id str "product_coverage",
+      value real { 98981077147016, 10, -14 }
+    },
+    { -- Score --
+      id str "exon_identity",
+      value real { 981132075471698, 10, -15 }
+    },
+    { -- Score --
+      id str "pct_identity_gap",
+      value real { 981132075471698, 10, -13 }
+    },
+    { -- Score --
+      id str "num_ident",
+      value int 676
+    },
+    { -- Score --
+      id str "num_mismatch",
+      value int 2
+    },
+    { -- Score --
+      id str "pct_identity_ungap",
+      value real { 997050147492625, 10, -13 }
+    },
+    { -- Score --
+      id str "gap_count",
+      value int 8
+    },
+    { -- Score --
+      id str "pct_coverage",
+      value real { 986899563318777, 10, -13 }
+    },
+    { -- Score --
+      id str "rank",
+      value int 1
+    }
+  },
+  segs spliced { -- Spliced-seg --
+    product-id gi 15432886,
+    genomic-id gi 157696901,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons { -- SEQUENCE OF Spliced-exon --
+      { -- Spliced-exon --
+        product-start nucpos 7,
+        product-end nucpos 283,
+        genomic-start 2550486,
+        genomic-end 2550762,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 151,
+          mismatch 1,
+          match 125
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 274989013671875, 10, -12 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 996389891696751, 10, -15 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 284,
+        product-end nucpos 492,
+        genomic-start 2618937,
+        genomic-end 2619148,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 208,
+          genomic-ins 3,
+          match 1
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 206147994995117, 10, -12 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 985849056603774, 10, -15 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 493,
+        product-end nucpos 631,
+        genomic-start 2621453,
+        genomic-end 2621591,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 72,
+          product-ins 1,
+          match 13,
+          genomic-ins 1,
+          match 53
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 134151992797852, 10, -12 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 985714285714286, 10, -15 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 632,
+        product-end nucpos 686,
+        genomic-start 2622015,
+        genomic-end 2622073,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 4,
+          genomic-ins 1,
+          match 13,
+          genomic-ins 1,
+          match 13,
+          genomic-ins 1,
+          match 7,
+          mismatch 1,
+          match 2,
+          genomic-ins 2,
+          match 8,
+          product-ins 1,
+          match 6
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 419049987792969, 10, -13 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 883333333333333, 10, -15 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "TC"
+        }
+      }
+    },
+    product-length 687
+  },
+  id { -- SEQUENCE OF Object-id --
+    str "e096789a-f708-4206-b15d-43f702d571e8"
+  },
+  ext { -- SEQUENCE OF User-object --
+    { -- User-object --
+      type str "origin",
+      data { -- SEQUENCE OF User-field --
+        { -- User-field --
+          label str "algo",
+          data str "Splign:1.39.8"
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced { -- Spliced-seg --
+    product-id gi 25358097,
+    genomic-id gi 358485058,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons { -- SEQUENCE OF Spliced-exon --
+      { -- Spliced-exon --
+        product-start nucpos 4,
+        product-end nucpos 28,
+        genomic-start 2935719,
+        genomic-end 2935744,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 25,
+          genomic-ins 1
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 25, 10, 0 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 961538461538462, 10, -15 }
+          }
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        },
+        partial TRUE
+      },
+      { -- Spliced-exon --
+        product-start nucpos 29,
+        product-end nucpos 137,
+        genomic-start 2934970,
+        genomic-end 2935078,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 102,
+          mismatch 1,
+          match 6
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 106988998413086, 10, -12 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 990825688073395, 10, -15 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 138,
+        product-end nucpos 221,
+        genomic-start 2934136,
+        genomic-end 2934219,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 84
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 84, 10, 0 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 222,
+        product-end nucpos 331,
+        genomic-start 2933293,
+        genomic-end 2933402,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 110
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 11, 10, 1 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 332,
+        product-end nucpos 464,
+        genomic-start 2932881,
+        genomic-end 2933013,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 133
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 133, 10, 0 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 1, 10, 0 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 465,
+        product-end nucpos 619,
+        genomic-start 2932469,
+        genomic-end 2932623,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 34,
+          mismatch 1,
+          match 120
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 152988998413086, 10, -12 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 993548387096774, 10, -15 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 620,
+        product-end nucpos 715,
+        genomic-start 2931909,
+        genomic-end 2932003,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 30,
+          product-ins 1,
+          match 9,
+          mismatch 1,
+          match 55
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 910650024414062, 10, -13 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 979166666666667, 10, -15 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        donor-after-exon { -- Splice-site --
+          bases "GT"
+        }
+      },
+      { -- Spliced-exon --
+        product-start nucpos 716,
+        product-end nucpos 788,
+        genomic-start 2931698,
+        genomic-end 2931768,
+        parts { -- SEQUENCE OF Spliced-exon-chunk --
+          match 14,
+          product-ins 1,
+          match 31,
+          product-ins 1,
+          match 26
+        },
+        scores { -- Score-set --
+          { -- Score --
+            id str "splign",
+            value real { 671520004272461, 10, -13 }
+          },
+          { -- Score --
+            id str "idty",
+            value real { 972602739726027, 10, -15 }
+          }
+        },
+        acceptor-before-exon { -- Splice-site --
+          bases "AG"
+        },
+        partial TRUE
+      }
+    },
+    product-length 790
+  },
+  ext { -- SEQUENCE OF User-object --
+    { -- User-object --
+      type str "origin",
+      data { -- SEQUENCE OF User-field --
+        { -- User-field --
+          label str "algo",
+          data str "Splign:1.39.8"
+        }
+      }
+    }
+  }
+}
