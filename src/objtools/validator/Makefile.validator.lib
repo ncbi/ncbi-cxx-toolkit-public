@@ -15,4 +15,4 @@ WATCHERS = bollin kornbluh
 
 
 USES_LIBRARIES =  \
-    $(XFORMAT_LIBS) taxon3 valerr valid xalnmgr
+    $(XFORMAT_LIBS) valerr xalnmgr xobjedit
