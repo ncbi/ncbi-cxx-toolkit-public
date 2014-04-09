@@ -201,10 +201,11 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_Mask(request.job_mask),
     m_GroupId(0),
     m_LastTouch(),
-    m_ClientIP(request.ip),
-    m_ClientSID(request.sid),
     m_Output("")
 {
+    SetClientIP(request.ip);
+    SetClientSID(request.sid);
+    SetNCBIPHID(request.ncbi_phid);
     SetInput(request.input);
 }
 
@@ -352,6 +353,7 @@ CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
 
     m_ClientIP      = job_db.client_ip;
     m_ClientSID     = job_db.client_sid;
+    m_NCBIPHID      = job_db.ncbi_phid;
 
     if (!(char) job_db.input_overflow)
         job_db.input.ToString(m_Input);
@@ -486,6 +488,7 @@ bool CJob::Flush(CQueue* queue)
 
         job_db.client_ip      = m_ClientIP;
         job_db.client_sid     = m_ClientSID;
+        job_db.ncbi_phid      = m_NCBIPHID;
 
         if (!input_overflow) {
             job_db.input_overflow = 0;
@@ -743,8 +746,9 @@ string CJob::Print(const CQueue &               queue,
               "OK:input: '" + NStr::PrintableString(m_Input) + "'\n"
               "OK:output: '" + NStr::PrintableString(m_Output) + "'\n"
               "OK:progress_msg: '" + m_ProgressMsg + "'\n"
-              "OK:remote_client_sid: " + m_ClientSID + "\n"
-              "OK:remote_client_ip: " + m_ClientIP + "\n";
+              "OK:remote_client_sid: " + NStr::PrintableString(m_ClientSID) + "\n"
+              "OK:remote_client_ip: " + NStr::PrintableString(m_ClientIP) + "\n"
+              "OK:ncbi_phid: " + NStr::PrintableString(m_NCBIPHID) + "\n";
 
     return result;
 }

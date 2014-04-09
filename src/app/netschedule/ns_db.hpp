@@ -57,6 +57,7 @@ BEGIN_NCBI_SCOPE
 const unsigned kNetScheduleSplitSize = 96;  // Changed from 64; See CXX-3449
 const unsigned kMaxClientIpSize      = 48;  // Changed from 64; See CXX-3449
 const unsigned kMaxSessionIdSize     = 48;  // Changed from 64; See CXX-3449
+const unsigned kMaxHitIdSize         = 64;
 
 
 /// BDB table to store frequently used job info
@@ -106,6 +107,7 @@ struct SJobDB : public CBDB_File
 
     CBDB_FieldLString      client_ip;       // IP address came from CGI client
     CBDB_FieldLString      client_sid;      // CGI session ID
+    CBDB_FieldLString      ncbi_phid;       // CGI page hit ID
     CBDB_FieldLString      progress_msg;    // Progress report message
 
     SJobDB()
@@ -147,6 +149,7 @@ struct SJobDB : public CBDB_File
         BindData("output",             &output,         kNetScheduleSplitSize);
         BindData("client_ip",          &client_ip,      kMaxClientIpSize);
         BindData("client_sid",         &client_sid,     kMaxSessionIdSize);
+        BindData("ncbi_phid",          &ncbi_phid,      kMaxHitIdSize);
         BindData("progress_msg",       &progress_msg,   kNetScheduleMaxDBDataSize);
     }
 };

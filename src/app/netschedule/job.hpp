@@ -253,6 +253,8 @@ public:
     { return m_ClientIP; }
     const string&  GetClientSID() const
     { return m_ClientSID; }
+    const string&  GetNCBIPHID() const
+    { return m_NCBIPHID; }
 
     const vector<CJobEvent>& GetEvents() const
     { return m_Events; }
@@ -332,7 +334,16 @@ public:
       m_Dirty |= fJobPart; }
     void           SetClientSID(const string& client_sid)
     { if (client_sid.size() < kMaxSessionIdSize) m_ClientSID = client_sid;
-      else m_ClientSID = client_sid.substr(0, kMaxSessionIdSize);
+      else m_ClientSID = "SID_TOO_LONG_FOR_NS_STORAGE";
+      m_Dirty |= fJobPart; }
+    void           SetNCBIPHID(const string& ncbi_phid)
+    { if (ncbi_phid.size() < kMaxHitIdSize) m_NCBIPHID = ncbi_phid;
+      else {
+        if (ncbi_phid.find('.') == string::npos)
+            m_NCBIPHID = "PHID_TOO_LONG_FOR_NS_STORAGE";
+        else
+            m_NCBIPHID = ncbi_phid.substr(0, kMaxHitIdSize);
+      }
       m_Dirty |= fJobPart; }
 
     void           SetEvents(const vector<CJobEvent>& events)
@@ -423,6 +434,7 @@ private:
 
     string              m_ClientIP;
     string              m_ClientSID;
+    string              m_NCBIPHID;
 
     // Resides in SEventsDB table
     vector<CJobEvent>   m_Events;

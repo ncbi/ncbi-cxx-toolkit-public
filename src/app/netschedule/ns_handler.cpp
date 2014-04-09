@@ -80,76 +80,92 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                          eNS_Admin },
         { { "drain",             eNSPT_Int, eNSPA_Optional, "0" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETCONF",       { &CNetScheduleHandler::x_ProcessGetConf,
                          eNS_Admin },
         { { "effective",         eNSPT_Int, eNSPA_Optional, "0" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "REFUSESUBMITS", { &CNetScheduleHandler::x_ProcessRefuseSubmits,
                          eNS_Admin },
         { { "mode",              eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QPAUSE",        { &CNetScheduleHandler::x_ProcessPause,
                          eNS_Queue },
         { { "pullback",          eNSPT_Int, eNSPA_Optional, "0" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QRESUME",       { &CNetScheduleHandler::x_ProcessResume,
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RECO",          { &CNetScheduleHandler::x_ProcessReloadConfig,
                          eNS_Admin },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "VERSION",       { &CNetScheduleHandler::x_ProcessVersion,
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "HEALTH",        { &CNetScheduleHandler::x_ProcessHealth,
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "ACKALERT",      { &CNetScheduleHandler::x_ProcessAckAlert,
                          eNS_NoChecks },
         { { "alert",             eNSPT_Id,  eNSPA_Required      },
           { "user",              eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QUIT",          { &CNetScheduleHandler::x_ProcessQuitSession,
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "ACNT",          { &CNetScheduleHandler::x_ProcessActiveCount,
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QLST",          { &CNetScheduleHandler::x_ProcessQList,
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QINF",          { &CNetScheduleHandler::x_ProcessQueueInfo,
                          eNS_NoChecks },
         { { "qname",             eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QINF2",         { &CNetScheduleHandler::x_ProcessQueueInfo,
                          eNS_NoChecks },
         { { "qname",             eNSPT_Id,  eNSPA_Optional, ""  },
           { "service",           eNSPT_Id,  eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETQUEUE",      { &CNetScheduleHandler::x_ProcessSetQueue,
                          eNS_NoChecks },
         { { "qname",             eNSPT_Id,  eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "DROPQ",         { &CNetScheduleHandler::x_ProcessDropQueue,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     /* QCRE checks 'program' and 'submit hosts' from the class */
     { "QCRE",          { &CNetScheduleHandler::x_ProcessCreateDynamicQueue,
                          eNS_NoChecks },
@@ -157,23 +173,27 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "qclass",            eNSPT_Id,  eNSPA_Required      },
           { "description",       eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     /* QDEL checks 'program' and 'submit hosts' from the queue it deletes */
     { "QDEL",          { &CNetScheduleHandler::x_ProcessDeleteDynamicQueue,
                          eNS_NoChecks },
         { { "qname",             eNSPT_Id, eNSPA_Required       },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "STATUS",        { &CNetScheduleHandler::x_ProcessStatus,
                          eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "STATUS2",       { &CNetScheduleHandler::x_ProcessStatus,
                          eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     /* The STAT commands makes sense with and without a queue */
     { "STAT",          { &CNetScheduleHandler::x_ProcessStatistics,
                          eNS_NoChecks },
@@ -182,18 +202,21 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",               eNSPT_Str, eNSPA_Optional      },
           { "group",             eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "MPUT",          { &CNetScheduleHandler::x_ProcessPutMessage,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "progress_msg",      eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "MGET",          { &CNetScheduleHandler::x_ProcessGetMessage,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "DUMP",          { &CNetScheduleHandler::x_ProcessDump,
                          eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
@@ -202,37 +225,45 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "count",             eNSPT_Int, eNSPA_Optional, "0" },
           { "group",             eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETP",          { &CNetScheduleHandler::x_ProcessGetParam,
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETP2",         { &CNetScheduleHandler::x_ProcessGetParam,
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETC",          { &CNetScheduleHandler::x_ProcessGetConfiguration,
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CLRN",          { &CNetScheduleHandler::x_ProcessClearWorkerNode,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CANCELQ",       { &CNetScheduleHandler::x_ProcessCancelQueue,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SST",           { &CNetScheduleHandler::x_ProcessFastStatusS,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SST2",          { &CNetScheduleHandler::x_ProcessFastStatusS,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SUBMIT",        { &CNetScheduleHandler::x_ProcessSubmit,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "input",             eNSPT_Str, eNSPA_Required      },
@@ -242,79 +273,92 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "msk",               eNSPT_Int, eNSPA_Optional, "0" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "group",             eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "group",             eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CANCEL",        { &CNetScheduleHandler::x_ProcessCancel,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
           { "group",             eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "LISTEN",        { &CNetScheduleHandler::x_ProcessListenJob,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "port",              eNSPT_Int, eNSPA_Required      },
           { "timeout",           eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "BSUB",          { &CNetScheduleHandler::x_ProcessSubmitBatch,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "port",              eNSPT_Int, eNSPA_Optional      },
           { "timeout",           eNSPT_Int, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "group",             eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "group",             eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "READ",          { &CNetScheduleHandler::x_ProcessReading,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "timeout",           eNSPT_Int, eNSPA_Optional, "0" },
           { "group",             eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CFRM",          { &CNetScheduleHandler::x_ProcessConfirm,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "FRED",          { &CNetScheduleHandler::x_ProcessReadFailed,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "err_msg",           eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RDRB",          { &CNetScheduleHandler::x_ProcessReadRollback,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "WST",           { &CNetScheduleHandler::x_ProcessFastStatusW,
                          eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "WST2",          { &CNetScheduleHandler::x_ProcessFastStatusW,
                          eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CHAFF",         { &CNetScheduleHandler::x_ProcessChangeAffinity,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "add",               eNSPT_Str, eNSPA_Optional, ""  },
           { "del",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETAFF",        { &CNetScheduleHandler::x_ProcessSetAffinity,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GET",           { &CNetScheduleHandler::x_ProcessGetJob,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "port",              eNSPT_Id,  eNSPA_Optional      },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GET2",          { &CNetScheduleHandler::x_ProcessGetJob,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "wnode_aff",         eNSPT_Int, eNSPA_Required, "0" },
@@ -324,14 +368,16 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "port",              eNSPT_Int, eNSPA_Optional      },
           { "timeout",           eNSPT_Int, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "PUT",           { &CNetScheduleHandler::x_ProcessPut,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "job_return_code",   eNSPT_Id,  eNSPA_Required      },
           { "output",            eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "PUT2",          { &CNetScheduleHandler::x_ProcessPut,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -339,30 +385,35 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "job_return_code",   eNSPT_Id,  eNSPA_Required      },
           { "output",            eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RETURN",        { &CNetScheduleHandler::x_ProcessReturn,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RETURN2",       { &CNetScheduleHandler::x_ProcessReturn,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "blacklist",         eNSPT_Int, eNSPA_Optional, "1" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "WGET",          { &CNetScheduleHandler::x_ProcessGetJob,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "port",              eNSPT_Int, eNSPA_Required      },
           { "timeout",           eNSPT_Int, eNSPA_Required      },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CWGET",         { &CNetScheduleHandler::x_ProcessCancelWaitGet,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "FPUT",          { &CNetScheduleHandler::x_ProcessPutFailure,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -370,7 +421,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "output",            eNSPT_Str, eNSPA_Required      },
           { "job_return_code",   eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "FPUT2",         { &CNetScheduleHandler::x_ProcessPutFailure,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -379,7 +431,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "output",            eNSPT_Str, eNSPA_Required      },
           { "job_return_code",   eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "JXCG",          { &CNetScheduleHandler::x_ProcessJobExchange,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Optchain      },
@@ -387,23 +440,27 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "output",            eNSPT_Str, eNSPA_Optional      },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "JDEX",          { &CNetScheduleHandler::x_ProcessJobDelayExpiration,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "timeout",           eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "AFLS",          { &CNetScheduleHandler::x_ProcessGetAffinityList,
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETCLIENTDATA", { &CNetScheduleHandler::x_ProcessSetClientData,
                          eNS_Queue },
         { { "data",              eNSPT_Str, eNSPA_Required       },
           { "version",           eNSPT_Int, eNSPA_Optional, "-1" },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""   },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""   } } },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""   },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""   } } },
 
     // Obsolete commands
     { "REGC",          { &CNetScheduleHandler::x_CmdObsolete,
@@ -885,6 +942,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         // It throws an exception if the input is not valid
         m_CommandArguments.AssignValues(cmd.params,
                                         cmd.command->cmd,
+                                        x_NeedToGeneratePHIDAndSID(cmd.command->extra.processor),
                                         GetSocket(),
                                         m_Server->GetCompoundIDPool());
 
@@ -1096,7 +1154,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
     TNSProtoParams  params;
     try {
         m_BatchEndParser.ParseArguments(msg, s_BatchArgs, &params);
-        m_CommandArguments.AssignValues(params, "", GetSocket(),
+        m_CommandArguments.AssignValues(params, "", false, GetSocket(),
                                         m_Server->GetCompoundIDPool());
     }
     catch (const CNSProtoParserException &  ex) {
@@ -1156,6 +1214,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
     job.SetSubmNotifTimeout(m_BatchSubmTimeout);
     job.SetClientIP(m_BatchClientIP);
     job.SetClientSID(m_BatchClientSID);
+    job.SetNCBIPHID(m_BatchNCBIPHID);
 
     if (++m_BatchPos >= m_BatchSize)
         m_ProcessMessage = &CNetScheduleHandler::x_ProcessMsgBatchSubmit;
@@ -1228,6 +1287,7 @@ void CNetScheduleHandler::x_ProcessMsgBatchSubmit(BUF buffer)
         unsigned    job_id = GetQueue()->SubmitBatch(m_ClientId,
                                                      m_BatchJobs,
                                                      m_BatchGroup,
+                                                     m_ConnContext.NotNull(),
                                                      m_RollbackAction);
         double      db_elapsed = sw.Elapsed();
 
@@ -1285,9 +1345,9 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
 {
     bool            cmdv2(m_CommandArguments.cmd == "SST2");
     CNSPreciseTime  lifetime;
+    CJob            job;
     TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
-                                                     m_CommandArguments.job_key,
-                                                     true, &lifetime);
+                                                     job, true, &lifetime);
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -1316,6 +1376,7 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
         }
         else
             x_WriteMessage("OK:" + NStr::NumericToString((int) status));
+        x_LogCommandWithJob(job);
     }
     x_PrintCmdRequestStop();
 }
@@ -1325,9 +1386,9 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 {
     bool            cmdv2(m_CommandArguments.cmd == "WST2");
     CNSPreciseTime  lifetime;
+    CJob            job;
     TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
-                                                     m_CommandArguments.job_key,
-                                                     false, &lifetime);
+                                                     job, false, &lifetime);
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -1356,6 +1417,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
         }
         else
             x_WriteMessage("OK:" + NStr::NumericToString((int) status));
+        x_LogCommandWithJob(job);
     }
     x_PrintCmdRequestStop();
 }
@@ -1444,6 +1506,7 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
         unsigned int  job_id = q->Submit(m_ClientId, job,
                                          m_CommandArguments.affinity_token,
                                          m_CommandArguments.group,
+                                         m_ConnContext.NotNull(),
                                          m_RollbackAction);
 
         x_WriteMessage("OK:" + q->MakeJobKey(job_id));
@@ -1486,6 +1549,7 @@ void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
         m_BatchSubmTimeout = CNSPreciseTime(m_CommandArguments.timeout, 0);
         m_BatchClientIP    = m_CommandArguments.ip;
         m_BatchClientSID   = m_CommandArguments.sid;
+        m_BatchNCBIPHID    = m_CommandArguments.ncbi_phid;
         m_BatchGroup       = m_CommandArguments.group;
 
         x_WriteMessage("OK:Batch submit ready");
@@ -1552,16 +1616,18 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
     // Here: one argument is given - a job key or a group
     if (!m_CommandArguments.group.empty()) {
         // CANCEL for a group
-        q->CancelGroup(m_ClientId, m_CommandArguments.group);
+        q->CancelGroup(m_ClientId, m_CommandArguments.group,
+                       m_ConnContext.NotNull());
         x_WriteMessage("OK:");
         x_PrintCmdRequestStop();
         return;
     }
 
     // Here: CANCEL for a job
+    CJob        job;
     switch (q->Cancel(m_ClientId,
                       m_CommandArguments.job_id,
-                      m_CommandArguments.job_key)) {
+                      m_CommandArguments.job_key, job)) {
         case CNetScheduleAPI::eJobNotFound:
             ERR_POST(Warning << "CANCEL for unknown job: "
                              << m_CommandArguments.job_key);
@@ -1570,9 +1636,11 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
             break;
         case CNetScheduleAPI::eCanceled:
             x_WriteMessage("OK:WARNING:Already canceled;");
+            x_LogCommandWithJob(job);
             break;
         default:
             x_WriteMessage("OK:");
+            x_LogCommandWithJob(job);
     }
     x_PrintCmdRequestStop();
 }
@@ -1585,8 +1653,7 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
     CNSPreciseTime  lifetime;
 
     if (q->ReadAndTouchJob(m_CommandArguments.job_id,
-                           m_CommandArguments.job_key, job, &lifetime) ==
-                CNetScheduleAPI::eJobNotFound) {
+                           job, &lifetime) == CNetScheduleAPI::eJobNotFound) {
         // Here: there is no such a job
         ERR_POST(Warning << m_CommandArguments.cmd << " for unknown job: "
                          << m_CommandArguments.job_key);
@@ -1614,6 +1681,9 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
         x_WriteMessage("OK:"
                        "job_status=" +
                        CNetScheduleAPI::StatusToString(job.GetStatus()) +
+                       "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
+                       "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
+                       "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
                        "&job_exptime=" + NStr::NumericToString(lifetime.Sec()) +
                        "&ret_code=" + NStr::NumericToString(job.GetRetCode()) +
                        "&output=" + NStr::URLEncode(job.GetOutput()) +
@@ -1629,6 +1699,8 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
                        "\" \"" + NStr::PrintableString(job.GetErrorMsg()) +
                        "\" \"" + NStr::PrintableString(job.GetInput()) +
                        "\"");
+
+    x_LogCommandWithJob(job);
     x_PrintCmdRequestStop();
 }
 
@@ -1701,6 +1773,9 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:ePrefAffExpired:");
     } else {
+        if (job.GetId())
+            x_LogCommandWithJob(job);
+
         if (added_pref_aff.empty() == false) {
             if (m_ConnContext.NotNull()) {
                 GetDiagContext().Extra()
@@ -1736,15 +1811,18 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
         x_CheckAuthorizationToken();
     }
 
+    CJob        job;
     TJobStatus  old_status = q->PutResult(m_ClientId, CNSPreciseTime::Current(),
                                           m_CommandArguments.job_id,
                                           m_CommandArguments.job_key,
+                                          job,
                                           m_CommandArguments.auth_token,
                                           m_CommandArguments.job_return_code,
                                           m_CommandArguments.output);
     if (old_status == CNetScheduleAPI::ePending ||
         old_status == CNetScheduleAPI::eRunning) {
         x_WriteMessage("OK:");
+        x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
     }
@@ -1752,6 +1830,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
         // Still accept the job results, but print a warning: CXX-3632
         ERR_POST(Warning << "Accepting results for a job in the FAILED state.");
         x_WriteMessage("OK:");
+        x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
     }
@@ -1760,6 +1839,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
                          << m_CommandArguments.job_key
                          << " results. The job has already been done.");
         x_WriteMessage("OK:WARNING:Already done;");
+        x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
     }
@@ -1783,6 +1863,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
     x_WriteMessage("ERR:eInvalidJobStatus:"
                    "Cannot accept job results; job is in " +
                    CNetScheduleAPI::StatusToString(old_status) + " state");
+    x_LogCommandWithJob(job);
     x_PrintCmdRequestStop();
 }
 
@@ -1799,9 +1880,11 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     CNSPreciseTime  curr = CNSPreciseTime::Current();
 
     // PUT part
+    CJob            job;
     TJobStatus      old_status = q->PutResult(m_ClientId, curr,
                                           m_CommandArguments.job_id,
                                           m_CommandArguments.job_key,
+                                          job,
                                           m_CommandArguments.auth_token,
                                           m_CommandArguments.job_return_code,
                                           m_CommandArguments.output);
@@ -1813,11 +1896,15 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     } else if (old_status == CNetScheduleAPI::eFailed) {
         // Still accept the job results, but print a warning: CXX-3632
         ERR_POST(Warning << "Accepting results for a job in the FAILED state.");
+        x_LogCommandWithJob(job);
     } else if (old_status != CNetScheduleAPI::ePending &&
                old_status != CNetScheduleAPI::eRunning) {
+        x_LogCommandWithJob(job);
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job has already been done.");
+    } else {
+        x_LogCommandWithJob(job);
     }
 
 
@@ -1845,7 +1932,6 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
-    CJob                job;
     string              added_pref_aff;
     x_ClearRollbackAction();
     if (q->GetJobOrWait(m_ClientId,
@@ -1882,10 +1968,13 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessPutMessage(CQueue* q)
 {
-    if (q->PutProgressMessage(m_CommandArguments.job_id,
-                              m_CommandArguments.progress_msg))
+    CJob        job;
+
+    if (q->PutProgressMessage(m_CommandArguments.job_id, job,
+                              m_CommandArguments.progress_msg)) {
         x_WriteMessage("OK:");
-    else {
+        x_LogCommandWithJob(job);
+    } else {
         ERR_POST(Warning << "MPUT for unknown job "
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
@@ -1901,10 +1990,10 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
     CNSPreciseTime  lifetime;
 
     if (q->ReadAndTouchJob(m_CommandArguments.job_id,
-                           m_CommandArguments.job_key, job, &lifetime) !=
-            CNetScheduleAPI::eJobNotFound)
+                           job, &lifetime) != CNetScheduleAPI::eJobNotFound) {
         x_WriteMessage("OK:" + NStr::PrintableString(job.GetProgressMsg()));
-    else {
+        x_LogCommandWithJob(job);
+    } else {
         ERR_POST(Warning << m_CommandArguments.cmd
                          << "MGET for unknown job "
                          << m_CommandArguments.job_key);
@@ -1924,11 +2013,13 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
         x_CheckAuthorizationToken();
     }
 
+    CJob        job;
     string      warning;
     TJobStatus  old_status = q->FailJob(
                                 m_ClientId,
                                 m_CommandArguments.job_id,
                                 m_CommandArguments.job_key,
+                                job,
                                 m_CommandArguments.auth_token,
                                 m_CommandArguments.err_msg,
                                 m_CommandArguments.output,
@@ -1948,6 +2039,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
         ERR_POST(Warning << "FPUT for already failed job "
                          << m_CommandArguments.job_key);
         x_WriteMessage("OK:WARNING:Already failed;");
+        x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
     }
@@ -1961,6 +2053,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
         x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
         x_WriteMessage("ERR:eInvalidJobStatus:Cannot fail job; job is in " +
                        CNetScheduleAPI::StatusToString(old_status) + " state");
+        x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
     }
@@ -1970,13 +2063,14 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
         x_WriteMessage("OK:");
     else
         x_WriteMessage("OK:WARNING:" + warning + ";");
+    x_LogCommandWithJob(job);
     x_PrintCmdRequestStop();
 }
 
 
 void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 {
-    q->Truncate();
+    q->Truncate(m_ConnContext.NotNull());
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }
@@ -1997,10 +2091,12 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
             return_option = CQueue::eWithoutBlacklist;
     }
 
+    CJob            job;
     string          warning;
     TJobStatus      old_status = q->ReturnJob(m_ClientId,
                                               m_CommandArguments.job_id,
                                               m_CommandArguments.job_key,
+                                              job,
                                               m_CommandArguments.auth_token,
                                               warning, return_option);
 
@@ -2010,6 +2106,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
         else
             x_WriteMessage("OK:WARNING:" + warning + ";");
         x_PrintCmdRequestStop();
+        x_LogCommandWithJob(job);
         return;
     }
 
@@ -2031,6 +2128,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
     x_WriteMessage("ERR:eInvalidJobStatus:Cannot return job; job is in " +
                    CNetScheduleAPI::StatusToString(old_status) + " state");
 
+    x_LogCommandWithJob(job);
     x_PrintCmdRequestStop();
 }
 
@@ -2048,9 +2146,10 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
         return;
     }
 
+    CJob            job;
     CNSPreciseTime  timeout(m_CommandArguments.timeout, 0);
     TJobStatus      status = q->JobDelayExpiration(m_CommandArguments.job_id,
-                                                   timeout);
+                                                   job, timeout);
 
     if (status == CNetScheduleAPI::eJobNotFound) {
         ERR_POST(Warning << "JDEX for unknown job "
@@ -2068,12 +2167,14 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
         x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
         x_WriteMessage("ERR:eInvalidJobStatus:" +
                        CNetScheduleAPI::StatusToString(status));
+        x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
     }
 
     // Here: the new timeout has been applied
     x_WriteMessage("OK:");
+    x_LogCommandWithJob(job);
     x_PrintCmdRequestStop();
 }
 
@@ -2082,8 +2183,9 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
 {
     size_t          last_event_index = 0;
     CNSPreciseTime  timeout(m_CommandArguments.timeout, 0);
+    CJob            job;
     TJobStatus      status = q->SetJobListener(
-                                    m_CommandArguments.job_id,
+                                    m_CommandArguments.job_id, job,
                                     m_ClientId.GetAddress(),
                                     m_CommandArguments.port,
                                     timeout,
@@ -2094,11 +2196,13 @@ void CNetScheduleHandler::x_ProcessListenJob(CQueue* q)
                          << m_CommandArguments.job_key);
         x_SetCmdRequestStatus(eStatus_NotFound);
         x_WriteMessage("ERR:eJobNotFound:");
-    } else
+    } else {
         x_WriteMessage("OK:job_status=" +
                        CNetScheduleAPI::StatusToString(status) +
                        "&last_event_index=" +
                        NStr::NumericToString(last_event_index));
+        x_LogCommandWithJob(job);
+    }
 
     x_PrintCmdRequestStop();
 }
@@ -2840,18 +2944,21 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
     if (job_id) {
         job_key = q->MakeJobKey(job_id);
         x_WriteMessage("OK:job_key=" + job_key +
+                       "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
+                       "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
+                       "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
                        "&auth_token=" + job.GetAuthToken() +
                        "&status=" +
                        CNetScheduleAPI::StatusToString(job.GetStatus()));
         x_ClearRollbackAction();
+        x_LogCommandWithJob(job);
     }
     else
         x_WriteMessage("OK:");
 
     if (m_ConnContext.NotNull()) {
         if (job_id)
-            GetDiagContext().Extra().Print("job_key", job_key)
-                                    .Print("auth_token", job.GetAuthToken());
+            GetDiagContext().Extra().Print("job_key", job_key);
         else
             GetDiagContext().Extra().Print("job_key", "None");
     }
@@ -2864,12 +2971,14 @@ void CNetScheduleHandler::x_ProcessConfirm(CQueue* q)
     x_CheckNonAnonymousClient("use CFRM command");
     x_CheckAuthorizationToken();
 
+    CJob            job;
     TJobStatus      old_status = q->ConfirmReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
                                             m_CommandArguments.job_key,
+                                            job,
                                             m_CommandArguments.auth_token);
-    x_FinalizeReadCommand("CFRM", old_status);
+    x_FinalizeReadCommand("CFRM", old_status, job);
 }
 
 
@@ -2878,13 +2987,15 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
     x_CheckNonAnonymousClient("use FRED command");
     x_CheckAuthorizationToken();
 
+    CJob            job;
     TJobStatus      old_status = q->FailReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
                                             m_CommandArguments.job_key,
+                                            job,
                                             m_CommandArguments.auth_token,
                                             m_CommandArguments.err_msg);
-    x_FinalizeReadCommand("FRED", old_status);
+    x_FinalizeReadCommand("FRED", old_status, job);
 }
 
 
@@ -2893,17 +3004,21 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
     x_CheckNonAnonymousClient("use RDRB command");
     x_CheckAuthorizationToken();
 
+    CJob            job;
     TJobStatus      old_status = q->ReturnReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
                                             m_CommandArguments.job_key,
-                                            m_CommandArguments.auth_token);
-    x_FinalizeReadCommand("RDRB", old_status);
+                                            job,
+                                            m_CommandArguments.auth_token,
+                                            false);
+    x_FinalizeReadCommand("RDRB", old_status, job);
 }
 
 
 void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
-                                                TJobStatus      old_status)
+                                                TJobStatus      old_status,
+                                                const CJob &    job)
 {
     if (old_status == CNetScheduleAPI::eJobNotFound) {
         ERR_POST(Warning << command << " for unknown job "
@@ -2931,6 +3046,7 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
     } else
         x_WriteMessage("OK:");
 
+    x_LogCommandWithJob(job);
     x_PrintCmdRequestStop();
 }
 
@@ -3003,7 +3119,7 @@ void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 {
-    q->CancelAllJobs(m_ClientId);
+    q->CancelAllJobs(m_ClientId, m_ConnContext.NotNull());
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }
@@ -3161,9 +3277,13 @@ void CNetScheduleHandler::x_CheckQInf2Parameters(void)
 }
 
 
-void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd& cmd)
+void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd &  cmd)
 {
     if (m_CmdContext.NotNull()) {
+        // Need to log SID/IP/PHID only if the command may not have
+        // a job key in the parameters
+        bool    is_worker_node_command = x_WorkerNodeCommand();
+
         CDiagContext::SetRequestContext(m_CmdContext);
         CDiagContext_Extra    ctxt_extra =
                 GetDiagContext().PrintRequestStart()
@@ -3173,14 +3293,22 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd& cmd)
                             .Print("peer", GetSocket().GetPeerAddress(eSAF_IP))
                             .Print("conn", m_ConnContext->GetRequestID());
 
-        // SUMBIT parameters should not be logged. The new job attributes will
-        // be logged when a new job is actually submitted.
-        if (cmd.command->extra.processor != &CNetScheduleHandler::x_ProcessSubmit) {
-            ITERATE(TNSProtoParams, it, cmd.params) {
-                if (it->first == "ip")  continue;
-                if (it->first == "sid") continue;
-                ctxt_extra.Print(it->first, it->second);
+        ITERATE(TNSProtoParams, it, cmd.params) {
+            if (it->first == "ip") {
+                if (!is_worker_node_command)
+                    CDiagContext::GetRequestContext().SetClientIP(it->second);
+                continue;
             }
+            if (it->first == "sid") {
+                if (!is_worker_node_command)
+                    CDiagContext::GetRequestContext().SetSessionID(it->second);
+                continue;
+            }
+            if (it->first == "ncbi_phid") {
+                if (is_worker_node_command)
+                    continue;
+            }
+            ctxt_extra.Print(it->first, it->second);
         }
         ctxt_extra.Flush();
 
@@ -3253,6 +3381,7 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                        "&affinity=" + NStr::URLEncode(q->GetAffinityTokenByID(job.GetAffinityId())) +
                        "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
                        "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
+                       "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
                        "&mask=" + NStr::NumericToString(job.GetMask()) +
                        "&auth_token=" + job.GetAuthToken());
     else
@@ -3260,7 +3389,8 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                        " \"" + NStr::PrintableString(job.GetInput()) + "\""
                        " \"" + NStr::PrintableString(
                                 q->GetAffinityTokenByID(job.GetAffinityId())) + "\""
-                       " \"" + job.GetClientIP() + " " + job.GetClientSID() + "\""
+                       " \"" + NStr::PrintableString(job.GetClientIP()) + " " +
+                               NStr::PrintableString(job.GetClientSID()) + "\""
                        " " + NStr::NumericToString(job.GetMask()));
 }
 
@@ -3283,6 +3413,46 @@ bool CNetScheduleHandler::x_CanBeWithoutQueue(FProcessor  processor) const
            processor == &CNetScheduleHandler::x_ProcessConfirm ||               // CFRM
            processor == &CNetScheduleHandler::x_ProcessReadFailed ||            // FRED
            processor == &CNetScheduleHandler::x_ProcessReadRollback;            // RDRB
+}
+
+
+bool
+CNetScheduleHandler::x_NeedToGeneratePHIDAndSID(FProcessor  processor) const
+{
+    // The only commands which need the phid and sid generated are
+    // SUBMIT and BSUB
+    return processor == &CNetScheduleHandler::x_ProcessSubmit ||                // SUBMIT
+           processor == &CNetScheduleHandler::x_ProcessSubmitBatch;             // BSUB
+}
+
+
+bool
+CNetScheduleHandler::x_WorkerNodeCommand(void) const
+{
+    // If a command has a reference to a job some way, it may come
+    // from a worker node or from somewhere else.
+    // Denis suggested the following way of distinguishing the source:
+    // if ncbi_phid and/or sid are both empty strings then it is a
+    // worker node command.
+    // Depending on this decision logging will be done in a different way.
+    return m_CommandArguments.ncbi_phid.empty() &&
+           m_CommandArguments.sid.empty();
+}
+
+
+void
+CNetScheduleHandler::x_LogCommandWithJob(const CJob &  job) const
+{
+    // If a command refers to a job some way then it should be logged
+    // in a different way depending on the command source.
+    if (m_ConnContext.NotNull()) {
+        if (x_WorkerNodeCommand()) {
+            CDiagContext::GetRequestContext().SetClientIP(job.GetClientIP());
+            CDiagContext::GetRequestContext().SetSessionID(job.GetClientSID());
+            GetDiagContext().Extra().Print("ncbi_phid", job.GetNCBIPHID());
+        } else
+            GetDiagContext().Extra().Print("job_phid", job.GetNCBIPHID());
+    }
 }
 
 

@@ -387,34 +387,13 @@ unsigned CQueue::LoadStatusMatrix()
 
 
 // Used to log a single job
-void CQueue::x_LogSubmit(const CJob &       job,
-                         const string &     aff,
-                         const string &     group)
+void CQueue::x_LogSubmit(const CJob &  job)
 {
-    if (!m_Log)
-        return;
-
-    string                  group_token(group);
-
-    if (group_token.empty())
-        group_token = "n/a";
-
     CDiagContext_Extra  extra = GetDiagContext().Extra()
         .Print("job_key", MakeJobKey(job.GetId()))
-        .Print("queue", GetQueueName())
-        .Print("input", job.GetInput())
-        .Print("aff", aff)
-        .Print("group", group_token)
-        .Print("mask", job.GetMask())
-        .Print("subm_addr", CSocketAPI::gethostbyaddr(job.GetSubmAddr()))
-        .Print("subm_notif_port", job.GetSubmNotifPort())
-        .Print("subm_notif_timeout", job.GetSubmNotifTimeout())
-        .Print("timeout", Uint8(job.GetTimeout()))
-        .Print("run_timeout", job.GetRunTimeout())
-        .Print("progress_msg", job.GetProgressMsg());
+        .Print("queue", GetQueueName());
 
     extra.Flush();
-    return;
 }
 
 
@@ -422,6 +401,7 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
                              CJob &                     job,
                              const string &             aff_token,
                              const string &             group,
+                             bool                       logging,
                              CNSRollbackInterface * &   rollback_action)
 {
     // the only config parameter used here is the max input size so there is no
@@ -499,7 +479,8 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
     }}
 
     m_StatisticsCounters.CountSubmit(1);
-    x_LogSubmit(job, aff_token, group);
+    if (logging)
+        x_LogSubmit(job);
 
     rollback_action = new CNSSubmitRollback(client, job_id);
     return job_id;
@@ -509,6 +490,7 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
 unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
                                   vector< pair<CJob, string> > &  batch,
                                   const string &                  group,
+                                  bool                            logging,
                                   CNSRollbackInterface * &        rollback_action)
 {
     unsigned int    batch_size = batch.size();
@@ -592,9 +574,9 @@ unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
     }}
 
     m_StatisticsCounters.CountSubmit(batch_size);
-    if (m_LogBatchEachJob)
+    if (m_LogBatchEachJob && logging)
         for (size_t  k = 0; k < batch_size; ++k)
-            x_LogSubmit(batch[k].first, batch[k].second, group);
+            x_LogSubmit(batch[k].first);
 
     rollback_action = new CNSBatchSubmitRollback(client, job_id, batch_size);
     return job_id;
@@ -608,12 +590,11 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
                               const CNSPreciseTime &  curr,
                               unsigned int            job_id,
                               const string &          job_key,
+                              CJob &                  job,
                               const string &          auth_token,
                               int                     ret_code,
                               const string &          output)
 {
-    _ASSERT(job_id);
-
     // The only one parameter (max output size) is required for the put
     // operation so there is no need to use CQueueParamAccessor
 
@@ -621,7 +602,6 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Output is too long");
 
-    CJob                job;
     size_t              dead_locks = 0; // dead lock counter
 
     for (;;) {
@@ -642,7 +622,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
 
             {{
                 CNSTransaction      transaction(this);
-                x_UpdateDB_PutResultNoLock(job_id, job_key, auth_token, curr,
+                x_UpdateDB_PutResultNoLock(job_id, auth_token, curr,
                                            ret_code, output, job,
                                            client);
                 transaction.Commit();
@@ -1095,9 +1075,9 @@ int CQueue::SetClientData(const CNSClientId &  client,
 
 
 TJobStatus  CQueue::JobDelayExpiration(unsigned int            job_id,
+                                       CJob &                  job,
                                        const CNSPreciseTime &  tm)
 {
-    CJob                job;
     CNSPreciseTime      queue_run_timeout = GetRunTimeout();
     CNSPreciseTime      curr = CNSPreciseTime::Current();
 
@@ -1146,7 +1126,7 @@ TJobStatus  CQueue::JobDelayExpiration(unsigned int            job_id,
 
 
 TJobStatus  CQueue::GetStatusAndLifetime(unsigned int      job_id,
-                                         const string &    job_key,
+                                         CJob &            job,
                                          bool              need_touch,
                                          CNSPreciseTime *  lifetime)
 {
@@ -1156,22 +1136,23 @@ TJobStatus  CQueue::GetStatusAndLifetime(unsigned int      job_id,
     if (status == CNetScheduleAPI::eJobNotFound)
         return status;
 
-    if (need_touch) {
-        CJob                job;
-        CNSPreciseTime      curr = CNSPreciseTime::Current();
+    CNSPreciseTime      curr = CNSPreciseTime::Current();
 
-        {{
-            CNSTransaction      transaction(this);
+    {{
+        CNSTransaction      transaction(this);
 
-            if (job.Fetch(this, job_id) != CJob::eJF_Ok)
-                NCBI_THROW(CNetScheduleException, eInternalError,
-                           "Error fetching job");
+        if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                       "Error fetching job");
 
+        if (need_touch) {
             job.SetLastTouch(curr);
             job.Flush(this);
             transaction.Commit();
-        }}
+        }
+    }}
 
+    if (need_touch) {
         m_GCRegistry.UpdateLifetime(job_id,
                                     job.GetExpirationTime(m_Timeout,
                                                           m_RunTimeout,
@@ -1185,12 +1166,12 @@ TJobStatus  CQueue::GetStatusAndLifetime(unsigned int      job_id,
 
 
 TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
+                                   CJob &                  job,
                                    unsigned int            address,
                                    unsigned short          port,
                                    const CNSPreciseTime &  timeout,
                                    size_t *                last_event_index)
 {
-    CJob                job;
     CNSPreciseTime      curr = CNSPreciseTime::Current();
     TJobStatus          status = CNetScheduleAPI::eJobNotFound;
     CFastMutexGuard     guard(m_OperationLock);
@@ -1234,9 +1215,9 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
 
 
 bool CQueue::PutProgressMessage(unsigned int    job_id,
+                                CJob &          job,
                                 const string &  msg)
 {
-    CJob                job;
     CNSPreciseTime      curr = CNSPreciseTime::Current();
 
     {{
@@ -1268,11 +1249,11 @@ bool CQueue::PutProgressMessage(unsigned int    job_id,
 TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
                               unsigned int            job_id,
                               const string &          job_key,
+                              CJob &                  job,
                               const string &          auth_token,
                               string &                warning,
                               TJobReturnOption        how)
 {
-    CJob                job;
     CNSPreciseTime      current_time = CNSPreciseTime::Current();
     CFastMutexGuard     guard(m_OperationLock);
     TJobStatus          old_status = GetJobStatus(job_id);
@@ -1286,6 +1267,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
         if (job.Fetch(this, job_id) != CJob::eJF_Ok)
             NCBI_THROW(CNetScheduleException, eInternalError,
                        "Error fetching job");
+
         if (job.GetStatus() != CNetScheduleAPI::eRunning)
             NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
                        "Operation is applicable to eRunning job state only");
@@ -1380,12 +1362,12 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
                                job.GetAffinityId(), m_ClientsRegistry,
                                m_AffinityRegistry, m_NotifHifreqPeriod,
                                m_HandicapTimeout);
+
     return old_status;
 }
 
 
 TJobStatus  CQueue::ReadAndTouchJob(unsigned int      job_id,
-                                    const string &    job_key,
                                     CJob &            job,
                                     CNSPreciseTime *  lifetime)
 {
@@ -1419,7 +1401,7 @@ TJobStatus  CQueue::ReadAndTouchJob(unsigned int      job_id,
 
 
 // Deletes all the jobs from the queue
-void CQueue::Truncate(void)
+void CQueue::Truncate(bool  logging)
 {
     CJob                                job;
     TNSBitVector                        bv;
@@ -1455,6 +1437,10 @@ void CQueue::Truncate(void)
                                                         MakeJobKey(job_id),
                                                         job.GetStatus(),
                                                         job.GetLastEventIndex());
+
+                if (logging)
+                    GetDiagContext().Extra().Print("job_key", MakeJobKey(job_id))
+                                            .Print("job_phid", job.GetNCBIPHID());
             }
 
             // There is no need to commit transaction - there were no changes
@@ -1475,10 +1461,10 @@ void CQueue::Truncate(void)
 TJobStatus  CQueue::Cancel(const CNSClientId &  client,
                            unsigned int         job_id,
                            const string &       job_key,
+                           CJob &               job,
                            bool                 is_ns_rollback)
 {
     TJobStatus          old_status;
-    CJob                job;
     CNSPreciseTime      current_time = CNSPreciseTime::Current();
 
     {{
@@ -1562,7 +1548,8 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
 }
 
 
-void  CQueue::CancelAllJobs(const CNSClientId &  client)
+void  CQueue::CancelAllJobs(const CNSClientId &  client,
+                            bool                 logging)
 {
     vector<CNetScheduleAPI::EJobStatus> statuses;
 
@@ -1576,13 +1563,15 @@ void  CQueue::CancelAllJobs(const CNSClientId &  client)
     statuses.push_back(CNetScheduleAPI::eReadFailed);
 
     CFastMutexGuard     guard(m_OperationLock);
-    x_CancelJobs(client, m_StatusTracker.GetJobs(statuses));
+    x_CancelJobs(client, m_StatusTracker.GetJobs(statuses),
+                 logging);
     return;
 }
 
 
 void CQueue::x_CancelJobs(const CNSClientId &   client,
-                          const TNSBitVector &  jobs_to_cancel)
+                          const TNSBitVector &  jobs_to_cancel,
+                          bool                  logging)
 {
     CJob                        job;
     CNSPreciseTime              current_time = CNSPreciseTime::Current();
@@ -1645,9 +1634,11 @@ void CQueue::x_CancelJobs(const CNSClientId &   client,
                                                 MakeJobKey(job_id),
                                                 job.GetStatus(),
                                                 job.GetLastEventIndex());
-    }
 
-    return;
+        if (logging)
+            GetDiagContext().Extra().Print("job_key", MakeJobKey(job_id))
+                                    .Print("job_phid", job.GetNCBIPHID());
+    }
 }
 
 
@@ -1665,10 +1656,12 @@ CQueue::x_GetEstimatedJobLifetime(unsigned int   job_id,
 
 
 void  CQueue::CancelGroup(const CNSClientId &  client,
-                          const string &       group)
+                          const string &       group,
+                          bool                 logging)
 {
     CFastMutexGuard     guard(m_OperationLock);
-    x_CancelJobs(client, m_GroupRegistry.GetJobs(group));
+    x_CancelJobs(client, m_GroupRegistry.GetJobs(group),
+                 logging);
     return;
 }
 
@@ -1852,12 +1845,14 @@ void CQueue::GetJobForReading(const CNSClientId &       client,
 TJobStatus  CQueue::ConfirmReadingJob(const CNSClientId &  client,
                                       unsigned int         job_id,
                                       const string &       job_key,
+                                      CJob &               job,
                                       const string &       auth_token)
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
                                                 client, job_id, job_key,
-                                                auth_token, "",
-                                                CNetScheduleAPI::eConfirmed);
+                                                job, auth_token, "",
+                                                CNetScheduleAPI::eConfirmed,
+                                                false);
     m_ClientsRegistry.ClearReading(client, job_id);
     return old_status;
 }
@@ -1866,13 +1861,15 @@ TJobStatus  CQueue::ConfirmReadingJob(const CNSClientId &  client,
 TJobStatus  CQueue::FailReadingJob(const CNSClientId &  client,
                                    unsigned int         job_id,
                                    const string &       job_key,
+                                   CJob &               job,
                                    const string &       auth_token,
                                    const string &       err_msg)
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
                                                 client, job_id, job_key,
-                                                auth_token, err_msg,
-                                                CNetScheduleAPI::eReadFailed);
+                                                job, auth_token, err_msg,
+                                                CNetScheduleAPI::eReadFailed,
+                                                false);
     m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
     return old_status;
 }
@@ -1881,12 +1878,13 @@ TJobStatus  CQueue::FailReadingJob(const CNSClientId &  client,
 TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
                                      unsigned int         job_id,
                                      const string &       job_key,
+                                     CJob &               job,
                                      const string &       auth_token,
                                      bool                 is_ns_rollback)
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
                                                 client, job_id, job_key,
-                                                auth_token, "",
+                                                job, auth_token, "",
                                                 CNetScheduleAPI::eDone,
                                                 is_ns_rollback);
     m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
@@ -1897,13 +1895,13 @@ TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
 TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                                           unsigned int         job_id,
                                           const string &       job_key,
+                                          CJob &               job,
                                           const string &       auth_token,
                                           const string &       err_msg,
                                           TJobStatus           target_status,
                                           bool                 is_ns_rollback)
 {
     CNSPreciseTime                              current_time = CNSPreciseTime::Current();
-    CJob                                        job;
     TJobStatus                                  new_status = target_status;
     CStatisticsCounters::ETransitionPathOption  path_option =
                                                     CStatisticsCounters::eNone;
@@ -2197,6 +2195,7 @@ string CQueue::GetAffinityList()
 TJobStatus CQueue::FailJob(const CNSClientId &    client,
                            unsigned int           job_id,
                            const string &         job_key,
+                           CJob &                 job,
                            const string &         auth_token,
                            const string &         err_msg,
                            const string &         output,
@@ -2216,7 +2215,6 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                    "Output is too long");
     }
 
-    CJob                job;
     CNSPreciseTime      curr = CNSPreciseTime::Current();
     bool                rescheduled = false;
     TJobStatus          old_status;
@@ -3461,7 +3459,6 @@ unsigned int CQueue::CountActiveJobs(void) const
 
 
 void CQueue::x_UpdateDB_PutResultNoLock(unsigned                job_id,
-                                        const string &          job_key,
                                         const string &          auth_token,
                                         const CNSPreciseTime &  curr,
                                         int                     ret_code,

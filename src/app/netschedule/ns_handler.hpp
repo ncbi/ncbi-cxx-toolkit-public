@@ -182,7 +182,8 @@ private:
     void x_ProcessReadFailed(CQueue*);
     void x_ProcessReadRollback(CQueue*);
     void x_FinalizeReadCommand(const string &  command,
-                               TJobStatus      status);
+                               TJobStatus      status,
+                               const CJob &    job);
     void x_ProcessGetAffinityList(CQueue*);
     void x_ProcessSetClientData(CQueue*);
     void x_ProcessClearWorkerNode(CQueue*);
@@ -224,6 +225,9 @@ private:
                                const CJob &   job,
                                bool           add_security_token);
     bool x_CanBeWithoutQueue(FProcessor  processor) const;
+    bool x_NeedToGeneratePHIDAndSID(FProcessor  processor) const;
+    bool x_WorkerNodeCommand(void) const;
+    void x_LogCommandWithJob(const CJob &  job) const;
 
     void x_ClearRollbackAction(void);
     void x_ExecuteRollbackAction(CQueue * q);
@@ -260,6 +264,7 @@ private:
     CNSPreciseTime                  m_BatchSubmTimeout;
     string                          m_BatchClientIP;
     string                          m_BatchClientSID;
+    string                          m_BatchNCBIPHID;
     bool                            m_WithinBatchSubmit;
 
     // Parsers for incoming commands and their parser tables

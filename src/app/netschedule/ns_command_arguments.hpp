@@ -79,6 +79,7 @@ struct SNSCommandArguments
     string          service;
     string          user;
     string          client_data;
+    string          ncbi_phid;
 
     bool            any_affinity;
     bool            wnode_affinity;
@@ -89,8 +90,9 @@ struct SNSCommandArguments
     bool            pullback;
     bool            blacklist;  // RETURN2 only: add or not to blacklist
 
-    void AssignValues(const TNSProtoParams &     params,
+    void AssignValues(TNSProtoParams &           params,
                       const string &             command,
+                      bool                       need_to_generate,
                       CSocket &                  peer_socket,
                       CCompoundIDPool::TInstance id_pool);
 

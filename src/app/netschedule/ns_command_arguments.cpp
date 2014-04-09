@@ -76,6 +76,7 @@ void SNSCommandArguments::x_Reset()
     service.erase();
     user.erase();
     client_data.erase();
+    ncbi_phid.erase();
 
     any_affinity = false;
     wnode_affinity = false;
@@ -90,15 +91,16 @@ void SNSCommandArguments::x_Reset()
 }
 
 
-void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
+void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                                        const string &             command,
+                                       bool                       need_to_generate,
                                        CSocket &                  peer_socket,
                                        CCompoundIDPool::TInstance id_pool)
 {
     x_Reset();
     cmd = command;
 
-    ITERATE(TNSProtoParams, it, params) {
+    NON_CONST_ITERATE(TNSProtoParams, it, params) {
         const CTempString &     key = it->first;
         const CTempString &     val = it->second;
         size_t                  size_to_check = 0;
@@ -204,9 +206,10 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                 input = NStr::ParseEscapes(val);
             else if (key == "ip") {
                 ip = NStr::ParseEscapes(val);
-                if (ip.empty())
+                if (ip.empty()) {
                     ip = peer_socket.GetPeerAddress(eSAF_IP);
-                CDiagContext::GetRequestContext().SetClientIP(ip);
+                    it->second = ip;
+                }
             }
             break;
         case 'j':
@@ -234,6 +237,20 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                     NCBI_THROW(CNetScheduleException, eInvalidParameter,
                                "mode accepted values are 0 and 1.");
                 mode = (tmp == 1);
+            }
+            break;
+        case 'n':
+            if (key == "ncbi_phid") {
+                ncbi_phid = NStr::ParseEscapes(val);
+                if (ncbi_phid.empty()) {
+                    if (need_to_generate) {
+                        ncbi_phid = CDiagContext::GetRequestContext().SetHitID();
+                        // Dictionary is updated for the logging
+                        it->second = ncbi_phid;
+                    }
+                }
+                else
+                    CDiagContext::GetRequestContext().SetHitID(ncbi_phid);
             }
             break;
         case 'o':
@@ -276,7 +293,14 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
             }
             else if (key == "sid") {
                 sid = NStr::ParseEscapes(val);
-                CDiagContext::GetRequestContext().SetSessionID(NStr::URLDecode(sid));
+                if (sid.empty()) {
+                    if (need_to_generate) {
+                        sid = CDiagContext::GetRequestContext().SetSessionID();
+                        it->second = sid;
+                    }
+                }
+                else
+                    CDiagContext::GetRequestContext().SetSessionID(sid);
             }
             else if (key == "start_after") {
                 start_after = val;

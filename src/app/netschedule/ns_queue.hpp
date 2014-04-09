@@ -172,6 +172,7 @@ public:
                          CJob &                     job,
                          const string &             aff_token,
                          const string &             group,
+                         bool                       logging,
                          CNSRollbackInterface * &   rollback_action);
 
     /// Submit job batch
@@ -179,12 +180,14 @@ public:
     unsigned SubmitBatch(const CNSClientId &             client,
                          vector< pair<CJob, string> > &  batch,
                          const string &                  group,
+                         bool                            logging,
                          CNSRollbackInterface * &        rollback_action);
 
     TJobStatus  PutResult(const CNSClientId &     client,
                           const CNSPreciseTime &  curr,
                           unsigned int            job_id,
                           const string &          job_key,
+                          CJob &                  job,
                           const string &          auth_token,
                           int                     ret_code,
                           const string &          output);
@@ -214,48 +217,54 @@ public:
                        const string &  data, int  data_version);
 
     TJobStatus  JobDelayExpiration(unsigned int            job_id,
+                                   CJob &                  job,
                                    const CNSPreciseTime &  tm);
 
     TJobStatus  GetStatusAndLifetime(unsigned int      job_id,
-                                     const string &    job_key,
+                                     CJob &            job,
                                      bool              need_touch,
                                      CNSPreciseTime *  lifetime);
 
     TJobStatus  SetJobListener(unsigned int            job_id,
+                               CJob &                  job,
                                unsigned int            address,
                                unsigned short          port,
                                const CNSPreciseTime &  timeout,
                                size_t *                last_event_index);
 
     // Worker node-specific methods
-    bool PutProgressMessage(unsigned      job_id,
-                            const string& msg);
+    bool PutProgressMessage(unsigned int    job_id,
+                            CJob &          job,
+                            const string &  msg);
 
     TJobStatus  ReturnJob(const CNSClientId &     client,
                           unsigned int            job_id,
                           const string &          job_key,
+                          CJob &                  job,
                           const string &          auth_token,
                           string &                warning,
                           TJobReturnOption        how);
 
     TJobStatus  ReadAndTouchJob(unsigned int      job_id,
-                                const string &    job_key,
                                 CJob &            job,
                                 CNSPreciseTime *  lifetime);
 
     // Remove all jobs
-    void Truncate(void);
+    void Truncate(bool  logging);
 
     // Cancel job execution (job stays in special Canceled state)
     // Returns the previous job status
     TJobStatus  Cancel(const CNSClientId &  client,
                        unsigned int         job_id,
                        const string &       job_key,
+                       CJob &               job,
                        bool                 is_ns_rollback = false);
 
-    void CancelAllJobs(const CNSClientId &  client);
+    void CancelAllJobs(const CNSClientId &  client,
+                       bool                 logging);
     void CancelGroup(const CNSClientId &  client,
-                     const string &       group);
+                     const string &       group,
+                     bool                 logging);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
@@ -277,19 +286,22 @@ public:
     TJobStatus  ConfirmReadingJob(const CNSClientId &   client,
                                   unsigned int          job_id,
                                   const string &        job_key,
+                                  CJob &                job,
                                   const string &        auth_token);
     // Fail (negative acknowledge) reading of these jobs
     TJobStatus  FailReadingJob(const CNSClientId &   client,
                                unsigned int          job_id,
                                const string &        job_key,
+                               CJob &                job,
                                const string &        auth_token,
                                const string &        err_msg);
     // Return jobs to unread state without reservation
     TJobStatus  ReturnReadingJob(const CNSClientId &   client,
                                  unsigned int          job_id,
                                  const string &        job_key,
+                                 CJob &                job,
                                  const string &        auth_token,
-                                 bool                  is_ns_rollback = false);
+                                 bool                  is_ns_rollback);
 
     // Erase job from all structures, request delayed db deletion
     void EraseJob(unsigned job_id);
@@ -308,6 +320,7 @@ public:
     TJobStatus FailJob(const CNSClientId &    client,
                        unsigned int           job_id,
                        const string &         job_key,
+                       CJob &                 job,
                        const string &         auth_token,
                        const string &         err_msg,
                        const string &         output,
@@ -415,10 +428,11 @@ private:
     TJobStatus  x_ChangeReadingStatus(const CNSClientId &  client,
                                       unsigned int         job_id,
                                       const string &       job_key,
+                                      CJob &               job,
                                       const string &       auth_token,
                                       const string &       err_msg,
                                       TJobStatus           target_status,
-                                      bool                 is_ns_rollback = false);
+                                      bool                 is_ns_rollback);
 
     struct x_SJobPick
     {
@@ -438,7 +452,6 @@ private:
                              unsigned int         picked_earlier);
 
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
-                                    const string &          job_key,
                                     const string &          auth_token,
                                     const CNSPreciseTime &  curr,
                                     int                     ret_code,
@@ -456,9 +469,7 @@ private:
                                  const CNSPreciseTime &  curr_time,
                                  bool                    logging);
 
-    void x_LogSubmit(const CJob &       job,
-                     const string &     aff,
-                     const string &     group);
+    void x_LogSubmit(const CJob &  job);
     void x_UpdateStartFromCounter(void);
     unsigned int x_ReadStartFromCounter(void);
     void x_DeleteJobEvents(unsigned int  job_id);
@@ -494,7 +505,8 @@ private:
                       unsigned int           start_after_job_id,
                       unsigned int           count);
     void x_CancelJobs(const CNSClientId &   client,
-                      const TNSBitVector &  jobs_to_cancel);
+                      const TNSBitVector &  jobs_to_cancel,
+                      bool                  logging);
     CNSPreciseTime x_GetEstimatedJobLifetime(unsigned int   job_id,
                                              TJobStatus     status) const;
     CNSPreciseTime x_GetSubmitTime(unsigned int  job_id);
