@@ -2458,9 +2458,7 @@ Blast_HSPListReevaluateUngapped(EBlastProgramType program,
                                					&align_length,
                                					sbp);
 
-           delete_hsp = Blast_HSPTest(hsp, hit_params->options, align_length) ||
-        		        Blast_HSPQueryCoverageTest(hsp, hit_params->options->query_cov_hsp_perc,
-        		           						   query_info->contexts[context].query_length);
+           delete_hsp = Blast_HSPTest(hsp, hit_params->options, align_length);
       }
       if (delete_hsp) { /* This HSP is now below the cutoff */
          hsp_array[index] = Blast_HSPFree(hsp_array[index]);

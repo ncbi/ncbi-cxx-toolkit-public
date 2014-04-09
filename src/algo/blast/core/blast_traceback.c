@@ -590,9 +590,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                        							   &align_length,
                        							   sbp);
   
-               delete_hsp = Blast_HSPTest(hsp, hit_options, align_length) ||
-       		                Blast_HSPQueryCoverageTest(hsp, hit_options->query_cov_hsp_perc,
-       		           						           query_length);;
+               delete_hsp = Blast_HSPTest(hsp, hit_options, align_length);
            }
            if (!delete_hsp) {
               Blast_HSPAdjustSubjectOffset(hsp, start_shift);
@@ -658,8 +656,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                        score_params, sbp);
           if (!delete_hsp) 
               delete_hsp = Blast_HSPTestIdentityAndLength(program_number, hsp, query_nomask, 
-                                                       subject, score_options, hit_options) ||
-                           Blast_HSPQueryCoverageTest( hsp, hit_options->query_cov_hsp_perc, query_length) ;
+                                                       subject, score_options, hit_options);
           if (delete_hsp) 
               hsp_array[index] = Blast_HSPFree(hsp);
        }
@@ -822,6 +819,30 @@ EBlastEncoding Blast_TracebackGetEncoding(EBlastProgramType program_number)
     } else {
         return eBlastEncodingNucleotide;
     }
+}
+
+/** Delete hsps below query coverage percentage
+ * @param results All results after traceback [in] [out]
+ * @param hit_options hits options [in]
+ * @param query_info  query info [in]
+ * @param program_number  blast program number [in]
+ */
+static void
+s_BlastResultsReapByQueryCoverage(BlastHSPResults* results, const BlastHitSavingOptions* hit_options,
+        const BlastQueryInfo* query_info, EBlastProgramType program_number)
+{
+   Int4 query_index, subject_index;
+   BlastHitList* hit_list;
+
+   for (query_index = 0; query_index < results->num_queries; ++query_index) {
+      if (!(hit_list = results->hitlist_array[query_index]))
+         continue;
+      for (subject_index = 0;
+           subject_index < hit_list->hsplist_count; ++subject_index) {
+    	  	  BlastHSPList * hsp_list = hit_list->hsplist_array[subject_index];
+    	  	  Blast_HSPListReapByQueryCoverage(hsp_list, hit_options, query_info, program_number);
+      }
+   }
 }
 
 
@@ -1671,6 +1692,10 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
     if (BlastSeqSrcGetTotLen(seq_src) > 0)
         Blast_HSPResultsSortByEvalue(results);
 
+    if(hit_params->options->query_cov_hsp_perc > 0) {
+    	s_BlastResultsReapByQueryCoverage(results, hit_params->options,
+            						  	  query_info, program_number);
+    }
     /* Eliminate extra hits from results, if preliminary hit list size is
        larger than the final hit list size */
     s_BlastPruneExtraHits(results, hit_params->options->hitlist_size);

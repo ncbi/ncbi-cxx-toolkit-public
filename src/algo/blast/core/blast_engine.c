@@ -1419,6 +1419,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
         	   status = s_Blast_HSPListReapByPrelimEvalue(hsp_list, hit_params);
                }
  
+               Blast_HSPListReapByQueryCoverage(hsp_list,hit_params->options, query_info, program_number);
             /* Calculate and fill the bit scores, since there will be no
                traceback stage where this can be done. */
             Blast_HSPListGetBitScores(hsp_list, gapped_calculation, sbp);
