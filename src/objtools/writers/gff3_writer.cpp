@@ -1105,7 +1105,8 @@ bool CGff3Writer::xWriteFeatureTrna(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffFeatureRecord> pParent( new CGffFeatureRecord(xNextTrnaId()) );
+    const string rnaId = xNextTrnaId();
+    CRef<CGffFeatureRecord> pParent( new CGffFeatureRecord(rnaId) );
     if (!this->xAssignFeature(*pParent, fc, mf)) {
         return false;
     }
@@ -1117,7 +1118,7 @@ bool CGff3Writer::xWriteFeatureTrna(
         return false;
     }
 
-    CRef<CGffFeatureRecord> pRna(new CGffFeatureRecord(xNextTrnaId()));
+    CRef<CGffFeatureRecord> pRna(new CGffFeatureRecord(rnaId));
     if (!xAssignFeature(*pRna, fc, mf)) {
         return false;
     }
@@ -1132,6 +1133,7 @@ bool CGff3Writer::xWriteFeatureTrna(
             pChild->SetRecordId(xNextGenericId());
             pChild->SetType("exon");
             pChild->SetLocation(subint);
+            pChild->SetParent(rnaId);
             if ( ! xWriteRecord(*pChild ) ) {
                 return false;
             }
