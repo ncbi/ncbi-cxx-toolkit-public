@@ -2687,3 +2687,4 @@ string CGff3Writer::xNextTrnaId()
 }
 
 END_NCBI_SCOPE
+
