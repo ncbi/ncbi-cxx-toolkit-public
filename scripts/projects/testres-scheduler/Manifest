@@ -20,7 +20,7 @@ COPY: $srcdir/src/internal/cppcore/testres/tool/scripts/ $installdir
 COPY: $srcdir/src/internal/cppcore/testres/web/presenters/ $installdir
 
 #ini file
-COPY: $srcdir/src/internal/cppcore/testres/kernel/testres_scheduler.ini $installdir/bin
+COPY: $srcdir/src/internal/cppcore/testres/scheduler/testres_scheduler.ini $installdir/bin
 
 Linux64-Centos  : plain  : GCC.sh      --without-debug --with-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
