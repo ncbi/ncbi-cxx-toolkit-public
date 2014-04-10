@@ -643,4 +643,4 @@ EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
 OBJREAD_LIBS = xobjread variation creaders submit
 
 # formatting code
-XFORMAT_LIBS = xformat xcleanup gbseq submit mlacli mla medlars pubmed valid xhtml
+XFORMAT_LIBS = xformat xcleanup gbseq submit mlacli mla medlars pubmed valid
