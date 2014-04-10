@@ -931,6 +931,8 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
     }
     if (NStr::IsBlank(dir)) {
         dir = s_GetDefaultDir(is_negative, default_dir);
+    } else if (is_negative) {
+        return "";
     }
 
     size_t pos = 0;
