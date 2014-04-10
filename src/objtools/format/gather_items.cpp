@@ -108,8 +108,6 @@
 #include <objtools/error_codes.hpp>
 #include "utils.hpp"
 
-#include <html/htmlhelper.hpp>
-
 #include <connect/ncbi_socket.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Fmt_Gather
@@ -2421,14 +2419,14 @@ static void s_CleanCDDFeature(const CSeq_feat& feat)
     } else if ( feat.GetData().IsRegion() && feat.GetNamedDbxref("CDD") ) {
         if ( feat.IsSetComment() ) {
             string s = feat.GetComment();
-            CStringUTF8 x = CHTMLHelper::HTMLDecode (s);
+            CStringUTF8 x = NStr::HtmlDecode (s);
             if (! NStr::Equal (s, x)) {
                 CSeq_feat& f = const_cast<CSeq_feat&>(feat);
                 f.SetComment(x);
             }
         }
         string s = feat.GetData().GetRegion();
-        CStringUTF8 x = CHTMLHelper::HTMLDecode (s);
+        CStringUTF8 x = NStr::HtmlDecode (s);
         if (! NStr::Equal (s, x)) {
             CSeq_feat& f = const_cast<CSeq_feat&>(feat);
             f.SetData().SetRegion(x);
