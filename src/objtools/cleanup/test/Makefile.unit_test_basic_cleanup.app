@@ -5,8 +5,10 @@ SRC = unit_test_basic_cleanup
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = test_boost xcleanup xregexp $(XFORMAT_LIBS) xalnmgr xobjutil valid valerr submit tables gbseq $(OBJMGR_LIBS) $(PCRE_LIB)
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
+LIB = xcleanup xobjutil valid submit xregexp $(PCRE_LIB) $(COMPRESS_LIBS) \
+      test_boost $(SOBJMGR_LIBS)
+
+LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
