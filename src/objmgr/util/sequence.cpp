@@ -4821,3 +4821,4 @@ void ReverseComplement(CSeq_inst& inst, CScope* scope)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
