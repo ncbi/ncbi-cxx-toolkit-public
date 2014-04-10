@@ -356,6 +356,7 @@ gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
 gpipe_common needs xconnect
 gpipe_common needs xmlwrapp
+gpipe_common needs xregexp
 gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gpinit_buildinfo
@@ -375,7 +376,6 @@ gpipe_jira needs gpipe_common
 gpipe_jira needs3party $(OPENSSL_LIBS)
 gpipe_jira needs3party $(Z_LIBS)
 gpipe_kmer needs biotree
-gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs gpipe_xml
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
@@ -390,7 +390,6 @@ gpipe_objutil needs writedb
 gpipe_objutil needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_property needs gpipe_common
-gpipe_property needs xregexp
 gpipe_remap needs xobjreadex
 gpipe_resource_req needs xncbi
 gpipe_sadb needs $(COMPRESS_LIBS)
@@ -409,9 +408,7 @@ gpipe_val needs gpipe_common
 gpipe_val needs pub
 gpipe_val needs valerr
 gpipe_xml needs connssl
-gpipe_xml needs genome_collection
-gpipe_xml needs gpipe_common
-gpipe_xml needs taxon1
+gpipe_xml needs gpipe_objutil
 gpipe_xml needs taxon3
 gpxapi needs general
 gpxapi needs xconnect
@@ -795,12 +792,10 @@ odbc_ftds64 needs tds_ftds64
 omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party ctutils
-pathogen_ctl needs $(SRAREAD_LIBS)
 pathogen_ctl needs bag_access
 pathogen_ctl needs gencoll_client
 pathogen_ctl needs gpipe_xml
 pathogen_ctl needs xvalidate
-pathogen_ctl needs3party $(SRA_SDK_SYSLIBS)
 pathogen_fill_taxa needs gpipe_common
 pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
@@ -831,7 +826,6 @@ refseq_aln_source needs dbapi
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs gpinit_access
-refseq_ctl needs xregexp
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
