@@ -414,7 +414,7 @@ void CWGSSeqIterator::x_ReportInvalid(const char* method) const
 
 bool CWGSSeqIterator::HasGi(void) const
 {
-    return m_Seq->m_GI;
+    return m_Seq->m_GI && GetGi();
 }
 
 
@@ -499,8 +499,15 @@ void CWGSSeqIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
         if ( !str.empty() ) {
             CRef<CSeq_id> id(new CSeq_id);
             CDbtag& tag = id->SetGeneral();
-            tag.SetDb("WGS:"+GetDb().m_IdPrefixWithVersion);
-            tag.SetTag().SetStr(str);
+            string db = "WGS:"+GetDb().m_IdPrefixWithVersion;
+            tag.SetDb(db);
+            db += ':';
+            if ( NStr::StartsWith(str, db) ) {
+                tag.SetTag().SetStr(str.substr(db.size()));
+            }
+            else {
+                tag.SetTag().SetStr(str);
+            }
             ids.push_back(id);
         }
     }
@@ -1304,13 +1311,14 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
     TSeqPos length = GetSeqLength();
     inst->SetLength(length);
     inst->SetMol(CSeq_inst::eMol_dna);
-    inst->SetStrand(CSeq_inst::eStrand_ds);
-    inst->SetRepr(CSeq_inst::eRepr_delta);
     CVDBValueFor4Bits read(m_Seq->READ(m_CurrId));
     if ( (flags & fMaskInst) == fInst_ncbi4na ) {
+        inst->SetRepr(CSeq_inst::eRepr_raw);
         inst->SetSeq_data(*sx_Get4na(read, 0, length));
     }
     else {
+        inst->SetRepr(CSeq_inst::eRepr_delta);
+        inst->SetStrand(CSeq_inst::eStrand_ds);
         CRef<CSeq_id> id = GetAccSeq_id();
         size_t gaps_count = 0;
         const INSDC_coord_one* gaps_start = 0;
@@ -1345,8 +1353,22 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
                 }
             }
         }
-        sx_AddDelta(*id, inst->SetExt().SetDelta().Set(), read, 0, length,
+        CDelta_ext& delta = inst->SetExt().SetDelta();
+        sx_AddDelta(*id, delta.Set(), read, 0, length,
                     gaps_count, gaps_start, gaps_len, gaps_props, gaps_linkage);
+        if ( delta.Set().size() == 1 ) {
+            CDelta_seq& seg = *delta.Set().front();
+            if ( seg.IsLiteral() &&
+                 seg.GetLiteral().GetLength() == inst->GetLength() &&
+                 !seg.GetLiteral().IsSetFuzz() &&
+                 seg.GetLiteral().IsSetSeq_data() ) {
+                // single segment, delta is not necessary
+                inst->SetRepr(CSeq_inst::eRepr_raw);
+                inst->SetSeq_data(seg.SetLiteral().SetSeq_data());
+                inst->ResetStrand();
+                inst->ResetExt();
+            }
+        }
     }
     return inst;
 }
