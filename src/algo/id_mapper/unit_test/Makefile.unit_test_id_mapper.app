@@ -14,5 +14,6 @@ LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD = unit_test_id_mapper
+CHECK_TIMEOUT = 1200
 
 WATCHERS = boukn meric
