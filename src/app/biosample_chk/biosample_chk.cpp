@@ -1119,46 +1119,46 @@ void AddBioSourceToAttributes(node& organism, node& sample_attrs, const CBioSour
                 s_AddSamplePair(sample_attrs, attribute_name, (*it)->GetName());
             }
         }
-        if (src.IsSetPcr_primers()) {
-            ITERATE(CBioSource::TPcr_primers::Tdata, it, src.GetPcr_primers().Get()) {
-                if ((*it)->IsSetForward()) {
-                    ITERATE(CPCRReaction::TForward::Tdata, fit, (*it)->GetForward().Get()) {
-                        if ((*fit)->IsSetName()) {
-                            s_AddSamplePair(sample_attrs, kPcrForwardName, (*fit)->GetName().Get());
-                        }
-                        if ((*fit)->IsSetSeq()) {
-                            s_AddSamplePair(sample_attrs, kPcrForwardSeq, (*fit)->GetSeq().Get());
-                        }                        
+    }
+    if (src.IsSetPcr_primers()) {
+        ITERATE(CBioSource::TPcr_primers::Tdata, it, src.GetPcr_primers().Get()) {
+            if ((*it)->IsSetForward()) {
+                ITERATE(CPCRReaction::TForward::Tdata, fit, (*it)->GetForward().Get()) {
+                    if ((*fit)->IsSetName()) {
+                        s_AddSamplePair(sample_attrs, kPcrForwardName, (*fit)->GetName().Get());
                     }
+                    if ((*fit)->IsSetSeq()) {
+                        s_AddSamplePair(sample_attrs, kPcrForwardSeq, (*fit)->GetSeq().Get());
+                    }                        
                 }
-                if ((*it)->IsSetReverse()) {
-                    ITERATE(CPCRReaction::TForward::Tdata, rit, (*it)->GetReverse().Get()) {
-                        if ((*rit)->IsSetName()) {
-                            s_AddSamplePair(sample_attrs, kPcrReverseName, (*rit)->GetName().Get());
-                        }
-                        if ((*rit)->IsSetSeq()) {
-                            s_AddSamplePair(sample_attrs, kPcrReverseSeq, (*rit)->GetSeq().Get());
-                        }                        
+            }
+            if ((*it)->IsSetReverse()) {
+                ITERATE(CPCRReaction::TForward::Tdata, rit, (*it)->GetReverse().Get()) {
+                    if ((*rit)->IsSetName()) {
+                        s_AddSamplePair(sample_attrs, kPcrReverseName, (*rit)->GetName().Get());
                     }
+                    if ((*rit)->IsSetSeq()) {
+                        s_AddSamplePair(sample_attrs, kPcrReverseSeq, (*rit)->GetSeq().Get());
+                    }                        
                 }
             }
         }
+    }
 
-        if (src.IsSetOrg()) {
-            if (src.GetOrg().IsSetTaxname()) {
-                organism.insert(node("OrganismName", src.GetOrg().GetTaxname().c_str()));
-            }
-            if (src.GetOrg().IsSetOrgMod()) {
-                ITERATE(COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
-                    if ((*it)->IsSetSubtype() && (*it)->IsSetSubname()) {
-                        string attribute_name = "";
-                        if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
-                            attribute_name = "orgmod_note";
-                        } else {
-                            attribute_name = COrgMod::GetSubtypeName((*it)->GetSubtype()); 
-                        }
-                        s_AddSamplePair(sample_attrs, attribute_name, (*it)->GetSubname());
+    if (src.IsSetOrg()) {
+        if (src.GetOrg().IsSetTaxname()) {
+            organism.insert(node("OrganismName", src.GetOrg().GetTaxname().c_str()));
+        }
+        if (src.GetOrg().IsSetOrgMod()) {
+            ITERATE(COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
+                if ((*it)->IsSetSubtype() && (*it)->IsSetSubname()) {
+                    string attribute_name = "";
+                    if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
+                        attribute_name = "orgmod_note";
+                    } else {
+                        attribute_name = COrgMod::GetSubtypeName((*it)->GetSubtype()); 
                     }
+                    s_AddSamplePair(sample_attrs, attribute_name, (*it)->GetSubname());
                 }
             }
         }
