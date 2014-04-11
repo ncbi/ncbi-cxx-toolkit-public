@@ -10,7 +10,7 @@
 #
 
 APP: lbsmd lbsmc lbsm_feedback
-APP: launcherd fwdaemon dispd.cgi test_mghbn
+APP: launcherd fwdaemon dispd.cgi
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
 DEFAULT_CONFIGURATIONS:  Linux32-Centos:GCC Linux64-Centos:GCC FreeBSD32:GCC SunOSx86:GCC SunOSSparc:WS64 IntelMAC:GCC
