@@ -22,4 +22,4 @@ WATCHERS = ludwigf dicuccio kornbluh
 
 
 USES_LIBRARIES =  \
-    gbseq mlacli submit valid xalnmgr xhtml
+    gbseq mlacli submit valid xalnmgr xcleanup
