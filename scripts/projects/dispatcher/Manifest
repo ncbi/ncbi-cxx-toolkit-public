@@ -23,7 +23,7 @@ COPY: $srcdir/include/connect/ext/*.h        $installdir/include/connect/ext/
 COPY: $srcdir/include/connect/daemons/*.h    $installdir/include/connect/daemons/
 COPY: $srcdir/include/internal/webenv2/id.h  $installdir/include/internal/webenv2/
 
-POSTBUILD: [ "$platform" != "Cygwin32" ] || { cp -v --preserve=mode,timestamps /bin/{cyggcc_s-1.dll,cygrunsrv.exe,cygwin1.dll,cygz.dll,true.exe} $installdir/bin/; }
+POSTBUILD: [ "$platform" != "Cygwin32" ] || { cp -v --preserve=mode,timestamps /bin/{cyggcc_s-1.dll,cygrunsrv.exe,cygwin1.dll,cygz.dll} $installdir/bin/; }
 POSTBUILD: [ "$platform" != "Cygwin32" ] || { cp -v --preserve=mode,timestamps /usr/{bin/cygcheck.exe,bin/ipcs.exe,sbin/cygserver.exe} $installdir/bin/; }
 
 # Each line describes a single configuration
@@ -36,8 +36,8 @@ POSTBUILD: [ "$platform" != "Cygwin32" ] || { cp -v --preserve=mode,timestamps /
 Linux32-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux32-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux64-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-Linux64-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --without-version
-FreeBSD32       : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --without-version
+Linux64-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
+FreeBSD32       : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSx86        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSx86        : WS32  : WorkShop.sh 32 --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 SunOSSparc      : WS64  : WorkShop.sh 64 --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
