@@ -591,6 +591,16 @@ CDB_Object* CTL_RowResult::GetItemInternal(
 								DATABASE_DRIVER_ERROR( "Invalid conversion to CDB_VarChar type", 230021 );
 						}
 						break;
+#ifndef FTDS_IN_USE
+                    case eDB_Char:
+                        if (outlen <= MAX_VARCHAR_SIZE) {
+                                ((CDB_Char*) item_buf)
+                                    ->SetValue(v, outlen, eEncoding_Unknown);
+                        } else {
+                                DATABASE_DRIVER_ERROR( "Invalid conversion to CDB_Char type", 230022 );
+                        }
+                        break;
+#endif
                     default:
 						DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
                         break;
