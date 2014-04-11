@@ -46,7 +46,13 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
             CSDB_ConnectionParam params(GetDatabase().GetConnectionParam());
             params.Set(CSDB_ConnectionParam::eDatabase, target_db_name);
             CDatabase db(params);
+            BOOST_CHECK( !db.IsConnected(CDatabase::eFullCheck) );
+            BOOST_CHECK( !db.IsConnected(CDatabase::eFastCheck) );
+            BOOST_CHECK( !db.IsConnected(CDatabase::eNoCheck) );
             db.Connect();
+            BOOST_CHECK(db.IsConnected(CDatabase::eNoCheck));
+            BOOST_CHECK(db.IsConnected(CDatabase::eFastCheck));
+            BOOST_CHECK(db.IsConnected(CDatabase::eFullCheck));
 
             CQuery query = db.NewQuery("select db_name()");
 
@@ -58,6 +64,11 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
             const  string db_name = it[1].AsString();
             BOOST_CHECK_EQUAL(db_name, target_db_name);
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+
+            db.Close();
+            BOOST_CHECK( !db.IsConnected(CDatabase::eFullCheck) );
+            BOOST_CHECK( !db.IsConnected(CDatabase::eFastCheck) );
+            BOOST_CHECK( !db.IsConnected(CDatabase::eNoCheck) );
         }
     }
     catch(const CException& ex) {

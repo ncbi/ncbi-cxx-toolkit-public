@@ -843,6 +843,13 @@ private:
 class CDatabase
 {
 public:
+    /// How thoroughly IsConnected should actually check the connection.
+    enum EConnectionCheckMethod {
+        eNoCheck,   //< Confirm that Connect() was called and Close() wasn't.
+        eFastCheck, //< Also verify that the driver still sees a connection.
+        eFullCheck, //< Further confirm that a simple query succeeds.
+    };
+
     /// Empty constructor of database object.
     /// Object created this way cannot be used for anything except assigning
     /// from another database object.
@@ -879,9 +886,10 @@ public:
     /// from original one.
     CDatabase Clone(void);
     /// Check if database object was already connected to database server.
-    /// This checks only that Connect() method was called and Close() wasn't
-    /// called.
-    bool IsConnected(void);
+    /// By default, this checks only that Connect() method was called
+    /// and Close() wasn't called, but more thorough checks are possible.
+    /// NB: eFullCheck mode cannot coexist with active queries.
+    bool IsConnected(EConnectionCheckMethod check_method = eNoCheck);
 
     /// Get new CQuery object for this database.
     /// Method can be called only when database object is connected to the

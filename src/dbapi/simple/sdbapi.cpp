@@ -1441,9 +1441,35 @@ CDatabase::Close(void)
 }
 
 bool
-CDatabase::IsConnected(void)
+CDatabase::IsConnected(EConnectionCheckMethod check_method)
 {
-    return m_Impl  &&  m_Impl->IsOpen();
+    if (m_Impl == NULL  ||  !m_Impl->IsOpen()) {
+        return false;
+    } else if (check_method == eNoCheck) {
+        return true;
+    }
+
+    IConnection* conn = m_Impl->GetConnection();
+    _ASSERT(conn != NULL);
+    if ( !conn->IsAlive() ) {
+        return false;
+    } else if (check_method == eFastCheck) {
+        return true;
+    }
+
+    _ASSERT(check_method == eFullCheck);
+    try {
+        CQuery query = NewQuery("SELECT 1");
+        query.Execute();
+        query.RequireRowCount(1);
+        CQuery::CRowIterator row = query.begin();
+        bool ok = (row != query.end()  &&  row.GetTotalColumns() == 1
+                   &&  row[1].AsInt4() == 1);
+        query.VerifyDone();
+        return ok;
+    } catch (exception&) {
+        return false;
+    }
 }
 
 CDatabase
