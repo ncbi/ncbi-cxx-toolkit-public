@@ -1083,3 +1083,102 @@ Variation ::= {
     }
   }
 }
+Variation ::= {
+  name "NM_030785.3:c.2100_2101insGAGGAGGAGGAGGAGGGC",
+  description "",
+  placements {
+    {
+      loc int {
+        from 2270,
+        to 2271,
+        strand plus,
+        id other {
+          accession "NM_030785",
+          version 3
+        }
+      },
+      mol cdna,
+      seq {
+        length 2,
+        seq-data iupacna "AG"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 81492
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data instance {
+    type ins,
+    delta {
+      {
+        seq literal {
+          length 18,
+          seq-data iupacna "GAGGAGGAGGAGGAGGGC"
+        },
+        action ins-before
+      }
+    }
+  },
+  consequence {
+    variation {
+      placements {
+        {
+          loc int {
+            from 713,
+            to 714,
+            strand plus,
+            id other {
+              accession "NP_110412",
+              version 1
+            }
+          },
+          mol protein,
+          seq {
+            length 2,
+            seq-data ncbieaa "ET"
+          }
+        },
+        {
+          loc int {
+            from 2310,
+            to 2315,
+            strand plus,
+            id other {
+              accession "NM_030785",
+              version 3
+            }
+          },
+          mol cdna,
+          frame 2,
+          seq {
+            length 6,
+            seq-data iupacna "GAGACA"
+          }
+        }
+      },
+      data instance {
+        type ins,
+        delta {
+          {
+            seq literal {
+              length 18,
+              seq-data iupacna "GAGGAGGAGGGCGAGGAG"
+            },
+            action ins-before
+          }
+        }
+      },
+      so-terms {
+        1820
+      }
+    }
+  }
+}
