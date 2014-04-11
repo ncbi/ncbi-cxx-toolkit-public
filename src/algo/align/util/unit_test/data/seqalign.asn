@@ -4285,6 +4285,18 @@ Seq-align ::= {
   type global,
   dim 2,
   score { -- SEQUENCE OF Score --
+    {
+      id str "length",
+      value int 689
+    },
+    {
+      id str "gapopen",
+      value int 8
+    },
+    {
+      id str "gap_bases",
+      value int 11
+    },
     { -- Score --
       id str "matches",
       value int 676
@@ -4325,12 +4337,20 @@ Seq-align ::= {
       id str "pct_identity_ungap",
       value real { 997050147492625, 10, -13 }
     },
+    {
+      id str "pct_identity_gapopen_only",
+      value real { 985422740524781, 10, -13 }
+    },
     { -- Score --
       id str "gap_count",
       value int 8
     },
     { -- Score --
       id str "pct_coverage",
+      value real { 986899563318777, 10, -13 }
+    },
+    { -- Score --
+      id str "pct_coverage_hiqual",
       value real { 986899563318777, 10, -13 }
     },
     { -- Score --
@@ -4486,6 +4506,80 @@ Seq-align ::= {
 Seq-align ::= {
   type global,
   dim 2,
+  score { -- SEQUENCE OF Score --
+    {
+      id str "length",
+      value int 786
+    },
+    {
+      id str "gapopen",
+      value int 4
+    },
+    {
+      id str "gap_bases",
+      value int 4
+    },
+    { -- Score --
+      id str "matches",
+      value int 676
+    },
+    { -- Score --
+      id str "identity",
+      value real { 971264367816092, 10, -15 }
+    },
+    { -- Score --
+      id str "splices",
+      value int 6
+    },
+    { -- Score --
+      id str "consensus_splices",
+      value int 6
+    },
+    { -- Score --
+      id str "product_coverage",
+      value real { 98981077147016, 10, -14 }
+    },
+    { -- Score --
+      id str "exon_identity",
+      value real { 981132075471698, 10, -15 }
+    },
+    { -- Score --
+      id str "pct_identity_gap",
+      value real { 991094147582697, 10, -13 }
+    },
+    { -- Score --
+      id str "num_ident",
+      value int 779
+    },
+    { -- Score --
+      id str "num_mismatch",
+      value int 3
+    },
+    { -- Score --
+      id str "pct_identity_ungap",
+      value real { 99616368286445, 10, -12 }
+    },
+    {
+      id str "pct_identity_gapopen_only",
+      value real { 991094147582697, 10, -13 }
+    },
+    { -- Score --
+      id str "gap_count",
+      value int 8
+    },
+    { -- Score --
+      id str "pct_coverage",
+      value real { 989873417721519, 10, -13 }
+    },
+    { -- Score --
+      id str "pct_coverage_hiqual",
+      value real { 989873417721519, 10, -13 }
+    },
+    { -- Score --
+      id str "rank",
+      value int 1
+    }
+  },
   segs spliced { -- Spliced-seg --
     product-id gi 25358097,
     genomic-id gi 358485058,
