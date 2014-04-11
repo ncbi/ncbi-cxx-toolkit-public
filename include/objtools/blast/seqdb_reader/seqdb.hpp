@@ -66,9 +66,9 @@ class CSeqDB;
 
 
 /// CSeqDBIter
-/// 
+///
 /// Small class to iterate over a seqdb database.
-/// 
+///
 /// This serves something of the same role for a CSeqDB object that a
 /// vector iterator might serve in the standard template library.
 
@@ -79,62 +79,62 @@ public:
     {
         x_RetSeq();
     }
-    
+
     /// Increment operator
-    /// 
+    ///
     /// Returns the currently held sequence and gets pointers to the
     /// next sequence.
     CSeqDBIter & operator++();
-    
+
     /// Get the OID of the currently held sequence.
     int GetOID()
     {
         return m_OID;
     }
-    
+
     /// Get the sequence data for the currently held sequence.
     const char * GetData()
     {
         return m_Data;
     }
-    
+
     /// Get the length (in base pairs) of the currently held sequence.
     int GetLength()
     {
         return m_Length;
     }
-    
+
     /// Returns true if the iterator points to a valid sequence.
     DECLARE_OPERATOR_BOOL(m_Length != -1);
-    
+
     /// Construct one iterator from another.
     CSeqDBIter(const CSeqDBIter &);
-    
+
     /// Copy one iterator to another.
     CSeqDBIter & operator =(const CSeqDBIter &);
-    
+
 private:
     /// Get data pointer and length for the current sequence.
     inline void x_GetSeq();
-    
+
     /// Release hold on current sequence.
     inline void x_RetSeq();
-    
+
     /// CSeqDB is a friend so it alone can create objects of this type.
     friend class CSeqDB;
-    
+
     /// Build an iterator (called only from CSeqDB).
     CSeqDBIter(const CSeqDB *, int oid);
-    
+
     /// The CSeqDB object which this object iterates over.
     const CSeqDB     * m_DB;
-    
+
     /// The OID this iterator is currently accessing.
     int                m_OID;
-    
+
     /// The sequence data for this OID.
     const char       * m_Data;
-    
+
     /// The length of this OID.
     int                m_Length;
 };
@@ -160,13 +160,13 @@ class NCBI_XOBJREAD_EXPORT CSeqDB : public CObject {
 public:
     /// Import type to allow shorter name.
     typedef TSeqDBAliasFileValues TAliasFileValues;
-    
+
     /// Indicates how block of OIDs was returned.
     enum EOidListType {
         eOidList,
         eOidRange
     };
-    
+
     /// Sequence types (eUnknown tries protein, then nucleotide).
     enum ESeqType {
         eProtein,
@@ -176,25 +176,25 @@ public:
 
     /// Converts a CSeqDB sequence type into a human readable string
     static string ESeqType2String(ESeqType type);
-    
+
     /// Types of summary information available.
     enum ESummaryType {
         /// Sum of all sequences, ignoring GI and OID lists and alias files.
         eUnfilteredAll,
-        
+
         /// Values from alias files, or summation over all included sequences.
         eFilteredAll,
-        
+
         /// Sum of included sequences with OIDs within the iteration range.
         eFilteredRange
     };
-    
+
     /// Sequence type accepted and returned for OID indices.
     typedef int TOID;
-    
+
     /// Sequence type accepted and returned for PIG indices.
     typedef int TPIG;
-    
+
     /// Sequence type accepted and returned for GI indices.
     typedef int TGI;
 
@@ -291,14 +291,14 @@ public:
     /// String containing the error message in exceptions thrown when a given
     /// OID cannot be found
     static const string kOidNotFound;
-    
+
     /// Short Constructor
-    /// 
+    ///
     /// This version of the constructor assumes memory mapping and
     /// that the entire possible OID range will be included.  Please
     /// use quotes ("") around database names that contains space
     /// characters.
-    /// 
+    ///
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces
     /// @param seqtype
@@ -306,14 +306,14 @@ public:
     /// @param gilist
     ///   The database will be filtered by this GI list if non-null.
     CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gilist = 0);
-    
+
     /// Short Constructor with Negative ID list.
-    /// 
+    ///
     /// This version of the constructor assumes the entire OID range
     /// will be included, and applies filtering by a negative ID list.
     /// Please use quotes ("") around database names that contains
     /// space characters.
-    /// 
+    ///
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces
     /// @param seqtype
@@ -323,14 +323,14 @@ public:
     CSeqDB(const string       & dbname,
            ESeqType             seqtype,
            CSeqDBNegativeList * nlist);
-    
+
     /// Short Constructor with Computed ID list.
-    /// 
+    ///
     /// This version of the constructor takes a computed CSeqDBIdSet
     /// list which can be positive or negative.  This is equivalent to
     /// building a positive or negative list from the IdSet object and
     /// and passing it into one of the previous constructors.
-    /// 
+    ///
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces
     /// @param seqtype
@@ -338,12 +338,12 @@ public:
     /// @param ids
     ///   The database will be filtered by this set of IDs.
     CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBIdSet ids);
-    
+
     /// Short Constructor
-    /// 
+    ///
     /// This version of the constructor assumes memory mapping and
     /// that the entire possible OID range will be included.
-    /// 
+    ///
     /// @param dbs
     ///   A list of database or alias names.
     /// @param seqtype
@@ -353,7 +353,7 @@ public:
     CSeqDB(const vector<string> & dbs,
            ESeqType               seqtype,
            CSeqDBGiList         * gilist = 0);
-    
+
     /// Constructor with MMap Flag and OID Range.
     ///
     /// If the oid_end value is specified as zero, or as a value
@@ -364,7 +364,7 @@ public:
     /// type is specified as a character (eventually only the ESeqType
     /// version will exist).  Please use quotes ("") around database
     /// names that contains space characters.
-    /// 
+    ///
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
     /// @param seqtype
@@ -387,7 +387,7 @@ public:
            int            oid_end,
            bool           use_mmap,
            CSeqDBGiList * gi_list = 0);
-    
+
     /// Constructor with MMap Flag and OID Range.
     ///
     /// If the oid_end value is specified as zero, or as a value
@@ -397,7 +397,7 @@ public:
     /// version of the constructor is obsolete because the sequence
     /// type is specified as a character (eventually only the ESeqType
     /// version will exist).
-    /// 
+    ///
     /// @param dbname
     ///   A list of database or alias names.
     /// @param seqtype
@@ -420,18 +420,18 @@ public:
            int                    oid_end,
            bool                   use_mmap,
            CSeqDBGiList         * gi_list = 0);
-    
+
     /// Destructor.
     ///
     /// This will return resources acquired by this object, including
     /// any gotten by the GetSequence() call, whether or not they have
     /// been returned by RetSequence().
     ~CSeqDB();
-    
+
     /// Returns the default BLAST database search path
     /// configured for this local installation of BLAST
     static string GenerateSearchPath();
-    
+
     /// Returns the sequence length in base pairs or residues.
     int GetSeqLength(int oid) const;
 
@@ -441,7 +441,7 @@ public:
     /// If you need those checks, please use GetGis()
     /// @sa GetGis
     int GetSeqGI(int oid) const;
-    
+
     /// Returns an unbiased, approximate sequence length.
     ///
     /// For protein DBs, this method is identical to GetSeqLength().
@@ -450,7 +450,7 @@ public:
     /// that, returning an approximation ranging from L-3 to L+3
     /// (where L indicates the exact length), and unbiased on average.
     int GetSeqLengthApprox(int oid) const;
-    
+
     /// Get the ASN.1 header for the sequence.
     ///
     /// Do not modify the object returned here (e.g. by removing some
@@ -460,12 +460,31 @@ public:
     /// @param oid The ordinal ID of the sequence.
     /// @return The blast deflines for this sequence.
     CRef<CBlast_def_line_set> GetHdr(int oid) const;
-    
+
     /// Get taxid for an OID.
     ///
     /// This finds the TAXIDS associated with a given OID and computes
     /// a mapping from GI to taxid.  This mapping is added to the
     /// map<int,int> provided by the user.  If the "persist" flag is
+    /// set to true, the new associations will simply be added to the
+    /// map.  If it is false (the default), the map will be cleared
+    /// first.
+    ///
+    /// @param oid
+    ///   The ordinal id of the sequence.
+    /// @param gi_to_taxid_set
+    ///   A returned mapping from GI to set of taxids.
+    /// @param persist
+    ///   If false, the map will be cleared before adding new entries.
+    void GetTaxIDs(int                  oid,
+                   map<int, set<int> >& gi_to_taxid_set,
+                   bool                 persist = false) const;
+
+    /// Get taxid for an OID.
+    ///
+    /// This finds the TAXIDS associated with a given OID and computes
+    /// a mapping from GI to a set of taxids.  This mapping is added to the
+    /// map<int,set<int>> provided by the user.  If the "persist" flag is
     /// set to true, the new associations will simply be added to the
     /// map.  If it is false (the default), the map will be cleared
     /// first.
@@ -479,7 +498,7 @@ public:
     void GetTaxIDs(int             oid,
                    map<int, int> & gi_to_taxid,
                    bool            persist = false) const;
-    
+
     /// Get taxids for an OID.
     ///
     /// This finds the TAXIDS associated with a given OID and returns
@@ -499,15 +518,15 @@ public:
     void GetTaxIDs(int           oid,
                    vector<int> & taxids,
                    bool          persist = false) const;
-    
+
     /// Get a CBioseq for a sequence.
     ///
     /// This builds and returns the header and sequence data
     /// corresponding to the indicated sequence as a CBioseq.  If
-    /// target_gi is non-zero or target_seq_id is non-null, the header 
-    /// information will be filtered to only include the defline associated 
+    /// target_gi is non-zero or target_seq_id is non-null, the header
+    /// information will be filtered to only include the defline associated
     /// with that gi/seq_id.
-    /// 
+    ///
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @param target_gi
@@ -516,17 +535,17 @@ public:
     ///   The target seq_id to filter the header information by.
     /// @return
     ///   A CBioseq object corresponding to the sequence.
-    CRef<CBioseq> GetBioseq(int             oid, 
-                            int             target_gi = 0, 
+    CRef<CBioseq> GetBioseq(int             oid,
+                            int             target_gi = 0,
                             const CSeq_id * target_seq_id = NULL) const;
-    
+
     /// Get a CBioseq for a sequence without sequence data.
-    /// 
+    ///
     /// This builds and returns the data corresponding to the
     /// indicated sequence as a CBioseq, but without the sequence
     /// data.  It is used when processing large sequences, to avoid
     /// accessing unused parts of the sequence.
-    /// 
+    ///
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @param target_gi
@@ -536,26 +555,26 @@ public:
     /// @return
     ///   A CBioseq object corresponding to the sequence, but without
     ///   sequence data.
-    CRef<CBioseq> GetBioseqNoData(int             oid, 
+    CRef<CBioseq> GetBioseqNoData(int             oid,
                                   int             target_gi = 0,
                                   const CSeq_id * target_seq_id = NULL) const;
 
     /// Extract a Blast-def-line-set object from a Bioseq retrieved by CSeqDB
     /// @param bioseq Bioseq retrieved from CSeqDB [in]
-    static CRef<CBlast_def_line_set> 
+    static CRef<CBlast_def_line_set>
     ExtractBlastDefline(const CBioseq & bioseq);
-    /// Extract a Blast-def-line-set object from a Bioseq_Handle retrieved by 
+    /// Extract a Blast-def-line-set object from a Bioseq_Handle retrieved by
     /// CSeqDB
     /// @param bioseq Bioseq retrieved from CSeqDB [in]
-    static CRef<CBlast_def_line_set> 
+    static CRef<CBlast_def_line_set>
     ExtractBlastDefline(const CBioseq_Handle& handle);
-    
+
     /// Get a pointer to raw sequence data.
     ///
     /// Get the raw sequence (strand data).  When done, resources
     /// should be returned with RetSequence.  This data pointed to
     /// by *buffer is in read-only memory (where supported).
-    /// 
+    ///
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @param buffer
@@ -564,7 +583,7 @@ public:
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
     int GetSequence(int oid, const char ** buffer) const;
-    
+
     /// Get a pointer to sequence data with ambiguities.
     ///
     /// In the protein case, this is identical to GetSequence().  In
@@ -573,7 +592,7 @@ public:
     /// data, either kSeqDBNuclNcbiNA8 or kSeqDBNuclBlastNA8, ignored
     /// if the sequence is a protein sequence.  When done, resources
     /// should be returned with RetSequence.
-    /// 
+    ///
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @param buffer
@@ -584,13 +603,13 @@ public:
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
     int GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const;
-    
+
     /// Get a pointer to a range of sequence data with ambiguities.
-    /// 
+    ///
     /// This is like GetAmbigSeq(), but only a range of the sequence
     /// data is computed and returned.  When done, resources should be
     /// returned with RetSequence.
-    /// 
+    ///
     /// @param oid
     ///   The ordinal id of the sequence.
     /// @param buffer
@@ -609,7 +628,7 @@ public:
                     int           nucl_code,
                     int           begin_offset,
                     int           end_offset) const;
-    
+
     /// Get a pointer to sequence data with ambiguities.
     ///
     /// This is like GetAmbigSeq(), but the allocated object should be
@@ -641,9 +660,9 @@ public:
                          int                nucl_code,
                          ESeqDBAllocType    strategy,
                          TSequenceRanges  * masks = NULL) const;
-    
+
     /// Returns any resources associated with the sequence.
-    /// 
+    ///
     /// Calls to GetSequence (but not GetBioseq())
     /// either increment a counter corresponding to a section of the
     /// database where the sequence data lives, or allocate a buffer
@@ -656,9 +675,9 @@ public:
     /// @param buffer
     ///   A pointer to the sequence data to release.
     void RetSequence(const char ** buffer) const;
-    
+
     /// Returns any resources associated with the sequence.
-    /// 
+    ///
     /// Calls to GetAmbigSeq (but not GetBioseq())
     /// either increment a counter corresponding to a section of the
     /// database where the sequence data lives, or allocate a buffer
@@ -671,9 +690,9 @@ public:
     /// @param buffer
     ///   A pointer to the sequence data to release.
     void RetAmbigSeq(const char ** buffer) const;
-    
+
     /// Gets a list of sequence identifiers.
-    /// 
+    ///
     /// This returns the list of CSeq_id identifiers associated with
     /// the sequence specified by the given OID.
     ///
@@ -682,14 +701,14 @@ public:
     /// @return
     ///   A list of Seq-id objects for this sequence.
     list< CRef<CSeq_id> > GetSeqIDs(int oid) const;
-    
+
     /// Gets a list of GIs for an OID.
-    /// 
+    ///
     /// This returns the GIs associated with the sequence specified by
     /// the given OID.  If append is true, gis will be appended to the
     /// end of the provided vector; otherwise the vector will be
     /// emptied first.
-    /// 
+    ///
     /// @param oid
     ///   The oid of the sequence.
     /// @param gis
@@ -697,21 +716,21 @@ public:
     /// @param append
     ///   Specify true to append to gis, keeping existing elements.
     void GetGis(int oid, vector<int> & gis, bool append = false) const;
-    
+
     /// Returns the type of database opened - protein or nucleotide.
-    /// 
+    ///
     /// This uses the same constants as the constructor.
     ESeqType GetSequenceType() const;
-    
+
     /// Returns the database title.
     ///
     /// This is usually read from database volumes or alias files.  If
     /// multiple databases were passed to the constructor, this will
     /// be a concatenation of those databases' titles.
     string GetTitle() const;
-    
+
     /// Returns the construction date of the database.
-    /// 
+    ///
     /// This is encoded in the database.  If multiple databases or
     /// multiple volumes were accessed, the latest date will
     /// be used.
@@ -722,7 +741,7 @@ public:
     static const char* kBlastDbDateFormat;
 
     /// Returns the construction date of the database.
-    /// 
+    ///
     /// @param dbname
     ///   The database name.
     /// @param seqtype
@@ -731,18 +750,18 @@ public:
     ///   The latest date
     static CTime GetDate(const string & dbname,
                          ESeqType       seqtype);
-    
+
     /// Returns the number of sequences available.
     int GetNumSeqs() const;
-    
+
     /// Returns the number of sequences available.
     ///
     /// This may be overridden by the STATS_NSEQ key.
     int GetNumSeqsStats() const;
-    
+
     /// Returns the size of the (possibly sparse) OID range.
     int GetNumOIDs() const;
-    
+
     /// Returns the sum of the lengths of all available sequences.
     ///
     /// This uses summary information stored in the database volumes
@@ -758,14 +777,14 @@ public:
     /// thorugh the sequences i.e. a db with gi list
     Uint8 GetExactTotalLength();
 
-    
+
     /// Returns the sum of the lengths of all available sequences.
     ///
     /// This uses summary information stored in the database volumes
     /// or alias files.  It provides either an exact value or a value
     /// changed in the alias files by the STATS_TOTLEN key.
     Uint8 GetTotalLengthStats() const;
-    
+
     /// Returns the sum of the lengths of all volumes.
     ///
     /// This uses summary information stored in the database volumes
@@ -774,7 +793,7 @@ public:
     /// OIDs regardless of inclusion by the filtering mechanisms of
     /// the alias files.
     Uint8 GetVolumeLength() const;
-    
+
     /// Returns the sum of the sequence lengths.
     ///
     /// This uses summary information and iteration to compute the
@@ -803,13 +822,13 @@ public:
                    int          * oid_count,
                    Uint8        * total_length,
                    bool           use_approx = true) const;
-    
+
     /// Returns the length of the largest sequence in the database.
     ///
     /// This uses summary information stored in the database volumes
     /// or alias files.  This might be used to chose buffer sizes.
     int GetMaxLength() const;
-    
+
     /// Returns the length of the shortest sequence in the database.
     ///
     /// This uses summary information stored in the database volumes
@@ -821,7 +840,7 @@ public:
     /// This gets an iterator designed to allow traversal of the
     /// database from beginning to end.
     CSeqDBIter Begin() const;
-    
+
     /// Find an included OID, incrementing next_oid if necessary.
     ///
     /// If the specified OID is not included in the set (i.e. the OID
@@ -832,9 +851,9 @@ public:
     /// @return
     ///   True if a valid OID was found, false otherwise.
     bool CheckOrFindOID(int & next_oid) const;
-    
+
     /// Return a chunk of OIDs, and update the OID bookmark.
-    /// 
+    ///
     /// This method allows the caller to iterate over the database by
     /// fetching batches of OIDs.  It will either return a list of OIDs in
     /// a vector, or set a pair of integers to indicate a range of OIDs.
@@ -876,14 +895,14 @@ public:
     /// oid_state argument to GetNextOIDChunk is NULL. This allows for several
     /// iterations to be performed over the same CSeqDB object
     void ResetInternalChunkBookmark();
-    
+
     /// Get list of database names.
     ///
     /// This returns the database name list used at construction.
     /// @return
     ///   List of database names.
     const string & GetDBNameList() const;
-    
+
     /// Get GI list attached to this database.
     ///
     /// This returns the GI list attached to this database, or NULL,
@@ -894,7 +913,7 @@ public:
     ///
     /// @return A pointer to the attached GI list, or NULL.
     const CSeqDBGiList * GetGiList() const;
-    
+
     /// Get IdSet list attached to this database.
     ///
     /// This returns the ID set used to filter this database. If a
@@ -907,9 +926,9 @@ public:
     ///
     /// @return A pointer to the attached ID set, or NULL.
     CSeqDBIdSet GetIdSet() const;
-    
+
     /// Set upper limit on memory and mapping slice size.
-    /// 
+    ///
     /// This sets a (not precisely enforced) upper limit on memory
     /// used by CSeqDB to memory map disk files (and for some large
     /// arrays).  Setting this to a low value may degrade performance.
@@ -921,43 +940,43 @@ public:
     /// size is no longer externally adjustable and may be removed in
     /// the future.  Also note that if SeqDB detects a map failure, it
     /// will reduce the memory bound.
-    /// 
+    ///
     /// @param membound Maximum memory for SeqDB.
     /// @param slice_size No longer used.
     void SetMemoryBound(Uint8 membound, Uint8 slice_size = 0);
-    
+
     /// Translate a PIG to an OID.
     bool PigToOid(int pig, int & oid) const;
-    
+
     /// Translate an OID to a PIG.
     bool OidToPig(int oid, int & pig) const;
-    
+
     /// Translate a TI to an OID.
     bool TiToOid(Int8 ti, int & oid) const;
-    
+
     /// Translate an OID to a GI.
     bool OidToGi(int oid, int & gi) const;
-    
+
     /// Translate a GI to an OID.
     bool GiToOid(int gi, int & oid) const;
-    
+
     /// Translate a GI to a PIG.
     bool GiToPig(int gi, int & pig) const;
-    
+
     /// Translate a PIG to a GI.
     bool PigToGi(int pig, int & gi) const;
-    
+
     /// Translate an Accession to a list of OIDs.
     void AccessionToOids(const string & acc, vector<int> & oids) const;
-    
+
     /// Translate a Seq-id to a list of OIDs.
     void SeqidToOids(const CSeq_id & seqid, vector<int> & oids) const;
-    
+
     /// Translate a Seq-id to any matching OID.
     bool SeqidToOid(const CSeq_id & seqid, int & oid) const;
-    
+
     /// Find the sequence closest to the given offset into the database.
-    /// 
+    ///
     /// The database volumes can be viewed as a single array of
     /// residues, partitioned into sequences by OID order.  The length
     /// of this array is given by GetTotalLength().  Given an offset
@@ -983,7 +1002,7 @@ public:
     /// @return
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> GiToBioseq(int gi) const;
-    
+
     /// Get a CBioseq for a given PIG
     ///
     /// This builds and returns the header and sequence data
@@ -995,7 +1014,7 @@ public:
     /// @return
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> PigToBioseq(int pig) const;
-    
+
     /// Get a CBioseq for a given Seq-id
     ///
     /// This builds and returns the header and sequence data
@@ -1009,12 +1028,12 @@ public:
     /// @return
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> SeqidToBioseq(const CSeq_id & seqid) const;
-    
+
     /// Find volume paths
     ///
-    /// Find the base names of all volumes (and alias nodes).  This 
-    /// method builds an alias hierarchy (which should be much faster 
-    /// than constructing an entire CSeqDB object), and returns the 
+    /// Find the base names of all volumes (and alias nodes).  This
+    /// method builds an alias hierarchy (which should be much faster
+    /// than constructing an entire CSeqDB object), and returns the
     /// resolved volume/alias file base names from that hierarchy.
     ///
     /// @param dbname
@@ -1036,7 +1055,7 @@ public:
                     vector<string> * alias_paths = NULL,
                     bool             recursive = true,
                     bool             expand_links = true);
-    
+
     /// Find volume paths
     ///
     /// Find the base names of all volumes.  This method returns the
@@ -1047,7 +1066,7 @@ public:
     /// @param recursive
     ///   If true, the search will traverse the full alias node tree
     void FindVolumePaths(vector<string> & paths, bool recursive=true) const;
-    
+
     /// Set Iteration Range
     ///
     /// This method sets the iteration range as a pair of OIDs.
@@ -1061,7 +1080,7 @@ public:
     /// @param oid_end
     ///   Iterator will return up to (but not including) this OID.
     void SetIterationRange(int oid_begin, int oid_end);
-    
+
     /// Get Name/Value Data From Alias Files
     ///
     /// SeqDB treats each alias file as a map from a variable name to
@@ -1082,19 +1101,19 @@ public:
     /// be different -- SeqDB's internal editing distributes GI lists
     /// over sub-alias files, which is why the value type of the
     /// returned data is a vector.
-    /// 
+    ///
     /// @param afv
     ///   The alias file contents will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv);
-    
+
     /// Get taxonomy information
-    /// 
+    ///
     /// This method returns taxonomy information for a single taxid.
     /// This information does not vary with sequence type (protein
     /// vs. nucleotide) and is the same for all blast databases.  If
     /// the taxonomy database is not available or the taxid is not
     /// found, this method will throw an exception.
-    /// 
+    ///
     /// @param taxid
     ///   An integer identifying the taxid to fetch.
     /// @param info
@@ -1118,7 +1137,7 @@ public:
     CRef<CSeq_data> GetSeqData(int     oid,
                                TSeqPos begin,
                                TSeqPos end) const;
-    
+
     /// Set global default memory bound for SeqDB.
     ///
     /// The memory bound for individual SeqDB objects can be adjusted
@@ -1130,7 +1149,7 @@ public:
     /// memory bound.  If zero is specified, an appropriate default
     /// will be selected based on system information.
     static void SetDefaultMemoryBound(Uint8 bytes);
-    
+
     /// Get a sequence in a given encoding.
     ///
     /// This method gets the sequence data for the given OID, converts
@@ -1150,7 +1169,7 @@ public:
                              CSeqUtil::ECoding   coding,
                              string            & output,
                              TSeqRange           range = TSeqRange()) const;
-    
+
     /// Get a sequence in a readable text encoding.
     ///
     /// This method gets the sequence data for an OID, converts it to a
@@ -1163,10 +1182,10 @@ public:
     /// @param output The returned sequence data as a string.
     /// @param range The range of the sequence to retrieve, if empty, the
     /// entire sequence will be retrived [in]
-    void GetSequenceAsString(int oid, 
+    void GetSequenceAsString(int oid,
                              string & output,
                              TSeqRange range = TSeqRange()) const;
-    
+
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
@@ -1179,7 +1198,7 @@ public:
     ///
     /// @param titles Column titles are returned here. [out]
     void ListColumns(vector<string> & titles);
-    
+
     /// Get an ID number for a given column title.
     ///
     /// For a given column title, this returns an ID that can be used
@@ -1190,7 +1209,7 @@ public:
     /// @param title Column title to search for. [in]
     /// @return Column ID number for this column, or -1. [in]
     int GetColumnId(const string & title);
-    
+
     /// Get all metadata for the specified column.
     ///
     /// Columns may contain user-defined metadata as a list of
@@ -1202,11 +1221,11 @@ public:
     /// If this is unsatisfactory, the two-argument version of this
     /// method may be used to get more precise values for specific
     /// volumes.
-    /// 
+    ///
     /// @param column_id The column id from GetColumnId. [in]
     /// @return The map of metadata for this column. [out]
     const map<string,string> & GetColumnMetaData(int column_id);
-    
+
     /// Look up the value for a specific column metadata key.
     ///
     /// Columns can contain user-defined metadata as a list of
@@ -1216,7 +1235,7 @@ public:
     /// @param column_id The column id from GetColumnId. [in]
     /// @return The value corresponding to the specified key. [out]
     const string & GetColumnValue(int column_id, const string & key);
-    
+
     /// Get all metadata for the specified column.
     ///
     /// Columns may contain user-defined metadata as a list of
@@ -1224,22 +1243,22 @@ public:
     /// id, this returns that column's metadata (as defined for that
     /// volume) in the provided map.  The volume name should match
     /// the string returned by FindVolumePaths(vector<string>&).
-    /// 
+    ///
     /// @param column_id The column id from GetColumnId. [in]
     /// @param volname   The volume to get metadata for. [in]
     /// @return The map of metadata for this column + volume. [out]
     const map<string,string> &
     GetColumnMetaData(int            column_id,
                       const string & volname);
-    
+
     /// Fetch the data blob for the given column and oid.
     /// @param col_id The column to fetch data from. [in]
     /// @param oid    The OID of the blob. [in]
     /// @param blob   The data will be returned here. [out]
     void GetColumnBlob(int col_id, int oid, CBlastDbBlob & blob);
-    
+
     // Mask data support.
-    
+
     /// Get a list of algorithm IDs for which mask data exists.
     ///
     /// Multiple sources of masking data may be used when building
@@ -1254,18 +1273,18 @@ public:
     /// @param algorithms List of algorithm ids. [out]
     void GetAvailableMaskAlgorithms(vector<int> & algorithms);
 
-    /// Get the numeric algorithm ID for a string. 
+    /// Get the numeric algorithm ID for a string.
     /// @param algo_name The name of the filtering algorithm
     int GetMaskAlgorithmId(const string &algo_name) const;
 
     /// Returns a formatted string with the list of available masking
     /// algorithms in this database for display purposes (i.e.: help)
     string GetAvailableMaskAlgorithmDescriptions();
-    
+
     /// Validates the algorithm IDs passed to this function, returning a vector
     /// of those algorithm IDs not present in this object
     vector<int> ValidateMaskAlgorithms(const vector<int>& algorithm_ids);
-    
+
     /// Get information about one type of masking available here.
     ///
     /// For a given algorithm_id, this method fetches information
@@ -1275,7 +1294,7 @@ public:
     /// from one or more sources.  There can also be multiple types of
     /// masking data from the same algorithm (such as DUST), but
     /// generated with different sets of input parameters.
-    /// 
+    ///
     /// @param algorithm_id The ID as from GetAvailableMaskAlgorithms [in]
     /// @param program The filtering program used (DUST, SEG, etc.) [out]
     /// @param program_name string representation of program [out]
@@ -1284,29 +1303,29 @@ public:
                                  objects::EBlast_filter_program & program,
                                  string            & program_name,
                                  string            & algo_opts);
-    
+
     void GetMaskAlgorithmDetails(int                 algorithm_id,
                                  string            & program,
                                  string            & program_name,
                                  string            & algo_opts);
-    
+
     /// Get masked ranges of a sequence.
     ///
     /// For the provided OID and list of algorithm IDs, this method
     /// gets a list of masked areas of those sequences for the first
-    /// algorithm ID.  The list of masked areas is returned via the 
+    /// algorithm ID.  The list of masked areas is returned via the
     /// ranges parameter.
     ///
     /// @param oid The ordinal ID of the sequence. [in]
     /// @param algo_id The algorithm ID to get data for. [in]
     /// @param ranges The list of sequence offset ranges. [out]
-    NCBI_DEPRECATED 
+    NCBI_DEPRECATED
     void GetMaskData(int                 oid,
                      const vector<int> & algo_ids,
-                     TSequenceRanges   & ranges) 
+                     TSequenceRanges   & ranges)
     {
         GetMaskData(oid, algo_ids[0], ranges);
-    }         
+    }
 
     /// Get masked ranges of a sequence.
     ///
@@ -1324,13 +1343,13 @@ public:
 
     /// Invoke the garbage collector to free up memory
     void GarbageCollect(void);
-    
+
     /***********************************************************************/
     /* BEGIN: support for partial sequence fetching                        */
-    
+
     /// List of sequence offset ranges.
     typedef set< pair<int, int> > TRangeList;
-    
+
     /// Apply a range of offsets to a database sequence.
     ///
     /// The GetAmbigSeq() method requires an amount of work (and I/O)
@@ -1379,9 +1398,9 @@ public:
 
     /// Setting the number of threads
     ///
-    /// This should be called by the master thread, before and after 
+    /// This should be called by the master thread, before and after
     /// multiple threads run.
-    /// 
+    ///
     /// @param num_threads   Number of threads
     void SetNumberOfThreads(int num_threads);
 
@@ -1393,9 +1412,9 @@ public:
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
-    
+
     /// No-argument Constructor
-    /// 
+    ///
     /// This version of the constructor is used as an extension by the
     /// 'expert' interface in seqdbexpert.hpp.
     CSeqDB();
@@ -1426,7 +1445,7 @@ struct NCBI_XOBJREAD_EXPORT SSeqDBInitInfo : public CObject {
 
     /// Create a new CSeqDB instance from this object
     CRef<CSeqDB> InitSeqDb() const {
-        return CRef<CSeqDB>(new CSeqDB(m_BlastDbName, m_MoleculeType)); 
+        return CRef<CSeqDB>(new CSeqDB(m_BlastDbName, m_MoleculeType));
     }
 };
 
@@ -1438,7 +1457,7 @@ struct NCBI_XOBJREAD_EXPORT SSeqDBInitInfo : public CObject {
 /// @param include_alias_files Should alias files be included also? [in]
 /// @param remove_redundant_dbs Should BLASTDBs that are referenced by other
 /// alias files in the return value be removed? [in]
-NCBI_XOBJREAD_EXPORT 
+NCBI_XOBJREAD_EXPORT
 vector<SSeqDBInitInfo>
 FindBlastDBs(const string& path, const string& dbtype, bool recurse,
              bool include_alias_files = false,
@@ -1447,7 +1466,7 @@ FindBlastDBs(const string& path, const string& dbtype, bool recurse,
 /// CSeqDBSequence --
 ///
 /// Small class to implement RIAA for sequences.
-/// 
+///
 /// The CSeqDB class requires that sequences be returned at some point
 /// after they are gotten.  This class provides that service via the
 /// destructor.  It also insures that the database itself stays around
@@ -1461,7 +1480,7 @@ class NCBI_XOBJREAD_EXPORT CSeqDBSequence {
 public:
     /// Defines the type used to select which sequence to get.
     typedef CSeqDB::TOID TOID;
-    
+
     /// Get a hold a database sequence.
     CSeqDBSequence(CSeqDB * db, int oid)
         : m_DB    (db),
@@ -1470,7 +1489,7 @@ public:
     {
         m_Length = m_DB->GetSequence(oid, & m_Data);
     }
-    
+
     /// Destructor, returns the sequence.
     ~CSeqDBSequence()
     {
@@ -1478,32 +1497,32 @@ public:
             m_DB->RetSequence(& m_Data);
         }
     }
-    
+
     /// Get pointer to sequence data.
     const char * GetData()
     {
         return m_Data;
     }
-    
+
     /// Get sequence length.
     int GetLength()
     {
         return m_Length;
     }
-    
+
 private:
     /// Prevent copy construct.
     CSeqDBSequence(const CSeqDBSequence &);
-    
+
     /// Prevent copy.
     CSeqDBSequence & operator=(const CSeqDBSequence &);
-    
+
     /// The CSeqDB object this sequence is from.
     CRef<CSeqDB> m_DB;
-    
+
     /// The sequence data for this sequence.
     const char * m_Data;
-    
+
     /// The length of this sequence.
     int          m_Length;
 };
@@ -1523,19 +1542,19 @@ void CSeqDBIter::x_RetSeq()
 
 /// Convert a string to a CSeqDB ESeqType object
 /// @param str string containing the molecule type (e.g.: prot, nucl, guess)
-NCBI_XOBJREAD_EXPORT 
+NCBI_XOBJREAD_EXPORT
 CSeqDB::ESeqType ParseMoleculeTypeString(const string& str);
 
 /// Deletes all files associated with a BLAST database
 /// @param dbpath BLAST database file path [in]
 /// @param seq_type Sequence type [in]
 /// @return true if relevant files were deleted, else false
-NCBI_XOBJREAD_EXPORT 
+NCBI_XOBJREAD_EXPORT
 bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type);
 
 /// Class to facilitate trimming down the list of WGS BLAST DBs so to those
 /// relevant to the GIs provided. (WB-1206, WB-1069)
-/// @note this class relies on the environment variable WGS_GILIST_DIR 
+/// @note this class relies on the environment variable WGS_GILIST_DIR
 class NCBI_XOBJREAD_EXPORT CWgsDbTrimmer {
 public:
     /// Constructor which takes a space separated list of WGS BLAST DBs
