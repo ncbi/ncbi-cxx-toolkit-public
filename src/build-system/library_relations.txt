@@ -336,6 +336,7 @@ gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
 gpipe_align_format needs $(XFORMAT_LIBS)
 gpipe_align_format needs gpipe_objutil
 gpipe_align_format needs prosplign
+gpipe_align_format needs xcleanup
 gpipe_align_format needs xobjwrite
 gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
@@ -346,7 +347,6 @@ gpipe_an_base needs gpipe_sadb
 gpipe_an_base needs gpipe_type_verifier
 gpipe_an_base needs gpxlib
 gpipe_an_base needs grid_wrapper
-gpipe_asn_cleanup needs xcleanup
 gpipe_asn_cleanup needs xvalidate
 gpipe_asn_cleanup needs3party ncbiobj
 gpipe_asn_proc needs gpipe_alnutil
@@ -361,6 +361,7 @@ gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gpinit_buildinfo
 gpipe_ftp needs xalgoalignutil
+gpipe_ftp needs xcleanup
 gpipe_ftp needs xobjedit
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
@@ -368,6 +369,7 @@ gpipe_ftp_new needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp_new needs $(XFORMAT_LIBS)
 gpipe_ftp_new needs gpinit_buildinfo
 gpipe_ftp_new needs xalgoalignutil
+gpipe_ftp_new needs xcleanup
 gpipe_ftp_new needs xobjedit
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
@@ -1206,10 +1208,8 @@ xfcgi includes xcgi
 xfcgi needs3party $(FASTCGI_LIBS)
 xformat needs gbseq
 xformat needs mlacli
-xformat needs submit
-xformat needs valid
 xformat needs xalnmgr
-xformat needs xhtml
+xformat needs xcleanup
 xgdsapi needs $(CONNEXT)
 xgdsapi needs connect
 xgdsapi needs dbapi
@@ -1375,6 +1375,7 @@ xutil needs xncbi
 xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
+xvalidate needs xcleanup
 xvalidate needs xobjedit
 xxconnect needs connect
 xxconnect needs xncbi
