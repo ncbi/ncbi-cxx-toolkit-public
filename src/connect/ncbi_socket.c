@@ -5363,7 +5363,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
             } else
                 status = eIO_Success;
             if (bufsize  &&  x_msgsize > bufsize)
-                memcpy(buf, x_msg, bufsize);
+                memcpy(buf, x_msg, x_read < bufsize ? x_read : bufsize);
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
