@@ -91,9 +91,9 @@ public:
 #endif
         } else if (NStr::CompareNocase(m_ServerName, "Sybase") == 0) {
 #ifdef HAVE_LIBCONNEXT
-            return "DBAPI_SYB_TEST";
+            return "DBAPI_SYB155_TEST";
 #else
-            return "DBAPI_DEV1";
+            return "DBAPI_DEV3";
 #endif
         }
         return m_ServerName;

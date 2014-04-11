@@ -22,7 +22,5 @@ CHECK_TIMEOUT = 600
 
 CHECK_CMD = sdbapi_unit_test -S MsSql
 CHECK_CMD = sdbapi_unit_test -S Sybase
-# Run tests against Sybase ASE 15.5 (below) as well as Sybase 12.x (above)
-CHECK_CMD = sdbapi_unit_test -S DBAPI_SYB155_TEST -T Sybase
 
 WATCHERS = ucko

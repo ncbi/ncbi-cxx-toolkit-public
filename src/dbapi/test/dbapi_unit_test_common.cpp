@@ -421,9 +421,9 @@ string CUnitTestParams::GetServerName(void) const
 #endif
     } else if (NStr::CompareNocase(server_name, "Sybase") == 0) {
 #ifdef HAVE_LIBCONNEXT
-        return "DBAPI_SYB_TEST";
+        return "DBAPI_SYB155_TEST";
 #else
-        return "DBAPI_DEV1";
+        return "DBAPI_DEV3";
 #endif
     }
 

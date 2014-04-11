@@ -27,10 +27,11 @@ CHECK_TIMEOUT = 600
 # CHECK_CMD = dbapi_unit_test -dr dblib      -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds       -S MsSql
 CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql
-CHECK_CMD = dbapi_unit_test -dr ctlib      -S Sybase
+# Force the traditional C locale when using Sybase ctlib to avoid
+# error #4847 from Sybase ASE 15.5 (reporting that character set
+# mismatches block bulk insertion).
+CHECK_CMD = env LC_ALL=C dbapi_unit_test -dr ctlib -S Sybase
 CHECK_CMD = dbapi_unit_test -dr dblib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds       -S Sybase
-# Run tests against Sybase ASE 15.5 (below) as well as Sybase 12.x (above)
-CHECK_CMD = dbapi_unit_test -dr ftds       -S DBAPI_SYB155_TEST
 
 WATCHERS = ucko

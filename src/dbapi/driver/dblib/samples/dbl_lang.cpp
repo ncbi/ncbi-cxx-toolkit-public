@@ -57,7 +57,7 @@ CDemoApp::Run(void)
 
         CDBLibContext my_context;
 
-        auto_ptr<CDB_Connection> con(my_context.Connect("DBAPI_DEV1",
+        auto_ptr<CDB_Connection> con(my_context.Connect("DBAPI_DEV3",
                                                         "DBAPI_test",
                                                         "allowed",
                                                         0));
