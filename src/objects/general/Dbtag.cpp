@@ -576,7 +576,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_Fungorum, "http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=" },
     { CDbtag::eDbtagType_GABI, "http://www.gabipd.org/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId=" },
     { CDbtag::eDbtagType_GEO, "http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" },
-    { CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:" },
+    { CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/amigo/term/GO:" },
     { CDbtag::eDbtagType_GOA, "http://www.ebi.ac.uk/ego/GProtein?ac=" },
     { CDbtag::eDbtagType_GRIN, "http://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?" },
     { CDbtag::eDbtagType_GeneDB, "http://old.genedb.org/genedb/Search?organism=All%3A*&name=" },
@@ -760,182 +760,192 @@ string CDbtag::GetUrl(const string & genus,
     // URLs are constructed by catenating the URL prefix with the specific tag
     // except in a few cases handled below.
     switch (GetType()) {
-        case CDbtag::eDbtagType_FLYBASE:
-            if (NStr::Find(tag, "FBan") != NPOS) {
-                prefix = kFBan;
+    case CDbtag::eDbtagType_FLYBASE:
+        if (NStr::Find(tag, "FBan") != NPOS) {
+            prefix = kFBan;
+        }
+        break;
+
+    case CDbtag::eDbtagType_Fungorum:
+        {
+            int num_skip = 0;
+            string::const_iterator tag_iter = tag.begin();
+            for ( ; tag_iter != tag.end() && ! isdigit(*tag_iter) ; ++tag_iter ) {
+                num_skip++;
             }
-            break;
-
-        case CDbtag::eDbtagType_Fungorum:
-            {
-                int num_skip = 0;
-                string::const_iterator tag_iter = tag.begin();
-                for ( ; tag_iter != tag.end() && ! isdigit(*tag_iter) ; ++tag_iter ) {
-                    num_skip++;
-                }
-                if (num_skip > 0) {
-                    tag = tag.substr(num_skip);
-                }
+            if (num_skip > 0) {
+                tag = tag.substr(num_skip);
             }
-            break;
+        }
+        break;
 
-        case eDbtagType_MGI:
-        case eDbtagType_MGD:
-            if (NStr::StartsWith(tag, "MGI:", NStr::eNocase)  ||
-                NStr::StartsWith(tag, "MGD:", NStr::eNocase)) {
-                tag = tag.substr(4);
-            }
-            break;
+    case eDbtagType_MGI:
+    case eDbtagType_MGD:
+        if (NStr::StartsWith(tag, "MGI:", NStr::eNocase)  ||
+            NStr::StartsWith(tag, "MGD:", NStr::eNocase)) {
+            tag = tag.substr(4);
+        }
+        break;
 
-        case eDbtagType_PID:
-            if (tag[0] == 'g') {
-                tag = tag.substr(1);
-            }
-            break;
+    case eDbtagType_PID:
+        if (tag[0] == 'g') {
+            tag = tag.substr(1);
+        }
+        break;
 
-        case eDbtagType_SRPDB:
-            tag += ".fasta";
-            break;
+    case eDbtagType_SRPDB:
+        tag += ".fasta";
+        break;
 
-        case eDbtagType_UniSTS:
-            tag += "%20%5BUniSTS%20ID%5D";
-            break;
+    case eDbtagType_UniSTS:
+        tag += "%20%5BUniSTS%20ID%5D";
+        break;
 
-        case eDbtagType_dbSTS:
-            break;
+    case eDbtagType_dbSTS:
+        break;
 
-        case eDbtagType_niaEST:
-            tag += "&val=1";
-            break;
+    case eDbtagType_niaEST:
+        tag += "&val=1";
+        break;
 
-        case eDbtagType_MaizeGDB:
-            if (GetTag().IsId()) {
-                prefix = kMaizeGDBInt;
-            } else if (GetTag().IsStr()) {
-                prefix = kMaizeGDBStr;
-            }
-            break;
+    case eDbtagType_MaizeGDB:
+        if (GetTag().IsId()) {
+            prefix = kMaizeGDBInt;
+        } else if (GetTag().IsStr()) {
+            prefix = kMaizeGDBStr;
+        }
+        break;
 
-        case eDbtagType_GDB:
+    case eDbtagType_GDB:
         {{
-            SIZE_TYPE pos = NStr::Find(tag, "G00-");
-            if (pos != NPOS) {
-                tag = tag.substr(pos + 4);
-                remove(tag.begin(), tag.end(), '-');
-            } else if (!isdigit((unsigned char) tag[0])) {
-                return kEmptyStr;
-            }
-            break;
-        }}
+                SIZE_TYPE pos = NStr::Find(tag, "G00-");
+                if (pos != NPOS) {
+                    tag = tag.substr(pos + 4);
+                    remove(tag.begin(), tag.end(), '-');
+                } else if (!isdigit((unsigned char) tag[0])) {
+                    return kEmptyStr;
+                }
+                break;
+            }}
 
-        case eDbtagType_REBASE:
-            tag += ".html";
-            break;
+    case eDbtagType_REBASE:
+        tag += ".html";
+        break;
 
-        case eDbtagType_H_InvDB:
-            if (NStr::Find(tag, "HIT")) {
-                prefix = kHInvDbHIT;
-            } else if (NStr::Find(tag, "HIX")) {
-                prefix = kHInvDbHIX;
-            }
-            break;
+    case eDbtagType_H_InvDB:
+        if (NStr::Find(tag, "HIT")) {
+            prefix = kHInvDbHIT;
+        } else if (NStr::Find(tag, "HIX")) {
+            prefix = kHInvDbHIX;
+        }
+        break;
 
-        case eDbtagType_SK_FST:
-            return prefix;
-            break;
+    case eDbtagType_SK_FST:
+        return prefix;
+        break;
 
-        case CDbtag::eDbtagType_taxon:
-            if (isdigit((unsigned char) tag[0])) {
-                tag.insert(0, "id=");
-            } else {
-                tag.insert(0, "name=");
-            }
-            break;
+    case CDbtag::eDbtagType_taxon:
+        if (isdigit((unsigned char) tag[0])) {
+            tag.insert(0, "id=");
+        } else {
+            tag.insert(0, "name=");
+        }
+        break;
 
-        case CDbtag::eDbtagType_dictyBase:
-            if (NStr::Find(tag, "_") != NPOS) {
-                prefix = kDictyPrim;
-            }
-            break;
+    case CDbtag::eDbtagType_dictyBase:
+        if (NStr::Find(tag, "_") != NPOS) {
+            prefix = kDictyPrim;
+        }
+        break;
 
 
-        case CDbtag::eDbtagType_miRBase:
-            if (NStr::Find(tag, "MIMAT") != NPOS) {
-                prefix = kMiRBaseMat;
-            }
-            break;
+    case CDbtag::eDbtagType_miRBase:
+        if (NStr::Find(tag, "MIMAT") != NPOS) {
+            prefix = kMiRBaseMat;
+        }
+        break;
 
-        case CDbtag::eDbtagType_WormBase:
-            {
-                int num_alpha = 0;
-                int num_digit = 0;
-                int num_unscr = 0;
-                if( x_LooksLikeAccession (tag, num_alpha, num_digit, num_unscr) &&
-                    num_alpha == 3 && num_digit == 5 ) 
+    case CDbtag::eDbtagType_WormBase:
+        {
+            int num_alpha = 0;
+            int num_digit = 0;
+            int num_unscr = 0;
+            if( x_LooksLikeAccession (tag, num_alpha, num_digit, num_unscr) &&
+                num_alpha == 3 && num_digit == 5 ) 
                 {
                     prefix = "http://www.wormbase.org/search/protein/";
                 }
+        }
+        break;
+
+    case CDbtag::eDbtagType_HOMD:
+        if( NStr::StartsWith(tag, "tax_") ) {
+            prefix = kHomdTax;
+            tag = tag.substr(4);
+        } else if( NStr::StartsWith(tag, "seq_") ) {
+            prefix = kHomdSeq;
+            tag = tag.substr(4);
+        }
+        break;
+
+    case eDbtagType_IRD:
+        tag += "&decorator=influenza";
+        break;
+
+    case eDbtagType_ATCC:
+        tag += ".aspx";
+        break;
+
+    case eDbtagType_ViPR:
+        tag += "&decorator=vipr";
+        break;
+
+    case CDbtag::eDbtagType_IMGT_GENEDB:
+        if( ! genus.empty() ) {
+            string taxname_url_piece = genus + "+" + species;
+            if( ! subspecies.empty() ) {
+                taxname_url_piece += "+" + subspecies;
             }
-            break;
+            string ret = prefix;
+            return NStr::Replace( ret,
+                                  "species=Homo+sapiens&",
+                                  "species=" + taxname_url_piece + "&" ) +
+                tag;
+        }
+        break;
 
-        case CDbtag::eDbtagType_HOMD:
-            if( NStr::StartsWith(tag, "tax_") ) {
-                prefix = kHomdTax;
-                tag = tag.substr(4);
-            } else if( NStr::StartsWith(tag, "seq_") ) {
-                prefix = kHomdSeq;
-                tag = tag.substr(4);
-            }
-            break;
+    case CDbtag::eDbtagType_IMGT_HLA:
+        if( NStr::StartsWith(tag, "HLA") ) {
+            prefix = "http://www.ebi.ac.uk/Tools/dbfetch/dbfetch?db=imgthla;id=";
+        }
+        break;
 
-        case eDbtagType_IRD:
-            tag += "&decorator=influenza";
-            break;
-
-        case eDbtagType_ATCC:
-            tag += ".aspx";
-            break;
-
-        case eDbtagType_ViPR:
-            tag += "&decorator=vipr";
-            break;
-
-        case CDbtag::eDbtagType_IMGT_GENEDB:
-            if( ! genus.empty() ) {
-                string taxname_url_piece = genus + "+" + species;
-                if( ! subspecies.empty() ) {
-                    taxname_url_piece += "+" + subspecies;
-                }
-                string ret = prefix;
-                return NStr::Replace( ret,
-                                      "species=Homo+sapiens&",
-                                      "species=" + taxname_url_piece + "&" ) +
-                    tag;
-            }
-            break;
-
-        case CDbtag::eDbtagType_IMGT_HLA:
-            if( NStr::StartsWith(tag, "HLA") ) {
-                prefix = "http://www.ebi.ac.uk/Tools/dbfetch/dbfetch?db=imgthla;id=";
-            }
-            break;
-
-        case eDbtagType_RefSeq:
+    case eDbtagType_RefSeq:
         {{
-            string::const_iterator tag_iter = tag.begin();
-            if (isalpha (*tag_iter)) {
-                ++tag_iter;
-                if (*tag_iter == 'P') {
+                string::const_iterator tag_iter = tag.begin();
+                if (isalpha (*tag_iter)) {
                     ++tag_iter;
-                    if (*tag_iter == '_') {
-                        prefix = "http://www.ncbi.nlm.nih.gov/protein/";
+                    if (*tag_iter == 'P') {
+                        ++tag_iter;
+                        if (*tag_iter == '_') {
+                            prefix = "http://www.ncbi.nlm.nih.gov/protein/";
+                        }
                     }
                 }
-            }
-        }}
+            }}
+        break;
 
-        default:
-            break;
+    case CDbtag::eDbtagType_GO:
+        if (!tag.empty()){
+            while (tag.size() < SIZE_TYPE(7)){
+                tag = '0' + tag;
+            }
+        }
+        break;
+            
+
+    default:
+        break;
     }
 
     return string(prefix) + tag;
