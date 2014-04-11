@@ -45,8 +45,8 @@ static char const rcsid[] = "$Id$";
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
-#include <serial/objostrasnb.hpp> 
-#include <serial/objistrasnb.hpp> 
+#include <serial/objostrasnb.hpp>
+#include <serial/objistrasnb.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
@@ -74,7 +74,7 @@ static char s_GetSeqTypeChar(CSeqDB::ESeqType seqtype)
     case CSeqDB::eUnknown:
         return '-';
     }
-    
+
     NCBI_THROW(CSeqDBException,
                eArgErr,
                "Invalid sequence type specified.");
@@ -88,7 +88,7 @@ static char s_GetSeqTypeChar(CSeqDB::ESeqType seqtype)
 /// nucleotide.  The created object will be returned.  Either
 /// kSeqTypeProt for a protein database, kSeqTypeNucl for nucleotide,
 /// or kSeqTypeUnkn to less this function try one then the other.
-/// 
+///
 /// @param dbname
 ///   A list of database or alias names, seperated by spaces.
 /// @param prot_nucl
@@ -123,7 +123,7 @@ s_SeqDBInit(const string       & dbname,
             CSeqDBIdSet          idset = CSeqDBIdSet())
 {
     CSeqDBImpl * impl = 0;
-    
+
     if (prot_nucl == '-') {
         try {
             prot_nucl = 'p';
@@ -140,7 +140,7 @@ s_SeqDBInit(const string       & dbname,
             prot_nucl = 'n';
         }
     }
-    
+
     if (! impl) {
         impl = new CSeqDBImpl(dbname,
                               prot_nucl,
@@ -151,9 +151,9 @@ s_SeqDBInit(const string       & dbname,
                               neg_list,
                               idset);
     }
-    
+
     _ASSERT(impl);
-    
+
     return impl;
 }
 
@@ -166,16 +166,16 @@ CSeqDB::CSeqDB(const string & dbname,
                    eArgErr,
                    "Database name is required.");
     }
-    
+
     char seq_type = s_GetSeqTypeChar(seqtype);
-    
+
     m_Impl = s_SeqDBInit(dbname,
                          seq_type,
                          0,
                          0,
                          true,
                          gi_list);
-    
+
     m_Impl->Verify();
 }
 
@@ -188,7 +188,7 @@ CSeqDB::CSeqDB(const string       & dbname,
                    eArgErr,
                    "Database name is required.");
     }
-    
+
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
@@ -196,7 +196,7 @@ CSeqDB::CSeqDB(const string       & dbname,
                          true,
                          NULL,
                          nlist);
-    
+
     m_Impl->Verify();
 }
 
@@ -222,10 +222,10 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBIdSet ids)
                    eArgErr,
                    "Database name is required.");
     }
-    
+
     CRef<CSeqDBNegativeList> neg;
     CRef<CSeqDBGiList> pos;
-    
+
     if (! ids.Blank()) {
         if (ids.IsPositive()) {
             pos = ids.GetPositiveList();
@@ -233,7 +233,7 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBIdSet ids)
             neg = ids.GetNegativeList();
         }
     }
-    
+
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
@@ -242,7 +242,7 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBIdSet ids)
                          pos.GetPointerOrNull(),
                          neg.GetPointerOrNull(),
                          ids);
-    
+
     m_Impl->Verify();
 }
 
@@ -252,20 +252,20 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
 {
     string dbname;
     SeqDB_CombineAndQuote(dbs, dbname);
-    
+
     if (dbname.size() == 0) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Database name is required.");
     }
-    
+
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
                          0,
                          true,
                          gi_list);
-    
+
     m_Impl->Verify();
 }
 
@@ -281,14 +281,14 @@ CSeqDB::CSeqDB(const string & dbname,
                    eArgErr,
                    "Database name is required.");
     }
-    
+
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          oid_begin,
                          oid_end,
                          use_mmap,
                          gi_list);
-    
+
     m_Impl->Verify();
 }
 
@@ -301,20 +301,20 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
 {
     string dbname;
     SeqDB_CombineAndQuote(dbs, dbname);
-    
+
     if (dbname.size() == 0) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Database name is required.");
     }
-    
+
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          oid_begin,
                          oid_end,
                          use_mmap,
                          gi_list);
-    
+
     m_Impl->Verify();
 }
 
@@ -329,7 +329,7 @@ int CSeqDB::GetSeqLength(int oid) const
     m_Impl->Verify();
     int length = m_Impl->GetSeqLength(oid);
     m_Impl->Verify();
-    
+
     return length;
 }
 
@@ -338,7 +338,7 @@ int CSeqDB::GetSeqLengthApprox(int oid) const
     m_Impl->Verify();
     int length = m_Impl->GetSeqLengthApprox(oid);
     m_Impl->Verify();
-    
+
     return length;
 }
 
@@ -347,7 +347,7 @@ CRef<CBlast_def_line_set> CSeqDB::GetHdr(int oid) const
     m_Impl->Verify();
     CRef<CBlast_def_line_set> rv = m_Impl->GetHdr(oid);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -359,7 +359,7 @@ CSeqDB::ESeqType CSeqDB::GetSequenceType() const
     case 'n':
         return eNucleotide;
     }
-    
+
     NCBI_THROW(CSeqDBException,
                eArgErr,
                "Internal sequence type is not valid.");
@@ -383,13 +383,24 @@ void CSeqDB::GetTaxIDs(int           oid,
     m_Impl->Verify();
 }
 
+void CSeqDB::GetTaxIDs(
+        int                  oid,
+        map<int, set<int> >& gi_to_taxid_set,
+        bool                 persist
+) const
+{
+    m_Impl->Verify();
+    m_Impl->GetTaxIDs(oid, gi_to_taxid_set, persist);
+    m_Impl->Verify();
+}
+
 CRef<CBioseq>
 CSeqDB::GetBioseq(int oid, int target_gi, const CSeq_id * target_id) const
 {
     m_Impl->Verify();
     CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, target_id, true);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -399,7 +410,7 @@ CSeqDB::GetBioseqNoData(int oid, int target_gi, const CSeq_id * target_id) const
     m_Impl->Verify();
     CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, target_id, false);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -415,7 +426,7 @@ int CSeqDB::GetSequence(int oid, const char ** buffer) const
     m_Impl->Verify();
     int rv = m_Impl->GetSequence(oid, buffer);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -426,7 +437,7 @@ CRef<CSeq_data> CSeqDB::GetSeqData(int     oid,
     m_Impl->Verify();
     CRef<CSeq_data> rv = m_Impl->GetSeqData(oid, begin, end);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -439,7 +450,7 @@ int CSeqDB::GetAmbigSeq(int oid, const char ** buffer, int nucl_code) const
                                  0,
                                  (ESeqDBAllocType) 0);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -457,17 +468,17 @@ int CSeqDB::GetAmbigSeq(int           oid,
                         int           end_offset) const
 {
     m_Impl->Verify();
-    
+
     SSeqDBSlice region(begin_offset, end_offset);
-    
+
     int rv = m_Impl->GetAmbigSeq(oid,
                                  (char **)buffer,
                                  nucl_code,
                                  & region,
                                  (ESeqDBAllocType) 0);
-    
+
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -478,17 +489,17 @@ int CSeqDB::GetAmbigSeqAlloc(int             oid,
                              TSequenceRanges *masks) const
 {
     m_Impl->Verify();
-    
+
     if ((strategy != eMalloc) && (strategy != eNew)) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Invalid allocation strategy specified.");
     }
-    
+
     int rv = m_Impl->GetAmbigSeq(oid, buffer, nucl_code, 0, strategy, masks);
-    
+
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -526,7 +537,7 @@ CSeqDB::GetDate(const string   & dbname,
             CTime d(string(date), fmt);
             if (retv.IsEmpty() || d > retv) {
                 retv = d;
-            } 
+            }
         }
     }
     return retv;
@@ -580,7 +591,7 @@ int CSeqDB::GetMinLength() const
 CSeqDB::~CSeqDB()
 {
     m_Impl->Verify();
-    
+
     if (m_Impl)
         delete m_Impl;
 }
@@ -595,7 +606,7 @@ bool CSeqDB::CheckOrFindOID(int & oid) const
     m_Impl->Verify();
     bool rv = m_Impl->CheckOrFindOID(oid);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -608,12 +619,12 @@ CSeqDB::GetNextOIDChunk(int         & begin,
                         int         * state)
 {
     m_Impl->Verify();
-    
+
     CSeqDB::EOidListType rv =
         m_Impl->GetNextOIDChunk(begin, end, size, lst, state);
-    
+
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -630,11 +641,11 @@ const string & CSeqDB::GetDBNameList() const
 list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(int oid) const
 {
     m_Impl->Verify();
-    
+
     list< CRef<CSeq_id> > rv = m_Impl->GetSeqIDs(oid);
-    
+
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -648,7 +659,7 @@ bool CSeqDB::PigToOid(int pig, int & oid) const
     m_Impl->Verify();
     bool rv = m_Impl->PigToOid(pig, oid);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -657,7 +668,7 @@ bool CSeqDB::OidToPig(int oid, int & pig) const
     m_Impl->Verify();
     bool rv = m_Impl->OidToPig(oid, pig);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -666,7 +677,7 @@ bool CSeqDB::TiToOid(Int8 ti, int & oid) const
     m_Impl->Verify();
     bool rv = m_Impl->TiToOid(ti, oid);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -675,7 +686,7 @@ bool CSeqDB::GiToOid(int gi, int & oid) const
     m_Impl->Verify();
     bool rv = m_Impl->GiToOid(gi, oid);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -684,7 +695,7 @@ bool CSeqDB::OidToGi(int oid, int & gi) const
     m_Impl->Verify();
     bool rv = m_Impl->OidToGi(oid, gi);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -692,14 +703,14 @@ bool CSeqDB::PigToGi(int pig, int & gi) const
 {
     m_Impl->Verify();
     bool rv = false;
-    
+
     int oid(0);
-    
+
     if (m_Impl->PigToOid(pig, oid)) {
         rv = m_Impl->OidToGi(oid, gi);
     }
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -707,15 +718,15 @@ bool CSeqDB::GiToPig(int gi, int & pig) const
 {
     m_Impl->Verify();
     bool rv = false;
-    
+
     int oid(0);
-    
+
     if (m_Impl->GiToOid(gi, oid)) {
         rv = m_Impl->OidToPig(oid, pig);
     }
-    
+
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -723,17 +734,17 @@ void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
 {
     m_Impl->Verify();
     m_Impl->AccessionToOids(acc, oids);
-    
+
     // If we have a numeric ID and the search failed, try to look it
     // up as a GI (but not as a PIG or TI).  Due to the presence of
     // PDB ids like "pdb|1914|a", the faster GitToOid is not done
     // first (unless the caller does so.)
-    
+
     if (oids.empty()) {
         try {
             int gi = NStr::StringToInt(acc, NStr::fConvErr_NoThrow);
             int oid(-1);
-            
+
             if (gi > 0 && GiToOid(gi, oid)) {
                 int oid0 = oid;
                 if (m_Impl->CheckOrFindOID(oid) && (oid==oid0)) {
@@ -744,7 +755,7 @@ void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
         catch(...) {
         }
     }
-    
+
     m_Impl->Verify();
 }
 
@@ -759,19 +770,19 @@ bool CSeqDB::SeqidToOid(const CSeq_id & seqid, int & oid) const
 {
     m_Impl->Verify();
     bool rv = false;
-    
+
     oid = -1;
-    
+
     vector<int> oids;
     m_Impl->SeqidToOids(seqid, oids, false);
-    
+
     if (! oids.empty()) {
         rv = true;
         oid = oids[0];
     }
-    
+
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -785,7 +796,7 @@ int CSeqDB::GetOidAtOffset(int first_seq, Uint8 residue) const
     m_Impl->Verify();
     int rv = m_Impl->GetOidAtOffset(first_seq, residue);
     m_Impl->Verify();
-    
+
     return rv;
 }
 
@@ -815,31 +826,31 @@ CSeqDBIter::CSeqDBIter(const CSeqDBIter & other)
 CSeqDBIter & CSeqDBIter::operator =(const CSeqDBIter & other)
 {
     x_RetSeq();
-    
+
     m_DB = other.m_DB;
     m_OID = other.m_OID;
     m_Data = 0;
     m_Length = -1;
-    
+
     if (m_DB->CheckOrFindOID(m_OID)) {
         x_GetSeq();
     }
-    
+
     return *this;
 }
 
 CSeqDBIter & CSeqDBIter::operator++()
 {
     x_RetSeq();
-    
+
     ++m_OID;
-    
+
     if (m_DB->CheckOrFindOID(m_OID)) {
         x_GetSeq();
     } else {
         m_Length = -1;
     }
-    
+
     return *this;
 }
 
@@ -847,16 +858,16 @@ CRef<CBioseq>
 CSeqDB::GiToBioseq(int gi) const
 {
     m_Impl->Verify();
-    
+
     CRef<CBioseq> bs;
     int oid(0);
-    
+
     if (m_Impl->GiToOid(gi, oid)) {
         bs = m_Impl->GetBioseq(oid, gi, NULL, true);
     }
-    
+
     m_Impl->Verify();
-    
+
     return bs;
 }
 
@@ -864,16 +875,16 @@ CRef<CBioseq>
 CSeqDB::PigToBioseq(int pig) const
 {
     m_Impl->Verify();
-    
+
     int oid(0);
     CRef<CBioseq> bs;
-    
+
     if (m_Impl->PigToOid(pig, oid)) {
         bs = m_Impl->GetBioseq(oid, 0, NULL, true);
     }
-    
+
     m_Impl->Verify();
-    
+
     return bs;
 }
 
@@ -881,18 +892,18 @@ CRef<CBioseq>
 CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
 {
     m_Impl->Verify();
-    
+
     vector<int> oids;
     CRef<CBioseq> bs;
-    
+
     m_Impl->SeqidToOids(seqid, oids, false);
-    
+
     if (! oids.empty()) {
         bs = m_Impl->GetBioseq(oids[0], 0, &seqid, true);
     }
-    
+
     m_Impl->Verify();
-    
+
     return bs;
 }
 
@@ -930,23 +941,23 @@ void
 CSeqDB::GetGis(int oid, vector<int> & gis, bool append) const
 {
     m_Impl->Verify();
-    
+
     // This could be done a little faster at a lower level, but not
     // necessarily by too much.  If this operation is important to
     // performance, that decision can be revisited.
-    
+
     list< CRef<CSeq_id> > seqids = GetSeqIDs(oid);
-    
+
     if (! append) {
         gis.clear();
     }
-    
+
     ITERATE(list< CRef<CSeq_id> >, seqid, seqids) {
         if ((**seqid).IsGi()) {
             gis.push_back(GI_TO(int, (**seqid).GetGi()));
         }
     }
-    
+
     m_Impl->Verify();
 }
 
@@ -962,7 +973,7 @@ void CSeqDB::GetAliasFileValues(TAliasFileValues & afv)
     m_Impl->Verify();
 }
 
-void CSeqDB::GetTaxInfo(int taxid, SSeqDBTaxInfo & info) 
+void CSeqDB::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
 {
     CSeqDBImpl::GetTaxInfo(taxid, info);
 }
@@ -999,7 +1010,7 @@ void CSeqDB::GetSequenceAsString(int      oid,
     CSeqUtil::ECoding code_to = ((GetSequenceType() == CSeqDB::eProtein)
                                  ? CSeqUtil::e_Iupacaa
                                  : CSeqUtil::e_Iupacna);
-    
+
     GetSequenceAsString(oid, code_to, output, range);
 }
 
@@ -1030,13 +1041,13 @@ void CSeqDB::GetSequenceAsString(int                 oid,
         throw;
     }
     RetAmbigSeq(& buffer);
-    
+
     CSeqUtil::ECoding code_from = ((GetSequenceType() == CSeqDB::eProtein)
                                    ? CSeqUtil::e_Ncbistdaa
                                    : CSeqUtil::e_Ncbi8na);
-    
+
     string result;
-    
+
     if (code_from == coding) {
         result.swap(raw);
     } else {
@@ -1047,7 +1058,7 @@ void CSeqDB::GetSequenceAsString(int                 oid,
                              result,
                              coding);
     }
-    
+
     output.swap(result);
 }
 
@@ -1168,12 +1179,12 @@ void CSeqDB::SetOffsetRanges(int                        oid,
                              bool                       cache_data)
 {
     m_Impl->Verify();
-    
+
     m_Impl->SetOffsetRanges(oid,
                             offset_ranges,
                             append_ranges,
                             cache_data);
-    
+
     m_Impl->Verify();
 }
 
@@ -1222,9 +1233,9 @@ public:
         value.m_BlastDbName = de.GetPath().substr(0, de.GetPath().length() - 4);
         CNcbiOstrstream oss;
         // Needed for escaping spaces
-        oss << "\"" << value.m_BlastDbName << "\""; 
+        oss << "\"" << value.m_BlastDbName << "\"";
         value.m_BlastDbName = CNcbiOstrstreamToString(oss);
-        value.m_MoleculeType = 
+        value.m_MoleculeType =
             (extn == "n" ? CSeqDB::eNucleotide : CSeqDB::eProtein);
         m_DBs.push_back(value);
     }
@@ -1297,9 +1308,9 @@ FindBlastDBs(const string& path, const string& dbtype, bool recurse,
 {
     // 1. Find every database volume (but not alias files etc).
     vector<string> fmasks, dmasks;
-    
+
     // If the type is 'guess' we do both types of databases.
-    
+
     if (dbtype != "nucl") {
         fmasks.push_back("*.pin");
         if (include_alias_files) {
@@ -1313,10 +1324,10 @@ FindBlastDBs(const string& path, const string& dbtype, bool recurse,
         }
     }
     dmasks.push_back("*");
-    
+
     EFindFiles flags = (EFindFiles)
         (fFF_File | (recurse ? fFF_Recursive : 0));
-    
+
     CBlastDbFinder dbfinder;
     FindFilesInDir(CDir(path), fmasks, dmasks, dbfinder, flags);
     if (remove_redundant_dbs) {
@@ -1353,7 +1364,7 @@ Int8 CSeqDB::GetDiskUsage() const
                 if (length != -1) {
                     retval += length;
                 } else {
-                    ERR_POST(Error << "Error retrieving file size for " 
+                    ERR_POST(Error << "Error retrieving file size for "
                                    << file.GetPath());
                 }
             }
@@ -1362,7 +1373,7 @@ Int8 CSeqDB::GetDiskUsage() const
     return retval;
 }
 
-CSeqDB::ESeqType 
+CSeqDB::ESeqType
 ParseMoleculeTypeString(const string& s)
 {
     CSeqDB::ESeqType retval = CSeqDB::eUnknown;
@@ -1463,7 +1474,7 @@ CWgsDbTrimmer::x_ReadGiListsForDbs()
 string CWgsDbTrimmer::GetDbList()
 {
     TGiLists wgs_gi_lists = x_ReadGiListsForDbs();
-    if (wgs_gi_lists.empty()) { 
+    if (wgs_gi_lists.empty()) {
         // no GI lists were found in WGS_GILIST_DIR, we can't do anything
         return m_OrigWgsList;
     }
