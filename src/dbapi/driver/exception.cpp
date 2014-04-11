@@ -147,9 +147,18 @@ CDB_Exception::SetParams(const CDBParams* params)
     SParams::TParams& my_params = m_Params->params;
     my_params.resize(n);
     for (unsigned int i = 0;  i < n;  ++i) {
-        my_params[i].name = params->GetName(i);
-        my_params[i].value
-            = (params->GetValue(i) ? params->GetValue(i)->Clone() : NULL);
+        my_params[i].value = NULL;
+    }
+    for (unsigned int i = 0;  i < n;  ++i) {
+        SParam& p = my_params[i];
+        p.name = params->GetName(i);
+        try {
+            const CDB_Object* v = params->GetValue(i);
+            if (v != NULL) {
+                p.value = v->Clone();
+            }
+        } catch (exception&) {
+        }
     }
 }
 
