@@ -2179,9 +2179,10 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
             //  prot_ref_str: CWDADPLKRPTFKQIVQLIEKQISES*   -> CWD
             //  prot_var_str: WS*                           -> WS*
             size_t suffix_len = GetCommonSuffixLen(prot_ref_str, prot_var_str);
-            if(/*2 * suffix_len >= max(prot_ref_str.size(), prot_var_str.size())*/ suffix_len > 2) {
-                //Note: '>=' because in edge-case X* -> Y* the common suffix is '*' and we want to truncate. VAR-699
-
+            if(   (prot_ref_str.size() == prot_var_str.size() && suffix_len > 0) 
+               || suffix_len > 3                                                    // VAR-872
+               || 2 * suffix_len >= max(prot_ref_str.size(), prot_var_str.size()))  // VAR-699
+            {
                 prot_ref_str.resize(prot_ref_str.size() - suffix_len);
                 prot_var_str.resize(prot_var_str.size() - suffix_len);
             } else if(NStr::EndsWith(prot_var_str, "*") && prot_ref_str.size() > prot_var_str.size()) {
