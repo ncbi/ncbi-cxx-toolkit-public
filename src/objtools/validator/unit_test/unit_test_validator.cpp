@@ -14198,50 +14198,75 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefWithoutGene)
 }
 
 
+void CreateReciprocalLinks(CSeq_feat& f1, CSeq_feat& f2)
+{
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    x1->SetId().SetLocal().SetId(f2.GetId().GetLocal().GetId());
+    f1.SetXref().push_back(x1);
+    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
+    x2->SetId().SetLocal().SetId(f1.GetId().GetLocal().GetId());
+    f2.SetXref().push_back(x2);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
-    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
-    cds->SetId().SetLocal().SetId(1);
-    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
-    cds->SetXref().push_back(x1);
-    
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+
+    // add ID to CDS
+    cds->SetId().SetLocal().SetId(1);
+    
+    // create mRNA feature
+    CRef<CSeq_feat> mrna = unit_test_util::MakemRNAForCDS(cds);
+    mrna->SetId().SetLocal().SetId(2);
+    unit_test_util::AddFeat (mrna, nuc);
+
+    // create gene feature
     CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
     gene->SetId().SetLocal().SetId(3);
     unit_test_util::AddFeat (gene, nuc);
-    
+
+    // add misc_feature
+    CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature(nuc);
+    misc->SetId().SetLocal().SetId(4);
+        
     STANDARD_SETUP
+
+    // add broken SeqFeatXref to coding region
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    cds->SetXref().push_back(x1);
+
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
                                 "SeqFeatXref with no id or data field"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    cds->ResetXref();
 
     CLEAR_ERRORS    
 
-    cds->SetXref().front()->SetId().SetLocal().SetId(3);
-    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
-    x2->SetId().SetLocal().SetId(1);
-    gene->SetXref().push_back(x2);
+    // xref between CDS and misc_feat is not allowed,
+    // triggers error for non-ambiguous CDS/mRNA
+    scope.RemoveTopLevelSeqEntry(seh);
+    CreateReciprocalLinks(*cds, *misc);
+    seh = scope.AddTopLevelSeqEntry(*entry);
 
-
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
+                                "CDS/mRNA unambiguous pair have erroneous cross-references"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
-                                "Cross-references are not between CDS and mRNA pair"));
+                                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
-                                "Cross-references are not between CDS and mRNA pair"));
+                                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS    
-
+    
+    // complain if linked-to feature has no xrefs of its own
     scope.RemoveTopLevelSeqEntry(seh);
-    CRef<CSeq_feat> mrna = unit_test_util::MakemRNAForCDS(cds);
-    mrna->SetId().SetLocal().SetId(2);
-    unit_test_util::AddFeat (mrna, nuc);
-    gene->ResetXref();
-    cds->SetXref().front()->SetId().SetLocal().SetId(2);
+    misc->ResetXref();
     seh = scope.AddTopLevelSeqEntry(*entry);
-
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
                                 "CDS/mRNA unambiguous pair have erroneous cross-references"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
@@ -14249,7 +14274,47 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    cds->ResetXref();
+    
     CLEAR_ERRORS    
+
+    // create xref between mRNA and coding region - this is allowed
+    scope.RemoveTopLevelSeqEntry(seh);
+    CreateReciprocalLinks(*cds, *mrna);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // create xref between coding region and gene - this is allowed
+    scope.RemoveTopLevelSeqEntry(seh);
+    CreateReciprocalLinks(*cds, *gene);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // create xref between mRNA and gene - this is allowed
+    scope.RemoveTopLevelSeqEntry(seh);
+    CreateReciprocalLinks(*mrna, *gene);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // shouldn't matter what order the links are created in
+    scope.RemoveTopLevelSeqEntry(seh);
+    mrna->ResetXref();
+    cds->ResetXref();
+    gene->ResetXref();
+    CreateReciprocalLinks(*cds, *gene);
+    CreateReciprocalLinks(*mrna, *gene);
+    CreateReciprocalLinks(*cds, *mrna);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
@@ -17602,9 +17667,21 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WrongQualOnFeature)
 
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
-    string to_fix = "9.93N\xC2\xB0 and 78.12\xC2\xB0\x45";
-    string fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    string to_fix;
+    string fixed;
+
+    to_fix = "-50.4498 N - 59 74.8912 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
+    to_fix = "50.4498 N 59 74.8912 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
+    to_fix = "9.93N\xC2\xB0 and 78.12\xC2\xB0\x45";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
+
 
     to_fix = "N03'00'12.1 E101'39'33'1";
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
