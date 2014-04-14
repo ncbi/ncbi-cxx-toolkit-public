@@ -5762,6 +5762,48 @@ FeaturePairIsTwoTypes
 }
 
 
+static bool s_GeneRefsAreEquivalent (const CGene_ref& g1, const CGene_ref& g2, string& label)
+{
+    bool equivalent = false;
+    if (g1.IsSetLocus_tag()
+        && g2.IsSetLocus_tag()) {
+        if (NStr::EqualNocase(g1.GetLocus_tag(),
+                              g2.GetLocus_tag())) {
+            label = g1.GetLocus_tag();
+            equivalent = true;
+        }
+    } else if (g1.IsSetLocus()
+               && g2.IsSetLocus()) {
+        if (NStr::EqualNocase(g1.GetLocus(),
+                              g2.GetLocus())) {
+            label = g1.GetLocus();
+            equivalent = true;
+        }
+    } else if (g1.IsSetSyn()
+               && g2.IsSetSyn()) {
+        if (NStr::EqualNocase (g1.GetSyn().front(),
+                               g2.GetSyn().front())) {
+            label = g1.GetSyn().front();
+            equivalent = true;
+        }
+    }                    
+    return equivalent;
+}
+
+
+bool GeneXrefConflicts(const CSeq_feat& feat, const CSeq_feat& gene)
+{
+    FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, feat) {
+        string label;
+        if ((*it)->IsSetData() && (*it)->GetData().IsGene() 
+             && !s_GeneRefsAreEquivalent((*it)->GetData().GetGene(), gene.GetData().GetGene(), label)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat, CTSE_Handle tse)
 {
     if (!xref.IsSetId() && !xref.IsSetData()) {
@@ -5779,17 +5821,26 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
                         has_xref = true;
                         if (feat.IsSetId() && s_FeatureIdsMatch(feat.GetId(), (*it)->GetId())) {
                             has_reciprocal_xref = true;
-                            if (FeaturePairIsTwoTypes(feat, *(far_feat.GetSeq_feat()),
+                            const CSeq_feat& ff = *(far_feat.GetSeq_feat());
+                            if (FeaturePairIsTwoTypes(feat, ff,
                                                       CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA)
-                                || FeaturePairIsTwoTypes(feat, *(far_feat.GetSeq_feat()),
+                                || FeaturePairIsTwoTypes(feat, ff,
                                                       CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_mRNA)
-                                || FeaturePairIsTwoTypes(feat, *(far_feat.GetSeq_feat()),
+                                || FeaturePairIsTwoTypes(feat, ff,
                                                       CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion)) {
                                 if (feat.GetData().IsCdregion() && far_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
                                     ECompare comp = Compare(feat.GetLocation(), far_feat.GetLocation(), m_Scope);
                                     if ( (comp != eContained) && (comp != eSame)) {
                                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAXrefLocationProblem, 
                                                  "CDS not contained within cross-referenced mRNA", feat);
+                                    }
+                                }
+                                if (far_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene) {
+                                    // make sure feature does not have conflicting gene xref
+                                    if (GeneXrefConflicts(feat, ff)) {
+                                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem, 
+                                                 "Feature gene xref does not match Feature ID cross-referenced gene feature",
+                                                 feat);
                                     }
                                 }
                             } else {
@@ -6878,35 +6929,6 @@ static bool s_LocationStrandsIncompatible (const CSeq_loc& loc1, const CSeq_loc&
     }
 
     return true;
-}
-
-
-static bool s_GeneRefsAreEquivalent (const CGene_ref& g1, const CGene_ref& g2, string& label)
-{
-    bool equivalent = false;
-    if (g1.IsSetLocus_tag()
-        && g2.IsSetLocus_tag()) {
-        if (NStr::EqualNocase(g1.GetLocus_tag(),
-                              g2.GetLocus_tag())) {
-            label = g1.GetLocus_tag();
-            equivalent = true;
-        }
-    } else if (g1.IsSetLocus()
-               && g2.IsSetLocus()) {
-        if (NStr::EqualNocase(g1.GetLocus(),
-                              g2.GetLocus())) {
-            label = g1.GetLocus();
-            equivalent = true;
-        }
-    } else if (g1.IsSetSyn()
-               && g2.IsSetSyn()) {
-        if (NStr::EqualNocase (g1.GetSyn().front(),
-                               g2.GetSyn().front())) {
-            label = g1.GetSyn().front();
-            equivalent = true;
-        }
-    }                    
-    return equivalent;
 }
 
 

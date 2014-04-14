@@ -14315,6 +14315,39 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    // if feature has gene xref AND a feature ID xref to a gene feature, 
+    // they should not conflict
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> other_gene = unit_test_util::AddMiscFeature(nuc);
+    other_gene->SetData().SetGene().SetLocus("mismatch");
+    // note that gene and other_gene cannot have the same location or will 
+    // trigger duplicate feature errors, gene xref gene should not be the
+    // gene mapped to by overlap
+    other_gene->SetLocation().Assign(gene->GetLocation());
+    other_gene->SetLocation().SetInt().SetTo(other_gene->GetLocation().GetInt().GetTo() + 1);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CSeqFeatXref> gene_xref(new CSeqFeatXref());
+    gene_xref->SetData().SetGene().SetLocus("mismatch");
+    cds->SetXref().push_back(gene_xref);
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
+                                "Feature gene xref does not match Feature ID cross-referenced gene feature"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // ignore if gene xref and linked gene feature match
+    scope.RemoveTopLevelSeqEntry(seh);
+    gene_xref->SetData().SetGene().SetLocus("gene locus");
+    other_gene->SetLocation().Assign(gene->GetLocation());
+    gene->SetLocation().SetInt().SetTo(gene->GetLocation().GetInt().GetTo() + 1);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
