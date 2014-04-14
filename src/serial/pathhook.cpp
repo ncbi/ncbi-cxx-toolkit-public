@@ -41,8 +41,7 @@ BEGIN_NCBI_SCOPE
 static const char
     s_Separator = '.',
     s_One       = '?',
-    s_Many      = '*',
-    s_All       = '*';
+    s_Many      = '*';
 static const char* s_AllStr  = "?";
 
 
