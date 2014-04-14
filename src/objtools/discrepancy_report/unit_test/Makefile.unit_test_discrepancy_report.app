@@ -10,14 +10,16 @@ APP = unit_test_discrepancy_report
 SRC = unit_test_discrepancy_report
 # OBJ =
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE)
 
 LIB = xunittestutil xdiscrepancy_report xobjread xvalidate valid valerr taxon3 \
+        xmlwrapp \
         $(XFORMAT_LIBS) xalnmgr xobjutil tables \
         macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
         test_boost xncbi
 
-LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS) \
+         $(LIBXML_LIBS) $(LIBXSLT_LIBS)
 
 REQUIRES = Boost.Test.Included
 

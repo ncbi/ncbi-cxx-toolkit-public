@@ -37,8 +37,12 @@
 #include <objtools/discrepancy_report/hDiscRep_output.hpp>
 #include <objtools/discrepancy_report/hUtilib.hpp>
 
+// xmlwrapp include
+#include <misc/xmlwrapp/xmlwrapp.hpp>
+
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 BEGIN_NCBI_SCOPE
 
@@ -408,8 +412,7 @@ static const DiscInfoData disc_info_list [] = {
   {"Uncultured Notes", "UNCULTURED_NOTES_ONCALLER"}
 };
 
-UInt2UInts m_PrtOrd;
-void CDiscRepOutput :: x_SortReport()
+void CDiscRepOutput :: x_SortReport(UInt2UInts& prt_ord)
 {
    // ini.
    Str2UInt  list_ord;
@@ -420,34 +423,52 @@ void CDiscRepOutput :: x_SortReport()
 
    i=0;
    ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
-      m_PrtOrd[list_ord[(*it)->setting_name]].push_back(i++);
+      prt_ord[list_ord[(*it)->setting_name]].push_back(i++);
    }
 };
 
-void CDiscRepOutput :: x_Clean()
+void CDiscRepOutput :: x_Clear(UInt2UInts* prt_ord)
 {
    thisInfo.test_item_list.clear();
    thisInfo.test_item_objs.clear();
    thisInfo.disc_report_data.clear();
-   m_PrtOrd.clear();
+   if (prt_ord) prt_ord->clear();
 };
 
 // for asndisc
 void CDiscRepOutput :: Export()
 {
-   x_SortReport();
+   UInt2UInts prt_ord;
+   x_SortReport(prt_ord);
 
   if (oc.add_output_tag || oc.add_extra_output_tag) {
        x_AddListOutputTags();
   }
 
-  *(oc.output_f) << "Discrepancy Report Results\n\n" << "Summary\n";
-  x_WriteDiscRepSummary();
+  xml::document xmldoc("asndisc");
+  xml::node& xml_root = xmldoc.get_root_node();
+  
+  if (!oc.xml) {
+    *(oc.output_f) << "Discrepancy Report Results\n\n" << "Summary\n";
+  }
+  x_WriteDiscRepSummary(xml_root, prt_ord);
 
-  *(oc.output_f) << "\n\nDetailed Report\n";
-  x_WriteDiscRepDetails(thisInfo.disc_report_data, oc.use_flag);
+  if (!oc.xml) {
+    *(oc.output_f) << "\n\nDetailed Report\n";
+  }
+  x_WriteDiscRepDetails(thisInfo.disc_report_data, 
+                              xml_root, prt_ord, oc.use_flag);
 
-  x_Clean();
+  if (oc.xml) {
+    // set some document settings
+    xmldoc.set_is_standalone(true);
+    xmldoc.set_encoding("UTF-8");
+    
+    cout << xmldoc;
+    *(oc.output_f) << xmldoc;
+  }
+
+  x_Clear(&prt_ord);
 };  // Asndisc:: Export
 
 bool CDiscRepOutput :: x_RmTagInDescp(string& str, const string& tag)
@@ -465,25 +486,44 @@ bool CDiscRepOutput :: x_RmTagInDescp(string& str, const string& tag)
 }
 
 
-void CDiscRepOutput :: x_WriteDiscRepSummary()
+void CDiscRepOutput :: x_WriteDiscRepSummary(xml::node& xml_root, UInt2UInts& prt_ord)
 {
-  string desc;
+  string desc, strtmp;
+
 
   //ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
   CRef <CClickableItem> c_item;
-  ITERATE (UInt2UInts, it, m_PrtOrd) {
+
+  ITERATE (UInt2UInts, it, prt_ord) {
     ITERATE (vector <unsigned>, jt, it->second) {
+
       c_item = thisInfo.disc_report_data[*jt];
       desc = c_item->description;
       if ( desc.empty()) continue;
 
       // FATAL tag
       if (x_RmTagInDescp(desc, "FATAL: ")) {
-          *(oc.output_f)  << "FATAL: ";
+         if (!oc.xml) {
+            *(oc.output_f)  << "FATAL: ";
+         }
+         strtmp = "FATAL";
       }
-      *(oc.output_f) << c_item->setting_name << ": " << desc << endl;
+      else strtmp = "INFO";
+
+      xml::node::iterator 
+          xit = xml_root.insert(xml_root.end(), 
+                                   xml::node("message", desc.c_str()));
+      if (!oc.xml) {
+         *(oc.output_f) << c_item->setting_name << ": " << desc << endl;
+      }
+      else { 
+         // set attributes:
+         xit->get_attributes().insert("code", (c_item->setting_name).c_str());
+         xit->get_attributes().insert("prefix", "Summary");
+         xit->get_attributes().insert("severity", strtmp.c_str());
+      }
       if ("SUSPECT_PRODUCT_NAMES" == c_item->setting_name) {
-            x_WriteDiscRepSubcategories(c_item->subcategories);
+           x_WriteDiscRepSubcategories(c_item->subcategories, *xit);
       }
     }
   }
@@ -491,13 +531,23 @@ void CDiscRepOutput :: x_WriteDiscRepSummary()
 } // WriteDiscrepancyReportSummary
 
 
-void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident)
+void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, xml::node& xml_node, unsigned ident)
 {
    unsigned i;
    ITERATE (vector <CRef <CClickableItem> >, it, subcategories) {
-      for (i=0; i< ident; i++) *(oc.output_f) << "\t"; 
-      *(oc.output_f) << (*it)->description  << endl; 
-      x_WriteDiscRepSubcategories( (*it)->subcategories, ident+1);
+      xml::node sub_node("message", (*it)->description.c_str());
+      if (!oc.xml) {
+         for (i=0; i< ident; i++) *(oc.output_f) << "\t"; 
+         *(oc.output_f) << (*it)->description  << endl; 
+      }
+      else {
+         // set attributes:
+        sub_node.get_attributes().insert("code", ((*it)->setting_name.c_str()));
+        sub_node.get_attributes().insert("prefix", "Summary");
+        sub_node.get_attributes().insert("severity", "INFO");
+      }
+      x_WriteDiscRepSubcategories( (*it)->subcategories, sub_node, ident+1);
+      xml_node.push_back(sub_node);
    }
 } // WriteDiscRepSubcategories
 
@@ -536,9 +586,9 @@ bool CDiscRepOutput :: x_SubsHaveTags(CRef <CClickableItem> c_item)
   return false;
 };
 
-void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, bool use_flag, bool IsSubcategory)
+void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, xml::node& xml_root, UInt2UInts& prt_ord, bool use_flag, bool IsSubcategory)
 {
-  string prefix, desc;
+  string prefix, desc, strtmp;
   unsigned i, j;
   vector <unsigned> prt_idx;
   if (IsSubcategory) {
@@ -547,22 +597,30 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
     }
   }
   else {
-     ITERATE (UInt2UInts, it, m_PrtOrd) {
+     ITERATE (UInt2UInts, it, prt_ord) {
        ITERATE (vector <unsigned>, jt, it->second) {
           prt_idx.push_back(*jt);
        }
      }
   }
+
+  string xml_prefix, xml_severity;
   CRef <CClickableItem> c_item;
   for (j=0; j< prt_idx.size(); j++) {
       c_item = disc_rep_dt[prt_idx[j]];
       desc = c_item->description;
       if ( desc.empty() ) continue;
 
+      xml::node::iterator
+        xit = xml_root.insert(xml_root.end(),
+                                xml::node("message", desc.c_str()));
       // prefix
       if (use_flag) {
           prefix = "DiscRep_";
           prefix += IsSubcategory ? "SUB:" : "ALL:";
+          
+          xml_prefix = prefix.substr(0, prefix.size()-1);
+
           strtmp = c_item->setting_name;
           prefix += strtmp.empty()? " " : strtmp + ": ";
       }
@@ -570,7 +628,12 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
       // FATAL tag
       if (x_RmTagInDescp(desc, "FATAL: ")) {
          prefix = "FATAL: " + prefix;
+         xml_severity = "FATAL";
       }
+      else xml_severity = "INFO";
+      xit->get_attributes().insert("code", (c_item->setting_name).c_str());
+      xit->get_attributes().insert("prefix", xml_prefix.c_str());
+      xit->get_attributes().insert("severity", xml_severity.c_str());
 
       if ( (oc.add_output_tag || oc.add_extra_output_tag) 
                && (prefix.find("FATAL: ") != string::npos 
@@ -579,7 +642,9 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
       }
       // summary report
       if (oc.summary_report) {
-         *(oc.output_f) << prefix << desc << endl;
+         if (!oc.xml) {
+             *(oc.output_f) << prefix << desc << endl;
+         }
       }
       else {
 /*
@@ -589,7 +654,7 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
             if (ptr == NULL || ptr != prefix)
               SetStringValue (&prefix, "FATAL", ExistingTextOption_prefix_colon 
 */
-         x_WriteDiscRepItems(c_item, prefix);
+         x_WriteDiscRepItems(c_item, prefix, *xit);
       }
       if ( x_OkToExpand (c_item) ) {
         for (i = 0; i< c_item->subcategories.size() -1; i++) {
@@ -597,10 +662,12 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
         }
         if (use_flag 
                && c_item->setting_name == "DISC_INCONSISTENT_BIOSRC_DEFLINE") {
-           x_WriteDiscRepDetails (c_item->subcategories, false, false);
+             x_WriteDiscRepDetails(c_item->subcategories, *xit, 
+                                    prt_ord, false, false);
         } 
         else {
-           x_WriteDiscRepDetails (c_item->subcategories, oc.use_flag, true);
+             x_WriteDiscRepDetails(c_item->subcategories, *xit,
+                                    prt_ord, oc.use_flag, true);
         }
       } 
   }
@@ -625,16 +692,33 @@ bool CDiscRepOutput :: x_SuppressItemListForFeatureTypeForOutputFiles(const stri
 
 
 
-void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix)
+void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix, xml::node& xml_node)
 {
+   string strtmp, xml_prefix, xml_severity;
    if (oc.use_flag && 
           x_SuppressItemListForFeatureTypeForOutputFiles(c_item->setting_name)){
+
+
        if (!prefix.empty()) {
-            *(oc.output_f) << prefix;
+         if (!oc.xml) {
+               *(oc.output_f) << prefix;
+         }
+         xml_prefix = (prefix.find("DiscRep_ALL") != string::npos) ?
+                        "DiscRep_ALL" : "DiscRep_SUB";
        }
        string desc = c_item->description;
-       x_RmTagInDescp(desc, "FATAL: ");
-       *(oc.output_f) << desc << endl;
+       xml_severity = (x_RmTagInDescp(desc, "FATAL: ")) ?
+                          "FATAL" : "INFO";
+       if (!oc.xml) {
+          *(oc.output_f) << desc << endl;
+       }
+       else {
+         xml::node sub_node("message", desc.c_str());
+         sub_node.get_attributes().insert("code", c_item->setting_name.c_str());
+         sub_node.get_attributes().insert("prefix", strtmp.c_str());
+         sub_node.get_attributes().insert("severity", strtmp.c_str());
+         xml_node.push_back(sub_node);
+       }
 /* unnecessary
     for (vnp = c_item->subcategories; vnp != NULL; vnp = vnp->next) {
           dip = vnp->data.ptrvalue;
@@ -649,26 +733,40 @@ void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const s
 */
   } 
   else {
-     x_StandardWriteDiscRepItems (oc, c_item, prefix, !c_item->expanded);
+     x_StandardWriteDiscRepItems (oc, c_item, prefix, !c_item->expanded, xml_node);
   }
   if ((!c_item->next_sibling && c_item->subcategories.empty()) 
         || (!c_item->subcategories.empty() && !c_item->item_list.empty()
                 &&  !c_item->expanded) ) {
 
-      *(oc.output_f) << endl;
+      if (!oc.xml) {
+         *(oc.output_f) << endl;
+      }
  }
   
 } // WriteDiscRepItems()
 
 
-void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat)
+void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat, xml::node& xml_node)
 {
+  string xml_prefix, xml_severity, strtmp;
   if (!prefix.empty()) {
-     *(oc.output_f) << prefix;
+     if (!oc.xml) {
+        *(oc.output_f) << prefix;
+     }
+     if (prefix.find("DiscRep_ALL") != string::npos) {
+        xml_prefix = "DiscRep_ALL";
+     }
+     else xml_prefix = "DiscRep_SUB";
   }
   string desc = c_item->description;
-  x_RmTagInDescp(desc, "FATAL: ");
-  *(oc.output_f) << desc << endl;
+  if (x_RmTagInDescp(desc, "FATAL: ")) {
+     xml_severity = "FATAL";
+  }
+  else xml_severity = "INFO";
+  if (!oc.xml) {
+      *(oc.output_f) << desc << endl;
+  }
 
   if (c_item->subcategories.empty() || list_features_if_subcat) {
           /*
@@ -678,9 +776,85 @@ void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CCli
              vnp = list_copy;
            }
         */
-      ITERATE (vector <string>, it, c_item->item_list) {
-         *(oc.output_f) << *it << endl;
+unsigned ii=0;
+    ITERATE (vector <string>, it, c_item->item_list) {
+      if (!oc.xml) {
+          *(oc.output_f) << *it << endl;
       }
+      else {
+        const CObject* ptr = (c_item->obj_list[ii++]).GetPointer();
+        const CSeq_entry* entry = dynamic_cast<const CSeq_entry*>(ptr);
+        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(ptr);
+        const CBioseq_set* seq_set = dynamic_cast<const CBioseq_set*>(ptr);
+        const CSeq_feat* seq_ft = dynamic_cast<const CSeq_feat*>(ptr);
+        const CSeqdesc* seq_desc = dynamic_cast<const CSeqdesc*> (ptr);
+/*
+if (entry) cerr << "entry  \n" << c_item->setting_name << endl;
+else if (seq_set) {
+cerr << "seq_set \n" << c_item->setting_name << endl;
+}
+else if (seq_desc) cerr << "seq_desc " << c_item->setting_name << endl;
+*/
+
+        xml::node sub_node("message", (*it).c_str());
+        xml::attributes& att = sub_node.get_attributes();
+        att.insert("code",(c_item->setting_name.c_str()));
+        att.insert("prefix", xml_prefix.c_str());
+        att.insert("severity", xml_severity.c_str());
+
+        if (bioseq) {
+           strtmp = bioseq->GetFirstId()->AsFastaString();
+           att.insert("seq-id", strtmp.c_str()); 
+        }
+        else if (seq_ft) {
+           const CSeq_id* seq_id = seq_ft->GetLocation().GetId();
+           if (seq_id) strtmp = seq_id->AsFastaString();
+           else {
+             CBioseq_Handle 
+                bioseq_h 
+                  = thisInfo.scope->GetBioseqHandle(seq_ft->GetLocation());
+             strtmp = bioseq_h.GetSeqId()->AsFastaString();
+           }
+           att.insert("seq-id", strtmp.c_str()); 
+         
+           strtmp = kEmptyStr;
+           if (seq_ft->CanGetId()) {
+              const CFeat_id& feat_id = seq_ft->GetId();
+              switch (feat_id.Which()) {
+                 case CFeat_id::e_Gibb:
+                    strtmp = NStr::IntToString(feat_id.GetGibb());
+                    break;
+                 case CFeat_id::e_Giim:
+                   {
+                     const CGiimport_id& giim = feat_id.GetGiim();
+                     if (giim.CanGetDb()) {
+                       strtmp = giim.GetDb() + "|";
+                     }
+                     strtmp += NStr::IntToString(giim.GetId());
+                     if (giim.CanGetRelease()) {
+                       strtmp += ("." + giim.GetRelease());
+                     }
+                     break;
+                   }
+                 case CFeat_id::e_Local:
+                   {
+                      ostringstream ostr;
+                      feat_id.GetLocal().AsString(ostr);
+                      strtmp = ostr.str();
+                      break;
+                   }
+                 case CFeat_id::e_General:
+                   {
+                     feat_id.GetGeneral().GetLabel(&strtmp);
+                     break;
+                   }
+              } // switch
+           }
+           att.insert("feat-id", strtmp.c_str()); 
+        } // if (seq_ft)
+        xml_node.push_back(sub_node);
+      }
+    }
   }
 
 }; // StandardWriteDiscRepItems()
@@ -1118,8 +1292,9 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
           }
       }
       else {
-        x_SortReport();
-        ITERATE (UInt2UInts, it, m_PrtOrd) {
+        UInt2UInts prt_ord;
+        x_SortReport(prt_ord);
+        ITERATE (UInt2UInts, it, prt_ord) {
           ITERATE (vector <unsigned>, jt, it->second) {
               x_SendItemToGbench(thisInfo.disc_report_data[*jt], item_list);
           }
@@ -1127,7 +1302,7 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
       }
    };
 
-   x_Clean();
+   x_Clear();
 };
 
 // for unit test
@@ -1141,7 +1316,7 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableItem> >& c_item, const str
       }
    }
 
-   x_Clean();
+   x_Clear();
 };
 
 // for unit test
@@ -1160,7 +1335,7 @@ void CDiscRepOutput :: Export(CClickableItem& c_item, const string& setting_name
       }
    }
 
-   x_Clean();
+   x_Clear();
 } 
 
 END_NCBI_SCOPE

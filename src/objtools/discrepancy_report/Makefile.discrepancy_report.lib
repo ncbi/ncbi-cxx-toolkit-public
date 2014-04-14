@@ -14,4 +14,4 @@ WATCHERS = chenj bollin
 
 
 USES_LIBRARIES =  \
-    $(OBJMGR_LIBS) $(OBJREAD_LIBS) macro xvalidate
+    $(OBJMGR_LIBS) $(OBJREAD_LIBS) macro xvalidate xmlwrapp

@@ -1268,6 +1268,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
              = (strtmp.find("t") != string::npos);
       thisInfo.output_config.add_extra_output_tag 
              = (strtmp.find("s") != string::npos);
+      thisInfo.output_config.xml = (strtmp.find("x") != string::npos);
       if (strtmp == "Asndisc") {
         thisInfo.report = fUnknown;
       }
@@ -1291,7 +1292,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
       else if (strtmp.find("b") != string::npos) {
         thisInfo.report = fBigSequence;
       }
-      else if (strtmp != "t" && strtmp != "s") {
+      else if (strtmp != "t" && strtmp != "s" && strtmp != "x") {
          NCBI_USER_THROW("Unknown report type");
       }
     }
@@ -1306,7 +1307,8 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     }
 
     // output
-    m_outsuffix = (args.find("s") != end) ? args["s"] : ".dr";
+    m_outsuffix = m_outsuffix.empty() ?
+                    ((args.find("s") != end) ? args["s"] : ".dr") : m_outsuffix;
     string output_f = (args.find("o") != end) ? args["o"] : kEmptyStr;
     m_outdir= (args.find("r") != end) ? GetDirStr(args["r"]) : kEmptyStr;
     if (!output_f.empty() && !m_outdir.empty()) {

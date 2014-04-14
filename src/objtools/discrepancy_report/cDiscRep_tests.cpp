@@ -11055,7 +11055,6 @@ CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bi
             break;
         default: break;
      }
-
    }
 
    return (eBioseqSkip_No); 
@@ -11070,17 +11069,10 @@ CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(stri
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CFeatureItem& feature_item)
 {
-/*
-if (block_text.find("CDS")!=string::npos 
-      && block_text.find("1..365") != string::npos
-      && block_text.find("LTSEBAI_0430") != string::npos) {
-cerr << "000block_test \n" << block_text << endl;
-const CSeq_feat& sf = feature_item.GetFeat().GetOriginalFeature();
-cerr << "000 sf\n"
- << MSerial_AsnText << sf << endl;
-exit(1);
-}
-*/
+   if (block_text.find("CDS") != string::npos
+          && block_text.find("/coded_by") != string::npos) {
+      return eAction_Skip;
+   }
    size_t pos = block_text.find("/translation=\"");
    string trans_str, strtmp;
    if (pos != string::npos) {
@@ -11103,24 +11095,11 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
   block_text 
     =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
 
-/*
-if (block_text.find("flagellar basal body P-ring biosynthesis") != string::npos) 
-cerr << "block:  \n" << block_text << endl;
-
-if (block_text.find("1..365") != string::npos) 
-cerr << "block111\n" << block_text << endl;
-*/
-
-  //ITERATE (Str2UInt, it, thisInfo.whole_word) {
   ITERATE (Str2CombDt, it, thisInfo.fix_data) {
      string strtmp;
      CConstRef <CObject> obj_ref;
      if (CTestAndRepData :: DoesStringContainPhrase( 
                            block_text, it->first, false,  it->second.b_val)) {
-/*
-if (block_text.find("1..365") != string::npos) 
-cerr << "block333\n" << block_text << endl;
-*/
        switch (which_block) {
          case CFlatFileConfig::fGenbankBlocks_Locus: {
                  strtmp = m_mol_desc; 
@@ -11153,10 +11132,6 @@ cerr << "block333\n" << block_text << endl;
               const CFeatureItemBase& feat_item 
                             = dynamic_cast<const CFeatureItemBase&> (flat_item);
               const CSeq_feat& sf = feat_item.GetFeat().GetOriginalFeature();
-/*
-if (block_text.find("1..365") != string::npos)
-cerr << "sf \n" << MSerial_AsnText << sf << endl;
-*/
               strtmp = GetDiscItemText(sf);
               obj_ref.Reset(&sf);
               break;
@@ -11166,13 +11141,6 @@ cerr << "sf \n" << MSerial_AsnText << sf << endl;
        };
        strtmp 
          = thisInfo.fix_data[it->first].s_val + "$" + it->first + "#" + strtmp;
-/*
-if (strtmp.find("flagellar basal body P-ring biosynthesis") != string::npos) {
-cerr << "Which block " << which_block << endl;
-cerr << "strtmp " << strtmp << endl;
-cerr << "222block \n" << block_text << endl;
-}
-*/
        thisInfo.test_item_list[m_setting_name].push_back(strtmp);
        strtmp = m_setting_name + "$" + thisInfo.fix_data[it->first].s_val 
                  + "#" + it->first;
