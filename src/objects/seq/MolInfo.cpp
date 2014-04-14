@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seq/MolInfo.hpp>
+#include <util/static_map.hpp>
 
 // generated classes
 
@@ -84,6 +85,48 @@ void CMolInfo::GetLabel(string* label) const
         (*label) += sep + tv->FindName(comp, true);
     }
 }
+
+
+typedef SStaticPair<const char *, CMolInfo::EBiomol> TBiomolKey;
+
+static const TBiomolKey biomol_key_to_subtype [] = {
+    { " ", CMolInfo::eBiomol_unknown } ,
+    { "cRNA", CMolInfo::eBiomol_cRNA },
+    { "genomic", CMolInfo::eBiomol_genomic } ,
+    { "genomic mRNA", CMolInfo::eBiomol_genomic_mRNA } ,
+    { "mRNA [cDNA]", CMolInfo::eBiomol_mRNA } ,
+    { "ncRNA", CMolInfo::eBiomol_ncRNA } ,
+    { "other", CMolInfo::eBiomol_other } ,
+    { "other-genetic", CMolInfo::eBiomol_other_genetic } ,
+    { "peptide", CMolInfo::eBiomol_peptide } ,
+    { "precursor RNA", CMolInfo::eBiomol_pre_RNA } ,
+    { "rRNA", CMolInfo::eBiomol_rRNA } ,
+    { "scRNA", CMolInfo::eBiomol_scRNA } ,
+    { "snoRNA", CMolInfo::eBiomol_snoRNA } ,
+    { "snRNA", CMolInfo::eBiomol_snRNA } ,
+    { "tmRNA", CMolInfo::eBiomol_tmRNA } ,
+    { "transcribed RNA", CMolInfo::eBiomol_transcribed_RNA } ,
+    { "tRNA", CMolInfo::eBiomol_tRNA } ,
+};
+
+typedef CStaticPairArrayMap <const char*, CMolInfo::EBiomol, PNocase_CStr> TBiomolMap;
+DEFINE_STATIC_ARRAY_MAP(TBiomolMap, sm_BiomolKeys, biomol_key_to_subtype);
+
+
+string CMolInfo::GetBiomolName (CMolInfo::TBiomol biomol)
+{
+    string biomol_name = "";
+    TBiomolMap::const_iterator g_iter = sm_BiomolKeys.begin();
+    while (g_iter != sm_BiomolKeys.end() &&
+           unsigned(g_iter->second) != biomol) {
+        ++g_iter;
+    }
+    if (g_iter != sm_BiomolKeys.end()) {
+        biomol_name = g_iter->first;
+    }
+    return biomol_name;
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

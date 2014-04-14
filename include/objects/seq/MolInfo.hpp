@@ -59,6 +59,8 @@ public:
     // Append a label to label based on content
     void GetLabel(string* label) const;
 
+    static string GetBiomolName (CMolInfo::TBiomol biomol);
+
 private:
     // Prohibit copy constructor and assignment operator
     CMolInfo(const CMolInfo& value);

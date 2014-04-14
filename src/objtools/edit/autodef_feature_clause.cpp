@@ -43,6 +43,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -1508,23 +1509,53 @@ CAutoDefNcRNAClause::~CAutoDefNcRNAClause()
 
 bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
 {
-    string ncrna_class = m_MainFeat.GetNamedQual("ncRNA_class");
-    string ncrna_product = m_MainFeat.GetNamedQual("product");
-	string ncrna_comment = m_MainFeat.GetComment();
-    if (!NStr::IsBlank(ncrna_comment)) {
-        string::size_type pos = NStr::Find(ncrna_comment, ";");
-        if (pos != NCBI_NS_STD::string::npos) {
-            ncrna_comment = ncrna_comment.substr(0, pos);
+    string ncrna_product = "";
+    string ncrna_class = "";
+    if (m_MainFeat.IsSetData() && m_MainFeat.GetData().IsRna()
+        && m_MainFeat.GetData().GetRna().IsSetExt()) {
+        const CRNA_ref::TExt& ext = m_MainFeat.GetData().GetRna().GetExt();
+        if (ext.IsName()) {
+            ncrna_product = ext.GetName();
+            if (NStr::EqualNocase(ncrna_product, "ncRNA")) {
+                ncrna_product = "";
+            }
+        } else if (ext.IsGen()) {
+            if (ext.GetGen().IsSetProduct()) {
+                ncrna_product = ext.GetGen().GetProduct();
+            }
+            if (ext.GetGen().IsSetClass()) {
+                ncrna_class = ext.GetGen().GetClass();
+            }
+        }
+    }
+    if (NStr::IsBlank(ncrna_product)) {
+        ncrna_product = m_MainFeat.GetNamedQual("product");
+    }
+    if (NStr::IsBlank(ncrna_class)) {
+        ncrna_class = m_MainFeat.GetNamedQual("ncRNA_class");
+    }
+    if (NStr::EqualNocase(ncrna_class, "other")) {
+        ncrna_class = "";
+    }
+    NStr::ReplaceInPlace(ncrna_class, "_", " ");
+    
+	string ncrna_comment;
+    if (m_MainFeat.IsSetComment()) {
+        ncrna_comment = m_MainFeat.GetComment();
+        if (!NStr::IsBlank(ncrna_comment)) {
+            string::size_type pos = NStr::Find(ncrna_comment, ";");
+            if (pos != NCBI_NS_STD::string::npos) {
+                ncrna_comment = ncrna_comment.substr(0, pos);
+            }
         }
     }
 
     if (!NStr::IsBlank (ncrna_product)) {
-        if (!NStr::IsBlank (ncrna_class) && !NStr::Equal (ncrna_class, "other")) {
-            product_name = ncrna_product + " " + ncrna_class;
-        } else {
-            product_name = ncrna_product;
+        product_name = ncrna_product;
+        if (!NStr::IsBlank (ncrna_class)) {
+            product_name += " " + ncrna_class;
         }
-	} else if (!NStr::IsBlank(ncrna_class) && !NStr::Equal (ncrna_class, "other")) {
+	} else if (!NStr::IsBlank(ncrna_class)) {
         product_name = ncrna_class;
 	} else if (m_UseComment && !NStr::IsBlank (ncrna_comment)) {
 		product_name = ncrna_comment;

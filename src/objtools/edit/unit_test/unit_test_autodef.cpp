@@ -200,7 +200,8 @@ static void AddTitle (CRef<CSeq_entry> entry, string defline)
 }
 
 
-static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false)
+static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
+                                CAutoDef::EFeatureListType list_type = CAutoDef::eListAllFeatures)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
@@ -218,6 +219,8 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false)
     } else {
         mod_combo = new CAutoDefModifierCombo ();
     }
+
+    autodef.SetFeatureListType(list_type);
 
     // check defline for each nucleotide sequence
     CBioseq_CI seq_iter(seh, CSeq_inst::eMol_na);
@@ -610,6 +613,43 @@ BOOST_AUTO_TEST_CASE(Test_GB_3099)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3359)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(seq, "Erwinia amylovora");
+    seq->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    unit_test_util::SetBiomol(seq, CMolInfo::eBiomol_transcribed_RNA);
+    CRef<CSeq_feat> ncrna = unit_test_util::BuildGoodFeat ();
+    ncrna->SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
+    ncrna->SetData().SetRna().SetExt().SetGen().SetProduct("RmaA");
+    ncrna->SetData().SetRna().SetExt().SetGen().SetClass("antisense_RNA");
+    unit_test_util::AddFeat (ncrna, seq);
+    string defline = "Erwinia amylovora RmaA antisense RNA, complete sequence.";
+    AddTitle(seq, defline);
+    CheckDeflineMatches(seq, true);
+
+}
+
+
+void TestOneOrganelleSequenceDefline(CBioSource::TGenome genome, const string& defline)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetGenome(seq, genome);
+    AddTitle(seq, defline);
+    CheckDeflineMatches(seq, true, objects::CAutoDef::eSequence);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_1733)
+{
+    TestOneOrganelleSequenceDefline(CBioSource::eGenome_unknown, "Sebaea microphylla genomic sequence.");
+    TestOneOrganelleSequenceDefline(CBioSource::eGenome_mitochondrion, "Sebaea microphylla mitochondrion sequence.");
+    TestOneOrganelleSequenceDefline(CBioSource::eGenome_apicoplast, "Sebaea microphylla apicoplast sequence.");
+    TestOneOrganelleSequenceDefline(CBioSource::eGenome_chloroplast, "Sebaea microphylla chloroplast sequence.");
+    TestOneOrganelleSequenceDefline(CBioSource::eGenome_kinetoplast, "Sebaea microphylla kinetoplast sequence.");
+    TestOneOrganelleSequenceDefline(CBioSource::eGenome_leucoplast, "Sebaea microphylla leucoplast sequence.");
+
+}
 
 
 END_SCOPE(objects)

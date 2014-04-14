@@ -185,6 +185,9 @@ int CAutoDefSourceDescription::Compare(const CAutoDefSourceDescription& s) const
             rval = 1;
         }
     }
+    if (rval == 0) {
+        rval = NStr::Compare (GetFeatureClauses(), s.GetFeatureClauses());
+    }
     return rval;
 }
 

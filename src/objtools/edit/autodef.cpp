@@ -1176,50 +1176,78 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
 }
 
 
+string CAutoDef::x_GetNonFeatureListEnding()
+{
+    string end = "";
+    switch (m_FeatureListType)
+    {
+        case eCompleteSequence:
+            end = ", complete sequence.";
+            break;
+        case eCompleteGenome:
+            end = ", complete genome.";
+            break;
+        case ePartialSequence:
+            end = ", partial sequence.";
+            break;
+        case ePartialGenome:
+            end = ", partial genome.";
+            break;
+        case eSequence:
+            end = " sequence.";
+            break;
+        default:
+            break;
+    }
+    return end;
+}
+
+
 string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val)
 {
     string feature_clauses = "";
-    switch (m_FeatureListType) {
-        case eListAllFeatures:
-            {{
-            feature_clauses = " " + x_GetFeatureClauses(bh);
-            string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
-            if (m_AltSpliceFlag) {
-                if (NStr::IsBlank(ending)) {
-                    ending = "; alternatively spliced";
-                } else {
-                    ending += ", alternatively spliced";
-                }
-            }
-            feature_clauses += ending;
-            if (NStr::IsBlank(feature_clauses)) {
-                feature_clauses = ".";
+    if (m_FeatureListType == eListAllFeatures) {
+        feature_clauses = " " + x_GetFeatureClauses(bh);
+        string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
+        if (m_AltSpliceFlag) {
+            if (NStr::IsBlank(ending)) {
+                ending = "; alternatively spliced";
             } else {
-                feature_clauses += ".";
+                ending += ", alternatively spliced";
             }
-            }} 
-        break;
-        case eCompleteSequence:
-            feature_clauses = ", complete sequence";
-            break;
-        case eCompleteGenome:
-            {{
-            string organelle = OrganelleByGenome(genome_val);
-            if (!NStr::IsBlank(organelle)) {
-                feature_clauses = " " + organelle;
+        }
+        feature_clauses += ending;
+        if (NStr::IsBlank(feature_clauses)) {
+            feature_clauses = ".";
+        } else {
+            feature_clauses += ".";
+        }
+    } else {
+        string organelle = "";
+        
+        if (m_FeatureListType != eSequence
+            || genome_val == CBioSource::eGenome_apicoplast
+            || genome_val == CBioSource::eGenome_chloroplast
+            || genome_val == CBioSource::eGenome_kinetoplast
+            || genome_val == CBioSource::eGenome_leucoplast
+            || genome_val == CBioSource::eGenome_mitochondrion
+            || genome_val == CBioSource::eGenome_plastid) {
+            organelle = OrganelleByGenome(genome_val);
+        }
+        if (!NStr::IsBlank(organelle)) {
+            feature_clauses = " " + organelle;
+        } else if (NStr::IsBlank(organelle) && m_FeatureListType == eSequence) {
+            string biomol = "";
+            CSeqdesc_CI mi(bh, CSeqdesc::e_Molinfo);
+            if (mi && mi->GetMolinfo().IsSetBiomol()) {
+                biomol = CMolInfo::GetBiomolName(mi->GetMolinfo().GetBiomol());
             }
-            feature_clauses += ", complete genome";
-            }}
-            break;
-        case ePartialSequence:
-            feature_clauses += ", partial sequence";
-            break;
-        case ePartialGenome:
-            feature_clauses += ", partial genome";
-            break;
-        case eSequence:
-            feature_clauses += ", sequence";
-            break;
+            if (!NStr::IsBlank(biomol)) {
+                feature_clauses = " " + biomol;
+            }
+        }
+
+        feature_clauses += x_GetNonFeatureListEnding();
     }
     return feature_clauses;
 }

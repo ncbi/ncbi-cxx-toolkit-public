@@ -726,7 +726,7 @@ vector<CAutoDefModifierCombo *> CAutoDefModifierCombo::ExpandByAnyPresent()
     expanded.clear();
     NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
         if ((*it)->GetSrcList().size() == 1) {
-            break;
+            continue;
         }
         mods = (*it)->GetModifiersPresentForAny();
         ITERATE (CAutoDefSourceDescription::TModifierVector, mod_it, mods) {

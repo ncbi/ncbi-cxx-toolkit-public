@@ -156,6 +156,7 @@ private:
         (TModifierIndexVector& index_list,
          CAutoDefSourceDescription::TAvailableModifierVector& modifier_list);
     
+    string x_GetNonFeatureListEnding();
     string x_GetFeatureClauses(CBioseq_Handle bh);
     string x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                            CBioseq_Handle bh);
