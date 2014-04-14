@@ -58,7 +58,7 @@ const char GAP_CHAR='-'; // used in dna and protein text
 const char INTRON_CHAR='.'; // protein
 #ifdef _DEBUG
 const char SPACE_CHAR=' '; // translation and protein
-const char INTRON_OR_GAP[] = {INTRON_CHAR,GAP_CHAR,0};
+//const char INTRON_OR_GAP[] = {INTRON_CHAR,GAP_CHAR,0};
 #endif
 
 // used in match text
