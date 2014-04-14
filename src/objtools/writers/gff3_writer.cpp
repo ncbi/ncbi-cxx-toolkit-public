@@ -2102,10 +2102,10 @@ bool CGff3Writer::xAssignFeature(
     CRef<CSeq_loc> pLoc(new CSeq_loc(CSeq_loc::e_Mix));
     pLoc->Add(mf.GetLocation());
     CWriteUtil::ChangeToPackedInt(*pLoc);
-    record.InitLocation(*pLoc);
 
     CBioseq_Handle bsh = fc.BioseqHandle();
     if (!CWriteUtil::IsSequenceCircular(bsh)) {
+        record.InitLocation(*pLoc);
         return xAssignFeatureBasic(record, fc, mf);
     }
 
@@ -2136,6 +2136,7 @@ bool CGff3Writer::xAssignFeature(
         sublocs.erase(it_floor);
     }
 
+    record.InitLocation(*pLoc);
     return xAssignFeatureBasic(record, fc, mf);
 }
 
@@ -2533,18 +2534,14 @@ bool CGff3Writer::xWriteFeatureRecords(
     unsigned int seqLength )
 //  ============================================================================
 {
-    CRef<CSeq_loc> pPackedInt(new CSeq_loc(CSeq_loc::e_Mix));
-    pPackedInt->Add(location);
-    CWriteUtil::ChangeToPackedInt(*pPackedInt);
-
-    if (!pPackedInt->IsPacked_int() || !pPackedInt->GetPacked_int().CanGet()) {
+    const CSeq_loc& loc = record.Location();
+    if (!loc.IsPacked_int()  ||  !loc.GetPacked_int().CanGet()) {
         return xWriteRecord(record);
     }
-    const list<CRef<CSeq_interval> >& sublocs = pPackedInt->GetPacked_int().Get();
+    const list<CRef<CSeq_interval> >& sublocs = loc.GetPacked_int().Get();
     if (sublocs.size() == 1) {
         return xWriteRecord(record);
-    }
-
+    }//<<
     list<CRef<CSeq_interval> >::const_iterator it;
     string totIntervals = string("/") + NStr::IntToString(sublocs.size());
     unsigned int curInterval = 1;
