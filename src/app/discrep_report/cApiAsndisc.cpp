@@ -55,13 +55,18 @@ void GetAsndiscReport(int argc, const char* argv[])
 {
     vector <string> arr;
     Str2Str args;
+    if (argc < 2) {
+       NCBI_THROW(CException, eUnknown,
+                  "Input path or input file must be specified");
+    }
+
     for (int i=1; i< argc; i++) {
       arr.clear();
       arr = NStr::Tokenize(argv[i], "=", arr);
       args[arr[0]] = arr[1];  
     }
 
-    CRef <CRepConfig> config (CRepConfig::factory("Asndisc"));
+    CRef <CRepConfig> config (CRepConfig::factory(fAsndisc));
     config->ProcessArgs(args);
 
     CRef <IRWRegistry> reg(0);

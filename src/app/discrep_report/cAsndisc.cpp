@@ -81,12 +81,12 @@ void CDiscRepApp::Init(void)
                                 CArgDescriptions::eString);
     arg_desc->AddOptionalKey("p", "InPath", "Path to ASN.1 Files", 
                                  CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("P", "ReportType",
-                   "Report type: Asndisc, Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
-                   CArgDescriptions::eString, "Asndisc");
+    arg_desc->AddOptionalKey("P", "ReportType",
+                   "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser, x - XML format",
+                   CArgDescriptions::eString);
     arg_desc->AddOptionalKey("r", "OutPath", "Output Directory", 
                               CArgDescriptions::eString);
-     arg_desc->AddDefaultKey("R", "Remote", 
+    arg_desc->AddDefaultKey("R", "Remote", 
                           "Allow GenBank data loader: 'T' = true, 'F' = false",
                            CArgDescriptions::eBoolean, "T");
     arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", 
@@ -110,20 +110,11 @@ int CDiscRepApp :: Run(void)
     const CArgs& args = GetArgs();
     
     try {
-       string report = args["P"].AsString();
-       ETestCategoryFlags test_cate = fAsndisc;
-        if (report == "t" || report == "s") {
-           test_cate = fAsndisc;
-        }
-        if (report == "bt") {
-            test_cate = fBigSequence;
-        }
-
        CRef <DiscRepNmSpc::CRepConfig> 
-           config( DiscRepNmSpc::CRepConfig :: factory(test_cate) );
+           config( DiscRepNmSpc::CRepConfig :: factory(fAsndisc) );
        CRef <IRWRegistry> reg(0);
        if (CFile("disc_report.ini").Exists()) {
-           CMetaRegistry:: SEntry 
+           CMetaRegistry::SEntry 
                  entry = CMetaRegistry :: Load("disc_report.ini");
            reg.Reset(entry.registry);
        }
@@ -133,13 +124,13 @@ int CDiscRepApp :: Run(void)
        config->Run();
 
        return 0;
-    }
-    catch (CException& eu) {
+   }
+   catch (CException& eu) {
        string err_msg(eu.GetMsg());
        if (err_msg == "Input path or input file must be specified") {
-          err_msg = "You need to supply at least an input file (-i) or a path in which to find input files (-p). Please see 'asndisc -help' for additional details.";
+           err_msg = "You need to supply at least an input file (-i) or a path in which to find input files (-p). Please see 'asndisc -help' for additional details.";
        }
-       ERR_POST(err_msg);
+       ERR_POST( err_msg);
        return 1;
     } 
 }
@@ -152,12 +143,13 @@ int CDiscRepApp :: Run(void)
 int main(int argc, const char* argv[])
 {
 //  SetDiagTrace(eDT_Enable);
-  SetDiagPostLevel(eDiag_Error);
+   SetDiagPostLevel(eDiag_Error);
 
   try {
     return CDiscRepApp().AppMain(argc, argv);
-  } catch(CException& eu) {
-     ERR_POST(eu.GetMsg());
+  } 
+  catch(CException& eu) {
+     ERR_POST( eu.GetMsg());
      return 1;
   }
 }
