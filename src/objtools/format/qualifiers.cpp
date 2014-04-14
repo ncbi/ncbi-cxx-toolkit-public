@@ -1363,6 +1363,14 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
             continue;
         }
 
+        if (NStr::EqualNocase(db, "GO")) {
+            if (!id.empty()){
+                while (id.size() < SIZE_TYPE(7)){
+                    id = '0' + id;
+                }
+            }
+        }
+
         CNcbiOstrstream db_xref;
         db_xref << db << ':';
         if (ctx.Config().DoHTML()) {
