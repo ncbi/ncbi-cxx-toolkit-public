@@ -48,6 +48,7 @@
 
 #include <objtools/discrepancy_report/hDiscRep_tests.hpp>
 #include <objtools/discrepancy_report/clickable_item.hpp>
+#include <misc/xmlwrapp/xmlwrapp.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -61,6 +62,7 @@ class COutputConfig
     bool     summary_report;
     bool     add_output_tag;
     bool     add_extra_output_tag;
+    bool     xml;
 };
  
 struct s_fataltag {
@@ -92,27 +94,32 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     Str2Int m_sOnCallerToolPriorities;
     map <string, EOnCallerGrp> m_sOnCallerToolGroups;
 
-    void x_SortReport();
-    void x_Clean();
-    void x_WriteDiscRepSummary();
+    void x_SortReport(UInt2UInts& prt_ord);
+    void x_Clear(UInt2UInts* prt_ord = 0);
+    void x_WriteDiscRepSummary(xml::node& root, UInt2UInts& m_PrtOrd);
     bool x_NeedsTag(const string& setting_name, const string& desc, 
                             const s_fataltag* tags, const unsigned& cnt);
     void x_AddListOutputTags();
     void x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
+                               xml::node& root,
+                               UInt2UInts& prt_ord, 
                                bool use_flag, 
                                bool IsSubcategory = false);
     bool x_RmTagInDescp(string& str, const string& tag);
     void x_WriteDiscRepSubcategories(
                 const vector <CRef <CClickableItem> >& subcategories, 
+                xml::node& node,
                 unsigned ident = 1);
     bool x_SubsHaveTags(CRef <CClickableItem> c_item);
     bool x_OkToExpand(CRef < CClickableItem > c_item);
     bool x_SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
-    void x_WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix); 
+    void x_WriteDiscRepItems(CRef <CClickableItem> c_item, 
+                                 const string& prefix, xml::node& node); 
     void x_StandardWriteDiscRepItems(COutputConfig& oc, 
                                      const CClickableItem* c_item, 
                                      const string& prefix, 
-                                     bool list_features_if_subcat);
+                                     bool list_features_if_subcat,
+                                     xml::node& node);
     string x_GetDesc4GItem(string desc);
     void x_OutputRepToGbenchItem(const CClickableItem& c_item,  
                                  CClickableText& item);
