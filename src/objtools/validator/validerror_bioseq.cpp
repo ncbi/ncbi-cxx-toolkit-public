@@ -3982,12 +3982,10 @@ void CValidError_bioseq::x_ValidateCompletness
                         && NStr::FindNoCase(title, "complete genome") == string::npos) {
                         if (seq.IsSetInst() && seq.GetInst().IsSetTopology()
                             && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
-                            /*
                             const CSeq_entry& ctx = *seq.GetParentEntry();
                             PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteCircleProblem,
                                     "Circular topology has complete flag set, but title should say complete sequence or complete genome",
                                     ctx, *desc);
-                            */
                         } else {
                             PostErr(sev, eErr_SEQ_DESCR_UnwantedCompleteFlag,
                                     "Suspicious use of complete", seq);

@@ -3069,7 +3069,9 @@ BOOST_AUTO_TEST_CASE(Test_CompleteCircleProblem)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "CompleteCircleProblem", "Circular topology without complete flag set"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, 
+                              "CompleteCircleProblem", 
+                              "Circular topology without complete flag set"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -3081,7 +3083,11 @@ BOOST_AUTO_TEST_CASE(Test_CompleteCircleProblem)
     SetTitle(entry, "This is just a title");
     unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, "UnwantedCompleteFlag",
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, 
+                              "CompleteCircleProblem", 
+      "Circular topology has complete flag set, but title should say complete sequence or complete genome"));
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, 
+                              "UnwantedCompleteFlag",
                               "Suspicious use of complete"));
 
     eval = validator.Validate(seh, options);
