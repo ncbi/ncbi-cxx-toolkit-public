@@ -93,14 +93,13 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef <CScope> scope (new CScope(*object_manager));
     CSeq_entry_Handle seq_handle = scope->AddTopLevelSeqEntry(*seq_entry);   
-
     CRef <CRepConfig> 
-          config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
+          config (CRepConfig::factory(fOncaller, &seq_handle));
 /*
     CRef <CRepConfig> 
-          config (CRepConfig::factory((string)"Oncaller", &seq_handle));
+          config (CRepConfig::factory(fDiscrepancy, &seq_handle));
     CRef <CRepConfig> 
-          config (CRepConfig::factory((string)"Mega", &seq_handle));
+          config (CRepConfig::factory(fMegaReport, &seq_handle));
 */
 
     CRef <IRWRegistry> reg(0); 
