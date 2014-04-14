@@ -2939,7 +2939,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
     res += 127;
     BOOST_CHECK_EQUAL( strncmp(conv,res,256), 0);
 
-    string sample("micro=µ Agrave=À atilde=ã ccedil=ç");
+    string sample("micro=µ Agrave=À atilde=ã ccedil=ç"); /* NCBI_FAKE_WARNING */
     string u8sample("micro=Âµ Agrave=Ã€ atilde=Ã£ ccedil=Ã§");
 
     u8str = CUtf8::AsUTF8( sample, eEncoding_ISO8859_1);
