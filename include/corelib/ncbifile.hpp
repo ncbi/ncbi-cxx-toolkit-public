@@ -1880,11 +1880,14 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CFileUtil --
-///
-/// Utility functions.
+/// CFileUtil -- Utility functions.
 ///
 /// Throws an exceptions on error.
+///
+/// NOTE: For some combinations of platform, file system, drivers and some
+///       other unknown factors, the systems calls used to get system
+///       information can return incorrect information about free/total
+///       disk space, be aware.
 
 class NCBI_XNCBI_EXPORT CFileUtil
 {
