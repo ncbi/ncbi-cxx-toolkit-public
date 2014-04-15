@@ -4575,12 +4575,13 @@ void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
 {
     if (thisTest.is_Bases_N_run) return;
     thisTest.is_Bases_N_run = true;
-    if (x_IsDeltaSeqWithFarpointers (bioseq)) return;
-   
+
     unsigned cnt_a, cnt_t, cnt_g, cnt_c, cnt_n, tot_n, cnt_non_nt;
     cnt_a = cnt_t = cnt_g = cnt_c = cnt_n = tot_n = cnt_non_nt = 0;
+
     unsigned start_n, i=0;
     string n10_intvls(kEmptyStr), n14_intvls(kEmptyStr);
+
     CBioseq_Handle bioseq_h = thisInfo.scope->GetBioseqHandle(bioseq);
     if (!bioseq_h) return;
     CSeqVector seq_vec = bioseq_h.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -4621,6 +4622,14 @@ void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
           n14_intvls 
             += ", " + NStr::UIntToString(start_n) + "-" + NStr::UIntToString(i);
     }
+
+    bool run_n10 = (thisTest.tests_run.find(GetName_n10()) != end_it);
+    bool run_n14 = ((thisTest.tests_run.find(GetName_n14()) != end_it)
+                      && !x_IsDeltaSeqWithFarpointers (bioseq));
+    bool run_0 = (thisTest.tests_run.find(GetName_0()) != end_it);
+    bool run_5perc = (thisTest.tests_run.find(GetName_5perc()) != end_it);
+    bool run_10perc = (thisTest.tests_run.find(GetName_10perc()) != end_it);
+    bool run_non_nt = (thisTest.tests_run.find(GetName_non_nt()) != end_it);
    
     const CSeq_id& 
       new_seq_id =
@@ -4631,49 +4640,51 @@ void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
     string desc = GetDiscItemText(bioseq);
     CConstRef <CObject> bsq_ref = CConstRef <CObject> (&bioseq);
     // N_RUNS
-    if (!n10_intvls.empty()) { 
+    if (run_n10 && !n10_intvls.empty()) { 
        thisInfo.test_item_list[GetName_n10()].push_back(
                desc + "$" + id_str + "#" + CTempString(n10_intvls).substr(2));
        thisInfo.test_item_objs[GetName_n10()+"$"+desc].push_back(bsq_ref);
     }
     // N_RUNS_14
-    if (!n14_intvls.empty()) {  // just for test, should be in the TSA report          
+    if (run_n14 && !n14_intvls.empty()) {  // just for test, should be in the TSA report          
        thisInfo.test_item_list[GetName_n14()].push_back(
                  desc + "$" + id_str + "#" + CTempString(n14_intvls).substr(2));
        thisInfo.test_item_objs[GetName_n14() + "$" +desc].push_back(bsq_ref);
     }
     // ZERO_BASECOUNT
-    if (!cnt_a) {
-       thisInfo.test_item_list[GetName_0()].push_back("A$" + desc);
-       thisInfo.test_item_objs[GetName_0()+ "$A"].push_back(bsq_ref);
-    }
-    if (!cnt_t) {
-       thisInfo.test_item_list[GetName_0()].push_back("T$" + desc);
-       thisInfo.test_item_objs[GetName_0()+ "$T"].push_back(bsq_ref);
-    }
-    if (!cnt_c) {
-       thisInfo.test_item_list[GetName_0()].push_back("C$" + desc);
-       thisInfo.test_item_objs[GetName_0()+ "$C"].push_back(bsq_ref);
-    }
-    if (!cnt_g) {
-       thisInfo.test_item_list[GetName_0()].push_back("G$" + desc);
-       thisInfo.test_item_objs[GetName_0()+ "$G"].push_back(bsq_ref);
+    if (run_0) {
+       if (!cnt_a) {
+          thisInfo.test_item_list[GetName_0()].push_back("A$" + desc);
+          thisInfo.test_item_objs[GetName_0()+ "$A"].push_back(bsq_ref);
+       }
+       if (!cnt_t) {
+          thisInfo.test_item_list[GetName_0()].push_back("T$" + desc);
+          thisInfo.test_item_objs[GetName_0()+ "$T"].push_back(bsq_ref);
+       }
+       if (!cnt_c) {
+          thisInfo.test_item_list[GetName_0()].push_back("C$" + desc);
+          thisInfo.test_item_objs[GetName_0()+ "$C"].push_back(bsq_ref);
+       }
+       if (!cnt_g) {
+          thisInfo.test_item_list[GetName_0()].push_back("G$" + desc);
+          thisInfo.test_item_objs[GetName_0()+ "$G"].push_back(bsq_ref);
+       }
     }
 
     // DISC_PERCENT_N
-    if (tot_n && (float)tot_n/(float)bioseq.GetLength() > 0.05) {
+    if (run_5perc && tot_n && (float)tot_n/(float)bioseq.GetLength() > 0.05) {
        thisInfo.test_item_list[GetName_5perc()].push_back(desc);
        thisInfo.test_item_objs[GetName_5perc()].push_back(bsq_ref);
     }
 
     // DISC_10_PERCENTN
-    if (tot_n && (float)tot_n/(float)bioseq.GetLength() > 0.10) {
+    if (run_10perc && tot_n && (float)tot_n/(float)bioseq.GetLength() > 0.10) {
        thisInfo.test_item_list[GetName_10perc()].push_back(desc);
        thisInfo.test_item_objs[GetName_10perc()].push_back(bsq_ref);
     }
  
     // TEST_UNUSUAL_NT
-    if (cnt_non_nt) {
+    if (run_non_nt && cnt_non_nt) {
        thisInfo.test_item_list[GetName_non_nt()].push_back(desc);
        thisInfo.test_item_objs[GetName_non_nt()].push_back(bsq_ref);
     }
@@ -5855,6 +5866,13 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: BioSourceMatch( const CBioSource& biosr
 };
 
 
+string CSeqEntry_INCONSISTENT_BIOSOURCE :: GetOrgModQualName(CRef <COrgMod> orgmod)
+{
+   string qual = orgmod->GetSubtypeName(orgmod->GetSubtype(), 
+                                          COrgMod::eVocabulary_insdc);
+   qual = (qual == "note") ? "note-orgmod" : qual;
+   return qual;
+};
 
 string CSeqEntry_INCONSISTENT_BIOSOURCE :: OrgModSetDifferences(const COrgName& nm1, const COrgName& nm2) 
 {
@@ -5874,49 +5892,38 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: OrgModSetDifferences(const COrgName& 
      for (i=0, it = mod1.begin(), jt = mod2.begin(); i < sz; i++, it++, jt++) {
        att_i = (*it)->CanGetAttrib()? (*it)->GetAttrib(): kEmptyStr;
        att_j = (*jt)->CanGetAttrib()? (*jt)->GetAttrib(): kEmptyStr;
-       qual = (*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc);
-       if ( (*it)->GetSubtype() != (*jt)->GetSubtype() ) 
-          org_mod_diff_str += "Missing " + qual + " modifier, ";
-       else if (att_i != att_j) 
+       qual = GetOrgModQualName(*it);
+       if ( (*it)->GetSubtype() != (*jt)->GetSubtype() ) {
+         org_mod_diff_str += "Missing " + qual + " modifier, ";
+       }
+       else if (att_i != att_j) {
           org_mod_diff_str += qual + " modifier attrib values differ, ";
-       else if ( (*it)->GetSubname() != (*jt)->GetSubname() )
+       }
+       else if ( (*it)->GetSubname() != (*jt)->GetSubname() ) {
           org_mod_diff_str += "Different " + qual + " values, ";
+       }
      } 
      if (sz < mod1.size()) {
         // pick up one of the remain
         org_mod_diff_str 
-           += "Missing " 
-              + (*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc)
-              +" modifier, ";
+             += ("Missing "  + GetOrgModQualName(*it) +" modifier, ");
      }
      else if (sz < mod2.size()) {
-        // pick up one of the remain
-        org_mod_diff_str 
-           += "Missing " 
-              + (*jt)->GetSubtypeName((*jt)->GetSubtype(), COrgMod::eVocabulary_insdc)
-              + " modifier, ";
+      // pick up one of the remain
+      org_mod_diff_str += ("Missing " + GetOrgModQualName(*jt) + " modifier, ");
      }
   }
   else if (has_mod1) {
      list < CRef < COrgMod > >::const_iterator it = nm1.GetMod().begin();
-     org_mod_diff_str 
-         += "Missing " 
-            + (*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc) 
-            + " modifier, ";
+     org_mod_diff_str += ("Missing " + GetOrgModQualName(*it) + " modifier, ");
   }
   else {    // has_mod2
      list < CRef < COrgMod > >::const_iterator it = nm2.GetMod().begin();
-     org_mod_diff_str 
-       += "Missing " 
-           + (*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc) 
-           + " modifier, ";
+     org_mod_diff_str += ("Missing " + GetOrgModQualName(*it) + " modifier, ");
   }
   org_mod_diff_str = org_mod_diff_str.substr(0, org_mod_diff_str.size()-2);
   return (org_mod_diff_str);
 };
-
-
-
 
 string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeOrgNameDifferences(const COrg_ref& org1, const COrg_ref& org2)
 {
@@ -6023,8 +6030,10 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeBioSourceDifferences(const CB
     int genome1 = biosrc1.GetGenome();
     int genome2 = biosrc2.GetGenome();
     if (genome1 != genome2
-        && !(genome1 = CBioSource::eGenome_unknown && genome2 == CBioSource::eGenome_genomic)
-        && !(genome1 == CBioSource::eGenome_genomic && genome2 ==CBioSource::eGenome_unknown) ) {
+        && !(genome1 = CBioSource::eGenome_unknown 
+                         && genome2 == CBioSource::eGenome_genomic)
+        && !(genome1 == CBioSource::eGenome_genomic 
+                           && genome2 ==CBioSource::eGenome_unknown) ) {
        diff_str += "locations differ, ";
     }
     if (!SubSourceSetMatch(biosrc1,biosrc2)) {
@@ -8332,8 +8341,11 @@ void CSeqEntry_test_on_quals :: CheckForMultiQual(const string& qual_name, const
      else {
         bool has_dup = false;
         ITERATE (Str2Int, it, vlu_cnt) {
-          if (it->second > 1) {has_dup = true; break;}
-   }
+          if (it->second > 1) {
+                has_dup = true; 
+                break;
+          }
+        }
         multi_type = has_dup ? e_dup : e_all_dif;
      }
    }
@@ -8343,13 +8355,22 @@ void CSeqEntry_test_on_quals :: CheckForMultiQual(const string& qual_name, const
 
 void CSeqEntry_test_on_quals :: GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc, vector <string>& multi_vlus, bool is_subsrc)
 {
-   ITERATE (vector <string>, it, thisInfo.no_multi_qual) if (qual_name == *it) return;
+   ITERATE (vector <string>, it, thisInfo.no_multi_qual) {
+       if (qual_name == *it) {
+           return;
+       }
+   }
 
-   if (is_subsrc) GetMultiSubSrcVlus(biosrc, qual_name, multi_vlus);
+   if (is_subsrc) {
+        GetMultiSubSrcVlus(biosrc, qual_name, multi_vlus);
+   }
    if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq"
-             || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" )
+           || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" ){
       GetMultiPrimerVlus(biosrc, qual_name, multi_vlus);
-   else GetMultiOrgModVlus(biosrc, qual_name, multi_vlus);
+   }
+   else {
+      GetMultiOrgModVlus(biosrc, qual_name, multi_vlus);
+   }
 };
 
 
@@ -8455,18 +8476,24 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
 void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, const vector <CConstRef <CBioSource> >& src_ls, const vector <CConstRef <CObject> >& objs, const string& setting_name, unsigned pre_cnt, unsigned tot_cnt)
 {
   int pre_idx, cur_idx, i;
-  string qual_name, src_qual_vlu, src_txt;
+  string qual_name, qual_name_rpt, src_qual_vlu, src_txt; // _rpt: for report
   bool is_subsrc;
   size_t pos;
 
   string strtmp;
   pre_idx = (int)pre_cnt - 1;
   ITERATE (Str2Ints, it, qual2src_idx) {
-     qual_name = it->first;
+     qual_name = qual_name_rpt = it->first;
      is_subsrc = false;
      if ( (pos = qual_name.find("$subsrc")) != string::npos) {
         is_subsrc = true;
-        qual_name = qual_name.substr(0, pos);
+        qual_name = qual_name_rpt = qual_name.substr(0, pos);
+     }
+     if (qual_name_rpt == "note") {
+       qual_name_rpt += (is_subsrc ? "-subsrc" : "-orgmod");
+     }
+     else if (qual_name_rpt == "plasmid") {
+       qual_name_rpt += "-name";
      }
      pre_idx = -1;
      ITERATE (vector <int>, jt, it->second) {
@@ -8477,9 +8504,9 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
        if (pre_idx +1 != cur_idx) {  // have missing
           strtmp = "missing";
           for ( i = pre_idx+1; i < cur_idx; i++) {
-               strtmp = qual_name + "$missing#" + desc_ls[i];
+               strtmp = qual_name_rpt + "$missing#" + desc_ls[i];
                thisInfo.test_item_list[setting_name].push_back(strtmp);
-               strtmp = setting_name + "$" + qual_name + "#missing";
+               strtmp = setting_name + "$" + qual_name_rpt + "#missing";
                thisInfo.test_item_objs[strtmp].push_back(objs[i]);
           }
        }
@@ -8488,33 +8515,34 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
                                       is_subsrc);
        src_txt = desc_ls[cur_idx];
        // qualnm_srcvlu_biosrc
-       strtmp = qual_name + "$" + src_qual_vlu + "#" + src_txt;
+       strtmp = qual_name_rpt + "$" + src_qual_vlu + "#" + src_txt;
        thisInfo.test_item_list[setting_name].push_back(strtmp);
-       strtmp = setting_name + "$" + qual_name + "#" + src_qual_vlu;
+       strtmp = setting_name + "$" + qual_name_rpt + "#" + src_qual_vlu;
        thisInfo.test_item_objs[strtmp].push_back(objs[cur_idx]);
 
        // have multiple qualifiers? 
        eMultiQual multi_type;
+       string mul_str;
        CheckForMultiQual(qual_name, *src_ls[cur_idx], multi_type, is_subsrc);
        switch (multi_type) {
-          case e_same: strtmp = "multi_same"; 
+          case e_same: mul_str = "multi_same"; 
                        break;
-          case e_dup:  strtmp = "multi_dup"; 
+          case e_dup:  mul_str = "multi_dup"; 
                        break;
-          case e_all_dif: strtmp = "multi_all_dif"; 
+          case e_all_dif: mul_str = "multi_all_dif"; 
                           break;
-          default: strtmp = kEmptyStr;
+          default: mul_str = kEmptyStr;
                    break;
        }
-       if (!strtmp.empty()) {
-          strtmp = qual_name + "$" + strtmp + "#" + src_txt;
+       if (!mul_str.empty()) {
+          strtmp = qual_name_rpt + "$" + mul_str + "#" + src_txt;
           thisInfo.test_item_list[setting_name].push_back(strtmp);
-          string strtmp2 = setting_name + "$" + qual_name + "#" + strtmp;
+          string strtmp2 = setting_name + "$" + qual_name_rpt + "#" + mul_str;
           thisInfo.test_item_objs[strtmp].push_back(objs[cur_idx]);
        }
 
        // biosrc_val_qualnm:
-       strtmp = src_txt + "$" + src_qual_vlu + "#" + qual_name;
+       strtmp = src_txt + "$" + src_qual_vlu + "#" + qual_name_rpt;
        thisInfo.test_item_list[setting_name + "_src"].push_back(strtmp);
        strtmp = setting_name + "_src$" + src_txt + "#" + src_qual_vlu;
        thisInfo.test_item_objs[strtmp].push_back(objs[cur_idx]);
@@ -8524,11 +8552,15 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
 
      strtmp = "$missing#";
      for (i = cur_idx + 1; i < (int)tot_cnt; i++) {
-          strtmp = qual_name + "$missing#" + desc_ls[i];
+          strtmp = qual_name_rpt + "$missing#" + desc_ls[i];
           thisInfo.test_item_list[setting_name].push_back(strtmp);
  
           // GetName_miss(): put missing objs into the correct subcategory.
-          strtmp = GetName_miss() + "$" + qual_name + "#missing";
+          strtmp 
+           = (setting_name == GetName_sq() 
+                       || setting_name == GetName_sq_oncall()) ?
+               setting_name : GetName_miss();
+          strtmp += ("$" + qual_name_rpt + "#missing");
           thisInfo.test_item_objs[strtmp].push_back(objs[i]); 
      }
   }
@@ -8539,13 +8571,10 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
    vector <string> uni_sub;
    vector <CConstRef <CObject> > uni_sub_obj;
    unsigned uni_cnt=0, sz;
-   string qual_vlu, qual_nm_ori;
+   string qual_vlu;
 
    const vector <string>* vstr_p;
-   qual_nm_ori = qual_nm;
-   if (qual_nm_ori.find("note") != string::npos) {
-      qual_nm_ori = "note";
-   }
+   qual_nm;
    string strtmp;
    ITERATE (Str2Strs, jt, qvlu2src) {
       qual_vlu = jt->first; 
@@ -8554,7 +8583,7 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
            continue;
       }
       sz = (jt->second).size();
-      strtmp = setting_nm + "$" + qual_nm_ori + "#" + qual_vlu;
+      strtmp = setting_nm + "$" + qual_nm + "#" + qual_vlu;
       if (sz > 1) {
 //	  vstr_p = (setting_nm == GetName_sq_oncall()) ? &(jt->second) : 0;
 	  vstr_p = (setting_nm == GetName_bad()) ? &(jt->second) : 0;
@@ -8585,9 +8614,8 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
            c_item->subcategories.push_back(c_sub);
        }
        else {
-           // ? original setting_nm or modified?
            string 
-              setting_nm_mod = setting_nm + "$" + qual_nm_ori + "#" + qual_vlu; 
+              setting_nm_mod = setting_nm + "$" + qual_nm + "#" + qual_vlu; 
            AddSubcategory(c_item, setting_nm_mod, 0, "source", strtmp,
                    e_HasComment, false, kEmptyStr, false, uni_cnt); 
        }
@@ -8616,7 +8644,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
    bool all_same, all_unique, all_present;
    bool multi_same, multi_dup, multi_all_dif;
    unsigned multi_type_cnt;
-   string qual_nm, qual_nm_ori, qual_vlu;
+   string qual_nm, qual_vlu;
    const vector <string>* vstr_p = 0;
 
    Str2Strs qvlu2src;
@@ -8635,18 +8663,29 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
 
    string strtmp;
    ITERATE (Str2Strs, it, qnm2qvlu_src) {
-     qual_nm_ori = qual_nm = it->first;
+     qual_nm = it->first;
      qvlu2src.clear();
      GetTestItemList(it->second, qvlu2src, "#");
 
      all_present = (qvlu2src.find("missing") == qvlu2src.end());
 
-     if ( (qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1)
-              || (qvlu2src.size() == 2 && !all_present)) {
+     // all same?
+     all_same = false;
+     if ( qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1 ) {
            all_same = true;
      }
-     else {
-        all_same = false;
+     else if (qvlu2src.size() == 2 && !all_present) {
+        ITERATE (Str2Strs, jt, qvlu2src) {
+          if ( jt->first != "missing") {
+              if (jt->second.size() > 1) {
+                all_same = true;
+              } 
+              break;
+          }
+        }
+     };
+
+     if (!all_same) {
         all_unique = true;
         ITERATE (Str2Strs, jt, qvlu2src) {
           if ( jt->first != "missing"
@@ -8659,7 +8698,6 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
           }
         }
      } 
-     
 
      multi_same = (qvlu2src.find("multi_same") != qvlu2src.end());
      multi_dup = (qvlu2src.find("multi_dup") != qvlu2src.end());
@@ -8670,9 +8708,6 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
      multi_type_cnt += multi_dup ? 1 : 0;
      multi_type_cnt += multi_all_dif? 1 : 0;
 
-     if (qual_nm == "note") {
-         qual_nm += "-subsrc";
-     }
      c_item->description = qual_nm;
      unsigned sz = 0;
      if (all_present) {
@@ -8681,7 +8716,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
             qual_vlu = qvlu2src.begin()->first;
             c_item->description += "all same";
             strtmp
-              =setting_name + "$" + qual_nm_ori + "#" + qvlu2src.begin()->first;
+              = setting_name + "$" + qual_nm + "#" + qvlu2src.begin()->first;
             AddSubcategory(c_item, 
                            strtmp,
                            &(qvlu2src.begin()->second), //0, 
@@ -8695,15 +8730,14 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
          }
          else if (all_unique) {
             c_item->description += "all unique";
-            if (setting_name == GetName_bad()) { //GetName_sq_oncall())
+            if (setting_name == GetName_bad()) {
                ITERATE (Str2Strs, jt, qvlu2src) { 
                   if ( jt->first != "missing" 
                             && jt->first != "multi_same"
                             && jt->first != "multi_dup" 
                             && jt->first != "multi_all_dif") {
                       c_item->item_list.push_back((jt->second)[0]);
-                      strtmp 
-                        = setting_name + "$" + qual_nm_ori + "#" + jt->first;
+                      strtmp = setting_name + "$" + qual_nm + "#" + jt->first;
                       c_item->obj_list.push_back(
                                            thisInfo.test_item_objs[strtmp][0]);
                   }
@@ -8732,7 +8766,10 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
         vstr_p 
             = (setting_name == GetName_sq_oncall()) ? &qvlu2src["missing"] :0;
 */
-        strtmp = GetName_miss() + "$" + qual_nm_ori + "#missing";
+        strtmp = (setting_name == GetName_sq() 
+                       || setting_name == GetName_sq_oncall()) ?
+                    setting_name : GetName_miss();
+        strtmp += ("$" + qual_nm + "#missing");
         AddSubcategory(c_item, strtmp, vstr_p, "source", "missing " + qual_nm, 
            e_IsComment, false, kEmptyStr, false, qvlu2src["missing"].size());
         if (all_same) {
@@ -8741,7 +8778,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
             vstr_p = (setting_name != GetName_bad()) ? 
                         &(qvlu2src.begin()->second) : 0;
             qual_vlu = qvlu2src.begin()->first;
-            strtmp = setting_name + "$" + qual_nm_ori + "#" + qual_vlu;
+            strtmp = setting_name + "$" + qual_nm + "#" + qual_vlu;
             AddSubcategory(c_item, strtmp, vstr_p, "source", 
                  " '" + qual_vlu + "' for " + qual_nm, e_HasComment,
                  true, kEmptyStr, false, (qvlu2src.begin()->second).size());
@@ -10330,7 +10367,7 @@ void CSeqEntry_ONCALLER_MULTISRC :: GetReport(CRef <CClickableItem> c_item)
   c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description 
      = GetHasComment(c_item->item_list.size(), "organism")
-         + "commma or semicolon in strain or isolate.";
+         + "comma or semicolon in strain or isolate.";
 };
 
 
@@ -12956,7 +12993,8 @@ void CSeqEntryTestAndRepData :: AddBioseqsInSeqentryToReport(const CSeq_entry* s
 
 CRef <GeneralDiscSubDt> CSeqEntry_INCONSISTENT_BIOSOURCE :: AddSeqEntry(const CSeqdesc& seqdesc, const CSeq_entry& seq_entry, const CBioseq_CI& b_ci)
 {
-    CRef < GeneralDiscSubDt > new_biosrc_ls (new GeneralDiscSubDt (kEmptyStr, kEmptyStr));
+    CRef < GeneralDiscSubDt > 
+         new_biosrc_ls (new GeneralDiscSubDt (kEmptyStr, kEmptyStr));
     new_biosrc_ls->obj_text.clear();
     new_biosrc_ls->obj_ls.clear();
 
@@ -12964,9 +13002,11 @@ CRef <GeneralDiscSubDt> CSeqEntry_INCONSISTENT_BIOSOURCE :: AddSeqEntry(const CS
     for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
        if (bb_ci->IsNa()) {
           new_biosrc_ls->obj_text.push_back(biosrc_txt);
-          new_biosrc_ls->obj_text.push_back(GetDiscItemText(*(bb_ci->GetCompleteBioseq())));
+          new_biosrc_ls->obj_text.push_back(
+                               GetDiscItemText(*(bb_ci->GetCompleteBioseq())));
           new_biosrc_ls->obj_ls.push_back(CConstRef <CObject>(&seqdesc));
-          new_biosrc_ls->obj_ls.push_back( CConstRef <CObject>(bb_ci->GetCompleteBioseq()));
+          new_biosrc_ls->obj_ls.push_back(
+                            CConstRef <CObject>(bb_ci->GetCompleteBioseq()));
        }
     }
     new_biosrc_ls->biosrc = &(seqdesc.GetSource());
@@ -12997,7 +13037,8 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: TestOnObj(const CSeq_entry& seq_entry)
          };
       }
       if (!has_na) continue;
-      NON_CONST_ITERATE(vector <CRef < GeneralDiscSubDt > >,jt,INCONSISTENT_BIOSOURCE_biosrc) {
+      NON_CONST_ITERATE(vector <CRef < GeneralDiscSubDt > >,
+                                   jt, INCONSISTENT_BIOSOURCE_biosrc) {
          if ( BioSourceMatch((*it)->GetSource(), *((*jt)->biosrc)) ) {
             biosrc_txt = GetDiscItemText(**it, *this_seq);
             for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {

@@ -909,10 +909,11 @@ bool CSuspectRuleCheck :: DoesCodingRegionMatchTranslationConstraint(const CSeq_
   if (has_num_mismatches) {
     if (feat.CanGetProduct()) {
        CBioseq_Handle 
-           actual_prot = GetBioseqFromSeqLoc(feat.GetProduct(), *thisInfo.scope);
+          actual_prot = GetBioseqFromSeqLoc(feat.GetProduct(), *thisInfo.scope);
        if (actual_prot) {
            CSeqVector 
-             seq_vec =m_bioseq_hl.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+             seq_vec =m_bioseq_hl.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
+                                                  eNa_strand_plus);
            seq_vec.GetSeqData(0, actual_prot.GetInst_Length(), actual);
        }
     }

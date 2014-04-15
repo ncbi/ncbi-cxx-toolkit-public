@@ -1047,13 +1047,26 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
             if (seqmap_ci.GetType() == CSeqMap::eSeqGap) {
                  gap_cnt += seqmap_ci.GetLength();
             }
-            else ambigs_cnt += CSeqportUtil::GetAmbigs(seqmap_ci.GetRefData(),
+            else if (bioseq.IsNa()){
+              ambigs_cnt += CSeqportUtil::GetAmbigs(seqmap_ci.GetRefData(),
                                                     &out_seq, &idx,
                                                     CSeq_data::e_Ncbi2na,
                                                     seqmap_ci.GetRefPosition(),
                                                     seqmap_ci.GetLength());
+            }
         }
       }
+      else {
+        CSeqVector seq_vec(bioseq_handle, CBioseq_Handle::eCoding_Iupac);
+        for (CSeqVector_CI it = seq_vec.begin(); it; ++ it) {
+           if (it.IsInGap()) gap_cnt ++;
+           else if (bioseq.IsNa() && (*it) != 'A' 
+                      && (*it) != 'T' && (*it) != 'G' && (*it) != 'C') {
+                  ambigs_cnt ++;
+             }
+        }
+      }
+ 
       if (bioseq.IsNa()) {
           if (ambigs_cnt >0)
              len_txt += ", " + NStr::UIntToString(ambigs_cnt) + " other"; 
