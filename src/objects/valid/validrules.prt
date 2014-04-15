@@ -542,6 +542,227 @@ nelle\)$" ,
             required TRUE ,
             severity info } } } } } ,
   {
+    prefix "##MIGS:4.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^\(eukaryote\|bacteria_archaea\|plasmid\|virus\|orga
+nelle\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "isol_growth_condt" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^eukaryote$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "ploidy" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "estimated_size" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "finishing_strategy" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^bacteria_archaea$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "ref_biomaterial" ,
+            required TRUE ,
+            severity info } ,
+          {
+            field-name "finishing_strategy" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^plasmid$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } } } ,
+      {
+        match-name "investigation_type" ,
+        value-constraint "^virus$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } } } } } ,
+  {
+    prefix "##MIMS:4.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^metagenome$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE } ,
+  {
+    prefix "##MIMARKS:4.0-Data-START##" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^\(mimarks-survey\|mimarks-culture\)$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_biome" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_feature" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_material" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_package" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "target_gene" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^mimarks-culture$" ,
+        other-fields {
+          {
+            field-name "isol_growth_condt" ,
+            required TRUE ,
+            severity info } } } } } ,
+  {
     prefix "##Genome-Assembly-Data-START##" ,
     fields {
       {

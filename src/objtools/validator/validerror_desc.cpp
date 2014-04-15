@@ -329,9 +329,12 @@ static string s_OfficialPrefixList[] = {
     "MIENS-Data",
     "MIGS-Data",
     "MIGS:3.0-Data",
+    "MIGS:4.0-Data",
     "MIMARKS:3.0-Data",
+    "MIMARKS:4.0-Data",
     "MIMS-Data",
     "MIMS:3.0-Data",
+    "MIMS:4.0-Data",
     "RefSeq-Attributes"
 };
 
@@ -433,8 +436,8 @@ static bool x_IsBadBioSampleFormat (
 
 {
     char  ch;
-    int   i;
-    int   skip = 4;
+    unsigned int   i;
+    unsigned int   skip = 4;
 
     if (str.length() < 5) return true;
 
@@ -464,7 +467,7 @@ static bool x_IsBadAltBioSampleFormat (
 
 {
     char  ch;
-    int   i;
+    unsigned int   i;
 
     if (str.length() < 9) return true;
 
@@ -486,7 +489,7 @@ static bool x_IsBadSRAFormat (
 
 {
     char  ch;
-    int   i;
+    unsigned int   i;
 
     if (str.length() < 9) return true;
 
@@ -511,7 +514,7 @@ static bool x_IsBadBioProjectFormat (
 
 {
     char  ch;
-    int   i;
+    unsigned int   i;
 
     if (str.length() < 6) return true;
 

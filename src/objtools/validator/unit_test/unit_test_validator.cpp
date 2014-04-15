@@ -7746,6 +7746,31 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 
     CLEAR_ERRORS
 
+    prefix_field->SetData().SetStr("##MIGS:4.0-Data-START##");
+    required_fields.clear();
+    required_fields.push_back("assembly");
+    required_fields.push_back("collection_date");
+    required_fields.push_back("env_biome");
+    required_fields.push_back("env_feature");
+    required_fields.push_back("env_material");
+    required_fields.push_back("env_package");
+    required_fields.push_back("geo_loc_name");
+    required_fields.push_back("investigation_type");
+    required_fields.push_back("isol_growth_condt");
+    required_fields.push_back("lat_lon");
+    required_fields.push_back("project_name");
+    required_fields.push_back("seq_meth");
+
+    ITERATE(vector<string>, it, required_fields) {
+        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommInvalidFieldValue",
+                                  "Required field " + *it + " is missing"));
+    }
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
     // should complain about missing required field for specific values of sequencing technology
     prefix_field->SetData().SetStr("##Assembly-Data-START##");
     desc->SetUser().ResetData();
