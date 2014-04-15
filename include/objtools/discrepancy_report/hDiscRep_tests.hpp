@@ -2108,6 +2108,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {return string("INCONSISTENT_BIOSOURCE"); }
    
     private:
+      string GetOrgModQualName(CRef <COrgMod> orgmod);
       bool SynonymsMatch(const COrg_ref& org1, const COrg_ref& org2);
       bool DbtagMatch(const COrg_ref& org1, const COrg_ref& org2);
       bool OrgModSetMatch(const COrgName& nm1, const COrgName& nm2);
