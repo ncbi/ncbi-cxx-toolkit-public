@@ -68,6 +68,7 @@
 #  if !defined(MAP_FAILED)
 #    define MAP_FAILED ((void *)(-1L))
 #  endif
+#  include <sys/ioctl.h>
 
 #else
 #  error "File API defined for MS Windows and UNIX platforms only"
@@ -4358,7 +4359,7 @@ static const SFileSystem s_FileSystem[] = {
 };
 
 
-// Macros to get filesytem status information
+// Macros to get filesystem status information
 
 #define GET_STATVFS_INFO                                       \
     struct statvfs st;                                         \
@@ -4385,6 +4386,83 @@ static const SFileSystem s_FileSystem[] = {
     info->free_space   = (Uint8)st.f_bsize * st.f_bavail;      \
     info->total_space  = (Uint8)st.f_bsize * st.f_blocks;      \
     info->block_size   = (unsigned long)st.f_bsize
+
+
+
+#if defined(NCBI_OS_UNIX)
+
+// Standard kernel calls cannot get correct information 
+// about PANFS mounts, so we use workaround for that.
+
+void s_GetDiskSpace_PANFS(const string&               path,
+                          CFileUtil::SFileSystemInfo* info)
+{
+    typedef Uint8 panfs_ui64_t;
+    
+    struct panfs_extended_v1_t {
+        unsigned int  struct_version;
+        char          mount_from_name[256];
+        int           mount_from_name_len;
+        unsigned long volume_id;
+        unsigned long bladeset_id;
+        unsigned long bladeset_storageblade_count;
+        panfs_ui64_t  bladeset_total_bytes;
+        panfs_ui64_t  bladeset_free_bytes;
+        panfs_ui64_t  bladeset_unreserved_total_bytes;
+        panfs_ui64_t  bladeset_unreserved_free_bytes;
+        panfs_ui64_t  bladeset_recon_spare_total_bytes;
+        panfs_ui64_t  volume_live_bytes_used;
+        panfs_ui64_t  volume_snapshot_bytes_used;
+        panfs_ui64_t  volume_hard_quota_bytes;
+        panfs_ui64_t  volume_soft_quota_bytes;
+        unsigned long filler[16];
+    };    
+    typedef struct panfs_extended_v1_t panfs_extended_t;
+    
+    // An ioctl used to collect extended information about a mountpoint
+    #define PANFS_IOCTL    ((unsigned int)0x24)
+    #define PANFS_EXTENDED _IOWR(PANFS_IOCTL,80,panfs_extended_t)
+    
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1) {
+        NCBI_THROW(CFileErrnoException, eFileSystemInfo,
+                   string("Cannot open ") + path);
+    }
+    panfs_extended_t panfs;
+    int ret = ioctl(fd, PANFS_EXTENDED, &panfs);
+    close(fd);
+    if ( ret ) {
+        NCBI_THROW(CFileErrnoException, eFileSystemInfo,
+                   string("Cannot get extended information for PANFS mount ") +
+                   path);
+    }
+    // Only version 1 is now supported
+    if (panfs.struct_version != 1) {
+        NCBI_THROW(CFileErrnoException, eFileSystemInfo,
+                   string("Unsupported version of PANFS extended information ") +
+                   NStr::NumericToString(panfs.struct_version));
+    }
+    // Compute disk space
+    if (panfs.volume_hard_quota_bytes > 0) {
+        if (panfs.volume_hard_quota_bytes >= panfs.volume_live_bytes_used) {
+            info->free_space = 
+                min(panfs.bladeset_unreserved_free_bytes,
+                    panfs.volume_hard_quota_bytes - panfs.volume_live_bytes_used);
+        }
+        else {
+            info->free_space = panfs.volume_hard_quota_bytes - panfs.volume_live_bytes_used;
+        }
+        info->total_space = min(panfs.bladeset_unreserved_free_bytes,
+                                panfs.volume_hard_quota_bytes);
+    }
+    else {
+        info->free_space = panfs.bladeset_unreserved_free_bytes;
+        info->total_space = panfs.bladeset_unreserved_total_bytes;
+    }     
+    return;
+}
+
+#endif // defined(NCBI_OS_UNIX)
 
 
 void s_GetFileSystemInfo(const string&               path,
@@ -4460,10 +4538,13 @@ void s_GetFileSystemInfo(const string&               path,
 
 #else // defined(NCBI_OS_MSWIN)
 
+    bool need_name_max = true;
 #  ifdef _PC_NAME_MAX
-    info->filename_max = pathconf(path.c_str(), _PC_NAME_MAX);
-#  else
-#    define NEED_NAME_MAX
+    long r_name_max = pathconf(path.c_str(), _PC_NAME_MAX);
+    if (r_name_max != -1) {
+        info->filename_max = (unsigned long)r_name_max;
+        need_name_max = false;
+    }
 #  endif
 
 #  if defined(NCBI_OS_LINUX)  &&  defined(HAVE_STATFS)
@@ -4538,43 +4619,50 @@ void s_GetFileSystemInfo(const string&               path,
             default:          info->fs_type = CFileUtil::eUnknown;  break;
         }
     }
+    if (need_name_max) {
+        info->filename_max = (unsigned long)st.f_namelen;
+    }
 
-#ifdef NEED_NAME_MAX
-    info->filename_max = (unsigned long)st.f_namelen;
-#endif
-
-#  elif (defined(NCBI_OS_SOLARIS) ||  defined(NCBI_OS_IRIX)  ||  \
-         defined(NCBI_OS_OSF1)) &&  defined(HAVE_STATVFS)
+#  elif (defined(NCBI_OS_SOLARIS) || defined(NCBI_OS_IRIX) || defined(NCBI_OS_OSF1)) \
+         &&  defined(HAVE_STATVFS)
 
     GET_STATVFS_INFO;
-#ifdef NEED_NAME_MAX
-    info->filename_max = (unsigned long)st.f_namemax;
-#endif
+    if (need_name_max) {
+        info->filename_max = (unsigned long)st.f_namemax;
+    }
     fs_name_ptr = st.f_basetype;
 
 #  elif defined(NCBI_OS_DARWIN)  &&  defined(HAVE_STATFS)
 
     GET_STATFS_INFO;
-#ifdef NEED_NAME_MAX
-    info->filename_max = (unsigned long)st.f_namelen;
-#endif
+    if (need_name_max) {
+        info->filename_max = (unsigned long)st.f_namelen;
+    }
     fs_name_ptr = st.f_fstypename;
+
+#  elif defined(NCBI_OS_BSD)  &&  defined(HAVE_STATFS)
+
+    GET_STATFS_INFO;
+    fs_name_ptr = st.f_fstypename;
+    if (need_name_max) {
+        info->filename_max = (unsigned long)st.f_namemax;
+    }
 
 #  elif defined(NCBI_OS_OSF1)  &&  defined(HAVE_STATVFS)
 
     GET_STATVFS_INFO;
-#ifdef NEED_NAME_MAX
-    info->filename_max = (unsigned long)st.f_namelen;
-#endif
+    if (need_name_max) {
+        info->filename_max = (unsigned long)st.f_namelen;
+    }
     fs_name_ptr = st.f_fstypename;
 
 #  else
      // Unknown UNIX OS
-#    if defined(HAVE_STATVFS)
+    #if defined(HAVE_STATVFS)
         GET_STATVFS_INFO;
-#    elif defined(HAVE_STATFS)
+    #elif defined(HAVE_STATFS)
         GET_STATFS_INFO;
-#    endif
+    #endif
 #  endif
 #endif
 
@@ -4588,6 +4676,14 @@ void s_GetFileSystemInfo(const string&               path,
             }
         }
     }
+
+#if defined(NCBI_OS_UNIX)
+    // Standard kernel calls cannot get correct information 
+    // about PANFS mounts, so we use workaround for that.
+    if ((info->fs_type == CFileUtil::ePANFS) && (flags & fFSI_DiskSpace)) {
+        s_GetDiskSpace_PANFS(path, info);
+    }
+#endif
 }
 
 
