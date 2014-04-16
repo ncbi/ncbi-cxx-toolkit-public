@@ -648,7 +648,7 @@ bool CGff3Writer::xAssignAlignmentSplicedTarget(
     target += " " + seqStart;
     target += " " + seqStop;
     target += " " + seqStrand;
-    record.SetTarget(target); 
+    record.SetAttribute("Target", target); 
     return true;
 }
 
@@ -870,7 +870,7 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     target += " " + NStr::IntToString(start2 + 1);
     target += " " + NStr::IntToString(stop2 + 1);
     target += " " + string(strand == eNa_strand_plus ? "+" : "-");
-    record.SetTarget(target); 
+    record.SetAttribute("Target", target); 
     return true;
 }
 

@@ -87,9 +87,6 @@ public:
     CGffAlignRecord( 
         const string& id="");
 
-    void SetTarget(
-        const string&);
-
     void
     AddInsertion(
         unsigned int);
@@ -103,7 +100,6 @@ public:
     void
     FinalizeMatches();
 
-    string StrAttributes() const;
     string StrTarget() const;
     string StrGap() const;
 

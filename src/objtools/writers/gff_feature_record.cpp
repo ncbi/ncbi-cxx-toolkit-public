@@ -123,14 +123,6 @@ CGffAlignRecord::CGffAlignRecord(
 }
 
 //  ----------------------------------------------------------------------------
-void CGffAlignRecord::SetTarget(
-    const string& target)
-//  ----------------------------------------------------------------------------
-{
-    mAttrTarget = target;
-}
-
-//  ----------------------------------------------------------------------------
 string CGffAlignRecord::StrTarget() const
 //  ----------------------------------------------------------------------------
 {
@@ -142,22 +134,6 @@ string CGffAlignRecord::StrGap() const
 //  ----------------------------------------------------------------------------
 {
     return mAttrGap;
-}
-
-//  ----------------------------------------------------------------------------
-string CGffAlignRecord::StrAttributes() const
-//  ----------------------------------------------------------------------------
-{
-    string attributes = CGffBaseRecord::StrAttributes();
-    attributes += CGffBaseRecord::ATTR_SEPARATOR;
-    attributes += "Target=";
-    attributes += StrTarget();
-    if (!mGapIsTrivial) {
-        attributes += CGffBaseRecord::ATTR_SEPARATOR;
-        attributes += "Gap=";
-        attributes += StrGap();
-    }
-    return attributes;
 }
 
 //  ----------------------------------------------------------------------------
@@ -200,15 +176,17 @@ void CGffAlignRecord::AddMatch(
 void CGffAlignRecord::FinalizeMatches()
 //  -----------------------------------------------------------------------------
 {
-    if (mAccumulatedMatches == 0) {
-        return;
+    if (mAccumulatedMatches != 0) {
+        if (!mAttrGap.empty()) {
+            mAttrGap += " ";
+        }
+        mAttrGap += "M";
+        mAttrGap += NStr::IntToString(mAccumulatedMatches);
+        mAccumulatedMatches = 0;
     }
-    if (!mAttrGap.empty()) {
-        mAttrGap += " ";
+    if (!mGapIsTrivial) {
+        SetAttribute("Gap", mAttrGap);
     }
-    mAttrGap += "M";
-    mAttrGap += NStr::IntToString(mAccumulatedMatches);
-    mAccumulatedMatches = 0;
 }
 
 END_objects_SCOPE

@@ -356,9 +356,6 @@ bool CGff2Record::x_AssignAttributesFromGff(
             // things. 
             continue;
         }
-        if (strKey == "ID"  &&  strValue == "id685531") {
-            cerr << "";
-        }
         m_Attributes[ strKey ] = strValue;        
     }
     return true;

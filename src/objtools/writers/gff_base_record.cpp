@@ -389,9 +389,31 @@ string CGffBaseRecord::StrPhase() const
 }
 
 //  ----------------------------------------------------------------------------
+bool lessAttrCit(CGffBaseRecord::TAttrCit& lhs, CGffBaseRecord::TAttrCit& rhs)
+//  ----------------------------------------------------------------------------
+{
+    return (lhs->first < rhs->first);
+}
+
+//  ----------------------------------------------------------------------------
+bool lessScoreCit(CGffBaseRecord::TScoreCit& lhs, CGffBaseRecord::TScoreCit& rhs)
+//  ----------------------------------------------------------------------------
+{
+    return (lhs->first < rhs->first);
+}
+
+//  ----------------------------------------------------------------------------
 string CGffBaseRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
+    //mss-264: Order of attributes:
+    //  ID always comes first
+    //  Parent is next if present
+    //  Then come all regular attributes EXCEPT FOR Gap, in alphabetical order
+    //  Then come any extra scores, in alphabetical order
+    //  Finally and always last is Gap if it is present at all
+    //
+
     string attributes;
 	attributes.reserve(256);
 
@@ -406,8 +428,23 @@ string CGffBaseRecord::StrAttributes() const
         attributes += "Parent=";
         attributes += mParent;
     }
-    for (TAttrCit it = mAttributes.begin(); it != mAttributes.end(); ++it) {
-        string key = it->first;
+
+    typedef vector<TAttrCit> SORTATTRS;
+    TAttrCit gapAttr = mAttributes.end();
+    SORTATTRS sortedAttrs;
+    sortedAttrs.reserve(mAttributes.size());
+    for (TAttrCit ait = mAttributes.begin(); ait != mAttributes.end(); ++ait) {
+        if (ait->first != "Gap") {
+            sortedAttrs.push_back(ait);
+        }
+        else {
+            gapAttr = ait;
+        }
+    }
+    sort(sortedAttrs.begin(), sortedAttrs.end(), lessAttrCit);
+    for (SORTATTRS::const_iterator cit = sortedAttrs.begin(); 
+            cit != sortedAttrs.end(); ++cit) { 
+        string key = (*cit)->first;
 
         if (!attributes.empty()) {
             attributes += ATTR_SEPARATOR;
@@ -416,16 +453,25 @@ string CGffBaseRecord::StrAttributes() const
         attributes += "=";
 		
         vector<string> escapedValues;
-        for (vector<string>::const_iterator cit = it->second.begin();
-                cit != it->second.end(); ++cit) {
-            escapedValues.push_back(xEscapedValue(key, *cit));
+        for (vector<string>::const_iterator vit = (*cit)->second.begin();
+                vit != (*cit)->second.end(); ++vit) {
+            escapedValues.push_back(xEscapedValue(key, *vit));
         }
         string value = NStr::Join(escapedValues, ",");
 		attributes += value;
     }
 
-    for (TScoreCit it = mExtraScores.begin(); it != mExtraScores.end(); ++it) {
-        string key = it->first;
+    typedef vector<TScoreCit> SORTSCORES;
+    SORTSCORES sortedScores;
+    sortedScores.reserve(mExtraScores.size());
+    for (TScoreCit ait = mExtraScores.begin(); ait != mExtraScores.end(); ++ait) {
+        sortedScores.push_back(ait);
+    }
+   
+    sort(sortedScores.begin(), sortedScores.end(), lessScoreCit);
+    for (SORTSCORES::const_iterator cit = sortedScores.begin(); 
+            cit != sortedScores.end(); ++cit) { 
+        string key = (*cit)->first;
 
         if (!attributes.empty()) {
             attributes += ATTR_SEPARATOR;
@@ -433,7 +479,18 @@ string CGffBaseRecord::StrAttributes() const
         attributes += xEscapedString(key);
         attributes += "=";
 		
-        string value = it->second;
+        string value = (*cit)->second;
+		attributes += xEscapedValue(key, value);
+    }
+    if (gapAttr != mAttributes.end()) {
+        string key = gapAttr->first;
+
+        if (!attributes.empty()) {
+            attributes += ATTR_SEPARATOR;
+        }
+        attributes += xEscapedString(key);
+        attributes += "=";
+        string value = gapAttr->second[0];
 		attributes += xEscapedValue(key, value);
     }
     if ( attributes.empty() ) {
