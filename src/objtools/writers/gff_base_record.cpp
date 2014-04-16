@@ -389,14 +389,16 @@ string CGffBaseRecord::StrPhase() const
 }
 
 //  ----------------------------------------------------------------------------
-bool lessAttrCit(CGffBaseRecord::TAttrCit& lhs, CGffBaseRecord::TAttrCit& rhs)
+bool lessAttrCit(
+    const CGffBaseRecord::TAttrCit& lhs, const CGffBaseRecord::TAttrCit& rhs)
 //  ----------------------------------------------------------------------------
 {
     return (lhs->first < rhs->first);
 }
 
 //  ----------------------------------------------------------------------------
-bool lessScoreCit(CGffBaseRecord::TScoreCit& lhs, CGffBaseRecord::TScoreCit& rhs)
+bool lessScoreCit(
+    const CGffBaseRecord::TScoreCit& lhs, const CGffBaseRecord::TScoreCit& rhs)
 //  ----------------------------------------------------------------------------
 {
     return (lhs->first < rhs->first);
