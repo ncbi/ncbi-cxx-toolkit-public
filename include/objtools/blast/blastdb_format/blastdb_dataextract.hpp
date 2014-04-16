@@ -50,10 +50,10 @@ class NCBI_BLASTDB_FORMAT_EXPORT CBlastDBExtractor {
 
 public:
     /// ctor
-    CBlastDBExtractor(CSeqDB&             blastdb, 
+    CBlastDBExtractor(CSeqDB&             blastdb,
                       TSeqRange           range = TSeqRange(),
                       objects::ENa_strand strand = objects::eNa_strand_both,
-                      int                 filt_algo_id = -1, 
+                      int                 filt_algo_id = -1,
                       int                 fmt_algo_id = -1,
                       int                 line_width = 80,
                       bool                target_only = true,
@@ -69,7 +69,8 @@ public:
               m_UseCtrlA(ctrl_a),
               m_Oid(0)
     {
-	m_Gi2TaxidMap.first = -1;
+//	m_Gi2TaxidMap.first = -1;
+	m_Gi2TaxidSetMap.first = -1;
 	m_Gi2AccMap.first = -1;
 	m_Gi2TitleMap.first = -1;
 	m_Oid2Pig.first = -1;
@@ -130,9 +131,11 @@ protected:
     /// bioseq
     CRef<CBioseq> m_Bioseq;
     /// Cache the defline (for membership bits)
-    CRef<CBlast_def_line_set> m_Defline; 
+    CRef<CBlast_def_line_set> m_Defline;
     /// Pair with a gi2taxid map for one Oid
-    pair<TOID, map<TGi, int> > m_Gi2TaxidMap;
+//    pair<TOID, map<TGi, int> > m_Gi2TaxidMap;
+    /// Pair with a gi-to-set-of-taxids map for one Oid
+    pair<TOID, map<TGi, set<int> > > m_Gi2TaxidSetMap;
     /// Pair with a gi2accesion map for one Oid
     pair<TOID, map<TGi, string> > m_Gi2AccMap;
     /// Pair with a gi2title map for one Oid
@@ -143,7 +146,8 @@ protected:
     pair<TOID, map<TGi, string> > m_Gi2SeqIdMap;
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
-    int x_ExtractTaxId();
+//    int x_ExtractTaxId();
+    void x_ExtractTaxIds(set<int>& taxids);
     /// Sets the map
     void x_SetGi2AccMap();
     /// Sets the map
