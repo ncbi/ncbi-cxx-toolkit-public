@@ -210,13 +210,10 @@ private:
     string m_BioSampleAccession;
     string m_BioProjectAccession;
     string m_Owner;
+    string m_Comment;
 
     size_t m_Processed;
     size_t m_Unprocessed;
-
-//    TSrcTableColumnList m_SrcReportFields;
-	TStructuredCommentTableColumnList m_StructuredCommentReportFields;
-
 
     TBiosampleFieldDiffList m_Diffs;
     CRef<CSeq_table> m_Table;
@@ -231,11 +228,9 @@ CBiosampleChkApp::CBiosampleChkApp(void) :
     m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), 
     m_FirstSeqOnly(false), m_IDPrefix(""), m_HUPDate(""),
     m_BioSampleAccession(""), m_BioProjectAccession(""),
-    m_Owner(""),
+    m_Owner(""), m_Comment(""),
     m_Processed(0), m_Unprocessed(0)
 {
-//    m_SrcReportFields.clear();
-	m_StructuredCommentReportFields.clear();
 }
 
 
@@ -291,7 +286,7 @@ void CBiosampleChkApp::Init(void)
         "biosample", "BioSampleAccession", "BioSample Accession to use for sequences in record. Report error if sequences contain a reference to a different BioSample accession.", CArgDescriptions::eString);
     arg_desc->AddOptionalKey(
         "bioproject", "BioProjectAccession", "BioProject Accession to use for sequences in record. Report error if sequences contain a reference to a different BioProject accession.", CArgDescriptions::eString);
-
+    arg_desc->AddOptionalKey("comment", "BioSampleComment", "Comment to use for creating new BioSample xml", CArgDescriptions::eString);
 
     // Program description
     string prog_description = "BioSample Checker\n";
@@ -585,6 +580,7 @@ int CBiosampleChkApp::Run(void)
     m_HUPDate = args["HUP"] ? args["HUP"].AsString() : "";
     m_BioSampleAccession = args["biosample"] ? args["biosample"].AsString() : "";
     m_BioProjectAccession = args["bioproject"] ? args["bioproject"].AsString() : "";
+    m_Comment = args["comment"] ? args["comment"].AsString() : "";
 
     if (args["o"]) {
         if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
@@ -615,9 +611,6 @@ int CBiosampleChkApp::Run(void)
 	}
 
     m_UseDevServer = args["d"].AsBoolean();
-
-//    m_SrcReportFields.clear();
-	m_StructuredCommentReportFields.clear();
 
     if (!NStr::IsBlank(m_StructuredCommentPrefix) && m_Mode != e_generate_biosample) {
         // error
@@ -1279,6 +1272,9 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
 
     node::iterator description = root.insert(node("Description"));
     string title = "Auto generated from GenBank Accession " + sequence_id;
+    if (!NStr::IsBlank(m_Comment)) {
+        title = m_Comment;
+    }
     description->insert(node("Comment", title.c_str()));
 
     node::iterator node_iter = description->insert(node("Submitter"));
