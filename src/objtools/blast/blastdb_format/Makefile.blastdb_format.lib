@@ -9,7 +9,7 @@ LIB = blastdb_format
 SRC = seq_writer blastdb_dataextract blastdb_formatter
 # OBJ =
 
-CPPFLAGS = -DNCBI_MODULE=BLASTDB -I../../../../include $(ORIG_CPPFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
 
 
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
@@ -17,7 +17,7 @@ CPPFLAGS = -DNCBI_MODULE=BLASTDB -I../../../../include $(ORIG_CPPFLAGS)
 # CXXFLAGS = $(FAST_CXXFLAGS)
 #
 # LIB_OR_DLL = dll
-LDFLAGS = -L../seqdb_reader $(ORIG_LDFLAGS)
+
 
 USES_LIBRARIES =  \
     seqdb xobjutil
