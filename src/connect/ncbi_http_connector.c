@@ -1192,7 +1192,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
     if (uuu->net_info->debug_printout
         ||  header_parse == eHTTP_HeaderContinue) {
-        if (http_code > 0/*real error, w/only a very short body is expected*/)
+        if (http_code > 0/*real error, w/only a very short body expected*/)
             SOCK_SetTimeout(uuu->sock, eIO_Read, kInfiniteTimeout);
         status = SOCK_StripToPattern(uuu->sock, 0, 0, &uuu->http, &size);
         assert(status != eIO_Success);
@@ -1350,7 +1350,10 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
 
     assert(uuu->received <= uuu->expected);
 
-    if (uuu->flags & fHTTP_UrlDecodeInput) {
+    if (uuu->net_info->req_method == eReqMethod_Head) {
+        status = eIO_Closed;
+        *n_read = 0;
+    } else if (uuu->flags & fHTTP_UrlDecodeInput) {
         /* read and URL-decode */
         size_t         n_peeked, n_decoded;
         TNCBI_BigCount remain    = uuu->expected - uuu->received;
