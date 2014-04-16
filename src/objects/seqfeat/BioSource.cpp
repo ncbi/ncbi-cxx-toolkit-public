@@ -41,7 +41,9 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/PCRReactionSet.hpp>
 #include <algorithm>
 #include <set>
 #include <util/static_map.hpp>
@@ -579,6 +581,415 @@ bool CBioSource::GetDisableStrainForwarding() const
     return val;
 }
 
+
+bool s_MustCopy (int subtype)
+{
+    if (CSubSource::IsDiscouraged(subtype)) {
+        return false;
+    } else if (subtype == CSubSource::eSubtype_chromosome
+               || subtype == CSubSource::eSubtype_map
+               || subtype == CSubSource::eSubtype_plasmid_name
+               || subtype == CSubSource::eSubtype_other) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
+{
+    if (!force) {
+        TFieldDiffList diffs = GetBiosampleDiffs(biosample);
+        if (diffs.size() > 0) {
+            // throw exception
+            NCBI_THROW(CException, eUnknown, "Conflicts found");                      
+        }
+    }
+    if (biosample.IsSetOrg()) {
+        SetOrg().Assign(biosample.GetOrg());
+    } else {
+        ResetOrg();
+    }
+
+    // only values that must stay the same are removed from the existing source
+    x_ClearCoordinatedBioSampleSubSources();
+
+    if (biosample.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, it, biosample.GetSubtype()) {
+            if (s_MustCopy((*it)->GetSubtype())) {
+                CRef<CSubSource> s(new CSubSource());
+                s->Assign(**it);
+                SetSubtype().push_back(s);
+            } else {
+                // if the master has a value, the contig's value must be updated,
+                // but if the master had no value, the contig's value would have
+                // been allowed to remain
+                bool found = false;
+                NON_CONST_ITERATE (CBioSource::TSubtype, sit, SetSubtype()) {
+                    if ((*it)->GetSubtype() == (*sit)->GetSubtype()) {
+                        found = true;
+                        (*sit)->SetName((*it)->GetName());
+                        break;
+                    }
+                }
+                if (!found) {
+                    CRef<CSubSource> s(new CSubSource());
+                    s->Assign(**it);
+                    SetSubtype().push_back(s);                        
+                }
+            }
+        }
+    }
+}
+
+
+void CBioSource::x_ClearCoordinatedBioSampleSubSources()
+{
+    if (!IsSetSubtype()) {
+        return;
+    }
+    CBioSource::TSubtype::iterator it = SetSubtype().begin();
+    while (it != SetSubtype().end()) {
+        if (s_MustCopy((*it)->GetSubtype())) {
+            it = SetSubtype().erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
+typedef enum {
+  eConflictIgnoreAll = 0,
+  eConflictIgnoreMissingInBioSource,
+  eConflictIgnoreMissingInBioSample
+} EConflictIgnoreType;
+
+
+typedef struct ignoreconflict {
+  string qual_name;
+  EConflictIgnoreType ignore_type;
+} IgnoreConflictData;
+
+
+static IgnoreConflictData sIgnoreConflictList[] = {
+  { "environmental-sample", eConflictIgnoreMissingInBioSample } ,
+  { "germline", eConflictIgnoreMissingInBioSample } ,
+  { "endogenous-virus-name", eConflictIgnoreMissingInBioSample } ,
+  { "map", eConflictIgnoreMissingInBioSample } ,
+  { "metagenomic", eConflictIgnoreMissingInBioSample } ,
+  { "plasmid-name", eConflictIgnoreMissingInBioSample } ,
+  { "plastid-name", eConflictIgnoreMissingInBioSample } ,
+  { "chromosome", eConflictIgnoreMissingInBioSample } ,
+  { "linkage-group", eConflictIgnoreMissingInBioSample } ,
+  { "rearranged", eConflictIgnoreMissingInBioSample } ,
+  { "segment", eConflictIgnoreMissingInBioSample } ,
+  { "transgenic", eConflictIgnoreMissingInBioSample } ,
+  { "old-lineage", eConflictIgnoreMissingInBioSample } ,
+  { "old-name", eConflictIgnoreMissingInBioSample } ,
+  { "acronym", eConflictIgnoreAll },
+  { "biovar", eConflictIgnoreAll } ,
+  { "chemovar", eConflictIgnoreAll } ,
+  { "forma", eConflictIgnoreAll } ,
+  { "forma-specialis", eConflictIgnoreAll } ,
+  { "gb-synonym", eConflictIgnoreAll } ,
+  { "lineage", eConflictIgnoreAll } ,
+  { "pathovar", eConflictIgnoreAll } ,
+  { "serotype", eConflictIgnoreAll } ,
+  { "serovar", eConflictIgnoreAll } ,
+  { "subspecies", eConflictIgnoreAll } ,
+  { "sub-species", eConflictIgnoreAll } ,
+  { "synonym", eConflictIgnoreAll } ,
+  { "variety", eConflictIgnoreAll } ,
+  { "StructuredCommentPrefix", eConflictIgnoreAll} ,
+  { "StructuredCommentSuffix", eConflictIgnoreAll}
+};
+
+static const int kNumIgnoreConflictList = sizeof (sIgnoreConflictList) / sizeof (IgnoreConflictData);
+
+bool s_SameExceptPrecision (double val1, double val2)
+{
+    if (val1 > 180.0 || val2 > 180.0) {
+        return false;
+    }
+    char buf1[20];
+    char buf2[20];
+    sprintf(buf1, "%0.2f", val1);
+    sprintf(buf2, "%0.2f", val2);
+    if (strcmp(buf1, buf2) == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+    
+
+static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_val)
+{
+    int i;
+    bool rval = false;
+
+    if (NStr::EqualNocase(src_val, sample_val)) {
+        return true;
+    }
+    for (i = 0; i < kNumIgnoreConflictList; i++) {
+        if (NStr::EqualNocase (label, sIgnoreConflictList[i].qual_name)) {
+            switch (sIgnoreConflictList[i].ignore_type) {
+                case eConflictIgnoreAll:
+                    rval = true;
+                    break;
+                case eConflictIgnoreMissingInBioSource:
+                    if (NStr::IsBlank(src_val)) {
+                      rval = true;
+                    }
+                    break;
+                case eConflictIgnoreMissingInBioSample:
+                    if (NStr::IsBlank(sample_val)) {
+                      rval = true;
+                    }
+                    break;
+            }
+            break;
+        }
+    }
+    // special handling for lat-lon
+    if (!rval && NStr::EqualNocase(label, "lat-lon")) {
+        bool src_format_correct, src_precision_correct,
+             src_lat_in_range, src_lon_in_range;
+        double src_lat_value, src_lon_value;
+        CSubSource::IsCorrectLatLonFormat(src_val, src_format_correct, src_precision_correct,
+                                          src_lat_in_range, src_lon_in_range,
+                                          src_lat_value, src_lon_value);
+        bool smpl_format_correct, smpl_precision_correct,
+             smpl_lat_in_range, smpl_lon_in_range;
+        double smpl_lat_value, smpl_lon_value;
+        CSubSource::IsCorrectLatLonFormat(sample_val, smpl_format_correct, smpl_precision_correct,
+                                          smpl_lat_in_range, smpl_lon_in_range,
+                                          smpl_lat_value, smpl_lon_value);
+        if (src_format_correct && smpl_format_correct 
+            && s_SameExceptPrecision(src_lat_value, smpl_lat_value)
+            && s_SameExceptPrecision(src_lon_value, smpl_lon_value)) {
+            rval = true;
+        }
+    }
+    // special handling for collection-date
+    if (!rval && NStr::EqualNocase(label, "collection-date")) {
+        try {
+            CRef<CDate> src_date = CSubSource::DateFromCollectionDate(src_val);
+            CRef<CDate> smpl_date = CSubSource::DateFromCollectionDate(sample_val);
+            if (src_date && smpl_date && src_date->Equals(*smpl_date)) {
+                rval = true;
+            }
+        } catch (...) {
+        }
+    }
+    // special handling for country
+    if (!rval && NStr::EqualNocase(label, "country")) {
+        NStr::ReplaceInPlace(src_val, ": ", ":");
+        NStr::ReplaceInPlace(sample_val, ": ", ":");
+        if (NStr::Equal(src_val, sample_val)) {
+            rval = true;
+        }
+    }
+    // special handling for altitude
+    if (!rval && NStr::EqualNocase(label, "altitude")) {
+        if (NStr::EndsWith(src_val, ".") && !NStr::EndsWith(sample_val, ".")
+            && NStr::EqualNocase(src_val.substr(0, src_val.length() - 1), sample_val)) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
+void AddFieldDiff (TFieldDiffList& list, 
+                   const string& label, 
+                   const string& src_val, 
+                   const string& sample_val)
+{
+    if (!s_ShouldIgnoreConflict(label, src_val, sample_val)) {
+        CRef<CFieldDiff> diff(new CFieldDiff(label, src_val, sample_val));
+        list.push_back(diff);
+    }
+}
+
+const string& kOrgModNote = "orgmod_note";
+const string& kSubSrcNote = "subsrc_note";
+const string kOrganismName = "Organism Name";
+
+
+typedef pair<string, string> TNameVal;
+typedef vector<TNameVal> TNameValList;
+
+
+int s_iCompareNameVals (TNameVal& f1, TNameVal& f2)
+{
+    int cmp = NStr::Compare (f1.first, f2.first);
+    if (cmp == 0) {
+        cmp = NStr::CompareNocase (f1.second, f2.second);
+        if (cmp == 0) {
+            cmp = NStr::Compare(f1.second, f2.second);
+        }
+    }
+    return cmp;
+}
+
+
+bool s_CompareNameVals (TNameVal& f1, TNameVal& f2)
+{ 
+    int cmp = s_iCompareNameVals (f1, f2);
+    if (cmp < 0) {
+        return true;
+    } else {
+        return false;
+    }        
+}
+
+
+TNameValList GetOrgModVals(const COrg_ref& org)
+{
+    TNameValList list;
+
+    if (org.IsSetOrgMod()) {
+        ITERATE(COrgName::TMod, it, org.GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubname() && (*it)->IsSetSubtype()) {
+                string label;
+                if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
+                    label = kOrgModNote;
+                } else {
+                    label = COrgMod::GetSubtypeName((*it)->GetSubtype());
+                }
+                list.push_back(TNameVal(label, (*it)->GetSubname()));
+            }
+        }
+    }
+    sort(list.begin(), list.end(), s_CompareNameVals);
+
+    return list;
+}
+
+
+TNameValList GetSubtypeVals(const CBioSource& src)
+{
+    TNameValList list;
+
+    if (src.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
+            if ((*it)->IsSetName() && (*it)->IsSetSubtype()) {
+                string label;
+                if ((*it)->GetSubtype() == CSubSource::eSubtype_other) {
+                    label = kSubSrcNote;
+                } else {
+                    label = CSubSource::GetSubtypeName((*it)->GetSubtype());
+                }
+                list.push_back(TNameVal(label, (*it)->GetName()));
+            }
+        }
+    }
+    sort(list.begin(), list.end(), s_CompareNameVals);
+
+    return list;
+}
+
+
+void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
+                                   TNameValList& list1, 
+                                   TNameValList& list2)
+{
+    TNameValList::iterator it1 = list1.begin();
+    TNameValList::iterator it2 = list2.begin();
+
+    while (it1 != list1.end() && it2 != list2.end()) {
+        int cmp = NStr::Compare(it1->first, it2->first);
+        if (cmp == 0) {
+            if (!s_ShouldIgnoreConflict(it1->first, it1->second, it2->second)) {
+                CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, it2->second));
+                list.push_back(diff);
+            }
+            it1++;
+            it2++;
+        } else if (cmp < 0) {
+            if (!s_ShouldIgnoreConflict(it1->first, it1->second, "")) {
+                CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, ""));
+                list.push_back(diff);
+            }
+            it1++;
+        } else {
+            // cmp > 0
+            if (!s_ShouldIgnoreConflict(it2->first, "", it2->second)) {
+                CRef<CFieldDiff> diff(new CFieldDiff(it2->first, "", it2->second));
+                list.push_back(diff);
+            }
+            it2++;
+        }
+    }
+    while (it1 != list1.end()) {
+        if (!s_ShouldIgnoreConflict(it1->first, it1->second, "")) {
+            CRef<CFieldDiff> diff(new CFieldDiff(it1->first, it1->second, ""));
+            list.push_back(diff);
+        }
+        it1++;
+    }
+    while (it2 != list2.end()) {
+        if (!s_ShouldIgnoreConflict(it2->first, "", it2->second)) {
+            CRef<CFieldDiff> diff(new CFieldDiff(it2->first, "", it2->second));
+            list.push_back(diff);
+        }
+        it2++;
+    }
+}
+
+
+void CBioSource::x_AddOrgRefFieldDiffs(TFieldDiffList& list, const CBioSource& biosample) const
+{
+    string taxname1 = "";
+    string taxname2 = "";
+
+    if (IsSetOrg() && GetOrg().IsSetTaxname()) {
+        taxname1 = GetOrg().GetTaxname();
+    }
+    if (biosample.IsSetOrg() && biosample.GetOrg().IsSetTaxname()) {
+        taxname2 = biosample.GetOrg().GetTaxname();
+    }
+    AddFieldDiff(list, kOrganismName, taxname1, taxname2);
+
+    TNameValList list1;
+    TNameValList list2;
+    if (IsSetOrg()) {
+        list1 = GetOrgModVals(GetOrg());
+    }
+    if (biosample.IsSetOrg()) {
+        list2 = GetOrgModVals(biosample.GetOrg());
+    }
+    GetFieldDiffsFromNameValLists(list, list1, list2);
+}
+
+
+void CBioSource::x_AddSubtypeFieldDiffs(TFieldDiffList& list, const CBioSource& biosample) const
+{
+    TNameValList list1;
+    TNameValList list2;
+
+    if (IsSetSubtype()) {
+        list1 = GetSubtypeVals(*this);
+    }
+    if (biosample.IsSetSubtype()) {
+        list2 = GetSubtypeVals(biosample);
+    }
+    GetFieldDiffsFromNameValLists(list, list1, list2);
+}
+
+
+TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
+{
+    TFieldDiffList rval;
+
+    x_AddOrgRefFieldDiffs(rval, biosample);
+    x_AddSubtypeFieldDiffs(rval, biosample);
+
+    return rval;
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::

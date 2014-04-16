@@ -168,7 +168,6 @@ private:
 
     // for mode 3, biosample_push
     void UpdateBioSource (CBioseq_Handle bh, const CBioSource& src);
-    void x_ClearCoordinatedSubSources(CBioSource& src);
     vector<CRef<CSeqdesc> > GetBiosampleDescriptors(string fname);
     vector<CRef<CSeqdesc> > GetBiosampleDescriptorsFromSeqSubmit();
     vector<CRef<CSeqdesc> > GetBiosampleDescriptorsFromSeqEntry();
@@ -215,7 +214,7 @@ private:
     size_t m_Processed;
     size_t m_Unprocessed;
 
-    TSrcTableColumnList m_SrcReportFields;
+//    TSrcTableColumnList m_SrcReportFields;
 	TStructuredCommentTableColumnList m_StructuredCommentReportFields;
 
 
@@ -235,7 +234,7 @@ CBiosampleChkApp::CBiosampleChkApp(void) :
     m_Owner(""),
     m_Processed(0), m_Unprocessed(0)
 {
-    m_SrcReportFields.clear();
+//    m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
 }
 
@@ -617,7 +616,7 @@ int CBiosampleChkApp::Run(void)
 
     m_UseDevServer = args["d"].AsBoolean();
 
-    m_SrcReportFields.clear();
+//    m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
 
     if (!NStr::IsBlank(m_StructuredCommentPrefix) && m_Mode != e_generate_biosample) {
@@ -1709,37 +1708,6 @@ void CBiosampleChkApp::ProcessSeqSubmit(void)
 }
 
 
-static bool s_MustCopy (int subtype)
-{
-    if (CSubSource::IsDiscouraged(subtype)) {
-        return false;
-    } else if (subtype == CSubSource::eSubtype_chromosome
-               || subtype == CSubSource::eSubtype_map
-               || subtype == CSubSource::eSubtype_plasmid_name
-               || subtype == CSubSource::eSubtype_other) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-
-void CBiosampleChkApp::x_ClearCoordinatedSubSources(CBioSource& src)
-{
-    if (!src.IsSetSubtype()) {
-        return;
-    }
-    CBioSource::TSubtype::iterator it = src.SetSubtype().begin();
-    while (it != src.SetSubtype().end()) {
-        if (s_MustCopy((*it)->GetSubtype())) {
-            it = src.SetSubtype().erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
-
 void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src)
 {
     CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
@@ -1758,57 +1726,7 @@ void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src
     } else {
         const CBioSource& bs = src_desc_ci->GetSource();
         CBioSource* old_src = const_cast<CBioSource *> (&bs);
-
-        if (src.IsSetOrg()) {
-            old_src->SetOrg().Assign(src.GetOrg());
-        } else {
-            old_src->ResetOrg();
-        }
-        if (src.IsSetPcr_primers()) {
-            old_src->SetPcr_primers().Assign(src.GetPcr_primers());
-        } else {
-            old_src->ResetPcr_primers();
-        }       
-        if (src.IsSetOrigin()) {
-            old_src->SetOrigin(src.GetOrigin());
-        } else {
-            old_src->ResetOrigin();
-        }
-
-        // optionals
-        if (src.IsSetGenome()) {
-            old_src->SetGenome(src.GetGenome());
-        }
-
-        // only values that must stay the same are removed from the existing source
-        x_ClearCoordinatedSubSources(*old_src);
-
-        if (src.IsSetSubtype()) {
-            ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
-                if (s_MustCopy((*it)->GetSubtype())) {
-                    CRef<CSubSource> s(new CSubSource());
-                    s->Assign(**it);
-                    old_src->SetSubtype().push_back(s);
-                } else {
-                    // if the master has a value, the contig's value must be updated,
-                    // but if the master had no value, the contig's value would have
-                    // been allowed to remain
-                    bool found = false;
-                    NON_CONST_ITERATE (CBioSource::TSubtype, sit, old_src->SetSubtype()) {
-                        if ((*it)->GetSubtype() == (*sit)->GetSubtype()) {
-                            found = true;
-                            (*sit)->SetName((*it)->GetName());
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        CRef<CSubSource> s(new CSubSource());
-                        s->Assign(**it);
-                        old_src->SetSubtype().push_back(s);                        
-                    }
-                }
-            }
-        }
+        old_src->UpdateWithBioSample(src, true);
     }
 }
 

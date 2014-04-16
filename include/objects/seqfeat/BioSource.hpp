@@ -49,6 +49,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class COrgName;
+class CFieldDiff;
+
+typedef vector< CRef<CFieldDiff> > TFieldDiffList;
+
 
 class NCBI_SEQFEAT_EXPORT CBioSource : public CBioSource_Base
 {
@@ -111,11 +115,20 @@ public:
     void SetDisableStrainForwarding(bool val);
     bool GetDisableStrainForwarding() const;
 
+    // for BioSample
+    void UpdateWithBioSample(const CBioSource& biosample, bool force);
+
+    TFieldDiffList GetBiosampleDiffs(const CBioSource& biosample) const;
+
+
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);
     CBioSource& operator=(const CBioSource& value);
 
+    void x_ClearCoordinatedBioSampleSubSources();
+    void x_AddOrgRefFieldDiffs(TFieldDiffList& list, const CBioSource& biosample) const;
+    void x_AddSubtypeFieldDiffs(TFieldDiffList& list, const CBioSource& biosample) const;
 };
 
 
@@ -130,6 +143,34 @@ CBioSource::CBioSource(void)
 
 
 /////////////////// end of CBioSource inline methods
+
+
+// =============================================================================
+//      For representing differences between BioSample and BioSource
+// =============================================================================
+
+class NCBI_SEQFEAT_EXPORT CFieldDiff : public CObject
+{
+public:
+    CFieldDiff() {};
+    CFieldDiff(string field_name, string src_val, string sample_val) :
+        m_FieldName(field_name), m_SrcVal(src_val), m_SampleVal(sample_val)
+        {};
+
+    ~CFieldDiff(void) {};
+
+    const string& GetFieldName() const { return m_FieldName; };
+    const string& GetSrcVal() const { return m_SrcVal; };
+    const string& GetSampleVal() const { return m_SampleVal; };
+
+private:
+    string m_FieldName;
+    string m_SrcVal;
+    string m_SampleVal;
+};
+
+
+
 
 
 END_objects_SCOPE // namespace ncbi::objects::

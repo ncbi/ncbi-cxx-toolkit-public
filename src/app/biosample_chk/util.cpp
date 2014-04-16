@@ -62,7 +62,6 @@
 #include <serial/objistrasn.hpp>
 
 #include "util.hpp"
-#include "src_table_column.hpp"
 #include "struc_table_column.hpp"
 
 #include <objects/general/User_object.hpp>
@@ -231,55 +230,6 @@ int CBiosampleFieldDiff::Compare(const CBiosampleFieldDiff& other)
 }
 
 
-bool s_CompareSourceFields (CRef<CSrcTableColumnBase> f1, CRef<CSrcTableColumnBase> f2)
-{ 
-    if (!f1) {
-        return true;
-    } else if (!f2) {
-        return false;
-    } 
-    string name1 = f1->GetLabel();
-    string name2 = f2->GetLabel();
-    int cmp = NStr::Compare (name1, name2);
-    if (cmp < 0) {
-        return true;
-    } else {
-        return false;
-    }        
-}
-
-
-TSrcTableColumnList GetAvailableFields(vector<CConstRef<CBioSource> > src)
-{
-    TSrcTableColumnList fields;
-
-    ITERATE(vector<CConstRef<CBioSource> >, it, src) {
-        TSrcTableColumnList src_fields = GetSourceFields(**it);
-		fields.insert(fields.end(), src_fields.begin(), src_fields.end());
-    }
-
-    // no need to sort and unique if there are less than two fields
-    if (fields.size() < 2) {
-        return fields;
-    }
-    sort(fields.begin(), fields.end(), s_CompareSourceFields);
-
-    TSrcTableColumnList::iterator f_prev = fields.begin();
-    TSrcTableColumnList::iterator f_next = f_prev;
-    f_next++;
-    while (f_next != fields.end()) {
-        if (NStr::Equal((*f_prev)->GetLabel(), (*f_next)->GetLabel())) {
-            f_next = fields.erase(f_next);
-        } else {
-            ++f_prev;
-            ++f_next;
-        }
-    }
-
-    return fields;
-}
-
-
 bool s_CompareStructuredCommentFields (CRef<CStructuredCommentTableColumnBase> f1, CRef<CStructuredCommentTableColumnBase> f2)
 { 
     if (!f1) {
@@ -329,175 +279,31 @@ TStructuredCommentTableColumnList GetAvailableFields(vector<CConstRef<CUser_obje
 }
 
 
-typedef enum {
-  eConflictIgnoreAll = 0,
-  eConflictIgnoreMissingInBioSource,
-  eConflictIgnoreMissingInBioSample
-} EConflictIgnoreType;
-
-
-typedef struct ignoreconflict {
-  string qual_name;
-  EConflictIgnoreType ignore_type;
-} IgnoreConflictData;
-
-
-static IgnoreConflictData sIgnoreConflictList[] = {
-  { "rev-primer-name", eConflictIgnoreMissingInBioSample } ,
-  { "rev-primer-seq", eConflictIgnoreMissingInBioSample } ,
-  { "fwd-primer-name", eConflictIgnoreMissingInBioSample } ,
-  { "fwd-primer-seq", eConflictIgnoreMissingInBioSample } ,
-  { "environmental-sample", eConflictIgnoreMissingInBioSample } ,
-  { "germline", eConflictIgnoreMissingInBioSample } ,
-  { "endogenous-virus-name", eConflictIgnoreMissingInBioSample } ,
-  { "map", eConflictIgnoreMissingInBioSample } ,
-  { "metagenomic", eConflictIgnoreMissingInBioSample } ,
-  { "plasmid-name", eConflictIgnoreMissingInBioSample } ,
-  { "plastid-name", eConflictIgnoreMissingInBioSample } ,
-  { "chromosome", eConflictIgnoreMissingInBioSample } ,
-  { "linkage-group", eConflictIgnoreMissingInBioSample } ,
-  { "rearranged", eConflictIgnoreMissingInBioSample } ,
-  { "segment", eConflictIgnoreMissingInBioSample } ,
-  { "transgenic", eConflictIgnoreMissingInBioSample } ,
-  { "old-lineage", eConflictIgnoreMissingInBioSample } ,
-  { "old-name", eConflictIgnoreMissingInBioSample } ,
-  { "acronym", eConflictIgnoreAll },
-  { "biovar", eConflictIgnoreAll } ,
-  { "chemovar", eConflictIgnoreAll } ,
-  { "forma", eConflictIgnoreAll } ,
-  { "forma-specialis", eConflictIgnoreAll } ,
-  { "gb-synonym", eConflictIgnoreAll } ,
-  { "lineage", eConflictIgnoreAll } ,
-  { "pathovar", eConflictIgnoreAll } ,
-  { "serotype", eConflictIgnoreAll } ,
-  { "serovar", eConflictIgnoreAll } ,
-  { "subspecies", eConflictIgnoreAll } ,
-  { "sub-species", eConflictIgnoreAll } ,
-  { "synonym", eConflictIgnoreAll } ,
-  { "variety", eConflictIgnoreAll } ,
-  { "StructuredCommentPrefix", eConflictIgnoreAll} ,
-  { "StructuredCommentSuffix", eConflictIgnoreAll}
-};
-
-static const int kNumIgnoreConflictList = sizeof (sIgnoreConflictList) / sizeof (IgnoreConflictData);
-
-bool s_SameExceptPrecision (double val1, double val2)
-{
-    if (val1 > 180.0 || val2 > 180.0) {
-        return false;
-    }
-    char buf1[20];
-    char buf2[20];
-    sprintf(buf1, "%0.2f", val1);
-    sprintf(buf2, "%0.2f", val2);
-    if (strcmp(buf1, buf2) == 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
-    
-
-static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_val)
-{
-    int i;
-    bool rval = false;
-
-    if (NStr::EqualNocase(src_val, sample_val)) {
-        return true;
-    }
-    for (i = 0; i < kNumIgnoreConflictList; i++) {
-        if (NStr::EqualNocase (label, sIgnoreConflictList[i].qual_name)) {
-            switch (sIgnoreConflictList[i].ignore_type) {
-                case eConflictIgnoreAll:
-                    rval = true;
-                    break;
-                case eConflictIgnoreMissingInBioSource:
-                    if (NStr::IsBlank(src_val)) {
-                      rval = true;
-                    }
-                    break;
-                case eConflictIgnoreMissingInBioSample:
-                    if (NStr::IsBlank(sample_val)) {
-                      rval = true;
-                    }
-                    break;
-            }
-            break;
-        }
-    }
-    // special handling for lat-lon
-    if (!rval && NStr::EqualNocase(label, "lat-lon")) {
-        bool src_format_correct, src_precision_correct,
-             src_lat_in_range, src_lon_in_range;
-        double src_lat_value, src_lon_value;
-        CSubSource::IsCorrectLatLonFormat(src_val, src_format_correct, src_precision_correct,
-                                          src_lat_in_range, src_lon_in_range,
-                                          src_lat_value, src_lon_value);
-        bool smpl_format_correct, smpl_precision_correct,
-             smpl_lat_in_range, smpl_lon_in_range;
-        double smpl_lat_value, smpl_lon_value;
-        CSubSource::IsCorrectLatLonFormat(sample_val, smpl_format_correct, smpl_precision_correct,
-                                          smpl_lat_in_range, smpl_lon_in_range,
-                                          smpl_lat_value, smpl_lon_value);
-        if (src_format_correct && smpl_format_correct 
-            && s_SameExceptPrecision(src_lat_value, smpl_lat_value)
-            && s_SameExceptPrecision(src_lon_value, smpl_lon_value)) {
-            rval = true;
-        }
-    }
-    // special handling for collection-date
-    if (!rval && NStr::EqualNocase(label, "collection-date")) {
-        try {
-            CRef<CDate> src_date = CSubSource::DateFromCollectionDate(src_val);
-            CRef<CDate> smpl_date = CSubSource::DateFromCollectionDate(sample_val);
-            if (src_date && smpl_date && src_date->Equals(*smpl_date)) {
-                rval = true;
-            }
-        } catch (...) {
-        }
-    }
-    // special handling for country
-    if (!rval && NStr::EqualNocase(label, "country")) {
-        NStr::ReplaceInPlace(src_val, ": ", ":");
-        NStr::ReplaceInPlace(sample_val, ": ", ":");
-        if (NStr::Equal(src_val, sample_val)) {
-            rval = true;
-        }
-    }
-    // special handling for altitude
-    if (!rval && NStr::EqualNocase(label, "altitude")) {
-        if (NStr::EndsWith(src_val, ".") && !NStr::EndsWith(sample_val, ".")
-            && NStr::EqualNocase(src_val.substr(0, src_val.length() - 1), sample_val)) {
-            rval = true;
-        }
-    }
-    return rval;
-}
-
-
 TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CBioSource& src, const CBioSource& sample)
 {
     TBiosampleFieldDiffList rval;
 
-    vector<CConstRef<CBioSource> > src_list;
-    CConstRef<CBioSource> s1(&src);
-    src_list.push_back(s1);
-    CConstRef<CBioSource> s2(&sample);
-    src_list.push_back(s2);
-
-    TSrcTableColumnList field_list = GetAvailableFields (src_list);
-
-    ITERATE(TSrcTableColumnList, it, field_list) {
-        string src_val = (*it)->GetFromBioSource(src);
-        string sample_val = (*it)->GetFromBioSource(sample);
-        if (!s_ShouldIgnoreConflict((*it)->GetLabel(), src_val, sample_val)) {
-            CRef<CBiosampleFieldDiff> diff(new CBiosampleFieldDiff(sequence_id, biosample_id, (*it)->GetLabel(), src_val, sample_val));
-            rval.push_back(diff);
-        }
+    TFieldDiffList src_diffs = src.GetBiosampleDiffs(sample);
+    ITERATE(TFieldDiffList, it, src_diffs) {
+        CRef<CBiosampleFieldDiff> diff(new CBiosampleFieldDiff(sequence_id, biosample_id, **it));
+        rval.push_back(diff);
     }
 
+
     return rval;
+}
+
+
+bool s_ShouldIgnoreStructuredCommentFieldDiff (const string& label, const string& src_val, const string& sample_val)
+{
+    if (NStr::Equal(label, "StructuredCommentPrefix")
+        || NStr::Equal(label, "StructuredCommentSuffix")) {
+        return true;
+    } else if (NStr::EqualNocase(src_val, sample_val)) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -514,9 +320,14 @@ TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, c
     TStructuredCommentTableColumnList field_list = GetAvailableFields (src_list);
 
     ITERATE(TStructuredCommentTableColumnList, it, field_list) {
+        if (NStr::Equal((*it)->GetLabel(), "StructuredCommentPrefix")
+            || NStr::Equal((*it)->GetLabel(), "StructuredCommentSuffix")) {
+            continue;
+        }
         string src_val = (*it)->GetFromComment(src);
         string sample_val = (*it)->GetFromComment(sample);
-        if (!s_ShouldIgnoreConflict((*it)->GetLabel(), src_val, sample_val)) {
+
+        if (!s_ShouldIgnoreStructuredCommentFieldDiff((*it)->GetLabel(), src_val, sample_val)) {
             CRef<CBiosampleFieldDiff> diff(new CBiosampleFieldDiff(sequence_id, biosample_id, (*it)->GetLabel(), src_val, sample_val));
             rval.push_back(diff);
         }
@@ -549,7 +360,7 @@ TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, C
         if (sample) {
             (*it)->GetFromComment(*sample);
         }
-        if (!s_ShouldIgnoreConflict((*it)->GetLabel(), src_val, sample_val)) {
+        if (!s_ShouldIgnoreStructuredCommentFieldDiff((*it)->GetLabel(), src_val, sample_val)) {
             CRef<CBiosampleFieldDiff> diff(new CBiosampleFieldDiff(sequence_id, biosample_id, (*it)->GetLabel(), src_val, sample_val));
             rval.push_back(diff);
         }

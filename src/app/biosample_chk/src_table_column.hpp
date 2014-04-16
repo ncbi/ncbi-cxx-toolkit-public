@@ -104,7 +104,7 @@ public:
         objects::CBioSource & in_out_bioSource );
     virtual string GetFromBioSource(
         const objects::CBioSource & in_out_bioSource ) const;
-    virtual string GetLabel() const { return "Organism Name"; }
+    virtual string GetLabel() const { return "Genome"; }
 };
 
 class CSrcTableSubSourceColumn : public CSrcTableColumnBase

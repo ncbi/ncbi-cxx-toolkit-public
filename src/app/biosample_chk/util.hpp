@@ -53,12 +53,19 @@ CRef< CSeq_descr > GetBiosampleData(string accession, bool use_dev_server);
 vector<string> GetBiosampleIDs(CBioseq_Handle bh);
 vector<string> GetBioProjectIDs(CBioseq_Handle bh);
 
+
 class CBiosampleFieldDiff : public CObject
 {
 public:
     CBiosampleFieldDiff() {};
     CBiosampleFieldDiff(string sequence_id, string biosample_id, string field_name, string src_val, string sample_val) :
         m_SequenceID(sequence_id), m_BiosampleID(biosample_id), m_FieldName(field_name), m_SrcVal(src_val), m_SampleVal(sample_val)
+        {};
+    CBiosampleFieldDiff(string sequence_id, string biosample_id, const CFieldDiff& diff) :
+        m_SequenceID(sequence_id), m_BiosampleID(biosample_id),
+        m_FieldName(diff.GetFieldName()),
+        m_SrcVal(diff.GetSrcVal()),
+        m_SampleVal(diff.GetSampleVal())
         {};
 
     ~CBiosampleFieldDiff(void) {};
