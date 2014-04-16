@@ -38,10 +38,10 @@ case "`expr '(' $$ / 10 ')' '%' 4`" in
   fi
   ;;
   2)
-  url='ftp://ftp.ncbi.nlm.nih.gov/README.ftp'
+  url='ftp://ftp-ext.ncbi.nlm.nih.gov/README.ftp'
   ;;
   3)
-  url='http://ftp.ncbi.nlm.nih.gov/README.ftp'
+  url='http://ftp-ext.ncbi.nlm.nih.gov/README.ftp'
   ;;
 esac
 

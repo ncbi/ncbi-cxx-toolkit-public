@@ -36,7 +36,7 @@ case "`expr '(' $$ / 10 ')' '%' $n`" in
     file=
     ;;
   1)
-    file='ftp://ftp.ncbi.nlm.nih.gov/'
+    file='ftp://ftp-ext.ncbi.nlm.nih.gov/'
     ;;
   2)
     file='ftp://ftp.kernel.org/pub/'

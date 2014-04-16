@@ -47,6 +47,8 @@
 #  define DEV_NULL "NUL"
 #endif // NCBI_OS_UNIX
 
+#define CONN_NCBI_FTP_HOST  "ftp-ext.ncbi.nlm.nih.gov"
+
 
 static const size_t kBufferSize = 512*1024;
 
@@ -259,7 +261,7 @@ int main(int argc, const char* argv[])
                              DEF_CONN_DEBUG_PRINTOUT);
         flag |= strcasecmp(val, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
     }
-    CConn_FTPDownloadStream download("ftp.ncbi.nlm.nih.gov",
+    CConn_FTPDownloadStream download(CONN_NCBI_FTP_HOST,
                                      "Misc/test_ncbi_conn_stream.FTP.data",
                                      "ftp"/*default*/, "-none"/*default*/,
                                      "/toolbox/ncbi_tools++/DATA",

@@ -42,7 +42,9 @@
 
 #include "test_assert.h"  /* This header must go last */
 
-#define TEST_HOST  "ftp.ncbi.nlm.nih.gov"
+#define CONN_NCBI_FTP_HOST  "ftp-ext.ncbi.nlm.nih.gov"
+
+#define TEST_HOST  CONN_NCBI_FTP_HOST
 #define TEST_PORT  0
 #define TEST_USER  "ftp"
 #define TEST_PASS  "none"

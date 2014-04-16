@@ -53,11 +53,14 @@
 #define SCREEN_COLS (80 - 1)
 
 
+#define CONN_NCBI_FTP_HOST  "ftp-ext.ncbi.nlm.nih.gov"
+
+
 BEGIN_NCBI_SCOPE
 
 
 static const char kDefaultTestURL[] =
-    "ftp://ftp:-none@ftp.ncbi.nlm.nih.gov/toolbox/ncbi_tools/ncbi.tar.gz";
+    "ftp://ftp:-none@" CONN_NCBI_FTP_HOST "/toolbox/ncbi_tools/ncbi.tar.gz";
 
 
 static bool s_Signaled  = false;
@@ -628,7 +631,7 @@ int main(int argc, const char* argv[])
 
     if        (net_info->scheme == eURL_Unspec) {
         if (NStr::strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
-            strcpy(net_info->host, "ftp.ncbi.nlm.nih.gov");
+            strcpy(net_info->host, CONN_NCBI_FTP_HOST);
         }
         net_info->scheme = eURL_Ftp;
     } else if (net_info->scheme != eURL_Ftp) {
