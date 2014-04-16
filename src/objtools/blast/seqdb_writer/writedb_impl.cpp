@@ -1367,8 +1367,6 @@ void CWriteDB_Impl::AddColumnMetaData(int            col_id,
 
 CBlastDbBlob & CWriteDB_Impl::SetBlobData(int col_id)
 {
-    typedef CBlastDbBlob TBlob;
-    
     if ((col_id < 0) || (col_id * 2 >= (int) m_Blobs.size())) {
         NCBI_THROW(CWriteDBException, eArgErr,
                    "Error: provided column ID is not valid");

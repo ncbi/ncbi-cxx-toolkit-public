@@ -253,7 +253,7 @@ void CBlastDBExtractor::x_SetGi2AccMap()
     map<TGi, string> gi2acc;
     x_InitDefline();
     ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
-        TGi gi;
+        TGi gi(INVALID_GI);
         ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
             if ((*id)->IsGi()) {
                 gi = (*id)->GetGi();
@@ -263,7 +263,8 @@ void CBlastDBExtractor::x_SetGi2AccMap()
         CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
         string acc;
         theId->GetLabel(&acc, CSeq_id::eContent);
-        gi2acc[gi] = acc;
+        if (gi != INVALID_GI)
+            gi2acc[gi] = acc;
     }
 	m_Gi2AccMap.first = m_Oid;
 	m_Gi2AccMap.second.swap(gi2acc);
@@ -278,7 +279,7 @@ void CBlastDBExtractor::x_SetGi2SeqIdMap()
 	map<TGi, string> gi2id;
     x_InitDefline();
     ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
-        TGi gi;
+        TGi gi(INVALID_GI);
         ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
             if ((*id)->IsGi()) {
                 gi = (*id)->GetGi();
@@ -286,7 +287,8 @@ void CBlastDBExtractor::x_SetGi2SeqIdMap()
             }
         }
         CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
-        gi2id[gi] = theId->AsFastaString();
+        if (gi != INVALID_GI)
+            gi2id[gi] = theId->AsFastaString();
     }
 	m_Gi2SeqIdMap.first = m_Oid;
 	m_Gi2SeqIdMap.second.swap(gi2id);
@@ -301,14 +303,15 @@ void CBlastDBExtractor::x_SetGi2TitleMap()
 	map<TGi, string> gi2title;
 	x_InitDefline();
     ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
-	    TGi gi;
+	    TGi gi(INVALID_GI);
         ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
             if ((*id)->IsGi()) {
                 gi = (*id)->GetGi();
                 break;
             }
 	    }
-	    gi2title[gi] = (*bd)->GetTitle();	
+        if (gi != INVALID_GI)
+            gi2title[gi] = (*bd)->GetTitle();	
 	}
 	m_Gi2TitleMap.first = m_Oid;
 	m_Gi2TitleMap.second.swap(gi2title);

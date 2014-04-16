@@ -2048,8 +2048,6 @@ void CSeqDB_IdRemapper::AddMapping(int vol_id, int id, const string & desc)
 
 bool CSeqDB_IdRemapper::GetDesc(int algorithm_id, string & desc)
 {
-    typedef map<int,string> TIdMap;
-
     if (! s_Contains(m_IdToDesc, algorithm_id)) {
        return false;
     }

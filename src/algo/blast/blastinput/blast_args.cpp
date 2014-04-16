@@ -563,7 +563,7 @@ s_IsDefaultWordThreshold(EProgram program, double threshold)
                word_threshold != BLAST_WORD_THRESHOLD_TBLASTN) {
         retval = false;
     }
-    return false;
+    return retval;
 }
 
 void
