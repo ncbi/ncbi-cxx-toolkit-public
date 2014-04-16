@@ -856,6 +856,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "SYNC_START",
         {&CNCMessageHandler::x_DoCmd_SyncStart,
             "SYNC_START",
+          // this command does not need space, but, to do sync, we WILL need space
+            fNeedsSpaceAsPeer +
             fNeedsStorageCache + fNeedsLowerPriority + fNeedsAdminClient},
           // Server id of the server starting synchronization.
         { { "srv_id",  eNSPT_Int,  eNSPA_Required },
@@ -1798,6 +1800,13 @@ CNCMessageHandler::x_StartCommand(void)
         }
     }
 
+    if (x_IsFlagSet(fNeedsSpaceAsPeer)
+        && !CNCBlobStorage::AcceptWritesFromPeers()) {
+        GetDiagCtx()->SetRequestStatus(eStatus_NoDiskSpace);
+        WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
+        return &Me::x_FinishCommand;
+    }
+        
     if (!x_IsFlagSet(fNeedsBlobAccess)) {
         diag_msg.Flush();
         // if we do not need blob access
@@ -1872,6 +1881,10 @@ CNCMessageHandler::x_StartCommand(void)
         ||  (x_IsFlagSet(fNeedsSpaceAsPeer)
             &&  !CNCBlobStorage::AcceptWritesFromPeers()))
     {
+        if (CNCDistributionConf::CountServersForSlot(m_BlobSlot) != 0) {
+            x_GetCurSlotServers();
+            return &Me::x_ProxyToNextPeer;
+        }
         GetDiagCtx()->SetRequestStatus(eStatus_NoDiskSpace);
         WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
         return &Me::x_FinishCommand;
@@ -1948,7 +1961,10 @@ CNCMessageHandler::x_GetCurSlotServers(void)
         // server. It will give false positive results if there are several
         // NC instances on the same server processing the same slot. But there's
         // no much sense in such setup, so it's pretty safe assumption.
-        if (Uint4(CNCDistributionConf::GetSelfID() >> 32) == main_srv_ip) {
+        if (Uint4(CNCDistributionConf::GetSelfID() >> 32) == main_srv_ip
+            // if NeedStopWrite, I cannot be sure that blob on this server is most recent
+            // and need to ask other servers
+            && !CNCBlobStorage::NeedStopWrite()) {
             m_ThisServerIsMain = true;
         }
         else {

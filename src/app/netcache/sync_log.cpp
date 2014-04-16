@@ -522,6 +522,9 @@ bool
 CNCSyncLog::Finalize(void)
 {
     const string& file_name = CNCDistributionConf::GetSyncLogFileName();
+    if (file_name.empty()) {
+        return false;
+    }
     FILE* log_file = fopen(file_name.c_str(), "w");
 
     if (!log_file)

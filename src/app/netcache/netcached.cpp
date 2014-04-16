@@ -511,6 +511,13 @@ CNCServer::InitialSyncComplete(void)
 }
 
 void
+CNCServer::InitialSyncRequired(void)
+{
+    INFO("Initial synchronization required");
+    s_InitiallySynced = false;
+}
+
+void
 CNCServer::CachingCompleted(void)
 {
     s_CachingComplete = true;

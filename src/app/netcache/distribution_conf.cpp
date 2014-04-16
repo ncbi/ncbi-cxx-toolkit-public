@@ -239,7 +239,9 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     s_PeriodicLogFile   = reg.Get(kNCReg_NCPoolSection, "periodic_log_file");
 
     s_CopyDelayLogFile = reg.Get(kNCReg_NCPoolSection, "copy_delay_log_file");
-    s_CopyDelayLog = fopen(s_CopyDelayLogFile.c_str(), "a");
+    if (!s_CopyDelayLogFile.empty()) {
+        s_CopyDelayLog = fopen(s_CopyDelayLogFile.c_str(), "a");
+    }
 
     try {
         s_CntSlotBuckets = reg.GetInt(kNCReg_NCPoolSection, "cnt_slot_buckets", 10);
@@ -368,6 +370,12 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("deferred_sync_timeout"      ).WriteText(is).WriteNumber(s_PeriodicSyncTimeout/ kUSecsPerSecond);
     task.WriteText(eol).WriteText("failed_sync_retry_delay"    ).WriteText(is).WriteNumber(s_FailedSyncRetryDelay/kUSecsPerSecond);
     task.WriteText(eol).WriteText("network_error_timeout"      ).WriteText(is).WriteNumber(s_NetworkErrorTimeout/ kUSecsPerSecond);
+}
+
+size_t
+CNCDistributionConf::CountServersForSlot(Uint2 slot)
+{
+    return s_Slot2Servers[slot].size();
 }
 
 TServersList

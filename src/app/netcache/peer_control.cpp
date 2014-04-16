@@ -56,6 +56,7 @@ CAtomicCounter CNCPeerControl::sm_TotalCopyRequests;
 CAtomicCounter CNCPeerControl::sm_CopyReqsRejected;
 
 static CNCPeerShutdown* s_ShutdownListener = NULL;
+static Uint4 s_ServersToSync = 0;
 
 
 
@@ -98,7 +99,9 @@ bool
 CNCPeerControl::Initialize(void)
 {
     s_MirrorQueueSize.Set(0);
-    s_MirrorLogFile = fopen(CNCDistributionConf::GetMirroringSizeFile().c_str(), "a");
+    if (!CNCDistributionConf::GetMirroringSizeFile().empty()) {
+        s_MirrorLogFile = fopen(CNCDistributionConf::GetMirroringSizeFile().c_str(), "a");
+    }
     sm_TotalCopyRequests.Set(0);
     sm_CopyReqsRejected.Set(0);
 
@@ -149,6 +152,7 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
       m_ActiveConns(0),
       m_BGConns(0),
       m_SlotsToInitSync(0),
+      m_OrigSlotsToInitSync(0),
       m_CntActiveSyncs(0),
       m_CntNWErrors(0),
       m_InThrottle(false),
@@ -615,9 +619,16 @@ CNCPeerControl::GetMirrorQueueSize(Uint8 srv_id)
 void
 CNCPeerControl::SetServersForInitSync(Uint4 cnt_servers)
 {
+    s_ServersToSync = cnt_servers;
     s_SyncOnInit.Set(cnt_servers);
     s_WaitToOpenToClients.Set(cnt_servers);
     s_AbortedSyncClients.Set(cnt_servers);
+}
+
+void
+CNCPeerControl::ResetServersForInitSync(void)
+{
+    SetServersForInitSync(s_ServersToSync);
 }
 
 bool

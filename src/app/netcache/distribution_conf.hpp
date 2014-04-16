@@ -58,6 +58,7 @@ public:
     static void GetSlotByRnd(Uint4 key_rnd, Uint2& slot, Uint2& time_bucket);
 
     // Provides server IDs which serve the given slot
+    static size_t CountServersForSlot(Uint2 slot);
     static TServersList GetServersForSlot(Uint2 slot);
     static const TServersList& GetRawServersForSlot(Uint2 slot);
 

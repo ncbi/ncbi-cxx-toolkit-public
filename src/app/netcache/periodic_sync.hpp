@@ -63,6 +63,7 @@ class CNCPeriodicSync
 {
 public:
     static bool Initialize(void);
+    static void ReInitialize(void);
     static void Finalize(void);
 
     // Initiates synchronization which came from a peer netcache.
@@ -129,19 +130,6 @@ enum ESynActionType {
     eSynActionRemove
 };
 
-
-struct SSyncSrvData
-{
-    CMiniMutex lock;
-    Uint8   srv_id;
-    Uint8   next_sync_time;
-    Uint8   first_nw_err_time;
-    Uint2   slots_to_init;
-    Uint2   cnt_active_syncs;
-    bool    initially_synced;
-
-    SSyncSrvData(Uint8 srv_id);
-};
 
 struct SSyncSlotSrv
 {
@@ -274,6 +262,9 @@ public:
     bool GetNextTask(SSyncTaskInfo& task_info);
     void ExecuteSyncTask(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
     void CmdFinished(ESyncResult res, ESynActionType action, CNCActiveHandler* conn);
+    bool IsStuck(void) const {
+        return m_Stuck;
+    }
 
 private:
     State x_StartScanSlots(void);
@@ -333,6 +324,7 @@ private:
     bool m_ForceInitSync;
     bool m_DidSync;
     bool m_FinishSyncCalled;
+    bool m_Stuck;
     Uint8 m_MinNextTime;
     Uint8 m_LoopStart;
     TSyncSlotsList::const_iterator m_NextSlotIt;

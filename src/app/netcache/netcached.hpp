@@ -100,6 +100,7 @@ public:
     static void CachingCompleted(void);
     static bool IsInitiallySynced(void);
     static void InitialSyncComplete(void);
+    static void InitialSyncRequired(void);
     static bool IsCachingComplete(void);
     static bool IsDebugMode(void);
 

@@ -251,7 +251,9 @@ SSyncSlotSrv::SSyncSlotSrv(CNCPeerControl* peer_)
 bool
 CNCPeriodicSync::Initialize(void)
 {
-    s_LogFile = fopen(CNCDistributionConf::GetPeriodicLogFile().c_str(), "a");
+    if (!CNCDistributionConf::GetPeriodicLogFile().empty()) {
+        s_LogFile = fopen(CNCDistributionConf::GetPeriodicLogFile().c_str(), "a");
+    }
 
     const vector<Uint2>& slots = CNCDistributionConf::GetSelfSlots();
     for (Uint2 i = 0; i < slots.size(); ++i) {
@@ -294,6 +296,24 @@ CNCPeriodicSync::Initialize(void)
         CNCServer::InitialSyncComplete();
 
     return true;
+}
+
+void
+CNCPeriodicSync::ReInitialize(void)
+{
+    ITERATE(TSyncControls, c, s_SyncControls) {
+        if (!(*c)->IsStuck()) {
+            return;
+        }
+    }
+    ITERATE(TSyncSlotsList, sl, s_SlotsList) {
+        ITERATE(TSlotSrvsList, srv, (*sl)->srvs) {
+            (*srv)->made_initial_sync = false;
+            (*srv)->peer->ResetSlotsForInitSync();
+        }
+    }
+    CNCPeerControl::ResetServersForInitSync();
+    CNCServer::InitialSyncRequired();
 }
 
 void
@@ -461,15 +481,30 @@ CNCActiveSyncControl::CNCActiveSyncControl(void)
 {
     SetState(&Me::x_StartScanSlots);
     m_ForceInitSync = false;
+    m_Stuck = false;
 }
 
-CNCActiveSyncControl::~CNCActiveSyncControl(void)
-{}
+CNCActiveSyncControl::~CNCActiveSyncControl(void) {
+}
 
 
 CNCActiveSyncControl::State
 CNCActiveSyncControl::x_StartScanSlots(void)
 {
+    if (CTaskServer::IsInShutdown()) {
+        return NULL;
+    }
+    if ( CNCBlobStorage::NeedStopWrite()) {
+        // in this scenario, I do not start sync, but still accept sync requests from others
+        RunAfter(CNCDistributionConf::GetPeriodicSyncInterval() / kUSecsPerSecond);
+        if (!m_Stuck) {
+            m_Stuck = true;
+            CNCPeriodicSync::ReInitialize();
+        }
+        return NULL;
+    }
+    m_Stuck = false;
+
     m_DidSync = false;
     m_MinNextTime = numeric_limits<Uint8>::max();
     m_LoopStart = CSrvTime::Current().AsUSec();
