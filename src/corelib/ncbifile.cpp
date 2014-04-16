@@ -4635,9 +4635,11 @@ void s_GetFileSystemInfo(const string&               path,
 #  elif defined(NCBI_OS_DARWIN)  &&  defined(HAVE_STATFS)
 
     GET_STATFS_INFO;
-    if (need_name_max) {
-        info->filename_max = (unsigned long)st.f_namelen;
-    }
+    // Seems statfs structure on Darwin dont have any information 
+    // about name length, so rely on pathconf() only.
+    //if (need_name_max) {
+    //    info->filename_max = (unsigned long)st.f_namelen;
+    //}
     fs_name_ptr = st.f_fstypename;
 
 #  elif defined(NCBI_OS_BSD)  &&  defined(HAVE_STATFS)
