@@ -823,7 +823,7 @@ typedef pair<string, string> TNameVal;
 typedef vector<TNameVal> TNameValList;
 
 
-int s_iCompareNameVals (TNameVal& f1, TNameVal& f2)
+int s_iCompareNameVals (const TNameVal& f1, const TNameVal& f2)
 {
     int cmp = NStr::Compare (f1.first, f2.first);
     if (cmp == 0) {
@@ -836,7 +836,7 @@ int s_iCompareNameVals (TNameVal& f1, TNameVal& f2)
 }
 
 
-bool s_CompareNameVals (TNameVal& f1, TNameVal& f2)
+bool s_CompareNameVals (const TNameVal& f1, const TNameVal& f2)
 { 
     int cmp = s_iCompareNameVals (f1, f2);
     if (cmp < 0) {
