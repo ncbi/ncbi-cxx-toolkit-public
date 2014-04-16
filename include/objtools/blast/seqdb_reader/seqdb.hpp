@@ -465,7 +465,7 @@ public:
     ///
     /// This finds the TAXIDS associated with a given OID and computes
     /// a mapping from GI to taxid.  This mapping is added to the
-    /// map<int,int> provided by the user.  If the "persist" flag is
+    /// map<int,set<int>> provided by the user.  If the "persist" flag is
     /// set to true, the new associations will simply be added to the
     /// map.  If it is false (the default), the map will be cleared
     /// first.
@@ -484,7 +484,7 @@ public:
     ///
     /// This finds the TAXIDS associated with a given OID and computes
     /// a mapping from GI to a set of taxids.  This mapping is added to the
-    /// map<int,set<int>> provided by the user.  If the "persist" flag is
+    /// map<int,int> provided by the user.  If the "persist" flag is
     /// set to true, the new associations will simply be added to the
     /// map.  If it is false (the default), the map will be cleared
     /// first.
