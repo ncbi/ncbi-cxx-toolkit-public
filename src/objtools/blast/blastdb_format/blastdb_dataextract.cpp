@@ -84,7 +84,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     }
 
     if (m_Oid < 0) {
-        NCBI_THROW(CSeqDBException, eArgErr, 
+        NCBI_THROW(CSeqDBException, eArgErr,
                    "Entry not found in BLAST database");
     }
 
@@ -110,8 +110,8 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
 
     try {
         if (get_data) {
-            m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, target_gi, target_seq_id)); 
-        } 
+            m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, target_gi, target_seq_id));
+        }
 	else if (m_Gi <= 0)
 	{  // If no GI, then all the Gi2XMaps will fail.
 	    m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, target_gi, target_seq_id));
@@ -121,7 +121,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
         // this happens when CSeqDB detects a GI that doesn't belong to a
         // filtered database (e.g.: swissprot as a subset of nr)
         if (e.GetMsg().find("oid headers do not contain target gi")) {
-            NCBI_THROW(CSeqDBException, eArgErr, 
+            NCBI_THROW(CSeqDBException, eArgErr,
                        "Entry not found in BLAST database");
         }
     }
@@ -154,11 +154,11 @@ void CBlastDBExtractor::x_SetGi() {
             m_Gi = (*itr)->GetGi();
             return;
         }
-    } 
+    }
     return;
 }
 
-void CBlastDBExtractor::x_InitDefline() 
+void CBlastDBExtractor::x_InitDefline()
 {
     if (m_Defline.NotEmpty()) {
         return;
@@ -218,7 +218,7 @@ string CBlastDBExtractor::ExtractMembershipInteger()
 
         if (seqid->IsGi() && (seqid->GetGi() == m_Gi) &&
             (*itr)->IsSetMemberships()) {
-            ITERATE(CBlast_def_line::TMemberships, memb_int, 
+            ITERATE(CBlast_def_line::TMemberships, memb_int,
                     (*itr)->GetMemberships()) {
                 retval += *memb_int;
             }
@@ -310,8 +310,9 @@ void CBlastDBExtractor::x_SetGi2TitleMap()
                 break;
             }
 	    }
-        if (gi != INVALID_GI)
-            gi2title[gi] = (*bd)->GetTitle();	
+        if (gi != INVALID_GI) {
+            gi2title[gi] = (*bd)->GetTitle();
+        }
 	}
 	m_Gi2TitleMap.first = m_Oid;
 	m_Gi2TitleMap.second.swap(gi2title);
@@ -364,56 +365,163 @@ string CBlastDBExtractor::ExtractTitle() {
     return NOT_AVAILABLE;
 }
 
+//string CBlastDBExtractor::ExtractTaxId() {
+//    return NStr::IntToString(x_ExtractTaxId());
+//}
+
 string CBlastDBExtractor::ExtractTaxId() {
-    return NStr::IntToString(x_ExtractTaxId());
+    set<int> taxids;
+    x_ExtractTaxIds(taxids);
+    set<int>::iterator taxids_iter = taxids.begin();
+    string str(NStr::IntToString(*taxids_iter));
+    for (++taxids_iter; taxids_iter != taxids.end(); ++taxids_iter) {
+        str += SEPARATOR + NStr::IntToString(*taxids_iter);
+    }
+    return str;
 }
+
+//string CBlastDBExtractor::ExtractCommonTaxonomicName() {
+//    const int kTaxID = x_ExtractTaxId();
+//    SSeqDBTaxInfo tax_info;
+//    string retval(NOT_AVAILABLE);
+//    try {
+//        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+//        _ASSERT(kTaxID == tax_info.taxid);
+//        retval = tax_info.common_name;
+//    } catch (...) {}
+//    return retval;
+//}
 
 string CBlastDBExtractor::ExtractCommonTaxonomicName() {
-    const int kTaxID = x_ExtractTaxId();
+    set<int> taxids;
+    x_ExtractTaxIds(taxids);
     SSeqDBTaxInfo tax_info;
-    string retval(NOT_AVAILABLE);
-    try {
-        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
-        _ASSERT(kTaxID == tax_info.taxid);
-        retval = tax_info.common_name;
-    } catch (...) {}
-    return retval;
+    string retval;
+    ITERATE(set<int>, taxid_iter, taxids) {
+        const int kTaxID = *taxid_iter;
+        try {
+            m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+            _ASSERT(kTaxID == tax_info.taxid);
+            if (retval.empty()) {
+                retval = tax_info.common_name;
+            } else {
+                retval += SEPARATOR + tax_info.common_name;
+            }
+        } catch (...) {}
+    }
+    if (retval.empty()) {
+        return string(NOT_AVAILABLE);
+    } else {
+        return retval;
+    }
 }
+
+//string CBlastDBExtractor::ExtractScientificName() {
+//    const int kTaxID = x_ExtractTaxId();
+//    SSeqDBTaxInfo tax_info;
+//    string retval(NOT_AVAILABLE);
+//    try {
+//        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+//        _ASSERT(kTaxID == tax_info.taxid);
+//        retval = tax_info.scientific_name;
+//    } catch (...) {}
+//    return retval;
+//}
 
 string CBlastDBExtractor::ExtractScientificName() {
-    const int kTaxID = x_ExtractTaxId();
+    set<int> taxids;
+    x_ExtractTaxIds(taxids);
     SSeqDBTaxInfo tax_info;
-    string retval(NOT_AVAILABLE);
-    try {
-        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
-        _ASSERT(kTaxID == tax_info.taxid);
-        retval = tax_info.scientific_name;
-    } catch (...) {}
-    return retval;
+    string retval;
+    ITERATE(set<int>, taxid_iter, taxids) {
+        const int kTaxID = *taxid_iter;
+        try {
+            m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+            _ASSERT(kTaxID == tax_info.taxid);
+            if (retval.empty()) {
+                retval = tax_info.scientific_name;
+            } else {
+                retval += SEPARATOR + tax_info.scientific_name;
+            }
+        } catch (...) {}
+    }
+    if (retval.empty()) {
+        return string(NOT_AVAILABLE);
+    } else {
+        return retval;
+    }
 }
+
+//string CBlastDBExtractor::ExtractBlastName() {
+//    const int kTaxID = x_ExtractTaxId();
+//    SSeqDBTaxInfo tax_info;
+//    string retval(NOT_AVAILABLE);
+//    try {
+//        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+//        _ASSERT(kTaxID == tax_info.taxid);
+//        retval = tax_info.blast_name;
+//    } catch (...) {}
+//    return retval;
+//}
 
 string CBlastDBExtractor::ExtractBlastName() {
-    const int kTaxID = x_ExtractTaxId();
+    set<int> taxids;
+    x_ExtractTaxIds(taxids);
     SSeqDBTaxInfo tax_info;
-    string retval(NOT_AVAILABLE);
-    try {
-        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
-        _ASSERT(kTaxID == tax_info.taxid);
-        retval = tax_info.blast_name;
-    } catch (...) {}
-    return retval;
+    string retval;
+    ITERATE(set<int>, taxid_iter, taxids) {
+        const int kTaxID = *taxid_iter;
+        try {
+            m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+            _ASSERT(kTaxID == tax_info.taxid);
+            if (retval.empty()) {
+                retval = tax_info.blast_name;
+            } else {
+                retval += SEPARATOR + tax_info.blast_name;
+            }
+        } catch (...) {}
+    }
+    if (retval.empty()) {
+        return string(NOT_AVAILABLE);
+    } else {
+        return retval;
+    }
 }
 
+//string CBlastDBExtractor::ExtractSuperKingdom() {
+//    const int kTaxID = x_ExtractTaxId();
+//    SSeqDBTaxInfo tax_info;
+//    string retval(NOT_AVAILABLE);
+//    try {
+//        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+//        _ASSERT(kTaxID == tax_info.taxid);
+//        retval = tax_info.s_kingdom;
+//    } catch (...) {}
+//    return retval;
+//}
+
 string CBlastDBExtractor::ExtractSuperKingdom() {
-    const int kTaxID = x_ExtractTaxId();
+    set<int> taxids;
+    x_ExtractTaxIds(taxids);
     SSeqDBTaxInfo tax_info;
-    string retval(NOT_AVAILABLE);
-    try {
-        m_BlastDb.GetTaxInfo(kTaxID, tax_info);
-        _ASSERT(kTaxID == tax_info.taxid);
-        retval = tax_info.s_kingdom;
-    } catch (...) {}
-    return retval;
+    string retval;
+    ITERATE(set<int>, taxid_iter, taxids) {
+        const int kTaxID = *taxid_iter;
+        try {
+            m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+            _ASSERT(kTaxID == tax_info.taxid);
+            if (retval.empty()) {
+                retval = tax_info.s_kingdom;
+            } else {
+                retval += SEPARATOR + tax_info.s_kingdom;
+            }
+        } catch (...) {}
+    }
+    if (retval.empty()) {
+        return string(NOT_AVAILABLE);
+    } else {
+        return retval;
+    }
 }
 
 string CBlastDBExtractor::ExtractMaskingData() {
@@ -445,7 +553,7 @@ string CBlastDBExtractor::ExtractSeqData() {
                       &seq[mask->first], (int (*)(int))tolower);
         }
         if (m_Strand == eNa_strand_minus) {
-            CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 
+            CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna,
                                          0, seq.size());
         }
     } catch (CSeqDBException& e) {
@@ -465,7 +573,7 @@ string CBlastDBExtractor::ExtractSeqLen() {
 
 // Calculates hash for a buffer in IUPACna (NCBIeaa for proteins) format.
 // NOTE: if sequence is in a different format, the function below can be modified to convert
-// each byte into IUPACna encoding on the fly.  
+// each byte into IUPACna encoding on the fly.
 static int s_GetHash(const char* buffer, int length)
 {
     CChecksum crc(CChecksum::eCRC32ZIP);
@@ -540,34 +648,56 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     try { fasta.Write(*m_Bioseq, range); }
     catch (const CObjmgrUtilException& e) {
         if (e.GetErrCode() == CObjmgrUtilException::eBadLocation) {
-            NCBI_THROW(CInvalidDataException, eInvalidRange, 
+            NCBI_THROW(CInvalidDataException, eInvalidRange,
                        "Invalid sequence range");
         }
     }
     return out.str();
 }
 
-int CBlastDBExtractor::x_ExtractTaxId() 
+//int CBlastDBExtractor::x_ExtractTaxId()
+//{
+//    x_SetGi();
+//
+//    if (m_Gi) {
+//        if (m_Gi2TaxidMap.first != m_Oid)
+//        {
+//            m_Gi2TaxidMap.first = m_Oid;
+//            m_BlastDb.GetTaxIDs(m_Oid, m_Gi2TaxidMap.second);
+//        }
+//        return m_Gi2TaxidMap.second[m_Gi];
+//    }
+//    // for database without Gi:
+//    vector<int> taxid;
+//    m_BlastDb.GetTaxIDs(m_Oid, taxid);
+//    return taxid.size() ? taxid[0] : 0;
+//}
+
+void CBlastDBExtractor::x_ExtractTaxIds(set<int>& taxids)
 {
     x_SetGi();
 
     if (m_Gi) {
-        if (m_Gi2TaxidMap.first != m_Oid)
+        if (m_Gi2TaxidSetMap.first != m_Oid)
         {
-            m_Gi2TaxidMap.first = m_Oid;
-            m_BlastDb.GetTaxIDs(m_Oid, m_Gi2TaxidMap.second);
+            m_Gi2TaxidSetMap.first = m_Oid;
+            m_BlastDb.GetTaxIDs(m_Oid, m_Gi2TaxidSetMap.second);
         }
-        return m_Gi2TaxidMap.second[m_Gi];
+        taxids.clear();
+        const set<int>& taxid_set = m_Gi2TaxidSetMap.second[m_Gi];
+        taxids.insert(taxid_set.begin(), taxid_set.end());
+        return;
     }
     // for database without Gi:
-    vector <int> taxid;
+    vector<int> taxid;
     m_BlastDb.GetTaxIDs(m_Oid, taxid);
-    return taxid.size() ? taxid[0] : 0;
+    taxids.clear();
+    taxids.insert(taxid.begin(), taxid.end());
 }
 
-void 
-CBlastDBExtractor::x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, 
-                                        int algo_id) 
+void
+CBlastDBExtractor::x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges,
+                                        int algo_id)
 {
     ranges.clear();
     if (algo_id != -1) {
