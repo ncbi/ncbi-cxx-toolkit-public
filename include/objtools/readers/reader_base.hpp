@@ -208,6 +208,10 @@ protected:
     virtual CRef<CUser_object> x_MakeAsnConversionInfo(
         IMessageListener* );
 
+    bool xParseComment(
+        const CTempString&,
+        CRef<CSeq_annot>&);
+
     void
     ProcessError(
         CObjReaderLineException&,

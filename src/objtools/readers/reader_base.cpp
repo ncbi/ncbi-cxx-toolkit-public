@@ -95,6 +95,7 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/error_codes.hpp>
+#include <objtools/readers/distance_reader.hpp>
 
 #include <algorithm>
 
@@ -136,6 +137,8 @@ CReaderBase::GetReader(
         return new CFastaReader(flags);
     case CFormatGuess::eFiveColFeatureTable:
         return new CFeature_table_reader(flags);
+    case CFormatGuess::eDistanceMatrix:
+        return new CDistanceMatrixReader(flags);
     }
 }
 
@@ -277,7 +280,6 @@ void CReaderBase::x_SetBrowserRegion(
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> location( new CSeq_loc );
-    CSeq_interval& interval = location->SetInt();
 
     string strChrom;
     string strInterval;
@@ -290,25 +292,55 @@ void CReaderBase::x_SetBrowserRegion(
         ProcessError(*pErr, pEC);
     }
     CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
-    location->SetId( *id );
 
-    string strFrom;
-    string strTo;
-    if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Bad browser line: cannot parse browser position" ) );
-        ProcessError(*pErr, pEC);
-    }    
-    interval.SetFrom( NStr::StringToInt( strFrom ) - 1);
-    interval.SetTo( NStr::StringToInt( strTo ) - 1 );
-    interval.SetStrand( eNa_strand_unknown );
+    if (NStr::Compare(strInterval, "start-stop") == 0 )
+    {
+        location->SetWhole(*id);
+    }
+    else
+    {
+        string strFrom;
+        string strTo;
+        if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Bad browser line: cannot parse browser position" ) );
+            ProcessError(*pErr, pEC);
+        }  
+        try
+        {
+            int n_from,n_to;
 
-    CRef<CAnnotdesc> region( new CAnnotdesc() );
-    region->SetRegion( *location );
-    desc.Set().push_back( region );
+            n_from = NStr::StringToInt(strFrom, NStr::fAllowCommas);
+            n_to   = NStr::StringToInt(strTo, NStr::fAllowCommas);
+
+            CSeq_interval& interval = location->SetInt();
+            interval.SetFrom(n_from-1);
+            interval.SetTo(n_to-1);
+            interval.SetStrand( eNa_strand_unknown );
+            location->SetId( *id );
+
+        }
+        catch (const CStringException& e)
+        {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Bad browser line: cannot parse browser position" ) );
+            ProcessError(*pErr, pEC);
+            location.Release();
+        }
+    }
+
+    if (location.NotEmpty())
+    {
+        CRef<CAnnotdesc> region( new CAnnotdesc() );
+        region->SetRegion( *location );
+        desc.Set().push_back( region );
+    }
 }
     
 //  ----------------------------------------------------------------------------
@@ -397,6 +429,18 @@ void CReaderBase::x_SetTrackData(
     trackdata->AddField( strKey, strValue );
 }
 
+//  ----------------------------------------------------------------------------
+bool CReaderBase::xParseComment(
+    const CTempString& record,
+    CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
+//  ----------------------------------------------------------------------------
+{
+    if (NStr::StartsWith(record, "#")) {
+        return true;
+    }
+    return false;
+}
+ 
 //  ----------------------------------------------------------------------------
 void CReaderBase::x_AddConversionInfo(
     CRef<CSeq_annot >& annot,

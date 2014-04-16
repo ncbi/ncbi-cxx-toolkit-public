@@ -463,18 +463,6 @@ bool CBedReader::xParseFeatureUserFormat(
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedReader::xParseComment(
-    const CTempString& record,
-    CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
-//  ----------------------------------------------------------------------------
-{
-    if (NStr::StartsWith(record, "#")) {
-        return true;
-    }
-    return false;
-}
- 
-//  ----------------------------------------------------------------------------
 void CBedReader::x_SetFeatureDisplayData(
     CRef<CSeq_feat>& feature,
     const vector<string>& fields )

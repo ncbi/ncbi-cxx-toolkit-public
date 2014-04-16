@@ -269,10 +269,6 @@ protected:
         unsigned int,
         IMessageListener*);
 
-    bool xParseComment(
-        const CTempString&,
-        CRef<CSeq_annot>&);
-
     void x_SetFeatureLocation(
         CRef<CSeq_feat>&,
         const vector<string>&);
