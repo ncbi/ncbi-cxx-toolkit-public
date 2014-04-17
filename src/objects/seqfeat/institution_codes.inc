@@ -993,6 +993,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CIB<MEX-LaPaz>	s	Centro de Investigaciones Biologicas del Noroeste, S.C. (Mexico)",
 "CIB<MEX-Veracruz>	s	Universidad Veracruzana",
 "CIBC	s	International Institute of Biological Control",
+"CIBIO	s	Centro Iberoamericano de la Biodiversidad",
 "CIBM	s	Centro Invest. Biol. Noroeste",
 "CIC	s	Albertson College of Idaho, Biology Department",
 "CICC	c	China Center for Industrial Culture Collection",
