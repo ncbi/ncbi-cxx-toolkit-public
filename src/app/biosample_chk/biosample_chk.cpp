@@ -1314,7 +1314,7 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
     node::iterator descr = sample->insert(node("Descriptor"));
 
     if (!NStr::IsBlank(m_Comment)) {
-        descr->insert(node("Comment", m_Comment.c_str()));
+        descr->insert(node("Description", m_Comment.c_str()));
     }
 
 
