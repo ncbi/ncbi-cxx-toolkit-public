@@ -308,10 +308,12 @@ BOOST_AUTO_TEST_CASE(Test_SetTaxIds)
     BOOST_CHECK_EQUAL(taxid_set.size(), taxids.size());
     BOOST_CHECK(def_line.IsSetTaxid());
     BOOST_CHECK(!def_line.IsSetLinks());
+    BOOST_CHECK_EQUAL(def_line.GetTaxid(), 100001);
 
-    // Test SetTaxIds with multiple taxids.
+    // Test SetTaxIds with multiple taxids, initially no taxid.
     def_line.ResetTaxid();
     def_line.ResetLinks();
+    taxid_set.clear();
     taxid_set.insert(100002);
     taxid_set.insert(100003);
     taxid_set.insert(100004);
@@ -321,4 +323,35 @@ BOOST_AUTO_TEST_CASE(Test_SetTaxIds)
     BOOST_CHECK_EQUAL(taxid_set.size(), taxids.size());
     BOOST_CHECK(def_line.IsSetTaxid());
     BOOST_CHECK(def_line.IsSetLinks());
+    BOOST_CHECK_EQUAL(def_line.GetTaxid(), 100002);
+
+    // Test SetTaxIds with multiple taxids, initial taxid IS in set.
+    def_line.SetTaxid(100005);  // will not get overwritten
+    def_line.ResetLinks();
+    taxid_set.clear();
+    taxid_set.insert(100002);
+    taxid_set.insert(100003);
+    taxid_set.insert(100004);
+    taxid_set.insert(100005);
+    def_line.SetTaxIds(taxid_set);
+    taxids = def_line.GetTaxIds();
+    BOOST_CHECK_EQUAL(taxid_set.size(), taxids.size());
+    BOOST_CHECK(def_line.IsSetTaxid());
+    BOOST_CHECK(def_line.IsSetLinks());
+    BOOST_CHECK_EQUAL(def_line.GetTaxid(), 100005);
+
+    // Test SetTaxIds with multiple taxids, initial taxid IS NOT in set.
+    def_line.SetTaxid(100001);  // will get overwritten
+    def_line.ResetLinks();
+    taxid_set.clear();
+    taxid_set.insert(100002);
+    taxid_set.insert(100003);
+    taxid_set.insert(100004);
+    taxid_set.insert(100005);
+    def_line.SetTaxIds(taxid_set);
+    taxids = def_line.GetTaxIds();
+    BOOST_CHECK_EQUAL(taxid_set.size(), taxids.size());
+    BOOST_CHECK(def_line.IsSetTaxid());
+    BOOST_CHECK(def_line.IsSetLinks());
+    BOOST_CHECK_EQUAL(def_line.GetTaxid(), 100002);
 }

@@ -71,7 +71,7 @@ CBlast_def_line::SetTaxIds(const CBlast_def_line::TTaxIds& t)
         // (2) that value is non-zero;
         // (3) it's already present in the input set.
         bool overwrite = true;
-        if (CanGetTaxid()) {
+        if (IsSetTaxid()) {
             const TTaxid taxid = GetTaxid();
             if (taxid != 0) {
                 TTaxIds::iterator it = t.find(taxid);
