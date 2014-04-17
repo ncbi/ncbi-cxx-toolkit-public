@@ -50,10 +50,10 @@ CGffBaseRecord::CGffBaseRecord(
     const string& id):
 //  ----------------------------------------------------------------------------
     mSeqId(""),
+    mType("."),
+    mMethod("."),
     mSeqStart(0),
     mSeqStop(0),
-    mMethod("."),
-    mType("."),
     mScore("."),
     mStrand("."),
     mPhase("."),
@@ -71,10 +71,10 @@ CGffBaseRecord::CGffBaseRecord(
     const CGffBaseRecord& other):
 //  ----------------------------------------------------------------------------
     mSeqId(other.mSeqId),
+    mType(other.mType),
+    mMethod(other.mMethod),
     mSeqStart(other.mSeqStart),
     mSeqStop(other.mSeqStop),
-    mMethod(other.mMethod),
-    mType(other.mType),
     mScore(other.mScore),
     mStrand(other.mStrand),
     mPhase(other.mPhase),
