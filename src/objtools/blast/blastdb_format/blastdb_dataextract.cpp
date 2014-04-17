@@ -372,12 +372,19 @@ string CBlastDBExtractor::ExtractTitle() {
 string CBlastDBExtractor::ExtractTaxId() {
     set<int> taxids;
     x_ExtractTaxIds(taxids);
-    set<int>::iterator taxids_iter = taxids.begin();
-    string str(NStr::IntToString(*taxids_iter));
-    for (++taxids_iter; taxids_iter != taxids.end(); ++taxids_iter) {
-        str += SEPARATOR + NStr::IntToString(*taxids_iter);
+    if (taxids.empty()) {
+        return NOT_AVAILABLE;
     }
-    return str;
+    set<int>::iterator taxids_iter = taxids.begin();
+    string retval;
+    ITERATE(set<int>, taxids_iter, taxids) {
+        if (retval.empty()) {
+            retval = NStr::IntToString(*taxids_iter);
+        } else {
+            retval += SEPARATOR + NStr::IntToString(*taxids_iter);
+        }
+    }
+    return retval;
 }
 
 //string CBlastDBExtractor::ExtractCommonTaxonomicName() {
