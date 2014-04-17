@@ -1236,8 +1236,11 @@ void CFeatureItem::x_AddQualSeqfeatNote(CBioseqContext &ctx)
                             // don't propagate tRNAscan-SE comments to irrelevant features
                             continue;
                         }
+                        string comm = comment;
+                        TrimSpacesAndJunkFromEnds( comm, false );
+                        RemovePeriodFromEnd( comm, true );
                         x_AddQual(eFQ_seqfeat_note,
-                            new CFlatStringQVal(comment));
+                            new CFlatStringQVal(comm));
                     }
             }
         }
