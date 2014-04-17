@@ -47,28 +47,39 @@ CInstInfoMap::GetInstitutionVoucherInfo(
 {
     // the map that maps name to lots of information
 
-    static const string s_atcc_base("http://www.atcc.org/Products/All/");
-    static const string s_bcrc_base("http://strain.bcrc.firdi.org.tw/BSAS/controller?event=SEARCH&bcrc_no=");
-    static const string s_cas_base("http://collections.calacademy.org/herp/specimen/");
-    static const string s_cbs_base("http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+");
-    static const string s_ccap_base("http://www.ccap.ac.uk/strain_info.php?Strain_No=");
-    static const string s_ccmp_base("https://ccmp.bigelow.org/node/1/strain/CCMP");
-    static const string s_ccug_base("http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=");
-    static const string s_cori_base("http://ccr.coriell.org/Sections/Search/Search.aspx?q=");
-    static const string s_dsmz_base("http://www.dsmz.de/catalogues/details/culture/DSM-");
-    static const string s_fsu_base("http://www.prz.uni-jena.de/data.php?fsu=");
-    static const string s_kctc_base("http://www.brc.re.kr/English/_SearchView.aspx?sn=");
-    static const string s_ku_base("http://collections.nhm.ku.edu/");
-    static const string s_lcr_base("http://scd.landcareresearch.co.nz/Specimen/");
-    static const string s_mcz_base("http://mczbase.mcz.harvard.edu/guid/");
-    static const string s_ncimb_base("http://www.ncimb.com/BioloMICS.aspx?Table=NCIMBstrains&ExactMatch=T&Fields=All&Name=NCIMB%20");
-    static const string s_pcc_base("http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+");
-    static const string s_pcmb_base("http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=");
-    static const string s_sag_base("http://sagdb.uni-goettingen.de/detailedList.php?str_number=");
-    static const string s_tgrc_base("http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=");
-    static const string s_uam_base("http://arctos.database.museum/guid/");
-    static const string s_usnm_base("http://collections.mnh.si.edu/services/resolver/resolver.php?");
-    static const string s_ypm_base("http://peabody.research.yale.edu/cgi-bin/Query.Ledger?");
+    static const string  s_acbr_base("http://www.acbr-database.at/BioloMICS.aspx?Link=T&DB=0&Table=0&Descr=");
+    static const string  s_atcc_base("http://www.atcc.org/Products/All/");
+    static const string  s_bcrc_base("https://catalog.bcrc.firdi.org.tw/BSAS_cart/controller?event=SEARCH&bcrc_no=");
+    static const string  s_cas_base("http://collections.calacademy.org/herp/specimen/");
+    static const string  s_cbs_base("http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+");
+    static const string  s_ccap_base("http://www.ccap.ac.uk/strain_info.php?Strain_No=");
+    static const string  s_ccmp_base("https://ccmp.bigelow.org/node/1/strain/CCMP");
+    static const string  s_ccug_base("http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=");
+    static const string  s_cfmr_base("http://www.fpl.fs.fed.us/search/mycologysearch_action.php?sorting_rule=1u&phrasesAndKeywords02=");
+    static const string  s_cori_base("http://ccr.coriell.org/Sections/Search/Search.aspx?q=");
+    static const string  s_dsmz_base("http://www.dsmz.de/catalogues/details/culture/DSM-");
+    static const string  s_frr_base("http://www.foodscience.csiro.au/cgi-bin/rilax/search.pl?stpos=0&stype=AND&query=");
+    static const string  s_fsu_base("http://www.prz.uni-jena.de/data.php?fsu=");
+    static const string  s_jcm_base("http://www.jcm.riken.jp/cgi-bin/jcm/jcm_number?JCM=");
+    static const string  s_kctc_base("http://www.brc.re.kr/English/_SearchView.aspx?sn=");
+    static const string  s_ku_base("http://collections.nhm.ku.edu/");
+    static const string  s_lcr_base("http://scd.landcareresearch.co.nz/Specimen/");
+    static const string  s_maff_base("http://www.gene.affrc.go.jp/databases-micro_search_detail_en.php?maff=");
+    static const string  s_mcz_base("http://mczbase.mcz.harvard.edu/guid/");
+    static const string  s_mtcc_base("http://mtcc.imtech.res.in/catalogue_hyper.php?a=");
+    static const string  s_mucl_base("http://bccm.belspo.be/db/mucl_search_results.php?FIRSTITEM=1&LIST1=STRAIN_NUMBER&TEXT1=");
+    static const string  s_nbrc_base("http://www.nbrc.nite.go.jp/NBRC2/NBRCCatalogueDetailServlet?ID=NBRC&CAT=");
+    static const string  s_ncimb_base("http://www.ncimb.com/BioloMICS.aspx?Table=NCIMBstrains&ExactMatch=T&Fields=All&Name=NCIMB%20");
+    static const string  s_nrrl_base("http://nrrl.ncaur.usda.gov/cgi-bin/usda/mold/report.html?nrrlcodes=");
+    static const string  s_pcc_base("http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+");
+    static const string  s_pcmb_base("http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=");
+    static const string  s_pycc_base("http://pycc.bio-aware.com/BioloMICS.aspx?Table=PYCC%20strains&Name=PYCC%20");
+    static const string  s_sag_base("http://sagdb.uni-goettingen.de/detailedList.php?str_number=");
+    static const string  s_tgrc_base("http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=");
+    static const string  s_uam_base("http://arctos.database.museum/guid/");
+    static const string  s_uamh_base("https://secure.devonian.ualberta.ca/uamh/details.php?id=");
+    static const string  s_usnm_base("http://collections.mnh.si.edu/services/resolver/resolver.php?");
+    static const string  s_ypm_base("http://peabody.research.yale.edu/cgi-bin/Query.Ledger?");
 
     static const string s_colon_pfx(":");
     static const string s_uscr_pfx("_");
@@ -85,18 +96,23 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string s_ypmmam_pfx("LE=mam&SU=0&ID=");
     static const string s_ypmorn_pfx("LE=orn&SU=0&ID=");
 
+    static const string s_acbr_sfx("&Fields=All&ExactMatch=T");
     static const string s_atcc_sfx(".aspx");
-    static const string s_bcrc_sfx("&type_id=6&keyword=;;");
+    static const string s_bcrc_sfx("&type_id=9&keyword=");
+    static const string s_mucl_sfx("&LIST2=ALL+FIELDS&CONJ=OR&RANGE=20&B3=Run+Query");
+    static const string s_pycc_sfx("&Fields=All&ExactMatch=T");
 
     typedef SStaticPair<const char*, TVoucherInfoRef> TVoucherInfoElem;
     static const TVoucherInfoElem sc_voucher_info_map[] = {
+        { "ACBR",             TVoucherInfoRef(new SVoucherInfo(&s_acbr_base,  false, NULL,          &s_acbr_sfx, "Austrian Center of Biological Resources and Applied Mycology") ) },
         { "ATCC",             TVoucherInfoRef(new SVoucherInfo(&s_atcc_base,  false, NULL,          &s_atcc_sfx, "American Type Culture Collection") ) },
         { "BCRC",             TVoucherInfoRef(new SVoucherInfo(&s_bcrc_base,  false, NULL,          &s_bcrc_sfx, "Bioresource Collection and Research Center") ) },
-        { "Cas:HERP",         TVoucherInfoRef(new SVoucherInfo(&s_cas_base,   true,  &s_colon_pfx,  NULL,        "California Academy of Sciences, Herpetology collection") ) },
+        { "CAS:HERP",         TVoucherInfoRef(new SVoucherInfo(&s_cas_base,   true,  &s_colon_pfx,  NULL,        "California Academy of Sciences, Herpetology collection") ) },
         { "CBS",              TVoucherInfoRef(new SVoucherInfo(&s_cbs_base,   false, NULL,          NULL,        "Centraalbureau voor Schimmelcultures, Fungal and Yeast Collection") ) },
         { "CCAP",             TVoucherInfoRef(new SVoucherInfo(&s_ccap_base,  false, NULL,          NULL,        "Culture Collection of Algae and Protozoa") ) },
         { "CCMP",             TVoucherInfoRef(new SVoucherInfo(&s_ccmp_base,  false, NULL,          NULL,        "Provasoli-Guillard National Center for Culture of Marine Phytoplankton") ) },
         { "CCUG",             TVoucherInfoRef(new SVoucherInfo(&s_ccug_base,  false, NULL,          NULL,        "Culture Collection, University of Goteborg, Department of Clinical Bacteriology") ) },
+        { "CFMR",             TVoucherInfoRef(new SVoucherInfo(&s_cfmr_base,  false, NULL,          NULL,        "Center for Forest Mycology Research") ) },
         { "CHR",              TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,   true,  &s_uscr_pfx,   NULL,        "Allan Herbarium, Landcare Research New Zealand Limited") ) },
         { "CRCM:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Washington State University, Charles R. Conner Museum, bird collection") ) },
         { "Coriell",          TVoucherInfoRef(new SVoucherInfo(&s_cori_base,  false, NULL,          NULL,        "Coriell Institute for Medical Research") ) },
@@ -108,13 +124,16 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "DMNS:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Ornithology Collections") ) },
         { "DMNS:Mamm",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Mammology Collection") ) },
         { "DSM",              TVoucherInfoRef(new SVoucherInfo(&s_dsmz_base,  false, NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ) },
+        { "FRR",              TVoucherInfoRef(new SVoucherInfo(&s_frr_base,   false, NULL,          NULL,        "Food Science Australia, Ryde") ) },
         { "FSU<DEU>",         TVoucherInfoRef(new SVoucherInfo(&s_fsu_base,   false, NULL,          NULL,        "Jena Microbial Resource Collection") ) },
         { "ICMP",             TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,   true,  &s_uscr_pfx,   NULL,        "International Collection of Microorganisms from Plants") ) },
+        { "JCM",              TVoucherInfoRef(new SVoucherInfo(&s_jcm_base,   false, NULL,          NULL,        "Japan Collection of Microorganisms") ) },
         { "KCTC",             TVoucherInfoRef(new SVoucherInfo(&s_kctc_base,  false, NULL,          NULL,        "Korean Collection for Type Cultures") ) },
         { "KNWR:Ento",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Kenai National Wildlife Refuge, Entomology Collection") ) },
         { "KU:I",             TVoucherInfoRef(new SVoucherInfo(&s_ku_base,    false, &s_kui_pfx,    NULL,        "University of Kansas, Museum of Natural History, Ichthyology collection") ) },
         { "KU:IT",            TVoucherInfoRef(new SVoucherInfo(&s_ku_base,    false, &s_kuit_pfx,   NULL,        "University of Kansas, Museum of Natural History, Ichthyology tissue collection") ) },
         { "KWP:Ento",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Kenelm W. Philip Collection, University of Alaska Museum of the North, Lepidoptera collection") ) },
+        { "MAFF",             TVoucherInfoRef(new SVoucherInfo(&s_maff_base,  false, NULL,          NULL,        "Genebank, Ministry of Agriculture Forestry and Fisheries") ) },
         { "MCZ:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,   true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Ornithology Collection") ) },
         { "MCZ:Cryo",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,   true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Cryogenic Collection") ) },
         { "MCZ:Ent",          TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,   true,  &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Entomology Collection") ) },
@@ -129,6 +148,8 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "MSB:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Bird Collection") ) },
         { "MSB:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Mammal Collection") ) },
         { "MSB:Para",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Southwestern Biology, Parasitology Collection") ) },
+        { "MTCC",             TVoucherInfoRef(new SVoucherInfo(&s_mtcc_base,  false, NULL,          NULL,        "Microbial Type Culture Collection & Gene Bank") ) },
+        { "MUCL",             TVoucherInfoRef(new SVoucherInfo(&s_mucl_base,  false, NULL,          &s_mucl_sfx, "Mycotheque de l'Universite Catholique de Louvain") ) },
         { "MVZ:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Bird Collection") ) },
         { "MVZ:Egg",          TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Egg Collection") ) },
         { "MVZ:Herp",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection") ) },
@@ -137,13 +158,16 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "MVZ:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection") ) },
         { "MVZ:Page",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Notebook Page Collection") ) },
         { "MVZObs:Herp",      TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection") ) },
+        { "NBRC",             TVoucherInfoRef(new SVoucherInfo(&s_nbrc_base,  false, NULL,          NULL,        "NITE Biological Resource Center") ) },
         { "NBSB:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection") ) },
         { "NCIMB",            TVoucherInfoRef(new SVoucherInfo(&s_ncimb_base, false, NULL,          NULL,        "National Collections of Industrial Food and Marine Bacteria (incorporating the NCFB)") ) },
+        { "NRRL",             TVoucherInfoRef(new SVoucherInfo(&s_nrrl_base,  false, NULL,          NULL,        "Agricultural Research Service Culture Collection") ) },
         { "NZAC",             TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,   true,  &s_uscr_pfx,   NULL,        "New Zealand Arthropod Collection") ) },
         { "PCC",              TVoucherInfoRef(new SVoucherInfo(&s_pcc_base,   false, NULL,          NULL,        "Pasteur Culture Collection of Cyanobacteria") ) },
         { "PCMB",             TVoucherInfoRef(new SVoucherInfo(&s_pcmb_base,  false, NULL,          NULL,        "The Pacific Center for Molecular Biodiversity") ) },
         { "PDD",              TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,   true,  &s_uscr_pfx,   NULL,        "New Zealand Fungal Herbarium") ) },
         { "PSU<USA-OR>:Mamm", TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   false, &s_psu_pfx,    NULL,        "Portland State University, Vertebrate Biology Museum, Mammal Collection") ) },
+        { "PYCC",             TVoucherInfoRef(new SVoucherInfo(&s_pycc_base,  false, NULL,          &s_pycc_sfx, "Portuguese Yeast Culture Collection") ) },
         { "SAG",              TVoucherInfoRef(new SVoucherInfo(&s_sag_base,   false, NULL,          NULL,        "Sammlung von Algenkulturen at Universitat Gottingen") ) },
         { "TGRC",             TVoucherInfoRef(new SVoucherInfo(&s_tgrc_base,  false, NULL,          NULL,        "C.M. Rick Tomato Genetics Resource Center") ) },
         { "UAM:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Bird Collection") ) },
@@ -156,6 +180,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "UAM:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Mammal Collection") ) },
         { "UAM:Moll",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Mollusc Collection") ) },
         { "UAM:Paleo",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, paleontology collection") ) },
+        { "UAMH",             TVoucherInfoRef(new SVoucherInfo(&s_uamh_base,  false, NULL,          NULL,        "University of Alberta Microfungus Collection and Herbarium") ) },
         { "UAMObs:Mamm",      TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "University of Alaska, Museum of the North, Mammal Collection") ) },
         { "USNM:Birds",       TVoucherInfoRef(new SVoucherInfo(&s_usnm_base,  false, &s_usnm_pfx,   NULL,        "National Museum of Natural History, Smithsonian Institution, Division of Birds") ) },
         { "WNMU:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  &s_colon_pfx,  NULL,        "Western New Mexico University Museum, bird collection") ) },
