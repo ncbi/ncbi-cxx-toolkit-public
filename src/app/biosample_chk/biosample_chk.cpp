@@ -56,6 +56,7 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objects/seqfeat/PCRReaction.hpp>
 #include <objects/seqfeat/PCRPrimer.hpp>
@@ -97,7 +98,6 @@
 
 
 #include "util.hpp"
-#include "src_table_column.hpp"
 #include "struc_table_column.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -991,10 +991,10 @@ void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh, bool with_id)
 
 	if (src_desc_ci) {
 		const CBioSource& src = src_desc_ci->GetSource();
-	    TSrcTableColumnList src_fields = GetSourceFields(src);
-		ITERATE(TSrcTableColumnList, it, src_fields) {
-			AddValueToTable(m_Table, (*it)->GetLabel(), (*it)->GetFromBioSource(src), row);
-		}
+        CBioSource::TNameValList src_vals = src.GetNameValPairs();
+        ITERATE(CBioSource::TNameValList, it, src_vals) {
+            AddValueToTable(m_Table, it->first, it->second, row);
+        }
 	}
     
     if (m_CompareStructuredComments) {
@@ -1109,30 +1109,6 @@ void AddBioSourceToAttributes(node& organism, node& sample_attrs, const CBioSour
                     attribute_name = CSubSource::GetSubtypeName((*it)->GetSubtype()); 
                 }
                 s_AddSamplePair(sample_attrs, attribute_name, (*it)->GetName());
-            }
-        }
-    }
-    if (src.IsSetPcr_primers()) {
-        ITERATE(CBioSource::TPcr_primers::Tdata, it, src.GetPcr_primers().Get()) {
-            if ((*it)->IsSetForward()) {
-                ITERATE(CPCRReaction::TForward::Tdata, fit, (*it)->GetForward().Get()) {
-                    if ((*fit)->IsSetName()) {
-                        s_AddSamplePair(sample_attrs, kPcrForwardName, (*fit)->GetName().Get());
-                    }
-                    if ((*fit)->IsSetSeq()) {
-                        s_AddSamplePair(sample_attrs, kPcrForwardSeq, (*fit)->GetSeq().Get());
-                    }                        
-                }
-            }
-            if ((*it)->IsSetReverse()) {
-                ITERATE(CPCRReaction::TForward::Tdata, rit, (*it)->GetReverse().Get()) {
-                    if ((*rit)->IsSetName()) {
-                        s_AddSamplePair(sample_attrs, kPcrReverseName, (*rit)->GetName().Get());
-                    }
-                    if ((*rit)->IsSetSeq()) {
-                        s_AddSamplePair(sample_attrs, kPcrReverseSeq, (*rit)->GetSeq().Get());
-                    }                        
-                }
             }
         }
     }

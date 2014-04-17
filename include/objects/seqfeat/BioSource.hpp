@@ -120,6 +120,10 @@ public:
 
     TFieldDiffList GetBiosampleDiffs(const CBioSource& biosample) const;
 
+    typedef pair<string, string> TNameVal;
+    typedef vector<TNameVal> TNameValList;
+
+    TNameValList GetNameValPairs() const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -127,8 +131,9 @@ private:
     CBioSource& operator=(const CBioSource& value);
 
     void x_ClearCoordinatedBioSampleSubSources();
-    void x_AddOrgRefFieldDiffs(TFieldDiffList& list, const CBioSource& biosample) const;
-    void x_AddSubtypeFieldDiffs(TFieldDiffList& list, const CBioSource& biosample) const;
+    TNameValList x_GetOrgModNameValPairs() const;
+    TNameValList x_GetSubtypeNameValPairs() const;
+
 };
 
 

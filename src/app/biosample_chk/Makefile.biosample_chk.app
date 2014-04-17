@@ -7,7 +7,7 @@
 #################################
 
 APP = biosample_chk
-SRC = biosample_chk util src_table_column struc_table_column
+SRC = biosample_chk util struc_table_column
 LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) xvalidate xobjedit xcleanup $(XFORMAT_LIBS) \
       xalnmgr xobjutil valid valerr submit taxon3 gbseq \
       tables xregexp xmlwrapp xser $(PCRE_LIB) $(OBJMGR_LIBS)

@@ -660,6 +660,106 @@ void CBioSource::x_ClearCoordinatedBioSampleSubSources()
 }
 
 
+const string kOrgModNote = "orgmod_note";
+const string kSubSrcNote = "subsrc_note";
+const string kOrganismName = "Organism Name";
+const string kTaxId = "Tax ID";
+
+CBioSource::TNameValList CBioSource::GetNameValPairs() const
+{
+    TNameValList list;
+
+    if (IsSetOrg() && GetOrg().IsSetTaxname()) {
+        list.push_back(TNameVal(kOrganismName, GetOrg().GetTaxname()));
+    }
+    if (IsSetOrg()) {
+        try {
+            int taxid = GetOrg().GetTaxId();
+            string val = NStr::NumericToString(taxid);
+            list.push_back(TNameVal(kTaxId, val));
+        } catch (...) {
+        }
+    }
+
+    TNameValList extra = x_GetOrgModNameValPairs();
+    ITERATE(TNameValList, it, extra) {
+        list.push_back(*it);
+    }
+    extra = x_GetSubtypeNameValPairs();
+    ITERATE(TNameValList, it, extra) {
+        list.push_back(*it);
+    }
+
+    return list;
+}
+
+
+int s_iCompareNameVals (const CBioSource::TNameVal& f1, const CBioSource::TNameVal& f2)
+{
+    int cmp = NStr::Compare (f1.first, f2.first);
+    if (cmp == 0) {
+        cmp = NStr::CompareNocase (f1.second, f2.second);
+        if (cmp == 0) {
+            cmp = NStr::Compare(f1.second, f2.second);
+        }
+    }
+    return cmp;
+}
+
+
+bool s_CompareNameVals (const CBioSource::TNameVal& f1, const CBioSource::TNameVal& f2)
+{ 
+    int cmp = s_iCompareNameVals (f1, f2);
+    if (cmp < 0) {
+        return true;
+    } else {
+        return false;
+    }        
+}
+
+
+CBioSource::TNameValList CBioSource::x_GetOrgModNameValPairs() const
+{
+    TNameValList list;
+    if (IsSetOrgMod()) {
+        ITERATE(COrgName::TMod, it, GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubname() && (*it)->IsSetSubtype()) {
+                string label;
+                if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
+                    label = kOrgModNote;
+                } else {
+                    label = COrgMod::GetSubtypeName((*it)->GetSubtype());
+                }
+                list.push_back(TNameVal(label, (*it)->GetSubname()));
+            }
+        }
+    }
+    sort(list.begin(), list.end(), s_CompareNameVals);
+    return list;
+}
+
+
+CBioSource::TNameValList CBioSource::x_GetSubtypeNameValPairs() const
+{
+    TNameValList list;
+    if (IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, it, GetSubtype()) {
+            if ((*it)->IsSetName() && (*it)->IsSetSubtype()) {
+                string label;
+                if ((*it)->GetSubtype() == CSubSource::eSubtype_other) {
+                    label = kSubSrcNote;
+                } else {
+                    label = CSubSource::GetSubtypeName((*it)->GetSubtype());
+                }
+                list.push_back(TNameVal(label, (*it)->GetName()));
+            }
+        }
+    }
+    sort(list.begin(), list.end(), s_CompareNameVals);
+    return list;
+}
+
+
 typedef enum {
   eConflictIgnoreAll = 0,
   eConflictIgnoreMissingInBioSource,
@@ -814,91 +914,14 @@ void AddFieldDiff (TFieldDiffList& list,
     }
 }
 
-const string& kOrgModNote = "orgmod_note";
-const string& kSubSrcNote = "subsrc_note";
-const string kOrganismName = "Organism Name";
-
-
-typedef pair<string, string> TNameVal;
-typedef vector<TNameVal> TNameValList;
-
-
-int s_iCompareNameVals (const TNameVal& f1, const TNameVal& f2)
-{
-    int cmp = NStr::Compare (f1.first, f2.first);
-    if (cmp == 0) {
-        cmp = NStr::CompareNocase (f1.second, f2.second);
-        if (cmp == 0) {
-            cmp = NStr::Compare(f1.second, f2.second);
-        }
-    }
-    return cmp;
-}
-
-
-bool s_CompareNameVals (const TNameVal& f1, const TNameVal& f2)
-{ 
-    int cmp = s_iCompareNameVals (f1, f2);
-    if (cmp < 0) {
-        return true;
-    } else {
-        return false;
-    }        
-}
-
-
-TNameValList GetOrgModVals(const COrg_ref& org)
-{
-    TNameValList list;
-
-    if (org.IsSetOrgMod()) {
-        ITERATE(COrgName::TMod, it, org.GetOrgname().GetMod()) {
-            if ((*it)->IsSetSubname() && (*it)->IsSetSubtype()) {
-                string label;
-                if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
-                    label = kOrgModNote;
-                } else {
-                    label = COrgMod::GetSubtypeName((*it)->GetSubtype());
-                }
-                list.push_back(TNameVal(label, (*it)->GetSubname()));
-            }
-        }
-    }
-    sort(list.begin(), list.end(), s_CompareNameVals);
-
-    return list;
-}
-
-
-TNameValList GetSubtypeVals(const CBioSource& src)
-{
-    TNameValList list;
-
-    if (src.IsSetSubtype()) {
-        ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
-            if ((*it)->IsSetName() && (*it)->IsSetSubtype()) {
-                string label;
-                if ((*it)->GetSubtype() == CSubSource::eSubtype_other) {
-                    label = kSubSrcNote;
-                } else {
-                    label = CSubSource::GetSubtypeName((*it)->GetSubtype());
-                }
-                list.push_back(TNameVal(label, (*it)->GetName()));
-            }
-        }
-    }
-    sort(list.begin(), list.end(), s_CompareNameVals);
-
-    return list;
-}
 
 
 void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
-                                   TNameValList& list1, 
-                                   TNameValList& list2)
+                                   CBioSource::TNameValList& list1, 
+                                   CBioSource::TNameValList& list2)
 {
-    TNameValList::iterator it1 = list1.begin();
-    TNameValList::iterator it2 = list2.begin();
+    CBioSource::TNameValList::iterator it1 = list1.begin();
+    CBioSource::TNameValList::iterator it2 = list2.begin();
 
     while (it1 != list1.end() && it2 != list2.end()) {
         int cmp = NStr::Compare(it1->first, it2->first);
@@ -941,52 +964,14 @@ void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
 }
 
 
-void CBioSource::x_AddOrgRefFieldDiffs(TFieldDiffList& list, const CBioSource& biosample) const
-{
-    string taxname1 = "";
-    string taxname2 = "";
-
-    if (IsSetOrg() && GetOrg().IsSetTaxname()) {
-        taxname1 = GetOrg().GetTaxname();
-    }
-    if (biosample.IsSetOrg() && biosample.GetOrg().IsSetTaxname()) {
-        taxname2 = biosample.GetOrg().GetTaxname();
-    }
-    AddFieldDiff(list, kOrganismName, taxname1, taxname2);
-
-    TNameValList list1;
-    TNameValList list2;
-    if (IsSetOrg()) {
-        list1 = GetOrgModVals(GetOrg());
-    }
-    if (biosample.IsSetOrg()) {
-        list2 = GetOrgModVals(biosample.GetOrg());
-    }
-    GetFieldDiffsFromNameValLists(list, list1, list2);
-}
-
-
-void CBioSource::x_AddSubtypeFieldDiffs(TFieldDiffList& list, const CBioSource& biosample) const
-{
-    TNameValList list1;
-    TNameValList list2;
-
-    if (IsSetSubtype()) {
-        list1 = GetSubtypeVals(*this);
-    }
-    if (biosample.IsSetSubtype()) {
-        list2 = GetSubtypeVals(biosample);
-    }
-    GetFieldDiffsFromNameValLists(list, list1, list2);
-}
-
-
 TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
 {
     TFieldDiffList rval;
 
-    x_AddOrgRefFieldDiffs(rval, biosample);
-    x_AddSubtypeFieldDiffs(rval, biosample);
+    TNameValList src_list = GetNameValPairs();
+    TNameValList sample_list = biosample.GetNameValPairs();
+
+    GetFieldDiffsFromNameValLists(rval, src_list, sample_list);
 
     return rval;
 }
