@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class CDistanceMatrixReader: public CReaderBase
+class NCBI_XOBJREAD_EXPORT CDistanceMatrixReader: public CReaderBase
 {
 public:
     CDistanceMatrixReader(unsigned int = fNormal);
@@ -62,7 +62,8 @@ public:
 protected:
 
     CRef<CSeq_feat> xParseFeatureUCSCFormat(const string& Line, int Number);
-    void x_SetFeatureLocation(CRef<CSeq_feat>& feature, const vector<string>& fields);
+    void x_SetFeatureLocation
+            (CRef<CSeq_feat>& feature, const vector<string>& fields);
 
     void xSmartFieldSplit(vector<string>& fields,
         CTempString line);
