@@ -67,6 +67,7 @@ CWorkerNodeJobContext* CJobCommitterThread::AllocJobContext()
     CWorkerNodeJobContext* job_context = m_JobContextPool.Shift();
 
     job_context->m_Job.Reset();
+    job_context->m_JobGeneration = m_WorkerNode->GetCurrentJobGeneration();
 
     return job_context;
 }

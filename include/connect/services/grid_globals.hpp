@@ -122,14 +122,14 @@ public:
     void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level)
     {
         m_ShutdownLevel = level;
-        x_InterruptUDPPortListening();
+        InterruptUDPPortListening();
     }
     void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level,
             int exit_code)
     {
         m_ShutdownLevel = level;
         m_ExitCode = exit_code;
-        x_InterruptUDPPortListening();
+        InterruptUDPPortListening();
     }
     bool IsShuttingDown();
 
@@ -147,6 +147,8 @@ public:
 
     void KillNode();
 
+    void InterruptUDPPortListening();
+
 private:
     CAtomicCounter_WithAutoInit m_JobsStarted;
     bool m_ReuseJobObject;
@@ -157,8 +159,6 @@ private:
     const CTime  m_StartTime;
     CGridWorkerNode* m_Worker;
     unsigned short m_UDPPort;
-
-    void x_InterruptUDPPortListening();
 
     CGridGlobals(const CGridGlobals&);
     CGridGlobals& operator=(const CGridGlobals&);

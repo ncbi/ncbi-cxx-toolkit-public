@@ -55,6 +55,14 @@ const unsigned int kNetScheduleMaxDBDataSize = 2048;
 const unsigned int kNetScheduleMaxDBErrSize = 4096;
 
 
+/// Defines whether the job queue is paused, and if so, defines
+/// the pause mode set by the administrator.
+enum ENetScheduleQueuePauseMode {
+    eNSQ_NoPause,
+    eNSQ_WithPullback,
+    eNSQ_WithoutPullback
+};
+
 /** @addtogroup NetScheduleClient
  *
  * @{
@@ -231,7 +239,10 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     void GetQueueParams(TQueueParams& queue_params);
 
     /// Get job details
-    EJobStatus GetJobDetails(CNetScheduleJob& job, time_t* job_exptime = NULL);
+    EJobStatus GetJobDetails(
+            CNetScheduleJob& job,
+            time_t* job_exptime = NULL,
+            ENetScheduleQueuePauseMode* pause_mode = NULL);
 
     /// Update the progress_message field of the job structure.
     /// Prior to calling this method, the caller must set the
@@ -474,12 +485,16 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// @param job_exptime
     ///    Number of seconds since EPOCH when the job will expire
     ///    on the server.
+    /// @param pause_mode
+    ///    Queue pause mode set by the administrator.
     ///
     /// @return The current job status. eJobNotFound is returned if the job
     ///         cannot be found (job record has expired).
     ///
     CNetScheduleAPI::EJobStatus GetJobStatus(
-            const string& job_key, time_t* job_exptime = NULL);
+            const string& job_key,
+            time_t* job_exptime = NULL,
+            ENetScheduleQueuePauseMode* pause_mode = NULL);
 
     /// Get full information about the specified job.
     ///
@@ -495,7 +510,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     /// @return The current job status.
     ///
     CNetScheduleAPI::EJobStatus GetJobDetails(
-            CNetScheduleJob& job, time_t* job_exptime = NULL);
+            CNetScheduleJob& job,
+            time_t* job_exptime = NULL,
+            ENetScheduleQueuePauseMode* pause_mode = NULL);
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -639,12 +656,16 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     /// @param job_exptime
     ///    Number of seconds since EPOCH when the job will expire
     ///    on the server.
+    /// @param pause_mode
+    ///    Queue pause mode set by the administrator.
     ///
     /// @return The current job status. eJobNotFound is returned if the job
     ///         cannot be found (job record has expired).
     ///
-    CNetScheduleAPI::EJobStatus GetJobStatus(const string& job_key,
-            time_t* job_exptime = NULL);
+    CNetScheduleAPI::EJobStatus GetJobStatus(
+            const string& job_key,
+            time_t* job_exptime = NULL,
+            ENetScheduleQueuePauseMode* pause_mode = NULL);
 
     /// Switch the job back to the "Pending" status. It will be
     /// run again on a different worker node.

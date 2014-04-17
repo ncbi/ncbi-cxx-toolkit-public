@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 class CGetVersionProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
-    virtual void Process(const string& request,
+    virtual void Process(const string& /*request*/,
                          CNcbiOstream& os,
                          CWorkerNodeControlServer* control_server)
     {
@@ -66,7 +66,7 @@ public:
     }
 };
 
-class CShutdownProcessor : public CWorkerNodeControlServer::IRequestProcessor
+class CAdminCmdProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
     virtual bool Authenticate(const string& host,
@@ -88,6 +88,13 @@ public:
         return false;
     }
 
+protected:
+    string m_Host;
+};
+
+class CShutdownProcessor : public CAdminCmdProcessor
+{
+public:
     virtual void Process(const string& request,
                          CNcbiOstream& os,
                          CWorkerNodeControlServer* /*control_server*/)
@@ -108,16 +115,50 @@ public:
                 m_Host);
         }
     }
+};
 
-private:
-    string m_Host;
+class CSuspendProcessor : public CAdminCmdProcessor
+{
+public:
+    virtual void Process(const string& request, CNcbiOstream& os,
+        CWorkerNodeControlServer* control_server)
+    {
+        bool pullback = NStr::Find(request.c_str(), "pullback") != NPOS;
+
+        unsigned timeout = 0;
+        SIZE_TYPE timeout_str = NStr::Find(request.c_str(), "timeout=");
+        if (timeout_str != NPOS)
+            timeout = NStr::StringToUInt(request.c_str() +
+                    timeout_str + sizeof("timeout=") - 1,
+                    NStr::fConvErr_NoThrow | NStr::fAllowTrailingSymbols);
+
+        LOG_POST("Received SUSPEND request from " << m_Host <<
+                " (pullback=" << (pullback ? "ON" : "OFF") <<
+                ", timeout=" << timeout << ')');
+
+        control_server->GetWorkerNode().Suspend(pullback, timeout);
+
+        os << "OK:\n";
+    }
+};
+
+class CResumeProcessor : public CAdminCmdProcessor
+{
+public:
+    virtual void Process(const string& /*request*/, CNcbiOstream& os,
+        CWorkerNodeControlServer* control_server)
+    {
+        control_server->GetWorkerNode().Resume();
+        LOG_POST("Received RESUME request from " << m_Host);
+        os << "OK:\n";
+    }
 };
 
 class CGetStatisticsProcessor :
         public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
-    virtual void Process(const string& request,
+    virtual void Process(const string& /*request*/,
                          CNcbiOstream& os,
                          CWorkerNodeControlServer* control_server)
     {
@@ -145,6 +186,9 @@ public:
 
         if (node.GetMaxThreads() > 1)
             os << "Maximum job threads: " << node.GetMaxThreads() << "\n";
+
+        if (node.IsSuspended())
+            os << "The node is suspended\n";
 
         if (CGridGlobals::GetInstance().IsShuttingDown())
             os << "The node is shutting down\n";
@@ -208,7 +252,7 @@ public:
         return true;
     }
 
-    virtual void Process(const string& request,
+    virtual void Process(const string& /*request*/,
                          CNcbiOstream& os,
                          CWorkerNodeControlServer* control_server)
     {
@@ -229,27 +273,32 @@ public:
     }
 };
 
-const string SHUTDOWN_CMD = "SHUTDOWN";
-const string VERSION_CMD = "VERSION";
-const string STAT_CMD = "STAT";
-const string GETLOAD_CMD = "GETLOAD";
-
 /////////////////////////////////////////////////////////////////////////////
 //
 ///@internal
 
 /* static */
 CWorkerNodeControlServer::IRequestProcessor*
-CWorkerNodeControlServer::MakeProcessor(const string& cmd)
+    CWorkerNodeControlServer::MakeProcessor(const string& cmd)
 {
-    if (NStr::StartsWith(cmd, SHUTDOWN_CMD))
-        return new CShutdownProcessor;
-    else if (NStr::StartsWith(cmd, VERSION_CMD))
+    if (NStr::StartsWith(cmd, CTempString("VERSION", sizeof("VERSION") - 1)))
         return new CGetVersionProcessor;
-    else if (NStr::StartsWith(cmd, STAT_CMD))
+
+    if (NStr::StartsWith(cmd, CTempString("STAT", sizeof("STAT") - 1)))
         return new CGetStatisticsProcessor;
-    else if (NStr::StartsWith(cmd, GETLOAD_CMD))
+
+    if (NStr::StartsWith(cmd, CTempString("SHUTDOWN", sizeof("SHUTDOWN") - 1)))
+        return new CShutdownProcessor;
+
+    if (NStr::StartsWith(cmd, CTempString("SUSPEND", sizeof("SUSPEND") - 1)))
+        return new CSuspendProcessor;
+
+    if (NStr::StartsWith(cmd, CTempString("RESUME", sizeof("RESUME") - 1)))
+        return new CResumeProcessor;
+
+    if (NStr::StartsWith(cmd, CTempString("GETLOAD", sizeof("GETLOAD") - 1)))
         return new CGetLoadProcessor;
+
     return new CUnknownProcessor;
 }
 

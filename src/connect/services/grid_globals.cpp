@@ -176,7 +176,7 @@ void CWNJobWatcher::CheckForInfiniteLoop()
             } else
                 ++count;
         }
-        if( count > 0 && count == m_ActiveJobs.size()) {
+        if (count > 0 && count == m_ActiveJobs.size()) {
             ERR_POST_X(4, "All jobs are in infinite loops. "
                           "Server is shutting down.");
             CGridGlobals::GetInstance().KillNode();
@@ -248,10 +248,10 @@ void CGridGlobals::KillNode()
         GetJobWatcher().x_KillNode(*m_Worker);
 }
 
-void CGridGlobals::x_InterruptUDPPortListening()
+void CGridGlobals::InterruptUDPPortListening()
 {
     if (m_UDPPort != 0)
-        CDatagramSocket().Send("SHUTDOWN", sizeof("SHUTDOWN"),
+        CDatagramSocket().Send("INTERRUPT", sizeof("INTERRUPT"),
                 "127.0.0.1", m_UDPPort);
 }
 

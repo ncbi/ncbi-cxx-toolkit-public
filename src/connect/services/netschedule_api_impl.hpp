@@ -135,7 +135,8 @@ struct SNetScheduleAPIImpl : public CObject
     }
 
     CNetScheduleAPI::EJobStatus GetJobStatus(const string& cmd,
-            const string& job_key, time_t* job_exptime);
+            const string& job_key, time_t* job_exptime,
+            ENetScheduleQueuePauseMode* pause_mode);
 
     const CNetScheduleAPI::SServerParams& GetServerParams();
 

@@ -551,12 +551,26 @@ CNetService CNetScheduleAPI::GetService()
     return m_Impl->m_Service;
 }
 
-#define SKIP_SPACE(ptr) \
-    while (isspace((unsigned char) *(ptr))) \
-        ++ptr;
+static void s_SetJobExpTime(time_t* job_exptime, const string& time_str)
+{
+    if (job_exptime != NULL)
+        *job_exptime = (time_t) NStr::StringToUInt8(time_str,
+                NStr::fConvErr_NoThrow);
+}
 
-CNetScheduleAPI::EJobStatus
-    CNetScheduleAPI::GetJobDetails(CNetScheduleJob& job, time_t* job_exptime)
+static void s_SetPauseMode(ENetScheduleQueuePauseMode* pause_mode,
+        const string& mode_str)
+{
+    if (pause_mode != NULL)
+        *pause_mode = mode_str.empty() ? eNSQ_NoPause :
+                mode_str == "pullback" ? eNSQ_WithPullback :
+                        eNSQ_WithoutPullback;
+}
+
+CNetScheduleAPI::EJobStatus CNetScheduleAPI::GetJobDetails(
+        CNetScheduleJob& job,
+        time_t* job_exptime,
+        ENetScheduleQueuePauseMode* pause_mode)
 {
     string resp = m_Impl->x_ExecOnce("STATUS2", job.job_id);
 
@@ -574,7 +588,9 @@ CNetScheduleAPI::EJobStatus
             "input",            // 2
             "output",           // 3
             "ret_code",         // 4
-            "err_msg"};         // 5
+            "err_msg",          // 5
+            "pause",            // 6
+    };
 
 #define NUMBER_OF_STATUS_ATTRS (sizeof(s_JobStatusAttrNames) / \
     sizeof(*s_JobStatusAttrNames))
@@ -586,9 +602,8 @@ CNetScheduleAPI::EJobStatus
 
     EJobStatus status = StringToStatus(attr_values[0]);
 
-    if (job_exptime != NULL)
-        *job_exptime = (time_t) NStr::StringToUInt8(attr_values[1],
-                NStr::fConvErr_NoThrow);
+    s_SetJobExpTime(job_exptime, attr_values[1]);
+    s_SetPauseMode(pause_mode, attr_values[6]);
 
     switch (status) {
     case ePending:
@@ -613,7 +628,8 @@ CNetScheduleAPI::EJobStatus
 }
 
 CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
-        const string& job_key, time_t* job_exptime)
+        const string& job_key, time_t* job_exptime,
+        ENetScheduleQueuePauseMode* pause_mode)
 {
     string response;
 
@@ -632,7 +648,8 @@ CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
 
     static const char* const s_AttrNames[] = {
         "job_status",       // 0
-        "job_exptime"       // 1
+        "job_exptime",      // 1
+        "pause",            // 2
     };
 
 #define NUMBER_OF_ATTRS (sizeof(s_AttrNames) / sizeof(*s_AttrNames))
@@ -641,9 +658,8 @@ CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
 
     g_ParseNSOutput(response, s_AttrNames, attr_values, NUMBER_OF_ATTRS);
 
-    if (job_exptime != NULL)
-        *job_exptime = (time_t) NStr::StringToUInt8(attr_values[1],
-                NStr::fConvErr_NoThrow);
+    s_SetJobExpTime(job_exptime, attr_values[1]);
+    s_SetPauseMode(pause_mode, attr_values[2]);
 
     return CNetScheduleAPI::StringToStatus(attr_values[0]);
 }

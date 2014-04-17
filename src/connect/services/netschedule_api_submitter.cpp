@@ -543,15 +543,18 @@ void CNetScheduleSubmitter::CancelJobGroup(const string& job_group)
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobStatus(
-        const string& job_key, time_t* job_exptime)
+        const string& job_key, time_t* job_exptime,
+        ENetScheduleQueuePauseMode* pause_mode)
 {
-    return m_Impl->m_API->GetJobStatus("SST2", job_key, job_exptime);
+    return m_Impl->m_API->GetJobStatus("SST2",
+            job_key, job_exptime, pause_mode);
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleSubmitter::GetJobDetails(
-        CNetScheduleJob& job, time_t* job_exptime)
+        CNetScheduleJob& job, time_t* job_exptime,
+        ENetScheduleQueuePauseMode* pause_mode)
 {
-    return m_Impl->m_API.GetJobDetails(job, job_exptime);
+    return m_Impl->m_API.GetJobDetails(job, job_exptime, pause_mode);
 }
 
 void CNetScheduleSubmitter::GetProgressMsg(CNetScheduleJob& job)

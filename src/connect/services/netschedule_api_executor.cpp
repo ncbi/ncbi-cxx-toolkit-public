@@ -189,17 +189,15 @@ bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
         return false;
 
     try {
-        if (s_DoParseGet2JobResponse(job, response))
-            return true;
+        return s_DoParseGet2JobResponse(job, response);
     }
     catch (CUrlParserException&) {
         if (s_DoParseGetJobResponse(job, response))
             return true;
-    }
 
-    NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
-            "Cannot parse server output for " +
-                    job.job_id + ":\n" + response);
+        NCBI_THROW(CNetScheduleException, eProtocolSyntaxError,
+                "Cannot parse server output for GET:\n" + response);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -635,9 +633,11 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
 }
 
 CNetScheduleAPI::EJobStatus CNetScheduleExecutor::GetJobStatus(
-        const string& job_key, time_t* job_exptime)
+        const string& job_key, time_t* job_exptime,
+        ENetScheduleQueuePauseMode* pause_mode)
 {
-    return m_Impl->m_API->GetJobStatus("WST2", job_key, job_exptime);
+    return m_Impl->m_API->GetJobStatus("WST2",
+            job_key, job_exptime, pause_mode);
 }
 
 void CNetScheduleExecutor::ReturnJob(const string& job_key,

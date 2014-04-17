@@ -54,6 +54,7 @@ public:
     }
 
     void Cut();
+    void MoveTo(CWorkerNodeTimeline_Base* timeline);
 
     const CDeadline& GetTimeout() const {return m_Deadline;}
 
@@ -110,6 +111,19 @@ public:
         return old_head;
     }
 
+    void Clear()
+    {
+        if (!IsEmpty()) {
+            CWorkerNodeTimelineEntry* entry = m_Head;
+            do {
+                entry->m_Timeline = NULL;
+                entry = entry->m_Next;
+            } while (entry != NULL);
+
+            m_Tail = m_Head = NULL;
+        }
+    }
+
 private:
     CWorkerNodeTimelineEntry* m_Head;
     CWorkerNodeTimelineEntry* m_Tail;
@@ -128,6 +142,14 @@ inline void CWorkerNodeTimelineEntry::Cut()
         else
             (m_Prev->m_Next = m_Next)->m_Prev = m_Prev;
         m_Timeline = NULL;
+    }
+}
+
+inline void CWorkerNodeTimelineEntry::MoveTo(CWorkerNodeTimeline_Base* timeline)
+{
+    if (!IsInTimeline(timeline)) {
+        Cut();
+        timeline->Push(this);
     }
 }
 

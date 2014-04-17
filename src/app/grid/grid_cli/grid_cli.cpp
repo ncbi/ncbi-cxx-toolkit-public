@@ -1097,14 +1097,16 @@ struct SCommandDefinition {
         "Depending on whether the command is applied to a worker node "
         "or a NetSchedule service, the worker node or the entire "
         "NetSchedule queue will be paused.\n\n"
-        "For worker nodes, two additional options can be specified. "
-        "The '--" WAIT_FOR_JOB_COMPLETION_OPTION "' option makes sure "
-        "that when '" GRID_APP_NAME "' returns, no jobs are runnings. "
+        "The '--" PULLBACK_OPTION "' option instructs the worker node "
+        "(if the option is applied to a single worker node) or all "
+        "worker nodes connected to the given queue (if the option is "
+        "applied to a NetSchedule service) to stop processing and return "
+        "all running jobs.\n\n"
+        "For worker nodes, two additional options can be specified:\n\n"
         "The '--" TIMEOUT_OPTION "' option indicates how long the "
         "worker node must wait for the running jobs to complete.\n\n"
-        "For NetSchedule servers, the '--" PULLBACK_OPTION "' option "
-        "instructs the worker nodes connected to the specified queue "
-        "to stop processing and return all running jobs.",
+        "The '--" WAIT_FOR_JOB_COMPLETION_OPTION "' option makes sure "
+        "that when '" GRID_APP_NAME "' returns, no jobs are running.",
         {eWorkerNode, eTimeout, eWaitForJobCompletion,
             eNetSchedule, eQueue, ePullback,
             eLoginToken, eAuth, eClientNode, eClientSession,

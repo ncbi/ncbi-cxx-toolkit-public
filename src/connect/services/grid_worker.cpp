@@ -189,6 +189,7 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node) :
     m_ProgressMsgThrottler(1),
     m_NetScheduleExecutor(worker_node.GetNSExecutor()),
     m_NetCacheAPI(worker_node.GetNetCacheAPI()),
+    m_JobGeneration(worker_node.m_CurrentJobGeneration),
     m_CommitExpiration(0, 0)
 {
 }
@@ -313,8 +314,17 @@ CNetScheduleAdmin::EShutdownLevel CWorkerNodeJobContext::GetShutdownLevel()
 {
     if (m_StatusThrottler.Approve(CRequestRateControl::eErrCode))
         try {
-            switch (m_NetScheduleExecutor.GetJobStatus(GetJobKey())) {
+            ENetScheduleQueuePauseMode pause_mode;
+            switch (m_NetScheduleExecutor.GetJobStatus(GetJobKey(),
+                    NULL, &pause_mode)) {
             case CNetScheduleAPI::eRunning:
+                if (pause_mode == eNSQ_WithPullback) {
+                    m_WorkerNode.SetJobPullbackTimer(
+                            m_WorkerNode.m_DefaultPullbackTimeout);
+                    LOG_POST("Pullback request from the server, "
+                            "(default) pullback timeout=" <<
+                            m_WorkerNode.m_DefaultPullbackTimeout);
+                }
                 break;
 
             case CNetScheduleAPI::eCanceled:
@@ -329,6 +339,11 @@ CNetScheduleAdmin::EShutdownLevel CWorkerNodeJobContext::GetShutdownLevel()
             ERR_POST("Cannot retrieve job status for " << GetJobKey() <<
                     ": " << ex.what());
         }
+
+    if (m_WorkerNode.CheckForPullback(m_JobGeneration)) {
+        LOG_POST("Pullback timeout for " << m_Job.job_id);
+        return CNetScheduleAdmin::eShutdownImmediate;
+    }
 
     return CGridGlobals::GetInstance().GetShutdownLevel();
 }
@@ -809,6 +824,10 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 
+#define NO_EVENT ((void*) 0)
+#define SUSPEND_EVENT ((void*) 1)
+#define RESUME_EVENT ((void*) 2)
+
 CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
     m_JobProcessorFactory(job_factory),
@@ -823,6 +842,11 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
     m_StartupTime(0),
     m_CleanupEventSource(new CWorkerNodeCleanup()),
     m_DiscoveryIteration(0),
+    m_SuspendResumeEvent(NO_EVENT),
+    m_TimelineIsSuspended(false),
+    m_CurrentJobGeneration(0),
+    m_DefaultPullbackTimeout(0),
+    m_JobPullbackTime(0),
     m_Listener(new CGridWorkerNodeApp_Listener()),
     m_App(app),
     m_SingleThreadForced(false)
@@ -858,6 +882,34 @@ void CGridWorkerNode::Init()
 
     m_NetScheduleAPI = CNetScheduleAPI(reg);
     m_NetCacheAPI = CNetCacheAPI(reg, kEmptyStr, m_NetScheduleAPI);
+}
+
+void CGridWorkerNode::Suspend(bool pullback, unsigned timeout)
+{
+    if (pullback)
+        SetJobPullbackTimer(timeout);
+    if (SwapPointers(&m_SuspendResumeEvent, SUSPEND_EVENT) == NO_EVENT)
+        CGridGlobals::GetInstance().InterruptUDPPortListening();
+}
+
+void CGridWorkerNode::Resume()
+{
+    if (SwapPointers(&m_SuspendResumeEvent, RESUME_EVENT) == NO_EVENT)
+        CGridGlobals::GetInstance().InterruptUDPPortListening();
+}
+
+void CGridWorkerNode::SetJobPullbackTimer(unsigned seconds)
+{
+    CFastMutexGuard mutex_guard(m_JobPullbackMutex);
+    m_JobPullbackTime = CDeadline(seconds);
+    ++m_CurrentJobGeneration;
+}
+
+bool CGridWorkerNode::CheckForPullback(unsigned job_generation)
+{
+    CFastMutexGuard mutex_guard(m_JobPullbackMutex);
+    return job_generation != m_CurrentJobGeneration &&
+            m_JobPullbackTime.IsExpired();
 }
 
 void CGridWorkerNode::x_WNCoreInit()
@@ -1000,6 +1052,9 @@ int CGridWorkerNode::Run(
             "check_status_period", 2, 0, IRegistry::eReturn);
     if (m_CheckStatusPeriod == 0)
         m_CheckStatusPeriod = 1;
+
+    m_DefaultPullbackTimeout = reg.GetInt(kServerSec,
+            "default_pullback_timeout", 0, 0, IRegistry::eReturn);
 
     if (reg.HasEntry(kServerSec, "wait_server_timeout")) {
         ERR_POST_X(52, "[" << kServerSec <<
@@ -1453,7 +1508,7 @@ int CGridWorkerNode::OfflineRun()
     }
 
     m_Listener->OnGridWorkerStart();
-    
+
     LOG_POST("Reading job input files (*.in)...");
 
     string path;
@@ -1603,48 +1658,54 @@ bool CGridWorkerNode::x_GetJobWithAffinityLadder(SNetServerImpl* server,
     }
 }
 
+CGridWorkerNode::SNotificationTimelineEntry*
+    CGridWorkerNode::x_GetTimelineEntry(SNetServerImpl* server_impl)
+{
+    m_TimelineSearchPattern.m_ServerAddress =
+            server_impl->m_ServerInPool->m_Address;
+
+    TTimelineEntries::iterator it(
+            m_TimelineEntryByAddress.find(&m_TimelineSearchPattern));
+
+    if (it != m_TimelineEntryByAddress.end())
+        return *it;
+
+    SNotificationTimelineEntry* new_entry = new SNotificationTimelineEntry(
+            m_TimelineSearchPattern.m_ServerAddress, m_DiscoveryIteration);
+
+    m_TimelineEntryByAddress.insert(new_entry);
+
+    return new_entry;
+}
+
 // Action on a *detached* timeline entry.
 bool CGridWorkerNode::x_PerformTimelineAction(
         CGridWorkerNode::SNotificationTimelineEntry* timeline_entry,
         CNetScheduleJob& job)
 {
     if (timeline_entry->IsDiscoveryAction()) {
-        ++m_DiscoveryIteration;
-        for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate(
-                CNetService::eIncludePenalized); it; ++it) {
-            m_TimelineSearchPattern.m_ServerAddress =
-                    (*it)->m_ServerInPool->m_Address;
-            TTimelineEntries::iterator existing_entry(
-                    m_TimelineEntryByAddress.find(&m_TimelineSearchPattern));
-
-            if (existing_entry != m_TimelineEntryByAddress.end()) {
-                (*existing_entry)->m_DiscoveryIteration = m_DiscoveryIteration;
-                if (!(*existing_entry)->IsInTimeline())
-                    m_ImmediateActions.Push(*existing_entry);
-            } else {
-                SNotificationTimelineEntry* new_entry =
-                        new SNotificationTimelineEntry(
-                                m_TimelineSearchPattern.m_ServerAddress,
-                                        m_DiscoveryIteration);
-
-                m_TimelineEntryByAddress.insert(new_entry);
-                m_ImmediateActions.Push(new_entry);
+        if (!x_EnterSuspendedState()) {
+            ++m_DiscoveryIteration;
+            for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate(
+                    CNetService::eIncludePenalized); it; ++it) {
+                SNotificationTimelineEntry* srv_entry = x_GetTimelineEntry(*it);
+                srv_entry->m_DiscoveryIteration = m_DiscoveryIteration;
+                if (!srv_entry->IsInTimeline())
+                    m_ImmediateActions.Push(srv_entry);
             }
         }
 
-        timeline_entry->ResetTimeout(m_NSTimeout);
-        m_Timeline.Push(timeline_entry);
+        x_AddToTimeline(timeline_entry);
         return false;
     }
 
-    // Skip servers that disappeared from LBSM.
-    if (timeline_entry->m_DiscoveryIteration != m_DiscoveryIteration)
+    if (x_EnterSuspendedState() ||
+            // Skip servers that disappeared from LBSM.
+            timeline_entry->m_DiscoveryIteration != m_DiscoveryIteration)
         return false;
 
     CNetServer server(m_NetScheduleAPI->m_Service.GetServer(
             timeline_entry->m_ServerAddress));
-
-    timeline_entry->ResetTimeout(m_NSTimeout);
 
     try {
         if (x_GetJobWithAffinityLadder(server,
@@ -1657,7 +1718,7 @@ bool CGridWorkerNode::x_PerformTimelineAction(
         } else {
             // No job has been returned by this server;
             // query the server later.
-            m_Timeline.Push(timeline_entry);
+            x_AddToTimeline(timeline_entry);
             return false;
         }
     }
@@ -1669,30 +1730,43 @@ bool CGridWorkerNode::x_PerformTimelineAction(
     }
 }
 
+bool CGridWorkerNode::x_EnterSuspendedState()
+{
+    if (CGridGlobals::GetInstance().IsShuttingDown())
+        return true;
+
+    void* event;
+
+    while ((event = SwapPointers(&m_SuspendResumeEvent,
+            NO_EVENT)) != NO_EVENT) {
+        if (event == SUSPEND_EVENT) {
+            if (!m_TimelineIsSuspended) {
+                // Stop the timeline.
+                m_TimelineIsSuspended = true;
+                m_ImmediateActions.Clear();
+                m_Timeline.Clear();
+                x_AddToTimeline(&m_TimelineSearchPattern);
+            }
+        } else { /* event == RESUME_EVENT */
+            if (m_TimelineIsSuspended) {
+                // Resume the timeline.
+                m_TimelineIsSuspended = false;
+                m_TimelineSearchPattern.MoveTo(&m_ImmediateActions);
+            }
+        }
+    }
+
+    return m_TimelineIsSuspended;
+}
+
 void CGridWorkerNode::x_ProcessRequestJobNotification()
 {
-    CNetServer server;
+    if (!x_EnterSuspendedState()) {
+        CNetServer server;
 
-    if (m_NSExecutor->m_NotificationHandler.CheckRequestJobNotification(
-            m_NSExecutor, &server)) {
-        m_TimelineSearchPattern.m_ServerAddress =
-                server->m_ServerInPool->m_Address;
-
-        TTimelineEntries::iterator it(
-                m_TimelineEntryByAddress.find(&m_TimelineSearchPattern));
-
-        if (it == m_TimelineEntryByAddress.end()) {
-            SNotificationTimelineEntry* new_entry =
-                    new SNotificationTimelineEntry(
-                            m_TimelineSearchPattern.m_ServerAddress,
-                                    m_DiscoveryIteration);
-
-            m_ImmediateActions.Push(new_entry);
-            m_TimelineEntryByAddress.insert(new_entry);
-        } else if (!(*it)->IsInTimeline(&m_ImmediateActions)) {
-            (*it)->Cut();
-            m_ImmediateActions.Push(*it);
-        }
+        if (m_NSExecutor->m_NotificationHandler.CheckRequestJobNotification(
+                m_NSExecutor, &server))
+            x_GetTimelineEntry(server)->MoveTo(&m_ImmediateActions);
     }
 }
 
@@ -1744,7 +1818,7 @@ bool CGridWorkerNode::x_GetNextJob(CNetScheduleJob& job)
             job_exists = false;
         }
     }
-    if (job_exists && CGridGlobals::GetInstance().IsShuttingDown()) {
+    if (job_exists && x_EnterSuspendedState()) {
         x_ReturnJob(job);
         return false;
     }

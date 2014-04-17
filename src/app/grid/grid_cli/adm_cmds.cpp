@@ -450,7 +450,34 @@ int CGridCommandLineInterfaceApp::Cmd_Suspend()
         return 0;
 
     case eWorkerNodeAdmin:
-        m_NetScheduleAPI.GetService().ExecOnAllServers("SUSPEND");
+        {
+            string cmd("SUSPEND");
+            if (IsOptionSet(ePullback))
+                cmd += " pullback";
+            if (IsOptionSet(eTimeout)) {
+                cmd += " timeout=";
+                cmd += NStr::NumericToString(m_Opts.timeout);
+            }
+            m_NetScheduleAPI.GetService().ExecOnAllServers(cmd);
+            if (IsOptionSet(eWaitForJobCompletion)) {
+                CNetServer worker_node =
+                        m_NetScheduleAPI.GetService().Iterate().GetServer();
+                string output_line;
+                for (;;) {
+                    unsigned jobs_running = 0;
+                    CNetServerMultilineCmdOutput stat_output(
+                            worker_node.ExecWithRetry("STAT"));
+                    while (stat_output.ReadLine(output_line))
+                        if (NStr::StartsWith(output_line, "Jobs Running: "))
+                            jobs_running = NStr::StringToUInt(
+                                    output_line.c_str() +
+                                    sizeof("Jobs Running: ") - 1);
+                    if (jobs_running == 0)
+                        break;
+                    SleepMilliSec(500);
+                }
+            }
+        }
         return 0;
 
     default:

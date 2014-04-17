@@ -388,6 +388,9 @@ protected:
     auto_ptr<IEmbeddedStreamWriter> m_Writer;
     auto_ptr<CNcbiOstream> m_WStream;
 
+    // Used for the job "pullback" mechanism.
+    unsigned m_JobGeneration;
+
     CDeadline m_CommitExpiration;
     bool      m_FirstCommitAttempt;
 
@@ -729,6 +732,13 @@ public:
 
     IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
+    unsigned GetCurrentJobGeneration() {return m_CurrentJobGeneration;}
+    void Suspend(bool pullback, unsigned timeout);
+    void Resume();
+    bool IsSuspended() const {return m_TimelineIsSuspended;}
+    void SetJobPullbackTimer(unsigned seconds);
+    bool CheckForPullback(unsigned job_generation);
+
 private:
     void x_WNCoreInit();
     void x_StopWorkerThreads();
@@ -805,6 +815,14 @@ private:
 
     unsigned m_DiscoveryIteration;
 
+    void* volatile m_SuspendResumeEvent;
+    bool m_TimelineIsSuspended;
+    // Support for the job "pullback" mechanism.
+    CFastMutex m_JobPullbackMutex;
+    unsigned m_CurrentJobGeneration;
+    unsigned m_DefaultPullbackTimeout;
+    CDeadline m_JobPullbackTime;
+
     CWorkerNodeTimeline<SNotificationTimelineEntry>
             m_ImmediateActions, m_Timeline;
 
@@ -823,8 +841,15 @@ private:
     bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
             const CDeadline* timeout,
             CNetScheduleJob& job);
+    void x_AddToTimeline(SNotificationTimelineEntry* timeline_entry)
+    {
+        timeline_entry->ResetTimeout(m_NSTimeout);
+        m_Timeline.Push(timeline_entry);
+    }
+    SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
     bool x_PerformTimelineAction(SNotificationTimelineEntry* action,
             CNetScheduleJob& job);
+    bool x_EnterSuspendedState();
     void x_ProcessRequestJobNotification();
     bool x_WaitForNewJob(CNetScheduleJob& job);
     bool x_GetNextJob(CNetScheduleJob& job);
