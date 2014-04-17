@@ -1248,9 +1248,6 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
 
     node::iterator description = root.insert(node("Description"));
     string title = "Auto generated from GenBank Accession " + sequence_id;
-    if (!NStr::IsBlank(m_Comment)) {
-        title = m_Comment;
-    }
     description->insert(node("Comment", title.c_str()));
 
     node::iterator node_iter = description->insert(node("Submitter"));
@@ -1315,6 +1312,11 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
     node_iter->get_attributes().insert( "spuid_namespace", "GenBank");
 
     node::iterator descr = sample->insert(node("Descriptor"));
+
+    if (!NStr::IsBlank(m_Comment)) {
+        descr->insert(node("Comment", m_Comment.c_str()));
+    }
+
 
     node::iterator organism = sample->insert(node("Organism"));
 
