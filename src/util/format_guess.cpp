@@ -172,6 +172,7 @@ CFormatGuess::s_CheckOrder[] =
     ePhrapAce,
     eTable,
     eBinaryASN,
+    eUCSCRegion,
 };
 
 
@@ -212,6 +213,7 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
     "SRA",
     "BAM",
     "VCF",
+    "UCSC Region"
 };
 
 const char*

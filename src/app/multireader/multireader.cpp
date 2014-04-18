@@ -67,7 +67,7 @@
 #include <objtools/readers/agp_seq_entry.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/fasta.hpp>
-#include <objtools/readers/distance_reader.hpp>
+#include <objtools/readers/ucscregion_reader.hpp>
 
 #include <algo/phy_tree/phy_node.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
@@ -119,7 +119,7 @@ private:
     void xProcessWiggle(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggleRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessBed(const CArgs&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessMatrixDistance(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessUCSCRegion(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessBedRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessGtf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessVcf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
@@ -501,8 +501,8 @@ CMultiReaderApp::Run(void)
                     xProcessBed(args, istr, ostr);
                 }
                 break;
-            case CFormatGuess::eDistanceMatrix:
-                xProcessMatrixDistance(args, istr, ostr);
+            case CFormatGuess::eUCSCRegion:
+                xProcessUCSCRegion(args, istr, ostr);
                 break;
             case CFormatGuess::eGtf:
             case CFormatGuess::eGtf_POISENED:
@@ -594,13 +594,13 @@ void CMultiReaderApp::xProcessWiggleRaw(
 }
 
 //  ----------------------------------------------------------------------------
-void CMultiReaderApp::xProcessMatrixDistance(
+void CMultiReaderApp::xProcessUCSCRegion(
     const CArgs& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
 {
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
-    CDistanceMatrixReader reader(m_iFlags);
+    CUCSCRegionReader reader(m_iFlags);
     CStreamLineReader lr(istr);
     CRef<CSerialObject> pAnnot = reader.ReadObject(lr, m_pErrors);
     if (pAnnot) {
@@ -901,7 +901,7 @@ void CMultiReaderApp::xSetFormat(
     }
     if( NStr::StartsWith(strProgramName, "ucsc") ||
         format == "ucsc" ) {
-            m_uFormat = CFormatGuess::eDistanceMatrix;
+            m_uFormat = CFormatGuess::eUCSCRegion;
     }
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);

@@ -85,7 +85,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
-#include <objtools/readers/distance_reader.hpp>
+#include <objtools/readers/ucscregion_reader.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <objmgr/util/feature.hpp>
@@ -98,16 +98,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-CDistanceMatrixReader::CDistanceMatrixReader(unsigned int iflags):
+CUCSCRegionReader::CUCSCRegionReader(unsigned int iflags):
   CReaderBase(iflags)
 {
 }
 
-CDistanceMatrixReader::~CDistanceMatrixReader()
+CUCSCRegionReader::~CUCSCRegionReader()
 {
 }
 
-CRef<objects::CSeq_feat> CDistanceMatrixReader::xParseFeatureUCSCFormat(const string& Line, int Number)
+CRef<objects::CSeq_feat> CUCSCRegionReader::xParseFeatureUCSCFormat(const string& Line, int Number)
 {
     CRef<CSeq_feat> Feat(new CSeq_feat);
 #if 0
@@ -179,7 +179,7 @@ CRef<objects::CSeq_feat> CDistanceMatrixReader::xParseFeatureUCSCFormat(const st
     return Feat;
 }
 //  ----------------------------------------------------------------------------
-void CDistanceMatrixReader::xSmartFieldSplit(vector<string>& fields, CTempString line)
+void CUCSCRegionReader::xSmartFieldSplit(vector<string>& fields, CTempString line)
 {
     NStr::Tokenize(line, " \t.-:", fields, NStr::eMergeDelims);
     if (line[line.length()-1] == '-')
@@ -199,7 +199,7 @@ void CDistanceMatrixReader::xSmartFieldSplit(vector<string>& fields, CTempString
     }
 }
 //  ----------------------------------------------------------------------------
-bool CDistanceMatrixReader::xParseFeature(
+bool CUCSCRegionReader::xParseFeature(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     IMessageListener* pEC)
@@ -223,7 +223,7 @@ bool CDistanceMatrixReader::xParseFeature(
     return true;
 }
 //  ----------------------------------------------------------------------------                
-void CDistanceMatrixReader::x_SetFeatureLocation(
+void CUCSCRegionReader::x_SetFeatureLocation(
     CRef<CSeq_feat>& feature,
     const vector<string>& fields )
 //  ----------------------------------------------------------------------------
@@ -304,7 +304,7 @@ void CDistanceMatrixReader::x_SetFeatureLocation(
         location->SetId(*id);
         feature->SetLocation(*location);
     }
-    catch(CSeqIdException& ex)
+    catch(CSeqIdException&)
     {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
@@ -316,13 +316,13 @@ void CDistanceMatrixReader::x_SetFeatureLocation(
     
 }
 //  ----------------------------------------------------------------------------
-CRef<CSerialObject> CDistanceMatrixReader::ReadObject(ILineReader& lr, IMessageListener* pErrors)
+CRef<CSerialObject> CUCSCRegionReader::ReadObject(ILineReader& lr, IMessageListener* pErrors)
 {
     CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pErrors);
     return CRef<CSerialObject>(annot);
 }
 //  ----------------------------------------------------------------------------                
-CRef<CSeq_annot> CDistanceMatrixReader::ReadSeqAnnot(
+CRef<CSeq_annot> CUCSCRegionReader::ReadSeqAnnot(
     ILineReader& lr,
     IMessageListener* pEC ) 
 {

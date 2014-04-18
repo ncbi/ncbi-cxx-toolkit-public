@@ -47,11 +47,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJREAD_EXPORT CDistanceMatrixReader: public CReaderBase
+class NCBI_XOBJREAD_EXPORT CUCSCRegionReader: public CReaderBase
 {
 public:
-    CDistanceMatrixReader(unsigned int = fNormal);
-    virtual ~CDistanceMatrixReader();  
+    CUCSCRegionReader(unsigned int = fNormal);
+    virtual ~CUCSCRegionReader();  
 
     virtual CRef<CSeq_annot> ReadSeqAnnot(ILineReader& lr, IMessageListener* pEC);
     virtual CRef< CSerialObject > 

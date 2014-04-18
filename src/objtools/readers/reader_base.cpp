@@ -95,7 +95,7 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/error_codes.hpp>
-#include <objtools/readers/distance_reader.hpp>
+#include <objtools/readers/ucscregion_reader.hpp>
 
 #include <algorithm>
 
@@ -137,8 +137,8 @@ CReaderBase::GetReader(
         return new CFastaReader(flags);
     case CFormatGuess::eFiveColFeatureTable:
         return new CFeature_table_reader(flags);
-    case CFormatGuess::eDistanceMatrix:
-        return new CDistanceMatrixReader(flags);
+    case CFormatGuess::eUCSCRegion:
+        return new CUCSCRegionReader(flags);
     }
 }
 
@@ -323,7 +323,7 @@ void CReaderBase::x_SetBrowserRegion(
             location->SetId( *id );
 
         }
-        catch (const CStringException& e)
+        catch (const CStringException&)
         {
             AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(

@@ -88,6 +88,7 @@ public:
         eSra                 = 30, ///< INSDC Sequence Read Archive file
         eBam                 = 31, ///< Binary alignment/map file
         eVcf                 = 32, ///< VCF, CVcfReader
+        eUCSCRegion          = 33, ///< USCS Region file format
         /// Max value of EFormat
         eFormat_max
     };
