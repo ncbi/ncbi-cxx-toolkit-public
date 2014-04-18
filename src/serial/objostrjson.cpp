@@ -70,7 +70,8 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, bool deleteOut)
     m_BlockStart(false),
     m_ExpectValue(false),
     m_StringEncoding(eEncoding_Unknown),
-    m_BinaryFormat(eDefault)
+    m_BinaryFormat(eDefault),
+    m_WrapAt(0)
 {
 }
 
@@ -499,8 +500,10 @@ void CObjectOStreamJson::BeginBytes(const ByteBlock& )
         m_BinaryFormat == eArray_01 ||
         m_BinaryFormat == eArray_Uint) {
         m_Output.PutChar('[');
+        m_WrapAt = 78;
     } else {
         m_Output.PutChar('\"');
+        m_WrapAt = 0;
     }
 }
 
@@ -538,7 +541,7 @@ void CObjectOStreamJson::WriteBase64Bytes(const char* bytes, size_t length)
 {
     const size_t chunk_in  = 57;
     const size_t chunk_out = 80;
-    if (length > chunk_in) {
+    if (length > chunk_in && m_WrapAt != 0) {
         m_Output.PutEol(false);
     }
     char dst_buf[chunk_out];
@@ -550,11 +553,11 @@ void CObjectOStreamJson::WriteBase64Bytes(const char* bytes, size_t length)
         m_Output.PutString(dst_buf,dst_written);
         bytes_left -= src_read;
         bytes += src_read;
-        if (bytes_left > 0) {
+        if (bytes_left > 0 && m_WrapAt != 0) {
             m_Output.PutEol(false);
         }
     }
-    if (length > chunk_in) {
+    if (length > chunk_in && m_WrapAt != 0) {
         m_Output.PutEol(false);
     }
 }
@@ -577,7 +580,8 @@ void CObjectOStreamJson::WriteCustomBytes(const char* bytes, size_t length)
         WriteBytes(bytes, length);
         return;
     }
-    if (m_BinaryFormat != eString_Hex &&
+    if (m_WrapAt != 0 &&
+        m_BinaryFormat != eString_Hex &&
         m_BinaryFormat != eString_01 && 
         m_BinaryFormat != eString_01B) {
         m_Output.PutEol(false);
@@ -588,21 +592,27 @@ void CObjectOStreamJson::WriteCustomBytes(const char* bytes, size_t length)
         switch (m_BinaryFormat) {
         case eArray_Bool:
             for (; mask!=0; mask >>= 1) {
-                m_Output.WrapAt(78, false);
+                if (m_WrapAt != 0) {
+                    m_Output.WrapAt(m_WrapAt, false);
+                }
                 m_Output.PutString( (mask & c) ? "true" : "false");
                 m_Output.PutChar(',');
             }
             break;
         case eArray_01:
             for (; mask!=0; mask >>= 1) {
-                m_Output.WrapAt(78, false);
+                if (m_WrapAt != 0) {
+                    m_Output.WrapAt(m_WrapAt, false);
+                }
                 m_Output.PutChar( (mask & c) ? '1' : '0');
                 m_Output.PutChar(',');
             }
             break;
         default:
         case eArray_Uint:
-            m_Output.WrapAt(78, false);
+            if (m_WrapAt != 0) {
+                m_Output.WrapAt(m_WrapAt, false);
+            }
             m_Output.PutString( NStr::UIntToString((unsigned int)c));
             m_Output.PutChar(',');
             break;

@@ -229,6 +229,7 @@ private:
     EBinaryDataFormat m_BinaryFormat;
     string m_JsonpPrefix;
     string m_JsonpSuffix;
+    size_t m_WrapAt;
 };
 
 
