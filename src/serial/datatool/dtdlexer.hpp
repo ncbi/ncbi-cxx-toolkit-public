@@ -50,7 +50,7 @@ protected:
     virtual void LookupComments(void);
     virtual TToken LookupKeyword(void);
 
-    bool   ProcessComment(void);
+    bool   ProcessComment(bool sgml_type=false);
     bool   IsIdentifierSymbol(char c);
     TToken LookupIdentifier(void);
     TToken LookupEntity(void);

@@ -619,6 +619,10 @@ void DTDParser::BeginEntityContent(void)
 // skip
         ConsumeToken();
         tok = GetNextToken();
+        if (tok == K_CDATA) {
+            ConsumeToken();
+            tok = GetNextToken();
+        }
         if (tok!=T_STRING) {
             ParseError("string");
         }

@@ -142,13 +142,25 @@ void DTDLexer::LookupComments(void)
                 break;
             }
             return; // if it is not comment, it is token
+
+        case '-':
+// per  http://www.w3.org/TR/REC-html40/intro/sgmltut.html#h-3.3.1
+// SGML DTD comments look like this:
+// <!ELEMENT PARAM - O EMPTY       -- named property value-->
+            if (Char(1) == '-') {
+                SkipChars(2);
+                while (ProcessComment(true))
+                    ;
+                break;
+            }
+            return; // if it is not comment, it is token
         default:
             return;
         }
     }
 }
 
-bool DTDLexer::ProcessComment(void)
+bool DTDLexer::ProcessComment(bool sgml_type)
 {
     CComment& comment = AddComment();
     bool allblank = true;
@@ -189,13 +201,23 @@ bool DTDLexer::ProcessComment(void)
 #endif
 
         case '-':
-            if ((Char(1) == '-') && (Char(2) == '>')) {
-                // end of the comment
-                SkipChars(3);
-                if (allblank) {
-                    RemoveLastComment();
+            if (sgml_type) {
+                if (Char(1) == '-') {
+                    SkipChars(2);
+                    if (allblank) {
+                        RemoveLastComment();
+                    }
+                    return false;
                 }
-                return false;
+            } else {
+                if ((Char(1) == '-') && (Char(2) == '>')) {
+                    // end of the comment
+                    SkipChars(3);
+                    if (allblank) {
+                        RemoveLastComment();
+                    }
+                    return false;
+                }
             }
             // no break here
         default:
