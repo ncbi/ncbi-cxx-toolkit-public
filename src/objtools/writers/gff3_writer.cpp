@@ -624,9 +624,6 @@ bool CGff3Writer::xAssignAlignmentSplicedTarget(
     const CSpliced_exon& exon)
 //  ----------------------------------------------------------------------------
 {
-    //if (bDebugHere == true) {
-    //    bDebugHere = false;
-    //}
     string target;
     const CSeq_id& productId = spliced.GetProduct_id();
     CSeq_id_Handle bestH = sequence::GetId(
@@ -836,10 +833,6 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     unsigned int srcRow)
 //  ----------------------------------------------------------------------------
 {
-    //if (bDebugHere == true) {
-    //    bDebugHere = false;
-    //}
-
     const CSeq_id& sourceId = alnMap.GetSeqId(0);
     CBioseq_Handle sourceH = m_pScope->GetBioseqHandle(sourceId);
     CSeq_id_Handle sourceIdH = sourceH.GetSeq_id_Handle();
@@ -2050,7 +2043,8 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
 //  ----------------------------------------------------------------------------
 {
     if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
-        return xAssignFeatureAttributeParentGene(record, fc ,mf);
+        xAssignFeatureAttributeParentGene(record, fc, mf);
+        return true;
     }
     switch (mf.GetFeatSubtype()) {
     default:
@@ -2058,16 +2052,20 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
 
     case CSeqFeatData::eSubtype_cdregion:
     case CSeqFeatData::eSubtype_exon:
-        return (xAssignFeatureAttributeParentMrna(record, fc,mf)  ||
-            xAssignFeatureAttributeParentGene(record, fc, mf));
-
+        //mss-275:
+        //  we just write the data given to us we don't check it.
+        //  if there is a feature that should have a parent but doesn't
+        //    then so be it.
+        xAssignFeatureAttributeParentMrna(record, fc,mf)  ||
+            xAssignFeatureAttributeParentGene(record, fc, mf);
+        return true;
     case CSeqFeatData::eSubtype_mRNA:
     case CSeqFeatData::eSubtype_C_region:
     case CSeqFeatData::eSubtype_D_segment:
     case CSeqFeatData::eSubtype_J_segment:
     case CSeqFeatData::eSubtype_V_segment:
-        return xAssignFeatureAttributeParentGene(record, fc,mf);
-
+        xAssignFeatureAttributeParentGene(record, fc,mf);
+        return true;
     case CSeqFeatData::eSubtype_gene:
         //genes have no parents
         return true;
@@ -2631,6 +2629,10 @@ bool CGff3Writer::xWriteRecord(
     const CGffBaseRecord& record )
 //  ----------------------------------------------------------------------------
 {
+//    if (record.StrType() == "gene"  &&  record.StrSeqStart() == "15956") {
+//        cerr << "";
+//        bDebugHere = true;
+//    }
     m_Os << record.StrSeqId() << '\t';
     m_Os << record.StrMethod() << '\t';
     m_Os << record.StrType() << '\t';
@@ -2663,9 +2665,6 @@ string CGff3Writer::xNextAlignId()
 //  ----------------------------------------------------------------------------
 {
     string nextId = string("aln") + NStr::UIntToString(m_uPendingAlignId++);
-    //if (nextId == "aln2"  ||  nextId == "aln6") {
-    //    bDebugHere = true;
-    //}
     return nextId;
 }
 
