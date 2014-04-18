@@ -749,7 +749,7 @@ private:
     CNetCacheAPI m_NetCacheAPI;
     CNetScheduleAPI m_NetScheduleAPI;
     CNetScheduleExecutor m_NSExecutor;
-    auto_ptr<CStdPoolOfThreads> m_ThreadPool;
+    CStdPoolOfThreads* m_ThreadPool;
 
     unsigned int                 m_MaxThreads;
     unsigned int                 m_NSTimeout;

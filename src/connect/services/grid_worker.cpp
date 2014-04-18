@@ -831,6 +831,7 @@ private:
 CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
     m_JobProcessorFactory(job_factory),
+    m_ThreadPool(NULL),
     m_MaxThreads(1),
     m_NSTimeout(DEFAULT_NS_TIMEOUT),
     m_CommitJobInterval(COMMIT_JOB_INTERVAL_DEFAULT),
@@ -953,7 +954,7 @@ void CGridWorkerNode::x_WNCoreInit()
     _ASSERT(m_MaxThreads > 0);
 
     if (m_MaxThreads > 1) {
-        m_ThreadPool.reset(new CStdPoolOfThreads(m_MaxThreads, 0));
+        m_ThreadPool = new CStdPoolOfThreads(m_MaxThreads, 0);
         try {
             unsigned init_threads = reg.GetInt(kServerSec,
                     "init_threads", 1, 0, IRegistry::eReturn);
@@ -1115,14 +1116,17 @@ int CGridWorkerNode::Run(
         control_thread->Prepare();
     }
     catch (CServer_Exception& e) {
-        if (e.GetErrCode() != CServer_Exception::eCouldntListen)
-            throw;
-        NCBI_THROW_FMT(CGridWorkerNodeException, ePortBusy,
-            "Couldn't start a listener on a port from the specified "
-            "control port range; last port tried: " <<
-            control_thread->GetControlPort() << ". Another process "
-            "(probably another instance of this worker node) is occupying "
-            "the port(s).");
+        x_StopWorkerThreads();
+        if (e.GetErrCode() == CServer_Exception::eCouldntListen) {
+            ERR_POST("Couldn't start a listener on a port from the "
+                    "specified control port range; last port tried: " <<
+                    control_thread->GetControlPort() << ". Another "
+                    "process (probably another instance of this worker "
+                    "node) is occupying the port(s).");
+        } else {
+            ERR_POST(e);
+        }
+        return 3;
     }
 
     string control_port_str(
@@ -1304,8 +1308,8 @@ int CGridWorkerNode::Run(
                 continue;
             }
         } catch (exception& ex) {
+            ERR_POST_X(29, ex.what());
             if (TWorkerNode_StopOnJobErrors::GetDefault()) {
-                ERR_POST_X(29, ex.what());
                 CGridGlobals::GetInstance().RequestShutdown(
                     CNetScheduleAdmin::eShutdownImmediate);
             }
@@ -1313,12 +1317,10 @@ int CGridWorkerNode::Run(
         try_count = 0;
     }
     LOG_POST_X(31, Info << "Shutting down...");
-    LOG_POST(Info << "Stopping the socket server thread...");
-    control_thread->Stop();
 
     if (reg.GetBool(kServerSec,
             "force_exit", false, 0, CNcbiRegistry::eReturn)) {
-        ERR_POST_X(45, "Force exit");
+        ERR_POST_X(45, "Force exit (worker threads will not be waited for)");
     } else
         x_StopWorkerThreads();
 
@@ -1338,7 +1340,6 @@ int CGridWorkerNode::Run(
     }
 
     m_JobCommitterThread->Join();
-    control_thread->Join();
 
     try {
         GetNSExecutor().ClearNode();
@@ -1356,18 +1357,25 @@ int CGridWorkerNode::Run(
                 ex.what());
     }
 
+    int exit_code = x_WNCleanUp();
+
+    LOG_POST(Info << "Stopping the socket server thread...");
+    control_thread->Stop();
+    control_thread->Join();
+
     LOG_POST_X(38, Info << "Worker Node has been stopped.");
 
-    return x_WNCleanUp();
+    return exit_code;
 }
 
 void CGridWorkerNode::x_StopWorkerThreads()
 {
-    if (m_MaxThreads > 1) {
+    if (m_ThreadPool != NULL) {
         try {
             LOG_POST_X(32, Info << "Stopping worker threads...");
             m_ThreadPool->KillAllThreads(true);
-            m_ThreadPool.reset(NULL);
+            delete m_ThreadPool;
+            m_ThreadPool = NULL;
         }
         catch (exception& ex) {
             ERR_POST_X(33, "Could not stop worker threads: " << ex.what());
