@@ -254,7 +254,7 @@ bool XSDParser::DefineElementType(DTDElement& node)
     }
     if (IsValue("string") || IsValue("token") ||
         IsValue("normalizedString") ||
-        IsValue("duration") ||
+        IsValue("duration") || IsValue("language") ||
         IsValue("anyType") || IsValue("anyURI") || IsValue("QName") ||
         IsValue("dateTime") || IsValue("time") || IsValue("date") ||
         IsValue("anySimpleType")) {
@@ -288,6 +288,7 @@ bool XSDParser::DefineAttributeType(DTDAttribute& attrib)
         return false;
     }
     if (IsValue("string") || IsValue("token") || IsValue("QName") ||
+        IsValue("language") ||
         IsValue("anyType") || IsValue("anyURI") ||
         IsValue("dateTime") || IsValue("time") || IsValue("date")) {
         attrib.SetType(DTDAttribute::eString);
@@ -396,6 +397,9 @@ void XSDParser::ParseImport(void)
         if (IsValue("http://www.w3.org/XML/1998/namespace") ||
             (IsValue("//www.w3.org/XML/1998/namespace") && m_ValuePrefix == "http")) {
             string name = "xml:lang";
+            m_MapAttribute[name].SetName(name);
+            m_MapAttribute[name].SetType(DTDAttribute::eString);
+            name = "xml:space";
             m_MapAttribute[name].SetName(name);
             m_MapAttribute[name].SetType(DTDAttribute::eString);
             import=false;
@@ -627,8 +631,11 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
     }
     m_ExpectLastComment = true;
     if (!ref && !named_type) {
-        m_MapElement[name].SetTypeIfUnknown(
-            hasContents ? DTDElement::eEmpty : DTDElement::eString);
+        named_type = NStr::StartsWith( m_MapElement[name].GetTypeName(), "type:");
+        if (!named_type) {
+            m_MapElement[name].SetTypeIfUnknown(
+                hasContents ? DTDElement::eEmpty : DTDElement::eString);
+        }
     }
     return name;
 }
@@ -932,6 +939,9 @@ void XSDParser::ParseAttribute(DTDElement& node)
     TToken tok = GetRawAttributeSet();
     if (GetAttribute("ref")) {
         att.SetName(m_Value);
+        if (m_ValuePrefix == "xml") {
+            att.SetName(m_ValuePrefix + ":" + m_Value);
+        }
         ref=true;
     }
     if (GetAttribute("name")) {
@@ -1384,8 +1394,8 @@ void XSDParser::ProcessNamedTypes(void)
                     }
                     PushEntityLexer(node.GetTypeName());
                     bool elementForm = m_ElementFormDefault;
-                    ParseContent(node);
-                    node.SetTypeIfUnknown(DTDElement::eEmpty);
+                    bool hasContents = ParseContent(node);
+                    node.SetTypeIfUnknown(hasContents ? DTDElement::eEmpty : DTDElement::eString);
 
 // Make local elements defined by means of global types global.
 // In fact, this is incorrect; also, in case of unqualified form default we must keep
@@ -1442,27 +1452,6 @@ void XSDParser::ProcessNamedTypes(void)
                 list<DTDAttribute>& atts = node.GetNonconstAttributes();
                 list<DTDAttribute>::iterator a;
                 for (a = atts.begin(); a != atts.end(); ++a) {
-                    if (a->GetType() == DTDAttribute::eUnknown &&
-                        a->GetTypeName().empty() &&
-                        m_MapAttribute.find(a->GetName()) != m_MapAttribute.end()) {
-                        found = true;
-                        a->Merge(m_MapAttribute[a->GetName()]);
-                    }
-                }
-            }
-        }
-    } while (found);
-
-    do {
-        found = false;
-        map<string,DTDElement>::iterator i;
-        for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
-
-            DTDElement& node = i->second;
-            if (node.HasAttributes()) {
-                list<DTDAttribute>& atts = node.GetNonconstAttributes();
-                list<DTDAttribute>::iterator a;
-                for (a = atts.begin(); a != atts.end(); ++a) {
 
                     if (!a->GetTypeName().empty()) { 
                         if ( a->GetType() == DTDAttribute::eUnknown) {
@@ -1484,6 +1473,28 @@ void XSDParser::ProcessNamedTypes(void)
             }
         }
     } while (found);
+
+    do {
+        found = false;
+        map<string,DTDElement>::iterator i;
+        for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+
+            DTDElement& node = i->second;
+            if (node.HasAttributes()) {
+                list<DTDAttribute>& atts = node.GetNonconstAttributes();
+                list<DTDAttribute>::iterator a;
+                for (a = atts.begin(); a != atts.end(); ++a) {
+                    if (a->GetType() == DTDAttribute::eUnknown &&
+                        a->GetTypeName().empty() &&
+                        m_MapAttribute.find(a->GetName()) != m_MapAttribute.end()) {
+                        found = true;
+                        a->Merge(m_MapAttribute[a->GetName()]);
+                    }
+                }
+            }
+        }
+    } while (found);
+
     {
         map<string,DTDElement>::iterator i;
         for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
