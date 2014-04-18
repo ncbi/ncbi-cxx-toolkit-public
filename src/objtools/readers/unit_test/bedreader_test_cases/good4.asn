@@ -14,13 +14,12 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data region "chr1",
+      data region "label1",
       location int {
         from 4561209,
         to 4562354,
         id local str "chr1"
       },
-      title "label1",
       exts {
         {
           type str "DisplaySettings",
@@ -44,13 +43,12 @@ Seq-annot ::= {
     },
     {
       id local id 4,
-      data region "chr1",
+      data region "label2",
       location int {
         from 4775069,
         to 4776177,
         id local str "chr1"
       },
-      title "label2",
       exts {
         {
           type str "DisplaySettings",

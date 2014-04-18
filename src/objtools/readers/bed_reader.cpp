@@ -369,7 +369,7 @@ bool CBedReader::xAppendFeatureChrom(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
     try {
-        xSetFeatureTitle(feature, fields);
+        //xSetFeatureTitle(feature, fields);
         xSetFeatureLocationChrom(feature, fields);
         xSetFeatureIdsChrom(feature, fields, baseId);
         xSetFeatureBedData(feature, fields);
@@ -396,7 +396,7 @@ bool CBedReader::xAppendFeatureThick(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
     try {
-        xSetFeatureTitle(feature, fields);
+        //xSetFeatureTitle(feature, fields);
         xSetFeatureLocationThick(feature, fields);
         xSetFeatureIdsThick(feature, fields, baseId);
         xSetFeatureBedData(feature, fields);
@@ -422,7 +422,7 @@ bool CBedReader::xAppendFeatureBlock(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
     try {
-        xSetFeatureTitle(feature, fields);
+        //xSetFeatureTitle(feature, fields);
         xSetFeatureLocationBlock(feature, fields);
         xSetFeatureIdsBlock(feature, fields, baseId);
         xSetFeatureBedData(feature, fields);
@@ -435,7 +435,6 @@ bool CBedReader::xAppendFeatureBlock(
     ftable.push_back(feature);
     return true;
 }
-
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeatureUserFormat(
     const vector<string>& fields,
@@ -791,7 +790,7 @@ void CBedReader::xSetFeatureTitle(
 //  ----------------------------------------------------------------------------
 {
     if (fields.size() >= 4  &&  !fields[3].empty()  &&  fields[3] != ".") {
-        feature->SetTitle(fields[3]);
+        feature->SetTitle(fields[0]);
     }
     else {
         feature->SetTitle(string("line_") + NStr::IntToString(m_uLineNumber));
@@ -805,7 +804,7 @@ void CBedReader::xSetFeatureBedData(
 //  ----------------------------------------------------------------------------
 {
     CSeqFeatData& data = feature->SetData();
-    data.SetRegion() = fields[0];
+    data.SetRegion() = fields[3];
     
     CRef<CUser_object> pDisplayData(new CUser_object());
     if (fields.size() < 5  ||  fields[4] == ".") {

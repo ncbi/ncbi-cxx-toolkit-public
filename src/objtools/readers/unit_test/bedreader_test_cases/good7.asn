@@ -1,11 +1,6 @@
 Seq-annot ::= {
   desc {
-    region int {
-      from 127471195,
-      to 127495719,
-      strand unknown,
-      id local str "chr7"
-    },
+    region whole local str "chr7",
     title "Color by strand demonstration",
     name "ColorByStrandDemo",
     user {

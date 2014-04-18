@@ -24,7 +24,7 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data region "NC_000008.10",
+      data region "rs268",
       location int {
         from 19813522,
         to 19813528,
@@ -33,7 +33,6 @@ Seq-annot ::= {
           version 10
         }
       },
-      title "rs268",
       exts {
         {
           type str "BED",
@@ -74,13 +73,12 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data region "8",
+      data region "22524",
       location int {
         from 144804319,
         to 145668486,
         id local str "8"
       },
-      title "22524",
       exts {
         {
           type str "BED",
@@ -121,13 +119,12 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data region "1000",
+      data region "22524",
       location int {
         from 144804319,
         to 145668486,
         id gi 1000
       },
-      title "22524",
       exts {
         {
           type str "BED",
@@ -168,13 +165,12 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data region "chr8",
+      data region "22524",
       location int {
         from 144804319,
         to 145668486,
         id local str "chr8"
       },
-      title "22524",
       exts {
         {
           type str "BED",

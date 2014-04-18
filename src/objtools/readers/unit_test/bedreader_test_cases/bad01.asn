@@ -24,14 +24,13 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data region "chr22",
+      data region "cloneA",
       location int {
         from 1000,
         to 4999,
         strand plus,
         id local str "chr22"
       },
-      title "cloneA",
       xref {
         {
           id local id 2
@@ -67,14 +66,13 @@ Seq-annot ::= {
     },
     {
       id local id 2,
-      data region "chr22",
+      data region "cloneA",
       location int {
         from 1000,
         to 4999,
         strand plus,
         id local str "chr22"
       },
-      title "cloneA",
       xref {
         {
           id local id 1
@@ -110,7 +108,7 @@ Seq-annot ::= {
     },
     {
       id local id 3,
-      data region "chr22",
+      data region "cloneA",
       location packed-int {
         {
           from 1000,
@@ -125,7 +123,6 @@ Seq-annot ::= {
           id local str "chr22"
         }
       },
-      title "cloneA",
       xref {
         {
           id local id 1
@@ -161,14 +158,13 @@ Seq-annot ::= {
     },
     {
       id local id 4,
-      data region "chr22",
+      data region "cloneB",
       location int {
         from 2000,
         to 5999,
         strand minus,
         id local str "chr22"
       },
-      title "cloneB",
       xref {
         {
           id local id 5
@@ -204,14 +200,13 @@ Seq-annot ::= {
     },
     {
       id local id 5,
-      data region "chr22",
+      data region "cloneB",
       location int {
         from 2000,
         to 5999,
         strand minus,
         id local str "chr22"
       },
-      title "cloneB",
       xref {
         {
           id local id 4
@@ -247,7 +242,7 @@ Seq-annot ::= {
     },
     {
       id local id 6,
-      data region "chr22",
+      data region "cloneB",
       location packed-int {
         {
           from 2000,
@@ -262,7 +257,6 @@ Seq-annot ::= {
           id local str "chr22"
         }
       },
-      title "cloneB",
       xref {
         {
           id local id 4
