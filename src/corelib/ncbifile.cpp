@@ -4389,7 +4389,7 @@ static const SFileSystem s_FileSystem[] = {
 
 
 
-#if defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
 
 // Standard kernel calls cannot get correct information 
 // about PANFS mounts, so we use workaround for that.
@@ -4679,7 +4679,7 @@ void s_GetFileSystemInfo(const string&               path,
         }
     }
 
-#if defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_CYGWIN)
     // Standard kernel calls cannot get correct information 
     // about PANFS mounts, so we use workaround for that.
     if ((info->fs_type == CFileUtil::ePANFS) && (flags & fFSI_DiskSpace)) {
