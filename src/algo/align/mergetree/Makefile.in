@@ -1,0 +1,9 @@
+
+LIB_PROJ = xmergetree
+EXPENDABLE_SUB_PROJ = app
+
+WATCHERS = boukn
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+

@@ -1,0 +1,6 @@
+
+WATCHERS = boukn 
+SRC = merge_tree merge_tree_core   equiv_range 
+
+LIB = xmergetree
+
