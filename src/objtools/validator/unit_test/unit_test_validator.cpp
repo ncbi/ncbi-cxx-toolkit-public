@@ -10530,6 +10530,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
         "Inconsistent: Product= complete, Location= partial, Feature.partial= TRUE"));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
                                                  "Got stop codon, but 3'end is labeled partial"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "PartialProblem",
+                                                 "CDS is partial but protein is complete"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
