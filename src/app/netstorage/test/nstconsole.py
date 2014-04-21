@@ -759,6 +759,7 @@ if __name__ == "__main__":
         parser = OptionParser(
         """
         %prog  <host>  <port>
+        %prog  <host:port>
         Netstorage debug console
         """ )
 
@@ -769,12 +770,21 @@ if __name__ == "__main__":
         # parse the command line options
         options, args = parser.parse_args()
 
-        if len( args ) != 2:
+        if len( args ) not in [ 1, 2 ]:
             parserError( parser, "Incorrect number of arguments" )
             sys.exit( 1 )
 
-        host = args[ 0 ]
-        port = args[ 1 ]
+        if len( args ) == 2:
+            host = args[ 0 ]
+            port = args[ 1 ]
+        else:
+            parts = args[0].split( ":" )
+            if len( parts ) != 2 :
+                parserError( parser, "Expected format host:port" )
+                sys.exit( 1 )
+            host = parts[ 0 ]
+            port = parts[ 1 ]
+
         try:
             port = int( port )
         except:
