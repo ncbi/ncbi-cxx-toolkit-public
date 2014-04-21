@@ -372,9 +372,7 @@ void CNSTDatabase::x_PreCheckConnection(void)
 
 void CNSTDatabase::x_PostCheckConnection(void)
 {
-    // TODO: Replace with the real isAlive()
-    // if (!m_Db->IsAlive()) {
-    if (true) {
+    if (!m_Db->IsConnected(CDatabase::eFastCheck)) {
         m_Connected = false;
         ERR_POST("Database connection has been lost");
         m_RestoreConnectionThread->Wakeup();

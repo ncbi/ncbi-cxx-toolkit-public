@@ -180,15 +180,17 @@ CNetStorageServer::x_GetAdminClientNames(const string &  client_names)
 }
 
 
-enum EAlertAckResult CNetStorageServer::AcknowledgeAlert(const string &  id)
+enum EAlertAckResult CNetStorageServer::AcknowledgeAlert(const string &  id,
+                                                         const string &  user)
 {
-    return m_Alerts.Acknowledge(id);
+    return m_Alerts.Acknowledge(id, user);
 }
 
 
-enum EAlertAckResult CNetStorageServer::AcknowledgeAlert(EAlertType  alert_type)
+enum EAlertAckResult CNetStorageServer::AcknowledgeAlert(EAlertType  alert_type,
+                                                         const string &  user)
 {
-    return m_Alerts.Acknowledge(alert_type);
+    return m_Alerts.Acknowledge(alert_type, user);
 }
 
 

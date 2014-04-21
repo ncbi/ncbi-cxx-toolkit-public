@@ -46,7 +46,8 @@ struct AlertToId
 const AlertToId     alertToIdMap[] = { { eConfig,      "config" },
                                        { eReconfigure, "reconfigure" },
                                        { ePidFile,     "pidfile" },
-                                       { eDB,          "database" } };
+                                       { eDB,          "database" },
+                                       { eAccess,      "accessdenied" } };
 const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 
 
@@ -62,6 +63,7 @@ CJsonNode SNSTAlertAttributes::Serialize(void) const
                     NST_FormatPreciseTime(m_LastDetectedTimestamp));
     alert.SetString("LastAcknowledged",
                     NST_FormatPreciseTime(m_AcknowledgedTimestamp));
+    alert.SetString("User", m_User);
 
     return alert;
 }
@@ -88,17 +90,19 @@ void CNSTAlerts::Register(enum EAlertType alert_type)
 }
 
 
-enum EAlertAckResult CNSTAlerts::Acknowledge(const string &  alert_id)
+enum EAlertAckResult CNSTAlerts::Acknowledge(const string &  alert_id,
+                                             const string &  user)
 {
     EAlertType  type = x_IdToType(alert_id);
     if (type == eUnknown)
         return eNotFound;
 
-    return Acknowledge(type);
+    return Acknowledge(type, user);
 }
 
 
-enum EAlertAckResult CNSTAlerts::Acknowledge(enum EAlertType alert_type)
+enum EAlertAckResult CNSTAlerts::Acknowledge(enum EAlertType alert_type,
+                                             const string &  user)
 {
     map< enum EAlertType,
          SNSTAlertAttributes >::iterator    found;
@@ -113,6 +117,7 @@ enum EAlertAckResult CNSTAlerts::Acknowledge(enum EAlertType alert_type)
 
     found->second.m_AcknowledgedTimestamp = CNSTPreciseTime::Current();
     found->second.m_On = false;
+    found->second.m_User = user;
     return eAcknowledged;
 }
 

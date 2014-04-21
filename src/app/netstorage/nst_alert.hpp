@@ -54,7 +54,8 @@ enum EAlertType {
     eConfig = 0,
     eReconfigure = 1,
     ePidFile = 2,
-    eDB = 3
+    eDB = 3,
+    eAccess = 4
 };
 
 enum EAlertAckResult {
@@ -70,6 +71,7 @@ struct SNSTAlertAttributes
     CNSTPreciseTime     m_AcknowledgedTimestamp;
     bool                m_On;
     size_t              m_Count;
+    string              m_User;
 
     SNSTAlertAttributes() :
         m_LastDetectedTimestamp(CNSTPreciseTime::Current()),
@@ -86,8 +88,10 @@ class CNSTAlerts
 {
     public:
         void Register(enum EAlertType alert_type);
-        enum EAlertAckResult Acknowledge(const string &  alert_id);
-        enum EAlertAckResult Acknowledge(enum EAlertType alert_type);
+        enum EAlertAckResult Acknowledge(const string &  alert_id,
+                                         const string &  user);
+        enum EAlertAckResult Acknowledge(enum EAlertType alert_type,
+                                         const string &  user);
         CJsonNode Serialize(void) const;
 
     private:

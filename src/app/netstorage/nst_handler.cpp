@@ -433,6 +433,8 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         http_error_code = ex.ErrCodeToHTTPStatusCode();
         error_code = ex.GetErrCode();
         error_client_message = ex.what();
+        if (error_code == CNetStorageServerException::ePrivileges)
+            m_Server->RegisterAlert(eAccess);
     }
     catch (const CNetStorageException &  ex) {
         ERR_POST(ex);
@@ -919,10 +921,15 @@ CNetStorageHandler::x_ProcessAckAlert(
         NCBI_THROW(CNetStorageServerException, eInvalidArgument,
                    "Mandatory argument Name is not supplied "
                    "in ACKALERT command");
+    if (!message.HasKey("User"))
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Mandatory argument User is not supplied "
+                   "in ACKALERT command");
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
-    EAlertAckResult     ack_result = m_Server->AcknowledgeAlert(message.GetString("Name"));
+    EAlertAckResult     ack_result = m_Server->AcknowledgeAlert(message.GetString("Name"),
+                                                                message.GetString("User"));
     CJsonNode           reply = CreateResponseMessage(common_args.m_SerialNumber);
     switch (ack_result) {
         case eAcknowledged:
@@ -993,8 +1000,8 @@ CNetStorageHandler::x_ProcessReconfigure(
     CJsonNode   server_diff = m_Server->SetParameters(params, true);
     CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
 
-    m_Server->AcknowledgeAlert(eConfig);
-    m_Server->AcknowledgeAlert(eReconfigure);
+    m_Server->AcknowledgeAlert(eConfig, "NSTAcknowledge");
+    m_Server->AcknowledgeAlert(eReconfigure, "NSTAcknowledge");
 
     if (server_diff.IsNull() && metadata_diff.IsNull()) {
         if (m_ConnContext.NotNull())
