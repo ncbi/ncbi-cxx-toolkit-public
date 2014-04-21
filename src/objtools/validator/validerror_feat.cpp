@@ -270,7 +270,8 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
                         (*it)->GetVal() + " is not in proper EC_number format", feat);
             } else {
                   string ec_number = (*it)->GetVal();
-                CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+                  CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+                  x_ReportECNumFileStatus(feat);
                   switch (status) {
                       case CProt_ref::eEC_deleted:
                           PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
@@ -2647,6 +2648,32 @@ void CValidError_feat::x_ReportUninformativeNames(const CProt_ref& prot, const C
 }
 
 
+void CValidError_feat::x_ReportECNumFileStatus(const CSeq_feat& feat)
+{
+    static bool file_status_reported = false;
+
+    if (!file_status_reported) {
+        if (CProt_ref::GetECNumAmbiguousStatus() == CProt_ref::eECFile_not_found) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
+                "Unable to find EC number file 'ecnum_ambiguous.txt' in data directory", feat);
+        }
+        if (CProt_ref::GetECNumDeletedStatus() == CProt_ref::eECFile_not_found) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
+                "Unable to find EC number file 'ecnum_deleted.txt' in data directory", feat);
+        }
+        if (CProt_ref::GetECNumReplacedStatus() == CProt_ref::eECFile_not_found) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
+                "Unable to find EC number file 'ecnum_replaced.txt' in data directory", feat);
+        }
+        if (CProt_ref::GetECNumSpecificStatus() == CProt_ref::eECFile_not_found) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberDataMissing,
+                "Unable to find EC number file 'ecnum_specific.txt' in data directory", feat);
+        }
+        file_status_reported = true;
+    }
+}
+
+
 void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq_feat& feat) 
 {
     FOR_EACH_ECNUMBER_ON_PROTREF (it, prot) {
@@ -2658,6 +2685,7 @@ void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq
         } else {
             const string& ec_number = *it;
             CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+            x_ReportECNumFileStatus(feat);
             switch (status) {
                 case CProt_ref::eEC_deleted:
                     PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 

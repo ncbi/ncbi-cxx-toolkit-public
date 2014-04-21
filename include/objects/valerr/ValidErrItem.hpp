@@ -498,6 +498,7 @@ enum EErrType {
     eErr_SEQ_FEAT_ReplacedEcNumber,
     eErr_SEQ_FEAT_SplitEcNumber,
     eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+    eErr_SEQ_FEAT_EcNumberDataMissing,
     eErr_SEQ_FEAT_ShortExon,
     eErr_SEQ_FEAT_ExtraProteinFeature,
     eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,

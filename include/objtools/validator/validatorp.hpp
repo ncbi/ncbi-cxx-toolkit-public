@@ -1190,7 +1190,7 @@ private:
     TGi x_SeqIdToGiNumber(const string& seq_id, const string database_name );
 
     void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
-
+    void x_ReportECNumFileStatus(const CSeq_feat& feat);
 
 };
 

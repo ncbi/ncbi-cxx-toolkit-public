@@ -77,6 +77,16 @@ typedef map<string, string> TECNumberReplacementMap;
 static TECNumberStatusMap      s_ECNumberStatusMap;
 static TECNumberReplacementMap s_ECNumberReplacementMap;
 static bool                    s_ECNumberMapsInitialized = false;
+static CProt_ref::EECNumberFileStatus     s_ECNumAmbiguousStatus = CProt_ref::eECFile_not_attempted;
+static CProt_ref::EECNumberFileStatus     s_ECNumDeletedStatus = CProt_ref::eECFile_not_attempted;
+static CProt_ref::EECNumberFileStatus     s_ECNumReplacedStatus = CProt_ref::eECFile_not_attempted;
+static CProt_ref::EECNumberFileStatus     s_ECNumSpecificStatus = CProt_ref::eECFile_not_attempted;
+
+CProt_ref::EECNumberFileStatus CProt_ref::GetECNumAmbiguousStatus() { return s_ECNumAmbiguousStatus; }
+CProt_ref::EECNumberFileStatus CProt_ref::GetECNumDeletedStatus() { return s_ECNumDeletedStatus; }
+CProt_ref::EECNumberFileStatus CProt_ref::GetECNumReplacedStatus() { return s_ECNumReplacedStatus; }
+CProt_ref::EECNumberFileStatus CProt_ref::GetECNumSpecificStatus() { return s_ECNumSpecificStatus; }
+
 DEFINE_STATIC_FAST_MUTEX(s_ECNumberMutex);
 
 #include "ecnum_ambiguous.inc"
@@ -109,25 +119,31 @@ static void s_ProcessECNumberLine(const CTempString& line,
 }
 
 
-static void s_LoadECNumberTable(const string& dir, const string& name,
+static CProt_ref::EECNumberFileStatus s_LoadECNumberTable(const string& dir, const string& name,
                                 const char* const *fallback,
                                 size_t fallback_count,
                                 CProt_ref::EECNumberStatus status)
 {
     CRef<ILineReader> lr;
+    CProt_ref::EECNumberFileStatus rval = CProt_ref::eECFile_not_attempted;
+
     if ( !dir.empty() ) {
         lr.Reset(ILineReader::New
                  (CDirEntry::MakePath(dir, "ecnum_" + name, "txt")));
+        rval = CProt_ref::eECFile_not_found;
     }
     if (lr.Empty()) {
         while (fallback_count--) {
             s_ProcessECNumberLine(*fallback++, status);
         }
     } else {
+        rval = CProt_ref::eECFile_not_read;
         do {
             s_ProcessECNumberLine(*++*lr, status);
+            rval = CProt_ref::eECFile_read;
         } while ( !lr->AtEOF() );
     }
+    return rval;
 }
 
 
@@ -138,23 +154,26 @@ static void s_InitializeECNumberMaps(void)
         return;
     }
     string dir;
-    {{
+    const char* env_val = NULL;
+    env_val = getenv("NCBI_ECNUM_USE_DATA_DIR_FIRST");
+    if (env_val != NULL && stricmp(env_val, "TRUE") == 0)
+    {
         string file = g_FindDataFile("ecnum_specific.txt");
         if ( !file.empty() ) {
             dir = CDirEntry::AddTrailingPathSeparator(CDirEntry(file).GetDir());
         }
-    }}
-    if (dir.empty()) {
-        ERR_POST_X(2, Info << "s_InitializeECNumberMaps: "
-                   "falling back on built-in data.");
+        if (dir.empty()) {
+            ERR_POST_X(2, Info << "s_InitializeECNumberMaps: "
+                       "falling back on built-in data.");
+        }
     }
 #define LOAD_EC(x) s_LoadECNumberTable \
     (dir, #x, kECNum_##x, sizeof(kECNum_##x) / sizeof(*kECNum_##x), \
      CProt_ref::eEC_##x)
-    LOAD_EC(specific);
-    LOAD_EC(ambiguous);
-    LOAD_EC(replaced);
-    LOAD_EC(deleted);
+    s_ECNumSpecificStatus = LOAD_EC(specific);
+    s_ECNumAmbiguousStatus = LOAD_EC(ambiguous);
+    s_ECNumReplacedStatus = LOAD_EC(replaced);
+    s_ECNumDeletedStatus = LOAD_EC(deleted);
 #undef LOAD_EC
     s_ECNumberMapsInitialized = true;
 }

@@ -68,6 +68,15 @@ public:
         eEC_unknown    ///< Unrecognized; possibly malformed.
     };
 
+    /// Enzyme Commission file status
+    enum EECNumberFileStatus {
+        eECFile_not_attempted, ///< No attempt has been made to read the file
+        eECFile_not_found,     ///< File was not found in expected directory
+        eECFile_not_read,      ///< File was found but could not be read
+        eECFile_read           ///< File was read successfully (and is being
+                               ///  instead of the compiled fallback data
+    };
+
     /// Determine an EC number's validity and specificity.
     static EECNumberStatus GetECNumberStatus(const string& ecno);
 
@@ -76,6 +85,12 @@ public:
 
     /// Verify correct form of EC number.
     static bool IsValidECNumberFormat (const string&  ecno);
+
+    static EECNumberFileStatus GetECNumAmbiguousStatus();
+    static EECNumberFileStatus GetECNumDeletedStatus();
+    static EECNumberFileStatus GetECNumReplacedStatus();
+    static EECNumberFileStatus GetECNumSpecificStatus();
+
 
 private:
     // Prohibit copy constructor and assignment operator
