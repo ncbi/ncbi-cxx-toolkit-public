@@ -88,6 +88,7 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/Giimport_id.hpp>
@@ -189,7 +190,18 @@ static void AddTitle (CRef<CSeq_entry> entry, string defline)
     odesc->SetTitle(defline);
 
     if (entry->IsSeq()) {
-        entry->SetSeq().SetDescr().Set().push_back(odesc);
+        bool found = false;
+        if (entry->SetSeq().IsSetDescr()) {
+            NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+                if ((*it)->IsTitle()) {
+                    (*it)->SetTitle(defline);
+                    found = true;
+                }
+            }
+        }
+        if (!found) {
+            entry->SetSeq().SetDescr().Set().push_back(odesc);
+        }
     } else if (entry->IsSet()) {
         if (entry->GetSet().IsSetClass() && entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
             AddTitle (entry->SetSet().SetSeq_set().front(), defline);
@@ -649,6 +661,44 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1733)
     TestOneOrganelleSequenceDefline(CBioSource::eGenome_kinetoplast, "Sebaea microphylla kinetoplast sequence.");
     TestOneOrganelleSequenceDefline(CBioSource::eGenome_leucoplast, "Sebaea microphylla leucoplast sequence.");
 
+}
+
+
+void AddExon(CRef<CSeq_entry> seq, const string& number, TSeqPos start)
+{
+    CRef<CSeq_feat> exon = unit_test_util::AddGoodImpFeat(seq, "exon");
+    exon->ResetComment();
+    exon->SetLocation().SetInt().SetFrom(start);
+    exon->SetLocation().SetInt().SetTo(start + 5);
+    CRef<CGb_qual> qual(new CGb_qual());
+    qual->SetQual("number");
+    qual->SetVal(number);
+    exon->SetQual().push_back(qual);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3386)
+{
+    CRef<CSeq_entry> nps = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(nps);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (nps);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    AddExon(nuc, "1", cds->GetLocation().GetStart(eExtreme_Positional));
+
+    string defline = "Sebaea microphylla fake protein name gene, exon 1 and partial cds.";
+    AddTitle(nuc, defline);
+    CheckDeflineMatches(nps, true);
+
+    AddExon(nuc, "2", cds->GetLocation().GetStart(eExtreme_Positional) + 10);
+    defline = "Sebaea microphylla fake protein name gene, exons 1 and 2 and partial cds.";
+    AddTitle(nuc, defline);
+    CheckDeflineMatches(nps, true);
+
+    AddExon(nuc, "3", cds->GetLocation().GetStart(eExtreme_Positional) +20);
+    defline = "Sebaea microphylla fake protein name gene, exons 1 through 3 and partial cds.";
+    AddTitle(nuc, defline);
+    CheckDeflineMatches(nps, true);
 }
 
 

@@ -852,8 +852,18 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
 bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
 {
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
-    string label;
     
+    if (m_MainFeat.IsSetQual()) {
+        ITERATE(CSeq_feat::TQual, it, m_MainFeat.GetQual()) {
+            if ((*it)->IsSetQual() && (*it)->IsSetVal()
+                && NStr::EqualNocase((*it)->GetQual(), "number")) {
+                description = (*it)->GetVal();
+                return true;
+            }
+        }
+    }
+
+    string label;
     feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
 
     if ((subtype == CSeqFeatData::eSubtype_exon && NStr::Equal(label, "exon"))
