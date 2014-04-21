@@ -31,7 +31,7 @@
 * ===========================================================================
 */
 
- 
+#include <ncbi_pch.hpp> 
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 
@@ -847,6 +847,8 @@ TMergeNode CMergeTree::x_Search_Iter(TMergeNode StartNode,
                 }
             }
         }
+        // FIXME: hack fix to prevent tree cycles from creating cref-cycles in the frames
+        Frame->ChildFrames.clear();
 
     
         Explored.set_bit(Frame->CurrNode->Id, true);
