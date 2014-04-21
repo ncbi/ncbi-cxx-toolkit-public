@@ -97,21 +97,15 @@ CBlast_def_line::GetTaxIds() const
 {
     TTaxIds retval;                 // set<int>, initially empty
 
-    // If there's a non-zero 'taxid' value, add it to the result set.
+    // If there's a 'taxid' value, add it to the result set.
     if (CanGetTaxid()) {
         TTaxid taxid = GetTaxid();
-        if (taxid != 0) {
-            retval.insert(taxid);
-        }
+        retval.insert(taxid);
     }
-    // If there are any non-zero 'links' values, add them to the result set.
+    // If there are any 'links' values, add them to the result set.
     if (IsSetLinks()) {
         TLinks taxids = GetLinks();  // see ASN.1 spec comment
-        ITERATE(TLinks, itr, taxids) {
-            if (*itr != 0) {
-                retval.insert(*itr);
-            }
-        }
+        retval.insert(taxids.begin(), taxids.end());
     }
     // Remember, set containers guarantee that all members are unique,
     // so if the 'taxid' and 'links' fields share a value, it will not
