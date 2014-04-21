@@ -41,6 +41,8 @@ class I_BaseCmd;
 
 BEGIN_SCOPE(objects)
 
+struct SPubseqReaderReceiveData;
+
 class NCBI_XREADER_PUBSEQOS_EXPORT CPubseqReader : public CId1ReaderBase
 {
 public:
@@ -95,18 +97,11 @@ protected:
                              CDB_Connection* db_conn,
                              const char* rpc);
 
-    struct SReceiveData {
-        SReceiveData() : zip_type(0), blob_state(0), blob_version(0) {}
-
-        AutoPtr<CDB_Result> dbr;
-        int zip_type;
-        TBlobState blob_state;
-        TBlobVersion blob_version;
-    };
-    SReceiveData x_ReceiveData(CReaderRequestResult& result,
-                               const TBlobId& blob_id,
-                               I_BaseCmd& cmd,
-                               bool force_blob);
+    void x_ReceiveData(CReaderRequestResult& result,
+                       SPubseqReaderReceiveData& data,
+                       const TBlobId& blob_id,
+                       I_BaseCmd& cmd,
+                       bool force_blob);
     
 private:
     string                    m_Server;

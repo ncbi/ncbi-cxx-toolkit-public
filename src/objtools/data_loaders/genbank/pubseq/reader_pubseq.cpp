@@ -103,6 +103,20 @@ enum {
     fZipType_gzipped = 2
 };
 
+
+struct SPubseqReaderReceiveData {
+    SPubseqReaderReceiveData()
+        : zip_type(0), blob_state(0), blob_version(0) 
+        {
+        }
+    
+    AutoPtr<CDB_Result> dbr;
+    int zip_type;
+    CReader::TBlobState blob_state;
+    CReader::TBlobVersion blob_version;
+};
+
+
 CPubseqReader::CPubseqReader(int max_connections,
                              const string& server,
                              const string& user,
@@ -908,7 +922,8 @@ void CPubseqReader::GetBlobState(CReaderRequestResult& result,
         CDB_Connection* db_conn = x_GetConnection(conn);
         AutoPtr<I_BaseCmd> cmd
             (x_SendRequest2(blob_id, db_conn, RPC_GET_BLOB_INFO));
-        SReceiveData data = x_ReceiveData(result, blob_id, *cmd, false);
+        SPubseqReaderReceiveData data;
+        x_ReceiveData(result, data, blob_id, *cmd, false);
         if ( data.dbr ) {
             ERR_POST_X(5, "CPubseqReader: unexpected blob data");
         }
@@ -932,7 +947,8 @@ void CPubseqReader::GetBlobVersion(CReaderRequestResult& result,
             CDB_Connection* db_conn = x_GetConnection(conn);
             AutoPtr<I_BaseCmd> cmd
                 (x_SendRequest2(blob_id, db_conn, RPC_GET_BLOB_INFO));
-            SReceiveData data = x_ReceiveData(result, blob_id, *cmd, false);
+            SPubseqReaderReceiveData data;
+            x_ReceiveData(result, data, blob_id, *cmd, false);
             if ( data.dbr ) {
                 ERR_POST_X(5, "CPubseqReader: unexpected blob data");
             }
@@ -970,7 +986,8 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
         AutoPtr<I_BaseCmd> cmd(x_SendRequest(blob_id, db_conn, RPC_GET_ASN));
-        SReceiveData data = x_ReceiveData(result, blob_id, *cmd, true);
+        SPubseqReaderReceiveData data;
+        x_ReceiveData(result, data, blob_id, *cmd, true);
         if ( data.dbr ) {
             CDB_Result_Reader reader(data.dbr);
             CRStream stream(&reader);
@@ -1025,14 +1042,12 @@ I_BaseCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
 }
 
 
-CPubseqReader::SReceiveData
-CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
-                             const TBlobId& blob_id,
-                             I_BaseCmd& cmd,
-                             bool force_blob)
+void CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
+                                  SPubseqReaderReceiveData& ret,
+                                  const TBlobId& blob_id,
+                                  I_BaseCmd& cmd,
+                                  bool force_blob)
 {
-    SReceiveData ret;
-
     enum {
         kState_dead = 125
     };
@@ -1148,7 +1163,6 @@ CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
     }
     m_Dispatcher->SetAndSaveBlobState(result, blob_id, ret.blob_state);
     m_Dispatcher->SetAndSaveBlobVersion(result, blob_id, ret.blob_version);
-    return ret;
 }
 
 END_SCOPE(objects)
