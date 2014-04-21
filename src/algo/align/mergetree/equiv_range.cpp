@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp> 
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
