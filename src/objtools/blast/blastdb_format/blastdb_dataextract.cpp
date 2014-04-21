@@ -692,14 +692,22 @@ void CBlastDBExtractor::x_ExtractTaxIds(set<int>& taxids)
         }
         taxids.clear();
         const set<int>& taxid_set = m_Gi2TaxidSetMap.second[m_Gi];
-        taxids.insert(taxid_set.begin(), taxid_set.end());
+        if (taxid_set.empty()) {
+            taxids.insert(0);
+        } else {
+            taxids.insert(taxid_set.begin(), taxid_set.end());
+        }
         return;
     }
     // for database without Gi:
     vector<int> taxid;
     m_BlastDb.GetTaxIDs(m_Oid, taxid);
     taxids.clear();
-    taxids.insert(taxid.begin(), taxid.end());
+    if (taxid.empty()) {
+        taxids.insert(0);
+    } else {
+        taxids.insert(taxid.begin(), taxid.end());
+    }
 }
 
 void
