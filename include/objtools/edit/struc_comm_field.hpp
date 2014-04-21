@@ -105,19 +105,30 @@ public:
     static void SetAssemblyMethodVersion(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
     static void SetGenomeCoverage(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
     static void SetSequencingTechnology(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetExpectedFinalVersion(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetReferenceGuidedAssembly(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetSingleCellAmplification(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
 
-    static string GetAssemblyMethod(CUser_object& obj);
-    static string GetAssemblyMethodProgram(CUser_object& obj);
-    static string GetAssemblyMethodVersion(CUser_object& obj);
-    static string GetGenomeCoverage(CUser_object& obj);
-    static string GetSequencingTechnology(CUser_object& obj);
+    static string GetAssemblyMethod(const CUser_object& obj);
+    static string GetAssemblyMethodProgram(const CUser_object& obj);
+    static string GetAssemblyMethodVersion(const CUser_object& obj);
+    static string GetGenomeCoverage(const CUser_object& obj);
+    static string GetSequencingTechnology(const CUser_object& obj);
+    static string GetExpectedFinalVersion(const CUser_object& obj);
+    static string GetReferenceGuidedAssembly(const CUser_object& obj);
+    static string GetSingleCellAmplification(const CUser_object& obj);
 
     CGenomeAssemblyComment& SetAssemblyMethod(string val, EExistingText existing_text = eExistingText_replace_old);
     CGenomeAssemblyComment& SetAssemblyMethodProgram(string val, EExistingText existing_text = eExistingText_replace_old);
     CGenomeAssemblyComment& SetAssemblyMethodVersion(string val, EExistingText existing_text = eExistingText_replace_old);
     CGenomeAssemblyComment& SetGenomeCoverage(string val, EExistingText existing_text = eExistingText_replace_old);
     CGenomeAssemblyComment& SetSequencingTechnology(string val, EExistingText existing_text = eExistingText_replace_old);
+    CGenomeAssemblyComment& SetExpectedFinalVersion(string val, EExistingText existing_text = eExistingText_replace_old);
+    CGenomeAssemblyComment& SetReferenceGuidedAssembly(string val, EExistingText existing_text = eExistingText_replace_old);
+    CGenomeAssemblyComment& SetSingleCellAmplification(string val, EExistingText existing_text = eExistingText_replace_old);
     CRef<CUser_object> MakeUserObject();
+
+    static bool IsValid(const CUser_object& obj);
 
 protected:
     CRef<CUser_object> m_User;

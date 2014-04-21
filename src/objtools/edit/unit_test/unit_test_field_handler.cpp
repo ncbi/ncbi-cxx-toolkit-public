@@ -221,6 +221,10 @@ BOOST_AUTO_TEST_CASE(Test_GenomeAssemblyData)
     BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "tech");
     BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetSequencingTechnology(*user), "tech");
 
+    // false because Assembly Method is not valid
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::IsValid(*user), false);
+    edit::CGenomeAssemblyComment::SetAssemblyMethod(*user, "program v. version");
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::IsValid(*user), true);
 
     // alternate creation method
     edit::CGenomeAssemblyComment gnm_asm_cmt;

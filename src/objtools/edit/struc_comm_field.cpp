@@ -455,6 +455,9 @@ const string kGenomeAssemblyData = "Genome-Assembly-Data";
 const string kAssemblyMethod = "Assembly Method";
 const string kGenomeCoverage = "Genome Coverage";
 const string kSequencingTechnology = "Sequencing Technology";
+const string kExpectedFinalVersion = "Expected Final Version";
+const string kReferenceGuidedAssembly = "Reference-guided Assembly";
+const string kSingleCellAmplification = "Single-cell Amplification";
 
 CGenomeAssemblyComment::CGenomeAssemblyComment()
 {
@@ -553,14 +556,35 @@ void CGenomeAssemblyComment::SetSequencingTechnology(CUser_object& obj, string v
 }
 
 
-string CGenomeAssemblyComment::GetAssemblyMethod(CUser_object& obj)
+void CGenomeAssemblyComment::SetExpectedFinalVersion(CUser_object& obj, string val, EExistingText existing_text)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kExpectedFinalVersion);
+    field.SetVal(obj, val, existing_text);
+}
+
+
+void CGenomeAssemblyComment::SetReferenceGuidedAssembly(CUser_object& obj, string val, EExistingText existing_text)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kReferenceGuidedAssembly);
+    field.SetVal(obj, val, existing_text);
+}
+
+
+void CGenomeAssemblyComment::SetSingleCellAmplification(CUser_object& obj, string val, EExistingText existing_text)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kSingleCellAmplification);
+    field.SetVal(obj, val, existing_text);
+}
+
+
+string CGenomeAssemblyComment::GetAssemblyMethod(const CUser_object& obj)
 {
     CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
     return field.GetVal(obj);
 }
 
 
-string CGenomeAssemblyComment::GetAssemblyMethodProgram(CUser_object& obj)
+string CGenomeAssemblyComment::GetAssemblyMethodProgram(const CUser_object& obj)
 {
     CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
     string method = field.GetVal(obj);
@@ -571,7 +595,7 @@ string CGenomeAssemblyComment::GetAssemblyMethodProgram(CUser_object& obj)
 }
 
 
-string CGenomeAssemblyComment::GetAssemblyMethodVersion(CUser_object& obj)
+string CGenomeAssemblyComment::GetAssemblyMethodVersion(const CUser_object& obj)
 {
     CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
     string method = field.GetVal(obj);
@@ -582,16 +606,37 @@ string CGenomeAssemblyComment::GetAssemblyMethodVersion(CUser_object& obj)
 }
 
 
-string CGenomeAssemblyComment::GetGenomeCoverage(CUser_object& obj)
+string CGenomeAssemblyComment::GetGenomeCoverage(const CUser_object& obj)
 {
     CStructuredCommentField field(kGenomeAssemblyData, kGenomeCoverage);
     return field.GetVal(obj);
 }
 
 
-string CGenomeAssemblyComment::GetSequencingTechnology(CUser_object& obj)
+string CGenomeAssemblyComment::GetSequencingTechnology(const CUser_object& obj)
 {
     CStructuredCommentField field(kGenomeAssemblyData, kSequencingTechnology);
+    return field.GetVal(obj);
+}
+
+
+string CGenomeAssemblyComment::GetExpectedFinalVersion(const CUser_object& obj)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kExpectedFinalVersion);
+    return field.GetVal(obj);
+}
+
+
+string CGenomeAssemblyComment::GetReferenceGuidedAssembly(const CUser_object& obj)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kReferenceGuidedAssembly);
+    return field.GetVal(obj);
+}
+
+
+string CGenomeAssemblyComment::GetSingleCellAmplification(const CUser_object& obj)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kSingleCellAmplification);
     return field.GetVal(obj);
 }
 
@@ -631,6 +676,27 @@ CGenomeAssemblyComment& CGenomeAssemblyComment::SetSequencingTechnology(string v
 }
 
 
+CGenomeAssemblyComment& CGenomeAssemblyComment::SetExpectedFinalVersion(string val, EExistingText existing_text)
+{
+    SetExpectedFinalVersion(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CGenomeAssemblyComment& CGenomeAssemblyComment::SetReferenceGuidedAssembly(string val, EExistingText existing_text)
+{
+    SetReferenceGuidedAssembly(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CGenomeAssemblyComment& CGenomeAssemblyComment::SetSingleCellAmplification(string val, EExistingText existing_text)
+{
+    SetSingleCellAmplification(*m_User, val, existing_text);
+    return *this;
+}
+
+
 CRef<CUser_object> CGenomeAssemblyComment::MakeUserObject()
 {
     CRef<CUser_object> obj(new CUser_object());
@@ -638,6 +704,54 @@ CRef<CUser_object> CGenomeAssemblyComment::MakeUserObject()
     return obj;
 }
 
+
+bool s_UserFieldCompare (const CRef<CUser_field>& f1, const CRef<CUser_field>& f2)
+{
+    if (!f1->IsSetLabel()) return true;
+    if (!f2->IsSetLabel()) return false;
+    return f1->GetLabel().Compare(f2->GetLabel()) < 0;
+}
+
+
+bool CGenomeAssemblyComment::IsValid(const CUser_object& obj)
+{
+    string prefix = CComment_rule::GetStructuredCommentPrefix(obj);
+    if (!NStr::Equal(prefix, kGenomeAssemblyData)) {
+        return false;
+    }
+
+    CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
+    if (!comment_rules) {
+        return false;
+    }
+
+    try {
+        const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
+
+        if (rule.GetRequire_order()) {
+            CComment_rule::TErrorList errors = rule.IsValid(obj);
+            if (errors.size() == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            CUser_object tmp;
+            tmp.Assign(obj);
+            CUser_object::TData& fields = tmp.SetData();
+            stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
+            CComment_rule::TErrorList errors = rule.IsValid(obj);
+            if (errors.size() == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    } catch (CException ) {
+        // no rule for this prefix
+        return false;
+    }
+}
 
 
 
