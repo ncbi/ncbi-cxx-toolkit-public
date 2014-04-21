@@ -7,9 +7,9 @@ ASN_DEP = xnetblast
 SRC = result_set  sequence_set   \
       alignment_filterer  alignment_scorer  \
       blast_aligner  banded_aligner  merge_aligner  inversion_merge_aligner   \
-      ngalign  \
-	  unordered_spliter coverage_aligner \
-	  merge_tree_aligner
+      merge_tree_aligner \
+      unordered_spliter \
+      ngalign  
 
 LIB = xngalign
 
@@ -18,4 +18,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 
 USES_LIBRARIES =  \
-    $(BLAST_INPUT_LIBS) xalgoalignnw xalgoalignutil
+    $(BLAST_INPUT_LIBS) xalgoalignnw xalgoalignutil  xmergetree
