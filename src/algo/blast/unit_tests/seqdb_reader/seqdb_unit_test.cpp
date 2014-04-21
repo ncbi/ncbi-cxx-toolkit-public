@@ -4363,10 +4363,16 @@ BOOST_AUTO_TEST_CASE(MultiTaxidBlastDefLine)
 BOOST_AUTO_TEST_CASE(SingleTaxidBlastDefLine)
 {
     CBlast_def_line bdl;
-    const int kTaxid(9606);
     BOOST_CHECK(bdl.IsSetTaxid() == false);
     BOOST_CHECK(bdl.IsSetLinks() == false);
 
+    const int zeroTaxid(0);
+    bdl.SetTaxid(zeroTaxid);
+    BOOST_REQUIRE(bdl.IsSetTaxid() == true);
+    BOOST_CHECK(bdl.IsSetLinks() == false);
+    BOOST_REQUIRE_EQUAL(zeroTaxid, bdl.GetTaxid());
+
+    const int kTaxid(9606);
     bdl.SetTaxid(kTaxid);
     BOOST_REQUIRE(bdl.IsSetTaxid() == true);
     BOOST_CHECK(bdl.IsSetLinks() == false);
