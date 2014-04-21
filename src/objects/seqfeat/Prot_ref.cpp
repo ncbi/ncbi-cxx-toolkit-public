@@ -156,7 +156,7 @@ static void s_InitializeECNumberMaps(void)
     string dir;
     const char* env_val = NULL;
     env_val = getenv("NCBI_ECNUM_USE_DATA_DIR_FIRST");
-    if (env_val != NULL && stricmp(env_val, "TRUE") == 0)
+    if (env_val != NULL && NStr::EqualNocase(env_val, "TRUE"))
     {
         string file = g_FindDataFile("ecnum_specific.txt");
         if ( !file.empty() ) {
