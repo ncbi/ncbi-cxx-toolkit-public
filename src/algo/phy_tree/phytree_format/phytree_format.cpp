@@ -971,24 +971,25 @@ void CPhyTreeFormatter::x_MarkLeavesBySeqId(CBioTreeContainer& btc,
             }
         }
     }
-    sort(nodes.begin(), nodes.end(), compare_nodes_by_seqid());
 
     ITERATE (vector<string>, sid, ids) {
         CSeq_id seqid(*sid);
         CSeq_id_Handle idhandle = CSeq_id_Handle::GetHandle(seqid);
         pair<CNode*, CSeq_id_Handle> p(nullptr, idhandle);
-        vector< pair<CNode*, CSeq_id_Handle> >::iterator node
-            = lower_bound(nodes.begin(), nodes.end(), p,
-                          compare_nodes_by_seqid());
+        vector< pair<CNode*, CSeq_id_Handle> >::iterator node;
+        
+        for (node = nodes.begin();node != nodes.end();++node) {
 
-        if (node != nodes.end() && scope.IsSameBioseq(idhandle,
-                                                      node->second,
-                                                      CScope::eGetBioseq_All)) {
+            if (scope.IsSameBioseq(idhandle, node->second,
+                                   CScope::eGetBioseq_All)) {
 
-            // set features
-            // color for query node
-            x_AddFeature(eLabelBgColorId, s_kQueryNodeBgColor, node->first); 
-            x_AddFeature(eNodeInfoId, kNodeInfoQuery, node->first);
+                // set features
+                // color for query node
+                x_AddFeature(eLabelBgColorId, s_kQueryNodeBgColor, node->first); 
+                x_AddFeature(eNodeInfoId, kNodeInfoQuery, node->first);
+
+                break;
+            }
         }
     }
 }
