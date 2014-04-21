@@ -72,12 +72,19 @@ pair<set<TSeqRange>, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(c
         CConstRef<CSeq_align> padded_align(&align);
         if (padding > 0) {
             CRef<CSeq_loc> loc = align.CreateRowSeq_loc(1);
-            int start = loc->GetStart(eExtreme_Positional) - padding;
-            int stop = loc->GetStop(eExtreme_Positional) + padding;
+            int start = loc->GetStart(eExtreme_Positional);
+            int stop = loc->GetStop(eExtreme_Positional);
 
             bool is_circular = (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular);
             int genomic_length = bsh.GetBioseqLength();
+
+            if (is_circular) {
+                padding = min(padding, ((stop > start ? genomic_length : 0) - (stop - start +1))/2);
+            }
             
+            start -= padding;
+            stop += padding;
+
             if (start < 0) {
                 start = is_circular ? start + genomic_length : 0;
             }
