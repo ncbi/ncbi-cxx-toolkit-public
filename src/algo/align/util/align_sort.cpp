@@ -148,25 +148,9 @@ CAlignSort::SAlignExtractor::operator()(const CSeq_align& align)
 
         else {
             /// assume it is a score
-            double score = 0;
-            if (align.IsSetScore()) {
-                ITERATE (CSeq_align::TScore, it, align.GetScore()) {
-                    const CScore& s = **it;
-                    if (s.IsSetId()  &&  s.GetId().IsStr()  &&
-                        NStr::EqualNocase(*iter, s.GetId().GetStr())) {
-                        if (s.GetValue().IsInt()) {
-                            score = s.GetValue().GetInt();
-                        } else if (s.GetValue().IsReal()) {
-                            score = s.GetValue().GetReal();
-                        } else {
-                            NCBI_THROW(CException, eUnknown,
-                                       "invalid score type");
-                        }
-                    }
-                }
-            }
-
-            item.second = score;
+            CScoreLookup lookup;
+            lookup.SetScope(*scope);
+            item.second = lookup.GetScore(align, *iter);
         }
         key.items.push_back(item);
     }
