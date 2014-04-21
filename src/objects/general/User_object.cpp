@@ -41,12 +41,6 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/valid/Field_rule.hpp>
-#include <objects/valid/Comment_rule.hpp>
-#include <objects/valid/Comment_set.hpp>
-#include <objects/valid/Field_set.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbistr.hpp>
 
 // generated classes
 
