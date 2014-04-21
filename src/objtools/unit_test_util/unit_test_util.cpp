@@ -1023,7 +1023,8 @@ CRef<objects::CSeq_entry> MakeProteinForGoodNucProtSet (string id)
     pseq->SetId().push_back(pid);
 
     CRef<objects::CSeqdesc> mpdesc(new objects::CSeqdesc());
-    mpdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_peptide);    
+    mpdesc->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_peptide); 
+    mpdesc->SetMolinfo().SetCompleteness(objects::CMolInfo::eCompleteness_complete);
     pseq->SetDescr().Set().push_back(mpdesc);
 
     CRef<objects::CSeq_entry> pentry(new objects::CSeq_entry());

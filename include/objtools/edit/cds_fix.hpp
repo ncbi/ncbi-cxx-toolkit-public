@@ -48,6 +48,10 @@ NCBI_XOBJEDIT_EXPORT void ExtendStop(CSeq_loc& loc, TSeqPos len, CScope& scope);
 NCBI_XOBJEDIT_EXPORT bool DoesCodingRegionHaveTerminalCodeBreak(const objects::CCdregion& cdr);
 NCBI_XOBJEDIT_EXPORT CRef<CSeq_loc> GetLastCodonLoc(const CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT bool AddTerminalCodeBreak(CSeq_feat& cds, CScope& scope);
+NCBI_XOBJEDIT_EXPORT bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds);
+NCBI_XOBJEDIT_EXPORT bool AdjustProteinFeaturePartialsToMatchCDS(CSeq_feat& new_prot, const CSeq_feat& cds);
+NCBI_XOBJEDIT_EXPORT bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat);
+NCBI_XOBJEDIT_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
 
 
 END_SCOPE(edit)

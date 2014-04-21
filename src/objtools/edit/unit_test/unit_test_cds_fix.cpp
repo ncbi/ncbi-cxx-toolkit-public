@@ -249,6 +249,58 @@ BOOST_AUTO_TEST_CASE(Test_AddTerminalTranslationException)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_FeaturePartialSynchronization)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    STANDARD_SETUP
+
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_entry> prot_seq = unit_test_util::GetProteinSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> prot_feat = unit_test_util::GetProtFeatFromGoodNucProtSet (entry);
+    CRef<CSeqdesc> prot_molinfo;
+    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, prot_seq->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsMolinfo()) {
+            prot_molinfo.Reset(it->GetPointer());
+        }
+    }
+
+    // establish that everything is ok before
+    BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(cds->IsSetPartial(), false);
+    BOOST_CHECK_EQUAL(edit::AdjustFeaturePartialFlagForLocation(*cds), false);
+    BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(prot_feat->IsSetPartial(), false);
+    BOOST_CHECK_EQUAL(edit::AdjustProteinFeaturePartialsToMatchCDS(*prot_feat, *cds), false);
+    BOOST_CHECK_EQUAL(prot_molinfo->GetMolinfo().GetCompleteness(), (CMolInfo::TCompleteness)CMolInfo::eCompleteness_complete);
+    BOOST_CHECK_EQUAL(edit::AdjustProteinMolInfoToMatchCDS(prot_molinfo->SetMolinfo(), *cds), false);
+    BOOST_CHECK_EQUAL(edit::AdjustForCDSPartials(*cds, seh), false);
+
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    BOOST_CHECK_EQUAL(cds->IsSetPartial(), false);
+    BOOST_CHECK_EQUAL(edit::AdjustFeaturePartialFlagForLocation(*cds), true);
+    BOOST_CHECK_EQUAL(cds->IsSetPartial(), true);
+            
+    BOOST_CHECK_EQUAL(edit::AdjustProteinFeaturePartialsToMatchCDS(*prot_feat, *cds), true);
+    BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStart(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(prot_feat->IsSetPartial(), true);
+
+    BOOST_CHECK_EQUAL(edit::AdjustProteinMolInfoToMatchCDS(prot_molinfo->SetMolinfo(), *cds), true);
+    BOOST_CHECK_EQUAL(prot_molinfo->GetMolinfo().GetCompleteness(), (CMolInfo::TCompleteness)CMolInfo::eCompleteness_no_left);
+
+    // all changes in one go
+    cds->SetLocation().SetPartialStart(false, eExtreme_Biological);
+    BOOST_CHECK_EQUAL(edit::AdjustFeaturePartialFlagForLocation(*cds), true);
+    BOOST_CHECK_EQUAL(edit::AdjustForCDSPartials(*cds, seh), true);
+    prot_feat = unit_test_util::GetProtFeatFromGoodNucProtSet (entry);
+    BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(prot_feat->IsSetPartial(), false);
+    BOOST_CHECK_EQUAL(prot_molinfo->GetMolinfo().GetCompleteness(), (CMolInfo::TCompleteness)CMolInfo::eCompleteness_complete);
+
+}
 
 
 END_SCOPE(objects)
