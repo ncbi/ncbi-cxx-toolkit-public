@@ -293,6 +293,10 @@ void CEUtilsApp::CallESearch(const CArgs& args)
         req.SetRelDate(args["reldate"].AsInteger());
     }
 
+    if ( args["retmax"] ) {
+        req.SetRetMax(args["retmax"].AsInteger());
+    }
+
     string rettype = args["rettype"] ? args["rettype"].AsString() : kEmptyStr;
     if (rettype == "count") {
         req.SetRetType(CESearch_Request::eRetType_count);
