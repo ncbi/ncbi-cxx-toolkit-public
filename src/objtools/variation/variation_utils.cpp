@@ -330,6 +330,29 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wron
         return (wrong_ref == correct_ref);
 }
 
+int CVariationUtilities::GetVariationType(const CVariation_ref& vr, CScope& scope)
+{
+    set<int> types;
+    switch(vr.GetData().Which())
+    {
+    case  CVariation_Base::C_Data::e_Instance : return vr.GetData().GetInstance().GetType(); break;
+    case  CVariation_Base::C_Data::e_Set : 
+        for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = vr.GetData().GetSet().GetVariations().begin(); inst != vr.GetData().GetSet().GetVariations().end(); ++inst)
+        {
+            if ( (*inst)->IsSetData() && (*inst)->GetData().IsInstance() && (*inst)->GetData().GetInstance().GetType() != CVariation_inst::eType_identity)
+                types.insert( (*inst)->GetData().GetInstance().GetType() );
+        }
+        break;
+    default: break;            
+    }
+
+    if (types.empty())
+        return  CVariation_inst::eType_unknown;
+    if (types.size() == 1)
+        return *types.begin();
+    
+    return  CVariation_inst::eType_other;
+}
 
 // Variation Normalization
 CCache<string,CRef<CSeqVector> > CVariationNormalization_base_cache::m_cache(CCACHE_SIZE);
