@@ -908,9 +908,13 @@ bool CGff2Reader::x_FeatureSetQualifiers(
     const CGff2Record::TAttributes& attrs = record.Attributes();
     CGff2Record::TAttrCit it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
-
         // special case some well-known attributes
         if (x_ProcessQualifierSpecialCase(it, pFeature)) {
+            continue;
+        }
+
+        string qual = it->first;
+        if (CSeqFeatData::GetQualifierType(qual) == CSeqFeatData::eQual_bad) {
             continue;
         }
 
@@ -919,7 +923,7 @@ bool CGff2Reader::x_FeatureSetQualifiers(
         pQual->SetQual(it->first);
         pQual->SetVal(it->second);
         pFeature->SetQual().push_back(pQual);
-    }    
+    } 
     return true;
 }
 

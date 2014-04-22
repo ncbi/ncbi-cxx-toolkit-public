@@ -17,14 +17,6 @@ Seq-annot ::= {
         id local id 381
       },
       qual {
-        {
-          qual "gene_id",
-          val "381.000"
-        },
-        {
-          qual "real",
-          val "X"
-        }
       }
     },
     {
@@ -73,14 +65,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gene_id",
-          val "381.000"
-        },
-        {
-          qual "real",
-          val "X"
-        },
-        {
           qual "transcript_id",
           val "381.000.1"
         }
@@ -116,10 +100,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gene_id",
-          val "381.000"
-        },
         {
           qual "transcript_id",
           val "381.000.1"
