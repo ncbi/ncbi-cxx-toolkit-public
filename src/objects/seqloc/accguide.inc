@@ -48,6 +48,7 @@ static const char* const kBuiltInGuide[] = {
     "3+5  I??  ddbj_tpa_prot # fallback to placate older clients",
     "3+5  I??  ddbj_tpa_wgs_prot",
     "3+5  J??  gb_tsa_prot",
+    "3+5  K??  gb_wgs_prot",
     "3+5  ???  unreserved_prot",
     "",
     "# Genome pipeline accessions",
