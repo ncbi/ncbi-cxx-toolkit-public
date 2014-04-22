@@ -54,11 +54,11 @@ const string kSeqDBGroupAliasFileName("index.alx");
 CSeqDB_Substring SeqDB_RemoveDirName(CSeqDB_Substring s)
 {
     int off = s.FindLastOf(CFile::GetPathSeparator());
-    
+
     if (off != -1) {
         s.EraseFront(off + 1);
     }
-    
+
     return s;
 }
 
@@ -66,13 +66,13 @@ CSeqDB_Substring SeqDB_RemoveDirName(CSeqDB_Substring s)
 CSeqDB_Substring SeqDB_RemoveFileName(CSeqDB_Substring s)
 {
     int off = s.FindLastOf(CFile::GetPathSeparator());
-    
+
     if (off != -1) {
         s.Resize(off);
     } else {
         s.Clear();
     }
-    
+
     return s;
 }
 
@@ -82,22 +82,22 @@ CSeqDB_Substring SeqDB_RemoveExtn(CSeqDB_Substring s)
     // This used to remove anything after the last "." it could find.
     // Then it was changed to only remove the part after the ".", if
     // it did not contain a "/" character.
-    
+
     // Now it has been made even stricter, it looks for something like
     // "(.*)([.][a-zA-Z]{3})" and removes the second sub-expression if
     // there is a match.  This is because of mismatches like "1234.00"
     // that are not real "file extensions" in the way that SeqDB wants
     // to process them.
-    
+
     int slen = s.Size();
-    
+
     if (slen > 4) {
         string extn(s.GetEnd()-4, s.GetEnd());
         string extn2(extn, 2, 4);
         // Of course, nal and pal are not the only valid
         // extensions, but this code is only used with these two,
         // as far as I know, at this moment in time.
-            
+
         if (extn[0] == '.'     &&
             (extn[1] == 'n' || extn[1] == 'p') &&
             (extn2 == "al"  || extn2 == "in")) {
@@ -105,11 +105,11 @@ CSeqDB_Substring SeqDB_RemoveExtn(CSeqDB_Substring s)
             isalpha( s[slen-3] ) &&
             isalpha( s[slen-2] ) &&
             isalpha( s[slen-1] )) {*/
-            
+
             s.Resize(slen - 4);
         }
     }
-    
+
     return s;
 }
 
@@ -121,10 +121,10 @@ bool SeqDB_SplitString(CSeqDB_Substring & buffer,
     for(int i = 0; i < buffer.Size(); i++) {
         if (buffer[i] == delim) {
             front = buffer;
-            
+
             buffer.EraseFront(i + 1);
             front.Resize(i);
-            
+
             return true;
         }
     }
@@ -138,17 +138,17 @@ void SeqDB_CombinePath(const CSeqDB_Substring & one,
                        string                 & outp)
 {
     char delim = CFile::GetPathSeparator();
-    
+
     int extn_amt = extn ? (extn->Size()+1) : 0;
-    
+
     if (two.Empty()) {
         // We only use the extension if there is a filename.
         one.GetString(outp);
         return;
     }
-    
+
     bool only_two = false;
-    
+
     if (one.Empty() || two[0] == delim) {
         only_two = true;
     }
@@ -159,31 +159,31 @@ void SeqDB_CombinePath(const CSeqDB_Substring & one,
         isalpha(two[0]) &&
         two[1] == ':'   &&
         two[2] == '\\') {
-        
+
         only_two = true;
     }
-    
+
     if (only_two) {
         outp.reserve(two.Size() + extn_amt);
         two.GetString(outp);
-        
+
         if (extn) {
             outp.append(".");
             outp.append(extn->GetBegin(), extn->GetEnd());
         }
         return;
     }
-    
+
     outp.reserve(one.Size() + two.Size() + 1 + extn_amt);
-    
+
     one.GetString(outp);
-    
+
     if (outp[outp.size() - 1] != delim) {
         outp += delim;
     }
-    
+
     outp.append(two.GetBegin(), two.GetEnd());
-    
+
     if (extn) {
         outp.append(".");
         outp.append(extn->GetBegin(), extn->GetEnd());
@@ -198,7 +198,7 @@ bool SeqDB_CompareVolume(const string & s1, const string & s2)
     CSeqDB_Path(s2).FindBaseName().GetString(x2);
     if (x1 != x2) return (x1 < x2);
     else return (s1 < s2);
-} 
+}
 
 /// File existence test interface.
 class CSeqDB_FileExistence {
@@ -207,7 +207,7 @@ public:
     virtual ~CSeqDB_FileExistence()
     {
     }
-    
+
     /// Check if file exists at fully qualified path.
     /// @param fname Filename.
     /// @return True if the file was found.
@@ -241,7 +241,7 @@ static bool s_SeqDB_DBExists(const string         & dbname,
     string path;
     path.reserve(dbname.size() + 4);
     path.assign(dbname.data(), dbname.data() + dbname.size());
-    
+
     if (linkoutdb_search) {
         _ASSERT(dbtype == 'p');
         path.append(".p");
@@ -259,21 +259,21 @@ static bool s_SeqDB_DBExists(const string         & dbname,
         }
     } else {
         path.append(".-al");
-        
+
         path[path.size()-3] = dbtype;
-        
+
         if (access.DoesFileExist(path)) {
             return true;
         }
-        
+
         path[path.size()-2] = 'i';
         path[path.size()-1] = 'n';
-        
+
         if (access.DoesFileExist(path)) {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -283,13 +283,13 @@ static bool s_SeqDB_DBExists(const string         & dbname,
 static string s_GetPathSplitter()
 {
     const char * splitter = 0;
-    
+
 #if defined(NCBI_OS_UNIX)
     splitter = ":";
 #else
     splitter = ";";
 #endif
-    
+
     return splitter;
 }
 
@@ -297,9 +297,9 @@ static string s_GetPathSplitter()
 void SeqDB_ConvertOSPath(string & dbs)
 {
     // See also CDirEntry::ConvertToOSPath()
-    
+
     char delim = CDirEntry::GetPathSeparator();
-    
+
     for(size_t i = 0; i<dbs.size(); i++) {
         if (dbs[i] == '/' || dbs[i] == '\\') {
             dbs[i] = delim;
@@ -317,7 +317,7 @@ string SeqDB_MakeOSPath(const string & dbs)
 
 
 /// Search for a file in a provided set of paths
-/// 
+///
 /// This function takes a search path as a ":" delimited set of path
 /// names, and searches in those paths for the given database
 /// component.  The component name may include path components.  If
@@ -328,7 +328,7 @@ string SeqDB_MakeOSPath(const string & dbs)
 /// moving to the next element of the search path.  The path returned
 /// from this function will not contain a file extension unless the
 /// provided filename did (in which case, exact is normally set).
-/// 
+///
 /// @param blast_paths
 ///   List of filesystem paths seperated by ":".
 /// @param dbname
@@ -356,21 +356,21 @@ static string s_SeqDB_TryPaths(const string         & blast_paths,
     //    class was used, this would perform better here, and would
     //    allow improvement of the search routine for combined group
     //    indices (see comments in CSeqDBAliasSets::FindAliasPath).
-    
+
     vector<string> roads;
     NStr::Tokenize(blast_paths, s_GetPathSplitter(), roads, NStr::eMergeDelims);
-    
+
     string result;
     string attempt;
-    
+
     ITERATE(vector<string>, road, roads) {
         attempt.erase();
-        
+
         SeqDB_CombinePath(CSeqDB_Substring(SeqDB_MakeOSPath(*road)),
                           CSeqDB_Substring(dbname),
                           0,
                           attempt);
-        
+
         if (exact) {
             if (access.DoesFileExist(attempt)) {
                 result = attempt;
@@ -383,7 +383,7 @@ static string s_SeqDB_TryPaths(const string         & blast_paths,
             }
         }
     }
-    
+
     return result;
 }
 
@@ -396,11 +396,11 @@ s_SeqDB_FindBlastDBPath(const string         & dbname,
                         const string           path="")
 {
     const string pathology = (path=="") ? CSeqDBAtlas::GenerateSearchPath() : path;
-    
+
     if (sp) {
         *sp = pathology;
     }
-    
+
     return s_SeqDB_TryPaths(pathology, dbname, dbtype, exact, access);
 }
 
@@ -414,7 +414,7 @@ public:
           m_Locked (locked)
     {
     }
-    
+
     /// Test file existence.
     /// @param fname Fully qualified name of file for which to look.
     /// @return True iff file exists.
@@ -422,7 +422,7 @@ public:
     {
         return m_Atlas.DoesFileExist(fname, m_Locked);
     }
-    
+
 private:
     CSeqDBAtlas    & m_Atlas;
     CSeqDBLockHold & m_Locked;
@@ -454,7 +454,7 @@ public:
     CSeqDB_SimpleAccessor()
     {
     }
-    
+
     /// Test file existence.
     /// @param fname Fully qualified name of file for which to look.
     /// @return True iff file exists.
@@ -470,7 +470,7 @@ public:
 string SeqDB_ResolveDbPath(const string & filename)
 {
     CSeqDB_SimpleAccessor access;
-    
+
     return s_SeqDB_FindBlastDBPath(filename,
                                    '-',
                                    0,
@@ -478,11 +478,11 @@ string SeqDB_ResolveDbPath(const string & filename)
                                    access);
 }
 
-string SeqDB_ResolveDbPathNoExtension(const string & filename, 
+string SeqDB_ResolveDbPathNoExtension(const string & filename,
                                       char dbtype /* = '-' */)
 {
     CSeqDB_SimpleAccessor access;
-    
+
     return s_SeqDB_FindBlastDBPath(filename, dbtype, 0, false, access);
 }
 
@@ -499,25 +499,25 @@ void SeqDB_JoinDelim(string & a, const string & b, const string & delim)
     if (b.empty()) {
         return;
     }
-    
+
     if (a.empty()) {
         // a has no size - but might have capacity
         s_SeqDB_QuickAssign(a, b);
         return;
     }
-    
+
     size_t newlen = a.length() + b.length() + delim.length();
-    
+
     if (a.capacity() < newlen) {
         size_t newcap = 16;
-        
+
         while(newcap < newlen) {
             newcap <<= 1;
         }
-        
+
         a.reserve(newcap);
     }
-    
+
     a += delim;
     a += b;
 }
@@ -593,16 +593,16 @@ template<class TCompare, class TVector>
 void s_InsureOrder(TVector & v)
 {
     bool already = true;
-    
+
     TCompare compare_less;
-    
+
     for(int i = 1; i < (int) v.size(); i++) {
         if (compare_less(v[i], v[i-1])) {
             already = false;
             break;
         }
     }
-    
+
     if (! already) {
         sort(v.begin(), v.end(), compare_less);
     }
@@ -613,33 +613,33 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
 {
     // Code depends on OID order after translation, because various
     // methods of SeqDB use this class for filtering purposes.
-    
+
     if ((order < m_CurrentOrder) || (order == eNone)) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Out of sequence sort order requested.");
     }
-    
+
     // Input is usually sorted by GI, so we first test for sortedness.
     // If it will fail it will probably do so almost immediately.
-    
+
     if (order != m_CurrentOrder) {
         switch(order) {
         case eNone:
             break;
-            
+
         case eGi:
             s_InsureOrder<CSeqDB_SortGiLessThan>(m_GisOids);
             s_InsureOrder<CSeqDB_SortTiLessThan>(m_TisOids);
             s_InsureOrder<CSeqDB_SortSiLessThan>(m_SisOids);
             break;
-            
+
         default:
             NCBI_THROW(CSeqDBException,
                        eFileErr,
                        "Unrecognized sort order requested.");
         }
-        
+
         m_CurrentOrder = order;
     }
 }
@@ -662,13 +662,13 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid)
 bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 {
     InsureOrder(eGi);  // would assert be better?
-    
+
     int b(0), e((int)m_GisOids.size());
-    
+
     while(b < e) {
         int m = (b + e)/2;
         int m_gi = m_GisOids[m].gi;
-        
+
         if (m_gi < gi) {
             b = m + 1;
         } else if (m_gi > gi) {
@@ -679,7 +679,7 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
             return true;
         }
     }
-    
+
     oid = index = -1;
     return false;
 }
@@ -702,13 +702,13 @@ bool CSeqDBGiList::TiToOid(Int8 ti, int & oid)
 bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
 {
     InsureOrder(eGi);  // would assert be better?
-    
+
     int b(0), e((int)m_TisOids.size());
-    
+
     while(b < e) {
         int m = (b + e)/2;
         Int8 m_ti = m_TisOids[m].ti;
-        
+
         if (m_ti < ti) {
             b = m + 1;
         } else if (m_ti > ti) {
@@ -719,7 +719,7 @@ bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
             return true;
         }
     }
-    
+
     oid = index = -1;
     return false;
 }
@@ -745,7 +745,7 @@ bool CSeqDBGiList::SiToOid(const string &si, int & oid, int & index)
     while(b < e) {
         int m = (b + e)/2;
         const string & m_si = m_SisOids[m].si;
-        
+
         if (m_si < si) {
             b = m + 1;
         } else if (si < m_si) {
@@ -756,7 +756,7 @@ bool CSeqDBGiList::SiToOid(const string &si, int & oid, int & index)
             return true;
         }
     }
-    
+
     oid = index = -1;
     return false;
 }
@@ -788,14 +788,14 @@ CSeqDBGiList::GetTiList(vector<Int8>& tis) const
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
-    
+
     Int4 * beginp = (Int4*) mfile.GetPtr();
     Int4 * endp   = (Int4*) (((char*)mfile.GetPtr()) + mfile.GetSize());
-    
+
     Int4 num_gis = (int)(endp-beginp-2);
-    
+
     gis.clear();
-    
+
     if (((endp - beginp) < 2) ||
         (beginp[0] != -1) ||
         (SeqDB_GetStdOrd(beginp + 1) != num_gis)) {
@@ -803,9 +803,9 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
                    eFileErr,
                    "Specified file is not a valid binary GI file.");
     }
-    
+
     gis.reserve(num_gis);
-    
+
     for(Int4 * elem = beginp + 2; elem < endp; elem ++) {
         gis.push_back((int) SeqDB_GetStdOrd(elem));
     }
@@ -819,16 +819,16 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
 /// otherwise the file contains GIs [out]
 /// @returns true if file is binary
 /// @throws CSeqDBException if file is empty or invalid gi file
-static 
-bool s_SeqDB_IsBinaryNumericList(const char* fbeginp, const char* fendp, 
+static
+bool s_SeqDB_IsBinaryNumericList(const char* fbeginp, const char* fendp,
                                  bool& has_long_ids, bool* has_tis = NULL)
 {
     bool retval = false;
     has_long_ids = false;
-    if (has_tis) 
+    if (has_tis)
         *has_tis = false;
     Int8 file_size = fendp - fbeginp;
-    
+
     if (file_size == 0) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
@@ -840,7 +840,7 @@ bool s_SeqDB_IsBinaryNumericList(const char* fbeginp, const char* fendp,
         retval = true;
 
         int marker = fbeginp[3] & 0xFF;
-        
+
         if (marker == 0xFE || marker == 0xFC) {
             has_long_ids = true;
         }
@@ -863,16 +863,16 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
 {
     bool long_ids = false;
     Int8 file_size = fendp - fbeginp;
-    
+
     if (s_SeqDB_IsBinaryNumericList(fbeginp, fendp, long_ids)) {
         _ASSERT(long_ids == false);
         Int4 * bbeginp = (Int4*) fbeginp;
         Int4 * bendp = (Int4*) fendp;
-        
+
         Int4 num_gis = (int)(bendp-bbeginp-2);
-        
+
         gis.clear();
-        
+
         if (((bendp - bbeginp) < 2) ||
             (bbeginp[0] != -1) ||
             (SeqDB_GetStdOrd(bbeginp + 1) != num_gis)) {
@@ -880,18 +880,18 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                        eFileErr,
                        "Specified file is not a valid binary GI file.");
         }
-        
+
         gis.reserve(num_gis);
-        
+
         if (in_order) {
             int prev_gi =0;
             bool in_gi_order = true;
-            
+
             Int4 * elem = bbeginp + 2;
             while(elem < bendp) {
                 int this_gi = (int) SeqDB_GetStdOrd(elem);
                 gis.push_back(this_gi);
-            
+
                 if (prev_gi > this_gi) {
                     in_gi_order = false;
                     break;
@@ -899,11 +899,11 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                 prev_gi = this_gi;
                 elem ++;
             }
-            
+
             while(elem < bendp) {
                 gis.push_back((int) SeqDB_GetStdOrd(elem++));
             }
-            
+
             *in_order = in_gi_order;
         } else {
             for(Int4 * elem = bbeginp + 2; elem < bendp; elem ++) {
@@ -916,55 +916,55 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
         // average gi is 6 digits plus newline.  A few extra will be
         // allocated, but this is preferable to letting the vector
         // double itself (which it still will do if needed).
-        
+
         gis.reserve(int(file_size / 7));
-        
+
         Uint4 elem(0);
-        
+
         for(const char * p = fbeginp; p < fendp; p ++) {
             Uint4 dig = 0;
-            
+
             switch(*p) {
             case '0':
                 dig = 0;
                 break;
-            
+
             case '1':
                 dig = 1;
                 break;
-            
+
             case '2':
                 dig = 2;
                 break;
-            
+
             case '3':
                 dig = 3;
                 break;
-            
+
             case '4':
                 dig = 4;
                 break;
-            
+
             case '5':
                 dig = 5;
                 break;
-            
+
             case '6':
                 dig = 6;
                 break;
-            
+
             case '7':
                 dig = 7;
                 break;
-            
+
             case '8':
                 dig = 8;
                 break;
-            
+
             case '9':
                 dig = 9;
                 break;
-            
+
             case '#':
             case '\n':
             case '\r':
@@ -974,7 +974,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                 }
                 elem = 0;
                 continue;
-                
+
             default:
                 {
                     string msg = string("Invalid byte in text GI list [") +
@@ -983,7 +983,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                     NCBI_THROW(CSeqDBException, eFileErr, msg);
                 }
             }
-            
+
             elem *= 10;
             elem += dig;
         }
@@ -1023,60 +1023,60 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
 {
     bool long_ids = false;
     Int8 file_size = fendp - fbeginp;
-    
+
     if (s_SeqDB_IsBinaryNumericList(fbeginp, fendp, long_ids)) {
         Int4 * bbeginp = (Int4*) fbeginp;
         Int4 * bendp = (Int4*) fendp;
         Int4 * bdatap = bbeginp + 2;
-        
+
         Uint4 num_tis = (int)(bendp-bdatap);
-        
+
         int remainder = num_tis % 2;
-        
+
         if (long_ids) {
             num_tis /= 2;
         }
-        
+
         tis.clear();
-        
+
         bool bad_fmt = false;
-        
+
         if (bendp < bdatap) {
             bad_fmt = true;
         } else {
             int marker = SeqDB_GetStdOrd(bbeginp);
             unsigned num_ids = SeqDB_GetStdOrd(bbeginp+1);
-            
+
             if ((marker != -3 && marker != -4) ||
                 (num_ids != num_tis) ||
                 (remainder && long_ids)) {
-                
+
                 bad_fmt = true;
             }
         }
-        
+
         if (bad_fmt) {
             NCBI_THROW(CSeqDBException,
                        eFileErr,
                        "Specified file is not a valid binary GI or TI file.");
         }
-        
+
         tis.reserve(num_tis);
-        
+
         if (long_ids) {
             Int8 * bdatap8 = (Int8*) bdatap;
             Int8 * bendp8 = (Int8*) bendp;
-            
+
             if (in_order) {
                 Int8 prev_ti =0;
                 bool in_ti_order = true;
-                
+
                 Int8 * elem = bdatap8;
-                
+
                 while(elem < bendp8) {
                     Int8 this_ti = (Int8) SeqDB_GetStdOrd(elem);
                     tis.push_back(this_ti);
-                    
+
                     if (prev_ti > this_ti) {
                         in_ti_order = false;
                         break;
@@ -1084,11 +1084,11 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
                     prev_ti = this_ti;
                     elem ++;
                 }
-                
+
                 while(elem < bendp8) {
                     tis.push_back((Int8) SeqDB_GetStdOrd(elem++));
                 }
-                
+
                 *in_order = in_ti_order;
             } else {
                 for(Int8 * elem = bdatap8; elem < bendp8; elem ++) {
@@ -1099,13 +1099,13 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
             if (in_order) {
                 int prev_ti =0;
                 bool in_ti_order = true;
-                
+
                 Int4 * elem = bdatap;
-                
+
                 while(elem < bendp) {
                     int this_ti = (int) SeqDB_GetStdOrd(elem);
                     tis.push_back(this_ti);
-                    
+
                     if (prev_ti > this_ti) {
                         in_ti_order = false;
                         break;
@@ -1113,11 +1113,11 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
                     prev_ti = this_ti;
                     elem ++;
                 }
-                
+
                 while(elem < bendp) {
                     tis.push_back((int) SeqDB_GetStdOrd(elem++));
                 }
-                
+
                 *in_order = in_ti_order;
             } else {
                 for(Int4 * elem = bdatap; elem < bendp; elem ++) {
@@ -1130,55 +1130,55 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
         // average gi is 6 digits plus newline.  A few extra will be
         // allocated, but this is preferable to letting the vector
         // double itself (which it still will do if needed).
-        
+
         tis.reserve(int(file_size / 7));
-        
+
         Int8 elem(0);
-        
+
         for(const char * p = fbeginp; p < fendp; p ++) {
             Uint4 dig = 0;
-            
+
             switch(*p) {
             case '0':
                 dig = 0;
                 break;
-            
+
             case '1':
                 dig = 1;
                 break;
-            
+
             case '2':
                 dig = 2;
                 break;
-            
+
             case '3':
                 dig = 3;
                 break;
-            
+
             case '4':
                 dig = 4;
                 break;
-            
+
             case '5':
                 dig = 5;
                 break;
-            
+
             case '6':
                 dig = 6;
                 break;
-            
+
             case '7':
                 dig = 7;
                 break;
-            
+
             case '8':
                 dig = 8;
                 break;
-            
+
             case '9':
                 dig = 9;
                 break;
-            
+
             case '#':
             case '\n':
             case '\r':
@@ -1188,17 +1188,17 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
                 }
                 elem = 0;
                 continue;
-                
+
             default:
                 {
                     string msg = string("Invalid byte in text TI list [") +
                         NStr::UIntToString((unsigned char)(*p)) + " at location " +
                         NStr::NumericToString(p-fbeginp) + "].";
-                    
+
                     NCBI_THROW(CSeqDBException, eFileErr, msg);
                 }
             }
-            
+
             elem *= 10;
             elem += dig;
         }
@@ -1211,14 +1211,14 @@ void SeqDB_ReadMemorySiList(const char * fbeginp,
                             bool * in_order)
 {
     Int8 file_size = fendp - fbeginp;
-    
+
     // We would prefer to do only one allocation, so assume
     // average seqid is 6 digits plus newline.  A few extra will be
     // allocated, but this is preferable to letting the vector
     // double itself (which it still will do if needed).
-        
+
     sis.reserve(sis.size() + int(file_size / 7));
-       
+
     const char * p = fbeginp;
     const char * head;
     while ( p < fendp) {
@@ -1239,7 +1239,7 @@ void SeqDB_ReadMemorySiList(const char * fbeginp,
             } else {
                 cerr << "WARNING:  " << acc
                      << " is not a valid seqid string." << endl;
-            } 
+            }
         }
     }
     if (in_order) *in_order = false;
@@ -1304,7 +1304,7 @@ static bool s_ContainsBinaryNumericIdList(const string& fname, CSeqDBFileGiList:
     Int8 file_size = mfile.GetSize();
     const char * fbeginp = (char*) mfile.GetPtr();
     const char * fendp   = fbeginp + (int)file_size;
-    
+
     bool ignore = false;
     bool has_tis = false;
     bool retval = s_SeqDB_IsBinaryNumericList(fbeginp, fendp, ignore, &has_tis);
@@ -1329,11 +1329,11 @@ bool SeqDB_IsBinaryGiList(const string  & fname)
 void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, bool * in_order)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
-    
+
     Int8 file_size = mfile.GetSize();
     const char * fbeginp = (char*) mfile.GetPtr();
     const char * fendp   = fbeginp + (int)file_size;
-    
+
     SeqDB_ReadMemoryGiList(fbeginp, fendp, gis, in_order);
 }
 
@@ -1341,11 +1341,11 @@ void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, 
 void SeqDB_ReadTiList(const string & fname, vector<CSeqDBGiList::STiOid> & tis, bool * in_order)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
-    
+
     Int8 file_size = mfile.GetSize();
     const char * fbeginp = (char*) mfile.GetPtr();
     const char * fendp   = fbeginp + (int)file_size;
-    
+
     SeqDB_ReadMemoryTiList(fbeginp, fendp, tis, in_order);
 }
 
@@ -1364,12 +1364,12 @@ void SeqDB_ReadMixList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis,
 void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
 {
     typedef vector<CSeqDBGiList::SGiOid> TPairList;
-    
+
     TPairList pairs;
     SeqDB_ReadGiList(fname, pairs, in_order);
-    
+
     gis.reserve(pairs.size());
-    
+
     ITERATE(TPairList, iter, pairs) {
         gis.push_back(iter->gi);
     }
@@ -1389,13 +1389,13 @@ void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, 
 bool CSeqDBNegativeList::FindGi(int gi)
 {
     InsureOrder();
-    
+
     int b(0), e((int)m_Gis.size());
-    
+
     while(b < e) {
         int m = (b + e)/2;
         int m_gi = m_Gis[m];
-        
+
         if (m_gi < gi) {
             b = m + 1;
         } else if (m_gi > gi) {
@@ -1404,7 +1404,7 @@ bool CSeqDBNegativeList::FindGi(int gi)
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -1412,13 +1412,13 @@ bool CSeqDBNegativeList::FindGi(int gi)
 bool CSeqDBNegativeList::FindTi(Int8 ti)
 {
     InsureOrder();
-    
+
     int b(0), e((int)m_Tis.size());
-    
+
     while(b < e) {
         int m = (b + e)/2;
         Int8 m_ti = m_Tis[m];
-        
+
         if (m_ti < ti) {
             b = m + 1;
         } else if (m_ti > ti) {
@@ -1427,7 +1427,7 @@ bool CSeqDBNegativeList::FindTi(Int8 ti)
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -1446,11 +1446,11 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
         match_type = true;
         const CObject_id & obj = id.GetGeneral().GetTag();
-        
+
         Int8 ti = (obj.IsId()
                    ? obj.GetId()
                    : NStr::StringToInt8(obj.GetStr()));
-        
+
         return FindTi(ti);
     } else {
         match_type = false;
@@ -1465,11 +1465,11 @@ bool CSeqDBGiList::FindId(const CSeq_id & id)
         return FindGi(GI_TO(int, id.GetGi()));
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
         const CObject_id & obj = id.GetGeneral().GetTag();
-        
+
         Int8 ti = (obj.IsId()
                    ? obj.GetId()
                    : NStr::StringToInt8(obj.GetStr()));
-        
+
         return FindTi(ti);
     } else {
         Int8 num_id;
@@ -1509,7 +1509,7 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
     m_CurrentOrder = in_order ? eGi : eNone;
 }
 
-CSeqDBFileGiList::CSeqDBFileGiList(vector<string> fnames, EIdType idtype) 
+CSeqDBFileGiList::CSeqDBFileGiList(vector<string> fnames, EIdType idtype)
 {
     bool in_order = false;
     switch(idtype) {
@@ -1536,18 +1536,18 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
                            string               & dbname)
 {
     int sz = 0;
-    
+
     for(unsigned i = 0; i < dbs.size(); i++) {
         sz += int(3 + dbs[i].size());
     }
-    
+
     dbname.reserve(sz);
-    
+
     for(unsigned i = 0; i < dbs.size(); i++) {
         if (dbname.size()) {
             dbname.append(" ");
         }
-        
+
         if (dbs[i].find(" ") != string::npos) {
             dbname.append("\"");
             dbname.append(dbs[i]);
@@ -1563,12 +1563,12 @@ void SeqDB_SplitQuoted(const string        & dbname,
                        vector<CTempString> & dbs)
 {
     vector<CSeqDB_Substring> subs;
-    
+
     SeqDB_SplitQuoted(dbname, subs);
-    
+
     dbs.resize(0);
     dbs.reserve(subs.size());
-    
+
     ITERATE(vector<CSeqDB_Substring>, iter, subs) {
         CTempString tmp(iter->GetBegin(), iter->Size());
         dbs.push_back(tmp);
@@ -1580,15 +1580,15 @@ void SeqDB_SplitQuoted(const string             & dbname,
                        vector<CSeqDB_Substring> & dbs)
 {
     // split names
-    
+
     const char * sp = dbname.data();
-    
+
     bool quoted = false;
     unsigned begin = 0;
-    
+
     for(unsigned i = 0; i < dbname.size(); i++) {
         char ch = dbname[i];
-        
+
         if (quoted) {
             // Quoted mode sees '"' as the only actionable token.
             if (ch == '"') {
@@ -1600,7 +1600,7 @@ void SeqDB_SplitQuoted(const string             & dbname,
             }
         } else {
             // Non-quote mode: Space or quote starts the next string.
-            
+
             if (ch == ' ') {
                 if (begin < i) {
                     dbs.push_back(CSeqDB_Substring(sp + begin, sp + i));
@@ -1615,7 +1615,7 @@ void SeqDB_SplitQuoted(const string             & dbname,
             }
         }
     }
-    
+
     if (begin < dbname.size()) {
         dbs.push_back(CSeqDB_Substring(sp + begin, sp + dbname.size()));
     }
@@ -1625,35 +1625,35 @@ void SeqDB_SplitQuoted(const string             & dbname,
 CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gis)
 {
     _ASSERT(this != & gilist);
-    
+
     gilist.InsureOrder(CSeqDBGiList::eGi);
     sort(gis.begin(), gis.end());
-    
+
     int list_i = 0;
     int list_n = gilist.GetNumGis();
     int gis_i = 0;
     int gis_n = (int) gis.size();
-    
+
     while(list_i < list_n && gis_i < gis_n) {
         int L = gilist.GetGiOid(list_i).gi;
         int G = gis[gis_i];
-        
+
         if (L < G) {
             list_i ++;
             continue;
         }
-        
+
         if (L > G) {
             gis_i ++;
             continue;
         }
-        
+
         m_GisOids.push_back(gilist.GetGiOid(list_i));
-        
+
         list_i++;
         gis_i++;
     }
-    
+
     m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
 }
 
@@ -1662,27 +1662,27 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector
 {
     neg_gilist.InsureOrder();
     sort(gis.begin(), gis.end());
-    
+
     int list_i = 0;
     int list_n = neg_gilist.GetNumGis();
     int gis_i = 0;
     int gis_n = (int) gis.size();
-    
+
     while(list_i < list_n && gis_i < gis_n) {
         int L = neg_gilist.GetGi(list_i);
         int G = gis[gis_i];
-        
+
         if (L < G) {
             list_i ++;
             continue;
         }
-        
+
         if (L > G) {
             m_GisOids.push_back(gis[gis_i]);
             gis_i ++;
             continue;
         }
-        
+
         list_i++;
 
         int last_gi = gis[gis_i];
@@ -1693,7 +1693,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector
     while (gis_i < gis_n) {
         m_GisOids.push_back(gis[gis_i++]);
     }
-    
+
     m_CurrentOrder = m_GisOids.size() ? eGi : eNone;
 }
 
@@ -1731,9 +1731,9 @@ x_SummarizeBooleanOp(EOperation op,
                      bool     & incl_AB)
 {
     typedef CSeqDBIdSet TIdList;
-    
+
     incl_A = incl_B = incl_AB = false;
-    
+
     // Each binary boolean function can be represented as a 4 bit
     // descriptor.  The four bits indicate whether the result is true
     // when it appears, respectively, in neither list, only the second
@@ -1741,24 +1741,24 @@ x_SummarizeBooleanOp(EOperation op,
     // operation (A AND B) can be represented as (0001), and (A OR !B)
     // can be written as (1011).  In a positive ID list, 1 means that
     // an ID should be included in database iteration.
-    
+
     // But 4-bit descriptors starting with a '1' correspond to logical
     // operations that include all IDs not appearing in either input
     // set.  But of course we do not have access to the IDs that do
     // not appear, so we cannot (feasibly) compute such operations.
-    
+
     // To solve this problem, De Morgan's Laws are used to transform
     // the operation into its inverse, the results of which can be
     // applied to SeqDB as a negative ID list.
-    
+
     // For our purposes, these three transforms are needed:
     //
     //  1. (!X and !Y) becomes !(X or Y)
     //  2. (!X or Y) becomes !(X and !Y)
     //  3. (X or !Y) becomes !(!X and Y)
-    
+
     result_pos = true;
-    
+
     switch(op) {
     case eAnd:
         if ((! A_pos) && (! B_pos)) {
@@ -1767,7 +1767,7 @@ x_SummarizeBooleanOp(EOperation op,
             A_pos = B_pos = true;
         }
         break;
-        
+
     case eOr:
         if ((! A_pos) || (! B_pos)) {
             op = TIdList::eAnd;
@@ -1776,19 +1776,19 @@ x_SummarizeBooleanOp(EOperation op,
             B_pos = ! B_pos;
         }
         break;
-        
+
     case eXor:
         result_pos = A_pos == B_pos;
         break;
-        
+
     default:
         break;
     }
-    
+
     // Once we have a legal operation, we construct these flags to
     // summarize the boolean operation.  (Each of these corresponds to
     // one of the bits in the 4-bit descriptor.)
-    
+
     switch(op) {
     case eAnd:
         _ASSERT(A_pos || B_pos);
@@ -1796,17 +1796,17 @@ x_SummarizeBooleanOp(EOperation op,
         incl_B = !A_pos;
         incl_AB = A_pos && B_pos;
         break;
-        
+
     case eOr:
         _ASSERT(A_pos || B_pos);
         incl_A = incl_B = incl_AB = true;
         break;
-        
+
     case eXor:
         incl_AB = (A_pos != B_pos);
         incl_A = incl_B = ! incl_AB;
         break;
-        
+
     default:
         break;
     }
@@ -1824,7 +1824,7 @@ x_BooleanSetOperation(EOperation           op,
     bool incl_A(false),
         incl_B(false),
         incl_AB(false);
-    
+
     x_SummarizeBooleanOp(op,
                          A_pos,
                          B_pos,
@@ -1832,13 +1832,13 @@ x_BooleanSetOperation(EOperation           op,
                          incl_A,
                          incl_B,
                          incl_AB);
-    
+
     size_t A_i(0), B_i(0);
-    
+
     while((A_i < A.size()) && (B_i < B.size())) {
         Int8 Ax(A[A_i]), Bx(B[B_i]), target(-1);
         bool included(false);
-        
+
         if (Ax < Bx) {
             ++ A_i;
             target = Ax;
@@ -1853,18 +1853,18 @@ x_BooleanSetOperation(EOperation           op,
             target = Ax;
             included = incl_AB;
         }
-        
+
         if (included) {
             result.push_back(target);
         }
     }
-    
+
     if (incl_A) {
         while(A_i < A.size()) {
             result.push_back(A[A_i++]);
         }
     }
-    
+
     if (incl_B) {
         while(B_i < B.size()) {
             result.push_back(B[B_i++]);
@@ -1877,13 +1877,13 @@ void CSeqDBIdSet::Compute(EOperation          op,
                           bool                positive)
 {
     CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
-    
+
     CRef<CSeqDBIdSet_Vector> B(new CSeqDBIdSet_Vector(ids));
-    
+
     x_SortAndUnique(B->Set());
-    
+
     bool result_pos(true);
-    
+
     x_BooleanSetOperation(op,
                           m_Ids->Set(),
                           m_Positive,
@@ -1891,7 +1891,7 @@ void CSeqDBIdSet::Compute(EOperation          op,
                           positive,
                           result->Set(),
                           result_pos);
-    
+
     m_Positive = result_pos;
     m_Ids = result;
 }
@@ -1901,12 +1901,12 @@ void CSeqDBIdSet::Compute(EOperation           op,
                           bool                 positive)
 {
     CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
-    
+
     CRef<CSeqDBIdSet_Vector> B(new CSeqDBIdSet_Vector(ids));
     x_SortAndUnique(B->Set());
-    
+
     bool result_pos(true);
-    
+
     x_BooleanSetOperation(op,
                           m_Ids->Set(),
                           m_Positive,
@@ -1914,7 +1914,7 @@ void CSeqDBIdSet::Compute(EOperation           op,
                           positive,
                           result->Set(),
                           result_pos);
-    
+
     m_Positive = result_pos;
     m_Ids = result;
 }
@@ -1926,10 +1926,10 @@ void CSeqDBIdSet::Compute(EOperation op, const CSeqDBIdSet & ids)
                    eArgErr,
                    "Set operation requested but ID types don't match.");
     }
-    
+
     CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
     bool result_pos(true);
-    
+
     x_BooleanSetOperation(op,
                           m_Ids->Set(),
                           m_Positive,
@@ -1937,7 +1937,7 @@ void CSeqDBIdSet::Compute(EOperation op, const CSeqDBIdSet & ids)
                           ids.m_Positive,
                           result->Set(),
                           result_pos);
-    
+
     m_Positive = result_pos;
     m_Ids = result;
 }
@@ -1945,28 +1945,28 @@ void CSeqDBIdSet::Compute(EOperation op, const CSeqDBIdSet & ids)
 CRef<CSeqDBGiList> CSeqDBIdSet::GetPositiveList()
 {
     CRef<CSeqDBGiList> ids(new CSeqDBGiList);
-    
+
     if (! m_Positive) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Positive ID list requested but only negative exists.");
     }
-    
+
     if (m_IdType == eTi) {
         ids->ReserveTis(m_Ids->Size());
-        
+
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             ids->AddTi(*iter);
         }
     } else {
         ids->ReserveGis(m_Ids->Size());
-        
+
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             _ASSERT(((*iter) >> 32) == 0);
             ids->AddGi((int)*iter);
         }
     }
-    
+
     return ids;
 }
 
@@ -1977,24 +1977,24 @@ CRef<CSeqDBNegativeList> CSeqDBIdSet::GetNegativeList()
                    eFileErr,
                    "Negative ID list requested but only positive exists.");
     }
-    
+
     CRef<CSeqDBNegativeList> ids(new CSeqDBNegativeList);
-    
+
     if (m_IdType == eTi) {
         ids->ReserveTis(m_Ids->Size());
-        
+
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             ids->AddTi(*iter);
         }
     } else {
         ids->ReserveGis(m_Ids->Size());
-        
+
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             _ASSERT(((*iter) >> 32) == 0);
             ids->AddGi((int)*iter);
         }
     }
-    
+
     return ids;
 }
 
@@ -2026,9 +2026,9 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
                                  bool          & simpler)
 {
     ESeqDBIdType result = eStringId;
-    
+
     const CTextseq_id * tsip = 0;
-    
+
     bool matched = true;
 
     switch(bestid.Which()) {
@@ -2037,17 +2037,17 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
         num_id = bestid.GetGi();
         result = eGiId;
         break;
-        
+
     case CSeq_id::e_Gibbsq:    /* gibbseq */
         simpler = true;
         result = eStringId;
         str_id = NStr::UIntToString(bestid.GetGibbsq());
         break;
-        
+
     case CSeq_id::e_General:
         {
             const CDbtag & dbt = bestid.GetGeneral();
-            
+
             if (dbt.CanGetDb()) {
                 if (dbt.GetDb() == "BL_ORD_ID") {
                     simpler = true;
@@ -2055,20 +2055,20 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
                     result = eOID;
                     break;
                 }
-                
+
                 if (dbt.GetDb() == "PIG") {
                     simpler = true;
                     num_id = dbt.GetTag().GetId();
                     result = ePigId;
                     break;
                 }
-                
+
                 if (dbt.GetDb() == "ti") {
                     simpler = true;
                     num_id = (dbt.GetTag().IsStr()
                               ? NStr::StringToInt8(dbt.GetTag().GetStr())
                               : dbt.GetTag().GetId());
-                    
+
                     result = eTiId;
                     break;
                 }
@@ -2081,7 +2081,7 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
                     break;
                 }
             }
-            
+
             if (dbt.CanGetTag() && dbt.GetTag().IsStr()) {
                 result = eStringId;
                 str_id = dbt.GetTag().GetStr();
@@ -2092,13 +2092,13 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
             }
         }
         break;
-        
+
     case CSeq_id::e_Local:     /* local */
         simpler = true;
         result = eStringId;
         {
             const CObject_id & objid = bestid.GetLocal();
-            
+
             if (objid.IsStr()) {
                 // sparse version will leave "lcl|" off.
                 str_id = objid.GetStr();
@@ -2109,9 +2109,9 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
             }
         }
         break;
-        
+
         // tsip types
-        
+
     case CSeq_id::e_Embl:      /* embl */
     case CSeq_id::e_Ddbj:      /* ddbj */
     case CSeq_id::e_Genbank:   /* genbank */
@@ -2123,30 +2123,30 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
     case CSeq_id::e_Gpipe:     /* internal NCBI genome pipeline */
         tsip = bestid.GetTextseq_Id();
         break;
-        
+
     case CSeq_id::e_Pir:       /* pir   */
     case CSeq_id::e_Prf:       /* prf   */
         tsip = bestid.GetTextseq_Id();
         break;
-        
+
     default:
         matched = false;
     }
-    
+
     // Default: if we have a string, use it; if we only have seqid,
     // create a string.  This should not happen if the seqid matches
     // one of the cases above, which currently correspond to all the
     // supported seqid types.
-    
+
     CSeq_id::ELabelFlags label_flags = (CSeq_id::ELabelFlags)
         (CSeq_id::fLabel_GeneralDbIsContent | CSeq_id::fLabel_Version);
-    
+
     if (! matched) {
         // (should not happen normally)
-        
+
         simpler = false;
         result  = eStringId;
-        
+
         if (acc) {
             str_id = *acc;
             str_id = NStr::ToLower(str_id);
@@ -2155,15 +2155,15 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
             str_id = NStr::ToLower(str_id);
         }
     }
-    
+
     if (tsip) {
         bool found = false;
-        
+
         if (tsip->CanGetAccession()) {
             str_id = tsip->GetAccession();
             str_id = NStr::ToLower(str_id);
             found = true;
-            
+
             if (tsip->CanGetVersion()) {
                 str_id += ".";
                 str_id += NStr::UIntToString(tsip->GetVersion());
@@ -2173,22 +2173,22 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
             str_id = NStr::ToLower(str_id);
             found = true;
         }
-        
+
         if (found) {
             simpler = true;
             result = eStringId;
         }
     }
-    
+
     return result;
 }
 
 /// Find the end of a single element in a Seq-id set
-/// 
+///
 /// Seq-id strings sometimes contain several Seq-ids.  This function
 /// looks for the end of the first Seq-id, and will return its length.
 /// Static methods of CSeq_id are used to evaluate tokens.
-/// 
+///
 /// @param str
 ///   Seq-id string to search.
 /// @param pos
@@ -2200,33 +2200,33 @@ static size_t
 s_SeqDB_EndOfFastaID(const string & str, size_t pos)
 {
     // (Derived from s_EndOfFastaID()).
-    
+
     size_t vbar = str.find('|', pos);
-    
+
     if (vbar == string::npos) {
         return string::npos; // bad
     }
-    
+
     string portion(str, pos, vbar - pos);
-    
+
     CSeq_id::E_Choice choice =
         CSeq_id::WhichInverseSeqId(portion.c_str());
-    
+
     if (choice != CSeq_id::e_not_set) {
         size_t vbar_prev = vbar;
         int count;
         for (count=0; ; ++count, vbar_prev = vbar) {
             vbar = str.find('|', vbar_prev + 1);
-            
+
             if (vbar == string::npos) {
                 break;
             }
-            
+
             int start_pt = int(vbar_prev + 1);
             string element(str, start_pt, vbar - start_pt);
-            
+
             choice = CSeq_id::WhichInverseSeqId(element.c_str());
-            
+
             if (choice != CSeq_id::e_not_set) {
                 vbar = vbar_prev;
                 break;
@@ -2235,7 +2235,7 @@ s_SeqDB_EndOfFastaID(const string & str, size_t pos)
     } else {
         return string::npos; // bad
     }
-    
+
     return (vbar == string::npos) ? str.size() : vbar;
 }
 
@@ -2256,23 +2256,23 @@ s_SeqDB_ParseSeqIDs(const string              & line,
                     vector< CRef< CSeq_id > > & seqids)
 {
     // (Derived from s_ParseFastaDefline()).
-    
+
     seqids.clear();
     size_t pos = 0;
-    
+
     while (pos < line.size()) {
         size_t end = s_SeqDB_EndOfFastaID(line, pos);
-        
+
         if (end == string::npos) {
             // We didn't get a clean parse -- ignore the data after
             // this point, and return what we have.
             break;
         }
-        
+
         string element(line, pos, end - pos);
-        
+
         CRef<CSeq_id> id;
-        
+
         try {
             id = new CSeq_id(element);
         }
@@ -2280,11 +2280,11 @@ s_SeqDB_ParseSeqIDs(const string              & line,
             // Maybe this should be done: "seqids.clear();"
             break;
         }
-        
+
         seqids.push_back(id);
         pos = end + 1;
     }
-    
+
     return ! seqids.empty();
 }
 
@@ -2295,21 +2295,21 @@ ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
 {
     ESeqDBIdType result = eStringId;
     num_id = (Uint4)-1;
-    
+
     vector< CRef< CSeq_id > > seqid_set;
-    
+
     if (s_SeqDB_ParseSeqIDs(acc, seqid_set)) {
         // Something like SeqIdFindBest()
         CRef<CSeq_id> bestid =
             FindBestChoice(seqid_set, CSeq_id::BestRank);
-        
+
         result = SeqDB_SimplifySeqid(*bestid, & acc, num_id, str_id, simpler);
     } else {
         str_id = acc;
         result = eStringId;
         simpler = false;
     }
-    
+
     return result;
 }
 
@@ -2342,9 +2342,6 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
     extn.push_back(kExtnMol + "sd");   // ISAM string data file
     extn.push_back(kExtnMol + "pi");   // ISAM PIG index file
     extn.push_back(kExtnMol + "pd");   // ISAM PIG data file
-    extn.push_back(kExtnMol + "xc");   // gi-to-taxids cyclopedia file
-    extn.push_back(kExtnMol + "xa");   // gi-to-taxids index file
-    extn.push_back(kExtnMol + "xb");   // gi-to-taxids data file
 
     // Contain masking information
     extn.push_back(kExtnMol + "aa");   // ISAM mask index file
