@@ -99,7 +99,7 @@ public:
     /// %h -> hour
     /// %m -> minute
     /// %s -> second
-    /// \verbatim
+    /// \endverbatim
     /// Each of the above can contain a number immediately following the
     /// percent sign, indicating the number of characters to yield.
     /// 
