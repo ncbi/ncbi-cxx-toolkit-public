@@ -499,36 +499,33 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
                 seq_len *= 3;
             }
         }
-    
-        if ( !seq_len ) {
-            CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(0));
-            if (!bsh) {
+
+        if ( !seq_len ) { 
+            seq_len = scope.GetSequenceLength(align.GetSeq_id(0));
+
+            CSeq_inst::TMol q_mol = scope.GetSequenceType(align.GetSeq_id(0));
+            if (q_mol == CSeq_inst::eMol_not_set) {
                  NCBI_THROW(CSeqalignException, eInvalidSeqId,
-                            "s_GetPercentCoverage: "
-                            "The alignment query bioseq handle could not be "
-                            "loaded by the object managerfor seq ID: "
+                            "s_GetPercentCoverage: Can't determine mol-type for query:"
                             + align.GetSeq_id(0).AsFastaString());
+            } else if (q_mol == CSeq_inst::eMol_aa) {
+                CSeq_inst::TMol s_mol = scope.GetSequenceType(align.GetSeq_id(1));
+                if(s_mol == CSeq_inst::eMol_not_set) {
+                    NCBI_THROW(CSeqalignException, eInvalidSeqId,
+                               "s_GetPercentCoverage: Can't determine mol-type for subject:"
+                               + align.GetSeq_id(1).AsFastaString());
+                } else if(s_mol != CSeq_inst::eMol_aa) {
+                    /// NOTE: alignment length is always reported in nucleotide
+                    /// coordinates
+                    seq_len *= 3;
+                    if (align.GetSegs().IsStd()) {
+                        /// odd corner case:
+                        /// std-seg alignments of protein to nucleotide
+                        covered_bases *= 3;
+                    }   
+                }   
             }
-            CBioseq_Handle subject_bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
-            if (!subject_bsh) {
-                 NCBI_THROW(CSeqalignException, eInvalidSeqId,
-                            "s_GetPercentCoverage: "
-                            "The alignment subject bioseq handle could not be "
-                            "loaded by the object managerfor seq ID: "
-                            + align.GetSeq_id(1).AsFastaString());
-            }
-            seq_len = bsh.GetBioseqLength();
-            if (bsh.IsAa() &&  !subject_bsh.IsAa() ) {
-                /// NOTE: alignment length is always reported in nucleotide
-                /// coordinates
-                seq_len *= 3;
-                if (align.GetSegs().IsStd()) {
-                    /// odd corner case:
-                    /// std-seg alignments of protein to nucleotide
-                    covered_bases *= 3;
-                }
-            }
-        }
+        }  
     }
 
     if (covered_bases) {
