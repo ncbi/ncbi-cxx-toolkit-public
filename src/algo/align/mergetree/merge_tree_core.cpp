@@ -918,7 +918,7 @@ void CMergeTree::x_EvalGap(const CEquivRange& Early, const CEquivRange& Late,
         //GapOpen = 2; // meanest
         //GapExtend = QueryDiff + SubjtDiff;  // meanest
         // or goofy pythag version 
-        GapExtend =  sqrt( pow(QueryDiff, 2) + pow(SubjtDiff, 2) ) ;
+        GapExtend =  (ssize_t)sqrt( pow((double)QueryDiff, 2) + pow((double)SubjtDiff, 2) ) ;
     }
 }
     
