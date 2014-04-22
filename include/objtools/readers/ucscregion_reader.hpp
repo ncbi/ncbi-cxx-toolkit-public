@@ -30,8 +30,8 @@
  *
  */
 
-#ifndef OBJTOOLS_READERS___DISTANCE_READER__HPP
-#define OBJTOOLS_READERS___DISTANCE_READER__HPP
+#ifndef OBJTOOLS_READERS___UCSCREGION_READER__HPP
+#define OBJTOOLS_READERS___UCSCREGION_READER__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>

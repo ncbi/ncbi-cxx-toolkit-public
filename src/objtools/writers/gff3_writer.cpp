@@ -1061,7 +1061,7 @@ bool CGff3Writer::xWriteSource(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeature(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();

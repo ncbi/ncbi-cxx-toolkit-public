@@ -662,7 +662,7 @@ bool CWriteUtil::GetBestId(
     
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetBestId(
-    CMappedFeat mf,
+    const CMappedFeat& mf,
     string& best_id)
 //  ----------------------------------------------------------------------------
 {
@@ -687,6 +687,13 @@ bool CWriteUtil::GetBestId(
                 return  GetBestId( 
                     CSeq_id_Handle::GetHandle(sub.GetInt().GetId()), 
                     mf.GetScope(), best_id);
+            }
+            else
+            if (sub.IsMix())
+            {
+                const CSeq_id* pid = sub.GetMix().GetFirstLoc()->GetId();
+                return GetBestId(CSeq_id_Handle::GetHandle(*pid), mf.GetScope(),
+                    best_id);
             }
             const CSeq_id* pid = sub.GetId();
             return GetBestId(CSeq_id_Handle::GetHandle(*pid), mf.GetScope(),

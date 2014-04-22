@@ -24,7 +24,7 @@
 * ===========================================================================
 *
 * Author:  Mostly Mike Kornbluh, NCBI.
-*          Customizations by Frank Ludwig, NCBI.
+*          Customizations by Sergiy Gotvyanskyy, NCBI.
 *
 * File Description:
 *   GFF3 writer unit test.
@@ -50,7 +50,7 @@
 #include <dbapi/driver/drivers.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
-#include <objtools/writers/bed_writer.hpp>
+#include <objtools/writers/ucscregion_writer.hpp>
 #include "error_logger.hpp"
 
 #include <cstdio>
@@ -64,10 +64,10 @@ USING_SCOPE(objects);
 //  ============================================================================
 //  Customization data:
 const string extInput("asn");
-const string extOutput("bed");
+const string extOutput("ucsc");
 const string extErrors("errors");
 const string extKeep("new");
-const string dirTestFiles("bedwriter_test_cases");
+const string dirTestFiles("ucscwriter_test_cases");
 // !!!
 // !!! Must also customize reader type in sRunTest !!!
 // !!!
@@ -162,9 +162,9 @@ private:
     string mExtErrors;
 };
 
-CBedWriter* sGetWriter(CScope& scope, CNcbiOstream& ostr)
+CUCSCRegionWriter* sGetWriter(CScope& scope, CNcbiOstream& ostr)
 {
-    return new CBedWriter(scope, ostr);
+    return new CUCSCRegionWriter(scope, ostr);
 }
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
@@ -192,14 +192,14 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, ifstr, eTakeOwnership);
 
     CNcbiOfstream ofstr(output.c_str());
-    CBedWriter* pWriter = sGetWriter(*pScope, ofstr);
+    CUCSCRegionWriter* pWriter = sGetWriter(*pScope, ofstr);
 
     if (test_type == "annot") {
         CRef<CSeq_annot> pAnnot(new CSeq_annot);
         *pI >> *pAnnot;
-        pWriter->WriteHeader();
+        //pWriter->WriteHeader();
         pWriter->WriteAnnot(*pAnnot);
-        pWriter->WriteFooter();
+        //pWriter->WriteFooter();
         delete pWriter;
         ofstr.flush();
     }
@@ -265,7 +265,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    CBedWriter* pWriter = sGetWriter(*pScope, ofstr);
+    CUCSCRegionWriter* pWriter = sGetWriter(*pScope, ofstr);
 
     if (testInfo.mObjType == "annot") {
         CRef<CSeq_annot> pAnnot(new CSeq_annot);

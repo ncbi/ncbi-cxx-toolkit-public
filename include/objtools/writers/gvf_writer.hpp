@@ -68,7 +68,7 @@ public:
 protected:
     virtual bool xWriteFeature(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat&);
     virtual bool xWriteFeatureVariationRef(
         CGffFeatureContext&,
         CMappedFeat );

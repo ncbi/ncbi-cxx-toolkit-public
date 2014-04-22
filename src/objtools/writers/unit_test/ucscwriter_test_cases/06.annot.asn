@@ -1,0 +1,102 @@
+Seq-annot ::= {
+  desc {
+  },
+  data ftable {
+    {
+      data region "region: 1",
+      location int {
+        from 54495,
+        to 67781,
+        id other {
+          accession "NT_010542",
+          version 15
+        }
+      },
+      title "Line:1"
+    },
+    {
+      data region "region: 2",
+      location int {
+        from 80630,
+        to 162190,
+        id other {
+          accession "NT_010542",
+          version 15
+        }
+      },
+      title "Line:2"
+    },
+    {
+      data region "region: 3",
+      location int {
+        from 95942,
+        to 96055,
+        id other {
+          accession "NT_010542",
+          version 15
+        }
+      },
+      title "Line:3"
+    },
+    {
+      data region "region: 4",
+      location int {
+        from 148110,
+        to 159017,
+        id other {
+          accession "NT_010542",
+          version 15
+        }
+      },
+      title "Line:4"
+    },
+    {
+      data region "region: 5",
+      location int {
+        from 197405,
+        to 258988,
+        id other {
+          accession "NT_010542",
+          version 15
+        }
+      },
+      title "Line:5"
+    },
+    {
+      data region "region: 6",
+      location int {
+        from 265617,
+        to 267498,
+        id other {
+          accession "NT_010542",
+          version 15
+        }
+      },
+      title "Line:6"
+    },
+    {
+      data region "region: 7",
+      location int {
+        from 270313,
+        to 278108,
+        id other {
+          accession "NT_010542",
+          version 15
+        }
+      },
+      title "Line:7"
+    },
+    {
+      data region "region: 8",
+      location int {
+        from 278959,
+        to 290111,
+        id other {
+          accession "NT_010542",
+          version 15
+        }
+      },
+      title "Line:8"
+    }
+  }
+}

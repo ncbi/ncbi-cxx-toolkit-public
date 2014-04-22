@@ -116,7 +116,7 @@ bool CBedWriter::WriteAnnot(
 //  ----------------------------------------------------------------------------
 bool CBedWriter::xWriteFeature(
     const CBedTrackRecord& track,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     CBedFeatureRecord record;

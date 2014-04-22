@@ -23,14 +23,14 @@
  *
  * ===========================================================================
  *
- * Authors:  Frank Ludwig
+ * Authors:  Sergiy Gotvyanskyy
  *
- * File Description:  Formatter, Genbank to BED.
+ * File Description:  Formatter, Genbank to UCSC Region.
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___BED_WRITER__HPP
-#define OBJTOOLS_WRITERS___BED_WRITER__HPP
+#ifndef OBJTOOLS_WRITERS___UCSCREGION_WRITER__HPP
+#define OBJTOOLS_WRITERS___UCSCREGION_WRITER__HPP
 
 #include <objtools/writers/writer.hpp>
 #include <objtools/writers/bed_track_record.hpp>
@@ -39,16 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-/// CWriterBase implementation that will render given Genbank objects in the
-/// BED file format (http://http://genome.ucsc.edu/FAQ/FAQformat#format1).
-///
-/// When assigned from typical Genbank annotations, only locations will be 
-/// generated. Multi-interval Genbank features will be broken up into multiple 
-/// single interval BED feature records. Block parameters could be used to 
-/// encode multi-interval BED records but this is currently not supported.
-/// [[I will ad support though upon request]]
-///
-class NCBI_XOBJWRITE_EXPORT CBedWriter:
+class NCBI_XOBJWRITE_EXPORT CUCSCRegionWriter: 
     public CWriterBase 
 //  ============================================================================
 {
@@ -66,41 +57,17 @@ public:
     /// @param flags
     ///   any output customization flags.
     ///
-    CBedWriter(
+    CUCSCRegionWriter(
         CScope& scope,
         CNcbiOstream& ostr,
-        unsigned int colCount=12,
         unsigned int flags=fNormal );
 
-    virtual ~CBedWriter();
+    virtual ~CUCSCRegionWriter();
 
-    /// Write a raw Seq-annot to the internal output stream.
-    /// The Seq-annot is expected to contain a feature table. If so, each
-    /// feature will to formatted as a single BED record.
-    /// @param annot
-    ///   the Seq-annot object to be written.
-    /// @param name
-    ///   parameter describing the object. Handling will be format specific
-    /// @param descr
-    ///   parameter describing the object. Handling will be format specific
-    /// @return
-    ///   true if the Seq-annot was processed.
-    ///   false if the Seq-annot did not contain a feature table.
-    ///
-    bool WriteAnnot( 
-        const CSeq_annot&,
-        const string& = "",
-        const string& = "");
+    bool WriteAnnot(const CSeq_annot&, const CTempString& separator="\t");
 
 protected:
-    bool xWriteFeature(
-        const CBedTrackRecord&, 
-        const CMappedFeat&);
-
-    virtual SAnnotSelector xGetAnnotSelector();
-
     CScope& m_Scope;
-    unsigned int m_colCount;
 };
 
 END_objects_SCOPE

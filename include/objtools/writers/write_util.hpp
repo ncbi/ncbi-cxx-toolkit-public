@@ -104,7 +104,7 @@ public:
         string& );
 
     static bool GetBestId(
-        CMappedFeat,
+        const CMappedFeat&,
         string& );
 
     static bool GetTrnaCodons(
