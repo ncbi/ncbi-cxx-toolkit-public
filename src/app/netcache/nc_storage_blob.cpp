@@ -31,7 +31,7 @@
 #include "nc_storage_blob.hpp"
 #include "nc_storage.hpp"
 #include "nc_stat.hpp"
-
+#include <set>
 
 BEGIN_NCBI_SCOPE
 
@@ -60,6 +60,13 @@ static Uint8 s_CntVers = 0;
 */
 typedef map<string, Uint8> TForgets;
 static TForgets s_Forgets;
+
+// for PutFailed/PutSucceeded
+static bool s_FailMonitor = false;
+static CMiniMutex s_FailedListLock;
+static int s_FailedReserve=0;
+static CAtomicCounter s_FailedCounter;
+static set<string> s_FailedKeys;
 
 static const size_t kVerManagerSize = sizeof(CNCBlobVerManager)
                                       + sizeof(CCurVerReader);
@@ -1532,6 +1539,51 @@ bool CNCBlobAccessor::UpdatePurgeData(const string& data, char separator)
         SRV_LOG(Error, "Invalid PURGE data: " << data);
     }
     return res;
+}
+
+void CNCBlobAccessor::SetFailedWriteCount(int failed_write)
+{
+    s_FailedListLock.Lock();
+    s_FailedReserve = failed_write - s_FailedKeys.size();
+    s_FailMonitor = failed_write > 0;
+    s_FailedListLock.Unlock();
+}
+int CNCBlobAccessor::GetFailedWriteCount(void)
+{
+    return s_FailedReserve;
+}
+void CNCBlobAccessor::PutFailed(const string& blob_key)
+{
+    if (s_FailMonitor) {
+        s_FailedListLock.Lock();
+        if (s_FailedReserve > 0) {
+            s_FailedKeys.insert(blob_key);
+            --s_FailedReserve;
+            s_FailedCounter.Add(1);
+        }
+        s_FailedListLock.Unlock();
+    }
+}
+void CNCBlobAccessor::PutSucceeded(const string& blob_key)
+{
+    if (s_FailMonitor && s_FailedCounter.Get() != 0) {
+        s_FailedListLock.Lock();
+        if (s_FailedKeys.erase(blob_key)) {
+            ++s_FailedReserve;
+            s_FailedCounter.Add(-1);
+        }
+        s_FailedListLock.Unlock();
+    }
+}
+bool CNCBlobAccessor::HasPutSucceeded(const string& blob_key)
+{
+    bool b = false;
+    if (s_FailMonitor && s_FailedCounter.Get() != 0) {
+        s_FailedListLock.Lock();
+        b = s_FailedKeys.find(blob_key) != s_FailedKeys.end();
+        s_FailedListLock.Unlock();
+    }
+    return !b;
 }
 
 END_NCBI_SCOPE

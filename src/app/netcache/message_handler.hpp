@@ -112,7 +112,8 @@ enum ENCCmdFlags {
     eRunsInStartedSync  = fRunsInStartedSync + fNeedsAdminClient + fNeedsLowerPriority
                           + fNeedsStorageCache,
     eSyncBlobCmd        = eRunsInStartedSync + fNeedsBlobAccess + fDoNotProxyToPeers
-                          + fDoNotCheckPassword
+                          + fDoNotCheckPassword,
+    eBlobPut            =   fNeedsSpaceAsClient + fNeedsSpaceAsPeer
 };
 typedef Uint4 TNCCmdFlags;
 
@@ -265,6 +266,7 @@ private:
     void x_WriteFullBlobsList(void);
     void x_GetCurSlotServers(void);
 
+    void x_JournalBlobPutResult(int status, const string& blob_key, Uint2 blob_slot);
 
     TNCCmdFlags               m_Flags;
     /// NetCache protocol parser

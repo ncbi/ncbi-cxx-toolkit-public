@@ -183,6 +183,12 @@ public:
     static string GetPurgeData(char separator='\n');
     static bool UpdatePurgeData(const string& data, char separator='\n');
 
+    static void SetFailedWriteCount(int failed_write);
+    static int  GetFailedWriteCount(void);
+    static void PutFailed(const string& blob_key);
+    static void PutSucceeded(const string& blob_key);
+    static bool HasPutSucceeded(const string& blob_key);
+
     /// Prepare lock for the blob identified by key, subkey and version.
     /// Method only initializes necessary variables, actual acquiring of the
     /// lock happens in InitializeLock() method.

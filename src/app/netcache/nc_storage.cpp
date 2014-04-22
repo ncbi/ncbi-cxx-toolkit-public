@@ -80,6 +80,7 @@ static const char* kNCStorage_StopWriteOffParam = "db_limit_stop_write_off";
 static const char* kNCStorage_MinFreeDiskParam  = "disk_free_limit";
 static const char* kNCStorage_DiskCriticalParam = "critical_disk_free_limit";
 static const char* kNCStorage_MinRecNoSaveParam = "min_rec_no_save_period";
+static const char* kNCStorage_FailedWriteSize   = "failed_write_blob_key_count";
 
 
 // storage file type signatures
@@ -303,6 +304,8 @@ s_ReadVariableParams(void)
     SetWBWriteTimeout(to1, to2);
     SetWBFailedWriteDelay(reg.GetInt(kNCStorage_RegSection, "write_back_failed_delay", 2));
 
+    int failed_write = reg.GetInt(kNCStorage_RegSection, kNCStorage_FailedWriteSize, 0);
+    CNCBlobAccessor::SetFailedWriteCount((Uint4)failed_write);
     return true;
 }
 
@@ -1038,6 +1041,7 @@ void CNCBlobStorage::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("write_back_hard_size_limit").WriteText(is ).WriteNumber( GetWBHardSizeLimit());
     task.WriteText(eol).WriteText("write_back_timeout"        ).WriteText(is ).WriteNumber( GetWBWriteTimeout());
     task.WriteText(eol).WriteText("write_back_failed_delay"   ).WriteText(is ).WriteNumber( GetWBFailedWriteDelay());
+    task.WriteText(eol).WriteText(kNCStorage_FailedWriteSize  ).WriteText(is ).WriteNumber( CNCBlobAccessor::GetFailedWriteCount());
 }
 
 void
