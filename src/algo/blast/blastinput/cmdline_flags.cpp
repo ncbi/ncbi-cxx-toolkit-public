@@ -165,6 +165,7 @@ const string kDfltArgLookupTableMaskingOnlyProt("false");
 const string kDfltArgLookupTableMaskingOnlyNucl("true");
 
 const string kArgPSINumIterations("num_iterations");
+const unsigned int kDfltArgPSINumIterations = 1;
 const string kArgPSIInputChkPntFile("in_pssm");
 const string kArgPSIOutputChkPntFile("out_pssm");
 const string kArgAsciiPssmOutputFile("out_ascii_pssm");

@@ -1107,11 +1107,11 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
         // Number of iterations
         arg_desc.AddDefaultKey(kArgPSINumIterations, "int_value",
-                               "Number of iterations to perform",
-                               CArgDescriptions::eInteger,
-                               NStr::IntToString(1));
+                               "Number of iterations to perform (0 means run "
+                               "until convergence)", CArgDescriptions::eInteger,
+                               NStr::IntToString(kDfltArgPSINumIterations));
         arg_desc.SetConstraint(kArgPSINumIterations, 
-                               new CArgAllowValuesGreaterThanOrEqual(1));
+                               new CArgAllowValuesGreaterThanOrEqual(0));
         arg_desc.SetDependency(kArgPSINumIterations,
                                CArgDescriptions::eExcludes,
                                kArgRemote);
@@ -2665,7 +2665,8 @@ CBlastAppArgs::x_IssueWarningsForIgnoredOptions(const CArgs& args)
         NStr::IntToString(PSI_PSEUDO_COUNT_CONST);
     has_defaults[kArgPSIInclusionEThreshold] =
         NStr::DoubleToString(PSI_INCLUSION_ETHRESH);
-    has_defaults[kArgPSINumIterations] = NStr::IntToString(1);
+    has_defaults[kArgPSINumIterations] = 
+        NStr::IntToString(kDfltArgPSINumIterations);
 
     // get arguments, remove the supported ones and warn about those that
     // cannot be overridden.

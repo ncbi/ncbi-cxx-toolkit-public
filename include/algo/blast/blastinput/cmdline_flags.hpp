@@ -247,6 +247,7 @@ NCBI_BLASTINPUT_EXPORT extern const string kDfltArgLookupTableMaskingOnlyNucl;
 
 /// Argument to select the number of iterations to perform in PSI-BLAST
 NCBI_BLASTINPUT_EXPORT extern const string kArgPSINumIterations;
+NCBI_BLASTINPUT_EXPORT extern const unsigned int kDfltArgPSINumIterations;
 
 /// Argument to specify a 'checkpoint' file to recover the PSSM from
 NCBI_BLASTINPUT_EXPORT extern const string kArgPSIInputChkPntFile;
