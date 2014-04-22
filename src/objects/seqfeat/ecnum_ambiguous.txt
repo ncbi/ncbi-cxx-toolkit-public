@@ -644,8 +644,8 @@
 6.3.n.n	Forming carbon-nitrogen bonds
 6.3.1.-	Acid--ammonia (or amide) ligases (amide synthases)
 6.3.1.n	Acid--ammonia (or amide) ligases (amide synthases)
-6.3.2.-	Acid--D-amino-acid ligases (peptide synthases)
-6.3.2.n	Acid--D-amino-acid ligases (peptide synthases)
+6.3.2.-	Acid--amino-acid ligases (peptide synthases)
+6.3.2.n	Acid--amino-acid ligases (peptide synthases)
 6.3.3.-	Cyclo-ligases
 6.3.3.n	Cyclo-ligases
 6.3.4.-	Other carbon--nitrogen ligases
