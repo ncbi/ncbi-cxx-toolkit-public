@@ -56,6 +56,7 @@
 #include <objmgr/seq_vector.hpp>
 
 #include <objtools/writers/feature_context.hpp>
+#include <objtools/variation/variation_utils.hpp>
 #include <objtools/writers/vcf_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -113,25 +114,30 @@ CVcfWriter::~CVcfWriter()
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::WriteAnnot( 
-    const CSeq_annot& annot,
+    const CSeq_annot& orig_annot,
     const string&,
     const string& )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! x_WriteInit( annot ) ) {
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->Assign(orig_annot);
+     // TODO - may not compile since variation_normalization is not in stable components
+    //CVariationNormalization::NormalizeVariation(*annot,CVariationNormalization::eVCF,m_Scope);
+    if ( ! x_WriteInit( *annot ) ) {
         return false;
     }
-    if ( ! x_WriteMeta( annot ) ) {
+    if ( ! x_WriteMeta( *annot ) ) {
         return false;
     }
-    if ( ! x_WriteHeader( annot ) ) {
+    if ( ! x_WriteHeader( *annot ) ) {
         return false;
     }
-    if ( ! x_WriteData( annot ) ) {
+    if ( ! x_WriteData( *annot ) ) {
         return false;
     }
     return false;
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteInit(
@@ -252,25 +258,119 @@ bool CVcfWriter::x_WriteData(
     return true;
 }
 
+
+void CVcfWriter::x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string &ref, vector<string> &alt)
+{
+    int type = inst.GetType();
+    if (type != CVariation_inst::eType_identity)
+        rtype = type;
+    if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
+        && inst.GetDelta().front()->GetSeq().IsLiteral() 
+        && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+        && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+    {
+        string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+        if (!a.empty())
+        {
+            if (type == CVariation_inst::eType_identity )
+                ref = a;
+            else if (type != CVariation_inst::eType_del) 
+                alt.push_back(a);
+        }
+    }
+}
+
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeature(
     CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 { 
+
+    const CVariation_ref& vr = mf.GetData().GetVariation();
+    int type = CVariation_inst::eType_identity;
+    string ref;
+    vector<string> alt;
+    switch(vr.GetData().Which())
+    {
+    case  CVariation_Base::C_Data::e_Instance : x_GetTypeRefAlt(vr.GetData().GetInstance(),type,ref,alt); break;
+    case  CVariation_Base::C_Data::e_Set : 
+        for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = vr.GetData().GetSet().GetVariations().begin(); inst != vr.GetData().GetSet().GetVariations().end(); ++inst)
+        {
+            if ( (*inst)->IsSetData() && (*inst)->GetData().IsInstance())
+                x_GetTypeRefAlt((*inst)->GetData().GetInstance(),type,ref,alt);
+        }
+        break;
+    default: break;            
+    }
+
+    if ( type != CVariation_inst::eType_ins && type != CVariation_inst::eType_del  && type != CVariation_inst::eType_delins &&
+        type != CVariation_inst::eType_snv  && type != CVariation_inst::eType_mnp )
+    {
+        LOG_POST(Warning << "Cannot process type: " << type << Endm);
+        return false;
+    }
+
+    const CSeq_loc& loc = mf.GetLocation();
+    unsigned int start = loc.GetStart(eExtreme_Positional) + 1; // position in VCF is 1-based
+    string anchor;
+    if (type == CVariation_inst::eType_ins || type == CVariation_inst::eType_del  || type == CVariation_inst::eType_delins) 
+    {
+        ENa_strand strand = eNa_strand_unknown;
+        if (loc.IsSetStrand())
+            strand = loc.GetStrand();
+        const CSeq_id *seq_id = loc.GetId();
+        int pos = start;
+        pos--; // going to 0-based position for GetSeqData
+        if (type == CVariation_inst::eType_ins) // assuming "insert before" semantics
+        {
+            if (pos > 0)
+                pos--;
+        }
+        else
+        {
+            if (pos > 0)
+                pos--;
+            else
+                pos =  loc.GetStop(eExtreme_Positional) + 1 ; 
+        }
+        const CBioseq_Handle& bsh = m_Scope.GetBioseqHandle( *seq_id );         
+        if (bsh)
+        {
+            CRef<CSeqVector> seqvec(new CSeqVector(bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand)));
+            if (seqvec)
+            {
+                try 
+                {
+                    seqvec->GetSeqData(pos, pos+1, anchor);
+                }
+                catch(...) {}
+            }
+        }
+        else  // if id == "local id 1"
+        {
+            string label;
+            seq_id->GetLabel(&label);
+            LOG_POST(Error << "Cannot process Seq-id: " << label << Endm);
+            return true;
+        }
+        
+        
+    }
+
     if (!x_WriteFeatureChrom(context, mf)) {
         return false;
     }
-    if (!x_WriteFeaturePos(context, mf)) {
+    if (!x_WriteFeaturePos(context, mf, start, type)) {
         return false;
     }
     if (!x_WriteFeatureId(context, mf)) {
         return false;
     }
-    if (!x_WriteFeatureRef(context, mf)) {
+    if (!x_WriteFeatureRef(context, mf, start, type, anchor, ref)) {
         return false;
     }
-    if (!x_WriteFeatureAlt(context, mf)) {
+    if (!x_WriteFeatureAlt(context, mf, start, type, anchor, alt)) {
         return false;
     }
     if (!x_WriteFeatureQual(context, mf)) {
@@ -307,50 +407,47 @@ bool CVcfWriter::x_WriteFeatureChrom(
     return true;
 }
 
+/*
+enum EType {
+        eType_unknown         =   0,  ///< delta=[]
+        eType_identity        =   1,  ///< delta=[]
+        eType_inv             =   2,  ///< delta=[del, ins.seq=  RevComp(variation-location)]
+        eType_snv             =   3,  ///< delta=[morph of length 1]  NOTE: this is snV not snP; the latter  requires frequency-based validation to be  established in VariantProperties  the strict definition of SNP is an SNV with  an e
+        eType_mnp             =   4,  ///< delta=[morph of length >1]
+        eType_delins          =   5,  ///< delta=[del, ins]
+        eType_del             =   6,  ///< delta=[del]
+        eType_ins             =   7,  ///< delta=[ins]
+        eType_microsatellite  =   8,  ///< delta=[del, ins.seq= repeat-unit with fuzzy  multiplier]  variation-location is the microsat expansion  on the sequence
+        eType_transposon      =   9,  ///< delta=[del, ins.seq= known donor or 'this']  variation-location is equiv of transposon  locs.
+        eType_cnv             =  10,  ///< delta=[del, ins= 'this' with fuzzy  multiplier]
+        eType_direct_copy     =  11,  ///< delta=[ins.seq= upstream location on the  same strand]
+        eType_rev_direct_copy =  12,  ///< delta=[ins.seq= downstream location on the  same strand]
+        eType_inverted_copy   =  13,  ///< delta=[ins.seq= upstream location on the  opposite strand]
+        eType_everted_copy    =  14,  ///< delta=[ins.seq= downstream location on the  opposite strand]
+        eType_translocation   =  15,  ///< delta=like delins
+        eType_prot_missense   =  16,  ///< delta=[morph of length 1]
+        eType_prot_nonsense   =  17,  ///< delta=[del]; variation-location is the tail  of the protein being truncated
+        eType_prot_neutral    =  18,  ///< delta=[morph of length 1]
+        eType_prot_silent     =  19,  ///< delta=[morph of length 1, same AA as at  variation-location]
+        eType_prot_other      =  20,  ///< delta=any
+        eType_other           = 255  ///< delta=any
+    };
+*/
+
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeaturePos(
     CGffFeatureContext& context,
-    CMappedFeat mf)
+    CMappedFeat mf,
+    unsigned int start,
+    const int type
+    )
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
-
-    bool isInsertions = false;
-    try {
-        typedef CVariation_ref::TData::TSet::TVariations TVARS;
-        const TVARS& variations =
-            mf.GetData().GetVariation().GetData().GetSet().GetVariations();
-        for (TVARS::const_iterator cit = variations.begin(); 
-                cit != variations.end();
-                ++cit) {
-            if ( !(**cit).GetData().IsInstance() ) {
-                continue;
-            }
-            const CVariation_inst& instance = (**cit).GetData().GetInstance();
-            if (!instance.IsSetType()) {
-                continue;
-            }
-            switch(instance.GetType()) {
-            default:
-                continue;
-            case CVariation_inst::eType_ins:
-                isInsertions = true;
-                break;
-            case CVariation_inst::eType_del:
-            case CVariation_inst::eType_delins:
-            case CVariation_inst::eType_snv:
-                break;
-            }
-        }
-    }
-    catch(...) {
-        //empty set???
-    }
-    const CSeq_loc& loc = mf.GetLocation();
-    unsigned int start = loc.GetStart(eExtreme_Positional);
-    if (!isInsertions) {
-        start += 1;
-    }
+  
+    if ((type == CVariation_inst::eType_ins || type == CVariation_inst::eType_del || type == CVariation_inst::eType_delins) && start > 1) 
+        start--;
+    
     m_Os << NStr::UIntToString(start);
     return true;
 }
@@ -381,143 +478,78 @@ bool CVcfWriter::x_WriteFeatureId(
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureRef(
     CGffFeatureContext& context,
-    CMappedFeat mf )
+    CMappedFeat mf,
+    const unsigned int start,
+    const int type,
+    const string &anchor,
+    const string &ref
+    )
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
 
-    try {
-        CSeqVector v(mf.GetLocation(), mf.GetScope(), CBioseq_Handle::eCoding_Iupac);
-        string seqstr;
-        v.GetSeqData( v.begin(), v.end(), seqstr );
-        m_Os << seqstr;
+    if (!anchor.empty())
+    {   
+        if (type == CVariation_inst::eType_del || type == CVariation_inst::eType_delins) 
+        {
+            if (start > 1)
+                m_Os << anchor << ref;
+            else
+                m_Os << ref << anchor;
+        }
+        else if (type == CVariation_inst::eType_ins)
+        {
+            m_Os << anchor;
+        }
         return true;
     }
-    catch(const std::exception&) {
+    if (!ref.empty())
+    {
+        m_Os << ref;
+        return true;
     }
-    try {
-        typedef CVariation_ref::TData::TSet::TVariations TVARS;
-        const TVARS& variations =
-            mf.GetData().GetVariation().GetData().GetSet().GetVariations();
-        for (TVARS::const_iterator cit = variations.begin(); cit != variations.end();
-                ++cit) {
-            if ( !(**cit).GetData().IsInstance() ) {
-                continue;
-            }
-            const CVariation_inst& instance = (**cit).GetData().GetInstance();
-            if (instance.IsSetType()  &&
-                    instance.GetType() == CVariation_inst::eType_identity) {
-                const CDelta_item& delta = **( instance.GetDelta().begin() );   
-                if ( delta.GetSeq().IsLiteral() ) {
-                    m_Os << delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                    return true;
-                }
-            }
-            if (instance.IsSetObservation()  &&
-                    instance.GetObservation() == CVariation_inst::eObservation_reference ) {
-                const CDelta_item& delta = **( instance.GetDelta().begin() );   
-                if ( delta.GetSeq().IsLiteral() ) {
-                    m_Os << delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                    return true;
-                }
-            }
-        }
-    }
-    catch( ... ) {
-        m_Os << "?";
-    }
+  
+    m_Os << "?";
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureAlt(
     CGffFeatureContext& context,
-    CMappedFeat mf )
+    CMappedFeat mf,
+    const unsigned int start,
+    const int type,
+    const string &anchor,
+    const vector<string> &alt
+    )
 //  ----------------------------------------------------------------------------
 {
-    typedef CVariation_ref::TData::TSet::TVariations TVARS;
-
     m_Os << "\t";
 
-    vector<string> alternatives;
-    try {
-        const TVARS& variations =
-            mf.GetData().GetVariation().GetData().GetSet().GetVariations();
-        for ( TVARS::const_iterator cit = variations.begin(); 
-            cit != variations.end(); ++cit )
+  
+    if ( !alt.empty() ) 
+    {
+        for (vector<string>::const_iterator a = alt.begin(); a != alt.end(); ++a)
         {
-            if ( ! (**cit).GetData().IsInstance() ) {
-                continue;
-            }
-            const CVariation_inst& inst = (**cit).GetData().GetInstance();
-            if (inst.IsSetObservation()  &&  
-                    inst.GetObservation() == CVariation_inst::eObservation_reference) {
-                continue;
-            }
-            switch( inst.GetType() ) {
-
-                default: {
-                    alternatives.push_back( "?" );
-                    break;
-                }
-                case CVariation_inst::eType_identity: {
-                    //that would be the reference- already taken care of
-                    break;
-                }
-                case CVariation_inst::eType_snv: {
-                    const CDelta_item& delta = **( inst.GetDelta().begin() );   
-                    if ( delta.GetSeq().IsLiteral() ) {
-                        alternatives.push_back( 
-                            delta.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get() );
-                    }
-                    break;
-                }
-                case CVariation_inst::eType_ins: {
-                    CSeqVector v(mf.GetLocation(), mf.GetScope(), CBioseq_Handle::eCoding_Iupac);
-                    string seqstr;
-                    v.GetSeqData( v.begin(), v.end(), seqstr );
-                    CVariation_inst::TDelta::const_iterator cit = inst.GetDelta().begin();
-                    while( cit != inst.GetDelta().end()  &&  (**cit).GetSeq().IsThis()  ) {
-                        ++cit;
-                    }
-                    if ( cit == inst.GetDelta().end() ) {
-                        alternatives.push_back( seqstr );
-                    }
-                    else {
-                        alternatives.push_back(seqstr + 
-                            (*cit)->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get());
-                    }
-                    break;
-                }
-                case CVariation_inst::eType_del: {
-                    CSeq_loc loc;
-                    loc.Add( mf.GetLocation() );
-                    CSeqVector v(loc, mf.GetScope(), CBioseq_Handle::eCoding_Iupac);
-                    string seqstr;
-                    v.GetSeqData( v.begin(), v.end(), seqstr );
-                    CVariation_inst::TDelta::const_iterator cit = inst.GetDelta().begin();
-                    if ( cit == inst.GetDelta().end() ) {
-                    }
-                    while( cit != inst.GetDelta().end()  &&  (**cit).GetSeq().IsThis()  ) {
-                        ++cit;
-                    }
-                    if ( cit == inst.GetDelta().end() ) {
-                        alternatives.push_back( seqstr );
-                    }
-                    break;
-                }
-            }
+            if (a != alt.begin())
+                m_Os << ",";   
+            if (type == CVariation_inst::eType_ins || type == CVariation_inst::eType_delins) 
+            {
+                if (start > 1)
+                    m_Os << anchor << *a;
+                else
+                    m_Os << *a << anchor;
+            } 
+            else
+                m_Os << *a;                    
         }
-    }
-    catch( ... ) {
+        return true;
     }
 
-    if ( alternatives.empty() ) {
+    if (!anchor.empty() && type == CVariation_inst::eType_del) 
+        m_Os << anchor;
+    else
         m_Os << ".";
-    }
-    else {
-        m_Os << NStr::Join( alternatives, "," );
-    }
     return true;
 }
 

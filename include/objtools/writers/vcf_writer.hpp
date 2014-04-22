@@ -32,6 +32,7 @@
 #ifndef OBJTOOLS_WRITERS___VCF_WRITER__HPP
 #define OBJTOOLS_WRITERS___VCF_WRITER__HPP
 
+#include <objects/seqfeat/Variation_inst.hpp>
 #include <objtools/writers/writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -61,7 +62,10 @@ public:
         const string& = "",
         const string& = "" );
 
+
 protected:
+    void x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string &ref, vector<string> &alt);
+
     bool x_WriteInit(
         const CSeq_annot& );
     bool x_WriteMeta(
@@ -83,7 +87,10 @@ protected:
         
     bool x_WriteFeaturePos(
         CGffFeatureContext&,
-        CMappedFeat );
+        CMappedFeat,
+        unsigned int start,
+        const int type
+        );
         
     bool x_WriteFeatureId(
         CGffFeatureContext&,
@@ -91,15 +98,25 @@ protected:
         
     bool x_WriteFeatureRef(
         CGffFeatureContext&,
-        CMappedFeat );
+        CMappedFeat,
+        const unsigned int start,
+        const int type,
+        const string &anchor,
+        const string &ref
+        );
         
     bool x_WriteFeatureAlt(
         CGffFeatureContext&,
-        CMappedFeat );
+        CMappedFeat,
+        const unsigned int start,
+        const int type,
+        const string &anchor,
+        const vector<string> &alt
+        );
         
     bool x_WriteFeatureQual(
         CGffFeatureContext&,
-        CMappedFeat );
+        CMappedFeat);
         
     bool x_WriteFeatureFilter(
         CGffFeatureContext&,
