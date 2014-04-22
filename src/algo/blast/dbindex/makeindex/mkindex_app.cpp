@@ -119,7 +119,7 @@ void CMkIndexApplication::Init()
     arg_desc->AddDefaultKey(
             "old_style_index", "boolean",
             "Use old style index (deprecated)",
-            CArgDescriptions::eBoolean, "true" );
+            CArgDescriptions::eBoolean, "false" );
     arg_desc->SetConstraint( 
             "verbosity",
             &(*new CArgAllow_Strings, "quiet", "normal", "verbose") );
