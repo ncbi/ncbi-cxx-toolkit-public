@@ -97,10 +97,6 @@ protected:
         CRef< CSeq_feat >,
         CRef< CSeq_annot > );
 
-    virtual bool xFeatureAddRoundTripInfo(
-        const CGff2Record&,
-        CRef<CSeq_feat>);
-
     virtual bool xUpdateAnnotExon(
         const CGff2Record&,
         CRef<CSeq_feat>,

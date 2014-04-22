@@ -18,14 +18,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "Twinscan"
-        },
-        {
-          qual "gff_type",
-          val "exon"
-        },
-        {
           qual "gene_id",
           val "381.000"
         },
@@ -81,14 +73,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "Twinscan"
-        },
-        {
-          qual "gff_type",
-          val "exon"
-        },
-        {
           qual "gene_id",
           val "381.000"
         },
@@ -132,14 +116,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gff_source",
-          val "Twinscan"
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
         {
           qual "gene_id",
           val "381.000"

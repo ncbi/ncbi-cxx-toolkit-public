@@ -12,24 +12,6 @@ Seq-annot ::= {
         to 8999,
         strand plus,
         id local str "ctg123"
-      },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "gene"
-        },
-        {
-          qual "ID",
-          val "gene00001"
-        },
-        {
-          qual "Name",
-          val "EDEN"
-        }
       }
     },
     {
@@ -41,20 +23,6 @@ Seq-annot ::= {
         to 1011,
         strand plus,
         id local str "ctg123"
-      },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "TF_binding_site"
-        },
-        {
-          qual "Parent",
-          val "gene00001"
-        }
       },
       xref {
         {
@@ -91,24 +59,6 @@ Seq-annot ::= {
           to 7599,
           strand plus,
           id local str "ctg123"
-        }
-      },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "mRNA"
-        },
-        {
-          qual "ID",
-          val "mRNA00001"
-        },
-        {
-          qual "Parent",
-          val "gene00001"
         }
       },
       xref {
@@ -148,24 +98,6 @@ Seq-annot ::= {
           id local str "ctg123"
         }
       },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "mRNA"
-        },
-        {
-          qual "ID",
-          val "mRNA00002"
-        },
-        {
-          qual "Parent",
-          val "gene00001"
-        }
-      },
       xref {
         {
           id local str "gene00001"
@@ -195,24 +127,6 @@ Seq-annot ::= {
           to 7599,
           strand plus,
           id local str "ctg123"
-        }
-      },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "mRNA"
-        },
-        {
-          qual "ID",
-          val "mRNA00003"
-        },
-        {
-          qual "Parent",
-          val "gene00001"
         }
       },
       xref {
@@ -249,24 +163,6 @@ Seq-annot ::= {
           to 7599,
           strand plus,
           id local str "ctg123"
-        }
-      },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
-        {
-          qual "ID",
-          val "cds00001"
-        },
-        {
-          qual "Parent",
-          val "mRNA00001,mRNA00002"
         }
       },
       xref {
@@ -305,24 +201,6 @@ Seq-annot ::= {
           id local str "ctg123"
         }
       },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
-        {
-          qual "ID",
-          val "cds00001"
-        },
-        {
-          qual "Parent",
-          val "mRNA00001,mRNA00002"
-        }
-      },
       xref {
         {
           id local str "mRNA00001"
@@ -353,24 +231,6 @@ Seq-annot ::= {
           id local str "ctg123"
         }
       },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
-        {
-          qual "ID",
-          val "cds00002"
-        },
-        {
-          qual "Parent",
-          val "mRNA00002,mRNA00003"
-        }
-      },
       xref {
         {
           id local str "mRNA00003"
@@ -399,24 +259,6 @@ Seq-annot ::= {
           to 7599,
           strand plus,
           id local str "ctg123"
-        }
-      },
-      qual {
-        {
-          qual "gff_source",
-          val "."
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
-        {
-          qual "ID",
-          val "cds00002"
-        },
-        {
-          qual "Parent",
-          val "mRNA00002,mRNA00003"
         }
       },
       xref {

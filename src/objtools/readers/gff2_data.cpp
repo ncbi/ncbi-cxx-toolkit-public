@@ -748,10 +748,13 @@ bool CGff2Record::x_MigrateAttributes(
     CRef<CGb_qual> pQual;
     while (!attrs_left.empty()) {
         it = attrs_left.begin();
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual(it->first);
-        pQual->SetVal(it->second);
-        pFeature->SetQual().push_back(pQual);
+        string qual = it->first;
+        if (CSeqFeatData::GetQualifierType(qual) != CSeqFeatData::eQual_bad) {
+            pQual.Reset(new CGb_qual);
+            pQual->SetQual(qual);
+            pQual->SetVal(it->second);
+            pFeature->SetQual().push_back(pQual);
+        }
         attrs_left.erase(it);
     }
     return true;

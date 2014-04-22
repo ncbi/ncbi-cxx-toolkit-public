@@ -18,14 +18,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "gene"
-        },
-        {
           qual "gene_id",
           val "AT1G01010"
         }
@@ -76,14 +68,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "exon"
-        },
         {
           qual "gene_id",
           val "AT1G01010"
@@ -143,14 +127,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
-        {
           qual "gene_id",
           val "AT1G01010"
         },
@@ -182,14 +158,6 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
-        {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "gene"
-        },
         {
           qual "gene_id",
           val "AT1G01020"
@@ -257,14 +225,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
         {
           qual "gene_id",
           val "AT1G01020"
@@ -350,14 +310,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "exon"
-        },
-        {
           qual "gene_id",
           val "AT1G01020"
         },
@@ -421,14 +373,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
         {
           qual "gene_id",
           val "AT1G01020"
@@ -502,14 +446,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "exon"
-        },
-        {
           qual "gene_id",
           val "AT1G01020"
         },
@@ -539,14 +475,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "gene"
-        },
-        {
           qual "gene_id",
           val "AT1G01030"
         }
@@ -574,14 +502,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "exon"
-        },
-        {
           qual "gene_id",
           val "AT1G01030"
         },
@@ -607,14 +527,6 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
-        {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
         {
           qual "gene_id",
           val "AT1G01030"
@@ -647,14 +559,6 @@ Seq-annot ::= {
         id local str "Chr1"
       },
       qual {
-        {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "gene"
-        },
         {
           qual "gene_id",
           val "AT1G01040"
@@ -790,14 +694,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "exon"
-        },
         {
           qual "gene_id",
           val "AT1G01040"
@@ -941,14 +837,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
-        {
           qual "gene_id",
           val "AT1G01040"
         },
@@ -1054,14 +942,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "exon"
-        },
-        {
           qual "gene_id",
           val "AT1G01040"
         },
@@ -1161,14 +1041,6 @@ Seq-annot ::= {
         }
       },
       qual {
-        {
-          qual "gff_source",
-          val "TAIR10"
-        },
-        {
-          qual "gff_type",
-          val "CDS"
-        },
         {
           qual "gene_id",
           val "AT1G01040"

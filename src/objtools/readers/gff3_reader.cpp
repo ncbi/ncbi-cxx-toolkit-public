@@ -178,9 +178,6 @@ bool CGff3Reader::x_UpdateAnnotFeature(
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_feat > pFeature(new CSeq_feat);
-    if (! xFeatureAddRoundTripInfo(record, pFeature)) {
-        return false;
-    }
 
     string type = record.Type();
     if (type == "exon"  ||  type == "five_prime_UTR"  ||  type == "three_prime_UTR") {
@@ -206,32 +203,6 @@ bool CGff3Reader::x_UpdateAnnotFeature(
     if ( record.GetAttribute( "ID", strId ) ) {
         m_MapIdToFeature[ strId ] = pFeature;
     }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Reader::xFeatureAddRoundTripInfo(
-    const CGff2Record& record,
-    CRef<CSeq_feat> pFeature)
-//  ----------------------------------------------------------------------------
-{
-    CRef<CGb_qual> pQual(new CGb_qual);
-    pQual->SetQual("gff_source");
-    pQual->SetVal(record.Source());
-    pFeature->SetQual().push_back(pQual);
-
-    pQual.Reset(new CGb_qual);
-    pQual->SetQual("gff_type");
-    pQual->SetVal(record.Type());
-    pFeature->SetQual().push_back(pQual);
-
-    if (record.IsSetScore()) {
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual("gff_score");
-        pQual->SetVal(NStr::DoubleToString(record.Score()));
-        pFeature->SetQual().push_back(pQual);
-    }
-
     return true;
 }
 

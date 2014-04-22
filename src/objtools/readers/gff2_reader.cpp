@@ -901,40 +901,24 @@ bool CGff2Reader::x_FeatureSetQualifiers(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef< CGb_qual > pQual( new CGb_qual );
-    pQual->SetQual( "gff_source" );
-    pQual->SetVal( record.Source() );
-    pFeature->SetQual().push_back( pQual );
-
-    pQual.Reset( new CGb_qual );
-    pQual->SetQual( "gff_type" );
-    pQual->SetVal( record.Type() );
-    pFeature->SetQual().push_back( pQual );
-
-    if ( record.IsSetScore() ) {
-        pQual.Reset( new CGb_qual );
-        pQual->SetQual( "gff_score" );
-        pQual->SetVal( NStr::DoubleToString( record.Score() ) );
-        pFeature->SetQual().push_back( pQual );
-    }
-
     //
     //  Create GB qualifiers for the record attributes:
     //
+    CRef< CGb_qual > pQual(0);
     const CGff2Record::TAttributes& attrs = record.Attributes();
     CGff2Record::TAttrCit it = attrs.begin();
-    for ( /*NOOP*/; it != attrs.end(); ++it ) {
+    for (/*NOOP*/; it != attrs.end(); ++it) {
 
         // special case some well-known attributes
-        if ( x_ProcessQualifierSpecialCase( it, pFeature ) ) {
+        if (x_ProcessQualifierSpecialCase(it, pFeature)) {
             continue;
         }
 
         // turn everything else into a qualifier
-        pQual.Reset( new CGb_qual );
-        pQual->SetQual( it->first );
-        pQual->SetVal( it->second );
-        pFeature->SetQual().push_back( pQual );
+        pQual.Reset(new CGb_qual);
+        pQual->SetQual(it->first);
+        pQual->SetVal(it->second);
+        pFeature->SetQual().push_back(pQual);
     }    
     return true;
 }
