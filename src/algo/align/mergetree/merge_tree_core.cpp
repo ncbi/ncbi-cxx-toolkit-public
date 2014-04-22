@@ -40,6 +40,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
+#include <algo/align/mergetree/bitvec.hpp>
 #include <algo/align/mergetree/equiv_range.hpp>
 #include <algo/align/mergetree/merge_tree_core.hpp>
 
@@ -148,7 +149,7 @@ bool s_SortMergeNodeBySubjt(const TMergeNode& A, const TMergeNode& B) {
 
 void CMergeTree::AddEquiv(CEquivRange NewEquiv) 
 {
-    TBitVec Explored(512), Inserted(512);
+    bitvec<unsigned int> Explored(512), Inserted(512);
         
     TMergeNode NewNode = x_GetNode(NewEquiv);
    
@@ -280,10 +281,10 @@ void CMergeTree::AddEquivs(const TEquivList& Equivs)
 
 void CMergeTree::x_FindLeafs(TMergeNode Curr, set<TMergeNode>& Leafs, TBitVec& Explored)
 {
-    if(Explored.get_bit(Curr->Id)) { 
+    if(Explored.get(Curr->Id)) { 
         return;
     }
-    Explored.set_bit(Curr->Id, true);
+    Explored.set(Curr->Id, true);
 
     if(Curr->Children.empty()) {
         Leafs.insert(Curr);
@@ -299,11 +300,11 @@ void CMergeTree::x_FindLeafs(TMergeNode Curr, set<TMergeNode>& Leafs, TBitVec& E
 bool CMergeTree::x_FindBefores(TMergeNode New, TMergeNode Curr, set<TMergeNode>& Befores, 
                                TBitVec& Explored, TBitVec& Inserted) 
 {
-    if(Explored.get_bit(Curr->Id)) { 
-        return Inserted.get_bit(Curr->Id);
+    if(Explored.get(Curr->Id)) { 
+        return Inserted.get(Curr->Id);
     }
 
-    Explored.set_bit(Curr->Id, true);
+    Explored.set(Curr->Id, true);
 
     CEquivRange::ERelative Rel = New->Equiv.CalcRelative(Curr->Equiv);
 
@@ -321,11 +322,11 @@ bool CMergeTree::x_FindBefores(TMergeNode New, TMergeNode Curr, set<TMergeNode>&
             //    << "("<<New->QI<<","<<New->SI<<")" << "\t"
             //    << "("<<Curr->QI<<","<<Curr->SI<<")" << "\t"
             //    << "\t" << New->Equiv << "\t" << Curr->Equiv << endl;
-            Inserted.set_bit(Curr->Id, true);
+            Inserted.set(Curr->Id, true);
             return true;
         } else if(!SubInsert && Rel == CEquivRange::eBefore) {
             Befores.insert(Curr);
-            Inserted.set_bit(Curr->Id, true);
+            Inserted.set(Curr->Id, true);
             //cerr << "Inserted: " << s_RelToStr(Rel) << "\t" 
             //    << "("<<New->QI<<","<<New->SI<<")" << "\t"
             //    << "("<<Curr->QI<<","<<Curr->SI<<")" << "\t"
@@ -341,11 +342,11 @@ bool CMergeTree::x_FindBefores(TMergeNode New, TMergeNode Curr, set<TMergeNode>&
 bool CMergeTree::x_FindAfters(TMergeNode New, TMergeNode Curr, set<TMergeNode>& Afters, 
                               TBitVec& Explored, TBitVec& Inserted) 
 {
-    if(Explored.get_bit(Curr->Id)) { 
-        return Inserted.get_bit(Curr->Id);
+    if(Explored.get(Curr->Id)) { 
+        return Inserted.get(Curr->Id);
     }
 
-    Explored.set_bit(Curr->Id, true);
+    Explored.set(Curr->Id, true);
 
     CEquivRange::ERelative Rel = New->Equiv.CalcRelative(Curr->Equiv);
 
@@ -355,7 +356,7 @@ bool CMergeTree::x_FindAfters(TMergeNode New, TMergeNode Curr, set<TMergeNode>& 
     else if(Rel == CEquivRange::eAfter && !Curr->Equiv.Empty()) {
        // cerr << "After: " << New->Equiv << "\t" << Curr->Equiv << endl;
         Afters.insert(Curr);
-        Inserted.set_bit(Curr->Id, true);
+        Inserted.set(Curr->Id, true);
         return true;
     } else {
         bool SubInsert = !Curr->Children.empty();
@@ -364,7 +365,7 @@ bool CMergeTree::x_FindAfters(TMergeNode New, TMergeNode Curr, set<TMergeNode>& 
         }
         
         if(SubInsert) {
-            Inserted.set_bit(Curr->Id, true);
+            Inserted.set(Curr->Id, true);
             return true;
         } else {
             return false;
@@ -380,10 +381,10 @@ bool CMergeTree::x_FindBefores_Up(TMergeNode New, TMergeNode Curr, set<TMergeNod
                               TBitVec& Explored, TBitVec& Inserted, int& Depth) 
 {
     Depth++;
-    if(Explored.get_bit(Curr->Id)) { 
-        return Inserted.get_bit(Curr->Id);
+    if(Explored.get(Curr->Id)) { 
+        return Inserted.get(Curr->Id);
     }
-    Explored.set_bit(Curr->Id, true);
+    Explored.set(Curr->Id, true);
 
     if(Curr->Equiv.Empty())
         return false;
@@ -415,7 +416,7 @@ bool CMergeTree::x_FindBefores_Up(TMergeNode New, TMergeNode Curr, set<TMergeNod
         }
         
         Befores.insert(Curr);
-        Inserted.set_bit(Curr->Id, true);
+        Inserted.set(Curr->Id, true);
         return true;
     }
     else {
@@ -433,12 +434,12 @@ bool CMergeTree::x_FindBefores_Up(TMergeNode New, TMergeNode Curr, set<TMergeNod
 bool CMergeTree::x_FindAfters_Up(TMergeNode New, TMergeNode Curr, set<TMergeNode>& Afters, 
                               TBitVec& Explored, TBitVec& Inserted) 
 {
-    if(Explored.get_bit(Curr->Id)) { 
-        return Inserted.get_bit(Curr->Id);
+    if(Explored.get(Curr->Id)) { 
+        return Inserted.get(Curr->Id);
     }
 
 
-    Explored.set_bit(Curr->Id, true);
+    Explored.set(Curr->Id, true);
 
     CEquivRange::ERelative Rel = New->Equiv.CalcRelative(Curr->Equiv);
 
@@ -452,11 +453,11 @@ bool CMergeTree::x_FindAfters_Up(TMergeNode New, TMergeNode Curr, set<TMergeNode
         }
         
         if(SubInsert) {
-            Inserted.set_bit(Curr->Id, true);
+            Inserted.set(Curr->Id, true);
             return true;
         } else if(Rel == CEquivRange::eAfter && !Curr->Equiv.Empty()) {
             Afters.insert(Curr);
-            Inserted.set_bit(Curr->Id, true);
+            Inserted.set(Curr->Id, true);
         //    cerr << "AfterU: " << New->Equiv << "\t" << Curr->Equiv << endl;
             return true;
         } else {
@@ -576,14 +577,14 @@ TMergeNode CMergeTree::x_Search_Recur(TMergeNode CurrNode,
         DEBUG_CURR_NODE = true;
     
 
-    if(Explored.get_bit(CurrNode->Id)) {
+    if(Explored.get(CurrNode->Id)) {
 #ifdef MERGE_TREE_VERBOSE_DEBUG
         if(DEBUG_CURR_NODE) cerr << __LINE__ << endl;
 #endif
             return CurrNode;
     }
 
-    Explored.set_bit(CurrNode->Id, true);
+    Explored.set(CurrNode->Id, true);
     
     ssize_t SelfScore = (m_Scoring.Match * CurrNode->Equiv.Matches)
                       + (m_Scoring.MisMatch * CurrNode->Equiv.MisMatches);
@@ -738,7 +739,7 @@ TMergeNode CMergeTree::x_Search_Iter(TMergeNode StartNode,
         if(Frame->CurrNode->Id == -1)
             DEBUG_CURR_NODE = true;
 
-        if(Explored.get_bit(Frame->CurrNode->Id)) {
+        if(Explored.get(Frame->CurrNode->Id)) {
 #ifdef MERGE_TREE_VERBOSE_DEBUG
             if(DEBUG_CURR_NODE) cerr << __LINE__ << endl;
 #endif
@@ -851,7 +852,7 @@ TMergeNode CMergeTree::x_Search_Iter(TMergeNode StartNode,
         Frame->ChildFrames.clear();
 
     
-        Explored.set_bit(Frame->CurrNode->Id, true);
+        Explored.set(Frame->CurrNode->Id, true);
 
         if (Frame->BestChildMod.IsNull()) {
             Frame->CurrNode->ChainScore = Frame->CurrNode->SelfScore;
@@ -974,10 +975,10 @@ bool CMergeTree::x_IsEventualChildOf(TMergeNode Parent, TMergeNode ToFind, TBitV
     if(Parent == ToFind)
         return true;
   
-    if(Explored.get_bit(Parent->Id)) {
+    if(Explored.get(Parent->Id)) {
         return false;
     }
-    Explored.set_bit(Parent->Id, true);
+    Explored.set(Parent->Id, true);
 
     ITERATE(set<TMergeNode>, ChildIter, Parent->Children) {
         if( (*ChildIter) == ToFind) 
@@ -1002,9 +1003,9 @@ void CMergeTree::Print(CNcbiOstream& Out)
 
 void CMergeTree::x_Print(CNcbiOstream& Out, TMergeNode Node, int Level, int& Count, TBitVec& Explored) 
 {
-    if(Explored.get_bit(Node->Id))
+    if(Explored.get(Node->Id))
         return;
-    Explored.set_bit(Node->Id);
+    Explored.set(Node->Id);
 
     Out << Count << "\t" << Node->Id;
     for(int i=0;i<Level;i++) Out << (Count % 2 == 0 ? '-' : '.');
@@ -1036,9 +1037,9 @@ void CMergeTree::x_Dot(CNcbiOstream& Out, TMergeNode Node) {
 
 void CMergeTree::x_Dot_Nodes(CNcbiOstream& Out, TMergeNode Node, TBitVec& Explored) {
    
-    if(Explored.get_bit(Node->Id))
+    if(Explored.get(Node->Id))
         return;
-    Explored.set_bit(Node->Id);
+    Explored.set(Node->Id);
 
     Out << Node->Id << " ";
     Out << " [ " ;
@@ -1062,9 +1063,9 @@ void CMergeTree::x_Dot_Nodes(CNcbiOstream& Out, TMergeNode Node, TBitVec& Explor
 
 void CMergeTree::x_Dot_Edges(CNcbiOstream& Out, TMergeNode Node, TBitVec& Explored) {
     
-    if(Explored.get_bit(Node->Id))
+    if(Explored.get(Node->Id))
         return;
-    Explored.set_bit(Node->Id);
+    Explored.set(Node->Id);
 
    
     ITERATE(set<TMergeNode>, ChildIter, Node->Children) {
@@ -1084,9 +1085,9 @@ void CMergeTree::x_Dot_Edges(CNcbiOstream& Out, TMergeNode Node, TBitVec& Explor
 
 size_t CMergeTree::x_CountChildNodes(TMergeNode Node, TBitVec& Explored) const
 {
-    if(Explored.get_bit(Node->Id))
+    if(Explored.get(Node->Id))
         return 0;
-    Explored.set_bit(Node->Id);
+    Explored.set(Node->Id);
 
     int Mine = 1;
 
@@ -1099,9 +1100,9 @@ size_t CMergeTree::x_CountChildNodes(TMergeNode Node, TBitVec& Explored) const
 
 size_t CMergeTree::x_CountChildLinks(TMergeNode Node, TBitVec& Explored) const
 {
-    if(Explored.get_bit(Node->Id))
+    if(Explored.get(Node->Id))
         return 0;
-    Explored.set_bit(Node->Id);
+    Explored.set(Node->Id);
 
     int Mine = Node->Children.size();
 

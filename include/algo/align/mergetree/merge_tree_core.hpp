@@ -54,8 +54,9 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <util/range.hpp>
-#include <util/bitset/ncbi_bitset.hpp>
 
+
+#include <algo/align/mergetree/bitvec.hpp>
 #include <algo/align/mergetree/equiv_range.hpp>
 
 //
@@ -172,7 +173,7 @@ private:
     TNodeCache m_NodeCache;
     TMergeNode x_GetNode(CEquivRange Equiv);
 
-    typedef bm::bvector<> TBitVec;
+    typedef bitvec<unsigned int> TBitVec;
     
     void x_FindLeafs(TMergeNode Curr, set<TMergeNode>& Leafs, TBitVec& Explored);
     

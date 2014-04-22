@@ -60,6 +60,7 @@
 #include <util/range.hpp>
 
 
+#include <algo/align/mergetree/bitvec.hpp>
 #include <algo/align/mergetree/equiv_range.hpp>
 #include <algo/align/mergetree/merge_tree_core.hpp>
 
