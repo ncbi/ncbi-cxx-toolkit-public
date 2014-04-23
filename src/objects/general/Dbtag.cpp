@@ -583,7 +583,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/gene/" },
     { CDbtag::eDbtagType_GrainGenes, "http://wheat.pw.usda.gov/cgi-bin/graingenes/report.cgi?class=marker&name=" },
     { CDbtag::eDbtagType_Greengenes, "http://greengenes.lbl.gov/cgi-bin/show_one_record_v2.pl?prokMSA_id=" },
-    { CDbtag::eDbtagType_HGNC, "http://www.genenames.org/cgi-bin/gene_symbol_report?hgnc_id=" },
+    { CDbtag::eDbtagType_HGNC, "http://www.genenames.org/cgi-bin/gene_symbol_report?hgnc_id=HGNC:" },
     { CDbtag::eDbtagType_HMP, "http://www.hmpdacc.org/catalog/grid.php?dataset=genomic&hmp_id=" },
     { CDbtag::eDbtagType_HOMD, "http://www.homd.org/" },
     { CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/" },
@@ -625,7 +625,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RBGE_herbarium, "http://data.rbge.org.uk/herb/" },
     { CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/" },
     { CDbtag::eDbtagType_RFAM, "http://www.sanger.ac.uk/cgi-bin/Rfam/getacc?" },
-    { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/rgdweb/search/search.html?term=" },
+    { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/rgdweb/search/search.html?term=RGD:" },
     { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" },
     { CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id=" },
     { CDbtag::eDbtagType_SGD, "http://www.yeastgenome.org/cgi-bin/locus.fpl?sgdid=" },
@@ -783,6 +783,18 @@ string CDbtag::GetUrl(const string & genus,
     case eDbtagType_MGD:
         if (NStr::StartsWith(tag, "MGI:", NStr::eNocase)  ||
             NStr::StartsWith(tag, "MGD:", NStr::eNocase)) {
+            tag = tag.substr(4);
+        }
+        break;
+
+    case eDbtagType_HGNC:
+        if (NStr::StartsWith(tag, "HGNC:", NStr::eNocase)) {
+            tag = tag.substr(5);
+        }
+        break;
+
+    case eDbtagType_RGD:
+        if (NStr::StartsWith(tag, "RGD:", NStr::eNocase)) {
             tag = tag.substr(4);
         }
         break;
