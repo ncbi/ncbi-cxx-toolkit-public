@@ -290,23 +290,23 @@ enum ESourceQualifier {
 /// Usually, it's the same as the enum name minus the "eFQ_" prefix, but not always.
 /// @return
 ///   The string correspondnig to the given eFeatureQualifier, or "UNKNOWN_FEAT_QUAL" on error
-CTempString GetStringOfFeatQual(EFeatureQualifier eFeatureQualifier);
+CTempString NCBI_FORMAT_EXPORT GetStringOfFeatQual(EFeatureQualifier eFeatureQualifier);
 
 /// Given a ESourceQualifier, this returns the qualifier name.
 /// Usually, it's the same as the enum name minus the "eSQ_" prefix, but not always.
 /// @return
 ///   The string correspondnig to the given eSourceQualifier, or "UNKNOWN_SOURCE_QUAL" on error
-CTempString GetStringOfSourceQual(ESourceQualifier eSourceQualifier);
+CTempString NCBI_FORMAT_EXPORT GetStringOfSourceQual(ESourceQualifier eSourceQualifier);
 
 /// Translate an org-mod subtype into a sourcequalifier
 /// @return
 ///   The equivalent ESourceQualifier, or eSQ_none on error.
-ESourceQualifier GetSourceQualOfOrgMod(COrgMod::ESubtype eOrgModSubtype);
+ESourceQualifier NCBI_FORMAT_EXPORT GetSourceQualOfOrgMod(COrgMod::ESubtype eOrgModSubtype);
 
 /// Translate a subsource subtype into a sourcequalifier
 /// @return
 ///   The equivalent ESourceQualifier, or eSQ_none on error.
-ESourceQualifier GetSourceQualOfSubSource(CSubSource::ESubtype eSubSourceSubtype);
+ESourceQualifier NCBI_FORMAT_EXPORT GetSourceQualOfSubSource(CSubSource::ESubtype eSubSourceSubtype);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
