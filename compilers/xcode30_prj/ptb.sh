@@ -163,7 +163,17 @@ if test ! -x "$PTB_EXE"; then
   echo "=============================================================================="
   echo Building project tree builder locally, please wait
   cmd="xcodebuild -project $PTB_SLN -target $ptbname -configuration ReleaseDLL"
-  sdk=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
+  case "`uname -r`" in
+    ?.* | 1[01].* ) # Mac OS X 10.7.x or older
+      for v in 10.5 10.6 10.7; do
+        sdk=/Developer/SDKs/MacOSX$v.sdk
+        [ -d "$sdk" ] && break
+      done
+      ;;
+    * )
+      sdk=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
+      ;;
+  esac
   if [ -d "$sdk" ]; then
     cmd="$cmd -sdk $sdk"
   fi

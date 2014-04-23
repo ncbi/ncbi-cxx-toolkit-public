@@ -4,7 +4,9 @@
 
 include ./Makefile.mk
 
-SDK = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
+DEVSDK = /Developer/SDKs
+SDKDIR = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform
+SDK = $(firstword $(wildcard $(DEVSDK)/*.sdk) $(wildcard $(SDKDIR)/*.sdk))
 ifneq "" "$(wildcard ${SDK})"
   SDKFLAG = -sdk ${SDK}
 else
