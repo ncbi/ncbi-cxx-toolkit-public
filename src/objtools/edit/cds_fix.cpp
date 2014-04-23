@@ -36,12 +36,14 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_inst.hpp>
-#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -672,6 +674,66 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
     }
     return new_mrna;
 } 
+
+
+/// GetGeneticCodeForBioseq
+/// A function to construct the appropriate CGenetic_code object to use
+/// when constructing a coding region for a given Bioseq (if the default code
+/// should not be used).
+/// @param bh         The Bioseq_Handle of the nucleotide sequence on which the
+///                   coding region is to be created.
+///
+/// @return           CRef<CGenetic_code> for new CGenetic_code (will be NULL if default should be used)
+CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh)
+{
+    CRef<CGenetic_code> code(NULL);
+    if (!bh) {
+        return code;
+    }
+    CSeqdesc_CI src(bh, CSeqdesc::e_Source);
+    if (src && src->GetSource().IsSetOrg() && src->GetSource().GetOrg().IsSetOrgname()) {
+        if (src->GetSource().IsSetGenome()) {
+            switch (src->GetSource().GetGenome()) {
+                case CBioSource::eGenome_mitochondrion:
+                case CBioSource::eGenome_kinetoplast:
+                case CBioSource::eGenome_hydrogenosome:
+                    if (src->GetSource().IsSetMgcode()) {
+                        code.Reset(new CGenetic_code());
+                        code->SetId(src->GetSource().GetMgcode());
+                    }
+                    break;
+                case CBioSource::eGenome_chloroplast:
+                case CBioSource::eGenome_chromoplast:
+                case CBioSource::eGenome_plasmid:
+                case CBioSource::eGenome_cyanelle:
+                case CBioSource::eGenome_apicoplast:
+                case CBioSource::eGenome_leucoplast:
+                case CBioSource::eGenome_proplastid:
+                case CBioSource::eGenome_chromatophore:
+                    if (src->GetSource().IsSetPgcode()) {
+                        code.Reset(new CGenetic_code());
+                        code->SetId(src->GetSource().GetPgcode());
+                    } else {
+                        code.Reset(new CGenetic_code());
+                        code->SetId(11);
+                    }
+                    break;
+                default:
+                    if (src->GetSource().IsSetGcode()) {
+                        code.Reset(new CGenetic_code());
+                        code->SetId(src->GetSource().GetGcode());
+                    }
+                    break;
+            }
+        } else {
+            if (src->GetSource().IsSetGcode()) {
+                code.Reset(new CGenetic_code());
+                code->SetId(src->GetSource().GetGcode());
+            }
+        }
+    }
+    return code;
+}
 
 
 END_SCOPE(edit)

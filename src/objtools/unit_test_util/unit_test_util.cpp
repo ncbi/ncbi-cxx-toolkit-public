@@ -628,6 +628,48 @@ void SetGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode gcode)
 }
 
 
+void SetMGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode mgcode)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                (*it)->SetSource().SetOrg().SetOrgname().SetMgcode(mgcode);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                (*it)->SetSource().SetOrg().SetOrgname().SetMgcode(mgcode);
+            }
+        }
+    }
+}
+
+
+void SetPGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode pgcode)
+{
+    if (!entry) {
+        return;
+    }
+    if (entry->IsSeq()) {
+        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                (*it)->SetSource().SetOrg().SetOrgname().SetPgcode(pgcode);
+            }
+        }
+    } else if (entry->IsSet()) {
+        NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSet().SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                (*it)->SetSource().SetOrg().SetOrgname().SetPgcode(pgcode);
+            }
+        }
+    }
+}
+
+
 void ResetOrgname (CRef<objects::CSeq_entry> entry)
 {
     if (!entry) {

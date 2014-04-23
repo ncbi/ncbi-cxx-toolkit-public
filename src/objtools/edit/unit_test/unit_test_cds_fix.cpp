@@ -360,6 +360,38 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GetGeneticCodeForBioseq)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    STANDARD_SETUP
+
+    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
+    CRef<CGenetic_code> code = edit::GetGeneticCodeForBioseq(*bi);
+    BOOST_REQUIRE(!code);
+
+    unit_test_util::SetGcode(entry, 6);
+    code = edit::GetGeneticCodeForBioseq(*bi);
+    BOOST_CHECK_EQUAL(code->GetId(), 6);
+
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_mitochondrion);
+    code = edit::GetGeneticCodeForBioseq(*bi);
+    BOOST_REQUIRE(!code);
+
+    unit_test_util::SetMGcode(entry, 2);
+    code = edit::GetGeneticCodeForBioseq(*bi);
+    BOOST_CHECK_EQUAL(code->GetId(), 2);
+
+    unit_test_util::SetGenome(entry, CBioSource::eGenome_apicoplast);
+    code = edit::GetGeneticCodeForBioseq(*bi);
+    BOOST_CHECK_EQUAL(code->GetId(), 11);
+
+    unit_test_util::SetPGcode(entry, 12);
+    code = edit::GetGeneticCodeForBioseq(*bi);
+    BOOST_CHECK_EQUAL(code->GetId(), 12);
+}
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

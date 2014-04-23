@@ -112,6 +112,8 @@ NCBI_UNIT_TEST_UTIL_EXPORT void SetLineage (CRef<objects::CSeq_entry> entry, str
 NCBI_UNIT_TEST_UTIL_EXPORT void SetDiv (CRef<objects::CSeq_entry> entry, string div);
 NCBI_UNIT_TEST_UTIL_EXPORT void SetOrigin (CRef<objects::CSeq_entry> entry, objects::CBioSource::TOrigin origin);
 NCBI_UNIT_TEST_UTIL_EXPORT void SetGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode gcode);
+NCBI_UNIT_TEST_UTIL_EXPORT void SetMGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode mgcode);
+NCBI_UNIT_TEST_UTIL_EXPORT void SetPGcode (CRef<objects::CSeq_entry> entry, objects::COrgName::TGcode pgcode);
 NCBI_UNIT_TEST_UTIL_EXPORT void ResetOrgname (CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT void SetFocus (CRef<objects::CSeq_entry> entry);
 NCBI_UNIT_TEST_UTIL_EXPORT void ClearFocus (CRef<objects::CSeq_entry> entry);

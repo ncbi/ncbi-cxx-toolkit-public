@@ -36,7 +36,7 @@
 
 #include <objmgr/scope.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-
+#include <objects/seqfeat/Genetic_code.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -54,7 +54,7 @@ NCBI_XOBJEDIT_EXPORT bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_fea
 NCBI_XOBJEDIT_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
 NCBI_XOBJEDIT_EXPORT bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope);
-
+NCBI_XOBJEDIT_EXPORT CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh);
 
 END_SCOPE(edit)
 END_SCOPE(objects)
