@@ -32,11 +32,15 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <objtools/edit/cds_fix.hpp>
+#include <objtools/edit/loc_edit.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -551,8 +555,123 @@ bool RetranslateCDS(const CSeq_feat& cds, CScope& scope)
     }        
 
     AdjustForCDSPartials(cds, peh.GetSeq_entry_Handle());
+    return true;
+}
+
+
+string s_GetProductName (const CProt_ref& prot)
+{
+    string prot_nm(kEmptyStr);
+    if (prot.IsSetName() && prot.GetName().size() > 0) {
+        prot_nm = prot.GetName().front();
+    }
+    return prot_nm;
+}
+
+
+string s_GetProductName (const CSeq_feat& cds, CScope& scope)
+{
+    string prot_nm(kEmptyStr);
+    if (cds.IsSetProduct()) {
+        CBioseq_Handle prot_bsq = sequence::GetBioseqFromSeqLoc(cds.GetProduct(), scope);
+   
+        if (prot_bsq) {
+            CFeat_CI prot_ci(prot_bsq, CSeqFeatData::e_Prot);
+            if (prot_ci) {
+                prot_nm = s_GetProductName(prot_ci->GetOriginalFeature().GetData().GetProt());
+            }
+        }   
+    } else if (cds.IsSetXref()) {
+        ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                prot_nm = s_GetProductName((*it)->GetData().GetProt());
+            }
+        }
+    }
+    return prot_nm;
 
 }
+
+
+string s_GetmRNAName (const CSeq_feat& mrna)
+{
+    if (!mrna.IsSetData() || mrna.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA
+        || !mrna.GetData().IsRna() || !mrna.GetData().GetRna().IsSetExt()
+        || !mrna.GetData().GetRna().GetExt().IsName()) {
+        return "";
+    } else {
+        return mrna.GetData().GetRna().GetExt().GetName();
+    }
+}
+
+
+/// MakemRNAforCDS
+/// A function to create a CSeq_feat that represents the
+/// appropriate mRNA for a given CDS. Note that this feature
+/// is not added to the Seq-annot in the record; this step is
+/// left for the caller.
+/// @param cds        The feature for which the mRNA to be made, if one is not already present
+/// @param scope      The scope in which adjustments are to be made (if necessary)
+///
+/// @return           CRef<CSeq_feat> for new mRNA (will be NULL if one was already present)
+CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
+{
+    CRef <CSeq_feat> new_mrna(NULL);
+    string prot_nm = s_GetProductName(cds, scope);
+    const CSeq_loc& cd_loc = cds.GetLocation();
+
+    CConstRef <CSeq_feat> mrna = sequence::GetOverlappingmRNA(cd_loc, scope);
+    if (!mrna || !NStr::Equal(prot_nm, s_GetmRNAName(*mrna))) {
+        new_mrna.Reset (new CSeq_feat());
+        new_mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+        new_mrna->SetLocation().Assign(cds.GetLocation());
+        new_mrna->SetData().SetRna().SetExt().SetName(prot_nm);
+      
+        CBioseq_Handle bsh = scope.GetBioseqHandle(*cd_loc.GetId());
+        CSeq_entry_Handle cd_seh = bsh.GetSeq_entry_Handle();    
+      
+        bool found3 = false;
+        bool found5 = false;
+        int cd_start = cd_loc.GetStart(eExtreme_Positional);
+        int cd_stop = cd_loc.GetStop(eExtreme_Positional);
+        for (CFeat_CI utr(bsh, CSeqFeatData::e_Imp); utr; ++utr)
+        {
+            if (utr->GetOriginalFeature().GetData().GetImp().IsSetKey())
+            {
+                int utr_start = utr->GetOriginalFeature().GetLocation().GetStart(eExtreme_Positional);
+                int utr_stop = utr->GetOriginalFeature().GetLocation().GetStop(eExtreme_Positional);
+                if ( utr->GetOriginalFeature().GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR )
+                {
+                    found5 = true;
+                    if (abs(utr_stop - cd_start) <= 2)
+                    {
+                        //new_mrna->SetLocation().Add(utr->GetOriginalFeature().GetLocation());
+                        new_mrna->SetLocation(*SeqLocExtend(new_mrna->GetLocation(), utr_start, &scope));
+                        new_mrna->SetLocation().SetPartialStart( utr->GetOriginalFeature().GetLocation().IsPartialStart(eExtreme_Positional), eExtreme_Positional );
+                    }
+                }
+                else if ( utr->GetOriginalFeature().GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR )
+                {
+                    found3 = true;
+                    if ( abs(utr_start - cd_stop) <= 2)
+                    {
+                        //new_mrna->SetLocation().Add(utr->GetOriginalFeature().GetLocation());
+                        new_mrna->SetLocation(*SeqLocExtend(new_mrna->GetLocation(), utr_stop, &scope));
+                        new_mrna->SetLocation().SetPartialStop( utr->GetOriginalFeature().GetLocation().IsPartialStop(eExtreme_Positional), eExtreme_Positional );
+                    }
+                }
+            }
+
+        }
+        if (!found5)
+            new_mrna->SetLocation().SetPartialStart(true, eExtreme_Positional); 
+        if (!found3)
+            new_mrna->SetLocation().SetPartialStop(true, eExtreme_Positional); 
+
+        new_mrna->SetPartial(new_mrna->GetLocation().IsPartialStart(eExtreme_Positional) || new_mrna->GetLocation().IsPartialStop(eExtreme_Positional));
+    }
+    return new_mrna;
+} 
 
 
 END_SCOPE(edit)

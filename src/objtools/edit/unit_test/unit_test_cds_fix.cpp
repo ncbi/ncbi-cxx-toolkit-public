@@ -101,6 +101,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -299,6 +300,62 @@ BOOST_AUTO_TEST_CASE(Test_FeaturePartialSynchronization)
     BOOST_CHECK_EQUAL(prot_feat->GetLocation().IsPartialStop(eExtreme_Biological), false);
     BOOST_CHECK_EQUAL(prot_feat->IsSetPartial(), false);
     BOOST_CHECK_EQUAL(prot_molinfo->GetMolinfo().GetCompleteness(), (CMolInfo::TCompleteness)CMolInfo::eCompleteness_complete);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    STANDARD_SETUP
+
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> mrna = edit::MakemRNAforCDS(*cds, scope);
+    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(), &scope), sequence::eSame);
+    BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStart(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStop(eExtreme_Biological), true);
+
+    // with a 3' UTR
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<objects::CSeq_entry> nuc_seq = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> utr3 = unit_test_util::AddGoodImpFeat(nuc_seq, "3'UTR");
+    utr3->ResetComment();
+    utr3->SetLocation().SetInt().SetFrom(27);
+    utr3->SetLocation().SetInt().SetTo(30);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    mrna = edit::MakemRNAforCDS(*cds, scope);
+    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(), &scope), sequence::eContained);
+    BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStart(eExtreme_Biological), true);
+    BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(mrna->GetLocation().GetStop(eExtreme_Biological), utr3->GetLocation().GetStop(eExtreme_Biological));
+
+    // with a 5' UTR and a 3' UTR
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> utr5 = unit_test_util::AddGoodImpFeat(nuc_seq, "5'UTR");
+    utr5->ResetComment();
+    utr5->SetLocation().SetInt().SetFrom(0);
+    utr5->SetLocation().SetInt().SetTo(2);
+    cds->SetLocation().SetInt().SetFrom(3);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    mrna = edit::MakemRNAforCDS(*cds, scope);
+    BOOST_CHECK_EQUAL(sequence::Compare(cds->GetLocation(), mrna->GetLocation(), &scope), sequence::eContained);
+    BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStart(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(mrna->GetLocation().IsPartialStop(eExtreme_Biological), false);
+    BOOST_CHECK_EQUAL(mrna->GetLocation().GetStart(eExtreme_Biological), utr5->GetLocation().GetStart(eExtreme_Biological));
+    BOOST_CHECK_EQUAL(mrna->GetLocation().GetStop(eExtreme_Biological), utr3->GetLocation().GetStop(eExtreme_Biological));
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::AddFeat(mrna, nuc_seq);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    // should not create another mRNA if one is already on the record with the right product name
+    CRef<CSeq_feat> mrna2 = edit::MakemRNAforCDS(*cds, scope);
+    BOOST_REQUIRE(!mrna2);
+
+    // but will create if the existing mRNA has the wrong product
+    mrna->SetData().SetRna().SetExt().SetName("abc");
+    mrna2 = edit::MakemRNAforCDS(*cds, scope);
+    BOOST_CHECK_EQUAL(sequence::Compare(mrna2->GetLocation(), mrna->GetLocation(), &scope), sequence::eSame);
 
 }
 

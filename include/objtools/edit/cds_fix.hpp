@@ -53,6 +53,7 @@ NCBI_XOBJEDIT_EXPORT bool AdjustProteinFeaturePartialsToMatchCDS(CSeq_feat& new_
 NCBI_XOBJEDIT_EXPORT bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat);
 NCBI_XOBJEDIT_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
 NCBI_XOBJEDIT_EXPORT bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
+NCBI_XOBJEDIT_EXPORT CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope);
 
 
 END_SCOPE(edit)
