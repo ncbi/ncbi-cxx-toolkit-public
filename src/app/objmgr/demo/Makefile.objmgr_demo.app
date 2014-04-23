@@ -15,6 +15,7 @@ LIB = ncbi_xloader_blastdb seqdb blastdb \
       ncbi_xdbapi_ftds $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC) \
       $(OBJREAD_LIBS) xobjutil submit $(OBJMGR_LIBS)
 
-LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(SQLITE3_LIBS) $(ORIG_LIBS)
+LIBS = $(SQLITE3_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
+       $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 WATCHERS = vasilche
