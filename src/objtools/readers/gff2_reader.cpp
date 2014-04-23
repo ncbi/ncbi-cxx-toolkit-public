@@ -267,7 +267,20 @@ CGff2Reader::ReadObject(
         ReadSeqEntry( lr, pMessageListener ).ReleaseOrNull() );
     return object;
 }
-    
+ 
+//  ----------------------------------------------------------------------------
+void CGff2Reader::SetGenbankMode(
+    bool mode)
+//  ----------------------------------------------------------------------------
+{
+    if (mode) {
+        m_iFlags |= fGenbankMode;
+    }
+    else {
+        m_iFlags &= ~fGenbankMode;
+    }
+}
+   
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ReadLine(
     ILineReader& lr,
@@ -914,7 +927,8 @@ bool CGff2Reader::x_FeatureSetQualifiers(
         }
 
         string qual = it->first;
-        if (CSeqFeatData::GetQualifierType(qual) == CSeqFeatData::eQual_bad) {
+        if (IsGenbankMode()  &&  
+                CSeqFeatData::GetQualifierType(qual) == CSeqFeatData::eQual_bad) {
             continue;
         }
 

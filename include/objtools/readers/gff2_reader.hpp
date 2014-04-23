@@ -60,6 +60,7 @@ public:
     typedef enum {
         fNormal =       0,
         fNewCode =      0x1000, // for now don't clobber CGFFReader flags
+        fGenbankMode =  0x2000,
     } TFlags;
 
     typedef map< string, CRef< CSeq_feat > > IdToFeatureMap;
@@ -115,6 +116,13 @@ public:
         ILineReader&,
         IMessageListener* =0 );
 
+    void 
+    SetGenbankMode(
+        bool);
+
+    bool 
+    IsGenbankMode() const { return (m_iFlags & fGenbankMode); };
+        
     //
     // class interface:
     //
@@ -303,7 +311,7 @@ protected:
     //  data:
     //
 protected:
-//    TFlags             m_uFlags;
+//    TFlags             m_iFlags;
     IMessageListener*   m_pErrors;
     CRef< CAnnotdesc > m_CurrentTrackInfo;
     CRef< CAnnotdesc > m_CurrentBrowserInfo;

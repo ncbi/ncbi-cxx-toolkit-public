@@ -358,6 +358,12 @@ void CMultiReaderApp::Init(void)
         "3ff",
         "use BED three feature format",
         true);
+
+    arg_desc->AddFlag(
+        "genbank",
+        "clean up output for genbank submission",
+        true );
+        
     //
     //  wiggle reader specific arguments:
     //
@@ -964,8 +970,17 @@ void CMultiReaderApp::xSetFlags(
         if ( args["child-links"] ) {
             m_iFlags |= CGtfReader::fGenerateChildXrefs;
         }
+        if (args["genbank"] ) {
+            m_iFlags |= CGff2Reader::fGenbankMode;
+        }
         break;
-            
+           
+    case CFormatGuess::eGff3:
+        if (args["genbank"] ) {
+            m_iFlags |= CGff2Reader::fGenbankMode;
+        }
+        break;
+ 
     default:
         break;
     }
