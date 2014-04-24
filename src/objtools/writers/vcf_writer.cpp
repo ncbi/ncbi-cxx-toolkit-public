@@ -121,8 +121,28 @@ bool CVcfWriter::WriteAnnot(
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
     annot->Assign(orig_annot);
-     // TODO - may not compile since variation_normalization is not in stable components
-    //CVariationNormalization::NormalizeVariation(*annot,CVariationNormalization::eVCF,m_Scope);
+    CSeq_annot_Handle sah = m_Scope.AddSeq_annot( *annot );
+    CFeat_CI mf(sah);
+    for ( ; mf; ++mf ) 
+    {
+        const CSeq_id *seq_id = mf->GetLocation().GetId();
+        const CBioseq_Handle& bsh = m_Scope.GetBioseqHandle( *seq_id );
+        if (!bsh)
+        {
+            string label;
+            seq_id->GetLabel(&label);
+            LOG_POST(Error << "Cannot process Seq-id: " << label << Endm);
+            return false;
+        }
+    }
+    try
+    {
+        CVariationNormalization::NormalizeVariation(*annot,CVariationNormalization::eVCF,m_Scope);
+    }
+    catch(...)
+    {
+     return false;
+    }
     if ( ! x_WriteInit( *annot ) ) {
         return false;
     }
@@ -243,7 +263,7 @@ bool CVcfWriter::x_WriteData(
     const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    CSeq_annot_Handle sah = m_Scope.AddSeq_annot( annot );
+    CSeq_annot_Handle sah = m_Scope.GetSeq_annotHandle( annot );
     SAnnotSelector sel;
     sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
 

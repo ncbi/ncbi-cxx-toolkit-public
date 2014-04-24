@@ -3,7 +3,7 @@
 APP = unit_test_vcfwriter
 SRC = unit_test_vcfwriter
 LIB = xunittestutil xobjwrite $(OBJREAD_LIBS) xobjutil gbseq xalnmgr entrez2cli entrez2 \
-	tables test_boost $(OBJMGR_LIBS)  #variation_utils
+	tables test_boost $(OBJMGR_LIBS)  variation_utils variation xutil xncbi
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
