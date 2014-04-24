@@ -80,7 +80,7 @@ struct CFeatureGenerator::SImplementation {
 
     CConstRef<objects::CSeq_align> CleanAlignment(const objects::CSeq_align& align_in);
     CConstRef<objects::CSeq_align>
-    AdjustAlignment(const objects::CSeq_align& align, TSeqRange range);
+    AdjustAlignment(const objects::CSeq_align& align, TSeqRange range, EProductPositionsMode mode);
     CRef<CSeq_feat> ConvertAlignToAnnot(const objects::CSeq_align& align,
                              objects::CSeq_annot& annot,
                              objects::CBioseq_set& seqs,

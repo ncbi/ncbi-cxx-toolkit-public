@@ -540,12 +540,12 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
     }
 }
 
-CConstRef<CSeq_align> CFeatureGenerator::AdjustAlignment(const CSeq_align& align_in, TSeqRange range)
+CConstRef<CSeq_align> CFeatureGenerator::AdjustAlignment(const CSeq_align& align_in, TSeqRange range, EProductPositionsMode mode)
 {
-    return m_impl->AdjustAlignment(align_in, range);
+    return m_impl->AdjustAlignment(align_in, range, mode);
 }
 
-CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const CSeq_align& align_in, TSeqRange range)
+CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const CSeq_align& align_in, TSeqRange range, EProductPositionsMode mode)
 {
     if (!align_in.CanGetSegs() || !align_in.GetSegs().IsSpliced())
         return CConstRef<CSeq_align>(&align_in);
@@ -799,8 +799,13 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     if (offset > exons.front().prod_from) // negative division rounds toward zero
         offset -= 3;
 
+    if (mode == eTryToPreserveProductPositions && offset > 0) {
+        offset = 0; // do not shift product position unnecessarily
+    }
+
     vector<SExon>::iterator exon_struct_it = exons.begin();
 
+    int putative_prod_length = 0;
     if (is_protein_align) {
         NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
             CSpliced_exon& exon = **exon_it;
@@ -808,7 +813,7 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
             SetProtpos(exon.SetProduct_end(), exon_struct_it->prod_to - offset);
             ++exon_struct_it;
         }
-        spliced_seg.SetProduct_length((exons.back().prod_to - offset + 3)/3);
+        putative_prod_length = (exons.back().prod_to - offset + 3)/3;
     } else {
         NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
             CSpliced_exon& exon = **exon_it;
@@ -816,7 +821,10 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
             exon.SetProduct_end().SetNucpos() = exon_struct_it->prod_to - offset;
             ++exon_struct_it;
         }
-        spliced_seg.SetProduct_length(exons.back().prod_to - offset + 1);
+        putative_prod_length = exons.back().prod_to - offset + 1;
+    }
+    if (mode == eForceProductFrom0 || (int)spliced_seg.GetProduct_length() < putative_prod_length) {
+        spliced_seg.SetProduct_length(putative_prod_length);
     }
 
     if (cross_the_origin) {

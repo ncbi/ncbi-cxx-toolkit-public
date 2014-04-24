@@ -68,6 +68,7 @@ public:
                                        // Need to be careful with transcript queries -
                                        // cdregion passed to convert should correspond to the modified
                                        // query positions
+
         // Convert flags
         fCreateGene          = 0x001,
         fCreateMrna          = 0x002,
@@ -81,7 +82,7 @@ public:
         fGenerateStableLocalIds = 0x200,  // reproducible ids
         fPropagateNcrnaFeats = 0x400,
         fTrustProteinSeq     = 0x800,
-        fDeNovoProducts      = 0x1000,
+        fDeNovoProducts      = 0x4000,
 
         fDefaults = fCreateGene | fCreateMrna | fCreateCdregion |
                     fGenerateLocalIds | fPropagateNcrnaFeats
@@ -99,18 +100,23 @@ public:
     /// representation.  Cleaning involves adjusting segments to satisfy our
     /// expectations of partial exonic alignments and account for unaligned
     /// parts. Eg. stitching small gaps, trimming to codon boundaries.
+    /// May shift product positions.
     CConstRef<objects::CSeq_align>
     CleanAlignment(const objects::CSeq_align& align);
 
     /// Adjust alignment to the specified range
     /// (cross-the-origin range on circular chromosome is indicated by range.from > range.to)
     /// Will add necessary 'diags' at ends.
-    /// Will recalculate product positions to start at zero.
     /// Throws an exception on attempt to shink past an indel in CDS
     /// Works on Spliced-seg alignments only.
     /// Note: for a protein alignment do not expand it to include stop codon.
+
+    enum EProductPositionsMode {
+        eForceProductFrom0,
+        eTryToPreserveProductPositions
+    };
     CConstRef<objects::CSeq_align>
-    AdjustAlignment(const objects::CSeq_align& align, TSeqRange range);
+    AdjustAlignment(const objects::CSeq_align& align, TSeqRange range, EProductPositionsMode mode = eForceProductFrom0);
 
 
     /// Convert an alignment to an annotation.
