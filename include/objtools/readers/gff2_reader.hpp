@@ -119,10 +119,13 @@ public:
     void 
     SetGenbankMode(
         bool);
-
     bool 
     IsGenbankMode() const { return (m_iFlags & fGenbankMode); };
         
+    void SetLocusTagBase(
+        const string& base) { m_LocusTagBase = base; };
+    bool IsLocusTagMode() const { return !m_LocusTagBase.empty(); };
+
     //
     // class interface:
     //
@@ -308,15 +311,19 @@ protected:
         const CSeq_annot&,
         string& );
 
+    string xNextLocusTag();
+
     //  data:
     //
 protected:
 //    TFlags             m_iFlags;
-    IMessageListener*   m_pErrors;
-    CRef< CAnnotdesc > m_CurrentTrackInfo;
-    CRef< CAnnotdesc > m_CurrentBrowserInfo;
-    string             m_AnnotName;
-    string             m_AnnotTitle;
+    IMessageListener* m_pErrors;
+    CRef<CAnnotdesc> m_CurrentTrackInfo;
+    CRef<CAnnotdesc> m_CurrentBrowserInfo;
+    string m_AnnotName;
+    string m_AnnotTitle;
+    string m_LocusTagBase;
+    unsigned int m_LocusTagNumber;
 };
 
 END_SCOPE(objects)

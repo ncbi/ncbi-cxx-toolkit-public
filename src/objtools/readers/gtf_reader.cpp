@@ -790,7 +790,8 @@ bool CGtfReader::x_CreateParentGene(
     }
     m_GeneMap[ s_GeneKey( gff ) ] = pFeature;
 
-    return x_AddFeatureToAnnot( pFeature, pAnnot );
+    x_AddFeatureToAnnot( pFeature, pAnnot );
+    return true;
 }
     
 //  ----------------------------------------------------------------------------
@@ -1084,10 +1085,28 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
+    CRef<CGb_qual> pQual(0);
+
     if (0 == NStr::CompareNocase(it->first, "exon_id")) {
         return true;
     }
     if (0 == NStr::CompareNocase(it->first, "exon_number")) {
+        return true;
+    }
+    if (0 == NStr::CompareNocase(it->first, "gene_id")  &&  IsLocusTagMode()) {
+        pQual.Reset(new CGb_qual);
+        pQual->SetQual("locus_tag");
+        m_LocusTags.empty();
+        TGeneIdToLocusTag::iterator lit = m_LocusTags.find(it->second);
+        if (lit == m_LocusTags.end()) {
+            string nextTag = xNextLocusTag();
+            pQual->SetVal(nextTag);
+            m_LocusTags[it->second] = nextTag;
+        }
+        else {
+            pQual->SetVal(lit->second);
+        }
+        pFeature->SetQual().push_back(pQual);
         return true;
     }
     if (0 == NStr::CompareNocase(it->first, "transcript_id")  &&  

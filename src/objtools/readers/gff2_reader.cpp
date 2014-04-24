@@ -128,12 +128,13 @@ bool CGff2Reader::s_GetAnnotId(
 CGff2Reader::CGff2Reader(
     int iFlags,
     const string& name,
-    const string& title ):
+    const string& title):
 //  ----------------------------------------------------------------------------
-    CReaderBase( iFlags ),
-    m_pErrors( 0 ),
-    m_AnnotName( name ),
-    m_AnnotTitle( title )
+    CReaderBase(iFlags),
+    m_pErrors(0),
+    m_AnnotName(name),
+    m_AnnotTitle(title),
+    m_LocusTagNumber(0)
 {
 }
 
@@ -282,6 +283,22 @@ void CGff2Reader::SetGenbankMode(
 }
    
 //  ----------------------------------------------------------------------------
+string CGff2Reader::xNextLocusTag()
+//  ----------------------------------------------------------------------------
+{
+    ++m_LocusTagNumber;
+
+    const int WIDTH = 6;
+    const string padding = string(WIDTH, '0');
+    string suffix = NStr::NumericToString(m_LocusTagNumber);
+    if (suffix.size() < WIDTH) {
+        suffix = padding.substr(0, WIDTH-suffix.size()) + suffix;
+    }
+    string nextTag = m_LocusTagBase + "_" + suffix;
+    return nextTag;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ReadLine(
     ILineReader& lr,
     string& strLine )
@@ -413,6 +430,7 @@ bool CGff2Reader::x_ParseFeatureGff(
         if ( ! x_InitAnnot( *pRecord, pAnnot ) ) {
             return false;
         }
+        CSeq_annot::TData::TFtable& table = pAnnot->SetData().SetFtable();
         annots.push_back( pAnnot );      
     }
  
@@ -888,6 +906,10 @@ bool CGff2Reader::x_FeatureTrimQualifiers(
     for (TQual::iterator it = quals.begin(); it != quals.end(); /**/) {
         const string& qualKey = (*it)->GetQual();
         if (NStr::StartsWith(qualKey, "gff_")) {
+            it++;
+            continue;
+        }
+        if (qualKey == "locus_tag") {
             it++;
             continue;
         }

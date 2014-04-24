@@ -218,6 +218,9 @@ protected:
     TIdToFeature m_GeneMap;
     TIdToFeature m_CdsMap;
     TIdToFeature m_MrnaMap;
+
+    typedef map<string, string> TGeneIdToLocusTag;
+    TGeneIdToLocusTag m_LocusTags;
 };
 
 END_SCOPE(objects)
