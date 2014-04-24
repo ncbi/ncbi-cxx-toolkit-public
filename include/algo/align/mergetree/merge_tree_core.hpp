@@ -112,6 +112,7 @@ public:
         m_Root.Reset(new CMergeNode(m_NodeIdCounter));
         m_NodeIdCounter++;
     }
+    ~CMergeTree();
 
     struct SScoring {
         int Match;
@@ -179,7 +180,7 @@ private:
     
     // Trickles down
     bool x_FindBefores(TMergeNode New, TMergeNode Curr, 
-                      set<TMergeNode>& Befores, TBitVec& Explored, TBitVec& Inserted);
+                      set<TMergeNode>& Befores, TBitVec& Explored, TBitVec& Inserted, int& Depth);
     bool x_FindAfters(TMergeNode New, TMergeNode Curr, 
                       set<TMergeNode>& Afters, TBitVec& Explored, TBitVec& Inserted);
     // Trickles up, start from leafs

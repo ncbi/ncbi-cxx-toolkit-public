@@ -50,6 +50,34 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
+CMergeTree::~CMergeTree()
+{
+    m_NodeCache.clear();
+
+    // The tree is doubly-linked, defeating CRef re-counting
+    // So it needs to be explicitly dismantled
+    // The CRef's will handle their own deleting, just the
+    // Parent and Children sets need to be cleared out.
+    vector< TMergeNode > Children;
+    Children.push_back(m_Root);
+    
+    while(!Children.empty()) {
+        TMergeNode Curr = Children.back();
+        Children.pop_back();
+
+        Curr->Parents.clear();
+
+        ITERATE(set<TMergeNode>, ChildIter, Curr->Children) {
+            Children.push_back(*ChildIter);
+        }
+        Curr->Children.clear();
+    }
+
+
+    m_Root.Reset(NULL);
+}
+
+
 void CMergeTree::x_AddChild(TMergeNode Parent, TMergeNode Child)
 {
     m_Leaves.erase(Parent);
@@ -178,20 +206,45 @@ void CMergeTree::AddEquiv(CEquivRange NewEquiv)
     }
 
     if(HasAfters) { 
+        size_t BUps=0, BDowns=0;
+        int MaxUD=0, MaxDD=0;
         if(Befores.empty()) {
-            int MaxD = 0;
             ITERATE(set<TMergeNode>, LeafIter, m_Leaves) {
                 int Depth= 0;
                 x_FindBefores_Up(NewNode, *LeafIter, Befores, Explored, Inserted, Depth);
-                MaxD = max(MaxD, Depth);
+                MaxUD = max(MaxUD, Depth);
             }
             Explored.clear(); Inserted.clear();
+            BUps = Befores.size();
         }
         
         if(Befores.empty()) {
-            x_FindBefores(NewNode, m_Root, Befores, Explored, Inserted);
+            // this is never called, x_FindBefores_Up finds everything
+            // and because of input sorting, finds them in less time than top-down
+            x_FindBefores(NewNode, m_Root, Befores, Explored, Inserted, MaxDD);
             Explored.clear(); Inserted.clear();
+            BDowns = Befores.size();
         }
+
+        #ifdef MERGE_TREE_VERBOSE_DEBUG
+        /*
+        TSeqPos RootD = numeric_limits<TSeqPos>::max();
+        TSeqPos LeafD = numeric_limits<TSeqPos>::max();
+        ITERATE(set<TMergeNode>, RootChildIter, m_Root->Children) {
+            RootD = min(RootD, CEquivRange::Distance( (*RootChildIter)->Equiv, NewNode->Equiv));
+        }
+        ITERATE(set<TMergeNode>, LeafIter, m_Leaves) {
+            LeafD = min(LeafD, CEquivRange::Distance( (*LeafIter)->Equiv, NewNode->Equiv));
+        }
+
+        //if(MaxDD < MaxUD) {
+        if(RootD < LeafD) {
+        cerr << "AddEquiv " << NewNode->Equiv << " " << BUps << " v " << BDowns << endl;
+        cerr << "AE Depth: " << MaxUD << " v " << MaxDD << endl;
+        cerr << "AE Dists: " << LeafD << " v " << RootD << endl;
+        }
+        */
+        #endif
     }
 
 
@@ -214,7 +267,8 @@ void CMergeTree::AddEquiv(CEquivRange NewEquiv)
             TMergeNode AfterNode = *AfterIter;
             x_LinkNodes(NewNode, AfterNode);
         }
-    }   
+    }  
+
 }
 
 
@@ -299,8 +353,9 @@ void CMergeTree::x_FindLeafs(TMergeNode Curr, set<TMergeNode>& Leafs, TBitVec& E
 
 
 bool CMergeTree::x_FindBefores(TMergeNode New, TMergeNode Curr, set<TMergeNode>& Befores, 
-                               TBitVec& Explored, TBitVec& Inserted) 
+                               TBitVec& Explored, TBitVec& Inserted, int& Depth) 
 {
+    Depth++;
     if(Explored.get(Curr->Id)) { 
         return Inserted.get(Curr->Id);
     }
@@ -315,7 +370,7 @@ bool CMergeTree::x_FindBefores(TMergeNode New, TMergeNode Curr, set<TMergeNode>&
     else {        
         bool SubInsert = false;
         ITERATE(set<TMergeNode>, ChildIter, Curr->Children) {
-            SubInsert |= x_FindBefores(New, *ChildIter, Befores, Explored, Inserted);
+            SubInsert |= x_FindBefores(New, *ChildIter, Befores, Explored, Inserted, Depth);
         }
         
         if(SubInsert) {
@@ -975,7 +1030,9 @@ bool CMergeTree::x_IsEventualChildOf(TMergeNode Parent, TMergeNode ToFind, TBitV
 {
     if(Parent == ToFind)
         return true;
-  
+    if(Parent->Equiv == ToFind->Equiv)
+        return true;  
+
     if(Explored.get(Parent->Id)) {
         return false;
     }
