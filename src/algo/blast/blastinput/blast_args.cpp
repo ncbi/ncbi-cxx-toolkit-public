@@ -1422,7 +1422,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgGLOrigin, "germline_origin",
                             "The organism for your query sequence (i.e., human, mouse, etc.)",
                             CArgDescriptions::eString, "human");
-    //arg_desc.SetConstraint(kArgGLOrigin, &(*new CArgAllow_Strings, "human", "mouse"));
+    arg_desc.SetConstraint(kArgGLOrigin, &(*new CArgAllow_Strings, "human", "mouse", "rat", "rabbit", "rhesus_monkey"));
 
     arg_desc.AddDefaultKey(kArgGLDomainSystem, "domain_system",
                             "Domain system to be used for segment annotation",
