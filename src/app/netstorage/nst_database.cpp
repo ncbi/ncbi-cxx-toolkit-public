@@ -367,6 +367,22 @@ void CNSTDatabase::x_PreCheckConnection(void)
     if (!m_Connected)
         NCBI_THROW(CNetStorageServerException, eDatabaseError,
                    "There is no connection to metadata information database");
+
+    // It is possible that a connection has been lost and restored while there
+    // were no activities
+    if (!m_Db->IsConnected(CDatabase::eFastCheck)) {
+        try {
+            m_Db->Close();
+            m_Db->Connect();
+        } catch (...) {
+            // To avoid interfering the connection restoring thread nothing is
+            // done here. Basically the fact that we are here means there is no
+            // connection anymore. The exception is suppressed however a stored
+            // procedure execution exception will be generated a few moments
+            // later and a normal procedure of the connection restoration will
+            // be activated.
+        }
+    }
 }
 
 
