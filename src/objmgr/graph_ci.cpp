@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqres/seqres__.hpp>
 
 BEGIN_NCBI_SCOPE

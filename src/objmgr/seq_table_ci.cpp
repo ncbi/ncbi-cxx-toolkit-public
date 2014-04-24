@@ -35,6 +35,7 @@
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/seq_table_info.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
