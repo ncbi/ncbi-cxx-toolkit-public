@@ -103,6 +103,21 @@ void CAnnotMapping_Info::Reset(void)
 }
 
 
+CSeq_loc_Conversion& CAnnotMapping_Info::GetMappedSeq_loc_Conv(void) const
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_loc_Conv);
+    return static_cast<CSeq_loc_Conversion&>(m_MappedObject.GetNCObject());
+}
+
+
+void CAnnotMapping_Info::SetMappedConverstion(CSeq_loc_Conversion& cvt)
+{
+    _ASSERT(!IsMapped());
+    m_MappedObject.Reset(&cvt);
+    m_MappedObjectType = eMappedObjType_Seq_loc_Conv;
+}
+
+
 void CAnnotMapping_Info::SetMappedSeq_align(CSeq_align* align)
 {
     _ASSERT(m_MappedObjectType == eMappedObjType_Seq_loc_Conv_Set);
@@ -120,6 +135,18 @@ void CAnnotMapping_Info::SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts)
 }
 
 
+void CAnnotMapping_Info::SetGraphRanges(CGraphRanges* ranges)
+{
+    m_GraphRanges.Reset(ranges);
+}
+
+
+const CGraphRanges* CAnnotMapping_Info::GetGraphRanges(void) const
+{
+    return m_GraphRanges.GetPointerOrNull();
+}
+
+
 const CSeq_align&
 CAnnotMapping_Info::GetMappedSeq_align(const CSeq_align& orig) const
 {
@@ -129,8 +156,24 @@ CAnnotMapping_Info::GetMappedSeq_align(const CSeq_align& orig) const
             const_cast<CSeq_loc_Conversion_Set&>(
             *CTypeConverter<CSeq_loc_Conversion_Set>::
             SafeCast(m_MappedObject.GetPointer()));
+
         CRef<CSeq_align> dst;
         cvts.Convert(orig, &dst);
+
+        CRange<TSeqPos>& range = const_cast<CRange<TSeqPos>&>(m_TotalRange);
+        range = range.GetEmpty();
+        vector<CHandleRangeMap> hrmaps;
+        CAnnotObject_Info::x_ProcessAlign(hrmaps, *dst, 0);
+        const CSeq_loc_Conversion_Set::TSeq_id_Handles& dst_ids =
+            cvts.GetDst_id_Handles();
+        ITERATE ( vector<CHandleRangeMap>, rowit, hrmaps ) {
+            ITERATE ( CHandleRangeMap, idit, *rowit ) {
+                if ( dst_ids.find(idit->first) != dst_ids.end() ) {
+                    range.CombineWith(idit->second.GetOverlappingRange());
+                }
+            }
+        }
+        
         const_cast<CAnnotMapping_Info&>(*this).
             SetMappedSeq_align(dst.GetPointerOrNull());
     }
@@ -903,7 +946,7 @@ struct CAnnotObject_Less
         }
 
     void x_GetExtremes( TSeqPos &out_from, TSeqPos &out_to, 
-        const CAnnotObject_Ref& obj_ref ) const
+                        const CAnnotObject_Ref& obj_ref ) const
     {
         out_from = kInvalidSeqPos;
         out_to = kInvalidSeqPos;
@@ -942,7 +985,7 @@ struct CAnnotObject_Less
             }
 
             piece_start = loc_ci.GetRange().GetFrom();
-            piece_stop  = loc_ci.GetRange().GetTo();
+            piece_stop  = loc_ci.GetRange().GetToOpen();
 
             if( lowest == kInvalidSeqPos ) {
                 lowest = piece_start;
@@ -981,16 +1024,37 @@ struct CAnnotObject_Less
         if (is_circular) {
             if (all_minus) {
                 if( first_piece ) {
-                    out_to = first_piece.GetRange().GetTo();
+                    out_to = first_piece.GetRange().GetToOpen();
                 }
             } else {
                 if( last_piece ) {
-                    out_to = last_piece.GetRange().GetTo();
+                    out_to = last_piece.GetRange().GetToOpen();
                 }
             }
         } else {  
             out_to = highest;
         }
+    }
+
+    static
+    void GetRangeOpen(TSeqPos &out_from, TSeqPos &out_to, 
+                      const CAnnotObject_Ref& obj_ref)
+    {
+        out_from = obj_ref.GetMappingInfo().GetFrom();
+        out_to = obj_ref.GetMappingInfo().GetToOpen();
+        if ( out_from != kInvalidSeqPos ||
+             out_to != kInvalidSeqPos ||
+             !obj_ref.IsAlign() ||
+             (obj_ref.GetMappingInfo().GetMappedObjectType() !=
+              CAnnotMapping_Info::eMappedObjType_Seq_loc_Conv_Set) ) {
+            return;
+        }
+        // mapped align may have uninitialized total range
+        // force mapping
+        obj_ref.GetMappingInfo().GetMappedSeq_align(obj_ref.GetAlign());
+        // re-get updated range
+        out_from = obj_ref.GetMappingInfo().GetFrom();
+        out_to = obj_ref.GetMappingInfo().GetToOpen();
     }
 
     // Compare CRef-s: both must be features
@@ -1010,10 +1074,8 @@ struct CAnnotObject_Less
                 x_GetExtremes( x_from, x_to, x );
                 x_GetExtremes( y_from, y_to, y );
             } else {
-                x_from = x.GetMappingInfo().GetFrom();
-                y_from = y.GetMappingInfo().GetFrom();
-                x_to = x.GetMappingInfo().GetToOpen();
-                y_to = y.GetMappingInfo().GetToOpen();
+                GetRangeOpen(x_from, x_to, x);
+                GetRangeOpen(y_from, y_to, y);
             }
 
             // (from >= to) means circular location.
@@ -1054,10 +1116,14 @@ struct CAnnotObject_LessReverse
                 return false;
             }
 
-            TSeqPos x_from = x.GetMappingInfo().GetFrom();
-            TSeqPos y_from = y.GetMappingInfo().GetFrom();
-            TSeqPos x_to = x.GetMappingInfo().GetToOpen();
-            TSeqPos y_to = y.GetMappingInfo().GetToOpen();
+            TSeqPos x_from = kInvalidSeqPos;
+            TSeqPos x_to = kInvalidSeqPos;
+            TSeqPos y_from = kInvalidSeqPos;
+            TSeqPos y_to = kInvalidSeqPos;
+
+            CAnnotObject_Less::GetRangeOpen(x_from, x_to, x);
+            CAnnotObject_Less::GetRangeOpen(y_from, y_to, y);
+
             // (from >= to) means circular location.
             // Any circular location is less than (before) non-circular one.
             // If both are circular, compare them regular way.
@@ -1899,11 +1965,11 @@ void CAnnot_Collector::x_Sort(void)
     switch ( m_Selector->m_SortOrder ) {
     case SAnnotSelector::eSortOrder_Normal:
         stable_sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-             CAnnotObject_Less(m_Selector, m_Scope));
+                    CAnnotObject_Less(m_Selector, m_Scope));
         break;
     case SAnnotSelector::eSortOrder_Reverse:
         stable_sort(m_AnnotSet.begin(), m_AnnotSet.end(),
-             CAnnotObject_LessReverse(m_Selector, m_Scope));
+                    CAnnotObject_LessReverse(m_Selector, m_Scope));
         break;
     default:
         // do nothing

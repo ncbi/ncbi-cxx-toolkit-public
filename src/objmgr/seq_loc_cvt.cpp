@@ -1371,6 +1371,7 @@ CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(CHeapScope& scope)
 void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt,
                                   unsigned int loc_index)
 {
+    m_Dst_id_Handles.insert(cvt.GetDst_id_Handle());
     if (!m_SingleConv) {
         m_SingleConv.Reset(&cvt);
         m_SingleIndex = loc_index;

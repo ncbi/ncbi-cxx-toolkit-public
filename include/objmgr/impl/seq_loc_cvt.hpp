@@ -177,6 +177,10 @@ public:
     void SetMappedLocation(CAnnotObject_Ref& ref, ELocationType loctype);
     void MakeDstMix(CSeq_loc_mix& dst, const CSeq_loc_mix& src) const;
 
+    const CSeq_id_Handle& GetDst_id_Handle(void) const
+        {
+            return m_Dst_id_Handle;
+        }
     const CSeq_id& GetId(void) const
         {
             return m_Dst_loc_Empty->GetEmpty();
@@ -313,6 +317,12 @@ public:
                  unsigned int loc_index);
     void Convert(const CSeq_align& src, CRef<CSeq_align>* dst);
 
+    typedef set<CSeq_id_Handle> TSeq_id_Handles;
+    const TSeq_id_Handles& GetDst_id_Handles(void) const
+        {
+            return m_Dst_id_Handles;
+        }
+
 private:
     friend class CSeq_align_Mapper;
 
@@ -353,6 +363,7 @@ private:
     CRef<CSeq_loc_Conversion> m_SingleConv;
     unsigned int              m_SingleIndex;
     TConvByIndex m_CvtByIndex;
+    TSeq_id_Handles m_Dst_id_Handles;
     bool         m_Partial;
     TRange       m_TotalRange;
     CHeapScope   m_Scope;

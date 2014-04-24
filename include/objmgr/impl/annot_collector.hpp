@@ -40,9 +40,11 @@
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/annot_object.hpp>
-#include <objmgr/impl/seq_loc_cvt.hpp>
+#include <objects/seq/seq_loc_mapper_base.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <set>
@@ -67,6 +69,7 @@ class CSeq_feat_Handle;
 class CMappedFeat;
 class CAnnot_CI;
 class CSeqMap_CI;
+class CGraphRanges;
 
 class NCBI_XOBJMGR_EXPORT CAnnotMapping_Info
 {
@@ -138,10 +141,8 @@ public:
     void SetMappedSeq_align(CSeq_align* align);
     void SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts);
 
-    void SetGraphRanges(CGraphRanges* ranges)
-        { m_GraphRanges.Reset(ranges); }
-    const CGraphRanges* GetGraphRanges(void) const
-        { return m_GraphRanges.GetPointerOrNull(); }
+    void SetGraphRanges(CGraphRanges* ranges);
+    const CGraphRanges* GetGraphRanges(void) const;
 
     bool MappedSeq_locNeedsUpdate(void) const;
     void UpdateMappedSeq_loc(CRef<CSeq_loc>&      loc,
@@ -591,14 +592,6 @@ const CSeq_id& CAnnotMapping_Info::GetMappedSeq_id(void) const
 
 
 inline
-CSeq_loc_Conversion& CAnnotMapping_Info::GetMappedSeq_loc_Conv(void) const
-{
-    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_loc_Conv);
-    return static_cast<CSeq_loc_Conversion&>(m_MappedObject.GetNCObject());
-}
-
-
-inline
 const CSeq_feat& CAnnotMapping_Info::GetMappedSeq_feat(void) const
 {
     _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_feat);
@@ -644,15 +637,6 @@ void CAnnotMapping_Info::SetMappedPoint(bool point)
     else {
         m_MappedFlags &= ~fMapped_Seq_point;
     }
-}
-
-
-inline
-void CAnnotMapping_Info::SetMappedConverstion(CSeq_loc_Conversion& cvt)
-{
-    _ASSERT(!IsMapped());
-    m_MappedObject.Reset(&cvt);
-    m_MappedObjectType = eMappedObjType_Seq_loc_Conv;
 }
 
 
