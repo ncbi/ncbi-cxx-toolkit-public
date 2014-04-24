@@ -35,6 +35,7 @@
 #include <math.h>
 
 #include <algo/align/ngalign/merge_aligner.hpp>
+#include <algo/align/mergetree/merge_tree.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -93,8 +94,6 @@ CRef<CSeq_align_set>
 CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
 {
     CRef<CSeq_align_set> Merged(new CSeq_align_set);
-    CAlignCleanup Cleaner(Scope);
-    Cleaner.FillUnaligned(true);
 
     NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter,
                       QueryAligns.Get()) {
@@ -165,18 +164,24 @@ CMergeAligner::x_MergeAlignments(CQuerySet& QueryAligns, CScope& Scope)
 CRef<objects::CSeq_align_set>
 CMergeAligner::x_MergeSeqAlignSet(CSeq_align_set& InAligns, objects::CScope& Scope)
 {
-    list<CConstRef<CSeq_align> > In;
+    list<CRef<CSeq_align> > In;
     ITERATE(CSeq_align_set::Tdata, AlignIter, InAligns.Get()) {
-        CConstRef<CSeq_align> Align(*AlignIter);
+        CRef<CSeq_align> Align(*AlignIter);
         In.push_back(Align);
     }
 
     CRef<CSeq_align_set> Out(new CSeq_align_set);
 
     try {
+        CTreeAlignMerger merger;
+        merger.SetScope(&Scope);
+        merger.Merge(In, Out->Set());
+
+        /**
         CAlignCleanup Cleaner(Scope);
         Cleaner.FillUnaligned(true);
         Cleaner.Cleanup(In, Out->Set());
+        **/
     } catch(CException& e) {
         ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
         return CRef<CSeq_align_set>();
