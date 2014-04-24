@@ -43,6 +43,7 @@ except:
     hostIP = "127.0.0.1"
 
 SESSIONID = '1111111111111111_0000SID'
+NCBI_PHID = 'Fake.NCBI.PHID'
 
 
 
@@ -279,6 +280,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'HELLO',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'Client':       client,
                     'Service':      service,
@@ -295,6 +297,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'BYE',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -307,6 +310,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'INFO',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -319,6 +323,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'CONFIGURATION',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -339,6 +344,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'SHUTDOWN',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'Mode':         mode }
         self.exchange( message )
@@ -352,6 +358,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'GETCLIENTSINFO',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -359,6 +366,7 @@ class NetStorageConsole:
     def sendNoType( self, arguments ):
         " Sends a malformed request without a type "
         message = { 'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -392,6 +400,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'CREATE',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         if len( arguments ) > 1:
             print "are we there yet?", ' '.join( arguments[ 1 : ] )
@@ -441,6 +450,7 @@ class NetStorageConsole:
         message = { 'Type':         'WRITE',
                     'ObjectLoc':    locator,
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
 
         response = self.exchange( message )
@@ -475,6 +485,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'DELETE',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc }
 
@@ -494,6 +505,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'READ',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc }
 
@@ -535,6 +547,7 @@ class NetStorageConsole:
         objectLoc = arguments[ 0 ]
         message = { 'Type':         'EXISTS',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc }
 
@@ -552,6 +565,7 @@ class NetStorageConsole:
         objectLoc = arguments[ 0 ]
         message = { 'Type':         'GETSIZE',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc }
 
@@ -569,6 +583,7 @@ class NetStorageConsole:
         objectLoc = arguments[ 0 ]
         message = { 'Type':         'GETOBJECTINFO',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc }
 
@@ -588,6 +603,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'GETATTR',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc,
                     'AttrName':     attrName }
@@ -608,6 +624,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'DELATTR',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc,
                     'AttrName':     attrName }
@@ -627,6 +644,7 @@ class NetStorageConsole:
         srcLoc = arguments[ 0 ]
         message = { 'Type':         'RELOCATE',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    srcLoc,
                     'NewLocation':  json.loads( ' '.join( arguments[ 1 : ] ) ) }
@@ -645,6 +663,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'HEALTH',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -658,6 +677,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'GETMETADATAINFO',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -671,6 +691,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'RECONFIGURE',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP }
         self.exchange( message )
         return
@@ -678,16 +699,19 @@ class NetStorageConsole:
 
     def ackalert( self, arguments ):
         " Sends ACLALERT message "
-        if len( arguments ) != 1:
-            print "Exactly one argument is required "
+        if len( arguments ) != 2:
+            print "Exactly two argument are required: alert name and the user "
             return
 
         alertName = arguments[ 0 ]
+        userName = arguments[ 1 ]
 
         message = { 'Type':         'ACKALERT',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
-                    'Name':         alertName }
+                    'Name':         alertName,
+                    'User':         userName }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -708,6 +732,7 @@ class NetStorageConsole:
 
         message = { 'Type':         'SETATTR',
                     'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'ClientIP':     hostIP,
                     'ObjectLoc':    objectLoc,
                     'AttrName':     attrName,
