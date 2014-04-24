@@ -750,8 +750,10 @@ CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
                             .Print("_type", "message");
 
         for (CJsonIterator it = message.Iterate(); it; ++it) {
-            ctxt_extra.Print(it.GetKey(),
-                    it.GetNode().Repr(CJsonNode::fVerbatimIfString));
+            string      key = it.GetKey();
+            if (key != "SessionID" || key != "ClientIP")
+                ctxt_extra.Print(key,
+                        it.GetNode().Repr(CJsonNode::fVerbatimIfString));
         }
 
         ctxt_extra.Flush();
