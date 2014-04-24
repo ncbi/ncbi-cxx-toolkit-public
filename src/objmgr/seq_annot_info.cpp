@@ -1151,6 +1151,10 @@ void CSeq_annot_Info::x_UnmapFeatByGene(const CGene_ref& gene,
 
 void CSeq_annot_Info::x_MapFeatIds(CAnnotObject_Info& info)
 {
+    if ( !info.IsRegular() ) {
+        // table?
+        return;
+    }
     const CSeq_feat& feat = *info.GetFeatFast();
     if ( feat.IsSetId() ) {
         x_MapFeatById(feat.GetId(), info, eFeatId_id);
@@ -1176,6 +1180,10 @@ void CSeq_annot_Info::x_MapFeatIds(CAnnotObject_Info& info)
 
 void CSeq_annot_Info::x_UnmapFeatIds(CAnnotObject_Info& info)
 {
+    if ( !info.IsRegular() ) {
+        // table?
+        return;
+    }
     const CSeq_feat& feat = *info.GetFeatFast();
     if ( feat.IsSetId() ) {
         x_UnmapFeatById(feat.GetId(), info, eFeatId_id);
