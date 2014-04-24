@@ -1990,7 +1990,7 @@ void
 CNCMessageHandler::x_JournalBlobPutResult(int status, const string& blob_key, Uint2 blob_slot)
 {
     if (CNCDistributionConf::CountServersForSlot(blob_slot) != 0) {
-        if (status >= eStatus_CondFailed && status <= eStatus_ServerError) {
+        if (status == eStatus_PrematureClose && status == eStatus_CmdTimeout) {
             CNCBlobAccessor::PutFailed(blob_key);
         } else {
             CNCBlobAccessor::PutSucceeded(blob_key);
@@ -2255,17 +2255,29 @@ CNCMessageHandler::State
 CNCMessageHandler::x_FinishReadingBlob(void)
 {
     LOG_CURRENT_FUNCTION
+    bool fail = false;
+    string errmsg;
     if (x_IsFlagSet(fReadExactBlobSize)  &&  m_BlobSize != m_Size) {
+        fail = true;
         GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
         SRV_LOG(Error, "Too few data for blob size " << m_Size
-                       << " (received " << m_BlobSize << " bytes)");
-        //abort();
+                        << " (received " << m_BlobSize << " bytes)");
+        errmsg = s_MsgForStatus[eStatus_CondFailed];
+    }
+    else if (m_BlobSize > CNCBlobStorage::GetMaxBlobSizeStore()) {
+        fail = true;
+        GetDiagCtx()->SetRequestStatus(eStatus_BlobTooBig);
+        SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
+                        << CNCBlobStorage::GetMaxBlobSizeStore()
+                        << " (received " << m_BlobSize << " bytes)");
+        errmsg = "ERR:Too much data for blob";
+    }
+    if (fail) {
         if (x_IsFlagSet(fConfirmOnFinish)) {
-            WriteText(s_MsgForStatus[eStatus_CondFailed]).WriteText("\n");
+            WriteText(errmsg).WriteText("\n");
             x_UnsetFlag(fConfirmOnFinish);
             return &CNCMessageHandler::x_FinishCommand;
-        }
-        else {
+        } else {
             return &CNCMessageHandler::x_CloseCmdAndConn;
         }
     }
@@ -2443,12 +2455,18 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         return &CNCMessageHandler::x_CloseCmdAndConn;
     }
 
-    if (x_IsFlagSet(fReadExactBlobSize)  &&  m_BlobSize + m_ChunkLen > m_Size) {
+    if (x_IsFlagSet(fReadExactBlobSize)  &&  (m_BlobSize + m_ChunkLen) > m_Size) {
         GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
         SRV_LOG(Error, "Too much data for blob size " << m_Size
-                       << " (received at least "
-                       << (m_BlobSize + m_ChunkLen) << " bytes)");
-        //abort();
+                        << " (received at least "
+                        << (m_BlobSize + m_ChunkLen) << " bytes)");
+        return &CNCMessageHandler::x_CloseCmdAndConn;
+    }
+    if ((m_BlobSize + m_ChunkLen) > CNCBlobStorage::GetMaxBlobSizeStore()) {
+        GetDiagCtx()->SetRequestStatus(eStatus_BlobTooBig);
+        SRV_LOG(Error, "Blob size exceeds the allowed maximum of "
+                        << CNCBlobStorage::GetMaxBlobSizeStore()
+                        << " (received " << (m_BlobSize + m_ChunkLen) << " bytes)");
         return &CNCMessageHandler::x_CloseCmdAndConn;
     }
 

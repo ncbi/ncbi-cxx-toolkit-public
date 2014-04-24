@@ -120,8 +120,10 @@ enum EHTTPStatus {
     /// Command timeout is exceeded.
     eStatus_CmdTimeout  = 408,
     /// Precondition stated in command has failed (size of blob was given but
-    /// data has a different size).
+    /// data has a different size)
     eStatus_CondFailed  = 412,
+    // Blob size exceeds the allowed maximum.
+    eStatus_BlobTooBig  = 413,
     /// Connection was closed too early (client didn't send all data or didn't
     /// get confirmation about successful execution).
     eStatus_PrematureClose = 499,

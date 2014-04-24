@@ -127,6 +127,7 @@ public:
     static string GetPurgeData(void);
     static void SavePurgeData(void);
 
+    static Uint8 GetMaxBlobSizeStore(void);
 public:
     // For internal use only
 

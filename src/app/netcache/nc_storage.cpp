@@ -81,6 +81,7 @@ static const char* kNCStorage_MinFreeDiskParam  = "disk_free_limit";
 static const char* kNCStorage_DiskCriticalParam = "critical_disk_free_limit";
 static const char* kNCStorage_MinRecNoSaveParam = "min_rec_no_save_period";
 static const char* kNCStorage_FailedWriteSize   = "failed_write_blob_key_count";
+static const char* kNCStorage_MaxBlobSizeStore  = "max_blob_size_store";
 
 
 // storage file type signatures
@@ -178,6 +179,7 @@ static Uint8 s_StopWriteOnSize;
 static Uint8 s_StopWriteOffSize;
 static Uint8 s_DiskFreeLimit;
 static Uint8 s_DiskCritical;
+static Uint8 s_MaxBlobSizeStore;
 static CNewFileCreator* s_NewFileCreator;
 static CDiskFlusher* s_DiskFlusher;
 static CRecNoSaver* s_RecNoSaver;
@@ -278,6 +280,8 @@ s_ReadVariableParams(void)
                        kNCStorage_RegSection, kNCStorage_MinFreeDiskParam, "5 GB"));
     s_DiskCritical   = NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, kNCStorage_DiskCriticalParam, "1 GB"));
+    s_MaxBlobSizeStore = NStr::StringToUInt8_DataSize(reg.GetString(
+                       kNCStorage_RegSection, kNCStorage_MaxBlobSizeStore, "1 GB"));
 
     int warn_pct = reg.GetInt(kNCStorage_RegSection, "db_limit_percentage_alert", 65);
     if (warn_pct <= 0  ||  warn_pct >= 100) {
@@ -1031,6 +1035,9 @@ void CNCBlobStorage::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText(kNCStorage_DiskCriticalParam).WriteText(str).WriteText(iss)
                                                    .WriteText(NStr::UInt8ToString_DataSize( s_DiskCritical)).WriteText(eos);
     task.WriteText(eol).WriteText(kNCStorage_DiskCriticalParam).WriteText(is ).WriteNumber( s_DiskCritical);
+    task.WriteText(eol).WriteText(kNCStorage_MaxBlobSizeStore).WriteText(str).WriteText(iss)
+                                                   .WriteText(NStr::UInt8ToString_DataSize( s_MaxBlobSizeStore)).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_MaxBlobSizeStore).WriteText(is ).WriteNumber( s_MaxBlobSizeStore);
     task.WriteText(eol).WriteText("db_limit_percentage_alert" ).WriteText(is ).WriteNumber( s_WarnLimitOnPct);
     task.WriteText(eol).WriteText("db_limit_percentage_alert_delta").WriteText(is).WriteNumber(s_WarnLimitOffPct);
     task.WriteText(eol).WriteText("write_back_soft_size_limit").WriteText(str).WriteText(iss)
@@ -1812,6 +1819,12 @@ void CNCBlobStorage::SavePurgeData(void)
 {
     s_NeedSavePurgeData = true;
     s_RecNoSaver->SetRunnable();
+}
+
+Uint8
+CNCBlobStorage::GetMaxBlobSizeStore(void)
+{
+    return s_MaxBlobSizeStore;
 }
 
 Uint8
