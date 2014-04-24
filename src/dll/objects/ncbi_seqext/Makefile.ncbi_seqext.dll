@@ -28,7 +28,8 @@ HOSTED_LIBS    = xalnmgr   \
                  blastdb_format \
                  snputil \
                  uudutil \
-                 xunittestutil
+                 xunittestutil \
+                 variation_utils
 
 DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver
 
