@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp> 
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <cmath>
 
 #include <objmgr/util/sequence.hpp>
 
