@@ -181,18 +181,7 @@ const CSeq_align& CAlign_CI::operator* (void) const
 
 const CSeq_align* CAlign_CI::operator-> (void) const
 {
-    const CAnnotObject_Ref& annot = Get();
-    _ASSERT(annot.IsAlign());
-    if (!m_MappedAlign) {
-        if ( annot.GetMappingInfo().IsMapped() ) {
-            m_MappedAlign.Reset(&annot.GetMappingInfo().GetMappedSeq_align(
-                annot.GetAlign()));
-        }
-        else {
-            m_MappedAlign.Reset(&annot.GetAlign());
-        }
-    }
-    return m_MappedAlign.GetPointer();
+    return &**this;
 }
 
 
