@@ -81,9 +81,9 @@ public:
     /// Override this method to force the parent class to ignore gaps
     /// @param len length of the gap? @sa CFastaReader
     protected:
-    virtual void x_CloseGap(TSeqPos /*len*/, bool /*atStartOfLine*/, IMessageListener * /*pMessageListener*/
-        return;
-    }
+    virtual void x_CloseGap(TSeqPos /*len*/, bool /*atStartOfLine*/,
+                            IMessageListener * /*pMessageListener*/)
+        { }
 
     /// Override logic for assigning the molecule type
     /// @note fForceType is ignored if the sequence length is less than the
