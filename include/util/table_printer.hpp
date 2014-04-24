@@ -244,10 +244,9 @@ private:
 
 // inline functions
 
-namespace {
-
     /// Writes object to current table cell.
     template<typename TValue>
+    inline
     CTablePrinter & operator << (
         CTablePrinter & table_printer, const TValue & value) 
     {
@@ -256,13 +255,13 @@ namespace {
 
     /// Flushes table cell contents and prepares for the next cell.
     template<>
+    inline
     CTablePrinter & operator << <CTablePrinter::SEndOfCell>(
         CTablePrinter & table_printer, const CTablePrinter::SEndOfCell & end_of_cell ) 
     {
         return table_printer.EndOfCurrentCell();
     }
 
-}
 
 END_NCBI_SCOPE
 

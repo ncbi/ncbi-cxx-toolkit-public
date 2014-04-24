@@ -399,27 +399,6 @@ namespace
         } // end of testing for nucleotides vs. amino acids
     } // end of function s_TestTrimming
 
-    // creates a new CSeq_feat and attaches it to the given
-    // annot.
-    void s_AttachSeqFeat( 
-        CSeq_annot_EditHandle & annot_eh, 
-        TSeqPos start_pos,
-        TSeqPos length )
-    {
-        CAutoInitRef<CSeq_feat> pFeat;
-        pFeat->SetData().SetComment();
-
-        // set feat location
-        CSeq_id_Handle bioseq_seq_id_h =
-            annot_eh.GetParentEntry().GetSeq().GetAccessSeq_id_Handle();
-        CRef<CSeq_id> pSeqId( SerialClone( *bioseq_seq_id_h.GetSeqId() ) );
-        CRef<CSeq_loc> pLoc( 
-            new CSeq_loc( *pSeqId, start_pos, start_pos + length) );
-        pFeat->SetLocation().Assign( *pLoc );
-
-        // add feat to annot
-        annot_eh.AddFeat( *pFeat );
-    }
 }
 
 
@@ -498,77 +477,6 @@ BOOST_AUTO_TEST_CASE(SequenceAmbigTrimmer_TestDoNotTrimSeqGap)
 
 #define ITERATE_IN_PLACE_ARRAY(_elem_type, _iter, _array_literal) \
     ITERATE_IN_PLACE_ARRAY_IMPL(_elem_type, _iter, _array_literal, __LINE__)
-
-// BOOST_AUTO_TEST_CASE(SequenceAmbigTrimmer_TestTrimAnnot)
-//{
-//    const string kTheGoodBases = string(100, 'A');
-//    const string kTestSeq = 
-//        string(100, 'N') + kTheGoodBases + string(100, 'N');
-//
-//    ITERATE_BOTH_BOOL_VALUES(bTrimAnnot) {
-//        // create the bioseq, and add its annots and descs
-//        CBioseq_Handle bioseq_h =
-//            s_SequenceToBioseqHandle(kTestSeq, CSeq_inst::eMol_na);
-//        CBioseq_EditHandle bioseq_eh = bioseq_h.GetEditHandle();
-//
-//        CRef<CSeq_annot> pAnnot( new CSeq_annot );
-//        CSeq_annot_EditHandle annot_eh = bioseq_eh.AttachAnnot(*pAnnot);
-//        s_AttachSeqFeat( annot_eh, 25,  50 );
-//        s_AttachSeqFeat( annot_eh, 127, 155 );
-//        s_AttachSeqFeat( annot_eh, 229, 60 );
-//
-//        CRef<CSeqdesc> pSeqdesc( new CSeqdesc );
-//        pSeqdesc->SetComment( "some comment " );
-//        bioseq_eh.AddSeqdesc( *pSeqdesc );
-//
-//        // set up trimming flags
-//        CSequenceAmbigTrimmer::TFlags fTrimmerFlags = 0;
-//        if( bTrimAnnot ) {
-//            fTrimmerFlags |= 
-//                CSequenceAmbigTrimmer::fFlags_TrimAnnot;
-//        }
-//
-//        // do the trimming
-//        CSequenceAmbigTrimmer trimmer( 
-//            CSequenceAmbigTrimmer::eMeaningOfAmbig_OnlyCompletelyUnknown,
-//            fTrimmerFlags );
-//        BOOST_CHECK_EQUAL(
-//            trimmer.DoTrim( bioseq_h ), 
-//            CSequenceAmbigTrimmer::eResult_SuccessfullyTrimmed );
-//        
-//        // make sure trimmed on both sides
-//        const string sResult = s_ExtractSeqFromBioseq(bioseq_h);
-//        BOOST_CHECK_EQUAL( kTheGoodBases,
-//            sResult );
-//
-//        // check if it trimmed the annots correctly
-//
-//        typedef CSeq_feat_Handle::TRange TRange;
-//        typedef vector<TRange> TRangeVec;
-//        TRangeVec resultingRangeVec;
-//
-//        // get the resulting range of each feature
-//        CFeat_CI feat_ci( bioseq_eh );
-//        for( ; feat_ci; ++feat_ci ) {
-//            CSeq_feat_Handle feat_h = *feat_ci;
-//            resultingRangeVec.push_back( feat_h.GetLocationTotalRange() );
-//        }
-//
-//        // calculate the expected range for each feature
-//        TRangeVec expectedRangeVec;
-//        if( bTrimAnnot ) {
-//            expectedRangeVec.push_back( TRange(27, 100) );
-//        } else {
-//            expectedRangeVec.push_back( TRange(25, 75) );
-//            expectedRangeVec.push_back( TRange(127, 282) );
-//            expectedRangeVec.push_back( TRange(229, 289) );
-//        }
-//
-//        BOOST_CHECK_EQUAL_COLLECTIONS(
-//            resultingRangeVec.begin(), resultingRangeVec.end(),
-//            expectedRangeVec.begin(), expectedRangeVec.end() );
-//    }
-//}
 
 BOOST_AUTO_TEST_CASE(SequenceAmbigTrimmer_GeneralTests)
 {

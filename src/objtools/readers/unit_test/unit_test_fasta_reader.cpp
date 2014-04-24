@@ -101,7 +101,7 @@ namespace {
     struct SOneWarningsInfo {
         ILineError::EProblem m_eType;
         string   m_sFeatureName; // can be empty
-        int      m_iLineNumExpected; // might be zero for multiple-line errors
+        unsigned int m_iLineNumExpected; // might be zero for multiple-line errors
 
         int Compare(const SOneWarningsInfo & rhs) const;
 
@@ -490,28 +490,6 @@ namespace {
         BOOST_CHECK_EQUAL( sExpectedExceptionErrCode, sErrCodeThatOccurred );
 
         return pRetvalBioseq;
-    }
-
-    // returns NULL if not found.  Does NOT do boost checks
-    CConstRef<CSeq_literal> s_GetFirstGapSeqLiteral(
-        CConstRef<CBioseq> pBioseq)
-    {
-        try {
-            const CDelta_ext::Tdata & delta_data =
-                pBioseq->GetInst().GetExt().GetDelta().Get();
-            ITERATE(CDelta_ext::Tdata, delta_it, delta_data) {
-                const CSeq_literal & seq_literal = 
-                    (*delta_it)->GetLiteral();
-                if( ! seq_literal.IsSetSeq_data() || 
-                    FIELD_IS_SET_AND_IS(seq_literal, Seq_data, Gap) ) 
-                {
-                    return ConstRef(&seq_literal);
-                }
-            }
-        } catch(...) {
-            // do nothing, we will return NULL
-        }
-        return CConstRef<CSeq_literal>();
     }
 
     // kludge to work around the inability to have templated typedefs

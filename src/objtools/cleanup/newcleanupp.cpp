@@ -2882,53 +2882,6 @@ void CNewCleanup_imp::SiteFeatBC( CSeqFeatData::ESite &site, CSeq_feat& feat )
     }
 }
 
-static
-bool s_IsOneMinusStrand(const CSeq_loc& sl)
-{
-    switch ( sl.Which() ) {
-        default:
-            return false;
-        case CSeq_loc::e_Int:
-        case CSeq_loc::e_Pnt:
-            return sl.IsReverseStrand();
-
-        case CSeq_loc::e_Packed_int:
-            ITERATE(CSeq_loc::TPacked_int::Tdata, i, sl.GetPacked_int().Get()) {
-                if (IsReverse((*i)->GetStrand())) {
-                    return true;
-                }
-            }
-            break;
-        case CSeq_loc::e_Packed_pnt:
-            return IsReverse(sl.GetPacked_pnt().GetStrand());
-        case CSeq_loc::e_Mix:
-            ITERATE(CSeq_loc::TMix::Tdata, i, sl.GetMix().Get()) {
-                if (s_IsOneMinusStrand(**i)) {
-                    return true;
-                }
-            }
-            break;
-        case CSeq_loc::e_Equiv:
-            ITERATE(CSeq_loc::TEquiv::Tdata, i, sl.GetEquiv().Get()) {
-                if (s_IsOneMinusStrand(**i)) {
-                    return true;
-                }
-            }
-            break;
-        case CSeq_loc::e_Bond:
-            if (sl.GetBond().IsSetA() && sl.GetBond().GetA().IsSetStrand() && IsReverse(sl.GetBond().GetA().GetStrand())) {
-                return true;
-            }
-            if (sl.GetBond().IsSetB()) {
-                if (sl.GetBond().IsSetB() && sl.GetBond().GetB().IsSetStrand() && IsReverse(sl.GetBond().GetB().GetStrand())) {
-                    return true;
-                }
-            }
-            break;
-    }
-    return false;
-}
-
 void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
 {
     switch (loc.Which()) {

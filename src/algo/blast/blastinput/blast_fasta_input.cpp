@@ -80,8 +80,8 @@ public:
 
     /// Override this method to force the parent class to ignore gaps
     /// @param len length of the gap? @sa CFastaReader
-    virtual void x_CloseGap(TSeqPos len, IMessageListener * pMessageListener) {
-        (void)len;  // remove solaris compiler warning
+    protected:
+    virtual void x_CloseGap(TSeqPos /*len*/, bool /*atStartOfLine*/, IMessageListener * /*pMessageListener*/
         return;
     }
 

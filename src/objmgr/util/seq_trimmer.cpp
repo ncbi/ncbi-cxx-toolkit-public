@@ -79,6 +79,7 @@ namespace {
         }
     }
 
+#ifdef _DEBUG
     bool s_IsValidDirection(const TSignedSeqPos iSeqPos)
     {
         return (iSeqPos == 1 || iSeqPos == -1);
@@ -94,6 +95,7 @@ namespace {
             return false;
         }
     }
+#endif
 
     bool s_IsEmptyRange(
         const TSignedSeqPos iStartPos,
