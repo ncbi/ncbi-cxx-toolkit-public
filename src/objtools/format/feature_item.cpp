@@ -1581,8 +1581,8 @@ void CFeatureItem::x_AddQuals(
     {
         CMappedFeat mapped_gene = GetBestGeneForFeat (m_Feat, m_Feat_Tree);
         if (mapped_gene) {
-            const CSeq_feat& gene_feat = mapped_gene.GetOriginalFeature();
-            gene_ref = &gene_feat.GetData().GetGene();
+            gene_feat = &mapped_gene.GetOriginalFeature();
+            gene_ref = &gene_feat->GetData().GetGene();
         }
 
         /*
