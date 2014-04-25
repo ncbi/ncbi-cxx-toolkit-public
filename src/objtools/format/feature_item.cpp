@@ -1583,16 +1583,16 @@ void CFeatureItem::x_AddQuals(
         if (mapped_gene) {
             gene_feat = &mapped_gene.GetOriginalFeature();
             gene_ref = &gene_feat->GetData().GetGene();
+        } else {
+            // e.g., check sig_peptide for gene overlapping parent CDS
+            CSeq_feat_Handle parent_feat_handle;
+            if( parentFeatureItem ) {
+                parent_feat_handle = parentFeatureItem->GetFeat();
+            }
+            CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
+                gene_feat, parent_feat_handle );
         }
 
-        /*
-        CSeq_feat_Handle parent_feat_handle;
-        if( parentFeatureItem ) {
-            parent_feat_handle = parentFeatureItem->GetFeat();
-        }
-        CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
-            gene_feat, parent_feat_handle );
-        */
     } else if( ! is_not_genbank && gene_forbidden_if_genbank ) {
         // We include a gene_ref on the genbank-forbidden features if there's
         // an explicit xref and the referenced gene does not exist
