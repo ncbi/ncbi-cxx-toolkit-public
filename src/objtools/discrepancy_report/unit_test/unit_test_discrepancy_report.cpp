@@ -151,12 +151,9 @@ NCBITEST_AUTO_FINI()
     cout << "Finalization function executed" << endl;
 }
 
-static CRef <CObjectManager> objmgr = CObjectManager::GetInstance();
-static CRef <CScope> scope (new CScope(*objmgr));
 void RunAndCheckTest(CRef <CSeq_entry> entry, const string& test_name, const string& msg)
 {
-   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
-   scope.Reset(new CScope(*objmgr));
+   CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
    config->SetTopLevelSeqEntry(&seh);
 
@@ -267,8 +264,7 @@ void AddBioSource(CRef <CSeq_entry> entry, CBioSource::EGenome genome)
 
 void RunAndCheckMultiReports(CRef <CSeq_entry> entry, const string& test_name, const set <string>& msgs)
 {
-   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
-   scope.Reset(new CScope(*objmgr));
+   CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
    config->SetTopLevelSeqEntry(&seh);
 
@@ -968,8 +964,7 @@ BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
    CRef <CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
 
    // good gen-prod-set
-   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-   CRef <CScope> scope(new CScope(*objmgr));
+   CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
  
    config->SetTopLevelSeqEntry(&seh);
