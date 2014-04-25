@@ -406,7 +406,8 @@ void s_CleanupThreadsTls(void* /* ptr */)
 
 void CThread::CreateThreadsTls(void)
 {
-    static CStaticTls<SThreadInfo> s_ThreadsTls(s_CleanupThreadsTls);
+    static CStaticTls<SThreadInfo> s_ThreadsTls(s_CleanupThreadsTls,
+                                                CSafeStaticLifeSpan::eLifeSpan_Longest);
 
     sm_ThreadsTls = &s_ThreadsTls;
 }
