@@ -403,6 +403,15 @@ s_Initialize(bool do_reinit)
 
     if (!CNCBlobStorage::Initialize(do_reinit))
         return false;
+
+    if (CNCDistributionConf::GetMaxBlobSizeSync() > CNCBlobStorage::GetMaxBlobSizeStore()) {
+        SRV_LOG(Critical, "Bad configuration: max_blob_size_sync ("
+                            << CNCDistributionConf::GetMaxBlobSizeSync()
+                            << ") is greater than max_blob_size_store ("
+                            << CNCBlobStorage::GetMaxBlobSizeStore() << ").");
+        return false;
+    }
+
     CNCStat::Initialize();
     s_HeartBeat = new CNCHeartBeat();
 

@@ -107,6 +107,7 @@ static Uint8    s_PeriodicSyncInterval = 0;
 static Uint8    s_PeriodicSyncTimeout = 0;
 static Uint8    s_FailedSyncRetryDelay = 0;
 static Uint8    s_NetworkErrorTimeout = 0;
+static Uint8    s_MaxBlobSizeSync = 0;
 
 static const char*  kNCReg_NCPoolSection       = "mirror";
 static string       kNCReg_NCServerPrefix      = "server_";
@@ -264,7 +265,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_PeerTimeout = reg.GetInt(kNCReg_NCPoolSection, "peer_communication_timeout", 2);
         s_BlobListTimeout = reg.GetInt(kNCReg_NCPoolSection, "peer_blob_list_timeout", 10);
         s_SmallBlobBoundary = reg.GetInt(kNCReg_NCPoolSection, "small_blob_max_size", 100);
-        s_SmallBlobBoundary *= 1024;
+        s_SmallBlobBoundary *= 1000;
         s_MaxMirrorQueueSize = reg.GetInt(kNCReg_NCPoolSection, "max_instant_queue_size", 10000);
 
         s_SyncLogFileName = reg.GetString(kNCReg_NCPoolSection, "sync_log_file", "sync_events.log");
@@ -286,6 +287,15 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_FailedSyncRetryDelay *= kUSecsPerSecond;
         s_NetworkErrorTimeout = reg.GetInt(kNCReg_NCPoolSection, "network_error_timeout", 300);
         s_NetworkErrorTimeout *= kUSecsPerSecond;
+        s_MaxBlobSizeSync = NStr::StringToUInt8_DataSize(reg.GetString(
+                           kNCReg_NCPoolSection, "max_blob_size_sync", "1 GB"));
+
+        if (s_SmallBlobBoundary > s_MaxBlobSizeSync) {
+            SRV_LOG(Critical, log_pfx << "small_blob_max_size ("
+                              << s_SmallBlobBoundary << ") is greater than max_blob_size_sync ("
+                              << s_MaxBlobSizeSync << ").");
+            return false;
+        }
     }
     catch (CStringException& ex) {
         SRV_LOG(Critical, log_pfx  << ex);
@@ -303,7 +313,7 @@ CNCDistributionConf::Finalize(void)
 
 void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
 {
-    string is("\": "),iss("\": \""), eol(",\n\"");
+    string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
 
     //self
     task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteNumber(0).WriteText(iss);
@@ -359,7 +369,7 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("peer_throttle_period"       ).WriteText(is).WriteNumber(s_PeerThrottlePeriod/kUSecsPerSecond);
     task.WriteText(eol).WriteText("peer_communication_timeout" ).WriteText(is).WriteNumber(s_PeerTimeout);
     task.WriteText(eol).WriteText("peer_blob_list_timeout"     ).WriteText(is).WriteNumber(s_BlobListTimeout);
-    task.WriteText(eol).WriteText("small_blob_max_size"        ).WriteText(is).WriteNumber(s_SmallBlobBoundary/1024);
+    task.WriteText(eol).WriteText("small_blob_max_size"        ).WriteText(is).WriteNumber(s_SmallBlobBoundary/1000);
     task.WriteText(eol).WriteText("max_instant_queue_size"     ).WriteText(is).WriteNumber(s_MaxMirrorQueueSize);
     task.WriteText(eol).WriteText("max_slot_log_records"       ).WriteText(is).WriteNumber(s_MaxSlotLogEvents);
     task.WriteText(eol).WriteText("clean_slot_log_reserve"     ).WriteText(is).WriteNumber(s_CleanLogReserve);
@@ -370,6 +380,9 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("deferred_sync_timeout"      ).WriteText(is).WriteNumber(s_PeriodicSyncTimeout/ kUSecsPerSecond);
     task.WriteText(eol).WriteText("failed_sync_retry_delay"    ).WriteText(is).WriteNumber(s_FailedSyncRetryDelay/kUSecsPerSecond);
     task.WriteText(eol).WriteText("network_error_timeout"      ).WriteText(is).WriteNumber(s_NetworkErrorTimeout/ kUSecsPerSecond);
+    task.WriteText(eol).WriteText("max_blob_size_sync").WriteText(str).WriteText(iss)
+                                                   .WriteText(NStr::UInt8ToString_DataSize( s_MaxBlobSizeSync)).WriteText(eos);
+    task.WriteText(eol).WriteText("max_blob_size_sync").WriteText(is ).WriteNumber( s_MaxBlobSizeSync);
 }
 
 size_t
@@ -729,6 +742,11 @@ Uint8
 CNCDistributionConf::GetNetworkErrorTimeout(void)
 {
     return s_NetworkErrorTimeout;
+}
+Uint8
+CNCDistributionConf::GetMaxBlobSizeSync(void)
+{
+    return s_MaxBlobSizeSync;
 }
 
 void

@@ -2324,19 +2324,27 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     }
 
     if (!x_IsFlagSet(fCopyLogEvent)) {
-        m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
-        CNCPeerControl::MirrorWrite(m_BlobKey, m_BlobSlot,
-                                    m_OrigRecNo, m_BlobAccess->GetNewBlobSize());
-        // If fCopyLogEvent is not set then this blob comes from client and
-        // thus we need to check quorum value before answering to client.
-        // If fCopyLogEvent is set then this write comes from other server
-        // and we don't care about quorum in this case.
-        if (m_Quorum != 1) {
-            if (m_Quorum != 0)
-                --m_Quorum;
-            x_GetCurSlotServers();
-            if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main)
-                return &CNCMessageHandler::x_PutToNextPeer;
+        if (m_BlobAccess->GetNewBlobSize() < CNCDistributionConf::GetMaxBlobSizeSync()) {
+            m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
+            CNCPeerControl::MirrorWrite(m_BlobKey, m_BlobSlot,
+                                        m_OrigRecNo, m_BlobAccess->GetNewBlobSize());
+            // If fCopyLogEvent is not set then this blob comes from client and
+            // thus we need to check quorum value before answering to client.
+            // If fCopyLogEvent is set then this write comes from other server
+            // and we don't care about quorum in this case.
+            if (m_Quorum != 1) {
+                if (m_Quorum != 0)
+                    --m_Quorum;
+                x_GetCurSlotServers();
+                if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main)
+                    return &CNCMessageHandler::x_PutToNextPeer;
+            }
+        } else {
+            SRV_LOG(Warning, "Received blob is too big and will not be mirrored:"
+                << " blob key:"     << m_RawKey //m_BlobKey
+                << " blob size: "   << m_BlobAccess->GetNewBlobSize()
+                << " max allowed: " << CNCDistributionConf::GetMaxBlobSizeSync());
+            delete write_event;
         }
     }
     else if (m_OrigRecNo != 0) {

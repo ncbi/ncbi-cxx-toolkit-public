@@ -1931,6 +1931,7 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
         Uint8 cnt_blobs = cache->key_map.size();
         void* big_block = malloc(size_t(cnt_blobs * sizeof(SNCTempBlobInfo)));
         if (!big_block) {
+            cache->lock.Unlock();
             return;
         }
         SNCTempBlobInfo* info_ptr = (SNCTempBlobInfo*)big_block;
@@ -1950,6 +1951,15 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
                     key_bucket != bucket_num)
                 abort();
 
+            if (info_ptr->size > CNCDistributionConf::GetMaxBlobSizeSync()) {
+#if 0
+                SRV_LOG(Warning, "Stored blob is too big and will not be mirrored:"
+                    << " blob key:"     << info_ptr->key
+                    << " blob size: "   << info_ptr->size
+                    << " max allowed: " << CNCDistributionConf::GetMaxBlobSizeSync());
+#endif
+                continue;
+            }
             SNCBlobSummary* blob_sum = new SNCBlobSummary();
             blob_sum->create_id = info_ptr->create_id;
             blob_sum->create_server = info_ptr->create_server;

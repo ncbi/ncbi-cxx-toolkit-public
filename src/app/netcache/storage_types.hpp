@@ -149,6 +149,7 @@ struct SWritingInfo
 struct SNCTempBlobInfo
 {
     string  key;
+    Uint8   size;
     Uint8   create_time;
     Uint8   create_server;
     SNCDataCoord coord;
@@ -159,6 +160,7 @@ struct SNCTempBlobInfo
 
     SNCTempBlobInfo(const SNCCacheData& cache_info)
         : key(cache_info.key),
+          size(cache_info.size),
           create_time(cache_info.create_time),
           create_server(cache_info.create_server),
           coord(cache_info.coord),
