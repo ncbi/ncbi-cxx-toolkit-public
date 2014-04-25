@@ -58,7 +58,13 @@ USING_SCOPE(objects);
 
 CMergeTree::~CMergeTree()
 {
+    NON_CONST_ITERATE(TNodeCache, CacheIter, m_NodeCache) {
+        CacheIter->second->Parents.clear();
+        CacheIter->second->Children.clear();
+        CacheIter->second->BestChild.Reset(NULL);
+    }
     m_NodeCache.clear();
+    
 
     // The tree is doubly-linked, defeating CRef re-counting
     // So it needs to be explicitly dismantled
@@ -73,14 +79,16 @@ CMergeTree::~CMergeTree()
 
         Curr->Parents.clear();
 
-        ITERATE(set<TMergeNode>, ChildIter, Curr->Children) {
+        NON_CONST_SET_ITERATE(set<TMergeNode>, ChildIter, Curr->Children) {
+            (*ChildIter)->Parents.clear();
             Children.push_back(*ChildIter);
         }
         Curr->Children.clear();
+        Curr->BestChild.Reset(NULL);
     }
 
-
     m_Root.Reset(NULL);
+    m_Leaves.clear();
 }
 
 
