@@ -90,7 +90,8 @@ public:
 
         CFile file(dirEntry);
         string name = file.GetName();
-        if (NStr::EndsWith(name, ".txt")  ||  NStr::StartsWith(name, ".")) {
+        if (NStr::EndsWith(name, ".txt")  ||  NStr::EndsWith(name, ".new")  
+                ||NStr::StartsWith(name, ".")) {
             return;
         }
 
