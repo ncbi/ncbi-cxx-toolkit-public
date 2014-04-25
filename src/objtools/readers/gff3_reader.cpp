@@ -186,24 +186,7 @@ bool CGff3Reader::x_UpdateAnnotFeature(
     if (type == "CDS"  ||  type == "cds") {
         return xUpdateAnnotCds(record, pFeature, pAnnot, pEC);
     }
-
-    //  General case: brand new regular feature
-    if (!record.InitializeFeature(m_iFlags, pFeature)) {
-        return false;
-    }
-    
-    if (!x_FeatureSetXref(record, pFeature)) {
-        return false;
-    }
-
-    if (! x_AddFeatureToAnnot( pFeature, pAnnot )) {
-        return false;
-    }
-    string strId;
-    if ( record.GetAttribute( "ID", strId ) ) {
-        m_MapIdToFeature[ strId ] = pFeature;
-    }
-    return true;
+    return xUpdateAnnotGeneric(record, pFeature, pAnnot, pEC);
 }
 
 //  ----------------------------------------------------------------------------
@@ -301,6 +284,9 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     }
 
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
+        return false;
+    }
+    if (!x_FeatureSetXref(record, pFeature)) {
         return false;
     }
     if (! x_AddFeatureToAnnot( pFeature, pAnnot )) {
