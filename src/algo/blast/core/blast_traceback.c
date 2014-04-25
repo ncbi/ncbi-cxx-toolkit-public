@@ -1100,6 +1100,15 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
          sbp->kbp_gap[index] = Blast_KarlinBlkNew();
          Blast_KarlinBlkCopy(sbp->kbp_gap[index], sbp->kbp_gap[valid_kb_index]);
       }
+      if (sbp->kbp_gap_psi[index] == NULL) {
+         sbp->kbp_gap_psi[index] = Blast_KarlinBlkNew();
+         Blast_KarlinBlkCopy(sbp->kbp_gap_psi[index],
+                             sbp->kbp_gap_psi[valid_kb_index]);
+      }
+      if (sbp->kbp_psi[index] == NULL) {
+         sbp->kbp_psi[index] = Blast_KarlinBlkNew();
+         Blast_KarlinBlkCopy(sbp->kbp_psi[index], sbp->kbp_psi[valid_kb_index]);
+      }
    }
 
    /* for CBS the scaling of PSSM is ignored.  So we scale the gap parameters back */
