@@ -2766,9 +2766,15 @@ void  CProjBulderApp::RankDepGraph(void)
 
 void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep)
 {
+    if (m_GraphDepPrecedes.find(dep) == m_GraphDepPrecedes.end()) {
+        return;
+    }
     const set<string>& dependents = m_GraphDepPrecedes[dep];
     size_t graphset=0;
     for (set<string>::const_iterator d = dependents.begin(); d != dependents.end(); ++d) {
+        if (m_GraphDepPrecedes.find(*d) == m_GraphDepPrecedes.end()) {
+            continue;
+        }
         for (bool found=false; !found; ) {
             for (size_t s= 0; !found && s<graph.size(); ++s) {
                 if (graph[s].find(*d) != graph[s].end()) {
