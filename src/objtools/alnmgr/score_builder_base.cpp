@@ -462,6 +462,23 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
 ///
 /// calculate the percent coverage
 ///
+static bool s_SequenceIsProtein(CScope& scope, 
+                                const CSeq_id& id)
+{
+    CSeq_inst::TMol mol = scope.GetSequenceType(id);
+    if (mol == CSeq_inst::eMol_not_set) {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(id);
+        if ( !bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence: " + id.AsFastaString());
+        }
+        return bsh.IsAa();
+    }
+
+    return (mol == CSeq_inst::eMol_aa);
+}
+
+
 static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
                                  const CRangeCollection<TSeqPos>& ranges,
                                  double* pct_coverage)
@@ -503,18 +520,13 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         if ( !seq_len ) { 
             seq_len = scope.GetSequenceLength(align.GetSeq_id(0));
 
-            CSeq_inst::TMol q_mol = scope.GetSequenceType(align.GetSeq_id(0));
-            if (q_mol == CSeq_inst::eMol_not_set) {
-                 NCBI_THROW(CSeqalignException, eInvalidSeqId,
-                            "s_GetPercentCoverage: Can't determine mol-type for query:"
-                            + align.GetSeq_id(0).AsFastaString());
-            } else if (q_mol == CSeq_inst::eMol_aa) {
-                CSeq_inst::TMol s_mol = scope.GetSequenceType(align.GetSeq_id(1));
-                if(s_mol == CSeq_inst::eMol_not_set) {
-                    NCBI_THROW(CSeqalignException, eInvalidSeqId,
-                               "s_GetPercentCoverage: Can't determine mol-type for subject:"
-                               + align.GetSeq_id(1).AsFastaString());
-                } else if(s_mol != CSeq_inst::eMol_aa) {
+            bool query_is_aa = s_SequenceIsProtein(scope,
+                                                   align.GetSeq_id(0));
+            if (query_is_aa) {
+                bool subj_is_aa = s_SequenceIsProtein(scope,
+                                                      align.GetSeq_id(1));
+                if ( !subj_is_aa ) {
+                    /// alignment is protein-to-genomic alignment
                     /// NOTE: alignment length is always reported in nucleotide
                     /// coordinates
                     seq_len *= 3;
