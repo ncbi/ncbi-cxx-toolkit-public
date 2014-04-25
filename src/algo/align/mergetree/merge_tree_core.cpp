@@ -45,6 +45,12 @@
 #include <algo/align/mergetree/equiv_range.hpp>
 #include <algo/align/mergetree/merge_tree_core.hpp>
 
+/* Clear out any possible macro definition of CS, which shows up on
+ * Solaris/x86 when building with GCC (per sys/ucontext.h).
+ */
+#ifdef CS
+#  undef CS
+#endif
 
 BEGIN_NCBI_SCOPE
 
