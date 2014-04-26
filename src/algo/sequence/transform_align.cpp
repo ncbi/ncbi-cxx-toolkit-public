@@ -33,14 +33,11 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/Object_id.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-
-#include <objtools/alnmgr/score_builder_base.hpp>
 
 #include "feature_generator.hpp"
 
@@ -179,8 +176,6 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
     CSpliced_seg::TExons::iterator it = spliced_seg.SetExons().begin();
     CRef<CSpliced_exon> prev_exon = *it;
     size_t i = 1;
-    bool stitched_holes = false;
-    bool exon_idty_OK = true;
     for (++it; it != spliced_seg.SetExons().end();  ++i, prev_exon = *it++) {
         CSpliced_exon& exon = **it;
 
@@ -382,6 +377,8 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
             }
             prev_exon->SetParts().splice(prev_exon->SetParts().end(), exon.SetParts());
 
+            // TO DO: Recalculate or approximate scores
+            prev_exon->SetScores().Set().splice(prev_exon->SetScores().Set().end(), exon.SetScores().Set());
             if (exon.IsSetDonor_after_exon()) {
                 prev_exon->SetDonor_after_exon().Assign( exon.GetDonor_after_exon() );
             } else {
@@ -404,106 +401,7 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
             spliced_seg.SetExons().erase(it);
             it = save_it;
         }
-	exon_idty_OK &= RecalculateExonIdty(*prev_exon);
-        stitched_holes = true;
     }
-    if (stitched_holes) {
-        RecalculateScores(align, exon_idty_OK);
-    }
-}
-
-CSeq_align::EScoreType s_ScoresToRecalculate[] =
-{ CSeq_align::eScore_IdentityCount,
-  CSeq_align::eScore_MismatchCount,
-  CSeq_align::eScore_GapCount,
-  CSeq_align::eScore_PercentIdentity_Gapped, 
-  CSeq_align::eScore_PercentIdentity_Ungapped, 
-  CSeq_align::eScore_PercentCoverage,
-  CSeq_align::eScore_HighQualityPercentCoverage,
-  (CSeq_align::EScoreType)0
-};
-
-void CFeatureGenerator::SImplementation::
-RecalculateScores(CSeq_align &align, bool exon_idty_OK)
-{
-    NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
-                       align.SetSegs().SetSpliced().SetExons())
-    {
-        if ((*exon_it)->IsSetScores() && exon_idty_OK) {
-            /// Remove all scores except idty
-            for (CScore_set::Tdata::iterator score_it =
-                       (*exon_it)->SetScores().Set().begin();
-                 score_it != (*exon_it)->SetScores().Set().end(); ++score_it)
-            {
-                if ((*score_it)->IsSetId() && (*score_it)->GetId().IsStr() &&
-                    (*score_it)->GetId().GetStr() == "idty")
-                {
-                    ++score_it;
-                } else {
-                    score_it = (*exon_it)->SetScores().Set().erase(score_it);
-                }
-            }
-        } else {
-            (*exon_it)->ResetScores();
-        }
-    }
-
-    if (align.IsSetScore()) {
-        CScoreBuilderBase score_builder;
-        for (CSeq_align::EScoreType *score = s_ScoresToRecalculate;
-             *score; ++score)
-        {
-            align.ResetNamedScore(*score);
-            score_builder.AddScore(*m_scope, align, *score);
-        }
-        align.ResetNamedScore("weighted_identity");
-    }
-}
-
-bool CFeatureGenerator::SImplementation::
-RecalculateExonIdty(CSpliced_exon &exon)
-{
-    double idty = 1;
-    if (exon.IsSetParts()) {
-        double matches = 0;
-        double total = 0;
-        ITERATE (CSpliced_exon::TParts, part_it, exon.GetParts()) {
-            switch ((*part_it)->Which()) {
-            case CSpliced_exon_chunk::e_Match:
-               matches += (*part_it)->GetMatch();
-               total += (*part_it)->GetMatch();
-               break;
-
-            case CSpliced_exon_chunk::e_Mismatch:
-               total += (*part_it)->GetMismatch();
-               break;
-
-            case CSpliced_exon_chunk::e_Product_ins:
-               total += (*part_it)->GetProduct_ins();
-               break;
-
-            case CSpliced_exon_chunk::e_Genomic_ins:
-               total += (*part_it)->GetGenomic_ins();
-               break;
-
-            default:
-               return false;
-            }
-        }
-        idty = matches / total;
-    }
-    if (exon.IsSetScores()) {
-        NON_CONST_ITERATE (CScore_set::Tdata, score_it, exon.SetScores().Set())
-        {
-            if ((*score_it)->IsSetId() && (*score_it)->GetId().IsStr() &&
-                (*score_it)->GetId().GetStr() == "idty")
-            {
-                (*score_it)->SetValue().SetReal(idty);
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)

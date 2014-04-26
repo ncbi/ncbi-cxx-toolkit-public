@@ -250,9 +250,6 @@ private:
                                             int gene_id,
                                             const CSeq_feat* cds_feat_on_query_mrna_ptr,
                                             bool call_on_align_list);
-
-    void RecalculateScores(CSeq_align &align, bool exon_idty_OK);
-    bool RecalculateExonIdty(CSpliced_exon &exon);
 };
 
 CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id, CScope& scope);

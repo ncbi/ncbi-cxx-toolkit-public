@@ -11991,40 +11991,32 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
                   value real { 999598232221776, 10, -13 }
                 },
                 {
+                  id str "num_ident",
+                  value int 2488
+                },
+                {
+                  id str "num_mismatch",
+                  value int 1
+                },
+                {
+                  id str "gap_count",
+                  value int 0
+                },
+                {
+                  id str "pct_coverage",
+                  value real { 923562152133581, 10, -13 }
+                },
+                {
+                  id str "weighted_identity",
+                  value real { 999598232221776, 10, -15 }
+                },
+                {
                   id str "rank",
                   value int 1
                 },
                 {
                   id str "locus_rank",
                   value int 1
-                },
-                {
-                  id str "num_ident",
-                  value int 2488
-                },
-                {
-                  id str "num_mismatch",
-                  value int 54
-                },
-                {
-                  id str "gap_count",
-                  value int 1
-                },
-                {
-                  id str "pct_identity_gap",
-                  value real { 931137724550898, 10, -13 }
-                },
-                {
-                  id str "pct_identity_ungap",
-                  value real { 978756884343037, 10, -13 }
-                },
-                {
-                  id str "pct_coverage",
-                  value real { 951347305389222, 10, -13 }
-                },
-                {
-                  id str "pct_coverage_hiqual",
-                  value real { 951347305389222, 10, -13 }
                 }
               },
               segs spliced {
@@ -12056,8 +12048,20 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
                     },
                     scores {
                       {
+                        id str "splign",
+                        value real { 2091, 10, 0 }
+                      },
+                      {
                         id str "idty",
-                        value real { 931137724550898, 10, -15 }
+                        value real { 1, 10, 0 }
+                      },
+                      {
+                        id str "splign",
+                        value real { 395955993652344, 10, -12 }
+                      },
+                      {
+                        id str "idty",
+                        value real { 99748743718593, 10, -14 }
                       }
                     },
                     acceptor-before-exon {
@@ -15233,6 +15237,10 @@ Bioseq-set ::= {
               dim 2,
               score {
                 {
+                  id str "num_ident",
+                  value int 120
+                },
+                {
                   id str "num_positives",
                   value int 156
                 },
@@ -15251,34 +15259,6 @@ Bioseq-set ::= {
                 {
                   id str "align_length",
                   value int 219
-                },
-                {
-                  id str "num_ident",
-                  value int 126
-                },
-                {
-                  id str "num_mismatch",
-                  value int 178
-                },
-                {
-                  id str "gap_count",
-                  value int 1
-                },
-                {
-                  id str "pct_identity_gap",
-                  value real { 402555910543131, 10, -13 }
-                },
-                {
-                  id str "pct_identity_ungap",
-                  value real { 414473684210526, 10, -13 }
-                },
-                {
-                  id str "pct_coverage",
-                  value real { 539007092198582, 10, -13 }
-                },
-                {
-                  id str "pct_coverage_hiqual",
-                  value real { 539007092198582, 10, -13 }
                 }
               },
               segs spliced {
@@ -15303,6 +15283,8 @@ Bioseq-set ::= {
                       diag 63,
                       mismatch 1,
                       diag 2
+                    },
+                    scores {
                     },
                     partial TRUE
                   }
