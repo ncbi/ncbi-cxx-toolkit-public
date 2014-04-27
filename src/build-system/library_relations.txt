@@ -53,14 +53,12 @@ alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
 an_core needs bag_access
+an_core needs gc_util_sdbapi
 an_core needs gpipe_an_base
 an_core needs gpipe_jira
 an_core needs gpipe_kmer
-an_euk_pipeline needs bag_access
-an_euk_pipeline needs gpipe_an_base
-an_euk_pipeline needs gpipe_jira
+an_euk_pipeline needs an_core
 an_euk_pipeline needs gpipe_val
-an_euk_pipeline needs gpipe_xml
 an_prok_pipeline needs an_core
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
@@ -99,7 +97,9 @@ biosample needs xconnect
 biosample needs xmlwrapp
 biosample needs xutil
 bioscgi needs biosample
+bioscgi needs connssl
 bioscgi needs xcgi
+bioscgi needs xregexp
 biosconvert needs biosample
 biosconvert needs xvalidate
 biotree needs general
@@ -258,9 +258,7 @@ gbseq needs xser
 gc_ftp_ctl needs gpipe_objutil
 gc_load_utils needs gc_utils
 gc_load_utils needs xid_utils
-gc_util_sdbapi needs $(SDBAPI_LIB)
-gc_util_sdbapi needs xconnect
-gc_util_sdbapi needs xutil
+gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
 gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
 gcedit needs agp_lookup
@@ -336,7 +334,6 @@ gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
 gpipe_align_format needs $(XFORMAT_LIBS)
 gpipe_align_format needs gpipe_objutil
 gpipe_align_format needs prosplign
-gpipe_align_format needs xcleanup
 gpipe_align_format needs xobjwrite
 gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
@@ -350,18 +347,17 @@ gpipe_an_base needs grid_wrapper
 gpipe_asn_cleanup needs xvalidate
 gpipe_asn_cleanup needs3party ncbiobj
 gpipe_asn_proc needs gpipe_alnutil
+gpipe_asn_proc needs xmergetree
 gpipe_attr needs gpipe_property
 gpipe_best_placement needs gpipe_alnutil
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
 gpipe_common needs xconnect
 gpipe_common needs xmlwrapp
-gpipe_common needs xregexp
 gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gpinit_buildinfo
 gpipe_ftp needs xalgoalignutil
-gpipe_ftp needs xcleanup
 gpipe_ftp needs xobjedit
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
@@ -369,7 +365,6 @@ gpipe_ftp_new needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp_new needs $(XFORMAT_LIBS)
 gpipe_ftp_new needs gpinit_buildinfo
 gpipe_ftp_new needs xalgoalignutil
-gpipe_ftp_new needs xcleanup
 gpipe_ftp_new needs xobjedit
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
@@ -392,13 +387,13 @@ gpipe_objutil needs writedb
 gpipe_objutil needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_property needs gpipe_common
+gpipe_property needs xregexp
 gpipe_remap needs xobjreadex
 gpipe_resource_req needs xncbi
 gpipe_sadb needs $(COMPRESS_LIBS)
-gpipe_sadb needs genome_collection
-gpipe_sadb needs gpipe_common
 gpipe_sadb needs seqset
 gpipe_sadb needs taxon1
+gpipe_sadb needs xmlwrapp
 gpipe_standalone needs gpipe_an_base
 gpipe_tree needs gpipe_property
 gpipe_tree needs xalgophytree
@@ -828,6 +823,7 @@ refseq_aln_source needs dbapi
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs gpinit_access
+refseq_ctl needs xregexp
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
@@ -993,6 +989,8 @@ validate_regions needs $(GPIPE_GENCOLL_LIBS)
 validate_regions needs valerr
 variation needs $(SEQ_LIBS)
 variation needs pub
+variation_utils needs variation
+variation_utils needs xobjutil
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs $(SRA_LIBS)
 vdb2blast needs xregexp
@@ -1200,6 +1198,7 @@ xdiff needs xncbi
 xdiscrepancy_report needs $(OBJMGR_LIBS)
 xdiscrepancy_report needs $(OBJREAD_LIBS)
 xdiscrepancy_report needs macro
+xdiscrepancy_report needs xmlwrapp
 xdiscrepancy_report needs xvalidate
 xerces-c needs3party $(CURL_LIBS)
 xerces-c needs3party $(DL_LIBS)
@@ -1265,6 +1264,8 @@ xid_utils_noncorelib needs txclient
 xid_utils_noncorelib needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
+xmergetree needs $(SOBJMGR_LIBS)
+xmergetree needs3party $(DL_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlreaders needs xmlwrapp
 xmlreaders needs xncbi
@@ -1284,6 +1285,7 @@ xnetblastcli needs xnetblast
 xngalign needs $(BLAST_INPUT_LIBS)
 xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
+xngalign needs xmergetree
 xobjedit needs taxon3
 xobjedit needs valid
 xobjedit needs xobjutil
@@ -1299,6 +1301,7 @@ xobjsimple needs $(OBJMGR_LIBS)
 xobjutil needs $(SOBJMGR_LIBS)
 xobjutil needs3party $(DL_LIBS)
 xobjwrite needs $(OBJREAD_LIBS)
+xobjwrite needs variation_utils
 xobjwrite needs xalnmgr
 xomssa needs $(COMPRESS_LIBS)
 xomssa needs blast
@@ -1375,7 +1378,6 @@ xutil needs xncbi
 xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
-xvalidate needs xcleanup
 xvalidate needs xobjedit
 xxconnect needs connect
 xxconnect needs xncbi
