@@ -281,7 +281,9 @@ int CCgiApplication::Run(void)
                     m_Context->GetResponse().SetOutput(new_stream.get());
                 }
                 GetDiagContext().SetAppState(eDiagAppState_Request);
-                result = ProcessRequest(*m_Context);
+                result = CCgiContext::ProcessCORSRequest(
+                    m_Context->GetRequest(), m_Context->GetResponse()) ?
+                    0 : ProcessRequest(*m_Context);
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
                 m_Context->GetResponse().Finalize();
                 if (result != 0) {

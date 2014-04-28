@@ -230,13 +230,19 @@ public:
     /// (e.g. throw an exception).
     void CheckStatus(void) const;
 
+    /// Process cross-origin resource sharing (CORS) request.
+    /// If the request is a preflight one, send back the required data
+    /// and return true (in this case normal ProcessRequest should not
+    /// be called). Otherwise check if CORS is enabled and add the
+    /// required headers to the response.
+    static bool ProcessCORSRequest(const CCgiRequest& request,
+                                   CCgiResponse&      response);
+
 private:
     CCgiServerContext& x_GetServerContext(void) const;
     void x_InitSession(CCgiRequest::TFlags flags);
 
     void x_SetStatus(CCgiException::EStatusCode code, const string& msg) const;
-
-    void x_InitCORS(void);
 
     // Secure protocol flag.
     enum ESecureMode {

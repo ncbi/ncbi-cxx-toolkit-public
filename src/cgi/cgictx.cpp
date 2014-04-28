@@ -127,7 +127,6 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
         m_Response.DisableTrackingCookie();
     }
     x_InitSession(flags);
-    x_InitCORS();
     return;
 }
 
@@ -144,15 +143,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
 {
     m_Request->Deserialize(*is,flags);
     x_InitSession(flags);
-    x_InitCORS();
     return;
-}
-
-
-void CCgiContext::x_InitCORS(void)
-{
-    m_Response.InitCORSHeaders(m_Request->GetRandomProperty("ORIGIN"),
-                               m_Request->GetEntry("callback"));
 }
 
 
@@ -494,6 +485,270 @@ void CCgiContext::CheckStatus(void) const
         m_StatusMessage);
     ex.SetStatus(m_StatusCode);
     NCBI_EXCEPTION_THROW(ex);
+}
+
+
+// Param controlling cross-origin resource sharing headers. If set to true,
+// non-empty parameters for individual headers are used as values for the
+// headers.
+NCBI_PARAM_DECL(bool, CGI, CORS_Enable);
+NCBI_PARAM_DEF_EX(bool, CGI, CORS_Enable, false,
+                  eParam_NoThread, CGI_CORS_ENABLE);
+typedef NCBI_PARAM_TYPE(CGI, CORS_Enable) TCORS_Enable;
+
+// Access-Control-Allow-Headers
+NCBI_PARAM_DECL(string, CGI, CORS_Allow_Headers);
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Headers, "X-Requested-With",
+                  eParam_NoThread, CGI_CORS_ALLOW_HEADERS);
+typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Headers) TCORS_AllowHeaders;
+
+// Access-Control-Allow-Methods
+NCBI_PARAM_DECL(string, CGI, CORS_Allow_Methods);
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Methods, "GET, POST, OPTIONS",
+                  eParam_NoThread, CGI_CORS_ALLOW_METHODS);
+typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Methods) TCORS_AllowMethods;
+
+// Access-Control-Allow-Origin. Should be a list of domain suffixes
+// separated by space (e.g. 'foo.com bar.org'). The Origin header
+// sent by the client is matched against the list. If there's no match,
+// CORS is not enabled. If matched, the client provided Origin is copied
+// to the outgoing Access-Control-Allow-Origin. To allow any origin
+// set the value to '*' (this should be a single char, not part of the list).
+NCBI_PARAM_DECL(string, CGI, CORS_Allow_Origin);
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Origin, "ncbi.nlm.nih.gov",
+                  eParam_NoThread, CGI_CORS_ALLOW_ORIGIN);
+typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Origin) TCORS_AllowOrigin;
+
+// Access-Control-Allow-Credentials
+NCBI_PARAM_DECL(bool, CGI, CORS_Allow_Credentials);
+NCBI_PARAM_DEF_EX(bool, CGI, CORS_Allow_Credentials, false,
+                  eParam_NoThread, CGI_CORS_ALLOW_CREDENTIALS);
+typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Credentials) TCORS_AllowCredentials;
+
+// Access-Control-Expose-Headers
+NCBI_PARAM_DECL(string, CGI, CORS_Expose_Headers);
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Expose_Headers, kEmptyStr,
+                  eParam_NoThread, CGI_CORS_EXPOSE_HEADERS);
+typedef NCBI_PARAM_TYPE(CGI, CORS_Expose_Headers) TCORS_ExposeHeaders;
+
+// Access-Control-Max-Age
+NCBI_PARAM_DECL(string, CGI, CORS_Max_Age);
+NCBI_PARAM_DEF_EX(string, CGI, CORS_Max_Age, kEmptyStr,
+                  eParam_NoThread, CGI_CORS_MAX_AGE);
+typedef NCBI_PARAM_TYPE(CGI, CORS_Max_Age) TCORS_MaxAge;
+
+
+// Param to enable JQuery JSONP hack to allow cross-origin resource sharing
+// for browsers that don't support CORS (e.g. IE versions earlier than 11).
+// If it is set to true and the HTTP request contains entry "callback" whose
+// value starts with "JQuery_" (case-insensitive, configurable), then:
+//  - Set the response Content-Type to "text/javascript"
+//  - Wrap the response content into: "JQuery_foobar(original_content)"
+NCBI_PARAM_DECL(bool, CGI, CORS_JQuery_Callback_Enable);
+NCBI_PARAM_DEF_EX(bool, CGI, CORS_JQuery_Callback_Enable, false,
+                  eParam_NoThread, CGI_CORS_JQUERY_CALLBACK_ENABLE);
+typedef NCBI_PARAM_TYPE(CGI, CORS_JQuery_Callback_Enable)
+    TCORS_JQuery_Callback_Enable;
+
+// If ever need to use a prefix other than "JQuery_" for the JQuery JSONP hack
+// callback name (above). Use symbol '*' if any name is good.
+NCBI_PARAM_DECL(string, CGI, CORS_JQuery_Callback_Prefix);
+NCBI_PARAM_DEF_EX(string, CGI, CORS_JQuery_Callback_Prefix, "*",
+                  eParam_NoThread, CGI_CORS_JQUERY_CALLBACK_PREFIX);
+typedef NCBI_PARAM_TYPE(CGI, CORS_JQuery_Callback_Prefix)
+    TCORS_JQuery_Callback_Prefix;
+
+
+static const char* kAC_Origin = "Origin";
+static const char* kAC_RequestMethod = "Access-Control-Request-Method";
+static const char* kAC_RequestHeaders = "Access-Control-Request-Headers";
+static const char* kAC_AllowHeaders = "Access-Control-Allow-Headers";
+static const char* kAC_AllowMethods = "Access-Control-Allow-Methods";
+static const char* kAC_AllowOrigin = "Access-Control-Allow-Origin";
+static const char* kAC_AllowCredentials = "Access-Control-Allow-Credentials";
+static const char* kAC_ExposeHeaders = "Access-Control-Expose-Headers";
+static const char* kAC_MaxAge = "Access-Control-Max-Age";
+static const char* kSimpleHeaders =
+    " Cache-Control Content-Language Expires Last-Modified Pragma";
+
+
+typedef list<string> TStringList;
+
+
+// Check if the origin matches Allow-Origin parameter. Matching rules are:
+// - If Allow-Origin is empty, return false.
+// - If Allow-Origin contains an explicit list of origins, check if the
+//   input matches (case-sensitive) any of them, put this single value
+//   into the 'origin' argument and return true; return false otherwise.
+// - If Allow-Origin is '*' (any), and the input origin is not empty,
+//   return true.
+// - If Allow-Origin is '*' and the input origin is empty, check
+//   Allow-Credentials flag. Return false if it's enabled. Otherwise
+//   set 'origin' argument to '*' and return true.
+static bool s_IsAllowedOrigin(string& origin)
+{
+    if ( origin.empty() ) {
+        // Origin header is not set - this is not a CORS request.
+        return false;
+    }
+    const string& allowed = TCORS_AllowOrigin::GetDefault();
+    if ( allowed.empty() ) {
+        return false;
+    }
+    if (allowed == "*") {
+        // Accept any origin, it must be non-empty by now.
+        return true;
+    }
+
+    TStringList origins;
+    NStr::Split(allowed, " ", origins);
+    ITERATE(TStringList, it, origins) {
+        if (NStr::EndsWith(origin, *it, NStr::eCase)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+// Check if the method is in the list of allowed methods. Empty
+// method is a no-match. Comparison is case-sensitive.
+static bool s_IsAllowedMethod(const string& method)
+{
+    if ( method.empty() ) {
+        return false;
+    }
+    TStringList methods;
+    NStr::Split(TCORS_AllowMethods::GetDefault(), ", ", methods);
+    ITERATE(TStringList, it, methods) {
+        // Methods are case-sensitive.
+        if (*it == method) return true;
+    }
+    return false;
+}
+
+
+// Check if the (space separated) list of headers is a subset of the
+// list of allowed headers. Empty list of headers is a match.
+// Comparison is case-insensitive.
+// NOTE: The following simple headers are matched automatically:
+//   Cache-Control
+//   Content-Language
+//   Expires
+//   Last-Modified
+//   Pragma
+static bool s_IsAllowedHeaderList(const string& headers)
+{
+    if ( headers.empty() ) {
+        // Empty header list is a subset of allowed headers.
+        return true;
+    }
+    TStringList allowed, requested;
+
+    string ah = TCORS_AllowHeaders::GetDefault();
+    // Always allow simple headers.
+    ah += kSimpleHeaders;
+    NStr::ToUpper(ah);
+    NStr::Split(ah, " ", allowed);
+    allowed.sort();
+
+    string rh = headers;
+    NStr::ToUpper(rh);
+    NStr::Split(rh, " ", requested);
+    requested.sort();
+
+    TStringList::const_iterator ait = allowed.begin();
+    TStringList::const_iterator rit = requested.begin();
+    while (ait != allowed.end()  &&  rit != requested.end()) {
+        if (*ait == *rit) {
+            ++rit; // found match
+        }
+        ++ait; // check next allowed
+    }
+    // Found match for each requested header?
+    return rit == requested.end();
+}
+
+
+static string s_HeaderToHttp(const CTempString& name)
+{
+    return NStr::Replace(name, "-", "_");
+}
+
+
+bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
+                                     CCgiResponse&      response)
+{
+    // CORS requests handling, see http://www.w3.org/TR/cors/
+    if ( !TCORS_Enable::GetDefault() ) {
+        return false;
+    }
+
+    string origin = request.GetRandomProperty(s_HeaderToHttp(kAC_Origin));
+    if ( !s_IsAllowedOrigin(origin) ) {
+        return false;
+    }
+    _ASSERT(!origin.empty());
+
+    // This is probably a CORS request. Send back the required headers.
+
+    // Preflight request processing - check more incoming headers.
+    if (request.GetRequestMethod() == CCgiRequest::eMethod_OPTIONS) {
+        string method = request.GetRandomProperty(s_HeaderToHttp(kAC_RequestMethod));
+        string headers = request.GetRandomProperty(s_HeaderToHttp(kAC_RequestHeaders));
+        if (!s_IsAllowedMethod(method)  ||  !s_IsAllowedHeaderList(headers)) {
+            return false;
+        }
+
+        response.SetHeaderValue(kAC_AllowOrigin, origin);
+        if ( TCORS_AllowCredentials::GetDefault() ) {
+            response.SetHeaderValue(kAC_AllowCredentials, "true");
+        }
+        string allow_methods = TCORS_AllowMethods::GetDefault();
+        if ( !allow_methods.empty() ) {
+            response.SetHeaderValue(kAC_AllowMethods, allow_methods);
+        }
+        string allow_headers = TCORS_AllowHeaders::GetDefault();
+        if ( !allow_headers.empty() ) {
+            response.SetHeaderValue(kAC_AllowHeaders, allow_headers);
+        }
+        string max_age = TCORS_MaxAge::GetDefault();
+        if ( !max_age.empty() ) {
+            response.SetHeaderValue(kAC_MaxAge, max_age);
+        }
+        response.WriteHeader();
+        return true;
+    }
+
+    // Normal CORS request (not a preflight).
+    response.SetHeaderValue(kAC_AllowOrigin, origin);
+    if ( TCORS_AllowCredentials::GetDefault() ) {
+        response.SetHeaderValue(kAC_AllowCredentials, "true");
+    }
+    string exp_headers = TCORS_ExposeHeaders::GetDefault();
+    if ( !exp_headers.empty() ) {
+        response.SetHeaderValue(kAC_ExposeHeaders, exp_headers);
+    }
+
+    //
+    // Temporary JQuery based hack for browsers that don't yet support CORS
+    //
+    CCgiRequest::ERequestMethod method = request.GetRequestMethod();
+    string jquery_callback = request.GetEntry("callback");
+    if (TCORS_JQuery_Callback_Enable::GetDefault()
+        &&  (method == CCgiRequest::eMethod_GET   || 
+             method == CCgiRequest::eMethod_POST  ||
+             method == CCgiRequest::eMethod_Other)
+        &&  !jquery_callback.empty()) {
+        string prefix = TCORS_JQuery_Callback_Prefix::GetDefault();
+        if (prefix != "*"  &&
+            !NStr::StartsWith(jquery_callback, prefix, NStr::eNocase)) {
+            return false;
+        }
+        response.m_JQuery_Callback = jquery_callback;
+    }
+
+    return false;
 }
 
 

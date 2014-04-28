@@ -180,6 +180,8 @@ public:
     ///  sharing for browsers that don't support CORS (e.g. IE versions
     ///  earlier than 11). For more info about this (hopefully temporary) hack
     ///  see the sources.
+    /// @deprecated Use CCgiContext::ProcessCORSRequest
+    NCBI_DEPRECATED
     void InitCORSHeaders(const string& origin,
                          const string& jquery_callback = kEmptyStr);
 
@@ -246,6 +248,8 @@ private:
     NCBI_PARAM_DECL(bool, CGI, ExceptionAfterHEAD);
     typedef NCBI_PARAM_TYPE(CGI, ExceptionAfterHEAD) TCGI_ExceptionAfterHEAD;
     TCGI_ExceptionAfterHEAD m_ExceptionAfterHEAD;
+
+    friend class CCgiContext; // to set m_JQuery_Callback
 
     string m_JQuery_Callback;
 

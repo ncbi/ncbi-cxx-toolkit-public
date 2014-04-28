@@ -633,7 +633,9 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                         m_Context->GetResponse().SetOutput(new_stream.get());
                     }
                     GetDiagContext().SetAppState(eDiagAppState_Request);
-                    x_result = ProcessRequest(*m_Context);
+                    x_result = CCgiContext::ProcessCORSRequest(
+                        m_Context->GetRequest(), m_Context->GetResponse()) ?
+                        0 : ProcessRequest(*m_Context);
                     GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
                     m_Context->GetResponse().Finalize();
                     if (x_result == 0) {

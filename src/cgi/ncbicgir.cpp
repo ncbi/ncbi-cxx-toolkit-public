@@ -36,6 +36,7 @@
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_session.hpp>
+#include <cgi/cgictx.hpp>
 #include <cgi/cgiapp.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <cgi/error_codes.hpp>
@@ -614,151 +615,11 @@ bool CCgiResponse::HaveContentRange(void) const
 }
 
 
-// Param controlling cross-origin resource sharing headers. If set to true,
-// non-empty parameters for individual headers are used as values for the
-// headers.
-NCBI_PARAM_DECL(bool, CGI, CORS_Enable);
-NCBI_PARAM_DEF_EX(bool, CGI, CORS_Enable, false,
-                  eParam_NoThread, CGI_CORS_ENABLE);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Enable) TCORS_Enable;
-
-// Access-Control-Allow-Headers
-NCBI_PARAM_DECL(string, CGI, CORS_Allow_Headers);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Headers, "X-Requested-With",
-                  eParam_NoThread, CGI_CORS_ALLOW_HEADERS);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Headers) TCORS_AllowHeaders;
-
-// Access-Control-Allow-Methods
-NCBI_PARAM_DECL(string, CGI, CORS_Allow_Methods);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Methods, "GET, POST, OPTIONS",
-                  eParam_NoThread, CGI_CORS_ALLOW_METHODS);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Methods) TCORS_AllowMethods;
-
-// Access-Control-Allow-Origin. Should be a list of domain suffixes
-// separated by space (e.g. 'foo.com bar.org'). The Origin header
-// sent by the client is matched against the list. If there's no match,
-// CORS is not enabled. If matched, the client provided Origin is copied
-// to the outgoing Access-Control-Allow-Origin. To allow any origin
-// set the value to '*' (this should be a single char, not part of the list).
-NCBI_PARAM_DECL(string, CGI, CORS_Allow_Origin);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Origin, "ncbi.nlm.nih.gov",
-                  eParam_NoThread, CGI_CORS_ALLOW_ORIGIN);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Origin) TCORS_AllowOrigin;
-
-// Access-Control-Allow-Credentials
-NCBI_PARAM_DECL(string, CGI, CORS_Allow_Credentials);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Allow_Credentials, kEmptyStr,
-                  eParam_NoThread, CGI_CORS_ALLOW_CREDENTIALS);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Allow_Credentials) TCORS_AllowCredentials;
-
-// Access-Control-Expose-Headers
-NCBI_PARAM_DECL(string, CGI, CORS_Expose_Headers);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Expose_Headers, kEmptyStr,
-                  eParam_NoThread, CGI_CORS_EXPOSE_HEADERS);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Expose_Headers) TCORS_ExposeHeaders;
-
-// Access-Control-Max-Age
-NCBI_PARAM_DECL(string, CGI, CORS_Max_Age);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_Max_Age, kEmptyStr,
-                  eParam_NoThread, CGI_CORS_MAX_AGE);
-typedef NCBI_PARAM_TYPE(CGI, CORS_Max_Age) TCORS_MaxAge;
-
-
-// Param to enable JQuery JSONP hack to allow cross-origin resource sharing
-// for browsers that don't support CORS (e.g. IE versions earlier than 11).
-// If it is set to true and the HTTP request contains entry "callback" whose
-// value starts with "JQuery_" (case-insensitive, configurable), then:
-//  - Set the response Content-Type to "text/javascript"
-//  - Wrap the response content into: "JQuery_foobar(original_content)"
-NCBI_PARAM_DECL(bool, CGI, CORS_JQuery_Callback_Enable);
-NCBI_PARAM_DEF_EX(bool, CGI, CORS_JQuery_Callback_Enable, false,
-                  eParam_NoThread, CGI_CORS_JQUERY_CALLBACK_ENABLE);
-typedef NCBI_PARAM_TYPE(CGI, CORS_JQuery_Callback_Enable)
-    TCORS_JQuery_Callback_Enable;
-
-// If ever need to use a prefix other than "JQuery_" for the JQuery JSONP hack
-// callback name (above). Use symbol '*' if any name is good.
-NCBI_PARAM_DECL(string, CGI, CORS_JQuery_Callback_Prefix);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_JQuery_Callback_Prefix, "*",
-                  eParam_NoThread, CGI_CORS_JQUERY_CALLBACK_PREFIX);
-typedef NCBI_PARAM_TYPE(CGI, CORS_JQuery_Callback_Prefix)
-    TCORS_JQuery_Callback_Prefix;
-
-
-// Return true if the origin matches an element in the allowed origins
-// (space separated regexps).
-static bool CORS_IsValidOrigin(string& origin, const string& allowed)
+void CCgiResponse::InitCORSHeaders(const string& /*origin*/,
+                                   const string& /*jquery_callback*/)
 {
-    if ( allowed.empty() ) {
-        return false;
-    }
-    if (allowed == "*") {
-        // Accept any origin
-        if ( origin.empty() ) {
-            origin = "*";
-        }
-        return true;
-    }
-    if ( origin.empty() ) {
-        return false;
-    }
-    list<CTempString> origins;
-    NStr::Split(allowed, " ", origins);
-    ITERATE(list<CTempString>, it, origins) {
-        if (NStr::EndsWith(origin, *it, NStr::eCase)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-void CCgiResponse::InitCORSHeaders(const string& origin,
-                                   const string& jquery_callback)
-{
-    if ( !TCORS_Enable::GetDefault() ) {
-        return;
-    }
-
-    // string origin = m_Request->GetRandomProperty("ORIGIN");
-    string allowed_origin = origin;
-    if ( !CORS_IsValidOrigin(allowed_origin,
-                             TCORS_AllowOrigin::GetDefault()) ) {
-        return;
-    }
-
-    // Add headers for cross-origin resource sharing
-    SetHeaderValue("Access-Control-Allow-Origin",
-                   allowed_origin);
-    SetHeaderValue("Access-Control-Allow-Headers",
-                   TCORS_AllowHeaders::GetDefault());
-    SetHeaderValue("Access-Control-Allow-Methods",
-                   TCORS_AllowMethods::GetDefault());
-    SetHeaderValue("Access-Control-Allow-Credentials",
-                   TCORS_AllowCredentials::GetDefault());
-    SetHeaderValue("Access-Control-Expose-Headers",
-                   TCORS_ExposeHeaders::GetDefault());
-    SetHeaderValue("Access-Control-Max-Age",
-                   TCORS_MaxAge::GetDefault());
-
-
-    //
-    // Temporary JQuery based hack for browsers that don't yet support CORS
-    //
-
-    // string jquery_callback = m_Request->GetEntry("callback");
-    if (TCORS_JQuery_Callback_Enable::GetDefault()
-        &&  (m_RequestMethod == CCgiRequest::eMethod_GET   || 
-             m_RequestMethod == CCgiRequest::eMethod_POST  ||
-             m_RequestMethod == CCgiRequest::eMethod_Other)
-        &&  !jquery_callback.empty()) {
-        string prefix = TCORS_JQuery_Callback_Prefix::GetDefault();
-        if (prefix != "*"  &&
-            !NStr::StartsWith(jquery_callback, prefix, NStr::eNocase)) {
-            return;
-        }
-        m_JQuery_Callback = jquery_callback;
-    }
+    // This method is deprecated and does nothing.
+    // Use CCgiContext::ProcessCORSRequest().
 }
 
 
