@@ -2295,10 +2295,14 @@ void
 CQueryImpl::BeginNewRS(void)
 {
     x_CheckCanWork();
-    if (!m_Executed) {
+    bool has_more_rs = HasMoreResultSets();
+    if ( !has_more_rs  &&  !m_Executed ) {
+        // Check has_more_rs in addition to m_Executed because SetSql
+        // resets the latter.
         Execute();
+        has_more_rs = HasMoreResultSets();
     }
-    if (!HasMoreResultSets()) {
+    if ( !has_more_rs ) {
         if (m_IgnoreBounds  &&  m_CurRowNo == 0) {
             // OK to have no results whatsoever in SingleSet mode.
             return;
