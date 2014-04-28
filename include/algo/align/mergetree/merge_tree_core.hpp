@@ -94,10 +94,12 @@ public:
 
     int QI, SI;
 };
-typedef CRef<CMergeNode> TMergeNode;
+bool operator<(const CMergeNode& A, const CMergeNode& B);
 
+typedef CRef<CMergeNode> TMergeNode;
 typedef vector<TMergeNode> TMergeNodeVec;
 
+bool operator<(const TMergeNode& A, const TMergeNode& B);
 
 // Only Valid for Split Equivs
 //   100 equivs is instant

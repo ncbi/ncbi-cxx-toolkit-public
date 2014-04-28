@@ -56,6 +56,18 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
+bool operator<(const CMergeNode& A, const CMergeNode& B) {
+    return (A.Equiv < B.Equiv);
+}
+bool operator<(const TMergeNode& A, const TMergeNode& B) {
+    if(A.IsNull())
+        return true;
+    if(B.IsNull())
+        return false;
+    return ((*A) < (*B));
+}
+
+
 CMergeTree::~CMergeTree()
 {
     NON_CONST_ITERATE(TNodeCache, CacheIter, m_NodeCache) {
