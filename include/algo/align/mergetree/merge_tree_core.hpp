@@ -81,7 +81,7 @@ class CMergeNode : public CObject
 public:
     CMergeNode(int NId) { Id = NId; SelfScore = ChainScore = numeric_limits<ssize_t>::min(); QI = SI = -1; }
     CMergeNode(CEquivRange Value, int NId) : Equiv(Value) { Id = NId; SelfScore = ChainScore = numeric_limits<ssize_t>::min(); QI= SI= -1; }
-
+    
     CEquivRange Equiv;
     int Id;
 
@@ -184,7 +184,9 @@ private:
     bool x_FindAfters(TMergeNode New, TMergeNode Curr, 
                       set<TMergeNode>& Afters, TBitVec& Explored, TBitVec& Inserted);
     // Trickles up, start from leafs
-    bool x_FindBefores_Up(TMergeNode New, TMergeNode Curr, 
+    bool x_FindBefores_Up_Recur(TMergeNode New, TMergeNode Curr, 
+                      set<TMergeNode>& Befores, TBitVec& Explored, TBitVec& Inserted, int& Depth);
+    bool x_FindBefores_Up_Iter(TMergeNode New, TMergeNode StartCurr, 
                       set<TMergeNode>& Befores, TBitVec& Explored, TBitVec& Inserted, int& Depth);
     bool x_FindAfters_Up(TMergeNode New, TMergeNode Curr, 
                       set<TMergeNode>& Afters, TBitVec& Explored, TBitVec& Inserted);

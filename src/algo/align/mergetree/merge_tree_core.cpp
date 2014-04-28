@@ -225,7 +225,8 @@ void CMergeTree::AddEquiv(CEquivRange NewEquiv)
         if(Befores.empty()) {
             ITERATE(set<TMergeNode>, LeafIter, m_Leaves) {
                 int Depth= 0;
-                x_FindBefores_Up(NewNode, *LeafIter, Befores, Explored, Inserted, Depth);
+                //x_FindBefores_Up_Recur(NewNode, *LeafIter, Befores, Explored, Inserted, Depth);
+                x_FindBefores_Up_Iter(NewNode, *LeafIter, Befores, Explored, Inserted, Depth);
                 MaxUD = max(MaxUD, Depth);
             }
             Explored.clear(); Inserted.clear();
@@ -447,7 +448,7 @@ bool CMergeTree::x_FindAfters(TMergeNode New, TMergeNode Curr, set<TMergeNode>& 
 
 
 
-bool CMergeTree::x_FindBefores_Up(TMergeNode New, TMergeNode Curr, set<TMergeNode>& Befores, 
+bool CMergeTree::x_FindBefores_Up_Recur(TMergeNode New, TMergeNode Curr, set<TMergeNode>& Befores, 
                               TBitVec& Explored, TBitVec& Inserted, int& Depth) 
 {
     Depth++;
@@ -492,13 +493,134 @@ bool CMergeTree::x_FindBefores_Up(TMergeNode New, TMergeNode Curr, set<TMergeNod
     else {
         bool SubInsert = false; //!Curr->Children.empty();
         ITERATE(set<TMergeNode>, ParentIter, Curr->Parents) {
-            SubInsert |= x_FindBefores_Up(New, *ParentIter, Befores, Explored, Inserted, Depth);
+            SubInsert |= x_FindBefores_Up_Recur(New, *ParentIter, Befores, Explored, Inserted, Depth);
         }
         return SubInsert;    
     }
 
     return false;
 }
+
+
+struct SFindBeforesIterFrame : public CObject {
+    TMergeNode Curr;
+    bool Returned;
+
+    int VisitCount;
+    list< CRef< SFindBeforesIterFrame> > ChildFrames;
+};
+
+bool CMergeTree::x_FindBefores_Up_Iter(TMergeNode New, TMergeNode StartCurr, set<TMergeNode>& Befores, 
+                              TBitVec& Explored, TBitVec& Inserted, int& Depth) 
+{
+    vector< CRef<SFindBeforesIterFrame> > FrameStack;
+
+    CRef<SFindBeforesIterFrame> FirstFrame(new SFindBeforesIterFrame);
+    FirstFrame->Curr = StartCurr;
+    FirstFrame->Returned = false;
+    FirstFrame->VisitCount = 0;
+    FrameStack.push_back(FirstFrame);
+
+    while(!FrameStack.empty()) {
+//cerr << FrameStack.size() << "  " << New->Equiv << endl;
+        CRef<SFindBeforesIterFrame> Frame = FrameStack.back();
+       
+        if(Frame->Curr.IsNull()) {
+            FrameStack.pop_back();
+            continue;
+        }
+
+        Depth++;
+        if(Explored.get(Frame->Curr->Id)) { 
+            Frame->Returned = Inserted.get(Frame->Curr->Id); 
+            FrameStack.pop_back();
+            continue;
+        }
+        Explored.set(Frame->Curr->Id, true);
+
+        if(Frame->Curr->Equiv.Empty()) {
+            Frame->Returned = false;
+            FrameStack.pop_back();
+            continue;
+        }
+
+
+        CEquivRange::ERelative Rel = New->Equiv.CalcRelative(Frame->Curr->Equiv);
+
+        //cerr << "BeforeU: " << s_RelToStr(Rel) << "\t" 
+        //    << "("<<New->QI<<","<<New->SI<<")" << "\t"
+        //    << "("<<Curr->QI<<","<<Curr->SI<<")" << "\t"
+        //    << "\t" << New->Equiv << "\t" << Curr->Equiv << endl;
+        
+        if(Rel == CEquivRange::eAfter) {
+            Frame->Returned = false;
+            FrameStack.pop_back();
+            continue;
+        } 
+        else if(Rel == CEquivRange::eBefore) {
+            bool BeforeFound = false;
+            ERASE_ITERATE(set<TMergeNode>, Others, Befores) {
+                CEquivRange::ERelative Rel = (*Others)->Equiv.CalcRelative(Frame->Curr->Equiv);
+                //cerr << __LINE__ << "\t"
+                //    << s_RelToStr(Rel) << "\t"
+                //    << "("<<(*Others)->QI<<","<<(*Others)->SI<<")"<<"\t"
+                //    << "("<<Curr->QI<<","<<Curr->SI<<")"<<"\t"
+                //    << endl;
+                if(Rel == CEquivRange::eBefore) {
+                    BeforeFound = true;
+                    break;
+                } else if(Rel == CEquivRange::eAfter) {
+                    Befores.erase(Others);
+                }
+            }
+           
+            if(BeforeFound) {
+                Frame->Returned = false;
+                FrameStack.pop_back();
+                continue;
+            }
+            
+            Befores.insert(Frame->Curr);
+            Inserted.set(Frame->Curr->Id, true);
+
+            Frame->Returned = true;
+            FrameStack.pop_back();
+            continue;
+        }
+        else {
+            if(Frame->VisitCount == 0) {
+                Explored.set(Frame->Curr->Id, false); // unset the non-backtrack Explored
+                ITERATE(set<TMergeNode>, ParentIter, Frame->Curr->Parents) {
+                    CRef<SFindBeforesIterFrame> NewFrame(new SFindBeforesIterFrame);
+                    NewFrame->Curr = *ParentIter;
+                    NewFrame->Returned = false;
+                    NewFrame->VisitCount = 0;
+                    FrameStack.push_back(NewFrame);
+                    Frame->ChildFrames.push_back(NewFrame);
+                }
+                Frame->VisitCount++;
+                continue;
+            } else {
+                bool SubInsert = false; //!Curr->Children.empty();
+                ITERATE(list<CRef<SFindBeforesIterFrame> >, ChildFrameIter, Frame->ChildFrames) {
+                    SubInsert |= (*ChildFrameIter)->Returned;
+                }
+                Frame->ChildFrames.clear();
+                Frame->Returned = SubInsert;
+                FrameStack.pop_back();
+                continue;
+            }
+        }
+        
+        Frame->Returned = false;
+        FrameStack.pop_back();
+        continue;
+    }  // end stack loop
+    
+    FirstFrame->ChildFrames.clear();
+    return FirstFrame->Returned;
+}
+
 
 
 bool CMergeTree::x_FindAfters_Up(TMergeNode New, TMergeNode Curr, set<TMergeNode>& Afters, 
