@@ -794,6 +794,7 @@ pathogen_ctl needs gencoll_client
 pathogen_ctl needs gpipe_xml
 pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
+pathogen_metadata needs gpipe_xml
 pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
