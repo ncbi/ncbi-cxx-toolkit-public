@@ -969,7 +969,7 @@ static string s_TitleFromBioSource(const CBioSource& source,
 
     string title = NStr::TruncateSpaces(name + strain + chromosome + clone
                                         + map_ + plasmid + sfx);
-    if (islower((unsigned char) title[0])) {
+    if ( !title.empty()  &&  islower((unsigned char) title[0])) {
         title[0] = toupper((unsigned char) title[0]);
     }
 
