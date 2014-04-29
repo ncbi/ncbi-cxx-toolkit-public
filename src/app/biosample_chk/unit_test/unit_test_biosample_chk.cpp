@@ -33,8 +33,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include "unit_test_biosample_chk.hpp"
-
 #include <corelib/ncbi_system.hpp>
 
 // This macro should be defined before inclusion of test_boost.hpp in all
