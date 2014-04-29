@@ -1278,3 +1278,100 @@ class Scenario1117( TestBase ):
 
         raise Exception( "Expected data mismatch exception, received output: " +
                          output )
+
+
+
+class Scenario1200( TestBase ):
+    " Scenario 1200 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "GET2 with a group"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 6 )
+
+        # Client for a job
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1200' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        execAny( ns_client, "SUBMIT blah aff=a0 group=aaa" )
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 group=bbb' )
+        if output.strip() != "":
+            raise Exception( "Expected no job, received one" )
+
+        output = execAny( ns_client,
+                          'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 group=aaa' )
+        if not "job_key=JSID" in output:
+            raise Exception( "Expected a job, received nothing" )
+
+        return True
+
+
+class Scenario1201( TestBase ):
+    " Scenario 1201 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "GET2 with a group - job notifications"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 6 )
+
+        # Client1 for a job
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario1201' )
+        ns_client1.set_client_identification( 'node1', 'session1' )
+        # Socket to receive notifications
+        notifSocket1 = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket1.bind( ( "", 9007 ) )
+
+        # Client2 for a job
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario1201' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        # Socket to receive notifications
+        notifSocket2 = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket2.bind( ( "", 9008 ) )
+
+        execAny( ns_client1,
+                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9007 timeout=15 group=aaa' )
+        execAny( ns_client2,
+                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9008 timeout=15 group=bbb' )
+
+        # Submit a job and wait for notifications
+        execAny( ns_client1, "SUBMIT blah aff=a0 group=aaa" )
+
+        time.sleep( 10 )
+        if not self.hasNotification( notifSocket1 ):
+            raise Exception( "Expected notification, received nothing" )
+
+        if self.hasNotification( notifSocket2 ):
+            raise Exception( "Expected no notifications, received one" )
+        return True
+
+    @staticmethod
+    def hasNotification( s ):
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification" )
+            return True
+        except Exception, ex:
+            if "Unexpected notification" in str( ex ):
+                raise
+            pass
+        return False
+
