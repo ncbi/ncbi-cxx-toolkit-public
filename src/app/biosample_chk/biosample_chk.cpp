@@ -1286,11 +1286,11 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
         description->insert(hup);
     }
 
-    node_iter = root.insert(node("Action"))->insert(node("AddData"));
-    node_iter->get_attributes().insert("target_db", "BioSample");
+    node::iterator add_data = root.insert(node("Action"))->insert(node("AddData"));
+    add_data->get_attributes().insert("target_db", "BioSample");
 
     // BioSample-specific xml
-    node::iterator data = node_iter->insert(node("Data"));
+    node::iterator data = add_data->insert(node("Data"));
     data->get_attributes().insert("content_type", "XML");
 
     node::iterator sample = data->insert(node("XmlContent"))->insert(node("BioSample"));
@@ -1351,6 +1351,11 @@ void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
 	    }
     }
     sample->insert(sample_attrs);
+
+    node::iterator identifier = add_data->insert(node("Identifier"));
+    node_iter = identifier->insert(node("SPUID", sample_id.c_str()));
+    node_iter->get_attributes().insert( "spuid_namespace", "GenBank");
+
 
     // write XML to file
     if (m_ReportStream) {
