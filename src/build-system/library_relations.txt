@@ -133,6 +133,7 @@ bob_g needs splitdbasn_g
 bob_g needs3party netblast
 boost_unit_test_framework-gcc44-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs $(GPIPE_GENCOLL_LIBS)
+build_config needs bacterial_pipeline_proc
 build_config needs gpinit
 build_config needs gpinit_access
 build_config needs gpipe_xml
