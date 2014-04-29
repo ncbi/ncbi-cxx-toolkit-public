@@ -759,6 +759,9 @@ CNSClientsRegistry::Purge(const CNSPreciseTime &  current_time,
 
     for ( ; k != m_Clients.end(); ++k ) {
         if (current_time - k->second.GetLastAccess() > timeout) {
+
+            k->second.SetCleared(true);
+
             // The record has expired - clean the preferred affinities
             if (k->second.GetAffinityReset())
                 continue;   // The preferred affinities have already been reset

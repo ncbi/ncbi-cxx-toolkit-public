@@ -125,9 +125,7 @@ class CNSAffinityRegistry
         unsigned int  ResolveAffinityToken(const string &  token,
                                            unsigned int    job_id,
                                            unsigned int    client_id);
-        TNSBitVector  ResolveAffinitiesForWaitClient(const list< string > &  tokens,
-                                                     unsigned int            client_id);
-        TNSBitVector  GetAffinityIDs(const list< string > &  tokens) const;
+        TNSBitVector  ResolveAffinities(const list< string > &  tokens);
         list< SAffinityStatistics >  GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const;
         TNSBitVector  GetJobsWithAffinity(const TNSBitVector &  aff_ids) const;
         TNSBitVector  GetJobsWithAffinity(unsigned int  aff_id) const;

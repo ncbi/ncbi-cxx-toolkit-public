@@ -202,6 +202,7 @@ public:
                       bool                      any_affinity,
                       bool                      exclusive_new_affinity,
                       bool                      new_format,
+                      const string &            group,
                       CJob *                    new_job,
                       CNSRollbackInterface * &  rollback_action,
                       string &                  added_pref_aff);
@@ -416,8 +417,11 @@ public:
 
     TPauseStatus GetPauseStatus(void) const
     { return m_PauseStatus; }
-    void SetPauseStatus(TPauseStatus  status)
-    { m_PauseStatus = status; }
+    void SetPauseStatus(TPauseStatus  status);
+
+    void RegisterQueueResumeNotification(unsigned int  address,
+                                         unsigned short  port,
+                                         bool  new_format);
 
 private:
     void x_Detach(void);
@@ -446,7 +450,8 @@ private:
                      const TNSBitVector &   aff_ids,
                      bool                   wnode_affinity,
                      bool                   any_affinity,
-                     bool                   exclusive_new_affinity);
+                     bool                   exclusive_new_affinity,
+                     const string &         group);
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
                              unsigned int         picked_earlier);
@@ -494,7 +499,8 @@ private:
                                bool                  wnode_aff,
                                bool                  any_aff,
                                bool                  exclusive_new_affinity,
-                               bool                  new_format);
+                               bool                  new_format,
+                               const string &        group);
     bool x_UnregisterGetListener(const CNSClientId &  client,
                                  unsigned short       port);
 

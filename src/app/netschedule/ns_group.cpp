@@ -110,14 +110,18 @@ size_t        CNSGroupsRegistry::size(void) const
 }
 
 
-TNSBitVector  CNSGroupsRegistry::GetJobs(const string &  group) const
+TNSBitVector  CNSGroupsRegistry::GetJobs(const string &  group,
+                                         bool  allow_exception) const
 {
     CMutexGuard                             guard(m_Lock);
     TGroupTokenToAttrMap::const_iterator    found = m_TokenToAttr.find(&group);
 
-    if (found == m_TokenToAttr.end())
-        NCBI_THROW(CNetScheduleException, eGroupNotFound,
-                   "Group " + group + " is unknown");
+    if (found == m_TokenToAttr.end()) {
+        if (allow_exception)
+            NCBI_THROW(CNetScheduleException, eGroupNotFound,
+                       "Group " + group + " is unknown");
+        return TNSBitVector();
+    }
 
     return found->second->m_Jobs;
 }
@@ -448,7 +452,7 @@ CNSGroupsRegistry::x_PrintSelected(const TNSBitVector &    batch,
     CMutexGuard                         guard(m_Lock);
     TGroupIDToAttrMap::const_iterator   k = m_IDToAttr.begin();
     for ( ; k != m_IDToAttr.end(); ++k ) {
-        if (batch[k->first] && k->second->m_Jobs.any()) {
+        if (batch[k->first]) {
             buffer += x_PrintOne(*k->second, queue, verbose);
             ++printed;
             if (printed >= batch.count())

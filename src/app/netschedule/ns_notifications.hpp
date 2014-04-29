@@ -49,6 +49,7 @@ BEGIN_NCBI_SCOPE
 class CNSClientId;
 class CNSClientsRegistry;
 class CNSAffinityRegistry;
+class CNSGroupsRegistry;
 class CQueueDataBase;
 
 
@@ -68,6 +69,7 @@ struct SNSNotificationAttributes
                                     // notifications will be used. New format
                                     // is for clients used GET2 command.
                                     // Old format is for clients used WGET.
+    string          m_Group;
 
     // Support for two stage (different frequency) notifications
     // First stage is frequent (fast) within configured timeout from the moment
@@ -98,6 +100,16 @@ struct SExactTimeNotification
 
 
 
+// The structure holds information about notifications which are
+// triggered by worker nodes requests while the queue was paused.
+struct SQueueResumeNotification
+{
+    unsigned int    m_Address;
+    unsigned short  m_Port;
+    bool            m_NewFormat;
+};
+
+
 const size_t        k_MessageBufferSize = 512;
 
 class CNSNotificationList
@@ -113,7 +125,8 @@ class CNSNotificationList
                               bool                  wnode_aff,
                               bool                  any_job,
                               bool                  exclusive_new_affinity,
-                              bool                  new_format);
+                              bool                  new_format,
+                              const string &        group);
         void UnregisterListener(const CNSClientId &  client,
                                 unsigned short       port);
         void UnregisterListener(unsigned int         address,
@@ -138,6 +151,7 @@ class CNSNotificationList
                     unsigned int           aff_id,
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
+                    CNSGroupsRegistry &    group_registry,
                     const CNSPreciseTime & notif_highfreq_period,
                     const CNSPreciseTime & notif_handicap);
         void Notify(const TNSBitVector &   jobs,
@@ -145,8 +159,10 @@ class CNSNotificationList
                     bool                   no_aff_jobs,
                     CNSClientsRegistry &   clients_registry,
                     CNSAffinityRegistry &  aff_registry,
+                    CNSGroupsRegistry &    group_registry,
                     const CNSPreciseTime & notif_highfreq_period,
                     const CNSPreciseTime & notif_handicap);
+        void onQueueResumed(bool  any_pending);
         string Print(const CNSClientsRegistry &   clients_registry,
                      const CNSAffinityRegistry &  aff_registry,
                      bool                         verbose) const;
@@ -156,10 +172,16 @@ class CNSNotificationList
             return m_PassiveListeners.size() + m_ActiveListeners.size();
         }
 
-        void AddToExactNotifications(unsigned int  address, unsigned short  port,
-                                     const CNSPreciseTime &  when, bool  new_format);
+        void AddToExactNotifications(unsigned int  address,
+                                     unsigned short  port,
+                                     const CNSPreciseTime &  when,
+                                     bool  new_format);
         void ClearExactNotifications(void);
         CNSPreciseTime NotifyExactListeners(void);
+
+        void AddToQueueResumedNotifications(unsigned int  address,
+                                            unsigned short  port,
+                                            bool  new_format);
 
     private:
         void x_SendNotificationPacket(unsigned int    address,
@@ -179,6 +201,9 @@ class CNSNotificationList
 
         list<SExactTimeNotification>        m_ExactTimeNotifications;
         mutable CMutex                      m_ExactTimeNotifLock;
+
+        list<SQueueResumeNotification>      m_QueueResumeNotifications;
+        mutable CMutex                      m_QueueResumeNotifLock;
 
         list<SNSNotificationAttributes>::iterator
                 x_FindListener(list<SNSNotificationAttributes> &  container,

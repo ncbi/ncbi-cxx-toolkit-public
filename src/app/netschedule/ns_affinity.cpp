@@ -235,9 +235,7 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
 // must be memorized as a referencer of the affinities.
 // The DB transaction must be set in the outer scope.
 TNSBitVector
-CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
-                                const list< string > &  tokens,
-                                unsigned int            client_id)
+CNSAffinityRegistry::ResolveAffinities(const list< string > &  tokens)
 {
     TNSBitVector            result;
     CMutexGuard             guard(m_Lock);
@@ -251,12 +249,6 @@ CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
             // This token is known. Update the jobs/clients vectors and finish
             unsigned int    aff_id = found->second;
 
-            if (client_id != 0) {
-                map< unsigned int,
-                     SNSJobsAffinity >::iterator        jobs_affinity = m_JobsAffinity.find(aff_id);
-                jobs_affinity->second.m_WaitGetClients.set(client_id, true);
-                jobs_affinity->second.WaitGetOp();
-            }
             result.set(aff_id, true);
             continue;
         }
@@ -277,10 +269,6 @@ CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
         // Create a record in the id->attributes map
         SNSJobsAffinity     new_job_affinity;
         new_job_affinity.m_AffToken = new_token;
-        if (client_id != 0) {
-            new_job_affinity.m_WaitGetClients.set(client_id, true);
-            new_job_affinity.WaitGetOp();
-        }
         m_JobsAffinity[aff_id] = new_job_affinity;
 
         // Memorize the new affinity ID
@@ -294,29 +282,6 @@ CNSAffinityRegistry::ResolveAffinitiesForWaitClient(
         result.set(aff_id, true);
     }
 
-    return result;
-}
-
-
-TNSBitVector
-CNSAffinityRegistry::GetAffinityIDs(const list< string > &  tokens) const
-{
-    TNSBitVector                                result;
-    CMutexGuard                                 guard(m_Lock);
-    map< const string *,
-         unsigned int,
-         SNSTokenCompare >::const_iterator      found;
-
-    for (list<string>::const_iterator  k = tokens.begin();
-         k != tokens.end(); ++k) {
-        const string &      token = *k;
-
-        if (!token.empty()) {
-            found = m_AffinityIDs.find(&token);
-            if (found != m_AffinityIDs.end())
-                result.set(found->second, true);
-        }
-    }
     return result;
 }
 

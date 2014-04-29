@@ -235,6 +235,8 @@ class CNSClient
         { return m_WaitAffinities.any(); }
         unsigned int  GetPeerAddress(void) const
         { return m_Addr; }
+        void SetCleared(bool  value)
+        { m_Cleared = value; }
 
         void  CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
         int  SetClientData(const string &  data, int  data_version);

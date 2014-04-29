@@ -42,6 +42,7 @@
 #include "ns_clients_registry.hpp"
 #include "ns_affinity.hpp"
 #include "ns_handler.hpp"
+#include "ns_group.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -123,6 +124,7 @@ string  SNSNotificationAttributes::Print(
     else
         buffer += s_False;
 
+    buffer += "OK:  GROUP: '" + m_Group + "'\n";
 
     buffer += "OK:  ACTIVE: ";
     if (is_active)
@@ -172,7 +174,8 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
                                            bool                  wnode_aff,
                                            bool                  any_job,
                                            bool                  exclusive_new_affinity,
-                                           bool                  new_format)
+                                           bool                  new_format,
+                                           const string &        group)
 {
     unsigned int                                address = client.GetAddress();
     list<SNSNotificationAttributes>::iterator   found;
@@ -188,6 +191,7 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
         found->m_AnyJob = any_job;
         found->m_ExclusiveNewAff = exclusive_new_affinity;
         found->m_NewFormat = new_format;
+        found->m_Group = group;
         found->m_HifreqNotifyLifetime = CNSPreciseTime();
         found->m_SlowRate = false;
         found->m_SlowRateCount = 0;
@@ -221,6 +225,7 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
     attributes.m_AnyJob = any_job;
     attributes.m_ExclusiveNewAff = exclusive_new_affinity;
     attributes.m_NewFormat = new_format;
+    attributes.m_Group = group;
     attributes.m_HifreqNotifyLifetime = CNSPreciseTime();
     attributes.m_SlowRate = false;
     attributes.m_SlowRateCount = 0;
@@ -392,6 +397,7 @@ void CNSNotificationList::Notify(unsigned int           job_id,
                                  unsigned int           aff_id,
                                  CNSClientsRegistry &   clients_registry,
                                  CNSAffinityRegistry &  aff_registry,
+                                 CNSGroupsRegistry &    group_registry,
                                  const CNSPreciseTime & notif_highfreq_period,
                                  const CNSPreciseTime & notif_handicap)
 {
@@ -404,7 +410,7 @@ void CNSNotificationList::Notify(unsigned int           job_id,
     jobs.set_bit(job_id, true);
 
     Notify(jobs, aff_ids, aff_id == 0,
-           clients_registry, aff_registry,
+           clients_registry, aff_registry, group_registry,
            notif_highfreq_period, notif_handicap);
 }
 
@@ -417,12 +423,15 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                             bool                   no_aff_jobs,
                             CNSClientsRegistry &   clients_registry,
                             CNSAffinityRegistry &  aff_registry,
+                            CNSGroupsRegistry &    group_registry,
                             const CNSPreciseTime & notif_highfreq_period,
                             const CNSPreciseTime & notif_handicap)
 {
     CNSPreciseTime  current_time = CNSPreciseTime::Current();
     TNSBitVector    all_preferred_affs =
                                 clients_registry.GetAllPreferredAffinities();
+    TNSBitVector    group_jobs;
+
 
     // Support randomized UDP notifications
     // See CXX-3662
@@ -447,6 +456,15 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                                     k->m_ClientNode)).any() == false) {
             ++k;
             continue;
+        }
+
+        // Check if the group restriction is applicable
+        if (!k->m_Group.empty()) {
+            group_jobs = group_registry.GetJobs(k->m_Group);
+            if ((jobs & group_jobs).any() == false) {
+                ++k;
+                continue;
+            }
         }
 
         if (k->m_AnyJob)
@@ -502,6 +520,28 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
         // This will reschedule when the thread should wake up net time
         m_QueueDB.WakeupNotifThread();
     }
+}
+
+
+// When a queue is resumed the notifications should be sent to
+// worker nodes. This would allows them to come for a job straight
+// after the queue is resumed.
+void CNSNotificationList::onQueueResumed(bool  any_pending)
+{
+    if (any_pending) {
+        CMutexGuard                                 guard(m_ListenersLock);
+        list<SNSNotificationAttributes>::iterator   k = m_PassiveListeners.begin();
+
+        for ( ; k != m_PassiveListeners.end(); ++k)
+            x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
+    }
+
+    CMutexGuard                                 guard(m_QueueResumeNotifLock);
+    list<SQueueResumeNotification>::iterator    k = m_QueueResumeNotifications.begin();
+
+    for ( ; k != m_QueueResumeNotifications.end(); ++k)
+        x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
+    m_QueueResumeNotifications.clear();
 }
 
 
@@ -600,6 +640,27 @@ CNSNotificationList::NotifyExactListeners(void)
     }
 
     return never;
+}
+
+
+void
+CNSNotificationList::AddToQueueResumedNotifications(unsigned int  address,
+                                                    unsigned short  port,
+                                                    bool  new_format)
+{
+    CMutexGuard     guard(m_QueueResumeNotifLock);
+    for (list<SQueueResumeNotification>::iterator  k = m_QueueResumeNotifications.begin();
+         k != m_QueueResumeNotifications.end(); ++k) {
+        if (k->m_Address == address && k->m_Port == port)
+            return;
+    }
+
+    // Not found in the existing list. Add it.
+    SQueueResumeNotification    notif;
+    notif.m_Address = address;
+    notif.m_Port = port;
+    notif.m_NewFormat = new_format;
+    m_QueueResumeNotifications.push_back(notif);
 }
 
 

@@ -285,7 +285,8 @@ CJobStatusTracker::GetPendingJobFromSet(const TNSBitVector &  candidate_set)
 unsigned int
 CJobStatusTracker::GetJobByStatus(TJobStatus            status,
                                   const TNSBitVector &  unwanted_jobs,
-                                  const TNSBitVector &  group_jobs) const
+                                  const TNSBitVector &  group_jobs,
+                                  bool                  use_group) const
 {
     TNSBitVector &      bv = *m_StatusStor[(int)status];
     CReadLockGuard      guard(m_Lock);
@@ -296,7 +297,7 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
     TNSBitVector        candidates(bv);
 
     candidates -= unwanted_jobs;
-    if (group_jobs.any())
+    if (use_group)
         // Group restriction is provided
         candidates &= group_jobs;
 
@@ -304,28 +305,6 @@ CJobStatusTracker::GetJobByStatus(TJobStatus            status,
         return 0;
 
     return *candidates.first();
-}
-
-
-unsigned int
-CJobStatusTracker::GetJobByStatus(TJobStatus            status,
-                                  const TNSBitVector &  unwanted_jobs) const
-{
-    TNSBitVector &      bv = *m_StatusStor[(int)status];
-    CReadLockGuard      guard(m_Lock);
-
-    if (!bv.any())
-        return 0;
-
-    if (unwanted_jobs.any()) {
-        TNSBitVector        candidates(bv);
-        candidates -= unwanted_jobs;
-        if (!candidates.any())
-            return 0;
-        return *candidates.first();
-    }
-
-    return *bv.first();
 }
 
 

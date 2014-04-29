@@ -96,7 +96,8 @@ class CNSGroupsRegistry
 
         size_t        size(void) const;
 
-        TNSBitVector  GetJobs(const string &  group) const;
+        TNSBitVector  GetJobs(const string &  group,
+                              bool  allow_exception = true) const;
         TNSBitVector  GetRegisteredGroups(void) const;
         unsigned int  ResolveGroup(const string &  group);
         string        ResolveGroup(unsigned int  group) const;

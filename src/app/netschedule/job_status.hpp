@@ -90,9 +90,8 @@ public:
     /// in the unwanted jobs list
     unsigned int  GetJobByStatus(TJobStatus            status,
                                  const TNSBitVector &  unwanted_jobs,
-                                 const TNSBitVector &  group_jobs) const;
-    unsigned int  GetJobByStatus(TJobStatus            status,
-                                 const TNSBitVector &  unwanted_jobs) const;
+                                 const TNSBitVector &  group_jobs,
+                                 bool                  use_group) const;
 
     TNSBitVector  GetJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
     TNSBitVector  GetJobs(CNetScheduleAPI::EJobStatus  status) const;

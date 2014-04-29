@@ -367,6 +367,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "port",              eNSPT_Int, eNSPA_Optional      },
           { "timeout",           eNSPT_Int, eNSPA_Optional      },
+          { "group",             eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
@@ -1728,6 +1729,12 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
     // Check if the queue is paused
     CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
     if (pause_status != CQueue::eNoPause) {
+
+        if (m_CommandArguments.timeout != 0)
+            q->RegisterQueueResumeNotification(m_ClientId.GetAddress(),
+                                               m_CommandArguments.port,
+                                               cmdv2);
+
         string      pause_status_str;
 
         if (pause_status == CQueue::ePauseWithPullback)
@@ -1765,6 +1772,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                         m_CommandArguments.any_affinity,
                         m_CommandArguments.exclusive_new_aff,
                         cmdv2,
+                        m_CommandArguments.group,
                         &job,
                         m_RollbackAction,
                         added_pref_aff) == false) {
@@ -1911,6 +1919,12 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     // Get part
     CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
     if (pause_status != CQueue::eNoPause) {
+
+        if (m_CommandArguments.timeout != 0)
+            q->RegisterQueueResumeNotification(m_ClientId.GetAddress(),
+                                               m_CommandArguments.port,
+                                               false);
+
         x_WriteMessage("OK:");
         if (m_ConnContext.NotNull()) {
             string      pause_status_str;
@@ -1942,6 +1956,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                         m_CommandArguments.any_affinity,
                         false,
                         false,
+                        "",
                         &job,
                         m_RollbackAction,
                         added_pref_aff) == false) {
