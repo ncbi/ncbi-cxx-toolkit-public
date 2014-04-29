@@ -47,6 +47,16 @@
 #include <algorithm>
 #include <set>
 #include <util/static_map.hpp>
+#include <corelib/ncbistr.hpp>
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_limits.h>
+#include <memory>
+#include <set>
+#include <list>
+#include <vector>
+
 
 // generated classes
 
@@ -597,6 +607,27 @@ bool s_MustCopy (int subtype)
 }
 
 
+void CBioSource::x_RemoveStopWords(COrg_ref& org_ref)
+{
+    if (org_ref.IsSetTaxname() && IsStopWord(org_ref.GetTaxname())) {
+        org_ref.ResetTaxname();
+    }
+    if (org_ref.IsSetOrgMod()) {
+        COrgName::TMod::iterator it = org_ref.SetOrgname().SetMod().begin();
+        while (it != org_ref.SetOrgname().SetMod().end()) {
+            if (IsStopWord((*it)->GetSubname())) {
+                it = org_ref.SetOrgname().SetMod().erase(it);
+            } else {
+                it++;
+            }
+        }
+        if (org_ref.GetOrgname().GetMod().empty()) {
+            org_ref.SetOrgname().ResetMod();
+        }
+    }
+}
+
+
 void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
 {
     if (!force) {
@@ -608,6 +639,7 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
     }
     if (biosample.IsSetOrg()) {
         SetOrg().Assign(biosample.GetOrg());
+        x_RemoveStopWords(SetOrg());
     } else {
         ResetOrg();
     }
@@ -617,6 +649,9 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
 
     if (biosample.IsSetSubtype()) {
         ITERATE(CBioSource::TSubtype, it, biosample.GetSubtype()) {
+            if (IsStopWord((*it)->GetName())) {
+                continue;
+            }
             if (s_MustCopy((*it)->GetSubtype())) {
                 CRef<CSubSource> s(new CSubSource());
                 s->Assign(**it);
@@ -845,7 +880,7 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
                     }
                     break;
                 case eConflictIgnoreMissingInBioSample:
-                    if (NStr::IsBlank(sample_val)) {
+                    if (NStr::IsBlank(sample_val) || CBioSource::IsStopWord(sample_val)) {
                       rval = true;
                     }
                     break;
@@ -974,6 +1009,38 @@ TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
     GetFieldDiffsFromNameValLists(rval, src_list, sample_list);
 
     return rval;
+}
+
+
+static const char* const s_StopWords[] = {
+    "?",
+    "missing",
+    "n/a",
+    "na",
+    "none",
+    "not applicable",
+    "not available",
+    "not collected",
+    "not determined",
+    "not provided",
+    "not recorded",
+    "null",
+    "unk",
+    "unknown",
+    "unspecified"
+};
+
+typedef CStaticArraySet<const char*, PNocase_CStr> TCStopWordStrSet;
+static const TCStopWordStrSet s_StopWordsSet(s_StopWords, sizeof(s_StopWords), __FILE__, __LINE__);
+
+
+bool CBioSource::IsStopWord(const string& value)
+{   
+    if (s_StopWordsSet.find(value.c_str()) != s_StopWordsSet.end()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 

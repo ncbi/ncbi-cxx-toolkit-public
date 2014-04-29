@@ -41,7 +41,6 @@
 // generated includes
 #include <objects/seqfeat/BioSource_.hpp>
 
-
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -125,6 +124,8 @@ public:
 
     TNameValList GetNameValPairs() const;
 
+    static bool IsStopWord(const string& value);
+
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);
@@ -134,6 +135,10 @@ private:
     TNameValList x_GetOrgModNameValPairs() const;
     TNameValList x_GetSubtypeNameValPairs() const;
 
+    // for handling StopWords from BioSample
+    static void x_InitStopWords(void);
+
+    static void x_RemoveStopWords(COrg_ref& org_ref);
 };
 
 

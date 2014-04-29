@@ -1,0 +1,11 @@
+#
+#
+#
+
+# $Id$
+
+APP_PROJ = unit_test_biosample_chk
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
