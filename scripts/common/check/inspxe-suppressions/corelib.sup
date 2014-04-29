@@ -55,18 +55,6 @@
 				<datatype>16</datatype>
 				<value>ncbimtx.cpp</value>
 			</item>
-			<item>
-			<is_inactive>1</is_inactive>
-				<datatype>13</datatype>
-				<value></value>
-			</item>
-			<item>
-			<is_inactive>1</is_inactive>
-				<datatype>21</datatype>
-				<value>103</value>
-				<line_func>InitializeHandle</line_func>
-				<line_offset>6</line_offset>
-			</item>
 		</rule>
 	</rule_set>
 
@@ -90,17 +78,11 @@
 				<datatype>16</datatype>
 				<value>ncbimtx.cpp</value>
 			</item>
-			<is_inactive>1</is_inactive>
-				<datatype>21</datatype>
-				<value>165</value>
-				<line_func>InitializeDynamic</line_func>
-				<line_offset>2</line_offset>
-			</item>
 		</rule>
 	</rule_set>
 
 	<rule_set>
-		<name>ncbimtx.cpp - SSytemFastMutex - resource leak</name>
+		<name>ncbimtx.cpp - SSytemFastMutex - resource leak (1)</name>
 		<set_type>1</set_type>
 		<rule>
 			<item>
@@ -124,6 +106,29 @@
 				<value>155</value>
 				<line_func>InitializeStatic</line_func>
 				<line_offset>13</line_offset>
+			</item>
+		</rule>
+	</rule_set>
+
+	<rule_set>
+		<name>ncbimtx.cpp - SSytemFastMutex - resource leak (2)</name>
+		<set_type>1</set_type>
+		<rule>
+			<item>
+				<datatype>9</datatype>
+				<value>prob_kernel_handle_leaked</value>
+			</item>
+			<item>
+				<datatype>60</datatype>
+				<value>obs_crit_sec_creation_site</value>
+			</item>
+			<item>
+				<datatype>20</datatype>
+				<value>InitializeStatic</value>
+			</item>
+			<item>
+				<datatype>16</datatype>
+				<value>ncbimtx.cpp</value>
 			</item>
 		</rule>
 	</rule_set>

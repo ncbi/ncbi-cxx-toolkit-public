@@ -3,6 +3,28 @@
 <supps major="1" minor="0" type="0">
 
 	<rule_set>
+		<name>Suppress all memory leaks (1)</name>
+		<set_type>1</set_type>
+		<rule>
+			<item>
+				<datatype>9</datatype>
+				<value>prob_reachable_leak</value>
+			</item>
+		</rule>
+	</rule_set>
+	<rule_set>
+		<name>Suppress all memory leaks (3)</name>
+		<set_type>3</set_type>
+		<rule>
+			<item>
+				<datatype>9</datatype>
+				<value>prob_leaked</value>
+			</item>
+		</rule>
+	</rule_set>
+
+
+	<rule_set>
 		<name>Unhandled exception</name>
 		<set_type>1</set_type>
 		<rule>
