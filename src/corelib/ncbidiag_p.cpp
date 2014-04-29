@@ -386,6 +386,7 @@ EDiagFilterAction CDiagFilter::Check(const CException& ex,
     return eDiagFilter_Reject;
 }
 
+
 EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode) const
 // same logic as in CheckFile
 {
@@ -418,6 +419,9 @@ EDiagFilterAction CDiagFilter::CheckErrCode(int code, int subcode) const
             }
             return eDiagFilter_Reject;
         case eDiagFilter_None:
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                ++not_matchers_processed;
+            }
             break;
         }
     }
@@ -467,6 +471,9 @@ EDiagFilterAction CDiagFilter::CheckFile(const char* file) const
             return eDiagFilter_Reject;
         case eDiagFilter_None:
             // Continue the loop.
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                ++not_matchers_processed;
+            }
             break;
         }
     }
@@ -529,6 +536,9 @@ EDiagFilterAction CDiagFilter::x_Check(const char* module,
             return action;
         case eDiagFilter_None:
             // Continue the loop.
+            if ( not_matchers_processed < m_NotMatchersNum ) {
+                ++not_matchers_processed;
+            }
             break;
         }
     }

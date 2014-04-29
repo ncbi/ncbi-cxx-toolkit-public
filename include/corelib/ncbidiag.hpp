@@ -2383,13 +2383,11 @@ enum EDiagFilter {
 ///
 /// Diagnostic filter acts as a second level filtering mechanism
 /// (the primary established by global error post level)
-/// @sa SetDiagPostLevel
-///
-///
 /// @param what
 ///    Filter is set for
 /// @param filter_str
 ///    Filter string
+/// @sa SetDiagPostLevel
 NCBI_XNCBI_EXPORT
 extern void SetDiagFilter(EDiagFilter what, const char* filter_str);
 
