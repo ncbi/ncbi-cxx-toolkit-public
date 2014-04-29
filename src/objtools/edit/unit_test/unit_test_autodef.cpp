@@ -702,5 +702,37 @@ BOOST_AUTO_TEST_CASE(Test_GB_3386)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3410)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(seq);
+    misc->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    misc->SetComment("contains internal transcribed spacer 1, 5.8S ribosomal RNA, and internal transcribed spacer 2");
+    AddTitle(seq, "Sebaea microphylla internal transcribed spacer 1, 5.8S ribosomal RNA gene, and internal transcribed spacer 2, complete sequence.");
+
+    CheckDeflineMatches(seq, true);
+
+    misc->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    misc->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    AddTitle(seq, "Sebaea microphylla internal transcribed spacer 1, partial sequence; 5.8S ribosomal RNA gene, complete sequence; and internal transcribed spacer 2, partial sequence.");
+    CheckDeflineMatches(seq, true);
+
+    misc->SetComment("contains 18S ribosomal RNA, internal transcribed spacer 1, 5.8S ribosomal RNA, and internal transcribed spacer 2");
+    AddTitle(seq, "Sebaea microphylla 18S ribosomal RNA gene, partial sequence; internal transcribed spacer 1 and 5.8S ribosomal RNA gene, complete sequence; and internal transcribed spacer 2, partial sequence.");
+    CheckDeflineMatches(seq, true);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3395)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> dloop = unit_test_util::AddGoodImpFeat (seq, "D-loop");
+    dloop->ResetComment();
+    AddTitle(seq, "Sebaea microphylla D-loop, complete sequence.");
+    CheckDeflineMatches(seq, true);
+   
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

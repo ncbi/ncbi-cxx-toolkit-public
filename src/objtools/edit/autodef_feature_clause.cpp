@@ -193,6 +193,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_otherRNA
         || subtype == CSeqFeatData::eSubtype_misc_RNA
         || subtype == CSeqFeatData::eSubtype_ncRNA
+        || subtype == CSeqFeatData::eSubtype_D_loop
         || IsNoncodingProductFeat()
         || IsTransposon()
         || IsInsertionSequence()
@@ -921,7 +922,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
         }
         return false;
     } else if (NStr::Equal(m_Typeword, "control region")
-               || NStr::Equal(m_Typeword, "D loop")
+               || NStr::Equal(m_Typeword, "D-loop")
                || subtype == CSeqFeatData::eSubtype_3UTR
                || subtype == CSeqFeatData::eSubtype_5UTR) {
         return false;

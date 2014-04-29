@@ -581,6 +581,11 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
     vector<unsigned int> types;
 
     for (j = 0; j < parts.size() && !bad_phrase; j++) {
+        // clean up part name
+        NStr::TruncateSpacesInPlace(parts[j]);
+        if (NStr::StartsWith(parts[j], "and ")) {
+            parts[j] = parts[j].substr(4);
+        }
         // find first of the recognized words to occur in the string
         string::size_type first_word = NCBI_NS_STD::string::npos;
         unsigned int word_id = 0;
