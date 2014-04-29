@@ -564,11 +564,17 @@ bool CDB_UserHandler::HandleAll(const TExceptions& /* exceptions */)
 
 bool CDB_UserHandler::x_HandleAll(const TExceptions& exceptions)
 {
-    bool handled_any = false;
+#if 1
+    return false;
+#else
+    // Better done in CDBHandlerStack::HandleExceptions, which can
+    // keep track of which exceptions still need handling.
+    bool handled_all = true;
     ITERATE (TExceptions, it, exceptions) {
-        handled_any |= HandleIt(*it);
+        handled_all &= HandleIt(*it);
     }
-    return handled_any;
+    return handled_all;
+#endif
 }
 
 bool CDB_UserHandler::HandleMessage(int /* severity */,

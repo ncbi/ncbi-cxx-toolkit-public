@@ -93,11 +93,7 @@ void CDBExceptionStorage::Handle(const CDBHandlerStack& handler,
         CFastMutexGuard mg(m_Mutex);
         TGuard guard(m_Exceptions);
 
-        if (!handler.HandleExceptions(m_Exceptions, msg, conn, par)) {
-            NON_CONST_ITERATE(CDB_UserHandler::TExceptions, it, m_Exceptions) {
-                handler.PostMsg(*it, msg, conn, par);
-            }
-        }
+        handler.HandleExceptions(m_Exceptions, msg, conn, par);
     }
 }
 

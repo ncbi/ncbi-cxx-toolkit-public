@@ -152,19 +152,38 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex, const string& extra_msg,
 }
 
 
-bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions&  exeptions,
+bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions& exceptions,
                                        const string& extra_msg,
                                        const CConnection* connection,
                                        const CDBParams* params) const
 {
-    ITERATE(CDB_UserHandler::TExceptions, it, exeptions) {
+    typedef CDB_UserHandler::TExceptions TExceptions;
+    TExceptions remaining, still_remaining;
+
+    ITERATE (TExceptions, it, exceptions) {
         x_AddDetails(**it, extra_msg, connection, params);
+        remaining.push_back(*it);
     }
 
-    REVERSE_ITERATE(TContainer, cit, m_Stack) {
-        if ( cit->NotNull() && cit->GetNCObject().GetHandler()->HandleAll(exeptions) )
-        {
+    REVERSE_ITERATE (TContainer, cit, m_Stack) {
+        if (cit->Empty()) {
+            continue;
+        }
+        CDB_UserHandler& handler = *cit->GetNCObject().GetHandler();
+        if (handler.HandleAll(remaining)) {
             return true;
+        } else {
+            ITERATE (TExceptions, it, remaining) {
+                if ( !handler.HandleIt(*it) ) {
+                    still_remaining.push_back(*it);
+                }
+            }
+            if (still_remaining.empty()) {
+                return true;
+            } else {
+                remaining = still_remaining;
+                still_remaining.clear();
+            }
         }
     }
 
