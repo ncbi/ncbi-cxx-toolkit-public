@@ -109,6 +109,12 @@ protected:
         CRef<CSeq_annot>,
         IMessageListener*);
 
+    virtual bool xUpdateAnnotGene(
+        const CGff2Record&,
+        CRef<CSeq_feat>,
+        CRef<CSeq_annot>,
+        IMessageListener*);
+
     virtual bool xUpdateAnnotGeneric(
         const CGff2Record&,
         CRef<CSeq_feat>,
@@ -121,10 +127,15 @@ protected:
     virtual bool xVerifyCdsParents(
         const CGff2Record&);
 
+    virtual bool xFeatureSetLocusTag(
+        const CGff2Record&,
+        CRef<CSeq_feat>);
+
     virtual bool xReadInit();
 
     // Data:
     map<string, string> mCdsParentMap;
+    map<string, string> mLocusTagMap;
 };
 
 END_SCOPE(objects)
