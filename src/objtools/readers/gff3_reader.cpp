@@ -330,7 +330,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
-    if (!xFeatureSetLocusTag(record, pFeature)) {
+    if (IsLocusTagMode() && !xFeatureSetLocusTag(record, pFeature)) {
         return false;
     }
     if (!x_FeatureSetXref(record, pFeature)) {

@@ -21,10 +21,6 @@ Seq-annot ::= {
         {
           qual "Name",
           val "EDEN"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       }
     },
@@ -42,10 +38,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene00001"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       },
       xref {
@@ -93,10 +85,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene00001"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       },
       xref {
@@ -144,10 +132,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene00001"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       },
       xref {
@@ -189,10 +173,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene00001"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       },
       xref {
@@ -239,10 +219,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "mRNA00001,mRNA00002"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       },
       xref {
@@ -289,10 +265,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "mRNA00001,mRNA00002"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       },
       xref {
@@ -333,10 +305,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "mRNA00002,mRNA00003"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       },
       xref {
@@ -377,10 +345,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "mRNA00002,mRNA00003"
-        },
-        {
-          qual "locus_tag",
-          val "_000001"
         }
       },
       xref {
