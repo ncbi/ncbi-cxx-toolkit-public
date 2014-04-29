@@ -138,7 +138,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Read blob contents. Command for "ICache" clients.
     { "READ",
         {&CNCMessageHandler::x_DoCmd_Get,
@@ -163,7 +166,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // Max age of blob (returned blob should be younger)
-          { "age",     eNSPT_Int,  eNSPA_Optional } } },
+          { "age",     eNSPT_Int,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Write blob contents. Command for "ICache" clients.
     { "STOR",
         {&CNCMessageHandler::x_DoCmd_IC_Store,
@@ -192,7 +198,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Write blob contents. Old and deprecated command which probably is not
     // used by modern ICache clients anymore. It has the size of the blob right
     // in the command (so client should know it beforehand) and it doesn't use
@@ -222,7 +231,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Read all or part of contents of the "last" version of the blob.
     // In response to the command NC sends blob contents, blob version it has
     // and flag showing if this version can be considered "valid", i.e. if it's
@@ -252,7 +264,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // Max age of blob (returned blob should be younger)
-          { "age",     eNSPT_Int,  eNSPA_Optional } } },
+          { "age",     eNSPT_Int,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Mark the given blob version as "valid" and do that only if this version
     // is still current and wasn't rewritten with another version.
     { "SETVALID",
@@ -276,7 +291,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Write blob contents. Command is issued only by other servers while
     // mirroring just written blobs or processing quorum requirements,
     // i.e. writing to other servers before answering to client that blob is
@@ -387,7 +405,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Read blob contents. Command for "NetCache" clients.
     { "GET2",
         {&CNCMessageHandler::x_DoCmd_Get,
@@ -409,7 +430,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // Max age of blob (returned blob should be younger)
-          { "age",     eNSPT_Int,  eNSPA_Optional } } },
+          { "age",     eNSPT_Int,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Check if blob exists. Command for "NetCache" clients.
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
@@ -426,7 +450,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Delete blob. Command for "NetCache" clients.
     // If the blob doesn't exist command is still considered successful.
     { "RMV2",
@@ -444,7 +471,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Get size of the blob. Command for "NetCache" clients.
     { "GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
@@ -461,7 +491,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Delete blob. Command for "ICache" clients.
     // If the blob doesn't exist command is still considered successful.
     { "REMO",
@@ -485,7 +518,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Get size of the blob. Command for "ICache" clients.
     { "GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
@@ -508,7 +544,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Read part of the blob contents. Command for "NetCache" clients.
     { "GETPART",
         {&CNCMessageHandler::x_DoCmd_Get,
@@ -531,7 +570,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // Max age of blob (returned blob should be younger)
-          { "age",     eNSPT_Int,  eNSPA_Optional } } },
+          { "age",     eNSPT_Int,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Read part of the blob contents. Command for "ICache" clients.
     { "READPART",
         {&CNCMessageHandler::x_DoCmd_Get,
@@ -560,7 +602,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // Max age of blob (returned blob should be younger)
-          { "age",     eNSPT_Int,  eNSPA_Optional } } },
+          { "age",     eNSPT_Int,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Get meta information about the blob. This command is sent only by other
     // NC servers. And it's used to determine which server has the latest
     // version of the blob. Thus response to this command is a line containing
@@ -1110,7 +1155,10 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Required },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
     // Prolong blob's life for a specific number of seconds from current time.
     // This command is sent only by other NC servers in response to client's
     // PROLONG command when the server where client have sent initial command
@@ -1590,6 +1638,13 @@ CNCMessageHandler::x_AssignCmdParams(void)
         case 'm':
             if (key == "md5_pass") {
                 m_BlobPass = val;
+            }
+            break;
+        case 'n':
+            if (key == "ncbi_phid") {
+                if (!val.empty()) {
+                    GetDiagCtx()->SetHitID(val);
+                }
             }
             break;
         case 'p':
