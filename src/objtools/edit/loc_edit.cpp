@@ -37,6 +37,16 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
+#include <objects/seqloc/Packed_seqpnt.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seqloc/Seq_loc_mix.hpp>
+#include <objects/seqloc/Seq_point.hpp>
+#include <objects/general/Int_fuzz.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -559,6 +569,199 @@ bool ApplyPolicyToFeature(const CLocationEditPolicy& policy, const CSeq_feat& or
 }
 
 
+void ReverseComplementLocation(CSeq_interval& interval, CScope& scope)
+{
+    // flip strand
+    interval.FlipStrand();
+    if (interval.IsSetId()) {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(interval.GetId());
+        if (bsh) {
+            if (interval.IsSetFrom()) {
+                interval.SetFrom(bsh.GetInst_Length() - interval.GetFrom() - 1);
+            }
+            if (interval.IsSetTo()) {
+                interval.SetTo(bsh.GetInst_Length() - interval.GetTo() - 1);
+            }
+
+            // reverse from and to
+            if (interval.IsSetFrom()) {
+                TSeqPos from = interval.GetFrom();
+                if (interval.IsSetTo()) {
+                    interval.SetFrom(interval.GetTo());
+                } else {
+                    interval.ResetFrom();
+                }
+                interval.SetTo(from);
+            } else if (interval.IsSetTo()) {
+                interval.SetFrom(interval.GetTo());
+                interval.ResetTo();
+            }
+
+            if (interval.IsSetFuzz_from()) {
+                interval.SetFuzz_from().Negate(bsh.GetInst_Length());
+            }
+            if (interval.IsSetFuzz_to()) {
+                interval.SetFuzz_to().Negate(bsh.GetInst_Length());
+            }
+
+            // swap fuzz
+            if (interval.IsSetFuzz_from()) {
+                CRef<CInt_fuzz> swap(new CInt_fuzz());
+                swap->Assign(interval.GetFuzz_from());
+                if (interval.IsSetFuzz_to()) {
+                    interval.SetFuzz_from().Assign(interval.GetFuzz_to());
+                } else {
+                    interval.ResetFuzz_from();
+                }
+                interval.SetFuzz_to(*swap);
+            } else if (interval.IsSetFuzz_to()) {
+                interval.SetFuzz_from().Assign(interval.GetFuzz_to());
+                interval.ResetFuzz_to();
+            }
+        }
+    }
+}
+
+
+void ReverseComplementLocation(CSeq_point& pnt, CScope& scope)
+{
+    // flip strand
+    pnt.FlipStrand();
+    if (pnt.IsSetId()) {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(pnt.GetId());
+        if (bsh) {
+            if (pnt.IsSetPoint()) {
+                pnt.SetPoint(bsh.GetInst_Length() - pnt.GetPoint() - 1);
+            }
+            if (pnt.IsSetFuzz()) {
+                pnt.SetFuzz().Negate(bsh.GetInst_Length());
+            }
+        }
+    }
+}
+
+
+void ReverseComplementLocation(CPacked_seqpnt& ppnt, CScope& scope)
+{
+    // flip strand
+    ppnt.FlipStrand();
+    CBioseq_Handle bsh = scope.GetBioseqHandle(ppnt.GetId());
+    if (bsh) {
+        // flip fuzz
+        if (ppnt.IsSetFuzz()) {
+            ppnt.SetFuzz().Negate(bsh.GetInst_Length());
+        }
+        //complement points
+        if (ppnt.IsSetPoints()) {
+            vector<int> new_pnts;
+            ITERATE(CPacked_seqpnt::TPoints, it, ppnt.SetPoints()) {
+                new_pnts.push_back(bsh.GetInst_Length() - *it - 1);
+            }
+            ppnt.ResetPoints();
+            ITERATE(vector<int>, it, new_pnts) {
+                ppnt.SetPoints().push_back(*it);
+            }
+        }
+    }
+
+}
+
+
+void ReverseComplementLocation(CSeq_loc& loc, CScope& scope)
+{
+    switch (loc.Which()) {
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Whole:
+        case CSeq_loc::e_Feat:
+        case CSeq_loc::e_Null:
+        case CSeq_loc::e_not_set:
+            // do nothing
+            break;
+        case CSeq_loc::e_Int:
+            ReverseComplementLocation(loc.SetInt(), scope);
+            loc.InvalidateCache();
+            break;
+        case CSeq_loc::e_Pnt:
+            ReverseComplementLocation(loc.SetPnt(), scope);
+            loc.InvalidateCache();
+            break;
+        case CSeq_loc::e_Bond:
+            if (loc.GetBond().IsSetA()) {
+                ReverseComplementLocation(loc.SetBond().SetA(), scope);
+            }
+            if (loc.GetBond().IsSetB()) {
+                ReverseComplementLocation(loc.SetBond().SetB(), scope);
+            }
+            loc.InvalidateCache();
+            break;
+        case CSeq_loc::e_Mix:
+            // revcomp individual elements
+            NON_CONST_ITERATE(CSeq_loc_mix::Tdata, it, loc.SetMix().Set()) {
+                ReverseComplementLocation(**it, scope);
+            }
+            loc.InvalidateCache();
+            break;
+        case CSeq_loc::e_Equiv:
+            // revcomp individual elements
+            NON_CONST_ITERATE(CSeq_loc_equiv::Tdata, it, loc.SetEquiv().Set()) {
+                ReverseComplementLocation(**it, scope);
+            }
+            loc.InvalidateCache();
+            break;
+        case CSeq_loc::e_Packed_int:
+            // revcomp individual elements
+            NON_CONST_ITERATE(CPacked_seqint::Tdata, it, loc.SetPacked_int().Set()) {
+                ReverseComplementLocation(**it, scope);
+            }
+            loc.InvalidateCache();
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            ReverseComplementLocation(loc.SetPacked_pnt(), scope);
+            loc.InvalidateCache();
+            break;
+
+    }
+}
+
+
+void ReverseComplementCDRegion(CCdregion& cdr, CScope& scope)
+{
+    if (cdr.IsSetCode_break()) {
+        NON_CONST_ITERATE(CCdregion::TCode_break, it, cdr.SetCode_break()) {
+            if ((*it)->IsSetLoc()) {
+                ReverseComplementLocation((*it)->SetLoc(), scope);
+            }
+        }
+    }
+}
+
+
+void ReverseComplementTrna(CTrna_ext& trna, CScope& scope)
+{
+    if (trna.IsSetAnticodon()) {
+        ReverseComplementLocation(trna.SetAnticodon(), scope);
+    }
+}
+
+
+void ReverseComplementFeature(CSeq_feat& feat, CScope& scope)
+{
+    if (feat.IsSetLocation()) {
+        ReverseComplementLocation(feat.SetLocation(), scope);
+    }
+    if (feat.IsSetData()) {
+        switch (feat.GetData().GetSubtype()) {
+            case CSeqFeatData::eSubtype_cdregion:
+                ReverseComplementCDRegion(feat.SetData().SetCdregion(), scope);
+                break;
+            case CSeqFeatData::eSubtype_tRNA:
+                ReverseComplementTrna(feat.SetData().SetRna().SetExt().SetTRNA(), scope);
+                break;
+            default:
+                break;
+        }
+    }
+}
 
 
 END_SCOPE(edit)

@@ -209,6 +209,8 @@ void CSeq_point::FlipStrand(void)
 {
     if (IsSetStrand()) {
         SetStrand(Reverse(GetStrand()));
+    } else {
+        SetStrand(eNa_strand_minus);
     }
 }
 

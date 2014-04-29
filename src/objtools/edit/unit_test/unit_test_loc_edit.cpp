@@ -87,6 +87,7 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/Giimport_id.hpp>
@@ -147,13 +148,20 @@ NCBITEST_AUTO_INIT()
 }
 
 
+void s_CheckLocationResults(const CSeq_loc& loc, bool partial5, bool partial3, TSeqPos start, TSeqPos stop)
+{
+    BOOST_CHECK_EQUAL(loc.IsPartialStart(eExtreme_Biological), partial5);
+    BOOST_CHECK_EQUAL(loc.IsPartialStop(eExtreme_Biological), partial3);
+    BOOST_CHECK_EQUAL(loc.GetStart(eExtreme_Biological), start);
+    BOOST_CHECK_EQUAL(loc.GetStop(eExtreme_Biological), stop);
+
+}
+
+
 void s_CheckLocationPolicyResults(const CSeq_feat& cds, bool partial5, bool partial3, TSeqPos start, TSeqPos stop)
 {
-    BOOST_CHECK_EQUAL(cds.GetLocation().IsPartialStart(eExtreme_Biological), partial5);
-    BOOST_CHECK_EQUAL(cds.GetLocation().IsPartialStop(eExtreme_Biological), partial3);
+    s_CheckLocationResults(cds.GetLocation(), partial5, partial3, start, stop);
     BOOST_CHECK_EQUAL(cds.IsSetPartial(), (partial5 || partial3));
-    BOOST_CHECK_EQUAL(cds.GetLocation().GetStart(eExtreme_Biological), start);
-    BOOST_CHECK_EQUAL(cds.GetLocation().GetStop(eExtreme_Biological), stop);
 }
 
 
@@ -293,6 +301,125 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     s_CheckLocationPolicyResults(*cds, true, true, 0, 59);
     BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetFrame(), CCdregion::eFrame_three);
     
+}
+
+
+void s_CheckLocationAndStrandResults(const CSeq_loc& loc, bool partial5, bool partial3, TSeqPos start, TSeqPos stop, ENa_strand strand)
+{
+    s_CheckLocationResults(loc, partial5, partial3, start, stop);
+    ENa_strand loc_strand = loc.GetStrand();
+    if (strand == eNa_strand_minus) {
+        BOOST_REQUIRE(loc_strand == eNa_strand_minus);
+    } else {
+        BOOST_REQUIRE(loc_strand == eNa_strand_plus || loc_strand == eNa_strand_unknown);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ReverseComplementLocation)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    STANDARD_SETUP
+
+    CRef<objects::CSeq_feat> imp = unit_test_util::AddGoodImpFeat (entry, "misc_feature");
+
+    CRef<CSeq_id> id(new CSeq_id());
+    id->Assign(*(imp->GetLocation().GetId()));
+
+    // interval
+    imp->SetLocation().SetInt().SetFrom(0);
+    imp->SetLocation().SetInt().SetTo(15);
+    edit::ReverseComplementFeature(*imp, scope);
+    s_CheckLocationAndStrandResults(imp->GetLocation(), false, false,
+                                    entry->GetSeq().GetInst().GetLength() - 1,
+                                    entry->GetSeq().GetInst().GetLength() - 16,
+                                    eNa_strand_minus);
+
+    // with one end partial
+    imp->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    edit::ReverseComplementFeature(*imp, scope);
+    s_CheckLocationAndStrandResults(imp->GetLocation(), true, false, 0, 15, eNa_strand_plus);
+
+    // point
+    imp->SetLocation().SetPnt().SetId().Assign(*id);
+    imp->SetLocation().SetPnt().SetPoint(15);
+    edit::ReverseComplementFeature(*imp, scope);
+    s_CheckLocationAndStrandResults(imp->GetLocation(), false, false,
+                                    entry->GetSeq().GetInst().GetLength() - 16,
+                                    entry->GetSeq().GetInst().GetLength() - 16,
+                                    eNa_strand_minus);
+
+    // mix
+    CRef<objects::CSeq_loc> mix_loc = unit_test_util::MakeMixLoc (id);
+    edit::ReverseComplementLocation(*mix_loc, scope);
+    s_CheckLocationAndStrandResults(*mix_loc, false, false, 
+                                    entry->GetSeq().GetInst().GetLength() - 1,
+                                    entry->GetSeq().GetInst().GetLength() - 57,
+                                    eNa_strand_minus);
+    // check internal intervals
+    s_CheckLocationAndStrandResults(*(mix_loc->GetMix().Get().front()), false, false,
+                                    entry->GetSeq().GetInst().GetLength() - 1,
+                                    entry->GetSeq().GetInst().GetLength() - 16,
+                                    eNa_strand_minus);
+    s_CheckLocationAndStrandResults(*(mix_loc->GetMix().Get().back()), false, false,
+                                    entry->GetSeq().GetInst().GetLength() - 47,
+                                    entry->GetSeq().GetInst().GetLength() - 57,
+                                    eNa_strand_minus);
+
+    // with one end partial
+    mix_loc->SetPartialStop(true, eExtreme_Biological);
+    edit::ReverseComplementLocation(*mix_loc, scope);
+    s_CheckLocationAndStrandResults(*mix_loc, false, true, 0, 56, eNa_strand_plus);
+    // check internal intervals
+    s_CheckLocationAndStrandResults(*(mix_loc->GetMix().Get().front()), false, false, 0, 15, eNa_strand_plus);
+    s_CheckLocationAndStrandResults(*(mix_loc->GetMix().Get().back()), false, true, 46, 56, eNa_strand_plus);
+
+    // packed point
+    CRef<CSeq_loc> packed_pnt(new CSeq_loc());
+    packed_pnt->SetPacked_pnt().SetId().Assign(*id);
+    packed_pnt->SetPacked_pnt().SetPoints().push_back(0);
+    packed_pnt->SetPacked_pnt().SetPoints().push_back(15);
+    packed_pnt->SetPacked_pnt().SetPoints().push_back(46);
+    packed_pnt->SetPacked_pnt().SetPoints().push_back(56);
+    edit::ReverseComplementLocation(*packed_pnt, scope);
+    ENa_strand strand = packed_pnt->GetPacked_pnt().GetStrand();
+    BOOST_REQUIRE(strand == eNa_strand_minus);
+    BOOST_CHECK_EQUAL(packed_pnt->GetPacked_pnt().GetPoints().front(), entry->GetSeq().GetInst().GetLength() - 1);
+    BOOST_CHECK_EQUAL(packed_pnt->GetPacked_pnt().GetPoints().back(), entry->GetSeq().GetInst().GetLength() - 57);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ReverseComplementFeature)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    STANDARD_SETUP
+
+    // check CDS code break
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    s_CheckLocationAndStrandResults(cds->GetLocation(), false, false, 0, 26, eNa_strand_plus);
+    BOOST_CHECK_EQUAL(cds->GetLocation().GetStart(eExtreme_Biological), 0);
+    BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 26);
+    CRef<CCode_break> cb(new CCode_break());
+    CRef<CSeq_id> id(new CSeq_id());
+    id->Assign(*(cds->GetLocation().GetId()));
+    cb->SetLoc().SetInt().SetId(*id);
+    cb->SetLoc().SetInt().SetFrom(3);
+    cb->SetLoc().SetInt().SetTo(5);
+    cds->SetData().SetCdregion().SetCode_break().push_back(cb);
+    edit::ReverseComplementFeature(*cds, scope);
+    s_CheckLocationAndStrandResults(cds->GetLocation(), false, false, 59, 33, eNa_strand_minus);
+    s_CheckLocationAndStrandResults(cb->GetLoc(), false, false, 56, 54, eNa_strand_minus);
+
+    // check tRNA anticodon
+    CRef<objects::CSeq_feat> trna = unit_test_util::BuildGoodtRNA(id);
+    s_CheckLocationAndStrandResults(trna->GetLocation(), false, false, 0, 10, eNa_strand_plus);
+    s_CheckLocationAndStrandResults(trna->GetData().GetRna().GetExt().GetTRNA().GetAnticodon(),
+                                    false, false, 8, 10, eNa_strand_plus);
+    edit::ReverseComplementFeature(*trna, scope);
+    s_CheckLocationAndStrandResults(trna->GetLocation(), false, false, 59, 49, eNa_strand_minus);
+    s_CheckLocationAndStrandResults(trna->GetData().GetRna().GetExt().GetTRNA().GetAnticodon(),
+                                    false, false, 51, 49, eNa_strand_minus);
+
 }
 
 

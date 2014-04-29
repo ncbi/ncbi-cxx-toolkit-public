@@ -245,6 +245,8 @@ void CSeq_interval::FlipStrand(void)
 {
     if (IsSetStrand()) {
         SetStrand(Reverse(GetStrand()));
+    } else {
+        SetStrand(eNa_strand_minus);
     }
 }
 

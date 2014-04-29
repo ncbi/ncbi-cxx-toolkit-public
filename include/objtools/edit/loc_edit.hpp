@@ -113,6 +113,9 @@ NCBI_XOBJEDIT_EXPORT bool
 NCBI_XOBJEDIT_EXPORT CRef<CSeq_loc> 
     SeqLocExtend(const CSeq_loc& loc, size_t pos, CScope* scope);
 
+NCBI_XOBJEDIT_EXPORT void ReverseComplementLocation(CSeq_loc& loc, CScope& scope);
+
+NCBI_XOBJEDIT_EXPORT void ReverseComplementFeature(CSeq_feat& feat, CScope& scope);
 
 END_SCOPE(edit)
 END_SCOPE(objects)

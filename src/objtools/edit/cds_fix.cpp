@@ -350,21 +350,6 @@ bool SetTranslExcept(objects::CSeq_feat& cds, const string& comment, bool strict
 }
 
 
-void ReverseComplementCDRegion(CCdregion& cdr, CScope& scope)
-{
-    if (cdr.IsSetCode_break()) {
-        NON_CONST_ITERATE(CCdregion::TCode_break, it, cdr.SetCode_break()) {
-            if ((*it)->IsSetLoc()) {
-                CSeq_loc* new_loc = sequence::SeqLocRevCmpl((*it)->GetLoc(), &scope);
-                if (new_loc) {
-                    (*it)->SetLoc().Assign(*new_loc);
-                } 
-            }
-        }
-    }
-}
-
-
 /// AdjustProteinMolInfoToMatchCDS
 /// A function to change an existing MolInfo to match a coding region
 /// @param molinfo  The MolInfo to be adjusted (if necessary)

@@ -193,6 +193,8 @@ void CPacked_seqpnt::FlipStrand(void)
 {
     if (IsSetStrand()) {
         SetStrand(Reverse(GetStrand()));
+    } else {
+        SetStrand(eNa_strand_minus);
     }
 }
 
