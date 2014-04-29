@@ -1978,6 +1978,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 )
 
 {
+    CBioSource::TGenome   genome;
     size_t                pos;
     int                   len;
     bool                  partial = false;
@@ -2021,7 +2022,13 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     if (len > 2 && m_MainTitle [len - 1] == ')') {
         pos = m_MainTitle.find_last_of ("(");
         if (pos != NPOS) {
-            m_MainTitle.erase (pos);
+            for ( genome = NCBI_GENOME(chloroplast); genome <= NCBI_GENOME(chromatophore); genome++ ) {
+                string str = s_proteinOrganellePrefix [genome];
+                 if ( str[0] != '\0' && NStr::FindNoCase (m_MainTitle, str, pos + 1, str.length()) != NPOS ) {
+                    m_MainTitle.erase (pos);
+                    break;
+                }
+            }
         }
         s_TrimMainTitle (m_MainTitle);
         len = m_MainTitle.length();
