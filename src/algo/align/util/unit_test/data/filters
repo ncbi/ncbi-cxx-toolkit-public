@@ -63,7 +63,7 @@ min_exon_len < 30
 pct_coverage > 97.5
 0 1 2 3 4 5 10 11 12 13
 symmetric_overlap_min > 97.5
-0 1 2 3 4 11 12 13
+0 1 2 3 4 10 11 12 13
 symmetric_overlap > 2
 5
 query_start > 50
@@ -125,7 +125,7 @@ not 3prime_exon_len >= 500
 3prime_exon_len < 500
 4 10 12 13
 5prime_exon_pct_identity > 98
-2 4 12
+2 4 10 12
 3prime_exon_pct_identity > 98
 2 4 9 10
 query_strand = subject_strand
