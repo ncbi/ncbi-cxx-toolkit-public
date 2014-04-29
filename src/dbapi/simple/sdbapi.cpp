@@ -1859,6 +1859,7 @@ CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
       m_RSFinished(true),
       m_Executed(false),
       m_ReportedWrongRowCount(false),
+      m_IsSP(false),
       m_CurRSNo(0),
       m_CurRowNo(0),
       m_CurRelRowNo(0),
@@ -1878,6 +1879,29 @@ CQueryImpl::~CQueryImpl(void)
     STD_CATCH_ALL_X(6, "Error destroying CQuery");
     x_ClearAllParams();
     delete m_Stmt;
+}
+
+string
+CQueryImpl::x_GetContext(void) const
+{
+    CNcbiOstrstream oss;
+    oss << (m_IsSP ? "RPC: " : "SQL: ");
+    oss << m_Sql;
+    if ( !m_Params.empty() ) {
+        string delim;
+        oss << "; input parameter(s): ";
+        ITERATE (TParamsMap, it, m_Params) {
+            oss << delim;
+            oss << it->first << " = ";
+            if (it->second.value == NULL  ||  it->second.value->IsNull()) {
+                oss << "NULL";
+            } else {
+                oss << it->second.value->GetData()->GetLogString();
+            }
+            delim = ", ";
+        }
+    }
+    return CNcbiOstrstreamToString(oss);
 }
 
 void
@@ -1959,7 +1983,8 @@ CQueryImpl::GetParameter(CTempString name)
     TParamsMap::iterator it = m_Params.find(name);
     if (it == m_Params.end()) {
         NCBI_THROW(CSDB_Exception, eNotExist,
-                   "Parameter '" + string(name) + "' doesn't exist");
+                   "Parameter '" + string(name) + "' doesn't exist.  "
+                   + x_GetContext());
     }
     SQueryParamInfo& info = it->second;
     if (!info.field)
@@ -2006,6 +2031,7 @@ CQueryImpl::SetSql(CTempString sql)
 
     m_Sql = sql;
     m_Executed = false;
+    m_IsSP = false;
 }
 
 void
@@ -2056,6 +2082,10 @@ CQueryImpl::x_InitBeforeExec(void)
 inline void
 CQueryImpl::Execute(void)
 {
+    if (m_IsSP  ||  m_Sql.empty()) {
+        NCBI_THROW(CSDB_Exception, eInconsistent, "No statement to execute.");
+    }
+
     x_CheckCanWork();
 
     try {
@@ -2078,6 +2108,9 @@ inline void
 CQueryImpl::ExecuteSP(CTempString sp)
 {
     x_CheckCanWork();
+
+    m_Sql  = sp;
+    m_IsSP = true;
 
     try {
         x_Close();
@@ -2131,7 +2164,8 @@ CQueryImpl::GetRowCount(void)
     x_CheckCanWork();
     if ( !IsFinished(CQuery::eAllResultSets) ) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
-          "CQuery::GetRowCount called with some results still unread.");
+                   "CQuery::GetRowCount called with some results still"
+                   " unread.  " + x_GetContext());
     } else {
         return m_RowCount;
     }
@@ -2143,7 +2177,8 @@ CQueryImpl::GetStatus(void)
     x_CheckCanWork();
     if ( !IsFinished(CQuery::eAllResultSets) ) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
-                   "CQuery::GetStatus called with some results still unread.");
+                   "CQuery::GetStatus called with some results still"
+                   " unread.  " + x_GetContext());
     } else {
         return m_Status;
     }
@@ -2168,13 +2203,15 @@ void CQueryImpl::x_CheckRowCount(void)
         m_ReportedWrongRowCount = true;
         NCBI_THROW(CSDB_Exception, eWrongParams,
                    "Too many rows returned (limited to "
-                   + NStr::NumericToString(m_MaxRowCount) + ')');
+                   + NStr::NumericToString(m_MaxRowCount) + ").  "
+                   + x_GetContext());
     } else if (m_RSFinished  &&  n < m_MinRowCount) {
         m_ReportedWrongRowCount = true;
         NCBI_THROW(CSDB_Exception, eWrongParams,
                    "Not enough rows returned ("
                    + NStr::NumericToString(m_CurRowNo) + '/'
-                   + NStr::NumericToString(m_MinRowCount) + ')');
+                   + NStr::NumericToString(m_MinRowCount) + ").  "
+                   + x_GetContext());
     }
 }
 
@@ -2256,7 +2293,8 @@ CQueryImpl::HasMoreResultSets(void)
                                " neither SingleSet nor MultiSet explicitly"
                                " requested.  Defaulting to MultiSet per"
                                " historic behavior, but future versions may"
-                               " default to SingleSet.");
+                               " default to SingleSet.  "
+                               << x_GetContext());
                 }
                 if ( !m_IgnoreBounds ) {
                     m_ReportedWrongRowCount = false;
@@ -2308,7 +2346,8 @@ CQueryImpl::BeginNewRS(void)
             return;
         }
         NCBI_THROW(CSDB_Exception, eClosed,
-                   "All result sets in CQuery were already iterated through");
+                   "All result sets in CQuery were already iterated through.  "
+                   + x_GetContext());
     }
     if (m_RSFinished) {
         // Complete recovering from a premature call to GetStatus or
@@ -2438,7 +2477,7 @@ CQueryImpl::VerifyDone(CQuery::EHowMuch how_much)
 
     if (missed_results) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
-                   "Result set had unread rows.");
+                   "Result set had unread rows.  " + x_GetContext());
     }
 }
 
@@ -2490,7 +2529,8 @@ CQueryImpl::GetColumn(const CDBParamVariant& col) const
                    "No such column in the result set: "
                    + (col.IsPositional()
                       ? NStr::NumericToString(col.GetPosition())
-                      : col.GetName()));
+                      : col.GetName())
+                   + ".  " + x_GetContext());
     }
     return *m_Fields[pos - 1];
 }

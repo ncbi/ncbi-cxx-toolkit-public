@@ -158,6 +158,7 @@ public:
     IConnection* GetConnection(void);
 
 private:
+    string x_GetContext(void) const;
     void x_CheckCanWork(bool need_rs = false) const;
     void x_SetOutParameter(const string& name, const CVariant& value);
     void x_ClearAllParams(void);
@@ -184,6 +185,7 @@ private:
     bool                m_RSFinished;
     bool                m_Executed;
     bool                m_ReportedWrongRowCount;
+    bool                m_IsSP;
     unsigned int        m_CurRSNo;
     unsigned int        m_CurRowNo;
     unsigned int        m_CurRelRowNo;
