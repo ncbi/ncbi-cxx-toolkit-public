@@ -54,8 +54,10 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <common/ncbi_export.h>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -63,6 +65,7 @@ BEGIN_SCOPE(objects)
 
 void CheckDiffs(const TFieldDiffList& expected, const TFieldDiffList& observed)
 {
+    BOOST_CHECK_EQUAL(expected.size(), observed.size());
     TFieldDiffList::const_iterator ex = expected.begin();
     TFieldDiffList::const_iterator ob = observed.begin();
     while (ex != expected.end() && ob != observed.end()) {
@@ -104,9 +107,45 @@ BOOST_AUTO_TEST_CASE(Test_GetBiosampleDiffs)
     TFieldDiffList expected;
     expected.push_back(CRef<CFieldDiff>(new CFieldDiff("Organism Name", "A", "B")));
     TFieldDiffList diff_list = test_src->GetBiosampleDiffs(*test_sample);
-    BOOST_CHECK_EQUAL(diff_list.size(), 1);
-
     CheckDiffs(expected, diff_list);
+
+    // ignore differences that can be autofixed
+    unit_test_util::SetSubSource(*test_src, CSubSource::eSubtype_sex, "male");
+    unit_test_util::SetSubSource(*test_sample, CSubSource::eSubtype_sex, "m");
+    diff_list = test_src->GetBiosampleDiffs(*test_sample);
+    CheckDiffs(expected, diff_list);
+
+    // ignore differences that are allowed if BioSample is missing a value
+    unit_test_util::SetSubSource(*test_src, CSubSource::eSubtype_chromosome, "1");
+    diff_list = test_src->GetBiosampleDiffs(*test_sample);
+    CheckDiffs(expected, diff_list);
+
+    // ignore certain diffs in Org-ref
+    unit_test_util::SetOrgMod(*test_sample, COrgMod::eSubtype_pathovar, "path");
+    unit_test_util::SetOrgMod(*test_sample, COrgMod::eSubtype_specimen_voucher, "spec");
+    expected.push_back(CRef<CFieldDiff>(new CFieldDiff("specimen-voucher", "", "spec")));
+    diff_list = test_src->GetBiosampleDiffs(*test_sample);
+    CheckDiffs(expected, diff_list);
+
+
+    try {
+        test_src->UpdateWithBioSample(*test_sample, false);
+        BOOST_CHECK_EQUAL("Expected exception to be thrown", "Exception not thrown!");
+    } catch (CException& e) {
+        BOOST_CHECK_EQUAL(e.GetMsg(), "Conflicts found");
+    }
+
+    try {
+        test_src->UpdateWithBioSample(*test_sample, true);
+        BOOST_CHECK_EQUAL(test_src->GetOrg().GetTaxname(), "B");
+        BOOST_CHECK_EQUAL(test_src->GetSubtype().front()->GetName(), "1");
+        BOOST_CHECK_EQUAL(test_src->GetSubtype().back()->GetName(), "male");
+        BOOST_CHECK_EQUAL(test_src->GetOrg().GetOrgname().GetMod().front()->GetSubname(), "path");
+        BOOST_CHECK_EQUAL(test_src->GetOrg().GetOrgname().GetMod().back()->GetSubname(), "spec");
+    } catch (CException& e) {
+        BOOST_CHECK_EQUAL("Unexpected exception", e.GetMsg());
+    }
+
 }
 
 

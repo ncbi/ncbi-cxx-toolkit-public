@@ -163,6 +163,9 @@ public:
     static bool IsValidSexQualifierValue (const string& value);
     static string FixSexQualifierValue (const string& value);
 
+    static string AutoFix(TSubtype subtype, const string& value);
+    void AutoFix();
+
 private:
     // Prohibit copy constructor and assignment operator
     CSubSource(const CSubSource& value);

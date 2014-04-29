@@ -550,6 +550,50 @@ COrgMod::GetInstitutionShortName( const string &full_name )
 }
 
 
+string COrgMod::AutoFix(TSubtype subtype, const string& value)
+{
+    string new_val = "";
+    switch (subtype) {
+        case COrgMod::eSubtype_bio_material:
+            new_val = value;
+            if (!FixStructuredVoucher(new_val, "b")) {
+                new_val = "";
+            }
+            break;
+        case COrgMod::eSubtype_culture_collection:
+            new_val = value;
+            if (!FixStructuredVoucher(new_val, "c")) {
+                new_val = "";
+            }
+            break;
+        case COrgMod::eSubtype_specimen_voucher:
+            new_val = value;
+            if (!FixStructuredVoucher(new_val, "s")) {
+                new_val = "";
+            }
+            break;
+        default:
+            break;
+    }
+    return new_val;
+}
+
+
+void COrgMod::AutoFix()
+{
+    if (!IsSetSubtype() || !IsSetSubname()) {
+        return;
+    }
+
+    string new_val = AutoFix(GetSubtype(), GetSubname());
+
+    if (!NStr::IsBlank(new_val)) {
+        SetSubname(new_val);
+    }
+
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

@@ -2633,7 +2633,43 @@ string CCountries::CountryFixupItem(const string &input, bool capitalize_after_c
     return new_country;
 }
       
-         
+     
+string CSubSource::AutoFix(TSubtype subtype, const string& value)
+{
+    string new_val = "";
+    switch (subtype) {
+        case CSubSource::eSubtype_country:
+            new_val = CCountries::NewFixCountry(value);
+            break;
+        case CSubSource::eSubtype_collection_date:
+            new_val = FixDateFormat(value);
+            break;
+        case CSubSource::eSubtype_lat_lon:
+            new_val = FixLatLonFormat(value);
+            break;
+        case CSubSource::eSubtype_sex:
+            new_val = FixSexQualifierValue(value);
+            break;
+        default:
+            break;
+    }
+    return new_val;
+}
+
+
+void CSubSource::AutoFix()
+{
+    if (!IsSetSubtype() || !IsSetName()) {
+        return;
+    }
+
+    string new_val = AutoFix(GetSubtype(), GetName());
+
+    if (!NStr::IsBlank(new_val)) {
+        SetName(new_val);
+    }
+
+}
     
 
 END_objects_SCOPE // namespace ncbi::objects::

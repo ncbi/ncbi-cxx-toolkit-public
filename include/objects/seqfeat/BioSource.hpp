@@ -126,6 +126,8 @@ public:
 
     static bool IsStopWord(const string& value);
 
+    void AutoFix();
+
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);

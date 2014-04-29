@@ -676,6 +676,7 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
             }
         }
     }
+    AutoFix();
 }
 
 
@@ -865,9 +866,35 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
     int i;
     bool rval = false;
 
-    if (NStr::EqualNocase(src_val, sample_val)) {
+    if (NStr::Equal(src_val, sample_val)) {
         return true;
     }
+
+    try {
+        CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue(label);
+        string test_val = CSubSource::AutoFix(subtype, sample_val);
+        if (!NStr::IsBlank(test_val)) {
+            if (NStr::Equal(src_val, test_val)) {
+                return true;
+            } else {
+                sample_val = test_val;
+            }
+        }
+    } catch (...) {
+        try {
+            COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(label);
+            string test_val = COrgMod::AutoFix(subtype, sample_val);
+            if (!NStr::IsBlank(test_val)) {
+                if (NStr::Equal(src_val, test_val)) {
+                    return true;
+                } else {
+                    sample_val = test_val;
+                }
+            }
+        } catch (...) {
+        }
+    }
+
     for (i = 0; i < kNumIgnoreConflictList; i++) {
         if (NStr::EqualNocase (label, sIgnoreConflictList[i].qual_name)) {
             switch (sIgnoreConflictList[i].ignore_type) {
@@ -1004,7 +1031,10 @@ TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
     TFieldDiffList rval;
 
     TNameValList src_list = GetNameValPairs();
+    sort(src_list.begin(), src_list.end(), s_CompareNameVals);
+
     TNameValList sample_list = biosample.GetNameValPairs();
+    sort(sample_list.begin(), sample_list.end(), s_CompareNameVals);
 
     GetFieldDiffsFromNameValLists(rval, src_list, sample_list);
 
@@ -1040,6 +1070,42 @@ bool CBioSource::IsStopWord(const string& value)
         return true;
     } else {
         return false;
+    }
+}
+
+
+void CBioSource::AutoFix()
+{
+    if (IsSetSubtype()) {
+        CBioSource::TSubtype::iterator it = SetSubtype().begin();
+        while (it != SetSubtype().end()) {
+            (*it)->AutoFix();
+            if ((*it)->IsSetSubtype()
+                && !CSubSource::NeedsNoText((*it)->GetSubtype())
+                && (!(*it)->IsSetName() || NStr::IsBlank((*it)->GetName()))) {
+                it = SetSubtype().erase(it);
+            } else {
+                it++;
+            }
+        }
+        if (GetSubtype().empty()) {
+            ResetSubtype();
+        }
+    }
+    if (IsSetOrg() && GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetMod()) {
+        COrgName::TMod::iterator it = SetOrg().SetOrgname().SetMod().begin();
+        while (it != SetOrg().SetOrgname().SetMod().end()) {
+            (*it)->AutoFix();
+            if ((*it)->IsSetSubtype()
+                && (!(*it)->IsSetSubname() || NStr::IsBlank((*it)->GetSubname()))) {
+                it = SetOrg().SetOrgname().SetMod().erase(it);
+            } else {
+                it++;
+            }
+        }
+        if (GetOrg().GetOrgname().GetMod().empty()) {
+            SetOrg().SetOrgname().ResetMod();
+        }
     }
 }
 

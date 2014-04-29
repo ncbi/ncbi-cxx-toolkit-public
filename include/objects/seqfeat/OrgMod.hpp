@@ -94,6 +94,9 @@ public:
     static const string &GetInstitutionFullName( const string &short_name );
     static const string &GetInstitutionShortName( const string &full_name );
 
+    static string AutoFix(TSubtype subtype, const string& value);
+    void AutoFix();
+
     private:
     // Prohibit copy constructor and assignment operator
     COrgMod(const COrgMod& value);
