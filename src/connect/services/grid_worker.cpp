@@ -1703,7 +1703,8 @@ bool CGridWorkerNode::x_PerformTimelineAction(
             }
         }
 
-        x_AddToTimeline(timeline_entry);
+        timeline_entry->ResetTimeout(m_NSTimeout);
+        m_Timeline.Push(timeline_entry);
         return false;
     }
 
@@ -1714,6 +1715,8 @@ bool CGridWorkerNode::x_PerformTimelineAction(
 
     CNetServer server(m_NetScheduleAPI->m_Service.GetServer(
             timeline_entry->m_ServerAddress));
+
+    timeline_entry->ResetTimeout(m_NSTimeout);
 
     try {
         if (x_GetJobWithAffinityLadder(server,
@@ -1726,7 +1729,7 @@ bool CGridWorkerNode::x_PerformTimelineAction(
         } else {
             // No job has been returned by this server;
             // query the server later.
-            x_AddToTimeline(timeline_entry);
+            m_Timeline.Push(timeline_entry);
             return false;
         }
     }
@@ -1753,7 +1756,8 @@ bool CGridWorkerNode::x_EnterSuspendedState()
                 m_TimelineIsSuspended = true;
                 m_ImmediateActions.Clear();
                 m_Timeline.Clear();
-                x_AddToTimeline(&m_TimelineSearchPattern);
+                m_TimelineSearchPattern.ResetTimeout(m_NSTimeout);
+                m_Timeline.Push(&m_TimelineSearchPattern);
             }
         } else { /* event == RESUME_EVENT */
             if (m_TimelineIsSuspended) {

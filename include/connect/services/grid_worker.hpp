@@ -841,11 +841,6 @@ private:
     bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
             const CDeadline* timeout,
             CNetScheduleJob& job);
-    void x_AddToTimeline(SNotificationTimelineEntry* timeline_entry)
-    {
-        timeline_entry->ResetTimeout(m_NSTimeout);
-        m_Timeline.Push(timeline_entry);
-    }
     SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
     bool x_PerformTimelineAction(SNotificationTimelineEntry* action,
             CNetScheduleJob& job);
