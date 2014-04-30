@@ -364,6 +364,13 @@ void CMultiReaderApp::Init(void)
         "clean up output for genbank submission",
         true );
         
+    arg_desc->AddDefaultKey(
+        "locus-tag-prefix", 
+        "STRING",
+        "Prefix for auto generated locus tags",
+        CArgDescriptions::eString,
+        "" );
+        
     //
     //  wiggle reader specific arguments:
     //
@@ -660,6 +667,7 @@ void CMultiReaderApp::xProcessGtf(
         return xProcessGff2(args, istr, ostr);
     }
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    reader.SetLocusTagBase(args["locus-tag-prefix"].AsString());
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
@@ -680,6 +688,7 @@ void CMultiReaderApp::xProcessGff3(
         return xProcessGff2(args, istr, ostr);
     }
     CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    reader.SetLocusTagBase(args["locus-tag-prefix"].AsString());
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
