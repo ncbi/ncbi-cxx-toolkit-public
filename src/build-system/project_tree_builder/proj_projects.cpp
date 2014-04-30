@@ -30,6 +30,7 @@
 #include "proj_projects.hpp"
 #include "proj_builder_app.hpp"
 #include "proj_tree.hpp"
+#include "ptb_err_codes.hpp"
 
 #include <corelib/ncbienv.hpp>
 #include <util/xregexp/regexp.hpp>
@@ -201,6 +202,10 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* 
         str += "$";
         CRegexp rx("^" + str);
         if (rx.IsMatch(proj_dir)) {
+            if (!m_PassAll) {
+                PTB_INFO_EX(project_base_dir, ePTB_NoError,
+                            "skipped because of this rule in LST file: " << *s);
+            }
             return false;
         }
     }
