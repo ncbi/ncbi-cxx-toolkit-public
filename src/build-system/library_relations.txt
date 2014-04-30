@@ -790,10 +790,6 @@ odbc_ftds64 needs tds_ftds64
 omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party ctutils
-pathogen_ctl needs bag_access
-pathogen_ctl needs gencoll_client
-pathogen_ctl needs gpipe_xml
-pathogen_ctl needs xvalidate
 pathogen_fill_taxa needs gpipe_common
 pathogen_metadata needs gpipe_xml
 pcassay needs $(SEQ_LIBS)
