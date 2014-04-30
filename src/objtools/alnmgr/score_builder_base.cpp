@@ -913,6 +913,194 @@ void CScoreBuilderBase::AddScore(CScope& scope, CSeq_align& align,
     }
 }
 
+string GetDonor(const objects::CSpliced_exon& exon) {
+    if( exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases() ) {
+        return exon.GetDonor_after_exon().GetBases();
+    }
+    return string();
+}    
+
+string GetAcceptor(const objects::CSpliced_exon& exon) {
+    if( exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases()  ) {
+        return exon.GetAcceptor_before_exon().GetBases();
+    }
+    return string();
+}
+
+//returns true for GT/AG, GC/AG AND AT/AC        
+bool IsConsSplice(const string& donor, const string acc) {
+    if(donor.length()<2 || acc.length()<2) return false;
+    if(toupper(acc.c_str()[0]) != 'A') return false;
+    switch(toupper(acc.c_str()[1])) {
+    case 'C':
+        if( toupper(donor.c_str()[0] == 'A') && toupper(donor.c_str()[1] == 'T') ) return true;
+        else return false;
+        break;
+    case 'G':
+        if( toupper(donor.c_str()[0] == 'G') ) {
+            char don2 = toupper(donor.c_str()[1]);
+            if(don2 == 'T' || don2 == 'C') return true;
+        }
+        return false;
+        break;
+    default:
+        return false;
+        break;
+    }
+    return false;
+}
+           
+    
+void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
+                                        CSeq_align::TScore &scores)
+{
+    typedef CSeq_align::TSegs::TSpliced TSpliced;
+    const TSpliced & spliced (align.GetSegs().GetSpliced());
+    if(spliced.GetProduct_type() != CSpliced_seg::eProduct_type_transcript) {
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CScoreBuilderBase::AddSplignScores(): Unsupported product type");
+    }
+
+    const bool qstrand (spliced.GetProduct_strand() != eNa_strand_minus);
+
+    typedef TSpliced::TExons TExons;
+    const TExons & exons (spliced.GetExons());
+
+    size_t matches (0),
+        aligned_query_bases (0),  // matches, mismatches and indels
+        aln_length_exons (0),
+        aln_length_gaps (0),
+        splices_total (0),        // twice the number of introns
+        splices_consensus (0);
+
+    const TSeqPos  qlen (spliced.GetProduct_length());
+    const TSeqPos polya (spliced.CanGetPoly_a()?
+                         spliced.GetPoly_a(): (qstrand? qlen: TSeqPos(-1)));
+    const TSeqPos prod_length_no_polya (qstrand? polya: qlen - 1 - polya);
+        
+    typedef CSpliced_exon TExon;
+    TSeqPos qprev (qstrand? TSeqPos(-1): qlen);
+    string donor;
+    ITERATE(TExons, ii2, exons) {
+
+        const TExon & exon (**ii2);
+        const TSeqPos qmin (exon.GetProduct_start().GetNucpos()),
+            qmax (exon.GetProduct_end().GetNucpos());
+
+        const TSeqPos qgap (qstrand? qmin - qprev - 1: qprev - qmax - 1);
+
+        if(qgap > 0) {
+            aln_length_gaps += qgap;
+            donor.clear();
+        }
+        else if (ii2 != exons.begin()) {
+            splices_total += 2;
+            if(IsConsSplice(donor, GetAcceptor(exon))) { splices_consensus += 2; }
+        }
+
+        typedef TExon::TParts TParts;
+        const TParts & parts (exon.GetParts());
+        string errmsg;
+        ITERATE(TParts, ii3, parts) {
+            const CSpliced_exon_chunk & part (**ii3);
+            const CSpliced_exon_chunk::E_Choice choice (part.Which());
+            TSeqPos len (0);
+            switch(choice) {
+            case CSpliced_exon_chunk::e_Match:
+                len = part.GetMatch();
+                matches += len;
+                aligned_query_bases += len;
+                break;
+            case CSpliced_exon_chunk::e_Mismatch:
+                len = part.GetMismatch();
+                aligned_query_bases += len;
+                break;
+            case CSpliced_exon_chunk::e_Product_ins:
+                len = part.GetProduct_ins();
+                aligned_query_bases += len;
+                break;
+            case CSpliced_exon_chunk::e_Genomic_ins:
+                len = part.GetGenomic_ins();
+                break;
+            default:
+                errmsg = "Unexpected spliced exon chunk part: "
+                    + part.SelectionName(choice);
+                NCBI_THROW(CSeqalignException, eUnsupported, errmsg);
+            }
+            aln_length_exons += len;
+        }
+
+        donor = GetDonor(exon);
+        qprev = qstrand? qmax: qmin;
+    } // TExons
+
+    const TSeqPos qgap (qstrand? polya - qprev - 1: qprev - polya - 1);
+    aln_length_gaps += qgap;
+
+    for (CSeq_align::TScore::iterator it = scores.begin(); it != scores.end(); )
+    {
+        CSeq_align::EScoreType score_type = CSeq_align::eScore_Score;
+        if ((*it)->GetId().IsStr()) {
+            score_type = CSeq_align::ScoreNameMap()
+                             . find((*it)->GetId().GetStr())->second;
+        }
+        if (score_type >= CSeq_align::eScore_Matches &&
+            score_type <= CSeq_align::eScore_ExonIdentity)
+        {
+            it = scores.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+        {
+            CRef<CScore> score_matches (new CScore());
+            score_matches->SetId().SetStr(
+                CSeq_align::ScoreName(CSeq_align::eScore_Matches));
+            score_matches->SetValue().SetInt(matches);
+            scores.push_back(score_matches);
+        }
+        {
+            CRef<CScore> score_overall_identity (new CScore());
+            score_overall_identity->SetId().SetStr(
+                CSeq_align::ScoreName(CSeq_align::eScore_OverallIdentity));
+            score_overall_identity->SetValue().
+                SetReal(double(matches)/(aln_length_exons + aln_length_gaps));
+            scores.push_back(score_overall_identity);
+        }
+        {
+            CRef<CScore> score_splices (new CScore());
+            score_splices->SetId().SetStr(
+                CSeq_align::ScoreName(CSeq_align::eScore_Splices));
+            score_splices->SetValue().SetInt(splices_total);
+            scores.push_back(score_splices);
+        }
+        {
+            CRef<CScore> score_splices_consensus (new CScore());
+            score_splices_consensus->SetId().SetStr(
+                CSeq_align::ScoreName(CSeq_align::eScore_ConsensusSplices));
+            score_splices_consensus->SetValue().SetInt(splices_consensus);
+            scores.push_back(score_splices_consensus);
+        }
+        {
+            CRef<CScore> score_coverage (new CScore());
+            score_coverage->SetId().SetStr(
+                CSeq_align::ScoreName(CSeq_align::eScore_ProductCoverage));
+            score_coverage->SetValue().
+                SetReal(double(aligned_query_bases) / prod_length_no_polya);
+            scores.push_back(score_coverage);
+        }
+        {
+            CRef<CScore> score_exon_identity (new CScore());
+            score_exon_identity->SetId().SetStr(
+                CSeq_align::ScoreName(CSeq_align::eScore_ExonIdentity));
+            score_exon_identity->SetValue().
+                SetReal(double(matches) / aln_length_exons);
+            scores.push_back(score_exon_identity);
+        }
+
+}
+
 double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
                                        CSeq_align::EScoreType score)
 {
@@ -1056,6 +1244,32 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
             return pct_coverage;
         }}
         break;
+
+    case CSeq_align::eScore_Matches:
+    case CSeq_align::eScore_OverallIdentity:
+    case CSeq_align::eScore_Splices:
+    case CSeq_align::eScore_ConsensusSplices:
+    case CSeq_align::eScore_ProductCoverage:
+    case CSeq_align::eScore_ExonIdentity:
+        {{
+             if (ranges.empty() || !ranges.begin()->IsWhole()) {
+                 NCBI_THROW(CSeqalignException, eNotImplemented,
+                            "splign scores not supported within a range");
+             }
+             CSeq_align::TScore scores;
+             AddSplignScores(align, scores);
+             ITERATE (CSeq_align::TScore, it, scores) {
+                 if ((*it)->GetId().GetStr() == CSeq_align::ScoreName(score))
+                 {
+                     if ((*it)->GetValue().IsInt()) {
+                         return (*it)->GetValue().GetInt();
+                     } else {
+                         return (*it)->GetValue().GetReal();
+                     }
+                 }
+             }
+             NCBI_ASSERT(false, "Should never reach this point");
+        }}
 
     default:
         {{
