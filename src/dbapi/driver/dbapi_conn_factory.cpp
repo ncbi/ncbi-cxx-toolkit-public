@@ -460,6 +460,13 @@ CDBConnectionFactory::DispatchServerName(
         else if (!service_name.empty()) {
             dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
 
+            if (dsp_srv.Empty()  &&  tried_servers.empty()) {
+                _TRACE("List of servers for service " << service_name
+                       << " is exhausted. Giving excluded a try.");
+                rt_data.GetDBServiceMapper().CleanExcluded(service_name);
+                dsp_srv = rt_data.GetDBServiceMapper().GetServer(service_name);
+            }
+
             if (dsp_srv.Empty()) {
                 m_Errors.push_back(new CDB_Exception(DIAG_COMPILE_INFO, NULL, CDB_Exception::EErrCode(0),
                                    "Service mapper didn't return any server for " + service_name, eDiag_Error, 0));
