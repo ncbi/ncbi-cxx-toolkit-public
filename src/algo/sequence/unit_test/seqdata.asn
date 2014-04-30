@@ -12025,6 +12025,30 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
                 {
                   id str "pct_coverage_hiqual",
                   value real { 951347305389222, 10, -13 }
+                },
+                {
+                  id str "matches",
+                  value int 2488
+                },
+                {
+                  id str "identity",
+                  value real { 931137724550898, 10, -15 }
+                },
+                {
+                  id str "splices",
+                  value int 0
+                },
+                {
+                  id str "consensus_splices",
+                  value int 0
+                },
+                {
+                  id str "product_coverage",
+                  value real { 1, 10, 0 }
+                },
+                {
+                  id str "exon_identity",
+                  value real { 931137724550898, 10, -15 }
                 }
               },
               segs spliced {
