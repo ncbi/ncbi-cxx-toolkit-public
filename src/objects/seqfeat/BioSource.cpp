@@ -866,32 +866,30 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
     int i;
     bool rval = false;
 
-    if (NStr::Equal(src_val, sample_val)) {
+    if (NStr::EqualNocase(src_val, sample_val) || (NStr::IsBlank(src_val) && CBioSource::IsStopWord(sample_val))) {
         return true;
     }
 
-    try {
-        CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue(label);
-        string test_val = CSubSource::AutoFix(subtype, sample_val);
-        if (!NStr::IsBlank(test_val)) {
-            if (NStr::Equal(src_val, test_val)) {
-                return true;
-            } else {
-                sample_val = test_val;
-            }
-        }
-    } catch (...) {
+    if (!NStr::IsBlank(src_val) && !NStr::IsBlank(sample_val)) {
         try {
-            COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(label);
-            string test_val = COrgMod::AutoFix(subtype, sample_val);
+            CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue(label);
+            string test_val = CSubSource::AutoFix(subtype, sample_val);
             if (!NStr::IsBlank(test_val)) {
                 if (NStr::Equal(src_val, test_val)) {
                     return true;
-                } else {
-                    sample_val = test_val;
-                }
+                } 
             }
         } catch (...) {
+            try {
+                COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(label);
+                string test_val = COrgMod::AutoFix(subtype, sample_val);
+                if (!NStr::IsBlank(test_val)) {
+                    if (NStr::Equal(src_val, test_val)) {
+                        return true;
+                    }
+                }
+            } catch (...) {
+            }
         }
     }
 
