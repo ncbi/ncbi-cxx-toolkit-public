@@ -5652,6 +5652,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "STD	s	Prittlewell Priory Museum",
 "STDCM	s	Southend Central Museum",
 "STE	s	National Botanical Institute",
+"STE-U	c	Culture collection of the Department of Plant Pathology, University of Stellenbosch",
 "STEU	sc	University of Stellenbosch, Botany Department",
 "STFX	s	St. Francis Xavier University, Biology Department",
 "STG	s	St. Martin's Convent",
