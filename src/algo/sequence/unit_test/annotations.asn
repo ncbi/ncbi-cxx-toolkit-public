@@ -2990,7 +2990,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 8 substitutions and aligns at 97%
+      comment "The RefSeq transcript has 8 substitutions and aligns at 96%
  coverage compared to this genomic sequence",
       product whole other {
         accession "NM_003715",
@@ -5046,7 +5046,7 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       comment "The RefSeq transcript has 17 substitutions, 3 frameshifts, 2
- non-frameshifting indels and aligns at 59% coverage compared to this genomic
+ non-frameshifting indels and aligns at 58% coverage compared to this genomic
  sequence",
       product whole other {
         accession "NM_012133",
@@ -5992,7 +5992,7 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       comment "The RefSeq transcript has 1 non-frameshifting indel and aligns
- at 59% coverage compared to this genomic sequence",
+ at 54% coverage compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4

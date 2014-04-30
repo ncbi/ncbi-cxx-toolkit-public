@@ -48,20 +48,25 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-namespace {
-
-struct SExon {
-    TSignedSeqPos prod_from;
-    TSignedSeqPos prod_to;
-    TSignedSeqPos genomic_from;
-    TSignedSeqPos genomic_to;
-};
-
-}
-
 struct CFeatureGenerator::SImplementation {
     SImplementation(objects::CScope& scope);
     ~SImplementation();
+
+    struct SExon {
+        TSignedSeqPos prod_from;
+        TSignedSeqPos prod_to;
+        TSignedSeqPos genomic_from;
+        TSignedSeqPos genomic_to;
+
+        bool operator==(const SExon& b) const
+        {
+            return
+            prod_from == b.prod_from &&
+            prod_to == b.prod_to &&
+            genomic_from == b.genomic_from &&
+            genomic_to == b.genomic_to;
+        }
+    };
 
     CRef<objects::CScope> m_scope;
     TFeatureGeneratorFlags m_flags;
@@ -251,8 +256,11 @@ private:
                                             const CSeq_feat* cds_feat_on_query_mrna_ptr,
                                             bool call_on_align_list);
 
-    void RecalculateScores(CSeq_align &align, bool exon_idty_OK);
-    bool RecalculateExonIdty(CSpliced_exon &exon);
+    void RecalculateScores(CSeq_align &align);
+    void RecalculateExonIdty(CSpliced_exon &exon);
+    void ClearScores(CSeq_align &align);
+    vector<SExon> GetExons(const CSeq_align &align);
+    void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons, CScope* scope);
 };
 
 CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id, CScope& scope);

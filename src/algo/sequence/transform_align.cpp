@@ -69,7 +69,16 @@ pair <ENa_strand, ENa_strand> GetSplicedStrands(const CSpliced_seg& spliced_seg)
     return make_pair(product_strand, genomic_strand);
 }
 
-void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons, CScope& scope)
+void SetProtpos(CProduct_pos &pos, int value)
+{
+    pos.SetProtpos().SetAmin(value/3);
+    pos.SetProtpos().SetFrame((value % 3) +1);
+}
+
+}
+
+
+void CFeatureGenerator::SImplementation::GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons, CScope* scope)
 {
     pair <ENa_strand, ENa_strand> strands = GetSplicedStrands(spliced_seg);
     ENa_strand product_strand = strands.first;
@@ -102,8 +111,8 @@ void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons, CSc
             ? (exon_struct.genomic_from < prev_genomic_pos)
             : (exon_struct.genomic_from > prev_genomic_pos));
 
-        if (cross_the_origin) {
-            offset = scope.GetSequenceLength(spliced_seg.GetGenomic_id());
+        if (cross_the_origin && scope) {
+            offset = scope->GetSequenceLength(spliced_seg.GetGenomic_id());
         }
 
         prev_genomic_pos = exon_struct.genomic_from;
@@ -124,13 +133,6 @@ void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons, CSc
     _ASSERT( exons.size() == spliced_seg.GetExons().size() );
 }
 
-void SetProtpos(CProduct_pos &pos, int value)
-{
-    pos.SetProtpos().SetAmin(value/3);
-    pos.SetProtpos().SetFrame((value % 3) +1);
-}
-
-}
 
 void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
 {
@@ -140,7 +142,7 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
         return;
 
     vector<SExon> exons;
-    GetExonStructure(spliced_seg, exons, *m_scope);
+    GetExonStructure(spliced_seg, exons, m_scope);
 
     bool is_protein = (spliced_seg.GetProduct_type()==CSpliced_seg::eProduct_type_protein);
 
@@ -179,8 +181,6 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
     CSpliced_seg::TExons::iterator it = spliced_seg.SetExons().begin();
     CRef<CSpliced_exon> prev_exon = *it;
     size_t i = 1;
-    bool stitched_holes = false;
-    bool exon_idty_OK = true;
     for (++it; it != spliced_seg.SetExons().end();  ++i, prev_exon = *it++) {
         CSpliced_exon& exon = **it;
 
@@ -404,12 +404,15 @@ void CFeatureGenerator::SImplementation::StitchSmallHoles(CSeq_align& align)
             spliced_seg.SetExons().erase(it);
             it = save_it;
         }
-	exon_idty_OK &= RecalculateExonIdty(*prev_exon);
-        stitched_holes = true;
     }
-    if (stitched_holes) {
-        RecalculateScores(align, exon_idty_OK);
-    }
+}
+
+vector<CFeatureGenerator::SImplementation::SExon> CFeatureGenerator::SImplementation::
+GetExons(const CSeq_align &align)
+{
+    vector<SExon> exons;
+    GetExonStructure(align.GetSegs().GetSpliced(), exons, NULL);
+    return exons;
 }
 
 CSeq_align::EScoreType s_ScoresToRecalculate[] =
@@ -424,28 +427,36 @@ CSeq_align::EScoreType s_ScoresToRecalculate[] =
 };
 
 void CFeatureGenerator::SImplementation::
-RecalculateScores(CSeq_align &align, bool exon_idty_OK)
+ClearScores(CSeq_align &align)
 {
     NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
                        align.SetSegs().SetSpliced().SetExons())
     {
-        if ((*exon_it)->IsSetScores() && exon_idty_OK) {
-            /// Remove all scores except idty
-            for (CScore_set::Tdata::iterator score_it =
-                       (*exon_it)->SetScores().Set().begin();
-                 score_it != (*exon_it)->SetScores().Set().end(); ++score_it)
-            {
-                if ((*score_it)->IsSetId() && (*score_it)->GetId().IsStr() &&
-                    (*score_it)->GetId().GetStr() == "idty")
-                {
-                    ++score_it;
-                } else {
-                    score_it = (*exon_it)->SetScores().Set().erase(score_it);
-                }
-            }
-        } else {
-            (*exon_it)->ResetScores();
+        (*exon_it)->ResetScores();
+    }
+    if (align.IsSetScore()) {
+        CScoreBuilderBase score_builder;
+        for (CSeq_align::EScoreType *score = s_ScoresToRecalculate;
+             *score; ++score)
+        {
+            align.ResetNamedScore(*score);
         }
+        align.ResetNamedScore("weighted_identity");
+
+        if (align.SetScore().empty()) {
+            align.ResetScore();
+        }
+    }
+}
+
+
+void CFeatureGenerator::SImplementation::
+RecalculateScores(CSeq_align &align)
+{
+    NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it,
+                       align.SetSegs().SetSpliced().SetExons())
+    {
+	RecalculateExonIdty(**exon_it);
     }
 
     if (align.IsSetScore()) {
@@ -453,25 +464,31 @@ RecalculateScores(CSeq_align &align, bool exon_idty_OK)
         for (CSeq_align::EScoreType *score = s_ScoresToRecalculate;
              *score; ++score)
         {
-            align.ResetNamedScore(*score);
-            score_builder.AddScore(*m_scope, align, *score);
+            int sink;
+            if (align.GetNamedScore(*score, sink)) {
+                align.ResetNamedScore(*score);
+                score_builder.AddScore(*m_scope, align, *score);
+            }
         }
         if (align.GetSegs().GetSpliced().GetProduct_type() ==
             CSpliced_seg::eProduct_type_transcript)
         {
-            score_builder.AddSplignScores(align);
+            ////score_builder.AddSplignScores(align);
         }
         align.ResetNamedScore("weighted_identity");
     }
 }
 
-bool CFeatureGenerator::SImplementation::
+void CFeatureGenerator::SImplementation::
 RecalculateExonIdty(CSpliced_exon &exon)
 {
-    double idty = 1;
+    if (!exon.IsSetScores())
+        return;
+
+    double idty = -1;
     if (exon.IsSetParts()) {
-        double matches = 0;
-        double total = 0;
+        int matches = 0;
+        int total = 0;
         ITERATE (CSpliced_exon::TParts, part_it, exon.GetParts()) {
             switch ((*part_it)->Which()) {
             case CSpliced_exon_chunk::e_Match:
@@ -492,23 +509,23 @@ RecalculateExonIdty(CSpliced_exon &exon)
                break;
 
             default:
-               return false;
+                matches = INT_MIN; // to ensure negative identity
+                total += 1;        // to prevent division by zero
+                break;
             }
         }
-        idty = matches / total;
+        idty = double(matches) / total;
     }
-    if (exon.IsSetScores()) {
-        NON_CONST_ITERATE (CScore_set::Tdata, score_it, exon.SetScores().Set())
-        {
-            if ((*score_it)->IsSetId() && (*score_it)->GetId().IsStr() &&
-                (*score_it)->GetId().GetStr() == "idty")
-            {
-                (*score_it)->SetValue().SetReal(idty);
-                return true;
-            }
+
+    CScore_set::Tdata& exon_scores = exon.SetScores().Set();
+    ERASE_ITERATE (CScore_set::Tdata, score_it, exon_scores) {
+        if (idty >= 0 && (*score_it)->IsSetId() && (*score_it)->GetId().IsStr() &&
+            (*score_it)->GetId().GetStr() == "idty") {
+            (*score_it)->SetValue().SetReal(idty);
+        } else {
+            exon_scores.erase(score_it);
         }
     }
-    return false;
 }
 
 void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
@@ -541,7 +558,7 @@ void CFeatureGenerator::SImplementation::TrimHolesToCodons(CSeq_align& align)
     }
 
     vector<SExon> exons;
-    GetExonStructure(spliced_seg, exons, *m_scope);
+    GetExonStructure(spliced_seg, exons, m_scope);
 
     int frame_offset = (exons.back().prod_to/3+1)*3+cds.GetFrom(); // to make modulo operands always positive
 
@@ -660,6 +677,8 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     CRef<CSeq_align> align(new CSeq_align);
     align->Assign(align_in);
 
+    vector<SExon> orig_exons = GetExons(*align);
+
     CSpliced_seg& spliced_seg = align->SetSegs().SetSpliced();
 
     pair <ENa_strand, ENa_strand> strands = GetSplicedStrands(spliced_seg);
@@ -721,7 +740,7 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     _ASSERT(!(align_range.GetTo() < range.GetFrom()));
 
     vector<SExon> exons;
-    GetExonStructure(spliced_seg, exons, *m_scope);
+    GetExonStructure(spliced_seg, exons, m_scope);
 
     bool is_protein_align =
         spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
@@ -943,6 +962,11 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
                 exon.SetGenomic_end() -= genomic_size;
         }
     }
+
+    if (GetExons(*align) != orig_exons) {
+        ClearScores(*align);
+    }
+
     return align;
 }
 

@@ -559,11 +559,21 @@ SImplementation::CleanAlignment(const CSeq_align& align_in)
     CRef<CSeq_align> align(new CSeq_align);
     align->Assign(align_in);
 
+    vector<SExon> orig_exons = GetExons(*align);
+
     StitchSmallHoles(*align);
     TrimHolesToCodons(*align);
 
     if (m_flags & fMaximizeTranslation) {
         MaximizeTranslation(*align);
+    }
+
+    if (GetExons(*align) != orig_exons) {
+        if (m_flags & fMaximizeTranslation) {
+            ClearScores(*align);
+        } else {
+            RecalculateScores(*align);
+        }
     }
 
     return align;

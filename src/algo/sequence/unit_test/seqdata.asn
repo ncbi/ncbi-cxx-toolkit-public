@@ -6504,8 +6504,16 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                   value real { 997929070670463, 10, -13 }
                 },
                 {
+                  id str "rank",
+                  value int 1
+                },
+                {
+                  id str "locus_rank",
+                  value int 1
+                },
+                {
                   id str "num_ident",
-                  value int 3855
+                  value int 3851
                 },
                 {
                   id str "num_mismatch",
@@ -6517,19 +6525,7 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                 },
                 {
                   id str "pct_coverage",
-                  value real { 970115519839277, 10, -13 }
-                },
-                {
-                  id str "weighted_identity",
-                  value real { 997929070670463, 10, -15 }
-                },
-                {
-                  id str "rank",
-                  value int 1
-                },
-                {
-                  id str "locus_rank",
-                  value int 1
+                  value real { 96911099949774, 10, -12 }
                 }
               },
               segs spliced {
@@ -6557,10 +6553,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 238955993652344, 10, -12 }
-                      },
-                      {
                         id str "idty",
                         value real { 995850622406639, 10, -15 }
                       }
@@ -6584,12 +6576,8 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 895600032806396, 10, -14 }
-                      },
-                      {
                         id str "idty",
-                        value real { 909090909090909, 10, -15 }
+                        value real { 888888888888889, 10, -15 }
                       }
                     },
                     partial TRUE
@@ -6610,12 +6598,8 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 128240003585815, 10, -13 }
-                      },
-                      {
                         id str "idty",
-                        value real { 80952380952381, 10, -14 }
+                        value real { 789473684210526, 10, -15 }
                       }
                     },
                     donor-after-exon {
@@ -6634,10 +6618,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 41
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 759560012817383, 10, -13 }
-                      },
                       {
                         id str "idty",
                         value real { 987179487179487, 10, -15 }
@@ -6660,10 +6640,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 101, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -6684,10 +6660,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 103
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 103, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -6710,10 +6682,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 56, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -6734,10 +6702,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 121
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 121, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -6760,10 +6724,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 179, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -6784,10 +6744,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 141
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 141, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -6810,10 +6766,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 89, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -6834,10 +6786,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 155
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 155, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -6860,10 +6808,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 212, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -6884,10 +6828,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 111
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 111, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -6910,10 +6850,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 119, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -6934,10 +6870,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 182
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 182, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -6960,10 +6892,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 122, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -6984,10 +6912,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 139
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 139, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -7010,10 +6934,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 164, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -7034,10 +6954,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 87
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 87, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -7060,10 +6976,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 99, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -7085,10 +6997,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 108, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -7109,10 +7017,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 216
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 216, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -7136,10 +7040,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                       match 179
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 100595599365234, 10, -11 }
-                      },
                       {
                         id str "idty",
                         value real { 999007936507937, 10, -15 }
@@ -9851,12 +9751,20 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                   value real { 988697524219591, 10, -13 }
                 },
                 {
+                  id str "rank",
+                  value int 1
+                },
+                {
+                  id str "locus_rank",
+                  value int 1
+                },
+                {
                   id str "num_ident",
-                  value int 1837
+                  value int 1823
                 },
                 {
                   id str "num_mismatch",
-                  value int 21
+                  value int 17
                 },
                 {
                   id str "gap_count",
@@ -9864,19 +9772,7 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                 },
                 {
                   id str "pct_coverage",
-                  value real { 594336621062679, 10, -13 }
-                },
-                {
-                  id str "weighted_identity",
-                  value real { 988697524219591, 10, -15 }
-                },
-                {
-                  id str "rank",
-                  value int 1
-                },
-                {
-                  id str "locus_rank",
-                  value int 1
+                  value real { 585427935093859, 10, -13 }
                 }
               },
               segs spliced {
@@ -9902,10 +9798,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 127, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -9926,10 +9818,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                       match 53
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 53, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -9952,10 +9840,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 81, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -9976,10 +9860,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                       match 72
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 72, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -10002,10 +9882,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 8, 10, 1 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -10026,10 +9902,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                       match 76
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 76, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -10052,10 +9924,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 93, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -10076,10 +9944,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                       match 87
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 87, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -10102,10 +9966,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 158, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -10127,12 +9987,8 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 891199970245361, 10, -14 }
-                      },
-                      {
                         id str "idty",
-                        value real { 846153846153846, 10, -15 }
+                        value real { 888888888888889, 10, -15 }
                       }
                     },
                     partial TRUE
@@ -10151,12 +10007,8 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 749599981307983, 10, -14 }
-                      },
-                      {
                         id str "idty",
-                        value real { 764705882352941, 10, -15 }
+                        value real { 8, 10, -1 }
                       }
                     },
                     donor-after-exon {
@@ -10176,12 +10028,8 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 995600032806396, 10, -14 }
-                      },
-                      {
                         id str "idty",
-                        value real { 916666666666667, 10, -15 }
+                        value real { 888888888888889, 10, -15 }
                       }
                     },
                     partial TRUE
@@ -10198,12 +10046,8 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 586800003051758, 10, -14 }
-                      },
-                      {
                         id str "idty",
-                        value real { 75, 10, -2 }
+                        value real { 777777777777778, 10, -15 }
                       }
                     },
                     partial TRUE
@@ -10218,12 +10062,8 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 895600032806396, 10, -14 }
-                      },
-                      {
                         id str "idty",
-                        value real { 909090909090909, 10, -15 }
+                        value real { 1, 10, 0 }
                       }
                     },
                     donor-after-exon {
@@ -10248,10 +10088,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                       match 3
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 10625, 10, -3 }
-                      },
                       {
                         id str "idty",
                         value real { 80952380952381, 10, -14 }
@@ -10284,10 +10120,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 127360000610352, 10, -13 }
-                      },
-                      {
                         id str "idty",
                         value real { 76, 10, -2 }
                       }
@@ -10317,12 +10149,8 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 102824996948242, 10, -12 }
-                      },
-                      {
                         id str "idty",
-                        value real { 890625, 10, -6 }
+                        value real { 888888888888889, 10, -15 }
                       }
                     },
                     donor-after-exon {
@@ -10339,10 +10167,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                       match 139
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 139, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -10364,10 +10188,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                       match 99
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 99, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -10391,10 +10211,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                       match 248
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 564757019042969, 10, -12 }
-                      },
                       {
                         id str "idty",
                         value real { 998242530755712, 10, -15 }
@@ -11432,32 +11248,28 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                   value real { 988697524219591, 10, -13 }
                 },
                 {
-                  id str "num_ident",
-                  value int 1837
-                },
-                {
-                  id str "num_mismatch",
-                  value int 21
-                },
-                {
-                  id str "gap_count",
-                  value int 5
-                },
-                {
-                  id str "pct_coverage",
-                  value real { 594336621062679, 10, -13 }
-                },
-                {
-                  id str "weighted_identity",
-                  value real { 988697524219591, 10, -15 }
-                },
-                {
                   id str "rank",
                   value int 1
                 },
                 {
                   id str "locus_rank",
                   value int 1
+                },
+                {
+                  id str "num_ident",
+                  value int 1727
+                },
+                {
+                  id str "num_mismatch",
+                  value int 0
+                },
+                {
+                  id str "gap_count",
+                  value int 1
+                },
+                {
+                  id str "pct_coverage",
+                  value real { 549475023862552, 10, -13 }
                 }
               },
               segs spliced {
@@ -11483,10 +11295,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 127, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -11507,10 +11315,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                       match 53
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 53, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -11533,10 +11337,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 81, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -11557,10 +11357,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                       match 72
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 72, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -11583,10 +11379,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 8, 10, 1 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -11607,10 +11399,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                       match 76
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 76, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -11633,10 +11421,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 93, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -11657,10 +11441,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                       match 87
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 87, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -11683,10 +11463,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 158, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -11705,10 +11481,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 99, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -11726,10 +11498,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                       match 139
                     },
                     scores {
-                      {
-                        id str "splign",
-                        value real { 139, 10, 0 }
-                      },
                       {
                         id str "idty",
                         value real { 1, 10, 0 }
@@ -11752,10 +11520,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 99, 10, 0 }
-                      },
-                      {
                         id str "idty",
                         value real { 1, 10, 0 }
                       }
@@ -11777,12 +11541,8 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     },
                     scores {
                       {
-                        id str "splign",
-                        value real { 564757019042969, 10, -12 }
-                      },
-                      {
                         id str "idty",
-                        value real { 998242530755712, 10, -15 }
+                        value real { 998236331569665, 10, -15 }
                       }
                     },
                     donor-after-exon {
@@ -12011,44 +11771,8 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
                   value int 1
                 },
                 {
-                  id str "pct_identity_gap",
-                  value real { 931137724550898, 10, -13 }
-                },
-                {
-                  id str "pct_identity_ungap",
-                  value real { 978756884343037, 10, -13 }
-                },
-                {
                   id str "pct_coverage",
                   value real { 951347305389222, 10, -13 }
-                },
-                {
-                  id str "pct_coverage_hiqual",
-                  value real { 951347305389222, 10, -13 }
-                },
-                {
-                  id str "matches",
-                  value int 2488
-                },
-                {
-                  id str "identity",
-                  value real { 931137724550898, 10, -15 }
-                },
-                {
-                  id str "splices",
-                  value int 0
-                },
-                {
-                  id str "consensus_splices",
-                  value int 0
-                },
-                {
-                  id str "product_coverage",
-                  value real { 1, 10, 0 }
-                },
-                {
-                  id str "exon_identity",
-                  value real { 931137724550898, 10, -15 }
                 }
               },
               segs spliced {
@@ -15275,34 +14999,6 @@ Bioseq-set ::= {
                 {
                   id str "align_length",
                   value int 219
-                },
-                {
-                  id str "num_ident",
-                  value int 126
-                },
-                {
-                  id str "num_mismatch",
-                  value int 178
-                },
-                {
-                  id str "gap_count",
-                  value int 1
-                },
-                {
-                  id str "pct_identity_gap",
-                  value real { 402555910543131, 10, -13 }
-                },
-                {
-                  id str "pct_identity_ungap",
-                  value real { 414473684210526, 10, -13 }
-                },
-                {
-                  id str "pct_coverage",
-                  value real { 539007092198582, 10, -13 }
-                },
-                {
-                  id str "pct_coverage_hiqual",
-                  value real { 539007092198582, 10, -13 }
                 }
               },
               segs spliced {
