@@ -402,7 +402,13 @@ static const TScoreNamePair sc_ScoreNames[] = {
     { CSeq_align::eScore_PercentCoverage, "pct_coverage" },
     { CSeq_align::eScore_SumEValue,       "sum_e" },
     { CSeq_align::eScore_CompAdjMethod,   "comp_adjustment_method" },
-    { CSeq_align::eScore_HighQualityPercentCoverage, "pct_coverage_hiqual" }
+    { CSeq_align::eScore_HighQualityPercentCoverage, "pct_coverage_hiqual" },
+    { CSeq_align::eScore_Matches,         "matches"},
+    { CSeq_align::eScore_OverallIdentity, "identity"},
+    { CSeq_align::eScore_Splices,         "splices"},
+    { CSeq_align::eScore_ConsensusSplices, "consensus_splices"},
+    { CSeq_align::eScore_ProductCoverage, "product_coverage"},
+    { CSeq_align::eScore_ExonIdentity,    "exon_identity"}
 };
 
 static const char* const sc_ScoreHelpText[] = {
@@ -422,7 +428,13 @@ static const char* const sc_ScoreHelpText[] = {
     "Percentage of query sequence aligned to subject (0.0-100.0)",
     "Blast-style sum_e",
     "Composition-adjustment method from BLAST",
-    "Percent coverage (0.0-100.0) of high quality region"
+    "Percent coverage (0.0-100.0) of high quality region",
+    "Count of identities",
+    "Percent identity; count gaps within exons and introns on product",
+    "Number of splices; 2 x number of introns that have no gap on product",
+    "Number of splices with consensus splice sequence",
+    "Percentage of query sequence aligned to subject (0.0-100.0)",
+    "Percent identity; count gaps within exons only"
 };
 
 static const bool sc_IsInteger[] = {
@@ -443,6 +455,12 @@ static const bool sc_IsInteger[] = {
     false,  // eScore_SumEValue
     false,  // eScore_CompAdjMethod
     false,  // eScore_HighQualityPercentCoverage
+    true,   // eScore_Matches
+    false,  // eScore_OverallIdentity
+    true,   // eScore_Splices
+    true,   // eScore_ConsensusSplices
+    false,  // eScore_ProductCoverage
+    false   // eScore_ExonIdentity
 };
 
 
@@ -464,6 +482,11 @@ const CSeq_align::TScoreNameMap &CSeq_align::ScoreNameMap()
 
         return m_ScoreNameMap;
     }
+}
+
+string CSeq_align::ScoreName(EScoreType score)
+{
+    return sc_ScoreNames[score].second;
 }
 
 string CSeq_align::HelpText(EScoreType score)

@@ -301,15 +301,9 @@ public:
 
     // alignment statistics
 
-    enum ECompartmentScores {
-        eCS_Matches             = 6,
-        eCS_OverallIdentity     = 10,
+    enum ECDSCompartmentScores {
         eCS_InframeMatches      = 20,
         eCS_InframeIdentity     = 22,
-        eCS_Splices             = 23,
-        eCS_ConsensusSplices    = 24,
-        eCS_ProductCoverage     = 27,
-        eCS_ExonIdentity        = 28,
         eCS_CombinationIdentity = 32
     };
 

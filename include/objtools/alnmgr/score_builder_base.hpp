@@ -113,6 +113,16 @@ public:
                                 const CRangeCollection<TSeqPos> &ranges,
                                 CSeq_align::EScoreType score);
 
+    /// Compute the six splign scores. Add them to scores object, or, if it is
+    /// not provided, to alignment itself
+    void AddSplignScores(const CSeq_align& align, CSeq_align::TScore &scores);
+
+    void AddSplignScores(CSeq_align& align)
+    {
+        AddSplignScores(align, align.SetScore());
+    }
+
+
     /// Compute percent identity (range 0-100)
     enum EPercentIdentityType {
         eGapped,    //< count gaps as mismatches

@@ -176,6 +176,14 @@ public:
         //< percent coverage (0.0-100.0) of high quality region (high_quality_pct_coverage)
         eScore_HighQualityPercentCoverage,
 
+        //< Scores calculated by Splign
+        eScore_Matches,
+        eScore_OverallIdentity,
+        eScore_Splices,
+        eScore_ConsensusSplices,
+        eScore_ProductCoverage,
+        eScore_ExonIdentity,
+
         //< generic percent identity is an alias for gapped percent identity
         //< (i.e., BLAST-style percent identity)
         eScore_PercentIdentity = eScore_PercentIdentity_Gapped
@@ -346,6 +354,8 @@ public:
     CRef<CUser_object> FindExt(const string& ext_type);
 
     static const TScoreNameMap &ScoreNameMap();
+
+    static string ScoreName(EScoreType score);
 
     static string HelpText(EScoreType score);
 

@@ -64,6 +64,8 @@
 
 #include <objtools/lds2/lds2.hpp>
 #include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
+
+#include <objtools/alnmgr/score_builder_base.hpp>
     
 #include <algorithm>
 #include <memory>
@@ -1031,29 +1033,13 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
 
         CRef<CSeq_align_set> sas (m_Formatter->AsSeqAlignSet(&splign_results,
                                                              flags));
-        //add some scores
-        CSplign::TScoreSets scores;
-        bool not_empty (sas.GetPointer() && sas->CanGet() && sas->Get().size());
-        if(not_empty) CSplign::s_ComputeStats(sas, &scores);
         
-        CSplign::TScoreSets::iterator   score_it = scores.begin();
-        CSeq_align_set::Tdata::iterator align_it = sas->Set().begin();
-        for ( ;
-              score_it != scores.end()  &&
-                  align_it != sas->Set().end();
-              ++score_it, ++align_it) {
-            
-            NON_CONST_ITERATE (CScore_set::Tdata, i, (*score_it)->Set()) {
-                CRef<CScore> score(*i);
-                if(score->GetId().GetId() == CSplign::eCS_ConsensusSplices) {
-                    score->SetId().SetStr("consensus_splices");
-                    (*align_it)->SetScore().push_back(score);
-                }
-                else if(score->GetId().GetId() == CSplign::eCS_Splices) {
-                    score->SetId().SetStr("splices");
-                    (*align_it)->SetScore().push_back(score);
-                }
-            }
+        CScoreBuilderBase score_builder;
+        NON_CONST_ITERATE (CSeq_align_set::Tdata, align_it, sas->Set()) {
+            score_builder.AddScore(*m_Splign->GetScope(), **align_it,
+                                   CSeq_align::eScore_ConsensusSplices);
+            score_builder.AddScore(*m_Splign->GetScope(), **align_it,
+                                   CSeq_align::eScore_Splices);
         }
        
 

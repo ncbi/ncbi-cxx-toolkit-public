@@ -190,6 +190,16 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
         alignment.GetNamedScore(CSeq_align::eScore_NegativeCount,
                                 kExpectedNegativeCount);
 
+        map<string,double> expected_scores;
+        ITERATE (CSeq_align::TScore, score_it, alignment.GetScore()) {
+            if ((*score_it)->GetId().IsStr()) {
+                expected_scores[(*score_it)->GetId().GetStr()] =
+                    (*score_it)->GetValue().IsReal()
+                        ? (*score_it)->GetValue().GetReal()
+                        : (double)(*score_it)->GetValue().GetInt();
+            }
+        }
+
         /// reset scores to avoid any taint in score generation
         alignment.ResetScore();
 
@@ -380,6 +390,26 @@ BOOST_AUTO_TEST_CASE(Test_Score_Builder)
             LOG_POST(Error << "Verifying score: num_negatives: "
                      << kExpectedNegativeCount << " == " << actual);
             BOOST_CHECK_EQUAL(kExpectedNegativeCount, actual);
+        }
+
+        if (alignment.GetSegs().IsSpliced() &&
+            alignment.GetSegs().GetSpliced().GetProduct_type() ==
+                CSpliced_seg::eProduct_type_transcript)
+        {
+            score_builder.AddSplignScores(alignment);
+
+            ITERATE (CSeq_align::TScore, score_it, alignment.GetScore()) {
+                string score_name = (*score_it)->GetId().GetStr();
+                double actual = 
+                        (*score_it)->GetValue().IsReal()
+                            ? (*score_it)->GetValue().GetReal()
+                            : (double)(*score_it)->GetValue().GetInt();
+                double expected = expected_scores[score_name];
+                LOG_POST(Error << "Verifying score: " << score_name << ": "
+                          << expected << " == " << actual);
+
+                BOOST_CHECK_CLOSE(expected, actual, 1e-12);
+            }
         }
     }
 }
