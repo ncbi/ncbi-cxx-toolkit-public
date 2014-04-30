@@ -17,4 +17,4 @@ CHECK_CMD = score_builder_unit_test -data-in data/seqalign.asn
 CHECK_COPY = data
 
 
-WATCHERS = dicuccio
+WATCHERS = dicuccio mozese2
