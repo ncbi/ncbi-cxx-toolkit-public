@@ -421,8 +421,8 @@ CDBConnectionFactory::MakeDBConnection(
         t_con->SetTimeout(query_timeout);
     }
 
-    handler->Flush((t_con == NULL) ? eDiagSevMax : eDiag_Warning);
     x_LogConnection(opening_ctx, t_con, params);
+    handler->Flush((t_con == NULL) ? eDiagSevMax : eDiag_Warning);
 
     return t_con;
 }
