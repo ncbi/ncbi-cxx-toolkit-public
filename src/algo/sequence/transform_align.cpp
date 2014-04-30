@@ -457,7 +457,7 @@ RecalculateScores(CSeq_align &align, bool exon_idty_OK)
             score_builder.AddScore(*m_scope, align, *score);
         }
         if (align.GetSegs().GetSpliced().GetProduct_type() ==
-            CSpliced_seg::CSpliced_seg::eProduct_type_transcript)
+            CSpliced_seg::eProduct_type_transcript)
         {
             score_builder.AddSplignScores(align);
         }
