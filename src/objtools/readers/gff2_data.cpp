@@ -512,14 +512,24 @@ bool CGff2Record::x_MigrateAttributes(
             pSubSource->SetSubtype(CSubSource::eSubtype_other);
             pSubSource->SetName("is_circular");
             pFeature->SetData().SetBiosrc().SetSubtype().push_back(pSubSource);
-            attrs_left.erase(it);
         }
     }
 
-    //it = attrs_left.find("Name");
-    //if (it != attrs_left.end()) {
-    //    attrs_left.erase(it); //ignore
-    //}
+    it = attrs_left.find("Name");
+    if (it != attrs_left.end()) {
+        if (0 == NStr::CompareNocase(Type(), "cds")) {
+            CRef<CSeqFeatData> pData(new CSeqFeatData);
+            pData->SetProt().SetName().push_back(it->second);
+            CRef<CSeqFeatXref> pName(new CSeqFeatXref);
+            pName->SetData(*pData);
+            pFeature->SetXref().push_back(pName);
+            attrs_left.erase(it);
+        }
+        if (0 == NStr::CompareNocase(Type(), "mRNA")) {
+            pFeature->SetData().SetRna().SetExt().SetName(it->second);
+            attrs_left.erase(it);
+        }
+    }
 
     it = attrs_left.find("codon_start");
     if (it != attrs_left.end()) {
