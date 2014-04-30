@@ -114,6 +114,12 @@ void CVariationUtilities::CorrectRefAllele(CRef<CVariation_ref>& var, CScope& sc
     CorrectRefAllele(vr,scope,new_ref);
 }
 
+void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, const CSeq_loc& loc, CScope& scope)
+{
+    string new_ref = GetAlleleFromLoc(loc,scope);
+    CorrectRefAllele(vr,scope,new_ref);
+}
+
 void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, CScope& scope, const string& new_ref)
 {
     string old_ref;

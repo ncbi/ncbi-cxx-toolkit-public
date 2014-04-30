@@ -45,6 +45,7 @@ class CVariationUtilities
 public:
     static void CorrectRefAllele(CRef<CVariation>& v, CScope& scope);      
     static void CorrectRefAllele(CRef<CVariation_ref>& var, CScope& scope);    
+    static void CorrectRefAllele(CVariation_ref& vr, const CSeq_loc& loc, CScope& scope);
     static void CorrectRefAllele(CRef<CSeq_annot>& v, CScope& scope);
     static void CorrectRefAllele(CVariation_ref& var, CScope& scope, const string& new_ref); 
     static bool IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope);
