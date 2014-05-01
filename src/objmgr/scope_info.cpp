@@ -860,13 +860,17 @@ CTSE_ScopeInfo::~CTSE_ScopeInfo(void)
 
 CTSE_ScopeInfo::TBlobOrder CTSE_ScopeInfo::GetBlobOrder(void) const
 {
-    if ( CanBeUnloaded() ) {
+    if ( !m_TSE_Lock ) {
         _ASSERT(m_UnloadedInfo.get());
         return m_UnloadedInfo->m_BlobOrder;
     }
     else {
         _ASSERT(m_TSE_Lock);
-        return m_TSE_Lock->GetBlobOrder();
+        TBlobOrder order = m_TSE_Lock->GetBlobOrder();
+        if ( m_UnloadedInfo && m_UnloadedInfo->m_BlobOrder != order ) {
+            m_UnloadedInfo->m_BlobOrder = order;
+        }
+        return order;
     }
 }
 
