@@ -47,9 +47,11 @@ public:
     static void CorrectRefAllele(CRef<CVariation_ref>& var, CScope& scope);    
     static void CorrectRefAllele(CVariation_ref& vr, const CSeq_loc& loc, CScope& scope);
     static void CorrectRefAllele(CRef<CSeq_annot>& v, CScope& scope);
-    static void CorrectRefAllele(CVariation_ref& var, CScope& scope, const string& new_ref); 
+    static void CorrectRefAllele(CVariation_ref& var, const string& new_ref); 
     static bool IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope);
-    static int GetVariationType(const CVariation_ref& vr, CScope& scope);
+    static int GetVariationType(const CVariation_ref& vr);
+    static void GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt);
+
 private:
     static string GetRefAlleleFromVP(CRef<CVariantPlacement> vp, CScope& scope, TSeqPos length);
     static string GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);

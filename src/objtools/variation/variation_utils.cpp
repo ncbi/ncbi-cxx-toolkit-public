@@ -79,7 +79,6 @@ void CVariationUtilities::CorrectRefAllele(CRef<CVariation>& v, CScope& scope)
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna() 
-                //&& (*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
                 && (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity
                 )
             {
@@ -101,7 +100,7 @@ void CVariationUtilities::CorrectRefAllele(CRef<CSeq_annot>& annot, CScope& scop
     {
         CVariation_ref& vr = (*feat)->SetData().SetVariation();
         string new_ref = GetAlleleFromLoc((*feat)->SetLocation(),scope);
-        CorrectRefAllele(vr,scope,new_ref);
+        CorrectRefAllele(vr,new_ref);
     }
 }
 
@@ -111,16 +110,16 @@ void CVariationUtilities::CorrectRefAllele(CRef<CVariation_ref>& var, CScope& sc
     if (!vr.IsSetLocation())
         NCBI_THROW(CException, eUnknown, "Location is not set in input Variation-ref");
     string new_ref = GetAlleleFromLoc(vr.GetLocation(),scope);
-    CorrectRefAllele(vr,scope,new_ref);
+    CorrectRefAllele(vr,new_ref);
 }
 
 void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, const CSeq_loc& loc, CScope& scope)
 {
     string new_ref = GetAlleleFromLoc(loc,scope);
-    CorrectRefAllele(vr,scope,new_ref);
+    CorrectRefAllele(vr,new_ref);
 }
 
-void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, CScope& scope, const string& new_ref)
+void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, const string& new_ref)
 {
     string old_ref;
     if (!vr.IsSetData() || !vr.GetData().IsSet() || !vr.GetData().GetSet().IsSetVariations())
@@ -131,7 +130,6 @@ void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, CScope& scope, co
             NCBI_THROW(CException, eUnknown, "Variation-inst is not set in input Seq-annot");
         if (
              (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity && 
-             //(*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference) &&
             (*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
             && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
             && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
@@ -161,7 +159,6 @@ void CVariationUtilities::FixAlleles(CVariation_ref& vr, string old_ref, string 
             string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
             if (!(
                     (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
-                    //(*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
                     ))
             {
                 type = (*inst)->SetData().SetInstance().SetType();
@@ -193,12 +190,9 @@ void CVariationUtilities::FixAlleles(CVariation_ref& vr, string old_ref, string 
     }
 }
 
-// Taken from variation_util2.cpp
 string CVariationUtilities::GetRefAlleleFromVP(CRef<CVariantPlacement> vp, CScope& scope, TSeqPos length) 
 {
     string new_ref;
-//    TSeqPos length = vp->GetSeq().GetLength();
-    
     if(   (vp->IsSetStart_offset() && vp->GetStart_offset() != 0)
           || (vp->IsSetStop_offset()  && vp->GetStop_offset()  != 0))
         NCBI_THROW(CException, eUnknown, "Can't get sequence for an offset-based location");
@@ -253,10 +247,7 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
             {
                 string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-                if (!(
-                         (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
-                         //(*inst)->GetData().GetInstance().IsSetObservation() && (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
-                        ))
+                if (! (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity )
                 {
                     type = (*inst)->SetData().SetInstance().SetType();
                     if (old_ref  == a) add_old_ref = false;
@@ -308,8 +299,6 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wron
         {
             if ((*inst)->IsSetData() && (*inst)->GetData().IsInstance() && 
                 (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity && 
-                // (*inst)->GetData().GetInstance().IsSetObservation() && 
-                //(int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference) &&
                 (*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
                 && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
@@ -336,7 +325,7 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wron
         return (wrong_ref == correct_ref);
 }
 
-int CVariationUtilities::GetVariationType(const CVariation_ref& vr, CScope& scope)
+int CVariationUtilities::GetVariationType(const CVariation_ref& vr)
 {
     set<int> types;
     switch(vr.GetData().Which())
@@ -358,6 +347,58 @@ int CVariationUtilities::GetVariationType(const CVariation_ref& vr, CScope& scop
         return *types.begin();
     
     return  CVariation_inst::eType_other;
+}
+
+void CVariationUtilities::GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt)
+{
+    ref.clear();
+    alt.clear();
+    switch (vr.GetData().Which())
+    {
+    case  CVariation_Base::C_Data::e_Set :
+        for (CVariation_ref::TData::TSet::TVariations::const_iterator inst_it = vr.GetData().GetSet().GetVariations().begin(); inst_it != vr.GetData().GetSet().GetVariations().end(); ++inst_it)
+            if ( (*inst_it)->IsSetData() && (*inst_it)->GetData().IsInstance())
+            {
+                const CVariation_inst &inst = (*inst_it)->GetData().GetInstance();
+                int type = inst.GetType();
+                if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
+                    && inst.GetDelta().front()->GetSeq().IsLiteral() 
+                    && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+                    && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+                {
+                    string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                    if (!a.empty())
+                    {
+                        if (type == CVariation_inst::eType_identity )
+                            ref = a;
+                        else if (type != CVariation_inst::eType_del) 
+                            alt.push_back(a);
+                    }
+                }
+            }
+        break;
+    case  CVariation_Base::C_Data::e_Instance :
+    {
+        const CVariation_inst &inst = vr.GetData().GetInstance();
+        int type = inst.GetType();
+        if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
+            && inst.GetDelta().front()->GetSeq().IsLiteral() 
+            && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+            && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+        {
+            string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+            if (!a.empty())
+            {
+                if (type == CVariation_inst::eType_identity )
+                    ref = a;
+                else if (type != CVariation_inst::eType_del) 
+                    alt.push_back(a);
+            }
+        }
+        break;
+    }
+    default : break;
+    }           
 }
 
 // Variation Normalization
