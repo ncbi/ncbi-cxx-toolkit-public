@@ -1,3 +1,11 @@
+Release 4.17.1 cloned from 4.17.0
+
+Improvements:
+    * NetSchedule -- GET2 to understand "job groups" (JIRA: CXX-4800)
+    * NetSchedule: incorrect affinity handling (JIRA: CXX-4888)
+    * New worker node state: cleared (JIRA: CXX-4892)
+
+
 Release 4.17.0 based on TRUNK (2014-04-09)
 
 Improvements:
