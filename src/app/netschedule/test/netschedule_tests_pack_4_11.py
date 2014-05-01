@@ -601,7 +601,7 @@ class Scenario312( TestBase ):
 
         execAny( ns_client,
                  'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0 '
-                 'port=9007 timeout=3000' )
+                 'port=9007 timeout=4' )
 
         info = getNotificationInfo( ns_admin )
         if info[ 'client_node' ] != 'node1':
