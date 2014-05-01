@@ -783,7 +783,7 @@ inline
 bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
 {
     if ( m_Seq_annot != ref.m_Seq_annot ) {
-        return m_Seq_annot < ref.m_Seq_annot;
+        return m_Seq_annot.OrderedBefore(ref.m_Seq_annot);
     }
     return m_AnnotIndex < ref.m_AnnotIndex;
 }
