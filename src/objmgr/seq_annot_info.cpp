@@ -165,6 +165,7 @@ void CSeq_annot_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 
 void CSeq_annot_Info::x_TSEAttachContents(CTSE_Info& tse)
 {
+    SetBioObjectId(tse.x_RegisterBioObject(*this));
     CRef<CSeq_annot_SNP_Info> snp_info = tse.x_GetSNP_Info(m_Object);
     if ( snp_info ) {
         _ASSERT(!m_SNP_Info);
@@ -193,6 +194,8 @@ void CSeq_annot_Info::x_TSEDetachContents(CTSE_Info& tse)
         x_SetDirtyAnnotIndex();
     }
     TParent::x_TSEDetachContents(tse);
+    tse.x_UnregisterBioObject(*this);
+    SetBioObjectId(CBioObjectId());
 }
 
 
