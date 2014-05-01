@@ -321,29 +321,6 @@ CNSAffinityRegistry::GetAffinityStatistics(const CJobStatusTracker &  status_tra
 
 
 TNSBitVector
-CNSAffinityRegistry::GetJobsWithAffinity(const TNSBitVector &  aff_ids) const
-{
-    TNSBitVector                            result;
-    TNSBitVector::enumerator                aff_id_en = aff_ids.first();
-    unsigned int                            aff_id;
-    map< unsigned int,
-         SNSJobsAffinity >::const_iterator  found;
-    CMutexGuard                             guard(m_Lock);
-
-    for (; aff_id_en.valid(); ++aff_id_en) {
-        aff_id = *aff_id_en;
-        if (aff_id == 0)
-            continue;
-
-        found = m_JobsAffinity.find(aff_id);
-        if (found != m_JobsAffinity.end())
-            result |= (found->second.m_Jobs);
-    }
-    return result;
-}
-
-
-TNSBitVector
 CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 {
     if (aff_id == 0)

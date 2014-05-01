@@ -664,6 +664,20 @@ CNSNotificationList::AddToQueueResumedNotifications(unsigned int  address,
 }
 
 
+CNSPreciseTime
+CNSNotificationList::GetPassiveNotificationLifetime(unsigned int  address,
+                                                    unsigned short  port) const
+{
+    CMutexGuard     guard(m_ListenersLock);
+    for (list<SNSNotificationAttributes>::const_iterator  k = m_PassiveListeners.begin();
+         k != m_PassiveListeners.end(); ++k) {
+        if (k->m_Address == address && k->m_Port == port)
+            return k->m_Lifetime;
+    }
+    return CNSPreciseTime();
+}
+
+
 void
 CNSNotificationList::x_SendNotificationPacket(unsigned int    address,
                                               unsigned short  port,

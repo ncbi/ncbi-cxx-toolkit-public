@@ -126,8 +126,8 @@ class CNSAffinityRegistry
                                            unsigned int    job_id,
                                            unsigned int    client_id);
         TNSBitVector  ResolveAffinities(const list< string > &  tokens);
-        list< SAffinityStatistics >  GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const;
-        TNSBitVector  GetJobsWithAffinity(const TNSBitVector &  aff_ids) const;
+        list< SAffinityStatistics >
+        GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const;
         TNSBitVector  GetJobsWithAffinity(unsigned int  aff_id) const;
         TNSBitVector  GetRegisteredAffinities(void) const;
         void  RemoveJobFromAffinity(unsigned int  job_id, unsigned int  aff_id);
@@ -162,16 +162,18 @@ class CNSAffinityRegistry
         unsigned int  CheckRemoveCandidates(void);
 
     private:
-        size_t x_RemoveClientFromAffinities(unsigned int          client_id,
-                                            const TNSBitVector &  aff_ids,
-                                            bool                  is_wait_client);
+        size_t
+        x_RemoveClientFromAffinities(unsigned int          client_id,
+                                     const TNSBitVector &  aff_ids,
+                                     bool                  is_wait_client);
         void x_Clear(void);
         void x_DeleteAffinity(unsigned int                   aff_id,
                               map<unsigned int,
                                   SNSJobsAffinity>::iterator found_aff);
 
     private:
-        SAffinityDictDB *       m_AffDictDB;    // DB to store aff id -> aff token
+        SAffinityDictDB *       m_AffDictDB;    // DB to store
+                                                // aff id -> aff token map
 
         map< const string *,
              unsigned int,

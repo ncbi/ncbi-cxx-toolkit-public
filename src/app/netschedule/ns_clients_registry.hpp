@@ -47,6 +47,7 @@ BEGIN_NCBI_SCOPE
 class CQueue;
 class CNSAffinityRegistry;
 class CJobStatusTracker;
+class CNSNotificationList;
 
 
 // The CNSClientsRegistry serves all the queue clients.
@@ -128,11 +129,11 @@ class CNSClientsRegistry
         bool  IsPreferredByAny(unsigned int  aff_id) const;
         string  GetNodeName(unsigned int  id) const;
         bool  GetAffinityReset(const CNSClientId &   client) const;
-        vector< pair< unsigned int, unsigned short > >
-                Purge(const CNSPreciseTime &  current_time,
-                      const CNSPreciseTime &  timeout,
-                      CNSAffinityRegistry &   aff_registry,
-                      bool                    is_log);
+        void  Purge(const CNSPreciseTime &  current_time,
+                    const CNSPreciseTime &  timeout,
+                    CNSAffinityRegistry &   aff_registry,
+                    CNSNotificationList &   notif_registry,
+                    bool                    is_log);
         void SetBlacklistTimeout(const CNSPreciseTime &  blacklist_timeout)
         { m_BlacklistTimeout = blacklist_timeout; }
         void RegisterSocketWriteError(const CNSClientId &  client);

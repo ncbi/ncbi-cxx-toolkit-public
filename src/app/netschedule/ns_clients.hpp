@@ -121,8 +121,8 @@ class CNSClientId
         string              m_ClientHost;     // Client host name if passed in
                                               // the handshake line.
 
-        TNSCommandChecks    m_PassedChecks;   // What checks the client has passed
-                                              // successfully
+        TNSCommandChecks    m_PassedChecks;   // What checks the client has
+                                              // passed successfully
 
         // 0 for old style clients
         // non 0 for new style clients.
@@ -153,11 +153,16 @@ class CNSClient
             eReader     = 4
         };
 
+        enum ENSClientState {
+            eActive = 1,
+            eStale  = 2,
+            eQuit   = 4
+        };
+
     public:
         CNSClient();
         CNSClient(const CNSClientId &  client_id,
                   CNSPreciseTime *     blacklist_timeout);
-        bool Clear(void);
         TNSBitVector GetRunningJobs(void) const
         { return m_RunningJobs; }
         TNSBitVector GetReadingJobs(void) const
@@ -166,14 +171,10 @@ class CNSClient
         bool IsJobBlacklisted(unsigned int  job_id) const;
         void SetWaitPort(unsigned short  port)
         { m_WaitPort = port; }
+        unsigned short GetWaitPort(void) const
+        { return m_WaitPort; }
         string GetSession(void) const
         { return m_Session; }
-        CNSPreciseTime GetRegistrationTime(void) const
-        { return m_RegistrationTime; }
-        CNSPreciseTime GetSessionStartTime(void) const
-        { return m_SessionStartTime; }
-        CNSPreciseTime GetSessionResetTime(void) const
-        { return m_SessionResetTime; }
         CNSPreciseTime GetLastAccess(void) const
         { return m_LastAccess; }
         void RegisterSocketWriteError(void)
@@ -190,11 +191,14 @@ class CNSClient
         void UnregisterRunningJob(unsigned int  job_id);
         void UnregisterReadingJob(unsigned int  job_id);
 
+        bool Clear(void);
         bool Touch(const CNSClientId &  client_id,
                    TNSBitVector &       running_jobs,
                    TNSBitVector &       reading_jobs,
                    bool &               session_was_reset,
                    string &             old_session);
+        bool Purge(CNSAffinityRegistry &   aff_registry);
+
         string Print(const string &               node_name,
                      const CQueue *               queue,
                      const CNSAffinityRegistry &  aff_registry,
@@ -209,6 +213,9 @@ class CNSClient
         { m_Type |= type_to_append; }
         TNSBitVector  GetPreferredAffinities(void) const
         { return m_Affinities; }
+        ENSClientState GetState(void) const
+        { return m_State; }
+
         void  AddPreferredAffinities(const TNSBitVector &  aff);
         bool  AddPreferredAffinity(unsigned int  aff);
         void  RemovePreferredAffinities(const TNSBitVector &  aff);
@@ -227,22 +234,16 @@ class CNSClient
 
         bool  GetAffinityReset(void) const
         { return m_AffReset; }
-        void  SetAffinityReset(bool  value)
-        { m_AffReset = value; }
-        bool  AnyAffinity(void) const
-        { return m_Affinities.any(); }
         bool  AnyWaitAffinity(void) const
         { return m_WaitAffinities.any(); }
         unsigned int  GetPeerAddress(void) const
         { return m_Addr; }
-        void SetCleared(bool  value)
-        { m_Cleared = value; }
 
         void  CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
         int  SetClientData(const string &  data, int  data_version);
 
     private:
-        bool            m_Cleared;        // Set to true when CLRN is received
+        ENSClientState  m_State;          // Client state
                                           // If true => m_Session == "n/a"
         unsigned int    m_Type;           // bit mask of ENSClientType
         unsigned int    m_Addr;           // Client peer address
@@ -273,17 +274,18 @@ class CNSClient
                                             // waits for on WGET
         size_t          m_NumberOfSubmitted;// Number of submitted jobs
         size_t          m_NumberOfRead;     // Number of jobs given for reading
-        size_t          m_NumberOfRun;      // Number of jobs given for executing
-        bool            m_AffReset;         // true => affinities were reset due to
-                                            // client inactivity timeout
+        size_t          m_NumberOfRun;      // Number of jobs given for
+                                            // executing
+        bool            m_AffReset;         // true => affinities were reset due
+                                            // to client inactivity timeout
         size_t          m_NumberOfSockErrors;
 
         CNSPreciseTime *    m_BlacklistTimeout;
         mutable
         map<unsigned int,
             CNSPreciseTime>
-                        m_BlacklistLimits;  // job id -> last second the job is in
-                                            // the blacklist
+                        m_BlacklistLimits;  // job id -> last second the job is
+                                            // in the blacklist
 
         string  x_TypeAsString(void) const;
         void    x_AddToBlacklist(unsigned int  job_id);

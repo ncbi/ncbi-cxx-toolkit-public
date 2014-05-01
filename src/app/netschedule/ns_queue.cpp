@@ -489,11 +489,12 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
 }
 
 
-unsigned int  CQueue::SubmitBatch(const CNSClientId &             client,
-                                  vector< pair<CJob, string> > &  batch,
-                                  const string &                  group,
-                                  bool                            logging,
-                                  CNSRollbackInterface * &        rollback_action)
+unsigned int
+CQueue::SubmitBatch(const CNSClientId &             client,
+                    vector< pair<CJob, string> > &  batch,
+                    const string &                  group,
+                    bool                            logging,
+                    CNSRollbackInterface * &        rollback_action)
 {
     unsigned int    batch_size = batch.size();
     unsigned int    job_id = GetNextJobIdForBatch(batch_size);
@@ -2919,19 +2920,10 @@ unsigned int  CQueue::PurgeGroups(void)
 void  CQueue::PurgeWNodes(const CNSPreciseTime &  current_time)
 {
     // Clears the worker nodes affinities if the workers are inactive for
-    // certain time
+    // the configured timeout
     CFastMutexGuard     guard(m_OperationLock);
-
-    vector< pair< unsigned int,
-                  unsigned short > >  notif_to_reset =
-                                        m_ClientsRegistry.Purge(
-                                                current_time, m_WNodeTimeout,
-                                                m_AffinityRegistry,
-                                                m_Log);
-    for (vector< pair< unsigned int,
-                       unsigned short > >::const_iterator  k = notif_to_reset.begin();
-         k != notif_to_reset.end(); ++k)
-        m_NotificationsList.UnregisterListener(k->first, k->second);
+    m_ClientsRegistry.Purge(current_time, m_WNodeTimeout,
+                            m_AffinityRegistry, m_NotificationsList, m_Log);
 }
 
 

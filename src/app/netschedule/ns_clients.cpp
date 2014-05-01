@@ -188,7 +188,7 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
 
 // This constructor is for the map<> container
 CNSClient::CNSClient() :
-    m_Cleared(false),
+    m_State(eActive),
     m_Type(0),
     m_Addr(0),
     m_ControlPort(0),
@@ -221,7 +221,7 @@ CNSClient::CNSClient() :
 
 CNSClient::CNSClient(const CNSClientId &  client_id,
                      CNSPreciseTime *     blacklist_timeout) :
-    m_Cleared(false),
+    m_State(eActive),
     m_Type(0),
     m_Addr(client_id.GetAddress()),
     m_ControlPort(client_id.GetControlPort()),
@@ -261,10 +261,11 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
 }
 
 
+// Used when CLRN is received
 // Returns true if there was at least something in the preferred affinites list
 bool CNSClient::Clear(void)
 {
-    m_Cleared = true;
+    m_State = eQuit;
     m_Session = "";
     m_SessionResetTime = CNSPreciseTime::Current();
 
@@ -279,6 +280,22 @@ bool CNSClient::Clear(void)
     if (m_Affinities.any()) {
         m_Affinities.clear();
         x_AffinitiesOp();
+        return true;
+    }
+    return false;
+}
+
+
+// Used when WN timeout is detected
+bool CNSClient::Purge(CNSAffinityRegistry &   aff_registry)
+{
+    m_State = eStale;
+    m_SessionResetTime = CNSPreciseTime::Current();
+
+    if (m_Affinities.any()) {
+        m_AffReset = true;
+        aff_registry.RemoveClientFromAffinities(m_ID, m_Affinities);
+        ClearPreferredAffinities();
         return true;
     }
     return false;
@@ -406,7 +423,7 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
                       string &             old_session)
 {
     m_LastAccess = CNSPreciseTime::Current();
-    m_Cleared = false;
+    m_State = eActive;
     m_ControlPort = client_id.GetControlPort();
     m_ClientHost = client_id.GetClientHost();
     m_Addr = client_id.GetAddress();
@@ -465,11 +482,15 @@ string CNSClient::Print(const string &               node_name,
 {
     string      buffer;
 
-    buffer += "OK:CLIENT: '" + node_name + "'\n";
-    if (m_Cleared)
-        buffer += "OK:  STATUS: cleared\n";
+    buffer += "OK:CLIENT: '" + node_name + "'\n"
+              "OK:  STATUS: ";
+    if (m_State == eActive)
+        buffer += "active\n";
+    else if (m_State == eStale)
+        buffer += "stale\n";
     else
-        buffer += "OK:  STATUS: active\n";
+        buffer += "quit\n";
+
     buffer += "OK:  PREFERRED AFFINITIES RESET: ";
     if (m_AffReset) buffer += "TRUE\n";
     else            buffer += "FALSE\n";
@@ -477,22 +498,26 @@ string CNSClient::Print(const string &               node_name,
     if (m_LastAccess == CNSPreciseTime())
         buffer += "OK:  LAST ACCESS: n/a\n";
     else
-        buffer += "OK:  LAST ACCESS: " + NS_FormatPreciseTime(m_LastAccess) + "\n";
+        buffer += "OK:  LAST ACCESS: " +
+                  NS_FormatPreciseTime(m_LastAccess) + "\n";
 
     if (m_SessionStartTime == CNSPreciseTime())
         buffer += "OK:  SESSION START TIME: n/a\n";
     else
-        buffer += "OK:  SESSION START TIME: " + NS_FormatPreciseTime(m_SessionStartTime) + "\n";
+        buffer += "OK:  SESSION START TIME: " +
+                  NS_FormatPreciseTime(m_SessionStartTime) + "\n";
 
     if (m_RegistrationTime == CNSPreciseTime())
         buffer += "OK:  REGISTRATION TIME: n/a\n";
     else
-        buffer += "OK:  REGISTRATION TIME: " + NS_FormatPreciseTime(m_RegistrationTime) + "\n";
+        buffer += "OK:  REGISTRATION TIME: " +
+                  NS_FormatPreciseTime(m_RegistrationTime) + "\n";
 
     if (m_SessionResetTime == CNSPreciseTime())
         buffer += "OK:  SESSION RESET TIME: n/a\n";
     else
-        buffer += "OK:  SESSION RESET TIME: " + NS_FormatPreciseTime(m_SessionResetTime) + "\n";
+        buffer += "OK:  SESSION RESET TIME: " +
+                  NS_FormatPreciseTime(m_SessionResetTime) + "\n";
 
     buffer += "OK:  PEER ADDRESS: " + CSocketAPI::gethostbyaddr(m_Addr) + "\n";
 

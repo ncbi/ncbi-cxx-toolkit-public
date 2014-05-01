@@ -182,6 +182,9 @@ class CNSNotificationList
         void AddToQueueResumedNotifications(unsigned int  address,
                                             unsigned short  port,
                                             bool  new_format);
+        CNSPreciseTime
+        GetPassiveNotificationLifetime(unsigned int  address,
+                                       unsigned short  port) const;
 
     private:
         void x_SendNotificationPacket(unsigned int    address,
