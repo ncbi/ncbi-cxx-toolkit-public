@@ -2029,7 +2029,7 @@ CQueryImpl::SetSql(CTempString sql)
 {
     x_CheckCanWork();
 
-    m_Sql = sql;
+    m_Sql = sql.empty() ? CTempString(" ") : sql;
     m_Executed = false;
     m_IsSP = false;
 }
