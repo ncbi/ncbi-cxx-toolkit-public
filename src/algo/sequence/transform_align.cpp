@@ -473,7 +473,7 @@ RecalculateScores(CSeq_align &align)
         if (align.GetSegs().GetSpliced().GetProduct_type() ==
             CSpliced_seg::eProduct_type_transcript)
         {
-            ////score_builder.AddSplignScores(align);
+            score_builder.AddSplignScores(align);
         }
         align.ResetNamedScore("weighted_identity");
     }
