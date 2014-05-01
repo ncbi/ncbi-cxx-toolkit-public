@@ -77,6 +77,40 @@ CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
     return it->second;
 }
 
+const char* CNetScheduleException::GetErrCodeString() const
+{
+    switch (GetErrCode()) {
+    case eInternalError:       return "eInternalError";
+    case eProtocolSyntaxError: return "eProtocolSyntaxError";
+    case eAuthenticationError: return "eAuthenticationError";
+    case eKeyFormatError:      return "eKeyFormatError";
+    case eJobNotFound:         return "eJobNotFound";
+    case eGroupNotFound:       return "eGroupNotFound";
+    case eAffinityNotFound:    return "eAffinityNotFound";
+    case eInvalidJobStatus:    return "eInvalidJobStatus";
+    case eUnknownQueue:        return "eUnknownQueue";
+    case eUnknownQueueClass:   return "eUnknownQueueClass";
+    case eUnknownService:      return "eUnknownService";
+    case eTooManyPendingJobs:  return "eTooManyPendingJobs";
+    case eDataTooLong:         return "eDataTooLong";
+    case eInvalidClient:       return "eInvalidClient";
+    case eClientDataVersionMismatch:
+                               return "eClientDataVersionMismatch";
+    case eAccessDenied:        return "eAccessDenied";
+    case eSubmitsDisabled:     return "eSubmitsDisabled";
+    case eShuttingDown:        return "eShuttingDown";
+    case eDuplicateName:       return "eDuplicateName";
+    case eObsoleteCommand:     return "eObsoleteCommand";
+    case eInvalidParameter:    return "eInvalidParameter";
+    case eInvalidAuthToken:    return "eInvalidAuthToken";
+    case eTooManyPreferredAffinities:
+        return "eTooManyPreferredAffinities";
+    case ePrefAffExpired:      return "ePrefAffExpired";
+    case eTryAgain:            return "eTryAgain";
+    default:                   return CNetServiceException::GetErrCodeString();
+    }
+}
+
 unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
 {
     switch (GetErrCode()) {
@@ -105,6 +139,67 @@ unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
     case eTooManyPreferredAffinities:           return 503;
     case ePrefAffExpired:                       return 404;
     case eTryAgain:                             return 503;
+    }
+}
+
+const char* CNetScheduleException::GetErrCodeDescription() const
+{
+    switch (GetErrCode()) {
+    case eInternalError:
+        return "NetSchedule server internal error";
+    case eProtocolSyntaxError:
+        return "NetSchedule server cannot parse the client command";
+    case eAuthenticationError:
+        return "NetSchedule server received incomplete client authentication";
+    case eJobNotFound:
+        return "The job is not found";
+    case eGroupNotFound:
+        return "The job group is not found";
+    case eAffinityNotFound:
+        return "The job affinity is not found";
+    case eInvalidJobStatus:
+        return "The job status does not support the requested operation";
+    case eUnknownQueue:
+        return "The queue is not found";
+    case eUnknownQueueClass:
+        return "The queue class is not found";
+    case eUnknownService:
+        return "The service is not found";
+    case eDataTooLong:
+        return "The provided data are too long";
+    case eInvalidClient:
+        return "The command requires a non-anonymous client";
+    case eClientDataVersionMismatch:
+        return "The client data cannot be set because the data "
+                "version doesn't match";
+    case eAccessDenied:
+        return "Not enough privileges to perform the requested operation";
+    case eSubmitsDisabled:
+        return "Cannot submit a job because submits are disabled";
+    case eShuttingDown:
+        return "NetSchedule refuses command execution because "
+                "it is shutting down";
+    case eDuplicateName:
+        return "A dynamic queue cannot be created because "
+                "another queue with the same name already exists";
+    case eObsoleteCommand:
+        return "The command is obsolete and will be ignored";
+    case eInvalidParameter:
+        return "Invalid value for a command argument";
+    case eInvalidAuthToken:
+        return "The requested job operation is rejected "
+            "because the provided authorization token is invalid";
+    case eTooManyPreferredAffinities:
+        return "There is no room for a new preferred affinity";
+    case ePrefAffExpired:
+        return "The preferred affinities expired and were reset "
+                "because the worker node did not communicate within "
+                "the timeout. The command execution is refused.";
+    case eTryAgain:
+        return "BerkleyDB has too many incomplete transactions at the moment. "
+                "Try again later.";
+    default:
+        return NULL;
     }
 }
 

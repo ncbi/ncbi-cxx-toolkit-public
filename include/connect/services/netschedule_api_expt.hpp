@@ -91,41 +91,11 @@ public:
         eTryAgain,
     };
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eInternalError:       return "eInternalError";
-        case eProtocolSyntaxError: return "eProtocolSyntaxError";
-        case eAuthenticationError: return "eAuthenticationError";
-        case eKeyFormatError:      return "eKeyFormatError";
-        case eJobNotFound:         return "eJobNotFound";
-        case eGroupNotFound:       return "eGroupNotFound";
-        case eAffinityNotFound:    return "eAffinityNotFound";
-        case eInvalidJobStatus:    return "eInvalidJobStatus";
-        case eUnknownQueue:        return "eUnknownQueue";
-        case eUnknownQueueClass:   return "eUnknownQueueClass";
-        case eUnknownService:      return "eUnknownService";
-        case eTooManyPendingJobs:  return "eTooManyPendingJobs";
-        case eDataTooLong:         return "eDataTooLong";
-        case eInvalidClient:       return "eInvalidClient";
-        case eClientDataVersionMismatch:
-                                   return "eClientDataVersionMismatch";
-        case eAccessDenied:        return "eAccessDenied";
-        case eSubmitsDisabled:     return "eSubmitsDisabled";
-        case eShuttingDown:        return "eShuttingDown";
-        case eDuplicateName:       return "eDuplicateName";
-        case eObsoleteCommand:     return "eObsoleteCommand";
-        case eInvalidParameter:    return "eInvalidParameter";
-        case eInvalidAuthToken:    return "eInvalidAuthToken";
-        case eTooManyPreferredAffinities:
-            return "eTooManyPreferredAffinities";
-        case ePrefAffExpired:      return "ePrefAffExpired";
-        case eTryAgain:            return "eTryAgain";
-        default:                   return CNetServiceException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString() const;
 
     unsigned ErrCodeToHTTPStatusCode() const;
+
+    const char* GetErrCodeDescription() const;
 
     NCBI_EXCEPTION_DEFAULT(CNetScheduleException, CNetServiceException);
 };
