@@ -1,4 +1,4 @@
-Release 4.17.1 cloned from 4.17.0
+Release 4.17.1 cloned from 4.17.0 (2014-05-01)
 
 Improvements:
     * NetSchedule -- GET2 to understand "job groups" (JIRA: CXX-4800)
