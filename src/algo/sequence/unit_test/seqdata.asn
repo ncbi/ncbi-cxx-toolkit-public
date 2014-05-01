@@ -6476,30 +6476,6 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
               dim 2,
               score {
                 {
-                  id str "matches",
-                  value int 3855
-                },
-                {
-                  id str "identity",
-                  value real { 968106479156203, 10, -15 }
-                },
-                {
-                  id str "splices",
-                  value int 42
-                },
-                {
-                  id str "consensus_splices",
-                  value int 40
-                },
-                {
-                  id str "product_coverage",
-                  value real { 970115519839277, 10, -15 }
-                },
-                {
-                  id str "exon_identity",
-                  value real { 997929070670463, 10, -15 }
-                },
-                {
                   id str "pct_identity",
                   value real { 997929070670463, 10, -13 }
                 },
@@ -9747,30 +9723,6 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
               dim 2,
               score {
                 {
-                  id str "matches",
-                  value int 1837
-                },
-                {
-                  id str "identity",
-                  value real { 583545108005083, 10, -15 }
-                },
-                {
-                  id str "splices",
-                  value int 26
-                },
-                {
-                  id str "consensus_splices",
-                  value int 22
-                },
-                {
-                  id str "product_coverage",
-                  value real { 594336621062679, 10, -15 }
-                },
-                {
-                  id str "exon_identity",
-                  value real { 98077949813134, 10, -14 }
-                },
-                {
                   id str "pct_identity",
                   value real { 988697524219591, 10, -13 }
                 },
@@ -11268,30 +11220,6 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
               dim 2,
               score {
                 {
-                  id str "matches",
-                  value int 1837
-                },
-                {
-                  id str "identity",
-                  value real { 583545108005083, 10, -15 }
-                },
-                {
-                  id str "splices",
-                  value int 26
-                },
-                {
-                  id str "consensus_splices",
-                  value int 22
-                },
-                {
-                  id str "product_coverage",
-                  value real { 594336621062679, 10, -15 }
-                },
-                {
-                  id str "exon_identity",
-                  value real { 98077949813134, 10, -14 }
-                },
-                {
                   id str "pct_identity",
                   value real { 988697524219591, 10, -13 }
                 },
@@ -11794,30 +11722,6 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
               type global,
               dim 2,
               score {
-                {
-                  id str "matches",
-                  value int 2488
-                },
-                {
-                  id str "identity",
-                  value real { 931137724550898, 10, -15 }
-                },
-                {
-                  id str "splices",
-                  value int 0
-                },
-                {
-                  id str "consensus_splices",
-                  value int 0
-                },
-                {
-                  id str "product_coverage",
-                  value real { 931511976047904, 10, -15 }
-                },
-                {
-                  id str "exon_identity",
-                  value real { 999598232221776, 10, -15 }
-                },
                 {
                   id str "pct_identity",
                   value real { 999598232221776, 10, -13 }

@@ -473,7 +473,7 @@ const CSeq_align::TScoreNameMap &CSeq_align::ScoreNameMap()
         if (m_ScoreNameMap.empty()) {
             /// initialize map
             for(unsigned score = eScore_Blast;
-                score <= eScore_HighQualityPercentCoverage; ++score)
+                score <= eScore_ExonIdentity; ++score)
                 {
                     m_ScoreNameMap[sc_ScoreNames[score].second] =
                         sc_ScoreNames[score].first;
