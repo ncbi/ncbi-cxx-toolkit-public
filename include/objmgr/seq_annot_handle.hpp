@@ -129,6 +129,8 @@ public:
 
     /// For usage in containers
     bool operator<(const CSeq_annot_Handle& annot) const;
+    /// More stable comparison - takes loading order in account
+    bool OrderedBefore(const CSeq_annot_Handle& annot) const;
 
     /// Get scope this handle belongs to
     CScope& GetScope(void) const;

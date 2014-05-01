@@ -136,6 +136,26 @@ bool CTSE_Handle::IsValid(void) const
 }
 
 
+bool CTSE_Handle::OrderedBefore(const CTSE_Handle& tse) const
+{
+    if ( *this == tse ) {
+        return false;
+    }
+    const CTSE_ScopeInfo& info1 = x_GetScopeInfo();
+    const CTSE_ScopeInfo& info2 = tse.x_GetScopeInfo();
+    CTSE_ScopeInfo::TBlobOrder order1 = info1.GetBlobOrder();
+    CTSE_ScopeInfo::TBlobOrder order2 = info2.GetBlobOrder();
+    if ( order1 != order2 ) {
+        _ASSERT((order1 < order2) || (order2 < order1));
+        return order1 < order2;
+    }
+    if ( info1.GetLoadIndex() != info2.GetLoadIndex() ) {
+        return info1.GetLoadIndex() < info2.GetLoadIndex();
+    }
+    return *this < tse;
+}
+
+
 bool CTSE_Handle::Blob_IsSuppressed(void) const
 {
     return Blob_IsSuppressedTemp()  ||  Blob_IsSuppressedPerm();

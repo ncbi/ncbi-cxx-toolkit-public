@@ -105,6 +105,25 @@ CSeq_annot_EditHandle CSeq_annot_Handle::GetEditHandle(void) const
 }
 
 
+bool CSeq_annot_Handle::OrderedBefore(const CSeq_annot_Handle& h) const
+{
+    if ( *this == h ) {
+        return false;
+    }
+    if ( GetTSE_Handle() != h.GetTSE_Handle() ) {
+        _ASSERT(GetTSE_Handle().OrderedBefore(h.GetTSE_Handle())||
+                h.GetTSE_Handle().OrderedBefore(GetTSE_Handle()));
+        return GetTSE_Handle().OrderedBefore(h.GetTSE_Handle());
+    }
+    if ( x_GetInfo().GetBioObjectId() != h.x_GetInfo().GetBioObjectId() ) {
+        _ASSERT(x_GetInfo().GetBioObjectId()<h.x_GetInfo().GetBioObjectId()||
+                h.x_GetInfo().GetBioObjectId()<x_GetInfo().GetBioObjectId());
+        return x_GetInfo().GetBioObjectId() < h.x_GetInfo().GetBioObjectId();
+    }
+    return *this < h;
+}
+
+
 bool CSeq_annot_Handle::IsNamed(void) const
 {
     return x_GetInfo().GetName().IsNamed();

@@ -71,6 +71,9 @@ public:
     bool operator == (const CBioObjectId& other) const {
         return m_Id == other.m_Id;
     }
+    bool operator != (const CBioObjectId& other) const {
+        return m_Id != other.m_Id;
+    }
     bool operator < (const CBioObjectId& other) const {
         return m_Id < other.m_Id; 
     }

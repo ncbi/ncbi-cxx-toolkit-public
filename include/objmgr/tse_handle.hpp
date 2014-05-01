@@ -88,6 +88,7 @@ public:
     bool operator==(const CTSE_Handle& tse) const;
     bool operator!=(const CTSE_Handle& tse) const;
     bool operator<(const CTSE_Handle& tse) const;
+    bool OrderedBefore(const CTSE_Handle& tse) const;
 
     /// Reset to null state
     void Reset(void);
