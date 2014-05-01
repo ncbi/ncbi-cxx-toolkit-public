@@ -779,5 +779,50 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_GuessTopOverScaffold)
 }
 
 
+
+// Don't match partial chromosome names
+BOOST_AUTO_TEST_CASE(TestCasePartialChromosomeTest)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000001405.13",
+                              CGCClient_GetAssemblyRequest::eLevel_component,
+                              0,
+                              0,
+                              2048, // pseudo
+                              0
+                             )
+    );
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_component;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    
+    CSeq_loc OrigLoc;
+    OrigLoc.SetInt().SetId().SetLocal().SetStr("23-499");
+    OrigLoc.SetInt().SetFrom(50000000);
+    OrigLoc.SetInt().SetTo(50000001);
+    
+    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.IsNull());
+
+    OrigLoc.SetInt().SetId().SetLocal().SetStr("333");
+    Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.IsNull());
+
+    OrigLoc.SetInt().SetId().SetLocal().SetStr("425");
+    Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.IsNull());
+
+}
+
+
+
 BOOST_AUTO_TEST_SUITE_END();
 

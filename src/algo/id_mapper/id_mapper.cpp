@@ -780,7 +780,9 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
         const int OldRole = x_GetRole(*Found->second);
         const int NewRole = x_GetRole(*Seq);
         if (NewRole == SIdSpec::e_Role_NotSet ||
-            (OldRole != SIdSpec::e_Role_NotSet && OldRole >= NewRole)
+            (OldRole != SIdSpec::e_Role_NotSet && OldRole >= NewRole && 
+             (OldRole != eGC_SequenceRole_pseudo_scaffold && 
+              OldRole != eGC_SequenceRole_submitter_pseudo_scaffold) )
            ) {
             return;
         }
@@ -1278,6 +1280,14 @@ CGencollIdMapper::x_FindChromosomeSequence(const CSeq_id& Id, const SIdSpec& Spe
     TIdToSeqMap::const_iterator Found = m_IdToSeqMap.end();
     ITERATE (vector<string>, ChromoIter, m_Chromosomes) {
         if (NStr::Find(IdStr, *ChromoIter) != NPOS) {
+            size_t Start = NStr::Find(IdStr, *ChromoIter);
+            size_t End = Start + ChromoIter->length()-1;
+            if( (Start > 0 && isdigit(IdStr[Start-1])) ||
+                (End+1 < IdStr.length() && isdigit(IdStr[End+1])) ) {
+                // Matching region is in a run of digits, and not
+                // the entire run of digits. Does not count.
+                continue;
+            }
             CRef<CSeq_id> Temp(new CSeq_id());
             Temp->SetLocal().SetStr() = *ChromoIter;
             // If we have a pattern, double check it.
