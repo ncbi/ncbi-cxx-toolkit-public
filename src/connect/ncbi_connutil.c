@@ -1031,14 +1031,14 @@ static const char* x_ClientAddress(const char* client_host,
     assert(client_host);
     strncpy0(addr, client_host, sizeof(addr) - 1);
     if (UTIL_NcbiLocalHostName(addr)  &&  (s = strdup(addr)) != 0)
-        client_host = s;
+        client_host = s;  /*NB: this usually makes client_host insufficient*/
 
-    if (x_IsSufficientAddress(client_host)       ||
-        !(ip = *client_host  &&  !local_host
-          ? SOCK_gethostbyname(client_host)
-          : SOCK_GetLocalHostAddress(eDefault))  ||
-        SOCK_ntoa(ip, addr, sizeof(addr)) != 0   ||
-        !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
+    if ((client_host == c  &&  x_IsSufficientAddress(client_host))
+        ||  !(ip = *c  &&  !local_host
+              ? SOCK_gethostbyname(c)
+              : SOCK_GetLocalHostAddress(eDefault))
+        ||  SOCK_ntoa(ip, addr, sizeof(addr)) != 0
+        ||  !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
         return client_host/*least we can do :-/*/;
     }
 
