@@ -113,6 +113,7 @@ public:
     CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
         const CNcbiEnvironment& client_env,
         const CNetScheduleJob& job,
+        const string& service_name,
         const string& queue_name);
 
     const char* const* GetEnv() const { return &m_Env[0]; }
@@ -125,6 +126,7 @@ private:
 CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
     const CNcbiEnvironment& client_env,
     const CNetScheduleJob& job,
+    const string& service_name,
     const string& queue_name)
 {
     list<string> cln_names;
@@ -166,6 +168,7 @@ CCgiEnvHolder::CCgiEnvHolder(const CRemoteAppLauncher& remote_app_launcher,
             m_EnvValues.push_back(s + "=" + local_env.Get(s));
     }
 
+    m_EnvValues.push_back("NCBI_NS_SERVICE=" + service_name);
     m_EnvValues.push_back("NCBI_NS_QUEUE=" + queue_name);
     m_EnvValues.push_back("NCBI_NS_JID=" + job.job_id);
     m_EnvValues.push_back("NCBI_JOB_AFFINITY=" + job.affinity);
@@ -208,8 +211,11 @@ public:
             return -1;
         }
 
-        CCgiEnvHolder env(m_RemoteAppLauncher, request->GetEnvironment(),
-            job_context.GetJob(), job_context.GetQueueName());
+        CCgiEnvHolder env(m_RemoteAppLauncher,
+                request->GetEnvironment(),
+                job_context.GetJob(),
+                job_context.GetWorkerNode().GetServiceName(),
+                job_context.GetQueueName());
         vector<string> args;
 
         CNcbiStrstream err;

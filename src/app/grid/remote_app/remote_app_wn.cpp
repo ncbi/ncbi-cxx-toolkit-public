@@ -134,6 +134,10 @@ public:
 
             const CNetScheduleJob& job = context.GetJob();
 
+            string service_name_env("NCBI_NS_SERVICE=" +
+                    context.GetWorkerNode().GetServiceName());
+            env.insert(env.begin(), service_name_env.c_str());
+
             string queue_name_env("NCBI_NS_QUEUE=" + context.GetQueueName());
             env.insert(env.begin(), queue_name_env.c_str());
 
