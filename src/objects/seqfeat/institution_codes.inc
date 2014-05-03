@@ -5133,6 +5133,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "RMRC	b	Regional Medical Research Centre",
 "RMS	s	University of Wyoming Herbarium",
 "RMSC	s	Rocky Mountain Forest and Range Experiment Station",
+"RMSCC	c	Roche Molecular Systems Culture Collection",
 "RMWC	s	Randolph-Macon Woman's College, Biology Department",
 "RNG	s	University of Reading",
 "RNMUT	s	Republic Nature Museum of Uzbekistan",
