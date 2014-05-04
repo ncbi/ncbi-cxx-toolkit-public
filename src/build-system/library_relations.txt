@@ -136,6 +136,7 @@ build_config needs $(GPIPE_GENCOLL_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs gpinit
 build_config needs gpinit_access
+build_config needs gpinit_buildinfo
 build_config needs gpipe_xml
 bz2 needs3party $(ORIG_LIBS)
 cache_blob needs $(COMPRESS_LIBS)
@@ -328,7 +329,10 @@ gpinit_access needs gpipe_common
 gpinit_admin needs gc_utils
 gpinit_admin needs gpinit_access
 gpinit_asn_factory needs gpinit
-gpinit_buildinfo needs gpinit
+gpinit_asn_factory needs gpinit_buildinfo
+gpinit_buildinfo needs entrez2cli
+gpinit_buildinfo needs gc_utils
+gpinit_buildinfo needs gpinit_utils
 gpinit_stats_report needs $(GPIPE_COMMON_LIBS)
 gpinit_utils needs $(GPIPE_COMMON_LIBS)
 gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
@@ -340,6 +344,7 @@ gpipe_alloc needs3party $(ORIG_LIBS)
 gpipe_alnutil needs gpipe_objutil
 gpipe_alnutil needs xalgoalignutil
 gpipe_an_base needs gencoll_client
+gpipe_an_base needs gpinit
 gpipe_an_base needs gpinit_buildinfo
 gpipe_an_base needs gpipe_sadb
 gpipe_an_base needs gpipe_type_verifier
@@ -357,6 +362,7 @@ gpipe_common needs xconnect
 gpipe_common needs xmlwrapp
 gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs $(XFORMAT_LIBS)
+gpipe_ftp needs gpinit
 gpipe_ftp needs gpinit_buildinfo
 gpipe_ftp needs xalgoalignutil
 gpipe_ftp needs xobjedit
@@ -364,6 +370,7 @@ gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
 gpipe_ftp_new needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp_new needs $(XFORMAT_LIBS)
+gpipe_ftp_new needs gpinit
 gpipe_ftp_new needs gpinit_buildinfo
 gpipe_ftp_new needs xalgoalignutil
 gpipe_ftp_new needs xobjedit
