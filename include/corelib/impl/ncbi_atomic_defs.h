@@ -117,8 +117,7 @@ extern "C" {
   ((defined(__sparc) && !defined(__sparcv9))  ||  \
    ((defined(__i386) || defined(__sparc) || defined(__x86_64))  &&  \
     !defined(__GLIBCPP__) /* < 3.0 or >= 3.4 */)  &&  \
-   (!defined(__GLIBCXX__)  ||  !defined(NCBI_TCHECK)))  &&  \
-  !defined(NCBI_HAVE_CXX11)
+   (!defined(__GLIBCXX__)  ||  !defined(NCBI_TCHECK)))
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_USE_ASM 1
