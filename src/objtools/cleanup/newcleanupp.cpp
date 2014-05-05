@@ -1403,6 +1403,7 @@ void CNewCleanup_imp::BiosourceBC (
         ChangeMade ( CCleanupChange::eChangeBioSourceOrigin );
     }
 
+
     // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
     if( FIELD_IS_SET(biosrc, Subtype) ) {
         SUBSOURCE_ON_BIOSOURCE_Type::iterator prev = 
@@ -1591,9 +1592,11 @@ void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
             CSubSource& sbs = **it;
             TSUBSOURCE_SUBTYPE chs = GET_FIELD (sbs, Subtype);
             if (CSubSource::NeedsNoText (chs)) {
-                RESET_FIELD (sbs, Name);
-                SET_FIELD (sbs, Name, "");
-                ChangeMade (CCleanupChange::eCleanSubsource);
+                if (sbs.IsSetName() && !NStr::IsBlank(sbs.GetName())) {
+                    RESET_FIELD (sbs, Name);
+                    SET_FIELD (sbs, Name, "");
+                    ChangeMade (CCleanupChange::eCleanSubsource);
+                }
             } else if (chs == NCBI_SUBSOURCE(plastid_name)) {
                 // plasTid
                 if (NStr::EqualNocase (GET_FIELD (sbs, Name), plastid_name)) {
@@ -4684,6 +4687,63 @@ CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQua
     // all other gbquals not appropriate on protein features
     return eAction_Erase;
 }
+
+
+void CNewCleanup_imp::BioSourceEC(CBioSource& biosrc)
+{
+    x_AddEnvSamplOrMetagenomic(biosrc);
+}
+
+
+void CNewCleanup_imp::x_AddEnvSamplOrMetagenomic(CBioSource& biosrc)
+{
+    // add environmental_sample or metagenomic based on lineage or div
+    if ( biosrc.IsSetOrg() && biosrc.GetOrg().IsSetOrgname()) {
+        bool needs_env_sample = false;
+        bool needs_metagenomic = false;
+        if (biosrc.GetOrg().GetOrgname().IsSetLineage()) {
+            string lineage = biosrc.GetOrg().GetOrgname().GetLineage();
+            if (NStr::FindNoCase(lineage, "environmental sample") != string::npos) {
+                needs_env_sample = true;
+            }
+            if (NStr::FindNoCase(lineage, "metagenomes") != string::npos) {
+                needs_metagenomic = true;
+            }
+        }
+        if (biosrc.GetOrg().GetOrgname().IsSetDiv()
+            && NStr::Equal(biosrc.GetOrg().GetOrgname().GetDiv(), "ENV")) {
+            needs_env_sample = true;
+        }
+
+        if (needs_env_sample || needs_metagenomic) {
+            bool has_env_sample = false;
+            bool has_metagenomic = false;
+            if ( biosrc.IsSetSubtype()) {
+                ITERATE(CBioSource::TSubtype, it, biosrc.GetSubtype()) {
+                    if ((*it)->IsSetSubtype()) {
+                        if ((*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                            has_env_sample = true;
+                        }
+                        if ((*it)->GetSubtype() == CSubSource::eSubtype_metagenomic) {
+                            has_metagenomic = true;
+                        }
+                    }
+                }
+            }
+            if (needs_env_sample && !has_env_sample) {
+                CRef<CSubSource> s(new CSubSource(CSubSource::eSubtype_environmental_sample, ""));
+                biosrc.SetSubtype().push_back(s);
+                ChangeMade(CCleanupChange::eAddSubSource);
+            }
+            if (needs_metagenomic && !has_metagenomic) {
+                CRef<CSubSource> s(new CSubSource(CSubSource::eSubtype_metagenomic, ""));
+                biosrc.SetSubtype().push_back(s);
+                ChangeMade(CCleanupChange::eAddSubSource);
+            }
+        }
+    }
+}
+
 
 void CNewCleanup_imp::x_FlattenPubEquiv(CPub_equiv& pub_equiv)
 {
@@ -8316,16 +8376,6 @@ void CNewCleanup_imp::RnaFeatBC (
             FIELD_IS_SET(rna.GetExt().GetGen(), Product) ) 
         {
             x_TranslateITSName( rna.SetExt().SetGen().SetProduct() );
-        } else if( ! FIELD_IS_SET(rna, Ext) && STRING_FIELD_NOT_EMPTY(seq_feat, Comment) ) {
-            CCachedRegexp its_regex = regexpCache.Get(
-                "internal transcribed spacer [123]", 
-                CRegexp::fCompile_ignore_case );
-            if( its_regex->IsMatch(GET_FIELD(seq_feat, Comment) ) ) {
-                rna.SetExt().SetName( GET_FIELD(seq_feat, Comment) );
-                ChangeMade(CCleanupChange::eChangeRNAref);
-                RESET_FIELD(seq_feat, Comment) ;
-                ChangeMade(CCleanupChange::eRemoveComment);
-            }
         }
     }
 

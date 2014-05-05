@@ -355,3 +355,93 @@ Seq-entry ::= seq {\
             seq-data\
               iupacna \"TTGCCCTAAAAATAAGAGTAAAACTAA\" } }\
 ";
+
+void s_ReportUnexpected(const vector<string>& observed, const vector<string>& expected)
+{
+    vector<string>::const_iterator oi = observed.begin();
+    vector<string>::const_iterator ei = expected.begin();
+    while (oi != observed.end() && ei != expected.end()) {
+        BOOST_CHECK_EQUAL(*oi, *ei);
+        oi++;
+        ei++;
+    }
+    while (oi != observed.end()) {
+        BOOST_CHECK_EQUAL("unexpected cleanup", *oi);
+        oi++;
+	}
+    while (ei != expected.end()) {
+        BOOST_CHECK_EQUAL("missing expected cleanup", *ei);
+        ei++;
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
+{
+    CRef<CSeqdesc> srcdesc(new CSeqdesc());
+    srcdesc->SetSource().SetOrg().SetOrgname().SetLineage("metagenomes");
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSeq().SetDescr().Set().push_back(srcdesc);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
+    // look for expected change flags
+	vector<string> changes_str = changes->GetAllDescriptions();
+    vector<string> expected;
+    expected.push_back("Add BioSource SubSource");
+    s_ReportUnexpected(changes_str, expected);
+    BOOST_CHECK_EQUAL(srcdesc->GetSource().IsSetSubtype(), true);
+    if (srcdesc->GetSource().IsSetSubtype()) {
+        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().size(), 1);
+        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_metagenomic);
+    }
+
+    // no additional changes if cleanup again
+    changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
+    changes_str = changes->GetAllDescriptions();
+    expected.clear();
+    s_ReportUnexpected(changes_str, expected);
+
+    // test env sample
+    srcdesc->SetSource().SetOrg().SetOrgname().SetLineage("environmental sample");
+    changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
+    changes_str = changes->GetAllDescriptions();
+    expected.push_back("Add BioSource SubSource");
+    s_ReportUnexpected(changes_str, expected);
+    BOOST_CHECK_EQUAL(srcdesc->GetSource().IsSetSubtype(), true);
+    if (srcdesc->GetSource().IsSetSubtype()) {
+        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().size(), 2);
+        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    }
+
+    // also add env_sample for div ENV
+    srcdesc->SetSource().ResetSubtype();
+    srcdesc->SetSource().SetOrg().SetOrgname().ResetLineage();
+    srcdesc->SetSource().SetOrg().SetOrgname().SetDiv("ENV");
+    changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
+    changes_str = changes->GetAllDescriptions();
+    expected.clear();
+    expected.push_back("Add BioSource SubSource");
+    s_ReportUnexpected(changes_str, expected);
+    BOOST_CHECK_EQUAL(srcdesc->GetSource().IsSetSubtype(), true);
+    if (srcdesc->GetSource().IsSetSubtype()) {
+        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().size(), 1);
+        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    }
+
+    // no additional changes if cleanup again
+    changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
+    changes_str = changes->GetAllDescriptions();
+    expected.clear();
+    s_ReportUnexpected(changes_str, expected);
+
+
+}
+

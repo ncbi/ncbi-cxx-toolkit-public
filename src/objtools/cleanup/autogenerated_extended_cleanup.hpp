@@ -38,10 +38,13 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/Txinit.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Map_ext.hpp>
@@ -73,6 +76,8 @@ public:
   void ExtendedCleanupSeqFeat( CSeq_feat & arg0_raw );
 
 private: 
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_ETC( CBioSource & arg0 );
+  void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_biosrc_ETC( CBioSource & arg0 );
   void x_ExtendedCleanupSeqFeat_data_data_gene_gene( CGene_ref & arg0 );
   void x_ExtendedCleanupSeqFeat_data_data_gene( CGene_ref & arg0 );
   void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_ETC( CProt_ref & arg0 );
@@ -97,6 +102,10 @@ void x_ExtendedCleanupBioseq_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_fe
   void x_ExtendedCleanupBioseq_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_ExtendedCleanupBioseq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
+  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_E_ETC( CSeqdesc & arg0 );
+  void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_E_ETC( CSeqdesc & arg0 );
+  template< typename Tcontainer_ncbi_cref_cseqdesc_ >
+void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_descr_ETC( Tcontainer_ncbi_cref_cseqdesc_ & arg0 );
   void x_ExtendedCleanupBioseqSet_seq_set_E_E_seq_seq_descr_ETC( CSeq_descr & arg0 );
   void x_ExtendedCleanupBioseq_inst_inst_ext_ext_map_map_E( CSeq_feat & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_feat_ >

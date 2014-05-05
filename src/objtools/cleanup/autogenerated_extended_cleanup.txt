@@ -85,3 +85,5 @@ use m_NewCleanup.x_RemoveEmptyUserObject
     Bioseq-set.descr
 }
 
+use m_NewCleanup.BioSourceEC { BioSource }
+

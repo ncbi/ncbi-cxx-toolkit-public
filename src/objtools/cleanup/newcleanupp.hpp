@@ -282,6 +282,10 @@ private:
 
     void MolInfoBC( CMolInfo &molinfo );
 
+
+    // Extended Cleanup functions
+    void BioSourceEC ( CBioSource& biosrc );
+
     // void XxxxxxBC (Cxxxxx& xxx);
 
     // Prohibit copy constructor & assignment operator
@@ -335,6 +339,7 @@ private:
     EAction x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual);
     EAction x_ParseCodeBreak(const CSeq_feat& feat, CCdregion& cds, const string& str);
     EAction x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQualOpt opt );
+    void x_AddEnvSamplOrMetagenomic(CBioSource& biosrc);
 
     // publication-related cleanup
     void x_FlattenPubEquiv(CPub_equiv& pe);
