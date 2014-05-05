@@ -1112,12 +1112,14 @@ case "$host_os:$compiler" in
       ;;
 esac
 
-case "$compiler:$compiler_version" in
-   GCC:4[[0-6]]? | ICC:1[[01]]?? )
+AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
+
+case "$ac_cv_have_decl__LIBCPP_VERSION:$compiler:$compiler_version" in
+   no:GCC:4[[0-6]]? | no:ICC:1[[01]]?? )
      ncbi_cv_prog_cxx_11=no
      ncbi_cv_prog_c_99=no
      ;;
-   ICC:* )
+   *:ICC:* )
      ncbi_cv_prog_c_99='-std=gnu99 -fgnu89-inline'
      ;;
 esac
@@ -2218,9 +2220,9 @@ if test "$compiler" = "GCC"; then
    llvm_version=`$CXX -v 2>&1 | $EGREP 'clang|LLVM'`
    case "$llvm_version" in
       *clang* )
-         # Take the LLVM version from both "clang version X.Y (...)" and
+         # Take the LLVM version from both "clang version X.Y (...) ..." and
          # "$Vendor (LLVM|clang) version ... (...) (based on LLVM X.Y)"
-         sed='s/.* \([[1-9]][[0-9.]]*\).*/\1/; s/\.//; s/^..$/&0/'
+         sed='s/.*[[Mn]] \([[1-9]][[0-9.]]*\).*/\1/; s/\.//; s/^..$/&0/'
          signature_compiler=Clang
          signature_compiler_version=`echo $llvm_version | sed -e "$sed"`
          ;;

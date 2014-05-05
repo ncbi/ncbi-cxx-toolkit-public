@@ -6355,12 +6355,85 @@ echo "${ECHO_T}$ncbi_cv_prog_cc_new_dtags" >&6; }
       ;;
 esac
 
-case "$compiler:$compiler_version" in
-   GCC:4[0-6]? | ICC:1[01]?? )
+{ echo "$as_me:$LINENO: checking whether _LIBCPP_VERSION is declared" >&5
+echo $ECHO_N "checking whether _LIBCPP_VERSION is declared... $ECHO_C" >&6; }
+if test "${ac_cv_have_decl__LIBCPP_VERSION+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <iosfwd>
+
+int
+main ()
+{
+#ifndef _LIBCPP_VERSION
+  char *p = (char *) _LIBCPP_VERSION;
+  return !p;
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_have_decl__LIBCPP_VERSION=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_have_decl__LIBCPP_VERSION=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_have_decl__LIBCPP_VERSION" >&5
+echo "${ECHO_T}$ac_cv_have_decl__LIBCPP_VERSION" >&6; }
+
+
+case "$ac_cv_have_decl__LIBCPP_VERSION:$compiler:$compiler_version" in
+   no:GCC:4[0-6]? | no:ICC:1[01]?? )
      ncbi_cv_prog_cxx_11=no
      ncbi_cv_prog_c_99=no
      ;;
-   ICC:* )
+   *:ICC:* )
      ncbi_cv_prog_c_99='-std=gnu99 -fgnu89-inline'
      ;;
 esac
@@ -8475,9 +8548,9 @@ if test "$compiler" = "GCC"; then
    llvm_version=`$CXX -v 2>&1 | $EGREP 'clang|LLVM'`
    case "$llvm_version" in
       *clang* )
-         # Take the LLVM version from both "clang version X.Y (...)" and
+         # Take the LLVM version from both "clang version X.Y (...) ..." and
          # "$Vendor (LLVM|clang) version ... (...) (based on LLVM X.Y)"
-         sed='s/.* \([1-9][0-9.]*\).*/\1/; s/\.//; s/^..$/&0/'
+         sed='s/.*[Mn] \([1-9][0-9.]*\).*/\1/; s/\.//; s/^..$/&0/'
          signature_compiler=Clang
          signature_compiler_version=`echo $llvm_version | sed -e "$sed"`
          ;;
