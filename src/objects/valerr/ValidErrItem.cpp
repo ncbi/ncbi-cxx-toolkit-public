@@ -312,6 +312,10 @@ the whole of a sequence." } },
    { eErr_SEQ_INST_TSAMasterLacksStrucComm,
    { "TSAMasterLacksStrucComm",
 "TSA Master records require an Assembly Data structured comment user object." } },
+   { eErr_SEQ_INST_AllNs,
+   { "AllNs",
+"Sequence has only Ns." } },
+
 
 /* SEQ_DESCR */
 

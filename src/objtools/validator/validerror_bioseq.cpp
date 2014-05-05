@@ -886,7 +886,8 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
     }*/
     
     if ( seq.IsNa() ) {
-        // check for N bases at start or stop of sequence
+        // check for N bases at start or stop of sequence,
+        // or sequence entirely made of Ns
         ValidateNsAndGaps(seq);
 
     }
@@ -2460,71 +2461,91 @@ bool CValidError_bioseq::GetTSANStretchErrors(const CBioseq& seq)
 
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
-    // don't bother checking if length is less than 10
-    if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr() 
-        || !seq.GetInst().IsSetLength() || seq.GetInst().GetLength() < 10) {
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr()) {
+        // can't check if no Inst or Repr
         return;
     }
-
     CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
 
     // only check for raw or for delta sequences that are delta lit only
     if ( repr != CSeq_inst::eRepr_raw  && (repr != CSeq_inst::eRepr_delta  ||  !x_IsDeltaLitOnly(seq.GetInst()))) {
         return;
     }
-         
+
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     if ( !bsh ) {
+        // no check if Bioseq not in scope
         return;
     }    
-    EBioseqEndIsType begin_n;
-    EBioseqEndIsType begin_gap;
-    EBioseqEndIsType end_n;
-    EBioseqEndIsType end_gap;
-    CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
-
-    bool only_local = true;
-    bool is_NC = false;
-    bool is_patent = false;
-    FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-        if (!(*id_it)->IsLocal()) {
-            only_local = false;
-            if ((*id_it)->IsPatent()) {
-                is_patent = true;
-            } else if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
-                && NStr::StartsWith ((*id_it)->GetOther().GetAccession(), "NC_")) {
-                is_NC = true;
-            }
-        }
-    }
-    bool is_circular = false;
-    if (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
-        is_circular = true;
-    }
-    EDiagSev sev;
-    if (begin_n != eBioseqEndIsType_None) {
-        sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, begin_n);
-        PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at beginning of sequence", seq);
-    } else if (begin_gap != eBioseqEndIsType_None) {
-        sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, begin_gap);
-        PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at beginning of sequence", seq);
-    }
-
-    if (end_n != eBioseqEndIsType_None) {
-        sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, end_n);
-        PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at end of sequence", seq);
-    } else if (end_gap != eBioseqEndIsType_None) {
-        sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, end_gap);
-        PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at end of sequence", seq);
-    }
-
-    // don't check N content for patent sequences
-    if (is_patent) {
-        return;
-    }
 
     try {            
-        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);                        
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+        // check to see if sequence is all Ns
+        bool all_ns = true;
+        for ( CSeqVector_CI sv_iter(vec); (sv_iter) && all_ns ; ++sv_iter ) {
+            if (*sv_iter != 'N') {
+                all_ns = false;
+            }
+        }
+
+        if (all_ns) {
+            PostErr(eDiag_Error, eErr_SEQ_INST_AllNs, "Sequence is all Ns", seq);
+            return;
+        }
+
+        // don't bother checking if length is less than 10
+        if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr() 
+            || !seq.GetInst().IsSetLength() || seq.GetInst().GetLength() < 10) {
+            return;
+        }
+                
+        EBioseqEndIsType begin_n;
+        EBioseqEndIsType begin_gap;
+        EBioseqEndIsType end_n;
+        EBioseqEndIsType end_gap;
+        CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
+
+        bool only_local = true;
+        bool is_NC = false;
+        bool is_patent = false;
+        FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+            if (!(*id_it)->IsLocal()) {
+                only_local = false;
+                if ((*id_it)->IsPatent()) {
+                    is_patent = true;
+                } else if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
+                    && NStr::StartsWith ((*id_it)->GetOther().GetAccession(), "NC_")) {
+                    is_NC = true;
+                }
+            }
+        }
+        bool is_circular = false;
+        if (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
+            is_circular = true;
+        }
+        EDiagSev sev;
+        if (begin_n != eBioseqEndIsType_None) {
+            sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, begin_n);
+            PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at beginning of sequence", seq);
+        } else if (begin_gap != eBioseqEndIsType_None) {
+            sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, begin_gap);
+            PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at beginning of sequence", seq);
+        }
+
+        if (end_n != eBioseqEndIsType_None) {
+            sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, end_n);
+            PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at end of sequence", seq);
+        } else if (end_gap != eBioseqEndIsType_None) {
+            sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, end_gap);
+            PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at end of sequence", seq);
+        }
+
+        // don't check N content for patent sequences
+        if (is_patent) {
+            return;
+        }
+                        
 
         // if TSA, check for percentage of Ns and max stretch of Ns
         if (IsBioseqTSA(seq, m_Scope)) {

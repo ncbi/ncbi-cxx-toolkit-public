@@ -6445,6 +6445,18 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonRange)
 }
 
 
+void TestSpecificHostNoError(const string& host)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, host);
+    
+    STANDARD_SETUP
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
 {
     // prepare entry
@@ -6491,11 +6503,36 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    // others
+    TestSpecificHostNoError("Racoon");
+    TestSpecificHostNoError("SNAKE");
+    TestSpecificHostNoError("Snake");
+    TestSpecificHostNoError("Turtle");
+
+
 }
 
 BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 {
 	string host, error_msg;
+
+    host = "Racoon";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
+    host = "SNAKE";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
+    host = "Snake";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
+    host = "Turtle";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
+
 	host = "Homo sapiens";
 	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
@@ -18425,3 +18462,22 @@ BOOST_AUTO_TEST_CASE(TEST_DisableStrainForwarding)
     src.SetDisableStrainForwarding(false);
     BOOST_CHECK_EQUAL(src.GetDisableStrainForwarding(), false);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_AllNs)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NNNNNNNNNNNNNNNNNNNNNNNNNNNNNN");
+    entry->SetSeq().SetInst().SetLength(30);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "AllNs",
+                              "Sequence is all Ns"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
