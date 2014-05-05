@@ -53,7 +53,9 @@ CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
          **          (forwarded to CSeqMaskerOstatOpt)
          **\param use_ba use bit array optimization
          **/
-        explicit CSeqMaskerOstatOptBin( const string & name, Uint2 sz, bool use_ba );
+        explicit CSeqMaskerOstatOptBin( 
+                const string & name, Uint2 sz, bool use_ba,
+                string const & metadata );
 
         /**
          **\brief Object constructor.
@@ -62,7 +64,9 @@ CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
          **          (forwarded to CSeqMaskerOstatOpt)
          **\param use_ba use bit array optimization
          **/
-        explicit CSeqMaskerOstatOptBin( CNcbiOstream & os, Uint2 sz, bool use_ba );
+        explicit CSeqMaskerOstatOptBin( 
+                CNcbiOstream & os, Uint2 sz, bool use_ba,
+                string const & metadata );
 
         /**
          **\brief Object destructor.

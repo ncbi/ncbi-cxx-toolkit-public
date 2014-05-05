@@ -51,13 +51,14 @@ public:
         **\brief Object constructor.
         **\param name the name of the output file stream
         **/
-    explicit CSeqMaskerOstatBin( const string & name );
+    explicit CSeqMaskerOstatBin( 
+            const string & name, string const & metadata );
 
     /**
         **\brief Object constructor.
         **\param os the output stream
         **/
-    explicit CSeqMaskerOstatBin( CNcbiOstream & os );
+    explicit CSeqMaskerOstatBin( CNcbiOstream & os, string const & metadata );
 
     /**
         **\brief Object destructor.

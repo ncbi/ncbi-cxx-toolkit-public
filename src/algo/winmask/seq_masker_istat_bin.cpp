@@ -81,9 +81,25 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
     CNcbiIfstream in_stream( name.c_str(), IOS_BASE::binary );
     Uint4 data;
     in_stream.read( (char *)&data, sizeof( Uint4 ) );
+    streamsize adj( 0 );
 
     {
         in_stream.read( (char *)&data, sizeof( Uint4 ) );
+
+        if( data > 16 ) {
+            adj = sizeof( Uint4 ) + data - 16;
+            string md( data - 16, 0 );
+            char c;
+
+            for( Uint4 i( 0 ); i < data - 16; ++i ) {
+                in_stream.read( &c, 1 );
+                md[i] = c;
+            }
+
+            SetMetaData( md );
+            in_stream.read( (char *)&data, sizeof( Uint4 ) );
+        }
+
         Uint1 us = (Uint1)data;
         
         if( us == 0 || us > 16 )
@@ -93,7 +109,7 @@ CSeqMaskerIstatBin::CSeqMaskerIstatBin( const string & name,
     }
 
     {
-        streamsize datalen = iflen - HEADER_LEN - TRAILER_LEN;
+        streamsize datalen = iflen - HEADER_LEN - TRAILER_LEN - adj;
 
         if( datalen%(2*sizeof( Uint4 )) != 0 )
             NCBI_THROW( Exception, eFormat, "wrong length" );

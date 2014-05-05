@@ -81,7 +81,8 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskCountsConverter
         CWinMaskCountsConverter(
                 const string & input_fname,
                 const string & output_fname,
-                const string & counts_oformat );
+                const string & counts_oformat,
+                string const & metadata );
 
         /**
             \brief Instance constructor.
@@ -93,7 +94,8 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskCountsConverter
         CWinMaskCountsConverter(
                 const string & input_fname,
                 CNcbiOstream & out_stream,
-                const string & counts_oformat );
+                const string & counts_oformat,
+                string const & metadata );
 
         /**
             \brief Method performing the actual conversion.
@@ -108,6 +110,7 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskCountsConverter
         string ofname;                  ///< output file name
         string oformat;                 ///< target n-mer counts format for the output
         CNcbiOstream * os;
+        string metadata;
 };
 
 END_NCBI_SCOPE

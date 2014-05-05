@@ -43,15 +43,17 @@ BEGIN_NCBI_SCOPE
 static const char * PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatBin::CSeqMaskerOstatBin( const string & name )
+CSeqMaskerOstatBin::CSeqMaskerOstatBin( 
+        const string & name, string const & metadata )
     : CSeqMaskerOstat( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), true ),
+        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), true, metadata ),
       pvalues( sizeof( PARAMS )/sizeof( const char * ) )
 { write_word( (Uint4)0 ); } // Format identifier.
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatBin::CSeqMaskerOstatBin( CNcbiOstream & os )
-    : CSeqMaskerOstat( os, false ),
+CSeqMaskerOstatBin::CSeqMaskerOstatBin( 
+        CNcbiOstream & os, string const & metadata )
+    : CSeqMaskerOstat( os, false, metadata ),
       pvalues( sizeof( PARAMS )/sizeof( const char * ) )
 { write_word( (Uint4)0 ); } // Format identifier.
 
@@ -77,7 +79,14 @@ void CSeqMaskerOstatBin::write_word( Uint4 word )
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatBin::doSetUnitSize( Uint4 us )
-{ write_word( us ); }
+{ 
+    if( !metadata.empty() ) {
+        write_word( (Uint4)(metadata.size() + 16) );
+        out_stream.write( metadata.c_str(), metadata.size() );
+    }
+
+    write_word( us ); 
+}
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatBin::doSetUnitCount( Uint4 unit, Uint4 count )

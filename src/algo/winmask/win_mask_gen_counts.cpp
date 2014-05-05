@@ -137,9 +137,10 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     bool arg_use_list,
     const CWinMaskUtil::CIdSet * arg_ids,
     const CWinMaskUtil::CIdSet * arg_exclude_ids,
-    bool use_ba )
+    bool use_ba, string const & metadata )
 :   input( arg_input ),
-    ustat( CSeqMaskerOstatFactory::create( sformat, os, use_ba ) ),
+    ustat( CSeqMaskerOstatFactory::create( 
+                sformat, os, use_ba, metadata ) ),
     max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
@@ -181,9 +182,10 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     bool arg_use_list,
     const CWinMaskUtil::CIdSet * arg_ids,
     const CWinMaskUtil::CIdSet * arg_exclude_ids,
-    bool use_ba )
+    bool use_ba, string const & metadata )
 :   input( arg_input ),
-    ustat( CSeqMaskerOstatFactory::create( sformat, output, use_ba ) ),
+    ustat( CSeqMaskerOstatFactory::create( 
+                sformat, output, use_ba, metadata ) ),
     max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 

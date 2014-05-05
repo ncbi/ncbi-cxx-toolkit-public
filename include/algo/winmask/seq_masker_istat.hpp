@@ -265,6 +265,9 @@ public:
         **/
     Uint4 get_use_min_count() const { return use_min_count; }
 
+    /**\brief Return the metadata string. */
+    string const & GetMetaData() const { return metadata; }
+
 protected:
     /**
         **\brief Set the count value for units with actual counts
@@ -300,6 +303,9 @@ protected:
     void set_optimization_data( const optimization_data & opt_data )
     { opt_data_ = opt_data; }
 
+    /** Set metadata string. */
+    void SetMetaData( string const & md ) { metadata = md; }
+
 private:
 
     /**\name Provide reference semantics for CSeqMaskerOstat. */
@@ -315,6 +321,8 @@ private:
     Uint4 min_count;        /**<\internal T_low */
     Uint4 use_min_count;    /**<\internal Count to use for units with actual count < T_low. */
     Uint1 unit_size;        /**<\internal The unit size. */
+
+    string metadata;        /**<\internal Metadata string. */
 
     CSeqMaskerWindow::TUnit ambig_unit; /**<\internal Unit value to represent ambiguities. */
 

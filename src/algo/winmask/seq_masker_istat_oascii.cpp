@@ -191,6 +191,12 @@ CSeqMaskerIstatOAscii::CSeqMaskerIstatOAscii( const string & name,
                     "not enough lines to fill the values table" );
 
     uset.add_vt_info( M, vt );
+
+    if( getline( input_stream, line ) ) {
+        if( line.size() > 1 && line[0] == '#' && line[1] == '#' ) {
+            SetMetaData( line.substr( 2 ) );
+        }
+    }
 }
 
 //------------------------------------------------------------------------------

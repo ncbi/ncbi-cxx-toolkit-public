@@ -50,17 +50,19 @@ CSeqMaskerOstatAscii::CSeqMaskerOstatAsciiException::GetErrCodeString() const
 }
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( const string & name )
+CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( 
+        const string & name, string const & metadata )
     : CSeqMaskerOstat( 
             name.empty() ? 
             static_cast<CNcbiOstream&>(NcbiCout) : 
             static_cast<CNcbiOstream&>(*new CNcbiOfstream( name.c_str() )),
-            name.empty() ? false : true )
+            name.empty() ? false : true, metadata )
 {}
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( CNcbiOstream & os )
-    : CSeqMaskerOstat( os, false )
+CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( 
+        CNcbiOstream & os, string const & metadata )
+    : CSeqMaskerOstat( os, false, metadata )
 {}
 
 //------------------------------------------------------------------------------
@@ -70,7 +72,10 @@ CSeqMaskerOstatAscii::~CSeqMaskerOstatAscii()
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatAscii::doSetUnitSize( Uint4 us )
-{ out_stream << us << endl; }
+{ 
+    out_stream << us << endl; 
+    if( !metadata.empty() ) out_stream << "##" << metadata << endl;
+}
 
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatAscii::doSetUnitCount( Uint4 unit, Uint4 count )

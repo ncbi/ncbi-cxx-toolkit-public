@@ -51,7 +51,7 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
                                     EAppType type,
                                     bool determine_input)
 {
-    arg_desc.SetCurrentGroup("Windowmasker options");
+    arg_desc.SetCurrentGroup("WindowMasker options");
 
     // Adding command line arguments descriptions
     if(type == eAny)
@@ -83,6 +83,9 @@ void CWinMaskConfig::AddWinMaskArgs(CArgDescriptions &arg_desc,
         arg_desc.AddDefaultKey( "mem", "available_memory",
                                  "memory available for mk_counts option in megabytes",
                                  CArgDescriptions::eInteger, "1536" );
+        arg_desc.AddDefaultKey( "meta", "info_string",
+                                "add metadata to the counts file",
+                                CArgDescriptions::eString, "" );
         arg_desc.AddOptionalKey( "unit", "unit_length",
                                   "number of bases in a unit",
                                   CArgDescriptions::eInteger );
@@ -336,7 +339,8 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
       smem( app_type < eGenerateMasks ? args["smem"].AsInteger() : 0 ),
       ids( 0 ), exclude_ids( 0 ),
       use_ba( app_type != eConvertCounts && args["use_ba"].AsBoolean() ),
-      text_match( app_type != eConvertCounts && args["text_match"].AsBoolean() )
+      text_match( app_type != eConvertCounts && args["text_match"].AsBoolean() ),
+      metadata( args["meta"].AsString() )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 

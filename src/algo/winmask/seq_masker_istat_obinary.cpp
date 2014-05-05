@@ -202,6 +202,19 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
                     "not enough data to fill the values table" );
 
     uset.add_vt_info( M, vt );
+    Uint4 mdsz( 0 );
+
+    if( input_stream.read( (char *)&mdsz, sizeof( Uint4 ) ) ) {
+        string md;
+        char c;
+
+        for( Uint4 i( 0 ); i < mdsz; ++i ) {
+            input_stream.read( &c, 1 );
+            md.push_back( c );
+        }
+
+        SetMetaData( md );
+    }
 }
 
 //------------------------------------------------------------------------------

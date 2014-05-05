@@ -77,8 +77,13 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
         line.erase();
         getline( input_stream, line );
         ++linenum;
+        if( line.length() == 0 ) continue;
 
-        if( !line.length() || line[0] == '#' ) continue;
+        if( line[0] == '#' ) {
+            if( line.length() < 2 || line[1] != '#' ) continue;
+            SetMetaData( line.substr( 2 ) );
+            continue;
+        }
 
         // Check if we have a precomputed parameter.
         if( line[0] == '>' )

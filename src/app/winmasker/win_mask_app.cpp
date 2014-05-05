@@ -98,14 +98,16 @@ int CWinMaskApplication::Run (void)
             CWinMaskCountsConverter converter( 
                     aConfig.Input(),
                     NcbiCout,
-                    aConfig.SFormat() );
+                    aConfig.SFormat(),
+                    aConfig.GetMetaData() );
             return converter();
         }
         else {
             CWinMaskCountsConverter converter( 
                     aConfig.Input(),
                     aConfig.Output(),
-                    aConfig.SFormat() );
+                    aConfig.SFormat(),
+                    aConfig.GetMetaData() );
             return converter();
         }
     }
@@ -133,7 +135,8 @@ int CWinMaskApplication::Run (void)
                                         aConfig.FaList(),
                                         aConfig.Ids(),
                                         aConfig.ExcludeIds(),
-                                        aConfig.UseBA() );
+                                        aConfig.UseBA(),
+                                        aConfig.GetMetaData() );
             cg();
         }
         else {
@@ -151,7 +154,8 @@ int CWinMaskApplication::Run (void)
                                         aConfig.FaList(),
                                         aConfig.Ids(),
                                         aConfig.ExcludeIds(),
-                                        aConfig.UseBA() );
+                                        aConfig.UseBA(),
+                                        aConfig.GetMetaData() );
             cg();
         }
 

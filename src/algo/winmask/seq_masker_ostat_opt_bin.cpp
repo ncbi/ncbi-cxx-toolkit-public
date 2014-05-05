@@ -37,10 +37,12 @@
 BEGIN_NCBI_SCOPE
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( const string & name, 
-                                              Uint2 sz, bool arg_use_ba )
+CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( 
+        const string & name, Uint2 sz, bool arg_use_ba, 
+        string const & metadata )
     : CSeqMaskerOstatOpt( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), sz, true ),
+        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), 
+        sz, true, metadata ),
       use_ba( arg_use_ba )
 { 
     if( use_ba )
@@ -49,9 +51,9 @@ CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( const string & name,
 } 
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( CNcbiOstream & os,
-                                              Uint2 sz, bool arg_use_ba )
-    : CSeqMaskerOstatOpt( os, sz, false ),
+CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( 
+        CNcbiOstream & os, Uint2 sz, bool arg_use_ba, string const & metadata )
+    : CSeqMaskerOstatOpt( os, sz, false, metadata ),
       use_ba( arg_use_ba )
 { 
     if( use_ba )
@@ -86,6 +88,13 @@ void CSeqMaskerOstatOptBin::write_out( const params & p ) const
     Uint4 sz = (1<<p.k);
     out_stream.write( (const char *)(p.ht), sz*sizeof( Uint4 ) );
     out_stream.write( (const char *)(p.vt), p.M*sizeof( Uint2 ) );
+
+    if( !metadata.empty() ) {
+        Uint4 sz( metadata.size() );
+        out_stream.write( (const char *)&sz, sizeof( Uint4 ) );
+        out_stream.write( metadata.c_str(), sz );
+    }
+
     out_stream << flush;
 }
 

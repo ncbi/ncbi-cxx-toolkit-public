@@ -37,10 +37,10 @@
 BEGIN_NCBI_SCOPE
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii( const string & name, 
-                                                  Uint2 sz )
+CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii( 
+        const string & name, Uint2 sz, string const & metadata )
     : CSeqMaskerOstatOpt( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str() ) ), sz, true ) 
+        *new CNcbiOfstream( name.c_str() ) ), sz, true, metadata ) 
 { 
     // File format identifier
     out_stream << (char)65; 
@@ -50,9 +50,9 @@ CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii( const string & name,
 }
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii( CNcbiOstream & os, 
-                                                  Uint2 sz )
-    : CSeqMaskerOstatOpt( os, sz, false ) 
+CSeqMaskerOstatOptAscii::CSeqMaskerOstatOptAscii( 
+        CNcbiOstream & os, Uint2 sz, string const & metadata )
+    : CSeqMaskerOstatOpt( os, sz, false, metadata ) 
 { 
     // File format identifier
     out_stream << (char)65; 
@@ -78,6 +78,7 @@ void CSeqMaskerOstatOptAscii::write_out( const params & p ) const
     for( Uint4 i = 0; i < p.M; ++i )
         out_stream << (Uint4)(p.vt[i]) << "\n";
 
+    if( !metadata.empty() ) out_stream << "##" << metadata << endl;
     out_stream << flush;
 }
 

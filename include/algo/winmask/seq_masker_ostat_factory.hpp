@@ -83,10 +83,12 @@ public:
         **\param ustat_type the name of the unit counts file format
         **\param name the name of the file to save unit counts data to
         **\param use_ba whether to use bit array based optimizations
+        **\param metadata metadata string
         **\return pointer to the newly created object
         **/
     static CSeqMaskerOstat * create( 
-        const string & ustat_type, const string & name, bool use_ba );
+        const string & ustat_type, const string & name, bool use_ba,
+        string const & metadata = "" );
 
     /**
         **\brief Method used to create a CSeqMakserOstat object by format name.
@@ -98,10 +100,12 @@ public:
         **\param ustat_type the name of the unit counts file format
         **\param os the output stream
         **\param use_ba whether to use bit array based optimizations
+        **\param metadata metadata string
         **\return pointer to the newly created object
         **/
     static CSeqMaskerOstat * create( 
-        const string & ustat_type, CNcbiOstream & os, bool use_ba );
+        const string & ustat_type, CNcbiOstream & os, bool use_ba,
+        string const & metadata = "" );
 };
 
 END_NCBI_SCOPE

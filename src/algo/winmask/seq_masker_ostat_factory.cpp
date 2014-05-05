@@ -54,23 +54,24 @@ CSeqMaskerOstatFactory::CSeqMaskerOstatFactoryException::GetErrCodeString() cons
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstat * CSeqMaskerOstatFactory::create( 
-    const string & ustat_type, CNcbiOstream & os, bool use_ba )
+    const string & ustat_type, CNcbiOstream & os, bool use_ba, 
+    string const & metadata )
 {
     try
     {
         if( ustat_type.substr( 0, 5 ) == "ascii" )
-            return new CSeqMaskerOstatAscii( os );
+            return new CSeqMaskerOstatAscii( os, metadata );
         else if( ustat_type.substr( 0, 6 ) == "binary" )
-            return new CSeqMaskerOstatBin( os );
+            return new CSeqMaskerOstatBin( os, metadata );
         else if( ustat_type.substr( 0, 6 ) == "oascii" )
         {
             Uint4 size = atoi( ustat_type.substr( 6 ).c_str() );
-            return new CSeqMaskerOstatOptAscii( os, size );
+            return new CSeqMaskerOstatOptAscii( os, size, metadata );
         }
         else if( ustat_type.substr( 0, 7 ) == "obinary" )
         {
             Uint4 size = atoi( ustat_type.substr( 7 ).c_str() );
-            return new CSeqMaskerOstatOptBin( os, size, use_ba );
+            return new CSeqMaskerOstatOptBin( os, size, use_ba, metadata );
         }
         else NCBI_THROW( CSeqMaskerOstatFactoryException,
                          eBadName,
@@ -91,23 +92,24 @@ CSeqMaskerOstat * CSeqMaskerOstatFactory::create(
     
 //------------------------------------------------------------------------------
 CSeqMaskerOstat * CSeqMaskerOstatFactory::create( 
-    const string & ustat_type, const string & name, bool use_ba )
+    const string & ustat_type, const string & name, bool use_ba,
+    string const & metadata )
 {
     try
     {
         if( ustat_type.substr( 0, 5 ) == "ascii" )
-            return new CSeqMaskerOstatAscii( name );
+            return new CSeqMaskerOstatAscii( name, metadata );
         else if( ustat_type.substr( 0, 6 ) == "binary" )
-            return new CSeqMaskerOstatBin( name );
+            return new CSeqMaskerOstatBin( name, metadata );
         else if( ustat_type.substr( 0, 6 ) == "oascii" )
         {
             Uint4 size = atoi( ustat_type.substr( 6 ).c_str() );
-            return new CSeqMaskerOstatOptAscii( name, size );
+            return new CSeqMaskerOstatOptAscii( name, size, metadata );
         }
         else if( ustat_type.substr( 0, 7 ) == "obinary" )
         {
             Uint4 size = atoi( ustat_type.substr( 7 ).c_str() );
-            return new CSeqMaskerOstatOptBin( name, size, use_ba );
+            return new CSeqMaskerOstatOptBin( name, size, use_ba, metadata );
         }
         else NCBI_THROW( CSeqMaskerOstatFactoryException,
                          eBadName,

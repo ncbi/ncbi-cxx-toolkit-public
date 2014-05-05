@@ -112,6 +112,7 @@ public:
      **\param exclude_ids set of ids to ignore
      **\param use_ba use bit array optimization for optimized binary
      **              unit counts format
+     **\param metadata the metadata string
      **
      **/
     CWinMaskCountsGenerator( const string & input,
@@ -128,7 +129,8 @@ public:
                              bool use_list,
                              const CWinMaskUtil::CIdSet * ids,
                              const CWinMaskUtil::CIdSet * exclude_ids,
-                             bool use_ba );
+                             bool use_ba,
+                             string const & metadata );
 
     /**
      **\brief Constructor.
@@ -158,6 +160,7 @@ public:
      **\param exclude_ids set of ids to ignore
      **\param use_ba use bit array optimization for optimized binary
      **              unit counts format
+     **\param metadata the metadata string
      **
      **/
     CWinMaskCountsGenerator( const string & input,
@@ -174,7 +177,8 @@ public:
                              bool use_list,
                              const CWinMaskUtil::CIdSet * ids,
                              const CWinMaskUtil::CIdSet * exclude_ids,
-                             bool use_ba );
+                             bool use_ba,
+                             string const & metadata );
 
     /**
      **\brief Object destructor.

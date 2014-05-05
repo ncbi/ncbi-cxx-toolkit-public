@@ -50,8 +50,8 @@ static const char * PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstatOpt::CSeqMaskerOstatOpt( 
-        CNcbiOstream & os, Uint2 sz, bool alloc ) 
-    : CSeqMaskerOstat( os, alloc ), size_requested( sz ),
+        CNcbiOstream & os, Uint2 sz, bool alloc, string const & metadata ) 
+    : CSeqMaskerOstat( os, alloc, metadata ), size_requested( sz ),
       pvalues( sizeof( PARAMS )/sizeof( const char * ) )
 {}
 

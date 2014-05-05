@@ -52,7 +52,8 @@ CSeqMaskerOstatOptAscii : public CSeqMaskerOstatOpt
          **\param sz requested upper limit on the size of the data structure
          **          (forwarded to CSeqMaskerOstatOpt)
          **/
-        explicit CSeqMaskerOstatOptAscii( const string & name, Uint2 sz );
+        explicit CSeqMaskerOstatOptAscii( 
+                const string & name, Uint2 sz, string const & metadata );
 
         /**
          **\brief Object constructor.
@@ -60,7 +61,8 @@ CSeqMaskerOstatOptAscii : public CSeqMaskerOstatOpt
          **\param sz requested upper limit on the size of the data structure
          **          (forwarded to CSeqMaskerOstatOpt)
          **/
-        explicit CSeqMaskerOstatOptAscii( CNcbiOstream & os, Uint2 sz );
+        explicit CSeqMaskerOstatOptAscii( 
+                CNcbiOstream & os, Uint2 sz, string const & metadata );
 
         /**
          **\brief Object destructor.

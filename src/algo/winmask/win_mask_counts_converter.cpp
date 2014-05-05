@@ -46,8 +46,9 @@ BEGIN_NCBI_SCOPE
 //------------------------------------------------------------------------------
 CWinMaskCountsConverter::CWinMaskCountsConverter(
     const string & input_fname, const string & output_fname,
-    const string & counts_oformat )
-    : istat( 0 ), ofname( output_fname ), oformat( counts_oformat ), os( 0 )
+    const string & counts_oformat, string const & metadata )
+    : istat( 0 ), ofname( output_fname ), oformat( counts_oformat ), os( 0 ),
+      metadata( metadata )
 {
     if( input_fname == "-" ) {
         NCBI_THROW( 
@@ -67,8 +68,9 @@ CWinMaskCountsConverter::CWinMaskCountsConverter(
 //------------------------------------------------------------------------------
 CWinMaskCountsConverter::CWinMaskCountsConverter(
     const string & input_fname, CNcbiOstream & out_stream,
-    const string & counts_oformat )
-    : istat( 0 ), ofname( "" ), oformat( counts_oformat ), os( &out_stream )
+    const string & counts_oformat, string const & metadata )
+    : istat( 0 ), ofname( "" ), oformat( counts_oformat ), os( &out_stream ),
+      metadata( metadata )
 {
     if( input_fname == "-" ) {
         NCBI_THROW( 
@@ -84,11 +86,15 @@ CWinMaskCountsConverter::CWinMaskCountsConverter(
 int CWinMaskCountsConverter::operator()()
 {
     CRef< CSeqMaskerOstat > ostat( 0 );
+    string md( metadata );
+
+    if( md.empty() ) md = istat->GetMetaData();
 
     if( os == 0 ) {
-        ostat = CSeqMaskerOstatFactory::create( oformat, ofname, true );
+        ostat = CSeqMaskerOstatFactory::create( 
+                oformat, ofname, true, md );
     }
-    else ostat = CSeqMaskerOstatFactory::create( oformat, *os, true );
+    else ostat = CSeqMaskerOstatFactory::create( oformat, *os, true, md );
 
     Uint4 unit_size = istat->UnitSize();
     _TRACE( "set unit size to " << unit_size );

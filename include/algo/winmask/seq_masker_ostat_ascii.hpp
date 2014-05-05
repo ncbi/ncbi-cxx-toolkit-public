@@ -75,13 +75,14 @@ public:
         **\param name name of the output file containing the unit
         **            counts data
         **/
-    explicit CSeqMaskerOstatAscii( const string & name );
+    explicit CSeqMaskerOstatAscii( 
+            const string & name, string const & metadat );
 
     /**
         **\brief Object constructor.
         **\param os the output stream
         **/
-    explicit CSeqMaskerOstatAscii( CNcbiOstream & os );
+    explicit CSeqMaskerOstatAscii( CNcbiOstream & os, string const & metadata );
 
     /**
         **\brief Object destructor.

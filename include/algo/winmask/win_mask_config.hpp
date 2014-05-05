@@ -505,6 +505,10 @@ public:
      **/
     bool MatchId() const { return !text_match; }
 
+    /**\brief Get metadata string to be added to the counts file. 
+    */
+    string const GetMetaData() const { return metadata; }
+
     static void AddWinMaskArgs(CArgDescriptions &arg_desc,
                                EAppType type = eAny,
                                bool determine_input = true);
@@ -657,6 +661,7 @@ private:
     CIdSet * exclude_ids;           /**< set of ids to exclude from processing */
     bool use_ba;                    /**< use bit array based optimization */
     bool text_match;                /**< identify seq ids by string matching */
+    string metadata;                /**< metadata associated with counts file */
     //@}
 };
 
