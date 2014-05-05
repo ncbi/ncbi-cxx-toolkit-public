@@ -90,7 +90,8 @@ public:
 #endif
 
 private:
-    volatile TValue m_Value;  ///< Internal counter value
+    typedef NCBI_ATOMIC_TYPE(TValue) TData;
+    volatile TData m_Value;  ///< Internal counter value
 
     // CObject's constructor needs to read m_Value directly when checking
     // for the magic number left by operator new.
@@ -247,7 +248,7 @@ inline
 #  endif
 CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
 {
-    TValue* nv_value_p = const_cast<TValue*>(&m_Value);
+    TData* nv_value_p = const_cast<TData*>(&m_Value);
     return NCBI_COUNTER_ADD(nv_value_p, delta);
 }
 #endif

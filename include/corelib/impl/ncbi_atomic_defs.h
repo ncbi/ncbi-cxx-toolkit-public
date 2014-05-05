@@ -89,8 +89,10 @@ extern "C" {
 #  define NCBI_SWAP_POINTERS_EXTERN 1
 #endif
 
-#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 300  &&  \
-  defined(__cplusplus)
+#if defined(NCBI_HAVE_CXX11)
+#  include <atomic>
+#elif defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 300  &&  \
+   defined(__cplusplus)
 /* Determine libstdc++ version, which may not entirely correlate with
    the compiler's own version(!) */
 #  include <bits/c++config.h>
@@ -115,13 +117,19 @@ extern "C" {
   ((defined(__sparc) && !defined(__sparcv9))  ||  \
    ((defined(__i386) || defined(__sparc) || defined(__x86_64))  &&  \
     !defined(__GLIBCPP__) /* < 3.0 or >= 3.4 */)  &&  \
-   (!defined(__GLIBCXX__)  ||  !defined(NCBI_TCHECK)))
+   (!defined(__GLIBCXX__)  ||  !defined(NCBI_TCHECK)))  &&  \
+  !defined(NCBI_HAVE_CXX11)
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
 #  define NCBI_COUNTER_USE_ASM 1
 #  if defined(__sparc)  &&  !defined(__sparcv9)
 #    define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
 #  endif
+#elif defined(NCBI_HAVE_CXX11)
+    typedef unsigned int TNCBIAtomicValue;
+#  define NCBI_ATOMIC_TYPE(t) std::atomic<t>
+#  define NCBI_COUNTER_UNSIGNED 1
+#  define NCBI_COUNTER_ADD(p, d) ((*p) += d)
 #elif defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_ATOMIC_H) /* Solaris 10+. */
 #  include <atomic.h>
 #  ifndef NCBI_COUNTER_ADD
@@ -190,7 +198,7 @@ extern "C" {
 #  endif
 #elif defined(NCBI_OS_DARWIN)  &&  defined(NCBI_COMPILER_GCC)  &&  defined(__ppc__)  &&  defined(__OPTIMIZE__)  &&  NCBI_COMPILER_VERSION >= 420  &&  NCBI_COMPILER_VERSION < 430
 /* Work around a compiler bug by forcing use of an alternate implementation. */
-#elif (defined(NCBI_COMPILER_GCC) && defined(__cplusplus)) || defined(__GLIBCPP__) || defined(__GLIBCXX__)
+#elif defined(_CXXCONFIG)
 #  if defined(__GLIBCXX__) && __GLIBCXX__ >= 20070514 /* 4.2 */
 #    include <ext/atomicity.h>
 #  else
@@ -259,6 +267,10 @@ extern "C" {
 #if !defined(NCBI_SWAP_POINTERS)  &&  !defined(NCBI_SWAP_POINTERS_CONDITIONALLY)  &&  !defined(NCBI_NO_THREADS)  &&  (!defined(NCBI_COUNTER_ASM_OK)  ||  (!defined(__i386) && !defined(__powerpc__) && !defined(__powerpc64__) && !defined(__ppc__) && !defined(__ppc64__) && !defined(__sparc) && !defined(__x86_64)))
 #  define NCBI_SWAP_POINTERS_EXTERN 1
 #  define NCBI_SLOW_ATOMIC_SWAP 1
+#endif
+
+#ifndef NCBI_ATOMIC_TYPE
+#  define NCBI_ATOMIC_TYPE(t) t
 #endif
 
 /* @} */
