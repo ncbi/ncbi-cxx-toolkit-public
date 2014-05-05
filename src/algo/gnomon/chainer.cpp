@@ -1320,18 +1320,24 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
             }
         }
 
+        CAlignMap chainmap = chain.GetAlignMap();
         TSignedSeqRange new_limits = chain.Limits();
         ITERATE(TMemberPtrSet, im, conflict_members) {
-            const CGeneModel& a = *(*im)->m_align;
-            if(a.Limits().GetFrom() < noclip_limits.GetFrom()) {
-                int to = min(noclip_limits.GetFrom(),a.Limits().GetTo());
-                if(chain.m_coverage_drop_left > 0 && Include(a.Limits(),chain.m_coverage_drop_left)) {
+            TSignedSeqRange alim = (*im)->m_align->Limits()&chain.Limits();
+            if(alim.Empty())
+                continue;
+            alim = chainmap.ShrinkToRealPoints(alim);
+            if(alim.Empty())
+                continue;
+            if(alim.GetFrom() < noclip_limits.GetFrom()) {
+                int to = min(noclip_limits.GetFrom(),alim.GetTo());
+                if(chain.m_coverage_drop_left > 0 && Include(alim,chain.m_coverage_drop_left)) {
                     to = min(noclip_limits.GetFrom(),chain.m_coverage_drop_left);
                 }
                 new_limits.SetFrom(max(new_limits.GetFrom(),to));
-            } else if(a.Limits().GetTo() > noclip_limits.GetTo()) {
-                int from = max(noclip_limits.GetTo(),a.Limits().GetFrom());
-                if(chain.m_coverage_drop_right > 0 && Include(a.Limits(),chain.m_coverage_drop_right)) {
+            } else if(alim.GetTo() > noclip_limits.GetTo()) {
+                int from = max(noclip_limits.GetTo(),alim.GetFrom());
+                if(chain.m_coverage_drop_right > 0 && Include(alim,chain.m_coverage_drop_right)) {
                     from = max(noclip_limits.GetTo(),chain.m_coverage_drop_right);
                 }
                 new_limits.SetTo(min(new_limits.GetTo(),from));
@@ -4197,11 +4203,8 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& 
             wlen += coverage[i];
 
         while(left_limit > 0 && (longseq_coverage[left_limit] > 0 || 
-                                 (coverage[left_limit] > max(core_coverage,wlen/len)*utr_clip_threshold &&
-                                  (intron_coverage.find(left_limit-1) == intron_coverage.end() || intron_coverage[left_limit-1] > core_inron_coverage*utr_clip_threshold)
-                                  )
-                                 )
-              ) {
+               (coverage[left_limit] > max(core_coverage,wlen/len)*utr_clip_threshold &&
+               (intron_coverage.find(left_limit-1) == intron_coverage.end() || intron_coverage[left_limit-1] > core_inron_coverage*utr_clip_threshold)))) {
 
             ++len;
             --left_limit;
@@ -4235,11 +4238,8 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& 
             window_wlen += coverage[i];
             
         while(right_limit < mrna_len-1 && (longseq_coverage[right_limit] > 0 || 
-                                           (coverage[right_limit] > wlen/len*utr_clip_threshold &&
-                                            (intron_coverage.find(right_limit) == intron_coverage.end() || intron_coverage[right_limit] > core_inron_coverage*utr_clip_threshold)
-                                            )
-                                           )
-              ) {
+              (coverage[right_limit] > wlen/len*utr_clip_threshold &&
+              (intron_coverage.find(right_limit) == intron_coverage.end() || intron_coverage[right_limit] > core_inron_coverage*utr_clip_threshold)))) {
 
             ++len;
             ++right_limit;
