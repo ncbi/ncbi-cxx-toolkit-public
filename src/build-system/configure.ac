@@ -38,7 +38,7 @@
 #
 #############################################################################
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.60)
 
 dnl Early setup, most crucially for locking.  The diversion magic lets
 dnl this occur before AC_INIT, which already interferes with other
@@ -493,6 +493,10 @@ AC_ARG_WITH(manuals,
    [***** See also HTML documentation in ./doc/index.html *****])
 
 
+AC_DIVERT_PUSH(PARSE_ARGS)
+dnl As of Autoconf 2.60, this needs to run too early for config.log,
+dnl to which AC_MSG_ERROR normally copies its output, to be available.
+m4_rename([AS_MESSAGE_LOG_FD], [NCBI_ORIG_ASMLFD])
 #### Check the passed arguments against the list of available ones
 x_with_list="\
 debug max-debug symbols optimization profiling tcheck dll static static-exe \
@@ -564,7 +568,7 @@ for x_arg in "$@" ; do
       | --with-muparser=* | --with-hdf5=* | --with-jni=* | --with-magic=* \
       | --x-includes=* | --x-libraries=* | --with-3psw=* \
       | --target=* | --with-runpath=* | --with-relative-runpath=* \
-      | --no-create | --no-recursion)
+      | --help | --no-create | --no-recursion)
       ;;
 
       * )
@@ -572,6 +576,8 @@ for x_arg in "$@" ; do
       ;;
    esac
 done
+m4_rename([NCBI_ORIG_ASMLFD], [AS_MESSAGE_LOG_FD])
+AC_DIVERT_POP
 
 
 if test "$with_gbench" = "yes" ; then
@@ -2176,7 +2182,7 @@ else
 fi
 
 AC_PATH_PROG(TOUCH, touch, [], /bin:/usr/bin:$PATH)
-AC_PATH_PROG(GREP, grep)
+dnl AC_PATH_PROG(GREP, grep)
 AC_PROG_EGREP
 AC_MSG_CHECKING([how to run $EGREP quietly])
 if test -z "`echo foo | $EGREP -q fo+ 2>>config.log || echo $?`"; then
