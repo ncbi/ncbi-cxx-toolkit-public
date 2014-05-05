@@ -488,9 +488,12 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatBam( mode );
     case eVcf:
         return TestFormatVcf( mode );
+    case eUCSCRegion:
+        return false;
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
-            "CFormatGuess::x_TestFormat(): Unsupported format ID." );
+            "CFormatGuess::x_TestFormat(): Unsupported format ID (" +
+            NStr::NumericToString((int)format) + ")." );
     }
 }
 
