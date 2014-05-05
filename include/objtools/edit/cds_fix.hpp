@@ -55,6 +55,8 @@ NCBI_XOBJEDIT_EXPORT bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_
 NCBI_XOBJEDIT_EXPORT bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh);
+NCBI_XOBJEDIT_EXPORT bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope);
+NCBI_XOBJEDIT_EXPORT bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope);
 
 END_SCOPE(edit)
 END_SCOPE(objects)

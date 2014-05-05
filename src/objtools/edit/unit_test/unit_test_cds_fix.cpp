@@ -391,6 +391,79 @@ BOOST_AUTO_TEST_CASE(Test_GetGeneticCodeForBioseq)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_TruncateCDSAtStop)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAATAAGTAAATAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry, entry->GetSeq().GetInst().GetLength() - 1);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    cds->SetData().SetCdregion();
+    STANDARD_SETUP
+
+    // check for frame 1/unset
+    bool found_stop = edit::TruncateCDSAtStop(*cds, scope);
+    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 23);
+    BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
+
+    // check for frame 2
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+    cds->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    found_stop = edit::TruncateCDSAtStop(*cds, scope);
+    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 27);
+    BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
+
+    // check for frame 3
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    cds->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    found_stop = edit::TruncateCDSAtStop(*cds, scope);
+    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 31);
+    BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
+
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ExtendCDSToStopCodon)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AATTGGCCAAAATTGGCCAAATAAGTAAATAATTGGCCAAAATTGGCCAAAATTGGCCAA");
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry, 15);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    cds->SetData().SetCdregion();
+    STANDARD_SETUP
+
+    // check for frame 1/unset
+    bool found_stop = edit::ExtendCDSToStopCodon(*cds, scope);
+    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 23);
+    BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
+
+    // check for frame 2
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
+    cds->SetLocation().SetInt().SetTo(15);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    found_stop = edit::ExtendCDSToStopCodon(*cds, scope);
+    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 27);
+    BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
+
+    // check for frame 3
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
+    cds->SetLocation().SetInt().SetTo(15);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    found_stop = edit::ExtendCDSToStopCodon(*cds, scope);
+    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 31);
+    BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
+
+
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
