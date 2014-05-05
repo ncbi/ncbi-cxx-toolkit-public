@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(Test_TruncateCDSAtStop)
 
     // check for frame 1/unset
     bool found_stop = edit::TruncateCDSAtStop(*cds, scope);
-    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(found_stop, true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 23);
     BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
 
@@ -411,7 +411,7 @@ BOOST_AUTO_TEST_CASE(Test_TruncateCDSAtStop)
     cds->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     found_stop = edit::TruncateCDSAtStop(*cds, scope);
-    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(found_stop, true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 27);
     BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
 
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(Test_TruncateCDSAtStop)
     cds->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength() - 1);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     found_stop = edit::TruncateCDSAtStop(*cds, scope);
-    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(found_stop, true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 31);
     BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
 
@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE(Test_ExtendCDSToStopCodon)
 
     // check for frame 1/unset
     bool found_stop = edit::ExtendCDSToStopCodon(*cds, scope);
-    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(found_stop, true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 23);
     BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
 
@@ -448,7 +448,7 @@ BOOST_AUTO_TEST_CASE(Test_ExtendCDSToStopCodon)
     cds->SetLocation().SetInt().SetTo(15);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     found_stop = edit::ExtendCDSToStopCodon(*cds, scope);
-    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(found_stop, true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 27);
     BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
 
@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(Test_ExtendCDSToStopCodon)
     cds->SetLocation().SetInt().SetTo(15);
     cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
     found_stop = edit::ExtendCDSToStopCodon(*cds, scope);
-    BOOST_CHECK_EQUAL(found_stop, TRUE);
+    BOOST_CHECK_EQUAL(found_stop, true);
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 31);
     BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
 
