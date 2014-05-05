@@ -94,7 +94,7 @@ __size_type__
 hashtable<_Val,_Key,_HF,_ExK,_EqK,_All>::_M_next_size(size_type __n) const    { 
   const size_type* __first = (const size_type*)_Stl_prime_type::_M_list;
   const size_type* __last =  (const size_type*)_Stl_prime_type::_M_list + (int)__stl_num_primes;
-  const size_type* pos = __lower_bound(__first, __last, __n, __less((size_type*)0), (ptrdiff_t*)0);
+  const size_type* pos = __lower_bound(__first, __last, __n, _stlp_less((size_type*)0), (ptrdiff_t*)0);
   return (pos == __last ? *(__last - 1) : *pos);
 }
 

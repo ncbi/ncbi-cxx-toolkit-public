@@ -219,6 +219,13 @@ NCBI_USING_NAMESPACE_STD;
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #endif
 
+#ifdef _LIBCPP_VERSION
+#  define NO_STD_CONSTRUCT
+#  define NO_STD_DESTROY
+#  define NO_STD_IDENTITY
+#  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG // Don't try to use _Select1st
+#endif
+
 #ifdef _DEBUG
 #  define _STLP_DEBUG_UNINITIALIZED
 // uninitialized value filler
@@ -253,7 +260,7 @@ struct __Select1st_hint : public unary_function<_Pair, _Whatever> {
 //
 
 template <class _Tp>
-less<_Tp> __less(_Tp* ) { return less<_Tp>(); }
+less<_Tp> _stlp_less(_Tp* ) { return less<_Tp>(); }
 
 
 #ifdef NO_STD_CONSTRUCT
