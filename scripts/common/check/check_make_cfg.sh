@@ -139,7 +139,7 @@ if test -n "$NCBI_AUTOMATED_BUILD"; then
          *MT ) ;;
          *   ) signature="${signature}ST" ;;
       esac
-      signature="${signature}${x_libdll}${ARCH}--i386-pc-win${ARCH:-32}-${SRV_NAME}"
+      signature="${signature}${x_libdll}${ARCH}--i386-pc-win${ARCH:-32}-${COMPUTERNAME}"
    fi
 fi
 
@@ -380,13 +380,13 @@ RunTest() {
            x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext"
            x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext"
            x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext"
-           x_applog_sh="\$x_work_dir/\$x_app.applog.sh"
+           x_applog_sh="\$x_work_dir/\$x_app.applog\$x_ext.sh"
         else
            x_cmd="[\$build_tree/\$build_cfg/\$x_wdir] \$tool_up \$x_name"
            x_test_out="\$x_work_dir/\$x_app.test_out\$x_ext.\$tool_lo"
            x_test_rep="\$x_work_dir/\$x_app.test_rep\$x_ext.\$tool_lo"
            x_boost_rep="\$x_work_dir/\$x_app.boost_rep\$x_ext.\$tool_lo"
-           x_applog_sh="\$x_work_dir/\$x_app.applog.\$tool_lo.sh"
+           x_applog_sh="\$x_work_dir/\$x_app.applog\$x_ext.\$tool_lo.sh"
         fi
 
         if \$is_db_load; then
@@ -400,8 +400,10 @@ RunTest() {
                 ;;
            esac
            if test -f \$x_applog_sh; then
-              chmod a+x \$x_applog_sh
-              ##\$x_applog_sh >> "\$build_dir/test_stat_load_applog.log" 2>&1
+              chmod a+x \$x_applog_sh 2>&1
+              \$x_applog_sh >> "\$build_dir/test_stat_load_applog.log" 2>&1
+           else
+              echo "Error generating \$x_applog_sh "
            fi
            continue
         fi
