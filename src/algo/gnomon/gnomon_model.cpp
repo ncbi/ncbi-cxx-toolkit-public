@@ -155,6 +155,8 @@ CAlignModel::CAlignModel(const CGeneModel& g, const CAlignMap& a)
     FrameShifts() = m_alignmap.GetInDels(true);
     RemoveExtraFShifts();
     SetTargetId(*CIdHandler::GnomonMRNA(ID()));
+    if(a.Orientation() != g.Strand()) 
+        Status() |= CGeneModel::eReversed;
 }
 
 void CAlignModel::ResetAlignMap()
