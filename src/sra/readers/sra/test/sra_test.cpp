@@ -144,6 +144,19 @@ int CSRATestApp::Run(void)
                      << NcbiEndl;
             return 0;
         }
+        try {
+            string acc = sra;
+            // exclude spot id
+            SIZE_TYPE dot_pos = acc.find('.');
+            if ( dot_pos != NPOS ) {
+                acc.resize(dot_pos);
+            }
+            string path = CSraPath().FindAccPath(acc);
+            NcbiCout << "Resolved "<<acc<<" -> "<<path<<NcbiEndl;
+        }
+        catch ( CSraException& exc ) {
+            ERR_POST("FindAccPath failed: "<<exc);
+        }
         CRef<CSeq_entry> entry = mgr.GetSpotEntry(sra);
         args["o"].AsOutputFile() << MSerial_AsnText << *entry << NcbiFlush;
     }

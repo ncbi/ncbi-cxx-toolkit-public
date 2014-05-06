@@ -286,18 +286,9 @@ string CSraPath::FindAccPath(const string& acc) const
                     rc = VResolverQuery(res, eProtocolHttp, accPath, &resolvedPath, NULL, NULL);
                     if (rc == 0)
                     {
-                        for ( ;; ) {
-                            String s;
-                            StringInitCString(&s, ret.c_str());
-                            VPathGetPath(resolvedPath, &s);
-                            if ( GetRCState(rc) == rcInsufficient ) {
-                                // buffer too small, realloc and repeat
-                                ret.resize(ret.size()*2);
-                            }
-                            else {
-                                break;
-                            }
-                        }
+                        String s;
+                        VPathGetPath(resolvedPath, &s);
+                        ret.assign(s.addr, s.len);
                         rc2 = VPathRelease(resolvedPath);
                         if (rc == 0)
                             rc = rc2;
