@@ -3332,6 +3332,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     size_t num_adjacent_gaps = 0;
     bool non_interspersed_gaps = false;
     bool first = true;
+    int num_gap_known_or_spec = 0;
+    int num_gap_unknown_unspec = 0;
 
     vector<CConstRef<CSeq_loc> > delta_locs;
 
@@ -3440,11 +3442,15 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                             for (int i = 0; i < 12; i++) {
                               linkevarray [i] = 0;
                             }
+                            bool is_unspec = false;
                             ITERATE( CSeq_gap::TLinkage_evidence, ev_itr, gap.GetLinkage_evidence() ) {
                                 const CLinkage_evidence & evidence = **ev_itr;
                                 if (! evidence.CanGetType() ) continue;
                                 int linktype = evidence.GetType();
                                 linkcount++;
+                                if (linktype == 8) {
+                                    is_unspec = true;
+                                }
                                 if (linktype == 255) {
                                     (linkevarray [10])++;
                                 } else if (linktype < 0 || linktype > 9) {
@@ -3479,6 +3485,11 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                                     PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
                                         "Seq-gap of type " + NStr::IntToString(gaptype) +
                                         "should not have linkage evidence", seq);
+                                }
+                                if (gaptype == CSeq_gap::eType_unknown && is_unspec) {
+                                    num_gap_unknown_unspec++;
+                                } else {
+                                    num_gap_known_or_spec++;
                                 }
                             }
                         } else {
@@ -3552,6 +3563,18 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 "CDelta_seq::Which() is e_not_set", seq);
         }
     }
+
+    if (num_gap_unknown_unspec > 0 && num_gap_known_or_spec == 0) {
+        if (num_gap_unknown_unspec > 1) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem,
+                "All " + NStr::IntToString(num_gap_unknown_unspec) +
+                " Seq-gaps have unknown type and unspecified linkage", seq);
+        } else {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem,
+                "Single Seq-gap has unknown type and unspecified linkage", seq);
+        }
+    }
+
     if (inst.GetLength() > len) {
         PostErr(eDiag_Critical, eErr_SEQ_INST_SeqDataLenWrong,
             "Bioseq.seq_data too short [" + NStr::IntToString(len) +
