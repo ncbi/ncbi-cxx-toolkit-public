@@ -1969,6 +1969,15 @@ esac
 ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
 
 
+case $ac_dir_in in
+.) ac_abs_top_srcdir=$real_srcdir;;
+*)
+  case $real_srcdir in
+  .) ac_abs_top_srcdir=$ac_dir_in;;
+  [\\/]* | ?:[\\/]* ) ac_abs_top_srcdir=$real_srcdir;;
+  *) ac_abs_top_srcdir=$ac_dir_in/$real_srcdir;;
+  esac;;
+esac
 ac_builddir=$builddir
 
     cd "$ac_dir" || { ac_status=$?; continue; }
@@ -41502,6 +41511,15 @@ esac
 ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
 
 
+case $ac_dir_in in
+.) ac_abs_top_srcdir=$real_srcdir;;
+*)
+  case $real_srcdir in
+  .) ac_abs_top_srcdir=$ac_dir_in;;
+  [\\/]* | ?:[\\/]* ) ac_abs_top_srcdir=$real_srcdir;;
+  *) ac_abs_top_srcdir=$ac_dir_in/$real_srcdir;;
+  esac;;
+esac
 ac_builddir=$builddir
 
 

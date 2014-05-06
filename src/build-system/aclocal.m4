@@ -11,6 +11,7 @@ fi
 
 NCBI_ORIG__AC_SRCDIRS(["$ac_dir_in"])
 
+AS_SET_CATFILE([ac_abs_top_srcdir], [$ac_dir_in], [$real_srcdir])
 ac_builddir=$builddir
 ])
 
