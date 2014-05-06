@@ -622,6 +622,7 @@ public:
     TSignedSeqPos FShiftedMove(TSignedSeqPos orig_pos, int len) const;   // may reurn < 0 if hits a gap
     TInDels GetInDels(bool fs_only) const;
     int TargetLen() const { return m_target_len; }
+    EStrand Orientation() const { return m_orientation; }
 
 // private: // breaks SMapRange on WorkShop. :-/
     struct SMapRangeEdge {
@@ -838,6 +839,38 @@ void ReverseComplement(const BidirectionalIterator& first, const BidirectionalIt
         *i = Complement(*i);
     reverse(first, last);
 }
+
+
+template<class Model>
+list<Model> GetAlignParts(const Model& algn, bool settrimflags) {
+    list<Model> parts;
+    
+    int left = algn.Limits().GetFrom();
+    for(unsigned int i = 1; i < algn.Exons().size(); ++i) {
+        if (!algn.Exons()[i-1].m_ssplice || !algn.Exons()[i].m_fsplice) {
+            Model m = algn;
+            m.Clip(TSignedSeqRange(left,algn.Exons()[i-1].GetTo()),CGeneModel::eRemoveExons);
+            if(!parts.empty() && settrimflags) {
+                parts.back().Status() &= ~CGeneModel::eRightTrimmed;
+                m.Status() &= ~CGeneModel::eLeftTrimmed;
+            }
+            parts.push_back(m);
+            left = algn.Exons()[i].GetFrom();
+        }
+    }
+    if(!parts.empty()) {
+        Model m = algn;
+        m.Clip(TSignedSeqRange(left,algn.Limits().GetTo()),CGeneModel::eRemoveExons);
+        if(settrimflags) {
+            parts.back().Status() &= ~CGeneModel::eRightTrimmed;
+            m.Status() &= ~CGeneModel::eLeftTrimmed;
+        }
+        parts.push_back(m);
+    }
+
+    return parts;
+}
+
 
 
 END_SCOPE(gnomon)
