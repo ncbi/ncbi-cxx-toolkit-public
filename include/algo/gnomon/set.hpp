@@ -81,6 +81,18 @@ public:
         for (TIterator i = begin; i != end; ++i)
             insert(*i);
     }
+    
+    void push_back(const T& element)   // much faster than insert but needs sort_and_unique after last element is inserted if input was not sorted
+    {
+        m_elements.push_back(element);
+    }
+
+    void sort_and_unique() 
+    {
+        sort(m_elements.begin(),m_elements.end());
+        m_elements.erase( unique(m_elements.begin(),m_elements.end()), m_elements.end() );
+    }
+
 
     void clear() { m_elements.clear(); }
   
