@@ -117,7 +117,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                     ITERATE(CUser_object::TData, j, (*i)->GetData()) {
                         if(*j && (*j)->CanGetLabel() && (*j)->GetLabel().IsStr()) {
                             string label = (*j)->GetLabel().GetStr();
-                            if(NStr::EndsWith(label, "alignments"))
+                            if(NStr::EndsWith(label, "alignments") || label.find(' ') == string::npos)
                                 count += (*j)->GetData().GetInt();
                         }
                     }
@@ -132,7 +132,9 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             reverse(mismatches.begin(),mismatches.end());
     }
 
+#ifdef _DEBUG 
     bool ggap_model= false;
+#endif    
 
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
@@ -205,7 +207,9 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             }
 
             AddGgapExon(eident, fill_seq, fill_src, Strand() == eMinus);
+#ifdef _DEBUG 
             ggap_model = true;
+#endif    
         }
         transcript_exons.push_back(TSignedSeqRange(exon.GetProduct_start().AsSeqPos(), exon.GetProduct_end().AsSeqPos()));
 
