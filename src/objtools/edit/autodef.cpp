@@ -1281,7 +1281,10 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
     string feature_clauses = GetOneFeatureClauseList(bh, genome_val);
     
     if (org_desc.length() > 0 && isalpha(org_desc.c_str()[0])) {
-        org_desc = NStr::ToUpper(org_desc.substr(0, 1)) + org_desc.substr(1);
+        string first_letter = org_desc.substr(0, 1);
+        string remainder = org_desc.substr(1);
+        NStr::ToUpper(first_letter);
+        org_desc = first_letter + remainder;
     }
 
     return org_desc + feature_clauses;
