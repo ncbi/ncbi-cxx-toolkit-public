@@ -734,5 +734,17 @@ BOOST_AUTO_TEST_CASE(Test_GB_3395)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3439)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(seq, "uncultured archaeon");
+    CRef<objects::CSeq_feat> dloop = unit_test_util::AddGoodImpFeat (seq, "D-loop");
+    dloop->ResetComment();
+    AddTitle(seq, "Uncultured archaeon D-loop, complete sequence.");
+    CheckDeflineMatches(seq, true);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
