@@ -104,14 +104,6 @@ void CVariationUtilities::CorrectRefAllele(CRef<CSeq_annot>& annot, CScope& scop
     }
 }
 
-void CVariationUtilities::CorrectRefAllele(CRef<CVariation_ref>& var, CScope& scope)
-{
-    CVariation_ref& vr = *var;
-    if (!vr.IsSetLocation())
-        NCBI_THROW(CException, eUnknown, "Location is not set in input Variation-ref");
-    string new_ref = GetAlleleFromLoc(vr.GetLocation(),scope);
-    CorrectRefAllele(vr,new_ref);
-}
 
 void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, const CSeq_loc& loc, CScope& scope)
 {
