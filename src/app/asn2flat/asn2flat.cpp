@@ -365,7 +365,8 @@ int CAsn2FlatApp::Run(void)
     }
 
     if ( args[ "batch" ] ) {
-        CGBReleaseFile in( *is.release() );
+        bool propagate = args[ "p" ];
+        CGBReleaseFile in( *is.release(), propagate );
         in.RegisterHandler( this );
         in.Read();  // HandleSeqEntry will be called from this function
         return 0;
