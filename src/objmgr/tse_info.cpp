@@ -194,7 +194,8 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
     m_UsedMemory = tse->m_UsedMemory;
     m_LoadState = eLoaded;
 
-
+    // update Seq-inst object with split data
+    tse->x_Update(fNeedUpdate_children_seq_data);
     x_SetObject(*tse, &m_BaseTSE->m_ObjectCopyMap);
     x_TSEAttach(*this);
 
