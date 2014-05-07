@@ -51,6 +51,8 @@ USING_SCOPE(objects);
 
 
 //////////////////////
+
+
 set<int> 
 s_AlignIdsFromEquivList(const TEquivList& Equivs) {
     set<int> AlignIds;
@@ -237,44 +239,6 @@ TSeqPos s_AlignDist(const CSeq_align& A, const CSeq_align& B)
     return max(D, DeltaInt);
 }
 
-TSeqPos s_AlignDist(const TEquivList& A, const TEquivList& B) 
-{
-    TSeqRange AQR, ASR, BQR, BSR;
-    ITERATE(TEquivList, EquivIter, A) {
-        AQR += EquivIter->Query;
-        ASR += EquivIter->Subjt;
-    }
-    ITERATE(TEquivList, EquivIter, B) {
-        BQR += EquivIter->Query;
-        BSR += EquivIter->Subjt;
-    }
-
-    TSeqRange QI = AQR.IntersectionWith(BQR);
-    TSeqRange SI = ASR.IntersectionWith(BSR);
-
-    TSeqPos QD=0, SD=0;
-    if(QI.Empty()) {
-        if( AQR.GetFrom() >= BQR.GetTo() ) {
-            QD = AQR.GetFrom() - BQR.GetTo();
-        } else {
-            QD = BQR.GetFrom() - AQR.GetTo();
-        }
-    } 
-    if(SI.Empty()) {
-        if( ASR.GetFrom() >= BSR.GetTo() ) {
-            SD = ASR.GetFrom() - BSR.GetTo();
-        } else {
-            SD = BSR.GetFrom() - ASR.GetTo();
-        }
-    } 
-    TSeqPos D = QD + SD;
-
-    TSignedSeqPos AINT = A.front().Intercept; //s_SeqAlignIntercept(A);
-    TSignedSeqPos BINT = B.front().Intercept; //s_SeqAlignIntercept(B);
-    TSeqPos DeltaInt = abs(AINT - BINT);
-
-    return max(D, DeltaInt);
-}
 
 
 
@@ -325,7 +289,8 @@ void CTreeAlignMerger::Merge(const list< CRef<CSeq_align> >& Input,
 void CTreeAlignMerger::Merge_AllAtOnce(const list< CRef<CSeq_align> >& Input,
                              list< CRef<CSeq_align> >& Output ) 
 {
-    
+    CEquivRangeBuilder EquivRangeBuilder;
+
     typedef pair<CSeq_id_Handle, ENa_strand> TSeqIdPair;
     typedef pair<TSeqIdPair, TSeqIdPair> TMapKey;
     typedef vector<CRef<CSeq_align> > TAlignVec;
@@ -369,7 +334,7 @@ void CTreeAlignMerger::Merge_AllAtOnce(const list< CRef<CSeq_align> >& Input,
             cerr << AID << "\t" << (*AlignIter)->GetSeqRange(0) 
                         << "\t" << (*AlignIter)->GetSeqRange(1) << endl;
 #endif
-            CEquivRange::ExtractRangesFromSeqAlign(**AlignIter, OrigEquivs);
+            EquivRangeBuilder.ExtractRangesFromSeqAlign(**AlignIter, OrigEquivs);
             AID++;
         }
 #ifdef MERGE_TREE_VERBOSE_DEBUG
@@ -378,7 +343,7 @@ void CTreeAlignMerger::Merge_AllAtOnce(const list< CRef<CSeq_align> >& Input,
 #endif
 
         if(QueryBSH && SubjtBSH) {
-            CEquivRange::CalcMatches(QueryBSH, SubjtBSH, OrigEquivs);
+            EquivRangeBuilder.CalcMatches(QueryBSH, SubjtBSH, OrigEquivs);
         } else {
             NON_CONST_ITERATE(TEquivList, Iter, OrigEquivs) {
                 Iter->Matches  = Iter->Query.GetLength();
@@ -477,7 +442,7 @@ void CTreeAlignMerger::Merge_AllAtOnce(const list< CRef<CSeq_align> >& Input,
                 cerr << endl;
                 {
                     TEquivList LocalSplits;
-                    CEquivRange::SplitIntersections(QuadIter->Storage, LocalSplits);
+                    EquivRangeBuilder.SplitIntersections(QuadIter->Storage, LocalSplits);
                     QuadIter->Storage.clear();
                     
                     CMergeTree Tree;
@@ -497,7 +462,7 @@ void CTreeAlignMerger::Merge_AllAtOnce(const list< CRef<CSeq_align> >& Input,
                     //        Output.push_back(Merged);
                     //}}   
                    
-                    CEquivRange::MergeAbuttings(Path, QuadIter->Storage);
+                    EquivRangeBuilder.MergeAbuttings(Path, QuadIter->Storage);
 
                     //QuadIter->Storage.insert(QuadIter->Storage.end(), Path.begin(), Path.end());
                     AlignIds = s_AlignIdsFromEquivList(QuadIter->Storage);
@@ -536,7 +501,7 @@ void CTreeAlignMerger::Merge_AllAtOnce(const list< CRef<CSeq_align> >& Input,
             OrigEquivs.swap(Filtered);
         cerr << "_______________________________" << endl;
         }}*/
-        CEquivRange::SplitIntersections(OrigEquivs, SplitEquivs);
+        EquivRangeBuilder.SplitIntersections(OrigEquivs, SplitEquivs);
         
         CMergeTree Tree;
         if(Callback != NULL)
@@ -577,6 +542,8 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
     typedef map<TMapKey, TAlignVec> TAlignMap;
     TAlignMap AlignMap;
 
+    CEquivRangeBuilder EquivRangeBuilder;
+    
     ITERATE(list<CRef<CSeq_align> >, AlignIter, Input) {
         const CSeq_align& Align = **AlignIter;
 
@@ -619,11 +586,11 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
         int AID = 0;
         ITERATE(TAlignVec, AlignIter, MapIter->second) {
             TEquivList Temp;
-            //CEquivRange::ExtractRangesFromSeqAlign(**AlignIter, OrigEquivs);
-            CEquivRange::ExtractRangesFromSeqAlign(**AlignIter, Temp);
+            //EquivRangeBuilder.ExtractRangesFromSeqAlign(**AlignIter, OrigEquivs);
+            EquivRangeBuilder.ExtractRangesFromSeqAlign(**AlignIter, Temp);
             
             if(QueryBSH && SubjtBSH) {
-                CEquivRange::CalcMatches(QueryBSH, SubjtBSH, Temp);
+                EquivRangeBuilder.CalcMatches(QueryBSH, SubjtBSH, Temp);
             } else { 
                 NON_CONST_ITERATE(TEquivList, Iter, Temp) {
                     Iter->Matches  = Iter->Query.GetLength();
@@ -646,7 +613,7 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
 #endif
 
         if(QueryBSH && SubjtBSH) {
-            CEquivRange::CalcMatches(QueryBSH, SubjtBSH, OrigEquivs);
+            EquivRangeBuilder.CalcMatches(QueryBSH, SubjtBSH, OrigEquivs);
         } else {
             NON_CONST_ITERATE(TEquivList, Iter, OrigEquivs) {
                 Iter->Matches  = Iter->Query.GetLength();
@@ -666,7 +633,7 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
 
             //cerr << "A: " << MapIter->second.size() << " OS: " << OrigEquivs.size() << " SE: " << SplitEquivs.size() << endl;
             SplitEquivs.clear();
-            CEquivRange::SplitIntersections(CurrEquivs, SplitEquivs);
+            EquivRangeBuilder.SplitIntersections(CurrEquivs, SplitEquivs);
          
        
             CMergeTree Tree;
@@ -696,7 +663,7 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
 
                 //AccumEquivs.clear();
                 TEquivList Abutted;
-                CEquivRange::MergeAbuttings(Path, Abutted);
+                EquivRangeBuilder.MergeAbuttings(Path, Abutted);
                 sort(Abutted.begin(), Abutted.end());
                 s_EquivDiff(AccumEquivs, Abutted);
                 AccumScore = NewScore;
@@ -839,7 +806,7 @@ CTreeAlignMerger::x_MakeMergeableGroups(list<CRef<CSeq_align> > Input,
 class CAlignDistGraph 
 {
 public:
-    CAlignDistGraph() : m_NextIndex(0) { ; }
+    CAlignDistGraph(CEquivRangeBuilder& Builder) : m_EquivRangeBuilder(Builder), m_NextIndex(0) { ; }
     CAlignDistGraph(const CAlignDistGraph& Original);
 
     size_t Size() const { return AlignEquivMap.size(); }
@@ -856,6 +823,7 @@ public:
     void Print();
 
 private:
+    CEquivRangeBuilder& m_EquivRangeBuilder;
 
     size_t m_NextIndex;
     
@@ -905,7 +873,8 @@ void CAlignDistGraph::Print()
     }}
 }
 
-CAlignDistGraph::CAlignDistGraph(const CAlignDistGraph& Original) : m_NextIndex(0)
+CAlignDistGraph::CAlignDistGraph(const CAlignDistGraph& Original) 
+    : m_EquivRangeBuilder(Original.m_EquivRangeBuilder), m_NextIndex(0)
 {
     m_NextIndex = Original.m_NextIndex;
     ITERATE(TAlignEquivListMap, AlignIter, Original.AlignEquivMap) {        
@@ -942,7 +911,7 @@ void CAlignDistGraph::AddAlignment(const TEquivList& NewAlignEquivs)
         size_t CI = IndexIter->first;
         const TEquivList& CurrEquivs = AlignEquivMap[CI];
 
-        TSeqPos CurrDist = s_AlignDist(NewEquivs, CurrEquivs);
+        TSeqPos CurrDist = CEquivRange::Distance(NewEquivs, CurrEquivs);
 
         if(CurrDist < BestD) {
             BestD = CurrDist;
@@ -1049,7 +1018,7 @@ void CAlignDistGraph::RemoveEquivs(const TEquivList& RemoveEquivs)
         TEquivList Origs, Splits;
         Origs.insert(Origs.end(), CurrEquivs.begin(), CurrEquivs.end());
         Origs.insert(Origs.end(), RemoveGroupEquivs.begin(), RemoveGroupEquivs.end());
-        CEquivRange::SplitIntersections(Origs, Splits);
+        m_EquivRangeBuilder.SplitIntersections(Origs, Splits);
         Origs.clear();
 
         TEquivList Remaining;
@@ -1069,7 +1038,7 @@ void CAlignDistGraph::RemoveEquivs(const TEquivList& RemoveEquivs)
             }
         }
         CurrEquivs.clear();
-        CEquivRange::MergeAbuttings(Remaining, CurrEquivs);
+        m_EquivRangeBuilder.MergeAbuttings(Remaining, CurrEquivs);
     
 
         if(CurrEquivs.empty()) {
@@ -1108,7 +1077,7 @@ void CAlignDistGraph::x_CalculateAllDistances()
     for( OII = 0; OII < Indexes.size(); OII++) {
         OI = Indexes[OII];
         TSeqPos BestDist = numeric_limits<TSeqPos>::max();
-        size_t BestI = Indexes[OII+1];
+        size_t BestI = 0;
         if(NearestMap.find(OI) != NearestMap.end()) {
             BestI = NearestMap[OI];
             BestDist = NearestDistMap[OI];
@@ -1119,7 +1088,7 @@ void CAlignDistGraph::x_CalculateAllDistances()
         //    if(OII == III)
         //        continue;
             II = Indexes[III];
-            TSeqPos CurrDist = s_AlignDist(AlignEquivMap[OI], AlignEquivMap[II]);
+            TSeqPos CurrDist = CEquivRange::Distance(AlignEquivMap[OI], AlignEquivMap[II]);
             if(CurrDist < BestDist) {
                 BestI = II;
                 BestDist = CurrDist;
@@ -1150,7 +1119,7 @@ void CAlignDistGraph::x_CalculateOneDistance(size_t CalcIndex)
         if(CurrIndex == CalcIndex)
             continue;
 
-        TSeqPos CurrDist = s_AlignDist(AlignEquivMap[CalcIndex], AlignEquivMap[CurrIndex]);
+        TSeqPos CurrDist = CEquivRange::Distance(AlignEquivMap[CalcIndex], AlignEquivMap[CurrIndex]);
         if(CurrDist < BestDist) {
             BestI = CurrIndex;
             BestDist = CurrDist;
@@ -1197,7 +1166,9 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
     const int PASSES_BEFORE_EARLY_REMOVE = 5;
     list<CRef<CSeq_align> > EarlyRemoves;
 
-    CAlignDistGraph OriginalGraph;
+    CEquivRangeBuilder EquivRangeBuilder;
+    
+    CAlignDistGraph OriginalGraph(EquivRangeBuilder);
 
 #ifdef MERGE_TREE_VERBOSE_DEBUG
     cerr << "Starting : " << Aligns.size() << endl;
@@ -1208,9 +1179,9 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
     
     ITERATE(TAlignVec, AlignIter, Aligns) {
         TEquivList Temp;
-        CEquivRange::ExtractRangesFromSeqAlign(**AlignIter, Temp);
+        EquivRangeBuilder.ExtractRangesFromSeqAlign(**AlignIter, Temp);
         if(QueryBSH && SubjtBSH) {
-            CEquivRange::CalcMatches(QueryBSH, SubjtBSH, Temp);
+            EquivRangeBuilder.CalcMatches(QueryBSH, SubjtBSH, Temp);
         } else { 
             NON_CONST_ITERATE(TEquivList, Iter, Temp) {
                 Iter->Matches  = Iter->Query.GetLength();
@@ -1252,7 +1223,7 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
             CurrEquivs.insert(CurrEquivs.end(), OtherEs.begin(), OtherEs.end());
             sort(CurrEquivs.begin(), CurrEquivs.end());
             TEquivList SplitEquivs;
-            CEquivRange::SplitIntersections(CurrEquivs, SplitEquivs);
+            EquivRangeBuilder.SplitIntersections(CurrEquivs, SplitEquivs);
         
             CMergeTree Tree;
             if(Callback != NULL)
@@ -1271,7 +1242,7 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
             }
 
             TEquivList Abutted;
-            CEquivRange::MergeAbuttings(Path, Abutted);
+            EquivRangeBuilder.MergeAbuttings(Path, Abutted);
             sort(Abutted.begin(), Abutted.end());
            
             if(!Abutted.empty())
@@ -1320,17 +1291,17 @@ CTreeAlignMerger::x_Merge_Dist_Impl(TAlignVec& Aligns,
             }}
 
             {{
+#ifdef MERGE_TREE_VERBOSE_DEBUG
                 //s_EquivDiff(CurrEquivs, Abutted);
                 int MinScore = Tree.Score(MinEs);
                 int OtherScore = Tree.Score(OtherEs);
                 int NewScore = Tree.Score(Abutted);
-#ifdef MERGE_TREE_VERBOSE_DEBUG
                 cerr << " Scores: " << MinScore << " x " << OtherScore << " => " << NewScore << endl; 
                 if(NewScore < MinScore || NewScore < OtherScore) {
                     cerr << "BACKWARDS!" << endl;
                 }
-#endif
                 //s_FindBestSubRange(Tree, Abutted);
+#endif
             }}
         
         } // end while CurrGraph

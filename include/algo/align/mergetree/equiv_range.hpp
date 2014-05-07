@@ -34,7 +34,6 @@
 
 #include <objects/seqloc/seqloc__.hpp>
 #include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
 #include <util/range.hpp>
 
 
@@ -66,11 +65,6 @@ public:
     int SegmtId;
     int SplitId;
 
-    static int GAlignId;
-    static int GSegmtId;
-    static int GSplitId;
-
-
 	bool Empty() const {
 		return (Query.Empty() || Subjt.Empty());
 	}
@@ -95,18 +89,9 @@ public:
 
         return true;
     }
-
-	CEquivRange SliceOnQuery(const CRange<TSeqPos>& pQuery) const;
-	CEquivRange SliceOnSubjt(const CRange<TSeqPos>& pSubjt) const;
-    CEquivRange Merge(const CEquivRange& Other) const;
-
-	void CalcMatches(objects::CBioseq_Handle QueryHandle, objects::CBioseq_Handle SubjtHandle);
-
-	static bool SplitIntersections(const TEquivList& Originals,
-								   TEquivList& Splits);
-    static bool MergeAbuttings(const TEquivList& Originals, TEquivList& Merges);
-
-	enum ERelative {
+	
+    
+    enum ERelative {
         eWtf = 0x00,
 		eIntersects = 0x01,
         eInterQuery = 0x02,
@@ -117,15 +102,41 @@ public:
 		eUnder  = 0x80
 	};
 
-	// How is Check positioned relative to this
+    // How is Check positioned relative to this
 	ERelative CalcRelative(const CEquivRange& Check) const;
 	ERelative CalcRelativeDuo(const CEquivRange& Check) const;
 
-	static void ExtractRangesFromSeqAlign(const objects::CSeq_align& Alignment, 
+    static TSeqPos Distance(const CEquivRange& A, const CEquivRange& B);
+    static TSeqPos Distance(const TEquivList& A,  const TEquivList& B);
+};
+
+class CEquivRangeBuilder 
+{
+public:
+
+    CEquivRangeBuilder();
+
+    bool SplitIntersections(const TEquivList& Originals,
+								   TEquivList& Splits);
+    bool MergeAbuttings(const TEquivList& Originals, TEquivList& Merges);
+
+
+	void ExtractRangesFromSeqAlign(const objects::CSeq_align& Alignment, 
 											TEquivList& Equivs);
-    static void CalcMatches(objects::CBioseq_Handle QueryHandle, 
+    
+    void CalcMatches(objects::CBioseq_Handle QueryHandle, 
                             objects::CBioseq_Handle SubjtHandle,
                             TEquivList& Equivs);
+     
+private:
+    int x_GAlignId;
+    int x_GSegmtId;
+    int x_GSplitId;
+  
+    CEquivRange SliceOnQuery(const CEquivRange& Original, const CRange<TSeqPos>& pQuery);
+	CEquivRange SliceOnSubjt(const CEquivRange& Original, const CRange<TSeqPos>& pSubjt);
+    CEquivRange Merge(const CEquivRange& First, const CEquivRange& Second);
+
 };
 
 

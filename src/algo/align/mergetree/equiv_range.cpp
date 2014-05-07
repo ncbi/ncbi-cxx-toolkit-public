@@ -120,528 +120,6 @@ bool s_SortEquivBySubjt(const CEquivRange& A, const CEquivRange& B) {
 END_SCOPE(ncbi);
 
 
-int CEquivRange::GAlignId = 0;
-int CEquivRange::GSegmtId = 0;
-int CEquivRange::GSplitId = 0;
-
-CEquivRange 
-CEquivRange::SliceOnQuery(const CRange<TSeqPos>& pQuery) const
-{
-	CEquivRange Slice;
-	CRange<TSeqPos> Inter = Query.IntersectionWith(pQuery);
-	
-	Slice.Strand = Strand;
-	Slice.Intercept = Intercept;
-	Slice.Matches = 0;
-    Slice.MisMatches = 0;
-	if(Inter.Empty()) {
-		Slice.Query = Inter;
-		return Slice;
-	} else if(Query == Inter) {
-		return *this;
-	}
-
-    Slice.Query = Inter;
-	TSeqPos SOffset = Inter.GetFrom() - Query.GetFrom();
-
-	if(Strand == eNa_strand_plus) {
-	    Slice.Subjt.SetFrom(Subjt.GetFrom() + SOffset);
-		Slice.Subjt.SetLength(Inter.GetLength());
-	} else {
-		Slice.Subjt.SetTo(Subjt.GetTo() - SOffset);
-		Slice.Subjt.SetLengthDown(Inter.GetLength());
-	}
-    
-    ITERATE(vector<TSeqPos>, MisPointIter, MisMatchSubjtPoints) {
-        if (Slice.Subjt.GetFrom() <= *MisPointIter &&
-            Slice.Subjt.GetTo() >= *MisPointIter) {
-            Slice.MisMatchSubjtPoints.push_back(*MisPointIter);
-        }
-    }
-    Slice.MisMatches = Slice.MisMatchSubjtPoints.size();
-    Slice.Matches = Slice.Subjt.GetLength() - Slice.MisMatches;
-
-    Slice.AlignId = AlignId;
-    Slice.SegmtId = SegmtId;
-    Slice.SplitId = GSplitId; GSplitId++;
-
-	return Slice;
-}
-
-
-CEquivRange 
-CEquivRange::SliceOnSubjt(const CRange<TSeqPos>& pSubjt) const
-{
-	CEquivRange Slice;
-	CRange<TSeqPos> Inter = Subjt.IntersectionWith(pSubjt);
-	
-	Slice.Strand = Strand;
-	Slice.Intercept = Intercept;
-	Slice.Matches = 0;
-	Slice.MisMatches = 0;
-    if(Inter.Empty()) {
-		Slice.Subjt = Inter;
-		return Slice;
-	} else if(Subjt == Inter) {
-		return *this;
-	}
-
-    Slice.Subjt = Inter;
-    TSeqPos QOffset = Inter.GetFrom() - Subjt.GetFrom();
-    		
-	if(Strand == eNa_strand_plus) {
-		Slice.Query.SetFrom(Query.GetFrom() + QOffset);
-		Slice.Query.SetLength(Inter.GetLength());
-	} else {
-		Slice.Query.SetTo(Query.GetTo() - QOffset);
-		Slice.Query.SetLengthDown(Inter.GetLength());
-	}
- 
-    ITERATE(vector<TSeqPos>, MisPointIter, MisMatchSubjtPoints) {
-        if (Slice.Subjt.GetFrom() <= *MisPointIter &&
-            Slice.Subjt.GetTo() >= *MisPointIter) {
-            Slice.MisMatchSubjtPoints.push_back(*MisPointIter);
-        }
-    }
-    Slice.MisMatches = Slice.MisMatchSubjtPoints.size();
-    Slice.Matches = Slice.Subjt.GetLength() - Slice.MisMatches;
-
-    Slice.AlignId = AlignId;
-    Slice.SegmtId = SegmtId;
-    Slice.SplitId = GSplitId; GSplitId++;
-
-	return Slice;
-}
-
-
-CEquivRange 
-CEquivRange::Merge(const CEquivRange& Other) const
-{
-    CEquivRange Merged;
-
-    Merged.Query = Query + Other.Query;
-    Merged.Subjt = Subjt + Other.Subjt;
-
-    Merged.Strand = Strand;
-    Merged.Intercept = Intercept;
-    Merged.Matches = Matches + Other.Matches;
-    Merged.MisMatches = MisMatches + Other.MisMatches;
-
-    Merged.MisMatchSubjtPoints.insert(Merged.MisMatchSubjtPoints.end(),
-            MisMatchSubjtPoints.begin(), MisMatchSubjtPoints.end());
-    Merged.MisMatchSubjtPoints.insert(Merged.MisMatchSubjtPoints.end(),
-            Other.MisMatchSubjtPoints.begin(), Other.MisMatchSubjtPoints.end());
-
-    Merged.AlignId = AlignId;
-    Merged.SegmtId = SegmtId;
-    Merged.SplitId = GSplitId; GSplitId++;
-   
-    if(Merged.Query.GetLength() != Merged.Subjt.GetLength())
-       cerr << __LINE__ << " ERROR" << endl;
-    if(Merged.MisMatchSubjtPoints.size() != (size_t)Merged.MisMatches) 
-       cerr << __LINE__ << " ERROR" << endl;
-    if(Merged.Query.GetLength() != (size_t)(Merged.Matches + Merged.MisMatches))
-       cerr << __LINE__ << " ERROR" << endl;
-
-    return Merged;
-}
-
-
-void CEquivRange::CalcMatches(CBioseq_Handle QueryHandle, 
-							  CBioseq_Handle SubjtHandle) 
-{
- 	CSeqVector QueryVec(QueryHandle, CBioseq_Handle::eCoding_Iupac, Strand);
- 	CSeqVector SubjtVec(SubjtHandle, CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
-
-	string QueryStr, SubjtStr;
-	if(Strand == eNa_strand_plus)
-		QueryVec.GetSeqData(Query.GetFrom(), Query.GetTo()+1, QueryStr); 
-	else
-		QueryVec.GetSeqData(QueryVec.size()-Query.GetTo()-1, 
-							QueryVec.size()-Query.GetFrom(), QueryStr); 
-	SubjtVec.GetSeqData(Subjt.GetFrom(), Subjt.GetTo()+1, SubjtStr); 
-
-
-	Matches = 0;
-    MisMatches = 0;
-	for(size_t Loop = 0; Loop < QueryStr.length(); Loop++) {
-		if(QueryStr[Loop] == SubjtStr[Loop]) {
-			Matches++;
-        } else {
-            MisMatches++;
-            MisMatchSubjtPoints.push_back(Subjt.GetFrom()+Loop);
-        }
-	}
-
-}
-
-
-bool
-CEquivRange::SplitIntersections(const TEquivList& Originals,
-								TEquivList& Splits)
-{
-	//set<CEquivRange> Sources;
-	//set<CEquivRange> Equivs;
-	TEquivList Sources, Equivs;
-
-    bool MadeCuts = false;
-	do {
-        MadeCuts = false;
-		
-		if(Equivs.empty()) {
-			ITERATE(TEquivList, OrigIter, Originals) {
-				//Sources.insert(*OrigIter);
-			    Sources.push_back(*OrigIter);
-            }
-            TEquivList::iterator NE;
-            sort(Sources.begin(), Sources.end());
-            NE = unique(Sources.begin(), Sources.end());
-		    Sources.erase(NE, Sources.end());
-        }	
-		else {
-			Sources.clear();
-			Equivs.swap(Sources);
-			Equivs.clear();
-		}
-
-		//cerr << "IS: " << Equivs.size() << " : " << Sources.size() << endl;
-		typedef vector<TSeqPos> TPointContainer;
-		//typedef set<TSeqPos> TPointContainer;
-        TPointContainer QueryPoints, SubjtPoints;
-        QueryPoints.reserve(Sources.size()*2);
-        SubjtPoints.reserve(Sources.size()*2);
-
-		ITERATE(vector<CEquivRange>, SourceIter, Sources) {
-		//	QueryPoints.insert(SourceIter->Query.GetFrom());
-		//	QueryPoints.insert(SourceIter->Query.GetTo()+1);
-		//	SubjtPoints.insert(SourceIter->Subjt.GetFrom());
-		//	SubjtPoints.insert(SourceIter->Subjt.GetTo()+1);
-			
-            QueryPoints.push_back(SourceIter->Query.GetFrom());
-			QueryPoints.push_back(SourceIter->Query.GetTo()+1);
-			SubjtPoints.push_back(SourceIter->Subjt.GetFrom());
-			SubjtPoints.push_back(SourceIter->Subjt.GetTo()+1);
-        }
-
-        {{
-            vector<TSeqPos>::iterator NE;
-            sort(QueryPoints.begin(), QueryPoints.end());
-            NE = unique(QueryPoints.begin(), QueryPoints.end());
-            QueryPoints.erase(NE, QueryPoints.end());
-            sort(SubjtPoints.begin(), SubjtPoints.end());
-            NE = unique(SubjtPoints.begin(), SubjtPoints.end());
-            SubjtPoints.erase(NE, SubjtPoints.end());
-        }}
-		
-
-        //cerr << "S" << endl;
-        //cerr << CTime(CTime::eCurrent).AsString("m:s.l") << endl;
-		
-        
-        ITERATE(TEquivList, SourceIter, Sources) {
-            const CEquivRange& Equiv = *SourceIter;
-           
-            size_t JumpTo = 0;
-            {{
-                size_t F = 0, T = QueryPoints.size()-1;
-                size_t I = 0;
-                while(true) {
-                    if(F+1 >= T) {
-                        I = F;
-                        break;
-                    }
-                    I = (F+((T-F)/2));
-                    TSeqPos IV = QueryPoints[I];
-                    //cerr << " F " << F << "  T " << T <<  "  I " << I << "  IV  " << IV << endl;
-                    if( IV == Equiv.Query.GetFrom()) {
-                        break;
-                    } else if( Equiv.Query.GetFrom() < IV ) {
-                        T = I;
-                    } else {
-                        F = I;
-                    }
-                }
-                JumpTo = I;
-            }}
-            //cerr << "Q JumpTo: " << JumpTo << "\t" << Equiv << endl;
-
-            //ITERATE(TPointContainer, StartIter, QueryPoints) {
-            for(TPointContainer::const_iterator StartIter = QueryPoints.begin()+JumpTo;
-                StartIter != QueryPoints.end(); ++StartIter) {
-                
-                TPointContainer::const_iterator Next = StartIter;
-			    ++Next;
-			    if(Next == QueryPoints.end())
-				    continue;
-                    
-			    //CRange<TSeqPos> Range(*StartIter, *Next-1);
-			    CRange<TSeqPos> Range(*StartIter, *Next-1);
-		        Range.SetFrom(*StartIter);
-                Range.SetTo(*Next-1);
-
-			    if(Range.Empty())
-				    continue;
-                
-                if(Range == Equiv.Query) {
-                    Equivs.push_back(Equiv);
-                } else if(Range.IntersectingWith(Equiv.Query)) {
-                    CEquivRange Temp = Equiv.SliceOnQuery(Range);
-				    //if(Temp.NotEmpty() && Temp.Matches > 0) {
-				    if(Temp.NotEmpty()) {
-                        Equivs.push_back(Temp);
-                        MadeCuts = true;
-                    }
-                }
-
-                if(*StartIter > Equiv.Query.GetTo()) {
-                    break;
-                }
-            }
-            
-            {{
-                size_t F = 0, T = SubjtPoints.size()-1;
-                size_t I = 0;
-                while(true) {
-                    if(F+1 >= T) {
-                        I = F;
-                        break;
-                    }
-                    I = (F+((T-F)/2));
-                    TSeqPos IV = SubjtPoints[I];
-                    if( IV == Equiv.Subjt.GetFrom()) {
-                        break;
-                    } else if( Equiv.Subjt.GetFrom() < IV ) {
-                        T = I;
-                    } else {
-                        F = I;
-                    }
-                }
-                JumpTo = I;
-            }}
-            
-            //ITERATE(TPointContainer, StartIter, SubjtPoints) {
-    	    for(TPointContainer::const_iterator StartIter = SubjtPoints.begin()+JumpTo;
-                StartIter != SubjtPoints.end(); ++StartIter) {
-             
-                TPointContainer::const_iterator Next = StartIter;
-			    ++Next;
-			    if(Next == SubjtPoints.end())
-				    continue;
-    
-			    //CRange<TSeqPos> Range(*StartIter, *Next-1);
-		        CRange<TSeqPos> Range(*StartIter, *Next-1);
-		        Range.SetFrom(*StartIter);
-                Range.SetTo(*Next-1);
-
-
-			    if(Range.Empty())
-				    continue;
-                
-                if(Range == Equiv.Subjt) {
-                    Equivs.push_back(Equiv);
-                } else if(Range.IntersectingWith(Equiv.Subjt)) {
-                    CEquivRange Temp = Equiv.SliceOnSubjt(Range);
-				    //if(Temp.NotEmpty() && Temp.Matches > 0) {
-				    if(Temp.NotEmpty()) {
-                        Equivs.push_back(Temp);
-                        MadeCuts = true;
-                    }
-                }
-                if(*StartIter > Equiv.Subjt.GetTo()) {
-                    break;
-                }
-            }
-        }
-
-        /*
-        cerr << "Q" << endl;
-        cerr << CTime(CTime::eCurrent).AsString("m:s.l") << endl;
-		TEquivList::iterator LastSourceStart;
-        LastSourceStart = Sources.end();
-        int LCI = 0;
-        LCI = 0;
-        ITERATE(TPointContainer, StartIter, QueryPoints) {
-
-			TPointContainer::const_iterator Next = StartIter;
-			++Next;
-			if(Next == QueryPoints.end())
-				continue;
-
-			CRange<TSeqPos> Range(*StartIter, *Next-1);
-		
-			if(Range.Empty())
-				continue;
-            
-
-            TEquivList::iterator SourceIter = LastSourceStart;
-            LastSourceStart = Sources.end();
-            if(SourceIter == Sources.end())
-                SourceIter = Sources.begin();
-            size_t CI = LCI;
-            LCI = 0;
-			//ITERATE(vector<CEquivRange>, SourceIter, Sources) {
-			for( ; SourceIter != Sources.end(); ++SourceIter) { 
-                
-                if(*Next < SourceIter->Query.GetFrom()) {
-                    continue;
-                }
-                
-                if (LastSourceStart == Sources.end()) {
-                    LastSourceStart = SourceIter;
-                    LCI = CI;
-                } 
-                
-                if(Range == SourceIter->Query) {
-                    cerr << "QE : CI : " << CI << "\t" << Range << "\t" << SourceIter->Query << endl;
-                    Equivs.push_back(*SourceIter);
-                } else if(Range.IntersectingWith(SourceIter->Query)) {
-                    cerr << "QI : CI : " << CI << "\t" << Range << "\t" << SourceIter->Query << endl;
-                    CEquivRange Temp = SourceIter->SliceOnQuery(Range);
-				    if(Temp.NotEmpty()) {
-					    //Equivs.insert(Temp);
-                        Equivs.push_back(Temp);
-                    }
-                } else if( *StartIter > SourceIter->Query.GetFrom() &&
-                           *StartIter > LastSourceStart->Query.GetFrom() ) {
-                    LastSourceStart = SourceIter;
-                    ++LastSourceStart;
-                    LCI = CI + 1;
-                    break;
-                }
-                CI++;
-			}
-		}
-
-        sort(Sources.begin(), Sources.end(), s_SortEquivBySubjt);
-        
-        cerr << "S" << endl;
-        cerr << CTime(CTime::eCurrent).AsString("m:s.l") << endl;
-		LastSourceStart = Sources.end();
-		ITERATE(TPointContainer, StartIter, SubjtPoints) {
-
-			TPointContainer::const_iterator Next = StartIter;
-			++Next;
-			if(Next == SubjtPoints.end())
-			    continue;
-
-			CRange<TSeqPos> Range(*StartIter, *Next-1);
-		
-			if(Range.Empty())
-				continue;
-
-            TEquivList::iterator SourceIter = LastSourceStart;
-            LastSourceStart = Sources.end();
-            if(SourceIter == Sources.end())
-                SourceIter = Sources.begin();
-    
-            //ITERATE(vector<CEquivRange>, SourceIter, Sources) {
-			for( ; SourceIter != Sources.end(); ++SourceIter) { 
-                
-                if(*Next < SourceIter->Subjt.GetFrom()) {
-                    continue;
-                }
-                
-                if (LastSourceStart == Sources.end()) {
-                    LastSourceStart = SourceIter;
-                }
-
-                if(Range == SourceIter->Subjt) {
-                    Equivs.push_back(*SourceIter);
-                } else if(Range.IntersectingWith(SourceIter->Subjt)) {
-                    CEquivRange Temp = SourceIter->SliceOnSubjt(Range);
-				    if(Temp.NotEmpty()) {
-					    //Equivs.insert(Temp);
-                        Equivs.push_back(Temp);
-                    }
-                } else if( *StartIter > SourceIter->Query.GetFrom() &&
-                           *StartIter > LastSourceStart->Query.GetFrom() ) {
-                    LastSourceStart = SourceIter;
-                    ++LastSourceStart;
-                    continue;
-                }
-			}
-		}
-        */
-
-        //cerr << "E" << endl;
-        //cerr << CTime(CTime::eCurrent).AsString("m:s.l") << endl;
-
-		//ITERATE(set<CEquivRange>, EquivIter, Equivs) {
-	    //		cout << *EquivIter << endl;
-		//}
-
-        {{
-            TEquivList::iterator NE;
-            sort(Equivs.begin(), Equivs.end());
-            NE = unique(Equivs.begin(), Equivs.end());
-            Equivs.erase(NE, Equivs.end());
-		    //cerr << "ES: " << Equivs.size() << " : " << Sources.size() << endl;
-	    }}
-    //} while(Equivs.size() > Sources.size());
-    } while(MadeCuts);
-
-	ITERATE(vector<CEquivRange>, EquivIter, Equivs) {
-		Splits.push_back(*EquivIter);
-	}
-
-	return !Splits.empty();
-}
-
-bool
-CEquivRange::MergeAbuttings(const TEquivList& Originals,
-							TEquivList& Merges)
-{
-    bool MadeChanges = false;
-    do {
-
-        TEquivList Sources;
-        Sources.clear();
-        if(Merges.empty())
-            Sources.insert(Sources.end(), Originals.begin(), Originals.end());
-        else
-            Sources.insert(Sources.end(), Merges.begin(), Merges.end());
-        {{
-            TEquivList::iterator NE;
-            sort(Sources.begin(), Sources.end(), s_SortEquivBySubjt);
-            NE = unique(Sources.begin(), Sources.end());
-            Sources.erase(NE, Sources.end());
-        }}
-        
-        MadeChanges = false;
-        Merges.clear();
-        
-        CEquivRange Curr;
-        ITERATE(TEquivList, SourceIter, Sources) {
-            if(SourceIter->Empty()) {
-                continue;
-            }
-
-            if(Curr.Empty()) {
-                Curr = *SourceIter;
-                continue;
-            }
-
-            if (Curr.AbuttingWith(*SourceIter) && 
-                Curr.AlignId == SourceIter->AlignId &&
-                Curr.SegmtId == SourceIter->SegmtId) {            
-                Curr = Curr.Merge(*SourceIter);
-                MadeChanges = true;
-                continue;
-            }
-
-            else {
-                Merges.push_back(Curr);
-                Curr = *SourceIter;
-            }
-
-        }
-        if(!Curr.Empty())
-            Merges.push_back(Curr);
-
-    } while(MadeChanges);
-
-    return true;
-}
 
 CEquivRange::ERelative 
 CEquivRange::CalcRelative(const CEquivRange& Check) const
@@ -804,10 +282,437 @@ CEquivRange::CalcRelativeDuo(const CEquivRange& Check) const
 }
 
 
-void CEquivRange::ExtractRangesFromSeqAlign(const CSeq_align& Align, 
-												 TEquivList& Equivs)
+TSeqPos CEquivRange::Distance(const CEquivRange& A, const CEquivRange& B)
 {
-	if(Align.GetSegs().IsDisc()) {
+    TSeqRange QI = A.Query.IntersectionWith(B.Query);
+    TSeqRange SI = A.Subjt.IntersectionWith(B.Subjt);
+
+    TSeqPos QD=0, SD=0;
+    if(QI.Empty()) {
+        if( A.Query.GetFrom() >= B.Query.GetTo() ) {
+            QD = A.Query.GetFrom() - B.Query.GetTo();
+        } else {
+            QD = B.Query.GetFrom() - A.Query.GetTo();
+        }
+    } 
+    if(SI.Empty()) {
+        if( A.Subjt.GetFrom() >= B.Subjt.GetTo() ) {
+            SD = A.Subjt.GetFrom() - B.Subjt.GetTo();
+        } else {
+            SD = B.Subjt.GetFrom() - A.Subjt.GetTo();
+        }
+    } 
+    TSeqPos D = QD + SD;
+
+    TSignedSeqPos AINT = A.Intercept; //s_SeqAlignIntercept(A);
+    TSignedSeqPos BINT = B.Intercept; //s_SeqAlignIntercept(B);
+    TSeqPos DeltaInt = abs(AINT - BINT);
+
+    return max(D, DeltaInt);
+}
+
+TSeqPos CEquivRange::Distance(const TEquivList& A, const TEquivList& B) 
+{
+    TSeqRange AQR, ASR, BQR, BSR;
+    ITERATE(TEquivList, EquivIter, A) {
+        AQR += EquivIter->Query;
+        ASR += EquivIter->Subjt;
+    }
+    ITERATE(TEquivList, EquivIter, B) {
+        BQR += EquivIter->Query;
+        BSR += EquivIter->Subjt;
+    }
+
+    TSeqRange QI = AQR.IntersectionWith(BQR);
+    TSeqRange SI = ASR.IntersectionWith(BSR);
+
+    TSeqPos QD=0, SD=0;
+    if(QI.Empty()) {
+        if( AQR.GetFrom() >= BQR.GetTo() ) {
+            QD = AQR.GetFrom() - BQR.GetTo();
+        } else {
+            QD = BQR.GetFrom() - AQR.GetTo();
+        }
+    } 
+    if(SI.Empty()) {
+        if( ASR.GetFrom() >= BSR.GetTo() ) {
+            SD = ASR.GetFrom() - BSR.GetTo();
+        } else {
+            SD = BSR.GetFrom() - ASR.GetTo();
+        }
+    } 
+    TSeqPos D = QD + SD;
+
+    TSignedSeqPos AINT = A.front().Intercept; 
+    TSignedSeqPos BINT = B.front().Intercept; 
+    TSeqPos DeltaInt = abs(AINT - BINT);
+
+    return max(D, DeltaInt);
+}
+
+
+
+CEquivRangeBuilder::CEquivRangeBuilder() 
+            : x_GAlignId(0), x_GSegmtId(0), x_GSplitId(0) 
+{
+    ;
+}
+
+bool
+CEquivRangeBuilder::SplitIntersections(const TEquivList& Originals,
+								TEquivList& Splits)
+{
+	TEquivList Sources, Equivs;
+
+    bool MadeCuts = false;
+	do {
+        MadeCuts = false;
+		
+		if(Equivs.empty()) {
+			ITERATE(TEquivList, OrigIter, Originals) {
+				//Sources.insert(*OrigIter);
+			    Sources.push_back(*OrigIter);
+            }
+            TEquivList::iterator NE;
+            sort(Sources.begin(), Sources.end());
+            NE = unique(Sources.begin(), Sources.end());
+		    Sources.erase(NE, Sources.end());
+        }	
+		else {
+			Sources.clear();
+			Equivs.swap(Sources);
+			Equivs.clear();
+		}
+
+		//cerr << "IS: " << Equivs.size() << " : " << Sources.size() << endl;
+		typedef vector<TSeqPos> TPointContainer;
+		//typedef set<TSeqPos> TPointContainer;
+        TPointContainer QueryPoints, SubjtPoints;
+        QueryPoints.reserve(Sources.size()*2);
+        SubjtPoints.reserve(Sources.size()*2);
+
+		ITERATE(vector<CEquivRange>, SourceIter, Sources) {
+            QueryPoints.push_back(SourceIter->Query.GetFrom());
+			QueryPoints.push_back(SourceIter->Query.GetTo()+1);
+			SubjtPoints.push_back(SourceIter->Subjt.GetFrom());
+			SubjtPoints.push_back(SourceIter->Subjt.GetTo()+1);
+        }
+
+        {{
+            vector<TSeqPos>::iterator NE;
+            sort(QueryPoints.begin(), QueryPoints.end());
+            NE = unique(QueryPoints.begin(), QueryPoints.end());
+            QueryPoints.erase(NE, QueryPoints.end());
+            sort(SubjtPoints.begin(), SubjtPoints.end());
+            NE = unique(SubjtPoints.begin(), SubjtPoints.end());
+            SubjtPoints.erase(NE, SubjtPoints.end());
+        }}
+		
+        
+        ITERATE(TEquivList, SourceIter, Sources) {
+            const CEquivRange& Equiv = *SourceIter;
+           
+            size_t JumpTo = 0;
+            {{
+                size_t F = 0, T = QueryPoints.size()-1;
+                size_t I = 0;
+                while(true) {
+                    if(F+1 >= T) {
+                        I = F;
+                        break;
+                    }
+                    I = (F+((T-F)/2));
+                    TSeqPos IV = QueryPoints[I];
+                    //cerr << " F " << F << "  T " << T <<  "  I " << I << "  IV  " << IV << endl;
+                    if( IV == Equiv.Query.GetFrom()) {
+                        break;
+                    } else if( Equiv.Query.GetFrom() < IV ) {
+                        T = I;
+                    } else {
+                        F = I;
+                    }
+                }
+                JumpTo = I;
+            }}
+            //cerr << "Q JumpTo: " << JumpTo << "\t" << Equiv << endl;
+
+            //ITERATE(TPointContainer, StartIter, QueryPoints) {
+            for(TPointContainer::const_iterator StartIter = QueryPoints.begin()+JumpTo;
+                StartIter != QueryPoints.end(); ++StartIter) {
+                
+                TPointContainer::const_iterator Next = StartIter;
+			    ++Next;
+			    if(Next == QueryPoints.end())
+				    continue;
+                    
+			    //CRange<TSeqPos> Range(*StartIter, *Next-1);
+			    CRange<TSeqPos> Range(*StartIter, *Next-1);
+		        Range.SetFrom(*StartIter);
+                Range.SetTo(*Next-1);
+
+			    if(Range.Empty())
+				    continue;
+                
+                if(Range == Equiv.Query) {
+                    Equivs.push_back(Equiv);
+                } else if(Range.IntersectingWith(Equiv.Query)) {
+                    CEquivRange Temp = SliceOnQuery(Equiv, Range);
+				    //if(Temp.NotEmpty() && Temp.Matches > 0) {
+				    if(Temp.NotEmpty()) {
+                        Equivs.push_back(Temp);
+                        MadeCuts = true;
+                    }
+                }
+
+                if(*StartIter > Equiv.Query.GetTo()) {
+                    break;
+                }
+            }
+            
+            {{
+                size_t F = 0, T = SubjtPoints.size()-1;
+                size_t I = 0;
+                while(true) {
+                    if(F+1 >= T) {
+                        I = F;
+                        break;
+                    }
+                    I = (F+((T-F)/2));
+                    TSeqPos IV = SubjtPoints[I];
+                    if( IV == Equiv.Subjt.GetFrom()) {
+                        break;
+                    } else if( Equiv.Subjt.GetFrom() < IV ) {
+                        T = I;
+                    } else {
+                        F = I;
+                    }
+                }
+                JumpTo = I;
+            }}
+            
+            //ITERATE(TPointContainer, StartIter, SubjtPoints) {
+    	    for(TPointContainer::const_iterator StartIter = SubjtPoints.begin()+JumpTo;
+                StartIter != SubjtPoints.end(); ++StartIter) {
+             
+                TPointContainer::const_iterator Next = StartIter;
+			    ++Next;
+			    if(Next == SubjtPoints.end())
+				    continue;
+    
+			    //CRange<TSeqPos> Range(*StartIter, *Next-1);
+		        CRange<TSeqPos> Range(*StartIter, *Next-1);
+		        Range.SetFrom(*StartIter);
+                Range.SetTo(*Next-1);
+
+
+			    if(Range.Empty())
+				    continue;
+                
+                if(Range == Equiv.Subjt) {
+                    Equivs.push_back(Equiv);
+                } else if(Range.IntersectingWith(Equiv.Subjt)) {
+                    CEquivRange Temp = SliceOnSubjt(Equiv, Range);
+				    //if(Temp.NotEmpty() && Temp.Matches > 0) {
+				    if(Temp.NotEmpty()) {
+                        Equivs.push_back(Temp);
+                        MadeCuts = true;
+                    }
+                }
+                if(*StartIter > Equiv.Subjt.GetTo()) {
+                    break;
+                }
+            }
+        }
+
+        /*
+        cerr << "Q" << endl;
+        cerr << CTime(CTime::eCurrent).AsString("m:s.l") << endl;
+		TEquivList::iterator LastSourceStart;
+        LastSourceStart = Sources.end();
+        int LCI = 0;
+        LCI = 0;
+        ITERATE(TPointContainer, StartIter, QueryPoints) {
+
+			TPointContainer::const_iterator Next = StartIter;
+			++Next;
+			if(Next == QueryPoints.end())
+				continue;
+
+			CRange<TSeqPos> Range(*StartIter, *Next-1);
+		
+			if(Range.Empty())
+				continue;
+            
+
+            TEquivList::iterator SourceIter = LastSourceStart;
+            LastSourceStart = Sources.end();
+            if(SourceIter == Sources.end())
+                SourceIter = Sources.begin();
+            size_t CI = LCI;
+            LCI = 0;
+			//ITERATE(vector<CEquivRange>, SourceIter, Sources) {
+			for( ; SourceIter != Sources.end(); ++SourceIter) { 
+                
+                if(*Next < SourceIter->Query.GetFrom()) {
+                    continue;
+                }
+                
+                if (LastSourceStart == Sources.end()) {
+                    LastSourceStart = SourceIter;
+                    LCI = CI;
+                } 
+                
+                if(Range == SourceIter->Query) {
+                    cerr << "QE : CI : " << CI << "\t" << Range << "\t" << SourceIter->Query << endl;
+                    Equivs.push_back(*SourceIter);
+                } else if(Range.IntersectingWith(SourceIter->Query)) {
+                    cerr << "QI : CI : " << CI << "\t" << Range << "\t" << SourceIter->Query << endl;
+                    CEquivRange Temp = SourceIter->SliceOnQuery(Range);
+				    if(Temp.NotEmpty()) {
+					    //Equivs.insert(Temp);
+                        Equivs.push_back(Temp);
+                    }
+                } else if( *StartIter > SourceIter->Query.GetFrom() &&
+                           *StartIter > LastSourceStart->Query.GetFrom() ) {
+                    LastSourceStart = SourceIter;
+                    ++LastSourceStart;
+                    LCI = CI + 1;
+                    break;
+                }
+                CI++;
+			}
+		}
+
+        sort(Sources.begin(), Sources.end(), s_SortEquivBySubjt);
+        
+        cerr << "S" << endl;
+        cerr << CTime(CTime::eCurrent).AsString("m:s.l") << endl;
+		LastSourceStart = Sources.end();
+		ITERATE(TPointContainer, StartIter, SubjtPoints) {
+
+			TPointContainer::const_iterator Next = StartIter;
+			++Next;
+			if(Next == SubjtPoints.end())
+			    continue;
+
+			CRange<TSeqPos> Range(*StartIter, *Next-1);
+		
+			if(Range.Empty())
+				continue;
+
+            TEquivList::iterator SourceIter = LastSourceStart;
+            LastSourceStart = Sources.end();
+            if(SourceIter == Sources.end())
+                SourceIter = Sources.begin();
+    
+            //ITERATE(vector<CEquivRange>, SourceIter, Sources) {
+			for( ; SourceIter != Sources.end(); ++SourceIter) { 
+                
+                if(*Next < SourceIter->Subjt.GetFrom()) {
+                    continue;
+                }
+                
+                if (LastSourceStart == Sources.end()) {
+                    LastSourceStart = SourceIter;
+                }
+
+                if(Range == SourceIter->Subjt) {
+                    Equivs.push_back(*SourceIter);
+                } else if(Range.IntersectingWith(SourceIter->Subjt)) {
+                    CEquivRange Temp = SourceIter->SliceOnSubjt(Range);
+				    if(Temp.NotEmpty()) {
+					    //Equivs.insert(Temp);
+                        Equivs.push_back(Temp);
+                    }
+                } else if( *StartIter > SourceIter->Query.GetFrom() &&
+                           *StartIter > LastSourceStart->Query.GetFrom() ) {
+                    LastSourceStart = SourceIter;
+                    ++LastSourceStart;
+                    continue;
+                }
+			}
+		}
+        */
+
+
+        {{
+            TEquivList::iterator NE;
+            sort(Equivs.begin(), Equivs.end());
+            NE = unique(Equivs.begin(), Equivs.end());
+            Equivs.erase(NE, Equivs.end());
+	    }}
+    //} while(Equivs.size() > Sources.size());
+    } while(MadeCuts);
+
+	ITERATE(vector<CEquivRange>, EquivIter, Equivs) {
+		Splits.push_back(*EquivIter);
+	}
+
+	return !Splits.empty();
+}
+
+bool
+CEquivRangeBuilder::MergeAbuttings(const TEquivList& Originals,
+							TEquivList& Merges)
+{
+    bool MadeChanges = false;
+    do {
+
+        TEquivList Sources;
+        Sources.clear();
+        if(Merges.empty())
+            Sources.insert(Sources.end(), Originals.begin(), Originals.end());
+        else
+            Sources.insert(Sources.end(), Merges.begin(), Merges.end());
+        {{
+            TEquivList::iterator NE;
+            sort(Sources.begin(), Sources.end(), s_SortEquivBySubjt);
+            NE = unique(Sources.begin(), Sources.end());
+            Sources.erase(NE, Sources.end());
+        }}
+        
+        MadeChanges = false;
+        Merges.clear();
+        
+        CEquivRange Curr;
+        ITERATE(TEquivList, SourceIter, Sources) {
+            if(SourceIter->Empty()) {
+                continue;
+            }
+
+            if(Curr.Empty()) {
+                Curr = *SourceIter;
+                continue;
+            }
+
+            if (Curr.AbuttingWith(*SourceIter) && 
+                Curr.AlignId == SourceIter->AlignId &&
+                Curr.SegmtId == SourceIter->SegmtId) {            
+                Curr = Merge(Curr, *SourceIter);
+                MadeChanges = true;
+                continue;
+            }
+
+            else {
+                Merges.push_back(Curr);
+                Curr = *SourceIter;
+            }
+
+        }
+        if(!Curr.Empty())
+            Merges.push_back(Curr);
+
+    } while(MadeChanges);
+
+    return true;
+}
+
+
+void CEquivRangeBuilder::ExtractRangesFromSeqAlign(const CSeq_align& Align, 
+												    TEquivList& Equivs)
+{
+	// FIXME: Add support for more than Denseg and Disc-of-Denseg
+    if(Align.GetSegs().IsDisc()) {
 		ITERATE(CSeq_align_set::Tdata, AlignIter, 
 				Align.GetSegs().GetDisc().Get()) {
 			ExtractRangesFromSeqAlign(**AlignIter, Equivs);
@@ -857,19 +762,19 @@ void CEquivRange::ExtractRangesFromSeqAlign(const CSeq_align& Align,
 		Curr.Matches = 0;
         Curr.MisMatches = 0;
 
-        Curr.AlignId = GAlignId;
-        Curr.SegmtId = GSegmtId; GSegmtId++;
-        Curr.SplitId = GSplitId; GSplitId++;
+        Curr.AlignId = x_GAlignId;
+        Curr.SegmtId = x_GSegmtId; x_GSegmtId++;
+        Curr.SplitId = x_GSplitId; x_GSplitId++;
 
         Equivs.push_back(Curr);
 		//cout << Curr.Query << " to " << Curr.Subjt << endl;
 	}
     
-    GAlignId++;
+    x_GAlignId++;
 }
 
 
-void CEquivRange::CalcMatches(objects::CBioseq_Handle QueryHandle, 
+void CEquivRangeBuilder::CalcMatches(objects::CBioseq_Handle QueryHandle, 
                               objects::CBioseq_Handle SubjtHandle,
                               TEquivList& Equivs)
 {
@@ -887,7 +792,7 @@ void CEquivRange::CalcMatches(objects::CBioseq_Handle QueryHandle,
         QRange += CurrEquiv.Query;
         SRange += CurrEquiv.Subjt;
     }
-  //cerr << "FR: " << QRange << "\t" << SRange << endl; 
+    
     string QueryStr, SubjtStr;
 	if(Equivs.front().Strand == eNa_strand_plus)
 	    QueryVec.GetSeqData(QRange.GetFrom(), QRange.GetTo()+1, QueryStr); 
@@ -896,8 +801,6 @@ void CEquivRange::CalcMatches(objects::CBioseq_Handle QueryHandle,
 			    			QueryVec.size()-QRange.GetFrom(), QueryStr);	    
     SubjtVec.GetSeqData(SRange.GetFrom(), SRange.GetTo()+1, SubjtStr); 
 
-  //cerr << "FL: " << QueryStr.length() << "\t" << SubjtStr.length() << endl;
-  //size_t Counter = 0;
     NON_CONST_ITERATE(TEquivList, EquivIter, Equivs) {
         CEquivRange& CurrEquiv = *EquivIter;
         
@@ -934,5 +837,130 @@ void CEquivRange::CalcMatches(objects::CBioseq_Handle QueryHandle,
     }
 
 }
+
+
+CEquivRange 
+CEquivRangeBuilder::SliceOnQuery(const CEquivRange& Original, const CRange<TSeqPos>& pQuery) 
+{
+	CEquivRange Slice;
+	CRange<TSeqPos> Inter = Original.Query.IntersectionWith(pQuery);
+	
+	Slice.Strand = Original.Strand;
+	Slice.Intercept = Original.Intercept;
+	Slice.Matches = 0;
+    Slice.MisMatches = 0;
+	if(Inter.Empty()) {
+		Slice.Query = Inter;
+		return Slice;
+	} else if(Original.Query == Inter) {
+		return Original;
+	}
+
+    Slice.Query = Inter;
+	TSeqPos SOffset = Inter.GetFrom() - Original.Query.GetFrom();
+
+	if(Original.Strand == eNa_strand_plus) {
+	    Slice.Subjt.SetFrom(Original.Subjt.GetFrom() + SOffset);
+		Slice.Subjt.SetLength(Inter.GetLength());
+	} else {
+		Slice.Subjt.SetTo(Original.Subjt.GetTo() - SOffset);
+		Slice.Subjt.SetLengthDown(Inter.GetLength());
+	}
+    
+    ITERATE(vector<TSeqPos>, MisPointIter, Original.MisMatchSubjtPoints) {
+        if (Slice.Subjt.GetFrom() <= *MisPointIter &&
+            Slice.Subjt.GetTo() >= *MisPointIter) {
+            Slice.MisMatchSubjtPoints.push_back(*MisPointIter);
+        }
+    }
+    Slice.MisMatches = Slice.MisMatchSubjtPoints.size();
+    Slice.Matches = Slice.Subjt.GetLength() - Slice.MisMatches;
+
+    Slice.AlignId = Original.AlignId;
+    Slice.SegmtId = Original.SegmtId;
+    Slice.SplitId = x_GSplitId; x_GSplitId++;
+
+	return Slice;
+}
+
+
+CEquivRange 
+CEquivRangeBuilder::SliceOnSubjt(const CEquivRange& Original, const CRange<TSeqPos>& pSubjt)
+{
+	CEquivRange Slice;
+	CRange<TSeqPos> Inter = Original.Subjt.IntersectionWith(pSubjt);
+	
+	Slice.Strand = Original.Strand;
+	Slice.Intercept = Original.Intercept;
+	Slice.Matches = 0;
+	Slice.MisMatches = 0;
+    if(Inter.Empty()) {
+		Slice.Subjt = Inter;
+		return Slice;
+	} else if(Original.Subjt == Inter) {
+		return Original;
+	}
+
+    Slice.Subjt = Inter;
+    TSeqPos QOffset = Inter.GetFrom() - Original.Subjt.GetFrom();
+    		
+	if(Original.Strand == eNa_strand_plus) {
+		Slice.Query.SetFrom(Original.Query.GetFrom() + QOffset);
+		Slice.Query.SetLength(Inter.GetLength());
+	} else {
+		Slice.Query.SetTo(Original.Query.GetTo() - QOffset);
+		Slice.Query.SetLengthDown(Inter.GetLength());
+	}
+ 
+    ITERATE(vector<TSeqPos>, MisPointIter, Original.MisMatchSubjtPoints) {
+        if (Slice.Subjt.GetFrom() <= *MisPointIter &&
+            Slice.Subjt.GetTo() >= *MisPointIter) {
+            Slice.MisMatchSubjtPoints.push_back(*MisPointIter);
+        }
+    }
+    Slice.MisMatches = Slice.MisMatchSubjtPoints.size();
+    Slice.Matches = Slice.Subjt.GetLength() - Slice.MisMatches;
+
+    Slice.AlignId = Original.AlignId;
+    Slice.SegmtId = Original.SegmtId;
+    Slice.SplitId = x_GSplitId; x_GSplitId++;
+
+	return Slice;
+}
+
+
+CEquivRange 
+CEquivRangeBuilder::Merge(const CEquivRange& First, const CEquivRange& Second) 
+{
+    CEquivRange Merged;
+
+    Merged.Query = First.Query + Second.Query;
+    Merged.Subjt = First.Subjt + Second.Subjt;
+
+    Merged.Strand = First.Strand;
+    Merged.Intercept = First.Intercept;
+    Merged.Matches = First.Matches + Second.Matches;
+    Merged.MisMatches = First.MisMatches + Second.MisMatches;
+
+    Merged.MisMatchSubjtPoints.insert(Merged.MisMatchSubjtPoints.end(),
+            First.MisMatchSubjtPoints.begin(), First.MisMatchSubjtPoints.end());
+    Merged.MisMatchSubjtPoints.insert(Merged.MisMatchSubjtPoints.end(),
+            Second.MisMatchSubjtPoints.begin(), Second.MisMatchSubjtPoints.end());
+
+    Merged.AlignId = First.AlignId;
+    Merged.SegmtId = First.SegmtId;
+    Merged.SplitId = x_GSplitId; x_GSplitId++;
+  
+    
+    if(Merged.Query.GetLength() != Merged.Subjt.GetLength())
+       cerr << __LINE__ << " ERROR" << endl;
+    if(Merged.MisMatchSubjtPoints.size() != (size_t)Merged.MisMatches) 
+       cerr << __LINE__ << " ERROR" << endl;
+    if(Merged.Query.GetLength() != (size_t)(Merged.Matches + Merged.MisMatches))
+       cerr << __LINE__ << " ERROR" << endl;
+
+    return Merged;
+}
+
 
 
