@@ -358,7 +358,8 @@ static bool s_CanStore(CS_INT src, EDB_Type dst)
     case CS_BIT_TYPE:      if (dst == eDB_Bit)      { return true; }
     case CS_TINYINT_TYPE:  if (dst == eDB_TinyInt)  { return true; }
     case CS_SMALLINT_TYPE: if (dst == eDB_SmallInt) { return true; }
-    case CS_INT_TYPE:      return dst == eDB_Int;
+    case CS_INT_TYPE:      if (dst == eDB_Int)      { return true; }
+    case CS_LONG_TYPE:     return dst == eDB_BigInt;
 
     case CS_REAL_TYPE:  return dst == eDB_Float;
 
@@ -370,9 +371,6 @@ static bool s_CanStore(CS_INT src, EDB_Type dst)
     case CS_NUMERIC_TYPE:
     case CS_DECIMAL_TYPE:
         return dst == eDB_BigInt  ||  dst == eDB_Numeric;
-
-    case CS_LONG_TYPE:
-        return dst == eDB_BigInt;
     }
 
     // Other types (MONEY, etc.) unhandled.
@@ -480,27 +478,30 @@ CDB_Object* CTL_RowResult::GetItemInternal(
     case CS_SMALLINT_TYPE:
     case CS_INT_TYPE:
     case CS_BIT_TYPE:
+    case CS_LONG_TYPE:
     {
-        CS_INT v = 0;
+        Int8 v = 0;
         CS_INT sz;
         switch (fmt.datatype) {
         case CS_TINYINT_TYPE:  sz = sizeof(CS_TINYINT);  break;
         case CS_SMALLINT_TYPE: sz = sizeof(CS_SMALLINT); break;
         case CS_INT_TYPE:      sz = sizeof(CS_INT);      break;
         case CS_BIT_TYPE:      sz = sizeof(CS_BIT);      break;
+        case CS_LONG_TYPE:     sz = sizeof(v);           break;
         default:               _TROUBLE;
         }
         my_ct_get_data(cmd, item_no, &v, sz, &outlen, is_null);
 #ifdef WORDS_BIGENDIAN
-        v >>= (sizeof(CS_INT) - sz) * CHAR_BIT;
+        v >>= (sizeof(v) - sz) * CHAR_BIT;
 #endif
 
         ENSURE_ITEM();
 
         switch (b_type) {
-        case eDB_Int:      *(CDB_Int     *) item_buf =        v;  break;
+        case eDB_Int:      *(CDB_Int     *) item_buf = (Int4) v;  break;
         case eDB_SmallInt: *(CDB_SmallInt*) item_buf = (Int2) v;  break;
         case eDB_TinyInt:  *(CDB_TinyInt *) item_buf = (Int1) v;  break;
+        case eDB_BigInt:   *(CDB_BigInt  *) item_buf =        v;  break;
         case eDB_Bit:      *(CDB_Bit     *) item_buf = (v != 0);  break;
         default:           _TROUBLE;
         }
@@ -533,15 +534,6 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         default:
             _TROUBLE;
         }
-        break;
-    }
-
-    case CS_LONG_TYPE:
-    {
-        Int8 v;
-        my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null);
-        ENSURE_ITEM();
-        *static_cast<CDB_BigInt*>(item_buf) = v;
         break;
     }
 
