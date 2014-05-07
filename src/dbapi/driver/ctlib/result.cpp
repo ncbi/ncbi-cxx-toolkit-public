@@ -274,6 +274,10 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd,
                 is_null = (*outlen == 0);
 #endif
             }
+        } else if (rc == CS_CANCELED) {
+            DATABASE_DRIVER_ERROR("The command has been canceled.", 130004);
+        } else if (rc != CS_SUCCEED) {
+            DATABASE_DRIVER_ERROR("ct_get_data failed.", 130000);
         }
         return rc;
     }
@@ -319,6 +323,59 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd,
     return (n == buflen) ? CS_END_ITEM : CS_SUCCEED;
 }
 
+
+// Traditional conversion policy, when given a target object.
+static bool s_CanStore(CS_INT src, EDB_Type dst)
+{
+    switch (src) {
+    case CS_CHAR_TYPE:
+    case CS_BINARY_TYPE:
+    case CS_VARCHAR_TYPE:
+    case CS_VARBINARY_TYPE:
+#ifdef FTDS_IN_USE
+    case CS_UNIQUE_TYPE:
+#endif
+        if (dst == eDB_Char  ||  dst == eDB_VarBinary  ||  dst == eDB_Binary) {
+            return true;
+        }
+        // else fall through
+    case CS_LONGCHAR_TYPE:
+        if (dst == eDB_VarChar) {
+            return true;
+        }
+        // else fall through
+    case CS_LONGBINARY_TYPE:
+        return dst == eDB_LongChar  ||  dst == eDB_LongBinary;
+
+    case CS_TEXT_TYPE:
+    case CS_IMAGE_TYPE:
+        return dst == eDB_Text  ||  dst == eDB_Image;
+
+    case CS_BIT_TYPE:      if (dst == eDB_Bit)      { return true; }
+    case CS_TINYINT_TYPE:  if (dst == eDB_TinyInt)  { return true; }
+    case CS_SMALLINT_TYPE: if (dst == eDB_SmallInt) { return true; }
+    case CS_INT_TYPE:      return dst == eDB_Int;
+
+    case CS_REAL_TYPE:  return dst == eDB_Float;
+
+    case CS_FLOAT_TYPE: return dst == eDB_Double;
+
+    case CS_DATETIME4_TYPE: if (dst == eDB_SmallDateTime) { return true; }
+    case CS_DATETIME_TYPE:  return dst == eDB_DateTime;
+
+    case CS_NUMERIC_TYPE:
+    case CS_DECIMAL_TYPE:
+        return dst == eDB_BigInt  ||  dst == eDB_Numeric;
+
+    case CS_LONG_TYPE:
+        return dst == eDB_BigInt;
+    }
+
+    // Other types (MONEY, etc.) unhandled.
+    return false;
+}
+
+
 // Aux. for CTL_RowResult::GetItem()
 CDB_Object* CTL_RowResult::GetItemInternal(
 	I_Result::EGetItem policy, 
@@ -328,668 +385,226 @@ CDB_Object* CTL_RowResult::GetItemInternal(
 	CDB_Object* item_buf
 	)
 {
-    CS_INT outlen = 0;
+    CS_INT outlen = 0, maxlength = fmt.maxlength;
     char buffer[2048];
-    EDB_Type b_type = item_buf ? item_buf->GetType() : eDB_UnsupportedType;
+    EDB_Type b_type = ConvDataType_Ctlib2DBAPI(fmt);
     bool is_null = false;
 
+    CHECK_DRIVER_ERROR(b_type == eDB_UnsupportedType,
+                       "Unsupported result type "
+                       + NStr::NumericToString(fmt.datatype),
+                       130004);
+
+    if (item_buf == NULL) {
+        _ASSERT(s_CanStore(fmt.datatype, b_type));
+    } else {
+        b_type = item_buf->GetType();
+        CHECK_DRIVER_ERROR(!s_CanStore(fmt.datatype, b_type),
+                           "Wrong type of CDB_Object.", 130020);
+    }
+
+    AutoPtr<CDB_Object> auto_item(item_buf, eNoOwnership);
+#define ENSURE_ITEM() \
+        if (item_buf == NULL) { \
+            auto_item.reset(CDB_Object::Create(b_type, maxlength)); \
+            item_buf = auto_item.get(); \
+            _ASSERT(item_buf->IsNULL()); \
+        } else if (is_null) { \
+            item_buf->AssignNULL(); \
+        } \
+        if (is_null) { \
+            break; \
+        }
+
     switch ( fmt.datatype ) {
+    case CS_CHAR_TYPE:
+    case CS_BINARY_TYPE:
+    case CS_VARCHAR_TYPE:
+    case CS_VARBINARY_TYPE:
 #ifdef FTDS_IN_USE
     case CS_UNIQUE_TYPE:
 #endif
-    case CS_VARBINARY_TYPE:
-    case CS_BINARY_TYPE: {
-        if (item_buf  &&
-            b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
-            b_type != eDB_VarChar    &&  b_type != eDB_Char &&
-            b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            DATABASE_DRIVER_ERROR("Wrong type of CDB_Object." +
-                                  GetDbgInfo(), 130020 );
+    case CS_LONGCHAR_TYPE:
+    case CS_LONGBINARY_TYPE:
+    {
+        AutoPtr<char, ArrayDeleter<char> > auto_buf;
+        char *v = buffer;
+        if (maxlength >= (CS_INT) sizeof(buffer)) {
+            auto_buf.reset(new char[maxlength + 1]);
+            v = auto_buf.get();
         }
 
-        char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
-            ? buffer : new char[fmt.maxlength + 1];
+        my_ct_get_data(cmd, item_no, v, maxlength, &outlen, is_null);
 
-        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                switch ( b_type ) {
-                case eDB_VarBinary:
-                    ((CDB_VarBinary*) item_buf)->SetValue(v, outlen);
-                    break;
-                case eDB_Binary:
-                    ((CDB_Binary*)    item_buf)->SetValue(v, outlen);
-                    break;
-                case eDB_VarChar:
-                    v[outlen] = '\0';
-                    *((CDB_VarChar*)  item_buf) = v;
-                    break;
-                case eDB_Char:
-                    v[outlen] = '\0';
-                    *((CDB_Char*)     item_buf) = v;
-                    break;
-                case eDB_LongChar:
-                    v[outlen] = '\0';
-                    *((CDB_LongChar*)     item_buf) = v;
-                    break;
-                case eDB_LongBinary:
-                    ((CDB_LongBinary*)     item_buf)->SetValue(v, outlen);
-                    break;
-                default:
-                    break;
-                }
+        ENSURE_ITEM();
 
-                if (v != buffer)  delete[] v;
-                return item_buf;
-            }
+        CHECK_DRIVER_ERROR(fmt.datatype == CS_LONGCHAR_TYPE
+                           &&  b_type == eDB_VarChar
+                           &&  outlen > MAX_VARCHAR_SIZE,
+                           "Invalid conversion to CDB_VarChar type.", 230021);
 
-            CDB_VarBinary* val = is_null
-                ? new CDB_VarBinary() : new CDB_VarBinary(v, outlen);
-
-            if ( v != buffer)  delete[] v;
-            return val;
-        }
-        case CS_CANCELED:
-            if (v != buffer)  delete[] v;
-            DATABASE_DRIVER_ERROR("The command has been canceled." +
-                                  GetDbgInfo(), 130004 );
-        default:
-            if (v != buffer)  delete[] v;
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
-    }
-
-    case CS_LONGBINARY_TYPE: {
-        if (item_buf  &&
-            b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
-        char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
-            ? buffer : new char[fmt.maxlength + 1];
-
-        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                switch ( b_type ) {
-                case eDB_LongBinary:
-                    ((CDB_LongBinary*) item_buf)->SetValue(v, outlen);
-                    break;
-                case eDB_LongChar:
-                    v[outlen] = '\0';
-                    *((CDB_LongChar*)     item_buf) = v;
-                default:
-                    break;
-                }
-
-                if (v != buffer)  delete[] v;
-                return item_buf;
-            }
-
-            CDB_LongBinary* val = is_null
-                ? new CDB_LongBinary(fmt.maxlength) :
-                  new CDB_LongBinary(fmt.maxlength, v, outlen);
-
-            if ( v != buffer)  delete[] v;
-            return val;
-        }
-        case CS_CANCELED:
-            if (v != buffer)  {
-                delete[] v;
-            }
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            if (v != buffer)  {
-                delete[] v;
-            }
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
-    }
-
-    case CS_BIT_TYPE: {
-        if (item_buf  &&
-            b_type != eDB_Bit       &&  b_type != eDB_TinyInt  &&
-            b_type != eDB_SmallInt  &&  b_type != eDB_Int) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
-        CS_BIT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    switch ( b_type ) {
-                    case eDB_Bit:
-                        *((CDB_Bit*)      item_buf) = (int) v;
-                        break;
-                    case eDB_TinyInt:
-                        *((CDB_TinyInt*)  item_buf) = v ? 1 : 0;
-                        break;
-                    case eDB_SmallInt:
-                        *((CDB_SmallInt*) item_buf) = v ? 1 : 0;
-                        break;
-                    case eDB_Int:
-                        *((CDB_Int*)      item_buf) = v ? 1 : 0;
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                return item_buf;
-            }
-
-            return is_null ? new CDB_Bit() : new CDB_Bit((int) v);
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
-    }
-
-    case CS_VARCHAR_TYPE:
-    case CS_CHAR_TYPE: {
-        if (item_buf  &&
-            b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
-            b_type != eDB_VarChar    &&  b_type != eDB_Char &&
-            b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
-        char* v = static_cast<unsigned int>(fmt.maxlength) < sizeof(buffer)
-            ? buffer : new char[fmt.maxlength + 1];
-        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
+        switch (b_type) {
+        case eDB_VarChar:
+        case eDB_Char:
+        case eDB_LongChar:
             v[outlen] = '\0';
-            if ( item_buf) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    switch ( b_type ) {
-                    case eDB_VarChar:
-                        *((CDB_VarChar*)  item_buf) = v;
-                        break;
-                    case eDB_Char:
-                        *((CDB_Char*)     item_buf) = v;
-                        break;
-                    case eDB_LongChar:
-                        *((CDB_LongChar*)     item_buf) = v;
-                        break;
-                    case eDB_VarBinary:
-                        ((CDB_VarBinary*) item_buf)->SetValue(v, outlen);
-                        break;
-                    case eDB_Binary:
-                        ((CDB_Binary*)    item_buf)->SetValue(v, outlen);
-                        break;
-                    case eDB_LongBinary:
-                        ((CDB_LongBinary*)    item_buf)->SetValue(v, outlen);
-                        break;
-                    default:
-                        break;
-                    }
-                }
-
-                if ( v != buffer) delete[] v;
-                return item_buf;
-            }
-
-            CDB_VarChar* val = is_null
-                ? new CDB_VarChar() : new CDB_VarChar(v, (size_t) outlen);
-
-            if (v != buffer) delete[] v;
-            return val;
-        }
-        case CS_CANCELED:
-            if (v != buffer) {
-                delete[] v;
-            }
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
+            static_cast<CDB_String*>(item_buf)->Assign(v /* , outlen */);
+            break;
+        case eDB_VarBinary:
+            static_cast<CDB_VarBinary*>(item_buf)->SetValue(v, outlen);
+            break;
+        case eDB_Binary:
+            static_cast<CDB_Binary*>(item_buf)->SetValue(v, outlen);
+            break;
+        case eDB_LongBinary:
+            static_cast<CDB_LongBinary*>(item_buf)->SetValue(v, outlen);
+            break;
         default:
-            if (v != buffer) {
-                delete[] v;
-            }
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
+            _TROUBLE;
         }
+        break;
     }
 
-    case CS_LONGCHAR_TYPE: {
-        char* v = static_cast<unsigned int>(fmt.maxlength) < sizeof(buffer)
-            ? buffer : new char[fmt.maxlength + 1];
-        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            v[outlen] = '\0';
-            if ( item_buf) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    switch ( b_type ) {
-                    case eDB_LongChar:
-                        *((CDB_LongChar*)     item_buf) = v;
-                        break;
-                    case eDB_LongBinary:
-                        ((CDB_LongBinary*)    item_buf)->SetValue(v, outlen);
-                        break;
-					case eDB_VarChar:
-						if (outlen <= MAX_VARCHAR_SIZE) {
-								((CDB_VarChar*)  item_buf)->SetValue(v, outlen, eEncoding_Unknown);
-						} else {
-								DATABASE_DRIVER_ERROR( "Invalid conversion to CDB_VarChar type", 230021 );
-						}
-						break;
-#ifndef FTDS_IN_USE
-                    case eDB_Char:
-                        if (outlen <= MAX_VARCHAR_SIZE) {
-                                ((CDB_Char*) item_buf)
-                                    ->SetValue(v, outlen, eEncoding_Unknown);
-                        } else {
-                                DATABASE_DRIVER_ERROR( "Invalid conversion to CDB_Char type", 230022 );
-                        }
-                        break;
+    case CS_TINYINT_TYPE:
+    case CS_SMALLINT_TYPE:
+    case CS_INT_TYPE:
+    case CS_BIT_TYPE:
+    {
+        CS_INT v = 0;
+        CS_INT sz;
+        switch (fmt.datatype) {
+        case CS_TINYINT_TYPE:  sz = sizeof(CS_TINYINT);  break;
+        case CS_SMALLINT_TYPE: sz = sizeof(CS_SMALLINT); break;
+        case CS_INT_TYPE:      sz = sizeof(CS_INT);      break;
+        case CS_BIT_TYPE:      sz = sizeof(CS_BIT);      break;
+        default:               _TROUBLE;
+        }
+        my_ct_get_data(cmd, item_no, &v, sz, &outlen, is_null);
+#ifdef WORDS_BIGENDIAN
+        v >>= (sizeof(CS_INT) - sz) * CHAR_BIT;
 #endif
-                    default:
-						DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-                        break;
-                    }
-                }
 
-                if ( v != buffer) delete[] v;
-                return item_buf;
-            }
+        ENSURE_ITEM();
 
-            CDB_LongChar* val = is_null
-                ? new CDB_LongChar(fmt.maxlength) : new CDB_LongChar((size_t) outlen, v);
-
-            if (v != buffer) delete[] v;
-            return val;
+        switch (b_type) {
+        case eDB_Int:      *(CDB_Int     *) item_buf =        v;  break;
+        case eDB_SmallInt: *(CDB_SmallInt*) item_buf = (Int2) v;  break;
+        case eDB_TinyInt:  *(CDB_TinyInt *) item_buf = (Int1) v;  break;
+        case eDB_Bit:      *(CDB_Bit     *) item_buf = (v != 0);  break;
+        default:           _TROUBLE;
         }
-        case CS_CANCELED:
-            if (v != buffer) {
-                delete[] v;
-            }
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            if (v != buffer) {
-                delete[] v;
-            }
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
+        break;
     }
 
-    case CS_DATETIME_TYPE: {
-        if (item_buf  &&  b_type != eDB_DateTime) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
+    case CS_DATETIME_TYPE:
+    {
         CS_DATETIME v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf) {
-                if (!is_null) {
-                    ((CDB_DateTime*)item_buf)->Assign(v.dtdays, v.dttime);
-                }
-                else {
-                    item_buf->AssignNULL();
-                }
-                return item_buf;
-            }
-
-            CDB_DateTime* val;
-            if (!is_null) {
-                val = new CDB_DateTime(v.dtdays, v.dttime);
-            } else {
-                val = new CDB_DateTime;
-            }
-
-            return val;
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
+        my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null);
+        ENSURE_ITEM();
+        static_cast<CDB_DateTime*>(item_buf)->Assign(v.dtdays, v.dttime);
+        break;
     }
 
-    case CS_DATETIME4_TYPE:  {
-        if (item_buf  &&
-            b_type != eDB_SmallDateTime  &&  b_type != eDB_DateTime) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
+    case CS_DATETIME4_TYPE:
+    {
         CS_DATETIME4 v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf) {
-                if (!is_null) {
-                    switch ( b_type ) {
-                    case eDB_SmallDateTime:
-                        ((CDB_SmallDateTime*) item_buf)->Assign
-                            (v.days, v.minutes);
-                        break;
-                    case eDB_DateTime:
-                        ((CDB_DateTime*)      item_buf)->Assign
-                            (v.days, v.minutes * 60 * 300);
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                else {
-                    item_buf->AssignNULL();
-                }
-                return item_buf;
-            }
+        my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null);
 
-            return is_null
-                ? new CDB_SmallDateTime
-                : new CDB_SmallDateTime(v.days, v.minutes);
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
+        ENSURE_ITEM();
+
+        switch (b_type) {
+        case eDB_SmallDateTime:
+            ((CDB_SmallDateTime*)item_buf)->Assign(v.days, v.minutes);
+            break;
+        case eDB_DateTime:
+            ((CDB_DateTime*)item_buf)->Assign(v.days, v.minutes * 60 * 300);
+            break;
         default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
+            _TROUBLE;
         }
+        break;
     }
 
-    case CS_TINYINT_TYPE: {
-        if (item_buf  &&
-            b_type != eDB_TinyInt  &&  b_type != eDB_SmallInt  &&
-            b_type != eDB_Int) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
-        CS_TINYINT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    switch ( b_type ) {
-                    case eDB_TinyInt:
-                        *((CDB_TinyInt*)  item_buf) = (Uint1) v;
-                        break;
-                    case eDB_SmallInt:
-                        *((CDB_SmallInt*) item_buf) = (Int2) v;
-                        break;
-                    case eDB_Int:
-                        *((CDB_Int*)      item_buf) = (Int4) v;
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                return item_buf;
-            }
-
-            return is_null
-                ? new CDB_TinyInt() : new CDB_TinyInt((Uint1) v);
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
-    }
-
-    case CS_SMALLINT_TYPE: {
-        if (item_buf  &&
-            b_type != eDB_SmallInt  &&  b_type != eDB_Int) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
-        CS_SMALLINT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    switch ( b_type ) {
-                    case eDB_SmallInt:
-                        *((CDB_SmallInt*) item_buf) = (Int2) v;
-                        break;
-                    case eDB_Int:
-                        *((CDB_Int*)      item_buf) = (Int4) v;
-                        break;
-                    default:
-                        break;
-                    }
-                }
-                return item_buf;
-            }
-
-            return is_null
-                ? new CDB_SmallInt() : new CDB_SmallInt((Int2) v);
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
-    }
-
-    case CS_INT_TYPE: {
-        if (item_buf  &&  b_type != eDB_Int) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
-        CS_INT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    *((CDB_Int*) item_buf) = (Int4) v;
-                }
-                return item_buf;
-            }
-
-            return is_null ? new CDB_Int() : new CDB_Int((Int4) v);
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
-    }
-
-    case CS_LONG_TYPE: {
-        if (item_buf  &&  b_type != eDB_BigInt) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
+    case CS_LONG_TYPE:
+    {
         Int8 v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    *((CDB_BigInt*) item_buf) = (Int8) v;
-                }
-                return item_buf;
-            }
-
-            return is_null ? new CDB_BigInt() : new CDB_BigInt(v);
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
+        my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null);
+        ENSURE_ITEM();
+        *static_cast<CDB_BigInt*>(item_buf) = v;
+        break;
     }
 
     case CS_DECIMAL_TYPE:
-    case CS_NUMERIC_TYPE: {
-        if (item_buf  &&  b_type != eDB_BigInt  &&  b_type != eDB_Numeric) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
+    case CS_NUMERIC_TYPE:
+    {
+        CS_NUMERIC v;
+        my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null);
+
+        if (outlen < 3) {
+            /* ctlib on windows returns 2 even for NULL numeric */
+            is_null = true;
         }
 
-        CS_NUMERIC v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                if (outlen < 3) { /* it used to be == 0 but ctlib on windows
-                     returns 2 even for NULL numeric */
-                    item_buf->AssignNULL();
-                } else if (is_null) {
-                    item_buf->AssignNULL();
-                } else {
-                    if (b_type == eDB_Numeric) {
-                        ((CDB_Numeric*) item_buf)->Assign
+        ENSURE_ITEM();
+
+        switch (b_type) {
+        case eDB_BigInt:
+            *static_cast<CDB_BigInt*>(item_buf) =
+                numeric_to_longlong((unsigned int)v.precision, v.array);
+            break;
+        case eDB_Numeric:
+            static_cast<CDB_Numeric*>(item_buf)->Assign
                             ((unsigned int)         v.precision,
                              (unsigned int)         v.scale,
                              (const unsigned char*) v.array);
-                    }
-                    else {
-                        *((CDB_BigInt*) item_buf) =
-                            numeric_to_longlong((unsigned int)
-                                                v.precision, v.array);
-                    }
-                }
-                return item_buf;
-            }
-
-            if (fmt.scale == 0  &&  fmt.precision < 20) {
-                return (outlen == 0)
-                    ? new CDB_BigInt
-                    : new CDB_BigInt(numeric_to_longlong((unsigned int)
-                                                         v.precision,v.array));
-            } else {
-                return  is_null
-                    ? new CDB_Numeric
-                    : new CDB_Numeric((unsigned int)         v.precision,
-                                      (unsigned int)         v.scale,
-                                      (const unsigned char*) v.array);
-            }
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
+            break;
         default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
+            _TROUBLE;
         }
+        break;
     }
 
-    case CS_FLOAT_TYPE: {
-        if (item_buf  &&  b_type != eDB_Double) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
+    case CS_FLOAT_TYPE:
+    {
         CS_FLOAT v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    *((CDB_Double*) item_buf) = (double) v;
-                }
-                return item_buf;
-            }
-
-            return is_null
-                ? new CDB_Double() : new CDB_Double((double) v);
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
+        my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null);
+        ENSURE_ITEM();
+        *static_cast<CDB_Double*>(item_buf) = v;
+        break;
     }
 
-    case CS_REAL_TYPE: {
-        if (item_buf  &&  b_type != eDB_Float) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-        }
-
+    case CS_REAL_TYPE:
+    {
         CS_REAL v;
-        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null) ) {
-        case CS_SUCCEED:
-        case CS_END_ITEM:
-        case CS_END_DATA: {
-            if ( item_buf ) {
-                if (is_null) {
-                    item_buf->AssignNULL();
-                }
-                else {
-                    *((CDB_Float*) item_buf) = (float) v;
-                }
-                return item_buf;
-            }
-
-            return is_null ? new CDB_Float() : new CDB_Float((float) v);
-        }
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
+        my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen, is_null);
+        ENSURE_ITEM();
+        *static_cast<CDB_Float*>(item_buf) = v;
+        break;
     }
 
     case CS_TEXT_TYPE:
-    case CS_IMAGE_TYPE: {
-		if (item_buf  &&  b_type != eDB_Text  &&  b_type != eDB_Image) {
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object." + GetDbgInfo(), 130020 );
-		}
+    case CS_IMAGE_TYPE:
+    {
+        CDB_Stream* val = static_cast<CDB_Stream*>(item_buf);
 
-        CDB_Stream* val = NULL;
-
-		if (item_buf) {
-			val = static_cast<CDB_Stream*>(item_buf);
-
-			if (policy == I_Result::eAssignLOB) {
-				// Explicitly truncate previous value ...
-				val->Truncate();
-			}
-		} else if (fmt.datatype == CS_TEXT_TYPE) {
-			val = new CDB_Text;
-		} else {
-			val = new CDB_Image;
-		}
+        if (item_buf == NULL) {
+            auto_item.reset(CDB_Object::Create(b_type, maxlength));
+            item_buf = auto_item.get();
+            val = static_cast<CDB_Stream*>(item_buf);
+        } else if (policy == I_Result::eAssignLOB) {
+            // Explicitly truncate previous value ...
+            val->Truncate();
+        }
 
 		_ASSERT(val);
 
-        if (m_NullValue[GetCurrentItemNum()] == eIsNull)
-            return val;
+        if (m_NullValue[GetCurrentItemNum()] == eIsNull) {
+            is_null = true;
+            break;
+        }
 
-        for (;;) {
+        bool done = false;
+        while (!done) {
             switch ( my_ct_get_data(cmd, item_no, buffer, sizeof(buffer), &outlen, is_null) ) {
             case CS_SUCCEED:
                 // For historic reasons, Append with a length of 0 calls
@@ -999,27 +614,23 @@ CDB_Object* CTL_RowResult::GetItemInternal(
             case CS_END_ITEM:
             case CS_END_DATA:
                 val->Append(outlen ? buffer : kEmptyCStr, outlen);
-                return val;
-            case CS_CANCELED:
-                DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
+                done = true;
+                break;
             default:
-                DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
+                _TROUBLE;
             }
         }
+        break;
     }
 
-    default: {
-        // Not handled data types ...
-//         CS_MONEY_TYPE
-//         CS_MONEY4_TYPE
-//         CS_SENSITIVITY_TYPE
-//         CS_BOUNDARY_TYPE
-//         CS_VOID_TYPE
-//         CS_USHORT_TYPE
-//         CS_UNICHAR_TYPE
-        DATABASE_DRIVER_ERROR( "Unexpected result type." + GetDbgInfo(), 130004 );
+    default:
+        _TROUBLE;
     }
-    }
+
+#undef ENSURE_ITEM
+
+    _ASSERT(item_buf->IsNULL() == is_null);
+    return auto_item.release();
 }
 
 
@@ -1102,10 +713,8 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
         // ct_get_data successfully retrieved a chunk of data that is
         // not the last chunk of data for this column.
         break;
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
     default:
-        DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
+        _TROUBLE;
     }
 
     return (size_t) outlen;
@@ -1130,16 +739,7 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
     char dummy[4];
     CS_INT outlen = 0;
 
-    switch (my_ct_get_data(x_GetSybaseCmd(), item_num + 1, dummy, 0, &outlen, is_null) ) {
-    case CS_END_ITEM:
-    case CS_END_DATA:
-    case CS_SUCCEED:
-        break;
-    case CS_CANCELED:
-        DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-    default:
-        DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-    }
+    my_ct_get_data(x_GetSybaseCmd(), item_num + 1, dummy, 0, &outlen, is_null);
 
     if (is_null)
         m_NullValue[item_num] = eIsNull;
@@ -1239,16 +839,8 @@ bool CTL_CursorResult::SkipItem()
         char dummy[4];
         bool is_null = false;
 
-        switch ( my_ct_get_data(x_GetSybaseCmd(), GetCurrentItemNum(), dummy, 0, 0, is_null) ) {
-        case CS_END_ITEM:
-        case CS_END_DATA:
-        case CS_SUCCEED:
-            break;
-        case CS_CANCELED:
-            DATABASE_DRIVER_ERROR( "The command has been canceled." + GetDbgInfo(), 130004 );
-        default:
-            DATABASE_DRIVER_ERROR( "ct_get_data failed." + GetDbgInfo(), 130000 );
-        }
+        my_ct_get_data(x_GetSybaseCmd(), GetCurrentItemNum(), dummy, 0, 0,
+                       is_null);
 
         return true;
     }
