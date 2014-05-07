@@ -340,7 +340,11 @@ static bool s_CanStore(CS_INT src, EDB_Type dst)
         }
         // else fall through
     case CS_LONGCHAR_TYPE:
-        if (dst == eDB_VarChar) {
+        if (
+#ifndef FTDS_IN_USE
+            dst == eDB_Char  ||
+#endif
+            dst == eDB_VarChar) {
             return true;
         }
         // else fall through
@@ -442,6 +446,13 @@ CDB_Object* CTL_RowResult::GetItemInternal(
                            &&  b_type == eDB_VarChar
                            &&  outlen > MAX_VARCHAR_SIZE,
                            "Invalid conversion to CDB_VarChar type.", 230021);
+
+#ifndef FTDS_IN_USE
+        CHECK_DRIVER_ERROR(fmt.datatype == CS_LONGCHAR_TYPE
+                           &&  b_type == eDB_Char
+                           &&  outlen > MAX_VARCHAR_SIZE,
+                           "Invalid conversion to CDB_VarChar type.", 230022);
+#endif
 
         switch (b_type) {
         case eDB_VarChar:
