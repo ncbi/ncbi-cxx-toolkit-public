@@ -118,7 +118,7 @@ void CFlatFileGenerator::Generate
     CSeq_entry_EditHandle seeh = entry.GetEditHandle();
     CRef<CSeq_entry> tmp_se;
 
-    //if ( m_Ctx->GetConfig().BasicCleanup() )
+    if ( m_Ctx->GetConfig().BasicCleanup() )
     {
 
         tmp_se = new CSeq_entry;
