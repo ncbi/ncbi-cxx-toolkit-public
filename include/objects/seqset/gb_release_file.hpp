@@ -68,12 +68,12 @@ public:
     };
     
     /// constructors
-    CGBReleaseFile(const string& file_name);
+    CGBReleaseFile(const string& file_name, bool propagate=false);
 
     /// Build a release file on a pre-established object stream
     /// NOTE: this constructor will take ownership of the object, and it will
     /// be deleted with this class.
-    CGBReleaseFile(CObjectIStream& in);
+    CGBReleaseFile(CObjectIStream& in, bool propagate=false);
 
     /// destructor
     virtual ~CGBReleaseFile(void);

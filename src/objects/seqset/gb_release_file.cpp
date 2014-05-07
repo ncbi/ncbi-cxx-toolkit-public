@@ -39,6 +39,7 @@
 #include <vector>
 #include <algorithm>
 #include <objects/seqset/gb_release_file.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -55,8 +56,8 @@ class CGBReleaseFileImpl : public CReadClassMemberHook
 public:
     typedef CGBReleaseFile::ISeqEntryHandler*   THandler;
 
-    CGBReleaseFileImpl(const string& file_name);
-    CGBReleaseFileImpl(CObjectIStream& in);
+    CGBReleaseFileImpl(const string& file_name, bool propagate);
+    CGBReleaseFileImpl(CObjectIStream& in, bool propagate);
 
     void Read(void);
     void RegisterHandler(THandler handler);
@@ -68,19 +69,23 @@ private:
     auto_ptr<CObjectIStream>    m_In;
     CBioseq_set                 m_Seqset;
     bool                        m_Stopped;
+    bool                        m_Propagate;
 };
 
 
-CGBReleaseFileImpl::CGBReleaseFileImpl(const string& file_name) :
+CGBReleaseFileImpl::CGBReleaseFileImpl(const string& file_name, bool propagate) :
     m_In(CObjectIStream::Open(file_name, eSerial_AsnBinary)),
-    m_Stopped(false)
+    m_Stopped(false),
+    m_Propagate(propagate)
 {
     _ASSERT(m_In.get() != 0  &&  m_In->InGoodState());
 }
 
 
-CGBReleaseFileImpl::CGBReleaseFileImpl(CObjectIStream& in) :
-    m_In(&in), m_Stopped(false)
+CGBReleaseFileImpl::CGBReleaseFileImpl(CObjectIStream& in, bool propagate) :
+    m_In(&in),
+    m_Stopped(false),
+    m_Propagate(propagate)
 {
     _ASSERT(m_In.get() != 0  &&  m_In->InGoodState());
 }
@@ -117,11 +122,19 @@ void CGBReleaseFileImpl::ReadClassMember
     // remove the read hook
     member.ResetLocalReadHook(in);
 
+    CBioseq_set& parent_set = *CType<CBioseq_set>::Get(member.GetClassObject());
+
     // iterate over the sequence of entries
     for ( CIStreamContainerIterator it(in, member); it; ++it ) {
         CRef<CSeq_entry> se(new CSeq_entry);
         it >> *se;
         if ( se ) {
+            if ( m_Propagate ) {
+                EDIT_EACH_DESCRIPTOR_ON_SEQSET (it, parent_set) {
+                    CSeqdesc& desc = **it;
+                    ADD_DESCRIPTOR_TO_SEQENTRY (*se, CRef<CSeqdesc>(SerialClone(desc)));
+                }
+            }
             if ( !m_Handler->HandleSeqEntry(se) ) {
                 m_Stopped = true;
                 break;
@@ -136,15 +149,15 @@ void CGBReleaseFileImpl::ReadClassMember
 //  CGBReleaseFile
 
 
-CGBReleaseFile::CGBReleaseFile(const string& file_name) :
-    m_Impl(new CGBReleaseFileImpl(file_name))
+CGBReleaseFile::CGBReleaseFile(const string& file_name, bool propagate) :
+    m_Impl(new CGBReleaseFileImpl(file_name, propagate))
 {
     _ASSERT(m_Impl);
 }
 
 
-CGBReleaseFile::CGBReleaseFile(CObjectIStream& in) :
-    m_Impl(new CGBReleaseFileImpl(in))
+CGBReleaseFile::CGBReleaseFile(CObjectIStream& in, bool propagate) :
+    m_Impl(new CGBReleaseFileImpl(in, propagate))
 {
     _ASSERT(m_Impl);
 }
