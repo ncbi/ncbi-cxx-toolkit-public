@@ -415,13 +415,22 @@ bool CVcfWriter::x_WriteFeatureChrom(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CSeq_id_Handle idh = sequence::GetIdHandle(mf.GetLocation(),
-                                               &mf.GetScope());
-    string chrom = idh.AsString();
-    string db, id;
-    NStr::SplitInTwo( idh.AsString(), "|", db, id );
-    if (NStr::EndsWith(id, "|")) {
-        id = id.substr(0, id.size()-1);
+    string id;
+    if (mf.GetData().IsUser() && mf.GetData().GetUser().IsSetClass() && mf.GetData().GetUser().GetClass() ==  "VCF_COLUMN_1_ID" 
+        && mf.GetData().GetUser().IsSetData() && mf.GetData().GetUser().GetData().front()->GetData().IsStr())
+    {
+        id = mf.GetData().GetUser().GetData().front()->GetData().GetStr();
+    }
+    else
+    {
+        CSeq_id_Handle idh = sequence::GetIdHandle(mf.GetLocation(),
+                                                   &mf.GetScope());
+        string chrom = idh.AsString();
+        string db;
+        NStr::SplitInTwo( idh.AsString(), "|", db, id );
+        if (NStr::EndsWith(id, "|")) {
+            id = id.substr(0, id.size()-1);
+        }
     }
     m_Os << id;
     return true;
