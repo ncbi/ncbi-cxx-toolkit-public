@@ -334,7 +334,7 @@ CSeq_id_Handle sx_MakeUniqueId(const CSeq_id_Handle& idh, TIdMap& id_map)
     }
     base += "_";
     CSeq_id_Handle& suffix_id = id_map[TIdKey(idh, null)];
-    for ( int k = suffix_id.GetGi(); ; ++k ) {
+    for ( TIntId k = suffix_id.GetGi(); ; ++k ) {
         obj_id->SetStr(base+NStr::NumericToString(k));
         CSeq_id_Handle new_idh = CSeq_id_Handle::GetHandle(*new_id);
         if ( sx_AddId(id_map, new_idh).second ) {
@@ -542,7 +542,7 @@ void CSeq_entry::ReassignConflictingIds(void)
 
     // gather conflicting ids
     bool has_conflict = false;
-    CSeq_id_Handle gi1 = CSeq_id_Handle::GetGiHandle(1);
+    CSeq_id_Handle gi1 = CSeq_id_Handle::GetGiHandle(TIntId(1));
     for ( CTypeConstIterator<CBioseq> it(ConstBegin(*this)); it; ++it ) {
         ITERATE ( CBioseq::TId, idit, it->GetId() ) {
             if ( !sx_CanReassign((**idit).Which()) ) {
