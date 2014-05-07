@@ -33,9 +33,9 @@ done
 
 # Run test
 
-"$inspxe" -collect mi3     -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $*
+"$inspxe" -collect mi3 -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $*
 app_result=$?
-"$inspxe" -report problems -result-dir $rd
+"$inspxe" -report problems –report-all -result-dir $rd
 insp_result=$?
 
 
