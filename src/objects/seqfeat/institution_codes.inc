@@ -2253,7 +2253,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HLX	s	Ovenden Naturalists' Society",
 "HM<DEU>	s	Humbolt Museum",
 "HM<USA-NE>	s	Hastings Museum",
-"HMAS	s	Institute of Microbiology, Academia Sinica",
+"HMAS	sc	Institute of Microbiology, Academia Sinica",
 "HMC	s	Jardin Botanico de Las Tunas",
 "HME	s	Haslemere Educational Museum",
 "HMH	s	Hoebarth Museum Horn",
