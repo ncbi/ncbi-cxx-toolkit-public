@@ -9,14 +9,14 @@ APP = asndisc_cpp
 SRC = cAsndisc
 
 LIB = xdiscrepancy_report xvalidate xobjedit valid valerr \
-        xmlwrapp \
+        xmlwrapp xncbi \
         taxon3 $(XFORMAT_LIBS) xalnmgr xobjutil tables \
 	macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS)
 
-LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS) \
-        $(LIBXML_LIBS) $(LIBXSLT_LIBS)
+LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) \
+        $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(ORIG_LIBS) \
 
-CPPFLAGS= $(ORIG_CPPFLAGS) $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE)
+CPPFLAGS= $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE) $(ORIG_CPPFLAGS) 
 
 REQUIRES = objects
 
