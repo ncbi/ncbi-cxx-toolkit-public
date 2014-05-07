@@ -113,11 +113,17 @@ void CFlatFileGenerator::Generate
 {
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
-    CSeq_entry_EditHandle seeh = entry.GetEditHandle();
-    CRef<CSeq_entry> tmp_se (new CSeq_entry);
-    tmp_se->Assign(*seeh.GetCompleteSeq_entry());
+    entry.GetTopLevelEntry().GetCompleteSeq_entry();
 
-    if ( m_Ctx->GetConfig().BasicCleanup() ) {
+    CSeq_entry_EditHandle seeh = entry.GetEditHandle();
+    CRef<CSeq_entry> tmp_se;
+
+    //if ( m_Ctx->GetConfig().BasicCleanup() )
+    {
+
+        tmp_se = new CSeq_entry;
+        tmp_se->Assign(*seeh.GetCompleteSeq_entry());
+
         CCleanup cleanup;
         cleanup.BasicCleanup( *tmp_se );
 
