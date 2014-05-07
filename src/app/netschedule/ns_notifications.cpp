@@ -460,7 +460,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
 
         // Check if the group restriction is applicable
         if (!k->m_Group.empty()) {
-            group_jobs = group_registry.GetJobs(k->m_Group);
+            group_jobs = group_registry.GetJobs(k->m_Group, false);
             if ((jobs & group_jobs).any() == false) {
                 ++k;
                 continue;
