@@ -593,6 +593,32 @@ string s_GetmRNAName (const CSeq_feat& mrna)
 }
 
 
+void s_AdjustForUTR(const CSeq_feat& utr, int cd_start, int cd_stop, CSeq_loc& mrna_loc, bool found5, bool found3, CScope& scope)
+{
+    int utr_start = utr.GetLocation().GetStart(eExtreme_Positional);
+    int utr_stop = utr.GetLocation().GetStop(eExtreme_Positional);
+    if ( utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR )
+    {
+        found5 = true;
+        if (abs(utr_stop - cd_start) <= 2)
+        {
+            mrna_loc.Assign(*SeqLocExtend(mrna_loc, utr_start, &scope));
+            mrna_loc.SetPartialStart( utr.GetLocation().IsPartialStart(eExtreme_Positional), eExtreme_Positional );
+        }
+    }
+    else if ( utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR )
+    {
+        found3 = true;
+        if ( abs(utr_start - cd_stop) <= 2)
+        {
+            mrna_loc.Assign(*SeqLocExtend(mrna_loc, utr_stop, &scope));
+            mrna_loc.SetPartialStop( utr.GetLocation().IsPartialStop(eExtreme_Positional), eExtreme_Positional );
+        }
+    }
+}
+
+
+
 /// MakemRNAforCDS
 /// A function to create a CSeq_feat that represents the
 /// appropriate mRNA for a given CDS. Note that this feature
@@ -615,42 +641,32 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
         new_mrna->SetLocation().Assign(cds.GetLocation());
         new_mrna->SetData().SetRna().SetExt().SetName(prot_nm);
       
-        CBioseq_Handle bsh = scope.GetBioseqHandle(*cd_loc.GetId());
-        CSeq_entry_Handle cd_seh = bsh.GetSeq_entry_Handle();    
-      
         bool found3 = false;
         bool found5 = false;
         int cd_start = cd_loc.GetStart(eExtreme_Positional);
         int cd_stop = cd_loc.GetStop(eExtreme_Positional);
-        for (CFeat_CI utr(bsh, CSeqFeatData::e_Imp); utr; ++utr)
-        {
-            if (utr->GetOriginalFeature().GetData().GetImp().IsSetKey())
+ 
+        CBioseq_Handle bsh = scope.GetBioseqHandle(*cd_loc.GetId());
+        if (bsh) {      
+            for (CFeat_CI utr(bsh, CSeqFeatData::e_Imp); utr; ++utr)
             {
-                int utr_start = utr->GetOriginalFeature().GetLocation().GetStart(eExtreme_Positional);
-                int utr_stop = utr->GetOriginalFeature().GetLocation().GetStop(eExtreme_Positional);
-                if ( utr->GetOriginalFeature().GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR )
-                {
-                    found5 = true;
-                    if (abs(utr_stop - cd_start) <= 2)
-                    {
-                        //new_mrna->SetLocation().Add(utr->GetOriginalFeature().GetLocation());
-                        new_mrna->SetLocation(*SeqLocExtend(new_mrna->GetLocation(), utr_start, &scope));
-                        new_mrna->SetLocation().SetPartialStart( utr->GetOriginalFeature().GetLocation().IsPartialStart(eExtreme_Positional), eExtreme_Positional );
-                    }
-                }
-                else if ( utr->GetOriginalFeature().GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR )
-                {
-                    found3 = true;
-                    if ( abs(utr_start - cd_stop) <= 2)
-                    {
-                        //new_mrna->SetLocation().Add(utr->GetOriginalFeature().GetLocation());
-                        new_mrna->SetLocation(*SeqLocExtend(new_mrna->GetLocation(), utr_stop, &scope));
-                        new_mrna->SetLocation().SetPartialStop( utr->GetOriginalFeature().GetLocation().IsPartialStop(eExtreme_Positional), eExtreme_Positional );
+                s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
+                               new_mrna->SetLocation(), found5, found3, scope);
+            }
+        } else {
+            CSeq_feat_Handle fh = scope.GetSeq_featHandle(cds);
+            if (fh) {
+                CSeq_annot_Handle sah = fh.GetAnnot();
+                if (sah) {
+                    for (CFeat_CI utr(sah, CSeqFeatData::e_Imp); utr; ++utr) {
+                        s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
+                                       new_mrna->SetLocation(), found5, found3, scope);
                     }
                 }
             }
-
         }
+
+
         if (!found5)
             new_mrna->SetLocation().SetPartialStart(true, eExtreme_Positional); 
         if (!found3)

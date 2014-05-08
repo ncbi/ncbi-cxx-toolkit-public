@@ -78,6 +78,7 @@
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
@@ -461,6 +462,59 @@ BOOST_AUTO_TEST_CASE(Test_ExtendCDSToStopCodon)
     BOOST_CHECK_EQUAL(cds->GetLocation().GetStop(eExtreme_Biological), 31);
     BOOST_CHECK_EQUAL(cds->GetLocation().IsPartialStop(eExtreme_Biological), false);
 
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MakemRNAAnnotOnly)
+{
+    CRef<CSeq_feat> cds(new CSeq_feat());
+    cds->SetData().SetCdregion();
+    cds->SetLocation().SetInt().SetId().SetLocal().SetStr("abc");
+    cds->SetLocation().SetInt().SetFrom(10);
+    cds->SetLocation().SetInt().SetTo(40);
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetFtable().push_back(cds);
+
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_annot_Handle sah = scope.AddSeq_annot(*annot);
+    CFeat_CI it(sah);
+    while (it) {
+        if (it->GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion) {
+            const CSeq_feat& cds = it->GetOriginalFeature();
+            CRef<CSeq_feat> pRna = edit::MakemRNAforCDS(cds, scope); //<-- blows up on NULL ptr !!!
+            BOOST_CHECK_EQUAL(pRna->GetLocation().GetStart(eExtreme_Biological), 10);
+            BOOST_CHECK_EQUAL(pRna->GetLocation().GetStop(eExtreme_Biological), 40);
+        }
+        ++it;
+    }
+
+    scope.RemoveSeq_annot(sah);
+    CRef<CSeq_feat> utr5(new CSeq_feat());
+    utr5->SetData().SetImp().SetKey("5'UTR");
+    utr5->SetLocation().SetInt().SetId().SetLocal().SetStr("abc");
+    utr5->SetLocation().SetInt().SetFrom(0);
+    utr5->SetLocation().SetInt().SetTo(9);
+    annot->SetData().SetFtable().push_back(utr5);
+    CRef<CSeq_feat> utr3(new CSeq_feat());
+    utr3->SetData().SetImp().SetKey("3'UTR");
+    utr3->SetLocation().SetInt().SetId().SetLocal().SetStr("abc");
+    utr3->SetLocation().SetInt().SetFrom(41);
+    utr3->SetLocation().SetInt().SetTo(50);
+    annot->SetData().SetFtable().push_back(utr3);
+
+    sah = scope.AddSeq_annot(*annot);
+    CFeat_CI it2(sah);
+    while (it2) {
+        if (it2->GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion) {
+            const CSeq_feat& cds = it2->GetOriginalFeature();
+            CRef<CSeq_feat> pRna = edit::MakemRNAforCDS(cds, scope); //<-- blows up on NULL ptr !!!
+            BOOST_CHECK_EQUAL(pRna->GetLocation().GetStart(eExtreme_Biological), 0);
+            BOOST_CHECK_EQUAL(pRna->GetLocation().GetStop(eExtreme_Biological), 50);
+        }
+        ++it2;
+    }
 
 }
 
