@@ -57,7 +57,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     m_Oid = -1;
     CRef<CSeq_id> seq_id;
 
-    TGi target_gi = 0;
+    TGi target_gi = ZERO_GI;
     CSeq_id *target_seq_id = NULL;
 
     if (id.IsOID()) {
