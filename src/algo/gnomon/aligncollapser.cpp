@@ -1440,7 +1440,7 @@ void CAlignCollapser::FilterAlignments() {
     }
 
     //clean genomic gaps
-    sort(m_align_gaps.begin(),m_align_gaps.end(),GenomicGapsOrder());                            // if the sequence same accsession is used
+    sort(m_align_gaps.begin(),m_align_gaps.end(),GenomicGapsOrder());                            // accsession is used if the sequence is same
     m_align_gaps.erase( unique(m_align_gaps.begin(),m_align_gaps.end()), m_align_gaps.end() );   // uses == for CInDelInfo which ignores accession
 
     total += m_aligns_for_filtering_only.size();
@@ -1463,6 +1463,55 @@ bool CAlignCollapser::CheckAndInsert(const CAlignModel& align, TAlignModelCluste
     clsset.Insert(align);
     return true;
 }
+
+struct LeftAndLongFirstOrderForAligns
+{
+    bool operator() (TAlignModelList::const_iterator a, TAlignModelList::const_iterator b) {  // left and long first
+        if(a->Limits() == b->Limits())
+            return a->TargetAccession() < b->TargetAccession();
+        else if(a->Limits().GetFrom() !=  b->Limits().GetFrom())
+            return a->Limits().GetFrom() <  b->Limits().GetFrom();
+        else
+            return a->Limits().GetTo() >  b->Limits().GetTo();
+    }
+}; 
+
+// one-exon alignments are equal
+// gapfilled exons compared by seq; real exons compared by range and splices
+// real exon < gapfilled exon; 
+bool OneExonCompare(const CModelExon& a, const CModelExon& b) {
+    if(!a.m_seq.empty() || !b.m_seq.empty()) {  // at least one is gapfilling
+        return a.m_seq < b.m_seq;
+    } else if(b.Limits().Empty()) {             // b is from one-exon alignment
+        return false;
+    } else if(a.Limits().Empty()) {             // a is from one-exon alignment and b is not
+        return true;
+    } else if(a.m_fsplice != b.m_fsplice) {
+        return a.m_fsplice < b.m_fsplice;
+    } else if(a.m_ssplice != b.m_ssplice) {
+        return a.m_ssplice < b.m_ssplice;
+    } else {
+        return a.Limits() < b.Limits();
+    }
+}
+
+struct MultiExonsCompare
+{ 
+    bool operator() (const CGeneModel::TExons& a, const CGeneModel::TExons& b) {
+        if(a.size() != b.size()) {
+            return a.size() < b.size();
+        } else {
+            for(int i = 0; i < (int)a.size(); ++i) {
+                if(OneExonCompare(a[i],b[i]))
+                    return true;
+                if(OneExonCompare(b[i],a[i]))
+                    return false;
+            }
+            return false;
+        }
+    }
+};
+
 
 void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
 
@@ -1521,7 +1570,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
                         if(CheckAndInsert(align, clsset))
                             ++total;
                         extended_aligns.erase(ita);
-                    } else if(!collapsed) {
+                    } else if(!collapsed) {    // even if collapsed must check extended_aligns to the end to purge finished
                         if(rightisfixed && ai.m_range.GetTo() != aj.m_range.GetTo())
                             continue;
                         if(notspliced && aj.m_range.GetTo() > ai.m_range.GetTo()) {
@@ -1554,12 +1603,79 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         }
     }
 
+    if(m_collapsest && m_fillgenomicgaps) {   // collaps ests used for gapfilling
+        typedef map<CGeneModel::TExons, vector<TAlignModelList::iterator>, MultiExonsCompare> TEstHolder;
+        TEstHolder est_for_collapsing;
+        NON_CONST_ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
+            if(i->Type() == CGeneModel::eEST) {
+                CGeneModel::TExons exons = i->Exons();
+                if(exons.size() == 1) {
+                    exons.front().Limits() = TSignedSeqRange::GetEmpty();
+                    _ASSERT(exons.front().m_seq.empty());
+                } else {
+                    if(exons.front().m_ssplice_sig != "XX")
+                        exons.front().Limits().SetFrom(exons.front().GetTo());
+                    if(exons.back().m_fsplice_sig != "XX")
+                        exons.back().Limits().SetTo(exons.back().GetFrom());
+                }
+                est_for_collapsing[exons].push_back(i);
+            }
+        }
+
+        NON_CONST_ITERATE(TEstHolder, i, est_for_collapsing) {
+            sort(i->second.begin(),i->second.end(),LeftAndLongFirstOrderForAligns());
+            list<TAlignModelList::iterator> ests(i->second.begin(),i->second.end());
+            for(list<TAlignModelList::iterator>::iterator ihost = ests.begin(); ihost != ests.end(); ) {
+                CAlignModel& host = **(ihost++);
+                set<int>::const_iterator ri = right_exon_ends.lower_bound(host.Limits().GetTo());  // leftmost compatible rexon
+                int rlima = -1;
+                if(ri != right_exon_ends.begin())
+                    rlima = *(--ri);                                                               // position of the rightmost incompatible rexon
+                set<int>::const_iterator li = left_exon_ends.upper_bound(host.Limits().GetFrom()); // leftmost not compatible lexon
+                int llimb = numeric_limits<int>::max() ;
+                if(li != left_exon_ends.end())
+                    llimb = *li;                                                                    // position of the leftmost not compatible lexon
+                
+
+                for(list<TAlignModelList::iterator>::iterator iloop = ihost; iloop != ests.end(); ) {
+                    list<TAlignModelList::iterator>::iterator iguest = iloop++;
+                    CAlignModel& guest = **iguest;
+
+                    if(guest.Limits().GetFrom() >= min(host.Limits().GetTo()+1,llimb))    // host is completed
+                        break;
+
+                    if(guest.Limits().GetTo() > host.Limits().GetTo() || guest.Limits().GetTo() <= rlima)
+                        continue;
+
+                    if(host.Strand() != guest.Strand() || (host.Status()&CGeneModel::eUnknownOrientation) != (guest.Status()&CGeneModel::eUnknownOrientation))
+                        continue;
+                    if((guest.Status()&CGeneModel::ePolyA) || (host.Status()&CGeneModel::ePolyA)) {
+                        if((guest.Status()&CGeneModel::ePolyA) != (host.Status()&CGeneModel::ePolyA) 
+                           || (guest.Strand() == ePlus && guest.Limits().GetTo() != host.Limits().GetTo())
+                           || (guest.Strand() == eMinus && guest.Limits().GetFrom() != host.Limits().GetFrom()))
+                            continue;
+                    }
+                    if((guest.Status()&CGeneModel::eCap) || (host.Status()&CGeneModel::eCap)) {
+                        if((guest.Status()&CGeneModel::eCap) != (host.Status()&CGeneModel::eCap) 
+                           || (guest.Strand() == eMinus && guest.Limits().GetTo() != host.Limits().GetTo())
+                           || (guest.Strand() == ePlus && guest.Limits().GetFrom() != host.Limits().GetFrom()))
+                            continue;
+                    }
+
+                    host.SetWeight(host.Weight()+guest.Weight());
+                    m_aligns_for_filtering_only.erase(*iguest);
+                    ests.erase(iguest);
+                }
+            }
+        }
+    }
+
     NON_CONST_ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
         if(i->Type() == CGeneModel::emRNA) {
             CBioseq_Handle bh (m_scope->GetBioseqHandle(*i->GetTargetId()));
             const CMolInfo* molinfo = GetMolInfo(bh);
             if(molinfo && molinfo->IsSetTech() && molinfo->GetTech() == CMolInfo::eTech_tsa)
-                i->Status() |= CGeneModel::eTSA;
+                i->Status() |= CGeneModel::eTSA;   // used to exclude from CDS projection
         }
         if(CheckAndInsert(*i, clsset))
             ++total;
@@ -1987,9 +2103,17 @@ void CAlignCollapser::AddAlignment(const CAlignModel& a) {
         }
     }
 
-    if((align.Type()&CGeneModel::eSR) || ((align.Type()&CGeneModel::eEST) && m_collapsest && align.Continuous())) {   // add alignments for collapsing
-        CAlignCommon c(align);
-        m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c]));
+    if((align.Type()&CGeneModel::eSR) || ((align.Type()&CGeneModel::eEST) && !(align.Status()&CGeneModel::eGapFiller) && m_collapsest)) {   // add alignments for collapsing
+        if(align.Continuous()) {
+            CAlignCommon c(align);
+            m_aligns[c].push_back(SAlignIndividual(align, m_target_id_pool[c]));
+        } else {
+            TAlignModelList aligns = GetAlignParts(align, false);
+            ITERATE(TAlignModelList, i, aligns) {
+                CAlignCommon c(*i);
+                m_aligns[c].push_back(SAlignIndividual(*i, m_target_id_pool[c]));                
+            }
+        }
     } else {
         m_aligns_for_filtering_only.push_back(align);
     }
