@@ -6065,7 +6065,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UAWC<WBK>	b	Union of Agricultural Work Committees",
 "UAY	s	Universidad Autonoma de Yucatan, Facultad de Medicina Veterinaria y Zootecnia",
 "UAZ	s	University of Arizona",
-"UB<BRA>	s	Universidade de Brasilia, Departamento de Botanica",
+"UB	sc	University of Brasilia Herbarium",
 "UB<FRA>	s	Laboratoire de Biostratigraphie",
 "UBA	s	Mongolian Academy of Sciences",
 "UBC	s	Beaty Biodiversity Museum, University of British Columbia",
