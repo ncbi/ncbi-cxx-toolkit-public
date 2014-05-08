@@ -516,6 +516,28 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAAnnotOnly)
         ++it2;
     }
 
+    // should not make mRNA if one already exists
+    scope.RemoveSeq_annot(sah);
+    CRef<CSeq_feat> mrna(new CSeq_feat());
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetData().SetRna().SetExt().SetName("");
+    mrna->SetLocation().SetInt().SetId().SetLocal().SetStr("abc");
+    mrna->SetLocation().SetInt().SetFrom(10);
+    mrna->SetLocation().SetInt().SetTo(40);
+    annot->SetData().SetFtable().push_back(mrna);
+    BOOST_CHECK_EQUAL(mrna->GetData().GetSubtype(), CSeqFeatData::eSubtype_mRNA);
+    sah = scope.AddSeq_annot(*annot);
+
+    CFeat_CI it3(sah);
+    while (it3) {
+        if (it3->GetFeatSubtype() == CSeqFeatData::eSubtype_cdregion) {
+            const CSeq_feat& cds = it3->GetOriginalFeature();
+            CRef<CSeq_feat> pRna = edit::MakemRNAforCDS(cds, scope);
+            BOOST_REQUIRE(!pRna);
+        }
+        ++it3;
+    }
+
 }
 
 

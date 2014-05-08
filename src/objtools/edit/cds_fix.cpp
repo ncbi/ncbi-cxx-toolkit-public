@@ -634,7 +634,30 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
     string prot_nm = s_GetProductName(cds, scope);
     const CSeq_loc& cd_loc = cds.GetLocation();
 
-    CConstRef <CSeq_feat> mrna = sequence::GetOverlappingmRNA(cd_loc, scope);
+    CConstRef <CSeq_feat> mrna(NULL);
+    CBioseq_Handle bsh = scope.GetBioseqHandle(*cd_loc.GetId());
+    CSeq_feat_Handle fh = scope.GetSeq_featHandle(cds);
+    CSeq_annot_Handle sah;
+    if (fh) {
+        sah = fh.GetAnnot();
+    }
+    // can only look for overlapping mRNA with sequence::GetOverlappingmRNA
+    // if Bioseq is in scope.
+    if (bsh) {
+        mrna = sequence::GetOverlappingmRNA(cd_loc, scope);
+    } else if (sah) {
+        for (CFeat_CI mrna_find(sah, CSeqFeatData::eSubtype_mRNA); mrna_find; ++mrna_find) {
+            size_t best_len = 0;
+            if (sequence::TestForOverlap64(mrna_find->GetLocation(), cd_loc, sequence::eOverlap_CheckIntervals) != -1) {
+                size_t len = sequence::GetLength(mrna_find->GetLocation(), &scope);
+                if (best_len == 0 || len > best_len) {
+                    best_len = len;
+                    mrna = &(mrna_find->GetOriginalFeature());
+                }
+            }
+        }
+    }
+
     if (!mrna || !NStr::Equal(prot_nm, s_GetmRNAName(*mrna))) {
         new_mrna.Reset (new CSeq_feat());
         new_mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
@@ -646,23 +669,16 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
         int cd_start = cd_loc.GetStart(eExtreme_Positional);
         int cd_stop = cd_loc.GetStop(eExtreme_Positional);
  
-        CBioseq_Handle bsh = scope.GetBioseqHandle(*cd_loc.GetId());
         if (bsh) {      
             for (CFeat_CI utr(bsh, CSeqFeatData::e_Imp); utr; ++utr)
             {
                 s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
                                new_mrna->SetLocation(), found5, found3, scope);
             }
-        } else {
-            CSeq_feat_Handle fh = scope.GetSeq_featHandle(cds);
-            if (fh) {
-                CSeq_annot_Handle sah = fh.GetAnnot();
-                if (sah) {
-                    for (CFeat_CI utr(sah, CSeqFeatData::e_Imp); utr; ++utr) {
-                        s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
-                                       new_mrna->SetLocation(), found5, found3, scope);
-                    }
-                }
+        } else if (sah) {
+            for (CFeat_CI utr(sah, CSeqFeatData::e_Imp); utr; ++utr) {
+                s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
+                                new_mrna->SetLocation(), found5, found3, scope);
             }
         }
 
