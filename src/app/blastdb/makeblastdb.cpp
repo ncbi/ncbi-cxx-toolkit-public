@@ -33,7 +33,7 @@
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
+static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
@@ -45,6 +45,9 @@ static char const rcsid[] =
 #include <serial/iterator.hpp>
 #include <objmgr/util/create_defline.hpp>
 #include <objmgr/util/sequence.hpp>
+
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/general/User_object.hpp>
 
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/blastdb/Blast_db_mask_info.hpp>
@@ -76,7 +79,7 @@ class CMakeBlastDBApp : public CNcbiApplication {
 public:
     /// Convenience typedef
     typedef CFormatGuess::EFormat TFormat;
-    
+
     enum ESupportedInputFormats {
         eFasta,
         eBinaryASN,
@@ -84,7 +87,7 @@ public:
         eBlastDb,
         eUnsupported = 256
     };
-    
+
     /** @inheritDoc */
     CMakeBlastDBApp()
         : m_LogFile(NULL),
@@ -94,47 +97,49 @@ public:
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
     }
-    
+
 private:
     /** @inheritDoc */
     virtual void Init();
     /** @inheritDoc */
     virtual int Run();
-    
+
     void x_AddSequenceData(CNcbiIstream & input, TFormat fmt);
-    
+
     vector<ESupportedInputFormats>
-    x_GuessInputType(const vector<CTempString>& filenames, 
+    x_GuessInputType(const vector<CTempString>& filenames,
                      vector<string>& blastdbs);
     ESupportedInputFormats x_GetUserInputTypeHint(void);
     TFormat x_ConvertToCFormatGuessType(ESupportedInputFormats fmt);
     ESupportedInputFormats x_ConvertToSupportedType(TFormat fmt);
     TFormat x_GuessFileType(CNcbiIstream & input);
-    
+
     void x_BuildDatabase();
-    
+
     void x_AddFasta(CNcbiIstream & data);
-    
+
     void x_AddSeqEntries(CNcbiIstream & data, TFormat fmt);
-    
+
     void x_ProcessMaskData();
-    
+
     void x_ProcessInputData(const string & paths, bool is_protein);
-    
+
     bool x_ShouldParseSeqIds(void);
 
     void x_VerifyInputFilesType(const vector<CTempString>& filenames,
     				    		CMakeBlastDBApp::ESupportedInputFormats input_type);
 
     // Data
-    
+
     CNcbiOstream * m_LogFile;
-    
+
     CRef<CBuildDatabase> m_DB;
-    
+
     CRef<CMaskedRangeSet> m_Ranges;
 
     bool m_IsModifyMode;
+
+    bool m_SkipUnver;
 };
 
 /// Reads an object defined in a NCBI ASN.1 spec from a stream in multiple
@@ -151,16 +156,16 @@ void s_ReadObject(CNcbiIstream          & file,
                   const string          & msg)
 {
     obj.Reset(new TObj);
-    
+
     switch (fmt) {
     case CFormatGuess::eBinaryASN:
         file >> MSerial_AsnBinary >> *obj;
         break;
-        
+
     case CFormatGuess::eTextASN:
         file >> MSerial_AsnText >> *obj;
         break;
-        
+
     default:
         NCBI_THROW(CInvalidDataException, eInvalidInput, string("Unknown encoding for ") + msg);
     }
@@ -198,8 +203,8 @@ void CMakeBlastDBApp::Init()
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
-                  "Application to create BLAST databases, version " 
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                  "Application to create BLAST databases, version "
                   + CBlastVersion().Print());
 
     string dflt("Default = input file name provided to -");
@@ -216,7 +221,7 @@ void CMakeBlastDBApp::Init()
                                             "fasta", "blastdb",
                                             "asn1_bin",
                                             "asn1_txt"));
-    
+
     arg_desc->AddKey(kArgDbType, "molecule_type",
                      "Molecule type of target db", CArgDescriptions::eString);
     arg_desc->SetConstraint(kArgDbType, &(*new CArgAllow_Strings,
@@ -233,7 +238,7 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddFlag("hash_index",
                       "Create index of sequence hash values.",
                       true);
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     arg_desc->SetCurrentGroup("Sequence masking options");
@@ -248,7 +253,7 @@ void CMakeBlastDBApp::Init()
                              "Comma-separated list of strings to uniquely "
                              "identify the masking algorithm",
                              CArgDescriptions::eString);
-    
+
     arg_desc->AddOptionalKey("mask_desc", "mask_algo_descriptions",
                              "Comma-separated list of free form strings to "
                              "describe the masking algorithm details",
@@ -269,7 +274,7 @@ void CMakeBlastDBApp::Init()
     arg_desc->SetDependency("gi_mask_name", CArgDescriptions::eRequires, "gi_mask");
 
 #endif
-    
+
     arg_desc->SetCurrentGroup("Output options");
     arg_desc->AddOptionalKey(kOutput, "database_name",
                              "Name of BLAST database to be created\n" + dflt +
@@ -284,7 +289,7 @@ void CMakeBlastDBApp::Init()
 #endif /* _BLAST_DEBUG */
 
     arg_desc->SetCurrentGroup("Taxonomy options");
-    arg_desc->AddOptionalKey("taxid", "TaxID", 
+    arg_desc->AddOptionalKey("taxid", "TaxID",
                              "Taxonomy ID to assign to all sequences",
                              CArgDescriptions::eInteger);
     arg_desc->SetConstraint("taxid", new CArgAllowValuesGreaterThanOrEqual(0));
@@ -306,21 +311,21 @@ void CMakeBlastDBApp::Init()
 static string Uint8ToString_DataSize(Uint8 v, unsigned minprec = 10)
 {
     static string kMods = "KMGTPEZY";
-    
+
     size_t i(0);
     for(i = 0; i < kMods.size(); i++) {
         if (v < Uint8(minprec)*1024) {
             v /= 1024;
         }
     }
-    
+
     string rv = NStr::UInt8ToString(v);
-    
+
     if (i) {
         rv.append(kMods, i, 1);
         rv.append("B");
     }
-    
+
     return rv;
 }
 
@@ -374,75 +379,144 @@ class CSeqEntrySource : public IBioseqSource {
 public:
     /// Convenience typedef
     typedef CFormatGuess::EFormat TFormat;
-    
-    CSeqEntrySource(CNcbiIstream & is, TFormat fmt)
+
+    bool IsUnverified(const CSeq_descr& descr) {
+
+        const string unv("Unverified");
+
+        const CSeq_descr::Tdata& da = descr.Get();
+        ITERATE(CSeq_descr::Tdata, da_iter, da) {
+            CRef<CSeqdesc> dai = *da_iter;
+            if (dai->IsUser()) {
+                const CSeqdesc::TUser& du = dai->GetUser();
+                if (du.IsSetType()) {
+                    const CUser_object::TType& ty = du.GetType();
+                    if (ty.IsStr()) {
+                        const CObject_id::TStr& str = ty.GetStr();
+                        if (NStr::CompareNocase(str, unv) == 0) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+
+    }
+
+    CSeqEntrySource(CNcbiIstream & is, TFormat fmt, bool skip_unver)
         :m_objmgr(CObjectManager::GetInstance()),
          m_scope(new CScope(*m_objmgr)),
-         m_entry(new CSeq_entry)
+         m_entry(new CSeq_entry),
+         m_SkipUnver(skip_unver)
     {
-        char ch=is.peek();
+        char ch = is.peek();
 
-        // Get rid of white spaces 
-        while(!is.eof() && (ch==' ' || ch=='\t' || ch=='\n' || ch=='\r')) {
+        // Get rid of white spaces
+        while (!is.eof()
+                &&
+                (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')) {
             is.read(&ch, 1);
-            ch=is.peek();
+            ch = is.peek();
         }
 
-        if(is.eof())
+        if (is.eof())
         	return;
 
         // If input is a Bioseq_set
-        if(ch == 'B' || ch == '0') {
+        if (ch == 'B' || ch == '0') {
             CRef<CBioseq_set> obj(new CBioseq_set);
             s_ReadObject(is, fmt, obj, "bioseq");
             m_entry->SetSet(*obj);
         } else {
+            // If not, it should be a Seq-entry.
             s_ReadObject(is, fmt, m_entry, "bioseq");
         }
 
+        CTypeIterator<CBioseq_set> it_bio_set;
+        CTypeIterator<CBioseq> it_bio;
+
+        // Step through Seq-entry, picking out Bioseq-set objects.
+        for (it_bio_set = Begin(*m_entry); it_bio_set; ++it_bio_set) {
+            // If Bioseq-set is of the 'nuc-prot' class,
+            // and it's marked "Unverified", skip ALL of the
+            // Bioseq objects it contains.
+            if (it_bio_set->GetClass() == CBioseq_set::eClass_nuc_prot) {
+                if (IsUnverified(it_bio_set->GetDescr())) {
+                    for (it_bio = Begin(*it_bio_set); it_bio; ++it_bio) {
+                        m_bio_skipped.insert(&(*it_bio));
+                    }
+                }
+            }
+        }
+
+        // Step through Seq-entry, picking out Bioseq objects.
+        for (it_bio = Begin(*m_entry); it_bio; ++it_bio) {
+            // If Bioseq is marked as "Unverified", skip it.
+            if (IsUnverified(it_bio->GetDescr())) {
+                // Because m_bio_skipped is an STL set container,
+                // inserting an item that's already in the set will leave
+                // the set unaltered (i.e. no duplicate items).
+                m_bio_skipped.insert(&(*it_bio));
+            }
+        }
+
         m_bio = Begin(*m_entry);
-        for (CTypeIterator<CBioseq> it = Begin(*m_entry); it; ++it)
-        {
-       		m_scope->AddBioseq(*it);
+        for (CTypeIterator<CBioseq> it = Begin(*m_entry); it; ++it) {
+            m_scope->AddBioseq(*it);
         }
         m_entry->Parentize();
     }
-    
+
     virtual CConstRef<CBioseq> GetNext()
     {
         CConstRef<CBioseq> rv;
-        
-       if (m_bio ) {
+
+        if (m_bio) {
+
+            // If skipping of "unverified" entries is enabled...
+            if (m_SkipUnver) {
+                // If the the address of the current Bioseq object (*m_bio)
+                // is in the skip set, advance to the next Bioseq and
+                // try again.
+                while (m_bio_skipped.find(&(*m_bio)) != m_bio_skipped.end()) {
+                    ++m_bio;    // will be null when incremented past end
+                    if (!m_bio) return rv;
+                }
+            }
+
             if (s_GenerateTitle(*m_bio)) {
-                 sequence::CDeflineGenerator gen;
-                 const string & title = gen.GenerateDefline(*m_bio , *m_scope);
-                 CRef<CSeqdesc> des(new CSeqdesc);
-                 des->SetTitle(title);
-                 CSeq_descr& desr(m_bio ->SetDescr());
-                 desr.Set().push_back(des);
+                sequence::CDeflineGenerator gen;
+                const string & title = gen.GenerateDefline(*m_bio , *m_scope);
+                CRef<CSeqdesc> des(new CSeqdesc);
+                des->SetTitle(title);
+                CSeq_descr& desr(m_bio->SetDescr());
+                desr.Set().push_back(des);
             }
 
-            if(0 == m_bio->GetTaxId()) {
-            	int taxid = s_GetTaxId(*m_bio);
-            	if(0 != taxid) {
-            		CRef<CSeqdesc> des(new CSeqdesc);
-            		des->SetOrg().SetTaxId(taxid);
-            		m_bio->SetDescr().Set().push_back(des);
-            	}
+            if (0 == m_bio->GetTaxId()) {
+                int taxid = s_GetTaxId(*m_bio);
+                if (0 != taxid) {
+                    CRef<CSeqdesc> des(new CSeqdesc);
+                    des->SetOrg().SetTaxId(taxid);
+                    m_bio->SetDescr().Set().push_back(des);
+                }
             }
 
-            rv.Reset(&(*m_bio ));
-            ++m_bio ;
+            rv.Reset(&(*m_bio));
+            ++m_bio;    // will be null when incremented past end
         }
-      
+
         return rv;
     }
-    
+
 private:
     CRef<CObjectManager>    m_objmgr;
     CRef<CScope>            m_scope;
     CRef<CSeq_entry>        m_entry;
     CTypeIterator <CBioseq> m_bio;
+    bool                    m_SkipUnver;
+    set<CBioseq*>           m_bio_skipped;
 };
 
 void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
@@ -450,7 +524,7 @@ void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
 	try {
 	while(!data.eof())
 	{
-		CSeqEntrySource src(data, fmt);
+		CSeqEntrySource src(data, fmt, m_SkipUnver);
 		m_DB->AddSequences(src);
 	}
 	} catch (const CEofException& e) {
@@ -465,7 +539,7 @@ void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
 class CRawSeqDBSource : public IRawSequenceSource {
 public:
     CRawSeqDBSource(const string & name, bool protein, CBuildDatabase * outdb);
-    
+
     virtual ~CRawSeqDBSource()
     {
         if (m_Sequence) {
@@ -473,21 +547,21 @@ public:
             m_Sequence = NULL;
         }
     }
-    
+
     virtual bool GetNext(CTempString               & sequence,
                          CTempString               & ambiguities,
                          CRef<CBlast_def_line_set> & deflines,
                          vector<SBlastDbMaskData>  & mask_range,
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs);
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     virtual void GetColumnNames(vector<string> & names)
     {
         names = m_ColumnNames;
     }
-    
+
     virtual int GetColumnId(const string & name)
     {
         return m_Source->GetColumnId(name);
@@ -498,7 +572,7 @@ public:
         return m_Source->GetColumnMetaData(id);
     }
 #endif
-    
+
     void ClearSequence()
     {
         if (m_Sequence) {
@@ -506,7 +580,7 @@ public:
             m_Source->RetSequence(& m_Sequence);
         }
     }
-    
+
 private:
     CRef<CSeqDBExpert> m_Source;
     const char * m_Sequence;
@@ -526,7 +600,7 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDataba
 {
     CSeqDB::ESeqType seqtype =
         protein ? CSeqDB::eProtein : CSeqDB::eNucleotide;
-    
+
     m_Source.Reset(new CSeqDBExpert(name, seqtype));
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
@@ -537,8 +611,8 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDataba
         string algo_opts, algo_name;
         m_Source->GetMaskAlgorithmDetails(*algo_id, algo, algo_name, algo_opts);
         algo_name += NStr::IntToString(*algo_id);
-        m_MaskIdMap[*algo_id] = outdb->RegisterMaskingAlgorithm(algo, algo_opts, algo_name); 
-    }              
+        m_MaskIdMap[*algo_id] = outdb->RegisterMaskingAlgorithm(algo, algo_opts, algo_name);
+    }
     // Process columns
     m_Source->ListColumns(m_ColumnNames);
     for(int i = 0; i < (int)m_ColumnNames.size(); i++) {
@@ -562,20 +636,20 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
         m_Source->RetSequence(& m_Sequence);
         m_Sequence = NULL;
     }
-    
+
     int slength(0), alength(0);
-    
+
     m_Source->GetRawSeqAndAmbig(m_Oid, & m_Sequence, & slength, & alength);
-    
+
     sequence    = CTempString(m_Sequence, slength);
     ambiguities = CTempString(m_Sequence + slength, alength);
-    
+
     deflines = m_Source->GetHdr(m_Oid);
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     // process masks
-    ITERATE(vector<int>, algo_id, m_MaskIds) { 
+    ITERATE(vector<int>, algo_id, m_MaskIds) {
 
         CSeqDB::TSequenceRanges ranges;
         m_Source->GetMaskData(m_Oid, *algo_id, ranges);
@@ -586,7 +660,7 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
         ITERATE(CSeqDB::TSequenceRanges, range, ranges) {
             mask_data.offsets.push_back(pair<TSeqPos, TSeqPos>(range->first, range->second));
         }
-       
+
         mask_range.push_back(mask_data);
     }
 
@@ -595,19 +669,19 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
     column_ids = m_ColumnIds;
     column_blobs.resize(column_ids.size());
     m_Blobs.resize(column_ids.size());
-    
+
     for(int i = 0; i < (int)column_ids.size(); i++) {
         m_Source->GetColumnBlob(column_ids[i], m_Oid, m_Blobs[i]);
         column_blobs[i] = m_Blobs[i].Str();
     }
 #endif
-    
+
     m_Oid ++;
-    
+
     return true;
 }
 
-CMakeBlastDBApp::TFormat 
+CMakeBlastDBApp::TFormat
 CMakeBlastDBApp::x_ConvertToCFormatGuessType(CMakeBlastDBApp::ESupportedInputFormats
                                              fmt)
 {
@@ -621,7 +695,7 @@ CMakeBlastDBApp::x_ConvertToCFormatGuessType(CMakeBlastDBApp::ESupportedInputFor
     return retval;
 }
 
-CMakeBlastDBApp::ESupportedInputFormats 
+CMakeBlastDBApp::ESupportedInputFormats
 CMakeBlastDBApp::x_ConvertToSupportedType(CMakeBlastDBApp::TFormat fmt)
 {
     ESupportedInputFormats retval = eUnsupported;
@@ -651,7 +725,7 @@ CMakeBlastDBApp::x_GetUserInputTypeHint(void)
             retval = eBlastDb;
         } else {
             // need to add supported type to list of constraints!
-            _ASSERT(false); 
+            _ASSERT(false);
         }
     }
     return retval;
@@ -706,12 +780,12 @@ void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input,
     case CFormatGuess::eFasta:
         x_AddFasta(input);
         break;
-        
+
     case CFormatGuess::eTextASN:
     case CFormatGuess::eBinaryASN:
         x_AddSeqEntries(input, fmt);
         break;
-        
+
     default:
         string msg("Input format not supported (");
         msg += string(CFormatGuess::GetFormatName(fmt)) + " format). ";
@@ -726,12 +800,12 @@ void CMakeBlastDBApp::x_AddSequenceData(CNcbiIstream & input,
 void CMakeBlastDBApp::x_ProcessMaskData()
 {
     const CArgs & args = GetArgs();
-    
+
     const CArgValue & files    = args["mask_data"];
     const CArgValue & ids      = args["mask_id"];
     const CArgValue & descs    = args["mask_desc"];
     const CArgValue & gi_names = args["gi_mask_name"];
-    
+
     vector<string> file_list;
     vector<string> id_list;
     vector<string> desc_list;
@@ -741,10 +815,10 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     NStr::Tokenize(NStr::TruncateSpaces(files.AsString()), ",", file_list,
                    NStr::eNoMergeDelims);
     if (! file_list.size()) {
-        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+        NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "mask_data option found, but no files were specified.");
     }
-    
+
     if (ids.HasValue()) {
         NStr::Tokenize(NStr::TruncateSpaces(ids.AsString()), ",", id_list,
                    NStr::eNoMergeDelims);
@@ -779,14 +853,14 @@ void CMakeBlastDBApp::x_ProcessMaskData()
         NStr::Tokenize(NStr::TruncateSpaces(gi_names.AsString()), ",", gi_mask_names,
                    NStr::eNoMergeDelims);
         if (file_list.size() != gi_mask_names.size()) {
-            NCBI_THROW(CInvalidDataException, eInvalidInput, 
+            NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "the size of gi_mask_name does not match that of mask_data.");
         }
-    } 
-    
+    }
+
     for (unsigned int i = 0; i < file_list.size(); ++i) {
         if ( !CFile(file_list[i]).Exists() ) {
-            ERR_POST(Error << "Ignoring mask file '" << file_list[i] 
+            ERR_POST(Error << "Ignoring mask file '" << file_list[i]
                            << "' as it does not exist.");
             continue;
         }
@@ -800,11 +874,11 @@ void CMakeBlastDBApp::x_ProcessMaskData()
              fg.GetFormatHints().DisableAllNonpreferred();
              mask_file_format = fg.GuessFormat();
          }}
-        
+
         int algo_id = -1;
         while (true) {
             CRef<CBlast_db_mask_info> first_obj;
-        
+
             try {
                 s_ReadObject(mask_file, mask_file_format, first_obj, "mask data in '" + file_list[i] + "'");
             }
@@ -812,43 +886,43 @@ void CMakeBlastDBApp::x_ProcessMaskData()
                 // must be end of file
                 break;
             }
-        
+
             if (algo_id < 0) {
                 *m_LogFile << "Mask file: " << file_list[i] << endl;
                 string opts = first_obj->GetAlgo_options();
                 if (id_list.size())  {
                     algo_id = m_DB->RegisterMaskingAlgorithm(id_list[i], desc_list[i], opts);
                 } else {
-                    EBlast_filter_program prog_id = 
+                    EBlast_filter_program prog_id =
                         static_cast<EBlast_filter_program>(first_obj->GetAlgo_program());
                     string name = gi_mask_names.size() ? gi_mask_names[i] : file_list[i];
                     algo_id = m_DB->RegisterMaskingAlgorithm(prog_id, opts, name);
                 }
             }
-        
+
             CRef<CBlast_mask_list> masks(& first_obj->SetMasks());
             first_obj.Reset();
-        
+
             while(1) {
                 if (m_Ranges.Empty() && ! masks->GetMasks().empty()) {
                     m_Ranges.Reset(new CMaskedRangeSet);
                     m_DB->SetMaskDataSource(*m_Ranges);
                 }
-            
+
                 ITERATE(CBlast_mask_list::TMasks, iter, masks->GetMasks()) {
                     CConstRef<CSeq_id> seqid((**iter).GetId());
-                    
+
                     if (seqid.Empty()) {
-                        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                        NCBI_THROW(CInvalidDataException, eInvalidInput,
                                      "Cannot get masked range Seq-id");
                     }
-                
+
                     m_Ranges->Insert(algo_id, *seqid, **iter);
                 }
-            
+
                 if (! masks->GetMore())
                     break;
-            
+
                 s_ReadObject(mask_file, mask_file_format, masks, "mask data (continuation)");
             }
         }
@@ -901,12 +975,12 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
             CSeqDB db(blastdb[0], seqtype);
             vector<string> paths;
             db.FindVolumePaths(paths);
-            // if paths.size() == 1, we will happily take it to be the same 
-            // case as a single volume database and recreate a new db 
+            // if paths.size() == 1, we will happily take it to be the same
+            // case as a single volume database and recreate a new db
             if (paths.size() > 1) {
-                NCBI_THROW(CInvalidDataException, eInvalidInput, 
+                NCBI_THROW(CInvalidDataException, eInvalidInput,
                     "Modifying an alias BLAST db is currently not supported.");
-            } 
+            }
             final_blastdb.push_back(blastdb[0]);
         } else {
 
@@ -930,7 +1004,7 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
             CRef<IRawSequenceSource> raw(new CRawSeqDBSource(quoted, is_protein, m_DB));
             m_DB->AddSequences(*raw);
         } else {
-            NCBI_THROW(CInvalidDataException, eInvalidInput, 
+            NCBI_THROW(CInvalidDataException, eInvalidInput,
                 "No valid input FASTA file or BLAST db is found.");
         }
     }
@@ -938,28 +1012,32 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
 
 void CMakeBlastDBApp::x_BuildDatabase()
 {
+    const string env_skip =
+            GetEnvironment().Get("NCBI_MAKEBLASTDB_SKIP_UNVERIFIED_BIOSEQS");
+    m_SkipUnver = (env_skip.empty() == false);
+
     const CArgs & args = GetArgs();
-    
+
     // Get arguments to the CBuildDatabase constructor.
-    
+
     bool is_protein = (args[kArgDbType].AsString() == "prot");
-    
+
     // 1. title option if present
     // 2. otherwise, kInput
     string title = (args[kArgDbTitle].HasValue()
                     ? args[kArgDbTitle]
                     : args[kInput]).AsString();
-    
+
     // 1. database name option if present
     // 2. else, kInput
     string dbname = (args[kOutput].HasValue()
                      ? args[kOutput]
                      : args[kInput]).AsString();
-    
+
     vector<string> input_files;
     NStr::Tokenize(dbname, kInputSeparators, input_files);
     if (dbname == "-" || input_files.size() > 1) {
-        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+        NCBI_THROW(CInvalidDataException, eInvalidInput,
             "Please provide a database name using -" + kOutput);
     }
 
@@ -969,20 +1047,20 @@ void CMakeBlastDBApp::x_BuildDatabase()
 
     // N.B.: Source database(s) in the current working directory will
     // be overwritten (as in formatdb)
-    
+
     if (title == "-") {
-        NCBI_THROW(CInvalidDataException, eInvalidInput, 
+        NCBI_THROW(CInvalidDataException, eInvalidInput,
                          "Please provide a title using -title");
     }
-    
+
     m_LogFile = & (args["logfile"].HasValue()
                    ? args["logfile"].AsOutputFile()
                    : cout);
-    
+
     bool parse_seqids = x_ShouldParseSeqIds();
     bool hash_index = args["hash_index"];
     bool use_gi_mask = args["gi_mask"];
-    
+
     CWriteDB::TIndexType indexing = CWriteDB::eNoIndex;
     indexing |= (hash_index ? CWriteDB::eAddHash : 0);
     indexing |= (parse_seqids ? CWriteDB::eFullIndex : 0);
@@ -999,9 +1077,9 @@ void CMakeBlastDBApp::x_BuildDatabase()
         m_DB->SetVerbosity(true);
     }
 #endif /* _BLAST_DEBUG */
-    
+
     // Should we keep the linkout and membership bits?  Sure.
-    
+
     // Create empty linkout bit table in order to call these methods;
     // however, in the future it would probably be good to populate
     // this from a user provided option as multisource does.  Also, it
@@ -1009,18 +1087,18 @@ void CMakeBlastDBApp::x_BuildDatabase()
     // database will most likely not have corresponding mask files;
     // but until there is a way to configure membership bits with this
     // tool, I think it is better to keep, than to toss.
-    
+
     TLinkoutMap no_bits;
-    
+
     m_DB->SetLinkouts(no_bits, true);
     m_DB->SetMembBits(no_bits, true);
-    
+
     // Max file size
-    
+
     Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());
-    *m_LogFile << "Maximum file size: " 
+    *m_LogFile << "Maximum file size: "
                << Uint8ToString_DataSize(bytes) << endl;
-    
+
     m_DB->SetMaxFileSize(bytes);
 
     if (args["taxid"].HasValue()) {
@@ -1034,7 +1112,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
         m_DB->SetTaxids(*taxids);
     }
 
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     x_ProcessMaskData();
@@ -1045,7 +1123,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
 int CMakeBlastDBApp::Run(void)
 {
     int status = 0;
-    try { x_BuildDatabase(); } 
+    try { x_BuildDatabase(); }
     CATCH_ALL(status)
     return status;
 }
