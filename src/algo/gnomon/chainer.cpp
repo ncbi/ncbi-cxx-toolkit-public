@@ -1711,38 +1711,11 @@ void CChainer::CutParts(TGeneModelList& models)
     m_data->CutParts(models);
 }
 
-TGeneModelList GetParts(const CGeneModel& algn) {
-    TGeneModelList parts;
-    
-    int left = algn.Limits().GetFrom();
-    for(unsigned int i = 1; i < algn.Exons().size(); ++i) {
-        if (!algn.Exons()[i-1].m_ssplice || !algn.Exons()[i].m_fsplice) {
-            CGeneModel m = algn;
-            m.Clip(TSignedSeqRange(left,algn.Exons()[i-1].GetTo()),CGeneModel::eRemoveExons);
-            if(!parts.empty()) {
-                parts.back().Status() &= ~CGeneModel::eRightTrimmed;
-                m.Status() &= ~CGeneModel::eLeftTrimmed;
-            }
-            parts.push_back(m);
-            left = algn.Exons()[i].GetFrom();
-        }
-    }
-    if(!parts.empty()) {
-        CGeneModel m = algn;
-        m.Clip(TSignedSeqRange(left,algn.Limits().GetTo()),CGeneModel::eRemoveExons);
-        parts.back().Status() &= ~CGeneModel::eRightTrimmed;
-        m.Status() &= ~CGeneModel::eLeftTrimmed;
-        parts.push_back(m);
-    }
-
-    return parts;
-}
-
 void CChainer::CChainerImpl::CutParts(TGeneModelList& clust) {
     for(TGeneModelList::iterator iloop = clust.begin(); iloop != clust.end(); ) {
         TGeneModelList::iterator im = iloop++;
 
-        TGeneModelList parts = GetParts(*im);
+        TGeneModelList parts = GetAlignParts(*im, true);
         if(!parts.empty()) {
             clust.splice(clust.begin(),parts);
             clust.erase(im);            
