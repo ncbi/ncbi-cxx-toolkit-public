@@ -136,7 +136,6 @@ build_config needs $(GPIPE_GENCOLL_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs gpinit
 build_config needs gpinit_access
-build_config needs gpinit_buildinfo
 build_config needs gpipe_xml
 bz2 needs3party $(ORIG_LIBS)
 cache_blob needs $(COMPRESS_LIBS)
@@ -263,6 +262,7 @@ gc_load_utils needs xid_utils
 gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
 gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
+gcaccess_utils needs xobjedit
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
@@ -329,10 +329,6 @@ gpinit_access needs gpipe_common
 gpinit_admin needs gc_utils
 gpinit_admin needs gpinit_access
 gpinit_asn_factory needs gpinit
-gpinit_asn_factory needs gpinit_buildinfo
-gpinit_buildinfo needs entrez2cli
-gpinit_buildinfo needs gc_utils
-gpinit_buildinfo needs gpinit_utils
 gpinit_stats_report needs $(GPIPE_COMMON_LIBS)
 gpinit_utils needs $(GPIPE_COMMON_LIBS)
 gpipe_align_format needs $(BLAST_FORMATTER_MINIMAL_LIBS)
@@ -345,7 +341,6 @@ gpipe_alnutil needs gpipe_objutil
 gpipe_alnutil needs xalgoalignutil
 gpipe_an_base needs gencoll_client
 gpipe_an_base needs gpinit
-gpipe_an_base needs gpinit_buildinfo
 gpipe_an_base needs gpipe_sadb
 gpipe_an_base needs gpipe_type_verifier
 gpipe_an_base needs gpxlib
@@ -363,7 +358,6 @@ gpipe_common needs xmlwrapp
 gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gpinit
-gpipe_ftp needs gpinit_buildinfo
 gpipe_ftp needs xalgoalignutil
 gpipe_ftp needs xobjedit
 gpipe_ftp needs xobjwrite
@@ -371,7 +365,6 @@ gpipe_ftp needs xrepeatdb
 gpipe_ftp_new needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp_new needs $(XFORMAT_LIBS)
 gpipe_ftp_new needs gpinit
-gpipe_ftp_new needs gpinit_buildinfo
 gpipe_ftp_new needs xalgoalignutil
 gpipe_ftp_new needs xobjedit
 gpipe_ftp_new needs xobjwrite
@@ -379,7 +372,7 @@ gpipe_ftp_new needs xrepeatdb
 gpipe_jira needs gpipe_common
 gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs biotree
-gpipe_kmer needs gpipe_xml
+gpipe_kmer needs gpipe_pathogen
 gpipe_kpi needs xmlwrapp
 gpipe_kpi needs xncbi
 gpipe_meta_access needs gpipe_common
@@ -392,6 +385,8 @@ gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
 gpipe_objutil needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
+gpipe_pathogen needs gpipe_objutil
+gpipe_pathogen needs pathogen_metadata
 gpipe_property needs gpipe_common
 gpipe_property needs xregexp
 gpipe_remap needs xobjreadex
@@ -411,7 +406,8 @@ gpipe_val needs gpipe_common
 gpipe_val needs pub
 gpipe_val needs valerr
 gpipe_xml needs connssl
-gpipe_xml needs gpipe_objutil
+gpipe_xml needs gpipe_common
+gpipe_xml needs taxon1
 gpipe_xml needs taxon3
 gpxapi needs general
 gpxapi needs xconnect
@@ -803,6 +799,7 @@ omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party ctutils
 pathogen_ctl needs bag_access
+pathogen_ctl needs gc_utils
 pathogen_ctl needs gencoll_client
 pathogen_ctl needs pathogen_metadata
 pathogen_ctl needs xvalidate
