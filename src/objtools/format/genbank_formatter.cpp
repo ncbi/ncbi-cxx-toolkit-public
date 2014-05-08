@@ -1838,7 +1838,7 @@ void CGenbankFormatter::FormatSequence
                 const char *mol_type = ( seq.GetContext()->IsProt() ? "aa" : "bp" );
                 gap_link << "          [gap " << gap_size << " " << mol_type << "]";
                 const TGi gi = seq.GetContext()->GetGI();
-                if( gi > 0 ) {
+                if( gi > ZERO_GI ) {
                     gap_link << "    <a href=\"" << strLinkBaseEntrezViewer 
                         << gi << "?fmt_mask=" << kExpandedGapDisplay
                         << "\">Expand Ns</a>";
