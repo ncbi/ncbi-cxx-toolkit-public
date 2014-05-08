@@ -192,6 +192,7 @@ if "%PTB_PROJECT%"=="" (
 REM -------------------------------------------------------------------------
 REM Build PTB_EXE if needed
 
+set NCBI_CONFIG__DIAG__POST_FILTER=!(807,9)
 if not exist "%PTB_EXE%" (
   echo ******************************************************************************
   echo Building project tree builder locally, please wait
@@ -210,6 +211,8 @@ if not exist "%PTB_EXE%" (
   echo Using PREBUILT project tree builder at %PTB_EXE%
   echo ******************************************************************************
 )
+set NCBI_CONFIG__DIAG__POST_FILTER=
+
 if not exist "%PTB_EXE%" (
   echo ERROR: "%PTB_EXE%" not found
   exit /b 1
