@@ -74,6 +74,8 @@ enum ENCAccessType {
 enum EHTTPStatus {
     /// Command is ok and execution is good.
     eStatus_OK          = 200,
+    /// New resource has been created
+    eStatus_Created     = 201,
     /// Inactivity timeout on connection.
     eStatus_Inactive    = 204,
     /// SYNC_START command is ok but synchronization by blobs list will be

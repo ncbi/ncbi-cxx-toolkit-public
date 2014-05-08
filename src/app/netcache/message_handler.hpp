@@ -102,6 +102,9 @@ enum ENCCmdFlags {
     /// Command comes from client, not from other NC server.
     fComesFromClient    = 1 << 22,
 
+    /// HTTP-related.
+    fIsHttp  = 1 << 23,
+
 
     eProxyBlobRead      = fNeedsBlobAccess + fUsesPeerSearch,
     eClientBlobRead     = eProxyBlobRead + fComesFromClient,
@@ -342,6 +345,15 @@ private:
     string                    m_StatType;
     Uint8                     m_AgeMax;
     Uint8                     m_AgeCur;
+
+    string m_PosponedCmd;
+    enum EHttpMode {
+        eNoHttp,
+        eHttp10,
+        eHttp11
+    } m_HttpMode;
+    void x_WriteHttpResponse(void);
+    void x_WriteHttpHeader(int cmd_status, size_t content_length, bool binary);
 };
 
 

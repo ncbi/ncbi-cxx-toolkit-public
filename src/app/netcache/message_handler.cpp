@@ -30,6 +30,7 @@
 #include "nc_pch.hpp"
 
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include <util/md5.hpp>
@@ -1271,6 +1272,44 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
 
 
 
+// HTTP commands
+    { "DELETE",
+        {&CNCMessageHandler::x_DoCmd_Remove,
+            "DELETE",
+            fNeedsBlobAccess + fConfirmOnFinish + fNoBlobAccessStats + fIsHttp,
+            eNCCreate,
+            eProxyRemove}
+    },
+    { "GET",
+        {&CNCMessageHandler::x_DoCmd_Get,
+            "PUT",
+            eClientBlobRead + fConfirmOnFinish + fIsHttp,
+            eNCReadData,
+            eProxyRead}
+    },
+    { "HEAD",
+        {&CNCMessageHandler::x_DoCmd_GetMeta,
+            "PUT",
+            eClientBlobRead + fDoNotCheckPassword + fConfirmOnFinish + fIsHttp,
+            eNCRead,
+            eProxyGetMeta}
+    },
+    { "POST",
+        {&CNCMessageHandler::x_DoCmd_Put,
+            "PUT",
+            eClientBlobWrite + fCanGenerateKey + fConfirmOnFinish + fReadExactBlobSize + fSkipBlobEOF + fIsHttp,
+            eNCCreate,
+            eProxyWrite}
+    },
+    { "PUT",
+        {&CNCMessageHandler::x_DoCmd_Put,
+            "PUT",
+            eClientBlobWrite + fConfirmOnFinish + fIsHttp + fReadExactBlobSize + fSkipBlobEOF + fIsHttp,
+            eNCCreate,
+            eProxyWrite}
+    },
+
+
     // All commands below are not implemented and mostly old ones not needed
     // anymore. One exception is RECONF - it would be nice to have it but it
     // needs some thinking on how to implement it.
@@ -1288,8 +1327,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "SMR",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "SMR"} },
     { "SMU",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "SMU"} },
     { "OK",       {&CNCMessageHandler::x_DoCmd_NotImplemented, "OK"} },
-    { "GET",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "GET"} },
-    { "PUT",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "PUT"} },
+// will be used by HTTP
+//    { "GET",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "GET"} },
+//    { "PUT",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "PUT"} },
     { "REMOVE",   {&CNCMessageHandler::x_DoCmd_NotImplemented, "REMOVE"} },
     { "STSP",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_STSP"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
@@ -1364,6 +1404,7 @@ CNCMessageHandler::CNCMessageHandler(void)
 
     //Uint8 cnt = AtomicAdd(s_CntHndls, 1);
     //INFO("CNCMessageHandler, cnt=" << cnt);
+    m_HttpMode = eNoHttp;
 }
 
 CNCMessageHandler::~CNCMessageHandler(void)
@@ -1498,24 +1539,42 @@ CNCMessageHandler::x_ReadAuthMessage(void)
         }
     }
 
-    TNSProtoParams params;
-    try {
-        m_Parser.ParseArguments(auth_line, s_AuthArgs, &params);
+    m_HttpMode = eNoHttp;
+    size_t auth_size = auth_line.size();
+    if (auth_size > 8 && auth_line[auth_size-8] == 'H') {
+        if (NStr::strncmp(auth_line.data() + auth_size - 8, "HTTP/1.", 7) == 0) {
+            if (auth_line[auth_size-1] == '0') {
+                m_HttpMode = eHttp10;
+            } else if (auth_line[auth_size-1] == '1') {
+                m_HttpMode = eHttp11;
+            }
+        }
     }
-    catch (CNSProtoParserException& ex) {
-        SRV_LOG(Warning, "Error authenticating client: '"
-                         << auth_line << "': " << ex);
-        params["client"] = auth_line;
+
+    if (m_HttpMode == eNoHttp) {
+        TNSProtoParams params;
+        try {
+            m_Parser.ParseArguments(auth_line, s_AuthArgs, &params);
+        }
+        catch (CNSProtoParserException& ex) {
+            SRV_LOG(Warning, "Error authenticating client: '"
+                             << auth_line << "': " << ex);
+            params["client"] = auth_line;
+        }
+        ITERATE(TNSProtoParams, it, params) {
+            m_ClientParams[it->first] = it->second;
+        }
+        CSrvDiagMsg diag_msg;
+        diag_msg.PrintExtra();
+        ITERATE(TNSProtoParams, it, params) {
+            diag_msg.PrintParam(it->first, it->second);
+        }
+        diag_msg.Flush();
+    } else {
+        m_PosponedCmd = auth_line;
+//        m_ClientParams["cache"] = "http";
+//        m_ClientParams["cache"] = "";
     }
-    ITERATE(TNSProtoParams, it, params) {
-        m_ClientParams[it->first] = it->second;
-    }
-    CSrvDiagMsg diag_msg;
-    diag_msg.PrintExtra();
-    ITERATE(TNSProtoParams, it, params) {
-        diag_msg.PrintParam(it->first, it->second);
-    }
-    diag_msg.Flush();
 
     m_BaseAppSetup = m_AppSetup = CNCServer::GetAppSetup(m_ClientParams);
     if (m_AppSetup->disable) {
@@ -1554,189 +1613,248 @@ CNCMessageHandler::x_AssignCmdParams(void)
 
     CTempString cache_name;
 
-    ERASE_ITERATE(TNSProtoParams, it, m_ParsedCmd.params) {
-        const CTempString& key = it->first;
-        CTempString& val = it->second;
+    if (m_HttpMode == eNoHttp) {
+        ERASE_ITERATE(TNSProtoParams, it, m_ParsedCmd.params) {
+            const CTempString& key = it->first;
+            CTempString& val = it->second;
 
-        switch (key[0]) {
-        case 'a':
-            if (key == "age") {
-                m_AgeMax = NStr::StringToUInt8(val);
-            }
-            break;
-        case 'c':
-            switch (key[1]) {
+            switch (key[0]) {
             case 'a':
-                if (key == "cache") {
-                    cache_name = val;
+                if (key == "age") {
+                    m_AgeMax = NStr::StringToUInt8(val);
                 }
                 break;
-            case 'm':
-                if (key == "cmd_ver") {
-                    m_CmdVersion = NStr::StringToUInt(val);
+            case 'c':
+                switch (key[1]) {
+                case 'a':
+                    if (key == "cache") {
+                        cache_name = val;
+                    }
+                    break;
+                case 'm':
+                    if (key == "cmd_ver") {
+                        m_CmdVersion = NStr::StringToUInt(val);
+                    }
+                    break;
+                case 'o':
+                    if (key == "confirm") {
+                        if (val == "1")
+                            x_SetFlag(fConfirmOnFinish);
+                        else
+                            x_UnsetFlag(fConfirmOnFinish);
+                    }
+                    break;
+                case 'r':
+                    if (key == "cr_time") {
+                        m_CopyBlobInfo->create_time = NStr::StringToUInt8(val);
+                    }
+                    else if (key == "cr_id") {
+                        m_CopyBlobInfo->create_id = NStr::StringToUInt(val);
+                    }
+                    else if (key == "cr_srv") {
+                        m_CopyBlobInfo->create_server = NStr::StringToUInt8(val);
+                    }
+                    break;
                 }
                 break;
-            case 'o':
-                if (key == "confirm") {
-                    if (val == "1")
-                        x_SetFlag(fConfirmOnFinish);
-                    else
-                        x_UnsetFlag(fConfirmOnFinish);
+            case 'd':
+                if (key == "dead") {
+                    m_CopyBlobInfo->dead_time = NStr::StringToInt(val);
                 }
                 break;
-            case 'r':
-                if (key == "cr_time") {
-                    m_CopyBlobInfo->create_time = NStr::StringToUInt8(val);
-                }
-                else if (key == "cr_id") {
-                    m_CopyBlobInfo->create_id = NStr::StringToUInt(val);
-                }
-                else if (key == "cr_srv") {
-                    m_CopyBlobInfo->create_server = NStr::StringToUInt8(val);
+            case 'e':
+                if (key == "exp") {
+                    m_CopyBlobInfo->expire = NStr::StringToInt(val);
                 }
                 break;
-            }
-            break;
-        case 'd':
-            if (key == "dead") {
-                m_CopyBlobInfo->dead_time = NStr::StringToInt(val);
-            }
-            break;
-        case 'e':
-            if (key == "exp") {
-                m_CopyBlobInfo->expire = NStr::StringToInt(val);
-            }
-            break;
-        case 'i':
-            if (key == "ip") {
-                if (!val.empty())
-                    GetDiagCtx()->SetClientIP(val);
-                // Erase parameter to not print it in request-start, it will be
-                // printed as a part of standard log header.
-                m_ParsedCmd.params.erase(it);
-            }
-            break;
-        case 'k':
-            if (key == "key") {
-                m_RawKey = blob_key = val;
-            }
-            break;
-        case 'l':
-            if (key == "log_rec") {
-                m_OrigRecNo = NStr::StringToUInt8(val);
-            }
-            else if (key == "log_srv") {
-                m_OrigSrvId = NStr::StringToUInt8(val);
-            }
-            else if (key == "log_time") {
-                m_OrigTime = NStr::StringToUInt8(val);
-            }
-            else if (key == "local") {
-                m_ForceLocal = val == "1";
-            }
-            break;
-        case 'm':
-            if (key == "md5_pass") {
-                m_BlobPass = val;
-            }
-            break;
-        case 'n':
-            if (key == "ncbi_phid") {
-                if (!val.empty()) {
-                    GetDiagCtx()->SetHitID(val);
-                }
-            }
-            break;
-        case 'p':
-            if (key == "pass") {
-                m_RawBlobPass = val;
-                CMD5 md5;
-                md5.Update(val.data(), val.size());
-                unsigned char digest[16];
-                md5.Finalize(digest);
-                m_BlobPass.assign((char*)digest, 16);
-                // Erase parameter to not expose passwords via logs.
-                m_ParsedCmd.params.erase(it);
-            }
-            else if (key == "prev") {
-                m_StatPrev = val == "1";
-            }
-            break;
-        case 'q':
-            if (key == "qrum") {
-                m_Quorum = NStr::StringToUInt(val);
-                quorum_was_set = true;
-            }
-            break;
-        case 'r':
-            if (key == "rec_my") {
-                m_RemoteRecNo = NStr::StringToUInt8(val);
-            }
-            else if (key == "rec_your") {
-                m_LocalRecNo = NStr::StringToUInt8(val);
-            }
-            break;
-        case 's':
-            switch (key[1]) {
             case 'i':
-                if (key == "sid") {
+                if (key == "ip") {
                     if (!val.empty())
-                        GetDiagCtx()->SetSessionID(NStr::URLDecode(val));
-                    // Erase parameter to not print it in request-start,
-                    // it will be printed as a part of standard log header.
+                        GetDiagCtx()->SetClientIP(val);
+                    // Erase parameter to not print it in request-start, it will be
+                    // printed as a part of standard log header.
                     m_ParsedCmd.params.erase(it);
                 }
-                else if (key == "size") {
-                    m_Size = Uint8(NStr::StringToInt8(val));
+                break;
+            case 'k':
+                if (key == "key") {
+                    m_RawKey = blob_key = val;
                 }
                 break;
             case 'l':
-                if (key == "slot") {
-                    m_Slot = Uint2(NStr::StringToUInt(val));
+                if (key == "log_rec") {
+                    m_OrigRecNo = NStr::StringToUInt8(val);
+                }
+                else if (key == "log_srv") {
+                    m_OrigSrvId = NStr::StringToUInt8(val);
+                }
+                else if (key == "log_time") {
+                    m_OrigTime = NStr::StringToUInt8(val);
+                }
+                else if (key == "local") {
+                    m_ForceLocal = val == "1";
+                }
+                break;
+            case 'm':
+                if (key == "md5_pass") {
+                    m_BlobPass = val;
+                }
+                break;
+            case 'n':
+                if (key == "ncbi_phid") {
+                    if (!val.empty()) {
+                        GetDiagCtx()->SetHitID(val);
+                    }
+                }
+                break;
+            case 'p':
+                if (key == "pass") {
+                    m_RawBlobPass = val;
+                    CMD5 md5;
+                    md5.Update(val.data(), val.size());
+                    unsigned char digest[16];
+                    md5.Finalize(digest);
+                    m_BlobPass.assign((char*)digest, 16);
+                    // Erase parameter to not expose passwords via logs.
+                    m_ParsedCmd.params.erase(it);
+                }
+                else if (key == "prev") {
+                    m_StatPrev = val == "1";
+                }
+                break;
+            case 'q':
+                if (key == "qrum") {
+                    m_Quorum = NStr::StringToUInt(val);
+                    quorum_was_set = true;
                 }
                 break;
             case 'r':
-                if (key == "srv_id") {
-                    m_SrvId = NStr::StringToUInt8(val);
+                if (key == "rec_my") {
+                    m_RemoteRecNo = NStr::StringToUInt8(val);
                 }
-                else if (key == "srch") {
-                    m_SearchOnRead = val != "0";
-                    search_was_set = true;
+                else if (key == "rec_your") {
+                    m_LocalRecNo = NStr::StringToUInt8(val);
+                }
+                break;
+            case 's':
+                switch (key[1]) {
+                case 'i':
+                    if (key == "sid") {
+                        if (!val.empty())
+                            GetDiagCtx()->SetSessionID(NStr::URLDecode(val));
+                        // Erase parameter to not print it in request-start,
+                        // it will be printed as a part of standard log header.
+                        m_ParsedCmd.params.erase(it);
+                    }
+                    else if (key == "size") {
+                        m_Size = Uint8(NStr::StringToInt8(val));
+                    }
+                    break;
+                case 'l':
+                    if (key == "slot") {
+                        m_Slot = Uint2(NStr::StringToUInt(val));
+                    }
+                    break;
+                case 'r':
+                    if (key == "srv_id") {
+                        m_SrvId = NStr::StringToUInt8(val);
+                    }
+                    else if (key == "srch") {
+                        m_SearchOnRead = val != "0";
+                        search_was_set = true;
+                    }
+                    break;
+                case 't':
+                    if (key == "start") {
+                        m_StartPos = NStr::StringToUInt8(val);
+                    }
+                    break;
+                case 'u':
+                    if (key == "subkey") {
+                        blob_subkey = val;
+                    }
+                    break;
                 }
                 break;
             case 't':
-                if (key == "start") {
-                    m_StartPos = NStr::StringToUInt8(val);
+                if (key == "ttl") {
+                    m_BlobTTL = NStr::StringToUInt(val);
+                }
+                else if (key == "type") {
+                    m_StatType = val;
                 }
                 break;
-            case 'u':
-                if (key == "subkey") {
-                    blob_subkey = val;
+            case 'v':
+                if (key == "version") {
+                    m_BlobVersion = NStr::StringToInt(val);
+                }
+                else if (key == "ver_ttl") {
+                    m_CopyBlobInfo->ver_ttl = NStr::StringToUInt(val);
+                }
+                else if (key == "ver_dead") {
+                    m_CopyBlobInfo->ver_expire = NStr::StringToInt(val);
                 }
                 break;
+            default:
+                break;
             }
-            break;
-        case 't':
-            if (key == "ttl") {
-                m_BlobTTL = NStr::StringToUInt(val);
+        }
+    } else {
+        m_ClientParams["client"] = "";
+        cache_name = m_ClientParams["cache"];
+        if (m_ClientParams.find("key") != m_ClientParams.end()) {
+            m_RawKey = blob_key = m_ClientParams["key"];
+        }
+        // parse HTTP header
+        CTempString cmd_line;
+        while (ReadLine(&cmd_line)) {
+            if (cmd_line.empty()) {
+                break;
             }
-            else if (key == "type") {
-                m_StatType = val;
+            const string content_length("Content-Length:");
+            const string     user_agent("User-Agent:");
+            const string  content_range("Range:");
+            size_t max_pos = cmd_line.size();
+
+            if (NStr::StartsWith(cmd_line, content_length)) {
+                size_t pos = content_length.size();
+                m_Size = NStr::StringToUInt8(
+                    CTempString(cmd_line.data() + pos, max_pos - pos),
+                    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
             }
-            break;
-        case 'v':
-            if (key == "version") {
-                m_BlobVersion = NStr::StringToInt(val);
+            else if (NStr::StartsWith(cmd_line, content_range)) {
+                size_t pos = content_range.size();
+                const char* begin = cmd_line.data() + pos;
+                while (!isdigit(*begin) && pos < max_pos) {
+                    ++pos; ++begin;
+                }
+                m_StartPos = 0;
+                while (isdigit(*begin) && pos < max_pos) {
+                    m_StartPos = m_StartPos * 10 + (*begin - '0');
+                    ++pos; ++begin;
+                }
+                while (!isdigit(*begin) && pos < max_pos) {
+                    ++pos; ++begin;
+                }
+                m_Size = 0;
+                while (isdigit(*begin) && pos < max_pos) {
+                    m_Size = m_Size * 10 + (*begin - '0');
+                    ++pos; ++begin;
+                }
+                m_Size = (m_Size > m_StartPos) ? (m_Size - m_StartPos) : 0;
             }
-            else if (key == "ver_ttl") {
-                m_CopyBlobInfo->ver_ttl = NStr::StringToUInt(val);
+            else if (NStr::StartsWith(cmd_line, user_agent)) {
+                size_t pos = user_agent.size();
+                const char* begin = cmd_line.data() + pos;
+                while (*begin == ' ' && pos < max_pos) {
+                    ++pos; ++begin;
+                }
+                const char* end = begin;
+                while (*end != ' ' && pos < max_pos) {
+                    ++pos; ++end;
+                }
+                m_ClientParams["client"] = NStr::URLEncode(CTempString(begin, end-begin));
             }
-            else if (key == "ver_dead") {
-                m_CopyBlobInfo->ver_expire = NStr::StringToInt(val);
-            }
-            break;
-        default:
-            break;
         }
     }
 
@@ -1968,7 +2086,9 @@ CNCMessageHandler::x_ReadCommand(void)
     }
 
     CTempString cmd_line;
-    if (!ReadLine(&cmd_line)) {
+    if (m_HttpMode != eNoHttp && !m_PosponedCmd.empty()) {
+        cmd_line = m_PosponedCmd;
+    } else if (!ReadLine(&cmd_line)) {
         if (!HasError()  &&  CanHaveMoreRead())
             return NULL;
         if (IsReadDataAvailable())
@@ -1976,15 +2096,64 @@ CNCMessageHandler::x_ReadCommand(void)
         return &CNCMessageHandler::x_SaveStatsAndClose;
     }
 
-    try {
-        m_ParsedCmd = m_Parser.ParseCommand(cmd_line);
+    if (m_HttpMode == eNoHttp) {
+        try {
+            m_ParsedCmd = m_Parser.ParseCommand(cmd_line);
+        }
+        catch (CNSProtoParserException& ex) {
+            SRV_LOG(Warning, "Error parsing command: " << ex);
+            GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
+            //abort();
+            return &CNCMessageHandler::x_SaveStatsAndClose;
+        }
+    } else {
+        list<CTempString> arr;
+        NStr::Split(cmd_line, " ", arr);
+        bool good = false;
+        if (arr.size() >= 3) {
+            CTempString arr_cmd(arr.front());
+            CTempString arr_uri(*(++arr.begin()));
+            CTempString arr_key;
+            if (arr_cmd == "DELETE" ||
+                arr_cmd == "GET"    ||
+                arr_cmd == "HEAD"   ||
+                arr_cmd == "POST"   ||
+                arr_cmd == "PUT") {
+
+                if (arr_cmd != "POST") {
+                    const char* slash = nullptr;
+                    for (slash = arr_uri.data() + arr_uri.size();
+                            slash >= arr_uri.data() && *slash != '/'; --slash)
+                        ;
+                    arr_key = CTempString(slash+1, arr_uri.size() - (slash - arr_uri.data()) - 1);
+                    arr_uri = CTempString(arr_uri.data(), (slash - arr_uri.data()) + 1);
+
+                    m_ClientParams["key"] = arr_key;
+                }
+//                m_ClientParams["cache"] = arr_uri;
+                m_ClientParams["cache"].clear();
+
+                try {
+                    m_ParsedCmd = m_Parser.ParseCommand(cmd_line);
+                    good = true;
+                }
+                catch (CNSProtoParserException& ) {
+                    GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
+                }
+            } else {
+                GetDiagCtx()->SetRequestStatus(eStatus_NoImpl);
+            }
+        } else {
+            SRV_LOG(Error, "Error parsing command: " << cmd_line);
+            GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
+        }
+        m_PosponedCmd.clear();
+        if (!good) {
+            x_WriteHttpResponse();
+            return &CNCMessageHandler::x_SaveStatsAndClose;
+        }
     }
-    catch (CNSProtoParserException& ex) {
-        SRV_LOG(Warning, "Error parsing command: " << ex);
-        GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
-        //abort();
-        return &CNCMessageHandler::x_SaveStatsAndClose;
-    }
+
     const SCommandExtra& cmd_extra = m_ParsedCmd.command->extra;
     m_CmdProcessor = cmd_extra.processor;
     m_Flags        = cmd_extra.cmd_flags;
@@ -2112,14 +2281,16 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
 {
     LOG_CURRENT_FUNCTION
     x_SetFlag(fNoBlobAccessStats);
-    x_UnsetFlag(fConfirmOnFinish);
     GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
-    WriteText(s_MsgForStatus[eStatus_NotFound]);
-    if (m_AgeCur != 0) {
-        WriteText(", AGE=").WriteNumber(m_AgeCur);
-        WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
+    if (m_HttpMode == eNoHttp) {
+        x_UnsetFlag(fConfirmOnFinish);
+        WriteText(s_MsgForStatus[eStatus_NotFound]);
+        if (m_AgeCur != 0) {
+            WriteText(", AGE=").WriteNumber(m_AgeCur);
+            WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
+        }
+        WriteText("\n");
     }
-    WriteText("\n");
     return &CNCMessageHandler::x_FinishCommand;
 }
 
@@ -2234,8 +2405,13 @@ CNCMessageHandler::x_CleanCmdResources(void)
         else
             CNCPeriodicSync::Cancel(m_SrvId, m_Slot, m_SyncId);
     }
-    if (x_IsFlagSet(fConfirmOnFinish))
-        WriteText("OK:\n");
+    if (x_IsFlagSet(fConfirmOnFinish)) {
+        if (m_HttpMode == eNoHttp) {
+            WriteText("OK:\n");
+        } else {
+            x_WriteHttpResponse();
+        }
+    }
     Flush();
 
     if (m_ActiveHub) {
@@ -2274,6 +2450,8 @@ CNCMessageHandler::x_CleanCmdResources(void)
 
     m_SendBuff.reset();
     ReleaseDiagCtx();
+
+    m_PosponedCmd.clear();
 }
 
 CNCMessageHandler::State
@@ -2430,6 +2608,10 @@ CNCMessageHandler::State
 CNCMessageHandler::x_ReadBlobSignature(void)
 {
     LOG_CURRENT_FUNCTION
+    if (m_HttpMode != eNoHttp) {
+        return &CNCMessageHandler::x_ReadBlobChunkLength;
+    }
+
     Uint4 sig = 0;
     bool has_sig = ReadNumber(&sig);
     if (NeedEarlyClose())
@@ -2483,6 +2665,10 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
     if (x_IsFlagSet(fSkipBlobEOF)  &&  m_BlobSize == m_Size) {
         // Workaround for old STRS
         m_ChunkLen = 0xFFFFFFFF;
+    }
+    else if (m_HttpMode != eNoHttp) {
+        m_ChunkLen = m_Size;
+        has_chunklen = m_ChunkLen != 0;
     }
     else {
         has_chunklen = ReadNumber(&m_ChunkLen);
@@ -3163,10 +3349,24 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Put(void)
 {
     LOG_CURRENT_FUNCTION
+    if (m_HttpMode != eNoHttp) {
+// if blob not exists, verify that it is POST, not PUT
+        if (!m_BlobAccess->IsBlobExists() && !x_IsFlagSet(fCanGenerateKey)) {
+            GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
+            x_WriteHttpResponse();
+            return &CNCMessageHandler::x_CloseCmdAndConn;
+        }
+    }
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetVersionTTL(0);
     m_BlobAccess->SetBlobVersion(0);
-    WriteText("OK:ID:").WriteText(m_RawKey).WriteText("\n");
+    if (m_HttpMode == eNoHttp) {
+        WriteText("OK:ID:").WriteText(m_RawKey).WriteText("\n");
+    } else {
+        CNcbiOstrstream str;
+        str << ",\"blob_key\":\"" << m_RawKey << "\"";
+        m_PosponedCmd += CNcbiOstrstreamToString(str);
+    }
     return &CNCMessageHandler::x_StartReadingBlob;
 }
 
@@ -3189,11 +3389,16 @@ CNCMessageHandler::x_DoCmd_Get(void)
             m_Size = blob_size;
     }
 
-    WriteText("OK:BLOB found. SIZE=").WriteNumber(blob_size);
-    if (m_AgeCur != 0) {
-        WriteText(", AGE=").WriteNumber(m_AgeCur);
+    if (m_HttpMode == eNoHttp) {
+        WriteText("OK:BLOB found. SIZE=").WriteNumber(blob_size);
+        if (m_AgeCur != 0) {
+            WriteText(", AGE=").WriteNumber(m_AgeCur);
+        }
+        WriteText("\n");
+    } else {
+        x_WriteHttpHeader(eStatus_OK, blob_size, true);
+        x_UnsetFlag(fConfirmOnFinish);
     }
-    WriteText("\n");
 
     if (blob_size == 0)
         return &CNCMessageHandler::x_FinishCommand;
@@ -3245,7 +3450,7 @@ CNCMessageHandler::x_DoCmd_SetValid(void)
 
     if (m_BlobAccess->GetCurBlobVersion() != m_BlobVersion) {
         GetDiagCtx()->SetRequestStatus(eStatus_RaceCond);
-        WriteText("OK:BLOB was changed.\n");
+        WriteText("OK:WARNING:BLOB was changed.\n");
     }
     else {
         x_ProlongVersionLife();
@@ -3658,10 +3863,48 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetMeta(void)
 {
     LOG_CURRENT_FUNCTION
+    char time_buf[50];
+    string tmp;
+
+    if (m_HttpMode != eNoHttp) {
+
+        CNcbiOstrstream str;
+
+        str << ",\"blob_key\":\"" << m_RawKey << "\"";
+        str << ",\"slot\":" << m_BlobSlot;
+        Uint8 create_time = m_BlobAccess->GetCurBlobCreateTime();
+        CSrvTime t;
+        t.Sec() = time_t(create_time / kUSecsPerSecond);
+        t.NSec() = (create_time % kUSecsPerSecond) * 1000;
+        t.Print(time_buf, CSrvTime::eFmtHumanUSecs);
+        str << ",\"write_time\":\"" << time_buf << "\"";
+        Uint8 create_server = m_BlobAccess->GetCurCreateServer();
+        str << ",\"control_server\":\""
+            << CTaskServer::GetHostByIP(Uint4(create_server >> 32)) << ":"
+            << NStr::UIntToString(Uint4(create_server))
+            << "\"";
+        str << ",\"control_id\":" << m_BlobAccess->GetCurCreateId();
+        str << ",\"ttl\":" << m_BlobAccess->GetCurBlobTTL();
+        t.Sec() = m_BlobAccess->GetCurBlobExpire();
+        t.Print(time_buf, CSrvTime::eFmtHumanSeconds);
+        str << ",\"expire\":\"" << time_buf << "\"";
+        str << ",\"size\":" << m_BlobAccess->GetCurBlobSize();
+        tmp = m_BlobAccess->GetCurPassword();
+        if (!tmp.empty()) {
+            tmp = "yes";
+        }
+        str << ",\"password\":\"" << tmp << "\"";
+        str << ",\"version\":" << m_BlobAccess->GetCurBlobVersion();
+        str << ",\"version_ttl\":" << m_BlobAccess->GetCurVersionTTL();
+        t.Sec() = m_BlobAccess->GetCurVerExpire();
+        t.Print(time_buf, CSrvTime::eFmtHumanSeconds);
+        str << ",\"version_expire\":\"" << time_buf << "\"";
+        m_PosponedCmd += CNcbiOstrstreamToString(str);
+
+        return &CNCMessageHandler::x_FinishCommand;
+    }
     m_SendBuff.reset(new TNCBufferType());
     m_SendBuff->reserve_mem(1024);
-    string tmp;
-    char time_buf[50];
 
     tmp = "OK:Slot: ";
     m_SendBuff->append(tmp.data(), tmp.size());
@@ -3842,6 +4085,46 @@ CNCMessageHandler::x_DoCmd_CopyPurge(void)
         CNCBlobStorage::SavePurgeData();
     }
     return &CNCMessageHandler::x_FinishCommand;
+}
+
+void
+CNCMessageHandler::x_WriteHttpResponse(void)
+{
+    int cmd_status = GetDiagCtx()->GetRequestStatus();
+    bool succeeded = cmd_status >= eStatus_OK && cmd_status < 300;
+    size_t content_length = 0;
+    string envelope;
+    if (succeeded && !m_PosponedCmd.empty()) {
+        CNcbiOstrstream str;
+        str << "{\"status\":" << cmd_status;
+        envelope = CNcbiOstrstreamToString(str);
+        content_length = envelope.size() + m_PosponedCmd.size() + 1;
+    }
+    x_WriteHttpHeader(cmd_status, content_length, false);
+    if (content_length != 0) {
+        Write(     envelope.data(),      envelope.size());
+        Write(m_PosponedCmd.data(), m_PosponedCmd.size());
+        WriteText("}");
+    }
+}
+
+void
+CNCMessageHandler::x_WriteHttpHeader(int cmd_status, size_t content_length, bool binary)
+{
+    bool succeeded = cmd_status >= eStatus_OK && cmd_status < 300;
+    WriteText("HTTP/1.");
+    WriteText(m_HttpMode == eHttp10 ? "0" : "1");
+    WriteText(" ").WriteNumber(cmd_status).WriteText(" ");
+    WriteText(succeeded ? "OK" : "ERR").WriteText("\r\n");
+    if (content_length != 0) {
+        WriteText("Content-Length: ").WriteNumber(content_length).WriteText("\r\n");
+        if (binary) {
+            WriteText("Content-Type: application/octet-stream\r\n");
+        } else {
+            WriteText("Content-Type: application/json\r\n");
+        }
+    }
+    WriteText("\r\n");
 }
 
 
