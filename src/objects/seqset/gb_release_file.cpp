@@ -29,17 +29,16 @@
 *
 */
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
-#include <serial/objhook.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objectiter.hpp>
-#include <serial/objectio.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <vector>
-#include <algorithm>
 #include <objects/seqset/gb_release_file.hpp>
-#include <objects/misc/sequence_macros.hpp>
+
+#include <serial/objistr.hpp>
+#include <serial/objectio.hpp>
+
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seqset/seqset_macros.hpp>
+
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
