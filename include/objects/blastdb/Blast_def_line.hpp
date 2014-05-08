@@ -60,11 +60,13 @@ public:
     // destructor
     ~CBlast_def_line(void);
 
-    /// Set of taxonomy IDs associated with this entry in the BLAST database;
-    /// it could be 1 or multiple (for the case of WP proteins)
+    /// Set of leaf-node taxonomy IDs associated with this entry in the
+    // BLAST database
     typedef set<int> TTaxIds;
-    TTaxIds GetTaxIds() const;
-    void SetTaxIds(const TTaxIds& t);
+    TTaxIds GetTaxIds() const;          // DEPRECATED, use GetLeafTaxIds
+    void SetTaxIds(const TTaxIds& t);   // DEPRECATED, use SetLeafTaxIds
+    TTaxIds GetLeafTaxIds() const;
+    void SetLeafTaxIds(const TTaxIds& t);
 
 private:
     // Prohibit copy constructor and assignment operator

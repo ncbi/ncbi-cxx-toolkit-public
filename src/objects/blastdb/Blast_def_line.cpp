@@ -51,6 +51,7 @@ CBlast_def_line::~CBlast_def_line(void)
 {
 }
 
+// DEPRECATED, use SetLeafTaxIds
 void
 CBlast_def_line::SetTaxIds(const CBlast_def_line::TTaxIds& t)
 {
@@ -92,6 +93,7 @@ CBlast_def_line::SetTaxIds(const CBlast_def_line::TTaxIds& t)
     }
 }
 
+// DEPRECATED, use GetLeafTaxIds
 CBlast_def_line::TTaxIds
 CBlast_def_line::GetTaxIds() const
 {
@@ -110,6 +112,31 @@ CBlast_def_line::GetTaxIds() const
     // Remember, set containers guarantee that all members are unique,
     // so if the 'taxid' and 'links' fields share a value, it will not
     // be returned twice.
+
+    // Return result set.
+    return retval;
+}
+
+void
+CBlast_def_line::SetLeafTaxIds(const CBlast_def_line::TTaxIds& t)
+{
+    if (t.empty()) {
+        ResetLinks();
+    } else {
+        SetLinks().assign(t.begin(), t.end());
+    }
+}
+
+CBlast_def_line::TTaxIds
+CBlast_def_line::GetLeafTaxIds() const
+{
+    TTaxIds retval;                 // set<int>, initially empty
+
+    // If there are any 'links' values, add them to the result set.
+    if (IsSetLinks()) {
+        TLinks taxids = GetLinks();  // see ASN.1 spec comment
+        retval.insert(taxids.begin(), taxids.end());
+    }
 
     // Return result set.
     return retval;

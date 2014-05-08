@@ -461,24 +461,24 @@ public:
     /// @return The blast deflines for this sequence.
     CRef<CBlast_def_line_set> GetHdr(int oid) const;
 
-    /// Get taxid for an OID.
-    ///
-    /// This finds the TAXIDS associated with a given OID and computes
-    /// a mapping from GI to taxid.  This mapping is added to the
-    /// map<int,set<int>> provided by the user.  If the "persist" flag is
-    /// set to true, the new associations will simply be added to the
-    /// map.  If it is false (the default), the map will be cleared
-    /// first.
-    ///
-    /// @param oid
-    ///   The ordinal id of the sequence.
-    /// @param gi_to_taxid_set
-    ///   A returned mapping from GI to set of taxids.
-    /// @param persist
-    ///   If false, the map will be cleared before adding new entries.
-    void GetTaxIDs(int                  oid,
-                   map<int, set<int> >& gi_to_taxid_set,
-                   bool                 persist = false) const;
+//    /// Get taxid for an OID.
+//    ///
+//    /// This finds the TAXIDS associated with a given OID and computes
+//    /// a mapping from GI to taxid.  This mapping is added to the
+//    /// map<int,set<int>> provided by the user.  If the "persist" flag is
+//    /// set to true, the new associations will simply be added to the
+//    /// map.  If it is false (the default), the map will be cleared
+//    /// first.
+//    ///
+//    /// @param oid
+//    ///   The ordinal id of the sequence.
+//    /// @param gi_to_taxid_set
+//    ///   A returned mapping from GI to set of taxids.
+//    /// @param persist
+//    ///   If false, the map will be cleared before adding new entries.
+//    void GetTaxIDs(int                  oid,
+//                   map<int, set<int> >& gi_to_taxid_set,
+//                   bool                 persist = false) const;
 
     /// Get taxid for an OID.
     ///

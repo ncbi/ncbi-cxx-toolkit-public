@@ -69,8 +69,7 @@ public:
               m_UseCtrlA(ctrl_a),
               m_Oid(0)
     {
-//	m_Gi2TaxidMap.first = -1;
-	m_Gi2TaxidSetMap.first = -1;
+	m_Gi2TaxidMap.first = -1;
 	m_Gi2AccMap.first = -1;
 	m_Gi2TitleMap.first = -1;
 	m_Oid2Pig.first = -1;
@@ -133,9 +132,7 @@ protected:
     /// Cache the defline (for membership bits)
     CRef<CBlast_def_line_set> m_Defline;
     /// Pair with a gi2taxid map for one Oid
-//    pair<TOID, map<TGi, int> > m_Gi2TaxidMap;
-    /// Pair with a gi-to-set-of-taxids map for one Oid
-    pair<TOID, map<TGi, set<int> > > m_Gi2TaxidSetMap;
+    pair<TOID, map<TGi, int> > m_Gi2TaxidMap;
     /// Pair with a gi2accesion map for one Oid
     pair<TOID, map<TGi, string> > m_Gi2AccMap;
     /// Pair with a gi2title map for one Oid
@@ -146,8 +143,7 @@ protected:
     pair<TOID, map<TGi, string> > m_Gi2SeqIdMap;
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
-//    int x_ExtractTaxId();
-    void x_ExtractTaxIds(set<int>& taxids);
+    int x_ExtractTaxId();
     /// Sets the map
     void x_SetGi2AccMap();
     /// Sets the map

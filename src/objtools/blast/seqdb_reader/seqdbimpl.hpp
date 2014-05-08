@@ -297,24 +297,24 @@ public:
                    map<int, int> & gi_to_taxid,
                    bool            persist);
 
-    /// Get gi to taxid map for an OID.
-    ///
-    /// This finds the TAXIDS associated with a given OID and computes
-    /// a mapping from GI to a set of taxids.  This mapping is added to the
-    /// map<int,set<int>> provided by the user.  If the "persist" flag is
-    /// set to true, the new associations will simply be added to the
-    /// map.  If it is false (the default), the map will be cleared
-    /// first.
-    ///
-    /// @param oid
-    ///   The ordinal id of the sequence.
-    /// @param gi_to_taxid_set
-    ///   A returned mapping from GI to set of taxids.
-    /// @param persist
-    ///   If false, the map will be cleared before adding new entries.
-    void GetTaxIDs(int                  oid,
-                   map<int, set<int> >& gi_to_taxid_set,
-                   bool                 persist);
+//    /// Get gi to taxid map for an OID.
+//    ///
+//    /// This finds the TAXIDS associated with a given OID and computes
+//    /// a mapping from GI to a set of taxids.  This mapping is added to the
+//    /// map<int,set<int>> provided by the user.  If the "persist" flag is
+//    /// set to true, the new associations will simply be added to the
+//    /// map.  If it is false (the default), the map will be cleared
+//    /// first.
+//    ///
+//    /// @param oid
+//    ///   The ordinal id of the sequence.
+//    /// @param gi_to_taxid_set
+//    ///   A returned mapping from GI to set of taxids.
+//    /// @param persist
+//    ///   If false, the map will be cleared before adding new entries.
+//    void GetTaxIDs(int                  oid,
+//                   map<int, set<int> >& gi_to_taxid_set,
+//                   bool                 persist);
 
     /// Get taxids for an OID.
     ///

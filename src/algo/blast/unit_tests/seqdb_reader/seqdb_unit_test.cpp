@@ -1892,100 +1892,100 @@ BOOST_AUTO_TEST_CASE(GetTaxIDs_gi_to_taxid)
 #define BEGIN(X) (X)
 #define END(X) ((X) + (sizeof (X) / sizeof *(X)))
 
-BOOST_AUTO_TEST_CASE(GetTaxIDs_gi_to_taxid_set)
-{
-
-    int gi1a = 446106212;
-    int tax1[] = {
-            1386,
-            1392,
-            1396,
-            1428,
-            1234146
-    };
-
-    int gi2a = 494110381;
-    int tax2a[] = {
-            1678,
-            216816,
-            469594,
-            1263059
-    };
-
-    int gi2b = 30172867;
-    int tax2b[] = {
-            206672
-    };
-
-    int oid1 = -1;
-    int oid2 = -1;
-
-    CSeqDB db("data/wp_nr", CSeqDB::eProtein);
-
-    bool success = db.GiToOid(gi1a, oid1);
-    BOOST_REQUIRE(success);
-
-    success = db.GiToOid(gi2a, oid2);
-    BOOST_REQUIRE(success);
-
-    BOOST_REQUIRE(oid1 != oid2);
-
-    map<int, set<int> > gi2taxids;
-
-    set<int> expected1;
-    expected1.insert(BEGIN(tax1), END(tax1));
-
-    set<int> expected2a;
-    expected2a.insert(BEGIN(tax2a), END(tax2a));
-
-    set<int> expected2b;
-    expected2b.insert(BEGIN(tax2b), END(tax2b));
-
-    // At this point, gi2taxids is empty.
-    BOOST_REQUIRE(gi2taxids.empty());
-    db.GetTaxIDs(oid1, gi2taxids);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids.size(),       44);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi1a].size(), 5);
-    BOOST_REQUIRE_EQUAL_COLLECTIONS(
-            gi2taxids[gi1a].begin(), gi2taxids[gi1a].end(),
-            expected1.begin(),       expected1.end()
-    );
-
-    // At this point, gi2taxids is NOT empty, but 'persist' is false.
-    BOOST_REQUIRE(!gi2taxids.empty());
-    db.GetTaxIDs(oid2, gi2taxids, false);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids.size(),       23);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi2a].size(), 4);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi2b].size(), 1);
-    BOOST_REQUIRE_EQUAL_COLLECTIONS(
-            gi2taxids[gi2a].begin(), gi2taxids[gi2a].end(),
-            expected2a.begin(),      expected2a.end()
-    );
-    BOOST_REQUIRE_EQUAL_COLLECTIONS(
-            gi2taxids[gi2b].begin(), gi2taxids[gi2b].end(),
-            expected2b.begin(),      expected2b.end()
-    );
-
-    // At this point, gi2taxids is NOT empty, and 'persist' is true.
-    BOOST_REQUIRE(!gi2taxids.empty());
-    db.GetTaxIDs(oid1, gi2taxids, true);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids.size(),       67);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi1a].size(), 5);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi2a].size(), 4);
-    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi2b].size(), 1);
-    BOOST_REQUIRE_EQUAL_COLLECTIONS(
-            gi2taxids[gi1a].begin(), gi2taxids[gi1a].end(),
-            expected1.begin(),       expected1.end()
-    );
-    BOOST_REQUIRE_EQUAL_COLLECTIONS(
-            gi2taxids[gi2a].begin(), gi2taxids[gi2a].end(),
-            expected2a.begin(),      expected2a.end()
-    );
-    BOOST_REQUIRE_EQUAL_COLLECTIONS(
-            gi2taxids[gi2b].begin(), gi2taxids[gi2b].end(),
-            expected2b.begin(),      expected2b.end()
-    );
-}
+//BOOST_AUTO_TEST_CASE(GetTaxIDs_gi_to_taxid_set)
+//{
+//
+//    int gi1a = 446106212;
+//    int tax1[] = {
+//            1386,
+//            1392,
+//            1396,
+//            1428,
+//            1234146
+//    };
+//
+//    int gi2a = 494110381;
+//    int tax2a[] = {
+//            1678,
+//            216816,
+//            469594,
+//            1263059
+//    };
+//
+//    int gi2b = 30172867;
+//    int tax2b[] = {
+//            206672
+//    };
+//
+//    int oid1 = -1;
+//    int oid2 = -1;
+//
+//    CSeqDB db("data/wp_nr", CSeqDB::eProtein);
+//
+//    bool success = db.GiToOid(gi1a, oid1);
+//    BOOST_REQUIRE(success);
+//
+//    success = db.GiToOid(gi2a, oid2);
+//    BOOST_REQUIRE(success);
+//
+//    BOOST_REQUIRE(oid1 != oid2);
+//
+//    map<int, set<int> > gi2taxids;
+//
+//    set<int> expected1;
+//    expected1.insert(BEGIN(tax1), END(tax1));
+//
+//    set<int> expected2a;
+//    expected2a.insert(BEGIN(tax2a), END(tax2a));
+//
+//    set<int> expected2b;
+//    expected2b.insert(BEGIN(tax2b), END(tax2b));
+//
+//    // At this point, gi2taxids is empty.
+//    BOOST_REQUIRE(gi2taxids.empty());
+//    db.GetTaxIDs(oid1, gi2taxids);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids.size(),       44);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi1a].size(), 5);
+//    BOOST_REQUIRE_EQUAL_COLLECTIONS(
+//            gi2taxids[gi1a].begin(), gi2taxids[gi1a].end(),
+//            expected1.begin(),       expected1.end()
+//    );
+//
+//    // At this point, gi2taxids is NOT empty, but 'persist' is false.
+//    BOOST_REQUIRE(!gi2taxids.empty());
+//    db.GetTaxIDs(oid2, gi2taxids, false);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids.size(),       23);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi2a].size(), 4);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi2b].size(), 1);
+//    BOOST_REQUIRE_EQUAL_COLLECTIONS(
+//            gi2taxids[gi2a].begin(), gi2taxids[gi2a].end(),
+//            expected2a.begin(),      expected2a.end()
+//    );
+//    BOOST_REQUIRE_EQUAL_COLLECTIONS(
+//            gi2taxids[gi2b].begin(), gi2taxids[gi2b].end(),
+//            expected2b.begin(),      expected2b.end()
+//    );
+//
+//    // At this point, gi2taxids is NOT empty, and 'persist' is true.
+//    BOOST_REQUIRE(!gi2taxids.empty());
+//    db.GetTaxIDs(oid1, gi2taxids, true);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids.size(),       67);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi1a].size(), 5);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi2a].size(), 4);
+//    BOOST_REQUIRE_EQUAL((int) gi2taxids[gi2b].size(), 1);
+//    BOOST_REQUIRE_EQUAL_COLLECTIONS(
+//            gi2taxids[gi1a].begin(), gi2taxids[gi1a].end(),
+//            expected1.begin(),       expected1.end()
+//    );
+//    BOOST_REQUIRE_EQUAL_COLLECTIONS(
+//            gi2taxids[gi2a].begin(), gi2taxids[gi2a].end(),
+//            expected2a.begin(),      expected2a.end()
+//    );
+//    BOOST_REQUIRE_EQUAL_COLLECTIONS(
+//            gi2taxids[gi2b].begin(), gi2taxids[gi2b].end(),
+//            expected2b.begin(),      expected2b.end()
+//    );
+//}
 
 BOOST_AUTO_TEST_CASE(GetTaxIDs_vector_of_taxids)
 {
@@ -4350,12 +4350,14 @@ BOOST_AUTO_TEST_CASE(MultiTaxidBlastDefLine)
     BOOST_CHECK(bdl.IsSetTaxid() == false);
     BOOST_CHECK(bdl.IsSetLinks() == false);
 
-    bdl.SetTaxIds(taxids);
+    bdl.SetLeafTaxIds(taxids);
     // Next line changed from 'false' to 'true' 4/10/2014 by rackerst
     // to conform to current implementation of CBlast_def_line::SetTaxIds.
-    BOOST_REQUIRE(bdl.IsSetTaxid() == true);
+    // And then changed back to 'false' 5/7/2014 by rackerst
+    // to conform to newer implementation of CBlast_def_line::SetLeafTaxIds.
+    BOOST_REQUIRE(bdl.IsSetTaxid() == false);
     BOOST_CHECK(bdl.IsSetLinks() == true);
-    CBlast_def_line::TTaxIds returned = bdl.GetTaxIds();
+    CBlast_def_line::TTaxIds returned = bdl.GetLeafTaxIds();
     BOOST_REQUIRE_EQUAL_COLLECTIONS(taxids.begin(), taxids.end(),
                                     returned.begin(), returned.end());
 }
@@ -4378,15 +4380,18 @@ BOOST_AUTO_TEST_CASE(SingleTaxidBlastDefLine)
     BOOST_CHECK(bdl.IsSetLinks() == false);
     BOOST_REQUIRE_EQUAL(kTaxid, bdl.GetTaxid());
 
-    CBlast_def_line::TTaxIds returned = bdl.GetTaxIds();
+    CBlast_def_line::TTaxIds returned = bdl.GetLeafTaxIds();
     CBlast_def_line::TTaxIds expected;
-    expected.insert(kTaxid);
+    expected.clear();
     BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
                                     returned.begin(), returned.end());
 
-    bdl.SetTaxIds(expected);
+    expected.insert(kTaxid);
+    expected.insert(kTaxid + 1);
+    bdl.SetLeafTaxIds(expected);
     BOOST_REQUIRE(bdl.IsSetTaxid() == true);
-    BOOST_CHECK(bdl.IsSetLinks() == false);
+    BOOST_CHECK(bdl.IsSetLinks() == true);
+    BOOST_CHECK(bdl.GetLeafTaxIds().size() == 2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -383,16 +383,16 @@ void CSeqDB::GetTaxIDs(int           oid,
     m_Impl->Verify();
 }
 
-void CSeqDB::GetTaxIDs(
-        int                  oid,
-        map<int, set<int> >& gi_to_taxid_set,
-        bool                 persist
-) const
-{
-    m_Impl->Verify();
-    m_Impl->GetTaxIDs(oid, gi_to_taxid_set, persist);
-    m_Impl->Verify();
-}
+//void CSeqDB::GetTaxIDs(
+//        int                  oid,
+//        map<int, set<int> >& gi_to_taxid_set,
+//        bool                 persist
+//) const
+//{
+//    m_Impl->Verify();
+//    m_Impl->GetTaxIDs(oid, gi_to_taxid_set, persist);
+//    m_Impl->Verify();
+//}
 
 CRef<CBioseq>
 CSeqDB::GetBioseq(int oid, int target_gi, const CSeq_id * target_id) const

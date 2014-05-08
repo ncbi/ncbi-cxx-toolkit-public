@@ -247,111 +247,47 @@ BOOST_AUTO_TEST_CASE(SortRefSeqNucleotideSet1)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_GetTaxIds)
+BOOST_AUTO_TEST_CASE(Test_GetLeafTaxIds)
 {
     CBlast_def_line def_line;   // initially empty
 
-    // Test GetTaxIds with nothing in 'taxid', nothing in 'links'.
-    CBlast_def_line::TTaxIds taxids = def_line.GetTaxIds();
+    // Test GetLeafTaxIds with nothing in 'links'.
+    CBlast_def_line::TTaxIds taxids = def_line.GetLeafTaxIds();
     BOOST_CHECK_EQUAL(taxids.size(), 0);
-
-    // Test GetTaxIds with value in 'taxid', nothing in 'links'.
-    def_line.SetTaxid(100001);
-    def_line.ResetLinks();
-    taxids = def_line.GetTaxIds();
-    BOOST_CHECK_EQUAL(taxids.size(), 1);
 
     list<int> taxid_list;       // initially empty
 
-    // Test GetTaxIds with nothing in 'taxid', values in 'links'.
+    // Test GetLeafTaxIds with values in 'links'.
     taxid_list.push_back(200003);
     taxid_list.push_back(200002);
     taxid_list.push_back(200001);
     def_line.ResetTaxid();
     def_line.SetLinks() = taxid_list;
-    taxids = def_line.GetTaxIds();
+    taxids = def_line.GetLeafTaxIds();
     BOOST_CHECK_EQUAL(taxids.size(), 3);
-
-    // Test GetTaxIds with value in 'taxid', same values in 'links',
-    // 'taxid' value in 'links'.
-    def_line.SetTaxid(*taxid_list.begin());
-    taxids = def_line.GetTaxIds();
-    BOOST_CHECK_EQUAL(taxids.size(), 3);
-
-    // Test GetTaxIds with value in 'taxid', same values in 'links',
-    // 'taxid' value not in 'links'.
-    def_line.SetTaxid(200004);
-    taxids = def_line.GetTaxIds();
-    BOOST_CHECK_EQUAL(taxids.size(), 4);
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SetTaxIds)
+BOOST_AUTO_TEST_CASE(Test_SetLeafTaxIds)
 {
-    CBlast_def_line def_line;   // initially empty
+    CBlast_def_line          def_line;      // initially empty
+    CBlast_def_line::TTaxIds taxid_set;     // initially empty
 
-    CBlast_def_line::TTaxIds taxid_set;          // initially empty
-
-    // Test SetTaxIds with no taxids.
-    def_line.SetTaxIds(taxid_set);
-    CBlast_def_line::TTaxIds taxids = def_line.GetTaxIds();
+    // Test SetLeafTaxIds with no taxids.
+    def_line.SetLeafTaxIds(taxid_set);
+    CBlast_def_line::TTaxIds taxids = def_line.GetLeafTaxIds();
     BOOST_CHECK_EQUAL(taxids.size(), 0);
-    BOOST_CHECK(!def_line.IsSetTaxid());
     BOOST_CHECK(!def_line.IsSetLinks());
 
-    // Test SetTaxIds with single taxid.
-    def_line.ResetTaxid();
-    def_line.ResetLinks();
-    taxid_set.insert(100001);
-    def_line.SetTaxIds(taxid_set);
-    taxids = def_line.GetTaxIds();
-    BOOST_CHECK_EQUAL(taxid_set.size(), taxids.size());
-    BOOST_CHECK(def_line.IsSetTaxid());
-    BOOST_CHECK(!def_line.IsSetLinks());
-    BOOST_CHECK_EQUAL(def_line.GetTaxid(), 100001);
-
-    // Test SetTaxIds with multiple taxids, initially no taxid.
-    def_line.ResetTaxid();
+    // Test SetLeafTaxIds with multiple taxids.
     def_line.ResetLinks();
     taxid_set.clear();
     taxid_set.insert(100002);
     taxid_set.insert(100003);
     taxid_set.insert(100004);
     taxid_set.insert(100005);
-    def_line.SetTaxIds(taxid_set);
-    taxids = def_line.GetTaxIds();
+    def_line.SetLeafTaxIds(taxid_set);
+    taxids = def_line.GetLeafTaxIds();
     BOOST_CHECK_EQUAL(taxid_set.size(), taxids.size());
-    BOOST_CHECK(def_line.IsSetTaxid());
     BOOST_CHECK(def_line.IsSetLinks());
-    BOOST_CHECK_EQUAL(def_line.GetTaxid(), 100002);
-
-    // Test SetTaxIds with multiple taxids, initial taxid IS in set.
-    def_line.SetTaxid(100005);  // will not get overwritten
-    def_line.ResetLinks();
-    taxid_set.clear();
-    taxid_set.insert(100002);
-    taxid_set.insert(100003);
-    taxid_set.insert(100004);
-    taxid_set.insert(100005);
-    def_line.SetTaxIds(taxid_set);
-    taxids = def_line.GetTaxIds();
-    BOOST_CHECK_EQUAL(taxid_set.size(), taxids.size());
-    BOOST_CHECK(def_line.IsSetTaxid());
-    BOOST_CHECK(def_line.IsSetLinks());
-    BOOST_CHECK_EQUAL(def_line.GetTaxid(), 100005);
-
-    // Test SetTaxIds with multiple taxids, initial taxid IS NOT in set.
-    def_line.SetTaxid(100001);  // will get overwritten
-    def_line.ResetLinks();
-    taxid_set.clear();
-    taxid_set.insert(100002);
-    taxid_set.insert(100003);
-    taxid_set.insert(100004);
-    taxid_set.insert(100005);
-    def_line.SetTaxIds(taxid_set);
-    taxids = def_line.GetTaxIds();
-    BOOST_CHECK_EQUAL(taxid_set.size(), taxids.size());
-    BOOST_CHECK(def_line.IsSetTaxid());
-    BOOST_CHECK(def_line.IsSetLinks());
-    BOOST_CHECK_EQUAL(def_line.GetTaxid(), 100002);
 }
