@@ -593,7 +593,7 @@ string s_GetmRNAName (const CSeq_feat& mrna)
 }
 
 
-void s_AdjustForUTR(const CSeq_feat& utr, int cd_start, int cd_stop, CSeq_loc& mrna_loc, bool found5, bool found3, CScope& scope)
+void s_AdjustForUTR(const CSeq_feat& utr, int cd_start, int cd_stop, CSeq_loc& mrna_loc, bool& found5, bool& found3, CScope& scope)
 {
     int utr_start = utr.GetLocation().GetStart(eExtreme_Positional);
     int utr_stop = utr.GetLocation().GetStop(eExtreme_Positional);
