@@ -147,5 +147,36 @@ BOOST_AUTO_TEST_CASE(Test_GetBiosampleDiffs)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetGenome(CBioSource::eGenome_genomic);
+    src->SetOrg().SetTaxname("Campylobacter jejuni Cj3");
+    unit_test_util::SetTaxon(*src, 1365660);
+    unit_test_util::SetOrgMod(*src, COrgMod::eSubtype_strain, "Cj3");
+    src->SetOrg().SetOrgname().SetLineage("Bacteria; Proteobacteria; Epsilonproteobacteria;  Campylobacterales; Campylobacteraceae; Campylobacter");
+    src->SetOrg().SetOrgname().SetGcode(11);
+    src->SetOrg().SetOrgname().SetDiv("BCT");
+
+    CRef<CBioSource> biosample(new CBioSource());
+    biosample->SetOrg().SetTaxname("Campylobacter jejuni Cj3");
+    unit_test_util::SetTaxon(*biosample, 1365660);
+    unit_test_util::SetOrgMod(*biosample, COrgMod::eSubtype_nat_host, "Homo sapiens");
+    unit_test_util::SetOrgMod(*biosample, COrgMod::eSubtype_strain, "Cj3");
+    biosample->SetOrg().SetOrgname().SetLineage("Bacteria; Proteobacteria; Epsilonproteobacteria;  Campylobacterales; Campylobacteraceae; Campylobacter");
+    biosample->SetOrg().SetOrgname().SetGcode(11);
+    biosample->SetOrg().SetOrgname().SetDiv("BCT");
+    unit_test_util::SetSubSource(*biosample, CSubSource::eSubtype_country, "Thailand");
+    unit_test_util::SetSubSource(*biosample, CSubSource::eSubtype_isolation_source, "stool");
+ 
+    src->UpdateWithBioSample(*biosample, true);
+
+    TFieldDiffList diff_list = src->GetBiosampleDiffs(*biosample);
+    TFieldDiffList expected;
+    CheckDiffs(expected, diff_list);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
