@@ -180,7 +180,7 @@ void NcbiId(CNcbiOstream& os, const T& id, bool html = false)
     if (!html) {
         os << id;
     } else {
-        os << "<a href=\"" << strLinkBaseEntrezViewer
+        os << "<a href=\"" << strLinkBaseNuc //strLinkBaseEntrezViewer
            << id << "\">" << id << "</a>";
     }
 }

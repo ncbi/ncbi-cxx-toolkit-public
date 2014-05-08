@@ -330,7 +330,7 @@ void
 CFlatItemFormatter::Start(
     IFlatTextOStream& Out )
 {
-    const string strHtmlHead(
+    static const char* strHtmlHead = 
         "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"
         "    \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
         "<html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n"
@@ -339,9 +339,9 @@ CFlatItemFormatter::Start(
         "<title>GenBank entry</title>\n"
         "</head>\n"
         "<body>\n"
-        "<hr /><div class=\"sequence\">" );
+        "<hr /><div class=\"sequence\">";
 
-    const string strCgiHead("<div class=\"sequence\">");
+    static const char* strCgiHead = "<div class=\"sequence\">";
 
     //mss-249
     if (m_Ctx->GetConfig().DoHTML()) {

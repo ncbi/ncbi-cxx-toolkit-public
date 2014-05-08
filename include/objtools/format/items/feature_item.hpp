@@ -293,11 +293,11 @@ protected:
     // format
     void x_FormatQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
-    void x_FormatQual(EFeatureQualifier slot, const string & name,
+    void x_FormatQual(EFeatureQualifier slot, const CTempString & name,
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
-    void x_FormatNoteQual(EFeatureQualifier slot, const string & name, 
+    void x_FormatNoteQual(EFeatureQualifier slot, const CTempString & name, 
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
-    void x_FormatGOQualCombined( EFeatureQualifier slot, const string & name,
+    void x_FormatGOQualCombined( EFeatureQualifier slot, const CTempString & name,
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
 
     // data

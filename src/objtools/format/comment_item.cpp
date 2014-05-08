@@ -1798,7 +1798,7 @@ string s_CreateHistCommentString
 (const string& prefix,
  const string& suffix,
  const CSeq_hist_rec& hist,
- bool do_html)
+ const CBioseqContext& ctx)
 {
     //if (!hist.CanGetDate()  ||  !hist.CanGetIds()) {
     //    return "???";
@@ -1831,7 +1831,7 @@ string s_CreateHistCommentString
             text << ",";
         }
         text << " gi:";
-        NcbiId(text, gis[count], do_html);
+        NcbiId(text, gis[count], ctx.Config().DoHTML());
     }
     text << '.' << '\n';
 
@@ -1849,13 +1849,13 @@ void CHistComment::x_GatherInfo(CBioseqContext& ctx)
                 "[WARNING] On",
                 "this project was updated. The new version is",
                 m_Hist->GetReplaced_by(),
-                ctx.Config().DoHTML()));
+                ctx));
         } else {
             x_SetComment(s_CreateHistCommentString(
                 "[WARNING] On",
                 "this sequence was replaced by",
                 m_Hist->GetReplaced_by(),
-                ctx.Config().DoHTML()));
+                ctx));
         }
         break;
     case eReplaces:
@@ -1863,7 +1863,7 @@ void CHistComment::x_GatherInfo(CBioseqContext& ctx)
             "On",
             "this sequence version replaced",
             m_Hist->GetReplaces(),
-            ctx.Config().DoHTML()));
+            ctx));
         break;
     }
 }

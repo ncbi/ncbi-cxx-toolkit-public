@@ -3949,7 +3949,7 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
 void CFeatureItem::x_FormatQual
 (EFeatureQualifier slot,
- const string & name,
+ const CTempString & name,
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
@@ -3964,7 +3964,7 @@ void CFeatureItem::x_FormatQual
 
 void CFeatureItem::x_FormatNoteQual
 (EFeatureQualifier slot,
- const string & name, 
+ const CTempString & name, 
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
@@ -3982,7 +3982,7 @@ void CFeatureItem::x_FormatNoteQual
 // values concatenated.
 void CFeatureItem::x_FormatGOQualCombined
 (EFeatureQualifier slot, 
- const string & name,
+ const CTempString & name,
  CFlatFeature::TQuals& qvec, 
  TQualFlags flags) const
 {
