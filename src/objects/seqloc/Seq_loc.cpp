@@ -985,9 +985,9 @@ TSeqPos CSeq_loc::GetCircularLength(TSeqPos seq_len) const
     bool    minus = IsReverseStrand();
 
     if (start < stop) {
-        return minus ? (seq_len - stop + start + 1) : (stop - start - 1);
+        return minus ? (seq_len - stop + start + 1) : (stop - start + 1);
     } else {
-        return minus ? (start - stop - 1) : (seq_len - start + stop + 1);
+        return minus ? (start - stop + 1) : (seq_len - start + stop + 1);
     }
 }
 
