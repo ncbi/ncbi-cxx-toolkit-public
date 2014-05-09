@@ -173,11 +173,24 @@ string CVDBMgr::FindAccPath(const string& acc) const
 
 
 //#define GUARD_SDK
-#ifdef GUARD_SDK
+#ifdef NCBI_COMPILER_MSVC
+# define GUARD_SDK_GET
+#endif
+
+#if defined GUARD_SDK || defined GUARD_SDK_GET
 DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
+#endif
+
+#ifdef GUARD_SDK
 # define DECLARE_SDK_GUARD() CFastMutexGuard guard(sx_SDKMutex)
 #else
 # define DECLARE_SDK_GUARD() 
+#endif
+
+#ifdef GUARD_SDK_GET
+# define DECLARE_SDK_GET_GUARD() CFastMutexGuard guard(sx_SDKMutex)
+#else
+# define DECLARE_SDK_GET_GUARD() 
 #endif
 
 
@@ -461,6 +474,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
 
 void CVDBValue::x_Get(const VCursor* cursor, uint32_t column)
 {
+    DECLARE_SDK_GET_GUARD();
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellData(cursor, column,
                                    &bit_length, &m_Data, &bit_offset,
@@ -479,6 +493,7 @@ void CVDBValue::x_Get(const VCursor* cursor, uint32_t column)
 
 void CVDBValue::x_Get(const VCursor* cursor, uint64_t row, uint32_t column)
 {
+    DECLARE_SDK_GET_GUARD();
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column,
                                          &bit_length, &m_Data, &bit_offset,
@@ -510,6 +525,7 @@ void CVDBValueFor4Bits::x_Get(const VCursor* cursor,
                               uint64_t row,
                               uint32_t column)
 {
+    DECLARE_SDK_GET_GUARD();
     uint32_t bit_offset, bit_length, elem_count;
     const void* data;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column,
