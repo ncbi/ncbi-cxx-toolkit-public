@@ -105,6 +105,8 @@ AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
 
 [Linker.1200]
 AdditionalOptions=advapi32.lib ole32.lib user32.lib gdi32.lib shell32.lib
+# Remove next line if you dont link with any prebuild 3rd party libraries built with old/unknown compiler (like Sybase)
+ImageHasSafeExceptionHandlers=false
 
 [Linker.x64]
 TargetMachine=17
