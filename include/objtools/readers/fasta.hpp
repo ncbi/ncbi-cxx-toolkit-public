@@ -213,6 +213,11 @@ public:
     /// to SGapTypeInfo info directly (For example, to iterate through
     /// all possible types).
     static const TGapTypeMap & GetNameToGapTypeInfoMap(void);
+    static
+    void HandleGaps(objects::CSeq_entry& entry, 
+       TSeqPos gapNmin, TSeqPos gap_Unknown_length);
+
+    void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
 
 protected:
     enum EInternalFlags {
@@ -360,6 +365,8 @@ private:
     TSeqPos                 m_SegmentBase;
     TSeqPos                 m_CurrentGapLength;
     TSeqPos                 m_TotalGapLength;
+    TSeqPos                 m_gapNmin;
+    TSeqPos                 m_gap_Unknown_length;
     char                    m_CurrentGapChar;
     CRef<CSeq_id>           m_BestID;
     TStartsMap              m_Starts;
@@ -478,15 +485,6 @@ void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner,
 
 /////////////////// CFastaReader inline methods
 
-
-inline
-void CFastaReader::CloseGap(bool atStartOfLine, IMessageListener * pMessageListener)
-{
-    if (m_CurrentGapLength > 0) {
-        x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
-    }
-    m_CurrentGapLength = 0;
-}
 
 inline
 void CFastaReader::OpenMask()

@@ -35,6 +35,7 @@
 
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/idmapper.hpp>
+#include <objtools/readers/gff3_reader.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -353,6 +354,10 @@ CRef<CSeq_entry> CMultiReader::xReadFile(const string& ifname)
     case CFormatGuess::eTextASN:
         result = xReadASN1(istr);
         break;
+    case CFormatGuess::eGff2:
+    case CFormatGuess::eGff3:
+        result = xReadGFF3(istr);
+        break;
     default:
         result = xReadFasta(istr);
         break;
@@ -426,6 +431,8 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
+    if (m_context.m_gapNmin > 0)
+        pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
 
     CStreamLineReader lr( instream );
     CRef<CSeq_entry> result = pReader->ReadSeqEntry (lr, m_context.m_logger);
@@ -499,6 +506,8 @@ void CMultiReader::xSetFormat(
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2);
     FG.GetFormatHints().DisableAllNonpreferred();
 
     m_uFormat = FG.GuessFormat();
@@ -1144,26 +1153,6 @@ void CMultiReader::xProcessGtf(
 }
 
 //  ----------------------------------------------------------------------------
-void CMultiReader::xProcessGff3(
-    const CTable2AsnContext& args,
-    CNcbiIstream& istr,
-    CNcbiOstream& ostr)
-    //  ----------------------------------------------------------------------------
-{
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
-    ANNOTS annots;
-
-    if (args.m_format == "gff2") { // process as plain GFF2
-        return xProcessGff2(args, istr, ostr);
-    }
-    CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    reader.ReadSeqAnnots(annots, istr, m_pErrors);
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(**cit, ostr);
-    }
-}
-
-//  ----------------------------------------------------------------------------
 void CMultiReader::xProcessGff2(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
@@ -1287,6 +1276,18 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 
 
 #endif
+
+CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+    CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    reader.ReadSeqAnnots(annots, instream, m_context.m_logger);
+    entry->SetSeq().SetAnnot().insert(entry->SetSeq().SetAnnot().end(), annots.begin(), annots.end());
+
+    return entry;
+}
 
 auto_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CNcbiIstream& instream)
 {

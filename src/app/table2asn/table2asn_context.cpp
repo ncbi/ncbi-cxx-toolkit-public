@@ -386,46 +386,6 @@ void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry) const
     }
 }
 
-void CTable2AsnContext::HandleGaps(objects::CSeq_entry& entry) const
-{
-    if (m_gapNmin==0 && m_gap_Unknown_length > 0)
-        return;
-
-    switch(entry.Which())
-    {
-    case CSeq_entry::e_Seq:
-        {
-            if (entry.SetSeq().IsSetInst())
-            {
-                CSeq_inst& inst = entry.SetSeq().SetInst();
-                if (inst.IsSetExt() && inst.SetExt().IsDelta())
-                {
-                    NON_CONST_ITERATE(CDelta_ext::Tdata, it, inst.SetExt().SetDelta().Set())
-                    {
-                        if ((**it).IsLiteral())
-                        {
-                            CDelta_seq::TLiteral& lit = (**it).SetLiteral();
-                            if (!lit.IsSetSeq_data() && lit.IsSetLength() && lit.GetLength() == m_gap_Unknown_length)
-                            {
-                                lit.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        break;
-    case CSeq_entry::e_Set:
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
-        {
-            HandleGaps(**it);
-        }
-        break;
-    default:
-        break;
-    }
-}
-
 CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry> object) const
 {
     if (m_submit_template.NotEmpty())

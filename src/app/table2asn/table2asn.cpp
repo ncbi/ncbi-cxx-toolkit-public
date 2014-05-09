@@ -576,8 +576,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         {
             m_context.SetSeqId(*entry);
         }
-
-        m_context.HandleGaps(*entry);
     }
 
     if (m_context.m_descriptors.NotNull())

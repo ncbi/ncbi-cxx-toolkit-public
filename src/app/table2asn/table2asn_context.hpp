@@ -118,7 +118,6 @@ public:
     bool ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry) const;
-    void HandleGaps(objects::CSeq_entry& entry) const;
     CRef<CSerialObject> 
         CreateSubmitFromTemplate(CRef<objects::CSeq_entry> object) const;
     CRef<CSerialObject>

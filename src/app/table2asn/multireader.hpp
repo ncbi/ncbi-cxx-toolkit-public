@@ -44,6 +44,7 @@ private:
     CRef<objects::CSeq_entry> xReadFile(const string& ifname);
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadASN1(CNcbiIstream& instream);
+    CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     auto_ptr<CObjectIStream> xCreateASNStream(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
 

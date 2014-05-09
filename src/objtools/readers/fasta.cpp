@@ -260,6 +260,7 @@ inline bool s_ASCII_IsValidNuc(unsigned char c)
 
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
     : m_LineReader(&reader), m_MaskVec(0), 
+      m_gapNmin(0), m_gap_Unknown_length(0),
       m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
@@ -267,6 +268,7 @@ CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
 
 CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
     : m_LineReader(ILineReader::New(in)), m_MaskVec(0),
+      m_gapNmin(0), m_gap_Unknown_length(0),
       m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
@@ -274,6 +276,7 @@ CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
 
 CFastaReader::CFastaReader(const string& path, TFlags flags)
     : m_LineReader(ILineReader::New(path)), m_MaskVec(0),
+      m_gapNmin(0), m_gap_Unknown_length(0),
       m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
@@ -281,6 +284,7 @@ CFastaReader::CFastaReader(const string& path, TFlags flags)
 
 CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags)
     : CReaderBase(fBaseFlags), m_MaskVec(0), 
+      m_gapNmin(0), m_gap_Unknown_length(0),
       m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
@@ -289,6 +293,20 @@ CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags)
 CFastaReader::~CFastaReader(void)
 {
     _ASSERT(m_Flags.size() == 1);
+}
+
+void CFastaReader::SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length)
+{
+    m_gapNmin = gapNmin; m_gap_Unknown_length = gap_Unknown_length;
+}
+
+inline
+void CFastaReader::CloseGap(bool atStartOfLine, IMessageListener * pMessageListener)
+{
+    if (m_CurrentGapLength > 0) {
+        x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
+        m_CurrentGapLength = 0;
+    }
 }
 
 CRef<CSerialObject>
@@ -1069,6 +1087,16 @@ void CFastaReader::x_CloseGap(
     TSeqPos len, bool atStartOfLine, IMessageListener * pMessageListener)
 {
     _ASSERT(len > 0  &&  TestFlag(fParseGaps));
+
+    if (m_CurrentGapLength < m_gapNmin)
+    {
+        // the run of N is too short to be assumed as a gap, put N as is.
+        m_SeqData.resize(m_SeqData.size() + m_CurrentGapLength, 'X');
+        memset(&m_SeqData.at(m_CurrentPos), m_CurrentGapChar, m_CurrentGapLength);
+        m_CurrentPos += m_CurrentGapLength;
+        return;
+    }
+
     if (TestFlag(fAligning)) {
         TSeqPos pos = GetCurrentPos(ePosWithGapsAndSegs);
         m_Starts[pos + m_Offset][m_Row] = CFastaAlignmentBuilder::kNoPos;
@@ -1077,17 +1105,26 @@ void CFastaReader::x_CloseGap(
     } else {
         TSeqPos pos = GetCurrentPos(eRawPos);
         SGap::EKnownSize eKnownSize = SGap::eKnownSize_Yes;
-        // Special case -- treat a lone hyphen at the end of a line as
-        // a gap of unknown length.
-        // (do NOT treat a lone 'N' or 'X' as unknown length)
-        if (len == 1 && m_CurrentGapChar == '-' ) {
-            TSeqPos l = m_SeqData.length();
-            if ((l == pos  ||  l == pos + (*GetLineReader()).length())  && atStartOfLine) {
-                //and it's not the first col of the line
-                len = 0;
-                eKnownSize = SGap::eKnownSize_No;
+        if (len == m_gap_Unknown_length)
+        {
+            eKnownSize = SGap::eKnownSize_No;
+            //len = 0;
+        }
+        else
+        {
+            // Special case -- treat a lone hyphen at the end of a line as
+            // a gap of unknown length.
+            // (do NOT treat a lone 'N' or 'X' as unknown length)
+            if (len == 1 && m_CurrentGapChar == '-' ) {
+                TSeqPos l = m_SeqData.length();
+                if ((l == pos  ||  l == pos + (*GetLineReader()).length())  && atStartOfLine) {
+                    //and it's not the first col of the line
+                    len = 0;
+                    eKnownSize = SGap::eKnownSize_No;
+                }
             }
         }
+
         TGapRef pGap( new SGap(
             pos, len,
             eKnownSize,
@@ -1235,13 +1272,11 @@ bool CFastaReader::ParseGapLine(
                     bConflictingGapTypes = true;
                 }
             } else {
-                FASTA_WARNING_EX(
+                FASTA_ERROR(
                     LineNumber(),
-                    "Unknown gap-type: " << sValue,
-                    ILineError::eProblem_ParsingModifiers,
-                    "gapline",
-                    "gap-type",
-                    sValue );
+                    string("wrong gap type ") + string(sValue),
+                    eWrongGap
+                    );
             }
 
         } else if( canonicalKey == "linkage-evidence") {
@@ -2147,6 +2182,47 @@ CFastaReader::SGap::SGap(
         m_setOfLinkageEvidence(setOfLinkageEvidence)
 {
 }
+
+void CFastaReader::HandleGaps(objects::CSeq_entry& entry, TSeqPos gapNmin, TSeqPos gap_Unknown_length)
+{
+    if (gapNmin==0 && gap_Unknown_length > 0)
+        return;
+
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        {
+            if (entry.SetSeq().IsSetInst())
+            {
+                CSeq_inst& inst = entry.SetSeq().SetInst();
+                if (inst.IsSetExt() && inst.SetExt().IsDelta())
+                {
+                    NON_CONST_ITERATE(CDelta_ext::Tdata, it, inst.SetExt().SetDelta().Set())
+                    {
+                        if ((**it).IsLiteral())
+                        {
+                            CDelta_seq::TLiteral& lit = (**it).SetLiteral();
+                            if (!lit.IsSetSeq_data() && lit.IsSetLength() && lit.GetLength() == gap_Unknown_length)
+                            {
+                                lit.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        break;
+    case CSeq_entry::e_Set:
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        {
+            HandleGaps(**it, gapNmin, gap_Unknown_length);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
