@@ -182,7 +182,7 @@ bool DoesCodingRegionEndWithStopCodon(const objects::CSeq_feat& cds, objects::CS
         if (NStr::EndsWith(transl_prot, "*")) {
             rval = true;
         }
-    } catch (CException& e) {
+    } catch (CException&) {
         // can't translate
     }
     return rval;
@@ -646,11 +646,11 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
     if (bsh) {
         mrna = sequence::GetOverlappingmRNA(cd_loc, scope);
     } else if (sah) {
+        size_t best_len = 0;
         for (CFeat_CI mrna_find(sah, CSeqFeatData::eSubtype_mRNA); mrna_find; ++mrna_find) {
-            size_t best_len = 0;
             if (sequence::TestForOverlap64(mrna_find->GetLocation(), cd_loc, sequence::eOverlap_CheckIntervals) != -1) {
                 size_t len = sequence::GetLength(mrna_find->GetLocation(), &scope);
-                if (best_len == 0 || len > best_len) {
+                if (best_len == 0 || len < best_len) {
                     best_len = len;
                     mrna = &(mrna_find->GetOriginalFeature());
                 }
