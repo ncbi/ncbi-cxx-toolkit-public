@@ -1841,7 +1841,8 @@ CNCMessageHandler::x_AssignCmdParams(void)
                     m_Size = m_Size * 10 + (*begin - '0');
                     ++pos; ++begin;
                 }
-                m_Size = (m_Size > m_StartPos) ? (m_Size - m_StartPos) : 0;
+                // byte pos are inclusive
+                m_Size = (m_Size >= m_StartPos) ? (m_Size - m_StartPos + 1) : 0;
             }
             else if (NStr::StartsWith(cmd_line, user_agent)) {
                 size_t pos = user_agent.size();
@@ -3382,7 +3383,9 @@ CNCMessageHandler::x_DoCmd_Get(void)
         blob_size = 0;
     else
         blob_size -= m_StartPos;
+    bool range = false;
     if (m_Size != Uint8(-1)) {
+        range = true;
         if (m_Size < blob_size)
             blob_size = m_Size;
         else
@@ -3396,7 +3399,8 @@ CNCMessageHandler::x_DoCmd_Get(void)
         }
         WriteText("\n");
     } else {
-        x_WriteHttpHeader(eStatus_OK, blob_size, true);
+        // http://greenbytes.de/tech/webdav/rfc2616.html#header.range
+        x_WriteHttpHeader(range ? 206 : eStatus_OK, blob_size, true);
         x_UnsetFlag(fConfirmOnFinish);
     }
 
