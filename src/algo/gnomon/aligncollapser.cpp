@@ -650,7 +650,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
         CAlignModel a = align;
         a.Clip(TSignedSeqRange(piece_begin->Limits().GetFrom(),piece_end->Limits().GetTo()),CGeneModel::eRemoveExons);  // only one piece   
             
-        //remove flanking bad introns       
+        //remove flanking bad introns
         int new_left = a.Limits().GetFrom();
         for(int k = 1; k < (int)a.Exons().size(); ++k) {
             CModelExon exonl = a.Exons()[k-1];
@@ -1625,8 +1625,8 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         NON_CONST_ITERATE(TEstHolder, i, est_for_collapsing) {
             sort(i->second.begin(),i->second.end(),LeftAndLongFirstOrderForAligns());
             list<TAlignModelList::iterator> ests(i->second.begin(),i->second.end());
-            for(list<TAlignModelList::iterator>::iterator ihost = ests.begin(); ihost != ests.end(); ) {
-                CAlignModel& host = **(ihost++);
+            for(list<TAlignModelList::iterator>::iterator ihost = ests.begin(); ihost != ests.end(); ++ihost) {
+                CAlignModel& host = **ihost;
                 set<int>::const_iterator ri = right_exon_ends.lower_bound(host.Limits().GetTo());  // leftmost compatible rexon
                 int rlima = -1;
                 if(ri != right_exon_ends.begin())
@@ -1636,8 +1636,8 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
                 if(li != left_exon_ends.end())
                     llimb = *li;                                                                    // position of the leftmost not compatible lexon
                 
-
-                for(list<TAlignModelList::iterator>::iterator iloop = ihost; iloop != ests.end(); ) {
+                list<TAlignModelList::iterator>::iterator iloop = ihost;
+                for(++iloop; iloop != ests.end(); ) {
                     list<TAlignModelList::iterator>::iterator iguest = iloop++;
                     CAlignModel& guest = **iguest;
 
