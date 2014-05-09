@@ -79,7 +79,10 @@ Seq-annot ::= {
       location int {
         from 10228,
         to 10229,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",

@@ -218,7 +218,10 @@ ird-party annotation(TPA:GWAS,PAGE)"">",
       },
       location pnt {
         point 985954,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -291,7 +294,10 @@ NV;VP=050260000a05000002110100;dbSNPBuildID=136"
       },
       location pnt {
         point 1245103,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -362,7 +368,10 @@ bSNPBuildID=134"
       },
       location pnt {
         point 1469330,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -433,7 +442,10 @@ bSNPBuildID=134"
       },
       location pnt {
         point 1959074,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -511,7 +523,10 @@ LSD;OM;OTHERKG;REF;RSPOS=1959075;SAO=1;SSR=0;VC=SNV;VP=050260000a0500000211010
       },
       location pnt {
         point 1959698,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -586,7 +601,10 @@ LSD;OM;OTHERKG;REF;RSPOS=1959699;SAO=1;SSR=0;VC=SNV;VP=050260000a0504011611010
       },
       location pnt {
         point 1961452,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -657,7 +675,10 @@ NPBuildID=134"
       },
       location pnt {
         point 2337953,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -728,7 +749,10 @@ dbSNPBuildID=129"
       },
       location pnt {
         point 2337964,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -801,7 +825,10 @@ LNSRC=OMIM Allelic
       },
       location pnt {
         point 2337966,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -879,7 +906,10 @@ dbSNPBuildID=129"
       },
       location pnt {
         point 2337991,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -950,7 +980,10 @@ PROD;KGPhase1;LSD;OTHERKG;REF;RSPOS=2337992;RV;SAO=0;SSR=0;VC=SNV;VP=050360000
       },
       location pnt {
         point 2337999,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1028,7 +1061,10 @@ dbSNPBuildID=129"
       },
       location pnt {
         point 2338014,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1098,7 +1134,10 @@ a05040116100100;dbSNPBuildID=126"
       location int {
         from 2338019,
         to 2338020,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1169,7 +1208,10 @@ a05040116100100;dbSNPBuildID=126"
       },
       location pnt {
         point 2338204,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1227,7 +1269,10 @@ dbSNPBuildID=129"
       },
       location pnt {
         point 2338230,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1298,7 +1343,10 @@ dbSNPBuildID=129"
       },
       location pnt {
         point 2340117,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1378,7 +1426,10 @@ LNSRC=OMIM Allelic
       },
       location pnt {
         point 2340158,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1456,7 +1507,10 @@ a05040516100100;dbSNPBuildID=126"
       },
       location pnt {
         point 2340211,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1525,7 +1579,10 @@ a05040516100100;dbSNPBuildID=126"
       },
       location pnt {
         point 2343937,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1596,7 +1653,10 @@ SD;OTHERKG;REF;RSPOS=2343938;RV;SAO=0;SSR=0;VC=DIV;VP=050168001201000002100200
       },
       location pnt {
         point 3334485,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1667,7 +1727,10 @@ bSNPBuildID=134"
       },
       location pnt {
         point 3680268,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1738,7 +1801,10 @@ PBuildID=134"
       },
       location pnt {
         point 3755580,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1809,7 +1875,10 @@ SNPBuildID=134"
       },
       location pnt {
         point 3765181,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1880,7 +1949,10 @@ SNPBuildID=134"
       },
       location pnt {
         point 5935005,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -1952,7 +2024,10 @@ ephronophthisis
       },
       location pnt {
         point 5947453,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -2024,7 +2099,10 @@ ephronophthisis
       },
       location pnt {
         point 5947462,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -2096,7 +2174,10 @@ ephronophthisis
       },
       location pnt {
         point 5947495,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -2168,7 +2249,10 @@ enior-Loken syndrome
       },
       location pnt {
         point 5964775,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -2240,7 +2324,10 @@ ephronophthisis
       },
       location pnt {
         point 5964847,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -2312,7 +2399,10 @@ enior-Loken syndrome
       },
       location pnt {
         point 6172230,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -2383,7 +2473,10 @@ NPBuildID=134"
       },
       location pnt {
         point 6511985,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -2454,7 +2547,10 @@ dbSNPBuildID=132"
       },
       location pnt {
         point 6512060,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",

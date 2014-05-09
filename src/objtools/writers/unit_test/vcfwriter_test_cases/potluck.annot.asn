@@ -76,7 +76,10 @@ specs/dbSNP_BitField_latest.pdf",
       },
       location pnt {
         point 985954,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -138,7 +141,10 @@ specs/dbSNP_BitField_latest.pdf",
       location int {
         from 2338019,
         to 2338020,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -188,7 +194,10 @@ specs/dbSNP_BitField_latest.pdf",
       },
       location pnt {
         point 4339280,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -252,7 +261,10 @@ specs/dbSNP_BitField_latest.pdf",
       location int {
         from 4077314,
         to 4077315,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",
@@ -355,7 +367,10 @@ specs/dbSNP_BitField_latest.pdf",
       location int {
         from 91666,
         to 91668,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",

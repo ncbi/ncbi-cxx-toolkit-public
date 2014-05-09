@@ -101,8 +101,8 @@ Seq-annot ::= {
         from 0,
         to 1,
         id other {
-          accession "NC_000008",
-          version 10
+          accession "NG_008855",
+          version 1
         }
       },
       ext {

@@ -257,7 +257,10 @@ ird-party annotation(TPA:GWAS,PAGE)"">",
       location int {
         from 10054,
         to 10055,
-        id local id 1
+	  id other {
+          accession "NC_000001",
+          version 10
+        }
       },
       ext {
         type str "VcfAttributes",

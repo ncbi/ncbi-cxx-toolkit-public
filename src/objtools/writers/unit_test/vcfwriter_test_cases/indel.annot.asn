@@ -98,8 +98,8 @@ Seq-annot ::= {
         }
       },
       location int {
-        from 1,
-        to 2,
+        from 100000,
+        to 100001,
         id other {
           accession "NC_000008",
           version 10

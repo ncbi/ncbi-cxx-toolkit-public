@@ -416,12 +416,17 @@ bool CVcfWriter::x_WriteFeatureChrom(
 //  ----------------------------------------------------------------------------
 {
     string id;
-    if (mf.GetData().IsUser() && mf.GetData().GetUser().IsSetClass() && mf.GetData().GetUser().GetClass() ==  "VCF_COLUMN_1_ID" 
-        && mf.GetData().GetUser().IsSetData() && mf.GetData().GetUser().GetData().front()->GetData().IsStr())
-    {
-        id = mf.GetData().GetUser().GetData().front()->GetData().GetStr();
-    }
-    else
+    if (mf.IsSetExts())
+        for (CSeq_feat::TExts::const_iterator uo = mf.GetExts().begin(); uo != mf.GetExts().end(); ++uo)
+        {
+            if ((*uo)->IsSetType()  && (*uo)->GetType().IsStr() && (*uo)->GetType().GetStr() ==  "VCF_COLUMN_1_ID" 
+                && (*uo)->IsSetData() && !(*uo)->GetData().empty() && (*uo)->GetData().front()->IsSetData() && (*uo)->GetData().front()->GetData().IsStr())
+            {
+                id = (*uo)->GetData().front()->GetData().GetStr();
+            }
+        }
+
+    if (id.empty())
     {
         CSeq_id_Handle idh = sequence::GetIdHandle(mf.GetLocation(),
                                                    &mf.GetScope());
