@@ -95,11 +95,10 @@ biblio needs general
 biosample needs $(SDBAPI_LIB)
 biosample needs xconnect
 biosample needs xmlwrapp
+biosample needs xregexp
 biosample needs xutil
 bioscgi needs biosample
-bioscgi needs connssl
 bioscgi needs xcgi
-bioscgi needs xregexp
 biosconvert needs biosample
 biosconvert needs xvalidate
 biotree needs general
