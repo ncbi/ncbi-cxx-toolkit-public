@@ -815,10 +815,8 @@ int CGridCommandLineInterfaceApp::Cmd_GetJobOutput()
         break;
 
     default:
-        fprintf(stderr, GRID_APP_NAME
-            ": cannot retrieve job output for job status %s.\n",
+        fprintf(stderr, "Warning: job is in %s status.\n",
             CNetScheduleAPI::StatusToString(status).c_str());
-        return 3;
     }
 
     return DumpJobInputOutput(job.output);
