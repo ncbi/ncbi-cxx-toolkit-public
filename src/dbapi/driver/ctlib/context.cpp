@@ -1209,9 +1209,9 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
 
                 // nobody can be informed, let's put it in stderr
                 err_str << "CTLIB error handler detects the following error" << endl
-                        << "Severity:" << msg->severity << err_str << " Msg # "
-                        << msg->msgnumber << endl;
-                err_str << msg->msgstring << endl;
+                        << "Severity:" << msg->severity
+                        << " Msg # "   << msg->msgnumber << endl
+                        << msg->msgstring << endl;
 
                 if (msg->osstringlen > 1) {
                     err_str << "OS # "    << msg->osnumber
