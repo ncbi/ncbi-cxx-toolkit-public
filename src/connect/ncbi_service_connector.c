@@ -804,6 +804,23 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
 }
 
 
+static void s_Cleanup(SServiceConnector* uuu)
+{
+    if (uuu->type) {
+        free((void*) uuu->type);
+        uuu->type = 0;
+    }
+    if (uuu->descr) {
+        free((void*) uuu->descr);
+        uuu->descr = 0;
+    } 
+    if (uuu->user_header) {
+        free((void*) uuu->user_header);
+        uuu->user_header = 0;
+    }
+}
+
+
 static EIO_Status s_Close(CONNECTOR       connector,
                           const STimeout* timeout,
                           int/*bool*/     cleanup)
@@ -815,21 +832,10 @@ static EIO_Status s_Close(CONNECTOR       connector,
         status = uuu->meta.close
             ? uuu->meta.close(uuu->meta.c_close, timeout)
             : eIO_Success;
-        if (uuu->type) {
-            free((void*) uuu->type);
-            uuu->type = 0;
-        }
-        if (uuu->descr) {
-            free((void*) uuu->descr);
-            uuu->descr = 0;
-        } 
-        if (uuu->user_header) {
-            free((void*) uuu->user_header);
-            uuu->user_header = 0;
-        }
         if (uuu->params.reset)
             uuu->params.reset(uuu->params.data);
         s_CloseDispatcher(uuu);
+        s_Cleanup(uuu);
     } else
         status = eIO_Success/*unused*/;
 
@@ -1008,9 +1014,8 @@ static void s_Destroy(CONNECTOR connector)
     if (uuu->params.cleanup)
         uuu->params.cleanup(uuu->params.data);
     s_CloseDispatcher(uuu);
+    s_Cleanup(uuu);
     ConnNetInfo_Destroy(uuu->net_info);
-    assert(!uuu->type);
-    assert(!uuu->descr);
     free(uuu);
     free(connector);
 }
