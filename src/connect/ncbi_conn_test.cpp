@@ -50,6 +50,9 @@
 #define NCBI_FWDOC_URL                                                  \
     "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/firewall.html#Settings"
 
+#define NCBI_FWD_BEMD  "130.14.29.112"
+#define NCBI_FWD_STVA  "165.112.7.12"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -653,17 +656,17 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         temp += "This mode requires your firewall to be configured in such a"
             " way that it allows outbound connections to the port range ["
             STRINGIFY(CONN_FWD_PORT_MIN) ".." STRINGIFY(CONN_FWD_PORT_MAX)
-            "] (inclusive) at the two fixed NCBI hosts, 130.14.29.112"
-            " and 165.112.7.12\n"
+            "] (inclusive) at the two fixed NCBI addresses, "
+            NCBI_FWD_BEMD " and " NCBI_FWD_STVA ".\n"
             "To set that up correctly, please have your network administrator"
             " read the following (if they have not already done so):"
             " " NCBI_FWDOC_URL "\n";
     } else {
         temp += "This is an obsolescent mode that requires keeping a wide port"
             " range [4444..4544] (inclusive) open to let through connections"
-            " to any NCBI host (130.14.2x.xxx/165.112.xx.xxx) -- this mode was"
-            " designed for unrestricted networks when firewall port blocking"
-            " was not an issue\n";
+            " to the entire NCBI site (130.14.xxx.xxx/165.112.xxx.xxx) -- this"
+            " mode was designed for unrestricted networks when firewall port"
+            " blocking had not been an issue\n";
     }
     if (m_Firewall) {
         _ASSERT(net_info);
@@ -671,7 +674,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         case eFWMode_Adaptive:
             temp += "There are also fallback connection ports such as "
                 STRINGIFY(CONN_PORT_SSH) " and " STRINGIFY(CONN_PORT_HTTPS)
-                " at 130.14.29.112.  They will be used if connections to"
+                " at " NCBI_FWD_BEMD ".  They will be used if connections to"
                 " the ports in the range described above have failed\n";
             break;
         case eFWMode_Firewall:
