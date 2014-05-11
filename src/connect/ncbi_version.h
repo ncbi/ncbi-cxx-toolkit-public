@@ -46,6 +46,7 @@
 #  define   NETDAEMONS_MAJOR        NCBI_PACKAGE_VERSION_MAJOR
 #  define   NETDAEMONS_MINOR        NCBI_PACKAGE_VERSION_MINOR
 #  define   NETDAEMONS_PATCH        NCBI_PACKAGE_VERSION_PATCH
+/*#define   NETDAEMONS_FINAL        1// only when doing final build, not RC! */
 
 #  define   NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION
 
@@ -53,7 +54,7 @@
 
 #  define   NETDAEMONS_MAJOR        2
 #  define   NETDAEMONS_MINOR        1
-#  define   NETDAEMONS_PATCH        8
+#  define   NETDAEMONS_PATCH        9
 
 #  ifdef NCBI_CXX_TOOLKIT
 #    define NETDAEMONS_VERSION_STR  NCBI_PACKAGE_VERSION_COMPOSE_STR    \
@@ -75,20 +76,20 @@
 
 #ifndef RC_INVOKED
 
-#define NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned short)            \
-                                            ((((ma) & 0xF) << 8) |      \
-                                             (((mi) & 0xF) << 4) |      \
-                                             ( (pa) & 0xF)))
+#  define NETDAEMONS_VERSION_OF(ma, mi, pa)  ((unsigned short)          \
+                                              ((((ma) & 0xF) << 8) |    \
+                                               (((mi) & 0xF) << 4) |    \
+                                               ( (pa) & 0xF)))
 
-#define NETDAEMONS_MAJOR_OF(ver)           (((ver) >> 8) & 0xF)
-#define NETDAEMONS_MINOR_OF(ver)           (((ver) >> 4) & 0xF)
-#define NETDAEMONS_PATCH_OF(ver)           ( (ver)       & 0xF)
+#  define NETDAEMONS_MAJOR_OF(ver)           (((ver) >> 8) & 0xF)
+#  define NETDAEMONS_MINOR_OF(ver)           (((ver) >> 4) & 0xF)
+#  define NETDAEMONS_PATCH_OF(ver)           ( (ver)       & 0xF)
 
-#define NETDAEMONS_VERSION_INT             ((unsigned int)              \
-                                            NETDAEMONS_VERSION_OF       \
-                                           (NETDAEMONS_MAJOR,           \
-                                            NETDAEMONS_MINOR,           \
-                                            NETDAEMONS_PATCH))
+#  define NETDAEMONS_VERSION_INT             ((unsigned int)            \
+                                              NETDAEMONS_VERSION_OF     \
+                                              (NETDAEMONS_MAJOR,        \
+                                               NETDAEMONS_MINOR,        \
+                                               NETDAEMONS_PATCH))
 #endif /*RC_INVOKED*/
 
 #ifdef NCBI_CXX_TOOLKIT
@@ -116,18 +117,18 @@
 
 #ifndef RC_INVOKED
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif
+#  endif
 
 
 extern NCBI_XCONNECT_EXPORT
 const char* g_VersionStr(const char* revision);
 
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 } /* extern "C" */
-#endif
+#  endif
 
 #endif /*RC_INVOKED*/
 
