@@ -261,6 +261,7 @@ public:
     ///   Flags for object operations
     CSQLITE_Connection(CTempString     file_name,
                        TOperationFlags flags = eDefaultFlags);
+    ~CSQLITE_Connection(void);
 
     /// Get database file name for the connection
     const string&   GetFileName(void) const;
@@ -310,6 +311,15 @@ public:
     /// will cause the database file to be created again.
     void DeleteDatabase(void);
 
+    /// Create a read-only copy of the database in memory.
+    /// The in-memory database is never synchronized with the original file.
+    /// If 'shared' is true, a single copy of in-memory database is used.
+    /// Otherwise each call to the function creates a new database and
+    /// the returned connection is the only way to access it.
+    /// On error return NULL.
+    static CSQLITE_Connection* CreateInMemoryDatabase(CTempString file_name,
+                                                      bool        shared = false);
+
 public:
     // For internal use only
 
@@ -346,6 +356,9 @@ private:
     unsigned int     m_CacheSize;
     /// Pool of low-level database connections
     THandlePool      m_HandlePool;
+    // In-memory database can not use handle pool. The only handle
+    // is locked for the whole database life.
+    sqlite3*         m_InMemory;
 };
 
 
@@ -842,6 +855,9 @@ CSQLITE_Connection::SetCacheSize(unsigned int size)
 inline sqlite3*
 CSQLITE_Connection::LockHandle(void)
 {
+    if ( m_InMemory ) {
+        return m_InMemory;
+    }
     sqlite3* result = m_HandlePool.Get();
     if ((m_Flags & eAllMT) == fExternalMT) {
         m_HandlePool.Return(result);
@@ -852,6 +868,9 @@ CSQLITE_Connection::LockHandle(void)
 inline void
 CSQLITE_Connection::UnlockHandle(sqlite3* handle)
 {
+    if (m_InMemory  &&  handle == m_InMemory) {
+        return;
+    }
     if ((m_Flags & eAllMT) == fInternalMT) {
         m_HandlePool.Return(handle);
     }

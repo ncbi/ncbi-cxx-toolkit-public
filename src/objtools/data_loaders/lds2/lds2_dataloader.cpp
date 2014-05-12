@@ -58,6 +58,8 @@ BEGIN_NCBI_SCOPE
 
 const char* kLDS2_Lock = "lock";
 const char* kLDS2_NoLock = "nolock";
+const char* kLDS2_Cache = "cache";
+
 
 // Default lock mode for LDS2 database - must be defined outside of the
 // objects namespace.
@@ -65,7 +67,8 @@ NCBI_PARAM_ENUM_DECL(objects::CLDS2_DataLoader::ELockMode, LDS2, DataLoader_Lock
 NCBI_PARAM_ENUM_ARRAY(objects::CLDS2_DataLoader::ELockMode, LDS2, DataLoader_Lock)
 {
     {kLDS2_Lock, objects::CLDS2_DataLoader::eLockDatabase},
-    {kLDS2_NoLock, objects::CLDS2_DataLoader::eDoNotLockDatabase}
+    {kLDS2_NoLock, objects::CLDS2_DataLoader::eDoNotLockDatabase},
+    {kLDS2_Cache, objects::CLDS2_DataLoader::eCacheDatabase}
 };
 
 NCBI_PARAM_ENUM_DEF_EX(objects::CLDS2_DataLoader::ELockMode, LDS2, DataLoader_Lock,
@@ -185,9 +188,17 @@ CLDS2_DataLoader::CLDS2_LoaderMaker::CreateLoader(void) const
         lock_mode = TLDS2_LockMode::GetDefault();
     }
     if ( !m_Db ) {
-        m_Db.Reset(new CLDS2_Database(m_DbPath,
-            lock_mode == eLockDatabase ?
-            CLDS2_Database::eWrite : CLDS2_Database::eRead));
+        switch ( lock_mode ) {
+        case eDoNotLockDatabase:
+            m_Db.Reset(new CLDS2_Database(m_DbPath, CLDS2_Database::eRead));
+            break;
+        case eCacheDatabase:
+            m_Db.Reset(new CLDS2_Database(m_DbPath, CLDS2_Database::eMemory));
+            break;
+        default:
+            m_Db.Reset(new CLDS2_Database(m_DbPath, CLDS2_Database::eWrite));
+            break;
+        }
     }
     CLDS2_DataLoader* dl = new CLDS2_DataLoader(m_Name, *m_Db, m_FastaFlags);
     return dl;
@@ -718,6 +729,9 @@ CDataLoader* CLDS2_DataLoaderCF::CreateAndRegister(
         }
         else if ( NStr::EqualNocase(kLDS2_NoLock, lock_mode_str) ) {
             lock_mode = CLDS2_DataLoader::eDoNotLockDatabase;
+        }
+        else if ( NStr::EqualNocase(kLDS2_Cache, lock_mode_str) ) {
+            lock_mode = CLDS2_DataLoader::eCacheDatabase;
         }
     }
 

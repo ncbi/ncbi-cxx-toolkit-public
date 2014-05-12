@@ -53,7 +53,8 @@ const CSQLITE_Connection::TOperationFlags kDefaultLDS2DBFlags =
     CSQLITE_Connection::fExternalMT |
     CSQLITE_Connection::fVacuumManual |
     CSQLITE_Connection::fJournalOff |
-    CSQLITE_Connection::fSyncOff;
+    CSQLITE_Connection::fSyncOff |
+    CSQLITE_Connection::fTempToMemory;
 
 CLDS2_Database::CLDS2_Database(const string& db_file, EAccessMode mode)
     : m_DbFile(db_file),
@@ -348,14 +349,19 @@ CLDS2_Database::SLDS2_DbConnection::SLDS2_DbConnection(void)
 CLDS2_Database::SLDS2_DbConnection&
 CLDS2_Database::x_GetDbConnection(void) const
 {
+    CRef<TDbConnectionsTls> tls = m_DbConn; // Keep reference.
     if ( !m_DbConn ) {
-        m_DbConn.Reset(new TDbConnectionsTls);
+        CFastMutexGuard guard(m_DbInitMutex);
+        if ( !m_DbConn ) {
+            m_DbConn.Reset(new TDbConnectionsTls);
+        }
+        tls = m_DbConn;
     }
-    SLDS2_DbConnection* db_conn = m_DbConn->GetValue();
+    SLDS2_DbConnection* db_conn = tls->GetValue();
     if ( !db_conn ) {
         auto_ptr<SLDS2_DbConnection> conn_ptr(new SLDS2_DbConnection);
         db_conn = conn_ptr.get();
-        m_DbConn->SetValue(conn_ptr.release(), sx_DbConn_Cleanup, 0);
+        tls->SetValue(conn_ptr.release(), sx_DbConn_Cleanup, 0);
     }
     return *db_conn;
 }
@@ -363,6 +369,7 @@ CLDS2_Database::x_GetDbConnection(void) const
 
 void CLDS2_Database::x_ResetDbConnection(void)
 {
+    CFastMutexGuard guard(m_DbInitMutex);
     m_DbConn.Reset();
 }
 
@@ -380,8 +387,18 @@ CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
         if ( m_DbFile.empty() ) {
             LDS2_THROW(eInvalidDbFile, "Empty database file name.");
         }
-        db_conn.Connection.reset(new CSQLITE_Connection(m_DbFile,
-            m_Mode == eRead ? CSQLITE_Connection::fReadOnly : m_DbFlags));
+        switch ( m_Mode ) {
+        case eWrite:
+            db_conn.Connection.reset(new CSQLITE_Connection(m_DbFile, m_DbFlags));
+            break;
+        case eRead:
+            db_conn.Connection.reset(new CSQLITE_Connection(m_DbFile,
+                CSQLITE_Connection::fReadOnly));
+            break;
+        case eMemory:
+            db_conn.Connection.reset(CSQLITE_Connection::CreateInMemoryDatabase(m_DbFile));
+            break;
+        }
         db_conn.Connection->SetCacheSize(
             (unsigned int)TSQLiteCacheSize::GetDefault());
     }
@@ -1025,7 +1042,7 @@ void CLDS2_Database::Analyze(void)
 
 void CLDS2_Database::BeginRead(void)
 {
-    if (m_Mode != eRead) {
+    if (m_Mode == eWrite) {
         x_GetConn().ExecuteSql("begin transaction;");
     }
 }
@@ -1033,7 +1050,7 @@ void CLDS2_Database::BeginRead(void)
 
 void CLDS2_Database::EndRead(void)
 {
-    if (m_Mode != eRead) {
+    if (m_Mode == eWrite) {
         x_GetConn().ExecuteSql("end transaction;");
     }
 }

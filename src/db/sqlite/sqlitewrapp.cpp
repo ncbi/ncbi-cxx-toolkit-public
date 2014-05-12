@@ -469,7 +469,8 @@ CSQLITE_Connection::CSQLITE_Connection(CTempString     file_name,
       m_Flags(flags),
       m_PageSize(kSQLITE_DefPageSize),
       m_CacheSize(0),
-      m_HandlePool(CSQLITE_HandleFactory(this))
+      m_HandlePool(CSQLITE_HandleFactory(this)),
+      m_InMemory(0)
 {
     x_CheckFlagsValidity(flags, eAllMT);
     x_CheckFlagsValidity(flags, eAllVacuum);
@@ -478,6 +479,15 @@ CSQLITE_Connection::CSQLITE_Connection(CTempString     file_name,
     x_CheckFlagsValidity(flags, eAllTemp);
     x_CheckFlagsValidity(flags, eAllWrites);
 }
+
+
+CSQLITE_Connection::~CSQLITE_Connection(void)
+{
+    if ( m_InMemory ) {
+        m_HandlePool.Return(m_InMemory);
+    }
+}
+
 
 void
 CSQLITE_Connection::SetupNewConnection(sqlite3* handle)
@@ -591,6 +601,37 @@ CSQLITE_Connection::DeleteDatabase(void)
     CFile(m_FileName + "-journal").Remove();
 }
 
+
+CSQLITE_Connection*
+CSQLITE_Connection::CreateInMemoryDatabase(CTempString file_name, bool shared)
+{
+    string dbname = shared ? "file::memory:?cache=shared" : ":memory:";
+    CSQLITE_Connection fdb(file_name, fReadOnly);
+    auto_ptr<CSQLITE_Connection> mdb(new CSQLITE_Connection(dbname,
+        fExternalMT | fVacuumOff | fJournalOff | fSyncOff | fTempToMemory));
+
+    sqlite3* fh = fdb.LockHandle();
+    sqlite3* mh = mdb->m_HandlePool.Get();
+    try {
+        sqlite3_backup* backup = sqlite3_backup_init(mh, "main", fh, "main");
+        if( backup ) {
+            sqlite3_backup_step(backup, -1);
+            sqlite3_backup_finish(backup);
+        }
+        fdb.UnlockHandle(fh);
+        if (sqlite3_errcode(mh) != SQLITE_OK) {
+            mdb->m_HandlePool.Return(mh);
+            return NULL;
+        }
+        mdb->m_InMemory = mh;
+    }
+    catch (...) {
+        fdb.UnlockHandle(fh);
+        mdb->m_HandlePool.Return(mh);
+        return NULL;
+    }
+    return mdb.release();
+}
 
 
 CSQLITE_Statement::~CSQLITE_Statement(void)

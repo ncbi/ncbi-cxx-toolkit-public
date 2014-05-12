@@ -88,8 +88,8 @@ void CSampleLds2Application::Init(void)
     // Create
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    arg_desc->AddKey("data_dir", "DataDir", "Directory with the data files.",
-        CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("data_dir", "DataDir",
+        "Directory with the data files.", CArgDescriptions::eString);
 
     arg_desc->AddKey("db", "DbFile", "LDS2 database file name.",
         CArgDescriptions::eString);
@@ -123,26 +123,27 @@ int CSampleLds2Application::Run(void)
     // Process command line args
     const CArgs& args = GetArgs();
 
-    const string& data_path = args["data_dir"].AsString();
     const string& db_path = args["db"].AsString();
 
     //
     // Initialize the local data storage
     //
-    try {
-        CRef<CLDS2_Manager> mgr(new CLDS2_Manager(db_path));
-        // Allow to split GB release bioseq-sets
-        mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
-        if ( args["group_aligns"] ) {
-            mgr->SetSeqAlignGroupSize(args["group_aligns"].AsInteger());
+    if ( args["data_dir"] ) {
+        try {
+            CRef<CLDS2_Manager> mgr(new CLDS2_Manager(db_path));
+            // Allow to split GB release bioseq-sets
+            mgr->SetGBReleaseMode(CLDS2_Manager::eGB_Guess);
+            if ( args["group_aligns"] ) {
+                mgr->SetSeqAlignGroupSize(args["group_aligns"].AsInteger());
+            }
+            mgr->AddDataDir(args["data_dir"].AsString());
+            mgr->UpdateData();
         }
-        mgr->AddDataDir(data_path);
-        mgr->UpdateData();
-    }
-    catch(CException& e) {
-        LOG_POST(Error << "Error initializing local data storage: "
-                 << e.what());
-        return 1;
+        catch(CException& e) {
+            LOG_POST(Error << "Error initializing local data storage: "
+                     << e.what());
+            return 1;
+        }
     }
 
     // Create OM and LDS2 data loader

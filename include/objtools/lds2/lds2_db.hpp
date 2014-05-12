@@ -32,6 +32,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <util/format_guess.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <util/range.hpp>
@@ -242,7 +243,8 @@ public:
     /// Database access mode flags.
     enum EAccessMode {
         eRead,  ///< Read-only access.
-        eWrite  ///< Read/write access.
+        eWrite, ///< Read/write access.
+        eMemory ///< Copy db to memory and open read-only.
     };
 
     CLDS2_Database(const string& db_file, EAccessMode mode = eWrite);
@@ -476,6 +478,7 @@ private:
     string                          m_DbFile;
     int                             m_DbFlags;
     // Connections and prepared statements are per-thread.
+    mutable CFastMutex              m_DbInitMutex;
     mutable CRef<TDbConnectionsTls> m_DbConn;
     EAccessMode                     m_Mode;
 };

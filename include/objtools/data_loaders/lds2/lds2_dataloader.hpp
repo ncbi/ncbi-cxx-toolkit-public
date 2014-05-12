@@ -52,7 +52,7 @@ BEGIN_SCOPE(objects)
 
 #define kCFParam_LDS2_DbPath     "DbPath"     // = string
 #define kCFParam_LDS2_FastaFlags "FastaFlags" // = int
-#define kCFParam_LDS2_LockMode   "LockMode"   // = lock | nolock
+#define kCFParam_LDS2_LockMode   "LockMode"   // = lock | nolock | cache
 
 
 class NCBI_XLOADER_LDS2_EXPORT CLDS2_DataLoader : public CDataLoader
@@ -70,7 +70,8 @@ public:
         eDefaultLockMode,   ///< Use LDS2_DATALOADER_LOCK parameter,
                             ///< lock by default.
         eLockDatabase,      ///< Lock the database.
-        eDoNotLockDatabase  ///< Do not lock the database.
+        eDoNotLockDatabase, ///< Do not lock the database.
+        eCacheDatabase      ///< Clone the database into memory.
     };
 
     /// Argument-less loader - for compatibility only, unusable.
