@@ -515,7 +515,7 @@ int CReadBlastApp::SortSeqs(void)
        }
      else
        {
-       NcbiCerr << "ERROR: submit file does not have proper seqset"<< NcbiCerr;
+       NcbiCerr << "ERROR: submit file does not have proper seqset" << NcbiEndl;
        }
      }
    else
