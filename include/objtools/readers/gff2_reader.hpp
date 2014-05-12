@@ -116,6 +116,16 @@ public:
         ILineReader&,
         IMessageListener* =0 );
 
+    virtual void
+    FixupSeqAnnots(
+        TAnnots&,
+        IMessageListener* =0 );
+
+    virtual void
+    FixupSeqAnnot(
+        CRef<CSeq_annot>,
+        IMessageListener* =0 );
+
     void 
     SetGenbankMode(
         bool);

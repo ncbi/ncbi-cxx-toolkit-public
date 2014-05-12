@@ -81,6 +81,14 @@ public:
 
     virtual ~CGff3Reader();
 
+    //
+    //api
+    //
+    virtual void
+    FixupSeqAnnot(
+        CRef<CSeq_annot>,
+        IMessageListener* =0 );
+
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGff3ReadRecord(); };    
 
