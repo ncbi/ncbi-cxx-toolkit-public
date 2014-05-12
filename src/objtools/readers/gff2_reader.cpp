@@ -173,34 +173,8 @@ CGff2Reader::ReadSeqAnnots(
     for ( ;  annot_iter;  ++annot_iter) {
         annots.push_back( CRef<CSeq_annot>( annot_iter.operator->() ) );
     }
-    if (IsGenbankMode()) {
-        FixupSeqAnnots(annots, pMessageListener);
-    }
 }
  
-//  ---------------------------------------------------------------------------
-void
-CGff2Reader::FixupSeqAnnots(
-    vector<CRef<CSeq_annot> >& annots,
-    IMessageListener* pMessageListener )
-//  ----------------------------------------------------------------------------
-{
-    vector<CRef<CSeq_annot> >::iterator it = annots.begin();
-    while (it != annots.end()) {
-        FixupSeqAnnot(*it);
-        ++it;
-    }
-}
-  
-//  ---------------------------------------------------------------------------
-void
-CGff2Reader::FixupSeqAnnot(
-    CRef<CSeq_annot> pAnnot,
-    IMessageListener* pMessageListener )
-//  ----------------------------------------------------------------------------
-{
-}
-      
 //  ---------------------------------------------------------------------------                       
 void
 CGff2Reader::ReadSeqAnnotsNew(
