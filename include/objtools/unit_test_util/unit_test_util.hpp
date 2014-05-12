@@ -131,6 +131,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CPub> BuildGoodArticlePub();
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CPub> BuildGoodCitGenPub(CRef<objects::CAuthor> author, int serial_number);
 NCBI_UNIT_TEST_UTIL_EXPORT void MakeSeqLong(objects::CBioseq& seq);
 NCBI_UNIT_TEST_UTIL_EXPORT void SetBiomol (CRef<objects::CSeq_entry> entry, objects::CMolInfo::TBiomol biomol);
+NCBI_UNIT_TEST_UTIL_EXPORT void SetTech (CRef<objects::CSeq_entry> entry, objects::CMolInfo::TTech tech);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> MakeProteinForGoodNucProtSet (string id);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_feat> MakeCDSForGoodNucProtSet (string nuc_id, string prot_id);
 NCBI_UNIT_TEST_UTIL_EXPORT void AdjustProtFeatForNucProtSet(CRef<objects::CSeq_entry> entry);

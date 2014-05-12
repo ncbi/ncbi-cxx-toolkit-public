@@ -1008,6 +1008,24 @@ void SetBiomol (CRef<objects::CSeq_entry> entry, objects::CMolInfo::TBiomol biom
 }
 
 
+void SetTech (CRef<objects::CSeq_entry> entry, objects::CMolInfo::TTech tech)
+{
+    bool found = false;
+
+    NON_CONST_ITERATE (objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsMolinfo()) {
+            (*it)->SetMolinfo().SetTech(tech);
+            found = true;
+        }
+    }
+    if (!found) {
+        CRef<objects::CSeqdesc> mdesc(new objects::CSeqdesc());
+        mdesc->SetMolinfo().SetTech(tech);
+        entry->SetSeq().SetDescr().Set().push_back(mdesc);
+    }
+}
+
+
 void SetCompleteness(CRef<objects::CSeq_entry> entry, objects::CMolInfo::TCompleteness completeness)
 {
     if (entry->IsSeq()) {

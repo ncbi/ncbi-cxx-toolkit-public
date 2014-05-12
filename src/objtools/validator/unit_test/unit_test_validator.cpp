@@ -1418,29 +1418,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ShortSeq)
 }
 
 
-static void SetTech (CRef<CSeq_entry> entry, CMolInfo::TTech tech)
-{
-    bool found = false;
-
-    NON_CONST_ITERATE (CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
-        if ((*it)->IsMolinfo()) {
-            (*it)->SetMolinfo().SetTech(tech);
-            found = true;
-        }
-    }
-    if (!found) {
-        CRef<CSeqdesc> mdesc(new CSeqdesc());
-        if (entry->GetSeq().IsAa()) {
-            mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-        } else {
-            mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
-        }
-        mdesc->SetMolinfo().SetTech(tech);
-        entry->SetSeq().SetDescr().Set().push_back(mdesc);
-    }
-}
-
-
 static bool IsProteinTech (CMolInfo::TTech tech)
 {
     bool rval = false;
@@ -6452,6 +6429,7 @@ void TestSpecificHostNoError(const string& host)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, host);
     
     STANDARD_SETUP
+    options |= CValidator::eVal_use_entrez;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 }
