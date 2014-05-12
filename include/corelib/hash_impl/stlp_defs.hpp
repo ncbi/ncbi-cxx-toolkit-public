@@ -59,8 +59,6 @@ _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 Additional flags for some compilers
 NO_STD_CONSTRUCT
 NO_STD_DESTROY
-NO_STD_IDENTITY
-    generate some functions if they are not defined in std library
 
 USE_NO_ALLOC_TRAITS
     some compilers already have _Alloc_traits -- do not redefine
@@ -179,29 +177,23 @@ NCBI_USING_NAMESPACE_STD;
 #endif
 
 #ifdef NCBI_COMPILER_ICC
-#  if !defined(__GNUC__)  ||  defined(__INTEL_CXXLIB_ICC)  ||  defined(_YVALS)
-#    define NO_STD_IDENTITY
-#  endif
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #  define _STLP_USE_NESTED_TCLASS_THROUGHT_TPARAM 1
 #endif
 
 #ifdef NCBI_COMPILER_MSVC
-#  define NO_STD_IDENTITY
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #endif
 
 #ifdef NCBI_COMPILER_WORKSHOP
 #  define NO_STD_CONSTRUCT
 #  define NO_STD_DESTROY
-#  define NO_STD_IDENTITY
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #endif
 
 #ifdef NCBI_COMPILER_COMPAQ
 #  define NO_STD_CONSTRUCT
 #  define NO_STD_DESTROY
-#  define NO_STD_IDENTITY
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #endif
 
@@ -215,14 +207,12 @@ NCBI_USING_NAMESPACE_STD;
 #endif
 
 #ifdef NCBI_COMPILER_VISUALAGE
-#  define NO_STD_IDENTITY
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG
 #endif
 
 #ifdef _LIBCPP_VERSION
 #  define NO_STD_CONSTRUCT
 #  define NO_STD_DESTROY
-#  define NO_STD_IDENTITY
 #  define _STLP_MULTI_CONST_TEMPLATE_ARG_BUG // Don't try to use _Select1st
 #endif
 
@@ -309,14 +299,10 @@ inline void _Destroy(_Tp* /*__pointer */) {
 #endif /* NO_STD_DESTROY */
 
 
-#ifdef NO_STD_IDENTITY
-
 template <class _Tp>
-struct _Identity : public unary_function<_Tp,_Tp> {
+struct _STLP_Identity : public unary_function<_Tp,_Tp> {
     const _Tp& operator()(const _Tp& __x) const { return __x; }
 };
-
-#endif /* NO_STD_IDENTITY */
 
 
 // fbp: those are being used for iterator/const_iterator definitions everywhere
