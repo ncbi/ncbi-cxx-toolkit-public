@@ -214,6 +214,18 @@ void CAlignCleanup::Cleanup(const TConstAligns& aligns_in,
                             TAligns&            aligns_out,
                             EMode               mode)
 {
+    size_t size = aligns_in.size();
+    if (size == 0) {
+        return;
+    }
+    if (size == 1) {
+        // short cut: just copy the alignment
+        CRef<CSeq_align> align(new CSeq_align);
+        align->Assign(*aligns_in.front());
+        aligns_out.push_back(align);
+        return;
+    }
+
     switch (mode) {
     case eAlignVec:
         x_Cleanup_AlignVec(aligns_in, aligns_out);
