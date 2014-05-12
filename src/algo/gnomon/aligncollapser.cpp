@@ -639,52 +639,55 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
     CAlignMap amap = align.GetAlignMap();
 
     CGeneModel editedmodel = align;
-    editedmodel.ClearExons();  // empty alignment with all atributes
-    for (CAlignModel::TExons::const_iterator piece_begin = align.Exons().begin(); piece_begin != align.Exons().end(); ++piece_begin) {
-        _ASSERT( !piece_begin->m_fsplice );
+
+    if(!(editedmodel.Status()&CGeneModel::eGapFiller)) {  //remove flanking bad introns AND exons
+        editedmodel.ClearExons();  // empty alignment with all atributes
+        for (CAlignModel::TExons::const_iterator piece_begin = align.Exons().begin(); piece_begin != align.Exons().end(); ++piece_begin) {
+            _ASSERT( !piece_begin->m_fsplice );
             
-        CAlignModel::TExons::const_iterator piece_end = piece_begin;
-        for ( ; piece_end != align.Exons().end() && piece_end->m_ssplice; ++piece_end) ;
-        _ASSERT( piece_end != align.Exons().end() );
+            CAlignModel::TExons::const_iterator piece_end = piece_begin;
+            for ( ; piece_end != align.Exons().end() && piece_end->m_ssplice; ++piece_end) ;
+            _ASSERT( piece_end != align.Exons().end() );
 
-        CAlignModel a = align;
-        a.Clip(TSignedSeqRange(piece_begin->Limits().GetFrom(),piece_end->Limits().GetTo()),CGeneModel::eRemoveExons);  // only one piece   
+            CAlignModel a = align;
+            a.Clip(TSignedSeqRange(piece_begin->Limits().GetFrom(),piece_end->Limits().GetTo()),CGeneModel::eRemoveExons);  // only one piece   
             
-        //remove flanking bad introns
-        int new_left = a.Limits().GetFrom();
-        for(int k = 1; k < (int)a.Exons().size(); ++k) {
-            CModelExon exonl = a.Exons()[k-1];
-            CModelExon exonr = a.Exons()[k];
-            if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), m_align_introns, check_introns_on_both_strands))
-                break;
-            else
-                new_left = exonr.GetFrom();
-        }
-        int new_right = a.Limits().GetTo();
-        for(int k = (int)a.Exons().size()-1; k > 0 && a.Exons()[k-1].GetTo() > new_left; --k) {
-            CModelExon exonl = a.Exons()[k-1];
-            CModelExon exonr = a.Exons()[k];
-            if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), m_align_introns, check_introns_on_both_strands))
-                break;
-            else
-                new_right = exonl.GetTo();
-        }
+            //remove flanking bad in    trons
+            int new_left = a.Limits().GetFrom();
+            for(int k = 1; k < (int)a.Exons().size(); ++k) {
+                CModelExon exonl = a.Exons()[k-1];
+                CModelExon exonr = a.Exons()[k];
+                if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), m_align_introns, check_introns_on_both_strands))
+                    break;
+                else
+                    new_left = exonr.GetFrom();
+            }
+            int new_right = a.Limits().GetTo();
+            for(int k = (int)a.Exons().size()-1; k > 0 && a.Exons()[k-1].GetTo() > new_left; --k) {
+                CModelExon exonl = a.Exons()[k-1];
+                CModelExon exonr = a.Exons()[k];
+                if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), m_align_introns, check_introns_on_both_strands))
+                    break;
+                else
+                    new_right = exonl.GetTo();
+            }
 
-        TSignedSeqRange new_lim(new_left,new_right);
-        if(new_lim != a.Limits()) {
-            new_lim = amap.ShrinkToRealPoints(new_lim,false);
-            a.Clip(new_lim,CGeneModel::eRemoveExons);
-            _ASSERT(a.Limits().NotEmpty());
+            TSignedSeqRange new_lim(new_left,new_right);
+            if(new_lim != a.Limits()) {
+                new_lim = amap.ShrinkToRealPoints(new_lim,false);
+                a.Clip(new_lim,CGeneModel::eRemoveExons);
+                _ASSERT(a.Limits().NotEmpty());
+            }
+
+            if(!editedmodel.Exons().empty())
+                editedmodel.AddHole();
+
+            ITERATE(CGeneModel::TExons, e, a.Exons()) {
+                editedmodel.AddExon(e->Limits(), e->m_fsplice_sig, e->m_ssplice_sig, e->m_ident);
+            }
+
+            piece_begin = piece_end;
         }
-
-        if(!editedmodel.Exons().empty())
-            editedmodel.AddHole();
-
-        ITERATE(CGeneModel::TExons, e, a.Exons()) {
-            editedmodel.AddExon(e->Limits(), e->m_fsplice_sig, e->m_ssplice_sig, e->m_ident);
-        }
-
-        piece_begin = piece_end;
     }
 
 
@@ -1171,7 +1174,7 @@ void CAlignCollapser::FilterAlignments() {
             }
         }
 
-        if(!align.Exons().empty())
+        if(!align.Exons().empty() && !(align.Status()&CGeneModel::eGapFiller))
             ClipNotSupportedFlanks(align, clip_threshold);
 
         if(align.Exons().empty() || (!good_alignment && !(align.Type()&CGeneModel::eNotForChaining)) || !AlignmentIsSupportedBySR(align, m_coverage, minsingleexpression, m_left_end)) {
