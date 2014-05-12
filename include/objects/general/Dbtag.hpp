@@ -131,6 +131,7 @@ public:
         eDbtagType_NMPDR,
         eDbtagType_NRESTdb,
         eDbtagType_NextDB,
+        eDbtagType_OrthoMCL,
         eDbtagType_Osa1,
         eDbtagType_PBR,
         eDbtagType_PBmice,
