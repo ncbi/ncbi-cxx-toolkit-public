@@ -6707,7 +6707,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CCG");
     ambig.push_back("PIN");
     ambig.push_back("NMB");
-    ambig.push_back("UB");
     ambig.push_back("ARC");
     ambig.push_back("HSU");
     ambig.push_back("CAUP");
