@@ -3369,23 +3369,12 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
             && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
             && (*mod_it)->IsSetSubname()
             && isupper ((*mod_it)->GetSubname().c_str()[0])) {
-               string host = (*mod_it)->GetSubname();
-            size_t pos = NStr::Find(host, " ");
-            if (pos != string::npos) {
-                if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
-                    && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
-                    pos = NStr::Find(host, " ", pos + 1);
-                    if (pos != string::npos) {
-                        host = host.substr(0, pos);
-                    }
-                } else {
-                    host = host.substr(0, pos);
-                }
+            string host = SpecificHostValueToCheck((*mod_it)->GetSubname());
+            if (!NStr::IsBlank(host)) {
+                CRef<COrg_ref> rq(new COrg_ref);
+                rq->SetTaxname(host);
+				org_rq_list.push_back(rq);
             }
-
-            CRef<COrg_ref> rq(new COrg_ref);
-            rq->SetTaxname(host);
-            org_rq_list.push_back(rq);
         }
     }
 
