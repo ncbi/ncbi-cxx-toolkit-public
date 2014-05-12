@@ -490,41 +490,6 @@ void CSeqDBImpl::GetTaxIDs(int             oid,
     }
 }
 
-//void CSeqDBImpl::GetTaxIDs(int                  oid,
-//                           map<int, set<int> >& gi_to_taxid_set,
-//                           bool                 persist)
-//{
-//    CSeqDBLockHold locked(m_Atlas);
-//    m_Atlas.Lock(locked);
-//    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
-//
-//    if (! persist) {
-//        gi_to_taxid_set.clear();
-//    }
-//
-//    CRef<CBlast_def_line_set> defline_set =
-//        x_GetHdr(oid, locked);
-//
-//    if ((! defline_set.Empty()) && defline_set->CanGet()) {
-//        ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
-//            if (! (*defline)->CanGetSeqid()) {
-//                continue;
-//            }
-//
-//            ITERATE(list< CRef<CSeq_id> >, seqid, (*defline)->GetSeqid()) {
-//                if (! (**seqid).IsGi()) {
-//                    continue;
-//                }
-//
-//                CBlast_def_line::TTaxIds taxids = (*defline)->GetTaxIds();
-//                gi_to_taxid_set[GI_TO(int, (**seqid).GetGi())].insert(
-//                        taxids.begin(), taxids.end()
-//                );
-//            }
-//        }
-//    }
-//}
-
 void CSeqDBImpl::GetTaxIDs(int           oid,
                            vector<int> & taxids,
                            bool          persist)
@@ -541,14 +506,91 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
 
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
         ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
-//            if (! (*defline)->IsSetTaxid()) {
-//                continue;
-//            }
-//
-//            taxids.push_back((*defline)->GetTaxid());
+            if ((*defline)->IsSetTaxid()) {
+                taxids.push_back((*defline)->GetTaxid());
+            }
+//            CBlast_def_line::TTaxIds taxid_set = (*defline)->GetTaxIds();
+//            taxids.insert(taxids.end(), taxid_set.begin(), taxid_set.end());
+        }
+    }
+}
 
-            CBlast_def_line::TTaxIds taxid_set = (*defline)->GetTaxIds();
-            taxids.insert(taxids.end(), taxid_set.begin(), taxid_set.end());
+void CSeqDBImpl::GetLeafTaxIDs(
+        int                  oid,
+        map<int, set<int> >& gi_to_taxid_set,
+        bool                 persist
+)
+{
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+
+    if (! persist) {
+        gi_to_taxid_set.clear();
+    }
+
+    CRef<CBlast_def_line_set> defline_set =
+        x_GetHdr(oid, locked);
+
+    if ((! defline_set.Empty()) && defline_set->CanGet()) {
+        ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
+            if (! (*defline)->CanGetSeqid()) {
+                continue;
+            }
+
+            ITERATE(list< CRef<CSeq_id> >, seqid, (*defline)->GetSeqid()) {
+                if (! (**seqid).IsGi()) {
+                    continue;
+                }
+
+                CBlast_def_line::TTaxIds taxids = (*defline)->GetLeafTaxIds();
+                gi_to_taxid_set[GI_TO(int, (**seqid).GetGi())].insert(
+                        taxids.begin(), taxids.end()
+                );
+            }
+        }
+    }
+}
+
+void CSeqDBImpl::GetLeafTaxIDs(
+        int          oid,
+        vector<int>& taxids,
+        bool         persist
+)
+{
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+    m_Atlas.MentionOid(oid, m_NumOIDs, locked);
+
+    if (! persist) {
+        taxids.clear();
+    }
+
+    CRef<CBlast_def_line_set> defline_set = x_GetHdr(oid, locked);
+
+    if ((! defline_set.Empty())  &&  defline_set->CanGet()) {
+        ITERATE(
+                list<CRef<CBlast_def_line> >,
+                defline,
+                defline_set->Get()
+        ) {
+            if ((*defline)->CanGetSeqid()) {
+                ITERATE(
+                        list<CRef<CSeq_id> >,
+                        seqid,
+                        (*defline)->GetSeqid()
+                ) {
+                    if ((**seqid).IsGi()) {
+                        CBlast_def_line::TTaxIds leafTaxids =
+                                (*defline)->GetLeafTaxIds();
+                        taxids.insert(
+                                taxids.end(),
+                                leafTaxids.begin(),
+                                leafTaxids.end()
+                        );
+                    }
+                }
+            }
         }
     }
 }

@@ -32,7 +32,7 @@
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
+static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
@@ -50,10 +50,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
-                 CNcbiOstream& out, 
+                 CNcbiOstream& out,
                  CSeqFormatterConfig config /* = CSeqFormatterConfig() */)
     : m_Out(out), m_FmtSpec(format_spec), m_BlastDb(blastdb),
-      m_DataExtractor(blastdb, 
+      m_DataExtractor(blastdb,
                       config.m_SeqRange,
                       config.m_Strand,
                       config.m_FiltAlgoId,
@@ -65,11 +65,11 @@ CSeqFormatter::CSeqFormatter(const string& format_spec, CSeqDB& blastdb,
     // Validate the algo id
     if (config.m_FiltAlgoId >= 0 || config.m_FmtAlgoId >= 0) {
         vector<int> algo_ids;
-        if (config.m_FiltAlgoId >= 0) 
+        if (config.m_FiltAlgoId >= 0)
             algo_ids.push_back(config.m_FiltAlgoId);
-        if (config.m_FmtAlgoId >= 0) 
+        if (config.m_FmtAlgoId >= 0)
             algo_ids.push_back(config.m_FmtAlgoId);
-        vector<int> invalid_algo_ids = 
+        vector<int> invalid_algo_ids =
             m_BlastDb.ValidateMaskAlgorithms(algo_ids);
         if ( !invalid_algo_ids.empty()) {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
@@ -161,12 +161,20 @@ void CSeqFormatter::x_Builder(vector<string>& data2write)
             data2write.push_back(m_DataExtractor.ExtractTaxId());
             break;
 
+        case 'X':
+            data2write.push_back(m_DataExtractor.ExtractLeafTaxIds());
+            break;
+
         case 'P':
             data2write.push_back(m_DataExtractor.ExtractPig());
             break;
 
         case 'L':
             data2write.push_back(m_DataExtractor.ExtractCommonTaxonomicName());
+            break;
+
+        case 'C':
+            data2write.push_back(m_DataExtractor.ExtractLeafCommonTaxonomicNames());
             break;
 
         case 'B':
@@ -179,6 +187,10 @@ void CSeqFormatter::x_Builder(vector<string>& data2write)
 
         case 'S':
             data2write.push_back(m_DataExtractor.ExtractScientificName());
+            break;
+
+        case 'N':
+            data2write.push_back(m_DataExtractor.ExtractLeafScientificNames());
             break;
 
         case 'm':
@@ -204,7 +216,7 @@ void CSeqFormatter::x_Builder(vector<string>& data2write)
         default:
             CNcbiOstrstream os;
             os << "Unrecognized format specification: '%" << *fmt << "'";
-            NCBI_THROW(CInvalidDataException, eInvalidInput, 
+            NCBI_THROW(CInvalidDataException, eInvalidInput,
                        CNcbiOstrstreamToString(os));
         }
     }

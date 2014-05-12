@@ -369,6 +369,24 @@ string CBlastDBExtractor::ExtractTaxId() {
     return NStr::IntToString(x_ExtractTaxId());
 }
 
+string CBlastDBExtractor::ExtractLeafTaxIds() {
+    set<int> taxids;
+    x_ExtractLeafTaxIds(taxids);
+    if (taxids.empty()) {
+        return ExtractTaxId();
+    }
+    set<int>::iterator taxids_iter = taxids.begin();
+    string retval;
+    ITERATE(set<int>, taxids_iter, taxids) {
+        if (retval.empty()) {
+            retval = NStr::IntToString(*taxids_iter);
+        } else {
+            retval += SEPARATOR + NStr::IntToString(*taxids_iter);
+        }
+    }
+    return retval;
+}
+
 string CBlastDBExtractor::ExtractCommonTaxonomicName() {
     const int kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
@@ -379,6 +397,30 @@ string CBlastDBExtractor::ExtractCommonTaxonomicName() {
         retval = tax_info.common_name;
     } catch (...) {}
     return retval;
+}
+
+string CBlastDBExtractor::ExtractLeafCommonTaxonomicNames() {
+    set<int> taxids;
+    x_ExtractLeafTaxIds(taxids);
+    SSeqDBTaxInfo tax_info;
+    string retval;
+    ITERATE(set<int>, taxid_iter, taxids) {
+        const int kTaxID = *taxid_iter;
+        try {
+            m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+            _ASSERT(kTaxID == tax_info.taxid);
+            if (retval.empty()) {
+                retval = tax_info.common_name;
+            } else {
+                retval += SEPARATOR + tax_info.common_name;
+            }
+        } catch (...) {}
+    }
+    if (retval.empty()) {
+        return ExtractCommonTaxonomicName();
+    } else {
+        return retval;
+    }
 }
 
 string CBlastDBExtractor::ExtractScientificName() {
@@ -393,6 +435,30 @@ string CBlastDBExtractor::ExtractScientificName() {
     return retval;
 }
 
+string CBlastDBExtractor::ExtractLeafScientificNames() {
+    set<int> taxids;
+    x_ExtractLeafTaxIds(taxids);
+    SSeqDBTaxInfo tax_info;
+    string retval;
+    ITERATE(set<int>, taxid_iter, taxids) {
+        const int kTaxID = *taxid_iter;
+        try {
+            m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+            _ASSERT(kTaxID == tax_info.taxid);
+            if (retval.empty()) {
+                retval = tax_info.scientific_name;
+            } else {
+                retval += SEPARATOR + tax_info.scientific_name;
+            }
+        } catch (...) {}
+    }
+    if (retval.empty()) {
+        return ExtractScientificName();
+    } else {
+        return retval;
+    }
+}
+
 string CBlastDBExtractor::ExtractBlastName() {
     const int kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
@@ -405,6 +471,30 @@ string CBlastDBExtractor::ExtractBlastName() {
     return retval;
 }
 
+//string CBlastDBExtractor::ExtractBlastName() {
+//    set<int> taxids;
+//    x_ExtractTaxIds(taxids);
+//    SSeqDBTaxInfo tax_info;
+//    string retval;
+//    ITERATE(set<int>, taxid_iter, taxids) {
+//        const int kTaxID = *taxid_iter;
+//        try {
+//            m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+//            _ASSERT(kTaxID == tax_info.taxid);
+//            if (retval.empty()) {
+//                retval = tax_info.blast_name;
+//            } else {
+//                retval += SEPARATOR + tax_info.blast_name;
+//            }
+//        } catch (...) {}
+//    }
+//    if (retval.empty()) {
+//        return string(NOT_AVAILABLE);
+//    } else {
+//        return retval;
+//    }
+//}
+
 string CBlastDBExtractor::ExtractSuperKingdom() {
     const int kTaxID = x_ExtractTaxId();
     SSeqDBTaxInfo tax_info;
@@ -416,6 +506,30 @@ string CBlastDBExtractor::ExtractSuperKingdom() {
     } catch (...) {}
     return retval;
 }
+
+//string CBlastDBExtractor::ExtractSuperKingdom() {
+//    set<int> taxids;
+//    x_ExtractTaxIds(taxids);
+//    SSeqDBTaxInfo tax_info;
+//    string retval;
+//    ITERATE(set<int>, taxid_iter, taxids) {
+//        const int kTaxID = *taxid_iter;
+//        try {
+//            m_BlastDb.GetTaxInfo(kTaxID, tax_info);
+//            _ASSERT(kTaxID == tax_info.taxid);
+//            if (retval.empty()) {
+//                retval = tax_info.s_kingdom;
+//            } else {
+//                retval += SEPARATOR + tax_info.s_kingdom;
+//            }
+//        } catch (...) {}
+//    }
+//    if (retval.empty()) {
+//        return string(NOT_AVAILABLE);
+//    } else {
+//        return retval;
+//    }
+//}
 
 string CBlastDBExtractor::ExtractMaskingData() {
     static const string kNoMasksFound("none");
@@ -564,6 +678,28 @@ int CBlastDBExtractor::x_ExtractTaxId()
     vector<int> taxid;
     m_BlastDb.GetTaxIDs(m_Oid, taxid);
     return taxid.size() ? taxid[0] : 0;
+}
+
+void CBlastDBExtractor::x_ExtractLeafTaxIds(set<int>& taxids)
+{
+    x_SetGi();
+
+    if (m_Gi) {
+        if (m_Gi2TaxidSetMap.first != m_Oid)
+        {
+            m_Gi2TaxidSetMap.first = m_Oid;
+            m_BlastDb.GetLeafTaxIDs(m_Oid, m_Gi2TaxidSetMap.second);
+        }
+        taxids.clear();
+        const set<int>& taxid_set = m_Gi2TaxidSetMap.second[m_Gi];
+        taxids.insert(taxid_set.begin(), taxid_set.end());
+        return;
+    }
+    // for database without Gi:
+    vector<int> taxid;
+    m_BlastDb.GetLeafTaxIDs(m_Oid, taxid);
+    taxids.clear();
+    taxids.insert(taxid.begin(), taxid.end());
 }
 
 void
