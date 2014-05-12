@@ -462,7 +462,7 @@ static void s_GetPercentIdentity(CScope& scope, const CSeq_align& align,
 ///
 /// calculate the percent coverage
 ///
-static bool s_SequenceIsProtein(CScope& scope, 
+static bool s_SequenceIsProtein(CScope& scope,
                                 const CSeq_id& id)
 {
     CSeq_inst::TMol mol = scope.GetSequenceType(id);
@@ -476,6 +476,37 @@ static bool s_SequenceIsProtein(CScope& scope,
     }
 
     return (mol == CSeq_inst::eMol_aa);
+}
+
+
+static bool s_IsProteinToGenomic(CScope& scope,
+                                 const CSeq_align& align)
+{
+    if (align.GetSegs().IsSpliced()) {
+        return align.GetSegs().GetSpliced()
+            .GetProduct_type() == CSpliced_seg::eProduct_type_protein;
+    }
+
+    if (align.GetSegs().IsDenseg()) {
+        const CDense_seg& seg = align.GetSegs().GetDenseg();
+        if (seg.IsSetWidths()) {
+            // FIXME: I can't remember what the rule for widths is
+            // 
+        }
+        else {
+            // we must be protein-to-protein or nuc-to-nuc
+            return false;
+        }
+    }
+
+    // our short-cuts are exhausted
+    // fall back to a check of sequence type
+    const CSeq_id& id0 = align.GetSeq_id(0);
+    if ( !s_SequenceIsProtein(scope, id0) ) {
+        return false;
+    }
+    const CSeq_id& id1 = align.GetSeq_id(1);
+    return s_SequenceIsProtein(scope, id0);
 }
 
 
@@ -520,21 +551,19 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         if ( !seq_len ) { 
             seq_len = scope.GetSequenceLength(align.GetSeq_id(0));
 
-            bool query_is_aa = s_SequenceIsProtein(scope,
-                                                   align.GetSeq_id(0));
-            if (query_is_aa) {
-                bool subj_is_aa = s_SequenceIsProtein(scope,
-                                                      align.GetSeq_id(1));
-                if ( !subj_is_aa ) {
-                    /// alignment is protein-to-genomic alignment
-                    /// NOTE: alignment length is always reported in nucleotide
-                    /// coordinates
-                    seq_len *= 3;
-                    if (align.GetSegs().IsStd()) {
-                        /// odd corner case:
-                        /// std-seg alignments of protein to nucleotide
-                        covered_bases *= 3;
-                    }   
+            //
+            // determine if the alignment is protein-to-genomic
+            //
+            bool is_protein_to_genomic = s_IsProteinToGenomic(scope, align);
+            if (is_protein_to_genomic) {
+                /// alignment is protein-to-genomic alignment
+                /// NOTE: alignment length is always reported in nucleotide
+                /// coordinates
+                seq_len *= 3;
+                if (align.GetSegs().IsStd()) {
+                    /// odd corner case:
+                    /// std-seg alignments of protein to nucleotide
+                    covered_bases *= 3;
                 }   
             }
         }  
