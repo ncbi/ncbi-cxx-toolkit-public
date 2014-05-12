@@ -1272,11 +1272,13 @@ bool CFastaReader::ParseGapLine(
                     bConflictingGapTypes = true;
                 }
             } else {
-                FASTA_ERROR(
+                FASTA_WARNING_EX(
                     LineNumber(),
-                    string("wrong gap type ") + string(sValue),
-                    eWrongGap
-                    );
+                    "Unknown gap-type: " << sValue,
+                    ILineError::eProblem_ParsingModifiers,
+                    "gapline",
+                    "gap-type",
+                    sValue );
             }
 
         } else if( canonicalKey == "linkage-evidence") {
