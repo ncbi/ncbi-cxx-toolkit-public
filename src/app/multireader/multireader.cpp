@@ -696,7 +696,7 @@ void CMultiReaderApp::xProcessGff3(
         if (args["genbank"].AsBoolean()) {
             edit::CFeatTableEdit fte(**cit, m_pErrors);
             fte.InferParentMrnas();
-            //fte.InferParentGenes();
+            fte.InferParentGenes();
             //fte.InferPartials();
             fte.EliminateBadQualifiers();
         }
