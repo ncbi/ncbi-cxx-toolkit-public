@@ -532,19 +532,32 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
 {
     const CArgs& args = GetArgs();
 
-    CSeq_entry_EditHandle seeh = seh.GetEditHandle();
-    CRef<CSeq_entry> tmp_se (new CSeq_entry);
-    tmp_se->Assign(*seeh.GetCompleteSeq_entry());
-
     if ( m_do_cleanup ) {
+        CSeq_entry_EditHandle tseh = seh.GetTopLevelEntry().GetEditHandle();
+        CBioseq_set_EditHandle bseth;
+        CBioseq_EditHandle bseqh;
+        CRef<CSeq_entry> tmp_se(new CSeq_entry);
+        if ( tseh.IsSet() ) {
+            bseth = tseh.SetSet();
+            CConstRef<CBioseq_set> bset = bseth.GetCompleteObject();
+            bseth.Remove(bseth.eKeepSeq_entry);
+            tmp_se->SetSet(const_cast<CBioseq_set&>(*bset));
+        }
+        else {
+            bseqh = tseh.SetSeq();
+            CConstRef<CBioseq> bseq = bseqh.GetCompleteObject();
+            bseqh.Remove(bseqh.eKeepSeq_entry);
+            tmp_se->SetSeq(const_cast<CBioseq&>(*bseq));
+        }
+
         CCleanup cleanup;
         cleanup.BasicCleanup( *tmp_se );
 
-        seeh.SelectNone();
-        switch (tmp_se->Which()) {
-            case CSeq_entry::e_Seq:  seeh.SelectSeq(tmp_se->SetSeq());  break;
-            case CSeq_entry::e_Set:  seeh.SelectSet(tmp_se->SetSet());  break;
-            default:                 _TROUBLE;
+        if ( tmp_se->IsSet() ) {
+            tseh.SelectSet(bseth);
+        }
+        else {
+            tseh.SelectSeq(bseqh);
         }
     }
 
