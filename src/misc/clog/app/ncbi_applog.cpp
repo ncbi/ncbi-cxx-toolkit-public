@@ -110,9 +110,13 @@ USING_NCBI_SCOPE;
 const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 
 /// Regular expression to check lines of raw logs.
-const char*        kApplogRegexp = "^\\d{5}/\\d{3}/\\d{4}/[NSPRBE ]{3}[0-9A-Z]{16} \\d{4}/\\d{4} \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
-const unsigned int kLoglineNamePos   = 126;
-const unsigned int kLoglineParamsPos = kLoglineNamePos + 15;
+const char*  kApplogRegexp = "^\\d{5}/\\d{3}/\\d{4}/[NSPRBE ]{3}[0-9A-Z]{16} \\d{4}/\\d{4} \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
+
+// Base position of the application name in the string if time format have milliseconds
+// (3 digits after seconds). It will be increased to use microseconds if necessary.
+const unsigned int kLoglineTimeCheckPos = 68;
+const unsigned int kLoglineNamePos      = 126; 
+const unsigned int kLoglineParamsPos    = kLoglineNamePos + 15;
 
 /// Declare the parameter for logging CGI
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
@@ -878,11 +882,16 @@ int CNcbiApplogApp::Run(void)
         if ( !found ||  m_Raw_line.length() <= kLoglineNamePos + 1 ) {
             throw "Error processing input raw log, cannot find any line in applog format";
         }
-        size_t pos = m_Raw_line.find(' ', kLoglineNamePos + 1);
+        size_t namepos = kLoglineNamePos;
+        if (m_Raw_line[kLoglineTimeCheckPos] != ' ') {
+            // time format use microseconds, not milliseconds -- adjust positions
+            namepos += 3;
+        }
+        size_t pos = m_Raw_line.find(' ', namepos + 1);
         if (pos == NPOS) {
             throw "Error processing input raw log, line has wrong format";
         }
-        m_Info.appname = m_Raw_line.substr(kLoglineNamePos, pos - kLoglineNamePos);
+        m_Info.appname = m_Raw_line.substr(namepos, pos - namepos);
     
     } else {
         // Initialize session from existing token
@@ -1152,6 +1161,13 @@ int CNcbiApplogApp::Run(void)
         if ( !no_logsite ) {
             orig_appname = "orig_appname=" + m_Info.appname;
         }
+        size_t namepos  = kLoglineNamePos;
+        size_t parampos = kLoglineParamsPos;
+        if (m_Raw_line[kLoglineTimeCheckPos] != ' ') {
+            // time format use microseconds, not milliseconds -- adjust positions
+            namepos  += 3;
+            parampos += 3;
+        }
         do {
             if (re.IsMatch(m_Raw_line)) {
                 if ( no_logsite ) {
@@ -1159,12 +1175,12 @@ int CNcbiApplogApp::Run(void)
                 } else {
                     // Use logsite name instead of appname if necessary.
 
-                    if (m_Raw_line.length() <= kLoglineNamePos + 1  ||
-                        !NStr::StartsWith(CTempString(CTempString(m_Raw_line), kLoglineNamePos), m_Info.appname)) {
+                    if (m_Raw_line.length() <= namepos + 1  ||
+                        !NStr::StartsWith(CTempString(CTempString(m_Raw_line), namepos), m_Info.appname)) {
                         throw "Error processing input raw log, line has wrong format";
                     }
                     // Replace app name
-                    m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite, kLoglineNamePos, 1);
+                    m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite, namepos, 1);
 
                     /// Command type for original name to logsite substitution.
                     typedef enum {
@@ -1174,7 +1190,7 @@ int CNcbiApplogApp::Run(void)
                         eCmdOther
                     } ECmdType;
 
-                    CTempString cmdstr(CTempString(m_Raw_line), kLoglineNamePos + m_Info.logsite.size() + 1);
+                    CTempString cmdstr(CTempString(m_Raw_line), namepos + m_Info.logsite.size() + 1);
                     ECmdType cmd = eCmdOther;
                     if (NStr::StartsWith(cmdstr, "start")) {
                         cmd = eCmdAppStart;
@@ -1189,9 +1205,9 @@ int CNcbiApplogApp::Run(void)
                     case eCmdPerf:
                         {
                             // Find end of status and time, parameters starts after last space
-                            size_t start = kLoglineParamsPos + m_Info.logsite.size();
+                            size_t start = parampos + m_Info.logsite.size();
                             size_t pos = m_Raw_line.find_last_of(' ');
-                            if (pos == NPOS || pos <= kLoglineNamePos) {
+                            if (pos == NPOS || pos <= namepos) {
                                 throw "Error processing input raw log, perf line has wrong format";
                             }
                             param_ofs = pos - start + 1;
@@ -1201,7 +1217,7 @@ int CNcbiApplogApp::Run(void)
                     case eCmdRequestStart:
                         // Modify parameters for 'request-start' and 'perf' commands
                         {
-                            size_t pos = kLoglineParamsPos + m_Info.logsite.size() + param_ofs;
+                            size_t pos = parampos + m_Info.logsite.size() + param_ofs;
                             string params = NStr::TruncateSpaces(m_Raw_line.substr(pos, NPOS));
                             if ( params.empty() ) {
                                 params = orig_appname;
@@ -1220,7 +1236,7 @@ int CNcbiApplogApp::Run(void)
                         if (cmd == eCmdAppStart) {
                             // Add original appname as extra after 'start_app' command,
                             // constructing it from original raw line
-                            string s = m_Raw_line.substr(0, kLoglineNamePos + 1 + m_Info.logsite.size())
+                            string s = m_Raw_line.substr(0, namepos + 1 + m_Info.logsite.size())
                                        + "extra         " + orig_appname;
                             // Replace state: "PB" -> "P "
                             s[16] = ' ';
