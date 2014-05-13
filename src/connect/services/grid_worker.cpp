@@ -951,12 +951,26 @@ void CGridWorkerNode::x_WNCoreInit()
 
     m_StartupTime = time(0);
 
+    CGridGlobals::GetInstance().SetReuseJobObject(reg.GetBool(kServerSec,
+        "reuse_job_object", false, 0, CNcbiRegistry::eReturn));
+    CGridGlobals::GetInstance().SetWorker(*this);
+
+    m_LogRequested = reg.GetBool(kServerSec,
+        "log", false, 0, IRegistry::eReturn);
+    m_ProgressLogRequested = reg.GetBool(kServerSec,
+        "log_progress", false, 0, IRegistry::eReturn);
+    m_ThreadPoolTimeout = reg.GetInt(kServerSec,
+        "thread_pool_timeout", 30, 0, IRegistry::eReturn);
+}
+
+void CGridWorkerNode::x_StartWorkerThreads()
+{
     _ASSERT(m_MaxThreads > 0);
 
     if (m_MaxThreads > 1) {
         m_ThreadPool = new CStdPoolOfThreads(m_MaxThreads, 0);
         try {
-            unsigned init_threads = reg.GetInt(kServerSec,
+            unsigned init_threads = m_App.GetConfig().GetInt("server",
                     "init_threads", 1, 0, IRegistry::eReturn);
 
             m_ThreadPool->Spawn(init_threads <= m_MaxThreads ?
@@ -969,17 +983,6 @@ void CGridWorkerNode::x_WNCoreInit()
             throw;
         }
     }
-
-    CGridGlobals::GetInstance().SetReuseJobObject(reg.GetBool(kServerSec,
-        "reuse_job_object", false, 0, CNcbiRegistry::eReturn));
-    CGridGlobals::GetInstance().SetWorker(*this);
-
-    m_LogRequested = reg.GetBool(kServerSec,
-        "log", false, 0, IRegistry::eReturn);
-    m_ProgressLogRequested = reg.GetBool(kServerSec,
-        "log_progress", false, 0, IRegistry::eReturn);
-    m_ThreadPoolTimeout = reg.GetInt(kServerSec,
-        "thread_pool_timeout", 30, 0, IRegistry::eReturn);
 }
 
 int CGridWorkerNode::Run(
@@ -1247,6 +1250,8 @@ int CGridWorkerNode::Run(
         "Maximum job threads: " << m_MaxThreads << "\n");
 
     m_Listener->OnGridWorkerStart();
+
+    x_StartWorkerThreads();
 
     CNetScheduleJob job;
     max_wait_for_servers = CDeadline(
@@ -1516,6 +1521,8 @@ int CGridWorkerNode::OfflineRun()
     }
 
     m_Listener->OnGridWorkerStart();
+
+    x_StartWorkerThreads();
 
     LOG_POST("Reading job input files (*.in)...");
 

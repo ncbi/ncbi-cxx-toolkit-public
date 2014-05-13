@@ -741,6 +741,7 @@ public:
 
 private:
     void x_WNCoreInit();
+    void x_StartWorkerThreads();
     void x_StopWorkerThreads();
     int x_WNCleanUp();
 
