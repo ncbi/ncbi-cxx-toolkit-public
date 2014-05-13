@@ -104,6 +104,17 @@ static size_t GetGCSize(void)
 }
 
 
+NCBI_PARAM_DECL(string, WGS_LOADER, VOL_PATH);
+NCBI_PARAM_DEF_EX(string, WGS_LOADER, VOL_PATH, "",
+                  eParam_NoThread, WGS_LOADER_VOL_PATH);
+
+static string GetWGSVolPath(void)
+{
+    static NCBI_PARAM_TYPE(WGS_LOADER, VOL_PATH) s_Value;
+    return s_Value.Get();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -187,6 +198,9 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     : m_WGSVolPath(params.m_WGSVolPath),
       m_FoundFiles(GetGCSize())
 {
+    if ( m_WGSVolPath.empty() && params.m_WGSFiles.empty() ) {
+        m_WGSVolPath = GetWGSVolPath();
+    }
     ITERATE (vector<string>, it, params.m_WGSFiles) {
         CRef<CWGSFileInfo> info(new CWGSFileInfo(*this, *it));
         if ( !m_FixedFiles.insert(TFixedFiles::value_type(info->GetWGSPrefix(),
