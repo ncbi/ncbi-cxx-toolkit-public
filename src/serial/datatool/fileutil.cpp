@@ -456,9 +456,9 @@ bool CDelayedOfstream::equals(void)
 {
     if ( !m_Istream.get() )
         return false;
-    size_t count = (size_t)pcount();
-    const char* ptr = str();
-    freeze(false);
+    string s = CNcbiOstrstreamToString(*this);
+    size_t count = s.size();
+    const char* ptr = s.data();
     while ( count > 0 ) {
         char buffer[BUFFER_SIZE];
         size_t c = count;
@@ -492,10 +492,8 @@ bool CDelayedOfstream::rewrite(void)
             return false;
         }
     }
-    streamsize count = pcount();
-    const char* ptr = str();
-    freeze(false);
-    if ( !m_Ostream->write(ptr, count) ) {
+    string s = CNcbiOstrstreamToString(*this);
+    if ( !m_Ostream->write(s.data(), s.size()) ) {
         _TRACE("write fault " << m_FileName);
         return false;
     }
@@ -519,16 +517,16 @@ void CDelayedOfstream::Discard(void)
 
 bool Empty(const CNcbiOstrstream& src)
 {
-    return const_cast<CNcbiOstrstream&>(src).pcount() == 0;
+    return NcbiStreamposToInt8(const_cast<CNcbiOstrstream&>(src).tellp()) == 0;
 }
 
 CNcbiOstream& Write(CNcbiOstream& out, const CNcbiOstrstream& src)
 {
     CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(src);
-    size_t size = (size_t)source.pcount();
+    size_t size = (size_t)NcbiStreamposToInt8(source.tellp());
     if ( size != 0 ) {
-        out.write(source.str(), size);
-        source.freeze(false);
+        string str = CNcbiOstrstreamToString(source);
+        out.write(str.data(), size);
     }
     return out;
 }
@@ -537,12 +535,12 @@ CNcbiOstream& WriteTabbed(CNcbiOstream& out, const CNcbiOstrstream& code,
                           const char* tab)
 {
     CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(code);
-    size_t size = (size_t)source.pcount();
+    size_t size = (size_t)NcbiStreamposToInt8(source.tellp());
     if ( size != 0 ) {
         if ( !tab )
             tab = "    ";
-        const char* ptr = source.str();
-        source.freeze(false);
+        string str = CNcbiOstrstreamToString(source);
+        const char* ptr = str.data();
         while ( size > 0 ) {
             out << tab;
             const char* endl =

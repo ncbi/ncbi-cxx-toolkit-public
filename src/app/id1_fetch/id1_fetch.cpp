@@ -383,12 +383,8 @@ int CId1FetchApp::Run(void)
         if (args["query"]) {
             e2_element->SetStr(args["query"].AsString());
         } else {
-            CNcbiIstream& is = args["qf"].AsInputFile();
-            CNcbiOstrstream oss;
-            oss << is.rdbuf();
-            string& str = e2_element->SetStr();
-            str.assign(oss.str(), oss.pcount());
-            oss.freeze(false);
+            string str;
+            NcbiStreamToString(&str, args["qf"].AsInputFile());
             replace_if(str.begin(), str.end(), s_IsControl, ' ');
         }
 

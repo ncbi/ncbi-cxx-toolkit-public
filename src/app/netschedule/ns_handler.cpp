@@ -2355,45 +2355,24 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         {{
             CNcbiOstrstream ostr;
 
-            try {
-                m_Server->PrintMutexStat(ostr);
-                ostr << ends;
-                x_WriteMessage(string("OK:") + ostr.str());
-            } catch (...) {
-                ostr.freeze(false);
-                throw;
-            }
-            ostr.freeze(false);
+            m_Server->PrintMutexStat(ostr);
+            x_WriteMessage("OK:" + (string)CNcbiOstrstreamToString(ostr));
         }}
 
         x_WriteMessage("OK:[Berkeley DB Locks]:");
         {{
             CNcbiOstrstream ostr;
 
-            try {
-                m_Server->PrintLockStat(ostr);
-                ostr << ends;
-                x_WriteMessage(string("OK:") + ostr.str());
-            } catch (...) {
-                ostr.freeze(false);
-                throw;
-            }
-            ostr.freeze(false);
+            m_Server->PrintLockStat(ostr);
+            x_WriteMessage("OK:" + (string)CNcbiOstrstreamToString(ostr));
         }}
 
         x_WriteMessage("OK:[Berkeley DB Memory Usage]:");
         {{
             CNcbiOstrstream ostr;
 
-            try {
-                m_Server->PrintMemStat(ostr);
-                ostr << ends;
-                x_WriteMessage(string("OK:") + ostr.str());
-            } catch (...) {
-                ostr.freeze(false);
-                throw;
-            }
-            ostr.freeze(false);
+            m_Server->PrintMemStat(ostr);
+            x_WriteMessage("OK:" + (string)CNcbiOstrstreamToString(ostr));
         }}
 
         x_WriteMessage("OK:[BitVector block pool]:");

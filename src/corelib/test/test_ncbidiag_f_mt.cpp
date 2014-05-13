@@ -462,9 +462,8 @@ bool CTestDiagApp::TestApp_Exit(void)
     TStrings messages;
 
     // Get the list of messages
-    CTempString ts(s_Sout.str(), (size_t)s_Sout.pcount());
-    NStr::Split(ts, "\r\n", messages);
-    s_Sout.freeze(false);
+    string s = CNcbiOstrstreamToString(s_Sout);
+    NStr::Split(s, "\r\n", messages);
 
     bool result = true;
     ITERATE(TStrings, i, messages) {

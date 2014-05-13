@@ -121,10 +121,8 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
         oos->SetVerifyData(eSerialVerifyData_No);
         oos->Write(this, GetThisTypeInfo());
     }}
-    ostr << "\n****** end   ASN dump ******\n" << '\0';
-    const char* str = ostr.str();
-    ostr.freeze();
-    ddc.Log( "Serial_AsnText", str);
+    ostr << "\n****** end   ASN dump ******\n";
+    ddc.Log( "Serial_AsnText", CNcbiOstrstreamToString(ostr));
 }
 
 /////////////////////////////////////////////////////////////////////////////

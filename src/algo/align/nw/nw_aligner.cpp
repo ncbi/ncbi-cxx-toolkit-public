@@ -132,7 +132,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
     if(verify) {
         size_t iErrPos1 = x_CheckSequence(seq1, len1);
 	if(iErrPos1 < len1) {
-	    ostrstream oss;
+            CNcbiOstrstream oss;
 	    oss << "The first sequence is inconsistent with the current "
 		<< "scoring matrix type. "
                 << "Position = " << iErrPos1 
@@ -144,7 +144,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 
 	size_t iErrPos2 = x_CheckSequence(seq2, len2);
 	if(iErrPos2 < len2) {
-	    ostrstream oss;
+            CNcbiOstrstream oss;
 	    oss << "The second sequence is inconsistent with the current "
 		<< "scoring matrix type. "
                 << "Position = " << iErrPos2 

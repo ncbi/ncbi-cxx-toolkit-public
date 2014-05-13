@@ -443,9 +443,8 @@ int CTestApp::Run(void)
     }
     // Check captured errors
     SetDiagStream(&NcbiCerr);
-    if ( err_out.pcount() ) {
-        string errors(err_out.rdbuf()->str(), err_out.pcount());
-        CheckString(errors, args, "errors messages");
+    if (NcbiStreamposToInt8(err_out.tellp()) > 0) {
+        CheckString(CNcbiOstrstreamToString(err_out), args, "errors messages");
     }
 
     LOG_POST("All tests passed");

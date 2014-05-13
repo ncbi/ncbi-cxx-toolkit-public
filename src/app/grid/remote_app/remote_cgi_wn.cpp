@@ -250,7 +250,7 @@ public:
                         "Exited with return code " + NStr::IntToString(ret));
 
         if (job_context.IsLogRequested()) {
-            if (err.pcount() > 0 )
+            if (NcbiStreamposToInt8(err.tellp()) > 0 )
                 LOG_POST("STDERR: " << err.rdbuf());
 
             LOG_POST("Job " << job_context.GetJobKey() <<

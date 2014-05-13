@@ -639,8 +639,8 @@ BOOST_AUTO_TEST_CASE(TestRegistry)
     // Dump
     CNcbiOstrstream os;
     BOOST_CHECK ( reg.Write(os) );
-    os << '\0';
-    const char* os_str = os.str();  os.rdbuf()->freeze(false);
+    string os_string = CNcbiOstrstreamToString(os);
+    const char* os_str = os_string.c_str();
     NcbiCerr << "\nRegistry:\n" << os_str << NcbiEndl;
 
     // "Persistent" load

@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(StandardOutput) {
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
     CRef<CScope> scope = tmp_data_loader.NewScope();
     
-    ostrstream output_stream;
+    CNcbiOstrstream output_stream;
     CBlastTabularInfo ctab(output_stream);
     // CBlastTabularInfo ctab(cout);
 
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(QuerySubjectScoreOutput) {
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
     CRef<CScope> scope = tmp_data_loader.NewScope();
     
-    ostrstream output_stream;
+    CNcbiOstrstream output_stream;
     CBlastTabularInfo ctab(output_stream, "qseqid sseqid bitscore");
 
     ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentScoreOutput) {
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
     CRef<CScope> scope = tmp_data_loader.NewScope();
     
-    ostrstream output_stream;
+    CNcbiOstrstream output_stream;
     CBlastTabularInfo ctab(output_stream, "qacc sacc pident bitscore");
 
     ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(QueryAccSubjectAccIdentBTOPOutput) {
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
     CRef<CScope> scope = tmp_data_loader.NewScope();
     
-    ostrstream output_stream;
+    CNcbiOstrstream output_stream;
     CBlastTabularInfo ctab(output_stream, "qacc sacc score pident btop");
 
     ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
     CRef<CScope> scope = tmp_data_loader.NewScope();
 
-    ostrstream output_stream;
+    CNcbiOstrstream output_stream;
     CBlastTabularInfo ctab(output_stream, "qacc sacc staxids sscinames scomnames sblastnames sskingdoms");
 
     ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     CRef<CScope> scope = tmp_data_loader.NewScope();
 
     {
-    	ostrstream output_stream;
+        CNcbiOstrstream output_stream;
     	CBlastTabularInfo ctab(output_stream, "qacc sacc stitle");
 
     	ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     }
 
     {
-    	ostrstream output_stream;
+        CNcbiOstrstream output_stream;
     	CBlastTabularInfo ctab(output_stream, "qacc sacc salltitles");
 
     	ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)

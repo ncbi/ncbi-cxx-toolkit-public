@@ -204,7 +204,7 @@ bool CPhyTreeFormatter::PrintNexusTree(CNcbiOstream& ostr,
 {
     // generate tree in Newick format and collect leaf labels
     vector<string> labels; // tree leaf labels
-    ostrstream buff;
+    CNcbiOstrstream buff;
     x_PrintNewickTree(buff, *m_Dyntree.GetTreeNode(), labels, false);
 
     CNcbiOstrstreamToString s(buff);

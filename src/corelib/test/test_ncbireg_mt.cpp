@@ -77,7 +77,8 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     list<string> entries;
 
     CNcbiOstrstream os;
-    const char*  os_str = 0;
+    string os_string = CNcbiOstrstreamToString(os);
+    const char* os_str = os_string.c_str();
     string       test_str("\" V481\" \n\"V482 ");
 
     // Compose a test registry
@@ -220,9 +221,9 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
 
     // Dump
     assert ( m_Registry.Write(os) );
-    os << '\0';
-    os_str = os.str();
-    os.freeze(false);
+
+    os_string = CNcbiOstrstreamToString(os);
+    os_str = os_string.c_str();
 
     }}
 

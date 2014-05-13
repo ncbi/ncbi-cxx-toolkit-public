@@ -85,7 +85,7 @@ string PrintAlignment(CMultiAlnPrinter::EFormat format,
     printer.SetWidth(80);
     printer.SetFormat(format);
 
-    ostrstream output_stream;
+    CNcbiOstrstream output_stream;
     printer.Print(output_stream);
     string output = CNcbiOstrstreamToString(output_stream);
 

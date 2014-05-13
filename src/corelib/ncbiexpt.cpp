@@ -331,7 +331,7 @@ string CException::ReportAll(TDiagPostFlags flags) const
     for (pex = this; pex; pex = pex->GetPredecessor()) {
         pile.push(pex);
     }
-    ostrstream os;
+    CNcbiOstrstream os;
     os << "NCBI C++ Exception:" << '\n';
     for (; !pile.empty(); pile.pop()) {
         //indentation
@@ -352,10 +352,10 @@ string CException::ReportAll(TDiagPostFlags flags) const
 
 string CException::ReportThis(TDiagPostFlags flags) const
 {
-    ostrstream os, osex;
+    CNcbiOstrstream os, osex;
     ReportStd(os, flags);
     ReportExtra(osex);
-    if (osex.pcount() != 0) {
+    if (NcbiStreamposToInt8(osex.tellp()) != 0) {
         os << " (" << (string)CNcbiOstrstreamToString(osex) << ')';
     }
     return CNcbiOstrstreamToString(os);

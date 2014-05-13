@@ -60,8 +60,7 @@ private:
 };
 
 
-static char s_Str[k_NumThreadsMax*200] = "";
-static ostrstream* s_Sout;
+static CNcbiOstrstream s_Sout;
 static size_t s_CreateLine = 0;
 static size_t s_LogLine = 0;
 static size_t s_ErrLine = 0;
@@ -111,16 +110,14 @@ bool CTestDiagApp::TestApp_Init(void)
              << (GetDiagContext().IsSetOldPostFormat() ? "old" : "new")
              << " format)..."
              << NcbiEndl;
-    // Output to the string stream -- to verify the result
-    s_Sout = new ostrstream(s_Str, k_NumThreadsMax*200, ios::out);
-    SetDiagStream(s_Sout);
+    SetDiagStream(&s_Sout);
     return true;
 }
 
 bool CTestDiagApp::TestApp_Exit(void)
 {
     // Verify the result
-    string test_res(s_Str);
+    string test_res = CNcbiOstrstreamToString(s_Sout);
     TStringList messages;
 
     // Get the list of messages and check the size

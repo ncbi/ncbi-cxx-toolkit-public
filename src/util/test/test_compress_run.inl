@@ -406,9 +406,8 @@
             // directly, when you finished writing to stream.
         }}
         // Get compressed size
-        const char* str = os_str.str();
-        size_t os_str_len = (size_t)os_str.pcount();
-        PrintResult(eCompress, kUnknownErr, kDataLen, kBufLen, os_str_len);
+        string str = CNcbiOstrstreamToString(os_str);
+        PrintResult(eCompress, kUnknownErr, kDataLen, kBufLen, str.size());
 
         // Try to decompress data
         TCompression c;
@@ -419,16 +418,15 @@
             c.SetFlags(c.GetFlags() | CLZOCompression::fStreamFormat);
         }
 #endif
-        result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen,
+        result = c.DecompressBuffer(str.data(), str.size(), cmp_buf, kBufLen,
                                     &out_len);
-        PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen,
+        PrintResult(eDecompress, c.GetErrorCode(), str.size(), kBufLen,
                     out_len);
         assert(result);
 
         // Compare original and decompressed data
         assert(out_len == kDataLen);
         assert(memcmp(src_buf, cmp_buf, out_len) == 0);
-        os_str.rdbuf()->freeze(0);
         OK;
     }}
 
@@ -472,16 +470,14 @@
         assert(os_zip.good());
 
         // Get decompressed size
-        const char*  str = os_str.str();
-        size_t os_str_len = (size_t)os_str.pcount();
-        PrintResult(eDecompress, kUnknownErr, out_len, kBufLen, os_str_len);
+        string str = CNcbiOstrstreamToString(os_str);
+        PrintResult(eDecompress, kUnknownErr, out_len, kBufLen, str.size());
         assert(os_zip.GetProcessedSize() == out_len);
         assert(os_zip.GetOutputSize() == kDataLen);
 
         // Compare original and uncompressed data
-        assert(os_str_len == kDataLen);
-        assert(memcmp(src_buf, str, os_str_len) == 0);
-        os_str.rdbuf()->freeze(0);
+        assert(str.size() == kDataLen);
+        assert(memcmp(src_buf, str.data(), str.size()) == 0);
         OK;
     }}
 
@@ -525,7 +521,7 @@
         {{
             INIT_BUFFERS;
 
-            CNcbiStrstream stm(dst_buf, (int)kBufLen,
+            CNcbiStrstream stm(NCBI_STRSTREAM_INIT(dst_buf, (int)kBufLen),
                                IOS_BASE::in|IOS_BASE::out|IOS_BASE::binary);
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
                                           new TStreamCompressor(),
@@ -569,7 +565,7 @@
                 int n = kCount[k];
 
                 INIT_BUFFERS;
-                CNcbiStrstream stm(dst_buf, (int)kBufLen);
+                CNcbiStrstream stm(NCBI_STRSTREAM_INIT(dst_buf, (int)kBufLen));
                 CCompressionIOStream zip(stm,
                                          new TStreamDecompressor(),
                                          new TStreamCompressor(),
@@ -622,12 +618,12 @@
                     ocs_zip << v << endl;
                 }
             }}
-            const char* str = os_str.str();
-            size_t os_str_len = (size_t)os_str.pcount();
-            PrintResult(eCompress, kUnknownErr, kUnknown, kUnknown,os_str_len);
+            string str = CNcbiOstrstreamToString(os_str);
+            PrintResult(eCompress, kUnknownErr, kUnknown, kUnknown,
+                        str.size());
 
             // Decompress data from input stream
-            CNcbiIstrstream is_str(str, os_str_len);
+            CNcbiIstrstream is_str(str.data(), str.size());
             CCompressionIStream ids_zip(is_str, &decompressor);
             assert(ids_zip.good());
             for (int i = 0; i < n; i++) {
@@ -636,12 +632,11 @@
                 assert( i*2 == v);
             }
 
-            PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown,
+            PrintResult(eDecompress, kUnknownErr, str.size(), kUnknown,
                         kUnknown);
             // Check EOF
             ids_zip >> v;
             assert(ids_zip.eof());
-            os_str.rdbuf()->freeze(0);
         }
         OK;
     }}
@@ -676,18 +671,19 @@
         } else {
             _TROUBLE;
         }
-        const char* str = os_str.str();
-        size_t os_str_len = (size_t)os_str.pcount();
-        PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
+        string str = CNcbiOstrstreamToString(os_str);
+        PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, str.size());
         // Decompress data and compare with original
-        result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
-        PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen, out_len);
+        result = c.DecompressBuffer(str.data(), str.size(), cmp_buf, kBufLen,
+                                    &out_len);
+        PrintResult(eDecompress, c.GetErrorCode(), str.size(), kBufLen,
+                    out_len);
         assert(result);
         assert(out_len == kDataLen);
         assert(memcmp(src_buf, cmp_buf, out_len) == 0);
 
         // Decompress data using manipulator
-        CNcbiIstrstream is_cmp(str, os_str_len);
+        CNcbiIstrstream is_cmp(str.data(), str.size());
         string str_cmp;
         INIT_BUFFERS;
         if (test_name == "bzip2") {
@@ -705,13 +701,12 @@
         }
         str = str_cmp.data();
         out_len = str_cmp.length();
-        PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
+        PrintResult(eDecompress, kUnknownErr, str.size(), kUnknown, out_len);
         // Compare original and decompressed data
         assert(out_len == kDataLen);
-        assert(memcmp(src_buf, str, out_len) == 0);
+        assert(memcmp(src_buf, str.data(), out_len) == 0);
 
         // Done
-        os_str.rdbuf()->freeze(0);
         OK;
     }}
 
@@ -751,11 +746,12 @@
             } else {
                 _TROUBLE;
             }
-            const char* str = os_str.str();
-            size_t os_str_len = (size_t)os_str.pcount();
+            string str = CNcbiOstrstreamToString(os_str);
+            size_t os_str_len = str.size();
             PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
             // Decompress data and compare with original
-            result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
+            result = c.DecompressBuffer(str.data(), os_str_len, cmp_buf,
+                                        kBufLen, &out_len);
             PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen, out_len);
             assert(result);
             assert(out_len == kDataLen);
@@ -763,7 +759,7 @@
 
             // Decompress data using manipulator and << operator
             INIT_BUFFERS;
-            CNcbiIstrstream is_cmp(str, os_str_len);
+            CNcbiIstrstream is_cmp(str.data(), os_str_len);
             CNcbiOstrstream os_cmp;
             if (test_name == "bzip2") {
                 os_cmp << MDecompress_BZip2 << is_cmp;
@@ -778,16 +774,12 @@
             } else {
                 _TROUBLE;
             }
-            str = os_cmp.str();
-            out_len = (size_t)os_cmp.pcount();
+            str = CNcbiOstrstreamToString(os_cmp);
+            out_len = str.size();
             PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
             // Compare original and decompressed data
             assert(out_len == kDataLen);
-            assert(memcmp(src_buf, str, out_len) == 0);
-
-            // Done
-            os_str.rdbuf()->freeze(0);
-            os_cmp.rdbuf()->freeze(0);
+            assert(memcmp(src_buf, str.data(), out_len) == 0);
         }}
 
         // Manipulators and operator>>
@@ -808,11 +800,12 @@
             } else {
                 _TROUBLE;
             }
-            const char* str = os_str.str();
-            size_t os_str_len = (size_t)os_str.pcount();
+            string str = CNcbiOstrstreamToString(os_str);
+            size_t os_str_len = str.size();
             PrintResult(eCompress, kUnknownErr, kDataLen, kUnknown, os_str_len);
             // Decompress data and compare with original
-            result = c.DecompressBuffer(str, os_str_len, cmp_buf, kBufLen, &out_len);
+            result = c.DecompressBuffer(str.data(), os_str_len, cmp_buf,
+                                        kBufLen, &out_len);
             PrintResult(eDecompress, c.GetErrorCode(), os_str_len, kBufLen, out_len);
             assert(result);
             assert(out_len == kDataLen);
@@ -820,7 +813,7 @@
 
             // Decompress data using manipulator and << operator
             INIT_BUFFERS;
-            CNcbiIstrstream is_cmp(str, os_str_len);
+            CNcbiIstrstream is_cmp(str.data(), os_str_len);
             CNcbiOstrstream os_cmp;
             if (test_name == "bzip2") {
                 is_cmp >> MDecompress_BZip2 >> os_cmp;
@@ -835,16 +828,12 @@
             } else {
                 _TROUBLE;
             }
-            str = os_cmp.str();
-            out_len = (size_t)os_cmp.pcount();
+            str = CNcbiOstrstreamToString(os_cmp);
+            out_len = str.size();
             PrintResult(eDecompress, kUnknownErr, os_str_len, kUnknown, out_len);
             // Compare original and decompressed data
             assert(out_len == kDataLen);
-            assert(memcmp(src_buf, str, out_len) == 0);
-
-            // Done
-            os_str.rdbuf()->freeze(0);
-            os_cmp.rdbuf()->freeze(0);
+            assert(memcmp(src_buf, str.data(), out_len) == 0);
         }}
 
         OK;
@@ -913,15 +902,15 @@
         } else {
             _TROUBLE;
         }
-        out_len = (size_t)os_cmp.pcount();
+        string str = CNcbiOstrstreamToString(os_cmp);
+        out_len = str.size();
         PrintResult(eDecompress, kUnknownErr, dst_len, kUnknown, out_len);
         // Compare original and decompressed data
         assert(out_len == kDataLen);
-        assert(memcmp(src_buf, os_cmp.str(), out_len) == 0);
+        assert(memcmp(src_buf, str.data(), out_len) == 0);
         is.close();
 
         // Done
-        os_cmp.rdbuf()->freeze(0);
         CFile(kFileName).Remove();
         OK;
     }}

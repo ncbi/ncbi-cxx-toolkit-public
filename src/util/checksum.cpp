@@ -219,13 +219,11 @@ bool CChecksum::ValidChecksumLineLong(const char* line, size_t length) const
     }
     CNcbiOstrstream buffer;
     WriteChecksum(buffer);
-    size_t bufferLength = (size_t) buffer.pcount() - 1; // do not include '\n'
-    if ( bufferLength != length ) {
+    string buffer_str = CNcbiOstrstreamToString(buffer);
+    if ( buffer_str.size() != length + 1 ) { // account for '\n'
         return false;
     }
-    const char* bufferPtr = buffer.str();
-    buffer.freeze(false);
-    return memcmp(line, bufferPtr, length) == 0;
+    return memcmp(line, buffer_str.data(), length) == 0;
 }
 
 

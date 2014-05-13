@@ -156,8 +156,8 @@ int CNetScheduleDApp::Run(void)
     CNcbiOstrstream     ostr;
     reg.Write(ostr);
     LOG_POST(Message << Warning
-                     << "Configuration file content: " << ostr.str());
-    ostr.freeze(false);
+                     << "Configuration file content: "
+                     << (string)CNcbiOstrstreamToString(ostr));
 
     // attempt to get server gracefully shutdown on signal
     signal(SIGINT,  Threaded_Server_SignalHandler);

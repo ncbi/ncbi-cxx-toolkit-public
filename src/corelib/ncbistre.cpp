@@ -404,6 +404,9 @@ bool NcbiStreamCompareText(CNcbiIstream& is, const string& str,
 
 CNcbiOstrstreamToString::operator string(void) const
 {
+#ifdef NCBI_SHUN_OSTRSTREAM
+    return m_Out.str();
+#else
     SIZE_TYPE len = (SIZE_TYPE) m_Out.pcount();
     if ( !len ) {
         return string();
@@ -411,6 +414,7 @@ CNcbiOstrstreamToString::operator string(void) const
     const char* str = m_Out.str();
     m_Out.freeze(false);
     return string(str, len);
+#endif
 }
 
 

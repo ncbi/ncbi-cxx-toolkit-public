@@ -1249,7 +1249,8 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
                 else {
                     s << "unknown annotation";
                 }
-                ERR_POST_X(5, "Empty region in "<<GetDescription()<<" "<<s.rdbuf());
+                ERR_POST_X(5, "Empty region in " << GetDescription() << " "
+                           << (string)CNcbiOstrstreamToString(s));
                 continue;
             }
             key.m_Handle = hrit->first;

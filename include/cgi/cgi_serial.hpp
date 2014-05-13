@@ -110,25 +110,24 @@ public:
 
     void flush(bool write_empty_data = false) 
     {
-        if (!m_str && !write_empty_data )  return;
-        try {
-            x_GetStrm() << ends;
-            m_Ostream << m_str->pcount() << ' ' << m_str->str();
-        } catch (...) { x_Clear(); throw;  }
-        x_Clear();
+        if (m_str.get() == NULL  &&  !write_empty_data)
+            return;
+
+        auto_ptr<CNcbiOstrstream> strm(m_str.release());
+        string s = CNcbiOstrstreamToString(*strm);
+        // Historically counted, but did not output, a final \0.
+        m_Ostream << (s.size() + 1) << ' ' << s;
     }
 
 private:
     CNcbiOstream& x_GetStrm() {
-        if (!m_str) m_str = new CNcbiOstrstream;
+        if (m_str.get() == NULL) {
+            m_str.reset(new CNcbiOstrstream);
+        }
         return *m_str;
     }
-    void x_Clear() {
-        if (m_str) m_str->freeze(false);
-        delete m_str; m_str = NULL;
-    }
     CNcbiOstream& m_Ostream;
-    CNcbiOstrstream* m_str;
+    auto_ptr<CNcbiOstrstream> m_str;
     
 }; 
 

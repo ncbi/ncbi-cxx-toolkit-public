@@ -1966,10 +1966,8 @@ CSeqDBVol::x_GetFilteredBinaryHeader(int                    oid,
             CObjectOStreamAsnBinary outpstr(asndata);
             outpstr << *dls;
         }}
-        size_t size = asndata.pcount();
-        const char* ptr = asndata.str();
-        asndata.freeze(false);
-        hdr_data.assign(ptr, ptr+size);
+        string s = CNcbiOstrstreamToString(asndata);
+        hdr_data.assign(s.data(), s.data() + s.size());
     } else {
         CTempString raw = x_GetHdrAsn1Binary(oid, locked);
         hdr_data.assign(raw.data(), raw.data() + raw.size());

@@ -286,7 +286,7 @@ void CIdMapperGCAssembly::x_AddAliasMappings(const CGC_Sequence& seq,
                     NCBI_THROW(CIdMapperException, eBadSeqId,
                         "Unhandled ID type in GC-Assembly: " +
                         NStr::PrintableString(
-                        CTempString(str.str(), str.pcount()),
+                        (string)CNcbiOstrstreamToString(str),
                         NStr::fNewLine_Quote));
                 }
             }

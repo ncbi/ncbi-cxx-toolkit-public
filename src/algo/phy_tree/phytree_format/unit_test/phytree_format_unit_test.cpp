@@ -580,7 +580,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNewick)
     CRef<CPhyTreeFormatter> tree(new CPhyTreeFormatter(btc,
                                                CPhyTreeFormatter::eSeqTitle));
 
-    auto_ptr<ostrstream> ostr(new ostrstream());
+    auto_ptr<CNcbiOstrstream> ostr(new CNcbiOstrstream);
 
     tree->PrintNewickTree(*ostr);
     string output = CNcbiOstrstreamToString(*ostr);
@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNewick)
     BOOST_CHECK_EQUAL(output, "(serpin_B9__Homo_sapiens_:4.73586, (hypothetical_protein__Homo_sapiens_:0, ((serpin_peptidase_inhibitor__clade_B__ovalbumin___member_11__Homo_sapiens_:0.0646582, unnamed_protein_product__Homo_sapiens_:0):0.368709, (((antithrombin_III_precursor__Homo_sapiens_:0, antithrombin_III__Homo_sapiens_:0.00969429):0.00807382, antithrombin_III_variant__Homo_sapiens_:0):0.0311961, unnamed_protein_product__Homo_sapiens_:0):0.560057):0.656712):0);\n");
 
 
-    ostr.reset(new ostrstream());
+    ostr.reset(new CNcbiOstrstream);
     tree.Reset(new CPhyTreeFormatter(btc, CPhyTreeFormatter::eTaxName));
     tree->PrintNewickTree(*ostr);
     output = CNcbiOstrstreamToString(*ostr);
@@ -596,21 +596,21 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNewick)
     BOOST_CHECK_EQUAL(output, "(Homo_sapiens:4.73586, (Homo_sapiens:0, ((Homo_sapiens:0.0646582, Homo_sapiens:0):0.368709, (((Homo_sapiens:0, Homo_sapiens:0.00969429):0.00807382, Homo_sapiens:0):0.0311961, Homo_sapiens:0):0.560057):0.656712):0);\n");
 
 
-    ostr.reset(new ostrstream());
+    ostr.reset(new CNcbiOstrstream);
     tree.Reset(new CPhyTreeFormatter(btc, CPhyTreeFormatter::eBlastName));
     tree->PrintNewickTree(*ostr);
     output = CNcbiOstrstreamToString(*ostr);
     BOOST_CHECK_EQUAL(output, "(primates:4.73586, (primates:0, ((primates:0.0646582, primates:0):0.368709, (((primates:0, primates:0.00969429):0.00807382, primates:0):0.0311961, primates:0):0.560057):0.656712):0);\n");
 
 
-    ostr.reset(new ostrstream());
+    ostr.reset(new CNcbiOstrstream);
     tree.Reset(new CPhyTreeFormatter(btc, CPhyTreeFormatter::eSeqId));
     tree->PrintNewickTree(*ostr);
     output = CNcbiOstrstreamToString(*ostr);
     BOOST_CHECK_EQUAL(output, "(ref_NP_004146_1:4.73586, (emb_CAE45712_1:0, ((gb_EAW63158_1:0.0646582, dbj_BAG59299_1:0):0.368709, (((ref_NP_000479_1:0, gb_AAA51796_1:0.00969429):0.00807382, dbj_BAA06212_1:0):0.0311961, dbj_BAG35537_1:0):0.560057):0.656712):0);\n");
 
 
-    ostr.reset(new ostrstream());
+    ostr.reset(new CNcbiOstrstream);
     tree.Reset(new CPhyTreeFormatter(btc,
                                      CPhyTreeFormatter::eSeqIdAndBlastName));
 
@@ -632,7 +632,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     CRef<CPhyTreeFormatter> tree(new CPhyTreeFormatter(btc,
                                               CPhyTreeFormatter::eSeqTitle));
 
-    auto_ptr<ostrstream> ostr(new ostrstream());
+    auto_ptr<CNcbiOstrstream> ostr(new CNcbiOstrstream);
 
     tree->PrintNexusTree(*ostr);
     string output = CNcbiOstrstreamToString(*ostr);
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     BOOST_REQUIRE(output.find("ENDBLOCK;") != NPOS);
 
 
-    ostr.reset(new ostrstream());
+    ostr.reset(new CNcbiOstrstream);
     tree.Reset(new CPhyTreeFormatter(btc, CPhyTreeFormatter::eTaxName));
     tree->PrintNexusTree(*ostr);
     output = CNcbiOstrstreamToString(*ostr);
@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     BOOST_REQUIRE(output.find("ENDBLOCK;") != NPOS);
 
 
-    ostr.reset(new ostrstream());
+    ostr.reset(new CNcbiOstrstream);
     tree.Reset(new CPhyTreeFormatter(btc, CPhyTreeFormatter::eBlastName));
     tree->PrintNexusTree(*ostr);
     output = CNcbiOstrstreamToString(*ostr);
@@ -680,7 +680,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     BOOST_REQUIRE(output.find("ENDBLOCK;") != NPOS);
 
 
-    ostr.reset(new ostrstream());
+    ostr.reset(new CNcbiOstrstream);
     tree.Reset(new CPhyTreeFormatter(btc, CPhyTreeFormatter::eSeqId));
     tree->PrintNexusTree(*ostr);
     output = CNcbiOstrstreamToString(*ostr);
@@ -696,7 +696,7 @@ BOOST_AUTO_TEST_CASE(TestPrintTreeNexus)
     BOOST_REQUIRE(output.find("ENDBLOCK;") != NPOS);
 
 
-    ostr.reset(new ostrstream());
+    ostr.reset(new CNcbiOstrstream);
     tree.Reset(new CPhyTreeFormatter(btc,
                                      CPhyTreeFormatter::eSeqIdAndBlastName));
 

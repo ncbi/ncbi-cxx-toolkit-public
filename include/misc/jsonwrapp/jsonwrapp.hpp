@@ -1002,7 +1002,7 @@ CJson_ConstNode::ToString(void) const {
             return NStr::NumericToString( v.GetUint8());
         }
     }
-    std::ostrstream os;
+    ncbi::CNcbiOstrstream os;
     rapidjson::CppOStream ofs(os);
     rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
     m_Impl->Accept(writer);

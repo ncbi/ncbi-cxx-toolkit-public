@@ -1922,18 +1922,16 @@ void CDiagContext_Extra::Flush(void)
     }
 
     auto_ptr<CNcbiOstrstream> ostr;
-    char* buf = 0;
-    size_t buflen = 0;
+    string s;
     if (m_EventType == SDiagMessage::eEvent_PerfLog) {
         ostr.reset(new CNcbiOstrstream);
         *ostr << m_PerfStatus << " " <<
             NStr::DoubleToString(m_PerfTime, -1, NStr::fDoubleFixed);
-        buf = ostr->str();
-        buflen = size_t(ostr->pcount());
+        s = CNcbiOstrstreamToString(*ostr);
     }
 
     SDiagMessage mess(eDiag_Info,
-                      buf, buflen,
+                      s.data(), s.size(),
                       0, 0, // file, line
                       CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
                       NULL,
@@ -1948,9 +1946,6 @@ void CDiagContext_Extra::Flush(void)
     mess.m_AllowBadExtraNames = m_AllowBadNames;
 
     GetDiagBuffer().DiagHandler(mess);
-    if ( ostr.get() ) {
-        ostr->rdbuf()->freeze(false);
-    }
 
     if ( app_state_updated ) {
         if (m_EventType == SDiagMessage::eEvent_RequestStart) {
@@ -2481,8 +2476,9 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         }
         ostr << message;
     }
+    string s = CNcbiOstrstreamToString(ostr);
     SDiagMessage mess(eDiag_Info,
-                      ostr.str(), size_t(ostr.pcount()),
+                      s.data(), s.size(),
                       0, 0, // file, line
                       CNcbiDiag::ForceImportantFlags(kApplogDiagPostFlags),
                       NULL,
@@ -2491,7 +2487,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                       0, 0, 0); // module/class/function
     mess.m_Event = event;
     CDiagBuffer::DiagHandler(mess);
-    ostr.rdbuf()->freeze(false);
     // Now it's safe to reset the request context
     if (event == SDiagMessage::eEvent_RequestStop) {
         ctx.StopRequest();
@@ -3229,7 +3224,7 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
     }
 
     if (m_Diag != &diag) {
-        if ( m_Stream->pcount() ) {
+        if ( NcbiStreamposToInt8(m_Stream->tellp()) != 0 ) {
             Flush();
         }
         m_Diag = &diag;
@@ -3252,9 +3247,9 @@ private:
 void CDiagBuffer::Flush(void)
 {
     if ( m_InUse || !m_Diag ) {
-        if (!m_InUse  &&  m_Stream  &&  m_Stream->pcount()) {
-            string message(m_Stream->str(), size_t(m_Stream->pcount()));
-            m_Stream->rdbuf()->freeze(false);
+        if ( !m_InUse  &&  m_Stream
+            &&  NcbiStreamposToInt8(m_Stream->tellp()) != 0) {
+            string message = CNcbiOstrstreamToString(*m_Stream);
             // Can not use Reset() without CNcbiDiag.
             m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
             _TRACE("Discarding junk data from CDiagBuffer: " << message);
@@ -3267,13 +3262,12 @@ void CDiagBuffer::Flush(void)
     bool is_console = (m_Diag->GetPostFlags() & eDPF_IsConsole) != 0;
     bool is_disabled = SeverityDisabled(sev);
     // Do nothing if diag severity is lower than allowed
-    if ((!is_console  &&  is_disabled)  ||  !m_Stream->pcount()) {
+    if ((!is_console  &&  is_disabled)
+        ||  NcbiStreamposToInt8(m_Stream->tellp()) == 0) {
         return;
     }
 
-    const char* message = m_Stream->str();
-    size_t size = size_t(m_Stream->pcount());
-    m_Stream->rdbuf()->freeze(false);
+    string message = CNcbiOstrstreamToString(*m_Stream);
 
     TDiagPostFlags flags = m_Diag->GetPostFlags();
     if (sev == eDiag_Trace) {
@@ -3285,14 +3279,11 @@ void CDiagBuffer::Flush(void)
     }
 
     if (  m_Diag->CheckFilters()  ) {
-        string dest;
         if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
-            string src(message, size);
-            NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", dest);
-            message = dest.c_str();
-            size = dest.length();
+            string src = message;
+            NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", message);
         }
-        SDiagMessage mess(sev, message, size,
+        SDiagMessage mess(sev, message.data(), message.size(),
                           m_Diag->GetFile(),
                           m_Diag->GetLine(),
                           flags,
@@ -3314,6 +3305,10 @@ void CDiagBuffer::Flush(void)
 #else
     // reset flags to initial value
     m_Stream->flags(m_InitialStreamFlags);
+#  ifdef NCBI_SHUN_OSTRSTREAM
+    // m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg);
+    m_Stream->str(kEmptyStr);
+#  endif
 #endif
 
     Reset(*m_Diag);
@@ -4266,9 +4261,7 @@ void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 {
     CNcbiOstrstream ostr;
     Write(ostr, flags);
-    ostr.put('\0');
-    str = ostr.str();
-    ostr.rdbuf()->freeze(false);
+    str = CNcbiOstrstreamToString(ostr);
 }
 
 
@@ -4279,9 +4272,7 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
         CNcbiOstrstream ostr;
         string str;
         x_Write(ostr, fNoEndl);
-        ostr.put('\0');
-        str = ostr.str();
-        ostr.rdbuf()->freeze(false);
+        str = CNcbiOstrstreamToString(ostr);
         if (str.find_first_of("\r\n") != NPOS) {
             list<string> lines;
             NStr::Split(str, "\r\n", lines);
@@ -5038,9 +5029,7 @@ void CTeeDiagHandler::Post(const SDiagMessage& mess)
     CNcbiOstrstream str_os;
     mess.x_OldWrite(str_os);
     if (IsSetDiagPostFlag(eDPF_PreMergeLines, mess.m_Flags)) {
-        str_os.put('\0');
-        string str = str_os.str();
-        str_os.rdbuf()->freeze(false);
+        string str = CNcbiOstrstreamToString(str_os);
         if (str.find_first_of("\r\n") != NPOS) {
             list<string> lines;
             NStr::Split(str, "\r\n", lines);
@@ -5054,8 +5043,8 @@ void CTeeDiagHandler::Post(const SDiagMessage& mess)
         }
     }
     CDiagLock lock(CDiagLock::ePost);
-    cerr.write(str_os.str(), str_os.pcount());
-    str_os.rdbuf()->freeze(false);
+    string str = CNcbiOstrstreamToString(str_os);
+    cerr.write(str.data(), str.size());
     cerr << NcbiFlush;
 }
 
@@ -5135,8 +5124,8 @@ void CDiagHandler::PostToConsole(const SDiagMessage& mess)
     CDiagLock lock(CDiagLock::ePost);
     CNcbiOstrstream str_os;
     str_os << mess;
-    cerr.write(str_os.str(), str_os.pcount());
-    str_os.rdbuf()->freeze(false);
+    string str = CNcbiOstrstreamToString(str_os);
+    cerr.write(str.data(), str.size());
     cerr << NcbiFlush;
 }
 
@@ -5190,8 +5179,8 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
     m_Stream->clear();
     CNcbiOstrstream str_os;
     str_os << mess;
-    m_Stream->write(str_os.str(), str_os.pcount());
-    str_os.rdbuf()->freeze(false);
+    string str = CNcbiOstrstreamToString(str_os);
+    m_Stream->write(str.data(), str.size());
     if (m_QuickFlush) {
         *m_Stream << NcbiFlush;
     }
@@ -5327,9 +5316,9 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         ITERATE(TMessages, it, *m_Messages) {
             CNcbiOstrstream str_os;
             str_os << *it;
-            if (write(new_handle->GetHandle(), str_os.str(),
-                      size_t(str_os.pcount()))) {/*dummy*/};
-            str_os.rdbuf()->freeze(false);
+            string str = CNcbiOstrstreamToString(str_os);
+            if (write(new_handle->GetHandle(), str.data(), str.size()))
+                {/*dummy*/}
         }
         m_Messages.reset();
     }
@@ -5380,10 +5369,10 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
     if (handle) {
         CNcbiOstrstream str_os;
         str_os << mess;
-        if (write(handle->GetHandle(), str_os.str(),
-                  size_t(str_os.pcount()))) {/*dummy*/};
-        str_os.rdbuf()->freeze(false);
-
+        string str = CNcbiOstrstreamToString(str_os);
+        if (write(handle->GetHandle(), str.data(), str.size()))
+            {/*dummy*/}
+ 
         handle->RemoveReference();
     }
 }
@@ -6235,7 +6224,7 @@ const CNcbiDiag& CNcbiDiag::Put(const CStackTrace*,
 {
     if ( !stacktrace.Empty() ) {
         stacktrace.SetPrefix("      ");
-        ostrstream os;
+        CNcbiOstrstream os;
         s_FormatStackTrace(os, stacktrace);
         *this << (string) CNcbiOstrstreamToString(os);
     }
@@ -6246,9 +6235,9 @@ static string
 s_GetExceptionText(const CException* pex)
 {
     string text(pex->GetMsg());
-    ostrstream os;
+    CNcbiOstrstream os;
     pex->ReportExtra(os);
-    if (os.pcount()) {
+    if (NcbiStreamposToInt8(os.tellp()) != 0) {
         text += " (";
         text += (string) CNcbiOstrstreamToString(os);
         text += ')';
@@ -6282,7 +6271,7 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
     }
     if (!main_pex)
         main_pex = pile.top();
-    if (m_Buffer.m_Stream->pcount()) {
+    if (NcbiStreamposToInt8(m_Buffer.m_Stream->tellp()) != 0) {
         *this << "(" << main_pex->GetType() << "::"
                      << main_pex->GetErrCodeString() << ") "
               << s_GetExceptionText(main_pex);
@@ -6292,7 +6281,7 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         string text(s_GetExceptionText(pex));
         const CStackTrace* stacktrace = pex->GetStackTrace();
         if ( stacktrace ) {
-            ostrstream os;
+            CNcbiOstrstream os;
             s_FormatStackTrace(os, *stacktrace);
             text += (string) CNcbiOstrstreamToString(os);
         }

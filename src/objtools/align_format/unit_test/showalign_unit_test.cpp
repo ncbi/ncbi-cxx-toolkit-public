@@ -106,7 +106,7 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
         CDisplaySeqalign::eShowBlastStyleId;
     ds.SetAlignOption(flags);
     ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
-    ostrstream output_stream;
+    CNcbiOstrstream output_stream;
     ds.DisplaySeqalign(output_stream);
     string output = CNcbiOstrstreamToString(output_stream);
     BOOST_REQUIRE(output.find(">gi|1788470|gb|AE000304.1|AE000304 ") != NPOS);

@@ -643,13 +643,14 @@ void CGBSeqFormatter::x_StrOStreamToTextOStream(IFlatTextOStream& text_os)
     // flush ObjectOutputStream to underlying strstream
     m_Out->Flush();
     // read text from strstream
-    CTempString ts(m_StrStream.str(), m_StrStream.pcount());
-    NStr::Split(ts, "\n", l);
+    NStr::Split((string)CNcbiOstrstreamToString(m_StrStream), "\n", l);
     // add text to TextOStream
     text_os.AddParagraph(l);
     // reset strstream
-    m_StrStream.freeze(false);
     m_StrStream.seekp(0);
+#ifdef NCBI_SHUN_OSTRSTREAM
+    m_StrStream.str(kEmptyStr);
+#endif
 }
 
 

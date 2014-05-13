@@ -373,7 +373,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 assert(ocs.good());
                 ocs.Finalize();
                 assert(ocs.good());
-                n = (size_t)os_str.pcount();
+                n = (size_t)NcbiStreamposToInt8(os_str.tellp());
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
                 assert(ocs.GetOutputSize() == n);
@@ -384,7 +384,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 assert(ods.good());
                 ods.Finalize();
                 assert(test.result ? ods.good() : !ods.good());
-                n = (size_t)os_str.pcount();
+                n = (size_t)NcbiStreamposToInt8(os_str.tellp());
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);
                 assert(ods.GetOutputSize() == n);
@@ -401,7 +401,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 assert(ocs.good());
                 ocs.Finalize();
                 assert(ocs.good());
-                n = (size_t)os_str.pcount();
+                n = (size_t)NcbiStreamposToInt8(os_str.tellp());
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
                 assert(ocs.GetOutputSize() == n);
@@ -414,7 +414,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 assert(ods.good());
                 ods.Finalize();
                 assert(test.result ? ods.good() : !ods.good());
-                n = (size_t)os_str.pcount();
+                n = (size_t)NcbiStreamposToInt8(os_str.tellp());
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);
                 assert(ods.GetOutputSize() == n);
@@ -461,12 +461,12 @@ void CTest::TestTransparentCopy(const char* src_buf, size_t src_len)
         assert(os.good());
         os.Finalize();
         assert(os.good());
-        const char* str = os_str.str();
-        n = (size_t)os_str.pcount();
+        string str = CNcbiOstrstreamToString(os_str);
+        n = str.size();
         assert(src_len == n);
         assert(os.GetProcessedSize() == n);
         assert(os.GetOutputSize() == n);
-        assert(memcmp(src_buf, str, n) == 0);
+        assert(memcmp(src_buf, str.data(), n) == 0);
         OK;
     }}
 }

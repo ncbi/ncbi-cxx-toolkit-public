@@ -66,10 +66,8 @@ CObjectOStream& CAsnSizer::OpenDataStream(void)
 void CAsnSizer::CloseDataStream(void)
 {
     m_OStream.reset();
-    size_t size = m_MStream->pcount();
-    const char* data = m_MStream->str();
-    m_MStream->freeze(false);
-    m_AsnData.assign(data, data+size);
+    string s = CNcbiOstrstreamToString(*m_MStream);
+    m_AsnData.assign(s.data(), s.data() + s.size());
     m_MStream.reset();
 }
 

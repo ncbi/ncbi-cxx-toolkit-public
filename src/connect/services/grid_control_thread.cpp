@@ -426,13 +426,8 @@ void CWNCTConnectionHandler::x_ProcessRequest(BUF buffer)
     if (processor->Authenticate(host, m_Auth, m_Queue, os, &m_Server))
         processor->Process(request, os, &m_Server);
 
-    try {
-        socket.Write(os.str(), (size_t)os.pcount());
-    }  catch (...) {
-        os.freeze(false);
-        throw;
-    }
-    os.freeze(false);
+    string s = CNcbiOstrstreamToString(os);
+    socket.Write(s.data(), s.size());
 }
 
 END_NCBI_SCOPE

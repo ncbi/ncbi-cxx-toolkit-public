@@ -1205,7 +1205,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         }
         else {
             if (msg->severity != CS_SV_INFORM) {
-                ostrstream err_str;
+                CNcbiOstrstream err_str;
 
                 // nobody can be informed, let's put it in stderr
                 err_str << "CTLIB error handler detects the following error" << endl
@@ -1375,7 +1375,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
             server_name = string(msg->svrname, msg->svrnlen);
         }
         else {
-            ostrstream err_str;
+            CNcbiOstrstream err_str;
 
             err_str << "Message from the server ";
 

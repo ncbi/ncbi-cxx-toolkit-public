@@ -1877,21 +1877,17 @@ bool CGridWorkerNode::x_AreMastersBusy() const
                 GetServiceName() << endl <<
                 "GETLOAD" << endl << ends;
 
-        if (socket.Write(os.str(), (size_t)os.pcount()) != eIO_Success) {
-            os.freeze(false);
+        string msg = CNcbiOstrstreamToString(os);
+        if (socket.Write(msg.data(), msg.size()) != eIO_Success)
             continue;
-        }
-        os.freeze(false);
         string reply;
         if (socket.ReadLine(reply) != eIO_Success)
             continue;
         if (NStr::StartsWith(reply, "ERR:")) {
-            string msg;
             NStr::Replace(reply, "ERR:", "", msg);
             ERR_POST_X(43, "Worker Node at " << it->AsString() <<
                 " returned error: " << msg);
         } else if (NStr::StartsWith(reply, "OK:")) {
-            string msg;
             NStr::Replace(reply, "OK:", "", msg);
             try {
                 int load = NStr::StringToInt(msg);

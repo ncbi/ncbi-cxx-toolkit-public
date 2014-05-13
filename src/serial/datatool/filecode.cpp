@@ -737,14 +737,14 @@ void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
     (this->*method)(code);
 
     // get code length
-    size_t count = (size_t)code.pcount();
+    size_t count = (size_t)NcbiStreamposToInt8(code.tellp());
     if ( count == 0 ) {
         NCBI_THROW(CDatatoolException,eInvalidData,"empty generated code");
     }
 
     // get code string pointer
-    const char* codePtr = code.str();
-    code.freeze(false);
+    string codeStr = CNcbiOstrstreamToString(code);
+    const char* codePtr = codeStr.data();
 
     // split code by lines
     while ( count > 0 ) {

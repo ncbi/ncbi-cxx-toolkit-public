@@ -108,6 +108,11 @@
 #    define PUBSEEKPOS  pubseekpos
 #  endif
 
+#  ifdef _LIBCPP_VERSION
+#    define NCBI_SHUN_OSTRSTREAM 1
+#    include <sstream>
+#  endif
+
 #else
 #  error "Neither <iostream> nor <iostream.h> can be found!"
 #endif
@@ -156,11 +161,18 @@ typedef IO_PREFIX::strstreambuf  CNcbiStrstreambuf;
 /// Portable alias for istrstream.
 typedef IO_PREFIX::istrstream    CNcbiIstrstream;
 
+#ifndef NCBI_SHUN_OSTRSTREAM
 /// Portable alias for ostrstream.
 typedef IO_PREFIX::ostrstream    CNcbiOstrstream;
 
 /// Portable alias for strstream.
 typedef IO_PREFIX::strstream     CNcbiStrstream;
+#  define NCBI_STRSTREAM_INIT(p, l) (p), (l)
+#else
+typedef IO_PREFIX::ostringstream CNcbiOstrstream;
+typedef IO_PREFIX::stringstream  CNcbiStrstream;
+#  define NCBI_STRSTREAM_INIT(p, l) string(p, l)
+#endif
 
 /// Portable alias for filebuf.
 typedef IO_PREFIX::filebuf       CNcbiFilebuf;

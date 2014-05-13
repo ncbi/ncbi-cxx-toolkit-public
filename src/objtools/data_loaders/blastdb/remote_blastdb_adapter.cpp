@@ -57,7 +57,7 @@ CRemoteBlastDbAdapter::CRemoteBlastDbAdapter(const string& db_name,
     CBlastServices rmt_svc;
     const bool kIsProtein = (db_type == CSeqDB::eProtein) ? true : false;
     if ( !rmt_svc.IsValidBlastDb(db_name, kIsProtein) ) {
-        ostrstream out;
+        CNcbiOstrstream out;
         out << (kIsProtein ? "Protein" : "Nucleotide") <<  " BLAST database "
             << "'" << db_name << "' does not exist in the NCBI servers";
         NCBI_THROW(CSeqDBException, eArgErr, CNcbiOstrstreamToString(out));

@@ -333,8 +333,8 @@ public:
         }
         if (m_Monitor && m_MonitorWatch.get() &&
                 m_MonitorWatch->Elapsed() > (double) m_MonitorPeriod) {
-            CNcbiStrstream out;
-            CNcbiStrstream err;
+            CNcbiOstrstream out;
+            CNcbiOstrstream err;
             vector<string> args;
             args.push_back("-pid");
             args.push_back(NStr::UInt8ToString((Uint8) pid));
@@ -346,13 +346,15 @@ public:
             switch (m_Monitor->Run(args, out, err)) {
             case 0:
                 {
-                    bool non_empty_output = out.pcount() > 0;
+                    bool non_empty_output
+                        = NcbiStreamposToInt8(out.tellp()) > 0;
                     if (non_empty_output) {
-                        out << NcbiEnds;
-                        m_JobContext.PutProgressMessage(out.str(), true);
+                        m_JobContext.PutProgressMessage
+                            (CNcbiOstrstreamToString(out), true);
                     }
                     if (m_JobContext.IsLogRequested() &&
-                            (!non_empty_output || err.pcount() > 0))
+                        ( !non_empty_output
+                         || NcbiStreamposToInt8(err.tellp()) > 0))
                         x_Log("exited with zero return code", err);
                 }
                 break;
@@ -364,9 +366,8 @@ public:
                 {
                     x_Log("job failed", err);
                     string errmsg;
-                    if (out.pcount() > 0) {
-                        out << '\0';
-                        errmsg = out.str();
+                    if (NcbiStreamposToInt8(out.tellp()) > 0) {
+                        errmsg = CNcbiOstrstreamToString(out);
                     } else
                         errmsg = "Monitor requested job termination";
                     throw runtime_error(errmsg);
@@ -383,9 +384,9 @@ public:
     }
 
 private:
-    inline void x_Log(const string& what, CNcbiStrstream& sstream)
+    inline void x_Log(const string& what, CNcbiOstrstream& sstream)
     {
-        if (sstream.pcount() > 0) {
+        if (NcbiStreamposToInt8(sstream.tellp()) > 0) {
             LOG_POST(m_JobContext.GetJobKey() << " (monitor) " << what <<
                     ": " << sstream.rdbuf());
         } else {

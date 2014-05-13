@@ -349,7 +349,9 @@ void CId2FetchApp::x_SendRequestPacket(CID2_Request_Packet& packet)
         char buffer[MAX_ASN_IN];
         size_t size;
         {{
-            CNcbiOstrstream mem_str(buffer, sizeof(buffer));
+            // NOT CNcbiOstrstream, because that can be ostringstream, which
+            // doesn't support setting up a fixed-length buffer in this manner.
+            ostrstream mem_str(buffer, sizeof(buffer));
             {{
                 CObjectOStreamAsnBinary obj_str(mem_str);
                 obj_str << packet;
