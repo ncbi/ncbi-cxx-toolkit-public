@@ -107,6 +107,7 @@ public:
         eDbtagType_HGNC,
         eDbtagType_HMP,
         eDbtagType_HOMD,
+        eDbtagType_HPM,
         eDbtagType_HPRD,
         eDbtagType_HSSP,
         eDbtagType_H_InvDB,
