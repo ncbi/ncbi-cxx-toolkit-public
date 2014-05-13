@@ -57,6 +57,10 @@ CFeatTableEdit::CFeatTableEdit(
     mpMessageListener(pMessageListener),
     mNextFeatId(1)
 {
+    mpScope.Reset(new CScope(*CObjectManager::GetInstance()));
+    mpScope->AddDefaults();
+    mHandle = mpScope->AddSeq_annot(mAnnot);
+    mEditHandle = mpScope->GetEditHandle(mHandle);
 };
 
 //  -------------------------------------------------------------------------
@@ -69,17 +73,12 @@ CFeatTableEdit::~CFeatTableEdit()
 void CFeatTableEdit::InferParentMrnas()
 //  -------------------------------------------------------------------------
 {
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-    CSeq_annot_Handle sah = scope.AddSeq_annot(mAnnot);
-    CSeq_annot_EditHandle saeh = scope.GetEditHandle(sah);
-
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-    CFeat_CI it(sah, sel);
+    CFeat_CI it(mHandle, sel);
     for ( ; it; ++it) {
         const CSeq_feat& cds = it->GetOriginalFeature();
-        CRef<CSeq_feat> pRna = edit::MakemRNAforCDS(cds, scope);
+        CRef<CSeq_feat> pRna = edit::MakemRNAforCDS(cds, *mpScope);
         if (!pRna) {
             continue;
         }
@@ -87,10 +86,10 @@ void CFeatTableEdit::InferParentMrnas()
         string rnaId(xNextFeatId());
         pRna->SetId().SetLocal().SetStr(rnaId);
         //add rna xref to cds
-        CSeq_feat_EditHandle feh(scope.GetObjectHandle(cds));
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
         feh.AddFeatXref(rnaId);
         //add new rna to feature table
-        saeh.AddFeat(*pRna);
+        mEditHandle.AddFeat(*pRna);
     }
 }
 
@@ -98,17 +97,12 @@ void CFeatTableEdit::InferParentMrnas()
 void CFeatTableEdit::InferParentGenes()
 //  ---------------------------------------------------------------------------
 {
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-    CSeq_annot_Handle sah = scope.AddSeq_annot(mAnnot);
-    CSeq_annot_EditHandle saeh = scope.GetEditHandle(sah);
-
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-    CFeat_CI it(sah, sel);
+    CFeat_CI it(mHandle, sel);
     for ( ; it; ++it) {
         const CSeq_feat& rna = it->GetOriginalFeature();
-        CRef<CSeq_feat> pGene = xMakeGeneForMrna(rna, scope);
+        CRef<CSeq_feat> pGene = xMakeGeneForMrna(rna, *mpScope);
         const CSeq_loc& rnaLoc = rna.GetLocation();
         if (!pGene) {
             continue;
@@ -117,10 +111,10 @@ void CFeatTableEdit::InferParentGenes()
         string geneId(xNextFeatId());
         pGene->SetId().SetLocal().SetStr(geneId);
         //add gene xref to rna
-        CSeq_feat_EditHandle feh(scope.GetObjectHandle(rna));
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(rna));
         feh.AddFeatXref(geneId);
         //add new gene to feature table
-        saeh.AddFeat(*pGene);
+        mEditHandle.AddFeat(*pGene);
     }
 }
 
@@ -136,23 +130,23 @@ void CFeatTableEdit::EliminateBadQualifiers()
 {
     typedef CSeq_feat::TQual QUALS;
 
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-    CSeq_annot_Handle sah = scope.AddSeq_annot(mAnnot);
-    CSeq_annot_EditHandle saeh = scope.GetEditHandle(sah);
-
-    CFeat_CI it(sah);
+    CFeat_CI it(mHandle);
     for ( ; it; ++it) {
-        CSeq_feat_EditHandle feh(scope.GetObjectHandle(
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
             (it)->GetOriginalFeature()));
         const QUALS& quals = (*it).GetQual();
+        vector<string> badQuals;
         for (QUALS::const_iterator qual = quals.begin(); qual != quals.end(); 
                 ++qual) {
             string qualVal = (*qual)->GetQual();
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualVal);
             if (qualType == CSeqFeatData::eQual_bad) {
-                feh.RemoveQualifier(qualVal);
+                badQuals.push_back(qualVal);
             }
+        }
+        for (vector<string>::const_iterator badIt = badQuals.begin();
+                badIt != badQuals.end(); ++badIt) {
+            feh.RemoveQualifier(*badIt);
         }
     }
 }

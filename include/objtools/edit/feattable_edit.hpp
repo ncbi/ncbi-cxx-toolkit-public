@@ -36,6 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objmgr/scope.hpp>
 #include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -66,6 +67,9 @@ protected:
         CScope&);
 
     CSeq_annot& mAnnot;
+    CRef<CScope> mpScope;
+    CSeq_annot_Handle mHandle;
+    CSeq_annot_EditHandle mEditHandle;
     IMessageListener* mpMessageListener;
     unsigned int mNextFeatId;
 };
