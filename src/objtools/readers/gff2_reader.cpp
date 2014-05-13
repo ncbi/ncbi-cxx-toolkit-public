@@ -174,7 +174,7 @@ CGff2Reader::ReadSeqAnnots(
         annots.push_back( CRef<CSeq_annot>( annot_iter.operator->() ) );
     }
 }
- 
+
 //  ---------------------------------------------------------------------------                       
 void
 CGff2Reader::ReadSeqAnnotsNew(
@@ -269,19 +269,6 @@ CGff2Reader::ReadObject(
     return object;
 }
  
-//  ----------------------------------------------------------------------------
-void CGff2Reader::SetGenbankMode(
-    bool mode)
-//  ----------------------------------------------------------------------------
-{
-    if (mode) {
-        m_iFlags |= fGenbankMode;
-    }
-    else {
-        m_iFlags &= ~fGenbankMode;
-    }
-}
-   
 //  ----------------------------------------------------------------------------
 string CGff2Reader::xNextLocusTag()
 //  ----------------------------------------------------------------------------
@@ -949,8 +936,8 @@ bool CGff2Reader::x_FeatureSetQualifiers(
         }
 
         string qual = it->first;
-        if (IsGenbankMode()  &&  
-                CSeqFeatData::GetQualifierType(qual) == CSeqFeatData::eQual_bad) {
+        if (/*IsGenbankMode()  &&*/  
+                false  &&  CSeqFeatData::GetQualifierType(qual) == CSeqFeatData::eQual_bad) {
             continue;
         }
 

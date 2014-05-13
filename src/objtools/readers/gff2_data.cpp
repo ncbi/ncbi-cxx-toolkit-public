@@ -755,18 +755,16 @@ bool CGff2Record::x_MigrateAttributes(
     //
     //  Turn whatever is left into a gbqual:
     //
-    bool isGenbankMode = (flags & CGff2Reader::fGenbankMode);
     CRef<CGb_qual> pQual;
     while (!attrs_left.empty()) {
         it = attrs_left.begin();
         string qual = it->first;
-        if (!isGenbankMode  ||
-                CSeqFeatData::GetQualifierType(qual) != CSeqFeatData::eQual_bad) {
+        //if (CSeqFeatData::GetQualifierType(qual) != CSeqFeatData::eQual_bad) {
             pQual.Reset(new CGb_qual);
             pQual->SetQual(qual);
             pQual->SetVal(it->second);
             pFeature->SetQual().push_back(pQual);
-        }
+        //}
         attrs_left.erase(it);
     }
     return true;

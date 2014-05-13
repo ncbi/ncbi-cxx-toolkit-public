@@ -60,7 +60,6 @@ public:
     typedef enum {
         fNormal =       0,
         fNewCode =      0x1000, // for now don't clobber CGFFReader flags
-        fGenbankMode =  0x2000,
     } TFlags;
 
     typedef map< string, CRef< CSeq_feat > > IdToFeatureMap;
@@ -116,12 +115,6 @@ public:
         ILineReader&,
         IMessageListener* =0 );
 
-    void 
-    SetGenbankMode(
-        bool);
-    bool 
-    IsGenbankMode() const { return (m_iFlags & fGenbankMode); };
-        
     void SetLocusTagBase(
         const string& base) { m_LocusTagBase = base; };
     bool IsLocusTagMode() const { return !m_LocusTagBase.empty(); };

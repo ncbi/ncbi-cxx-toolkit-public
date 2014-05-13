@@ -69,6 +69,8 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/ucscregion_reader.hpp>
 
+#include <objtools/edit/feattable_edit.hpp>
+
 #include <algo/phy_tree/phy_node.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
 #include <objects/biotree/BioTreeContainer.hpp>
@@ -691,6 +693,13 @@ void CMultiReaderApp::xProcessGff3(
     reader.SetLocusTagBase(args["locus-tag-prefix"].AsString());
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        if (args["genbank"].AsBoolean()) {
+            edit::CFeatTableEdit fte(**cit, m_pErrors);
+            //fte.InferParentMrnas();
+            //fte.InferParentGenes();
+            //fte.InferPartials();
+            //fte.EliminateBadQualifiers();
+        }
         xWriteObject(args, **cit, ostr);
     }
 }
@@ -979,17 +988,8 @@ void CMultiReaderApp::xSetFlags(
         if ( args["child-links"] ) {
             m_iFlags |= CGtfReader::fGenerateChildXrefs;
         }
-        if (args["genbank"] ) {
-            m_iFlags |= CGff2Reader::fGenbankMode;
-        }
         break;
            
-    case CFormatGuess::eGff3:
-        if (args["genbank"] ) {
-            m_iFlags |= CGff2Reader::fGenbankMode;
-        }
-        break;
- 
     default:
         break;
     }
