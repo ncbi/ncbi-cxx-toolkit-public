@@ -931,6 +931,10 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
                  << string(CNcbiOstrstreamToString(out_code));
             out_inc.seekp(0);
             out_code.seekp(0);
+#ifdef NCBI_SHUN_OSTRSTREAM
+            out_inc.str(kEmptyStr);
+            out_code.str(kEmptyStr);
+#endif
             out->close();
             if ( !*out )
                 ERR_POST_X(12, Fatal << "Error writing file " << filename);
