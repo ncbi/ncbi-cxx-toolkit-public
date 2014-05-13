@@ -695,10 +695,10 @@ void CMultiReaderApp::xProcessGff3(
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         if (args["genbank"].AsBoolean()) {
             edit::CFeatTableEdit fte(**cit, m_pErrors);
-            //fte.InferParentMrnas();
+            fte.InferParentMrnas();
             //fte.InferParentGenes();
             //fte.InferPartials();
-            //fte.EliminateBadQualifiers();
+            fte.EliminateBadQualifiers();
         }
         xWriteObject(args, **cit, ostr);
     }
