@@ -1416,8 +1416,9 @@ CAnnot_Collector::~CAnnot_Collector(void)
 inline
 bool CAnnot_Collector::x_NoMoreObjects(void) const
 {
-    size_t limit = m_Selector->m_MaxSize;
-    if ( limit >= kMax_UInt ) {
+    typedef SAnnotSelector::TMaxSize TMaxSize;
+    TMaxSize limit = m_Selector->GetMaxSize();
+    if ( limit >= numeric_limits<TMaxSize>::max() ) {
         return false;
     }
     size_t size = m_AnnotSet.size();
@@ -1496,7 +1497,23 @@ void CAnnot_Collector::x_Initialize0(const SAnnotSelector& selector)
     if ( selector.m_LimitObjectType != SAnnotSelector::eLimit_None ) {
         x_GetTSE_Info();
     }
+    m_SearchSegments = selector.GetMaxSearchSegments();
+    double max_time = selector.GetMaxSearchTime();
+    if ( max_time <= 86400 ) { // 24 hours
+        m_SearchTime.Start();
+    }
 }
+
+
+inline
+void CAnnot_Collector::x_StopSearchLimits(void)
+{
+    if ( m_SearchSegments != numeric_limits<TMaxSearchSegments>::max() ) {
+        m_SearchSegments = numeric_limits<TMaxSearchSegments>::max();
+    }
+    m_SearchTime.Stop();
+}
+
 
 void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                                     const CBioseq_Handle& bh,
@@ -2177,6 +2194,10 @@ bool CAnnot_Collector::x_SearchTSE2(const CTSE_Handle&    tseh,
                 if ( m_TriggerTypes.test(index) ) {
                     m_UnseenAnnotTypes.reset();
                     found = true;
+                    // If we have found adaptive depth trigger features
+                    // it means that sequence is annotated and
+                    // time/segments limits are no longer active.
+                    x_StopSearchLimits();
                     break;
                 }
             }
@@ -2390,7 +2411,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
             // Release lock for tse update:
             guard.Release();
             ITERATE(TStubMap, it, stubmap) {
-                if ( m_Selector->m_MaxSize != kMax_UInt ) {
+                if ( m_Selector->GetMaxSize() < numeric_limits<TMaxSize>::max() ) {
                     it->first->LoadChunk(*it->second.begin());
                     break;
                 }
@@ -2917,6 +2938,28 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
                                       const CSeq_id_Handle& master_id,
                                       const CHandleRange&   master_hr)
 {
+    if ( seg.FeaturePolicyWasApplied() ) {
+        // If we have found explict feature policy object
+        // it means that time/segments limits are no longer active.
+        x_StopSearchLimits();
+    }
+    if ( !m_AnnotSet.empty() || m_MappingCollector.get() ) {
+        // If we have found matching annotations it means the sequence
+        // is annotated and time/segments limits are no longer active.
+        x_StopSearchLimits();
+    }
+    if ( m_SearchTime.IsRunning() &&
+         m_SearchTime.Elapsed() > m_Selector->GetMaxSearchTime() ) {
+        NCBI_THROW(CAnnotSearchLimitException, eTimeLimitExceded,
+                   "CAnnot_Collector: "
+                   "search time limit exceeded, no annotations found");
+    }
+    if ( m_SearchSegments != numeric_limits<TMaxSearchSegments>::max() &&
+         --m_SearchSegments == 0 ) {
+        NCBI_THROW(CAnnotSearchLimitException, eSegmentsLimitExceded,
+                   "CAnnot_Collector: "
+                   "search segments limit exceeded, no annotations found");
+    }
     CHandleRange::TOpenRange master_seg_range(
         seg.GetPosition(),
         seg.GetEndPosition());

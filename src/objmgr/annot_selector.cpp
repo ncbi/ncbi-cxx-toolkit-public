@@ -66,7 +66,9 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
       m_UnresolvedFlag(eIgnoreUnresolved),
-      m_MaxSize(kMax_UInt),
+      m_MaxSize(numeric_limits<size_t>::max()),
+      m_MaxSearchSegments(kMax_UInt),
+      m_MaxSearchTime(FLT_MAX),
       m_NoMapping(false),
       m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
@@ -92,7 +94,9 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
       m_UnresolvedFlag(eIgnoreUnresolved),
-      m_MaxSize(kMax_UInt),
+      m_MaxSize(numeric_limits<size_t>::max()),
+      m_MaxSearchSegments(kMax_UInt),
+      m_MaxSearchTime(FLT_MAX),
       m_NoMapping(false),
       m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
@@ -114,7 +118,9 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_SortOrder(eSortOrder_Normal),
       m_LimitObjectType(eLimit_None),
       m_UnresolvedFlag(eIgnoreUnresolved),
-      m_MaxSize(kMax_UInt),
+      m_MaxSize(numeric_limits<size_t>::max()),
+      m_MaxSearchSegments(kMax_UInt),
+      m_MaxSearchTime(FLT_MAX),
       m_NoMapping(false),
       m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
@@ -148,6 +154,8 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_LimitObject = sel.m_LimitObject;
         m_LimitTSE = sel.m_LimitTSE;
         m_MaxSize = sel.m_MaxSize;
+        m_MaxSearchSegments = sel.m_MaxSearchSegments;
+        m_MaxSearchTime = sel.m_MaxSearchTime;
         m_IncludeAnnotsNames = sel.m_IncludeAnnotsNames;
         m_ExcludeAnnotsNames = sel.m_ExcludeAnnotsNames;
         if ( sel.m_NamedAnnotAccessions ) {

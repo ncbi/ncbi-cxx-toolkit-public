@@ -435,16 +435,47 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return m_ExactDepth;
         }
 
+    typedef size_t TMaxSize;
     /// Get maximum allowed number of annotations to find.
-    size_t GetMaxSize(void) const
+    TMaxSize GetMaxSize(void) const
         {
             return m_MaxSize;
         }
     /// Set maximum number of annotations to find.
-    /// Set to 0 for no limit (default).
-    SAnnotSelector& SetMaxSize(size_t max_size)
+    /// Set to 0 or numeric_limits<TMaxSize>::max() for no limit (default).
+    SAnnotSelector& SetMaxSize(TMaxSize max_size)
         {
-            m_MaxSize = max_size? max_size: kMax_UInt;
+            m_MaxSize = max_size>0? max_size: numeric_limits<TMaxSize>::max();
+            return *this;
+        }
+
+    typedef unsigned TMaxSearchSegments;
+    /// Get maximum number of empty segments to search before giving up.
+    TMaxSearchSegments GetMaxSearchSegments(void) const
+        {
+            return m_MaxSearchSegments;
+        }
+    /// Set maximum number of empty segments to search before giving up.
+    /// The limit is effective only if no annotation was found.
+    /// Set to 0 for no limit (default).
+    SAnnotSelector& SetMaxSearchSegments(TMaxSearchSegments max_segments)
+        {
+            m_MaxSearchSegments = max_segments? max_segments: numeric_limits<TMaxSearchSegments>::max();
+            return *this;
+        }
+
+    typedef float TMaxSearchTime;
+    /// Get maximum time (in seconds) to search before giving up.
+    TMaxSearchTime GetMaxSearchTime(void) const
+        {
+            return m_MaxSearchTime;
+        }
+    /// Set maximum time (in seconds) to search before giving up.
+    /// The limit is effective only if no annotation was found.
+    /// Set to 0 for no limit (default).
+    SAnnotSelector& SetMaxSearchTime(TMaxSearchTime max_time)
+        {
+            m_MaxSearchTime = max_time>0? max_time: numeric_limits<TMaxSearchTime>::max();
             return *this;
         }
 
@@ -721,7 +752,9 @@ protected:
     EUnresolvedFlag       m_UnresolvedFlag;
     CConstRef<CObject>    m_LimitObject;
     CTSE_Handle           m_LimitTSE;
-    size_t                m_MaxSize; //
+    TMaxSize              m_MaxSize; // maximum number of annotations to find
+    TMaxSearchSegments    m_MaxSearchSegments; // max number of empty segments
+    TMaxSearchTime        m_MaxSearchTime; // max time in seconds to search
     TAnnotsNames          m_IncludeAnnotsNames;
     TAnnotsNames          m_ExcludeAnnotsNames;
     AutoPtr<TNamedAnnotAccessions> m_NamedAnnotAccessions;

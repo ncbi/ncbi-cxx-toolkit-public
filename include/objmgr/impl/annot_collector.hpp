@@ -415,6 +415,8 @@ private:
 
     const TAnnotNames& x_GetAnnotNames(void) const;
 
+    void x_StopSearchLimits(void);
+
     const SAnnotSelector*            m_Selector;
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
@@ -433,6 +435,10 @@ private:
     TAnnotTypesBitset       m_UnseenAnnotTypes;
     TAnnotTypesBitset       m_CollectAnnotTypes;
     mutable auto_ptr<TAnnotNames> m_AnnotNames;
+    typedef SAnnotSelector::TMaxSize TMaxSize;
+    typedef SAnnotSelector::TMaxSearchSegments TMaxSearchSegments;
+    CStopWatch              m_SearchTime;
+    TMaxSearchSegments      m_SearchSegments;
 
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;

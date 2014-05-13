@@ -210,6 +210,27 @@ public:
     NCBI_EXCEPTION_DEFAULT(CObjmgrUtilException, CObjMgrException);
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+//  CAnnotSearchLimitException::
+//
+//    Exception used to notify that some annot iterator search limit
+//    is reached, aborting subsequent search.
+//
+
+class NCBI_XOBJMGR_EXPORT CAnnotSearchLimitException : public CObjMgrException
+{
+public:
+    enum EErrCode {
+        eTimeLimitExceded = CObjMgrException::eOtherError + 1,
+        eSegmentsLimitExceded
+    };
+
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CAnnotSearchLimitException, CObjMgrException);
+};
+
+
 /* @} */
 
 

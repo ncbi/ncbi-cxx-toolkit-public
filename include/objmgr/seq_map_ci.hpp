@@ -226,6 +226,7 @@ private:
     bool                m_MinusStrand;
     // Link segment bioseqs to master
     bool                m_LinkUsedTSE;
+    // Top-level TSE (for used TSEs linking)
     CTSE_Handle         m_TopTSE;
     // maximum resolution level
     size_t              m_MaxResolveCount;
@@ -319,6 +320,8 @@ public:
 
     const CTSE_Handle& GetUsingTSE(void) const;
 
+    bool FeaturePolicyWasApplied(void) const;
+
 private:
     friend class CSeqMap;
     friend class CSeqMap_I;
@@ -378,6 +381,8 @@ private:
     // search range
     TSeqPos              m_SearchPos;
     TSeqPos              m_SearchEnd;
+    // Feature policy was applied
+    bool                 m_FeaturePolicyWasApplied;
 
 protected:
     void x_UpdateLength(void);
@@ -775,6 +780,13 @@ inline
 const CTSE_Handle& CSeqMap_CI::GetUsingTSE(void) const
 {
     return x_GetSegmentInfo().m_TSE;
+}
+
+
+inline
+bool CSeqMap_CI::FeaturePolicyWasApplied(void) const
+{
+    return m_FeaturePolicyWasApplied;
 }
 
 

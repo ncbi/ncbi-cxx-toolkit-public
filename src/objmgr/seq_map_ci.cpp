@@ -139,7 +139,8 @@ bool CSeqMap_CI::x_Push(TSeqPos pos)
 
 CSeqMap_CI::CSeqMap_CI(void)
     : m_SearchPos(0),
-      m_SearchEnd(kInvalidSeqPos)
+      m_SearchEnd(kInvalidSeqPos),
+      m_FeaturePolicyWasApplied(false)
 {
     m_Selector.SetPosition(kInvalidSeqPos);
 }
@@ -151,7 +152,8 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        TSeqPos pos)
     : m_Scope(scope),
       m_SearchPos(0),
-      m_SearchEnd(kInvalidSeqPos)
+      m_SearchEnd(kInvalidSeqPos),
+      m_FeaturePolicyWasApplied(false)
 {
     x_Select(seqMap, sel, pos);
 }
@@ -163,7 +165,8 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
                        const CRange<TSeqPos>& range)
     : m_Scope(scope),
       m_SearchPos(range.GetFrom()),
-      m_SearchEnd(range.GetToOpen())
+      m_SearchEnd(range.GetToOpen()),
+      m_FeaturePolicyWasApplied(false)
 {
     x_Select(seqMap, sel, range.GetFrom());
 }
@@ -174,7 +177,8 @@ CSeqMap_CI::CSeqMap_CI(const CBioseq_Handle& bioseq,
                        TSeqPos pos)
     : m_Scope(&bioseq.GetScope()),
       m_SearchPos(0),
-      m_SearchEnd(kInvalidSeqPos)
+      m_SearchEnd(kInvalidSeqPos),
+      m_FeaturePolicyWasApplied(false)
 {
     SSeqMapSelector tse_sel(sel);
     tse_sel.SetLinkUsedTSE(bioseq.GetTSE_Handle());
@@ -187,7 +191,8 @@ CSeqMap_CI::CSeqMap_CI(const CBioseq_Handle& bioseq,
                        const CRange<TSeqPos>& range)
     : m_Scope(&bioseq.GetScope()),
       m_SearchPos(range.GetFrom()),
-      m_SearchEnd(range.GetToOpen())
+      m_SearchEnd(range.GetToOpen()),
+      m_FeaturePolicyWasApplied(false)
 {
     SSeqMapSelector tse_sel(sel);
     tse_sel.SetLinkUsedTSE(bioseq.GetTSE_Handle());
@@ -202,7 +207,8 @@ CSeqMap_CI::CSeqMap_CI(const CSeqMap_CI& base,
     : m_Scope(base.m_Scope),
       m_Stack(1, base.m_Stack.back()),
       m_SearchPos(0),
-      m_SearchEnd(kInvalidSeqPos)
+      m_SearchEnd(kInvalidSeqPos),
+      m_FeaturePolicyWasApplied(false)
 {
     TSegmentInfo& info = x_GetSegmentInfo();
     if ( &info.x_GetSeqMap() != &seqmap ||
@@ -424,6 +430,7 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
         }
         if ( (GetFlags() & CSeqMap::fByFeaturePolicy) &&
             bh.GetFeatureFetchPolicy() == bh.eFeatureFetchPolicy_only_near ) {
+            m_FeaturePolicyWasApplied = true;
             return false;
         }
         if ( info.m_TSE ) {

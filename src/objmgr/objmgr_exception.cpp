@@ -141,5 +141,15 @@ const char* CObjmgrUtilException::GetErrCodeString(void) const
 }
 
 
+const char* CAnnotSearchLimitException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eTimeLimitExceded: return "eTimeLimitExceded";
+    case eSegmentsLimitExceded: return "eSegmentsLimitExceded";
+    default:                return CObjMgrException::GetErrCodeString();
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
