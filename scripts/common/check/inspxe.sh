@@ -35,7 +35,7 @@ done
 
 "$inspxe" -collect mi3 -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $*
 app_result=$?
-"$inspxe" -report problems –report-all -result-dir $rd
+"$inspxe" -report problems -report-all -result-dir $rd
 insp_result=$?
 
 
