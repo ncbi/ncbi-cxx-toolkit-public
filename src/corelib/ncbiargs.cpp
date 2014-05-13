@@ -163,15 +163,6 @@ CArgValue::TStringArray& CArgValue::SetStringList()
 }
 
 
-//  Overload the comparison operator -- to handle "CRef<CArgValue>" elements
-//  in "CArgs::m_Args" stored as "set< CRef<CArgValue> >"
-//
-inline bool operator< (const CRef<CArgValue>& x, const CRef<CArgValue>& y)
-{
-    return x->GetName() < y->GetName();
-}
-
-
 
 ///////////////////////////////////////////////////////
 //  CArg_NoValue::
