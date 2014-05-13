@@ -17821,6 +17821,37 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_FixLatLonCountry)
+{
+    string latlon;
+    string country;
+    string error;
+    CSubSource::ELatLonCountryErr errcode;
+
+    latlon = "35 N 80 E";
+    country = "USA";
+    error = CSubSource::ValidateLatLonCountry(country, latlon, false, errcode);
+    BOOST_CHECK_EQUAL(errcode, CSubSource::eLatLonCountryErr_Value);
+    BOOST_CHECK_EQUAL(error, "Longitude should be set to W (western hemisphere)");
+    BOOST_CHECK_EQUAL(latlon, "35.00 N 80.00 W");
+    
+    latlon = "25 N 47 E";
+    country = "Madagascar";
+    error = CSubSource::ValidateLatLonCountry(country, latlon, false, errcode);
+    BOOST_CHECK_EQUAL(errcode, CSubSource::eLatLonCountryErr_Value);
+    BOOST_CHECK_EQUAL(error, "Latitude should be set to S (southern hemisphere)");
+    BOOST_CHECK_EQUAL(latlon, "25.00 S 47.00 E");
+
+    latlon = "15 N 47 E";
+    country = "Austria";
+    error = CSubSource::ValidateLatLonCountry(country, latlon, false, errcode);
+    BOOST_CHECK_EQUAL(errcode, CSubSource::eLatLonCountryErr_Value);
+    BOOST_CHECK_EQUAL(error, "Latitude and longitude values appear to be exchanged");
+    BOOST_CHECK_EQUAL(latlon, "47.00 N 15.00 E");
+
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortExon)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet ();

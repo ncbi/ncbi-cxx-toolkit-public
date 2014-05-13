@@ -56,6 +56,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CDate;
 class CDate_std;
+class CLatLonCountryId;
+class CLatLonCountryMap;
 
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_SEQFEAT_EXPORT CSubSource : public CSubSource_Base
@@ -160,6 +162,18 @@ public:
                                      bool& lat_in_range, bool& lon_in_range,
                                      double& lat_value, double& lon_value);
     static string FixLatLonFormat (string orig_lat_lon, bool guess = false);
+    static string MakeLatLon(double lat_value, double lon_value);
+
+    enum ELatLonCountryErr {
+        eLatLonCountryErr_None = 0,
+        eLatLonCountryErr_Country,
+        eLatLonCountryErr_State,
+        eLatLonCountryErr_Water,
+        eLatLonCountryErr_Value
+    };
+    
+    static string ValidateLatLonCountry (const string& countryname, string& lat_lon, bool check_state, ELatLonCountryErr& errcode);
+
     static bool IsValidSexQualifierValue (const string& value);
     static string FixSexQualifierValue (const string& value);
 
@@ -172,6 +186,11 @@ private:
     CSubSource& operator=(const CSubSource& value);
 
     static string x_ParseDateRangeWithDelimiter(const string& orig_date, const string& delim);
+    static CLatLonCountryId * x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
+
+    // validation data read from external files
+    static auto_ptr<CLatLonCountryMap> m_LatLonCountryMap;
+    static auto_ptr<CLatLonCountryMap> m_LatLonWaterMap;
 
 };
 
@@ -227,6 +246,212 @@ private:
     static vector<string> x_Tokenize(const string& val);
 };
 
+
+// ==================== for validating lat-lon versus country ================
+
+class CCountryLine;
+
+class NCBI_SEQFEAT_EXPORT CCountryExtreme
+{
+public:
+    CCountryExtreme (const string & country_name, int min_x, int min_y, int max_x, int max_y);
+    ~CCountryExtreme (void);
+
+    string GetCountry(void)         const { return m_CountryName; }
+    string GetLevel0(void)         const { return m_Level0; }
+    string GetLevel1(void)         const { return m_Level1; }
+    int GetMinX(void)               const { return m_MinX; }
+    int GetMinY(void)               const { return m_MinY; }
+    int GetMaxX(void)               const { return m_MaxX; }
+    int GetMaxY(void)               const { return m_MaxY; }
+    int GetArea(void)               const { return m_Area; }
+    void AddLine(const CCountryLine* line);
+    bool SetMinX(int min_x);
+    bool SetMinY(int min_y);
+    bool SetMaxX(int max_x);
+    bool SetMaxY(int max_y);
+    bool DoesOverlap(const CCountryExtreme* other_block) const;
+    bool PreferTo(const CCountryExtreme* other_block, const string country, const string province, const bool prefer_new) const;
+
+private:
+    string m_CountryName;
+    string m_Level0;
+    string m_Level1;
+    int m_MinX;
+    int m_MinY;
+    int m_MaxX;
+    int m_MaxY;
+    int m_Area;
+};
+
+
+class CCountryLine
+{
+public:
+    CCountryLine (const string & country_name, double y, double min_x, double max_x, double scale);
+    ~CCountryLine (void);
+
+    string GetCountry(void)            const { return m_CountryName; }
+  double GetLat(void)                const { return m_Y / m_Scale; }
+  double GetMinLon(void)             const { return m_MinX / m_Scale; }
+  double GetMaxLon(void)             const { return m_MaxX / m_Scale; }
+  int GetY(void)                  const { return m_Y; }
+  int GetMinX(void)               const { return m_MinX; }
+  int GetMaxX(void)               const { return m_MaxX; }
+
+  static int ConvertLat(double y, double scale);
+  static int ConvertLon(double x, double scale);
+
+  void SetBlock (CCountryExtreme *block) { m_Block = block; }
+  CCountryExtreme * GetBlock(void) const {return m_Block; }
+
+private:
+  int x_ConvertLat(double y);
+  int x_ConvertLon(double x);
+
+  CCountryExtreme *m_Block;
+    string m_CountryName;
+    int m_Y;
+    int m_MinX;
+    int m_MaxX;
+  double m_Scale;
+};
+
+
+class NCBI_SEQFEAT_EXPORT CLatLonCountryId
+{
+public:
+    CLatLonCountryId(float lat, float lon);
+    ~CLatLonCountryId(void);
+
+    float GetLat(void) const { return m_Lat; }
+    void  SetLat(float lat) { m_Lat = lat; }
+    float GetLon(void) const { return m_Lon; }
+    void  SetLon(float lon) { m_Lon = lon; }
+    string GetFullGuess(void) const { return m_FullGuess; }
+    void  SetFullGuess(string guess) { m_FullGuess = guess; }
+    string GetGuessCountry(void) const { return m_GuessCountry; }
+    void  SetGuessCountry(string guess) { m_GuessCountry = guess; }
+    string GetGuessProvince(void) const { return m_GuessProvince; }
+    void  SetGuessProvince(string guess) { m_GuessProvince = guess; }
+    string GetGuessWater(void) const { return m_GuessWater; }
+    void  SetGuessWater(string guess) { m_GuessWater = guess; }
+    string GetClosestFull(void) const { return m_ClosestFull; }
+    void  SetClosestFull(string closest) { m_ClosestFull = closest; }
+    string GetClosestCountry(void) const { return m_ClosestCountry; }
+    void  SetClosestCountry(string closest) { m_ClosestCountry = closest; }
+    string GetClosestProvince(void) const { return m_ClosestProvince; }
+    void  SetClosestProvince(string closest) { m_ClosestProvince = closest; }
+    string GetClosestWater(void) const { return m_ClosestWater; }
+    void  SetClosestWater(string closest) { m_ClosestWater = closest; }
+    string GetClaimedFull(void) const { return m_ClaimedFull; }
+    void  SetClaimedFull(string claimed) { m_ClaimedFull = claimed; }
+
+    int GetLandDistance(void) const { return m_LandDistance; }
+    void SetLandDistance (int dist) { m_LandDistance = dist; }
+    int GetWaterDistance(void) const { return m_WaterDistance; }
+    void SetWaterDistance (int dist) { m_WaterDistance = dist; }
+    int GetClaimedDistance(void) const { return m_ClaimedDistance; }
+    void SetClaimedDistance (int dist) { m_ClaimedDistance = dist; }
+
+
+    enum EClassificationFlags {
+        fCountryMatch    = (1),
+        fProvinceMatch   = (1 << 1),
+        fWaterMatch      = (1 << 2), 
+        fOverlap         = (1 << 3), 
+        fCountryClosest  = (1 << 4), 
+        fProvinceClosest = (1 << 5),
+        fWaterClosest    = (1 << 6)
+    };
+    typedef int TClassificationFlags;    ///< Bitwise OR of "EClassificationFlags"
+
+    CLatLonCountryId::TClassificationFlags Classify(string country, string province);
+
+
+private:
+  float  m_Lat;
+  float  m_Lon;
+  string m_FullGuess;
+  string m_GuessCountry;
+  string m_GuessProvince;
+  string m_GuessWater;
+  string m_ClosestFull;
+  string m_ClosestCountry;
+  string m_ClosestProvince;
+  string m_ClosestWater;
+  string m_ClaimedFull;
+  int    m_LandDistance;
+  int    m_WaterDistance;
+  int    m_ClaimedDistance;
+};
+
+class NCBI_SEQFEAT_EXPORT CLatLonCountryMap
+{
+public:
+    CLatLonCountryMap(bool is_water);
+    ~CLatLonCountryMap(void);
+    bool IsCountryInLatLon(const string& country, double lat, double lon);
+    const CCountryExtreme * GuessRegionForLatLon(double lat, double lon,
+                                            const string& country = kEmptyStr,
+                                            const string& province = kEmptyStr);
+    const CCountryExtreme * FindClosestToLatLon(double lat, double lon,
+                                                double range, double& distance);
+    bool IsClosestToLatLon(const string& country, double lat, double lon,
+                           double range, double& distance);
+    bool HaveLatLonForRegion(const string& country);
+    bool DoCountryBoxesOverlap(const string& country1, const string& country2);
+    const CCountryExtreme * IsNearLatLon(double lat, double lon, double range,
+                                         double& distance,
+                                         const string& country,
+                                         const string& province = kEmptyStr);
+    double GetScale (void) { return m_Scale; }
+    static int AdjustAndRoundDistance (double distance, double scale);
+    int AdjustAndRoundDistance (double distance);
+
+    enum ELatLonAdjustFlags {
+      fNone      = 0 ,
+      fFlip      = 1 ,
+      fNegateLat = (1 << 1),
+      fNegateLon = (1 << 2),
+    };
+    typedef int TLatLonAdjustFlags;    ///< Bitwise OR of "ELatLonAdjustFlags"
+
+
+private:
+    void x_InitFromDefaultList(const char * const *list, int num);
+    bool x_InitFromFile(const string& filename);
+    static bool s_CompareTwoLinesByCountry(const CCountryLine* line1,
+                                    const CCountryLine* line2);
+    static bool s_CompareTwoLinesByLatLonThenCountry(const CCountryLine* line1,
+                                    const CCountryLine* line2);
+
+    int x_GetLatStartIndex (int y);
+    const CCountryExtreme * x_FindCountryExtreme (const string& country);
+
+
+    typedef vector <CCountryLine *> TCountryLineList;
+    typedef TCountryLineList::const_iterator TCountryLineList_iter; 
+
+    TCountryLineList m_CountryLineList;
+    TCountryLineList m_LatLonSortedList;
+    double m_Scale;
+
+    typedef vector <CCountryExtreme *> TCountryExtremeList;
+    typedef TCountryExtremeList::const_iterator TCountryExtremeList_iter; 
+    TCountryExtremeList m_CountryExtremes;
+
+
+      static const string sm_BodiesOfWater[];
+
+
+
+};
+
+NCBI_SEQFEAT_EXPORT double ErrorDistance (
+  double latA,
+  double lonA,
+  double scale);
 
 
 

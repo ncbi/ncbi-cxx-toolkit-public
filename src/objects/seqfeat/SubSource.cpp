@@ -49,6 +49,10 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+auto_ptr<CLatLonCountryMap> CSubSource::m_LatLonCountryMap;
+auto_ptr<CLatLonCountryMap> CSubSource::m_LatLonWaterMap;
+
+
 // destructor
 CSubSource::~CSubSource(void)
 {
@@ -1413,6 +1417,513 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 }
 
 
+string CSubSource::MakeLatLon(double lat_value, double lon_value)
+{
+    char ns = 'N';
+    if (lat_value < 0) {
+        ns = 'S';
+        lat_value = -lat_value;
+    }
+    char ew = 'E';
+    if (lon_value < 0) {
+        ew = 'W';
+        lon_value = -lon_value;
+    }
+
+    char reformatted[1000];
+    sprintf (reformatted, "%.*lf %c %.*lf %c", 2, lat_value, ns, 2, lon_value, ew);
+
+    string latlon = reformatted;
+    return latlon;
+}
+
+
+CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_value, string country, string province)
+{
+    CLatLonCountryId *id = new CLatLonCountryId(lat_value, lon_value);
+
+    bool goodmatch = false;
+
+    // lookup region by coordinates, or find nearest region and calculate distance
+    const CCountryExtreme * guess = m_LatLonCountryMap->GuessRegionForLatLon(lat_value, lon_value, country, province);
+    if (guess) {
+        id->SetFullGuess(guess->GetCountry());
+        id->SetGuessCountry(guess->GetLevel0());
+        id->SetGuessProvince(guess->GetLevel1());
+        if (NStr::EqualNocase(country, id->GetGuessCountry())
+            && (NStr::IsBlank(province) || NStr::EqualNocase(province, id->GetGuessProvince()))) {
+            goodmatch = true;
+        }
+    } else {
+        // not inside a country, check water
+        guess = m_LatLonWaterMap->GuessRegionForLatLon(lat_value, lon_value, country);
+        if (guess) {
+            // found inside water
+            id->SetGuessWater(guess->GetCountry());
+            if (NStr::EqualNocase(country, id->GetGuessWater())) {
+                goodmatch = true;
+            }
+
+            // also see if close to land for coastal warning (if country is land)
+            // or proximity message (if country is water)
+            double landdistance = 0.0;
+            guess = m_LatLonCountryMap->FindClosestToLatLon (lat_value, lon_value, 5.0, landdistance);
+            if (guess) {
+                id->SetClosestFull(guess->GetCountry());
+                id->SetClosestCountry(guess->GetLevel0());
+                id->SetClosestProvince(guess->GetLevel1());
+                id->SetLandDistance(m_LatLonCountryMap->AdjustAndRoundDistance (landdistance));
+                if (NStr::EqualNocase(country, id->GetClosestCountry()) 
+                    && (NStr::IsBlank(province) || NStr::EqualNocase(province, guess->GetLevel1()))) {
+                    goodmatch = true;
+                }
+            }
+        } else {
+            // may be coastal inlet, area of data insufficiency
+            double landdistance = 0.0;
+            guess = m_LatLonCountryMap->FindClosestToLatLon (lat_value, lon_value, 5.0, landdistance);
+            if (guess) {
+                id->SetClosestFull(guess->GetCountry());
+                id->SetClosestCountry(guess->GetLevel0());
+                id->SetClosestProvince(guess->GetLevel1());
+                id->SetLandDistance(m_LatLonCountryMap->AdjustAndRoundDistance (landdistance));
+                if (NStr::EqualNocase(country, id->GetClosestCountry())
+                     && (NStr::IsBlank(province) || NStr::EqualNocase(province, guess->GetLevel1()))) {
+                    goodmatch = true;
+                }
+            }
+
+            double waterdistance = 0.0;
+            guess = m_LatLonWaterMap->FindClosestToLatLon (lat_value, lon_value, 5.0, waterdistance);
+            if (guess) {
+                id->SetClosestWater(guess->GetLevel0());
+                id->SetWaterDistance(m_LatLonWaterMap->AdjustAndRoundDistance (waterdistance));
+                if (NStr::EqualNocase(country, id->GetClosestWater())) {
+                    goodmatch = true;
+                }
+            }
+        }
+    }
+
+    // if guess is not the provided country or province, calculate distance to claimed country
+    if (!goodmatch) {
+        double distance = 0.0;
+        guess = m_LatLonCountryMap->IsNearLatLon (lat_value, lon_value, 5.0, distance, country, province);
+        if (guess) {
+            if (distance < ErrorDistance(lat_value, lon_value, m_LatLonCountryMap->GetScale())) {
+                // close enough
+                id->SetGuessCountry(country);
+                id->SetGuessProvince(province);
+                id->SetFullGuess(guess->GetCountry());
+            } else {            
+                id->SetClaimedFull(guess->GetCountry());
+                id->SetClaimedDistance(m_LatLonCountryMap->AdjustAndRoundDistance (distance));
+            }
+        } else if (NStr::IsBlank(province)) {
+            guess = m_LatLonWaterMap->IsNearLatLon (lat_value, lon_value, 5.0, distance, country, province);
+            if (guess) {
+                id->SetClaimedFull(guess->GetCountry());
+                id->SetClaimedDistance(m_LatLonWaterMap->AdjustAndRoundDistance (distance));
+            }
+        }
+    }
+
+    return id;
+}
+
+
+
+typedef SStaticPair<const char*, const char*>  TWaterPairElem;
+static const TWaterPairElem k_water_pair_map[] = {
+    {"Adriatic Sea",         "Mediterranean Sea"},
+    {"Aegean Sea",           "Mediterranean Sea"},
+    {"Alboran Sea",          "Mediterranean Sea"},
+    {"Andaman Sea",          "Indian Ocean"},
+    {"Arabian Sea",          "Indian Ocean"},
+    {"Argentine Sea",        "Atlantic Ocean"},
+    {"Ariake Sea",           "Pacific Ocean"},
+    {"Baffin Bay",           "Atlantic Ocean"},
+    {"Balearic Sea",         "Mediterranean Sea"},
+    {"Baltic Sea",           "Atlantic Ocean"},
+    {"Barents Sea",          "Arctic Ocean"},
+    {"Bay of Bengal",        "Indian Ocean"},
+    {"Beaufort Sea",         "Arctic Ocean"},
+    {"Bering Sea",           "Pacific Ocean"},
+    {"Bismarck Sea",         "Pacific Ocean"},
+    {"Black Sea",            "Mediterranean Sea"},
+    {"Bohai Sea",            "Pacific Ocean"},
+    {"Caribbean Sea",        "Atlantic Ocean"},
+    {"Celebes Sea",          "Pacific Ocean"},
+    {"Champlain Sea",        "Atlantic Ocean"},
+    {"Chilean Sea",          "Pacific Ocean"},
+    {"China Seas",           "Pacific Ocean"},
+    {"Chukchi Sea",          "Arctic Ocean"},
+    {"Coral Sea",            "Pacific Ocean"},
+    {"Davis Strait",         "Atlantic Ocean"},
+    {"East China Sea",       "Pacific Ocean"},
+    {"East Siberian Sea",    "Arctic Ocean"},
+    {"English Channel",      "Atlantic Ocean"},
+    {"Erythraean Sea",       "Indian Ocean"},
+    {"Greenland Sea",        "Arctic Ocean"},
+    {"Gulf of Mexico",       "Atlantic Ocean"},
+    {"Gulf of Thailand",     "Pacific Ocean"},
+    {"Gulf of Tonkin",       "Pacific Ocean"},
+    {"Hudson Bay",           "Arctic Ocean"},
+    {"Ionian Sea",           "Mediterranean Sea"},
+    {"Irish Sea",            "Atlantic Ocean"},
+    {"Irminger Sea",         "Atlantic Ocean"},
+    {"James Bay",            "Atlantic Ocean"},
+    {"Java Sea",             "Indian Ocean"},
+    {"Kara Sea",             "Arctic Ocean"},
+    {"Koro Sea",             "Pacific Ocean"},
+    {"Labrador Sea",         "Atlantic Ocean"},
+    {"Laccadive Sea",        "Indian Ocean"},
+    {"Laptev Sea",           "Arctic Ocean"},
+    {"Ligurian Sea",         "Mediterranean Sea"},
+    {"Lincoln Sea",          "Arctic Ocean"},
+    {"Myrtoan Sea",          "Mediterranean Sea"},
+    {"North Sea",            "Atlantic Ocean"},
+    {"Norwegian Sea",        "Atlantic Ocean"},
+    {"Pechora Sea",          "Arctic Ocean"},
+    {"Persian Gulf",         "Indian Ocean"},
+    {"Philippine Sea",       "Pacific Ocean"},
+    {"Red Sea",              "Indian Ocean"},
+    {"Salish Sea",           "Pacific Ocean"},
+    {"Sargasso Sea",         "Atlantic Ocean"},
+    {"Scotia Sea",           "Southern Ocean"},
+    {"Sea of Azov",          "Black Sea"},
+    {"Sea of Chiloe",        "Pacific Ocean"},
+    {"Sea of Crete",         "Mediterranean Sea"},
+    {"Sea of Japan",         "Pacific Ocean"},
+    {"Sea of Okhotsk",       "Pacific Ocean"},
+    {"Sea of the Hebrides",  "Atlantic Ocean"},
+    {"Sea of Zanj",          "Indian Ocean"},
+    {"Seas of Greenland",    "Atlantic Ocean"},
+    {"Sethusamudram",        "Indian Ocean"},
+    {"Sibutu Passage",       "Pacific Ocean"},
+    {"Solomon Sea",          "Pacific Ocean"},
+    {"South China Sea",      "Pacific Ocean"},
+    {"Sulu Sea",             "Pacific Ocean"},
+    {"Tasman Sea",           "Pacific Ocean"},
+    {"Thracian Sea",         "Mediterranean Sea"},
+    {"Timor Sea",            "Indian Ocean"},
+    {"Tyrrhenian Sea",       "Mediterranean Sea"},
+    {"Wandel Sea",           "Arctic Ocean"},
+    {"White Sea",            "Arctic Ocean"},
+    {"Yellow Sea",           "Pacific Ocean"}
+};
+typedef CStaticArrayMap<const char*, const char*, PNocase_CStr> TWaterPairMap;
+DEFINE_STATIC_ARRAY_MAP(TWaterPairMap, sc_WaterPairMap, k_water_pair_map);
+
+static string x_FindSurroundingOcean (string& water)
+
+{
+    TWaterPairMap::const_iterator new_water_pair_iter = sc_WaterPairMap.find(water.c_str());
+    if( new_water_pair_iter != sc_WaterPairMap.end() ) {
+        return new_water_pair_iter->second;
+    }
+    return "";
+}
+
+
+string CSubSource::ValidateLatLonCountry (const string& input_countryname, string& lat_lon, bool check_state, ELatLonCountryErr& errcode)
+{
+    errcode = eLatLonCountryErr_None;
+    string countryname = input_countryname;
+    if (NStr::IsBlank(countryname) || NStr::IsBlank(lat_lon)) {
+        return "";
+    }
+
+    if ( m_LatLonCountryMap.get() == 0 ) {
+        m_LatLonCountryMap.reset (new CLatLonCountryMap(false));
+    }
+    if ( m_LatLonWaterMap.get() == 0 ) {
+        m_LatLonWaterMap.reset (new CLatLonCountryMap(true));
+    }
+
+    // only do these checks if the latlon format is good
+    bool format_correct, lat_in_range, lon_in_range, precision_correct;
+    double lat_value = 0.0, lon_value = 0.0;
+    CSubSource::IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
+                               lat_in_range, lon_in_range,
+                               lat_value, lon_value);
+    if (!format_correct) {
+        // may have comma and then altitude, so just get lat_lon component */
+        size_t pos = NStr::Find(lat_lon, ",", 0, string::npos, NStr::eLast);
+        if (pos != string::npos) {
+            lat_lon = lat_lon.substr(0, pos);
+            CSubSource::IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
+                                       lat_in_range, lon_in_range,
+                                       lat_value, lon_value);
+        }
+    }
+
+    // reality checks
+    if (!format_correct || !lat_in_range || !lon_in_range) {
+        // incorrect lat_lon format should be reported elsewhere
+        // incorrect latitude range should be reported elsewhere
+        // incorrect longitude range should be reported elsewhere
+        return "";
+    }
+
+    // get rid of comments after semicolon or comma in country name
+    size_t pos = NStr::Find(countryname, ";");
+    if (pos != string::npos) {
+         countryname = countryname.substr(0, pos);
+        }
+    pos = NStr::Find(countryname, ",");
+    if (pos != string::npos) {
+         countryname = countryname.substr(0, pos);
+        }
+
+    string country = countryname;
+    string province = "";
+    pos = NStr::Find(country, ":");
+    if (pos != string::npos) {
+        // is the full string in the list?
+        if (m_LatLonCountryMap->HaveLatLonForRegion(countryname)) {
+            province = country.substr(pos + 1);
+            NStr::TruncateSpacesInPlace(province, NStr::eTrunc_Both);
+        }
+        country = country.substr(0, pos);
+        NStr::TruncateSpacesInPlace(country, NStr::eTrunc_Both);
+    }
+    if (NStr::IsBlank(country)) {
+        return "";
+    }
+
+    // known exceptions - don't even bother calculating any further
+    if (NStr::EqualNocase (country, "Antarctica") && lat_value < -60.0) {
+        return "";
+    }
+
+    if (! NStr::IsBlank(province)) {
+        // do not attempt quick exit
+    } else if (m_LatLonCountryMap->HaveLatLonForRegion(country)) {
+        if (m_LatLonCountryMap->IsCountryInLatLon(country, lat_value, lon_value)) {
+            return "";
+        }
+    } else if (m_LatLonWaterMap->HaveLatLonForRegion(country)) {
+        if (m_LatLonWaterMap->IsCountryInLatLon(country, lat_value, lon_value)) {
+            return "";
+        }
+    } else {
+        // report unrecognized country
+        return "";
+    }
+
+    CLatLonCountryId *id = x_CalculateLatLonId(lat_value, lon_value, country, province);
+
+    CLatLonCountryId::TClassificationFlags flags = (id == NULL ? 0 : id->Classify(country, province));
+
+    string wguess = id->GetGuessWater();
+    string cguess = id->GetGuessCountry();
+    if (NStr::IsBlank (cguess) && (! NStr::IsBlank (wguess))) {
+        string parent = x_FindSurroundingOcean (wguess);
+        if ((! NStr::IsBlank (parent)) && NStr::EqualNocase (country, parent)) {
+            delete id;
+            return "";
+        }
+    }
+
+    double neardist = 0.0;
+    CLatLonCountryMap::TLatLonAdjustFlags adjustment = CLatLonCountryMap::fNone;
+    CLatLonCountryId::TClassificationFlags adjusted_flags = 0;
+
+    if (!flags && m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 2.0, neardist, country) && neardist < 5.0) {
+        id->SetGuessCountry (country);
+        id->SetGuessProvince ("");
+        flags = id->Classify(country, province);
+    }
+
+    if (!flags && !m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
+        && !m_LatLonWaterMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
+        && (! NStr::IsBlank (cguess)) && NStr::IsBlank (wguess)) {
+        /* do not flip from water */
+        CLatLonCountryId *adjust_id = x_CalculateLatLonId(lon_value, lat_value, country, province);
+        adjusted_flags = adjust_id == NULL ? 0 : adjust_id->Classify(country, province);
+        if (adjusted_flags) {
+            string awguess = adjust_id->GetGuessWater();
+            string acguess = adjust_id->GetGuessCountry();
+            if (NStr::IsBlank (awguess) && (! NStr::IsBlank (acguess))) {
+                delete id;
+                id = adjust_id;
+                flags = adjusted_flags;
+                adjustment = CLatLonCountryMap::fFlip;
+            }
+        } else {
+            if (adjust_id) {
+                delete adjust_id;
+            }
+            adjust_id = x_CalculateLatLonId(-lat_value, lon_value, country, province);
+            adjusted_flags = adjust_id == NULL ? 0 : adjust_id->Classify(country, province);
+            if (adjusted_flags) {
+                string awguess = adjust_id->GetGuessWater();
+                string acguess = adjust_id->GetGuessCountry();
+                if (NStr::IsBlank (awguess) && (! NStr::IsBlank (acguess))) {
+                    delete id;
+                    id = adjust_id;
+                    flags = adjusted_flags;
+                    adjustment = CLatLonCountryMap::fNegateLat;
+                }
+            } else {
+                if (adjust_id) {
+                    delete adjust_id;
+                }
+                adjust_id = x_CalculateLatLonId(lat_value, -lon_value, country, province);
+                adjusted_flags = adjust_id == NULL ? 0 : adjust_id->Classify(country, province);
+                if (adjusted_flags) {
+                    string awguess = adjust_id->GetGuessWater();
+                    string acguess = adjust_id->GetGuessCountry();
+                    if (NStr::IsBlank (awguess) && (! NStr::IsBlank (acguess))) {
+                        delete id;
+                        id = adjust_id;
+                        flags = adjusted_flags;
+                        adjustment = CLatLonCountryMap::fNegateLon;
+                    }
+                } else {
+                    if (adjust_id) {
+                        delete adjust_id;
+                    }
+                }
+            }
+        }
+    }
+
+    string error = "";
+
+    if (adjustment != CLatLonCountryMap::fNone) {
+        if (adjustment == CLatLonCountryMap::fFlip) {
+            errcode = eLatLonCountryErr_Value;
+            error = "Latitude and longitude values appear to be exchanged";
+            lat_lon = MakeLatLon(lon_value, lat_value);
+        } else if (adjustment == CLatLonCountryMap::fNegateLat) {
+            errcode = eLatLonCountryErr_Value;  
+            if (lat_value < 0.0) {
+                error = "Latitude should be set to N (northern hemisphere)";
+            } else {
+                error = "Latitude should be set to S (southern hemisphere)";
+            }
+            lat_lon = MakeLatLon(-lat_value, lon_value);
+        } else if (adjustment == CLatLonCountryMap::fNegateLon) {
+            errcode = eLatLonCountryErr_Value;
+            if (lon_value < 0.0) {
+                error = "Longitude should be set to E (eastern hemisphere)";
+            } else {
+                error = "Longitude should be set to W (western hemisphere)";
+            }
+            lat_lon = MakeLatLon(lat_value, -lon_value);
+        }
+    } else if ((flags & CLatLonCountryId::fCountryMatch) && (flags & CLatLonCountryId::fProvinceMatch)) {
+        // success!  nothing to report
+    } else if (flags & CLatLonCountryId::fWaterMatch) {
+        // success!  nothing to report
+    } else if (flags & CLatLonCountryId::fCountryMatch && NStr::IsBlank(province)) {
+        if (check_state) {
+            errcode = eLatLonCountryErr_State;
+            error = "Lat_lon " + lat_lon + " is in " + id->GetFullGuess()
+                        + " (more specific than " + country + ")";
+        }
+    } else if (!NStr::IsBlank(id->GetGuessWater())) {
+        if (flags & (CLatLonCountryId::fCountryClosest | CLatLonCountryId::fProvinceClosest)) {
+            bool suppress = false;
+            string reportregion;
+            string nosubphrase = "";
+            string desphrase = "designated subregion ";
+            string subphrase = "another subregion ";
+            string phrase = nosubphrase;
+            bool show_claimed = false;
+
+            if (id->GetLandDistance() < 22) {
+                // for now, will not report
+                // this is a policy decision
+                suppress = true;
+            } else if (NStr::Find(countryname, "Island") != string::npos) {
+                suppress = true;
+            }
+
+
+            if (flags & CLatLonCountryId::fProvinceClosest) {
+                reportregion = countryname;
+                phrase = desphrase;
+            } else {
+                // wasn't closest province, so must be closest country
+                if (!NStr::IsBlank(province) && check_state) {
+                  phrase = subphrase;
+                  reportregion = id->GetClosestFull();
+                } else {
+                  reportregion = id->GetClosestCountry();
+                }
+                if (!NStr::IsBlank(id->GetClaimedFull())) {
+                  show_claimed = true;
+                }
+            }
+            if (!suppress) {
+                errcode = eLatLonCountryErr_Water;
+                if (show_claimed) {
+                    error = "Lat_lon '" + lat_lon + "' is closest to " + phrase + "'" + reportregion + "' at distance "
+                            + NStr::IntToString(id->GetLandDistance())
+                            + " km, but in water '" + id->GetGuessWater()
+                            + "' - claimed region '" + id->GetClaimedFull() 
+                            + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km";
+                } else {
+                    error = "Lat_lon '" + lat_lon + "' is closest to " + phrase + "'" + reportregion
+                            + "' at distance " + NStr::IntToString(id->GetLandDistance()) + " km, but in water '"
+                            + id->GetGuessWater() + "'";
+                }
+            }
+        } else if (neardist > 0.0) { 
+            errcode = eLatLonCountryErr_Water;
+            error = "Lat_lon '" + lat_lon + "' is in water '" + id->GetGuessWater() + "', '"
+                        + countryname + "' is " + NStr::IntToString(m_LatLonCountryMap->AdjustAndRoundDistance(neardist)) + " km away";
+        } else {
+            errcode = eLatLonCountryErr_Water;
+            error = "Lat_lon '" + lat_lon + "' is in water '" + id->GetGuessWater() + "'";
+        }
+    } else if (!NStr::IsBlank(id->GetGuessCountry())) {
+        if (NStr::IsBlank(id->GetClaimedFull())) {
+            errcode = eLatLonCountryErr_Country;
+            error = "Lat_lon '" + lat_lon + "' maps to '" + id->GetFullGuess() + "' instead of '"
+                        + countryname + "'";
+        } else {
+            if (NStr::IsBlank(province)) {
+                errcode = eLatLonCountryErr_Country;
+                error = "Lat_lon '" + lat_lon + "' maps to '" + id->GetFullGuess() + "' instead of '"
+                            + country + "' - claimed region '" + id->GetClaimedFull() 
+                            + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km";
+            } else {
+                errcode = eLatLonCountryErr_Country;
+                if (NStr::EqualNocase(id->GetGuessCountry(), country)) {
+                    errcode = eLatLonCountryErr_State;
+                }
+                if (errcode == eLatLonCountryErr_Country || check_state) {
+                    error = "Lat_lon '" + lat_lon + "' maps to '" + id->GetFullGuess() + "' instead of '"
+                                + countryname + "' - claimed region '" + id->GetClaimedFull() 
+                                + "' is at distance " + NStr::IntToString(id->GetClaimedDistance()) + " km";
+                } else {
+                    errcode = eLatLonCountryErr_None;
+                }
+            }
+        }
+    } else if (!NStr::IsBlank(id->GetClosestCountry())) {
+        errcode = eLatLonCountryErr_Country;
+        error = "Lat_lon '" + lat_lon + "' is closest to '" + id->GetClosestCountry() + "' instead of '"
+                    + countryname + "'";
+    } else if (!NStr::IsBlank(id->GetClosestWater())) {
+        errcode = eLatLonCountryErr_Water;
+        error = "Lat_lon '" + lat_lon + "' is closest to '" + id->GetClosestWater() + "' instead of '"
+                    + countryname + "'";
+    } else {
+        errcode = eLatLonCountryErr_Country;
+        error = "Unable to determine mapping for lat_lon '" + lat_lon + "' and country '" + countryname + "'";
+    }
+
+
+    delete id;
+    return error;
+}
+
+
 const char* sm_ValidSexQualifierTokens[] = {
   "asexual",
   "bisexual",
@@ -2671,6 +3182,942 @@ void CSubSource::AutoFix()
 
 }
     
+
+// CCountryLine
+CCountryLine::CCountryLine 
+(const string & country_name, double y, double min_x, double max_x, double scale)
+: m_CountryName(country_name) ,
+  m_Scale (scale)
+{
+    m_Y = x_ConvertLat(y);
+    m_MinX = x_ConvertLon(min_x);
+    m_MaxX = x_ConvertLon(max_x);
+
+}
+
+
+CCountryLine::~CCountryLine (void)
+{
+}
+
+
+#define EPSILON 0.001
+
+int CCountryLine::ConvertLat (double y, double scale) 
+{
+
+    int  val = 0;
+
+    if (y < -90.0) {
+        y = -90.0;
+    }
+    if (y > 90.0) {
+        y = 90.0;
+    }
+
+    if (y > 0) {
+        val = (int) (y * scale + EPSILON);
+    } else {
+        val = (int) (-(-y * scale + EPSILON));
+    }
+
+    return val;
+}
+
+
+int CCountryLine::x_ConvertLat (double y) 
+{
+    return ConvertLat(y, m_Scale);
+}
+
+int CCountryLine::ConvertLon (double x, double scale) 
+{
+
+  int  val = 0;
+
+  if (x < -180.0) {
+    x = -180.0;
+  }
+  if (x > 180.0) {
+    x = 180.0;
+  }
+
+  if (x > 0) {
+    val = (int) (x * scale + EPSILON);
+  } else {
+    val = (int) (-(-x * scale + EPSILON));
+  }
+
+  return val;
+}
+
+
+int CCountryLine::x_ConvertLon (double x) 
+{
+    return ConvertLon(x, m_Scale);
+}
+
+
+CCountryExtreme::CCountryExtreme (const string & country_name, int min_x, int min_y, int max_x, int max_y)
+: m_CountryName(country_name) , m_MinX (min_x), m_MinY (min_y), m_MaxX(max_x), m_MaxY (max_y)
+{
+    m_Area = (1 + m_MaxY - m_MinY) * (1 + m_MaxX - m_MinX);
+    size_t pos = NStr::Find(country_name, ":");
+    if (pos == string::npos) {
+        m_Level0 = country_name;
+        m_Level1 = "";
+    } else {
+        m_Level0 = country_name.substr(0, pos);
+        NStr::TruncateSpacesInPlace(m_Level0);
+        m_Level1 = country_name.substr(pos + 1);
+        NStr::TruncateSpacesInPlace(m_Level1);
+    }
+
+}
+
+
+CCountryExtreme::~CCountryExtreme (void)
+{
+
+}
+
+
+bool CCountryExtreme::SetMinX(int min_x) 
+{ 
+    if (min_x < m_MinX) { 
+        m_MinX = min_x; 
+        return true;
+    } else { 
+        return false; 
+    } 
+}
+
+
+bool CCountryExtreme::SetMaxX(int max_x) 
+{ 
+    if (max_x > m_MaxX) { 
+        m_MaxX = max_x; 
+        return true;
+    } else { 
+        return false; 
+    } 
+}
+
+
+bool CCountryExtreme::SetMinY(int min_y) 
+{ 
+    if (min_y < m_MinY) { 
+        m_MinY = min_y; 
+        return true;
+    } else { 
+        return false; 
+    } 
+}
+
+
+bool CCountryExtreme::SetMaxY(int max_y) 
+{ 
+    if (max_y > m_MaxY) { 
+        m_MaxY = max_y; 
+        return true;
+    } else { 
+        return false; 
+    } 
+}
+
+
+void CCountryExtreme::AddLine(const CCountryLine *line)
+{
+    if (line) {
+        SetMinX(line->GetMinX());
+        SetMaxX(line->GetMaxX());
+        SetMinY(line->GetY());
+        SetMaxY(line->GetY());
+        m_Area += 1 + line->GetMaxX() - line->GetMinX();
+    }
+}
+
+
+bool CCountryExtreme::DoesOverlap(const CCountryExtreme* other_block) const
+{
+    if (!other_block) {
+        return false;
+    } else if (m_MaxX >= other_block->GetMinX()
+        && m_MaxX <= other_block->GetMaxX()
+        && m_MaxY >= other_block->GetMinY()
+        && m_MinY <= other_block->GetMaxY()) {
+        return true;
+    } else if (other_block->GetMaxX() >= m_MinX
+        && other_block->GetMaxX() <= m_MaxX
+        && other_block->GetMaxY() >= m_MinY
+        && other_block->GetMinY() <= m_MaxY) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CCountryExtreme::PreferTo(const CCountryExtreme* other_block, const string country, const string province, const bool prefer_new) const
+{
+    if (!other_block) {
+        return true;
+    }
+
+    // if no preferred country, these are equal
+    if (NStr::IsBlank(country)) {
+        return prefer_new;
+    }
+    
+    // if match to preferred country 
+    if (NStr::EqualNocase(country, m_Level0)) {
+        // if best was not preferred country, take new match
+        if (!NStr::EqualNocase(country, other_block->GetLevel0())) {
+            return true;
+        }
+        // if match to preferred province
+        if (!NStr::IsBlank(province) && NStr::EqualNocase(province, m_Level1)) {
+            // if best was not preferred province, take new match
+            if (!NStr::EqualNocase(province, other_block->GetLevel1())) {
+                return true;
+            }
+        }
+            
+        // if both match province, or neither does, or no preferred province, take smallest
+        return prefer_new;
+    }
+
+    // if best matches preferred country, keep
+    if (NStr::EqualNocase(country, other_block->GetLevel0())) {
+        return false;
+    }
+
+    // otherwise take smallest
+    return prefer_new;
+}
+
+
+CLatLonCountryId::CLatLonCountryId(float lat, float lon)
+{
+    m_Lat = lat;
+    m_Lon = lon;
+    m_FullGuess = "";
+    m_GuessCountry = "";
+    m_GuessProvince = "";
+    m_GuessWater = "";
+    m_ClosestFull = "";
+    m_ClosestCountry = "";
+    m_ClosestProvince = "";
+    m_ClosestWater = "";
+    m_ClaimedFull = "";
+    m_LandDistance = -1;
+    m_WaterDistance = -1;
+    m_ClaimedDistance = -1;
+}
+
+
+CLatLonCountryId::TClassificationFlags CLatLonCountryId::Classify(string country, string province)
+{
+    CLatLonCountryId::TClassificationFlags rval = 0;
+
+    // compare guesses or closest regions to indicated country and province
+    if (!NStr::IsBlank(GetGuessCountry())) {
+        // if top level countries match
+        if (NStr::EqualNocase(country, GetGuessCountry())) {
+            rval |= CLatLonCountryId::fCountryMatch;
+            // if both are empty, still call it a match
+            if (NStr::EqualNocase(province, GetGuessProvince())) {
+                rval |= CLatLonCountryId::fProvinceMatch;
+            }
+        }
+        // if they don't match, are they closest?
+        if (!(rval & CLatLonCountryId::fCountryMatch)) {
+            if (NStr::EqualNocase(country, GetClosestCountry())) {
+                rval |= CLatLonCountryId::fCountryClosest;
+                if (NStr::EqualNocase(province, GetClosestProvince())) {
+                    rval |= CLatLonCountryId::fProvinceClosest;
+                }
+            }
+        } else if (!(rval & CLatLonCountryId::fProvinceMatch) && !NStr::IsBlank(province)) {
+            if (NStr::EqualNocase (province, GetClosestProvince())) {
+                rval |= CLatLonCountryId::fProvinceClosest;
+            }
+        }
+    }
+
+    if (!NStr::IsBlank(GetGuessWater())) {
+        // was the non-approved body of water correctly indicated?
+        if (NStr::EqualNocase(country, GetGuessWater())) {
+            rval |= CLatLonCountryId::fWaterMatch;
+        } else if (NStr::EqualNocase(country, GetClosestWater())) {
+            rval |= CLatLonCountryId::fWaterClosest;
+        }
+    }
+
+    if (!NStr::IsBlank(GetClosestCountry()) && NStr::EqualNocase(country, GetClosestCountry())) {
+        if (NStr::IsBlank(GetGuessCountry()) && NStr::IsBlank(GetGuessWater())) {
+            rval |= CLatLonCountryId::fCountryMatch;
+            SetGuessCountry(GetClosestCountry());
+            SetFullGuess(GetClosestCountry());
+            if (!NStr::IsBlank(GetClosestProvince()) && NStr::EqualNocase(province, GetClosestProvince())) {
+                rval |= CLatLonCountryId::fProvinceMatch;
+                SetGuessProvince(GetClosestProvince());
+                SetFullGuess(GetClosestFull());
+            }
+        } else {
+            rval |= CLatLonCountryId::fCountryClosest;
+            if (!NStr::IsBlank(GetClosestProvince()) && NStr::EqualNocase(province, GetClosestProvince())) {
+                rval |= CLatLonCountryId::fProvinceClosest;
+            }
+        }
+    }
+    return rval;
+}
+
+
+CLatLonCountryId::~CLatLonCountryId(void)
+{
+}
+
+
+#include "lat_lon_country.inc"
+
+static const int k_NumLatLonCountryText = sizeof (s_DefaultLatLonCountryText) / sizeof (char *);
+
+#include "lat_lon_water.inc"
+
+static const int k_NumLatLonWaterText = sizeof (s_DefaultLatLonWaterText) / sizeof (char *);
+
+void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
+{
+      // initialize list of country lines
+    m_CountryLineList.clear();
+    m_Scale = 20.0;
+    string current_country = "";
+
+    for (int i = 0; i < num; i++) {
+            const string& line = list[i];
+
+        if (line.c_str()[0] == '-') {
+            // skip comment
+        } else if (isalpha (line.c_str()[0])) {
+            current_country = line;
+        } else if (isdigit (line.c_str()[0])) {
+            m_Scale = NStr::StringToDouble(line);
+        } else {          
+            vector<string> tokens;
+              NStr::Tokenize(line, "\t", tokens);
+            if (tokens.size() > 3) {
+                double x = NStr::StringToDouble(tokens[1]);
+                for (size_t j = 2; j < tokens.size() - 1; j+=2) {
+                    m_CountryLineList.push_back(new CCountryLine(current_country, x, NStr::StringToDouble(tokens[j]), NStr::StringToDouble(tokens[j + 1]), m_Scale));
+                }
+            }
+        }
+    }
+}
+
+
+
+
+bool CLatLonCountryMap::x_InitFromFile(const string& filename)
+{
+    string fname = g_FindDataFile (filename);
+    if (NStr::IsBlank (fname)) {
+        return false;
+    }
+
+    CRef<ILineReader> lr = ILineReader::New (fname);
+    if (lr.Empty()) {
+        return false;
+    } else {
+        m_Scale = 20.0;
+        string current_country = "";
+
+        // make sure to clear before using.  in this outer
+        // scope in the interest of speed (avoid repeated 
+        // construction/destruction)
+        vector<SIZE_TYPE> tab_positions;
+
+        do {
+            // const string& line = *++*lr;
+            CTempString line = *++*lr;
+            if (line[0] == '-') {
+                // skip comment
+            } else if (isalpha (line[0])) {
+                current_country = line;
+            } else if (isdigit (line[0])) {
+                m_Scale = NStr::StringToDouble(line);
+            } else {          
+                // NStr::Tokenize would be much simpler, but
+                // it's just too slow in this case, especially
+                // in debug mode.
+
+                // for the future, if we need even more speed,
+                // it should be possible to eliminate the tab_positions
+                // vector and collect tab positions on the fly without
+                // any heap-allocated memory
+
+                // find position of all tabs on this line
+                tab_positions.clear();
+                SIZE_TYPE tab_pos = line.find('\t');
+                while( tab_pos != NPOS ) {
+                    tab_positions.push_back(tab_pos);
+                    tab_pos = line.find('\t', tab_pos+1);
+                }
+                // an imaginary sentinel tab
+                tab_positions.push_back(line.length());
+
+                const char * line_start = line.data();
+                if( tab_positions.size() >= 4 ) {
+                    CTempString y_str( line_start + tab_positions[0]+1, tab_positions[1] - tab_positions[0] - 1 );
+                    double y = NStr::StringToDouble( y_str );
+
+                    // convert into line list
+                    for (size_t j = 1; j < tab_positions.size() - 2; j+=2) {
+                        const SIZE_TYPE pos1 = tab_positions[j];
+                        const SIZE_TYPE pos2 = tab_positions[j+1];
+                        const SIZE_TYPE pos3 = tab_positions[j+2];
+                        CTempString first_num( line_start + pos1 + 1, pos2 - pos1 - 1 );
+                        CTempString second_num( line_start + pos2 + 1, pos3 - pos2 - 1 );
+                        m_CountryLineList.push_back(new CCountryLine(current_country, y, NStr::StringToDouble(first_num), NStr::StringToDouble(second_num), m_Scale));
+                    }
+                }
+            }
+        } while ( !lr->AtEOF() );
+
+        return true;
+    }
+}
+
+
+bool CLatLonCountryMap::
+        s_CompareTwoLinesByCountry(const CCountryLine* line1,
+                                    const CCountryLine* line2)
+{
+    int cmp = NStr::CompareNocase(line1->GetCountry(), line2->GetCountry());
+    if (cmp == 0) {        
+        if (line1->GetY() < line2->GetY()) {
+            return true;
+        } else if (line1->GetY() > line2->GetY()) {
+            return false;
+        } else {
+            if (line1->GetMinX() < line2->GetMinX()) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    } else if (cmp < 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CLatLonCountryMap::
+        s_CompareTwoLinesByLatLonThenCountry(const CCountryLine* line1,
+                                    const CCountryLine* line2)
+{
+    if (line1->GetY() < line2->GetY()) {
+        return true;
+    } else if (line1->GetY() > line2->GetY()) {
+        return false;
+    } if (line1->GetMinX() < line2->GetMinX()) {
+        return true;
+    } else if (line1->GetMinX() > line2->GetMinX()) {
+        return false;
+    } else if (line1->GetMaxX() < line2->GetMaxX()) {
+        return true;
+    } else if (line1->GetMaxX() > line2->GetMaxX()) {
+        return false;
+    } else {
+        int cmp = NStr::CompareNocase(line1->GetCountry(), line2->GetCountry());
+        if (cmp < 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+
+CLatLonCountryMap::CLatLonCountryMap (bool is_water) 
+{
+    // initialize list of country lines
+    m_CountryLineList.clear();
+
+    if (is_water) {
+        if (!x_InitFromFile("lat_lon_water.txt")) {
+            x_InitFromDefaultList(s_DefaultLatLonWaterText, k_NumLatLonWaterText);
+        }
+    } else {
+        if (!x_InitFromFile("lat_lon_country.txt")) {
+            x_InitFromDefaultList(s_DefaultLatLonCountryText, k_NumLatLonCountryText);
+        }
+    }
+    sort (m_CountryLineList.begin(), m_CountryLineList.end(), s_CompareTwoLinesByCountry);
+
+    // set up extremes index and copy into LatLon index
+    m_CountryExtremes.clear();
+    m_LatLonSortedList.clear();
+      size_t i, ext = 0;
+
+    for (i = 0; i < m_CountryLineList.size(); i++) {
+        if (ext > 0 && NStr::Equal(m_CountryLineList[i]->GetCountry(), m_CountryExtremes[ext - 1]->GetCountry())) {
+            m_CountryExtremes[ext - 1]->AddLine(m_CountryLineList[i]);
+        } else {
+            m_CountryExtremes.push_back(new CCountryExtreme(m_CountryLineList[i]->GetCountry(),
+                                                m_CountryLineList[i]->GetMinX(), 
+                                                m_CountryLineList[i]->GetY(),
+                                                m_CountryLineList[i]->GetMaxX(),
+                                                m_CountryLineList[i]->GetY()));
+            ext++;
+        }
+        m_LatLonSortedList.push_back(m_CountryLineList[i]);
+        m_CountryLineList[i]->SetBlock(m_CountryExtremes[ext - 1]);
+    }
+    sort (m_LatLonSortedList.begin(), m_LatLonSortedList.end(), s_CompareTwoLinesByLatLonThenCountry);
+
+}
+
+
+CLatLonCountryMap::~CLatLonCountryMap (void)
+{
+      size_t i;
+
+    for (i = 0; i < m_CountryLineList.size(); i++) {
+        delete (m_CountryLineList[i]);
+    }
+    m_CountryLineList.clear();
+
+    for (i = 0; i < m_CountryExtremes.size(); i++) {
+        delete (m_CountryExtremes[i]);
+    }
+    m_CountryExtremes.clear();
+    // note - do not delete items in m_LatLonSortedList, they are pointing to the same objects as m_CountryLineList
+    m_LatLonSortedList.clear();
+}
+
+
+bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
+                                          double lon)
+{
+    int x = CCountryLine::ConvertLon(lon, m_Scale);
+    int y = CCountryLine::ConvertLat(lat, m_Scale);
+
+    size_t L, R, mid;
+
+    L = 0;
+    R = m_CountryLineList.size() - 1;
+    mid = 0;
+
+    while (L < R) {
+        mid = (L + R) / 2;
+        int cmp = NStr::Compare(m_CountryLineList[mid]->GetCountry(), country);
+        if (cmp < 0) {
+            L = mid + 1;
+        } else if (cmp > 0) {
+            R = mid;
+        } else {
+            while (mid > 0 
+                   && NStr::Compare(m_CountryLineList[mid - 1]->GetCountry(), country) == 0
+                   && m_CountryLineList[mid - 1]->GetY() >= y) {
+                mid--;
+            }
+            L = mid;
+            R = mid;
+        }
+    }
+
+    while (R < m_CountryLineList.size() 
+           && NStr::EqualNocase(country, m_CountryLineList[R]->GetCountry())
+           && m_CountryLineList[R]->GetY() < y) {
+        R++;
+    }
+
+    while (R < m_CountryLineList.size() 
+           && NStr::EqualNocase(country, m_CountryLineList[R]->GetCountry())
+           && m_CountryLineList[R]->GetY() == y
+           && m_CountryLineList[R]->GetMaxX() < x) {
+        R++;
+    }
+    if (R < m_CountryLineList.size() 
+           && NStr::EqualNocase(country, m_CountryLineList[R]->GetCountry())
+           && m_CountryLineList[R]->GetY() == y
+           && m_CountryLineList[R]->GetMinX() <= x 
+           && m_CountryLineList[R]->GetMaxX() >= x) {
+        return true;
+    } else {
+        return false;
+    }    
+}
+
+
+const CCountryExtreme *
+CLatLonCountryMap::x_FindCountryExtreme(const string& country)
+{
+    int L, R, mid;
+
+    if (NStr::IsBlank (country)) return NULL;
+
+    L = 0;
+    R = m_CountryExtremes.size() - 1;
+    mid = 0;
+
+    while (L < R) {
+        mid = (L + R) / 2;
+        if (NStr::CompareNocase(m_CountryExtremes[mid]->GetCountry(), country) < 0) {
+            L = mid + 1;
+        } else {
+            R = mid;
+        }
+    }
+    if (!NStr::EqualNocase(m_CountryExtremes[R]->GetCountry(), country)) {
+        return NULL;
+    } else {
+        return m_CountryExtremes[R];
+    }
+}
+
+
+bool CLatLonCountryMap::HaveLatLonForRegion(const string& region)
+{
+    if (x_FindCountryExtreme(region) == NULL) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+int CLatLonCountryMap::x_GetLatStartIndex (int y)
+{
+    int L, R, mid;
+
+    L = 0;
+    R = m_LatLonSortedList.size() - 1;
+    mid = 0;
+
+    while (L < R) {
+        mid = (L + R) / 2;
+        if (m_LatLonSortedList[mid]->GetY() < y) {
+            L = mid + 1;
+        } else if (m_LatLonSortedList[mid]->GetY() > y) {
+            R = mid;
+        } else {
+            while (mid > 0 && m_LatLonSortedList[mid - 1]->GetY() == y) {
+                mid--;
+            }
+            L = mid;
+            R = mid;
+        }
+    }
+    return R;
+}
+
+
+const CCountryExtreme *
+CLatLonCountryMap::GuessRegionForLatLon(double lat, double lon,
+                                        const string& country,
+                                        const string& province)
+{
+    int x = CCountryLine::ConvertLon(lon, m_Scale);
+    int y = CCountryLine::ConvertLon(lat, m_Scale);
+
+    size_t R = x_GetLatStartIndex(y);
+
+    const CCountryExtreme *best = NULL;
+
+    while (R < m_LatLonSortedList.size() && m_LatLonSortedList[R]->GetY() == y) {
+            if (m_LatLonSortedList[R]->GetMinX() <= x 
+            && m_LatLonSortedList[R]->GetMaxX() >= x) {
+            const CCountryExtreme *other = m_LatLonSortedList[R]->GetBlock();
+            if (best == NULL) {
+                best = other;
+            } else if (!best->PreferTo(other, country, province, (bool)(best->GetArea() <= other->GetArea()))) {
+                best = other;
+            }
+             }
+        R++;
+      }
+      return best;
+}
+
+
+//Distance on a spherical surface calculation adapted from
+//http://www.linuxjournal.com/magazine/
+//work-shell-calculating-distance-between-two-latitudelongitude-points
+
+#define EARTH_RADIUS 6371.0 /* average radius of non-spherical earth in kilometers */
+#define CONST_PI 3.14159265359
+
+static double DegreesToRadians (
+  double degrees
+)
+
+{
+  return (degrees * (CONST_PI / 180.0));
+}
+
+static double DistanceOnGlobe (
+  double latA,
+  double lonA,
+  double latB,
+  double lonB
+)
+
+{
+  double lat1, lon1, lat2, lon2;
+  double dLat, dLon, a, c;
+
+  lat1 = DegreesToRadians (latA);
+  lon1 = DegreesToRadians (lonA);
+  lat2 = DegreesToRadians (latB);
+  lon2 = DegreesToRadians (lonB);
+
+  dLat = lat2 - lat1;
+  dLon = lon2 - lon1;
+
+   a = sin (dLat / 2) * sin (dLat / 2) +
+       cos (lat1) * cos (lat2) * sin (dLon / 2) * sin (dLon / 2);
+   c = 2 * atan2 (sqrt (a), sqrt (1 - a));
+
+  return (double) (EARTH_RADIUS * c);
+}
+
+
+double ErrorDistance (
+  double latA,
+  double lonA,
+  double scale)
+{
+  double lat1, lon1, lat2, lon2;
+  double dLat, dLon, a, c;
+
+  lat1 = DegreesToRadians (latA);
+  lon1 = DegreesToRadians (lonA);
+  lat2 = DegreesToRadians (latA + (1.0 / scale));
+  lon2 = DegreesToRadians (lonA + (1.0 / scale));
+
+  dLat = lat2 - lat1;
+  dLon = lon2 - lon1;
+
+   a = sin (dLat / 2) * sin (dLat / 2) +
+       cos (lat1) * cos (lat2) * sin (dLon / 2) * sin (dLon / 2);
+   c = 2 * atan2 (sqrt (a), sqrt (1 - a));
+
+  return (double) (EARTH_RADIUS * c);
+  
+}
+
+
+const CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon(double lat,
+                                                               double lon,
+                                                               double range,
+                                                               double &distance)
+{
+    int x = CCountryLine::ConvertLon(lon, m_Scale);
+    int y = CCountryLine::ConvertLon(lat, m_Scale);
+
+    int maxDelta = (int) (range * m_Scale + EPSILON);
+    int min_y = y - maxDelta;
+    int max_y = y + maxDelta;
+    int min_x = x - maxDelta;
+    int max_x = x + maxDelta;
+
+    // binary search to lowest lat
+    size_t R = x_GetLatStartIndex(min_y);
+
+    double closest = 0.0;
+    CCountryExtreme *rval = NULL;
+
+    while (R < m_LatLonSortedList.size() && m_LatLonSortedList[R]->GetY() <= max_y) {
+        if (m_LatLonSortedList[R]->GetMaxX() < min_x || m_LatLonSortedList[R]->GetMinX() > max_x) {
+            // out of range, don't bother calculating distance
+        } else {
+            double end;
+            if (x < m_LatLonSortedList[R]->GetMinX()) {
+                end = m_LatLonSortedList[R]->GetMinLon();
+            } else if (x > m_LatLonSortedList[R]->GetMaxX()) {
+                end = m_LatLonSortedList[R]->GetMaxLon();
+            } else {
+                end = lon;
+            }
+            double dist = DistanceOnGlobe (lat, lon, m_LatLonSortedList[R]->GetLat(), end);
+            if (rval == NULL || closest > dist 
+                || (closest == dist 
+                    && (rval->GetArea() > m_LatLonSortedList[R]->GetBlock()->GetArea()
+                        || (rval->GetArea() == m_LatLonSortedList[R]->GetBlock()->GetArea()
+                            && NStr::IsBlank(rval->GetLevel1())
+                            && !NStr::IsBlank(m_LatLonSortedList[R]->GetBlock()->GetLevel1()))))) {
+                rval = m_LatLonSortedList[R]->GetBlock();
+                closest = dist;
+            }
+        }
+        R++;
+    }
+    distance = closest;
+    return rval;
+}
+
+
+bool CLatLonCountryMap::IsClosestToLatLon(const string& comp_country,
+                                          double lat, double lon,
+                                          double range, double &distance)
+{
+    int x = CCountryLine::ConvertLon(lon, m_Scale);
+    int y = CCountryLine::ConvertLon(lat, m_Scale);
+
+    int maxDelta = (int) (range * m_Scale + EPSILON);
+    int min_y = y - maxDelta;
+    int max_y = y + maxDelta;
+    int min_x = x - maxDelta;
+    int max_x = x + maxDelta;
+
+    // binary search to lowest lat
+    size_t R = x_GetLatStartIndex(min_y);
+
+    string country = "";
+    double closest = 0.0;
+    int smallest_area = -1;
+
+    while (R < m_LatLonSortedList.size() && m_LatLonSortedList[R]->GetY() <= max_y) {
+        if (m_LatLonSortedList[R]->GetMaxX() < min_x || m_LatLonSortedList[R]->GetMinX() > max_x) {
+            // out of range, don't bother calculating distance
+        } else {
+            double end;
+            if (x < m_LatLonSortedList[R]->GetMinX()) {
+                end = m_LatLonSortedList[R]->GetMinLon();
+            } else {
+                end = m_LatLonSortedList[R]->GetMaxLon();
+            }
+            double dist = DistanceOnGlobe (lat, lon, m_LatLonSortedList[R]->GetLat(), end);
+            if (NStr::IsBlank (country) || closest > dist) {
+                country = m_LatLonSortedList[R]->GetCountry();
+                closest = dist;
+                const CCountryExtreme * ext = x_FindCountryExtreme(country);
+                if (ext) {
+                    smallest_area = ext->GetArea();
+                }
+            } else if (closest == dist) {
+                // if the distances are the same, prefer the input country, otherwise prefer the smaller region
+                if (NStr::Equal(country, comp_country)) {
+                    // keep country we're searching for
+                } else if (!NStr::Equal(m_LatLonSortedList[R]->GetCountry(), country)) {
+                    const CCountryExtreme * ext = x_FindCountryExtreme(m_LatLonSortedList[R]->GetCountry());
+                    if (ext 
+                        && (ext->GetArea() < smallest_area 
+                            || NStr::Equal(m_LatLonSortedList[R]->GetCountry(), comp_country))) {
+                        country = m_LatLonSortedList[R]->GetCountry();
+                        smallest_area = ext->GetArea();
+                    }
+                }
+            }
+        }
+        R++;
+    }
+    distance = closest;
+    return NStr::Equal(country, comp_country);
+}
+
+
+const CCountryExtreme * CLatLonCountryMap::IsNearLatLon(double lat, double lon,
+                                                        double range,
+                                                        double &distance,
+                                                        const string& country,
+                                                        const string& province)
+{
+    int x = CCountryLine::ConvertLon(lon, m_Scale);
+    int y = CCountryLine::ConvertLat(lat, m_Scale);
+    double closest = -1.0;
+    int maxDelta = (int) (range * m_Scale + EPSILON);
+    int min_y = y - maxDelta;
+    int max_y = y + maxDelta;
+    int min_x = x - maxDelta;
+    int max_x = x + maxDelta;
+    CCountryExtreme *ext = NULL;
+
+    // binary search to lowest lat
+    size_t R = x_GetLatStartIndex(min_y);
+
+    while (R < m_LatLonSortedList.size() && m_LatLonSortedList[R]->GetY() <= max_y) {
+        if (m_LatLonSortedList[R]->GetMaxX() < min_x || m_LatLonSortedList[R]->GetMinX() > max_x) {
+            // out of range, don't bother calculating distance
+        } else if (!NStr::EqualNocase(m_LatLonSortedList[R]->GetBlock()->GetLevel0(), country)) {
+            // wrong country, skip
+        } else if (!NStr::IsBlank(province) && !NStr::EqualNocase(m_LatLonSortedList[R]->GetBlock()->GetLevel1(), province)) {
+            // wrong province, skip
+        } else {
+            double end;
+            if (x < m_LatLonSortedList[R]->GetMinX()) {
+                end = m_LatLonSortedList[R]->GetMinLon();
+            } else if (x > m_LatLonSortedList[R]->GetMaxX()) {
+                end = m_LatLonSortedList[R]->GetMaxLon();
+            } else {
+                end = lon;
+            }
+            double dist = DistanceOnGlobe (lat, lon, m_LatLonSortedList[R]->GetLat(), end);
+            if (closest < 0.0 ||  closest > dist) { 
+                closest = dist;
+                ext = m_LatLonSortedList[R]->GetBlock();
+            }
+        }
+        R++;
+    }
+    distance = closest;
+    return ext;
+}
+
+
+
+
+
+bool CLatLonCountryMap::DoCountryBoxesOverlap(const string& country1,
+                                              const string& country2)
+{
+    if (NStr::IsBlank (country1) || NStr::IsBlank(country2)) return false;
+
+    const CCountryExtreme *ext1 = x_FindCountryExtreme (country1);
+    if (!ext1) {
+        return false;
+    }
+    const CCountryExtreme *ext2 = x_FindCountryExtreme (country2);
+    if (!ext2) {
+        return false;
+    }
+
+
+    return ext1->DoesOverlap(ext2);
+}
+
+
+int CLatLonCountryMap::AdjustAndRoundDistance (double distance, double scale)
+
+{
+  if (scale < 1.1) {
+    distance += 111.19;
+  } else if (scale > 19.5 && scale < 20.5) {
+    distance += 5.56;
+  } else if (scale > 99.5 && scale < 100.5) {
+    distance += 1.11;
+  }
+
+  return (int) (distance + 0.5);
+}
+
+
+int CLatLonCountryMap::AdjustAndRoundDistance (double distance)
+
+{
+  return AdjustAndRoundDistance (distance, m_Scale);
+}
+
+
+
+
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
