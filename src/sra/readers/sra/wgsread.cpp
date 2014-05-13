@@ -161,7 +161,10 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                 return path;
             }
         }
-        return CDirEntry::MakePath(vol_path, path_or_acc);
+        string path = CDirEntry::MakePath(vol_path, path_or_acc);
+        if ( CDirEntry(path).Exists() ) {
+            return path;
+        }
     }
     if ( path_or_acc.find_first_of("/\\") == NPOS ) {
         // parse WGS accession
