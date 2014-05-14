@@ -113,25 +113,36 @@ void CFlatFileGenerator::Generate
 {
     _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
-    entry.GetTopLevelEntry().GetCompleteSeq_entry();
-
-    CSeq_entry_EditHandle seeh = entry.GetEditHandle();
-    CRef<CSeq_entry> tmp_se;
-
     if ( m_Ctx->GetConfig().BasicCleanup() )
     {
 
-        tmp_se = new CSeq_entry;
-        tmp_se->Assign(*seeh.GetCompleteSeq_entry());
+        entry.GetTopLevelEntry().GetCompleteObject();
+        CSeq_entry_EditHandle tseh = entry.GetTopLevelEntry().GetEditHandle();
+        CBioseq_set_EditHandle bseth;
+        CBioseq_EditHandle bseqh;
+        CRef<CSeq_entry> tmp_se(new CSeq_entry);
+
+        if ( tseh.IsSet() ) {
+            bseth = tseh.SetSet();
+            CConstRef<CBioseq_set> bset = bseth.GetCompleteObject();
+            bseth.Remove(bseth.eKeepSeq_entry);
+            tmp_se->SetSet(const_cast<CBioseq_set&>(*bset));
+        }
+        else {
+            bseqh = tseh.SetSeq();
+            CConstRef<CBioseq> bseq = bseqh.GetCompleteObject();
+            bseqh.Remove(bseqh.eKeepSeq_entry);
+            tmp_se->SetSeq(const_cast<CBioseq&>(*bseq));
+        }
 
         CCleanup cleanup;
         cleanup.BasicCleanup( *tmp_se );
 
-        seeh.SelectNone();
-        switch (tmp_se->Which()) {
-            case CSeq_entry::e_Seq:  seeh.SelectSeq(tmp_se->SetSeq());  break;
-            case CSeq_entry::e_Set:  seeh.SelectSet(tmp_se->SetSet());  break;
-            default:                 _TROUBLE;
+        if ( tmp_se->IsSet() ) {
+            tseh.SelectSet(bseth);
+        }
+        else {
+            tseh.SelectSeq(bseqh);
         }
     }
 
