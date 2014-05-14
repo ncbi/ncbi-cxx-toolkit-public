@@ -244,7 +244,8 @@ GC-AssemblyDesc ::= SEQUENCE {
         gpipe(5),
         public(10),
         suppressed(15),
-        hup(100)
+        hup(100),
+        withdrawn(105)
     } OPTIONAL,
 
     -- in alt-loci units - contain alignment of this sequence to the primary
