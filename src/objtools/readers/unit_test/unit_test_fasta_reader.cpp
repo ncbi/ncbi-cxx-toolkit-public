@@ -538,8 +538,8 @@ namespace {
     {
         // check number of deltas
         const CDelta_ext::Tdata * pDeltaData = NULL;
-        IGNORE_ANY_THROWS(
-            pDeltaData = & pBioseq->GetInst().GetExt().GetDelta().Get());
+        if (pBioseq->IsSetInst() && pBioseq->GetInst().IsSetExt() && pBioseq->GetInst().GetExt().IsDelta())
+            pDeltaData = & pBioseq->GetInst().GetExt().GetDelta().Get();
         if( pNumDeltasExpected ) {
             if( pDeltaData ) {
                 NCBITEST_CHECK_EQUAL(pDeltaData->size(), *pNumDeltasExpected);
@@ -584,8 +584,8 @@ namespace {
 
         // extract CSeq_gap, if any
         CConstRef<CSeq_gap> pSeqGap;
-        IGNORE_ANY_THROWS(
-            pSeqGap.Reset( & pGapLiteral->GetSeq_data().GetGap() ) );
+        if (pGapLiteral->IsSetSeq_data() && pGapLiteral->GetSeq_data().IsGap())
+            pSeqGap.Reset( & pGapLiteral->GetSeq_data().GetGap() );
 
         if( pGapTypeExpected ) {
             NCBITEST_CHECK_EQUAL(pSeqGap->GetType(), *pGapTypeExpected);
@@ -607,8 +607,8 @@ namespace {
                 ! FIELD_EQUALS(*pSeqGap, Linkage, CSeq_gap::eLinkage_linked) );
         }
         const CSeq_gap::TLinkage_evidence * pLinkEvidObjs = NULL;
-        IGNORE_ANY_THROWS(
-            pLinkEvidObjs = & pSeqGap->GetLinkage_evidence() );
+        if (pSeqGap.NotNull() && pSeqGap->IsSetLinkage_evidence())
+            pLinkEvidObjs = & pSeqGap->GetLinkage_evidence();
         if( pLinkEvidsExpected ) {
             vector<CLinkage_evidence::EType> vecLinkEvids;
             if( pLinkEvidObjs ) {
