@@ -93,9 +93,11 @@ public:
 
     virtual const char* GetErrCodeString() const;
 
+    static const char* GetErrCodeString(CException::TErrCode err_code);
+
     unsigned ErrCodeToHTTPStatusCode() const;
 
-    const char* GetErrCodeDescription() const;
+    static const char* GetErrCodeDescription(CException::TErrCode err_code);
 
     NCBI_EXCEPTION_DEFAULT(CNetScheduleException, CNetServiceException);
 };

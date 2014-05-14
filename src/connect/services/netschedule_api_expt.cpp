@@ -79,7 +79,13 @@ CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
 
 const char* CNetScheduleException::GetErrCodeString() const
 {
-    switch (GetErrCode()) {
+    return GetErrCodeString(GetErrCode());
+}
+
+const char* CNetScheduleException::GetErrCodeString(
+        CException::TErrCode err_code)
+{
+    switch (err_code) {
     case eInternalError:       return "eInternalError";
     case eProtocolSyntaxError: return "eProtocolSyntaxError";
     case eAuthenticationError: return "eAuthenticationError";
@@ -107,7 +113,7 @@ const char* CNetScheduleException::GetErrCodeString() const
         return "eTooManyPreferredAffinities";
     case ePrefAffExpired:      return "ePrefAffExpired";
     case eTryAgain:            return "eTryAgain";
-    default:                   return CNetServiceException::GetErrCodeString();
+    default:                   return "eInvalid";
     }
 }
 
@@ -142,9 +148,10 @@ unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
     }
 }
 
-const char* CNetScheduleException::GetErrCodeDescription() const
+const char* CNetScheduleException::GetErrCodeDescription(
+        CException::TErrCode err_code)
 {
-    switch (GetErrCode()) {
+    switch (err_code) {
     case eInternalError:
         return "NetSchedule server internal error";
     case eProtocolSyntaxError:
@@ -199,7 +206,7 @@ const char* CNetScheduleException::GetErrCodeDescription() const
         return "BerkleyDB has too many incomplete transactions at the moment. "
                 "Try again later.";
     default:
-        return NULL;
+        return GetErrCodeString(err_code);
     }
 }
 

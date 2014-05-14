@@ -376,9 +376,7 @@ void CNetScheduleServerListener::OnError(
             NCBI_THROW(CNetScheduleException, eJobNotFound, err_msg);
         }
         code = err_msg;
-        msg = err_msg;
-    } else if (msg.empty())
-        msg = code;
+    }
 
     // Map code into numeric value
     CException::TErrCode err_code = CNetScheduleExceptionMap::GetCode(code);
@@ -392,11 +390,11 @@ void CNetScheduleServerListener::OnError(
         break;
 
     case CNetScheduleException::eJobNotFound:
-        msg = "Job not found";
-        /* FALL THROUGH */
+        NCBI_THROW(CNetScheduleException, eJobNotFound, "Job not found");
 
     default:
-        NCBI_THROW(CNetScheduleException, EErrCode(err_code), msg);
+        NCBI_THROW(CNetScheduleException, EErrCode(err_code), !msg.empty() ?
+                msg : CNetScheduleException::GetErrCodeDescription(err_code));
     }
 }
 
