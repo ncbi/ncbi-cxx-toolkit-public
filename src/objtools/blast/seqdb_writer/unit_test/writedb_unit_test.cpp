@@ -1140,7 +1140,7 @@ BOOST_AUTO_TEST_CASE(BioseqHandleAndSeqVectorNonWriteDB)
     CRef<CSeq_id> id2(new CSeq_id("gi|129296"));
     CBioseq_Handle bsh2 = scope->GetBioseqHandle(*id2);
     CConstRef<CBioseq> bs1c = bsh2.GetCompleteBioseq();
-    
+
     CRef<CBioseq> bs1 = s_Duplicate(*bs1c);
     CSeqVector sv(bsh2);
     
@@ -2549,11 +2549,11 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestDirectoryCreation)
     CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
     bd->SetTaxids(*tid);
     bd->StartBuild();
-    bd->SetSourceDb("nr");
+    bd->SetSourceDb("swissprot");
     //bd->SetVerbosity(true);
     bd->SetUseRemote(true);
     //vector<string> ids(1, "129295");
-    vector<string> ids(1, "405833");
+    vector<string> ids(1, "30172867");
     bd->AddIds(ids);
     bd->EndBuild();
     CFile f1(kOutput + ".pin");
@@ -2580,11 +2580,10 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestBasicDatabaseCreation)
     CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
     bd->SetTaxids(*tid);
     bd->StartBuild();
-    bd->SetSourceDb("nr");
+    bd->SetSourceDb("swissprot");
     //bd->SetVerbosity(true);
     bd->SetUseRemote(true);
-    //vector<string> ids(1, "129295");
-    vector<string> ids(1, "405833");
+    vector<string> ids(1, "30172867");
     bd->AddIds(ids);
     bd->EndBuild();
     CFile f1(kOutput + ".pin");
