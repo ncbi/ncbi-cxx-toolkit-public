@@ -445,7 +445,7 @@ bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat)
 /// @return           Boolean to indicate whether the Seq-entry-handle was changed
 bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
 {
-    if (!cds.IsSetProduct()) {
+    if (!cds.IsSetProduct() || !seh) {
         return false;
     }
 
@@ -510,7 +510,7 @@ bool RetranslateCDS(const CSeq_feat& cds, CScope& scope)
     CBioseq_Handle prot_bsh = scope.GetBioseqHandle(cds.GetProduct());
 
     // Should be a protein!
-    if (prot_bsh || !prot_bsh.IsProtein())
+    if (!prot_bsh || !prot_bsh.IsProtein())
     {
         return false;
     }

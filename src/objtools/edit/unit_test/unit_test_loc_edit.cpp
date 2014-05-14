@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
 
     // both ends should be good, so there should be no change
     policy.SetPartial5Policy(edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd);
-    policy.SetPartial5Policy(edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd);
+    policy.SetPartial3Policy(edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd);
     BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, true, true), false);
     cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
     s_CheckLocationPolicyResults(*cds, false, false, 0, 26);
@@ -301,6 +301,42 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     s_CheckLocationPolicyResults(*cds, true, true, 0, 59);
     BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetFrame(), CCdregion::eFrame_three);
     
+    // should not crash if Seq-entry not in scope
+    scope.RemoveTopLevelSeqEntry(seh);
+    CSeq_annot_Handle annot_handle = scope.AddSeq_annot(*(entry->GetAnnot().front()));
+    cds->SetLocation().SetInt().SetFrom(1);
+    cds->SetLocation().SetInt().SetTo(22);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_not_set);
+    policy.SetPartial5Policy(edit::CLocationEditPolicy::ePartialPolicy_eClear);
+    policy.SetPartial3Policy(edit::CLocationEditPolicy::ePartialPolicy_eClear);
+    policy.SetExtend5(false);
+    policy.SetExtend3(false);
+    BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, true, true), true);
+    cds = annot_handle.GetCompleteSeq_annot()->GetData().GetFtable().front();
+    s_CheckLocationPolicyResults(*cds, false, false, 1, 22);
+
+    policy.SetPartial5Policy(edit::CLocationEditPolicy::ePartialPolicy_eSet);
+    policy.SetPartial3Policy(edit::CLocationEditPolicy::ePartialPolicy_eSet);
+    policy.SetExtend5(true);
+    policy.SetExtend3(true);
+    BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, true, true), true);
+    cds = annot_handle.GetCompleteSeq_annot()->GetData().GetFtable().front();
+    s_CheckLocationPolicyResults(*cds, true, true, 0, 22);
+
+    cds->SetLocation().SetInt().SetFrom(1);
+    cds->SetLocation().SetInt().SetTo(22);
+    policy.SetPartial5Policy(edit::CLocationEditPolicy::ePartialPolicy_eClear);
+    policy.SetPartial3Policy(edit::CLocationEditPolicy::ePartialPolicy_eClear);
+    BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, true, true), true);
+    cds = annot_handle.GetCompleteSeq_annot()->GetData().GetFtable().front();
+    s_CheckLocationPolicyResults(*cds, false, false, 1, 22);
+
+    policy.SetPartial5Policy(edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd);
+    policy.SetPartial3Policy(edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd);
+    BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, true, true), false);
+    cds = annot_handle.GetCompleteSeq_annot()->GetData().GetFtable().front();
+    s_CheckLocationPolicyResults(*cds, false, false, 1, 22);
+
 }
 
 
