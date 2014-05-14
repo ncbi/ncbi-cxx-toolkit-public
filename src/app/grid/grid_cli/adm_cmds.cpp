@@ -88,7 +88,11 @@ CGridCommandLineInterfaceApp::EAPIClass
         SetUp_NetStorageCmd(eNetStorageAdmin);
         return eNetStorageAdmin;
 
-    default: // None or a combination of options
+    case 0: // No options specified
+        NCBI_THROW(CArgException, eNoValue, "this command requires "
+                "a service name or a server address");
+
+    default: // A combination of options
         NCBI_THROW(CArgException, eNoValue, "this command works "
                 "with only one type of server at a time");
     }
