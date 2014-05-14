@@ -34935,10 +34935,10 @@ if test "$with_libexslt" != "no"; then
     LIBEXSLT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       LIBEXSLT_LIBS="$LIBEXSLT_LIBPATH -lexslt "
+       LIBEXSLT_LIBS="$LIBEXSLT_LIBPATH -lexslt $GCRYPT_LIBS"
     else
        LIBEXSLT_INCLUDE=""
-       LIBEXSLT_LIBS="-lexslt "
+       LIBEXSLT_LIBS="-lexslt $GCRYPT_LIBS"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for libexslt$in_path" >&5
@@ -35037,7 +35037,7 @@ _ACEOF
 
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libexslt-static.a"; then
-   LIBEXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lexslt-static"
+   LIBEXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lexslt-static $GCRYPT_LIBS"
 else
    LIBEXSLT_STATIC_LIBS=${LIBEXSLT_LIBS}
 fi

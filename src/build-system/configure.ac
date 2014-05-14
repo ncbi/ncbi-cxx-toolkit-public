@@ -5974,11 +5974,11 @@ AC_PATH_PROG(XSLTPROC, xsltproc, :,
 : ${LIBEXSLT_PATH=$LIBXSLT_PATH}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libexslt, LIBEXSLT, exslt,
  [AC_LANG_PROGRAM([#include <libexslt/exslt.h>], [exsltRegisterAll()])],
- [], [$LIBXSLT_LIBS $LIBXML_LIBS $Z_LIBS], [$LIBXSLT_INCLUDE])
+ [$GCRYPT_LIBS], [$LIBXSLT_LIBS $LIBXML_LIBS $Z_LIBS], [$LIBXSLT_INCLUDE])
 
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libexslt-static.a"; then
-   LIBEXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lexslt-static"
+   LIBEXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lexslt-static $GCRYPT_LIBS"
 else
    LIBEXSLT_STATIC_LIBS=${LIBEXSLT_LIBS}
 fi
