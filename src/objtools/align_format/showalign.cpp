@@ -4287,27 +4287,28 @@ CDisplaySeqalign::x_FillLocList(TSAlnSeqlocInfoList& loc_list,
         CRef<SAlnSeqlocInfo> alnloc(new SAlnSeqlocInfo);
         bool has_valid_loc = false;
         for (int i=0; i<m_AV->GetNumRows(); i++){
-            TSeqRange loc_range(**iter);
-            if((*iter)->GetInterval().GetId().Match(m_AV->GetSeqId(i)) &&
+        	const CSeq_interval& interval = (*iter)->GetInterval();
+            TSeqRange loc_range(interval.GetFrom(), interval.GetTo());
+            if(interval.GetId().Match(m_AV->GetSeqId(i)) &&
                m_AV->GetSeqRange(i).IntersectingWith(loc_range)){
                 int actualAlnStart = 0, actualAlnStop = 0;
                 if(m_AV->IsPositiveStrand(i)){
                     actualAlnStart =
                         m_AV->GetAlnPosFromSeqPos(i, 
-                                                  (*iter)->GetInterval().GetFrom(),
+                                                  interval.GetFrom(),
                                                           CAlnMap::eBackwards, true);
                     actualAlnStop =
                         m_AV->GetAlnPosFromSeqPos(i, 
-                                                  (*iter)->GetInterval().GetTo(),
+                                                  interval.GetTo(),
                                                   CAlnMap::eBackwards, true);
                 } else {
                     actualAlnStart =
                         m_AV->GetAlnPosFromSeqPos(i, 
-                                                  (*iter)->GetInterval().GetTo(),
+                                                  interval.GetTo(),
                                                   CAlnMap::eBackwards, true);
                     actualAlnStop =
                         m_AV->GetAlnPosFromSeqPos(i, 
-                                                  (*iter)->GetInterval().GetFrom(),
+                                                  interval.GetFrom(),
                                                   CAlnMap::eBackwards, true);
                 }
                 alnloc->aln_range.Set(actualAlnStart, actualAlnStop);  

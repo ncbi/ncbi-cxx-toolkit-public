@@ -116,8 +116,7 @@ s_SeqIntervalToSeqLocInfo(CRef<CSeq_interval> interval,
                           const CSeqLocInfo::ETranslationFrame frame,
                           TMaskedSubjRegions& retval)
 {
-    TSeqRange loc(interval->GetFrom(), 0);
-    loc.SetToOpen(interval->GetTo());
+    TSeqRange loc(interval->GetFrom(), interval->GetTo());
 
     for (size_t ir=0; ir< target_ranges.size(); ir++) {
         if (target_ranges[ir] != TSeqRange::GetEmpty() &&  
