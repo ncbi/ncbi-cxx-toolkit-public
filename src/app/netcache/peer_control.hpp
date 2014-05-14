@@ -172,6 +172,8 @@ private:
 
 
     Uint8 m_SrvId;
+    Uint4 m_HostIP;
+    string m_Hostname;
     CMiniMutex m_ObjLock;
     TNCPeerConnsList m_PooledConns;
     TNCPeerConnsList m_BusyConns;
@@ -183,7 +185,8 @@ private:
     Uint2 m_SlotsToInitSync;
     Uint2 m_OrigSlotsToInitSync;
     Uint2 m_CntActiveSyncs;
-    Uint1 m_CntNWErrors;
+    Uint2 m_CntNWErrors;
+    Uint2 m_CntNWThrottles;
     bool  m_InThrottle;
     bool  m_HasBGTasks;
     bool  m_InitiallySynced;

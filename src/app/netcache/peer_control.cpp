@@ -147,6 +147,7 @@ CNCPeerControl::Peer(Uint8 srv_id)
 
 CNCPeerControl::CNCPeerControl(Uint8 srv_id)
     : m_SrvId(srv_id),
+      m_HostIP( Uint4(m_SrvId >> 32)),
       m_FirstNWErrTime(0),
       m_NextSyncTime(0),
       m_ActiveConns(0),
@@ -155,11 +156,22 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
       m_OrigSlotsToInitSync(0),
       m_CntActiveSyncs(0),
       m_CntNWErrors(0),
+      m_CntNWThrottles(0),
       m_InThrottle(false),
       m_HasBGTasks(false),
       m_InitiallySynced(false)
 {
     m_NextTaskSync = m_SyncList.end();
+
+     // it MUST be "host:port", see CNCDistributionConf::Initialize
+    string hostport( CNCDistributionConf::GetPeerNameOrEmpty(m_SrvId));
+    if (!hostport.empty()) {
+        list<CTempString> srv_fields;
+        NStr::Split(hostport, ":", srv_fields);
+        if (srv_fields.size() == 2) {
+            m_Hostname = srv_fields.front();
+        }
+    }
 }
 
 void
@@ -171,6 +183,7 @@ CNCPeerControl::RegisterConnError(void)
     if (++m_CntNWErrors >= CNCDistributionConf::GetCntErrorsToThrottle()) {
         m_InThrottle = true;
         m_ThrottleStart = CSrvTime::Current().AsUSec();
+        ++m_CntNWThrottles;
     }
 }
 
@@ -181,6 +194,7 @@ CNCPeerControl::RegisterConnSuccess(void)
     m_InThrottle = false;
     m_FirstNWErrTime = 0;
     m_CntNWErrors = 0;
+    m_CntNWThrottles = 0;
     m_ThrottleStart = 0;
 }
 
@@ -200,7 +214,15 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
                     << CNCDistributionConf::GetFullPeerName(m_SrvId) << " is throttled");
                 return false;
             }
-
+            if (m_CntNWThrottles >= CNCDistributionConf::GetCntThrottlesToIpchange()) {
+                Uint4 host = CTaskServer::GetIPByHost(m_Hostname);
+                if (host != 0 && m_HostIP != host) {
+                    m_HostIP = host;
+                    SRV_LOG(Warning, "IP address change: host "
+                        << CNCDistributionConf::GetFullPeerName(m_SrvId));
+                }
+                m_CntNWThrottles = 0;
+            }
             m_InThrottle = false;
             if (m_InitiallySynced)
                 m_FirstNWErrTime = 0;
@@ -211,7 +233,7 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
     }
 
     CNCActiveHandler_Proxy* proxy = new CNCActiveHandler_Proxy(conn);
-    if (!proxy->Connect(Uint4(m_SrvId >> 32), Uint2(m_SrvId))) {
+    if (!proxy->Connect(m_HostIP, Uint2(m_SrvId))) {
         delete proxy;
         RegisterConnError();
         return false;

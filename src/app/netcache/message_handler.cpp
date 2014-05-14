@@ -3883,10 +3883,16 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
         t.Print(time_buf, CSrvTime::eFmtHumanUSecs);
         str << ",\"write_time\":\"" << time_buf << "\"";
         Uint8 create_server = m_BlobAccess->GetCurCreateServer();
-        str << ",\"control_server\":\""
-            << CTaskServer::GetHostByIP(Uint4(create_server >> 32)) << ":"
-            << NStr::UIntToString(Uint4(create_server))
-            << "\"";
+
+        string hostport( CNCDistributionConf::GetPeerNameOrEmpty(create_server));
+        str << ",\"control_server\":\"";
+        if (hostport.empty()) {
+            str << CTaskServer::GetHostByIP(Uint4(create_server >> 32)) << ":"
+            << NStr::UIntToString(Uint4(create_server));
+        } else {
+            str << hostport;
+        }
+        str << "\"";
         str << ",\"control_id\":" << m_BlobAccess->GetCurCreateId();
         str << ",\"ttl\":" << m_BlobAccess->GetCurBlobTTL();
         t.Sec() = m_BlobAccess->GetCurBlobExpire();
@@ -3927,12 +3933,16 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
     tmp = "\nOK:Control server: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     Uint8 create_server = m_BlobAccess->GetCurCreateServer();
-    tmp = CTaskServer::GetHostByIP(Uint4(create_server >> 32));
-    m_SendBuff->append(tmp.data(), tmp.size());
-    m_SendBuff->append(":", 1);
-    tmp = NStr::UIntToString(Uint4(create_server));
-    m_SendBuff->append(tmp.data(), tmp.size());
-
+    tmp = CNCDistributionConf::GetPeerNameOrEmpty(create_server);
+    if (tmp.empty()) {
+        tmp = CTaskServer::GetHostByIP(Uint4(create_server >> 32));
+        m_SendBuff->append(tmp.data(), tmp.size());
+        m_SendBuff->append(":", 1);
+        tmp = NStr::UIntToString(Uint4(create_server));
+        m_SendBuff->append(tmp.data(), tmp.size());
+    } else {
+        m_SendBuff->append(tmp.data(), tmp.size());
+    }
     tmp = "\nOK:Control id: ";
     m_SendBuff->append(tmp.data(), tmp.size());
     tmp = NStr::Int8ToString(m_BlobAccess->GetCurCreateId());

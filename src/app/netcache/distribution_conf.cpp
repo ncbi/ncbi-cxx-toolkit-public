@@ -89,7 +89,8 @@ static Uint1    s_MaxSyncsOneServer = 2;
 static Uint1    s_SyncPriority = 10;
 static Uint2    s_MaxPeerTotalConns = 100;
 static Uint2    s_MaxPeerBGConns = 50;
-static Uint1    s_CntErrorsToThrottle = 10;
+static Uint2    s_CntErrorsToThrottle = 10;
+static Uint2    s_CntThrottlesToIpchange = 10;
 static Uint8    s_PeerThrottlePeriod = 10 * kUSecsPerSecond;
 static Uint1    s_PeerTimeout = 2;
 static Uint1    s_BlobListTimeout = 10;
@@ -260,6 +261,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_MaxPeerTotalConns = reg.GetInt(kNCReg_NCPoolSection, "max_peer_connections", 100);
         s_MaxPeerBGConns = reg.GetInt(kNCReg_NCPoolSection, "max_peer_bg_connections", 50);
         s_CntErrorsToThrottle = reg.GetInt(kNCReg_NCPoolSection, "peer_errors_for_throttle", 10);
+        s_CntThrottlesToIpchange = reg.GetInt(kNCReg_NCPoolSection, "peer_throttles_for_ip_change", 10);
         s_PeerThrottlePeriod = reg.GetInt(kNCReg_NCPoolSection, "peer_throttle_period", 10);
         s_PeerThrottlePeriod *= kUSecsPerSecond;
         s_PeerTimeout = reg.GetInt(kNCReg_NCPoolSection, "peer_communication_timeout", 2);
@@ -366,6 +368,7 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("max_peer_connections"       ).WriteText(is).WriteNumber(s_MaxPeerTotalConns);
     task.WriteText(eol).WriteText("max_peer_bg_connections"    ).WriteText(is).WriteNumber(s_MaxPeerBGConns);
     task.WriteText(eol).WriteText("peer_errors_for_throttle"   ).WriteText(is).WriteNumber(s_CntErrorsToThrottle);
+    task.WriteText(eol).WriteText("peer_throttles_for_ip_change").WriteText(is).WriteNumber(s_CntThrottlesToIpchange);
     task.WriteText(eol).WriteText("peer_throttle_period"       ).WriteText(is).WriteNumber(s_PeerThrottlePeriod/kUSecsPerSecond);
     task.WriteText(eol).WriteText("peer_communication_timeout" ).WriteText(is).WriteNumber(s_PeerTimeout);
     task.WriteText(eol).WriteText("peer_blob_list_timeout"     ).WriteText(is).WriteNumber(s_BlobListTimeout);
@@ -433,7 +436,7 @@ CNCDistributionConf::GetPeers(void)
 }
 
 string
-CNCDistributionConf::GetPeerName(Uint8 srv_id)
+CNCDistributionConf::GetPeerNameOrEmpty(Uint8 srv_id)
 {
     string name;
     if (srv_id == s_SelfID) {
@@ -442,7 +445,14 @@ CNCDistributionConf::GetPeerName(Uint8 srv_id)
     else if (s_Peers.find(srv_id) != s_Peers.end()) {
         name = s_Peers[srv_id];
     }
-    else {
+    return name;
+}
+
+string
+CNCDistributionConf::GetPeerName(Uint8 srv_id)
+{
+    string name(GetPeerNameOrEmpty(srv_id));
+    if (name.empty()) {
         name = "unknown_server";
     }
     return name;
@@ -634,10 +644,16 @@ CNCDistributionConf::GetMaxPeerBGConns(void)
     return s_MaxPeerBGConns;
 }
 
-Uint1
+Uint2
 CNCDistributionConf::GetCntErrorsToThrottle(void)
 {
     return s_CntErrorsToThrottle;
+}
+
+Uint2
+CNCDistributionConf::GetCntThrottlesToIpchange(void)
+{
+    return s_CntThrottlesToIpchange;
 }
 
 Uint8

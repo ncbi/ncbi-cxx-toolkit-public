@@ -72,6 +72,7 @@ public:
 
     // Get all partners "host:port" strings
     static const TNCPeerList& GetPeers(void);
+    static string GetPeerNameOrEmpty(Uint8 srv_id);
     static string GetPeerName(Uint8 srv_id);
     static string GetFullPeerName(Uint8 srv_id);
     static TServersList GetPeerServers(void);
@@ -91,7 +92,8 @@ public:
     static Uint1 GetSyncPriority(void);
     static Uint2 GetMaxPeerTotalConns(void);
     static Uint2 GetMaxPeerBGConns(void);
-    static Uint1 GetCntErrorsToThrottle(void);
+    static Uint2 GetCntErrorsToThrottle(void);
+    static Uint2 GetCntThrottlesToIpchange(void);
     static Uint8 GetPeerThrottlePeriod(void);
     static Uint1 GetPeerTimeout(void);
     static Uint1 GetBlobListTimeout(void);
