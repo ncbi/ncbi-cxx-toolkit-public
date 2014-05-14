@@ -151,6 +151,58 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
 }
 
 
+void PrintReportLineHeader(CNcbiOstrstream& lines)
+{
+    lines << "Accession\tOld Name\tNew Name\n";
+}
+
+
+void ReportMailReportLine(CNcbiOstrstream& lines, const CSeq_table& table, size_t i)
+{
+    string id;
+    table.GetColumns()[0]->GetData().GetId()[i]->GetLabel(&id, CSeq_id::eContent);
+    lines << id;
+    lines << "\t";
+    lines << table.GetColumns()[1]->GetData().GetString()[i];
+    lines << "\t";
+    lines << table.GetColumns()[3]->GetData().GetString()[i];
+    lines << "\n";
+}
+
+
+string GetReportFromMailReportTable(const CSeq_table& table)
+{
+    CNcbiOstrstream lines;
+
+    lines << "Failed Lookups\n";
+    PrintReportLineHeader(lines);
+    for (size_t i = 0; i < table.GetColumns().front()->GetData().GetSize(); i++) {
+        if (table.GetColumns()[4]->GetData().GetInt()[i] == 0) {
+            ReportMailReportLine(lines, table, i);
+        }
+    }
+    lines << "\n\nSp. Replaced with Real\n";
+    PrintReportLineHeader(lines);
+    for (size_t i = 0; i < table.GetColumns().front()->GetData().GetSize(); i++) {
+        if (NStr::Find(table.GetColumns()[1]->GetData().GetString()[i], " sp.") != string::npos
+            && NStr::Find(table.GetColumns()[3]->GetData().GetString()[i], " sp.") == string::npos) {
+            ReportMailReportLine(lines, table, i);
+        }
+    }
+
+    lines << "\n\nUnpublished Names\n";
+    PrintReportLineHeader(lines);
+    for (size_t i = 0; i < table.GetColumns().front()->GetData().GetSize(); i++) {
+        if (table.GetColumns()[5]->GetData().GetInt()[i] != 0) {
+            ReportMailReportLine(lines, table, i);
+        }
+    }
+
+    return string(CNcbiOstrstreamToString(lines));
+}
+
+
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
