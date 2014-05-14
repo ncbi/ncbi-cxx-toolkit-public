@@ -108,15 +108,17 @@ USING_NCBI_SCOPE;
 /// Default CGI used by default if /log directory is not writable on current machine.
 /// Can be redefined in the configuration file.
 const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
+//const char* kDefaultCGI = "http://intrawebdev2.be-md/staff/ivanov/ncbi_applog.cgi";
+
 
 /// Regular expression to check lines of raw logs.
 const char*  kApplogRegexp = "^\\d{5}/\\d{3}/\\d{4}/[NSPRBE ]{3}[0-9A-Z]{16} \\d{4}/\\d{4} \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
 
 // Base position of the application name in the string if time format have milliseconds
-// (3 digits after seconds). It will be increased to use microseconds if necessary.
-const unsigned int kLoglineTimeCheckPos = 68;
-const unsigned int kLoglineNamePos      = 126; 
-const unsigned int kLoglineParamsPos    = kLoglineNamePos + 15;
+// (3 digits after seconds). It will be increased if necessary.
+const unsigned int kTimeCheckPos = 68;
+const unsigned int kNamePos      = 126; 
+const unsigned int kParamsPos    = kNamePos + 15;
 
 /// Declare the parameter for logging CGI
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
@@ -879,15 +881,20 @@ int CNcbiApplogApp::Run(void)
                 break;
             }
         }
-        if ( !found ||  m_Raw_line.length() <= kLoglineNamePos + 1 ) {
+        if ( !found ||  m_Raw_line.length() <= kNamePos + 1 ) {
             throw "Error processing input raw log, cannot find any line in applog format";
         }
-        size_t namepos = kLoglineNamePos;
-        if (m_Raw_line[kLoglineTimeCheckPos] != ' ') {
-            // time format use microseconds, not milliseconds -- adjust positions
-            namepos += 3;
+        // check timestamp
+        size_t pos = m_Raw_line.find(' ', kTimeCheckPos);
+        if (pos == NPOS) {
+            throw "Error processing input raw log, line has wrong format";
         }
-        size_t pos = m_Raw_line.find(' ', namepos + 1);
+        if (pos - kTimeCheckPos > 9) {
+            throw "Error processing input raw log, timestamp has wrong format";
+        }
+        size_t namepos = kNamePos + (pos - kTimeCheckPos);
+        // get an application name
+        pos = m_Raw_line.find(' ', namepos + 1);
         if (pos == NPOS) {
             throw "Error processing input raw log, line has wrong format";
         }
@@ -1161,19 +1168,22 @@ int CNcbiApplogApp::Run(void)
         if ( !no_logsite ) {
             orig_appname = "orig_appname=" + m_Info.appname;
         }
-        size_t namepos  = kLoglineNamePos;
-        size_t parampos = kLoglineParamsPos;
-        if (m_Raw_line[kLoglineTimeCheckPos] != ' ') {
-            // time format use microseconds, not milliseconds -- adjust positions
-            namepos  += 3;
-            parampos += 3;
-        }
         do {
             if (re.IsMatch(m_Raw_line)) {
                 if ( no_logsite ) {
                     NcbiLogP_Raw(m_Raw_line.c_str());
                 } else {
                     // Use logsite name instead of appname if necessary.
+
+                    size_t pos = m_Raw_line.find(' ', kTimeCheckPos);
+                    if (pos == NPOS) {
+                        throw "Error processing input raw log, line has wrong format";
+                    }
+                    if (pos - kTimeCheckPos > 9) {
+                        throw "Error processing input raw log, timestamp has wrong format";
+                    }
+                    size_t namepos  = kNamePos + (pos - kTimeCheckPos);
+                    size_t parampos = kParamsPos + (pos - kTimeCheckPos);
 
                     if (m_Raw_line.length() <= namepos + 1  ||
                         !NStr::StartsWith(CTempString(CTempString(m_Raw_line), namepos), m_Info.appname)) {
