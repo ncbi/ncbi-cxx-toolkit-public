@@ -156,7 +156,7 @@ typedef enum {
 typedef unsigned short TNcbiCapacity;
 
 
-/*NB: High bit determines the OS family */
+/* NB: High bit determines the OS family */
 typedef enum {
     fOS_Unknown,
     fOS_IRIX          = 8,
