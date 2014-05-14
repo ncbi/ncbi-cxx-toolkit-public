@@ -1660,14 +1660,42 @@ CQueue::x_GetEstimatedJobLifetime(unsigned int   job_id,
 }
 
 
-void  CQueue::CancelGroup(const CNSClientId &  client,
-                          const string &       group,
-                          bool                 logging)
+string  CQueue::CancelGroupAndAffinity(const CNSClientId &  client,
+                                       const string &       group,
+                                       const string &       affinity_token,
+                                       bool                 logging)
 {
+    string              warning;
+    TNSBitVector        group_jobs;
+    TNSBitVector        affinity_jobs;
     CFastMutexGuard     guard(m_OperationLock);
-    x_CancelJobs(client, m_GroupRegistry.GetJobs(group),
-                 logging);
-    return;
+
+    if (!group.empty()) {
+        try {
+            group_jobs = m_GroupRegistry.GetJobs(group);
+        } catch (...)
+        {
+            warning = "job group " + group + " is not found;";
+        }
+    }
+
+    if (!affinity_token.empty()) {
+        unsigned int    aff_id = m_AffinityRegistry.GetIDByToken(
+                                                            affinity_token);
+        if (aff_id == 0)
+            warning += "affinity " + affinity_token + " is not found;";
+        else
+            affinity_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
+    }
+
+    if (!group.empty() && !affinity_token.empty())
+        x_CancelJobs(client, group_jobs & affinity_jobs, logging);
+    else if (!group.empty())
+        x_CancelJobs(client, group_jobs, logging);
+    else
+        x_CancelJobs(client, affinity_jobs, logging);
+
+    return warning;
 }
 
 

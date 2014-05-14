@@ -23,6 +23,7 @@ import netschedule_tests_pack_4_11 as pack_4_11
 import netschedule_tests_pack_4_13 as pack_4_13
 import netschedule_tests_pack_4_14 as pack_4_14
 import netschedule_tests_pack_4_16 as pack_4_16
+import netschedule_tests_pack_4_17 as pack_4_17
 
 
 defaultGridCliPath = ""
@@ -35,7 +36,7 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.17.1"
+latestNetscheduleVersion = "4.17.2"
 
 
 # The map below describes what tests should be excluded for a certain
@@ -46,20 +47,27 @@ excludeTestsMap = \
     "4.16.8":   [ 214, 215, 800, 801, 900,
                   1000, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108, 1109,
                   1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117,
-                  1200, 1201 ],
+                  1200, 1201,
+                  1300 ],
     "4.16.9":   [ 214, 215,
                   1000, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108, 1109,
                   1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117,
-                  1200, 1201 ],
+                  1200, 1201,
+                  1300 ],
     "4.16.10":  [ 1108, 1109,
                   1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117,
-                  1200, 1201 ],
+                  1200, 1201,
+                  1300 ],
     "4.16.11":  [ 1108, 1109,
                   1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117,
-                  1200, 1201 ],
+                  1200, 1201,
+                  1300 ],
     "4.17.0":   [ 801,
-                  1200, 1201 ],
-    "4.17.1":   [ 801 ]
+                  1200, 1201,
+                  1300 ],
+    "4.17.1":   [ 801,
+                  1300 ],
+    "4.17.2":   [ 801 ]
 }
 
 
@@ -451,6 +459,8 @@ def main():
 
               pack_4_16.Scenario1200( netschedule ),
               pack_4_16.Scenario1201( netschedule ),
+
+              pack_4_17.Scenario1300( netschedule ),
             ]
 
     # Calculate the start test index

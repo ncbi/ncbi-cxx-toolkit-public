@@ -263,9 +263,10 @@ public:
 
     void CancelAllJobs(const CNSClientId &  client,
                        bool                 logging);
-    void CancelGroup(const CNSClientId &  client,
-                     const string &       group,
-                     bool                 logging);
+    string CancelGroupAndAffinity(const CNSClientId &  client,
+                                  const string &       group,
+                                  const string &       affinity_token,
+                                  bool                 logging);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 

@@ -41,7 +41,7 @@ class Scenario600( TestBase ):
                          'node1', 'session1' )
 
         # Check that the job is in the blacklist for this client
-        ns_client = self.getNetScheduleService( 'TEST', 'scenario109' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario600' )
         client = getClientInfo( ns_client, 'node1' )
 
         if 'blacklisted_jobs' not in client:

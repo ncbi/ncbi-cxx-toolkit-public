@@ -279,6 +279,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Optional      },
           { "group",             eNSPT_Str, eNSPA_Optional      },
+          { "aff",               eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
@@ -1595,8 +1596,12 @@ void CNetScheduleHandler::x_ProcessBatchSequenceEnd(CQueue*)
 void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
 {
     // Job key or a group must be given
-    if (m_CommandArguments.job_id == 0 && m_CommandArguments.group.empty()) {
-        LOG_POST(Message << Warning << "CANCEL must have a job key or a group");
+    if (m_CommandArguments.job_id == 0 &&
+        m_CommandArguments.group.empty() &&
+        m_CommandArguments.affinity_token.empty()) {
+        LOG_POST(Message << Warning << "Neither job key nor a group nor an "
+                                       "affinity is provided for the CANCEL "
+                                       "command");
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:eInvalidParameter:"
                        "Job key or group must be given");
@@ -1604,22 +1609,32 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
         return;
     }
 
-    if (m_CommandArguments.job_id != 0 && !m_CommandArguments.group.empty()) {
-        LOG_POST(Message << Warning << "CANCEL must have only one "
-                                       "argument - a job key or a group");
+    if (m_CommandArguments.job_id != 0 &&
+        (!m_CommandArguments.group.empty() ||
+         !m_CommandArguments.affinity_token.empty())) {
+        LOG_POST(Message << Warning << "CANCEL can accept either a job "
+                                       "key or any combination of a group "
+                                       "and an affinity");
         x_SetCmdRequestStatus(eStatus_BadRequest);
-        x_WriteMessage("ERR:eInvalidParameter:CANCEL can accept a job key or "
-                       "a group but not both");
+        x_WriteMessage("ERR:eInvalidParameter:CANCEL can accept either a job "
+                       "key or any combination of a group and an affinity");
         x_PrintCmdRequestStop();
         return;
     }
 
     // Here: one argument is given - a job key or a group
-    if (!m_CommandArguments.group.empty()) {
+    if (!m_CommandArguments.group.empty() ||
+        !m_CommandArguments.affinity_token.empty()) {
         // CANCEL for a group
-        q->CancelGroup(m_ClientId, m_CommandArguments.group,
-                       m_ConnContext.NotNull());
-        x_WriteMessage("OK:");
+        string      warning = q->CancelGroupAndAffinity(
+                                    m_ClientId, m_CommandArguments.group,
+                                    m_CommandArguments.affinity_token,
+                                    m_ConnContext.NotNull());
+        if (warning.empty())
+            x_WriteMessage("OK:");
+        else
+            x_WriteMessage("OK:WARNING:" + warning);
+
         x_PrintCmdRequestStop();
         return;
     }
