@@ -6125,6 +6125,450 @@ LDFLAGS="$MT_FLAG $LDFLAGS"
 APP_LDFLAGS=
 DLL_LDFLAGS=
 
+#### Provide default environment setup for known platforms/compilers
+DEPFLAGS="-M"
+DEPFLAGS_POST="" # Needed for VisualAge
+OBJCXX_CXXFLAGS=
+OBJCXX_LIBS=
+case "$host_os:$compiler" in
+ solaris2\.6:GCC )
+   echo "GCC compiler is not supported for:  $host"
+   compiler=
+   ;;
+
+ solaris*:GCC )
+   # On Solaris, GCC defaults to setting _XOPEN_SOURCE (to 500) only
+   # in C++ mode.  Set it for C code as well to ensure consistent
+   # header behavior, taking care to match the C standard version
+   # (as enforced by <sys/feature_tests.h>).
+   case "$ncbi_cv_prog_c_99" in
+      no) CC="$CC -D_XOPEN_SOURCE=500" ;;
+      *)  CC="$CC -D_XOPEN_SOURCE=600" ;;
+   esac
+
+   STRIP="@:"
+   ;;
+
+ linux*:ICC )
+   # "incomplete type is not allowed" should be an error, not a warning!
+   CFLAGS="-we70 $CFLAGS"
+   CXXFLAGS="-we70 $CXXFLAGS"
+   case "$compiler_version" in
+      1[1-9]?? ) MATH_LIBS=-Wl,-lm ;; # avoid static libimf in shared libs
+   esac
+   ;;
+
+ irix*:GCC )
+   if test "$with_debug" != "no" ; then
+      LDFLAGS="-LD_LAYOUT:lgot_buffer=32 $LDFLAGS"
+   fi
+   ;;
+
+ solaris*:WorkShop* )
+   CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS"
+   CXXFLAGS="+w +w2 $CXXFLAGS"
+   DEPFLAGS="-xM1"
+   LDFLAGS="-xildoff $LDFLAGS"
+   AR=${AR:="$CXX $MT_FLAG -xar -o"}
+   STRIP="@:"
+   if test "$with_symbols" = "no" -a "$with_profiling" != "yes" \
+      -a "$with_strip" = "yes" ; then
+      LDFLAGS="-s $LDFLAGS"
+   fi
+   # Recent versions default to DWARF, yielding much larger executables in
+   # debug configurations; insist on STABS when the choice exists, even for
+   # versions that already default to it.
+   case "$with_symbols:$compiler" in
+      no:* | *:WorkShop5[0-4] ) ;;
+      * )
+         CFLAGS="-xdebugformat=stabs $CFLAGS"
+         CXXFLAGS="-xdebugformat=stabs $CXXFLAGS"
+         ;;
+   esac
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.WorkShop.sh"
+   LINK_FILTER="$CXX_FILTER"
+   AR_FILTER="$CXX_FILTER"
+   serial_ws50_rtti_kludge="rtti"
+   ;;
+
+ irix*:MIPSpro73 )
+   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
+   # Warnings we disable (messages courtesy of "gettxt cc.cat.m:N")
+   # 1107: A signed bit field has a length of 1 bit.
+   # 1169: External/internal linkage conflicts with a previous declaration.
+   # 1209: The controlling expression is constant. [while (0) et al.]
+   # 1424: The %n1 is not used in declaring the argument types of %n2.
+   # 1429: The type "long long" is nonstandard.
+   # 1460: Function %n is redeclared "inline" after being called.
+   # 1521: A nonstandard preprocessing directive is used.
+   CFLAGS="$COMMON_FLAGS -woff 1209 $CFLAGS"
+   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -no_auto_include -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
+   : ${CXXCPP:="$CXX -E -LANG:std"}
+   LDFLAGS="-LANG:std -G0 -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section $LDFLAGS"
+   CPPFLAGS="-D__LONGLONG $CPPFLAGS"
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.$compiler.sh"
+   ;;
+
+ cygwin*:GCC )
+   with_dll="no"
+   # : ${NETWORK_LIBS:="-lws2_32"}
+   CONF_exe_ext=".exe"
+   ;;
+
+ cygwin*:MSVC )
+   with_dll="no"
+   CFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
+   CXXFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
+   CPPFLAGS="/nologo $CPPFLAGS"
+   LDFLAGS="/DEBUG"
+   AR="lib.exe"
+   RANLIB=":"
+   STRIP="@:"
+   CONF_obj_ext=".obj"
+   CONF_lib_ext=".lib"
+   CONF_dll_ext=".dll"
+   CONF_lib_l_ext=".lib"
+   CONF_lib_pre=" "
+   CONF_lib_l_pre=" "
+   CONF_exe_ext=".exe"
+   CONF_f_compile="/c "
+   CONF_f_outobj="/Fo"
+   CONF_f_outlib="/OUT:"
+   CONF_f_libpath="/LIBPATH:"
+   CONF_f_outexe="/OUT:"
+   script_shell=""
+   make_shell=""
+   ;;
+
+ *:VisualAge)
+   # 1506-1108 (I) The use of keyword '__attribute__' is non-portable.
+   CFLAGS="-qlanglvl=extc99 -qsuppress=1506-1108 $CFLAGS"
+   # 1540-1663 (W) Incorrect assignment of a restrict qualified pointer.
+   CXXFLAGS="-qrtti=all -qsuppress=1540-1663 $CXXFLAGS"
+   DEPFLAGS="-E -M"
+   DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
+   ;;
+
+ *:Compaq)
+   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
+   CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
+   DEPFLAGS="$DEPFLAGS -distinguish_nested_enums"
+   case "$host_os" in
+      osf*)
+        # Suppress link warnings; otherwise, we get "weak symbol multiply
+        # defined" all over the place.
+        LDFLAGS="-Wl,-S $LDFLAGS"
+        # The linker sometimes needs a LOT of memory.
+        LINK="ulimit -d \`ulimit -H -d\` && $LINK"
+        ;;
+   esac
+   ;;
+
+ darwin*:GCC)
+   case `uname -m` in
+      *64 ) : ${with_64=yes} ;;
+      *   ) : ${with_64=no}  ;;
+   esac
+   # Per <http://fink.sourceforge.net/doc/porting/shared.php>, it was
+   # historically necessary to build plugins as Mach-O bundles rather than
+   # dynamic libraries.  That's not such a big deal on modern Mac OS X
+   # versions, so the Toolkit now defaults to building only the latter.
+   CONF_dll_ext=".dylib"
+   if test "$with_bundles" = yes; then
+      CONF_loadable_ext=".so"
+   else
+      CONF_loadable_ext=".dylib"
+   fi
+   if $CXX -v 2>&1 | grep -q Apple; then
+      CFLAGS="-fpascal-strings $CFLAGS"
+      CXXFLAGS="-fpascal-strings $CXXFLAGS"
+      $CXX -v 2>&1 | grep -q clang  ||  CXXFLAGS="-fno-permissive $CXXFLAGS"
+      # -flat_namespace is necessary for proper handling of shared libraries
+      # that don't themselves link against all their dependencies.
+      LDFLAGS="-flat_namespace $LDFLAGS"
+
+      if test "$with_ncbi_public" = yes; then
+         sdks='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk'
+         case "$host_os" in
+            darwin?.* | darwin10.* ) # Mac OS X 10.6.x or older
+               TARGET='-mmacosx-version-min=10.5'
+               sdks="/Developer/SDKs/MacOSX10.6.sdk"
+               if test "$with_64:${with_universal-no}" != "yes:no"; then
+                  sdks="/Developer/SDKs/MacOSX10.5.sdk $sdks"
+               fi
+               ;;
+            * )
+               TARGET='-mmacosx-version-min=10.7'
+               ;;
+         esac
+         for sdk in $sdks; do
+            if test -d "$sdk"; then
+               TARGET="-isysroot $sdk $TARGET"
+               break
+            fi
+         done
+         CC="$CC $TARGET"
+         CXX="$CXX $TARGET"
+      fi
+   else
+      LDFLAGS="-Wl,-flat_namespace $LDFLAGS"
+   fi
+   if test -f /usr/include/dlfcn.h; then
+      # may be able to do without /sw, so ignore it by default
+      :
+   elif test -f /sw/include/dlfcn.h; then
+      CPPFLAGS="-I/sw/include $CPPFLAGS"
+      LDFLAGS="-L/sw/lib $LDFLAGS"
+   else
+      { echo "$as_me:$LINENO: WARNING: No dlfcn.h in /usr/include or /sw/include." >&5
+echo "$as_me: WARNING: No dlfcn.h in /usr/include or /sw/include." >&2;}
+   fi
+   case "$CPPFLAGS $LIBS" in
+      *sw/*) ;;
+      *)
+         if test -d "$orig_NCBI/safe-sw"; then
+             CPPFLAGS="-I$orig_NCBI/safe-sw/include $CPPFLAGS"
+             LDFLAGS="-L$orig_NCBI/safe-sw/lib $LDFLAGS"
+         fi
+         ;;
+   esac
+   : ${with_x=${with_xpm-no}}
+
+   # CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
+   LIBS="-Wl,-framework,ApplicationServices $LIBS"
+
+   OBJCXX_CXXFLAGS='-x objective-c++'
+   OBJCXX_LIBS='-lobjc'
+   ;;
+esac
+
+
+#### Set makefile variables for platform-specific includes
+COMPILER=`echo $ncbi_compiler | tr '[A-Z]' '[a-z]'`
+OSTYPE=`echo $host_os | sed -e 's/[0-9.]*$//; s/-gnu[^-]*$//; y/A-Z/a-z/'`
+
+
+#### Check if the compiler matches one of supported compilers on this platform
+if test -z "$compiler" ; then
+   cat <<EOF
+
+  Compiler $CXX $compiler_ver is not fully supported.
+  Consult doc/config.html\#ref_Compilers for the list of
+  fully supported platforms/compilers.
+EOF
+   case "$with_caution" in
+    yes )
+       { { echo "$as_me:$LINENO: error: Configuration has been canceled per --with-caution." >&5
+echo "$as_me: error: Configuration has been canceled per --with-caution." >&2;}
+   { (exit 1); exit 1; }; } ;;
+    no )
+       { echo "$as_me:$LINENO: WARNING: Proceeding without questions per --without-caution" >&5
+echo "$as_me: WARNING: Proceeding without questions per --without-caution" >&2;} ;;
+    * )
+       echo "Do you still want to proceed (at your own risk)? [y/N]"
+       read answer <& 7
+       case "$answer" in
+         [Yy]* )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
+echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ;;
+         *       )  { { echo "$as_me:$LINENO: error: Configuration has been canceled by user." >&5
+echo "$as_me: error: Configuration has been canceled by user." >&2;}
+   { (exit 1); exit 1; }; } ;;
+       esac
+       ;;
+ esac
+   echo
+   compiler="UNKNOWN"
+fi
+
+
+#### Set compiler prefix for non-native compilers
+case "$host_os:$compiler" in
+   *:GCC | *:KCC | *:ICC )
+      compiler_pfx="${compiler}-"
+      compiler_vpfx="${compiler}${compiler_version}-"
+      ;;
+esac
+
+
+C_LIBS=$LIBS
+
+
+ARCH_CPPFLAGS=
+#### architecture settings, and extra C++ LIBS
+if test "${with_universal-no}" != "no" ; then
+   bit64_sfx= #"Univ"
+   case "$host" in
+    *-*-darwin[89].* | *-*-darwin[1-9][0-9]* )
+      case "$with_universal" in
+       yes )
+          case "$with_64:$host_os" in
+           yes:darwin8.* )
+             { { echo "$as_me:$LINENO: error: Unable to build 64-bit universal binaries on $host" >&5
+echo "$as_me: error: Unable to build 64-bit universal binaries on $host" >&2;}
+   { (exit 1); exit 1; }; }
+             ;;
+           yes:* )
+             ARCH_CFLAGS="-arch ppc64 -arch x86_64"
+             ARCH_CPPFLAGS="-m64"
+             ;;
+           * )
+             ARCH_CFLAGS="-arch ppc -arch i386"
+             ARCH_CPPFLAGS="-m32"
+             ;;
+          esac
+          ;;
+       * )
+         ARCH_CFLAGS="-arch `echo $with_universal | sed -e 's/,/ -arch /g'`"
+         ARCH_CPPFLAGS="-arch `echo $with_universal | sed -e 's/,.*//'`"
+         ;;
+      esac
+      case "$host" in
+       p*pc*-*-darwin8.*)
+         # Must specify -isysroot ..., but only once; anyway, the preprocessor
+         # needs to see it, and naturally can't cope with multiple -arch flags.
+         # The -mmacosx-version-min flag avoids link errors under OS 10.5
+         # (Darwin 9), which otherwise tries to use crt1.10.5.o despite the
+         # request for a sysroot lacking that file.
+         SYSROOT="-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4"
+         #ARCH_CFLAGS="$SYSROOT $ARCH_CFLAGS"
+         CC="$CC $SYSROOT"
+         CXX="$CXX $SYSROOT"
+         ;;
+      esac
+      ;;
+    * ) { { echo "$as_me:$LINENO: error: Do not know how to build universal binaries on $host" >&5
+echo "$as_me: error: Do not know how to build universal binaries on $host" >&2;}
+   { (exit 1); exit 1; }; } ;;
+   esac
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_UNIVERSAL_BUILD 1
+_ACEOF
+
+   with_distcc=no
+elif test "$with_64" = "yes" ; then
+   bit64_sfx="64"
+   case "$host:$compiler" in
+    sparc-sun-solaris*:WorkShop5 | sparc-sun-solaris*:KCC )
+      ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
+      ;;
+    sparc-sun-solaris*:WorkShop51 )
+      ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS -lc"
+      ;;
+    *solaris*:WorkShop59 | *solaris*:WorkShop51? )
+      ARCH_CFLAGS="-m64"
+      LIBS="-lCstd -lCrun $LIBS -lc"
+      ;;
+    *solaris*:WorkShop5* )
+      ARCH_CFLAGS="-xtarget=generic64"
+      # Redundant for programs, but necessary for dlopen-able shared libs,
+      # at least in the x86 ReleaseMT configuration.
+      LIBS="-lCstd -lCrun $LIBS -lc"
+      ;;
+    mips*:GCC )
+      ARCH_CFLAGS="-mips64"
+      ;;
+    *:GCC )
+      # May not work prior to GCC 3.1.
+      ARCH_CFLAGS="-m64"
+      case $host_os in darwin*) ARCH_CPPFLAGS="-m64" ;; esac
+      ;;
+
+    mips-sgi-irix*:MIPSpro73 )
+      ARCH_CFLAGS="-64"
+      CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
+      AR=${AR:="$CXX $ARCH_CFLAGS -ar -WR,-v -o"}
+      ;;
+    mips-sgi-irix*:KCC )
+      ARCH_CFLAGS="-64"
+      ;;
+    * )
+      { { echo "$as_me:$LINENO: error: Do not know how to compile 64-bit with compiler $CXX $compiler_ver $host:$compiler" >&5
+echo "$as_me: error: Do not know how to compile 64-bit with compiler $CXX $compiler_ver $host:$compiler" >&2;}
+   { (exit 1); exit 1; }; }
+      ;;
+   esac
+else
+   bit64_sfx=
+   ARCH_CFLAGS=
+   if test "$with_64" = "no" ; then
+      case "$host:$compiler" in
+       *solaris*:WorkShop* | *solaris*:KCC )
+         ARCH_CFLAGS="-xtarget=generic"
+         ;;
+       mips*:GCC )
+         ARCH_CFLAGS="-mipsn32"
+         ;;
+       *:GCC )
+         # May not work prior to GCC 3.1.
+         ARCH_CFLAGS="-m32"
+         case $host_os in darwin*) ARCH_CPPFLAGS="-m32" ;; esac
+         ;;
+
+       mips-sgi-irix*:MIPSpro73 )
+         ARCH_CFLAGS="-n32"
+         CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
+         AR=${AR:="$CXX $ARCH_CFLAGS -ar -WR,-v -o"}
+         ;;
+       mips-sgi-irix*:KCC )
+         ARCH_CFLAGS="-n32"
+         ;;
+       * )
+         # Just a warning, since 32-bit mode is typically the default anyway...
+         { echo "$as_me:$LINENO: WARNING: Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler" >&5
+echo "$as_me: WARNING: Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler" >&2;}
+         ;;
+      esac
+   fi
+   case "$host:$compiler" in
+    *solaris*:WorkShop5 )
+      LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
+      MATH_LIBS=" "
+      ;;
+    *solaris*:WorkShop51 )
+      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS -lc"
+      MATH_LIBS=" "
+      ;;
+    sparc-sun-solaris*:WorkShop54 )
+      # Using this (still very conservative) non-generic XARCH flavor allows
+      # compiler to use the extended instruction set which reportedly speeds
+      # up the locking of at least some STL classes by allowing them to use
+      # atomic increment instead of mutex;  also seems to fix something that
+      # caused misterios basic_string<> related crashes in the
+      # WorkShop54 -xarch=v8 -mt configuration).
+      ARCH_CFLAGS="-xarch=v8plus"
+      LIBS="-lCstd $LIBS -lCrun -lc"
+      ;;
+    *solaris*:WorkShop5* )
+      # MATH_LIBS=" "
+      # Redundant for programs, but necessary for dlopen-able shared libs,
+      # at least in the x86 ReleaseMT configuration.
+      LIBS="-lCstd $LIBS -lCrun -lc"
+      ;;
+    *irix*:MIPSpro73 | *irix*:KCC )
+      ARCH_CFLAGS="-n32"
+      ;;
+   esac
+fi
+
+case "$host_os:$host_cpu" in
+   linux*:alpha*)
+      ARCH_CFLAGS="-mieee $ARCH_CFLAGS"
+      ;;
+esac
+
+CPPFLAGS="$ARCH_CPPFLAGS $CPPFLAGS"
+CFLAGS="$ARCH_CFLAGS $CFLAGS"
+CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
+LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
+
+: ${MATH_LIBS:="-lm"}
+
+### Math lib to be always linked in
+LIBS="$MATH_LIBS $LIBS"
+C_LIBS="$MATH_LIBS $C_LIBS"
+
 ### Should go before any test compiler runs
 
 cat >>confdefs.h <<\_ACEOF
@@ -6133,10 +6577,87 @@ _ACEOF
 
 
 
+if test -n "$with_64"; then
+
+{ echo "$as_me:$LINENO: checking whether this system supports --with(out)-64" >&5
+echo $ECHO_N "checking whether this system supports --with(out)-64... $ECHO_C" >&6; }
+if test "${ncbi_cv_sys_with64_ok+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+
+          /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <string>
+int
+main ()
+{
+std::string* sp = new std::string("foo");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_sys_with64_ok=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_sys_with64_ok=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_sys_with64_ok" >&5
+echo "${ECHO_T}$ncbi_cv_sys_with64_ok" >&6; }
+   if test "$ncbi_cv_sys_with64_ok" = no; then
+      { { echo "$as_me:$LINENO: error: cannot continue; please try different options" >&5
+echo "$as_me: error: cannot continue; please try different options" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
+
+
 case "$host_os:$compiler" in
    darwin*:GCC )
-
-{ echo "$as_me:$LINENO: checking whether $CC supports -Wl,-rpath" >&5
+      { echo "$as_me:$LINENO: checking whether $CC supports -Wl,-rpath" >&5
 echo $ECHO_N "checking whether $CC supports -Wl,-rpath... $ECHO_C" >&6; }
 if test "${ncbi_cv_prog_cc_wl_rpath+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -6615,525 +7136,6 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
 
-#### Provide default environment setup for known platforms/compilers
-DEPFLAGS="-M"
-DEPFLAGS_POST="" # Needed for VisualAge
-OBJCXX_CXXFLAGS=
-OBJCXX_LIBS=
-case "$host_os:$compiler" in
- solaris2\.6:GCC )
-   echo "GCC compiler is not supported for:  $host"
-   compiler=
-   ;;
-
- solaris*:GCC )
-   # On Solaris, GCC defaults to setting _XOPEN_SOURCE (to 500) only
-   # in C++ mode.  Set it for C code as well to ensure consistent
-   # header behavior, taking care to match the C standard version
-   # (as enforced by <sys/feature_tests.h>).
-   case "$ncbi_cv_prog_c_99" in
-      no) CC="$CC -D_XOPEN_SOURCE=500" ;;
-      *)  CC="$CC -D_XOPEN_SOURCE=600" ;;
-   esac
-
-   STRIP="@:"
-   ;;
-
- linux*:ICC )
-   # "incomplete type is not allowed" should be an error, not a warning!
-   CFLAGS="-we70 $CFLAGS"
-   CXXFLAGS="-we70 $CXXFLAGS"
-   case "$compiler_version" in
-      1[1-9]?? ) MATH_LIBS=-Wl,-lm ;; # avoid static libimf in shared libs
-   esac
-   ;;
-
- irix*:GCC )
-   if test "$with_debug" != "no" ; then
-      LDFLAGS="-LD_LAYOUT:lgot_buffer=32 $LDFLAGS"
-   fi
-   ;;
-
- solaris*:WorkShop* )
-   CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS"
-   CXXFLAGS="+w +w2 $CXXFLAGS"
-   DEPFLAGS="-xM1"
-   LDFLAGS="-xildoff $LDFLAGS"
-   AR=${AR:="$CXX $MT_FLAG -xar -o"}
-   STRIP="@:"
-   if test "$with_symbols" = "no" -a "$with_profiling" != "yes" \
-      -a "$with_strip" = "yes" ; then
-      LDFLAGS="-s $LDFLAGS"
-   fi
-   # Recent versions default to DWARF, yielding much larger executables in
-   # debug configurations; insist on STABS when the choice exists, even for
-   # versions that already default to it.
-   case "$with_symbols:$compiler" in
-      no:* | *:WorkShop5[0-4] ) ;;
-      * )
-         CFLAGS="-xdebugformat=stabs $CFLAGS"
-         CXXFLAGS="-xdebugformat=stabs $CXXFLAGS"
-         ;;
-   esac
-   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.WorkShop.sh"
-   LINK_FILTER="$CXX_FILTER"
-   AR_FILTER="$CXX_FILTER"
-   serial_ws50_rtti_kludge="rtti"
-   ;;
-
- irix*:MIPSpro73 )
-   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
-   # Warnings we disable (messages courtesy of "gettxt cc.cat.m:N")
-   # 1107: A signed bit field has a length of 1 bit.
-   # 1169: External/internal linkage conflicts with a previous declaration.
-   # 1209: The controlling expression is constant. [while (0) et al.]
-   # 1424: The %n1 is not used in declaring the argument types of %n2.
-   # 1429: The type "long long" is nonstandard.
-   # 1460: Function %n is redeclared "inline" after being called.
-   # 1521: A nonstandard preprocessing directive is used.
-   CFLAGS="$COMMON_FLAGS -woff 1209 $CFLAGS"
-   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -no_auto_include -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
-   : ${CXXCPP:="$CXX -E -LANG:std"}
-   LDFLAGS="-LANG:std -G0 -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section $LDFLAGS"
-   CPPFLAGS="-D__LONGLONG $CPPFLAGS"
-   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/unix/cxx_filter.$compiler.sh"
-   ;;
-
- cygwin*:GCC )
-   with_dll="no"
-   # : ${NETWORK_LIBS:="-lws2_32"}
-   CONF_exe_ext=".exe"
-   ;;
-
- cygwin*:MSVC )
-   with_dll="no"
-   CFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
-   CXXFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
-   CPPFLAGS="/nologo $CPPFLAGS"
-   LDFLAGS="/DEBUG"
-   AR="lib.exe"
-   RANLIB=":"
-   STRIP="@:"
-   CONF_obj_ext=".obj"
-   CONF_lib_ext=".lib"
-   CONF_dll_ext=".dll"
-   CONF_lib_l_ext=".lib"
-   CONF_lib_pre=" "
-   CONF_lib_l_pre=" "
-   CONF_exe_ext=".exe"
-   CONF_f_compile="/c "
-   CONF_f_outobj="/Fo"
-   CONF_f_outlib="/OUT:"
-   CONF_f_libpath="/LIBPATH:"
-   CONF_f_outexe="/OUT:"
-   script_shell=""
-   make_shell=""
-   ;;
-
- *:VisualAge)
-   # 1506-1108 (I) The use of keyword '__attribute__' is non-portable.
-   CFLAGS="-qlanglvl=extc99 -qsuppress=1506-1108 $CFLAGS"
-   # 1540-1663 (W) Incorrect assignment of a restrict qualified pointer.
-   CXXFLAGS="-qrtti=all -qsuppress=1540-1663 $CXXFLAGS"
-   DEPFLAGS="-E -M"
-   DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
-   ;;
-
- *:Compaq)
-   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
-   CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
-   DEPFLAGS="$DEPFLAGS -distinguish_nested_enums"
-   case "$host_os" in
-      osf*)
-        # Suppress link warnings; otherwise, we get "weak symbol multiply
-        # defined" all over the place.
-        LDFLAGS="-Wl,-S $LDFLAGS"
-        # The linker sometimes needs a LOT of memory.
-        LINK="ulimit -d \`ulimit -H -d\` && $LINK"
-        ;;
-   esac
-   ;;
-
- darwin*:GCC)
-   case `uname -m` in
-      *64 ) : ${with_64=yes} ;;
-      *   ) : ${with_64=no}  ;;
-   esac
-   # Per <http://fink.sourceforge.net/doc/porting/shared.php>, it was
-   # historically necessary to build plugins as Mach-O bundles rather than
-   # dynamic libraries.  That's not such a big deal on modern Mac OS X
-   # versions, so the Toolkit now defaults to building only the latter.
-   CONF_dll_ext=".dylib"
-   if test "$with_bundles" = yes; then
-      CONF_loadable_ext=".so"
-   else
-      CONF_loadable_ext=".dylib"
-   fi
-   if $CXX -v 2>&1 | grep -q Apple; then
-      CFLAGS="-fpascal-strings $CFLAGS"
-      CXXFLAGS="-fpascal-strings $CXXFLAGS"
-      $CXX -v 2>&1 | grep -q clang  ||  CXXFLAGS="-fno-permissive $CXXFLAGS"
-      # -flat_namespace is necessary for proper handling of shared libraries
-      # that don't themselves link against all their dependencies.
-      LDFLAGS="-flat_namespace $LDFLAGS"
-
-      if test "$with_ncbi_public" = yes; then
-         sdks='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk'
-         case "$host_os" in
-            darwin?.* | darwin10.* ) # Mac OS X 10.6.x or older
-               TARGET='-mmacosx-version-min=10.5'
-               sdks="/Developer/SDKs/MacOSX10.6.sdk"
-               if test "$with_64:${with_universal-no}" != "yes:no"; then
-                  sdks="/Developer/SDKs/MacOSX10.5.sdk $sdks"
-               fi
-               ;;
-            * )
-               TARGET='-mmacosx-version-min=10.7'
-               ;;
-         esac
-         for sdk in $sdks; do
-            if test -d "$sdk"; then
-               TARGET="-isysroot $sdk $TARGET"
-               break
-            fi
-         done
-         CC="$CC $TARGET"
-         CXX="$CXX $TARGET"
-      fi
-   else
-      LDFLAGS="-Wl,-flat_namespace $LDFLAGS"
-   fi
-   if test -f /usr/include/dlfcn.h; then
-      # may be able to do without /sw, so ignore it by default
-      :
-   elif test -f /sw/include/dlfcn.h; then
-      CPPFLAGS="-I/sw/include $CPPFLAGS"
-      LDFLAGS="-L/sw/lib $LDFLAGS"
-   else
-      { echo "$as_me:$LINENO: WARNING: No dlfcn.h in /usr/include or /sw/include." >&5
-echo "$as_me: WARNING: No dlfcn.h in /usr/include or /sw/include." >&2;}
-   fi
-   case "$CPPFLAGS $LIBS" in
-      *sw/*) ;;
-      *)
-         if test -d "$orig_NCBI/safe-sw"; then
-             CPPFLAGS="-I$orig_NCBI/safe-sw/include $CPPFLAGS"
-             LDFLAGS="-L$orig_NCBI/safe-sw/lib $LDFLAGS"
-         fi
-         ;;
-   esac
-   : ${with_x=${with_xpm-no}}
-
-   # CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
-   LIBS="-Wl,-framework,ApplicationServices $LIBS"
-
-   OBJCXX_CXXFLAGS='-x objective-c++'
-   OBJCXX_LIBS='-lobjc'
-   ;;
-esac
-
-
-#### Set makefile variables for platform-specific includes
-COMPILER=`echo $ncbi_compiler | tr '[A-Z]' '[a-z]'`
-OSTYPE=`echo $host_os | sed -e 's/[0-9.]*$//; s/-gnu[^-]*$//; y/A-Z/a-z/'`
-
-
-#### Check if the compiler matches one of supported compilers on this platform
-if test -z "$compiler" ; then
-   cat <<EOF
-
-  Compiler $CXX $compiler_ver is not fully supported.
-  Consult doc/config.html\#ref_Compilers for the list of
-  fully supported platforms/compilers.
-EOF
-   case "$with_caution" in
-    yes )
-       { { echo "$as_me:$LINENO: error: Configuration has been canceled per --with-caution." >&5
-echo "$as_me: error: Configuration has been canceled per --with-caution." >&2;}
-   { (exit 1); exit 1; }; } ;;
-    no )
-       { echo "$as_me:$LINENO: WARNING: Proceeding without questions per --without-caution" >&5
-echo "$as_me: WARNING: Proceeding without questions per --without-caution" >&2;} ;;
-    * )
-       echo "Do you still want to proceed (at your own risk)? [y/N]"
-       read answer <& 7
-       case "$answer" in
-         [Yy]* )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
-echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ;;
-         *       )  { { echo "$as_me:$LINENO: error: Configuration has been canceled by user." >&5
-echo "$as_me: error: Configuration has been canceled by user." >&2;}
-   { (exit 1); exit 1; }; } ;;
-       esac
-       ;;
- esac
-   echo
-   compiler="UNKNOWN"
-fi
-
-
-#### Set compiler prefix for non-native compilers
-case "$host_os:$compiler" in
-   *:GCC | *:KCC | *:ICC )
-      compiler_pfx="${compiler}-"
-      compiler_vpfx="${compiler}${compiler_version}-"
-      ;;
-esac
-
-
-C_LIBS=$LIBS
-
-
-ARCH_CPPFLAGS=
-#### architecture settings, and extra C++ LIBS
-if test "${with_universal-no}" != "no" ; then
-   bit64_sfx= #"Univ"
-   case "$host" in
-    *-*-darwin[89].* | *-*-darwin[1-9][0-9]* )
-      case "$with_universal" in
-       yes )
-          case "$with_64:$host_os" in
-           yes:darwin8.* )
-             { { echo "$as_me:$LINENO: error: Unable to build 64-bit universal binaries on $host" >&5
-echo "$as_me: error: Unable to build 64-bit universal binaries on $host" >&2;}
-   { (exit 1); exit 1; }; }
-             ;;
-           yes:* )
-             ARCH_CFLAGS="-arch ppc64 -arch x86_64"
-             ARCH_CPPFLAGS="-m64"
-             ;;
-           * )
-             ARCH_CFLAGS="-arch ppc -arch i386"
-             ARCH_CPPFLAGS="-m32"
-             ;;
-          esac
-          ;;
-       * )
-         ARCH_CFLAGS="-arch `echo $with_universal | sed -e 's/,/ -arch /g'`"
-         ARCH_CPPFLAGS="-arch `echo $with_universal | sed -e 's/,.*//'`"
-         ;;
-      esac
-      case "$host" in
-       p*pc*-*-darwin8.*)
-         # Must specify -isysroot ..., but only once; anyway, the preprocessor
-         # needs to see it, and naturally can't cope with multiple -arch flags.
-         # The -mmacosx-version-min flag avoids link errors under OS 10.5
-         # (Darwin 9), which otherwise tries to use crt1.10.5.o despite the
-         # request for a sysroot lacking that file.
-         SYSROOT="-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4"
-         #ARCH_CFLAGS="$SYSROOT $ARCH_CFLAGS"
-         CC="$CC $SYSROOT"
-         CXX="$CXX $SYSROOT"
-         ;;
-      esac
-      ;;
-    * ) { { echo "$as_me:$LINENO: error: Do not know how to build universal binaries on $host" >&5
-echo "$as_me: error: Do not know how to build universal binaries on $host" >&2;}
-   { (exit 1); exit 1; }; } ;;
-   esac
-
-cat >>confdefs.h <<\_ACEOF
-#define NCBI_UNIVERSAL_BUILD 1
-_ACEOF
-
-   with_distcc=no
-elif test "$with_64" = "yes" ; then
-   bit64_sfx="64"
-   case "$host:$compiler" in
-    sparc-sun-solaris*:WorkShop5 | sparc-sun-solaris*:KCC )
-      ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
-      ;;
-    sparc-sun-solaris*:WorkShop51 )
-      ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -Bdynamic $LIBS -lc"
-      ;;
-    *solaris*:WorkShop59 | *solaris*:WorkShop51? )
-      ARCH_CFLAGS="-m64"
-      LIBS="-lCstd -lCrun $LIBS -lc"
-      ;;
-    *solaris*:WorkShop5* )
-      ARCH_CFLAGS="-xtarget=generic64"
-      # Redundant for programs, but necessary for dlopen-able shared libs,
-      # at least in the x86 ReleaseMT configuration.
-      LIBS="-lCstd -lCrun $LIBS -lc"
-      ;;
-    mips*:GCC )
-      ARCH_CFLAGS="-mips64"
-      ;;
-    *:GCC )
-      # May not work prior to GCC 3.1.
-      ARCH_CFLAGS="-m64"
-      case $host_os in darwin*) ARCH_CPPFLAGS="-m64" ;; esac
-      ;;
-
-    mips-sgi-irix*:MIPSpro73 )
-      ARCH_CFLAGS="-64"
-      CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
-      AR=${AR:="$CXX $ARCH_CFLAGS -ar -WR,-v -o"}
-      ;;
-    mips-sgi-irix*:KCC )
-      ARCH_CFLAGS="-64"
-      ;;
-    * )
-      { { echo "$as_me:$LINENO: error: Do not know how to compile 64-bit with compiler $CXX $compiler_ver $host:$compiler" >&5
-echo "$as_me: error: Do not know how to compile 64-bit with compiler $CXX $compiler_ver $host:$compiler" >&2;}
-   { (exit 1); exit 1; }; }
-      ;;
-   esac
-else
-   bit64_sfx=
-   ARCH_CFLAGS=
-   if test "$with_64" = "no" ; then
-      case "$host:$compiler" in
-       *solaris*:WorkShop* | *solaris*:KCC )
-         ARCH_CFLAGS="-xtarget=generic"
-         ;;
-       mips*:GCC )
-         ARCH_CFLAGS="-mipsn32"
-         ;;
-       *:GCC )
-         # May not work prior to GCC 3.1.
-         ARCH_CFLAGS="-m32"
-         case $host_os in darwin*) ARCH_CPPFLAGS="-m32" ;; esac
-         ;;
-
-       mips-sgi-irix*:MIPSpro73 )
-         ARCH_CFLAGS="-n32"
-         CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
-         AR=${AR:="$CXX $ARCH_CFLAGS -ar -WR,-v -o"}
-         ;;
-       mips-sgi-irix*:KCC )
-         ARCH_CFLAGS="-n32"
-         ;;
-       * )
-         # Just a warning, since 32-bit mode is typically the default anyway...
-         { echo "$as_me:$LINENO: WARNING: Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler" >&5
-echo "$as_me: WARNING: Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler" >&2;}
-         ;;
-      esac
-   fi
-   case "$host:$compiler" in
-    *solaris*:WorkShop5 )
-      LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
-      MATH_LIBS=" "
-      ;;
-    *solaris*:WorkShop51 )
-      LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS -lc"
-      MATH_LIBS=" "
-      ;;
-    sparc-sun-solaris*:WorkShop54 )
-      # Using this (still very conservative) non-generic XARCH flavor allows
-      # compiler to use the extended instruction set which reportedly speeds
-      # up the locking of at least some STL classes by allowing them to use
-      # atomic increment instead of mutex;  also seems to fix something that
-      # caused misterios basic_string<> related crashes in the
-      # WorkShop54 -xarch=v8 -mt configuration).
-      ARCH_CFLAGS="-xarch=v8plus"
-      LIBS="-lCstd $LIBS -lCrun -lc"
-      ;;
-    *solaris*:WorkShop5* )
-      # MATH_LIBS=" "
-      # Redundant for programs, but necessary for dlopen-able shared libs,
-      # at least in the x86 ReleaseMT configuration.
-      LIBS="-lCstd $LIBS -lCrun -lc"
-      ;;
-    *irix*:MIPSpro73 | *irix*:KCC )
-      ARCH_CFLAGS="-n32"
-      ;;
-   esac
-fi
-
-case "$host_os:$host_cpu" in
-   linux*:alpha*)
-      ARCH_CFLAGS="-mieee $ARCH_CFLAGS"
-      ;;
-esac
-
-CPPFLAGS="$ARCH_CPPFLAGS $CPPFLAGS"
-CFLAGS="$ARCH_CFLAGS $CFLAGS"
-CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
-LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
-
-: ${MATH_LIBS:="-lm"}
-
-### Math lib to be always linked in
-LIBS="$MATH_LIBS $LIBS"
-C_LIBS="$MATH_LIBS $C_LIBS"
-
-if test -n "$with_64"; then
-   { echo "$as_me:$LINENO: checking whether this system supports --with(out)-64" >&5
-echo $ECHO_N "checking whether this system supports --with(out)-64... $ECHO_C" >&6; }
-if test "${ncbi_cv_sys_with64_ok+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-
-          /* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <string>
-int
-main ()
-{
-std::string* sp = new std::string("foo");
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ncbi_cv_sys_with64_ok=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ncbi_cv_sys_with64_ok=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-{ echo "$as_me:$LINENO: result: $ncbi_cv_sys_with64_ok" >&5
-echo "${ECHO_T}$ncbi_cv_sys_with64_ok" >&6; }
-   if test "$ncbi_cv_sys_with64_ok" = no; then
-      { { echo "$as_me:$LINENO: error: cannot continue; please try different options" >&5
-echo "$as_me: error: cannot continue; please try different options" >&2;}
-   { (exit 1); exit 1; }; }
-   fi
-fi
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in

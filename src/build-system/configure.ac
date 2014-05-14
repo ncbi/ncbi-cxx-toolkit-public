@@ -1068,93 +1068,6 @@ LDFLAGS="$MT_FLAG $LDFLAGS"
 APP_LDFLAGS=
 DLL_LDFLAGS=
 
-### Should go before any test compiler runs
-AC_GNU_SOURCE
-
-case "$host_os:$compiler" in
-   darwin*:GCC )
-      AC_CACHE_CHECK([whether $CC supports -Wl,-rpath],
-         ncbi_cv_prog_cc_wl_rpath,
-         [orig_LDFLAGS=$LDFLAGS
-          LDFLAGS="-Wl,-rpath,. $LDFLAGS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-             [ncbi_cv_prog_cc_wl_rpath=yes], [ncbi_cv_prog_cc_wl_rpath=no])
-          LDFLAGS=$orig_LDFLAGS])
-      ;;
-   *:GCC | *:ICC )
-      AC_CACHE_CHECK([whether $CC has an option to export all symbols],
-         ncbi_cv_prog_cc_export_all,
-         [orig_LDFLAGS=$LDFLAGS
-          ncbi_cv_prog_cc_export_all=no
-          for x in -Wl,--export-all-symbols -rdynamic -Wl,-E; do
-             LDFLAGS="$x $orig_LDFLAGS"
-             AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-                [ncbi_cv_prog_cc_export_all=$x])
-             test "x$ncbi_cv_prog_cc_export_all" = "xno"  ||  break
-          done
-          LDFLAGS=$orig_LDFLAGS])
-      test "$ncbi_cv_prog_cc_export_all" = no  || \
-         LDFLAGS="$ncbi_cv_prog_cc_export_all $LDFLAGS"
-      AC_CACHE_CHECK([whether $CC supports -Wl,--{en,dis}able-new-dtags],
-         ncbi_cv_prog_cc_new_dtags,
-         [orig_LDFLAGS=$LDFLAGS
-          LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
-             [ncbi_cv_prog_cc_new_dtags=yes], [ncbi_cv_prog_cc_new_dtags=no])
-          LDFLAGS=$orig_LDFLAGS])
-      if test "$ncbi_cv_prog_cc_new_dtags" = yes; then
-          if test "$with_hard_runpath" = yes; then
-             LDFLAGS="-Wl,--disable-new-dtags $LDFLAGS"
-          else
-             LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
-          fi
-      fi
-      ;;
-esac
-
-AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
-
-case "$ac_cv_have_decl__LIBCPP_VERSION:$compiler:$compiler_version" in
-   no:GCC:4[[0-6]]? | no:ICC:1[[01]]?? )
-     ncbi_cv_prog_cxx_11=no
-     ncbi_cv_prog_c_99=no
-     ;;
-   *:ICC:* )
-     ncbi_cv_prog_c_99='-std=gnu99 -fgnu89-inline'
-     ;;
-esac
-
-AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
-   ncbi_cv_prog_cxx_11,
-   [orig_CXX=$CXX
-    ncbi_cv_prog_cxx_11=no
-    for x in -std=gnu++11 -std=gnu++0x; do
-       CXX="$orig_CXX $x"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
-          [ncbi_cv_prog_cxx_11=$x])
-          test "x$ncbi_cv_prog_cxx_11" = "xno"  ||  break
-       done
-       CXX=$orig_CXX])
-test "$ncbi_cv_prog_cxx_11" = no  ||  CXX="$CXX $ncbi_cv_prog_cxx_11"
-
-AC_LANG_PUSH(C)
-AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
-   ncbi_cv_prog_c_99,
-   [orig_CC=$CC
-    ncbi_cv_prog_c_99=no
-    for x in -xc99=all "-std=gnu11 -fgnu89-inline" \
-             "-std=gnu1x -fgnu89-inline" \
-             "-std=gnu99 -fgnu89-inline" \
-             "-std=gnu9x -fgnu89-inline"; do
-       CC="$orig_CC $x"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
-          [ncbi_cv_prog_c_99=$x])
-          test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
-       done
-       CC=$orig_CC])
-AC_LANG_POP(C)
-test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
-
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
 DEPFLAGS_POST="" # Needed for VisualAge
@@ -1575,6 +1488,9 @@ LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 LIBS="$MATH_LIBS $LIBS"
 C_LIBS="$MATH_LIBS $C_LIBS"
 
+### Should go before any test compiler runs
+AC_GNU_SOURCE
+
 if test -n "$with_64"; then
    AC_CACHE_CHECK([whether this system supports --with(out)-64],
       ncbi_cv_sys_with64_ok,
@@ -1586,6 +1502,92 @@ if test -n "$with_64"; then
       AC_MSG_ERROR([cannot continue; please try different options])
    fi
 fi
+
+
+case "$host_os:$compiler" in
+   darwin*:GCC )
+      AC_CACHE_CHECK([whether $CC supports -Wl,-rpath],
+         ncbi_cv_prog_cc_wl_rpath,
+         [orig_LDFLAGS=$LDFLAGS
+          LDFLAGS="-Wl,-rpath,. $LDFLAGS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+             [ncbi_cv_prog_cc_wl_rpath=yes], [ncbi_cv_prog_cc_wl_rpath=no])
+          LDFLAGS=$orig_LDFLAGS])
+      ;;
+   *:GCC | *:ICC )
+      AC_CACHE_CHECK([whether $CC has an option to export all symbols],
+         ncbi_cv_prog_cc_export_all,
+         [orig_LDFLAGS=$LDFLAGS
+          ncbi_cv_prog_cc_export_all=no
+          for x in -Wl,--export-all-symbols -rdynamic -Wl,-E; do
+             LDFLAGS="$x $orig_LDFLAGS"
+             AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+                [ncbi_cv_prog_cc_export_all=$x])
+             test "x$ncbi_cv_prog_cc_export_all" = "xno"  ||  break
+          done
+          LDFLAGS=$orig_LDFLAGS])
+      test "$ncbi_cv_prog_cc_export_all" = no  || \
+         LDFLAGS="$ncbi_cv_prog_cc_export_all $LDFLAGS"
+      AC_CACHE_CHECK([whether $CC supports -Wl,--{en,dis}able-new-dtags],
+         ncbi_cv_prog_cc_new_dtags,
+         [orig_LDFLAGS=$LDFLAGS
+          LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
+             [ncbi_cv_prog_cc_new_dtags=yes], [ncbi_cv_prog_cc_new_dtags=no])
+          LDFLAGS=$orig_LDFLAGS])
+      if test "$ncbi_cv_prog_cc_new_dtags" = yes; then
+          if test "$with_hard_runpath" = yes; then
+             LDFLAGS="-Wl,--disable-new-dtags $LDFLAGS"
+          else
+             LDFLAGS="-Wl,--enable-new-dtags $LDFLAGS"
+          fi
+      fi
+      ;;
+esac
+
+AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
+
+case "$ac_cv_have_decl__LIBCPP_VERSION:$compiler:$compiler_version" in
+   no:GCC:4[[0-6]]? | no:ICC:1[[01]]?? )
+     ncbi_cv_prog_cxx_11=no
+     ncbi_cv_prog_c_99=no
+     ;;
+   *:ICC:* )
+     ncbi_cv_prog_c_99='-std=gnu99 -fgnu89-inline'
+     ;;
+esac
+
+AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
+   ncbi_cv_prog_cxx_11,
+   [orig_CXX=$CXX
+    ncbi_cv_prog_cxx_11=no
+    for x in -std=gnu++11 -std=gnu++0x; do
+       CXX="$orig_CXX $x"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
+          [ncbi_cv_prog_cxx_11=$x])
+          test "x$ncbi_cv_prog_cxx_11" = "xno"  ||  break
+       done
+       CXX=$orig_CXX])
+test "$ncbi_cv_prog_cxx_11" = no  ||  CXX="$CXX $ncbi_cv_prog_cxx_11"
+
+AC_LANG_PUSH(C)
+AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
+   ncbi_cv_prog_c_99,
+   [orig_CC=$CC
+    ncbi_cv_prog_c_99=no
+    for x in -xc99=all "-std=gnu11 -fgnu89-inline" \
+             "-std=gnu1x -fgnu89-inline" \
+             "-std=gnu99 -fgnu89-inline" \
+             "-std=gnu9x -fgnu89-inline"; do
+       CC="$orig_CC $x"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
+          [ncbi_cv_prog_c_99=$x])
+          test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
+       done
+       CC=$orig_CC])
+AC_LANG_POP(C)
+test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
+
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in
