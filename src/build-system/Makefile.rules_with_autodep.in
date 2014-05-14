@@ -35,8 +35,14 @@ ifdef GCCPCH
  FIXPCH = -e 's%\$$(wildcard \$$(includedir)/ncbi_pch\.hpp)%& $$(pchdir)/$(PCHMODE)%g'
 endif
 
+SKIP_DEP_RULES = no
+ifneq "" "$(findstring q,$(MAKEFLAGS))"
+  ifeq "" "$(filter depend,$(MAKECMDGOALS))"
+    SKIP_DEP_RULES = yes
+  endif
+endif
 
-ifeq "" "$(findstring q,$(MAKEFLAGS))"
+ifeq "no" "$(SKIP_DEP_RULES)"
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
@@ -97,6 +103,8 @@ endif
 
 $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE): $(pchsrc)
 	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
+
+depend: $(SOURCES:%=%.d)
 endif
 
 NODEPGOALS = $(ALT_GOALS)

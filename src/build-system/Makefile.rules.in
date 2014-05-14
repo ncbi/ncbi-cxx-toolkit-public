@@ -23,7 +23,7 @@ ifneq "$(BINCOPY)" "@:"
 endif
 
 ALT_GOALS = clean purge requirements mark-as-disabled deactivate src-stamp \
-            export-headers
+            export-headers depend
 
 ALL_SETTINGS = $(CFLAGS_ALL) $(CXXFLAGS_ALL) $(DLL_LIBS) \
                $(LDFLAGS) $(LIB) $(LIBS)
@@ -132,5 +132,7 @@ purge-headers:
 	    cd $(incdest)  &&  rmdir -p $(PACKAGE_EXPORT); \
 	fi
 
-.PHONY: clean-common export-headers purge-headers requirements mark-as-disabled
+depend:;
 
+.PHONY: clean-common export-headers purge-headers requirements mark-as-disabled
+.PHONY: depend
