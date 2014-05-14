@@ -368,7 +368,8 @@ class Scenario505( TestBase ):
             reply = self.ns.directReadSingleReply()
             if reply[ 0 ] != True:
                 raise Exception( 'RECO failed: ' + reply[ 1 ] )
-            if 'No changeable parameters' not in reply[ 1 ]:
+            if 'No changeable parameters' not in reply[ 1 ] and \
+               'No changes in changeable parameters' not in reply[ 1 ]:
                 raise Exception( 'Unexpected output for RECO: ' + reply[ 1 ] )
 
             # Step 3: RECO without touching

@@ -1633,7 +1633,7 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
         if (warning.empty())
             x_WriteMessage("OK:");
         else
-            x_WriteMessage("OK:WARNING:" + warning);
+            x_WriteMessage("OK:WARNING:" + warning + ";");
 
         x_PrintCmdRequestStop();
         return;
@@ -1648,10 +1648,10 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
             ERR_POST(Warning << "CANCEL for unknown job: "
                              << m_CommandArguments.job_key);
             x_SetCmdRequestStatus(eStatus_NotFound);
-            x_WriteMessage("OK:WARNING:Job not found;");
+            x_WriteMessage("OK:WARNING:eJobNotFound:Job not found;");
             break;
         case CNetScheduleAPI::eCanceled:
-            x_WriteMessage("OK:WARNING:Already canceled;");
+            x_WriteMessage("OK:WARNING:eJobAlreadyCanceled:Already canceled;");
             x_LogCommandWithJob(job);
             break;
         default:
@@ -1861,7 +1861,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
         ERR_POST(Warning << "Cannot accept job "
                          << m_CommandArguments.job_key
                          << " results. The job has already been done.");
-        x_WriteMessage("OK:WARNING:Already done;");
+        x_WriteMessage("OK:WARNING:eJobAlreadyDone:Already done;");
         x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
@@ -2068,7 +2068,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
     if (old_status == CNetScheduleAPI::eFailed) {
         ERR_POST(Warning << "FPUT for already failed job "
                          << m_CommandArguments.job_key);
-        x_WriteMessage("OK:WARNING:Already failed;");
+        x_WriteMessage("OK:WARNING:eJobAlreadyFailed:Already failed;");
         x_LogCommandWithJob(job);
         x_PrintCmdRequestStop();
         return;
@@ -2455,8 +2455,9 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
             m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
             if (m_ConnContext.NotNull())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
-            x_WriteMessage("OK:WARNING:No changeable parameters were "
-                           "identified in the new cofiguration file;");
+            x_WriteMessage("OK:WARNING:eNoParametersChanged:No changes in "
+                           "changeable parameters were identified in the new "
+                           "cofiguration file;");
             x_PrintCmdRequestStop();
             return;
         }
@@ -2481,8 +2482,8 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
         x_WriteMessage("OK:" + total_changes);
     }
     else
-        x_WriteMessage("OK:WARNING:Configuration file has not "
-                       "been changed, RECO ignored;");
+        x_WriteMessage("OK:WARNING:eConfigFileNotChanged:Configuration file "
+                       "has not been changed, RECO ignored;");
 
     x_PrintCmdRequestStop();
 }
@@ -2682,16 +2683,15 @@ void CNetScheduleHandler::x_ProcessAckAlert(CQueue*)
                                            m_CommandArguments.user);
     switch (result) {
         case eNotFound:
-            x_WriteMessage("OK:WARNING:Alert has not been found;");
+            x_WriteMessage("OK:WARNING:eAlertNotFound:Alert has not been "
+                           "found;");
             break;
         case eAlreadyAcknowledged:
-            x_WriteMessage("OK:WARNING:Alert has already been acknowledged;");
-            break;
-        case eAcknowledged:
-            x_WriteMessage("OK:");
+            x_WriteMessage("OK:WARNING:eAlertAlreadyAcknowledged:Alert has "
+                           "already been acknowledged;");
             break;
         default:
-            x_WriteMessage("OK:WARNING:unknown acknowledge result;");
+            x_WriteMessage("OK:");
     }
     x_PrintCmdRequestStop();
 }
@@ -3158,7 +3158,8 @@ void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
 
     if (m_CommandArguments.mode == false &&
             m_Server->GetRefuseSubmits() == true)
-        x_WriteMessage("OK:WARNING:Submits are disabled on the server level;");
+        x_WriteMessage("OK:WARNING:eSubmitsDisabledForServer:Submits are "
+                       "disabled on the server level;");
     else
         x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
@@ -3179,7 +3180,7 @@ void CNetScheduleHandler::x_ProcessPause(CQueue* q)
     if (current == CQueue::eNoPause)
         x_WriteMessage("OK:");
     else {
-        string  reply = "OK:WARNING:The queue has "
+        string  reply = "OK:WARNING:eQueueAlreadyPaused:The queue has "
                         "already been paused (previous pullback value is ";
         if (current == CQueue::ePauseWithPullback)  reply += "true";
         else                                        reply += "false";
@@ -3198,7 +3199,7 @@ void CNetScheduleHandler::x_ProcessResume(CQueue* q)
 
     q->SetPauseStatus(CQueue::eNoPause);
     if (current == CQueue::eNoPause)
-        x_WriteMessage("OK:WARNING:The queue is not paused;");
+        x_WriteMessage("OK:WARNING:eQueueNotPaused:The queue is not paused;");
     else
         x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
@@ -3216,7 +3217,8 @@ void CNetScheduleHandler::x_CmdNotImplemented(CQueue *)
 void CNetScheduleHandler::x_CmdObsolete(CQueue*)
 {
     x_SetCmdRequestStatus(eStatus_NotImplemented);
-    x_WriteMessage("OK:WARNING:Obsolete;");
+    x_WriteMessage("OK:WARNING:eCommandObsolete:Command is obsolete and will "
+                   "be ignored;");
     x_PrintCmdRequestStop();
 }
 
@@ -3567,7 +3569,8 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
                                         m_CommandArguments.affinity_token));
     }
     else if (what == "WNODE") {
-        x_WriteMessage("OK:WARNING:Obsolete, use STAT CLIENTS instead;");
+        x_WriteMessage("OK:WARNING:eCommandObsolete:Command is obsolete, use "
+                       "STAT CLIENTS instead;");
     }
 
     x_WriteMessage("OK:END");

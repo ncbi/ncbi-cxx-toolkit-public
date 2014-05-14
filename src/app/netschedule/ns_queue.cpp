@@ -933,7 +933,7 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
                              << *k << "'. Ignored.");
             if (!msg.empty())
                 msg += "; ";
-            msg += "unknown affinity to delete: " + *k;
+            msg += "eAffinityNotFound:unknown affinity to delete: " + *k;
             continue;
         }
 
@@ -946,7 +946,7 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
                                 "preferred client affinities. Ignored.");
             if (!msg.empty())
                 msg += "; ";
-            msg += "not registered affinity to delete: " + *k;
+            msg += "eAffinityNotPreferred:not registered affinity to delete: " + *k;
             continue;
         }
 
@@ -1008,7 +1008,7 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
                             "preferred client affinities. Ignored.");
         if (!msg.empty())
             msg += "; ";
-        msg += "already registered affinity to add: " + *j;
+        msg += "eAffinityAlreadyPreferred:already registered affinity to add: " + *j;
     }
 
     if (any_to_del)
@@ -1291,7 +1291,8 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
                 // by whatever reason (expired/failed/returned before)
                 LOG_POST(Message << Warning << "Received RETURN2 with only "
                                                "passport matched.");
-                warning = "Only job passport matched. Command is ignored.";
+                warning = "eJobPassportOnlyMatch:Only job passport matched. "
+                          "Command is ignored.";
                 return old_status;
             }
             // Here: the authorization token is OK, we can continue
@@ -1675,15 +1676,18 @@ string  CQueue::CancelGroupAndAffinity(const CNSClientId &  client,
             group_jobs = m_GroupRegistry.GetJobs(group);
         } catch (...)
         {
-            warning = "job group " + group + " is not found;";
+            warning = "eGroupNotFound:job group " + group + " is not found";
         }
     }
 
     if (!affinity_token.empty()) {
         unsigned int    aff_id = m_AffinityRegistry.GetIDByToken(
                                                             affinity_token);
-        if (aff_id == 0)
-            warning += "affinity " + affinity_token + " is not found;";
+        if (aff_id == 0) {
+            if (!warning.empty())
+                warning += "; ";
+            warning += "eAffinityNotFound:" + affinity_token + " is not found";
+        }
         else
             affinity_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
     }
@@ -2298,7 +2302,8 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                     // by whatever reason (expired/failed/returned before)
                     LOG_POST(Message << Warning << "Received FPUT2 with only "
                                                    "passport matched.");
-                    warning = "Only job passport matched. Command is ignored.";
+                    warning = "eJobPassportOnlyMatch:Only job passport "
+                              "matched. Command is ignored.";
                     return old_status;
                 }
                 // Here: the authorization token is OK, we can continue
