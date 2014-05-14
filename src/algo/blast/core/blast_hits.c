@@ -1708,11 +1708,12 @@ Int2 Blast_HSPListGetEvalues(EBlastProgramType program_number,
           /* All kbp in preliminary stage are equivalent.  However, some
              may be invalid.  Search for the first populated kbp */
           int i;
-          for (i=0; i<6; ++i) {
+          for (i=0; i < sbp->number_of_contexts; ++i) {
               if (kbp[i]) break;
           }
           kbp_context = i;
       }
+      ASSERT(kbp[kbp_context]);
       kbp[kbp_context]->Lambda /= scaling_factor;
 
       if (sbp->gbp) {
