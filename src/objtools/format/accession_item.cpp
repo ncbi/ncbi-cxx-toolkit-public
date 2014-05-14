@@ -92,8 +92,14 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
     if ( ctx.IsWGS()  && ctx.GetLocation().IsWhole() ) {
         size_t acclen = m_Accession.length();
         m_WGSAccession = m_Accession;
-        if (acclen >= 12  &&  m_WGSAccession.find('0', 6) != NPOS) {
+        if (acclen == 12  &&  ! NStr::EndsWith(m_WGSAccession, "000000") ) {
             m_WGSAccession.replace(6, acclen - 6, acclen - 6, '0');
+        } else if (acclen == 13  &&  ! NStr::EndsWith(m_WGSAccession, "0000000") ) {
+            m_WGSAccession.replace(7, acclen - 7, acclen - 7, '0');
+        } else if (acclen == 14  &&  ! NStr::EndsWith(m_WGSAccession, "00000000") ) {
+            m_WGSAccession.replace(8, acclen - 8, acclen - 8, '0');
+        } else if (acclen == 15  &&  ! NStr::EndsWith(m_WGSAccession, "00000000") ) {
+            m_WGSAccession.replace(8, acclen - 8, acclen - 8, '0');
         } else {
             m_WGSAccession.erase();
         }
