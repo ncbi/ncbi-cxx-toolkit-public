@@ -2510,8 +2510,8 @@ case "$compiler" in
            ALLOW_UNDEF='-undefined suppress'
            FORBID_UNDEF='-undefined error'
         else
-           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-dylib -Wl,-install_name,${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-read_only_relocs,warning -lbundle1.o -o"
+           LINK_DLL="$LINK $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-dylib -Wl,-install_name,${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$LINK $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-read_only_relocs,warning -lbundle1.o -o"
            ALLOW_UNDEF='-Wl,-undefined,suppress'
            FORBID_UNDEF='-Wl,-undefined,error'
         fi
