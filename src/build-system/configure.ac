@@ -1080,15 +1080,6 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:GCC )
-   # On Solaris, GCC defaults to setting _XOPEN_SOURCE (to 500) only
-   # in C++ mode.  Set it for C code as well to ensure consistent
-   # header behavior, taking care to match the C standard version
-   # (as enforced by <sys/feature_tests.h>).
-   case "$ncbi_cv_prog_c_99" in
-      no) CC="$CC -D_XOPEN_SOURCE=500" ;;
-      *)  CC="$CC -D_XOPEN_SOURCE=600" ;;
-   esac
-
    STRIP="@:"
    ;;
 
@@ -1587,6 +1578,19 @@ AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
        CC=$orig_CC])
 AC_LANG_POP(C)
 test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
+
+case "$host_os:$compiler" in
+ solaris*:GCC )
+   # On Solaris, GCC defaults to setting _XOPEN_SOURCE (to 500) only
+   # in C++ mode.  Set it for C code as well to ensure consistent
+   # header behavior, taking care to match the C standard version
+   # (as enforced by <sys/feature_tests.h>).
+   case "$ncbi_cv_prog_c_99" in
+      no) CC="$CC -D_XOPEN_SOURCE=500" ;;
+      *)  CC="$CC -D_XOPEN_SOURCE=600" ;;
+   esac
+   ;;
+esac
 
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
