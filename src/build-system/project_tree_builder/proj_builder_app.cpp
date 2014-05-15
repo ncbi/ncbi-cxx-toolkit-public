@@ -2568,95 +2568,141 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
             }
             list<string> values;
             NStr::Split(line, " ", values);
-            if (values.size() > 2) {
-                list<string>::const_iterator l= values.begin();
-                string first  = *l++;
-                string second = *l++;
-                string third  = *l++;
+            if (values.size() < 2) {
+                continue;
+            }
+            list<string>::const_iterator l= values.begin();
+            string first  = *l++;
+            string second = *l++;
+            string third  = values.size() > 2 ? (*l++) : string();
 
-                list<string> first_list;
-                if (CSymResolver::IsDefine(first)) {
-                    string resolved;
-                    site.ResolveDefine(CSymResolver::StripDefine(first), resolved);
-                    first = resolved;
-                }
-                NStr::Split(first, LIST_SEPARATOR_LIBS, first_list);
+            list<string> first_list;
+            if (CSymResolver::IsDefine(first)) {
+                string resolved;
+                site.ResolveDefine(CSymResolver::StripDefine(first), resolved);
+                first = resolved;
+            }
+            NStr::Split(first, LIST_SEPARATOR_LIBS, first_list);
 
-                list<string> third_list;
+            list<string> third_list;
 #if DO_PATCHTREEMAKEFILES
-                third_list.push_back(third);
+            third_list.push_back(third);
 #else
-                if (CSymResolver::IsDefine(third)) {
-                    string resolved;
-                    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
-                        string stripped(CSymResolver::StripDefine(third));
-                        if (stripped != "NCBI_C_ncbi") {
-                            site.ResolveDefine(stripped, resolved);
-                        }
-                        if (resolved.empty()) {
-                            resolved = "@" + stripped + "@";
+            if (CSymResolver::IsDefine(third)) {
+                string resolved;
+                if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+                    string stripped(CSymResolver::StripDefine(third));
+                    if (stripped != "NCBI_C_ncbi") {
+                        site.ResolveDefine(stripped, resolved);
+                    }
+                    if (resolved.empty()) {
+                        resolved = "@" + stripped + "@";
+                    }
+                } else {
+                    site.ResolveDefine(CSymResolver::StripDefine(third), resolved);
+                }
+                third = resolved;
+            }
+            NStr::Split(third, LIST_SEPARATOR_LIBS, third_list);
+#endif
+            ITERATE(list<string>, f, first_list) {
+                string f_name(*f);
+                if (NStr::StartsWith(*f, "-l")) {
+                    f_name = f->substr(2);
+                } else if (NStr::FindCase(*f,"-framework") != NPOS) {
+                    list<string> f_list;
+                    NStr::Split(f_name, ",", f_list);
+                    f_name = f_list.back();
+                } else if (f->at(0) == '-') {
+                    continue;
+                }
+                map<string, set<string> >  lib3Precedes;
+                CSymResolver::StripSuffix(f_name);
+                if (third_list.empty()) {
+                    m_GraphDepPrecedes[f_name] = set<string>();
+                }
+                ITERATE(list<string>, t, third_list) {
+                    string t_name(*t);
+                    CSymResolver::StripSuffix(t_name);
+                    bool is_lib = false;
+                    bool is_framework = false;
+                    if (NStr::StartsWith(*t, "-l")) {
+                        is_lib = true;
+                        t_name = t->substr(2);
+                    } else if (NStr::CompareNocase(*t,"-framework") == 0) {
+                        if (t != third_list.end()) {
+                            is_framework = true;
+                            t_name = *(++t);
+                        } else {
+                            continue;
                         }
                     } else {
-                        site.ResolveDefine(CSymResolver::StripDefine(third), resolved);
+                        is_lib = t->at(0) != '-';
                     }
-                    third = resolved;
-                }
-                NStr::Split(third, LIST_SEPARATOR_LIBS, third_list);
-#endif
-                ITERATE(list<string>, f, first_list) {
-                    string f_name = NStr::StartsWith(*f, "-l") ? f->substr(2) : *f;
-                    if (f_name.at(0) == '-') {
+                    if (*f == t_name) {
                         continue;
                     }
-                    CSymResolver::StripSuffix(f_name);
-                    ITERATE(list<string>, t, third_list) {
-                        string t_name(*t);
-                        CSymResolver::StripSuffix(t_name);
-                        bool is_lib = false;
-                        bool is_framework = false;
-                        if (NStr::StartsWith(*t, "-l")) {
-                            is_lib = true;
-                            t_name = t->substr(2);
-                        } else if (NStr::CompareNocase(*t,"-framework") == 0) {
-                            if (t != third_list.end()) {
-                                is_framework = true;
-                                t_name = *(++t);
-                            } else {
-                                continue;
-                            }
-                        } else {
-                            is_lib = t->at(0) != '-';
+                    if (!is_lib && !is_framework) {
+                        if (second == "needs3party") {
+                            m_GraphDepFlags[*f].insert(t_name);
                         }
-                        if (*f == t_name) {
-                            continue;
+                        continue;
+                    }
+                    if (second == "includes") {
+                        m_GraphDepIncludes[*f].insert(t_name);
+                    } else if (second == "includes3party") {
+                        m_GraphDepIncludes[*f].insert(t_name);
+                        m_3PartyLibs.insert(t_name);
+                        if (is_framework) {
+                            m_Frameworks.insert(t_name);
                         }
-                        if (!is_lib && !is_framework) {
-                            if (second == "needs3party") {
-                                m_GraphDepFlags[*f].insert(t_name);
-                            }
-                            continue;
-                        }
-                        if (second == "includes") {
-                            m_GraphDepIncludes[*f].insert(t_name);
-                        } else if (second == "includes3party") {
-                            m_GraphDepIncludes[*f].insert(t_name);
-                            m_3PartyLibs.insert(t_name);
-                            if (is_framework) {
-                                m_Frameworks.insert(t_name);
-                            }
-                        } else if (second == "needs") {
-                            m_GraphDepPrecedes[*f].insert(t_name);
-                        } else if (second == "needs3party") {
-                            m_GraphDepPrecedes[*f].insert(t_name);
-                            m_3PartyLibs.insert(t_name);
-                            if (is_framework) {
-                                m_Frameworks.insert(t_name);
-                            }
+                    } else if (second == "needs") {
+                        m_GraphDepPrecedes[*f].insert(t_name);
+                    } else if (second == "needs3party") {
+                        m_GraphDepPrecedes[*f].insert(t_name);
+                        m_3PartyLibs.insert(t_name);
+                        if (is_framework) {
+                            m_Frameworks.insert(t_name);
                         }
                     }
                 }
             }
         }
+//gur
+#if 0
+        {
+            string resolved;
+            list<string> third_list;
+            site.ResolveDefine("ORIG_LIBS", resolved);
+            NStr::Split(resolved, LIST_SEPARATOR_LIBS, third_list);
+            ITERATE(list<string>, t, third_list) {
+                string t_name(*t);
+                CSymResolver::StripSuffix(t_name);
+                bool is_lib = false;
+                bool is_framework = false;
+                if (NStr::StartsWith(*t, "-l")) {
+                    is_lib = true;
+                    t_name = t->substr(2);
+                } else if (NStr::CompareNocase(*t,"-framework") == 0) {
+                    if (t != third_list.end()) {
+                        is_framework = true;
+                        t_name = *(++t);
+                    } else {
+                        continue;
+                    }
+                } else {
+                    is_lib = t->at(0) != '-';
+                }
+                if (is_lib || is_framework) {
+                    m_GraphDepPrecedes[t_name] = set<string>();
+                    m_3PartyLibs.insert(t_name);
+                    if (is_framework) {
+                        m_Frameworks.insert(t_name);
+                    }
+                }
+            }
+        }
+#endif
     }
     for ( map<string, set<string> >::const_iterator i = m_GraphDepIncludes.begin();
         i != m_GraphDepIncludes.end(); ++i) {
@@ -2755,7 +2801,8 @@ void  CProjBulderApp::RankDepGraph(void)
     vector< set<string> > graph;
     for (map<string, set<string> >::const_iterator d= m_GraphDepPrecedes.begin();
             d!= m_GraphDepPrecedes.end(); ++d) {
-        InsertDep(graph, d->first);
+        set<string> done;
+        InsertDep(graph, d->first, done);
     }
     for (size_t s= 0; s<graph.size(); ++s) {
         for (set<string>::const_iterator l = graph[s].begin(); l != graph[s].end(); ++l) {
@@ -2764,11 +2811,15 @@ void  CProjBulderApp::RankDepGraph(void)
     }
 }
 
-void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep)
+void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep, set<string>& done)
 {
     if (m_GraphDepPrecedes.find(dep) == m_GraphDepPrecedes.end()) {
         return;
     }
+    if (done.find(dep) != done.end()) {
+        return;
+    }
+    done.insert(dep);
     const set<string>& dependents = m_GraphDepPrecedes[dep];
     size_t graphset=0;
     for (set<string>::const_iterator d = dependents.begin(); d != dependents.end(); ++d) {
@@ -2783,7 +2834,8 @@ void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep)
                 }
             }
             if (!found) {
-                InsertDep(graph, *d);
+                InsertDep(graph, *d, done);
+                break;
             }
         }
     }

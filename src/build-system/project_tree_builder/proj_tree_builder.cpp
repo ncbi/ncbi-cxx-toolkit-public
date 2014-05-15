@@ -881,9 +881,8 @@ void  SMakeProjectT::VerifyLibDepends(
                 projlibs.insert(p->Id());
             }
         }
-// all toolkit libs should be known
-// while 3rd party may be unknown
-        if (expected_3party != nullptr) {
+// all libs should be known
+        {
             list<string> unknown;
             ITERATE (set<string>, p,  projlibs) {
                 if (app.m_GraphDepPrecedes.find(*p) == app.m_GraphDepPrecedes.end()) {
@@ -892,7 +891,7 @@ void  SMakeProjectT::VerifyLibDepends(
             }
             if (!unknown.empty()) {
                 fix = false;
-                warnings.push_back("unknown toolkit libraries: "  + NStr::Join(unknown,","));
+                warnings.push_back("unknown libraries: "  + NStr::Join(unknown,","));
             }
         }
     }
