@@ -730,7 +730,7 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
                 tgt_range += tgt_piece;
             }
             if (count) {
-                if ( 0 != NcbiStreamposToInt8(cigar.tellp()) ) {
+                if ( !IsOssEmpty(cigar) ) {
                    trivial = false;
                    cigar << '+';
                 }

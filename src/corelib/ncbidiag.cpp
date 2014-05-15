@@ -3224,7 +3224,7 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
     }
 
     if (m_Diag != &diag) {
-        if ( NcbiStreamposToInt8(m_Stream->tellp()) != 0 ) {
+        if ( !IsOssEmpty(*m_Stream) ) {
             Flush();
         }
         m_Diag = &diag;
@@ -3247,8 +3247,7 @@ private:
 void CDiagBuffer::Flush(void)
 {
     if ( m_InUse || !m_Diag ) {
-        if ( !m_InUse  &&  m_Stream
-            &&  NcbiStreamposToInt8(m_Stream->tellp()) != 0) {
+        if ( !m_InUse  &&  m_Stream  &&  !IsOssEmpty(*m_Stream) ) {
             string message = CNcbiOstrstreamToString(*m_Stream);
             // Can not use Reset() without CNcbiDiag.
             m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
@@ -3262,8 +3261,7 @@ void CDiagBuffer::Flush(void)
     bool is_console = (m_Diag->GetPostFlags() & eDPF_IsConsole) != 0;
     bool is_disabled = SeverityDisabled(sev);
     // Do nothing if diag severity is lower than allowed
-    if ((!is_console  &&  is_disabled)
-        ||  NcbiStreamposToInt8(m_Stream->tellp()) == 0) {
+    if ((!is_console  &&  is_disabled)  ||  IsOssEmpty(*m_Stream)) {
         return;
     }
 
@@ -6237,7 +6235,7 @@ s_GetExceptionText(const CException* pex)
     string text(pex->GetMsg());
     CNcbiOstrstream os;
     pex->ReportExtra(os);
-    if (NcbiStreamposToInt8(os.tellp()) != 0) {
+    if ( !IsOssEmpty(os) ) {
         text += " (";
         text += (string) CNcbiOstrstreamToString(os);
         text += ')';
@@ -6271,7 +6269,7 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
     }
     if (!main_pex)
         main_pex = pile.top();
-    if (NcbiStreamposToInt8(m_Buffer.m_Stream->tellp()) != 0) {
+    if ( !IsOssEmpty(*m_Buffer.m_Stream) ) {
         *this << "(" << main_pex->GetType() << "::"
                      << main_pex->GetErrCodeString() << ") "
               << s_GetExceptionText(main_pex);

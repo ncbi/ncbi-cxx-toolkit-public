@@ -858,7 +858,7 @@ SIZE_TYPE CHTML_tr::GetTextLength(TMode mode)
         Node(i)->Print(sout, mode);
         cols++;
     }
-    SIZE_TYPE textlen = (SIZE_TYPE)NcbiStreamposToInt8(sout.tellp());
+    SIZE_TYPE textlen = (SIZE_TYPE)GetOssSize(sout);
 
     switch (mode) {
         case ePlainText:

@@ -218,7 +218,7 @@ public:
                 job_context.GetQueueName());
         vector<string> args;
 
-        CNcbiStrstream err;
+        CNcbiOstrstream err;
         CNcbiStrstream str_in;
         CNcbiIstream* in = request->GetInputStream();
         if (!in)
@@ -250,8 +250,8 @@ public:
                         "Exited with return code " + NStr::IntToString(ret));
 
         if (job_context.IsLogRequested()) {
-            if (NcbiStreamposToInt8(err.tellp()) > 0 )
-                LOG_POST("STDERR: " << err.rdbuf());
+            if ( !IsOssEmpty(err) )
+                LOG_POST("STDERR: " << (string)CNcbiOstrstreamToString(err));
 
             LOG_POST("Job " << job_context.GetJobKey() <<
                 " is " << job_context.GetCommitStatusDescription(

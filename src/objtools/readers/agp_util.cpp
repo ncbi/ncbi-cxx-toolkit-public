@@ -1422,7 +1422,7 @@ void CAgpErrEx::Msg(int code, const string& details, int appliesTo)
 
 void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
 {
-    if( NcbiStreamposToInt8(m_messages->tellp()) > 0 ) {
+    if( !IsOssEmpty(*m_messages) ) {
         if(m_use_xml) {
             PrintLineXml(*m_out, m_filename, line_num, s, m_two_lines_involved);
         }

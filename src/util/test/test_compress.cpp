@@ -373,7 +373,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 assert(ocs.good());
                 ocs.Finalize();
                 assert(ocs.good());
-                n = (size_t)NcbiStreamposToInt8(os_str.tellp());
+                n = (size_t)GetOssSize(os_str);
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
                 assert(ocs.GetOutputSize() == n);
@@ -384,7 +384,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 assert(ods.good());
                 ods.Finalize();
                 assert(test.result ? ods.good() : !ods.good());
-                n = (size_t)NcbiStreamposToInt8(os_str.tellp());
+                n = (size_t)GetOssSize(os_str);
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);
                 assert(ods.GetOutputSize() == n);
@@ -401,7 +401,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 assert(ocs.good());
                 ocs.Finalize();
                 assert(ocs.good());
-                n = (size_t)NcbiStreamposToInt8(os_str.tellp());
+                n = (size_t)GetOssSize(os_str);
                 assert(n == test.stream_output_size);
                 assert(ocs.GetProcessedSize() == 0);
                 assert(ocs.GetOutputSize() == n);
@@ -414,7 +414,7 @@ void CTest::TestEmptyInputData(CCompressStream::EMethod method)
                 assert(ods.good());
                 ods.Finalize();
                 assert(test.result ? ods.good() : !ods.good());
-                n = (size_t)NcbiStreamposToInt8(os_str.tellp());
+                n = (size_t)GetOssSize(os_str);
                 assert(n == 0);
                 assert(ods.GetProcessedSize() == 0);
                 assert(ods.GetOutputSize() == n);

@@ -355,7 +355,7 @@ string CException::ReportThis(TDiagPostFlags flags) const
     CNcbiOstrstream os, osex;
     ReportStd(os, flags);
     ReportExtra(osex);
-    if (NcbiStreamposToInt8(osex.tellp()) != 0) {
+    if ( !IsOssEmpty(osex) ) {
         os << " (" << (string)CNcbiOstrstreamToString(osex) << ')';
     }
     return CNcbiOstrstreamToString(os);

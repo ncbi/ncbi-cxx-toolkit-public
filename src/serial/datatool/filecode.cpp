@@ -737,7 +737,7 @@ void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
     (this->*method)(code);
 
     // get code length
-    size_t count = (size_t)NcbiStreamposToInt8(code.tellp());
+    size_t count = (size_t)GetOssSize(code);
     if ( count == 0 ) {
         NCBI_THROW(CDatatoolException,eInvalidData,"empty generated code");
     }

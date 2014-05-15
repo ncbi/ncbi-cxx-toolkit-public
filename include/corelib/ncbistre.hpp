@@ -679,6 +679,23 @@ private:
     CNcbiOstrstream& m_Out;
 };
 
+inline
+Int8 
+GetOssSize(CNcbiOstrstream& oss)
+{
+#ifdef NCBI_SHUN_OSTRSTREAM
+    return NcbiStreamposToInt8(oss.tellp());
+#else
+    return oss.pcount();
+#endif
+}
+
+inline
+bool
+IsOssEmpty(CNcbiOstrstream& oss)
+{
+    return GetOssSize(oss) == 0;
+}
 
 /// Utility class for automatic conversion of strings to all uppercase letters.
 /// Sample usage:

@@ -517,13 +517,13 @@ void CDelayedOfstream::Discard(void)
 
 bool Empty(const CNcbiOstrstream& src)
 {
-    return NcbiStreamposToInt8(const_cast<CNcbiOstrstream&>(src).tellp()) == 0;
+    return IsOssEmpty(const_cast<CNcbiOstrstream&>(src));
 }
 
 CNcbiOstream& Write(CNcbiOstream& out, const CNcbiOstrstream& src)
 {
     CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(src);
-    size_t size = (size_t)NcbiStreamposToInt8(source.tellp());
+    size_t size = (size_t)GetOssSize(source);
     if ( size != 0 ) {
         string str = CNcbiOstrstreamToString(source);
         out.write(str.data(), size);
@@ -535,7 +535,7 @@ CNcbiOstream& WriteTabbed(CNcbiOstream& out, const CNcbiOstrstream& code,
                           const char* tab)
 {
     CNcbiOstrstream& source = const_cast<CNcbiOstrstream&>(code);
-    size_t size = (size_t)NcbiStreamposToInt8(source.tellp());
+    size_t size = (size_t)GetOssSize(source);
     if ( size != 0 ) {
         if ( !tab )
             tab = "    ";

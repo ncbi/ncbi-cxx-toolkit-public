@@ -443,7 +443,7 @@ int CTestApp::Run(void)
     }
     // Check captured errors
     SetDiagStream(&NcbiCerr);
-    if (NcbiStreamposToInt8(err_out.tellp()) > 0) {
+    if ( !IsOssEmpty(err_out) ) {
         CheckString(CNcbiOstrstreamToString(err_out), args, "errors messages");
     }
 

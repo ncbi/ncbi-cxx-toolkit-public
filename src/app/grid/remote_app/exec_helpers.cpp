@@ -346,15 +346,13 @@ public:
             switch (m_Monitor->Run(args, out, err)) {
             case 0:
                 {
-                    bool non_empty_output
-                        = NcbiStreamposToInt8(out.tellp()) > 0;
+                    bool non_empty_output = !IsOssEmpty(out);
                     if (non_empty_output) {
                         m_JobContext.PutProgressMessage
                             (CNcbiOstrstreamToString(out), true);
                     }
                     if (m_JobContext.IsLogRequested() &&
-                        ( !non_empty_output
-                         || NcbiStreamposToInt8(err.tellp()) > 0))
+                        ( !non_empty_output || !IsOssEmpty(err) ))
                         x_Log("exited with zero return code", err);
                 }
                 break;
@@ -366,7 +364,7 @@ public:
                 {
                     x_Log("job failed", err);
                     string errmsg;
-                    if (NcbiStreamposToInt8(out.tellp()) > 0) {
+                    if ( !IsOssEmpty(out) ) {
                         errmsg = CNcbiOstrstreamToString(out);
                     } else
                         errmsg = "Monitor requested job termination";
@@ -386,9 +384,9 @@ public:
 private:
     inline void x_Log(const string& what, CNcbiOstrstream& sstream)
     {
-        if (NcbiStreamposToInt8(sstream.tellp()) > 0) {
+        if ( !IsOssEmpty(sstream) ) {
             LOG_POST(m_JobContext.GetJobKey() << " (monitor) " << what <<
-                    ": " << sstream.rdbuf());
+                     ": " << (string)CNcbiOstrstreamToString(sstream));
         } else {
             LOG_POST(m_JobContext.GetJobKey() << " (monitor) " << what << ".");
         }
