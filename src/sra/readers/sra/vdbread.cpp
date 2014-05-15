@@ -217,7 +217,10 @@ string s_FixPath(const string& acc_or_path)
         CVPath vpath(acc_or_path);
         string path = vpath;
         // workaround for lost drive letter
-        if ( isalpha(acc_or_path[0]&0xff) && acc_or_path[1] == ':' ) {
+        if ( isalpha(acc_or_path[0]&0xff) && acc_or_path[1] == ':' &&
+             (path[0] != '/' ||
+              path[1] != toupper(acc_or_path[0]&0xff) ||
+              path[2] != '/') ) {
             path = "/ " + path;
             path[1] = toupper(acc_or_path[0]&0xff);
         }
