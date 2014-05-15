@@ -60,8 +60,7 @@ public:
     ~CSearch_func(void);
 
     bool Empty() const;
-    bool Match(const string& str) const;
-    void SetSearchStr( const string& str) { m_sch_str = str; };
+    bool Match(const string& str);
 
 private:
     string m_sch_str, m_digit_str;
