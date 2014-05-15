@@ -3453,29 +3453,89 @@ struct SLinker
 
 typedef vector<SLinker> TLinkers;
 
+struct RangeOrder {
+    bool operator()(const TSignedSeqRange& a, const TSignedSeqRange& b) {
+        return Precede(a, b);
+    }
+};
+typedef set<TSignedSeqRange,RangeOrder> TRangePrecedeSet;
+
 void CChain::CalculateSupportAndWeightFromMembers() {
 
     TLinkers linkers;
     ITERATE(TContained, i, m_members) {
         SChainMember* mi = *i;
+        CGeneModel* ai = mi->m_align;
+        const CCDSInfo* cdsi = mi->m_cds_info;
         _ASSERT(mi->m_orig_align);
-
-        SLinker sl;
-        sl.m_member = mi;
-        sl.m_value = 1;
-        ITERATE(CGeneModel::TExons, e, Exons()) {
-            sl.m_range += (mi->m_align->Limits()&e->Limits());
-            sl.m_reading_frame += (mi->m_cds_info->ReadingFrame()&e->Limits()&ReadingFrame());
-        }
 
         bool pstop_outside_rf = false;
         for(int is = 0; is < (int)GetCdsInfo().PStops().size() && !pstop_outside_rf; ++is) {
             const TSignedSeqRange& s = GetCdsInfo().PStops()[is];
-            pstop_outside_rf = Include(sl.m_range,s) && !Include(sl.m_reading_frame,s);  // these alignments were not in the 'original' chain - they were added during deleting compatible chains
+            pstop_outside_rf = Include(ai->Limits(),s) && !Include(cdsi->ReadingFrame(),s);  // these alignments were not in the 'original' chain - they were added during deleting compatible chains
+        }
+        if(pstop_outside_rf)
+            continue;
+
+        bool not_wanted = false;
+
+        TRangePrecedeSet incompatible_ranges;
+        for(int j = 1; j < (int)Exons().size(); ++j) {
+            TSignedSeqRange intron(Exons()[j-1].GetTo()+1,Exons()[j].GetFrom()-1);
+            if(intron.IntersectingWith(ai->Limits()))
+                incompatible_ranges.insert(incompatible_ranges.end(),intron);
+        }
+        for(int j = 1; j < (int)ai->Exons().size(); ++j) {
+            TSignedSeqRange intron(ai->Exons()[j-1].GetTo()+1,ai->Exons()[j].GetFrom()-1);
+            if(intron.IntersectingWith(Limits())) {
+                TRangePrecedeSet::iterator first = incompatible_ranges.lower_bound(TSignedSeqRange(intron.GetFrom(),intron.GetFrom()));
+                if(first != incompatible_ranges.end() && *first == intron) { // compatible intron
+                    incompatible_ranges.erase(first);
+                    continue;
+                }
+
+                TRangePrecedeSet::iterator second = incompatible_ranges.upper_bound(TSignedSeqRange(intron.GetTo(),intron.GetTo()));
+                for(TRangePrecedeSet::iterator ir = first; ir != second; ) {
+                    intron += *ir;
+                    incompatible_ranges.erase(ir++);
+                }
+                incompatible_ranges.insert(second,intron);
+            }
         }
 
-        if(!pstop_outside_rf)
+        if(!incompatible_ranges.empty())
+            not_wanted = true;
+
+        int left = (ai->Limits()&Limits()).GetFrom();
+        if(!incompatible_ranges.empty() && incompatible_ranges.begin()->GetFrom() <= left) {
+            left = incompatible_ranges.begin()->GetTo()+1;
+            incompatible_ranges.erase(incompatible_ranges.begin());
+        }
+        int right = (ai->Limits()&Limits()).GetTo();
+        if(!incompatible_ranges.empty()) {
+            TRangePrecedeSet::iterator last = incompatible_ranges.end();
+            if((--last)->GetTo() >= right) {
+                right = last->GetFrom()-1;
+                incompatible_ranges.erase(last);
+            }
+        }
+        while(left <= right) {
+            SLinker sl;
+            sl.m_not_wanted = not_wanted;
+            sl.m_member = mi;
+            sl.m_value = 1;
+            sl.m_range.SetFrom(left);
+            if(!incompatible_ranges.empty()) {
+                sl.m_range.SetTo(incompatible_ranges.begin()->GetFrom()-1);
+                left = incompatible_ranges.begin()->GetTo()+1;
+                incompatible_ranges.erase(incompatible_ranges.begin());
+            } else {
+                sl.m_range.SetTo(right);
+                left = right+1;
+            }
+            sl.m_reading_frame = ReadingFrame()&sl.m_range;
             linkers.push_back(sl);
+        }
     }
 
     set<TSignedSeqRange> chain_introns;
@@ -3502,7 +3562,7 @@ void CChain::CalculateSupportAndWeightFromMembers() {
                 if(align.ID() == m_gapped_helper_align.ID())
                     Status() |= CGeneModel::eChangedByFilter;
             } 
-        } else if(align.Status()&CGeneModel::eChangedByFilter) {
+        } else if(align.Status()&CGeneModel::eChangedByFilter) {  // for proteins could be restored
             sl.m_not_wanted = true;
         } else {
             CAlignModel& orig_align = *mi->m_orig_align;
