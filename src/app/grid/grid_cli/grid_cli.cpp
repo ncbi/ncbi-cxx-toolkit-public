@@ -42,6 +42,8 @@
 #include <fcntl.h>
 #endif
 
+#include <common/test_assert.h>  /* This header must go last */
+
 USING_NCBI_SCOPE;
 
 #define ANY_JOB_STATUS "Any"
