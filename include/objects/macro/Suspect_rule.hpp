@@ -60,15 +60,11 @@ public:
     ~CSuspect_rule(void);
  
     // C's MatchesSuspectProductRule()
-    bool StringMatchesSuspectProductRule (const string& str) const;
-    static bool IsAllCaps(const string& str);
-    static bool IsAllLowerCase(const string& str);
-    static bool IsAllPunctuation(const string& str);
+    bool StringMatchesSuspectProductRule (const string& str);
+    // C's DoesObjectMatchConstraintChoiceSet()
+    //bool DoesObjectMatchConstraintChoiceSet(const CSeq_feat* feat, CRef <CScope> scope);
 
 /*
-    // C's DoesObjectMatchConstraintChoiceSet()
-    bool DoesObjectMatchConstraintChoiceSet(const CSeq_feat* feat) const;
-
     // get all string type data from object
     template <class T>
     void GetStringsFromObject(const T& obj, vector <string>& strs)
@@ -81,82 +77,69 @@ public:
     };
 */
 
-
 private:
     // Prohibit copy constructor and assignment operator
     CSuspect_rule(const CSuspect_rule& value);
     CSuspect_rule& operator=(const CSuspect_rule& value);
 
-    string m_digit_str, m_alpha_str;
+/*
+    CRec <CScope> m_scope;
+    // cons.Which(): CConstraint_choice::e_String
+    bool x_DoesObjectMatchStringConstraint(const CBioSource& biosrc, 
+                                      const CString_constraint& str_cons) const;
+    bool x_DoesObjectMatchStringConstraint(const CCGPSetData& cgp, 
+                                      const CString_constraint& str_cons) const;
+    bool x_DoesObjectMatchStringConstraint(const CSeq_feat& feat, 
+                                      const vector <string>& strs, 
+                                      const CString_constraint& str_cons) const;
 
-    bool x_IsSearchFuncEmpty(const CSearch_func& func) const;
-    bool x_MatchesSearchFunc(const string& str, const CSearch_func& func) const;
+    // CConstraint_choice::e_Location
+    bool x_DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, 
+                                    const CLocation_constraint& loc_cons) const;
+    bool x_IsLocationConstraintEmpty(const CLocation_constraint& loc_cons) const;
+    bool x_DoesStrandMatchConstraint(const CSeq_loc& loc, const CLocation_constraint& loc_cons) const;
+    bool x_DoesBioseqMatchSequenceType(const ESeqtype_constraint& seq_type) const;
+    bool x_DoesLocationMatchPartialnessConstraint(const CSeq_loc& loc, 
+                                   const CLocation_constraint& loc_cons) const;
+    bool x_DoesLocationMatchTypeConstraint(const CSeq_loc& seq_loc, 
+                                   const CLocation_constraint& loc_cons) const;
+    bool x_DoesLocationMatchDistanceConstraint(const CSeq_loc& loc, 
+                                    const CLocation_constraint& loc_cons) const;
+    bool x_DoesPositionMatchEndConstraint(int pos, 
+                                 const CLocation_pos_constraint& lp_cons) const;
 
-    // func.Which(): CSearch_func::e_String_constraint
-    bool x_DoesStringMatchConstraint(const string& str, 
-                                    const CString_constraint* constraint) const;
-    bool x_DoesSingleStringMatchConstraint(const string& str, 
+
+    // CConstraint_choice::e_Field
+    bool x_DoesObjectMatchFieldConstraint(const CSeq_feat& data, 
+                                    const CField_constraint& field_cons) const;
+    string x_GetSrcQualValue4FieldType(const CBioSource& biosrc, 
+                                      const CSource_qual_choice& src_qual, 
                                       const CString_constraint* str_cons) const;
-    bool x_IsStringConstraintEmpty(const CString_constraint* constraint) const;
-    string x_SkipWeasel(const string& str) const;
-    bool x_AdvancedStringMatch(const string& str, 
-                                 const CString_constraint* str_cons) const;
-    bool x_AdvancedStringCompare(const string& str, 
-                                  const string& str_match, 
-                                  const CString_constraint* str_cons, 
-                                  bool is_start, 
-                                  unsigned* ini_target_match_len = 0) const;
-    bool x_CaseNCompareEqual(string str1, 
-                               string str2, 
-                               unsigned len1, bool case_sensitive) const;
-    string x_StripUnimportantCharacters(const string& str, 
-                                     bool strip_space, bool strip_punct) const;
-    bool x_IsWholeWordMatch(const string& start, 
-                              const size_t& found, 
-                              const unsigned& match_len, 
-                              bool disallow_slash = false) const;
-    bool x_DisallowCharacter(const char ch, bool disallow_slash) const;
-    bool x_IsStringInSpanInList (const string& str, const string& list) const;
-    bool x_IsStringInSpan(const string& str, 
-                            const string& first, const string& second) const;
-    bool x_StringIsPositiveAllDigits(const string& str) const;
-    bool x_GetSpanFromHyphenInString(const string& str, 
-                                       const size_t& hyphen, 
-                                       string& first, 
-                                       string& second) const;
 
-    // CSearch_func::e_Contains_plural
-    bool x_StringMayContainPlural(const string& str) const;
-    bool x_DoesStrContainPlural(const string& word, 
-                                 char last_letter, 
-                                 char second_to_last_letter, 
-                                 char next_letter) const;
+    // CConstraint_choice::e_Source
+    x_DoesBiosourceMatchConstraint
 
-    // e_N_or_more_brackets_or_parentheses
-    bool x_ContainsNorMoreSetsOfBracketsOrParentheses(const string& search, 
-                                                        const int& n) const;
-    char x_GetClose(char bp) const;
-    bool x_SkipBracketOrParen(const unsigned& idx, string& start) const;
+    // CConstraint_choice::e_Cdsgeneprot_qual
+    x_DoesFeatureMatchCGPQualConstraint
 
-    // e_Three_numbers
-    bool x_ContainsThreeOrMoreNumbersTogether(const string& search) const;
-    bool x_FollowedByFamily(string& after_str) const;
-    bool x_PrecededByOkPrefix (const string& start_str) const;
-    bool x_InWordBeforeCytochromeOrCoenzyme(const string& start_str) const;
+    // CConstraint_choice::e_Cdsgeneprot_pseudo
+    x_DoesFeatureMatchCGPPseudoConstraint
 
-    // e_Underscore
-    bool x_StringContainsUnderscore(const string& search) const;
+    // CConstraint_choice::e_Sequence
+    x_DoesSequenceMatchSequenceConstraint
 
-    // e_Prefix_and_numbers
-    bool x_IsPrefixPlusNumbers(const string& prefix, const string& search) const;
+    // CConstraint_choice::e_Pub
+    x_DoesPubMatchPublicationConstraint
 
-    // e_Unbalanced_paren
-    bool x_StringContainsUnbalancedParentheses(const string& search) const;
-    bool x_IsPropClose(const string& str, char open_p) const;
+    // CConstraint_choice::e_Molinfo
+    x_DoesObjectMatchMolinfoFieldConstraint
 
-    // e_Has_term
-    bool x_ProductContainsTerm(const string& pattern, const string& search) const;
+    // CConstraint_choice::e_Field_missing
+    x_GetConstraintFieldFromObject
 
+    // CConstraint_choice::e_Translation
+    x_DoesCodingRegionMatchTranslationConstraint
+*/
 };
 
 /////////////////// CSuspect_rule inline methods
@@ -165,8 +148,6 @@ private:
 inline
 CSuspect_rule::CSuspect_rule(void)
 {
-    m_digit_str = "0123456789";
-    m_alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 }
 
 
