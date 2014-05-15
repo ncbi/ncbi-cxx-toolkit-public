@@ -18,8 +18,8 @@ LIB = xunittestutil xdiscrepancy_report xobjread xvalidate xobjedit valid valerr
         macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
         test_boost xncbi
 
-LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS) \
-         $(LIBXML_LIBS) $(LIBXSLT_LIBS)
+LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
+       $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
