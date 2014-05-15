@@ -209,9 +209,9 @@ public:
 
     void CancelWaitGet(const CNSClientId &  client);
 
-    string ChangeAffinity(const CNSClientId &     client,
-                          const list<string> &    aff_to_add,
-                          const list<string> &    aff_to_del);
+    list<string> ChangeAffinity(const CNSClientId &     client,
+                                const list<string> &    aff_to_add,
+                                const list<string> &    aff_to_del);
     void SetAffinity(const CNSClientId &     client,
                      const list<string> &    aff);
     int  SetClientData(const CNSClientId &  client,
@@ -263,10 +263,10 @@ public:
 
     void CancelAllJobs(const CNSClientId &  client,
                        bool                 logging);
-    string CancelGroupAndAffinity(const CNSClientId &  client,
-                                  const string &       group,
-                                  const string &       affinity_token,
-                                  bool                 logging);
+    list<string> CancelGroupAndAffinity(const CNSClientId &  client,
+                                        const string &       group,
+                                        const string &       affinity_token,
+                                        bool                 logging);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 

@@ -1453,12 +1453,17 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     NStr::Split(m_CommandArguments.aff_to_del,
                 "\t,", aff_to_del_list, NStr::eNoMergeDelims);
 
-    string  msg = q->ChangeAffinity(m_ClientId, aff_to_add_list,
-                                                aff_to_del_list);
-    if (msg.empty())
+    list<string>  msgs = q->ChangeAffinity(m_ClientId, aff_to_add_list,
+                                                       aff_to_del_list);
+    if (msgs.empty())
         x_WriteMessage("OK:");
-    else
-        x_WriteMessage("OK:WARNING:" + msg + ";");
+    else {
+        string  msg;
+        for (list<string>::const_iterator k = msgs.begin();
+             k != msgs.end(); ++k)
+            msg += "WARNING:" + *k +";";
+        x_WriteMessage("OK:" + msg);
+    }
     x_PrintCmdRequestStop();
 }
 
@@ -1626,14 +1631,20 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
     if (!m_CommandArguments.group.empty() ||
         !m_CommandArguments.affinity_token.empty()) {
         // CANCEL for a group
-        string      warning = q->CancelGroupAndAffinity(
+        list<string>    warnings = q->CancelGroupAndAffinity(
                                     m_ClientId, m_CommandArguments.group,
                                     m_CommandArguments.affinity_token,
                                     m_ConnContext.NotNull());
-        if (warning.empty())
+        if (warnings.empty())
             x_WriteMessage("OK:");
-        else
-            x_WriteMessage("OK:WARNING:" + warning + ";");
+        else {
+            string  msg;
+            for (list<string>::const_iterator  k = warnings.begin();
+                 k != warnings.end(); ++k) {
+                msg += "WARNING:" + *k + ";";
+            }
+            x_WriteMessage("OK:" + msg);
+        }
 
         x_PrintCmdRequestStop();
         return;

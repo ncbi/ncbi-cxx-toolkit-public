@@ -905,14 +905,15 @@ void  CQueue::CancelWaitGet(const CNSClientId &  client)
 }
 
 
-string  CQueue::ChangeAffinity(const CNSClientId &     client,
-                               const list<string> &    aff_to_add,
-                               const list<string> &    aff_to_del)
+list<string>
+CQueue::ChangeAffinity(const CNSClientId &     client,
+                       const list<string> &    aff_to_add,
+                       const list<string> &    aff_to_del)
 {
     // It is guaranteed here that the client is a new style one.
     // I.e. it has both client_node and client_session.
 
-    string          msg;    // Warning message for the socket
+    list<string>    msgs;   // Warning messages for the socket
     unsigned int    client_id = client.GetID();
     TNSBitVector    current_affinities =
                          m_ClientsRegistry.GetPreferredAffinities(client);
@@ -931,9 +932,8 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
             LOG_POST(Message << Warning << "Client '" << client.GetNode()
                              << "' deletes unknown affinity '"
                              << *k << "'. Ignored.");
-            if (!msg.empty())
-                msg += "; ";
-            msg += "eAffinityNotFound:unknown affinity to delete: " + *k;
+            msgs.push_back("eAffinityNotFound:unknown affinity to delete: " +
+                           *k);
             continue;
         }
 
@@ -944,9 +944,8 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
                              << "' deletes affinity '" << *k
                              << "' which is not in the list of the "
                                 "preferred client affinities. Ignored.");
-            if (!msg.empty())
-                msg += "; ";
-            msg += "eAffinityNotPreferred:not registered affinity to delete: " + *k;
+            msgs.push_back("eAffinityNotPreferred:not registered affinity "
+                           "to delete: " + *k);
             continue;
         }
 
@@ -1006,9 +1005,8 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
                          << "' adds affinity '" << *j
                          << "' which is already in the list of the "
                             "preferred client affinities. Ignored.");
-        if (!msg.empty())
-            msg += "; ";
-        msg += "eAffinityAlreadyPreferred:already registered affinity to add: " + *j;
+        msgs.push_back("eAffinityAlreadyPreferred:already registered "
+                       "affinity to add: " + *j);
     }
 
     if (any_to_del)
@@ -1019,7 +1017,7 @@ string  CQueue::ChangeAffinity(const CNSClientId &     client,
         m_ClientsRegistry.UpdatePreferredAffinities(client,
                                                     aff_id_to_add,
                                                     aff_id_to_del);
-    return msg;
+    return msgs;
 }
 
 
@@ -1661,12 +1659,13 @@ CQueue::x_GetEstimatedJobLifetime(unsigned int   job_id,
 }
 
 
-string  CQueue::CancelGroupAndAffinity(const CNSClientId &  client,
-                                       const string &       group,
-                                       const string &       affinity_token,
-                                       bool                 logging)
+list<string>
+CQueue::CancelGroupAndAffinity(const CNSClientId &  client,
+                               const string &       group,
+                               const string &       affinity_token,
+                               bool                 logging)
 {
-    string              warning;
+    list<string>        warnings;
     TNSBitVector        group_jobs;
     TNSBitVector        affinity_jobs;
     CFastMutexGuard     guard(m_OperationLock);
@@ -1676,18 +1675,17 @@ string  CQueue::CancelGroupAndAffinity(const CNSClientId &  client,
             group_jobs = m_GroupRegistry.GetJobs(group);
         } catch (...)
         {
-            warning = "eGroupNotFound:job group " + group + " is not found";
+            warnings.push_back("eGroupNotFound:job group " + group +
+                               " is not found");
         }
     }
 
     if (!affinity_token.empty()) {
         unsigned int    aff_id = m_AffinityRegistry.GetIDByToken(
                                                             affinity_token);
-        if (aff_id == 0) {
-            if (!warning.empty())
-                warning += "; ";
-            warning += "eAffinityNotFound:" + affinity_token + " is not found";
-        }
+        if (aff_id == 0)
+            warnings.push_back("eAffinityNotFound:" + affinity_token +
+                               " is not found");
         else
             affinity_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
     }
@@ -1699,7 +1697,7 @@ string  CQueue::CancelGroupAndAffinity(const CNSClientId &  client,
     else
         x_CancelJobs(client, affinity_jobs, logging);
 
-    return warning;
+    return warnings;
 }
 
 
