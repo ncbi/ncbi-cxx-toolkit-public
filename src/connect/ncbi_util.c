@@ -621,7 +621,13 @@ extern REG CORE_GetREG(void)
 
 extern const char* CORE_GetNcbiSid(void)
 {
-    return g_CORE_GetSid ? g_CORE_GetSid() : getenv("HTTP_NCBI_SID");
+    const char* sid = g_CORE_GetSid ? g_CORE_GetSid() : 0;
+    if (sid  &&  *sid)
+        return sid;
+    sid = getenv("NCBI_LOG_SESSION_ID");
+    if (sid  &&  *sid)
+        return sid;
+    return getenv("HTTP_NCBI_SID");
 }
 
 
