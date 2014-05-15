@@ -98,7 +98,27 @@ class NCBI_SRAREAD_EXPORT CVPath
     : public CSraRef<VPath>
 {
 public:
+    CVPath(void)
+        {
+            m_Str.addr = 0;
+            m_Str.size = 0;
+        }
     CVPath(const string& path);
+
+    const char* data(void) const
+        {
+            return m_Str.addr;
+        }
+    size_t size(void) const
+        {
+            return m_Str.size;
+        }
+    operator string(void) const
+        {
+            return string(data(), size());
+        }
+private:
+    String m_Str;
 };
 
 

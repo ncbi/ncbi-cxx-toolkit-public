@@ -92,10 +92,14 @@ CVFSManager::CVFSManager(void)
 
 CVPath::CVPath(const string& path)
 {
-    if ( rc_t rc = VPathMake(x_InitPtr(), path.c_str()) ) {
+    if ( rc_t rc = VPathMakeSysPath(x_InitPtr(), path.c_str()) ) {
         *x_InitPtr() = 0;
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot create VPath", rc);
+        NCBI_THROW3(CSraException, eInitFailed,
+                    "Cannot create VPath", rc, path);
+    }
+    if ( rc_t rc = VPathGetPath(*this, &m_Str) ) {
+        NCBI_THROW3(CSraException, eInitFailed,
+                    "Cannot get path from VPath", rc, path);
     }
 }
 
@@ -208,10 +212,16 @@ void CVDBMgr::x_Init(void)
 static
 string s_FixPath(const string& acc_or_path)
 {
-    if ( acc_or_path[0] == '\\' ) {
+    if ( acc_or_path.find_first_of("/\\") != NPOS ) {
         // VDB doesn't understand Windows path starting with backslash
-        string path = acc_or_path;
-        path[0] = '/';
+        CVPath vpath(acc_or_path);
+        string path = vpath;
+        // workaround for lost drive letter
+        if ( isalpha(acc_or_path[0]&0xff) && acc_or_path[1] == ':' ) {
+            path = "/ " + path;
+            path[1] = toupper(acc_or_path[0]&0xff);
+        }
+        //LOG_POST("FixPath \""<<acc_or_path<<"\" -> \""<<path<<"\"");
         return path;
     }
     return acc_or_path;
@@ -225,8 +235,9 @@ string s_FixPath(const string& acc_or_path)
 void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
 {
     DECLARE_SDK_GUARD();
-    if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0,
-                                        s_FixPath(acc_or_path).c_str()) ) {
+    const string& path = s_FixPath(acc_or_path);
+    if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0, "%.*s",
+                                        int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
         if ( GetRCObject(rc) == RCObject(rcDirectory) &&
              GetRCState(rc) == rcNotFound ) {
@@ -278,9 +289,9 @@ void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot make default SRA schema", rc);
     }
-    if ( rc_t rc = VDBManagerOpenTableRead(mgr, x_InitPtr(),
-                                           schema,
-                                           s_FixPath(acc_or_path).c_str()) ) {
+    const string& path = s_FixPath(acc_or_path);
+    if ( rc_t rc = VDBManagerOpenTableRead(mgr, x_InitPtr(), schema, "%.*s",
+                                           int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
         VSchemaRelease(schema);
         if ( GetRCObject(rc) == RCObject(rcDirectory) &&
