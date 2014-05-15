@@ -185,18 +185,43 @@ void CGff2Record::TokenizeGFF(vector<CTempString>& columns, const CTempString& i
     columns.clear();
     columns.reserve(9);
     size_t index;
+    // first try to split just using tabs
+    NStr::Tokenize(in_line, "\t", columns, NStr::eMergeDelims);
+    if (columns.size() == 9)
+        return;
+    columns.clear();
+
     // better to be thread-safe static
     const CTempString space_tab_delim("\t "); 
-    CTempString line(in_line);
-    while (!line.empty() && columns.size()<8 && (index = line.find_first_of(space_tab_delim)) != CTempString::npos)
+    const CTempString digits("0123456789");
+
+    size_t current = 0;
+    while (current != CTempString::npos && columns.size()<8 && (index = in_line.find_first_of(space_tab_delim, current)) != CTempString::npos)
     {
-        CTempString next = line.substr(0, index);
-        index = line.find_first_not_of(space_tab_delim, index);
-        line = line.substr(index);
+        CTempString next = in_line.substr(current, index-current);
+        current = in_line.find_first_not_of(space_tab_delim, index);
+        // looking for the numeric columns at 3 & 4 but not at 5
+        if (columns.size() == 5)
+        {
+            if (next.find_first_of(digits) != CTempString::npos ||
+                columns[4].find_first_not_of(digits) != CTempString::npos ||
+                columns[3].find_first_not_of(digits) != CTempString::npos)
+            {
+                // merge col2 with col3 and shift subsequent columns
+                // operations with iterators are legal since all belong to the same memory space
+                size_t sizeof_col1 = (columns[2].begin() + columns[2].size() - columns[1].begin());
+                size_t startof_col1 = columns[1].begin() - in_line.begin();
+                columns[1] = in_line.substr(startof_col1, sizeof_col1);
+                columns[2] = columns[3];
+                columns[3] = columns[4];
+                columns[4] = next;
+                continue;
+            }
+        }
         columns.push_back(next); 
     }
-    if (!line.empty())
-        columns.push_back(line);
+    if (current != CTempString::npos)
+        columns.push_back(in_line.substr(current));
 }
 //  ----------------------------------------------------------------------------
 bool CGff2Record::AssignFromGff(
