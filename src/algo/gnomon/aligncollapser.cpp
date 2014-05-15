@@ -1500,7 +1500,7 @@ bool OneExonCompare(const CModelExon& a, const CModelExon& b) {
 
 struct MultiExonsCompare
 { 
-    bool operator() (const CGeneModel::TExons& a, const CGeneModel::TExons& b) {
+    bool operator() (const CGeneModel::TExons& a, const CGeneModel::TExons& b) const {
         if(a.size() != b.size()) {
             return a.size() < b.size();
         } else {
