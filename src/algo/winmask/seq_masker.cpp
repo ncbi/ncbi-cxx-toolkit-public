@@ -94,9 +94,9 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
                : eTrigger_Min ),
       discontig( arg_discontig ), pattern( arg_pattern )
 {
-    if( window_size == 0 )
-        window_size = ustat->UnitSize() + 4;
-    else if( window_size < ustat->UnitSize() ) {
+    if( window_size == 0 ) window_size = ustat->UnitSize() + 4;
+
+    if( window_size < ustat->UnitSize() ) {
         std::ostringstream os;
         os << "window size (" << (int)window_size << ") "
               "must be greater or equal to unit size (" <<
