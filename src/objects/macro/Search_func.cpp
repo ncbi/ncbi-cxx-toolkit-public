@@ -453,8 +453,10 @@ bool CSearch_func :: x_ProductContainsTerm(const string& pattern) const
   else return false;
 }
 
-bool CSearch_func :: Match(const string& str) const
+bool CSearch_func :: Match(const string& str)
 {
+   m_sch_str = str;
+
    switch (Which()){
      case e_String_constraint:
       {
@@ -462,7 +464,7 @@ bool CSearch_func :: Match(const string& str) const
         return str_cons.Match(m_sch_str);
       }
      case CSearch_func::e_Contains_plural:
-        return x_StringMayContainPlural ();
+        return x_StringMayContainPlural();
      case  CSearch_func::e_N_or_more_brackets_or_parentheses:
         return x_ContainsNorMoreSetsOfBracketsOrParentheses(
                                         GetN_or_more_brackets_or_parentheses());

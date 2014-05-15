@@ -60,12 +60,11 @@ CSuspect_rule::~CSuspect_rule(void)
 bool CSuspect_rule :: StringMatchesSuspectProductRule(const string& str)
 {
   CSearch_func& func = SetFind();
-  func.SetSearchStr(str);
   if (!func.Empty() && !func.Match(str)) {
       return false;
   }
   else if (CanGetExcept()) {
-     const CSearch_func& exc_func = GetExcept();
+     CSearch_func& exc_func = SetExcept();
      if (!exc_func.Empty() && !exc_func.Match(str)) {
        return false;
      }
