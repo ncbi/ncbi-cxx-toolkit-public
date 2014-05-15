@@ -2042,6 +2042,16 @@ void CNewCleanup_imp::DbtagBC (
             dbtag.SetTag().SetStr("J");
             ChangeMade(CCleanupChange::eChangeDbxrefs);
         }
+    } else if (NStr::EqualNocase (dbtag.GetDb(), "HGNC") ) {
+        if(NStr::StartsWith (dbtag.GetTag().GetStr(), "HGNC:")) {
+            dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (5));
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
+        }
+    } else if (NStr::EqualNocase (dbtag.GetDb(), "RGD") ) {
+        if(NStr::StartsWith (dbtag.GetTag().GetStr(), "RGD:")) {
+            dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (4));
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
+        }
     }
 
     bool all_zero = true;
@@ -5201,6 +5211,8 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
     // check if we're trying to split something we shouldn't
     if( NStr::EqualNocase( tags.front(), "MGD" ) ||
         NStr::EqualNocase( tags.front(), "MGI" ) ||
+        NStr::EqualNocase( tags.front(), "HGNC" ) ||
+        NStr::EqualNocase( tags.front(), "RGD" ) ||
         NStr::EqualNocase( tags.front(), "J" ) )
     {
         return;
