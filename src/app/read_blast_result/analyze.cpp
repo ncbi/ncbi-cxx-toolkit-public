@@ -48,7 +48,7 @@ int CReadBlastApp::AnalyzeSeqsViaBioseqs(bool in_pool_prot, bool against_prot)
        }
      else
        {
-       NcbiCerr << "ERROR: submit file does not have proper seqset"<< NcbiCerr;
+       NcbiCerr << "ERROR: submit file does not have proper seqset" << NcbiEndl;
        }
      }
    else
@@ -165,7 +165,7 @@ int CReadBlastApp::AnalyzeSeqs(void)
        }
      else
        {
-       NcbiCerr << "ERROR: submit file does not have proper seqset"<< NcbiCerr;
+       NcbiCerr << "ERROR: submit file does not have proper seqset" << NcbiEndl;
        }
      }
    else
@@ -281,4 +281,3 @@ int CReadBlastApp::AnalyzeSeqs(CBioseq_set::TSeq_set& seqs)
    DecreaseVerbosity();
    return -1;
 }
-
