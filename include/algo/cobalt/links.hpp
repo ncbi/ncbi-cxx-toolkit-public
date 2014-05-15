@@ -63,7 +63,7 @@ public:
         SLink(int f, int s, double w) : first(f), second(s), weight(w) {}
 
         /// Less then operator for sorting links by weights
-        bool operator<(const SLink& link) {return weight < link.weight;}
+        bool operator<(const SLink& link) const {return weight < link.weight;}
     };
 
     typedef list<SLink>::const_iterator SLink_CI;
