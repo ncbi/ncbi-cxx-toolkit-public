@@ -185,7 +185,7 @@ public:
     {
         return !(*this == p);
     }
-    bool operator<(const CModelExon& p) const { return Precede(Limits(),p.Limits()); }
+    //    bool operator<(const CModelExon& p) const { return Precede(Limits(),p.Limits()); }
     
     operator TSignedSeqRange() const { return m_range; }
     const TSignedSeqRange& Limits() const { return m_range; }
@@ -453,7 +453,7 @@ public:
     void SetComment(const string& comment) { m_comment = comment; }
     void AddComment(const string& comment) { m_comment += " " + comment; }
 
-    bool operator<(const CGeneModel& a) const { return Precede(Limits(),a.Limits()); }
+    //    bool operator<(const CGeneModel& a) const { return Precede(Limits(),a.Limits()); }
 
     double Score() const { return m_cds_info.Score(); }
 
@@ -773,12 +773,13 @@ class NCBI_XALGOGNOMON_EXPORT CModelClusterSet : public set<Cluster> {
     void Insert(const typename Cluster::TModel& a) {
         Cluster clust;
         clust.Insert(a);
-        pair<Titerator,Titerator> lim = set<Cluster>::equal_range(clust);
-        for(Titerator it = lim.first; it != lim.second;) {
+        Titerator first = set<Cluster>::lower_bound(Cluster(a.Limits().GetFrom(),a.Limits().GetFrom()));
+        Titerator second = set<Cluster>::upper_bound(Cluster(a.Limits().GetTo(),a.Limits().GetTo()));
+        for(Titerator it = first; it != second;) {
             clust.Splice(const_cast<Cluster&>(*it));
             this->erase(it++);
         }
-        const_cast<Cluster&>(*this->insert(lim.second,Cluster(clust.Limits()))).Splice(clust);
+        const_cast<Cluster&>(*this->insert(second,Cluster(clust.Limits()))).Splice(clust);
     }
 };
 
