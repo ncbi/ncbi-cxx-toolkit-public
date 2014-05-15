@@ -287,6 +287,12 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                                 &&  retry->mode == eRetry_Redirect303) {
                                 uuu->net_info->req_method  = eReqMethod_Get;
                             }
+                            if ((uuu->flags & fHTTP_AdjustOnRedirect)
+                                &&   uuu->adjust
+                                &&  !uuu->adjust(uuu->net_info,
+                                                 uuu->user_data, 0)) {
+                                fail = 1;
+                            }
                         }
                     }
                 } else
