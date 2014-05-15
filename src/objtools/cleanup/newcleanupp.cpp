@@ -6031,25 +6031,15 @@ static SIZE_TYPE s_TitleEndsInOrganism (
         " (mitochondrion)"
     };
     if( out_piOrganellePos ) {
-        const SIZE_TYPE space_left_for_organelle =
-            ( sTitle.length() >= sOrganism.length() ?
-              sTitle.length() - sOrganism.length() :
-              0 );
 
         static const unsigned int kOrganellePrefixes_len = 
             (sizeof(kOrganellePrefixes)/sizeof(kOrganellePrefixes[0]));
         for( unsigned int ii = 0; ii < kOrganellePrefixes_len; ++ii ) {
             const string & organelle_prefix = kOrganellePrefixes[ii];
 
-            // skip if organelle can't possibly fit on line
-            if (organelle_prefix.length() + 1 >= space_left_for_organelle) {
-                continue;
-            }
-
-            const SIZE_TYPE possible_organelle_start_pos = 
-                space_left_for_organelle - organelle_prefix.length();
-
-            if( NStr::EqualNocase( sTitle.substr(possible_organelle_start_pos, organelle_prefix.length()) , organelle_prefix ) ) {
+            SIZE_TYPE possible_organelle_start_pos = NStr::Find (sTitle, organelle_prefix);
+            if ( possible_organelle_start_pos != NPOS &&
+                 NStr::EndsWith(CTempString(sTitle, 0, answer), organelle_prefix) ) {
                 *out_piOrganellePos = possible_organelle_start_pos;
                 break;
             }

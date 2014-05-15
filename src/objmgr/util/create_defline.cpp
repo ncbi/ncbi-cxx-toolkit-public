@@ -2024,9 +2024,12 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
         if (pos != NPOS) {
             for ( genome = NCBI_GENOME(chloroplast); genome <= NCBI_GENOME(chromatophore); genome++ ) {
                 string str = s_proteinOrganellePrefix [genome];
-                 if ( str[0] != '\0' && NStr::FindNoCase (m_MainTitle, str, pos + 1, str.length()) != NPOS ) {
-                    m_MainTitle.erase (pos);
-                    break;
+                if ( ! str.empty() ) {
+                    string paren = "(" + str + ")";
+                    if (NStr::EndsWith (m_MainTitle, paren )) {
+                        m_MainTitle.erase (pos);
+                        break;
+                    }
                 }
             }
         }
