@@ -438,8 +438,9 @@ void CSraRun::Init(CSraMgr& mgr, const string& acc)
 
 void CSraRun::x_DoInit(CSraMgr& mgr, const string& acc)
 {
-    if ( rc_t rc = SRAMgrOpenTableRead(mgr, x_InitPtr(),
-                                       mgr.FindAccPath(acc).c_str()) ) {
+    const string& path = mgr.FindAccPath(acc);
+    if ( rc_t rc = SRAMgrOpenTableRead(mgr, x_InitPtr(), "%.*s",
+                                       int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
         NCBI_THROW3(CSraException, eNotFoundDb,
                     "Cannot open run read", rc, acc);
