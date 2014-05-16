@@ -178,6 +178,21 @@ CNSClientsRegistry::SetClientData(const CNSClientId &  client,
 }
 
 
+void  CNSClientsRegistry::MarkAsAdmin(const CNSClientId &  client)
+{
+    // Check if it is an old-style client
+    if (!client.IsComplete())
+        return;
+
+    CMutexGuard                 guard(m_Lock);
+    map< string,
+         CNSClient >::iterator  admin = m_Clients.find(client.GetNode());
+
+    if (admin != m_Clients.end())
+        admin->second.MarkAsAdmin();
+}
+
+
 // Updates the submitter job.
 // No need to check session id, it's done in Touch()
 void  CNSClientsRegistry::AddToSubmitted(const CNSClientId &  client,

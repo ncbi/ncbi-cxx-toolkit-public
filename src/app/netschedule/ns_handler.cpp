@@ -942,11 +942,12 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         cmd = m_SingleCmdParser.ParseCommand(msg);
 
         // It throws an exception if the input is not valid
-        m_CommandArguments.AssignValues(cmd.params,
-                                        cmd.command->cmd,
-                                        x_NeedToGeneratePHIDAndSID(cmd.command->extra.processor),
-                                        GetSocket(),
-                                        m_Server->GetCompoundIDPool());
+        m_CommandArguments.AssignValues(
+                cmd.params,
+                cmd.command->cmd,
+                x_NeedToGeneratePHIDAndSID(cmd.command->extra.processor),
+                GetSocket(),
+                m_Server->GetCompoundIDPool());
 
         x_PrintCmdRequestStart(cmd);
     }
@@ -2272,6 +2273,8 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
                    "STAT " + what + " requires a queue");
     }
 
+    if (q != NULL)
+        q->MarkClientAsAdmin(m_ClientId);
 
     if (what == "QCLASSES") {
         string      info = m_Server->GetQueueClassesInfo();
@@ -2524,18 +2527,20 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
             return;
         }
 
-        x_WriteMessage(q->PrintAllJobDbStat(m_CommandArguments.group,
-                                            m_CommandArguments.job_status,
-                                            m_CommandArguments.start_after_job_id,
-                                            m_CommandArguments.count) +
-                       "OK:END");
+        x_WriteMessage(
+                q->PrintAllJobDbStat(m_ClientId,
+                                     m_CommandArguments.group,
+                                     m_CommandArguments.job_status,
+                                     m_CommandArguments.start_after_job_id,
+                                     m_CommandArguments.count) + "OK:END");
         x_PrintCmdRequestStop();
         return;
     }
 
 
     // Certain job dump
-    string      job_info = q->PrintJobDbStat(m_CommandArguments.job_id);
+    string      job_info = q->PrintJobDbStat(m_ClientId,
+                                             m_CommandArguments.job_id);
     if (job_info.empty()) {
         // Nothing was printed because there is no such a job
         x_SetCmdRequestStatus(eStatus_NotFound);
@@ -3073,7 +3078,7 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
 
 void CNetScheduleHandler::x_ProcessGetAffinityList(CQueue* q)
 {
-    x_WriteMessage("OK:" + q->GetAffinityList());
+    x_WriteMessage("OK:" + q->GetAffinityList(m_ClientId));
     x_PrintCmdRequestStop();
 }
 
@@ -3165,6 +3170,7 @@ void CNetScheduleHandler::x_ProcessRefuseSubmits(CQueue* q)
     }
 
     // This is a queue scope request.
+    q->MarkClientAsAdmin(m_ClientId);
     q->SetRefuseSubmits(m_CommandArguments.mode);
 
     if (m_CommandArguments.mode == false &&
@@ -3187,7 +3193,7 @@ void CNetScheduleHandler::x_ProcessPause(CQueue* q)
     else
         new_value = CQueue::ePauseWithoutPullback;
 
-    q->SetPauseStatus(new_value);
+    q->SetPauseStatus(m_ClientId, new_value);
     if (current == CQueue::eNoPause)
         x_WriteMessage("OK:");
     else {
@@ -3208,7 +3214,7 @@ void CNetScheduleHandler::x_ProcessResume(CQueue* q)
 {
     CQueue::TPauseStatus    current = q->GetPauseStatus();
 
-    q->SetPauseStatus(CQueue::eNoPause);
+    q->SetPauseStatus(m_ClientId, CQueue::eNoPause);
     if (current == CQueue::eNoPause)
         x_WriteMessage("OK:WARNING:eQueueNotPaused:The queue is not paused;");
     else

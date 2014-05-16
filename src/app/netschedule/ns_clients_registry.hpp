@@ -70,6 +70,7 @@ class CNSClientsRegistry
                               bool &                 pref_affs_were_reset);
 
         // Methods to update the client records.
+        void  MarkAsAdmin(const CNSClientId &  client);
         void  AddToSubmitted(const CNSClientId &  client,
                              size_t               count);
         void  AddToReading(const CNSClientId &  client,

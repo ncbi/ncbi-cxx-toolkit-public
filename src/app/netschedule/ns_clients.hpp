@@ -72,6 +72,8 @@ class CNSClientId
         { return m_ClientNode; }
         const string &  GetSession(void) const
         { return m_ClientSession; }
+        const string &  GetType(void) const
+        { return m_ClientType; }
         unsigned short  GetControlPort(void) const
         { return m_ControlPort; }
         const string &  GetClientHost(void) const
@@ -117,6 +119,7 @@ class CNSClientId
                                               // e.g. service10:9300
         string              m_ClientSession;  // Session of working
                                               //  with netschedule.
+        string              m_ClientType;     // Client type, e.g. admin
         unsigned short      m_ControlPort;    // Client control port
         string              m_ClientHost;     // Client host name if passed in
                                               // the handshake line.
@@ -150,7 +153,8 @@ class CNSClient
         enum ENSClientType {
             eSubmitter  = 1,
             eWorkerNode = 2,
-            eReader     = 4
+            eReader     = 4,
+            eAdmin      = 8
         };
 
         enum ENSClientState {
@@ -197,6 +201,8 @@ class CNSClient
                    TNSBitVector &       reading_jobs,
                    bool &               session_was_reset,
                    string &             old_session);
+        void MarkAsAdmin(void)
+        { m_Type |= eAdmin; }
         bool Purge(CNSAffinityRegistry &   aff_registry);
 
         string Print(const string &               node_name,
@@ -246,6 +252,15 @@ class CNSClient
         ENSClientState  m_State;          // Client state
                                           // If true => m_Session == "n/a"
         unsigned int    m_Type;           // bit mask of ENSClientType
+
+        /* Note: at the handshake time a client may claim that it is an admin
+         * user. It has nothing to do with how NS decides if an adminstritive
+         * permission required command could be executed. The member below
+         * tells what the client claimed and also how it will be shown in the
+         * STAT CLIENTS output. And nothing else. This might be misleading
+         * however it is how it was requested to do.
+         */
+        bool            m_ClaimedAdmin;
         unsigned int    m_Addr;           // Client peer address
         unsigned short  m_ControlPort;    // Worker node control port
         string          m_ClientHost;     // Client host as given in the

@@ -146,7 +146,7 @@ public:
                                 map<string, string> > & linked_sections) const;
 
     bool GetRefuseSubmits(void) const { return m_RefuseSubmits; }
-    void SetRefuseSubmits(bool  val)  { m_RefuseSubmits = val;  }
+    void SetRefuseSubmits(bool  val) { m_RefuseSubmits = val; }
     size_t GetAffSlotsUsed(void) const { return m_AffinityRegistry.size(); }
     size_t GetClientsCount(void) const { return m_ClientsRegistry.size(); }
     size_t GetGroupsCount(void) const { return m_GroupRegistry.size(); }
@@ -317,7 +317,7 @@ public:
     //
     // @return
     //     affinity preference string
-    string GetAffinityList();
+    string GetAffinityList(const CNSClientId &    client);
 
     TJobStatus FailJob(const CNSClientId &    client,
                        unsigned int           job_id,
@@ -376,12 +376,14 @@ public:
     CBDB_FileCursor& GetEventsCursor();
 
     // Dump a single job
-    string PrintJobDbStat(unsigned int job_id);
+    string PrintJobDbStat(const CNSClientId &  client,
+                          unsigned int         job_id);
     // Dump all job records
-    string PrintAllJobDbStat(const string &  group,
-                             TJobStatus      job_status,
-                             unsigned int    start_after_job_id,
-                             unsigned int    count);
+    string PrintAllJobDbStat(const CNSClientId &  client,
+                             const string &       group,
+                             TJobStatus           job_status,
+                             unsigned int         start_after_job_id,
+                             unsigned int         count);
 
     unsigned CountStatus(TJobStatus) const;
     void StatusStatistics(TJobStatus                  status,
@@ -394,6 +396,7 @@ public:
                               bool &         session_was_reset,
                               string &       old_session,
                               bool &         pref_affs_were_reset);
+    void MarkClientAsAdmin(const CNSClientId &  client);
     void RegisterSocketWriteError(const CNSClientId &  client);
 
     void PrintStatistics(size_t &  aff_count) const;
@@ -418,7 +421,7 @@ public:
 
     TPauseStatus GetPauseStatus(void) const
     { return m_PauseStatus; }
-    void SetPauseStatus(TPauseStatus  status);
+    void SetPauseStatus(const CNSClientId &  client, TPauseStatus  status);
 
     void RegisterQueueResumeNotification(unsigned int  address,
                                          unsigned short  port,

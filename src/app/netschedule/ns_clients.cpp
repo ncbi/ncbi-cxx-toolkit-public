@@ -69,6 +69,7 @@ void CNSClientId::Update(unsigned int            peer_addr,
     m_ClientName     = "";
     m_ClientNode     = "";
     m_ClientSession  = "";
+    m_ClientType     = "";
     m_ClientHost     = "";
     m_ControlPort    = 0;
     m_PassedChecks   = 0;
@@ -81,6 +82,17 @@ void CNSClientId::Update(unsigned int            peer_addr,
     found = params.find("client_session");
     if (found != params.end())
         m_ClientSession = found->second;
+
+    found = params.find("client_type");
+    if (found != params.end()) {
+        m_ClientType = found->second;
+
+        // The only recognized value for the moment is 'admin'
+        if (m_ClientType != "admin")
+            LOG_POST(Warning << "Unsupported client_type value at the "
+                                "handshake phase. Supported value is: admin. "
+                                "Received: " << m_ClientType);
+    }
 
     // It must be that either both client_node and client_session
     // parameters are provided or none of them
@@ -190,6 +202,7 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
 CNSClient::CNSClient() :
     m_State(eActive),
     m_Type(0),
+    m_ClaimedAdmin(false),
     m_Addr(0),
     m_ControlPort(0),
     m_RegistrationTime(0, 0),
@@ -223,6 +236,7 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
                      CNSPreciseTime *     blacklist_timeout) :
     m_State(eActive),
     m_Type(0),
+    m_ClaimedAdmin(client_id.GetType() == "admin"),
     m_Addr(client_id.GetAddress()),
     m_ControlPort(client_id.GetControlPort()),
     m_ClientHost(client_id.GetClientHost()),
@@ -750,6 +764,9 @@ string  CNSClient::x_TypeAsString(void) const
 {
     string      result;
 
+    if (m_ClaimedAdmin)
+        return "admin";
+
     if (m_Type & eSubmitter)
         result = "submitter";
 
@@ -763,6 +780,12 @@ string  CNSClient::x_TypeAsString(void) const
         if (!result.empty())
             result += " | ";
         result += "reader";
+    }
+
+    if (m_Type & eAdmin) {
+        if (!result.empty())
+            result += " | ";
+        result += "admin";
     }
 
     if (result.empty())

@@ -286,6 +286,7 @@ CQueue::GetLinkedSections(map< string,
     }
 }
 
+
 // Used while loading the status matrix.
 // The access to the DB is not protected here.
 CNSPreciseTime  CQueue::x_GetSubmitTime(unsigned int  job_id)
@@ -2214,8 +2215,10 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
 }
 
 
-string CQueue::GetAffinityList()
+string CQueue::GetAffinityList(const CNSClientId &    client)
 {
+    m_ClientsRegistry.MarkAsAdmin(client);
+
     list< SAffinityStatistics >
                 statistics = m_AffinityRegistry.GetAffinityStatistics(m_StatusTracker);
 
@@ -2994,8 +2997,11 @@ CBDB_FileCursor& CQueue::GetEventsCursor()
 }
 
 
-string CQueue::PrintJobDbStat(unsigned int job_id)
+string CQueue::PrintJobDbStat(const CNSClientId &  client,
+                              unsigned int         job_id)
 {
+    m_ClientsRegistry.MarkAsAdmin(client);
+
     // Check first that the job has not been deleted yet
     {{
         CFastMutexGuard     guard(m_JobsToDeleteLock);
@@ -3020,11 +3026,14 @@ string CQueue::PrintJobDbStat(unsigned int job_id)
 }
 
 
-string CQueue::PrintAllJobDbStat(const string &  group,
-                                 TJobStatus      job_status,
-                                 unsigned int    start_after_job_id,
-                                 unsigned int    count)
+string CQueue::PrintAllJobDbStat(const CNSClientId &  client,
+                                 const string &       group,
+                                 TJobStatus           job_status,
+                                 unsigned int         start_after_job_id,
+                                 unsigned int         count)
 {
+    m_ClientsRegistry.MarkAsAdmin(client);
+
     // Form a bit vector of all jobs to dump
     vector<CNetScheduleAPI::EJobStatus>     statuses;
     TNSBitVector                            jobs_to_dump;
@@ -3174,6 +3183,12 @@ void CQueue::TouchClientsRegistry(CNSClientId &  client,
         x_ResetRunningDueToNewSession(client, running_jobs);
     if (reading_jobs.any())
         x_ResetReadingDueToNewSession(client, reading_jobs);
+}
+
+
+void CQueue::MarkClientAsAdmin(const CNSClientId &  client)
+{
+    m_ClientsRegistry.MarkAsAdmin(client);
 }
 
 
@@ -3498,8 +3513,10 @@ unsigned int CQueue::CountActiveJobs(void) const
 }
 
 
-void CQueue::SetPauseStatus(TPauseStatus  status)
+void CQueue::SetPauseStatus(const CNSClientId &  client, TPauseStatus  status)
 {
+    m_ClientsRegistry.MarkAsAdmin(client);
+
     bool        need_notifications = (status == eNoPause &&
                                       m_PauseStatus != eNoPause);
 
