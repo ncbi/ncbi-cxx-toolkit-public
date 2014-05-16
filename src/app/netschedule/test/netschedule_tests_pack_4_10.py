@@ -308,7 +308,7 @@ class Scenario105( TestBase ):
 
         client = getClientInfo( ns_client, 'mynode' )
         if client[ 'session' ] == 'mysession' and \
-           client[ 'type' ] == 'unknown':
+           ( client[ 'type' ] in [ 'unknown', 'admin' ]):
             return True
 
         raise Exception( "Unexpected client info: " + str( client ) )
@@ -815,7 +815,7 @@ class Scenario119( TestBase ):
         client = getClientInfo( ns_client, 'mynode', verbose = False )
         if client[ 'number_of_preferred_affinities' ] != 2:
             raise Exception( 'Unexpected length of preferred_affinities' )
-        if client[ 'type' ] not in [ 'unknown', 'worker node' ]:
+        if client[ 'type' ] not in [ 'unknown', 'worker node', 'worker node | admin' ]:
             raise Exception( 'Unexpected client type: ' + client[ 'type' ] )
 
         return True
@@ -847,7 +847,7 @@ class Scenario120( TestBase ):
             raise Exception( 'Unexpected preferred_affinities[ 0 ]' )
         if client[ 'preferred_affinities' ][ 1 ] != 'a2':
             raise Exception( 'Unexpected preferred_affinities[ 1 ]' )
-        if client[ 'type' ] not in [ 'unknown', 'worker node' ]:
+        if client[ 'type' ] not in [ 'unknown', 'worker node', 'worker node | admin' ]:
             raise Exception( 'Unexpected client type: ' + client[ 'type' ] )
 
         return True
