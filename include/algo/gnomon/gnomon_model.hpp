@@ -185,7 +185,7 @@ public:
     {
         return !(*this == p);
     }
-    //    bool operator<(const CModelExon& p) const { return Precede(Limits(),p.Limits()); }
+    bool operator<(const CModelExon& p) const { return Precede(Limits(),p.Limits()); }
     
     operator TSignedSeqRange() const { return m_range; }
     const TSignedSeqRange& Limits() const { return m_range; }
@@ -453,7 +453,7 @@ public:
     void SetComment(const string& comment) { m_comment = comment; }
     void AddComment(const string& comment) { m_comment += " " + comment; }
 
-    //    bool operator<(const CGeneModel& a) const { return Precede(Limits(),a.Limits()); }
+    bool operator<(const CGeneModel& a) const { return Precede(Limits(),a.Limits()); }
 
     double Score() const { return m_cds_info.Score(); }
 
