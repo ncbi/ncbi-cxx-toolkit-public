@@ -1072,13 +1072,13 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
 
         // Prepare data ...
         {
-            ostrstream out;
+            CNcbiOstrstream out;
 
             for (int i = 0; i < test_size; ++i) {
                 out << i << " ";
             }
 
-            data_len = long(out.pcount());
+            data_len = long(GetOssSize(out));
             BOOST_CHECK(data_len > 0);
 
             // Clean table ...
@@ -1099,9 +1099,9 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
                 ostream& ostrm = auto_cursor->GetBlobOStream(1,
                                                              data_len,
                                                              kBOSFlags);
+                string s = CNcbiOstrstreamToString(out);
 
-                ostrm.write(out.str(), data_len);
-                out.freeze(false);
+                ostrm.write(s.data(), data_len);
 
                 BOOST_CHECK_EQUAL(ostrm.fail(), false);
 
