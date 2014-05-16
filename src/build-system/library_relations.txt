@@ -1,5 +1,6 @@
 # $Id$
 # Pregenerated summary of library relations, for use by project_tree_builder.
+$(ORIG_LIBS) needs3party
 BoostTestXML needs xser
 EntrezCache_g needs $(EUTILS_LIBS)
 EntrezCache_g needs dbloadb
@@ -57,6 +58,7 @@ an_core needs gc_util_sdbapi
 an_core needs gpipe_an_base
 an_core needs gpipe_jira
 an_core needs gpipe_kmer
+an_core needs ncbi_xcache_netcache
 an_euk_pipeline needs an_core
 an_euk_pipeline needs gpipe_val
 an_prok_pipeline needs an_core
@@ -263,7 +265,6 @@ gc_load_utils needs xid_utils
 gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
 gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
-gcaccess_utils needs xobjedit
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
@@ -361,14 +362,12 @@ gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gpinit
 gpipe_ftp needs xalgoalignutil
-gpipe_ftp needs xobjedit
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
 gpipe_ftp_new needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp_new needs $(XFORMAT_LIBS)
 gpipe_ftp_new needs gpinit
 gpipe_ftp_new needs xalgoalignutil
-gpipe_ftp_new needs xobjedit
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
 gpipe_jira needs gpipe_common
@@ -381,7 +380,6 @@ gpipe_meta_access needs gpipe_common
 gpipe_objutil needs $(GPIPE_COMMON_LIBS)
 gpipe_objutil needs $(GPIPE_LOADER_LIBS)
 gpipe_objutil needs $(OBJMGR_LIBS)
-gpipe_objutil needs ncbi_xloader_wgs
 gpipe_objutil needs pubmed
 gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
@@ -405,8 +403,8 @@ gpipe_val needs $(SEQ_LIBS)
 gpipe_val needs gpipe_common
 gpipe_val needs pub
 gpipe_val needs valerr
+gpipe_xml needs $(GPIPE_COMMON_LIBS)
 gpipe_xml needs connssl
-gpipe_xml needs gpipe_common
 gpipe_xml needs taxon1
 gpipe_xml needs taxon3
 gpxapi needs general
@@ -1000,7 +998,6 @@ valerr needs xser
 valid needs general
 valid needs xregexp
 validate_regions needs $(GPIPE_GENCOLL_LIBS)
-validate_regions needs valerr
 variation needs $(SEQ_LIBS)
 variation needs pub
 variation_utils needs variation
