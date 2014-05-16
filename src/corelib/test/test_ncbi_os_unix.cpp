@@ -46,7 +46,8 @@ int main()
     SetDiagPostLevel(eDiag_Info);
 
     // Run tests
-    LOG_POST("Trying to daemonize at \"/\", expecting failure");
+    LOG_POST("Trying to daemonize at \"/\","
+             " expecting failure for the check to continue successfully");
     _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == 0);
     _ASSERT(errno == EACCES  ||  errno == EPERM  ||  errno == ENOENT);
     _ASSERT(CProcess::Daemonize("./test_ncbi_os_unix.log",
