@@ -198,9 +198,9 @@ public:
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply) = 0;
 
-protected:
     CAutomationProc* m_AutomationProc;
 
+protected:
     TObjectID m_Id;
 };
 
@@ -220,155 +220,6 @@ struct SNetServiceAutomationObject : public CAutomationObject
     CNetService::EServiceType m_ActualServiceType;
 };
 
-struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
-{
-    class CEventHandler : public INetEventHandler
-    {
-    public:
-        CEventHandler(CAutomationProc* automation_proc,
-                CNetCacheAPI::TInstance ns_api) :
-            m_AutomationProc(automation_proc),
-            m_NetCacheAPI(ns_api)
-        {
-        }
-
-        virtual void OnWarning(const string& warn_msg, CNetServer server);
-
-    private:
-        CAutomationProc* m_AutomationProc;
-        CNetCacheAPI::TInstance m_NetCacheAPI;
-    };
-
-    SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& client_name) :
-        SNetServiceAutomationObject(automation_proc,
-                CNetService::eLoadBalancedService),
-        m_NetCacheAPI(service_name, client_name)
-    {
-        m_Service = m_NetCacheAPI.GetService();
-        m_NetCacheAPI.SetEventHandler(
-                new CEventHandler(automation_proc, m_NetCacheAPI));
-    }
-
-    virtual const string& GetType() const;
-
-    virtual const void* GetImplPtr() const;
-
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
-
-    CNetCacheAPI m_NetCacheAPI;
-
-protected:
-    SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
-            const CNetCacheAPI& nc_server) :
-        SNetServiceAutomationObject(automation_proc,
-                CNetService::eSingleServerService),
-        m_NetCacheAPI(nc_server)
-    {
-        m_Service = m_NetCacheAPI.GetService();
-    }
-};
-
-struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
-{
-    SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
-            CNetCacheAPI nc_api, CNetServer::TInstance server) :
-        SNetCacheServiceAutomationObject(automation_proc,
-                nc_api.GetServer(server)),
-        m_NetServer(server)
-    {
-    }
-
-    SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
-        const string& service_name, const string& client_name);
-
-    virtual const string& GetType() const;
-
-    virtual const void* GetImplPtr() const;
-
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
-
-    CNetServer m_NetServer;
-};
-
-struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
-{
-    class CEventHandler : public INetEventHandler
-    {
-    public:
-        CEventHandler(CAutomationProc* automation_proc,
-                CNetScheduleAPI::TInstance ns_api) :
-            m_AutomationProc(automation_proc),
-            m_NetScheduleAPI(ns_api)
-        {
-        }
-
-        virtual void OnWarning(const string& warn_msg, CNetServer server);
-
-    private:
-        CAutomationProc* m_AutomationProc;
-        CNetScheduleAPI::TInstance m_NetScheduleAPI;
-    };
-
-    SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& queue_name,
-            const string& client_name) :
-        SNetServiceAutomationObject(automation_proc,
-                CNetService::eLoadBalancedService),
-        m_NetScheduleAPI(service_name, client_name, queue_name)
-    {
-        m_Service = m_NetScheduleAPI.GetService();
-        m_NetScheduleAPI.SetEventHandler(
-                new CEventHandler(automation_proc, m_NetScheduleAPI));
-    }
-
-    virtual const string& GetType() const;
-
-    virtual const void* GetImplPtr() const;
-
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
-
-    CNetScheduleAPI m_NetScheduleAPI;
-
-protected:
-    SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
-            const CNetScheduleAPI& ns_server) :
-        SNetServiceAutomationObject(automation_proc,
-                CNetService::eSingleServerService),
-        m_NetScheduleAPI(ns_server)
-    {
-        m_Service = m_NetScheduleAPI.GetService();
-    }
-};
-
-struct SNetScheduleServerAutomationObject :
-        public SNetScheduleServiceAutomationObject
-{
-    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
-            CNetScheduleAPI ns_api, CNetServer::TInstance server) :
-        SNetScheduleServiceAutomationObject(automation_proc,
-                ns_api.GetServer(server)),
-        m_NetServer(server)
-    {
-    }
-
-    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& queue_name,
-            const string& client_name);
-
-    virtual const string& GetType() const;
-
-    virtual const void* GetImplPtr() const;
-
-    virtual bool Call(const string& method,
-            CArgArray& arg_array, CJsonNode& reply);
-
-    CNetServer m_NetServer;
-};
-
 typedef CRef<CAutomationObject> TAutomationObjectRef;
 
 class IMessageSender
@@ -384,8 +235,7 @@ class CAutomationProc
 public:
     CAutomationProc(IMessageSender* message_sender);
 
-    TAutomationObjectRef CreateObject(const string& class_name,
-            CArgArray& arg_array);
+    TObjectID CreateObject(const string& class_name, CArgArray& arg_array);
 
     CJsonNode ProcessMessage(const CJsonNode& message);
 
@@ -393,7 +243,8 @@ public:
 
     void SendError(const CTempString& error_message);
 
-    void AddObject(TAutomationObjectRef new_object, const void* impl_ptr);
+    TObjectID AddObject(TAutomationObjectRef new_object);
+    TObjectID AddObject(TAutomationObjectRef new_object, const void* impl_ptr);
 
     TAutomationObjectRef FindObjectByPtr(const void* impl_ptr) const;
 
@@ -421,12 +272,19 @@ private:
     CJsonNode m_WarnNode;
 };
 
-inline void CAutomationProc::AddObject(TAutomationObjectRef new_object,
+inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object)
+{
+    TObjectID new_object_id = m_Pid + m_ObjectByIndex.size();
+    new_object->SetID(new_object_id);
+    m_ObjectByIndex.push_back(new_object);
+    return new_object_id;
+}
+
+inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object,
         const void* impl_ptr)
 {
-    new_object->SetID(m_Pid + m_ObjectByIndex.size());
-    m_ObjectByIndex.push_back(new_object);
     m_ObjectByPointer[impl_ptr] = new_object;
+    return AddObject(new_object);
 }
 
 END_NCBI_SCOPE
