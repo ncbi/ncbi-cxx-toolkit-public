@@ -2649,14 +2649,18 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         TrimAlignmentsIncludedInDifferentGenes(genes);
         CombineCompatibleChains(tmp_chains);
         SetFlagsForChains(tmp_chains);
-        FindGenes(tmp_chains);                      // redo genes after trim    
     }
+    NON_CONST_ITERATE(TChainList, it, tmp_chains) {
+        if(it->Score() != BadScore()) 
+            m_gnomon->GetScore(*it,!no5pextension,false); // this will return CDS to best/longest depending on no5pextension
+    }
+    if(genes.size() > 1)
+        FindGenes(tmp_chains);                      // redo genes after trim    
+    
     
     TGeneModelList chains;
     NON_CONST_ITERATE(TChainList, it, tmp_chains) {
         it->RestoreTrimmedEnds(trim);
-        if(it->Score() != BadScore()) 
-            m_gnomon->GetScore(*it,!no5pextension,false); // this will return CDS to best/longest depending on no5pextension
         chains.push_back(*it);
     }
 
