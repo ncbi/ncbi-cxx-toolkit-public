@@ -2835,7 +2835,6 @@ void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep,
             }
             if (!found) {
                 InsertDep(graph, *d, done);
-                break;
             }
         }
     }
