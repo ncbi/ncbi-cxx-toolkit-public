@@ -373,5 +373,77 @@ Seq-align ::= { \
     CConstRef<CSeq_align> clean_alignment = fg.CleanAlignment(align);
     set<TSeqPos> stops = int_stop_finder.FindStops(*clean_alignment);
 
-    BOOST_CHECK_EQUAL( *stops.begin(), 84609 );
+    BOOST_CHECK_EQUAL( *stops.begin(), 84609U );
+}
+
+BOOST_AUTO_TEST_CASE(TestAltStarts)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CScope scope(*om);
+    scope.AddDefaults();
+
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 148225248, \
+    genomic-id gi 224514980, \
+    genomic-strand plus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { \
+          amin 22, \
+          frame 1 \
+        }, \
+        product-end protpos { \
+          amin 277, \
+          frame 3 \
+        }, \
+        genomic-start 30641728, \
+        genomic-end 30642468, \
+        parts { \
+          diag 69, \
+          product-ins 3, \
+          diag 30, \
+          product-ins 4, \
+          diag 494, \
+          product-ins 2, \
+          diag 85, \
+          product-ins 18, \
+          diag 63 \
+        }, \
+        partial TRUE \
+      } \
+    }, \
+    product-length 278, \
+    modifiers { \
+      stop-codon-found TRUE \
+    } \
+  } \
+} \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CSeq_align align;
+    *istr >> align;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CInternalStopFinder int_stop_finder(scope);
+
+    typedef map<TSeqRange, bool> TStarts;
+    TStarts starts = int_stop_finder.FindStartStopRanges(align,3).first;
+
+    int atg_starts = 0;
+    ITERATE(TStarts, s, starts) {
+        if (s->second)
+            ++atg_starts;
+    }
+
+    BOOST_CHECK_EQUAL( atg_starts, 3 );
 }
