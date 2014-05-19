@@ -213,6 +213,8 @@ private:
     void EnteringEntry(CSeq_entry& se);
     void LeavingEntry (CSeq_entry& se);
 
+    void SetGeneticCode (CBioseq& bs);
+
     void SubmitblockBC (CSubmit_block& sb);
 
     void SeqsetBC (CBioseq_set& bss);
