@@ -113,7 +113,7 @@ static int s_RetrieveFeat(TGi gi, CObjectManager& om, const string& lds_name)
 static int s_RetrieveFeat(TGi gi)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*om);
+    CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->SetAlwaysLoadExternal(false);
     
     CLDS_Manager manager(LDS_DB_DIR);
     auto_ptr<CLDS_Database> lds_db(manager.ReleaseDB());
@@ -150,7 +150,7 @@ static int s_RetrieveAlign(TGi gi, CObjectManager& om, const string& lds_name)
 static int s_RetrieveAlign(TGi gi)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*om);
+    CGBDataLoader::RegisterInObjectManager(*om).GetLoader()->SetAlwaysLoadExternal(false);
     
     CLDS_Manager manager(LDS_DB_DIR);
     auto_ptr<CLDS_Database> lds_db(manager.ReleaseDB());
