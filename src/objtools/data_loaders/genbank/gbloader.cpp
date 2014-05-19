@@ -488,17 +488,37 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
 
     m_IdExpirationTimeout = DEFAULT_ID_EXPIRATION_TIMEOUT;
     if ( gb_params ) {
-        try {
-            string param =
-                GetParam(gb_params, NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT);
-            if ( !param.empty() ) {
+        string param =
+            GetParam(gb_params, NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT);
+        if ( !param.empty() ) {
+            try {
                 Uint4 timeout = NStr::StringToNumeric<Uint4>(param);
                 if ( timeout > 0 ) {
                     m_IdExpirationTimeout = timeout;
                 }
             }
+            catch ( CException& exc ) {
+                NCBI_RETHROW_FMT(exc, CLoaderException, eBadConfig,
+                                 "Bad value of parameter "
+                                 NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT
+                                 ": \""<<param<<"\"");
+            }
         }
-        catch ( CException& /*ignored*/ ) {
+    }
+    m_AlwaysLoadExternal = true;
+    if ( gb_params ) {
+        string param =
+            GetParam(gb_params, NCBI_GBLOADER_PARAM_ALWAYS_LOAD_EXTERNAL);
+        if ( !param.empty() ) {
+            try {
+                m_AlwaysLoadExternal = NStr::StringToBool(param);
+            }
+            catch ( CException& exc ) {
+                NCBI_RETHROW_FMT(exc, CLoaderException, eBadConfig,
+                                 "Bad value of parameter "
+                                 NCBI_GBLOADER_PARAM_ALWAYS_LOAD_EXTERNAL
+                                 ": \""<<param<<"\"");
+            }
         }
     }
     
@@ -1285,7 +1305,9 @@ CDataLoader::TTSE_LockSet
 CGBDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
                                      const SAnnotSelector* sel)
 {
-    return CDataLoader::GetOrphanAnnotRecords(idh, sel);
+    if ( !m_AlwaysLoadExternal ) {
+        return CDataLoader::GetOrphanAnnotRecords(idh, sel);
+    }
     return GetExternalAnnotRecords(idh, sel);
 }
 

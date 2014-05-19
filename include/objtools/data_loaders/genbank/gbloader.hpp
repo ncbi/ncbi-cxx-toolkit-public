@@ -382,6 +382,8 @@ private:
 
     TExpirationTimeout      m_IdExpirationTimeout;
 
+    bool                    m_AlwaysLoadExternal;
+
     //
     // private code
     //
