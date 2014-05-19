@@ -339,6 +339,16 @@ public:
         }
     void SetIdExpirationTimeout(TExpirationTimeout timeout);
 
+    bool GetAlwaysLoadExternal(void) const
+        {
+            return m_AlwaysLoadExternal;
+        }
+
+    void SetAlwaysLoadExternal(bool flag)
+        {
+            m_AlwaysLoadExternal = flag;
+        }
+
 protected:
     friend class CGBReaderRequestResult;
 
