@@ -130,7 +130,8 @@ public:
         eLoaderFailed,
         eNoConnection,
         eOtherError,
-        eRepeatAgain
+        eRepeatAgain,
+        eBadConfig
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CLoaderException, CObjMgrException);

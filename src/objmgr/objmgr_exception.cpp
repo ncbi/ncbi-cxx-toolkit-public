@@ -110,6 +110,7 @@ const char* CLoaderException::GetErrCodeString(void) const
     case eNoConnection:     return "eNoConnection";
     case eOtherError:       return "eOtherError";
     case eRepeatAgain:      return "eRepeatAgain";
+    case eBadConfig:        return "eBadConfig";
     default:                return CException::GetErrCodeString();
     }
 }
