@@ -4460,6 +4460,8 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
                     gap_align->query_stop -= esp->num[i-1];
     
                 esp->size--;
+                i--;
+                ASSERT(esp->size == i);
             }
         }
     }
