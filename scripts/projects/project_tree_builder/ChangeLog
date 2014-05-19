@@ -251,4 +251,12 @@ August 05, 2013
 version 3.10.0
 Changed utility projects names.
 
+May 19, 2014
+version 3.11.0
+Added option to generate CMake style makefile tree.
+Added option to generate and arrange library dependencies on Unix.
+Added support of Microsoft Visual Studio 2013.
+
+
+
 
