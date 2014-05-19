@@ -183,7 +183,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     //get a scope
     CRef<CObjectManager> pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*pObjMngr);
+    CGBDataLoader::RegisterInObjectManager(*pObjMngr).GetLoader()->SetAlwaysLoadExternal(false);
     CRef<CScope> pScope(new CScope(*pObjMngr));
     pScope->AddDefaults();
 
@@ -261,7 +261,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     //get a scope
     CRef<CObjectManager> pObjMngr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*pObjMngr);
+    CGBDataLoader::RegisterInObjectManager(*pObjMngr).GetLoader()->SetAlwaysLoadExternal(false);
     CRef<CScope> pScope(new CScope(*pObjMngr));
     pScope->AddDefaults();
 
