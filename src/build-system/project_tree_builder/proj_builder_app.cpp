@@ -421,6 +421,7 @@ CProjBulderApp::CProjBulderApp(void)
     m_InteractiveCfg = false;
     m_Dtdep = false;
     m_AddMissingDep = false;
+    m_LibDep = false;
     m_CMakeMode = false;
     m_Ide = 0;
     m_ExitCode = 0;
@@ -521,6 +522,9 @@ void CProjBulderApp::Init(void)
                             "Add dependency on datatool where needed.");
     arg_desc->AddFlag      ("noadddep", 
                             "Do not add missing dependencies.");
+    arg_desc->AddDefaultKey("libdep", "LibraryDependencies",
+         "Analyze dependencies and generate library info for linker on Unix",
+         CArgDescriptions::eBoolean, "false");
 
     arg_desc->AddOptionalKey("args", "args_file",
                              "Read arguments from a file",
@@ -1526,7 +1530,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             string filename(
                 CDirEntry::ConcatPath(solution_dir,
                     CDirEntry::CreateRelativePath( GetProjectTreeInfo().m_Src, p->second.GetPath() + ".libdep")));
-            if (!liborder.empty() ||  !lib3order.empty()) {
+            if (m_LibDep  && (!liborder.empty() ||  !lib3order.empty())) {
                 CNcbiOfstream ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc);
                 if (ofs.is_open()) {
                     if (!liborder.empty()) {
@@ -1967,6 +1971,7 @@ void CProjBulderApp::ParseArguments(void)
     m_InteractiveCfg = (bool)args["i"];
     m_Dtdep = (bool)args["dtdep"];
     m_AddMissingDep = !((bool)args["noadddep"]);
+    m_LibDep = args["libdep"].AsBoolean();
 
     // Solution
     PTB_INFO("Solution: " << m_Solution);
@@ -2668,41 +2673,6 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                 }
             }
         }
-//gur
-#if 0
-        {
-            string resolved;
-            list<string> third_list;
-            site.ResolveDefine("ORIG_LIBS", resolved);
-            NStr::Split(resolved, LIST_SEPARATOR_LIBS, third_list);
-            ITERATE(list<string>, t, third_list) {
-                string t_name(*t);
-                CSymResolver::StripSuffix(t_name);
-                bool is_lib = false;
-                bool is_framework = false;
-                if (NStr::StartsWith(*t, "-l")) {
-                    is_lib = true;
-                    t_name = t->substr(2);
-                } else if (NStr::CompareNocase(*t,"-framework") == 0) {
-                    if (t != third_list.end()) {
-                        is_framework = true;
-                        t_name = *(++t);
-                    } else {
-                        continue;
-                    }
-                } else {
-                    is_lib = t->at(0) != '-';
-                }
-                if (is_lib || is_framework) {
-                    m_GraphDepPrecedes[t_name] = set<string>();
-                    m_3PartyLibs.insert(t_name);
-                    if (is_framework) {
-                        m_Frameworks.insert(t_name);
-                    }
-                }
-            }
-        }
-#endif
     }
     for ( map<string, set<string> >::const_iterator i = m_GraphDepIncludes.begin();
         i != m_GraphDepIncludes.end(); ++i) {

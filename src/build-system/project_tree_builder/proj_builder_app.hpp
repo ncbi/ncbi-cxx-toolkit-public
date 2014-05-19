@@ -135,6 +135,7 @@ public:
     bool m_InteractiveCfg;
     bool m_Dtdep;
     bool m_AddMissingDep;
+    bool m_LibDep;
     bool m_CMakeMode;
     int m_Ide;
     string m_Arch;
