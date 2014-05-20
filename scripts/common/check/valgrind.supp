@@ -118,6 +118,14 @@
 }
 
 {
+    http://permalink.gmane.org/gmane.comp.encryption.nettle.bugs/886
+    Memcheck:Addr8
+    fun:memxor3
+    fun:gcm_crypt
+    fun:nettle_gcm_encrypt
+}
+
+{
     I think this is glibc's ultra optimised getenv doing 2 byte reads
     Memcheck:Addr2
     fun:getenv
