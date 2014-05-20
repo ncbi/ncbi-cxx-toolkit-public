@@ -62,6 +62,8 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 #include <objtools/lds2/lds2.hpp>
 #include <objtools/data_loaders/lds2/lds2_dataloader.hpp>
 
@@ -113,31 +115,46 @@ void CSplignApp::Init()
 
     argdescr->AddOptionalKey
         ("mklds", "mklds",
-         "[Batch mode] "
          "Make LDS DB under the specified directory "
          "with cDNA and genomic FASTA files or symlinks.",
          CArgDescriptions::eString);
 
     argdescr->AddOptionalKey
         ("blastdb", "blastdb",
-         "[Batch mode] Blast DB.",
+         "Comma separated list of Blast DBs for sequence retrieval.",
          CArgDescriptions::eString);
 
     argdescr->AddOptionalKey
         ("ldsdir", "ldsdir",
-         "[Batch mode] Directory holding LDS subdirectory.",
+         "Comma separated list of directories with LDS DBs.",
          CArgDescriptions::eString);
+
+    argdescr->AddFlag
+        ("genbank",
+         "Add genbank loader. Not recommended in Batch mode.");
 
     argdescr->AddOptionalKey
         ("query", "query",
-         "[Pairwise mode] FASTA file with the spliced sequence.",
+         "[Pairwise mode] FASTA file with the spliced sequence. "
+         "Not compatible with \"-query_id\".",
          CArgDescriptions::eInputFile);
     
     argdescr->AddOptionalKey
+        ("query_id", "query_id",
+         "[Pairwise mode] Query id. Not compatible with \"-query\".",
+         CArgDescriptions::eString);
+
+    argdescr->AddOptionalKey
         ("subj", "subj",
-         "[Pairwise mode] FASTA file with the genomic sequence.",
+         "[Pairwise mode] FASTA file with the genomic sequence. "
+         "Not compatible with \"-subj_id\".",
          CArgDescriptions::eInputFile);
     
+    argdescr->AddOptionalKey
+        ("subj_id", "subj_id",
+         "[Pairwise mode] Subject id. Not compatible with \"-subj\".",
+         CArgDescriptions::eString);
+
     argdescr->AddFlag
         ("disc",
          "[Pairwise mode] Use discontiguous megablast to facilitate "
@@ -556,13 +573,25 @@ int CSplignApp::Run()
 
     // check that modes aren't mixed
 
+    if( args["query"] && args["query_id"] ) {
+        NCBI_THROW(CSplignAppException,
+                   eBadParameter,
+                   "\"-query\" is not compatible with \"-query_id\". "
+                   "Specify -help to print arguments." );
+    }
+
+    if( args["subj"] && args["subj_id"] ) {
+        NCBI_THROW(CSplignAppException,
+                   eBadParameter,
+                   "\"-subj\" is not compatible with \"-subj_id\". "
+                   "Specify -help to print arguments." );
+    }
+
     const bool is_mklds   = args["mklds"];
-    const bool is_batch  =  args["blastdb"] || args["ldsdir"];
 
     const bool is_hits    = args["hits"];
-    const bool is_query   = args["query"];
-    const bool is_subj    = args["subj"];
-
+    const bool is_query   = args["query"] || args["query_id"];
+    const bool is_subj    = args["subj"] || args["subj_id"];
     const bool is_comps   = args["comps"];
 
     const bool use_disc_megablast (args["disc"]);
@@ -594,13 +623,13 @@ int CSplignApp::Run()
     // determine mode and verify arguments
     ERunMode run_mode (eNotSet);
     
-    if(is_query && is_subj && !(is_hits || is_comps || is_batch)) {
+    if(is_query && is_subj && !(is_hits || is_comps)) {
         run_mode = ePairwise;
     }
-    else if(is_hits && is_batch && !(is_comps ||is_query || is_subj)) {
+    else if(is_hits && !(is_comps ||is_query || is_subj)) {
         run_mode = eBatch1;
     }
-    else if(is_comps && is_batch && !(is_hits ||is_query || is_subj)) {
+    else if(is_comps && !(is_hits ||is_query || is_subj)) {
         run_mode = eBatch2;
     }
 
@@ -620,8 +649,8 @@ int CSplignApp::Run()
     // open paiwise alignment output stream, if any
     m_AlnOut = args["aln"]? & args["aln"].AsOutputFile(): NULL;
     
-    // in pairwise, batch 2 or incremental mode, setup blast options
-    if(run_mode != eBatch1 && run_mode != eBatch2) {
+    // in pairwise mode, setup blast options
+    if(run_mode == ePairwise) {
         m_BlastOptionsHandle = x_SetupBlastOptions(use_disc_megablast);
     }
 
@@ -634,18 +663,16 @@ int CSplignApp::Run()
     // splign formatter object    
     m_Formatter.Reset(new CSplignFormatter(*m_Splign));
 
-    // do mode-specific preparations
+    // add loaders
     CRef<CScope> scope;
-    CRef<CSeq_id> seqid_query, seqid_subj;
-    if(run_mode == ePairwise) {
+    scope.Reset (new CScope(*m_ObjMgr));
 
-        scope.Reset (new CScope(*m_ObjMgr));
-        scope->AddDefaults();
-        seqid_query = x_ReadFastaSetId(args["query"], scope);
-        seqid_subj  = x_ReadFastaSetId(args["subj"] , scope);
-    }
-    else if(run_mode == eBatch1 || run_mode == eBatch2) {
-        
+
+    {{
+        if(args["genbank"]) {
+            CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
+        }
+            
         int priority = 1;
 
         typedef vector<string> TDbs;
@@ -701,21 +728,56 @@ int CSplignApp::Run()
             LOG_POST(Info << "added loader: LDS: " << db << " (" << priority << ")");
             ++priority;
         }
-       
+    }}
 
-        scope.Reset (new CScope(*m_ObjMgr));
-        scope->AddDefaults();
-    }
-    else {
-        NCBI_THROW(CSplignAppException,
-                   eGeneral,
-                   "Requested mode not implemented." );
-    }
-
+    scope->AddDefaults();
     m_Splign->SetScope() = scope;
 
     // run splign in selected mode 
     if(run_mode == ePairwise) {
+        //query
+        CRef<CSeq_id> seqid_query;
+        if(args["query"]) {
+            seqid_query = x_ReadFastaSetId(args["query"], scope);
+        } else if(args["query_id"]) {
+            const string& id_list = args["query_id"].AsString();
+            try {
+                CBioseq::TId ids;
+                CSeq_id::ParseFastaIds(ids, id_list);
+                seqid_query = FindBestChoice(ids, objects::CSeq_id::Score);                 
+                if(!seqid_query) seqid_query = new CSeq_id(CSeq_id::e_Local, id_list);
+        
+            } catch(CException) {
+                seqid_query.Reset (new CSeq_id(CSeq_id::e_Local, id_list)); 
+            }            
+        } else {
+            NCBI_THROW(CSplignAppException,
+                       eBadParameter,
+                       "Query is missing. "
+                       "Specify -help to print arguments." );
+        }
+
+        //subject
+        CRef<CSeq_id> seqid_subj;
+        if(args["subj"]) {
+            seqid_subj = x_ReadFastaSetId(args["subj"], scope);
+        } else if(args["subj_id"]) {
+            const string& id_list = args["subj_id"].AsString();
+            try {
+                CBioseq::TId ids;
+                CSeq_id::ParseFastaIds(ids, id_list);
+                seqid_subj = FindBestChoice(ids, objects::CSeq_id::Score);                 
+                if(!seqid_subj) seqid_subj = new CSeq_id(CSeq_id::e_Local, id_list);
+        
+            } catch(CException) {
+                seqid_subj.Reset (new CSeq_id(CSeq_id::e_Local, id_list)); 
+            }            
+        } else {
+            NCBI_THROW(CSplignAppException,
+                       eBadParameter,
+                       "Subject is missing. "
+                       "Specify -help to print arguments." );
+        }
 
         THitRefs hitrefs;
         x_GetBl2SeqHits(seqid_query, seqid_subj, scope, &hitrefs);
