@@ -2016,6 +2016,20 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
     case e_Gibbmt:
     case e_Giim:
     case e_Gi:
+#ifdef NCBI_INT8_GI
+        if ( the_type == e_Gi ) {
+            try {
+                TIntId gi = NStr::StringToNumeric<TIntId>(acc);
+                if ( gi > 0 ) {
+                    SetGi(gi);
+                    return *this;
+                }
+            }
+            catch ( CException& /*ignored*/ ) {
+                // will be processed by the code below
+            }
+        }
+#endif
         if ( (the_id = NStr::StringToNonNegativeInt (acc)) >= 0 ) {
             return Set(the_type, the_id);
         } else {
