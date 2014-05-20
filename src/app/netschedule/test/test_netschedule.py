@@ -9,7 +9,7 @@
 Netschedule server test script
 """
 
-import sys, os.path, time
+import sys, os.path
 
 oldcwd = os.getcwd()
 os.chdir( os.path.dirname( sys.argv[ 0 ] ) )
@@ -80,7 +80,7 @@ def debug( title, port ):
         os.system( echo + " '" + title + "' " + suffix )
         os.system( ps + " -ef " + suffix )
         os.system( netstat + " -v -p -a -n " + suffix )
-        os.system( echo + " o | " + netcat + "  -v localhost " + \
+        os.system( echo + " o | " + netcat + "  -v localhost " +
                    str( port ) + " " + suffix )
     return
 
@@ -144,8 +144,8 @@ def main():
                        default=defaultNetschedulePath,
                        help="Path to the netschedule daemon" )
     parser.add_option( "--db-path", dest="pathDB",
-                       default=os.path.dirname( \
-                                    os.path.abspath( sys.argv[ 0 ] ) ) + \
+                       default=os.path.dirname(
+                                    os.path.abspath( sys.argv[ 0 ] ) ) +
                                     os.path.sep + "data",
                        help="Directory name where data are stored" )
     parser.add_option( "--start-from", dest="start_from",
@@ -159,11 +159,11 @@ def main():
                        help="Header for the tests output" )
     parser.add_option( "--all-to-stderr",
                        action="store_true", dest="alltostderr", default=False,
-                       help="print the messages on stderr only " \
+                       help="print the messages on stderr only "
                             "(default: False)" )
     parser.add_option( "--ns-version", dest="version",
                        default=latestNetscheduleVersion,
-                       help="The tested netschedule version (default:" + \
+                       help="The tested netschedule version (default:" +
                             latestNetscheduleVersion + ")" )
 
 
@@ -185,6 +185,14 @@ def main():
     port = int( args[ 0 ] )
     if port <= 0 or port > 65535:
         raise Exception( "Incorrect port number" )
+
+    # Check the DB path. It may not match the 
+    if not os.path.exists( options.pathDB ) or not os.path.isdir( options.pathDB ):
+        raise Exception( "DB path is invalid. The '" + options.pathDB +
+                         "' expected to be an existing directory." )
+    if os.path.normpath( os.path.realpath( options.pathDB ) ) == \
+       os.path.normpath( os.path.realpath( os.path.dirname( __file__ ) ) ):
+        raise Exception( "DB path must not match the test script location" )
 
     if options.verbose:
         print "Using netschedule path: " + options.pathNetschedule
