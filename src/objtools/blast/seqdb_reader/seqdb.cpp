@@ -1497,7 +1497,7 @@ string CWgsDbTrimmer::GetDbList()
         NON_CONST_ITERATE(TGiLists, gis4wgs_db, wgs_gi_lists) {
             const string& wgs_db_name = gis4wgs_db->first;
             const vector<int>& wgs_gis = gis4wgs_db->second;
-            if (find(wgs_gis.begin(), wgs_gis.end(), *gi) != wgs_gis.end()) {
+            if (find(wgs_gis.begin(), wgs_gis.end(), GI_TO(int, *gi)) != wgs_gis.end()) {
                 trimmed_wgs_dbs.insert(wgs_db_name);
                 wgs_gi_lists.erase(wgs_db_name);
                 break;
