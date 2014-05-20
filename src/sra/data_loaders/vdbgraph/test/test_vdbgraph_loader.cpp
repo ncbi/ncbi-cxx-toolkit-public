@@ -75,7 +75,8 @@ static CRef<CScope> s_MakeScope(const string& file_name = kEmptyStr)
 static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
                         const vector<string>& naccs,
                         bool only_main = true,
-                        bool no_annots = false)
+                        bool no_annots = false,
+                        const vector<string>* other_accs = 0)
 {
     NcbiCout << "Test with "<<naccs.size()<<" accs"<<NcbiEndl;
     SAnnotSelector sel;
@@ -83,13 +84,26 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
     ITERATE ( vector<string>, it, naccs ) {
         sel.IncludeNamedAnnotAccession(*it);
     }
+    if ( other_accs ) {
+        ITERATE ( vector<string>, it, *other_accs ) {
+            sel.IncludeNamedAnnotAccession(*it);
+        }
+    }
     CSeq_loc loc;
     loc.SetWhole(*SerialClone(id));
     CGraph_CI graph_it(scope, loc, sel);
     CSeq_table_CI table_it(scope, loc, sel);
     if ( no_annots ) {
         BOOST_CHECK(!graph_it);
+        if ( graph_it ) {
+            NcbiCout << "Unexpected " << MSerial_AsnText
+                     << graph_it->GetMappedGraph();
+        }
         BOOST_CHECK(!table_it);
+        if ( table_it ) {
+            NcbiCout << "Unexpected " << MSerial_AsnText
+                     << table_it.GetAnnot().GetCompleteObject()->GetData().GetSeq_table();
+        }
         return;
     }
     if ( only_main ) {
@@ -391,3 +405,19 @@ BOOST_AUTO_TEST_CASE(FetchSeq4)
     }
 }
 
+BOOST_AUTO_TEST_CASE(FetchWithSRR)
+{
+    string nacc = "NA000008777.1";
+    string srr = "SRR000010";
+    CSeq_id seqid1("NC_002333.2");
+    TSeqPos seq_len = 16596;
+
+    CRef<CScope> scope = s_MakeScope();
+    BOOST_REQUIRE_EQUAL(kInvalidSeqPos, scope->GetSequenceLength(seqid1));
+    CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
+    BOOST_REQUIRE(!handle1);
+    
+    vector<string> other_accs(1, srr);
+    s_CheckFast(*scope, seqid1, seq_len, vector<string>(1, nacc), false, false, &other_accs);
+    s_VerifyGraphs(*scope, seqid1, seq_len, nacc);
+}

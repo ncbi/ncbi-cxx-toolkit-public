@@ -544,10 +544,31 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
 }
 
 
+static bool sx_IsNA(const string& s)
+{
+    // NA%09d.%d
+    if ( s.size() < 13 ) {
+        return false;
+    }
+    if ( s[0] != 'N' || s[1] != 'A' || s[11] != '.' ) {
+        return false;
+    }
+    for ( int i = 0; i < 9; ++i ) {
+        if ( !isdigit(s[i+2]&0xff) ) {
+            return false;
+        }
+    }
+    return NStr::StringToNonNegativeInt(s.substr(12)) > 0;
+}
+
+
 CRef<CVDBGraphDataLoader_Impl::SVDBFileInfo>
 CVDBGraphDataLoader_Impl::x_GetNAFileInfo(const string& na_acc)
 {
     if ( !m_FixedFileMap.empty() ) {
+        return null;
+    }
+    if ( !sx_IsNA(na_acc) ) {
         return null;
     }
     CMutexGuard guard(m_Mutex);
