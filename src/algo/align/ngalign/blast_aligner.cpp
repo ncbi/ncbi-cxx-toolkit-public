@@ -44,6 +44,7 @@
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
+#include <algo/align/util/depth_filter.hpp>
 #include <algo/align/util/score_builder.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -275,20 +276,36 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
 
 	list<int> scores;
     TSeqPos AlignCount = 0;
+    CSeq_align_set FilteredResults;
     NON_CONST_ITERATE(CSearchResultSet, SetIter, *BlastResults) {
         CSearchResults& Results = **SetIter;
         CConstRef<CSeq_align_set> AlignSet = Results.GetSeqAlign();
         if(!AlignSet->IsEmpty()) {
+            typedef map<CSeq_id_Handle, list<CRef<CSeq_align> > > TSubjectMap;
+            TSubjectMap SubjectMap;
             ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet->Get()) {
-                CRef<CSeq_align> Align = *AlignIter;
-                Align->SetNamedScore(GetName(), 1);
-				AlignCount++;
-            	int Score;
-				Align->GetNamedScore(CSeq_align::eScore_Score, Score);
-				scores.push_back(Score);
-			//cerr << "blast " << MSerial_AsnText << *Align << endl;
+                CSeq_id_Handle SubjectIdH = CSeq_id_Handle::GetHandle((*AlignIter)->GetSeq_id(1));
+                SubjectMap[SubjectIdH].push_back(*AlignIter);
+            }
+            
+            ITERATE(TSubjectMap, SubjectIter, SubjectMap) {
+                list<CRef<CSeq_align> > Filtered;    
+                CAlignDepthFilter::FilterBothRows(SubjectIter->second, Filtered);
+                if(!Filtered.empty()) {
+                    FilteredResults.Set().insert(FilteredResults.Set().end(), 
+                        Filtered.begin(), Filtered.end());
+                }
             }
         }
+    }
+            
+    ITERATE(CSeq_align_set::Tdata, AlignIter, FilteredResults.Get()) {
+        CRef<CSeq_align> Align = *AlignIter;
+        Align->SetNamedScore(GetName(), 1);
+        AlignCount++;
+        int Score;
+        Align->GetNamedScore(CSeq_align::eScore_Score, Score);
+        scores.push_back(Score);
     }
 
     //ERR_POST(Info << "blast_alignments: " << AlignCount);
@@ -302,9 +319,12 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
 
     if(AlignCount == 0) {
         ERR_POST(Warning << "CBlastAligner found no hits this run.");
+    } else {
+        ERR_POST(Info << "CBlastAligner found " << AlignCount << " hits.");
     }
 
-    Results->Insert(*BlastResults);
+    //Results->Insert(*BlastResults);
+    Results->Insert(FilteredResults);
 
     return Results;
 }
@@ -347,22 +367,7 @@ TAlignResultsRef CRemoteBlastAligner::GenerateAlignments(CScope& Scope,
 
     CRef<IQueryFactory> Querys;
     CRef<CLocalDbAdapter> Subjects;
-/*
-    if(dynamic_cast<CBlastDbSet*>(SubjectSet)) {
-        CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
-        BlastSubjectSet->SetSoftFiltering(m_Filter);
-    }
-
-
-    if (dynamic_cast<CSeqIdListSet*>(QuerySet) &&
-        dynamic_cast<CBlastDbSet*>(SubjectSet) ) {
-        CSeqIdListSet* SeqIdListQuerySet = dynamic_cast<CSeqIdListSet*>(QuerySet);
-        CBlastDbSet* BlastSubjectSet = dynamic_cast<CBlastDbSet*>(SubjectSet);
-        vector<int> GiList;
-        SeqIdListQuerySet->GetGiList(GiList, Scope, *AccumResults, m_Threshold);
-        BlastSubjectSet->SetNegativeGiList(GiList);
-    }
-*/
+    
     while(true) {
     Querys = QuerySet->CreateQueryFactory(Scope, *m_BlastOptions, *AccumResults, m_Threshold);
     Subjects = SubjectSet->CreateLocalDbAdapter(Scope, *m_BlastOptions);
@@ -399,23 +404,44 @@ TAlignResultsRef CRemoteBlastAligner::GenerateAlignments(CScope& Scope,
     }
 
     TSeqPos AlignCount = 0;
+    CSeq_align_set FilteredResults;
     NON_CONST_ITERATE(CSearchResultSet, SetIter, *BlastResults) {
         CSearchResults& Results = **SetIter;
         CConstRef<CSeq_align_set> AlignSet = Results.GetSeqAlign();
         if(!AlignSet->IsEmpty()) {
+            typedef map<CSeq_id_Handle, list<CRef<CSeq_align> > > TSubjectMap;
+            TSubjectMap SubjectMap;
             ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet->Get()) {
-                CRef<CSeq_align> Align = *AlignIter;
-                Align->SetNamedScore(GetName(), 1);
-                AlignCount++;
+                CSeq_id_Handle SubjectIdH = CSeq_id_Handle::GetHandle((*AlignIter)->GetSeq_id(1));
+                SubjectMap[SubjectIdH].push_back(*AlignIter);
+            }
+            
+            ITERATE(TSubjectMap, SubjectIter, SubjectMap) {
+                list<CRef<CSeq_align> > Filtered;    
+                CAlignDepthFilter::FilterBothRows(SubjectIter->second, Filtered);
+                if(!Filtered.empty()) {
+                    FilteredResults.Set().insert(FilteredResults.Set().end(), 
+                        Filtered.begin(), Filtered.end());
+                }
             }
         }
     }
-
+            
+    ITERATE(CSeq_align_set::Tdata, AlignIter, FilteredResults.Get()) {
+        CRef<CSeq_align> Align = *AlignIter;
+        Align->SetNamedScore(GetName(), 1);
+        AlignCount++;
+        int Score;
+        Align->GetNamedScore(CSeq_align::eScore_Score, Score);
+    }           
+            
+            
     if(AlignCount == 0) {
         ERR_POST(Warning << "CRemoteBlastAligner found no hits this run.");
     }
 
-    Results->Insert(*BlastResults);
+    //Results->Insert(*BlastResults);
+    Results->Insert(FilteredResults);
 }
 
     return Results;
