@@ -94,7 +94,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromGIString)
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1234.5")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("-1234")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("0")));
+#ifdef NCBI_INT8_GI
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("9876543210")));
+    BOOST_CHECK(id->IsGi());
+    BOOST_CHECK(id->GetGi() == GI_FROM(TIntId, 9876543210));
+#else
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("9876543210")));
+#endif
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromNAcc)
