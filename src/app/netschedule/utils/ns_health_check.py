@@ -28,10 +28,60 @@ FD_LIMIT = 50           # At least 50 fds must be still available
 
 PENALTY_CURVE = [ 90, 99 ]
 
+
+# Set the value to None and no log file operations will be done
+VERBOSE_LOG_FILE = None
+#VERBOSE_LOG_FILE = "/home/satskyse/ns_healthcheck_log/healthcheck.log"
+
+
+LOG_FILE = None
+if VERBOSE_LOG_FILE is not None:
+    try:
+        LOG_FILE = open( VERBOSE_LOG_FILE, "a" )
+    except:
+        LOG_FILE = None
+
+
+def getTimestamp():
+    " Provides the current timestamp "
+    now = datetime.datetime.now()
+
+    year = str( now.year )
+
+    month = str( now.month )
+    if now.month <= 9:
+        month = "0" + month
+
+    day = str( now.day )
+    if now.day <= 9:
+        day = "0" + day
+
+    hour = str( now.hour )
+    if now.hour <= 9:
+        hour = "0" + hour
+
+    minute = str( now.minute )
+    if now.minute <= 9:
+        minute = "0" + minute
+
+    second = str( now.second )
+    if now.second <= 9:
+        second = "0" + second
+
+    return year + "-" + month + "-" + day + " " + \
+           hour + ":" + minute + ":" + second
+
 def printVerbose( msg ):
     " Prints stdout message conditionally "
+    if LOG_FILE is not None:
+        try:
+            LOG_FILE.write( getTimestamp() + " " + msg + "\n" )
+            LOG_FILE.flush()
+        except:
+            pass
+
     if VERBOSE:
-        print msg
+        print getTimestamp() + " " + msg
     return
 
 def printStderr( msg ):
@@ -203,12 +253,11 @@ def main():
         if len( args ) > 4:
             secondsSinceLastCheck = int( args[ 4 ] )
 
-        printVerbose(
-            "Service name: " + serviceName + "\n"
-            "Connection point: " + connectionPoint + "\n"
-            "Last check exit code: " + str( lastCheckExitCode ) + "\n"
-            "Last check repeat count: " + str( lastCheckRepeatCount ) + "\n"
-            "Seconds since last check: " + str( secondsSinceLastCheck ) )
+        printVerbose( "Service name: " + serviceName )
+        printVerbose( "Connection point: " + connectionPoint )
+        printVerbose( "Last check exit code: " + str( lastCheckExitCode ) )
+        printVerbose( "Last check repeat count: " + str( lastCheckRepeatCount ) )
+        printVerbose( "Seconds since last check: " + str( secondsSinceLastCheck ) )
     except Exception, exc:
         return log( BASE_NO_ACTION_ALERT_CODE + 2,
                     "Error processing command line arguments: " + str( exc ) )
@@ -524,6 +573,7 @@ class StaticHealthChecker:
 
 # The script execution entry point
 if __name__ == "__main__":
+    printVerbose( "---------- Start ----------" )
     try:
         returnValue = main()
     except KeyboardInterrupt:
