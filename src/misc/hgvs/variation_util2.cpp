@@ -481,6 +481,7 @@ CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(const CVariation&
     result->SetLoc().SetNull();
     result->SetMol(CVariantPlacement::eMol_unknown);
     CBioseq_Handle bsh = m_scope->GetBioseqHandle(target);
+    CRef<CSeq_loc_Mapper> upmapper;
 
     if(v.IsSetPlacements()) {
         //First see if we already have location on target in one of the placements
@@ -496,22 +497,50 @@ CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(const CVariation&
             //did not find an existing placement for the target; will try to remap
             ITERATE(CVariation::TPlacements, it, v.GetPlacements()) {
                 const CVariantPlacement& placement = **it;
+
                 if(!placement.GetLoc().GetId()) {
                     continue;
-                } else if(placement.GetMol() == CVariantPlacement::eMol_protein) {
+                }
+                CSeq_id_Handle p_idh = sequence::GetId(*placement.GetLoc().GetId(), 
+                                                       *m_scope,
+                                                       sequence::eGetId_ForceAcc);
+
+                bool is_scaffold = p_idh.IdentifyAccession() == CSeq_id::eAcc_refseq_contig
+                                || p_idh.IdentifyAccession() == CSeq_id::eAcc_refseq_contig_ncbo
+                                || p_idh.IdentifyAccession() == CSeq_id::eAcc_refseq_wgs_nuc
+                                || p_idh.IdentifyAccession() == CSeq_id::eAcc_refseq_wgs_intermed;
+                
+                if(placement.GetMol() == CVariantPlacement::eMol_protein) {
+
                     CRef<CVariation> precursor = InferNAfromAA(v);
                     result = RemapToAnnotatedTarget(*precursor, target);
+
+                } else if(placement.GetMol() == CVariantPlacement::eMol_genomic
+                          && is_scaffold)
+                {
+                    // location is possibly a component of the target
+                    if(!upmapper) {
+                        upmapper.Reset(new CSeq_loc_Mapper(1, bsh, CSeq_loc_Mapper::eSeqMap_Up));
+                    }
+                    result = Remap(placement, *upmapper);
+                    ChangeIdsInPlace(*result, sequence::eGetId_ForceAcc, *m_scope);
+
                 } else {
-                    //the annotation is gi-based, so we'll make sure the target is gi-based so we won't need to do conversion for all products while searching.
-                    CSeq_id_Handle product_idh = sequence::GetId(*placement.GetLoc().GetId(), *m_scope, sequence::eGetId_ForceGi);
+
+                    // the annotation is gi-based, so we'll make sure the target 
+                    // is gi-based so we won't need to do conversion for all products while searching.
+                    CSeq_id_Handle product_idh = sequence::GetId(*placement.GetLoc().GetId(), 
+                                                                 *m_scope, 
+                                                                  sequence::eGetId_ForceGi);
                     if(!product_idh) {
                         continue;
                     }
 
-                    //note that here we are looking for annotated (packaged) alignment at the
-                    //feature's location first (we could have searched the whole sequence instead, but it is quite slow for NCs)
-                    //If we have the feature but no alignment, it is assumed that the alignment is perfect, and a synthetic seq-align
-                    //is created based on RNA feature.
+                    // note that here we are looking for annotated (packaged) alignment at the
+                    // feature's location first (we could have searched the whole sequence instead, 
+                    // but it is quite slow for NCs) If we have the feature but no alignment, 
+                    // it is assumed that the alignment is perfect, and a synthetic seq-align
+                    // is created based on RNA feature.
                     CRef<CSeq_align> aln;
                     {{
                         CRef<CSeq_loc> target_loc = bsh.GetRangeSeq_loc(0, 0); //this returns "whole"
@@ -550,6 +579,7 @@ CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(const CVariation&
                         ChangeIdsInPlace(*aln, sequence::eGetId_ForceAcc, *m_scope);
                         result = Remap(*p2, *aln);
                     }
+
                 }
                 if(!result->GetLoc().IsNull()) {
                     break;
