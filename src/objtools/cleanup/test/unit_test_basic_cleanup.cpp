@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE(Test_CornerCaseFiles)
     }
 
     // process each input file
-    BOOST_CHECK( ! file_rememberer.empty() );
+    BOOST_WARN( ! file_rememberer.empty() );
     ITERATE( CFileRememberer, file_name_iter, file_rememberer ) {
 
         const string &input_file_name = *file_name_iter;
