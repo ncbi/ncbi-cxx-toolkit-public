@@ -32,8 +32,5 @@ FreeBSD32 : GCC : GCC.sh --without-debug
 SunOSx86 : GCC  : GCC.sh 4.5.3     --without-debug --without-mt --with-static
 SunOSx86 : WS64 : WorkShop59.sh 64 --with-debug --with-dll --with-mt
 
-SunOSSparc : GCC  : GCC.sh 4.5.3 --without-debug --with-mt --with-3psw=system
-SunOSSparc : WS32 : WorkShop59.sh 32 --with-debug
-
 IntelMAC : GCC401 : GCC.sh 4.0 --with-debug --with-dll --with-mt --with-universal
 IntelMAC : GCC421 : GCC.sh 4.2 --without-debug --with-dll --with-mt --with-universal=i386,x86_64
