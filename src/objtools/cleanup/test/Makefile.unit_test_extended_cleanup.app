@@ -14,4 +14,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
-WATCHERS = bollin kornbluh
+WATCHERS = bollin kornbluh kans
