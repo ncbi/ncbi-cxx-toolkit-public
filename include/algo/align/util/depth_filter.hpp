@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 class CSeq_align;
 END_SCOPE(objects)
 
-class CAlignDepthFilter {
+class NCBI_XALGOALIGN_EXPORT CAlignDepthFilter {
 
 public:
     
