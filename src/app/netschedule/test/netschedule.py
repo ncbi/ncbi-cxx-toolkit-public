@@ -63,8 +63,8 @@ class NetSchedule:
         if netschedule_path != "":
             # Local NS is configured, so host must be local as well
             if not self.isLocal():
-                raise Exception( "The locally configured NS must have host " \
-                                 "argument equal to " \
+                raise Exception( "The locally configured NS must have host "
+                                 "argument equal to "
                                  "'localhost' or '127.0.0.1'." )
 
         self.__checkPresence()
@@ -122,10 +122,10 @@ class NetSchedule:
 
         # A problem has been identified
         if err.strip() == "":
-            raise Exception( "Error in '%s' invocation. Return code: " + \
+            raise Exception( "Error in '%s' invocation. Return code: " +
                              str( process.returncode ) )
 
-        raise Exception( "Error in '%s' invocation: %s" % \
+        raise Exception( "Error in '%s' invocation: %s" %
                          (commandArgs[0], err) )
 
     def __checkPresence( self ):
@@ -133,7 +133,7 @@ class NetSchedule:
 
         # Check for grid_cli
         if os.system( self.__grid_cli + " help > /dev/null 2>&1" ) != 0:
-            raise Exception( "Cannot find grid_cli at the " \
+            raise Exception( "Cannot find grid_cli at the "
                              "specified location: " + self.__grid_cli )
 
 
@@ -159,7 +159,7 @@ class NetSchedule:
                                                     "netscheduled.ini.1":
                 raise Exception()
         except:
-            raise Exception( "netscheduled.ini.1 configuration " \
+            raise Exception( "netscheduled.ini.1 configuration "
                              "is not found on " + self.__host )
 
         cmdLine = [ "ls", self.__path + "netscheduled.ini.2" ]
@@ -169,13 +169,13 @@ class NetSchedule:
                                                     "netscheduled.ini.2":
                 raise Exception()
         except:
-            raise Exception( "netscheduled.ini.2 configuration " \
+            raise Exception( "netscheduled.ini.2 configuration "
                              "is not found on " + self.__host )
 
         # DB path
         dirname = os.path.dirname( self.__dbPath )
         if not os.path.exists( dirname ) or not os.path.isdir( dirname ):
-            raise Exception( "DB path is invalid. The '" + dirname + \
+            raise Exception( "DB path is invalid. The '" + dirname +
                              "' expected to be an existing directory." )
 
         return
@@ -253,7 +253,7 @@ class NetSchedule:
     def __localOperationAssert( self ):
         " Used before executing any local operation "
         if self.__path == "":
-            raise Exception( "Cannot perform this operation. " \
+            raise Exception( "Cannot perform this operation. "
                              "NS is initialized as remote." )
 
     def setConfig( self, number = 1 ):
@@ -438,7 +438,7 @@ class NetSchedule:
         self.__localOperationAssert()
 
         if self.isRunning():
-            raise Exception( "Cannot delete data directory " \
+            raise Exception( "Cannot delete data directory "
                              "while netschedule is running" )
 
         cmdLine = [ "rm", "-rf", self.__dbPath ]
@@ -449,7 +449,7 @@ class NetSchedule:
     def shutdown( self, auth = 'netschedule_admin' ):
         " Sends the shutdown command "
         if not self.isRunning():
-            raise Exception( "Inconsistency: shutting down netschedule " \
+            raise Exception( "Inconsistency: shutting down netschedule "
                              "while it is not running" )
 
         cmdLine = [ self.__grid_cli, "shutdown",
@@ -551,8 +551,8 @@ class NetSchedule:
                 continue
             parts = line.split( ':' )
             if len( parts ) != 2:
-                raise Exception( "Unexpected output of the 'queueinfo' " \
-                                 "command. 'key=value' format expected, " \
+                raise Exception( "Unexpected output of the 'queueinfo' "
+                                 "command. 'key=value' format expected, "
                                  "received: '" + line + "'" )
             result[ parts[ 0 ].strip() ] = parts[ 1 ].strip()
         return result
@@ -661,8 +661,8 @@ class NetSchedule:
                 continue
             parts = line.split( ':' )
             if len( parts ) < 2:
-                raise Exception( "Unexpected job info format. " \
-                                 "Expected: 'key: value', " \
+                raise Exception( "Unexpected job info format. "
+                                 "Expected: 'key: value', "
                                  "Received: " + line )
             value = ":".join( parts[ 1: ] ).strip()
             result[ parts[0].strip() ] = value
@@ -788,8 +788,8 @@ class NetSchedule:
             if len( parts ) < 2:
                 if line.startswith( "[event" ):
                     continue
-                raise Exception( "Unexpected job info format. " \
-                                 "Expected: 'key: value', " \
+                raise Exception( "Unexpected job info format. "
+                                 "Expected: 'key: value', "
                                  "Received: " + line )
             value = ":".join( parts[ 1: ] ).strip()
             result[ parts[0].strip().replace( '-', '_' ) ] = value
@@ -825,8 +825,8 @@ class NetSchedule:
             if should:
                 parts = line.split( ':' )
                 if len( parts ) < 2:
-                    raise Exception( "Unexpected job info format. " \
-                                     "Expected: 'key: value', " \
+                    raise Exception( "Unexpected job info format. "
+                                     "Expected: 'key: value', "
                                      "Received: " + line )
                 value = ":".join( parts[ 1: ] )
                 value = value.strip()
@@ -838,7 +838,7 @@ class NetSchedule:
                     # Worker node statistics should be included
                     parts = line.split( ' ' )
                     if len( parts ) != 6:
-                        raise Exception( "Unexpected worker node description." \
+                        raise Exception( "Unexpected worker node description."
                                          " Received: " + line )
                     result[ ' '.join( parts[0:4] ) ] = parts[4] + ' ' + parts[5]
 

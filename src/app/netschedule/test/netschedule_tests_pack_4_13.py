@@ -11,14 +11,7 @@ Netschedule server tests pack for the features appeared in NS-4.13.0
 import time
 import socket
 from netschedule_tests_pack import TestBase
-from netschedule_tests_pack_4_10 import getClientInfo, NON_EXISTED_JOB, \
-                                        getAffinityInfo, getNotificationInfo, \
-                                        getGroupInfo, changeAffinity, \
-                                        execAny
-from ncbi_grid_1_0.ncbi.grid import ns as grid
-
-# Works for python 2.5. Python 2.7 has it in urlparse module
-from cgi import parse_qs
+from netschedule_tests_pack_4_10 import changeAffinity, execAny
 
 
 
@@ -84,7 +77,7 @@ class Scenario401( TestBase ):
         ns_client2 = self.getNetScheduleService( 'TEST', 'scenario401' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         changeAffinity( ns_client2, [ 'a2' ], [] )
-        jobID = self.ns.submitJob( 'TEST', 'bla', 'a2' )
+        self.ns.submitJob( 'TEST', 'bla', 'a2' )
 
 
         ns_client1 = self.getNetScheduleService( 'TEST', 'scenario400' )

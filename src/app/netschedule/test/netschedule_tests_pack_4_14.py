@@ -11,14 +11,7 @@ Netschedule server tests pack for the features appeared in NS-4.14.0
 import time, os
 import socket
 from netschedule_tests_pack import TestBase
-from netschedule_tests_pack_4_10 import getClientInfo, NON_EXISTED_JOB, \
-                                        getAffinityInfo, getNotificationInfo, \
-                                        getGroupInfo, changeAffinity, \
-                                        execAny
-from ncbi_grid_1_0.ncbi.grid import ns as grid
-
-# Works for python 2.5. Python 2.7 has it in urlparse module
-from cgi import parse_qs
+from netschedule_tests_pack_4_10 import execAny
 
 
 class Scenario500( TestBase ):
@@ -521,7 +514,7 @@ class Scenario505( TestBase ):
             if len( reply ) != 1 or reply[ 0 ] != '':
                 raise Exception( 'Unexpected QLST output (step 9): ' + str( reply ) )
 
-        except Exception, exc:
+        except Exception:
             self.ns.disconnect()
             raise
 

@@ -568,7 +568,7 @@ class Scenario311( TestBase ):
             output = execAny( ns_client,
                               'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1' )
         except Exception, excpt:
-            if "ePrefAffExpired" in str( excpt ):
+            if "ePrefAffExpired" in str( excpt ) or "expired" in str( excpt ):
                 return True
             raise
 
