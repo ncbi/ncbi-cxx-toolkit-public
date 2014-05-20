@@ -46,15 +46,6 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <klib/rc.h>
-#include <klib/writer.h>
-#include <align/align-access.h>
-#include <vdb/manager.h>
-#include <vdb/database.h>
-#include <vdb/table.h>
-#include <vdb/cursor.h>
-#include <vdb/vdb-priv.h>
-
 #include <serial/serial.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/objistrasnb.hpp>
@@ -117,66 +108,6 @@ void CWGSTestApp::Init(void)
 }
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-//  Run test
-/////////////////////////////////////////////////////////////////////////////
-
-#if 0
-void CheckRc(rc_t rc)
-{
-    if ( rc ) {
-        char buffer[1024];
-        size_t error_len;
-        RCExplain(rc, buffer, sizeof(buffer), &error_len);
-        cerr << "SDK Error: 0x" << hex << rc << dec << ": " << buffer << endl;
-        exit(1);
-    }
-}
-
-//#include <vdb/vdb-priv.h>
-//#include <sra/sradb-priv.h>
-//#include <sra/xf.h>
-
-int LowLevelTest(void)
-{
-    string path = "/panfs/traces01/wgs01/WGS/AA/AA/AAAA01";
-    //RegisterSRASchemaMake(SRASchemaMake);
-    //register_sraxf_functions();
-    //register_vxf_functions();
-    //register_axf_functions();
-
-    for ( int i = 0; i < 10; ++i ) {
-        const VDBManager* mgr = 0;
-        CheckRc(VDBManagerMakeRead(&mgr, 0));
-
-        const VDatabase* db = 0;
-        CheckRc(VDBManagerOpenDBRead(mgr, &db, 0, path.c_str()));
-
-        const VTable* table = 0;
-        CheckRc(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
-
-        const VCursor* cursor = 0;
-        CheckRc(VTableCreateCursorRead(table, &cursor));
-        CheckRc(VCursorPermitPostOpenAdd(cursor));
-        CheckRc(VCursorOpen(cursor));
-
-        uint32_t col_index;
-        CheckRc(VCursorAddColumn(cursor, &col_index, "SEQ_ID"));
-        CheckRc(VCursorAddColumn(cursor, &col_index, "ACC_VERSION"));
-            
-        //CheckRc(VCursorOpen(cursor));
-
-        CheckRc(VCursorRelease(cursor));
-        CheckRc(VTableRelease(table));
-        CheckRc(VDatabaseRelease(db));
-        CheckRc(VDBManagerRelease(mgr));
-    }
-    cout << "LowLevelTest done" << endl;
-    return 0;
-}
-#endif
-
 string sx_GetSeqData(const CBioseq& seq)
 {
     CScope scope(*CObjectManager::GetInstance());
@@ -202,9 +133,172 @@ string sx_GetSeqData(const CBioseq& seq)
     return ret;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+//  Run test
+/////////////////////////////////////////////////////////////////////////////
+
+#if 0 // enable low-level SRA SDK test
+# include <unistd.h>
+# include <klib/rc.h>
+# include <klib/writer.h>
+# include <align/align-access.h>
+# include <vdb/manager.h>
+# include <vdb/database.h>
+# include <vdb/table.h>
+# include <vdb/cursor.h>
+# include <vdb/vdb-priv.h>
+
+// low level SRA SDK test
+void CheckRc(rc_t rc, const char* code, const char* file, int line)
+{
+    if ( rc ) {
+        char buffer1[4096];
+        size_t error_len;
+        RCExplain(rc, buffer1, sizeof(buffer1), &error_len);
+        char buffer2[8192];
+        size_t len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
+                             file, line, code, rc, buffer1);
+        write(2, buffer2, len);
+        exit(1);
+    }
+}
+#define CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
+
+struct SThreadInfo
+{
+    pthread_t thread_id;
+    const VCursor* cursor;
+    vector<uint32_t> columns;
+    uint64_t row_start;
+    uint64_t row_end;
+};
+
+void* read_thread_func(void* arg)
+{
+    SThreadInfo& info = *(SThreadInfo*)arg;
+    for ( int pass = 0; pass < 100; ++pass ) {
+        for ( uint64_t row = info.row_start; row < info.row_end; ++row ) {
+            for ( size_t i = 0; i < info.columns.size(); ++i ) {
+                const void* data;
+                uint32_t bit_offset, bit_length;
+                uint32_t elem_count;
+                CALL(VCursorCellDataDirect(info.cursor, row, info.columns[i],
+                                           &bit_length, &data, &bit_offset,
+                                           &elem_count));
+            }
+        }
+    }
+    return 0;
+}
+
+int LowLevelTest(void)
+{
+    if ( 0 ) {
+        cout << "LowLevelTest for multiple cursor opening..." << endl;
+        for ( int i = 0; i < 10; ++i ) {
+            cout << "Iteration " << i << endl;
+            const VDBManager* mgr = 0;
+            CALL(VDBManagerMakeRead(&mgr, 0));
+
+            const VDatabase* db = 0;
+            CALL(VDBManagerOpenDBRead(mgr, &db, 0, "GAMP01"));
+
+            const VTable* table = 0;
+            CALL(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
+
+            const VCursor* cursor = 0;
+            CALL(VTableCreateCursorRead(table, &cursor));
+            CALL(VCursorPermitPostOpenAdd(cursor));
+            CALL(VCursorOpen(cursor));
+
+            uint32_t col_SEQ_ID, col_ACC_VERSION;
+            CALL(VCursorAddColumn(cursor, &col_SEQ_ID, "SEQ_ID"));
+            CALL(VCursorAddColumn(cursor, &col_ACC_VERSION, "ACC_VERSION"));
+            
+            CALL(VCursorRelease(cursor));
+            CALL(VTableRelease(table));
+            CALL(VDatabaseRelease(db));
+            CALL(VDBManagerRelease(mgr));
+        }
+    }
+    if ( 1 ) {
+        cout << "LowLevelTest for MT cursor read..." << endl;
+        const VDBManager* mgr = 0;
+        CALL(VDBManagerMakeRead(&mgr, 0));
+        
+        const VDatabase* db = 0;
+        CALL(VDBManagerOpenDBRead(mgr, &db, 0, "GAMP01"));
+        
+        const VTable* table = 0;
+        CALL(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
+
+        const size_t kNumCursors = 8;
+        const size_t kNumReads = 5000;
+        SThreadInfo tinfo[kNumCursors];
+        for ( size_t i = 0; i < kNumCursors; ++i ) {
+            cout << "Create cursor " << i << endl;
+            CALL(VTableCreateCursorRead(table, &tinfo[i].cursor));
+            CALL(VCursorPermitPostOpenAdd(tinfo[i].cursor));
+            CALL(VCursorOpen(tinfo[i].cursor));
+
+#define ADD_COLUMN(name)                                                \
+            do {                                                        \
+                uint32_t column;                                        \
+                CALL(VCursorAddColumn(tinfo[i].cursor, &column, name)); \
+                tinfo[i].columns.push_back(column);                     \
+            } while(0)
+            
+            ADD_COLUMN("GI");
+            ADD_COLUMN("ACCESSION");
+            ADD_COLUMN("ACC_VERSION");
+            ADD_COLUMN("CONTIG_NAME");
+            ADD_COLUMN("NAME");
+            ADD_COLUMN("TITLE");
+            ADD_COLUMN("LABEL");
+            ADD_COLUMN("READ_START");
+            ADD_COLUMN("READ_LEN");
+            ADD_COLUMN("READ");
+            //ADD_COLUMN("SEQ_ID");
+            ADD_COLUMN("TAXID");
+            ADD_COLUMN("DESCR");
+            ADD_COLUMN("ANNOT");
+            ADD_COLUMN("GB_STATE");
+            ADD_COLUMN("GAP_START");
+            ADD_COLUMN("GAP_LEN");
+            ADD_COLUMN("GAP_PROPS");
+            ADD_COLUMN("GAP_LINKAGE");
+
+#undef ADD_COLUMN
+        }
+        for ( size_t i = 0; i < kNumCursors; ++i ) {
+            cout << "Starting thread " << i << endl;
+            tinfo[i].row_start = 1+i*kNumReads;
+            tinfo[i].row_end = tinfo[i].row_start + kNumReads;
+            pthread_create(&tinfo[i].thread_id, 0, read_thread_func, &tinfo[i]);
+        }
+        for ( size_t i = 0; i < kNumCursors; ++i ) {
+            cout << "Waiting for thread " << i << endl;
+            void* ret = 0;
+            pthread_join(tinfo[i].thread_id, &ret);
+        }
+        for ( size_t i = 0; i < kNumCursors; ++i ) {
+            CALL(VCursorRelease(tinfo[i].cursor));
+        }
+        CALL(VTableRelease(table));
+        CALL(VDatabaseRelease(db));
+        CALL(VDBManagerRelease(mgr));
+    }
+    cout << "LowLevelTest done" << endl;
+    return 0;
+}
+#endif
+
 int CWGSTestApp::Run(void)
 {
-    //return LowLevelTest();
+#ifdef CALL
+    return LowLevelTest();
+#endif
 
     const CArgs& args = GetArgs();
 
