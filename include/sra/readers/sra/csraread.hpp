@@ -580,11 +580,12 @@ public:
     NCBI_DEPRECATED uint32_t GetMateIndex(void) const {
         return GetReadId()-1;
     }
-    // Use GetMaxReadId() instead of GetMateCount().
-    // The read_id goes from 1 to GetMaxReadId().
-    NCBI_DEPRECATED uint32_t GetMateCount(void) const {
+    // Number of reads in this spot.
+    uint32_t GetReadCount(void) const {
         return GetMaxReadId();
     }
+    // Number of biological reads without taking into account any clipping.
+    uint32_t GetMateCount(void) const;
 
     CTempString GetSpotGroup(void) const;
 

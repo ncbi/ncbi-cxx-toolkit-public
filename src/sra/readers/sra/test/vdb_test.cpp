@@ -931,6 +931,11 @@ int CCSRATestApp::Run(void)
                     spot_id = it.GetShortId1();
                     read_id = it.GetShortId2();
                 }
+                if ( verbose ) {
+                    out << "Short read "<<it.GetSpotId()<<"."<<it.GetReadId()
+                        << " of "<<it.GetMateCount() << " mate(s)."
+                        << '\n';
+                }
                 ++scanned;
                 if ( it.HasClippingInfo() ) {
                     ++clipped;

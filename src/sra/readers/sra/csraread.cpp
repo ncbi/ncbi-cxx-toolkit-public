@@ -1578,6 +1578,23 @@ bool CCSraShortReadIterator::x_Settle(bool single_spot)
 }
 
 
+uint32_t CCSraShortReadIterator::GetMateCount(void) const
+{
+    uint32_t count = 0;
+    CVDBValueFor<INSDC_read_type> read_types = m_Seq->READ_TYPE(m_SpotId);
+    for ( size_t i = 0; i < read_types.size(); ++i ) {
+        INSDC_read_type type = read_types[i];
+        if ( (type & (SRA_READ_TYPE_TECHNICAL | SRA_READ_TYPE_BIOLOGICAL)) ==
+             SRA_READ_TYPE_TECHNICAL ) {
+            // skip technical reads
+            continue;
+        }
+        ++count;
+    }
+    return count;
+}
+
+
 void CCSraShortReadIterator::x_GetMaxReadId(void)
 {
     m_MaxReadId = uint32_t(m_Seq->READ_TYPE(m_SpotId).size());
