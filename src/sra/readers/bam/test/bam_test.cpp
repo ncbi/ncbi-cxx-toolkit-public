@@ -392,6 +392,9 @@ int CBAMTestApp::Run(void)
         }
         path.clear();
     }
+    if ( path.empty() ) {
+        path = args["file"].AsString();
+    }
 #if 0
     if ( !CFile(path).Exists() ) {
         NcbiCerr << "\nNCBI_UNITTEST_SKIPPED "

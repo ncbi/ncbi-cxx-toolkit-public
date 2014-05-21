@@ -36,6 +36,7 @@
 
 #include <klib/rc.h>
 #include <klib/writer.h>
+#include <klib/text.h>
 #include <vfs/path.h>
 
 #include <corelib/ncbifile.hpp>
@@ -396,6 +397,25 @@ static VPath* sx_GetVPath(const string& path)
     if ( rc_t rc = VPathMakeSysPath(&kpath, c_path) ) {
         NCBI_THROW2(CBamException, eInitFailed,
                     "Cannot create VPath object", rc);
+    }
+    String s;
+    if ( rc_t rc = VPathGetScheme(kpath, &s) ) {
+        NCBI_THROW2(CBamException, eInitFailed,
+                    "Cannot get VPath scheme", rc);
+    }
+    if ( s.size == 1 ) {
+        string fixed(s.addr, s.size);
+        fixed = '/'+fixed;
+        if ( rc_t rc = VPathGetPath(kpath, &s) ) {
+            NCBI_THROW2(CBamException, eInitFailed,
+                        "Cannot get VPath path", rc);
+        }
+        fixed += string(s.addr, s.size);
+        VPathRelease(kpath);
+        if ( rc_t rc = VPathMake(&kpath, fixed.c_str()) ) {
+            NCBI_THROW2(CBamException, eInitFailed,
+                        "Cannot create fixed VPath object", rc);
+        }
     }
     return kpath;
 }
