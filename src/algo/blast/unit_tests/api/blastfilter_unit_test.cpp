@@ -916,19 +916,19 @@ BOOST_AUTO_TEST_CASE(RestrictLowerCaseMask) {
     TMaskedQueryRegions::iterator itr = restricted_mask.begin();
 
     BOOST_REQUIRE_EQUAL((TSeqPos)1000, (*itr)->GetInterval().GetFrom());
-    BOOST_REQUIRE_EQUAL((TSeqPos)1004, (*itr)->GetInterval().GetTo());
+    BOOST_REQUIRE_EQUAL((TSeqPos)1004, (*itr)->GetInterval().GetTo()-1);
     BOOST_REQUIRE(id->Match((*itr)->GetInterval().GetId()));
     BOOST_REQUIRE(!(*itr)->GetInterval().CanGetStrand());
     BOOST_REQUIRE_EQUAL((int)CSeqLocInfo::eFrameNotSet, (*itr)->GetFrame());
     ++itr;
     BOOST_REQUIRE_EQUAL((TSeqPos)1018, (*itr)->GetInterval().GetFrom());
-    BOOST_REQUIRE_EQUAL((TSeqPos)1122, (*itr)->GetInterval().GetTo());
+    BOOST_REQUIRE_EQUAL((TSeqPos)1122, (*itr)->GetInterval().GetTo()-1);
     BOOST_REQUIRE(id->Match((*itr)->GetInterval().GetId()));
     BOOST_REQUIRE(!(*itr)->GetInterval().CanGetStrand());
     BOOST_REQUIRE_EQUAL((int)CSeqLocInfo::eFrameNotSet, (*itr)->GetFrame());
     ++itr;
     BOOST_REQUIRE_EQUAL((TSeqPos)1128, (*itr)->GetInterval().GetFrom());
-    BOOST_REQUIRE_EQUAL((TSeqPos)1298, (*itr)->GetInterval().GetTo());
+    BOOST_REQUIRE_EQUAL((TSeqPos)1298, (*itr)->GetInterval().GetTo()-1);
     BOOST_REQUIRE(id->Match((*itr)->GetInterval().GetId()));
     BOOST_REQUIRE(!(*itr)->GetInterval().CanGetStrand());
     BOOST_REQUIRE_EQUAL((int)CSeqLocInfo::eFrameNotSet, (*itr)->GetFrame());

@@ -348,13 +348,10 @@ static BlastSeqLoc* s_SeqLocListInvert(const BlastSeqLoc* locations, Int4 length
          else
              stop = length-1;
 
-         if (stop - start > 2)
-         {
             if (retval == NULL)
                tail = BlastSeqLocNew(&retval, start, stop);
             else
                tail = BlastSeqLocNew(&tail, start, stop);
-         }
      }
      return retval;
 }

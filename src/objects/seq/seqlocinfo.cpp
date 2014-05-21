@@ -103,9 +103,10 @@ TMaskedQueryRegions::RestrictToSeqInt(const objects::CSeq_interval& location) co
     loc.SetToOpen(location.GetTo());
 
     ITERATE(TMaskedQueryRegions, maskinfo, *this) {
-        TSeqRange range = loc.IntersectionWith(**maskinfo);
+        const CSeq_interval& intv = (*maskinfo)->GetInterval();
+    	TSeqRange mask (intv.GetFrom(), intv.GetTo());
+        TSeqRange range = loc.IntersectionWith(mask);
         if (range.NotEmpty()) {
-            const CSeq_interval& intv = (*maskinfo)->GetInterval();
             const ENa_strand kStrand = intv.CanGetStrand() 
                 ? intv.GetStrand() : eNa_strand_unknown;
             CRef<CSeq_interval> si
