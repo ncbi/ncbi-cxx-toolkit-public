@@ -32,7 +32,7 @@
 #ifndef UTIL__HPP
 #define UTIL__HPP
 
-#include <connect/services/netservice_api.hpp>
+#include <connect/services/netschedule_api.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,9 +52,11 @@ CJsonNode g_ServerInfoToJson(CNetService service,
 
 CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node);
 
+void g_SuspendNetSchedule(CNetScheduleAPI netschedule_api, bool pullback_mode);
+void g_ResumeNetSchedule(CNetScheduleAPI netschedule_api);
+
 void g_SuspendWorkerNode(CNetServer worker_node,
         bool pullback_mode, unsigned timeout);
-
 void g_ResumeWorkerNode(CNetServer worker_node);
 
 void g_GetUserAndHost(string* user, string* host);

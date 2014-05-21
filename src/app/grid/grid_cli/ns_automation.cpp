@@ -158,6 +158,15 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
     else if (method == "reconf")
         reply.Append(g_ReconfAndReturnJson(m_NetScheduleAPI,
                 m_ActualServiceType));
+    else if (method == "suspend")
+        g_SuspendNetSchedule(m_NetScheduleAPI, arg_array.NextBoolean(false));
+    else if (method == "resume")
+        g_ResumeNetSchedule(m_NetScheduleAPI);
+    else if (method == "shutdown")
+        m_NetScheduleAPI.GetAdmin().ShutdownServer(
+                arg_array.NextBoolean(false) ?
+                        CNetScheduleAdmin::eNormalShutdown :
+                        CNetScheduleAdmin::eDrain);
     else if (method == "parse_key") {
         CJobInfoToJSON job_key_to_json;
         job_key_to_json.ProcessJobMeta(CNetScheduleKey(arg_array.NextString(),

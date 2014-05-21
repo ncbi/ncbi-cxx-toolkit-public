@@ -445,12 +445,10 @@ void CGridCommandLineInterfaceApp::NetSchedule_SuspendResume(bool suspend)
                 "missing option '--" QUEUE_OPTION "'");
     }
 
-    string cmd(suspend ? IsOptionSet(ePullback) ?
-            "QPAUSE pullback=1" : "QPAUSE" : "QRESUME");
-
-    g_AppendClientIPAndSessionID(cmd);
-
-    m_NetScheduleAPI.GetService().ExecOnAllServers(cmd);
+    if (suspend)
+        g_SuspendNetSchedule(m_NetScheduleAPI, IsOptionSet(ePullback));
+    else
+        g_ResumeNetSchedule(m_NetScheduleAPI);
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Suspend()
