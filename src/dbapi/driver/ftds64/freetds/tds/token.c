@@ -1706,6 +1706,7 @@ tds_get_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int is_param)
         if (is_blob_type (curcol->column_type)) {
             curcol->table_namelen =
                 tds_get_string(tds, tds_get_smallint(tds), curcol->table_name, sizeof(curcol->table_name) - 1);
+            curcol->column_size = INT_MAX;
         }
         break;
     case 2:
