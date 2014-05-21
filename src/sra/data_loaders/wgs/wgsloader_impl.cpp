@@ -476,14 +476,14 @@ CSeq_id_Handle CWGSDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
+TGi CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
     if ( CWGSSeqIterator it = GetSeqIterator(idh) ) {
         if ( it.HasGi() ) {
             return it.GetGi();
         }
     }
-    return 0;
+    return ZERO_GI;
 }
 
 

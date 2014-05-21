@@ -101,7 +101,7 @@ public:
 
     virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     virtual CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
-    virtual int GetGi(const CSeq_id_Handle& idh);
+    virtual TGi GetGi(const CSeq_id_Handle& idh);
     virtual int GetTaxId(const CSeq_id_Handle& idh);
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     virtual CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);

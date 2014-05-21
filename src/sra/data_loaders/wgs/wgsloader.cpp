@@ -246,7 +246,7 @@ CSeq_id_Handle CWGSDataLoader::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CWGSDataLoader::GetGi(const CSeq_id_Handle& idh)
+TGi CWGSDataLoader::GetGi(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetGi(idh);
 }

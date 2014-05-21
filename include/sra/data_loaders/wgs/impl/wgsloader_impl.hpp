@@ -155,7 +155,7 @@ public:
     typedef vector<CSeq_id_Handle> TIds;
     void GetIds(const CSeq_id_Handle& idh, TIds& ids);
     CSeq_id_Handle GetAccVer(const CSeq_id_Handle& idh);
-    int GetGi(const CSeq_id_Handle& idh);
+    TGi GetGi(const CSeq_id_Handle& idh);
     int GetTaxId(const CSeq_id_Handle& idh);
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
