@@ -6041,8 +6041,11 @@ static SIZE_TYPE s_TitleEndsInOrganism (
             answer = NPOS;
         }
     } else {
-        // pattern not found
-        answer = NPOS;
+        answer = NStr::FindNoCase(sTitle, sPattern, 0, NPOS, NStr::eLast);
+        if (answer < 1 || answer == NPOS) {
+            // pattern not found
+            answer = NPOS;
+        }
     }
 
     // find organelle prefix

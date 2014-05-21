@@ -237,6 +237,10 @@ private:
     bool m_Multispecies;
     CBioSource::TGenome m_Genome;
 
+    string m_FirstSuperKingdom;
+    string m_SecondSuperKingdom;
+    bool m_IsCrossKingdom;
+
     /// subsource fields
     CTempString m_Chromosome;
     CTempString m_Clone;

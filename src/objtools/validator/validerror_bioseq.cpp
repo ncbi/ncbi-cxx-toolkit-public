@@ -7018,7 +7018,55 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     bool is_assembly = false;
     bool is_finished_status = false;
 
-    // some validation is for descriptors that affect a bioseq, 
+    bool wgs_master = false;
+    bool tsa_master = false;
+    bool is_WP = false;
+    EDiagSev sev =  eDiag_Error;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( bsh ) {
+        FOR_EACH_SEQID_ON_BIOSEQ_HANDLE (sid_itr, bsh) {
+            CSeq_id_Handle sid = *sid_itr;
+            switch (sid.Which()) {
+                case NCBI_SEQID(Embl):
+                case NCBI_SEQID(Ddbj):
+                {
+                    sev = eDiag_Warning;
+                    // flow through
+                }
+                case NCBI_SEQID(Other):
+                case NCBI_SEQID(Genbank):
+                {
+                    CConstRef<CSeq_id> id = sid.GetSeqId();
+                    const CTextseq_id& tsid = *id->GetTextseq_Id ();
+                    if (tsid.IsSetAccession()) {
+                        const string& acc = tsid.GetAccession ();
+                        TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
+                        TACCN_CHOICE div = (TACCN_CHOICE) (type & NCBI_ACCN(division_mask));
+                        if ( div == NCBI_ACCN(wgs) ) 
+                        {
+                            if( (type & CSeq_id::fAcc_master) != 0 ) {
+                                wgs_master = true;
+                            }
+                        }
+                        if ( div == NCBI_ACCN(tsa) )
+                        {
+                            if( (type & CSeq_id::fAcc_master) != 0 ) {
+                                tsa_master = true;
+                            }
+                        }
+                        if (type == NCBI_ACCN(refseq_unique_prot)) {
+                            is_WP = true;
+                        }
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+
+    // some validation is for descriptors that affect a bioseq,
     // other validation is only for descriptors _on_ a bioseq
     FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
         const CSeqdesc& desc = **it;
@@ -7355,9 +7403,11 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                         } else if (seq.IsAa()) {
                             taxname = "[" + taxname + "]";
                             if (!NStr::EndsWith(title, taxname, NStr::eNocase)) {
-                                PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrganismInTitle, 
-                                        "RefSeq protein title does not end with organism name",
-                                        ctx, desc);
+                                if (! is_WP || NStr::FindNoCase(title, taxname, 0, NPOS, NStr::eLast) == NPOS) {
+                                    PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrganismInTitle,
+                                            "RefSeq protein title does not end with organism name",
+                                            ctx, desc);
+                                }
                             }
                         }
                     }
@@ -7435,49 +7485,6 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         PostErr (eDiag_Warning, eErr_SEQ_DESCR_FinishedStatusForWGS, "WGS record %s should not have Finished status", seq);
     }
 
-    bool wgs_master = false;
-    bool tsa_master = false;
-    EDiagSev sev =  eDiag_Error;
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if ( bsh ) {
-        FOR_EACH_SEQID_ON_BIOSEQ_HANDLE (sid_itr, bsh) {
-            CSeq_id_Handle sid = *sid_itr;
-            switch (sid.Which()) {
-                case NCBI_SEQID(Embl):
-                case NCBI_SEQID(Ddbj):
-                {
-                    sev = eDiag_Warning;
-                    // flow through
-                }
-                case NCBI_SEQID(Other):
-                case NCBI_SEQID(Genbank):
-                {
-                    CConstRef<CSeq_id> id = sid.GetSeqId();
-                    const CTextseq_id& tsid = *id->GetTextseq_Id ();
-                    if (tsid.IsSetAccession()) {
-                        const string& acc = tsid.GetAccession ();
-                        TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
-                        TACCN_CHOICE div = (TACCN_CHOICE) (type & NCBI_ACCN(division_mask));
-                        if ( div == NCBI_ACCN(wgs) ) 
-                        {
-                            if( (type & CSeq_id::fAcc_master) != 0 ) {
-                                wgs_master = true;
-                            }
-                        }
-                        if ( div == NCBI_ACCN(tsa) )
-                        {
-                            if( (type & CSeq_id::fAcc_master) != 0 ) {
-                                tsa_master = true;
-                            }
-                        }
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    }
     if (wgs_master && ! is_genome_assembly) {
        PostErr (sev, eErr_SEQ_INST_WGSMasterLacksStrucComm, "WGS master without Genome Assembly Data user object", seq);
     }

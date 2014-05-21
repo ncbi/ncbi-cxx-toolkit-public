@@ -210,6 +210,10 @@ void CDeflineGenerator::x_SetFlags (
     m_Multispecies = false;
     m_Genome = NCBI_GENOME(unknown);
 
+    m_FirstSuperKingdom.clear();
+    m_SecondSuperKingdom.clear();
+    m_IsCrossKingdom = false;
+
     m_Chromosome.clear();
     m_Clone.clear();
     m_has_clone = false;
@@ -361,6 +365,9 @@ void CDeflineGenerator::x_SetFlags (
 
     const list <string> *keywords = NULL;
 
+    int num_super_kingdom = 0;
+    bool super_kingdoms_different = false;
+
     for (CSeqdesc_CI desc_it(bsh, desc_choices);
          needed_desc_choices != 0  &&  desc_it;  ++desc_it) {
         switch (desc_it->Which()) {
@@ -433,6 +440,37 @@ void CDeflineGenerator::x_SetFlags (
                 m_Source.Reset(&desc_it->GetSource());
                 // take first, then skip remainder
                 needed_desc_choices &= ~fSource;
+            }
+            if (m_IsWP) {
+                const CBioSource &bsrc = desc_it->GetSource();
+                if (! bsrc.IsSetOrgname()) break;
+                const COrgName& onp = bsrc.GetOrgname();
+                if (! onp.IsSetName()) break;
+                const COrgName::TName& nam = onp.GetName();
+                if (! nam.IsPartial()) break;
+                const CPartialOrgName& pon = nam.GetPartial();
+                if (! pon.IsSet()) break;
+                const CPartialOrgName::Tdata& tx = pon.Get();
+                ITERATE (CPartialOrgName::Tdata, itr, tx) {
+                    const CTaxElement& te = **itr;
+                    if (! te.IsSetFixed_level()) continue;
+                    if (te.GetFixed_level() != 0) continue;
+                    if (! te.IsSetLevel()) continue;
+                    const string& lvl = te.GetLevel();
+                    if (! NStr::EqualNocase (lvl, "superkingdom")) continue;
+                    num_super_kingdom++;
+                    if (m_FirstSuperKingdom.empty() && te.IsSetName()) {
+                        m_FirstSuperKingdom = te.GetName();
+                    } else if (te.IsSetName() && ! NStr::EqualNocase (m_FirstSuperKingdom, te.GetName())) {
+                        if (m_SecondSuperKingdom.empty()) {
+                            super_kingdoms_different = true;
+                            m_SecondSuperKingdom = te.GetName();
+                        }
+                    }
+                    if (num_super_kingdom > 1 && super_kingdoms_different) {
+                        m_IsCrossKingdom = true;
+                    }
+                }
             }
             break;
 
@@ -1613,7 +1651,9 @@ void CDeflineGenerator::x_SetTitleFromProtein (
         }
     }
 
-    if (! taxname.empty() /* && m_MainTitle.find(taxname) == NPOS */) {
+    if (m_IsCrossKingdom && ! m_FirstSuperKingdom.empty() && ! m_SecondSuperKingdom.empty()) {
+        m_MainTitle += " [" + string(m_FirstSuperKingdom) + "][" + string(m_SecondSuperKingdom) + "]";
+    } else if (! taxname.empty() /* && m_MainTitle.find(taxname) == NPOS */) {
         m_MainTitle += " [" + string(taxname) + "]";
     }
 }
@@ -2010,6 +2050,10 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 
     // remove [taxname]
     if (len > 2 && m_MainTitle [len - 1] == ']') {
+        pos = NStr::FindNoCase(m_MainTitle, "][", 0, NPOS, NStr::eLast);
+        if (pos != NPOS) {
+            m_MainTitle.erase (pos + 1);
+        }
         pos = m_MainTitle.find_last_of ("[");
         if (pos != NPOS) {
             m_MainTitle.erase (pos);
@@ -2073,7 +2117,10 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
         }
     }
 
-    if (! taxname.empty() /* && m_MainTitle.find(taxname) == NPOS */) {
+
+    if (m_IsCrossKingdom && ! m_FirstSuperKingdom.empty() && ! m_SecondSuperKingdom.empty()) {
+        m_MainTitle += " [" + string(m_FirstSuperKingdom) + "][" + string(m_SecondSuperKingdom) + "]";
+    } else if (! taxname.empty() /* && m_MainTitle.find(taxname) == NPOS */) {
         m_MainTitle += " [" + string(taxname) + "]";
     }
 }
