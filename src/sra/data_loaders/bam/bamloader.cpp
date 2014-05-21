@@ -288,7 +288,7 @@ CSeq_id_Handle CBAMDataLoader::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CBAMDataLoader::GetGi(const CSeq_id_Handle& idh)
+TGi CBAMDataLoader::GetGi(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetGi(idh);
 }

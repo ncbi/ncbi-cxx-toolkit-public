@@ -357,12 +357,12 @@ CSeq_id_Handle CBAMDataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CBAMDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
+TGi CBAMDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
     if ( idh.IsGi() && IsShortSeq(idh) ) {
         return idh.GetGi();
     }
-    return 0;
+    return ZERO_GI;
 }
 
 
