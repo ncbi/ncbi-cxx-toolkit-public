@@ -144,6 +144,11 @@ public:
         m_AllowedSeqidIndex = allowed_seqid_index;
     }
 
+    //allowd seqloc will be treated as intended targets
+    void SetAllowedSeq(const list<CRef<CSeq_loc> >* allowed_seq) {
+        m_AllowedSeqloc = allowed_seq;
+    }
+
     ///The maximal number of non-specific targets to return.  
     ///Default is 20 if not specified
     ///@param number: the number
@@ -206,6 +211,8 @@ private:
 
     ///user specified hits that can be disregarded for specificity checking
     vector<TSeqPos> m_AllowedSeqidIndex;
+
+    const list<CRef<CSeq_loc> >* m_AllowedSeqloc;
 
     bool m_UseITree;
 

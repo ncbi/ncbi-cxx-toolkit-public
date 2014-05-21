@@ -98,6 +98,7 @@ COligoSpecificityTemplate::COligoSpecificityTemplate(const CBioseq_Handle& templ
         = FindBestChoice(template_handle.GetBioseqCore()->GetId(),
                          CSeq_id::WorstRank);
     m_TemplateType = wid->IdentifyAccession();
+    m_AllowedSeqloc = NULL;
 }
 
 COligoSpecificityTemplate::~COligoSpecificityTemplate()
@@ -936,6 +937,22 @@ static bool ContainsId(const CBioseq_Handle& bh, const CSeq_id_Handle& id) {
     return (find(bh.GetId().begin(), bh.GetId().end(), id) != bh.GetId().end());
 }
 
+static bool SeqLocAllowed(const list<CRef<CSeq_loc> >& allowed_seq,
+                          const CSeq_id& hit_id, 
+                          const CRange<TSeqPos>& hit_range,
+                          CScope& scope) {
+    bool allowed = false;
+    ITERATE(list<CRef<CSeq_loc> >, iter, allowed_seq) {       
+        if(IsSameBioseq(*((*iter)->GetId()), hit_id, &scope) && 
+           (*iter)->GetTotalRange().IntersectionWith(hit_range).GetLength() >= hit_range.GetLength()*0.95){
+            allowed = true;
+            break;
+        }
+    }
+    
+    return allowed; 
+}
+
 void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
                                               CSeq_align& right_align,
                                               TSeqPos left_total_mismatch,
@@ -1005,10 +1022,17 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
                    GetBioseqCore()->GetId(),
                          CSeq_id::WorstRank);
     CSeq_id::EAccessionInfo hit_type = hit_wid->IdentifyAccession();
+    CRange<TSeqPos> hit_range(left_align.GetSeqRange(1).GetFrom(),
+                               right_align.GetSeqRange(1).GetTo());
     //self hits
     if (template_hit_same_id && left_template_aln_overlap && right_template_aln_overlap) {
         
         m_SelfHit[m_CurrentPrimerIndex].push_back(info);
+    } else if (m_Hits->m_AllowedSeqloc && SeqLocAllowed(*(m_Hits->m_AllowedSeqloc), 
+                                                        *hit_wid, 
+                                                        hit_range, *m_Scope)){
+        m_SelfHit[m_CurrentPrimerIndex].push_back(info);      
+
     } else if (m_Hits->m_Id->Which() != CSeq_id::e_Local && 
                ((m_Hits->m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome ||
                 (m_Hits->m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
@@ -1025,6 +1049,7 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
         //try mapping the template
         m_SelfHit[m_CurrentPrimerIndex].push_back(info);
         cerr << "self hit by mapping" << endl;
+      
     } else {
         bool hit_assigned = false;
         //allowed hits
