@@ -863,7 +863,7 @@ CSeq_id_Handle CCSRADataLoader_Impl::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
+TGi CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
 {
     // the only possible gi is for reference sequence
     if ( CCSraRefSeqIterator iter = GetRefSeqIterator(idh) ) {
@@ -873,7 +873,7 @@ int CCSRADataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
             }
         }
     }
-    return 0;
+    return ZERO_GI;
 }
 
 

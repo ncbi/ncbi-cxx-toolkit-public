@@ -53,11 +53,8 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
-/*
-NCBI_PARAM_DECL(string, CSRA, DIR_PATH);
-NCBI_PARAM_DEF_EX(string, CSRA, DIR_PATH, "",
-                  eParam_NoThread, CSRA_DIR_PATH);
-*/
+NCBI_PARAM_DECL(string, CSRA, ACCESSIONS);
+NCBI_PARAM_DEF(string, CSRA, ACCESSIONS, "");
 
 /////////////////////////////////////////////////////////////////////////////
 // CCSRADataLoader
@@ -81,6 +78,8 @@ CCSRADataLoader::TRegisterLoaderInfo CCSRADataLoader::RegisterInObjectManager(
     CObjectManager::TPriority priority)
 {
     SLoaderParams params;
+    NStr::Tokenize(NCBI_PARAM_TYPE(CSRA, ACCESSIONS)().Get(), ",",
+                   params.m_CSRAFiles);
     TMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
@@ -275,7 +274,7 @@ CSeq_id_Handle CCSRADataLoader::GetAccVer(const CSeq_id_Handle& idh)
 }
 
 
-int CCSRADataLoader::GetGi(const CSeq_id_Handle& idh)
+TGi CCSRADataLoader::GetGi(const CSeq_id_Handle& idh)
 {
     return m_Impl->GetGi(idh);
 }
