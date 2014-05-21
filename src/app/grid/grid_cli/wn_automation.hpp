@@ -25,40 +25,33 @@
  *
  * Authors:  Dmitry Kazimirov
  *
- * File Description: Utility functions - declarations.
+ * File Description: Automation processor - Worker node declarations.
  *
  */
 
-#ifndef UTIL__HPP
-#define UTIL__HPP
+#ifndef WN_AUTOMATION__HPP
+#define WN_AUTOMATION__HPP
 
-#include <connect/services/netservice_api.hpp>
+#include "automation.hpp"
 
 BEGIN_NCBI_SCOPE
 
-void g_PrintJSON(FILE* output_stream, CJsonNode node,
-        const char* indent = "\t");
+struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
+{
+    SWorkerNodeAutomationObject(CAutomationProc* automation_proc,
+            const string& wn_address, const string& client_name);
 
-CJsonNode g_ExecAnyCmdToJson(CNetService service,
-        CNetService::EServiceType service_type,
-        const string& command, bool multiline);
+    virtual const string& GetType() const;
 
-CJsonNode g_ServerInfoToJson(CNetServerInfo server_info,
-        bool server_version_key);
+    virtual const void* GetImplPtr() const;
 
-CJsonNode g_ServerInfoToJson(CNetService service,
-        CNetService::EServiceType service_type,
-        bool server_version_key);
+    virtual bool Call(const string& method,
+            CArgArray& arg_array, CJsonNode& reply);
 
-CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node);
-
-void g_SuspendWorkerNode(CNetServer worker_node,
-        bool pullback_mode, unsigned timeout);
-
-void g_ResumeWorkerNode(CNetServer worker_node);
-
-void g_GetUserAndHost(string* user, string* host);
+    CNetScheduleAPI m_NetScheduleAPI;
+    CNetServer m_WorkerNode;
+};
 
 END_NCBI_SCOPE
 
-#endif // UTIL__HPP
+#endif // WN_AUTOMATION__HPP

@@ -175,6 +175,15 @@ inline void CArgArray::UpdateLocation(const string& location)
     }
 }
 
+struct SServerAddressToJson : public IExecToJson
+{
+    SServerAddressToJson(int which_part) : m_WhichPart(which_part) {}
+
+    virtual CJsonNode ExecOn(CNetServer server);
+
+    int m_WhichPart;
+};
+
 typedef Int8 TObjectID;
 
 class CAutomationProc;

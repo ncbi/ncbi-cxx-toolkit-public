@@ -70,7 +70,7 @@ class CAdminCmdProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
     virtual bool Authenticate(const string& host,
-                              const string& auth,
+                              const string& /*auth*/,
                               const string& queue,
                               CNcbiOstream& os,
                               CWorkerNodeControlServer* control_server)
@@ -281,22 +281,22 @@ public:
 CWorkerNodeControlServer::IRequestProcessor*
     CWorkerNodeControlServer::MakeProcessor(const string& cmd)
 {
-    if (NStr::StartsWith(cmd, CTempString("VERSION", sizeof("VERSION") - 1)))
+    if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("VERSION")))
         return new CGetVersionProcessor;
 
-    if (NStr::StartsWith(cmd, CTempString("STAT", sizeof("STAT") - 1)))
+    if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("STAT")))
         return new CGetStatisticsProcessor;
 
-    if (NStr::StartsWith(cmd, CTempString("SHUTDOWN", sizeof("SHUTDOWN") - 1)))
+    if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("SHUTDOWN")))
         return new CShutdownProcessor;
 
-    if (NStr::StartsWith(cmd, CTempString("SUSPEND", sizeof("SUSPEND") - 1)))
+    if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("SUSPEND")))
         return new CSuspendProcessor;
 
-    if (NStr::StartsWith(cmd, CTempString("RESUME", sizeof("RESUME") - 1)))
+    if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("RESUME")))
         return new CResumeProcessor;
 
-    if (NStr::StartsWith(cmd, CTempString("GETLOAD", sizeof("GETLOAD") - 1)))
+    if (NStr::StartsWith(cmd, TEMP_STRING_CTOR("GETLOAD")))
         return new CGetLoadProcessor;
 
     return new CUnknownProcessor;

@@ -37,8 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#define TEMP_STRING_CTOR(str) CTempString(str, sizeof(str) - 1)
-
 class NCBI_XCONNECT_EXPORT CNetScheduleStructuredOutputParser
 {
 public:
@@ -96,6 +94,10 @@ string g_GetNetScheduleStatCommand(ENetScheduleStatTopic topic);
 extern NCBI_XCONNECT_EXPORT
 CJsonNode g_GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose);
+
+extern NCBI_XCONNECT_EXPORT
+bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
+        const char* pid_key);
 
 extern NCBI_XCONNECT_EXPORT
 CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose);

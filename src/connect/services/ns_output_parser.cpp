@@ -413,6 +413,21 @@ CJsonNode g_GenericStatToJson(CNetServer server,
     return entities;
 }
 
+bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
+        const char* pid_key)
+{
+    SIZE_TYPE misplaced_pid = NStr::Find(executable_path, "; PID: ");
+    if (misplaced_pid == NPOS)
+        return false;
+
+    SIZE_TYPE pos = misplaced_pid + sizeof("; PID: ") - 1;
+    stat_info.SetInteger(pid_key, NStr::StringToInt8(
+            CTempString(executable_path.data() + pos,
+                    executable_path.length() - pos)));
+    executable_path.erase(misplaced_pid);
+    return true;
+}
+
 CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
 {
     const string stat_cmd(verbose ? "STAT ALL" : "STAT");
@@ -452,21 +467,13 @@ CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
                     CNetScheduleAPI::eJobNotFound)
                 jobs_by_status.SetInteger(key, NStr::StringToInt8(value));
             else {
-                if (key == "Executable path") {
-                    SIZE_TYPE misplaced_pid = NStr::Find(value, "; PID: ");
-                    if (misplaced_pid != NPOS) {
-                        SIZE_TYPE pos = misplaced_pid + sizeof("; PID: ") - 1;
-                        stat_info.SetInteger("PID", NStr::StringToInt8(
-                                CTempString(value.data() + pos,
-                                        value.length() - pos)));
-                        value.erase(misplaced_pid);
+                if (key == "Executable path" &&
+                        g_FixMisplacedPID(stat_info, value, "PID")) {
+                    if (!stat_info.HasKey("Version"))
+                        stat_info.SetString("Version", "Unknown");
 
-                        if (!stat_info.HasKey("Version"))
-                            stat_info.SetString("Version", "Unknown");
-
-                        if (!stat_info.HasKey("Build date"))
-                            stat_info.SetString("Build date", "Unknown");
-                    }
+                    if (!stat_info.HasKey("Build date"))
+                        stat_info.SetString("Build date", "Unknown");
                 }
                 stat_info.SetByKey(key, CJsonNode::GuessType(value));
             }

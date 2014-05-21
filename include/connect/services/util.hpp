@@ -94,6 +94,8 @@ extern NCBI_XCONNECT_EXPORT
 void g_VerifyAlphabet(const string& str, const CTempString& param_name,
         ECharacterClass char_class);
 
+#define TEMP_STRING_CTOR(str) CTempString(str, sizeof(str) - 1)
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___UTIL__HPP */

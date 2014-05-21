@@ -33,6 +33,8 @@
 
 #include "util.hpp"
 
+#include <connect/services/ns_output_parser.hpp>
+
 #include <connect/ncbi_util.h>
 
 BEGIN_NCBI_SCOPE
@@ -162,14 +164,25 @@ CJsonNode g_ExecAnyCmdToJson(CNetService service,
 
 struct SServerInfoToJson : public IExecToJson
 {
+    SServerInfoToJson(bool server_version_key) :
+        m_ServerVersionKey(server_version_key)
+    {
+    }
+
     virtual CJsonNode ExecOn(CNetServer server);
+
+    bool m_ServerVersionKey;
 };
 
 CJsonNode SServerInfoToJson::ExecOn(CNetServer server)
 {
-    CJsonNode server_info_node(CJsonNode::NewObjectNode());
+    return g_ServerInfoToJson(server.GetServerInfo(), m_ServerVersionKey);
+}
 
-    CNetServerInfo server_info(server.GetServerInfo());
+CJsonNode g_ServerInfoToJson(CNetServerInfo server_info,
+        bool server_version_key)
+{
+    CJsonNode server_info_node(CJsonNode::NewObjectNode());
 
     string attr_name, attr_value;
 
@@ -185,18 +198,17 @@ CJsonNode SServerInfoToJson::ExecOn(CNetServer server)
             break;
 
         case eDefault:
-            if (attr_name == "NCBI NetSchedule server version" ||
-                    attr_name == "NCBI NetCache server version")
+            if (NStr::EndsWith(attr_name, " version"))
             {
                 old_format = eOn;
-                attr_name = "server_version";
+                attr_name = server_version_key ? "server_version" : "version";
                 break;
             } else
                 old_format = eOff;
             /* FALL THROUGH */
 
         case eOff:
-            if (attr_name == "version")
+            if (server_version_key && attr_name == "version")
                 attr_name = "server_version";
         }
 
@@ -207,12 +219,178 @@ CJsonNode SServerInfoToJson::ExecOn(CNetServer server)
 }
 
 CJsonNode g_ServerInfoToJson(CNetService service,
-        CNetService::EServiceType service_type)
+        CNetService::EServiceType service_type,
+        bool server_version_key)
 {
-    SServerInfoToJson server_info_proc;
+    SServerInfoToJson server_info_proc(server_version_key);
 
     return g_ExecToJson(server_info_proc, service,
             service_type, CNetService::eIncludePenalized);
+}
+
+static bool s_ExtractKey(const CTempString& line,
+        string& key, CTempString& value)
+{
+    key.erase(0, key.length());
+    SIZE_TYPE line_len = line.length();
+    key.reserve(line_len);
+
+    for (SIZE_TYPE i = 0; i < line_len; ++i)
+    {
+        char c = line[i];
+        if (isalnum(c))
+            key += tolower(c);
+        else if (c == ' ')
+            key += '_';
+        else if (c != ':' || key.empty())
+            break;
+        else {
+            if (++i < line_len && line[i] == ' ')
+                ++i;
+            value.assign(line, i, line_len - i);
+            return true;
+        }
+    }
+    return false;
+}
+
+static CJsonNode s_WordsToJsonArray(const CTempString& str)
+{
+    CJsonNode array_node(CJsonNode::NewArrayNode());
+    list<CTempString> words;
+    NStr::Split(str, TEMP_STRING_CTOR(" "), words);
+    ITERATE(list<CTempString>, it, words) {
+        array_node.AppendString(*it);
+    }
+    return array_node;
+}
+
+CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
+{
+    CNetServerMultilineCmdOutput output(worker_node.ExecWithRetry("STAT"));
+
+    CJsonNode wn_info(CJsonNode::NewObjectNode());
+
+    string line;
+    string key;
+    CTempString value;
+    CJsonNode job_counters(CJsonNode::NewObjectNode());
+    CJsonNode running_jobs(CJsonNode::NewArrayNode());
+    SIZE_TYPE pos;
+    int running_job_count = 0;
+    int free_worker_threads = 1;
+    bool suspended = false;
+    bool shutting_down = false;
+    bool exclusive_job = false;
+    bool working = false;
+
+    while (output.ReadLine(line)) {
+        if (line.empty() || isspace(line[0]))
+            continue;
+
+        if (running_job_count > 0) {
+            if ((pos = NStr::Find(line, TEMP_STRING_CTOR("running for "),
+                    0, NPOS, NStr::eLast, NStr::eNocase)) != NPOS) {
+                --running_job_count;
+
+                pos += sizeof("running for ") - 1;
+                Uint8 run_time = NStr::StringToUInt8(
+                        CTempString(line.data() + pos, line.length() - pos),
+                                NStr::fConvErr_NoThrow |
+                                NStr::fAllowLeadingSpaces |
+                                NStr::fAllowTrailingSymbols);
+
+                if ((pos = NStr::Find(line, TEMP_STRING_CTOR(" "))) != NPOS) {
+                    CJsonNode running_job(CJsonNode::NewObjectNode());
+
+                    running_job.SetString("key", CTempString(line.data(), pos));
+                    running_job.SetInteger("run_time", (Int8) run_time);
+                    running_jobs.Append(running_job);
+                }
+            }
+        } else if (NStr::StartsWith(line, TEMP_STRING_CTOR("Jobs "))) {
+            if (s_ExtractKey(CTempString(line.data() + sizeof("Jobs ") - 1,
+                    line.length() - (sizeof("Jobs ") - 1)), key, value)) {
+                job_counters.SetInteger(key, NStr::StringToInt8(value));
+                if (key == "running") {
+                    running_job_count = NStr::StringToInt(value,
+                            NStr::fConvErr_NoThrow |
+                            NStr::fAllowLeadingSpaces |
+                            NStr::fAllowTrailingSymbols);
+                    working = running_job_count > 0;
+                    free_worker_threads -= running_job_count;
+                }
+            }
+        } else if (s_ExtractKey(line, key, value)) {
+            if (key == "host_name")
+                key = "hostname";
+            else if (key == "node_started_at")
+                key = "started";
+            else if (key == "executable_path")
+                g_FixMisplacedPID(wn_info, value, "pid");
+            else if (key == "maximum_job_threads") {
+                int maximum_job_threads = NStr::StringToInt(value,
+                            NStr::fConvErr_NoThrow |
+                            NStr::fAllowLeadingSpaces |
+                            NStr::fAllowTrailingSymbols);
+                free_worker_threads += maximum_job_threads - 1;
+                wn_info.SetInteger(key, maximum_job_threads);
+                continue;
+            } else if (key == "netschedule_servers") {
+                if (value != "N/A")
+                    wn_info.SetByKey(key, s_WordsToJsonArray(value));
+                else
+                    wn_info.SetByKey(key, CJsonNode::NewArrayNode());
+                continue;
+            } else if (key == "preferred_affinities") {
+                wn_info.SetByKey(key, s_WordsToJsonArray(value));
+                continue;
+            }
+            wn_info.SetByKey(key, CJsonNode::GuessType(value));
+        } else if (wn_info.GetSize() == 0)
+            wn_info = g_ServerInfoToJson(g_ServerInfoFromString(line), false);
+        else if (NStr::Find(line, TEMP_STRING_CTOR("suspended")) != NPOS)
+            suspended = true;
+        else if (NStr::Find(line, TEMP_STRING_CTOR("shutting down")) != NPOS)
+            shutting_down = true;
+        else if (NStr::Find(line, TEMP_STRING_CTOR("exclusive job")) != NPOS)
+            exclusive_job = true;
+    }
+
+    if (!wn_info.HasKey("version"))
+        wn_info.SetString("version", kEmptyStr);
+    if (!wn_info.HasKey("build_date"))
+        wn_info.SetString("build_date", kEmptyStr);
+
+    wn_info.SetString("status",
+            shutting_down ? "shutting_down" :
+            suspended ? "suspended" :
+            exclusive_job ? "processing_exclusive_job" :
+            free_worker_threads == 0 ? "busy" :
+            working ? "working" : "ready");
+
+    wn_info.SetByKey("job_counters", job_counters);
+    wn_info.SetByKey("running_jobs", running_jobs);
+
+    return wn_info;
+}
+
+void g_SuspendWorkerNode(CNetServer worker_node,
+        bool pullback_mode, unsigned timeout)
+{
+    string cmd("SUSPEND");
+    if (pullback_mode)
+        cmd += " pullback";
+    if (timeout > 0) {
+        cmd += " timeout=";
+        cmd += NStr::NumericToString(timeout);
+    }
+    worker_node.ExecWithRetry(cmd);
+}
+
+void g_ResumeWorkerNode(CNetServer worker_node)
+{
+    worker_node.ExecWithRetry("RESUME");
 }
 
 void g_GetUserAndHost(string* user, string* host)

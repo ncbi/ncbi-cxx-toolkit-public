@@ -33,6 +33,7 @@
 
 #include "nc_automation.hpp"
 #include "ns_automation.hpp"
+#include "wn_automation.hpp"
 
 #include <connect/ncbi_pipe.hpp>
 
@@ -65,15 +66,6 @@ TAutomationObjectRef CAutomationProc::FindObjectByPtr(const void* impl_ptr) cons
     return it != m_ObjectByPointer.end() ? it->second : TAutomationObjectRef();
 }
 
-struct SServerAddressToJson : public IExecToJson
-{
-    SServerAddressToJson(int which_part) : m_WhichPart(which_part) {}
-
-    virtual CJsonNode ExecOn(CNetServer server);
-
-    int m_WhichPart;
-};
-
 CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
 {
     switch (m_WhichPart) {
@@ -97,9 +89,9 @@ bool SNetServiceAutomationObject::Call(const string& method,
 
         reply.Append(g_ExecToJson(server_address_proc,
                 m_Service, m_ActualServiceType));
-    } else if (method == "server_info") {
-        reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType));
-    } else if (method == "exec") {
+    } else if (method == "server_info")
+        reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, true));
+    else if (method == "exec") {
         string command(arg_array.NextString());
         reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType,
                 command, arg_array.NextBoolean(false)));
@@ -163,6 +155,14 @@ TObjectID CAutomationProc::CreateObject(const string& class_name,
                         service_name, queue_name, client_name);
             impl_ptr = nssrv_object_ptr->m_NetScheduleAPI;
             new_object.Reset(nssrv_object_ptr);
+        } else if (class_name == "wn") {
+            string wn_address(arg_array.NextString());
+            string client_name(arg_array.NextString(kEmptyStr));
+            SWorkerNodeAutomationObject* wn_object_ptr =
+                    new SWorkerNodeAutomationObject(this,
+                            wn_address, client_name);
+            impl_ptr = wn_object_ptr->m_NetScheduleAPI;
+            new_object.Reset(wn_object_ptr);
         } else {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                     "Unknown class '" << class_name << "'");

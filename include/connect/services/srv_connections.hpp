@@ -32,7 +32,7 @@
  *
  */
 
-#include <connect/services/util.hpp>
+#include "util.hpp"
 
 #include <connect/ncbi_socket.hpp>
 
@@ -107,6 +107,9 @@ class NCBI_XCONNECT_EXPORT CNetServerInfo
     /// left unchanged.
     bool GetNextAttribute(string& attr_name, string& attr_value);
 };
+
+NCBI_XCONNECT_EXPORT
+CNetServerInfo g_ServerInfoFromString(const string& server_info);
 
 ///////////////////////////////////////////////////////////////////////////
 //

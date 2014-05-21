@@ -104,6 +104,8 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 
     EAPIClass api_class = SetUp_AdminCmd(eReadOnlyAdminCmd);
 
+    bool server_version_key = true;
+
     switch (api_class) {
     case eNetCacheAdmin:
         service = m_NetCacheAPI.GetService();
@@ -111,6 +113,7 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 
     case eNetScheduleAdmin:
     case eWorkerNodeAdmin:
+        server_version_key = false;
         service = m_NetScheduleAPI.GetService();
         break;
 
@@ -123,7 +126,7 @@ int CGridCommandLineInterfaceApp::Cmd_ServerInfo()
 
     if (m_Opts.output_format == eJSON)
         g_PrintJSON(stdout, g_ServerInfoToJson(service,
-                service.GetServiceType()));
+                service.GetServiceType(), server_version_key));
     else if (m_Opts.output_format == eRaw)
         service.PrintCmdOutput("VERSION", NcbiCout,
                 CNetService::eSingleLineOutput,
@@ -165,7 +168,11 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
         return PrintNetScheduleStats();
 
     case eWorkerNodeAdmin:
-        m_NetScheduleAdmin.PrintServerStatistics(NcbiCout);
+        if (m_Opts.output_format == eJSON)
+            g_PrintJSON(stdout, g_WorkerNodeInfoToJson(
+                    m_NetScheduleAPI.GetService().Iterate().GetServer()));
+        else
+            m_NetScheduleAdmin.PrintServerStatistics(NcbiCout);
         return 0;
 
     default:
@@ -455,17 +462,11 @@ int CGridCommandLineInterfaceApp::Cmd_Suspend()
 
     case eWorkerNodeAdmin:
         {
-            string cmd("SUSPEND");
-            if (IsOptionSet(ePullback))
-                cmd += " pullback";
-            if (IsOptionSet(eTimeout)) {
-                cmd += " timeout=";
-                cmd += NStr::NumericToString(m_Opts.timeout);
-            }
-            m_NetScheduleAPI.GetService().ExecOnAllServers(cmd);
+            CNetServer worker_node =
+                    m_NetScheduleAPI.GetService().Iterate().GetServer();
+            g_SuspendWorkerNode(worker_node,
+                    IsOptionSet(ePullback), m_Opts.timeout);
             if (IsOptionSet(eWaitForJobCompletion)) {
-                CNetServer worker_node =
-                        m_NetScheduleAPI.GetService().Iterate().GetServer();
                 string output_line;
                 for (;;) {
                     unsigned jobs_running = 0;
@@ -497,7 +498,7 @@ int CGridCommandLineInterfaceApp::Cmd_Resume()
         return 0;
 
     case eWorkerNodeAdmin:
-        m_NetScheduleAPI.GetService().ExecOnAllServers("RESUME");
+        g_ResumeWorkerNode(m_NetScheduleAPI.GetService().Iterate().GetServer());
         return 0;
 
     default:

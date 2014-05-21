@@ -42,7 +42,8 @@
 #include <fcntl.h>
 #endif
 
-#include <common/test_assert.h>  /* This header must go last */
+/* This header must go last */
+#include <common/test_assert.h>
 
 USING_NCBI_SCOPE;
 

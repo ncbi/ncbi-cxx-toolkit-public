@@ -150,9 +150,10 @@ void CWNJobWatcher::Print(CNcbiOstream& os) const
     CMutexGuard guard(m_ActiveJobsMutex);
     os << "Jobs Running: " << m_ActiveJobs.size() << "\n";
     ITERATE(TActiveJobs, it, m_ActiveJobs) {
-        os << it->first->GetJobKey() << " " << it->first->GetJobInput()
-           << " -- running for " << (int)it->second.elasped_time.Elapsed()
-           << " seconds.";
+        os << it->first->GetJobKey() << " \"" <<
+            NStr::PrintableString(it->first->GetJobInput()) <<
+            "\" -- running for " <<
+            (int) it->second.elasped_time.Elapsed() << " seconds.";
         if (it->second.flag)
             os << "!!! LONG RUNNING JOB !!!";
         os << "\n";
