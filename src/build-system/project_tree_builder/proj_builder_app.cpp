@@ -2765,7 +2765,7 @@ void  CProjBulderApp::RankDepGraph(void)
 #if DO_PATCHTREEMAKEFILES
     return;
 #endif
-    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix || !m_LibDep) {
         return;
     }
     vector< set<string> > graph;
