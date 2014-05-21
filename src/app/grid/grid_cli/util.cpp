@@ -240,7 +240,7 @@ static bool s_ExtractKey(const CTempString& line,
         char c = line[i];
         if (isalnum(c))
             key += tolower(c);
-        else if (c == ' ')
+        else if (c == ' ' || c == '_' || c == '-')
             key += '_';
         else if (c != ':' || key.empty())
             break;
@@ -357,6 +357,8 @@ CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
             exclusive_job = true;
     }
 
+    if (!wn_info.HasKey("maximum_job_threads"))
+        wn_info.SetInteger("maximum_job_threads", 1);
     if (!wn_info.HasKey("version"))
         wn_info.SetString("version", kEmptyStr);
     if (!wn_info.HasKey("build_date"))

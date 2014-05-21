@@ -182,10 +182,8 @@ public:
                 "\nNetSchedule client name: " << node.GetClientName() <<
                 "\nQueue name: " << node.GetQueueName() <<
                 "\nNode ID: " << ns_api->m_ClientNode <<
-                "\nNode session: " << ns_api->m_ClientSession << "\n";
-
-        if (node.GetMaxThreads() > 1)
-            os << "Maximum job threads: " << node.GetMaxThreads() << "\n";
+                "\nNode session: " << ns_api->m_ClientSession <<
+                "\nMaximum job threads: " << node.GetMaxThreads() << "\n";
 
         if (node.IsSuspended())
             os << "The node is suspended\n";
