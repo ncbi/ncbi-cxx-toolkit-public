@@ -417,7 +417,7 @@ void CWGSSeqIterator::x_ReportInvalid(const char* method) const
 
 bool CWGSSeqIterator::HasGi(void) const
 {
-    return m_Seq->m_GI && GetGi();
+    return m_Seq->m_GI && GetGi() != ZERO_GI;
 }
 
 
@@ -425,12 +425,12 @@ CSeq_id::TGi CWGSSeqIterator::GetGi(void) const
 {
     x_CheckValid("GetGi");
     NCBI_gi gi = *m_Seq->GI(m_CurrId);
-    if ( sizeof(CSeq_id::TGi) != sizeof(NCBI_gi) &&
-         NCBI_gi(CSeq_id::TGi(gi)) != gi ) {
+    if ( sizeof(TIntId) != sizeof(NCBI_gi) &&
+         NCBI_gi(TIntId(gi)) != gi ) {
         NCBI_THROW_FMT(CSraException, eDataError,
                        "CWGSSeqIterator::GetGi() GI is too big: "<<gi);
     }
-    return CSeq_id::TGi(gi);
+    return CSeq_id::TGi(TIntId(gi));
 }
 
 
