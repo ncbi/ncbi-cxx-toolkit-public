@@ -1853,22 +1853,26 @@ BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
 	    	continue;
 
 	    BlastHSP ** hsp_array = hsp_list->hsp_array;
-        for (int j = 0; j < hsp_list->hspcnt; j++)
-        {
+
+	if(hsp_list->hspcnt > 0)
+	{
+            const Uint4 oid = hsp_list->oid;
+       	    TSeqPos subject_length = 0;
+       	    CRef<CSeq_id> subject_id;
+       	    vector<int> gi_list;
+       	    GetFilteredRedundantGis(*subject_seqinfo, oid, gi_list);
+       	    GetSequenceLengthAndId(subject_seqinfo, oid, subject_id, &subject_length);
+
+            for (int j = 0; j < hsp_list->hspcnt; j++)
+            {
         	BlastHSP* hsp = hsp_array[j];
 
         	if(!hsp)
-        		continue;
+        	    continue;
 
-        	const Uint4 oid = hsp_list->oid;
-        	TSeqPos subject_length = 0;
-        	CRef<CSeq_id> subject_id;
-        	vector<int> gi_list;
-        	GetFilteredRedundantGis(*subject_seqinfo, oid, gi_list);
-        	GetSequenceLengthAndId(subject_seqinfo, oid, subject_id, &subject_length);
-        	seg_list.push_back((*fun_ptr) (hsp, query_id, subject_id,
-        									query_length, subject_length,
-        									 gi_list));
+               	seg_list.push_back((*fun_ptr) (hsp, query_id, subject_id, 
+                                               query_length, subject_length, gi_list));
+	    }
         }
     }
 }
