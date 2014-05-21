@@ -300,6 +300,8 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
             } else {
                 data = NStr::Replace(data, raw_macro, definition);
             }
+        } else {
+            data = FilterDefine(data);
         }
     }
     return data;
