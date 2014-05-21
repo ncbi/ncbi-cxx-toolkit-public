@@ -100,27 +100,27 @@ bool s_DeflineCompare(const CRef<CBlast_def_line>& d1,
         if (c1->IsOther() && c2->IsOther()) {
             const string& acc1 = c1->GetOther().GetAccession();
             const string& acc2 = c2->GetOther().GetAccession();
-            if (acc1.find("NP_") == 0 && acc2.find("YP_") == 0)
+            if (acc1.find("WP") == 0 && acc2.find("NP_") == 0)
 		return true;
-            else if (acc1.find("NP_") == 0 && acc2.find("AP_") == 0)
+            else if (acc1.find("WP_") == 0 && acc2.find("YP_") == 0)
 		return true;
-            else if (acc1.find("YP_") == 0 && acc2.find("NP_") == 0)
+            else if (acc1.find("YP_") == 0 && acc2.find("WP_") == 0)
 		return false;
-            else if (acc1.find("AP_") == 0 && acc2.find("NP_") == 0)
+            else if (acc1.find("NP_") == 0 && acc2.find("WP_") == 0)
 		return false;
-            else if ((acc1.find("NP_") == 0 || acc1.find("YP_") == 0 || acc1.find("AP_") == 0)
+            else if ((acc1.find("WP_") == 0 || acc1.find("NP_") == 0 || acc1.find("YP_") == 0 || acc1.find("AP_") == 0)
 		&& acc2.find("XP_") == 0)
                 return true;
-            else if ((acc1.find("NP_") == 0 || acc1.find("YP_") == 0 || acc1.find("AP_") == 0)
-		&& acc2.find("WP_") == 0)
+            else if ((acc1.find("WP_") == 0 || acc1.find("NP_") == 0 || acc1.find("YP_") == 0)
+		&& acc2.find("AP_") == 0)
                 return true;
-            else if (acc1.find("WP_") == 0 && 
-		(acc2.find("NP_") == 0 || acc2.find("YP_") == 0 || acc2.find("AP_") == 0))
+            else if (acc1.find("AP_") == 0 && 
+		(acc2.find("NP_") == 0 || acc2.find("YP_") == 0 || acc2.find("WP_") == 0))
                 return false;
             else if (acc1.find("YP_") == 0 && acc2.find("AP_") == 0)
                 return true;
             else if (acc1.find("XP_") == 0 && 
-		(acc2.find("NP_") == 0 || acc2.find("AP_") == 0 || acc2.find("YP_") == 0))
+		(acc2.find("NP_") == 0 || acc2.find("AP_") == 0 || acc2.find("YP_") == 0 || acc2.find("WP") == 0))
                 return false;
 	    else if (acc1.find("NM_") == 0 && acc2.find("XM_") ==0)
 		return true;

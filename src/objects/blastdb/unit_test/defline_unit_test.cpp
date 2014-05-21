@@ -120,17 +120,17 @@ s_MakeRandomDeflineSet(const char* const theIds[], size_t array_size)
 
 
 
-// NP before YP before WP
+// WP before NP before YP
 BOOST_AUTO_TEST_CASE(SortRefSeqProteinSet1)
 {
 	// theIds has the canonical order
 	const char* const theIds[] = {
+		"gi|289223532|ref|WP_003131952.1|",
 		"gi|15674171|ref|NP_268346.1|",
 		"gi|116513137|ref|YP_812044.1|",
 		"gi|125625229|ref|YP_001033712.1|",
 		"gi|281492845|ref|YP_003354825.1|",
 		"gi|385831755|ref|YP_005869568.1|",
-		"gi|289223532|ref|WP_003131952.1|",
 		"gi|13878750|sp|Q9CDN0.1|RS18_LACLA",
 		"gi|122939895|sp|Q02VU1.1|RS18_LACLS",
 		"gi|166220956|sp|A2RNZ2.1|RS18_LACLM",
@@ -157,15 +157,15 @@ BOOST_AUTO_TEST_CASE(SortRefSeqProteinSet1)
 	}
 }
 
-// YP before WP
+// WP before YP
 BOOST_AUTO_TEST_CASE(SortRefSeqProteinSet2)
 {
 	const char* const theIds[] = {
+		"gi|446057344|ref|WP_000135199.1|",
 		"gi|443615715|ref|YP_007379571.1|",
 		"gi|444353545|ref|YP_007389689.1|",
 		"gi|448240163|ref|YP_007404216.1|",
 		"gi|449306713|ref|YP_007439069.1|",
-		"gi|446057344|ref|WP_000135199.1|",
 		"gi|67472372|sp|P0A7T7.2|RS18_ECOLI",
 		"gi|67472373|sp|P0A7T8.2|RS18_ECOL6",
 		"gi|67472374|sp|P0A7T9.2|RS18_ECO57",
@@ -219,8 +219,35 @@ BOOST_AUTO_TEST_CASE(SortRefSeqProteinSet3)
 	}
 }
 
+// AP after NP
+BOOST_AUTO_TEST_CASE(SortRefSeqProteinSet4)
+{
+	// theIds has the canonical order
+	const char* const theIds[] = {
+		"gi|9626178|ref|NP_040526.1|",
+		"gi|56160501|ref|AP_000176.1|",
+		"gi|56160855|ref|AP_000513.1|"
+		"gi|139364|sp|P03252.1|PRO_ADE02",
+		"gi|34810217|pdb|1NLN|A",
+		"gi|33330456|gb|AAQ10554.1|"
+	};
 
-// NM befor XM
+	CRef<CBlast_def_line_set> defline_set = s_MakeRandomDeflineSet(theIds, ArraySize(theIds));
+
+	defline_set->SortBySeqIdRank(true);
+
+	int index=0;
+	ITERATE(CBlast_def_line_set::Tdata, itr, defline_set->Get())
+	{
+		const string fasta_str = (*itr)->GetSeqid().back()->AsFastaString();
+		// cerr << fasta_str << "\n";
+		string startId(theIds[index]);
+		BOOST_CHECK_MESSAGE(startId.find(fasta_str) != string::npos, "Error for " << fasta_str);
+		index++;
+	}
+}
+
+// NM before XM
 BOOST_AUTO_TEST_CASE(SortRefSeqNucleotideSet1)
 {
 	// theIds has the canonical order
