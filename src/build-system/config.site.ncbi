@@ -7,22 +7,26 @@
 . `dirname $0`/../../scripts/common/common.sh
 ncbi_platform=`COMMON_DetectPlatform`
 
-if test "$ncbi_favor_std_packages" = yes; then
+try_local() {
     # /sw (Mac)? /usr/sfw (Solaris)?
     for d in /usr/local /usr/X11 /usr/openwin /usr; do
         test -d "$d"  ||  continue
         test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
         test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
+        test -d "$d/include/curl"          &&  : ${CURL_PATH=$d}
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
         test -d "$d/include/FTGL"          &&  : ${FTGL_PATH=$d}
         test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
+        test -f "$d/include/gif_lib.h"     &&  : ${GIF_PATH=$d}
         test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
         test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
-        test -x "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
+        test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
+        test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
+        test -d "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
         test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
         test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
         test -d "$d/include/mongo"         &&  : ${MONGODB_PATH=$d}
@@ -30,14 +34,21 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
+        test -f "$d/include/png.h"         &&  : ${PNG_PATH=$d}
         test -x "$d/bin/sablot-config"     &&  : ${SABLOT_PATH=$d}
         test -f "$d/include/SgmlParser.h"  &&  : ${SP_PATH=$d}
         test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
+        test -f "$d/include/tiff.h"        &&  : ${TIFF_PATH=$d}
+        test -f "$d/include/gif_lib.h"     &&  : ${UNGIF_PATH=$d}
         test -x "$d/bin/wx-config"         &&  : ${WXWIDGETS_PATH=$d}
         test -d "$d/include/xalanc"        &&  : ${XALAN_PATH=$d}
         test -d "$d/include/xercesc"       &&  : ${XERCES_PATH=$d}
         test -d "$d/include/zorba"         &&  : ${ZORBA_PATH=$d}
     done
+}
+
+if test "$ncbi_favor_std_packages" = yes; then
+    try_local
 fi
 
 case "$ncbi_platform" in
@@ -234,3 +245,5 @@ esac
 case "$ncbi_platform" in
     Linux64    ) : ${ZORBA_PATH=$NCBI/zorba-2.2.0} ;;
 esac
+
+try_local
