@@ -89,18 +89,18 @@ bool CSearch_func :: x_DoesStrContainPlural(const string& word, char last_letter
    return false;
 };
 
-bool CSearch_func :: x_StringMayContainPlural() const
+bool CSearch_func :: x_StringMayContainPlural(const string& str) const
 {
   char last_letter, second_to_last_letter, next_letter;
   bool may_contain_plural = false;
   string word_skip = " ,";
   unsigned len;
 
-  if (m_sch_str.empty()) {
+  if (str.empty()) {
       return false;
   }
   vector <string> arr;
-  arr = NStr::Tokenize(m_sch_str, " ,", arr, NStr::eMergeDelims);
+  arr = NStr::Tokenize(str, " ,", arr, NStr::eMergeDelims);
   if (arr.size() == 1) { // doesn't have ', ', or the last char is ', '
      len = arr[0].size();
      if (len == 1) {
@@ -108,14 +108,14 @@ bool CSearch_func :: x_StringMayContainPlural() const
      }
      last_letter = arr[0][len-1];
      second_to_last_letter = arr[0][len-2]; 
-     next_letter = (len == m_sch_str.size()) ? ',' : m_sch_str[len];
+     next_letter = (len == str.size()) ? ',' : str[len];
      may_contain_plural = x_DoesStrContainPlural(arr[0], 
                                                   last_letter, 
                                                   second_to_last_letter, 
                                                   next_letter);
   }
   else {
-    string strtmp(m_sch_str);
+    string strtmp(str);
     size_t pos;
     vector <string>::const_iterator jt;
     ITERATE (vector <string>, it, arr) { 
@@ -204,11 +204,11 @@ bool CSearch_func :: x_SkipBracketOrParen(const unsigned& idx, string& start) co
   return rval;
 };
 
-bool CSearch_func :: x_ContainsNorMoreSetsOfBracketsOrParentheses(const int& n) const
+bool CSearch_func :: x_ContainsNorMoreSetsOfBracketsOrParentheses(const string& str, const int& n) const
 {
   size_t idx, end;
   int num_found = 0;
-  string open_bp("(["), sch_src(m_sch_str);
+  string open_bp("(["), sch_src(str);
 
   if (sch_src.empty()) {
      return false;
@@ -297,11 +297,11 @@ bool CSearch_func :: x_FollowedByFamily(string& after_str) const
   return false;
 };
 
-bool CSearch_func :: x_ContainsThreeOrMoreNumbersTogether() const
+bool CSearch_func :: x_ContainsThreeOrMoreNumbersTogether(const string& str) const
 {
   size_t p=0, p2;
   unsigned num_digits = 0;
-  string sch_str(m_sch_str), strtmp;
+  string sch_str(str), strtmp;
   
   while (!sch_str.empty()) {
       p = sch_str.find_first_of(m_digit_str);
@@ -339,22 +339,22 @@ bool CSearch_func :: x_ContainsThreeOrMoreNumbersTogether() const
   return false;
 };
 
-bool CSearch_func :: x_StringContainsUnderscore() const
+bool CSearch_func :: x_StringContainsUnderscore(const string& str) const
 { 
-  if (m_sch_str.find('_') == string::npos) {
+  if (str.find('_') == string::npos) {
      return false;
   }
 
   string strtmp;
   vector <string> arr;
-  arr = NStr::Tokenize(m_sch_str, "_", arr);
+  arr = NStr::Tokenize(str, "_", arr);
   for (unsigned i=0; i< arr.size() - 1; i++) {
      strtmp = arr[i+1];
      // strtmp was changed in the FollowedByFamily
      if (x_FollowedByFamily(strtmp)) {
          continue; 
      }
-     else if (arr[i].size() < 3 || m_sch_str[arr[i].size()-1] == ' ') {
+     else if (arr[i].size() < 3 || str[arr[i].size()-1] == ' ') {
           return true;
      }
      else {
@@ -370,17 +370,17 @@ bool CSearch_func :: x_StringContainsUnderscore() const
   return false;
 };
 
-bool CSearch_func :: x_IsPrefixPlusNumbers(const string& prefix) const
+bool CSearch_func :: x_IsPrefixPlusNumbers(const string& prefix, const string& str) const
 {
-  if (m_sch_str.empty()) return false;
+  if (str.empty()) return false;
 
   unsigned pattern_len = prefix.size();
-  if (pattern_len > 0 && !NStr::EqualCase(m_sch_str, 0, pattern_len, prefix)) {
+  if (pattern_len > 0 && !NStr::EqualCase(str, 0, pattern_len, prefix)) {
        return false;
   }
 
-  size_t digit_len = m_sch_str.find_first_not_of(m_digit_str, pattern_len);
-  if (digit_len != string::npos && digit_len == m_sch_str.size()) {
+  size_t digit_len = str.find_first_not_of(m_digit_str, pattern_len);
+  if (digit_len != string::npos && digit_len == str.size()) {
       return true;
   }
   else return false;
@@ -393,11 +393,11 @@ bool CSearch_func :: x_IsPropClose(const string& str, char open_p) const
    else return true;
 };
 
-bool CSearch_func :: x_StringContainsUnbalancedParentheses() const
+bool CSearch_func :: x_StringContainsUnbalancedParentheses(const string& str) const
 {
   size_t pos = 0;
   char ch_src;
-  string strtmp, sch_src(m_sch_str);
+  string strtmp, sch_src(str);
   while (!sch_src.empty()) {
     pos = sch_src.find_first_of("()[]");
     if (pos == string::npos) {
@@ -437,62 +437,61 @@ bool CSearch_func :: x_StringContainsUnbalancedParentheses() const
   else return true;
 };
 
-bool CSearch_func :: x_ProductContainsTerm(const string& pattern) const
+bool CSearch_func :: x_ProductContainsTerm(const string& pattern, const string& str) const
 {
 // don't bother searching for c-term or n-term if product name contains "domain"
-  if (NStr::FindNoCase(m_sch_str, "domain") != string::npos) {
+  if (NStr::FindNoCase(str, "domain") != string::npos) {
       return false;
   }
 
-  size_t pos = NStr::FindNoCase(m_sch_str, pattern);
+  size_t pos = NStr::FindNoCase(str, pattern);
 // c-term and n-term must be either first word or separated from other word 
 // by space, num, or punct 
-  if (pos != string::npos && (!pos || !isalpha (m_sch_str[pos-1]))) {
+  if (pos != string::npos && (!pos || !isalpha (str[pos-1]))) {
      return true;
   }
   else return false;
 }
 
-bool CSearch_func :: Match(const string& str)
+bool CSearch_func :: Match(const string& str) const
 {
-   m_sch_str = str;
 
    switch (Which()){
      case e_String_constraint:
       {
         const CString_constraint& str_cons = GetString_constraint();
-        return str_cons.Match(m_sch_str);
+        return str_cons.Match(str);
       }
      case CSearch_func::e_Contains_plural:
-        return x_StringMayContainPlural();
+        return x_StringMayContainPlural(str);
      case  CSearch_func::e_N_or_more_brackets_or_parentheses:
-        return x_ContainsNorMoreSetsOfBracketsOrParentheses(
+        return x_ContainsNorMoreSetsOfBracketsOrParentheses(str, 
                                         GetN_or_more_brackets_or_parentheses());
      case CSearch_func::e_Three_numbers:
-        return x_ContainsThreeOrMoreNumbersTogether ();
+        return x_ContainsThreeOrMoreNumbersTogether (str);
      case CSearch_func::e_Underscore:
-        return x_StringContainsUnderscore ();
+        return x_StringContainsUnderscore (str);
      case CSearch_func::e_Prefix_and_numbers:
-        return x_IsPrefixPlusNumbers (GetPrefix_and_numbers());
+        return x_IsPrefixPlusNumbers (GetPrefix_and_numbers(), str);
      case CSearch_func::e_All_caps:
       {
         // IsAllCaps (m_sch_str);
-        string up_str = m_sch_str;
+        string up_str = str;
         up_str = NStr::ToUpper(up_str);
-        if (up_str == m_sch_str) return true;
+        if (up_str == str) return true;
         else return false;
       }
      case CSearch_func::e_Unbalanced_paren:
-        return x_StringContainsUnbalancedParentheses ();
+        return x_StringContainsUnbalancedParentheses (str);
      case CSearch_func::e_Too_long:
-        if (NStr::FindNoCase (m_sch_str, "bifunctional") == string::npos
-              && NStr::FindNoCase (m_sch_str, "multifunctional") == string::npos
-              && m_sch_str.size() > (unsigned) GetToo_long()) {
+        if (NStr::FindNoCase (str, "bifunctional") == string::npos
+              && NStr::FindNoCase (str, "multifunctional") == string::npos
+              && str.size() > (unsigned) GetToo_long()) {
             return true;
         }
         else return false;
      case CSearch_func::e_Has_term:
-        return x_ProductContainsTerm(GetHas_term());
+        return x_ProductContainsTerm(GetHas_term(), str);
      default: break;
   }
   return false;

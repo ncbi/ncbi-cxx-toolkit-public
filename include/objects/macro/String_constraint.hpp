@@ -62,6 +62,7 @@ public:
     bool Match(const string& str) const;
     bool DoesSingleStringMatchConstraint (const string& str) const;
     bool IsStringConstraintEmpty() const;
+    bool ReplaceStringConstraintPortionInString(string& val, const string& replace) const;
 
 private:
     string m_digit_str, m_alpha_str;
@@ -99,6 +100,8 @@ private:
     bool x_IsStringInSpan(const string& str, 
                           const string& first, 
                           const string& second) const;
+
+    bool x_ReplaceContains(string& val, const string& replace) const;
 };
 
 /////////////////// CString_constraint inline methods

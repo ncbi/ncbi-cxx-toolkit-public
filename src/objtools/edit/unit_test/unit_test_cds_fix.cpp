@@ -57,6 +57,12 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/macro/Simple_replace.hpp>
+#include <objects/macro/Replace_func.hpp>
+#include <objects/macro/Replace_rule.hpp>
+#include <objects/macro/Search_func.hpp>
+#include <objects/macro/String_constraint.hpp>
+#include <objects/macro/Suspect_rule.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -537,6 +543,106 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAAnnotOnly)
         }
         ++it3;
     }
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SimpleReplace)
+{
+    CRef<CSimple_replace> repl(new CSimple_replace());
+    repl->SetReplace("foo");
+
+    string test = "abc";
+
+    CRef<CString_constraint> constraint(NULL);
+    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK_EQUAL(test, "foo");
+
+    test = "candidate abc";
+    repl->SetWeasel_to_putative(true);
+    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK_EQUAL(test, "putative foo");
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ReplaceFunc)
+{
+    CRef<CReplace_func> repl(new CReplace_func());
+    repl->SetHaem_replace("haem");
+
+    string test = "haemagglutination domain protein";
+
+    CRef<CString_constraint> constraint(NULL);
+    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK_EQUAL(test, "hemagglutination domain protein");
+
+    test = "land of the free, haem of the brave";
+    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK_EQUAL(test, "land of the free, heme of the brave");
+
+    repl->SetSimple_replace().SetReplace("foo");
+    test = "abc";
+
+    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK_EQUAL(test, "foo");
+
+    test = "candidate abc";
+    repl->SetSimple_replace().SetWeasel_to_putative(true);
+    BOOST_CHECK_EQUAL(repl->ApplyToString(test, constraint), true);
+    BOOST_CHECK_EQUAL(test, "putative foo");
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SuspectRule)
+{
+    CRef<CSuspect_rule> rule(new CSuspect_rule());
+    rule->SetFind().SetString_constraint().SetMatch_text("haem");
+    rule->SetReplace().SetReplace_func().SetHaem_replace("haem");
+
+    string test = "haemagglutination domain protein";
+
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    BOOST_CHECK_EQUAL(test, "hemagglutination domain protein");
+
+    test = "land of the free, haem of the brave";
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    BOOST_CHECK_EQUAL(test, "land of the free, heme of the brave");
+
+    rule->SetFind().SetString_constraint().SetMatch_text("abc");
+    rule->SetReplace().SetReplace_func().SetSimple_replace().SetReplace("foo");
+    rule->SetReplace().SetReplace_func().SetSimple_replace().SetWhole_string(true);
+    test = "abc";
+
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    BOOST_CHECK_EQUAL(test, "foo");
+
+    test = "candidate abc";
+    rule->SetReplace().SetReplace_func().SetSimple_replace().SetWeasel_to_putative(true);
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    BOOST_CHECK_EQUAL(test, "putative foo");
+
+    test = "do not match me";
+    rule->SetReplace().SetReplace_func().SetSimple_replace().ResetWhole_string();
+    rule->SetFind().SetString_constraint().SetMatch_text("me");
+    rule->SetFind().SetString_constraint().SetMatch_location(eString_location_starts);
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), false);
+    BOOST_CHECK_EQUAL(test, "do not match me");
+
+    rule->SetFind().SetString_constraint().SetMatch_location(eString_location_ends);
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    BOOST_CHECK_EQUAL(test, "do not match foo");
+
+    test = "me first";
+    rule->SetFind().SetString_constraint().SetMatch_location(eString_location_starts);
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    BOOST_CHECK_EQUAL(test, "foo first");
+
+    test = "me me me me";
+    rule->SetFind().SetString_constraint().ResetMatch_location();
+
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    BOOST_CHECK_EQUAL(test, "foo foo foo foo");
 
 }
 

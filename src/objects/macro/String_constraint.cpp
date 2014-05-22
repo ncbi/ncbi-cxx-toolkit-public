@@ -216,14 +216,16 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
   char ch1, ch2;
   vector <string> word_word;
   bool has_word = false;
-  string strtmp;
-  ITERATE (list <CRef <CWord_substitution> >, 
-             it, 
-             GetIgnore_words().Get()) {
-      strtmp = ((*it)->CanGetWord()) ? (*it)->GetWord() : kEmptyStr;
-      word_word.push_back(strtmp);
-      if (!strtmp.empty()) {
-         has_word = true;
+  if (IsSetIgnore_words()) {
+      string strtmp;
+      ITERATE (list <CRef <CWord_substitution> >, 
+                 it, 
+                 GetIgnore_words().Get()) {
+          strtmp = ((*it)->CanGetWord()) ? (*it)->GetWord() : kEmptyStr;
+          word_word.push_back(strtmp);
+          if (!strtmp.empty()) {
+             has_word = true;
+          }
       }
   }
 
@@ -702,6 +704,85 @@ bool CString_constraint :: Match(const string& str) const
      return rval;
   }
 };
+
+
+bool CString_constraint::x_ReplaceContains(string& val, const string& replace) const
+{
+    bool rval = false;
+
+    size_t offset = 0;
+    while (offset < val.length()) {
+        size_t match_len = 0;
+        if (x_AdvancedStringCompare(val.substr(offset), GetMatch_text(),
+                                    (offset == 0 || !isalpha(val.c_str()[offset - 1])),
+                                    &match_len)) {
+            val = val.substr(0, offset) + replace + val.substr(offset + match_len);
+            rval = true;
+            offset += replace.length();
+        } else {
+            offset++;
+        }
+    }
+    return rval;
+}
+
+
+bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, const string& replace) const
+{
+    bool rval = false;
+    
+    if (val.empty()) {
+        if (IsStringConstraintEmpty() || (IsSetNot_present() && GetNot_present())) {
+            val = replace;
+            rval = true;
+        }
+    } else if (IsStringConstraintEmpty()) {
+        val = replace;
+        rval = true;
+    } else {
+        if (IsSetMatch_location()) {
+            switch (GetMatch_location()) {
+                case eString_location_inlist:
+                case eString_location_equals:
+                    val = replace;
+                    rval = true;
+                    break;
+                case eString_location_starts:
+                    {{
+                       unsigned int match_len = 0;
+                       if (x_AdvancedStringCompare(val, GetMatch_text(), true, &match_len)) {
+                           val = replace + val.substr(match_len);
+                           rval = true;
+                       }
+                    }}
+                    break;
+                case eString_location_contains:
+                    rval = x_ReplaceContains(val, replace);
+                    break;
+                case eString_location_ends:
+                    {{
+                        size_t offset = 0;
+                        while (!rval && offset < val.length()) {
+                            size_t match_len = 0;
+                            if (x_AdvancedStringCompare(val.substr(offset), GetMatch_text(),
+                                                        (offset == 0), &match_len)
+                                && offset + match_len == val.length()) {
+                                val = val.substr(0, offset) + replace;
+                                rval = true;
+                            } else {
+                                offset++;
+                            }
+                        }
+                    }}
+                    break;
+            } 
+        } else {
+            rval = x_ReplaceContains(val, replace);                    
+        }
+    }
+    return rval;
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

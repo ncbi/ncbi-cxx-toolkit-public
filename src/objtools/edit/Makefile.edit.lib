@@ -13,7 +13,7 @@ SRC = seq_entry_edit promote autodef_available_modifier autodef \
 
 LIB    = xobjedit
 
-ASN_DEP = seqset valid
+ASN_DEP = seqset valid macro
 
 WATCHERS = bollin kornbluh gotvyans
 

@@ -57,14 +57,14 @@ CSuspect_rule::~CSuspect_rule(void)
 {
 }
 
-bool CSuspect_rule :: StringMatchesSuspectProductRule(const string& str)
+bool CSuspect_rule :: StringMatchesSuspectProductRule(const string& str) const
 {
-  CSearch_func& func = SetFind();
+  const CSearch_func& func = GetFind();
   if (!func.Empty() && !func.Match(str)) {
       return false;
   }
   else if (CanGetExcept()) {
-     CSearch_func& exc_func = SetExcept();
+     const CSearch_func& exc_func = GetExcept();
      if (!exc_func.Empty() && !exc_func.Match(str)) {
        return false;
      }
@@ -714,6 +714,22 @@ bool CSuspect_rule :: x_DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat
 };
 
 */
+
+bool CSuspect_rule::ApplyToString(string& val) const
+{
+    if (!IsSetReplace() || !StringMatchesSuspectProductRule(val)) {
+        return false;
+    }
+
+    CRef<CString_constraint> constraint(NULL);
+    if (IsSetFind() && GetFind().IsString_constraint()) {
+        constraint.Reset(new CString_constraint());
+        constraint->Assign(GetFind().GetString_constraint());
+    }
+    return GetReplace().ApplyToString(val, constraint);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

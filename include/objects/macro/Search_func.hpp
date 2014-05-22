@@ -60,45 +60,45 @@ public:
     ~CSearch_func(void);
 
     bool Empty() const;
-    bool Match(const string& str);
+    bool Match(const string& str) const;
 
 private:
-    string m_sch_str, m_digit_str;
+    string m_digit_str;
 
     // Prohibit copy constructor and assignment operator
     CSearch_func(const CSearch_func& value);
     CSearch_func& operator=(const CSearch_func& value);
 
     // e_Contains_plural
-    bool x_StringMayContainPlural() const;
+    bool x_StringMayContainPlural(const string& str) const;
     bool x_DoesStrContainPlural(const string& word,
                                  char last_letter,
                                  char second_to_last_letter,
                                  char next_letter) const;
 
     // e_N_or_more_brackets_or_parentheses
-    bool x_ContainsNorMoreSetsOfBracketsOrParentheses(const int& n) const;
+    bool x_ContainsNorMoreSetsOfBracketsOrParentheses(const string& str, const int& n) const;
     char x_GetClose(char bp) const;
     bool x_SkipBracketOrParen(const unsigned& idx, string& start) const;
     
     // e_Three_numbers
-    bool x_ContainsThreeOrMoreNumbersTogether() const;
+    bool x_ContainsThreeOrMoreNumbersTogether(const string& str) const;
     bool x_FollowedByFamily(string& after_str) const;
     bool x_PrecededByOkPrefix (const string& start_str) const;
     bool x_InWordBeforeCytochromeOrCoenzyme(const string& start_str) const;
 
     // e_Underscore
-    bool x_StringContainsUnderscore() const;
+    bool x_StringContainsUnderscore(const string& str) const;
 
     // e_Prefix_and_numbers
-    bool x_IsPrefixPlusNumbers(const string& prefix) const;
+    bool x_IsPrefixPlusNumbers(const string& prefix, const string& str) const;
 
     // e_Unbalanced_paren
-    bool x_StringContainsUnbalancedParentheses() const;
+    bool x_StringContainsUnbalancedParentheses(const string& str) const;
     bool x_IsPropClose(const string& str, char open_p) const;
 
     // e_Has_term
-    bool x_ProductContainsTerm(const string& pattern) const;
+    bool x_ProductContainsTerm(const string& pattern, const string& str) const;
 };
 
 /////////////////// CSearch_func inline methods

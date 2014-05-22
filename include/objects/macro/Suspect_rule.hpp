@@ -60,7 +60,8 @@ public:
     ~CSuspect_rule(void);
  
     // C's MatchesSuspectProductRule()
-    bool StringMatchesSuspectProductRule (const string& str);
+    bool StringMatchesSuspectProductRule (const string& str) const;
+
     // C's DoesObjectMatchConstraintChoiceSet()
     //bool DoesObjectMatchConstraintChoiceSet(const CSeq_feat* feat, CRef <CScope> scope);
 
@@ -76,6 +77,8 @@ public:
        }
     };
 */
+
+    bool ApplyToString(string& val) const;
 
 private:
     // Prohibit copy constructor and assignment operator
