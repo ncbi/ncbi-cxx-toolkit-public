@@ -696,9 +696,9 @@ public:
         string m_StrSuffix;
         bool operator==(const TKey& b) const {
             return m_Key == b.m_Key &&
-                NStr::EqualNocase(m_Db, b.m_Db) &&
+                NStr::EqualNocase(m_StrSuffix, b.m_StrSuffix) &&
                 NStr::EqualNocase(m_StrPrefix, b.m_StrPrefix) &&
-                NStr::EqualNocase(m_StrSuffix, b.m_StrSuffix);
+                NStr::EqualNocase(m_Db, b.m_Db);
         }
         bool operator!=(const TKey& b) const {
             return !(*this == b);
@@ -709,11 +709,11 @@ public:
             if ( a.m_Key != b.m_Key ) {
                 return a.m_Key < b.m_Key;
             }
-            int diff = NStr::CompareNocase(a.m_Db, b.m_Db);
+            int diff = NStr::CompareNocase(a.m_StrSuffix, b.m_StrSuffix);
             if ( diff == 0 ) {
                 diff = NStr::CompareNocase(a.m_StrPrefix, b.m_StrPrefix);
                 if ( diff == 0 ) {
-                    diff = NStr::CompareNocase(a.m_StrSuffix, b.m_StrSuffix);
+                    diff = NStr::CompareNocase(a.m_Db, b.m_Db);
                 }
             }
             return diff < 0;

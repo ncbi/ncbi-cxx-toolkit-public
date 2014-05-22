@@ -1798,6 +1798,7 @@ CSeq_id_General_Id_Info::CSeq_id_General_Id_Info(CSeq_id_Mapper* mapper,
     : CSeq_id_Info(CSeq_id::e_General, mapper),
       m_Key(key)
 {
+    //LOG_POST("CSeq_id_General_Id_Info("<<key<<")");
 }
 
 
@@ -1862,6 +1863,8 @@ CSeq_id_General_Str_Info::CSeq_id_General_Str_Info(CSeq_id_Mapper* mapper,
     : CSeq_id_Info(CSeq_id::e_General, mapper),
       m_Key(key)
 {
+    //LOG_POST("CSeq_id_General_Str_Info("<<key.m_Db<<","<<key.m_StrPrefix
+    //         <<","<<hex<<key.m_Key<<dec<<","<<key.m_StrSuffix<<")");
 }
 
 
@@ -1904,8 +1907,15 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
         key.m_StrSuffix = str.substr(prefix_len+str_digits);
     }
     int hash = 1;
-    for ( int i = 0; i < 3 && i < prefix_len; ++i ) {
-        hash = (hash << 8) | toupper(key.m_StrPrefix[prefix_len-1-i] & 0xff);
+    if ( 1 ) {
+        ITERATE ( string, i, key.m_StrPrefix ) {
+            hash = hash*17 + toupper(Uint1(*i));
+        }
+    }
+    else {
+        for ( int i = 0; i < 3 && i < prefix_len; ++i ) {
+            hash = (hash << 8) | toupper(key.m_StrPrefix[prefix_len-1-i] & 0xff);
+        }
     }
     key.m_Key = (hash << 8) | str_digits;
     return key;
@@ -2026,33 +2036,40 @@ CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
 {
     _ASSERT( id.IsGeneral() );
     const CDbtag& dbid = id.GetGeneral();
-    TReadLockGuard guard(m_TreeLock);
     if ( s_PackGeneralEnabled() ) {
         switch ( dbid.GetTag().Which() ) {
         case CObject_id::e_Str:
         {
             TPackedStrKey key = CSeq_id_General_Str_Info::Parse(dbid);
+            TReadLockGuard guard(m_TreeLock);
             TPackedStrMap::const_iterator it = m_PackedStrMap.find(key);
-            if ( it == m_PackedStrMap.end() ) {
-                break;
+            if ( it != m_PackedStrMap.end() ) {
+                return CSeq_id_Handle(it->second, it->second->Pack(dbid));
             }
-            return CSeq_id_Handle(it->second, it->second->Pack(dbid));
+            else {
+                return CSeq_id_Handle(x_FindInfo(dbid));
+            }
         }
         case CObject_id::e_Id:
         {
             const string& key = dbid.GetDb();
+            TReadLockGuard guard(m_TreeLock);
             TPackedIdMap::const_iterator it = m_PackedIdMap.find(key);
-            if ( it == m_PackedIdMap.end() ) {
-                break;
+            if ( it != m_PackedIdMap.end() ) {
+                return CSeq_id_Handle(it->second, it->second->Pack(dbid));
             }
-            return CSeq_id_Handle(it->second, it->second->Pack(dbid));
+            else {
+                return CSeq_id_Handle(x_FindInfo(dbid));
+            }
         }
         default:
-            break;
+            return null;
         }
-        return null;
     }
-    return CSeq_id_Handle(x_FindInfo(dbid));
+    else {
+        TReadLockGuard guard(m_TreeLock);
+        return CSeq_id_Handle(x_FindInfo(dbid));
+    }
 }
 
 
@@ -2060,12 +2077,12 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
 {
     _ASSERT( id.IsGeneral() );
     const CDbtag& dbid = id.GetGeneral();
-    TWriteLockGuard guard(m_TreeLock);
     if ( s_PackGeneralEnabled() ) {
         switch ( dbid.GetTag().Which() ) {
         case CObject_id::e_Str:
         {
             TPackedStrKey key = CSeq_id_General_Str_Info::Parse(dbid);
+            TWriteLockGuard guard(m_TreeLock);
             TPackedStrMap::iterator it = m_PackedStrMap.lower_bound(key);
             if ( it == m_PackedStrMap.end() ||
                  m_PackedStrMap.key_comp()(key, it->first) ) {
@@ -2079,6 +2096,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
         case CObject_id::e_Id:
         {
             const string& key = dbid.GetDb();
+            TWriteLockGuard guard(m_TreeLock);
             TPackedIdMap::iterator it = m_PackedIdMap.lower_bound(key);
             if ( it == m_PackedIdMap.end() ||
                  !NStr::EqualNocase(it->first, key) ) {
@@ -2093,16 +2111,19 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
             break;
         }
     }
+    TWriteLockGuard guard(m_TreeLock);
     CSeq_id_Info* info = x_FindInfo(dbid);
     if ( !info ) {
         info = CreateInfo(id);
         STagMap& tm = m_DbMap[dbid.GetDb()];
         const CObject_id& oid = dbid.GetTag();
         if ( oid.IsStr() ) {
+            //LOG_POST("CSeq_id_General_Tree::CreateStr("<<oid.GetStr()<<")");
             _VERIFY(tm.m_ByStr.insert
                     (STagMap::TByStr::value_type(oid.GetStr(), info)).second);
         }
         else if ( oid.IsId() ) {
+            //LOG_POST("CSeq_id_General_Tree::CreateStr("<<oid.GetId()<<")");
             _VERIFY(tm.m_ById.insert(STagMap::TById::value_type(oid.GetId(),
                                                                 info)).second);
         }
@@ -2162,7 +2183,7 @@ bool CSeq_id_General_Tree::HaveMatch(const CSeq_id_Handle& id) const
 void CSeq_id_General_Tree::FindMatch(const CSeq_id_Handle& id,
                                      TSeq_id_MatchList& id_list) const
 {
-    TReadLockGuard guard(m_TreeLock);
+    //TReadLockGuard guard(m_TreeLock);
     id_list.insert(id);
     CConstRef<CSeq_id> seq_id = id.GetSeqId();
     const CDbtag& dbtag = seq_id->GetGeneral();
