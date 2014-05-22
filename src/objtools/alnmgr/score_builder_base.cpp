@@ -1255,7 +1255,9 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
             /// "NCBI_GPIPE", containing a region Seq-feat named "alignable"
             TSeqRange alignable_range = TSeqRange::GetWhole();
             CBioseq_Handle query = scope.GetBioseqHandle(align.GetSeq_id(0));
-            for(CFeat_CI feat_it(query, SAnnotSelector(CSeqFeatData::e_Region));
+            for(CFeat_CI feat_it(query,
+                                 SAnnotSelector(CSeqFeatData::e_Region).
+                                 SetExcludeExternal());
                     feat_it; ++feat_it)
             {
                 if(feat_it->GetData().GetRegion() == "alignable" &&
