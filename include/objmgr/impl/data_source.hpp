@@ -138,7 +138,7 @@ public:
 
     typedef CDSAnnotLockReadGuard                   TAnnotLockReadGuard;
     typedef CDSAnnotLockWriteGuard                  TAnnotLockWriteGuard;
-    typedef CMutex TMainLock;
+    typedef CRWLock TMainLock;
     typedef CMutex TAnnotLock;
     typedef CMutex TCacheLock;
 
