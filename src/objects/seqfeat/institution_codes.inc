@@ -1207,6 +1207,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CQBG	s	Chongqing Botanical Garden",
 "CQNM	s	Chongqing Natural History Museum",
 "CR	s	Museo Nacional de Costa Rica",
+"CRA-CIN	c	Consiglio per la Ricerca e sperimentazione in Agricoltura - Centro ricerche per  le Colture Industriali ( Research Centre for Industrial Crops)",
 "CRA-COLMIA<ITA>	c	Collezione Nazionale di Microrganismi di interesse Agrario ed Industriale ed Ambientale - COL.MIA",
 "CRA-OLI	b	Centro di Ricerca per l'Olivicoltura e l'Industria Olearia",
 "CRA-PAV<ITA>	c	Centro di Ricerca per la Patologia Vegetale",
