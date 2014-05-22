@@ -132,8 +132,8 @@ typedef   int   ssize_t;
 
 #endif
 
-/* Windows XP and above */
-#define NCBI_WIN32_WINNT 0x0501
+/* Windows Server 2008, Windows Vista and above */
+#define NCBI_WIN32_WINNT 0x0600
 #if !defined(_WIN32_WINNT)
 #  define _WIN32_WINNT NCBI_WIN32_WINNT
 #elif _WIN32_WINNT < NCBI_WIN32_WINNT

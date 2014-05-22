@@ -1953,112 +1953,11 @@ CSpinLock::Unlock(void)
 //  CONDITION VARIABLE
 //
 
-
 #if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
-
-
-#  if defined(NCBI_OS_MSWIN)
-#    if (_WIN32_WINNT < 0x0600)
-#    pragma warning (disable : 4191)
-class CCV_Dynlink
-{
-public:
-    typedef VOID (WINAPI *pInitializeConditionVariable)( PCONDITION_VARIABLE ConditionVariable);
-    typedef VOID (WINAPI *pWakeConditionVariable)(       PCONDITION_VARIABLE ConditionVariable);
-    typedef VOID (WINAPI *pWakeAllConditionVariable)(    PCONDITION_VARIABLE ConditionVariable);
-    typedef BOOL (WINAPI *pSleepConditionVariableCS)(    PCONDITION_VARIABLE ConditionVariable,
-                                                            PCRITICAL_SECTION CriticalSection,
-                                                            DWORD dwMilliseconds);
-    static bool IsSupported(void)
-    {
-        return NULL != GetProcAddress(
-            GetModuleHandleA("KERNEL32.DLL"),"InitializeConditionVariable");
-    }
-    static void unsupported(void)
-    {
-        NCBI_THROW(CConditionVariableException, eUnsupported,
-                   "Condition variable is not supported");
-    }
-    static void InitializeConditionVariable(PCONDITION_VARIABLE ConditionVariable)
-    {
-        static pInitializeConditionVariable p = 0;
-        if (!p) {
-            p = (pInitializeConditionVariable)GetProcAddress(
-                GetModuleHandleA("KERNEL32.DLL"),"InitializeConditionVariable");
-        }
-        if (!p) {
-            unsupported();
-        }
-        p(ConditionVariable);
-    }
-    static void WakeConditionVariable(PCONDITION_VARIABLE ConditionVariable)
-    {
-        static pWakeConditionVariable p = 0;
-        if (!p) {
-            p = (pWakeConditionVariable)GetProcAddress(
-                GetModuleHandleA("KERNEL32.DLL"),"WakeConditionVariable");
-            if (!p) {
-                unsupported();
-            }
-        }
-        p(ConditionVariable);
-    }
-    static void WakeAllConditionVariable(PCONDITION_VARIABLE ConditionVariable)
-    {
-        static pWakeAllConditionVariable p = 0;
-        if (!p) {
-            p = (pWakeAllConditionVariable)GetProcAddress(
-                GetModuleHandleA("KERNEL32.DLL"),"WakeAllConditionVariable");
-            if (!p) {
-                unsupported();
-            }
-        }
-        p(ConditionVariable);
-    }
-    static bool SleepConditionVariableCS(PCONDITION_VARIABLE ConditionVariable,
-                                              PCRITICAL_SECTION CriticalSection,
-                                              DWORD dwMilliseconds)
-    {
-        static pSleepConditionVariableCS p = 0;
-        if (!p) {
-            p = (pSleepConditionVariableCS)GetProcAddress(
-                GetModuleHandleA("KERNEL32.DLL"),"SleepConditionVariableCS");
-            if (!p) {
-                unsupported();
-            }
-        }
-        return p(ConditionVariable,CriticalSection,dwMilliseconds) != FALSE;
-    }
-};
-
-#      define CCV_Dynlink_IsSupported                 CCV_Dynlink::IsSupported
-#      define CCV_Dynlink_InitializeConditionVariable CCV_Dynlink::InitializeConditionVariable
-#      define CCV_Dynlink_WakeConditionVariable       CCV_Dynlink::WakeConditionVariable
-#      define CCV_Dynlink_WakeAllConditionVariable    CCV_Dynlink::WakeAllConditionVariable
-#      define CCV_Dynlink_SleepConditionVariableCS    CCV_Dynlink::SleepConditionVariableCS 
-
-#    else // _WIN32_WINNT < 0x0600
-
-#      error "Now it is time to get rid of this ugly workaround above and below"
-
-#      define CCV_Dynlink_IsSupported()               true
-#      define CCV_Dynlink_InitializeConditionVariable InitializeConditionVariable
-#      define CCV_Dynlink_WakeConditionVariable       WakeConditionVariable
-#      define CCV_Dynlink_WakeAllConditionVariable    WakeAllConditionVariable
-#      define CCV_Dynlink_SleepConditionVariableCS    SleepConditionVariableCS 
-
-#    endif // _WIN32_WINNT < 0x0600
-#  endif // NCBI_OS_MSWIN
-
-
 
 bool CConditionVariable::IsSupported(void)
 {
-#if defined(NCBI_OS_MSWIN)
-    return CCV_Dynlink_IsSupported();
-#else
     return true;
-#endif
 }
 
 
@@ -2067,7 +1966,7 @@ CConditionVariable::CConditionVariable(void)
       m_WaitMutex(NULL)
 {
 #if defined(NCBI_OS_MSWIN)
-    CCV_Dynlink_InitializeConditionVariable(&m_ConditionVar);
+    InitializeConditionVariable(&m_ConditionVar);
 #else
     int res = pthread_cond_init(&m_ConditionVar, NULL);
     switch (res) {
@@ -2192,8 +2091,7 @@ bool CConditionVariable::x_WaitForSignal
 #if defined(NCBI_OS_MSWIN)
     DWORD timeout_msec = deadline.IsInfinite() ?
         INFINITE : deadline.GetRemainingTime().GetAsMilliSeconds();
-    BOOL res = CCV_Dynlink_SleepConditionVariableCS
-        (&m_ConditionVar, &mutex.m_Handle, timeout_msec);
+    BOOL res = SleepConditionVariableCS(&m_ConditionVar, &mutex.m_Handle, timeout_msec);
     s_ThrowIfDifferentMutexes(mutex_guard);
 
     if ( res )
@@ -2276,7 +2174,7 @@ bool CConditionVariable::WaitForSignal(CFastMutex&       mutex,
 void CConditionVariable::SignalSome(void)
 {
 #if defined(NCBI_OS_MSWIN)
-    CCV_Dynlink_WakeConditionVariable(&m_ConditionVar);
+    WakeConditionVariable(&m_ConditionVar);
 #else
     int res = pthread_cond_signal(&m_ConditionVar);
     if (res != 0) {
@@ -2296,7 +2194,7 @@ void CConditionVariable::SignalSome(void)
 void CConditionVariable::SignalAll(void)
 {
 #if defined(NCBI_OS_MSWIN)
-    CCV_Dynlink_WakeAllConditionVariable(&m_ConditionVar);
+    WakeAllConditionVariable(&m_ConditionVar);
 #else
     int res = pthread_cond_broadcast(&m_ConditionVar);
     if (res != 0) {
