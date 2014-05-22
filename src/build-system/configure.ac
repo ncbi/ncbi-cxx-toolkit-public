@@ -1297,15 +1297,6 @@ EOF
 fi
 
 
-#### Set compiler prefix for non-native compilers
-case "$host_os:$compiler" in
-   *:GCC | *:KCC | *:ICC )
-      compiler_pfx="${compiler}-"
-      compiler_vpfx="${compiler}${compiler_version}-"
-      ;;
-esac
-
-
 C_LIBS=$LIBS
 
 
@@ -3830,6 +3821,18 @@ fi
 
 ### Third-party libraries
 
+#### Set compiler prefix (empty for vendor compilers)
+case "$signature_compiler:$ac_cv_have_decl__LIBCPP_VERSION" in
+   Clang:yes | LLVMGCC:yes )
+      compiler_pfx="${signature_compiler}-"
+      compiler_vpfx="${signature_compiler}${signature_compiler_version}-"
+      ;;
+   Clang:* | *[[GIK]]CC:* )
+      compiler_pfx="${compiler}-"
+      compiler_vpfx="${compiler}${compiler_version}-"
+      ;;
+esac
+
 usr_lib=['[/usr]*/lib/*[amdsprcv]*[23469]*']
 no_usr_lib="s,-L$usr_lib ,,g;"
 
@@ -4834,6 +4837,15 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          case "$BOOST_TAG" in
             -*gcc|-il ) boost_comp_vers=`echo $compiler_version | cut -c1-2` ;;
             *         ) boost_comp_vers='' ;;
+         esac
+         case "$llvm_version:$ac_cv_have_decl__LIBCPP_VERSION" in
+            *clang*:yes )
+                case "$host_os" in
+                   darwin*) BOOST_TAG="-clang-darwin" ;;
+                   *)       BOOST_TAG="-clang" ;;
+                esac
+                boost_comp_vers=`echo $signature_compiler_version | cut -c1-2`
+            ;;
          esac
          test "$with_mt"    = "yes"  &&  BOOST_MT=-mt
          test "$with_debug" = "yes"  &&  BOOST_D=-d
