@@ -649,8 +649,8 @@ bool CString_constraint :: DoesSingleStringMatchConstraint(const string& str) co
                 pFound = string::npos;
               }
               else {
-  	        pFound = GetCase_sensitive() ?
-                           pFound = search.find(pattern, pFound+1):
+  	              pFound = GetCase_sensitive() ?
+                           search.find(pattern, pFound+1):
                               NStr::FindNoCase(search, pattern, pFound+1);
               }
             }
@@ -749,7 +749,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                     break;
                 case eString_location_starts:
                     {{
-                       unsigned int match_len = 0;
+                       size_t match_len = 0;
                        if (x_AdvancedStringCompare(val, GetMatch_text(), true, &match_len)) {
                            val = replace + val.substr(match_len);
                            rval = true;
