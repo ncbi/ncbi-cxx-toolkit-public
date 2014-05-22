@@ -674,6 +674,7 @@ mysqlclient needs $(Z_LIB)
 mysqlclient needs3party $(NETWORK_LIBS)
 mysqlclient needs3party $(ORIG_LIBS)
 mysqlclient needs3party $(Z_LIBS)
+mzXML needs xser
 ncbi includes connect
 ncbi includes tables
 ncbi needs3party $(ORIG_LIBS)
@@ -834,6 +835,7 @@ pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
 pcsubstance needs pub
 pepXML needs xser
+peptidome needs general
 phytree_format needs taxon1
 phytree_format needs xalgophytree
 png needs $(Z_LIB)
@@ -1017,6 +1019,7 @@ u2tl needs3party $(SYBASE_DBLIBS)
 u2tl needs3party $(SYBASE_LIBS)
 u2tl needs3party $(Z_LIBS)
 uilist needs xser
+unimod needs xser
 uudutil needs $(COMPRESS_LIBS)
 uudutil needs gbproj
 uudutil needs xconnserv
@@ -1031,7 +1034,6 @@ variation_utils needs variation
 variation_utils needs xobjutil
 vdb2blast needs $(BLAST_LIBS)
 vdb2blast needs $(SRA_LIBS)
-vdb2blast needs xregexp
 vdb2blast needs3party $(SRA_SDK_SYSLIBS)
 vibgif needs3party $(NCBI_C_ncbi)
 vibnet needs3party ncbiacc
