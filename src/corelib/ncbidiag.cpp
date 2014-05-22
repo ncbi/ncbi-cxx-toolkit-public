@@ -2735,7 +2735,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     if ( !log_switched  &&  config ) {
         try_root_log_first = config->GetBool("LOG", "TryRootLogFirst", false)
             &&  (ds == eDS_ToStdlog  ||  ds == eDS_Default);
-        bool force_config = config->GetBool("LOG", "IgnoreEnvArg", false);
+        bool force_config = !config->GetBool("LOG", "IgnoreEnvArg", false);
         if ( force_config ) {
             try_root_log_first = false;
         }
