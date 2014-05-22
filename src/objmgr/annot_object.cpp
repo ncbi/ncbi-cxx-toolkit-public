@@ -587,15 +587,15 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                 }
                 TSeqPos len = (*it)->GetLen();
                 for (int row = 0; row < dim; ++row) {
-                    CSeq_loc loc;
-                    loc.SetInt().SetId().Assign(*(*it)->GetIds()[row]);
-                    loc.SetInt().SetFrom((*it)->GetStarts()[row]);
-                    loc.SetInt().SetTo((*it)->GetStarts()[row] + len - 1);
+                    const CSeq_id& id = *(*it)->GetIds()[row];
+                    TSeqPos from = (*it)->GetStarts()[row];
+                    TSeqPos to = from + len - 1;
+                    ENa_strand strand = eNa_strand_unknown;
                     if ( (*it)->IsSetStrands() ) {
-                        loc.SetInt().SetStrand((*it)->GetStrands()[row]);
+                        strand = (*it)->GetStrands()[row];
                     }
                     hrmaps[row].SetMasterSeq(master);
-                    hrmaps[row].AddLocation(loc);
+                    hrmaps[row].AddRange(id, from, to, strand);
                 }
             }
             break;
@@ -632,16 +632,15 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     if (denseg.GetStarts()[seg*dim + row] < 0 ) {
                         continue;
                     }
-                    CSeq_loc loc;
-                    loc.SetInt().SetId().Assign(*denseg.GetIds()[row]);
-                    loc.SetInt().SetFrom(denseg.GetStarts()[seg*dim + row]);
-                    loc.SetInt().SetTo(denseg.GetStarts()[seg*dim + row]
-                        + denseg.GetLens()[seg] - 1);
+                    const CSeq_id& id = *denseg.GetIds()[row];
+                    TSeqPos from = denseg.GetStarts()[seg*dim + row];
+                    TSeqPos to = from + denseg.GetLens()[seg] - 1;
+                    ENa_strand strand = eNa_strand_unknown;
                     if ( denseg.IsSetStrands() ) {
-                        loc.SetInt().SetStrand(denseg.GetStrands()[seg*dim + row]);
+                        strand = denseg.GetStrands()[seg*dim + row];
                     }
                     hrmaps[row].SetMasterSeq(master);
-                    hrmaps[row].AddLocation(loc);
+                    hrmaps[row].AddRange(id, from, to, strand);
                 }
             }
             break;
@@ -660,15 +659,12 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                         if (row >= (int)hrmaps.size()) {
                             hrmaps.resize(row + 1);
                         }
-                        CSeq_loc loc;
-                        loc.SetInt().SetId().Assign(row_it.GetSeq_id());
-                        loc.SetInt().SetFrom(row_it.GetRange().GetFrom());
-                        loc.SetInt().SetTo(row_it.GetRange().GetTo());
-                        if ( row_it.GetStrand() != eNa_strand_unknown ) {
-                            loc.SetInt().SetStrand(row_it.GetStrand());
-                        }
+                        const CSeq_id& id = row_it.GetSeq_id();
+                        TSeqPos from = row_it.GetRange().GetFrom();
+                        TSeqPos to = row_it.GetRange().GetTo();
+                        ENa_strand strand = row_it.GetStrand();
                         hrmaps[row].SetMasterSeq(master);
-                        hrmaps[row].AddLocation(loc);
+                        hrmaps[row].AddRange(id, from, to, strand);
                     }
                 }
             }
@@ -696,16 +692,15 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             for (int seg = 0;  seg < numseg;  seg++) {
                 for (int row = 0;  row < dim;  row++) {
                     if ( packed.GetPresent()[seg*dim + row] ) {
-                        CSeq_loc loc;
-                        loc.SetInt().SetId().Assign(*packed.GetIds()[row]);
-                        loc.SetInt().SetFrom(packed.GetStarts()[seg*dim + row]);
-                        loc.SetInt().SetTo(packed.GetStarts()[seg*dim + row]
-                            + packed.GetLens()[seg] - 1);
-                        if ( packed.IsSetStrands() ) {
-                            loc.SetInt().SetStrand(packed.GetStrands()[seg*dim + row]);
-                        }
                         hrmaps[row].SetMasterSeq(master);
-                        hrmaps[row].AddLocation(loc);
+                        const CSeq_id& id = *packed.GetIds()[row];
+                        TSeqPos from = packed.GetStarts()[seg*dim + row];
+                        TSeqPos to = from + packed.GetLens()[seg] - 1;
+                        ENa_strand strand = eNa_strand_unknown;
+                        if ( packed.IsSetStrands() ) {
+                            strand = packed.GetStrands()[seg*dim + row];
+                        }
+                        hrmaps[row].AddRange(id, from, to, strand);
                     }
                 }
             }
@@ -734,38 +729,40 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                 const CSeq_id* ex_gen_id = ex.IsSetGenomic_id() ?
                     &ex.GetGenomic_id() : gen_id;
                 if ( ex_gen_id ) {
-                    CSeq_loc loc;
-                    loc.SetInt().SetId().Assign(*ex_gen_id);
-                    loc.SetInt().SetFrom(ex.GetGenomic_start());
-                    loc.SetInt().SetTo(ex.GetGenomic_end());
+                    const CSeq_id& id = *ex_gen_id;
+                    TSeqPos from = ex.GetGenomic_start();
+                    TSeqPos to = ex.GetGenomic_end();
+                    ENa_strand strand = eNa_strand_unknown;
                     if ( ex.IsSetGenomic_strand() ) {
-                        loc.SetInt().SetStrand(ex.GetGenomic_strand());
+                        strand = ex.GetGenomic_strand();
                     }
                     else if ( spliced.IsSetGenomic_strand() ) {
-                        loc.SetInt().SetStrand(spliced.GetGenomic_strand());
+                        strand = spliced.GetGenomic_strand();
                     }
                     hrmaps[1].SetMasterSeq(master);
-                    hrmaps[1].AddLocation(loc);
+                    hrmaps[1].AddRange(id, from, to, strand);
                 }
                 const CSeq_id* ex_prod_id = ex.IsSetProduct_id() ?
                     &ex.GetProduct_id() : prod_id;
                 if ( ex_prod_id ) {
-                    CSeq_loc loc;
-                    loc.SetInt().SetId().Assign(*ex_prod_id);
-                    loc.SetInt().SetFrom(ex.GetProduct_start().IsNucpos() ?
-                        ex.GetProduct_start().GetNucpos()
-                        : ex.GetProduct_start().GetProtpos().GetAmin());
-                    loc.SetInt().SetTo(ex.GetProduct_end().IsNucpos() ?
-                        ex.GetProduct_end().GetNucpos()
-                        : ex.GetProduct_end().GetProtpos().GetAmin());
+                    const CSeq_id& id = *ex_prod_id;
+                    TSeqPos from =
+                        (ex.GetProduct_start().IsNucpos() ?
+                         ex.GetProduct_start().GetNucpos() :
+                         ex.GetProduct_start().GetProtpos().GetAmin());
+                    TSeqPos to =
+                        (ex.GetProduct_end().IsNucpos() ?
+                         ex.GetProduct_end().GetNucpos() :
+                         ex.GetProduct_end().GetProtpos().GetAmin());
+                    ENa_strand strand = eNa_strand_unknown;
                     if ( ex.IsSetProduct_strand() ) {
-                        loc.SetInt().SetStrand(ex.GetProduct_strand());
+                        strand = ex.GetProduct_strand();
                     }
                     else if ( spliced.IsSetProduct_strand() ) {
-                        loc.SetInt().SetStrand(spliced.GetProduct_strand());
+                        strand = spliced.GetProduct_strand();
                     }
                     hrmaps[0].SetMasterSeq(master);
-                    hrmaps[0].AddLocation(loc);
+                    hrmaps[0].AddRange(id, from, to, strand);
                 }
             }
             break;
@@ -809,20 +806,23 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                 hrmaps[row+1].SetMasterSeq(master);
                 for (size_t seg = 0; seg < numseg; ++seg) {
                     TSeqPos len = aln_row.GetLens()[seg];
-                    CSeq_loc loc;
-                    loc.SetInt().SetId().Assign(aln_row.GetFirst_id());
-                    loc.SetInt().SetFrom(aln_row.GetFirst_starts()[seg]);
-                    loc.SetInt().SetTo(aln_row.GetFirst_starts()[seg] + len - 1);
-                    // consensus sequence goes to the first row
-                    hrmaps[0].AddLocation(loc);
-
-                    loc.SetInt().SetId().Assign(aln_row.GetSecond_id());
-                    loc.SetInt().SetFrom(aln_row.GetSecond_starts()[seg]);
-                    loc.SetInt().SetTo(aln_row.GetSecond_starts()[seg] + len - 1);
-                    if ( aln_row.IsSetSecond_strands() ) {
-                        loc.SetInt().SetStrand(aln_row.GetSecond_strands()[row]);
+                    {
+                        const CSeq_id& id = aln_row.GetFirst_id();
+                        TSeqPos from = aln_row.GetFirst_starts()[seg];
+                        TSeqPos to = from + len - 1;
+                        // consensus sequence goes to the first row
+                        hrmaps[0].AddRange(id, from, to);
                     }
-                    hrmaps[row+1].AddLocation(loc);
+                    {
+                        const CSeq_id& id = aln_row.GetSecond_id();
+                        TSeqPos from = aln_row.GetSecond_starts()[seg];
+                        TSeqPos to = from + len - 1;
+                        ENa_strand strand = eNa_strand_unknown;
+                        if ( aln_row.IsSetSecond_strands() ) {
+                            strand = aln_row.GetSecond_strands()[row];
+                        }
+                        hrmaps[row+1].AddRange(id, from, to, strand);
+                    }
                 }
                 row++;
             }
