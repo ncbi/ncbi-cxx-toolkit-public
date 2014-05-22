@@ -505,7 +505,7 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
             }
         }
     }
-    m_AlwaysLoadExternal = true;
+    m_AlwaysLoadExternal = false;
     if ( gb_params ) {
         string param =
             GetParam(gb_params, NCBI_GBLOADER_PARAM_ALWAYS_LOAD_EXTERNAL);
