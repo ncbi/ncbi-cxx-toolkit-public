@@ -198,7 +198,7 @@ bool CString_constraint :: x_IsWholeWordMatch(const string& start, const size_t&
   }
   return true;
 };
-bool CString_constraint :: x_AdvancedStringCompare(const string& str, const string& str_match, bool is_start, unsigned* ini_target_match_len)  const
+bool CString_constraint :: x_AdvancedStringCompare(const string& str, const string& str_match, bool is_start, unsigned int * ini_target_match_len)  const
 {
   if (str.empty()) return false;
   if (str_match.empty()) return true;
@@ -712,7 +712,7 @@ bool CString_constraint::x_ReplaceContains(string& val, const string& replace) c
 
     size_t offset = 0;
     while (offset < val.length()) {
-        size_t match_len = 0;
+        unsigned int match_len = 0;
         if (x_AdvancedStringCompare(val.substr(offset), GetMatch_text(),
                                     (offset == 0 || !isalpha(val.c_str()[offset - 1])),
                                     &match_len)) {
@@ -749,7 +749,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                     break;
                 case eString_location_starts:
                     {{
-                       size_t match_len = 0;
+                       unsigned int match_len = 0;
                        if (x_AdvancedStringCompare(val, GetMatch_text(), true, &match_len)) {
                            val = replace + val.substr(match_len);
                            rval = true;
@@ -763,7 +763,7 @@ bool CString_constraint::ReplaceStringConstraintPortionInString(string& val, con
                     {{
                         size_t offset = 0;
                         while (!rval && offset < val.length()) {
-                            size_t match_len = 0;
+                            unsigned int match_len = 0;
                             if (x_AdvancedStringCompare(val.substr(offset), GetMatch_text(),
                                                         (offset == 0), &match_len)
                                 && offset + match_len == val.length()) {

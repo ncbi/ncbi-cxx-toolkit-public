@@ -78,7 +78,7 @@ private:
     bool x_AdvancedStringCompare(const string& str, 
                                   const string& str_match, 
                                   bool is_start, 
-                                  unsigned* ini_target_match_len = 0) const;
+                                  unsigned int * ini_target_match_len = 0) const;
     bool x_AdvancedStringMatch(const string& str, const string& tmp_match) const;
     bool x_CaseNCompareEqual(string str1,
                                string str2,
