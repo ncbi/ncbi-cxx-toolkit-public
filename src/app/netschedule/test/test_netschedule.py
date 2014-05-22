@@ -125,6 +125,29 @@ def parserError( parser, message ):
     return 1
 
 
+def checkDBPath( dbpath, verbose ):
+    " Checks the existance or creates the path. Throws an exception if problems found "
+    if os.path.exists( dbpath ):
+        if os.path.isdir( dbpath ):
+            if dbpath == os.path.normpath( os.path.realpath( os.path.dirname( __file__ ) ) ):
+                raise Exception( "DB path must not match the test script location" )
+            if os.path.islink( dbpath ):
+                raise Exception( "DB path must be a real directory, not a link" )
+            # Existing dir which is not the scripts directory
+            return
+
+        # The path exists, but it is not a directory
+        raise Exception( "DB path is invalid. The '" + dbpath +
+                         "' expected to be a directory." )
+
+    # Here: the path does not exist. Check the write permissions.
+    if not os.access( os.path.dirname( dbpath ), os.R_OK ):
+        raise Exception( "No read permissions at the DB path" )
+    if not os.access( os.path.dirname( dbpath ), os.W_OK ):
+        raise Exception( "No write permissions at the DB path" )
+
+    return
+
 
 def main():
     " main function for the netcache sync test "
@@ -186,13 +209,8 @@ def main():
     if port <= 0 or port > 65535:
         raise Exception( "Incorrect port number" )
 
-    # Check the DB path. It may not match the 
-    if not os.path.exists( options.pathDB ) or not os.path.isdir( options.pathDB ):
-        raise Exception( "DB path is invalid. The '" + options.pathDB +
-                         "' expected to be an existing directory." )
-    if os.path.normpath( os.path.realpath( options.pathDB ) ) == \
-       os.path.normpath( os.path.realpath( os.path.dirname( __file__ ) ) ):
-        raise Exception( "DB path must not match the test script location" )
+    options.pathDB = os.path.normpath( os.path.realpath( options.pathDB ) )
+    checkDBPath( options.pathDB, options.verbose )
 
     if options.verbose:
         print "Using netschedule path: " + options.pathNetschedule

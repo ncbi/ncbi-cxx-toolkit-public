@@ -1,4 +1,4 @@
-import sys, socket, re
+import socket, re
 
 class NSException(Exception):
     def __init__(self, errcode, msg=""):
