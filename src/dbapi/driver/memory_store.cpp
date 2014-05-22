@@ -459,7 +459,7 @@ size_t CMemStore::Insert(const void* buff, size_t size)
 
 size_t CMemStore::Delete(size_t size)
 {
-    if (!m_Last  ||  !size == 0)
+    if (!m_Last  ||  !size)
         return m_Size;
 
     if(size > kMax_BlobSize) size= kMax_BlobSize;
