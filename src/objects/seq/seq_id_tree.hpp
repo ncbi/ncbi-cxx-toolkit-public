@@ -736,7 +736,7 @@ public:
     const string& GetStrSuffix(void) const {
         return m_Key.m_StrSuffix;
     }
-    int GetStrDigits(void) const {
+    size_t GetStrDigits(void) const {
         return m_Key.GetStrDigits();
     }
     void Restore(CDbtag& id, TPacked param) const;
