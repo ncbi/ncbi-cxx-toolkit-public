@@ -39,12 +39,6 @@
 
 // generated includes
 #include <objects/macro/Suspect_rule.hpp>
-#include <objects/macro/Word_substitution.hpp>
-#include <objects/macro/Word_substitution_set.hpp>
-#include <serial/serial.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objistr.hpp>
-#include <corelib/ncbistre.hpp>
 
 // generated classes
 
@@ -57,8 +51,42 @@ CSuspect_rule::~CSuspect_rule(void)
 {
 }
 
+bool CSuspect_rule :: Match(const string& str, const CSeq_feat& feat, CConstRef <CScope> scope)
+{
+   if (StringMatchesSuspectProductRule(str)) {
+    
+    // list the coding region, rather than the protein feature, if possible
+    const CSeq_feat* feat_pnt = &feat;
+    CBioseq_Handle 
+       bioseq_hl 
+         = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), (CScope&)(scope));
+    if (feat.GetData().IsProt()) {
+      feat_pnt = sequence::GetCDSForProduct(bioseq_hl);
+      if (!feat_pnt) {
+         feat_pnt = &feat;
+      }
+    }
+
+    // CConstraint_choice_set
+    if (!CanGetFeat_constraint()) {
+         return true;
+    }
+    else {
+        if (!feat_pnt) {
+            return false;
+        }
+        else {
+          return GetFeat_constraint().Match(*feat_pnt, scope);
+        }
+    }
+  }
+
+  return false;
+};
+
 bool CSuspect_rule :: StringMatchesSuspectProductRule(const string& str) const
 {
+  // CSearch_func: only about string
   const CSearch_func& func = GetFind();
   if (!func.Empty() && !func.Match(str)) {
       return false;
@@ -73,369 +101,7 @@ bool CSuspect_rule :: StringMatchesSuspectProductRule(const string& str) const
 };
 
 
-
-
-
 /*
-
-bool CSuspect_rule :: x_DoesObjectMatchStringConstraint(const CBioSource& biosrc, const CString_constraint& str_cons) const
-{
-   vector <string> strs; 
-   GetStringsFromObject(biosrc, strs);
-   ITERATE (vector <string>, it, strs) {
-      if (x_DoesSingleStringMatchConstraint(*it, &str_cons)) {
-          strs.clear();
-          return true;
-      }
-   }
-   strs.clear();
-   return false;
-};
-
-bool CSuspect_rule :: x_DoesObjectMatchStringConstraint(const CCGPSetData& cgp, const CString_constraint& str_cons) const
-{
-  * CDS-Gene-Prot set *
-  bool all_match = true, any_match = false;
-  vector <string> strs;
-  if (cgp.gene) {
-       m_bioseq_hl 
-         = sequence:: GetBioseqFromSeqLoc(cgp.gene->GetLocation(), *m_scope);
-       GetStringsFromObject(*cgp.gene, strs);
-       if (x_DoesObjectMatchStringConstraint ( *cgp.gene, strs, str_cons)) {
-          any_match = true;
-       }
-       else {
-          any_match = false;
-       }
-       strs.clear();
-  }
-  if (cgp.cds && (!any_match || all_match)) {
-      m_bioseq_hl 
-        = sequence::GetBioseqFromSeqLoc(cgp.cds->GetLocation(), *m_scope);
-      strs.clear();
-      GetStringsFromObject(*cgp.cds, strs);
-      if (x_DoesObjectMatchStringConstraint( *cgp.cds, strs, str_cons)) {
-         any_match = true;
-      }
-      else {
-         all_match = false;
-      }
-      strs.clear();
-  }
-  if (cgp.mrna && (!any_match || all_match)) {
-      m_bioseq_hl 
-        = sequence::GetBioseqFromSeqLoc(cgp.mrna->GetLocation(), *m_scope);
-      strs.clear();
-      GetStringsFromObject(*cgp.mrna, strs);
-      if (x_DoesObjectMatchStringConstraint( *cgp.mrna, strs, str_cons)) {
-         any_match = true;
-      }
-      else {
-         all_match = false;
-      }
-      strs.clear();
-  }
-  if (cgp.prot  && (!any_match || all_match)) {
-      m_bioseq_hl 
-        = sequence::GetBioseqFromSeqLoc(cgp.prot->GetLocation(), *m_scope);
-      strs.clear();
-      GetStringsFromObject(*cgp.prot, strs);
-      if (x_DoesObjectMatchStringConstraint( *cgp.prot, strs, str_cons)) {
-         any_match = true;
-      }
-      else all_match = false;
-      strs.clear();
-  }
-  if (!any_match || all_match) {
-     ITERATE (vector <const CSeq_feat*>, it, cgp.mat_peptide_list) {
-        m_bioseq_hl 
-          = sequence :: GetBioseqFromSeqLoc((*it)->GetLocation(), *m_scope);
-        strs.clear();
-        GetStringsFromObject(**it, strs);
-        if (x_DoesObjectMatchStringConstraint( **it, strs, str_cons)) {
-           any_match = true;
-        }
-        else all_match = false;
-        strs.clear();
-        if (any_match && !all_match) {
-            break;
-        }
-     }
-  }
-
-  if (str_cons.GetNot_present()) {
-      return all_match;
-  }
-  else return any_match;
-};
-
-bool CSuspect_rule :: x_DoesObjectMatchStringConstraint(const CSeq_feat& feat, const vector <string>& strs, const CString_constraint& str_cons) const
-{
-   bool rval = false;
-   ITERATE (vector <string>, it, strs) { 
-       rval = x_DoesSingleStringMatchConstraint(*it, &str_cons); 
-       if (rval) {
-            break;
-       }
-   }
-   if (!rval) {
-     string str(kEmptyStr);
-     switch (feat.GetData().Which()) {
-       case CSeqFeatData::e_Cdregion: 
-         {
-            if (feat.CanGetProduct()) {
-               CBioseq_Handle 
-                  bioseq_hl = sequence :: GetBioseqFromSeqLoc(feat.GetProduct(),
-                                                                 *m_scope);
-               if (bioseq_hl) {
-                  CFeat_CI ci(bioseq_hl, SAnnotSelector(CSeqFeatData::eSubtype_prot)); 
-                  if (ci) {
-                     vector <string> arr;
-                     GetStringsFromObject(ci->GetOriginalFeature(), arr);
-                     ITERATE (vector <string>, it, arr) {
-                         rval = x_DoesSingleStringMatchConstraint(*it, &str_cons);
-                         if (rval) break;
-                     }
-                     arr.clear();
-                  }
-               }
-            }
-            break;
-         }
-       case CSeqFeatData::e_Rna:
-         {
-           if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
-             // try CTestAndRepData :: GetSeqFeatLabel(feat, str);
-             feature::GetLabel(seq_feat, &str, fFGL_Content);
-             rval = x_DoesSingleStringMatchConstraint(str, &str_cons);
-             if (!rval) {
-               str = "tRNA-" + str;
-               rval = x_DoesSingleStringMatchConstraint(str, &str_cons);
-             }
-           }
-           break;
-         }
-       case CSeqFeatData::e_Imp:
-         rval 
-           = x_DoesSingleStringMatchConstraint(feat.GetData().GetImp().GetKey(),
-                                                &str_cons);
-         break;
-       default: break;
-     }
-   }
-   if (str_cons.GetNot_present()) {
-        rval = !rval;
-   }
-   return rval;
-};
-
-bool CSuspect_rule :: x_IsLocationConstraintEmpty(const CLocation_constraint& loc_cons) const
-{
-  if (loc_cons.GetStrand() != eStrand_constraint_any
-          || loc_cons.GetSeq_type() != eSeqtype_constraint_any
-          || loc_cons.GetPartial5() != ePartial_constraint_either
-          || loc_cons.GetPartial3() != ePartial_constraint_either
-          || loc_cons.GetLocation_type() != eLocation_type_constraint_any
-          || (loc_cons.CanGetEnd5()
-                && loc_cons.GetEnd5().Which() != CLocation_pos_constraint::e_not_set)
-          || (loc_cons.CanGetEnd3()
-                && loc_cons.GetEnd3().Which() != CLocation_pos_constraint::e_not_set)) {
-    return false;
-  }
-  else return true;
-};
-
-bool CSuspect_rule :: x_DoesStrandMatchConstraint(const CSeq_loc& loc, const CLocation_constraint& loc_cons) const
-{
-  if (loc.Which() == CSeq_loc::e_not_set) {
-     return false;
-  }
-  if (loc_cons.GetStrand() == eStrand_constraint_any) {
-     return true;
-  }
-
-  if (loc.GetStrand() == eNa_strand_minus) {
-      if (loc_cons.GetStrand() == eStrand_constraint_minus) {
-         return true;
-      }
-      else return false;
-  }
-  else {
-     if (loc_cons.GetStrand() == eStrand_constraint_plus) {
-       return true;
-     }
-     else return false;
-  }
-};
-
-bool CSuspect_rule :: x_DoesBioseqMatchSequenceType(const ESeqtype_constraint& seq_type) const
-{
-  if (seq_type == eSeqtype_constraint_any
-        || (m_bioseq_hl.IsNa() && seq_type == eSeqtype_constraint_nuc)
-        || (m_bioseq_hl.IsAa() && seq_type == eSeqtype_constraint_prot)) {
-      return true;
-  }
-  else return false;
-};
-
-bool CSuspect_rule :: x_DoesLocationMatchPartialnessConstraint(const CSeq_loc& loc, const CLocation_constraint& loc_cons) const
-{
-  bool partial5 = loc.IsPartialStart(eExtreme_Biological);
-  bool partial3 = loc.IsPartialStop(eExtreme_Biological);
-  if ( (loc_cons.GetPartial5() == ePartial_constraint_partial && !partial5)
-         || (loc_cons.GetPartial5() == ePartial_constraint_complete && partial5) 
-         || (loc_cons.GetPartial3() == ePartial_constraint_partial && !partial3)
-         || (loc_cons.GetPartial3() == ePartial_constraint_complete && partial3) ) {
-       return false;
-    }
-    else return true;
-};
-
-bool CSuspect_rule :: x_DoesLocationMatchTypeConstraint(const CSeq_loc& seq_loc, const CLocation_constraint& loc_cons) const
-{
-  bool has_null = false;
-  int  num_intervals = 0;
-
-  if (loc_cons.GetLocation_type() == eLocation_type_constraint_any) {
-      return true;
-  }
-  else
-  {
-    for (CSeq_loc_CI sl_ci(seq_loc); sl_ci; ++ sl_ci) {
-       if (sl_ci.GetEmbeddingSeq_loc().Which() == CSeq_loc::e_Null) {
-           has_null = true;
-       }
-       else if (!sl_ci.IsEmpty()) num_intervals ++;
-    }
-
-    if (loc_cons.GetLocation_type() == eLocation_type_constraint_single_interval)
-    {
-        if (num_intervals == 1) {
-           return true;
-        }
-    }
-    else if (loc_cons.GetLocation_type() == eLocation_type_constraint_joined) {
-      if (num_intervals > 1 && !has_null) {
-          return true;
-      }
-    }
-    else if (loc_cons.GetLocation_type() == eLocation_type_constraint_ordered) {
-       if (num_intervals > 1 && has_null) {
-          return true;
-       }
-    }
-  }
-  return false;
-}
-
-bool CSuspect_rule :: x_DoesPositionMatchEndConstraint(int pos, const CLocation_pos_constraint& lp_cons) const
-{
-   switch (lp_cons.Which())
-   {
-      case CLocation_pos_constraint:: e_Dist_from_end:
-            if (pos != lp_cons.GetDist_from_end()) {
-               return false;
-            }
-            break;
-      case CLocation_pos_constraint:: e_Max_dist_from_end:
-            if (pos > lp_cons.GetMax_dist_from_end()) {
-              return false;
-            }
-            break;
-      case CLocation_pos_constraint:: e_Min_dist_from_end:
-            if (pos < lp_cons.GetMin_dist_from_end()) {
-               return false;
-            }
-            break;
-      default: break;
-   }
-   return true;
-};
-
-bool CSuspect_rule :: x_DoesLocationMatchDistanceConstraint(const CSeq_loc& loc, const CLocation_constraint& loc_cons) const
-{
-  if (!loc_cons.CanGetEnd5() && !loc_cons.CanGetEnd3()) {
-      return true;
-  }
-
-  unsigned pos = loc.GetStop(eExtreme_Positional);
-  int pos2 = (m_bioseq_hl.IsSetInst_Length() ? m_bioseq_hl.GetInst_Length() : 0)
-              - pos - 1;
-
-  if (loc.GetStrand() == eNa_strand_minus) {
-    if (loc_cons.CanGetEnd5()) {
-      if (m_bioseq_hl.GetCompleteBioseq().Empty()) {
-          return false;
-      }
-      else {
-        if (!x_DoesPositionMatchEndConstraint(pos2, loc_cons.GetEnd5())) {
-           return false;
-        }
-      }
-    }
-    if (loc_cons.CanGetEnd3()) {
-       return x_DoesPositionMatchEndConstraint(pos, loc_cons.GetEnd3());
-    }
-  }
-  else
-  {
-    if (loc_cons.CanGetEnd5()
-           && !x_DoesPositionMatchEndConstraint(pos, loc_cons.GetEnd5())) {
-        return false;
-    }
-    if (loc_cons.CanGetEnd3()) {
-      if (m_bioseq_hl.GetCompleteBioseq().Empty()) {
-         return false;
-      }
-      return x_DoesPositionMatchEndConstraint(pos2, loc_cons.GetEnd3());
-    }
-  }
-  return true;
-};
-
-bool CSuspect_rule :: x_DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, const CLocation_constraint& loc_cons) const 
-{
-  if (x_IsLocationConstraintEmpty (loc_cons)) {
-     return true;
-  }
-
-  const CSeq_loc& feat_loc = feat.GetLocation();
-  if (loc_cons.GetStrand() != eStrand_constraint_any) {
-    if (!m_bioseq_hl) {
-       return false;
-    }
-    else if (m_bioseq_hl.IsAa()) {
-      const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
-      if (!cds) {
-         return false;
-      }
-      else if (!x_DoesStrandMatchConstraint (cds->GetLocation(), loc_cons)) {
-        return false;
-      }
-    }
-    else if (!DoesStrandMatchConstraint (feat_loc, loc_cons)) {
-        return false;
-    }
-  }
-
-  if (!x_DoesBioseqMatchSequenceType(loc_cons.GetSeq_type())) {
-     return false;
-  }
-
-  if (!x_DoesLocationMatchPartialnessConstraint (feat_loc, loc_cons)) {
-     return false;
-  }
-
-  if (!x_DoesLocationMatchTypeConstraint (feat_loc, loc_cons)) {
-     return false;
-  }
-
-  if (!x_DoesLocationMatchDistanceConstraint(feat_loc, loc_cons)) {
-     return false;
-  }
-
-  return true;
-};
 
 string CSuspect_rule :: GetSrcQualName(ESource_qual src_qual)
 {
@@ -531,25 +197,6 @@ bool CSuspect_rule :: IsSubsrcQual(ESource_qual src_qual)
         return true;
      default: return false;
    }
-};
-
-string CSuspect_rule :: x_GetSrcQualValue4FieldType(const CBioSource& biosrc, const CSource_qual_choice& src_qual, const CString_constraint* str_cons) const
-{
-   string str(kEmptyStr);
-   switch (src_qual.Which()) {
-     case CSource_qual_choice::e_Textqual:
-       {
-          ESource_qual text_qual= src_qual.GetTextqual();
-          string qual_name = GetSrcQualName(text_qual);
-          bool is_subsrc = IsSubsrcQual(text_qual);
-          str = CTestAndRepData :: GetSrcQualValue( biosrc, qual_name, is_subsrc, str_cons);
-       }
-       break;
-     case CSource_qual_choice::e_not_set: break;
-     default:
-         str = GetNotTextqualSrcQualValue(biosrc, src_qual, str_cons);
-   }
-   return str;
 };
 
 bool CSuspect_rule :: x_DoesObjectMatchFieldConstraint(const CSeq_feat& data, const CField_constraint& field_cons) const 
@@ -698,20 +345,6 @@ bool CSuspect_rule :: x_DoesObjectMatchConstraint(const CSeq_feat& data, const v
   }
   return true;
 }
-
-bool CSuspect_rule :: x_DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat, const CConstraint_choice_set& c_set) const
-{
-  vector <string> strs_in_feat;
-  GetStringsFromObject(feat, strs_in_feat);
-  ITERATE (list <CRef <CConstraint_choice> >, sit, c_set.Get()) {
-     if (!x_DoesObjectMatchConstraint(feat, strs_in_feat, **sit)) {
-           strs_in_feat.clear();
-           return false;
-     }
-  }
-  strs_in_feat.clear();
-  return true;
-};
 
 */
 
