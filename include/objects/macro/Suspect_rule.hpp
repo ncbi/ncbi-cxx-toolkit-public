@@ -42,6 +42,10 @@
 
 // generated includes
 #include <objects/macro/Suspect_rule_.hpp>
+#include <objects/macro/Replace_rule.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/util/sequence.hpp>
 
 // generated classes
 
@@ -59,24 +63,12 @@ public:
     // destructor
     ~CSuspect_rule(void);
  
+    // C's DoesStringMatchSuspectRule()
+    bool Match(const string& str, const CSeq_feat& feat, CConstRef <CScope> scope);
+
     // C's MatchesSuspectProductRule()
     bool StringMatchesSuspectProductRule (const string& str) const;
 
-    // C's DoesObjectMatchConstraintChoiceSet()
-    //bool DoesObjectMatchConstraintChoiceSet(const CSeq_feat* feat, CRef <CScope> scope);
-
-/*
-    // get all string type data from object
-    template <class T>
-    void GetStringsFromObject(const T& obj, vector <string>& strs)
-    {
-       CTypesConstIterator it(CStdTypeInfo<string>::GetTypeInfo(),
-                          CStdTypeInfo<utf8_string_type>::GetTypeInfo());
-       for (it = ConstBegin(obj);  it;  ++it) {
-          strs.push_back(*static_cast<const string*>(it.GetFoundPtr()));
-       }
-    };
-*/
 
     bool ApplyToString(string& val) const;
 
@@ -86,15 +78,6 @@ private:
     CSuspect_rule& operator=(const CSuspect_rule& value);
 
 /*
-    CRec <CScope> m_scope;
-    // cons.Which(): CConstraint_choice::e_String
-    bool x_DoesObjectMatchStringConstraint(const CBioSource& biosrc, 
-                                      const CString_constraint& str_cons) const;
-    bool x_DoesObjectMatchStringConstraint(const CCGPSetData& cgp, 
-                                      const CString_constraint& str_cons) const;
-    bool x_DoesObjectMatchStringConstraint(const CSeq_feat& feat, 
-                                      const vector <string>& strs, 
-                                      const CString_constraint& str_cons) const;
 
     // CConstraint_choice::e_Location
     bool x_DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, 

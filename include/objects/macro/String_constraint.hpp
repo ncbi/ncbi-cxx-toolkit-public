@@ -42,6 +42,10 @@
 
 // generated includes
 #include <objects/macro/String_constraint_.hpp>
+#include <serial/iterator.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objmgr/scope.hpp>
+
 
 // generated classes
 
@@ -59,10 +63,23 @@ public:
     // destructor
     ~CString_constraint(void);
 
+    // get all string type data from object
+    template <class T>
+    void GetStringsFromObject(const T& obj, vector <string>& strs) const
+    {
+       CTypesConstIterator it(CStdTypeInfo<string>::GetTypeInfo(),
+                          CStdTypeInfo<utf8_string_type>::GetTypeInfo());
+       for (it = ConstBegin(obj);  it;  ++it) {
+          strs.push_back(*static_cast<const string*>(it.GetFoundPtr()));
+       }
+    };
+
     bool Match(const string& str) const;
-    bool DoesSingleStringMatchConstraint (const string& str) const;
-    bool IsStringConstraintEmpty() const;
+    bool Empty() const;
     bool ReplaceStringConstraintPortionInString(string& val, const string& replace) const;
+
+    bool DoesObjectMatchStringConstraint(const CSeq_feat& feat, 
+                                            CConstRef <CScope> scope) const;
 
 private:
     string m_digit_str, m_alpha_str;
@@ -71,6 +88,8 @@ private:
     CString_constraint(const CString_constraint& value);
     CString_constraint& operator=(const CString_constraint& value);
 
+    bool x_DoesSingleStringMatchConstraint (const string& str) const;
+    bool x_IsWeasel(const string& str) const;
     string x_SkipWeasel(const string& str) const;
     bool x_IsAllCaps(const string& str) const;
     bool x_IsAllLowerCase(const string& str) const;
