@@ -42,6 +42,7 @@
 
 #include "distribution_conf.hpp"
 #include "netcached.hpp"
+#include "peer_control.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -73,6 +74,7 @@ static Uint2    s_CntTimeBuckets = 0;
 static Uint4    s_SlotRndShare  = numeric_limits<Uint4>::max();
 static Uint4    s_TimeRndShare  = numeric_limits<Uint4>::max();
 static Uint8    s_SelfID        = 0;
+static Uint4    s_SelfIP        = 0;
 static string   s_SelfGroup;
 static string   s_SelfName;
 static CMiniMutex s_KeyRndLock;
@@ -80,6 +82,7 @@ static CRandom  s_KeyRnd(CRandom::TValue(time(NULL)));
 static string   s_SelfHostIP;
 static CAtomicCounter s_BlobId;
 static TNCPeerList s_Peers;
+static set<string> s_HostAliases;
 static string   s_MirroringSizeFile;
 static string   s_PeriodicLogFile;
 static string   s_CopyDelayLogFile;
@@ -122,6 +125,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
 
     Uint4 self_host = CTaskServer::GetIPByHost(CTaskServer::GetHostName());
+    s_SelfIP = self_host;
     s_SelfID = (Uint8(self_host) << 32) + control_port;
     s_SelfHostIP = CTaskServer::IPToString(self_host);
     s_BlobId.Set(0);
@@ -164,6 +168,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
             found_self = true;
             s_SelfGroup = grp_name;
             s_SelfName = peer_str;
+            CreateHostAliases(s_HostAliases, host, host_str);
         }
         else {
             if (s_Peers.find(srv_id) != s_Peers.end()) {
@@ -172,6 +177,8 @@ CNCDistributionConf::Initialize(Uint2 control_port)
                 return false;
             }
             s_Peers[srv_id] = peer_str;
+            // pre-create all peers
+            CNCPeerControl::Peer(srv_id);
         }
 
         // There must be corresponding description of slots
@@ -567,15 +574,65 @@ CNCDistributionConf::GetSlotByRnd(Uint4 key_rnd,
 }
 
 Uint4
-CNCDistributionConf::GetMainSrvIP(const string& key)
+CNCDistributionConf::GetMainSrvIP(const string& key, string* host)
 {
     try {
         CNetCacheKey nc_key(key);
-        return CTaskServer::GetIPByHost(nc_key.GetHost());
+        string host_str(nc_key.GetHost());
+        if (host) {
+            *host = host_str;
+        }
+        if (s_HostAliases.find(host_str) != s_HostAliases.end()) {
+            return s_SelfIP;
+        }
+        Uint4 ip = CNCPeerControl::FindIPbyAlias(host_str);
+        if (ip != 0) {
+            return ip;
+        }
+        return CTaskServer::GetIPByHost(host_str);
     }
     catch (CNetCacheException&) {
         return 0;
     }
+}
+
+void
+CNCDistributionConf::CreateHostAliases(
+    set<string>& aliases, Uint4 ip, const string& host_str)
+{
+    string ip_str(CTaskServer::IPToString(ip));
+    aliases.insert( host_str);
+    aliases.insert( ip_str);
+
+    CChecksum crc32(CChecksum::eCRC32);
+    crc32.AddChars(host_str.data(), host_str.size());
+    string host_enc( NStr::NumericToString(crc32.GetChecksum(),0, 16));
+    aliases.insert( host_enc);
+
+    crc32.Reset();
+    crc32.AddChars(ip_str.data(), ip_str.size());
+    host_enc = NStr::NumericToString(crc32.GetChecksum(),0, 16);
+    aliases.insert( host_enc);
+}
+
+string CNCDistributionConf::EncodeKey(const string& key)
+{
+    CNetCacheKey nc_key(key);
+    string host_str(nc_key.GetHost());
+    CChecksum crc32(CChecksum::eCRC32);
+    crc32.AddChars(host_str.data(), host_str.size());
+    string host_enc( NStr::NumericToString(crc32.GetChecksum(),0, 16));
+    return NStr::Replace(key, host_str, host_enc);
+}
+
+string CNCDistributionConf::DecodeKey(const string& key)
+{
+    string host_str;
+    Uint4 ip = CNCDistributionConf::GetMainSrvIP(key, &host_str);
+    if (ip != 0) {
+        return NStr::Replace(key, host_str, CTaskServer::IPToString(ip));
+    }
+    return key;
 }
 
 bool

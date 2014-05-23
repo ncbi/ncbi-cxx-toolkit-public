@@ -34,6 +34,7 @@
 
 
 #include "nc_utils.hpp"
+#include <set>
 
 
 BEGIN_NCBI_SCOPE
@@ -68,7 +69,11 @@ public:
     // Get the current server ID
     static Uint8 GetSelfID(void);
 
-    static Uint4 GetMainSrvIP(const string& key);
+    static Uint4 GetMainSrvIP(const string& key, string* host = nullptr);
+    
+    static void CreateHostAliases(set<string>& aliases, Uint4 ip, const string& host_str);
+    static string EncodeKey(const string& key);
+    static string DecodeKey(const string& key);
 
     // Get all partners "host:port" strings
     static const TNCPeerList& GetPeers(void);

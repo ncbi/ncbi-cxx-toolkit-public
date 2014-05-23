@@ -44,7 +44,8 @@ BEGIN_NCBI_SCOPE
 
 
 typedef map<Uint8, CNCPeerControl*> TControlMap;
-static CMiniMutex s_MapLock;
+// not needed, as I pre-create them all on initialization
+//static CMiniMutex s_MapLock;
 static TControlMap s_Controls;
 static CAtomicCounter s_SyncOnInit;
 static CAtomicCounter s_WaitToOpenToClients;
@@ -108,11 +109,11 @@ CNCPeerControl::Initialize(void)
     s_ShutdownListener = new CNCPeerShutdown();
     CTaskServer::AddShutdownCallback(s_ShutdownListener);
 
-    s_MapLock.Lock();
+//    s_MapLock.Lock();
     NON_CONST_ITERATE(TControlMap, it, s_Controls) {
         it->second->SetRunnable();
     }
-    s_MapLock.Unlock();
+//    s_MapLock.Unlock();
 
     return true;
 }
@@ -128,7 +129,7 @@ CNCPeerControl*
 CNCPeerControl::Peer(Uint8 srv_id)
 {
     CNCPeerControl* ctrl;
-    s_MapLock.Lock();
+//    s_MapLock.Lock();
     TControlMap::const_iterator it = s_Controls.find(srv_id);
     it = s_Controls.find(srv_id);
     if (it == s_Controls.end()) {
@@ -141,7 +142,7 @@ CNCPeerControl::Peer(Uint8 srv_id)
     else {
         ctrl = it->second;
     }
-    s_MapLock.Unlock();
+//    s_MapLock.Unlock();
     return ctrl;
 }
 
@@ -172,6 +173,7 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
             m_Hostname = srv_fields.front();
         }
     }
+    CNCDistributionConf::CreateHostAliases(m_HostAliases, m_HostIP, m_Hostname);
 }
 
 void
@@ -218,6 +220,8 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
                 Uint4 host = CTaskServer::GetIPByHost(m_Hostname);
                 if (host != 0 && m_HostIP != host) {
                     m_HostIP = host;
+                    m_HostAliases.clear();
+                    CNCDistributionConf::CreateHostAliases(m_HostAliases, m_HostIP, m_Hostname);
                     SRV_LOG(Warning, "IP address change: host "
                         << CNCDistributionConf::GetFullPeerName(m_SrvId));
                 }
@@ -638,6 +642,18 @@ CNCPeerControl::GetMirrorQueueSize(Uint8 srv_id)
     return peer->m_SmallMirror.size() + peer->m_BigMirror.size();
 }
 
+Uint4
+CNCPeerControl::FindIPbyAlias(const string& name)
+{
+    ITERATE(TControlMap, it_ctrl, s_Controls) {
+        CNCPeerControl* peer = it_ctrl->second;
+        if (!peer->m_InThrottle && peer->m_HostAliases.find(name) != peer->m_HostAliases.end()) {
+            return peer->m_HostIP;
+        }
+    }
+    return 0;
+}
+
 void
 CNCPeerControl::SetServersForInitSync(Uint4 cnt_servers)
 {
@@ -881,12 +897,12 @@ bool
 CNCPeerShutdown::ReadyForShutdown(void)
 {
     bool result = true;
-    s_MapLock.Lock();
+//    s_MapLock.Lock();
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;
         result &= peer->GetReadyForShutdown();
     }
-    s_MapLock.Unlock();
+//    s_MapLock.Unlock();
     return result;
 }
 

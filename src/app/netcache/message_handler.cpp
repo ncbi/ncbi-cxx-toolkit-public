@@ -1803,7 +1803,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
         m_ClientParams["client"] = "";
         cache_name = m_ClientParams["cache"];
         if (m_ClientParams.find("key") != m_ClientParams.end()) {
-            m_RawKey = blob_key = m_ClientParams["key"];
+            m_RawKey = blob_key = CNCDistributionConf::DecodeKey(m_ClientParams["key"]);
         }
         // parse HTTP header
         CTempString cmd_line;
@@ -2120,18 +2120,23 @@ CNCMessageHandler::x_ReadCommand(void)
                 arr_cmd == "HEAD"   ||
                 arr_cmd == "POST"   ||
                 arr_cmd == "PUT") {
-
-                if (arr_cmd != "POST") {
-                    const char* slash = nullptr;
-                    for (slash = arr_uri.data() + arr_uri.size();
-                            slash >= arr_uri.data() && *slash != '/'; --slash)
-                        ;
-                    arr_key = CTempString(slash+1, arr_uri.size() - (slash - arr_uri.data()) - 1);
-                    arr_uri = CTempString(arr_uri.data(), (slash - arr_uri.data()) + 1);
-
-                    m_ClientParams["key"] = arr_key;
+                {
+                    // eg, "/"  "/service"
+                    list<CTempString> uri_parts;
+                    NStr::Split(arr_uri, "/", uri_parts);
+                    if (uri_parts.size() > 0) {
+                        if (arr_cmd != "POST") {
+                            arr_key = uri_parts.back();
+                            m_ClientParams["key"] = arr_key;
+                            uri_parts.pop_back();
+                        }
+                        string service;
+                        if (!uri_parts.empty())  {
+                            service = NStr::Join(uri_parts, "/") + "/";
+                        }
+                        m_ClientParams["service"] = service;
+                    }
                 }
-//                m_ClientParams["cache"] = arr_uri;
                 m_ClientParams["cache"].clear();
 
                 try {
@@ -2193,7 +2198,10 @@ CNCMessageHandler::x_GetCurSlotServers(void)
         if (Uint4(CNCDistributionConf::GetSelfID() >> 32) == main_srv_ip
             // if NeedStopWrite, I cannot be sure that blob on this server is most recent
             // and need to ask other servers
-            && !CNCBlobStorage::NeedStopWrite()) {
+            && !CNCBlobStorage::NeedStopWrite()
+            // make sure this slot is served here
+            && CNCDistributionConf::IsServedLocally(m_BlobSlot)
+            ) {
             //m_ThisServerIsMain = true;
             m_ThisServerIsMain = 
                 CNCBlobAccessor::HasPutSucceeded(m_BlobKey);
@@ -3365,7 +3373,8 @@ CNCMessageHandler::x_DoCmd_Put(void)
         WriteText("OK:ID:").WriteText(m_RawKey).WriteText("\n");
     } else {
         CNcbiOstrstream str;
-        str << ",\"blob_key\":\"" << m_RawKey << "\"";
+        str << ",\"blob_key\":\"" << m_ClientParams["service"]
+            << CNCDistributionConf::EncodeKey(m_RawKey) << "\"";
         m_PosponedCmd += CNcbiOstrstreamToString(str);
     }
     return &CNCMessageHandler::x_StartReadingBlob;
@@ -3874,7 +3883,8 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
 
         CNcbiOstrstream str;
 
-        str << ",\"blob_key\":\"" << m_RawKey << "\"";
+        str << ",\"blob_key\":\"" << m_ClientParams["service"]
+            << CNCDistributionConf::EncodeKey(m_RawKey) << "\"";
         str << ",\"slot\":" << m_BlobSlot;
         Uint8 create_time = m_BlobAccess->GetCurBlobCreateTime();
         CSrvTime t;
