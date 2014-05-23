@@ -88,6 +88,14 @@ NCBI_SERIAL_TEST_EXPLORE ((Var).Which() != CSeq_entry::e_not_set, Typ, Itr, (Var
 #define VISIT_WITHIN_SEQSET(Typ, Itr, Var) \
 NCBI_SERIAL_TEST_EXPLORE ((Var).IsSetSeq_set(), Typ, Itr, (Var))
 
+/// Base macros for editable exploration
+
+#define EXPLORE_WITHIN_SEQENTRY(Typ, Itr, Var) \
+NCBI_SERIAL_NC_EXPLORE ((Var).Which() != CSeq_entry::e_not_set, Typ, Itr, (Var))
+
+#define EXPLORE_WITHIN_SEQSET(Typ, Itr, Var) \
+NCBI_SERIAL_NC_EXPLORE ((Var).IsSetSeq_set(), Typ, Itr, (Var))
+
 
 // "VISIT_ALL_XXX_WITHIN_YYY" does a recursive exploration of NCBI objects
 
@@ -105,6 +113,12 @@ VISIT_WITHIN_SEQENTRY (CSeq_entry, Itr, Var)
 
 #define VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY(Itr, Var) \
 VISIT_WITHIN_SEQENTRY (CBioseq, Itr, Var)
+
+/// EXPLORE_ALL_BIOSEQS_WITHIN_SEQENTRY
+// CSeq_entry& as input, dereference with CBioseq& bioseq = *itr;
+
+#define EXPLORE_ALL_BIOSEQS_WITHIN_SEQENTRY(Itr, Var) \
+EXPLORE_WITHIN_SEQENTRY (CBioseq, Itr, Var)
 
 /// VISIT_ALL_SEQSETS_WITHIN_SEQENTRY
 // CSeq_entry& as input, dereference with const CBioseq_set& bss = *itr;
@@ -166,6 +180,12 @@ VISIT_WITHIN_SEQSET (CSeq_entry, Itr, Var)
 
 #define VISIT_ALL_BIOSEQS_WITHIN_SEQSET(Itr, Var) \
 VISIT_WITHIN_SEQSET (CBioseq, Itr, Var)
+
+/// EXPLORE_ALL_BIOSEQS_WITHIN_SEQSET
+// CBioseq_set& as input, dereference with CBioseq& bioseq = *itr;
+
+#define EXPLORE_ALL_BIOSEQS_WITHIN_SEQSET(Itr, Var) \
+EXPLORE_WITHIN_SEQSET (CBioseq, Itr, Var)
 
 /// VISIT_ALL_SEQSETS_WITHIN_SEQSET
 // CBioseq_set& as input, dereference with const CBioseq_set& bss = *itr;
