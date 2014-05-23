@@ -713,7 +713,7 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
                                const TVersion* ver)
 {
     TKey key;
-    int len = acc.size(), prefix_len = len, most_significant = -1;
+    size_t len = acc.size(), prefix_len = len, most_significant = NPOS;
     while ( prefix_len ) {
         char c = acc[--prefix_len];
         if ( c >= '1' && c <= '9' ) {
@@ -724,10 +724,10 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
             break;
         }
     }
-    if ( most_significant < 0 ) {
+    if ( most_significant == NPOS ) {
         return key;
     }
-    int acc_digits = len - prefix_len, real_digits = len - most_significant;
+    size_t acc_digits = len - prefix_len, real_digits = len - most_significant;
     if ( acc_digits < 2 || acc_digits > 12 ||
          real_digits > 9 || acc_digits*2 < prefix_len ) {
         return key;
@@ -746,15 +746,15 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
         return key;
     }
     if ( acc_digits > 6 && real_digits < acc_digits ) {
-        acc_digits = max(6, real_digits);
+        acc_digits = max(size_t(6), real_digits);
         prefix_len = len - acc_digits;
     }
     key.m_Prefix = acc.substr(0, prefix_len);
     unsigned hash = 0;
-    for ( int i = 0; i < 3 && i < prefix_len; ++i ) {
+    for ( size_t i = 0; i < 3 && i < prefix_len; ++i ) {
         hash = (hash << 8) | toupper(key.m_Prefix[i] & 0xff);
     }
-    hash = (hash << 8) | (acc_digits << 1);
+    hash = (hash << 8) | unsigned(acc_digits << 1);
     key.m_Hash = hash;
     if ( ver ) {
         key.SetVersion(*ver);
@@ -1883,10 +1883,10 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
     TKey key;
     key.m_Key = 0;
     const string& str = dbtag.GetTag().GetStr();
-    int len = str.size(), prefix_len = len, str_digits = 0;
+    size_t len = str.size(), prefix_len = len, str_digits = 0;
     // find longest digit substring
-    int cur_digits = 0;
-    for ( int i = len; i >= 0; ) {
+    size_t cur_digits = 0;
+    for ( ssize_t i = len; i >= 0; ) {
         char c = --i < 0? 0: str[i];
         if ( c >= '0' && c <= '9' ) {
             ++cur_digits;
@@ -1907,21 +1907,21 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
     if ( prefix_len > 0 ) {
         key.m_StrPrefix = str.substr(0, prefix_len);
     }
-    if ( SIZE_TYPE(prefix_len + str_digits) < str.size() ) {
+    if ( prefix_len + str_digits < str.size() ) {
         key.m_StrSuffix = str.substr(prefix_len+str_digits);
     }
-    int hash = 1;
+    TPacked hash = 1;
     if ( 1 ) {
         ITERATE ( string, i, key.m_StrPrefix ) {
             hash = hash*17 + toupper(Uint1(*i));
         }
     }
     else {
-        for ( int i = 0; i < 3 && i < prefix_len; ++i ) {
+        for ( size_t i = 0; i < 3 && i < prefix_len; ++i ) {
             hash = (hash << 8) | toupper(key.m_StrPrefix[prefix_len-1-i] & 0xff);
         }
     }
-    key.m_Key = (hash << 8) | str_digits;
+    key.m_Key = (hash << 8) | TPacked(str_digits);
     return key;
 }
 
