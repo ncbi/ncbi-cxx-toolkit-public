@@ -131,6 +131,7 @@ bool bool CString_constraint :: ObjectMatch(const CCGPSetData& cgp, const CScope
 };
  */
 
+/*
 bool CConstraint_choice :: Match(const CSeq_feat& feat, CConstRef <CScope> scope) const
 {
   switch (Which()) {
@@ -142,7 +143,7 @@ bool CConstraint_choice :: Match(const CSeq_feat& feat, CConstRef <CScope> scope
     case CConstraint_choice::e_Field :
        return GetField().Match (feat, scope);
     case CConstraint_choice::e_Source :
-/*
+*
        if (data.GetData().IsBiosrc()) {
           return x_DoesBiosourceMatchConstraint ( data.GetData().GetBiosrc(), 
                                                 cons.GetSource());
@@ -157,12 +158,12 @@ bool CConstraint_choice :: Match(const CSeq_feat& feat, CConstRef <CScope> scope
           }
           else return false;
        }
-*/
+/
        break;
     case CConstraint_choice::e_Cdsgeneprot_qual :
-//       return x_DoesFeatureMatchCGPQualConstraint (data, 
- //                                               cons.GetCdsgeneprot_qual());
-/****
+       return x_DoesFeatureMatchCGPQualConstraint (data, 
+                                                cons.GetCdsgeneprot_qual());
+****
       if (choice == 0) {
         rval = DoesCGPSetMatchQualConstraint (data, cons->data.ptrvalue);
       } else if (choice == OBJ_SEQDESC) {
@@ -174,44 +175,44 @@ bool CConstraint_choice :: Match(const CSeq_feat& feat, CConstRef <CScope> scope
       } else {
         rval = FALSE;
       }
-****/
+****
     case CConstraint_choice::e_Cdsgeneprot_pseudo :
   //     return x_DoesFeatureMatchCGPPseudoConstraint (data, cons.GetCdsgeneprot_pseudo());
-/*
+*
       if (choice == 0) {
         rval = DoesCGPSetMatchPseudoConstraint (data, cons->data.ptrvalue);
       } else if (choice == OBJ_SEQFEAT) {
         rval = DoesFeatureMatchCGPPseudoConstraint (data, cons->data.ptrvalue);
       }
-*/
+*
     case CConstraint_choice::e_Sequence :
       {
-/*
+*
         if (m_bioseq_hl) { 
             return x_DoesSequenceMatchSequenceConstraint(cons.GetSequence());
         }
-*/
+*
         break;
       }
     case CConstraint_choice::e_Pub:
-/*
+*
       if (data.GetData().IsPub()) {
          return x_DoesPubMatchPublicationConstraint(data.GetData().GetPub(), cons.GetPub());
       }
-*/
+*
       break;
     case CConstraint_choice::e_Molinfo:
  //      return x_DoesObjectMatchMolinfoFieldConstraint (data, cons.GetMolinfo()); // use bioseq_hl
     case CConstraint_choice::e_Field_missing:
-/*
+*
      if (x_GetConstraintFieldFromObject(data, cons.GetField_missing()).empty()){
            return true; 
      }
      else return false;
-*/
+*
     case CConstraint_choice::e_Translation:
-     /* must be coding region or protein feature */
-/*
+     // must be coding region or protein feature
+*
       if (data.GetData().IsProt()) {
          const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
          if (cds) {
@@ -223,11 +224,12 @@ bool CConstraint_choice :: Match(const CSeq_feat& feat, CConstRef <CScope> scope
          return x_DoesCodingRegionMatchTranslationConstraint(
                                              data, cons.GetTranslation());
       }
-*/
+*
     default: break;
   }
   return true;
 };
+*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

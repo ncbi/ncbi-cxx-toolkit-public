@@ -144,6 +144,7 @@ string CField_type :: x_GetDBLinkFieldFromUserObject(const CUser_object& user_ob
   return str;
 };
 
+/*
 string CField_type :: x_GetFieldValueForObjectEx (const CSeq_feat& feat, CBioseq_Handle bioseq_hl, const CString_constraint& str_cons) const
 {
   string str(kEmptyStr);
@@ -157,7 +158,7 @@ string CField_type :: x_GetFieldValueForObjectEx (const CSeq_feat& feat, CBioseq
          break;
       }
     case e_Molinfo_field :
-      str = GetMolinfo_field().GetSequenceQualFromBioseq (bioseq_hl);
+//      str = GetMolinfo_field().GetSequenceQualFromBioseq (bioseq_hl);
       break;
     case e_Dblink:
       for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_User); 
@@ -280,6 +281,7 @@ bool CField_type :: Match(const CSeq_feat& feat, const CString_constraint& str_c
   }
   return rval; 
 };
+*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

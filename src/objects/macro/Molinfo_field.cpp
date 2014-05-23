@@ -51,9 +51,10 @@ CMolinfo_field::~CMolinfo_field(void)
 {
 }
 
+/*
 string CMolinfo_field :: GetSequenceQualFromBioseq (CBioseq_Handle bioseq_hl) const
 {
-  const CMolInfo* molinfo = sequence::GetMolInfo(bioseq_hl); // objmgr/util/sequence.hpp
+  const CMolInfo* molinfo;  = sequence::GetMolInfo(bioseq_hl); // objmgr/util/sequence.hpp
   string rval(kEmptyStr);
   switch (Which()) {
     case e_Molecule:
@@ -104,6 +105,7 @@ string CMolinfo_field :: GetSequenceQualFromBioseq (CBioseq_Handle bioseq_hl) co
   if (rval == "unknown" || rval == "not-set") rval = kEmptyStr;
   return rval;
 };
+*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

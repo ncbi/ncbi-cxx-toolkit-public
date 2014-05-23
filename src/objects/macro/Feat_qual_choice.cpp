@@ -51,6 +51,7 @@ CFeat_qual_choice::~CFeat_qual_choice(void)
 {
 }
 
+/*
 string CFeat_qual_choice :: GetQualFromFeatureAnyType(const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
 {
    if (Which() == e_not_set) {
@@ -167,6 +168,7 @@ string CFeat_qual_choice :: GetQualFromFeatureAnyType(const CSeq_feat& feat, con
      }
    }
 }
+*/
 
 string CFeat_qual_choice :: x_GetLegalQualName(vector <EFeat_qual_legal>& v_qual, EFeat_qual_legal qual) const
 {       
@@ -254,6 +256,7 @@ string CFeat_qual_choice :: GetFirstStringMatch(const vector <string>& strs, con
    return kEmptyStr;
 };
 
+/*
 string CFeat_qual_choice :: x_GetQualViaFeatSeqTableColumn(const string& name, const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
 {
    string rval;
@@ -425,7 +428,7 @@ string CFeat_qual_choice :: x_GetQualViaFeatSeqTableColumn(const string& name, c
    }
 
    vector <string> strs;
-/*
+**
    if (!name.empty()) {
      CRef<CFeatureSeqTableColumnBase>
           feat_col (CFeatureSeqTableColumnBaseFactory::Create(name));
@@ -482,11 +485,13 @@ string CFeat_qual_choice :: x_GetQualViaFeatSeqTableColumn(const string& name, c
        }
      }
    }
-*/
+**
 
    return rval;  
 };
+*/
 
+/*
 string CFeat_qual_choice :: x_GetCodeBreakString(const CSeq_feat& feat, CConstRef <CScope> scope) const
 {
   string rval(kEmptyStr);
@@ -512,6 +517,7 @@ string CFeat_qual_choice :: x_GetCodeBreakString(const CSeq_feat& feat, CConstRe
   rval = CTempString(rval).substr(0, rval.size()-2);
   return rval;
 };
+*/
 
 string CFeat_qual_choice :: x_GetFirstGBQualMatchConstraintName(const CSeq_feat& feat, const CString_constraint& str_cons) const
 {

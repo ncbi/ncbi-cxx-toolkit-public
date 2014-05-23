@@ -97,6 +97,7 @@ bool CLocation_constraint :: x_DoesStrandMatchConstraint(const CSeq_loc& loc) co
   }
 };
 
+/*
 bool CLocation_constraint :: x_DoesBioseqMatchSequenceType(CBioseq_Handle bioseq_hl, const ESeqtype_constraint& seq_type) const
 {
   if (seq_type == eSeqtype_constraint_any
@@ -106,6 +107,7 @@ bool CLocation_constraint :: x_DoesBioseqMatchSequenceType(CBioseq_Handle bioseq
   }
   else return false;
 };
+*/
 
 bool CLocation_constraint :: x_DoesLocationMatchPartialnessConstraint(const CSeq_loc& loc) const
 {
@@ -157,6 +159,7 @@ bool CLocation_constraint :: x_DoesLocationMatchTypeConstraint(const CSeq_loc& s
   return false;
 };
 
+/*
 bool CLocation_constraint :: x_DoesLocationMatchDistanceConstraint(CBioseq_Handle bioseq_hl, const CSeq_loc& loc) const
 {
   if (!CanGetEnd5() && !CanGetEnd3()) {
@@ -196,7 +199,9 @@ bool CLocation_constraint :: x_DoesLocationMatchDistanceConstraint(CBioseq_Handl
   }
   return true;
 };
+*/
 
+/*
 bool CLocation_constraint :: Match(const CSeq_feat& feat, CConstRef <CScope> scope) const
 {
   if (x_IsLocationConstraintEmpty()) {
@@ -242,6 +247,7 @@ bool CLocation_constraint :: Match(const CSeq_feat& feat, CConstRef <CScope> sco
 
   return true;
 };
+*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

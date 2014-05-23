@@ -118,6 +118,7 @@ CSeqFeatData :: ESubtype CFeature_field :: x_GetFeatSubtype() const
    } 
 };
 
+/*
 string CFeature_field :: x_GetQualFromFeature(const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
 {
    if (GetType() != eMacro_feature_type_any 
@@ -141,6 +142,7 @@ bool CFeature_field :: Match(const CSeq_feat& feat, const CString_constraint& st
    }
    return rval;
 };
+*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

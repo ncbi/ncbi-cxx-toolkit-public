@@ -42,10 +42,6 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 
-#include <objmgr/util/feature.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/scope.hpp>
-
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -709,6 +705,7 @@ bool CString_constraint :: Match(const string& str) const
 };
 
 // object match
+/* 
 bool CString_constraint :: DoesObjectMatchStringConstraint(const CSeq_feat& feat, CConstRef <CScope> scope) const
 {
    bool rval = false;
@@ -774,6 +771,7 @@ bool CString_constraint :: DoesObjectMatchStringConstraint(const CSeq_feat& feat
    }
    return rval;
 };
+*/
 
 bool CString_constraint::x_ReplaceContains(string& val, const string& replace) const
 {

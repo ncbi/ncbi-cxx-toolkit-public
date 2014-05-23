@@ -82,6 +82,7 @@ int CRna_qual :: x_GetLegalQual(ERna_field rna_field) const
    return 0;
 };
  
+/*
 string CRna_qual :: x_GetRNAQualFromFeature(const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
 {
    if (!GetType().Match(feat)) {
@@ -112,6 +113,7 @@ bool CRna_qual :: Match(const CSeq_feat& feat, const CString_constraint& str_con
   }
   return rval;
 };
+*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

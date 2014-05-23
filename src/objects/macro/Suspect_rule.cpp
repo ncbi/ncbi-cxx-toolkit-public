@@ -51,6 +51,7 @@ CSuspect_rule::~CSuspect_rule(void)
 {
 }
 
+/*
 bool CSuspect_rule :: Match(const string& str, const CSeq_feat& feat, CConstRef <CScope> scope)
 {
    if (StringMatchesSuspectProductRule(str)) {
@@ -83,6 +84,7 @@ bool CSuspect_rule :: Match(const string& str, const CSeq_feat& feat, CConstRef 
 
   return false;
 };
+*/
 
 bool CSuspect_rule :: StringMatchesSuspectProductRule(const string& str) const
 {
