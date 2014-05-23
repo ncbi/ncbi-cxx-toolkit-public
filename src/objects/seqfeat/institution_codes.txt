@@ -4298,7 +4298,8 @@ NM	s	Northern Michigan University, Biology Department
 NMAC	s	Inner Mongolia Agricultural University, Department of Pratacultural Science
 NMAG	s	Naturhistorisches Museum, Augsburg
 NMB<CHE>	s	Naturhistorishes Museum
-NMB<ZAF>	s	National Museum, Botany Department
+NMB<ZAF>	s	National Museum, Bloemfontein
+NMB<ZAF>:P	s	National Museum, Bloemfontein, The Protozoan collection of the National Museum
 NMBA<ARG>	s	National Museum, Buenos Aires
 NMBA<AUT>	s	Naturhistorisches Museum der Benediktiner-Abtei
 NMBA<CHE>	s	Naturhistorisches Museum, Basel
