@@ -17945,6 +17945,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExtraProteinFeature)
 
 BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 {
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("1000"), "");
+    BOOST_CHECK_EQUAL(CSubSource::GetCollectionDateProblem("1000"), "Collection_date format is not in DD-Mmm-YYYY format");
+
     bool bad_format = false;
     bool in_future = false;
     CSubSource::IsCorrectDateFormat("collection date: Nov-2010 and Dec-2012", bad_format, in_future);

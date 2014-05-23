@@ -781,7 +781,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             year += 2000;
         }
     }
-    if (year >= 1000 && year < 2100) {
+    if (year >= 1700 && year < 2100) {
         reformatted_date = NStr::NumericToString (year);
         if (!NStr::IsBlank (month)) {
             reformatted_date = month + "-" + reformatted_date;
