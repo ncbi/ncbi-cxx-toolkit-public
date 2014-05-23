@@ -1430,6 +1430,5 @@ xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
 xvalidate needs xobjedit
-xxconnect needs connect
-xxconnect needs xncbi
+xxconnect needs xconnect
 z needs3party $(ORIG_LIBS)
