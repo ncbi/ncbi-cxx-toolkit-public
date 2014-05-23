@@ -45,12 +45,14 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
+/*
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/format/items/qualifiers.hpp>
+*/
 
 // generated classes
 
@@ -68,9 +70,11 @@ public:
     // destructor
     ~CFeat_qual_choice(void);
  
+/*
     string GetQualFromFeatureAnyType(const CSeq_feat& feat, 
                                         const CString_constraint& str_cons,
                                         CConstRef <CScope> scope) const;
+*/
     static string GetFirstStringMatch(const list <string>& strs, 
                                      const CString_constraint& str_cons);
     static string GetFirstStringMatch(const vector <string>& strs, 
@@ -87,14 +91,18 @@ private:
                                   const string& qual_name, 
                                   int subfield, 
                                   const CString_constraint& str_cons) const;
+/*
     string x_GetQualViaFeatSeqTableColumn(const string& name, 
                                            const CSeq_feat& feat, 
                                            const CString_constraint& str_cons,
                                            CConstRef <CScope> scope) const;
+*/
     string x_GetFirstGBQualMatchConstraintName(const CSeq_feat& feat,
                                   const CString_constraint& str_cons) const;
+/*
     string x_GetCodeBreakString(const CSeq_feat& feat,
                                     CConstRef <CScope> scope) const;
+*/
 };
 
 /////////////////// CFeat_qual_choice inline methods

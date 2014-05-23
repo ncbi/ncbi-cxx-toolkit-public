@@ -55,10 +55,12 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 
+/*
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
+*/
 
 // generated classes
 
@@ -76,8 +78,10 @@ public:
     // destructor
     ~CField_type(void);
 
+/*
     bool Match(const CSeq_feat& feat, 
            const CString_constraint& str_cons, CConstRef <CScope> scope) const;
+*/
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -86,8 +90,10 @@ private:
 
     CRef <CFeature_field>
         x_FeatureFieldFromCDSGeneProtField (ECDSGeneProt_field cgp_field) const;
+/*
     string x_GetFieldValueForObjectEx (const CSeq_feat& feat, 
            CBioseq_Handle bioseq_hl, const CString_constraint& str_cons) const;
+*/
     string x_GetDBLinkFieldFromUserObject(const CUser_object& user_obj, 
                                     EDBLink_field_type dblink_tp, 
                                     const CString_constraint& str_cons) const;

@@ -44,7 +44,7 @@
 #include <objects/macro/Field_constraint_.hpp>
 #include <objects/macro/Field_type.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objmgr/scope.hpp>
+//#include <objmgr/scope.hpp>
 
 // generated classes
 
@@ -62,7 +62,7 @@ public:
     // destructor
     ~CField_constraint(void);
 
-    bool Match(const CSeq_feat& feat, CConstRef <CScope> scope) const;
+//    bool Match(const CSeq_feat& feat, CConstRef <CScope> scope) const;
 
 private:
     // Prohibit copy constructor and assignment operator

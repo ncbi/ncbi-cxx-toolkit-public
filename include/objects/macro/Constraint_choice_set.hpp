@@ -43,7 +43,7 @@
 // generated includes
 #include <objects/macro/Constraint_choice_set_.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objmgr/scope.hpp>
+//#include <objmgr/scope.hpp>
 
 // generated classes
 
@@ -64,7 +64,7 @@ public:
     // C's DoesObjectMatchConstraintChoiceSet()
     // when the original feat is a protein feat, 
     // feat is the cds related to the protein feat, if possible
-    bool Match(const CSeq_feat& feat, CConstRef <CScope> scope) const;
+//    bool Match(const CSeq_feat& feat, CConstRef <CScope> scope) const;
 
 private:
     // Prohibit copy constructor and assignment operator

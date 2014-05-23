@@ -44,8 +44,10 @@
 #include <objects/macro/Suspect_rule_.hpp>
 #include <objects/macro/Replace_rule.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+/*
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
+*/
 
 // generated classes
 
@@ -64,7 +66,7 @@ public:
     ~CSuspect_rule(void);
  
     // C's DoesStringMatchSuspectRule()
-    bool Match(const string& str, const CSeq_feat& feat, CConstRef <CScope> scope);
+//    bool Match(const string& str, const CSeq_feat& feat, CConstRef <CScope> scope);
 
     // C's MatchesSuspectProductRule()
     bool StringMatchesSuspectProductRule (const string& str) const;

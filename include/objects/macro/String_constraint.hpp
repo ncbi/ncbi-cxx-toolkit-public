@@ -44,7 +44,7 @@
 #include <objects/macro/String_constraint_.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objmgr/scope.hpp>
+// #include <objmgr/scope.hpp>
 
 
 // generated classes
@@ -78,8 +78,10 @@ public:
     bool Empty() const;
     bool ReplaceStringConstraintPortionInString(string& val, const string& replace) const;
 
+/*
     bool DoesObjectMatchStringConstraint(const CSeq_feat& feat, 
                                             CConstRef <CScope> scope) const;
+*/
 
 private:
     string m_digit_str, m_alpha_str;

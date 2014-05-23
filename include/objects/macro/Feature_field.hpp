@@ -59,17 +59,21 @@ public:
     // destructor
     ~CFeature_field(void);
 
+/*
     bool Match(const CSeq_feat& feat, 
            const CString_constraint& str_cons, CConstRef <CScope> scope) const;
+*/
 
 private:
     // Prohibit copy constructor and assignment operator
     CFeature_field(const CFeature_field& value);
     CFeature_field& operator=(const CFeature_field& value);
 
+/*
     string x_GetQualFromFeature(const CSeq_feat& feat, 
                                  const CString_constraint& str_cons, 
                                  CConstRef <CScope> scope) const;
+*/
     CSeqFeatData::ESubtype x_GetFeatSubtype() const;
 };
 
