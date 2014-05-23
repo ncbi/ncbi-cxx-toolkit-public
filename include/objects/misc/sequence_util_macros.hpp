@@ -51,6 +51,9 @@ BEGIN_SCOPE(objects)
 #define NCBI_SERIAL_TEST_EXPLORE(Test, Type, Var, Cont) \
 if (! (Test)) {} else for (CTypeConstIterator<Type> Var (Cont); Var; ++Var)
 
+#define NCBI_SERIAL_NC_EXPLORE(Test, Type, Var, Cont) \
+if (! (Test)) {} else for (CTypeIterator<Type> Var (Cont); Var; ++Var)
+
 
 /////////////////////////////////////////////////////////////////////////////
 /// Macros to iterate over standard template containers (non-recursive)
