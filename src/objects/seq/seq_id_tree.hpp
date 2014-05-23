@@ -135,16 +135,11 @@ protected:
         }
     virtual void x_Unindex(const CSeq_id_Info* info) = 0;
 
-/*
-    typedef CRWLockPosix TRWLock;
-    typedef TRWLock::TReadLockGuard TReadLockGuard;
-    typedef TRWLock::TWriteLockGuard TWriteLockGuard;
-*/
-    typedef CMutex TRWLock;
-    typedef CMutexGuard TReadLockGuard;
-    typedef CMutexGuard TWriteLockGuard;
+    typedef CFastMutex TTreeLock;
+    typedef TTreeLock::TReadLockGuard TReadLockGuard;
+    typedef TTreeLock::TWriteLockGuard TWriteLockGuard;
 
-    mutable TRWLock m_TreeLock;
+    mutable TTreeLock m_TreeLock;
     CSeq_id_Mapper* m_Mapper;
 
 private:
@@ -358,6 +353,9 @@ public:
             m_Hash |= 1;
             m_Version = version;
         }
+        int GetAccDigits(void) const {
+            return (m_Hash & 0xff) >> 1;
+        }
     };
     CSeq_id_Textseq_Info(CSeq_id::E_Choice type,
                          CSeq_id_Mapper* mapper,
@@ -374,7 +372,7 @@ public:
         return NStr::StartsWith(acc, GetAccPrefix(), NStr::eNocase);
     }
     int GetAccDigits(void) const {
-        return (m_Key.m_Hash & 0xff) >> 1;
+        return m_Key.GetAccDigits();
     }
     bool IsSetVersion(void) const {
         return m_Key.IsSetVersion();
@@ -393,8 +391,8 @@ public:
         }
         return ParseAcc(acc, ver_ptr);
     }
-    TPacked ParseAccNumber(const string& acc) const;
-    TPacked Pack(const CTextseq_id& id) const;
+    static TPacked Pack(const TKey& key, const string& acc);
+    static TPacked Pack(const TKey& key, const CTextseq_id& id);
     
     virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
     
@@ -677,7 +675,7 @@ public:
     void Restore(CDbtag& id, TPacked param) const;
 
     static TKey Parse(const CDbtag& id);
-    TPacked Pack(const CDbtag& id) const;
+    static TPacked Pack(const TKey& key, const CDbtag& id);
     
     virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
     
@@ -702,6 +700,9 @@ public:
         }
         bool operator!=(const TKey& b) const {
             return !(*this == b);
+        }
+        size_t GetStrDigits(void) const {
+            return m_Key & 0xff;
         }
     };
     struct PKeyLess {
@@ -736,13 +737,12 @@ public:
         return m_Key.m_StrSuffix;
     }
     int GetStrDigits(void) const {
-        return m_Key.m_Key & 0xff;
+        return m_Key.GetStrDigits();
     }
     void Restore(CDbtag& id, TPacked param) const;
 
     static TKey Parse(const CDbtag& id);
-    TPacked ParseStrNumber(const string& str) const;
-    TPacked Pack(const CDbtag& id) const;
+    static TPacked Pack(const TKey& key, const CDbtag& id);
     
     virtual CConstRef<CSeq_id> GetPackedSeqId(TPacked packed) const;
     

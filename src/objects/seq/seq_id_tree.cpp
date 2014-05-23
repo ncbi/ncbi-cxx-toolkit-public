@@ -779,16 +779,18 @@ void CSeq_id_Textseq_Info::Restore(CTextseq_id& id, TPacked param) const
 
 
 inline
-CSeq_id_Textseq_Info::TPacked CSeq_id_Textseq_Info::ParseAccNumber(const string& acc) const
+CSeq_id_Textseq_Info::TPacked
+CSeq_id_Textseq_Info::Pack(const TKey& key, const string& acc)
 {
-    return s_ParseNumber(acc, GetAccPrefix().size(), GetAccDigits());
+    return s_ParseNumber(acc, key.m_Prefix.size(), key.GetAccDigits());
 }
 
 
 inline
-CSeq_id_Textseq_Info::TPacked CSeq_id_Textseq_Info::Pack(const CTextseq_id& tid) const
+CSeq_id_Textseq_Info::TPacked
+CSeq_id_Textseq_Info::Pack(const TKey& key, const CTextseq_id& tid)
 {
-    return ParseAccNumber(tid.GetAccession());
+    return Pack(key, tid.GetAccession());
 }
 
 
@@ -924,19 +926,21 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT(x_Check(id));
     const CTextseq_id& tid = x_Get(id);
     // Can not compare if no accession given
-    TReadLockGuard guard(m_TreeLock);
     if ( s_PackTextidEnabled() &&
          tid.IsSetAccession() && !tid.IsSetName() && !tid.IsSetRelease() ) {
         TPackedKey key =
             CSeq_id_Textseq_Info::ParseAcc(tid.GetAccession(), &tid);
         if ( key ) {
+            TPacked packed = CSeq_id_Textseq_Info::Pack(key, tid);
+            TReadLockGuard guard(m_TreeLock);
             TPackedMap_CI it = m_PackedMap.find(key);
             if ( it == m_PackedMap.end() ) {
                 return null;
             }
-            return CSeq_id_Handle(it->second, it->second->Pack(tid));
+            return CSeq_id_Handle(it->second, packed);
         }
     }
+    TReadLockGuard guard(m_TreeLock);
     return CSeq_id_Handle(x_FindStrInfo(id.Which(), tid));
 }
 
@@ -944,12 +948,13 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
 {
     _ASSERT(x_Check(id));
     const CTextseq_id& tid = x_Get(id);
-    TWriteLockGuard guard(m_TreeLock);
     if ( s_PackTextidEnabled() &&
          tid.IsSetAccession() && !tid.IsSetName() && !tid.IsSetRelease() ) {
         TPackedKey key =
             CSeq_id_Textseq_Info::ParseAcc(tid.GetAccession(), &tid);
         if ( key ) {
+            TWriteLockGuard guard(m_TreeLock);
+            TPacked packed = CSeq_id_Textseq_Info::Pack(key, tid);
             TPackedMap_I it = m_PackedMap.lower_bound(key);
             if ( it == m_PackedMap.end() ||
                  m_PackedMap.key_comp()(key, it->first) ) {
@@ -957,9 +962,10 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
                     (new CSeq_id_Textseq_Info(id.Which(), m_Mapper, key));
                 it = m_PackedMap.insert(it, TPackedMapValue(key, info));
             }
-            return CSeq_id_Handle(it->second, it->second->Pack(tid));
+            return CSeq_id_Handle(it->second, packed);
         }
     }
+    TWriteLockGuard guard(m_TreeLock);
     CSeq_id_Info* info = x_FindStrInfo(id.Which(), tid);
     if ( !info ) {
         info = CreateInfo(id);
@@ -1035,9 +1041,8 @@ void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
                 // only same version
                 TPackedMap_CI it = m_PackedMap.find(key);
                 if ( it != m_PackedMap.end() ) {
-                    const CSeq_id_Textseq_Info* info = it->second;
-                    TPacked packed = info->ParseAccNumber(acc);
-                    id_list.insert(CSeq_id_Handle(info, packed));
+                    TPacked packed = CSeq_id_Textseq_Info::Pack(key, acc);
+                    id_list.insert(CSeq_id_Handle(it->second, packed));
                 }
             }
             else {
@@ -1047,12 +1052,11 @@ void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
                       it != m_PackedMap.end() && it->first.SameHashNoVer(key);
                       ++it ) {
                     if ( it->first.EqualAcc(key) ) {
-                        const CSeq_id_Textseq_Info* info = it->second;
                         if ( packed == 0 ) {
-                            packed = info->ParseAccNumber(acc);
+                            packed = CSeq_id_Textseq_Info::Pack(key, acc);
                         }
-                        _ASSERT(packed == info->ParseAccNumber(acc));
-                        id_list.insert(CSeq_id_Handle(info, packed));
+                        _ASSERT(packed==CSeq_id_Textseq_Info::Pack(key, acc));
+                        id_list.insert(CSeq_id_Handle(it->second, packed));
                     }
                 }
             }
@@ -1083,18 +1087,16 @@ void CSeq_id_Textseq_Tree::x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
         if ( TPackedKey key = CSeq_id_Textseq_Info::ParseAcc(acc, ver) ) {
             TPackedMap_CI it = m_PackedMap.find(key);
             if ( it != m_PackedMap.end() ) {
-                const CSeq_id_Textseq_Info* info = it->second;
-                TPacked packed = info->ParseAccNumber(acc);
-                id_list.insert(CSeq_id_Handle(info, packed));
+                TPacked packed = CSeq_id_Textseq_Info::Pack(key, acc);
+                id_list.insert(CSeq_id_Handle(it->second, packed));
             }
             if ( key.IsSetVersion() ) {
                 // no version too
                 key.ResetVersion();
                 TPackedMap_CI it = m_PackedMap.find(key);
                 if ( it != m_PackedMap.end() ) {
-                    const CSeq_id_Textseq_Info* info = it->second;
-                    TPacked packed = info->ParseAccNumber(acc);
-                    id_list.insert(CSeq_id_Handle(info, packed));
+                    TPacked packed = CSeq_id_Textseq_Info::Pack(key, acc);
+                    id_list.insert(CSeq_id_Handle(it->second, packed));
                 }
             }
         }
@@ -1807,7 +1809,9 @@ CSeq_id_General_Id_Info::~CSeq_id_General_Id_Info(void)
 }
 
 
-CSeq_id_General_Id_Info::TPacked CSeq_id_General_Id_Info::Pack(const CDbtag& dbtag) const
+inline
+CSeq_id_General_Id_Info::TPacked
+CSeq_id_General_Id_Info::Pack(const TKey& /*key*/, const CDbtag& dbtag)
 {
     TPacked id = dbtag.GetTag().GetId();
     if ( id <= 0 ) {
@@ -1923,16 +1927,13 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
 
 
 inline
-CSeq_id_General_Str_Info::TPacked CSeq_id_General_Str_Info::ParseStrNumber(const string& str) const
+CSeq_id_General_Str_Info::TPacked
+CSeq_id_General_Str_Info::Pack(const TKey& key,
+                               const CDbtag& dbtag)
 {
-    return s_ParseNumber(str, GetStrPrefix().size(), GetStrDigits());
-}
-
-
-inline
-CSeq_id_General_Str_Info::TPacked CSeq_id_General_Str_Info::Pack(const CDbtag& dbtag) const
-{
-    TPacked id = ParseStrNumber(dbtag.GetTag().GetStr());
+    TPacked id = s_ParseNumber(dbtag.GetTag().GetStr(),
+                               key.m_StrPrefix.size(),
+                               key.GetStrDigits());
     if ( id <= 0 ) {
         --id;
     }
@@ -2032,6 +2033,9 @@ CSeq_id_Info* CSeq_id_General_Tree::x_FindInfo(const CDbtag& dbid) const
 }
 
 
+static const size_t kMinGeneralStrDigits = 3;
+
+
 CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
 {
     _ASSERT( id.IsGeneral() );
@@ -2041,35 +2045,34 @@ CSeq_id_Handle CSeq_id_General_Tree::FindInfo(const CSeq_id& id) const
         case CObject_id::e_Str:
         {
             TPackedStrKey key = CSeq_id_General_Str_Info::Parse(dbid);
+            if ( key.GetStrDigits() < kMinGeneralStrDigits ) {
+                break;
+            }
+            TPacked packed = CSeq_id_General_Str_Info::Pack(key, dbid);
             TReadLockGuard guard(m_TreeLock);
             TPackedStrMap::const_iterator it = m_PackedStrMap.find(key);
             if ( it != m_PackedStrMap.end() ) {
-                return CSeq_id_Handle(it->second, it->second->Pack(dbid));
+                return CSeq_id_Handle(it->second, packed);
             }
-            else {
-                return CSeq_id_Handle(x_FindInfo(dbid));
-            }
+            return null;
         }
         case CObject_id::e_Id:
         {
             const string& key = dbid.GetDb();
+            TPacked packed = CSeq_id_General_Id_Info::Pack(key, dbid);
             TReadLockGuard guard(m_TreeLock);
             TPackedIdMap::const_iterator it = m_PackedIdMap.find(key);
             if ( it != m_PackedIdMap.end() ) {
-                return CSeq_id_Handle(it->second, it->second->Pack(dbid));
+                return CSeq_id_Handle(it->second, packed);
             }
-            else {
-                return CSeq_id_Handle(x_FindInfo(dbid));
-            }
+            return null;
         }
         default:
             return null;
         }
     }
-    else {
-        TReadLockGuard guard(m_TreeLock);
-        return CSeq_id_Handle(x_FindInfo(dbid));
-    }
+    TReadLockGuard guard(m_TreeLock);
+    return CSeq_id_Handle(x_FindInfo(dbid));
 }
 
 
@@ -2082,6 +2085,10 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
         case CObject_id::e_Str:
         {
             TPackedStrKey key = CSeq_id_General_Str_Info::Parse(dbid);
+            if ( key.GetStrDigits() < kMinGeneralStrDigits ) {
+                break;
+            }
+            TPacked packed = CSeq_id_General_Str_Info::Pack(key, dbid);
             TWriteLockGuard guard(m_TreeLock);
             TPackedStrMap::iterator it = m_PackedStrMap.lower_bound(key);
             if ( it == m_PackedStrMap.end() ||
@@ -2091,11 +2098,12 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                 it = m_PackedStrMap.insert
                     (it, TPackedStrMap::value_type(key, info));
             }
-            return CSeq_id_Handle(it->second, it->second->Pack(dbid));
+            return CSeq_id_Handle(it->second, packed);
         }
         case CObject_id::e_Id:
         {
             const string& key = dbid.GetDb();
+            TPacked packed = CSeq_id_General_Id_Info::Pack(key, dbid);
             TWriteLockGuard guard(m_TreeLock);
             TPackedIdMap::iterator it = m_PackedIdMap.lower_bound(key);
             if ( it == m_PackedIdMap.end() ||
@@ -2105,7 +2113,7 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
                 it = m_PackedIdMap.insert
                     (it, TPackedIdMap::value_type(key, info));
             }
-            return CSeq_id_Handle(it->second, it->second->Pack(dbid));
+            return CSeq_id_Handle(it->second, packed);
         }
         default:
             break;
@@ -2174,8 +2182,32 @@ void CSeq_id_General_Tree::x_Unindex(const CSeq_id_Info* info)
 }
 
 
+static inline bool sx_AllDigits(const string& s)
+{
+    ITERATE ( string, i, s ) {
+        if ( !isdigit(Uint1(*i)) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool CSeq_id_General_Tree::HaveMatch(const CSeq_id_Handle& id) const
 {
+    // match id <-> str(number)
+    if ( !m_PackedStrMap.empty() ) {
+        const CSeq_id_General_Str_Info* sinfo =
+            dynamic_cast<const CSeq_id_General_Str_Info*>(id.x_GetInfo());
+        if ( sinfo ) {
+            // string with non-digital prefix or suffix
+            // cannot be converted to numeric id
+            if ( !sinfo->GetStrSuffix().empty() ||
+                 !sx_AllDigits(sinfo->GetStrPrefix()) ) {
+                return false;
+            }
+        }
+    }
     return true;
 }
 
@@ -2183,8 +2215,20 @@ bool CSeq_id_General_Tree::HaveMatch(const CSeq_id_Handle& id) const
 void CSeq_id_General_Tree::FindMatch(const CSeq_id_Handle& id,
                                      TSeq_id_MatchList& id_list) const
 {
-    //TReadLockGuard guard(m_TreeLock);
     id_list.insert(id);
+    // match id <-> str(number)
+    if ( !m_PackedStrMap.empty() ) {
+        const CSeq_id_General_Str_Info* sinfo =
+            dynamic_cast<const CSeq_id_General_Str_Info*>(id.x_GetInfo());
+        if ( sinfo ) {
+            // string with non-digital prefix or suffix
+            // cannot be converted to numeric id
+            if ( !sinfo->GetStrSuffix().empty() ||
+                 !sx_AllDigits(sinfo->GetStrPrefix()) ) {
+                return;
+            }
+        }
+    }
     CConstRef<CSeq_id> seq_id = id.GetSeqId();
     const CDbtag& dbtag = seq_id->GetGeneral();
     const CObject_id& obj_id = dbtag.GetTag();
