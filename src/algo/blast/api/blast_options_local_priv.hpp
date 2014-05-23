@@ -563,6 +563,10 @@ inline void
 CBlastOptionsLocal::SetWordSize(int ws)
 {
     m_LutOpts->word_size = ws;
+    if (m_LutOpts->lut_type == eCompressedAaLookupTable && ws < 5)
+	m_LutOpts->lut_type = eAaLookupTable;
+    else if (m_LutOpts->lut_type == eAaLookupTable && ws >= 5)
+	m_LutOpts->lut_type = eCompressedAaLookupTable;
 }
 
 inline unsigned char

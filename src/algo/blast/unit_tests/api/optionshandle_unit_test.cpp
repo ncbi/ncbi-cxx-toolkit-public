@@ -257,6 +257,18 @@ BOOST_AUTO_TEST_CASE(BlastpTest) {
        delete handle;
 }
 
+BOOST_AUTO_TEST_CASE(BlastpLookupTableType) {
+       CBlastOptionsHandle* handle = CBlastOptionsFactory::CreateTask("blastp"); 
+       CBlastAdvancedProteinOptionsHandle* opts =
+             dynamic_cast<CBlastAdvancedProteinOptionsHandle*> (handle);
+       const CBlastOptions& kOpts = opts->GetOptions();
+       BOOST_REQUIRE_EQUAL(eAaLookupTable, kOpts.GetLookupTableType());
+       opts->SetWordSize(6);
+       BOOST_REQUIRE_EQUAL(eCompressedAaLookupTable, kOpts.GetLookupTableType());
+       opts->SetWordSize(2);
+       BOOST_REQUIRE_EQUAL(eAaLookupTable, kOpts.GetLookupTableType());
+}
+
 BOOST_AUTO_TEST_CASE(BlastpShortTest) {
        CBlastOptionsHandle* handle = CBlastOptionsFactory::CreateTask("blastp-short"); 
        CBlastAdvancedProteinOptionsHandle* opts =
