@@ -42,6 +42,10 @@
 
 // generated includes
 #include <objects/macro/Search_func_.hpp>
+#include <objects/macro/String_constraint.hpp>
+#include <objects/macro/Word_substitution.hpp>
+#include <objects/macro/Word_substitution_set.hpp>
+
 
 // generated classes
 
@@ -77,7 +81,8 @@ private:
                                  char next_letter) const;
 
     // e_N_or_more_brackets_or_parentheses
-    bool x_ContainsNorMoreSetsOfBracketsOrParentheses(const string& str, const int& n) const;
+    bool x_ContainsNorMoreSetsOfBracketsOrParentheses(const string& str,
+                                                       const int& n) const;
     char x_GetClose(char bp) const;
     bool x_SkipBracketOrParen(const unsigned& idx, string& start) const;
     
@@ -91,14 +96,14 @@ private:
     bool x_StringContainsUnderscore(const string& str) const;
 
     // e_Prefix_and_numbers
-    bool x_IsPrefixPlusNumbers(const string& prefix, const string& str) const;
+    bool x_IsPrefixPlusNumbers(const string& str, const string& prefix) const;
 
     // e_Unbalanced_paren
     bool x_StringContainsUnbalancedParentheses(const string& str) const;
     bool x_IsPropClose(const string& str, char open_p) const;
 
     // e_Has_term
-    bool x_ProductContainsTerm(const string& pattern, const string& str) const;
+    bool x_ProductContainsTerm(const string& str, const string& pattern) const;
 };
 
 /////////////////// CSearch_func inline methods
