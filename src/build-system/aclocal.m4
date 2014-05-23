@@ -201,7 +201,7 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
        yes | "" ) ;;
        *        ) $2_PATH=$with_$1 ;;
     esac
-    if test -d "[$]$2_PATH"; then
+    if test "[$]$2_PATH" != /usr -a -d "[$]$2_PATH"; then
        in_path=" in [$]$2_PATH"
        if test -z "[$]$2_INCLUDE" -a -d "[$]$2_PATH/include"; then
           $2_INCLUDE="-I[$]$2_PATH/include"

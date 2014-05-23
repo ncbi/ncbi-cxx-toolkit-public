@@ -24646,7 +24646,7 @@ if test "$with_z" != "no"; then
        yes | "" ) ;;
        *        ) Z_PATH=$with_z ;;
     esac
-    if test -d "$Z_PATH"; then
+    if test "$Z_PATH" != /usr -a -d "$Z_PATH"; then
        in_path=" in $Z_PATH"
        if test -z "$Z_INCLUDE" -a -d "$Z_PATH/include"; then
           Z_INCLUDE="-I$Z_PATH/include"
@@ -24813,7 +24813,7 @@ if test "$with_bz2" != "no"; then
        yes | "" ) ;;
        *        ) BZ2_PATH=$with_bz2 ;;
     esac
-    if test -d "$BZ2_PATH"; then
+    if test "$BZ2_PATH" != /usr -a -d "$BZ2_PATH"; then
        in_path=" in $BZ2_PATH"
        if test -z "$BZ2_INCLUDE" -a -d "$BZ2_PATH/include"; then
           BZ2_INCLUDE="-I$BZ2_PATH/include"
@@ -25001,7 +25001,7 @@ if test "$with_lzo" != "no"; then
        yes | "" ) ;;
        *        ) LZO_PATH=$with_lzo ;;
     esac
-    if test -d "$LZO_PATH"; then
+    if test "$LZO_PATH" != /usr -a -d "$LZO_PATH"; then
        in_path=" in $LZO_PATH"
        if test -z "$LZO_INCLUDE" -a -d "$LZO_PATH/include"; then
           LZO_INCLUDE="-I$LZO_PATH/include"
@@ -25160,7 +25160,7 @@ if test "$with_pcre" != "no"; then
        yes | "" ) ;;
        *        ) PCRE_PATH=$with_pcre ;;
     esac
-    if test -d "$PCRE_PATH"; then
+    if test "$PCRE_PATH" != /usr -a -d "$PCRE_PATH"; then
        in_path=" in $PCRE_PATH"
        if test -z "$PCRE_INCLUDE" -a -d "$PCRE_PATH/include"; then
           PCRE_INCLUDE="-I$PCRE_PATH/include"
@@ -25435,7 +25435,7 @@ if test "$with_gcrypt" != "no"; then
        yes | "" ) ;;
        *        ) GCRYPT_PATH=$with_gcrypt ;;
     esac
-    if test -d "$GCRYPT_PATH"; then
+    if test "$GCRYPT_PATH" != /usr -a -d "$GCRYPT_PATH"; then
        in_path=" in $GCRYPT_PATH"
        if test -z "$GCRYPT_INCLUDE" -a -d "$GCRYPT_PATH/include"; then
           GCRYPT_INCLUDE="-I$GCRYPT_PATH/include"
@@ -25761,7 +25761,7 @@ if test "$with_gnutls" != "no"; then
        yes | "" ) ;;
        *        ) GNUTLS_PATH=$with_gnutls ;;
     esac
-    if test -d "$GNUTLS_PATH"; then
+    if test "$GNUTLS_PATH" != /usr -a -d "$GNUTLS_PATH"; then
        in_path=" in $GNUTLS_PATH"
        if test -z "$GNUTLS_INCLUDE" -a -d "$GNUTLS_PATH/include"; then
           GNUTLS_INCLUDE="-I$GNUTLS_PATH/include"
@@ -25955,7 +25955,7 @@ if test "$with_openssl" != "no"; then
        yes | "" ) ;;
        *        ) OPENSSL_PATH=$with_openssl ;;
     esac
-    if test -d "$OPENSSL_PATH"; then
+    if test "$OPENSSL_PATH" != /usr -a -d "$OPENSSL_PATH"; then
        in_path=" in $OPENSSL_PATH"
        if test -z "$OPENSSL_INCLUDE" -a -d "$OPENSSL_PATH/include"; then
           OPENSSL_INCLUDE="-I$OPENSSL_PATH/include"
@@ -26188,7 +26188,7 @@ if test "$with_krb5" != "no"; then
        yes | "" ) ;;
        *        ) KRB5_PATH=$with_krb5 ;;
     esac
-    if test -d "$KRB5_PATH"; then
+    if test "$KRB5_PATH" != /usr -a -d "$KRB5_PATH"; then
        in_path=" in $KRB5_PATH"
        if test -z "$KRB5_INCLUDE" -a -d "$KRB5_PATH/include"; then
           KRB5_INCLUDE="-I$KRB5_PATH/include"
@@ -26376,7 +26376,7 @@ if test "$with_curl" != "no"; then
        yes | "" ) ;;
        *        ) CURL_PATH=$with_curl ;;
     esac
-    if test -d "$CURL_PATH"; then
+    if test "$CURL_PATH" != /usr -a -d "$CURL_PATH"; then
        in_path=" in $CURL_PATH"
        if test -z "$CURL_INCLUDE" -a -d "$CURL_PATH/include"; then
           CURL_INCLUDE="-I$CURL_PATH/include"
@@ -34182,7 +34182,7 @@ if test "$with_expat" != "no"; then
        yes | "" ) ;;
        *        ) EXPAT_PATH=$with_expat ;;
     esac
-    if test -d "$EXPAT_PATH"; then
+    if test "$EXPAT_PATH" != /usr -a -d "$EXPAT_PATH"; then
        in_path=" in $EXPAT_PATH"
        if test -z "$EXPAT_INCLUDE" -a -d "$EXPAT_PATH/include"; then
           EXPAT_INCLUDE="-I$EXPAT_PATH/include"
@@ -34359,7 +34359,7 @@ if test "$with_sablot" != "no"; then
        yes | "" ) ;;
        *        ) SABLOT_PATH=$with_sablot ;;
     esac
-    if test -d "$SABLOT_PATH"; then
+    if test "$SABLOT_PATH" != /usr -a -d "$SABLOT_PATH"; then
        in_path=" in $SABLOT_PATH"
        if test -z "$SABLOT_INCLUDE" -a -d "$SABLOT_PATH/include"; then
           SABLOT_INCLUDE="-I$SABLOT_PATH/include"
@@ -34691,7 +34691,7 @@ if test "$with_libxslt" != "no"; then
        yes | "" ) ;;
        *        ) LIBXSLT_PATH=$with_libxslt ;;
     esac
-    if test -d "$LIBXSLT_PATH"; then
+    if test "$LIBXSLT_PATH" != /usr -a -d "$LIBXSLT_PATH"; then
        in_path=" in $LIBXSLT_PATH"
        if test -z "$LIBXSLT_INCLUDE" -a -d "$LIBXSLT_PATH/include"; then
           LIBXSLT_INCLUDE="-I$LIBXSLT_PATH/include"
@@ -34897,7 +34897,7 @@ if test "$with_libexslt" != "no"; then
        yes | "" ) ;;
        *        ) LIBEXSLT_PATH=$with_libexslt ;;
     esac
-    if test -d "$LIBEXSLT_PATH"; then
+    if test "$LIBEXSLT_PATH" != /usr -a -d "$LIBEXSLT_PATH"; then
        in_path=" in $LIBEXSLT_PATH"
        if test -z "$LIBEXSLT_INCLUDE" -a -d "$LIBEXSLT_PATH/include"; then
           LIBEXSLT_INCLUDE="-I$LIBEXSLT_PATH/include"
@@ -35762,7 +35762,7 @@ if test "$with_sqlite3" != "no"; then
        yes | "" ) ;;
        *        ) SQLITE3_PATH=$with_sqlite3 ;;
     esac
-    if test -d "$SQLITE3_PATH"; then
+    if test "$SQLITE3_PATH" != /usr -a -d "$SQLITE3_PATH"; then
        in_path=" in $SQLITE3_PATH"
        if test -z "$SQLITE3_INCLUDE" -a -d "$SQLITE3_PATH/include"; then
           SQLITE3_INCLUDE="-I$SQLITE3_PATH/include"
@@ -36205,7 +36205,7 @@ if test "$with_oechem" != "no"; then
        yes | "" ) ;;
        *        ) OECHEM_PATH=$with_oechem ;;
     esac
-    if test -d "$OECHEM_PATH"; then
+    if test "$OECHEM_PATH" != /usr -a -d "$OECHEM_PATH"; then
        in_path=" in $OECHEM_PATH"
        if test -z "$OECHEM_INCLUDE" -a -d "$OECHEM_PATH/include"; then
           OECHEM_INCLUDE="-I$OECHEM_PATH/include"
@@ -36408,7 +36408,7 @@ if test "$with_sge" != "no"; then
        yes | "" ) ;;
        *        ) SGE_PATH=$with_sge ;;
     esac
-    if test -d "$SGE_PATH"; then
+    if test "$SGE_PATH" != /usr -a -d "$SGE_PATH"; then
        in_path=" in $SGE_PATH"
        if test -z "$SGE_INCLUDE" -a -d "$SGE_PATH/include"; then
           SGE_INCLUDE="-I$SGE_PATH/include"
@@ -36593,7 +36593,7 @@ if test "$with_muparser" != "no"; then
        yes | "" ) ;;
        *        ) MUPARSER_PATH=$with_muparser ;;
     esac
-    if test -d "$MUPARSER_PATH"; then
+    if test "$MUPARSER_PATH" != /usr -a -d "$MUPARSER_PATH"; then
        in_path=" in $MUPARSER_PATH"
        if test -z "$MUPARSER_INCLUDE" -a -d "$MUPARSER_PATH/include"; then
           MUPARSER_INCLUDE="-I$MUPARSER_PATH/include"
@@ -36777,7 +36777,7 @@ if test "$with_hdf5" != "no"; then
        yes | "" ) ;;
        *        ) HDF5_PATH=$with_hdf5 ;;
     esac
-    if test -d "$HDF5_PATH"; then
+    if test "$HDF5_PATH" != /usr -a -d "$HDF5_PATH"; then
        in_path=" in $HDF5_PATH"
        if test -z "$HDF5_INCLUDE" -a -d "$HDF5_PATH/include"; then
           HDF5_INCLUDE="-I$HDF5_PATH/include"
@@ -36936,7 +36936,7 @@ if test "$with_jpeg" != "no"; then
        yes | "" ) ;;
        *        ) JPEG_PATH=$with_jpeg ;;
     esac
-    if test -d "$JPEG_PATH"; then
+    if test "$JPEG_PATH" != /usr -a -d "$JPEG_PATH"; then
        in_path=" in $JPEG_PATH"
        if test -z "$JPEG_INCLUDE" -a -d "$JPEG_PATH/include"; then
           JPEG_INCLUDE="-I$JPEG_PATH/include"
@@ -37099,7 +37099,7 @@ if test "$with_png" != "no"; then
        yes | "" ) ;;
        *        ) PNG_PATH=$with_png ;;
     esac
-    if test -d "$PNG_PATH"; then
+    if test "$PNG_PATH" != /usr -a -d "$PNG_PATH"; then
        in_path=" in $PNG_PATH"
        if test -z "$PNG_INCLUDE" -a -d "$PNG_PATH/include"; then
           PNG_INCLUDE="-I$PNG_PATH/include"
@@ -37257,7 +37257,7 @@ if test "$with_tiff" != "no"; then
        yes | "" ) ;;
        *        ) TIFF_PATH=$with_tiff ;;
     esac
-    if test -d "$TIFF_PATH"; then
+    if test "$TIFF_PATH" != /usr -a -d "$TIFF_PATH"; then
        in_path=" in $TIFF_PATH"
        if test -z "$TIFF_INCLUDE" -a -d "$TIFF_PATH/include"; then
           TIFF_INCLUDE="-I$TIFF_PATH/include"
@@ -37415,7 +37415,7 @@ if test "$with_ungif" != "no"; then
        yes | "" ) ;;
        *        ) UNGIF_PATH=$with_ungif ;;
     esac
-    if test -d "$UNGIF_PATH"; then
+    if test "$UNGIF_PATH" != /usr -a -d "$UNGIF_PATH"; then
        in_path=" in $UNGIF_PATH"
        if test -z "$UNGIF_INCLUDE" -a -d "$UNGIF_PATH/include"; then
           UNGIF_INCLUDE="-I$UNGIF_PATH/include"
@@ -37572,7 +37572,7 @@ if test "$with_ungif" = "no"; then
        yes | "" ) ;;
        *        ) GIF_PATH=$with_gif ;;
     esac
-    if test -d "$GIF_PATH"; then
+    if test "$GIF_PATH" != /usr -a -d "$GIF_PATH"; then
        in_path=" in $GIF_PATH"
        if test -z "$GIF_INCLUDE" -a -d "$GIF_PATH/include"; then
           GIF_INCLUDE="-I$GIF_PATH/include"
@@ -37739,7 +37739,7 @@ if test "$with_xpm" != "no"; then
        yes | "" ) ;;
        *        ) XPM_PATH=$with_xpm ;;
     esac
-    if test -d "$XPM_PATH"; then
+    if test "$XPM_PATH" != /usr -a -d "$XPM_PATH"; then
        in_path=" in $XPM_PATH"
        if test -z "$XPM_INCLUDE" -a -d "$XPM_PATH/include"; then
           XPM_INCLUDE="-I$XPM_PATH/include"
@@ -38209,7 +38209,7 @@ if test "$with_ftgl" != "no"; then
        yes | "" ) ;;
        *        ) FTGL_PATH=$with_ftgl ;;
     esac
-    if test -d "$FTGL_PATH"; then
+    if test "$FTGL_PATH" != /usr -a -d "$FTGL_PATH"; then
        in_path=" in $FTGL_PATH"
        if test -z "$FTGL_INCLUDE" -a -d "$FTGL_PATH/include"; then
           FTGL_INCLUDE="-I$FTGL_PATH/include"
@@ -38365,7 +38365,7 @@ if test "$with_magic" != "no"; then
        yes | "" ) ;;
        *        ) MAGIC_PATH=$with_magic ;;
     esac
-    if test -d "$MAGIC_PATH"; then
+    if test "$MAGIC_PATH" != /usr -a -d "$MAGIC_PATH"; then
        in_path=" in $MAGIC_PATH"
        if test -z "$MAGIC_INCLUDE" -a -d "$MAGIC_PATH/include"; then
           MAGIC_INCLUDE="-I$MAGIC_PATH/include"
@@ -38575,7 +38575,7 @@ if test "$with_mimetic" != "no"; then
        yes | "" ) ;;
        *        ) MIMETIC_PATH=$with_mimetic ;;
     esac
-    if test -d "$MIMETIC_PATH"; then
+    if test "$MIMETIC_PATH" != /usr -a -d "$MIMETIC_PATH"; then
        in_path=" in $MIMETIC_PATH"
        if test -z "$MIMETIC_INCLUDE" -a -d "$MIMETIC_PATH/include"; then
           MIMETIC_INCLUDE="-I$MIMETIC_PATH/include"
@@ -38883,7 +38883,7 @@ if test "$with_gsoap" != "no"; then
        yes | "" ) ;;
        *        ) GSOAP_PATH=$with_gsoap ;;
     esac
-    if test -d "$GSOAP_PATH"; then
+    if test "$GSOAP_PATH" != /usr -a -d "$GSOAP_PATH"; then
        in_path=" in $GSOAP_PATH"
        if test -z "$GSOAP_INCLUDE" -a -d "$GSOAP_PATH/include"; then
           GSOAP_INCLUDE="-I$GSOAP_PATH/include"
@@ -39105,7 +39105,7 @@ if test "$with_mongodb" != "no"; then
        yes | "" ) ;;
        *        ) MONGODB_PATH=$with_mongodb ;;
     esac
-    if test -d "$MONGODB_PATH"; then
+    if test "$MONGODB_PATH" != /usr -a -d "$MONGODB_PATH"; then
        in_path=" in $MONGODB_PATH"
        if test -z "$MONGODB_INCLUDE" -a -d "$MONGODB_PATH/include"; then
           MONGODB_INCLUDE="-I$MONGODB_PATH/include"
