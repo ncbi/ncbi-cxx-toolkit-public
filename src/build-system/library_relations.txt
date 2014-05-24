@@ -172,6 +172,7 @@ connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
 connext needs connect
 connssl needs connect
+connssl needs3party $(GCRYPT_LIBS)
 connssl needs3party $(GNUTLS_LIBS)
 creaders needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
@@ -259,6 +260,7 @@ eutilsapp needs ncqhst
 eutilsapp needs3party $(FASTCGI_LIBS)
 event_g needs generic_db_utils
 expat needs3party $(ORIG_LIBS)
+exslt needs3party $(GCRYPT_LIBS)
 exslt needs3party $(LIBXML_LIBS)
 exslt needs3party $(ORIG_LIBS)
 fastme needs3party $(ORIG_LIBS)
@@ -1430,5 +1432,6 @@ xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
 xvalidate needs xobjedit
-xxconnect needs xconnect
+xxconnect needs xncbi
+xxconnect needs3party $(NCBI_C_ncbi)
 z needs3party $(ORIG_LIBS)
