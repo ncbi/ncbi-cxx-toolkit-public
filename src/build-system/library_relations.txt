@@ -608,7 +608,8 @@ linkoutdb needs sqlitewrapp
 ls_cli needs $(NCBILS2_LIB)
 ls_cli needs dbloadb
 lzo2 needs3party $(ORIG_LIBS)
-macro needs xser
+macro needs $(SEQ_LIBS)
+macro needs pub
 mapdata needs mv_align
 mapdata needs mv_metacli
 mapview needs mapdata
