@@ -117,6 +117,7 @@ string CSource_qual_choice :: x_GetTextqualValue(const CBioSource& biosrc, ESour
         qual_name = "bio-material";
      }
    }
+   return rvlu;
 /*
    CRef <CSrcTableColumnBase> 
      src_tbl = CSrcTableColumnBaseFactory::Create(qual_name);
