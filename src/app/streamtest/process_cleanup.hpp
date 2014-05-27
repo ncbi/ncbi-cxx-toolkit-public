@@ -68,7 +68,7 @@ public:
     {
         try {
             CCleanup cleanup;
-            cleanup.BasicCleanup( *m_entry );
+            cleanup.BasicCleanup( *m_entry, CCleanup::eClean_SyncGenCodes );
 
             *m_out << MSerial_AsnText << *m_entry << endl;
         }

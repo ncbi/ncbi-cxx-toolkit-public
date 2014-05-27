@@ -78,7 +78,7 @@ public:
 
         if (m_cleanup) {
             CCleanup cleanup;
-            cleanup.BasicCleanup( *m_entry );
+            cleanup.BasicCleanup( *m_entry, CCleanup::eClean_SyncGenCodes );
         }
     };
 
