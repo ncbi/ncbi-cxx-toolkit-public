@@ -36,6 +36,13 @@
 #include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/error_codes.hpp>
 
+#ifdef NCBI_OS_MSWIN
+#  include <winsock2.h>
+#elif !defined(NCBI_OS_SOLARIS)
+#  include <sys/fcntl.h>
+#  include <sys/types.h>
+#  include <sys/socket.h>
+#endif
 
 #define NCBI_USE_ERRCODE_X   Dbapi_DataServer
 
@@ -284,7 +291,57 @@ CDB_Connection::CDB_Connection(impl::CConnection* c)
 
 bool CDB_Connection::IsAlive()
 {
-    return (m_ConnImpl == 0) ? false : m_ConnImpl->IsAlive();
+    if (m_ConnImpl == NULL  ||  !m_ConnImpl->IsAlive()) {
+        return false;
+    }
+
+    // Otherwise, try to confirm that the network connection hasn't closed.
+    // (Done only when no separate network library is necessary.)
+    // XXX - consider caching GetLowLevelHandle result, or at least
+    // availability.
+#ifndef NCBI_OS_SOLARIS
+    try {
+        I_ConnectionExtra::TSockHandle s = m_ConnImpl->GetLowLevelHandle();
+        char c;
+#  ifdef NCBI_OS_UNIX
+        // On Windows, the non-blocking flag is write-only(!); leave it
+        // alone, since only the ftds driver implements
+        // GetLowLevelHandle, and FreeTDS normally enables non-blocking
+        // mode itself.  (It does so on Unix too, but explicitly
+        // restoring settings is still best practice.)
+        int orig_flags = fcntl(s, F_GETFL, 0);
+        fcntl(s, F_SETFL, orig_flags | O_NONBLOCK);
+#  endif
+        int n = recv(s, &c, 1, MSG_PEEK);
+#  ifdef NCBI_OS_UNIX
+        if ((orig_flags & O_NONBLOCK) != O_NONBLOCK) {
+            fcntl(s, F_SETFL, orig_flags);
+        }
+#  endif
+        if (n > 0) {
+            return true; // open, with unread data available
+        } else if (n == 0) {
+            return false; // closed
+        } else {
+#  ifdef NCBI_OS_MSWIN
+            return WSAGetLastError() == WSAEWOULDBLOCK;
+#  else
+            switch (errno) {
+            case EAGAIN:
+#    if defined(EWOULDBLOCK)  &&  EWOULDBLOCK != EAGAIN
+            case EWOULDBLOCK:
+#    endif
+                return true; // open, but no data immediately available
+            default:
+                return false; // something else is wrong
+            }
+#  endif
+        }
+    } catch (CDB_Exception&) { // Presumably unimplemented
+        return true;
+    }
+#endif    
+    return true;
 }
 
 #define CHECK_CONNECTION( conn ) \

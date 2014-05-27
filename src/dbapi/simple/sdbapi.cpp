@@ -1452,6 +1452,7 @@ CDatabase::IsConnected(EConnectionCheckMethod check_method)
     IConnection* conn = m_Impl->GetConnection();
     _ASSERT(conn != NULL);
     if ( !conn->IsAlive() ) {
+        Close();
         return false;
     } else if (check_method == eFastCheck) {
         return true;
@@ -1468,6 +1469,7 @@ CDatabase::IsConnected(EConnectionCheckMethod check_method)
         query.VerifyDone();
         return ok;
     } catch (exception&) {
+        Close();
         return false;
     }
 }
