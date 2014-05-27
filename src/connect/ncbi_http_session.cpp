@@ -527,7 +527,7 @@ void CHttpFormData::WriteFormData(CNcbiOstream& out) const
                 part_content_type);
             ITERATE(TValues, file, files->second) {
                 try {
-                    CNcbiIfstream in(file->m_Value, ios_base::binary);
+                    CNcbiIfstream in(file->m_Value.c_str(), ios_base::binary);
                     CFile f(file->m_Value);
                     x_WritePartHeader(out, part_boundary, files->first,
                         file->m_ContentType,

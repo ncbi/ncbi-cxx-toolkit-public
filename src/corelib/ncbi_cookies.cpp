@@ -650,6 +650,10 @@ bool CHttpCookie::MatchDomain(const string& host) const
 
 bool CHttpCookie::MatchPath(const string& path) const
 {
+    if ( m_Path.empty() ) {
+        // Treat empty path as root ('/').
+        return true;
+    }
     string p = path;
     // Truncate path to the last (or the only one) '/' char.
     size_t last_sep = p.find('/');
