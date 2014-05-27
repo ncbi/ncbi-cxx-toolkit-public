@@ -3255,6 +3255,9 @@ string CSubSource::AutoFix(TSubtype subtype, const string& value)
         case CSubSource::eSubtype_sex:
             new_val = FixSexQualifierValue(value);
             break;
+        case CSubSource::eSubtype_altitude:
+            new_val = FixAltitude(value);
+            break;
         default:
             break;
     }

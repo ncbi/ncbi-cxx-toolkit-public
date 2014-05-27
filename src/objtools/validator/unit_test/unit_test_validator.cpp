@@ -18526,3 +18526,34 @@ BOOST_AUTO_TEST_CASE(Test_AllNs)
     CLEAR_ERRORS
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SubSourceAutofix)
+{
+    CRef<CSubSource> ss(new CSubSource());
+
+    ss->SetSubtype(CSubSource::eSubtype_country);
+    ss->SetName("Maryland, USA");
+    ss->AutoFix();
+    BOOST_CHECK_EQUAL(ss->GetName(), "USA: Maryland");
+
+    ss->SetSubtype(CSubSource::eSubtype_collection_date);
+    ss->SetName("1-14-97");
+    ss->AutoFix();
+    BOOST_CHECK_EQUAL(ss->GetName(), "14-Jan-1997");
+
+    ss->SetSubtype(CSubSource::eSubtype_lat_lon);
+    ss->SetName("Lattitude: 25.790544; longitude: -80.214930");
+    ss->AutoFix();
+    BOOST_CHECK_EQUAL(ss->GetName(), "25.790544 N 80.214930 W");
+
+    ss->SetSubtype(CSubSource::eSubtype_sex);
+    ss->SetName("m/f/neuter");
+    ss->AutoFix();
+    BOOST_CHECK_EQUAL(ss->GetName(), "male, female, and neuter");
+
+    ss->SetSubtype(CSubSource::eSubtype_altitude);
+    ss->SetName("123 ft.");
+    ss->AutoFix();
+    BOOST_CHECK_EQUAL(ss->GetName(), "37.4904 m.");
+
+}
