@@ -61,7 +61,8 @@ public:
     enum EValidOptions {
         eClean_NoReporting       = 0x1,
         eClean_GpipeMode         = 0x2,
-        eClean_NoNcbiUserObjects = 0x4
+        eClean_NoNcbiUserObjects = 0x4,
+        eClean_SyncGenCodes      = 0x8
     };
 
     // Construtor / Destructor

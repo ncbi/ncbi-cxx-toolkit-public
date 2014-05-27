@@ -270,7 +270,7 @@ void s_ProcessOneEntry(
         cleanup.ExtendedCleanup( input_seq_entry, 
             CCleanup::eClean_NoNcbiUserObjects );
     } else {
-        cleanup.BasicCleanup( input_seq_entry );
+        cleanup.BasicCleanup( input_seq_entry, CCleanup::eClean_SyncGenCodes );
     }
     const bool bSeqEntriesAreEqual = 
         input_seq_entry.Equals(expected_output_seq_entry);

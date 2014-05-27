@@ -483,11 +483,8 @@ protected:
     CRef<CScope>          m_Scope;
     /// Set via m_Options when we're in gpipe cleanup mode
     bool                  m_IsGpipe;
-
-    /// Genetic code used by organism, organelle, etc.
-    /// Use an auto_ptr so that we can distinguish "0"
-    /// from "not yet calculated"
-    auto_ptr<int>         m_pGenCode;
+    /// Set via m_Options to synchronize Cdregion genetic codes with BioSource
+    bool                  m_SyncGenCodes;
 
     // Seq-entry variables.  We keep a stack of these and push when
     // we enter a Seq-entry and pop when we leave.
