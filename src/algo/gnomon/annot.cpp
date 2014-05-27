@@ -611,17 +611,18 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
         if(cds.Empty())
             continue;
 
-        bool has_genome_cds = false;
+        bool gapfilled = false;
+        int genome_cds = 0;
         ITERATE(CGeneModel::TExons, ie, model.Exons()) {
-            if(cds.IntersectingWith(ie->Limits()) && ie->m_fsplice_sig != "XX" && ie->m_ssplice_sig != "XX") {
-                has_genome_cds = true;
-                break;
-            }
+            if(ie->m_fsplice_sig == "XX" || ie->m_ssplice_sig == "XX")
+                gapfilled = true;
+            else
+                genome_cds += (cds&ie->Limits()).GetLength();
         }
-
-        if(!has_genome_cds) {
+        
+        if(gapfilled && genome_cds < 45) {
             model.Status() |= CGeneModel::eSkipped;
-            model.AddComment("Whole CDS in genomic gap");
+            model.AddComment("Most CDS in genomic gap");
             bad_aligns.push_back(model);
             models.erase(im);
         }
