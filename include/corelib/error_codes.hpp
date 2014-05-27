@@ -62,6 +62,7 @@ NCBI_DEFINE_ERRCODE_X(Corelib_Dll,        118,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_TestBoost,  119,  6);
 NCBI_DEFINE_ERRCODE_X(Corelib_Process,    120,  2);
 NCBI_DEFINE_ERRCODE_X(Corelib_Mutex,      121,  2);
+NCBI_DEFINE_ERRCODE_X(Corelib_Cookies,    122,  7);
 
 
 END_NCBI_SCOPE
