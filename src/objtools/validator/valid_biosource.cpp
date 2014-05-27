@@ -601,6 +601,15 @@ void CValidError_imp::ValidateBioSource
 
         case CSubSource::eSubtype_altitude:
             ++altitude_count;
+            if (!(*ssit)->IsSetName() || !CSubSource::IsAltitudeValid ((*ssit)->GetName())) {
+                string val = "";
+                if ((*ssit)->IsSetName()) {
+                    val = (*ssit)->GetName();
+                }
+                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_BadAltitude, 
+                           "bad altitude qualifier value " +  val,
+                           obj, ctx);
+            }
             break;
 
         case CSubSource::eSubtype_chromosome:

@@ -2060,6 +2060,100 @@ string CSubSource::FixSexQualifierValue (const string& value)
 }
 
 
+void s_CollectNumberAndUnits(const string& value, string& number, string& units)
+{
+    number = "";
+    units = "";
+
+    if (NStr::IsBlank(value)) {
+        return;
+    }
+
+    string::const_iterator it = value.begin();
+    if (*it == '+' || *it == '-') {
+        number += *it;
+        it++;
+    }
+
+    bool any_digit = false;
+    while (it != value.end() && isdigit(*it)) {
+        any_digit = true;
+        number += *it;
+        it++;
+    }
+
+    if (it == value.end()) {
+        number = "";
+        return;
+    }
+
+    if (*it == '.') {
+        number += *it;
+        it++;
+        while (it != value.end() && isdigit(*it)) {
+            any_digit = true;
+            number += *it;
+            it++;
+        }
+    }
+
+    if (it == value.end() || *it != ' ' || !any_digit) {
+        number = "";
+        return;
+    }
+
+    it++;
+    while (it != value.end()) {
+        units += *it;
+        it++;
+    }
+}
+
+
+bool CSubSource::IsAltitudeValid (const string& value)
+{
+    if (NStr::IsBlank(value)) {
+        return false;
+    }
+
+    string number = "";
+    string units = "";
+    s_CollectNumberAndUnits(value, number, units);
+    if (NStr::IsBlank(number) || !NStr::EqualCase(units, "m.")) {
+        return false;
+    } else {
+        return true;
+    }
+
+}
+
+
+string CSubSource::FixAltitude (const string& value)
+{
+    if (NStr::IsBlank(value)) {
+        return "";
+    }
+
+    string number = "";
+    string units = "";
+    s_CollectNumberAndUnits(value, number, units);
+    if (NStr::IsBlank(number)) {
+        return "";
+    } else if (NStr::Equal(units, "ft.") || NStr::Equal(units, "ft") || NStr::Equal(units, "feet")) {
+        double val = NStr::StringToDouble(number);
+        val *= 0.3048;
+        NStr::NumericToString(number, val);
+        units = "m.";
+    } 
+    
+    if (NStr::Equal(units, "m.")) {
+        return number + " " + "m.";
+    } else {
+        return "";
+    }
+}
+
+
 // =============================================================================
 //                                 Country Names
 // =============================================================================

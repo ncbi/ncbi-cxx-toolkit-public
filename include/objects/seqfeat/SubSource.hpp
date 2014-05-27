@@ -177,6 +177,9 @@ public:
     static bool IsValidSexQualifierValue (const string& value);
     static string FixSexQualifierValue (const string& value);
 
+    static bool IsAltitudeValid (const string& value);
+    static string FixAltitude (const string& value);
+
     static string AutoFix(TSubtype subtype, const string& value);
     void AutoFix();
 

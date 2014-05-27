@@ -6422,6 +6422,40 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonRange)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_Descr_BadAltitude)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123 m.");
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadAltitude",
+                              "bad altitude qualifier value 123"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123 ft.");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadAltitude",
+                              "bad altitude qualifier value 123 ft."));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("123 ft."), "37.4904 m.");
+}
+
+
 void TestSpecificHostNoError(const string& host)
 {
     // prepare entry
