@@ -669,7 +669,7 @@ bool CHttpCookie::MatchPath(const string& path) const
     if ( !NStr::StartsWith(p, m_Path) ) {
         return false;
     }
-    if (m_Path != p  &&  m_Path.back() != '/'  &&  p[m_Path.size()] != '/') {
+    if (m_Path != p  &&  m_Path[m_Path.size() - 1] != '/'  &&  p[m_Path.size()] != '/') {
         return false;
     }
     return true;
