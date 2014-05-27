@@ -2465,6 +2465,10 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         // can't check if no Inst or Repr
         return;
     }
+    if (!seq.GetInst().IsSetMol() || seq.GetInst().GetMol() == CSeq_inst::eMol_aa) {
+        // don't check proteins
+        return;
+    }
     CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
 
     // only check for raw or for delta sequences that are delta lit only
