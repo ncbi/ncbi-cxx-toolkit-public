@@ -1094,7 +1094,8 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx,
         // BankIt
         {{
             if ( !ctx.Config().HideBankItComment() ) {
-                string str = CCommentItem::GetStringForBankIt(uo);
+                const CFlatFileConfig& cfg = ctx.Config();
+                string str = CCommentItem::GetStringForBankIt(uo, cfg.IsModeDump());
                 if ( !str.empty() ) {
                     x_AddComment(new CCommentItem(str, ctx, &uo));
                 }

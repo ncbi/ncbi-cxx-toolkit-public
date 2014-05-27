@@ -122,7 +122,7 @@ public:
 
     static const string& GetNsAreGapsStr(void);
     static string GetStringForTPA(const CUser_object& uo, CBioseqContext& ctx);
-    static string GetStringForBankIt(const CUser_object& uo);
+    static string GetStringForBankIt(const CUser_object& uo, bool dump_mode);
     enum EGenomeBuildComment {
         eGenomeBuildComment_No = 0,
         eGenomeBuildComment_Yes

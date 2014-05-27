@@ -310,14 +310,15 @@ string CCommentItem::GetStringForTPA
 }
 
 
-string CCommentItem::GetStringForBankIt(const CUser_object& uo)
+string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
 {
     if ( !uo.CanGetType()  ||  !uo.GetType().IsStr()  ||
          uo.GetType().GetStr() != "Submission" ) {
         return kEmptyStr;
     }
 
-    const string* uvc = 0, *bic = 0;
+    const string* uvc = 0, *bic = 0, *smc = 0;
+
     if ( uo.HasField("UniVecComment") ) {
         const CUser_field& uf = uo.GetField("UniVecComment");
         if ( uf.CanGetData()  &&  uf.GetData().IsStr() ) {
@@ -330,14 +331,26 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo)
             bic = &(uf.GetData().GetStr());
         } 
     }
+    if ( uo.HasField("SmartComment") && dump_mode ) {
+        const CUser_field& uf = uo.GetField("SmartComment");
+        if ( uf.CanGetData()  &&  uf.GetData().IsStr() ) {
+            smc = &(uf.GetData().GetStr());
+        } 
+    }
 
     CNcbiOstrstream text;
-    if ( uvc != 0  &&  bic != 0 ) {
-        text << "Vector Explanation: " << *uvc << "~Bankit Comment: " << *bic;
-    } else if ( uvc != 0 ) {
-        text << "Vector Explanation: " << *uvc;
-    } else if ( bic != 0 ) {
-         text << "Bankit Comment: " << *bic;
+    string pfx = "";
+    if ( uvc != 0 ) {
+        text << pfx << "Vector Explanation: " << *uvc;
+        pfx = "~";
+    }
+    if ( bic != 0 ) {
+        text << pfx << "Bankit Comment: " << *bic;
+        pfx = "~";
+    }
+    if ( smc != 0 ) {
+        text << pfx << "Bankit Comment: " << *smc;
+        pfx = "~";
     }
 
     return CNcbiOstrstreamToString(text);
