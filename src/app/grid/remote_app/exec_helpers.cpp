@@ -50,15 +50,15 @@ BEGIN_NCBI_SCOPE
 ///
 CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
         const IRegistry& reg)
-    : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), 
+    : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0),
       m_NonZeroExitAction(eDoneOnNonZeroExit),
       m_RemoveTempDir(true),
       m_CacheStdOutErr(true)
 {
-    m_MaxAppRunningTime = 
+    m_MaxAppRunningTime =
         reg.GetInt(sec_name,"max_app_run_time",0,0,IRegistry::eReturn);
-    
-    m_KeepAlivePeriod = 
+
+    m_KeepAlivePeriod =
         reg.GetInt(sec_name,"keep_alive_period",0,0,IRegistry::eReturn);
 
     if (reg.HasEntry(sec_name, "non_zero_exit_action") ) {
@@ -70,14 +70,14 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
         else if (NStr::CompareNocase(val, "done") == 0 )
             m_NonZeroExitAction = eDoneOnNonZeroExit;
         else {
-           ERR_POST(Warning << "Unknown parameter value : Section [" 
+           ERR_POST(Warning << "Unknown parameter value : Section ["
                      << sec_name << "], param : \"non_zero_exit_action\", value : \""
-                     << val << "\". Allowed values: fail, return, done"); 
+                     << val << "\". Allowed values: fail, return, done");
         }
 
     } else {
         if (reg.HasEntry(sec_name, "fail_on_non_zero_exit") ) {
-            if (reg.GetBool(sec_name, "fail_on_non_zero_exit", false, 0, 
+            if (reg.GetBool(sec_name, "fail_on_non_zero_exit", false, 0,
                             CNcbiRegistry::eReturn) )
                 m_NonZeroExitAction = eFailOnNonZeroExit;
         }
@@ -85,24 +85,24 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
 
     if (reg.GetBool(sec_name, "run_in_separate_dir", false, 0,
             CNcbiRegistry::eReturn)) {
-        if (reg.HasEntry(sec_name, "tmp_dir")) 
+        if (reg.HasEntry(sec_name, "tmp_dir"))
             m_TempDir = reg.GetString(sec_name, "tmp_dir", "." );
-        else 
+        else
             m_TempDir = reg.GetString(sec_name, "tmp_path", "." );
-        
+
         if (!CDirEntry::IsAbsolutePath(m_TempDir)) {
-            string tmp = CDir::GetCwd() 
-                + CDirEntry::GetPathSeparator() 
+            string tmp = CDir::GetCwd()
+                + CDirEntry::GetPathSeparator()
                 + m_TempDir;
             m_TempDir = CDirEntry::NormalizePath(tmp);
         }
-        if (reg.HasEntry(sec_name, "remove_tmp_dir")) 
-            m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_dir", true, 0, 
+        if (reg.HasEntry(sec_name, "remove_tmp_dir"))
+            m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_dir", true, 0,
                                     CNcbiRegistry::eReturn);
         else
-            m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_path", true, 0, 
+            m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_path", true, 0,
                                     CNcbiRegistry::eReturn);
-        m_CacheStdOutErr = reg.GetBool(sec_name, "cache_std_out_err", true, 0, 
+        m_CacheStdOutErr = reg.GetBool(sec_name, "cache_std_out_err", true, 0,
                                     CNcbiRegistry::eReturn);
     }
 
@@ -113,8 +113,8 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
                 "].app_path");
     }
     if (!CDirEntry::IsAbsolutePath(m_AppPath)) {
-        string tmp = CDir::GetCwd() 
-            + CDirEntry::GetPathSeparator() 
+        string tmp = CDir::GetCwd()
+            + CDirEntry::GetPathSeparator()
             + m_AppPath;
         m_AppPath = CDirEntry::NormalizePath(tmp);
     }
@@ -122,14 +122,14 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     m_MonitorAppPath = reg.GetString(sec_name, "monitor_app_path", kEmptyStr);
     if (!m_MonitorAppPath.empty()) {
         if (!CDirEntry::IsAbsolutePath(m_MonitorAppPath)) {
-            string tmp = CDir::GetCwd() 
-                + CDirEntry::GetPathSeparator() 
+            string tmp = CDir::GetCwd()
+                + CDirEntry::GetPathSeparator()
                 + m_MonitorAppPath;
             m_MonitorAppPath = CDirEntry::NormalizePath(tmp);
         }
         CFile f(m_MonitorAppPath);
         if (!f.Exists() || !CanExecRemoteApp(f)) {
-            ERR_POST("Can not execute \"" << m_MonitorAppPath 
+            ERR_POST("Can not execute \"" << m_MonitorAppPath
                      << "\". The Monitor application will not run!");
             m_MonitorAppPath = kEmptyStr;
         }
@@ -177,17 +177,17 @@ bool CanExecRemoteApp(const CFile& file)
 ///
 struct STmpDirGuard
 {
-    STmpDirGuard(const string& path, bool remove_path) 
+    STmpDirGuard(const string& path, bool remove_path)
         : m_Path(path), m_RemovePath(remove_path)
-    { 
+    {
         if (!m_Path.empty()) {
-            CDir dir(m_Path); 
-            if (!dir.Exists()) 
-                dir.CreatePath(); 
+            CDir dir(m_Path);
+            if (!dir.Exists())
+                dir.CreatePath();
         }
     }
-    ~STmpDirGuard() 
-    { 
+    ~STmpDirGuard()
+    {
         if (m_RemovePath && !m_Path.empty()) {
             try {
                 if (!CDir(m_Path).Remove(CDirEntry::eRecursiveIgnoreMissing)) {
@@ -215,8 +215,8 @@ public:
         if (max_app_running_time > 0)
             m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));
     }
-    
-    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle /*pid*/) 
+
+    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle /*pid*/)
     {
         if (m_MaxAppRunningTime > 0 && m_RunningTime->Elapsed() >
                 (double) m_MaxAppRunningTime) {
@@ -253,8 +253,8 @@ public:
         int exit_value;
         CPipe::EFinish ret = CPipe::eCanceled;
         try {
-            ret = CPipe::ExecWait(m_App, args, in, 
-                                  out, err, exit_value, 
+            ret = CPipe::ExecWait(m_App, args, in,
+                                  out, err, exit_value,
                                   kEmptyStr, m_Env,
                                   &callback);
         }
@@ -435,7 +435,7 @@ public:
             // directory will not succeed.
             TFileHandle fd = m_ReaderWriter->GetFileIO().GetFileHandle();
             fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
-#endif            
+#endif
             m_StreamGuard.reset(new CWStream(m_ReaderWriter.get()));
             m_Stream = m_StreamGuard.get();
         } else {
@@ -446,12 +446,10 @@ public:
     {
         try {
             Close();
-        } catch(exception& ex) {
-            ERR_POST( "CTmpStreamGuard::~CTmpStreamGuard(): " <<
+        }
+        catch (exception& ex) {
+            ERR_POST("CTmpStreamGuard::~CTmpStreamGuard(): " <<
                 m_Name << " --> " << ex.what());
-        } catch(...) {
-            ERR_POST( "CTmpStreamGuard::~CTmpStreamGuard(): " <<
-                m_Name << " --> Unknown error.");
         }
     }
 
@@ -465,8 +463,8 @@ public:
             m_ReaderWriter->GetFileIO().SetFilePos(0, CFileIO_Base::eBegin);
             {
             CRStream rstm(m_ReaderWriter.get());
-            if (!rstm.good() 
-                || !NcbiStreamCopy(m_OrigStream, rstm)) 
+            if (!rstm.good()
+                || !NcbiStreamCopy(m_OrigStream, rstm))
                 ERR_POST( "Cannot copy \"" << m_Name << "\" file.");
             }
             m_ReaderWriter.reset();
@@ -560,12 +558,17 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
 
         STimeout kill_tm = {m_KillTimeout, 0};
 
-        return CPipe::ExecWait(GetAppPath(), args, in,
+        bool result = CPipe::ExecWait(GetAppPath(), args, in,
                                std_out_guard.GetOStream(),
                                std_err_guard.GetOStream(),
-                               exit_value, 
+                               exit_value,
                                tmp_path, env, &callback,
                                &kill_tm) == CPipe::eDone;
+
+        std_err_guard.Close();
+        std_out_guard.Close();
+
+        return result;
     }
 }
 
