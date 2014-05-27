@@ -226,7 +226,8 @@ TMgr-BlastRIDReply ::= SEQUENCE {
 TMgr-CreateUserDataItem ::= SEQUENCE {
     datakey VisibleString,
     seqids SET OF VisibleString,
-    attrs SET OF TMgr-Attribute OPTIONAL
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    seqs SET OF TMgr-DatasetItemSeq OPTIONAL
 }
 
 TMgr-IdentityId ::= SEQUENCE {
