@@ -203,6 +203,7 @@ void FixOrgNames(objects::CSeq_entry_Handle seh, string& result)
 
 void FindOrgNames(objects::CSeq_entry_Handle seh, vector<string>& taxnames)
 {
+    if (!seh) return;
     objects::CBioseq_CI b_iter(seh, objects::CSeq_inst::eMol_na);
     for ( ; b_iter ; ++b_iter ) {
         objects::CSeqdesc_CI it (*b_iter, objects::CSeqdesc::e_Source);
