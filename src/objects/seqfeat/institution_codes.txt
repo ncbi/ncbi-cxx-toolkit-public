@@ -2323,8 +2323,8 @@ HUF	s	Hunan Forestry School
 HUFU	s	Universidade Federal de Uberlandia, Instituto de Biologia
 HUIC	s	Hacettepe University Ichthyological Collection
 HUIF	s	Hunan Forestry Institute
-HUJ	s	Hebrew University
-HUJ:INV	s	Hebrew University, Invertebrate collection
+HUJ	s	Hebrew University of Jerusalem
+HUJ:INV	s	Hebrew University of Jerusalem, Invertebrate collection
 HUKUK	c	Culture Collection of Animal Cells
 HUL	s	Fine Arts Museum
 HULE	s	Universidad Nacional Autonoma de Nicaragua, Departamento de Biologia
@@ -2864,6 +2864,7 @@ JXM	s	Jiangxi Institute of Materia Medica
 JXU	s	Jiangxi University, Biology Department
 JYV	s	University of Jyvaeskylae, Natural History Department
 K	sb	Royal Botanic Gardens, Kew
+K(M)	s	Mycology Collection of Kew Royal Botanical Gardens
 KA	s	Vytautas Magnus University
 KABA	s	University of Kabul
 KAC	c	Kalmar Algae Collection
