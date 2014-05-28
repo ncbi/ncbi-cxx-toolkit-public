@@ -45,8 +45,11 @@
 #include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 #include <objtools/edit/edit_exception.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
+#include <objtools/edit/loc_edit.hpp>
 #include <set>
 #include <sstream>
 #include <map>
@@ -1274,6 +1277,314 @@ bool HasRepairedIDs(const CSeq_entry& entry)
         }
     }
     return rval;
+}
+
+
+void s_AddLiteral(CSeq_inst& inst, const string& element)
+{
+    CRef<CDelta_seq> ds(new CDelta_seq());
+    ds->SetLiteral().SetSeq_data().SetIupacna().Set(element);
+    ds->SetLiteral().SetLength(element.length());
+    
+    inst.SetExt().SetDelta().Set().push_back(ds);
+}
+
+
+void s_AddGap(CSeq_inst& inst, size_t n_len, bool is_unknown)
+{
+    CRef<CDelta_seq> gap(new CDelta_seq());
+    gap->SetLiteral().SetSeq_data().SetGap();
+    if (is_unknown) {
+        gap->SetLiteral().SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+    }
+    gap->SetLiteral().SetLength(n_len);
+    inst.SetExt().SetDelta().Set().push_back(gap);
+}
+
+
+/// ConvertRawToDeltaByNs
+/// A function to convert a raw sequence to a delta sequence, using runs of
+/// Ns to determine the gap location. The size of the run of Ns determines
+/// whether a gap should be created and whether the gap should be of type
+/// known or unknown. Note that if the ranges overlap, unknown gaps will be
+/// preferred (allowing the user to create known length gaps for 20-forever,
+/// but unknown length gaps for 100, for example).
+/// Use a negative number for a maximum to indicate that there is no upper
+/// limit.
+/// @param inst        The Seq-inst to adjust
+/// @param min_unknown The minimum number of Ns to be converted to a gap of 
+///                    unknown length
+/// @param max_unknown The maximum number of Ns to be converted to a gap of 
+///                    unknown length
+/// @param min_known   The minimum number of Ns to be converted to a gap of 
+///                    known length
+/// @param max_known   The maximum number of Ns to be converted to a gap of 
+///                    known length
+///
+/// @return            none
+void ConvertRawToDeltaByNs(CSeq_inst& inst, 
+                           size_t min_unknown, int max_unknown, 
+                           size_t min_known,   int max_known)
+{
+    // can only convert if starting as raw
+    if (!inst.IsSetRepr() || inst.GetRepr() != CSeq_inst::eRepr_raw
+        || !inst.IsSetSeq_data()) {
+        return;
+    }
+
+    string iupacna;
+
+    switch(inst.GetSeq_data().Which()) {
+        case CSeq_data::e_Iupacna:
+            iupacna = inst.GetSeq_data().GetIupacna();
+            break;
+        case CSeq_data::e_Ncbi2na:
+            CSeqConvert::Convert(inst.GetSeq_data().GetNcbi2na().Get(), CSeqUtil::e_Ncbi2na,
+                                    0, inst.GetLength(), iupacna, CSeqUtil::e_Iupacna);
+            break;
+        case CSeq_data::e_Ncbi4na:
+            CSeqConvert::Convert(inst.GetSeq_data().GetNcbi4na().Get(), CSeqUtil::e_Ncbi4na,
+                                    0, inst.GetLength(), iupacna, CSeqUtil::e_Iupacna);
+            break;
+        case CSeq_data::e_Ncbi8na:
+            CSeqConvert::Convert(inst.GetSeq_data().GetNcbi8na().Get(), CSeqUtil::e_Ncbi8na,
+                                    0, inst.GetLength(), iupacna, CSeqUtil::e_Iupacna);
+            break;
+        default:
+            return;
+            break;
+    }
+  
+    string element = "";
+    size_t n_len = 0;
+    ITERATE(string, it, iupacna) {
+        if ((*it) == 'N') {
+            n_len++;
+            element += *it;
+        } else {
+            if (n_len > 0) {
+                // decide whether to turn this past run of Ns into a gap
+                bool is_unknown = false;
+                bool is_known = false;
+
+                if (n_len >= min_unknown && (max_unknown < 0 || n_len <= max_unknown)) {
+                    is_unknown = true;
+                } else if (n_len >= min_known && (max_known < 0 || n_len <= max_known)) {
+                    is_known = true;
+                }
+                if (is_unknown || is_known) {
+                   // make literal to contain sequence before gap
+                    if (element.length() > n_len) {
+                        element = element.substr(0, element.length() - n_len);
+                        s_AddLiteral(inst, element);
+                    }
+                    s_AddGap(inst, n_len, is_unknown);
+                    element = "";
+                }
+                n_len = 0;
+            }
+            element += *it;
+        }
+    }
+
+    if (n_len > 0) {
+        // decide whether to turn this past run of Ns into a gap
+        bool is_unknown = false;
+        bool is_known = false;
+
+        if (n_len >= min_unknown && (max_unknown < 0 || n_len <= max_unknown)) {
+            is_unknown = true;
+        } else if (n_len >= min_known && (max_known < 0 || n_len <= max_known)) {
+            is_known = true;
+        }
+        if (is_unknown || is_known) {
+            // make literal to contain sequence before gap
+            if (element.length() > n_len) {
+                element = element.substr(0, element.length() - n_len);
+                s_AddLiteral(inst, element);
+            }
+            s_AddGap(inst, n_len, is_unknown);
+        }
+    } else {
+        s_AddLiteral(inst, element);
+    }
+
+    inst.SetRepr(CSeq_inst::eRepr_delta);
+    inst.ResetSeq_data();
+}
+
+
+/// NormalizeUnknownLengthGaps
+/// A function to adjust the length of unknown-length gaps to a specific
+/// length (100 by default).
+/// @param inst        The Seq-inst to adjust
+///
+/// @return            A vector of the adjustments to the sequence,
+///                    which can be used to fix the locations of features
+///                    on the sequence.
+TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, size_t unknown_length)
+{
+    TLocAdjustmentVector changes;
+
+    // can only adjust if starting as delta sequence
+    if (!inst.IsSetRepr() || inst.GetRepr() != CSeq_inst::eRepr_delta
+        || !inst.IsSetExt()) {
+        return changes;
+    }
+
+    size_t pos = 0;
+    NON_CONST_ITERATE(CSeq_ext::TDelta::Tdata, it, inst.SetExt().SetDelta().Set()) {
+        size_t orig_len = 0;
+        if ((*it)->IsLiteral()) {
+            if ((*it)->GetLiteral().IsSetLength()) {
+                orig_len = (*it)->GetLiteral().GetLength();
+            }            
+            if ((*it)->GetLiteral().IsSetFuzz()
+                && orig_len != unknown_length
+                && (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())) {                
+
+                int diff = unknown_length - orig_len;
+                (*it)->SetLiteral().SetLength(unknown_length);
+                changes.push_back(TLocAdjustment(pos, diff));
+                inst.SetLength(inst.GetLength() + diff);
+            }
+        } else if ((*it)->IsLoc()) {
+            orig_len = (*it)->GetLoc().GetTotalRange().GetLength();
+        }
+
+        pos += orig_len;
+    }
+
+    return changes;
+}
+
+
+void ConvertRawToDeltaByNs(CBioseq_Handle bsh, 
+                           size_t min_unknown, int max_unknown, 
+                           size_t min_known, int max_known)
+{
+    CRef<CSeq_inst> inst(new CSeq_inst());
+    inst->Assign(bsh.GetInst());
+
+    ConvertRawToDeltaByNs(*inst, min_unknown, max_unknown, min_known, max_known);
+    TLocAdjustmentVector changes = NormalizeUnknownLengthGaps(*inst);
+    CBioseq_EditHandle beh = bsh.GetEditHandle();
+    beh.SetInst(*inst);
+
+    if (changes.size() > 0) {
+        for (CFeat_CI f(bsh); f; ++f) {
+            CRef<CSeq_feat> cpy(new CSeq_feat());
+            cpy->Assign(*(f->GetSeq_feat()));
+            TLocAdjustmentVector::reverse_iterator it = changes.rbegin();
+            bool cut = false;
+            bool trimmed = false;
+            while (it != changes.rend() && !cut) {
+                if (it->second < 0) {
+                    FeatureAdjustForTrim(*cpy, it->first, it->first - it->second + 1, NULL, cut, trimmed);
+                } else {
+                    FeatureAdjustForInsert(*cpy, it->first, it->first + it->second - 1, NULL);
+                }
+                it++;
+            }
+            CSeq_feat_EditHandle feh(f->GetSeq_feat_Handle());
+            if (cut) {
+                feh.Remove();
+            } else {
+                feh.Replace(*cpy);
+            }
+        }
+    }
+
+}
+
+
+/// SetLinkageType
+/// A function to set the linkage_type for gaps in a delta sequence.
+/// @param ext          The Seq_ext to adjust
+/// @param linkage_type The linkage_type to use.
+///
+/// @return            none
+void SetLinkageType(CSeq_ext& ext, CSeq_gap::TType linkage_type)
+{
+    NON_CONST_ITERATE(CSeq_ext::TDelta::Tdata, it, ext.SetDelta().Set()) {
+        if ((*it)->IsLiteral()
+            && (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())) {
+            CSeq_gap& gap = (*it)->SetLiteral().SetSeq_data().SetGap();
+            gap.ChangeType(linkage_type);
+        }
+    }
+}
+
+
+/// SetLinkageTypeScaffold
+/// A special case of SetLinkageType. When type is Scaffold, linkage must be
+/// linked and linkage evidence must be provided.
+/// @param ext           The Seq_ext to adjust
+/// @param evidence_type The linkage_type to use.
+///
+/// @return            none
+void SetLinkageTypeScaffold(CSeq_ext& ext, CLinkage_evidence::TType evidence_type)
+{
+    NON_CONST_ITERATE(CSeq_ext::TDelta::Tdata, it, ext.SetDelta().Set()) {
+        if ((*it)->IsLiteral()
+            && (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())) {
+            CSeq_gap& gap = (*it)->SetLiteral().SetSeq_data().SetGap();
+            gap.SetLinkageTypeScaffold(evidence_type);
+        }
+    }
+}
+
+
+void SetLinkageTypeLinkedRepeat(CSeq_ext& ext, CLinkage_evidence::TType evidence_type)
+{
+    NON_CONST_ITERATE(CSeq_ext::TDelta::Tdata, it, ext.SetDelta().Set()) {
+        if ((*it)->IsLiteral()
+            && (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())) {
+            CSeq_gap& gap = (*it)->SetLiteral().SetSeq_data().SetGap();
+            gap.SetLinkageTypeLinkedRepeat(evidence_type);
+        }
+    }
+}
+
+
+/// AddLinkageEvidence
+/// A function to add linkage evidence for gaps in a delta sequence.
+/// Note that this function will automatically set the linkage to eLinkage_linked.
+/// @param ext           The Seq_ext to adjust
+/// @param evidence_type The evidence type to use.
+///
+/// @return            none
+void AddLinkageEvidence(CSeq_ext& ext, CLinkage_evidence::TType evidence_type)
+{
+    NON_CONST_ITERATE(CSeq_ext::TDelta::Tdata, it, ext.SetDelta().Set()) {
+        if ((*it)->IsLiteral()
+            && (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())) {
+            CSeq_gap& gap = (*it)->SetLiteral().SetSeq_data().SetGap();
+            gap.AddLinkageEvidence(evidence_type);
+        }
+    }
+}
+
+
+/// ResetLinkageEvidence
+/// A function to clear linkage evidence for gaps in a delta sequence.
+/// @param ext           The Seq_ext to adjust
+///
+/// @return            none
+void ResetLinkageEvidence(CSeq_ext& ext)
+{
+    NON_CONST_ITERATE(CSeq_ext::TDelta::Tdata, it, ext.SetDelta().Set()) {
+        if ((*it)->IsLiteral()
+            && (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())) {
+            CSeq_gap& gap = (*it)->SetLiteral().SetSeq_data().SetGap();
+            if (gap.IsSetType() && gap.GetType() == CSeq_gap::eType_repeat) {
+                gap.SetLinkage(CSeq_gap::eLinkage_unlinked);
+            } else {
+                gap.ResetLinkage();
+            }
+            gap.ResetLinkage_evidence();
+        }
+    }
 }
 
 

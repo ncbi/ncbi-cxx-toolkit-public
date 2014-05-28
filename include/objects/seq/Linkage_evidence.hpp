@@ -45,9 +45,6 @@
 
 // generated classes
 
-// user-added includes
-#include <objects/seq/Seq_gap.hpp>
-
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -62,6 +59,8 @@ public:
     // destructor
     ~CLinkage_evidence(void);
 
+    typedef list< CRef< CLinkage_evidence > > TLinkage_evidence;
+
     // Convert a raw string into a container of linkage-evidence.
     // The result is appended to output_result.
     // @param output_result The result is appended to this.
@@ -70,7 +69,7 @@ public:
     // @return true if succeeded.  If false, output_result is
     // guaranteed to be restored to its original state.
     static bool GetLinkageEvidence (
-        CSeq_gap::TLinkage_evidence& output_result, 
+        TLinkage_evidence& output_result, 
         const string& linkage_evidence );
 
     // Convert a vector of strings into a container of linkage-evidence.
@@ -80,7 +79,7 @@ public:
     // @return true if succeeded.  If false, output_result is
     // guaranteed to be restored to its original state.
     static bool GetLinkageEvidence(
-        CSeq_gap::TLinkage_evidence& output_result, 
+        TLinkage_evidence& output_result, 
         const vector<string> &linkage_evidence );
 
     // Convert a container of CLinkage_evidence into a 
@@ -93,7 +92,7 @@ public:
     //         representing a linkage_evidence(s) we couldn't convert, but
     //         the rest of the string will be fine.
     static bool VecToString( string & output_result,
-        const CSeq_gap::TLinkage_evidence & linkage_evidence );
+        const TLinkage_evidence & linkage_evidence );
 
 private:
     // Prohibit copy constructor and assignment operator

@@ -33,7 +33,8 @@
 */
 #include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-
+#include <objects/seq/Seq_gap.hpp>
+#include <objects/seq/Linkage_evidence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -142,7 +143,38 @@ void AddLocalIdUserObjects(CSeq_entry& entry);
 /// the contents of the OriginalID User-object descriptor
 NCBI_XOBJEDIT_EXPORT
 bool HasRepairedIDs(const CSeq_entry& entry);
-   
+
+NCBI_XOBJEDIT_EXPORT
+void ConvertRawToDeltaByNs(CSeq_inst& inst, 
+                           size_t min_unknown, int max_unknown, 
+                           size_t min_known, int max_known);
+
+NCBI_XOBJEDIT_EXPORT
+void ConvertRawToDeltaByNs(CBioseq_Handle bsh, 
+                           size_t min_unknown, int max_unknown, 
+                           size_t min_known, int max_known);
+
+typedef pair<size_t, int> TLocAdjustment;
+typedef vector<TLocAdjustment> TLocAdjustmentVector;
+
+NCBI_XOBJEDIT_EXPORT
+TLocAdjustmentVector NormalizeUnknownLengthGaps(CSeq_inst& inst, size_t unknown_length = 100);
+
+NCBI_XOBJEDIT_EXPORT
+void SetLinkageType(CSeq_ext& ext, CSeq_gap::TType linkage_type);
+
+NCBI_XOBJEDIT_EXPORT
+void SetLinkageTypeScaffold(CSeq_ext& ext, CLinkage_evidence::TType evidence_type);
+
+NCBI_XOBJEDIT_EXPORT
+void SetLinkageTypeLinkedRepeat(CSeq_ext& ext, CLinkage_evidence::TType evidence_type);
+
+NCBI_XOBJEDIT_EXPORT
+void AddLinkageEvidence(CSeq_ext& ext, CLinkage_evidence::TType evidence_type);
+
+NCBI_XOBJEDIT_EXPORT
+void ResetLinkageEvidence(CSeq_ext& ext, CLinkage_evidence::TType evidence_type);
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

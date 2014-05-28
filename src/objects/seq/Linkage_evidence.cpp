@@ -55,7 +55,7 @@ CLinkage_evidence::~CLinkage_evidence(void)
 }
 
 bool CLinkage_evidence::GetLinkageEvidence (
-    CSeq_gap::TLinkage_evidence& output_result, 
+    TLinkage_evidence& output_result, 
     const string& linkage_evidence )
 {
     // basically just a wrapper for the other function which does
@@ -67,7 +67,7 @@ bool CLinkage_evidence::GetLinkageEvidence (
 
 
 bool CLinkage_evidence::GetLinkageEvidence(
-    CSeq_gap::TLinkage_evidence& output_result, 
+    TLinkage_evidence& output_result, 
     const vector<string> &linkage_evidence )
 {
     // remember the old size so we can resize if there's an error
@@ -117,11 +117,11 @@ bool CLinkage_evidence::GetLinkageEvidence(
 
 bool CLinkage_evidence::VecToString( 
     string & output_result,
-    const CSeq_gap::TLinkage_evidence & linkage_evidence )
+    const TLinkage_evidence & linkage_evidence )
 {
     bool all_converted_okay = true;
 
-    ITERATE( CSeq_gap::TLinkage_evidence, evid_iter, linkage_evidence ) {
+    ITERATE( TLinkage_evidence, evid_iter, linkage_evidence ) {
         const char *evid_str = NULL;
         if( (*evid_iter)->IsSetType() ) {
             switch( (*evid_iter)->GetType() ) {

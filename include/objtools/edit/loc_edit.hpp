@@ -117,6 +117,26 @@ NCBI_XOBJEDIT_EXPORT void ReverseComplementLocation(CSeq_loc& loc, CScope& scope
 
 NCBI_XOBJEDIT_EXPORT void ReverseComplementFeature(CSeq_feat& feat, CScope& scope);
 
+NCBI_XOBJEDIT_EXPORT void SeqLocAdjustForTrim(CSeq_loc& loc, 
+                                                TSeqPos from, TSeqPos to,
+                                                const CSeq_id* seqid,
+                                                bool& bCompleteCut,
+                                                bool& bTrimmed);
+
+NCBI_XOBJEDIT_EXPORT void SeqLocAdjustForInsert(CSeq_loc& loc, 
+                                                TSeqPos from, TSeqPos to,
+                                                const CSeq_id* seqid);
+
+NCBI_XOBJEDIT_EXPORT void FeatureAdjustForTrim(CSeq_feat& feat, 
+                                                TSeqPos from, TSeqPos to,
+                                                const CSeq_id* seqid,
+                                                bool& bCompleteCut,
+                                                bool& bTrimmed);
+
+NCBI_XOBJEDIT_EXPORT void FeatureAdjustForInsert(CSeq_feat& feat, 
+                                                 TSeqPos from, TSeqPos to,
+                                                 const CSeq_id* seqid);
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
