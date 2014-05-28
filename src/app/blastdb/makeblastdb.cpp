@@ -1022,12 +1022,6 @@ void CMakeBlastDBApp::x_BuildDatabase()
 
     bool is_protein = (args[kArgDbType].AsString() == "prot");
 
-    // 1. title option if present
-    // 2. otherwise, kInput
-    string title = (args[kArgDbTitle].HasValue()
-                    ? args[kArgDbTitle]
-                    : args[kInput]).AsString();
-
     // 1. database name option if present
     // 2. else, kInput
     string dbname = (args[kOutput].HasValue()
@@ -1044,6 +1038,25 @@ void CMakeBlastDBApp::x_BuildDatabase()
     if (args[kInput].AsString() == dbname) {
         m_IsModifyMode = true;
     }
+
+    // 1. title option if present
+    // 2. otherwise, kInput, UNLESS
+    // 3. input is a BLAST database, in which we use that title
+    string title = (args[kArgDbTitle].HasValue()
+                    ? args[kArgDbTitle]
+                    : args[kInput]).AsString();
+    if (!args[kArgDbTitle].HasValue() && x_GetUserInputTypeHint() == eBlastDb) { 
+        vector<CTempString> names;
+        SeqDB_SplitQuoted(args[kInput].AsString(), names);
+        if (names.size() > 1) {
+            NCBI_THROW(CInvalidDataException, eInvalidInput,
+                       "Please provide a title using -title");
+        }
+        CRef<CSeqDB> dbhandle(new CSeqDB(names.front(), 
+            (is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide)));
+        title = dbhandle->GetTitle();
+    }
+
 
     // N.B.: Source database(s) in the current working directory will
     // be overwritten (as in formatdb)
