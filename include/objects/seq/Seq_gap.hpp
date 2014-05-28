@@ -43,6 +43,8 @@
 // generated includes
 #include <objects/seq/Seq_gap_.hpp>
 
+#include <objects/seq/Linkage_evidence.hpp>
+
 // generated classes
 
 
