@@ -85,7 +85,7 @@ static const s_cgp2feattype_featqual cgp_ftype_fqual[] = {
  { eCDSGeneProt_field_mat_peptide_comment, eMacro_feature_type_mat_peptide_aa, eFeat_qual_legal_note}
 };
 
-CRef <CFeature_field> CField_type :: x_FeatureFieldFromCDSGeneProtField (ECDSGeneProt_field cgp_field) const
+CRef <CFeature_field> CField_type :: FeatureFieldFromCDSGeneProtField (ECDSGeneProt_field cgp_field)
 {
    CRef <CFeature_field> feat_field(new CFeature_field);
    CRef <CFeat_qual_choice> f_qual;
@@ -100,7 +100,7 @@ CRef <CFeature_field> CField_type :: x_FeatureFieldFromCDSGeneProtField (ECDSGen
    return (CRef <CFeature_field> (0));
 };
 
-static const char* dblink_name[] = {
+static const string dblink_name[] = {
    "Trace Assembly Archive",
    "BioSample",
    "ProbeDB",
@@ -109,7 +109,7 @@ static const char* dblink_name[] = {
    "Assembly"
 };
 
-string CField_type :: x_GetDBLinkFieldFromUserObject(const CUser_object& user_obj, EDBLink_field_type dblink_tp, const CString_constraint& str_cons) const
+string CField_type :: GetDBLinkFieldFromUserObject(const CUser_object& user_obj, EDBLink_field_type dblink_tp, const CString_constraint& str_cons)
 {
   string str(kEmptyStr);
   if (user_obj.GetType().IsStr() && user_obj.GetType().GetStr() == "DBLink") {
@@ -143,145 +143,6 @@ string CField_type :: x_GetDBLinkFieldFromUserObject(const CUser_object& user_ob
   }
   return str;
 };
-
-/*
-string CField_type :: x_GetFieldValueForObjectEx (const CSeq_feat& feat, CBioseq_Handle bioseq_hl, const CString_constraint& str_cons) const
-{
-  string str(kEmptyStr);
-  switch (Which()) {
-    case e_Source_qual :
-      {
-        if (feat.GetData().IsBiosrc()) {
-          const CBioSource& biosrc = feat.GetData().GetBiosrc();
-          str = GetSource_qual().GetSourceQualFromBioSource(biosrc, str_cons);
-        }
-         break;
-      }
-    case e_Molinfo_field :
-//      str = GetMolinfo_field().GetSequenceQualFromBioseq (bioseq_hl);
-      break;
-    case e_Dblink:
-      for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_User); 
-                                          seq_ci && str.empty(); ++seq_ci)
-         str = x_GetDBLinkFieldFromUserObject(
-                                 seq_ci->GetUser(), GetDblink(), str_cons);
-      break;
-    case e_Misc:
-      switch (GetMisc()) {
-        case eMisc_field_genome_project_id:
-          for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_User); 
-                                          seq_ci && str.empty(); ++seq_ci) {
-            const CObject_id& type = seq_ci->GetUser().GetType();
-            if (type.IsStr() && type.GetStr() == "GenomeProjectsDB") {
-              ITERATE (vector <CRef <CUser_field> >, uit, 
-                                          seq_ci->GetUser().GetData()) {
-                const CObject_id& label = (*uit)->GetLabel();
-                if (label.IsStr() && label.GetStr()== "ProjectID" 
-                                    && (*uit)->GetData().IsInt()) {
-                  str = NStr::IntToString( (*uit)->GetData().GetInt() );
-                  if (str_cons.Empty() || str_cons.Match(str)) {
-                          break;
-                  }
-                  else str = kEmptyStr;
-                }
-              }
-            }
-          }
-          break;
-        case eMisc_field_comment_descriptor:
-          for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_Comment); 
-                                           seq_ci && str.empty(); ++seq_ci) {
-             str = seq_ci->GetComment();
-             if (!str_cons.Match(str)) {
-                 str = kEmptyStr;
-             }
-          }
-          break;
-        case eMisc_field_defline:
-          for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_Title); 
-                                           seq_ci && str.empty(); ++seq_ci) {
-             str = seq_ci->GetTitle();
-             if (!str_cons.Match(str)) {
-                str = kEmptyStr;
-             }
-          }
-          break;
-        case eMisc_field_keyword:
-          for (CSeqdesc_CI seq_ci(bioseq_hl, CSeqdesc::e_Genbank); 
-                                       seq_ci && str.empty(); ++seq_ci) {
-             if (seq_ci->GetGenbank().CanGetKeywords()) {
-                str = CFeat_qual_choice::GetFirstStringMatch(
-                               seq_ci->GetGenbank().GetKeywords(), str_cons);
-             }
-          }
-          break;
-        default: break;
-      }
-      break;
-    default: break;
-  }
-  return str;
-};
-
-bool CField_type :: Match(const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
-{
-  bool rval = false;
-  string str;
-  CBioseq_Handle 
-     b_hl 
-       = sequence :: GetBioseqFromSeqLoc(feat.GetLocation(), (CScope&)(*scope));
-  switch (Which()) {
-    case e_Source_qual:
-      {
-        if (feat.GetData().IsBiosrc()) {
-          const CBioSource& biosrc = feat.GetData().GetBiosrc();
-          str = GetSource_qual().GetSourceQualFromBioSource(biosrc, str_cons);
-        }
-        if (!str.empty()) {
-          rval = true;
-        }
-      }
-      break;
-    case CField_type:: e_Feature_field:
-      rval = GetFeature_field().Match(feat, str_cons, scope);
-      break;
-    case CField_type:: e_Rna_field:
-      rval = GetRna_field().Match(feat, str_cons, scope);
-      break;
-    case CField_type:: e_Cds_gene_prot:
-      {
-        CRef <CFeature_field> 
-           feat_field = x_FeatureFieldFromCDSGeneProtField (GetCds_gene_prot());
-        feat_field->Match(feat, str_cons, scope);
-      }
-      break;
-    case CField_type:: e_Molinfo_field:
-      if (b_hl) {
-        str =  GetMolinfo_field().GetSequenceQualFromBioseq(b_hl);
-        if ( ( str.empty() && str_cons.GetNot_present() ) 
-                || (!str.empty() && str_cons.Match((str)))) {
-            rval = true;
-        }
-      }
-      break;
-    case CField_type:: e_Misc:
-    case CField_type:: e_Dblink:
-      if (b_hl) {
-        str = x_GetFieldValueForObjectEx (feat, b_hl, str_cons);
-        if (!str.empty()) {
-           rval = true;
-        }
-      }
-      break;
-
-// TODO LATER 
-    case CField_type:: e_Pub:
-      break;
-    default: break;
-  }
-  return rval; 
-};
-*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

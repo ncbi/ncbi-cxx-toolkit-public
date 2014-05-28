@@ -66,7 +66,7 @@ static const s_rnafeattype2rnareftype rna_tp_map[] = {
  { CRna_feat_type::e_MiscRNA , CRNA_ref::eType_miscRNA} 
 };
 
-CRNA_ref :: EType CRna_feat_type :: x_GetRefType(E_Choice choice) const
+CRNA_ref :: EType CRna_feat_type :: GetRnaRefType(E_Choice choice) const
 {
    for (unsigned i=0; i< ArraySize(rna_tp_map); i++) {
       if (rna_tp_map[i].rna_feat_type == choice) {
@@ -86,7 +86,7 @@ bool CRna_feat_type :: Match(const CSeq_feat& feat) const
    }
    const CRNA_ref& rna_ref = feat.GetData().GetRna();
 
-   CRNA_ref::EType ref_type4feat_type = x_GetRefType(Which());
+   CRNA_ref::EType ref_type4feat_type = GetRnaRefType(Which());
    if (rna_ref.GetType() ==  ref_type4feat_type) {
       if (IsNcRNA()) {
          if (GetNcRNA().empty()) {

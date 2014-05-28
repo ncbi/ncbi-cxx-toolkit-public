@@ -3,7 +3,9 @@
 LIB = macro
 SRC = macro__ macro___
 
-WATCHERS = bollin kans
+WATCHERS = bollin kans chenj
+
+ASN_DEP = genome_collection seqset
 
 USES_LIBRARIES =  \
     xser

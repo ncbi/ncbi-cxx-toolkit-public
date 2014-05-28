@@ -97,17 +97,15 @@ bool CLocation_constraint :: x_DoesStrandMatchConstraint(const CSeq_loc& loc) co
   }
 };
 
-/*
-bool CLocation_constraint :: x_DoesBioseqMatchSequenceType(CBioseq_Handle bioseq_hl, const ESeqtype_constraint& seq_type) const
+bool CLocation_constraint :: x_DoesBioseqMatchSequenceType(CConstRef <CBioseq> bioseq, const ESeqtype_constraint& seq_type) const
 {
   if (seq_type == eSeqtype_constraint_any
-        || (bioseq_hl.IsNa() && seq_type == eSeqtype_constraint_nuc)
-        || (bioseq_hl.IsAa() && seq_type == eSeqtype_constraint_prot)) {
+        || (bioseq->IsNa() && seq_type == eSeqtype_constraint_nuc)
+        || (bioseq->IsAa() && seq_type == eSeqtype_constraint_prot)) {
       return true;
   }
   else return false;
 };
-*/
 
 bool CLocation_constraint :: x_DoesLocationMatchPartialnessConstraint(const CSeq_loc& loc) const
 {
@@ -159,20 +157,21 @@ bool CLocation_constraint :: x_DoesLocationMatchTypeConstraint(const CSeq_loc& s
   return false;
 };
 
-/*
-bool CLocation_constraint :: x_DoesLocationMatchDistanceConstraint(CBioseq_Handle bioseq_hl, const CSeq_loc& loc) const
+bool CLocation_constraint :: x_DoesLocationMatchDistanceConstraint(CConstRef <CBioseq> bioseq, const CSeq_loc& loc) const
 {
   if (!CanGetEnd5() && !CanGetEnd3()) {
       return true;
   }
 
   unsigned pos = loc.GetStop(eExtreme_Positional);
-  int pos2 = (bioseq_hl.IsSetInst_Length() ? bioseq_hl.GetInst_Length() : 0)
-              - pos - 1;
+  int pos2;
+  if (bioseq.NotEmpty()) {
+     pos2 = (bioseq->IsSetLength() ?  bioseq->GetLength() : 0) - pos - 1;
+  }
 
   if (loc.GetStrand() == eNa_strand_minus) {
     if (CanGetEnd5()) {
-      if (bioseq_hl.GetCompleteBioseq().Empty()) {
+      if (bioseq.Empty()) {
           return false;
       }
       else {
@@ -191,7 +190,7 @@ bool CLocation_constraint :: x_DoesLocationMatchDistanceConstraint(CBioseq_Handl
         return false;
     }
     if (CanGetEnd3()) {
-      if (bioseq_hl.GetCompleteBioseq().Empty()) {
+      if (bioseq.Empty()) {
          return false;
       }
       return GetEnd3().Match(pos2);
@@ -199,28 +198,23 @@ bool CLocation_constraint :: x_DoesLocationMatchDistanceConstraint(CBioseq_Handl
   }
   return true;
 };
-*/
 
-/*
-bool CLocation_constraint :: Match(const CSeq_feat& feat, CConstRef <CScope> scope) const
+bool CLocation_constraint :: Match(const CSeq_feat& feat, CConstRef <CSeq_feat> feat_to, CConstRef <CBioseq> feat_bioseq) const
 {
   if (x_IsLocationConstraintEmpty()) {
      return true;
   }
  
   const CSeq_loc& feat_loc = feat.GetLocation();
-  CBioseq_Handle 
-      b_hl = sequence :: GetBioseqFromSeqLoc(feat_loc, (CScope&)(*scope));
   if (GetStrand() != eStrand_constraint_any) {
-    if (!b_hl) {
+    if (feat_bioseq.Empty()) {
        return false;
     }
-    else if (b_hl.IsAa()) {
-      const CSeq_feat* cds = sequence::GetCDSForProduct(b_hl);
-      if (!cds) {
+    else if (feat_bioseq->IsAa()) {
+      if (feat_to.Empty()) {  // when feat is product, feat_to points to cds
          return false;
       }
-      else if (!x_DoesStrandMatchConstraint (cds->GetLocation())) {
+      else if (!x_DoesStrandMatchConstraint (feat_to->GetLocation())) {
         return false;
       }
     }
@@ -229,7 +223,7 @@ bool CLocation_constraint :: Match(const CSeq_feat& feat, CConstRef <CScope> sco
     }
   }
 
-  if (!x_DoesBioseqMatchSequenceType(b_hl, GetSeq_type())) {
+  if (!x_DoesBioseqMatchSequenceType(feat_bioseq, GetSeq_type())) {
      return false;
   }
 
@@ -241,13 +235,12 @@ bool CLocation_constraint :: Match(const CSeq_feat& feat, CConstRef <CScope> sco
      return false;
   }
 
-  if (!x_DoesLocationMatchDistanceConstraint(b_hl, feat_loc)) {
+  if (!x_DoesLocationMatchDistanceConstraint(feat_bioseq, feat_loc)) {
      return false;
   }
 
   return true;
 };
-*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

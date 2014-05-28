@@ -72,7 +72,7 @@ static const s_rnafield2featquallegal field_qual_map[] = {
  { eRna_field_tag_peptide , eFeat_qual_legal_tag_peptide}
 };
 
-int CRna_qual :: x_GetLegalQual(ERna_field rna_field) const
+int CRna_qual :: GetLegalQual(ERna_field rna_field)
 {
    for (unsigned i=0; i< ArraySize(field_qual_map); i++) {
        if (field_qual_map[i].rna_field == rna_field) {
@@ -82,39 +82,6 @@ int CRna_qual :: x_GetLegalQual(ERna_field rna_field) const
    return 0;
 };
  
-/*
-string CRna_qual :: x_GetRNAQualFromFeature(const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
-{
-   if (!GetType().Match(feat)) {
-      return kEmptyStr;
-   }
-   int legal_qual = x_GetLegalQual(GetField());
-   if (legal_qual) {
-     CFeat_qual_choice feat_qual;
-     feat_qual.SetLegal_qual((EFeat_qual_legal)legal_qual); 
-     feat_qual.GetQualFromFeatureAnyType(feat, str_cons, scope);
-   }
-   else return kEmptyStr;
-};
-
-bool CRna_qual :: Match(const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
-{
-  if (str_cons.Empty()) {
-     return true;
-  }
- 
-  CString_constraint tmp_cons;
-  tmp_cons.Assign(str_cons);
-  tmp_cons.SetNot_present(false);
-  string str = x_GetRNAQualFromFeature(feat, tmp_cons, scope); 
-  bool rval = (str.empty() ? false : true);
-  if (str_cons.GetNot_present()) {
-     rval = !rval;
-  }
-  return rval;
-};
-*/
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

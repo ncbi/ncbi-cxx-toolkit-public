@@ -51,47 +51,61 @@ CMolinfo_field::~CMolinfo_field(void)
 {
 }
 
-/*
-string CMolinfo_field :: GetSequenceQualFromBioseq (CBioseq_Handle bioseq_hl) const
+string CMolinfo_field :: GetSequenceQualFromBioseq (CConstRef <CBioseq> bioseq) const
 {
-  const CMolInfo* molinfo;  = sequence::GetMolInfo(bioseq_hl); // objmgr/util/sequence.hpp
+  if (bioseq.Empty()) return kEmptyStr;
+  const CMolInfo* molinfo = 0;
+  if (bioseq->CanGetDescr()) {
+     ITERATE (list <CRef <CSeqdesc> >, it, bioseq->GetDescr().Get()) {
+        if ((*it)->IsMolinfo()) {
+           molinfo = &((*it)->GetMolinfo());
+        }
+     }
+  }
+
   string rval(kEmptyStr);
   switch (Which()) {
     case e_Molecule:
-        rval = CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindName(molinfo->GetBiomol(), true);
-        break;
+      if (molinfo) {
+        rval = CMolInfo::ENUM_METHOD_NAME(EBiomol)()
+                                ->FindName(molinfo->GetBiomol(), true);
+      }
+      break;
     case e_Technique:
-        rval = CMolInfo::ENUM_METHOD_NAME(ETech)()->FindName(molinfo->GetTech(), true);
-        break;
+      if (molinfo) {
+        rval = CMolInfo::ENUM_METHOD_NAME(ETech)()
+                                ->FindName(molinfo->GetTech(), true);
+      }
+      break;
     case e_Completedness:
+      if (molinfo) {
         rval = CMolInfo::ENUM_METHOD_NAME(ECompleteness)()
                                    ->FindName(molinfo->GetCompleteness(), true);
-        break;
+      }
+      break;
     case e_Mol_class:
-        if (bioseq_hl.IsSetInst_Mol()) {
-           rval = CSeq_inst::ENUM_METHOD_NAME(EMol)()
-                                     ->FindName(bioseq_hl.GetInst_Mol(), true);
-           if (rval == "dna" || rval == "rna") {
+        rval = CSeq_inst::ENUM_METHOD_NAME(EMol)()
+                              ->FindName(bioseq->GetInst().GetMol(), true);
+        if (rval == "dna" || rval == "rna") {
               rval = NStr::ToUpper(rval);
-           }
-           else if (rval == "aa") {
+        }
+        else if (rval == "aa") {
               rval = "protein";
-           }
-           else if (rval == "na") {
+        }
+        else if (rval == "na") {
               rval = "nucleotide";
-           }
         }
         break;
     case e_Topology:
-        if (bioseq_hl.IsSetInst_Topology()) {
+        if (bioseq->GetInst().CanGetTopology()) {
             rval = CSeq_inst::ENUM_METHOD_NAME(ETopology)()
-                               ->FindName(bioseq_hl.GetInst_Topology(), true);
+                          ->FindName(bioseq->GetInst().GetTopology(), true);
         }
         break;
     case e_Strand:
-        if (bioseq_hl.CanGetInst_Strand()) {
+        if (bioseq->GetInst().CanGetStrand()) {
            rval = CSeq_inst::ENUM_METHOD_NAME(EStrand)()
-                                  ->FindName(bioseq_hl.GetInst_Strand(), true);
+                              ->FindName(bioseq->GetInst().GetStrand(), true);
            if (rval == "ss") {
               rval = "single";
            }
@@ -105,7 +119,6 @@ string CMolinfo_field :: GetSequenceQualFromBioseq (CBioseq_Handle bioseq_hl) co
   if (rval == "unknown" || rval == "not-set") rval = kEmptyStr;
   return rval;
 };
-*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

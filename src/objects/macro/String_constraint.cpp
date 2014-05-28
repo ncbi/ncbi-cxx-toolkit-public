@@ -705,8 +705,7 @@ bool CString_constraint :: Match(const string& str) const
 };
 
 // object match
-/* 
-bool CString_constraint :: DoesObjectMatchStringConstraint(const CSeq_feat& feat, CConstRef <CScope> scope) const
+bool CString_constraint :: DoesObjectMatchStringConstraint(const CSeq_feat& feat, CConstRef <CSeq_feat> feat_to) const
 {
    bool rval = false;
    vector <string> strs_in_feat;
@@ -725,23 +724,13 @@ bool CString_constraint :: DoesObjectMatchStringConstraint(const CSeq_feat& feat
        case CSeqFeatData::e_Cdregion: 
          {
             if (feat.CanGetProduct()) {
-               CBioseq_Handle 
-                  bioseq_hl 
-                    = sequence :: GetBioseqFromSeqLoc(
-                              feat.GetProduct(), (CScope&)(*scope));
-               if (bioseq_hl) {
-                  CFeat_CI ci(bioseq_hl, 
-                               SAnnotSelector(CSeqFeatData::eSubtype_prot)); 
-                  if (ci) {
-                    GetStringsFromObject(ci->GetOriginalFeature(),strs_in_feat);
-                    ITERATE (vector <string>, it, strs_in_feat) {
-                       rval = x_DoesSingleStringMatchConstraint(*it);
-                       if (rval) {
-                          break;
-                       }
-                    }
-                    strs_in_feat.clear();
-                  }
+               if (feat_to.NotEmpty()) {
+                 GetStringsFromObject(*feat_to, strs_in_feat);
+                 ITERATE (vector <string>, it, strs_in_feat) {
+                    rval = x_DoesSingleStringMatchConstraint(*it);
+                    if (rval) break;
+                 }
+                 strs_in_feat.clear();
                }
             }
             break;
@@ -771,7 +760,6 @@ bool CString_constraint :: DoesObjectMatchStringConstraint(const CSeq_feat& feat
    }
    return rval;
 };
-*/
 
 bool CString_constraint::x_ReplaceContains(string& val, const string& replace) const
 {

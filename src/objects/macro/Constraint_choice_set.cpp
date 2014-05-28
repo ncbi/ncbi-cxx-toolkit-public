@@ -51,18 +51,6 @@ CConstraint_choice_set::~CConstraint_choice_set(void)
 {
 }
 
-/*
-bool CConstraint_choice_set :: Match(const CSeq_feat& feat, CConstRef <CScope> scope) const
-{
-  ITERATE (list <CRef <CConstraint_choice> >, sit, Get()) {
-     if (!(*sit)->Match(feat, scope)) {
-           return false;
-     }
-  }
-  return true;
-};
-*/
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

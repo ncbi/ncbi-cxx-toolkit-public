@@ -51,7 +51,7 @@ CSource_qual_choice::~CSource_qual_choice(void)
 {
 }
 
-bool CSource_qual_choice :: x_IsSubsrcQual(ESource_qual src_qual) const
+bool CSource_qual_choice :: IsSubsrcQual(ESource_qual src_qual) const
 {
    switch (src_qual) {
      case eSource_qual_cell_line:
@@ -101,69 +101,16 @@ bool CSource_qual_choice :: x_IsSubsrcQual(ESource_qual src_qual) const
    }
 };
 
-string CSource_qual_choice :: x_GetTextqualValue(const CBioSource& biosrc, ESource_qual text_qual, const CString_constraint& str_cons) const
-{
-   string rvlu, qual_name;
-   qual_name = ENUM_METHOD_NAME(ESource_qual)()->FindName(text_qual, true);
-   if (!x_IsSubsrcQual(text_qual)) {
-     if (text_qual == eSource_qual_culture_collection_INST
-           || text_qual == eSource_qual_culture_collection_COLL
-           || text_qual == eSource_qual_culture_collection_SpecID) {
-        qual_name = "bio-collection";  // orgmod
-     }
-     else if (text_qual == eSource_qual_bio_material_INST
-                || text_qual == eSource_qual_bio_material_COLL
-                || text_qual == eSource_qual_bio_material_SpecID) {
-        qual_name = "bio-material";
-     }
-   }
-   return rvlu;
-/*
-   CRef <CSrcTableColumnBase> 
-     src_tbl = CSrcTableColumnBaseFactory::Create(qual_name);
-   if (src_tbl.Empty()) {
-      return kEmptyStr;
-   }
-   if (text_qual == eSource_qual_dbxref
-           || text_qual == eSource_qual_all_notes) {
-      vector <string> vals = src_tbl->GetVals(biosrc);
-      if (text_qual == eSource_qual_dbxref) {
-         ITERATE (vector <string>, it, vals) {
-           if (str_cons.Match(*it)) {
-             rvlu += *it + ";";
-           }
-         }
-      }
-      else {
-         ITERATE (vector <string>, it, vals) {
-           if (str_cons.Match(*it)) {
-             rvlu = *it;
-             break;
-           }
-         }
-      }
-      return rvlu;
-   }
-   else {
-     rvlu = src_tbl->GetFromBioSource(biosrc);
-     return(str_cons.Match(rvlu) ? rvlu : kEmptyStr);
-   }
-*/
-};
-   
-string CSource_qual_choice :: GetSourceQualFromBioSource(const CBioSource& biosrc, const CString_constraint& str_cons) const
+string CSource_qual_choice :: GetLimitedSourceQualFromBioSource(const CBioSource& biosrc, const CString_constraint& str_cons) const
 {
    string str;
    switch (Which()) {
-     case e_Textqual:
-       str = x_GetTextqualValue(biosrc, GetTextqual(), str_cons);
-       break;
      case e_Location:
        {
           str = CBioSource::ENUM_METHOD_NAME(EGenome)()
              ->FindName((CBioSource::EGenome)biosrc.GetGenome(), false);
           if (str == "unknown") {
-               str = " "; // ????
+               str = kEmptyStr;
           }
           else if (str == "extrachrom") {
               str = "extrachromosomal";

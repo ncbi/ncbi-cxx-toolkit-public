@@ -51,7 +51,7 @@ CFeature_field::~CFeature_field(void)
 {
 }
 
-CSeqFeatData :: ESubtype CFeature_field :: x_GetFeatSubtype() const
+CSeqFeatData :: ESubtype CFeature_field :: GetFeatSubtype() const
 {
    string strtmp
            = ENUM_METHOD_NAME(EMacro_feature_type)()->FindName(GetType(), true);
@@ -117,32 +117,6 @@ CSeqFeatData :: ESubtype CFeature_field :: x_GetFeatSubtype() const
        return (CSeqFeatData :: SubtypeNameToValue(strtmp));
    } 
 };
-
-/*
-string CFeature_field :: x_GetQualFromFeature(const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
-{
-   if (GetType() != eMacro_feature_type_any 
-           && feat.GetData().GetSubtype() != x_GetFeatSubtype()) {
-      return kEmptyStr;
-   }
-   else {
-     CString_constraint tmp_cons;
-     tmp_cons.Assign(str_cons);
-     tmp_cons.SetNot_present(false);
-     GetField().GetQualFromFeatureAnyType(feat, tmp_cons, scope);
-   }
-};
-
-bool CFeature_field :: Match(const CSeq_feat& feat, const CString_constraint& str_cons, CConstRef <CScope> scope) const
-{
-   string str = x_GetQualFromFeature(feat, str_cons, scope);
-   bool rval = (str.empty() ? false : true);
-   if (str_cons.GetNot_present()) {
-      rval = !rval;
-   }
-   return rval;
-};
-*/
 
 END_objects_SCOPE // namespace ncbi::objects::
 

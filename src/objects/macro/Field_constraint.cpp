@@ -51,17 +51,6 @@ CField_constraint::~CField_constraint(void)
 {
 }
 
-/*
-bool CField_constraint :: Match(const CSeq_feat& feat, CConstRef <CScope> scope) const
-{
-  if (GetString_constraint().Empty()) {
-     return true;
-  }
-
-  return GetField().Match(feat, GetString_constraint(), scope);
-}
-*/
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
