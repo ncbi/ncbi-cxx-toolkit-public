@@ -524,7 +524,7 @@ void CProjBulderApp::Init(void)
                             "Do not add missing dependencies.");
     arg_desc->AddDefaultKey("libdep", "LibraryDependencies",
          "Analyze dependencies and generate library info for linker on Unix",
-         CArgDescriptions::eBoolean, "false");
+         CArgDescriptions::eBoolean, "true");
 
     arg_desc->AddOptionalKey("args", "args_file",
                              "Read arguments from a file",
