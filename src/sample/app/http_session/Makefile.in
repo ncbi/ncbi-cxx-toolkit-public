@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile
+#################################
+
+APP_PROJ = http_session_sample
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
