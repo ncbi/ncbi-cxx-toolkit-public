@@ -444,7 +444,7 @@ void s_IntervalsMatchGaps(const CSeq_loc& loc, const CSeq_inst& inst)
         if (lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap()) {
             BOOST_CHECK_EQUAL(ci.GetRange().GetFrom(), pos);
             BOOST_CHECK_EQUAL(ci.GetRange().GetTo(), pos + lit.GetLength() - 1);
-            ci++;
+            ++ci;
         }
         pos += lit.GetLength();
         ds_it++;
