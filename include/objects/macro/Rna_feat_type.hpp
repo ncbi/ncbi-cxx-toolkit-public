@@ -63,13 +63,13 @@ public:
     ~CRna_feat_type(void);
 
     bool Match (const CSeq_feat& feat) const;
+    CRNA_ref :: EType GetRnaRefType(E_Choice choice) const;
 
 private:
     // Prohibit copy constructor and assignment operator
     CRna_feat_type(const CRna_feat_type& value);
     CRna_feat_type& operator=(const CRna_feat_type& value);
 
-    CRNA_ref :: EType x_GetRefType(E_Choice choice) const;
 };
 
 /////////////////// CRna_feat_type inline methods

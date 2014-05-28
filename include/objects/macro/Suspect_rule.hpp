@@ -44,10 +44,6 @@
 #include <objects/macro/Suspect_rule_.hpp>
 #include <objects/macro/Replace_rule.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-/*
-#include <objmgr/scope.hpp>
-#include <objmgr/util/sequence.hpp>
-*/
 
 // generated classes
 
@@ -65,12 +61,8 @@ public:
     // destructor
     ~CSuspect_rule(void);
  
-    // C's DoesStringMatchSuspectRule()
-//    bool Match(const string& str, const CSeq_feat& feat, CConstRef <CScope> scope);
-
     // C's MatchesSuspectProductRule()
     bool StringMatchesSuspectProductRule (const string& str) const;
-
 
     bool ApplyToString(string& val) const;
 
@@ -78,56 +70,6 @@ private:
     // Prohibit copy constructor and assignment operator
     CSuspect_rule(const CSuspect_rule& value);
     CSuspect_rule& operator=(const CSuspect_rule& value);
-
-/*
-
-    // CConstraint_choice::e_Location
-    bool x_DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, 
-                                    const CLocation_constraint& loc_cons) const;
-    bool x_IsLocationConstraintEmpty(const CLocation_constraint& loc_cons) const;
-    bool x_DoesStrandMatchConstraint(const CSeq_loc& loc, const CLocation_constraint& loc_cons) const;
-    bool x_DoesBioseqMatchSequenceType(const ESeqtype_constraint& seq_type) const;
-    bool x_DoesLocationMatchPartialnessConstraint(const CSeq_loc& loc, 
-                                   const CLocation_constraint& loc_cons) const;
-    bool x_DoesLocationMatchTypeConstraint(const CSeq_loc& seq_loc, 
-                                   const CLocation_constraint& loc_cons) const;
-    bool x_DoesLocationMatchDistanceConstraint(const CSeq_loc& loc, 
-                                    const CLocation_constraint& loc_cons) const;
-    bool x_DoesPositionMatchEndConstraint(int pos, 
-                                 const CLocation_pos_constraint& lp_cons) const;
-
-
-    // CConstraint_choice::e_Field
-    bool x_DoesObjectMatchFieldConstraint(const CSeq_feat& data, 
-                                    const CField_constraint& field_cons) const;
-    string x_GetSrcQualValue4FieldType(const CBioSource& biosrc, 
-                                      const CSource_qual_choice& src_qual, 
-                                      const CString_constraint* str_cons) const;
-
-    // CConstraint_choice::e_Source
-    x_DoesBiosourceMatchConstraint
-
-    // CConstraint_choice::e_Cdsgeneprot_qual
-    x_DoesFeatureMatchCGPQualConstraint
-
-    // CConstraint_choice::e_Cdsgeneprot_pseudo
-    x_DoesFeatureMatchCGPPseudoConstraint
-
-    // CConstraint_choice::e_Sequence
-    x_DoesSequenceMatchSequenceConstraint
-
-    // CConstraint_choice::e_Pub
-    x_DoesPubMatchPublicationConstraint
-
-    // CConstraint_choice::e_Molinfo
-    x_DoesObjectMatchMolinfoFieldConstraint
-
-    // CConstraint_choice::e_Field_missing
-    x_GetConstraintFieldFromObject
-
-    // CConstraint_choice::e_Translation
-    x_DoesCodingRegionMatchTranslationConstraint
-*/
 };
 
 /////////////////// CSuspect_rule inline methods

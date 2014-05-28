@@ -42,14 +42,6 @@
 
 // generated includes
 #include <objects/macro/Constraint_choice_.hpp>
-#include <objects/macro/String_constraint.hpp>
-#include <objects/macro/Location_constraint.hpp>
-#include <objects/macro/Field_constraint.hpp>
-
-#include <objects/seqfeat/Seq_feat.hpp>
-// #include <objmgr/scope.hpp>
-#include <serial/iterator.hpp>
-#include <corelib/ncbiobj.hpp>
 
 // generated classes
 
@@ -67,36 +59,10 @@ public:
     // destructor
     ~CConstraint_choice(void);
 
-    class CCGPSetData : public CObject
-    {
-        public:
-          CCGPSetData() {
-              cds = CConstRef <CSeq_feat> (0);
-              gene = CConstRef <CSeq_feat> (0);
-              mrna = CConstRef <CSeq_feat> (0);
-              prot = CConstRef <CSeq_feat> (0);
-              mat_peptide_list.clear();};
-
-          ~CCGPSetData() {};
-
-          CConstRef <CSeq_feat> cds;
-          CConstRef <CSeq_feat> gene;
-          CConstRef <CSeq_feat> mrna;
-          CConstRef <CSeq_feat> prot;
-          vector <CConstRef <CSeq_feat> > mat_peptide_list;
-    };
-
-  //  bool Match(const CSeq_feat& feat, CConstRef <CScope> scope) const;
-
 private:
     // Prohibit copy constructor and assignment operator
     CConstraint_choice(const CConstraint_choice& value);
     CConstraint_choice& operator=(const CConstraint_choice& value);
-
-/*
-    bool x_DoesObjectMatchStringConstraint(const CSeq_feat& feat, 
-                                            CConstRef <CScope> scope);
-*/
 };
 
 /////////////////// CConstraint_choice inline methods

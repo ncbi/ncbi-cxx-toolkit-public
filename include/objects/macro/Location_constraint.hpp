@@ -44,7 +44,6 @@
 #include <objects/macro/Location_constraint_.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-// #include <objmgr/scope.hpp>
 
 // generated classes
 
@@ -62,7 +61,7 @@ public:
     // destructor
     ~CLocation_constraint(void);
 
-  //  bool Match(const CSeq_feat& feat, CConstRef <CScope> scope) const;
+    bool Match(const CSeq_feat& feat, CConstRef <CSeq_feat> feat_to, CConstRef <CBioseq> feat_bioseq) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -71,16 +70,12 @@ private:
 
     bool x_IsLocationConstraintEmpty() const;
     bool x_DoesStrandMatchConstraint(const CSeq_loc& loc) const;
-/*
-    bool x_DoesBioseqMatchSequenceType(CBioseq_Handle bioseq_hl,
+    bool x_DoesBioseqMatchSequenceType(CConstRef <CBioseq> bioseq,
                                    const ESeqtype_constraint& seq_type) const;
-*/
     bool x_DoesLocationMatchPartialnessConstraint(const CSeq_loc& loc) const;
     bool x_DoesLocationMatchTypeConstraint(const CSeq_loc& seq_loc) const;
-/*
-    bool x_DoesLocationMatchDistanceConstraint(CBioseq_Handle bioseq_hl, 
+    bool x_DoesLocationMatchDistanceConstraint(CConstRef <CBioseq> bioseq_hl, 
                                                  const CSeq_loc& loc)  const;
-*/
 };
 
 /////////////////// CLocation_constraint inline methods

@@ -42,7 +42,10 @@
 
 // generated includes
 #include <objects/macro/Molinfo_field_.hpp>
-// #include <objmgr/util/sequence.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <corelib/ncbiobj.hpp>
 
 // generated classes
 
@@ -60,7 +63,7 @@ public:
     // destructor
     ~CMolinfo_field(void);
 
-    // string GetSequenceQualFromBioseq(CBioseq_Handle bioseq_hl) const;
+    string GetSequenceQualFromBioseq(CConstRef <CBioseq> bioseq) const;
 
 private:
     // Prohibit copy constructor and assignment operator

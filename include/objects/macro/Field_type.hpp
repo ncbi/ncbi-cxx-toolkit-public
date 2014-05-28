@@ -42,25 +42,10 @@
 
 // generated includes
 #include <objects/macro/Field_type_.hpp>
-#include <objects/macro/Source_qual_choice.hpp>
-#include <objects/macro/Molinfo_field.hpp>
-#include <objects/macro/Rna_qual.hpp>
 #include <objects/macro/String_constraint.hpp>
-
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
-
-#include <objects/seqblock/GB_block.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-
-/*
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/util/sequence.hpp>
-*/
 
 // generated classes
 
@@ -78,26 +63,16 @@ public:
     // destructor
     ~CField_type(void);
 
-/*
-    bool Match(const CSeq_feat& feat, 
-           const CString_constraint& str_cons, CConstRef <CScope> scope) const;
-*/
+    static CRef <CFeature_field>
+        FeatureFieldFromCDSGeneProtField (ECDSGeneProt_field cgp_field);
 
+    static string GetDBLinkFieldFromUserObject(const CUser_object& user_obj, 
+                                    EDBLink_field_type dblink_tp, 
+                                    const CString_constraint& str_cons);
 private:
     // Prohibit copy constructor and assignment operator
     CField_type(const CField_type& value);
     CField_type& operator=(const CField_type& value);
-
-    CRef <CFeature_field>
-        x_FeatureFieldFromCDSGeneProtField (ECDSGeneProt_field cgp_field) const;
-/*
-    string x_GetFieldValueForObjectEx (const CSeq_feat& feat, 
-           CBioseq_Handle bioseq_hl, const CString_constraint& str_cons) const;
-*/
-    string x_GetDBLinkFieldFromUserObject(const CUser_object& user_obj, 
-                                    EDBLink_field_type dblink_tp, 
-                                    const CString_constraint& str_cons) const;
-    
 };
 
 /////////////////// CField_type inline methods

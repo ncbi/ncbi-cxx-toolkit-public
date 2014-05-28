@@ -44,9 +44,6 @@
 #include <objects/macro/Rna_qual_.hpp>
 #include <objects/macro/Rna_field_.hpp>
 #include <objects/macro/Feat_qual_legal_.hpp>
-#include <objects/macro/String_constraint.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-// #include <objmgr/scope.hpp>
 
 // generated classes
 
@@ -64,22 +61,12 @@ public:
     // destructor
     ~CRna_qual(void);
 
-/*
-    bool Match(const CSeq_feat& feat, 
-            const CString_constraint& str_cons, CConstRef <CScope> scope) const;
-*/
+    static int GetLegalQual(ERna_field rna_field);
 
 private:
     // Prohibit copy constructor and assignment operator
     CRna_qual(const CRna_qual& value);
     CRna_qual& operator=(const CRna_qual& value);
-
-/*
-    string x_GetRNAQualFromFeature(const CSeq_feat& feat, 
-                                    const CString_constraint& str_cons, 
-                                    CConstRef <CScope> scope) const;
-*/
-    int x_GetLegalQual(ERna_field rna_field) const;
 };
 
 /////////////////// CRna_qual inline methods

@@ -62,17 +62,14 @@ public:
     // destructor
     ~CSource_qual_choice(void);
 
-    string GetSourceQualFromBioSource(const CBioSource& biosrc, 
+    string GetLimitedSourceQualFromBioSource(const CBioSource& biosrc, 
                                     const CString_constraint& str_cons) const;
+    bool IsSubsrcQual(ESource_qual src_qual) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CSource_qual_choice(const CSource_qual_choice& value);
     CSource_qual_choice& operator=(const CSource_qual_choice& value);
-
-    bool x_IsSubsrcQual(ESource_qual src_qual) const;
-    string x_GetTextqualValue(const CBioSource& biosrc, 
-                                ESource_qual text_qual, 
-                                const CString_constraint& str_cons) const;
 };
 
 /////////////////// CSource_qual_choice inline methods

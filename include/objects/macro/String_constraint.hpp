@@ -39,13 +39,10 @@
 #ifndef OBJECTS_MACRO_STRING_CONSTRAINT_HPP
 #define OBJECTS_MACRO_STRING_CONSTRAINT_HPP
 
-
 // generated includes
 #include <objects/macro/String_constraint_.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-// #include <objmgr/scope.hpp>
-
 
 // generated classes
 
@@ -78,11 +75,8 @@ public:
     bool Empty() const;
     bool ReplaceStringConstraintPortionInString(string& val, const string& replace) const;
 
-/*
     bool DoesObjectMatchStringConstraint(const CSeq_feat& feat, 
-                                            CConstRef <CScope> scope) const;
-*/
-
+                               CConstRef <CSeq_feat> feat_to) const;
 private:
     string m_digit_str, m_alpha_str;
 
@@ -97,10 +91,10 @@ private:
     bool x_IsAllLowerCase(const string& str) const;
     bool x_IsAllPunctuation(const string& str) const;
     bool x_AdvancedStringCompare(const string& str, 
-                                  const string& str_match, 
-                                  bool is_start, 
-                                  unsigned int * ini_target_match_len = 0) const;
-    bool x_AdvancedStringMatch(const string& str, const string& tmp_match) const;
+                                const string& str_match, 
+                                bool is_start, 
+                                unsigned int * ini_target_match_len = 0) const;
+    bool x_AdvancedStringMatch(const string& str,const string& tmp_match) const;
     bool x_CaseNCompareEqual(string str1,
                                string str2,
                                unsigned len1, bool case_sensitive) const;
