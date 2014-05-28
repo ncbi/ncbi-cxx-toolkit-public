@@ -221,18 +221,18 @@ bool CFormatGuessEx::x_TryRmo()
     CRmReader::TFlags Flags =
         CRmReader::fIncludeRepeatClass |
         CRmReader::fIncludeRepeatName;
-    CRef<CSeq_annot> Result;
-    
-    try {
-        CRmReader* Reader;
-    	Reader = CRmReader::OpenReader(m_LocalBuffer);
-    	Reader->Read(Result, Flags);
-    	CRmReader::CloseReader(Reader);
-    } catch(CException&) {
-    } catch(...) {
+    CRef<CSerialObject> Result;
+
+    auto_ptr<CRepeatMaskerReader> reader(new CRepeatMaskerReader(Flags));
+    try
+    {
+        Result = reader->ReadObject(m_LocalBuffer);
     }
-	
-    return (bool)(Result);
+    catch(...)
+    {
+    }
+    
+    return Result.NotEmpty();
 }
 
 bool CFormatGuessEx::x_TryAgp()
@@ -345,7 +345,7 @@ bool CFormatGuessEx::x_TryFasta()
     } catch(...) {
     }
 
-    return (bool)(Result);
+    return Result.NotEmpty();
 }
 
 //	bool x_TryTextAsn();
