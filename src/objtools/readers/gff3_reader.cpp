@@ -258,9 +258,6 @@ bool CGff3Reader::xUpdateAnnotCds(
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
-    if (!xFeatureSetLocusTag(record, pFeature)) {
-        return false;
-    }
     if (!x_FeatureSetXref(record, pFeature)) {
         return false;
     }
@@ -270,44 +267,6 @@ bool CGff3Reader::xUpdateAnnotCds(
     if ( !id.empty() ) {
         m_MapIdToFeature[ id ] = pFeature;
     }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Reader::xFeatureSetLocusTag(
-    const CGff2Record& record,
-    CRef<CSeq_feat> pFeature )
-//  ----------------------------------------------------------------------------
-{
-    string locusTag;
-    if (record.Type() == "gene") {
-        //create a brand new locus_tag
-        locusTag = xNextLocusTag();
-    }
-    else {
-        //find a suitable locus_tag to inherit
-        list<string> parents;
-        if (!record.GetAttribute("Parent", parents)) {
-            //give up on the locus_tag, but allow processing to continue
-            return true;
-        }
-        map<string, string>::iterator cit = mLocusTagMap.find(parents.front());
-        if (cit == mLocusTagMap.end()) {
-            //give up on the locus_tag, but allow processing to continue
-            return true;
-        }
-        locusTag = cit->second;
-    }
-    CRef<CGb_qual> pLocusTag(new CGb_qual);
-    pLocusTag->SetQual("locus_tag");
-    pLocusTag->SetVal(locusTag);
-    pFeature->SetQual().push_back(pLocusTag);
-
-    string id;
-    if (!record.GetAttribute("ID", id)) {
-        return true;
-    }
-    mLocusTagMap[id] = locusTag;
     return true;
 }
 
@@ -328,9 +287,6 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     }
 
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
-        return false;
-    }
-    if (IsLocusTagMode() && !xFeatureSetLocusTag(record, pFeature)) {
         return false;
     }
     if (!x_FeatureSetXref(record, pFeature)) {

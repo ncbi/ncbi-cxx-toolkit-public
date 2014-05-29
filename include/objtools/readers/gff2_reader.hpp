@@ -115,10 +115,6 @@ public:
         ILineReader&,
         IMessageListener* =0 );
 
-    void SetLocusTagBase(
-        const string& base) { m_LocusTagBase = base; };
-    bool IsLocusTagMode() const { return !m_LocusTagBase.empty(); };
-
     //
     // class interface:
     //
@@ -304,8 +300,6 @@ protected:
         const CSeq_annot&,
         string& );
 
-    string xNextLocusTag();
-
     //  data:
     //
 protected:
@@ -315,8 +309,6 @@ protected:
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
     string m_AnnotName;
     string m_AnnotTitle;
-    string m_LocusTagBase;
-    unsigned int m_LocusTagNumber;
 };
 
 END_SCOPE(objects)

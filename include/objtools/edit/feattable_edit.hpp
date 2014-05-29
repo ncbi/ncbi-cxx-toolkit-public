@@ -54,17 +54,28 @@ public:
         IMessageListener* =0);
     ~CFeatTableEdit();
 
+	void GenerateLocusTags(
+		const string&);
     void InferParentMrnas();
     void InferParentGenes();
     void InferPartials();
     void EliminateBadQualifiers();
+    void GenerateProteinIds();
+    void GenerateTranscriptIds();
 
 protected:
     string xNextFeatId();
+	string xNextLocusTag(
+		const string&);
 
+	CConstRef<CSeq_feat> xGetGeneParent(
+		const CSeq_feat&);
     CRef<CSeq_feat> xMakeGeneForMrna(
         const CSeq_feat&,
         CScope&);
+	string xGetProteinId(
+		const CSeq_feat&,
+		CScope&);
 
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
@@ -72,6 +83,7 @@ protected:
     CSeq_annot_EditHandle mEditHandle;
     IMessageListener* mpMessageListener;
     unsigned int mNextFeatId;
+	unsigned int mLocusTagNumber;
 };
 
 END_SCOPE(edit)

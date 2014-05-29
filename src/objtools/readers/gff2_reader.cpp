@@ -133,8 +133,7 @@ CGff2Reader::CGff2Reader(
     CReaderBase(iFlags),
     m_pErrors(0),
     m_AnnotName(name),
-    m_AnnotTitle(title),
-    m_LocusTagNumber(0)
+    m_AnnotTitle(title)
 {
 }
 
@@ -269,22 +268,6 @@ CGff2Reader::ReadObject(
     return object;
 }
  
-//  ----------------------------------------------------------------------------
-string CGff2Reader::xNextLocusTag()
-//  ----------------------------------------------------------------------------
-{
-    ++m_LocusTagNumber;
-
-    const int WIDTH = 6;
-    const string padding = string(WIDTH, '0');
-    string suffix = NStr::NumericToString(m_LocusTagNumber);
-    if (suffix.size() < WIDTH) {
-        suffix = padding.substr(0, WIDTH-suffix.size()) + suffix;
-    }
-    string nextTag = m_LocusTagBase + "_" + suffix;
-    return nextTag;
-}
-
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ReadLine(
     ILineReader& lr,
@@ -836,7 +819,8 @@ bool CGff2Reader::x_FeatureSetXref(
         pFeatId->SetLocal().SetStr(*cit);
         IdToFeatureMap::iterator it = m_MapIdToFeature.find(*cit);
         if (it == m_MapIdToFeature.end()) {
-            return false;
+            //return false;
+			continue;
         }
         CRef<CSeq_feat> pParent = it->second;
         pParent->SetId(*pFeatId);
@@ -932,12 +916,6 @@ bool CGff2Reader::x_FeatureSetQualifiers(
     for (/*NOOP*/; it != attrs.end(); ++it) {
         // special case some well-known attributes
         if (x_ProcessQualifierSpecialCase(it, pFeature)) {
-            continue;
-        }
-
-        string qual = it->first;
-        if (/*IsGenbankMode()  &&*/  
-                false  &&  CSeqFeatData::GetQualifierType(qual) == CSeqFeatData::eQual_bad) {
             continue;
         }
 

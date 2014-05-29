@@ -42,6 +42,7 @@
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/edit/cds_fix.hpp>
+#include <objtools/edit/loc_edit.hpp>
 #include <objtools/edit/feattable_edit.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -55,7 +56,8 @@ CFeatTableEdit::CFeatTableEdit(
 //  -------------------------------------------------------------------------
     mAnnot(annot),
     mpMessageListener(pMessageListener),
-    mNextFeatId(1)
+    mNextFeatId(1),
+	mLocusTagNumber(1)
 {
     mpScope.Reset(new CScope(*CObjectManager::GetInstance()));
     mpScope->AddDefaults();
@@ -122,6 +124,24 @@ void CFeatTableEdit::InferParentGenes()
 void CFeatTableEdit::InferPartials()
 //  ----------------------------------------------------------------------------
 {
+    edit::CLocationEditPolicy editPolicy(
+        edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd,
+        edit::CLocationEditPolicy::ePartialPolicy_eSetForBadEnd, 
+        false, //extend 5'
+        false, //extend 3'
+        edit::CLocationEditPolicy::eMergePolicy_NoChange);
+
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    CFeat_CI it(mHandle, sel);
+    for ( ; it; ++it) {
+        const CSeq_feat& cds = it->GetOriginalFeature();
+        CRef<CSeq_feat> pEditedCds(new CSeq_feat);
+        pEditedCds->Assign(cds);
+        editPolicy.ApplyPolicyToFeature(*pEditedCds, *mpScope);    
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
+        feh.Replace(*pEditedCds);
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -152,6 +172,78 @@ void CFeatTableEdit::EliminateBadQualifiers()
 }
 
 //  ----------------------------------------------------------------------------
+void CFeatTableEdit::GenerateProteinIds()
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    CFeat_CI it(mHandle, sel);
+    for ( ; it; ++it) {
+        const CSeq_feat& cds = it->GetOriginalFeature();
+		string proteinId = this->xGetProteinId(cds, *mpScope);
+		if (proteinId.empty()) {
+			continue;
+		}
+        CRef<CSeq_feat> pEditedCds(new CSeq_feat);
+        pEditedCds->Assign(cds);
+		CRef<CGb_qual> pProteinId(new CGb_qual);
+		pProteinId->SetQual("protein_id");
+		pProteinId->SetVal(proteinId);
+		pEditedCds->SetQual().push_back(pProteinId);
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
+        feh.Replace(*pEditedCds);
+	}
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::GenerateTranscriptIds()
+//  ----------------------------------------------------------------------------
+{
+    SAnnotSelector sel;
+    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    CFeat_CI it(mHandle, sel);
+    for ( ; it; ++it) {
+        const CSeq_feat& rna = it->GetOriginalFeature();
+	}
+}
+
+//  ----------------------------------------------------------------------------
+void CFeatTableEdit::GenerateLocusTags(
+	const string& prefix)
+//  ----------------------------------------------------------------------------
+{
+	CRef<CGb_qual> pLocusTag;
+
+    SAnnotSelector selGenes;
+    selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+    CFeat_CI itGenes(mHandle, selGenes);
+    for ( ; itGenes; ++itGenes) {
+		string locusTagVal = itGenes->GetNamedQual("locus_tag");
+		if (!locusTagVal.empty()) {
+			continue;
+		}
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
+            (itGenes)->GetOriginalFeature()));
+		feh.AddQualifier("locus_tag", xNextLocusTag(prefix));
+	}
+	SAnnotSelector selOther;
+	selOther.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+    CFeat_CI itOther(mHandle, selOther);
+	for ( ; itOther; ++itOther) {
+        const CSeq_feat& feat = itOther->GetOriginalFeature();		
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
+            (itOther)->GetOriginalFeature()));
+		feh.RemoveQualifier("locus_tag");
+		CConstRef<CSeq_feat> pGeneParent = xGetGeneParent(feat);
+		if (!pGeneParent) {
+			continue;
+		}
+		string locusTag = pGeneParent->GetNamedQual("locus_tag");
+		feh.AddQualifier("locus_tag", locusTag);
+	}
+}
+
+//  ----------------------------------------------------------------------------
 string CFeatTableEdit::xNextFeatId()
 //  ----------------------------------------------------------------------------
 {
@@ -166,6 +258,66 @@ string CFeatTableEdit::xNextFeatId()
 }
 
 //  ----------------------------------------------------------------------------
+string CFeatTableEdit::xNextLocusTag(
+	const string& prefix)
+//  ----------------------------------------------------------------------------
+{
+    const int WIDTH = 6;
+    const string padding = string(WIDTH, '0');
+    string suffix = NStr::NumericToString(mLocusTagNumber++);
+    if (suffix.size() < WIDTH) {
+        suffix = padding.substr(0, WIDTH-suffix.size()) + suffix;
+    }
+    string nextTag = prefix + "_" + suffix;
+    return nextTag;
+}
+
+//	----------------------------------------------------------------------------
+CConstRef<CSeq_feat> CFeatTableEdit::xGetGeneParent(
+	const CSeq_feat& feat)
+//	----------------------------------------------------------------------------
+{
+	CConstRef<CSeq_feat> pGene;
+	CSeq_feat_Handle sfh = mpScope->GetSeq_featHandle(feat);
+	CSeq_annot_Handle sah = sfh.GetAnnot();
+	if (!sah) {
+		return pGene;
+	}
+
+    size_t bestLength(0);
+    CFeat_CI findGene(sah, CSeqFeatData::eSubtype_gene);
+    for ( ; findGene; ++findGene) {
+        Int8 compare = sequence::TestForOverlap64(
+            findGene->GetLocation(), feat.GetLocation(),
+            sequence::eOverlap_Contained);
+        if (compare == -1) {
+            continue;
+        }
+        size_t currentLength = sequence::GetLength(findGene->GetLocation(), mpScope);
+        if (!bestLength  ||  currentLength > bestLength) {
+            pGene.Reset(&(findGene->GetOriginalFeature()));
+            bestLength = currentLength;
+        }
+    }
+	return pGene;
+}
+
+
+//  ----------------------------------------------------------------------------
+string CFeatTableEdit::xGetProteinId(
+    const CSeq_feat& cds,
+    CScope& scope)
+//  ----------------------------------------------------------------------------
+{
+	CConstRef<CSeq_feat> pGene = xGetGeneParent(cds);
+    if (!pGene) {
+		return "";
+	}
+	string locusTag = pGene->GetNamedQual("locus_tag");
+	return locusTag;
+}
+
+//  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForMrna(
     const CSeq_feat& rna,
     CScope& scope)
@@ -177,24 +329,8 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForMrna(
     if (!sah) {
         return pGene;
     }
-    CConstRef<CSeq_feat> pExistingGene;
-    size_t bestLength(0);
-    CFeat_CI findGene(sah, CSeqFeatData::eSubtype_gene);
-    for ( ; findGene; ++findGene) {
-        Int8 compare = sequence::TestForOverlap64(
-            findGene->GetLocation(), rna.GetLocation(),
-            sequence::eOverlap_CheckIntervals);
-        if (compare == -1) {
-            continue;
-        }
-        size_t currentLength = sequence::GetLength(findGene->GetLocation(), &scope);
-        if (!bestLength  ||  currentLength > bestLength) {
-            pExistingGene.Reset(&(findGene->GetOriginalFeature()));
-            bestLength = currentLength;
-        }
-    }
+    CConstRef<CSeq_feat> pExistingGene = xGetGeneParent(rna);
     if (pExistingGene) {
-        const CSeq_interval& geneLoc = pGene->GetLocation().GetInt();
         return pGene;
     }
     pGene.Reset(new CSeq_feat);

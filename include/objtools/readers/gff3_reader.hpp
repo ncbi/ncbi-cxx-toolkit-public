@@ -127,15 +127,10 @@ protected:
     virtual bool xVerifyCdsParents(
         const CGff2Record&);
 
-    virtual bool xFeatureSetLocusTag(
-        const CGff2Record&,
-        CRef<CSeq_feat>);
-
     virtual bool xReadInit();
 
     // Data:
     map<string, string> mCdsParentMap;
-    map<string, string> mLocusTagMap;
 };
 
 END_SCOPE(objects)

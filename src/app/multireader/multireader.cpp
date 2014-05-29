@@ -669,7 +669,6 @@ void CMultiReaderApp::xProcessGtf(
         return xProcessGff2(args, istr, ostr);
     }
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    reader.SetLocusTagBase(args["locus-tag-prefix"].AsString());
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
@@ -690,15 +689,17 @@ void CMultiReaderApp::xProcessGff3(
         return xProcessGff2(args, istr, ostr);
     }
     CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    reader.SetLocusTagBase(args["locus-tag-prefix"].AsString());
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         if (args["genbank"].AsBoolean()) {
             edit::CFeatTableEdit fte(**cit, m_pErrors);
+            //fte.InferPartials();
             fte.InferParentMrnas();
             fte.InferParentGenes();
-            //fte.InferPartials();
+			fte.GenerateLocusTags(args["locus-tag-prefix"].AsString());
             fte.EliminateBadQualifiers();
+            fte.GenerateProteinIds();
+            //fte.GenerateTranscriptIds();
         }
         xWriteObject(args, **cit, ostr);
     }
