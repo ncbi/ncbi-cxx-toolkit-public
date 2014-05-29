@@ -4,11 +4,11 @@
     xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
     xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
     xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
-    xmlns="http://ncbi.nlm.nih.gov/"
-    targetNamespace="http://ncbi.nlm.nih.gov/"
+    xmlns="http://www.ncbi.nlm.nih.gov/"
+    targetNamespace="http://www.ncbi.nlm.nih.gov/"
     >
   <wsdl:types>
-    <xs:schema elementFormDefault="qualified" targetNamespace="http://ncbi.nlm.nih.gov/">
+    <xs:schema elementFormDefault="qualified" targetNamespace="http://www.ncbi.nlm.nih.gov/">
 
 <xs:element name="Description">
   <xs:complexType/>
@@ -116,7 +116,7 @@
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:binding name="SoapSampleServer" type="SoapSampleServer">
-    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document" />
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http/" style="document" />
     <wsdl:operation name="GetDescription">
       <soap:operation soapAction="GetDescription" style="document" />
       <wsdl:input>

@@ -115,7 +115,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     // NOTE:  While this sample uses the CHTML* classes for generating HTML,
     // you are encouraged to use XML/XSLT and the NCBI port of XmlWrapp.
     // For more info:
-    //  http://www.ncbi.nlm.nih.gov/books/NBK8829/
+    //  http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_xmlwrapp/
     //  http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
 
     // Create a HTML page (using template HTML file "cgi_sample.html")

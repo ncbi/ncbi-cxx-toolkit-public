@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <xs:schema
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
-  xmlns="http://ncbi.nlm.nih.gov/"
-  targetNamespace="http://ncbi.nlm.nih.gov/"
+  xmlns="http://www.ncbi.nlm.nih.gov/"
+  targetNamespace="http://www.ncbi.nlm.nih.gov/"
   elementFormDefault="qualified"
   attributeFormDefault="unqualified">
 
