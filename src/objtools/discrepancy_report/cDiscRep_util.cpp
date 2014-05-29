@@ -995,11 +995,11 @@ string CTestAndRepData :: SeqDescLabelContent(const CSeqdesc& sd)
 
 string CTestAndRepData :: GetDiscItemText(const CSeqdesc& seqdesc, const CBioseq& bioseq)
 {
-    // what if no bioseq?
-    string row_text = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank) + ": ";
-    row_text += SeqDescLabelContent(seqdesc);
-    if (thisInfo.infile.empty()) return row_text;
-    else return(thisInfo.infile + ": " + row_text);
+  // what if no bioseq?
+  string row_text = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank) + ": ";
+  row_text += SeqDescLabelContent(seqdesc);
+  if (thisInfo.infile.empty()) return row_text;
+  else return(thisInfo.infile + ": " + row_text);
 };
 
 
@@ -1101,8 +1101,9 @@ const CSeq_id& CTestAndRepData::BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id
         }
         else  return ( (*it).GetObject() );
       };
-      if ( best_score == 99999 ) 
+      if ( best_score == 99999 ) { 
            NCBI_USER_THROW("BioseqToBestSeqId failed");
+      }
       else return ( (*best_seq_id).GetObject() );  
 }; // BioseqToBestSeqId()
 

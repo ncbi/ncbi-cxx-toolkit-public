@@ -116,9 +116,11 @@ bool CDiscRepOutput :: x_NeedsTag(const string& setting_name, const string& desc
    for (i =0; i< cnt; i++) {
      if (setting_name == tags[i].setting_name
           && (tags[i].notag_description == NULL
-                 || NStr::FindNoCase(desc, tags[i].notag_description) == string::npos)
+                 || NStr::FindNoCase(desc, tags[i].notag_description) 
+                         == string::npos)
           && (tags[i].description == NULL
-                 || NStr::FindNoCase(desc, tags[i].description) != string::npos) ) {
+                 || NStr::FindNoCase(desc, tags[i].description) 
+                                             != string::npos) ) {
         return true;
      }
    }
@@ -142,17 +144,20 @@ void CDiscRepOutput :: x_AddListOutputTags()
  
   // AddOutpuTag
   bool has_sub_trna_in_cds = false;
-  NON_CONST_ITERATE (vector <CRef <CClickableItem> > , it, thisInfo.disc_report_data) {
+  NON_CONST_ITERATE (vector <CRef <CClickableItem> > , it, 
+                                    thisInfo.disc_report_data) {
      setting_name = (*it)->setting_name;
      desc = (*it)->description; 
      if (desc.empty()) continue;
 
      // check subcategories first;
-     NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, (*it)->subcategories) {
+     NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, 
+                                               (*it)->subcategories) {
         sub_desc = (*sit)->description;
         if (x_NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
                || (oc.add_extra_output_tag 
-                      && x_NeedsTag(setting_name, sub_desc, extra_fatal, extra_cnt)) ){
+                      && x_NeedsTag(setting_name, sub_desc, extra_fatal, 
+                                                             extra_cnt)) ){
            if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
              if (sub_desc.find("some missing") != string::npos
                        || sub_desc.find("some duplicate") != string::npos)
@@ -464,7 +469,7 @@ void CDiscRepOutput :: Export()
     xmldoc.set_is_standalone(true);
     xmldoc.set_encoding("UTF-8");
     
-    cout << xmldoc;
+    // cout << xmldoc;
     *(oc.output_f) << xmldoc;
   }
 
@@ -776,13 +781,13 @@ void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CCli
              vnp = list_copy;
            }
         */
-unsigned ii=0;
+    unsigned obj_i=0;
     ITERATE (vector <string>, it, c_item->item_list) {
       if (!oc.xml) {
           *(oc.output_f) << *it << endl;
       }
       else {
-        const CObject* ptr = (c_item->obj_list[ii++]).GetPointer();
+        const CObject* ptr = (c_item->obj_list[obj_i++]).GetPointer();
         const CSeq_entry* entry = dynamic_cast<const CSeq_entry*>(ptr);
         const CBioseq* bioseq = dynamic_cast<const CBioseq*>(ptr);
         const CBioseq_set* seq_set = dynamic_cast<const CBioseq_set*>(ptr);
@@ -793,7 +798,6 @@ if (entry) cerr << "entry  \n" << c_item->setting_name << endl;
 else if (seq_set) {
 cerr << "seq_set \n" << c_item->setting_name << endl;
 }
-else if (seq_desc) cerr << "seq_desc " << c_item->setting_name << endl;
 */
 
         xml::node sub_node("message", (*it).c_str());
@@ -806,16 +810,31 @@ else if (seq_desc) cerr << "seq_desc " << c_item->setting_name << endl;
            strtmp = bioseq->GetFirstId()->AsFastaString();
            att.insert("seq-id", strtmp.c_str()); 
         }
+        else if (seq_desc) {
+           if (!(c_item->item_list.empty())) {
+              strtmp = *(c_item->item_list.begin());
+              strtmp = CTempString(strtmp.substr(strtmp.find(":")+1));
+              strtmp = CTempString(strtmp.substr(0, strtmp.find(":")));
+              strtmp = NStr::TruncateSpaces(strtmp);
+              if (!strtmp.empty()) {
+                  att.insert("seq-id", strtmp.c_str());
+              }
+           }           
+        }
         else if (seq_ft) {
            const CSeq_id* seq_id = seq_ft->GetLocation().GetId();
-           if (seq_id) strtmp = seq_id->AsFastaString();
+           if (seq_id) {
+              strtmp = seq_id->AsFastaString();
+           }
            else {
              CBioseq_Handle 
                 bioseq_h 
                   = thisInfo.scope->GetBioseqHandle(seq_ft->GetLocation());
              strtmp = bioseq_h.GetSeqId()->AsFastaString();
            }
-           att.insert("seq-id", strtmp.c_str()); 
+           if (!strtmp.empty()) {
+              att.insert("seq-id", strtmp.c_str()); 
+           }
          
            strtmp = kEmptyStr;
            if (seq_ft->CanGetId()) {
@@ -848,9 +867,12 @@ else if (seq_desc) cerr << "seq_desc " << c_item->setting_name << endl;
                      feat_id.GetGeneral().GetLabel(&strtmp);
                      break;
                    }
+                 default: break;
               } // switch
            }
-           att.insert("feat-id", strtmp.c_str()); 
+           if (!strtmp.empty()) {
+              att.insert("feat-id", strtmp.c_str()); 
+           }
         } // if (seq_ft)
         xml_node.push_back(sub_node);
       }
