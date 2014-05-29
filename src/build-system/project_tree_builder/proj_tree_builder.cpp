@@ -2394,8 +2394,13 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
         resolver.Append( GetApp().GetSite().GetMacros());
     }
     ITERATE(list<string>, p, metadata_files) {
-	    string fileloc(CDirEntry::ConcatPath(
-	                root_src_path, CDirEntry::ConvertToOSPath(*p)));
+	    string fileloc;
+        if (!GetApp().m_BuildRoot.empty()) {
+            fileloc = CDirEntry::ConcatPath(GetApp().m_BuildRoot,*p);
+        }
+        if (fileloc.empty() || !CFile(fileloc).Exists()) {
+            fileloc = CDirEntry::ConcatPath(root_src_path, CDirEntry::ConvertToOSPath(*p));
+        }
 	    if (!CDirEntry(fileloc).Exists() && !GetApp().m_ExtSrcRoot.empty()) {
 	        fileloc = CDirEntry::ConcatPath( CDirEntry::ConcatPath(
 	            GetApp().m_ExtSrcRoot,

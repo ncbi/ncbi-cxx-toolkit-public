@@ -101,11 +101,12 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         // unix
         string unix_cfg = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(),"MetaData");
         if (!unix_cfg.empty()) {
-            string fileloc(CDirEntry::ConcatPath( CDirEntry(GetApp().m_Solution).GetDir(),unix_cfg));
-            if (!CFile(fileloc).Exists()) {
-                if (!GetApp().m_BuildRoot.empty()) {
-                    fileloc = CDirEntry::ConcatPath(GetApp().m_BuildRoot,unix_cfg);
-                }
+            string fileloc;
+            if (!GetApp().m_BuildRoot.empty()) {
+                fileloc = CDirEntry::ConcatPath(GetApp().m_BuildRoot,unix_cfg);
+            }
+            if (fileloc.empty() || !CFile(fileloc).Exists()) {
+                fileloc = CDirEntry::ConcatPath( CDirEntry(GetApp().m_Solution).GetDir(),unix_cfg);
             }
             if (CFile(fileloc).Exists()) {
                 m_UnixMakeDef.SetValueSeparator(LIST_SEPARATOR_LIBS);
