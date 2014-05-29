@@ -47,6 +47,16 @@ public:
     CNullProcess()
     //  ------------------------------------------------------------------------
         : CSeqEntryProcess()
+        , m_out( 0 )
+        , m_do_copy (false)
+    {};
+
+    //  ------------------------------------------------------------------------
+    CNullProcess(bool do_copy)
+    //  ------------------------------------------------------------------------
+        : CSeqEntryProcess()
+        , m_out( 0 )
+        , m_do_copy (do_copy)
     {};
 
     //  ------------------------------------------------------------------------
@@ -61,6 +71,8 @@ public:
     //  ------------------------------------------------------------------------
     {
         CSeqEntryProcess::ProcessInitialize( args );
+
+        m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
     };
 
     static bool x_UserFieldCompare (const CRef<CUser_field>& f1, const CRef<CUser_field>& f2)
@@ -77,12 +89,19 @@ public:
         // empty method body
         try {
 
+            if ( m_do_copy ) {
+                *m_out << MSerial_AsnText << *m_entry << endl;
+            }
         }
         catch (CException& e) {
             LOG_POST(Error << "error processing seqentry: " << e.what());
         }
     };
 
+
+protected:
+    CNcbiOstream* m_out;
+    bool m_do_copy;
 };
 
 #endif

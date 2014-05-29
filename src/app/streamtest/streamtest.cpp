@@ -163,6 +163,7 @@ void CStreamTestApp::Init()
         CArgDescriptions::eString );
      arg_desc->SetConstraint( "test", &(*new CArgAllow_Strings,
                                         "null",
+                                        "copy",
                                         "agpwrite",
                                         "cleanup",
                                         "defline",
@@ -287,6 +288,9 @@ CStreamTestApp::GetProcess(
     CSeqEntryProcess* pProcess = 0;
     if ( testcase == "null" ) {
         pProcess = new CNullProcess;
+    }
+    if ( testcase == "copy" ) {
+        pProcess = new CNullProcess (true);
     }
     if ( testcase == "agpwrite" ) {
         pProcess = new CAgpwriteProcess( args["options"].AsString() );
