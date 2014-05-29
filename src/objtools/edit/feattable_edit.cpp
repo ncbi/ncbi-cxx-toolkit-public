@@ -177,12 +177,13 @@ void CFeatTableEdit::EliminateBadQualifiers()
 void CFeatTableEdit::GenerateProteinIds()
 //  ----------------------------------------------------------------------------
 {
+	// that's for cds's.
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     CFeat_CI it(mHandle, sel);
     for ( ; it; ++it) {
         const CSeq_feat& cds = it->GetOriginalFeature();
-		string proteinId = this->xGetProteinId(cds, *mpScope);
+		string proteinId = xNextProteinId(cds);
 		if (proteinId.empty()) {
 			continue;
 		}
@@ -273,6 +274,29 @@ string CFeatTableEdit::xNextLocusTag()
 }
 
 //	----------------------------------------------------------------------------
+string CFeatTableEdit::xNextProteinId(
+	const CSeq_feat& cds)
+//	----------------------------------------------------------------------------
+{
+	// format: mLocusTagPrefix|<locus tag of gene>[_numeric disambiguation]
+	CConstRef<CSeq_feat> pGene = xGetGeneParent(cds);
+    if (!pGene) {
+		return "";
+	}
+	string locusTag = pGene->GetNamedQual("locus_tag");
+	string disAmbig = "";
+	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
+	if (it == mMapProtIdCounts.end()) {
+		mMapProtIdCounts[locusTag] = 1;
+	}
+	else {
+		++mMapProtIdCounts[locusTag];
+		disAmbig = string("_") + NStr::IntToString(mMapProtIdCounts[locusTag]);
+	}
+	return (mLocusTagPrefix + "|" + locusTag + disAmbig);
+}
+
+//	----------------------------------------------------------------------------
 CConstRef<CSeq_feat> CFeatTableEdit::xGetGeneParent(
 	const CSeq_feat& feat)
 //	----------------------------------------------------------------------------
@@ -300,20 +324,6 @@ CConstRef<CSeq_feat> CFeatTableEdit::xGetGeneParent(
         }
     }
 	return pGene;
-}
-
-//  ----------------------------------------------------------------------------
-string CFeatTableEdit::xGetProteinId(
-    const CSeq_feat& cds,
-    CScope& scope)
-//  ----------------------------------------------------------------------------
-{
-	CConstRef<CSeq_feat> pGene = xGetGeneParent(cds);
-    if (!pGene) {
-		return "";
-	}
-	string locusTag = pGene->GetNamedQual("locus_tag");
-	return locusTag;
 }
 
 //  ----------------------------------------------------------------------------
