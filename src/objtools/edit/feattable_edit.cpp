@@ -52,12 +52,14 @@ BEGIN_SCOPE(edit)
 //  -------------------------------------------------------------------------
 CFeatTableEdit::CFeatTableEdit(
     CSeq_annot& annot,
+	const string& locusTagPrefix,
     IMessageListener* pMessageListener):
 //  -------------------------------------------------------------------------
     mAnnot(annot),
     mpMessageListener(pMessageListener),
     mNextFeatId(1),
-	mLocusTagNumber(1)
+	mLocusTagNumber(1),
+	mLocusTagPrefix(locusTagPrefix)
 {
     mpScope.Reset(new CScope(*CObjectManager::GetInstance()));
     mpScope->AddDefaults();
@@ -208,8 +210,7 @@ void CFeatTableEdit::GenerateTranscriptIds()
 }
 
 //  ----------------------------------------------------------------------------
-void CFeatTableEdit::GenerateLocusTags(
-	const string& prefix)
+void CFeatTableEdit::GenerateLocusTags()
 //  ----------------------------------------------------------------------------
 {
 	CRef<CGb_qual> pLocusTag;
@@ -224,7 +225,7 @@ void CFeatTableEdit::GenerateLocusTags(
 		}
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
             (itGenes)->GetOriginalFeature()));
-		feh.AddQualifier("locus_tag", xNextLocusTag(prefix));
+		feh.AddQualifier("locus_tag", xNextLocusTag());
 	}
 	SAnnotSelector selOther;
 	selOther.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
@@ -258,8 +259,7 @@ string CFeatTableEdit::xNextFeatId()
 }
 
 //  ----------------------------------------------------------------------------
-string CFeatTableEdit::xNextLocusTag(
-	const string& prefix)
+string CFeatTableEdit::xNextLocusTag()
 //  ----------------------------------------------------------------------------
 {
     const int WIDTH = 6;
@@ -268,7 +268,7 @@ string CFeatTableEdit::xNextLocusTag(
     if (suffix.size() < WIDTH) {
         suffix = padding.substr(0, WIDTH-suffix.size()) + suffix;
     }
-    string nextTag = prefix + "_" + suffix;
+    string nextTag = mLocusTagPrefix + "_" + suffix;
     return nextTag;
 }
 
@@ -301,7 +301,6 @@ CConstRef<CSeq_feat> CFeatTableEdit::xGetGeneParent(
     }
 	return pGene;
 }
-
 
 //  ----------------------------------------------------------------------------
 string CFeatTableEdit::xGetProteinId(

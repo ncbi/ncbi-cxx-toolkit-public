@@ -51,11 +51,11 @@ class NCBI_XOBJEDIT_EXPORT CFeatTableEdit
 public:
     CFeatTableEdit(
         CSeq_annot&,
+		const string& = "",
         IMessageListener* =0);
     ~CFeatTableEdit();
 
-	void GenerateLocusTags(
-		const string&);
+	void GenerateLocusTags();
     void InferParentMrnas();
     void InferParentGenes();
     void InferPartials();
@@ -65,8 +65,7 @@ public:
 
 protected:
     string xNextFeatId();
-	string xNextLocusTag(
-		const string&);
+	string xNextLocusTag();
 
 	CConstRef<CSeq_feat> xGetGeneParent(
 		const CSeq_feat&);
@@ -84,6 +83,7 @@ protected:
     IMessageListener* mpMessageListener;
     unsigned int mNextFeatId;
 	unsigned int mLocusTagNumber;
+	string mLocusTagPrefix;
 };
 
 END_SCOPE(edit)

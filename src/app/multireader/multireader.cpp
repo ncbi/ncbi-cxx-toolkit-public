@@ -1002,11 +1002,12 @@ void CMultiReaderApp::xPostProcessAnnot(
     if (!args["genbank"].AsBoolean()) {
 		return;
 	}
-    edit::CFeatTableEdit fte(annot, m_pErrors);
+    edit::CFeatTableEdit fte(annot, args["locus-tag-prefix"].AsString(),
+		m_pErrors);
     //fte.InferPartials();
     fte.InferParentMrnas();
     fte.InferParentGenes();
-	fte.GenerateLocusTags(args["locus-tag-prefix"].AsString());
+	fte.GenerateLocusTags();
     fte.EliminateBadQualifiers();
     fte.GenerateProteinIds();
     //fte.GenerateTranscriptIds();
