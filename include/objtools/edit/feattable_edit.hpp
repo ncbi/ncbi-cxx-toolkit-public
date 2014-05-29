@@ -61,7 +61,7 @@ public:
     void InferPartials();
     void EliminateBadQualifiers();
     void GenerateProteinAndTranscriptIds();
-    //void GenerateOrigProteinAndOrigTranscriptIds();
+    void GenerateOrigProteinAndOrigTranscriptIds();
 
 protected:
     string xNextFeatId();
@@ -72,6 +72,8 @@ protected:
 		const CSeq_feat&);
 
 	CConstRef<CSeq_feat> xGetGeneParent(
+		const CSeq_feat&);
+	CConstRef<CSeq_feat> xGetMrnaParent(
 		const CSeq_feat&);
     CRef<CSeq_feat> xMakeGeneForMrna(
         const CSeq_feat&);
