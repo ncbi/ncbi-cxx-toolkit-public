@@ -1280,6 +1280,6 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
-    return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return CAsn2FlatApp().AppMain(argc, argv);
 }
 
