@@ -139,6 +139,7 @@ private:
     void xSetMapper(const CArgs&);
     void xSetMessageListener(const CArgs&);
             
+	void xPostProcessAnnot(const CArgs&,  CSeq_annot&);
     void xWriteObject(const CArgs&, CSerialObject&, CNcbiOstream&);
     void xDumpErrors(CNcbiOstream& );
 
@@ -670,8 +671,9 @@ void CMultiReaderApp::xProcessGtf(
     }
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(args, **cit, ostr);
+    for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
+		xPostProcessAnnot(args, **it);
+        xWriteObject(args, **it, ostr);
     }
 }
 
@@ -690,18 +692,9 @@ void CMultiReaderApp::xProcessGff3(
     }
     CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        if (args["genbank"].AsBoolean()) {
-            edit::CFeatTableEdit fte(**cit, m_pErrors);
-            //fte.InferPartials();
-            fte.InferParentMrnas();
-            fte.InferParentGenes();
-			fte.GenerateLocusTags(args["locus-tag-prefix"].AsString());
-            fte.EliminateBadQualifiers();
-            fte.GenerateProteinIds();
-            //fte.GenerateTranscriptIds();
-        }
-        xWriteObject(args, **cit, ostr);
+    for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
+		xPostProcessAnnot(args, **it);
+        xWriteObject(args, **it, ostr);
     }
 }
 
@@ -998,6 +991,25 @@ void CMultiReaderApp::xSetFlags(
     m_AnnotTitle = args["title"].AsString();
     m_bCheckOnly = args["checkonly"];
     m_bXMLErrors = args["xmlerrors"];
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xPostProcessAnnot(
+    const CArgs & args,
+    CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    if (!args["genbank"].AsBoolean()) {
+		return;
+	}
+    edit::CFeatTableEdit fte(annot, m_pErrors);
+    //fte.InferPartials();
+    fte.InferParentMrnas();
+    fte.InferParentGenes();
+	fte.GenerateLocusTags(args["locus-tag-prefix"].AsString());
+    fte.EliminateBadQualifiers();
+    fte.GenerateProteinIds();
+    //fte.GenerateTranscriptIds();
 }
 
 //  ----------------------------------------------------------------------------
