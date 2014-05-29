@@ -405,6 +405,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 
     //get defline
     sdl->defline = CDeflineGenerator().GenerateDefline(m_ScopeRef->GetBioseqHandle(*(sdl->id)));
+	sdl->fullDefline = sdl->defline;
     if (!(bdl.empty())) { 
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
@@ -432,11 +433,11 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                         wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
                         wid->GetLabel(&concat_acc, CSeq_id::eFasta, 0);
                         if( (m_Option & eShowGi) && cur_gi > ZERO_GI){
-                            sdl->defline =  sdl->defline + " >" + "gi|" + 
+                            sdl->fullDefline =  sdl->fullDefline + " >" + "gi|" + 
                                 NStr::NumericToString(cur_gi) + "|" + 
                                 concat_acc + " " + (*iter)->GetTitle();
                         } else {
-                            sdl->defline = sdl->defline + " >" + concat_acc +
+                            sdl->fullDefline = sdl->fullDefline + " >" + concat_acc +
                                 " " + 
                                 (*iter)->GetTitle();
                         }
@@ -1463,7 +1464,17 @@ string CShowBlastDefline::x_FormatSeqSetHeaders(int isGenomicSeq, bool formatHea
     return subHeader;            
 }
 
-
+static void s_LimitDescrLength(string &descr)
+{
+	const int kMaxDescrLength = 4096;
+	if(descr.length() > kMaxDescrLength) {
+        size_t end = NStr::Find(descr," ",0,kMaxDescrLength,NStr::eLast);
+        if(end != NPOS) {            
+            descr = descr.substr(0,end);                                        
+            descr += "...";
+        }                
+    }           	
+}
 string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new)
 {
     const int kMaxDescrLength = 4096;
@@ -1490,15 +1501,12 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     }
 
     string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";    
-    if(descr.length() > kMaxDescrLength) {
-        size_t end = NStr::Find(descr," ",0,kMaxDescrLength,NStr::eLast);
-        if(end != NPOS) {            
-            descr = descr.substr(0,end);                                        
-            descr += "...";
-        }                
-    }           
-    defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",CHTMLHelper::HTMLEncode(descr));
+	s_LimitDescrLength(descr);
+	defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",CHTMLHelper::HTMLEncode(descr));	
 
+	descr = (!sdl->fullDefline.empty()) ? sdl->fullDefline : seqid;    
+	s_LimitDescrLength(descr);
+	defLine = CAlignFormatUtil::MapTemplate(defLine,"full_dfln_defline",CHTMLHelper::HTMLEncode(descr));
     if(sdl->score_url != NcbiEmptyString) {        
         string scoreInfo  = CAlignFormatUtil::MapTemplate(m_DeflineTemplates->scoreInfoTmpl,"score_url",sdl->score_url);
         scoreInfo = CAlignFormatUtil::MapTemplate(scoreInfo,"bit_string",iter->bit_string);
