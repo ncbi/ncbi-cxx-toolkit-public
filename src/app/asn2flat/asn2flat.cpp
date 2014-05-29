@@ -47,6 +47,7 @@
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
 #include <objtools/readers/fasta.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
@@ -314,6 +315,13 @@ int CAsn2FlatApp::Run(void)
 {
     // initialize conn library
     CONNECT_Init(&GetConfig());
+#ifdef HAVE_PUBSEQ_OS
+    // we may require PubSeqOS readers at some point, so go ahead and make
+    // sure they are properly registered
+    GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
+#endif
+    
 
     const CArgs&   args = GetArgs();
 
