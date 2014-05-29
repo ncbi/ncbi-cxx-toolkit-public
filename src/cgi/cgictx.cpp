@@ -459,7 +459,8 @@ string CCgiContext::RetrieveTrackingId() const
 
     string tag_name = TCGI_TrackingTagName::GetDefault();
     NStr::ReplaceInPlace(tag_name, "-", "_");
-    tid = m_Request->GetRandomProperty(tag_name, true);
+    tid = CRequestContext::SelectLastSessionID(
+        m_Request->GetRandomProperty(tag_name, true));
     if (!tid.empty()) {
         return tid;
     }

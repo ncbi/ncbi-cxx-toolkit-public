@@ -2229,6 +2229,13 @@ void CDiagContext::SetAppState(EDiagAppState state, EPropertyMode mode)
 }
 
 
+// Session id passed through HTTP
+NCBI_PARAM_DECL(string, Log, Http_Session_Id);
+NCBI_PARAM_DEF_EX(string, Log, Http_Session_Id, kEmptyStr, eParam_NoThread,
+                  HTTP_NCBI_SID);
+typedef NCBI_PARAM_TYPE(Log, Http_Session_Id) TParamHttpSessionId;
+
+// Session id set in the environment
 NCBI_PARAM_DECL(string, Log, Session_Id);
 NCBI_PARAM_DEF_EX(string, Log, Session_Id, kEmptyStr, eParam_NoThread,
                   NCBI_LOG_SESSION_ID);
@@ -2242,7 +2249,13 @@ const string& CDiagContext::GetDefaultSessionID(void) const
         m_DefaultSessionId.reset(new CEncodedString);
     }
     if ( m_DefaultSessionId->IsEmpty() ) {
-        m_DefaultSessionId->SetString(TParamDefaultSessionId::GetDefault());
+        string sid = CRequestContext::SelectLastSessionID(
+            TParamHttpSessionId::GetDefault());
+        if ( sid.empty() ) {
+            sid = CRequestContext::SelectLastSessionID(
+                TParamDefaultSessionId::GetDefault());
+        }
+        m_DefaultSessionId->SetString(sid);
     }
     return m_DefaultSessionId->GetOriginalString();
 }

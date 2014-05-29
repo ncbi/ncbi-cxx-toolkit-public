@@ -71,10 +71,36 @@ CRequestContext::TCount CRequestContext::GetNextRequestID(void)
 }
 
 
+// Hit id passed through HTTP
+NCBI_PARAM_DECL(string, Log, Http_Hit_Id);
+NCBI_PARAM_DEF_EX(string, Log, Http_Hit_Id, kEmptyStr, eParam_NoThread,
+                  HTTP_NCBI_PHID);
+typedef NCBI_PARAM_TYPE(Log, Http_Hit_Id) TParamHttpHitId;
+
+
+const string& CRequestContext::x_GetDefaultHitID(void) const
+{
+    if ( !m_DefaultHitID.get() ) {
+        m_DefaultHitID.reset(new string);
+        *m_DefaultHitID = SelectLastHitID(TParamHttpHitId::GetDefault());
+    }
+    return *m_DefaultHitID;
+}
+
+
 const string& CRequestContext::SetHitID(void)
 {
     SetHitID(GetDiagContext().GetNextHitID());
     return m_HitID;
+}
+
+
+const string& CRequestContext::GetHitID(void) const
+{
+    if ( x_IsSetProp(eProp_HitID) ) {
+        return m_HitID;
+    }
+    return x_GetDefaultHitID();
 }
 
 
@@ -425,6 +451,35 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_AutoIncOnPost = m_AutoIncOnPost;
     ret->m_Flags = m_Flags;
     return ret;
+}
+
+
+string CRequestContext::SelectLastHitID(const string& hit_ids)
+{
+    // Empty string or single value - return as-is.
+    if (hit_ids.empty()  ||  hit_ids.find_first_of(", ") == NPOS) {
+        return hit_ids;
+    }
+    list<string> ids;
+    NStr::Split(hit_ids, ", ", ids);
+    return ids.empty() ? kEmptyStr : ids.back();
+}
+
+
+string CRequestContext::SelectLastSessionID(const string& session_ids)
+{
+    // Empty string or single value - return as-is.
+    if (session_ids.empty()  ||  session_ids.find_first_of(", ") == NPOS) {
+        return session_ids;
+    }
+    list<string> ids;
+    NStr::Split(session_ids, ", ", ids);
+    REVERSE_ITERATE(list<string>, it, ids) {
+        if (*it != "UNK_SESSION") {
+            return *it;
+        }
+    }
+    return kEmptyStr;
 }
 
 

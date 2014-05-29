@@ -1226,14 +1226,24 @@ void CCgiRequest::x_SetPageHitId(TFlags flags)
     CRequestContext& rctx = CDiagContext::GetRequestContext();
 
     if ((flags & fIgnorePageHitId) == 0) {
+        string phid;
         // Check if pageviewid is present. If not, generate one.
         TCgiEntries::iterator phid_it = m_Entries.find(
             g_GetNcbiString(eNcbiStrings_PHID));
-
-        if (phid_it == m_Entries.end())
+        if (phid_it != m_Entries.end()) {
+            phid = phid_it->second;
+        }
+        else {
+            // Try HTTP_NCBI_PHID
+            phid = CRequestContext::SelectLastHitID(
+                GetRandomProperty("NCBI_PHID", true));
+        }
+        if (phid.empty()  &&  !rctx.IsSetHitID()) {
             rctx.SetHitID();
-        else
-            rctx.SetHitID(phid_it->second);
+        }
+        else {
+            rctx.SetHitID(phid);
+        }
     }
 }
 

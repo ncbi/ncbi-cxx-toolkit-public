@@ -107,9 +107,15 @@ public:
     const string& GetEncodedSessionID(void) const;
 
     /// Hit ID
+    /// Get explicit hit id or the default one (from HTTP_NCBI_PHID).
     const string& GetHitID(void) const;
+    /// Set explicit hit id.
     void          SetHitID(const string& hit);
+    /// Check if there's an explicit hit id or the default one.
     bool          IsSetHitID(void) const;
+    /// Check if there's an explicit hit id.
+    bool          IsSetExplicitHitID(void) const;
+    /// Reset explicit hit id.
     void          UnsetHitID(void);
     /// Generate unique hit id, assign it to this request, return
     /// the hit id value.
@@ -209,6 +215,13 @@ public:
     /// after it's stopped).
     CRef<CRequestContext> Clone(void) const;
 
+    /// Select the last hit id from the list of ids separated with commas
+    /// and optional spaces.
+    static string SelectLastHitID(const string& hit_ids);
+    /// Select the last session id from the list of ids separated with
+    /// commas and optional spaces, ignore UNK_SESSION value.
+    static string SelectLastSessionID(const string& session_ids);
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -227,6 +240,10 @@ private:
 
     // Check if the request is running.
     bool IsRunning(void) const { return m_IsRunning; }
+
+    // Check HTTP_NCBI_PHID if not yet checked, return its
+    // value or empty string.
+    const string& x_GetDefaultHitID(void) const;
 
     enum EProperty {
         eProp_RequestID     = 1 << 0,
@@ -260,6 +277,7 @@ private:
     bool           m_IsRunning;
     bool           m_AutoIncOnPost;
     TContextFlags  m_Flags;
+    mutable auto_ptr<string> m_DefaultHitID; // HTTP_NCBI_PHID
 };
 
 
@@ -356,7 +374,7 @@ const string& CRequestContext::GetEncodedSessionID(void) const
 inline
 bool CRequestContext::IsSetSessionID(void) const
 {
-    return x_IsSetProp(eProp_SessionID)  ||
+    return IsSetExplicitSessionID()  ||
         !GetDiagContext().GetDefaultSessionID().empty();
 }
 
@@ -375,13 +393,13 @@ void CRequestContext::UnsetSessionID(void)
 
 
 inline
-const string& CRequestContext::GetHitID(void) const
+bool CRequestContext::IsSetHitID(void) const
 {
-    return x_IsSetProp(eProp_HitID) ? m_HitID : kEmptyStr;
+    return IsSetExplicitHitID()  ||  !x_GetDefaultHitID().empty();
 }
 
 inline
-bool CRequestContext::IsSetHitID(void) const
+bool CRequestContext::IsSetExplicitHitID(void) const
 {
     return x_IsSetProp(eProp_HitID);
 }
@@ -398,8 +416,7 @@ void CRequestContext::UnsetHitID(void)
 inline
 string CRequestContext::GetNextSubHitID(void)
 {
-    string phid = GetHitID();
-    if ( !x_IsSetProp(eProp_HitID) ) return kEmptyStr;
+    if ( !IsSetHitID() ) return kEmptyStr;
     return GetHitID() + "." + NStr::NumericToString(++m_SubHitID);
 }
 
