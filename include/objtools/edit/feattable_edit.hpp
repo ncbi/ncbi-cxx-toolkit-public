@@ -60,15 +60,15 @@ public:
     void InferParentGenes();
     void InferPartials();
     void EliminateBadQualifiers();
-    void GenerateProteinIds();
-    void GenerateTranscriptIds();
+    void GenerateProteinAndTranscriptIds();
+    //void GenerateOrigProteinAndOrigTranscriptIds();
 
 protected:
     string xNextFeatId();
 	string xNextLocusTag();
 	string xNextProteinId(
 		const CSeq_feat&);
-	string xNextTranscriptId(
+	string xCurrentTranscriptId(
 		const CSeq_feat&);
 
 	CConstRef<CSeq_feat> xGetGeneParent(
@@ -86,7 +86,6 @@ protected:
 	string mLocusTagPrefix;
 
 	map<string, int> mMapProtIdCounts;
-	map<string, int> mMapTranscriptIdCounts;
 };
 
 END_SCOPE(edit)

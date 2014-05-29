@@ -1009,8 +1009,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     fte.InferParentGenes();
 	fte.GenerateLocusTags();
     fte.EliminateBadQualifiers();
-    fte.GenerateProteinIds();
-    fte.GenerateTranscriptIds();
+    fte.GenerateProteinAndTranscriptIds();
 }
 
 //  ----------------------------------------------------------------------------

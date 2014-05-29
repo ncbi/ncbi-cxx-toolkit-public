@@ -174,7 +174,7 @@ void CFeatTableEdit::EliminateBadQualifiers()
 }
 
 //  ----------------------------------------------------------------------------
-void CFeatTableEdit::GenerateProteinIds()
+void CFeatTableEdit::GenerateProteinAndTranscriptIds()
 //  ----------------------------------------------------------------------------
 {
 	// that's for cds's.
@@ -184,6 +184,7 @@ void CFeatTableEdit::GenerateProteinIds()
     for ( ; it; ++it) {
         const CSeq_feat& cds = it->GetOriginalFeature();
 		string proteinId = xNextProteinId(cds);
+		string transcriptId = xCurrentTranscriptId(cds);
 		if (proteinId.empty()) {
 			continue;
 		}
@@ -193,33 +194,12 @@ void CFeatTableEdit::GenerateProteinIds()
 		pProteinId->SetQual("protein_id");
 		pProteinId->SetVal(proteinId);
 		pEditedCds->SetQual().push_back(pProteinId);
-        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
-        feh.Replace(*pEditedCds);
-	}
-}
-
-//  ----------------------------------------------------------------------------
-void CFeatTableEdit::GenerateTranscriptIds()
-//  ----------------------------------------------------------------------------
-{
-	// that's for mrna's.
-    SAnnotSelector sel;
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-    CFeat_CI it(mHandle, sel);
-    for ( ; it; ++it) {
-        const CSeq_feat& rna = it->GetOriginalFeature();
-		string transcriptId = xNextTranscriptId(rna);
-		if (transcriptId.empty()) {
-			continue;
-		}
-        CRef<CSeq_feat> pEditedRna(new CSeq_feat);
-        pEditedRna->Assign(rna);
 		CRef<CGb_qual> pTranscriptId(new CGb_qual);
 		pTranscriptId->SetQual("transcript_id");
 		pTranscriptId->SetVal(transcriptId);
-		pEditedRna->SetQual().push_back(pTranscriptId);
-        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(rna));
-        feh.Replace(*pEditedRna);
+		pEditedCds->SetQual().push_back(pTranscriptId);
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(cds));
+        feh.Replace(*pEditedCds);
 	}
 }
 
@@ -310,7 +290,7 @@ string CFeatTableEdit::xNextProteinId(
 }
 
 //	----------------------------------------------------------------------------
-string CFeatTableEdit::xNextTranscriptId(
+string CFeatTableEdit::xCurrentTranscriptId(
 	const CSeq_feat& cds)
 //	----------------------------------------------------------------------------
 {
@@ -321,14 +301,9 @@ string CFeatTableEdit::xNextTranscriptId(
 	}
 	string locusTag = pGene->GetNamedQual("locus_tag");
 	string disAmbig = "";
-	map<string, int>::iterator it = mMapTranscriptIdCounts.find(locusTag);
-	if (it == mMapTranscriptIdCounts.end()) {
-		mMapTranscriptIdCounts[locusTag] = 0;
-	}
-	else {
-		++mMapTranscriptIdCounts[locusTag];
-		disAmbig = string("_") + 
-			NStr::IntToString(mMapTranscriptIdCounts[locusTag]);
+	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
+	if (it != mMapProtIdCounts.end()  &&  mMapProtIdCounts[locusTag] != 0) {
+		disAmbig = string("_") + NStr::IntToString(mMapProtIdCounts[locusTag]);
 	}
 	return (mLocusTagPrefix + "|mrna." + locusTag + disAmbig);
 }
