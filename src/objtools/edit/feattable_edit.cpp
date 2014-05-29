@@ -106,7 +106,7 @@ void CFeatTableEdit::InferParentGenes()
     CFeat_CI it(mHandle, sel);
     for ( ; it; ++it) {
         const CSeq_feat& rna = it->GetOriginalFeature();
-        CRef<CSeq_feat> pGene = xMakeGeneForMrna(rna, *mpScope);
+        CRef<CSeq_feat> pGene = xMakeGeneForMrna(rna);
         const CSeq_loc& rnaLoc = rna.GetLocation();
         if (!pGene) {
             continue;
@@ -202,11 +202,24 @@ void CFeatTableEdit::GenerateProteinIds()
 void CFeatTableEdit::GenerateTranscriptIds()
 //  ----------------------------------------------------------------------------
 {
+	// that's for mrna's.
     SAnnotSelector sel;
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
     CFeat_CI it(mHandle, sel);
     for ( ; it; ++it) {
         const CSeq_feat& rna = it->GetOriginalFeature();
+		string transcriptId = xNextTranscriptId(rna);
+		if (transcriptId.empty()) {
+			continue;
+		}
+        CRef<CSeq_feat> pEditedRna(new CSeq_feat);
+        pEditedRna->Assign(rna);
+		CRef<CGb_qual> pTranscriptId(new CGb_qual);
+		pTranscriptId->SetQual("transcript_id");
+		pTranscriptId->SetVal(transcriptId);
+		pEditedRna->SetQual().push_back(pTranscriptId);
+        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(rna));
+        feh.Replace(*pEditedRna);
 	}
 }
 
@@ -287,13 +300,37 @@ string CFeatTableEdit::xNextProteinId(
 	string disAmbig = "";
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
 	if (it == mMapProtIdCounts.end()) {
-		mMapProtIdCounts[locusTag] = 1;
+		mMapProtIdCounts[locusTag] = 0;
 	}
 	else {
 		++mMapProtIdCounts[locusTag];
 		disAmbig = string("_") + NStr::IntToString(mMapProtIdCounts[locusTag]);
 	}
 	return (mLocusTagPrefix + "|" + locusTag + disAmbig);
+}
+
+//	----------------------------------------------------------------------------
+string CFeatTableEdit::xNextTranscriptId(
+	const CSeq_feat& cds)
+//	----------------------------------------------------------------------------
+{
+	// format: mLocusTagPrefix|mrna.<locus tag of gene>[_numeric disambiguation]
+	CConstRef<CSeq_feat> pGene = xGetGeneParent(cds);
+    if (!pGene) {
+		return "";
+	}
+	string locusTag = pGene->GetNamedQual("locus_tag");
+	string disAmbig = "";
+	map<string, int>::iterator it = mMapTranscriptIdCounts.find(locusTag);
+	if (it == mMapTranscriptIdCounts.end()) {
+		mMapTranscriptIdCounts[locusTag] = 0;
+	}
+	else {
+		++mMapTranscriptIdCounts[locusTag];
+		disAmbig = string("_") + 
+			NStr::IntToString(mMapTranscriptIdCounts[locusTag]);
+	}
+	return (mLocusTagPrefix + "|mrna." + locusTag + disAmbig);
 }
 
 //	----------------------------------------------------------------------------
@@ -328,12 +365,11 @@ CConstRef<CSeq_feat> CFeatTableEdit::xGetGeneParent(
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForMrna(
-    const CSeq_feat& rna,
-    CScope& scope)
+    const CSeq_feat& rna)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_feat> pGene;
-    CSeq_feat_Handle sfh = scope.GetSeq_featHandle(rna);
+    CSeq_feat_Handle sfh = mpScope->GetSeq_featHandle(rna);
     CSeq_annot_Handle sah = sfh.GetAnnot();
     if (!sah) {
         return pGene;

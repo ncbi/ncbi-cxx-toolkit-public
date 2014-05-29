@@ -68,12 +68,13 @@ protected:
 	string xNextLocusTag();
 	string xNextProteinId(
 		const CSeq_feat&);
+	string xNextTranscriptId(
+		const CSeq_feat&);
 
 	CConstRef<CSeq_feat> xGetGeneParent(
 		const CSeq_feat&);
     CRef<CSeq_feat> xMakeGeneForMrna(
-        const CSeq_feat&,
-        CScope&);
+        const CSeq_feat&);
 
     CSeq_annot& mAnnot;
     CRef<CScope> mpScope;
@@ -85,6 +86,7 @@ protected:
 	string mLocusTagPrefix;
 
 	map<string, int> mMapProtIdCounts;
+	map<string, int> mMapTranscriptIdCounts;
 };
 
 END_SCOPE(edit)

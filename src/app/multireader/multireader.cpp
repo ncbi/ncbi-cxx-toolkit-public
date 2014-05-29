@@ -1010,7 +1010,7 @@ void CMultiReaderApp::xPostProcessAnnot(
 	fte.GenerateLocusTags();
     fte.EliminateBadQualifiers();
     fte.GenerateProteinIds();
-    //fte.GenerateTranscriptIds();
+    fte.GenerateTranscriptIds();
 }
 
 //  ----------------------------------------------------------------------------
