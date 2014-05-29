@@ -4653,6 +4653,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ORIS	s	Institute of Steppe of the Ural branch of Russian Academy of Sciences",
 "ORIT	s	University of Tokyo",
 "ORM	s	Musee des Sciences Naturelles, Departement de Botanique",
+"ORS	c	Culture Collection of the Laboratory of Soil Microbiology, ORSTOM",
 "ORSAY	sb	Universite Paris-Sud - Parc Botanique de Launay",
 "ORSC	s	Office de la Recherche Scientifique et Technique d'Outre-Mer",
 "ORST	s	Office de la Recherche Scientifique et Technique d'Outre-Mer",
