@@ -4041,6 +4041,9 @@ else
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(krb5, KRB5, gssapi_krb5,
  [[AC_LANG_PROGRAM([[#include <time.h>
+#ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
 extern "C" {
 #include <gssapi/gssapi_krb5.h>
 }]],

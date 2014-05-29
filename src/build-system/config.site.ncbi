@@ -9,7 +9,7 @@ ncbi_platform=`COMMON_DetectPlatform`
 
 try_local() {
     # /sw (Mac)? /usr/sfw (Solaris)?
-    for d in /usr/local /usr/X11 /usr/openwin /usr; do
+    for d in /usr /usr/local /usr/X11 /usr/openwin; do
         test -d "$d"  ||  continue
         test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
         test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}

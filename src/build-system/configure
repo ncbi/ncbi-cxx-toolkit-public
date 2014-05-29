@@ -26258,6 +26258,9 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <time.h>
+#ifdef HAVE_INTTYPES_H
+#  include <inttypes.h>
+#endif
 extern "C" {
 #include <gssapi/gssapi_krb5.h>
 }
