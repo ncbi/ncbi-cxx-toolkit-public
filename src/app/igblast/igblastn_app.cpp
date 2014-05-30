@@ -181,7 +181,19 @@ int CIgBlastnApp::Run(void)
                                &*ig_opts);
                                
         
-        formatter.PrintProlog();
+        //formatter.PrintProlog();
+        if(fmt_args->GetFormattedOutputChoice() == 
+           CFormattingArgs::eFlatQueryAnchoredIdentities || 
+           fmt_args->GetFormattedOutputChoice() == 
+           CFormattingArgs::eFlatQueryAnchoredNoIdentities){
+            if(blastdb_full->GetDatabaseName() != NcbiEmptyString){
+                vector<CBlastFormatUtil::SDbInfo> db_info;
+                CBlastFormatUtil::GetBlastDbInfo(db_info, blastdb_full->GetDatabaseName(), 
+                                                 ig_opts->m_IsProtein, -1, false);
+                CBlastFormatUtil::PrintDbReport(db_info, 68, m_CmdLineArgs->GetOutputStream(), true);
+            }
+        }
+         
         
         /*** Process the input ***/
         for (; !input.End(); formatter.ResetScopeHistory()) {
