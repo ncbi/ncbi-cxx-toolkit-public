@@ -704,63 +704,6 @@ bool CString_constraint :: Match(const string& str) const
   }
 };
 
-// object match
-bool CString_constraint :: DoesObjectMatchStringConstraint(const CSeq_feat& feat, CConstRef <CSeq_feat> feat_to) const
-{
-   bool rval = false;
-   vector <string> strs_in_feat;
-   GetStringsFromObject(feat, strs_in_feat);
-   ITERATE (vector <string>, it, strs_in_feat) { 
-       rval = x_DoesSingleStringMatchConstraint(*it); 
-       if (rval) {
-            break;
-       }
-   }
-   strs_in_feat.clear();
-
-   if (!rval) {
-     string str;
-     switch (feat.GetData().Which()) {
-       case CSeqFeatData::e_Cdregion: 
-         {
-            if (feat.CanGetProduct()) {
-               if (feat_to.NotEmpty()) {
-                 GetStringsFromObject(*feat_to, strs_in_feat);
-                 ITERATE (vector <string>, it, strs_in_feat) {
-                    rval = x_DoesSingleStringMatchConstraint(*it);
-                    if (rval) break;
-                 }
-                 strs_in_feat.clear();
-               }
-            }
-            break;
-         }
-       case CSeqFeatData::e_Rna:
-         {
-           if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
-             // try CTestAndRepData :: GetSeqFeatLabel(feat, str);
-             feature::GetLabel(feat, &str, feature::fFGL_Content);
-             rval = x_DoesSingleStringMatchConstraint(str);
-             if (!rval) {
-               str = "tRNA-" + str;
-               rval = x_DoesSingleStringMatchConstraint(str);
-             }
-           }
-           break;
-         }
-       case CSeqFeatData::e_Imp:
-         rval = x_DoesSingleStringMatchConstraint(
-                                            feat.GetData().GetImp().GetKey());
-         break;
-       default: break;
-     }
-   }
-   if (GetNot_present()) {
-        rval = !rval;
-   }
-   return rval;
-};
-
 bool CString_constraint::x_ReplaceContains(string& val, const string& replace) const
 {
     bool rval = false;
