@@ -106,13 +106,13 @@ END_NCBI_SCOPE
 int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
-    CNcbiRegistry* reg;
     TFTP_Flags flag = 0;
     SConnNetInfo* net_info;
+    auto_ptr<CNcbiRegistry> reg;
     size_t i, j, k, l, m, n, size;
 
-    reg = s_CreateRegistry();
-    CONNECT_Init(reg);
+    reg.reset(s_CreateRegistry());
+    CONNECT_Init(reg.get());
 
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
@@ -460,17 +460,17 @@ int main(int argc, const char* argv[])
                          fHTTP_AutoReconnect | fHTTP_Flushable |
                          fHCC_UrlEncodeArgs/*obsolete now*/);
 
-    char *buf1 = new char[kBufferSize + 1];
-    char *buf2 = new char[kBufferSize + 2];
+    AutoPtr< char, ArrayDeleter<char> >  buf1(new char[kBufferSize + 1]);
+    AutoPtr< char, ArrayDeleter<char> >  buf2(new char[kBufferSize + 2]);
 
-    for (j = 0; j < kBufferSize/1024; j++) {
+    for (j = 0;  j < kBufferSize/1024;  j++) {
         for (i = 0; i < 1024 - 1; i++)
-            buf1[j*1024 + i] = "0123456789"[rand() % 10];
-        buf1[j*1024 + 1024 - 1] = '\n';
+            buf1.get()[j*1024 + i] = "0123456789"[rand() % 10];
+        buf1.get()[j*1024 + 1024 - 1] = '\n';
     }
-    buf1[kBufferSize] = '\0';
+    buf1.get()[kBufferSize] = '\0';
 
-    if (!(ios << buf1))
+    if (!(ios << buf1.get()))
         ERR_POST(Fatal << "Cannot send data");
 
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(kBufferSize)));
@@ -478,20 +478,20 @@ int main(int argc, const char* argv[])
     if (!ios.flush())
         ERR_POST(Fatal << "Cannot flush data");
 
-    ios.read(buf2, kBufferSize + 1);
+    ios.read(buf2.get(), kBufferSize + 1);
     streamsize buflen = ios.gcount();
 
-    if (!ios.good() && !ios.eof())
+    if (!ios.good()  &&  !ios.eof())
         ERR_POST(Fatal << "Cannot receive data");
 
     LOG_POST(Info << buflen << " bytes obtained"
              << (ios.eof() ? " (EOF)" : ""));
-    buf2[buflen] = '\0';
+    buf2.get()[buflen] = '\0';
 
-    for (i = 0; i < kBufferSize; i++) {
-        if (!buf2[i])
+    for (i = 0;  i < kBufferSize;  i++) {
+        if (!buf2.get()[i])
             break;
-        if (buf2[i] != buf1[i])
+        if (buf2.get()[i] != buf1.get()[i])
             break;
     }
     if (i < kBufferSize)
@@ -507,24 +507,22 @@ int main(int argc, const char* argv[])
 
     LOG_POST(Info << "Test 6 of 9: Random bounce");
 
-    if (!(ios << buf1))
+    if (!(ios << buf1.get()))
         ERR_POST(Fatal << "Cannot send data");
 
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(2*kBufferSize)));
 
     j = 0;
     buflen = 0;
-    for (i = 0, l = 0; i < kBufferSize; i += j, l++) {
+    for (i = 0, l = 0;  i < kBufferSize;  i += j, l++) {
         k = rand() % 15 + 1;
 
         if (i + k > kBufferSize + 1)
             k = kBufferSize + 1 - i;
-        ios.read(&buf2[i], k);
+        ios.read(&buf2.get()[i], k);
         j = (size_t) ios.gcount();
-        if (!ios.good() && !ios.eof()) {
-            ERR_POST("Cannot receive data");
-            return 2;
-        }
+        if (!ios.good()  &&  !ios.eof())
+            ERR_POST(Fatal << "Cannot receive data");
         if (j != k)
             LOG_POST(Info << "Bytes requested: " << k << ", received: " << j);
         buflen += j;
@@ -535,12 +533,12 @@ int main(int argc, const char* argv[])
 
     LOG_POST(Info << buflen << " bytes obtained in " << l << " iteration(s)"
              << (ios.eof() ? " (EOF)" : ""));
-    buf2[buflen] = '\0';
+    buf2.get()[buflen] = '\0';
 
-    for (i = 0; i < kBufferSize; i++) {
-        if (!buf2[i])
+    for (i = 0;  i < kBufferSize;  i++) {
+        if (!buf2.get()[i])
             break;
-        if (buf2[i] != buf1[i])
+        if (buf2.get()[i] != buf1.get()[i])
             break;
     }
     if (i < kBufferSize)
@@ -556,27 +554,27 @@ int main(int argc, const char* argv[])
 
     LOG_POST(Info << "Test 7 of 9: Truly binary bounce");
 
-    for (i = 0; i < kBufferSize; i++)
-        buf1[i] = (char)(255/*rand() % 256*/);
+    for (i = 0;  i < kBufferSize;  i++)
+        buf1.get()[i] = (char)(255/*rand() % 256*/);
 
-    ios.write(buf1, kBufferSize);
+    ios.write(buf1.get(), kBufferSize);
 
     if (!ios.good())
         ERR_POST(Fatal << "Cannot send data");
 
     assert(ios.tellp() == (CT_POS_TYPE)((CT_OFF_TYPE)(3*kBufferSize)));
 
-    ios.read(buf2, kBufferSize + 1);
+    ios.read(buf2.get(), kBufferSize + 1);
     buflen = ios.gcount();
 
-    if (!ios.good() && !ios.eof())
+    if (!ios.good()  &&  !ios.eof())
         ERR_POST(Fatal << "Cannot receive data");
 
     LOG_POST(Info << buflen << " bytes obtained"
              << (ios.eof() ? " (EOF)" : ""));
 
-    for (i = 0; i < kBufferSize; i++) {
-        if (buf2[i] != buf1[i])
+    for (i = 0;  i < kBufferSize;  i++) {
+        if (buf2.get()[i] != buf1.get()[i])
             break;
     }
     if (i < kBufferSize)
@@ -586,8 +584,8 @@ int main(int argc, const char* argv[])
 
     LOG_POST(Info << "Test 7 passed\n");
 
-    delete[] buf1;
-    delete[] buf2;
+    buf1.release();
+    buf2.release();
 
 
     LOG_POST(Info << "Test 8 of 9: NcbiStreamCopy()");
@@ -631,7 +629,7 @@ int main(int argc, const char* argv[])
 
 
     CORE_SetREG(0);
-    delete reg;
+    reg.release();
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOCK(0);
