@@ -46,9 +46,9 @@
  * Random generator seeding support
  *    private global:  g_NCBI_ConnectRandomSeed
  *    macro:           NCBI_CONNECT_SRAND_ADDEND
- * App name and SID support
+ * App name and NCBI ID support
  *    private globals: g_CORE_GetAppName
- *                     g_CORE_GetSid
+ *                     g_CORE_GetRequestID
  *
  */
 
@@ -322,11 +322,11 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetAppName g_CORE_GetAppName;
 
 
 /******************************************************************************
- *  NCBI SID support (return "as is" to the user)
+ *  NCBI request ID support (return "as is" to the user)
  */
 
-typedef const char* (*FNcbiGetSid)(void);
-extern NCBI_XCONNECT_EXPORT FNcbiGetSid g_CORE_GetSid;
+typedef const char* (*FNcbiGetRequestID)(ENcbiRequestID);
+extern NCBI_XCONNECT_EXPORT FNcbiGetRequestID g_CORE_GetRequestID;
 
 
 #ifdef __cplusplus

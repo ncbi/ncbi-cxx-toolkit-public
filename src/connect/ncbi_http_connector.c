@@ -441,6 +441,32 @@ static const char* s_MakePath(const SConnNetInfo* net_info)
 }
 
 
+static void x_SetRequestIDs(SConnNetInfo* net_info)
+{
+    char* tag;
+    const char* id = CORE_GetNcbiRequestID(eNcbiRequestID_SID);
+    if (id  &&  *id) {
+        if (!(tag = malloc(sizeof(HTTP_NCBI_SID) + 1 + strlen(id))))
+            ConnNetInfo_DeleteUserHeader(net_info, HTTP_NCBI_SID);
+        else {
+            sprintf(tag, HTTP_NCBI_SID " %s", id);
+            ConnNetInfo_OverrideUserHeader(net_info, tag);
+            free(tag);
+        }
+    }
+    id = CORE_GetNcbiRequestID(eNcbiRequestID_HitID);
+    if (id  &&  *id) {
+        if (!(tag = malloc(sizeof(HTTP_NCBI_PHID) + 1 + strlen(id))))
+            ConnNetInfo_DeleteUserHeader(net_info, HTTP_NCBI_PHID);
+        else {
+            sprintf(tag, HTTP_NCBI_PHID " %s", id);
+            ConnNetInfo_OverrideUserHeader(net_info, tag);
+            free(tag);
+        }
+    }
+}
+
+
 /* Connect to the HTTP server, specified by uuu->net_info's "port:host".
  * Return eIO_Success only if socket connection has succeeded and uuu->sock
  * is non-zero.  If unsuccessful, try to adjust uuu->net_info by s_Adjust(),
@@ -594,7 +620,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                     args = 0;
             }
 
-            /* identify the connector in the User-Agent: header */
+            /* NCBI request IDs */
+            if (!(uuu->flags & fHTTP_NoAutomagicSID))
+                x_SetRequestIDs(uuu->net_info);
+
+            /* identify the connector in the User-Agent: header tag */
             http_user_header = (uuu->net_info->http_user_header
                                 ? strdup(uuu->net_info->http_user_header)
                                 : 0);
@@ -1023,7 +1053,6 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     sid[n] = '\0';
                     ConnNetInfo_OverrideUserHeader(uuu->net_info, s + 1);
                     sid[n] = c;
-                    uuu->flags |= fHTTP_NoAutomagicSID;
                     m &= ~2;
                 }
             }
@@ -1796,7 +1825,6 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
     int/*bool*/ has_referer = 0/*false*/;
     int/*bool*/ has_host = 0/*false*/;
     const char* s;
-    char buf[128];
 
     if ((s = net_info->http_user_header) != 0) {
         int/*bool*/ first = 1/*true*/;
@@ -1830,6 +1858,7 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
     }
     s = CORE_GetAppName();
     if (s  &&  *s) {
+        char buf[128];
         sprintf(buf, "User-Agent: %.80s", s);
         ConnNetInfo_ExtendUserHeader(net_info, buf);
     }
@@ -1838,11 +1867,6 @@ static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
         sprintf((char*) s, "Referer: %s", net_info->http_referer);
         ConnNetInfo_AppendUserHeader(net_info, s);
         free((void*) s);
-    }
-    if (!*has_sid  &&  (s = CORE_GetNcbiSid()) != 0  &&  *s) {
-        *has_sid = 1/*true*/;
-        sprintf(buf, HTTP_NCBI_SID " %.80s", s);
-        ConnNetInfo_AppendUserHeader(net_info, buf);
     }
     return has_host;
 }

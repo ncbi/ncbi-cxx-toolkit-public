@@ -267,12 +267,20 @@ static const char* s_GetAppName(void)
  *                               NCBI SID                              *
  ***********************************************************************/
 extern "C" {
-static const char* s_GetSid(void)
+static const char* s_GetRequestID(ENcbiRequestID reqid)
 {
-    if (!CDiagContext::GetRequestContext().IsSetSessionID()) {
-        CDiagContext::GetRequestContext().SetSessionID();
+    switch (reqid) {
+    case eNcbiRequestID_SID:
+        if (!CDiagContext::GetRequestContext().IsSetSessionID()) {
+            CDiagContext::GetRequestContext().SetSessionID();
+        }
+        return CDiagContext::GetRequestContext().GetSessionID().c_str();
+    case eNcbiRequestID_HitID:
+        return CDiagContext::GetRequestContext().GetNextSubHitID().c_str();
+    default:
+        break;
     }
-    return CDiagContext::GetRequestContext().GetSessionID().c_str();
+    return 0;
 }
 }
 
@@ -309,8 +317,8 @@ static void s_Init(IRWRegistry*      reg  = 0,
         atexit(s_Fini);
     }
 
-    /* setup sid retrieval callback */
-    g_CORE_GetSid = s_GetSid;
+    /* setup request ID retrieval callback */
+    g_CORE_GetRequestID = s_GetRequestID;
 
     /* setup app name retrieval callback */
     g_CORE_GetAppName = s_GetAppName;

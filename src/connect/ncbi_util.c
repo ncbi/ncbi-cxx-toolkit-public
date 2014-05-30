@@ -616,23 +616,6 @@ extern REG CORE_GetREG(void)
 
 
 /******************************************************************************
- *  CORE_GetNcbiSid
- */
-
-extern const char* CORE_GetNcbiSid(void)
-{
-    const char* sid = g_CORE_GetSid ? g_CORE_GetSid() : 0;
-    if (sid  &&  *sid)
-        return sid;
-    sid = getenv("NCBI_LOG_SESSION_ID");
-    if (sid  &&  *sid)
-        return sid;
-    return getenv("HTTP_NCBI_SID");
-}
-
-
-
-/******************************************************************************
  *  CORE_GetAppName
  */
 
@@ -640,6 +623,34 @@ extern const char* CORE_GetAppName(void)
 {
     const char* an;
     return !g_CORE_GetAppName  ||  !(an = g_CORE_GetAppName()) ? "" : an;
+}
+
+
+
+/******************************************************************************
+ *  CORE_GetNcbiRequestID
+ */
+
+extern const char* CORE_GetNcbiRequestID(ENcbiRequestID reqid)
+{
+    const char* id = g_CORE_GetRequestID ? g_CORE_GetRequestID(reqid) : 0;
+    if (id  &&  *id)
+        return id;
+    switch (reqid) {
+    case eNcbiRequestID_SID:
+        id = getenv("HTTP_NCBI_SID");
+        if (id  &&  *id)
+            return id;
+        return getenv("NCBI_LOG_SESSION_ID");
+    case eNcbiRequestID_HitID:
+        id = getenv("HTTP_NCBI_PHID");
+        if (id  &&  *id)
+            return id;
+        return getenv("NCBI_LOG_HIT_ID");
+    default:
+        break;
+    }
+    return 0;
 }
 
 
