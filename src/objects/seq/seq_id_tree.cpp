@@ -953,8 +953,8 @@ CSeq_id_Handle CSeq_id_Textseq_Tree::FindOrCreate(const CSeq_id& id)
         TPackedKey key =
             CSeq_id_Textseq_Info::ParseAcc(tid.GetAccession(), &tid);
         if ( key ) {
-            TWriteLockGuard guard(m_TreeLock);
             TPacked packed = CSeq_id_Textseq_Info::Pack(key, tid);
+            TWriteLockGuard guard(m_TreeLock);
             TPackedMap_I it = m_PackedMap.lower_bound(key);
             if ( it == m_PackedMap.end() ||
                  m_PackedMap.key_comp()(key, it->first) ) {
