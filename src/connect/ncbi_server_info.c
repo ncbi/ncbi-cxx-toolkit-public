@@ -173,8 +173,8 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
             s = str + strlen(str);
         }
 
-        assert(info->flag < (int)(sizeof(kFlags)/sizeof(kFlags[0])));
-        for (n = 0;  n < sizeof(kFlags)/sizeof(kFlags[0]);  ++n) {
+        assert(info->flag < (int)(sizeof(kFlags) / sizeof(kFlags[0])));
+        for (n = 0;  n < sizeof(kFlags) / sizeof(kFlags[0]);  ++n) {
             if (info->flag == kFlags[n].val) {
                 s += sprintf(s, " %s", kFlags[n].tag);
                 break;
@@ -217,14 +217,39 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
     str = SERV_ReadType(str, &type);
     if (!str  ||  (*str  &&  !isspace((unsigned char)(*str))))
         return 0;
-    /* NB: "str" guarantees there is non-NULL attr */
+    /* NB: "str" guarantees there is a non-NULL attr */
     while (*str  &&  isspace((unsigned char)(*str)))
-        str++;
-    if (!ispunct((unsigned char)(*str))  ||  *str == ':') {
-        if (!(str = SOCK_StringToHostPortEx(str, &host, &port, lazy)))
-            return 0;
-        while (*str  &&  isspace((unsigned char)(*str)))
-            str++;
+        ++str;
+    if (*str  &&  (*str == ':'  ||  !ispunct((unsigned char)(*str)))) {
+        const char* end = str;
+        size_t      len;
+        while (*end  &&  !isspace((unsigned char)(*end)))
+            ++end;
+        verify((len = (size_t)(end - str)) > 0);
+        if (*str != ':') {
+            if (strcspn(str, "=") > len) {
+                size_t i;
+                for (i = 0;  i < sizeof(kFlags) / sizeof(kFlags[0]);  ++i) {
+                    if (len == kFlags[i].len
+                        &&  strncasecmp(str, kFlags[i].tag, len) == 0) {
+                        end = 0;
+                        break;
+                    }
+                }
+            } else
+                end = 0;
+        }
+        if (end) {
+            if (!(str = SOCK_StringToHostPortEx(str, &host, &port, lazy)))
+                return 0;
+            if (str != end)
+                return 0;
+            while (*str  &&  isspace((unsigned char)(*str)))
+                ++str;
+        } else {
+            host = 0;
+            port = 0;
+        }
     } else {
         host = 0;
         port = 0;
@@ -239,7 +264,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
     coef = mime = locl = priv = quor = rate = sful = time = flag = 0;/*false*/
     /* continue reading server info: optional parts: ... */
     while (*str  &&  isspace((unsigned char)(*str)))
-        str++;
+        ++str;
     while (*str) {
         if (str[1] == '='  &&  !isspace((unsigned char) str[2])) {
             char*          e;
@@ -368,7 +393,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         } else if (!flag) {
             size_t i;
             flag = 1;
-            for (i = 0;  i < sizeof(kFlags)/sizeof(kFlags[0]);  ++i) {
+            for (i = 0;  i < sizeof(kFlags) / sizeof(kFlags[0]);  ++i) {
                 if (strncasecmp(str, kFlags[i].tag, kFlags[i].len) == 0) {
                     info->flag = kFlags[i].val;
                     str += kFlags[i].len;
@@ -380,7 +405,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         if (*str  &&  !isspace((unsigned char)(*str)))
             break;
         while (*str  &&  isspace((unsigned char)(*str)))
-            str++;
+            ++str;
     }
     if (*str) {
         free(info);
