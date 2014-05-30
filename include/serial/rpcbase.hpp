@@ -66,12 +66,6 @@ public:
         : m_Service(service), m_Format(format), m_Timeout(kDefaultTimeout),
           m_RetryLimit(retry_limit)
     {
-#if NCBI_DEVELOPMENT_VER < 20121104
-        const char* sid = CORE_GetNcbiSid();
-        if (sid  &&  *sid) {
-            m_SessionID.assign(sid, strlen(sid));
-        }
-#endif
     }
     virtual ~CRPCClient(void);
 
@@ -129,7 +123,6 @@ private:
     auto_ptr<CObjectOStream> m_Out;
     string                   m_Service; ///< Used by default Connect().
     string                   m_Affinity;
-    string                   m_SessionID;
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     const STimeout*          m_Timeout; ///< Cloned if not special.
@@ -281,13 +274,13 @@ void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
             if ( !dynamic_cast<CSerialException*>(&e)
                  &&  !dynamic_cast<CIOException*>(&e) ) {
                 throw;
-            } else if (++tries == m_RetryLimit  ||  !x_ShouldRetry(tries) ) {
+            } else if (++tries == m_RetryLimit  ||  !x_ShouldRetry(tries)) {
                 throw;
             } else if ( !(tries & 1) ) {
                 // reset on every other attempt in case we're out of sync
                 try {
                     Reset();
-                } STD_CATCH_ALL_XX(Serial_RPCClient, 1, "CRPCClient<>::Reset()")
+                } STD_CATCH_ALL_XX(Serial_RPCClient,1,"CRPCClient<>::Reset()");
             }
             SleepSec(m_RetryDelay.GetCompleteSeconds());
             SleepMicroSec(m_RetryDelay.GetNanoSecondsAfterSecond() / 1000);
@@ -302,10 +295,6 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
 {
     _ASSERT( !m_Service.empty() );
     SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
-    if (!m_SessionID.empty()) {
-        string header = "Cookie: ncbi_sid=" + m_SessionID;
-        ConnNetInfo_AppendUserHeader(net_info, header.c_str());
-    }
     if (!m_Affinity.empty()) {
         ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0);
     }
