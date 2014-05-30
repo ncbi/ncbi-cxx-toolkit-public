@@ -590,10 +590,13 @@ void CTestAndRepData :: GetProperCItem(CRef <CClickableItem> c_item, bool* citem
 
 bool CTestAndRepData :: HasLineage(const CBioSource& biosrc, const string& type)
 {
-   if (thisInfo.report_lineage.find(type) != string::npos) return true;
+   if (NStr::FindNoCase(thisInfo.report_lineage, type) != string::npos) {
+        return true;
+   }
    else if (thisInfo.report_lineage.empty() && biosrc.IsSetLineage()
-                && biosrc.GetLineage().find(type) != string::npos)
-          return true;
+                && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos){
+      return true;
+   }
    else return false;
 };
 

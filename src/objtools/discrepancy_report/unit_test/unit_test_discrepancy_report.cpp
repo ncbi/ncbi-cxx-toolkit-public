@@ -169,7 +169,7 @@ void RunAndCheckTest(CRef <CSeq_entry> entry, const string& test_name, const str
       output_obj.Export(c_item, test_name);
    }
    NCBITEST_CHECK_MESSAGE(
-     !(c_item.description).empty() || test_name=="FIND_DUP_TRNAS", "no report");
+    !(c_item.description).empty() || test_name=="FIND_DUP_TRNAS", "no report");
    if (msg == "print") {
      if ( test_name != "FIND_DUP_TRNAS") {
           cerr << "desc " << c_item.description << endl;
@@ -306,6 +306,23 @@ void LookAndSave(CRef <CSeq_entry> entry, const string& file)
 {
    cerr << MSerial_AsnText << *entry << endl;
    OutBlob(*entry, file);
+};
+
+BOOST_AUTO_TEST_CASE(TEST_ORGANELLE_PRODUCTS)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+   NON_CONST_ITERATE (list <CRef <CSeqdesc> >, it, entry->SetDescr().Set()) {
+     if ( (*it)->IsSource()) {
+       (*it)->SetSource().SetGenome(CBioSource::eGenome_proviral);
+     }
+   }
+   SetLineage(entry, "not_Bac_not_Vir");
+
+   CRef <CSeq_entry> prot_entry = GetProteinSequenceFromGoodNucProtSet(entry);
+   prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().push_back("ATP synthase F0F1 subunit alpha");
+  
+   RunAndCheckTest(entry, "TEST_ORGANELLE_PRODUCTS", 
+                              "1 suspect products is not organelled.");
 };
 
 BOOST_AUTO_TEST_CASE(COUNT_PROTEINS)
@@ -876,13 +893,13 @@ BOOST_AUTO_TEST_CASE(DISC_SUSPECT_RRNA_PRODUCTS)
    CRef <CSeq_entry> entry = BuildGoodNucProtSet();
 
    // add rrna onto nucleotide sequence
-   CRef <CSeq_entry> nuc_entry = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   CRef <CSeq_entry> nuc_entry= GetNucleotideSequenceFromGoodNucProtSet(entry);
    CRef <CSeq_feat> 
-     new_rna =MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"5s_rRNA");
+    new_rna =MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"5s_rRNA");
    AddFeat(new_rna, nuc_entry);
-   new_rna = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"16s_rRNA");
+   new_rna =MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"16s_rRNA");
    AddFeat(new_rna, nuc_entry);
-   new_rna = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"23s_rRNA");
+   new_rna =MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"23s_rRNA");
    AddFeat(new_rna, nuc_entry);
    new_rna 
       = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"partial 16S");
