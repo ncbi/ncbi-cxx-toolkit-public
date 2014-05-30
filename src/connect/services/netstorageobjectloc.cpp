@@ -330,7 +330,12 @@ void CNetStorageObjectLoc::x_Pack()
 CJsonNode CNetStorageObjectLoc::ToJSON() const
 {
     CJsonNode root(CJsonNode::NewObjectNode());
+    ToJSON(root);
+    return root;
+}
 
+void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
+{
     root.SetInteger("Version", 1);
 
     CJsonNode storage_flags(CJsonNode::NewObjectNode());
@@ -385,8 +390,6 @@ CJsonNode CNetStorageObjectLoc::ToJSON() const
     if (m_Fields & (fNFID_FileTrackDev | fNFID_FileTrackQA))
         root.SetString("FileTrackSite",
                 m_Fields & fNFID_FileTrackDev ? "dev" : "qa");
-
-    return root;
 }
 
 END_NCBI_SCOPE

@@ -46,6 +46,24 @@ USING_NCBI_SCOPE;
 
 int CGridCommandLineInterfaceApp::Cmd_WhatIs()
 {
+    try {
+        CNetStorageObjectLoc object_loc(m_CompoundIDPool, m_Opts.id);
+
+        CJsonNode object_loc_info(CJsonNode::NewObjectNode());
+
+        object_loc_info.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_LOC);
+
+        object_loc.ToJSON(object_loc_info);
+
+        g_PrintJSON(stdout, object_loc_info);
+
+        return 0;
+    }
+    catch (CCompoundIDException&) {
+    }
+    catch (CNetStorageException&) {
+    }
+
     CNetCacheKey nc_key;
     CNetScheduleKey ns_key;
 
@@ -94,23 +112,8 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
                     GRID_APP_NAME " jobinfo %s\n", m_Opts.id.c_str());
         }
     } else {
-        try {
-            CNetStorageObjectLoc object_loc(m_CompoundIDPool, m_Opts.id);
-
-            CJsonNode object_loc_info(object_loc.ToJSON());
-
-            object_loc_info.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_LOC);
-
-            g_PrintJSON(stdout, object_loc_info);
-        }
-        catch (CCompoundIDException&) {
-            fprintf(stderr, "Unable to recognize the specified token.\n");
-            return 3;
-        }
-        catch (CNetStorageException&) {
-            fprintf(stderr, "Unable to recognize the specified token.\n");
-            return 3;
-        }
+        fprintf(stderr, "Unable to recognize the specified token.\n");
+        return 3;
     }
 
     return 0;

@@ -534,6 +534,7 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
     CJsonNode hello(MkStdRequest("HELLO"));
 
     hello.SetString("Client", m_ClientName);
+    hello.SetString("Service", m_NetStorageServiceName);
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app != NULL)
         hello.SetString("Application", app->GetProgramExecutablePath());
@@ -553,7 +554,7 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
 
 CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 {
-    CJsonNode request(MkStdRequest("WRITE"));
+    CJsonNode request(MkStdRequest("CREATE"));
 
     x_SetStorageFlags(request, flags);
     x_SetICacheNames(request);

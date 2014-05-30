@@ -683,93 +683,17 @@ Uint8 SNetStorageObjectAPIImpl::GetSize()
             "\" could not be found in any of the designated locations.");
 }
 
-struct STryGetAttr : public ITryLocation
-{
-    STryGetAttr(SNetStorageObjectAPIImpl* netstorage_object_api,
-            const string& attr_name) :
-        m_NetStorageObjectAPI(netstorage_object_api),
-        m_AttrName(attr_name)
-    {
-    }
-
-    virtual bool TryLocation(ENetStorageObjectLocation location);
-
-    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
-            SNetStorageObjectAPIImpl> > m_NetStorageObjectAPI;
-    string m_AttrName;
-    string m_AttrValue;
-};
-
-bool STryGetAttr::TryLocation(ENetStorageObjectLocation location)
-{
-    try {
-        if (location == eNFL_NetCache) {
-            string attr_blob_id =
-                m_NetStorageObjectAPI->m_ObjectLoc.GetUniqueKey() + "_attr_";
-            attr_blob_id += m_AttrName;
-
-            size_t blob_size;
-
-            auto_ptr<IReader> reader(m_NetStorageObjectAPI->m_NetICacheClient.
-                    GetReadStream(attr_blob_id, 0, kEmptyStr, &blob_size,
-                    nc_server_to_use =
-                            m_NetStorageObjectAPI->GetNetCacheServer()));
-
-            if (reader.get() == NULL)
-                return false;
-
-            m_AttrValue.resize(blob_size);
-
-            if (reader->Read(const_cast<char*>(m_AttrValue.data()),
-                    blob_size) != eRW_Success) {
-                ERR_POST("Error while retrieving the \"" <<
-                        m_AttrName << "\" attribute value");
-                return false;
-            }
-        } else { /* location == eNFL_FileTrack */
-            m_AttrValue = m_NetStorageObjectAPI->m_NetStorage->m_FileTrackAPI.
-                    GetFileAttribute(
-                            &m_NetStorageObjectAPI->m_ObjectLoc, m_AttrName);
-        }
-
-        return true;
-    }
-    catch (CException& e) {
-        LOG_POST(Trace << e);
-    }
-
-    return false;
-}
-
 string SNetStorageObjectAPIImpl::GetAttribute(const string& attr_name)
 {
-    STryGetAttr try_get_attr(this, attr_name);
-
-    if (LocateAndTry(&try_get_attr))
-        return try_get_attr.m_AttrValue;
-
-    NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "Failed to retrieve attribute \"" << attr_name <<
-            "\" of \"" << m_ObjectLoc.GetLoc() << "\".");
+    NCBI_THROW(CNetStorageException, eInvalidArg,
+        "Attribute support is only implemented in NetStorage server.");
 }
 
 void SNetStorageObjectAPIImpl::SetAttribute(const string& attr_name,
         const string& attr_value)
 {
-    Locate();
-    if (m_CurrentLocation == eNFL_NetCache) {
-        string attr_blob_id = m_ObjectLoc.GetUniqueKey() + "_attr_";
-        attr_blob_id += attr_name;
-
-        auto_ptr<IEmbeddedStreamWriter> writer(
-                m_NetICacheClient.GetNetCacheWriter(attr_blob_id, 0, kEmptyStr,
-                        nc_server_to_use = GetNetCacheServer()));
-        writer->Write(attr_value.data(), attr_value.length());
-        writer->Close();
-    } else { /* location == eNFL_FileTrack */
-        m_NetStorage->m_FileTrackAPI.SetFileAttribute(
-                &m_ObjectLoc, attr_name, attr_value);
-    }
+    NCBI_THROW(CNetStorageException, eInvalidArg,
+        "Attribute support is only implemented in NetStorage server.");
 }
 
 bool SNetStorageObjectAPIImpl::x_TryGetInfoFromLocation(

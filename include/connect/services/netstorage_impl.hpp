@@ -307,6 +307,7 @@ public:
     }
 
     // Serialize to a JSON object.
+    void ToJSON(CJsonNode& root) const;
     CJsonNode ToJSON() const;
 
 private:
