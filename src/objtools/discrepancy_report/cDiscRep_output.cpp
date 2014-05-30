@@ -793,12 +793,6 @@ void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CCli
         const CBioseq_set* seq_set = dynamic_cast<const CBioseq_set*>(ptr);
         const CSeq_feat* seq_ft = dynamic_cast<const CSeq_feat*>(ptr);
         const CSeqdesc* seq_desc = dynamic_cast<const CSeqdesc*> (ptr);
-/*
-if (entry) cerr << "entry  \n" << c_item->setting_name << endl;
-else if (seq_set) {
-cerr << "seq_set \n" << c_item->setting_name << endl;
-}
-*/
 
         xml::node sub_node("message", (*it).c_str());
         xml::attributes& att = sub_node.get_attributes();
@@ -806,9 +800,63 @@ cerr << "seq_set \n" << c_item->setting_name << endl;
         att.insert("prefix", xml_prefix.c_str());
         att.insert("severity", xml_severity.c_str());
 
-        if (bioseq) {
-           strtmp = bioseq->GetFirstId()->AsFastaString();
-           att.insert("seq-id", strtmp.c_str()); 
+        if (entry) {
+          CSeq_entry_Handle
+               entry_hl = thisInfo.scope->GetSeq_entryHandle(*entry);
+          if (entry_hl) {
+             CBioseq_CI bci(entry_hl, CSeq_inst::eMol_na);
+             if (bci) {
+                CConstRef <CSeq_id> seq_id = bci->GetInitialSeqIdOrNull();
+                if (seq_id) {
+                  strtmp = seq_id->AsFastaString();
+                }
+             } 
+             else {
+               bci = CBioseq_CI(entry_hl);
+               if (bci) {
+                  CConstRef <CSeq_id> seq_id = bci->GetInitialSeqIdOrNull();
+                  if (seq_id) {
+                     strtmp = seq_id->AsFastaString();
+                  }
+               }
+             }
+             if (!strtmp.empty()) {
+                att.insert("seq-id", strtmp.c_str());
+             }
+          }
+        }
+        else if (seq_set) {
+          CBioseq_set_Handle 
+              set_hl = thisInfo.scope->GetBioseq_setHandle(*seq_set);
+          if (set_hl) {
+             CBioseq_CI bci(set_hl, CSeq_inst::eMol_na);
+             if (bci) {
+                CConstRef <CSeq_id> seq_id = bci->GetInitialSeqIdOrNull();
+                if (seq_id) {
+                  strtmp = seq_id->AsFastaString();
+                }
+             }
+             else {
+               bci = CBioseq_CI(set_hl);
+               if (bci) {
+                  CConstRef <CSeq_id> seq_id = bci->GetInitialSeqIdOrNull();
+                  if (seq_id) {
+                     strtmp = seq_id->AsFastaString();
+                  }
+               }
+             }
+             if (!strtmp.empty()) {
+                att.insert("seq-id", strtmp.c_str());
+             }
+          }
+        }
+        else if (bioseq) {
+           if (bioseq->GetFirstId()) {
+             strtmp = bioseq->GetFirstId()->AsFastaString();
+             if (!strtmp.empty()) {
+                att.insert("seq-id", strtmp.c_str()); 
+             }
+           }
         }
         else if (seq_desc) {
            if (!(c_item->item_list.empty())) {
