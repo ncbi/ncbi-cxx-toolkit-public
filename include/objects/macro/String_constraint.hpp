@@ -75,8 +75,6 @@ public:
     bool Empty() const;
     bool ReplaceStringConstraintPortionInString(string& val, const string& replace) const;
 
-    bool DoesObjectMatchStringConstraint(const CSeq_feat& feat, 
-                               CConstRef <CSeq_feat> feat_to) const;
 private:
     string m_digit_str, m_alpha_str;
 
