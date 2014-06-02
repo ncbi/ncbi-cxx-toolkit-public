@@ -5362,10 +5362,11 @@ static EIO_Status s_RecvMsg(SOCK            sock,
                 status = eIO_Unknown;
             } else
                 status = eIO_Success;
-            if (bufsize  &&  x_msgsize > bufsize) {
+            if (bufsize  &&  bufsize < x_msgsize) {
                 memcpy(buf, x_msg,
                        (size_t) x_read < bufsize ? (size_t) x_read : bufsize);
             }
+
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
                 s_DoLog(eLOG_Note, sock, eIO_Read, x_msg,
