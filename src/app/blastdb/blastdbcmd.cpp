@@ -210,7 +210,6 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
     _ASSERT(m_BlastDb.NotEmpty());
 
     if (args["pig"].HasValue()) {
-        ERR_POST(Error << "checkpoint A");
         retval.reserve(1);
         retval.push_back(CRef<CBlastDBSeqId>
                          (new CBlastDBSeqId(args["pig"].AsInteger())));
@@ -221,7 +220,6 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
         const string& entry = args["entry"].AsString();
 
         if (entry.find(kDelim[0]) != string::npos) {
-            ERR_POST(Error << "checkpoint B");
             vector<string> tokens;
             NStr::Tokenize(entry, kDelim, tokens);
             ITERATE(vector<string>, itr, tokens) {
@@ -230,19 +228,15 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
                     ERR_POST(Error << *itr << ": OID not found");
                 }
             }
-            ERR_POST(Error << "err_found = " << err_found);
         } else if (entry == "all") {
-            ERR_POST(Error << "checkpoint C");
             for (int i = 0; m_BlastDb->CheckOrFindOID(i); i++) {
                 x_AddOid(retval, i);
             }
         } else {
-            ERR_POST(Error << "checkpoint D");
             err_found += (err_here = x_AddSeqId(retval, entry));
             if (err_here) {
                 ERR_POST(Error << entry << ": OID not found");
             }
-            ERR_POST(Error << "err_found = " << err_found);
         }
 
     } else {
