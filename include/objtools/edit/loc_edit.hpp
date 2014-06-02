@@ -43,6 +43,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+NCBI_XOBJEDIT_EXPORT string PrintBestSeqId(const CSeq_id& sid, CScope& scope);
+NCBI_XOBJEDIT_EXPORT string PrintSeqIntUseBestID(const CSeq_interval& seq_int, CScope& scope, bool range_only);
+NCBI_XOBJEDIT_EXPORT string PrintPntAndPntsUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool range_only = false);
+NCBI_XOBJEDIT_EXPORT string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool range_only = false);
+
 class NCBI_XOBJEDIT_EXPORT CLocationEditPolicy : public CObject
 {
 public:
