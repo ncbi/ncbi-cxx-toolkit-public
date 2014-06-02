@@ -262,7 +262,14 @@ private:
     string m_rEnzyme;
 
     /// exception fields
-    CTextFsm<int> m_Low_Quality_Fsa;
+
+    /// (Careful: CTextFsm has no virtual destructor)
+    class CLowQualityTextFsm : public CTextFsm<int> {
+    public:
+        CLowQualityTextFsm(void);
+    };
+
+    static CSafeStatic<CLowQualityTextFsm> ms_p_Low_Quality_Fsa;
 };
 
 

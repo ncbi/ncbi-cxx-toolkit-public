@@ -34,6 +34,7 @@
 
 #include <objmgr/util/create_defline.hpp>
 
+#include <corelib/ncbi_safe_static.hpp>
 #include <util/text_joiner.hpp>
 #include <serial/iterator.hpp>
 
@@ -83,12 +84,7 @@ CDeflineGenerator::~CDeflineGenerator (void)
 
 void CDeflineGenerator::x_Init (void)
 {
-    m_Low_Quality_Fsa = 0;
-
-    m_Low_Quality_Fsa.AddWord ("heterogeneous population sequenced", 1);
-    m_Low_Quality_Fsa.AddWord ("low-quality sequence region", 2);
-    m_Low_Quality_Fsa.AddWord ("unextendable partial coding region", 3);
-    m_Low_Quality_Fsa.Prime ();
+    // nothing here yet
 }
 
 // macros
@@ -259,12 +255,12 @@ void CDeflineGenerator::x_SetFlags (
                     const string& acc = tsid.GetAccession ();
                     TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
                     TACCN_CHOICE div = (TACCN_CHOICE) (type & NCBI_ACCN(division_mask));
-                    if ( div == NCBI_ACCN(wgs) ) 
+                    if ( div == NCBI_ACCN(wgs) )
                     {
                         if( (type & CSeq_id::fAcc_master) != 0 ) {
                             m_WGSMaster = true;
                         }
-                    } else if ( div == NCBI_ACCN(tsa) ) 
+                    } else if ( div == NCBI_ACCN(tsa) )
                     {
                         if( (type & CSeq_id::fAcc_master) != 0 && m_IsVirtual ) {
                             m_TSAMaster = true;
@@ -1415,8 +1411,8 @@ bool CDeflineGenerator::x_CDShasLowQualityException (
     int current_state = 0;
     FOR_EACH_CHAR_IN_STRING (str_itr, str) {
         const char ch = *str_itr;
-        int next_state = m_Low_Quality_Fsa.GetNextState (current_state, ch);
-        if (m_Low_Quality_Fsa.IsMatchFound (next_state)) {
+        int next_state = ms_p_Low_Quality_Fsa->GetNextState (current_state, ch);
+        if (ms_p_Low_Quality_Fsa->IsMatchFound (next_state)) {
             return true;
         }
         current_state = next_state;
@@ -1955,7 +1951,7 @@ void CDeflineGenerator::x_SetSuffix (
                 if (m_MainTitle.find ("whole genome shotgun sequencing project")
                     == NPOS){
                     suffix = ", whole genome shotgun sequencing project";
-                }            
+                }
             } else if (m_MainTitle.find ("whole genome shotgun sequence")
                        == NPOS) {
                 string orgnl = x_OrganelleName (m_Genome, false, false, true);
@@ -1972,7 +1968,7 @@ void CDeflineGenerator::x_SetSuffix (
                         ("transcriptome shotgun assembly")
                         == NPOS) {
                         suffix = ", transcriptome shotgun assembly";
-                    }            
+                    }
                 } else {
                     if (m_MainTitle.find ("RNA sequence") == NPOS) {
                         switch (m_MIBiomol) {
@@ -1996,7 +1992,7 @@ void CDeflineGenerator::x_SetSuffix (
                             default:
                                 break;
                         }
-                    }            
+                    }
                 }
             }
             break;
@@ -2263,3 +2259,11 @@ string CDeflineGenerator::GenerateDefline (
     return GenerateDefline(bsh, flags);
 }
 
+CDeflineGenerator::CLowQualityTextFsm::CLowQualityTextFsm(void) {
+    AddWord ("heterogeneous population sequenced", 1);
+    AddWord ("low-quality sequence region", 2);
+    AddWord ("unextendable partial coding region", 3);
+    Prime ();
+}
+
+CSafeStatic<CDeflineGenerator::CLowQualityTextFsm> CDeflineGenerator::ms_p_Low_Quality_Fsa;
