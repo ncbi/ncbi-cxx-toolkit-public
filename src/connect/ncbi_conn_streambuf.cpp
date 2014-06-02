@@ -76,7 +76,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
                                  size_t                      size)
     : m_Conn(0), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
       m_Status(status), m_Tie(false), m_Close(true), m_CbValid(false),
-      x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
+      x_Buf(), x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE)size)
 {
     if (!connector) {
         if (m_Status == eIO_Success)
@@ -112,7 +112,7 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
                                  size_t                      size)
     : m_Conn(conn), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
       m_Status(eIO_Success), m_Tie(false), m_Close(close), m_CbValid(false),
-      x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
+      x_Buf(), x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE)size)
 {
     if (!m_Conn) {
         m_Status = eIO_InvalidArg;
@@ -506,8 +506,8 @@ streamsize CConn_Streambuf::showmanyc(void)
     bool backup = false;
     if (m_BufSize > 1) {
         if (eback()  &&  gptr() > eback()) {
-            backup = true;
             x_Buf = gptr()[-1];
+            backup = true;
         }
         if (!tmo)
             _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, &kZeroTmo)==eIO_Success);
