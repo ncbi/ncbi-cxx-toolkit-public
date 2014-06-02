@@ -202,6 +202,7 @@ int
 CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 {
     int err_found = 0;
+    int err_here;
     const CArgs& args = GetArgs();
 
     retval.clear();
@@ -209,6 +210,7 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
     _ASSERT(m_BlastDb.NotEmpty());
 
     if (args["pig"].HasValue()) {
+        ERR_POST(Error << "checkpoint A");
         retval.reserve(1);
         retval.push_back(CRef<CBlastDBSeqId>
                          (new CBlastDBSeqId(args["pig"].AsInteger())));
@@ -219,17 +221,28 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
         const string& entry = args["entry"].AsString();
 
         if (entry.find(kDelim[0]) != string::npos) {
+            ERR_POST(Error << "checkpoint B");
             vector<string> tokens;
             NStr::Tokenize(entry, kDelim, tokens);
             ITERATE(vector<string>, itr, tokens) {
-                err_found += x_AddSeqId(retval, *itr);
+                err_found += (err_here = x_AddSeqId(retval, *itr));
+                if (err_here) {
+                    ERR_POST(Error << *itr << ": OID not found");
+                }
             }
+            ERR_POST(Error << "err_found = " << err_found);
         } else if (entry == "all") {
+            ERR_POST(Error << "checkpoint C");
             for (int i = 0; m_BlastDb->CheckOrFindOID(i); i++) {
                 x_AddOid(retval, i);
             }
         } else {
-            err_found += x_AddSeqId(retval, entry);
+            ERR_POST(Error << "checkpoint D");
+            err_found += (err_here = x_AddSeqId(retval, entry));
+            if (err_here) {
+                ERR_POST(Error << entry << ": OID not found");
+            }
+            ERR_POST(Error << "err_found = " << err_found);
         }
 
     } else {
@@ -239,7 +252,7 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 
     if (retval.empty()) {
         NCBI_THROW(CInputException, eInvalidInput,
-                   "Entry not found in BLAST database");
+                   "Entry or entries not found in BLAST database");
     }
 
     return (err_found) ? 1 : 0;
@@ -457,17 +470,18 @@ int CBlastDBCmdApp::x_ProcessBatchEntry(const CArgs& args, CSeqFormatter & seq_f
             }
 
            	seq_fmt.SetConfig(seq_range, seq_strand, seq_algo_id);
-            NON_CONST_ITERATE(TQueries, itr, queries) {
-            	try {
-            		seq_fmt.Write(**itr);
-            	} catch (const CException& e) {
-                     ERR_POST(Error << e.GetMsg());
-                     err_found = true;
-            	} catch (...) {
-                  	ERR_POST(Error << "Failed to retrieve requested item");
-                   	err_found = true;
-            	}
-            }
+           	NON_CONST_ITERATE(TQueries, itr, queries) {
+           	    try {
+           	        seq_fmt.Write(**itr);
+           	    } catch (const CException& e) {
+           	        ERR_POST(Error << e.GetMsg() << ": " << **itr);
+           	        err_found = true;
+           	    } catch (...) {
+           	        ERR_POST(Error << "Failed to retrieve requested item: "
+           	                << **itr);
+           	        err_found = true;
+           	    }
+           	}
         }
     }
     return err_found ? 1:0;
