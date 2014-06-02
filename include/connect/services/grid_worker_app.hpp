@@ -187,6 +187,14 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
 #endif
 #endif
 
+
+// To allow use the NCBI_WORKERNODE_XXX convenience macros with
+// a class derived from CGridWorkerApp
+#if !defined(NCBI_WORKERNODE_CLASS)
+#  define NCBI_WORKERNODE_CLASS  CGridWorkerApp
+#endif
+
+
 #define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)                       \
     NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version);               \
     int main(int argc, const char* argv[])                                  \
