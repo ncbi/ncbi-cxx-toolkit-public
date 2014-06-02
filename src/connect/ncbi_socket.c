@@ -5345,7 +5345,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
             /* got a message */
             sock->r_status = eIO_Success;
             sock->r_len = (TNCBI_BigCount) x_read;
-            if ( msglen)
+            if ( msglen )
                 *msglen = x_read;
             if ( sender_addr )
                 *sender_addr =       sin.sin_addr.s_addr;
@@ -5362,9 +5362,10 @@ static EIO_Status s_RecvMsg(SOCK            sock,
                 status = eIO_Unknown;
             } else
                 status = eIO_Success;
-            if (bufsize  &&  x_msgsize > bufsize)
-                memcpy(buf, x_msg, x_read < bufsize ? x_read : bufsize);
-
+            if (bufsize  &&  x_msgsize > bufsize) {
+                memcpy(buf, x_msg,
+                       (size_t) x_read < bufsize ? (size_t) x_read : bufsize);
+            }
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
                 s_DoLog(eLOG_Note, sock, eIO_Read, x_msg,
