@@ -56,6 +56,157 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
+string PrintBestSeqId(const CSeq_id& sid, CScope& scope) 
+{
+   string best_id(kEmptyStr);
+
+   // Best seq_id
+   CSeq_id_Handle sid_hl = sequence::GetId(sid, scope, sequence::eGetId_Best);
+   if (sid_hl) {
+      CConstRef <CSeq_id> new_id = sid_hl.GetSeqId();
+      if (new_id) {
+        best_id = sid_hl.GetSeqId()->AsFastaString();
+      }
+   }
+   else best_id = sid.AsFastaString();
+
+   return best_id;
+};
+
+static const string strand_symbol[] = {"", "", "c","b", "r"};
+string PrintSeqIntUseBestID(const CSeq_interval& seq_int, CScope& scope, bool range_only)
+{
+    string location(kEmptyStr);
+
+    // Best seq_id
+    if (!range_only) {
+      location = PrintBestSeqId(seq_int.GetId(), scope) + ":";
+    }
+
+    // strand
+    ENa_strand 
+      this_strand 
+         = (seq_int.CanGetStrand()) ? seq_int.GetStrand(): eNa_strand_unknown;
+    location += strand_symbol[(int)this_strand];
+    int from, to;
+    string lab_from(kEmptyStr), lab_to(kEmptyStr);
+    if (eNa_strand_minus == this_strand 
+                               || eNa_strand_both_rev ==  this_strand) {
+           to = seq_int.GetFrom();
+           from = seq_int.GetTo();
+           if (seq_int.CanGetFuzz_to()) {
+               const CInt_fuzz& f_from = seq_int.GetFuzz_to();
+               f_from.GetLabel(&lab_from, from, false); 
+           }
+           else lab_from = NStr::IntToString(++from);
+           if (seq_int.CanGetFuzz_from()) {
+               const CInt_fuzz& f_to = seq_int.GetFuzz_from();
+               f_to.GetLabel(&lab_to, to); 
+           }
+           else lab_to = NStr::IntToString(++to);
+    }
+    else {
+           to = seq_int.GetTo();
+           from = seq_int.GetFrom();
+           if (seq_int.CanGetFuzz_from()) {
+                const CInt_fuzz& f_from = seq_int.GetFuzz_from();
+                f_from.GetLabel(&lab_from, from, false);
+           }
+           else lab_from = NStr::IntToString(++from);
+           if (seq_int.CanGetFuzz_to()) {
+               const CInt_fuzz& f_to = seq_int.GetFuzz_to();
+               f_to.GetLabel(&lab_to, to);
+           }
+           else lab_to = NStr::IntToString(++to);
+    }
+    location += lab_from + "-" + lab_to; 
+    return location;
+};
+
+string PrintPntAndPntsUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool range_only)
+{
+  string location(kEmptyStr);
+
+   // Best seq_id
+  if (!range_only) {
+     if (seq_loc.IsPnt()) {
+       location = PrintBestSeqId(seq_loc.GetPnt().GetId(), scope) + ":";
+     }
+     else if (seq_loc.IsPacked_pnt()) {
+       location = PrintBestSeqId(seq_loc.GetPacked_pnt().GetId(), scope) + ":";
+     }
+  }
+
+  if (!location.empty()) {
+     string strtmp;
+     seq_loc.GetLabel(&strtmp);
+     location += strtmp.substr(strtmp.find(":")+1);
+  }
+  return location;
+}
+    
+string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool range_only)
+{
+  string location(kEmptyStr);
+  if (seq_loc.IsInt()) {
+     location = PrintSeqIntUseBestID(seq_loc.GetInt(), scope, range_only);
+  } 
+  else if (seq_loc.IsMix() || seq_loc.IsEquiv()) {
+     location = "(";
+     const list <CRef <CSeq_loc> >* seq_loc_ls; 
+     if (seq_loc.IsMix()) {
+        seq_loc_ls = &(seq_loc.GetMix().Get());
+     }
+     else {
+        seq_loc_ls = &(seq_loc.GetEquiv().Get());
+     }
+     ITERATE (list <CRef <CSeq_loc> >, it, *seq_loc_ls) {
+        if (it == seq_loc.GetMix().Get().begin()) {
+           location += SeqLocPrintUseBestID(**it, scope, range_only);
+        }
+        else location += SeqLocPrintUseBestID(**it, scope, true);
+        location += ", ";
+     }
+     if (!location.empty()) {
+        location = location.substr(0, location.size()-2);
+     }
+     location += ")"; 
+  }
+  else if (seq_loc.IsPacked_int()) {
+     location = "(";
+     ITERATE (list <CRef <CSeq_interval> >, it, seq_loc.GetPacked_int().Get()) {
+        if (it == seq_loc.GetPacked_int().Get().begin()) {
+           location += PrintSeqIntUseBestID(**it, scope, range_only);
+        }
+        else {
+            location += PrintSeqIntUseBestID(**it, scope, true);
+        }
+        location += ", ";
+     }
+     if (!location.empty()) {
+        location = location.substr(0, location.size()-2);
+     }
+     location += ")";
+  }
+  else if (seq_loc.IsPnt() || seq_loc.IsPacked_pnt()) {
+     location = PrintPntAndPntsUseBestID(seq_loc, scope, range_only);
+  }
+  else if (seq_loc.IsBond()) {
+     CSeq_loc tmp_loc;
+     tmp_loc.SetBond().Assign(seq_loc.GetBond().GetA());
+     location = PrintPntAndPntsUseBestID(tmp_loc, scope, range_only);
+     if (seq_loc.GetBond().CanGetB()) {
+       tmp_loc.SetBond().Assign(seq_loc.GetBond().GetB());
+       location 
+          += "=" + PrintPntAndPntsUseBestID(tmp_loc, scope, range_only);
+     } 
+  }
+  else {
+    seq_loc.GetLabel(&location);
+  }
+  return location;
+}
+
 
 bool s_Is5AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh)
 {
