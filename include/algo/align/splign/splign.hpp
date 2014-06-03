@@ -57,6 +57,7 @@ BEGIN_SCOPE(objects)
     class CSeq_id;
     class CScore_set;
     class CSeq_align_set;
+    class CSeqMap;
 END_SCOPE(objects)
 
 
@@ -429,6 +430,7 @@ protected:
 
     // genomic sequence
     vector<char>          m_genomic;
+    CRef<objects::CSeqMap>         m_GenomicSeqMap;
 
     // max space to look beyond end hits
     size_t                m_max_genomic_ext;
@@ -468,7 +470,13 @@ protected:
                           const objects::CSeq_id& seqid,
                           THit::TCoord start,
                           THit::TCoord finish,
-                          bool retain);
+                          bool retain, bool is_genomic = false, bool genomic_strand = true);
+
+    //checks if position belongs to the genomic gap
+    //gap information comes from ASN (CSeqMap).
+    // fasta of LDS does not support gap info. If sequence comes from FASTA file ir LDS, the method will always return 'false'
+    //coordinates are resolved, meaning that 'm_genomic' coordinates should be used.
+    bool x_IsInGap(THit::TCoord pos);
 
     static THitRef sx_NewHit(THit::TCoord q0, THit::TCoord q,
                              THit::TCoord s0, THit::TCoord s);

@@ -558,11 +558,24 @@ double CSplign::GetCompartmentPenalty( void ) const
     return m_CompartmentPenalty;
 }
 
+bool CSplign::x_IsInGap(THit::TCoord pos)
+{
+    bool res = false;
+    CSeqMap_CI it = m_GenomicSeqMap->FindResolved(GetScope(), pos, SSeqMapSelector());
+    if(it) {
+        if(CSeqMap::eSeqGap == it.GetType()) { 
+            res = true;
+        }
+    }
+    return res;
+}
+
+
 void CSplign::x_LoadSequence(vector<char>* seq, 
-                             const objects::CSeq_id& seqid,
+                             const CSeq_id& seqid,
                              THit::TCoord start,
                              THit::TCoord finish,
-                             bool retain)
+                             bool retain, bool is_genomic, bool genomic_strand)
 {
 
     try {
@@ -603,6 +616,13 @@ void CSplign::x_LoadSequence(vector<char>* seq,
             
             string s;
             sv.GetSeqData(start, finish + 1, s);
+            if(is_genomic) {//get SeqMap data
+                ENa_strand strand = eNa_strand_minus;
+                if(genomic_strand) strand = eNa_strand_plus;
+                CRef<CSeq_id> tmp_id(new CSeq_id());
+                tmp_id->Assign(seqid);
+                m_GenomicSeqMap = CSeqMap::CreateSeqMapForSeq_loc(CSeq_loc(*tmp_id, start, finish, strand), GetScope());
+            }
             seq->resize(1 + finish - start);
             copy(s.begin(), s.end(), seq->begin());
         }
@@ -1487,7 +1507,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
 
         m_genomic.clear();
         x_LoadSequence(&m_genomic, *(phitrefs->front()->GetSubjId()), 
-                       smin, smax, true);
+                       smin, smax, true, true, ctg_strand);
 
         // adjust smax if beyond the end
         const THit::TCoord ctg_end (smin + m_genomic.size());
@@ -1897,9 +1917,61 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
     }
 
     m_segments.resize(0);
- 
+    
     string test_type = GetTestType();
-
+    
+    //partial trimming near sequence gaps   
+    {{
+        if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode    
+            bool first = true;
+            TSegmentDeque::iterator prev;
+            NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+                if(ii->m_exon == false) continue;
+                if(first) {
+                    first = false;
+                } else {
+                    TSeqPos from =  prev->m_box[3];
+                    TSeqPos length = ii->m_box[2] - prev->m_box[3] + 1;
+                    if(m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),  from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) { //gap, trim.
+                        
+                        /* TEST OUTPUT   
+                        CSeqMap_CI smit = m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),   from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
+                        CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
+                        string type = "not_gap";
+                        if(smit.GetType() == CSeqMap::eSeqGap) type = "gap";
+                        cout<<"Type: "<<type;
+                        if(slit) {
+                            cout<<" Position: "<<smit.GetPosition()+1;
+                            cout<<" Length: "<<smit.GetLength();
+                            cout<<" End Position: "<<smit.GetEndPosition()+1;
+                        }
+                        cout<<endl;
+                        */
+                        
+                        if(test_type == kTestType_20_28_90_cut20) {
+                            prev->ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                            ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                        } else {
+                            prev->ImproveFromRight(Seq1, Seq2, m_aligner);
+                            ii->ImproveFromLeft(Seq1, Seq2, m_aligner);                                                
+                        }                        
+                        //add gaps if needed    
+                        if( ii->m_box[0] > prev->m_box[1] + 1) {
+                            TSegment sgap;
+                            sgap.m_box[0] = prev->m_box[1] + 1;
+                            sgap.m_box[2] = prev->m_box[3] + 1;
+                            sgap.m_box[1] = ii->m_box[0] - 1;
+                            sgap.m_box[3] = ii->m_box[2] - 1;
+                            sgap.SetToGap();
+                            ii = segments.insert(ii, sgap);
+                            ++ii;
+                        }                        
+                    }
+                }
+                prev = ii;
+            }
+        }
+    }}
 
     while(true) {
 
@@ -1911,8 +1983,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             m_segments.resize(0);
         }
 
-        size_t seg_dim (segments.size());
-        if(seg_dim == 0) {
+        if(segments.size() == 0) {
             return 0;
         }
 
@@ -1925,7 +1996,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         if (test_type == kTestType_20_28_90_cut20 )  { // test mode
             bool first_exon = true;
             TSegment *last_exon = NULL;
-            for(size_t k0 = 0; k0 < seg_dim; ++k0) {                
+            for(size_t k0 = 0; k0 < segments.size(); ++k0) {                
                 TSegment& s = segments[k0];
                 int ext_len = 0;
                 int ext_max = 0;
@@ -1960,7 +2031,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             // Go from the ends and see if we can improve term exons
             //note that it continue trimming of exons until s.m_idty is high
             size_t k0 (0);
-            while(k0 < seg_dim) {
+            while(k0 < segments.size()) {
 
                 TSegment& s = segments[k0];
                 if(s.m_exon) {
@@ -1977,7 +2048,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 ++k0;
             }
 
-            int k1 (seg_dim - 1);
+            int k1 (segments.size() - 1);
             while(k1 >= int(k0)) {
 
                 TSegment& s (segments[k1]);
@@ -2024,7 +2095,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         //partial trimming, exons near <GAP>s, terminal exons are trimmed already
-        for(size_t k0 = 0; k0 < seg_dim; ++k0) {
+        for(size_t k0 = 0; k0 < segments.size(); ++k0) {
             if(!segments[k0].m_exon) {
                 if( k0 > 0 && segments[k0-1].m_exon) {
                     if(test_type == kTestType_20_28_90_cut20) {
@@ -2033,7 +2104,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                             segments[k0-1].ImproveFromRight(Seq1, Seq2, m_aligner);                
                     }
                 }
-                if( k0 + 1 < seg_dim && segments[k0+1].m_exon) {
+                if( k0 + 1 < segments.size() && segments[k0+1].m_exon) {
                     if(test_type == kTestType_20_28_90_cut20) {
                             segments[k0+1].ImproveFromLeft1(Seq1, Seq2, m_aligner);                
                     } else {
@@ -2042,6 +2113,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
             }
         }
+
 
         //CORRECTIONS AFTER PARTIAL TRIMMING
         // indicate any slack space on the left
@@ -2054,7 +2126,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             g.m_box[3] = segments[0].m_box[2] - 1;
             g.SetToGap();
             segments.push_front(g);
-            ++seg_dim;
         }
         
         // same on the right        
@@ -2069,7 +2140,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             g.m_box[3] = SeqLen2 - 1;
             g.SetToGap();
             segments.push_back(g);
-            ++seg_dim;
         }
 
         //WHOLE EXON TRIMMING
@@ -2126,7 +2196,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                             sgap.SetToGap();
                             ii = segments.insert(ii, sgap);
                             continue_iterations = true;
-                            ++seg_dim;
                             ++ii;
                         }
                         if( (ii+1) != segments.end() && (ii+1)->m_box[0] > ii->m_box[1] + 1 ) {
@@ -2139,7 +2208,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                             sgap.SetToGap();
                             ii = segments.insert(ii, sgap);
                             continue_iterations = true;
-                            ++seg_dim;
                         }
 
                     } else {
@@ -2175,7 +2243,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         // turn to gaps exons with combination of shortness and low identity           
                 // deal with exons adjacent to gaps
         if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode  
-            for(size_t k (0); k < seg_dim; ++k) {
+            for(size_t k (0); k < segments.size(); ++k) {
                 TSegment& s (segments[k]);
                 if(s.m_exon == false) continue;
                 
@@ -2196,7 +2264,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     }
                 }
 
-                if( k + 1 == seg_dim ) {//the last segment is an exon
+                if( k + 1 == segments.size() ) {//the last segment is an exon
                     if( ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {
                         adj = eHard;
                     } else {
@@ -2212,7 +2280,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     }
                 }
 
-                if(k + 1 < seg_dim && (! segments[k+1].m_exon ) ) {//gap on right
+                if(k + 1 < segments.size() && (! segments[k+1].m_exon ) ) {//gap on right
                     if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {
                         adj = eHard;
                     } else {
@@ -2244,7 +2312,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             // find the two leftmost exons
             size_t exon_count (0);
             TSegment* term_segs[] = {0, 0};
-            for(size_t i = 0; i < seg_dim; ++i) {
+            for(size_t i = 0; i < segments.size(); ++i) {
                 TSegment& s = segments[i];
                 if(s.m_exon) {
                     term_segs[exon_count] = &s;
@@ -2263,7 +2331,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             // find the two rightmost exons
             size_t exon_count (0);
             TSegment* term_segs[] = {0, 0};
-            for(int i = seg_dim - 1; i >= 0; --i) {
+            for(int i = segments.size() - 1; i >= 0; --i) {
                 TSegment& s = segments[i];
                 if(s.m_exon) {
                     term_segs[exon_count] = &s;
@@ -2280,7 +2348,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         // turn to gaps extra-short exons preceded/followed by gaps
           bool gap_prev (false);
-          for(size_t k (0); k < seg_dim; ++k) {
+          for(size_t k (0); k < segments.size(); ++k) {
               
               TSegment& s (segments[k]);
               if(s.m_exon == false) {
@@ -2289,7 +2357,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
               else {
                   size_t length (s.m_box[1] - s.m_box[0] + 1);
                   bool gap_next (false);
-                  if(k + 1 < seg_dim) {
+                  if(k + 1 < segments.size()) {
                       gap_next = !segments[k+1].m_exon;
                   }
                   if(length <= 10 && (gap_prev || gap_next)) {
@@ -2302,11 +2370,11 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         // merge all adjacent gaps
         int gap_start_idx (-1);
-        if(seg_dim && segments[0].m_exon == false) {
+        if(segments.size() && segments[0].m_exon == false) {
             gap_start_idx = 0;
         }
 
-        for(size_t k (0); k < seg_dim; ++k) {
+        for(size_t k (0); k < segments.size(); ++k) {
             TSegment& s (segments[k]);
             if(!s.m_exon) {
                 if(gap_start_idx == -1) {
@@ -2333,8 +2401,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         if(gap_start_idx >= 0) {
             TSegment& g (segments[gap_start_idx]);
-            g.m_box[1] = segments[seg_dim-1].m_box[1];
-            g.m_box[3] = segments[seg_dim-1].m_box[3];
+            g.m_box[1] = segments[segments.size()-1].m_box[1];
+            g.m_box[3] = segments[segments.size()-1].m_box[3];
             g.m_len = g.m_box[1] - g.m_box[0] + 1;
             g.m_details.resize(0);
             m_segments.push_back(g);
