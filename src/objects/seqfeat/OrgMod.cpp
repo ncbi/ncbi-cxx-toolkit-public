@@ -62,6 +62,7 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
     string name = NStr::TruncateSpaces(str);
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
+    replace(name.begin(), name.end(), ' ', '-');
     
     if (name == "note") {
         return eSubtype_other;
