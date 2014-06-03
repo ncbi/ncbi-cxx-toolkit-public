@@ -51,9 +51,9 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/format/items/qualifiers.hpp>
 
-#include <objtools/discrepancy_report/hDiscRep_config.hpp>
-#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
-#include <objtools/discrepancy_report/hUtilib.hpp>
+#include <misc/discrepancy_report/hDiscRep_config.hpp>
+#include <misc/discrepancy_report/hDiscRep_tests.hpp>
+#include <misc/discrepancy_report/hUtilib.hpp>
 
 #include <sstream> 
 

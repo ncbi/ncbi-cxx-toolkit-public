@@ -52,11 +52,6 @@
 
 #include <objects/seqfeat/RNA_ref.hpp>
 
-#ifdef __GNUC__
-#  warning "Header <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/*.hpp> instead!"
-#endif // __GNUC__ 
-
-
 #include <misc/discrepancy_report/hDiscRep_tests.hpp>
 #include <misc/discrepancy_report/hDiscRep_output.hpp>
 

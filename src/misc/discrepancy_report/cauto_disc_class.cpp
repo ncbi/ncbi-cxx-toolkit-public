@@ -34,7 +34,7 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/misc/sequence_macros.hpp>
-#include <objtools/discrepancy_report/hauto_disc_class.hpp>
+#include <misc/discrepancy_report/hauto_disc_class.hpp>
 
 BEGIN_NCBI_SCOPE
 

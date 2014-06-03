@@ -36,10 +36,10 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 
-#include <objtools/discrepancy_report/hchecking_class.hpp>
-#include <objtools/discrepancy_report/hDiscRep_config.hpp>
-#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
-#include <objtools/discrepancy_report/hUtilib.hpp>
+#include <misc/discrepancy_report/hchecking_class.hpp>
+#include <misc/discrepancy_report/hDiscRep_config.hpp>
+#include <misc/discrepancy_report/hDiscRep_tests.hpp>
+#include <misc/discrepancy_report/hUtilib.hpp>
 
 BEGIN_NCBI_SCOPE
 

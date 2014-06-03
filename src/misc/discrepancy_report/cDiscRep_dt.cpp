@@ -32,8 +32,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/discrepancy_report/hDiscRep_config.hpp>
-#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <misc/discrepancy_report/hDiscRep_config.hpp>
+#include <misc/discrepancy_report/hDiscRep_tests.hpp>
 
 BEGIN_NCBI_SCOPE
 

@@ -49,10 +49,6 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/submit/Submit_block.hpp>
 
-#ifdef __GNUC__
-#  warning "Header <objtools/discrepancy_report/hDiscRep_tests.hpp> is obsolete; please use <misc/discrepancy_report/hDiscRep_tests.hpp> instead!"
-#endif // __GNUC__ 
-
 #include <misc/discrepancy_report/hDiscRep_tests.hpp>
 
 BEGIN_NCBI_SCOPE

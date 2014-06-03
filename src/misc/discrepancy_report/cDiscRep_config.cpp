@@ -41,11 +41,11 @@
 #include <serial/objhook.hpp>
 #include <serial/objectio.hpp>
 #include <serial/objectiter.hpp>
-#include <objtools/discrepancy_report/hauto_disc_class.hpp>
-#include <objtools/discrepancy_report/hDiscRep_config.hpp>
-#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
-#include <objtools/discrepancy_report/hUtilib.hpp>
-#include <objtools/discrepancy_report/hDiscRep_summ.hpp>
+#include <misc/discrepancy_report/hauto_disc_class.hpp>
+#include <misc/discrepancy_report/hDiscRep_config.hpp>
+#include <misc/discrepancy_report/hDiscRep_tests.hpp>
+#include <misc/discrepancy_report/hUtilib.hpp>
+#include <misc/discrepancy_report/hDiscRep_summ.hpp>
 
 #include <sstream>
 

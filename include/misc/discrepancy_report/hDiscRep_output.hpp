@@ -40,19 +40,13 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-// #include <objtools/validator/validatorp.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/objhook.hpp>
 #include <serial/serial.hpp>
 
-#ifdef __GNUC__
-#  warning "Header <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/*.hpp> instead!"
-#endif // __GNUC__ 
-
 #include <misc/discrepancy_report/hDiscRep_tests.hpp>
 #include <misc/discrepancy_report/clickable_item.hpp>
-
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 
 BEGIN_NCBI_SCOPE

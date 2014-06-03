@@ -42,10 +42,6 @@
 #include <objects/seq/Map_ext.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#ifdef __GNUC__
-#  warning "Header <objtools/discrepancy_report/hchecking_class.hpp> is obsolete; please use <misc/discrepancy_report/hchecking_class.hpp> instead!"
-#endif // __GNUC__ 
-
 #include <misc/discrepancy_report/hchecking_class.hpp>
 
 BEGIN_NCBI_SCOPE
