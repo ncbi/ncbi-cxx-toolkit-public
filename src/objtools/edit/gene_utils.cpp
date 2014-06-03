@@ -75,11 +75,11 @@ CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
      else return (CConstRef <CSeq_feat>());
   }
   else {
-    return( 
-      CConstRef <CSeq_feat>(sequence::GetBestOverlappingFeat(feat.GetLocation(),
-                                                   CSeqFeatData::e_Gene,
-                                                   sequence::eOverlap_Contained,
-                                                   scope)));
+   return( 
+     CConstRef <CSeq_feat>(sequence::GetBestOverlappingFeat(feat.GetLocation(),
+                                                  CSeqFeatData::e_Gene,
+                                                  sequence::eOverlap_Contained,
+                                                  scope)));
   }
 
   return (CConstRef <CSeq_feat>());
