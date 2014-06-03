@@ -99,6 +99,19 @@ void CHttpSessionApp::Init()
 }
 
 
+class CTestDataProvider : public CFormDataProvider_Base
+{
+public:
+    CTestDataProvider(void) {}
+    virtual string GetContentType(void) const { return "text/plain"; }
+    virtual string GetFileName(void) const { return "test.txt"; }
+    virtual void WriteData(CNcbiOstream& out) const
+    {
+        out << "Provider test";
+    }
+};
+
+
 int CHttpSessionApp::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -117,8 +130,8 @@ int CHttpSessionApp::Run(void)
         const CArgValue::TStringArray& urls = args["head"].GetStringList();
         ITERATE(CArgValue::TStringArray, it, urls) {
             cout << "HEAD " << *it << endl;
-            CHttpRequest req = session.Head(*it);
-            PrintResponse(session, req.GetResponse());
+            CHttpRequest req = session.NewRequest(*it, CHttpSession::eHead);
+            PrintResponse(session, req.Execute());
             cout << "-------------------------------------" << endl << endl;
         }
     }
@@ -127,8 +140,8 @@ int CHttpSessionApp::Run(void)
         const CArgValue::TStringArray& urls = args["get"].GetStringList();
         ITERATE(CArgValue::TStringArray, it, urls) {
             cout << "GET " << *it << endl;
-            CHttpRequest req = session.Get(*it);
-            PrintResponse(session, req.GetResponse());
+            CHttpRequest req = session.NewRequest(*it);
+            PrintResponse(session, req.Execute());
             cout << "-------------------------------------" << endl << endl;
         }
     }
@@ -139,24 +152,22 @@ int CHttpSessionApp::Run(void)
 
     const string sample_url = "http://web.ncbi.nlm.nih.gov/Service/sample/cgi_sample.cgi";
     CUrl url(sample_url);
-    /*
-    session.GetCookies().Add(CHttpCookie(
-        "ncbi_phid", "ABCDEF.1.2", "web.ncbi.nlm.nih.gov", "/Service/sample"));
-    */
 
     {{
         // HEAD request
         cout << "HEAD " << sample_url << endl;
-        CHttpRequest req = session.Head(url);
-        PrintResponse(session, req.GetResponse());
+        // Requests can be initialized with either a string or a CUrl
+        CHttpRequest req = session.NewRequest(url, CHttpSession::eHead);
+        CHttpResponse resp = req.Execute();
+        PrintResponse(session, resp);
         cout << "-------------------------------------" << endl << endl;
     }}
 
     {{
         // Simple GET request
         cout << "GET (no args) " << sample_url << endl;
-        CHttpRequest req = session.Get(url);
-        PrintResponse(session, req.GetResponse());
+        CHttpRequest req = session.NewRequest(url);
+        PrintResponse(session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -165,18 +176,39 @@ int CHttpSessionApp::Run(void)
         // GET request with arguments
         cout << "GET (with args) " << sample_url << endl;
         url_with_args.GetArgs().SetValue("message", "GET data");
-        CHttpRequest req = session.Get(url_with_args);
-        PrintResponse(session, req.GetResponse());
+        CHttpRequest req = session.NewRequest(url_with_args);
+        PrintResponse(session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
     {{
         // POST request with form data
-        cout << "POST " << sample_url << endl;
-        CHttpRequest req = session.Post(url);
-        CHttpFormData& data = req.GetFormData();
+        cout << "POST (form data) " << sample_url << endl;
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+        CHttpFormData& data = req.FormData();
         data.AddEntry("message", "POST data");
-        PrintResponse(session, req.GetResponse());
+        PrintResponse(session, req.Execute());
+        cout << "-------------------------------------" << endl << endl;
+    }}
+
+    {{
+        // POST using a provider
+        cout << "POST (provider) " << sample_url << endl;
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+        CHttpFormData& data = req.FormData();
+        data.AddProvider("message", new CTestDataProvider);
+        PrintResponse(session, req.Execute());
+        cout << "-------------------------------------" << endl << endl;
+    }}
+
+    {{
+        // POST some data manually
+        cout << "POST (manual) " << sample_url << endl;
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+        req.Headers().SetValue(CHttpHeaders::eContentType, "application/x-www-form-urlencoded");
+        CNcbiOstream& out = req.ContentStream();
+        out << "message=POST manual data";
+        PrintResponse(session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -188,9 +220,11 @@ int CHttpSessionApp::Run(void)
 void CHttpSessionApp::PrintResponse(const CHttpSession& session,
                                     const CHttpResponse& response)
 {
+    cout << "Status: " << response.GetStatusCode() << " "
+        << response.GetStatusText() << endl;
     if ( m_PrintHeaders ) {
         list<string> headers;
-        NStr::Split(response.GetHeaders().GetHttpHeader(), "\n\r", headers);
+        NStr::Split(response.Headers().GetHttpHeader(), "\n\r", headers);
         cout << "--- Headers ---" << endl;
         ITERATE(list<string>, it, headers) {
             cout << *it << endl;
@@ -206,7 +240,7 @@ void CHttpSessionApp::PrintResponse(const CHttpSession& session,
 
     if ( m_PrintBody ) {
         cout << "--- Body ---" << endl;
-        CNcbiIstream& in = response.GetStream();
+        CNcbiIstream& in = response.ContentStream();
         // No body in HEAD requests.
         if ( in.good() ) {
             cout << in.rdbuf() << endl;

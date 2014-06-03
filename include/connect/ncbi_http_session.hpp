@@ -35,6 +35,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_url.hpp>
 #include <corelib/ncbi_cookies.hpp>
 #include <connect/connect_export.h>
@@ -53,9 +54,12 @@ BEGIN_NCBI_SCOPE
 class CHttpSession;
 
 
-class NCBI_XCONNECT_EXPORT CHttpHeaders
+class NCBI_XCONNECT_EXPORT CHttpHeaders : public CObject
 {
 public:
+    CHttpHeaders(void) {}
+    virtual ~CHttpHeaders(void) {}
+
     /// Some standard HTTP headers.
     enum EName {
         eCacheControl = 0,
@@ -99,10 +103,14 @@ public:
     const THeaderValues& GetAllValues(EName name) const;
 
     /// Remove all existing values for the name, set the new one.
+    /// Some names are reserved and can not be set directly
+    /// (NCBI-SID, NCBI-PHID).
     void SetValue(const CTempString& name, const CTempString& value);
     /// Remove all existing values for the name, set the new one.
     void SetValue(EName name, const CTempString& value);
     /// Add new value for the name (multiple values are allowed).
+    /// Some names are reserved and can not be set directly
+    /// (NCBI-SID, NCBI-PHID).
     void AddValue(const CTempString& name, const CTempString& value);
     /// Add new value for the name (multiple values are allowed).
     void AddValue(EName name, const CTempString& value);
@@ -121,62 +129,44 @@ public:
 
     static const string& s_GetHeaderName(EName name);
 
+    /// Copy all headers to this object.
+    void Assign(const CHttpHeaders& headers);
+    /// Add/replace headers to this object.
+    /// NOTE: The method does not check if there are duplicate values
+    /// for a name.
+    void Merge(const CHttpHeaders& headers);
+
 private:
+    // Prohibit copying headers.
+    CHttpHeaders(const CHttpHeaders&);
+    CHttpHeaders& operator=(const CHttpHeaders&);
+
+    // Check if the name is a reserved one (NCBI-SID, NCBI-PHID).
+    // If yes, log error and _ASSERT(0) - these headers must be set in
+    // CRequestContext, not directly.
+    // Return 'false' if the header name is not reserved and a value can
+    // be set safely.
+    bool x_IsReservedHeader(const CTempString& name) const;
+
     THeaders            m_Headers;
 };
 
 
-/// HTTP response
-class NCBI_XCONNECT_EXPORT CHttpResponse
+/// Interface for custom form data providers.
+class NCBI_XCONNECT_EXPORT CFormDataProvider_Base : public CObject
 {
 public:
-    ~CHttpResponse(void);
+    virtual ~CFormDataProvider_Base(void) {}
 
-    /// Get incoming HTTP headers.
-    const CHttpHeaders& GetHeaders(void) const { return m_Headers; }
+    /// Get content type. Returns empty string by default, indicating
+    /// no Content-Type header should be sent for the part.
+    virtual string GetContentType(void) const { return kEmptyStr; }
 
-    /// Get input stream.
-    CNcbiIstream& GetStream(void) const;
+    /// Get optional filename to be shown in Content-Disposition header.
+    virtual string GetFileName(void) const { return kEmptyStr; }
 
-    /// Get actual resource location. This may be different from the
-    /// requested URL in case of redirects.
-    const CUrl& GetLocation(void) const { return m_Location; }
-
-private:
-    friend class CHttpRequest;
-
-    CHttpResponse(CHttpSession& session);
-
-    // Parse response headers, update location, parse cookies and
-    // store them in the session.
-    void x_ParseHeader(const char* header);
-    // Set new URL and Location (reset any redirects).
-    void x_SetUrl(const CUrl& url);
-
-    // CObject wrapper for CConn_HttpStream
-    class CHttpStream : public CObject
-    {
-    public:
-        CHttpStream(void) : m_ConnNetInfo(0) {}
-        virtual ~CHttpStream(void);
-        bool IsInitialized(void) const { return m_ConnStream.get(); }
-        CConn_HttpStream& GetConnStream(void) const { return *m_ConnStream; }
-        void SetConnStream(CConn_HttpStream* stream) { m_ConnStream.reset(stream); }
-        void SetConnNetInfo(SConnNetInfo* netinfo) { m_ConnNetInfo = netinfo; }
-        SConnNetInfo* GetConnNetInfo(void) const { return m_ConnNetInfo; }
-    private:
-        CHttpStream(const CHttpStream&);
-        CHttpStream& operator=(const CHttpStream&);
-        // SConnNetInfo must be stored here to be destroyed using proper function.
-        SConnNetInfo*              m_ConnNetInfo;
-        auto_ptr<CConn_HttpStream> m_ConnStream;
-    };
-
-    CRef<CHttpSession> m_Session;
-    CUrl               m_Url;      // Original URL
-    CUrl               m_Location; // Redirection URL if any.
-    CRef<CHttpStream>  m_Stream;
-    CHttpHeaders       m_Headers;
+    /// Write user data to the stream.
+    virtual void WriteData(CNcbiOstream& out) const = 0;
 };
 
 
@@ -198,10 +188,10 @@ public:
     /// Get current content type.
     EContentType GetContentType(void) const { return m_ContentType; }
     /// Set content type for POST data (ignored for other request methods).
-    /// The call is ignored if a file has been added to the POST data,
-    /// the effective content type in this case is always eMultipartFormData.
-    /// Content types for individual entries can be set when adding an
-    /// entry (see AddEntry() and AddFile()).
+    /// The call is ignored if a file or a provider has been added to the
+    /// POST data, the effective content type in this case is always
+    /// eMultipartFormData. Content types for individual entries can be set
+    /// when adding an entry (see AddEntry() and AddFile()).
     void SetContentType(EContentType content_type);
 
     /// Add name/value pair for POST reequest. Ignored if request type
@@ -237,6 +227,18 @@ public:
                  const CTempString& file_name,
                  const CTempString& content_type = kEmptyStr);
 
+    /// Add custom data provider. Ignored if the request type is not POST.
+    /// The form content type is automatically set to eMultipartFormData and
+    /// can not be changed later.
+    /// @param entry_name
+    ///   Name of the form input responsible for the data. Multiple providers
+    ///   can be added with the same entry name.
+    /// @param provider
+    ///   An instance of CFormDataProvider_Base derived class. The object must
+    ///   be created on heap.
+    void AddProvider(const CTempString&      entry_name,
+                     CFormDataProvider_Base* provider);
+
     /// Check if any entries have been added.
     bool Empty(void) const;
 
@@ -250,21 +252,83 @@ public:
     static string s_CreateBoundary(void);
 
 private:
+    // Prohibit copying.
     CHttpFormData(const CHttpFormData&);
     CHttpFormData& operator=(const CHttpFormData&);
 
     struct SFormData {
-        string m_Value;       // value or file name
-        string m_ContentType; // content type
+        string m_Value;
+        string m_ContentType;
     };
 
     typedef vector<SFormData>   TValues;
     typedef map<string, TValues> TEntries;
+    typedef vector< CRef<CFormDataProvider_Base> > TProviders;
+    typedef map<string, TProviders> TProviderEntries;
 
-    EContentType    m_ContentType;
-    TEntries        m_Entries;   // Normal entries
-    TEntries        m_Files;     // Files
-    mutable string  m_Boundary;  // Main boundary string
+    EContentType     m_ContentType;
+    TEntries         m_Entries;   // Normal entries
+    TProviderEntries m_Providers; // Files and custom providers
+    mutable string   m_Boundary;  // Main boundary string
+};
+
+
+// CObject wrapper for CConn_HttpStream.
+// Should not be used directly.
+class CHttpStream : public CObject
+{
+public:
+    CHttpStream(void) {}
+    virtual ~CHttpStream(void) {}
+    bool IsInitialized(void) const { return m_ConnStream.get(); }
+    CConn_HttpStream& GetConnStream(void) const { return *m_ConnStream; }
+    void SetConnStream(CConn_HttpStream* stream) { m_ConnStream.reset(stream); }
+private:
+    CHttpStream(const CHttpStream&);
+    CHttpStream& operator=(const CHttpStream&);
+    // SConnNetInfo must be stored here to be destroyed using proper function.
+    auto_ptr<CConn_HttpStream> m_ConnStream;
+};
+
+
+/// HTTP response
+class NCBI_XCONNECT_EXPORT CHttpResponse : public CObject
+{
+public:
+    virtual ~CHttpResponse(void) {}
+
+    /// Get incoming HTTP headers.
+    const CHttpHeaders& Headers(void) const { return *m_Headers; }
+
+    /// Get input stream.
+    CNcbiIstream& ContentStream(void) const;
+
+    /// Get actual resource location. This may be different from the
+    /// requested URL in case of redirects.
+    const CUrl& Location(void) const { return m_Location; }
+
+    /// Get response status code.
+    int GetStatusCode(void) const { return m_StatusCode; }
+
+    /// Get response status text.
+    const string& GetStatusText(void) const { return m_StatusText; }
+
+private:
+    friend class CHttpRequest;
+
+    CHttpResponse(CHttpSession& session, const CUrl& url, CHttpStream& stream);
+
+    // Parse response headers, update location, parse cookies and
+    // store them in the session.
+    void x_ParseHeader(const char* header);
+
+    CRef<CHttpSession> m_Session;
+    CUrl               m_Url;      // Original URL
+    CUrl               m_Location; // Redirection or the original URL.
+    CRef<CHttpStream>  m_Stream;
+    CRef<CHttpHeaders> m_Headers;
+    int                m_StatusCode;
+    string             m_StatusText;
 };
 
 
@@ -272,48 +336,72 @@ private:
 class NCBI_XCONNECT_EXPORT CHttpRequest
 {
 public:
-    /// Create the output stream, write headers. Return the initialized stream.
-    /// The method does not close the stream, a user can write additional data
-    /// (e.g. when sending POST request with custom content type).
-    CNcbiOstream& GetStream(void);
-
-    /// Send the request, start reading response (status, headers).
-    /// Return the response. After calling this method the output stream
-    /// is no more writable.
-    CHttpResponse& GetResponse(void);
-
     /// Get HTTP headers to be sent.
-    CHttpHeaders& GetHeaders(void) { return m_Headers; }
+    CHttpHeaders& Headers(void) { return *m_Headers; }
 
-    /// Return form data object to be filled with entries and sent
-    /// to the server. If request method is not POST the form data
-    /// is ignored.
-    CHttpFormData& GetFormData(void);
+    /// Get form data to be sent with POST request or throw an exception
+    /// if the selected method does not support sending form data.
+    /// The data can also be ignored if ContentStream() is called to
+    /// manually send any data to the server.
+    CHttpFormData& FormData(void);
+
+    /// Get output stream to write user data. 
+    /// Headers are sent automatically when opening the stream, form data
+    /// is ignored (unless written to the stream explicitly by the user).
+    /// No changes can be made to the request after getting the stream
+    /// until it is completed by calling Execute().
+    /// Throws an exception if the selected request method does not
+    /// support sending data.
+    /// NOTE: This automatically adds cookies to the request headers.
+    CNcbiOstream& ContentStream(void);
+
+    /// Send the request, initialize and return the response, reset the
+    /// request so that it can be modified and re-executed.
+    /// NOTE: This automatically adds cookies to the request headers.
+    CHttpResponse Execute(void);
+
+    /// Get current timeout.
+    const CTimeout& GetTimeout(void) const { return m_Timeout; }
+    /// Set new timeout.
+    void SetTimeout(const CTimeout& timeout) { m_Timeout = timeout; }
+
+    /// Get number of retries.
+    unsigned short GetRetries(void) const { return m_Retries; }
+    /// Set number of retries.
+    void SetRetries(unsigned short retries) { m_Retries = retries; }
 
 private:
     friend class CHttpSession;
 
-    // CConn_HttpStream callback for parsing headers.
-    static EHTTP_HeaderParse s_ParseHeader(const char*, void*, int);
-    // CConn_HttpStream callback for handling retries and redirects.
-    static int s_Adjust(SConnNetInfo* net_info,
-                        void*         user_data,
-                        unsigned int  failure_count);
-
     CHttpRequest(CHttpSession& session, const CUrl& url, EReqMethod method);
 
-    void x_ParseHeader(const char* header);
+    // Open connection, initialize response.
+    void x_InitConnection(bool use_form_data);
+
+    bool x_CanSendData(void) const;
 
     // Find cookies matching the url, add or replace 'Cookie' header with the
     // new values.
     void x_AddCookieHeader(const CUrl& url);
 
+    // CConn_HttpStream callback for parsing headers.
+    // 'user_data' must point to a CHttpRequest object.
+    static EHTTP_HeaderParse s_ParseHeader(const char*, void*, int);
+    // CConn_HttpStream callback for handling retries and redirects.
+    // 'user_data' must point to a CHttpRequest object.
+    static int s_Adjust(SConnNetInfo* net_info,
+                        void*         user_data,
+                        unsigned int  failure_count);
+
     CRef<CHttpSession>  m_Session;
     CUrl                m_Url;
     EReqMethod          m_Method;
-    CHttpHeaders        m_Headers;
-    CHttpResponse       m_Response;
+    CRef<CHttpHeaders>  m_Headers;
     CRef<CHttpFormData> m_FormData;
+    CRef<CHttpStream>   m_Stream;
+    CRef<CHttpResponse> m_Response; // current response or null
+    CTimeout            m_Timeout;
+    unsigned short      m_Retries;
 };
 
 
@@ -321,18 +409,26 @@ class NCBI_XCONNECT_EXPORT CHttpSession : public CObject,
                                           virtual protected CConnIniter
 {
 public:
+    // Supported request methods, proxy for EReqMethod.
+    enum ERequestMethod {
+        eHead = eReqMethod_Head,
+        eGet  = eReqMethod_Get,
+        ePost = eReqMethod_Post
+    };
+
     CHttpSession(void);
     virtual ~CHttpSession(void) {}
 
-    /// The following methods initialize requests but do not open connection
-    /// to the server. A user can set headers/cookies before opening the
-    /// stream and sending the actual request.
+    /// Initialize request. This does not open connection to the server.
+    /// A user can set headers/cookies before opening the stream and
+    /// sending the actual request.
+    /// The default request method is GET.
+    CHttpRequest NewRequest(const CUrl& url, ERequestMethod method = eGet);
 
-    CHttpRequest Head(const CUrl& url);
-    CHttpRequest Get(const CUrl& url);
-    CHttpRequest Post(const CUrl& url);
-    //void Put();
-    //void Delete();
+    /// Get all stored cookies.
+    const CHttpCookies& GetCookies(void) const { return m_Cookies; }
+    /// Get non-const cookies.
+    CHttpCookies& SetCookies(void) { return m_Cookies; }
 
     /// Get flags passed to CConn_HttpStream.
     THTTP_Flags GetHttpFlags(void) const { return m_HttpFlags; }
@@ -340,20 +436,34 @@ public:
     /// fHTTP_AdjustOnRedirect is always added to the flags.
     void SetHttpFlags(THTTP_Flags flags) { m_HttpFlags = flags; }
 
-    /// Get all stored cookies.
-    const CHttpCookies& GetCookies(void) const { return m_Cookies; }
-    /// Non-const version of GetCookies().
-    CHttpCookies& GetCookies(void) { return m_Cookies; }
-
 private:
     friend class CHttpResponse;
 
-    CHttpRequest x_InitRequest(const CUrl& url,
-                               EReqMethod  method);
     void x_SetCookie(const CTempString& cookie, const CUrl* url);
 
     THTTP_Flags  m_HttpFlags;
     CHttpCookies m_Cookies;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CHttpSessionException --
+///
+///   Exceptions used by CHttpSession, CHttpRequest and CHttpResponse
+///   classes.
+
+class NCBI_XCONNECT_EXPORT CHttpSessionException : public CException
+{
+public:
+    enum EErrCode {
+        eBadRequest, ///< Error initializing or sending a request.
+        eOther
+    };
+
+    virtual const char* GetErrCodeString(void) const;
+
+    NCBI_EXCEPTION_DEFAULT(CHttpSessionException, CException);
 };
 
 
@@ -400,27 +510,9 @@ inline void CHttpHeaders::Clear(EName name)
 }
 
 
-inline CHttpRequest CHttpSession::Head(const CUrl& url)
-{
-    return x_InitRequest(url, eReqMethod_Head);
-}
-
-
-inline CHttpRequest CHttpSession::Get(const CUrl& url)
-{
-    return x_InitRequest(url, eReqMethod_Get);
-}
-
-
-inline CHttpRequest CHttpSession::Post(const CUrl& url)
-{
-    return x_InitRequest(url, eReqMethod_Post);
-}
-
-
 inline bool CHttpFormData::Empty(void) const
 {
-    return !m_Entries.empty()  ||  !m_Files.empty();
+    return !m_Entries.empty()  ||  !m_Providers.empty();
 }
 
 
