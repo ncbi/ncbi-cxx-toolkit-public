@@ -80,8 +80,8 @@ public:
         m_FormatterMap[field_name] = CIRef<IFormatter>(field_formatter);
     }
 
-    virtual void WriteHeader();
-    virtual void Format(const objects::CSeq_align& align);
+    void WriteHeader();
+    void Format(const objects::CSeq_align& align);
 
     const TFormatterMap &AvailableFormatters() const
     { return m_FormatterMap; }
