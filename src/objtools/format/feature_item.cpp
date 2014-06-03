@@ -1574,7 +1574,10 @@ void CFeatureItem::x_AddQuals(
           subtype == CSeqFeatData::eSubtype_mobile_element ||
           subtype == CSeqFeatData::eSubtype_centromere ||
           subtype == CSeqFeatData::eSubtype_telomere );
-    if ( type != CSeqFeatData::e_Gene &&
+    const CGene_ref* feat_gene_xref = m_Feat.GetGeneXref();
+    if ( feat_gene_xref && feat_gene_xref->IsSuppressed() ) {
+        // suppress gene by overlap
+    } else if ( type != CSeqFeatData::e_Gene &&
          subtype != CSeqFeatData::eSubtype_operon &&
          subtype != CSeqFeatData::eSubtype_gap && 
          (  ! gene_forbidden_if_genbank || is_not_genbank ) )
@@ -1597,7 +1600,6 @@ void CFeatureItem::x_AddQuals(
         // We include a gene_ref on the genbank-forbidden features if there's
         // an explicit xref and the referenced gene does not exist
         // e.g. NC_014095.1
-        const CGene_ref* feat_gene_xref = m_Feat.GetGeneXref();
         if( feat_gene_xref && ! CGeneFinder::ResolveGeneXref(feat_gene_xref, ctx.GetTopLevelEntry()) ) {
             gene_ref = feat_gene_xref;
         }
