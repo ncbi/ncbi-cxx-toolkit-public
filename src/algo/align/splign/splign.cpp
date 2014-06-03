@@ -621,7 +621,8 @@ void CSplign::x_LoadSequence(vector<char>* seq,
                 if(genomic_strand) strand = eNa_strand_plus;
                 CRef<CSeq_id> tmp_id(new CSeq_id());
                 tmp_id->Assign(seqid);
-                m_GenomicSeqMap = CSeqMap::CreateSeqMapForSeq_loc(CSeq_loc(*tmp_id, start, finish, strand), GetScope());
+                CSeq_loc tmp_loc(*tmp_id, start, finish, strand);
+                m_GenomicSeqMap = CSeqMap::CreateSeqMapForSeq_loc(tmp_loc, GetScope());
             }
             seq->resize(1 + finish - start);
             copy(s.begin(), s.end(), seq->begin());
