@@ -46,10 +46,10 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 
-#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
-#include <objtools/discrepancy_report/hDiscRep_output.hpp>
-#include <objtools/discrepancy_report/hDiscRep_config.hpp>
-#include <objtools/discrepancy_report/hUtilib.hpp>
+#include <misc/discrepancy_report/hDiscRep_tests.hpp>
+#include <misc/discrepancy_report/hDiscRep_output.hpp>
+#include <misc/discrepancy_report/hDiscRep_config.hpp>
+#include <misc/discrepancy_report/hUtilib.hpp>
 
 #include <objects/submit/Contact_info.hpp>
 #include <objects/biblio/Author.hpp>
