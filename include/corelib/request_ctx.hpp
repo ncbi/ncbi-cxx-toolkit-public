@@ -122,7 +122,7 @@ public:
     const string& SetHitID(void);
     /// Get current hit id appended with auto-incremented sub-hit id.
     /// If hit id is not set, return empty string.
-    string GetNextSubHitID(void);
+    const string& GetNextSubHitID(void);
 
     /// Request exit startus
     int  GetRequestStatus(void) const;
@@ -278,6 +278,7 @@ private:
     bool           m_AutoIncOnPost;
     TContextFlags  m_Flags;
     mutable auto_ptr<string> m_DefaultHitID; // HTTP_NCBI_PHID
+    string         m_SubHitIDCache;
 };
 
 
@@ -414,10 +415,12 @@ void CRequestContext::UnsetHitID(void)
 
 
 inline
-string CRequestContext::GetNextSubHitID(void)
+const string& CRequestContext::GetNextSubHitID(void)
 {
     if ( !IsSetHitID() ) return kEmptyStr;
-    return GetHitID() + "." + NStr::NumericToString(++m_SubHitID);
+    // Cache the string so that C code can use it.
+    m_SubHitIDCache = GetHitID() + "." + NStr::NumericToString(++m_SubHitID);
+    return m_SubHitIDCache;
 }
 
 
