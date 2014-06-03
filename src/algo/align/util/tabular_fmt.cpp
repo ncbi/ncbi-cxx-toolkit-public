@@ -1650,8 +1650,8 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
 
     IFormatter *sallseqid =
         new CTabularFormatter_AllSeqIds(1);
-    formatter.RegisterField("sallseqid", qallseqid);
-    formatter.RegisterField("sallacc", qallseqid);
+    formatter.RegisterField("sallseqid", sallseqid);
+    formatter.RegisterField("sallacc", sallseqid);
 
     formatter.RegisterField("sgi",
         new CTabularFormatter_SeqId(1, sequence::eGetId_ForceGi));
