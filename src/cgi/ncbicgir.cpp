@@ -404,6 +404,8 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         self->m_Cookies.Add(*m_TrackingCookie);
         self->SetHeaderValue(TCGI_TrackingTagName::GetDefault(),
             m_TrackingCookie->GetValue());
+        self->SetHeaderValue("NCBI-PHID",
+            GetDiagContext().GetRequestContext().GetHitID());
         // Prevent storing the page in public caches.
         string cc = GetHeaderValue(sm_CacheControl);
         if ( cc.empty() ) {
