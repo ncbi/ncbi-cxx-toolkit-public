@@ -165,6 +165,58 @@ void s_CheckLocationPolicyResults(const CSeq_feat& cds, bool partial5, bool part
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SeqLocPrintUseBestID)
+{
+  CRef <CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+  CRef <CSeq_entry> 
+     prot_entry = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+
+  // add seq_ids
+  CRef <CSeq_id> sid (new CSeq_id);
+  sid->SetGeneral().SetDb("BankIt");
+  sid->SetGeneral().SetTag().SetStr("1572628/Seq1");
+  prot_entry->SetSeq().SetId().push_back(sid);
+  sid.Reset(new CSeq_id);
+  sid->SetGeneral().SetDb("TMSMART");
+  sid->SetGeneral().SetTag().SetId(33590036);
+  prot_entry->SetSeq().SetId().push_back(sid);
+  sid.Reset(new CSeq_id);
+  sid->SetGenbank().SetAccession("JX983656");
+  prot_entry->SetSeq().SetId().push_back(sid);
+
+  // make new feat with new type of seq_loc
+  unit_test_util :: AddProtFeat(prot_entry);
+  CRef <CSeq_feat> new_feat = prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back();
+  CRef <CSeq_loc> new_seq_loc = unit_test_util::MakeMixLoc(sid);
+  new_feat->SetLocation(*new_seq_loc);
+
+  // imp feat with a CSeq_pnt seq_loc
+  unit_test_util :: AddGoodImpFeat(prot_entry, "fake imp");
+  new_feat.Reset(prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back());
+  new_seq_loc.Reset(new CSeq_loc);
+  CRef <CSeq_point> pnt (new CSeq_point);
+  pnt->SetPoint(102);
+  pnt->SetStrand(eNa_strand_minus);
+  pnt->SetId().SetLocal().SetStr("prot");
+  new_seq_loc->SetPnt(*pnt);
+  new_feat->SetLocation(*new_seq_loc);
+  
+  CRef <CScope> scope(new CScope(*CObjectManager::GetInstance()));
+  CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+  NON_CONST_ITERATE (list <CRef <CSeq_feat> >, it, prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable()) {
+  CSeq_loc& seq_loc = (*it)->SetLocation();
+  if (seq_loc.IsInt()) {
+      seq_loc.SetInt().SetStrand(eNa_strand_minus);
+  }
+  string strtmp = edit::SeqLocPrintUseBestID(seq_loc, *scope);
+  NCBITEST_CHECK_MESSAGE(!strtmp.empty(), "No seq-loc string printed out");
+}
+
+// cout << MSerial_AsnText << *entry << endl;
+  
+};
+
 BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
