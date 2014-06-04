@@ -135,6 +135,7 @@ string CString_constraint :: x_SkipWeasel(const string& str) const
       ret_str = NStr::Join(arr, " "); 
       ret_str = CTempString(ret_str).substr(0, ret_str.size()-1); 
   }
+  else ret_str = str;
 
   return ret_str;
 };
