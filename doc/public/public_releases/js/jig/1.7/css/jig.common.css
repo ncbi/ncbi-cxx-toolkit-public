@@ -1,0 +1,24 @@
+
+/* 
+   Common jig css
+   this gets concatenated into ui.widgets.css, though it can be used separately if you are
+   using jig widgets apart from jig.
+ */
+ 
+ .ui-widget {
+    font-family: arial, "sans-serif" !important; /* per NCBI standards */
+    /* font-size: 1.2em !important;  body at 62.5% per NCBI standards */ 
+ }
+ 
+
+iframe.ui-ncbi-iframe-fix {
+    position: absolute;
+    top:0px;
+    left:0px;       
+    height: 200px;
+    z-index:3000; 
+    display: block;
+    filter:alpha(opacity=1);
+}
+
+
