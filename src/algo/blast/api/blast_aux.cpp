@@ -655,7 +655,7 @@ void CAutomaticGenCodeSingleton::AddGeneticCode(int genetic_code)
 
 void ThrowIfInvalidTask(const string& task)
 {
-    static set<string> valid_tasks;
+    set<string> valid_tasks;
     if (valid_tasks.empty()) {
         valid_tasks = CBlastOptionsFactory::GetTasks();
     }
