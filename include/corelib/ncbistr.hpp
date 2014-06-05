@@ -3570,7 +3570,7 @@ public:
     void SetEncoder(IStringEncoder* encoder, EOwnership own = eTakeOwnership)
         { m_Encoder.reset(encoder, own); }
     /// Get encoder or NULL. Does not affect encoder ownership.
-    IStringDecoder* GetEncoder(void) { return m_Encoder.get(); }
+    IStringEncoder* GetEncoder(void) { return m_Encoder.get(); }
 
     /// Parse the string.
     ///
