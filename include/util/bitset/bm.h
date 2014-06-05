@@ -1485,15 +1485,15 @@ private:
 
 
     void combine_operation_with_block(unsigned nb,
-                                      unsigned gap,
+                                      bool gap,
                                       bm::word_t* blk,
                                       const bm::word_t* arg_blk,
-                                      int arg_gap,
+                                      bool arg_gap,
                                       bm::operation opcode);
 public:
     void combine_operation_with_block(unsigned nb,
                                       const bm::word_t* arg_blk,
-                                      int arg_gap,
+                                      bool arg_gap,
                                       bm::operation opcode)
     {
         bm::word_t* blk = const_cast<bm::word_t*>(get_block(nb));
@@ -1501,6 +1501,7 @@ public:
         combine_operation_with_block(nb, gap, blk, arg_blk, arg_gap, opcode);
     }
 private:
+#if 0 // unused, needs non-existent 6-arg variant
     void combine_count_operation_with_block(unsigned nb,
                                             const bm::word_t* arg_blk,
                                             int arg_gap,
@@ -1510,6 +1511,7 @@ private:
         bool gap = BM_IS_GAP(blk);
         combine_count_operation_with_block(nb, gap, blk, arg_blk, arg_gap, opcode);
     }
+#endif
 
 
     /**
@@ -2636,10 +2638,10 @@ void bvector<Alloc>::combine_operation(
 template<class Alloc> 
 void 
 bvector<Alloc>::combine_operation_with_block(unsigned          nb,
-                                             unsigned          gap,
+                                             bool              gap,
                                              bm::word_t*       blk,
                                              const bm::word_t* arg_blk,
-                                             int               arg_gap,
+                                             bool              arg_gap,
                                              bm::operation     opcode)
 {
     gap_word_t tmp_buf[bm::gap_equiv_len * 3]; // temporary result            
