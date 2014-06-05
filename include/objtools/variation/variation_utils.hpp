@@ -80,7 +80,9 @@ class CVariationNormalization_base : public CVariationNormalization_base_cache
 {
 public:
     static void x_Shift(CVariation& var, CScope &scope);
-    static void x_Shift(CSeq_annot& var, CScope &scope);
+	static void x_Shift(CSeq_annot& annot, CScope &scope);
+	static void x_Shift(CSeq_feat& feat, CScope &scope);
+
     static void x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right, 
                                   CSeqVector &seqvec, int &rtype);    
     static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type) {return T::x_ProcessShift(a,pos_left,pos_right,seqvec,type);}
@@ -154,7 +156,8 @@ public:
     //For a deletion, this is either a point or interval, depending on the size of the deletion.
     // and precisely why we are breaking up alleles into separate HGVS expressions
     static void AlterToHGVSVar(CVariation& var, CScope& scope);
-    static void AlterToHGVSVar(CSeq_annot& var, CScope& scope);
+    static void AlterToHGVSVar(CSeq_annot& annot, CScope& scope);
+	static void AlterToHGVSVar(CSeq_feat& feat, CScope& scope);
  
     //VCF business logic
     static void AlterToVCFVar(CVariation& var, CScope& scope);

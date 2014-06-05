@@ -607,90 +607,92 @@ void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, C
 template<class T>
 void CVariationNormalization_base<T>::x_Shift(CSeq_annot& annot, CScope &scope)
 {
-    if (!annot.IsSetData() || !annot.GetData().IsFtable())
-        NCBI_THROW(CException, eUnknown, "Ftable is not set in input Seq-annot");
+	if (!annot.IsSetData() || !annot.GetData().IsFtable())
+		NCBI_THROW(CException, eUnknown, "Ftable is not set in input Seq-annot");
 
-    CSeq_annot::TData::TFtable ftable = annot.SetData().SetFtable();
-    for (CSeq_annot::TData::TFtable::iterator ifeat = ftable.begin(); ifeat != ftable.end(); ++ifeat)
-    {
-        CSeq_feat &feat = **ifeat;
-        LOG_POST(Trace << "This Feat: " << MSerial_AsnText << feat << Endm);
-        if (!feat.IsSetLocation()           || 
-            !feat.IsSetData()               || 
-            !feat.GetData().IsVariation()   || 
-            !feat.GetData().GetVariation().IsSetData()) continue;
-        
-        const CSeq_id &seq_id = *feat.GetLocation().GetId();
-        int pos_left = feat.GetLocation().GetStart(eExtreme_Positional);
-        int pos_right = feat.GetLocation().GetStop(eExtreme_Positional);
-        int new_pos_left = -1;
-        int new_pos_right = -1;
-        bool is_deletion = false;
-        string ref;
-        CSeq_literal *refref = NULL;
-        int type;
-        ENa_strand strand = eNa_strand_unknown;
-        if (feat.GetLocation().IsSetStrand())
-            strand = feat.GetLocation().GetStrand();
+	CSeq_annot::TData::TFtable ftable = annot.SetData().SetFtable();
+	for (CSeq_annot::TData::TFtable::iterator ifeat = ftable.begin(); ifeat != ftable.end(); ++ifeat)
+		x_Shift(**ifeat, scope);
+}
 
-        CRef<CSeqVector> seqvec ;
-        try {
-            seqvec = x_PrefetchSequence(scope,seq_id,strand);
-            ERR_POST(Trace << "Prefetch success for : " << seq_id.AsFastaString());
-        } catch(CException& e) {
-            ERR_POST(Error << "Prefetch failed for " << seq_id.AsFastaString() );
-            ERR_POST(Error << e.ReportAll());
-            continue;
-        }
+template<class T>
+void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
+{
+	LOG_POST(Trace << "This Feat: " << MSerial_AsnText << feat << Endm);
+	if (!feat.IsSetLocation()           || 
+		!feat.IsSetData()               || 
+		!feat.GetData().IsVariation()   || 
+		!feat.GetData().GetVariation().IsSetData()) return;
 
-        //CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
+	const CSeq_id &seq_id = *feat.GetLocation().GetId();
+	int pos_left = feat.GetLocation().GetStart(eExtreme_Positional);
+	int pos_right = feat.GetLocation().GetStop(eExtreme_Positional);
+	int new_pos_left = -1;
+	int new_pos_right = -1;
+	bool is_deletion = false;
+	string ref;
+	CSeq_literal *refref = NULL;
+	int type;
+	ENa_strand strand = eNa_strand_unknown;
+	if (feat.GetLocation().IsSetStrand())
+		strand = feat.GetLocation().GetStrand();
 
-        CVariation_ref& vr = feat.SetData().SetVariation();
-  
-        try {
-        switch(vr.GetData().Which())
-        {
-            case  CVariation_Base::C_Data::e_Instance : x_ProcessInstance(vr.SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right, *seqvec,type); break;
-            case  CVariation_Base::C_Data::e_Set : 
-                for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
-                {
-                    if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
-                        x_ProcessInstance((*inst)->SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,*seqvec,type);
-                }
-                break;
-            default: break;            
-        }
-        } catch(CException &e) {
-            ERR_POST(Error << "Exception while shifting: " << e.ReportAll() << ".  Continuing on" << Endm);
-            //Ideally this would make it into the service msg'ing system.
-            continue;
-        }
-        if (!ref.empty() && is_deletion)
-        {
-            int pos = pos_right - ref.size() + 1;
-            const bool found = x_ProcessShift(ref, pos_left,pos,*seqvec,type);
-            pos_right = pos + ref.size()-1; 
-            if (found)
-            {
-                if (new_pos_left == -1)
-                    new_pos_left = pos_left;
-                else if (new_pos_left != pos_left)
-                {
-                    ERR_POST(Error <<   "Left position is ambiguous due to different leaf alleles" << Endm);
-                    continue;
-                }
-                if (new_pos_right == -1)
-                    new_pos_right = pos_right;
-                else if (new_pos_right != pos_right)
-                {
-                    ERR_POST(Error <<   "Right position is ambiguous due to different leaf alleles" << Endm);
-                    continue;
-                }
-                x_ModifyLocation(feat.SetLocation(),*refref,ref,pos_left,pos_right,type);
-            }
-        }
-            
-    }
+	CRef<CSeqVector> seqvec ;
+	try {
+		seqvec = x_PrefetchSequence(scope,seq_id,strand);
+		ERR_POST(Trace << "Prefetch success for : " << seq_id.AsFastaString());
+	} catch(CException& e) {
+		ERR_POST(Error << "Prefetch failed for " << seq_id.AsFastaString() );
+		ERR_POST(Error << e.ReportAll());
+		return;
+	}
+
+	//CRef<CSeqVector> seqvec = x_PrefetchSequence(scope,seq_id,strand);
+
+	CVariation_ref& vr = feat.SetData().SetVariation();
+
+	try {
+		switch(vr.GetData().Which())
+		{
+		case  CVariation_Base::C_Data::e_Instance : x_ProcessInstance(vr.SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right, *seqvec,type); break;
+		case  CVariation_Base::C_Data::e_Set : 
+			for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
+			{
+				if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
+					x_ProcessInstance((*inst)->SetData().SetInstance(),feat.SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right,*seqvec,type);
+			}
+			break;
+		default: break;            
+		}
+	} catch(CException &e) {
+		ERR_POST(Error << "Exception while shifting: " << e.ReportAll() << ".  Continuing on" << Endm);
+		//Ideally this would make it into the service msg'ing system.
+		return;
+	}
+	if (!ref.empty() && is_deletion)
+	{
+		int pos = pos_right - ref.size() + 1;
+		const bool found = x_ProcessShift(ref, pos_left,pos,*seqvec,type);
+		pos_right = pos + ref.size()-1; 
+		if (found)
+		{
+			if (new_pos_left == -1)
+				new_pos_left = pos_left;
+			else if (new_pos_left != pos_left)
+			{
+				ERR_POST(Error <<   "Left position is ambiguous due to different leaf alleles" << Endm);
+				return;
+			}
+			if (new_pos_right == -1)
+				new_pos_right = pos_right;
+			else if (new_pos_right != pos_right)
+			{
+				ERR_POST(Error <<   "Right position is ambiguous due to different leaf alleles" << Endm);
+				return;
+			}
+			x_ModifyLocation(feat.SetLocation(),*refref,ref,pos_left,pos_right,type);
+		}
+	}
 }
 
 template<class T>
@@ -1016,9 +1018,14 @@ void CVariationNormalization::AlterToHGVSVar(CVariation& var, CScope& scope)
     CVariationNormalizationRight::x_Shift(var,scope);
 }
 
-void CVariationNormalization::AlterToHGVSVar(CSeq_annot& var, CScope& scope)
+void CVariationNormalization::AlterToHGVSVar(CSeq_annot& annot, CScope& scope)
 {
-    CVariationNormalizationRight::x_Shift(var,scope);
+	CVariationNormalizationRight::x_Shift(annot,scope);
+}
+
+void CVariationNormalization::AlterToHGVSVar(CSeq_feat& feat, CScope& scope)
+{
+    CVariationNormalizationRight::x_Shift(feat,scope);
 }
 
 void CVariationNormalization::NormalizeAmbiguousVars(CVariation& var, CScope &scope)
