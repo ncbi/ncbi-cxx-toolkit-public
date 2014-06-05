@@ -8574,7 +8574,6 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
    string qual_vlu;
 
    const vector <string>* vstr_p;
-   qual_nm;
    string strtmp;
    ITERATE (Str2Strs, jt, qvlu2src) {
       qual_vlu = jt->first; 
@@ -13125,6 +13124,47 @@ void CBioseq_TEST_TERMINAL_NS :: GetReport(CRef <CClickableItem> c_item)
                          + "terminal Ns";
 };
 
+
+static string sid_phrases[] = {
+   "paired",
+   "trimmed",
+   "length",
+   "node",
+   "cov_",
+};
+
+bool CBioseq_SEQ_ID_PHRASES :: x_HasPhrase(const string& sid)
+{
+   for (unsigned i=0; i< ArraySize(sid_phrases); i++) {
+     if (NStr::FindNoCase(sid, sid_phrases[i]) != string::npos) {
+       return true;
+     }
+   }
+   return false;
+};
+
+void CBioseq_SEQ_ID_PHRASES :: TestOnObj(const CBioseq& bioseq)
+{
+  if (thisInfo.test_item_list.find(GetName()) 
+                       != thisInfo.test_item_list.end()){
+    return;
+  }
+
+  string strtmp;
+  ITERATE (list <CRef <CSeq_id> >, it, bioseq.GetId()) {
+     string strtmp = (*it)->AsFastaString();
+     if (x_HasPhrase((*it)->AsFastaString())) {
+        thisInfo.test_item_list[GetName()].push_back("Sequence Ids contain unacceptable phrases (cov_, length, node, paired, or trimmed)");
+        return;
+     }
+  }
+};
+
+void CBioseq_SEQ_ID_PHRASES :: GetReport(CRef <CClickableItem> c_item)
+{
+  c_item->description = thisInfo.test_item_list[GetName()][0]; 
+  c_item->item_list.clear();
+};
 
 void CBioseq_DISC_MISSING_DEFLINES :: TestOnObj(const CBioseq& bioseq) 
 {

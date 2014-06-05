@@ -1469,6 +1469,8 @@ static const s_test_property test_list[] = {
      fOncaller | fMegaReport, "Records should have identical submit-blocks"},
 
 // tests_on_Bioseq
+   {"SEQ_ID_PHRASES", fGenomes | fDiscrepancy | fAsndisc | fMegaReport, 
+     "Special phrases of seq ids"},
    {"DISC_MISSING_DEFLINES", 
      fOncaller | fMegaReport, "Missing definition lines"},
    {"DISC_QUALITY_SCORES", 
@@ -2090,6 +2092,11 @@ void CRepConfig :: GetTestList()
    if (thisTest.tests_run.find("DISC_SUBMITBLOCK_CONFLICT") != end_it) {
         thisGrp.tests_on_SubmitBlk.push_back(
             CRef <CTestAndRepData>(new CSeqEntry_DISC_SUBMITBLOCK_CONFLICT));
+        if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("SEQ_ID_PHRASES") != end_it) {
+       thisGrp.tests_on_Bioseq.push_back(
+           CRef <CTestAndRepData>(new CBioseq_SEQ_ID_PHRASES));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_MISSING_DEFLINES") != end_it) {
