@@ -64,14 +64,14 @@ void s_MakeLittleEndian(TStringUCS2& s)
 template<>
 CGenericSqlString<char>::operator const char*(void) const
 {
-    return c_str();
+    return this->c_str();
 }
 
 #ifdef HAVE_WSTRING
 template<>
 CGenericSqlString<wchar_t>::operator const wchar_t*(void) const
 {
-    return c_str();
+    return this->c_str();
 }
 #endif
 
