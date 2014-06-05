@@ -86,22 +86,23 @@ CDelta_seq& CDelta_ext::AddLiteral(TSeqPos len)
 
 /// add a literal segment at the end
 /// this variant adds a non-gap literal
-CDelta_seq& CDelta_ext::AddLiteral(const string& iupac_seq,
-                                   CSeq_inst::EMol mol)
+CDelta_seq& CDelta_ext::AddLiteral(const CTempString& iupac_seq,
+                                   CSeq_inst::EMol mol, bool do_pack)
 {
     CRef<CDelta_seq> seg(new CDelta_seq());
     seg->SetLiteral().SetLength(iupac_seq.size());
 
     switch (mol) {
     case CSeq_inst::eMol_aa:
-        seg->SetLiteral().SetSeq_data().SetIupacaa().Set() = iupac_seq;
+        seg->SetLiteral().SetSeq_data().SetIupacaa().Set().assign(iupac_seq.data(), iupac_seq.length());
         break;
 
     case CSeq_inst::eMol_na:
     case CSeq_inst::eMol_dna:
     case CSeq_inst::eMol_rna:
-        seg->SetLiteral().SetSeq_data().SetIupacna().Set() = iupac_seq;
-        CSeqportUtil::Pack(&seg->SetLiteral().SetSeq_data());
+        seg->SetLiteral().SetSeq_data().SetIupacna().Set().assign(iupac_seq.data(), iupac_seq.length());
+        if (do_pack)
+            CSeqportUtil::Pack(&seg->SetLiteral().SetSeq_data());
         break;
 
     default:
@@ -179,11 +180,13 @@ char* CDelta_ext_PackTarget::NewSegment(CSeqUtil::TCoding coding,
 }
 
 
-void CDelta_ext::AddAndSplit(const CTempString& src, CSeq_data::E_Choice format,
-                             TSeqPos length /* in residues */, bool gaps_ok)
+void CDelta_ext::AddAndSplit(const CTempString& src, CSeq_data::E_Choice in_format,
+                             TSeqPos length /* in residues */, 
+                             bool gaps_ok, bool allow_packing)
 {
-    CSeqUtil::TCoding coding;
-    switch (format) {
+    CSeqUtil::TCoding coding = CSeqUtil::e_not_set;
+
+    switch (in_format) {
     case CSeq_data::e_Iupacna:    coding = CSeqUtil::e_Iupacna;     break;
     case CSeq_data::e_Iupacaa:    coding = CSeqUtil::e_Iupacaa;     break;
     case CSeq_data::e_Ncbi4na:    coding = CSeqUtil::e_Ncbi4na;     break;
@@ -192,20 +195,24 @@ void CDelta_ext::AddAndSplit(const CTempString& src, CSeq_data::E_Choice format,
     case CSeq_data::e_Ncbieaa:    coding = CSeqUtil::e_Ncbieaa;     break;
     case CSeq_data::e_Ncbistdaa:  coding = CSeqUtil::e_Ncbistdaa;   break;
     default:
+        coding = CSeqUtil::e_not_set;
+    }
+
+    if (allow_packing)
+    {
+        CDelta_ext_PackTarget dst(*this, gaps_ok);
+        CSeqConvert::Pack(src.data(), length, coding, dst);
+    }
+    else
     {
         // add as a single piece
-        CRef<CSeq_data>  data (new CSeq_data(src, format));
+        CRef<CSeq_data>  data (new CSeq_data(src, in_format));
         CRef<CDelta_seq> ds   (new CDelta_seq);
         CSeq_literal&    lit = ds->SetLiteral();
         lit.SetLength(length);
         lit.SetSeq_data(*data);
         Set().push_back(ds);
-        return;
     }
-    }
-
-    CDelta_ext_PackTarget dst(*this, gaps_ok);
-    CSeqConvert::Pack(src.data(), length, coding, dst);
 }
 
 /// add a segment that refers to another segment

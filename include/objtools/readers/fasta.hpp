@@ -46,7 +46,8 @@
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
-// #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Seq_data.hpp>
+
 #include <stack>
 #include <sstream>
 
@@ -58,7 +59,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeq_data;
 class CSeq_entry;
 class CSeq_loc;
 
@@ -218,6 +218,7 @@ public:
        TSeqPos gapNmin, TSeqPos gap_Unknown_length);
 
     void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
+    void IgnoreProblem(ILineError::EProblem problem);
 
 protected:
     enum EInternalFlags {
@@ -257,6 +258,11 @@ protected:
         const TStr& sLineText, 
         TSeqPos iLineNum,
         IMessageListener * pMessageListener);
+    virtual void   PostWarning(IMessageListener * pMessageListener,
+            EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, 
+            CObjReaderParseException::EErrCode _eErrCode, 
+            ILineError::EProblem _eProblem, 
+            CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
@@ -378,6 +384,7 @@ private:
     Uint4                   m_MaxIDLength;
     vector<SLineTextAndLoc> m_CurrentSeqTitles;
     CRef<CSourceModParser::CModFilter> m_pModFilter;
+    std::vector<ILineError::EProblem> m_ignorable;
 };
 
 

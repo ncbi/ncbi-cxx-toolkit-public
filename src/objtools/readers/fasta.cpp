@@ -85,27 +85,9 @@
 
 #define FASTA_LINE_EXPT(_eSeverity, _uLineNum, _MessageStrmOps,  _eErrCode, _eProblem, _sFeature, _sQualName, _sQualValue) \
     do {                                                                \
-        const string sSeqId_49518053 = ( m_BestID ?                     \
-                                         m_BestID->AsFastaString() :    \
-                                         kEmptyStr  );                  \
-        const size_t uLineNum_49518053 = (_uLineNum);                   \
         stringstream err_strm_49518053;                                 \
         err_strm_49518053 << _MessageStrmOps;                           \
-        AutoPtr<CObjReaderLineException> pLineExpt(                        \
-            CObjReaderLineException::Create(                            \
-                (_eSeverity), uLineNum_49518053,                        \
-                err_strm_49518053.str(),                                \
-                (_eProblem),                                            \
-                sSeqId_49518053, (_sFeature),                           \
-                (_sQualName), (_sQualValue),                            \
-                CObjReaderParseException::_eErrCode) );                 \
-        if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {    \
-            ERR_POST_X(1, "FASTA-Reader: Warning: " + pLineExpt->Message()); \
-        } else if ( ! pMessageListener || ! pMessageListener->PutError( *pLineExpt ) ) \
-        {                                                               \
-            NCBI_THROW2(CObjReaderParseException, _eErrCode,            \
-                        err_strm_49518053.str(), uLineNum_49518053 );   \
-        }                                                               \
+        PostWarning(pMessageListener, (_eSeverity), (_uLineNum), (err_strm_49518053.str()),  (_eErrCode), (_eProblem), (_sFeature), (_sQualName), (_sQualValue)); \
     } while(0)
 
 #define FASTA_PROGRESS(_MessageStrmOps)                                 \
@@ -119,10 +101,10 @@
 
 
 #define FASTA_WARNING(_uLineNum, _MessageStrmOps, _eProblem, _Feature) \
-    FASTA_LINE_EXPT(eDiag_Warning, _uLineNum, _MessageStrmOps, eFormat, _eProblem, _Feature, kEmptyStr, kEmptyStr)
+    FASTA_LINE_EXPT(eDiag_Warning, _uLineNum, _MessageStrmOps, CObjReaderParseException::eFormat, _eProblem, _Feature, kEmptyStr, kEmptyStr)
 
 #define FASTA_WARNING_EX(_uLineNum, _MessageStrmOps, _eProblem, _Feature, _sQualName, _sQualValue) \
-    FASTA_LINE_EXPT(eDiag_Warning, _uLineNum, _MessageStrmOps, eFormat, _eProblem, _Feature, _sQualName, _sQualValue)
+    FASTA_LINE_EXPT(eDiag_Warning, _uLineNum, _MessageStrmOps, CObjReaderParseException::eFormat, _eProblem, _Feature, _sQualName, _sQualValue)
 
 #define FASTA_ERROR(_uLineNum, _MessageStrmOps, _eErrCode) \
     FASTA_LINE_EXPT(eDiag_Error, _uLineNum, _MessageStrmOps, _eErrCode, ILineError::eProblem_GeneralParsingError, kEmptyStr, kEmptyStr, kEmptyStr)
@@ -361,7 +343,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
         if (GetLineReader().AtEOF()) {
             FASTA_ERROR(LineNumber(), 
                         "CFastaReader: Unexpected end-of-file around line " << LineNumber(),
-                        eEOF );
+                        CObjReaderParseException::eEOF );
             break;
         }
         if (c == '>' ) {
@@ -387,7 +369,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
             if (need_defline) {
                 FASTA_ERROR(LineNumber(), 
                     "CFastaReader: Reached unexpected end of segmented set around line " << LineNumber(),
-                    eEOF );
+                    CObjReaderParseException::eEOF );
             }
             break;
         }
@@ -438,7 +420,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
     if (need_defline  &&  GetLineReader().AtEOF()) {
         FASTA_ERROR(LineNumber(),
             "CFastaReader: Expected defline around line " << LineNumber(),
-            eEOF);
+            CObjReaderParseException::eEOF);
     }
 
     AssembleSeq(pMessageListener);
@@ -669,7 +651,7 @@ void CFastaReader::ParseDefLine(const TStr& s, IMessageListener * pMessageListen
         if (TestFlag(fRequireID)) {
             FASTA_ERROR(LineNumber(),
                         "CFastaReader: Defline lacks a proper ID around line " << LineNumber(),
-                        eNoIDs );
+                        CObjReaderParseException::eNoIDs );
         }
         GenerateID();
     } else if ( !TestFlag(fForceType) ) {
@@ -736,7 +718,7 @@ void CFastaReader::ParseDefLine(const TStr& s, IMessageListener * pMessageListen
                 FASTA_ERROR(LineNumber(),
                     "CFastaReader: Seq-id " << h.AsString()
                     << " is a duplicate around line " << LineNumber(),
-                    eDuplicateID );
+                    CObjReaderParseException::eDuplicateID );
             }
         }
     }
@@ -818,7 +800,7 @@ bool CFastaReader::ParseIDs(
             << ", the sequence ID is too long.  Its length is " << s.length()
             << " but the max length allowed is " << m_MaxIDLength 
             << ".  Please find and correct all sequence IDs that are too long.",
-            eIDTooLong);
+            CObjReaderParseException::eIDTooLong);
     }
     return count > 0;
 }
@@ -947,7 +929,7 @@ void CFastaReader::CheckDataLine(
             "CFastaReader: Near line " << LineNumber()
             << ", there's a line that doesn't look like plausible data, "
             "but it's not marked as defline or comment.",
-            eFormat);
+            CObjReaderParseException::eFormat);
     }
     // warn if more than a certain percentage is ambiguous nucleotides
     const static size_t kWarnPercentAmbiguous = 40; // e.g. "40" means "40%"
@@ -1413,6 +1395,7 @@ void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
               CSeq_data::e_Iupacaa : 
               CSeq_data::e_Ncbieaa ) :
             CSeq_data::e_Iupacna);
+
     if (TestFlag(fValidate)) {
         CSeq_data tmp_data(m_SeqData, format);
         vector<TSeqPos> badIndexes;
@@ -1465,9 +1448,9 @@ void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
         m_CurrentGapChar = '\0';
     }
 
-    if (m_Gaps.empty()) {
+    if (m_Gaps.empty() && m_SeqData.empty()) {
+
         _ASSERT(m_TotalGapLength == 0);
-        if (m_SeqData.empty()) {
             inst.SetLength(0);
             inst.SetRepr(CSeq_inst::eRepr_virtual);
             // empty sequence triggers warning if seq data was expected
@@ -1475,46 +1458,31 @@ void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
                 ! TestFlag(fNoSeqData) ) {
                 FASTA_ERROR(LineNumber(),
                     "FASTA-Reader: No residues given",
-                    eNoResidues);
+                    CObjReaderParseException::eNoResidues);
             }
-        } else if (TestFlag(fNoSplit)) {
-            inst.SetLength(GetCurrentPos(eRawPos));
-            inst.SetRepr(CSeq_inst::eRepr_raw);
-            CRef<CSeq_data> data(new CSeq_data(m_SeqData, format));
-            if ( !TestFlag(fLeaveAsText) ) {
-                CSeqportUtil::Pack(data, inst.GetLength());
-            }
-            inst.SetSeq_data(*data);
-        } else {
-            inst.SetLength(GetCurrentPos(eRawPos));
-            CDelta_ext& delta_ext = inst.SetExt().SetDelta();
-            delta_ext.AddAndSplit(m_SeqData, format, inst.GetLength(),
-                                  TestFlag(fLetterGaps));
-            if (delta_ext.Get().size() > 1) {
-                inst.SetRepr(CSeq_inst::eRepr_delta);
-            } else { // simplify -- just one piece
-                inst.SetRepr(CSeq_inst::eRepr_raw);
-                inst.SetSeq_data(delta_ext.Set().front()
-                                 ->SetLiteral().SetSeq_data());
-                inst.ResetExt();
-            }
+    }
+    else 
+    if (m_Gaps.empty() && TestFlag(fNoSplit)) {
+        inst.SetLength(GetCurrentPos(eRawPos));
+        inst.SetRepr(CSeq_inst::eRepr_raw);
+        CRef<CSeq_data> data(new CSeq_data(m_SeqData, format));
+        if ( !TestFlag(fLeaveAsText) ) {
+            CSeqportUtil::Pack(data, inst.GetLength());
         }
+        inst.SetSeq_data(*data);
     } else {
         CDelta_ext& delta_ext = inst.SetExt().SetDelta();
         inst.SetRepr(CSeq_inst::eRepr_delta);
         inst.SetLength(GetCurrentPos(ePosWithGaps));
         SIZE_TYPE n = m_Gaps.size();
-        for (SIZE_TYPE i = 0;  i < n;  ++i) {
 
-            if (i == 0  &&  m_Gaps[i]->m_uPos > 0) {
-                TStr chunk(m_SeqData, 0, m_Gaps[i]->m_uPos);
-                if (TestFlag(fNoSplit)) {
-                    delta_ext.AddLiteral(chunk, inst.GetMol());
-                } else {
-                    delta_ext.AddAndSplit(chunk, format, m_Gaps[i]->m_uPos,
-                                          TestFlag(fLetterGaps));
-                }
-            }
+        if (n==0 || m_Gaps[0]->m_uPos > 0)
+        {
+            TStr chunk(m_SeqData, 0, (n>0 && m_Gaps[0]->m_uPos > 0)?m_Gaps[0]->m_uPos : inst.GetLength());
+            delta_ext.AddAndSplit(chunk, format, chunk.length(), false, !TestFlag(fLeaveAsText));
+        }
+
+        for (SIZE_TYPE i = 0;  i < n;  ++i) {
 
             // add delta-seq
             CRef<CDelta_seq> gap_ds(new CDelta_seq);
@@ -1557,14 +1525,17 @@ void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
             if (next_start != m_Gaps[i]->m_uPos) {
                 TSeqPos seq_len = next_start - m_Gaps[i]->m_uPos;
                 TStr chunk(m_SeqData, m_Gaps[i]->m_uPos, seq_len);
-                if (TestFlag(fNoSplit)) {
-                    delta_ext.AddLiteral(chunk, inst.GetMol());
-                } else {
-                    delta_ext.AddAndSplit(chunk, format, seq_len,
-                                          TestFlag(fLetterGaps));
-                }
+                delta_ext.AddAndSplit(chunk, format, chunk.length(), false, !TestFlag(fLeaveAsText));
             }
         }
+        if (delta_ext.Get().size() == 1) {
+            // simplify -- just one piece
+            inst.SetRepr(CSeq_inst::eRepr_raw);
+            inst.SetSeq_data(delta_ext.Set().front()
+                                ->SetLiteral().SetSeq_data());
+            inst.ResetExt();
+        }
+
     }
 }
 
@@ -1744,7 +1715,7 @@ CRef<CSeq_entry> CFastaReader::x_ReadSeqsToAlign(TIds& ids,
                 FASTA_ERROR(LineNumber(),
                             "CFastaReader::ReadAlignedSet: Rows have different "
                             "lengths. For example, look around line " << LineNumber(), 
-                            eFormat );
+                            CObjReaderParseException::eFormat );
             }
         }
     }
@@ -2225,6 +2196,30 @@ void CFastaReader::HandleGaps(objects::CSeq_entry& entry, TSeqPos gapNmin, TSeqP
     }
 }
 
+void CFastaReader::PostWarning(
+            IMessageListener * pMessageListener,
+            EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, CObjReaderParseException::EErrCode _eErrCode, ILineError::EProblem _eProblem, CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue)
+{
+    if (find(m_ignorable.begin(), m_ignorable.end(), _eProblem) != m_ignorable.end())
+        return;
+
+
+    const CTempString sSeqId_49518053 = ( m_BestID ? m_BestID->AsFastaString() : kEmptyStr);                  
+    AutoPtr<CObjReaderLineException> pLineExpt(                        
+        CObjReaderLineException::Create(                            
+        (_eSeverity), _uLineNum,                        
+        _MessageStrmOps,                                
+        (_eProblem),                                            
+        sSeqId_49518053, (_sFeature),                           
+        (_sQualName), (_sQualValue),                            
+        _eErrCode) );                 
+    if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {    
+        ERR_POST_X(1, "FASTA-Reader: Warning: " + pLineExpt->Message()); 
+    } else if ( ! pMessageListener || ! pMessageListener->PutError( *pLineExpt ) ) 
+    {                                       
+        throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, _eErrCode, _MessageStrmOps, _uLineNum, _eSeverity);
+    }                                                               
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

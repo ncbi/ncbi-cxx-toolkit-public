@@ -71,12 +71,14 @@ public:
 
     /// add a literal segment at the end
     /// this variant adds a non-gap literal
-    CDelta_seq& AddLiteral(const string& iupac_seq, CSeq_inst::EMol mol);
+    CDelta_seq& AddLiteral(const CTempString& iupac_seq, CSeq_inst::EMol mol,
+        bool do_pack = true);
 
     /// add a chunk of sequence, splitting it as necessary for the
     /// sake of compactness (isolating ambiguous portions and optionally gaps)
     void AddAndSplit(const CTempString& src, CSeq_data::E_Choice format,
-                     TSeqPos length /* in residues */, bool gaps_ok = false);
+                     TSeqPos length /* in residues */, bool gaps_ok = false,
+                     bool allow_packing = true);
 
     /// add a segment that refers to another segment
     CDelta_seq& AddSeqRange(const CSeq_id& id, TSeqPos from, TSeqPos to,
