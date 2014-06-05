@@ -286,6 +286,7 @@ s_ComputeNumSequencesAndDbLength(const string& dbname,
 
     CSeqDB::ESeqType dbtype(is_prot ? CSeqDB::eProtein : CSeqDB::eNucleotide);
     try {
+        _TRACE("Attempting to compute length for '" << dbname << "'");
         CRef<CSeqDB> dbhandle(new CSeqDB(dbname, dbtype));
         dbhandle->GetTotals(CSeqDB::eFilteredAll, num_seqs_found, dbsize, false);
     } catch(...) {
@@ -385,11 +386,13 @@ s_CreateAliasFilePriv(const string& file_name,
 
     if (!s_ComputeNumSequencesAndDbLength(file_name, is_prot, &dbsize, &num_seqs)){
         CDirEntry(fname).Remove();
+        _TRACE("Deleting " << fname);
         string msg("BLASTDB alias file creation failed.  Some referenced files may be missing");
         NCBI_THROW(CSeqDBException, eArgErr, msg);
     };
     if (num_seqs == 0) {
         CDirEntry(fname).Remove();
+        _TRACE("Deleting " << fname);
         CNcbiOstrstream oss;
         oss << "No " << (alias_type == eGiList ? "GI" : "TI") << "s were found"
             << " in BLAST database";
@@ -505,6 +508,7 @@ CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files,
     if (delete_source_alias_files) {
         ITERATE(list<string>, itr, alias_files) {
             CFile(*itr).Remove(); // ignore errors
+            _TRACE("Deleting " << *itr);
         }
     }
 }

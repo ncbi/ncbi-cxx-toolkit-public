@@ -56,6 +56,7 @@ CAutoOutputFileReset::GetStream()
 {
     CFile file_deleter(m_FileName);
     if (file_deleter.Exists()) {
+        _TRACE("Deleting " << m_FileName);
         file_deleter.Remove();
     }
     m_FileStream.reset(new ofstream(m_FileName.c_str()));

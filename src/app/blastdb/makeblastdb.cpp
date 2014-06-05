@@ -284,6 +284,10 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
                             CArgDescriptions::eString, "1GB");
+    arg_desc->AddOptionalKey("logfile", "File_Name", 
+                             "File to which the program log should be redirected",
+                             CArgDescriptions::eOutputFile,
+                             CArgDescriptions::fAppend);
 #if _BLAST_DEBUG
     arg_desc->AddFlag("verbose", "Produce verbose output", true);
 #endif /* _BLAST_DEBUG */

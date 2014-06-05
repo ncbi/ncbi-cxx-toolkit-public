@@ -1340,6 +1340,7 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
             m_LogFile << "file: " << *iterf << endl;
             if (erase) {
                 CFile(*iterf).Remove();
+                _TRACE("Deleting " << *iterf);
             }
         }
     }
