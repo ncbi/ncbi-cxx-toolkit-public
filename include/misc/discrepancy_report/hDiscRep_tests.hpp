@@ -3320,6 +3320,19 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {return string("TEST_TERMINAL_NS");}
   };
 
+  class CBioseq_SEQ_ID_PHRASES : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_SEQ_ID_PHRASES () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem> c_item);
+      virtual string GetName() const {return string("SEQ_ID_PHRASES");}
+
+    private:
+      bool x_HasPhrase(const string& sid);
+  };
+
   class CBioseq_DISC_MISSING_DEFLINES : public CBioseqTestAndRepData
   {
     public:
