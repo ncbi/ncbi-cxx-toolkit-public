@@ -36,6 +36,9 @@
 
 
 #include <corelib/ncbistl.hpp>
+
+#include <stdlib.h>
+
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
 #endif
