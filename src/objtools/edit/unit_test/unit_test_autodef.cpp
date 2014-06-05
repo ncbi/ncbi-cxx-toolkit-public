@@ -746,5 +746,16 @@ BOOST_AUTO_TEST_CASE(Test_GB_3439)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3488)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(seq, "Cypripedium japonicum");
+    CRef<objects::CSeq_feat> rna = unit_test_util::AddMiscFeature(seq);
+    rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    AddTitle(seq, "Cypripedium japonicum gene, complete sequence.");
+    CheckDeflineMatches(seq, true);
+
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

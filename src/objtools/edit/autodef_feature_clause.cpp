@@ -796,7 +796,8 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                             }
                         }
                     }
-                } else if (m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
+                } else if (m_MainFeat.GetData().GetRna().IsSetExt()
+                           && m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
                     product_name = m_MainFeat.GetData().GetRna().GetExt().GetName();
                 }
             }
