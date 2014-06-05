@@ -6004,9 +6004,15 @@ AC_PATH_PROG(XSLTPROC, xsltproc, :,
    [$LIBXSLT_PATH/bin:`dirname $LIBXML_LIBPATH_ 2>/dev/null`/bin:$PATH])
 
 : ${LIBEXSLT_PATH=$LIBXSLT_PATH}
+if env PKG_CONFIG_PATH=$LIBEXSLT_PATH/lib/pkgconfig pkg-config libexslt --libs \
+    2>/dev/null | $EGREP_Q gcrypt; then
+   exslt_autodep=$GCRYPT_LIBS
+else
+   exslt_autodep=
+fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(libexslt, LIBEXSLT, exslt,
  [AC_LANG_PROGRAM([#include <libexslt/exslt.h>], [exsltRegisterAll()])],
- [$GCRYPT_LIBS], [$LIBXSLT_LIBS $LIBXML_LIBS $Z_LIBS], [$LIBXSLT_INCLUDE])
+ [$exslt_autodep], [$LIBXSLT_LIBS $LIBXML_LIBS $Z_LIBS], [$LIBXSLT_INCLUDE])
 
 # XXX - they might be in different directories in some setups
 if test -f "${LIBXML_LIBPATH_}/libexslt-static.a"; then

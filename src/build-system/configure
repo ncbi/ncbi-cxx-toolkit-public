@@ -34916,6 +34916,12 @@ fi
 
 
 : ${LIBEXSLT_PATH=$LIBXSLT_PATH}
+if env PKG_CONFIG_PATH=$LIBEXSLT_PATH/lib/pkgconfig pkg-config libexslt --libs \
+    2>/dev/null | $EGREP_Q gcrypt; then
+   exslt_autodep=$GCRYPT_LIBS
+else
+   exslt_autodep=
+fi
 if test "$with_libexslt" != "no"; then
     case "$with_libexslt" in
        yes | "" ) ;;
@@ -34971,10 +34977,10 @@ if test "$with_libexslt" != "no"; then
     LIBEXSLT_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       LIBEXSLT_LIBS="$LIBEXSLT_LIBPATH -lexslt $GCRYPT_LIBS"
+       LIBEXSLT_LIBS="$LIBEXSLT_LIBPATH -lexslt $exslt_autodep"
     else
        LIBEXSLT_INCLUDE=""
-       LIBEXSLT_LIBS="-lexslt $GCRYPT_LIBS"
+       LIBEXSLT_LIBS="-lexslt $exslt_autodep"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for libexslt$in_path" >&5
