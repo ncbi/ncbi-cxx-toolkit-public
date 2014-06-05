@@ -304,8 +304,15 @@ public:
     /// Get incoming HTTP headers.
     const CHttpHeaders& Headers(void) const { return *m_Headers; }
 
-    /// Get input stream.
+    /// Get input stream. If the status code indicates that there's
+    /// no content to be read, throw CHttpSessionException. The actual
+    /// request body (e.g. error page) can be read using ErrorStream().
     CNcbiIstream& ContentStream(void) const;
+
+    /// Get input stream containing error message (e.g. 404 page)
+    /// If the status code indicates that valid content is available
+    /// the method throws CHttpSessionException.
+    CNcbiIstream& ErrorStream(void) const;
 
     /// Get actual resource location. This may be different from the
     /// requested URL in case of redirects.
@@ -316,6 +323,14 @@ public:
 
     /// Get response status text.
     const string& GetStatusText(void) const { return m_StatusText; }
+
+    /// Check if the requested content can be read from the content stream.
+    /// This is true for status codes 2xx. If there's no content available,
+    /// ContentStream() will throw an exception and response body can be
+    /// accessed using ErrorStream().
+    /// @note This method returns true even if the content stream is empty
+    /// (e.g. after HEAD request), it's based on status code only.
+    bool CanGetContentStream(void) const;
 
     virtual ~CHttpResponse(void) {}
 
@@ -461,17 +476,6 @@ public:
     CHttpSession(void);
     virtual ~CHttpSession(void) {}
 
-    /// Allow HTTP streams to read response body after HTTP errors.
-    /// By default on HTTP errors the input stream has 'fail' bit set
-    /// and the response body is not available.
-    /// @sa EHTTP_HeaderParse
-    void SetReadContentOnHttpError(bool allow = true)
-    {
-        m_ReadContentOnHttpError = allow;
-    }
-
-    bool GetReadContentOnHttpError(void) const { return m_ReadContentOnHttpError; }
-
 private:
     friend class CHttpRequest;
     friend class CHttpResponse;
@@ -484,7 +488,6 @@ private:
 
     THTTP_Flags  m_HttpFlags;
     CHttpCookies m_Cookies;
-    bool         m_ReadContentOnHttpError;
 };
 
 
@@ -503,6 +506,7 @@ public:
         eBadContentType,  ///< Content-type conflicts with the data.
         eBadFormDataName, ///< Empty or bad name in form data.
         eBadFormData,     ///< Bad form data (e.g. unreadable file).
+        eBadStream,       ///< Wrong stream used to read content or error.
         eOther
     };
 

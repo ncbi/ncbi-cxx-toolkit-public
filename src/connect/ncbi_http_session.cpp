@@ -459,7 +459,33 @@ CHttpResponse::CHttpResponse(CHttpSession& session,
 CNcbiIstream& CHttpResponse::ContentStream(void) const
 {
     _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
+    if ( !CanGetContentStream() ) {
+        NCBI_THROW(CHttpSessionException, eBadStream,
+            string("Content stream is not available for status '") +
+            NStr::NumericToString(m_StatusCode) + " " +
+            m_StatusText + "'");
+    }
     return m_Stream->GetConnStream();
+}
+
+
+CNcbiIstream& CHttpResponse::ErrorStream(void) const
+{
+    _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
+    if ( CanGetContentStream() ) {
+        NCBI_THROW(CHttpSessionException, eBadStream,
+            string("Error stream is not available for status '") +
+            NStr::NumericToString(m_StatusCode) + " " +
+            m_StatusText + "'");
+    }
+    return m_Stream->GetConnStream();
+}
+
+
+bool CHttpResponse::CanGetContentStream(void) const
+{
+    if (m_StatusCode >= 200  &&  m_StatusCode < 300) return true;
+    return false;
 }
 
 
@@ -624,7 +650,7 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
                                               void*       user_data,
                                               int         server_error)
 {
-    if ( !user_data ) return eHTTP_HeaderSuccess;
+    if ( !user_data ) return eHTTP_HeaderContinue;
     CHttpRequest* req = reinterpret_cast<CHttpRequest*>(user_data);
     _ASSERT(req);
     CRef<CHttpResponse> resp = req->m_Response;
@@ -633,8 +659,8 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
     if ( resp ) {
         resp->x_ParseHeader(http_header);
     }
-    return req->m_Session->GetReadContentOnHttpError() ?
-        eHTTP_HeaderContinue : eHTTP_HeaderSuccess;
+    // Always read response body - normal content or error.
+    return eHTTP_HeaderContinue;
 }
 
 
@@ -678,8 +704,7 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
 
 
 CHttpSession::CHttpSession(void)
-    : m_HttpFlags(0),
-      m_ReadContentOnHttpError(false)
+    : m_HttpFlags(0)
 {
 }
 
@@ -731,6 +756,7 @@ const char* CHttpSessionException::GetErrCodeString(void) const
     case eBadContentType:   return "Bad Content-Type";
     case eBadFormDataName:  return "Bad form data name";
     case eBadFormData:      return "Bad form data";
+    case eBadStream:        return "Bad stream";
     case eOther:            return "Other error";
     default:                return CException::GetErrCodeString();
     }

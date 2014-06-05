@@ -214,17 +214,8 @@ int CHttpSessionApp::Run(void)
     }}
 
     {{
-        // Bad GET request, no content to read
-        cout << "GET (404 - no content) " << sample_url << endl;
-        CHttpRequest req = session.NewRequest(bad_url);
-        PrintResponse(session, req.Execute());
-        cout << "-------------------------------------" << endl << endl;
-    }}
-
-    {{
-        // Bad GET request, read content
-        session.SetReadContentOnHttpError();
-        cout << "GET (404 - read content) " << sample_url << endl;
+        // Bad GET request
+        cout << "GET (404) " << bad_url << endl;
         CHttpRequest req = session.NewRequest(bad_url);
         PrintResponse(session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
@@ -258,17 +249,17 @@ void CHttpSessionApp::PrintResponse(const CHttpSession& session,
 
     if ( m_PrintBody ) {
         cout << "--- Body ---" << endl;
-        CNcbiIstream& in = response.ContentStream();
-        // Test stream error reporting.
-        // Some requests have no body (HEAD, 404).
-        try {
-            NcbiStreamCopy(cout, in);
+        if ( response.CanGetContentStream() ) {
+            CNcbiIstream& in = response.ContentStream();
+            if ( in.good() ) {
+                NcbiStreamCopy(cout, in);
+            }
         }
-        catch (exception& ex) {
-            cout << "Error reading response body: " << ex.what() << endl;
-            return;
-        }
-        if ( in.good() ) {
+        else {
+            CNcbiIstream& in = response.ErrorStream();
+            if ( in.good() ) {
+                NcbiStreamCopy(cout, in);
+            }
         }
     }
 }
