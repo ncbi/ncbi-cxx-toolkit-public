@@ -257,20 +257,6 @@ private:
 };
 
 
-struct SWriteBackData
-{
-    CMiniMutex lock;
-    size_t cur_size;
-    size_t releasable_size;
-    size_t releasing_size;
-    vector<SNCBlobVerData*> to_add_list;
-    vector<SNCBlobVerData*> to_del_list;
-
-
-    SWriteBackData(void);
-};
-
-
 class CWriteBackControl : public CSrvTask
 {
 public:

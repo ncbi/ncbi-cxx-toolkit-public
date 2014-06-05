@@ -35,6 +35,18 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SWriteBackData
+{
+    CMiniMutex lock;
+    size_t cur_size;
+    size_t releasable_size;
+    size_t releasing_size;
+    vector<SNCBlobVerData*> to_add_list;
+    vector<SNCBlobVerData*> to_del_list;
+
+
+    SWriteBackData(void);
+};
 
 static size_t s_WBSoftSizeLimit = NCBI_CONST_UINT8(2000000000);
 static size_t s_WBHardSizeLimit = NCBI_CONST_UINT8(3000000000);
@@ -555,10 +567,11 @@ CNCBlobVerManager::Get(Uint2         time_bucket,
 void
 CNCBlobVerManager::Release(void)
 {
-    m_CacheData->lock.Lock();
+    SNCCacheData* cache_data = m_CacheData;
+    cache_data->lock.Lock();
     // DeleteThis below should be executed under the lock
     RemoveReference();
-    m_CacheData->lock.Unlock();
+    cache_data->lock.Unlock();
 }
 
 void
@@ -1082,17 +1095,15 @@ SNCBlobVerData::x_ExecuteWriteAll(void)
             SetRunnable();
         return true;
     }
-    else {
-        char* write_mem = chunks[cur_chunk_num];
-        Uint4 write_size = chunk_size;
-        if (cur_chunk_num == cnt_chunks - 1)
-            write_size = Uint4(min(size - (cnt_chunks - 1) * chunk_size, Uint8(chunk_size)));
-        wb_mem_lock.Unlock();
+    char* write_mem = chunks[cur_chunk_num];
+    Uint4 write_size = chunk_size;
+    if (cur_chunk_num == cnt_chunks - 1)
+        write_size = Uint4(min(size - (cnt_chunks - 1) * chunk_size, Uint8(chunk_size)));
+    wb_mem_lock.Unlock();
 
-        if (x_WriteCurChunk(write_mem, write_size))
-            SetRunnable();
-        return true;
-    }
+    if (x_WriteCurChunk(write_mem, write_size))
+        SetRunnable();
+    return true;
 }
 
 void

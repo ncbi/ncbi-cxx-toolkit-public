@@ -61,6 +61,9 @@ struct ATTR_PACKED SNCDataCoord
     Uint4   rec_num;
 
 
+    SNCDataCoord(void)
+        : file_id(0), rec_num(0) {
+    }
     bool empty(void) const;
     void clear(void);
 };

@@ -127,12 +127,12 @@ static string s_Path;
 /// Name of the storage
 static string s_Prefix;
 /// Number of blobs treated by GC and by caching mechanism in one batch
-static Uint2 s_GCBatchSize;
-static int s_FlushTimePeriod;
-static Uint1 s_MaxGarbagePct;
-static int s_MinMoveLife;
-static int s_FailedMoveDelay;
-static Uint8 s_MinDBSize;
+static Uint2 s_GCBatchSize   = 0;
+static int s_FlushTimePeriod = 0;
+static Uint1 s_MaxGarbagePct = 0;
+static int s_MinMoveLife     = 0;
+static int s_FailedMoveDelay = 0;
+static Uint8 s_MinDBSize     = 0;
 /// Name of guard file excluding several instances to run on the same
 /// database.
 static string s_GuardName;
@@ -141,50 +141,56 @@ static string s_GuardName;
 /// working, so that other instance of NetCache on the same database will
 /// be unable to start.
 static auto_ptr<CFileLock> s_GuardLock;
+
+/// manages access to s_IndexDB
 static CMiniMutex s_IndexLock;
 /// Index database file
 static auto_ptr<CNCDBIndexFile> s_IndexDB;
-/// Read-write lock to work with m_DBParts
+
+/// Read-write lock to work with s_DBFiles
 static CMiniMutex s_DBFilesLock;
 /// List of all database parts in the storage
-static TNCDBFilesMap* s_DBFiles = NULL;
+static TNCDBFilesMap* s_DBFiles = nullptr;
+
 static Uint4 s_LastFileId = 0;
+
+/// manages access to s_AllWritings
 static CMiniMutex s_NextWriteLock;
 static SWritingInfo s_AllWritings[s_CntAllFiles];
-static Uint4 s_NewFileSize;
+
+static Uint4 s_NewFileSize = 0;
 static TTimeBuckets s_TimeTables;
 static Uint8 s_CurBlobsCnt = 0;
 static Uint8 s_CurKeysCnt = 0;
 static bool s_Draining = false;
 /// Current size of storage database. Kept here for printing statistics.
-static Uint8 s_CurDBSize = 0;
-static CMiniMutex s_GarbageLock;
-static Uint8 s_GarbageSize = 0;
+volatile static Uint8 s_CurDBSize = 0;
+volatile static Uint8 s_GarbageSize = 0;
 static int s_LastFlushTime = 0;
 /// Internal cache of blobs identification information sorted to be able
 /// to search by key, subkey and version.
 static TBucketCacheMap s_BucketsCache;
 static EStopCause s_IsStopWrite = eNoStop;
-static bool s_CleanStart;
-static bool s_NeedSaveLogRecNo;
-static bool s_NeedSavePurgeData;
-static Uint1 s_WarnLimitOnPct;
-static Uint1 s_WarnLimitOffPct;
-static int s_MinRecNoSavePeriod;
+static bool s_CleanStart = false;
+static bool s_NeedSaveLogRecNo = false;
+static bool s_NeedSavePurgeData = false;
+static Uint1 s_WarnLimitOnPct = 0;
+static Uint1 s_WarnLimitOffPct = 0;
+static int s_MinRecNoSavePeriod = 0;
 static int s_LastRecNoSaveTime = 0;
 static CAtomicCounter s_BlobCounter;
-static Uint8 s_ExtraGCOnSize;
-static Uint8 s_ExtraGCOffSize;
-static Uint8 s_StopWriteOnSize;
-static Uint8 s_StopWriteOffSize;
-static Uint8 s_DiskFreeLimit;
-static Uint8 s_DiskCritical;
-static Uint8 s_MaxBlobSizeStore;
-static CNewFileCreator* s_NewFileCreator;
-static CDiskFlusher* s_DiskFlusher;
-static CRecNoSaver* s_RecNoSaver;
-static CSpaceShrinker* s_SpaceShrinker;
-static CExpiredCleaner* s_ExpiredCleaner;
+static Uint8 s_ExtraGCOnSize = 0;
+static Uint8 s_ExtraGCOffSize = 0;
+static Uint8 s_StopWriteOnSize = 0;
+static Uint8 s_StopWriteOffSize = 0;
+static Uint8 s_DiskFreeLimit = 0;
+static Uint8 s_DiskCritical = 0;
+static Uint8 s_MaxBlobSizeStore = 0;
+static CNewFileCreator* s_NewFileCreator = nullptr;
+static CDiskFlusher* s_DiskFlusher = nullptr;
+static CRecNoSaver* s_RecNoSaver = nullptr;
+static CSpaceShrinker* s_SpaceShrinker = nullptr;
+static CExpiredCleaner* s_ExpiredCleaner = nullptr;
 
 
 
@@ -591,6 +597,7 @@ s_GetIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
 static void
 s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
+    file_info->info_lock.Lock();
     SFileIndexRec* prev_rec;
     SFileIndexRec* next_rec;
     if (ind_rec->prev_num == 0)
@@ -606,6 +613,7 @@ s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
     ACCESS_ONCE(prev_rec->next_num) = ind_rec->next_num;
     ACCESS_ONCE(next_rec->prev_num) = ind_rec->prev_num;
     ind_rec->next_num = ind_rec->prev_num = Uint4(file_info->index_head - ind_rec);
+    file_info->info_lock.Unlock();
 }
 
 static inline void
@@ -635,9 +643,7 @@ s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
         abort();
     file_info->info_lock.Unlock();
 
-    s_GarbageLock.Lock();
-    s_GarbageSize += size;
-    s_GarbageLock.Unlock();
+    AtomicAdd(s_GarbageSize,size);
 }
 
 static CSrvRef<SNCDBFileInfo>
@@ -881,7 +887,7 @@ s_CreateNewFile(size_t type_idx)
 
     s_NextWriteLock.Lock();
     s_AllWritings[type_idx].next_file = file_info;
-    s_CurDBSize += kSignatureSize + sizeof(SFileIndexRec);
+    AtomicAdd(s_CurDBSize, kSignatureSize + sizeof(SFileIndexRec));
     s_NextWriteLock.Unlock();
 
     s_DBFilesLock.Unlock();
@@ -905,12 +911,9 @@ s_DeleteDBFile(const CSrvRef<SNCDBFileInfo>& file_info)
     s_DBFiles->erase(file_info->file_id);
     s_DBFilesLock.Unlock();
 
-    s_NextWriteLock.Lock();
-    s_CurDBSize -= file_info->file_size;
-    s_NextWriteLock.Unlock();
-    s_GarbageLock.Lock();
-    s_GarbageSize -= file_info->garb_size;
-    s_GarbageLock.Unlock();
+    AtomicSub(s_CurDBSize,   file_info->file_size);
+    AtomicSub(s_GarbageSize, file_info->garb_size);
+
 }
 
 SNCDBFileInfo::SNCDBFileInfo(void)
@@ -1251,16 +1254,16 @@ s_GetNextWriteCoord(EDBFileIndex file_index,
     Uint4 reserve_size = true_rec_size + sizeof(SFileIndexRec);
 
     bool need_signal_switch = false;
+    s_NextWriteLock.Lock();
     SWritingInfo& w_info = s_AllWritings[file_index];
 
-    s_NextWriteLock.Lock();
     if (w_info.left_file_size < reserve_size  &&  w_info.next_file == NULL) {
         s_NextWriteLock.Unlock();
         return false;
     }
     if (w_info.left_file_size < reserve_size) {
-        s_CurDBSize += w_info.left_file_size;
-        s_GarbageSize += w_info.left_file_size;
+        AtomicAdd(s_CurDBSize,  w_info.left_file_size);
+        AtomicAdd(s_GarbageSize,w_info.left_file_size);
         w_info.cur_file->info_lock.Lock();
         w_info.cur_file->garb_size += w_info.left_file_size;
         if (w_info.cur_file->used_size
@@ -1289,7 +1292,7 @@ s_GetNextWriteCoord(EDBFileIndex file_index,
 
     w_info.next_offset += true_rec_size;
     w_info.left_file_size -= reserve_size;
-    s_CurDBSize += reserve_size;
+    AtomicAdd(s_CurDBSize,  reserve_size);
 
     file_info->cnt_unfinished.Add(1);
 
@@ -2249,7 +2252,7 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
             if (info->garb_size < it->second)
                 abort();
             info->garb_size -= it->second;
-            s_GarbageSize -= it->second;
+            AtomicSub(s_GarbageSize, it->second);
         }
     }
     ind_rec->cache_data = cache_data;
@@ -2261,7 +2264,7 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
     if (file_info->garb_size < rec_size)
         abort();
     file_info->garb_size -= rec_size;
-    s_GarbageSize -= rec_size;
+    AtomicSub(s_GarbageSize, rec_size);
 
     TBucketCacheMap::iterator it_bucket = s_BucketsCache.lower_bound(time_bucket);
     SBucketCache* bucket_cache;
@@ -2380,15 +2383,15 @@ CBlobCacher::x_PreCacheRecNums(void)
     if (m_CurFile == s_DBFiles->end())
         return &Me::x_StartCreateFiles;
 
-    SNCDBFileInfo* file_info = m_CurFile->second.GetNCPointerOrNull();
+    SNCDBFileInfo* const file_info = m_CurFile->second.GetNCPointerOrNull();
     TRecNumsSet& recs_set = m_RecsMap[file_info->file_id];
 
-    s_CurDBSize += file_info->file_size;
+    AtomicAdd(s_CurDBSize,  file_info->file_size);
     // Non-garbage is left the same as in x_CreateNewFile
     Uint4 garb_size = file_info->file_size
                       - (kSignatureSize + sizeof(SFileIndexRec));
     file_info->garb_size += garb_size;
-    s_GarbageSize += garb_size;
+    AtomicAdd(s_GarbageSize,garb_size);
 
     SFileIndexRec* ind_rec = file_info->index_head;
     Uint4 prev_rec_num = 0;
@@ -3509,7 +3512,11 @@ CNewFileCreator::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
 // create new (next) db file
     for (Uint1 i = 0; i < s_CntAllFiles; ++i) {
-        if (s_AllWritings[i].next_file == NULL) {
+        bool need_new = false;
+        s_NextWriteLock.Lock();
+        need_new = s_AllWritings[i].next_file == NULL;
+        s_NextWriteLock.Unlock();
+        if (need_new) {
             s_CreateNewFile(i);
             SetRunnable();
             break;

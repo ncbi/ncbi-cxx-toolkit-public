@@ -143,6 +143,10 @@ struct SWritingInfo
     Uint4 next_rec_num;
     Uint4 next_offset;
     Uint4 left_file_size;
+
+    SWritingInfo(void)
+        : next_rec_num(0), next_offset(0), left_file_size(0) {
+    }
 };
 
 
@@ -158,6 +162,10 @@ struct SNCTempBlobInfo
     int     expire;
     int     ver_expire;
 
+    SNCTempBlobInfo(void)
+        :   size(0), create_time(0), create_server(0),
+            create_id(0), dead_time(0), expire(0), ver_expire(0) {
+    }
     SNCTempBlobInfo(const SNCCacheData& cache_info)
         : key(cache_info.key),
           size(cache_info.size),
