@@ -5251,12 +5251,18 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
         return false;
     }
 
-    CSeq_loc_CI li(feat.GetLocation());
+    const CSeq_loc& loc = feat.GetLocation();
+    bool found_short = false;
+
+    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
+    if (!bsh || m_Imp.IsOrganelle(bsh)) return found_short;
+
+    CSeq_loc_CI li(loc);
     const CSeq_loc& start_loc = li.GetEmbeddingSeq_loc();
+
     TSeqPos last_start = start_loc.GetStart(eExtreme_Positional);
     TSeqPos last_stop = start_loc.GetStop(eExtreme_Positional);
 
-    bool found_short = false;
     ++li;
     while (li && !found_short) {
         const CSeq_loc& this_loc = li.GetEmbeddingSeq_loc();
@@ -5286,6 +5292,9 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 
     const CSeq_loc& loc = feat.GetLocation();
     bool is_short = false;
+
+    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
+    if (!bsh || m_Imp.IsOrganelle(bsh)) return is_short;
 
     if (GetLength(loc, m_Scope) < 11) {
         bool partial_left = loc.IsPartialStart(eExtreme_Positional);
