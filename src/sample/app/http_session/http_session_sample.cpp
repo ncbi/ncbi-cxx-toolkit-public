@@ -151,6 +151,7 @@ int CHttpSessionApp::Run(void)
     }
 
     const string sample_url = "http://web.ncbi.nlm.nih.gov/Service/sample/cgi_sample.cgi";
+    const string bad_url = "http://web.ncbi.nlm.nih.gov/Service/sample/404";
     CUrl url(sample_url);
 
     {{
@@ -212,6 +213,23 @@ int CHttpSessionApp::Run(void)
         cout << "-------------------------------------" << endl << endl;
     }}
 
+    {{
+        // Bad GET request, no content to read
+        cout << "GET (404 - no content) " << sample_url << endl;
+        CHttpRequest req = session.NewRequest(bad_url);
+        PrintResponse(session, req.Execute());
+        cout << "-------------------------------------" << endl << endl;
+    }}
+
+    {{
+        // Bad GET request, read content
+        session.SetReadContentOnHttpError();
+        cout << "GET (404 - read content) " << sample_url << endl;
+        CHttpRequest req = session.NewRequest(bad_url);
+        PrintResponse(session, req.Execute());
+        cout << "-------------------------------------" << endl << endl;
+    }}
+
     return 0;
 }
 
@@ -233,7 +251,7 @@ void CHttpSessionApp::PrintResponse(const CHttpSession& session,
 
     if ( m_PrintCookies ) {
         cout << "--- Cookies ---" << endl;
-        ITERATE(CHttpCookies, it, session.GetCookies()) {
+        ITERATE(CHttpCookies, it, session.Cookies()) {
             cout << it->AsString(CHttpCookie::eHTTPResponse) << endl;
         }
     }
@@ -241,9 +259,16 @@ void CHttpSessionApp::PrintResponse(const CHttpSession& session,
     if ( m_PrintBody ) {
         cout << "--- Body ---" << endl;
         CNcbiIstream& in = response.ContentStream();
-        // No body in HEAD requests.
+        // Test stream error reporting.
+        // Some requests have no body (HEAD, 404).
+        try {
+            NcbiStreamCopy(cout, in);
+        }
+        catch (exception& ex) {
+            cout << "Error reading response body: " << ex.what() << endl;
+            return;
+        }
         if ( in.good() ) {
-            cout << in.rdbuf() << endl;
         }
     }
 }

@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <connect/ncbi_http_session.hpp>
 #include <stdlib.h>
 
@@ -45,7 +46,7 @@ BEGIN_NCBI_SCOPE
 //  CHttpHeaders::
 //
 
-static const string s_HttpHeaderNames[] = {
+static const char* s_HttpHeaderNames[] = {
     "Cache-Control",
     "Content-Length",
     "Content-Type",
@@ -71,63 +72,65 @@ static const CHttpHeaders::THeaderValues kEmptyValues;
 static const char kHttpHeaderDelimiter = ':';
 
 
-const string& CHttpHeaders::s_GetHeaderName(EName name)
+const char* CHttpHeaders::GetHeaderName(EHeaderName name)
 {
     _ASSERT(size_t(name) < sizeof(s_HttpHeaderNames)/sizeof(s_HttpHeaderNames[0]));
     return s_HttpHeaderNames[name];
 }
 
 
-bool CHttpHeaders::HasValue(const CTempString& name) const
+bool CHttpHeaders::HasValue(CHeaderNameConverter name) const
 {
-    return m_Headers.find(name) != m_Headers.end();
+    return m_Headers.find(name.GetName()) != m_Headers.end();
 }
 
 
-size_t CHttpHeaders::CountValues(const CTempString& name) const
+size_t CHttpHeaders::CountValues(CHeaderNameConverter name) const
 {
-    THeaders::const_iterator it = m_Headers.find(name);
+    THeaders::const_iterator it = m_Headers.find(name.GetName());
     if (it == m_Headers.end()) return 0;
     return it->second.size();
 }
 
 
-const string& CHttpHeaders::GetValue(const CTempString& name) const
+const string& CHttpHeaders::GetValue(CHeaderNameConverter name) const
 {
-    THeaders::const_iterator it = m_Headers.find(name);
+    THeaders::const_iterator it = m_Headers.find(name.GetName());
     if (it == m_Headers.end()  ||  it->second.empty()) return kEmptyStr;
     return it->second.back();
 }
 
 
 const CHttpHeaders::THeaderValues&
-    CHttpHeaders::GetAllValues(const CTempString& name) const
+    CHttpHeaders::GetAllValues(CHeaderNameConverter name) const
 {
-    THeaders::const_iterator it = m_Headers.find(name);
+    THeaders::const_iterator it = m_Headers.find(name.GetName());
     if (it == m_Headers.end()) return kEmptyValues;
     return it->second;
 }
 
 
-void CHttpHeaders::SetValue(const CTempString& name, const CTempString& value)
+void CHttpHeaders::SetValue(CHeaderNameConverter name,
+                            CTempString          value)
 {
-    _VERIFY( !x_IsReservedHeader(name) );
-    THeaderValues& vals = m_Headers[name];
+    _VERIFY( !x_IsReservedHeader(name.GetName()) );
+    THeaderValues& vals = m_Headers[name.GetName()];
     vals.clear();
     vals.push_back(value);
 }
 
 
-void CHttpHeaders::AddValue(const CTempString& name, const CTempString& value)
+void CHttpHeaders::AddValue(CHeaderNameConverter name,
+                            CTempString          value)
 {
-    _VERIFY( !x_IsReservedHeader(name) );
-    m_Headers[name].push_back(value);
+    _VERIFY( !x_IsReservedHeader(name.GetName()) );
+    m_Headers[name.GetName()].push_back(value);
 }
 
 
-void CHttpHeaders::Clear(const CTempString& name)
+void CHttpHeaders::Clear(CHeaderNameConverter name)
 {
-    THeaders::iterator it = m_Headers.find(name);
+    THeaders::iterator it = m_Headers.find(name.GetName());
     if (it != m_Headers.end()) {
         it->second.clear();
     }
@@ -189,7 +192,7 @@ void CHttpHeaders::Merge(const CHttpHeaders& headers)
 }
 
 
-bool CHttpHeaders::x_IsReservedHeader(const CTempString& name) const
+bool CHttpHeaders::x_IsReservedHeader(CTempString name) const
 {
     for (int i = 0; i < sizeof(kReservedHeaders)/sizeof(kReservedHeaders[0]); ++i) {
         THeaders::const_iterator it = m_Headers.find(kReservedHeaders[i]);
@@ -216,27 +219,46 @@ const char* kContentType_MultipartFormData = "multipart/form-data";
 
 CHttpFormData::CHttpFormData(void)
     : m_ContentType(eFormUrlEncoded),
-      m_Boundary(s_CreateBoundary())
+      m_Boundary(CreateBoundary())
 {
 }
 
 
 void CHttpFormData::SetContentType(EContentType content_type)
 {
-    if (!m_Providers.empty()) return;
+    if (!m_Providers.empty()  &&  content_type != eMultipartFormData) {
+        NCBI_THROW(CHttpSessionException, eBadContentType,
+            "The requested Content-Type can not be used with the form data.");
+    }
     m_ContentType = content_type;
 }
 
 
-void CHttpFormData::AddEntry(const CTempString& entry_name,
-                             const CTempString& value,
-                             const CTempString& content_type)
+void CHttpFormData::AddEntry(CTempString entry_name,
+                             CTempString value,
+                             CTempString content_type)
 {
+    if ( entry_name.empty() ) {
+        NCBI_THROW(CHttpSessionException, eBadFormDataName,
+            "Form data entry name can not be empty.");
+    }
     TValues& values = m_Entries[entry_name];
     SFormData entry;
     entry.m_Value = value;
     entry.m_ContentType = content_type;
     values.push_back(entry);
+}
+
+
+void CHttpFormData::AddProvider(CTempString             entry_name,
+                                CFormDataProvider_Base* provider)
+{
+    if ( entry_name.empty() ) {
+        NCBI_THROW(CHttpSessionException, eBadFormDataName,
+            "Form data entry name can not be empty.");
+    }
+    m_ContentType = eMultipartFormData;
+    m_Providers[entry_name].push_back(Ref(provider));
 }
 
 
@@ -262,11 +284,11 @@ public:
     {
         try {
             CNcbiIfstream in(m_FileName.c_str(), ios_base::binary);
-            out << in.rdbuf();
+            NcbiStreamCopy(out, in);
         }
         catch (...) {
-            // Skip unreadable files.
-            ERR_POST("Failed to POST file: " << m_FileName);
+            NCBI_THROW(CHttpSessionException, eBadFormData,
+                "Failed to POST file: " + m_FileName);
         }
     }
 
@@ -276,19 +298,20 @@ private:
 };
 
 
-void CHttpFormData::AddFile(const CTempString& entry_name,
-                            const CTempString& file_name,
-                            const CTempString& content_type)
+void CHttpFormData::AddFile(CTempString entry_name,
+                            CTempString file_name,
+                            CTempString content_type)
 {
     AddProvider(entry_name, new CFileDataProvider(file_name, content_type));
 }
 
 
-void CHttpFormData::AddProvider(const CTempString&      entry_name,
-                                CFormDataProvider_Base* provider)
+void CHttpFormData::Clear(void)
 {
-    m_ContentType = eMultipartFormData;
-    m_Providers[entry_name].push_back(Ref(provider));
+    m_ContentType = eFormUrlEncoded;
+    m_Entries.clear();
+    m_Providers.clear();
+    m_Boundary = CreateBoundary();
 }
 
 
@@ -322,7 +345,7 @@ static Int8 s_SimpleRand(Int8 range)
 }
 
 
-string CHttpFormData::s_CreateBoundary(void)
+string CHttpFormData::CreateBoundary(void)
 {
     static const char* kBoundaryChars =
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
@@ -394,23 +417,17 @@ void CHttpFormData::WriteFormData(CNcbiOstream& out) const
         }
         ITERATE(TProviderEntries, providers, m_Providers) {
             if ( providers->second.empty() ) continue;
-            string part_boundary = s_CreateBoundary();
+            string part_boundary = CreateBoundary();
             string part_content_type = "multipart/mixed; boundary=";
             part_content_type += part_boundary;
             x_WritePartHeader(out, m_Boundary, providers->first,
                 part_content_type);
             ITERATE(TProviders, provider, providers->second) {
-                try {
-                    x_WritePartHeader(out, part_boundary, providers->first,
-                        (*provider)->GetContentType(),
-                        (*provider)->GetFileName());
-                    (*provider)->WriteData(out);
-                    out << HTTP_EOL;
-                }
-                catch (...) {
-                    // Skip unreadable files.
-                    ERR_POST("Failed to POST data: " << providers->first);
-                }
+                x_WritePartHeader(out, part_boundary, providers->first,
+                    (*provider)->GetContentType(),
+                    (*provider)->GetFileName());
+                (*provider)->WriteData(out);
+                out << HTTP_EOL;
             }
             // End of part
             out << "--" << part_boundary << "--" << HTTP_EOL;
@@ -428,7 +445,7 @@ void CHttpFormData::WriteFormData(CNcbiOstream& out) const
 
 CHttpResponse::CHttpResponse(CHttpSession& session,
                              const CUrl&   url,
-                             CHttpStream&  stream)
+                             CHttpStreamRef&  stream)
     : m_Session(&session),
       m_Url(url),
       m_Location(url),
@@ -452,11 +469,8 @@ void CHttpResponse::x_ParseHeader(const char* header)
     m_Headers->ClearAll();
     m_Headers->ParseHttpHeader(header);
     
-    const CHttpHeaders::THeaderValues& cookies =
-        m_Headers->GetAllValues(CHttpHeaders::eSetCookie);
-    ITERATE(CHttpHeaders::THeaderValues, it, cookies) {
-        m_Session->x_SetCookie(*it, &m_Location);
-    }
+    m_Session->x_SetCookies(m_Headers->GetAllValues(CHttpHeaders::eSetCookie),
+        &m_Location);
 
     // Parse status code/text.
     const char* eol = strstr(header, HTTP_EOL);
@@ -499,7 +513,8 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
 CHttpResponse CHttpRequest::Execute(void)
 {
     // Connection not open yet.
-    bool have_data = x_CanSendData()  &&  m_FormData  &&  !m_FormData.Empty();
+    // Only POST supports sending form data.
+    bool have_data = m_FormData  &&  !m_FormData.Empty();
     if ( !m_Response ) {
         x_InitConnection(have_data);
     }
@@ -535,9 +550,13 @@ CNcbiOstream& CHttpRequest::ContentStream(void)
 
 CHttpFormData& CHttpRequest::FormData(void)
 {
-    if ( m_Method != eReqMethod_Post ) {
+    if (m_Method != eReqMethod_Post) {
         NCBI_THROW(CHttpSessionException, eBadRequest,
             "Request method does not support sending data");
+    }
+    if ( m_Stream ) {
+        NCBI_THROW(CHttpSessionException, eBadRequest,
+            "Can not get form data while executing request");
     }
     if ( !m_FormData ) {
         m_FormData.Reset(new CHttpFormData);
@@ -566,19 +585,19 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     connnetinfo->timeout = g_CTimeoutToSTimeout(m_Timeout, sto);
     connnetinfo->max_try = m_Retries;
 
-    m_Stream.Reset(new CHttpStream);
+    m_Stream.Reset(new TStreamRef);
     m_Stream->SetConnStream(new CConn_HttpStream(
         m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
         connnetinfo,
         headers.c_str(),
-        s_ParseHeader,
+        sx_ParseHeader,
         this,
-        s_Adjust,
+        sx_Adjust,
         0, // cleanup
         // Always set AdjustOnRedirect flag - we need this to send correct cookies.
         m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect));
     ConnNetInfo_Destroy(connnetinfo);
-
+    m_Stream->GetConnStream().exceptions(ios_base::badbit | ios_base::failbit);
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url, *m_Stream));
 }
 
@@ -592,14 +611,7 @@ bool CHttpRequest::x_CanSendData(void) const
 void CHttpRequest::x_AddCookieHeader(const CUrl& url)
 {
     if ( !m_Session ) return;
-    string cookies;
-    CHttpCookie_CI it = m_Session->GetCookies().begin(url);
-    for (; it; ++it) {
-        if ( !cookies.empty() ) {
-            cookies += "; ";
-        }
-        cookies += it->AsString(CHttpCookie::eHTTPRequest);
-    }
+    string cookies = m_Session->x_GetCookies(url);
     if ( !cookies.empty() ) {
         m_Headers->SetValue(CHttpHeaders::eCookie, cookies);
     }
@@ -608,7 +620,7 @@ void CHttpRequest::x_AddCookieHeader(const CUrl& url)
 
 // CConn_HttpStream callback for header parsing.
 // user_data must contain CHttpRequest*.
-EHTTP_HeaderParse CHttpRequest::s_ParseHeader(const char* http_header,
+EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
                                               void*       user_data,
                                               int         server_error)
 {
@@ -616,17 +628,21 @@ EHTTP_HeaderParse CHttpRequest::s_ParseHeader(const char* http_header,
     CHttpRequest* req = reinterpret_cast<CHttpRequest*>(user_data);
     _ASSERT(req);
     CRef<CHttpResponse> resp = req->m_Response;
-    _ASSERT(resp);
-    resp->x_ParseHeader(http_header);
-    return eHTTP_HeaderSuccess;
+    // Response can be NULL, e.g. if an exception was thrown while
+    // initializing the request.
+    if ( resp ) {
+        resp->x_ParseHeader(http_header);
+    }
+    return req->m_Session->GetReadContentOnHttpError() ?
+        eHTTP_HeaderContinue : eHTTP_HeaderSuccess;
 }
 
 
 // CConn_HttpStream callback for handling retries and redirects.
 // user_data must contain CHttpRequest*.
-int CHttpRequest::s_Adjust(SConnNetInfo* net_info,
-                           void*         user_data,
-                           unsigned int  failure_count)
+int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
+                            void*         user_data,
+                            unsigned int  failure_count)
 {
     if ( !user_data ) return 1;
     // Reset and re-fill headers on redirects (failure_count == 0).
@@ -634,6 +650,20 @@ int CHttpRequest::s_Adjust(SConnNetInfo* net_info,
     _ASSERT(req);
     CRef<CHttpResponse> resp = req->m_Response;
     _ASSERT(resp);
+
+    // On the following errors do not retry, abort the request.
+    switch ( resp->GetStatusCode() ) {
+    case 400:
+    case 403:
+    case 404:
+    case 405:
+    case 406:
+    case 410:
+        return 0;
+    default:
+        break;
+    }
+
     // Use new location from the last response rather than the original url.
     req->x_AddCookieHeader(resp->m_Location);
     string headers = req->m_Headers->GetHttpHeader();
@@ -648,7 +678,8 @@ int CHttpRequest::s_Adjust(SConnNetInfo* net_info,
 
 
 CHttpSession::CHttpSession(void)
-    : m_HttpFlags(0)
+    : m_HttpFlags(0),
+      m_ReadContentOnHttpError(false)
 {
 }
 
@@ -659,9 +690,32 @@ CHttpRequest CHttpSession::NewRequest(const CUrl& url, ERequestMethod method)
 }
 
 
-void CHttpSession::x_SetCookie(const CTempString& cookie, const CUrl* url)
+// Mutex protecting session cookies.
+DEFINE_STATIC_FAST_MUTEX(s_SessionMutex);
+
+
+void CHttpSession::x_SetCookies(const CHttpHeaders::THeaderValues& cookies,
+                                const CUrl*                        url)
 {
-    m_Cookies.Add(CHttpCookies::eHeader_SetCookie, cookie, url);
+    CFastMutexGuard lock(s_SessionMutex);
+    ITERATE(CHttpHeaders::THeaderValues, it, cookies) {
+        m_Cookies.Add(CHttpCookies::eHeader_SetCookie, *it, url);
+    }
+}
+
+
+string CHttpSession::x_GetCookies(const CUrl& url) const
+{
+    string cookies;
+    CFastMutexGuard lock(s_SessionMutex);
+    CHttpCookie_CI it = m_Cookies.begin(url);
+    for (; it; ++it) {
+        if ( !cookies.empty() ) {
+            cookies += "; ";
+        }
+        cookies += it->AsString(CHttpCookie::eHTTPRequest);
+    }
+    return cookies;
 }
 
 
@@ -673,9 +727,12 @@ void CHttpSession::x_SetCookie(const CTempString& cookie, const CUrl* url)
 const char* CHttpSessionException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case eBadRequest: return "Bad request";
-    case eOther:      return "Other error";
-    default:          return CException::GetErrCodeString();
+    case eBadRequest:       return "Bad request";
+    case eBadContentType:   return "Bad Content-Type";
+    case eBadFormDataName:  return "Bad form data name";
+    case eBadFormData:      return "Bad form data";
+    case eOther:            return "Other error";
+    default:                return CException::GetErrCodeString();
     }
 }
 
