@@ -81,7 +81,8 @@ public:
     CNcbiTable& operator=(const CNcbiTable& table)
     {
         x_Free();
-        x_Copy();
+        x_Copy(table);
+        return *this;
     }
 
     ~CNcbiTable();
