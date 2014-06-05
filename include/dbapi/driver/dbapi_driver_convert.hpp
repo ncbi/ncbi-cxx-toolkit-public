@@ -1214,7 +1214,7 @@ public:
 
 private:
     TObj* m_Stmt;
-    auto_ptr<CDB_Result> m_RS;
+    mutable auto_ptr<CDB_Result> m_RS;
 };
 
 template <typename CP>
