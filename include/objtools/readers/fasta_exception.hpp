@@ -33,12 +33,10 @@
 */
 
 #include <objtools/readers/reader_exception.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-class CSeq_id;
 
 class CBadResiduesException : public CObjReaderException
 {
