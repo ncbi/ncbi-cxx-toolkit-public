@@ -196,9 +196,9 @@ public:
 
     void swap(CSimpleBufferT<T>& other)
     {
-        swap(m_Buffer, other.m_Buffer);
-        swap(m_Size, other.m_Size);
-        swap(m_Capacity, other.m_Capacity);
+        std::swap(m_Buffer, other.m_Buffer);
+        std::swap(m_Size, other.m_Size);
+        std::swap(m_Capacity, other.m_Capacity);
     }
 
     /// Reserve memory. No data preservation guarantees.
