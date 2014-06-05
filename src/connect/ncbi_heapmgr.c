@@ -133,6 +133,8 @@
 #  if NCBI_PLATFORM_BITS == 64
 #     ifdef __GNUC__
 #       define HEAP_PACKED  __attribute__ ((packed))
+#     elif defined(_CRAYC)
+#       define HEAP_PACKED /* */
 #     else
 #       error "Don't know how to pack on this 64-bit platform"
 #     endif
