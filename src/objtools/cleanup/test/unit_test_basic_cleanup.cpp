@@ -430,6 +430,9 @@ Seq-entry ::= seq {\
                       label  str \"Assembly Date\" , \
                       data  str \"2014\" } , \
                     { \
+                      label  str \"Assembly Date\" , \
+                      data  str \"01-05-2014\" } , \
+                    { \
                       label  str \"StructuredCommentSuffix\" , \
                       data str \"##Genome-Assembly-Data-END##\" } } } , \
             molinfo {\
@@ -477,6 +480,7 @@ BOOST_AUTO_TEST_CASE(Test_CleanAssemblyDate)
         BOOST_CHECK_EQUAL(usr.GetData()[1]->GetData().GetStr(), "01-FEB-2014");
         BOOST_CHECK_EQUAL(usr.GetData()[2]->GetData().GetStr(), "FEB-2014");
         BOOST_CHECK_EQUAL(usr.GetData()[3]->GetData().GetStr(), "2014");
+        BOOST_CHECK_EQUAL(usr.GetData()[4]->GetData().GetStr(), "2014");
     }
 }
 

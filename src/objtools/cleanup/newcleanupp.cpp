@@ -6772,7 +6772,8 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
             }
             else if( GET_FIELD( field.GetLabel(), Str) == "Assembly Date" ) {
                 string &field_str = GET_MUTABLE( field.SetData(), Str );
-                string altered = CSubSource::FixDateFormat (field_str);
+                bool ambiguous = false;
+                string altered = CSubSource::FixDateFormat (field_str, true, ambiguous);
                 if (!NStr::IsBlank(altered)) {
                     CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (altered);
                     if (coll_date && coll_date->IsStd() && coll_date->GetStd().IsSetYear()) {
@@ -6780,10 +6781,10 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                         string month = "";
                         string year = "";
                         string new_date = "";
-                        if (coll_date->GetStd().IsSetDay()) {
+                        if (!ambiguous && coll_date->GetStd().IsSetDay()) {
                             coll_date->GetDate(&day, "%2D");
                         }
-                        if (coll_date->GetStd().IsSetMonth()) {
+                        if (!ambiguous && coll_date->GetStd().IsSetMonth()) {
                             coll_date->GetDate(&month, "%N");
                             month = month.substr(0, 3);
                             NStr::ToUpper(month);
