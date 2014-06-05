@@ -5769,6 +5769,16 @@ if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
 fi
 
 
+#### Detect Cray compiler
+if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
+  -a  "$VAC" != "yes" -a  "$CCC" != "yes"; then
+   cce_ver="`$real_CXX -V 2>&1 | grep '^Cray'`"
+   case "$cce_ver" in
+      *Cray* ) CCE="yes" ;;
+   esac
+fi
+
+
 #### Detect supported compilers
 compiler=
 compiler_ver=
@@ -5809,6 +5819,12 @@ elif test "$CCC" = "yes" ; then
    ncbi_compiler="COMPAQ"
    ncbi_compiler_ver="`echo $ccc_ver | sed 's%.*C[+][+] V\([0-9.]*\).*%\1%'`"
              WithFeatures="$WithFeatures${WithFeaturesSep}CompaqCompiler"; WithFeaturesSep=" "
+elif test "$CCE" = "yes" ; then
+   compiler_ver="$cce_ver"
+   compiler="Cray"
+   ncbi_compiler="CRAY"
+   ncbi_compiler_ver="`echo $cce_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
+             WithFeatures="$WithFeatures${WithFeaturesSep}Cray"; WithFeaturesSep=" "
 else
    case "$host_os" in
     solaris* )
@@ -5940,6 +5956,11 @@ _ACEOF
 
 
 cat >>confdefs.h <<\_ACEOF
+#define NCBI_COMPILER_CRAY 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
 #define NCBI_COMPILER_MSVC 1
 _ACEOF
 
@@ -6047,7 +6068,7 @@ compiler_root=`echo $CXX | sed -ne 's:\(.*\)[/\\]bin[/\\].*:\1:p'`
 with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
-    darwin* | irix* | cygwin*)  ;;
+    darwin* | irix* | cygwin* | *:Cray ) ;;
     solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
     solaris*:GCC             )  : ${MT_FLAG:="-pthreads"} ;;
     *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
@@ -39664,7 +39685,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
+for x in GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

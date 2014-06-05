@@ -778,6 +778,16 @@ if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
 fi
 
 
+#### Detect Cray compiler
+if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
+  -a  "$VAC" != "yes" -a  "$CCC" != "yes"; then
+   cce_ver="`$real_CXX -V 2>&1 | grep '^Cray'`"
+   case "$cce_ver" in
+      *Cray* ) CCE="yes" ;;
+   esac
+fi
+
+
 #### Detect supported compilers
 compiler=
 compiler_ver=
@@ -818,6 +828,12 @@ elif test "$CCC" = "yes" ; then
    ncbi_compiler="COMPAQ"
    ncbi_compiler_ver="`echo $ccc_ver | sed 's%.*C[[+]][[+]] V\([[0-9.]]*\).*%\1%'`"
    NCBI_FEATURE(CompaqCompiler)
+elif test "$CCE" = "yes" ; then
+   compiler_ver="$cce_ver"
+   compiler="Cray"
+   ncbi_compiler="CRAY"
+   ncbi_compiler_ver="`echo $cce_ver | sed 's%.*Version \([[0-9.]]*\).*%\1%'`"
+   NCBI_FEATURE(Cray)
 else
    case "$host_os" in
     solaris* )
@@ -919,6 +935,7 @@ if false; then
    AC_DEFINE(NCBI_COMPILER_MIPSPRO,   1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_VISUALAGE, 1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_COMPAQ,    1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_CRAY,      1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_MSVC,      1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_UNKNOWN,   1, [Compiler name])
 fi
@@ -992,7 +1009,7 @@ changequote([, ])dnl
 with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
-    darwin* | irix* | cygwin*)  ;;
+    darwin* | irix* | cygwin* | *:Cray ) ;;
     solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
     solaris*:GCC             )  : ${MT_FLAG:="-pthreads"} ;;
     *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
