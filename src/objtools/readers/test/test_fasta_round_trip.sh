@@ -60,19 +60,19 @@ test_case -in $data/gaps_letters.fsa -inflags 0x40010
 test_case -in $data/gaps_counted.fsa -gapmode 3 -inflags 16
 test_case -in $data/gaps_unk.fsa -gapmode 3 -inflags 16
 
-test_case -in $data/gaps_letters.fsa -gapmode 1 -inflags 0x40010 \
+test_case -in $data/gaps_letters.fsa -gapmode 1 -inflags 0x40031 \
     -expected $data/gaps_dashes.fsa
 test_case -in $data/gaps_counted.fsa -gapmode 1 -inflags 16 \
     -expected $data/gaps_dashes.fsa
 
-test_case -in $data/gaps_dashes.fsa -inflags 0x40010 \
+test_case -in $data/gaps_dashes.fsa -inflags 0x40031 \
     -expected $data/gaps_letters.fsa
-test_case -in $data/gaps_counted.fsa -inflags 0x40010 \
+test_case -in $data/gaps_counted.fsa -inflags 0x40031 \
     -expected $data/gaps_letters.fsa
 
 test_case -in $data/gaps_dashes.fsa -gapmode 3 -inflags 16 \
     -expected $data/gaps_counted.fsa
-test_case -in $data/gaps_letters.fsa -gapmode 3 -inflags 0x40010 \
+test_case -in $data/gaps_letters.fsa -gapmode 3 -inflags 0x40031 \
     -expected $data/gaps_counted.fsa
 
 test_case -in $data/masking.fsa -inflags 0x40010 # fParseGaps | fLetterGaps
