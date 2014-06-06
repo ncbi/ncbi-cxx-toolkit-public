@@ -256,6 +256,30 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     void SetClientSession(const string& client_session);
 
+    enum ENetScheduleWarningType {
+        eWarnUnknown,
+        eWarnAffinityNotFound,
+        eWarnAffinityNotPreferred,
+        eWarnAffinityAlreadyPreferred,
+        eWarnGroupNotFound,
+        eWarnJobNotFound,
+        eWarnJobAlreadyCanceled,
+        eWarnJobAlreadyDone,
+        eWarnJobAlreadyFailed,
+        eWarnJobPassportOnlyMatch,
+        eWarnNoParametersChanged,
+        eWarnConfigFileNotChanged,
+        eWarnAlertNotFound,
+        eWarnAlertAlreadyAcknowledged,
+        eWarnSubmitsDisabledForServer,
+        eWarnQueueAlreadyPaused,
+        eWarnQueueNotPaused,
+        eWarnCommandObsolete,
+    };
+    static ENetScheduleWarningType ExtractWarningType(string& warn_msg);
+    static const char* WarningTypeToString(
+            ENetScheduleWarningType warning_type);
+
     /// @internal
     void UpdateAuthString();
 

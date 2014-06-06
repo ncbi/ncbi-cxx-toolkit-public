@@ -82,6 +82,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         }
     }
 
+    m_NetScheduleAPI.SetEventHandler(new CNetScheduleWarningLogger);
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     if (IsOptionSet(eAllowXSiteConn))
         m_NetScheduleAPI.GetService().AllowXSiteConnections();

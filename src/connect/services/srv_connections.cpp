@@ -137,6 +137,10 @@ void SNetServerConnectionImpl::DeleteThis()
     delete this;
 }
 
+#define STRING_LEN(str) (sizeof(str) - 1)
+#define WARNING_PREFIX "WARNING:"
+#define WARNING_PREFIX_LEN STRING_LEN(WARNING_PREFIX)
+
 void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
 {
     switch (m_Socket.ReadLine(result))
@@ -165,24 +169,27 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
     }
 
     if (NStr::StartsWith(result, "OK:")) {
-        result.erase(0, sizeof("OK:") - 1);
-        if (NStr::StartsWith(result, "WARNING:")) {
-            string::size_type semicolon_pos =
-                result.find(';', sizeof("WARNING:") - 1);
-            if (semicolon_pos != string::npos) {
+        const char* reply = result.c_str() + STRING_LEN("OK:");
+        size_t reply_len = result.length() - STRING_LEN("OK:");
+        while (reply_len >= WARNING_PREFIX_LEN &&
+                memcmp(reply, WARNING_PREFIX, WARNING_PREFIX_LEN) == 0) {
+            reply += WARNING_PREFIX_LEN;
+            reply_len -= WARNING_PREFIX_LEN;
+            const char* semicolon = strchr(reply, ';');
+            if (semicolon == NULL) {
                 m_Server->m_Service->m_Listener->OnWarning(string(
-                        result.begin() + sizeof("WARNING:") - 1,
-                        result.begin() + semicolon_pos), m_Server);
-                result.erase(0, semicolon_pos + 1);
-            } else {
-                m_Server->m_Service->m_Listener->OnWarning(string(
-                        result.begin() + sizeof("WARNING:") - 1,
-                        result.end()), m_Server);
-                result.clear();
+                        reply, reply + reply_len), m_Server);
+                reply_len = 0;
+                break;
             }
+            m_Server->m_Service->m_Listener->OnWarning(string(
+                    reply, semicolon), m_Server);
+            reply_len -= semicolon - reply + 1;
+            reply = semicolon + 1;
         }
+        result.erase(0, result.length() - reply_len);
     } else if (NStr::StartsWith(result, "ERR:")) {
-        result.erase(0, sizeof("ERR:") - 1);
+        result.erase(0, STRING_LEN("ERR:"));
         result = NStr::ParseEscapes(result);
         m_Server->m_Service->m_Listener->OnError(result, m_Server);
         result = END_OF_MULTILINE_OUTPUT;

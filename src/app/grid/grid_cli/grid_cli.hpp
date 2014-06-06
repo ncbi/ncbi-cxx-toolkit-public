@@ -485,6 +485,18 @@ public:
 
 // Implementation details.
 private:
+    class CNetCacheWarningLogger : public INetEventHandler
+    {
+    public:
+        virtual void OnWarning(const string& warn_msg, CNetServer server);
+    };
+
+    class CNetScheduleWarningLogger : public INetEventHandler
+    {
+    public:
+        virtual void OnWarning(const string& warn_msg, CNetServer server);
+    };
+
     enum EAPIClass {
         eNetCacheAPI,
         eNetICacheClient,

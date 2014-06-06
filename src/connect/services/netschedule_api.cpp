@@ -529,6 +529,65 @@ CNetScheduleAPI::StringToStatus(const CTempString& status_str)
     return eJobNotFound;
 }
 
+#define EXTRACT_WARNING_TYPE(warning_type) \
+    if (NStr::StartsWith(warn_msg, "e" #warning_type ":")) { \
+        warn_msg.erase(0, sizeof("e" #warning_type ":") - 1); \
+        return eWarn##warning_type; \
+    }
+
+CNetScheduleAPI::ENetScheduleWarningType
+        CNetScheduleAPI::ExtractWarningType(string& warn_msg)
+{
+    EXTRACT_WARNING_TYPE(AffinityNotFound);
+    EXTRACT_WARNING_TYPE(AffinityNotPreferred);
+    EXTRACT_WARNING_TYPE(AffinityAlreadyPreferred);
+    EXTRACT_WARNING_TYPE(GroupNotFound);
+    EXTRACT_WARNING_TYPE(JobNotFound);
+    EXTRACT_WARNING_TYPE(JobAlreadyCanceled);
+    EXTRACT_WARNING_TYPE(JobAlreadyDone);
+    EXTRACT_WARNING_TYPE(JobAlreadyFailed);
+    EXTRACT_WARNING_TYPE(JobPassportOnlyMatch);
+    EXTRACT_WARNING_TYPE(NoParametersChanged);
+    EXTRACT_WARNING_TYPE(ConfigFileNotChanged);
+    EXTRACT_WARNING_TYPE(AlertNotFound);
+    EXTRACT_WARNING_TYPE(AlertAlreadyAcknowledged);
+    EXTRACT_WARNING_TYPE(SubmitsDisabledForServer);
+    EXTRACT_WARNING_TYPE(QueueAlreadyPaused);
+    EXTRACT_WARNING_TYPE(QueueNotPaused);
+    EXTRACT_WARNING_TYPE(CommandObsolete);
+    return eWarnUnknown;
+}
+
+#define WARNING_TYPE_TO_STRING(warning_type) \
+    case eWarn##warning_type: \
+        return #warning_type;
+
+const char* CNetScheduleAPI::WarningTypeToString(
+        CNetScheduleAPI::ENetScheduleWarningType warning_type)
+{
+    switch (warning_type) {
+    WARNING_TYPE_TO_STRING(AffinityNotFound);
+    WARNING_TYPE_TO_STRING(AffinityNotPreferred);
+    WARNING_TYPE_TO_STRING(AffinityAlreadyPreferred);
+    WARNING_TYPE_TO_STRING(GroupNotFound);
+    WARNING_TYPE_TO_STRING(JobNotFound);
+    WARNING_TYPE_TO_STRING(JobAlreadyCanceled);
+    WARNING_TYPE_TO_STRING(JobAlreadyDone);
+    WARNING_TYPE_TO_STRING(JobAlreadyFailed);
+    WARNING_TYPE_TO_STRING(JobPassportOnlyMatch);
+    WARNING_TYPE_TO_STRING(NoParametersChanged);
+    WARNING_TYPE_TO_STRING(ConfigFileNotChanged);
+    WARNING_TYPE_TO_STRING(AlertNotFound);
+    WARNING_TYPE_TO_STRING(AlertAlreadyAcknowledged);
+    WARNING_TYPE_TO_STRING(SubmitsDisabledForServer);
+    WARNING_TYPE_TO_STRING(QueueAlreadyPaused);
+    WARNING_TYPE_TO_STRING(QueueNotPaused);
+    WARNING_TYPE_TO_STRING(CommandObsolete);
+    default:
+        return "eWarnUnknown";
+    }
+}
+
 CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
 {
     return new SNetScheduleSubmitterImpl(m_Impl);
