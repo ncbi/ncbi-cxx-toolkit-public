@@ -1881,7 +1881,7 @@ inline bool CJson_Document::Read(std::istream& in) {
 }
 
 inline bool CJson_Document::ReadSucceeded(void) {
-    return m_DocImpl.HasParseError();
+    return !m_DocImpl.HasParseError();
 }
 inline std::string CJson_Document::GetReadError() const {
     return m_DocImpl.GetParseError();
