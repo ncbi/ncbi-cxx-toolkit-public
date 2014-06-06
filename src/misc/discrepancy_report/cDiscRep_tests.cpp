@@ -1655,6 +1655,7 @@ void CBioseq_TEST_CDS_HAS_CDD_XREF :: GetReport(CRef <CClickableItem> c_item)
 
 void CBioseq_DISC_CDS_HAS_NEW_EXCEPTION :: GetReport(CRef <CClickableItem> c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description
        = GetHasComment(c_item->item_list.size(), "coding region") 
          + "new exceptions";
