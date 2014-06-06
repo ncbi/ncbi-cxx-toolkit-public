@@ -264,7 +264,7 @@ static const char* s_GetAppName(void)
 
 
 /***********************************************************************
- *                               NCBI SID                              *
+ *                           NCBI Request ID                           *
  ***********************************************************************/
 extern "C" {
 static const char* s_GetRequestID(ENcbiRequestID reqid)
