@@ -444,9 +444,19 @@ public:
     /// The data may be truncated to match the new location.
     CRef<CSeq_graph> Map(const CSeq_graph& src_graph);
 
+    /// Flags defining seq-annot mapping options.
+    enum FAnnotMapFlag {
+        fAnnotMap_Location = 1 << 0, ///< Map seq-feat locations
+        fAnnotMap_Product  = 1 << 1, ///< Map seq-feat products
+        fAnnotMap_Both     = fAnnotMap_Location | fAnnotMap_Product,
+
+        fAnnotMap_Default = fAnnotMap_Both
+    };
+    typedef int TAnnotMapFlags;
+
     /// Map each object from the Seq-annot and replace the original
     /// with the mapped one.
-    void Map(CSeq_annot& annot);
+    void Map(CSeq_annot& annot, TAnnotMapFlags flags = fAnnotMap_Default);
 
     /// Check if the last mapping resulted in partial location
     /// (not all ranges from the original location could be mapped

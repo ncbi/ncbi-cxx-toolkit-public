@@ -3763,7 +3763,7 @@ CRef<CSeq_graph> CSeq_loc_Mapper_Base::Map(const CSeq_graph& src_graph)
 }
 
 
-void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot)
+void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
 {
     switch (annot.GetData().Which()) {
     case CSeq_annot::C_Data::e_Ftable:
@@ -3772,11 +3772,13 @@ void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot)
             NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, it, ftable) {
                 CSeq_feat& feat = **it;
                 CRef<CSeq_loc> loc;
-                loc = Map(feat.GetLocation());
-                if ( loc ) {
-                    feat.SetLocation(*loc);
+                if (flags & fAnnotMap_Location) {
+                    loc = Map(feat.GetLocation());
+                    if ( loc ) {
+                        feat.SetLocation(*loc);
+                    }
                 }
-                if ( feat.IsSetProduct() ) {
+                if ((flags & fAnnotMap_Product)  &&  feat.IsSetProduct() ) {
                     loc = Map(feat.GetProduct());
                     if ( loc ) {
                         feat.SetProduct(*loc);
