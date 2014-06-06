@@ -760,7 +760,7 @@ s_ConvertValue(const CVariant& from_var, string& to_val)
 }
 
 
-class CDataSourceInitializer
+class CDataSourceInitializer : protected CConnIniter
 {
 public:
     CDataSourceInitializer(void)
@@ -769,7 +769,6 @@ public:
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app)
             reg = &app->GetConfig();
-        CONNECT_Init(reg);
         DBLB_INSTALL_DEFAULT();
         DBAPI_RegisterDriver_FTDS();
 
@@ -814,130 +813,142 @@ CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
     return m_Url.ComposeUrl(CUrlArgs::eAmp_Char);
 }
 
+void CSDB_ConnectionParam::x_FillParamMap(void)
+{
+    static const string kDefault = "default";
+    m_ParamMap.clear();
+
+    impl::SDBConfParams conf_params;
+    s_GetDBContext()->ReadDBConfParams(m_Url.GetHost(), &conf_params);
+
+#define COPY_PARAM_EX(en, gn, fn) \
+    if (conf_params.Is##gn##Set()) \
+        m_ParamMap[e##en] = conf_params.fn
+#define COPY_PARAM(en, fn) COPY_PARAM_EX(en, en, fn)
+#define COPY_BOOL_PARAM(en, gn, fn) \
+    if (conf_params.Is##gn##Set()) \
+        m_ParamMap[e##en] = conf_params.fn.empty() ? "default" \
+            : NStr::StringToBool(conf_params.fn) ? "true" : "false"
+#define COPY_NUM_PARAM(en, gn, fn) \
+    if (conf_params.Is##gn##Set()) \
+        m_ParamMap[e##en] = conf_params.fn.empty() ? kDefault : conf_params.fn
+
+    COPY_PARAM_EX(Service, Server, server);
+
+    COPY_PARAM(Username, username);
+    COPY_PARAM(Password, password);
+    COPY_PARAM(Port,     port);
+    COPY_PARAM(Database, database);
+
+    COPY_NUM_PARAM (LoginTimeout,    LoginTimeout, login_timeout);
+    COPY_NUM_PARAM (IOTimeout,       IOTimeout,    io_timeout);
+    COPY_BOOL_PARAM(ExclusiveServer, SingleServer, single_server);
+    COPY_BOOL_PARAM(UseConnPool,     Pooled,       is_pooled);
+    COPY_NUM_PARAM (ConnPoolMinSize, PoolMinSize,  pool_minsize);
+    COPY_NUM_PARAM (ConnPoolMaxSize, PoolMaxSize,  pool_maxsize);
+
+#undef COPY_PARAM_EX
+#undef COPY_PARAM
+#undef COPY_BOOL_PARAM
+#undef COPY_NUM_PARAM
+
+    if ( !conf_params.args.empty() ) {
+        m_ParamMap[eArgsString] = conf_params.args;
+    }
+
+    // Check for overridden settings
+    ITERATE (TParamMap, it, m_ParamMap) {
+        string s = Get(it->first, eWithoutOverrides);
+        if ( !s.empty() ) {
+            x_ReportOverride(x_GetName(it->first), s, it->second);
+        }
+    }
+}
+
 void
 CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
 {
-    impl::SDBConfParams conf_params;
-    bool found_dummy = false;
-    s_GetDBContext()->ReadDBConfParams(m_Url.GetHost(), &conf_params);
-    params->SetServerName  (conf_params.IsServerSet()  ? conf_params.server
-                                                       : m_Url.GetHost());
-    params->SetUserName    (conf_params.IsUsernameSet()? conf_params.username
-                                                       : m_Url.GetUser());
-    params->SetPassword    (conf_params.IsPasswordSet()? conf_params.password
-                                                       : m_Url.GetPassword());
-    if (conf_params.IsDatabaseSet()) {
-        params->SetDatabaseName(conf_params.database);
-    }
-    else {
-        string path(m_Url.GetPath());
-        if (!path.empty())
-            path.erase(0, 1);
-        params->SetDatabaseName(path);
-    }
-    if (conf_params.IsPortSet()  &&  !conf_params.port.empty()) {
-        params->SetPort(NStr::StringToInt(conf_params.port));
-    }
-    else if (!m_Url.GetPort().empty()) {
-        params->SetPort(NStr::StringToInt(m_Url.GetPort()));
-    }
-    if (conf_params.IsLoginTimeoutSet()) {
-        if (conf_params.login_timeout.empty()) {
-            params->SetParam("login_timeout", "default");
-        }
-        else {
-            params->SetParam("login_timeout", conf_params.login_timeout);
-        }
-    }
-    else {
-        params->SetParam("login_timeout",
-                         GetArgs().GetValue("login_timeout", &found_dummy));
-    }
-    if (conf_params.IsIOTimeoutSet()) {
-        if (conf_params.io_timeout.empty()) {
-            params->SetParam("io_timeout", "default");
-        }
-        else {
-            params->SetParam("io_timeout", conf_params.io_timeout);
-        }
-    }
-    else {
-        params->SetParam("io_timeout",
-                         GetArgs().GetValue("io_timeout", &found_dummy));
-    }
-    if (conf_params.IsSingleServerSet()) {
-        if (conf_params.single_server.empty()) {
-            params->SetParam("single_server", "default");
-        }
-        else {
-            params->SetParam("single_server",
-                (NStr::StringToBool(conf_params.single_server)? "true": "false"));
-        }
-    }
-    else {
-        params->SetParam("single_server",
-                         GetArgs().GetValue("exclusive_server", &found_dummy));
-    }
-    if (conf_params.IsPooledSet()) {
-        if (conf_params.is_pooled.empty()) {
-            params->SetParam("is_pooled", "default");
-        }
-        else {
-            params->SetParam("is_pooled",
-                (NStr::StringToBool(conf_params.is_pooled)? "true": "false"));
-        }
-    }
-    else {
-        params->SetParam("is_pooled",
-                         GetArgs().GetValue("use_conn_pool", &found_dummy));
-    }
-    params->SetParam("pool_name", conf_params.pool_name);
-    if (conf_params.IsPoolMinSizeSet()) {
-        if (conf_params.pool_minsize.empty()) {
-            params->SetParam("pool_minsize", "default");
-        }
-        else {
-            params->SetParam("pool_minsize", conf_params.pool_minsize);
-        }
-    }
-    else {
-        params->SetParam("pool_minsize",
-                         GetArgs().GetValue("conn_pool_minsize", &found_dummy));
-    }
-    if (conf_params.IsPoolMaxSizeSet()) {
-        if (conf_params.pool_maxsize.empty()) {
-            params->SetParam("pool_maxsize", "default");
-        }
-        else {
-            params->SetParam("pool_maxsize", conf_params.pool_maxsize);
-        }
-    }
-    else {
-        params->SetParam("pool_maxsize",
-                         GetArgs().GetValue("conn_pool_maxsize", &found_dummy));
+    params->SetServerName  (Get(eService,  eWithOverrides));
+    params->SetUserName    (Get(eUsername, eWithOverrides));
+    params->SetPassword    (Get(ePassword, eWithOverrides));
+    params->SetDatabaseName(Get(eDatabase, eWithOverrides));
+
+    string port = Get(ePort, eWithOverrides);
+    if ( !port.empty() ) {
+        params->SetPort(NStr::StringToInt(port));
     }
 
-    CUrlArgs conf_args(conf_params.args);
-    const CUrlArgs::TArgs& args = m_Url.GetArgs().GetArgs();
-    ITERATE(CUrlArgs::TArgs, it, args) {
-        const string& param_name  = it->name;
-        const string& param_value = it->value;
-        if (param_name == "login_timeout"
-            ||  param_name == "io_timeout"
-            ||  param_name == "exclusive_server"
-            ||  param_name == "use_conn_pool"
-            ||  param_name == "conn_pool_minsize"
-            ||  param_name == "conn_pool_maxsize")
-        {
-            continue;
+    params->SetParam("login_timeout", Get(eLoginTimeout,    eWithOverrides));
+    params->SetParam("io_timeout",    Get(eIOTimeout,       eWithOverrides));
+    params->SetParam("single_server", Get(eExclusiveServer, eWithOverrides));
+    params->SetParam("is_pooled",     Get(eUseConnPool,     eWithOverrides));
+    params->SetParam("pool_minsize",  Get(eConnPoolMinSize, eWithOverrides));
+    params->SetParam("pool_maxsize",  Get(eConnPoolMaxSize, eWithOverrides));
+
+    // Generic named parameters.  The historic version of this logic
+    // had two quirks, which I [AMU] have not carried over:
+    // * A setting found in the configuration file counted only when
+    //   the original URL mentioned the same parameter.
+    // * If a key appeared more than once in either list, the old code
+    //   favored the last appearance in the URL but the first one in
+    //   the configuration file.  It now always favors the last one.
+    typedef vector<CUrlArgs*> TAllArgs;
+    TAllArgs all_args;
+    all_args.push_back(&m_Url.GetArgs());
+    
+    auto_ptr<CUrlArgs> conf_args;
+    {{
+        TParamMap::const_iterator it = m_ParamMap.find(eArgsString);
+        if (it != m_ParamMap.end()) {
+            conf_args.reset(new CUrlArgs(it->second));
+            all_args.push_back(conf_args.get());
         }
-        if (conf_args.IsSetValue(param_name))
-            params->SetParam(param_name, conf_args.GetValue(param_name));
-        else
-            params->SetParam(param_name, param_value);
+    }}
+
+    ITERATE (TAllArgs, ait, all_args) {
+        const CUrlArgs::TArgs& args = (*ait)->GetArgs();
+        ITERATE (CUrlArgs::TArgs, uit, args) {
+            const string& param_name  = uit->name;
+            const string& param_value = uit->value;
+            if ( !x_IsKnownArg(param_name) ) {
+                params->SetParam(param_name, param_value);
+            }
+        }
     }
 
     params->SetParam("do_not_read_conf", "true");
+}
+
+
+void CSDB_ConnectionParam::x_ReportOverride(const CTempString& name,
+                                            CTempString code_value,
+                                            CTempString reg_value) const
+{
+    if (name == x_GetName(eArgsString)) {
+        // Analyze individually
+        typedef map<string, string> TConfMap;
+        TConfMap conf_map;
+        CUrlArgs conf_args(reg_value);
+        ITERATE (CUrlArgs::TArgs, it, conf_args.GetArgs()) {
+            if ( !x_IsKnownArg(it->name) ) {
+                conf_map[it->name] = it->value;
+            }
+        }
+        ITERATE (CUrlArgs::TArgs, uait, m_Url.GetArgs().GetArgs()) {
+            TConfMap::const_iterator cmit = conf_map.find(uait->name);
+            if (cmit != conf_map.end()) {
+                x_ReportOverride(uait->name, uait->value, cmit->second);
+            }
+        }
+    } else {
+        if (name == x_GetName(ePassword)) {
+            code_value = "(redacted)";
+            reg_value  = "(redacted)";
+        }
+        ERR_POST_X(17, Warning << "Ignoring program-defined " << name
+                   << " parameter value " << code_value
+                   << " in favor of configured value " << reg_value);
+    }
 }
 
 
