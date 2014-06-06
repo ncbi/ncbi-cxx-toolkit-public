@@ -154,6 +154,8 @@ void CTestApp::Init(void)
 {
     s_Run = false;
 
+    CONNECT_Init(&GetConfig());
+
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
     if (args->Exist ("h"))
         args->Delete("h");
@@ -176,8 +178,6 @@ void CTestApp::Init(void)
 int CTestApp::Run(void)
 {
     s_Run = true;
-
-    CONNECT_Init(&GetConfig());
 
     const CArgs& args = GetArgs();
     size_t n = args.GetNExtra();
