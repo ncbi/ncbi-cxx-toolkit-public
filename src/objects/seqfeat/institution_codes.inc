@@ -5357,6 +5357,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SEFES	s	Southeastern Forest Experiment Station",
 "SEFSC	s	Southeast Fisheries Science Center",
 "SEFSC:MMMGL	s	Southeast Fisheries Science Center, Marine Mammal Molecular Genetics Laboratory",
+"SEHU	s	Hokkaido University Insect Collection",
 "SEIG	s	Societa Entomologica Italiana",
 "SEL	s	Marie Selby Botanical Gardens",
 "SELU	s	Southeastern Louisiana University, Biological Sciences Department",
