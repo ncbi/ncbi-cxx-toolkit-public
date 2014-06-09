@@ -50,10 +50,10 @@ public:
     static bool IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope);
     static int GetVariationType(const CVariation_ref& vr);
     static void GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt);
+	static string GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
 
 private:
     static string GetRefAlleleFromVP(CRef<CVariantPlacement> vp, CScope& scope, TSeqPos length);
-    static string GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
     static void FixAlleles(CRef<CVariation> v, string old_ref, string new_ref);
     static void FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) ;
     static const unsigned int MAX_LEN=1000;

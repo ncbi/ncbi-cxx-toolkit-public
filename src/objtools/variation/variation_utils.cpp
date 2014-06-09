@@ -438,7 +438,7 @@ CRef<CSeqVector> CVariationNormalization_base_cache::x_PrefetchSequence(CScope &
     // makes sure to get a reference count on the object in the cache
     // and now the actual object in memory can not be deleted
     // until that object's counter is down to zero.
-    // and that will not happen until the caller's CRef is dstroyed.
+    // and that will not happen until the caller's CRef is destroyed.
     LOG_POST(Trace << "Try to get from cache for accession: " << accession );
     CRef<CSeqVector> seqvec_ref = m_cache.Get(accession);
     LOG_POST(Trace << "Got CRef for acc : " << accession );
