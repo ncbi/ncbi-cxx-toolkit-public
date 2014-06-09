@@ -765,10 +765,6 @@ class CDataSourceInitializer : protected CConnIniter
 public:
     CDataSourceInitializer(void)
     {
-        CNcbiRegistry* reg = NULL;
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if (app)
-            reg = &app->GetConfig();
         DBLB_INSTALL_DEFAULT();
         DBAPI_RegisterDriver_FTDS();
 
