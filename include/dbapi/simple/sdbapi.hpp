@@ -744,7 +744,8 @@ public:
     ///   Also application configuration is looked for section with name
     ///   "service.dbservice" ("service" can be passed to the ctor or to Set()
     ///   method). If such section exists then the following parameters are
-    ///   read from it:
+    ///   read from it, and if present will override corresponding parameters
+    ///   extracted from the URL or specified later via Set.
     ///   - username
     ///   - password
     ///   - service
@@ -758,13 +759,10 @@ public:
     ///   - conn_pool_minsize
     ///   - conn_pool_maxsize
     ///
-    ///   Last 6 parameters can be given also via "args" string in configuration
-    ///   file or after question mark in the url form. But individual parameters
-    ///   in ini file always override ones in "args" string and anything in
-    ///   ini file overrides the anything given in application (via ctor or
-    ///   Set() method). Note: if "args" string is given in ini file it overrides
-    ///   arguments given in the url to ctor completely, not on param-by-param
-    ///   base.
+    ///   The last 6 parameters can also come as named URL parameters;
+    ///   "args" is a catch-all for any other parameters, which can appear
+    ///   directly as URL parameters.  (Settings from the configuration file's
+    ///   "args" string override URL parameters on an individual basis.)
     CSDB_ConnectionParam(const string& url_string = kEmptyStr);
 
     /// Whether to throw an exception if the connection parameters are
@@ -803,11 +801,23 @@ public:
         eConnPoolMaxSize,
         eArgsString
     };
+ 
+    /// Whether to report values from configuration files, or just
+    /// those set in code (which have a lower priority).
+    enum EWithOverrides {
+        eWithoutOverrides,
+        eWithOverrides
+    };
 
     /// Get one of the "essential" database connection parameters.
     /// Empty string means that it is not set.
-    string Get(EParam param) const;
-    /// Set one of the "essential" database connection parameters.
+    string Get(EParam param,
+               EWithOverrides with_overrides = eWithoutOverrides) const;
+    /// Set one of the "essential" database connection parameters,
+    /// unless overridden in a configuration file.
+    ///
+    /// Settings from [*.dbservice] sections always take precedence
+    /// because they're more visible and easier to adjust.
     ///
     /// @param param
     ///   Parameter to set
@@ -830,12 +840,27 @@ private:
     friend class CSDBAPI;
     friend class CDatabaseImpl;
 
+    /// Populate m_ParamMap according to the current server or service name.
+    void x_FillParamMap(void);
+
     /// Fill parameters for low-level DBAPI from what is set here and in the
     /// configuration file.
     void x_FillLowerParams(CDBConnParamsBase* params) const;
 
-    /// Url storing all parameters
+    static const char* x_GetName(EParam param);
+
+    static bool x_IsKnownArg(const string& name);
+
+    void x_ReportOverride(const CTempString& name, CTempString code_value,
+                          CTempString reg_value) const;
+
+    /// URL storing all parameters set in code.
     mutable CUrl m_Url;
+
+    /// Map of any parameters set in the configuration file, which override
+    /// those set in code.
+    typedef map<EParam, string> TParamMap;
+    TParamMap m_ParamMap;
 };
 
 
@@ -1001,17 +1026,19 @@ CSDB_ConnectionParam::CSDB_ConnectionParam(const string& url_string /* = kEmptyS
         m_Url.SetUrl("dbapi://" + url_string);
     // Force arguments to exist
     m_Url.GetArgs();
+    x_FillParamMap();
 }
 
 inline
 CSDB_ConnectionParam::CSDB_ConnectionParam(const CSDB_ConnectionParam& param)
-    : m_Url(param.m_Url)
+    : m_Url(param.m_Url), m_ParamMap(param.m_ParamMap)
 {}
 
 inline CSDB_ConnectionParam&
 CSDB_ConnectionParam::operator= (const CSDB_ConnectionParam& param)
 {
     m_Url = param.m_Url;
+    m_ParamMap = param.m_ParamMap;
     return *this;
 }
 
@@ -1027,9 +1054,48 @@ CSDB_ConnectionParam::GetArgs(void) const
     return m_Url.GetArgs();
 }
 
-inline string
-CSDB_ConnectionParam::Get(EParam param) const
+inline const char*
+CSDB_ConnectionParam::x_GetName(EParam param)
 {
+    switch (param) {
+    case eUsername:         return "username";
+    case ePassword:         return "password";
+    case eService:          return "service";
+    case ePort:             return "port";
+    case eDatabase:         return "database";
+    case eLoginTimeout:     return "login_timeout";
+    case eIOTimeout:        return "io_timeout";
+    case eExclusiveServer:  return "exclusive_server";
+    case eUseConnPool:      return "use_conn_pool";
+    case eConnPoolMinSize:  return "conn_pool_minsize"; 
+    case eConnPoolMaxSize:  return "conn_pool_maxsize";
+    case eArgsString:       return "args_string";
+    }
+    _TROUBLE;
+    return kEmptyCStr;
+}
+
+inline bool
+CSDB_ConnectionParam::x_IsKnownArg(const string& name)
+{
+    for (int p = eLoginTimeout;  p < eArgsString;  ++p) {
+        if (name == x_GetName(static_cast<EParam>(p))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline string
+CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
+{
+    if (with_overrides == eWithOverrides) {
+        TParamMap::const_iterator it = m_ParamMap.find(param);
+        if (it != m_ParamMap.end()) {
+            return it->second;
+        }
+    }
+
     switch (param) {
     case eUsername:
         return m_Url.GetUser();
@@ -1042,17 +1108,15 @@ CSDB_ConnectionParam::Get(EParam param) const
     case eDatabase:
         return m_Url.GetPath().empty()? kEmptyStr: m_Url.GetPath().substr(1);
     case eLoginTimeout:
-        return m_Url.GetArgs().GetValue("login_timeout");
     case eIOTimeout:
-        return m_Url.GetArgs().GetValue("io_timeout");
     case eExclusiveServer:
-        return m_Url.GetArgs().GetValue("exclusive_server");
     case eUseConnPool:
-        return m_Url.GetArgs().GetValue("use_conn_pool");
     case eConnPoolMinSize:
-        return m_Url.GetArgs().GetValue("conn_pool_minsize");
     case eConnPoolMaxSize:
-        return m_Url.GetArgs().GetValue("conn_pool_maxsize");
+    {
+        bool found_dummy = false;
+        return m_Url.GetArgs().GetValue(x_GetName(param), &found_dummy);
+    }
     case eArgsString:
         return m_Url.GetOriginalArgsString();
     }
@@ -1063,29 +1127,31 @@ CSDB_ConnectionParam::Get(EParam param) const
 inline void
 CSDB_ConnectionParam::Set(EParam param, const string& value)
 {
+    TParamMap::const_iterator it = m_ParamMap.find(param);
+    if (it != m_ParamMap.end()) {
+        x_ReportOverride(x_GetName(it->first), value, it->second);
+    }
+
     switch (param) {
     case eUsername:
         return m_Url.SetUser(value);
     case ePassword:
         return m_Url.SetPassword(value);
     case eService:
-        return m_Url.SetHost(value);
+        m_Url.SetHost(value);
+        x_FillParamMap();
+        return;
     case ePort:
         return m_Url.SetPort(value);
     case eDatabase:
         return m_Url.SetPath("/" + value);
     case eLoginTimeout:
-        return m_Url.GetArgs().SetValue("login_timeout", value);
     case eIOTimeout:
-        return m_Url.GetArgs().SetValue("io_timeout", value);
     case eExclusiveServer:
-        return m_Url.GetArgs().SetValue("exclusive_server", value);
     case eUseConnPool:
-        return m_Url.GetArgs().SetValue("use_conn_pool", value);
     case eConnPoolMinSize:
-        return m_Url.GetArgs().SetValue("conn_pool_minsize", value);
     case eConnPoolMaxSize:
-        return m_Url.GetArgs().SetValue("conn_pool_maxsize", value);
+        return m_Url.GetArgs().SetValue(x_GetName(param), value);
     case eArgsString:
         return m_Url.GetArgs().SetQueryString(value);
     }
