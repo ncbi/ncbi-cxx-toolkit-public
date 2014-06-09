@@ -398,12 +398,14 @@ public:
     /// @note This method automatically adds cookies to the request headers.
     CHttpResponse Execute(void);
 
-    /// Get current timeout.
+    /// Get current timeout. If set to CTimeout::eDefault, the global
+    /// default value is used (or the one from $CONN_TIMEOUT).
     const CTimeout& GetTimeout(void) const { return m_Timeout; }
     /// Set new timeout.
     void SetTimeout(const CTimeout& timeout) { m_Timeout = timeout; }
 
-    /// Get number of retries.
+    /// Get number of retries. If set to zero, the global default
+    /// value is used (or the one from $CONN_MAX_TRY).
     unsigned short GetRetries(void) const { return m_Retries; }
     /// Set number of retries.
     void SetRetries(unsigned short retries) { m_Retries = retries; }

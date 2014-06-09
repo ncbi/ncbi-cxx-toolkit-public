@@ -194,7 +194,7 @@ void CHttpHeaders::Merge(const CHttpHeaders& headers)
 
 bool CHttpHeaders::x_IsReservedHeader(CTempString name) const
 {
-    for (int i = 0; i < sizeof(kReservedHeaders)/sizeof(kReservedHeaders[0]); ++i) {
+    for (size_t i = 0; i < sizeof(kReservedHeaders)/sizeof(kReservedHeaders[0]); ++i) {
         THeaders::const_iterator it = m_Headers.find(kReservedHeaders[i]);
         if (it != m_Headers.end()) {
             ERR_POST(kReservedHeaders[i] << " must be set through CRequestContext");
@@ -530,8 +530,8 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
       m_Url(url),
       m_Method(method),
       m_Headers(new CHttpHeaders),
-      m_Timeout(DEF_CONN_TIMEOUT),
-      m_Retries(DEF_CONN_MAX_TRY)
+      m_Timeout(CTimeout::eDefault),
+      m_Retries(0)
 {
 }
 
@@ -607,9 +607,13 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     }
     string headers = m_Headers->GetHttpHeader();
 
-    STimeout sto;
-    connnetinfo->timeout = g_CTimeoutToSTimeout(m_Timeout, sto);
-    connnetinfo->max_try = m_Retries;
+    if ( !m_Timeout.IsDefault() ) {
+        STimeout sto;
+        ConnNetInfo_SetTimeout(connnetinfo, g_CTimeoutToSTimeout(m_Timeout, sto));
+    }
+    if ( m_Retries ) {
+        connnetinfo->max_try = m_Retries;
+    }
 
     m_Stream.Reset(new TStreamRef);
     m_Stream->SetConnStream(new CConn_HttpStream(
@@ -623,7 +627,6 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         // Always set AdjustOnRedirect flag - we need this to send correct cookies.
         m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect));
     ConnNetInfo_Destroy(connnetinfo);
-    m_Stream->GetConnStream().exceptions(ios_base::badbit | ios_base::failbit);
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url, *m_Stream));
 }
 
