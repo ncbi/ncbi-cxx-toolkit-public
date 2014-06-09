@@ -469,9 +469,10 @@ void CDiscRepOutput :: Export()
     xmldoc.set_is_standalone(true);
     xmldoc.set_encoding("UTF-8");
     
-    // cout << xmldoc;
+ //    cout << xmldoc;
     *(oc.output_f) << xmldoc;
   }
+  oc.output_f->flush();
 
   x_Clear(&prt_ord);
 };  // Asndisc:: Export
@@ -547,7 +548,7 @@ void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickable
       }
       else {
          // set attributes:
-        sub_node.get_attributes().insert("code", ((*it)->setting_name.c_str()));
+        sub_node.get_attributes().insert("code",((*it)->setting_name.c_str()));
         sub_node.get_attributes().insert("prefix", "Summary");
         sub_node.get_attributes().insert("severity", "INFO");
       }
@@ -701,7 +702,7 @@ void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const s
 {
    string strtmp, xml_prefix, xml_severity;
    if (oc.use_flag && 
-          x_SuppressItemListForFeatureTypeForOutputFiles(c_item->setting_name)){
+         x_SuppressItemListForFeatureTypeForOutputFiles(c_item->setting_name)){
 
 
        if (!prefix.empty()) {
@@ -771,6 +772,14 @@ void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CCli
   else xml_severity = "INFO";
   if (!oc.xml) {
       *(oc.output_f) << desc << endl;
+  }
+  else {
+        xml::node sub_node("message", desc.c_str());
+        xml::attributes& att = sub_node.get_attributes();
+        att.insert("code",(c_item->setting_name.c_str()));
+        att.insert("prefix", xml_prefix.c_str());
+        att.insert("severity", xml_severity.c_str());
+        xml_node.push_back(sub_node);
   }
 
   if (c_item->subcategories.empty() || list_features_if_subcat) {
@@ -1334,7 +1343,6 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
           vector <string> arr;
           x_ReorderAndGroupOnCallerResults(ord2i_citem, grp_idx_str);
           NON_CONST_ITERATE (UInt2UInts, it, ord2i_citem) {
-             //if (it->second < 0) {
              if (it->second.empty()) {
                  continue;
              }
@@ -1379,11 +1387,11 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
 void CDiscRepOutput :: Export(vector <CRef <CClickableItem> >& c_item, const string& setting_name)
 {
    if (!thisInfo.disc_report_data.empty()) {
-      ITERATE ( vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data){
+     ITERATE ( vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data){
          if ( (*it)->setting_name == setting_name) {
             c_item.push_back((*it));
          }
-      }
+     }
    }
 
    x_Clear();

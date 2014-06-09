@@ -1308,7 +1308,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
 
     // output
     m_outsuffix = m_outsuffix.empty() ?
-                    ((args.find("s") != end) ? args["s"] : ".dr") : m_outsuffix;
+                   ((args.find("s") != end) ? args["s"] : ".dr") : m_outsuffix;
     string output_f = (args.find("o") != end) ? args["o"] : kEmptyStr;
     m_outdir= (args.find("r") != end) ? GetDirStr(args["r"]) : kEmptyStr;
     if (!output_f.empty() && !m_outdir.empty()) {
@@ -1326,7 +1326,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     }
 
     thisInfo.output_config.output_f 
-      = output_f.empty() ? 0 : new CNcbiOfstream((m_outdir + output_f).c_str());
+     = output_f.empty() ? 0 : new CNcbiOfstream((m_outdir + output_f).c_str());
     strtmp = (args.find("S") != end) ? args["S"] : "false";
     thisInfo.output_config.summary_report 
        = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t"));
@@ -3275,9 +3275,9 @@ void CSeqEntryChoiceHook :: SkipChoiceVariant(CObjectIStream& in,const CObjectTy
 
 void CRepConfAsndisc :: x_BatchSeqSubmit(ESerialDataFormat datafm)
 {
-   auto_ptr<CObjectIStream> ois (CObjectIStream::Open(datafm, thisInfo.infile));
-   ois->SetPathSkipVariantHook("Seq-submit.entrys-set",new CSeqEntryChoiceHook);
-   ois->Skip(CType<CBioseq_set>()); 
+  auto_ptr<CObjectIStream> ois (CObjectIStream::Open(datafm, thisInfo.infile));
+  ois->SetPathSkipVariantHook("Seq-submit.entrys-set",new CSeqEntryChoiceHook);
+  ois->Skip(CType<CBioseq_set>()); 
 };
 
 void CRepConfAsndisc :: x_CatenatedSeqEntry()
@@ -3487,7 +3487,7 @@ void CRepConfig :: Run()
 {
   thisInfo.seq_submit.Reset(0);
   CRef <CSeq_entry> 
-    seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
+   seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   AddNumEntry();
   CheckThisSeqEntry(seq_ref);
   CollectRepData();
