@@ -140,11 +140,11 @@ public:
     }
     const TFieldType* GetPtr(const CFeat_CI& feat_ci) const {
         const TFieldType* dummy = 0;
-        return GetPtr(feat_ci, dummy, false);
+        return CTableFieldHandle_Base::GetPtr(feat_ci, dummy, false);
     }
     const TFieldType& Get(const CFeat_CI& feat_ci) const {
         const TFieldType* dummy = 0;
-        return *GetPtr(feat_ci, dummy, true);
+        return *CTableFieldHandle_Base::GetPtr(feat_ci, dummy, true);
     }
 };
 
