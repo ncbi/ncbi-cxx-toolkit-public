@@ -1581,10 +1581,13 @@ same id type" } },
 "The genetic codes are the same for all CDS features on one Bioseq." } },
    { eErr_SEQ_FEAT_InvalidFuzz,
    { "InvalidFuzz",
-   "Incorrect use of Int-fuzz.lim" } },
+"Incorrect use of Int-fuzz.lim" } },
    { eErr_SEQ_FEAT_BadComment,
    { "BadComment",
-   "Comment is inconsistent with content of feature." } },
+"Comment is inconsistent with content of feature." } },
+   { eErr_SEQ_FEAT_NonsenseIntron,
+   { "NonsenseIntron",
+"3 base intron actually contains a stop codon." } },
 
 /* SEQ_ALIGN */
 
