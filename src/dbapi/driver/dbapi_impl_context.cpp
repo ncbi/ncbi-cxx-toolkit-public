@@ -705,7 +705,7 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
     }
     if (reg.HasEntry(section_name, "port", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fPortSet;
-        params->port = reg.GetInt(section_name, "port", 0);
+        params->port = reg.Get(section_name, "port");
     }
     if (reg.HasEntry(section_name, "database", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fDatabaseSet;
