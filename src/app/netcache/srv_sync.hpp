@@ -51,6 +51,13 @@ class CSrvTime;
 #define ACCESS_ONCE(x) (*(volatile typeof(x) *)&(x))
 
 template <class T>
+inline T
+AtomicValCAS(T volatile& var, T old_value, T new_value)
+{
+    return __sync_val_compare_and_swap(&var, old_value, new_value);
+}
+
+template <class T>
 inline bool
 AtomicCAS(T volatile& var, T old_value, T new_value)
 {
@@ -74,6 +81,13 @@ AtomicSub(T volatile& var, T sub_value)
 #else
 
 #define ACCESS_ONCE(x) x
+
+template <class T>
+inline T
+AtomicValCAS(T volatile& var, T old_value, T new_value)
+{
+    return old_value;
+}
 
 template <class T>
 inline bool

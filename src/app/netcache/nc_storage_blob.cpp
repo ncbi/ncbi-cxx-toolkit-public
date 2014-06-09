@@ -41,9 +41,8 @@ struct SWriteBackData
     size_t cur_size;
     size_t releasable_size;
     size_t releasing_size;
-    vector<SNCBlobVerData*> to_add_list;
-    vector<SNCBlobVerData*> to_del_list;
-
+    vector<SNCBlobVerData*> *to_add_list;
+    vector<SNCBlobVerData*> *to_del_list;
 
     SWriteBackData(void);
 };
@@ -205,7 +204,7 @@ s_AddReleasableMem(SNCBlobVerData* ver_data,
     wb_data->releasable_size += add_releasable;
     wb_data->releasing_size -= sub_releasing;
     if (ver_data)
-        wb_data->to_add_list.push_back(ver_data);
+        wb_data->to_add_list->push_back(ver_data);
     wb_data->lock.Unlock();
 }
 
@@ -242,7 +241,7 @@ s_ScheduleVerDelete(SNCBlobVerData* ver_data)
 {
     SWriteBackData* wb_data = s_GetWBData();
     wb_data->lock.Lock();
-    wb_data->to_del_list.push_back(ver_data);
+    wb_data->to_del_list->push_back(ver_data);
     ver_data->delete_scheduled = true;
     wb_data->lock.Unlock();
 }
@@ -356,6 +355,10 @@ s_TransferVerList(vector<SNCBlobVerData*>& from_list,
 static void
 s_CollectWBData(SWriteBackData* wb_data)
 {
+    vector<SNCBlobVerData*> *next_add = new vector<SNCBlobVerData*>;
+    vector<SNCBlobVerData*> *next_del = new vector<SNCBlobVerData*>;
+    vector<SNCBlobVerData*> *prev_add = nullptr, *prev_del = nullptr;
+
     wb_data->lock.Lock();
     s_WBCurSize += wb_data->cur_size;
     wb_data->cur_size = 0;
@@ -363,9 +366,30 @@ s_CollectWBData(SWriteBackData* wb_data)
     wb_data->releasable_size = 0;
     s_WBReleasingSize += wb_data->releasing_size;
     wb_data->releasing_size = 0;
-    s_TransferVerList(wb_data->to_add_list, s_WBToAddList);
-    s_TransferVerList(wb_data->to_del_list, s_WBToDelList);
+
+    if (next_add) {
+        prev_add = wb_data->to_add_list;
+        wb_data->to_add_list = next_add;
+    } else {
+        s_TransferVerList(*(wb_data->to_add_list), s_WBToAddList);
+    }
+    if (next_del) {
+        prev_del = wb_data->to_del_list;
+        wb_data->to_del_list = next_del;
+    } else {
+        s_TransferVerList(*(wb_data->to_del_list), s_WBToDelList);
+    }
+
     wb_data->lock.Unlock();
+
+    if (prev_add) {
+        s_TransferVerList(*prev_add, s_WBToAddList);
+        delete prev_add;
+    }
+    if (prev_del) {
+        s_TransferVerList(*prev_del, s_WBToDelList);
+        delete prev_del;
+    }
 }
 
 static void
@@ -407,7 +431,10 @@ SWriteBackData::SWriteBackData(void)
     : cur_size(0),
       releasable_size(0),
       releasing_size(0)
-{}
+{
+    to_add_list = new vector<SNCBlobVerData*>;
+    to_del_list = new vector<SNCBlobVerData*>;
+}
 
 
 CWriteBackControl::CWriteBackControl(void)

@@ -631,8 +631,8 @@ s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
         size += 8 - (size & 7);
     size += sizeof(SFileIndexRec);
 
-    file_info->info_lock.Lock();
     s_DeleteIndexRec(file_info, ind_rec);
+    file_info->info_lock.Lock();
     if (file_info->used_size < size)
         abort();
     file_info->used_size -= size;
