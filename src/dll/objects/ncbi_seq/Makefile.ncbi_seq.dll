@@ -12,6 +12,7 @@ HOSTED_LIBS    = seq          \
                  xnetblastcli \
                  blastdb      \
                  blastxml     \
+                 blastxml2    \
                  taxon1       \
                  taxon3       \
                  variation    \
