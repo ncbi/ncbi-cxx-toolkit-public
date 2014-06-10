@@ -2138,7 +2138,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const = 0;
 
     protected:
-      bool m_all_same;
       string GetName_has() const {return string("ONCALLER_COMMENT_PRESENT");}
       string GetName_mix() const {return string("DISC_MISMATCHED_COMMENTS");}
   };
