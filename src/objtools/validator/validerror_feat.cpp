@@ -6002,6 +6002,79 @@ static bool s_LocIsNmAccession (const CSeq_loc& loc, CScope& scope)
     return false;
 }
 
+void CValidError_feat::CheckForThreeBaseNonsense (
+    const CSeq_feat& feat,
+    const CSeq_id& id,
+    const CCdregion& cdr,
+    TSeqPos start,
+    TSeqPos stop,
+    ENa_strand strand
+)
+
+{
+    CRef<CSeq_feat> tmp_cds (new CSeq_feat());
+
+    tmp_cds->SetLocation().SetInt().SetFrom(start);
+    tmp_cds->SetLocation().SetInt().SetTo(stop);
+    tmp_cds->SetLocation().SetInt().SetStrand(strand);
+    tmp_cds->SetLocation().SetInt().SetId().Assign(id);
+
+    tmp_cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    tmp_cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    tmp_cds->SetData().SetCdregion();
+    if ( cdr.IsSetCode()) {
+        tmp_cds->SetData().SetCdregion().SetCode().Assign(cdr.GetCode());
+    }
+
+    string transl_prot;   // translated protein
+    bool got_stop = false;
+    bool alt_start = false;
+    bool show_stop = false;
+    bool unable_to_translate = true;
+
+    x_FindTranslationStops(*tmp_cds, got_stop, show_stop, unable_to_translate, alt_start, transl_prot);
+
+    if (NStr::Equal (transl_prot, "*")) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_NonsenseIntron, "Triplet intron encodes stop codon", feat);
+    }
+}
+
+void CValidError_feat::TranslateTripletIntrons (
+    const CSeq_feat& feat,
+    const CCdregion& cdr
+)
+
+{
+    TSeqPos last_start, last_stop, start, stop;
+
+    if (feat.IsSetExcept() || feat.IsSetExcept_text()) return;
+    if (cdr.IsSetCode_break()) return;
+    if (feat.CanGetPseudo()  &&  feat.GetPseudo()) return;
+    if (IsOverlappingGenePseudo(feat)) return;
+
+    const CSeq_loc& loc = feat.GetLocation();
+
+    CSeq_loc_CI prev;
+    for (CSeq_loc_CI curr(loc); curr; ++curr) {
+        start = curr.GetRange().GetFrom();
+        stop = curr.GetRange().GetTo();
+        if ( prev  &&  curr  && IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), m_Scope) ) {
+            ENa_strand strand = curr.GetStrand();
+            if ( strand == eNa_strand_minus ) {
+                if (last_start - stop == 4) {
+                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, stop + 1, last_start - 1, strand);
+                }
+            } else {
+                if (start - last_stop == 4) {
+                    CheckForThreeBaseNonsense (feat, curr.GetSeq_id(), cdr, last_stop + 1, start - 1, strand);
+                }
+            }
+        }
+        last_start = start;
+        last_stop = stop;
+        prev = curr;
+    }
+}
 
 bool CValidError_feat::ValidateCdRegionTranslation 
 (const CSeq_feat& feat,
@@ -6020,6 +6093,8 @@ bool CValidError_feat::ValidateCdRegionTranslation
     if (NStr::IsBlank(transl_prot)) {
         return true;
     }
+
+    TranslateTripletIntrons (feat, feat.GetData().GetCdregion());
 
     int gc = 0;
     if ( feat.GetData().GetCdregion().IsSetCode() ) {
