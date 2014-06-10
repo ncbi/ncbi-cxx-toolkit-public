@@ -857,6 +857,8 @@ private:
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat);
+    void CheckForThreeBaseNonsense (const CSeq_feat& feat, const CSeq_id& id, const CCdregion& cdr, TSeqPos start, TSeqPos stop, ENa_strand strand);
+    void TranslateTripletIntrons (const CSeq_feat& feat, const CCdregion& cdr);
     bool ValidateCdRegionTranslation (const CSeq_feat& feat, const string& transl_prot, bool report_errors, bool unclassified_except, bool& has_errors, bool& other_than_mismatch, bool& reported_bad_start_codon, bool& prot_ok);
     void x_GetExceptionFlags
         (const string& except_text,
