@@ -1,0 +1,5 @@
+LIB = blastxml2
+SRC = blastxml2__ blastxml2___
+
+USES_LIBRARIES =  \
+    xser
