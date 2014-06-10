@@ -111,6 +111,7 @@
 #ifdef NCBI_SEQ_EXPORTS
 #  define NCBI_BLASTDB_EXPORTS
 #  define NCBI_BLASTXML_EXPORTS
+#  define NCBI_BLASTXML2_EXPORTS
 #  define NCBI_BLAST_EXPORTS
 #  define NCBI_GENOME_COLLECTION_EXPORTS
 #  define NCBI_SCOREMAT_EXPORTS
@@ -331,6 +332,14 @@
 #  define NCBI_BLASTXML_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_BLASTXML_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library blastxml2
+ */
+#ifdef NCBI_BLASTXML2_EXPORTS
+#  define NCBI_BLASTXML2_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_BLASTXML2_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library blast
