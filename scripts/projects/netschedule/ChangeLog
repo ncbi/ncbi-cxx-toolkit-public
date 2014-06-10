@@ -1,3 +1,17 @@
+Release 4.18.0 cloned from 4.17.1 (2014-06-10)
+
+Improvements:
+    * NetSchedule: incorrect RDRB if a job was in the FAILED state
+      (JIRA: CXX-4986)
+    * NetSchedule -- READ change; +CWREAD, JDREX cmds (JIRA: CXX-4981)
+    * NetSchedule: warning codes (JIRA: CXX-4941)
+    * NetSchedule: admin clients recognition (JIRA: CXX-4922)
+    * NetSchedule -- CANCEL to work for jobs with a given affinity (a la that
+      for group) (JIRA: CXX-4911)
+    * NetSchedule: garbage collector can steal a job group before notification
+      is triggered (JIRA: CXX-4909)
+
+
 Release 4.17.1 cloned from 4.17.0 (2014-05-01)
 
 Improvements:
