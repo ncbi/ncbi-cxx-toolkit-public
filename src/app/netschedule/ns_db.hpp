@@ -74,6 +74,8 @@ struct SJobDB : public CBDB_File
     CBDB_FieldUint4        timeout_nsec;
     CBDB_FieldUint4        run_timeout_sec; // Job run timeout
     CBDB_FieldUint4        run_timeout_nsec;
+    CBDB_FieldUint4        read_timeout_sec;
+    CBDB_FieldUint4        read_timeout_nsec;
 
     CBDB_FieldUint4        subm_notif_port;        // notification port
     CBDB_FieldUint4        subm_notif_timeout_sec; // notification timeout
@@ -122,6 +124,8 @@ struct SJobDB : public CBDB_File
         BindData("timeout_nsec",       &timeout_nsec);
         BindData("run_timeout_sec",    &run_timeout_sec);
         BindData("run_timeout_nsec",   &run_timeout_nsec);
+        BindData("read_timeout_sec",   &read_timeout_sec);
+        BindData("read_timeout_nsec",  &read_timeout_nsec);
 
         BindData("subm_notif_port",         &subm_notif_port);
         BindData("subm_notif_timeout_sec",  &subm_notif_timeout_sec);
@@ -276,6 +280,8 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldUint4     dump_group_buffer_size;
     CBDB_FieldUint4     run_timeout_sec;
     CBDB_FieldUint4     run_timeout_nsec;
+    CBDB_FieldUint4     read_timeout_sec;
+    CBDB_FieldUint4     read_timeout_nsec;
     CBDB_FieldLString   program_name;
     CBDB_FieldUint4     failed_retries;
     CBDB_FieldUint4     blacklist_time_sec;
@@ -319,6 +325,8 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("dump_group_buffer_size",        &dump_group_buffer_size);
         BindData("run_timeout_sec",               &run_timeout_sec);
         BindData("run_timeout_nsec",              &run_timeout_nsec);
+        BindData("read_timeout_sec",              &read_timeout_sec);
+        BindData("read_timeout_nsec",             &read_timeout_nsec);
         BindData("program_name",                  &program_name);
         BindData("failed_retries",                &failed_retries);
         BindData("blacklist_time_sec",            &blacklist_time_sec);

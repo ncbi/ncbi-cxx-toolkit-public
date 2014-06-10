@@ -1655,7 +1655,10 @@ class Scenario144( TestBase ):
         if status1 != "Done" or \
            status2 != "Done" or \
            status3 != "Done":
-            return False
+            raise Exception( "Unexpected job status. Expected: Done. "
+                             "WST report: " + status1 + " "
+                             "SST report: " + status2 + " "
+                             "DUMP report: " + status3 )
         return True
 
 class Scenario145( TestBase ):
@@ -1912,7 +1915,9 @@ class Scenario150( TestBase ):
         jobInfo = self.ns.getJob( 'TEST' )
         receivedJobID = jobInfo[ 0 ]
         if self.jobID != receivedJobID:
-            raise Exception( "Inconsistency detected" )
+            raise Exception( "Inconsistency detected. Submitted job: '" +
+                             self.jobID + "', received job: '" +
+                             receivedJobID + "'" )
         self.ns.putJob( 'TEST', self.jobID, jobInfo[ 1 ], 0, "" )
 
         self.readAndWaitTillFail()

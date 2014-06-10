@@ -53,11 +53,21 @@ class CNSGroupsRegistry;
 class CQueueDataBase;
 
 
+
+// Distinguishes get and read notifications
+enum ENotificationReason {
+    eGet,
+    eRead
+};
+
+
 struct SNSNotificationAttributes
 {
-    unsigned int    m_Address;
-    unsigned short  m_Port;
-    CNSPreciseTime  m_Lifetime;
+    ENotificationReason     m_Reason;
+
+    unsigned int            m_Address;
+    unsigned short          m_Port;
+    CNSPreciseTime          m_Lifetime;
 
     string          m_ClientNode;   // Non-empty for the new style clients
     bool            m_WnodeAff;     // true if I need to consider the node
@@ -92,10 +102,11 @@ struct SNSNotificationAttributes
 // which is going to be sent at exactly specified time
 struct SExactTimeNotification
 {
-    unsigned int    m_Address;
-    unsigned short  m_Port;
-    CNSPreciseTime  m_TimeToSend;
-    bool            m_NewFormat;
+    ENotificationReason     m_Reason;
+    unsigned int            m_Address;
+    unsigned short          m_Port;
+    CNSPreciseTime          m_TimeToSend;
+    bool                    m_NewFormat;
 };
 
 
@@ -126,7 +137,8 @@ class CNSNotificationList
                               bool                  any_job,
                               bool                  exclusive_new_affinity,
                               bool                  new_format,
-                              const string &        group);
+                              const string &        group,
+                              ENotificationReason   reason);
         void UnregisterListener(const CNSClientId &  client,
                                 unsigned short       port);
         void UnregisterListener(unsigned int         address,
@@ -153,7 +165,8 @@ class CNSNotificationList
                     CNSAffinityRegistry &  aff_registry,
                     CNSGroupsRegistry &    group_registry,
                     const CNSPreciseTime & notif_highfreq_period,
-                    const CNSPreciseTime & notif_handicap);
+                    const CNSPreciseTime & notif_handicap,
+                    ENotificationReason    reason);
         void Notify(const TNSBitVector &   jobs,
                     const TNSBitVector &   affinities,
                     bool                   no_aff_jobs,
@@ -161,7 +174,8 @@ class CNSNotificationList
                     CNSAffinityRegistry &  aff_registry,
                     CNSGroupsRegistry &    group_registry,
                     const CNSPreciseTime & notif_highfreq_period,
-                    const CNSPreciseTime & notif_handicap);
+                    const CNSPreciseTime & notif_handicap,
+                    ENotificationReason    reason);
         void onQueueResumed(bool  any_pending);
         string Print(const CNSClientsRegistry &   clients_registry,
                      const CNSAffinityRegistry &  aff_registry,
@@ -172,11 +186,7 @@ class CNSNotificationList
             return m_PassiveListeners.size() + m_ActiveListeners.size();
         }
 
-        void AddToExactNotifications(unsigned int  address,
-                                     unsigned short  port,
-                                     const CNSPreciseTime &  when,
-                                     bool  new_format);
-        void ClearExactNotifications(void);
+        void ClearExactGetNotifications(void);
         CNSPreciseTime NotifyExactListeners(void);
 
         void AddToQueueResumedNotifications(unsigned int  address,
@@ -187,14 +197,21 @@ class CNSNotificationList
                                        unsigned short  port) const;
 
     private:
-        void x_SendNotificationPacket(unsigned int    address,
-                                      unsigned short  port,
-                                      bool            new_format);
-        bool x_TestTimeout(const CNSPreciseTime &       current_time,
-                           CNSClientsRegistry &         clients_registry,
-                           CNSAffinityRegistry &        aff_registry,
-                           list<SNSNotificationAttributes> &            container,
-                           list<SNSNotificationAttributes>::iterator &  record);
+        void x_AddToExactNotifications(unsigned int  address,
+                                       unsigned short  port,
+                                       const CNSPreciseTime &  when,
+                                       bool  new_format,
+                                       ENotificationReason  reason);
+        void x_SendNotificationPacket(unsigned int            address,
+                                      unsigned short          port,
+                                      bool                    new_format,
+                                      ENotificationReason     reason);
+        bool x_TestTimeout(
+                const CNSPreciseTime &       current_time,
+                CNSClientsRegistry &         clients_registry,
+                CNSAffinityRegistry &        aff_registry,
+                list<SNSNotificationAttributes> &            container,
+                list<SNSNotificationAttributes>::iterator &  record);
         bool x_IsInExactList(unsigned int  address, unsigned short  port) const;
 
     private:
@@ -213,17 +230,19 @@ class CNSNotificationList
                                unsigned int                       address,
                                unsigned short                     port);
 
-        CDatagramSocket         m_GetNotificationSocket;
-        char                    m_GetMsgBuffer[k_MessageBufferSize];
-        size_t                  m_GetMsgLength;
-        char                    m_GetMsgBufferObsoleteVersion[k_MessageBufferSize];
-        size_t                  m_GetMsgLengthObsoleteVersion;
+        CDatagramSocket     m_GetAndReadNotificationSocket;
+        char                m_GetMsgBuffer[k_MessageBufferSize];
+        size_t              m_GetMsgLength;
+        char                m_GetMsgBufferObsoleteVersion[k_MessageBufferSize];
+        size_t              m_GetMsgLengthObsoleteVersion;
+        char                m_ReadMsgBuffer[k_MessageBufferSize];
+        size_t              m_ReadMsgLength;
 
-        CDatagramSocket         m_StatusNotificationSocket;
-        char                    m_JobStateConstPart[k_MessageBufferSize];
-        size_t                  m_JobStateConstPartLength;
+        CDatagramSocket     m_StatusNotificationSocket;
+        char                m_JobStateConstPart[k_MessageBufferSize];
+        size_t              m_JobStateConstPartLength;
 
-        CQueueDataBase &        m_QueueDB;
+        CQueueDataBase &    m_QueueDB;
 
     private:
         CNSNotificationList(const CNSNotificationList &);

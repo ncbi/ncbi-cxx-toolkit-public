@@ -301,7 +301,12 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "READ",          { &CNetScheduleHandler::x_ProcessReading,
                          eNS_Queue | eNS_Submitter | eNS_Program },
-        { { "timeout",           eNSPT_Int, eNSPA_Optional, "0" },
+        { { "reader_aff",        eNSPT_Int, eNSPA_Optional, "0" },
+          { "any_aff",           eNSPT_Int, eNSPA_Optional, "1" },
+          { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, "0" },
+          { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "port",              eNSPT_Int, eNSPA_Optional      },
+          { "timeout",           eNSPT_Int, eNSPA_Optional,     },
           { "group",             eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
@@ -416,6 +421,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "CWREAD",        { &CNetScheduleHandler::x_ProcessCancelWaitRead,
+                         eNS_Queue | eNS_Submitter | eNS_Program },
+        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "FPUT",          { &CNetScheduleHandler::x_ProcessPutFailure,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -451,6 +461,14 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "JDREX",         { &CNetScheduleHandler::x_ProcessJobDelayReadExpiration,
+                         eNS_Queue | eNS_Submitter | eNS_Program },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "timeout",           eNSPT_Int, eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+
     { "AFLS",          { &CNetScheduleHandler::x_ProcessGetAffinityList,
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
@@ -1837,6 +1855,16 @@ void CNetScheduleHandler::x_ProcessCancelWaitGet(CQueue* q)
 }
 
 
+void CNetScheduleHandler::x_ProcessCancelWaitRead(CQueue* q)
+{
+    x_CheckNonAnonymousClient("cancel waiting after READ");
+
+    q->CancelWaitRead(m_ClientId);
+    x_WriteMessage("OK:");
+    x_PrintCmdRequestStop();
+}
+
+
 void CNetScheduleHandler::x_ProcessPut(CQueue* q)
 {
     bool    cmdv2(m_CommandArguments.cmd == "PUT2");
@@ -2203,6 +2231,53 @@ void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
     }
     if (status != CNetScheduleAPI::eRunning) {
         ERR_POST(Warning << "Cannot change expiration for job "
+                         << m_CommandArguments.job_key
+                         << " in status "
+                         << CNetScheduleAPI::StatusToString(status));
+        x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+        x_WriteMessage("ERR:eInvalidJobStatus:" +
+                       CNetScheduleAPI::StatusToString(status));
+        x_LogCommandWithJob(job);
+        x_PrintCmdRequestStop();
+        return;
+    }
+
+    // Here: the new timeout has been applied
+    x_WriteMessage("OK:");
+    x_LogCommandWithJob(job);
+    x_PrintCmdRequestStop();
+}
+
+
+void CNetScheduleHandler::x_ProcessJobDelayReadExpiration(CQueue* q)
+{
+    if (m_CommandArguments.timeout <= 0) {
+        ERR_POST(Warning << "Invalid timeout "
+                         << m_CommandArguments.timeout
+                         << " in JDREX for job "
+                         << m_CommandArguments.job_key);
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:eInvalidParameter:");
+        x_PrintCmdRequestStop();
+        return;
+    }
+
+    CJob            job;
+    CNSPreciseTime  timeout(m_CommandArguments.timeout, 0);
+    TJobStatus      status = q->JobDelayReadExpiration(
+                                            m_CommandArguments.job_id,
+                                            job, timeout);
+
+    if (status == CNetScheduleAPI::eJobNotFound) {
+        ERR_POST(Warning << "JDREX for unknown job "
+                         << m_CommandArguments.job_key);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+        x_PrintCmdRequestStop();
+        return;
+    }
+    if (status != CNetScheduleAPI::eReading) {
+        ERR_POST(Warning << "Cannot change read expiration for job "
                          << m_CommandArguments.job_key
                          << " in status "
                          << CNetScheduleAPI::StatusToString(status));
@@ -2954,14 +3029,20 @@ void CNetScheduleHandler::x_ProcessGetConfiguration(CQueue* q)
 void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 {
     x_CheckNonAnonymousClient("use READ command");
+    x_CheckPortAndTimeout();
+    x_CheckReadParameters();
 
     CJob            job;
+    string          job_affinity;
+    bool            no_more_jobs = true;
 
     x_ClearRollbackAction();
-    q->GetJobForReading(m_ClientId,
-                        CNSPreciseTime(m_CommandArguments.timeout, 0),
-                        m_CommandArguments.group,
-                        &job, m_RollbackAction);
+    q->GetJobForReadingOrWait(m_ClientId,
+                              m_CommandArguments.port,
+                              m_CommandArguments.timeout,
+                              m_CommandArguments.group,
+                              &job, &job_affinity,
+                              &no_more_jobs, m_RollbackAction);
 
     unsigned int    job_id = job.GetId();
     string          job_key;
@@ -2974,18 +3055,21 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
                        "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
                        "&auth_token=" + job.GetAuthToken() +
                        "&status=" +
-                       CNetScheduleAPI::StatusToString(job.GetStatus()));
+                       CNetScheduleAPI::StatusToString(
+                                            job.GetStatusBeforeReading()) +
+                       "&affinity=" + job_affinity);
         x_ClearRollbackAction();
         x_LogCommandWithJob(job);
     }
     else
-        x_WriteMessage("OK:");
+        x_WriteMessage("OK:no_more_jobs=" + NStr::BoolToString(no_more_jobs));
 
     if (m_ConnContext.NotNull()) {
         if (job_id)
             GetDiagContext().Extra().Print("job_key", job_key);
         else
-            GetDiagContext().Extra().Print("job_key", "None");
+            GetDiagContext().Extra().Print("job_key", "None")
+                                    .Print("no_more_jobs", no_more_jobs);
     }
     x_PrintCmdRequestStop();
 }
@@ -3036,7 +3120,8 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
                                             m_CommandArguments.job_key,
                                             job,
                                             m_CommandArguments.auth_token,
-                                            false);
+                                            false,
+                                            CNetScheduleAPI::eJobNotFound);
     x_FinalizeReadCommand("RDRB", old_status, job);
 }
 
@@ -3288,6 +3373,25 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
 }
 
 
+void CNetScheduleHandler::x_CheckReadParameters(void)
+{
+    // Checks that the given READ parameters make sense
+    if (m_CommandArguments.reader_affinity == false &&
+        m_CommandArguments.any_affinity == false &&
+        m_CommandArguments.affinity_token.empty()) {
+        ERR_POST(Warning << "The job read request without explicit affinities, "
+                            "without preferred affinities and "
+                            "with any_aff flag set to false "
+                            "will never match any job.");
+        }
+    if (m_CommandArguments.exclusive_new_aff == true &&
+        m_CommandArguments.any_affinity == true)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "It is forbidden to have both any_affinity and "
+                   "exclusive_new_aff READ flags set to 1.");
+}
+
+
 void CNetScheduleHandler::x_CheckQInf2Parameters(void)
 {
     // One of the arguments must be provided: qname or service
@@ -3438,6 +3542,7 @@ bool CNetScheduleHandler::x_CanBeWithoutQueue(FProcessor  processor) const
            processor == &CNetScheduleHandler::x_ProcessPutFailure ||            // FPUT/FPUT2
            processor == &CNetScheduleHandler::x_ProcessJobExchange ||           // JXCG
            processor == &CNetScheduleHandler::x_ProcessJobDelayExpiration ||    // JDEX
+           processor == &CNetScheduleHandler::x_ProcessJobDelayReadExpiration ||// JDREX
            processor == &CNetScheduleHandler::x_ProcessConfirm ||               // CFRM
            processor == &CNetScheduleHandler::x_ProcessReadFailed ||            // FRED
            processor == &CNetScheduleHandler::x_ProcessReadRollback;            // RDRB

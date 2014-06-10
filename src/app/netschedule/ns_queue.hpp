@@ -132,6 +132,7 @@ public:
     TParameterList GetParameters() const;
     CNSPreciseTime GetTimeout() const;
     CNSPreciseTime GetRunTimeout() const;
+    CNSPreciseTime GetReadTimeout() const;
     CNSPreciseTime GetPendingTimeout() const;
     CNSPreciseTime  GetMaxPendingWaitTimeout() const;
     unsigned GetFailedRetries() const;
@@ -208,6 +209,7 @@ public:
                       string &                  added_pref_aff);
 
     void CancelWaitGet(const CNSClientId &  client);
+    void CancelWaitRead(const CNSClientId &  client);
 
     list<string> ChangeAffinity(const CNSClientId &     client,
                                 const list<string> &    aff_to_add,
@@ -220,6 +222,9 @@ public:
     TJobStatus  JobDelayExpiration(unsigned int            job_id,
                                    CJob &                  job,
                                    const CNSPreciseTime &  tm);
+    TJobStatus  JobDelayReadExpiration(unsigned int            job_id,
+                                       CJob &                  job,
+                                       const CNSPreciseTime &  tm);
 
     TJobStatus  GetStatusAndLifetime(unsigned int      job_id,
                                      CJob &            job,
@@ -279,11 +284,14 @@ public:
 
     // Read-Confirm stage
     // Request done jobs for reading with timeout
-    void GetJobForReading(const CNSClientId &       client,
-                          const CNSPreciseTime &    read_timeout,
-                          const string &            group,
-                          CJob *                    job,
-                          CNSRollbackInterface * &  rollback_action);
+    void GetJobForReadingOrWait(const CNSClientId &       client,
+                                unsigned int              port,
+                                unsigned int              timeout,
+                                const string &            group,
+                                CJob *                    job,
+                                string *                  affinity,
+                                bool *                    no_more_jobs,
+                                CNSRollbackInterface * &  rollback_action);
     // Confirm reading of these jobs
     TJobStatus  ConfirmReadingJob(const CNSClientId &   client,
                                   unsigned int          job_id,
@@ -303,7 +311,8 @@ public:
                                  const string &        job_key,
                                  CJob &                job,
                                  const string &        auth_token,
-                                 bool                  is_ns_rollback);
+                                 bool                  is_ns_rollback,
+                                 TJobStatus            target_status);
 
     // Erase job from all structures, request delayed db deletion
     void EraseJob(unsigned job_id);
@@ -474,6 +483,7 @@ private:
                                   CJob &                  job);
 
     void x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
+                                 const CNSPreciseTime &  queue_read_timeout,
                                  unsigned                job_id,
                                  const CNSPreciseTime &  curr_time,
                                  bool                    logging);
@@ -505,8 +515,17 @@ private:
                                bool                  exclusive_new_affinity,
                                bool                  new_format,
                                const string &        group);
+    void x_RegisterReadListener(const CNSClientId &   client,
+                                unsigned short        port,
+                                unsigned int          timeout,
+                                const TNSBitVector &  aff_ids,
+                                bool                  reader_aff,
+                                bool                  any_aff,
+                                bool                  exclusive_new_affinity,
+                                const string &        group);
     bool x_UnregisterGetListener(const CNSClientId &  client,
                                  unsigned short       port);
+    bool x_UnregisterReadListener(const CNSClientId &  client);
 
     /// Erase jobs from all structures, request delayed db deletion
     void x_Erase(const TNSBitVector& job_ids);
@@ -520,6 +539,7 @@ private:
     CNSPreciseTime x_GetEstimatedJobLifetime(unsigned int   job_id,
                                              TJobStatus     status) const;
     CNSPreciseTime x_GetSubmitTime(unsigned int  job_id);
+    bool x_NoMoreReadJobs(const string &  group);
 
 private:
     friend class CJob;
@@ -567,6 +587,11 @@ private:
     TNSBitVector                m_JobsToDelete;
     unsigned int                m_JobsToDeleteOps;
 
+    // Vector of jobs which are in a process of reading or had been already
+    // read.
+    TNSBitVector                m_ReadJobs;
+    unsigned int                m_ReadJobsOps;
+
     // Vector of jobs which have been set for notifications
     TNSBitVector                m_JobsToNotify;
 
@@ -576,6 +601,7 @@ private:
     CNSPreciseTime              m_RunTimeout;      // Execution timeout
     // Its precision, set at startup only, not reconfigurable
     CNSPreciseTime              m_RunTimeoutPrecision;
+    CNSPreciseTime              m_ReadTimeout;
     // How many attempts to make on different nodes before failure
     unsigned                    m_FailedRetries;
     CNSPreciseTime              m_BlacklistTime;
@@ -639,9 +665,13 @@ inline CNSPreciseTime CQueue::GetTimeout() const
 {
     return m_Timeout;
 }
-inline CNSPreciseTime CQueue::GetRunTimeout()  const
+inline CNSPreciseTime CQueue::GetRunTimeout() const
 {
     return m_RunTimeout;
+}
+inline CNSPreciseTime CQueue::GetReadTimeout() const
+{
+    return m_ReadTimeout;
 }
 inline CNSPreciseTime CQueue::GetPendingTimeout() const
 {

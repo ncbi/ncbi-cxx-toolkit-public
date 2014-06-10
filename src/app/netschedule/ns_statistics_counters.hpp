@@ -107,6 +107,12 @@ private:
     CAtomicCounter_WithAutoInit     m_ToReadFailedDueToTimeoutCounter;
     CAtomicCounter_WithAutoInit     m_ToReadFailedDueToClearCounter;
     CAtomicCounter_WithAutoInit     m_ToReadFailedDueToNewSessionCounter;
+    CAtomicCounter_WithAutoInit     m_ToCanceledDueToReadTimeoutCounter;
+    CAtomicCounter_WithAutoInit     m_ToFailedDueToReadTimeoutCounter;
+    CAtomicCounter_WithAutoInit     m_ToCanceledDueToReadNewSessionCounter;
+    CAtomicCounter_WithAutoInit     m_ToCanceledDueToReadClearCounter;
+    CAtomicCounter_WithAutoInit     m_ToFailedDueToReadNewSessionCounter;
+    CAtomicCounter_WithAutoInit     m_ToFailedDueToReadClearCounter;
 
     CAtomicCounter_WithAutoInit     m_PickedAsOutdated;
 };

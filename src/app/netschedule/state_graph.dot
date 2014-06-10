@@ -1,64 +1,63 @@
-# dot -T ps state_graph.dot -o state_graph.ps
+# dot -T jpg state_graph.dot -o state_graph.jpg
 
 digraph NetScheduleNew {
 
     None        [ label = "None",        shape = "box" ];
     Canceled    [ label = "Canceled",    shape = "box" ];
-    Timeout     [ label = "Timeout",     shape = "diamond", style = "dashed" ];
-    ReadTimeout [ label = "ReadTimeout", shape = "diamond", style = "dashed" ];
     Tries       [ label = "Tries",       shape = "diamond", style = "dashed" ];
     ReadTries   [ label = "ReadTries",   shape = "diamond", style = "dashed" ];
 
     None        -> Pending          [ label = "SUBMIT" ];
 
     Pending     -> Running          [ label = "GET\nWGET\nJXCG" ];
-    Pending     -> Canceled         [ label = "CANCEL" ];
+    Pending     -> Canceled         [ label = "C" ];
     Pending     -> Done             [ label = "PUT\nJXCG" ];
 
     Running     -> Pending          [ label = "RETURN" ];
-    Running     -> Canceled         [ label = "CANCEL" ];
+    Running     -> Canceled         [ label = "C" ];
     Running     -> Done             [ label = "PUT\nJXCG" ];
-    Running     -> Timeout          [ label = "timeout" ];
+    Running     -> Tries            [ label = "run timeout" ];
     Running     -> Tries            [ label = "FPUT" ];
     Running     -> Tries            [ label = "CLRN\nnew session", style = "dashed" ];
 
     Tries       -> Failed;
     Tries       -> Pending;
 
-    Timeout     -> Pending;
-    Timeout     -> Failed;
-
     Failed      -> Reading          [ label = "READ" ];
-    Failed      -> Canceled         [ label = "CANCEL" ];
+    Failed      -> Canceled         [ label = "C" ];
     Failed      -> Failed           [ label = "FPUT", style = "dashed" ];
     Failed      -> Done             [ label = "PUT" ];
 
     Done        -> Reading          [ label = "READ" ];
-    Done        -> Canceled         [ label = "CANCEL" ];
+    Done        -> Canceled         [ label = "C" ];
     Done        -> Done             [ label = "PUT\nJXCG", style = "dashed" ];
     Done        -> Confirmed        [ label = "CFRM" ];
 
-    Reading     -> Canceled         [ label = "CANCEL" ];
+    Reading     -> Canceled         [ label = "C" ];
     Reading     -> Confirmed        [ label = "CFRM" ];
     Reading     -> Done             [ label = "RDRB" ];
-    Reading     -> ReadTimeout      [ label = "timeout" ];
+    Reading     -> ReadTries        [ label = "read timeout" ];
     Reading     -> ReadTries        [ label = "FRED" ];
     Reading     -> ReadTries        [ label = "CLRN\nnew session", style = "dashed" ];
 
     ReadTries   -> ReadFailed;
     ReadTries   -> Done;
+    ReadTries   -> Canceled;
+    ReadTries   -> Failed;
 
-    ReadTimeout -> Done;
-    ReadTimeout -> ReadFailed;
-
-    ReadFailed  -> Canceled         [ label = "CANCEL" ];
+    ReadFailed  -> Canceled         [ label = "C" ];
     ReadFailed  -> ReadFailed       [ label = "FRED", style = "dashed" ];
+    ReadFailed  -> Confirmed        [ label = "CFRM" ];
 
-    Confirmed   -> Canceled         [ label = "CANCEL" ];
+    Confirmed   -> Canceled         [ label = "C" ];
     Confirmed   -> Confirmed        [ label = "CFRM", style = "dashed" ];
 
-    Canceled    -> Canceled         [ label = "CANCEL", style = "dashed" ];
+    Canceled    -> Canceled         [ label = "C", style = "dashed" ];
+    Canceled    -> Reading          [ label = "READ" ];
 
-    { rank = same; "Done"; "Pending" }
+    { rank = same; "Done";     "Pending" }
+    { rank = same; "Running";  "Reading" }
+    { rank = same; "Failed";   "ReadFailed" }
+    { rank = sink; "Canceled" }
 }
 

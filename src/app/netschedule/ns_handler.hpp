@@ -150,6 +150,7 @@ private:
     void x_ProcessStatus(CQueue*);
     void x_ProcessGetJob(CQueue*);
     void x_ProcessCancelWaitGet(CQueue*);
+    void x_ProcessCancelWaitRead(CQueue*);
     void x_ProcessPut(CQueue*);
     void x_ProcessJobExchange(CQueue*);
     void x_ProcessPutMessage(CQueue*);
@@ -158,6 +159,7 @@ private:
     void x_ProcessDropQueue(CQueue*);
     void x_ProcessReturn(CQueue*);
     void x_ProcessJobDelayExpiration(CQueue*);
+    void x_ProcessJobDelayReadExpiration(CQueue*);
     void x_ProcessListenJob(CQueue*);
     void x_ProcessStatistics(CQueue*);
     void x_ProcessStatusSnapshot(CQueue*);
@@ -197,6 +199,7 @@ private:
     void x_CheckPortAndTimeout(void);
     void x_CheckAuthorizationToken(void);
     void x_CheckGetParameters(void);
+    void x_CheckReadParameters(void);
     void x_CheckQInf2Parameters(void);
 
 private:

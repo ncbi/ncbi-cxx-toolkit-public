@@ -61,6 +61,7 @@ SQueueParameters::SQueueParameters() :
     dump_aff_buffer_size(default_dump_aff_buffer_size),
     dump_group_buffer_size(default_dump_group_buffer_size),
     run_timeout(default_run_timeout),
+    read_timeout(default_read_timeout),
     program_name(""),
     failed_retries(default_failed_retries),
     blacklist_time(default_blacklist_time),
@@ -97,6 +98,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     dump_aff_buffer_size = ReadDumpAffBufferSize(reg, sname);
     dump_group_buffer_size = ReadDumpGroupBufferSize(reg, sname);
     run_timeout = ReadRunTimeout(reg, sname);
+    read_timeout = ReadReadTimeout(reg, sname);
     program_name = ReadProgram(reg, sname);
     failed_retries = ReadFailedRetries(reg, sname);
     blacklist_time = ReadBlacklistTime(reg, sname);
@@ -183,6 +185,12 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                 diff, "run_timeout",
                 NS_FormatPreciseTimeAsSec(run_timeout),
                 NS_FormatPreciseTimeAsSec(other.run_timeout));
+
+    if (read_timeout != other.read_timeout)
+        AddParameterToDiffString(
+                diff, "read_timeout",
+                NS_FormatPreciseTimeAsSec(read_timeout),
+                NS_FormatPreciseTimeAsSec(other.read_timeout));
 
     if (program_name != other.program_name)
         AddParameterToDiffString(diff, "program",
@@ -391,6 +399,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "dump_aff_buffer_size" + suffix + NStr::NumericToString(dump_aff_buffer_size) + separator +
     prefix + "dump_group_buffer_size" + suffix + NStr::NumericToString(dump_group_buffer_size) + separator +
     prefix + "run_timeout" + suffix + NS_FormatPreciseTimeAsSec(run_timeout) + separator +
+    prefix + "read_timeout" + suffix + NS_FormatPreciseTimeAsSec(read_timeout) + separator +
     prefix + "failed_retries" + suffix + NStr::NumericToString(failed_retries) + separator +
     prefix + "blacklist_time" + suffix + NS_FormatPreciseTimeAsSec(blacklist_time) + separator +
     prefix + "max_input_size" + suffix + NStr::NumericToString(max_input_size) + separator +
@@ -443,6 +452,7 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "dump_aff_buffer_size=\"" + NStr::NumericToString(dump_aff_buffer_size) + "\"\n"
     "dump_group_buffer_size=\"" + NStr::NumericToString(dump_group_buffer_size) + "\"\n"
     "run_timeout=\"" + NS_FormatPreciseTimeAsSec(run_timeout) + "\"\n"
+    "read_timeout=\"" + NS_FormatPreciseTimeAsSec(read_timeout) + "\"\n"
     "run_timeout_precision=\"" + NS_FormatPreciseTimeAsSec(run_timeout_precision) + "\"\n"
     "program=\"" + program_name + "\"\n"
     "failed_retries=\"" + NStr::NumericToString(failed_retries) + "\"\n"
@@ -583,6 +593,19 @@ SQueueParameters::ReadRunTimeout(const IRegistry &  reg,
         return default_run_timeout;
     return CNSPreciseTime(val);
 }
+
+
+CNSPreciseTime
+SQueueParameters::ReadReadTimeout(const IRegistry &  reg,
+                                  const string &     sname)
+{
+    double  val = GetDoubleNoErr("read_timeout",
+                                 double(default_read_timeout));
+    if (val < 0)
+        return default_read_timeout;
+    return CNSPreciseTime(val);
+}
+
 
 string
 SQueueParameters::ReadProgram(const IRegistry &  reg,

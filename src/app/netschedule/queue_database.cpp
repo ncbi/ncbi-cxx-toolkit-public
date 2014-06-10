@@ -398,6 +398,8 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.dump_group_buffer_size = m_QueueDescriptionDB.dump_group_buffer_size;
         params.run_timeout = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_sec,
                                             m_QueueDescriptionDB.run_timeout_nsec);
+        params.read_timeout = CNSPreciseTime(m_QueueDescriptionDB.read_timeout_sec,
+                                             m_QueueDescriptionDB.read_timeout_nsec);
         params.program_name = m_QueueDescriptionDB.program_name;
         params.failed_retries = m_QueueDescriptionDB.failed_retries;
         params.blacklist_time = CNSPreciseTime(m_QueueDescriptionDB.blacklist_time_sec,
@@ -478,6 +480,8 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.dump_group_buffer_size = params.dump_group_buffer_size;
     m_QueueDescriptionDB.run_timeout_sec = params.run_timeout.Sec();
     m_QueueDescriptionDB.run_timeout_nsec = params.run_timeout.NSec();
+    m_QueueDescriptionDB.read_timeout_sec = params.read_timeout.Sec();
+    m_QueueDescriptionDB.read_timeout_nsec = params.read_timeout.NSec();
     m_QueueDescriptionDB.program_name = params.program_name;
     m_QueueDescriptionDB.failed_retries = params.failed_retries;
     m_QueueDescriptionDB.blacklist_time_sec = params.blacklist_time.Sec();
@@ -648,6 +652,9 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "run_timeout")
                 params.run_timeout =
                         params.ReadRunTimeout(reg, section_name);
+            else if (*val == "read_timeout")
+                params.read_timeout =
+                        params.ReadReadTimeout(reg, section_name);
             else if (*val == "program")
                 params.program_name = params.ReadProgram(reg, section_name);
             else if (*val == "failed_retries")

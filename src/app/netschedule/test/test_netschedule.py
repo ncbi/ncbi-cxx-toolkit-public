@@ -36,7 +36,7 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.17.2"
+latestNetscheduleVersion = "4.18.0"
 
 
 # The map below describes what tests should be excluded for a certain
@@ -48,26 +48,38 @@ excludeTestsMap = \
                   1000, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108, 1109,
                   1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117,
                   1200, 1201,
-                  1300 ],
+                  1300, 1301, 1302, 1303, 1304, 1305, 1306, 1307, 1308, 1309,
+                  1310, 1311, 1312, 1313, 1314, 1315, 1316, 1317, 1318, 1319,
+                  1320, 1321, 1322, 1323 ],
     "4.16.9":   [ 214, 215,
                   1000, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108, 1109,
                   1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117,
                   1200, 1201,
-                  1300 ],
+                  1300, 1301, 1302, 1303, 1304, 1305, 1306, 1307, 1308, 1309,
+                  1310, 1311, 1312, 1313, 1314, 1315, 1316, 1317, 1318, 1319,
+                  1320, 1321, 1322, 1323 ],
     "4.16.10":  [ 1108, 1109,
                   1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117,
                   1200, 1201,
-                  1300 ],
+                  1300, 1301, 1302, 1303, 1304, 1305, 1306, 1307, 1308, 1309,
+                  1310, 1311, 1312, 1313, 1314, 1315, 1316, 1317, 1318, 1319,
+                  1320, 1321, 1322, 1323 ],
     "4.16.11":  [ 1108, 1109,
                   1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117,
                   1200, 1201,
-                  1300 ],
+                  1300, 1301, 1302, 1303, 1304, 1305, 1306, 1307, 1308, 1309,
+                  1310, 1311, 1312, 1313, 1314, 1315, 1316, 1317, 1318, 1319,
+                  1320, 1321, 1322, 1323 ],
     "4.17.0":   [ 801,
                   1200, 1201,
-                  1300 ],
+                  1300, 1301, 1302, 1303, 1304, 1305, 1306, 1307, 1308, 1309,
+                  1310, 1311, 1312, 1313, 1314, 1315, 1316, 1317, 1318, 1319,
+                  1320, 1321, 1322, 1323 ],
     "4.17.1":   [ 801,
-                  1300 ],
-    "4.17.2":   [ 801 ]
+                  1300, 1301, 1302, 1303, 1304, 1305, 1306, 1307, 1308, 1309,
+                  1310, 1311, 1312, 1313, 1314, 1315, 1316, 1317, 1318, 1319,
+                  1320, 1321, 1322, 1323 ],
+    "4.18.0":   [ 801 ]
 }
 
 
@@ -487,6 +499,29 @@ def main():
               pack_4_16.Scenario1201( netschedule ),
 
               pack_4_17.Scenario1300( netschedule ),
+              pack_4_17.Scenario1301( netschedule ),
+              pack_4_17.Scenario1302( netschedule ),
+              pack_4_17.Scenario1303( netschedule ),
+              pack_4_17.Scenario1304( netschedule ),
+              pack_4_17.Scenario1305( netschedule ),
+              pack_4_17.Scenario1306( netschedule ),
+              pack_4_17.Scenario1307( netschedule ),
+              pack_4_17.Scenario1308( netschedule ),
+              pack_4_17.Scenario1309( netschedule ),
+              pack_4_17.Scenario1310( netschedule ),
+              pack_4_17.Scenario1311( netschedule ),
+              pack_4_17.Scenario1312( netschedule ),
+              pack_4_17.Scenario1313( netschedule ),
+              pack_4_17.Scenario1314( netschedule ),
+              pack_4_17.Scenario1315( netschedule ),
+              pack_4_17.Scenario1316( netschedule ),
+              pack_4_17.Scenario1317( netschedule ),
+              pack_4_17.Scenario1318( netschedule ),
+              pack_4_17.Scenario1319( netschedule ),
+              pack_4_17.Scenario1320( netschedule ),
+              pack_4_17.Scenario1321( netschedule ),
+              pack_4_17.Scenario1322( netschedule ),
+              pack_4_17.Scenario1323( netschedule ),
             ]
 
     # Calculate the start test index

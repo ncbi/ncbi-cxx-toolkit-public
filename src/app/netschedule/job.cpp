@@ -121,8 +121,10 @@ GetJobExpirationTime(const CNSPreciseTime &     last_touch,
                      const CNSPreciseTime &     job_submit_time,
                      const CNSPreciseTime &     job_timeout,
                      const CNSPreciseTime &     job_run_timeout,
+                     const CNSPreciseTime &     job_read_timeout,
                      const CNSPreciseTime &     queue_timeout,
                      const CNSPreciseTime &     queue_run_timeout,
+                     const CNSPreciseTime &     queue_read_timeout,
                      const CNSPreciseTime &     queue_pending_timeout,
                      const CNSPreciseTime &     event_time)
 {
@@ -130,11 +132,16 @@ GetJobExpirationTime(const CNSPreciseTime &     last_touch,
     if (last_update == CNSPreciseTime())
         last_update = last_touch;
 
-    if (status == CNetScheduleAPI::eRunning ||
-        status == CNetScheduleAPI::eReading) {
+    if (status == CNetScheduleAPI::eRunning) {
         if (job_run_timeout != CNSPreciseTime())
             return last_update + job_run_timeout;
         return last_update + queue_run_timeout;
+    }
+
+    if (status == CNetScheduleAPI::eReading) {
+        if (job_read_timeout != CNSPreciseTime())
+            return last_update + job_read_timeout;
+        return last_update + queue_read_timeout;
     }
 
     if (status == CNetScheduleAPI::ePending) {
@@ -168,6 +175,7 @@ CJob::CJob() :
     m_Status(CNetScheduleAPI::ePending),
     m_Timeout(),
     m_RunTimeout(),
+    m_ReadTimeout(),
     m_SubmNotifPort(0),
     m_SubmNotifTimeout(),
     m_ListenerNotifAddress(0),
@@ -189,6 +197,7 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_Status(CNetScheduleAPI::ePending),
     m_Timeout(),
     m_RunTimeout(),
+    m_ReadTimeout(),
     m_SubmNotifPort(request.port),
     m_SubmNotifTimeout(request.timeout, 0),
     m_ListenerNotifAddress(0),
@@ -333,6 +342,8 @@ CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
                                      job_db.timeout_nsec);
     m_RunTimeout    = CNSPreciseTime(job_db.run_timeout_sec,
                                      job_db.run_timeout_nsec);
+    m_ReadTimeout   = CNSPreciseTime(job_db.read_timeout_sec,
+                                     job_db.read_timeout_nsec);
 
     m_SubmNotifPort    = job_db.subm_notif_port;
     m_SubmNotifTimeout = CNSPreciseTime(job_db.subm_notif_timeout_sec,
@@ -464,10 +475,12 @@ bool CJob::Flush(CQueue* queue)
         job_db.passport = m_Passport;
         job_db.status   = int(m_Status);
 
-        job_db.timeout_sec      = m_Timeout.Sec();
-        job_db.timeout_nsec     = m_Timeout.NSec();
-        job_db.run_timeout_sec  = m_RunTimeout.Sec();
-        job_db.run_timeout_nsec = m_RunTimeout.NSec();
+        job_db.timeout_sec       = m_Timeout.Sec();
+        job_db.timeout_nsec      = m_Timeout.NSec();
+        job_db.run_timeout_sec   = m_RunTimeout.Sec();
+        job_db.run_timeout_nsec  = m_RunTimeout.NSec();
+        job_db.read_timeout_sec  = m_ReadTimeout.Sec();
+        job_db.read_timeout_nsec = m_ReadTimeout.NSec();
 
         job_db.subm_notif_port         = m_SubmNotifPort;
         job_db.subm_notif_timeout_sec  = m_SubmNotifTimeout.Sec();
@@ -597,9 +610,11 @@ string CJob::Print(const CQueue &               queue,
 {
     CNSPreciseTime  timeout = m_Timeout;
     CNSPreciseTime  run_timeout = m_RunTimeout;
+    CNSPreciseTime  read_timeout = m_ReadTimeout;
     CNSPreciseTime  pending_timeout = queue.GetPendingTimeout();
     CNSPreciseTime  queue_timeout = queue.GetTimeout();
     CNSPreciseTime  queue_run_timeout = queue.GetRunTimeout();
+    CNSPreciseTime  queue_read_timeout = queue.GetReadTimeout();
     string          result;
 
     result.reserve(2048);   // Voluntary; must be enough for most of the cases
@@ -608,17 +623,21 @@ string CJob::Print(const CQueue &               queue,
         timeout = queue_timeout;
     if (m_RunTimeout == CNSPreciseTime())
         run_timeout = queue_run_timeout;
+    if (m_ReadTimeout == CNSPreciseTime())
+        read_timeout = queue_read_timeout;
 
     CNSPreciseTime  exp_time;
     if (m_Status == CNetScheduleAPI::eRunning ||
         m_Status == CNetScheduleAPI::eReading)
         exp_time = GetExpirationTime(queue_timeout,
                                      queue_run_timeout,
+                                     queue_read_timeout,
                                      pending_timeout,
                                      GetLastEventTime());
     else
         exp_time = GetExpirationTime(queue_timeout,
                                      queue_run_timeout,
+                                     queue_read_timeout,
                                      pending_timeout,
                                      m_LastTouch);
 
@@ -645,21 +664,21 @@ string CJob::Print(const CQueue &               queue,
         result += "OK:run_expiration: n/a (timeout: " +
                   NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n"
                   "OK:read_expiration: n/a (timeout: " +
-                  NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n";
+                  NS_FormatPreciseTimeAsSec(read_timeout) + " sec)\n";
     } else {
         if (m_Status == CNetScheduleAPI::eRunning) {
             result += "OK:run_expiration: " + NS_FormatPreciseTime(exp_time) +
                       " (timeout: " +
                       NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n"
                       "OK:read_expiration: n/a (timeout: " +
-                      NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n";
+                      NS_FormatPreciseTimeAsSec(read_timeout) + " sec)\n";
         } else {
             // Reading job
             result += "OK:run_expiration: n/a (timeout: " +
                       NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n"
                       "OK:read_expiration: " + NS_FormatPreciseTime(exp_time) +
                       " (timeout: " +
-                      NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n";
+                      NS_FormatPreciseTimeAsSec(read_timeout) + " sec)\n";
         }
     }
 
@@ -752,6 +771,25 @@ string CJob::Print(const CQueue &               queue,
 
     return result;
 }
+
+
+TJobStatus  CJob::GetStatusBeforeReading(void) const
+{
+    ssize_t     index = m_Events.size() - 1;
+    while (index >= 0) {
+        if (m_Events[index].GetStatus() == CNetScheduleAPI::eReading)
+            break;
+        --index;
+    }
+
+    --index;
+    if (index < 0)
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "inconsistency in the job history. "
+                   "No reading status found or no event before reading.");
+    return m_Events[index].GetStatus();
+}
+
 
 END_NCBI_SCOPE
 

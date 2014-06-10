@@ -173,8 +173,10 @@ GetJobExpirationTime(const CNSPreciseTime &   last_touch,
                      const CNSPreciseTime &   job_submit_time,
                      const CNSPreciseTime &   job_timeout,
                      const CNSPreciseTime &   job_run_timeout,
+                     const CNSPreciseTime &   job_read_timeout,
                      const CNSPreciseTime &   queue_timeout,
                      const CNSPreciseTime &   queue_run_timeout,
+                     const CNSPreciseTime &   queue_read_timeout,
                      const CNSPreciseTime &   queue_pending_timeout,
                      const CNSPreciseTime &   event_time);
 
@@ -220,6 +222,8 @@ public:
     { return m_Timeout; }
     CNSPreciseTime GetRunTimeout() const
     { return m_RunTimeout; }
+    CNSPreciseTime GetReadTimeout() const
+    { return m_ReadTimeout; }
 
     unsigned       GetSubmAddr() const
     { return m_Events[0].m_NodeAddr; }
@@ -286,6 +290,9 @@ public:
       m_Dirty |= fJobPart; }
     void           SetRunTimeout(const CNSPreciseTime & t)
     { m_RunTimeout = t;
+      m_Dirty |= fJobPart; }
+    void           SetReadTimeout(const CNSPreciseTime & t)
+    { m_ReadTimeout = t;
       m_Dirty |= fJobPart; }
 
     void           SetSubmNotifPort(unsigned short port)
@@ -367,13 +374,15 @@ public:
     CNSPreciseTime      GetExpirationTime(
                                 const CNSPreciseTime &  queue_timeout,
                                 const CNSPreciseTime &  queue_run_timeout,
+                                const CNSPreciseTime &  queue_read_timeout,
                                 const CNSPreciseTime &  queue_pending_timeout,
                                 const CNSPreciseTime &  event_time) const
     {
        return GetJobExpirationTime(m_LastTouch, m_Status,
                                    GetSubmitTime(),
-                                   m_Timeout, m_RunTimeout,
+                                   m_Timeout, m_RunTimeout, m_ReadTimeout,
                                    queue_timeout, queue_run_timeout,
+                                   queue_read_timeout,
                                    queue_pending_timeout,
                                    event_time);
     }
@@ -399,6 +408,8 @@ public:
                  const CNSAffinityRegistry &  aff_registry,
                  const CNSGroupsRegistry &    group_registry) const;
 
+    TJobStatus GetStatusBeforeReading(void) const;
+
 private:
     EJobFetchResult x_Fetch(CQueue* queue);
 
@@ -416,6 +427,7 @@ private:
     TJobStatus          m_Status;
     CNSPreciseTime      m_Timeout;       // Individual timeout
     CNSPreciseTime      m_RunTimeout;    // Job run timeout
+    CNSPreciseTime      m_ReadTimeout;   // Job read timeout
 
     unsigned short      m_SubmNotifPort;    // Submit notification port
     CNSPreciseTime      m_SubmNotifTimeout; // Submit notification timeout

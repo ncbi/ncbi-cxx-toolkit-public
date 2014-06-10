@@ -80,6 +80,7 @@ void SNSCommandArguments::x_Reset()
 
     any_affinity = false;
     wnode_affinity = false;
+    reader_affinity = false;
     exclusive_new_aff = false;
     mode = false;
     drain = false;
@@ -285,6 +286,15 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
             }
             else if (key == "qclass")
                 qclass = NStr::ParseEscapes(val);
+            break;
+        case 'r':
+            if (key == "reader_aff") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "reader_aff accepted values are 0 and 1.");
+                reader_affinity = (tmp == 1);
+            }
             break;
         case 's':
             if (key == "status") {

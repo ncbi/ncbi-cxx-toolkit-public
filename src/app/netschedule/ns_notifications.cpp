@@ -77,14 +77,16 @@ string  SNSNotificationAttributes::Print(
         if (m_ClientNode.empty())
             buffer += "OK:  EXPLICIT AFFINITIES: CLIENT NOT FOUND\n";
         else {
-            TNSBitVector    wait_aff = clients_registry.GetWaitAffinities(m_ClientNode);
+            TNSBitVector    wait_aff =
+                            clients_registry.GetWaitAffinities(m_ClientNode);
 
             if (wait_aff.any()) {
                 buffer += "OK:  EXPLICIT AFFINITIES:\n";
 
                 TNSBitVector::enumerator    en(wait_aff.first());
                 for ( ; en.valid(); ++en)
-                    buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
+                    buffer += "OK:    '" +
+                              aff_registry.GetTokenByID(*en) + "'\n";
             }
             else
                 buffer += "OK:  EXPLICIT AFFINITIES: NONE\n";
@@ -102,14 +104,16 @@ string  SNSNotificationAttributes::Print(
         if (m_WnodeAff) {
 
             // Need to print resolved preferred affinities
-            TNSBitVector    pref_aff = clients_registry.GetPreferredAffinities(m_ClientNode);
+            TNSBitVector    pref_aff =
+                        clients_registry.GetPreferredAffinities(m_ClientNode);
 
             if (pref_aff.any()) {
                 buffer += "OK:  USE PREFERRED AFFINITIES:\n";
 
                 TNSBitVector::enumerator    en(pref_aff.first());
                 for ( ; en.valid(); ++en)
-                    buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
+                    buffer += "OK:    '" +
+                              aff_registry.GetTokenByID(*en) + "'\n";
             }
             else
                 buffer += "OK:  USE PREFERRED AFFINITIES: NONE\n";
@@ -125,6 +129,12 @@ string  SNSNotificationAttributes::Print(
         buffer += s_False;
 
     buffer += "OK:  GROUP: '" + m_Group + "'\n";
+
+    buffer += "OK:  REASON: ";
+    if (m_Reason == eGet)
+        buffer += "GET\n";
+    else
+        buffer += "READ\n";
 
     buffer += "OK:  ACTIVE: ";
     if (is_active)
@@ -159,8 +169,11 @@ CNSNotificationList::CNSNotificationList(CQueueDataBase &  qdb,
                                          ns_node.c_str());
 
     m_GetMsgLength = snprintf(m_GetMsgBuffer, k_MessageBufferSize,
-                              "ns_node=%s&queue=%s",
+                              "reason=get&ns_node=%s&queue=%s",
                               ns_node.c_str(), qname.c_str()) + 1;
+    m_ReadMsgLength = snprintf(m_ReadMsgBuffer, k_MessageBufferSize,
+                               "reason=read&ns_node=%s&queue=%s",
+                               ns_node.c_str(), qname.c_str()) + 1;
     m_GetMsgLengthObsoleteVersion =
                      snprintf(m_GetMsgBufferObsoleteVersion,
                               k_MessageBufferSize,
@@ -168,14 +181,17 @@ CNSNotificationList::CNSNotificationList(CQueueDataBase &  qdb,
 }
 
 
-void CNSNotificationList::RegisterListener(const CNSClientId &   client,
-                                           unsigned short        port,
-                                           unsigned int          timeout,
-                                           bool                  wnode_aff,
-                                           bool                  any_job,
-                                           bool                  exclusive_new_affinity,
-                                           bool                  new_format,
-                                           const string &        group)
+void
+CNSNotificationList::RegisterListener(
+                                const CNSClientId &   client,
+                                unsigned short        port,
+                                unsigned int          timeout,
+                                bool                  wnode_aff,
+                                bool                  any_job,
+                                bool                  exclusive_new_affinity,
+                                bool                  new_format,
+                                const string &        group,
+                                ENotificationReason   reason)
 {
     unsigned int                                address = client.GetAddress();
     list<SNSNotificationAttributes>::iterator   found;
@@ -185,7 +201,8 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
     found = x_FindListener(m_PassiveListeners, address, port);
     if (found != m_PassiveListeners.end()) {
         // Passive was here
-        found->m_Lifetime = CNSPreciseTime::Current() + CNSPreciseTime(timeout, 0);
+        found->m_Lifetime = CNSPreciseTime::Current() +
+                            CNSPreciseTime(timeout, 0);
         found->m_ClientNode = client.GetNode();
         found->m_WnodeAff = wnode_aff;
         found->m_AnyJob = any_job;
@@ -195,6 +212,7 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
         found->m_HifreqNotifyLifetime = CNSPreciseTime();
         found->m_SlowRate = false;
         found->m_SlowRateCount = 0;
+        found->m_Reason = reason;
 
         // If it is an old client => there is no record in the clients
         // registry, so there is no information stored of what explicit
@@ -219,7 +237,8 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
 
     attributes.m_Address = address;
     attributes.m_Port = port;
-    attributes.m_Lifetime = CNSPreciseTime::Current() + CNSPreciseTime(timeout, 0);
+    attributes.m_Lifetime = CNSPreciseTime::Current() +
+                            CNSPreciseTime(timeout, 0);
     attributes.m_ClientNode = client.GetNode();
     attributes.m_WnodeAff = wnode_aff;
     attributes.m_AnyJob = any_job;
@@ -229,6 +248,7 @@ void CNSNotificationList::RegisterListener(const CNSClientId &   client,
     attributes.m_HifreqNotifyLifetime = CNSPreciseTime();
     attributes.m_SlowRate = false;
     attributes.m_SlowRateCount = 0;
+    attributes.m_Reason = reason;
 
     // See the remark above about old clients.
     if (attributes.m_ClientNode.empty())
@@ -263,12 +283,14 @@ void CNSNotificationList::UnregisterListener(unsigned int         address,
 }
 
 
-void CNSNotificationList::NotifyJobStatus(unsigned int    address,
-                                          unsigned short  port,
-                                          const string &  job_key,
-                                          TJobStatus      job_status,
-                                          size_t          last_event_index  // zero based
-                                          )
+void
+CNSNotificationList::NotifyJobStatus(
+                            unsigned int    address,
+                            unsigned short  port,
+                            const string &  job_key,
+                            TJobStatus      job_status,
+                            size_t          last_event_index  // zero based
+                                    )
 {
     char    buffer[k_MessageBufferSize];
 
@@ -315,19 +337,22 @@ void CNSNotificationList::CheckTimeout(const CNSPreciseTime & current_time,
                           m_ActiveListeners, rec))
             continue;
 
-        // Need to move the record to the passive list
-        m_PassiveListeners.push_back(SNSNotificationAttributes(*rec));
-        rec = m_ActiveListeners.erase(rec);
+        if (rec->m_Reason == eGet) {
+            // Need to move the record to the passive list
+            m_PassiveListeners.push_back(SNSNotificationAttributes(*rec));
+            rec = m_ActiveListeners.erase(rec);
+        }
     }
 }
 
 
 // Called from a notification thread which notifies worker nodes periodically
 void
-CNSNotificationList::NotifyPeriodically(const CNSPreciseTime & current_time,
-                                        unsigned int           notif_lofreq_mult,
-                                        CNSClientsRegistry &   clients_registry,
-                                        CNSAffinityRegistry &  aff_registry)
+CNSNotificationList::NotifyPeriodically(
+                                const CNSPreciseTime & current_time,
+                                unsigned int           notif_lofreq_mult,
+                                CNSClientsRegistry &   clients_registry,
+                                CNSAffinityRegistry &  aff_registry)
 {
     CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_ActiveListeners.begin();
@@ -348,15 +373,15 @@ CNSNotificationList::NotifyPeriodically(const CNSPreciseTime & current_time,
                 // Send the same packet twice: Denis wanted to increase
                 // the UDP delivery probability
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
-                                         k->m_NewFormat);
+                                         k->m_NewFormat, k->m_Reason);
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
-                                         k->m_NewFormat);
+                                         k->m_NewFormat, k->m_Reason);
             }
         } else {
             // We are at fast rate
             if (x_IsInExactList(k->m_Address, k->m_Port) == false)
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
-                                         k->m_NewFormat);
+                                         k->m_NewFormat, k->m_Reason);
         }
         ++k;
     }
@@ -364,20 +389,21 @@ CNSNotificationList::NotifyPeriodically(const CNSPreciseTime & current_time,
 
 
 void
-CNSNotificationList::CheckOutdatedJobs(const TNSBitVector &    outdated_jobs,
-                                       CNSClientsRegistry &    clients_registry,
-                                       const CNSPreciseTime &  notif_highfreq_period)
+CNSNotificationList::CheckOutdatedJobs(
+                                const TNSBitVector &    outdated_jobs,
+                                CNSClientsRegistry &    clients_registry,
+                                const CNSPreciseTime &  notif_highfreq_period)
 {
     CNSPreciseTime                              current_time = CNSPreciseTime::Current();
     CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_PassiveListeners.begin();
 
     while (k != m_PassiveListeners.end()) {
-        if (k->m_ExclusiveNewAff) {
+        if (k->m_Reason == eGet && k->m_ExclusiveNewAff) {
             if ((outdated_jobs -
                  clients_registry.GetBlacklistedJobs(k->m_ClientNode)).any()) {
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
-                                         k->m_NewFormat);
+                                         k->m_NewFormat, k->m_Reason);
 
                 // Move from passive list to the active one
                 k->m_HifreqNotifyLifetime = current_time + notif_highfreq_period;
@@ -391,15 +417,16 @@ CNSNotificationList::CheckOutdatedJobs(const TNSBitVector &    outdated_jobs,
 }
 
 
-// Called when a job in pending state has appeared:
-// submit, batch submit, return, timeout, fail etc.
+// Called when a vacant job for GET (or READ) has appeared:
+// submit, batch submit, return, timeout, fail (RDRB, PUT, FPUT, CANCEL) etc.
 void CNSNotificationList::Notify(unsigned int           job_id,
                                  unsigned int           aff_id,
                                  CNSClientsRegistry &   clients_registry,
                                  CNSAffinityRegistry &  aff_registry,
                                  CNSGroupsRegistry &    group_registry,
                                  const CNSPreciseTime & notif_highfreq_period,
-                                 const CNSPreciseTime & notif_handicap)
+                                 const CNSPreciseTime & notif_handicap,
+                                 ENotificationReason    reason)
 {
     TNSBitVector    aff_ids;
     TNSBitVector    jobs;
@@ -411,12 +438,12 @@ void CNSNotificationList::Notify(unsigned int           job_id,
 
     Notify(jobs, aff_ids, aff_id == 0,
            clients_registry, aff_registry, group_registry,
-           notif_highfreq_period, notif_handicap);
+           notif_highfreq_period, notif_handicap, reason);
 }
 
 
-// Called when a job in pending state has appeared:
-// submit, batch submit, return, timeout, fail etc.
+// Called when a vacant job for GET (or READ) has appeared:
+// submit, batch submit, return, timeout, fail (RDRB, PUT, FPUT, CANCEL) etc.
 void
 CNSNotificationList::Notify(const TNSBitVector &   jobs,
                             const TNSBitVector &   affinities,
@@ -425,7 +452,8 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                             CNSAffinityRegistry &  aff_registry,
                             CNSGroupsRegistry &    group_registry,
                             const CNSPreciseTime & notif_highfreq_period,
-                            const CNSPreciseTime & notif_handicap)
+                            const CNSPreciseTime & notif_handicap,
+                            ENotificationReason    reason)
 {
     CNSPreciseTime  current_time = CNSPreciseTime::Current();
     TNSBitVector    all_preferred_affs =
@@ -446,6 +474,11 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
         if (x_TestTimeout(current_time, clients_registry, aff_registry,
                           m_PassiveListeners, k))
             continue;
+
+        if (reason != k->m_Reason) {
+            ++k;
+            continue;
+        }
 
         // The notification timeout is not over
         bool        should_send = false;
@@ -495,7 +528,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                 targets.push_back(&(*(m_ActiveListeners.rbegin())));
             } else {
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
-                                         k->m_NewFormat);
+                                         k->m_NewFormat, k->m_Reason);
             }
             k = m_PassiveListeners.erase(k);
             continue;
@@ -509,13 +542,15 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
 
         x_SendNotificationPacket(targets[0]->m_Address,
                                  targets[0]->m_Port,
-                                 targets[0]->m_NewFormat);
+                                 targets[0]->m_NewFormat,
+                                 targets[0]->m_Reason);
         CNSPreciseTime  when = CNSPreciseTime::Current() + notif_handicap;
         for (size_t j(1); j < targets.size(); ++j)
-            AddToExactNotifications(targets[j]->m_Address,
-                                    targets[j]->m_Port,
-                                    when,
-                                    targets[j]->m_NewFormat);
+            x_AddToExactNotifications(targets[j]->m_Address,
+                                      targets[j]->m_Port,
+                                      when,
+                                      targets[j]->m_NewFormat,
+                                      targets[j]->m_Reason);
 
         // This will reschedule when the thread should wake up net time
         m_QueueDB.WakeupNotifThread();
@@ -533,14 +568,17 @@ void CNSNotificationList::onQueueResumed(bool  any_pending)
         list<SNSNotificationAttributes>::iterator   k = m_PassiveListeners.begin();
 
         for ( ; k != m_PassiveListeners.end(); ++k)
-            x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
+            if (k->m_Reason == eGet)
+                x_SendNotificationPacket(k->m_Address, k->m_Port,
+                                         k->m_NewFormat, k->m_Reason);
     }
 
     CMutexGuard                                 guard(m_QueueResumeNotifLock);
     list<SQueueResumeNotification>::iterator    k = m_QueueResumeNotifications.begin();
 
     for ( ; k != m_QueueResumeNotifications.end(); ++k)
-        x_SendNotificationPacket(k->m_Address, k->m_Port, k->m_NewFormat);
+        x_SendNotificationPacket(k->m_Address, k->m_Port,
+                                 k->m_NewFormat, eGet);
     m_QueueResumeNotifications.clear();
 }
 
@@ -580,10 +618,12 @@ CNSNotificationList::Print(const CNSClientsRegistry &   clients_registry,
 
 
 void
-CNSNotificationList::AddToExactNotifications(unsigned int            address,
-                                             unsigned short          port,
-                                             const CNSPreciseTime &  when,
-                                             bool                    new_format)
+CNSNotificationList::x_AddToExactNotifications(
+                                    unsigned int            address,
+                                    unsigned short          port,
+                                    const CNSPreciseTime &  when,
+                                    bool                    new_format,
+                                    ENotificationReason     reason)
 {
     // The records in the m_ExactTimeNotifications list should be sorted in
     // accordance to the time when a notification should be sent.
@@ -600,6 +640,7 @@ CNSNotificationList::AddToExactNotifications(unsigned int            address,
     notification.m_Port = port;
     notification.m_TimeToSend = when;
     notification.m_NewFormat = new_format;
+    notification.m_Reason = reason;
 
     CMutexGuard     guard(m_ExactTimeNotifLock);
     m_ExactTimeNotifications.push_back(notification);
@@ -607,10 +648,17 @@ CNSNotificationList::AddToExactNotifications(unsigned int            address,
 
 
 void
-CNSNotificationList::ClearExactNotifications(void)
+CNSNotificationList::ClearExactGetNotifications(void)
 {
     CMutexGuard     guard(m_ExactTimeNotifLock);
-    m_ExactTimeNotifications.clear();
+    list<SExactTimeNotification>::iterator  k =
+                                    m_ExactTimeNotifications.begin();
+    while (k != m_ExactTimeNotifications.end()) {
+        if ( k->m_Reason == eGet)
+            k = m_ExactTimeNotifications.erase(k);
+        else
+            ++k;
+    }
 }
 
 
@@ -635,7 +683,8 @@ CNSNotificationList::NotifyExactListeners(void)
         // Here: send the notification and delete the record
         x_SendNotificationPacket(first->m_Address,
                                  first->m_Port,
-                                 first->m_NewFormat);
+                                 first->m_NewFormat,
+                                 first->m_Reason);
         m_ExactTimeNotifications.erase(first);
     }
 
@@ -649,7 +698,8 @@ CNSNotificationList::AddToQueueResumedNotifications(unsigned int  address,
                                                     bool  new_format)
 {
     CMutexGuard     guard(m_QueueResumeNotifLock);
-    for (list<SQueueResumeNotification>::iterator  k = m_QueueResumeNotifications.begin();
+    for (list<SQueueResumeNotification>::iterator
+         k = m_QueueResumeNotifications.begin();
          k != m_QueueResumeNotifications.end(); ++k) {
         if (k->m_Address == address && k->m_Port == port)
             return;
@@ -669,7 +719,8 @@ CNSNotificationList::GetPassiveNotificationLifetime(unsigned int  address,
                                                     unsigned short  port) const
 {
     CMutexGuard     guard(m_ListenersLock);
-    for (list<SNSNotificationAttributes>::const_iterator  k = m_PassiveListeners.begin();
+    for (list<SNSNotificationAttributes>::const_iterator
+         k = m_PassiveListeners.begin();
          k != m_PassiveListeners.end(); ++k) {
         if (k->m_Address == address && k->m_Port == port)
             return k->m_Lifetime;
@@ -679,17 +730,28 @@ CNSNotificationList::GetPassiveNotificationLifetime(unsigned int  address,
 
 
 void
-CNSNotificationList::x_SendNotificationPacket(unsigned int    address,
-                                              unsigned short  port,
-                                              bool            new_format)
+CNSNotificationList::x_SendNotificationPacket(
+                                unsigned int            address,
+                                unsigned short          port,
+                                bool                    new_format,
+                                ENotificationReason     reason)
 {
-    if (new_format)
-        m_GetNotificationSocket.Send(m_GetMsgBuffer, m_GetMsgLength,
-                                     CSocketAPI::ntoa(address), port);
+    if (new_format) {
+        // Read notifications could only be of a new format
+        if (reason == eGet)
+            m_GetAndReadNotificationSocket.Send(
+                    m_GetMsgBuffer, m_GetMsgLength,
+                    CSocketAPI::ntoa(address), port);
+        else
+            m_GetAndReadNotificationSocket.
+                    Send(m_ReadMsgBuffer, m_ReadMsgLength,
+                    CSocketAPI::ntoa(address), port);
+    }
     else
-        m_GetNotificationSocket.Send(m_GetMsgBufferObsoleteVersion,
-                                     m_GetMsgLengthObsoleteVersion,
-                                     CSocketAPI::ntoa(address), port);
+        m_GetAndReadNotificationSocket.Send(
+                    m_GetMsgBufferObsoleteVersion,
+                    m_GetMsgLengthObsoleteVersion,
+                    CSocketAPI::ntoa(address), port);
 }
 
 

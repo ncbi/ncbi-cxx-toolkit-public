@@ -67,6 +67,7 @@ struct SQueueParameters
     unsigned int    dump_aff_buffer_size;
     unsigned int    dump_group_buffer_size;
     CNSPreciseTime  run_timeout;
+    CNSPreciseTime  read_timeout;
     string          program_name;
     unsigned int    failed_retries;
     CNSPreciseTime  blacklist_time;
@@ -117,6 +118,7 @@ struct SQueueParameters
     unsigned int    ReadDumpAffBufferSize(const IRegistry &, const string &);
     unsigned int    ReadDumpGroupBufferSize(const IRegistry &, const string &);
     CNSPreciseTime  ReadRunTimeout(const IRegistry &, const string &);
+    CNSPreciseTime  ReadReadTimeout(const IRegistry &, const string &);
     string          ReadProgram(const IRegistry &, const string &);
     unsigned int    ReadFailedRetries(const IRegistry &, const string &);
     CNSPreciseTime  ReadBlacklistTime(const IRegistry &, const string &);

@@ -83,6 +83,7 @@ struct SNSCommandArguments
 
     bool            any_affinity;
     bool            wnode_affinity;
+    bool            reader_affinity;
     bool            exclusive_new_aff;
     bool            mode;
     bool            drain;

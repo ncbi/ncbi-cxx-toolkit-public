@@ -118,8 +118,10 @@ class CNSReadJobRollback : public CNSRollbackInterface
 {
     public:
         CNSReadJobRollback(const CNSClientId &  client,
-                          unsigned int          job_id) :
-            m_Client(client), m_JobId(job_id)
+                          unsigned int          job_id,
+                          TJobStatus            previous_status) :
+            m_Client(client), m_JobId(job_id),
+            m_PreviousStatus(previous_status)
         {}
 
         virtual ~CNSReadJobRollback() {}
@@ -130,6 +132,7 @@ class CNSReadJobRollback : public CNSRollbackInterface
     private:
         CNSClientId     m_Client;
         unsigned int    m_JobId;
+        TJobStatus      m_PreviousStatus;
 };
 
 

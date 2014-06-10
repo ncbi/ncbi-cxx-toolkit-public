@@ -68,6 +68,12 @@ static CAtomicCounter_WithAutoInit  s_ToDoneDueToTimeoutCounterTotal;
 static CAtomicCounter_WithAutoInit  s_ToDoneDueToFailCounterTotal;
 static CAtomicCounter_WithAutoInit  s_ToDoneDueToClearCounterTotal;
 static CAtomicCounter_WithAutoInit  s_ToDoneDueToNewSessionCounterTotal;
+static CAtomicCounter_WithAutoInit  s_ToCanceledDueToReadTimeoutCounterTotal;
+static CAtomicCounter_WithAutoInit  s_ToFailedDueToReadTimeoutCounterTotal;
+static CAtomicCounter_WithAutoInit  s_ToCanceledDueToReadClearCounterTotal;
+static CAtomicCounter_WithAutoInit  s_ToCanceledDueToReadNewSessionCounterTotal;
+static CAtomicCounter_WithAutoInit  s_ToFailedDueToReadClearCounterTotal;
+static CAtomicCounter_WithAutoInit  s_ToFailedDueToReadNewSessionCounterTotal;
 
 static CAtomicCounter_WithAutoInit  s_ToFailedDueToTimeoutCounterTotal;
 static CAtomicCounter_WithAutoInit  s_ToFailedDueToClearCounterTotal;
@@ -130,6 +136,8 @@ CStatisticsCounters::CStatisticsCounters()
                           [s_StatusToIndex[CNetScheduleAPI::eConfirmed]].Set(0);
         s_TransitionsTotal[s_StatusToIndex[CNetScheduleAPI::eReading]]
                           [s_StatusToIndex[CNetScheduleAPI::eReadFailed]].Set(0);
+        s_TransitionsTotal[s_StatusToIndex[CNetScheduleAPI::eReading]]
+                          [s_StatusToIndex[CNetScheduleAPI::eFailed]].Set(0);
 
         s_TransitionsTotal[s_StatusToIndex[CNetScheduleAPI::eConfirmed]]
                           [s_StatusToIndex[CNetScheduleAPI::eConfirmed]].Set(0);
@@ -160,6 +168,9 @@ CStatisticsCounters::CStatisticsCounters()
                           [s_StatusToIndex[CNetScheduleAPI::eCanceled]].Set(0);
         s_TransitionsTotal[s_StatusToIndex[CNetScheduleAPI::eReadFailed]]
                           [s_StatusToIndex[CNetScheduleAPI::eCanceled]].Set(0);
+
+        s_TransitionsTotal[s_StatusToIndex[CNetScheduleAPI::eCanceled]]
+                          [s_StatusToIndex[CNetScheduleAPI::eReading]].Set(0);
     }
 
     // Mark invalid transitions with the counter value -1.
@@ -200,6 +211,8 @@ CStatisticsCounters::CStatisticsCounters()
                  [s_StatusToIndex[CNetScheduleAPI::eConfirmed]].Set(0);
     m_Transitions[s_StatusToIndex[CNetScheduleAPI::eReading]]
                  [s_StatusToIndex[CNetScheduleAPI::eReadFailed]].Set(0);
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eReading]]
+                 [s_StatusToIndex[CNetScheduleAPI::eFailed]].Set(0);
 
     m_Transitions[s_StatusToIndex[CNetScheduleAPI::eConfirmed]]
                  [s_StatusToIndex[CNetScheduleAPI::eConfirmed]].Set(0);
@@ -230,6 +243,9 @@ CStatisticsCounters::CStatisticsCounters()
                  [s_StatusToIndex[CNetScheduleAPI::eCanceled]].Set(0);
     m_Transitions[s_StatusToIndex[CNetScheduleAPI::eReadFailed]]
                  [s_StatusToIndex[CNetScheduleAPI::eCanceled]].Set(0);
+
+    m_Transitions[s_StatusToIndex[CNetScheduleAPI::eCanceled]]
+                 [s_StatusToIndex[CNetScheduleAPI::eReading]].Set(0);
     return;
 }
 
@@ -284,7 +300,19 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
          .Print("Reading_ReadFailed_new_session",
                 m_ToReadFailedDueToNewSessionCounter.Get())
          .Print("Reading_ReadFailed_timeout",
-                m_ToReadFailedDueToTimeoutCounter.Get());
+                m_ToReadFailedDueToTimeoutCounter.Get())
+         .Print("Reading_Canceled_read_timeout",
+                m_ToCanceledDueToReadTimeoutCounter.Get())
+         .Print("Reading_Failed_read_timeout",
+                m_ToFailedDueToReadTimeoutCounter.Get())
+         .Print("Reading_Canceled_new_session",
+                m_ToCanceledDueToReadNewSessionCounter.Get())
+         .Print("Reading_Canceled_clear",
+                m_ToCanceledDueToReadClearCounter.Get())
+         .Print("Reading_Failed_new_session",
+                m_ToFailedDueToReadNewSessionCounter.Get())
+         .Print("Reading_Failed_clear",
+                m_ToFailedDueToReadClearCounter.Get());
 }
 
 
@@ -346,7 +374,19 @@ string CStatisticsCounters::PrintTransitions(void) const
            "OK:Reading_ReadFailed_new_session: " +
            NStr::NumericToString(m_ToReadFailedDueToNewSessionCounter.Get()) + "\n"
            "OK:Reading_ReadFailed_timeout: " +
-           NStr::NumericToString(m_ToReadFailedDueToTimeoutCounter.Get()) + "\n";
+           NStr::NumericToString(m_ToReadFailedDueToTimeoutCounter.Get()) + "\n"
+           "OK:Reading_Canceled_read_timeout: " +
+           NStr::NumericToString(m_ToCanceledDueToReadTimeoutCounter.Get()) + "\n"
+           "OK:Reading_Failed_read_timeout: " +
+           NStr::NumericToString(m_ToFailedDueToReadTimeoutCounter.Get()) + "\n"
+           "OK:Reading_Canceled_new_session: " +
+           NStr::NumericToString(m_ToCanceledDueToReadNewSessionCounter.Get()) + "\n"
+           "OK:Reading_Canceled_clear: " +
+           NStr::NumericToString(m_ToCanceledDueToReadClearCounter.Get()) + "\n"
+           "OK:Reading_Failed_new_session: " +
+           NStr::NumericToString(m_ToFailedDueToReadNewSessionCounter.Get()) + "\n"
+           "OK:Reading_Failed_clear: " +
+           NStr::NumericToString(m_ToFailedDueToReadClearCounter.Get()) + "\n";
 }
 
 
@@ -361,9 +401,11 @@ void CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
         // Debug checking. the release version should not check this
         if (m_Transitions[index_from][index_to].Get() ==
                static_cast<TNCBIAtomicValue>(-1)) {
-            ERR_POST("Disabled transition is counted. From index: " +
-                     NStr::NumericToString(index_from) + " To index: " +
-                     NStr::NumericToString(index_to));
+            ERR_POST("Disabled transition is counted. From " +
+                     s_ValidStatusesNames[index_from] + " (index: " +
+                     NStr::NumericToString(index_from) + ") To " +
+                     s_ValidStatusesNames[index_to] + " (index: " +
+                     NStr::NumericToString(index_to) + ")");
             m_Transitions[index_from][index_to].Add(1);
         }
         m_Transitions[index_from][index_to].Add(1);     // Common case
@@ -373,16 +415,31 @@ void CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
         if (to == CNetScheduleAPI::eFailed) {
             switch (path_option) {
                 case eTimeout:
-                    m_ToFailedDueToTimeoutCounter.Add(1);
-                    s_ToFailedDueToTimeoutCounterTotal.Add(1);
+                    if (from == CNetScheduleAPI::eReading) {
+                        m_ToFailedDueToReadTimeoutCounter.Add(1);
+                        s_ToFailedDueToReadTimeoutCounterTotal.Add(1);
+                    } else {
+                        m_ToFailedDueToTimeoutCounter.Add(1);
+                        s_ToFailedDueToTimeoutCounterTotal.Add(1);
+                    }
                     break;
                 case eClear:
-                    m_ToFailedDueToClearCounter.Add(1);
-                    s_ToFailedDueToClearCounterTotal.Add(1);
+                    if (from == CNetScheduleAPI::eReading) {
+                        m_ToFailedDueToReadClearCounter.Add(1);
+                        s_ToFailedDueToReadClearCounterTotal.Add(1);
+                    } else {
+                        m_ToFailedDueToClearCounter.Add(1);
+                        s_ToFailedDueToClearCounterTotal.Add(1);
+                    }
                     break;
                 case eNewSession:
-                    m_ToFailedDueToNewSessionCounter.Add(1);
-                    s_ToFailedDueToNewSessionCounterTotal.Add(1);
+                    if (from == CNetScheduleAPI::eReading) {
+                        m_ToFailedDueToReadNewSessionCounter.Add(1);
+                        s_ToFailedDueToReadNewSessionCounterTotal.Add(1);
+                    } else {
+                        m_ToFailedDueToNewSessionCounter.Add(1);
+                        s_ToFailedDueToNewSessionCounterTotal.Add(1);
+                    }
                     break;
                 default:
                     break;
@@ -437,20 +494,35 @@ void CStatisticsCounters::CountTransition(CNetScheduleAPI::EJobStatus  from,
         // Here: this is a transition from the Reading state
         switch (path_option) {
                 case eTimeout:
-                    m_ToDoneDueToTimeoutCounter.Add(1);
-                    s_ToDoneDueToTimeoutCounterTotal.Add(1);
+                    if (to == CNetScheduleAPI::eCanceled) {
+                        m_ToCanceledDueToReadTimeoutCounter.Add(1);
+                        s_ToCanceledDueToReadTimeoutCounterTotal.Add(1);
+                    } else {
+                        m_ToDoneDueToTimeoutCounter.Add(1);
+                        s_ToDoneDueToTimeoutCounterTotal.Add(1);
+                    }
                     break;
                 case eFail:
                     m_ToDoneDueToFailCounter.Add(1);
                     s_ToDoneDueToFailCounterTotal.Add(1);
                     break;
                 case eClear:
-                    m_ToDoneDueToClearCounter.Add(1);
-                    s_ToDoneDueToClearCounterTotal.Add(1);
+                    if (to == CNetScheduleAPI::eCanceled) {
+                        m_ToCanceledDueToReadClearCounter.Add(1);
+                        s_ToCanceledDueToReadClearCounterTotal.Add(1);
+                    } else {
+                        m_ToDoneDueToClearCounter.Add(1);
+                        s_ToDoneDueToClearCounterTotal.Add(1);
+                    }
                     break;
                 case eNewSession:
-                    m_ToDoneDueToNewSessionCounter.Add(1);
-                    s_ToDoneDueToNewSessionCounterTotal.Add(1);
+                    if (to == CNetScheduleAPI::eCanceled) {
+                        m_ToCanceledDueToReadNewSessionCounter.Add(1);
+                        s_ToCanceledDueToReadNewSessionCounterTotal.Add(1);
+                    } else {
+                        m_ToDoneDueToNewSessionCounter.Add(1);
+                        s_ToDoneDueToNewSessionCounterTotal.Add(1);
+                    }
                     break;
                 default:
                     break;
@@ -569,7 +641,19 @@ void  CStatisticsCounters::PrintTotal(size_t  affinities)
          .Print("Reading_ReadFailed_new_session",
                 s_ToReadFailedDueToNewSessionCounterTotal.Get())
          .Print("Reading_ReadFailed_timeout",
-                s_ToReadFailedDueToTimeoutCounterTotal.Get());
+                s_ToReadFailedDueToTimeoutCounterTotal.Get())
+         .Print("Reading_Canceled_read_timeout",
+                s_ToCanceledDueToReadTimeoutCounterTotal.Get())
+         .Print("Reading_Failed_read_timeout",
+                s_ToFailedDueToReadTimeoutCounterTotal.Get())
+         .Print("Reading_Canceled_clear",
+                s_ToCanceledDueToReadClearCounterTotal.Get())
+         .Print("Reading_Canceled_new_session",
+                s_ToCanceledDueToReadNewSessionCounterTotal.Get())
+         .Print("Reading_Failed_clear",
+                s_ToFailedDueToReadClearCounterTotal.Get())
+         .Print("Reading_Failed_new_session",
+                s_ToFailedDueToReadNewSessionCounterTotal.Get());
     extra.Flush();
 
     ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
