@@ -534,7 +534,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     // ini. summ_susrule
     CSummarizeSusProdRule summ_susrule;
 
-//unsigned ridx = 0;
+// unsigned ridx = 0;
     ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                        thisInfo.suspect_prod_rules->Get()) {
        arr.clear();
@@ -552,9 +552,9 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
        arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
        arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));
 /*
-if (arr[2].find("Three") != string::npos) {
+if (arr[2].find("plural") != string::npos) {
   cerr << "arr.sz " << arr.size() << endl;
-cerr << "ridx " << ridx  << endl;
+cerr << "arr.s  " << arr[2] << "  ridx " << ridx  << endl;
 }
 ridx ++;
 */

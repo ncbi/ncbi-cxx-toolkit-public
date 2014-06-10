@@ -178,12 +178,12 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
        if (!CategoryOkForBioSource(biosrc_p, this_term.fix_type)) continue;
        if (prot.CanGetName()) {
           ITERATE (list <string>, nit, prot.GetName()) {
-             if (this_term.search_func && this_term.search_func(pattern, *nit)){
+            if (this_term.search_func && this_term.search_func(pattern, *nit)){
                  thisInfo.test_item_list[GetName()].push_back(
                       NStr::UIntToString((unsigned)this_term.fix_type) + "$" 
                       + NStr::UIntToString(i) + "#" 
                       + GetDiscItemText(*feat_in_use));
-             }
+            }
           }
        }
      }
@@ -281,10 +281,9 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
        prot_nm = *(prot.GetName().begin()); 
        rule_idx = 0;
        string test_name, summ;
-//prot_nm = "phi X174 lysis protein";
+//prot_nm = "Restriction endonuclease S subunits";
        ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                    thisInfo.suspect_prod_rules->Get()) {
-
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, 
                                                     prot_nm, 
                                                     *feat_in_use, **rit)){
@@ -806,7 +805,7 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem> c
                          e_IsComment, 
                          false);
          c_item->subcategories.push_back(c_tech);
-         strtmp = " (all missing)";
+         strtmp = " (some missing, all same)"; // should be " (all missing)";
      }
      else {
         Str2Strs::iterator it = tech2seqs.begin();
@@ -2120,11 +2119,17 @@ void CBioseq_ADJACENT_PSEUDOGENES :: TestOnObj(const CBioseq& bioseq)
    vector <const CSeq_feat*>::const_iterator jt;   
    string match_txt;
    ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
-     if (!(*it)->CanGetPseudo() || !(*it)->GetPseudo()) continue;
+     if (!(*it)->CanGetPseudo() || !(*it)->GetPseudo()) {
+        continue;
+     }
      jt = it + 1; 
-     if (jt == gene_feat.end()) continue;
-     if (!(*jt)->CanGetPseudo() || !(*jt)->GetPseudo()) continue;
-     if ((*it)->GetLocation().GetStrand() != (*jt)->GetLocation().GetStrand()) {
+     if (jt == gene_feat.end()) {
+        continue;
+     }
+     if (!(*jt)->CanGetPseudo() || !(*jt)->GetPseudo()) {
+        continue;
+     }
+     if ((*it)->GetLocation().GetStrand() != (*jt)->GetLocation().GetStrand()){
                continue;
      }
      if (!(*it)->CanGetComment() || (*it)->GetComment().empty()
@@ -2142,8 +2147,8 @@ void CBioseq_ADJACENT_PSEUDOGENES :: TestOnObj(const CBioseq& bioseq)
          if (match_txt.empty()) {
             if (this_gene.CanGetDesc() && !this_gene.GetDesc().empty()
                     && next_gene.CanGetDesc() && !next_gene.GetDesc().empty()){
-               match_txt 
-                 = GetGeneStringMatch(this_gene.GetDesc(), next_gene.GetDesc());
+              match_txt 
+                = GetGeneStringMatch(this_gene.GetDesc(), next_gene.GetDesc());
             }
          } 
        }
@@ -7017,7 +7022,7 @@ void CBioseq_PARTIAL_CDS_COMPLETE_SEQUENCE :: GetReport(CRef <CClickableItem> c_
    c_item->obj_list = thisInfo.test_item_objs[GetName()];
    unsigned cnt = c_item->item_list.size();
    c_item->description 
-      = NStr::UIntToString(cnt) + " partial CDS" + "in complete " + GetNoun(cnt, "sequence");
+      = NStr::UIntToString(cnt) + " partial CDS " + "in complete " + GetNoun(cnt, "sequence");
 };
 
 
@@ -7314,7 +7319,7 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem> c_item)
                   desc1, desc2, e_OtherComment, false, "", true); 
      }
      else {
-       desc1 = "coding region overlaps an RNA";
+       desc1 = "coding region overlaps RNA";
        desc2 = "coding regions overlap RNAs";
        if (it->first == "overlap_opp_strand") 
              desc3 = " on the opposite strand (no containment)";
@@ -7374,10 +7379,13 @@ bool CBioseq_OVERLAPPING_CDS :: OverlappingProdNmSimilar(const string& prod_nm1,
   /* otherwise, if one of the product names contains one of special ignore similarity
    * words, the product names are not similar.
    */
-  for (i = 0; i < ignore_simi_prod_wds.size(); i++)
+  for (i = 0; i < ignore_simi_prod_wds.size(); i++) {
      if (string::npos != NStr::FindNoCase(prod_nm1, ignore_simi_prod_wds[i])
-           || string::npos != NStr::FindNoCase(prod_nm2, ignore_simi_prod_wds[i]))
+           || string::npos 
+                != NStr::FindNoCase(prod_nm2, ignore_simi_prod_wds[i])) {
          return false;
+     }
+  }
 
   if (!(NStr::CompareNocase(prod_nm1, prod_nm2))) return true;
   else return false;
@@ -7394,9 +7402,9 @@ void CBioseq_OVERLAPPING_CDS :: AddToDiscRep(const CSeq_feat* seq_feat)
      if (seq_feat->CanGetComment()) {
          const string& comm = seq_feat->GetComment();
          if ( string::npos != NStr::FindNoCase(comm, "overlap")
-                        || string::npos != NStr::FindNoCase(comm, "frameshift")
-                        || string::npos != NStr::FindNoCase(comm, "frame shift")
-                        || string::npos != NStr::FindNoCase(comm, "extend") ) {
+                 || string::npos != NStr::FindNoCase(comm, "frameshift")
+                 || string::npos != NStr::FindNoCase(comm, "frame shift")
+                 || string::npos != NStr::FindNoCase(comm, "extend") ) {
               thisInfo.test_item_list[GetName()].push_back("comment$" + desc);
               thisInfo.test_item_objs[GetName() + "$comment"]
                          .push_back(feat_ref);
@@ -7418,9 +7426,10 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
   if (seq_feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
      prod_nm = GetProdNmForCD(*seq_feat);
      if ( DoesStringContainPhrase(prod_nm, "ABC")
-                    || DoesStringContainPhrase(prod_nm, "transposon", false, false)
-                    || DoesStringContainPhrase(prod_nm, "transposase", false, false))
+            || DoesStringContainPhrase(prod_nm, "transposon", false, false)
+            || DoesStringContainPhrase(prod_nm, "transposase", false, false)){
           return false;
+     }
      else return true;
   }
   else return false;
@@ -7455,7 +7464,7 @@ void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
                     < loc_j.GetStart(eExtreme_Positional)) {
          break;
       }
-      if(!OverlappingProdNmSimilar(GetProdNmForCD(**it), GetProdNmForCD(**jt))){
+      if(!OverlappingProdNmSimilar(GetProdNmForCD(**it),GetProdNmForCD(**jt))){
           continue;
       }
       ENa_strand strandj = loc_j.GetStrand();
@@ -7463,7 +7472,8 @@ void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
              && (strandi == eNa_strand_minus || strandj ==eNa_strand_minus)) {
            continue;
       }
-      if ( sequence::eNoOverlap != sequence::Compare(loc_i, loc_j, thisInfo.scope)) {
+      if ( sequence::eNoOverlap 
+                    != sequence::Compare(loc_i, loc_j, thisInfo.scope)) {
           if ( !added[i] && HasNoSuppressionWords(*it)) {
                AddToDiscRep(*it);
                added[i] = true;
@@ -10755,11 +10765,10 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     }
 
     // TEST_HAS_PROJECT_ID
-    if (run_proj 
-            && type_str == "GenomeProjectsDB" 
-            && user_obj.HasField("ProjectID")
-            && user_obj.GetField("ProjectID").GetData().IsInt()) {
-      id = NStr::IntToString(user_obj.GetField("ProjectID").GetData().GetInt());
+    if (run_proj && type_str == "GenomeProjectsDB" 
+                 && user_obj.HasField("ProjectID")
+                 && user_obj.GetField("ProjectID").GetData().IsInt()) {
+      id =NStr::IntToString(user_obj.GetField("ProjectID").GetData().GetInt());
       for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
          bioseq_desc = GetDiscItemText(*(bb_ci->GetCompleteBioseq()));
          CConstRef <CObject> seq_ref(bb_ci->GetCompleteBioseq().GetPointer());
@@ -10988,18 +10997,22 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem> c_item)
       else tot_desc = " (some different)";
    }
 
-   if (prot_cnt && prot_id2seqs.size() > 1) {
+   if (prot_cnt) {
+     if (prot_id2seqs.size() > 1) {
         prot_desc = "(some different)";
-   }
-   else {
+     }
+     else {
         prot_desc = "(all same)";
+     }
    }
 
-   if (nuc_cnt && nuc_id2seqs.size() > 1) {
+   if (nuc_cnt) {
+      if (nuc_id2seqs.size() > 1) {
          nuc_desc = "(some different)";
-   }
-   else {
-       nuc_desc = "(all same)";
+      }
+      else {
+         nuc_desc = "(all same)";
+      }
    }
 
    if (prot_cnt && !nuc_cnt) {
@@ -11012,8 +11025,9 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem> c_item)
        }
        c_item->description 
            = GetOtherComment(c_item->item_list.size(),
-             "protein sequence has project ID ",
-             "protein sequences have project IDs " + prot_desc);
+                              "protein sequence has project ID ",
+                              "protein sequences have project IDs ")
+               + prot_desc;
    }
    else if (!prot_cnt && nuc_cnt) {
        //c_item->item_list = mol2list.begin()->second;
@@ -11024,10 +11038,10 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem> c_item)
             objs = &(thisInfo.test_item_objs[GetName() + "$nuc#" + it->first]);
           copy(objs->begin(), objs->end(), back_inserter(c_item->obj_list));
        }
-       c_item->description 
-          = GetOtherComment(c_item->item_list.size(),
-             "nucleotide sequence has project ID ",
-             "nucleotide sequences have project IDs " + nuc_desc);
+       c_item->description = GetOtherComment(c_item->item_list.size(),
+                                       "nucleotide sequence has project ID ",
+                                     "nucleotide sequences have project IDs ")
+                             + nuc_desc;
    }
    else {
        c_item->description 
@@ -13463,30 +13477,36 @@ void CSeqEntry_on_comment :: TestOnObj(const CSeq_entry& seq_entry)
   string desc, strtmp, comm1;
   bool run_has = (thisTest.tests_run.find(GetName_has()) != end_it);
   bool run_mix = (thisTest.tests_run.find(GetName_mix()) != end_it);
+  bool all_same = true;
 
-  m_all_same = true;
+  all_same = true;
   if (!comm_seqdesc.empty()) {
      comm1 = comm_seqdesc[0]->GetComment();
   }
   ITERATE (vector <const CSeqdesc*>, it, comm_seqdesc) {
-     CConstRef <CObject> feat_ref (*it);
-     desc = GetDiscItemText(**it, *(comm_seqdesc_seqentry[i])); 
-     // ONCALLER_COMMENT_PRESENT
-     if (run_has) {
-        if (m_all_same && comm1 != (*it)->GetComment()){
-             m_all_same  = false; 
+    CConstRef <CObject> feat_ref (*it);
+    desc = GetDiscItemText(**it, *(comm_seqdesc_seqentry[i])); 
+    // ONCALLER_COMMENT_PRESENT
+    if (run_has) {
+        if (all_same && comm1 != (*it)->GetComment()){
+             all_same  = false; 
         }
         thisInfo.test_item_list[GetName_has()].push_back(desc);
         thisInfo.test_item_objs[GetName_has()].push_back(feat_ref);
-     }
+    }
+    
 
-     // DISC_MISMATCHED_COMMENTS
-     if (run_mix) {
-       strtmp = (*it)->GetComment();
-       strtmp = strtmp.empty() ? "empty" : strtmp;
-       thisInfo.test_item_list[GetName_mix()].push_back(strtmp + "$" + desc);
-       thisInfo.test_item_objs[GetName_mix() +"$" + strtmp].push_back(feat_ref);
-     }
+    // DISC_MISMATCHED_COMMENTS
+    if (run_mix) {
+      strtmp = (*it)->GetComment();
+      strtmp = strtmp.empty() ? "empty" : strtmp;
+      thisInfo.test_item_list[GetName_mix()].push_back(strtmp + "$" + desc);
+      thisInfo.test_item_objs[GetName_mix() +"$" + strtmp].push_back(feat_ref);
+    }
+  }
+  if (run_has) {
+     thisInfo.test_item_list[GetName_has()+"_same"]
+                    .push_back(NStr::BoolToString(all_same));
   }
 };
 
@@ -13508,8 +13528,10 @@ void CSeqEntry_DISC_MISMATCHED_COMMENTS :: GetReport(CRef <CClickableItem> c_ite
 void CSeqEntry_ONCALLER_COMMENT_PRESENT :: GetReport(CRef <CClickableItem> c_item)
 {
   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  bool all_same 
+        = NStr::StringToBool(thisInfo.test_item_list[GetName() + "_same"][0]);
   unsigned cnt = c_item->item_list.size();
-  string strtmp = (m_all_same? " (all same)." : " (some different). ");
+  string strtmp = (all_same? " (all same)." : " (some different). ");
   c_item->description = GetOtherComment(cnt, 
                                          "comment descriptor was found", 
                                          "comment descriptors were found")
