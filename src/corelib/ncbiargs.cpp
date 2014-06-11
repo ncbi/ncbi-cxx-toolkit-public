@@ -2555,6 +2555,7 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
     }
 
     // Check dependencies, create set of exclusions
+    unsigned int nExtra = m_nExtra;
     set<string> exclude;
     map<string,string> require;
     ITERATE(TDependencies, dep, m_Dependencies) {
@@ -2565,6 +2566,9 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
         switch ( dep->second.m_Dep ) {
         case eRequires:
             require.insert(make_pair(dep->second.m_Arg,dep->first));
+            if (dep->second.m_Arg.at(0) == '#' && nExtra == 0) {
+                ++nExtra;
+            }
             break;
         case eExcludes:
             // Excluded exists and is not empty?
@@ -2574,6 +2578,9 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
                     "Incompatible with argument", dep->first));
             }
             exclude.insert(dep->second.m_Arg);
+            if (dep->second.m_Arg.at(0) == '#' && nExtra > 0) {
+                --nExtra;
+            }
             break;
         }
     }
@@ -2587,11 +2594,11 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
 
     // Check if all mandatory unnamed positional arguments are provided
     if (m_PosArgs.size() <= n_plain  &&
-        n_plain < m_PosArgs.size() + m_nExtra){
+        n_plain < m_PosArgs.size() + nExtra){
         NCBI_THROW(CArgException,eNoArg,
-            "Too few (" + NStr::UIntToString(n_plain) +
+            "Too few (" + NStr::UIntToString(n_plain - m_PosArgs.size()) +
             ") unnamed positional arguments. Must define at least " +
-            NStr::UIntToString(m_nExtra));
+            NStr::UIntToString(nExtra));
     }
 
     // Compose an ordered list of args
