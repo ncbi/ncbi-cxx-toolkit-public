@@ -1463,6 +1463,35 @@ BOOST_AUTO_TEST_CASE(HashToOid)
     s_WrapUpDb(*nucl);
 }
 
+BOOST_AUTO_TEST_CASE(MismatchedDb_Bioseq) // per SB-1330
+{
+    vector<string> files;
+    string title = "pdb-id";
+    string I1("pdb|3E3Q|BB"), T1("Lower case chain b");
+    
+    {
+        CRef<CWriteDB> wr(new CWriteDB(title,
+                                       CWriteDB::eNucleotide,
+                                       "title",
+                                       CWriteDB::eFullIndex));
+        
+        // Build a multi-defline bioseq and read it with CFastaReader.
+        
+        string str = ">"    + I1 + " " + T1 + "\n" + "ELVISLIVES\n";
+        
+        CRef<CBioseq> bs = s_FastaStringToBioseq(str, true);
+        
+        BOOST_REQUIRE_THROW(wr->AddSequence(*bs), CWriteDBException);
+        wr->Close();
+        
+        // Clean up.
+        
+        wr->ListFiles(files);
+    }
+    
+    s_RemoveFiles(files);
+}
+
 BOOST_AUTO_TEST_CASE(PDBIdLowerCase)
 {
         

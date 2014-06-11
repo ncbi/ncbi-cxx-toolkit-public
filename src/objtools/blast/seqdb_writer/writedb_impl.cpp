@@ -150,6 +150,13 @@ void CWriteDB_Impl::AddSequence(const CBioseq & bs)
     x_ResetSequenceData();
     
     m_Bioseq.Reset(& bs);
+    if (m_Bioseq->GetInst().CanGetMol() && (m_Bioseq->IsAa() != m_Protein)) {
+        CNcbiOstrstream msg;
+        msg << "Invalid molecule type of sequence added ("
+            << (m_Bioseq->IsAa() ? "protein" : "nucleotide")
+            << "); expected " << (m_Protein ? "protein" : "nucleotide");
+        NCBI_THROW(CWriteDBException, eArgErr, CNcbiOstrstreamToString(msg));
+    }
     
     if (m_Indices & CWriteDB::eAddHash) {
         x_ComputeHash(bs);
