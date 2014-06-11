@@ -518,11 +518,11 @@ bool CString_constraint :: x_IsStringInSpan(const string& str, const string& fir
         if (suf1 == suf2 && suf1 == sub_str) {
           /* suffixes match */
           first_num 
-             = NStr::StringToUInt(CTempString(first).substr(prefix_len, idx1));
+            = NStr::StringToUInt(CTempString(first).substr(prefix_len, idx1));
           second_num 
-             = NStr::StringToUInt(CTempString(second).substr(prefix_len, idx2));
+            =NStr::StringToUInt(CTempString(second).substr(prefix_len, idx2));
           str_num 
-             = NStr::StringToUInt(CTempString(str).substr(prefix_len, idx_str));
+            =NStr::StringToUInt(CTempString(str).substr(prefix_len, idx_str));
           if ( (str_num > first_num && str_num < second_num)
                    || (str_num > second_num && str_num < first_num) ) {
             rval = true;
@@ -556,7 +556,7 @@ bool CString_constraint :: x_IsStringInSpanInList (const string& str, const stri
        hyphen = CTempString(list).substr(1).find('-');
     }
     else {
-      if (x_GetSpanFromHyphenInString (list, hyphen, range_start, range_end)) {
+      if (x_GetSpanFromHyphenInString (list, hyphen, range_start, range_end)){
         if (x_IsStringInSpan (str, range_start, range_end)) rval = true;
       }
       hyphen = list.find('-', hyphen + 1);
@@ -604,8 +604,8 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
         bool ig_punct = GetIgnore_punct();
         if ( (GetMatch_location() != eString_location_inlist)
                  && (ig_space || ig_punct)) {
-           search = x_StripUnimportantCharacters(search, ig_space, ig_punct);
-           pattern = x_StripUnimportantCharacters(pattern, ig_space, ig_punct);
+          search = x_StripUnimportantCharacters(search, ig_space, ig_punct);
+          pattern = x_StripUnimportantCharacters(pattern, ig_space, ig_punct);
         } 
 
         size_t pFound;
@@ -620,11 +620,11 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
             else if (GetWhole_word()) {
                 rval = x_IsWholeWordMatch (search, pFound, pattern.size());
                 while (!rval && pFound != string::npos) {
-	           pFound = GetCase_sensitive() ?
+	          pFound = GetCase_sensitive() ?
                               search.find(pattern, pFound+1):
                                 NStr::FindNoCase(search, pattern, pFound+1);
-                   rval = (pFound != string::npos)? 
-                            x_IsWholeWordMatch(search, pFound, pattern.size()):
+                  rval = (pFound != string::npos)? 
+                           x_IsWholeWordMatch(search, pFound, pattern.size()):
                             false;
                 }
             }

@@ -117,6 +117,7 @@ bool CSearch_func :: x_StringMayContainPlural(const string& str) const
       len = (*it).size();
       if (len == 1) {
          strtmp = CTempString(strtmp).substr(pos+len);
+         strtmp = NStr::TruncateSpaces(strtmp, NStr::eTrunc_Begin);
          continue;
       }
       last_letter = (*it)[len-1];
