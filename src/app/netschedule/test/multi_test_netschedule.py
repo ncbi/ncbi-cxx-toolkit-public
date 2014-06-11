@@ -232,7 +232,12 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
 
 
     # Now, run the script which prepares the grid_cli stuff
+    if verbose:
+        print "rm -rf " + sandboxPath + "ncbi_grid_1_0"
     os.system( "rm -rf " + sandboxPath + "ncbi_grid_1_0" )
+    if verbose:
+        print sandboxPath + "make_ncbi_grid_module_tree.sh " + gcPath + \
+                  " " + sandboxPath + "ncbi_grid_1_0"
     if os.system( sandboxPath + "make_ncbi_grid_module_tree.sh " + gcPath +
                   " " + sandboxPath + "ncbi_grid_1_0" ) != 0:
         print >> sys.stderr, combination
