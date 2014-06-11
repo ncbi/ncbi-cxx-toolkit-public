@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#!/usr/bin/perl
 # $Id$
 # ===========================================================================
 #
@@ -40,6 +40,7 @@ use Pod::Usage;
 use File::stat;
 use Digest::MD5;
 use Archive::Tar;
+use List::MoreUtils qw(uniq);
 
 use constant NCBI_FTP => "ftp.ncbi.nlm.nih.gov";
 use constant BLAST_DB_DIR => "/blast/db";
@@ -128,11 +129,7 @@ sub get_available_databases
         next unless (/\.tar\.gz$/);
         push @retval, &extract_db_name($_);
     }
-
-    # Sort and eliminate adjacent duplicates
-    @retval = sort @retval;
-    my $prev = "not equal to $retval[0]";
-    return grep($_ ne $prev && ($prev = $_, 1), @retval);
+    return uniq @retval;
 }
 
 # Obtains the list of files to download
