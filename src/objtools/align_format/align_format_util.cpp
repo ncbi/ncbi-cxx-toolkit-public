@@ -439,6 +439,12 @@ string
 CAlignFormatUtil::GetSeqIdString(const CBioseq& cbs, bool believe_local_id)
 {
     const CBioseq::TId& ids = cbs.GetId();
+    return CAlignFormatUtil::GetSeqIdString(ids, believe_local_id);
+}
+
+string
+CAlignFormatUtil::GetSeqIdString(const list<CRef<CSeq_id> > & ids, bool believe_local_id)
+{
     string all_id_str = NcbiEmptyString;
     CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
     if (wid && (wid->Which()!= CSeq_id::e_Local || believe_local_id)){
@@ -447,7 +453,7 @@ CAlignFormatUtil::GetSeqIdString(const CBioseq& cbs, bool believe_local_id)
             if(gi == ZERO_GI){
                 all_id_str =  wid->AsFastaString().substr(4);
             } else {
-                all_id_str = "gi|" + NStr::NumericToString(gi) + 
+                all_id_str = "gi|" + NStr::NumericToString(gi) +
                     "|" + wid->AsFastaString().substr(4);
             }
         } else {

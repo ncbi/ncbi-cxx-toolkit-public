@@ -517,6 +517,12 @@ public:
     static string 
     GetSeqIdString(const objects::CBioseq& cbs, bool believe_local_id=true);
     
+    /// Returns a full '|'-delimited Seq-id string for a  a list of seq-ids.
+    /// @param ids lsit of seq-ids [in]
+    /// @param believe_local_id Should local ids be parsed? [in]
+    static string
+    GetSeqIdString(const list<CRef<objects::CSeq_id> > & ids, bool believe_local_id);
+
     /// Returns a full description for a Bioseq, concatenating all available 
     /// titles.
     /// @param cbs Bioseq object [in]
