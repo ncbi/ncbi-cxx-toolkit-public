@@ -38,8 +38,8 @@
 #include <connect/ncbi_http_session.hpp>
 
 // gnutls is required for https connections.
-// The application needs to be linked with $(GNUTLS_LIBS)
-// #include <connect/ncbi_gnutls.h>
+// The application needs to be linked with $(GNUTLS_LIBS) and connssl
+#include <connect/ncbi_gnutls.h>
 
 
 using namespace ncbi;
@@ -93,6 +93,8 @@ void CHttpSessionApp::Init()
     arg_desc->AddOptionalKey("get", "url", "URL to load using GET request",
         CArgDescriptions::eString,
         CArgDescriptions::fAllowMultiple);
+    arg_desc->AddOptionalKey("post", "url", "URL to POST data to (the data is read from STDIN)",
+        CArgDescriptions::eString);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -120,7 +122,7 @@ int CHttpSessionApp::Run(void)
     m_PrintBody = args["print-body"];
 
     // Setup secure connections.
-    // SOCK_SetupSSL(NcbiSetupGnuTls);
+    SOCK_SetupSSL(NcbiSetupGnuTls);
 
     CHttpSession session;
 
@@ -144,6 +146,15 @@ int CHttpSessionApp::Run(void)
             PrintResponse(session, req.Execute());
             cout << "-------------------------------------" << endl << endl;
         }
+    }
+    if ( args["post"] ) {
+        skip_defaults = true;
+        string url = args["post"].AsString();
+        cout << "POST " << url << endl;
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+        NcbiStreamCopy(req.ContentStream(), cin);
+        PrintResponse(session, req.Execute());
+        cout << "-------------------------------------" << endl << endl;
     }
 
     if ( skip_defaults ) {
