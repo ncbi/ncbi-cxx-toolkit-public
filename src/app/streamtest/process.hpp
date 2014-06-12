@@ -46,6 +46,7 @@ public:
     //  ------------------------------------------------------------------------
         : m_objectcount( 0 )
         , m_cleanup (false)
+        , m_extended (false)
     {};
 
     //  ------------------------------------------------------------------------
@@ -60,6 +61,9 @@ public:
     {
         if (args["cleanup"]) {
             m_cleanup = true;
+        }
+        if (args["extended"]) {
+            m_extended = true;
         }
     };
 
@@ -79,6 +83,11 @@ public:
         if (m_cleanup) {
             CCleanup cleanup;
             cleanup.BasicCleanup( *m_entry, CCleanup::eClean_SyncGenCodes );
+        }
+
+        if (m_extended) {
+            CCleanup cleanup;
+            cleanup.ExtendedCleanup( *m_entry );
         }
     };
 
@@ -101,6 +110,7 @@ public:
 protected:
     unsigned int     m_objectcount;
     bool             m_cleanup;
+    bool             m_extended;
     CRef<CSeq_entry> m_entry;
 };
 
