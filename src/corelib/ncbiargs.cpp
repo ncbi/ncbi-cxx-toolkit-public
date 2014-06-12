@@ -2556,6 +2556,10 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
 
     // Check dependencies, create set of exclusions
     unsigned int nExtra = m_nExtra;
+    string nameReq, nameExc;
+    unsigned int nExtraReq = 0;
+    unsigned int nExtraExc = 0;
+    unsigned int nEx = 0;
     set<string> exclude;
     map<string,string> require;
     ITERATE(TDependencies, dep, m_Dependencies) {
@@ -2566,8 +2570,13 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
         switch ( dep->second.m_Dep ) {
         case eRequires:
             require.insert(make_pair(dep->second.m_Arg,dep->first));
-            if (dep->second.m_Arg.at(0) == '#' && nExtra == 0) {
-                ++nExtra;
+            if (dep->second.m_Arg.at(0) == '#') {
+                nEx = NStr::StringToUInt(
+                    CTempString(dep->second.m_Arg.data()+1, dep->second.m_Arg.size()-1));
+                if (nEx > nExtraReq) {
+                    nExtraReq = nEx;
+                    nameReq = dep->first;
+                }
             }
             break;
         case eExcludes:
@@ -2578,11 +2587,26 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
                     "Incompatible with argument", dep->first));
             }
             exclude.insert(dep->second.m_Arg);
-            if (dep->second.m_Arg.at(0) == '#' && nExtra > 0) {
-                --nExtra;
+            if (dep->second.m_Arg.at(0) == '#') {
+                nEx = NStr::StringToUInt(
+                    CTempString(dep->second.m_Arg.data()+1, dep->second.m_Arg.size()-1));
+                if (nEx > nExtraExc) {
+                    nExtraExc = nEx;
+                    nameExc = dep->first;
+                }
             }
             break;
         }
+    }
+    if (nExtraReq != 0 && nExtraExc != 0 && nExtraReq >= nExtraExc) {
+        NCBI_THROW(CArgException,eSynopsis,
+            "Conflicting dependencies on unnamed positional arguments: " + 
+            nameReq + " requires #" + NStr::UIntToString(nExtraReq) + ", " +
+            nameExc + " excludes #" + NStr::UIntToString(nExtraExc));
+    }
+    nExtra = max(nExtra, nExtraReq);
+    if (nExtraExc > 0) {
+        nExtra = max(nExtra, nExtraExc-1);
     }
 
     // Check that all opening args are provided
@@ -2593,6 +2617,7 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
     }
 
     // Check if all mandatory unnamed positional arguments are provided
+    // note that positional ones are filled first, no matter are they optional or not
     if (m_PosArgs.size() <= n_plain  &&
         n_plain < m_PosArgs.size() + nExtra){
         NCBI_THROW(CArgException,eNoArg,
