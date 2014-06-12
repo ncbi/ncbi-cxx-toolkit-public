@@ -1358,10 +1358,10 @@ void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
     // minus
     {{
         // flip
-        gapi.Flip(minus_subj_min, minus_subj_min);
+        gapi.Flip(minus_subj_min, minus_subj_max);
         for(ii = ib; ii != iplus_beg; ++ii) {
 
-            const typename THit::TCoord s0 = minus_subj_min + minus_subj_min 
+            const typename THit::TCoord s0 = minus_subj_min + minus_subj_max 
                 - (*ii)->GetSubjMax();
             const typename THit::TCoord s1 = minus_subj_min + minus_subj_max 
                 - (*ii)->GetSubjMin();
