@@ -132,6 +132,7 @@ blastinput needs $(BLAST_LIBS)
 blastinput needs align_format
 blaststoreasncpp_g needs bl2seqasn_g
 blastxml needs xser
+blastxml2 needs xser
 blk64 needs3party $(DL_LIBS)
 blk64 needs3party $(ORIG_LIBS)
 blk64 needs3party comn64
