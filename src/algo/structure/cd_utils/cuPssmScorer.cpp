@@ -87,7 +87,7 @@ int PssmScorer::score(BlockModelPair& bmp, const CRef<CBioseq> bioseq)
 	vector<char> slaveSeq;
 	GetNcbistdSeq(*bioseq, slaveSeq);
 	if ((master.getLastAlignedPosition() >= masterLen) 
-		|| (slave.getLastAlignedPosition() >= slaveSeq.size()))
+		|| (slave.getLastAlignedPosition() >= (int) slaveSeq.size()))
 		return score;
 	if (m_scoresFromPssm.size() == 0)
 		return score;

@@ -368,7 +368,7 @@ int CCdCore::GetSeqIndex(const CRef< CSeq_id >& SeqID) const{
     CBioseq_set::TSeq_set::const_iterator seCend = GetSequences().GetSet().GetSeq_set().end();
 
     if (SeqID.NotEmpty()) {
-        for (i=0; seCit != seCend, i<NumSequences; ++seCit, i++) {
+        for (i=0; seCit != seCend && i<NumSequences; ++seCit, i++) {
             //  Stopped using GetSeqIDForIndex (or variants) as it selected only one of the possible Seq_ids -- and
             //  even in that case, the Seq_id is returned according to a ranking of the possible results 
             //  of Seq_id::Which().  Should be comparing against all Seq_ids in all bioseqs.
@@ -1095,7 +1095,7 @@ void CCdCore::EraseSequences() {
     //  Note:  GetSeqIDForIndex only checks one of the possible IDs against those in the alignment; 
     //         look through all possible IDs them before erasing a sequence.
 
-    for (i=0; seCit != seCend, i<NumSequences; ++seCit, i++) {
+    for (i=0; seCit != seCend && i<NumSequences; ++seCit, i++) {
         hasId = false;
         if ((*seCit)->IsSeq()) {
             const CBioseq::TId& ids = (*seCit)->GetSeq().GetId();
