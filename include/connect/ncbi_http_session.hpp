@@ -402,13 +402,15 @@ public:
     /// default value is used (or the one from $CONN_TIMEOUT).
     const CTimeout& GetTimeout(void) const { return m_Timeout; }
     /// Set new timeout.
-    void SetTimeout(const CTimeout& timeout) { m_Timeout = timeout; }
+    CHttpRequest& SetTimeout(const CTimeout& timeout);
+    /// Set new timeout in seconds/microseconds.
+    CHttpRequest& SetTimeout(unsigned int sec, unsigned int usec = 0);
 
     /// Get number of retries. If set to zero, the global default
     /// value is used (or the one from $CONN_MAX_TRY).
     unsigned short GetRetries(void) const { return m_Retries; }
     /// Set number of retries.
-    void SetRetries(unsigned short retries) { m_Retries = retries; }
+    CHttpRequest& SetRetries(unsigned short retries);
 
 private:
     friend class CHttpSession;
@@ -521,6 +523,28 @@ public:
 inline bool CHttpFormData::IsEmpty(void) const
 {
     return !m_Entries.empty()  ||  !m_Providers.empty();
+}
+
+
+inline CHttpRequest& CHttpRequest::SetTimeout(const CTimeout& timeout)
+{
+    m_Timeout = timeout;
+    return *this;
+}
+
+
+inline CHttpRequest& CHttpRequest::SetTimeout(unsigned int sec,
+                                              unsigned int usec)
+{
+    m_Timeout.Set(sec, usec);
+    return *this;
+}
+
+
+inline CHttpRequest& CHttpRequest::SetRetries(unsigned short retries)
+{
+    m_Retries = retries;
+    return *this;
 }
 
 
