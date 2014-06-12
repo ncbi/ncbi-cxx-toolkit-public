@@ -794,6 +794,36 @@ EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
     return ef;
 }
 
+CNcbiOstream& operator<< (CNcbiOstream& str, const CByteOrderMark&  bom)
+{
+    switch (bom.GetEncodingForm()) {
+    /// Stream has no BOM.
+    default:
+    case eEncodingForm_Unknown:
+    case eEncodingForm_ISO8859_1:
+    case eEncodingForm_Windows_1252:
+        break;
+    case eEncodingForm_Utf8:
+        str << Uint1(0xEF) << Uint1(0xBB) << Uint1(0xBF);
+        break;
+    case eEncodingForm_Utf16Native:
+#ifdef WORDS_BIGENDIAN 
+        str << Uint1(0xFE) << Uint1(0xFF);
+#else
+        str << Uint1(0xFF) << Uint1(0xFE);
+#endif
+        break;
+    case eEncodingForm_Utf16Foreign:
+#ifdef WORDS_BIGENDIAN 
+        str << Uint1(0xFF) << Uint1(0xFE);
+#else
+        str << Uint1(0xFE) << Uint1(0xFF);
+#endif
+        break;
+    }
+    return str;
+}
+
 
 #include "ncbi_base64.c"
 

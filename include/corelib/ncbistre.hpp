@@ -944,6 +944,45 @@ NCBI_XNCBI_EXPORT
 EEncodingForm GetTextEncodingForm(CNcbiIstream& input,
                                   EBOMDiscard   discard_bom);
 
+/// Byte Order Mark helper class to use in serialization
+///
+/// @sa GetTextEncodingForm
+class CByteOrderMark
+{
+public:
+    CByteOrderMark(void)
+        : m_EncodingForm(eEncodingForm_Unknown) {
+    }
+
+    CByteOrderMark(EEncodingForm encodingForm)
+        : m_EncodingForm(encodingForm) {
+    }
+
+    EEncodingForm GetEncodingForm(void) const {
+        return m_EncodingForm;
+    }
+    void SetEncodingForm(EEncodingForm encodingForm) {
+        m_EncodingForm = encodingForm;
+    }
+private:
+    EEncodingForm m_EncodingForm;
+};
+
+/// Write Byte Order Mark into output stream
+NCBI_XNCBI_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CByteOrderMark&  bom);
+
+/// Read Byte Order Mark, if present, from input stream
+///
+/// @note
+///   If BOM is found, stream position advances,
+///   otherwise, stream position remains unchanged
+///
+/// @sa GetTextEncodingForm
+inline 
+CNcbiIstream& operator>> (CNcbiIstream& str,  CByteOrderMark&  bom) {
+    bom.SetEncodingForm( GetTextEncodingForm(str, eBOM_Discard));
+    return str;
+}
 
 #include <corelib/ncbi_base64.h>
 
