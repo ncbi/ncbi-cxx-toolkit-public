@@ -250,6 +250,14 @@ public:
                           const string &          auth_token,
                           string &                warning,
                           TJobReturnOption        how);
+    TJobStatus  RescheduleJob(const CNSClientId &     client,
+                              unsigned int            job_id,
+                              const string &          job_key,
+                              const string &          auth_token,
+                              const string &          aff_token,
+                              const string &          group,
+                              bool &                  auth_token_ok,
+                              CJob &                  job);
 
     TJobStatus  ReadAndTouchJob(unsigned int      job_id,
                                 CJob &            job,

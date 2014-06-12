@@ -238,51 +238,52 @@ TNSBitVector
 CNSAffinityRegistry::ResolveAffinities(const list< string > &  tokens)
 {
     TNSBitVector            result;
+
+    for (list<string>::const_iterator  k(tokens.begin());
+         k != tokens.end(); ++k)
+        result.set(ResolveAffinity(*k), true);
+    return result;
+}
+
+
+// Non-existent affinity will be created
+unsigned int  CNSAffinityRegistry::ResolveAffinity(const string &  token)
+{
     CMutexGuard             guard(m_Lock);
 
-    for (list<string>::const_iterator  k(tokens.begin()); k != tokens.end(); ++k) {
-        // Search for this affinity token
-        map< const string *,
-             unsigned int,
-             SNSTokenCompare >::const_iterator      found = m_AffinityIDs.find(&(*k));
-        if (found != m_AffinityIDs.end()) {
-            // This token is known. Update the jobs/clients vectors and finish
-            unsigned int    aff_id = found->second;
+    map< const string *,
+         unsigned int,
+         SNSTokenCompare >::const_iterator  found = m_AffinityIDs.find(&token);
+    if (found != m_AffinityIDs.end())
+        return found->second;
 
-            result.set(aff_id, true);
-            continue;
-        }
-
-        // Here: this is a new token. The DB and memory structures should be
-        //       created. Let's start with a new identifier.
-        unsigned int    aff_id = x_GetNextAffinityID();
-        for (;;) {
-            if (m_JobsAffinity.find(aff_id) == m_JobsAffinity.end())
-                break;
-            aff_id = x_GetNextAffinityID();
-        }
-
-        // Create a record in the token->id map
-        string *    new_token = new string(*k);
-        m_AffinityIDs[new_token] = aff_id;
-
-        // Create a record in the id->attributes map
-        SNSJobsAffinity     new_job_affinity;
-        new_job_affinity.m_AffToken = new_token;
-        m_JobsAffinity[aff_id] = new_job_affinity;
-
-        // Memorize the new affinity ID
-        m_RegisteredAffinities.set_bit(aff_id);
-
-        // Update the database. The transaction is created in the outer scope.
-        m_AffDictDB->aff_id = aff_id;
-        m_AffDictDB->token = *k;
-        m_AffDictDB->UpdateInsert();
-
-        result.set(aff_id, true);
+    // Here: this is a new token. The DB and memory structures should be
+    //       created. Let's start with a new identifier.
+    unsigned int    aff_id = x_GetNextAffinityID();
+    for (;;) {
+        if (m_JobsAffinity.find(aff_id) == m_JobsAffinity.end())
+            break;
+        aff_id = x_GetNextAffinityID();
     }
 
-    return result;
+    // Create a record in the token->id map
+    string *    new_token = new string(token);
+    m_AffinityIDs[new_token] = aff_id;
+
+    // Create a record in the id->attributes map
+    SNSJobsAffinity     new_job_affinity;
+    new_job_affinity.m_AffToken = new_token;
+    m_JobsAffinity[aff_id] = new_job_affinity;
+
+    // Memorize the new affinity ID
+    m_RegisteredAffinities.set_bit(aff_id);
+
+    // Update the database. The transaction is created in the outer scope.
+    m_AffDictDB->aff_id = aff_id;
+    m_AffDictDB->token = token;
+    m_AffDictDB->UpdateInsert();
+
+    return aff_id;
 }
 
 
@@ -644,6 +645,9 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
 
     found->second.m_Jobs.set(job_id, true);
     found->second.JobsOp();
+
+    // It is for sure that the affinity cannot be deleted
+    m_RemoveCandidates.set(aff_id, false);
     return;
 }
 

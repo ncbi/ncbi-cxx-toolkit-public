@@ -1240,3 +1240,117 @@ class Scenario1323( TestBase ):
             raise Exception( "Expected no notifications, received some" )
         return True
 
+
+class Scenario1324( TestBase ):
+    " Scenario 1324 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "GET, RESCHEDULE with new affinity and new group"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 3 )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1324' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        self.ns.submitJob( 'TEST', 'blah', 'aff1', 'group1' )
+        jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                                            "node", "session" )
+        execAny( ns_client, "RESCHEDULE " + jobID + " " + authToken + " aff2 group2" )
+        output = execAny( ns_client, "GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=aff1" )
+        if output != "":
+            raise Exception( "Not expected job with old affinity" )
+        output = execAny( ns_client, "DUMP " + jobID, isMultiline = True )
+        if "affinity: 2 ('aff2')" not in output:
+            raise Exception( "Unexpected affinity of the job" )
+        if "group: 2 ('group2')" not in output:
+            raise Exception( "Unexpected group of the job" )
+
+        jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, 'aff2', '',
+                                                            "node", "session" )
+        if jobID == "":
+            raise Exception( "Expected job with new affinity" )
+        return True
+
+
+class Scenario1325( TestBase ):
+    " Scenario 1325 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "GET, RESCHEDULE without affinity and group"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 3 )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1325' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        self.ns.submitJob( 'TEST', 'blah', 'aff1', 'group1' )
+        jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                                            "node", "session" )
+        execAny( ns_client, "RESCHEDULE " + jobID + " " + authToken )
+        output = execAny( ns_client, "GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=aff1" )
+        if output != "":
+            raise Exception( "Not expected job with old affinity" )
+        output = execAny( ns_client, "DUMP " + jobID, isMultiline = True )
+        if "affinity: n/a" not in output:
+            raise Exception( "Unexpected affinity of the job" )
+        if "group: n/a" not in output:
+            raise Exception( "Unexpected group of the job" )
+
+        output = execAny( ns_client, "GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 group=group1" )
+        if output != "":
+            raise Exception( "Not expected job with old group" )
+        return True
+
+
+class Scenario1326( TestBase ):
+    " Scenario 1326 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT with no aff, no group, GET, RESCHEDULE with new aff and group"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 3 )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1326' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        self.ns.submitJob( 'TEST', 'blah', '', '' )
+        output = execAny( ns_client, "GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=aff1" )
+        if output != "":
+            raise Exception( "Not expected job with aff1" )
+
+        jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                                            "node", "session" )
+        execAny( ns_client, "RESCHEDULE " + jobID + " " + authToken + " aff1 group1" )
+        output = execAny( ns_client, "GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=aff1" )
+        if output == "":
+            raise Exception( "Expected job with aff1" )
+        output = execAny( ns_client, "DUMP " + jobID, isMultiline = True )
+        if "affinity: 1 ('aff1')" not in output:
+            raise Exception( "Unexpected affinity of the job" )
+        if "group: 1 ('group1')" not in output:
+            raise Exception( "Unexpected group of the job" )
+        return True

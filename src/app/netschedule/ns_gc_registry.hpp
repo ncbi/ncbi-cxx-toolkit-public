@@ -81,6 +81,9 @@ class CJobGCRegistry
                          unsigned int            aff_id,
                          unsigned int            group_id,
                          const CNSPreciseTime &  life_time);
+        void ChangeAffinityAndGroup(unsigned int    job_id,
+                                    unsigned int    aff_id,
+                                    unsigned int    group_id);
         bool DeleteIfTimedOut(unsigned int            job_id,       // in
                               const CNSPreciseTime &  current_time, // in
                               unsigned int *          aff_id,       // out: if deleted

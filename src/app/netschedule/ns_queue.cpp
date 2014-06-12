@@ -1398,10 +1398,6 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
             NCBI_THROW(CNetScheduleException, eInternalError,
                        "Error fetching job");
 
-        if (job.GetStatus() != CNetScheduleAPI::eRunning)
-            NCBI_THROW(CNetScheduleException, eInvalidJobStatus,
-                       "Operation is applicable to eRunning job state only");
-
         if (!auth_token.empty()) {
             // Need to check authorization token first
             CJob::EAuthTokenCompareResult   token_compare_result =
@@ -1497,6 +1493,140 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
                                    m_NotifHifreqPeriod, m_HandicapTimeout,
                                    eGet);
 
+    return old_status;
+}
+
+
+TJobStatus  CQueue::RescheduleJob(const CNSClientId &     client,
+                                  unsigned int            job_id,
+                                  const string &          job_key,
+                                  const string &          auth_token,
+                                  const string &          aff_token,
+                                  const string &          group,
+                                  bool &                  auth_token_ok,
+                                  CJob &                  job)
+{
+    CNSPreciseTime      current_time = CNSPreciseTime::Current();
+    CFastMutexGuard     guard(m_OperationLock);
+    TJobStatus          old_status = GetJobStatus(job_id);
+    unsigned int        affinity_id = 0;
+    unsigned int        group_id = 0;
+    unsigned int        job_affinity_id;
+    unsigned int        job_group_id;
+
+    if (old_status != CNetScheduleAPI::eRunning)
+        return old_status;
+
+    // Resolve affinity and group in a separate transaction
+    if (!aff_token.empty() || !group.empty()) {
+        {{
+            CNSTransaction      transaction(this);
+            if (!aff_token.empty())
+                affinity_id = m_AffinityRegistry.ResolveAffinity(aff_token);
+            if (!group.empty())
+                group_id = m_GroupRegistry.ResolveGroup(group);
+            transaction.Commit();
+        }}
+    }
+
+    {{
+         CNSTransaction      transaction(this);
+
+        if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                       "Error fetching job");
+
+        // Need to check authorization token first
+        CJob::EAuthTokenCompareResult   token_compare_result =
+                                            job.CompareAuthToken(auth_token);
+
+        if (token_compare_result == CJob::eInvalidTokenFormat)
+            NCBI_THROW(CNetScheduleException, eInvalidAuthToken,
+                       "Invalid authorization token format");
+
+        if (token_compare_result != CJob::eCompleteMatch) {
+            auth_token_ok = false;
+            return old_status;
+        }
+
+        // Here: the authorization token is OK, we can continue
+        auth_token_ok = true;
+
+        // Memorize the job group and affinity for the proper updates after
+        // the transaction is finished
+        job_affinity_id = job.GetAffinityId();
+        job_group_id = job.GetGroupId();
+
+        // Update the job affinity and group
+        job.SetAffinityId(affinity_id);
+        job.SetGroupId(group_id);
+
+        unsigned int    run_count = job.GetRunCount();
+        CJobEvent *     event = job.GetLastEvent();
+
+        if (!event)
+            ERR_POST("No JobEvent for running job");
+
+        event = &job.AppendEvent();
+        event->SetNodeAddr(client.GetAddress());
+        event->SetStatus(CNetScheduleAPI::ePending);
+        event->SetEvent(CJobEvent::eReschedule);
+        event->SetTimestamp(current_time);
+        event->SetClientNode(client.GetNode());
+        event->SetClientSession(client.GetSession());
+
+        if (run_count)
+            job.SetRunCount(run_count-1);
+
+        job.SetStatus(CNetScheduleAPI::ePending);
+        job.SetLastTouch(current_time);
+        job.Flush(this);
+
+        transaction.Commit();
+    }}
+
+    // Job has been updated in the DB. Update the affinity and group
+    // registries as needed.
+    if (job_affinity_id != affinity_id) {
+        if (job_affinity_id != 0)
+            m_AffinityRegistry.RemoveJobFromAffinity(job_id, job_affinity_id);
+        if (affinity_id != 0)
+            m_AffinityRegistry.AddJobToAffinity(job_id, affinity_id);
+    }
+    if (job_group_id != group_id) {
+        if (job_group_id != 0)
+            m_GroupRegistry.RemoveJob(job_group_id, job_id);
+        if (group_id != 0)
+            m_GroupRegistry.AddJob(group_id, job_id);
+    }
+    if (job_affinity_id != affinity_id || job_group_id != group_id)
+        m_GCRegistry.ChangeAffinityAndGroup(job_id, affinity_id, group_id);
+
+    m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::ePending);
+    m_StatisticsCounters.CountToPendingRescheduled(1);
+
+    TimeLineRemove(job_id);
+    m_ClientsRegistry.ClearExecuting(job_id);
+    m_GCRegistry.UpdateLifetime(job_id,
+                                job.GetExpirationTime(m_Timeout,
+                                                      m_RunTimeout,
+                                                      m_ReadTimeout,
+                                                      m_PendingTimeout,
+                                                      current_time));
+
+    if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
+        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
+                                            job.GetListenerNotifPort(),
+                                            job_key,
+                                            job.GetStatus(),
+                                            job.GetLastEventIndex());
+
+    if (m_PauseStatus == eNoPause)
+        m_NotificationsList.Notify(job_id,
+                                   job.GetAffinityId(), m_ClientsRegistry,
+                                   m_AffinityRegistry, m_GroupRegistry,
+                                   m_NotifHifreqPeriod, m_HandicapTimeout,
+                                   eGet);
     return old_status;
 }
 

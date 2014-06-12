@@ -86,6 +86,7 @@ public:
         eStatus_OK                  = 200, ///< Command is ok and execution is good
 
         eStatus_BadRequest          = 400, ///< Command is incorrect
+        eStatus_BadAuth             = 401, ///< Bad authorization token
         eStatus_NotFound            = 404, ///< Job is not found
         eStatus_Inactive            = 408, ///< Connection was closed due to inactivity
                                            ///< timeout
@@ -158,6 +159,7 @@ private:
     void x_ProcessPutFailure(CQueue*);
     void x_ProcessDropQueue(CQueue*);
     void x_ProcessReturn(CQueue*);
+    void x_ProcessReschedule(CQueue*);
     void x_ProcessJobDelayExpiration(CQueue*);
     void x_ProcessJobDelayReadExpiration(CQueue*);
     void x_ProcessListenJob(CQueue*);

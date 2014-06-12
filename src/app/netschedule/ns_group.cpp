@@ -253,11 +253,6 @@ void  CNSGroupsRegistry::RemoveJob(unsigned int  group_id,
             x_DeleteSingleInMemory(found);
         return;
     }
-
-    // The group does not exist. It is impossible to create it because
-    // the group name is unknown here.
-    NCBI_THROW(CNetScheduleException, eGroupNotFound,
-               "Group with id " + NStr::NumericToString(group_id) + " is unknown");
 }
 
 

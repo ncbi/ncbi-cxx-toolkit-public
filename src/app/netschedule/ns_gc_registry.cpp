@@ -65,6 +65,20 @@ void CJobGCRegistry::RegisterJob(unsigned int            job_id,
 }
 
 
+void CJobGCRegistry::ChangeAffinityAndGroup(unsigned int    job_id,
+                                            unsigned int    aff_id,
+                                            unsigned int    group_id)
+{
+    CFastMutexGuard                          guard(m_Lock);
+    map<unsigned int, SJobGCInfo>::iterator  attrs = m_JobsAttrs.find(job_id);
+
+    if (attrs != m_JobsAttrs.end()) {
+        attrs->second.m_AffinityID = aff_id;
+        attrs->second.m_GroupID = group_id;
+    }
+}
+
+
 // Returns true if the record has been deleted, i.e. the has to be marked
 // for deletion. The aff_id and group_id are filled only if the job is
 // deleted

@@ -100,8 +100,9 @@ public:
         eNSReadRollback,    // NS rolls back reading because
                             // of a network error when the job
                             // ID is sent to the client
-        eReturnNoBlacklist  // WN asked to return a job without
+        eReturnNoBlacklist, // WN asked to return a job without
                             // adding it to the WN blacklist
+        eReschedule         // RESCHEDULE
     };
 
     // Converts event code into its string representation

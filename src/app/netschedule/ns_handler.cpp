@@ -408,6 +408,15 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "RESCHEDULE",    { &CNetScheduleHandler::x_ProcessReschedule,
+                         eNS_Queue | eNS_Worker | eNS_Program },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "auth_token",        eNSPT_Id,  eNSPA_Required      },
+          { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "group",             eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "WGET",          { &CNetScheduleHandler::x_ProcessGetJob,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "port",              eNSPT_Int, eNSPA_Required      },
@@ -2203,6 +2212,61 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
 }
 
 
+void CNetScheduleHandler::x_ProcessReschedule(CQueue* q)
+{
+    x_CheckNonAnonymousClient("use RESCHEDULE command");
+    x_CheckAuthorizationToken();
+
+    CJob            job;
+    bool            auth_token_ok = true;
+    TJobStatus      old_status = q->RescheduleJob(
+                                        m_ClientId,
+                                        m_CommandArguments.job_id,
+                                        m_CommandArguments.job_key,
+                                        m_CommandArguments.auth_token,
+                                        m_CommandArguments.affinity_token,
+                                        m_CommandArguments.group,
+                                        auth_token_ok,
+                                        job);
+
+    if (!auth_token_ok) {
+        ERR_POST(Warning << "Invalid authorization token");
+        x_SetCmdRequestStatus(eStatus_BadAuth);
+        x_WriteMessage("ERR:eInvalidAuthToken:");
+        x_PrintCmdRequestStop();
+        return;
+    }
+
+    if (old_status == CNetScheduleAPI::eRunning) {
+        x_WriteMessage("OK:");
+        x_PrintCmdRequestStop();
+        x_LogCommandWithJob(job);
+        return;
+    }
+
+    if (old_status == CNetScheduleAPI::eJobNotFound) {
+        ERR_POST(Warning << "RESCHEDULE for unknown job "
+                         << m_CommandArguments.job_key);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage("ERR:eJobNotFound:");
+        x_PrintCmdRequestStop();
+        return;
+    }
+
+    ERR_POST(Warning << "Cannot reschedule job "
+                     << m_CommandArguments.job_key
+                     << "; job is in "
+                     << CNetScheduleAPI::StatusToString(old_status)
+                     << " state");
+    x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+    x_WriteMessage("ERR:eInvalidJobStatus:Cannot reschedule job; job is in " +
+                   CNetScheduleAPI::StatusToString(old_status) + " state");
+
+    x_LogCommandWithJob(job);
+    x_PrintCmdRequestStop();
+}
+
+
 void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 {
     if (m_CommandArguments.timeout <= 0) {
@@ -3539,6 +3603,7 @@ bool CNetScheduleHandler::x_CanBeWithoutQueue(FProcessor  processor) const
            processor == &CNetScheduleHandler::x_ProcessFastStatusW ||           // WST/WST2
            processor == &CNetScheduleHandler::x_ProcessPut ||                   // PUT/PUT2
            processor == &CNetScheduleHandler::x_ProcessReturn ||                // RETURN/RETURN2
+           processor == &CNetScheduleHandler::x_ProcessReschedule ||            // RESCHEDULE
            processor == &CNetScheduleHandler::x_ProcessPutFailure ||            // FPUT/FPUT2
            processor == &CNetScheduleHandler::x_ProcessJobExchange ||           // JXCG
            processor == &CNetScheduleHandler::x_ProcessJobDelayExpiration ||    // JDEX
