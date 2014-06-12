@@ -53,6 +53,7 @@ PUT                     # Deprecated: Use PUT2 instead
 PUT2                    # 4.10.0 and up
 RETURN                  # Deprecated: Use RETURN2 instead
 RETURN2                 # 4.10.0 and up
+RESCHEDULE              # 4.19.0 and up
 WGET                    # Deprecated: Use GET2 instead
 CWGET                   # 4.10.0 and up
 FPUT                    # Deprecated: Use FPUT2 instead
@@ -63,6 +64,8 @@ READ
 CFRM
 FRED
 RDRB
+CWREAD                  # 4.18.0 and up
+JDREX                   # 4.18.0 and up
 
 REGC                    # Deprecated
 URGC                    # Deprecated
