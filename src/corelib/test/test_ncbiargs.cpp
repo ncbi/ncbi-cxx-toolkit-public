@@ -248,6 +248,15 @@ static void s_InitTest7(CArgDescriptions& arg_desc)
     arg_desc.AddPositional
         ("p1",
          "This is a plain argument",  CArgDescriptions::eBoolean);
+
+    arg_desc.AddFlag("f1", "Flag 1");
+    arg_desc.AddFlag("f2", "Flag 1");
+    arg_desc.AddFlag("f3", "Flag 1");
+
+    arg_desc.SetDependency("p2", CArgDescriptions::eRequires, "#1");
+    arg_desc.SetDependency("f1", CArgDescriptions::eExcludes, "#1");
+    arg_desc.SetDependency("f2", CArgDescriptions::eRequires, "#2");
+    arg_desc.SetDependency("f3", CArgDescriptions::eExcludes, "#2");
 }
 
 static void s_RunTest7(const CArgs& args, ostream& os)
@@ -255,11 +264,13 @@ static void s_RunTest7(const CArgs& args, ostream& os)
     os << "p1=" << args["p1"].AsString()  << endl;
     os << "p2=" << args["p2"].AsString()  << endl;
 
-    os << "#1=" << args["#1"].AsInteger() << endl;
-    if ( args["#2"] ) {
+    if ( args.Exist("#1") ) {
+        os << "#1=" << args["#1"].AsInteger() << endl;
+    }
+    if ( args.Exist("#2") ) {
         os << "#2=" << args["#2"].AsInteger() << endl;
     }
-    if ( args["#3"] ) {
+    if ( args.Exist("#3") ) {
         os << "#3=" << args["#3"].AsInteger() << endl;
     }
 }
