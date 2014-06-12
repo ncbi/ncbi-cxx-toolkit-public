@@ -182,7 +182,7 @@ void CDiscRepOutput :: x_AddListOutputTags()
      // check self
      if (x_NeedsTag(setting_name, desc, disc_fatal, disc_cnt)
             || (oc.add_extra_output_tag 
-                   && x_NeedsTag(setting_name, desc, extra_fatal, extra_cnt))) {
+                   && x_NeedsTag(setting_name, desc, extra_fatal, extra_cnt))){
         if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
           if (NStr::FindNoCase(desc, "taxname (all present, all unique)") 
                   != string::npos) {

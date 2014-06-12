@@ -477,7 +477,9 @@ bool CTestAndRepData :: CommentHasPhrase(string comment, const string& phrase)
 
 string CTestAndRepData :: FindReplaceString(const string& src, const string& search_str, const string& replacement_str, bool case_sensitive, bool whole_word)
 {
-    CRegexpUtil rxu(src);
+    vector <string> arr;
+    arr = NStr::Tokenize(src, " \n", arr, NStr::eMergeDelims);
+    CRegexpUtil rxu(NStr::Join(arr, " "));
     string pattern (CRegexp::Escape(search_str));
 
     // word boundaries: whitespace & punctuation
@@ -559,9 +561,19 @@ void CTestAndRepData :: RmvRedundancy(vector <string>& items, vector <CConstRef 
   vector <string> tmp = items;
   vector <CConstRef <CObject> > tmp_objs = objs;
   set <string> uni_item;
+set <const CObject* > uni_objs;
   items.clear(); 
   objs.clear();
   unsigned i=0;
+  ITERATE (vector <CConstRef <CObject> >, it, tmp_objs) {
+     if (uni_objs.find((*it).GetPointer()) == uni_objs.end()) {
+          items.push_back(tmp[i]);
+          objs.push_back(*it);
+          uni_objs.insert((*it).GetPointer());
+     }
+     i++;
+  }
+/*
   ITERATE (vector <string>, it, tmp) {
     if (uni_item.find(*it) == uni_item.end()) {
       items.push_back(*it);
@@ -570,6 +582,7 @@ void CTestAndRepData :: RmvRedundancy(vector <string>& items, vector <CConstRef 
     } 
     i++;
   }
+*/
 };
 
 
