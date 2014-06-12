@@ -751,7 +751,7 @@ BlastXML2_FormatReport(const IBlastXML2ReportData* data, string file_name)
 	blastxml2::CBlastOutput bxmlout;
 	try {
 		CNcbiOfstream out_stream;
-		out_stream.open(file_name, IOS_BASE::out);
+		out_stream.open(file_name.c_str(), IOS_BASE::out);
 		if(!out_stream.is_open())
 			 NCBI_THROW(CException, eInvalid, "Cannot open output file");
 
@@ -799,7 +799,7 @@ BlastJSON_FormatReport(const IBlastXML2ReportData* data, string file_name)
 	blastxml2::CBlastOutput bxmlout;
 	try {
 		CNcbiOfstream out_stream;
-		out_stream.open(file_name, IOS_BASE::out);
+		out_stream.open(file_name.c_str(), IOS_BASE::out);
 		if(!out_stream.is_open())
 			 NCBI_THROW(CException, eInvalid, "Cannot open output file");
 
