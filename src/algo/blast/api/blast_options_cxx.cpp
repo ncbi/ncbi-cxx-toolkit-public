@@ -845,6 +845,18 @@ CBlastOptions::SetProgram(EProgram p)
     }
 }
 
+bool
+CBlastOptions::IsIterativeSearch() const{
+    switch ( GetProgram()) {
+    	case ePSIBlast :
+    	case ePSITblastn :
+    	case eDeltaBlast :
+    		return true;
+    	break;
+    	default :
+    		return false;
+    }
+}
 /******************* Lookup table options ***********************/
 double 
 CBlastOptions::GetWordThreshold() const

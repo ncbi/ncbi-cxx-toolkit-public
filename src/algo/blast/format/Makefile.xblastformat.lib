@@ -1,16 +1,16 @@
 # $Id$
 
-ASN_DEP = blastdb blastxml xnetblast
+ASN_DEP = blastdb blastxml blastxml2 xnetblast
 
 LIB = xblastformat
-SRC = blastfmtutil blastxml_format blast_format data4xmlformat build_archive vecscreen_run
+SRC = blastfmtutil blastxml_format blastxml2_format blast_format data4xmlformat data4xml2format build_archive vecscreen_run
 
 CPPFLAGS = -DNCBI_MODULE=BLASTFORMAT $(ORIG_CPPFLAGS)
 
-DLL_LIB = align_format blastxml xhtml xcgi
+DLL_LIB = align_format blastxml blastxml2 xhtml xcgi
 
 WATCHERS = jianye zaretska madden camacho fongah2
 
 
 USES_LIBRARIES =  \
-    $(BLAST_LIBS) align_format blastxml
+    $(BLAST_LIBS) align_format blastxml blastxml2

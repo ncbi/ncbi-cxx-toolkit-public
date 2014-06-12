@@ -50,6 +50,8 @@ Author: Jason Papadopoulos
 
 #include <algo/blast/format/blastxml_format.hpp>
 #include <algo/blast/format/data4xmlformat.hpp>       /* NCBI_FAKE_WARNING */
+#include <algo/blast/format/blastxml2_format.hpp>
+#include <algo/blast/format/data4xml2format.hpp>       /* NCBI_FAKE_WARNING */
 #include <algo/blast/format/build_archive.hpp>
 #include <serial/objostrxml.hpp>
 
@@ -61,6 +63,7 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 USING_SCOPE(align_format);
 #endif
+
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& options, 
                            blast::CLocalDbAdapter& db_adapter,
@@ -101,7 +104,10 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_CustomOutputFormatSpec(custom_output_format),
           m_IgOptions(ig_opts),
           m_Options(&options),
-          m_IsVdb(false)
+          m_IsVdb(false),
+          m_IsIterative(false),
+          m_BaseFile(kEmptyStr),
+          m_XMLFileCount(0)
 {
     m_DbName = db_adapter.GetDatabaseName();
     m_IsBl2Seq = (m_DbName == kEmptyStr ? true : false);
@@ -115,6 +121,11 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
         m_AccumulatedQueries.Reset(new CBlastQueryVector());
         m_BlastXMLIncremental.Reset(new SBlastXMLIncremental());
     }
+
+    if ((m_FormatType == CFormattingArgs::eXml2) || (m_FormatType == CFormattingArgs::eJson)){
+           m_AccumulatedQueries.Reset(new CBlastQueryVector());
+    }
+
     if (use_sum_statistics && m_IsUngappedSearch) {
         m_ShowLinkedSetSize = true;
     }
@@ -145,6 +156,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
                                          true, -1, is_remote_search);
         }
     }
+
+    m_IsIterative = options.IsIterativeSearch();
 }
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
@@ -184,7 +197,10 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
           m_IndexedMegablast(opts.GetMBIndexLoaded()), 
           m_CustomOutputFormatSpec(custom_output_format),
           m_Options(&opts),
-          m_IsVdb(is_vdb)
+          m_IsVdb(is_vdb),
+          m_IsIterative(false),
+          m_BaseFile(kEmptyStr),
+          m_XMLFileCount(0)
 {
     m_DbInfo.assign(dbinfo_list.begin(), dbinfo_list.end());
     vector< CBlastFormatUtil::SDbInfo >::const_iterator itInfo;
@@ -201,6 +217,10 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
     if (m_FormatType == CFormattingArgs::eXml) {
         m_AccumulatedQueries.Reset(new CBlastQueryVector());
         m_BlastXMLIncremental.Reset(new SBlastXMLIncremental());
+    }
+
+    if ((m_FormatType == CFormattingArgs::eXml2) || (m_FormatType == CFormattingArgs::eJson)) {
+           m_AccumulatedQueries.Reset(new CBlastQueryVector());
     }
 
     if (opts.GetSumStatisticsMode() && m_IsUngappedSearch) {
@@ -228,6 +248,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
         _ASSERT(opts.GetProgramType() == eBlastTypePsiBlast);
         m_Program = "deltablast";
     }
+    m_IsIterative = opts.IsIterativeSearch();
 }
 
 static const string kHTML_Prefix =
@@ -559,11 +580,14 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
 {
 
     // ASN.1 formatting is straightforward
-    if (m_FormatType == CFormattingArgs::eAsnText) {
+    if (m_FormatType == CFormattingArgs::eAsnText || m_FormatType == CFormattingArgs::eJsonSeqalign) {
         if (results.HasAlignments()) {
     	    CRef<CSeq_align_set> aln_set (new CSeq_align_set);
             CBlastFormatUtil::PruneSeqalign(*(results.GetSeqAlign()), *aln_set, m_HitlistSize);
-            m_Outfile << MSerial_AsnText << *x_WrapAlignmentInSeqAnnot(aln_set);
+            if(m_FormatType == CFormattingArgs::eAsnText)
+            	m_Outfile << MSerial_AsnText << *x_WrapAlignmentInSeqAnnot(aln_set);
+            else
+            	m_Outfile << MSerial_Json << *x_WrapAlignmentInSeqAnnot(aln_set);
         }
         return;
     } else if (m_FormatType == CFormattingArgs::eAsnBinary) {
@@ -610,6 +634,10 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
         m_AccumulatedResults.clear();
         m_AccumulatedQueries->clear();
         return;
+    }
+    else if(m_FormatType == CFormattingArgs::eXml2 || m_FormatType == CFormattingArgs::eJson) {
+    	x_PrintXML2Report(results, queries);
+    	return;
     }
 }
 
@@ -848,7 +876,10 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
     if (m_FormatType == CFormattingArgs::eAsnText 
       || m_FormatType == CFormattingArgs::eAsnBinary 
-      || m_FormatType == CFormattingArgs::eXml )
+      || m_FormatType == CFormattingArgs::eXml
+      || m_FormatType == CFormattingArgs::eXml2
+      || m_FormatType == CFormattingArgs::eJson
+      || m_FormatType == CFormattingArgs::eJsonSeqalign)
     {
         x_PrintStructuredReport(results, queries);
         return;
@@ -996,7 +1027,10 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
 
     if (m_FormatType == CFormattingArgs::eAsnText 
       || m_FormatType == CFormattingArgs::eAsnBinary 
-      || m_FormatType == CFormattingArgs::eXml )
+      || m_FormatType == CFormattingArgs::eXml
+      || m_FormatType == CFormattingArgs::eXml2
+      || m_FormatType == CFormattingArgs::eJson
+      ||  m_FormatType == CFormattingArgs::eJsonSeqalign)
     {
         x_PrintStructuredReport(results, queries);
         return;
@@ -1290,7 +1324,10 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
 
     if (m_FormatType == CFormattingArgs::eAsnText 
       || m_FormatType == CFormattingArgs::eAsnBinary 
-      || m_FormatType == CFormattingArgs::eXml )
+      || m_FormatType == CFormattingArgs::eXml
+      || m_FormatType == CFormattingArgs::eXml2
+      || m_FormatType == CFormattingArgs::eJson
+      || m_FormatType == CFormattingArgs::eJsonSeqalign)
     {
         ITERATE(CSearchResultSet, result, result_set) {
            x_PrintStructuredReport(**result, queries);
@@ -1435,9 +1472,35 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
     x_PrintOneQueryFooter(*first_results.GetAncillaryData());
 }
 
+
+
 void 
 CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
 {
+    if ((m_FormatType == CFormattingArgs::eXml2) || (m_FormatType == CFormattingArgs::eJson)) {
+    	if(!m_AccumulatedResults.empty()) {
+    		CRef <CBlastSearchQuery> q = m_AccumulatedQueries->GetBlastSearchQuery(0);
+    		if(m_IsBl2Seq) {
+    			CCmdLineBlastXML2ReportData report_data(q, m_AccumulatedResults, m_Options,
+    		 		   		   	   	   	   	   	   	    m_Scope, m_SeqInfoSrc);
+		    	x_WriteXML2(report_data);
+    		}
+    		else if(m_IsIterative){
+    			CCmdLineBlastXML2ReportData report_data (q, m_AccumulatedResults, m_Options,
+    					 	 	 	 	 				 m_Scope, m_DbInfo);
+		    	x_WriteXML2(report_data);
+    		}
+    		m_AccumulatedResults.clear();
+    		m_AccumulatedQueries->clear();
+    	}
+    	if (m_FormatType == CFormattingArgs::eXml2)
+    		x_GenerateXML2MasterFile();
+    	else
+    		x_GenerateJSONMasterFile();
+
+    	return;
+    }
+
     if (m_FormatType == CFormattingArgs::eTabularWithComments) {
         CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec);
         if (m_IsBl2Seq) {
@@ -1508,7 +1571,8 @@ void CBlastFormat::ResetScopeHistory()
 {
     // Do not reset the scope for BLAST2Sequences or else we'll loose the
     // sequence data! (see x_CreateSubjectBioseq)
-    if (m_IsBl2Seq) {
+    if ((m_IsBl2Seq) || (m_FormatType == CFormattingArgs::eXml2)
+    	|| (m_FormatType == CFormattingArgs::eJson)){
         return;
     }
 
@@ -1519,8 +1583,122 @@ void CBlastFormat::ResetScopeHistory()
     // This means that XML output requires more memory than other
     // output formats.
     
-    if (m_FormatType != CFormattingArgs::eXml) {
+    if (m_FormatType != CFormattingArgs::eXml)
+    {
         m_Scope->ResetDataAndHistory();
     }
+}
+
+void CBlastFormat::x_WriteXML2(CCmdLineBlastXML2ReportData & report_data)
+{
+	if(m_BaseFile == kEmptyStr) {
+		if(m_FormatType == CFormattingArgs::eXml2)
+			BlastXML2_FormatReport(&report_data, &m_Outfile);
+		else
+			BlastJSON_FormatReport(&report_data, &m_Outfile);
+	}
+	else {
+		m_XMLFileCount++;
+		if(m_FormatType == CFormattingArgs::eXml2) {
+			string file_name = m_BaseFile + "_" + NStr::IntToString(m_XMLFileCount) + ".xml";
+			BlastXML2_FormatReport(&report_data, file_name);
+		}
+		else {
+			string file_name = m_BaseFile + "_" + NStr::IntToString(m_XMLFileCount) + ".json";
+			BlastJSON_FormatReport(&report_data, file_name);
+		}
+	}
+}
+
+void CBlastFormat::x_PrintXML2Report(const blast::CSearchResults& results,
+        							 CConstRef<blast::CBlastQueryVector> queries)
+{
+	CRef<CSearchResults> res(const_cast<CSearchResults*>(&results));
+    res->TrimSeqAlign(m_HitlistSize);
+	if((m_IsIterative) || (m_IsBl2Seq)) {
+		if(m_AccumulatedResults.empty()) {
+			_ASSERT(m_AccumulatedQueries->size() == 0);
+			m_AccumulatedResults.push_back(res);
+			CConstRef<CSeq_id> query_id = results.GetSeqId();
+			ITERATE(CBlastQueryVector, itr, *queries) {
+				if (query_id->Match(*(*itr)->GetQueryId())) {
+			 		m_AccumulatedQueries->push_back(*itr);
+			 		break;
+			   	}
+			}
+	    }
+		else {
+			CConstRef<CSeq_id> query_id = results.GetSeqId();
+			if(m_AccumulatedResults[0].GetSeqId()->Match(*query_id)) {
+				m_AccumulatedResults.push_back(res);
+			}
+			else {
+				CRef <CBlastSearchQuery> q = m_AccumulatedQueries->GetBlastSearchQuery(0);
+				if(m_IsBl2Seq) {
+				    CCmdLineBlastXML2ReportData report_data(q, m_AccumulatedResults, m_Options,
+				    		   	   	   	   	   	   	    m_Scope, m_SeqInfoSrc);
+				    x_WriteXML2(report_data);
+				}
+				else {
+					CCmdLineBlastXML2ReportData report_data (q, m_AccumulatedResults, m_Options,
+							 	 	 	 	 				 m_Scope, m_DbInfo);
+				    x_WriteXML2(report_data);
+				}
+				m_AccumulatedResults.clear();
+				m_AccumulatedQueries->clear();
+
+				m_AccumulatedResults.push_back(res);
+				ITERATE(CBlastQueryVector, itr, *queries) {
+					if (query_id->Match(*(*itr)->GetQueryId())) {
+				 		m_AccumulatedQueries->push_back(*itr);
+				 		break;
+				   	}
+				}
+			}
+		}
+	}
+	else {
+		CRef<CBlastSearchQuery> q;
+			CConstRef<CSeq_id> query_id = results.GetSeqId();
+		ITERATE(CBlastQueryVector, itr, *queries) {
+			if (query_id->Match(*(*itr)->GetQueryId())) {
+				q = *itr;
+				break;
+			}
+		}
+		CCmdLineBlastXML2ReportData report_data (q, *res,  m_Options, m_Scope, m_DbInfo);
+	    x_WriteXML2(report_data);
+	}
+}
+
+void CBlastFormat::x_GenerateXML2MasterFile(void)
+{
+	if(m_BaseFile == kEmptyStr)
+		return;
+
+	m_Outfile << "<?xml version=\"1.0\"?>\n<BlastXML xmlns:xi=\"http://www.w3.org/2003/XInclude\">\n";
+
+	for(int i = 1; i <= m_XMLFileCount; i ++) {
+		string file_name = m_BaseFile + "_" + NStr::IntToString(i) + ".xml";
+		m_Outfile << "\t<xi:include href=\"" + file_name + "\"/>\n";
+	}
+	m_Outfile << "</BlastXML>\n";
+}
+
+void CBlastFormat::x_GenerateJSONMasterFile(void)
+{
+	if(m_BaseFile == kEmptyStr)
+		return;
+
+	m_Outfile << "{\n\t\"BlastJSON\": [\n";
+
+	for(int i = 1; i <= m_XMLFileCount; i ++) {
+		string file_name = m_BaseFile + "_" + NStr::IntToString(i) + ".json";
+		m_Outfile << "\t\t{\"File\": \"" + file_name + "\" }";
+		if(i != m_XMLFileCount)
+			m_Outfile << ",";
+		m_Outfile << "\n";
+	}
+	m_Outfile << "\t]\n}";
 }
 
