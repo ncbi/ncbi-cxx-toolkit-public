@@ -2651,8 +2651,15 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         SetFlagsForChains(tmp_chains);
     }
     NON_CONST_ITERATE(TChainList, it, tmp_chains) {
-        if(it->Score() != BadScore()) 
+        if(it->Score() != BadScore()) {
+            bool wasopen = it->OpenCds();
             m_gnomon->GetScore(*it,!no5pextension,false); // this will return CDS to best/longest depending on no5pextension
+            CCDSInfo cds = it->GetCdsInfo();
+            if(wasopen != it->OpenCds() && (wasopen == false || cds.HasStart())) {
+                cds.SetScore(cds.Score(),wasopen);
+                it->SetCdsInfo(cds);
+            }
+        }
     }
     if(genes.size() > 1)
         FindGenes(tmp_chains);                      // redo genes after trim    
