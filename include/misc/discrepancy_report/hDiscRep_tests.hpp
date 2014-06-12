@@ -1976,10 +1976,11 @@ BEGIN_SCOPE(DiscRepNmSpc)
        virtual string GetName() const {return kEmptyStr ;}
 
     protected:
-       string m_taxname, m_bioseq_desc, m_setting_name; 
-       string m_src_desc, m_mol_desc, m_tlt_desc, m_pub_desc, m_gbk_desc;
+       string m_bioseq_desc, m_setting_name, m_taxname; 
        vector <CSeqdesc::E_Choice> m_seqdesc_sel;
-       CConstRef <CObject> m_obj_ref;
+       CConstRef <CBioseq> m_bsq;
+
+       CConstRef <CObject> x_GetObjRef(const string& desc, CSeqdesc_CI ci);
   };
 
   class CSeqEntry_TEST_ALIGNMENT_HAS_SCORE : public CSeqEntryTestAndRepData
