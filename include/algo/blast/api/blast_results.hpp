@@ -405,7 +405,7 @@ public:
     }
 
     /// Return the number of unique query ID's represented by this object
-    size_type GetNumQueries()
+    size_type GetNumQueries() const
     {
         return m_NumQueries;
     }

@@ -55,6 +55,8 @@ Author: Jason Papadopoulos
 
 BEGIN_NCBI_SCOPE
 
+class CCmdLineBlastXML2ReportData;
+
 /// This class formats the BLAST results for command line applications
 class NCBI_XBLASTFORMAT_EXPORT CBlastFormat
 {
@@ -257,6 +259,9 @@ public:
     /// Get query range
     TSeqRange GetQueryRange(void) { return m_QueryRange; }
 
+    /// For use by XML2 only
+    void SetBaseFile(string base) {m_BaseFile = base;}
+
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;
@@ -326,6 +331,11 @@ private:
     bool m_IsVdb;
 
     TSeqRange m_QueryRange;
+
+    bool m_IsIterative;
+
+    string m_BaseFile;
+    int m_XMLFileCount;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
@@ -409,6 +419,12 @@ private:
    // Return true if the search is againist vdb databases
    bool x_IsVdbSearch()const;
 
+   void x_PrintXML2Report(const blast::CSearchResults& results,
+            			  CConstRef<blast::CBlastQueryVector> queries);
+
+   void x_GenerateXML2MasterFile(void);
+   void x_GenerateJSONMasterFile(void);
+   void x_WriteXML2(CCmdLineBlastXML2ReportData & report_data);
 };
 
 END_NCBI_SCOPE

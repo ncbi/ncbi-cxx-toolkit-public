@@ -127,6 +127,8 @@ public:
     /// Returns the CORE BLAST notion of program type
     EBlastProgramType GetProgramType() const;
 
+    bool IsIterativeSearch() const;
+
     /******************* Lookup table options ***********************/
     /// Returns WordThreshold
     double GetWordThreshold() const;

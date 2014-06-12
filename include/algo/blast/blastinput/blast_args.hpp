@@ -853,6 +853,12 @@ public:
         eCommaSeparatedValues,
         /// BLAST archive format
         eArchiveFormat,
+        /// JSON seq-align
+        eJsonSeqalign,
+        /// JSON output
+        eJson,
+        /// XML2 output
+        eXml2,
         /// Sentinel value for error checking
         eEndValue
     };
@@ -903,7 +909,10 @@ public:
     bool HasStructuredOutputFormat() const {
         return m_OutputFormat == eXml || 
             m_OutputFormat == eAsnText ||
-            m_OutputFormat == eAsnBinary;
+            m_OutputFormat == eAsnBinary ||
+            m_OutputFormat == eXml2 ||
+            m_OutputFormat == eJson ||
+            m_OutputFormat == eJsonSeqalign;
     }
 
     /// Display the NCBI GIs in formatted output?
