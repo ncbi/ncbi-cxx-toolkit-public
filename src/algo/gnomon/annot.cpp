@@ -421,6 +421,8 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
         typedef map<Int8,TIterList> TGIDIterlist;
         TGIDIterlist genes;
         NON_CONST_ITERATE(TGeneModelList, im, models) {
+            if(im->Type()&CGeneModel::eNested)
+                im->SetType(im->Type()-CGeneModel::eNested);  // ignore flag set in chainer    
             genes[im->GeneID()].push_back(im);
         }
 
@@ -584,6 +586,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
              
                     models.erase(*im);
                 } else {
+                    (*im)->SetType((*im)->Type()|CGeneModel::eNested);
                     included_complete_models.insert((*im)->ID()); 
                 }
             }
