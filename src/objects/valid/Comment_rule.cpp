@@ -249,7 +249,7 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
                 // find field for this rule and validate it
                 CConstRef<CUser_field> p_other_field = user.GetFieldRef(expected_field);
                 if( ! p_other_field ) {
-                    if ( GET_FIELD_OR_DEFAULT(**field_rule, Required, false)) {
+                    if ((*field_rule)->IsSetRequired() && (*field_rule)->GetRequired()) {
                         errors.push_back(TError((*field_rule)->GetSeverity(),
                                                 "Required field " + (*field_rule)->GetField_name() + " is missing"));
                     }
@@ -349,43 +349,47 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
                 value = NStr::IntToString(p_depend_field->GetData().GetInt());
             }
 
-            bool is_invert_match = GET_FIELD_OR_DEFAULT(**depend_rule, Invert_match, false);
+            bool is_invert_match = (*depend_rule)->IsSetInvert_match() && (*depend_rule)->GetInvert_match();
             bool does_match_rule_expression = (*depend_rule)->DoesStringMatchRuleExpression(value);
             if ( is_invert_match != does_match_rule_expression) {
                 // other rules apply
-                ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetOther_fields().Get()) {
+                if ((*depend_rule)->IsSetOther_fields()) {
+                    ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetOther_fields().Get()) {
 
-                    const string & other_field_name = (*other_rule)->GetField_name();
-                    CConstRef<CUser_field> p_other_field = user.GetFieldRef(other_field_name);
-                    if( ! p_other_field ) {
-                        // unable to find field
-                        if ( GET_FIELD_OR_DEFAULT(**other_rule, Required, false)) {
-                            errors.push_back(TError((*other_rule)->GetSeverity(),
-                                                    "Required field " + (*other_rule)->GetField_name() + " is missing when "
-                                                    + depend_field_name + " has value '" + value + "'"));
+                        const string & other_field_name = (*other_rule)->GetField_name();
+                        CConstRef<CUser_field> p_other_field = user.GetFieldRef(other_field_name);
+                        if( ! p_other_field ) {
+                            // unable to find field
+                            if ((*other_rule)->IsSetRequired() && (*other_rule)->GetRequired()) {
+                                errors.push_back(TError((*other_rule)->GetSeverity(),
+                                                        "Required field " + (*other_rule)->GetField_name() + " is missing when "
+                                                        + depend_field_name + " has value '" + value + "'"));
+                            }
+                            continue;
                         }
-                        continue;
-                    }
 
-                    string other_value = "";
-                    if (p_other_field->GetData().IsStr()) {
-                        other_value = (p_other_field->GetData().GetStr());
-                    } else if (p_other_field->GetData().IsInt()) {
-                        other_value = NStr::IntToString(p_other_field->GetData().GetInt());
-                    }
-                    if (!(*other_rule)->DoesStringMatchRuleExpression(other_value)) {
-                        // post error about not matching format
-                        errors.push_back(TError((*other_rule)->GetSeverity(),
-                                                other_value + " is not a valid value for " + other_field_name
-                                                + " when " + depend_field_name + " has value '" + value + "'"));
+                        string other_value = "";
+                        if (p_other_field->GetData().IsStr()) {
+                            other_value = (p_other_field->GetData().GetStr());
+                        } else if (p_other_field->GetData().IsInt()) {
+                            other_value = NStr::IntToString(p_other_field->GetData().GetInt());
+                        }
+                        if (!(*other_rule)->DoesStringMatchRuleExpression(other_value)) {
+                            // post error about not matching format
+                            errors.push_back(TError((*other_rule)->GetSeverity(),
+                                                    other_value + " is not a valid value for " + other_field_name
+                                                    + " when " + depend_field_name + " has value '" + value + "'"));
+                        }
                     }
                 }
-                ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetDisallowed_fields().Get()) {
-                    if( (*other_rule)->IsSetField_name() ) {
-                        const string & other_field_name = (*other_rule)->GetField_name();
-                        // found field that should not be present
-                        errors.push_back(TError((*other_rule)->GetSeverity(),
-                                                other_field_name + " is not a valid field name when " + depend_field_name + " has value '" + value + "'"));
+                if ((*depend_rule)->IsSetDisallowed_fields()) {
+                    ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetDisallowed_fields().Get()) {
+                        if( (*other_rule)->IsSetField_name() ) {
+                            const string & other_field_name = (*other_rule)->GetField_name();
+                            // found field that should not be present
+                            errors.push_back(TError((*other_rule)->GetSeverity(),
+                                                    other_field_name + " is not a valid field name when " + depend_field_name + " has value '" + value + "'"));
+                        }
                     }
                 }
             }
