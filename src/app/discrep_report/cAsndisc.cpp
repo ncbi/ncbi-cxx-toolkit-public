@@ -37,6 +37,9 @@
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>
 
@@ -108,7 +111,14 @@ int CDiscRepApp :: Run(void)
 {
     // Crocess command line args:  get GI to load
     const CArgs& args = GetArgs();
-    
+
+#ifdef HAVE_PUBSEQ_OS
+    // we may require PubSeqOS readers at some point, so go ahead and make
+    //         // sure they are properly registered
+    GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
+#endif
+
     try {
        CRef <DiscRepNmSpc::CRepConfig> 
            config( DiscRepNmSpc::CRepConfig :: factory(fAsndisc) );
@@ -142,14 +152,7 @@ int CDiscRepApp :: Run(void)
 
 int main(int argc, const char* argv[])
 {
-//  SetDiagTrace(eDT_Enable);
-   SetDiagPostLevel(eDiag_Error);
-
-  try {
+    //  SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Error);
     return CDiscRepApp().AppMain(argc, argv);
-  } 
-  catch(CException& eu) {
-     ERR_POST( eu.GetMsg());
-     return 1;
-  }
 }
