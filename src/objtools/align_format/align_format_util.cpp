@@ -49,7 +49,6 @@ static char const rcsid[] = "$Id$";
 #include <html/htmlhelper.hpp>
 #include <cgi/cgictx.hpp>
 #include <util/tables/raw_scoremat.h>
-#include <util/xregexp/regexp.hpp>
 
 
 #include <objects/seqalign/Seq_align.hpp>
@@ -2973,18 +2972,50 @@ static string s_MapURLLink(string urlTemplate, CAlignFormatUtil::SSeqURLInfo *se
     return url_link;
 }
 
-bool CAlignFormatUtil::IsWGSAccession(string &wgsAccession, string &wgsProj)
+
+
+static bool s_IsWGSPattern(string &wgsAccession)
 {
-	const string  kWgsAccessionPattern = "^[A-Z]{4}[0-9]{8,10}(\.[0-9]+){0,1}$"; //example AUXO013124042 or AUXO013124042.1	
-	const int  kWgsProgNameLength = 6;
-	CRegexp wgsRegExp(kWgsAccessionPattern);
-	bool isWGS = wgsRegExp.IsMatch(wgsAccession);
+	//const string  kWgsAccessionPattern = "^[A-Z]{4}[0-9]{8,10}(\.[0-9]+){0,1}$"; //example AUXO013124042 or AUXO013124042.1	    
+    const unsigned int kWgsProjLength = 4;
+    const unsigned int kWgsProjIDLengthMin = 8;
+    const unsigned int kWgsProjIDLengthMax = 10;
+    bool isWGS = true;
+
+    if(NStr::Find(wgsAccession, ".") != NPOS) { //Accession has version AUXO013124042.1 
+	    string version;
+		NStr::SplitInTwo(wgsAccession,".",wgsAccession,version);                
+	}
+
+    string wgsProj = wgsAccession.substr(0,kWgsProjLength);
+    string wgsId = wgsAccession.substr(kWgsProjLength + 1);    
+    for (size_t i = 0; i < wgsProj.length(); i ++){
+        if(!isalpha(wgsProj[i]&0xff)) {
+            isWGS = false;
+            break;
+        }
+    }
+    if(isWGS) {
+        wgsId = wgsAccession.substr(kWgsProjLength);
+        if(wgsId.length() >= kWgsProjIDLengthMin && wgsId.length() <= kWgsProjIDLengthMax) {
+            for (size_t i = 0; i < wgsId.length(); i ++){
+                if(!isdigit(wgsId[i]&0xff)) {
+                    isWGS = false;
+                    break;
+                }
+            }
+        }
+    }
+    return isWGS;
+}
+    
+
+bool CAlignFormatUtil::IsWGSAccession(string &wgsAccession, string &wgsProjName)
+{	
+	const unsigned int  kWgsProgNameLength = 6;	
+	bool isWGS = s_IsWGSPattern(wgsAccession);
 	if(isWGS) {
-		wgsProj = wgsAccession.substr(0,kWgsProgNameLength);		
-		if(NStr::Find(wgsAccession, ".") != NPOS) { //Accession has version AUXO013124042.1 
-			string version;
-			NStr::SplitInTwo(wgsAccession,".",wgsAccession,version);                
-		}
+		wgsProjName = wgsAccession.substr(0,kWgsProgNameLength);		
 	}
 	return isWGS;
 }
