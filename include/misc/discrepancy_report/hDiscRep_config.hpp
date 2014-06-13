@@ -242,7 +242,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
         static Str2CombDt                         rRNATerms;
         static vector <string>                    bad_gene_names_contained;
-        static vector <string>                    no_multi_qual;
         static vector <string>                    rrna_standard_name; 
         static vector <string>                    short_auth_nms; 
         static vector <string>                    spec_words_biosrc; 
