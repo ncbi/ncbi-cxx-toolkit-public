@@ -1022,8 +1022,11 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
                    GetBioseqCore()->GetId(),
                          CSeq_id::WorstRank);
     CSeq_id::EAccessionInfo hit_type = hit_wid->IdentifyAccession();
-    CRange<TSeqPos> hit_range(left_align.GetSeqRange(1).GetFrom(),
-                               right_align.GetSeqRange(1).GetTo());
+    CRange<TSeqPos> hit_range (min(left_align.GetSeqRange(1).GetFrom(),
+                                   right_align.GetSeqRange(1).GetFrom()),
+                               max(left_align.GetSeqRange(1).GetTo(),
+                                   right_align.GetSeqRange(1).GetTo()));
+                              
     //self hits
     if (template_hit_same_id && left_template_aln_overlap && right_template_aln_overlap) {
         
