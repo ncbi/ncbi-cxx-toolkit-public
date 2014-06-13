@@ -93,6 +93,7 @@ public:
 
     double Run(const TGeneModelList& chains,
                bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty = BadScore(), 
+               const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len = CGnomonAnnotator_Base::TIntMap(),
                const CGnomonAnnotator_Base::TGgapInfo& ggapinfo = CGnomonAnnotator_Base::TGgapInfo());
 
     CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id& id);

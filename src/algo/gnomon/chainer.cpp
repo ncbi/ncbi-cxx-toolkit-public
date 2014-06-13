@@ -6029,14 +6029,15 @@ void CGnomonAnnotator_Base::SetGenomic(const CResidueVec& seq)
     m_edited_contig_map = 0;
     m_editing_indels.clear();
     m_inserted_seqs.clear();
+    m_notbridgeable_gaps_len.clear();
     m_gnomon.reset(new CGnomonEngine(m_hmm_params, seq, TSignedSeqRange::GetWhole()));
 }
 
-void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, const string& mask_annots, const TInDels* contig_fix_indels)
+void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, const string& mask_annots, const TInDels* contig_fix_indels, const TGeneModelList* models)
 {
     CBioseq_Handle bh(scope.GetBioseqHandle(contig));
     CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
-    const size_t length (sv.size());
+    int length (sv.size());
     string seq_txt;
     sv.GetSeqData(0, length, seq_txt);
 
@@ -6059,13 +6060,65 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
         }
     }
 
-    CResidueVec seq(seq_txt.size());
+    CResidueVec seq(length);
     copy(seq_txt.begin(), seq_txt.end(), seq.begin());
 
     delete m_edited_contig_map;
     m_edited_contig_map = 0;
     m_editing_indels.clear();
     m_inserted_seqs.clear();
+    m_notbridgeable_gaps_len.clear();
+
+    if(models) {
+        /*
+        //Temporary diagnostics
+        TIntMap ngl;
+        TIntMap::iterator cg = ngl.end();
+        for(int i = 0; i < length; ++i) {
+            CConstRef<CSeq_literal> gsl = sv.GetGapSeq_literal(i);
+            if(gsl && gsl->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
+                if(cg == ngl.end())
+                    cg = ngl.insert(TIntMap::value_type(i,1)).first;
+                else
+                    ++cg->second;
+            } else {
+                cg = ngl.end();
+            }
+        }
+        ITERATE(TIntMap, ig, ngl) {
+            cerr << "Notbridgeable gap " << CIdHandler::ToString(contig) << " " << ig->first << " " << ig->second << endl;
+            TSignedSeqRange gap(ig->first,ig->first+ig->second-1);
+            ITERATE(TGeneModelList, im, *models) {
+                TSignedSeqRange lim = im->Limits();
+                if(lim.IntersectingWith(gap))
+                    cerr << "Chain " << im->ID() << " intersects with notbridgeable gap" << endl;
+            }
+        }
+        */
+
+
+        vector<int> model_ranges(length);
+        ITERATE(TGeneModelList, im, *models) {
+            for(int i = max(0,im->Limits().GetFrom()-2); i <= min(length-1,im->Limits().GetTo()+2); ++i)
+                model_ranges[i] = 1;
+        }
+
+        TIntMap::iterator current_gap = m_notbridgeable_gaps_len.end();
+        for(int i = 0; i < length; ++i) {
+            if(model_ranges[i])
+                continue;
+
+            CConstRef<CSeq_literal> gsl = sv.GetGapSeq_literal(i);
+            if(gsl && gsl->IsBridgeable() == CSeq_literal::e_NotBridgeable) {
+                if(current_gap == m_notbridgeable_gaps_len.end())
+                    current_gap = m_notbridgeable_gaps_len.insert(TIntMap::value_type(i,1)).first;
+                else
+                    ++current_gap->second;
+            } else {
+                current_gap = m_notbridgeable_gaps_len.end();
+            }
+        }
+    }
 
     if(contig_fix_indels && !contig_fix_indels->empty()) {
 
@@ -6111,6 +6164,14 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
             }
         }
 
+
+        TIntMap notbridgeable_gaps_len;
+        ITERATE(TIntMap, ig, m_notbridgeable_gaps_len) {
+            int pos = m_edited_contig_map->MapOrigToEdited(ig->first);
+            _ASSERT(pos >= 0);
+            notbridgeable_gaps_len[pos] = ig->second;
+        }
+        m_notbridgeable_gaps_len = notbridgeable_gaps_len;
     }
 
     m_gnomon.reset(new CGnomonEngine(m_hmm_params, seq, TSignedSeqRange::GetWhole()));

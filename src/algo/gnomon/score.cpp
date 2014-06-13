@@ -266,7 +266,8 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
     }
 }
 
-void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo)
+void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params, 
+         const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo)
 {
     CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
 
@@ -298,6 +299,30 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         }
     } catch(bad_alloc) {
         NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CSeqScores");
+    }
+
+
+    //block not bridgeable gaps
+    ITERATE(CGnomonAnnotator_Base::TIntMap, ig, notbridgeable_gaps_len) {
+        int left = ig->first;
+        int right = ig->first+ig->second-1;
+        if(left > m_chunk_stop || right < m_chunk_start)
+            continue;
+
+        left = m_map.MapOrigToEdited(max(left,m_chunk_start));
+        _ASSERT(left >= 0);
+        right = m_map.MapOrigToEdited(min(right,m_chunk_stop));
+        _ASSERT(right >= 0);
+        for(int pnt = left; pnt <= right; ++pnt) {
+            m_notinexon[ePlus][0][pnt] = pnt;
+            m_notinexon[ePlus][1][pnt] = pnt;
+            m_notinexon[ePlus][2][pnt] = pnt;
+            m_notinexon[eMinus][0][pnt] = pnt;
+            m_notinexon[eMinus][1][pnt] = pnt;
+            m_notinexon[eMinus][2][pnt] = pnt;
+            m_notinintron[ePlus][pnt] = pnt;
+            m_notinintron[eMinus][pnt] = pnt;
+        }
     }
 
     ITERATE(CGnomonAnnotator_Base::TGgapInfo, ig, ggapinfo) {      // block ab initio in ggaps

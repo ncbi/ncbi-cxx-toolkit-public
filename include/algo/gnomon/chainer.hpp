@@ -117,7 +117,7 @@ public:
     void SetHMMParameters(CHMMParameters* params);
     void EnableSeqMasking();
     void SetGenomic(const CResidueVec& seq);
-    void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const string& mask_annots = kEmptyStr, const TInDels* contig_fix_idels = 0);
+    void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const string& mask_annots = kEmptyStr, const TInDels* contig_fix_idels = 0, const TGeneModelList* models = 0);
     CGnomonEngine& GetGnomon();
     void MapAlignmentsToEditedContig(TAlignModelList& alignments) const;
     void MapModelsToEditedContig(TGeneModelList& models) const;
@@ -125,6 +125,7 @@ public:
     static TInDels GetGenomicGaps(const TGeneModelList& models);
 
     typedef map<int,TInDels::const_iterator> TGgapInfo;
+    typedef map<int,int> TIntMap;
 
 protected:
     CAlignModel MapOneModelToEditedContig(const CGeneModel& align) const;
@@ -135,6 +136,7 @@ protected:
     CAlignMap* m_edited_contig_map;
     TInDels m_editing_indels;      //original coordinates
     TGgapInfo m_inserted_seqs;     // edited coord to indelinfo
+    TIntMap m_notbridgeable_gaps_len;   // don't allow introns to cross this
 };
 
 ////////////////////////////////////////////////////////////////////////

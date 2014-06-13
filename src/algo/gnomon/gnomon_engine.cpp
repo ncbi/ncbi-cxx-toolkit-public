@@ -147,15 +147,16 @@ double CGnomonEngine::Run(bool repeats, bool leftwall, bool rightwall, double mp
 {
     TGeneModelList cls;
     CGnomonAnnotator_Base::TGgapInfo ggapinfo;
+    CGnomonAnnotator_Base::TIntMap notbridgeable_gaps_len;
 
     return Run( cls, repeats,
                 leftwall, rightwall, false, false,
-                mpp, BadScore(), ggapinfo
+                mpp, BadScore(), notbridgeable_gaps_len, ggapinfo
               );
 }
 
 double CGnomonEngine::Run(const TGeneModelList& cls,
-                          bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo)
+                          bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty, const CGnomonAnnotator_Base::TIntMap& notbridgeable_gaps_len, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo)
 {
     m_data->m_parse.reset();
     m_data->m_ss.reset();
@@ -168,7 +169,7 @@ double CGnomonEngine::Run(const TGeneModelList& cls,
                                        m_data->m_range.GetFrom(),  m_data->m_range.GetTo(),
                                        cls, initial_fshifts, mpp, *this)
                 );
-    m_data->m_ss->Init(m_data->m_seq, repeats, leftwall, rightwall, consensuspenalty, *m_data->m_intergenic_params, ggapinfo);
+    m_data->m_ss->Init(m_data->m_seq, repeats, leftwall, rightwall, consensuspenalty, *m_data->m_intergenic_params, notbridgeable_gaps_len, ggapinfo);
     m_data->m_parse.reset( new CParse(*m_data->m_ss,
                                       *m_data->m_intron_params,
                                       *m_data->m_intergenic_params,
