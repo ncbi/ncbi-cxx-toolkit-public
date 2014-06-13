@@ -70,6 +70,9 @@ static const char kEntrezUrl[] = "<a title=\"Show report for <@acc@>\" <@cssInf@
 //.ncbirc alias: ENTREZ_TM
 static const char kEntrezTMUrl[] = "http://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>";
 
+//.ncbirc alias: WGS
+static const char kWGSUrl[] = "http://www.ncbi.nlm.nih.gov/Traces/wgs/?val=<@wgsproj@>&page=1&display=contig&search=<@wgsacc@>";
+
 
 ///trace db
 //.ncbirc alias: TRACE
@@ -293,6 +296,7 @@ static const TTagUrl s_TagUrls [] = {
   { "TREEVIEW_CGI",  kGetTreeViewCgi },
   { "TREEVIEW_FRM",  k_GetTreeViewForm },
   { "UNIGEN",  kUnigeneUrl },    
+  { "WGS",  kWGSUrl },    
 };
 
 #ifndef NCBI_SWIG
@@ -1184,6 +1188,12 @@ public:
                                                 const objects::CSeq_id& aln_id,
                                                 list<TGi>& use_this_gi,
                                                 TGi& gi);
+
+	///Check if accession is WGS
+    ///@param accession: string accession [in]
+    ///@param wgsProj: string  wgsProj [out]      
+    ///@return: bool indicating if accession is WGS
+	static bool IsWGSAccession(string &accession, string &wgsProj);
 
     ///Get Gene symobol for gi
     ///@param  giForGeneLookup: gi
