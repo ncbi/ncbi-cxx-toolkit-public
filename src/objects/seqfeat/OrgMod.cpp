@@ -551,20 +551,9 @@ COrgMod::GetInstitutionShortName( const string &full_name )
 }
 
 
-bool s_IsAllDigits(const string& str)
+bool s_IsAllDigits(string str)
 {
-    bool rval = true;
-    if (NStr::IsBlank(str)) {
-        return false;
-    }
-    string::const_iterator it = str.cbegin();
-    while (it != str.cend()) {
-        if (!isdigit(*it)) {
-            return false;
-        }
-        ++it;
-    }
-    return true;
+    return (str.find_first_not_of("0123456789") == NPOS);
 }
 
 
