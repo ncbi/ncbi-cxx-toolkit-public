@@ -49,6 +49,8 @@ static char const rcsid[] = "$Id$";
 #include <html/htmlhelper.hpp>
 #include <cgi/cgictx.hpp>
 #include <util/tables/raw_scoremat.h>
+#include <util/xregexp/regexp.hpp>
+
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
@@ -2971,6 +2973,23 @@ static string s_MapURLLink(string urlTemplate, CAlignFormatUtil::SSeqURLInfo *se
     return url_link;
 }
 
+bool CAlignFormatUtil::IsWGSAccession(string &wgsAccession, string &wgsProj)
+{
+	const string  kWgsAccessionPattern = "^[A-Z]{4}[0-9]{8,10}(\.[0-9]+){0,1}$"; //example AUXO013124042 or AUXO013124042.1	
+	const int  kWgsProgNameLength = 6;
+	CRegexp wgsRegExp(kWgsAccessionPattern);
+	bool isWGS = wgsRegExp.IsMatch(wgsAccession);
+	if(isWGS) {
+		wgsProj = wgsAccession.substr(0,kWgsProgNameLength);		
+		if(NStr::Find(wgsAccession, ".") != NPOS) { //Accession has version AUXO013124042.1 
+			string version;
+			NStr::SplitInTwo(wgsAccession,".",wgsAccession,version);                
+		}
+	}
+	return isWGS;
+}
+			
+
 string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* ids)
 {
     string url_link = NcbiEmptyString;
@@ -2979,7 +2998,16 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
 
     string temp_class_info = kClassInfo; temp_class_info += " ";
-    if (seqUrlInfo->gi > ZERO_GI) {        
+	string wgsProj;
+	string wgsAccession = seqUrlInfo->accession;
+	bool isWGS = CAlignFormatUtil::IsWGSAccession(wgsAccession, wgsProj);
+	if(isWGS && seqUrlInfo->useTemplates) {		
+		string wgsUrl = CAlignFormatUtil::GetURLFromRegistry("WGS");    
+		url_link = s_MapCommonUrlParams(wgsUrl, seqUrlInfo);
+		url_link = CAlignFormatUtil::MapTemplate(url_link,"wgsproj",wgsProj);        
+		url_link = CAlignFormatUtil::MapTemplate(url_link,"wgsacc", wgsAccession);        
+	}
+    else if (seqUrlInfo->gi > ZERO_GI) {        
         string entrezTag = (seqUrlInfo->useTemplates) ? "ENTREZ_TM" : "ENTREZ";
         string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry(entrezTag);
         url_link = s_MapCommonUrlParams(l_EntrezUrl, seqUrlInfo);
@@ -2991,7 +3019,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
             url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
         }	           
             
-    } else {//seqid general, dbtag specified
+    } else {//seqid general, dbtag specified		
         if(wid->Which() == CSeq_id::e_General){
             const CDbtag& dtg = wid->GetGeneral();
             const string& dbname = dtg.GetDb();
