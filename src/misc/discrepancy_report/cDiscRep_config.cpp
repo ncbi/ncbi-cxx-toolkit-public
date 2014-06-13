@@ -75,7 +75,6 @@ string                              CDiscRepInfo :: report_lineage;
 bool                                CDiscRepInfo :: exclude_dirsub;
 Str2CombDt                          CDiscRepInfo :: rRNATerms;
 vector <string>                     CDiscRepInfo :: bad_gene_names_contained;
-vector <string>                     CDiscRepInfo :: no_multi_qual;
 vector <string>                     CDiscRepInfo :: short_auth_nms;
 vector <string>                     CDiscRepInfo :: spec_words_biosrc;
 vector <string>                     CDiscRepInfo :: suspicious_notes;
@@ -264,10 +263,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
         thisInfo.rRNATerms[arr[0]].b_val = (arr[2] == "1");
     }
 
-    // ini. of no_multi_qual
-    strtmp = "location,taxname,taxid";
-    thisInfo.no_multi_qual =NStr::Tokenize(strtmp, ",", thisInfo.no_multi_qual);
-  
     // ini. of bad_gene_names_contained
     strtmp = "putative,fragment,gene,orf,like";
     thisInfo.bad_gene_names_contained 
@@ -613,6 +608,7 @@ ridx ++;
     thisInfo.featkey_modified["J_segment"] = "j_segment";
     thisInfo.featkey_modified["V_segment"] = "v_segment";
     thisInfo.featkey_modified["D-loop"] = "d_loop";
+    thisInfo.featkey_modified["source"] = "biosrc";
 
     // ini of feattype_featdef & feattype_name
     for (i = eMacro_feature_type_any; i <= eMacro_feature_type_imp_CDS; i++) {

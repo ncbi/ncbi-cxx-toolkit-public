@@ -6545,8 +6545,10 @@ bool CBioseq_test_on_rna :: RnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2)
         if (prod1 != prod2) {
                return false;
         }
-        bool has_quals1 =(gen1.CanGetQuals() && !gen1.GetQuals().Get().empty());
-        bool has_quals2 =(gen2.CanGetQuals() && !gen2.GetQuals().Get().empty());
+        bool has_quals1 
+               = (gen1.CanGetQuals() && !gen1.GetQuals().Get().empty());
+        bool has_quals2 
+               = (gen2.CanGetQuals() && !gen2.GetQuals().Get().empty());
         if (has_quals1 != has_quals2) {
               return false;
         }
@@ -7320,7 +7322,7 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem> c_item)
          desc2 = "coding regions completely contain RNAs";
        }
        AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
-                  desc1, desc2, e_OtherComment, false, "", true); 
+                  desc1, desc2, e_OtherComment, true, "", true); 
      }
      else {
        desc1 = "coding region overlaps RNA";
@@ -7329,7 +7331,7 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem> c_item)
              desc3 = " on the opposite strand (no containment)";
        else desc3 = " on the same strand (no containment)";
        AddSubcategory(ovp_subcat, GetName() + "$" + it->first, &(it->second), 
-                  desc1, desc2, e_OtherComment, false, desc3, true); 
+                  desc1, desc2, e_OtherComment, true, desc3, true); 
        cnt_ovp += it->second.size()/2;
      } 
      cnt_tot += it->second.size()/2;
@@ -7341,6 +7343,10 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem> c_item)
                            "coding region overlaps an RNA", 
                            "coding region overlap RNAs") 
              + " (no containment)";
+      copy(ovp_subcat->item_list.begin(), ovp_subcat->item_list.end(),
+                 back_inserter( c_item->item_list));
+      copy(ovp_subcat->obj_list.begin(), ovp_subcat->obj_list.end(),
+                 back_inserter( c_item->obj_list));
       c_item->subcategories.push_back(ovp_subcat);
    }
 
@@ -8357,20 +8363,19 @@ void CSeqEntry_test_on_quals :: CheckForMultiQual(const string& qual_name, const
 
 void CSeqEntry_test_on_quals :: GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc, vector <string>& multi_vlus, bool is_subsrc)
 {
-   ITERATE (vector <string>, it, thisInfo.no_multi_qual) {
-       if (qual_name == *it) {
+   if (qual_name == "location" 
+           || qual_name == "taxname" || qual_name == "taxid") {
            return;
-       }
    }
 
    if (is_subsrc) {
         GetMultiSubSrcVlus(biosrc, qual_name, multi_vlus);
    }
    if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq"
-           || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" ){
+          || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" ){
       GetMultiPrimerVlus(biosrc, qual_name, multi_vlus);
    }
-   else {
+   else if (!is_subsrc) {
       GetMultiOrgModVlus(biosrc, qual_name, multi_vlus);
    }
 };
@@ -8810,10 +8815,9 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
               ext_desc = kEmptyStr;
               if (multi_same) {
                  sz = qvlu2src["multi_same"].size();
-                 c_sub->subcategories.push_back(MultiItem(qual_nm, 
-                                                         qvlu2src["multi_same"],
-                                                          ", same value", 
-                                                          GetName_dup()));
+                 c_sub->subcategories.push_back(
+                           MultiItem(qual_nm, qvlu2src["multi_same"],
+                                       ", same value", GetName_dup()));
               }
               if (multi_dup) {
                  sz += qvlu2src["multi_dup"].size();
@@ -8825,9 +8829,9 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem> c_item, co
               if (multi_all_dif) {
                  sz += qvlu2src["multi_all_dif"].size();
                  c_sub->subcategories.push_back(MultiItem(qual_nm, 
-                                                      qvlu2src["multi_all_dif"],
-                                                      kEmptyStr, 
-                                                      GetName_dup()));
+                                                     qvlu2src["multi_all_dif"],
+                                                     kEmptyStr, 
+                                                     GetName_dup()));
               }
           }
           c_sub->description 
@@ -9901,7 +9905,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   // TAX_LOOKUP_MISSING, TAX_LOOKUP_MISMATCH
   string original_tax, db_tax;
   original_tax 
-     = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() :kEmptyStr;
+    = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() :kEmptyStr;
   CRef <COrg_ref> rq(new COrg_ref);
   rq->SetTaxname(original_tax);
   vector <CRef <COrg_ref> > request_ls;
@@ -9952,7 +9956,8 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   if (m_run_div) {
      string div_code;
      if (biosrc.IsSetDivision() && !(div_code= biosrc.GetDivision()).empty()) {
-        thisInfo.test_item_list[GetName_div()].push_back(div_code + "$" + desc);
+        thisInfo.test_item_list[GetName_div()]
+                  .push_back(div_code + "$" + desc);
         thisInfo.test_item_objs[GetName_div() + "$" + div_code]
                    .push_back(obj_ref);
      }
@@ -9965,16 +9970,16 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
        has_map = IsSubSrcPresent(biosrc, CSubSource :: eSubtype_map);
        has_chrom = IsSubSrcPresent(biosrc, CSubSource :: eSubtype_chromosome);
        if (has_map && !has_chrom) {
-         for (CBioseq_CI b_ci(*thisInfo.scope, *(biosrc_seqdesc_seqentry[idx]));
+         for (CBioseq_CI b_ci(*thisInfo.scope,*(biosrc_seqdesc_seqentry[idx]));
                    b_ci; 
                    ++b_ci){
             if (b_ci->IsAa()) continue;
             CConstRef <CBioseq> bioseq = b_ci->GetCompleteBioseq();
             if (IsEukaryotic(*bioseq)) {
-                  thisInfo.test_item_list[GetName_map()]
-                              .push_back( GetDiscItemText(*bioseq)); 
-                  thisInfo.test_item_objs[GetName_map()]
-                           .push_back(CConstRef <CObject>(bioseq.GetPointer()));
+                thisInfo.test_item_list[GetName_map()]
+                          .push_back( GetDiscItemText(*bioseq)); 
+                thisInfo.test_item_objs[GetName_map()]
+                          .push_back(CConstRef <CObject>(bioseq.GetPointer()));
             }
          }
        }
@@ -9988,7 +9993,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   }
 
   // DISC_METAGENOMIC
-  if (m_run_meta && IsSubSrcPresent(biosrc, CSubSource::eSubtype_metagenomic)) {
+  if (m_run_meta && IsSubSrcPresent(biosrc, CSubSource::eSubtype_metagenomic)){
       vector <string> arr;
       GetSubSrcValues(biosrc, CSubSource::eSubtype_metagenomic, arr);
       ITERATE (vector <string>, it, arr) {
@@ -10210,6 +10215,9 @@ bool CSeqEntry_test_on_biosrc :: FindTrinomialWithoutQualifier(const CBioSource&
         if (!tax_nm.empty()) {
            vector <string> arr;
            GetOrgModValues(biosrc, it->first, arr);
+           if (arr.empty()) {
+              return true;
+           }
            ITERATE (vector <string>, jt, arr) {
              if (tax_nm.substr(0, (*jt).size()) != (*jt)) return true;
            }
@@ -10415,7 +10423,9 @@ void CSeqEntry_on_incnst_user :: x_GetIncnstTestReport (CRef <CClickableItem> c_
         strtmp = "$" + prefix + "_missing";
         c_item->obj_list = thisInfo.test_item_objs[setting_name + strtmp];
     }
-    ITERATE (Str2Strs, fid, field2ls) {// prefix + $ + fid.label + & + fid.vlu + @ + user.desc;
+    
+    // prefix + $ + fid.label + & + fid.vlu + @ + user.desc;
+    ITERATE (Str2Strs, fid, field2ls) {
       if (fid->first == "missing") {  // fix.label
           continue;
       }
@@ -10436,7 +10446,7 @@ void CSeqEntry_on_incnst_user :: x_GetIncnstTestReport (CRef <CClickableItem> c_
                               strtmp,
                               "missing field " + fid->first, 
                               e_IsComment, 
-                              false);
+                              false, "", false, 0, true);
             }
             else {
               AddSubcategory(c_field, 
@@ -10445,7 +10455,7 @@ void CSeqEntry_on_incnst_user :: x_GetIncnstTestReport (CRef <CClickableItem> c_
                         strtmp,
                         "field " + fid->first + " value '" + vid->first + "'",
                         e_HasComment, 
-                        false);
+                        false, "", false, 0, true);
             }
          }
       }
@@ -10467,6 +10477,7 @@ void CSeqEntry_on_incnst_user :: x_GetIncnstTestReport (CRef <CClickableItem> c_
          label 
             = "$" + prefix + "_" + fid->first + "&" + vlu2ls.begin()->first;
          c_sub->obj_list = thisInfo.test_item_objs[setting_name + label];
+         RmvRedundancy(c_sub->item_list, c_sub->obj_list);
          c_field->subcategories.push_back(c_sub);
       }
       cnt = c_field->subcategories.size();
@@ -10618,7 +10629,9 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
                        break;
                   }
               }
-              if (!match) prefix2flds[prefix].push_back(strtmp);
+              if (!match) {
+                 prefix2flds[prefix].push_back(strtmp);
+              }
            };
          };
        }
@@ -10630,7 +10643,8 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
                       || strtmp == "BioSample"
                       || strtmp == "ProbeDB" 
                       || strtmp == "Sequence Read Archive"
-                      || strtmp == "BioProject") {
+                      || strtmp == "BioProject"
+                      || strtmp == "Assembly") {
                  dblink2dbs["db"].push_back(strtmp);
              }
           }
@@ -10667,7 +10681,8 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
         else {
           for (; uci; ++uci) {
              if (x_GetUserObjType(uci->GetUser()) != "DBLink") continue;
-             x_ClassifyFlds(dblink2dbs, "db", *uci, GetName_db(), *(bci->GetCompleteBioseq()));
+             x_ClassifyFlds(dblink2dbs, "db", *uci, 
+                               GetName_db(), *(bci->GetCompleteBioseq()));
           }
         }
      }
@@ -13393,11 +13408,11 @@ void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
                    .push_back(seq_ref);
      }
      else {
-        ITERATE (Str2Int, it, feat_cnt_ls) { // feat$cnt@bsq;
-         strtmp = it->first + "$" + NStr::UIntToString(it->second) + "@" + desc;
-         thisInfo.test_item_list[GetName_oncaller()].push_back(strtmp);
-         strtmp = "$" + it->first + "@" + NStr::UIntToString(it->second);
-         thisInfo.test_item_objs[GetName_oncaller() +strtmp].push_back(seq_ref);
+       ITERATE (Str2Int, it, feat_cnt_ls) { // feat$cnt@bsq;
+        strtmp =it->first + "$" + NStr::UIntToString(it->second) + "@" + desc;
+        thisInfo.test_item_list[GetName_oncaller()].push_back(strtmp);
+        strtmp = "$" + it->first + "@" + NStr::UIntToString(it->second);
+        thisInfo.test_item_objs[GetName_oncaller() +strtmp].push_back(seq_ref);
        }
      }
    }
