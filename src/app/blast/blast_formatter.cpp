@@ -315,6 +315,10 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                            fmt_args.GetCustomOutputFormatSpec(),
                            kTask == "megablast",
                            opts.GetMBIndexLoaded());
+    if((fmt_args.GetFormattedOutputChoice() ==  CFormattingArgs::eXml2 ||
+        fmt_args.GetFormattedOutputChoice() ==  CFormattingArgs::eJson)
+        && args[kArgOutput].AsString() != "-")
+           	formatter.SetBaseFile(args[kArgOutput].AsString());
     CRef<CSearchResultSet> results = m_RmtBlast->GetResultSet();
     formatter.PrintProlog();
     bool isPsiBlast = ("psiblast" == kTask);

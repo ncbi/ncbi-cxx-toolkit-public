@@ -155,8 +155,11 @@ int CBlastnApp::Run(void)
                                m_CmdLineArgs->GetTask() == "megablast",
                                opt.GetMBIndexLoaded());
                                
-        
         formatter.SetQueryRange(query_opts->GetRange());
+        if((fmt_args->GetFormattedOutputChoice() ==  CFormattingArgs::eXml2 ||
+           fmt_args->GetFormattedOutputChoice() ==  CFormattingArgs::eJson)
+           && args[kArgOutput].AsString() != "-")
+        	formatter.SetBaseFile(args[kArgOutput].AsString());
         formatter.PrintProlog();
 
         /*** Process the input ***/
