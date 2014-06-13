@@ -17841,6 +17841,10 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "25.790544 N 80.214930 W");
 
+    to_fix = "34.1030555556 , -118.357777778  34 degrees 6' 11'' North , 118 degrees 21' 28'' West";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
     bool format_correct;
     bool precision_correct;
     bool lat_in_range;
@@ -18557,3 +18561,17 @@ BOOST_AUTO_TEST_CASE(Test_SubSourceAutofix)
     BOOST_CHECK_EQUAL(ss->GetName(), "37.4904 m.");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_OrgModAutofix)
+{
+    CRef<COrgMod> om(new COrgMod());
+    om->SetSubtype(COrgMod::eSubtype_strain);
+    om->SetSubname("ATCC1234");
+    om->AutoFix();
+    BOOST_CHECK_EQUAL(om->GetSubname(), "ATCC 1234");
+    om->SetSubname("DSM  567");
+    om->AutoFix();
+    BOOST_CHECK_EQUAL(om->GetSubname(), "DSM 567");
+}
+

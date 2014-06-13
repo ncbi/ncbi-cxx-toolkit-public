@@ -551,6 +551,44 @@ COrgMod::GetInstitutionShortName( const string &full_name )
 }
 
 
+bool s_IsAllDigits(const string& str)
+{
+    bool rval = true;
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
+    string::const_iterator it = str.cbegin();
+    while (it != str.cend()) {
+        if (!isdigit(*it)) {
+            return false;
+        }
+        ++it;
+    }
+    return true;
+}
+
+
+string COrgMod::FixStrain( const string& strain)
+{
+    string new_val = "";
+
+    if (NStr::StartsWith(strain, "ATCC")) {
+        string tmp = strain.substr(4);
+        NStr::TruncateSpacesInPlace(tmp);
+        if (s_IsAllDigits(tmp)) {
+            new_val = "ATCC " + tmp;
+        }
+    } else if (NStr::StartsWith(strain, "DSM")) {
+        string tmp = strain.substr(3);
+        NStr::TruncateSpacesInPlace(tmp);
+        if (s_IsAllDigits(tmp)) {
+            new_val = "DSM " + tmp;
+        }
+    }
+    return new_val;
+}
+
+
 string COrgMod::AutoFix(TSubtype subtype, const string& value)
 {
     string new_val = "";
@@ -572,6 +610,9 @@ string COrgMod::AutoFix(TSubtype subtype, const string& value)
             if (!FixStructuredVoucher(new_val, "s")) {
                 new_val = "";
             }
+            break;
+        case COrgMod::eSubtype_strain:
+            new_val = FixStrain(value);
             break;
         default:
             break;

@@ -93,6 +93,8 @@ public:
     // returns empty string if not found
     static const string &GetInstitutionFullName( const string &short_name );
     static const string &GetInstitutionShortName( const string &full_name );
+
+    static string FixStrain( const string& strain);
     static bool FuzzyStrainMatch( const string& strain1, const string& strain2 );
 
     static string AutoFix(TSubtype subtype, const string& value);
