@@ -595,6 +595,27 @@ void COrgMod::AutoFix()
 }
 
 
+void s_HarmonizeString(string& s) 
+{
+    NStr::ReplaceInPlace (s, " ", "");
+    NStr::ReplaceInPlace (s, "_", "");
+    NStr::ReplaceInPlace (s, "-", "");
+    NStr::ReplaceInPlace (s, ":", "");
+    NStr::ReplaceInPlace (s, "/", "");
+}
+
+
+bool COrgMod::FuzzyStrainMatch( const string& strain1, const string& strain2 )
+{
+    string s1 = strain1;
+    string s2 = strain2;
+
+    s_HarmonizeString(s1);
+    s_HarmonizeString(s2);
+    return NStr::EqualNocase(s1, s2);    
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
