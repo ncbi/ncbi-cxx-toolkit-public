@@ -304,7 +304,7 @@ void CAlnReader::SetAlphabet(EAlphabet alpha)
         break;
 
     case eAlpha_Protein:
-        SetAlphabet("ABCDEFGHIKLMNPQRSTUVWXYZabcdefghiklmnpqrstuvwxyz");
+        SetAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
         break;
     }
 }
