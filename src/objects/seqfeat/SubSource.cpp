@@ -947,6 +947,10 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
     while (pos < token.length()) {
         char ch = token.c_str()[pos];
         if (ch == ' ' || ch == ':' || ch == '-') {
+            if (pos == prev_start) {
+                // too many separators
+                return "";
+            }
             string num_str = token.substr(prev_start, pos - prev_start);
             double this_val = NStr::StringToDouble (num_str);
             if (num_sep == 0) {
