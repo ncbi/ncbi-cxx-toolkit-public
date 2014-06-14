@@ -64,10 +64,17 @@ an_core needs gc_util_sdbapi
 an_core needs gpipe_an_base
 an_core needs gpipe_jira
 an_core needs gpipe_kmer
+an_core needs gpipe_val
 an_core needs ncbi_xcache_netcache
-an_euk_pipeline needs an_core
+an_euk_pipeline needs bag_access
+an_euk_pipeline needs gc_util_sdbapi
+an_euk_pipeline needs gpipe_an_base
+an_euk_pipeline needs gpipe_jira
+an_euk_pipeline needs gpipe_kmer
 an_euk_pipeline needs gpipe_val
+an_euk_pipeline needs ncbi_xcache_netcache
 an_prok_pipeline needs an_core
+an_prok_pipeline needs an_euk_pipeline
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
 asn_cache includes id_dump
@@ -1188,6 +1195,7 @@ xblast needs xnetblastcli
 xblastformat needs $(BLAST_LIBS)
 xblastformat needs align_format
 xblastformat needs blastxml
+xblastformat needs blastxml2
 xbma_refiner needs xcd_utils
 xbma_refiner needs xstruct_util
 xbma_refiner_gui needs wx_tools
