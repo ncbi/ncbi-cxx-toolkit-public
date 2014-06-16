@@ -776,5 +776,32 @@ BOOST_AUTO_TEST_CASE(Test_GB_3486)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3496)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature (cds);
+    gene->SetData().SetGene().SetLocus("matK");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    unit_test_util::AddFeat(gene, nuc);
+    CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet (entry);
+    prot->SetData().SetProt().SetName().front() = "maturase K";
+
+    CRef<CSeq_feat> intron = unit_test_util::AddGoodImpFeat (nuc, "intron");
+    intron->SetLocation().SetInt().SetTo(nuc->GetSeq().GetLength() - 1);
+    intron->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    intron->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    intron->SetPartial(true);
+    CRef<CSeq_feat> gene2 = unit_test_util::MakeGeneForFeature (intron);
+    gene2->SetData().SetGene().SetLocus("trnK");
+    gene2->SetData().SetGene().SetDesc("tRNA-Lys");
+    unit_test_util::AddFeat(gene2, nuc);
+
+    AddTitle(nuc, "Sebaea microphylla tRNA-Lys (trnK) gene, partial sequence; and maturase K (matK) gene, complete cds.");
+    CheckDeflineMatches(entry, true);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

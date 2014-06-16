@@ -1882,6 +1882,11 @@ CRef<objects::CSeq_feat> MakeGeneForFeature (CRef<objects::CSeq_feat> feat)
     gene->SetLocation().SetInt().SetStrand(feat->GetLocation().GetStrand());
     gene->SetLocation().SetInt().SetFrom(feat->GetLocation().GetStart(objects::eExtreme_Positional));
     gene->SetLocation().SetInt().SetTo(feat->GetLocation().GetStop(objects::eExtreme_Positional));
+    gene->SetLocation().SetPartialStart(feat->GetLocation().IsPartialStart(objects::eExtreme_Positional), objects::eExtreme_Positional);
+    gene->SetLocation().SetPartialStop(feat->GetLocation().IsPartialStop(objects::eExtreme_Positional), objects::eExtreme_Positional);
+    if (feat->IsSetPartial() && feat->GetPartial()) {
+        gene->SetPartial(true);
+    }
     return gene;
 }
 

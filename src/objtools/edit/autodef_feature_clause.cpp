@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/edit/autodef.hpp>
+#include <objtools/edit/gene_utils.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -1263,24 +1264,24 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
         && subtype != CSeqFeatData::eSubtype_otherRNA
         && subtype != CSeqFeatData::eSubtype_ncRNA
         && subtype != CSeqFeatData::eSubtype_precursor_RNA
+        && subtype != CSeqFeatData::eSubtype_intron
+        && subtype != CSeqFeatData::eSubtype_exon
         && !x_GetNoncodingProductFeatProduct(noncoding_product_name)) {
         return false;
     }
 
-    // find overlapping gene for this feature    
-//    CConstRef<CSeq_feat> overlap = GetOverlappingGene(*m_ClauseLocation, m_BH.GetScope());
-    
     if (m_HasGene) {
-//        if (overlap && x_MatchGene(overlap->GetData().GetGene())) {
-//            used_gene = true;
-//        }            
-    } else if ((loc_compare == sequence::eContained || loc_compare == sequence::eSame)
-                && gene_clause->SameStrand(*m_ClauseLocation)) {
-        used_gene = true;
-        m_HasGene = true;
-        m_GeneName = gene_clause->GetGeneName();
-        m_AlleleName = gene_clause->GetAlleleName();
-        m_GeneIsPseudo = gene_clause->GetGeneIsPseudo();
+        // already assigned
+    } else {
+        // find overlapping gene for this feature    
+        CConstRef <CSeq_feat> gene_for_feat = edit::GetGeneForFeature(m_MainFeat, m_BH.GetScope());
+        if (gene_for_feat && NStr::Equal(x_GetGeneName(gene_for_feat->GetData().GetGene()), gene_clause->GetGeneName())) {
+            used_gene = true;
+            m_HasGene = true;
+            m_GeneName = gene_clause->GetGeneName();
+            m_AlleleName = gene_clause->GetAlleleName();
+            m_GeneIsPseudo = gene_clause->GetGeneIsPseudo();
+        }
     }
     
     if (used_gene && ! m_ProductNameChosen) {
