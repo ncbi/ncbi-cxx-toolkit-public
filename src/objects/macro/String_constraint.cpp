@@ -131,11 +131,8 @@ string CString_constraint :: x_SkipWeasel(const string& str) const
      arr.erase(arr.begin());
      found = true;
   }
-  if (found) {
-      ret_str = NStr::Join(arr, " "); 
-      ret_str = CTempString(ret_str).substr(0, ret_str.size()-1); 
-  }
-  else ret_str = str;
+  
+  ret_str = found ? NStr::Join(arr, " ") : str;
 
   return ret_str;
 };
@@ -264,14 +261,15 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
                     // text match
                   if (x_CaseNCompareEqual(*sit, cp_s, len2, wd_case)) {
                     word_start_s 
-                          = (!pos_str && is_start) || !isalpha(str[pos_str-1]);
+                         = (!pos_str && is_start) || !isalpha(str[pos_str-1]);
                     ch2 = (cp_s.size() < len2) ? ' ' : cp_s[len2];
                     // whole word match
                     if (!whole_wd || (!isalpha(ch2) && word_start_s)) {
-                      if(x_AdvancedStringCompare(CTempString(cp_s).substr(len2),
-                                                 CTempString(cp_m).substr(len1),
-                                                 word_start_m & word_start_s, 
-                                                 &target_match_len)){
+                      if(x_AdvancedStringCompare(
+                                    CTempString(cp_s).substr(len2),
+                                    CTempString(cp_m).substr(len1),
+                                    word_start_m & word_start_s, 
+                                    &target_match_len)){
                             recursive_match = true;
                       }
                     }
@@ -328,7 +326,8 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
          match = false;
     }
     else if (GetWhole_word() 
-                && (!is_start || (pos_str < len_s && isalpha (str[pos_str]))) ){
+                && (!is_start 
+                       || (pos_str < len_s && isalpha (str[pos_str]))) ){
              match = false;
     }
   }
@@ -674,11 +673,11 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
               rval = x_IsWholeWordMatch(pattern, pFound, search.size(), true);
               while (!rval && pFound != string::npos) {
                 pFound = GetCase_sensitive() ?
-                          CTempString(pattern).substr(pFound + 1).find(search):
-                            NStr::FindNoCase(
-                              CTempString(pattern).substr(pFound + 1), search);
+                         CTempString(pattern).substr(pFound + 1).find(search):
+                         NStr::FindNoCase(
+                             CTempString(pattern).substr(pFound + 1), search);
                 if (pFound != string::npos) {
-                  rval = x_IsWholeWordMatch (pattern, pFound, str.size(), true);
+                  rval = x_IsWholeWordMatch(pattern, pFound, str.size(),true);
                 }
               }
             }
