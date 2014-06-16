@@ -1539,9 +1539,7 @@ void CNewCleanup_imp::BiosourceBC (
                 chs == NCBI_SUBSOURCE(rev_primer_seq) )
             {
                 const string before = GET_FIELD (sbs, Name);
-                NStr::ToLower (GET_MUTABLE (sbs, Name));
-                // erase spaces that are outside of brackets
-                s_EraseSpacesOutsideBrackets( GET_MUTABLE(sbs, Name) );
+                CPCRPrimerSeq::Clean( GET_MUTABLE(sbs, Name) );
                 const string& after = GET_FIELD (sbs, Name);
                 if ( before != after ) {
                     ChangeMade (CCleanupChange::eCleanSubsource);
@@ -9138,8 +9136,7 @@ void CNewCleanup_imp::x_PCRPrimerSetBC( CPCRPrimerSet &primer_set )
             string &seq = GET_MUTABLE(primer, Seq).Set();
             const string before = seq;
             x_CleanupStringMarkChanged(seq);
-            s_EraseSpacesOutsideBrackets(seq);
-            NStr::ToLower(seq);
+            CPCRPrimerSeq::Clean(seq);
             if( before != seq ) {
                 ChangeMade(CCleanupChange::eChangePCRPrimers);
             }
