@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko, Mati Shomrat, NCBI
+* Author:  Aaron Ucko, Mati Shomrat, Jonathan Kans, NCBI
 *
 * File Description:
 *   fasta-file generator application
@@ -41,9 +41,9 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/cleanup/cleanup.hpp>
 
 #include <objects/seqset/gb_release_file.hpp>
+#include <objects/seq/seq_macros.hpp>
 
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 
@@ -53,75 +53,6 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-//  ==========================================================================
-class CFilteringFastaOstream:
-    public CFastaOstream
-//  ==========================================================================
-{
-public:
-    enum {
-        INCLUDE_NONE = 0,
-        INCLUDE_NUC = 1<<0,
-        INCLUDE_PROT = 1<<1,
-        INCLUDE_ALL = (INCLUDE_NUC | INCLUDE_PROT),
-    };
-
-public:
-    CFilteringFastaOstream(
-        CNcbiOstream& out,
-        unsigned int includes = INCLUDE_ALL)
-    : CFastaOstream(out) 
-    {
-        SetIncludes(includes);
-    };
-
-    virtual bool
-    SkipBioseq(
-        const CBioseq_Handle&);
-
-    virtual bool
-    SkipBioseq(
-        const CBioseq&);
- 
-    void
-    SetIncludes(
-        unsigned int includes)
-    {
-        m_includes = includes;
-    };
-
-protected:
-    int m_includes;
-};
-
-//  --------------------------------------------------------------------------
-bool CFilteringFastaOstream::SkipBioseq(
-    const ncbi::objects::CBioseq_Handle& bsh)
-//  --------------------------------------------------------------------------
-{
-    if ((m_includes & INCLUDE_NUC)  &&  bsh.IsNucleotide()) {
-        return false;
-    }
-    if ((m_includes & INCLUDE_PROT)  &&  bsh.IsProtein()) {
-        return false;
-    }
-    return true;
-}
-
-//  --------------------------------------------------------------------------
-bool CFilteringFastaOstream::SkipBioseq(
-    const ncbi::objects::CBioseq& bs)
-//  --------------------------------------------------------------------------
-{
-    if ((m_includes & INCLUDE_NUC)  &&  bs.IsNa()) {
-        return false;
-    }
-    if ((m_includes & INCLUDE_PROT)  &&  bs.IsAa()) {
-        return false;
-    }
-    return true;
-}
 
 //  ==========================================================================
 class CAsn2FastaApp: 
@@ -140,15 +71,24 @@ public:
     CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is);
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
 
+    CFastaOstream* OpenFastaOstream(const string& name);
 
 private:
     CObjectIStream* x_OpenIStream(const CArgs& args);
-    int x_GetFilterIncludes(const CArgs& args);
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CScope>                m_Scope;
-    CNcbiOstream*               m_Os;           // Output stream
+
+    auto_ptr<CFastaOstream>     m_Os;           // all sequence output stream
+    bool                        m_OnlyNucs;
+    bool                        m_OnlyProts;
+
+    auto_ptr<CFastaOstream>     m_On;           // nucleotide output stream
+    auto_ptr<CFastaOstream>     m_Og;           // genomic output stream
+    auto_ptr<CFastaOstream>     m_Or;           // RNA output stream
+    auto_ptr<CFastaOstream>     m_Op;           // protein output stream
+    CNcbiOstream*               m_Oq;           // quality score output stream
 
     bool m_DeflineOnly;
 };
@@ -183,10 +123,6 @@ void CAsn2FastaApp::Init(void)
             CArgDescriptions::eString, "any" );
         arg_desc->SetConstraint( "type",
             &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
-
-        // filtering options:
-        arg_desc->AddFlag("nucs-only", "Only emit nucleotide sequences");
-        arg_desc->AddFlag("prots-only", "Only emit protein sequences");
     }}
 
 
@@ -214,12 +150,87 @@ void CAsn2FastaApp::Init(void)
         arg_desc->AddOptionalKey("width", "CHARS", "Output FASTA with an alternate number of columns", CArgDescriptions::eInteger);
         arg_desc->SetConstraint("width", new CArgAllow_Integers(1, kMax_Int));
 
-        // name
-        arg_desc->AddOptionalKey("o", "OutputFile",
-            "Output file name", CArgDescriptions::eOutputFile);
+        // single output name
+        arg_desc->AddOptionalKey("o", "SingleOutputFile",
+            "Single output file name", CArgDescriptions::eOutputFile);
+
+        // filtering options for use with old style single output file:
+        arg_desc->AddFlag("nucs-only", "Only emit nucleotide sequences");
+        arg_desc->SetDependency("nucs-only", CArgDescriptions::eRequires, "o");
+
+        arg_desc->AddFlag("prots-only", "Only emit protein sequences");
+        arg_desc->SetDependency("prots-only", CArgDescriptions::eRequires, "o");
+        arg_desc->SetDependency("prots-only", CArgDescriptions::eExcludes,
+                                "nucs-only");
+
+        // file names
+        arg_desc->AddOptionalKey("on", "NucleotideOutputFile",
+            "Nucleotide output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("on", CArgDescriptions::eExcludes, "o");
+
+        arg_desc->AddOptionalKey("og", "GenomicOutputFile",
+            "Genomic output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("og", CArgDescriptions::eExcludes, "o");
+        arg_desc->SetDependency("og", CArgDescriptions::eExcludes, "on");
+
+        arg_desc->AddOptionalKey("or", "RNAOutputFile",
+            "RNA output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("or", CArgDescriptions::eExcludes, "o");
+        arg_desc->SetDependency("or", CArgDescriptions::eExcludes, "on");
+
+        arg_desc->AddOptionalKey("op", "ProteinOutputFile",
+            "Protein output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("op", CArgDescriptions::eExcludes, "o");
+
+        /*
+        arg_desc->AddOptionalKey("oq", "QualityScoreOutputFile",
+            "Quality score output file name", CArgDescriptions::eOutputFile);
+        */
     }}
 
     SetupArgDescriptions(arg_desc.release());
+}
+
+//  --------------------------------------------------------------------------
+CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& name)
+//  --------------------------------------------------------------------------
+{
+    const CArgs& args = GetArgs();
+
+    if (! args[name]) return NULL;
+
+    auto_ptr<CFastaOstream> fasta_os
+        ( new CFastaOstream( args[name].AsOutputFile() ) );
+
+    fasta_os->SetAllFlags(
+        CFastaOstream::fInstantiateGaps |
+        CFastaOstream::fAssembleParts |
+        CFastaOstream::fNoDupCheck |
+        CFastaOstream::fKeepGTSigns |
+        CFastaOstream::fNoExpensiveOps);
+    if( GetArgs()["gap-mode"] ) {
+        fasta_os->SetFlag(
+            CFastaOstream::fInstantiateGaps);
+        string gapmode = GetArgs()["gap-mode"].AsString();
+        if ( gapmode == "one-dash" ) {
+            fasta_os->SetGapMode(CFastaOstream::eGM_one_dash);
+        } else if ( gapmode == "dashes" ) {
+            fasta_os->SetGapMode(CFastaOstream::eGM_dashes);
+        } else if ( gapmode == "letters" ) {
+            fasta_os->SetGapMode(CFastaOstream::eGM_letters);
+        } else if ( gapmode == "count" ) {
+            fasta_os->SetGapMode(CFastaOstream::eGM_count);
+        }
+    }
+
+    if( GetArgs()["show-mods"] ) {
+        fasta_os->SetFlag(CFastaOstream::fShowModifiers);
+    }
+    if( GetArgs()["width"] ) {
+        fasta_os->SetWidth( GetArgs()["width"].AsInteger() );
+    }
+
+    return fasta_os.release();
 }
 
 //  --------------------------------------------------------------------------
@@ -242,10 +253,21 @@ int CAsn2FastaApp::Run(void)
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
-    // open the output stream
-    m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
-    if ( m_Os == 0 ) {
-        NCBI_THROW(CException, eUnknown, "Could not open output stream");
+    // open the output streams
+    m_Os.reset( OpenFastaOstream ("o") );
+    m_On.reset( OpenFastaOstream ("on") );
+    m_Og.reset( OpenFastaOstream ("og") );
+    m_Or.reset( OpenFastaOstream ("or") );
+    m_Op.reset( OpenFastaOstream ("op") );
+    m_Oq = NULL;
+    // m_Oq = args["oq"] ? &(args["oq"].AsOutputFile()) : 0;
+
+    m_OnlyNucs = args["nucs-only"];
+    m_OnlyProts = args["prots-only"];
+
+    if (m_Os.get() == NULL  &&  m_On.get() == NULL  &&  m_Og.get() == NULL  &&
+        m_Or.get() == NULL  &&  m_Op.get() == NULL  &&  m_Oq == NULL) {
+        NCBI_THROW(CArgException, eSynopsis, "No output (-o*) argument given");
     }
 
     auto_ptr<CObjectIStream> is;
@@ -358,9 +380,6 @@ int CAsn2FastaApp::Run(void)
         }
     }
 
-    m_Os->flush();
-
-    is.reset();
     return 0;
 }
 
@@ -456,45 +475,68 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 //  --------------------------------------------------------------------------
 {
-    CFilteringFastaOstream fasta_os( *m_Os, x_GetFilterIncludes(GetArgs()));
+    CFastaOstream* fasta_os;
 
-    fasta_os.SetAllFlags(
-        CFastaOstream::fInstantiateGaps |
-        CFastaOstream::fAssembleParts |
-        CFastaOstream::fNoDupCheck |
-        CFastaOstream::fKeepGTSigns |
-        CFastaOstream::fNoExpensiveOps);
-    if( GetArgs()["gap-mode"] ) {
-        fasta_os.SetFlag(
-            CFastaOstream::fInstantiateGaps);
-        string gapmode = GetArgs()["gap-mode"].AsString();
-        if ( gapmode == "one-dash" ) {
-            fasta_os.SetGapMode(CFastaOstream::eGM_one_dash);
-        } else if ( gapmode == "dashes" ) {
-            fasta_os.SetGapMode(CFastaOstream::eGM_dashes);
-        } else if ( gapmode == "letters" ) {
-            fasta_os.SetGapMode(CFastaOstream::eGM_letters);
-        } else if ( gapmode == "count" ) {
-            fasta_os.SetGapMode(CFastaOstream::eGM_count);
+    for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
+        CBioseq_Handle bsh = *bioseq_it;
+        CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+
+        bool is_genomic = false;
+        bool is_RNA = false;
+
+        CConstRef<CSeqdesc> closest_molinfo = bsr->GetClosestDescriptor(CSeqdesc::e_Molinfo);
+        if (closest_molinfo) {
+            const CMolInfo& molinf = closest_molinfo->GetMolinfo();
+            CMolInfo::TBiomol biomol = molinf.GetBiomol();
+            switch (biomol) {
+                case NCBI_BIOMOL(genomic):
+                case NCBI_BIOMOL(other_genetic):
+                case NCBI_BIOMOL(genomic_mRNA):
+                case NCBI_BIOMOL(cRNA):
+                    is_genomic = true;
+                    break;
+                case NCBI_BIOMOL(pre_RNA):
+                case NCBI_BIOMOL(mRNA):
+                case NCBI_BIOMOL(rRNA):
+                case NCBI_BIOMOL(tRNA):
+                case NCBI_BIOMOL(snRNA):
+                case NCBI_BIOMOL(scRNA):
+                case NCBI_BIOMOL(snoRNA):
+                case NCBI_BIOMOL(transcribed_RNA):
+                case NCBI_BIOMOL(ncRNA):
+                case NCBI_BIOMOL(tmRNA):
+                    is_RNA = true;
+                    break;
+                default:
+                    break;
+            }
         }
-    }
 
-    if( GetArgs()["show-mods"] ) {
-        fasta_os.SetFlag(CFastaOstream::fShowModifiers);
-    }
-    if( GetArgs()["width"] ) {
-        fasta_os.SetWidth( GetArgs()["width"].AsInteger() );
-    }
-
-    // CCleanup cleanup;
-    // cleanup.BasicCleanup( seh );
-
-    if (m_DeflineOnly) {
-        for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
-            fasta_os.WriteTitle(*bioseq_it);
+        if (m_Os.get() != NULL) {
+            if ( m_OnlyNucs && ! bsh.IsNa() ) continue;
+            if ( m_OnlyProts && ! bsh.IsAa() ) continue;
+            fasta_os = m_Os.get();
+        } else if (bsh.IsNa()) {
+            if (m_On.get() != NULL) {
+                fasta_os = m_On.get();
+            } else if (is_genomic && m_Og.get() != NULL) {
+                fasta_os = m_Og.get();
+            } else if (is_RNA && m_Or.get() != NULL) {
+                fasta_os = m_Or.get();
+            } else {
+                continue;
+            }
+        } else if (bsh.IsAa() && m_Op.get() != NULL) {
+            fasta_os = m_Op.get();
+        } else {
+            continue;
         }
-    } else {
-        fasta_os.Write(seh);
+
+        if (m_DeflineOnly) {
+            fasta_os->WriteTitle(bsh);
+        } else {
+            fasta_os->Write(bsh);
+        }
     }
     return true;
 }
@@ -529,7 +571,7 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
 
     // if -c was specified then wrap the input stream into a gzip decompressor before
     // turning it into an object stream:
-    CObjectIStream* pI = 0;
+    CObjectIStream* pI = NULL;
     if ( args["c"] ) {
         CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
             512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
@@ -548,26 +590,6 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
     return pI;
 }
 
-//  --------------------------------------------------------------------------
-int CAsn2FastaApp::x_GetFilterIncludes(
-    const CArgs& args)
-//  --------------------------------------------------------------------------
-{
-    bool bIncludeNucs = args["nucs-only"];
-    bool bIncludeProts = args["prots-only"];
-    if (bIncludeNucs && bIncludeProts) {
-        NCBI_THROW(CException, eUnknown,
-            "\"nucs-only\" and \"prots-only\" are mutually exclusive");
-    }
-    if (bIncludeNucs) {
-        return CFilteringFastaOstream::INCLUDE_NUC;
-    }
-    if (bIncludeProts) {
-        return CFilteringFastaOstream::INCLUDE_PROT;
-    }
-    return CFilteringFastaOstream::INCLUDE_ALL;
-}
-         
 END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
