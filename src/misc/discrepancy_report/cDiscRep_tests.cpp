@@ -285,10 +285,10 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
        prot_nm = *(prot.GetName().begin()); 
        rule_idx = 0;
        string test_name, summ;
-//prot_nm = "Restriction endonuclease S subunits";
+// prot_nm = "hypothetical protein";
        ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                    thisInfo.suspect_prod_rules->Get()) {
-         if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, 
+         if ( rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, 
                                                     prot_nm, 
                                                     *feat_in_use, **rit)){
               thisInfo.test_item_list[GetName()].push_back(

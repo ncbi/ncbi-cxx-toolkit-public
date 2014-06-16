@@ -183,18 +183,24 @@ bool CSuspectRuleCheck :: DoesSeqIDListMeetStringConstraint (const vector <CSeq_
 
       /* Bankit? */
       if (!match && seq_id->IsGeneral()
-                 && has_match_text && DoesTextMatchBankItId (*seq_id, str_cons)) 
+                 && has_match_text 
+                 && DoesTextMatchBankItId (*seq_id, str_cons)) {
           match = true;
+      }
 
       if (!match && seq_id->IsGeneral()) {
         const CDbtag& dbtag = seq_id->GetGeneral();
         const CObject_id& tag = dbtag.GetTag();
         if (dbtag.GetDb() == "NCBIFILE") {
-          if (tag.IsStr() && DoesSingleStringMatchConstraint (tag.GetStr(), &str_cons)) 
+          if (tag.IsStr() 
+                && DoesSingleStringMatchConstraint (tag.GetStr(), &str_cons)){
                 match = true;
+          }
           else if ((pos = tag.GetStr().find_last_of('/')) != string::npos) {
             strtmp = tag.GetStr().substr(0, pos);
-            if (DoesSingleStringMatchConstraint (strtmp, &str_cons)) match = true;
+            if (DoesSingleStringMatchConstraint (strtmp, &str_cons)) {
+              match = true;
+            }
           }
         }
       }
@@ -337,7 +343,7 @@ string CSuspectRuleCheck :: GetAuthorListString (const CAuth_list& auth_ls, cons
     case CAuth_list::C_Names::e_Std:
       ITERATE (list <CRef <CAuthor> >, it, names.GetStd()) {
          //GetAuthorString( **it, use_initials);
-         strtmp = CSeqEntry_test_on_pub :: GetAuthNameList(**it, use_initials);
+         strtmp =CSeqEntry_test_on_pub :: GetAuthNameList(**it, use_initials);
          if (!strtmp.empty() && DoesStringMatchConstraint(strtmp, str_cons))
            str += strtmp + ", ";
       }
@@ -1440,7 +1446,8 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
                && !CDiscRepUtil::IsAllPunctuation(this_str)) {
                rval = false;
     }
-    else if (!str_cons->CanGetMatch_text() ||str_cons->GetMatch_text().empty()){
+    else if (!str_cons->CanGetMatch_text() 
+                    ||str_cons->GetMatch_text().empty()) {
         rval = true; 
     }
     else {
@@ -1880,12 +1887,12 @@ bool CSuspectRuleCheck :: MatchesSearchFunc(const string& str, const CSearch_fun
 {
    switch (func.Which()){
       case CSearch_func::e_String_constraint:
-         return DoesStringMatchConstraint(str, &(func.GetString_constraint()));
+        return DoesStringMatchConstraint(str, &(func.GetString_constraint()));
       case CSearch_func::e_Contains_plural:
          return StringMayContainPlural (str);
       case  CSearch_func::e_N_or_more_brackets_or_parentheses:
          return ContainsNorMoreSetsOfBracketsOrParentheses(str, 
-                                  func.GetN_or_more_brackets_or_parentheses());
+                                 func.GetN_or_more_brackets_or_parentheses());
       case CSearch_func::e_Three_numbers:
          return ContainsThreeOrMoreNumbersTogether (str);
       case CSearch_func::e_Underscore:
@@ -2316,7 +2323,7 @@ string CSuspectRuleCheck :: GetNotTextqualSrcQualValue(const CBioSource& biosrc,
       break;
     case CSource_qual_choice::e_Origin:
       str = CBioSource::ENUM_METHOD_NAME(EOrigin)()
-                     ->FindName((CBioSource::EOrigin)biosrc.GetOrigin(), false);
+                  ->FindName((CBioSource::EOrigin)biosrc.GetOrigin(), false);
       if (str_cons && !DoesStringMatchConstraint (str, str_cons)) {
            str = kEmptyStr;
       }
@@ -2913,14 +2920,15 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
               } 
               else if (is_legal_qual && seq_feat.CanGetQual()) { 
                   // actual GenBank qualifiers
-                 string feat_qual_name =thisInfo.featquallegal_name[legal_qual];
+                 string feat_qual_name 
+                      = thisInfo.featquallegal_name[legal_qual];
                  bool has_subfield 
                        = (thisInfo.featquallegal_subfield.find(legal_qual) 
                              != thisInfo.featquallegal_subfield.end());
                  unsigned 
                    subfield = has_subfield ? 
-                                thisInfo.featquallegal_subfield[legal_qual] : 0;
-                 if (feat_qual_name != "name" || feat_qual_name != "location") {
+                              thisInfo.featquallegal_subfield[legal_qual] : 0;
+                 if (feat_qual_name != "name" || feat_qual_name !="location"){
                       // gbqual > -1
                     return GetFirstGBQualMatch(seq_feat.GetQual(), 
                                                feat_qual_name, 
@@ -4112,6 +4120,14 @@ bool CSuspectRuleCheck :: DoesObjectMatchConstraintChoiceSet(const CSeq_feat& fe
 
 bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& bioseq_hl, const string& str, const CSeq_feat& feat, const CSuspect_rule& rule)
 {
+/*
+bool match = rule.StringMatchesSuspectProductRule(str);
+if (match) {
+cerr << "match " << match << endl;
+}
+return match;
+*/
+
   m_bioseq_hl = bioseq_hl;
   if (MatchesSuspectProductRule(str, rule)) {
     const CSeq_feat* feat_pnt = const_cast <CSeq_feat*>(&feat);
@@ -4135,7 +4151,7 @@ bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& biose
         }
         else {
           return  DoesObjectMatchConstraintChoiceSet (*feat_pnt, 
-                                                    rule.GetFeat_constraint());
+                                                 rule.GetFeat_constraint());
         }
     }
   }

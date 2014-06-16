@@ -324,7 +324,6 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
           if (seq_feat_dt.GetSubtype() != CSeqFeatData::eSubtype_prot) {
                CTestAndRepData::non_prot_feat.push_back(&seq_feat);
           }
-
           switch (seq_feat_dt.Which()) {
             case CSeqFeatData::e_Biosrc: {
                  CTestAndRepData::bioseq_biosrc_feat.push_back(&seq_feat); 

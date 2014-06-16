@@ -599,9 +599,13 @@ string CSummarizeSusProdRule :: FeatureFieldLabel (const string& feature_name, c
 {
   string label;
   if (field.Which() == CFeat_qual_choice::e_not_set) return ("missing field");
-  else if (field.IsLegal_qual()) 
-       label = feature_name + " " + thisInfo.featqual_leg_name[field.GetLegal_qual()];
-  else if (field.IsIllegal_qual()) label = "constrained field on " + feature_name;
+  else if (field.IsLegal_qual()) {
+      label = feature_name + " " 
+                 + thisInfo.featqual_leg_name_4summ[field.GetLegal_qual()];
+  }
+  else if (field.IsIllegal_qual()) {
+         label = "constrained field on " + feature_name;
+  }
   else label = "illegal field value";
   return label;
 };

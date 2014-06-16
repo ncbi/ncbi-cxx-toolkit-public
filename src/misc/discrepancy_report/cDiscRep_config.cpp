@@ -121,7 +121,7 @@ vector <vector <string> >           CDiscRepInfo :: susterm_summ;
 map <EFeature_strandedness_constraint, string>       CDiscRepInfo :: feat_strandedness;
 map <EPublication_field, string>    CDiscRepInfo :: pubfield_label;
 map <CPub_field_special_constraint_type::E_Choice,string>  CDiscRepInfo :: spe_pubfield_label;
-map <EFeat_qual_legal, string>      CDiscRepInfo :: featqual_leg_name;
+map <EFeat_qual_legal, string>      CDiscRepInfo :: featqual_leg_name_4summ;
 vector <string>                     CDiscRepInfo :: miscfield_names;
 vector <string>                     CDiscRepInfo :: loctype_names;
 map <EString_location, string>      CDiscRepInfo :: matloc_names;
@@ -1116,14 +1116,15 @@ ridx ++;
        thisInfo.spe_pubfield_label[(CPub_field_special_constraint_type::E_Choice)i] = arr[i-1];
    }
 
-   // ini. of featqual_leg_name
-   for (i = eFeat_qual_legal_allele; i <= eFeat_qual_legal_pcr_conditions; i++){
+   // ini. of featqual_leg_name_4_summ
+   for (i = eFeat_qual_legal_allele; 
+                   i <= eFeat_qual_legal_pcr_conditions; i++){
       strtmp = ENUM_METHOD_NAME(EFeat_qual_legal)()->FindName(i, true);
       if (!strtmp.empty()) {
          strtmp = (strtmp == "ec-number") ? "EC number"
                     :((strtmp == "gene") ? "locus" 
                        :((strtmp == "pseudo") ? "pseudogene" : strtmp));
-         thisInfo.featqual_leg_name[(EFeat_qual_legal)i] = strtmp; 
+         thisInfo.featqual_leg_name_4summ[(EFeat_qual_legal)i] = strtmp; 
       }
    }
     
@@ -1139,7 +1140,8 @@ ridx ++;
         = NStr::Tokenize(strtmp, ",", thisInfo.loctype_names);
  
    // ini. of srcloc_names & genome_names;
-   for (i = eSource_location_unknown; i <= eSource_location_chromatophore; i++){
+   for (i = eSource_location_unknown; 
+                    i <= eSource_location_chromatophore; i++){
       strtmp = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);
       strtmp = (strtmp == "unknown") ? kEmptyStr
                  : ((strtmp == "extrachrom") ? "extrachromosomal" : strtmp);
