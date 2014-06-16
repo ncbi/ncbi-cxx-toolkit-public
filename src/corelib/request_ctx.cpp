@@ -35,6 +35,7 @@
 
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/ncbi_strings.h>
 #include <corelib/error_codes.hpp>
 
 
@@ -46,6 +47,7 @@ BEGIN_NCBI_SCOPE
 CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
+      m_LoggedHitID(false),
       m_SubHitID(0),
       m_ReqStatus(0),
       m_ReqTimer(CStopWatch::eStop),
@@ -71,26 +73,26 @@ CRequestContext::TCount CRequestContext::GetNextRequestID(void)
 }
 
 
-// Hit id passed through HTTP
-NCBI_PARAM_DECL(string, Log, Http_Hit_Id);
-NCBI_PARAM_DEF_EX(string, Log, Http_Hit_Id, kEmptyStr, eParam_NoThread,
-                  HTTP_NCBI_PHID);
-typedef NCBI_PARAM_TYPE(Log, Http_Hit_Id) TParamHttpHitId;
-
-
-const string& CRequestContext::x_GetDefaultHitID(void) const
+static void s_LogHitID(const string& phid)
 {
-    if ( !m_DefaultHitID.get() ) {
-        m_DefaultHitID.reset(new string);
-        *m_DefaultHitID = SelectLastHitID(TParamHttpHitId::GetDefault());
-    }
-    return *m_DefaultHitID;
+    GetDiagContext().Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), phid);
+}
+
+
+void CRequestContext::x_LogHitID(void) const
+{
+    if (m_LoggedHitID  ||  m_HitID.empty()) return;
+    if (m_AppState != eDiagAppState_Request  &&
+        m_AppState != eDiagAppState_RequestBegin) return;
+    s_LogHitID(m_HitID);
+    m_LoggedHitID = true;
 }
 
 
 const string& CRequestContext::SetHitID(void)
 {
     SetHitID(GetDiagContext().GetNextHitID());
+    x_LogHitID();
     return m_HitID;
 }
 
@@ -98,9 +100,10 @@ const string& CRequestContext::SetHitID(void)
 const string& CRequestContext::GetHitID(void) const
 {
     if ( x_IsSetProp(eProp_HitID) ) {
+        x_LogHitID();
         return m_HitID;
     }
-    return x_GetDefaultHitID();
+    return GetDiagContext().GetDefaultHitID();
 }
 
 
@@ -440,6 +443,7 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_ClientIP = m_ClientIP;
     ret->m_SessionID.SetString(m_SessionID.GetOriginalString());
     ret->m_HitID = m_HitID;
+    ret->m_LoggedHitID = m_LoggedHitID;
     ret->m_SubHitID = m_SubHitID;
     ret->m_ReqStatus = m_ReqStatus;
     ret->m_ReqTimer = m_ReqTimer;

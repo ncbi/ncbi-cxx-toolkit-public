@@ -2161,6 +2161,16 @@ public:
     /// request context.
     static void SetDefaultClientIP(const string& client_ip);
 
+    /// Get global default hit id. The hit id may be set using
+    /// SetDefaultHitId(), HTTP_NCBI_PHID or NCBI_LOG_HIT_ID env. variables,
+    /// or Log.Http_Hit_Id/Log.Hit_Id values in the INI file. The Http-value
+    /// has higher priority. If none of the values is set, the default hit id
+    /// is generated automatically.
+    const string& GetDefaultHitID(void) const;
+    /// Set new global default hit id. This value is used only if the per-request
+    /// hit id is not set.
+    void SetDefaultHitID(const string& hit_id);
+
     /// Write standard prefix to the stream. Use values from the message
     /// (PID/TID/RID etc.).
     void WriteStdPrefix(CNcbiOstream& ostr,
@@ -2270,6 +2280,8 @@ private:
     auto_ptr<CEncodedString>            m_Username;
     auto_ptr<CEncodedString>            m_AppName;
     mutable auto_ptr<CEncodedString>    m_DefaultSessionId;
+    mutable auto_ptr<string>            m_DefaultHitId;
+    mutable bool                        m_LoggedHitId;
     int                                 m_ExitCode;
     int                                 m_ExitSig;
     EDiagAppState                       m_AppState;

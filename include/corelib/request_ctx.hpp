@@ -107,7 +107,8 @@ public:
     const string& GetEncodedSessionID(void) const;
 
     /// Hit ID
-    /// Get explicit hit id or the default one (from HTTP_NCBI_PHID).
+    /// Get explicit hit id or the default one (from HTTP_NCBI_PHID or
+    /// generated automatically at application start).
     const string& GetHitID(void) const;
     /// Set explicit hit id.
     void          SetHitID(const string& hit);
@@ -241,10 +242,6 @@ private:
     // Check if the request is running.
     bool IsRunning(void) const { return m_IsRunning; }
 
-    // Check HTTP_NCBI_PHID if not yet checked, return its
-    // value or empty string.
-    const string& x_GetDefaultHitID(void) const;
-
     enum EProperty {
         eProp_RequestID     = 1 << 0,
         eProp_ClientIP      = 1 << 1,
@@ -260,6 +257,10 @@ private:
     void x_SetProp(EProperty prop);
     void x_UnsetProp(EProperty prop);
 
+    // Log current hit id if not yet logged and if the application state is
+    // 'in request', otherwise postpone logging until StartRequest is executed.
+    void x_LogHitID(void) const;
+
     static bool& sx_GetDefaultAutoIncRequestIDOnPost(void);
 
     TCount         m_RequestID;
@@ -267,6 +268,7 @@ private:
     string         m_ClientIP;
     CEncodedString m_SessionID;
     string         m_HitID;
+    mutable bool   m_LoggedHitID;
     int            m_SubHitID;
     int            m_ReqStatus;
     CStopWatch     m_ReqTimer;
@@ -277,7 +279,6 @@ private:
     bool           m_IsRunning;
     bool           m_AutoIncOnPost;
     TContextFlags  m_Flags;
-    mutable auto_ptr<string> m_DefaultHitID; // HTTP_NCBI_PHID
     string         m_SubHitIDCache;
 };
 
@@ -396,8 +397,10 @@ void CRequestContext::UnsetSessionID(void)
 inline
 bool CRequestContext::IsSetHitID(void) const
 {
-    return IsSetExplicitHitID()  ||  !x_GetDefaultHitID().empty();
+    // Either explicit or default hit id is always available.
+    return true;
 }
+
 
 inline
 bool CRequestContext::IsSetExplicitHitID(void) const
@@ -410,6 +413,7 @@ void CRequestContext::UnsetHitID(void)
 {
     x_UnsetProp(eProp_HitID);
     m_HitID.clear();
+    m_LoggedHitID = false;
     m_SubHitID = 0;
 }
 

@@ -39,6 +39,7 @@
 #include <corelib/error_codes.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/request_control.hpp>
+#include <corelib/ncbi_strings.h>
 #include "ncbidiag_p.hpp"
 #include "ncbisys.hpp"
 #include <fcntl.h>
@@ -1102,6 +1103,7 @@ CDiagContext::CDiagContext(void)
       m_Host(new CEncodedString),
       m_Username(new CEncodedString),
       m_AppName(new CEncodedString),
+      m_LoggedHitId(false),
       m_ExitCode(0),
       m_ExitSig(0),
       m_AppState(eDiagAppState_AppBegin),
@@ -2311,6 +2313,58 @@ void CDiagContext::SetDefaultClientIP(const string& client_ip)
 }
 
 
+// Hit id passed through HTTP
+NCBI_PARAM_DECL(string, Log, Http_Hit_Id);
+NCBI_PARAM_DEF_EX(string, Log, Http_Hit_Id, kEmptyStr, eParam_NoThread,
+                  HTTP_NCBI_PHID);
+typedef NCBI_PARAM_TYPE(Log, Http_Hit_Id) TParamHttpHitId;
+
+// Hit id set in the environment or registry
+NCBI_PARAM_DECL(string, Log, Hit_Id);
+NCBI_PARAM_DEF_EX(string, Log, Hit_Id, kEmptyStr, eParam_NoThread,
+                  NCBI_LOG_HIT_ID);
+typedef NCBI_PARAM_TYPE(Log, Hit_Id) TParamHitId;
+
+
+const string& CDiagContext::GetDefaultHitID(void) const
+{
+    CDiagLock lock(CDiagLock::eRead);
+    if ( !m_DefaultHitId.get() ) {
+        m_DefaultHitId.reset(new string);
+        if ( m_DefaultHitId->empty() ) {
+            string phid = CRequestContext::SelectLastHitID(
+                TParamHttpHitId::GetDefault());
+            if ( phid.empty() ) {
+                phid = CRequestContext::SelectLastHitID(
+                    TParamHitId::GetDefault());
+            }
+            *m_DefaultHitId = phid;
+        }
+        if ( m_DefaultHitId->empty() ) {
+            *m_DefaultHitId = GetNextHitID();
+        }
+        m_LoggedHitId = false;
+    }
+    if ( !m_LoggedHitId ) {
+        // Log default hit id automatically.
+        m_LoggedHitId = true;
+        Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), *m_DefaultHitId);
+    }
+    return *m_DefaultHitId;
+}
+
+
+void CDiagContext::SetDefaultHitID(const string& hit_id)
+{
+    CDiagLock lock(CDiagLock::eWrite);
+    if ( !m_DefaultHitId.get() ) {
+        m_DefaultHitId.reset(new string);
+        m_LoggedHitId = false;
+    }
+    *m_DefaultHitId = hit_id;
+}
+
+
 const char* CDiagContext::kProperty_UserName    = "user";
 const char* CDiagContext::kProperty_HostName    = "host";
 const char* CDiagContext::kProperty_HostIP      = "host_ip_addr";
@@ -2434,6 +2488,8 @@ void CDiagContext::x_StartRequest(void)
         }
         extra.Flush();
     }
+    // Log PHID if not yet logged.
+    ctx.GetHitID();
 }
 
 

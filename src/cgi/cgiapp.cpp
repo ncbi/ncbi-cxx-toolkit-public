@@ -819,22 +819,23 @@ void CCgiApplication::x_OnEvent(EEvent event, int status)
             SetHTTPStatus(200);
             m_ErrorStatus = false;
 
-            const string& phid = CDiagContext::GetRequestContext().GetHitID();
+            // This will log ncbi_phid as a separate 'extra' message
+            // if not yet logged.
+            CDiagContext::GetRequestContext().GetHitID();
+
             // Check if ncbi_st cookie is set
             const CCgiCookie* st = req.GetCookies().Find(
                 g_GetNcbiString(eNcbiStrings_Stat));
-            CUrlArgs pg_info;
             if ( st ) {
-                pg_info.SetQueryString(st->GetValue());
+                CUrlArgs pg_info(st->GetValue());
+                // Log ncbi_st values
+                CDiagContext_Extra extra = GetDiagContext().Extra();
+                // extra.SetType("NCBICGI");
+                ITERATE(CUrlArgs::TArgs, it, pg_info.GetArgs()) {
+                    extra.Print(it->name, it->value);
+                }
+                extra.Flush();
             }
-            pg_info.SetValue(g_GetNcbiString(eNcbiStrings_PHID), phid);
-            // Log ncbi_st values
-            CDiagContext_Extra extra = GetDiagContext().Extra();
-            // extra.SetType("NCBICGI");
-            ITERATE(CUrlArgs::TArgs, it, pg_info.GetArgs()) {
-                extra.Print(it->name, it->value);
-            }
-            extra.Flush();
             break;
         }
     case eSuccess:

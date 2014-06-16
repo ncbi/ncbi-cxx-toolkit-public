@@ -1224,7 +1224,9 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
 void CCgiRequest::x_SetPageHitId(TFlags flags)
 {
     CRequestContext& rctx = CDiagContext::GetRequestContext();
-
+    if ( rctx.IsSetExplicitHitID() ) {
+        return;
+    }
     if ((flags & fIgnorePageHitId) == 0) {
         string phid;
         // Check if pageviewid is present. If not, generate one.
@@ -1238,7 +1240,7 @@ void CCgiRequest::x_SetPageHitId(TFlags flags)
             phid = CRequestContext::SelectLastHitID(
                 GetRandomProperty("NCBI_PHID", true));
         }
-        if (phid.empty()  &&  !rctx.IsSetHitID()) {
+        if ( phid.empty() ) {
             rctx.SetHitID();
         }
         else {
