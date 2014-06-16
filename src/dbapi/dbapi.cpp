@@ -119,6 +119,20 @@ IResultSetMetaData::~IResultSetMetaData()
 {
 }
 
+bool IResultSetMetaData::HasColumn(const CDBParamVariant& param) const
+{
+    unsigned int n = GetTotalColumns();
+    if (param.IsPositional()) { // 1-based
+        return param.GetPosition() > 0  &&  param.GetPosition() <= n;
+    }
+    for (unsigned int i = 1;  i <= n;  ++i) {
+        if (GetName(i) == param.GetName()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 ICursor::~ICursor()
 {
 }

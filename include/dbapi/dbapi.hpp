@@ -112,6 +112,10 @@ public:
     /// Clean up the metadata for the resultset.
     virtual ~IResultSetMetaData(void);
 
+    /// Convenience method to check whether a column with a given name
+    /// (or number) actually exists.
+    bool HasColumn(const CDBParamVariant& param) const;
+
     /// Get total number of columns in resultset.
     virtual unsigned int  GetTotalColumns(void) const = 0;
 

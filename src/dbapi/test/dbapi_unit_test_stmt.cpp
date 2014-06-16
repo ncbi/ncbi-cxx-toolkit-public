@@ -1280,10 +1280,20 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
         {
             // bit
             {
-                rs = auto_stmt->ExecuteQuery("select convert(bit, 1)");
+                rs = auto_stmt->ExecuteQuery
+                    ("select convert(bit, 1) as [x y]");
                 BOOST_CHECK(rs != NULL);
                 md = rs->GetMetaData();
                 BOOST_CHECK(md);
+                // 1-based, sensitive to case and internal whitespace
+                BOOST_CHECK( !md->HasColumn(0) );
+                BOOST_CHECK(md->HasColumn(1));
+                BOOST_CHECK( !md->HasColumn(2) );
+
+                BOOST_CHECK(md->HasColumn("x y"));
+                BOOST_CHECK(md->HasColumn(" x y "));
+                BOOST_CHECK( !md->HasColumn("X Y") );
+                BOOST_CHECK( !md->HasColumn("x  y") );
 
                 EDB_Type curr_type = md->GetType(1);
                 BOOST_CHECK_EQUAL(curr_type, eDB_Bit);
