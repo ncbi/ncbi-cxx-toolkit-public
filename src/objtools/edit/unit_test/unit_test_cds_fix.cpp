@@ -653,9 +653,16 @@ BOOST_AUTO_TEST_CASE(Test_SuspectRule)
     rule->SetReplace().SetReplace_func().SetSimple_replace().SetReplace("CHC2 zinc finger protein");
     rule->SetReplace().SetReplace_func().SetSimple_replace().SetWhole_string(false);
     rule->SetReplace().SetReplace_func().SetSimple_replace().SetWeasel_to_putative(true);
-
     BOOST_CHECK_EQUAL(rule->ApplyToString(test), false);
 
+    test = "hypothetical protein";
+    rule->SetFind().Reset();
+    rule->SetFind().SetString_constraint().SetMatch_location(eString_location_equals);
+    rule->SetFind().SetString_constraint().SetMatch_text("protein");
+    rule->SetFind().SetString_constraint().SetIgnore_weasel(true);
+    rule->SetReplace().Reset();
+    rule->SetReplace().SetReplace_func().SetSimple_replace().SetReplace("hypothetical protein");
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
 }
 
 
