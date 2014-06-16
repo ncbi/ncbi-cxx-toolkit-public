@@ -758,7 +758,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         const CCit_book::TAuthors& auth = book.GetAuthors();
         string authstr;
         CReferenceItem::FormatAuthors(auth, authstr);
-        if (!authstr.empty()) {
+        if (!authstr.empty() && ! NStr::EqualNocase (authstr, "?")) {
             jour << authstr;
             size_t num_auth = s_NumAuthors(auth);
             jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << '\n';
