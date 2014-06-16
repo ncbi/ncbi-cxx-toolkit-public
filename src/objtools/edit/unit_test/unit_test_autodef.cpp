@@ -757,5 +757,24 @@ BOOST_AUTO_TEST_CASE(Test_GB_3488)
 
 }
 
+BOOST_AUTO_TEST_CASE(Test_GB_3486)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(seq, "Burkholderia sp. FERM BP-3421");
+    CRef<objects::CSeq_feat> gene = unit_test_util::AddMiscFeature (seq);
+    gene->ResetComment();
+    gene->SetData().SetGene().SetLocus("fr9A");
+    AddTitle(seq, "Burkholderia sp. FERM BP-3421 fr9A gene, complete sequence.");
+    CheckDeflineMatches(seq, true);
+
+    CRef<objects::CSeq_feat> gene_cluster = unit_test_util::AddMiscFeature(seq);
+    gene_cluster->SetComment("spliceostatin/FR901464 biosynthetic gene cluster");
+
+    AddTitle(seq, "Burkholderia sp. FERM BP-3421 spliceostatin/FR901464 biosynthetic gene cluster, complete sequence.");
+    CheckDeflineMatches(seq, true);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

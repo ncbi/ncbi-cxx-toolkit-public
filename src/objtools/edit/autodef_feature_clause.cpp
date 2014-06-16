@@ -167,7 +167,8 @@ bool CAutoDefFeatureClause::IsGeneCluster ()
     }
     
     string comment = m_MainFeat.GetComment();
-    if (NStr::Equal(comment, "gene cluster") || NStr::Equal(comment, "gene locus")) {
+    if (NStr::Find(comment, "gene cluster") != string::npos 
+        || NStr::Find(comment, "gene locus") != string::npos) {
         return true;
     } else {
         return false;
