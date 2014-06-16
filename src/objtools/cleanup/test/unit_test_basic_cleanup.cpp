@@ -631,3 +631,71 @@ BOOST_AUTO_TEST_CASE(Test_CleanStructuredVoucher2)
         }
     }
 }
+
+
+const char *sc_TestEntryCleanPCRPrimerSeq = "\
+Seq-entry ::= seq {\
+          id {\
+            local\
+              str \"cleanpcrprimerseq\" } ,\
+          descr {\
+            source { \
+              org { \
+                taxname \"Homo sapiens\" } ,\
+            pcr-primers { \
+              { \
+                forward { \
+                  { \
+                    seq \"atgTCCAAAccacaaacagagactaaagc\" , \
+                    name \"a_f\" } } , \
+                reverse { \
+                  { \
+                    seq \"cttctg<OTHER>ctaca  aataagaat  cgatctc\" , \
+                    name \"a_r\" } } } } } , \
+            molinfo {\
+              biomol genomic } } ,\
+          inst {\
+            repr raw ,\
+            mol dna ,\
+            length 27 ,\
+            seq-data\
+              iupacna \"TTGCCCTAAAAATAAGAGTAAAACTAA\" } } \
+";
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanPCRPrimerSeq)
+{
+    CSeq_entry entry;
+    {{
+         CNcbiIstrstream istr(sc_TestEntryCleanPCRPrimerSeq);
+         istr >> MSerial_AsnText >> entry;
+     }}
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(entry);
+    entry.Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.BasicCleanup (entry);
+    // look for expected change flags
+	vector<string> changes_str = changes->GetAllDescriptions();
+	if (changes_str.size() < 1) {
+        BOOST_CHECK_EQUAL("missing cleanup", "eChangePCRPrimers");
+    } else {
+        BOOST_CHECK_EQUAL (changes_str[0], "Change PCR Primers");
+    }
+
+    for (size_t i = 1; i < changes_str.size(); i++) {
+        BOOST_CHECK_EQUAL("unexpected cleanup", changes_str[i]);
+	}
+
+    // make sure change was actually made
+    CSeqdesc_CI d(scope->GetBioseqHandle(entry.GetSeq()), CSeqdesc::e_Source);
+    const CPCRReaction& reaction = *(d->GetSource().GetPcr_primers().Get().front());
+    BOOST_CHECK_EQUAL(reaction.GetForward().Get().front()->GetSeq(), "atgtccaaaccacaaacagagactaaagc");
+    BOOST_CHECK_EQUAL(reaction.GetReverse().Get().front()->GetSeq(), "cttctg<OTHER>ctacaaataagaatcgatctc");
+}
+
