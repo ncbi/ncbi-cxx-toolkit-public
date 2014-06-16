@@ -60,14 +60,14 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
         ITERATE(CBioseq::TId, id, bi->GetCompleteBioseq()->GetId()) {
             string label = "";
             (*id)->GetLabel(&label);
-            m_StringIdHash.insert(TStringIdHash::value_type(label, *id));
+            x_AddIdString(label, *id);
             label = "";
             (*id)->GetLabel(&label, CSeq_id::eContent);
-            m_StringIdHash.insert(TStringIdHash::value_type(label, *id));
+            x_AddIdString(label, *id);
             if ((*id)->IsGenbank()) {
                 size_t pos = NStr::Find(label, ".");
                 if (pos != string::npos) {
-                    m_StringIdHash.insert(TStringIdHash::value_type(label.substr(0, pos), *id));
+                    x_AddIdString(label.substr(0, pos), *id);
                 }
             } else if ((*id)->IsGeneral()) {
                 const CDbtag& dbtag = (*id)->GetGeneral();
@@ -78,10 +78,10 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
                     } else {
                         tag_str = dbtag.GetTag().GetStr();
                     }
-                    m_StringIdHash.insert(TStringIdHash::value_type(tag_str, *id));
+                    x_AddIdString(tag_str, *id);
                     // BankIt IDs can be specified with "BankIt" prefix
                     if (NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
-                        m_StringIdHash.insert(TStringIdHash::value_type("BankIt" + tag_str, *id));
+                        x_AddIdString("BankIt" + tag_str, *id);
                     } else if (NStr::EqualNocase(dbtag.GetDb(), "NCBIFILE")) {
                         // File ID are usually a filename plus a slash plus the original local ID
                         // add the filename as its own identifier, but only add the local ID if it hasn't 
@@ -89,10 +89,10 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
                         size_t pos = NStr::Find(tag_str, "/", 0, string::npos, NStr::eLast);
                         if (pos != string::npos) {
                             string file = tag_str.substr(0, pos);
-                            m_StringIdHash.insert(TStringIdHash::value_type(file, *id));
+                            x_AddIdString(file, *id);
                             string file_id = tag_str.substr(pos + 1);
                             if (!NStr::EqualNocase(file_id, local)) {
-                                m_StringIdHash.insert(TStringIdHash::value_type(file_id, *id));
+                                x_AddIdString(file_id, *id);
                             }
                         } 
                     }
@@ -101,6 +101,14 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
         }
         ++bi;
     }
+}
+
+
+void CSeqIdGuesser::x_AddIdString(string id_str, CRef<CSeq_id> id)
+{
+    m_StringIdHash.insert(TStringIdHash::value_type(id_str, id));
+    NStr::ToLower(id_str);
+    m_StringIdLCHash.insert(TStringIdHash::value_type(id_str, id));
 }
 
 
@@ -168,8 +176,15 @@ CRef<CSeq_id> CSeqIdGuesser::Guess(const string& id_str)
 {
     TStringIdHash::iterator it = m_StringIdHash.find(id_str);
     if (it == m_StringIdHash.end()) {
-        CRef<CSeq_id> empty(NULL);
-        return empty;
+        string tmp = id_str;
+        NStr::ToLower(tmp);
+        it = m_StringIdLCHash.find(tmp);
+        if (it == m_StringIdLCHash.end()) {
+            CRef<CSeq_id> empty(NULL);
+            return empty;
+        } else {
+            return it->second;
+        }
     } else {
         return it->second;
     }

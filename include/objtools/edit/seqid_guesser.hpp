@@ -56,6 +56,8 @@ private:
     CSeq_entry_Handle m_SeqEntry;
 
     TStringIdHash m_StringIdHash;
+    TStringIdHash m_StringIdLCHash;
+    void x_AddIdString(string id_str, CRef<CSeq_id> id);
 };
 
 
