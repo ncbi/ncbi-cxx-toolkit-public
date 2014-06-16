@@ -289,7 +289,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static map <EFeature_strandedness_constraint, string> feat_strandedness;
         static map <EPublication_field, string>         pubfield_label;
         static map <CPub_field_special_constraint_type::E_Choice,string> spe_pubfield_label;
-        static map <EFeat_qual_legal, string>           featqual_leg_name;
+        static map <EFeat_qual_legal, string>         featqual_leg_name_4summ;
         static vector <string>                          miscfield_names;
         static vector <string>                          loctype_names;
         static map <EString_location, string>           matloc_names;
