@@ -4969,7 +4969,7 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
                 string::size_type initials_first_good_idx = 0;
                 for( ; initials_first_good_idx < initials.length() &&
                         initials_first_good_idx < first_initials.length() && 
-                        initials[initials_first_good_idx] == first_initials[initials_first_good_idx] ; 
+                        toupper(initials[initials_first_good_idx]) == toupper(first_initials[initials_first_good_idx]) ;
                     ++initials_first_good_idx )
                 {
                     // do nothing
