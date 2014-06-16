@@ -531,7 +531,7 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
       m_Method(method),
       m_Headers(new CHttpHeaders),
       m_Timeout(CTimeout::eDefault),
-      m_Retries(0)
+      m_MaxTry(0)
 {
 }
 
@@ -591,6 +591,27 @@ CHttpFormData& CHttpRequest::FormData(void)
 }
 
 
+unsigned short CHttpRequest::GetRetries(void) const
+{
+    if ( m_MaxTry ) {
+        return m_MaxTry - 1;
+    }
+    // Get the default value
+    SConnNetInfo* connnetinfo = ConnNetInfo_Create(0);
+    unsigned short maxtry = connnetinfo->max_try;
+    ConnNetInfo_Destroy(connnetinfo);
+    return maxtry ? maxtry - 1 : 0;
+}
+
+
+CHttpRequest& CHttpRequest::SetRetries(unsigned short retries)
+{
+    retries++;
+    m_MaxTry = retries ? retries : retries - 1;
+    return *this;
+}
+
+
 void CHttpRequest::x_InitConnection(bool use_form_data)
 {
     if (m_Response  ||  m_Stream) {
@@ -611,8 +632,8 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         STimeout sto;
         ConnNetInfo_SetTimeout(connnetinfo, g_CTimeoutToSTimeout(m_Timeout, sto));
     }
-    if ( m_Retries ) {
-        connnetinfo->max_try = m_Retries;
+    if ( m_MaxTry ) {
+        connnetinfo->max_try = m_MaxTry;
     }
 
     m_Stream.Reset(new TStreamRef);

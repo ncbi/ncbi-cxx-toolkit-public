@@ -60,6 +60,8 @@ public:
                        const CHttpResponse& response);
 
 private:
+    void SetupRequest(CHttpRequest& request);
+
     bool m_PrintHeaders;
     bool m_PrintCookies;
     bool m_PrintBody;
@@ -71,6 +73,18 @@ CHttpSessionApp::CHttpSessionApp(void)
       m_PrintCookies(true),
       m_PrintBody(true)
 {
+}
+
+
+void CHttpSessionApp::SetupRequest(CHttpRequest& request)
+{
+    const CArgs& args = GetArgs();
+    if ( args["timeout"] ) {
+        request.SetTimeout(CTimeout(args["timeout"].AsDouble()));
+    }
+    if ( args["retries"] ) {
+        request.SetRetries((unsigned short)args["retries"].AsInteger());
+    }
 }
 
 
@@ -95,6 +109,11 @@ void CHttpSessionApp::Init()
         CArgDescriptions::fAllowMultiple);
     arg_desc->AddOptionalKey("post", "url", "URL to POST data to (the data is read from STDIN)",
         CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("timeout", "double", "Timeout in seconds",
+        CArgDescriptions::eDouble);
+    arg_desc->AddOptionalKey("retries", "int", "Number of retries",
+        CArgDescriptions::eInteger);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -133,6 +152,7 @@ int CHttpSessionApp::Run(void)
         ITERATE(CArgValue::TStringArray, it, urls) {
             cout << "HEAD " << *it << endl;
             CHttpRequest req = session.NewRequest(*it, CHttpSession::eHead);
+            SetupRequest(req);
             PrintResponse(session, req.Execute());
             cout << "-------------------------------------" << endl << endl;
         }
@@ -143,6 +163,7 @@ int CHttpSessionApp::Run(void)
         ITERATE(CArgValue::TStringArray, it, urls) {
             cout << "GET " << *it << endl;
             CHttpRequest req = session.NewRequest(*it);
+            SetupRequest(req);
             PrintResponse(session, req.Execute());
             cout << "-------------------------------------" << endl << endl;
         }
@@ -152,6 +173,7 @@ int CHttpSessionApp::Run(void)
         string url = args["post"].AsString();
         cout << "POST " << url << endl;
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+        SetupRequest(req);
         NcbiStreamCopy(req.ContentStream(), cin);
         PrintResponse(session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
@@ -170,6 +192,7 @@ int CHttpSessionApp::Run(void)
         cout << "HEAD " << sample_url << endl;
         // Requests can be initialized with either a string or a CUrl
         CHttpRequest req = session.NewRequest(url, CHttpSession::eHead);
+        SetupRequest(req);
         CHttpResponse resp = req.Execute();
         PrintResponse(session, resp);
         cout << "-------------------------------------" << endl << endl;
@@ -179,6 +202,7 @@ int CHttpSessionApp::Run(void)
         // Simple GET request
         cout << "GET (no args) " << sample_url << endl;
         CHttpRequest req = session.NewRequest(url);
+        SetupRequest(req);
         PrintResponse(session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
@@ -189,6 +213,7 @@ int CHttpSessionApp::Run(void)
         cout << "GET (with args) " << sample_url << endl;
         url_with_args.GetArgs().SetValue("message", "GET data");
         CHttpRequest req = session.NewRequest(url_with_args);
+        SetupRequest(req);
         PrintResponse(session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
@@ -197,6 +222,7 @@ int CHttpSessionApp::Run(void)
         // POST request with form data
         cout << "POST (form data) " << sample_url << endl;
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+        SetupRequest(req);
         CHttpFormData& data = req.FormData();
         data.AddEntry("message", "POST data");
         PrintResponse(session, req.Execute());
@@ -207,6 +233,7 @@ int CHttpSessionApp::Run(void)
         // POST using a provider
         cout << "POST (provider) " << sample_url << endl;
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+        SetupRequest(req);
         CHttpFormData& data = req.FormData();
         data.AddProvider("message", new CTestDataProvider);
         PrintResponse(session, req.Execute());
@@ -217,6 +244,7 @@ int CHttpSessionApp::Run(void)
         // POST some data manually
         cout << "POST (manual) " << sample_url << endl;
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
+        SetupRequest(req);
         req.Headers().SetValue(CHttpHeaders::eContentType, "application/x-www-form-urlencoded");
         CNcbiOstream& out = req.ContentStream();
         out << "message=POST manual data";
@@ -228,6 +256,7 @@ int CHttpSessionApp::Run(void)
         // Bad GET request
         cout << "GET (404) " << bad_url << endl;
         CHttpRequest req = session.NewRequest(bad_url);
+        SetupRequest(req);
         PrintResponse(session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}

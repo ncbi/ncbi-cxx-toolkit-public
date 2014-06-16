@@ -406,10 +406,11 @@ public:
     /// Set new timeout in seconds/microseconds.
     CHttpRequest& SetTimeout(unsigned int sec, unsigned int usec = 0);
 
-    /// Get number of retries. If set to zero, the global default
-    /// value is used (or the one from $CONN_MAX_TRY).
-    unsigned short GetRetries(void) const { return m_Retries; }
-    /// Set number of retries.
+    /// Get number of retries. If not set returns the global default
+    /// value ($CONN_MAX_TRY - 1).
+    unsigned short GetRetries(void) const;
+    /// Set number of retries. If not set, the global default
+    /// value is used ($CONN_MAX_TRY - 1).
     CHttpRequest& SetRetries(unsigned short retries);
 
 private:
@@ -445,7 +446,7 @@ private:
     CRef<TStreamRef>    m_Stream;
     CRef<CHttpResponse> m_Response; // current response or null
     CTimeout            m_Timeout;
-    unsigned short      m_Retries;
+    unsigned short      m_MaxTry;
 };
 
 
@@ -537,13 +538,6 @@ inline CHttpRequest& CHttpRequest::SetTimeout(unsigned int sec,
                                               unsigned int usec)
 {
     m_Timeout.Set(sec, usec);
-    return *this;
-}
-
-
-inline CHttpRequest& CHttpRequest::SetRetries(unsigned short retries)
-{
-    m_Retries = retries;
     return *this;
 }
 
