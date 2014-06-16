@@ -9709,7 +9709,9 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
                 CComment_rule::TErrorList errors = rule.IsValid(usr);
                 if (errors.size() == 0) {
                     string kywd = CComment_rule::KeywordForPrefix( prefix );
-                    new_keywords.push_back(kywd);
+                    if (! kywd.empty()) {
+                        new_keywords.push_back(kywd);
+                    }
                 }
             } catch (CException) {
             }
