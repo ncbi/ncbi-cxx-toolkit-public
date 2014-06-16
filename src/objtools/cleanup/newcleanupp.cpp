@@ -2223,6 +2223,19 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
         last_article->SetIds().Set().push_back( new_article_id );
         ChangeMade(CCleanupChange::eChangePublication);
     }
+
+    last_article_pubmed_id = 0;
+    int article_pubmed_id = 0;
+    EDIT_EACH_ARTICLEID_ON_CITART( id_iter, *last_article ) {
+        const CArticleId &article_id = **id_iter;
+        if( article_id.IsPubmed() ) {
+            article_pubmed_id = article_id.GetPubmed().Get();
+            if (last_article_pubmed_id > 0 && last_article_pubmed_id == article_pubmed_id) {
+                ERASE_ARTICLEID_ON_CITART( id_iter, *last_article );
+            }
+            last_article_pubmed_id = article_pubmed_id;
+        }
+    }
 }
 
 CNewCleanup_imp::EAction CNewCleanup_imp::PubBC(CPub& pub, bool fix_initials)
