@@ -951,21 +951,145 @@ void ReverseComplementFeature(CSeq_feat& feat, CScope& scope)
 }
 
 
-void x_SeqIntervalDelete(CRef<CSeq_interval> interval, 
+bool OkToAdjustLoc(const CSeq_interval& interval, const CSeq_id* seqid)
+{
+    bool rval = true;
+    if (seqid) {
+        if (!interval.IsSetId() || interval.GetId().Compare(*seqid) != CSeq_id::e_YES) {
+            rval = false;
+        }
+    }
+    return rval;
+}
+
+
+bool OkToAdjustLoc(const CSeq_point& pnt, const CSeq_id* seqid)
+{
+    bool rval = true;
+    if (seqid) {
+        if (!pnt.IsSetId() || pnt.GetId().Compare(*seqid) != CSeq_id::e_YES) {
+            rval = false;
+        }
+    }
+    return rval;
+}
+
+
+bool OkToAdjustLoc(const CPacked_seqpnt& pack, const CSeq_id* seqid)
+{
+    bool rval = true;
+    if (seqid) {
+        if (!pack.IsSetId() || pack.GetId().Compare(*seqid) != CSeq_id::e_YES) {
+            rval = false;
+        }
+    }
+    return rval;
+}
+
+
+void NormalizeLoc(CSeq_loc& loc)
+{
+    switch (loc.Which()) {
+        case CSeq_loc::e_Equiv:
+            {{
+                CSeq_loc::TEquiv::Tdata::iterator it = loc.SetEquiv().Set().begin();
+                while (it != loc.SetEquiv().Set().end()) {
+                    NormalizeLoc(**it);
+                    if (loc.Which() == CSeq_loc::e_not_set) {
+                        it = loc.SetEquiv().Set().erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+
+                // if only one, make regular loc
+                if (loc.GetEquiv().Get().size() == 1) {
+                    CRef<CSeq_loc> sub(new CSeq_loc());
+                    sub->Assign(*(loc.GetEquiv().Get().front()));
+                    loc.Assign(*sub);
+                } else if (loc.GetEquiv().Get().size() == 0) {
+                    // no sub intervals, reset
+                    loc.Reset();
+                }                
+            }}
+            break;
+        case CSeq_loc::e_Mix:
+            {{
+                CSeq_loc::TMix::Tdata::iterator it = loc.SetMix().Set().begin();
+                while (it != loc.SetMix().Set().end()) {
+                    NormalizeLoc(**it);
+                    if (loc.Which() == CSeq_loc::e_not_set) {
+                        it = loc.SetMix().Set().erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+
+                // if only one, make regular loc
+                if (loc.GetMix().Get().size() == 1) {
+                    CRef<CSeq_loc> sub(new CSeq_loc());
+                    sub->Assign(*(loc.GetMix().Get().front()));
+                    loc.Assign(*sub);
+                } else if (loc.GetMix().Get().size() == 0) {
+                    // no sub intervals, reset
+                    loc.Reset();
+                }                
+            }}
+            break;
+        case CSeq_loc::e_Packed_int:
+            if (loc.GetPacked_int().Get().size() == 0) {
+                loc.Reset();
+            } else if (loc.GetPacked_int().Get().size() == 1) {
+                CRef<CSeq_interval> sub(new CSeq_interval());
+                sub->Assign(*(loc.GetPacked_int().Get().front()));
+                loc.SetInt().Assign(*sub);
+            }
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            if (loc.GetPacked_pnt().GetPoints().size() == 0) {
+                loc.Reset();
+            } else if (loc.GetPacked_pnt().GetPoints().size() == 1) {
+                CRef<CSeq_point> sub(new CSeq_point());
+                if (loc.GetPacked_pnt().IsSetStrand()) {
+                    sub->SetStrand(loc.GetPacked_pnt().GetStrand());
+                }
+                if (loc.GetPacked_pnt().IsSetId()) {
+                    sub->SetId().Assign(loc.GetPacked_pnt().GetId());
+                }
+                if (loc.GetPacked_pnt().IsSetFuzz()) {
+                    sub->SetFuzz().Assign(loc.GetPacked_pnt().GetFuzz());
+                }
+                sub->SetPoint(loc.GetPacked_pnt().GetPoints()[0]);
+                loc.SetPnt().Assign(*sub);
+            }
+            break;
+        default:
+            // do nothing
+            break;
+    }
+}
+
+
+void SeqLocAdjustForTrim(CSeq_interval& interval, 
                          TSeqPos cut_from, TSeqPos cut_to,
                          const CSeq_id* seqid,
                          bool& bCompleteCut,
-                         bool& bTrimmed)
+                         TSeqPos& trim5,
+                         bool& bAdjusted)
 {
+    if (!OkToAdjustLoc(interval, seqid)) {
+        return;
+    }
+
     // These are required fields
-    if ( !(interval->CanGetFrom() && interval->CanGetTo()) )
+    if ( !(interval.CanGetFrom() && interval.CanGetTo()) )
     {
         return;
     }
 
     // Feature location
-    TSeqPos feat_from = interval->GetFrom();
-    TSeqPos feat_to = interval->GetTo();
+    TSeqPos feat_from = interval.GetFrom();
+    TSeqPos feat_to = interval.GetTo();
 
     // Size of the cut
     TSeqPos cut_size = cut_to - cut_from + 1;
@@ -982,6 +1106,7 @@ void x_SeqIntervalDelete(CRef<CSeq_interval> interval,
     {
         // Feature should be deleted
         bCompleteCut = true;
+        trim5 += feat_from - feat_to + 1;
         return;
     }
 
@@ -991,9 +1116,9 @@ void x_SeqIntervalDelete(CRef<CSeq_interval> interval,
         // Shift the feature by the cut_size
         feat_from -= cut_size;
         feat_to -= cut_size;
-        interval->SetFrom(feat_from);
-        interval->SetTo(feat_to);
-        bTrimmed = true;
+        interval.SetFrom(feat_from);
+        interval.SetTo(feat_to);
+        bAdjusted = true;
         return;
     }
 
@@ -1013,18 +1138,217 @@ void x_SeqIntervalDelete(CRef<CSeq_interval> interval,
     }
     else {
         // Right side cut
+        if (interval.IsSetStrand() && interval.GetStrand() == eNa_strand_minus) {
+            TSeqPos diff = cut_from - 1 - feat_to;
+            trim5 += diff;
+        }
         feat_to = cut_from - 1;
     }
 
     // Take care of the feat_from from the left side cut case
     if (feat_from >= cut_from) {
+        if (!interval.IsSetStrand() || interval.GetStrand() != eNa_strand_minus) {
+            TSeqPos diff = cut_to + 1 - feat_from;
+            trim5 += diff;
+        }
         feat_from = cut_to + 1;
         feat_from -= cut_size;
     }
 
-    interval->SetFrom(feat_from);
-    interval->SetTo(feat_to);
-    bTrimmed = true;
+    interval.SetFrom(feat_from);
+    interval.SetTo(feat_to);
+    bAdjusted = true;
+}
+
+
+void SeqLocAdjustForTrim(CPacked_seqint& packint, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid,
+                bool& bCompleteCut,
+                TSeqPos& trim5,
+                bool& bAdjusted)
+{
+    if (packint.IsSet()) {
+        bool from5 = true;
+        // Process each interval in the list
+        CPacked_seqint::Tdata::iterator it;
+        for (it = packint.Set().begin(); 
+                it != packint.Set().end(); ) 
+        {
+            bool bDeleted = false;
+            TSeqPos this_trim = 0;
+            SeqLocAdjustForTrim(**it, from, to, seqid, 
+                                bDeleted, this_trim, bAdjusted);
+
+            if (from5) {
+                trim5 += this_trim;
+            }
+            // Should interval be deleted from list?
+            if (bDeleted) {
+                it = packint.Set().erase(it);
+            }
+            else {
+                from5 = false;
+                ++it;
+            }
+        }
+        if (packint.Get().empty()) {
+            packint.Reset();
+        }
+    }    
+    if (!packint.IsSet()) {
+        bCompleteCut = true;
+    }
+}
+
+
+void SeqLocAdjustForTrim(CSeq_loc_mix& mix, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid,
+                bool& bCompleteCut,
+                TSeqPos& trim5,
+                bool& bAdjusted)
+{
+    if (mix.IsSet()) {
+        bool from5 = true;
+        // Process each seqloc in the list
+        CSeq_loc_mix::Tdata::iterator it;
+        for (it = mix.Set().begin(); 
+                it != mix.Set().end(); ) 
+        {
+            bool bDeleted = false;
+            TSeqPos this_trim = 0;
+            SeqLocAdjustForTrim(**it, from, to, seqid, bDeleted, this_trim, bAdjusted);
+
+            if (from5) {
+                trim5 += this_trim;
+            }
+            // Should seqloc be deleted from list?
+            if (bDeleted) {
+                it = mix.Set().erase(it);
+            }
+            else {
+                from5 = false;
+                ++it;
+            }
+        }
+    }
+    if (!mix.IsSet() || mix.Set().empty()) {
+        bCompleteCut = true;
+    }
+}
+
+
+void SeqLocAdjustForTrim(CSeq_point& pnt, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid,
+                bool& bCompleteCut,
+                TSeqPos& trim5,
+                bool& bAdjusted)
+{
+    if (!OkToAdjustLoc(pnt, seqid)) {
+        return;
+    }
+
+    if (to < pnt.GetPoint()) {
+        size_t diff = to - from + 1;
+        pnt.SetPoint(pnt.GetPoint() - diff);
+        bAdjusted = true;
+    } else if (from < pnt.GetPoint()) {
+        bCompleteCut = true;
+        trim5 += 1;
+    }
+}
+
+
+void SeqLocAdjustForTrim(CPacked_seqpnt& pack, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid,
+                bool& bCompleteCut, TSeqPos& trim5, bool& bAdjusted)
+{
+    if (!OkToAdjustLoc(pack, seqid)) {
+        return;
+    }
+
+    if (pack.IsSetPoints()) {
+        bool from5 = true;
+        CPacked_seqpnt::TPoints::iterator it = pack.SetPoints().begin();
+        while (it != pack.SetPoints().end()) {
+            if (to < *it) {
+                size_t diff = to - from + 1;
+                *it -= diff;
+                it++;
+                bAdjusted = true;
+                from5 = false;
+            } else if (from < *it) {
+                it = pack.SetPoints().erase(it);
+                bAdjusted = true;
+                if (from5) {
+                    trim5 += 1;
+                }
+            } else {
+                it++;
+                from5 = false;
+            }
+        }
+    }
+    if (pack.SetPoints().empty()) {
+        bCompleteCut = true;
+    }
+}
+
+
+void SeqLocAdjustForTrim(CSeq_bond& bond, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid,
+                bool& bCompleteCut,
+                TSeqPos& trim5,
+                bool& bAdjusted)
+{
+    bool cutA = false, cutB = false;
+    if (bond.IsSetA()) {
+        SeqLocAdjustForTrim(bond.SetA(), from, to, seqid, cutA, trim5, bAdjusted);
+    } else {
+        cutA = true;
+    }
+
+    if (bond.IsSetB()) {
+        SeqLocAdjustForTrim(bond.SetB(), from, to, seqid, cutB, trim5, bAdjusted);
+    } else {
+        cutB = true;
+    }
+    if (cutA && cutB) {
+        bCompleteCut = true;
+    }
+}
+
+
+void SeqLocAdjustForTrim(CSeq_loc_equiv& equiv, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid,                
+                bool& bCompleteCut,
+                TSeqPos& trim5,
+                bool& bAdjusted)
+{
+    TSeqPos max_trim5 = 0;
+    CSeq_loc_equiv::Tdata::iterator it = equiv.Set().begin();
+    while (it != equiv.Set().end()) {
+        bool cut = false;
+        TSeqPos this_trim5 = 0;
+        SeqLocAdjustForTrim(**it, from, to, seqid, cut, this_trim5, bAdjusted);
+        if (this_trim5 > max_trim5) {
+            max_trim5 = this_trim5;
+        }
+        if (cut) {
+            it = equiv.Set().erase(it);
+        } else {
+            it++;
+        }
+    }
+    if (equiv.Set().empty()) {
+        bCompleteCut = true;
+    }
+    trim5 = max_trim5;
 }
 
 
@@ -1032,7 +1356,7 @@ void SeqLocAdjustForTrim(CSeq_loc& loc,
                 TSeqPos from, TSeqPos to,
                 const CSeq_id* seqid,
                 bool& bCompleteCut,
-                bool& bTrimmed)
+                TSeqPos& trim5, bool& bAdjusted)
 {
     // Given a seqloc and a range, cut the seqloc
 
@@ -1040,122 +1364,62 @@ void SeqLocAdjustForTrim(CSeq_loc& loc,
     {
         // Single interval
         case CSeq_loc::e_Int:
-            {{
-                CRef<CSeq_interval> interval(new CSeq_interval);
-                interval->Assign(loc.GetInt());
-                x_SeqIntervalDelete(interval, from, to, seqid, 
-                                    bCompleteCut, bTrimmed);
-                loc.SetInt(*interval);
-            }}
+            SeqLocAdjustForTrim(loc.SetInt(), from, to, seqid, 
+                                bCompleteCut, trim5, bAdjusted);
             break;
 
         // Multiple intervals
         case CSeq_loc::e_Packed_int:
-            {{
-                CRef<CSeq_loc::TPacked_int> intervals(new CSeq_loc::TPacked_int);
-                intervals->Assign(loc.GetPacked_int());
-                if (intervals->CanGet()) {
-                    // Process each interval in the list
-                    CPacked_seqint::Tdata::iterator it;
-                    for (it = intervals->Set().begin(); 
-                         it != intervals->Set().end(); ) 
-                    {
-                        // Initial value: assume that all intervals 
-                        // will be deleted resulting in bCompleteCut = true.
-                        // Later on if any interval is not deleted, then set
-                        // bCompleteCut = false
-                        if (it == intervals->Set().begin()) {
-                            bCompleteCut = true;
-                        }
-
-                        bool bDeleted = false;
-                        x_SeqIntervalDelete(*it, from, to, seqid, 
-                                            bDeleted, bTrimmed);
-
-                        // Should interval be deleted from list?
-                        if (bDeleted) {
-                            it = intervals->Set().erase(it);
-                        }
-                        else {
-                            ++it;
-                            bCompleteCut = false;
-                        }
-                    }
-
-                    // Update the original list
-                    loc.SetPacked_int(*intervals);
-                }
-            }}
+            SeqLocAdjustForTrim(loc.SetPacked_int(), from, to, seqid, bCompleteCut, trim5, bAdjusted);
             break;
 
         // Multiple seqlocs
         case CSeq_loc::e_Mix:
-            {{
-                CRef<CSeq_loc_mix> mix(new CSeq_loc_mix);
-                mix->Assign(loc.GetMix());
-                if (mix->CanGet()) {
-                    // Process each seqloc in the list
-                    CSeq_loc_mix::Tdata::iterator it;
-                    for (it = mix->Set().begin(); 
-                         it != mix->Set().end(); ) 
-                    {
-                        // Initial value: assume that all seqlocs
-                        // will be deleted resulting in bCompleteCut = true.
-                        // Later on if any seqloc is not deleted, then set
-                        // bCompleteCut = false
-                        if (it == mix->Set().begin()) {
-                            bCompleteCut = true;
-                        }
-
-                        bool bDeleted = false;
-                        SeqLocAdjustForTrim(**it, from, to, seqid, bDeleted, bTrimmed);
-
-                        // Should seqloc be deleted from list?
-                        if (bDeleted) {
-                            it = mix->Set().erase(it);
-                        }
-                        else {
-                            ++it;
-                            bCompleteCut = false;
-                        }
-                    }
-
-                    // Update the original list
-                    loc.SetMix(*mix);
-                }
-            }}
+            SeqLocAdjustForTrim(loc.SetMix(), from, to, seqid, bCompleteCut, trim5, bAdjusted);
             break;
         case CSeq_loc::e_Pnt:
-            if (to < loc.GetPnt().GetPoint()) {
-                size_t diff = to - from + 1;
-                loc.SetPnt().SetPoint(loc.GetPnt().GetPoint() - diff);
-            } else if (from < loc.GetPnt().GetPoint()) {
-                bCompleteCut = true;
-            }
+            SeqLocAdjustForTrim(loc.SetPnt(), from, to , seqid, bCompleteCut, trim5, bAdjusted); 
             break;
-
-        // Other choices not supported yet 
-        default:
-        {           
-        }
-        break;
+        case CSeq_loc::e_Packed_pnt:
+            SeqLocAdjustForTrim(loc.SetPacked_pnt(), from, to, seqid, bCompleteCut, trim5, bAdjusted);
+            break;
+        case CSeq_loc::e_Bond:
+            SeqLocAdjustForTrim(loc.SetBond(), from, to, seqid, bCompleteCut, trim5, bAdjusted);
+            break;
+        case CSeq_loc::e_Equiv:
+            SeqLocAdjustForTrim(loc.SetEquiv(), from, to, seqid, bCompleteCut, trim5, bAdjusted);
+            break;
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Null:
+        case CSeq_loc::e_not_set:
+        case CSeq_loc::e_Whole:
+        case CSeq_loc::e_Feat:
+            // no adjustment needeed
+            break;
+    }
+    if (!bCompleteCut) {
+        NormalizeLoc(loc);
     }
 }
 
 
-void x_SeqIntervalInsert(CRef<CSeq_interval> interval, 
+void SeqLocAdjustForInsert(CSeq_interval& interval, 
                          TSeqPos insert_from, TSeqPos insert_to,
                          const CSeq_id* seqid)
 {
+    if (!OkToAdjustLoc(interval, seqid)) {
+        return;
+    }
+
     // These are required fields
-    if ( !(interval->CanGetFrom() && interval->CanGetTo()) )
+    if ( !(interval.CanGetFrom() && interval.CanGetTo()) )
     {
         return;
     }
 
     // Feature location
-    TSeqPos feat_from = interval->GetFrom();
-    TSeqPos feat_to = interval->GetTo();
+    TSeqPos feat_from = interval.GetFrom();
+    TSeqPos feat_to = interval.GetTo();
 
     // Size of the insert
     TSeqPos insert_size = insert_to - insert_from + 1;
@@ -1171,8 +1435,8 @@ void x_SeqIntervalInsert(CRef<CSeq_interval> interval,
     if (feat_from > insert_from) {
         feat_from += insert_size;
         feat_to += insert_size;
-        interval->SetFrom(feat_from);
-        interval->SetTo(feat_to);
+        interval.SetFrom(feat_from);
+        interval.SetTo(feat_to);
         return;
     }
 
@@ -1180,8 +1444,104 @@ void x_SeqIntervalInsert(CRef<CSeq_interval> interval,
     if (feat_from <= insert_from && feat_to >= insert_from)
     {
         feat_to += insert_size;
-        interval->SetTo(feat_to);
+        interval.SetTo(feat_to);
         return;
+    }
+}
+
+
+void SeqLocAdjustForInsert(CPacked_seqint& packint, 
+                         TSeqPos insert_from, TSeqPos insert_to,
+                         const CSeq_id* seqid)
+{
+    if (packint.IsSet()) {
+        // Process each interval in the list
+        CPacked_seqint::Tdata::iterator it;
+        for (it = packint.Set().begin(); 
+                it != packint.Set().end(); it++) 
+        {
+            SeqLocAdjustForInsert(**it, insert_from, insert_to, seqid);
+        }
+    }
+}
+
+
+void SeqLocAdjustForInsert(CSeq_loc_mix& mix, 
+                         TSeqPos insert_from, TSeqPos insert_to,
+                         const CSeq_id* seqid)
+{
+    if (mix.IsSet()) {
+        // Process each seqloc in the list
+        CSeq_loc_mix::Tdata::iterator it;
+        for (it = mix.Set().begin(); 
+                it != mix.Set().end(); it++) 
+        {
+            SeqLocAdjustForInsert(**it, insert_from, insert_to, seqid);
+        }
+    }
+}
+
+
+void SeqLocAdjustForInsert(CSeq_point& pnt, 
+                         TSeqPos insert_from, TSeqPos insert_to,
+                         const CSeq_id* seqid)
+{
+    if (!OkToAdjustLoc(pnt, seqid)) {
+        return;
+    }
+    if (!pnt.IsSetPoint()) {
+        return;
+    }
+
+    if (insert_from < pnt.GetPoint()) {
+        size_t diff = insert_to - insert_from + 1;
+        pnt.SetPoint(pnt.GetPoint() + diff);
+    }
+}
+
+
+void SeqLocAdjustForInsert(CPacked_seqpnt& packpnt, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid)
+{
+    if (!OkToAdjustLoc(packpnt, seqid)) {
+        return;
+    }
+
+    CPacked_seqpnt::TPoints::iterator it = packpnt.SetPoints().begin();
+    while (it != packpnt.SetPoints().end()) {
+        if (from < *it) {
+            size_t diff = to - from + 1;
+            *it += diff;
+        }
+        it++;
+    }
+}
+
+
+void SeqLocAdjustForInsert(CSeq_bond& bond, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid)
+{
+    if (bond.IsSetA()) {
+        SeqLocAdjustForInsert(bond.SetA(), from, to, seqid);
+    }
+
+    if (bond.IsSetB()) {
+        SeqLocAdjustForInsert(bond.SetB(), from, to, seqid);
+    }
+}
+
+
+void SeqLocAdjustForInsert(CSeq_loc_equiv& equiv, 
+                TSeqPos from, TSeqPos to,
+                const CSeq_id* seqid)
+{
+    CSeq_loc_equiv::Tdata::iterator it = equiv.Set().begin();
+    while (it != equiv.Set().end()) {
+        bool cut = false;
+        SeqLocAdjustForInsert(**it, from, to, seqid);
+        it++;
     }
 }
 
@@ -1196,30 +1556,196 @@ void SeqLocAdjustForInsert(CSeq_loc& loc,
     {
         // Single interval
         case CSeq_loc::e_Int:
+            SeqLocAdjustForInsert(loc.SetInt(), from, to, seqid);
+            break;
+
+        // Multiple intervals
+        case CSeq_loc::e_Packed_int:
+            SeqLocAdjustForInsert(loc.SetPacked_int(), from, to, seqid);
+            break;
+
+        // Multiple seqlocs
+        case CSeq_loc::e_Mix:
+            SeqLocAdjustForInsert(loc.SetMix(), from, to, seqid);
+            break;
+        case CSeq_loc::e_Pnt:
+            SeqLocAdjustForInsert(loc.SetPnt(), from, to, seqid);
+            break;
+
+        case CSeq_loc::e_Packed_pnt:
+            SeqLocAdjustForInsert(loc.SetPacked_pnt(), from, to, seqid);
+            break;
+        case CSeq_loc::e_Bond:
+            SeqLocAdjustForInsert(loc.SetBond(), from, to, seqid);
+            break;
+        case CSeq_loc::e_Equiv:
+            SeqLocAdjustForInsert(loc.SetEquiv(), from, to, seqid);
+            break;
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Null:
+        case CSeq_loc::e_not_set:
+        case CSeq_loc::e_Whole:
+        case CSeq_loc::e_Feat:
+            // no adjustment needeed
+            break;
+    }
+}
+
+
+CRef<CSeq_interval> SplitLocationForGap(CSeq_interval& before, 
+                                        size_t start, size_t stop,
+                                        const CSeq_id* seqid, bool& cut,
+                                        unsigned int options)
+{
+    cut = false;
+    if (!OkToAdjustLoc(before, seqid)) {
+        return CRef<CSeq_interval>(NULL);
+    }
+    // These are required fields
+    if ( !(before.CanGetFrom() && before.CanGetTo()) )
+    {
+        return CRef<CSeq_interval>(NULL);
+    }
+
+    // Feature location
+    TSeqPos feat_from = before.GetFrom();
+    TSeqPos feat_to = before.GetTo();
+
+    CRef<CSeq_interval> after(NULL);
+    if (feat_to < start) {
+        // gap completely after location
+        return after;
+    }
+
+    if (feat_from > start && !(options & eSplitLocOption_split_in_intron)) {
+        // if gap completely before location, but not splitting in introns,
+        // no change
+        return after;
+    }
+
+    if (feat_from < start && feat_to > stop) {
+        // gap entirely in inteval
+        if (!(options & eSplitLocOption_split_in_exon)) {
+            return after;
+        }
+    }
+
+    if (feat_to > stop) {
+        after.Reset(new CSeq_interval());
+        after->Assign(before);
+        if (stop + 1 > feat_from) {
+            after->SetFrom(stop + 1);
+            if (options & eSplitLocOption_make_partial) {
+                after->SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+            }
+        }
+    } 
+    if (feat_from < start) {
+        before.SetTo(start - 1);
+        if (options & eSplitLocOption_make_partial) {
+            before.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+        }
+    } else {
+        cut = true;
+    }
+    return after;
+}
+
+
+void SplitLocationForGap(CSeq_loc::TPacked_int& before_intervals,
+                         CSeq_loc::TPacked_int& after_intervals,
+                         size_t start, size_t stop, 
+                         const CSeq_id* seqid, unsigned int options)
+{
+    if (before_intervals.IsSet()) {
+        // Process each interval in the list
+        CPacked_seqint::Tdata::iterator it;
+        for (it = before_intervals.Set().begin(); 
+                it != before_intervals.Set().end(); ) 
+        {
+            bool cut = false;
+            CRef<CSeq_interval> after = SplitLocationForGap(**it, start, stop, seqid, cut, options);
+
+            // Should interval be deleted from list?
+            if (cut) {
+                it = before_intervals.Set().erase(it);
+            }
+            else {
+                ++it;
+            }
+            if (after) {
+                after_intervals.Set().push_back(after);
+                // from here on, always move intervals to the right to the other loc
+                options |= eSplitLocOption_split_in_intron;
+            }
+        }
+    }
+}
+
+
+void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2, 
+                         size_t start, size_t stop, 
+                         const CSeq_id* seqid, unsigned int options)
+{
+    // Given a seqloc and a range, place the portion of the location before the range
+    // into loc1 and the remainder of the location into loc2
+
+    switch(loc1.Which())
+    {
+        // Single interval
+        case CSeq_loc::e_Int:
             {{
-                CRef<CSeq_interval> interval(new CSeq_interval);
-                interval->Assign(loc.GetInt());
-                x_SeqIntervalInsert(interval, from, to, seqid);
-                loc.SetInt(*interval);
+                bool cut = false;
+                CRef<CSeq_interval> after = SplitLocationForGap(loc1.SetInt(), start, stop,
+                                                                seqid, cut, options);
+                if (cut) {
+                    loc1.Reset();
+                }
+                if (after) {
+                    if (loc2.Which() == CSeq_loc::e_not_set) {
+                        loc2.SetInt(*after);
+                    } else {
+                        CRef<CSeq_loc> add(new CSeq_loc());
+                        add->SetInt(*after);
+                        loc2.Add(*add);
+                    }
+                }
             }}
+            break;
+        // Single point
+        case CSeq_loc::e_Pnt:
+            if (OkToAdjustLoc(loc1.GetPnt(), seqid)) {
+                if (stop < loc1.GetPnt().GetPoint()) {
+                    if (loc2.Which() == CSeq_loc::e_not_set) {
+                        loc2.SetPnt().Assign(loc1.GetPnt());
+                    } else {
+                        loc2.Add(loc1);
+                    }
+                    loc1.Reset();
+                }
+            }
             break;
 
         // Multiple intervals
         case CSeq_loc::e_Packed_int:
             {{
-                CRef<CSeq_loc::TPacked_int> intervals(new CSeq_loc::TPacked_int);
-                intervals->Assign(loc.GetPacked_int());
-                if (intervals->CanGet()) {
-                    // Process each interval in the list
-                    CPacked_seqint::Tdata::iterator it;
-                    for (it = intervals->Set().begin(); 
-                         it != intervals->Set().end(); ) 
-                    {
-                        x_SeqIntervalInsert(*it, from, to, seqid);
-                    }
+                CSeq_loc::TPacked_int& before_intervals = loc1.SetPacked_int();
+                CRef<CSeq_loc::TPacked_int> after_intervals(new CSeq_loc::TPacked_int);
+                SplitLocationForGap(before_intervals, *after_intervals,
+                                    start, stop,
+                                    seqid, options);
 
-                    // Update the original list
-                    loc.SetPacked_int(*intervals);
+                if (before_intervals.Set().empty()) {
+                    loc1.Reset();
+                }
+                if (!after_intervals->Set().empty()) {
+                    if (loc2.Which() == CSeq_loc::e_not_set) {
+                        loc2.SetPacked_int().Assign(*after_intervals);
+                    } else {
+                        CRef<CSeq_loc> add(new CSeq_loc());
+                        add->SetPacked_int().Assign(*after_intervals);
+                        loc2.Add(*add);
+                    }
                 }
             }}
             break;
@@ -1227,35 +1753,129 @@ void SeqLocAdjustForInsert(CSeq_loc& loc,
         // Multiple seqlocs
         case CSeq_loc::e_Mix:
             {{
-                CRef<CSeq_loc_mix> mix(new CSeq_loc_mix);
-                mix->Assign(loc.GetMix());
-                if (mix->CanGet()) {
+                CSeq_loc_mix& before_mix = loc1.SetMix();
+                CRef<CSeq_loc_mix> after_mix(new CSeq_loc_mix);
+                 if (before_mix.IsSet()) {
                     // Process each seqloc in the list
                     CSeq_loc_mix::Tdata::iterator it;
-                    for (it = mix->Set().begin(); 
-                         it != mix->Set().end(); ) 
+                    for (it = before_mix.Set().begin(); 
+                         it != before_mix.Set().end(); ) 
                     {
-                        SeqLocAdjustForInsert(**it, from, to, seqid);
+                        CRef<CSeq_loc> after(new CSeq_loc());
+                        SplitLocationForGap(**it, *after, start, stop, seqid, options);
+                        // Should seqloc be deleted from list?
+                        if ((*it)->Which() == CSeq_loc::e_not_set) {
+                            it = before_mix.Set().erase(it);
+                        }
+                        else {
+                            ++it;
+                        }
+                        if (after->Which() != CSeq_loc::e_not_set) {
+                            after_mix->Set().push_back(after);
+                            // from here on, always move intervals to the right to the other loc
+                            options |= eSplitLocOption_split_in_intron;
+                        }
                     }
 
                     // Update the original list
-                    loc.SetMix(*mix);
+                    if (before_mix.Set().empty()) {
+                        loc1.Reset();
+                    }
+                    if (!after_mix->Set().empty()) {
+                        if (loc2.Which() == CSeq_loc::e_not_set) {
+                            loc2.SetMix().Assign(*after_mix);
+                        } else {
+                            CRef<CSeq_loc> add(new CSeq_loc());
+                            add->SetMix().Assign(*after_mix);
+                            loc2.Add(*add);
+                        }
+                    }
                 }
             }}
             break;
-        case CSeq_loc::e_Pnt:
-            if (to < loc.GetPnt().GetPoint()) {
-                size_t diff = to - from + 1;
-                loc.SetPnt().SetPoint(loc.GetPnt().GetPoint() + diff);
+        case CSeq_loc::e_Equiv:
+             {{
+                CSeq_loc_equiv& before_equiv = loc1.SetEquiv();
+                CRef<CSeq_loc_equiv> after_equiv(new CSeq_loc_equiv);
+                 if (before_equiv.IsSet()) {
+                    // Process each seqloc in the list
+                    CSeq_loc_equiv::Tdata::iterator it;
+                    for (it = before_equiv.Set().begin(); 
+                         it != before_equiv.Set().end(); ) 
+                    {
+                        CRef<CSeq_loc> after(new CSeq_loc());
+                        SplitLocationForGap(**it, *after, start, stop, seqid, options);
+                        // Should seqloc be deleted from list?
+                        if ((*it)->Which() == CSeq_loc::e_not_set) {
+                            it = before_equiv.Set().erase(it);
+                        }
+                        else {
+                            ++it;
+                        }
+                        if (after->Which() != CSeq_loc::e_not_set) {
+                            after_equiv->Set().push_back(after);
+                        }
+                    }
+
+                    // Update the original list
+                    if (before_equiv.Set().empty()) {
+                        loc1.Reset();
+                    }
+                    if (!after_equiv->Set().empty()) {
+                        if (loc2.Which() == CSeq_loc::e_not_set) {
+                            loc2.SetMix().Assign(*after_equiv);
+                        } else {
+                            CRef<CSeq_loc> add(new CSeq_loc());
+                            add->SetMix().Assign(*after_equiv);
+                            loc2.Add(*add);
+                        }
+                    }
+                }
+            }}
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            if (OkToAdjustLoc(loc1.GetPacked_pnt(), seqid)) {
+                CPacked_seqpnt::TPoints& before_points = loc1.SetPacked_pnt().SetPoints();
+                CPacked_seqpnt::TPoints after_points;
+                CPacked_seqpnt::TPoints::iterator it = loc1.SetPacked_pnt().SetPoints().begin();
+                while (it != loc1.SetPacked_pnt().SetPoints().end()) {
+                    if (stop < *it) {
+                        after_points.push_back(*it);
+                    }
+                    if (start >= *it) {
+                        it = before_points.erase(it);
+                    } else {
+                        it++;
+                    }
+                }
+                if (!after_points.empty()) {
+                    CRef<CPacked_seqpnt> after(new CPacked_seqpnt());
+                    after->Assign(loc1.GetPacked_pnt());
+                    after->SetPoints().assign(after_points.begin(), after_points.end());
+                    if (loc2.Which() == CSeq_loc::e_not_set) {
+                        loc2.SetPacked_pnt().Assign(*after);
+                    } else {
+                        CRef<CSeq_loc> add(new CSeq_loc());
+                        add->SetPacked_pnt().Assign(*after);
+                        loc2.Add(*add);
+                    }
+                }
+                if (before_points.empty()) {
+                    loc1.Reset();
+                }
             }
             break;
-
-        // Other choices not supported yet 
-        default:
-        {           
-        }
-        break;
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Null:
+        case CSeq_loc::e_not_set:
+        case CSeq_loc::e_Whole:
+        case CSeq_loc::e_Feat:
+        case CSeq_loc::e_Bond:
+            // no adjustment needeed
+            break;
     }
+    NormalizeLoc(loc1);
+    NormalizeLoc(loc2);
 }
 
 
@@ -1267,8 +1887,9 @@ void CdregionAdjustForTrim(CCdregion& cdr,
     while (it != cdr.SetCode_break().end()) {
         if ((*it)->IsSetLoc()) {
             bool cut = false;
-            bool trimmed = false;
-            SeqLocAdjustForTrim((*it)->SetLoc(), from, to, seqid, cut, trimmed);
+            bool adjusted = false;
+            TSeqPos trim5 = 0;
+            SeqLocAdjustForTrim((*it)->SetLoc(), from, to, seqid, cut, trim5, adjusted);
             if (cut) {
                 it = cdr.SetCode_break().erase(it);
             } else {
@@ -1291,7 +1912,8 @@ void TrnaAdjustForTrim(CTrna_ext& trna,
     if (trna.IsSetAnticodon()) {
         bool cut = false;
         bool trimmed = false;
-        SeqLocAdjustForTrim(trna.SetAnticodon(), from, to, seqid, cut, trimmed);
+        TSeqPos trim5 = 0;
+        SeqLocAdjustForTrim(trna.SetAnticodon(), from, to, seqid, cut, trim5, trimmed);
         if (cut) {
             trna.ResetAnticodon();
         } 
@@ -1305,7 +1927,8 @@ void FeatureAdjustForTrim(CSeq_feat& feat,
                             bool& bCompleteCut,
                             bool& bTrimmed)
 {
-    SeqLocAdjustForTrim (feat.SetLocation(), from, to, seqid, bCompleteCut, bTrimmed);
+    TSeqPos trim5 = 0;
+    SeqLocAdjustForTrim (feat.SetLocation(), from, to, seqid, bCompleteCut, trim5, bTrimmed);
     if (bCompleteCut) {
         return;
     }

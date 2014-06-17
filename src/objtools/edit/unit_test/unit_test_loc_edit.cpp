@@ -511,6 +511,672 @@ BOOST_AUTO_TEST_CASE(Test_ReverseComplementFeature)
 }
 
 
+void s_CheckInterval(const CSeq_interval& interval, TSeqPos from, TSeqPos to)
+{
+    BOOST_CHECK_EQUAL(interval.GetFrom(), from);
+    BOOST_CHECK_EQUAL(interval.GetTo(), to);
+}
+
+
+void s_MakePackedInt(CSeq_loc& loc, const CSeq_id& id, vector<TSeqPos> from, vector<TSeqPos> to)
+{
+    vector<TSeqPos>::iterator from_it = from.begin();
+    vector<TSeqPos>::iterator to_it = to.begin();
+
+    loc.SetPacked_int().Set().clear();
+
+    while (from_it != from.end()) {
+        CRef<CSeq_interval> interval(new CSeq_interval());
+        interval->SetId().Assign(id);
+        interval->SetFrom(*from_it);
+        interval->SetTo(*to_it);
+        loc.SetPacked_int().Set().push_back(interval);
+        ++from_it;
+        ++to_it;
+    }
+}
+
+
+void s_CheckPackedInt(const CPacked_seqint& pack, vector<TSeqPos> from, vector<TSeqPos> to)
+{
+    BOOST_CHECK_EQUAL(pack.Get().size(), from.size());
+    BOOST_CHECK_EQUAL(pack.Get().size(), to.size());
+    CPacked_seqint::Tdata::const_iterator lit = pack.Get().begin();
+    vector<TSeqPos>::iterator from_it = from.begin();
+    vector<TSeqPos>::iterator to_it = to.begin();
+    while (lit != pack.Get().end()) {
+        s_CheckInterval(**lit, *from_it, *to_it);
+        ++lit;
+        ++from_it;
+        ++to_it;
+    }
+
+}
+
+
+void s_MakeMixLoc(CSeq_loc& loc, const CSeq_id& id, vector<TSeqPos> from, vector<TSeqPos> to)
+{
+    vector<TSeqPos>::iterator from_it = from.begin();
+    vector<TSeqPos>::iterator to_it = to.begin();
+
+    loc.SetMix().Set().clear();
+
+    while (from_it != from.end()) {
+        CRef<CSeq_loc> sub(new CSeq_loc());
+        if (*from_it == *to_it) {
+            sub->SetPnt().SetId().Assign(id);
+            sub->SetPnt().SetPoint(*from_it);
+        } else {
+            sub->SetInt().SetId().Assign(id);
+            sub->SetInt().SetFrom(*from_it);
+            sub->SetInt().SetTo(*to_it);
+        }
+        loc.SetMix().Set().push_back(sub);
+        ++from_it;
+        ++to_it;
+    }
+}
+
+
+void s_CheckMixLoc(const CSeq_loc& mix, vector<TSeqPos> from, vector<TSeqPos> to)
+{
+    CSeq_loc_CI loc_i(mix);
+    vector<TSeqPos>::iterator from_it = from.begin();
+    vector<TSeqPos>::iterator to_it = to.begin();
+    while (loc_i) {
+        BOOST_CHECK_EQUAL(loc_i.GetRange().GetFrom(), *from_it);
+        BOOST_CHECK_EQUAL(loc_i.GetRange().GetTo(), *to_it);
+        ++loc_i;
+        ++from_it;
+        ++to_it;
+    }
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_AdjustForTrim)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr("nuc1");
+
+    // Test for Seq-interval
+    loc->SetInt().SetId().Assign(*id);
+    loc->SetInt().SetFrom(10);
+    loc->SetInt().SetTo(50);
+
+    bool cut = false;
+    TSeqPos trim5 = 0;
+    bool adjusted = false;
+
+    // cut to the right, should have no change
+    edit::SeqLocAdjustForTrim(*loc, 75, 100, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, false);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckInterval(loc->GetInt(), 10, 50);
+
+    // cut to the left, should shift left
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 0, 4, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckInterval(loc->GetInt(), 5, 45);
+
+    // cut in the middle, shift right but not left
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 10, 19, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckInterval(loc->GetInt(), 5, 35);
+
+    // cut on left end
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 0, 9, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 5);
+    s_CheckInterval(loc->GetInt(), 0, 25);
+
+    // cut on right end
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 20, 25, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckInterval(loc->GetInt(), 0, 19);
+
+    // cut entire feature
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 0, 25, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, true);
+
+    // Test for point
+    loc->SetPnt().SetId().Assign(*id);
+    loc->SetPnt().SetPoint(10);
+
+    // cut to right, no change
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 20, 30, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, false);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    BOOST_CHECK_EQUAL(loc->GetPnt().GetPoint(), 10);
+
+    // cut to left, shift
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 0, 4, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    BOOST_CHECK_EQUAL(loc->GetPnt().GetPoint(), 5);
+
+    // cut point
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 0, 10, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, true);
+    BOOST_CHECK_EQUAL(trim5, 1);
+
+    // Test for Packed-int
+    vector<TSeqPos> from;
+    vector<TSeqPos> to;
+    from.push_back(10);
+    from.push_back(50);
+    from.push_back(90);
+    to.push_back(30);
+    to.push_back(70);
+    to.push_back(110);
+
+    s_MakePackedInt(*loc, *id, from, to);
+
+    // cut to the right, no change
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 120, 130, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, false);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // cut portion of right end
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 106, 120, id.GetPointer(), cut, trim5, adjusted); 
+    to[2] = 105;
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // cut left portion of last interval
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 85, 94, id.GetPointer(), cut, trim5, adjusted); 
+    from[2] = 85;
+    to[2] = 95;
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // cut between intervals
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 72, 76, id.GetPointer(), cut, trim5, adjusted); 
+    from[2] = 80;
+    to[2] = 90;
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // cut entire middle interval
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 50, 70, id.GetPointer(), cut, trim5, adjusted);
+    from.pop_back();
+    to.pop_back();
+    from[1] = 59;
+    to[1] = 69;
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+    
+    // cut left portion of first interval
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 5, 14, id.GetPointer(), cut, trim5, adjusted);
+    from.clear();
+    to.clear();
+    from.push_back(5);
+    from.push_back(49);
+    to.push_back(20);
+    to.push_back(59);
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 5);
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // cut entire location
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 5, 59, id.GetPointer(), cut, trim5, adjusted);
+    BOOST_CHECK_EQUAL(cut, true);
+
+    // Test for Seq-loc-mix
+    from.clear();
+    to.clear();
+    from.push_back(10);
+    from.push_back(50);
+    from.push_back(90);
+    to.push_back(30);
+    to.push_back(70);
+    to.push_back(110);
+
+    s_MakeMixLoc(*loc, *id, from, to);
+
+    // cut to the right, no change
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 120, 130, id.GetPointer(), cut, trim5, adjusted); 
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, false);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckMixLoc(*loc, from, to);
+
+    // cut portion of right end
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 106, 120, id.GetPointer(), cut, trim5, adjusted); 
+    to[2] = 105;
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckMixLoc(*loc, from, to);
+
+    // cut left portion of last interval
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 85, 94, id.GetPointer(), cut, trim5, adjusted); 
+    from[2] = 85;
+    to[2] = 95;
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckMixLoc(*loc, from, to);
+
+    // cut between intervals
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 72, 76, id.GetPointer(), cut, trim5, adjusted); 
+    from[2] = 80;
+    to[2] = 90;
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckMixLoc(*loc, from, to);
+
+    // cut entire middle interval
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 50, 70, id.GetPointer(), cut, trim5, adjusted);
+    from.pop_back();
+    to.pop_back();
+    from[1] = 59;
+    to[1] = 69;
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 0);
+    s_CheckMixLoc(*loc, from, to);
+    
+    // cut left portion of first interval
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 5, 14, id.GetPointer(), cut, trim5, adjusted);
+    from.clear();
+    to.clear();
+    from.push_back(5);
+    from.push_back(49);
+    to.push_back(20);
+    to.push_back(59);
+    BOOST_CHECK_EQUAL(cut, false);
+    BOOST_CHECK_EQUAL(adjusted, true);
+    BOOST_CHECK_EQUAL(trim5, 5);
+    s_CheckMixLoc(*loc, from, to);
+
+    // cut entire location
+    cut = false;
+    trim5 = 0;
+    adjusted = false;
+    edit::SeqLocAdjustForTrim(*loc, 5, 59, id.GetPointer(), cut, trim5, adjusted);
+    BOOST_CHECK_EQUAL(cut, true);
+    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_AdjustForInsert)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr("nuc1");
+
+    // Test for Seq-interval
+    loc->SetInt().SetId().Assign(*id);
+    loc->SetInt().SetFrom(10);
+    loc->SetInt().SetTo(50);
+
+    // insert to right, no change
+    edit::SeqLocAdjustForInsert(*loc, 75, 100, id.GetPointer()); 
+    s_CheckInterval(loc->GetInt(), 10, 50);
+
+    // insert in middle, move right end
+    edit::SeqLocAdjustForInsert(*loc, 20, 29, id.GetPointer()); 
+    s_CheckInterval(loc->GetInt(), 10, 60);
+
+    // insert to left, shift both endpoints
+    edit::SeqLocAdjustForInsert(*loc, 5, 9, id.GetPointer()); 
+    s_CheckInterval(loc->GetInt(), 15, 65);
+
+    // Test for point
+    loc->SetPnt().SetId().Assign(*id);
+    loc->SetPnt().SetPoint(10);
+
+    // insert to right, no change
+    edit::SeqLocAdjustForInsert(*loc, 75, 100, id.GetPointer()); 
+    BOOST_CHECK_EQUAL(loc->GetPnt().GetPoint(), 10);
+   
+    // insert to left, shift
+    edit::SeqLocAdjustForInsert(*loc, 5, 7, id.GetPointer()); 
+    BOOST_CHECK_EQUAL(loc->GetPnt().GetPoint(), 13);
+
+
+    // Test for Packed-int
+    vector<TSeqPos> from;
+    vector<TSeqPos> to;
+    from.push_back(10);
+    from.push_back(50);
+    from.push_back(90);
+    to.push_back(30);
+    to.push_back(70);
+    to.push_back(110);
+    s_MakePackedInt(*loc, *id, from, to);
+
+    // insert to right, no change
+    edit::SeqLocAdjustForInsert(*loc, 120, 130, id.GetPointer()); 
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // insert to left, shift all
+    edit::SeqLocAdjustForInsert(*loc, 1, 5, id.GetPointer()); 
+    for (vector<TSeqPos>::iterator it = from.begin(); it != from.end(); ++it) {
+        (*it) += 5;
+    }
+    for (vector<TSeqPos>::iterator it = to.begin(); it != to.end(); ++it) {
+        (*it) += 5;
+    }
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // insert between last two intervals
+    edit::SeqLocAdjustForInsert(*loc, 80, 84, id.GetPointer());
+    from.back() += 5;
+    to.back() += 5;
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // insert inside first interval
+    edit::SeqLocAdjustForInsert(*loc, 20, 24, id.GetPointer());
+    vector<TSeqPos>::iterator fit = from.begin();
+    fit++;
+    while (fit != from.end()) {
+        (*fit) += 5;
+        fit++;
+    }
+    for (vector<TSeqPos>::iterator it = to.begin(); it != to.end(); ++it) {
+        (*it) += 5;
+    }
+    s_CheckPackedInt(loc->GetPacked_int(), from, to);
+
+    // Test for Seq-loc-mix
+    from.clear();
+    to.clear();
+    from.push_back(10);
+    from.push_back(50);
+    from.push_back(90);
+    to.push_back(30);
+    to.push_back(70);
+    to.push_back(110);
+    s_MakeMixLoc(*loc, *id, from, to);
+
+    // insert to right, no change
+    edit::SeqLocAdjustForInsert(*loc, 120, 130, id.GetPointer()); 
+    s_CheckMixLoc(*loc, from, to);
+
+    // insert to left, shift all
+    edit::SeqLocAdjustForInsert(*loc, 1, 5, id.GetPointer()); 
+    for (vector<TSeqPos>::iterator it = from.begin(); it != from.end(); ++it) {
+        (*it) += 5;
+    }
+    for (vector<TSeqPos>::iterator it = to.begin(); it != to.end(); ++it) {
+        (*it) += 5;
+    }
+    s_CheckMixLoc(*loc, from, to);
+
+    // insert between last two intervals
+    edit::SeqLocAdjustForInsert(*loc, 80, 84, id.GetPointer());
+    from.back() += 5;
+    to.back() += 5;
+    s_CheckMixLoc(*loc, from, to);
+
+    // insert inside first interval
+    edit::SeqLocAdjustForInsert(*loc, 20, 24, id.GetPointer());
+    fit = from.begin();
+    fit++;
+    while (fit != from.end()) {
+        (*fit) += 5;
+        fit++;
+    }
+    for (vector<TSeqPos>::iterator it = to.begin(); it != to.end(); ++it) {
+        (*it) += 5;
+    }
+    s_CheckMixLoc(*loc, from, to);
+
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap)
+{
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr("nuc1");
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+
+    unsigned int options = edit::eSplitLocOption_make_partial
+                         | edit::eSplitLocOption_split_in_exon
+                         | edit::eSplitLocOption_split_in_intron;
+
+    // Test for Seq-interval
+    loc1->SetInt().SetId().Assign(*id);
+    loc1->SetInt().SetFrom(10);
+    loc1->SetInt().SetTo(50);
+
+    // gap to right, no change   
+    edit::SplitLocationForGap(*loc1, *loc2, 75, 100, id.GetPointer(), options); 
+    s_CheckInterval(loc1->GetInt(), 10, 50);
+    BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_not_set);
+
+    // gap in middle
+    edit::SplitLocationForGap(*loc1, *loc2, 20, 29, id.GetPointer(), options); 
+    s_CheckInterval(loc1->GetInt(), 10, 19);
+    s_CheckInterval(loc2->GetInt(), 30, 50);
+
+    // gap to right, move to loc2
+    loc1->SetInt().SetId().Assign(*id);
+    loc1->SetInt().SetFrom(10);
+    loc1->SetInt().SetTo(50);
+    loc2->Reset();
+    edit::SplitLocationForGap(*loc1, *loc2, 5, 9, id.GetPointer(), options); 
+    BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_not_set);
+    s_CheckInterval(loc2->GetInt(), 10, 50);
+
+    // Test for point
+    loc1->SetPnt().SetId().Assign(*id);
+    loc1->SetPnt().SetPoint(10);
+    loc2->Reset();
+
+    // gap to right, no change
+    edit::SplitLocationForGap(*loc1, *loc2, 75, 100, id.GetPointer(), options); 
+    BOOST_CHECK_EQUAL(loc1->GetPnt().GetPoint(), 10);
+    BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_not_set);
+   
+    // gap to left, move to loc2
+    edit::SplitLocationForGap(*loc1, *loc2, 5, 7, id.GetPointer(), options);
+    BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_not_set);
+    BOOST_CHECK_EQUAL(loc2->GetPnt().GetPoint(), 10);
+
+    // Test for Packed-int
+    vector<TSeqPos> from;
+    vector<TSeqPos> to;
+    from.push_back(10);
+    from.push_back(50);
+    from.push_back(90);
+    to.push_back(30);
+    to.push_back(70);
+    to.push_back(110);
+    s_MakePackedInt(*loc1, *id, from, to);
+    loc2->Reset();
+
+    // gap to right, no change
+    edit::SplitLocationForGap(*loc1, *loc2, 120, 130, id.GetPointer(), options); 
+    s_CheckPackedInt(loc1->GetPacked_int(), from, to);
+    BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_not_set);
+
+    // gap to left, move to loc2
+    edit::SplitLocationForGap(*loc1, *loc2, 1, 5, id.GetPointer(), options); 
+    BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_not_set);
+    s_CheckPackedInt(loc2->GetPacked_int(), from, to);
+
+    // gap between last two intervals
+    s_MakePackedInt(*loc1, *id, from, to);
+    loc2->Reset();
+    edit::SplitLocationForGap(*loc1, *loc2, 80, 84, id.GetPointer(), options);
+
+    TSeqPos after_from;
+    TSeqPos after_to;
+    after_from = from.back();
+    after_to = to.back();
+    from.pop_back();
+    to.pop_back();
+
+    s_CheckPackedInt(loc1->GetPacked_int(), from, to);
+    s_CheckInterval(loc2->GetInt(), after_from, after_to);
+
+    // gap inside first interval
+    from.clear();
+    to.clear();
+    from.push_back(10);
+    from.push_back(50);
+    from.push_back(90);
+    to.push_back(30);
+    to.push_back(70);
+    to.push_back(110);
+    s_MakePackedInt(*loc1, *id, from, to);
+    loc2->Reset();
+
+    edit::SplitLocationForGap(*loc1, *loc2, 20, 24, id.GetPointer(), options);
+    TSeqPos before_from = from[0];
+    TSeqPos before_to = 19;
+    from[0] = 25;
+    s_CheckInterval(loc1->GetInt(), before_from, before_to);
+    s_CheckPackedInt(loc2->GetPacked_int(), from, to);
+
+    // Test for Seq-loc-mix
+    from.clear();
+    to.clear();
+    from.push_back(10);
+    from.push_back(50);
+    from.push_back(90);
+    to.push_back(30);
+    to.push_back(70);
+    to.push_back(110);
+    s_MakeMixLoc(*loc1, *id, from, to);
+    loc2->Reset();
+
+    // gap to right, no change
+    edit::SplitLocationForGap(*loc1, *loc2, 120, 130, id.GetPointer(), options); 
+    s_CheckMixLoc(*loc1, from, to);
+    BOOST_CHECK_EQUAL(loc2->Which(), CSeq_loc::e_not_set);
+
+    // gap to left, move to loc2
+    edit::SplitLocationForGap(*loc1, *loc2, 1, 5, id.GetPointer(), options); 
+    BOOST_CHECK_EQUAL(loc1->Which(), CSeq_loc::e_not_set);
+    s_CheckMixLoc(*loc2, from, to);
+
+    // gap between last two intervals
+    s_MakeMixLoc(*loc1, *id, from, to);
+    loc2->Reset();
+    edit::SplitLocationForGap(*loc1, *loc2, 80, 84, id.GetPointer(), options);
+
+    after_from = from.back();
+    after_to = to.back();
+    from.pop_back();
+    to.pop_back();
+
+    s_CheckMixLoc(*loc1, from, to);
+    s_CheckInterval(loc2->GetInt(), after_from, after_to);
+
+    // gap inside first interval
+    from.clear();
+    to.clear();
+    from.push_back(10);
+    from.push_back(50);
+    from.push_back(90);
+    to.push_back(30);
+    to.push_back(70);
+    to.push_back(110);
+    s_MakeMixLoc(*loc1, *id, from, to);
+    loc2->Reset();
+
+    edit::SplitLocationForGap(*loc1, *loc2, 20, 24, id.GetPointer(), options);
+    before_from = from[0];
+    before_to = 19;
+    from[0] = 25;
+    s_CheckInterval(loc1->GetInt(), before_from, before_to);
+    s_CheckMixLoc(*loc2, from, to);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

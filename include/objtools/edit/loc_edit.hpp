@@ -126,7 +126,8 @@ NCBI_XOBJEDIT_EXPORT void SeqLocAdjustForTrim(CSeq_loc& loc,
                                                 TSeqPos from, TSeqPos to,
                                                 const CSeq_id* seqid,
                                                 bool& bCompleteCut,
-                                                bool& bTrimmed);
+                                                TSeqPos& trim5,
+                                                bool& bAdjusted);
 
 NCBI_XOBJEDIT_EXPORT void SeqLocAdjustForInsert(CSeq_loc& loc, 
                                                 TSeqPos from, TSeqPos to,
@@ -136,11 +137,24 @@ NCBI_XOBJEDIT_EXPORT void FeatureAdjustForTrim(CSeq_feat& feat,
                                                 TSeqPos from, TSeqPos to,
                                                 const CSeq_id* seqid,
                                                 bool& bCompleteCut,
-                                                bool& bTrimmed);
+                                                bool& bAdjusted);
 
 NCBI_XOBJEDIT_EXPORT void FeatureAdjustForInsert(CSeq_feat& feat, 
                                                  TSeqPos from, TSeqPos to,
                                                  const CSeq_id* seqid);
+
+
+typedef enum {
+  eSplitLocOption_make_partial = 0x01,
+  eSplitLocOption_split_in_exon = 0x02,
+  eSplitLocOption_split_in_intron = 0x04
+} ESplitLocOptions;
+
+NCBI_XOBJEDIT_EXPORT 
+    void SplitLocationForGap(CSeq_loc& loc1, CSeq_loc& loc2,
+                             size_t start, size_t stop, 
+                             const CSeq_id* seqid,
+                             unsigned int options = eSplitLocOption_make_partial | eSplitLocOption_split_in_exon);
 
 END_SCOPE(edit)
 END_SCOPE(objects)
