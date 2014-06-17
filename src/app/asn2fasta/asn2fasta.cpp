@@ -88,6 +88,7 @@ private:
     auto_ptr<CFastaOstream>     m_Og;           // genomic output stream
     auto_ptr<CFastaOstream>     m_Or;           // RNA output stream
     auto_ptr<CFastaOstream>     m_Op;           // protein output stream
+    auto_ptr<CFastaOstream>     m_Ou;           // unknown output stream
     CNcbiOstream*               m_Oq;           // quality score output stream
 
     bool m_DeflineOnly;
@@ -182,6 +183,10 @@ void CAsn2FastaApp::Init(void)
             "Protein output file name", CArgDescriptions::eOutputFile);
         arg_desc->SetDependency("op", CArgDescriptions::eExcludes, "o");
 
+        arg_desc->AddOptionalKey("ou", "UnknownOutputFile",
+            "Unknown output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("ou", CArgDescriptions::eExcludes, "o");
+
         /*
         arg_desc->AddOptionalKey("oq", "QualityScoreOutputFile",
             "Quality score output file name", CArgDescriptions::eOutputFile);
@@ -259,6 +264,7 @@ int CAsn2FastaApp::Run(void)
     m_Og.reset( OpenFastaOstream ("og") );
     m_Or.reset( OpenFastaOstream ("or") );
     m_Op.reset( OpenFastaOstream ("op") );
+    m_Ou.reset( OpenFastaOstream ("ou") );
     m_Oq = NULL;
     // m_Oq = args["oq"] ? &(args["oq"].AsOutputFile()) : 0;
 
@@ -266,7 +272,8 @@ int CAsn2FastaApp::Run(void)
     m_OnlyProts = args["prots-only"];
 
     if (m_Os.get() == NULL  &&  m_On.get() == NULL  &&  m_Og.get() == NULL  &&
-        m_Or.get() == NULL  &&  m_Op.get() == NULL  &&  m_Oq == NULL) {
+        m_Or.get() == NULL  &&  m_Op.get() == NULL  &&  m_Ou.get() == NULL  &&
+        m_Oq == NULL) {
         NCBI_THROW(CArgException, eSynopsis, "No output (-o*) argument given");
     }
 
@@ -512,27 +519,35 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
             }
         }
 
-        if (m_Os.get() != NULL) {
+        if ( m_Os.get() != NULL ) {
             if ( m_OnlyNucs && ! bsh.IsNa() ) continue;
             if ( m_OnlyProts && ! bsh.IsAa() ) continue;
             fasta_os = m_Os.get();
-        } else if (bsh.IsNa()) {
-            if (m_On.get() != NULL) {
+        } else if ( bsh.IsNa() ) {
+            if ( m_On.get() != NULL ) {
                 fasta_os = m_On.get();
-            } else if (is_genomic && m_Og.get() != NULL) {
+            } else if ( is_genomic && m_Og.get() != NULL ) {
                 fasta_os = m_Og.get();
-            } else if (is_RNA && m_Or.get() != NULL) {
+            } else if ( is_RNA && m_Or.get() != NULL ) {
                 fasta_os = m_Or.get();
             } else {
                 continue;
             }
-        } else if (bsh.IsAa() && m_Op.get() != NULL) {
-            fasta_os = m_Op.get();
+        } else if ( bsh.IsAa() ) {
+            if ( m_Op.get() != NULL ) {
+                fasta_os = m_Op.get();
+            }
         } else {
-            continue;
+            if ( m_Ou.get() != NULL ) {
+                fasta_os = m_Ou.get();
+            } else if ( m_On.get() != NULL ) {
+                fasta_os = m_On.get();
+            } else {
+                continue;
+            }
         }
 
-        if (m_DeflineOnly) {
+        if ( m_DeflineOnly ) {
             fasta_os->WriteTitle(bsh);
         } else {
             fasta_os->Write(bsh);
