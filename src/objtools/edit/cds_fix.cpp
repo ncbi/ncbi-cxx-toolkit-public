@@ -988,6 +988,22 @@ bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope)
 }
 
 
+void AdjustCDSFrameForStartChange(CCdregion& cds, int change)
+{
+    TSeqPos old_frame = CCdregion::eFrame_one;
+    if (cds.IsSetFrame() && cds.GetFrame() != CCdregion::eFrame_not_set) {
+        old_frame = cds.GetFrame();
+    }
+
+    TSignedSeqPos new_frame = old_frame - (change % 3);
+    if (new_frame < 1)
+    {
+        new_frame += 3;
+    }
+    cds.SetFrame((CCdregion::EFrame)new_frame);
+}
+
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

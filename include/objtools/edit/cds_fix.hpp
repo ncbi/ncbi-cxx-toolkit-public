@@ -57,6 +57,8 @@ NCBI_XOBJEDIT_EXPORT CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope
 NCBI_XOBJEDIT_EXPORT CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh);
 NCBI_XOBJEDIT_EXPORT bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope);
+NCBI_XOBJEDIT_EXPORT void AdjustCDSFrameForStartChange(CCdregion& cds, int change);
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)
