@@ -629,7 +629,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RBGE_herbarium, "http://data.rbge.org.uk/herb/" },
     { CDbtag::eDbtagType_REBASE, "http://rebase.neb.com/rebase/enz/" },
     { CDbtag::eDbtagType_RFAM, "http://www.sanger.ac.uk/cgi-bin/Rfam/getacc?" },
-    { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/rgdweb/search/search.html?term=RGD:" },
+    { CDbtag::eDbtagType_RGD, "http://rgd.mcw.edu/rgdweb/search/search.html?id=RGD:" },
     { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" },
     { CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id=" },
     { CDbtag::eDbtagType_SGD, "http://www.yeastgenome.org/cgi-bin/locus.fpl?sgdid=" },
