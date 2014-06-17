@@ -274,6 +274,10 @@ seq_mac_is_unique (Base##_Set(Var).begin(), \
     } \
 }
 
+// careful of side effects
+#define BEGIN_COMMA_END(container) \
+    (container).begin(), (container).end()
+
 
 // "FOR_EACH_XXX_ON_YYY" does a linear const traversal of STL containers
 // "EDIT_EACH_XXX_ON_YYY" does a linear non-const traversal of STL containers
