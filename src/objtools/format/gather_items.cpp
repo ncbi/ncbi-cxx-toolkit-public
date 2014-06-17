@@ -776,9 +776,11 @@ void CFlatGatherer::x_GatherComments(void) const
     x_RefSeqComments(ctx,
         ( firstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
 
+    /*
     if ( s_NsAreGaps(ctx.GetHandle(), ctx) ) {
         x_AddComment(new CCommentItem(CCommentItem::GetNsAreGapsStr(), ctx));
     }
+    */
 
     x_HistoryComments(ctx);
     x_RefSeqGenomeComments(ctx);
