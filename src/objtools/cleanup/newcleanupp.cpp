@@ -2224,6 +2224,7 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
         ChangeMade(CCleanupChange::eChangePublication);
     }
 
+    /*
     last_article_pubmed_id = 0;
     int article_pubmed_id = 0;
     EDIT_EACH_ARTICLEID_ON_CITART( id_iter, *last_article ) {
@@ -2236,6 +2237,7 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
             last_article_pubmed_id = article_pubmed_id;
         }
     }
+    */
 }
 
 CNewCleanup_imp::EAction CNewCleanup_imp::PubBC(CPub& pub, bool fix_initials)
