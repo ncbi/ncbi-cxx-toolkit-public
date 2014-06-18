@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 #endif /*HAVE_LIBGNUTLS*/
     CONNECTOR     connector;
     SConnNetInfo* net_info;
-    char          blk[512];
+    char          blk[250];
     EIO_Status    status;
     THTTP_Flags   flags;
     NCBI_CRED     cred;
@@ -194,9 +194,8 @@ int main(int argc, char* argv[])
     while (fp  &&  !feof(fp)) {
         n = fread(blk, 1, sizeof(blk), fp);
         status = CONN_Write(conn, blk, n, &n, eIO_WritePersist);
-        if (status != eIO_Success) {
+        if (status != eIO_Success)
             CORE_LOGF(eLOG_Fatal, ("Write error: %s", IO_StatusStr(status)));
-        }
     }
     if (fp)
         fclose(fp);
