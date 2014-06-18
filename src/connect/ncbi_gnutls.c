@@ -174,28 +174,6 @@ static void x_GnuTlsLogger(int level, const char* message)
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int/*bool*/ x_IsTimeout(SOCK sock, EIO_Event direction)
-{
-    int retval;
-    switch (direction) {
-    case eIO_Read:
-        retval = !sock->r_tv_set  ||  (sock->r_tv.tv_sec | sock->r_tv.tv_usec);
-        break;
-    case eIO_Write:
-        retval = !sock->w_tv_set  ||  (sock->w_tv.tv_sec | sock->w_tv.tv_usec);
-        break;
-    default:
-        retval = 0;
-        assert(0);
-        break;
-    }
-    return retval;
-}
-
-
-#  ifdef __GNUC__
-inline
-#  endif /*__GNUC__*/
 static EIO_Status x_RetryStatus(gnutls_session_t session, EIO_Event direction)
 {
     SOCK sock = (SOCK) gnutls_session_get_ptr(session);
@@ -235,6 +213,28 @@ static EIO_Status x_ErrorToStatus(int error,
                  error, IO_StatusStr(status)));
 #endif
     return status;
+}
+
+
+#  ifdef __GNUC__
+inline
+#  endif /*__GNUC__*/
+static int/*bool*/ x_IsTimeout(SOCK sock, EIO_Event direction)
+{
+    int retval;
+    switch (direction) {
+    case eIO_Read:
+        retval = !sock->r_tv_set  ||  (sock->r_tv.tv_sec | sock->r_tv.tv_usec);
+        break;
+    case eIO_Write:
+        retval = !sock->w_tv_set  ||  (sock->w_tv.tv_sec | sock->w_tv.tv_usec);
+        break;
+    default:
+        retval = 0;
+        assert(0);
+        break;
+    }
+    return retval;
 }
 
 
@@ -284,6 +284,8 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
     gnutls_connection_end_t end = (side == eSOCK_Client
                                    ? GNUTLS_CLIENT
                                    : GNUTLS_SERVER);
+    gnutls_certificate_credentials_t xcred;
+    gnutls_anon_client_credentials_t acred;
     gnutls_session_t session;
     char val[128];
     int err;
@@ -294,16 +296,22 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
         return 0;
     }
 
-    if (cred  &&  (cred->type != eNcbiCred_GnuTls  ||  !cred->data)) {
+    CORE_LOCK_READ;
+    xcred = s_GnuTlsCredCert;
+    acred = s_GnuTlsCredAnon;
+    CORE_UNLOCK;
+
+    if (!acred
+        ||  (cred  &&  (cred->type != eNcbiCred_GnuTls  ||  !cred->data))) {
         /*FIXME: there's a NULL(data)-terminated array of credentials */
         *error = 0;
         return 0;
     }
 
-    ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
-
     if ((*error = gnutls_init(&session, end)) != GNUTLS_E_SUCCESS/*0*/)
         return 0;
+
+    ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
 
     if ((err = gnutls_set_default_priority(session))                   != 0  ||
 #  if defined(LIBGNUTLS_VERSION_NUMBER)  ||  !defined(NCBI_OS_SOLARIS)
@@ -317,10 +325,8 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
                                                      kGnuTlsCertPrio)) != 0) ||
 #  endif /*LIBGNUTLS_VERSION_NUMBER || !NCBI_OS_SOLARIS*/
         (err = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
-                                      cred ? cred->data :
-                                      s_GnuTlsCredCert))               != 0  ||
-        (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON,
-                                      s_GnuTlsCredAnon))               != 0) {
+                                      cred ? cred->data : xcred))      != 0  ||
+        (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON, acred))!= 0) {
         gnutls_deinit(session);
         *error = err;
         return 0;
@@ -337,7 +343,11 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
 static EIO_Status s_GnuTlsOpen(void* session, int* error)
 {
     EIO_Status status;
-    int x_error = gnutls_handshake((gnutls_session_t) session);
+    int x_error;
+
+    do {
+        x_error = gnutls_handshake((gnutls_session_t) session);
+    } while (x_error  &&  x_error == GNUTLS_E_REHANDSHAKE);
 
     if (x_error < 0) {
         status = x_ErrorToStatus(x_error,
@@ -347,6 +357,15 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error)
         status = eIO_Success;
 
     return status;
+}
+
+
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int x_IfToLog(void)
+{
+    return 7 < s_GnuTlsLogLevel  &&  s_GnuTlsLogLevel <= 10 ? 1/*T*/ : 0/*F*/;
 }
 
 
@@ -374,12 +393,14 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
     int x_error;
     EIO_Status status;
     SOCK sock = (SOCK) ptr;
+    FSSLPull pull = s_Pull;
 
-    if (s_Pull) {
+    if (pull) {
         size_t x_read = 0;
-        status = s_Pull(sock, buf, size, &x_read, s_GnuTlsLogLevel > 7);
-        if (x_read > 0  ||  status == eIO_Success) {
+        status = pull(sock, buf, size, &x_read, x_IfToLog());
+        if (x_read > 0  ||  status == eIO_Success/*&& x_read==0*/) {
             x_set_errno((gnutls_session_t) sock->session, 0);
+            assert(x_read <= size);
             return x_read;
         }
     } else
@@ -398,17 +419,30 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
     int x_error;
     EIO_Status status;
     SOCK sock = (SOCK) ptr;
+    FSSLPush push = s_Push;
 
-    if (s_Push) {
-        size_t x_written = 0;
-        status = s_Push(sock, data, size, &x_written, s_GnuTlsLogLevel > 7);
-        if (x_written  ||  (!size  &&  status == eIO_Success)) {
-            x_set_errno((gnutls_session_t) sock->session, 0);
-            return x_written;
-        }
+    if (push) {
+        ssize_t n_written = 0;
+        do {
+            size_t x_written = 0;
+            status = push(sock, data, size, &x_written, x_IfToLog());
+            if (!x_written) {
+                assert(!size  ||  status != eIO_Success);
+                if (size  ||  status != eIO_Success)
+                    goto err;
+            } else {
+                assert(x_written <= size);
+                n_written += x_written;
+                size      -= x_written;
+                data       = (const char*) data + x_written;
+            }
+        } while (size);
+        x_set_errno((gnutls_session_t) sock->session, 0);
+        return n_written;
     } else
         status = eIO_NotSupported;
 
+ err:
     x_error = x_StatusToError(status, sock, eIO_Write);
     if (x_error)
         x_set_errno((gnutls_session_t) sock->session, x_error);
@@ -489,6 +523,7 @@ static void s_GnuTlsDelete(void* session)
 }
 
 
+/* NB: Called under a lock */
 static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 {
     gnutls_anon_client_credentials_t acred;
@@ -549,6 +584,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 }
 
 
+/* NB: Called under a lock */
 static void s_GnuTlsExit(void)
 {
     gnutls_anon_client_credentials_t acred = s_GnuTlsCredAnon;
