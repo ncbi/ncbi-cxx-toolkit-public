@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
     if (argc < 3)
         fp = 0;
     else if (!(fp = strcmp(argv[2], "-") == 0 ? stdin : fopen(argv[2], "rb")))
-        CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"",argv[2]));
+        CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"", argv[2]));
 
     ConnNetInfo_GetValue(0, "RECONNECT", blk, 32, 0);
     if (ConnNetInfo_Boolean(blk)) {
