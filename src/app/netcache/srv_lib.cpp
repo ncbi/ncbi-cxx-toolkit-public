@@ -43,6 +43,7 @@
 #include "../../corelib/ddumpable.cpp"
 #undef NCBI_USE_ERRCODE_X
 #include "../../corelib/request_ctx.cpp"
+#include "../../corelib/ncbi_strings.c"
 #undef NCBI_USE_ERRCODE_X
 #include "../../corelib/ncbitime.cpp"
 #undef NCBI_USE_ERRCODE_X

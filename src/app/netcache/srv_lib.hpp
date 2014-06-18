@@ -275,6 +275,16 @@ public:
     static Int8 UpdateUID(void) { return 0; }
     static string GetStringUID(Int8) { return string(); }
     static EDiagAppState GetGlobalAppState(void) { return eDiagAppState_AppRun; }
+
+    CDiagContext& Extra(void) {
+        return *this;
+    }
+    CDiagContext& Print( const string& s1, const string& s2) {
+        return *this;
+    }
+    const string& GetDefaultHitID(void) { return m_hid; }
+private:
+    string m_hid;
 };
 
 CDiagContext& GetDiagContext(void);
