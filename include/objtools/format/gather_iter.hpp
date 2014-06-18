@@ -87,6 +87,9 @@ private:
 
     // Determines: Can we use this bioseq?
     bool x_IsBioseqHandleOkay( const CBioseq_Handle &bioseq );
+
+    // for fViewFirst filter
+    bool x_found;
 };
 
 END_SCOPE(objects)

@@ -142,7 +142,8 @@ public:
         // determines which Bioseqs in an entry to view
         fViewNucleotides  = 0x1,
         fViewProteins     = 0x2,
-        fViewAll          = (fViewNucleotides | fViewProteins)
+        fViewAll          = (fViewNucleotides | fViewProteins),
+        fViewFirst        = 0x4
     };
 
     enum EGffOptions {
@@ -390,11 +391,13 @@ public:
     bool IsViewNuc (void) const { return (m_View & fViewNucleotides) != 0; }
     bool IsViewProt(void) const { return (m_View & fViewProteins)    != 0; }
     bool IsViewAll (void) const { return IsViewNuc()  &&  IsViewProt();    }
+    bool IsViewFirst (void) const { return (m_View & fViewFirst) != 0; }
     // setters
     void SetView(const TView& view) { m_View = view; }
     void SetViewNuc (void) { m_View = fViewNucleotides; }
     void SetViewProt(void) { m_View = fViewProteins;    }
-    void SetViewAll (void) { m_View = fViewAll;         } 
+    void SetViewAll (void) { m_View = fViewAll;         }
+    void SetViewFirst (void) { m_View = fViewFirst;     }
 
     // -- Flags
     // getters

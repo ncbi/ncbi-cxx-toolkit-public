@@ -49,6 +49,7 @@ CGather_Iter::CGather_Iter(
     const CFlatFileConfig& config )
     : m_Config(config)
 {
+    x_found = false;
     x_AddSeqEntryToStack( top_seq_entry );
 }
 
@@ -129,7 +130,9 @@ bool CGather_Iter::x_AddSeqEntryToStack(
     }
 
     CSeq_inst::TMol mol_type;
-    if (m_Config.IsViewAll()) {
+    if (m_Config.IsViewFirst() && x_found) {
+        return false;
+    } else if (m_Config.IsViewAll()) {
         mol_type = CSeq_inst::eMol_not_set;
     } else if (m_Config.IsViewNuc()) {
         mol_type = CSeq_inst::eMol_na;
@@ -147,6 +150,7 @@ bool CGather_Iter::x_AddSeqEntryToStack(
 
         // found a good one
         m_BioseqIter = seq_iter;
+        x_found = true;
         return true;
     }
     return false;
