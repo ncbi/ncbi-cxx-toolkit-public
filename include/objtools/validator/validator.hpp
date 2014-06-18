@@ -95,6 +95,24 @@ public:
     CValidator(CObjectManager& objmgr);
     ~CValidator(void);
 
+    // If many validations are being done without changing the underlying
+    // objects, a cache can be given to speed up the process.
+    //
+    // Only functions that have some use for pCache or that directly
+    // or indirectly call some function that uses pCache should
+    // take pCache as an argument.
+    //
+    // (note PIMPL idiom to be as opaque as possible)
+    class CCacheImpl;
+    class NCBI_VALIDATOR_EXPORT CCache : public CObject {
+    public:
+        CCache(void);
+
+        // the containing CCache object owns the m_impl
+        auto_ptr<CCacheImpl> m_impl;
+    };
+    static CRef<CCache> MakeEmptyCache(void);
+
     // Validation methods:
     // It is possible to validate objects of types CSeq_entry, CSeq_submit 
     // or CSeq_annot. In addition to the object to validate the user must 
@@ -105,13 +123,13 @@ public:
     // If provding a scope the Seq-entry must be a 
     // top-level Seq-entry in that scope.
     CConstRef<CValidError> Validate(const CSeq_entry& se, CScope* scope = 0,
-        Uint4 options = 0);
+        Uint4 options = 0, CRef<CCache> pCache = CRef<CCache>());
     CConstRef<CValidError> Validate(const CSeq_entry_Handle& se,
-        Uint4 options = 0);
+        Uint4 options = 0, CRef<CCache> pCache = CRef<CCache>());
     // Validate Seq-submit.
     // Validates each of the Seq-entry contained in the submission.
     CConstRef<CValidError> Validate(const CSeq_submit& ss, CScope* scope = 0,
-        Uint4 options = 0);
+        Uint4 options = 0, CRef<CCache> pCache = CRef<CCache>());
     // Validate Seq-annot
     // Validates stand alone Seq-annot objects. This will supress any
     // check on the context of the annotaions.
@@ -154,7 +172,7 @@ public:
     CConstRef<CValidError> GetTSAConflictingBiomolTechErrors (const CBioseq& seq);
 
     // progress reporting
-    class CProgressInfo
+    class NCBI_VALIDATOR_EXPORT CProgressInfo
     {
     public:
         enum EState {

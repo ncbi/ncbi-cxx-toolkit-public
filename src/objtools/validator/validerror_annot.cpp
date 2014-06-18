@@ -145,22 +145,26 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
     }
 }
 
-static bool x_IsEmblOrDdbjOnSet (const CSeq_id& id, CBioseq_set_Handle set)
+static bool x_IsEmblOrDdbjOnSet (const CBioseq_set_Handle & set)
 {
-    for (CBioseq_CI b_ci (set); b_ci; ++b_ci) {
+    bool answer = false;
+    for (CBioseq_CI b_ci (set); b_ci && ! answer; ++b_ci) {
+        // actually looks only at the first seq-id
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(b_ci->GetCompleteBioseq())) {
             switch ( (*id_it)->Which() ) {
             case CSeq_id::e_Embl:
             case CSeq_id::e_Ddbj:
             case CSeq_id::e_Tpe:
             case CSeq_id::e_Tpd:
-                return true;
+                answer = true;
+                break;
             default:
                 break;
             }
         }
     }
-    return false;
+
+    return answer;
 }
 
 
@@ -173,12 +177,20 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
     } else if (annot.IsFtable()) {
         // if a feature is packaged on a set, the bioseqs in the locations should be in the set
         CBioseq_set_Handle bssh = m_Scope->GetBioseq_setHandle(set);
+        const bool is_embl_or_ddbj_on_set = x_IsEmblOrDdbjOnSet(bssh);
+        if( is_embl_or_ddbj_on_set ) {
+            return;
+        }
+
         FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, annot) {
             if ((*feat_it)->IsSetLocation()) {
                 for ( CSeq_loc_CI loc_it((*feat_it)->GetLocation()); loc_it; ++loc_it ) {
                     const CSeq_id& id = loc_it.GetSeq_id();
-                    if (x_IsEmblOrDdbjOnSet(id, bssh)) return;
 
+                    // Since IsBioseqWithIdInSet is linear in the number of
+                    // bioseqs in bssh, if this turns out to be an issue
+                    // we will have to change this code
+                    // or IsBioseqWithIdInSet's code
                     if (!IsBioseqWithIdInSet(id, bssh)) {
                         if (m_Imp.IsSmallGenomeSet()) {
                             m_Imp.IncrementSmallGenomeSetMisplacedCount();

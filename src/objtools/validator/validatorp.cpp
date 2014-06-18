@@ -137,6 +137,12 @@ using namespace sequence;
 //                            CValidError_imp Public
 // =============================================================================
 
+const CSeqFeatData::E_Choice CCacheImpl::kAnyFeatType =
+    static_cast<CSeqFeatData::E_Choice>(CSeqFeatData::e_not_set - 1);
+const CSeqFeatData::ESubtype CCacheImpl::kAnyFeatSubtype =
+    static_cast<CSeqFeatData::ESubtype>(CSeqFeatData::eSubtype_bad - 1);
+
+
 // Constructor
 CValidError_imp::CValidError_imp
 (CObjectManager& objmgr, 
@@ -1319,8 +1325,14 @@ void CValidError_imp::PostBadDateError
 bool CValidError_imp::Validate
 (const CSeq_entry& se,
  const CCit_sub* cs,
- CScope* scope)
+ CScope* scope,
+ CRef<CCache> pCache)
 {
+    // if no cache, make one
+    if( ! pCache ) {
+        pCache.Reset(new CCache);
+    }
+
     CSeq_entry_Handle seh;
     try {
         seh = scope->GetSeq_entryHandle(se);
@@ -1332,7 +1344,7 @@ bool CValidError_imp::Validate
         }
     }
 
-    return Validate(seh, cs);
+    return Validate(seh, cs, pCache);
 }
 
 bool CValidError_imp::ValidateDescriptorInSeqEntry (const CSeq_entry& se, CValidError_desc *descval)
@@ -1413,8 +1425,14 @@ bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se)
 
 bool CValidError_imp::Validate
 (const CSeq_entry_Handle& seh,
- const CCit_sub* cs)
+ const CCit_sub* cs,
+ CRef<CCache> pCache)
 {
+    // if no cache, make one
+    if( ! pCache ) {
+        pCache.Reset(new CCache);
+    }
+
     _ASSERT(seh);
 
     if ( m_PrgCallback ) {
@@ -1616,7 +1634,7 @@ bool CValidError_imp::Validate
         const CBioseq& seq = seh.GetCompleteSeq_entry()->GetSeq();
         CValidError_bioseq bioseq_validator(*this);
         try {
-            bioseq_validator.ValidateBioseq(seq);
+            bioseq_validator.ValidateBioseq(seq, pCache);
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exception while validating bioseq. EXCEPTION: ") +
@@ -1627,7 +1645,7 @@ bool CValidError_imp::Validate
         const CBioseq_set& set = seh.GetCompleteSeq_entry()->GetSet();
         CValidError_bioseqset bioseqset_validator(*this);
         try {
-            bioseqset_validator.ValidateBioseqSet(set);
+            bioseqset_validator.ValidateBioseqSet(set, pCache);
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exception while validating bioseq set. EXCEPTION: ") +
@@ -1736,8 +1754,14 @@ bool CValidError_imp::Validate
 }
 
 
-void CValidError_imp::Validate(const CSeq_submit& ss, CScope* scope)
+void CValidError_imp::Validate(
+    const CSeq_submit& ss, CScope* scope, CRef<CCache> pCache)
 {
+    // if no cache, make one
+    if( ! pCache ) {
+        pCache.Reset(new CCache);
+    }
+
     // Check that ss is type e_Entrys
     if ( ss.GetData().Which() != CSeq_submit::C_Data::e_Entrys ) {
         return;
@@ -1753,12 +1777,13 @@ void CValidError_imp::Validate(const CSeq_submit& ss, CScope* scope)
     // Just loop thru CSeq_entrys
     FOR_EACH_SEQENTRY_ON_SEQSUBMIT (se_itr, ss) {
         const CSeq_entry& se = **se_itr;
-        Validate (se, cs, scope);
+        Validate (se, cs, scope, pCache);
     }
 }
 
 
-void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
+void CValidError_imp::Validate(
+    const CSeq_annot_Handle& sah)
 {
     Setup(sah);
     
@@ -2502,19 +2527,19 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
         if ( IsNT()  &&  m_TSE ) {
             // In case of a NT bioseq limit the search to features packaged on the 
             // NT (we assume features have been pulled from the segments to the NT).
-            CFeat_CI fi(bsh, 
-                        SAnnotSelector(CSeqFeatData::e_Cdregion)
-                        .SetByProduct()
-                        .SetLimitTSE(m_Scope->GetSeq_entryHandle(*m_TSE)));
+            SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+            sel.SetByProduct()
+                .SetLimitTSE(m_Scope->GetSeq_entryHandle(*m_TSE));
+            CFeat_CI fi(bsh, sel);
             if ( fi ) {
                 // return the first one (should be the one packaged on the
                 // nuc-prot set).
                 feat.Reset(&(fi->GetOriginalFeature()));
             }
         } else {
-            CFeat_CI fi(bsh, 
-                        SAnnotSelector(CSeqFeatData::e_Cdregion)
-                        .SetByProduct());
+            SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+            sel.SetByProduct();
+            CFeat_CI fi(bsh, sel);
             if ( fi ) {
                 // return the first one (should be the one packaged on the
                 // nuc-prot set).
@@ -2543,19 +2568,18 @@ CConstRef<CSeq_feat> CValidError_imp::GetmRNAGivenProduct(const CBioseq& seq)
         }
 
         if (limit) {
-            CFeat_CI fi(bsh, 
-                        SAnnotSelector(CSeqFeatData::eSubtype_mRNA)
-                        .SetByProduct()
-                        .SetLimitTSE(limit));
+            SAnnotSelector sel(CSeqFeatData::eSubtype_mRNA);
+            sel.SetByProduct() .SetLimitTSE(limit);
+            CFeat_CI fi(bsh, sel);
             if ( fi ) {
                 // return the first one (should be the one packaged on the
                 // nuc-prot set).
                 feat.Reset(&(fi->GetOriginalFeature()));
             }
         } else {
-            CFeat_CI fi(bsh, 
-                        SAnnotSelector(CSeqFeatData::eSubtype_mRNA)
-                        .SetByProduct());
+            SAnnotSelector sel(CSeqFeatData::eSubtype_mRNA);
+            sel.SetByProduct();
+            CFeat_CI fi(bsh, sel);
             if ( fi ) {
                 // return the first one (should be the one packaged on the
                 // nuc-prot set).
@@ -2770,25 +2794,47 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
 // =============================================================================
 
 
-const char * script_tags[] = {"<script", "<object", "<applet", "<embed", "<form", "javascript:", "vbscript:", NULL};
 
 void CValidError_imp::FindEmbeddedScript (const CSerialObject& obj)
 {
-    bool found = false;
-    CStdTypeConstIterator<string> it(obj);
+    class CScriptTagTextFsm : public CTextFsm<bool>
+    {
+    public:
+        CScriptTagTextFsm() {
+            const char * script_tags[] = {
+                "<script", "<object", "<applet", "<embed", "<form",
+                "javascript:", "vbscript:"};
+            ITERATE_0_IDX(idx, ArraySize(script_tags)) {
+                AddWord(script_tags[idx], true);
+            }
+            Prime();
+        }
 
-    while (it && !found) {
-        for (int i = 0; script_tags[i] != NULL && !found; i++) {
-            if (NStr::FindNoCase (*it, script_tags[i]) != string::npos) {
-                found = true;
+        // Returns true if the given string matches any of the strings
+        // in the fsm anywhere.
+        bool DoesStrHaveFsmHits(const string &str) {
+            int state = GetInitialState();
+            ITERATE(string, str_it, str) {
+                state = GetNextState(state, *str_it);
+                if( IsMatchFound(state) ) {
+                    return true;
             }
         }
-        ++it;
-    }
 
-    if (found) {
-        PostErr (eDiag_Error, eErr_GENERIC_EmbeddedScript, "Script tag found in item", obj);
+            return false;
     }
+    };
+    static CScriptTagTextFsm s_ScriptTagFsm;
+
+
+    CStdTypeConstIterator<string> it(obj);
+    for( ; it; ++it) {
+        if (s_ScriptTagFsm.DoesStrHaveFsmHits(*it)) {
+            PostErr (eDiag_Error, eErr_GENERIC_EmbeddedScript,
+                     "Script tag found in item", obj);
+            return;
+    }
+}
 }
 
 
@@ -3349,6 +3395,189 @@ void CValidError_base::PostErr
     m_Imp.PostErr(sv, et, msg, entry);
 }
 
+bool
+CCacheImpl::SFeatKey::operator<(
+    const SFeatKey & rhs) const
+{
+    if( feat_type != rhs.feat_type ) {
+        return feat_type < rhs.feat_type;
+    } else if( feat_subtype != rhs.feat_subtype ) {
+        return feat_subtype < rhs.feat_subtype;
+     } else {
+        return bioseq_h < rhs.bioseq_h;
+    }
+}
+
+bool
+CCacheImpl::SFeatKey::operator==(
+    const SFeatKey & rhs) const
+{
+    return (feat_type == rhs.feat_type) &&
+        (feat_subtype == rhs.feat_subtype) && (bioseq_h == rhs.bioseq_h);
+}
+
+const CCacheImpl::TFeatValue &
+CCacheImpl::GetFeatFromCache(
+    const CCacheImpl::SFeatKey & featKey)
+{
+    // check common case where already in the cache
+    TFeatCache::iterator find_iter = m_featCache.find(featKey);
+    if( find_iter != m_featCache.end() ) {
+        return find_iter->second;
+    }
+
+    // check if bioseq already processed, but had no entry requested above
+    SFeatKey bioseq_check_key(
+        kAnyFeatType, kAnyFeatSubtype, featKey.bioseq_h );
+    TFeatCache::const_iterator bioseq_find_iter =
+        m_featCache.find(bioseq_check_key);
+    if( bioseq_find_iter != m_featCache.end() ) {
+        const static TFeatValue kEmptyFeatValue;
+        // bioseq was already processed,
+        // it just happened to not have an entry here
+        return kEmptyFeatValue;
+    }
+
+    // bioseq never added to cache, so calculate that now
+
+    // to avoid expensive constructions of CFeat_CI's,
+    // we iterate through all the seqs on
+    // the bioseq and load them into the cache.
+    CFeat_CI feat_ci(featKey.bioseq_h);
+    for( ; feat_ci; ++feat_ci ) {
+        SFeatKey inner_feat_key(
+            feat_ci->GetFeatType(), feat_ci->GetFeatSubtype(), featKey.bioseq_h);
+
+        m_featCache[inner_feat_key].push_back(*feat_ci);
+
+        // also add "don't care" entries for partial searches
+        // (e.g. if caller just wants to search on type but not on
+        // subtype they can set subtype to kAnyFeatSubtype)
+        SFeatKey any_type_key = inner_feat_key;
+        any_type_key.feat_type = kAnyFeatType;
+        m_featCache[any_type_key].push_back(*feat_ci);
+
+        SFeatKey any_subtype_key = inner_feat_key;
+        any_subtype_key.feat_subtype = kAnyFeatSubtype;
+        m_featCache[any_subtype_key].push_back(*feat_ci);
+
+        // for when the caller wants all feats on a bioseq
+        SFeatKey any_type_or_subtype_key = inner_feat_key;
+        any_type_or_subtype_key.feat_type = kAnyFeatType;
+        any_type_or_subtype_key.feat_subtype = kAnyFeatSubtype;
+        m_featCache[any_type_or_subtype_key].push_back(*feat_ci);
+    }
+
+    // in case a bioseq has no features, we add a dummy key just to
+    // remember that so we don't use CFeat_CI again on the same bioseq
+    m_featCache[bioseq_check_key]; // gets default val
+
+    return m_featCache[featKey];
+}
+
+AutoPtr<CCacheImpl::TFeatValue>
+CCacheImpl::GetFeatFromCacheMulti(
+        const vector<SFeatKey> &featKeys)
+{
+    if( featKeys.empty() ) {
+        return new TFeatValue;
+    }
+
+    // all featKeys must have the same bioseq
+    const CBioseq_Handle & bioseq_h = featKeys[0].bioseq_h;
+    ITERATE(vector<SFeatKey>, feat_it, featKeys) {
+        if( feat_it->bioseq_h != bioseq_h ) {
+            throw runtime_error("GetFeatFromCacheMulti must be called with only 1 bioseq in its args");
+        }
+    }
+
+    // set prevents dups
+    set<TFeatValue::value_type> set_of_feats;
+
+    // combine the answers from every key into the set
+    ITERATE(vector<SFeatKey>, key_it, featKeys  ) {
+        const TFeatValue & feat_value = GetFeatFromCache(*key_it);
+        copy(BEGIN_COMMA_END(feat_value), inserter(
+                 set_of_feats, set_of_feats.begin()));
+    }
+
+    // go through every feature on the bioseq and remember any that match what's in the set
+    // (The purpose of this step is to return the feats in the same
+    // order they were on the original bioseq.  In the future, we may
+    // consider adding a flag to avoid sorting for time purposes).
+    AutoPtr<TFeatValue> answer(new TFeatValue);
+    SFeatKey all_feats_key(
+        kAnyFeatType, kAnyFeatSubtype, bioseq_h);
+    const TFeatValue & all_feats_vec = GetFeatFromCache(all_feats_key);
+    ITERATE(TFeatValue, feat_it, all_feats_vec) {
+        if( set_of_feats.find(*feat_it) != set_of_feats.end() ) {
+            answer->push_back(*feat_it);
+        }
+    }
+
+    return answer;
+}
+
+const CCacheImpl::TFeatToBioseqValue &
+CCacheImpl::GetBioseqsOfFeatCache(
+    const CCacheImpl::TFeatToBioseqKey & feat_to_bioseq_key,
+    const CSeq_entry_Handle& tse)
+{
+    // load cache if empty
+    if( m_featToBioseqCache.empty() ) {
+        // otherwise, we need to initialize the cache
+        CBioseq_CI bioseq_ci(tse);
+        for( ; bioseq_ci; ++bioseq_ci ) {
+            CFeat_CI feat_ci(*bioseq_ci);
+            for( ;  feat_ci; ++feat_ci ) {
+                m_featToBioseqCache[*feat_ci].insert(*bioseq_ci);
+            }
+        }
+    }
+
+    // we're being given the map to a feature, so we should've loaded
+    // at least one feature when we loaded the cache
+    _ASSERT( ! m_featToBioseqCache.empty() );
+
+    // load from the cache
+    TFeatToBioseqCache::const_iterator find_iter =
+        m_featToBioseqCache.find(feat_to_bioseq_key);
+    if( find_iter != m_featToBioseqCache.end() ) {
+        return find_iter->second;
+    } else {
+        const static  TFeatToBioseqValue kEmptyFeatToBioseqCache;
+        return kEmptyFeatToBioseqCache;
+    }
+}
+
+const CCacheImpl::TIdToBioseqValue &
+CCacheImpl::GetIdToBioseq(
+    const CCacheImpl::TIdToBioseqKey & key,
+    const CSeq_entry_Handle& tse)
+{
+    // load cache if empty
+    if( m_IdToBioseqCache.empty() ) {
+        CBioseq_CI bioseq_ci(tse);
+        for( ; bioseq_ci; ++bioseq_ci ) {
+            const CBioseq_Handle::TId & ids = bioseq_ci->GetId();
+            ITERATE(CBioseq_Handle::TId, id_it, ids) {
+                m_IdToBioseqCache[id_it->GetSeqId()] = *bioseq_ci;
+            }
+        }
+    }
+
+    // there should be at least one Bioseq otherwise there wouldn't
+    // be anything to validate.
+    _ASSERT(! m_IdToBioseqCache.empty());
+
+    TIdToBioseqCache::const_iterator find_iter = m_IdToBioseqCache.find(key);
+    if( find_iter != m_IdToBioseqCache.end() ) {
+        return find_iter->second;
+    } else {
+        static const TIdToBioseqValue s_EmptyResult;
+        return s_EmptyResult;
+    }
+}
 
 END_SCOPE(validator)
 END_SCOPE(objects)

@@ -181,7 +181,6 @@ EDuplicateFeatureType NCBI_VALIDATOR_EXPORT IsDuplicate
      CSeq_feat_Handle f2, const CSeq_feat& feat2,CScope& scope);
 
 bool IsLocFullLength (const CSeq_loc& loc, const CBioseq_Handle& bsh);
-CConstRef <CSeq_feat> GetGeneForFeature (const CSeq_feat& f1, CScope *scope);
 bool PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2);
 
 // specific-host functions

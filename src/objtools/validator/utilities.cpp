@@ -676,15 +676,9 @@ bool s_FeatureIdsMatch (const CFeat_id& f1, const CFeat_id& f2)
 {
     if (!f1.IsLocal() || !f2.IsLocal()) {
         return false;
-    } else if (f1.GetLocal().IsStr() && f2.GetLocal().IsStr()
-               && NStr::EqualNocase(f1.GetLocal().GetStr(), f2.GetLocal().GetStr())) {
-        return true;
-    } else if (f1.GetLocal().IsId() && f2.GetLocal().IsId()
-               && f1.GetLocal().GetId() == f2.GetLocal().GetId()) {
-        return true;
-    } else {
-        return false;
     }
+
+    return 0 == f1.GetLocal().Compare(f2.GetLocal());
 }
 
 
@@ -851,79 +845,84 @@ bool IsBioseqTSA (const CBioseq& seq, CScope* scope)
 }
 
 
-string GetAuthorsString (const CAuth_list& auth_list)
+void GetAuthorsString (string *out_authors, const CAuth_list& auth_list)
 {
-    string auth_str = "";
+    string & auth_str = *out_authors;
+    auth_str.clear();
 
     if (!auth_list.IsSetNames()) {
-        return auth_str;
+        return;
     }
 
-    vector<string> name_list;
+    vector<CTempString> name_list;
+
+    // Since name_list must point to a string that lasts at least until
+    // the end of this function, we use temp_string_storage just
+    // as a place to store strings that we want to destroy when we exit
+    // the function.
+    vector<string> temp_string_storage;
 
     if (auth_list.GetNames().IsStd()) {
         ITERATE (CAuth_list::TNames::TStd, auth_it, auth_list.GetNames().GetStd()) {
             if ((*auth_it)->IsSetName()) {
-                string label;
+                temp_string_storage.push_back(kEmptyStr);
+                string & label = temp_string_storage.back();
                 (*auth_it)->GetName().GetLabel(&label);
                 name_list.push_back(label);
             }
         }
     } else if (auth_list.GetNames().IsMl()) {
-        ITERATE (CAuth_list::TNames::TMl, auth_it, auth_list.GetNames().GetMl()) {
-            name_list.push_back((*auth_it));
-        }
+        copy(BEGIN_COMMA_END(auth_list.GetNames().GetMl()),
+             back_inserter(name_list));
     } else if (auth_list.GetNames().IsStr()) {
-        ITERATE (CAuth_list::TNames::TStr, auth_it, auth_list.GetNames().GetStr()) {
-            name_list.push_back((*auth_it));
+        copy(BEGIN_COMMA_END(auth_list.GetNames().GetStr()),
+             back_inserter(name_list));
         }
-    }
 
     if (name_list.size() == 0) {
-        return auth_str;
+        return;
+    } else if(name_list.size() == 1) {
+        auth_str = name_list.back();
+        return;
     }
 
-    auth_str = name_list.back();
+    // join most of them by commas, but the last one gets an "and"
+    CTempString last_author = name_list.back();
     name_list.pop_back();
-    if (name_list.size() > 0) {
-        auth_str = "and " + auth_str;
-        if (name_list.size() == 1) {
-            auth_str = name_list.front() + auth_str;
-        } else {        
-            while (name_list.size() > 0) {
-                string this_name = name_list.back();
-                name_list.pop_back();
-                auth_str = this_name + ", " + auth_str;
-            }
-        }
-    }
+    // swap is faster than assignment
+    NStr::Join(name_list, ", ").swap(auth_str);
+    auth_str += "and ";
+    auth_str += last_author;
 
-    return auth_str;
+    return;
 }
 
 
-static string s_GetAuthorsString (const CPubdesc& pd) 
+static void s_GetAuthorsString (
+    string *out_authors_string, const CPubdesc& pd)
 {
-    string authors_string = "";
+    string & authors_string = *out_authors_string;
+    authors_string.clear();
 
     FOR_EACH_PUB_ON_PUBDESC (pub, pd) {
         if ((*pub)->IsSetAuthors()) {
-            authors_string = GetAuthorsString ((*pub)->GetAuthors());
+            GetAuthorsString (&authors_string, (*pub)->GetAuthors());
             break;
         }
     }
-    return authors_string;
 }
-
 
 void GetPubdescLabels 
 (const CPubdesc& pd, 
  vector<int>& pmids, vector<int>& muids, vector<int>& serials,
- vector<string>& published_labels, vector<string>& unpublished_labels)
+ vector<string>& published_labels,
+ vector<string>& unpublished_labels)
 {
     string label = "";
     bool   is_published = false;
     bool   need_label = false;
+
+    // could not get from cache, so do actual calculation
     FOR_EACH_PUB_ON_PUBDESC (it, pd) {
         if ((*it)->IsPmid()) {
             pmids.push_back ((*it)->GetPmid());
@@ -952,7 +951,10 @@ void GetPubdescLabels
         if (need_label && NStr::IsBlank(label)) {
             // create unique label
             (*it)->GetLabel(&label, CPub::eContent, true);
-            label += "; " + s_GetAuthorsString (pd);
+            string auth_str;
+            s_GetAuthorsString (&auth_str, pd);
+            label += "; ";
+            label += auth_str;
         }
     }
     if (!NStr::IsBlank(label)) {
@@ -1423,37 +1425,6 @@ bool IsLocFullLength (const CSeq_loc& loc, const CBioseq_Handle& bsh)
     } else {
         return false;
     }
-}
-
-
-CConstRef <CSeq_feat> GetGeneForFeature (const CSeq_feat& f1, CScope *scope)
-{
-    const CGene_ref * g1 = f1.GetGeneXref();
-    CConstRef <CSeq_feat> gene;
-
-    if (g1) {
-        if (g1->IsSuppressed()) {
-            return gene;
-        }
-        string ref_label;
-        g1->GetLabel(&ref_label);
-
-        CBioseq_Handle bsh = BioseqHandleFromLocation(scope, f1.GetLocation());
-        SAnnotSelector sel(CSeqFeatData::e_Gene);
-        CFeat_CI gene_it(bsh, sel);
-        while (gene_it) {
-            string feat_label;
-            feature::GetLabel(gene_it->GetOriginalFeature(), &feat_label, feature::fFGL_Content, scope);
-            if (NStr::EqualCase(ref_label, feat_label)) {
-                gene.Reset (&(gene_it->GetOriginalFeature()));
-                return gene;
-            }
-            ++gene_it;
-        }
-        return gene;
-    }
-
-    return sequence::GetOverlappingGene (f1.GetLocation(), *scope);
 }
 
 

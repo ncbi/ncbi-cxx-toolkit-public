@@ -68,12 +68,18 @@ CValidator::~CValidator(void)
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_entry& se,
  CScope* scope,
- Uint4 options)
+ Uint4 options,
+ CRef<CCache> pCache)
 {
+    // if no cache, make one
+    if( ! pCache ) {
+        pCache.Reset(new CCache);
+    }
+
     CRef<CValidError> errors(new CValidError(&se));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
-    if ( !imp.Validate(se, 0, scope) ) {
+    if ( !imp.Validate(se, 0, scope, pCache) ) {
         errors.Reset();
     }
     return errors;
@@ -81,8 +87,14 @@ CConstRef<CValidError> CValidator::Validate
 
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_entry_Handle& seh,
- Uint4 options)
+ Uint4 options,
+CRef<CCache> pCache)
 {
+    // if no cache, make one
+    if( ! pCache ) {
+        pCache.Reset(new CCache);
+    }
+
     static unsigned int num_e = 0, mult = 0;
 
     num_e++;
@@ -94,7 +106,7 @@ CConstRef<CValidError> CValidator::Validate
     CRef<CValidError> errors(new CValidError(&*seh.GetCompleteSeq_entry()));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
-    if ( !imp.Validate(seh, 0) ) {
+    if ( !imp.Validate(seh, 0, pCache) ) {
         errors.Reset();
     }
     return errors;
@@ -177,11 +189,17 @@ CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CBio
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_submit& ss,
  CScope* scope,
- Uint4 options)
+ Uint4 options,
+ CRef<CCache> pCache)
 {
+    // if no cache, make one
+    if( ! pCache ) {
+        pCache.Reset(new CCache);
+    }
+
     CRef<CValidError> errors(new CValidError(&ss));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
-    imp.Validate(ss, scope);
+    imp.Validate(ss, scope, pCache);
     if (ss.IsSetSub() && ss.GetSub().IsSetContact() && ss.GetSub().GetContact().IsSetContact()
         && ss.GetSub().GetContact().GetContact().IsSetAffil()
         && ss.GetSub().GetContact().GetContact().GetAffil().IsStd()) {
@@ -264,6 +282,16 @@ void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data
     m_UserData = user_data;
 }
 
+CCache::CCache(void)
+{
+    m_impl.reset(new CCacheImpl);
+}
+
+CRef<CCache>
+CValidator::MakeEmptyCache(void)
+{
+    return Ref(new CCache);
+}
 
 END_SCOPE(validator)
 END_SCOPE(objects)

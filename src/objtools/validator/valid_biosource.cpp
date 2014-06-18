@@ -284,8 +284,10 @@ bool CValidError_imp::IsSyntheticConstruct (const CBioSource& src)
         return false;
     }
     if (src.GetOrg().IsSetTaxname()) {
-        string taxname = src.GetOrg().GetTaxname();
-        if (NStr::EqualNocase(taxname, "synthetic construct") || NStr::FindNoCase(taxname, "vector") != string::npos) {
+        const string & taxname = src.GetOrg().GetTaxname();
+        if (NStr::EqualNocase(taxname, "synthetic construct") ||
+            NStr::FindNoCase(taxname, "vector") != string::npos)
+        {
             return true;
         }
     }

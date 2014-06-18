@@ -83,8 +83,14 @@ CValidError_bioseqset::~CValidError_bioseqset(void)
 }
 
 
-void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
+void CValidError_bioseqset::ValidateBioseqSet(
+    const CBioseq_set& seqset, CRef<CCache> pCache)
 {
+    // if no cache, make one
+    if( ! pCache ) {
+        pCache.Reset(new CCache);
+    }
+
     int protcnt = 0;
     int nuccnt  = 0;
     int segcnt  = 0;
@@ -105,12 +111,12 @@ void CValidError_bioseqset::ValidateBioseqSet(const CBioseq_set& seqset)
             }
 
             // validate member set
-            ValidateBioseqSet (set);
+            ValidateBioseqSet (set, pCache);
         } else if (se.IsSeq()) {
             const CBioseq& seq = se.GetSeq();
 
             // Validate Member Seq
-            m_BioseqValidator.ValidateBioseq(seq);
+            m_BioseqValidator.ValidateBioseq(seq, pCache);
         }
     }
 
