@@ -40,6 +40,8 @@
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include <dbapi/driver/drivers.hpp>
+
 
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>
 
@@ -117,6 +119,7 @@ int CDiscRepApp :: Run(void)
     //         // sure they are properly registered
     GenBankReaders_Register_Pubseq();
     GenBankReaders_Register_Pubseq2();
+    DBAPI_RegisterDriver_FTDS();
 #endif
 
     try {
