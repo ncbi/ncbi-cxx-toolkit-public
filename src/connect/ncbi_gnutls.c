@@ -315,8 +315,10 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
 
     if ((err = gnutls_set_default_priority(session))                   != 0  ||
 #  if defined(LIBGNUTLS_VERSION_NUMBER)  ||  !defined(NCBI_OS_SOLARIS)
+#    if LIBGNUTLS_VERSION_NUMBER >= 0x020200
         ( *val  &&
          (err = gnutls_priority_set_direct(session, val, 0))           != 0) ||
+#    endif /*LIBGNUTLS_VERSION_NUMBER>=2.2.0*/
         (!*val  &&
          (err = gnutls_compression_set_priority(session,
                                                 kGnuTlsCompPrio))      != 0) ||
@@ -373,13 +375,10 @@ static int x_IfToLog(void)
 static void x_set_errno(gnutls_session_t session, int error)
 {
 #  ifdef LIBGNUTLS_VERSION_NUMBER
-#    if                                         \
-    LIBGNUTLS_VERSION_MAJOR > 1  ||             \
-    LIBGNUTLS_VERSION_MINOR > 5  ||             \
-    LIBGNUTLS_VERSION_PATCH > 3
+#    if LIBGNUTLS_VERSION_NUMBER >= 0x010504
     gnutls_transport_set_errno(session, error);
     return;
-#    endif /*LIBGNUTLS_VERSION >= 1.5.4*/
+#    endif /*LIBGNUTLS_VERSION>=1.5.4*/
 #  endif /*LIBGNUTLS_VERSION_NUMBER*/
     /*NOTREACHED*/
     if (error)
