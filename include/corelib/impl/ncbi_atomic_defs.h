@@ -82,20 +82,16 @@ extern "C" {
 #  define NCBI_COUNTER_ASM_OK 1
 #endif
 
+#ifdef __cplusplus
+#  include <cstdlib> /* determine C++ standard library version */
+#endif
+
 #if defined(NCBI_TCHECK)
-#  if defined(NCBI_COMPILER_ICC)  &&  defined(__cplusplus)
-#    include <cstdlib> /* determine which GNU libstdc++, if any, is in use */
-#  endif
 #  define NCBI_SWAP_POINTERS_EXTERN 1
 #endif
 
 #if defined(NCBI_HAVE_CXX11)
 #  include <atomic>
-#elif defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION >= 300  &&  \
-   defined(__cplusplus)
-/* Determine libstdc++ version, which may not entirely correlate with
-   the compiler's own version(!) */
-#  include <bits/c++config.h>
 #endif
 
 /**
