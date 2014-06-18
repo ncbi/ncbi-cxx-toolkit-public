@@ -3769,20 +3769,26 @@ void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
     case CSeq_annot::C_Data::e_Ftable:
         {
             CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();
-            NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, it, ftable) {
+            ERASE_ITERATE(CSeq_annot::C_Data::TFtable, it, ftable) {
+                bool mapped = false;
                 CSeq_feat& feat = **it;
                 CRef<CSeq_loc> loc;
                 if (flags & fAnnotMap_Location) {
                     loc = Map(feat.GetLocation());
                     if ( loc ) {
                         feat.SetLocation(*loc);
+                        mapped = mapped  ||  !loc->IsNull();
                     }
                 }
                 if ((flags & fAnnotMap_Product)  &&  feat.IsSetProduct() ) {
                     loc = Map(feat.GetProduct());
                     if ( loc ) {
                         feat.SetProduct(*loc);
+                        mapped = mapped  ||  !loc->IsNull();
                     }
+                }
+                if ((flags & fAnnotMap_RemoveNonMapping)  &&  !mapped) {
+                    ftable.erase(it);
                 }
             }
             break;
@@ -3790,10 +3796,13 @@ void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
     case CSeq_annot::C_Data::e_Align:
         {
             CSeq_annot::C_Data::TAlign& aligns = annot.SetData().SetAlign();
-            NON_CONST_ITERATE(CSeq_annot::C_Data::TAlign, it, aligns) {
+            ERASE_ITERATE(CSeq_annot::C_Data::TAlign, it, aligns) {
                 CRef<CSeq_align> align = Map(**it);
                 if ( align ) {
                     *it = align;
+                }
+                else if (flags & fAnnotMap_RemoveNonMapping) {
+                    aligns.erase(it);
                 }
             }
             break;
@@ -3801,10 +3810,13 @@ void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
     case CSeq_annot::C_Data::e_Graph:
         {
             CSeq_annot::C_Data::TGraph& graphs = annot.SetData().SetGraph();
-            NON_CONST_ITERATE(CSeq_annot::C_Data::TGraph, it, graphs) {
+            ERASE_ITERATE(CSeq_annot::C_Data::TGraph, it, graphs) {
                 CRef<CSeq_graph> graph = Map(**it);
                 if ( graph ) {
                     *it = graph;
+                }
+                else if (flags & fAnnotMap_RemoveNonMapping) {
+                    graphs.erase(it);
                 }
             }
             break;

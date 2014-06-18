@@ -450,6 +450,9 @@ public:
         fAnnotMap_Product  = 1 << 1, ///< Map seq-feat products
         fAnnotMap_Both     = fAnnotMap_Location | fAnnotMap_Product,
 
+        /// Remove annotations which can not be mapped with this mapper.
+        fAnnotMap_RemoveNonMapping = 1 << 2,
+
         fAnnotMap_Default = fAnnotMap_Both
     };
     typedef int TAnnotMapFlags;
