@@ -1477,8 +1477,6 @@ static void s_LimitDescrLength(string &descr)
 }
 string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new)
 {
-    const int kMaxDescrLength = 4096;
-
     string defLine = ((sdl->gi > ZERO_GI) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;   
     string dflGi = (m_Option & eShowGi) && (sdl->gi > ZERO_GI) ? "gi|" + NStr::NumericToString(sdl->gi) + "|" : "";
     string seqid;
