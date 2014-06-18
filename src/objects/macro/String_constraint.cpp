@@ -197,9 +197,6 @@ bool CString_constraint :: x_IsWholeWordMatch(const string& start, const size_t&
 };
 bool CString_constraint :: x_AdvancedStringCompare(const string& str, const string& str_match, bool is_start, unsigned int * ini_target_match_len)  const
 {
-  if (str.empty()) return false;
-  if (str_match.empty()) return true;
-
   size_t pos_match = 0, pos_str = 0;
   bool wd_case, whole_wd, word_start_m, word_start_s;
   bool match = true, recursive_match = false;
@@ -241,17 +238,20 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
         whole_wd = (*it)->GetWhole_word();
         len1 = word_word[i].size();
         //text match
-        if (len1 && x_CaseNCompareEqual(word_word[i], cp_m, len1,wd_case)){
+        if (len1 && x_CaseNCompareEqual(word_word[i++], cp_m, len1,wd_case)){
            word_start_m 
-               = (!pos_match && is_start) || !isalpha(str_match[pos_match-1]);
-           ch1 = (cp_m.size() < len1) ? ' ' : cp_m[len1];
-           if (!whole_wd || (!isalpha(ch1) && word_start_m)) { // whole word mch
-              if ( !(*it)->CanGetSynonyms() ) { 
+               = (!pos_match && is_start) || !isalpha(cp_m[pos_match-1]);
+           ch1 = (cp_m.size() <= len1) ? ' ' : cp_m[len1];
+           
+           // whole word mch
+           if (!whole_wd || (!isalpha(ch1) && word_start_m)) { 
+              if ( !(*it)->CanGetSynonyms() || (*it)->GetSynonyms().empty() ){
                  if (x_AdvancedStringCompare(cp_s, 
                                            CTempString(cp_m).substr(len1), 
                                            word_start_m, 
                                            &target_match_len)) {
                     recursive_match = true;
+                    break;
                  }
               }
               else {
@@ -261,8 +261,8 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
                     // text match
                   if (x_CaseNCompareEqual(*sit, cp_s, len2, wd_case)) {
                     word_start_s 
-                         = (!pos_str && is_start) || !isalpha(str[pos_str-1]);
-                    ch2 = (cp_s.size() < len2) ? ' ' : cp_s[len2];
+                       = (!pos_str && is_start) || !isalpha(cp_s[pos_str-1]);
+                    ch2 = (cp_s.size() <= len2) ? ' ' : cp_s[len2];
                     // whole word match
                     if (!whole_wd || (!isalpha(ch2) && word_start_s)) {
                       if(x_AdvancedStringCompare(
@@ -271,6 +271,7 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
                                     word_start_m & word_start_s, 
                                     &target_match_len)){
                             recursive_match = true;
+                            break;
                       }
                     }
                   }
@@ -308,7 +309,7 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
   if (match && !recursive_match) {
     while ( pos_str < str.size() 
              && ((ig_space && isspace(str[pos_str])) 
-             || (ig_punct && ispunct(str[pos_str]))) ){
+                      || (ig_punct && ispunct(str[pos_str]))) ){
        pos_str++;
        target_match_len++;
     }
@@ -321,7 +322,7 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
     if (pos_match < str_match.size()) {
          match = false;
     }
-    else if ( (loc == eString_location_ends || loc == eString_location_equals) 
+    else if ( (loc == eString_location_ends || loc == eString_location_equals)
                  && pos_str < len_s) {
          match = false;
     }
