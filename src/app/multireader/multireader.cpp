@@ -1004,7 +1004,7 @@ void CMultiReaderApp::xPostProcessAnnot(
 	}
     edit::CFeatTableEdit fte(annot, args["locus-tag-prefix"].AsString(),
 		m_pErrors);
-    //fte.InferPartials();
+    fte.InferPartials();
     fte.InferParentMrnas();
     fte.InferParentGenes();
 	fte.GenerateLocusTags();
