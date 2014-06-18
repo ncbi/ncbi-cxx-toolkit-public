@@ -3,7 +3,7 @@ BEGIN
 
 BlastOutput ::= SEQUENCE {
 	report Report OPTIONAL,
-	error  Error OPTIONAL
+	error  Err OPTIONAL
 }
 
 Report ::= SEQUENCE {
@@ -15,7 +15,7 @@ Report ::= SEQUENCE {
 	results Results
 }
 
-Error ::= SEQUENCE {
+Err ::= SEQUENCE {
 	code                    INTEGER,
 	message                 VisibleString OPTIONAL
 }
