@@ -206,7 +206,7 @@ public:
     typedef EMode           TMode;
     typedef EStyle          TStyle;
     typedef unsigned int    TFlags; // binary OR of "EFlatFileFlags"
-    typedef EView           TView;
+    typedef unsigned int    TView;
     typedef unsigned int    TGffOptions;
     typedef unsigned int    TGenbankBlocks;
     
@@ -394,10 +394,26 @@ public:
     bool IsViewFirst (void) const { return (m_View & fViewFirst) != 0; }
     // setters
     void SetView(const TView& view) { m_View = view; }
-    void SetViewNuc (void) { m_View = fViewNucleotides; }
-    void SetViewProt(void) { m_View = fViewProteins;    }
-    void SetViewAll (void) { m_View = fViewAll;         }
-    void SetViewFirst (void) { m_View = fViewFirst;     }
+    inline void SetViewNuc (void)
+    {
+       m_View = (m_View & ~fViewAll) | fViewNucleotides;
+    }
+    inline void SetViewProt (void)
+    {
+       m_View = (m_View & ~fViewAll) | fViewProteins;
+    }
+    inline void SetViewAll (void)
+    {
+       m_View |= fViewAll;
+    }
+    inline void SetViewFirst (bool enabled)
+    {
+       if (enabled) {
+           m_View |= fViewFirst;
+       } else {
+           m_View &= ~fViewFirst;
+       }
+    }
 
     // -- Flags
     // getters
