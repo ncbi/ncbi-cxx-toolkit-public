@@ -890,8 +890,8 @@ public:
     void     SetEncoding(EBulkEnc e);
 
     virtual size_t Append(const void* buff, size_t nof_bytes);
-    size_t Append(const char* buff);
-    virtual size_t Append(const string& s, EEncoding enc = eEncoding_Unknown);
+    virtual size_t Append(const CTempString& s,
+                          EEncoding enc = eEncoding_Unknown);
     virtual size_t Append(const TStringUCS2& s);
 
     CDB_Text& operator= (const CDB_Text& text);

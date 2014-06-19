@@ -2012,13 +2012,7 @@ size_t CDB_Text::Append(const void* buff, size_t nof_bytes)
         (buff, nof_bytes ? nof_bytes : strlen((const char*) buff));
 }
 
-size_t CDB_Text::Append(const char* buff)
-{
-    if (!buff) return 0;
-    return CDB_Stream::Append(buff, strlen(buff));
-}
-
-size_t CDB_Text::Append(const string& s, EEncoding enc)
+size_t CDB_Text::Append(const CTempString& s, EEncoding enc)
 {
     switch (m_Encoding) {
     case eBulkEnc_RawBytes:
