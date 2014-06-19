@@ -139,7 +139,7 @@ string CString_constraint :: x_SkipWeasel(const string& str) const
 
 bool CString_constraint :: x_CaseNCompareEqual(string str1, string str2, unsigned len1, bool case_sensitive) const
 {
-   if (!len1) return false;
+   if (!len1) return true;
    string comp_str1, comp_str2;
    comp_str1 = CTempString(str1).substr(0, len1);
    comp_str2 = CTempString(str2).substr(0, len1);
@@ -209,17 +209,16 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
   unsigned len1, len2;
   char ch1, ch2;
   vector <string> word_word;
-  bool has_word = false;
+  bool has_word;
   if (IsSetIgnore_words()) {
+      has_word 
+          = (GetIgnore_words().CanGet() && !GetIgnore_words().Get().empty());
       string strtmp;
       ITERATE (list <CRef <CWord_substitution> >, 
                  it, 
                  GetIgnore_words().Get()) {
           strtmp = ((*it)->CanGetWord()) ? (*it)->GetWord() : kEmptyStr;
           word_word.push_back(strtmp);
-          if (!strtmp.empty()) {
-             has_word = true;
-          }
       }
   }
 
@@ -238,7 +237,7 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
         whole_wd = (*it)->GetWhole_word();
         len1 = word_word[i].size();
         //text match
-        if (len1 && x_CaseNCompareEqual(word_word[i++], cp_m, len1,wd_case)){
+        if (!len1 || x_CaseNCompareEqual(word_word[i++], cp_m, len1,wd_case)){
            word_start_m 
                = (!pos_match && is_start) || !isalpha(cp_m[pos_match-1]);
            ch1 = (cp_m.size() <= len1) ? ' ' : cp_m[len1];
@@ -259,7 +258,7 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
                   len2 = (*sit).size();
 
                     // text match
-                  if (x_CaseNCompareEqual(*sit, cp_s, len2, wd_case)) {
+                  if (!len2 || x_CaseNCompareEqual(*sit, cp_s, len2,wd_case)){
                     word_start_s 
                        = (!pos_str && is_start) || !isalpha(cp_s[pos_str-1]);
                     ch2 = (cp_s.size() <= len2) ? ' ' : cp_s[len2];
