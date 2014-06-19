@@ -379,7 +379,7 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
 };  /**< Quality values for PAM250 matrix, each element corresponds to same element number in array pam250_values */
 
-#define PAM30_VALUES_MAX 7 /**< Number of different combinations supported for PAM30. */
+#define PAM30_VALUES_MAX 11 /**< Number of different combinations supported for PAM30. */
 static array_of_8 pam30_values[PAM30_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3400, 0.283, 1.754, 0.1938, -0.3, 0.436164, 0.161818, 0.161818},
     {7, 2, (double) INT2_MAX, 0.305, 0.15, 0.87, 0.35, -3, 0.479087, 1.014010, 1.162730},
@@ -388,6 +388,10 @@ static array_of_8 pam30_values[PAM30_VALUES_MAX] = {
     {10, 1, (double) INT2_MAX, 0.309, 0.15, 0.88, 0.35, -3, 0.474741, 1.372050, 1.788770},
     {9, 1, (double) INT2_MAX, 0.294, 0.11, 0.61, 0.48, -6, 0.492716, 2.463920, 3.186150},
     {8, 1, (double) INT2_MAX, 0.270, 0.072, 0.40, 0.68, -10, 0.521286, 5.368130, 6.763480},
+    {15, 3, (double) INT2_MAX, 0.339, 0.28, 1.70, 0.20, -0.5, 0.437688, 0.157089, 0.155299},
+    {14, 2, (double) INT2_MAX, 0.337, 0.27, 1.62, 0.21, -0.8, 0.440010, 0.206970, 0.198524},
+    {14, 1, (double) INT2_MAX, 0.333, 0.27, 1.43, 0.23, -1.4, 0.444817, 0.436301, 0.361947},
+    {13, 3, (double) INT2_MAX, 0.338, 0.27, 1.69, 0.20, -0.5, 0.439086, 0.178973, 0.175436},    
 }; /**< Supported values (gap-existence, extension, etc.) for PAM30. */
 
 static Int4 pam30_prefs[PAM30_VALUES_MAX] = {
@@ -398,10 +402,14 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_BEST,
 BLAST_MATRIX_NOMINAL,
+BLAST_MATRIX_NOMINAL,
+BLAST_MATRIX_NOMINAL,
+BLAST_MATRIX_NOMINAL,
+BLAST_MATRIX_NOMINAL,
 };  /**< Quality values for PAM30 matrix, each element corresponds to same element number in array pam30_values */
 
 
-#define PAM70_VALUES_MAX 7 /**< Number of different combinations supported for PAM70. */
+#define PAM70_VALUES_MAX 9 /**< Number of different combinations supported for PAM70. */
 static array_of_8 pam70_values[PAM70_VALUES_MAX] = {
     {(double) INT2_MAX, (double) INT2_MAX, (double) INT2_MAX, 0.3345, 0.229, 1.029, 0.3250,   -0.7, 0.511296, 0.633439, 0.633439},
     {8, 2, (double) INT2_MAX, 0.301, 0.12, 0.54, 0.56, -5, 0.549019, 2.881650, 3.025710},
@@ -410,6 +418,8 @@ static array_of_8 pam70_values[PAM70_VALUES_MAX] = {
     {11, 1, (double) INT2_MAX, 0.305, 0.12, 0.52, 0.59, -6, 0.543514, 3.681400, 4.108020},
     {10, 1, (double) INT2_MAX, 0.291, 0.091, 0.41, 0.71, -9, 0.560723, 6.002970, 6.716570},
     {9, 1, (double) INT2_MAX, 0.270, 0.060, 0.28, 0.97, -14, 0.585186, 11.360800, 12.636700},
+    {11, 2, (double) INT2_MAX, 0.323, 0.186, 0.80, 1.32, -27, 0.524062, 1.321301, 1.281671},
+    {12, 3, (double) INT2_MAX, 0.330, 0.219, 0.93, 0.82, -16, 0.516845, 0.818768, 0.811240},
 }; /**< Supported values (gap-existence, extension, etc.) for PAM70. */
 
 static Int4 pam70_prefs[PAM70_VALUES_MAX] = {
@@ -419,6 +429,8 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_BEST,
+BLAST_MATRIX_NOMINAL,
+BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL
 };  /**< Quality values for PAM70 matrix, each element corresponds to same element number in array pam70_values */
 
