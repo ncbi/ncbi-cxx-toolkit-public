@@ -114,21 +114,26 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
 
     generation_time.SetTimeT((time_t) key.GetCreationTime());
 
-    printf(m_Opts.output_format == eJSON ?
+    if (key.GetVersion() != 3)
+        printf(m_Opts.output_format == eJSON ?
+            "\t\"server_host\": \"%s\",\n\t\"server_port\": %hu,\n" :
+            "server_address: %s:%hu\n",
+            g_NetService_TryResolveHost(key.GetHost()).c_str(), key.GetPort());
+    else
+        printf(m_Opts.output_format == eJSON ?
+            "\t\"server_address_crc32\": %u,\n" :
+            "server_address_crc32: 0x%08X\n",
+            key.GetHostPortCRC32());
 
-        "\t\"server_host\": \"%s\",\n"
-        "\t\"server_port\": %hu,\n"
+    printf(m_Opts.output_format == eJSON ?
         "\t\"id\": %u,\n"
         "\t\"key_generation_time\": \"%s\",\n"
         "\t\"random\": %u,\n" :
 
-        "server_address: %s:%hu\n"
         "id: %u\n"
         "key_generation_time: %s\n"
         "random: %u\n",
 
-        g_NetService_TryResolveHost(key.GetHost()).c_str(),
-        key.GetPort(),
         key.GetId(),
         generation_time.AsString().c_str(),
         (unsigned) key.GetRandomPart());

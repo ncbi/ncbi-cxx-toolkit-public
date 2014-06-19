@@ -40,6 +40,8 @@
 #include <connect/ncbi_socket.hpp>
 
 #include <util/random_gen.hpp>
+#include <util/checksum.hpp>
+
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -47,54 +49,89 @@
 BEGIN_NCBI_SCOPE
 
 
-static CSpinLock s_RandomLock;
-static CRandom s_NCKeyRandom((CRandom::TValue(time(NULL))));
-
 #define KEY_PREFIX "NCID_"
 #define KEY_PREFIX_LENGTH (sizeof(KEY_PREFIX) - 1)
+static const CTempString s_KeyPrefix(KEY_PREFIX, KEY_PREFIX_LENGTH);
 
 #define KEY_EXTENSION_MARKER "_0MetA0"
 #define KEY_EXTENSION_MARKER_LENGTH (sizeof(KEY_EXTENSION_MARKER) - 1)
 
-#define PARSE_NUMERIC_KEY_PART(part_name) \
+#define PARSE_KEY_PART(part_name, test_function) \
     const char* const part_name = ch; \
-    while (ch != ch_end && isdigit(*ch)) \
+    while (ch != ch_end && test_function(*ch)) \
         ++ch; \
     if (ch == ch_end  ||  *ch != '_') \
         return false; \
     ++ch;
 
+#define PARSE_NUMERIC_KEY_PART(part_name) PARSE_KEY_PART(part_name, isdigit)
+
 bool CNetCacheKey::ParseBlobKey(const char* key_str,
         size_t key_len, CNetCacheKey* key_obj,
         CCompoundIDPool::TInstance id_pool)
 {
-    if (key_len > KEY_PREFIX_LENGTH &&
-            memcmp(key_str, KEY_PREFIX, KEY_PREFIX_LENGTH) == 0) {
-        const char* ch      = key_str + KEY_PREFIX_LENGTH;
-        const char* ch_end  = key_str + key_len;
+    CTempString key(key_str, key_len);
+
+    if (key_obj != NULL)
+        key_obj->m_Key = key;
+
+    CTempString service_name, key_v3;
+
+    if (NStr::SplitInTwo(key, CTempString("/", 1), service_name, key_v3)) {
+        if (key_obj != NULL) {
+            key_obj->m_ServiceName = service_name;
+            key_obj->m_Flags = 0;
+        }
+        key = key_v3;
+    } else if (key_obj != NULL) {
+        key_obj->m_ServiceName = kEmptyStr;
+        key_obj->m_Flags = 0;
+    }
+
+    if (NStr::StartsWith(key, s_KeyPrefix)) {
+        const char* ch = key.data() + KEY_PREFIX_LENGTH;
+        const char* ch_end = key.data() + key.length();
 
         // version
         PARSE_NUMERIC_KEY_PART(ver_str);
 
+        unsigned key_version = (unsigned) atoi(ver_str);
+
         // id
         PARSE_NUMERIC_KEY_PART(id_str);
 
-        // hostname
-        const char* const hostname = ch;
-        while (ch != ch_end  &&  *ch != '_')
-            ++ch;
-        if (ch == ch_end  ||  *ch != '_')
-            return false;
         if (key_obj) {
-            key_obj->m_Key.assign(key_str, ch_end);
-            key_obj->m_Version = atoi(ver_str);
-            key_obj->m_Id = atoi(id_str);
-            key_obj->m_Host.assign(hostname, ch - hostname);
+            key_obj->m_Version = key_version;
+            key_obj->m_Id = (unsigned) atoi(id_str);
         }
-        ++ch;
 
-        // port
-        PARSE_NUMERIC_KEY_PART(port_str);
+        if (key_version == 1) {
+            // hostname
+            const char* const hostname = ch;
+            while (ch != ch_end  &&  *ch != '_')
+                ++ch;
+            if (ch == ch_end  ||  *ch != '_')
+                return false;
+            if (key_obj != NULL)
+                key_obj->m_Host.assign(hostname, ch - hostname);
+            ++ch;
+
+            // port
+            PARSE_NUMERIC_KEY_PART(port_str);
+            if (key_obj != NULL) {
+                key_obj->m_Port = (unsigned short) atoi(port_str);
+                key_obj->m_HostPortCRC32 = 0;
+            }
+        } else if (key_version == 3) {
+            // CRC32 of the hostname:port combination.
+            PARSE_KEY_PART(crc32, isalnum);
+            if (key_obj != NULL) {
+                key_obj->m_Host = kEmptyStr;
+                key_obj->m_Port = 0;
+                key_obj->m_HostPortCRC32 = (unsigned int) strtoul(crc32, NULL, 16);
+            }
+        } else
+            return false;
 
         // Creation time
         PARSE_NUMERIC_KEY_PART(creation_time_str);
@@ -105,14 +142,9 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
             ++ch;
 
         if (key_obj != NULL) {
-            key_obj->m_Port = (unsigned short) atoi(port_str);
             key_obj->m_CreationTime = (time_t) strtoul(creation_time_str, NULL, 10);
             key_obj->m_Random = (Uint4) strtoul(random_str, NULL, 10);
-            key_obj->m_PrimaryKeyLength = ch - key_str;
-
-            // Key extensions
-            key_obj->m_ServiceName = kEmptyStr;
-            key_obj->m_Flags = 0;
+            key_obj->m_PrimaryKey = string(key.data(), ch);
         }
 
         if (ch < ch_end) {
@@ -160,11 +192,14 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
                     }
             } while (ch < ch_end);
         }
+        return true;
+    }
+
 #ifndef NO_COMPOUND_ID_SUPPORT
-    } else if (id_pool != NULL) {
+    if (id_pool != NULL) {
         try {
             CCompoundIDPool pool_obj(id_pool);
-            CCompoundID cid(pool_obj.FromString(string(key_str, key_len)));
+            CCompoundID cid(pool_obj.FromString(key));
             if (key_obj != NULL)
                 key_obj->m_Version = 2;
 
@@ -209,14 +244,15 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
                         key_obj->m_Random,
                         key_obj->m_CreationTime);
 
-                key_obj->m_PrimaryKeyLength = key_obj->m_Key.length();
+                key_obj->m_PrimaryKey = key_obj->m_Key;
 
                 field = cid.GetFirst(eCIT_ServiceName);
-                key_obj->m_ServiceName = field ?
-                        field.GetServiceName() : kEmptyStr;
+                if (field)
+                    key_obj->m_ServiceName = field.GetServiceName();
 
                 field = cid.GetFirst(eCIT_Flags);
-                key_obj->m_Flags = field ? (unsigned) field.GetFlags() : 0;
+                if (field)
+                    key_obj->m_Flags = (unsigned) field.GetFlags();
 
                 if (!key_obj->m_ServiceName.empty() || key_obj->m_Flags != 0)
                     AddExtensions(key_obj->m_Key,
@@ -226,12 +262,11 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
         catch (CCompoundIDException&) {
             return false;
         }
-#endif /* NO_COMPOUND_ID_SUPPORT */
-    } else {
-        return false;
+        return true;
     }
+#endif /* NO_COMPOUND_ID_SUPPORT */
 
-    return true;
+    return false;
 }
 
 static void AppendServiceNameExtension(string& blob_id,
@@ -243,18 +278,26 @@ static void AppendServiceNameExtension(string& blob_id,
 }
 
 void CNetCacheKey::AddExtensions(string& blob_id, const string& service_name,
-        CNetCacheKey::TNCKeyFlags flags)
+        CNetCacheKey::TNCKeyFlags flags, unsigned ver)
 {
-    blob_id.append(KEY_EXTENSION_MARKER, KEY_EXTENSION_MARKER_LENGTH);
-    AppendServiceNameExtension(blob_id, service_name);
-
-    if (flags != 0) {
+    if (ver != 3) {
+        blob_id.append(KEY_EXTENSION_MARKER, KEY_EXTENSION_MARKER_LENGTH);
+        AppendServiceNameExtension(blob_id, service_name);
+        if (flags == 0)
+            return;
         blob_id.append("_F_", 3);
-        if (flags & fNCKey_SingleServer)
-            blob_id.append(1, '1');
-        if (flags & fNCKey_NoServerCheck)
-            blob_id.append(1, 'N');
+    } else {
+        blob_id.insert(0, 1, '/');
+        blob_id.insert(0, service_name);
+        if (flags == 0)
+            return;
+        blob_id.append(KEY_EXTENSION_MARKER "_F_",
+                KEY_EXTENSION_MARKER_LENGTH + 3);
     }
+    if (flags & fNCKey_SingleServer)
+        blob_id.append(1, '1');
+    if (flags & fNCKey_NoServerCheck)
+        blob_id.append(1, 'N');
 }
 
 CNetCacheKey::CNetCacheKey(const string& key_str,
@@ -275,17 +318,14 @@ void CNetCacheKey::Assign(const string& key_str,
     }
 }
 
-void
-CNetCacheKey::GenerateBlobKey(string*        key,
-                              unsigned int   id,
-                              const string&  host,
-                              unsigned short port,
-                              unsigned int   ver /* = 1 */)
+Uint4 CNetCacheKey::CalculateChecksum(const string& host, unsigned short port)
 {
-    s_RandomLock.Lock();
-    unsigned int rnd_num = s_NCKeyRandom.GetRand();
-    s_RandomLock.Unlock();
-    GenerateBlobKey(key, id, host, port, ver, rnd_num);
+    string server_address(host);
+    server_address.append(1, ':');
+    server_address.append(NStr::NumericToString(port));
+    CChecksum crc32(CChecksum::eCRC32);
+    crc32.AddChars(server_address.data(), server_address.size());
+    return crc32.GetChecksum();
 }
 
 void
@@ -304,34 +344,30 @@ CNetCacheKey::GenerateBlobKey(string*        key,
     NStr::IntToString(tmp, ver);
     key->append(tmp);
 
+    key->append(1, '_');
     NStr::IntToString(tmp, id);
-    key->append(1, '_');
     key->append(tmp);
 
     key->append(1, '_');
-    key->append(host);
 
-    NStr::IntToString(tmp, port);
+    if (ver == 3)
+        key->append(NStr::NumericToString(
+                CNetCacheKey::CalculateChecksum(host, port), 0, 16));
+    else {
+        key->append(host);
+        key->append(1, '_');
+        NStr::IntToString(tmp, port);
+        key->append(tmp);
+    }
+
     key->append(1, '_');
+    NStr::UInt8ToString(tmp,
+            (Uint8) (creation_time ? creation_time : ::time(NULL)));
     key->append(tmp);
 
-    if (creation_time == 0)
-        creation_time = ::time(0);
-    NStr::UInt8ToString(tmp, (Uint8) creation_time);
     key->append(1, '_');
-    key->append(tmp);
-
     NStr::UIntToString(tmp, rnd_num);
-    key->append(1, '_');
     key->append(tmp);
-}
-
-void CNetCacheKey::GenerateBlobKey(string* key, unsigned id,
-    const string& host, unsigned short port, const string& service_name,
-    CNetCacheKey::TNCKeyFlags flags)
-{
-    GenerateBlobKey(key, id, host, port);
-    AddExtensions(*key, service_name, flags);
 }
 
 #ifndef NO_COMPOUND_ID_SUPPORT

@@ -86,7 +86,7 @@ public:
             size_t key_len, CNetCacheKey* key_obj,
             CCompoundIDPool::TInstance id_pool = NULL);
 
-    bool HasExtensions() const {return m_PrimaryKeyLength < m_Key.length();}
+    bool HasExtensions() const {return m_PrimaryKey.length() < m_Key.length();}
 
     /// If the blob key has been parsed successfully,
     /// this method returns a trimmed "base" version
@@ -95,24 +95,21 @@ public:
 
     /// Unconditionally append a service name to the specified string.
     static void AddExtensions(string& blob_id, const string& service_name,
-            TNCKeyFlags flags);
+            TNCKeyFlags flags, unsigned ver = 1);
 
     TNCKeyFlags GetFlags() const {return m_Flags;}
     bool GetFlag(ENCKeyFlag flag) const {return (m_Flags & flag) != 0;}
     void SetFlag(ENCKeyFlag flag) {m_Flags |= (TNCKeyFlags) flag;}
     void ClearFlag(ENCKeyFlag flag) {m_Flags &= ~(TNCKeyFlags) flag;}
 
+    /// Calculate and return the CRC32 checksum generated from the
+    /// string "host:port".
+    static Uint4 CalculateChecksum(const string& host, unsigned short port);
+
     /// Generate blob key string
     ///
     /// Please note that "id" is an integer issued by the NetCache server.
     /// Clients should not use this function with custom ids.
-    /// Otherwise it may disrupt the inter-server communication.
-    static
-    void GenerateBlobKey(string*        key,
-                         unsigned int   id,
-                         const string&  host,
-                         unsigned short port,
-                         unsigned int   ver = 1);
     static
     void GenerateBlobKey(string*        key,
                          unsigned int   id,
@@ -121,15 +118,6 @@ public:
                          unsigned int   ver,
                          unsigned int   rnd_num,
                          time_t         creation_time = 0);
-
-    /// Generate a key with extensions.
-    static void GenerateBlobKey(
-        string* key,
-        unsigned id,
-        const string& host,
-        unsigned short port,
-        const string& service_name,
-        TNCKeyFlags flags);
 
     static string KeyToCompoundID(
         const string& key_str,
@@ -150,6 +138,7 @@ public:
     unsigned GetId() const;
     const string& GetHost() const;
     unsigned short GetPort() const;
+    unsigned GetHostPortCRC32() const;
     unsigned GetVersion() const;
     time_t GetCreationTime() const;
     Uint4 GetRandomPart() const;
@@ -157,13 +146,14 @@ public:
 
 private:
     string m_Key;
+    string m_PrimaryKey;
     unsigned int m_Id; ///< BLOB id
     string m_Host; ///< server name
     unsigned short m_Port; ///< TCP/IP port number
+    unsigned m_HostPortCRC32; ///< CRC32 checksum of the host:port combination
     unsigned m_Version; ///< Key version
     time_t m_CreationTime;
     Uint4 m_Random;
-    size_t m_PrimaryKeyLength;
 
     // Key extensions
     string m_ServiceName;
@@ -177,7 +167,7 @@ private:
 
 inline string CNetCacheKey::StripKeyExtensions() const
 {
-    return HasExtensions() ? string(m_Key.data(), m_PrimaryKeyLength) : m_Key;
+    return m_PrimaryKey;
 }
 
 inline const string& CNetCacheKey::GetKey() const
@@ -201,6 +191,11 @@ inline unsigned short
 CNetCacheKey::GetPort(void) const
 {
     return m_Port;
+}
+
+inline unsigned CNetCacheKey::GetHostPortCRC32() const
+{
+    return m_HostPortCRC32;
 }
 
 inline unsigned int
