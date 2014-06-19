@@ -75,6 +75,9 @@
 #include <serial/objostrxml.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <util/compress/zlib.hpp>
+#include <util/compress/bzip2.hpp>
+#include <util/compress/lzo.hpp>
+#include <util/format_guess.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -110,8 +113,8 @@ private:
 
     void Setup(const CArgs& args);
 
-    CObjectIStream* OpenFile(const CArgs& args);
-    CObjectIStream* OpenFile(const string& fname, const CArgs& args);
+    auto_ptr<CObjectIStream> OpenFile(const CArgs& args);
+    auto_ptr<CObjectIStream> OpenFile(const string& fname);
 
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
     CConstRef<CValidError> ProcessSeqEntry(void);
@@ -345,18 +348,21 @@ void CAsnvalApp::ValidateOneFile(string fname)
 
         ConstructOutputStreams();
     }
-    m_In.reset(OpenFile(fname, args));
-    if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
-        // Open File 
-        ProcessReleaseFile(args);
-    } else {
+    m_In = OpenFile(fname);
+    if (m_In.get() != 0)
+    {
+        if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
+            // Open File 
+            ProcessReleaseFile(args);
+        } else {
 
-        CConstRef<CValidError> eval = ValidateInput ();
+            CConstRef<CValidError> eval = ValidateInput ();
 
-        if ( eval ) {
-            PrintValidError(eval, args);
+            if ( eval ) {
+                PrintValidError(eval, args);
+            }
+
         }
-
     }
     time_t stop_time = time(NULL);
     time_t elapsed = stop_time - start_time;
@@ -520,6 +526,8 @@ void CAsnvalApp::ReadClassMember
                         PrintValidError(eval, GetArgs());
                     }
                 }
+                scope->RemoveTopLevelSeqEntry(seh);
+                scope->ResetHistory();
                 n++;
             } catch (exception e) {
                 if ( !m_Continue ) {
@@ -754,34 +762,60 @@ void CAsnvalApp::Setup(const CArgs& args)
 }
 
 
-CObjectIStream* CAsnvalApp::OpenFile
-(const CArgs& args)
+auto_ptr<CObjectIStream> CAsnvalApp::OpenFile(const CArgs& args)
 {
     // file name
-    return OpenFile(args["i"].AsString(), args);
+    return OpenFile(args["i"].AsString());
 }
 
 
-CObjectIStream* CAsnvalApp::OpenFile
-(const string& fname, const CArgs& args)
+auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
 {
-    // file format 
-    ESerialDataFormat format = args["b"].AsBoolean() ? eSerial_AsnBinary : eSerial_AsnText;
-
-    CObjectIStream* pI = 0;
-    if ( args["c"] ) {
-        CNcbiIfstream* pInputStream = new CNcbiIfstream (fname.c_str(), ios::binary);
-        CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
-            5120, 5120, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
-        CCompressionIStream* pUnzipStream = new CCompressionIStream(
-            *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
-        pI = CObjectIStream::Open( format, *pUnzipStream);
+    auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
+    auto_ptr<CCompressionStreamProcessor> Decompressor;
+    
+    CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
+    switch (format)
+    {
+    case CFormatGuess::eGZip:
+        Decompressor.reset(new CZipStreamDecompressor(5120, 5120, kZlibDefaultWbits, CZipCompression::fCheckFileHeader));
+        break;
+    case CFormatGuess::eBZip2:               
+        Decompressor.reset(new CBZip2StreamDecompressor());
+    case CFormatGuess::eLzo:
+        Decompressor.reset(new CLZOStreamDecompressor());
+        break;
+    default:
+        break;
     }
-    else {
-        pI = CObjectIStream::Open(fname, format);
+    if (Decompressor.get() != 0)
+    {
+        auto_ptr<CCompressionIStream> UnzipStream(new CCompressionIStream(*InputStream, Decompressor.get(), CCompressionIStream::fOwnProcessor));
+        InputStream.release();
+        InputStream = UnzipStream;
+        Decompressor.release();
+        format = CFormatGuess::Format(*InputStream);
     }
 
-    return pI;
+    auto_ptr<CObjectIStream> objectStream;
+    switch (format)
+    {
+        case CFormatGuess::eBinaryASN:
+        case CFormatGuess::eTextASN:
+            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream));
+            break;
+        default:
+            break;
+    }
+    InputStream.release();
+
+    return objectStream;
+}
+
+
+auto_ptr<CObjectIStream> CAsnvalApp::OpenFile(const string& fname)
+{
+    return OpenUncompressedStream(fname);
 }
 
 void CAsnvalApp::PrintValidError

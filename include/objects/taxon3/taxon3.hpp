@@ -69,8 +69,8 @@ public:
     void Init(const STimeout* timeout, unsigned reconnect_attempts=5);
 
     // submit a list of org_refs
-    CRef<CTaxon3_reply> SendOrgRefList(vector<CRef< COrg_ref> > list);
-    CRef< CTaxon3_reply >    SendRequest(CTaxon3_request& request);
+    CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef< COrg_ref> >& list);
+    CRef< CTaxon3_reply >    SendRequest(const CTaxon3_request& request);
 
     //--------------------------------------------------
     // Get error message after latest erroneous operation

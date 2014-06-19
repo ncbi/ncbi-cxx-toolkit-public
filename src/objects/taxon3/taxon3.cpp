@@ -95,7 +95,7 @@ CTaxon3::Init(const STimeout* timeout, unsigned reconnect_attempts)
 
 
 CRef< CTaxon3_reply >
-CTaxon3::SendRequest(CTaxon3_request& request)
+CTaxon3::SendRequest(const CTaxon3_request& request)
 {
     SetLastError(NULL);
 
@@ -158,7 +158,7 @@ CTaxon3::SetLastError( const char* pchErr )
 }
 
 
-CRef<CTaxon3_reply> CTaxon3::SendOrgRefList(vector<CRef< COrg_ref> > list)
+CRef<CTaxon3_reply> CTaxon3::SendOrgRefList(const vector<CRef< COrg_ref> >& list)
 {
     // Open connection to Taxonomy service
     CTaxon3_request request;

@@ -129,7 +129,53 @@ using namespace sequence;
 
 auto_ptr<CTextFsa> CValidError_imp::m_SourceQualTags;
 
+class CCachedTaxon
+{
+public:
+    typedef map<int, CRef<CT3Reply> > CCachedReplyMap;
+    void Init()
+    {
+        if (m_taxon.get() == 0)
+        {
+            m_taxon.reset(new CTaxon3);
+            m_taxon->Init();
+            m_cache.reset(new CCachedReplyMap);
+        }
+    }
+    CRef<CTaxon3_reply> SendOrgRefList(const vector< CRef<COrg_ref> >& query)
+    {
+        CRef<CTaxon3_reply> result(new CTaxon3_reply);
 
+        ITERATE (vector<CRef< COrg_ref> >, it, query)
+        {
+            int id = (**it).GetTaxId();
+            CRef<CT3Reply>& reply = (*m_cache)[id];
+            if (id < 1 || reply.Empty())
+            {
+                CTaxon3_request request;
+
+                CRef<CT3Request> rq(new CT3Request);                    
+                CRef<COrg_ref> org(new COrg_ref);
+                org->Assign(**it);
+                rq->SetOrg(*org);
+
+                request.SetRequest().push_back(rq);
+                CRef<CTaxon3_reply> result = m_taxon->SendRequest (request);
+                reply = *result->SetReply().begin();
+            }
+
+            result->SetReply().push_back(reply);
+        }
+
+        return result;
+    }  
+protected:
+    static auto_ptr<CTaxon3> m_taxon;
+    static auto_ptr<CCachedReplyMap> m_cache;
+};
+
+auto_ptr<CTaxon3> CCachedTaxon::m_taxon;
+auto_ptr<CCachedTaxon::CCachedReplyMap> CCachedTaxon::m_cache;
 
 
 static bool s_UnbalancedParentheses (string str)
@@ -2325,12 +2371,12 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
  const vector<CConstRef<CSeq_feat> > & src_feats,
  TSpecificHostWithParentList& host_list)
 {
-	host_list.clear();
-	vector<CRef<COrg_ref> > org_rq_list;
-	//first do descriptors
+        host_list.clear();
+        vector<CRef<COrg_ref> > org_rq_list;
+        //first do descriptors
     vector<CConstRef<CSeqdesc> >::const_iterator desc_it = src_descs.begin();
     vector<CConstRef<CSeq_entry> >::const_iterator ctx_it = desc_ctxs.begin();
-	while (desc_it != src_descs.end() && ctx_it != desc_ctxs.end()) {
+        while (desc_it != src_descs.end() && ctx_it != desc_ctxs.end()) {
         FOR_EACH_ORGMOD_ON_BIOSOURCE (mod_it, (*desc_it)->GetSource()) {
             if ((*mod_it)->IsSetSubtype()
                 && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
@@ -2339,8 +2385,8 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
                 if (!NStr::IsBlank(host)) {
                     CRef<COrg_ref> rq(new COrg_ref);
                     rq->SetTaxname(host);
-				    host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(),**desc_it, **ctx_it));
-				    org_rq_list.push_back(rq);
+                                    host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(),**desc_it, **ctx_it));
+                                    org_rq_list.push_back(rq);
                 }
             }
         }
@@ -2348,7 +2394,7 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
         ++ctx_it;
     }
 
-	// collect features with specific hosts
+        // collect features with specific hosts
     vector<CConstRef<CSeq_feat> >::const_iterator feat_it = src_feats.begin();
     while (feat_it != src_feats.end()) {
         FOR_EACH_ORGMOD_ON_BIOSOURCE (mod_it, (*feat_it)->GetData().GetBiosrc()) {
@@ -2359,23 +2405,23 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
                 if (!NStr::IsBlank(host)) {
                     CRef<COrg_ref> rq(new COrg_ref);
                     rq->SetTaxname(host);
-				    host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(), **feat_it));
-				    org_rq_list.push_back(rq);
+                                    host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(), **feat_it));
+                                    org_rq_list.push_back(rq);
                 }
             }
         }
         ++feat_it;
-	}
+        }
 
-	if (org_rq_list.size() > 0) {
+        if (org_rq_list.size() > 0) {
         CTaxon3 taxon3;
         taxon3.Init();
         CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
-		return reply;
-	} else {
-		CRef<CTaxon3_reply> reply;
-		return reply;
-	}
+                return reply;
+        } else {
+                CRef<CTaxon3_reply> reply;
+                return reply;
+        }
 }
 
 
@@ -2384,16 +2430,16 @@ void CValidError_imp::ValidateSpecificHost
  const vector<CConstRef<CSeq_entry> > & desc_ctxs,
  const vector<CConstRef<CSeq_feat> > & src_feats)
 {
-	TSpecificHostWithParentList host_list;
-	CRef<CTaxon3_reply> reply = RequestSpecificHost(src_descs, desc_ctxs, src_feats, host_list);
+        TSpecificHostWithParentList host_list;
+        CRef<CTaxon3_reply> reply = RequestSpecificHost(src_descs, desc_ctxs, src_feats, host_list);
     
     if (reply) {
         CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-		TSpecificHostWithParentList::iterator org_it = host_list.begin();
+                TSpecificHostWithParentList::iterator org_it = host_list.begin();
 
         // process descriptor and feature responses
-		while (reply_it != reply->GetReply().end() && org_it != host_list.end()) {
-			string host = (*org_it).GetOrgref().GetTaxname();
+                while (reply_it != reply->GetReply().end() && org_it != host_list.end()) {
+                        string host = (*org_it).GetOrgref().GetTaxname();
             string err_str = InterpretSpecificHostResult(host, **reply_it);
             if (!NStr::IsBlank(err_str)) {
                 EErrType et = eErr_SEQ_DESCR_BadSpecificHost;
@@ -2402,19 +2448,19 @@ void CValidError_imp::ValidateSpecificHost
                     et = eErr_SEQ_DESCR_AmbiguousSpecificHost;
                     sev = eDiag_Info;
                 } 
-				if ((*org_it).HasParentSeqdesc()) {
-					PostObjErr (sev, et, err_str,
+                                if ((*org_it).HasParentSeqdesc()) {
+                                        PostObjErr (sev, et, err_str,
                             (*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
-				} else {
-					PostErr (sev, et, err_str,
+                                } else {
+                                        PostErr (sev, et, err_str,
                              (*org_it).GetSeqfeatParent());
-				}
-			}
-			++reply_it;
-			++org_it;
-		}
+                                }
+                        }
+                        ++reply_it;
+                        ++org_it;
+                }
     }
-}	
+}       
 
 
 void CValidError_imp::ValidateSpecificHost (const CSeq_entry& se)
@@ -2464,7 +2510,7 @@ void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
     }
 
     if (org_rq_list.size() > 0) {
-        CTaxon3 taxon3;
+        CCachedTaxon taxon3;
         taxon3.Init();
         CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
         if (reply) {
@@ -2573,7 +2619,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     }
 
     if (org_rq_list.size() > 0) {
-        CTaxon3 taxon3;
+        CCachedTaxon taxon3;
         taxon3.Init();
         CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
         if (reply) {
@@ -2754,7 +2800,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
     rq->Assign(org);
     org_rq_list.push_back(rq);
 
-    CTaxon3 taxon3;
+    CCachedTaxon taxon3;
     taxon3.Init();
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
     if (reply) {
@@ -2847,7 +2893,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
             if (!NStr::IsBlank(host)) {
                 CRef<COrg_ref> rq(new COrg_ref);
                 rq->SetTaxname(host);
-				org_rq_list.push_back(rq);
+                                org_rq_list.push_back(rq);
             }
         }
     }
@@ -2915,7 +2961,7 @@ CPCRSetList::CPCRSetList(void)
 
 CPCRSetList::~CPCRSetList(void)
 {
-    for (int i = 0; i < m_SetList.size(); i++) {
+    for (size_t i = 0; i < m_SetList.size(); i++) {
         delete m_SetList[i];
     }
     m_SetList.clear();
