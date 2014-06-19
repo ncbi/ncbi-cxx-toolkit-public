@@ -2797,7 +2797,7 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
 
 void CValidError_imp::FindEmbeddedScript (const CSerialObject& obj)
 {
-    class CScriptTagTextFsm : public CTextFsm<bool>
+    class CScriptTagTextFsm : public CTextFsm<int>
     {
     public:
         CScriptTagTextFsm() {
