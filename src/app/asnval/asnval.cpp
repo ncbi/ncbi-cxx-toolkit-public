@@ -74,9 +74,7 @@
 
 #include <serial/objostrxml.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
-#include <util/compress/zlib.hpp>
-#include <util/compress/bzip2.hpp>
-#include <util/compress/lzo.hpp>
+#include <util/compress/stream_util.hpp>
 #include <util/format_guess.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -772,28 +770,20 @@ auto_ptr<CObjectIStream> CAsnvalApp::OpenFile(const CArgs& args)
 auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
 {
     auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
-    auto_ptr<CCompressionStreamProcessor> Decompressor;
+    CCompressStream::EMethod method;
     
     CFormatGuess::EFormat format = CFormatGuess::Format(*InputStream);
     switch (format)
     {
-    case CFormatGuess::eGZip:
-        Decompressor.reset(new CZipStreamDecompressor(5120, 5120, kZlibDefaultWbits, CZipCompression::fCheckFileHeader));
-        break;
-    case CFormatGuess::eBZip2:               
-        Decompressor.reset(new CBZip2StreamDecompressor());
-    case CFormatGuess::eLzo:
-        Decompressor.reset(new CLZOStreamDecompressor());
-        break;
-    default:
-        break;
+    case CFormatGuess::eGZip:  method = CCompressStream::eGZipFile;  break;
+    case CFormatGuess::eBZip2: method = CCompressStream::eBZip2;     break;
+    case CFormatGuess::eLzo:   method = CCompressStream::eLZO;       break;
+    default:                   method = CCompressStream::eNone;      break;
     }
-    if (Decompressor.get() != 0)
+    if (method != CCompressStream::eNone)
     {
-        auto_ptr<CCompressionIStream> UnzipStream(new CCompressionIStream(*InputStream, Decompressor.get(), CCompressionIStream::fOwnProcessor));
-        InputStream.release();
-        InputStream = UnzipStream;
-        Decompressor.release();
+        InputStream.reset
+            (new CDecompressIStream(*InputStream.release(), method));
         format = CFormatGuess::Format(*InputStream);
     }
 
