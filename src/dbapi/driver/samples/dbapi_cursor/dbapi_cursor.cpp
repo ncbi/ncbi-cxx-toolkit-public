@@ -102,8 +102,6 @@ CDbapiCursorApp::CreateTable(const string& table_name, const string& blob_type)
 
     lcmd.reset();
 
-    auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(table_name));
-
     CDB_Int int_val;
     CDB_Float fl_val;
     CDB_DateTime date_val(CTime::eCurrent);
@@ -114,6 +112,8 @@ CDbapiCursorApp::CreateTable(const string& table_name, const string& blob_type)
         pTxt.SetEncoding(eBulkEnc_RawUCS2);
     }
     pTxt.Append("This is a test string.");
+
+    auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(table_name));
 
     // Bind data from a program variables
     bcp->Bind(0, &int_val);
@@ -221,7 +221,7 @@ CDbapiCursorApp::RunSample(void)
     }
 
     int status = RunOneSample("text");
-    if (GetDriverName() != "odbc") {
+    if (GetDriverName() != "odbc"  &&  GetDriverName() != "dblib") {
         status |= RunOneSample("image");
     }
     if (GetServerType() == eMsSql) {
