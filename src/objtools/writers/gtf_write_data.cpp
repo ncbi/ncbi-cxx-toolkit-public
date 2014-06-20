@@ -223,76 +223,73 @@ bool CGtfRecord::x_AssignAttributesFromAsnCore(
 
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::x_AssignAttributesFromAsnExtended(
-    CMappedFeat mapped_feature )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
+    const CSeq_feat& feature = mf.GetOriginalFeature();
 
-    string strDbxref = x_FeatureToDbxref( mapped_feature );
+    string strDbxref = x_FeatureToDbxref(mf);
     if ( ! strDbxref.empty() ) {
         SetAttribute("db_xref", strDbxref);
     }
 
-    string strNote = x_FeatureToNote( mapped_feature );
+    string strNote = x_FeatureToNote(mf);
     if ( ! strNote.empty() ) {
         SetAttribute("note", strNote);
     }
     
-    if ( x_FeatureToPseudo( mapped_feature ) ) {    
+    if ( x_FeatureToPseudo(mf) ) {    
         SetAttribute("pseudo", "");
     }
 
-    if ( x_FeatureToPartial( mapped_feature ) ) {    
+    if ( x_FeatureToPartial(mf) ) {    
         SetAttribute("partial", "");
     }
 
     switch ( feature.GetData().GetSubtype() ) {
     default:
+		if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+            m_strGeneId = x_MrnaToGeneId(mf);
+            m_strTranscriptId = x_MrnaToTranscriptId(mf);
+
+            string strProduct = x_MrnaToProduct(mf);
+            if ( ! strProduct.empty() ) {
+                SetAttribute("product", strProduct); 
+            }
+		}
         break;
 
     case CSeq_feat::TData::eSubtype_cdregion: {
 
-            m_strGeneId = x_CdsToGeneId( mapped_feature );
-            m_strTranscriptId = x_CdsToTranscriptId( mapped_feature );
+            m_strGeneId = x_CdsToGeneId(mf);
+            m_strTranscriptId = x_CdsToTranscriptId(mf);
 
-            string strProteinId = x_CdsToProteinId( mapped_feature );
+            string strProteinId = x_CdsToProteinId(mf);
             if ( ! strProteinId.empty() ) {
                 SetAttribute("protein_id", strProteinId);
             }
 
-            if ( x_CdsToRibosomalSlippage( mapped_feature ) ) {
+            if ( x_CdsToRibosomalSlippage(mf) ) {
                 SetAttribute("ribosomal_slippage", "");
             }
 
-            string strProduct = x_CdsToProduct( mapped_feature );
+            string strProduct = x_CdsToProduct(mf);
             if ( ! strProduct.empty() ) {
                 SetAttribute("product", strProduct); 
             }
 
-            string strCode = x_CdsToCode( mapped_feature );
+            string strCode = x_CdsToCode(mf);
             if ( ! strCode.empty() ) {
                 SetAttribute("transl_table", strCode);
             }
          }
         break;
 
-    case CSeq_feat::TData::eSubtype_mRNA: {
-
-            m_strGeneId = x_MrnaToGeneId( mapped_feature );
-            m_strTranscriptId = x_MrnaToTranscriptId( mapped_feature );
-
-            string strProduct = x_MrnaToProduct( mapped_feature );
-            if ( ! strProduct.empty() ) {
-                SetAttribute("product", strProduct); 
-            }
-         }
-        break;
-
     case CSeq_feat::TData::eSubtype_gene: {
 
-            m_strGeneId = x_GeneToGeneId( mapped_feature );
+            m_strGeneId = x_GeneToGeneId(mf);
 
-            string strGeneSyn = x_GeneToGeneSyn( mapped_feature );
+            string strGeneSyn = x_GeneToGeneSyn(mf);
             if ( ! strGeneSyn.empty() ) {
                 SetAttribute("gene_synonym", strGeneSyn);
             }                             
@@ -382,10 +379,13 @@ CMappedFeat CGtfRecord::x_CdsFeatureToGeneParent(
 
 //  ============================================================================
 CMappedFeat CGtfRecord::x_MrnaFeatureToGeneParent(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf)
 //  ============================================================================
 {
-    return feature::GetBestGeneForMrna( mapped_feat, &FeatTree() );
+	if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
+		return feature::GetBestGeneForMrna(mf, &FeatTree());
+	}
+	return feature::GetBestGeneForFeat(mf, &FeatTree());
 }
 
 //  ============================================================================

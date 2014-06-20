@@ -119,19 +119,20 @@ bool CGtfWriter::x_WriteRecord(
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeature(
     CGffFeatureContext& context,
-    CMappedFeat mf )
+    CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
-    switch( mf.GetFeatSubtype() ) {
+    switch(mf.GetFeatSubtype()) {
         default:
+			if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+				return x_WriteFeatureMrna(context, mf);
+			}
             // GTF is not interested --- ignore
             return true;
         case CSeqFeatData::eSubtype_gene: 
-            return x_WriteFeatureGene( context, mf );
-        case CSeqFeatData::eSubtype_mRNA:
-            return x_WriteFeatureMrna( context, mf );
+            return x_WriteFeatureGene(context, mf);
         case CSeqFeatData::eSubtype_cdregion:
-            return x_WriteFeatureCds( context, mf );
+            return x_WriteFeatureCds(context, mf);
     }
     return false;
 }
