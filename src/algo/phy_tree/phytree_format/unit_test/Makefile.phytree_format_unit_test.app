@@ -12,6 +12,6 @@ LDFLAGS  = $(FAST_LDFLAGS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 CHECK_CMD = phytree_format_unit_test
-CHECK_COPY = data
+CHECK_COPY = data phytree_format_unit_test.ini
 
 WATCHERS = blastsoft
