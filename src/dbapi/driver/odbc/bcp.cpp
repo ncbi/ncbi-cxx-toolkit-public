@@ -508,12 +508,13 @@ bool CODBC_BCPInCmd::Send(void)
                     memmove(buff, buff + valid_len, invalid_len);
                 }
 
-                len = val.Read(buff + invalid_len, sizeof(buff) - invalid_len);
+                len = val.Read(buff + invalid_len, sizeof(buff) - invalid_len)
+                    + invalid_len;
                 if (len > left_bytes) {
                     len = left_bytes;
                 }
 
-                valid_len = CUtf8::GetValidBytesCount( CTempString(buff, len));
+                valid_len = impl::GetValidUTF8Len(CTempString(buff, len));
 
                 CODBCString odbc_str(buff, len);
 

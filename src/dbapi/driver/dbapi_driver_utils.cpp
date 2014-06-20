@@ -80,6 +80,25 @@ string ConvertN2A(Uint4 host)
     return string(str, len);
 }
 
+SIZE_TYPE GetValidUTF8Len(const CTempString& ts)
+{
+    SIZE_TYPE len = ts.size();
+    if (CUtf8::GetValidBytesCount(ts) != len) {
+        return len; // totally invalid, assume not UTF-8 after all
+    }
+    for (SIZE_TYPE n = len;  n > 0  &&  (ts[n - 1] & 0x80) != 0;  --n) {
+        if ((ts[n - 1] & 0xC0) == 0xC0) { // start byte
+            SIZE_TYPE needed;
+            CUtf8::DecodeFirst(ts[n - 1], needed);
+            if (n + needed > len) {
+                return n - 1;
+            }
+            break;
+        }
+    }
+    return len;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 CDBBindedParams::CDBBindedParams(CDB_Params& bindings) 
 : m_Bindings(&bindings)

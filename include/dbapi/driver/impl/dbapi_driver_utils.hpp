@@ -253,7 +253,9 @@ private:
 NCBI_DBAPIDRIVER_EXPORT
 string ConvertN2A(Uint4 host);
 
-
+// CUtf8::GetValidBytesCount tolerates mid-sequence truncation.
+NCBI_DBAPIDRIVER_EXPORT
+SIZE_TYPE GetValidUTF8Len(const CTempString& ts);
 
 /////////////////////////////////////////////////////////////////////////////
 inline
