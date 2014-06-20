@@ -139,22 +139,24 @@ CCompressIStream::CCompressIStream(CNcbiIstream& stream, EMethod method,
 
 CCompressOStream::CCompressOStream(CNcbiOstream& stream, EMethod method, 
                                    ICompression::TFlags flags, 
-                                   ICompression::ELevel level)
+                                   ICompression::ELevel level,
+                                   ENcbiOwnership own_ostream)
 {
     CCompressionStreamProcessor* processor = s_Init(eCompress, method, flags, level);
     if (processor) {
-        Create(stream, processor, CCompressionStream::fOwnProcessor);
+        Create(stream, processor, own_ostream==eTakeOwnership?CCompressionStream::fOwnAll:CCompressionStream::fOwnProcessor);
     }
 }
 
 
 CDecompressIStream::CDecompressIStream(CNcbiIstream& stream, EMethod method, 
-                                       ICompression::TFlags flags)
+                                       ICompression::TFlags flags,
+                                       ENcbiOwnership own_instream)
 {
     CCompressionStreamProcessor* processor = 
         s_Init(eDecompress, method, flags, ICompression::eLevel_Default);
     if (processor) {
-        Create(stream, processor, CCompressionStream::fOwnProcessor);
+        Create(stream, processor, own_instream==eTakeOwnership?CCompressionStream::fOwnAll:CCompressionStream::fOwnProcessor);
     }
 }
 

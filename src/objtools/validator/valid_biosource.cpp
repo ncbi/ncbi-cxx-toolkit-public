@@ -2413,15 +2413,15 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
         ++feat_it;
         }
 
-        if (org_rq_list.size() > 0) {
+    if (org_rq_list.size() > 0) {
         CTaxon3 taxon3;
         taxon3.Init();
         CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
-                return reply;
-        } else {
-                CRef<CTaxon3_reply> reply;
-                return reply;
-        }
+        return reply;
+    } else {
+        CRef<CTaxon3_reply> reply;
+        return reply;
+    }
 }
 
 

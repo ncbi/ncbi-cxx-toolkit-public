@@ -370,6 +370,7 @@ void CAsnvalApp::ValidateOneFile(string fname)
     }
     m_NumFiles++;
     DestroyOutputStreams();
+    m_In.reset();
 }
 
 
@@ -782,8 +783,9 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
     }
     if (method != CCompressStream::eNone)
     {
-        InputStream.reset
-            (new CDecompressIStream(*InputStream.release(), method));
+        CDecompressIStream* decompress(new CDecompressIStream(*InputStream, method, CCompressStream::fDefault, eTakeOwnership));
+        InputStream.release();
+        InputStream.reset(decompress);
         format = CFormatGuess::Format(*InputStream);
     }
 
@@ -792,13 +794,12 @@ auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
     {
         case CFormatGuess::eBinaryASN:
         case CFormatGuess::eTextASN:
-            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream));
+            objectStream.reset(CObjectIStream::Open(format==CFormatGuess::eBinaryASN ? eSerial_AsnBinary : eSerial_AsnText, *InputStream, eTakeOwnership));
+            InputStream.release();
             break;
         default:
             break;
     }
-    InputStream.release();
-
     return objectStream;
 }
 

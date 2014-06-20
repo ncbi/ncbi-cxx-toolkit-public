@@ -164,7 +164,8 @@ public:
     ///   Compression level.
     CCompressOStream(CNcbiOstream& stream, EMethod method, 
                      ICompression::TFlags flags = fDefault,
-                     ICompression::ELevel level = ICompression::eLevel_Default);
+                     ICompression::ELevel level = ICompression::eLevel_Default,
+                     ENcbiOwnership own_ostream = eNoOwnership);
 };
 
 
@@ -194,7 +195,8 @@ public:
     ///   By default, predefined algorithm-specific flags will be used,
     ///   but they can be overridden by using this parameter.
     CDecompressIStream(CNcbiIstream& stream, EMethod method, 
-                       ICompression::TFlags flags = fDefault);
+                       ICompression::TFlags flags = fDefault,
+                       ENcbiOwnership own_instream = eNoOwnership);
 };
 
 
