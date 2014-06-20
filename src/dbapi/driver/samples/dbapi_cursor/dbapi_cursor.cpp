@@ -49,11 +49,13 @@ public:
 
 protected:
     virtual int  RunSample(void);
+    int RunOneSample(const string& blob_type);
 
 protected:
     string GetTableName(void) const;
     /// function CreateTable is creating table in the database
-    void CreateTable (const string& table_name);
+    void CreateTable(const string& table_name,
+                     const string& blob_type);
 };
 
 CDbapiCursorApp::CDbapiCursorApp(void)
@@ -65,7 +67,7 @@ CDbapiCursorApp::~CDbapiCursorApp(void)
 }
 
 void
-CDbapiCursorApp::CreateTable (const string& table_name)
+CDbapiCursorApp::CreateTable(const string& table_name, const string& blob_type)
 {
     string sql;
 
@@ -87,7 +89,7 @@ CDbapiCursorApp::CreateTable (const string& table_name)
     sql += "    fl_val real not null, \n";
     sql += "    date_val datetime not null, \n";
     sql += "    str_val varchar(255) null, \n";
-    sql += "    txt_val text null, \n";
+    sql += "    txt_val " + blob_type + " null, \n";
     sql += "    primary key clustered(int_val) \n";
     sql += ")";
 
@@ -108,6 +110,9 @@ CDbapiCursorApp::CreateTable (const string& table_name)
     CDB_VarChar str_val;
     CDB_Text pTxt;
     int i;
+    if (blob_type[0] == 'n') {
+        pTxt.SetEncoding(eBulkEnc_RawUCS2);
+    }
     pTxt.Append("This is a test string.");
 
     // Bind data from a program variables
@@ -140,18 +145,34 @@ CDbapiCursorApp::GetTableName(void) const
 
 // The following function illustrates a usage of dbapi cursor
 int
-CDbapiCursorApp::RunSample(void)
+CDbapiCursorApp::RunOneSample(const string& blob_type)
 {
     try {
         // Change a default size of text(image)
         GetDriverContext().SetMaxTextImageSize(1000000);
 
         // Create table in database for the test
-        CreateTable(GetTableName());
+        CreateTable(GetTableName(), blob_type);
 
         CDB_Text txt;
 
         txt.Append ("This text will replace a text in the table.");
+        for (int i = 0;  i < 4000;  ++i) {
+            // Embedding U+2019 to test Unicode handling at various layers.
+            // With client_charset=UTF-8, round-tripping via a legacy TEXT
+            // column evidently stores the byte sequence as nominal
+            // ISO-8859-1, from which FreeTDS produces bogus UTF-8
+            // corresponding to U+00E2 U+0080 U+0099.  Round-tripping via
+            // VARCHAR(MAX) fails differently: the server converts from
+            // UCS-2 to Win1252 (storing \x92), but passes the result off
+            // as ISO-8859-1, so FreeTDS proceeds to return a UTF-8
+            // sequence corresponding to U+0092.  Only NVARCHAR(MAX),
+            // IMAGE, and VARBINARY(MAX) round-trip cleanly.  Meanwhile,
+            // the ODBC driver supports none of those types in this context
+            // (at least not in conjunction with CDB_Text), and yields \x92
+            // when told UTF-8 is in use.
+            txt.Append("  Let\xe2\x80\x99s make it long!");
+        }
 
         // Example : update text field in the table CursorSample where int_val = 2,
         // by using cursor
@@ -176,8 +197,10 @@ CDbapiCursorApp::RunSample(void)
         upd->Close();
 
         //print resutls on the screen
+        cout << "\n<RESULTSET blob_type=\"" << blob_type << "\">\n\n";
         ShowResults("select int_val,fl_val,date_val,str_val,txt_val from " +
             GetTableName());
+        cout << "</RESULTSET>\n";
 
         //Delete table from database
         DeleteTable(GetTableName());
@@ -188,6 +211,27 @@ CDbapiCursorApp::RunSample(void)
     }
 
     return 0;
+}
+
+int
+CDbapiCursorApp::RunSample(void)
+{
+    if (GetServerType() == eMsSql) {
+        SetDatabaseParameter("client_charset", "UTF-8");
+    }
+
+    int status = RunOneSample("text");
+    if (GetDriverName() != "odbc") {
+        status |= RunOneSample("image");
+    }
+    if (GetServerType() == eMsSql) {
+        status |= RunOneSample("varchar(max)");
+        if (GetDriverName() != "odbc") {
+            status |= RunOneSample("varbinary(max)");
+            status |= RunOneSample("nvarchar(max)");
+        }
+    }
+    return status;
 }
 
 int main(int argc, const char* argv[])

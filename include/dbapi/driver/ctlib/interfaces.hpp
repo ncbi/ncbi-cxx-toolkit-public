@@ -63,6 +63,7 @@
 #    define CTL_CursorResultExpl    CTDS_CursorResultExpl
 #    define CTL_BlobResult          CTDS_BlobResult
 #    define CTL_ITDescriptor        CTDS_ITDescriptor
+#    define CTL_CursorITDescriptor  CTDS_CursorITDescriptor
 #    define CTLibContextRegistry    CTDSContextRegistry
 
 #    define CTLIB_SetApplicationName    TDS_SetApplicationName
@@ -73,8 +74,6 @@
 #endif // FTDS_IN_USE
 
 BEGIN_NCBI_SCOPE
-
-class CDB_ITDescriptor;
 
 #ifdef FTDS_IN_USE
 namespace ftds64_ctlib
@@ -97,6 +96,7 @@ class CTL_ComputeResult;
 class CTL_StatusResult;
 class CTL_CursorResult;
 class CTL_CursorResultExpl;
+class CTL_CursorITDescriptor;
 class CTLibContextRegistry;
 
 
@@ -445,6 +445,8 @@ protected:
 private:
     void x_CmdAlloc(CS_COMMAND** cmd);
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
+    bool x_SendUpdateWrite(CDB_ITDescriptor& desc, CDB_Stream& img,
+                           size_t size);
 
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
     CS_CONNECTION* x_GetSybaseConn(void) const { return m_Handle.GetNativeHandle(); }
@@ -1079,9 +1081,17 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResult :  public CTL_RowResult
 {
     friend class CTL_Cmd;
 
+public:
+    const string& GetCursorName(void) const { return m_CursorName; }
+    void RegisterDescriptor(CTL_CursorITDescriptor& desc)
+    { m_Descriptors.insert(&desc); }
+    void UnregisterDescriptor(CTL_CursorITDescriptor& desc)
+    { m_Descriptors.erase(&desc); }
+
 protected:
-    CTL_CursorResult(CS_COMMAND* pCmd, CTL_Connection& conn) :
-    CTL_RowResult(pCmd, conn)
+    CTL_CursorResult(CS_COMMAND* pCmd, CTL_Connection& conn,
+                     const string& cursor_name) :
+    CTL_RowResult(pCmd, conn), m_CursorName(cursor_name)
     {
     }
     virtual ~CTL_CursorResult(void);
@@ -1089,6 +1099,13 @@ protected:
 protected:
     virtual EDB_ResType ResultType(void) const;
     virtual bool        SkipItem(void);
+    virtual bool        Fetch(void);
+
+    void x_InvalidateDescriptors(void);
+
+private:
+    set<CTL_CursorITDescriptor*> m_Descriptors;
+    string                       m_CursorName;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1098,7 +1115,7 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResultExpl : public CTL_CursorResu
     friend class auto_ptr<CTL_CursorResultExpl>;
 
 protected:
-    CTL_CursorResultExpl(CTL_LangCmd* cmd);
+    CTL_CursorResultExpl(CTL_LangCmd* cmd, const string& cursor_name);
     virtual ~CTL_CursorResultExpl(void);
 
 protected:
@@ -1256,7 +1273,8 @@ inline
 CTL_RowResult*
 CTL_Cmd::MakeCursorResult(void)
 {
-    return new CTL_CursorResult(x_GetSybaseCmd(), GetConnection());
+    return new CTL_CursorResult(x_GetSybaseCmd(), GetConnection(),
+                                GetCmdName());
 }
 
 inline
@@ -1346,6 +1364,7 @@ CTL_CursorCmdExpl::ClearResultSet(void)
 //
 
 #define CTL_ITDESCRIPTOR_TYPE_MAGNUM 0xc00
+#define CTL_ITDESCRIPTOR_TYPE_CURSOR 0xc01
 
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ITDescriptor : public I_ITDescriptor
 {
@@ -1366,6 +1385,25 @@ protected:
     CS_IODESC m_Desc;
 };
 
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorITDescriptor
+    : public CDB_ITDescriptor
+{
+public:
+    CTL_CursorITDescriptor(CTL_CursorResult& cursor_result,
+                           const string& table_name,
+                           const string& column_name,
+                           CS_INT datatype);
+    ~CTL_CursorITDescriptor();
+
+    int DescriptorType(void) const;
+
+    void Invalidate(void) { m_CursorResult = NULL; }
+
+    bool IsValid(void) const { return m_CursorResult != NULL; }
+
+private:
+    CTL_CursorResult* m_CursorResult;
+};
 
 #ifdef FTDS_IN_USE
 } // namespace ftds64_ctlib

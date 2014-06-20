@@ -699,14 +699,22 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
     }
 
     I_ITDescriptor* p_desc= 0;
+    CDB_ITDescriptor* dbdesc = dynamic_cast<CDB_ITDescriptor*>(&descr_in);
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
-        // this is not a native descriptor
-        p_desc= x_GetNativeITDescriptor
-            (dynamic_cast<CDB_ITDescriptor&> (descr_in));
-        if(p_desc == 0)
+    if (descr_in.DescriptorType() == CTL_ITDESCRIPTOR_TYPE_CURSOR) {
+        return x_SendUpdateWrite(*dbdesc, stream, size);
+    } else if (descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+        if (dbdesc != NULL) {
+            p_desc = x_GetNativeITDescriptor(*dbdesc);
+        }
+        if (p_desc != NULL
+            &&  static_cast<CTL_ITDescriptor*>(p_desc)->m_Desc.textptrlen <= 0)
+        {
+            return x_SendUpdateWrite(*dbdesc, stream, size);
+        } else {
             return false;
+        }
     }
 
 
@@ -811,6 +819,93 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
         }
         }
     }
+}
+
+
+
+
+bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
+                                       CDB_Stream& img, size_t size)
+{
+    CHECK_DRIVER_ERROR(desc.DescriptorType() == CTL_ITDESCRIPTOR_TYPE_CURSOR
+                       &&  !(static_cast<CTL_CursorITDescriptor&>(desc)
+                             .IsValid()),
+                       "Invalid blob descriptor (originally tied to a cursor"
+                       " that has been advanced or destroyed",
+                       110040);
+#ifdef FTDS_IN_USE // Only ever neeed with MS SQL Server
+    // Always start with an empty column for simplicity.
+    auto_ptr<CDB_LangCmd> lcmd(LangCmd("UPDATE " + desc.TableName() + " SET "
+                                       + desc.ColumnName() + " = 0x WHERE "
+                                       + desc.SearchConditions()));
+    CHECK_DRIVER_ERROR( !lcmd->Send(), "Failed to send command", 110041);
+    while (lcmd->HasMoreResults()) {
+        auto_ptr<CDB_Result> result(lcmd->Result());
+    }
+    CHECK_DRIVER_ERROR(lcmd->HasFailed(),
+                       "Failed to prepare " + desc.TableName()
+                       + " to receive blob",
+                       110042);
+
+    // MS recommends making the chunk size a multiple of 8040 bytes
+    // for best performance, but that would require using a FreeTDS
+    // version new enough to support TDS 7.2 or higher.
+    char buff[4000];
+    CDB_Text* text = dynamic_cast<CDB_Text*>(&img);
+    EBulkEnc encoding = ((text == NULL) ? eBulkEnc_RawBytes
+                         : text->GetEncoding());
+    string utf8_fragment;
+
+    while (size > 0) {
+        char* p  = buff;
+        size_t n = sizeof(buff);
+        if ( !utf8_fragment.empty() ) {
+            memcpy(p, utf8_fragment.data(), utf8_fragment.size());
+            p += utf8_fragment.size();
+            n -= utf8_fragment.size();
+            utf8_fragment.clear();
+        }
+
+        size_t len = img.Read(p, n);
+        CHECK_DRIVER_ERROR(len == 0, "Text/image data corrupted.", 110032);
+        size -= len;
+        len += p - buff; // Account for fragment after updating size.
+
+        // Avoid accidentally splitting up multi-byte UTF-8 sequences,
+        // while taking care not to interfere with binary data or
+        // non-UTF-8 text.
+        if (desc.GetColumnType() != CDB_ITDescriptor::eBinary
+            &&  text != NULL  &&  encoding != eBulkEnc_RawUCS2) {
+            SIZE_TYPE l = impl::GetValidUTF8Len(CTempString(buff, len));
+            if (l < len) {
+                utf8_fragment.assign(buff + l, len - l);
+                len = l;
+            }
+        }
+
+        auto_ptr<CDB_Object> chunk;
+        if (desc.GetColumnType() == CDB_ITDescriptor::eBinary) {
+            chunk.reset(new CDB_VarBinary(buff, len));
+        } else {
+            chunk.reset(new CDB_VarChar(buff, len));
+            static_cast<CDB_VarChar&>(*chunk).SetBulkInsertionEnc(encoding);
+        }
+
+        lcmd.reset(LangCmd("UPDATE " + desc.TableName()
+                           + " SET " + desc.ColumnName()
+                           + " .WRITE(@chunk, NULL, NULL) WHERE "
+                           + desc.SearchConditions()));
+        lcmd->BindParam("@chunk", chunk.get());
+        CHECK_DRIVER_ERROR( !lcmd->Send(), "Failed to send command", 110041);
+        while (lcmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> result(lcmd->Result());
+        }
+        CHECK_DRIVER_ERROR(lcmd->HasFailed(), "Failed to send chunk", 110043);
+    }
+    return true;
+#else
+    return false;
+#endif
 }
 
 

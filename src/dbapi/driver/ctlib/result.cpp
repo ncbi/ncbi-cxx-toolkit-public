@@ -851,8 +851,23 @@ bool CTL_CursorResult::SkipItem()
     return false;
 }
 
+bool CTL_CursorResult::Fetch(void)
+{
+    x_InvalidateDescriptors();
+    return CTL_RowResult::Fetch();
+}
+
+void CTL_CursorResult::x_InvalidateDescriptors(void)
+{
+    ITERATE (set<CTL_CursorITDescriptor*>, it, m_Descriptors) {
+        (*it)->Invalidate();
+    }
+    m_Descriptors.clear();
+}
+
 CTL_CursorResult::~CTL_CursorResult()
 {
+    x_InvalidateDescriptors();
     try {
         if (m_EOR  &&  !IsDead()) { // this is not a bug
             CS_INT res_type;
@@ -889,9 +904,42 @@ CTL_ITDescriptor::~CTL_ITDescriptor()
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CTL_CursorITDescriptor::
+//
+
+CTL_CursorITDescriptor::CTL_CursorITDescriptor(CTL_CursorResult& cursor_result,
+                                               const string& table_name,
+                                               const string& column_name,
+                                               CS_INT datatype)
+    : CDB_ITDescriptor(table_name, column_name,
+                       "CURRENT OF " + cursor_result.GetCursorName()),
+      m_CursorResult(&cursor_result)
+{
+    if (datatype == CS_VARBINARY_TYPE  ||  datatype == CS_IMAGE_TYPE) {
+        SetColumnType(eBinary);
+    } else {
+        SetColumnType(eText);
+    }
+    m_CursorResult->RegisterDescriptor(*this);
+}
+
+int CTL_CursorITDescriptor::DescriptorType() const
+{
+    return CTL_ITDESCRIPTOR_TYPE_CURSOR;
+}
+
+CTL_CursorITDescriptor::~CTL_CursorITDescriptor()
+{
+    m_CursorResult->UnregisterDescriptor(*this);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
-CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd* cmd) :
-    CTL_CursorResult(cmd->x_GetSybaseCmd(), cmd->GetConnection()),
+CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd* cmd,
+                                           const string& cursor_name) :
+    CTL_CursorResult(cmd->x_GetSybaseCmd(), cmd->GetConnection(), cursor_name),
     m_Cmd(cmd),
     m_Res(NULL),
     m_CurItemNo(0),
