@@ -3914,6 +3914,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MRSC	s	Mount Makulu Central Research Station",
 "MRSH	s	Matopos Research Station",
 "MRSN	s	Museo Regionale di Scienze Naturali",
+"MRSN<USA>	c	Multidrug Resistant Organism Repository and Surveillance Network",
 "MRSP	s	Museo Regionale di Scienze Naturali, St. Pierre",
 "MRST	s	Museo Regionale di Storia Naturale, Terrasini",
 "MS	s	Universita di Messina, Dipartimento di Scienze Botaniche",
