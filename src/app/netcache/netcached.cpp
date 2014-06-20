@@ -53,6 +53,13 @@
 # include <sys/resource.h>
 #endif
 
+// this must be 0 in release builds
+#define MAKE_TEST_BUILD   0
+
+#if MAKE_TEST_BUILD
+#include <util/random_gen.hpp>
+void s_InitTests(void);
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -445,6 +452,11 @@ s_Initialize(bool do_reinit)
     ports_str.resize(ports_str.size() - 2);
     INFO("Opening client ports: " << ports_str);
 
+
+#if MAKE_TEST_BUILD
+    s_InitTests();
+#endif
+
     return true;
 }
 
@@ -678,3 +690,379 @@ int main(int argc, const char* argv[])
 
     return 0;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// tests
+
+// Task generates and puts a lot of blobs into storage
+// Sort of, controlled environment...
+// no sockets, no communications, just a flood of data
+
+#if MAKE_TEST_BUILD
+
+static Uint4 MAKE_TEST_TASKS = 1;
+static Uint8 MAKE_TEST_MAXSIZE = 1000000;
+static Uint4 MAKE_TEST_DELAY = 1;
+static Uint4 MAKE_TEST_INTERVAL = 10;
+
+class CTest_BlobStorage : public CSrvStatesTask<CTest_BlobStorage>
+{
+public:
+    CTest_BlobStorage(Uint4 id);
+    virtual ~CTest_BlobStorage(void);
+
+    State x_Start(void);
+    State x_WaitForBlobAccess(void);
+    State x_PutBegin(void);
+    State x_PutBlobChunk(void);
+    State x_PutEnd(void);
+    State x_Remove(void);
+    State x_Finalize(void);
+    State x_Next(void);
+    State x_Stop(void);
+
+private:
+    void Reset(void);
+    size_t PutData(void* buf, size_t size);
+
+    bool IsTaskPaused(void);
+    void PrintStat(void);
+
+    bool               m_Paused;
+    Uint4              m_Id;
+    Uint4              m_Counter;
+    vector<string>     m_Keys;
+    Uint2                     m_LocalPort;
+    Uint2                     m_BlobSlot;
+    Uint2                     m_TimeBucket;
+
+    Uint8                     m_DataSize;
+    Uint8                     m_BlobSize;
+    Uint4                     m_ChunkLen;
+
+    CNCBlobAccessor*          m_BlobAccess;
+    string                    m_RawKey;
+    string                    m_BlobKey;
+    size_t                    m_Command;
+    CSrvTime                  m_CmdStartTime;
+
+    const SNCSpecificParams*  m_AppSetup;
+
+    static CMiniMutex ms_RndLock;
+    static CRandom ms_Rnd;
+    static const char* ms_Commands[];
+
+    friend void s_InitTests(void);
+};
+
+CMiniMutex CTest_BlobStorage::ms_RndLock;
+CRandom CTest_BlobStorage::ms_Rnd;
+const char* CTest_BlobStorage::ms_Commands[] = {"UNKNOWN", "PUT3", "REMO"};
+static const size_t s_Put3   = 1;
+static const size_t s_Remove = 2;
+
+static Uint4  s_CounterPut = 0;
+static Uint4  s_CounterRem = 0;
+static Uint8  s_SizePut = 0;
+static Uint8  s_SizeRem = 0;
+static CFutex s_ftxSemaphore;
+static CFutex s_ftxCounter;
+
+/////////////////////////////////////////////////////////////////////////////
+
+void s_InitTests(void)
+{
+    CRandom::TValue seed = CRandom::TValue(time(NULL));
+    CTest_BlobStorage::ms_Rnd.SetSeed(seed);
+    INFO("s_InitTests, seed: " << seed);
+
+    for (Uint4 i=0; i < MAKE_TEST_TASKS; ++i) {
+        new CTest_BlobStorage(i);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+CTest_BlobStorage::CTest_BlobStorage(Uint4 id)
+{
+    m_Paused = false;
+    m_Id = id;
+    m_Counter = 0;
+    m_AppSetup = CNCServer::GetAppSetup(TStringMap());
+    Reset();
+    SetState(&Me::x_Start);
+    SetRunnable();
+}
+CTest_BlobStorage::~CTest_BlobStorage(void)
+{
+}
+
+void CTest_BlobStorage::Reset(void)
+{
+    ++m_Counter;
+
+    m_LocalPort = 9999;
+    m_BlobSlot = 0;
+    m_TimeBucket = 0;
+    
+    m_BlobAccess = nullptr;
+    m_RawKey.clear();
+    m_BlobKey.clear();
+    m_Command = 0;
+
+    ms_RndLock.Lock();
+    Uint4 rand1 =  ms_Rnd.GetRand(1, MAKE_TEST_MAXSIZE);
+    Uint4 rand2 =  max( ms_Rnd.GetRand(1, (rand1+3)/4 + 1), rand1/100);
+    if (m_Keys.size() > 10) {
+        if (ms_Rnd.GetRand(1, 2) == 2) {
+            random_shuffle(m_Keys.begin(), m_Keys.end());
+            m_BlobKey = *m_Keys.begin();
+            m_Keys.erase(m_Keys.begin());
+        }
+    }
+    ms_RndLock.Unlock();
+
+    m_DataSize = rand1;
+    m_ChunkLen = rand2;
+    m_BlobSize = 0; 
+
+    if (m_BlobKey.empty()) {
+        m_Command = s_Put3;
+    } else {
+        m_Command = s_Remove;
+    }
+}
+
+size_t CTest_BlobStorage::PutData(void* buf, size_t size)
+{
+    memset(buf, 1, size);
+    return size;
+}
+
+bool CTest_BlobStorage::IsTaskPaused(void)
+{
+    if (m_Id == 0) {
+        if ((m_Counter % MAKE_TEST_INTERVAL) == 0) {
+
+            if (s_ftxSemaphore.ChangeValue(0,1)) {
+            } else {
+                abort();
+            }
+            int count=0;
+            s_ftxCounter.AddValue(1);
+            CSrvTime to;
+#ifdef NCBI_OS_LINUX
+            to.tv_sec = 10;
+#endif
+            while (s_ftxCounter.WaitValueChange(count, to) != CFutex::eTimedOut) {
+                count = s_ftxCounter.GetValue();
+                if (count == MAKE_TEST_TASKS) {
+                    break;
+                }
+            }
+            if (count != MAKE_TEST_TASKS) {
+cout << "timeout" << endl;
+                return false;
+            }
+
+            PrintStat();       
+
+            s_ftxCounter.ChangeValue(MAKE_TEST_TASKS, 0);
+            s_ftxSemaphore.ChangeValue(1,0);
+            s_ftxSemaphore.WakeUpWaiters(MAKE_TEST_TASKS);
+        }
+        return false;
+    }
+    if (s_ftxSemaphore.WaitValueChange(0, CSrvTime()) == CFutex::eTimedOut) {
+        if (m_Paused) {
+            m_Paused = false;
+        }
+        return m_Paused;
+    }
+    if (!m_Paused) {
+        m_Paused = true;
+        s_ftxCounter.AddValue(1);
+        s_ftxCounter.WakeUpWaiters(1);
+    }
+    return m_Paused;
+}
+
+void CTest_BlobStorage::PrintStat(void)
+{
+    SNCStateStat state;
+    CNCBlobStorage::MeasureDB(state);
+
+cout << endl;
+cout << "===============" << endl;
+cout << "s_CounterPut  = " << s_CounterPut << endl;
+cout << "s_CounterRem  = " << s_CounterRem << endl;
+cout << "blob expected = " << (s_CounterPut - s_CounterRem) << endl;
+cout << "s_SizePut     = " << s_SizePut << endl;
+cout << "s_SizeRem     = " << s_SizeRem << endl;
+cout << "size expected = " << (s_SizePut - s_SizeRem) << endl;
+cout << "===============" << endl;
+cout << "db_files  = " << state.db_files << endl;
+cout << "db_size   = " << state.db_size << endl;
+cout << "db_garb   = " << state.db_garb << endl;
+cout << "cnt_blobs = " << state.cnt_blobs << endl;
+cout << "cnt_keys  = " << state.cnt_keys << endl;
+cout << "===============" << endl;
+}
+
+CTest_BlobStorage::State
+CTest_BlobStorage::x_Start(void)
+{
+    m_CmdStartTime = CSrvTime::Current();
+    CNCStat::CmdStarted(ms_Commands[m_Command]);
+
+    if (m_Command == s_Put3) {
+        CNCDistributionConf::GenerateBlobKey(m_LocalPort, m_RawKey, m_BlobSlot, m_TimeBucket);
+        CNCBlobStorage::PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
+        m_Keys.push_back(m_BlobKey);
+    } else {
+        if ( !CNCDistributionConf::GetSlotByNetCacheKey(m_BlobKey, m_BlobSlot, m_TimeBucket)) {
+            abort();
+        }
+    }
+
+    m_BlobAccess = CNCBlobStorage::GetBlobAccess( eNCCreate, m_BlobKey, "", m_TimeBucket);
+    m_BlobAccess->RequestMetaInfo(this);
+    return &CTest_BlobStorage::x_WaitForBlobAccess;
+}
+
+CTest_BlobStorage::State
+CTest_BlobStorage::x_WaitForBlobAccess(void)
+{
+    if (!m_BlobAccess->IsMetaInfoReady()) {
+        return NULL;
+    }
+    if (m_Command == s_Put3) {
+        return &CTest_BlobStorage::x_PutBegin;
+    }
+    return &CTest_BlobStorage::x_Remove;
+}
+
+CTest_BlobStorage::State
+CTest_BlobStorage::x_PutBegin(void)
+{
+    m_BlobAccess->SetBlobTTL(m_AppSetup->blob_ttl);
+    m_BlobAccess->SetVersionTTL(0);
+    m_BlobAccess->SetBlobVersion(0);
+    return &CTest_BlobStorage::x_PutBlobChunk;
+}
+
+CTest_BlobStorage::State
+CTest_BlobStorage::x_PutBlobChunk(void)
+{
+    Uint4 read_len = Uint4(m_BlobAccess->GetWriteMemSize());
+    if (m_BlobAccess->HasError()) {
+        abort();
+    }
+    if (read_len > m_ChunkLen) {
+        read_len = m_ChunkLen;
+    }
+    if (read_len > m_DataSize) {
+        read_len = (Uint4)m_DataSize;
+    }
+
+    Uint4 n_read = Uint4(PutData(m_BlobAccess->GetWriteMemPtr(), read_len));
+    m_BlobAccess->MoveWritePos(n_read);
+    m_DataSize -= n_read;
+    m_BlobSize += n_read;
+    CNCStat::ClientDataWrite(n_read);
+
+    if (m_DataSize != 0) {
+        SetRunnable();
+        return NULL;
+    }
+    return &CTest_BlobStorage::x_PutEnd;
+}
+
+CTest_BlobStorage::State
+CTest_BlobStorage::x_PutEnd(void)
+{
+    CSrvTime cur_srv_time = CSrvTime::Current();
+    Uint8 cur_time = cur_srv_time.AsUSec();
+    int cur_secs = int(cur_srv_time.Sec());
+    m_BlobAccess->SetBlobCreateTime(cur_time);
+    if (m_BlobAccess->GetNewBlobExpire() == 0)
+        m_BlobAccess->SetNewBlobExpire(cur_secs + m_BlobAccess->GetNewBlobTTL());
+    m_BlobAccess->SetNewVerExpire(cur_secs + m_BlobAccess->GetNewVersionTTL());
+    m_BlobAccess->SetCreateServer(
+        CNCDistributionConf::GetSelfID(), CNCBlobStorage::GetNewBlobId());
+    if (m_BlobAccess->HasError()) {
+        abort();
+    }
+    return &CTest_BlobStorage::x_Finalize;
+}
+
+CTest_BlobStorage::State
+CTest_BlobStorage::x_Remove(void)
+{
+    if (m_BlobAccess->IsBlobExists()  &&  !m_BlobAccess->IsCurBlobExpired())
+    {
+        m_BlobSize = m_BlobAccess->GetCurBlobSize();
+        m_BlobAccess->SetBlobTTL(m_AppSetup->blob_ttl);
+        m_BlobAccess->SetBlobVersion(0);
+        int expire = CSrvTime::CurSecs() - 1;
+        unsigned int ttl = m_BlobAccess->GetNewBlobTTL();
+        if (m_BlobAccess->IsBlobExists()  &&  m_BlobAccess->GetCurBlobTTL() > ttl)
+            ttl = m_BlobAccess->GetCurBlobTTL();
+        m_BlobAccess->SetNewBlobExpire(expire, expire + ttl + 1);
+    }
+    return &CTest_BlobStorage::x_Finalize;
+}
+
+CTest_BlobStorage::State
+CTest_BlobStorage::x_Finalize(void)
+{
+    if (m_Command == s_Put3) {
+        AtomicAdd(s_CounterPut, 1);
+        AtomicAdd(s_SizePut, m_BlobSize);
+    } else {
+        AtomicAdd(s_CounterRem, 1);
+        AtomicAdd(s_SizeRem, m_DataSize);
+    }
+
+    m_BlobAccess->Finalize();
+    m_BlobAccess->Release();
+    m_BlobAccess = NULL;
+
+    CSrvTime cmd_len = CSrvTime::Current();
+    cmd_len -= m_CmdStartTime;
+    Uint8 len_usec = cmd_len.AsUSec();
+    CNCStat::CmdFinished(ms_Commands[m_Command], len_usec, eStatus_OK);
+    CNCStat::ClientBlobWrite(m_BlobSize, len_usec);
+
+    return &CTest_BlobStorage::x_Next;
+}
+
+CTest_BlobStorage::State 
+CTest_BlobStorage::x_Next(void)
+{
+    if (CTaskServer::IsInShutdown()) {
+        return &CTest_BlobStorage::x_Stop;
+    }
+    if (IsTaskPaused()) {
+        SetRunnable();
+        return NULL;
+    }
+    Reset();
+    SetState(&Me::x_Start);
+    if (MAKE_TEST_DELAY != 0) {
+        RunAfter(MAKE_TEST_DELAY);
+    } else {
+        SetRunnable();
+    }
+    return NULL;
+}
+
+CTest_BlobStorage::State
+CTest_BlobStorage::x_Stop(void)
+{
+    Terminate();
+    return NULL;
+}
+
+#endif //MAKE_TEST_BUILD
+

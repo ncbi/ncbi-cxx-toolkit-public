@@ -84,7 +84,8 @@ public:
 
     // Generates a blob key which is covered by the current server slots
     static void GenerateBlobKey(Uint2 local_port,
-                                string& key, Uint2& slot, Uint2& time_bucket);
+                                string& key, Uint2& slot, Uint2& time_bucket,
+                                unsigned int ver = 1);
 
     // Tests if a slot is served by the local server
     static bool IsServedLocally(Uint2 slot);

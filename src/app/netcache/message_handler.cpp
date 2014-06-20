@@ -1678,7 +1678,8 @@ CNCMessageHandler::x_AssignCmdParams(void)
                 break;
             case 'k':
                 if (key == "key") {
-                    m_RawKey = blob_key = val;
+//                    m_RawKey = blob_key = val;
+                    m_RawKey = blob_key = CNCDistributionConf::DecodeKey(val);
                 }
                 break;
             case 'l':
@@ -2002,7 +2003,7 @@ CNCMessageHandler::x_StartCommand(void)
     }
 
     if (x_IsFlagSet(fCanGenerateKey)  &&  m_RawKey.empty()) {
-        CNCDistributionConf::GenerateBlobKey(m_LocalPort, m_RawKey, m_BlobSlot, m_TimeBucket);
+        CNCDistributionConf::GenerateBlobKey(m_LocalPort, m_RawKey, m_BlobSlot, m_TimeBucket,1);
         CNCBlobStorage::PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
 
         diag_msg.PrintParam("key", m_RawKey);

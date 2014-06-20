@@ -204,9 +204,9 @@ CNCDistributionConf::Initialize(Uint2 control_port)
                                   << " provided twice for server " << srv_idx);
                 return false;
             }
-            if (srv_id == s_SelfID)
+            if (srv_id == s_SelfID) {
                 s_SelfSlots.push_back(slot);
-            else {
+            } else {
                 srvs.push_back(srv_id);
                 s_Slot2Servers[slot].push_back(SSrvGroupInfo(srv_id, grp_name));
             }
@@ -490,7 +490,8 @@ CNCDistributionConf::GetPeerServers(void)
 
 void
 CNCDistributionConf::GenerateBlobKey(Uint2 local_port,
-                                     string& key, Uint2& slot, Uint2& time_bucket)
+                                     string& key, Uint2& slot, Uint2& time_bucket,
+                                     unsigned int ver)
 {
     s_KeyRndLock.Lock();
     Uint4 rnd_num = s_KeyRnd.GetRand();
@@ -506,7 +507,7 @@ CNCDistributionConf::GenerateBlobKey(Uint2 local_port,
     time_bucket = Uint2((slot - 1) * s_CntSlotBuckets + remain / s_TimeRndShare) + 1;
     CNetCacheKey::GenerateBlobKey(&key,
                                   static_cast<Uint4>(s_BlobId.Add(1)),
-                                  s_SelfHostIP, local_port, 1, key_rnd);
+                                  s_SelfHostIP, local_port, ver, key_rnd);
 }
 
 bool
