@@ -3256,7 +3256,8 @@ CFastaOstream::GetGapModText(
     if( seq_gap.CanGetType() ) {
         switch( seq_gap.GetType() ) {
         case CSeq_gap::eType_unknown:
-            // don't show /gap_type
+            // don't show /gap_type - policy changed at SQD-1801
+            gap_type = "unknown";
             break;
         case CSeq_gap::eType_fragment:
             gap_type = "within scaffold";
