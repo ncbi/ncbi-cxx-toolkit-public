@@ -206,10 +206,10 @@ bool CString_constraint :: x_AdvancedStringCompare(const string& str, const stri
   bool ig_punct = GetIgnore_punct();
   bool str_case = GetCase_sensitive();
   EString_location loc = GetMatch_location();
-  unsigned len1, len2;
-  char ch1, ch2;
+  unsigned len1 = 0, len2 = 0;
+  char ch1 = 0, ch2 = 0;
   vector <string> word_word;
-  bool has_word;
+  bool has_word = false;
   if (IsSetIgnore_words()) {
       has_word 
           = (GetIgnore_words().CanGet() && !GetIgnore_words().Get().empty());
