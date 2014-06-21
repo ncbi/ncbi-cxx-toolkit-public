@@ -415,7 +415,7 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
         {
             throw;
         }
-        _TRACE(Trace << << "score " << score_name << " not found");
+        _TRACE(Trace << "score " << score_name << " not found");
         //LOG_POST(Warning << "score " << score_name << " not found");
         //LOG_POST(Info << e);
         return numeric_limits<double>::quiet_NaN();
