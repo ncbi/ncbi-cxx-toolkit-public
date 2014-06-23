@@ -850,7 +850,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
     // MS recommends making the chunk size a multiple of 8040 bytes
     // for best performance, but that would require using a FreeTDS
     // version new enough to support TDS 7.2 or higher.
-    char buff[4000];
+    char buff[4001];
     CDB_Text* text = dynamic_cast<CDB_Text*>(&img);
     EBulkEnc encoding = ((text == NULL) ? eBulkEnc_RawBytes
                          : text->GetEncoding());
@@ -858,7 +858,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
 
     while (size > 0) {
         char* p  = buff;
-        size_t n = sizeof(buff);
+        size_t n = sizeof(buff) - 1;
         if ( !utf8_fragment.empty() ) {
             memcpy(p, utf8_fragment.data(), utf8_fragment.size());
             p += utf8_fragment.size();
@@ -876,6 +876,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
         // non-UTF-8 text.
         if (desc.GetColumnType() != CDB_ITDescriptor::eBinary
             &&  text != NULL  &&  encoding != eBulkEnc_RawUCS2) {
+            buff[len] = '\0';
             SIZE_TYPE l = impl::GetValidUTF8Len(CTempString(buff, len));
             if (l < len) {
                 utf8_fragment.assign(buff + l, len - l);
