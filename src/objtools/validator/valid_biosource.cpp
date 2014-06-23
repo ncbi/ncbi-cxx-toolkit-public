@@ -129,10 +129,11 @@ using namespace sequence;
 
 auto_ptr<CTextFsa> CValidError_imp::m_SourceQualTags;
 
-class CCachedTaxon
+class CCachedTaxon3
 {
 public:
-    typedef map<int, CRef<CT3Reply> > CCachedReplyMap;
+    typedef map<string, CRef<CT3Reply> > CCachedReplyMap;
+
     void Init()
     {
         if (m_taxon.get() == 0)
@@ -144,13 +145,24 @@ public:
     }
     CRef<CTaxon3_reply> SendOrgRefList(const vector< CRef<COrg_ref> >& query)
     {
+        if (!m_enable_caching)
+            return m_taxon->SendOrgRefList(query);
+
         CRef<CTaxon3_reply> result(new CTaxon3_reply);
 
         ITERATE (vector<CRef< COrg_ref> >, it, query)
         {
-            int id = (**it).GetTaxId();
+            string id;
+            //CNcbiOstrstream ostream;
+            //ostream << MSerial_AsnText << **it << ends;
+            //id = ostream.str()
+
+            NStr::IntToString(id, (**it).GetTaxId());
+            if ((**it).IsSetTaxname())
+                id += (**it).GetTaxname();
+
             CRef<CT3Reply>& reply = (*m_cache)[id];
-            if (id < 1 || reply.Empty())
+            if (/*id < 1 ||*/ reply.Empty())
             {
                 CTaxon3_request request;
 
@@ -163,6 +175,12 @@ public:
                 CRef<CTaxon3_reply> result = m_taxon->SendRequest (request);
                 reply = *result->SetReply().begin();
             }
+            else
+            {
+#ifdef _DEBUG
+                //cerr << "Using cache for:" << id << endl;
+#endif
+            }
 
             result->SetReply().push_back(reply);
         }
@@ -172,10 +190,14 @@ public:
 protected:
     static auto_ptr<CTaxon3> m_taxon;
     static auto_ptr<CCachedReplyMap> m_cache;
+    static bool m_enable_caching;
 };
 
-auto_ptr<CTaxon3> CCachedTaxon::m_taxon;
-auto_ptr<CCachedTaxon::CCachedReplyMap> CCachedTaxon::m_cache;
+bool CCachedTaxon3::m_enable_caching = true;
+auto_ptr<CTaxon3> CCachedTaxon3::m_taxon;
+auto_ptr<CCachedTaxon3::CCachedReplyMap> CCachedTaxon3::m_cache;
+
+#define CCachedTaxon CCachedTaxon3
 
 
 static bool s_UnbalancedParentheses (string str)
