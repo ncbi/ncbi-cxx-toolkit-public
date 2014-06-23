@@ -6130,6 +6130,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerSequence)
 {
+    char bad_ch;
+    BOOST_CHECK_EQUAL(CPCRPrimerSeq::IsValid("01-May-2010", bad_ch), false);
+    BOOST_CHECK_EQUAL(bad_ch, '0');
+
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "May 1, 2010");
@@ -6173,6 +6177,37 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadPCRPrimerSequence)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_fwd_primer_seq, "");
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_rev_primer_seq, "");
+    NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsSource()) {
+            CRef<CPCRPrimer> fwd(new CPCRPrimer());
+            fwd->SetName().Set("AATTGGCCAATTGGC");
+            fwd->SetSeq().Set("AATTGGCCAATTGG4C");
+            CRef<CPCRReaction> reaction(new CPCRReaction());
+            reaction->SetForward().Set().push_back(fwd);
+            CRef<CPCRPrimer> rev(new CPCRPrimer());
+            rev->SetName().Set("AATTGGCCAATTGGC");
+            rev->SetSeq().Set("AATTGGCCAATTGG5C");
+            reaction->SetReverse().Set().push_back(rev);
+            (*it)->SetSource().SetPcr_primers().Set().push_back(reaction);
+        }
+    }
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPCRPrimerSequence",
+                              "PCR forward primer sequence format is incorrect, first bad character is '4'"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPCRPrimerName",
+                              "PCR forward primer name appears to be a sequence"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPCRPrimerSequence",
+                              "PCR reverse primer sequence format is incorrect, first bad character is '5'"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadPCRPrimerName",
+                              "PCR reverse primer name appears to be a sequence"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 

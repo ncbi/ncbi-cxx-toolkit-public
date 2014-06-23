@@ -234,6 +234,7 @@ static bool s_UnbalancedParentheses (string str)
 }
 
 
+#if 0
 const char* sm_ValidModifiedPrimerBases[] = {
   "ac4c",
   "chm5u",
@@ -344,6 +345,7 @@ static bool s_IsValidPrimerSequence (string str, char& bad_ch)
 
     return true;
 }
+#endif
 
 
 bool CValidError_imp::IsSyntheticConstruct (const CBioSource& src) 
@@ -1050,6 +1052,68 @@ void CValidError_imp::ValidateBioSource
     }
 
     ValidateOrgRef (orgref, obj, ctx);
+    if (bsrc.IsSetPcr_primers()) {
+        ValidatePCRReactionSet(bsrc.GetPcr_primers(), obj, ctx);
+    }
+}
+
+
+void CValidError_imp::x_ReportPCRSeqProblem
+(const string& primer_kind,
+ char badch,
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
+{
+    if (badch < ' ' || badch > '~') {
+        badch = '?';
+    }
+    string msg = "PCR " + primer_kind + " primer sequence format is incorrect, first bad character is '";
+    msg += badch;
+    msg += "'";
+    PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
+                msg, obj, ctx);
+}
+
+
+void CValidError_imp::x_CheckPCRPrimer
+(const CPCRPrimer& primer,
+ const string& primer_kind,
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
+{
+    char badch = 0;
+    if (primer.IsSetSeq() && ! CPCRPrimerSeq::IsValid(primer.GetSeq(), badch)) {
+        x_ReportPCRSeqProblem(primer_kind, badch, obj, ctx);
+    }
+    badch = 0;
+    if (primer.IsSetName() && primer.GetName().Get().length() > 10
+        && CPCRPrimerSeq::IsValid(primer.GetName(), badch)) {
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerName, 
+                    "PCR " + primer_kind + " primer name appears to be a sequence",
+                    obj, ctx);
+    }
+
+}
+
+
+void CValidError_imp::ValidatePCRReactionSet
+(const CPCRReactionSet& pcrset,
+ const CSerialObject& obj,
+ const CSeq_entry *ctx)
+{
+    ITERATE(CPCRReactionSet::Tdata, it, pcrset.Get()) {
+        if ((*it)->IsSetForward()) {
+            ITERATE(CPCRPrimerSet::Tdata, pit, (*it)->GetForward().Get()) {
+                x_CheckPCRPrimer(**pit, "forward", obj, ctx);
+            }
+        }
+        if ((*it)->IsSetReverse()) {
+            ITERATE(CPCRPrimerSet::Tdata, pit, (*it)->GetReverse().Get()) {
+                x_CheckPCRPrimer(**pit, "reverse", obj, ctx);
+            }
+        }
+    }
+
 }
 
 
@@ -1149,7 +1213,7 @@ void CValidError_imp::ValidateSubSource
             string name = subsrc.GetName();
             char bad_ch;
             if (name.length() > 10
-                && s_IsValidPrimerSequence(name, bad_ch)) {
+                && CPCRPrimerSeq::IsValid(name, bad_ch)) {
                 PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerName, 
                             "PCR primer name appears to be a sequence",
                             obj, ctx);
@@ -1162,7 +1226,7 @@ void CValidError_imp::ValidateSubSource
             string name = subsrc.GetName();
             char bad_ch;
             if (name.length() > 10
-                && s_IsValidPrimerSequence(name, bad_ch)) {
+                && CPCRPrimerSeq::IsValid(name, bad_ch)) {
                 PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerName, 
                             "PCR primer name appears to be a sequence",
                             obj, ctx);
@@ -1173,16 +1237,8 @@ void CValidError_imp::ValidateSubSource
     case CSubSource::eSubtype_fwd_primer_seq:
         {
             char bad_ch;
-            if (!subsrc.IsSetName() || !s_IsValidPrimerSequence(subsrc.GetName(), bad_ch)) {
-                if (bad_ch < ' ' || bad_ch > '~') {
-                    bad_ch = '?';
-                }
-
-                string msg = "PCR forward primer sequence format is incorrect, first bad character is '";
-                msg += bad_ch;
-                msg += "'";
-                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
-                            msg, obj, ctx);
+            if (!subsrc.IsSetName() || !CPCRPrimerSeq::IsValid(subsrc.GetName(), bad_ch)) {
+                x_ReportPCRSeqProblem("forward", bad_ch, obj, ctx);
             }
         }
         break;
@@ -1190,16 +1246,8 @@ void CValidError_imp::ValidateSubSource
     case CSubSource::eSubtype_rev_primer_seq:
         {
             char bad_ch;
-            if (!subsrc.IsSetName() || !s_IsValidPrimerSequence(subsrc.GetName(), bad_ch)) {
-                if (bad_ch < ' ' || bad_ch > '~') {
-                    bad_ch = '?';
-                }
-
-                string msg = "PCR reverse primer sequence format is incorrect, first bad character is '";
-                msg += bad_ch;
-                msg += "'";
-                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
-                            msg, obj, ctx);
+            if (!subsrc.IsSetName() || !CPCRPrimerSeq::IsValid(subsrc.GetName(), bad_ch)) {
+                x_ReportPCRSeqProblem("reverse", bad_ch, obj, ctx);
             }
         }
         break;

@@ -98,6 +98,120 @@ void CPCRPrimerSeq::Clean(string& seq)
 }
 
 
+const char* sm_ValidModifiedPrimerBases[] = {
+  "ac4c",
+  "chm5u",
+  "cm",
+  "cmnm5s2u",
+  "cmnm5u",
+  "d",
+  "fm",
+  "gal q",
+  "gm",
+  "i",
+  "i6a",
+  "m1a",
+  "m1f",
+  "m1g",
+  "m1i",
+  "m22g",
+  "m2a",
+  "m2g",
+  "m3c",
+  "m5c",
+  "m6a",
+  "m7g",
+  "mam5u",
+  "mam5s2u",
+  "man q",
+  "mcm5s2u",
+  "mcm5u",
+  "mo5u",
+  "ms2i6a",
+  "ms2t6a",
+  "mt6a",
+  "mv",
+  "o5u",
+  "osyw",
+  "p",
+  "q",
+  "s2c",
+  "s2t",
+  "s2u",
+  "s4u",
+  "t",
+  "t6a",
+  "tm",
+  "um",
+  "yw",
+  "x",
+  "OTHER"
+};
+
+
+bool CPCRPrimerSeq::IsValid(const string& seq, char& bad_ch)
+{
+    string str = seq;
+    bad_ch = 0;
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
+
+    if (NStr::Find(str, ",") == string::npos) {
+        if (NStr::Find(str, "(") != string::npos
+            || NStr::Find(str, ")") != string::npos) {
+            return false;
+        }
+    } else {
+        if (!NStr::StartsWith(str, "(") || !NStr::EndsWith(str, ")")) {
+            return false;
+        }
+    }
+
+    if (NStr::Find(str, ";") != string::npos) {
+        return false;
+    }
+
+    const char* *list_begin = sm_ValidModifiedPrimerBases;
+    const char* *list_end = &(sm_ValidModifiedPrimerBases[sizeof(sm_ValidModifiedPrimerBases) / sizeof(const char*)]);
+
+    size_t pos = 0;
+    string::iterator sit = str.begin();
+    while (sit != str.end()) {
+        if (*sit == '<') {
+            size_t pos2 = NStr::Find (str, ">", pos + 1);
+            if (pos2 == string::npos) {
+                bad_ch = '<';
+                return false;
+            }
+            string match = str.substr(pos + 1, pos2 - pos - 1);
+            if (find(list_begin, list_end, match) == list_end) {
+                bad_ch = '<';
+                return false;
+            }
+            sit += pos2 - pos + 1;
+            pos = pos2 + 1;
+        } else {
+            if (*sit != '(' && *sit != ')' && *sit != ',' && *sit != ':') {
+                if (!isalpha (*sit)) {
+                    bad_ch = *sit;
+                    return false;
+                }
+                char ch = toupper(*sit);
+                if (strchr ("ABCDGHKMNRSTVWY", ch) == NULL) {
+                    bad_ch = tolower (ch);
+                    return false;
+                }
+            }
+            ++sit;
+            ++pos;
+        }
+    }
+
+    return true;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

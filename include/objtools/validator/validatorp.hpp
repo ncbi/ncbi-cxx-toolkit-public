@@ -436,6 +436,7 @@ public:
     // General use validation methods
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
+    void ValidatePCRReactionSet(const CPCRReactionSet& pcrset, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateSubSource(const CSubSource& subsrc, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateOrgRef(const COrg_ref& orgref, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateOrgName(const COrgName& orgname, const bool has_taxon, const CSerialObject& obj, const CSeq_entry *ctx);
@@ -672,6 +673,14 @@ private:
                        bool &ordered,
                        bool circular,
                        const CSerialObject& obj);
+    void x_ReportPCRSeqProblem(const string& primer_kind,
+                               char badch,
+                               const CSerialObject& obj,
+                               const CSeq_entry *ctx);
+    void x_CheckPCRPrimer(const CPCRPrimer& primer,
+                          const string& primer_kind,
+                          const CSerialObject& obj,
+                          const CSeq_entry *ctx);
 
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;

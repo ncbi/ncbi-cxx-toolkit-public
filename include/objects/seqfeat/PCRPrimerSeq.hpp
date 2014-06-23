@@ -61,6 +61,7 @@ public:
         : Tparent(data) {}
 
     static void Clean(string& seq);
+    static bool IsValid(const string& seq, char& bad_ch);
 };
 
 END_objects_SCOPE // namespace ncbi::objects::
