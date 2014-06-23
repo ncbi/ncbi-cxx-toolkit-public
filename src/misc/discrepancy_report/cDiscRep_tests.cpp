@@ -285,7 +285,8 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
        prot_nm = *(prot.GetName().begin()); 
        rule_idx = 0;
        string test_name, summ;
-// prot_nm = "hypothetical protein";
+// prot_nm = "helix-turn-helix";
+
        ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                    thisInfo.suspect_prod_rules->Get()) {
          if ( rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, 
@@ -2133,7 +2134,7 @@ void CBioseq_ADJACENT_PSEUDOGENES :: TestOnObj(const CBioseq& bioseq)
      if (!(*jt)->CanGetPseudo() || !(*jt)->GetPseudo()) {
         continue;
      }
-     if ((*it)->GetLocation().GetStrand() != (*jt)->GetLocation().GetStrand()){
+     if ((*it)->GetLocation().GetStrand() !=(*jt)->GetLocation().GetStrand()){
                continue;
      }
      if (!(*it)->CanGetComment() || (*it)->GetComment().empty()
@@ -2147,13 +2148,13 @@ void CBioseq_ADJACENT_PSEUDOGENES :: TestOnObj(const CBioseq& bioseq)
        if (this_gene.CanGetLocus() && !this_gene.GetLocus().empty()
             && next_gene.CanGetLocus() && !next_gene.GetLocus().empty()) {
          match_txt 
-              = GetGeneStringMatch(this_gene.GetLocus(), next_gene.GetLocus());
+             = GetGeneStringMatch(this_gene.GetLocus(), next_gene.GetLocus());
          if (match_txt.empty()) {
-            if (this_gene.CanGetDesc() && !this_gene.GetDesc().empty()
-                    && next_gene.CanGetDesc() && !next_gene.GetDesc().empty()){
-              match_txt 
-                = GetGeneStringMatch(this_gene.GetDesc(), next_gene.GetDesc());
-            }
+           if (this_gene.CanGetDesc() && !this_gene.GetDesc().empty()
+                   && next_gene.CanGetDesc() && !next_gene.GetDesc().empty()){
+             match_txt 
+               = GetGeneStringMatch(this_gene.GetDesc(), next_gene.GetDesc());
+           }
          } 
        }
      }    
@@ -2178,14 +2179,24 @@ void CBioseq_ADJACENT_PSEUDOGENES :: GetReport(CRef <CClickableItem> c_item)
    GetTestItemList(c_item->item_list, txt2feats);
    c_item->item_list.clear();
    string strtmp;
-   ITERATE (Str2Strs, it, txt2feats) {
-     strtmp = "genes: Adjacent pseudogenes have the same text: " + it->first;
-     AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), strtmp,
-                    strtmp, e_OtherComment);
+   if (txt2feats.size() == 1 && txt2feats.begin()->second.size() == 2) {
+      c_item->item_list = txt2feats.begin()->second;
+      c_item->obj_list 
+        = thisInfo.test_item_objs[GetName() + "$" + txt2feats.begin()->first];
+      c_item->description = "Adjacent pseudogenes have the same text: " 
+                              + txt2feats.begin()->first; 
    }
-   c_item->description 
+   else {
+     ITERATE (Str2Strs, it, txt2feats) {
+       strtmp 
+         = "genes: Adjacent pseudogenes have the same text: " + it->first;
+       AddSubcategory(c_item, GetName() + "$" + it->first, 
+                    &(it->second), strtmp, strtmp, e_OtherComment);
+     }
+     c_item->description 
         = NStr::UIntToString((unsigned)c_item->item_list.size()/2) 
             + " pseudogenes match an adjacent pseudogene's text.";
+   }
 };
 
 
@@ -11181,7 +11192,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
             const CLocusItem& 
              locus_item = dynamic_cast<const CLocusItem&>(flat_item);
             const CMolInfo* 
-              molinfo = dynamic_cast <const CMolInfo*>(locus_item.GetObject());
+              molinfo =dynamic_cast <const CMolInfo*>(locus_item.GetObject());
             CSeqdesc seqdesc;
             seqdesc.SetMolinfo().Assign(*molinfo);
             strtmp = GetDiscItemText(seqdesc, *m_bsq);
@@ -11236,8 +11247,8 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
          case CFlatFileConfig::fGenbankBlocks_FeatAndGap:
             {
-              const CFeatureItemBase& feat_item 
-                           = dynamic_cast<const CFeatureItemBase&> (flat_item);
+              const CFeatureItemBase& 
+                feat_item = dynamic_cast<const CFeatureItemBase&> (flat_item);
               const CSeq_feat& sf = feat_item.GetFeat().GetOriginalFeature();
               strtmp = GetDiscItemText(sf);
               obj_ref.Reset(&sf);
@@ -11247,7 +11258,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
                   obj_ref = CConstRef <CObject>(m_bsq.GetPointer());
        };
        strtmp 
-         = thisInfo.fix_data[it->first].s_val + "$" + it->first + "#" + strtmp;
+         =thisInfo.fix_data[it->first].s_val + "$" + it->first + "#" + strtmp;
        thisInfo.test_item_list[m_setting_name].push_back(strtmp);
        strtmp = m_setting_name + "$" + thisInfo.fix_data[it->first].s_val 
                  + "#" + it->first;
@@ -11264,13 +11275,13 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
    unsigned blocks = CFlatFileConfig::fGenbankBlocks_All 
                              & ~CFlatFileConfig::fGenbankBlocks_Sequence;
    CFlatFileConfig cfg(CFlatFileConfig::eFormat_GenBank,
-                       CFlatFileConfig::eMode_GBench,
-                       CFlatFileConfig::eStyle_Normal,
-                       CFlatFileConfig::fShowContigFeatures,
-                       CFlatFileConfig::fViewAll,
-                       CFlatFileConfig::fGffGTFCompat,
-                       (CFlatFileConfig::FGenbankBlocks)blocks,
-                       &flatfile_find);
+                      CFlatFileConfig::eMode_GBench,
+                      CFlatFileConfig::eStyle_Normal,
+                      CFlatFileConfig::fShowContigFeatures,
+         CFlatFileConfig::fViewAll,  // | CFlatFileConfig::fViewFirst,
+                      CFlatFileConfig::fGffGTFCompat,
+                      (CFlatFileConfig::FGenbankBlocks)blocks,
+                      &flatfile_find);
    CFlatFileGenerator gen(cfg);
    CSeq_entry_Handle entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
    gen.Generate( entry_hl, cout); // slow
