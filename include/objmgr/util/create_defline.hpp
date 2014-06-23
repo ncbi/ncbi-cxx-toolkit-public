@@ -181,6 +181,7 @@ private:
     /// seq-inst fields
     bool m_IsNA;
     bool m_IsAA;
+    CSeq_inst::TTopology m_Topology;
 
     bool m_IsSeg;
     bool m_IsDelta;

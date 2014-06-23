@@ -157,6 +157,7 @@ void CDeflineGenerator::x_SetFlags (
     // reset member variables to cleared state
     m_IsNA = false;
     m_IsAA = false;
+    m_Topology = NCBI_SEQTOPOLOGY(not_set);
 
     m_IsSeg = false;
     m_IsDelta = false;
@@ -229,6 +230,7 @@ void CDeflineGenerator::x_SetFlags (
     // now start setting member variables
     m_IsNA = bsh.IsNa();
     m_IsAA = bsh.IsAa();
+    m_Topology = bsh.GetInst_Topology();
 
     if (bsh.IsSetInst()) {
         if (bsh.IsSetInst_Repr()) {
@@ -1809,7 +1811,9 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
             joiner.Add(" plasmid ").Add(m_Plasmid);
         }
     }
-    if (! m_GeneralStr.empty()  &&  m_GeneralStr != m_Chromosome
+    if (m_Genome == NCBI_GENOME(plasmid) && m_Topology == NCBI_SEQTOPOLOGY(circular)) {
+    } else if (m_Genome == NCBI_GENOME(chromosome)) {
+    } else if (! m_GeneralStr.empty()  &&  m_GeneralStr != m_Chromosome
         &&  (! m_IsWGS  ||  m_GeneralStr != m_Plasmid)) {
         joiner.Add(" ").Add(m_GeneralStr);
     }
