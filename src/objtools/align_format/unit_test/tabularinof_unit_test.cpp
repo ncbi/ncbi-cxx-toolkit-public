@@ -276,9 +276,9 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     	string output = CNcbiOstrstreamToString(output_stream);
     	vector<string> results;
     	NStr::Tokenize(output, "\n", results);
-    	string ref_0 = "hypothetical protein MTR_4g111700 [Medicago truncatula]<>hypothetical protein " \
-    				   "MTR_4g112050 [Medicago truncatula]<>hypothetical protein MTR_4g111700 [Medicago " \
-    				   "truncatula]<>hypothetical protein MTR_4g112050 [Medicago truncatula]";
+    	string ref_0 = "hypothetical protein MTR_4g111700 [Medicago truncatula]<>" \
+		       "hypothetical protein MTR_4g112050 [Medicago truncatula]<>" \
+                       "hypothetical protein MTR_4g111700 [Medicago truncatula]";
     	string ref_2 = "hypothetical protein Poptr_cp075 [Populus trichocarpa]<>hypothetical protein " \
     			       "Poptr_cp088 [Populus trichocarpa]<>hypothetical protein Poptr_cp075 [Populus " \
     			       "trichocarpa]<>hypothetical protein Poptr_cp088 [Populus trichocarpa]";
