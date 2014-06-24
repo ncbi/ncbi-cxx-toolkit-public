@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko, Mati Shomrat, Mike DiCuccio, NCBI
+* Author:  Aaron Ucko, Mati Shomrat, Mike DiCuccio, Jonathan Kans, NCBI
 *
 * File Description:
 *   flat-file generator application
@@ -42,6 +42,8 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/seq/seq_macros.hpp>
+
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
@@ -80,6 +82,8 @@ protected:
     CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is);
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
 
+    CNcbiOstream* OpenFlatfileOstream(const string& name);
+
 private:
     // types
     typedef CFlatFileConfig::TFormat        TFormat;
@@ -111,7 +115,17 @@ private:
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CScope>                m_Scope;
-    CNcbiOstream*               m_Os;           // Output stream
+
+    CNcbiOstream*               m_Os;           // all sequence output stream
+    bool                        m_OnlyNucs;
+    bool                        m_OnlyProts;
+
+    CNcbiOstream*               m_On;           // nucleotide output stream
+    CNcbiOstream*               m_Og;           // genomic output stream
+    CNcbiOstream*               m_Or;           // RNA output stream
+    CNcbiOstream*               m_Op;           // protein output stream
+    CNcbiOstream*               m_Ou;           // unknown output stream
+
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
     auto_ptr<ICanceled>         m_pCanceledCallback;
     bool                        m_do_cleanup;
@@ -154,10 +168,32 @@ void CAsn2FlatApp::Init(void)
          arg_desc->SetConstraint( "type",
                                   &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set", "seq-submit" ) );
 
-         // output
-         arg_desc->AddOptionalKey("o", "OutputFile",
-                                  "Output file name",
-                                  CArgDescriptions::eOutputFile);
+        // single output name
+        arg_desc->AddOptionalKey("o", "SingleOutputFile",
+            "Single output file name", CArgDescriptions::eOutputFile);
+
+        // file names
+        arg_desc->AddOptionalKey("on", "NucleotideOutputFile",
+            "Nucleotide output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("on", CArgDescriptions::eExcludes, "o");
+
+        arg_desc->AddOptionalKey("og", "GenomicOutputFile",
+            "Genomic output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("og", CArgDescriptions::eExcludes, "o");
+        arg_desc->SetDependency("og", CArgDescriptions::eExcludes, "on");
+
+        arg_desc->AddOptionalKey("or", "RNAOutputFile",
+            "RNA output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("or", CArgDescriptions::eExcludes, "o");
+        arg_desc->SetDependency("or", CArgDescriptions::eExcludes, "on");
+
+        arg_desc->AddOptionalKey("op", "ProteinOutputFile",
+            "Protein output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("op", CArgDescriptions::eExcludes, "o");
+
+        arg_desc->AddOptionalKey("ou", "UnknownOutputFile",
+            "Unknown output file name", CArgDescriptions::eOutputFile);
+        arg_desc->SetDependency("ou", CArgDescriptions::eExcludes, "o");
      }}
 
     // batch processing
@@ -232,11 +268,11 @@ void CAsn2FlatApp::Init(void)
 
                                  CArgDescriptions::eInteger, "0");
 
-         arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST", 
+         arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST",
              "Use this to only show certain parts of the flatfile (e.g. '-showblocks locus,defline').  "
              "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
              CArgDescriptions::eString );
-         arg_desc->AddOptionalKey("skipblocks", "COMMA_SEPARATED_BLOCK_LIST", 
+         arg_desc->AddOptionalKey("skipblocks", "COMMA_SEPARATED_BLOCK_LIST",
              "Use this to skip certain parts of the flatfile (e.g. '-skipblocks sequence,origin').  "
              "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
              CArgDescriptions::eString );
@@ -311,6 +347,21 @@ void CAsn2FlatApp::Init(void)
 }
 
 
+CNcbiOstream* CAsn2FlatApp::OpenFlatfileOstream(const string& name)
+{
+    const CArgs& args = GetArgs();
+
+    if (! args[name]) return NULL;
+
+    CNcbiOstream* flatfile_os = &(args[name].AsOutputFile());
+
+    // so we don't fail silently if, e.g., the output disk gets full
+    flatfile_os->exceptions( ios::failbit | ios::badbit );
+
+    return flatfile_os;
+}
+
+
 int CAsn2FlatApp::Run(void)
 {
     // initialize conn library
@@ -321,7 +372,7 @@ int CAsn2FlatApp::Run(void)
     GenBankReaders_Register_Pubseq();
     GenBankReaders_Register_Pubseq2();
 #endif
-    
+
 
     const CArgs&   args = GetArgs();
 
@@ -338,14 +389,26 @@ int CAsn2FlatApp::Run(void)
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
-    // open the output stream
-    m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
-    if ( m_Os == 0 ) {
-        NCBI_THROW(CException, eUnknown, "Could not open output stream");
+    // open the output streams
+    m_Os = OpenFlatfileOstream ("o");
+    m_On = OpenFlatfileOstream ("on");
+    m_Og = OpenFlatfileOstream ("og");
+    m_Or = OpenFlatfileOstream ("or");
+    m_Op = OpenFlatfileOstream ("op");
+    m_Ou = OpenFlatfileOstream ("ou");
+
+    m_OnlyNucs = false;
+    m_OnlyProts = false;
+    if (m_Os != NULL) {
+        const string& view = args["view"].AsString();
+        m_OnlyNucs = (view == "nuc");
+        m_OnlyProts = (view == "prot");
     }
 
-    // so we don't fail silently if, e.g., the output disk gets full
-    m_Os->exceptions( ios::failbit | ios::badbit );
+    if (m_Os == NULL  &&  m_On == NULL  &&  m_Og == NULL  &&
+        m_Or == NULL  &&  m_Op == NULL  &&  m_Ou == NULL) {
+        NCBI_THROW(CArgException, eSynopsis, "No output (-o*) argument given");
+    }
 
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
@@ -419,7 +482,7 @@ int CAsn2FlatApp::Run(void)
         }
         HandleSeqEntry(seh);
     }
-    else if ( asn_type == "bioseq" ) {                
+    else if ( asn_type == "bioseq" ) {
         //
         //  Read object as a bioseq, wrap it into a seq_entry, then process
         //  the wrapped bioseq as a seq_entry:
@@ -569,18 +632,86 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         }
     }
 
-    // generate flat file
-    if ( args["from"]  ||  args["to"] ) {
-        CSeq_loc loc;
-        x_GetLocation( seh, args, loc );
-        m_FFGenerator->Generate(loc, seh.GetScope(), *m_Os);
-    }
-    else {
-        int count = args["count"].AsInteger();
-        for ( int i = 0; i < count; ++i ) {
-            m_FFGenerator->Generate( seh, *m_Os);
+    for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
+        CBioseq_Handle bsh = *bioseq_it;
+        CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+
+        CNcbiOstream* flatfile_os;
+
+        bool is_genomic = false;
+        bool is_RNA = false;
+
+        CConstRef<CSeqdesc> closest_molinfo
+            = bsr->GetClosestDescriptor(CSeqdesc::e_Molinfo);
+        if (closest_molinfo) {
+            const CMolInfo& molinf = closest_molinfo->GetMolinfo();
+            CMolInfo::TBiomol biomol = molinf.GetBiomol();
+            switch (biomol) {
+                case NCBI_BIOMOL(genomic):
+                case NCBI_BIOMOL(other_genetic):
+                case NCBI_BIOMOL(genomic_mRNA):
+                case NCBI_BIOMOL(cRNA):
+                    is_genomic = true;
+                    break;
+                case NCBI_BIOMOL(pre_RNA):
+                case NCBI_BIOMOL(mRNA):
+                case NCBI_BIOMOL(rRNA):
+                case NCBI_BIOMOL(tRNA):
+                case NCBI_BIOMOL(snRNA):
+                case NCBI_BIOMOL(scRNA):
+                case NCBI_BIOMOL(snoRNA):
+                case NCBI_BIOMOL(transcribed_RNA):
+                case NCBI_BIOMOL(ncRNA):
+                case NCBI_BIOMOL(tmRNA):
+                    is_RNA = true;
+                    break;
+                default:
+                    break;
+            }
         }
 
+        if ( m_Os != NULL ) {
+            if ( m_OnlyNucs && ! bsh.IsNa() ) continue;
+            if ( m_OnlyProts && ! bsh.IsAa() ) continue;
+            flatfile_os = m_Os;
+        } else if ( bsh.IsNa() ) {
+            if ( m_On != NULL ) {
+                flatfile_os = m_On;
+            } else if ( is_genomic && m_Og != NULL ) {
+                flatfile_os = m_Og;
+            } else if ( is_RNA && m_Or != NULL ) {
+                flatfile_os = m_Or;
+            } else {
+                continue;
+            }
+        } else if ( bsh.IsAa() ) {
+            if ( m_Op != NULL ) {
+                flatfile_os = m_Op;
+            }
+        } else {
+            if ( m_Ou != NULL ) {
+                flatfile_os = m_Ou;
+            } else if ( m_On != NULL ) {
+                flatfile_os = m_On;
+            } else {
+                continue;
+            }
+        }
+
+
+        // generate flat file
+        if ( args["from"]  ||  args["to"] ) {
+            CSeq_loc loc;
+            x_GetLocation( seh, args, loc );
+            m_FFGenerator->Generate(loc, seh.GetScope(), *flatfile_os);
+        }
+        else {
+            int count = args["count"].AsInteger();
+            for ( int i = 0; i < count; ++i ) {
+                m_FFGenerator->Generate( bsh, *flatfile_os);
+            }
+
+        }
     }
     return true;
 }
@@ -687,7 +818,7 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
         pI = CObjectIStream::Open( serial, *pUnzipStream, eTakeOwnership );
     }
     else {
-        pI = CObjectIStream::Open( 
+        pI = CObjectIStream::Open(
             serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     }
 
@@ -714,7 +845,7 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
     }
 
     CFlatFileConfig cfg(
-        format, mode, style, flags, view, gff_options, genbank_blocks, 
+        format, mode, style, flags, view, gff_options, genbank_blocks,
         genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get(),
         args["cleanup"] );
     return new CFlatFileGenerator(cfg);
@@ -736,7 +867,7 @@ CAsn2FlatApp::TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
         return CFlatFileConfig::eFormat_FTable;
     }
     if (format == "gff"  ||  format == "gff3") {
-        string msg = 
+        string msg =
             "Asn2flat no longer supports GFF and GFF3 generation. "
             "For state-of-the-art GFF output, use annotwriter.";
         NCBI_THROW(CException, eInvalid, msg);
@@ -874,6 +1005,10 @@ CAsn2FlatApp::TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
 
 CAsn2FlatApp::TView CAsn2FlatApp::x_GetView(const CArgs& args)
 {
+    if ( m_Os == NULL ) {
+        return CFlatFileConfig::fViewAll;
+    }
+
     const string& view = args["view"].AsString();
     if ( view == "all" ) {
         return CFlatFileConfig::fViewAll;
@@ -889,12 +1024,12 @@ CAsn2FlatApp::TView CAsn2FlatApp::x_GetView(const CArgs& args)
 
 CAsn2FlatApp::TGenbankBlocks CAsn2FlatApp::x_GetGenbankBlocks(const CArgs& args)
 {
-    const static CAsn2FlatApp::TGenbankBlocks kDefault = 
+    const static CAsn2FlatApp::TGenbankBlocks kDefault =
         CFlatFileConfig::fGenbankBlocks_All;
 
     string blocks_arg;
     // set to true if we're hiding the blocks given instead of showing them
-    bool bInvertFlags = false; 
+    bool bInvertFlags = false;
     if( args["showblocks"] ) {
         blocks_arg = args["showblocks"].AsString();
     } else if( args["skipblocks"] ) {
@@ -920,14 +1055,14 @@ CAsn2FlatApp::TGenbankBlocks CAsn2FlatApp::x_GetGenbankBlocks(const CArgs& args)
     return ( bInvertFlags ? ~fBlocksGiven : fBlocksGiven );
 }
 
-CAsn2FlatApp::TGenbankBlockCallback* 
+CAsn2FlatApp::TGenbankBlockCallback*
 CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
 {
     class CSimpleCallback : public TGenbankBlockCallback {
     public:
         CSimpleCallback(void) { }
-        virtual ~CSimpleCallback(void) 
-            { 
+        virtual ~CSimpleCallback(void)
+            {
                 cerr << endl;
                 cerr << "GENBANK CALLBACK DEMO STATISTICS" << endl;
                 cerr << endl;
@@ -1226,13 +1361,13 @@ CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
         }
 
 
-        virtual bool IsCanceled(void) const 
+        virtual bool IsCanceled(void) const
         {
             // getting the current time should be the first
             // command in this function.
             CTime timeOfThisCheck(CTime::eCurrent);
 
-            const double dDiffInNsecs = 
+            const double dDiffInNsecs =
                 timeOfThisCheck.DiffNanoSecond(m_TimeOfLastCheck);
             const Int8 iDiffInMsecs = static_cast<Int8>(dDiffInNsecs / 1000000.0);
 
@@ -1247,7 +1382,7 @@ CAsn2FlatApp::x_CreateCancelBenchmarkCallback(void)
                 m_LastFewGaps.pop_front();
             }
 
-            const bool bIsCanceled = 
+            const bool bIsCanceled =
                 CSignal::IsSignaled(CSignal::eSignal_USR1);
             if( bIsCanceled ) {
                 cerr << "Canceled by SIGUSR1" << endl;
