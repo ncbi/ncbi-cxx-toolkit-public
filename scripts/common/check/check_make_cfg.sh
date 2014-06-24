@@ -132,6 +132,7 @@ if test -n "$NCBI_AUTOMATED_BUILD"; then
          msvc9  ) signature="MSVC_900"  ;;
          msvc10 ) signature="MSVC_1000" ;;
          vs2012 ) signature="VS_2012"   ;;
+         vs2013 ) signature="VS_2013"   ;;
       esac
       signature="$signature-${x_cfg}"
       case "$x_cfg" in
