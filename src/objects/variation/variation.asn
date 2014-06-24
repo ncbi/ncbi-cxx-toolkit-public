@@ -14,7 +14,7 @@
 NCBI-VariationPackage DEFINITIONS ::=
 BEGIN
 
-EXPORTS Variation;
+EXPORTS Variation, VariantPlacement;
 
 IMPORTS Int-fuzz, Dbtag, User-object, Object-id FROM NCBI-General
         Population-data, Phenotype, Variation-inst, VariantProperties FROM NCBI-Variation
