@@ -136,6 +136,15 @@ private:
 };
 
 
+static const char* kLogName_None     = "NONE";
+static const char* kLogName_Unknown  = "UNKNOWN";
+static const char* kLogName_Stdout   = "STDOUT";
+static const char* kLogName_Stderr   = "STDERR";
+static const char* kLogName_Stream   = "STREAM";
+static const char* kLogName_Memory   = "MEMORY";
+static const char* kLogName_Tee      = "STDERR-TEE";
+
+
 class CDiagFileHandleHolder : public CObject
 {
 public:
@@ -162,7 +171,7 @@ public:
     virtual string GetLogName(void)
     {
         return m_OrigHandler.get() ?
-            m_OrigHandler->GetLogName() : "STDERR-TEE";
+            m_OrigHandler->GetLogName() : kLogName_Tee;
     }
     virtual void Reopen(TReopenFlags flags)
     {
@@ -2636,13 +2645,6 @@ void CDiagContext::DiscardMessages(void)
 
 // Diagnostics setup
 
-static const char* kLogName_None     = "NONE";
-static const char* kLogName_Unknown  = "UNKNOWN";
-static const char* kLogName_Stdout   = "STDOUT";
-static const char* kLogName_Stderr   = "STDERR";
-static const char* kLogName_Stream   = "STREAM";
-static const char* kLogName_Memory   = "MEMORY";
-
 string GetDefaultLogLocation(CNcbiApplication& app)
 {
     static const char* kToolkitRcPath = "/etc/toolkitrc";
@@ -2942,7 +2944,9 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
                         }
                     }
                 }
-                if (!log_switched  &&  old_log_name != kLogName_Stderr) {
+                const char* new_log_name = TTeeToStderr::GetDefault() ?
+                    kLogName_Tee : kLogName_Stderr;
+                if (!log_switched  &&  old_log_name != new_log_name) {
                     SetDiagHandler(new CStreamDiagHandler(&cerr,
                         true, kLogName_Stderr), true);
                     log_switched = true;
