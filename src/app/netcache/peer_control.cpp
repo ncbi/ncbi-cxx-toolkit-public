@@ -173,7 +173,8 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
             m_Hostname = srv_fields.front();
         }
     }
-    CNCDistributionConf::CreateHostAliases(m_HostAliases, m_HostIP, m_Hostname);
+    m_HostIPname = CTaskServer::IPToString(m_HostIP);
+    m_HostAlias = CNCDistributionConf::CreateHostAlias(m_HostIP, Uint4(m_SrvId));
 }
 
 void
@@ -220,8 +221,8 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
                 Uint4 host = CTaskServer::GetIPByHost(m_Hostname);
                 if (host != 0 && m_HostIP != host) {
                     m_HostIP = host;
-                    m_HostAliases.clear();
-                    CNCDistributionConf::CreateHostAliases(m_HostAliases, m_HostIP, m_Hostname);
+                    m_HostIPname = CTaskServer::IPToString(m_HostIP);
+                    m_HostAlias = CNCDistributionConf::CreateHostAlias(m_HostIP, Uint4(m_SrvId));
                     SRV_LOG(Warning, "IP address change: host "
                         << CNCDistributionConf::GetFullPeerName(m_SrvId));
                 }
@@ -643,11 +644,23 @@ CNCPeerControl::GetMirrorQueueSize(Uint8 srv_id)
 }
 
 Uint4
-CNCPeerControl::FindIPbyAlias(const string& name)
+CNCPeerControl::FindIPbyAlias(Uint4 alias)
 {
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;
-        if (!peer->m_InThrottle && peer->m_HostAliases.find(name) != peer->m_HostAliases.end()) {
+        if (!peer->m_InThrottle && peer->m_HostAlias == alias) {
+            return peer->m_HostIP;
+        }
+    }
+    return 0;
+}
+
+Uint4
+CNCPeerControl::FindIPbyName(const string& alias)
+{
+    ITERATE(TControlMap, it_ctrl, s_Controls) {
+        CNCPeerControl* peer = it_ctrl->second;
+        if (!peer->m_InThrottle && peer->m_HostIPname == alias) {
             return peer->m_HostIP;
         }
     }

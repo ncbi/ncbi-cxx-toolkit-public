@@ -82,7 +82,7 @@ static CRandom  s_KeyRnd(CRandom::TValue(time(NULL)));
 static string   s_SelfHostIP;
 static CAtomicCounter s_BlobId;
 static TNCPeerList s_Peers;
-static set<string> s_HostAliases;
+static Uint4    s_SelfAlias = 0;
 static string   s_MirroringSizeFile;
 static string   s_PeriodicLogFile;
 static string   s_CopyDelayLogFile;
@@ -125,9 +125,10 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
 
     Uint4 self_host = CTaskServer::GetIPByHost(CTaskServer::GetHostName());
+    s_SelfHostIP = CTaskServer::IPToString(self_host);
     s_SelfIP = self_host;
     s_SelfID = (Uint8(self_host) << 32) + control_port;
-    s_SelfHostIP = CTaskServer::IPToString(self_host);
+    s_SelfAlias = CNCDistributionConf::CreateHostAlias(self_host, control_port);
     s_BlobId.Set(0);
 
     string reg_value;
@@ -168,7 +169,6 @@ CNCDistributionConf::Initialize(Uint2 control_port)
             found_self = true;
             s_SelfGroup = grp_name;
             s_SelfName = peer_str;
-            CreateHostAliases(s_HostAliases, host, host_str);
         }
         else {
             if (s_Peers.find(srv_id) != s_Peers.end()) {
@@ -527,18 +527,24 @@ bool
 CNCDistributionConf::GetSlotByNetCacheKey(const string& key,
         Uint2& slot, Uint2& time_bucket)
 {
+    size_t ind = 0;
+#if 0
 #define SKIP_UNDERSCORE(key, ind) \
     ind = key.find('_', ind + 1); \
     if (ind == string::npos) \
         return false;
 
-    size_t ind = 0;
     SKIP_UNDERSCORE(key, ind);      // version
     SKIP_UNDERSCORE(key, ind);      // id
     SKIP_UNDERSCORE(key, ind);      // host
     SKIP_UNDERSCORE(key, ind);      // port
     SKIP_UNDERSCORE(key, ind);      // time
     SKIP_UNDERSCORE(key, ind);      // random
+#else
+    ind = key.rfind('_');
+    if (ind == string::npos) \
+        return false;
+#endif
     ++ind;
 
     unsigned key_rnd = NStr::StringToUInt(
@@ -575,18 +581,20 @@ CNCDistributionConf::GetSlotByRnd(Uint4 key_rnd,
 }
 
 Uint4
-CNCDistributionConf::GetMainSrvIP(const string& key, string* host)
+CNCDistributionConf::GetMainSrvIP(const string& key)
 {
     try {
         CNetCacheKey nc_key(key);
-        string host_str(nc_key.GetHost());
-        if (host) {
-            *host = host_str;
+        if (nc_key.GetVersion() == 3) {
+            Uint4 alias = nc_key.GetHostPortCRC32();
+            return (alias == s_SelfAlias) ? s_SelfIP :
+                CNCPeerControl::FindIPbyAlias(alias);
         }
-        if (s_HostAliases.find(host_str) != s_HostAliases.end()) {
+        string host_str(nc_key.GetHost());
+        if (s_SelfHostIP == host_str) {
             return s_SelfIP;
         }
-        Uint4 ip = CNCPeerControl::FindIPbyAlias(host_str);
+        Uint4 ip = CNCPeerControl::FindIPbyName(host_str);
         if (ip != 0) {
             return ip;
         }
@@ -597,43 +605,11 @@ CNCDistributionConf::GetMainSrvIP(const string& key, string* host)
     }
 }
 
-void
-CNCDistributionConf::CreateHostAliases(
-    set<string>& aliases, Uint4 ip, const string& host_str)
+Uint4
+CNCDistributionConf::CreateHostAlias(Uint4 ip, Uint4 port)
 {
     string ip_str(CTaskServer::IPToString(ip));
-    aliases.insert( host_str);
-    aliases.insert( ip_str);
-
-    CChecksum crc32(CChecksum::eCRC32);
-    crc32.AddChars(host_str.data(), host_str.size());
-    string host_enc( NStr::NumericToString(crc32.GetChecksum(),0, 16));
-    aliases.insert( host_enc);
-
-    crc32.Reset();
-    crc32.AddChars(ip_str.data(), ip_str.size());
-    host_enc = NStr::NumericToString(crc32.GetChecksum(),0, 16);
-    aliases.insert( host_enc);
-}
-
-string CNCDistributionConf::EncodeKey(const string& key)
-{
-    CNetCacheKey nc_key(key);
-    string host_str(nc_key.GetHost());
-    CChecksum crc32(CChecksum::eCRC32);
-    crc32.AddChars(host_str.data(), host_str.size());
-    string host_enc( NStr::NumericToString(crc32.GetChecksum(),0, 16));
-    return NStr::Replace(key, host_str, host_enc);
-}
-
-string CNCDistributionConf::DecodeKey(const string& key)
-{
-    string host_str;
-    Uint4 ip = CNCDistributionConf::GetMainSrvIP(key, &host_str);
-    if (ip != 0) {
-        return NStr::Replace(key, host_str, CTaskServer::IPToString(ip));
-    }
-    return key;
+    return CNetCacheKey::CalculateChecksum(ip_str, port);
 }
 
 bool

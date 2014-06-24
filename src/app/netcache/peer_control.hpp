@@ -98,7 +98,9 @@ public:
     static bool Initialize(void);
     static void Finalize(void);
 
-    static Uint4 FindIPbyAlias(const string& name);
+    static Uint4 FindIPbyAlias(Uint4 alias);
+    static Uint4 FindIPbyName(const string& alias);
+
     static void SetServersForInitSync(Uint4 cnt_servers);
     static void ResetServersForInitSync(void);
     static bool HasServersForInitSync(void);
@@ -175,8 +177,9 @@ private:
 
     Uint8 m_SrvId;
     Uint4 m_HostIP;
+    string m_HostIPname;
     string m_Hostname;
-    set<string> m_HostAliases;
+    Uint4 m_HostAlias;
     CMiniMutex m_ObjLock;
     TNCPeerConnsList m_PooledConns;
     TNCPeerConnsList m_BusyConns;

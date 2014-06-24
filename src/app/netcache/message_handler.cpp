@@ -1678,8 +1678,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
                 break;
             case 'k':
                 if (key == "key") {
-//                    m_RawKey = blob_key = val;
-                    m_RawKey = blob_key = CNCDistributionConf::DecodeKey(val);
+                    m_RawKey = blob_key = val;
                 }
                 break;
             case 'l':
@@ -1804,7 +1803,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
         m_ClientParams["client"] = "";
         cache_name = m_ClientParams["cache"];
         if (m_ClientParams.find("key") != m_ClientParams.end()) {
-            m_RawKey = blob_key = CNCDistributionConf::DecodeKey(m_ClientParams["key"]);
+            m_RawKey = blob_key = m_ClientParams["key"];
         }
         // parse HTTP header
         CTempString cmd_line;
@@ -2003,7 +2002,9 @@ CNCMessageHandler::x_StartCommand(void)
     }
 
     if (x_IsFlagSet(fCanGenerateKey)  &&  m_RawKey.empty()) {
-        CNCDistributionConf::GenerateBlobKey(m_LocalPort, m_RawKey, m_BlobSlot, m_TimeBucket,1);
+        CNCDistributionConf::GenerateBlobKey(
+            m_HttpMode == eNoHttp ? m_LocalPort : Uint4( CNCDistributionConf::GetSelfID()),
+            m_RawKey, m_BlobSlot, m_TimeBucket, m_HttpMode == eNoHttp ? 1 : 3);
         CNCBlobStorage::PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
 
         diag_msg.PrintParam("key", m_RawKey);
@@ -2133,7 +2134,7 @@ CNCMessageHandler::x_ReadCommand(void)
                         }
                         string service;
                         if (!uri_parts.empty())  {
-                            service = NStr::Join(uri_parts, "/") + "/";
+                            service = NStr::Join(uri_parts, "/");
                         }
                         m_ClientParams["service"] = service;
                     }
@@ -3373,9 +3374,12 @@ CNCMessageHandler::x_DoCmd_Put(void)
     if (m_HttpMode == eNoHttp) {
         WriteText("OK:ID:").WriteText(m_RawKey).WriteText("\n");
     } else {
+        string key(m_RawKey);
+        if (!m_ClientParams["service"].empty()) {
+            CNetCacheKey::AddExtensions(key, m_ClientParams["service"], 0, 3);
+        }
         CNcbiOstrstream str;
-        str << ",\"blob_key\":\"" << m_ClientParams["service"]
-            << CNCDistributionConf::EncodeKey(m_RawKey) << "\"";
+        str << ",\"blob_key\":\"" << key << "\"";
         m_PosponedCmd += CNcbiOstrstreamToString(str);
     }
     return &CNCMessageHandler::x_StartReadingBlob;
@@ -3884,8 +3888,11 @@ CNCMessageHandler::x_DoCmd_GetMeta(void)
 
         CNcbiOstrstream str;
 
-        str << ",\"blob_key\":\"" << m_ClientParams["service"]
-            << CNCDistributionConf::EncodeKey(m_RawKey) << "\"";
+        tmp = m_RawKey;
+        if (!m_ClientParams["service"].empty()) {
+            CNetCacheKey::AddExtensions(tmp, m_ClientParams["service"], 0, 3);
+        }
+        str << ",\"blob_key\":\"" << tmp << "\"";
         str << ",\"slot\":" << m_BlobSlot;
         Uint8 create_time = m_BlobAccess->GetCurBlobCreateTime();
         CSrvTime t;
@@ -4141,8 +4148,8 @@ CNCMessageHandler::x_WriteHttpHeader(int cmd_status, size_t content_length, bool
     WriteText(m_HttpMode == eHttp10 ? "0" : "1");
     WriteText(" ").WriteNumber(cmd_status).WriteText(" ");
     WriteText(succeeded ? "OK" : "ERR").WriteText("\r\n");
+    WriteText("Content-Length: ").WriteNumber(content_length).WriteText("\r\n");
     if (content_length != 0) {
-        WriteText("Content-Length: ").WriteNumber(content_length).WriteText("\r\n");
         if (binary) {
             WriteText("Content-Type: application/octet-stream\r\n");
         } else {
