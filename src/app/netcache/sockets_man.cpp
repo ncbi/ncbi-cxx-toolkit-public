@@ -1151,7 +1151,7 @@ CSrvSocketTask::ReadLine(CTempString* line)
     }
     if (crlf_pos >= m_RdSize) {
         if (m_RdSize == kSockReadBufSize) {
-            SRV_LOG(Critical, "Too long line in the protocol - at least "
+            SRV_LOG(Warning, "Too long line in the protocol - at least "
                               << m_RdSize << " bytes");
             m_RegError = true;
         }
