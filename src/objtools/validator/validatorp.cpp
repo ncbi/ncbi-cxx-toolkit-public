@@ -132,6 +132,11 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 using namespace sequence;
 
+namespace {
+    // avoid creating a PQuickStringLess for every comparison
+    PQuickStringLess s_QuickStringLess;
+};
+
 
 // =============================================================================
 //                            CValidError_imp Public
@@ -141,6 +146,11 @@ const CSeqFeatData::E_Choice CCacheImpl::kAnyFeatType =
     static_cast<CSeqFeatData::E_Choice>(CSeqFeatData::e_not_set - 1);
 const CSeqFeatData::ESubtype CCacheImpl::kAnyFeatSubtype =
     static_cast<CSeqFeatData::ESubtype>(CSeqFeatData::eSubtype_bad - 1);
+const CCacheImpl::TFeatValue CCacheImpl::kEmptyFeatValue;
+
+const CBioseq_Handle CCacheImpl::kEmptyBioseqHandle;
+const CTSE_Handle CCacheImpl::kEmptyTSEHandle;
+const CBioseq_Handle CCacheImpl::kAnyBioseq;
 
 
 // Constructor
@@ -807,7 +817,9 @@ void CValidError_imp::PostErr
     // Append label for bioseq of feature location
     if (!m_SuppressContext) {
         try {
-            CBioseq_Handle hnd = /* m_Scope->GetBioseqHandle(ft.GetLocation()) */ BioseqHandleFromLocation (m_Scope, ft.GetLocation());
+            CBioseq_Handle hnd =
+                m_cache.GetBioseqHandleFromLocation (
+                    m_Scope, ft.GetLocation(), GetTSE_Handle());
             if( hnd ) {
                 CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
                 desc += " [";
@@ -1325,14 +1337,8 @@ void CValidError_imp::PostBadDateError
 bool CValidError_imp::Validate
 (const CSeq_entry& se,
  const CCit_sub* cs,
- CScope* scope,
- CRef<CCache> pCache)
+ CScope* scope)
 {
-    // if no cache, make one
-    if( ! pCache ) {
-        pCache.Reset(new CCache);
-    }
-
     CSeq_entry_Handle seh;
     try {
         seh = scope->GetSeq_entryHandle(se);
@@ -1344,7 +1350,7 @@ bool CValidError_imp::Validate
         }
     }
 
-    return Validate(seh, cs, pCache);
+    return Validate(seh, cs);
 }
 
 bool CValidError_imp::ValidateDescriptorInSeqEntry (const CSeq_entry& se, CValidError_desc *descval)
@@ -1425,14 +1431,8 @@ bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se)
 
 bool CValidError_imp::Validate
 (const CSeq_entry_Handle& seh,
- const CCit_sub* cs,
- CRef<CCache> pCache)
+ const CCit_sub* cs)
 {
-    // if no cache, make one
-    if( ! pCache ) {
-        pCache.Reset(new CCache);
-    }
-
     _ASSERT(seh);
 
     if ( m_PrgCallback ) {
@@ -1634,7 +1634,7 @@ bool CValidError_imp::Validate
         const CBioseq& seq = seh.GetCompleteSeq_entry()->GetSeq();
         CValidError_bioseq bioseq_validator(*this);
         try {
-            bioseq_validator.ValidateBioseq(seq, pCache);
+            bioseq_validator.ValidateBioseq(seq);
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exception while validating bioseq. EXCEPTION: ") +
@@ -1645,7 +1645,7 @@ bool CValidError_imp::Validate
         const CBioseq_set& set = seh.GetCompleteSeq_entry()->GetSet();
         CValidError_bioseqset bioseqset_validator(*this);
         try {
-            bioseqset_validator.ValidateBioseqSet(set, pCache);
+            bioseqset_validator.ValidateBioseqSet(set);
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
                 string("Exception while validating bioseq set. EXCEPTION: ") +
@@ -1755,13 +1755,8 @@ bool CValidError_imp::Validate
 
 
 void CValidError_imp::Validate(
-    const CSeq_submit& ss, CScope* scope, CRef<CCache> pCache)
+    const CSeq_submit& ss, CScope* scope)
 {
-    // if no cache, make one
-    if( ! pCache ) {
-        pCache.Reset(new CCache);
-    }
-
     // Check that ss is type e_Entrys
     if ( ss.GetData().Which() != CSeq_submit::C_Data::e_Entrys ) {
         return;
@@ -1777,7 +1772,7 @@ void CValidError_imp::Validate(
     // Just loop thru CSeq_entrys
     FOR_EACH_SEQENTRY_ON_SEQSUBMIT (se_itr, ss) {
         const CSeq_entry& se = **se_itr;
-        Validate (se, cs, scope, pCache);
+        Validate (se, cs, scope);
     }
 }
 
@@ -3395,6 +3390,32 @@ void CValidError_base::PostErr
     m_Imp.PostErr(sv, et, msg, entry);
 }
 
+CCacheImpl &
+CValidError_base::GetCache(void)
+{
+    return m_Imp.GetCache();
+}
+
+const CCacheImpl::CPubdescInfo &
+CCacheImpl::GetPubdescToInfo(
+    CConstRef<CPubdesc> pub)
+{
+    // first, try to receive from cache
+    CCacheImpl::TPubdescCache::const_iterator find_iter =
+        m_pubdescCache.find(pub);
+    if( find_iter != m_pubdescCache.end() ) {
+        return *find_iter->second;
+    }
+
+    CRef<CPubdescInfo> pInfo(new CPubdescInfo);
+    GetPubdescLabels (
+        *pub, pInfo->m_pmids, pInfo->m_muids,
+        pInfo->m_serials, pInfo->m_published_labels,
+        pInfo->m_unpublished_labels);
+    m_pubdescCache[pub] = pInfo;
+    return *pInfo;
+}
+
 bool
 CCacheImpl::SFeatKey::operator<(
     const SFeatKey & rhs) const
@@ -3518,14 +3539,100 @@ CCacheImpl::GetFeatFromCacheMulti(
     return answer;
 }
 
+bool
+CCacheImpl::SLabelKey::operator<(const SLabelKey & rhs) const
+{
+    if( m_eLabelType != rhs.m_eLabelType ) {
+        return m_eLabelType < rhs.m_eLabelType;
+    }
+    if( m_bioseq != rhs.m_bioseq ) {
+        return m_bioseq < rhs.m_bioseq;
+    }
+    return s_QuickStringLess(m_label, rhs.m_label);
+}
+
+bool
+CCacheImpl::SLabelKey::operator==(const SLabelKey & rhs) const
+{
+    if( m_eLabelType != rhs.m_eLabelType ) {
+        return false;
+    }
+    if( m_bioseq != rhs.m_bioseq ) {
+        return false;
+    }
+    return (m_label == rhs.m_label);
+}
+
+const CCacheImpl::TFeatValue &
+CCacheImpl::GetLabelToFeats(
+    const SLabelKey & label, const CTSE_Handle & tse_arg)
+{
+    const CBioseq_Handle & bsh = label.m_bioseq;
+
+    // caller must give us something to work with
+    _ASSERT(bsh || tse_arg);
+
+    const CTSE_Handle & tse = (tse_arg ? tse_arg : bsh.GetTSE_Handle());
+
+    // load cache if empty
+    if( m_labelToFeatsCache.empty() ) {
+        // (for now just indexes genes, but more may be added in the future)
+        SAnnotSelector sel(CSeqFeatData::e_Gene);
+        AutoPtr<CFeat_CI> p_gene_ci;
+        // if we have TSE, get all features on it; otherwise, just get
+        // the features from the bioseq
+        if( tse ) {
+            p_gene_ci.reset(new CFeat_CI(tse, sel));
+        } else {
+            p_gene_ci.reset(new CFeat_CI(bsh, sel));
+        }
+        CFeat_CI & gene_ci = *p_gene_ci; // for convenience
+
+        for( ; gene_ci; ++gene_ci ) {
+            string label;
+            const CGene_ref & gene_ref = gene_ci->GetData().GetGene();
+
+            // for each one, add an entry for using given Bioseq and the
+            // kAnyBioseq (so users can search on any bioseq)
+            gene_ref.GetLabel(&label);
+            SLabelKey label_key(eLabelType_Label, bsh, label);
+            m_labelToFeatsCache[label_key].push_back(*gene_ci);
+            if( bsh ) {
+                label_key.m_bioseq = kAnyBioseq;
+                m_labelToFeatsCache[label_key].push_back(*gene_ci);
+            }
+
+            const string & locus_tag = (
+                gene_ref.IsSetLocus_tag() ? gene_ref.GetLocus_tag() :
+                kEmptyStr);
+            SLabelKey locus_tag_key(eLabelType_LocusTag, bsh, locus_tag);
+            m_labelToFeatsCache[locus_tag_key].push_back(*gene_ci);
+            if( bsh ) {
+                locus_tag_key.m_bioseq = kAnyBioseq;
+                m_labelToFeatsCache[label_key].push_back(*gene_ci);
+            }
+        }
+    }
+
+    // get from cache, if possible
+    TLabelToFeatsCache::const_iterator find_iter =
+        m_labelToFeatsCache.find(label);
+    if( find_iter != m_labelToFeatsCache.end() ) {
+        return find_iter->second;
+    } else {
+        // nothing found
+        return kEmptyFeatValue;
+    }
+}
+
+
 const CCacheImpl::TFeatToBioseqValue &
 CCacheImpl::GetBioseqsOfFeatCache(
     const CCacheImpl::TFeatToBioseqKey & feat_to_bioseq_key,
-    const CSeq_entry_Handle& tse)
+    const CTSE_Handle & tse)
 {
     // load cache if empty
     if( m_featToBioseqCache.empty() ) {
-        // otherwise, we need to initialize the cache
         CBioseq_CI bioseq_ci(tse);
         for( ; bioseq_ci; ++bioseq_ci ) {
             CFeat_CI feat_ci(*bioseq_ci);
@@ -3553,8 +3660,10 @@ CCacheImpl::GetBioseqsOfFeatCache(
 const CCacheImpl::TIdToBioseqValue &
 CCacheImpl::GetIdToBioseq(
     const CCacheImpl::TIdToBioseqKey & key,
-    const CSeq_entry_Handle& tse)
+    const CTSE_Handle & tse)
 {
+    _ASSERT(tse);
+
     // load cache if empty
     if( m_IdToBioseqCache.empty() ) {
         CBioseq_CI bioseq_ci(tse);
@@ -3578,6 +3687,34 @@ CCacheImpl::GetIdToBioseq(
         return s_EmptyResult;
     }
 }
+
+CBioseq_Handle
+CCacheImpl::GetBioseqHandleFromLocation(
+    CScope *scope, const CSeq_loc& loc, const CTSE_Handle & tse)
+{
+    _ASSERT(scope || tse);
+    if( ! tse ) {
+        // fall back on old style
+        return BioseqHandleFromLocation(scope, loc);
+    }
+
+
+    for ( CSeq_loc_CI citer (loc); citer; ++citer) {
+        CConstRef<CSeq_id> id(&citer.GetSeq_id());
+        const TIdToBioseqValue & bioseq = GetIdToBioseq(id, tse);
+        if( bioseq ) {
+            return bioseq;
+        }
+    }
+
+    // nothing found, so fall back on old style if possible
+    if( scope ) {
+        return BioseqHandleFromLocation(scope, loc);
+    } else {
+        return kEmptyBioseqHandle;
+    }
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)

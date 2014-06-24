@@ -35,6 +35,7 @@
 #define VALIDATOR___VALIDATORP__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_autoinit.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>  // for CMappedFeat
@@ -130,16 +131,9 @@ public:
         vector<string> m_published_labels;
         vector<string> m_unpublished_labels;
     };
-    typedef map<CConstRef<CPubdesc>,
-                CConstRef<CPubdescInfo> > TPubdescCache;
-    TPubdescCache m_pubdescCache;
+    const CPubdescInfo & GetPubdescToInfo(CConstRef<CPubdesc> pub);
 
     // TODO: add a function for accessing the cache that fills it in if it's empty
-
-    // values that do not correspond to any legitimate value
-    // of the given enum to let us express the concept of "any"
-    static const CSeqFeatData::E_Choice kAnyFeatType;
-    static const CSeqFeatData::ESubtype kAnyFeatSubtype;
 
     //////////
     // cache the features on each bioseq
@@ -162,10 +156,10 @@ public:
         bool operator==(const SFeatKey & rhs) const;
     };
     typedef std::vector<CMappedFeat> TFeatValue;
-    typedef map<SFeatKey, TFeatValue> TFeatCache;
-    TFeatCache m_featCache;
 
     // user should go through here since it loads the cache if it's empty
+    static const CSeqFeatData::E_Choice kAnyFeatType;
+    static const CSeqFeatData::ESubtype kAnyFeatSubtype;
     const TFeatValue & GetFeatFromCache(const SFeatKey & featKey);
 
     // user should go through here since it loads the cache if it's empty, but:
@@ -175,33 +169,85 @@ public:
     AutoPtr<TFeatValue> GetFeatFromCacheMulti(
         const vector<SFeatKey> &featKeys);
 
+    enum ELabelType{
+        eLabelType_Label,
+        eLabelType_LocusTag,
+    };
+    struct SLabelKey
+    {
+        // set bioseq to kAnyBioseq to get data on all bioseqs
+        SLabelKey(ELabelType eLabelType,
+                  const CBioseq_Handle & bioseq,
+                  const string & label) :
+            m_eLabelType(eLabelType), m_bioseq(bioseq), m_label(label) { }
+
+        ELabelType m_eLabelType;
+        CBioseq_Handle m_bioseq;
+        string m_label;
+
+        bool operator<(const SLabelKey & rhs) const;
+        bool operator==(const SLabelKey & rhs) const;
+    };
+
+    // The "tse" is used to load the cache if it's empty
+    // (for now just indexes genes, but more may be added in the future)
+    static const CBioseq_Handle kAnyBioseq;
+    const TFeatValue & GetLabelToFeats(
+        const SLabelKey & label, const CTSE_Handle & tse);
+
     //////////
     // cache the bioseq(s) that each feature is on
 
     typedef CMappedFeat TFeatToBioseqKey;
     typedef set<CBioseq_Handle> TFeatToBioseqValue;
-    typedef map<TFeatToBioseqKey, TFeatToBioseqValue> TFeatToBioseqCache;
-    TFeatToBioseqCache m_featToBioseqCache;
 
     // user should go through here since it loads the cache if it's empty
     const TFeatToBioseqValue & GetBioseqsOfFeatCache(
         const TFeatToBioseqKey & feat_to_bioseq_key,
-        const CSeq_entry_Handle& tse);
-
+        const CTSE_Handle & tse);
 
     //////////
     // cache the bioseq that each CSeq-id points to, since the
     // native implementation is too slow for our purposes
     typedef CConstRef<CSeq_id> TIdToBioseqKey;
     typedef CBioseq_Handle TIdToBioseqValue;
-    typedef map<TIdToBioseqKey, TIdToBioseqValue> TIdToBioseqCache;
-    TIdToBioseqCache m_IdToBioseqCache;
 
     const TIdToBioseqValue & GetIdToBioseq(
-        const TIdToBioseqKey & key, const CSeq_entry_Handle& tse);
+        const TIdToBioseqKey & key, const CTSE_Handle & tse);
 
     // feel free to add more types of caching.  Maybe bioseqs?  Bioseq sets?
     // etc.
+
+    ////////////////////
+    // helper functions on top of the basic cache functions above
+    ////////////////////
+
+    CBioseq_Handle GetBioseqHandleFromLocation(
+        CScope *scope, const CSeq_loc& loc, const CTSE_Handle & tse);
+
+    static const CTSE_Handle kEmptyTSEHandle;
+
+private:
+    // values that do not correspond to any legitimate value
+    // of the given enum to let us express the concept of "any"
+    static const CBioseq_Handle kEmptyBioseqHandle;
+    static const TFeatValue kEmptyFeatValue;
+
+    typedef map<CConstRef<CPubdesc>,
+                CConstRef<CPubdescInfo> > TPubdescCache;
+    TPubdescCache m_pubdescCache;
+
+    typedef map<SFeatKey, TFeatValue> TFeatCache;
+    TFeatCache m_featCache;
+
+    typedef map<SLabelKey, TFeatValue> TLabelToFeatsCache;
+    TLabelToFeatsCache m_labelToFeatsCache;
+
+    typedef map<TFeatToBioseqKey, TFeatToBioseqValue> TFeatToBioseqCache;
+    TFeatToBioseqCache m_featToBioseqCache;
+
+    typedef map<TIdToBioseqKey, TIdToBioseqValue> TIdToBioseqCache;
+    TIdToBioseqCache m_IdToBioseqCache;
 };
 
 typedef CValidator::CCacheImpl CCacheImpl;
@@ -370,12 +416,11 @@ public:
 
     // Validation methods
     bool Validate(const CSeq_entry& se, const CCit_sub* cs = 0,
-                  CScope* scope = 0, CRef<CCache> pCache = CRef<CCache>());
+                  CScope* scope = 0);
     bool Validate(
-        const CSeq_entry_Handle& seh, const CCit_sub* cs = 0,
-        CRef<CCache> pCache = CRef<CCache>());
+        const CSeq_entry_Handle& seh, const CCit_sub* cs = 0);
     void Validate(
-        const CSeq_submit& ss, CScope* scope = 0, CRef<CCache> pCache = CRef<CCache>());
+        const CSeq_submit& ss, CScope* scope = 0);
     void Validate(const CSeq_annot_Handle& sa);
 
     void Validate(const CSeq_feat& feat, CScope* scope = 0);
@@ -469,6 +514,7 @@ public:
 		    
     // getters
     inline CScope* GetScope(void) { return m_Scope; }
+    inline CCacheImpl & GetCache(void) { return m_cache; }
 
     // flags derived from options parameter
     bool IsNonASCII(void)             const { return m_NonASCII; }
@@ -577,9 +623,9 @@ public:
     inline void SetFarFetchFailure (void) { m_FarFetchFailure = true; }
 
     const CSeq_entry& GetTSE(void) { return *m_TSE; }
-    CSeq_entry_Handle GetTSEH(void) { return m_TSEH; }
-
-    TFeatAnnotMap GetFeatAnnotMap(void);
+    const CSeq_entry_Handle & GetTSEH(void) { return m_TSEH; }
+    const CTSE_Handle & GetTSE_Handle(void) { return
+            (m_TSEH ? m_TSEH.GetTSE_Handle() : CCacheImpl::kEmptyTSEHandle); }
 
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
@@ -686,6 +732,8 @@ private:
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;
     CSeq_entry_Handle       m_TSEH;
+
+    CCacheImpl              m_cache;
 
     // error repoitory
     CValidError*       m_ErrRepository;
@@ -838,6 +886,8 @@ protected:
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TAlign align);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TEntry entry);
 
+    CCacheImpl & GetCache(void);
+
     CValidError_imp& m_Imp;
     CScope* m_Scope;
 };
@@ -934,7 +984,8 @@ public:
     CValidError_feat(CValidError_imp& imp);
     virtual ~CValidError_feat(void);
 
-    void ValidateSeqFeat(const CSeq_feat& feat);
+    void ValidateSeqFeat(
+        const CSeq_feat& feat);
     void ValidateSeqFeatContext(const CSeq_feat& feat, const CBioseq& seq);
 
     enum EInferenceValidCode {
@@ -1083,7 +1134,7 @@ private:
     void ValidateFeatPartialness(const CSeq_feat& feat);
     void ValidateExcept(const CSeq_feat& feat);
     void ValidateExceptText(const string& text, const CSeq_feat& feat);
-    void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat, CTSE_Handle tse);
+    void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat);
     void ValidateExtUserObject (const CUser_object& user_object, const CSeq_feat& feat);
     void ValidateGoTerms (CUser_object::TData field_list, const CSeq_feat& feat, vector<pair<string, string> >& id_terms);
 
@@ -1233,7 +1284,7 @@ class CmRNAAndCDSIndex
 public:
     CmRNAAndCDSIndex();
     ~CmRNAAndCDSIndex();
-    void SetBioseq(const CCacheImpl::TFeatValue * feat_list, const CBioseq_Handle & bioseq, CScope * scope, CRef<CCache> pCache, const CSeq_entry_Handle& tse);
+    void SetBioseq(const CCacheImpl::TFeatValue * feat_list, const CBioseq_Handle & bioseq, CCacheImpl & cache);
     CRef<CMatchmRNA> FindMatchmRNA (const CMappedFeat& mrna);
     bool MatchmRNAToCDSEnd (const CMappedFeat& mrna, unsigned int partial_type);
 
@@ -1249,16 +1300,16 @@ public:
     CValidError_bioseq(CValidError_imp& imp);
     virtual ~CValidError_bioseq(void);
 
-    void ValidateBioseq(const CBioseq& seq, CRef<CCache> pCache);
+    void ValidateBioseq(const CBioseq& seq);
     void ValidateSeqIds(const CBioseq& seq);
     void ValidateSeqId(const CSeq_id& id, const CBioseq& ctx);
-    void ValidateInst(const CBioseq& seq, CRef<CCache> pCache);
-    void ValidateBioseqContext(const CBioseq& seq, CRef<CCache> pCache);
+    void ValidateInst(const CBioseq& seq);
+    void ValidateBioseqContext(const CBioseq& seq);
     void ValidateHistory(const CBioseq& seq);
     bool GetTSANStretchErrors(const CBioseq& seq);
     bool GetTSAConflictingBiomolTechErrors(const CBioseq& seq);
     static CConstRef <CSeq_feat> GetGeneForFeature (
-        const CSeq_feat& f1, CScope *scope, CConstRef<CCache> pCache = CRef<CCache>());
+        const CSeq_feat& f1, CScope *scope);
 
     // DBLink user object counters
     int m_dblink_count;
@@ -1282,7 +1333,7 @@ private:
     void ValidateSeqParts(const CBioseq& seq);
     void x_ValidateTitle(const CBioseq& seq);
     void x_ValidateBarcode(const CBioseq& seq);
-    void ValidateRawConst(const CBioseq& seq, CRef<CCache> pCache);
+    void ValidateRawConst(const CBioseq& seq);
     void x_CalculateNsStretchAndTotal(const CBioseq& seq, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3);
     void ValidateNsAndGaps(const CBioseq& seq);
     void ReportBadAssemblyGap (const CBioseq& seq);
@@ -1291,25 +1342,25 @@ private:
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
     void ValidateCDSAndProtPartials (const CMappedFeat& feat);
-    void ValidateFeatPartialInContext (const CMappedFeat& feat, CRef<CCache> pCache);
+    void ValidateFeatPartialInContext (const CMappedFeat& feat);
     bool x_IsPartialAtSpliceSiteOrGap (const CSeq_loc& loc, unsigned int tag, bool& bad_seq, bool& is_gap);
     bool x_SplicingNotExpected(const CMappedFeat& feat);
     bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type);
-    bool x_IsSameAsCDS(const CMappedFeat& feat, CRef<CCache> pCache);
-    void ValidateSeqFeatContext(const CBioseq& seq, CRef<CCache> pCache);
-    EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label, CRef<CCache> pCache);
-    void x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat& feat1, const CSeq_feat_Handle & f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs, CRef<CCache> pCache);
+    bool x_IsSameAsCDS(const CMappedFeat& feat);
+    void ValidateSeqFeatContext(const CBioseq& seq);
+    EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label);
+    void x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat& feat1, const CSeq_feat_Handle & f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs);
     void x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide);
-    void ValidateDupOrOverlapFeats(const CBioseq& seq, CRef<CCache> pCache);
+    void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateCollidingGenes(const CBioseq& seq);
     void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,
         EErrType err, EDiagSev sev);
     void x_ValidateCompletness(const CBioseq& seq, const CMolInfo& mi);
-    void x_ValidateAbuttingUTR(const CBioseq_Handle& seq, CRef<CCache> pCache);
+    void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
     bool x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop);
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
     void x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq);
-    void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna, CRef<CCache> pCache);
+    void x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq, int numgene, int numcds, int nummrna);
     unsigned int x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     bool x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
@@ -1334,7 +1385,8 @@ private:
     void ValidateGraphOrderOnBioseq (const CBioseq& seq, vector <CRef <CSeq_graph> > graph_list);
     void ValidateByteGraphOnBioseq(const CSeq_graph& graph, const CBioseq& seq);
     void ValidateGraphOnDeltaBioseq(const CBioseq& seq);
-    bool ValidateGraphLocation (const CSeq_graph& graph);
+    bool ValidateGraphLocation (
+        const CSeq_graph& graph);
     void ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq,
         int& first_N, int& first_ACGT, size_t& num_bases, size_t& Ns_with_score, size_t& gaps_with_score,
         size_t& ACGTs_without_score, size_t& vals_below_min, size_t& vals_above_max);
@@ -1347,14 +1399,14 @@ private:
     void ValidateSecondaryAccConflict(const string& primary_acc,
         const CBioseq& seq, int choice);
     void ValidateIDSetAgainstDb(const CBioseq& seq);
-    void x_ValidateSourceFeatures(const CBioseq_Handle& bsh, CRef<CCache> pCache);
-    void x_ValidatePubFeatures(const CBioseq_Handle& bsh, CRef<CCache> pCache);
+    void x_ValidateSourceFeatures(const CBioseq_Handle& bsh);
+    void x_ValidatePubFeatures(const CBioseq_Handle& bsh);
     void x_ReportDuplicatePubLabels (const CBioseq& seq, const vector<CTempString>& labels);
     void x_ValidateMultiplePubs(
-        const CBioseq_Handle& bsh, CRef<CCache> pCache);
+        const CBioseq_Handle& bsh);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
-    void CheckSoureDescriptor(const CBioseq_Handle& bsh, CRef<CCache> pCache);
+    void CheckSoureDescriptor(const CBioseq_Handle& bsh);
     void CheckForMolinfoOnBioseq(const CBioseq& seq);
     void CheckTpaHistory(const CBioseq& seq);
 
@@ -1405,10 +1457,10 @@ private:
     public:
         CmRNACDSIndex();
         ~CmRNACDSIndex();
-        void SetBioseq(const CCacheImpl::TFeatValue * feat_list, const CTSE_Handle& tse, const CBioseq_Handle & bioseq, CScope * scope, CRef<CCache> pCache);
+        void SetBioseq(const CCacheImpl::TFeatValue * feat_list, const CBioseq_Handle & bioseq);
 
-        CMappedFeat GetmRNAForCDS(CMappedFeat cds);
-        CMappedFeat GetCDSFormRNA(CMappedFeat cds);
+        CMappedFeat GetmRNAForCDS(const CMappedFeat & cds);
+        CMappedFeat GetCDSFormRNA(const CMappedFeat & cds);
 
     private:
         typedef pair <CMappedFeat, CMappedFeat> TmRNACDSPair;
@@ -1435,7 +1487,7 @@ public:
     CValidError_bioseqset(CValidError_imp& imp);
     virtual ~CValidError_bioseqset(void);
 
-    void ValidateBioseqSet(const CBioseq_set& seqset, CRef<CCache> pCache);
+    void ValidateBioseqSet(const CBioseq_set& seqset);
 
 private:
 

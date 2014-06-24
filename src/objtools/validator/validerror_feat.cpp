@@ -193,7 +193,8 @@ const string kInferenceMessage[] = {
 };
 
 
-void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
+void CValidError_feat::ValidateSeqFeat(
+    const CSeq_feat& feat)
 {
     if ( !feat.IsSetLocation() ) {
         PostErr(eDiag_Critical, eErr_SEQ_FEAT_MissingLocation,
@@ -202,14 +203,14 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     }
 
     if (m_Scope) {
-        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
         m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh, 
                              (feat.GetData().IsGene() || !m_Imp.IsGpipe()),
                              "Location", feat);
 
         if ( feat.CanGetProduct() ) {
             ValidateSeqFeatProduct(feat.GetProduct(), feat);
-            CBioseq_Handle p_bsh = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+            CBioseq_Handle p_bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
             if (p_bsh == bsh) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_SelfReferentialProduct, "Self-referential feature product", feat);
             }
@@ -222,9 +223,8 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     ValidateExcept(feat);
 
     if (feat.IsSetXref()) {
-        CTSE_Handle tse = m_Imp.GetTSEH().GetTSE_Handle();
         FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, feat) {
-            ValidateSeqFeatXref (**it, feat, tse);
+            ValidateSeqFeatXref (**it, feat);
         }
     }
 
@@ -672,7 +672,7 @@ void CValidError_feat::ValidateSeqFeatProduct
         break;
     }
     
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
     if (bsh) {
         m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh, true, "Product", feat);
 
@@ -1109,7 +1109,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             if ( IsOneBioseq(feat.GetProduct(), m_Scope) ) {
                 const CSeq_id& prod_id = GetId(feat.GetProduct(), m_Scope);
                 CBioseq_Handle prod =
-                    m_Scope->GetBioseqHandleFromTSE(prod_id, m_Imp.GetTSE());
+                    m_Scope->GetBioseqHandleFromTSE(prod_id, m_Imp.GetTSE_Handle());
                 if ( !prod ) {
                     sev = eDiag_Info;
                     if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
@@ -1208,11 +1208,14 @@ static int s_GetStrictGenCode(const CBioSource& src)
 
 // to be DirSub, must not have ID of type other, must not have WGS keyword or tech, and
 // must not be both complete and bacterial
-static bool s_IsLocDirSub (const CSeq_loc& loc, CScope& scope)
+static bool s_IsLocDirSub (const CSeq_loc& loc,
+                           const CTSE_Handle & tse,
+                           CCacheImpl & cache,
+                           CScope *scope)
 {
     if (!loc.GetId()) {
         for ( CSeq_loc_CI si(loc); si; ++si ) {
-            if (!s_IsLocDirSub(si.GetEmbeddingSeq_loc(), scope)) {
+            if (!s_IsLocDirSub(si.GetEmbeddingSeq_loc(), tse, cache, scope)) {
                 return false;
             }
         }
@@ -1224,7 +1227,7 @@ static bool s_IsLocDirSub (const CSeq_loc& loc, CScope& scope)
         return false;
     }
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, loc);
+    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation (scope, loc, tse);
     if (!bsh) {
         return true;
     }
@@ -1359,7 +1362,7 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
                 }
             }
         }                        
-    } else if (m_Imp.DoesAnyGeneHaveLocusTag() && !s_IsLocDirSub (feat.GetLocation(), *m_Scope)) {
+    } else if (m_Imp.DoesAnyGeneHaveLocusTag() && !s_IsLocDirSub (feat.GetLocation(), m_Imp.GetTSE_Handle(), GetCache(), m_Scope)) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneLocusTag, 
                  "Missing gene locus tag", feat);
     }
@@ -1489,7 +1492,7 @@ void CValidError_feat::ValidateCdregion (
     }
     ValidateCdsProductId(feat);
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
 
     if ( cdregion.IsSetOrf()  &&  cdregion.GetOrf ()  &&
          feat.IsSetProduct () ) {
@@ -1593,7 +1596,7 @@ void CValidError_feat::ValidateCdregion (
         // suppress if protein has EC numbers
         bool suppress = false;
         if (feat.IsSetProduct()) {
-            CBioseq_Handle pbsh = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+            CBioseq_Handle pbsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
             if (pbsh) {
                 CFeat_CI prot_feat(pbsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
                 if (prot_feat && prot_feat->GetData().GetProt().IsSetEc()) {
@@ -1693,8 +1696,8 @@ void CValidError_feat::ValidateCdConflict
 (const CCdregion& cdregion,
  const CSeq_feat& feat)
 {
-    CBioseq_Handle nuc  = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
-    CBioseq_Handle prot = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+    CBioseq_Handle nuc  = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
+    CBioseq_Handle prot = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
     
     // translate the coding region
     string transl_prot;
@@ -1767,7 +1770,8 @@ static bool s_ConsistentWithT (Char ch)
 }
 
 
-void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
+void CValidError_feat::ValidateIntron (
+    const CSeq_feat& feat)
 {
     if (IsIntronShort(feat)) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
@@ -1815,7 +1819,7 @@ void CValidError_feat::ValidateIntron (const CSeq_feat& feat)
     }
 
     // skip if organelle
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, loc, m_Imp.GetTSE_Handle());
     if (m_Imp.IsOrganelle(bsh)) {
         return;
     }
@@ -2097,14 +2101,15 @@ void CValidError_feat::ValidateAcceptor
 }
 
 
-void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
+void CValidError_feat::ValidateSplice(
+    const CSeq_feat& feat, bool check_all)
 {
     bool report_errors = true, has_errors = false, ribo_slip = false;
 
     const CSeq_loc& loc = feat.GetLocation();
     
     // skip if organelle
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, loc, m_Imp.GetTSE_Handle());
     if (!bsh || m_Imp.IsOrganelle(bsh)) {
         return;
     }
@@ -2151,7 +2156,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                 }
             }
         }
-        CBioseq_Handle bsh_si = BioseqHandleFromLocation(m_Scope, si.GetEmbeddingSeq_loc());
+        CBioseq_Handle bsh_si = GetCache().GetBioseqHandleFromLocation(m_Scope, si.GetEmbeddingSeq_loc(), m_Imp.GetTSE_Handle());
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh_si.GetCompleteBioseq())) {
             if ((*it)->IsOther() && (*it)->GetOther().IsSetAccession()) {
                 relax_to_warning = true;
@@ -2219,7 +2224,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
             try {
                 const CSeq_loc& part = si.GetEmbeddingSeq_loc();
                 CSeq_loc::TRange range = si.GetRange();
-                CBioseq_Handle bsh_si = BioseqHandleFromLocation(m_Scope, *(si.GetRangeAsSeq_loc()) );
+                CBioseq_Handle bsh_si = GetCache().GetBioseqHandleFromLocation(m_Scope, *si.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
                     
                 if (bsh_si) {
                     CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
@@ -2460,7 +2465,8 @@ static const char* const sc_BadProtNameText [] = {
 typedef CStaticArraySet<const char*, PCase_CStr> TBadProtNameSet;
 DEFINE_STATIC_ARRAY_MAP(TBadProtNameSet, sc_BadProtName, sc_BadProtNameText);
 
-void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat) 
+void CValidError_feat::ValidateProt(
+    const CProt_ref& prot, const CSeq_feat& feat) 
 {
     CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
 
@@ -2526,7 +2532,7 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSeq_feat& feat
             }
         }
         if (NStr::StartsWith (*it, "hypothetical protein XP_")) {
-            CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+            CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
             if (bsh) {
                 FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
                     if ((*id_it)->IsOther() 
@@ -3001,7 +3007,8 @@ void CValidError_feat::ValidateRnaProductType
 (const CRNA_ref& rna,
  const CSeq_feat& feat)
 {
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(
+        m_Scope,feat.GetProduct(), m_Imp.GetTSE_Handle());
     if ( !bsh ) {
         return;
     }
@@ -3085,7 +3092,8 @@ static string GetGeneticCodeName (int gcode)
     return "unknown";
 }
 
-void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat)
+void CValidError_feat::ValidateTrnaCodons(
+    const CTrna_ext& trna, const CSeq_feat& feat)
 {
     if (!trna.IsSetAa()) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_BadTrnaAA, "Missing tRNA amino acid", feat);
@@ -3136,7 +3144,7 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
 
     // Retrive the Genetic code id for the tRNA
     int gcode = 1;
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
     if ( bsh ) {
         // need only the closest biosoure.
         CSeqdesc_CI diter(bsh, CSeqdesc::e_Source);
@@ -3408,7 +3416,8 @@ void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
 }
 
 
-void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
+void CValidError_feat::ValidateImp(
+    const CImp_feat& imp, const CSeq_feat& feat)
 {
     CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
 
@@ -3593,7 +3602,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
         {
             bool is_far_delta = false;
             const CSeq_loc& location = feat.GetLocation();
-            CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, location);
+            CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, location, m_Imp.GetTSE_Handle());
             if ( bsh.IsSetInst_Repr()) {
                 CBioseq_Handle::TInst::TRepr repr = bsh.GetInst_Repr();
                 if ( repr == CSeq_inst::eRepr_delta ) {
@@ -3694,7 +3703,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                 found = true;
             } else if (feat.IsSetComment() && !NStr::IsBlank(feat.GetComment())) {
                 // RefSeq allows conflict with accession in comment instead of sfp->cit
-                CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+                CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
                 if (bsh) {
                     FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetCompleteBioseq())) {
                         if ((*it)->IsOther()) {
@@ -3726,7 +3735,8 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
 }
 
 
-void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat)
+void CValidError_feat::ValidateNonImpFeat (
+    const CSeq_feat& feat)
 {
     string key = feat.GetData().GetKey();
 
@@ -3752,7 +3762,7 @@ void CValidError_feat::ValidateNonImpFeat (const CSeq_feat& feat)
                     found = true;
                 } else if (feat.IsSetComment() && NStr::EqualNocase (key, "conflict")) {
                     // RefSeq allows conflict with accession in comment instead of sfp->cit
-                    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+                    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
                     FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetCompleteBioseq())) {
                         if ((*it)->IsOther()) {
                             found = true;
@@ -4458,7 +4468,7 @@ void CValidError_feat::ValidateImpGbquals
                 break;
             case CSeqFeatData::eQual_replace:
                 {{
-                    CBioseq_Handle bh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+                    CBioseq_Handle bh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
                     if (bh) {
                         if (bh.IsNa()) {
                             if (NStr::Equal(key, "variation")) {
@@ -4869,7 +4879,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         return;
     }
     
-    CBioseq_Handle nuc = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+    CBioseq_Handle nuc = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
     if (!nuc) {
         has_errors = true;
         if (report_errors  ||  unclassified_except) {
@@ -4901,7 +4911,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 }
 
                 if (m_Imp.IsFarFetchMRNAproducts()) {
-                    rna = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+                    rna = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
                     if (!rna) {
                         string label;
                         product_id->GetLabel(&label);
@@ -5049,9 +5059,9 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
         return;
     }
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
     if ( !bsh ) {
-        bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+        bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
         if (bsh) {
             CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
             if (seh.IsSet() && seh.GetSet().IsSetClass()
@@ -5089,7 +5099,7 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
         }
         if ( genomicgrp != 0 ) {
             // get gene for mRNA product sequence
-            CBioseq_Handle seq = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+            CBioseq_Handle seq = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
             if (seq) {
                 CFeat_CI mrna_gene(seq, CSeqFeatData::e_Gene);
                 if ( mrna_gene ) {
@@ -5168,7 +5178,11 @@ void CValidError_feat::ValidateCommonCDSProduct
     CBioseq_Handle prod;
     const CSeq_id * sid = feat.GetProduct().GetId();
     if (sid) {
-        prod = m_Scope->GetBioseqHandleFromTSE(*sid, BioseqHandleFromLocation(m_Scope, feat.GetLocation()));
+        CBioseq_Handle inner_bsh =
+            GetCache().GetBioseqHandleFromLocation(
+                m_Scope,
+                feat.GetLocation(), m_Imp.GetTSE_Handle());
+        prod = m_Scope->GetBioseqHandleFromTSE(*sid, inner_bsh);
     }
     if ( !prod ) {
         const CSeq_id* sid = 0;
@@ -5196,7 +5210,7 @@ void CValidError_feat::ValidateCommonCDSProduct
             "Unable to find product Bioseq from CDS feature", feat);
         return;
     }
-    CBioseq_Handle nuc  = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+    CBioseq_Handle nuc  = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
     if ( nuc ) {
         bool is_nt = s_BioseqHasRefSeqThatStartsWithPrefix (nuc, "NT_");
         if (!is_nt) {
@@ -5232,7 +5246,7 @@ void CValidError_feat::ValidateCommonCDSProduct
         // do not report.
         if ( m_Imp.IsGPS() ) {
             // feature packaging test will do final contig vs. cdna check
-            CBioseq_Handle sfh = BioseqHandleFromLocation(m_Scope, sfp->GetLocation());
+            CBioseq_Handle sfh = GetCache().GetBioseqHandleFromLocation(m_Scope, sfp->GetLocation(), m_Imp.GetTSE_Handle());
             if ( nuc != sfh ) {
                 return;
             }
@@ -5255,7 +5269,7 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
     bool found_short = false;
 
     if (! m_Imp.IsIndexerVersion()) {
-        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
+        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, loc, m_Imp.GetTSE_Handle());
         if (!bsh || m_Imp.IsOrganelle(bsh)) return found_short;
     }
 
@@ -5296,7 +5310,7 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
     bool is_short = false;
 
     if (! m_Imp.IsIndexerVersion()) {
-        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
+        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, loc, m_Imp.GetTSE_Handle());
         if (!bsh || m_Imp.IsOrganelle(bsh)) return is_short;
     }
 
@@ -5307,8 +5321,12 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
         CBioseq_Handle bsh;
         if (partial_left && loc.GetStart(eExtreme_Positional) == 0) {
             // partial at beginning of sequence, ok
-        } else if (partial_right && (bsh = BioseqHandleFromLocation(m_Scope, loc))
-                   && loc.GetStop(eExtreme_Positional) == bsh.GetBioseqLength() - 1) {
+        } else if (partial_right &&
+                   (bsh = GetCache().GetBioseqHandleFromLocation(
+                       m_Scope,loc, m_Imp.GetTSE_Handle())) &&
+                   loc.GetStop(eExtreme_Positional) == (
+                       bsh.GetBioseqLength() - 1))
+        {
             // partial at end of sequence
         } else {
             is_short = true;
@@ -5318,13 +5336,17 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 }
 
 
-static bool s_CDS3primePartialTest (const CSeq_feat& feat, CScope *scope)
+static bool s_CDS3primePartialTest (const CSeq_feat& feat,
+                                    const CTSE_Handle & tse,
+                                    CCacheImpl & cache,
+                                    CScope *scope)
 {
-    if (!scope) {
+    if (!tse) {
         return false;
     }
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(scope, feat.GetLocation());
+    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation(
+        scope, feat.GetLocation(), tse);
     if (!bsh) {
         return false;
     }
@@ -5348,13 +5370,17 @@ static bool s_CDS3primePartialTest (const CSeq_feat& feat, CScope *scope)
 }
 
 
-static bool s_CDS5primePartialTest (const CSeq_feat& feat, CScope *scope)
+static bool s_CDS5primePartialTest (const CSeq_feat& feat,
+                                    const CTSE_Handle & tse,
+                                    CCacheImpl & cache,
+                                    CScope *scope)
 {
-    if (!scope) {
+    if (!tse) {
         return false;
     }
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation (scope, feat.GetLocation());
+    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation (
+        scope, feat.GetLocation(), tse);
     if (!bsh) {
         return false;
     }
@@ -5395,7 +5421,7 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
         return;
     }
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
     if ( !bsh ) {
         return;
     }
@@ -5441,7 +5467,9 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
             }
             if ( partial3 ) {
                 EDiagSev sev = eDiag_Error;
-                if (s_CDS3primePartialTest(feat, m_Scope)) {
+                if (s_CDS3primePartialTest(
+                        feat, m_Imp.GetTSE_Handle(), GetCache(), m_Scope))
+                {
                     sev = eDiag_Warning;
                 }
                 PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
@@ -5456,7 +5484,9 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
             }
             if (partial5) {
                 EDiagSev sev = eDiag_Error;
-                if (s_CDS5primePartialTest(feat, m_Scope)) {
+                if (s_CDS5primePartialTest(
+                        feat, m_Imp.GetTSE_Handle(), GetCache(), m_Scope))
+                {
                     sev = eDiag_Warning;
                 }
                 PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
@@ -5468,14 +5498,16 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
             if ( partial5 && partial3 ) {
             } else if ( partial5 ) {
                 EDiagSev sev = eDiag_Error;
-                if (s_CDS5primePartialTest(feat, m_Scope)) {
+                if (s_CDS5primePartialTest(
+                        feat, m_Imp.GetTSE_Handle(), GetCache(), m_Scope))
+                {
                     sev = eDiag_Warning;
                 }
                 PostErr(sev, eErr_SEQ_FEAT_PartialProblem,
                     "CDS is 5' partial but protein has neither end", feat);
             } else if ( partial3 ) {
                 EDiagSev sev = eDiag_Error;
-                if (s_CDS3primePartialTest(feat, m_Scope)) {
+                if (s_CDS3primePartialTest(feat, m_Imp.GetTSE_Handle(), GetCache(), m_Scope)) {
                     sev = eDiag_Warning;
                 }
 
@@ -5642,19 +5674,21 @@ static bool s_IsNcOrNt(const string& accession)
 }
 
 
-static bool s_IsNcOrNt (const CSeq_loc& loc, CScope *scope)
+static bool s_IsNcOrNt (
+const CSeq_loc& loc, CScope *scope, CCacheImpl & cache,
+const CTSE_Handle & tse)
 {
     const CSeq_id *id = loc.GetId();
     if (id != NULL && id->IsOther() 
         && id->GetOther().IsSetAccession()
         && s_IsNcOrNt(id->GetOther().GetAccession())) {
         return true;
-    }        
+    }
 
     if (!scope) {
         return false;
     }
-    CBioseq_Handle bsh = BioseqHandleFromLocation(scope, loc);
+    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation(scope, loc, tse);
     if (!bsh) {
         return false;
     }
@@ -5704,7 +5738,7 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
         }
         if ( !found) {
             if (m_Scope) {
-                CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+                CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
                 bool check_refseq = false;
                 if (bsh) {
                     if (GetGenProdSetParent (bsh)) {
@@ -5729,7 +5763,7 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             }
         }
         if ( !found ) {
-            if ( s_IsNcOrNt (feat.GetLocation(), m_Scope) ) {
+            if ( s_IsNcOrNt (feat.GetLocation(), m_Scope, GetCache(), m_Imp.GetTSE_Handle()) ) {
                 sev = eDiag_Warning;
             }
             PostErr(sev, eErr_SEQ_FEAT_ExceptionProblem,
@@ -5845,14 +5879,14 @@ bool GeneXrefConflicts(const CSeq_feat& feat, const CSeq_feat& gene)
 }
 
 
-void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat, CTSE_Handle tse)
+void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat)
 {
     if (!xref.IsSetId() && !xref.IsSetData()) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem, 
                  "SeqFeatXref with no id or data field", feat);
     } else if (xref.IsSetId()) {
         if (xref.GetId().IsLocal() && xref.GetId().GetLocal().IsId()) {
-            CSeq_feat_Handle far_feat = tse.GetFeatureWithId(CSeqFeatData::e_not_set,
+            CSeq_feat_Handle far_feat = m_Imp.GetTSE_Handle().GetFeatureWithId(CSeqFeatData::e_not_set,
                                                    xref.GetId().GetLocal().GetId());
             if (far_feat) {
                 bool has_xref = false;
@@ -5988,9 +6022,11 @@ static void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& ts
 }
 
 
-static bool s_LocIsNmAccession (const CSeq_loc& loc, CScope& scope)
+static bool s_LocIsNmAccession (
+    const CSeq_loc& loc, CScope& scope, CCacheImpl & cache,
+    const CTSE_Handle & tse)
 {
-    CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, loc);
+    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation (&scope, loc, tse);
     if (bsh) {
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
             if ((*it)->IsOther() && (*it)->GetOther().IsSetAccession() 
@@ -6270,7 +6306,10 @@ void CValidError_feat::x_CheckCDSFrame
                 // suppress
             } else {
                 EDiagSev sev = eDiag_Warning;
-                if (s_LocIsNmAccession (location, *m_Scope)) {
+                if (s_LocIsNmAccession (
+                        location, *m_Scope, GetCache(),
+                        m_Imp.GetTSE_Handle()))
+                {
                     sev = eDiag_Error;
                 }
                 has_errors = true;
@@ -6297,7 +6336,7 @@ void CValidError_feat::x_FindTranslationStops
     const CCdregion& cdregion = feat.GetData().GetCdregion();
     try {
         if (m_Scope) {
-            CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+            CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
             if (bsh) {
                 if (feat.GetLocation().IsWhole()) {
                     size_t start = 0;
@@ -6359,7 +6398,7 @@ const CSeq_id* CValidError_feat::x_GetCDSProduct
             protid = &GetId(feat.GetProduct(), m_Scope);
         } catch (CException&) {}
         if (protid != NULL) {
-            prot_handle = m_Scope->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE());
+            prot_handle = m_Scope->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE_Handle());
             if (!prot_handle  &&  m_Imp.IsFarFetchCDSproducts()) {
                 prot_handle = m_Scope->GetBioseqHandle(*protid);
                 farstr = "(far) ";
@@ -6725,7 +6764,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         // do not report
     } else if (!alt_start && feat.IsSetExcept() && feat.IsSetExcept_text()
                && NStr::Find(feat.GetExcept_text(), "alternative start codon") != string::npos) {
-        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
         if (bsh) {
             bool is_refseq_loc = false;
             FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
@@ -7056,7 +7095,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         return;
     }
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
     // if we can't get the bioseq on which the gene is located, we can't check for 
     // overlapping/ambiguous/redundant conditions
     if (!bsh) {
@@ -7077,7 +7116,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     string label = "?";
     bool xref_match_same_as_overlap = false;
 
-    while (gene_it) {
+    for ( ; gene_it; ++gene_it) {
         if (TestForOverlapEx (gene_it->GetLocation(), feat.GetLocation(), 
           gene_it->GetLocation().IsInt() ? eOverlap_Contained : eOverlap_Subset, m_Scope) >= 0) {
             size_t len = GetLength(gene_it->GetLocation(), m_Scope);
@@ -7105,7 +7144,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                 }
             }
         }
-        ++gene_it;
     }
 
     if ( gene_xref == 0) {
@@ -7259,23 +7297,23 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 
 
         // find gene on bioseq to match genexref
+        bool found = false;
         if (gene_xref->IsSetLocus() && !NStr::IsBlank (gene_xref->GetLocus())) {
-            SAnnotSelector sel (CSeqFeatData::e_Gene);
-            CFeat_CI f (bsh, sel);
-            bool found = false;
-            while (f && !found) {
-                string label;
-                f->GetData().GetGene().GetLabel(&label);
-                if (NStr::Equal(label, gene_xref->GetLocus())) {
-                    found = true;
-                    if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation(), m_Scope)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-                            "Gene cross-reference is not on expected strand", feat);
-                    }
-                } else {
-                    ++f;
+            CTempString locus = gene_xref->GetLocus();
+            CCacheImpl::SLabelKey label_key(CCacheImpl::eLabelType_Label, bsh, locus);
+            const CCacheImpl::TFeatValue & feats =
+                GetCache().GetLabelToFeats(label_key, m_Imp.GetTSE_Handle());
+            if( ! feats.empty() ) {
+                found = true;
+                const CMappedFeat & gene = feats[0];  // only look at first
+                if (s_LocationStrandsIncompatible(
+                        gene.GetLocation(), feat.GetLocation(), m_Scope))
+                {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                             "Gene cross-reference is not on expected strand", feat);
                 }
             }
+
             if (!found && bsh.IsAa()) {
                 const CSeq_feat* cds = GetCDSForProduct(bsh);
                 if ( cds != 0 ) {
@@ -7285,15 +7323,10 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                         if (id != NULL) {
                             CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
                             if (nbsh) {
-                                CFeat_CI nf (nbsh, sel);
-                                while (nf && !found) {
-                                    string label;
-                                    nf->GetData().GetGene().GetLabel(&label);
-                                    if (NStr::Equal(label, gene_xref->GetLocus())) {
-                                        found = true;
-                                    } else {
-                                        ++nf;
-                                    }
+                                CCacheImpl::SLabelKey label_key(CCacheImpl::eLabelType_Label, nbsh, gene_xref->GetLocus());
+                                const CCacheImpl::TFeatValue & feats = GetCache().GetLabelToFeats(label_key, m_Imp.GetTSE_Handle());
+                                if( ! feats.empty() ) {
+                                    found = true;
                                 }
                             }
                         }
@@ -7306,23 +7339,24 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             }
         }
         if (gene_xref->IsSetLocus_tag() 
-            && !NStr::IsBlank (gene_xref->GetLocus_tag())) {
-            SAnnotSelector sel (CSeqFeatData::e_Gene);
-            CFeat_CI f (bsh, sel);
-            bool found = false;
-            while (f && !found) {
-                if (f->GetData().GetGene().IsSetLocus_tag() 
-                    && NStr::EqualCase (f->GetData().GetGene().GetLocus_tag(), gene_xref->GetLocus_tag())) {
-                    found = true;
-                    if (s_LocationStrandsIncompatible(f->GetLocation(), feat.GetLocation(), m_Scope)) {
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-                            "Gene cross-reference is not on expected strand", feat);
-                    }
-                } else {
-                    ++f;
+            && !NStr::IsBlank (gene_xref->GetLocus_tag()))
+        {
+            CTempString locus_tag = gene_xref->GetLocus_tag();
+            CCacheImpl::SLabelKey gene_key(
+                CCacheImpl::eLabelType_LocusTag, bsh, locus_tag);
+            const CCacheImpl::TFeatValue & feats = GetCache().GetLabelToFeats(gene_key, m_Imp.GetTSE_Handle());
+            if( ! feats.empty() ) {
+                found = true;
+                const CMappedFeat & gene = feats[0];
+                if (s_LocationStrandsIncompatible(
+                        gene.GetLocation(), feat.GetLocation(), m_Scope))
+                {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                             "Gene cross-reference is not on expected strand", feat);
                 }
             }
-            if (!found && bsh.IsAa()) {
+
+            if (!found && bsh.IsAa() && gene_xref->IsSetLocus()) {
                 const CSeq_feat* cds = GetCDSForProduct(bsh);
                 if ( cds != 0 ) {
                     if (cds->IsSetLocation()) {
@@ -7331,15 +7365,12 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                         if (id != NULL) {
                             CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
                             if (nbsh) {
-                                CFeat_CI nf (nbsh, sel);
-                                while (nf && !found) {
-                                    string label;
-                                    nf->GetData().GetGene().GetLabel(&label);
-                                    if (gene_xref->IsSetLocus() && NStr::Equal(label, gene_xref->GetLocus())) {
-                                        found = true;
-                                    } else {
-                                        ++nf;
-                                    }
+                                string locus = gene_xref->GetLocus();
+                                CCacheImpl::SLabelKey gene_key(
+                                    CCacheImpl::eLabelType_Label, nbsh, locus);
+                                const CCacheImpl::TFeatValue & feats = GetCache().GetLabelToFeats(gene_key, m_Imp.GetTSE_Handle());
+                                if( ! feats.empty() ) {
+                                    found = true;
                                 }
                             }
                         }
@@ -7351,8 +7382,9 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                          "Feature has gene locus_tag cross-reference but no equivalent gene feature exists", feat);
             }
             if ((!gene_xref->IsSetLocus() || NStr::IsBlank (gene_xref->GetLocus()))
-                && found && f->GetData().GetGene().IsSetLocus() 
-                && !NStr::IsBlank (f->GetData().GetGene().GetLocus())) {
+                && found && feats[0].GetData().GetGene().IsSetLocus() 
+                && !NStr::IsBlank (feats[0].GetData().GetGene().GetLocus()))
+            {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutLocus,
                          "Feature has Gene Xref with locus_tag but no locus, gene with locus_tag and locus exists", feat);
             }
@@ -7404,7 +7436,8 @@ bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)
     }
 
     TSeqPos end = rng->GetStart(eExtreme_Biological);
-    CBioseq_Handle bsh = BioseqHandleFromLocation (m_Scope, *rng);
+    const CBioseq_Handle & bsh =
+        GetCache().GetBioseqHandleFromLocation (m_Scope,*rng, m_Imp.GetTSE_Handle());
     if (!bsh) {
         return false;
     }
@@ -7532,7 +7565,7 @@ void CValidError_feat::ValidateFeatBioSource
 
     m_Imp.ValidateBioSource(bsrc, feat);
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
     if ( !bsh ) {
         return;
     }
@@ -7684,7 +7717,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
     }
 
     if (m_Scope) {
-        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
+        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, loc, m_Imp.GetTSE_Handle());
         if (bsh) {
             // look for mismatch in capitalization for IDs
             CNcbiOstrstream os;
@@ -7732,7 +7765,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
                         CSeqVector vec = GetSequenceFromLoc (loc_it.GetEmbeddingSeq_loc(), *m_Scope);
                         if ( !vec.empty() ) {
-                            CBioseq_Handle ph = BioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc());
+                            CBioseq_Handle ph = GetCache().GetBioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc(), m_Imp.GetTSE_Handle());
                             TSeqPos offset = loc_it.GetEmbeddingSeq_loc().GetStart (eExtreme_Positional);
                             string vec_data;
                             vec.GetSeqData(0, vec.size(), vec_data);
@@ -7834,7 +7867,7 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                             for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
                                 CSeqVector vec = GetSequenceFromLoc (loc_it.GetEmbeddingSeq_loc(), *m_Scope);
                                 if ( !vec.empty() ) {
-                                    CBioseq_Handle ph = BioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc());
+                                    CBioseq_Handle ph = GetCache().GetBioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc(), m_Imp.GetTSE_Handle());
                                     TSeqPos offset = loc_it.GetEmbeddingSeq_loc().GetStart (eExtreme_Positional);
                                     string vec_data;
                                     vec.GetSeqData(0, vec.size(), vec_data);

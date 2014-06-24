@@ -153,7 +153,7 @@ CValidError_bioseq::~CValidError_bioseq()
 
 
 void CValidError_bioseq::ValidateBioseq (
-    const CBioseq& seq, CRef<CCache> pCache)
+    const CBioseq& seq)
 {
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
@@ -162,22 +162,22 @@ void CValidError_bioseq::ValidateBioseq (
             CCacheImpl::SFeatKey gene_key(
                 CSeqFeatData::e_Gene, CCacheImpl::kAnyFeatSubtype,
                 m_CurrentHandle);
-            m_GeneIt = &pCache->m_impl->GetFeatFromCache(gene_key);
+            m_GeneIt = &GetCache().GetFeatFromCache(gene_key);
 
             CCacheImpl::SFeatKey all_feat_key(
                 CCacheImpl::kAnyFeatType, CCacheImpl::kAnyFeatSubtype,
                 m_CurrentHandle);
-            m_AllFeatIt = &pCache->m_impl->GetFeatFromCache(all_feat_key);
+            m_AllFeatIt = &GetCache().GetFeatFromCache(all_feat_key);
         } catch ( const exception& ) {
             // sequence might be too broken to validate features
             m_GeneIt = NULL;
             m_AllFeatIt = NULL;
         }
         m_mRNACDSIndex.SetBioseq(
-            m_AllFeatIt, m_CurrentHandle, m_Scope, pCache, m_Imp.GetTSEH());
+            m_AllFeatIt, m_CurrentHandle, GetCache());
         ValidateSeqIds(seq);
-        ValidateInst(seq, pCache);
-        ValidateBioseqContext(seq, pCache);
+        ValidateInst(seq);
+        ValidateBioseqContext(seq);
         ValidatemRNAGene(seq);
         ValidateHistory(seq);
         FOR_EACH_ANNOT_ON_BIOSEQ (annot, seq) {
@@ -808,7 +808,7 @@ void CValidError_bioseq::x_ValidateBarcode(const CBioseq& seq)
 
 
 void CValidError_bioseq::ValidateInst(
-    const CBioseq& seq, CRef<CCache> pCache)
+    const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
 
@@ -865,7 +865,7 @@ void CValidError_bioseq::ValidateInst(
 
     if (rp == CSeq_inst::eRepr_raw  ||  rp == CSeq_inst::eRepr_const) {    
         // Validate raw and constructed sequences
-        ValidateRawConst(seq, pCache);
+        ValidateRawConst(seq);
     }
 
     if (rp == CSeq_inst::eRepr_seg  ||  rp == CSeq_inst::eRepr_ref) {
@@ -999,7 +999,7 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
 }
 
 void CValidError_bioseq::ValidateBioseqContext(
-    const CBioseq& seq, CRef<CCache> pCache)
+    const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
@@ -1020,16 +1020,16 @@ void CValidError_bioseq::ValidateBioseqContext(
             // multiple intervals
             ValidateMultiIntervalGene(seq);
 
-            ValidateSeqFeatContext(seq, pCache);
+            ValidateSeqFeatContext(seq);
 
             // Check for duplicate features and overlapping peptide features.
-            ValidateDupOrOverlapFeats(seq, pCache);
+            ValidateDupOrOverlapFeats(seq);
 
             // check for equivalent source features
-            x_ValidateSourceFeatures (bsh, pCache);
+            x_ValidateSourceFeatures (bsh);
 
             // check for equivalen pub features
-            x_ValidatePubFeatures (bsh, pCache);
+            x_ValidatePubFeatures (bsh);
 
             // Check for colliding genes
             ValidateCollidingGenes(seq);
@@ -1096,7 +1096,7 @@ void CValidError_bioseq::ValidateBioseqContext(
         }
         // make sure that there is a source on this bioseq
         if ( !m_Imp.IsNoBioSource() ) {
-            CheckSoureDescriptor(bsh, pCache);
+            CheckSoureDescriptor(bsh);
             //CheckForBiosourceOnBioseq(seq);
         }
 
@@ -1123,7 +1123,7 @@ void CValidError_bioseq::ValidateBioseqContext(
     CheckTpaHistory(seq);
     
     // check for multiple publications with identical identifiers
-    x_ValidateMultiplePubs(bsh, pCache);
+    x_ValidateMultiplePubs(bsh);
 
     // check feature packaging
     // a feature packaged on a bioseq should have at least one location on the bioseq
@@ -1140,7 +1140,11 @@ void CValidError_bioseq::ValidateBioseqContext(
                         } 
                     }
                     if (!found && seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
-                        CBioseq_Handle part = BioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc());
+                        const CBioseq_Handle & part =
+                            GetCache().GetBioseqHandleFromLocation(
+                                m_Scope,
+                                loc_it.GetEmbeddingSeq_loc(),
+                                bsh.GetTSE_Handle());
                         if (part) {
                             CSeq_entry_Handle parent = part.GetParentEntry();
                             if (parent && parent.IsSeq()) {
@@ -1251,7 +1255,7 @@ void CValidError_bioseq::ValidateBioseqContext(
         CCacheImpl::SFeatKey prot_key(
             CCacheImpl::kAnyFeatType, CSeqFeatData::eSubtype_prot, bsh);
         const CCacheImpl::TFeatValue & prot_feats =
-            pCache->m_impl->GetFeatFromCache(prot_key);
+            GetCache().GetFeatFromCache(prot_key);
 
         if (prot_feats.size() > 1) {
             ITERATE(CCacheImpl::TFeatValue, feat, prot_feats) {
@@ -1425,7 +1429,7 @@ static bool s_SuppressMultipleEquivBioSources (const CBioSource& src)
 
 
 void CValidError_bioseq::x_ValidateSourceFeatures(
-    const CBioseq_Handle& bsh, CRef<CCache> pCache)
+    const CBioseq_Handle& bsh)
 {
     // don't bother if can't build all feature iterator
     if (!m_AllFeatIt) {
@@ -1434,7 +1438,7 @@ void CValidError_bioseq::x_ValidateSourceFeatures(
     try {
         CCacheImpl::SFeatKey biosrc_key(
             CSeqFeatData::e_Biosrc, CCacheImpl::kAnyFeatSubtype, bsh);
-        const CCacheImpl::TFeatValue & biosrcs = pCache->m_impl->GetFeatFromCache(biosrc_key);
+        const CCacheImpl::TFeatValue & biosrcs = GetCache().GetFeatFromCache(biosrc_key);
         CCacheImpl::TFeatValue::const_iterator feat = biosrcs.begin();
         if (feat != biosrcs.end()) {
             if (IsLocFullLength(feat->GetLocation(), bsh) 
@@ -1517,7 +1521,7 @@ static void s_MakePubLabelString (const CPubdesc& pd, string& label)
 
 
 void CValidError_bioseq::x_ValidatePubFeatures(
-    const CBioseq_Handle& bsh, CRef<CCache> pCache)
+    const CBioseq_Handle& bsh)
 {
     // don't bother if can't build feature iterator at all
     if (!m_AllFeatIt) {
@@ -1527,7 +1531,7 @@ void CValidError_bioseq::x_ValidatePubFeatures(
         CCacheImpl::SFeatKey pub_key(
             CSeqFeatData::e_Pub, CCacheImpl::kAnyFeatSubtype, bsh);
         const CCacheImpl::TFeatValue & pubs =
-            pCache->m_impl->GetFeatFromCache(pub_key);
+            GetCache().GetFeatFromCache(pub_key);
         CCacheImpl::TFeatValue::const_iterator feat = pubs.begin();
         if (feat != pubs.end()) {
             if (IsLocFullLength(feat->GetLocation(), bsh)) {
@@ -1661,7 +1665,7 @@ void CValidError_bioseq::x_ReportDuplicatePubLabels (
 
 
 void CValidError_bioseq::x_ValidateMultiplePubs(
-    const CBioseq_Handle& bsh, CRef<CCache> pCache)
+    const CBioseq_Handle& bsh)
 {
     // used to check for dups.  Currently only deals with cases where
     // there's an otherpub, but check if this comment is out of date.
@@ -1674,47 +1678,17 @@ void CValidError_bioseq::x_ValidateMultiplePubs(
 
     CConstRef<CSeq_entry> ctx =
         bsh.GetSeq_entry_Handle().GetCompleteSeq_entry();
-    // this is just used to allocate memory that will be released at the end of
-    // the function.
-    typedef vector<CConstRef<CCacheImpl::CPubdescInfo> > TPubdescInfoStorage;
-    TPubdescInfoStorage pubdescInfoStorage;
-
-    CCacheImpl::TPubdescCache * p_pubdesc_cache = (
-        pCache ? &(pCache->m_impl->m_pubdescCache) : NULL);
 
     for (CSeqdesc_CI it(bsh, CSeqdesc::e_Pub); it; ++it) {
-        CConstRef<CCacheImpl::CPubdescInfo> pPubdescInfo;
         CConstRef<CPubdesc> pub = ConstRef(&it->GetPub());
         // first, try to receive from cache
-        if ( p_pubdesc_cache ) {
-            CCacheImpl::TPubdescCache::const_iterator find_iter =
-                p_pubdesc_cache->find(pub);
-            if( find_iter != p_pubdesc_cache->end() ) {
-                pPubdescInfo = find_iter->second;
-            }
-        }
-        if( ! pPubdescInfo ) {
-            CAutoInitRef<CCacheImpl::CPubdescInfo> pInfo;
-            GetPubdescLabels (
-                *pub, pInfo->m_pmids, pInfo->m_muids,
-                pInfo->m_serials, pInfo->m_published_labels,
-                pInfo->m_unpublished_labels);
-            pPubdescInfo = ConstRef(&pInfo.Get());
-            // load into cache, if possible
-            if( p_pubdesc_cache ) {
-                (*p_pubdesc_cache)[pub] = pPubdescInfo;
-            } else {
-                // put it in storage so it's not destroyed until the end of
-                // the function since we have CTempStrings around that
-                // refer to strings inside the pPubdescInfo
-                pubdescInfoStorage.push_back(pPubdescInfo);
-            }
-        }
+        const CCacheImpl::CPubdescInfo & pubdesc_info =
+            GetCache().GetPubdescToInfo(pub);
         // note that some (e.g. pmids are ignored other than maybe storing
         // in the cache above)
-        copy(BEGIN_COMMA_END(pPubdescInfo->m_published_labels),
+        copy(BEGIN_COMMA_END(pubdesc_info.m_published_labels),
              back_inserter(published_labels));
-        copy(BEGIN_COMMA_END(pPubdescInfo->m_unpublished_labels),
+        copy(BEGIN_COMMA_END(pubdesc_info.m_unpublished_labels),
              back_inserter(unpublished_labels));
 
         int muid = 0;
@@ -2667,7 +2641,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 
 // Assumes that seq is eRepr_raw or eRepr_inst
 void CValidError_bioseq::ValidateRawConst(
-    const CBioseq& seq, CRef<CCache> pCache)
+    const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
     const CEnumeratedTypeValues* tv = CSeq_inst::GetTypeInfo_enum_ERepr();
@@ -2939,7 +2913,7 @@ void CValidError_bioseq::ValidateRawConst(
                     CCacheImpl::SFeatKey prot_key(
                         CSeqFeatData::e_Prot, CCacheImpl::kAnyFeatSubtype, bsh);
                     const CCacheImpl::TFeatValue & prots =
-                        pCache->m_impl->GetFeatFromCache(prot_key);
+                        GetCache().GetFeatFromCache(prot_key);
                     if( ! prots.empty() ) {
                         const CSeqFeatData_Base::TProt & first_prot =
                             prots[0].GetData().GetProt();
@@ -3873,7 +3847,7 @@ bool CValidError_bioseq::ValidateRepr
 
 
 void CValidError_bioseq::CheckSoureDescriptor(
-    const CBioseq_Handle& bsh, CRef<CCache> pCache)
+    const CBioseq_Handle& bsh)
 {
     CSeqdesc_CI di(bsh, CSeqdesc::e_Source);
     if (!di) {
@@ -3886,7 +3860,7 @@ void CValidError_bioseq::CheckSoureDescriptor(
     if (m_Imp.IsTransgenic(di->GetSource())  &&
         CSeq_inst::IsNa(bsh.GetInst_Mol())) {
         // "if" means "if no biosrcs on bsh"
-        if( pCache->m_impl->GetFeatFromCache(
+        if( GetCache().GetFeatFromCache(
                 CCacheImpl::SFeatKey(
                     CSeqFeatData::e_Biosrc, CCacheImpl::kAnyFeatSubtype, bsh)).empty() )
         {
@@ -4384,7 +4358,9 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
         return false;
     }
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, *temp.GetRangeAsSeq_loc());
+    CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(
+        m_Scope,
+        *temp.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle() );
     if (!bsh) {
         return false;
     }
@@ -4512,7 +4488,7 @@ static bool s_MatchPartialType (const CSeq_loc& loc1, const CSeq_loc& loc2, unsi
 
 // REQUIRES: feature is either Gene or mRNA
 bool CValidError_bioseq::x_IsSameAsCDS(
-    const CMappedFeat& feat, CRef<CCache> pCache)
+    const CMappedFeat& feat)
 {
     EOverlapType overlap_type;
     if ( feat.GetData().IsGene() ) {
@@ -4726,7 +4702,7 @@ void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
 }
 
 void CValidError_bioseq::ValidateFeatPartialInContext (
-    const CMappedFeat& feat, CRef<CCache> pCache)
+    const CMappedFeat& feat)
 {
 
     ValidateCDSAndProtPartials (feat);
@@ -4921,7 +4897,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                     }
                 } else if ( (feat.GetData().Which() == CSeqFeatData::e_Gene  ||
                     feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) &&
-                     x_IsSameAsCDS(feat, pCache) ) {
+                     x_IsSameAsCDS(feat) ) {
                     PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                         parterr[i] + ": " + parterrs[j], *(feat.GetSeq_feat()));
                 } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
@@ -4939,7 +4915,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
 
 
 void CValidError_bioseq::ValidateSeqFeatContext(
-    const CBioseq& seq, CRef<CCache> pCache)
+    const CBioseq& seq)
 {
     // test
     string accession = "";
@@ -5061,7 +5037,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                 m_FeatValidator.ValidateSeqFeatContext(feat, seq);
                 
                 if (seq.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
-                    ValidateFeatPartialInContext (*fi, pCache);
+                    ValidateFeatPartialInContext (*fi);
                 }
 
                 if ( is_aa ) {                // protein
@@ -5230,7 +5206,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
 
         // validate abutting UTRs for nucleotides
         if ( !is_aa ) {
-            x_ValidateAbuttingUTR(m_CurrentHandle, pCache);
+            x_ValidateAbuttingUTR(m_CurrentHandle);
         }
 
         // validate abutting RNA features
@@ -5273,7 +5249,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
         }
 
         x_ValidateCDSmRNAmatch(
-            m_CurrentHandle, numgene, numcds, nummrna, pCache);
+            m_CurrentHandle, numgene, numcds, nummrna);
 
         if (m_Imp.IsLocusTagGeneralMatch()) {
             x_ValidateLocusTagGeneralMatch(m_CurrentHandle);
@@ -5333,7 +5309,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
    
         
         CBioseq_Handle prod = m_Scope->GetBioseqHandleFromTSE
-            (GetId(feat.GetProduct(), m_Scope), m_Imp.GetTSE());
+            (GetId(feat.GetProduct(), m_Scope), m_Imp.GetTSEH());
         if (!prod) {
             continue;
         }
@@ -5687,7 +5663,8 @@ template<typename TFeatList>
 void s_SetUpXrefPairs(
     vector < CRef<CMatchCDS> > & cds_list,
     vector < CRef<CMatchmRNA> > & mrna_list,
-    const TFeatList & feat_list, CScope * scope, ENoteCDS eNoteCDS )
+    const TFeatList & feat_list, CScope * scope, ENoteCDS eNoteCDS,
+    CCacheImpl & cache)
 {
     // map each mrna feat to its CMatchmRNA
     typedef map<CMappedFeat, CRef<CMatchmRNA> > TMrnaToMatch;
@@ -5712,6 +5689,7 @@ void s_SetUpXrefPairs(
     }
 
     // set up xref pairs
+    // (Note: potentially quadric time in worst case: O(num_cds * num_mrna))
     vector < CRef<CMatchCDS> >::iterator cds_it = cds_list.begin();
     for ( ; cds_it != cds_list.end(); ++cds_it) {
         CConstRef<CSeq_feat> cds = (*cds_it)->m_Cds;
@@ -5739,9 +5717,16 @@ void s_SetUpXrefPairs(
                 CConstRef<CSeq_feat> mrna = match_rna->m_Mrna;
                 if (TestForOverlapEx (cds->GetLocation(), mrna->GetLocation(), overlap_type, scope) >= 0) {
                     (*cds_it)->AddmRNA(match_rna);
-                    match_rna->AddCDS(*cds_it);
+                    if( eNoteCDS == eNoteCDS_No ) {
+                        match_rna->AddCDS(*cds_it);
+                    }
                     if (s_IdXrefsAreReciprocal(*cds, *mrna)) {
                         (*cds_it)->SetXrefMatch(match_rna);
+                        if( eNoteCDS == eNoteCDS_No ) {
+                            match_rna->SetCDS(cds);
+                        } else {
+                            match_rna->SetAccountedFor(true);
+                        }
                         match_rna->SetCDS(cds);
                     }
                 }
@@ -5772,8 +5757,8 @@ CmRNAAndCDSIndex::~CmRNAAndCDSIndex(void)
 
 void CmRNAAndCDSIndex::SetBioseq(
     const CCacheImpl::TFeatValue * feat_list,
-    const CBioseq_Handle & bioseq, CScope * scope, CRef<CCache> pCache,
-    const CSeq_entry_Handle & tse)
+    const CBioseq_Handle & bioseq,
+    CCacheImpl & cache)
 {
     m_CdsList.clear();
     m_mRNAList.clear();
@@ -5783,7 +5768,8 @@ void CmRNAAndCDSIndex::SetBioseq(
     }
 
     s_SetUpXrefPairs(
-        m_CdsList, m_mRNAList, *feat_list, scope, eNoteCDS_Yes);
+        m_CdsList, m_mRNAList, *feat_list, &bioseq.GetScope(), eNoteCDS_Yes,
+        cache);
 
 }
 
@@ -5908,8 +5894,7 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
 
 
 void CValidError_bioseq::x_ValidateCDSmRNAmatch(
-    const CBioseq_Handle& seq, int numgene, int numcds, int nummrna,
-    CRef<CCache> pCache)
+    const CBioseq_Handle& seq, int numgene, int numcds, int nummrna)
 {
     // skip this step if this is a genbank record for a bacteria or a virus
     bool is_genbank = false;
@@ -5939,7 +5924,8 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(
         vector < CRef<CMatchmRNA> > mrna_list;
 
         s_SetUpXrefPairs(
-            cds_list, mrna_list, *m_AllFeatIt, m_Scope, eNoteCDS_No);
+            cds_list, mrna_list, *m_AllFeatIt, m_Scope, eNoteCDS_No,
+            GetCache());
 
         // now, look for coding regions that have multiple mRNAs
         vector < CRef<CMatchCDS> >::iterator cds_it = cds_list.begin();
@@ -6028,7 +6014,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(
 
 
 void CValidError_bioseq::x_ValidateAbuttingUTR(
-    const CBioseq_Handle& seq, CRef<CCache> pCache)
+    const CBioseq_Handle& seq)
 {
     // note - if we couldn't build the feature iterator, no point
     // in trying this
@@ -6046,14 +6032,14 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(
         CCacheImpl::kAnyFeatType, CSeqFeatData::eSubtype_cdregion, seq);
     // cdregion is special because it can set strand
     const CCacheImpl::TFeatValue & cd_region_feats =
-        pCache->m_impl->GetFeatFromCache(feat_key);
+        GetCache().GetFeatFromCache(feat_key);
     const int num_cds = cd_region_feats.size();
     feat_key.feat_subtype = CSeqFeatData::eSubtype_3UTR;
-    const int num_3utr = pCache->m_impl->GetFeatFromCache(feat_key).size();
+    const int num_3utr = GetCache().GetFeatFromCache(feat_key).size();
     feat_key.feat_subtype = CSeqFeatData::eSubtype_5UTR;
-    const int num_5utr = pCache->m_impl->GetFeatFromCache(feat_key).size();
+    const int num_5utr = GetCache().GetFeatFromCache(feat_key).size();
     feat_key.feat_subtype = CSeqFeatData::eSubtype_gene;
-    const int num_gene = pCache->m_impl->GetFeatFromCache(feat_key).size();
+    const int num_gene = GetCache().GetFeatFromCache(feat_key).size();
 
     // cdregion is special because it can set strand
     if( num_cds > 0 ) {
@@ -6110,7 +6096,7 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(
         featKeys.push_back(multi_feat_key_template);
 
         AutoPtr<CCacheImpl::TFeatValue> cug_feats =
-            pCache->m_impl->GetFeatFromCacheMulti(featKeys);
+            GetCache().GetFeatFromCacheMulti(featKeys);
 
         if (strand == eNa_strand_minus) {
             // minus strand - expect 3'UTR, CDS, 5'UTR
@@ -6477,11 +6463,14 @@ static bool s_SpecialFlybaseId (const CSeq_id& id)
 }
 
 
-static bool s_SpecialFlybaseId (const CSeq_feat& feat, CScope * scope)
+static bool s_SpecialFlybaseId (
+    const CSeq_feat& feat, CScope * scope, CCacheImpl & cache,
+    const CTSE_Handle & tse)
 {
     bool rval = false;
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(scope, feat.GetLocation());
+    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation(
+        scope, feat.GetLocation(), tse);
 
     if (bsh) {
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
@@ -6525,11 +6514,14 @@ static bool s_SpecialDuplicateFeatID (const CSeq_id& id)
 }
 
 
-static bool s_SpecialDuplicateFeatID (const CSeq_feat& feat, CScope * scope)
+static bool s_SpecialDuplicateFeatID (
+    const CSeq_feat& feat, CScope * scope, CCacheImpl & cache,
+    const CTSE_Handle & tse)
 {
     bool rval = false;
 
-    CBioseq_Handle bsh = BioseqHandleFromLocation(scope, feat.GetLocation());
+    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation(
+        scope, feat.GetLocation(), tse);
 
     if (bsh) {
         FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
@@ -6549,12 +6541,12 @@ static bool s_SpecialDuplicateFeatID (const CSeq_feat& feat, CScope * scope)
 }
 
 
-static bool s_GeneXrefsDiffer (const CSeq_feat& f1, const CSeq_feat& f2, CScope *scope, CRef<CCache> pCache)
+static bool s_GeneXrefsDiffer (const CSeq_feat& f1, const CSeq_feat& f2, CScope *scope)
 {
     CConstRef <CSeq_feat> g1 =
-        CValidError_bioseq::GetGeneForFeature (f1, scope, pCache);
+        CValidError_bioseq::GetGeneForFeature (f1, scope);
     CConstRef <CSeq_feat> g2
-        = CValidError_bioseq::GetGeneForFeature (f2, scope, pCache);
+        = CValidError_bioseq::GetGeneForFeature (f2, scope);
 
     if (!g1 || !g2) {
         return false;
@@ -6574,8 +6566,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
  bool is_viral,
  bool is_htgs,
  bool same_annot,
- bool same_label,
- CRef<CCache> pCache)
+ bool same_label)
 {
     if (!same_annot && !same_label) {
         return eDiag_Warning;
@@ -6591,8 +6582,12 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
          curr_subtype == CSeqFeatData::eSubtype_variation ) {
         // lower severity for some features
         severity = eDiag_Warning;
-    } else if (s_SpecialDuplicateFeatID(curr, m_Scope)) {
-        if (is_fruitfly || s_SpecialFlybaseId(curr, m_Scope)) {
+    } else if (s_SpecialDuplicateFeatID(
+                   curr, m_Scope, GetCache(), m_Imp.GetTSE_Handle()))
+    {
+        if (is_fruitfly || s_SpecialFlybaseId(
+                curr, m_Scope, GetCache(), m_Imp.GetTSE_Handle()))
+        {
             severity = eDiag_Warning;
         }
     } else {
@@ -6649,14 +6644,14 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
         }
         
         if (same_label) {
-            if (s_GeneXrefsDiffer(curr, prev, m_Scope, pCache)) {
+            if (s_GeneXrefsDiffer(curr, prev, m_Scope)) {
                 severity = eDiag_Warning;
             }
         }
     } else {
         /* not same annot */
         if (same_label) {
-            if (s_GeneXrefsDiffer(curr, prev, m_Scope, pCache)) {
+            if (s_GeneXrefsDiffer(curr, prev, m_Scope)) {
                 severity = eDiag_Warning;
             }
         } else {
@@ -6669,7 +6664,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 
 
 
-void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat& feat1, const CSeq_feat_Handle & f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs, CRef<CCache> pCache)
+void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat& feat1, const CSeq_feat_Handle & f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs)
 {
     // Get type of duplication, if any
     EDuplicateFeatureType dup_type = IsDuplicate (f1, feat1, f2, feat2, *m_Scope);
@@ -6677,11 +6672,11 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
     switch (dup_type) {
         case eDuplicate_Duplicate:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, true, true, pCache);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, true, true);
                 CConstRef <CSeq_feat> g1 =
-                    CValidError_bioseq::GetGeneForFeature (feat1, m_Scope, pCache);
+                    CValidError_bioseq::GetGeneForFeature (feat1, m_Scope);
                 CConstRef <CSeq_feat> g2 =
-                    CValidError_bioseq::GetGeneForFeature (feat2, m_Scope, pCache);
+                    CValidError_bioseq::GetGeneForFeature (feat2, m_Scope);
                 if (g1 && g2 && g1 != g2) {
                     severity = eDiag_Warning;
                 }
@@ -6691,7 +6686,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_SameIntervalDifferentLabel:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, true, false, pCache);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, true, false);
                 if (feat1.GetData().IsImp()) {
                     severity = eDiag_Warning;
                 }
@@ -6702,7 +6697,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_DuplicateDifferentTable:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, false, true, pCache);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, false, true);
                 PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                     "Duplicate feature (packaged in different feature table)",
                     feat2);
@@ -6710,7 +6705,7 @@ void CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_SameIntervalDifferentLabelDifferentTable:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, false, false, pCache);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, false, false);
                 PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                     "Features have identical intervals, but labels "
                     "differ (packaged in different feature table)",
@@ -6790,7 +6785,7 @@ void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CS
 
 
 void CValidError_bioseq::ValidateDupOrOverlapFeats(
-    const CBioseq& bioseq, CRef<CCache> pCache)
+    const CBioseq& bioseq)
 {
 #ifndef GOFAST
     if (!m_AllFeatIt) {
@@ -6846,8 +6841,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
                                                    *prev_feat, 
                                                    curr_it->GetSeq_feat_Handle(), 
                                                    *curr_feat,
-                                                   fruit_fly, viral, htgs,
-                                                   pCache);
+                                                   fruit_fly, viral, htgs);
                     break;
                 }
             }
@@ -7623,13 +7617,8 @@ bool CValidError_bioseq::GetTSAConflictingBiomolTechErrors(const CBioseq& seq)
 
 
 CConstRef <CSeq_feat> CValidError_bioseq::GetGeneForFeature (
-    const CSeq_feat& f1, CScope *scope, CConstRef<CCache> pCache)
+    const CSeq_feat& f1, CScope *scope)
 {
-    // if no cache, make one
-    if( ! pCache ) {
-        pCache.Reset(new CCache);
-    }
-
     const CGene_ref * g1 = f1.GetGeneXref();
     CConstRef <CSeq_feat> gene;
 
@@ -7640,19 +7629,19 @@ CConstRef <CSeq_feat> CValidError_bioseq::GetGeneForFeature (
         string ref_label;
         g1->GetLabel(&ref_label);
 
-        CBioseq_Handle bsh = BioseqHandleFromLocation(scope, f1.GetLocation());
+        CBioseq_Handle bsh = BioseqHandleFromLocation(
+            scope, f1.GetLocation());
         SAnnotSelector sel(CSeqFeatData::e_Gene);
-        CCacheImpl::SFeatKey feat_key(
-            CSeqFeatData::e_Gene, CCacheImpl::kAnyFeatSubtype, bsh);
-        const CCacheImpl::TFeatValue & feats =
-            pCache->m_impl->GetFeatFromCache(feat_key);
-        ITERATE(CCacheImpl::TFeatValue, gene_it, feats) {
+        CFeat_CI gene_it(bsh, sel);
+        while (gene_it) {
             string feat_label;
-            feature::GetLabel(gene_it->GetOriginalFeature(), &feat_label, feature::fFGL_Content, scope);
+            feature::GetLabel(gene_it->GetOriginalFeature(), &feat_label,
+                              feature::fFGL_Content, scope);
             if (NStr::EqualCase(ref_label, feat_label)) {
                 gene.Reset (&(gene_it->GetOriginalFeature()));
                 return gene;
             }
+            ++gene_it;
         }
         return gene;
     }
@@ -8691,7 +8680,9 @@ bool CValidError_bioseq::ValidateGraphLocation (const CSeq_graph& graph)
         return false;
     } else {
         const CSeq_loc& loc = graph.GetLoc();
-        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, loc);
+        const CBioseq_Handle & bsh =
+            GetCache().GetBioseqHandleFromLocation(
+                m_Scope, loc, m_Imp.GetTSE_Handle());
         if (!bsh) {
             string label = "";
             if (loc.GetId() != 0) {
@@ -9283,8 +9274,8 @@ unsigned int s_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna
 
 
 void CValidError_bioseq::CmRNACDSIndex::SetBioseq(
-    const CCacheImpl::TFeatValue * feat_list, const CTSE_Handle& tse,
-    const CBioseq_Handle & bioseq, CScope * scope, CRef<CCache> pCache)
+    const CCacheImpl::TFeatValue * feat_list,
+    const CBioseq_Handle & bioseq)
 {
     m_PairList.clear();
     m_CDSList.clear();
@@ -9323,7 +9314,7 @@ void CValidError_bioseq::CmRNACDSIndex::SetBioseq(
                 overlap_type = eOverlap_SubsetRev;
             }
 
-            if (TestForOverlapEx (pair_it->first.GetLocation(), pair_it->second.GetLocation(), overlap_type, scope) >= 0) {
+            if (TestForOverlapEx (pair_it->first.GetLocation(), pair_it->second.GetLocation(), overlap_type, &bioseq.GetScope()) >= 0) {
                 if (pair_it->first.IsSetId() && pair_it->second.IsSetId()
                     && s_IdXrefsAreReciprocal(pair_it->first, pair_it->second)) {
                     featid_matched = true;
@@ -9336,7 +9327,7 @@ void CValidError_bioseq::CmRNACDSIndex::SetBioseq(
                 FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, pair_it->first) {
                     if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
                         && (*itx)->GetId().GetLocal().IsId()) {
-                        vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, 
+                        vector<CSeq_feat_Handle> handles = bioseq.GetTSE_Handle().GetFeaturesWithId(CSeqFeatData::e_not_set, 
                                                                                  (*itx)->GetId().GetLocal().GetId());
                         ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                             if (feat_it->IsSetData() 
@@ -9361,7 +9352,8 @@ void CValidError_bioseq::CmRNACDSIndex::SetBioseq(
     }
 
 
-CMappedFeat CValidError_bioseq::CmRNACDSIndex::GetmRNAForCDS(CMappedFeat cds)
+CMappedFeat CValidError_bioseq::CmRNACDSIndex::GetmRNAForCDS(
+    const CMappedFeat & cds)
 {
     CMappedFeat f;
 
@@ -9374,7 +9366,8 @@ CMappedFeat CValidError_bioseq::CmRNACDSIndex::GetmRNAForCDS(CMappedFeat cds)
 }
 
 
-CMappedFeat CValidError_bioseq::CmRNACDSIndex::GetCDSFormRNA(CMappedFeat mrna)
+CMappedFeat CValidError_bioseq::CmRNACDSIndex::GetCDSFormRNA(
+    const CMappedFeat & mrna)
 {
     CMappedFeat f;
 

@@ -84,13 +84,8 @@ CValidError_bioseqset::~CValidError_bioseqset(void)
 
 
 void CValidError_bioseqset::ValidateBioseqSet(
-    const CBioseq_set& seqset, CRef<CCache> pCache)
+    const CBioseq_set& seqset)
 {
-    // if no cache, make one
-    if( ! pCache ) {
-        pCache.Reset(new CCache);
-    }
-
     int protcnt = 0;
     int nuccnt  = 0;
     int segcnt  = 0;
@@ -111,12 +106,12 @@ void CValidError_bioseqset::ValidateBioseqSet(
             }
 
             // validate member set
-            ValidateBioseqSet (set, pCache);
+            ValidateBioseqSet (set);
         } else if (se.IsSeq()) {
             const CBioseq& seq = se.GetSeq();
 
             // Validate Member Seq
-            m_BioseqValidator.ValidateBioseq(seq, pCache);
+            m_BioseqValidator.ValidateBioseq(seq);
         }
     }
 
@@ -846,7 +841,8 @@ void CValidError_bioseqset::ValidatePhyMutEcoWgsSet(const CBioseq_set& seqset)
 }
 
 
-void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
+void CValidError_bioseqset::ValidateGenProdSet(
+    const CBioseq_set& seqset)
 {
     bool                id_no_good = false;
     CSeq_id::E_Choice   id_type = CSeq_id::e_not_set;
@@ -872,7 +868,8 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
     for (; fi; ++fi) {
         if ( fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA ) {
             if ( fi->IsSetProduct() ) {
-                CBioseq_Handle cdna = BioseqHandleFromLocation(m_Scope, fi->GetProduct());
+                CBioseq_Handle cdna = GetCache().GetBioseqHandleFromLocation(
+                    m_Scope, fi->GetProduct(), bsh.GetTSE_Handle());
                  if ( !cdna ) {
                     try {
                         const CSeq_id& id = GetId(fi->GetProduct(), m_Scope);

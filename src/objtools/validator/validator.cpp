@@ -68,18 +68,12 @@ CValidator::~CValidator(void)
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_entry& se,
  CScope* scope,
- Uint4 options,
- CRef<CCache> pCache)
+ Uint4 options)
 {
-    // if no cache, make one
-    if( ! pCache ) {
-        pCache.Reset(new CCache);
-    }
-
     CRef<CValidError> errors(new CValidError(&se));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
-    if ( !imp.Validate(se, 0, scope, pCache) ) {
+    if ( !imp.Validate(se, 0, scope) ) {
         errors.Reset();
     }
     return errors;
@@ -87,14 +81,8 @@ CConstRef<CValidError> CValidator::Validate
 
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_entry_Handle& seh,
- Uint4 options,
-CRef<CCache> pCache)
+ Uint4 options)
 {
-    // if no cache, make one
-    if( ! pCache ) {
-        pCache.Reset(new CCache);
-    }
-
     static unsigned int num_e = 0, mult = 0;
 
     num_e++;
@@ -106,7 +94,7 @@ CRef<CCache> pCache)
     CRef<CValidError> errors(new CValidError(&*seh.GetCompleteSeq_entry()));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
-    if ( !imp.Validate(seh, 0, pCache) ) {
+    if ( !imp.Validate(seh, 0) ) {
         errors.Reset();
     }
     return errors;
@@ -189,17 +177,11 @@ CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CBio
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_submit& ss,
  CScope* scope,
- Uint4 options,
- CRef<CCache> pCache)
+ Uint4 options)
 {
-    // if no cache, make one
-    if( ! pCache ) {
-        pCache.Reset(new CCache);
-    }
-
     CRef<CValidError> errors(new CValidError(&ss));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
-    imp.Validate(ss, scope, pCache);
+    imp.Validate(ss, scope);
     if (ss.IsSetSub() && ss.GetSub().IsSetContact() && ss.GetSub().GetContact().IsSetContact()
         && ss.GetSub().GetContact().GetContact().IsSetAffil()
         && ss.GetSub().GetContact().GetContact().GetAffil().IsStd()) {

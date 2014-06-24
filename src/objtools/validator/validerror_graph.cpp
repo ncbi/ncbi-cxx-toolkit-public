@@ -74,7 +74,10 @@ void CValidError_graph::ValidateSeqGraph(const CBioseq& seq)
                 if (!(*graph)->IsSetLoc()) {
                     m_Imp.IncrementMisplacedGraphCount(); 
                 } else {
-                    CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, (*graph)->GetLoc());
+                    CBioseq_Handle bsh =
+                        GetCache().GetBioseqHandleFromLocation(
+                            m_Scope, (*graph)->GetLoc(),
+                            m_Imp.GetTSE_Handle());
                     if (m_Scope->GetBioseqHandle(seq) != bsh) {
                         m_Imp.IncrementMisplacedGraphCount(); 
                     }
@@ -122,7 +125,9 @@ void CValidError_graph::ValidateSeqGraphContext(const CSeq_graph& graph, const C
     if (!graph.IsSetLoc()) {
         m_Imp.IncrementMisplacedGraphCount(); 
     } else {
-        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, graph.GetLoc());
+        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(
+            m_Scope,
+            graph.GetLoc(), m_Imp.GetTSE_Handle());
         if (m_Scope->GetBioseqHandle(seq) != bsh) {
             m_Imp.IncrementMisplacedGraphCount(); 
         }

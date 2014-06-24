@@ -972,3 +972,13 @@ int main(int argc, const char* argv[])
 {
     return CAsnvalApp().AppMain(argc, argv);
 }
+
+// don't commit this
+void mk(const CSerialObject *obj)
+{
+    if( obj ) {
+        cerr << MSerial_AsnText << *obj << endl;
+    } else {
+        cerr << "(NULL)" << endl;
+    }
+}
