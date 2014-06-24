@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ==========================================================================
-class CAsn2FastaApp: 
+class CAsn2FastaApp:
     public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 //  ==========================================================================
 {
@@ -327,7 +327,7 @@ int CAsn2FastaApp::Run(void)
                 }
                 return 0;
             }
-            else if ( asn_type == "bioseq" ) {                
+            else if ( asn_type == "bioseq" ) {
                 //
                 //  Read object as a bioseq, wrap it into a seq_entry, then
                 //  process the wrapped bioseq as a seq_entry:
@@ -482,11 +482,11 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 //  --------------------------------------------------------------------------
 {
-    CFastaOstream* fasta_os;
-
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+
+        CFastaOstream* fasta_os;
 
         bool is_genomic = false;
         bool is_RNA = false;
@@ -595,7 +595,7 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const CArgs& args)
         pI = CObjectIStream::Open( serial, *pUnzipStream, eTakeOwnership );
     }
     else {
-        pI = CObjectIStream::Open( 
+        pI = CObjectIStream::Open(
             serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     }
 
