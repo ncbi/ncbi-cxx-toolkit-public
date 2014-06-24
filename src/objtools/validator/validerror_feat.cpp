@@ -7300,9 +7300,9 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         bool found = false;
         if (gene_xref->IsSetLocus() && !NStr::IsBlank (gene_xref->GetLocus())) {
             CTempString locus = gene_xref->GetLocus();
-            CCacheImpl::SLabelKey label_key(CCacheImpl::eLabelType_Label, bsh, locus);
+            CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, bsh, locus);
             const CCacheImpl::TFeatValue & feats =
-                GetCache().GetLabelToFeats(label_key, m_Imp.GetTSE_Handle());
+                GetCache().GetFeatStrKeyToFeats(label_key, m_Imp.GetTSE_Handle());
             if( ! feats.empty() ) {
                 found = true;
                 const CMappedFeat & gene = feats[0];  // only look at first
@@ -7323,8 +7323,8 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                         if (id != NULL) {
                             CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
                             if (nbsh) {
-                                CCacheImpl::SLabelKey label_key(CCacheImpl::eLabelType_Label, nbsh, gene_xref->GetLocus());
-                                const CCacheImpl::TFeatValue & feats = GetCache().GetLabelToFeats(label_key, m_Imp.GetTSE_Handle());
+                                CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, nbsh, gene_xref->GetLocus());
+                                const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(label_key, m_Imp.GetTSE_Handle());
                                 if( ! feats.empty() ) {
                                     found = true;
                                 }
@@ -7342,9 +7342,9 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             && !NStr::IsBlank (gene_xref->GetLocus_tag()))
         {
             CTempString locus_tag = gene_xref->GetLocus_tag();
-            CCacheImpl::SLabelKey gene_key(
-                CCacheImpl::eLabelType_LocusTag, bsh, locus_tag);
-            const CCacheImpl::TFeatValue & feats = GetCache().GetLabelToFeats(gene_key, m_Imp.GetTSE_Handle());
+            CCacheImpl::SFeatStrKey gene_key(
+                CCacheImpl::eFeatKeyStr_LocusTag, bsh, locus_tag);
+            const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(gene_key, m_Imp.GetTSE_Handle());
             if( ! feats.empty() ) {
                 found = true;
                 const CMappedFeat & gene = feats[0];
@@ -7366,9 +7366,9 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                             CBioseq_Handle nbsh = m_Scope->GetBioseqHandle(*id);
                             if (nbsh) {
                                 string locus = gene_xref->GetLocus();
-                                CCacheImpl::SLabelKey gene_key(
-                                    CCacheImpl::eLabelType_Label, nbsh, locus);
-                                const CCacheImpl::TFeatValue & feats = GetCache().GetLabelToFeats(gene_key, m_Imp.GetTSE_Handle());
+                                CCacheImpl::SFeatStrKey gene_key(
+                                    CCacheImpl::eFeatKeyStr_Label, nbsh, locus);
+                                const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(gene_key, m_Imp.GetTSE_Handle());
                                 if( ! feats.empty() ) {
                                     found = true;
                                 }

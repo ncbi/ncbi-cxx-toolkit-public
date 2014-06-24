@@ -3540,34 +3540,34 @@ CCacheImpl::GetFeatFromCacheMulti(
 }
 
 bool
-CCacheImpl::SLabelKey::operator<(const SLabelKey & rhs) const
+CCacheImpl::SFeatStrKey::operator<(const SFeatStrKey & rhs) const
 {
-    if( m_eLabelType != rhs.m_eLabelType ) {
-        return m_eLabelType < rhs.m_eLabelType;
+    if( m_eFeatKeyStr != rhs.m_eFeatKeyStr ) {
+        return m_eFeatKeyStr < rhs.m_eFeatKeyStr;
     }
     if( m_bioseq != rhs.m_bioseq ) {
         return m_bioseq < rhs.m_bioseq;
     }
-    return s_QuickStringLess(m_label, rhs.m_label);
+    return s_QuickStringLess(m_feat_str, rhs.m_feat_str);
 }
 
 bool
-CCacheImpl::SLabelKey::operator==(const SLabelKey & rhs) const
+CCacheImpl::SFeatStrKey::operator==(const SFeatStrKey & rhs) const
 {
-    if( m_eLabelType != rhs.m_eLabelType ) {
+    if( m_eFeatKeyStr != rhs.m_eFeatKeyStr ) {
         return false;
     }
     if( m_bioseq != rhs.m_bioseq ) {
         return false;
     }
-    return (m_label == rhs.m_label);
+    return (m_feat_str == rhs.m_feat_str);
 }
 
 const CCacheImpl::TFeatValue &
-CCacheImpl::GetLabelToFeats(
-    const SLabelKey & label, const CTSE_Handle & tse_arg)
+CCacheImpl::GetFeatStrKeyToFeats(
+    const SFeatStrKey & feat_str_key, const CTSE_Handle & tse_arg)
 {
-    const CBioseq_Handle & bsh = label.m_bioseq;
+    const CBioseq_Handle & bsh = feat_str_key.m_bioseq;
 
     // caller must give us something to work with
     _ASSERT(bsh || tse_arg);
@@ -3575,7 +3575,7 @@ CCacheImpl::GetLabelToFeats(
     const CTSE_Handle & tse = (tse_arg ? tse_arg : bsh.GetTSE_Handle());
 
     // load cache if empty
-    if( m_labelToFeatsCache.empty() ) {
+    if( m_featStrKeyToFeatsCache.empty() ) {
         // (for now just indexes genes, but more may be added in the future)
         SAnnotSelector sel(CSeqFeatData::e_Gene);
         AutoPtr<CFeat_CI> p_gene_ci;
@@ -3595,29 +3595,29 @@ CCacheImpl::GetLabelToFeats(
             // for each one, add an entry for using given Bioseq and the
             // kAnyBioseq (so users can search on any bioseq)
             gene_ref.GetLabel(&label);
-            SLabelKey label_key(eLabelType_Label, bsh, label);
-            m_labelToFeatsCache[label_key].push_back(*gene_ci);
+            SFeatStrKey label_key(eFeatKeyStr_Label, bsh, label);
+            m_featStrKeyToFeatsCache[label_key].push_back(*gene_ci);
             if( bsh ) {
                 label_key.m_bioseq = kAnyBioseq;
-                m_labelToFeatsCache[label_key].push_back(*gene_ci);
+                m_featStrKeyToFeatsCache[label_key].push_back(*gene_ci);
             }
 
             const string & locus_tag = (
                 gene_ref.IsSetLocus_tag() ? gene_ref.GetLocus_tag() :
                 kEmptyStr);
-            SLabelKey locus_tag_key(eLabelType_LocusTag, bsh, locus_tag);
-            m_labelToFeatsCache[locus_tag_key].push_back(*gene_ci);
+            SFeatStrKey locus_tag_key(eFeatKeyStr_LocusTag, bsh, locus_tag);
+            m_featStrKeyToFeatsCache[locus_tag_key].push_back(*gene_ci);
             if( bsh ) {
                 locus_tag_key.m_bioseq = kAnyBioseq;
-                m_labelToFeatsCache[label_key].push_back(*gene_ci);
+                m_featStrKeyToFeatsCache[label_key].push_back(*gene_ci);
             }
         }
     }
 
     // get from cache, if possible
-    TLabelToFeatsCache::const_iterator find_iter =
-        m_labelToFeatsCache.find(label);
-    if( find_iter != m_labelToFeatsCache.end() ) {
+    TFeatStrKeyToFeatsCache::const_iterator find_iter =
+        m_featStrKeyToFeatsCache.find(feat_str_key);
+    if( find_iter != m_featStrKeyToFeatsCache.end() ) {
         return find_iter->second;
     } else {
         // nothing found

@@ -169,31 +169,34 @@ public:
     AutoPtr<TFeatValue> GetFeatFromCacheMulti(
         const vector<SFeatKey> &featKeys);
 
-    enum ELabelType{
-        eLabelType_Label,
-        eLabelType_LocusTag,
+    // this should be used for any kind of "string -> feats" mapping
+    enum EFeatKeyStr{
+        eFeatKeyStr_Label,
+        eFeatKeyStr_LocusTag,
+        // more could be added
     };
-    struct SLabelKey
+    struct SFeatStrKey
     {
         // set bioseq to kAnyBioseq to get data on all bioseqs
-        SLabelKey(ELabelType eLabelType,
+        SFeatStrKey(EFeatKeyStr eFeatKeyStr,
                   const CBioseq_Handle & bioseq,
-                  const string & label) :
-            m_eLabelType(eLabelType), m_bioseq(bioseq), m_label(label) { }
+                  const string & feat_str) :
+            m_eFeatKeyStr(eFeatKeyStr), m_bioseq(bioseq),
+            m_feat_str(feat_str) { }
 
-        ELabelType m_eLabelType;
+        EFeatKeyStr m_eFeatKeyStr;
         CBioseq_Handle m_bioseq;
-        string m_label;
+        string m_feat_str;
 
-        bool operator<(const SLabelKey & rhs) const;
-        bool operator==(const SLabelKey & rhs) const;
+        bool operator<(const SFeatStrKey & rhs) const;
+        bool operator==(const SFeatStrKey & rhs) const;
     };
 
     // The "tse" is used to load the cache if it's empty
     // (for now just indexes genes, but more may be added in the future)
     static const CBioseq_Handle kAnyBioseq;
-    const TFeatValue & GetLabelToFeats(
-        const SLabelKey & label, const CTSE_Handle & tse);
+    const TFeatValue & GetFeatStrKeyToFeats(
+        const SFeatStrKey & feat_str_key, const CTSE_Handle & tse);
 
     //////////
     // cache the bioseq(s) that each feature is on
@@ -240,8 +243,8 @@ private:
     typedef map<SFeatKey, TFeatValue> TFeatCache;
     TFeatCache m_featCache;
 
-    typedef map<SLabelKey, TFeatValue> TLabelToFeatsCache;
-    TLabelToFeatsCache m_labelToFeatsCache;
+    typedef map<SFeatStrKey, TFeatValue> TFeatStrKeyToFeatsCache;
+    TFeatStrKeyToFeatsCache m_featStrKeyToFeatsCache;
 
     typedef map<TFeatToBioseqKey, TFeatToBioseqValue> TFeatToBioseqCache;
     TFeatToBioseqCache m_featToBioseqCache;
