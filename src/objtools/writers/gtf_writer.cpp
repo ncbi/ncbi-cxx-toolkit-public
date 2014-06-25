@@ -129,6 +129,11 @@ bool CGtfWriter::x_WriteFeature(
 			}
             // GTF is not interested --- ignore
             return true;
+		case CSeqFeatData::eSubtype_C_region:
+		case CSeqFeatData::eSubtype_D_segment:
+		case CSeqFeatData::eSubtype_J_segment:
+		case CSeqFeatData::eSubtype_V_segment:
+            return x_WriteFeatureMrna(context, mf);
         case CSeqFeatData::eSubtype_gene: 
             return x_WriteFeatureGene(context, mf);
         case CSeqFeatData::eSubtype_cdregion:
