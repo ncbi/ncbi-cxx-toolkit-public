@@ -56,6 +56,7 @@
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/blastinput/tblastx_args.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
+#include <algo/blast/blastinput/rpsblast_args.hpp>
 #include "blast_input_unit_test_aux.hpp"
 
 #undef NCBI_BOOST_NO_AUTO_TEST_MAIN
@@ -2588,6 +2589,16 @@ BOOST_AUTO_TEST_CASE(PsiBlastAppTestMatrix)
     CRef<CBlastOptionsHandle> opts = psiblast_args.SetOptions(*args);
 
     BOOST_REQUIRE_EQUAL(opts->GetOptions().GetMatrixName(), string("BLOSUM80"));
+}
+
+BOOST_AUTO_TEST_CASE(RpsBlastCBS)
+{
+	CRPSBlastAppArgs rpsblast_args;
+    	CString2Args s2a("-db ecoli ");
+    	auto_ptr<CArgs> args(s2a.CreateCArgs(rpsblast_args));
+	CRef<CBlastOptionsHandle> opts = rpsblast_args.SetOptions(*args);
+    	BOOST_REQUIRE_EQUAL(opts->GetOptions().GetCompositionBasedStats(), 1);
+    	BOOST_REQUIRE(opts->GetOptions().GetSegFiltering() == false);
 }
 
 BOOST_AUTO_TEST_CASE(CheckMutuallyExclusiveOptions)

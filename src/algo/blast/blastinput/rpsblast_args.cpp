@@ -51,6 +51,7 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
     const bool kQueryIsProtein = true;
     const bool kIsRpsBlast = true;
     const bool kIsCBS2and3Supported = false;
+    const bool kFilterByDefault = false;
     CRef<IBlastCmdLineArgs> arg;
     static const string kProgram("rpsblast");
     arg.Reset(new CProgramDescriptionArgs(kProgram,
@@ -72,7 +73,7 @@ CRPSBlastAppArgs::CRPSBlastAppArgs()
     arg.Reset(new CGenericSearchArgs(kQueryIsProtein, kIsRpsBlast));
     m_Args.push_back(arg);
 
-    arg.Reset(new CFilteringArgs(kQueryIsProtein));
+    arg.Reset(new CFilteringArgs(kQueryIsProtein, kFilterByDefault));
     m_Args.push_back(arg);
 
     m_HspFilteringArgs.Reset(new CHspFilteringArgs);
