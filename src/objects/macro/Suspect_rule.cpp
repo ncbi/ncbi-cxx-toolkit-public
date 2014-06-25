@@ -60,7 +60,7 @@ bool CSuspect_rule :: StringMatchesSuspectProductRule(const string& str) const
   }
   else if (CanGetExcept()) {
      const CSearch_func& exc_func = GetExcept();
-     if (!exc_func.Empty() && !exc_func.Match(str)) {
+     if (!exc_func.Empty() && exc_func.Match(str)) {
        return false;
      }
   }

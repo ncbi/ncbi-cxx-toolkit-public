@@ -460,7 +460,7 @@ bool CSearch_func :: Match(const string& str) const
         return x_StringMayContainPlural(str);
      case  CSearch_func::e_N_or_more_brackets_or_parentheses:
         return x_ContainsNorMoreSetsOfBracketsOrParentheses(str, 
-                                       GetN_or_more_brackets_or_parentheses());
+                                      GetN_or_more_brackets_or_parentheses());
      case CSearch_func::e_Three_numbers:
         return x_ContainsThreeOrMoreNumbersTogether (str);
      case CSearch_func::e_Underscore:
