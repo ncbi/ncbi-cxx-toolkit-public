@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
 
     const string swissprot_title("Non-redundant UniProtKB/SwissProt sequences");
-    BOOST_REQUIRE_EQUAL(swissprot_title, dbinfo->GetDescription());
+    BOOST_REQUIRE(NStr::StartsWith(dbinfo->GetDescription(), swissprot_title));
 
     BOOST_REQUIRE(dbinfo->GetTotal_length() > (Int8)7e+7);
     BOOST_REQUIRE(dbinfo->GetNum_sequences() > (Int8)15e+4);
@@ -260,7 +260,6 @@ BOOST_AUTO_TEST_CASE(GetDatabaseInfo)
     BOOST_REQUIRE(dbinfo.NotEmpty());
 
     BOOST_REQUIRE(dbinfo->GetDatabase() == *blastdb);
-    BOOST_REQUIRE_EQUAL("", dbinfo->GetDescription());
     BOOST_REQUIRE_EQUAL((Int8)400, dbinfo->GetNum_sequences());
     BOOST_REQUIRE_EQUAL((Int8)4662239, dbinfo->GetTotal_length());
 
