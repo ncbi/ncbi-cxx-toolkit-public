@@ -143,6 +143,19 @@ public:
 };
 
 
+class CGridRPCBaseClientException : public CException
+{
+public:
+    enum EErrCode
+    {
+        eWaitTimeout,    ///< timeout while waiting for job completion
+        eUnexpectedFailure
+    };
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CGridRPCBaseClientException, CException);
+};
+
+
 ///
 /// CGridRPCBaseClient<typename TConnectTraits>
 ///
@@ -242,6 +255,7 @@ public:
         else {
             // TODO Check 'status' to see if the job's still running or
             // it has failed.
+            NCBI_THROW(CGridRPCBaseClientException, eWaitTimeout, kEmptyStr);
         }
     }
 

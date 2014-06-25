@@ -60,8 +60,15 @@ CTMS_CreateUserTrack_Client::~CTMS_CreateUserTrack_Client()
 CTMS_CreateUserTrack_Client::TReplyRef
 CTMS_CreateUserTrack_Client::Fetch(const TRequest& request) const
 {
-    TReplyRef reply(new TReply());
-    TBaseClient::Ask(request, *reply);
+    CRef<TReply> reply;
+    try {
+        reply.Reset(new TReply());
+        TBaseClient::Ask(request, *reply);
+    }
+    catch (const CException& e) {
+        NCBI_REPORT_EXCEPTION("Exception communicating with TMS-CreateUserTrack service ", e);
+        reply.Reset();
+    }
     return reply;
 }
 

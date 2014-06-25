@@ -2,7 +2,7 @@
 
 LIB = trackmgrgridcli
 
-SRC = blast_client displaytrack_client \
+SRC = tms_exception blast_client displaytrack_client \
       createusertrack_client removeusertrack_client \
       item_resolver_client switch_context_client track_attrvalue_client
 

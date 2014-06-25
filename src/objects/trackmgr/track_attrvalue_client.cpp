@@ -60,8 +60,15 @@ CTMS_TrackAttrValue_Client::~CTMS_TrackAttrValue_Client()
 CTMS_TrackAttrValue_Client::TReplyRef
 CTMS_TrackAttrValue_Client::Fetch(const TRequest& request) const
 {
-    TReplyRef reply(new TReply());
-    TBaseClient::Ask(request, *reply);
+    CRef<TReply> reply;
+    try {
+        reply.Reset(new TReply());
+        TBaseClient::Ask(request, *reply);
+    }
+    catch (const CException& e) {
+        NCBI_REPORT_EXCEPTION("Exception communicating with TMS-TrackAttrValue service ", e);
+        reply.Reset();
+    }
     return reply;
 }
 

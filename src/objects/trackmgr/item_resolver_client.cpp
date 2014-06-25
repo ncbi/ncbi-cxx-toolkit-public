@@ -62,8 +62,15 @@ CTMS_ItemResolver_Client::~CTMS_ItemResolver_Client()
 CTMS_ItemResolver_Client::TReplyRef
 CTMS_ItemResolver_Client::Fetch(const TRequest& request) const
 {
-    TReplyRef reply(new TReply());
-    TBaseClient::Ask(request, *reply);
+    CRef<TReply> reply;
+    try {
+        reply.Reset(new TReply());
+        TBaseClient::Ask(request, *reply);
+    }
+    catch (const CException& e) {
+        NCBI_REPORT_EXCEPTION("Exception communicating with TMS-ItemResolver service ", e);
+        reply.Reset();
+    }
     return reply;
 }
 
