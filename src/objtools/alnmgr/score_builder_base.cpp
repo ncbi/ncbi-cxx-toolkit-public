@@ -1070,8 +1070,12 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
     {
         CSeq_align::EScoreType score_type = CSeq_align::eScore_Score;
         if ((*it)->GetId().IsStr()) {
-            score_type = CSeq_align::ScoreNameMap()
-                             . find((*it)->GetId().GetStr())->second;
+            CSeq_align::TScoreNameMap::const_iterator score = 
+                    CSeq_align::ScoreNameMap()
+                             . find((*it)->GetId().GetStr());
+            if (score != CSeq_align::ScoreNameMap().end()) {
+                score_type = score->second;
+            }
         }
         if (score_type >= CSeq_align::eScore_Matches &&
             score_type <= CSeq_align::eScore_ExonIdentity)
