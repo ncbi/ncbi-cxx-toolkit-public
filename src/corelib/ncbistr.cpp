@@ -6127,7 +6127,7 @@ SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
         SIZE_TYPE more = 0;
         bool good = x_EvalFirst(*src, more);
         while (more-- && good) {
-            good = x_EvalNext(*(++src));
+            good = (++src != to) && x_EvalNext(*src);
         }
         if ( !good ) {
             return count;
