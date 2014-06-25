@@ -1119,7 +1119,6 @@ int CGridWorkerNode::Run(
         control_thread->Prepare();
     }
     catch (CServer_Exception& e) {
-        x_StopWorkerThreads();
         if (e.GetErrCode() == CServer_Exception::eCouldntListen) {
             ERR_POST("Couldn't start a listener on a port from the "
                     "specified control port range; last port tried: " <<
