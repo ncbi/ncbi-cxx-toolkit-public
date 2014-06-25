@@ -92,7 +92,12 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
 
 CWriteDB_Impl::~CWriteDB_Impl()
 {
-    Close();
+    try {
+    	Close();
+    } catch (const CWriteDBException& e) {
+	 LOG_POST(Error << "BLAST Database creation error: " << e.GetMsg());
+    }
+
 }
 
 void CWriteDB_Impl::x_ResetSequenceData()
