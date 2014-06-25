@@ -242,32 +242,36 @@ inline bool s_ASCII_IsValidNuc(unsigned char c)
 
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
     : m_LineReader(&reader), m_MaskVec(0), 
+      m_IDGenerator(new CSeqIdGenerator), 
       m_gapNmin(0), m_gap_Unknown_length(0),
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+      m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
     : m_LineReader(ILineReader::New(in)), m_MaskVec(0),
+      m_IDGenerator(new CSeqIdGenerator), 
       m_gapNmin(0), m_gap_Unknown_length(0),
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+      m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(const string& path, TFlags flags)
     : m_LineReader(ILineReader::New(path)), m_MaskVec(0),
+      m_IDGenerator(new CSeqIdGenerator), 
       m_gapNmin(0), m_gap_Unknown_length(0),
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+      m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags)
     : CReaderBase(fBaseFlags), m_MaskVec(0), 
+      m_IDGenerator(new CSeqIdGenerator), 
       m_gapNmin(0), m_gap_Unknown_length(0),
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+      m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
@@ -1384,8 +1388,11 @@ void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
     AssignMolType(pMessageListener);
 
     // apply source mods *after* figuring out mol type
-    ITERATE(vector<SLineTextAndLoc>, title_ci, m_CurrentSeqTitles) {
-        ParseTitle(*title_ci, pMessageListener);
+    if (TestFlag(fParseTitle) || TestFlag(fAddMods) ) 
+    {
+        ITERATE(vector<SLineTextAndLoc>, title_ci, m_CurrentSeqTitles) {
+            ParseTitle(*title_ci, pMessageListener);
+        }
     }
     m_CurrentSeqTitles.clear();
 
@@ -2204,7 +2211,7 @@ void CFastaReader::PostWarning(
         return;
 
 
-    const CTempString sSeqId_49518053 = ( m_BestID ? m_BestID->AsFastaString() : kEmptyStr);                  
+    string sSeqId_49518053 = ( m_BestID ? m_BestID->AsFastaString() : kEmptyStr);                  
     AutoPtr<CObjReaderLineException> pLineExpt(                        
         CObjReaderLineException::Create(                            
         (_eSeverity), _uLineNum,                        
@@ -2219,6 +2226,11 @@ void CFastaReader::PostWarning(
     {                                       
         throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, _eErrCode, _MessageStrmOps, _uLineNum, _eSeverity);
     }                                                               
+}
+
+void CFastaReader::IgnoreProblem(ILineError::EProblem problem)
+{
+    m_ignorable.push_back(problem);
 }
 
 END_SCOPE(objects)
