@@ -186,6 +186,7 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
         }
     }
     catch(const CException& ex) {
+        GetDS().SetLogStream(&cerr);
         DBAPI_BOOST_FAIL(ex);
     }
     catch (...) {
