@@ -92,7 +92,7 @@ private:
         CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
         scope->AddDefaults();
 
-        CFastaReader::TFlags flags = CFastaReader::fAssumeNuc;
+        CFastaReader::TFlags flags = CFastaReader::fAssumeNuc | CFastaReader::fParseTitle;
         if (parse_seqids) {
             flags |= CFastaReader::fAllSeqIds | CFastaReader::fUniqueIDs;
         } else {

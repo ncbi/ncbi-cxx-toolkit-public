@@ -318,6 +318,7 @@ CRef<CScope> CreateScope(const string& filename)
     CFastaReader fasta_reader(line_reader, 
                               CFastaReader::fAssumeProt |
                               CFastaReader::fForceType |
+                              CFastaReader::fParseTitle |
                               CFastaReader::fNoParseID);
 
     while (!line_reader.AtEOF()) {
