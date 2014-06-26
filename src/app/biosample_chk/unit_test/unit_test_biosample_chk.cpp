@@ -119,12 +119,15 @@ BOOST_AUTO_TEST_CASE(Test_GetBiosampleDiffs)
     CheckDiffs(expected, diff_list);
 
     // ignore certain diffs in Org-ref
-    unit_test_util::SetOrgMod(*test_sample, COrgMod::eSubtype_pathovar, "path");
-    unit_test_util::SetOrgMod(*test_sample, COrgMod::eSubtype_specimen_voucher, "spec");
-    expected.push_back(CRef<CFieldDiff>(new CFieldDiff("specimen-voucher", "", "spec")));
+    unit_test_util::SetOrgMod(*test_sample, COrgMod::eSubtype_acronym, "acronym");
     diff_list = test_src->GetBiosampleDiffs(*test_sample);
     CheckDiffs(expected, diff_list);
 
+    // ignore some case differences
+    unit_test_util::SetSubSource(*test_src, CSubSource::eSubtype_cell_type, "abc");
+    unit_test_util::SetSubSource(*test_sample, CSubSource::eSubtype_cell_type, "ABC");
+    diff_list = test_src->GetBiosampleDiffs(*test_sample);
+    CheckDiffs(expected, diff_list);
 
     try {
         test_src->UpdateWithBioSample(*test_sample, false);
@@ -136,13 +139,33 @@ BOOST_AUTO_TEST_CASE(Test_GetBiosampleDiffs)
     try {
         test_src->UpdateWithBioSample(*test_sample, true);
         BOOST_CHECK_EQUAL(test_src->GetOrg().GetTaxname(), "B");
-        BOOST_CHECK_EQUAL(test_src->GetSubtype().front()->GetName(), "1");
-        BOOST_CHECK_EQUAL(test_src->GetSubtype().back()->GetName(), "male");
-        BOOST_CHECK_EQUAL(test_src->GetOrg().GetOrgname().GetMod().front()->GetSubname(), "path");
-        BOOST_CHECK_EQUAL(test_src->GetOrg().GetOrgname().GetMod().back()->GetSubname(), "spec");
+        vector<string> vals;
+        vals.push_back("male");
+        vals.push_back("1");
+        vals.push_back("abc");
+        vector<string>::iterator sit = vals.begin();
+        ITERATE(CBioSource::TSubtype, it, test_src->GetSubtype()) {
+            if (sit == vals.end()) {
+                BOOST_CHECK_EQUAL("Unexpected SubSource Value", (*it)->GetName());
+            } else {
+                BOOST_CHECK_EQUAL((*it)->GetName(), *sit);
+                sit++;
+            }
+        }
+        BOOST_CHECK_EQUAL(test_src->GetOrg().IsSetOrgMod(), false);
     } catch (CException& e) {
         BOOST_CHECK_EQUAL("Unexpected exception", e.GetMsg());
     }
+
+    // ignore name elements if in taxname
+    unit_test_util::SetOrgMod(*test_src, COrgMod::eSubtype_biovar, "XYZ");
+    test_src->SetOrg().SetTaxname("B XYZ");
+    test_sample->SetOrg().SetTaxname("B XYZ");
+
+    expected.clear();
+    diff_list = test_src->GetBiosampleDiffs(*test_sample);
+    CheckDiffs(expected, diff_list);
+
 
 }
 
@@ -175,6 +198,16 @@ BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
     TFieldDiffList expected;
     CheckDiffs(expected, diff_list);
 
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FuzzyStrainMatch)
+{
+    BOOST_CHECK_EQUAL(COrgMod::FuzzyStrainMatch("abc", "ABC"), true);
+    BOOST_CHECK_EQUAL(COrgMod::FuzzyStrainMatch("ab c", "ABC"), true);
+    BOOST_CHECK_EQUAL(COrgMod::FuzzyStrainMatch("a/b c", "ABC"), true);
+    BOOST_CHECK_EQUAL(COrgMod::FuzzyStrainMatch("a/b c", "AB:C"), true);
+    BOOST_CHECK_EQUAL(COrgMod::FuzzyStrainMatch("a/b d", "AB:C"), false);
 }
 
 

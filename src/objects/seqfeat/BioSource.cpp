@@ -630,52 +630,44 @@ void CBioSource::x_RemoveStopWords(COrg_ref& org_ref)
 
 void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
 {
-    if (!force) {
-        TFieldDiffList diffs = GetBiosampleDiffs(biosample);
+    TFieldDiffList diffs = GetBiosampleDiffs(biosample);
+    if (!force) {        
         if (diffs.size() > 0) {
             // throw exception
             NCBI_THROW(CException, eUnknown, "Conflicts found");                      
         }
     }
-    if (biosample.IsSetOrg()) {
-        SetOrg().Assign(biosample.GetOrg());
-        x_RemoveStopWords(SetOrg());
-    } else {
-        ResetOrg();
-    }
 
-    // only values that must stay the same are removed from the existing source
-    x_ClearCoordinatedBioSampleSubSources();
-
-    if (biosample.IsSetSubtype()) {
-        ITERATE(CBioSource::TSubtype, it, biosample.GetSubtype()) {
-            if (IsStopWord((*it)->GetName())) {
-                continue;
-            }
-            if (s_MustCopy((*it)->GetSubtype())) {
-                CRef<CSubSource> s(new CSubSource());
-                s->Assign(**it);
-                SetSubtype().push_back(s);
-            } else {
-                // if the master has a value, the contig's value must be updated,
-                // but if the master had no value, the contig's value would have
-                // been allowed to remain
-                bool found = false;
-                NON_CONST_ITERATE (CBioSource::TSubtype, sit, SetSubtype()) {
-                    if ((*it)->GetSubtype() == (*sit)->GetSubtype()) {
-                        found = true;
-                        (*sit)->SetName((*it)->GetName());
-                        break;
-                    }
+    ITERATE(TFieldDiffList, it, diffs) {
+        if (NStr::EqualNocase((*it)->GetFieldName(), "Organism Name")) {
+            SetOrg().SetTaxname((*it)->GetSampleVal());
+        } else {
+            try {
+                COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue((*it)->GetFieldName());
+                RemoveOrgMod(subtype);
+                if (!NStr::IsBlank((*it)->GetSampleVal())) {
+                    CRef<COrgMod> mod(new COrgMod());
+                    mod->SetSubtype(subtype);
+                    mod->SetSubname((*it)->GetSampleVal());
+                    SetOrg().SetOrgname().SetMod().push_back(mod);
                 }
-                if (!found) {
-                    CRef<CSubSource> s(new CSubSource());
-                    s->Assign(**it);
-                    SetSubtype().push_back(s);                        
+            } catch (...) {
+                try {
+                    CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue((*it)->GetFieldName());
+                    RemoveSubSource(subtype);
+                    if (!NStr::IsBlank((*it)->GetSampleVal())) {
+                        CRef<CSubSource> sub(new CSubSource());
+                        sub->SetSubtype(subtype);
+                        sub->SetName((*it)->GetSampleVal());
+                        SetSubtype().push_back(sub);
+                    }
+                } catch (...) {
+                    NCBI_THROW(CException, eUnknown, "Unknown field name");
                 }
             }
         }
     }
+
     AutoFix();
 }
 
@@ -796,6 +788,60 @@ CBioSource::TNameValList CBioSource::x_GetSubtypeNameValPairs() const
 }
 
 
+static const char* const s_IgnoreCaseQuals[] = {
+    "cell-type",
+    "collected-by",
+    "dev-stage",
+    "frequency",
+    "group",
+    "identified-by",
+    "isolation-source",
+    "metagenome-source",
+    "note",
+    "phenotype",
+    "subgroup",
+    "tissue-type"
+};
+
+typedef CStaticArraySet<const char*, PNocase_CStr> TCIgnoreCaseQualsSet;
+static const TCIgnoreCaseQualsSet s_IgnoreCaseQualsSet(s_IgnoreCaseQuals, sizeof(s_IgnoreCaseQuals), __FILE__, __LINE__);
+
+bool s_MayIgnoreCase(const string& value)
+{   
+    if (s_IgnoreCaseQualsSet.find(value.c_str()) != s_IgnoreCaseQualsSet.end()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+static const char* const s_TaxNameElementQuals[] = {
+    "biovar",
+    "chemovar",
+    "forma",
+    "forma-specialis",
+    "genotype",
+    "pathova",
+    "serotype",
+    "serovar",
+    "subspecies",
+    "variety"
+};
+
+typedef CStaticArraySet<const char*, PNocase_CStr> TCTaxNameElementQualsSet;
+static const TCTaxNameElementQualsSet s_TaxNameElementQualsSet(s_TaxNameElementQuals, sizeof(s_TaxNameElementQuals), __FILE__, __LINE__);
+
+bool s_IsTaxNameElement(const string& value)
+{   
+    if (s_TaxNameElementQualsSet.find(value.c_str()) != s_TaxNameElementQualsSet.end()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 typedef enum {
   eConflictIgnoreAll = 0,
   eConflictIgnoreMissingInBioSource,
@@ -825,19 +871,9 @@ static IgnoreConflictData sIgnoreConflictList[] = {
   { "old-lineage", eConflictIgnoreMissingInBioSample } ,
   { "old-name", eConflictIgnoreMissingInBioSample } ,
   { "acronym", eConflictIgnoreAll },
-  { "biovar", eConflictIgnoreAll } ,
-  { "chemovar", eConflictIgnoreAll } ,
-  { "forma", eConflictIgnoreAll } ,
-  { "forma-specialis", eConflictIgnoreAll } ,
   { "gb-synonym", eConflictIgnoreAll } ,
   { "lineage", eConflictIgnoreAll } ,
-  { "pathovar", eConflictIgnoreAll } ,
-  { "serotype", eConflictIgnoreAll } ,
-  { "serovar", eConflictIgnoreAll } ,
-  { "subspecies", eConflictIgnoreAll } ,
-  { "sub-species", eConflictIgnoreAll } ,
   { "synonym", eConflictIgnoreAll } ,
-  { "variety", eConflictIgnoreAll } ,
   { "StructuredCommentPrefix", eConflictIgnoreAll} ,
   { "StructuredCommentSuffix", eConflictIgnoreAll}
 };
@@ -866,8 +902,20 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
     int i;
     bool rval = false;
 
-    if (NStr::EqualNocase(src_val, sample_val) || (NStr::IsBlank(src_val) && CBioSource::IsStopWord(sample_val))) {
+    // ignore if BioSource value is blank and BioSample value is a stop word
+    if (NStr::IsBlank(src_val) && CBioSource::IsStopWord(sample_val)) {
         return true;
+    }
+
+    // ignore if case matches exactly
+    if (s_MayIgnoreCase(label)) {
+        if (NStr::EqualNocase(src_val, sample_val)) {
+            return true;
+        }
+    } else {
+        if (NStr::EqualCase(src_val, sample_val)) {
+            return true;
+        }
     }
 
     if (!NStr::IsBlank(src_val) && !NStr::IsBlank(sample_val)) {
@@ -1024,6 +1072,41 @@ void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
 }
 
 
+void CBioSource::x_RemoveNameElementDiffs(const CBioSource& biosample, TFieldDiffList& diff_list) const
+{
+    string src_tax = "";
+    if (IsSetOrg() && GetOrg().IsSetTaxname()) {
+        src_tax = GetOrg().GetTaxname();
+    }
+    string sample_tax = "";
+    if (biosample.IsSetOrg() && biosample.GetOrg().IsSetTaxname()) {
+        sample_tax = biosample.GetOrg().GetTaxname();
+    }
+    TFieldDiffList::iterator it = diff_list.begin();
+    while (it != diff_list.end()) {
+        bool remove = false;
+        if (s_IsTaxNameElement((*it)->GetFieldName())) {
+            if (NStr::IsBlank((*it)->GetSampleVal())
+                && NStr::Find(sample_tax, (*it)->GetSrcVal()) != string::npos) {
+                // if value is missing from BioSample, but is present in BioSample taxname,
+                // ignore
+                remove = true;
+            } else if (NStr::IsBlank((*it)->GetSrcVal())
+                       && NStr::Find(src_tax, (*it)->GetSampleVal()) != string::npos) {
+                // if value is missing from BioSource, but is present in BioSource taxname,
+                // ignore
+                remove = true;
+            }
+        }
+        if (remove) {
+            it = diff_list.erase(it);
+        } else {
+            it++;
+        }
+    }
+}
+
+
 TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
 {
     TFieldDiffList rval;
@@ -1035,7 +1118,7 @@ TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
     sort(sample_list.begin(), sample_list.end(), s_CompareNameVals);
 
     GetFieldDiffsFromNameValLists(rval, src_list, sample_list);
-
+    x_RemoveNameElementDiffs(biosample, rval);
     return rval;
 }
 
@@ -1105,6 +1188,50 @@ void CBioSource::AutoFix()
             SetOrg().SetOrgname().ResetMod();
         }
     }
+}
+
+
+bool CBioSource::RemoveSubSource(unsigned int subtype)
+{
+    bool rval = false;
+
+    if (IsSetSubtype()) {
+        CBioSource::TSubtype::iterator it = SetSubtype().begin();
+        while (it != SetSubtype().end()) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
+                it = SetSubtype().erase(it);
+                rval = true;
+            } else {
+                it++;
+            }
+        }
+        if (GetSubtype().empty()) {
+            ResetSubtype();
+        }
+    }
+    return rval;
+}
+
+
+bool CBioSource::RemoveOrgMod(unsigned int subtype)
+{
+    bool rval = false;
+
+    if (IsSetOrg() && GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetMod()) {
+        COrgName::TMod::iterator it = SetOrg().SetOrgname().SetMod().begin();
+        while (it != SetOrg().SetOrgname().SetMod().end()) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
+                it = SetOrg().SetOrgname().SetMod().erase(it);
+                rval = true;
+            } else {
+                it++;
+            }
+        }
+        if (GetOrg().GetOrgname().GetMod().empty()) {
+            SetOrg().SetOrgname().ResetMod();
+        }
+    }
+    return rval;
 }
 
 

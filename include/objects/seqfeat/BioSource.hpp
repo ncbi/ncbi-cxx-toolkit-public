@@ -128,14 +128,19 @@ public:
 
     void AutoFix();
 
+    bool RemoveSubSource(unsigned int subtype);
+    bool RemoveOrgMod(unsigned int subtype);
+
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);
     CBioSource& operator=(const CBioSource& value);
 
     void x_ClearCoordinatedBioSampleSubSources();
+    void x_ClearCoordinatedBioSampleOrgMods();
     TNameValList x_GetOrgModNameValPairs() const;
     TNameValList x_GetSubtypeNameValPairs() const;
+    void x_RemoveNameElementDiffs(const CBioSource& biosample, TFieldDiffList& diff_list) const;
 
     // for handling StopWords from BioSample
     static void x_InitStopWords(void);
