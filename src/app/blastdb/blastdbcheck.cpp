@@ -814,7 +814,7 @@ private:
             CFile f(CDirEntry::MakePath(dir, tokens[i]));
 
             // File naming check 
-            if (tokens[0] == "OIDLIST" && f.GetExt() != "msk") {
+            if (tokens[0] == "OIDLIST" && f.GetExt() != ".msk") {
                 Log(name, e_Details) << "  [WARNING] oidlist file " << tokens[i]
                                << " does not have .msk extension" << endl;
             }
