@@ -407,7 +407,8 @@ int CAsn2FlatApp::Run(void)
 
     if (m_Os == NULL  &&  m_On == NULL  &&  m_Og == NULL  &&
         m_Or == NULL  &&  m_Op == NULL  &&  m_Ou == NULL) {
-        NCBI_THROW(CArgException, eSynopsis, "No output (-o*) argument given");
+        // No output (-o*) argument given - default to stdout
+        m_Os = &cout;
     }
 
     // create the flat-file generator

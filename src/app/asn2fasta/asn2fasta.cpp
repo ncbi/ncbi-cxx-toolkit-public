@@ -71,7 +71,7 @@ public:
     CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is);
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
 
-    CFastaOstream* OpenFastaOstream(const string& name);
+    CFastaOstream* OpenFastaOstream(const string& name, bool use_stdout);
 
 private:
     CObjectIStream* x_OpenIStream(const CArgs& args);
@@ -187,25 +187,26 @@ void CAsn2FastaApp::Init(void)
             "Unknown output file name", CArgDescriptions::eOutputFile);
         arg_desc->SetDependency("ou", CArgDescriptions::eExcludes, "o");
 
-        /*
         arg_desc->AddOptionalKey("oq", "QualityScoreOutputFile",
             "Quality score output file name", CArgDescriptions::eOutputFile);
-        */
     }}
 
     SetupArgDescriptions(arg_desc.release());
 }
 
 //  --------------------------------------------------------------------------
-CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& name)
+CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& name, bool use_stdout)
 //  --------------------------------------------------------------------------
 {
     const CArgs& args = GetArgs();
 
-    if (! args[name]) return NULL;
+    if (! use_stdout) {
+        if (! args[name]) return NULL;
+    }
 
     auto_ptr<CFastaOstream> fasta_os
-        ( new CFastaOstream( args[name].AsOutputFile() ) );
+        ( new CFastaOstream( use_stdout? cout : args[name].AsOutputFile()
+         ) );
 
     fasta_os->SetAllFlags(
         CFastaOstream::fInstantiateGaps |
@@ -259,14 +260,13 @@ int CAsn2FastaApp::Run(void)
     m_Scope->AddDefaults();
 
     // open the output streams
-    m_Os.reset( OpenFastaOstream ("o") );
-    m_On.reset( OpenFastaOstream ("on") );
-    m_Og.reset( OpenFastaOstream ("og") );
-    m_Or.reset( OpenFastaOstream ("or") );
-    m_Op.reset( OpenFastaOstream ("op") );
-    m_Ou.reset( OpenFastaOstream ("ou") );
-    m_Oq = NULL;
-    // m_Oq = args["oq"] ? &(args["oq"].AsOutputFile()) : 0;
+    m_Os.reset( OpenFastaOstream ("o", false) );
+    m_On.reset( OpenFastaOstream ("on", false) );
+    m_Og.reset( OpenFastaOstream ("og", false) );
+    m_Or.reset( OpenFastaOstream ("or", false) );
+    m_Op.reset( OpenFastaOstream ("op", false) );
+    m_Ou.reset( OpenFastaOstream ("ou", false) );
+    m_Oq = args["oq"] ? &(args["oq"].AsOutputFile()) : NULL;
 
     m_OnlyNucs = args["nucs-only"];
     m_OnlyProts = args["prots-only"];
@@ -274,7 +274,8 @@ int CAsn2FastaApp::Run(void)
     if (m_Os.get() == NULL  &&  m_On.get() == NULL  &&  m_Og.get() == NULL  &&
         m_Or.get() == NULL  &&  m_Op.get() == NULL  &&  m_Ou.get() == NULL  &&
         m_Oq == NULL) {
-        NCBI_THROW(CArgException, eSynopsis, "No output (-o*) argument given");
+        // No output (-o*) argument given - default to stdout
+        m_Os.reset( OpenFastaOstream ("", true) );
     }
 
     auto_ptr<CObjectIStream> is;
@@ -516,6 +517,27 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
                     break;
                 default:
                     break;
+            }
+        }
+
+        if ( m_Oq != NULL) {
+            FOR_EACH_SEQANNOT_ON_BIOSEQ (sa_itr, *bsr) {
+                const CSeq_annot& annot = **sa_itr;
+                if (! annot.IsGraph()) continue;
+                FOR_EACH_SEQGRAPH_ON_SEQANNOT (gr_itr, annot) {
+                    const CSeq_graph& graph = **gr_itr;
+                    if (graph.IsSetTitle()) {
+                        const string& g_title = graph.GetTitle();
+                        *m_Oq << "Title: " << g_title << endl;
+                    }
+                    if (graph.IsSetNumval()) {
+                        *m_Oq << "Numval: " << graph.GetNumval() << endl;
+                    }
+                    if (graph.IsSetLoc()) {
+                        const CSeq_loc& loc = graph.GetLoc();
+                        *m_Oq << "Start: " << loc.GetStart(eExtreme_Positional) << ", Stop: " << loc.GetStop(eExtreme_Positional) << endl;
+                    }
+                }
             }
         }
 
