@@ -692,13 +692,21 @@ void CBedReader::xSetFeatureLocationBlock(
     
     ENa_strand strand = xGetStrand(fields);
     CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
+
+    bool negative = fields[5] == "-";
+
+    CPacked_seqint::Tdata& blocks = location.Set();
+
     for (size_t i=0; i < blockCount; ++i) {
         CRef<CSeq_interval> pInterval(new CSeq_interval);
         pInterval->SetId(*pId);
         pInterval->SetFrom(blockStarts[i]);
         pInterval->SetTo(blockStarts[i] + blockSizes[i]);
         pInterval->SetStrand(strand);
-        location.Set().push_back(pInterval);
+        if (negative)
+            blocks.insert(blocks.begin(), pInterval);
+        else
+            blocks.push_back(pInterval);
     }
 
     CRef<CUser_object> pBed(new CUser_object());
