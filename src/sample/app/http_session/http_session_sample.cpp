@@ -253,6 +253,14 @@ int CHttpSessionApp::Run(void)
     }}
 
     {{
+        // POST using shortcut
+        cout << "POST (shortcut) " << sample_url << endl;
+        CHttpResponse response = session.Post(url, "message=POST%20shortcut%20data");
+        PrintResponse(session, response);
+        cout << "-------------------------------------" << endl << endl;
+    }}
+
+    {{
         // Bad GET request
         cout << "GET (404) " << bad_url << endl;
         CHttpRequest req = session.NewRequest(bad_url);

@@ -739,6 +739,28 @@ CHttpRequest CHttpSession::NewRequest(const CUrl& url, ERequestMethod method)
 }
 
 
+CHttpResponse CHttpSession::Get(const CUrl& url)
+{
+    return NewRequest(url, eGet).Execute();
+}
+
+
+CHttpResponse CHttpSession::Post(const CUrl& url,
+                                 CTempString data,
+                                 CTempString content_type)
+{
+    CHttpRequest req = NewRequest(url, ePost);
+    if ( content_type.empty() ) {
+        content_type = kContentType_FormUrlEnc;
+    }
+    req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
+    if ( !data.empty() ) {
+        req.ContentStream() << data;
+    }
+    return req.Execute();
+}
+
+
 // Mutex protecting session cookies.
 DEFINE_STATIC_FAST_MUTEX(s_SessionMutex);
 

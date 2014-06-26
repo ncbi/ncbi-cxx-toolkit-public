@@ -450,11 +450,13 @@ private:
 };
 
 
+/// HTTP session class, holding common data for multiple requests.
 class NCBI_XCONNECT_EXPORT CHttpSession : public CObject,
                                           virtual protected CConnIniter
 {
 public:
-    // Supported request methods, proxy for EReqMethod.
+    /// Supported request methods, proxy for EReqMethod.
+    /// @sa EReqMethod
     enum ERequestMethod {
         eHead = eReqMethod_Head,
         eGet  = eReqMethod_Get,
@@ -467,15 +469,37 @@ public:
     /// The default request method is GET.
     CHttpRequest NewRequest(const CUrl& url, ERequestMethod method = eGet);
 
+    /// Shortcut for GET requests.
+    /// @param url
+    ///   URL to send request to.
+    /// @sa NewRequest() CHttpRequest
+    CHttpResponse Get(const CUrl& url);
+
+    /// Shortcut for POST requests.
+    /// @param url
+    ///   URL to send request to.
+    /// @param data
+    ///   Data to be sent with the request. The data is sent as-is,
+    ///   any required encoding must be performed by the caller.
+    /// @param content_type
+    ///   Content-type. If empty, application/x-www-form-urlencoded
+    ///   is used.
+    /// @sa NewRequest() CHttpRequest
+    CHttpResponse Post(const CUrl& url,
+                       CTempString data,
+                       CTempString content_type = kEmptyStr);
+
     /// Get all stored cookies.
     const CHttpCookies& Cookies(void) const { return m_Cookies; }
-    /// Get non-const cookies.
+    /// Get all stored cookies, non-const.
     CHttpCookies& Cookies(void) { return m_Cookies; }
 
     /// Get flags passed to CConn_HttpStream.
+    /// @sa SetHttpFlags
     THTTP_Flags GetHttpFlags(void) const { return m_HttpFlags; }
     /// Set flags passed to CConn_HttpStream. When sending request,
     /// fHTTP_AdjustOnRedirect is always added to the flags.
+    /// @sa GetHttpFlags
     void SetHttpFlags(THTTP_Flags flags) { m_HttpFlags = flags; }
 
     CHttpSession(void);
