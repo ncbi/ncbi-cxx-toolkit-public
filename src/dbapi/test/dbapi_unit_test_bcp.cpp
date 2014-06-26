@@ -1980,7 +1980,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
                 "    gi1 int NOT NULL, \n"
                 "    gi2 int NOT NULL, \n"
                 "    idty FLOAT NOT NULL, \n"
-                "    transcript TEXT NOT NULL, \n"
+                "    transcript TEXT DEFAULT '' NOT NULL, \n"
                 "    idty_tup2 FLOAT NULL, \n"
                 "    idty_tup4 FLOAT NULL \n"
                 ")"
