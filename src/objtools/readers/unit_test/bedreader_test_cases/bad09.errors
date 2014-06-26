@@ -4,5 +4,9 @@ Message    : Invalid data line: Invalid strand character.
 
 Line No    : 6
 Severity   : Error
-Message    : Invalid data line: Bad "strand" value.
+Message    : Invalid data line: Bad "score" value.
+
+Line No    : 7
+Severity   : Error
+Message    : Invalid data line: Bad "score" value.
 
