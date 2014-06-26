@@ -2240,19 +2240,23 @@ LONGBINARY and VARBINARY.
             curcol = resinfo->columns[res_colnum];
             ++res_colnum;
             src = &(resinfo->current_row[curcol->column_offset]);
+            if (is_blob_type(curcol->column_type)) {
+                src = ((TDSBLOB*)src)->textvalue;
+            }
             /* Maybe it's better to ignore all requests of defaults after first request */
             if (bindcol->column_default) {
-                bindcol->column_default = realloc(bindcol->column_default, curcol->column_size);
+                bindcol->column_default = realloc(bindcol->column_default,
+                                                  curcol->column_cur_size);
             }
             else {
-                bindcol->column_default = malloc(curcol->column_size);
+                bindcol->column_default = malloc(curcol->column_cur_size);
             }
             if (!bindcol->column_default) {
                 ret = TDS_FAIL;
                 break;
             }
 
-            bindcol->column_def_size = curcol->column_size;
+            bindcol->column_def_size = curcol->column_cur_size;
             memcpy(bindcol->column_default, src, bindcol->column_def_size);
         }
     }
