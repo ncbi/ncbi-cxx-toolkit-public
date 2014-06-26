@@ -3258,6 +3258,7 @@ CFastaOstream::GetGapModText(
         case CSeq_gap::eType_unknown:
             // don't show /gap_type - policy changed at SQD-1801
             gap_type = "unknown";
+            need_evidence = is_linkage;
             break;
         case CSeq_gap::eType_fragment:
             gap_type = "within scaffold";
