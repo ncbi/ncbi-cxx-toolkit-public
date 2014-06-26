@@ -823,32 +823,41 @@ void CBedReader::xSetFeatureBedData(
     pDisplayData->SetType().SetStr("DisplaySettings");
     exts.push_front(pDisplayData);
 
-    try {
-        int int_score = NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow );
-        if (int_score == 0)
-        {
-            if (fields[4].compare("0") == 0)
-            {
-                pDisplayData->AddField("score", int_score);
-            }
-            else
-            {
-                double score = NStr::StringToDouble(fields[4]);       
-                pDisplayData->AddField("score", score);
-            }
+    int int_score = NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow );
+    double d_score = 0;
+
+    if (int_score == 0 && fields[4].compare("0") != 0)
+    {
+        try {
+            d_score = NStr::StringToDouble(fields[4]);
         }
-        else
-        {
-            pDisplayData->AddField("score", int_score);
+        catch(std::exception&) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Invalid data line: Bad \"score\" value.") );
+            pErr->Throw();
         }
     }
-    catch(std::exception&) {
+
+    if (d_score < 0 || int_score < 0)
+    {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Invalid data line: Bad \"strand\" value.") );
+            "Invalid data line: Bad \"score\" value.") );
         pErr->Throw();
+    }
+    else
+    if (d_score > 0)
+    {
+        pDisplayData->AddField("score", d_score);
+    }
+    else
+    {
+        pDisplayData->AddField("score", int_score);
     }
 
     if (fields.size() < 9) {
