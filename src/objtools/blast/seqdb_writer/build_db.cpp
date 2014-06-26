@@ -705,13 +705,13 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     typedef CFastaReader::EFlags TFlags;
     
     int iflags = CFastaReader::fAllSeqIds |
-                 CFastaReader::fForceType |
-                 CFastaReader::fParseGaps;
+                 CFastaReader::fForceType;
     
     if (is_protein) {
         iflags |= CFastaReader::fAssumeProt;
     } else {
         iflags |= CFastaReader::fAssumeNuc;
+        iflags |=  CFastaReader::fParseGaps;
     }
     
     if (parse_ids) {
