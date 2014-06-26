@@ -52,6 +52,13 @@
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
 
+#include <objects/blast/Blast4_archive.hpp>
+#include <objects/blast/Blas_get_searc_resul_reply.hpp>
+#include <objects/blast/Blast4_request.hpp>
+#include <objects/blast/Blast4_request_body.hpp>
+#include <objects/blast/Blast4_queue_search_reques.hpp>
+#include <objects/blast/Blast4_queries.hpp>
+
 using namespace std;
 using namespace ncbi;
 using namespace ncbi::objects;
@@ -289,6 +296,41 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     	BOOST_REQUIRE(results[2].find(ref_2) != NPOS);
     	BOOST_REQUIRE(results[6].find(ref_6) != NPOS);
     }
+}
+
+// SB-1177
+BOOST_AUTO_TEST_CASE(ExtractCorrectSeqIdWhenThereIsSourceObjectInDescription) {
+
+    const string blastArchiveName = "data/query_w_metadata.blast_archive.asn";
+    CRef<CBlast4_archive> ba(new CBlast4_archive);
+
+    ifstream in(blastArchiveName.c_str());
+    in >> MSerial_AsnText >> *ba;
+    in.close();
+    BOOST_REQUIRE(ba.NotEmpty());
+
+    const CSeq_align_set::Tdata& seqalign_list = ba->GetResults().GetAlignments().Get();
+
+    const string kDbName("nt.14");
+    const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eNucleotide);
+    TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
+    CRef<CScope> scope = tmp_data_loader.NewScope();
+    const CBioseq_set& bioseqs = ba->GetRequest().GetBody().GetQueue_search().GetQueries().GetBioseq_set();
+    scope->AddTopLevelSeqEntry(*bioseqs.GetSeq_set().front());
+
+    CNcbiOstrstream output_stream;
+    CBlastTabularInfo ctab(output_stream, "qseqid");
+    ctab.SetParseLocalIds(true);    // if this isn't set, the local ID is ignored
+
+    ITERATE(list<CRef<CSeq_align> >, iter, seqalign_list)
+    {
+       ctab.SetFields(**iter, *scope);
+       ctab.Print();
+    }
+
+    string output = CNcbiOstrstreamToString(output_stream);
+    BOOST_REQUIRE(NStr::StartsWith(output, "Query_1"));
+    BOOST_REQUIRE(output.find("Macaca") == NPOS);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
