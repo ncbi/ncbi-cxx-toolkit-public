@@ -333,6 +333,7 @@ void CAsnvalApp::ValidateOneFile(string fname)
     time_t start_time = time(NULL);
     auto_ptr<CNcbiOfstream> local_stream;
 
+    try {
     if (!m_ValidErrorStream) {
         string path = fname;
         size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
@@ -346,20 +347,28 @@ void CAsnvalApp::ValidateOneFile(string fname)
 
         ConstructOutputStreams();
     }
+    } catch (CException) {
+    }
     m_In = OpenFile(fname);
     if (m_In.get() != 0)
     {
-        if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
-            // Open File 
-            ProcessReleaseFile(args);
-        } else {
+        try {
+            if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
+                // Open File 
+                ProcessReleaseFile(args);
+            } else {
 
-            CConstRef<CValidError> eval = ValidateInput ();
+                CConstRef<CValidError> eval = ValidateInput ();
 
-            if ( eval ) {
-                PrintValidError(eval, args);
+                if ( eval ) {
+                    PrintValidError(eval, args);
+                }
+
             }
-
+        } catch (CException &e) {
+            // Also log to XML?
+            ERR_POST(e);
+            ++m_Reported;
         }
     }
     time_t stop_time = time(NULL);
@@ -444,6 +453,7 @@ int CAsnvalApp::Run(void)
         NCBI_THROW(CException, eUnknown, "Specific argument -a must be used along with -b flags" );
     }
 
+    try {
     ConstructOutputStreams();
 
     if ( args["p"] ) {
@@ -452,6 +462,8 @@ int CAsnvalApp::Run(void)
         if (args["i"]) {
             ValidateOneFile (args["i"].AsString());
         }
+    }
+    } catch (CException) {
     }
 
     time_t stop_time = time(NULL);
@@ -528,7 +540,7 @@ void CAsnvalApp::ReadClassMember
                 scope->RemoveTopLevelSeqEntry(seh);
                 scope->ResetHistory();
                 n++;
-            } catch (exception e) {
+            } catch (exception&) {
                 if ( !m_Continue ) {
                     throw;
                 }
