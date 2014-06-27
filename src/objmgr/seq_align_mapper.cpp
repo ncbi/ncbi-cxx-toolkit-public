@@ -104,12 +104,26 @@ void CSeq_align_Mapper::x_ConvertAlignCvt(CSeq_loc_Conversion_Set& cvts)
     if (cvts.m_CvtByIndex.size() == 0) {
         // Single mapping
         _ASSERT(cvts.m_SingleConv);
-        x_ConvertRowCvt(*cvts.m_SingleConv, cvts.m_SingleIndex);
+        if ( cvts.m_SingleIndex == cvts.kAllIndexes ) {
+            for ( size_t row = 0; row < GetMaxDim(); ++row ) {
+                x_ConvertRowCvt(*cvts.m_SingleConv, row);
+            }
+        }
+        else {
+            x_ConvertRowCvt(*cvts.m_SingleConv, cvts.m_SingleIndex);
+        }
         return;
     }
     NON_CONST_ITERATE(CSeq_loc_Conversion_Set::TConvByIndex, idx_it,
-        cvts.m_CvtByIndex) {
-        x_ConvertRowCvt(idx_it->second, idx_it->first);
+                      cvts.m_CvtByIndex) {
+        if ( idx_it->first == cvts.kAllIndexes ) {
+            for ( size_t row = 0; row < GetMaxDim(); ++row ) {
+                x_ConvertRowCvt(idx_it->second, row);
+            }
+        }
+        else {
+            x_ConvertRowCvt(idx_it->second, idx_it->first);
+        }
     }
 }
 
