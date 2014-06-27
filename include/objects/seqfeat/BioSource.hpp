@@ -118,6 +118,7 @@ public:
     void UpdateWithBioSample(const CBioSource& biosample, bool force);
 
     TFieldDiffList GetBiosampleDiffs(const CBioSource& biosample) const;
+    bool BiosampleDiffsOkForUpdate(const TFieldDiffList& diffs) const;
 
     typedef pair<string, string> TNameVal;
     typedef vector<TNameVal> TNameValList;

@@ -201,6 +201,126 @@ BOOST_AUTO_TEST_CASE(Test_UpdateWithBioSample)
 }
 
 
+const char *sc_TestSQD1833_Src = "\
+BioSource ::= { \
+  genome genomic, \
+  org { \
+    taxname \"Escherichia coli\", \
+    db { \
+      { \
+        db \"taxon\", \
+        tag id 562 \
+      } \
+    }, \
+    orgname { \
+      name binomial { \
+        genus \"Escherichia\", \
+        species \"coli\" \
+      }, \
+      lineage \"Bacteria; Proteobacteria; Gammaproteobacteria; \
+ Enterobacteriales; Enterobacteriaceae; Escherichia\", \
+      gcode 11, \
+      div \"BCT\" \
+    } \
+  } \
+} \
+";
+
+
+const char *sc_TestSQD1833_Smpl = "\
+BioSource ::= { \
+  org { \
+    taxname \"Escherichia coli\", \
+    db { \
+      { \
+        db \"taxon\", \
+        tag id 562 \
+      } \
+    }, \
+    syn { \
+      \"bacterium E3\", \
+      \"Enterococcus coli\", \
+      \"Bacterium coli commune\", \
+      \"Bacterium coli\", \
+      \"Bacillus coli\" \
+    }, \
+    orgname { \
+      name binomial { \
+        genus \"Escherichia\", \
+        species \"coli\" \
+      }, \
+      mod { \
+        { \
+          subtype nat-host, \
+          subname \"Homo sapiens\" \
+        }, \
+        { \
+          subtype strain, \
+          subname \"CS01\" \
+        } \
+      }, \
+      lineage \"Bacteria; Proteobacteria; Gammaproteobacteria; \
+ Enterobacteriales; Enterobacteriaceae; Escherichia\", \
+      gcode 11, \
+      div \"BCT\" \
+    } \
+  }, \
+  subtype { \
+    { \
+      subtype collection-date, \
+      name \"24-Jun-2013\" \
+    }, \
+    { \
+      subtype country, \
+      name \"USA: Santa Clara\" \
+    }, \
+    { \
+      subtype isolation-source, \
+      name \"Human fecal sample\" \
+    } \
+  } \
+} \
+";
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_1833)
+{
+    CBioSource src;
+    {{
+         CNcbiIstrstream istr(sc_TestSQD1833_Src);
+         istr >> MSerial_AsnText >> src;
+     }}
+
+    CBioSource smpl;
+    {{
+         CNcbiIstrstream istr(sc_TestSQD1833_Smpl);
+         istr >> MSerial_AsnText >> smpl;
+     }}
+
+
+    try {
+        src.UpdateWithBioSample(smpl, false);
+        vector<string> vals;
+        vals.push_back("24-Jun-2013");
+        vals.push_back("USA: Santa Clara");
+        vals.push_back("Human fecal sample");
+        vector<string>::iterator sit = vals.begin();
+        ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
+            if (sit == vals.end()) {
+                BOOST_CHECK_EQUAL("Unexpected SubSource Value", (*it)->GetName());
+            } else {
+                BOOST_CHECK_EQUAL((*it)->GetName(), *sit);
+                sit++;
+            }
+        }
+    } catch (CException& e) {
+        BOOST_CHECK_EQUAL("Unexpected exception", e.GetMsg());
+    }
+
+    
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_FuzzyStrainMatch)
 {
     BOOST_CHECK_EQUAL(COrgMod::FuzzyStrainMatch("abc", "ABC"), true);

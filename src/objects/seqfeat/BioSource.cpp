@@ -628,14 +628,23 @@ void CBioSource::x_RemoveStopWords(COrg_ref& org_ref)
 }
 
 
+bool CBioSource::BiosampleDiffsOkForUpdate(const TFieldDiffList& diffs) const
+{
+    ITERATE(TFieldDiffList, it, diffs) {
+        if (!NStr::IsBlank((*it)->GetSrcVal())) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
 {
     TFieldDiffList diffs = GetBiosampleDiffs(biosample);
-    if (!force) {        
-        if (diffs.size() > 0) {
-            // throw exception
-            NCBI_THROW(CException, eUnknown, "Conflicts found");                      
-        }
+    if (!force && !BiosampleDiffsOkForUpdate(diffs)) {        
+        // throw exception
+        NCBI_THROW(CException, eUnknown, "Conflicts found");                      
     }
 
     ITERATE(TFieldDiffList, it, diffs) {
