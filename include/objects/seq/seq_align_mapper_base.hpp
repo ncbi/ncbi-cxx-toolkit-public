@@ -169,6 +169,9 @@ protected:
     // Get the linked seq-loc mapper
     CSeq_loc_Mapper_Base& GetLocMapper(void) const { return m_LocMapper; }
 
+    /// Get max number of rows of all segments
+    size_t GetMaxDim(void) const;
+
     // Create sub-mapper to map sub-alignment. Used to map nested alignments.
     virtual CSeq_align_Mapper_Base*
         CreateSubAlign(const CSeq_align& align);
@@ -366,6 +369,14 @@ const CSeq_align_Mapper_Base::TSegments&
 CSeq_align_Mapper_Base::GetSegments(void) const
 {
     return m_Segs;
+}
+
+
+inline
+size_t
+CSeq_align_Mapper_Base::GetMaxDim(void) const
+{
+    return m_Dim;
 }
 
 
