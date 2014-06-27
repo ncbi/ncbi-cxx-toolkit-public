@@ -46,6 +46,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
        CSummarizeSusProdRule (void) {};
        ~CSummarizeSusProdRule () {};
 
+       string SummarizeSuspectRule(const CSuspect_rule& rule);
        string SummarizeSuspectRuleEx(const CSuspect_rule& rule, 
                                      bool short_version = true);
        string SummarizeSearchFunc (const CSearch_func& func, 
