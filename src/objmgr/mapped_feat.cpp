@@ -84,9 +84,8 @@ void CMappedFeat::Reset(void)
 
 
 CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
-                              const TIterator& annot)
+                              const CAnnotObject_Ref& feat_ref)
 {
-    const CAnnotObject_Ref& feat_ref = *annot;
     _ASSERT(feat_ref.IsFeat());
 
     m_CreatedOriginalFeat.Reset();
@@ -111,7 +110,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
         m_CreatedFeat = collector.m_CreatedOriginal;
         _ASSERT(!IsTableSNP());
     }
-    m_Seq_annot = annot->GetSeq_annot_Handle();
+    m_Seq_annot = feat_ref.GetSeq_annot_Handle();
 
     m_MappingInfoPtr = &feat_ref.GetMappingInfo();
     m_MappedFeat.ResetRefs();

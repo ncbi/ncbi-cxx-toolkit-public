@@ -74,6 +74,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
       m_Dst_id_Handle(dst_id),
       m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
+      m_PartialHasUnconvertedId(false),
       m_PartialFlag(0),
       m_LastType(eMappedObjType_not_set),
       m_LastStrand(eNa_strand_unknown),
@@ -99,6 +100,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
       m_Dst_id_Handle(dst_id),
       m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
+      m_PartialHasUnconvertedId(false),
       m_PartialFlag(0),
       m_LastType(eMappedObjType_not_set),
       m_LastStrand(eNa_strand_unknown),
@@ -122,15 +124,22 @@ CSeq_loc_Conversion::~CSeq_loc_Conversion(void)
 }
 
 
-void CSeq_loc_Conversion::Reset(void)
+void CSeq_loc_Conversion::ResetKeepPartial(void)
 {
     _ASSERT(!IsSpecialLoc());
     m_TotalRange = TRange::GetEmpty();
-    m_Partial = false;
     m_PartialFlag = 0;
     m_DstFuzz_from.Reset();
     m_DstFuzz_to.Reset();
     m_GraphRanges.Reset();
+}
+
+
+void CSeq_loc_Conversion::Reset(void)
+{
+    ResetKeepPartial();
+    m_Partial = false;
+    m_PartialHasUnconvertedId = false;
 }
 
 
@@ -219,7 +228,7 @@ void CSeq_loc_Conversion::ConvertSimpleLoc(const CSeq_id_Handle& src_id,
                                            const SAnnotObject_Index& src_index)
 {
     if ( src_id != m_Src_id_Handle ) {
-        m_Partial = true;
+        m_Partial = m_PartialHasUnconvertedId = true;
         return;
     }
     
@@ -968,9 +977,7 @@ void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
         CRef<CSeq_loc> cb_loc;
         Convert((*it)->GetLoc(), &cb_loc, eCnvAlways);
         // Preserve partial flag
-        bool partial = m_Partial;
-        Reset();
-        m_Partial = partial;
+        ResetKeepPartial();
         if (cb_loc  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
             CRef<CCode_break> cb(new CCode_break);
             cb->SetAa(const_cast<CCode_break::TAa&>((*it)->GetAa()));
@@ -1037,9 +1044,7 @@ void CSeq_loc_Conversion::ConvertRna(CAnnotObject_Ref& ref,
     CRef<CSeq_loc> ac_loc;
     Convert(src_anticodon, &ac_loc, eCnvAlways);
     // Preserve partial flag
-    bool partial = m_Partial;
-    Reset();
-    m_Partial = partial;
+    ResetKeepPartial();
     if (ac_loc  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
         mapped_feat->SetData()
             .SetRna().SetExt().SetTRNA().SetAnticodon(*ac_loc);
@@ -1361,6 +1366,7 @@ CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(CHeapScope& scope)
     : m_SingleConv(0),
       m_SingleIndex(0),
       m_Partial(false),
+      m_PartialHasUnconvertedId(false),
       m_TotalRange(TRange::GetEmpty()),
       m_Scope(scope)
 {
@@ -1401,11 +1407,18 @@ CSeq_loc_Conversion_Set::BeginRanges(CSeq_id_Handle id,
                                      TSeqPos to,
                                      unsigned int loc_index)
 {
-    TIdMap::iterator ranges = m_CvtByIndex[loc_index].find(id);
-    if (ranges == m_CvtByIndex[loc_index].end()) {
-        return TRangeIterator();
+    TConvByIndex::iterator index_iter = m_CvtByIndex.find(loc_index);
+    if ( index_iter == m_CvtByIndex.end() ) {
+        index_iter = m_CvtByIndex.find(kAllIndexes);
     }
-    return ranges->second.begin(TRange(from, to));
+    if ( index_iter != m_CvtByIndex.end() ) {
+        TIdMap::iterator ranges = index_iter->second.find(id);
+        if ( ranges != index_iter->second.end() ) {
+            return ranges->second.begin(TRange(from, to));
+        }
+    }
+    m_PartialHasUnconvertedId = true;
+    return TRangeIterator();
 }
 
 
@@ -1567,6 +1580,15 @@ void CSeq_loc_Conversion_Set::ConvertFeature(CAnnotObject_Ref& ref,
 }
 
 
+void CSeq_loc_Conversion_Set::Reset(void)
+{
+    m_TotalRange = TRange::GetEmpty();
+    m_Partial = false;
+    m_PartialHasUnconvertedId = false;
+    m_GraphRanges.Reset();
+}
+
+
 void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
                                       CSeq_loc_Conversion::ELocationType
                                       loctype)
@@ -1580,8 +1602,15 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
     if ( m_CvtByIndex.empty()  &&  !ref.IsAlign() ) {
         // No multiple mappings
         m_SingleConv->Convert(ref, loctype);
+        m_Partial = m_SingleConv->IsPartial();
+        m_PartialHasUnconvertedId = m_SingleConv->HasUnconvertedId();
+        m_TotalRange = m_SingleConv->GetTotalRange();
+        m_GraphRanges = m_SingleConv->m_GraphRanges;
         return;
     }
+
+    Reset();
+
     CRef<CSeq_feat> mapped_feat;
     CAnnotMapping_Info& map_info = ref.GetMappingInfo();
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();

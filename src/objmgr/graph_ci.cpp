@@ -39,14 +39,26 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CAnnotObject_Ref;
 
-void CMappedGraph::Set(CAnnot_Collector& collector, const TIterator& annot)
+
+void CMappedGraph::Set(CAnnot_Collector& collector,
+                       const CAnnotObject_Ref& annot_ref)
 {
-    _ASSERT(annot->IsGraph());
+    _ASSERT(annot_ref.IsGraph());
     m_Collector.Reset(&collector);
-    m_GraphRef = annot;
+    m_GraphRef = &annot_ref;
     m_MappedGraph.Reset();
     m_MappedLoc.Reset();
+}
+
+
+void CMappedGraph::Reset(void)
+{
+    m_MappedLoc.Reset();
+    m_MappedGraph.Reset();
+    m_GraphRef = 0;
+    m_Collector.Reset();
 }
 
 
@@ -137,8 +149,8 @@ void CMappedGraph::MakeMappedGraphData(CSeq_graph& dst) const
             TSeqPos from = it->GetFrom()/comp;
             TSeqPos to = it->GetTo()/comp + 1;
             CopyGraphData(src_data.GetByte().GetValues(),
-                dst_data.SetByte().SetValues(),
-                from, to);
+                          dst_data.SetByte().SetValues(),
+                          from, to);
             numval += to - from;
         }
         break;
@@ -151,8 +163,8 @@ void CMappedGraph::MakeMappedGraphData(CSeq_graph& dst) const
             TSeqPos from = it->GetFrom()/comp;
             TSeqPos to = it->GetTo()/comp + 1;
             CopyGraphData(src_data.GetInt().GetValues(),
-                dst_data.SetInt().SetValues(),
-                from, to);
+                          dst_data.SetInt().SetValues(),
+                          from, to);
             numval += to - from;
         }
         break;
@@ -165,8 +177,8 @@ void CMappedGraph::MakeMappedGraphData(CSeq_graph& dst) const
             TSeqPos from = it->GetFrom()/comp;
             TSeqPos to = it->GetTo()/comp + 1;
             CopyGraphData(src_data.GetReal().GetValues(),
-                dst_data.SetReal().SetValues(),
-                from, to);
+                          dst_data.SetReal().SetValues(),
+                          from, to);
             numval += to - from;
         }
         break;
@@ -208,9 +220,7 @@ CMappedGraph::GetMappedGraphRanges(void) const
 CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
@@ -218,9 +228,7 @@ CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc, &sel)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
@@ -230,9 +238,7 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq)
                      CRange<TSeqPos>::GetWhole(),
                      eNa_strand_unknown)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
@@ -244,9 +250,7 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      range,
                      strand)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
@@ -258,9 +262,7 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      eNa_strand_unknown,
                      &sel)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
@@ -273,9 +275,7 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      eNa_strand_unknown,
                      &sel)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
@@ -289,18 +289,14 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      strand,
                      &sel)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
 CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
@@ -308,18 +304,14 @@ CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot, &sel)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
 CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 
@@ -327,9 +319,7 @@ CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry, &sel)
 {
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
 }
 
 

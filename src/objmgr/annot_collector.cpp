@@ -55,6 +55,7 @@
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/mapped_feat.hpp>
+#include <objmgr/graph_ci.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/error_codes.hpp>
@@ -1515,6 +1516,8 @@ void CAnnot_Collector::x_StopSearchLimits(void)
 }
 
 
+static const bool kTraceFullCvt = false;
+
 void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                                     const CBioseq_Handle& bh,
                                     const CRange<TSeqPos>& range,
@@ -1562,11 +1565,13 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         deeper = bh.GetSeqMap().HasSegmentOfType(CSeqMap::eSeqRef);
     }
 
+    int last_depth = 0;
     if ( deeper ) {
         CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
         master_loc_empty->
             SetEmpty(const_cast<CSeq_id&>(*master_id.GetSeqId()));
         for ( int level = 1; level <= depth && deeper; ++level ) {
+            last_depth = level;
             // segments
             if ( adaptive_flags || !exact_depth || depth == level ) {
                 deeper = x_SearchSegments(bh, master_id, master_range,
@@ -1586,6 +1591,25 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
     }
         
     x_AddPostMappings();
+    if ( m_MappingCollector.get() ) {
+        // need full conversion set
+        if ( kTraceFullCvt ) {
+            LOG_POST("Need full conversion set for "<<
+                     m_MappingCollector->m_AnnotMappingSet.size()<<" annots");
+        }
+        CSeq_loc_Conversion_Set cvt_set(m_Scope);
+        CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
+        master_loc_empty->
+            SetEmpty(const_cast<CSeq_id&>(*master_id.GetSeqId()));
+        for ( int level = 1; level <= last_depth; ++level ) {
+            // segments
+            if ( adaptive_flags || !exact_depth || depth == level ) {
+                x_CollectSegments(bh, master_id, master_range,
+                                  *master_loc_empty, level, cvt_set);
+            }
+        }
+        x_AddPostMappingsCvt(cvt_set);
+    }
     x_Sort();
 }
 
@@ -1619,8 +1643,10 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         deeper = m_CollectAnnotTypes.any();
     }
 
+    int last_depth = 0;
     if ( deeper ) {
         for ( int level = 1; level <= depth && deeper; ++level ) {
+            last_depth = level;
             // segments
             if ( adaptive_flags || !exact_depth || depth == level ) {
                 deeper = x_SearchSegments(master_loc, level);
@@ -1639,6 +1665,21 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
     }
 
     x_AddPostMappings();
+    if ( m_MappingCollector.get() ) {
+        // need full conversion set
+        if ( kTraceFullCvt ) {
+            LOG_POST("Need full conversion set for "<<
+                     m_MappingCollector->m_AnnotMappingSet.size()<<" annots");
+        }
+        CSeq_loc_Conversion_Set cvt_set(m_Scope);
+        for ( int level = 1; level <= last_depth; ++level ) {
+            // segments
+            if ( adaptive_flags || !exact_depth || depth == level ) {
+                x_CollectSegments(master_loc, level, cvt_set);
+            }
+        }
+        x_AddPostMappingsCvt(cvt_set);
+    }
     x_Sort();
 }
 
@@ -1743,6 +1784,53 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
 }
 
 
+void CAnnot_Collector::x_CollectSegments(const CBioseq_Handle& bh,
+                                         const CSeq_id_Handle& master_id,
+                                         const CHandleRange& master_range,
+                                         CSeq_loc& master_loc_empty,
+                                         int level,
+                                         CSeq_loc_Conversion_Set& cvt_set)
+{
+    // CSeqMap_CI must be the same as in x_SearchSegments
+    _ASSERT(m_Selector->m_ResolveMethod != m_Selector->eResolve_None);
+    CSeqMap::TFlags flags = CSeqMap::fFindRef | CSeqMap::fFindExactLevel;
+    if ( m_Selector->m_UnresolvedFlag != SAnnotSelector::eFailUnresolved ) {
+        flags |= CSeqMap::fIgnoreUnresolved;
+    }
+    SSeqMapSelector sel(flags, level-1);
+    if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
+        sel.SetLimitTSE(bh.GetTSE_Handle());
+    }
+    
+    int depth = m_Selector->GetResolveDepth();
+    bool depth_is_set = depth >= 0 && depth < kMax_Int;
+    bool exact_depth = m_Selector->GetExactDepth() && depth_is_set;
+    int adaptive_flags = exact_depth? 0: m_Selector->GetAdaptiveDepthFlags();
+    if ( adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy ) {
+        sel.SetByFeaturePolicy();
+    }
+
+    const CRange<TSeqPos>& range = master_range.begin()->first;
+    for ( CSeqMap_CI smit(bh, sel, range);
+          smit && smit.GetPosition() < range.GetToOpen();
+          ++smit ) {
+        _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
+        if ( !CanResolveId(smit.GetRefSeqid(), bh) ) {
+            // External bioseq, try to search if limit is set
+            if ( m_Selector->m_UnresolvedFlag !=
+                 SAnnotSelector::eSearchUnresolved  ||
+                 !m_Selector->m_LimitObject ) {
+                // Do not try to search on external segments
+                continue;
+            }
+        }
+
+        x_CollectMapped(smit, master_loc_empty, master_id, master_range,
+                        cvt_set);
+    }
+}
+
+
 bool CAnnot_Collector::x_SearchSegments(const CBioseq_Handle& bh,
                                         const CSeq_id_Handle& master_id,
                                         const CHandleRange& master_range,
@@ -1806,6 +1894,70 @@ CScope::EGetBioseqFlag sx_GetFlag(const SAnnotSelector& selector)
     }
 }
 
+
+void CAnnot_Collector::x_CollectSegments(const CHandleRangeMap& master_loc,
+                                         int level,
+                                         CSeq_loc_Conversion_Set& cvt_set)
+{
+    ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
+        CBioseq_Handle bh =
+            m_Scope->GetBioseqHandle(idit->first, sx_GetFlag(GetSelector()));
+        if ( !bh ) {
+            if (m_Selector->m_UnresolvedFlag == SAnnotSelector::eFailUnresolved) {
+                // resolve by Seq-id only
+                NCBI_THROW(CAnnotException, eFindFailed,
+                           "Cannot resolve master id");
+            }
+            // skip unresolvable IDs
+            continue;
+        }
+        
+        if ( !bh.GetSeqMap().HasSegmentOfType(CSeqMap::eSeqRef) ) {
+            continue;
+        }
+        
+        CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
+        master_loc_empty->SetEmpty(
+            const_cast<CSeq_id&>(*idit->first.GetSeqId()));
+        
+        CSeqMap::TFlags flags = CSeqMap::fFindRef | CSeqMap::fFindExactLevel;
+        if ( m_Selector->m_UnresolvedFlag != m_Selector->eFailUnresolved ) {
+            flags |= CSeqMap::fIgnoreUnresolved;
+        }
+
+        SSeqMapSelector sel(flags, level-1);
+        if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
+            sel.SetLimitTSE(bh.GetTSE_Handle());
+        }
+        
+        int depth = m_Selector->GetResolveDepth();
+        bool depth_is_set = depth >= 0 && depth < kMax_Int;
+        bool exact_depth = m_Selector->GetExactDepth() && depth_is_set;
+        int adaptive_flags = exact_depth?0:m_Selector->GetAdaptiveDepthFlags();
+        if ( adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy ) {
+            sel.SetByFeaturePolicy();
+        }
+
+        CHandleRange::TRange range = idit->second.GetOverlappingRange();
+        for ( CSeqMap_CI smit(bh, sel, range);
+              smit && smit.GetPosition() < range.GetToOpen();
+              ++smit ) {
+            _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
+            if ( !CanResolveId(smit.GetRefSeqid(), bh) ) {
+                // External bioseq, try to search if limit is set
+                if ( m_Selector->m_UnresolvedFlag !=
+                     SAnnotSelector::eSearchUnresolved  ||
+                     !m_Selector->m_LimitObject ) {
+                    // Do not try to search on external segments
+                    continue;
+                }
+            }
+
+            x_CollectMapped(smit, *master_loc_empty, idit->first, idit->second,
+                            cvt_set);
+        }
+    }
+}
 
 bool CAnnot_Collector::x_SearchSegments(const CHandleRangeMap& master_loc,
                                         int level)
@@ -1942,23 +2094,86 @@ void CAnnot_Collector::x_AddPostMappings(void)
     if ( !m_MappingCollector.get() ) {
         return;
     }
-    NON_CONST_ITERATE(CAnnotMappingCollector::TAnnotMappingSet, amit,
-                      m_MappingCollector->m_AnnotMappingSet) {
+    CSeq_loc_Conversion::ELocationType loctype =
+        (m_Selector->m_FeatProduct ?
+         CSeq_loc_Conversion::eProduct :
+         CSeq_loc_Conversion::eLocation);
+    vector<CAnnotObject_Ref> partial_refs;
+    ERASE_ITERATE ( CAnnotMappingCollector::TAnnotMappingSet, amit,
+                    m_MappingCollector->m_AnnotMappingSet ) {
         CAnnotObject_Ref annot_ref = amit->first;
         if ( !amit->second ) {
             // no actual mapping, just filtering duplicates
             x_AddObject(annot_ref);
-            continue;
         }
-        amit->second->Convert(annot_ref,
-            m_Selector->m_FeatProduct ? CSeq_loc_Conversion::eProduct :
-                                        CSeq_loc_Conversion::eLocation);
+        else {
+            amit->second->Convert(annot_ref, loctype);
+            if ( amit->second->IsPartial() &&
+                 amit->second->HasUnconvertedId() ) {
+                // conversion is not complete
+                // keep the annotation for further conversion
+                continue;
+            }
+            if ( annot_ref.IsAlign() ||
+                 !annot_ref.GetMappingInfo().GetTotalRange().Empty() ) {
+                x_AddObject(annot_ref);
+            }
+        }
+        m_MappingCollector->m_AnnotMappingSet.erase(amit);
+    }
+    if ( m_MappingCollector->m_AnnotMappingSet.empty() ) {
+        m_MappingCollector.reset();
+    }
+}
+
+
+CConstRef<CSerialObject>
+CAnnot_Collector::x_GetMappedObject(const CAnnotObject_Ref& obj)
+{
+    CConstRef<CSerialObject> ret;
+    if ( obj.IsFeat() ) {
+        CMappedFeat feat;
+        feat.Set(*this, obj);
+        ret = feat.GetSeq_feat();
+    }
+    else if ( obj.IsGraph() ) {
+        CMappedGraph graph;
+        graph.Set(*this, obj);
+        ret = &graph.GetMappedGraph();
+    }
+    else if ( obj.IsAlign() ) {
+    }
+    return ret;
+}
+
+
+void CAnnot_Collector::x_AddPostMappingsCvt(CSeq_loc_Conversion_Set& cvt)
+{
+    if ( !m_MappingCollector.get() ) {
+        return;
+    }
+    CSeq_loc_Conversion::ELocationType loctype =
+        (m_Selector->m_FeatProduct ?
+         CSeq_loc_Conversion::eProduct :
+         CSeq_loc_Conversion::eLocation);
+    ITERATE ( CAnnotMappingCollector::TAnnotMappingSet, amit,
+              m_MappingCollector->m_AnnotMappingSet ) {
+        CAnnotObject_Ref annot_ref = amit->first;
+        if ( kTraceFullCvt ) {
+            amit->second.GetNCObject().Convert(annot_ref, loctype);
+            LOG_POST("Full conversion, was: "<<
+                     MSerial_AsnText<<*x_GetMappedObject(annot_ref));
+        }
+        cvt.Convert(annot_ref, loctype);
+        if ( kTraceFullCvt ) {
+            LOG_POST("Full conversion, now: "<<
+                     MSerial_AsnText<<*x_GetMappedObject(annot_ref));
+        }
         if ( annot_ref.IsAlign() ||
              !annot_ref.GetMappingInfo().GetTotalRange().Empty() ) {
             x_AddObject(annot_ref);
         }
     }
-    m_MappingCollector->m_AnnotMappingSet.clear();
     m_MappingCollector.reset();
 }
 
@@ -2930,6 +3145,59 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
             ++index;
         }
     }
+}
+
+
+void CAnnot_Collector::x_CollectMapped(const CSeqMap_CI&     seg,
+                                       CSeq_loc&             master_loc_empty,
+                                       const CSeq_id_Handle& master_id,
+                                       const CHandleRange&   master_hr,
+                                       CSeq_loc_Conversion_Set& cvt_set)
+{
+    CHandleRange::TOpenRange master_seg_range(
+        seg.GetPosition(),
+        seg.GetEndPosition());
+    CHandleRange::TOpenRange ref_seg_range(seg.GetRefPosition(),
+                                           seg.GetRefEndPosition());
+    bool reversed = seg.GetRefMinusStrand();
+    TSignedSeqPos shift;
+    if ( !reversed ) {
+        shift = ref_seg_range.GetFrom() - master_seg_range.GetFrom();
+    }
+    else {
+        shift = ref_seg_range.GetTo() + master_seg_range.GetFrom();
+    }
+    CSeq_id_Handle ref_id = seg.GetRefSeqid();
+    CHandleRangeMap ref_loc;
+    {{ // translate master_loc to ref_loc
+        CHandleRange& hr = ref_loc.AddRanges(ref_id);
+        ITERATE ( CHandleRange, mlit, master_hr ) {
+            CHandleRange::TOpenRange range = master_seg_range & mlit->first;
+            if ( !range.Empty() ) {
+                ENa_strand strand = mlit->second;
+                if ( !reversed ) {
+                    range.SetOpen(range.GetFrom() + shift,
+                                  range.GetToOpen() + shift);
+                }
+                else {
+                    if ( strand != eNa_strand_unknown ) {
+                        strand = Reverse(strand);
+                    }
+                    range.Set(shift - range.GetTo(), shift - range.GetFrom());
+                }
+                hr.AddRange(range, strand);
+            }
+        }
+        if ( hr.Empty() )
+            return;
+    }}
+
+    CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(master_loc_empty,
+                                                          master_id,
+                                                          seg,
+                                                          ref_id,
+                                                          m_Scope));
+    cvt_set.Add(*cvt, cvt_set.kAllIndexes);
 }
 
 

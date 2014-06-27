@@ -179,7 +179,7 @@ inline
 void CFeat_CI::Update(void)
 {
     if ( IsValid() ) {
-        m_MappedFeat.Set(GetCollector(), GetIterator());
+        m_MappedFeat.Set(GetCollector(), *GetIterator());
     }
     else {
         m_MappedFeat.Reset();

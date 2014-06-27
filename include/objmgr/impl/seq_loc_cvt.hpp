@@ -142,10 +142,15 @@ public:
                  EConvertFlag flag = eCnvDefault);
 
     void Reset(void);
+    void ResetKeepPartial(void);
 
     bool IsPartial(void) const
         {
             return m_Partial;
+        }
+    bool HasUnconvertedId(void) const
+        {
+            return m_PartialHasUnconvertedId;
         }
 
     void SetSrcId(const CSeq_id_Handle& src)
@@ -256,6 +261,7 @@ private:
     //   Cumulative results on destination:
     TRange         m_TotalRange;
     bool           m_Partial;
+    bool           m_PartialHasUnconvertedId;
 
     // Separate flags for left and right truncations of each interval
     enum EPartialFlag {
@@ -302,6 +308,12 @@ public:
     typedef TRangeMap::iterator TRangeIterator;
     typedef map<CSeq_id_Handle, TRangeMap> TIdMap;
 
+    enum {
+        // special index value meaning that
+        // the conversion should be applied to all location indexes
+        kAllIndexes = kMax_UInt
+    };
+
     // Conversions by location index
     typedef map<unsigned int, TIdMap> TConvByIndex;
 
@@ -316,6 +328,16 @@ public:
                  CRef<CSeq_loc>* dst,
                  unsigned int loc_index);
     void Convert(const CSeq_align& src, CRef<CSeq_align>* dst);
+
+    void Reset(void);
+    bool IsPartial(void) const
+        {
+            return m_Partial;
+        }
+    bool HasUnconvertedId(void) const
+        {
+            return m_PartialHasUnconvertedId;
+        }
 
     typedef set<CSeq_id_Handle> TSeq_id_Handles;
     const TSeq_id_Handles& GetDst_id_Handles(void) const
@@ -365,6 +387,7 @@ private:
     TConvByIndex m_CvtByIndex;
     TSeq_id_Handles m_Dst_id_Handles;
     bool         m_Partial;
+    bool         m_PartialHasUnconvertedId;
     TRange       m_TotalRange;
     CHeapScope   m_Scope;
 
@@ -400,11 +423,11 @@ TSeqPos CSeq_loc_Conversion::ConvertPos(TSeqPos src_pos)
 inline
 bool CSeq_loc_Conversion::GoodSrcId(const CSeq_id& id)
 {
-    bool good = (m_Src_id_Handle == id);
-    if ( !good ) {
-        m_Partial = true;
+    if ( m_Src_id_Handle == id ) {
+        return true;
     }
-    return good;
+    m_Partial = m_PartialHasUnconvertedId = true;
+    return false;
 }
 
 

@@ -44,6 +44,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CAnnot_Collector;
+class CAnnotObject_Ref;
 
 /** @addtogroup ObjectManagerIterators
  *
@@ -179,19 +181,18 @@ public:
 private:
     friend class CGraph_CI;
     friend class CAnnot_CI;
-
-    typedef CAnnot_Collector::TAnnotSet TAnnotSet;
-    typedef TAnnotSet::const_iterator   TIterator;
+    friend class CAnnot_Collector;
 
     void Set(CAnnot_Collector& collector,
-             const TIterator& annot);
+             const CAnnotObject_Ref& annot_ref);
+    void Reset(void);
 
     void MakeMappedGraph(void) const;
     void MakeMappedLoc(void) const;
     void MakeMappedGraphData(CSeq_graph& dst) const;
 
-    mutable CRef<CAnnot_Collector> m_Collector;
-    TIterator                      m_GraphRef;
+    mutable CRef<CAnnot_Collector>  m_Collector;
+    const CAnnotObject_Ref*         m_GraphRef;
 
     mutable CConstRef<CSeq_graph>   m_MappedGraph;
     mutable CConstRef<CSeq_loc>     m_MappedLoc;
@@ -293,6 +294,8 @@ public:
     const CMappedGraph& operator* (void) const;
     const CMappedGraph* operator-> (void) const;
 private:
+    void x_Update(void);
+
     CGraph_CI operator++ (int);
     CGraph_CI operator-- (int);
 
@@ -306,12 +309,21 @@ CGraph_CI::CGraph_CI(void)
 }
 
 inline
+void CGraph_CI::x_Update(void)
+{
+    if ( IsValid() ) {
+        m_Graph.Set(GetCollector(), *GetIterator());
+    }
+    else {
+        m_Graph.Reset();
+    }
+}
+
+inline
 CGraph_CI& CGraph_CI::operator++ (void)
 {
     Next();
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
+    x_Update();
     return *this;
 }
 
@@ -319,7 +331,7 @@ inline
 CGraph_CI& CGraph_CI::operator-- (void)
 {
     Prev();
-    m_Graph.Set(GetCollector(), GetIterator());
+    x_Update();
     return *this;
 }
 

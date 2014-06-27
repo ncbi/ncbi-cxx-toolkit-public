@@ -35,7 +35,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/seq_feat_handle.hpp>
-#include <objmgr/impl/annot_collector.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
@@ -104,12 +103,10 @@ public:
 private:
     friend class CFeat_CI;
     friend class CAnnot_CI;
-
-    typedef CAnnot_Collector::TAnnotSet TAnnotSet;
-    typedef TAnnotSet::const_iterator   TIterator;
+    friend class CAnnot_Collector;
 
     CMappedFeat& Set(CAnnot_Collector& collector,
-                     const TIterator& annot);
+                     const CAnnotObject_Ref& feat_ref);
     void Reset(void);
 
     CConstRef<CSeq_loc> GetMappedLocation(void) const;

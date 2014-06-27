@@ -33,14 +33,17 @@
 *
 */
 
-#include <objmgr/impl/annot_collector.hpp>
 #include <set>
+#include <vector>
+#include <objmgr/impl/annot_collector.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
 
 class CAnnot_CI;
+class CAnnot_Collector;
+class CAnnotObject_Ref;
 class CTableFieldHandle_Base;
 
 // Base class for specific annotation iterators
@@ -100,7 +103,7 @@ protected:
     friend class CAnnot_CI;
     friend class CTableFieldHandle_Base;
 
-    typedef CAnnot_Collector::TAnnotSet TAnnotSet;
+    typedef vector<CAnnotObject_Ref>    TAnnotSet;
     typedef TAnnotSet::const_iterator   TIterator;
 
     // Check if a datasource and an annotation are selected.

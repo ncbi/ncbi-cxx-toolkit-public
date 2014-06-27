@@ -300,6 +300,16 @@ private:
     void x_SearchMaster(const CBioseq_Handle& bh,
                         const CSeq_id_Handle& master_id,
                         const CHandleRange& master_range);
+    
+    // Collect segment conversions used by correspondging x_SearchSegments().
+    // Called by: x_Initialize()
+    void x_CollectSegments(const CBioseq_Handle& bh,
+                           const CSeq_id_Handle& master_id,
+                           const CHandleRange& master_range,
+                           CSeq_loc& master_loc_empty,
+                           int level,
+                           CSeq_loc_Conversion_Set& cvt_set);
+
     // Search annotations referencing sequence segments on level 'level'.
     // The master_range specifies region of master sequence to search.
     // The master_loc_empty is empty Seq-loc with master Seq-id for sharing.
@@ -309,6 +319,13 @@ private:
                           const CHandleRange& master_range,
                           CSeq_loc& master_loc_empty,
                           int level);
+
+    // Collect segment conversions used by correspondging x_SearchSegments().
+    // Called by: x_Initialize()
+    void x_CollectSegments(const CHandleRangeMap& master_loc,
+                           int level,
+                           CSeq_loc_Conversion_Set& cvt_set);
+
     // Search annotations referencing complex sequence location
     // on level 'level'.
     // The master_loc_empty is empty Seq-loc with master Seq-id for sharing.
@@ -316,6 +333,14 @@ private:
     // Calls: x_SearchMapped()
     bool x_SearchSegments(const CHandleRangeMap& master_loc,
                           int level);
+
+    // Collect conversion that is used by corresponding x_SearchMapped().
+    // Called by: x_CollectSegments()
+    void x_CollectMapped(const CSeqMap_CI&     seg,
+                         CSeq_loc&             master_loc_empty,
+                         const CSeq_id_Handle& master_id,
+                         const CHandleRange&   master_hr,
+                         CSeq_loc_Conversion_Set& cvt_set);
 
     // Search annotations directly referencing segment of master sequence.
     // The master_loc_empty is empty Seq-loc with master Seq-id for sharing.
@@ -404,7 +429,10 @@ private:
     bool x_NoMoreObjects(void) const;
 
     void x_AddPostMappings(void);
+    void x_AddPostMappingsCvt(CSeq_loc_Conversion_Set& cvt);
     void x_AddTSE(const CTSE_Handle& tse);
+
+    CConstRef<CSerialObject> x_GetMappedObject(const CAnnotObject_Ref& obj);
 
     // Set of processed annot-locs to avoid duplicates
     typedef set< CConstRef<CSeq_loc> >   TAnnotLocsSet;
