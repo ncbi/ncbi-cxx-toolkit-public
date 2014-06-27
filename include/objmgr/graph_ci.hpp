@@ -289,6 +289,8 @@ public:
     CGraph_CI& operator++ (void);
     CGraph_CI& operator-- (void);
 
+    void Rewind(void);
+
     DECLARE_OPERATOR_BOOL(IsValid());
 
     const CMappedGraph& operator* (void) const;
@@ -333,6 +335,14 @@ CGraph_CI& CGraph_CI::operator-- (void)
     Prev();
     x_Update();
     return *this;
+}
+
+
+inline
+void CGraph_CI::Rewind(void)
+{
+    CAnnotTypes_CI::Rewind();
+    x_Update();
 }
 
 
