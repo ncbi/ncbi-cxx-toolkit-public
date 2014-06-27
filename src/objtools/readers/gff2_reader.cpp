@@ -372,6 +372,7 @@ bool CGff2Reader::x_ParseFeatureGff(
     //
     TAnnotIt it = annots.begin();
     for ( /*NOOP*/; it != annots.end(); ++it ) {
+        if (!(**it).IsFtable()) continue;
         string strAnnotId;
         if ( ! s_GetAnnotId( **it, strAnnotId ) ) {
             return false;
@@ -428,6 +429,7 @@ bool CGff2Reader::x_ParseAlignmentGff(
     //
     TAnnotIt it = annots.begin();
     for ( /*NOOP*/; it != annots.end(); ++it ) {
+        if (!(**it).IsAlign()) continue;
         string strAnnotId;
         if ( ! s_GetAnnotId( **it, strAnnotId ) ) {
             return false;
