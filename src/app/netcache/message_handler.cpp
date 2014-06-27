@@ -2012,15 +2012,14 @@ CNCMessageHandler::x_StartCommand(void)
     }
     else if (m_BlobKey[0] == '\1') {
         CNetCacheKey nc_key;
-        if (!nc_key.ParseBlobKey(m_RawKey.data(), m_RawKey.length(), &nc_key) ||
-                !CNCDistributionConf::GetSlotByNetCacheKey(m_BlobKey,
-                        m_BlobSlot, m_TimeBucket)) {
+        if (!nc_key.ParseBlobKey(m_RawKey.data(), m_RawKey.length(), &nc_key)) {
             diag_msg.Flush();
             GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
             WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
             SRV_LOG(Critical, "Invalid blob key format: " << m_RawKey);
             return &CNCMessageHandler::x_FinishCommand;
         }
+        CNCDistributionConf::GetSlotByRnd(nc_key.GetRandomPart(), m_BlobSlot, m_TimeBucket);
         // If key is given and it's NetCache key (not ICache key) then we need
         // to strip service name from it. It's necessary for the case when new
         // CNetCacheAPI with enabled_mirroring=true passes key to an old CNetCacheAPI
