@@ -1,5 +1,5 @@
-#ifndef _DiscRep_Test_HPP
-#define _DiscRep_Test_HPP
+#ifndef OBJTOOLS_DiscRep_Test_HPP
+#define OBJTOOLS_DiscRep_Test_HPP
 
 /*  $Id$
  * =========================================================================
@@ -4040,4 +4040,4 @@ BEGIN_SCOPE(DiscRepNmSpc)
 END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE
 
-#endif
+#endif // OBJTOOLS_DiscRep_Test_HPP

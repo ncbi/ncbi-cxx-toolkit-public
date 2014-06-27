@@ -1,5 +1,5 @@
-#ifndef CHECKING_CLASS
-#define CHECKING_CLASS
+#ifndef OBJTOOLS_CHECKING_CLASS
+#define OBJTOOLS_CHECKING_CLASS
 
 /*  $Id$
  * ==========================================================================
@@ -109,4 +109,4 @@ BEGIN_SCOPE(DiscRepNmSpc)
 END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE
 
-#endif // CHECKING_CLASS
+#endif // OBJTOOLS_CHECKING_CLASS

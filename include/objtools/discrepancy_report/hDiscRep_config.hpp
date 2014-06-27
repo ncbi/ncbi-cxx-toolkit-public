@@ -1,5 +1,5 @@
-#ifndef _DiscRepConfig_HPP
-#define _DiscRepConfig_HPP
+#ifndef OBJTOOLS_DiscRepConfig_HPP
+#define OBJTOOLS_DiscRepConfig_HPP
 
 
 /*  $Id$
@@ -53,7 +53,8 @@
 #include <objects/seqfeat/RNA_ref.hpp>
 
 #ifdef __GNUC__
-#  warning "Header <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/*.hpp> instead!"
+#  warning "Header <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/hDiscRep_tests.hpp> instead!"
+#  warning "Header <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/hDiscRep_output.hpp> instead!"
 #endif // __GNUC__ 
 
 

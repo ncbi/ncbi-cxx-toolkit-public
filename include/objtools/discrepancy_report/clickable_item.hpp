@@ -28,15 +28,14 @@
  */
 
 
-#ifndef _CLICKABLE_ITEM_H_
-#define _CLICKABLE_ITEM_H_
+#ifndef OBJTOOLS_CLICKABLE_ITEM_H_
+#define OBJTOOLS_CLICKABLE_ITEM_H_
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
-// #include <gui/objutils/cmd_composite.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -77,4 +76,4 @@ protected:
 
 END_NCBI_SCOPE
 
-#endif 
+#endif  // OBJTOOLS_CLICKABLE_ITEM_H_

@@ -1,5 +1,5 @@
-#ifndef HAUTODISCCLASS__HPP
-#define HAUTODISCCLASS__HPP
+#ifndef OBJTOOLS_HAUTODISCCLASS__HPP
+#define OBJTOOLS_HAUTODISCCLASS__HPP
 
 /* $Id$
  * ===========================================================================
@@ -99,4 +99,4 @@ void x_LookAtSeqEntry_set_set_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 )
 END_SCOPE(DiscRepAutoNmSpc)
 END_NCBI_SCOPE
 
-#endif /* HAUTODISCCLASS__HPP */
+#endif /* OBJTOOLS_HAUTODISCCLASS__HPP */

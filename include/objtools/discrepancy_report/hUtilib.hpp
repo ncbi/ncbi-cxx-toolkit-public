@@ -24,8 +24,8 @@
 //
 
 
-#ifndef _UTILS_
-#define _UTILS_
+#ifndef OBJTOOLS_UTILS_
+#define OBJTOOLS_UTILS_
 
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgiapp.hpp>
@@ -178,4 +178,4 @@ string GetTime();
 
 END_NCBI_SCOPE
 
-#endif
+#endif // OBJTOOLS_UTILS_

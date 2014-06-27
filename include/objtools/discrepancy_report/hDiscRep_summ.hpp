@@ -1,5 +1,5 @@
-#ifndef _DiscRep_Summ_HPP
-#define _DiscRep_Summ_HPP
+#ifndef OBJTOOLS_DiscRep_Summ_HPP
+#define OBJTOOLS_DiscRep_Summ_HPP
 
 /*  $Id$
  * =========================================================================
@@ -100,5 +100,5 @@ END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE
 
 
-#endif
+#endif // OBJTOOLS_DiscRep_Summ_HPP
 

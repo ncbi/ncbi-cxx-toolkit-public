@@ -1,5 +1,5 @@
-#ifndef _DiscOutput_HPP
-#define _DiscOutput_HPP
+#ifndef OBJTOOLS_DiscOutput_HPP
+#define OBJTOOLS_DiscOutput_HPP
 
 /*  $Id$
  *===========================================================================
@@ -47,7 +47,8 @@
 #include <serial/serial.hpp>
 
 #ifdef __GNUC__
-#  warning "Header <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/*.hpp> instead!"
+#  warning "Header <objtools/discrepancy_report/hDiscRep_tests.hpp> are obsolete; please use <misc/discrepancy_report/hDiscRep_tests.hpp> instead!"
+#  warning "Header <objtools/discrepancy_report/clickable_itemhpp> are obsolete; please use <misc/discrepancy_report/clickable_item.hpp> instead!"
 #endif // __GNUC__ 
 
 #include <misc/discrepancy_report/hDiscRep_tests.hpp>
