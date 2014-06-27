@@ -2242,6 +2242,8 @@ LONGBINARY and VARBINARY.
             src = &(resinfo->current_row[curcol->column_offset]);
             if (is_blob_type(curcol->column_type)) {
                 src = ((TDSBLOB*)src)->textvalue;
+                bindcol->bcp_column_data
+                    = tds_alloc_bcp_column_data(curcol->column_cur_size);
             }
             /* Maybe it's better to ignore all requests of defaults after first request */
             if (bindcol->column_default) {
