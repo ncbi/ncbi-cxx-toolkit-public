@@ -215,14 +215,14 @@ string CSummarizeSusProdRule :: GetStringLocationPhrase (EString_location match_
 
 string CSummarizeSusProdRule :: SummarizeWordSubstitution (const CWord_substitution& word)
 {
-  if (word.CanGetSynonyms() || word.GetSynonyms().empty()) return kEmptyStr;
+  if (!word.CanGetSynonyms() || word.GetSynonyms().empty()) return kEmptyStr;
 
-  string syns = "'" + NStr::Join(word.GetSynonyms(), ", '") + "'";
+  string syns = "'" + NStr::Join(word.GetSynonyms(), "', '") + "'";
   size_t pos = syns.find_last_of(',');
-  syns = syns.substr(0, pos+1) + " and" + CTempString(syns).substr(pos+2);
+  syns = syns.substr(0, pos+1) + " and " + CTempString(syns).substr(pos+2);
   
   string summ 
-        = "allow '" + (word.CanGetWord()? word.GetWord() : "") + "' to be replace by " + syns;
+        = "allow '" + (word.CanGetWord()? word.GetWord() : "") + "' to be replaced by " + syns;
   if (word.GetCase_sensitive()) summ += ", case-sensitive";
   if (word.GetWhole_word()) summ += ", whole word";
   return summ;
@@ -259,7 +259,8 @@ string CSummarizeSusProdRule :: SummarizeStringConstraintEx(const CString_constr
        if (str_cons.GetCase_sensitive() 
               || str_cons.GetWhole_word() 
               || str_cons.GetIgnore_space() 
-              || str_cons.GetIgnore_punct()) {
+              || str_cons.GetIgnore_punct()
+              || str_cons.GetIgnore_weasel()) {
           has_start_para = true;
           str += " (";
        }
@@ -283,8 +284,6 @@ string CSummarizeSusProdRule :: SummarizeStringConstraintEx(const CString_constr
            str += "ignore punctuation";
            has_extra = true;
        }
-       if (has_start_para) str += ")";
-
        // Colleen: I think the weasel comes after the parenthesized portion.
        if (str_cons.GetIgnore_weasel()) {
            if (has_extra) str += ", ";
@@ -293,6 +292,8 @@ string CSummarizeSusProdRule :: SummarizeStringConstraintEx(const CString_constr
        }
 
        if (!sub_words.empty()) str += ", " + sub_words;
+
+       if (has_start_para) str += ")";
     }
   }
   strtmp = kEmptyStr;
@@ -598,9 +599,11 @@ string CSummarizeSusProdRule :: SummarizePublicationConstraint (const CPublicati
 string CSummarizeSusProdRule :: FeatureFieldLabel (const string& feature_name, const CFeat_qual_choice& field)
 {
   string label;
-  if (field.Which() == CFeat_qual_choice::e_not_set) return ("missing field");
+  if (field.Which() == CFeat_qual_choice::e_not_set) {
+       return ("missing field");
+  }
   else if (field.IsLegal_qual()) {
-      label = feature_name + " " 
+     label = feature_name + " " 
                  + thisInfo.featqual_leg_name_4summ[field.GetLegal_qual()];
   }
   else if (field.IsIllegal_qual()) {
@@ -682,10 +685,14 @@ string CSummarizeSusProdRule :: SummarizeFieldType (const CField_type& vnp)
       case CField_type::e_Feature_field:
         {
           const CFeature_field& ff = vnp.GetFeature_field();
-        if (ff.GetField().Which() == CFeat_qual_choice::e_not_set) str = "missing field";
+        if (ff.GetField().Which() == CFeat_qual_choice::e_not_set) {
+            str = "missing field";
+        }
         else {
             label = thisInfo.feattype_name[ff.GetType()];
-            if (label.empty()) str = "Unknown feature";
+            if (label.empty()) {
+               str = "Unknown feature";
+            }
             else str = FeatureFieldLabel (label, ff.GetField());
         }
         break;
@@ -735,7 +742,9 @@ string CSummarizeSusProdRule :: SummarizeFieldConstraint (const CField_constrain
   if (rule_check.IsStringConstraintEmpty (&(field_cons.GetString_constraint()))) 
              return kEmptyStr;
 
-  string summ = SummarizeStringConstraintEx (field_cons.GetString_constraint(), false);
+  string 
+    summ 
+     = SummarizeStringConstraintEx (field_cons.GetString_constraint(), false);
   string label = SummarizeFieldType (field_cons.GetField());
 
   if (!summ.empty() && !label.empty()) return ("where " + label + " " + summ);
@@ -894,10 +903,11 @@ string CSummarizeSusProdRule :: SummarizeReplaceFunc (const CReplace_func& repla
     case CReplace_func::e_Simple_replace:
       {
         const CSimple_replace& simple = replace.GetSimple_replace();
+// temp
         summ 
-         = (string)"replace " 
+         = (string)"Replace " 
              + (simple.GetWhole_string()? "entire name with " : "with ")
-             + (simple.CanGetReplace()? "'" + simple.GetReplace() + "'": "''");
+            + (simple.CanGetReplace()? "'" + simple.GetReplace() + "'": "''");
         if (simple.GetWeasel_to_putative() && !short_version) {
              summ += ", retain and normalize 'putative' synonym";
         }
@@ -916,10 +926,16 @@ string CSummarizeSusProdRule :: SummarizeReplaceFunc (const CReplace_func& repla
 
 string CSummarizeSusProdRule :: SummarizeReplaceRule (const CReplace_rule& replace, bool short_version)
 {
-  string summ = SummarizeReplaceFunc (replace.GetReplace_func());
+  string 
+     summ = SummarizeReplaceFunc (replace.GetReplace_func(), short_version);
   if (replace.GetMove_to_note()) summ += ", move original to note";
   return summ;
 }
+
+string CSummarizeSusProdRule :: SummarizeSuspectRule(const CSuspect_rule& rule)
+{
+   return (SummarizeSuspectRuleEx(rule, false));
+};
 
 extern const char* fix_type_names[];
 string CSummarizeSusProdRule :: SummarizeSuspectRuleEx(const CSuspect_rule& rule, bool short_version)
@@ -927,25 +943,33 @@ string CSummarizeSusProdRule :: SummarizeSuspectRuleEx(const CSuspect_rule& rule
   string fixtp = (!short_version && rule.GetRule_type() != eFix_type_none) ?
                    fix_type_names[rule.GetRule_type()] : kEmptyStr;
 
-  string rule_desc=rule.CanGetDescription() ? rule.GetDescription() : kEmptyStr;
+  string 
+     rule_desc = rule.CanGetDescription() ? rule.GetDescription() : kEmptyStr;
   if (short_version && !rule_desc.empty()) {
       if (fixtp.empty()) return rule_desc;
       else return (rule_desc + " (" + fixtp + ")");
   }
 
   string find  = SummarizeSearchFunc (rule.GetFind(), short_version);
+
   string 
     except 
-      =(rule.CanGetExcept() && !rule_check.IsSearchFuncEmpty(rule.GetExcept()))?
+      =(rule.CanGetExcept() 
+              && !rule_check.IsSearchFuncEmpty(rule.GetExcept()))?
           SummarizeSearchFunc(rule.GetExcept(), short_version) : kEmptyStr;
-  string feat_constraint 
-           = (!short_version && rule.CanGetFeat_constraint()) ?  
-              SummarizeConstraintSet (rule.GetFeat_constraint()) : kEmptyStr;
+
+  string 
+    feat_constraint 
+      = (!short_version && rule.CanGetFeat_constraint()) ?  
+         SummarizeConstraintSet (rule.GetFeat_constraint()) : kEmptyStr;
+
   string 
     replace 
-      = (!short_version 
-            || (rule.GetRule_type() == eFix_type_typo && rule.CanGetReplace()))?
-         SummarizeReplaceRule (rule.GetReplace()) : kEmptyStr;
+      = (rule.CanGetReplace() 
+           && (!short_version 
+                 || (rule.GetRule_type() == eFix_type_typo 
+                           && rule.CanGetReplace()))) ?
+         SummarizeReplaceRule (rule.GetReplace(), short_version) : kEmptyStr;
 
   string summ = find;
   if (!except.empty()) summ += " but not " + except;

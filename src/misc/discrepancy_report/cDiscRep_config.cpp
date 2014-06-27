@@ -214,12 +214,12 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
         }
     }
     else { // default
-       thisInfo.expand_defline_on_set = thisInfo.expand_srcqual_report = false;
+      thisInfo.expand_defline_on_set = thisInfo.expand_srcqual_report = false;
 
        // ini of orga_prod_rules:
-       thisInfo.orga_prod_rules.Reset(CSuspect_rule_set::GetOrganelleProductRules());
+      thisInfo.orga_prod_rules.Reset(CSuspect_rule_set::GetOrganelleProductRules());
        // ini. suspect rule file
-       thisInfo.suspect_prod_rules.Reset(CSuspect_rule_set::GetProductRules());
+      thisInfo.suspect_prod_rules.Reset(CSuspect_rule_set::GetProductRules());
     }
 
     // ini. of srcqual_keywords
@@ -522,97 +522,18 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
        else if (strtmp == "contains") {
            tmp = "does not contain";
        }
+       else if (strtmp == "equals") {
+           tmp = "does not equal";
+       }
        thisInfo.matloc_names[(EString_location)i] = strtmp;
        thisInfo.matloc_notpresent_names[(EString_location)i] = tmp;
     }
 
-    // ini. summ_susrule
-    CSummarizeSusProdRule summ_susrule;
-
-// unsigned ridx = 0;
-    ITERATE (list <CRef <CSuspect_rule> >, rit, 
-                                       thisInfo.suspect_prod_rules->Get()) {
-       arr.clear();
-       EFix_type fixtp = (*rit)->GetRule_type();
-       if (fixtp == eFix_type_typo) {
-           strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
-       }
-       else if (fixtp == eFix_type_quickfix || (*rit)->CanGetReplace() ) {
-           strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
-       }
-       else {
-           strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
-       }
-       arr.push_back(strtmp);  // test_name
-       arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
-       arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));
-/*
-if (arr[2].find("plural") != string::npos) {
-  cerr << "arr.sz " << arr.size() << endl;
-cerr << "arr.s  " << arr[2] << "  ridx " << ridx  << endl;
-}
-ridx ++;
-*/
-       thisInfo.susrule_summ.push_back(arr);
-    }
-
-    // ini. of susterm_summ for suspect_prod_terms if necessary
-    if ((thisInfo.suspect_prod_rules->Get()).empty()) {
-       for (i=0; 
-            i < (int)thisInfo.num_suspect_prod_terms;
-            i++){
-          const s_SuspectProductNameData& 
-                this_term = thisInfo.suspect_prod_terms[i];
-          arr.clear();
-          arr.push_back(this_term.pattern);
-
-          if (this_term.fix_type  ==  eSuspectNameType_Typo) {
-              strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
-          }
-          else if (this_term.fix_type == eSuspectNameType_QuickFix) {
-              strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
-          }
-          else {
-              strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
-          }
-          arr.push_back(strtmp); // test_name
-
-          // CTestAndRepData can't have these functions overwritten. 
-          if (this_term.search_func == CTestAndRepData :: EndsWithPattern) {
-              strtmp = "end";
-          }
-          else if (this_term.search_func ==CTestAndRepData ::StartsWithPattern){
-              strtmp = "start";
-          }
-          else {
-              strtmp = "contain";
-          }
-          arr.push_back(strtmp); // test_desc;
-          thisInfo.susterm_summ.push_back(arr);
-       }
-    }
-
-    // ini of skip_bracket_paren
-    strtmp = "(NAD(P)H),(NAD(P)),(I),(II),(III),(NADPH),(NAD+),(NAPPH/NADH),(NADP+),[acyl-carrier protein],[acyl-carrier-protein],(acyl carrier protein)";
-    thisInfo.skip_bracket_paren 
-        = NStr::Tokenize(strtmp, ",", thisInfo.skip_bracket_paren);
-
-    // ini of ok_num_prefix
-    strtmp = "DUF,UPF,IS,TIGR,UCP,PUF,CHP";
-    thisInfo.ok_num_prefix
-        = NStr::Tokenize(strtmp, ",", thisInfo.ok_num_prefix);
-
-    // ini of featkey_modified;
-    thisInfo.featkey_modified["precursor_RNA"] = "preRNA";
-    thisInfo.featkey_modified["C_region"] = "c_region";
-    thisInfo.featkey_modified["J_segment"] = "j_segment";
-    thisInfo.featkey_modified["V_segment"] = "v_segment";
-    thisInfo.featkey_modified["D-loop"] = "d_loop";
-    thisInfo.featkey_modified["source"] = "biosrc";
-
     // ini of feattype_featdef & feattype_name
-    for (i = eMacro_feature_type_any; i <= eMacro_feature_type_imp_CDS; i++) {
-      tmp = strtmp = ENUM_METHOD_NAME(EMacro_feature_type)()->FindName(i, true);
+    for (i = eMacro_feature_type_any; 
+                 i <= eMacro_feature_type_mobile_element; i++) {
+      tmp = strtmp 
+               = ENUM_METHOD_NAME(EMacro_feature_type)()->FindName(i, true);
       if (strtmp == "cds") {
           strtmp == "cdregion";
           tmp = "CDS";
@@ -632,22 +553,7 @@ ridx ++;
       else if (strtmp == "imp-CDS") {
           strtmp = "Imp-CDS";
       }
-      thisInfo.feattype_featdef[(EMacro_feature_type)i]
-          = CSeqFeatData :: SubtypeNameToValue(strtmp);
-      arr = NStr::Tokenize(tmp, "_", arr);
-      if (!arr.empty()) {
-          tmp = NStr::Join(arr, "-");
-          arr.clear();
-      }
-      thisInfo.feattype_name[(EMacro_feature_type)i] = tmp;
-    }
-
-    // skip eMocro_feature_type_conflict, why?
-    for (i = eMacro_feature_type_d_loop; 
-         i <= eMacro_feature_type_mobile_element; 
-         i++) {
-      tmp = strtmp = ENUM_METHOD_NAME(EMacro_feature_type)()->FindName(i, true);
-      if (strtmp == "d-loop") {
+      else if (strtmp == "d-loop") {
           strtmp = "D-loop";
       }
       else if (strtmp == "d-segment") {
@@ -706,6 +612,105 @@ ridx ++;
       }
       thisInfo.feattype_name[(EMacro_feature_type)i] = tmp;
     }
+    
+    // ini. of featqual_leg_name_4_summ
+    for (i = eFeat_qual_legal_allele; 
+                   i <= eFeat_qual_legal_pcr_conditions; i++){
+      strtmp = ENUM_METHOD_NAME(EFeat_qual_legal)()->FindName(i, true);
+      if (!strtmp.empty()) {
+         strtmp = (strtmp == "ec-number") ? "EC number"
+                    :((strtmp == "gene") ? "locus" 
+                       :((strtmp == "pseudo") ? "pseudogene" : strtmp));
+         thisInfo.featqual_leg_name_4summ[(EFeat_qual_legal)i] = strtmp; 
+      }
+    }
+    
+    // ini. summ_susrule
+    CSummarizeSusProdRule summ_susrule;
+
+// unsigned ridx = 0;
+    ITERATE (list <CRef <CSuspect_rule> >, rit, 
+                                       thisInfo.suspect_prod_rules->Get()) {
+       arr.clear();
+       EFix_type fixtp = (*rit)->GetRule_type();
+       if (fixtp == eFix_type_typo) {
+           strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
+       }
+       else if (fixtp == eFix_type_quickfix || (*rit)->CanGetReplace() ) {
+           strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
+       }
+       else {
+           strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
+       }
+       arr.push_back(strtmp);  // test_name
+       arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
+       arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));
+/*
+if (arr[2].find("contains ';'") != string::npos) {
+  cerr << "arr.sz " << arr.size() << endl;
+cerr << "arr.s  " << arr[2] << "  ridx " << ridx  << endl;
+cerr << MSerial_AsnText << **rit << endl;
+}
+ridx ++;
+*/
+       thisInfo.susrule_summ.push_back(arr);
+    }
+
+    // ini. of susterm_summ for suspect_prod_terms if necessary
+    if ((thisInfo.suspect_prod_rules->Get()).empty()) {
+       for (i=0; 
+            i < (int)thisInfo.num_suspect_prod_terms;
+            i++){
+          const s_SuspectProductNameData& 
+                this_term = thisInfo.suspect_prod_terms[i];
+          arr.clear();
+          arr.push_back(this_term.pattern);
+
+          if (this_term.fix_type  ==  eSuspectNameType_Typo) {
+              strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
+          }
+          else if (this_term.fix_type == eSuspectNameType_QuickFix) {
+              strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
+          }
+          else {
+              strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
+          }
+          arr.push_back(strtmp); // test_name
+
+          // CTestAndRepData can't have these functions overwritten. 
+          if (this_term.search_func == CTestAndRepData :: EndsWithPattern) {
+              strtmp = "end";
+          }
+          else if (this_term.search_func 
+                        ==CTestAndRepData ::StartsWithPattern){
+              strtmp = "start";
+          }
+          else {
+              strtmp = "contain";
+          }
+          arr.push_back(strtmp); // test_desc;
+          thisInfo.susterm_summ.push_back(arr);
+       }
+    }
+
+    // ini of skip_bracket_paren
+    strtmp = "(NAD(P)H),(NAD(P)),(I),(II),(III),(NADPH),(NAD+),(NAPPH/NADH),(NADP+),[acyl-carrier protein],[acyl-carrier-protein],(acyl carrier protein)";
+    thisInfo.skip_bracket_paren 
+        = NStr::Tokenize(strtmp, ",", thisInfo.skip_bracket_paren);
+
+    // ini of ok_num_prefix
+    strtmp = "DUF,UPF,IS,TIGR,UCP,PUF,CHP";
+    thisInfo.ok_num_prefix
+        = NStr::Tokenize(strtmp, ",", thisInfo.ok_num_prefix);
+
+    // ini of featkey_modified;
+    thisInfo.featkey_modified["precursor_RNA"] = "preRNA";
+    thisInfo.featkey_modified["C_region"] = "c_region";
+    thisInfo.featkey_modified["J_segment"] = "j_segment";
+    thisInfo.featkey_modified["V_segment"] = "v_segment";
+    thisInfo.featkey_modified["D-loop"] = "d_loop";
+    thisInfo.featkey_modified["source"] = "biosrc";
+
     
     // ini. of rnafeattp_rnareftp
     string rna_feat_tp_nm;
@@ -1116,17 +1121,6 @@ ridx ++;
        thisInfo.spe_pubfield_label[(CPub_field_special_constraint_type::E_Choice)i] = arr[i-1];
    }
 
-   // ini. of featqual_leg_name_4_summ
-   for (i = eFeat_qual_legal_allele; 
-                   i <= eFeat_qual_legal_pcr_conditions; i++){
-      strtmp = ENUM_METHOD_NAME(EFeat_qual_legal)()->FindName(i, true);
-      if (!strtmp.empty()) {
-         strtmp = (strtmp == "ec-number") ? "EC number"
-                    :((strtmp == "gene") ? "locus" 
-                       :((strtmp == "pseudo") ? "pseudogene" : strtmp));
-         thisInfo.featqual_leg_name_4summ[(EFeat_qual_legal)i] = strtmp; 
-      }
-   }
     
    // ini. of miscfield_names
    strtmp = "Genome Project ID,Comment Descriptor,Definition Line,Keyword";

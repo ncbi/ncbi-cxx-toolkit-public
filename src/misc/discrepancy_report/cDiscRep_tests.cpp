@@ -285,7 +285,6 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
        prot_nm = *(prot.GetName().begin()); 
        rule_idx = 0;
        string test_name, summ;
-// prot_nm = "helix-turn-helix";
 
        ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                    thisInfo.suspect_prod_rules->Get()) {

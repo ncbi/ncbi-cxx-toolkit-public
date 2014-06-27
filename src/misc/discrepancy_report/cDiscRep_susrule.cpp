@@ -1036,7 +1036,7 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
 // c CaseNCompare()
 bool CSuspectRuleCheck :: CaseNCompareEqual(string str1, string str2, unsigned len1, bool case_sensitive)
 {
-   if (!len1) return true;
+   if (!len1) return false;
    string comp_str1, comp_str2;
    comp_str1 = CTempString(str1).substr(0, len1);
    comp_str2 = CTempString(str2).substr(0, len1);
@@ -1088,7 +1088,7 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
         len1 = word_word[i].size();
         //text match
         if (CaseNCompareEqual(word_word[i++], cp_m, len1, wd_case)){
-           word_start_m 
+           word_start_m
                = (!pos_match && is_start) || !isalpha(cp_m[pos_match-1]);
            ch1 = (cp_m.size() <= len1) ? ' ' : cp_m[len1];
            
@@ -4130,6 +4130,9 @@ cerr << "match " << match << endl;
 }
 return match;
 */
+
+
+
   m_bioseq_hl = bioseq_hl;
   if (MatchesSuspectProductRule(str, rule)) {
     const CSeq_feat* feat_pnt = const_cast <CSeq_feat*>(&feat);
