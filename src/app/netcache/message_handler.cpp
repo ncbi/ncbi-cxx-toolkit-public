@@ -1933,8 +1933,10 @@ CNCMessageHandler::x_StartCommand(void)
     {
         diag_msg.Flush();
         GetDiagCtx()->SetRequestStatus(eStatus_JustStarted);
-        WriteText(s_MsgForStatus[eStatus_JustStarted]).WriteText("\n");
-        m_Flags = 0;
+        if (m_HttpMode == eNoHttp) {
+            WriteText(s_MsgForStatus[eStatus_JustStarted]).WriteText("\n");
+            m_Flags = 0;
+        }
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -1943,8 +1945,10 @@ CNCMessageHandler::x_StartCommand(void)
         // We'll be here only if generally work for the client is enabled but
         // for current particular cache it is disabled.
         GetDiagCtx()->SetRequestStatus(eStatus_Disabled);
-        WriteText(s_MsgForStatus[eStatus_Disabled]).WriteText("\n");
-        m_Flags = 0;
+        if (m_HttpMode == eNoHttp) {
+            WriteText(s_MsgForStatus[eStatus_Disabled]).WriteText("\n");
+            m_Flags = 0;
+        }
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -1980,7 +1984,9 @@ CNCMessageHandler::x_StartCommand(void)
     if (x_IsFlagSet(fNeedsSpaceAsPeer)
         && !CNCBlobStorage::AcceptWritesFromPeers()) {
         GetDiagCtx()->SetRequestStatus(eStatus_NoDiskSpace);
-        WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
+        if (m_HttpMode == eNoHttp) {
+            WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
+        }
         return &CNCMessageHandler::x_FinishCommand;
     }
         
@@ -1996,7 +2002,9 @@ CNCMessageHandler::x_StartCommand(void)
     {
         diag_msg.Flush();
         GetDiagCtx()->SetRequestStatus(eStatus_NotAllowed);
-        WriteText(s_MsgForStatus[eStatus_NotAllowed].substr(4)).WriteText("\n");
+        if (m_HttpMode == eNoHttp) {
+            WriteText(s_MsgForStatus[eStatus_NotAllowed].substr(4)).WriteText("\n");
+        }
         SRV_LOG(Warning, s_MsgForStatus[eStatus_NotAllowed]);
         return &CNCMessageHandler::x_FinishCommand;
     }
@@ -2015,8 +2023,10 @@ CNCMessageHandler::x_StartCommand(void)
         if (!nc_key.ParseBlobKey(m_RawKey.data(), m_RawKey.length(), &nc_key)) {
             diag_msg.Flush();
             GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
-            WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
-            SRV_LOG(Critical, "Invalid blob key format: " << m_RawKey);
+            if (m_HttpMode == eNoHttp) {
+                WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
+                SRV_LOG(Critical, "Invalid blob key format: " << m_RawKey);
+            }
             return &CNCMessageHandler::x_FinishCommand;
         }
         CNCDistributionConf::GetSlotByRnd(nc_key.GetRandomPart(), m_BlobSlot, m_TimeBucket);
@@ -2064,7 +2074,9 @@ CNCMessageHandler::x_StartCommand(void)
             return &CNCMessageHandler::x_ProxyToNextPeer;
         }
         GetDiagCtx()->SetRequestStatus(eStatus_NoDiskSpace);
-        WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
+        if (m_HttpMode == eNoHttp) {
+            WriteText(s_MsgForStatus[eStatus_NoDiskSpace]).WriteText("\n");
+        }
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -2243,7 +2255,9 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
 
     if (!m_BlobAccess->IsAuthorized()  &&  !x_IsFlagSet(fDoNotCheckPassword)) {
         GetDiagCtx()->SetRequestStatus(eStatus_BadPassword);
-        WriteText(s_MsgForStatus[eStatus_BadPassword]).WriteText("\n");
+        if (m_HttpMode == eNoHttp) {
+            WriteText(s_MsgForStatus[eStatus_BadPassword]).WriteText("\n");
+        }
         return &CNCMessageHandler::x_FinishCommand;
     }
 
@@ -2517,8 +2531,10 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     }
     if (fail) {
         if (x_IsFlagSet(fConfirmOnFinish)) {
-            WriteText(errmsg).WriteText("\n");
-            x_UnsetFlag(fConfirmOnFinish);
+            if (m_HttpMode == eNoHttp) {
+                WriteText(errmsg).WriteText("\n");
+                x_UnsetFlag(fConfirmOnFinish);
+            }
             return &CNCMessageHandler::x_FinishCommand;
         } else {
             return &CNCMessageHandler::x_CloseCmdAndConn;
