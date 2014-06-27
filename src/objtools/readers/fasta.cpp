@@ -1388,11 +1388,8 @@ void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
     AssignMolType(pMessageListener);
 
     // apply source mods *after* figuring out mol type
-    if (TestFlag(fParseTitle) || TestFlag(fAddMods) ) 
-    {
-        ITERATE(vector<SLineTextAndLoc>, title_ci, m_CurrentSeqTitles) {
-            ParseTitle(*title_ci, pMessageListener);
-        }
+    ITERATE(vector<SLineTextAndLoc>, title_ci, m_CurrentSeqTitles) {
+        ParseTitle(*title_ci, pMessageListener);
     }
     m_CurrentSeqTitles.clear();
 

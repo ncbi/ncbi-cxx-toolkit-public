@@ -144,7 +144,6 @@ namespace {
 
     const static CFastaReader::TFlags kDefaultFastaReaderFlags = 
         CFastaReader::fAssumeNuc | 
-        CFastaReader::fParseTitle |
         CFastaReader::fForceType;
 
     // list of FASTA warning tests
