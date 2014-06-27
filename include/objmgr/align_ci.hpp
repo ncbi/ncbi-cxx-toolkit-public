@@ -155,6 +155,9 @@ public:
     /// Move to the pervious object in iterated sequence
     CAlign_CI& operator-- (void);
 
+    /// Move to the first object in iterated sequence
+    void Rewind(void);
+
     /// Check if iterator points to an object
     DECLARE_OPERATOR_BOOL(IsValid());
 

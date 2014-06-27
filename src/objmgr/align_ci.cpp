@@ -162,6 +162,13 @@ CAlign_CI& CAlign_CI::operator-- (void)
 }
 
 
+void CAlign_CI::Rewind(void)
+{
+    CAnnotTypes_CI::Rewind();
+    m_MappedAlign.Reset();
+}
+
+
 const CSeq_align& CAlign_CI::operator* (void) const
 {
     const CAnnotObject_Ref& annot = Get();
