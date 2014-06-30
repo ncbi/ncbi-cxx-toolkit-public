@@ -2020,7 +2020,8 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
             bindcol->bcp_column_data->datalen = 0;
             bindcol->bcp_column_data->null_column = 1;
         }
-        else if (bindcol->column_hasdefault) {
+        else if (bindcol->column_hasdefault
+                 &&  (!is_blob_type(bindcol->column_type)  ||  datalen == 0)) {
             src = bindcol->column_default;
             srctype = _ct_get_client_type(blkdesc->con->ctx, bindcol->column_type, bindcol->column_usertype, bindcol->on_server.column_size);
             datalen = &bindcol->column_def_size;
