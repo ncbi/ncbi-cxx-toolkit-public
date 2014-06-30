@@ -74,6 +74,7 @@ private:
     unsigned int m_JobsSucceeded;
     unsigned int m_JobsFailed;
     unsigned int m_JobsReturned;
+    unsigned int m_JobsRescheduled;
     unsigned int m_JobsCanceled;
     unsigned int m_JobsLost;
     unsigned int m_MaxJobsAllowed;

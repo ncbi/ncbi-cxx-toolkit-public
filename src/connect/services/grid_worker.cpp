@@ -260,6 +260,15 @@ void CWorkerNodeJobContext::ReturnJob()
     m_JobCommitted = eReturn;
 }
 
+void CWorkerNodeJobContext::RescheduleJob(
+        const string& affinity, const string& group)
+{
+    CheckIfCanceled();
+    m_JobCommitted = eRescheduled;
+    m_Job.affinity = affinity;
+    m_Job.group = group;
+}
+
 void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
                                                bool send_immediately)
 {
@@ -388,6 +397,8 @@ const char* CWorkerNodeJobContext::GetCommitStatusDescription(
         return "failed";
     case eReturn:
         return "returned";
+    case eRescheduled:
+        return "rescheduled";
     case eCanceled:
         return "canceled";
     default:
@@ -534,6 +545,11 @@ void CWorkerNodeJobContext::x_RunJob()
     case eReturn:
         m_WorkerNode.x_NotifyJobWatchers(*this,
                 IWorkerNodeJobWatcher::eJobReturned);
+        break;
+
+    case eRescheduled:
+        m_WorkerNode.x_NotifyJobWatchers(*this,
+                IWorkerNodeJobWatcher::eJobRescheduled);
         break;
 
     default: // eCanceled - will be processed in x_SendJobResults().
@@ -1485,7 +1501,7 @@ void COfflineJobContext::x_RunJob()
                     m_OutputDirName, m_NetCacheAPI);
             break;
 
-        default: // eReturn and eCanceled - results won't be saved
+        default: // eReturn, eRescheduled, eCanceled - results won't be saved
             break;
         }
     }

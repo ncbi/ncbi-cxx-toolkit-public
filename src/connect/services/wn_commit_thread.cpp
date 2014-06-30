@@ -168,6 +168,10 @@ bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
             m_WorkerNode->x_ReturnJob(job_context->GetJob());
             break;
 
+        case CWorkerNodeJobContext::eRescheduled:
+            m_WorkerNode->GetNSExecutor().Reschedule(job_context->GetJob());
+            break;
+
         default: // Always eCanceled; eNotCommitted is overridden in x_RunJob().
             ERR_POST("Job " << job_context->GetJob().job_id <<
                     " has been canceled");

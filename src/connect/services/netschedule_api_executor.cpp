@@ -632,6 +632,33 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
     m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
 }
 
+void CNetScheduleExecutor::Reschedule(const CNetScheduleJob& job)
+{
+    string cmd("RESCHEDULE job_key=" + job.job_id);
+
+    SNetScheduleAPIImpl::VerifyAuthTokenAlphabet(job.auth_token);
+    cmd += " auth_token=";
+    cmd += job.auth_token;
+
+    if (!job.affinity.empty()) {
+        cmd += " aff=\"";
+        SNetScheduleAPIImpl::VerifyAffinityAlphabet(job.affinity);
+        cmd += NStr::PrintableString(job.affinity);
+        cmd += '"';
+    }
+
+    if (!job.group.empty()) {
+        cmd += " group=\"";
+        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(job.group);
+        cmd += NStr::PrintableString(job.group);
+        cmd += '"';
+    }
+
+    g_AppendClientIPAndSessionID(cmd);
+
+    m_Impl->ExecWithOrWithoutRetry(job.job_id, cmd);
+}
+
 CNetScheduleAPI::EJobStatus CNetScheduleExecutor::GetJobStatus(
         const string& job_key, time_t* job_exptime,
         ENetScheduleQueuePauseMode* pause_mode)

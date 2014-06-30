@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 /// @internal
 CWNJobWatcher::CWNJobWatcher()
     : m_JobsStarted(0), m_JobsSucceeded(0), m_JobsFailed(0), m_JobsReturned(0),
-      m_JobsCanceled(0), m_JobsLost(0),
+      m_JobsRescheduled(0), m_JobsCanceled(0), m_JobsLost(0),
       m_MaxJobsAllowed(0), m_MaxFailuresAllowed(0),
       m_InfiniteLoopTime(0)
 {
@@ -103,6 +103,9 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
     case eJobReturned:
         ++m_JobsReturned;
         break;
+    case eJobRescheduled:
+        ++m_JobsRescheduled;
+        break;
     case eJobCanceled:
         ++m_JobsCanceled;
         break;
@@ -144,6 +147,7 @@ void CWNJobWatcher::Print(CNcbiOstream& os) const
             "\nJobs Succeeded: " << m_JobsSucceeded <<
             "\nJobs Failed: " << m_JobsFailed  <<
             "\nJobs Returned: " << m_JobsReturned <<
+            "\nJobs Rescheduled: " << m_JobsRescheduled <<
             "\nJobs Canceled: " << m_JobsCanceled <<
             "\nJobs Lost: " << m_JobsLost << "\n";
 

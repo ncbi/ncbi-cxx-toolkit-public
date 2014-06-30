@@ -671,6 +671,13 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///
     void PutFailure(const CNetScheduleJob& job);
 
+    /// Reschedule a job with new affinity and/or group information.
+    ///
+    /// This method requires that the following fields of the specified
+    /// CNetScheduleJob structure are filled: 'job_id', 'auth_token',
+    /// 'affinity' and/or 'group'.
+    void Reschedule(const CNetScheduleJob& job);
+
     /// Get the current status of the specified job. Unlike the similar
     /// method from CNetScheduleSubmitter, this method does not prolong
     /// the lifetime of the job on the server.

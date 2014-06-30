@@ -272,6 +272,11 @@ public:
     ///
     void ReturnJob();
 
+    /// Put the job back in the queue with the specified affinity and group.
+    ///
+    /// This method should be called before exiting IWorkerNodeJob::Do().
+    void RescheduleJob(const string& affinity, const string& group = kEmptyStr);
+
     /// Check if job processing must be aborted.
     ///
     /// This method must be called periodically from within the Do()
@@ -340,6 +345,7 @@ public:
         eDone,
         eFailure,
         eReturn,
+        eRescheduled,
         eNotCommitted,
         eCanceled
     };
@@ -614,6 +620,7 @@ public:
         eJobFailed,
         eJobSucceeded,
         eJobReturned,
+        eJobRescheduled,
         eJobCanceled,
         eJobLost
     };
