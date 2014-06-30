@@ -1539,12 +1539,13 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
             else {
               rval = IsWholeWordMatch(pattern, pFound, search.size(), true);
               while (!rval && pFound != string::npos) {
-                pFound = (str_cons->GetCase_sensitive())?
-                          CTempString(pattern).substr(pFound + 1).find(search):
-                             NStr::FindNoCase(
-                               CTempString(pattern).substr(pFound + 1), search);
+                pFound 
+                  = (str_cons->GetCase_sensitive())?
+                      CTempString(pattern).substr(pFound + 1).find(search)
+                       : NStr::FindNoCase(
+                             CTempString(pattern).substr(pFound + 1), search);
                 if (pFound != string::npos) {
-                    rval = IsWholeWordMatch (pattern, pFound, str.size(), true);
+                   rval = IsWholeWordMatch(pattern, pFound, str.size(), true);
                 }
               }
             }
@@ -1557,6 +1558,7 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
       }
     }
   }
+}
   return rval;
 };
 
@@ -4128,9 +4130,14 @@ bool match = rule.StringMatchesSuspectProductRule(str);
 if (match) {
 cerr << "match " << match << endl;
 }
+
+if (match) {
+   string strtmp = str;
+   rule.ApplyToString(strtmp);
+cerr << "strtmp " << strtmp << endl;
+}
 return match;
 */
-
 
 
   m_bioseq_hl = bioseq_hl;
