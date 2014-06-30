@@ -62,6 +62,7 @@ public:
 
     static void Clean(string& seq);
     static bool IsValid(const string& seq, char& bad_ch);
+    static bool TrimJunk(string& seq);
 };
 
 END_objects_SCOPE // namespace ncbi::objects::

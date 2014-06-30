@@ -211,6 +211,28 @@ bool CPCRPrimerSeq::IsValid(const string& seq, char& bad_ch)
     return true;
 }
 
+bool CPCRPrimerSeq::TrimJunk(string& seq)
+{
+    const char* starts[] = {"5'-","5`-","5-","5'","5`","-",NULL};
+    const char* ends[] = {"-3'","-3`","-3","3'","3`","-",NULL};
+
+    string orig(seq);
+
+    for(int i=0; starts[i] != NULL; i++) {
+        unsigned int len = strlen(starts[i]);
+        unsigned int pos = seq.find(starts[i]);
+        if (pos == 0 && len < seq.length())
+            seq = seq.substr(len);
+    }
+    
+    for(int i=0; ends[i] != NULL; i++) {
+        unsigned int len = strlen(ends[i]);
+        unsigned int pos = seq.rfind(ends[i]);
+        if (len < seq.length() && pos == seq.length()-len)
+            seq = seq.substr(0,seq.length()-len);
+    }
+    return (orig != seq);
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
