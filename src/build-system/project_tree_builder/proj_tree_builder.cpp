@@ -813,7 +813,9 @@ void  SMakeProjectT::VerifyLibDepends(
             if (p == depends_ids.end()) {
                 if (libs_3party == nullptr || 
                     libs_3party->find(id) == libs_3party->end()) {
-                    if (!SMakeProjectT::IsConfigurableDefine(id)) {
+                    if (!SMakeProjectT::IsConfigurableDefine(id) &&
+                        !app.GetSite().IsLibWithChoice(id) &&
+                        !app.GetSite().Is3PartyLibWithChoice(id)) {
                         missing.push_back(id);
                         missing_suffix[id] = s_suffix;
                     }
