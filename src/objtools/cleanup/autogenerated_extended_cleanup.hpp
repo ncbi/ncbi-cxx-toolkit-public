@@ -94,11 +94,10 @@ void x_ExtendedCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_ETC( Tcon
   void x_ExtendedCleanupSeqFeat_xref_E_ETC( CSeqFeatXref & arg0 );
   template< typename Tcontainer_ncbi_cref_cseqfeatxref_ >
 void x_ExtendedCleanupSeqFeat_xref_ETC( Tcontainer_ncbi_cref_cseqfeatxref_ & arg0 );
-  void x_ExtendedCleanupBioseq_annot_E_E_data_ftable_E( CSeq_feat & arg0 );
+  void x_ExtendedCleanupSeqAnnot_data_ftable_E( CSeq_feat & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_feat_ >
-void x_ExtendedCleanupBioseq_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
-  void x_ExtendedCleanupBioseq_annot_E_E_data( CSeq_annot::C_Data & arg0 );
-  void x_ExtendedCleanupBioseq_annot_E_E( CSeq_annot & arg0 );
+void x_ExtendedCleanupSeqAnnot_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
+  void x_ExtendedCleanupSeqAnnot_data( CSeq_annot::C_Data & arg0 );
   void x_ExtendedCleanupBioseq_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_ExtendedCleanupBioseq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
@@ -116,11 +115,6 @@ void x_ExtendedCleanupBioseq_inst_inst_ext_ext_map_map( Tcontainer_ncbi_cref_cse
   void x_ExtendedCleanupBioseq_inst_inst( CSeq_inst & arg0 );
   void x_ExtendedCleanupBioseq_inst( CSeq_inst & arg0 );
   void x_ExtendedCleanupSeqEntry_seq( CBioseq & arg0 );
-  void x_ExtendedCleanupSeqEntry_set_set_annot_E_E_data_ftable_E( CSeq_feat & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
-void x_ExtendedCleanupSeqEntry_set_set_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
-  void x_ExtendedCleanupSeqEntry_set_set_annot_E_E_data( CSeq_annot::C_Data & arg0 );
-  void x_ExtendedCleanupSeqEntry_set_set_annot_E_E( CSeq_annot & arg0 );
   void x_ExtendedCleanupSeqEntry_set_set_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_ExtendedCleanupSeqEntry_set_set_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
@@ -129,11 +123,6 @@ void x_ExtendedCleanupSeqEntry_set_set_annot( Tcontainer_ncbi_cref_cseq_annot_ &
 void x_ExtendedCleanupSeqEntry_set_set_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
   void x_ExtendedCleanupSeqEntry_set_set_ETC( CBioseq_set & arg0 );
   void x_ExtendedCleanupSeqEntry_set( CBioseq_set & arg0 );
-  void x_ExtendedCleanupSeqSubmit_data_annots_E_E_data_ftable_E( CSeq_feat & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
-void x_ExtendedCleanupSeqSubmit_data_annots_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
-  void x_ExtendedCleanupSeqSubmit_data_annots_E_E_data( CSeq_annot::C_Data & arg0 );
-  void x_ExtendedCleanupSeqSubmit_data_annots_E_E( CSeq_annot & arg0 );
   void x_ExtendedCleanupSeqSubmit_data_annots_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_ExtendedCleanupSeqSubmit_data_annots( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
@@ -141,15 +130,6 @@ void x_ExtendedCleanupSeqSubmit_data_annots( Tcontainer_ncbi_cref_cseq_annot_ & 
   template< typename Tcontainer_ncbi_cref_cseq_entry_ >
 void x_ExtendedCleanupSeqSubmit_data_entrys( Tcontainer_ncbi_cref_cseq_entry_ & arg0 );
   void x_ExtendedCleanupSeqSubmit_data( CSeq_submit::C_Data & arg0 );
-  void x_ExtendedCleanupSeqAnnot_data_ftable_E( CSeq_feat & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
-void x_ExtendedCleanupSeqAnnot_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
-  void x_ExtendedCleanupSeqAnnot_data( CSeq_annot::C_Data & arg0 );
-  void x_ExtendedCleanupBioseqSet_annot_E_E_data_ftable_E( CSeq_feat & arg0 );
-  template< typename Tcontainer_ncbi_cref_cseq_feat_ >
-void x_ExtendedCleanupBioseqSet_annot_E_E_data_ftable( Tcontainer_ncbi_cref_cseq_feat_ & arg0 );
-  void x_ExtendedCleanupBioseqSet_annot_E_E_data( CSeq_annot::C_Data & arg0 );
-  void x_ExtendedCleanupBioseqSet_annot_E_E( CSeq_annot & arg0 );
   void x_ExtendedCleanupBioseqSet_annot_E( CSeq_annot & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_ExtendedCleanupBioseqSet_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );

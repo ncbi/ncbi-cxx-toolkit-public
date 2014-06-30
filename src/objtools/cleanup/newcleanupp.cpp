@@ -9839,6 +9839,184 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
     }
 }
 
+bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(CGene_ref& gene)
+{
+    bool should_remove = false;
+    if (gene.IsSetLocus() &&
+        NStr::IsBlank(gene.GetLocus())) {
+        gene.ResetLocus();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (gene.IsSetAllele() &&
+        NStr::IsBlank(gene.GetAllele())) {
+        gene.ResetAllele();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (gene.IsSetDesc() &&
+        NStr::IsBlank(gene.GetDesc())) {
+        gene.ResetDesc();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (gene.IsSetMaploc() &&
+        NStr::IsBlank(gene.GetMaploc())) {
+        gene.ResetMaploc();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (gene.IsSetLocus_tag() &&
+        NStr::IsBlank(gene.GetLocus_tag())) {
+        gene.ResetLocus_tag();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (gene.IsSetDb() && gene.GetDb().empty()) {
+        gene.ResetDb();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (gene.IsSetSyn() && gene.GetSyn().empty()) {
+        gene.ResetSyn();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (!gene.IsSetLocus() &&
+        !gene.IsSetAllele() &&
+        !gene.IsSetDesc() &&
+        !gene.IsSetMaploc() &&
+        !gene.IsSetLocus_tag() &&
+        !gene.IsSetDb() &&
+        !gene.IsSetSyn()) {
+        should_remove = true;
+    }
+    return should_remove;
+}
+
+            
+bool CNewCleanup_imp::x_ShouldRemoveEmptyProt( CProt_ref& prot )
+{
+    if (prot.IsSetProcessed() &&
+        (prot.GetProcessed() == CProt_ref::eProcessed_signal_peptide ||
+         prot.GetProcessed() == CProt_ref::eProcessed_transit_peptide)) {
+        return false;
+    }
+
+    bool should_remove = false;
+    if (prot.IsSetName() && 
+        (prot.GetName().empty() || 
+         NStr::IsBlank(prot.GetName().front()))) {
+        prot.ResetName();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (prot.IsSetEc() && prot.GetEc().empty()) {
+        prot.ResetEc();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (prot.IsSetDb() && prot.GetDb().empty()) {
+        prot.ResetDb();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (prot.IsSetActivity() && prot.GetActivity().empty()) {
+        prot.ResetActivity();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (prot.IsSetDesc() && NStr::IsBlank(prot.GetDesc())) {
+        prot.ResetDesc();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (!prot.IsSetName() &&
+        !prot.IsSetDesc() &&
+        !prot.IsSetEc() &&
+        !prot.IsSetActivity() &&
+        !prot.IsSetDb()) {
+        should_remove = true;
+    }
+    return should_remove;
+}
+           
+bool CNewCleanup_imp::x_ShouldRemoveEmptyPub(CPubdesc& pub)
+{
+    return false;
+}
+
+bool CNewCleanup_imp::x_ShouldRemoveEmptyFeature( CSeq_feat& feat)
+{
+    bool is_empty = false;
+
+    if (!feat.IsSetData()) {
+        return false;
+    }
+    switch (feat.GetData().Which()) {
+        case CSeqFeatData::e_Gene:
+            is_empty = x_ShouldRemoveEmptyGene(feat.SetData().SetGene());
+            break;
+        case CSeqFeatData::e_Prot:
+            is_empty = x_ShouldRemoveEmptyProt(feat.SetData().SetProt());
+            break;
+        case CSeqFeatData::e_Pub:
+            is_empty = x_ShouldRemoveEmptyPub(feat.SetData().SetPub());
+            break;
+        case CSeqFeatData::e_Comment:
+            if (!feat.IsSetComment() || NStr::IsBlank(feat.GetComment())) {
+                is_empty = true;
+            }
+            break;
+        default:
+            break;
+    }
+    return is_empty;
+}
+
+void CNewCleanup_imp::x_RemoveEmptyFeatures( CSeq_annot & seq_annot )
+{
+    if (seq_annot.IsFtable()) {
+        CSeq_annot::C_Data::TFtable::iterator it = seq_annot.SetData().SetFtable().begin();
+        while (it != seq_annot.SetData().SetFtable().end()) {
+            if (x_ShouldRemoveEmptyFeature(**it)) {
+                it = seq_annot.SetData().SetFtable().erase(it);
+                ChangeMade(CCleanupChange::eRemoveFeat);
+            } else {
+                it++;
+            }
+        }
+    }
+}
+
+void CNewCleanup_imp::x_RemoveEmptyFeatureTables( list< CRef< CSeq_annot > >& annot_list)
+{
+    list< CRef< CSeq_annot > >::iterator it = annot_list.begin();
+    while (it != annot_list.end()) {
+        if ((*it)->IsFtable()) {
+            x_RemoveEmptyFeatures(**it);
+            if ((*it)->GetData().GetFtable().empty()) {
+                it = annot_list.erase(it);
+                ChangeMade(CCleanupChange::eRemoveAnnot);
+            } else {
+                it++;
+            }
+        } else {
+            it++;
+        }
+    }
+}
+
+
+void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
+{
+    if (bioseq.IsSetAnnot()) {
+        x_RemoveEmptyFeatureTables(bioseq.SetAnnot());
+        if (bioseq.GetAnnot().empty()) {
+            bioseq.ResetAnnot();
+        }
+    }
+}
+
+void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
+{
+    if (bioseq_set.IsSetAnnot()) {
+        x_RemoveEmptyFeatureTables(bioseq_set.SetAnnot());
+        if (bioseq_set.GetAnnot().empty()) {
+            bioseq_set.ResetAnnot();
+        }
+    }
+}
+
+
 void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
 {
     // put general Bioseq-set cleanup here:

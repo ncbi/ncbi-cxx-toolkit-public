@@ -445,3 +445,42 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_RemoveEmptyFeatures)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene = BuildGoodFeat();
+    gene->SetData().SetGene();
+    AddFeat(gene, entry);
+    CRef<CSeq_feat> misc_feat = BuildGoodFeat();
+    AddFeat(misc_feat, entry);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.ExtendedCleanup (*entry);
+    vector<string> changes_str = changes->GetAllDescriptions();
+    vector<string> expected;
+    expected.push_back("Remove Feature");
+    expected.push_back("Move Descriptor");
+    expected.push_back("Add NcbiCleanupObject");
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    // make sure change was actually made
+    CFeat_CI feat (seh);
+    while (feat) {
+        if (feat->GetData().IsGene()) {
+            BOOST_CHECK_EQUAL("gene not removed", "missing expected cleanup");
+        }
+        ++feat;
+    }
+
+}
+
+

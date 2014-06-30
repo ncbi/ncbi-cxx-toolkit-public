@@ -87,3 +87,15 @@ use m_NewCleanup.x_RemoveEmptyUserObject
 
 use m_NewCleanup.BioSourceEC { BioSource }
 
+use m_NewCleanup.x_RemoveEmptyFeatures
+{
+    Seq-annot
+}
+
+use m_NewCleanup.x_RemoveEmptyFeatureTables
+{
+    Bioseq,
+    Bioseq-set
+}
+
+
