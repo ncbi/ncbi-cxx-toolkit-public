@@ -152,6 +152,7 @@ int CRPSBlastApp::Run(void)
                                fmt_args->GetCustomOutputFormatSpec());
 
         formatter.SetQueryRange(query_opts->GetRange());
+        formatter.SetLineLength(fmt_args->GetLineLength());
         if((fmt_args->GetFormattedOutputChoice() ==  CFormattingArgs::eXml2 ||
             fmt_args->GetFormattedOutputChoice() ==  CFormattingArgs::eJson)
            && args[kArgOutput].AsString() != "-")

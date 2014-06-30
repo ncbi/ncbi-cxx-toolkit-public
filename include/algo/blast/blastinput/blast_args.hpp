@@ -869,7 +869,8 @@ public:
         m_NumDescriptions(0), m_NumAlignments(0),
         m_DfltNumDescriptions(0), m_DfltNumAlignments(0),
         m_Html(false),
-        m_IsIgBlast(isIgblast)
+        m_IsIgBlast(isIgblast),
+        m_LineLength(align_format::kDfltLineLength)
     {
         if (m_IsIgBlast) {
             m_DfltNumAlignments = m_DfltNumDescriptions = 10;
@@ -940,6 +941,9 @@ public:
 
     bool ArchiveFormatRequested(const CArgs& args) const;
 
+    size_t GetLineLength() const {
+    	return m_LineLength;
+    }
 private:
     EOutputFormat m_OutputFormat;   ///< Choice of formatting output
     bool m_ShowGis;                 ///< Display NCBI GIs?
@@ -952,6 +956,7 @@ private:
     /// The format specification for custom output, e.g.: tabular or
     /// comma-separated value (populated if applicable)
     string m_CustomOutputFormatSpec;
+    size_t m_LineLength;
 
 };
 

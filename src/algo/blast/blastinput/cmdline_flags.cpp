@@ -215,6 +215,7 @@ const string kArgRid("rid");
 const string kArgArchive("archive");
 
 const string kArgQueryCovHspPerc("qcov_hsp_perc");
+const string kArgLineLength("line_length");
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -75,6 +75,8 @@ NCBI_ALIGN_FORMAT_EXPORT extern string kDfltArgTabularOutputFmt;
 /// Tag/keyword which is equivalent to using kDfltArgTabularOutputFmt
 NCBI_ALIGN_FORMAT_EXPORT extern const string kDfltArgTabularOutputFmtTag;
 
+NCBI_ALIGN_FORMAT_EXPORT extern const size_t kDfltLineLength;
+
 /// Enumeration for all fields that are supported in the tabular output
 enum ETabularField {
     eQuerySeqId = 0,       ///< Query Seq-id(s)

@@ -169,7 +169,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_AlignOption = 0;
     m_SeqLocChar = eX;
     m_SeqLocColor = eBlack;
-    m_LineLen = 60;
+    m_LineLen = align_format::kDfltLineLength;
     m_IsDbNa = true;
     m_CanRetrieveSeq = false;
     m_DbName = NcbiEmptyString;

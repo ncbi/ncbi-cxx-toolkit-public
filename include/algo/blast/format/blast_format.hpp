@@ -262,6 +262,8 @@ public:
     /// For use by XML2 only
     void SetBaseFile(string base) {m_BaseFile = base;}
 
+    /// Set Alignment Length
+    void SetLineLength(size_t len) {m_LineLength = len;}
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;
@@ -336,6 +338,8 @@ private:
 
     string m_BaseFile;
     int m_XMLFileCount;
+
+    size_t m_LineLength;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]

@@ -350,6 +350,9 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgArchive;
 /// Argument to specify min query coverage percentage for each hsp
 NCBI_BLASTINPUT_EXPORT extern const string kArgQueryCovHspPerc;
 
+/// Argument to specify line length for displaying alignments
+NCBI_BLASTINPUT_EXPORT extern const string kArgLineLength;
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

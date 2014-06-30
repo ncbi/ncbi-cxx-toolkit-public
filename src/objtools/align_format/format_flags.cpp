@@ -203,6 +203,7 @@ const string kArgNumAlignments("num_alignments");
 const size_t kDfltArgNumAlignments = 250;
 const string kArgProduceHtml("html");
 const bool kDfltArgProduceHtml = false;
+const size_t kDfltLineLength = 60;
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE

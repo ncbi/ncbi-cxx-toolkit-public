@@ -1964,6 +1964,14 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgNumAlignments, 
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
+    arg_desc.AddOptionalKey(kArgLineLength, "line_length",
+    		                "Line length for formatting alignments\n"
+    						"Not applicable for outfmt > 4\n"
+    		   			    "Default = `"+ NStr::IntToString(align_format::kDfltLineLength) + "'",
+    		                CArgDescriptions::eInteger);
+    arg_desc.SetConstraint(kArgLineLength,
+                           new CArgAllowValuesGreaterThanOrEqual(1));
+
     // Produce HTML?
     if(!m_IsIgBlast){
         arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
@@ -2087,6 +2095,10 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     	if (args[kArgNumDescriptions] || args[kArgNumAlignments]) {
     		hitlist_size = max(m_NumDescriptions, m_NumAlignments);
     	}
+
+    	if (args[kArgLineLength]) {
+    	    m_LineLength = args[kArgLineLength].AsInteger();
+    	}
     }
     else
     {
@@ -2094,6 +2106,11 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
    		 ERR_POST(Warning << "The parameter -num_descriptions is ignored for "
    				    		 "output formats > 4 . Use -max_target_seqs "
    				             "to control output");
+    	}
+
+    	if (args[kArgLineLength]) {
+   		 ERR_POST(Warning << "The parameter -line_length is not applicable for "
+   				    		 "output formats > 4 .");
     	}
 
     	if (args[kArgMaxTargetSequences]) {

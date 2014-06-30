@@ -107,7 +107,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_IsVdb(false),
           m_IsIterative(false),
           m_BaseFile(kEmptyStr),
-          m_XMLFileCount(0)
+          m_XMLFileCount(0),
+          m_LineLength(align_format::kDfltLineLength)
 {
     m_DbName = db_adapter.GetDatabaseName();
     m_IsBl2Seq = (m_DbName == kEmptyStr ? true : false);
@@ -200,7 +201,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
           m_IsVdb(is_vdb),
           m_IsIterative(false),
           m_BaseFile(kEmptyStr),
-          m_XMLFileCount(0)
+          m_XMLFileCount(0),
+          m_LineLength(align_format::kDfltLineLength)
 {
     m_DbInfo.assign(dbinfo_list.begin(), dbinfo_list.end());
     vector< CBlastFormatUtil::SDbInfo >::const_iterator itInfo;
@@ -980,6 +982,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
+    display.SetLineLen(m_LineLength);
 
     // set the alignment flags
     display.SetAlignOption(flags);
@@ -1442,6 +1445,7 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
 
            display.SetDbName(m_DbName);
            display.SetDbType(!m_DbIsAA);
+           display.SetLineLen(m_LineLength);
 
            // set the alignment flags
            display.SetAlignOption(flags);
