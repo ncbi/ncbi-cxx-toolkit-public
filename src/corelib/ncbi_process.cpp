@@ -551,14 +551,6 @@ bool CProcess::Kill(unsigned long timeout) const
                 // rights regardless of the security descriptor assigned
                 // to the process.
 
-                // Determine OS version
-                OSVERSIONINFO vi;
-                vi.dwOSVersionInfoSize = sizeof(vi);
-                GetVersionEx(&vi);
-                if (vi.dwPlatformId != VER_PLATFORM_WIN32_NT) {
-                    return false;
-                }
-
                 // Get current thread token 
                 HANDLE hToken;
                 if (!OpenThreadToken(GetCurrentThread(), 
