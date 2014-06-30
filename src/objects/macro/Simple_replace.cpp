@@ -106,9 +106,6 @@ bool SkipWeasel(string& str)
 
 bool CSimple_replace::ApplyToString(string& val, CRef<CString_constraint> find) const
 {
-    if (!IsSetReplace()) {
-        return false;
-    }
     bool use_putative = false;
     if (IsSetWeasel_to_putative() && GetWeasel_to_putative()) {
         if (SkipWeasel(val)) {
@@ -126,7 +123,8 @@ bool CSimple_replace::ApplyToString(string& val, CRef<CString_constraint> find) 
             rval = true;
         }
     } else {
-        rval = find->ReplaceStringConstraintPortionInString(val, GetReplace());
+       string replace = IsSetReplace() ? GetReplace() : kEmptyStr;
+       rval = find->ReplaceStringConstraintPortionInString(val, replace);
     }
 
     if (use_putative) {
