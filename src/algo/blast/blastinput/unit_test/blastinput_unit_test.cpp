@@ -697,6 +697,36 @@ BOOST_AUTO_TEST_CASE(ReadEmptyUserInput)
     }
 }
 
+// Basic test case to ensure CFastaReader changes don't break basic
+// functionality required by BLAST 
+BOOST_AUTO_TEST_CASE(ReadSingleFasta_WithTitle)
+{
+    const string kFileName("data/isprot.fa");
+    const string kExpectedTitle("seq");
+    const bool is_protein(false);
+
+    CScope scope(*CObjectManager::GetInstance());
+    CBlastInputSourceConfig iconfig(is_protein);
+
+    CNcbiIfstream infile(kFileName.c_str());
+    CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
+
+    blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope); 
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(query_vector);
+    BOOST_REQUIRE(!bioseqs.Empty());
+
+    string title;
+    ITERATE(CBioseq::TDescr::Tdata, itr, bioseqs->GetSeq_set().front()->GetSeq().GetDescr().Get()) {
+        const CSeqdesc& desc = **itr;
+        if (desc.IsTitle()) {
+            title = desc.GetTitle();
+            break;
+        }
+    }
+    BOOST_REQUIRE_EQUAL(kExpectedTitle, title);
+
+}
+
 BOOST_AUTO_TEST_CASE(ReadEmptyUserInput_OnlyTitle)
 {
     CTmpFile tmpfile;
