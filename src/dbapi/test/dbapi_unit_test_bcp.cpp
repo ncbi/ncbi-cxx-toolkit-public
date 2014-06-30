@@ -2035,6 +2035,14 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
             bi->Complete();
         }
 
+        IResultSet* rs
+            = auto_stmt->ExecuteQuery("SELECT transcript FROM " + table_name);
+        BOOST_CHECK(rs != NULL);
+        BOOST_CHECK(rs->Next());
+        do {
+            const CVariant& variant = rs->GetVariant(1);
+            BOOST_CHECK_EQUAL(variant.GetString(), test_data);
+        } while (rs->Next());
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);

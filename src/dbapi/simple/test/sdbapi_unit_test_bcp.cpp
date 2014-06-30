@@ -842,6 +842,14 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
             }
             bi.Complete();
         }
+
+        query.SetSql("SELECT transcript FROM " + table_name);
+        query.Execute();
+        query.RequireRowCount(test_num);
+        ITERATE (CQuery, it, query.SingleSet()) {
+            BOOST_CHECK_EQUAL(it[1].AsString(), test_data);
+        }
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
