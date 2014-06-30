@@ -410,7 +410,7 @@ double CAlignFilter::x_GetAlignmentScore(const string& score_name,
 
     try {
         return m_ScoreLookup.GetScore(align, score_name);
-    } catch (CException &e) {
+    } catch (CException &) {
         if( throw_if_not_found)
         {
             throw;
