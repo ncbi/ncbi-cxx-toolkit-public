@@ -10,7 +10,7 @@ var g_open_solution = true;
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
-// valid:   "71", "80", "80x64", "90", "90x64", "100", "100x64"
+// valid:   "71", "80", "80x64", "90", "90x64", "100", "100x64", "110", "110x64"
 var g_def_msvcver = "100";
 var g_msvcver     = "100";
 
@@ -498,7 +498,9 @@ function SetMsvcVer(oArgs, flag)
     if (msvcver.length  != 0) {
         if (msvcver != "71" && msvcver != "80" &&  msvcver != "80x64"
                             && msvcver != "90" &&  msvcver != "90x64"
-                            && msvcver != "100" && msvcver != "100x64") {
+                            && msvcver != "100" && msvcver != "100x64"
+                            && msvcver != "110" && msvcver != "110x64"
+           ) {
             WScript.Echo("ERROR: Unknown version of MSVC requested: " + msvcver);
             WScript.Quit(1);    
         }
@@ -516,6 +518,9 @@ function GetMsvcFolder()
     }
     if (g_msvcver == "100" || g_msvcver == "100x64") {
         return "msvc1000_prj";
+    }
+    if (g_msvcver == "110" || g_msvcver == "110x64") {
+        return "vs2013";
     }
     return "msvc710_prj";
 }
@@ -582,21 +587,25 @@ function GetPositionalValue(oArgs, position)
 // Configuration of pre-built C++ toolkit
 function GetDefaultSuffix()
 {
-    var s = "8";
+    var s = "msvc8";
     if (g_msvcver == "80") {
-        s = "8";
+        s = "msvc8";
     } else if (g_msvcver == "80x64") {
-        s = "8.64";
+        s = "msvc8.64";
     } else if (g_msvcver == "90") {
-        s = "9";
+        s = "msvc9";
     } else if (g_msvcver == "90x64") {
-        s = "9.64";
+        s = "msvc9.64";
     } else if (g_msvcver == "100") {
-        s = "10";
+        s = "msvc10";
     } else if (g_msvcver == "100x64") {
-        s = "10.64";
+        s = "msvc10.64";
+    } else if (g_msvcver == "110") {
+        s = "vs2013";
+    } else if (g_msvcver == "110x64") {
+        s = "vs2013.64";
     } else {
-        s = "71";
+        s = "msvc71";
     }
     return s;
 }
@@ -619,6 +628,10 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
         s = " -ide 1000 -arch Win32";
     } else if (g_msvcver == "100x64") {
         s = " -ide 1000 -arch x64";
+    } else if (g_msvcver == "110") {
+        s = " -ide 1100 -arch Win32";
+    } else if (g_msvcver == "110x64") {
+        s = " -ide 1100 -arch x64";
     } else {
         s = " -ide 710 -arch Win32";
     }
@@ -626,20 +639,20 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
 }
 function GetTargetPlatform()
 {
-    if (g_msvcver == "80x64" || g_msvcver == "90x64" || g_msvcver == "100x64") {
+    if (g_msvcver == "80x64" || g_msvcver == "90x64" || g_msvcver == "100x64" || g_msvcver == "110x64") {
         return "x64";
     }
     return "Win32";
 }
 function GetDefaultCXX_ToolkitFolder()
 {
-    var root = "\\\\snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc"
+    var root = "\\\\snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\"
     return root + GetDefaultSuffix();
 }
 function GetDefaultPtbRelease(oFso)
 {
-    var root = "\\\\snowman\\win-coremake\\App\\Ncbi\\cppcore\\ptb\\msvc"
-    var ptb = root + "\\project_tree_builder.RELEASE";
+    var root = "\\\\snowman\\win-coremake\\App\\Ncbi\\cppcore\\ptb\\"
+    var ptb = root + "msvc\\project_tree_builder.RELEASE";
     if (oFso.FileExists(ptb)) {
         return ptb;
     }
