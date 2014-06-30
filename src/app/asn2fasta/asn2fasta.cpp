@@ -43,6 +43,9 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <objects/seqset/gb_release_file.hpp>
+#include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqres/Byte_graph.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq_macros.hpp>
 
 #include <sra/data_loaders/wgs/wgsloader.hpp>
@@ -72,6 +75,8 @@ public:
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
 
     CFastaOstream* OpenFastaOstream(const string& name, bool use_stdout);
+
+    void PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream);
 
 private:
     CObjectIStream* x_OpenIStream(const CArgs& args);
@@ -320,7 +325,7 @@ int CAsn2FastaApp::Run(void)
                         HandleSeqEntry(seh);
                     }
                     catch (...) {
-                        cerr << "Resolution error: Sequence dropped." << endl;
+                        cerr << "Resolution error: Sequence dropped." << '\n';
                     }
                     m_Scope->RemoveTopLevelSeqEntry(seh);
                     m_Scope->ResetHistory();
@@ -480,6 +485,103 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 }
 
 //  --------------------------------------------------------------------------
+void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream)
+//  --------------------------------------------------------------------------
+{
+    TSeqPos curpos = 0;
+    TSeqPos len = 0;
+    int i = 0;
+    int j = 0;
+    bool first = true;
+
+    if (bsp.IsSetLength()) {
+        len = bsp.GetLength();
+    }
+    FOR_EACH_SEQANNOT_ON_BIOSEQ (sa_itr, bsp) {
+        const CSeq_annot& annot = **sa_itr;
+        if (! annot.IsGraph()) continue;
+        FOR_EACH_SEQGRAPH_ON_SEQANNOT (gr_itr, annot) {
+            const CSeq_graph& graph = **gr_itr;
+            if (first) {
+                first = false;
+                *out_stream << ">";
+                CSeq_id::WriteAsFasta(*out_stream, bsp);
+                if (graph.IsSetTitle()) {
+                    const string& g_title = graph.GetTitle();
+                    *out_stream << " " << g_title;
+                }
+                *out_stream << '\n';
+            }
+            const CSeq_graph::TGraph& src_data = graph.GetGraph();
+            switch (src_data.Which()) {
+                case CSeq_graph::TGraph::e_Byte:
+                    {
+                    if (graph.IsSetLoc()) {
+                        const CSeq_loc& loc = graph.GetLoc();
+                        TSeqPos left = loc.GetStart(eExtreme_Positional);
+                        while (curpos < left) {
+                            if (j > 0) {
+                                *out_stream << " ";
+                            }
+                            *out_stream << "-1";
+                            if (j < 19) {
+                                j++;
+                            } else {
+                                *out_stream << '\n';
+                                j = 0;
+                            }
+                            curpos++;
+                        }
+                    }
+                    const CByte_graph& byte_graph = src_data.GetByte();
+                    if (byte_graph.IsSetValues()) {
+                        const CByte_graph::TValues& bytes = byte_graph.GetValues();
+                        for (i = 0; i < bytes.size(); i++) {
+                            if (j > 0) {
+                                *out_stream << " ";
+                            }
+                            char ch = bytes [i];
+                            if ((int) ch < 10) {
+                                *out_stream << " ";
+                            }
+                            *out_stream << (int) ch;
+                            if (j < 19) {
+                                j++;
+                            } else {
+                                *out_stream << '\n';
+                                j = 0;
+                            }
+                            curpos++;
+                        }
+                    }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    if (! first) {
+        while (curpos < len) {
+            if (j > 0) {
+                *out_stream << " ";
+            }
+            *out_stream << "-1";
+            if (j < 19) {
+                j++;
+            } else {
+                *out_stream << '\n';
+                j = 0;
+            }
+            curpos++;
+        }
+    }
+    if (j > 0) {
+        *out_stream << '\n';
+    }
+}
+
+//  --------------------------------------------------------------------------
 bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 //  --------------------------------------------------------------------------
 {
@@ -520,25 +622,8 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
             }
         }
 
-        if ( m_Oq != NULL) {
-            FOR_EACH_SEQANNOT_ON_BIOSEQ (sa_itr, *bsr) {
-                const CSeq_annot& annot = **sa_itr;
-                if (! annot.IsGraph()) continue;
-                FOR_EACH_SEQGRAPH_ON_SEQANNOT (gr_itr, annot) {
-                    const CSeq_graph& graph = **gr_itr;
-                    if (graph.IsSetTitle()) {
-                        const string& g_title = graph.GetTitle();
-                        *m_Oq << "Title: " << g_title << endl;
-                    }
-                    if (graph.IsSetNumval()) {
-                        *m_Oq << "Numval: " << graph.GetNumval() << endl;
-                    }
-                    if (graph.IsSetLoc()) {
-                        const CSeq_loc& loc = graph.GetLoc();
-                        *m_Oq << "Start: " << loc.GetStart(eExtreme_Positional) << ", Stop: " << loc.GetStop(eExtreme_Positional) << endl;
-                    }
-                }
-            }
+        if ( m_Oq != NULL && bsh.IsNa() ) {
+            PrintQualityScores (*bsr, m_Oq);
         }
 
         if ( m_Os.get() != NULL ) {
