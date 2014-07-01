@@ -1558,7 +1558,6 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
       }
     }
   }
-}
   return rval;
 };
 
