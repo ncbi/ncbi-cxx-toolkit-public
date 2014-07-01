@@ -1948,6 +1948,7 @@ const char* sm_ValidSexQualifierTokens[] = {
 
 const char* sm_ValidSexQualifierPhrases[] = {
   "pooled males and females",
+  "pooled male and female",
 };
 
 
