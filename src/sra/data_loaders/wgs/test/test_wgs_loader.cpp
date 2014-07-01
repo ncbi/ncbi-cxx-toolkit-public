@@ -68,6 +68,24 @@ CRef<CObjectManager> sx_GetOM(void)
     return om;
 }
 
+CBioseq_Handle sx_LoadFromGB(const CBioseq_Handle& bh)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*om, 0, om->eNonDefault);
+    CScope scope(*om);
+    scope.AddDataLoader("GBLOADER");
+    return scope.GetBioseqHandle(*bh.GetSeqId());
+}
+
+string sx_GetASN(const CBioseq_Handle& bh)
+{
+    CNcbiOstrstream str;
+    if ( bh ) {
+        str << MSerial_AsnText << *bh.GetCompleteBioseq();
+    }
+    return CNcbiOstrstreamToString(str);
+}
+
 void sx_CheckNames(CScope& scope, const CSeq_loc& loc,
                    const string& name)
 {
@@ -440,6 +458,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq15)
         //cerr << MSerial_AsnText << *bsh.GetCompleteBioseq();
     }
     BOOST_CHECK(bsh);
+    //BOOST_CHECK_EQUAL(sx_GetASN(bsh), sx_GetASN(sx_LoadFromGB(bsh)));
 }
 
 
@@ -528,6 +547,7 @@ BOOST_AUTO_TEST_CASE(WithdrawnCheck)
 {
     CRef<CObjectManager> om = sx_GetOM();
     CScope scope(*om);
+    CGBDataLoader::RegisterInObjectManager(*om, 0, CObjectManager::eNonDefault);
     CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault);
     scope.AddDefaults();
 
@@ -536,11 +556,13 @@ BOOST_AUTO_TEST_CASE(WithdrawnCheck)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP02000011.1"));
     BOOST_CHECK(bh);
     BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    BOOST_CHECK_EQUAL(sx_GetASN(bh), sx_GetASN(sx_LoadFromGB(bh)));
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011.1"));
     BOOST_CHECK(bh);
     BOOST_CHECK_EQUAL(bh.GetState(),
                       CBioseq_Handle::fState_suppress_perm);
+    BOOST_CHECK_EQUAL(sx_GetASN(bh), sx_GetASN(sx_LoadFromGB(bh)));
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000012.1"));
     BOOST_CHECK(!bh);
@@ -556,7 +578,7 @@ BOOST_AUTO_TEST_CASE(WithdrawnCheck)
 # define PAN1_PATH "//panfs/pan1"
 #endif
 
-    BOOST_AUTO_TEST_CASE(TPGTest)
+BOOST_AUTO_TEST_CASE(TPGTest)
 {
     CRef<CObjectManager> om = sx_GetOM();
     CScope scope(*om);
@@ -599,4 +621,23 @@ BOOST_AUTO_TEST_CASE(FixedFileTest)
     BOOST_CHECK(!bh);
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAA01000001.1"));
     BOOST_CHECK(!bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(QualityTest)
+{
+    CRef<CObjectManager> om = sx_GetOM();
+    CScope scope(*om);
+
+    CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault);
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ABYI02000001.1"));
+    BOOST_REQUIRE(bh);
+    CGraph_CI graph_it(bh, SAnnotSelector().AddNamedAnnots("Phrap Graph"));
+    BOOST_CHECK_EQUAL(graph_it.GetSize(), 1u);
+    CFeat_CI feat_it(bh);
+    BOOST_CHECK_EQUAL(feat_it.GetSize(), 116u);
 }
