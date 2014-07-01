@@ -270,8 +270,10 @@ protected:
     /// Prepare properties for application stop message
     virtual void AppStop(int exit_code);
 
-    /// Set HTTP status code in the current request context
-    void SetHTTPStatus(int status);
+    /// Set HTTP status code in the current request context and in the
+    /// current CHttpResponse if one exists.
+    /// @sa CHttpResponse::SetStatus()
+    void SetHTTPStatus(unsigned int status, const string& reason = kEmptyStr);
 
 protected:
     /// Set CONN_HTTP_REFERER, print self-URL and referer to log.

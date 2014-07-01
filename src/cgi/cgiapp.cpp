@@ -1343,9 +1343,14 @@ string CCgiApplication::GetDefaultLogPath(void) const
 }
 
 
-void CCgiApplication::SetHTTPStatus(int status)
+void CCgiApplication::SetHTTPStatus(unsigned int status, const string& reason)
 {
-    CDiagContext::GetRequestContext().SetRequestStatus(status);
+    if ( m_Context.get() ) {
+        m_Context->GetResponse().SetStatus(status, reason);
+    }
+    else {
+        CDiagContext::GetRequestContext().SetRequestStatus(status);
+    }
 }
 
 
