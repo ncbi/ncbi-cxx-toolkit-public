@@ -37,6 +37,10 @@
 #include <util/icanceled.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CArgDescriptions;
+class CArgs;
+
 BEGIN_SCOPE(objects)
 
 class CBioseqContext;
@@ -597,10 +601,17 @@ public:
     static const vector<string> & GetAllGenbankStrings(void);
 
     // return non-const callback even if the CFlatFileConfig is const
-    CRef<CGenbankBlockCallback> GetGenbankBlockCallback(void) const { return m_GenbankBlockCallback; }
+    CRef<CGenbankBlockCallback> GetGenbankBlockCallback(void) const { 
+        return m_GenbankBlockCallback; }
+    void SetGenbankBlockCallback(CGenbankBlockCallback* pGenbankBlockCallback) {
+        m_GenbankBlockCallback = pGenbankBlockCallback;
+    }
 
     const ICanceled * GetCanceledCallback(void) const {
         return m_pCanceledCallback;
+    }
+    void SetCanceledCallback(ICanceled * pCallback) {
+        m_pCanceledCallback = pCallback;
     }
 
     // -- BasicCleanup
@@ -617,6 +628,10 @@ public:
             x_ThrowHaltNow();
         }
     }
+
+    // options to share between applications related to flatfile
+    static void AddArgumentDescriptions(CArgDescriptions& args);
+    void FromArguments(const CArgs& args);
 
 public:
     static const size_t SMARTFEATLIMIT = 1000000;

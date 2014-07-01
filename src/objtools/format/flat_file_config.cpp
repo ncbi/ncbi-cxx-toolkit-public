@@ -488,5 +488,356 @@ CFlatFileConfig::x_ThrowHaltNow(void) const
         "FlatFile Generation canceled" );
 }
 
+void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
+{
+    CArgDescriptions* arg_desc = & args;
+
+    // report
+    {{
+         arg_desc->SetCurrentGroup("Formatting Options");
+         // format (default: genbank)
+         arg_desc->AddDefaultKey("format", "Format",
+                                 "Output format",
+                                 CArgDescriptions::eString, "genbank");
+         arg_desc->SetConstraint("format",
+                                 &(*new CArgAllow_Strings,
+                                   "genbank", "embl", "ddbj", "gbseq", "ftable", "gff", "gff3"));
+
+         // mode (default: dump)
+         arg_desc->AddDefaultKey("mode", "Mode",
+                                 "Restriction level",
+                                 CArgDescriptions::eString, "gbench");
+         arg_desc->SetConstraint("mode",
+                                 &(*new CArgAllow_Strings, "release", "entrez", "gbench", "dump"));
+
+         // style (default: normal)
+         arg_desc->AddDefaultKey("style", "Style",
+                                 "Formatting style",
+                                 CArgDescriptions::eString, "normal");
+         arg_desc->SetConstraint("style",
+                                 &(*new CArgAllow_Strings, "normal", "segment", "master", "contig"));
+
+         // flags (default: 0)
+         arg_desc->AddDefaultKey("flags", "Flags",
+                                 "Flags controlling flat file output.  The value is the bitwise OR (logical addition) of:\n"
+                                 "         1 - show HTML report\n"
+                                 "         2 - show contig features\n"
+                                 "         4 - show contig sources\n"
+                                 "         8 - show far translations\n"
+                                 "        16 - show translations if there are no products\n"
+                                 "        32 - always translate CDS\n"
+                                 "        64 - show only near features\n"
+                                 "       128 - show far features on segs\n"
+                                 "       256 - copy CDS feature from cDNA\n"
+                                 "       512 - copy gene to cDNA\n"
+                                 "      1024 - show contig in master\n"
+                                 "      2048 - hide imported features\n"
+                                 "      4096 - hide remote imported features\n"
+                                 "      8192 - hide SNP features\n"
+                                 "     16384 - hide exon features\n"
+                                 "     32768 - hide intron features\n"
+                                 "     65536 - hide misc features\n"
+                                 "    131072 - hide CDS product features\n"
+                                 "    262144 - hide CDD features\n"
+                                 "    542288 - show transcript sequence\n"
+                                 "   1048576 - show peptides\n"
+                                 "   2097152 - hide GeneRIFs\n"
+                                 "   4194304 - show only GeneRIFs\n"
+                                 "   8388608 - show only the latest GeneRIFs\n"
+                                 "  16777216 - show contig and sequence\n"
+                                 "  33554432 - hide source features\n"
+                                 "  67108864 - show feature table references\n"
+                                 " 134217728 - use the old feature sort order\n"
+                                 " 268435456 - hide gap features\n"
+                                 " 536870912 - do not translate the CDS\n"
+                                 "1073741824 - show javascript sequence spans",
+
+                                 CArgDescriptions::eInteger, "0");
+
+         arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST", 
+             "Use this to only show certain parts of the flatfile (e.g. '-showblocks locus,defline').  "
+             "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
+             CArgDescriptions::eString );
+         arg_desc->AddOptionalKey("skipblocks", "COMMA_SEPARATED_BLOCK_LIST", 
+             "Use this to skip certain parts of the flatfile (e.g. '-skipblocks sequence,origin').  "
+             "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
+             CArgDescriptions::eString );
+         // don't allow both because it's not really clear what the user intended.
+         arg_desc->SetDependency("showblocks", CArgDescriptions::eExcludes, "skipblocks");
+
+         arg_desc->AddFlag("demo-genbank-callback",
+             "When set (and genbank mode is used), this program will demonstrate the use of "
+             "genbank callbacks via a very simple callback that just prints its output to stderr, then "
+             "prints some statistics.  To demonstrate halting of flatfile generation, the genbank callback "
+             "will halt flatfile generation if it encounters an item with the words 'HALT TEST'.  To demonstrate skipping a block, it will skip blocks with the words 'SKIP TEST' in them.  Also, blocks with the words 'MODIFY TEST' in them will have the text 'MODIFY TEST' turned into 'WAS MODIFIED TEST'.");
+
+         arg_desc->AddFlag("no-external",
+                           "Disable all external annotation sources");
+
+         arg_desc->AddFlag("resolve-all",
+                           "Resolves all, e.g. for contigs.");
+
+         arg_desc->AddFlag("show-flags",
+                           "Describe the current flag set in ENUM terms");
+
+         // view (default: nucleotide)
+         arg_desc->AddDefaultKey("view", "View", "View",
+                                 CArgDescriptions::eString, "nuc");
+         arg_desc->SetConstraint("view",
+                                 &(*new CArgAllow_Strings, "all", "prot", "nuc"));
+
+         // from
+         arg_desc->AddOptionalKey("from", "From",
+                                  "Begining of shown range", CArgDescriptions::eInteger);
+
+         // to
+         arg_desc->AddOptionalKey("to", "To",
+                                  "End of shown range", CArgDescriptions::eInteger);
+
+         // strand
+         arg_desc->AddDefaultKey("count", "Count", "Number of runs",
+                                 CArgDescriptions::eInteger, "1");
+
+         // accession to extract
+
+         // html
+         arg_desc->AddFlag("html", "Produce HTML output");
+     }}
+
+    // misc
+    {{
+         // cleanup
+         arg_desc->AddFlag("cleanup",
+                           "Do internal data cleanup prior to formatting");
+         // no-cleanup
+         arg_desc->AddFlag("nocleanup",
+                           "Do not perform data cleanup prior to formatting");
+         // remote
+         arg_desc->AddFlag("gbload", "Use GenBank data loader");
+     }}
+}
+
+namespace
+{
+CFlatFileConfig::EFormat x_GetFormat(const CArgs& args)
+{
+    const string& format = args["format"].AsString();
+    if ( format == "genbank" ) {
+        return CFlatFileConfig::eFormat_GenBank;
+    } else if ( format == "embl" ) {
+        return CFlatFileConfig::eFormat_EMBL;
+    } else if ( format == "ddbj" ) {
+        return CFlatFileConfig::eFormat_DDBJ;
+    } else if ( format == "gbseq" ) {
+        return CFlatFileConfig::eFormat_GBSeq;
+    } else if ( format == "ftable" ) {
+        return CFlatFileConfig::eFormat_FTable;
+    }
+    if (format == "gff"  ||  format == "gff3") {
+        string msg = 
+            "Asn2flat no longer supports GFF and GFF3 generation. "
+            "For state-of-the-art GFF output, use annotwriter.";
+        NCBI_THROW(CException, eInvalid, msg);
+    }
+    // default
+    return CFlatFileConfig::eFormat_GenBank;
+}
+
+
+CFlatFileConfig::EMode x_GetMode(const CArgs& args)
+{
+    const string& mode = args["mode"].AsString();
+    if ( mode == "release" ) {
+        return CFlatFileConfig::eMode_Release;
+    } else if ( mode == "entrez" ) {
+        return CFlatFileConfig::eMode_Entrez;
+    } else if ( mode == "gbench" ) {
+        return CFlatFileConfig::eMode_GBench;
+    } else if ( mode == "dump" ) {
+        return CFlatFileConfig::eMode_Dump;
+    }
+
+    // default
+    return CFlatFileConfig::eMode_GBench;
+}
+
+
+CFlatFileConfig::EStyle x_GetStyle(const CArgs& args)
+{
+    const string& style = args["style"].AsString();
+    if ( style == "normal" ) {
+        return CFlatFileConfig::eStyle_Normal;
+    } else if ( style == "segment" ) {
+        return CFlatFileConfig::eStyle_Segment;
+    } else if ( style == "master" ) {
+        return CFlatFileConfig::eStyle_Master;
+    } else if ( style == "contig" ) {
+        return CFlatFileConfig::eStyle_Contig;
+    }
+
+    // default
+    return CFlatFileConfig::eStyle_Normal;
+}
+
+
+CFlatFileConfig::EFlags x_GetFlags(const CArgs& args)
+{
+    int flags = args["flags"].AsInteger();
+    if (args["html"]) {
+        flags |= CFlatFileConfig::fDoHTML;
+    }
+
+    if (args["show-flags"]) {
+
+        typedef pair<CFlatFileConfig::EFlags, const char*> TFlagDescr;
+        static const TFlagDescr kDescrTable[] = {
+            TFlagDescr(CFlatFileConfig::fDoHTML,
+                       "CFlatFileConfig::fDoHTML"),
+            TFlagDescr(CFlatFileConfig::fShowContigFeatures,
+                       "CFlatFileConfig::fShowContigFeatures"),
+            TFlagDescr(CFlatFileConfig::fShowContigSources,
+                       "CFlatFileConfig::fShowContigSources"),
+            TFlagDescr(CFlatFileConfig::fShowFarTranslations,
+                       "CFlatFileConfig::fShowFarTranslations"),
+            TFlagDescr(CFlatFileConfig::fTranslateIfNoProduct,
+                       "CFlatFileConfig::fTranslateIfNoProduct"),
+            TFlagDescr(CFlatFileConfig::fAlwaysTranslateCDS,
+                       "CFlatFileConfig::fAlwaysTranslateCDS"),
+            TFlagDescr(CFlatFileConfig::fOnlyNearFeatures,
+                       "CFlatFileConfig::fOnlyNearFeatures"),
+            TFlagDescr(CFlatFileConfig::fFavorFarFeatures,
+                       "CFlatFileConfig::fFavorFarFeatures"),
+            TFlagDescr(CFlatFileConfig::fCopyCDSFromCDNA,
+                       "CFlatFileConfig::fCopyCDSFromCDNA"),
+            TFlagDescr(CFlatFileConfig::fCopyGeneToCDNA,
+                       "CFlatFileConfig::fCopyGeneToCDNA"),
+            TFlagDescr(CFlatFileConfig::fShowContigInMaster,
+                       "CFlatFileConfig::fShowContigInMaster"),
+            TFlagDescr(CFlatFileConfig::fHideImpFeatures,
+                       "CFlatFileConfig::fHideImpFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideRemoteImpFeatures,
+                       "CFlatFileConfig::fHideRemoteImpFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideSNPFeatures,
+                       "CFlatFileConfig::fHideSNPFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideExonFeatures,
+                       "CFlatFileConfig::fHideExonFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideIntronFeatures,
+                       "CFlatFileConfig::fHideIntronFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideMiscFeatures,
+                       "CFlatFileConfig::fHideMiscFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideCDSProdFeatures,
+                       "CFlatFileConfig::fHideCDSProdFeatures"),
+            TFlagDescr(CFlatFileConfig::fHideCDDFeatures,
+                       "CFlatFileConfig::fHideCDDFeatures"),
+            TFlagDescr(CFlatFileConfig::fShowTranscript,
+                       "CFlatFileConfig::fShowTranscript"),
+            TFlagDescr(CFlatFileConfig::fShowPeptides,
+                       "CFlatFileConfig::fShowPeptides"),
+            TFlagDescr(CFlatFileConfig::fHideGeneRIFs,
+                       "CFlatFileConfig::fHideGeneRIFs"),
+            TFlagDescr(CFlatFileConfig::fOnlyGeneRIFs,
+                       "CFlatFileConfig::fOnlyGeneRIFs"),
+            TFlagDescr(CFlatFileConfig::fLatestGeneRIFs,
+                       "CFlatFileConfig::fLatestGeneRIFs"),
+            TFlagDescr(CFlatFileConfig::fShowContigAndSeq,
+                       "CFlatFileConfig::fShowContigAndSeq"),
+            TFlagDescr(CFlatFileConfig::fHideSourceFeatures,
+                       "CFlatFileConfig::fHideSourceFeatures"),
+            TFlagDescr(CFlatFileConfig::fShowFtableRefs,
+                       "CFlatFileConfig::fShowFtableRefs"),
+            TFlagDescr(CFlatFileConfig::fOldFeaturesOrder,
+                       "CFlatFileConfig::fOldFeaturesOrder"),
+            TFlagDescr(CFlatFileConfig::fHideGapFeatures,
+                       "CFlatFileConfig::fHideGapFeatures"),
+            TFlagDescr(CFlatFileConfig::fNeverTranslateCDS,
+                       "CFlatFileConfig::fNeverTranslateCDS"),
+            TFlagDescr(CFlatFileConfig::fShowSeqSpans,
+                       "CFlatFileConfig::fShowSeqSpans")
+        };
+        static size_t kArraySize = sizeof(kDescrTable) / sizeof(TFlagDescr);
+        for (size_t i = 0;  i < kArraySize;  ++i) {
+            if (flags & kDescrTable[i].first) {
+                LOG_POST(Error << "flag: "
+                         << std::left << setw(40) << kDescrTable[i].second
+                         << " = "
+                         << std::right << setw(10) << kDescrTable[i].first
+                        );
+            }
+        }
+    }
+
+    return (CFlatFileConfig::EFlags)flags;
+}
+
+
+CFlatFileConfig::EView x_GetView(const CArgs& args)
+{
+    const string& view = args["view"].AsString();
+    if ( view == "all" ) {
+        return CFlatFileConfig::fViewAll;
+    } else if ( view == "prot" ) {
+        return CFlatFileConfig::fViewProteins;
+    } else if ( view == "nuc" ) {
+        return CFlatFileConfig::fViewNucleotides;
+    }
+
+    // default
+    return CFlatFileConfig::fViewNucleotides;
+}
+
+CFlatFileConfig::TGenbankBlocks x_GetGenbankBlocks(const CArgs& args)
+{
+    const static CFlatFileConfig::TGenbankBlocks kDefault = 
+        CFlatFileConfig::fGenbankBlocks_All;
+
+    string blocks_arg;
+    // set to true if we're hiding the blocks given instead of showing them
+    bool bInvertFlags = false; 
+    if( args["showblocks"] ) {
+        blocks_arg = args["showblocks"].AsString();
+    } else if( args["skipblocks"] ) {
+        blocks_arg = args["skipblocks"].AsString();
+        bInvertFlags = true;
+    } else {
+        return kDefault;
+    }
+
+    // turn the blocks into one mask
+    CFlatFileConfig::TGenbankBlocks fBlocksGiven = 0;
+    vector<string> vecOfBlockNames;
+    NStr::Tokenize(blocks_arg, ",", vecOfBlockNames);
+    ITERATE(vector<string>, name_iter, vecOfBlockNames) {
+        // Note that StringToGenbankBlock throws an
+        // exception if it gets an illegal value.
+        CFlatFileConfig::TGenbankBlocks fThisBlock =
+            CFlatFileConfig::StringToGenbankBlock(
+            NStr::TruncateSpaces(*name_iter));
+        fBlocksGiven |= fThisBlock;
+    }
+
+    return ( bInvertFlags ? ~fBlocksGiven : fBlocksGiven );
+}
+}
+
+void CFlatFileConfig::FromArguments(const CArgs& args)
+{
+    CFlatFileConfig::EFormat        format         = x_GetFormat(args);
+    CFlatFileConfig::EMode          mode           = x_GetMode(args);
+    CFlatFileConfig::EStyle         style          = x_GetStyle(args);
+    CFlatFileConfig::EFlags         flags          = x_GetFlags(args);
+    CFlatFileConfig::EView          view           = x_GetView(args);
+    CFlatFileConfig::EGffOptions    gff_options    = CFlatFileConfig::fGffGTFCompat;
+    CFlatFileConfig::TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
+
+    SetFormat(format);
+    SetMode(mode);
+    SetStyle(style);
+    SetFlags(flags);
+    SetView(view);
+    m_GffOptions = gff_options;
+    m_fGenbankBlocks = genbank_blocks;
+    m_BasicCleanup = args["cleanup"];
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

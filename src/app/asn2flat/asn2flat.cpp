@@ -86,24 +86,11 @@ protected:
 
 private:
     // types
-    typedef CFlatFileConfig::TFormat        TFormat;
-    typedef CFlatFileConfig::TMode          TMode;
-    typedef CFlatFileConfig::TStyle         TStyle;
-    typedef CFlatFileConfig::TFlags         TFlags;
-    typedef CFlatFileConfig::TView          TView;
-    typedef CFlatFileConfig::TGffOptions    TGffOptions;
-    typedef CFlatFileConfig::TGenbankBlocks TGenbankBlocks;
     typedef CFlatFileConfig::CGenbankBlockCallback TGenbankBlockCallback;
 
     CObjectIStream* x_OpenIStream(const CArgs& args);
 
     CFlatFileGenerator* x_CreateFlatFileGenerator(const CArgs& args);
-    TFormat         x_GetFormat(const CArgs& args);
-    TMode           x_GetMode(const CArgs& args);
-    TStyle          x_GetStyle(const CArgs& args);
-    TFlags          x_GetFlags(const CArgs& args);
-    TView           x_GetView(const CArgs& args);
-    TGenbankBlocks  x_GetGenbankBlocks(const CArgs& args);
     TGenbankBlockCallback* x_GetGenbankCallback(const CArgs& args);
     TSeqPos x_GetFrom(const CArgs& args);
     TSeqPos x_GetTo  (const CArgs& args);
@@ -206,6 +193,7 @@ void CAsn2FlatApp::Init(void)
          arg_desc->AddFlag("p", "Propagate top descriptors");
      }}
 
+#if 0
     // report
     {{
          arg_desc->SetCurrentGroup("Formatting Options");
@@ -329,6 +317,8 @@ void CAsn2FlatApp::Init(void)
          // remote
          arg_desc->AddFlag("gbload", "Use GenBank data loader");
      }}
+#endif
+    CFlatFileConfig::AddArgumentDescriptions(*arg_desc);
 
      // debugging options
      {{
@@ -832,228 +822,20 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 
 CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
 {
-    TFormat        format         = x_GetFormat(args);
-    TMode          mode           = x_GetMode(args);
-    TStyle         style          = x_GetStyle(args);
-    TFlags         flags          = x_GetFlags(args);
-    TView          view           = x_GetView(args);
-    TGffOptions    gff_options    = CFlatFileConfig::fGffGTFCompat;
-    TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
+    CFlatFileConfig cfg;
+    cfg.FromArguments(args);
+
     CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
     if( args["benchmark-cancel-checking"] ) {
         x_CreateCancelBenchmarkCallback();
     }
 
-    CFlatFileConfig cfg(
-        format, mode, style, flags, view, gff_options, genbank_blocks,
-        genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get(),
-        args["cleanup"] );
+    //CFlatFileConfig cfg(
+    //    format, mode, style, flags, view, gff_options, genbank_blocks,
+    //    genbank_callback.GetPointerOrNull(), m_pCanceledCallback.get(),
+    //    args["cleanup"] );
     return new CFlatFileGenerator(cfg);
-}
-
-
-CAsn2FlatApp::TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
-{
-    const string& format = args["format"].AsString();
-    if ( format == "genbank" ) {
-        return CFlatFileConfig::eFormat_GenBank;
-    } else if ( format == "embl" ) {
-        return CFlatFileConfig::eFormat_EMBL;
-    } else if ( format == "ddbj" ) {
-        return CFlatFileConfig::eFormat_DDBJ;
-    } else if ( format == "gbseq" ) {
-        return CFlatFileConfig::eFormat_GBSeq;
-    } else if ( format == "ftable" ) {
-        return CFlatFileConfig::eFormat_FTable;
-    }
-    if (format == "gff"  ||  format == "gff3") {
-        string msg =
-            "Asn2flat no longer supports GFF and GFF3 generation. "
-            "For state-of-the-art GFF output, use annotwriter.";
-        NCBI_THROW(CException, eInvalid, msg);
-    }
-    // default
-    return CFlatFileConfig::eFormat_GenBank;
-}
-
-
-CAsn2FlatApp::TMode CAsn2FlatApp::x_GetMode(const CArgs& args)
-{
-    const string& mode = args["mode"].AsString();
-    if ( mode == "release" ) {
-        return CFlatFileConfig::eMode_Release;
-    } else if ( mode == "entrez" ) {
-        return CFlatFileConfig::eMode_Entrez;
-    } else if ( mode == "gbench" ) {
-        return CFlatFileConfig::eMode_GBench;
-    } else if ( mode == "dump" ) {
-        return CFlatFileConfig::eMode_Dump;
-    }
-
-    // default
-    return CFlatFileConfig::eMode_GBench;
-}
-
-
-CAsn2FlatApp::TStyle CAsn2FlatApp::x_GetStyle(const CArgs& args)
-{
-    const string& style = args["style"].AsString();
-    if ( style == "normal" ) {
-        return CFlatFileConfig::eStyle_Normal;
-    } else if ( style == "segment" ) {
-        return CFlatFileConfig::eStyle_Segment;
-    } else if ( style == "master" ) {
-        return CFlatFileConfig::eStyle_Master;
-    } else if ( style == "contig" ) {
-        return CFlatFileConfig::eStyle_Contig;
-    }
-
-    // default
-    return CFlatFileConfig::eStyle_Normal;
-}
-
-
-CAsn2FlatApp::TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
-{
-    TFlags flags = args["flags"].AsInteger();
-    if (args["html"]) {
-        flags |= CFlatFileConfig::fDoHTML;
-    }
-
-    if (args["show-flags"]) {
-
-        typedef pair<CFlatFileConfig::EFlags, const char*> TFlagDescr;
-        static const TFlagDescr kDescrTable[] = {
-            TFlagDescr(CFlatFileConfig::fDoHTML,
-                       "CFlatFileConfig::fDoHTML"),
-            TFlagDescr(CFlatFileConfig::fShowContigFeatures,
-                       "CFlatFileConfig::fShowContigFeatures"),
-            TFlagDescr(CFlatFileConfig::fShowContigSources,
-                       "CFlatFileConfig::fShowContigSources"),
-            TFlagDescr(CFlatFileConfig::fShowFarTranslations,
-                       "CFlatFileConfig::fShowFarTranslations"),
-            TFlagDescr(CFlatFileConfig::fTranslateIfNoProduct,
-                       "CFlatFileConfig::fTranslateIfNoProduct"),
-            TFlagDescr(CFlatFileConfig::fAlwaysTranslateCDS,
-                       "CFlatFileConfig::fAlwaysTranslateCDS"),
-            TFlagDescr(CFlatFileConfig::fOnlyNearFeatures,
-                       "CFlatFileConfig::fOnlyNearFeatures"),
-            TFlagDescr(CFlatFileConfig::fFavorFarFeatures,
-                       "CFlatFileConfig::fFavorFarFeatures"),
-            TFlagDescr(CFlatFileConfig::fCopyCDSFromCDNA,
-                       "CFlatFileConfig::fCopyCDSFromCDNA"),
-            TFlagDescr(CFlatFileConfig::fCopyGeneToCDNA,
-                       "CFlatFileConfig::fCopyGeneToCDNA"),
-            TFlagDescr(CFlatFileConfig::fShowContigInMaster,
-                       "CFlatFileConfig::fShowContigInMaster"),
-            TFlagDescr(CFlatFileConfig::fHideImpFeatures,
-                       "CFlatFileConfig::fHideImpFeatures"),
-            TFlagDescr(CFlatFileConfig::fHideRemoteImpFeatures,
-                       "CFlatFileConfig::fHideRemoteImpFeatures"),
-            TFlagDescr(CFlatFileConfig::fHideSNPFeatures,
-                       "CFlatFileConfig::fHideSNPFeatures"),
-            TFlagDescr(CFlatFileConfig::fHideExonFeatures,
-                       "CFlatFileConfig::fHideExonFeatures"),
-            TFlagDescr(CFlatFileConfig::fHideIntronFeatures,
-                       "CFlatFileConfig::fHideIntronFeatures"),
-            TFlagDescr(CFlatFileConfig::fHideMiscFeatures,
-                       "CFlatFileConfig::fHideMiscFeatures"),
-            TFlagDescr(CFlatFileConfig::fHideCDSProdFeatures,
-                       "CFlatFileConfig::fHideCDSProdFeatures"),
-            TFlagDescr(CFlatFileConfig::fHideCDDFeatures,
-                       "CFlatFileConfig::fHideCDDFeatures"),
-            TFlagDescr(CFlatFileConfig::fShowTranscript,
-                       "CFlatFileConfig::fShowTranscript"),
-            TFlagDescr(CFlatFileConfig::fShowPeptides,
-                       "CFlatFileConfig::fShowPeptides"),
-            TFlagDescr(CFlatFileConfig::fHideGeneRIFs,
-                       "CFlatFileConfig::fHideGeneRIFs"),
-            TFlagDescr(CFlatFileConfig::fOnlyGeneRIFs,
-                       "CFlatFileConfig::fOnlyGeneRIFs"),
-            TFlagDescr(CFlatFileConfig::fLatestGeneRIFs,
-                       "CFlatFileConfig::fLatestGeneRIFs"),
-            TFlagDescr(CFlatFileConfig::fShowContigAndSeq,
-                       "CFlatFileConfig::fShowContigAndSeq"),
-            TFlagDescr(CFlatFileConfig::fHideSourceFeatures,
-                       "CFlatFileConfig::fHideSourceFeatures"),
-            TFlagDescr(CFlatFileConfig::fShowFtableRefs,
-                       "CFlatFileConfig::fShowFtableRefs"),
-            TFlagDescr(CFlatFileConfig::fOldFeaturesOrder,
-                       "CFlatFileConfig::fOldFeaturesOrder"),
-            TFlagDescr(CFlatFileConfig::fHideGapFeatures,
-                       "CFlatFileConfig::fHideGapFeatures"),
-            TFlagDescr(CFlatFileConfig::fNeverTranslateCDS,
-                       "CFlatFileConfig::fNeverTranslateCDS"),
-            TFlagDescr(CFlatFileConfig::fShowSeqSpans,
-                       "CFlatFileConfig::fShowSeqSpans")
-        };
-        static size_t kArraySize = sizeof(kDescrTable) / sizeof(TFlagDescr);
-        for (size_t i = 0;  i < kArraySize;  ++i) {
-            if (flags & kDescrTable[i].first) {
-                LOG_POST(Error << "flag: "
-                         << std::left << setw(40) << kDescrTable[i].second
-                         << " = "
-                         << std::right << setw(10) << kDescrTable[i].first
-                        );
-            }
-        }
-    }
-
-    return flags;
-}
-
-
-CAsn2FlatApp::TView CAsn2FlatApp::x_GetView(const CArgs& args)
-{
-    if ( m_Os == NULL ) {
-        return CFlatFileConfig::fViewAll;
-    }
-
-    const string& view = args["view"].AsString();
-    if ( view == "all" ) {
-        return CFlatFileConfig::fViewAll;
-    } else if ( view == "prot" ) {
-        return CFlatFileConfig::fViewProteins;
-    } else if ( view == "nuc" ) {
-        return CFlatFileConfig::fViewNucleotides;
-    }
-
-    // default
-    return CFlatFileConfig::fViewNucleotides;
-}
-
-CAsn2FlatApp::TGenbankBlocks CAsn2FlatApp::x_GetGenbankBlocks(const CArgs& args)
-{
-    const static CAsn2FlatApp::TGenbankBlocks kDefault =
-        CFlatFileConfig::fGenbankBlocks_All;
-
-    string blocks_arg;
-    // set to true if we're hiding the blocks given instead of showing them
-    bool bInvertFlags = false;
-    if( args["showblocks"] ) {
-        blocks_arg = args["showblocks"].AsString();
-    } else if( args["skipblocks"] ) {
-        blocks_arg = args["skipblocks"].AsString();
-        bInvertFlags = true;
-    } else {
-        return kDefault;
-    }
-
-    // turn the blocks into one mask
-    CAsn2FlatApp::TGenbankBlocks fBlocksGiven = 0;
-    vector<string> vecOfBlockNames;
-    NStr::Tokenize(blocks_arg, ",", vecOfBlockNames);
-    ITERATE(vector<string>, name_iter, vecOfBlockNames) {
-        // Note that StringToGenbankBlock throws an
-        // exception if it gets an illegal value.
-        CAsn2FlatApp::TGenbankBlocks fThisBlock =
-            CFlatFileConfig::StringToGenbankBlock(
-            NStr::TruncateSpaces(*name_iter));
-        fBlocksGiven |= fThisBlock;
-    }
-
-    return ( bInvertFlags ? ~fBlocksGiven : fBlocksGiven );
 }
 
 CAsn2FlatApp::TGenbankBlockCallback*
