@@ -1365,7 +1365,7 @@ s_LocateFrequencyData(const char * matrix)
 {
     int i;
     for (i = 0;  i < NUM_SUPPORTED_MATRICES;  i++) {
-        if (0 == strcmp(s_FrequencyData[i].name, matrix)) {
+        if (0 == strcasecmp(s_FrequencyData[i].name, matrix)) {
             return &s_FrequencyData[i];
         }
     }

@@ -64,6 +64,9 @@
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 
+#include <algo/blast/composition_adjustment/composition_constants.h>
+#include <algo/blast/composition_adjustment/matrix_frequency_data.h>
+
 #include "test_objmgr.hpp"
 #include "blast_test_util.hpp"
 
@@ -949,6 +952,12 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentUseXdropEvalue) {
 // that blastpgp reads frequency rations from a checkpoint file and scales
 // the PSSM and K parameter, which we cannot do unless we support reading
 // checkpoint files. QA should be added later 
+
+
+BOOST_AUTO_TEST_CASE(CheckLowerCaseMatrix)
+{
+      BOOST_REQUIRE(Blast_FrequencyDataIsAvailable("blosum62") == 1);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

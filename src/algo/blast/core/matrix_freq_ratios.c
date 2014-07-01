@@ -1662,15 +1662,15 @@ _PSIMatrixFrequencyRatiosNew(const char* matrix_name)
         return _PSIMatrixFrequencyRatiosFree(retval);
     }
 
-    if ( !strcmp(matrix_name, "BLOSUM62") ||
-         !strcmp(matrix_name, "BLOSUM62_20")) {
+    if ( !strcasecmp(matrix_name, "BLOSUM62") ||
+         !strcasecmp(matrix_name, "BLOSUM62_20")) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = BLOSUM62_FREQRATIOS[i][j];
             }
         }
         retval->bit_scale_factor = 2;
-    } else if ( !strcmp(matrix_name, "BLOSUM62_20A")) {
+    } else if ( !strcasecmp(matrix_name, "BLOSUM62_20A")) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = 
@@ -1678,7 +1678,7 @@ _PSIMatrixFrequencyRatiosNew(const char* matrix_name)
             }
         }
         retval->bit_scale_factor = 2;
-    } else if ( !strcmp(matrix_name, "BLOSUM62_20B")) {
+    } else if ( !strcasecmp(matrix_name, "BLOSUM62_20B")) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] =
@@ -1686,49 +1686,49 @@ _PSIMatrixFrequencyRatiosNew(const char* matrix_name)
             }
         }
         retval->bit_scale_factor = 2;
-    } else if ( !strcmp(matrix_name, "BLOSUM45") ) {
+    } else if ( !strcasecmp(matrix_name, "BLOSUM45") ) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = BLOSUM45_FREQRATIOS[i][j];
             }
         }
         retval->bit_scale_factor = 3;
-    } else if ( !strcmp(matrix_name, "BLOSUM80") ) {
+    } else if ( !strcasecmp(matrix_name, "BLOSUM80") ) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = BLOSUM80_FREQRATIOS[i][j];
             }
         }
         retval->bit_scale_factor = 2;
-    } else if ( !strcmp(matrix_name, "BLOSUM50") ) {
+    } else if ( !strcasecmp(matrix_name, "BLOSUM50") ) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = BLOSUM50_FREQRATIOS[i][j];
             }
         }
         retval->bit_scale_factor = 2;
-    } else if ( !strcmp(matrix_name, "BLOSUM90") ) {
+    } else if ( !strcasecmp(matrix_name, "BLOSUM90") ) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = BLOSUM90_FREQRATIOS[i][j];
             }
         }
         retval->bit_scale_factor = 2;
-    } else if ( !strcmp(matrix_name, "PAM30") ) {
+    } else if ( !strcasecmp(matrix_name, "PAM30") ) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = PAM30_FREQRATIOS[i][j];
             }
         }
         retval->bit_scale_factor = 2;
-    } else if ( !strcmp(matrix_name, "PAM70") ) {
+    } else if ( !strcasecmp(matrix_name, "PAM70") ) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = PAM70_FREQRATIOS[i][j];
             }
         }
         retval->bit_scale_factor = 2;
-    } else if ( !strcmp(matrix_name, "PAM250") ) {
+    } else if ( !strcasecmp(matrix_name, "PAM250") ) {
         for (i = 0; i < BLASTAA_SIZE; i++) {
             for (j = 0; j < BLASTAA_SIZE; j++) {
                 retval->data[i][j] = PAM250_FREQRATIOS[i][j];

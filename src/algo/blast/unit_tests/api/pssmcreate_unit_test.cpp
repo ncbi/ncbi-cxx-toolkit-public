@@ -1236,6 +1236,15 @@ BOOST_AUTO_TEST_CASE(testPsiAlignmentDataCreation_TooMuchMemory) {
 }
 
 
+BOOST_AUTO_TEST_CASE(testPsiLowerCaseMatrix) {
+
+	SFreqRatios* freq_ratios = _PSIMatrixFrequencyRatiosNew("blosum62");
+        BOOST_REQUIRE(freq_ratios != NULL);
+	freq_ratios = _PSIMatrixFrequencyRatiosFree(freq_ratios);
+
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 /*
