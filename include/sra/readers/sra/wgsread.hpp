@@ -143,6 +143,7 @@ protected:
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, GAP_LEN);
         DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, GAP_PROPS);
         DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, GAP_LINKAGE);
+        DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
     };
 
     // SSeqTableCursor is helper accessor structure for SCAFFOLD table
@@ -277,7 +278,13 @@ public:
     CSeq_id::TGi GetGi(void) const;
     CTempString GetAccession(void) const;
     int GetAccVersion(void) const;
+
+    // return corresponding kind of Seq-id if exists
+    // return null if there is no such Seq-id
     CRef<CSeq_id> GetAccSeq_id(void) const;
+    CRef<CSeq_id> GetGiSeq_id(void) const;
+    CRef<CSeq_id> GetGeneralSeq_id(void) const;
+
     //CTempString GetGeneralId(void) const;
     CTempString GetContigName(void) const;
 
@@ -302,6 +309,7 @@ public:
     };
     typedef int TFlags;
 
+    CRef<CSeq_id> GetRefId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
 
     bool HasSeq_descr(void) const;
@@ -310,6 +318,10 @@ public:
     bool HasAnnotSet(void) const;
     typedef CBioseq::TAnnot TAnnotSet;
     void GetAnnotSet(TAnnotSet& annot_set) const;
+
+    bool HasQualityGraph(void) const;
+    void GetQualityAnnot(TAnnotSet& annot_set,
+                         TFlags flags = fDefaultFlags) const;
 
     NCBI_gb_state GetGBState(void) const;
 

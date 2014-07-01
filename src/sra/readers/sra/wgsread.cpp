@@ -87,7 +87,8 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDB& db)
       INIT_OPTIONAL_VDB_COLUMN(GAP_START),
       INIT_OPTIONAL_VDB_COLUMN(GAP_LEN),
       INIT_OPTIONAL_VDB_COLUMN(GAP_PROPS),
-      INIT_OPTIONAL_VDB_COLUMN(GAP_LINKAGE)
+      INIT_OPTIONAL_VDB_COLUMN(GAP_LINKAGE),
+      INIT_OPTIONAL_VDB_COLUMN(QUALITY)
 {
 }
 
@@ -460,6 +461,44 @@ CRef<CSeq_id> CWGSSeqIterator::GetAccSeq_id(void) const
 }
 
 
+CRef<CSeq_id> CWGSSeqIterator::GetGiSeq_id(void) const
+{
+    CRef<CSeq_id> id;
+    if ( m_Seq->m_GI ) {
+        CSeq_id::TGi gi = GetGi();
+        if ( gi != ZERO_GI ) {
+            id = new CSeq_id;
+            id->SetGi(gi);
+        }
+    }
+    return id;
+}
+
+
+CRef<CSeq_id> CWGSSeqIterator::GetGeneralSeq_id(void) const
+{
+    CRef<CSeq_id> id;
+    if ( !GetDb().m_IdPrefixWithVersion.empty() ) {
+        // gnl
+        CTempString str = GetContigName();
+        if ( !str.empty() ) {
+            id = new CSeq_id;
+            CDbtag& tag = id->SetGeneral();
+            string db = "WGS:"+GetDb().m_IdPrefixWithVersion;
+            tag.SetDb(db);
+            db += ':';
+            if ( NStr::StartsWith(str, db) ) {
+                tag.SetTag().SetStr(str.substr(db.size()));
+            }
+            else {
+                tag.SetTag().SetStr(str);
+            }
+        }
+    }
+    return id;
+}
+
+
 CTempString CWGSSeqIterator::GetContigName(void) const
 {
     x_CheckValid("GetContigName");
@@ -487,6 +526,36 @@ TSeqPos CWGSSeqIterator::GetSeqLength(void) const
 }
 
 
+CRef<CSeq_id> CWGSSeqIterator::GetRefId(TFlags flags) const
+{
+    if ( flags & fIds_gi ) {
+        // gi
+        if ( CRef<CSeq_id> id = GetGiSeq_id() ) {
+            return id;
+        }
+    }
+
+    if ( flags & fIds_acc ) {
+        // acc.ver
+        if ( CRef<CSeq_id> id = GetAccSeq_id() ) {
+            return id;
+        }
+    }
+
+    if ( flags & fIds_gnl ) {
+        // gnl
+        if ( CRef<CSeq_id> id = GetGeneralSeq_id() ) {
+            return id;
+        }
+    }
+    
+    NCBI_THROW_FMT(CSraException, eDataError,
+                   "CWGSSeqIterator::GetRefId("<<flags<<"): "
+                   "no valid id found: "<<
+                   GetDb().m_IdPrefixWithVersion<<"/"<<m_CurrId);
+}
+
+
 void CWGSSeqIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 {
     if ( flags & fIds_acc ) {
@@ -496,29 +565,18 @@ void CWGSSeqIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
         }
     }
 
-    if ( (flags & fIds_gnl) && !GetDb().m_IdPrefixWithVersion.empty() ) {
+    if ( flags & fIds_gnl ) {
         // gnl
-        CTempString str = GetContigName();
-        if ( !str.empty() ) {
-            CRef<CSeq_id> id(new CSeq_id);
-            CDbtag& tag = id->SetGeneral();
-            string db = "WGS:"+GetDb().m_IdPrefixWithVersion;
-            tag.SetDb(db);
-            db += ':';
-            if ( NStr::StartsWith(str, db) ) {
-                tag.SetTag().SetStr(str.substr(db.size()));
-            }
-            else {
-                tag.SetTag().SetStr(str);
-            }
+        if ( CRef<CSeq_id> id = GetGeneralSeq_id() ) {
             ids.push_back(id);
         }
     }
 
-    if ( (flags & fIds_gi) && HasGi() ) {
-        CRef<CSeq_id> id(new CSeq_id);
-        id->SetGi(GetGi());
-        ids.push_back(id);
+    if ( flags & fIds_gi ) {
+        // gi
+        if ( CRef<CSeq_id> id = GetGiSeq_id() ) {
+            ids.push_back(id);
+        }
     }
 }
 
@@ -574,6 +632,58 @@ void CWGSSeqIterator::GetAnnotSet(TAnnotSet& annot_set) const
         in >> *annot;
         annot_set.push_back(annot);
     }
+}
+
+
+bool CWGSSeqIterator::HasQualityGraph(void) const
+{
+    x_CheckValid("HasQualityGraph");
+
+    return m_Seq->m_QUALITY && m_Seq->QUALITY(m_CurrId).size();
+}
+
+
+void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
+                                      TFlags flags) const
+{
+    x_CheckValid("GetQualityAnnot");
+
+    CVDBValueFor<INSDC_quality_phred> quality(m_Seq->QUALITY(m_CurrId));
+    size_t size = quality.size();
+    CByte_graph::TValues values(size);
+    INSDC_quality_phred min_q = 0xff, max_q = 0;
+    for ( size_t i = 0; i < size; ++i ) {
+        INSDC_quality_phred q = quality[i];
+        values[i] = q;
+        if ( q < min_q ) {
+            min_q = q;
+        }
+        if ( q > max_q ) {
+            max_q = q;
+        }
+    }
+    if ( max_q == 0 ) {
+        return;
+    }
+
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    CRef<CAnnotdesc> name(new CAnnotdesc);
+    name->SetName("Phrap Graph");
+    annot->SetDesc().Set().push_back(name);
+    CRef<CSeq_graph> graph(new CSeq_graph);
+    graph->SetTitle("Phrap Quality");
+    CSeq_interval& loc = graph->SetLoc().SetInt();
+    loc.SetId(*GetRefId(flags));
+    loc.SetFrom(0);
+    loc.SetTo(size-1);
+    graph->SetNumval(size);
+    CByte_graph& bytes = graph->SetGraph().SetByte();
+    bytes.SetValues().swap(values);
+    bytes.SetAxis(0);
+    bytes.SetMin(min_q);
+    bytes.SetMax(max_q);
+    annot->SetData().SetGraph().push_back(graph);
+    annot_set.push_back(annot);
 }
 
 
@@ -1386,8 +1496,14 @@ CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
     if ( HasSeq_descr() ) {
         ret->SetDescr(*GetSeq_descr());
     }
+    if ( HasQualityGraph() ) {
+        GetQualityAnnot(ret->SetAnnot(), flags);
+    }
     if ( HasAnnotSet() ) {
         GetAnnotSet(ret->SetAnnot());
+    }
+    if ( ret->GetAnnot().empty() ) {
+        ret->ResetAnnot();
     }
     ret->SetInst(*GetSeq_inst(flags));
     return ret;
