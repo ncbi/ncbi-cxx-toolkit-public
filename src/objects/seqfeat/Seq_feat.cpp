@@ -297,7 +297,12 @@ void CSeq_feat::RemoveQualifier(const string& qual_name)
 
     if( new_qual_vec.size() != GetQual().size() ) {
         // swap should be a constant-time operation
-        SetQual().swap(new_qual_vec);
+        if ( new_qual_vec.empty() ) {
+            ResetQual();
+        }
+        else {
+            SetQual().swap(new_qual_vec);
+        }
     }
 }
 
