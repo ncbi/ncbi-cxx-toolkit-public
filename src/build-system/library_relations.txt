@@ -1,6 +1,12 @@
 # $Id$
 # Pregenerated summary of library relations, for use by project_tree_builder.
 $(ORIG_LIBS) needs3party
+BlastCgiUtils needs $(CONNEXT)
+BlastCgiUtils needs connect
+BlastCgiUtils needs xhtml
+BlastOptsTools needs $(BLAST_LIBS)
+BlastOptsTools needs xcgi
+BlastOptsTools needs xhtml
 BoostTestXML needs xser
 EntrezCache_g needs $(EUTILS_LIBS)
 EntrezCache_g needs dbloadb
@@ -371,7 +377,7 @@ gpipe_asn_proc needs gpipe_alnutil
 gpipe_asn_proc needs xmergetree
 gpipe_attr needs gpipe_property
 gpipe_best_placement needs gpipe_alnutil
-gpipe_clean_titles needs xdiscrepancy_report
+gpipe_clean_titles needs macro
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
 gpipe_common needs xconnect
@@ -1222,11 +1228,6 @@ xctools needs xncbi
 xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
-xdiscrepancy_report needs $(OBJMGR_LIBS)
-xdiscrepancy_report needs $(OBJREAD_LIBS)
-xdiscrepancy_report needs macro
-xdiscrepancy_report needs xmlwrapp
-xdiscrepancy_report needs xvalidate
 xerces-c needs3party $(CURL_LIBS)
 xerces-c needs3party $(DL_LIBS)
 xerces-c needs3party $(ORIG_LIBS)
