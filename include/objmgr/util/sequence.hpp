@@ -663,6 +663,27 @@ CBioseq_Handle GetBioseqFromSeqLoc(const CSeq_loc& loc, CScope& scope,
     CScope::EGetBioseqFlag flag = CScope::eGetBioseq_Loaded);
 
 
+/// @deprecated  Unsupported and unused, per CXX-4305, it will be removed soon.
+enum ECreateBioseqFlags {
+    //< Create a delta sequence.  If this is not present, a raw sequence
+    //< is created
+    fBioseq_CreateDelta = 0x01,
+
+    //< Copy all descriptors into the new bioseq
+    fBioseq_CopyDescriptors = 0x02,
+
+    //< Project all annotations onto the new bioseq, and
+    //< create a new annotation for these
+    fBioseq_CopyAnnot = 0x04,
+
+    fBioseq_Defaults = fBioseq_CreateDelta
+};
+
+/// @deprecated  Unsupported and unused, per CXX-4305, it will be removed soon.
+typedef int TCreateBioseqFlags;
+
+/// @deprecated  Unsupported and unused, per CXX-4305, it will be removed soon.
+///
 /// Create a constructed bioseq from a location
 /// This function will construct a bioseq from a given location, using a set of
 /// options to control how the bioseq should be represented.  Options here
@@ -687,23 +708,7 @@ CBioseq_Handle GetBioseqFromSeqLoc(const CSeq_loc& loc, CScope& scope,
 /// @return
 ///   Newly created bioseq
 
-enum ECreateBioseqFlags {
-    //< Create a delta sequence.  If this is not present, a raw sequence
-    //< is created
-    fBioseq_CreateDelta = 0x01,
-
-    //< Copy all descriptors into the new bioseq
-    fBioseq_CopyDescriptors = 0x02,
-
-    //< Project all annotations onto the new bioseq, and
-    //< create a new annotation for these
-    fBioseq_CopyAnnot = 0x04,
-
-    fBioseq_Defaults = fBioseq_CreateDelta
-};
-typedef int TCreateBioseqFlags;
-
-NCBI_XOBJUTIL_EXPORT
+NCBI_DEPRECATED NCBI_XOBJUTIL_EXPORT
 CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
                                      TSeqPos from, TSeqPos to,
                                      const CSeq_id_Handle& new_seq_id,
