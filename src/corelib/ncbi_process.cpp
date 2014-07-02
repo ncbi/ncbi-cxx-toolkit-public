@@ -286,6 +286,15 @@ TPid CProcess::Fork(EUpdateDiagFlag flag)
 {
 #ifdef NCBI_OS_UNIX
     TPid pid = ::fork();
+    if (pid == (TPid) -1) {
+        int x_errno = errno;
+        const char* error = strerror(x_errno);
+        if (!error  ||  !*error)
+            error = "Unknown error";
+        errno = x_errno;
+        NCBI_THROW_FMT(CCoreException, eCore, "Cannot fork: " << error);
+    }
+
     CDiagContext::UpdateOnFork(
         flag == eUpdateDiag ?
         (CDiagContext::fOnFork_ResetTimer | CDiagContext::fOnFork_PrintStart)
@@ -308,22 +317,24 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
     try {
         if (flags & fKeepStdin) {
             int nullr = ::open("/dev/null", O_RDONLY);
-            if (nullr < 0)
-                throw string("Error opening /dev/null for reading");
+            if (nullr < 0) {
+                NCBI_THROW(CCoreException, eCore, "Error opening /dev/null for reading");
+            }
             if (nullr != STDIN_FILENO) {
                 int error = ::dup2(nullr, STDIN_FILENO);
                 int x_errno = errno;
                 ::close(nullr);
                 if (error < 0) {
                     errno = x_errno;
-                    throw string("Error redirecting stdin");
+                    NCBI_THROW(CCoreException, eCore, "Error redirecting stdin");
                 }
             }
         }
         if (flags & fKeepStdout) {
             int nullw = ::open("/dev/null", O_WRONLY);
-            if (nullw < 0)
-                throw string("Error opening /dev/null for writing");
+            if (nullw < 0) {
+                NCBI_THROW(CCoreException, eCore, "Error opening /dev/null for writing");
+            }
             NcbiCout.flush();
             ::fflush(stdout);
             if (nullw != STDOUT_FILENO) {
@@ -333,7 +344,7 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
                 if (error < 0) {
                     ::dup2(fdin, STDIN_FILENO);
                     errno = x_errno;
-                    throw string("Error redirecting stdout");
+                    NCBI_THROW(CCoreException, eCore, "Error redirecting stdout");
                 }
             }
         }
@@ -341,9 +352,12 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
             int fd = (!*logfile ? ::open("/dev/null", O_WRONLY | O_APPEND) :
                       ::open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666));
             if (fd < 0) {
-                if (!*logfile)
-                    throw string("Error opening /dev/null for appending");
-                throw "Unable to open logfile \"" + string(logfile) + '"';
+                if (!*logfile) {
+                    NCBI_THROW(CCoreException, eCore,
+                            "Error opening /dev/null for appending");
+                }
+                NCBI_THROW_FMT(CCoreException, eCore,
+                        "Unable to open logfile \"" << string(logfile) << '"');
             }
             NcbiCerr.flush();
             ::fflush(stderr);
@@ -355,23 +369,29 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
                     ::dup2(fdin,  STDIN_FILENO);
                     ::dup2(fdout, STDOUT_FILENO);
                     errno = x_errno;
-                    throw string("Error redirecting stderr");
+                    NCBI_THROW(CCoreException, eCore, "Error redirecting stderr");
                 }
             }
         }
         ::fflush(NULL);
-        TPid pid = Fork();
+        TPid pid;
+        try {
+            pid = Fork();
+        }
+        catch (CCoreException&) {
+            int x_errno = errno;
+            ::dup2(fdin,  STDIN_FILENO);
+            ::dup2(fdout, STDOUT_FILENO);
+            ::dup2(fderr, STDERR_FILENO);
+            errno = x_errno;
+            throw;
+        }
         if (pid) {
             // Parent thread (including fork error)
-            int x_errno = errno;
-            if (pid == (TPid)(-1)  ||  (flags & fKeepParent)) {
+            if ((flags & fKeepParent) != 0) {
                 ::dup2(fdin,  STDIN_FILENO);
                 ::dup2(fdout, STDOUT_FILENO);
                 ::dup2(fderr, STDERR_FILENO);
-            }
-            if (pid == (TPid)(-1)) {
-                errno = x_errno;
-                throw string("Cannot fork");
             }
             if (!(flags & fKeepParent)) {
                 ::_exit(0);
@@ -384,15 +404,13 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
         // Child thread only
         ::setsid();
         if (flags & fImmuneTTY) {
-            pid = Fork();
-            if (pid == (TPid)(-1)) {
-                const char* error = strerror(errno);
-                if (!error  ||  !*error)
-                    error = "Unknown error";
-                ERR_POST_X(2, "[Daemonize]  Failed to immune from TTY accruals"
-                           " (" + string(error) + "), continuing anyways");
-            } else if (pid) {
-                ::_exit(0);
+            try {
+                if (Fork() != 0)
+                    ::_exit(0); // Exit the second parent process
+            }
+            catch (CCoreException& e) {
+                ERR_POST_X(2, "[Daemonize]  Failed to immune from "
+                        "TTY accruals: " << e << " ... continuing anyways");
             }
         }
         if (!(flags & fDontChroot))
