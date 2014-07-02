@@ -195,7 +195,6 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
 
     string header;
 
-    CNcbiStreampos start_pos = input.GetStreamPos();
     try {
         while (true) {
             m_StreamPos = input.GetStreamPos();
@@ -212,9 +211,9 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
                     m_TopLevelMap.push_back(
                         SObjectDescription(it->type_info, m_StreamPos));
 
-                    LOG_POST_X(1, Info 
-                               << format_name << " top level object found:" 
-                               << it->type_info.GetTypeInfo()->GetName());
+                    _TRACE("Same type "
+                           << format_name << " top level object found:" 
+                           << it->type_info.GetTypeInfo()->GetName());
                     continue;
                 }
             }
@@ -244,7 +243,6 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
         LOG_POST_X(3, Info << "Exception reading "
                    << format_name << " " << e.what());
     }
-    //input.SetStreamPos(start_pos);
 }
 
 
@@ -256,7 +254,6 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
     // Brute force interrogation of the source file.
     //
 
-    CNcbiStreampos start_pos = input.GetStreamPos();
     it = m_Candidates.begin();
     while (it < m_Candidates.end()) {
 
@@ -288,7 +285,6 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
             ++it; // trying the next type.
         }
     }
-    //input.SetStreamPos(start_pos);
 }
 
 
