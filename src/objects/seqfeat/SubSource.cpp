@@ -42,6 +42,7 @@
 #include <objects/seqfeat/SubSource.hpp>
 
 #include <math.h>
+#include <objects/misc/sequence_util_macros.hpp>
 
 // generated classes
 
@@ -3692,24 +3693,31 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
     }
 }
 
+bool
+CLatLonCountryMap::s_CompareTwoLinesByLatLonOnly(
+    const CCountryLine* line1,
+    const CCountryLine* line2)
+{
+    if (line1->GetY() < line2->GetY()) {
+        return true;
+    } else if (line1->GetY() > line2->GetY()) {
+        return false;
+    } else {
+        if (line1->GetMinX() < line2->GetMinX()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
 
 bool CLatLonCountryMap::
         s_CompareTwoLinesByCountry(const CCountryLine* line1,
                                     const CCountryLine* line2)
 {
     int cmp = NStr::CompareNocase(line1->GetCountry(), line2->GetCountry());
-    if (cmp == 0) {        
-        if (line1->GetY() < line2->GetY()) {
-            return true;
-        } else if (line1->GetY() > line2->GetY()) {
-            return false;
-        } else {
-            if (line1->GetMinX() < line2->GetMinX()) {
-                return true;
-            } else {
-                return false;
-            }
-        }
+    if (cmp == 0) {
+        return s_CompareTwoLinesByLatLonOnly(line1, line2);
     } else if (cmp < 0) {
         return true;
     } else {
@@ -3759,7 +3767,34 @@ CLatLonCountryMap::CLatLonCountryMap (bool is_water)
             x_InitFromDefaultList(s_DefaultLatLonCountryText, k_NumLatLonCountryText);
         }
     }
-    sort (m_CountryLineList.begin(), m_CountryLineList.end(), s_CompareTwoLinesByCountry);
+
+    // Instead of doing a plain sort, we take advantage of the fact that
+    // there are few unique country names versus the number
+    // of lines.
+    typedef map<CTempString, TCountryLineList, PNocase> TCountryToLinesMap;
+    // this map maps a country name (case insens) to all the lines that
+    // belong to that country.
+    TCountryToLinesMap countryToLinesMap;
+    ITERATE(TCountryLineList, line_it, m_CountryLineList) {
+        countryToLinesMap[(*line_it)->GetCountry()].push_back(*line_it);
+    }
+
+    // build new m_CountryLineList here:
+    TCountryLineList new_country_line_list;
+    NON_CONST_ITERATE(TCountryToLinesMap, country_lines_it, countryToLinesMap)
+    {
+        // sort the lines for each country by lat/lon only, since we've already
+        // implicitly sorted by country in countryToLinesMap
+        TCountryLineList & line_list_for_this_country =
+            country_lines_it->second;
+        stable_sort(
+            BEGIN_COMMA_END(line_list_for_this_country),
+            s_CompareTwoLinesByLatLonOnly);
+        copy(BEGIN_COMMA_END(line_list_for_this_country),
+             back_inserter(new_country_line_list));
+    }
+    // swap should be constant time
+    m_CountryLineList.swap(new_country_line_list);
 
     // set up extremes index and copy into LatLon index
     m_CountryExtremes.clear();

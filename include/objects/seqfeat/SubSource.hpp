@@ -294,7 +294,7 @@ public:
     CCountryLine (const string & country_name, double y, double min_x, double max_x, double scale);
     ~CCountryLine (void);
 
-    string GetCountry(void)            const { return m_CountryName; }
+    const string & GetCountry(void)            const { return m_CountryName; }
   double GetLat(void)                const { return m_Y / m_Scale; }
   double GetMinLon(void)             const { return m_MinX / m_Scale; }
   double GetMaxLon(void)             const { return m_MaxX / m_Scale; }
@@ -424,6 +424,8 @@ public:
 private:
     void x_InitFromDefaultList(const char * const *list, int num);
     bool x_InitFromFile(const string& filename);
+    static bool s_CompareTwoLinesByLatLonOnly(const CCountryLine* line1,
+                                    const CCountryLine* line2);
     static bool s_CompareTwoLinesByCountry(const CCountryLine* line1,
                                     const CCountryLine* line2);
     static bool s_CompareTwoLinesByLatLonThenCountry(const CCountryLine* line1,
