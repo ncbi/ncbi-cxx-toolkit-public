@@ -99,7 +99,7 @@ class CAutoInitAddBioSource: public CAutoInitRef<CBioSource>
 {         
 public:
     CAutoInitAddBioSource(CSeq_descr& descr): 
-      m_descr(descr), m_need_to_add(true)
+        m_need_to_add(true), m_descr(descr)
       {
           NON_CONST_ITERATE(CSeq_descr::Tdata, desc_it, m_descr.Set())
           {

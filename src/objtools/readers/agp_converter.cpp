@@ -656,7 +656,7 @@ void CAgpConverter::x_SetChromosomeNameInSourceSubtype(
         m_pErrorHandler->HandleError(
             eError_WrongNumberOfSourceDescs,
             "found " +
-            NStr::UIntToString(source_descs.size()) +
+            NStr::SizetToString(source_descs.size()) +
             "Source Desc's; expected exactly one");
         return;
     }

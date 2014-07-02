@@ -56,8 +56,6 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
 
 void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
 {
-    typedef CSeqDBAtlas::TIndx TIndx;
-    
     m_Atlas.Lock(locked);
 
     if (m_Initialized) return;

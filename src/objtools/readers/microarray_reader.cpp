@@ -99,9 +99,10 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CMicroArrayReader::CMicroArrayReader(
     int flags )
 //  ----------------------------------------------------------------------------
-    : CReaderBase(flags), m_usescore(false),
-    m_currentId(""),
-    m_columncount(15)
+    : CReaderBase(flags),
+      m_currentId(""),
+      m_usescore(false),
+      m_columncount(15)
 {
 }
 

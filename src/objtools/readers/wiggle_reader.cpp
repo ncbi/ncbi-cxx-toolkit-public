@@ -69,8 +69,8 @@ CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
     CReaderBase(flags),
-    m_TrackType(eTrackType_invalid),
-    m_OmitZeros(false)
+    m_OmitZeros(false),
+    m_TrackType(eTrackType_invalid)
 {
     m_uLineNumber = 0;
     m_GapValue = 0.0; 
