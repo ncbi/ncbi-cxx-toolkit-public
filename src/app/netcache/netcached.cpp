@@ -700,7 +700,7 @@ int main(int argc, const char* argv[])
 
 #if MAKE_TEST_BUILD
 
-static Uint4 MAKE_TEST_TASKS = 1;
+static Uint4 MAKE_TEST_TASKS = 100;
 static Uint8 MAKE_TEST_MAXSIZE = 1000000;
 static Uint4 MAKE_TEST_DELAY = 1;
 static Uint4 MAKE_TEST_INTERVAL = 10;
@@ -758,6 +758,7 @@ private:
 CMiniMutex CTest_BlobStorage::ms_RndLock;
 CRandom CTest_BlobStorage::ms_Rnd;
 const char* CTest_BlobStorage::ms_Commands[] = {"UNKNOWN", "PUT3", "REMO"};
+static const size_t s_Noop   = 0;
 static const size_t s_Put3   = 1;
 static const size_t s_Remove = 2;
 
@@ -765,7 +766,7 @@ static Uint4  s_CounterPut = 0;
 static Uint4  s_CounterRem = 0;
 static Uint8  s_SizePut = 0;
 static Uint8  s_SizeRem = 0;
-static CFutex s_ftxSemaphore;
+static CFutex s_ftxStop;
 static CFutex s_ftxCounter;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -813,6 +814,7 @@ void CTest_BlobStorage::Reset(void)
     ms_RndLock.Lock();
     Uint4 rand1 =  ms_Rnd.GetRand(1, MAKE_TEST_MAXSIZE);
     Uint4 rand2 =  max( ms_Rnd.GetRand(1, (rand1+3)/4 + 1), rand1/100);
+#if 1
     if (m_Keys.size() > 10) {
         if (ms_Rnd.GetRand(1, 2) == 2) {
             random_shuffle(m_Keys.begin(), m_Keys.end());
@@ -820,6 +822,12 @@ void CTest_BlobStorage::Reset(void)
             m_Keys.erase(m_Keys.begin());
         }
     }
+#else
+    if (m_Counter == 2) {
+        m_BlobKey = *m_Keys.begin();
+        m_Keys.erase(m_Keys.begin());
+    }
+#endif
     ms_RndLock.Unlock();
 
     m_DataSize = rand1;
@@ -831,6 +839,12 @@ void CTest_BlobStorage::Reset(void)
     } else {
         m_Command = s_Remove;
     }
+
+#if 0
+    if (m_Counter > 2) {
+        m_Command = s_Noop;
+    }
+#endif
 }
 
 size_t CTest_BlobStorage::PutData(void* buf, size_t size)
@@ -842,10 +856,15 @@ size_t CTest_BlobStorage::PutData(void* buf, size_t size)
 bool CTest_BlobStorage::IsTaskPaused(void)
 {
     if (m_Id == 0) {
+        // "primary" task
+        //      stops all other test task
+        //      waits for them to stop
+        //      prints statistics
+        //      lets other tasks go
         if ((m_Counter % MAKE_TEST_INTERVAL) == 0) {
 
-            if (s_ftxSemaphore.ChangeValue(0,1)) {
-            } else {
+            // raise Stop sign
+            if (!s_ftxStop.ChangeValue(0,1)) {
                 abort();
             }
             int count=0;
@@ -854,31 +873,38 @@ bool CTest_BlobStorage::IsTaskPaused(void)
 #ifdef NCBI_OS_LINUX
             to.tv_sec = 10;
 #endif
+            // wait for other tasks
             while (s_ftxCounter.WaitValueChange(count, to) != CFutex::eTimedOut) {
                 count = s_ftxCounter.GetValue();
                 if (count == MAKE_TEST_TASKS) {
                     break;
                 }
             }
+/*
             if (count != MAKE_TEST_TASKS) {
 cout << "timeout" << endl;
                 return false;
             }
+*/
 
             PrintStat();       
 
+            // let'em go
             s_ftxCounter.ChangeValue(MAKE_TEST_TASKS, 0);
-            s_ftxSemaphore.ChangeValue(1,0);
-            s_ftxSemaphore.WakeUpWaiters(MAKE_TEST_TASKS);
+            s_ftxStop.ChangeValue(1,0);
+//            s_ftxStop.WakeUpWaiters(MAKE_TEST_TASKS);
         }
         return false;
     }
-    if (s_ftxSemaphore.WaitValueChange(0, CSrvTime()) == CFutex::eTimedOut) {
+    // "secondary" tasks
+    //  check Stop sign
+    if (s_ftxStop.WaitValueChange(0, CSrvTime()) == CFutex::eTimedOut) {
         if (m_Paused) {
             m_Paused = false;
         }
         return m_Paused;
     }
+    // Stop sign is there, report and stop
     if (!m_Paused) {
         m_Paused = true;
         s_ftxCounter.AddValue(1);
@@ -891,6 +917,7 @@ void CTest_BlobStorage::PrintStat(void)
 {
     SNCStateStat state;
     CNCBlobStorage::MeasureDB(state);
+    CWriteBackControl::ReadState(state);
 
 cout << endl;
 cout << "===============" << endl;
@@ -902,10 +929,18 @@ cout << "s_SizeRem     = " << s_SizeRem << endl;
 cout << "size expected = " << (s_SizePut - s_SizeRem) << endl;
 cout << "===============" << endl;
 cout << "db_files  = " << state.db_files << endl;
-cout << "db_size   = " << state.db_size << endl;
-cout << "db_garb   = " << state.db_garb << endl;
 cout << "cnt_blobs = " << state.cnt_blobs << endl;
 cout << "cnt_keys  = " << state.cnt_keys << endl;
+
+cout << "state_time     = " << CSrvTime::CurSecs() << endl;
+cout << "min_dead_time  = " << state.min_dead_time << endl;
+
+cout << "db_size   = " << state.db_size << endl;
+cout << "db_garb   = " << state.db_garb << endl;
+cout << "inuse     = " << state.db_size - state.db_garb << endl;
+cout << "wb_size   = " << state.wb_size << endl;
+cout << "wb_releasable   = " << state.wb_releasable << endl;
+cout << "wb_releasing   = " << state.wb_releasing << endl;
 cout << "===============" << endl;
 }
 
@@ -1002,13 +1037,42 @@ CTest_BlobStorage::x_Remove(void)
     if (m_BlobAccess->IsBlobExists()  &&  !m_BlobAccess->IsCurBlobExpired())
     {
         m_BlobSize = m_BlobAccess->GetCurBlobSize();
+
+// from
+// CNCMessageHandler::x_DoCmd_Remove
+//gur
+#if 0
         m_BlobAccess->SetBlobTTL(m_AppSetup->blob_ttl);
+#else
+        bool is_mirrored = CNCDistributionConf::CountServersForSlot(m_BlobSlot) != 0;
+        bool is_good = CNCServer::IsInitiallySynced() && !CNCPeerControl::HasPeerInThrottle();
+        unsigned int mirrored_ttl = is_good ? min(Uint4(300), m_AppSetup->blob_ttl) : m_AppSetup->blob_ttl;
+        unsigned int local_ttl = 5;
+        m_BlobAccess->SetBlobTTL( is_mirrored ? mirrored_ttl : local_ttl);
+#endif
+
         m_BlobAccess->SetBlobVersion(0);
         int expire = CSrvTime::CurSecs() - 1;
         unsigned int ttl = m_BlobAccess->GetNewBlobTTL();
+//gur
+#if 0
         if (m_BlobAccess->IsBlobExists()  &&  m_BlobAccess->GetCurBlobTTL() > ttl)
             ttl = m_BlobAccess->GetCurBlobTTL();
+#endif
+//gur
         m_BlobAccess->SetNewBlobExpire(expire, expire + ttl + 1);
+
+// from
+// CNCMessageHandler::x_FinishReadingBlob
+        CSrvTime cur_srv_time = CSrvTime::Current();
+        Uint8 cur_time = cur_srv_time.AsUSec();
+        int cur_secs = int(cur_srv_time.Sec());
+        m_BlobAccess->SetBlobCreateTime(cur_time);
+        if (m_BlobAccess->GetNewBlobExpire() == 0)
+            m_BlobAccess->SetNewBlobExpire(cur_secs + m_BlobAccess->GetNewBlobTTL());
+        m_BlobAccess->SetNewVerExpire(cur_secs + m_BlobAccess->GetNewVersionTTL());
+        m_BlobAccess->SetCreateServer(CNCDistributionConf::GetSelfID(),
+                                      CNCBlobStorage::GetNewBlobId());
     }
     return &CTest_BlobStorage::x_Finalize;
 }
@@ -1048,11 +1112,13 @@ CTest_BlobStorage::x_Next(void)
         return NULL;
     }
     Reset();
-    SetState(&Me::x_Start);
-    if (MAKE_TEST_DELAY != 0) {
-        RunAfter(MAKE_TEST_DELAY);
-    } else {
-        SetRunnable();
+    if (m_Command != s_Noop) {
+        SetState(&Me::x_Start);
+        if (MAKE_TEST_DELAY != 0) {
+            RunAfter(MAKE_TEST_DELAY);
+        } else {
+            SetRunnable();
+        }
     }
     return NULL;
 }
