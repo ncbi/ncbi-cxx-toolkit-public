@@ -380,18 +380,21 @@ DEFINE_STATIC_MUTEX(sx_InitTablesMutex);
 
 
 typedef vector<CSeqFeatData::E_Choice> TSubtypesTable;
-static AutoPtr<TSubtypesTable> sx_SubtypesTable;
+static CSafeStatic<TSubtypesTable> sx_SubtypesTable;
+static bool sx_SubtypesTableInitialized = false;
 
 typedef map<CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers> TFeatQuals;
 // these maps contain sorted vectors for faster lookup
-static AutoPtr<TFeatQuals> sx_LegalQuals;
-static AutoPtr<TFeatQuals> sx_MandatoryQuals;
-static AutoPtr<CSeqFeatData::TQualifiers> sx_EmptyQuals;
+static CSafeStatic<TFeatQuals> sx_LegalQuals;
+static bool sx_LegalQualsInitialized = false;
+static CSafeStatic<TFeatQuals> sx_MandatoryQuals;
+static bool sx_MandatoryQualsInitialized = false;
+static CSafeStatic<CSeqFeatData::TQualifiers> sx_EmptyQuals;
 
 
 CSeqFeatData::E_Choice CSeqFeatData::GetTypeFromSubtype(ESubtype subtype)
 {
-    if ( !sx_SubtypesTable ) {
+    if ( !sx_SubtypesTableInitialized ) {
         s_InitSubtypesTable();
     }
     return (*sx_SubtypesTable)[subtype];
@@ -558,7 +561,7 @@ CSeqFeatData::SubtypeValueToName(ESubtype eSubtype)
 
 bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 {
-    if ( !sx_LegalQuals ) {
+    if ( !sx_LegalQualsInitialized ) {
         s_InitLegalQuals();  // does nothing if already intialized
     }
     TFeatQuals::const_iterator iter = sx_LegalQuals->find(subtype);
@@ -572,7 +575,7 @@ bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subtype)
 {
-    if ( !sx_LegalQuals ) {
+    if ( !sx_LegalQualsInitialized ) {
         s_InitLegalQuals();  // does nothing if already intialized
     }
     TFeatQuals::const_iterator iter = sx_LegalQuals->find(subtype);
@@ -585,7 +588,7 @@ const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subty
 
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(ESubtype subtype)
 {
-    if ( !sx_MandatoryQuals ) {
+    if ( !sx_MandatoryQualsInitialized ) {
         s_InitMandatoryQuals();  // does nothing if already intialized
     }
     TFeatQuals::const_iterator iter = sx_MandatoryQuals->find(subtype);
@@ -719,15 +722,15 @@ static const size_t s_subtype_count =
 
 void CSeqFeatData::s_InitSubtypesTable(void)
 {
-    if ( sx_SubtypesTable ) {
+    if (sx_SubtypesTableInitialized) {
         return;
     }
     CMutexGuard guard(sx_InitTablesMutex);
-    if ( sx_SubtypesTable ) {
+    if (sx_SubtypesTableInitialized) {
         return;
     }
-    AutoPtr<TSubtypesTable> ptr(new TSubtypesTable(eSubtype_any+1, e_not_set));
-    TSubtypesTable& table = *ptr;
+    TSubtypesTable& table = *sx_SubtypesTable;
+    table.assign(eSubtype_any + 1, e_not_set);
 
     table[eSubtype_gene] = e_Gene;
     table[eSubtype_org] = e_Org;
@@ -763,7 +766,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
         table[p->m_Subtype] = e_Imp;
     }
 
-    sx_SubtypesTable = ptr;
+    sx_SubtypesTableInitialized = true;
 
 #ifdef _DEBUG
     if ( false ) { // print new definition of s_subtype_info[]
@@ -800,20 +803,15 @@ void CSeqFeatData::s_InitSubtypesTable(void)
 
 void CSeqFeatData::s_InitLegalQuals(void)
 {
-    if ( sx_LegalQuals ) {
+    if (sx_LegalQualsInitialized) {
         return;
     }
     CMutexGuard guard(sx_InitTablesMutex);
-    if ( sx_LegalQuals ) {
+    if (sx_LegalQualsInitialized) {
         return;
     }
 
-    if ( !sx_EmptyQuals ) {
-        sx_EmptyQuals.reset(new TQualifiers);
-    }
-    
-    AutoPtr<TFeatQuals> ptr(new TFeatQuals);
-    TFeatQuals& table = *ptr;
+    TFeatQuals& table = *sx_LegalQuals;
 
 #define START_SUBTYPE(x) { \
     TQualifiers& quals = table[eSubtype_##x];
@@ -2817,26 +2815,21 @@ END_SUBTYPE
         sort(iter->second.begin(), iter->second.end());
     }
 
-    sx_LegalQuals = ptr;
+    sx_LegalQualsInitialized = true;
 }
 
 
 void CSeqFeatData::s_InitMandatoryQuals(void)
 {
-    if ( sx_MandatoryQuals ) {
+    if (sx_MandatoryQualsInitialized) {
         return;
     }
     CMutexGuard guard(sx_InitTablesMutex);
-    if ( sx_MandatoryQuals ) {
+    if (sx_MandatoryQualsInitialized) {
         return;
     }
 
-    if ( !sx_EmptyQuals ) {
-        sx_EmptyQuals.reset(new TQualifiers);
-    }
-    
-    AutoPtr<TFeatQuals> ptr(new TFeatQuals);
-    TFeatQuals& table = *ptr;
+    TFeatQuals& table = *sx_MandatoryQuals;
 
     table[eSubtype_assembly_gap].push_back(eQual_estimated_length);
     table[eSubtype_assembly_gap].push_back(eQual_gap_type);
@@ -2855,7 +2848,7 @@ void CSeqFeatData::s_InitMandatoryQuals(void)
         sort(iter->second.begin(), iter->second.end());
     }
 
-    sx_MandatoryQuals = ptr;
+    sx_MandatoryQualsInitialized = true;
 }
 
 

@@ -719,7 +719,7 @@ DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TAccInfoMap, sc_AccInfoMap, sc_AccInfoArray);
 
 static const char kDigits[] = "0123456789";
 
-struct SAccGuide
+struct SAccGuide : public CObject
 {
     typedef CSeq_id::EAccessionInfo TAccInfo;
     typedef map<string, TAccInfo>   TPrefixes;
@@ -735,7 +735,14 @@ struct SAccGuide
     };
     typedef map<TFormatCode, SSubMap> TMainMap;
 
-    SAccGuide(void) : count(0) { }
+    SAccGuide(void);
+    SAccGuide(const string& filename)
+        : count(0)
+        { x_Load(filename); }
+    SAccGuide(ILineReader& lr)
+        : count(0)
+        { x_Load(lr); }
+
     void AddRule(const CTempString& rule);
     TAccInfo Find(TFormatCode fmt, const CTempString& acc_or_pfx,
                   string* key_used = NULL);
@@ -745,6 +752,11 @@ struct SAccGuide
     unsigned int count;
     TMainMap     rules;
     TPrefixes    general;
+
+private:
+    void x_Load(const string& filename);
+    void x_Load(ILineReader& lr);
+    void x_InitGeneral(void);
 };
 
 void SAccGuide::AddRule(const CTempString& rule)
@@ -916,36 +928,32 @@ SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt,
 }
 
 
-SAccGuide s_Guide;
-
-static void s_LoadGuide(void)
+SAccGuide::SAccGuide(void)
+    : count(0)
 {
-    DEFINE_STATIC_FAST_MUTEX(mutex);
-    CFastMutexGuard guard(mutex);
-    if (s_Guide.count) {
-        return;
-    }
     {{
         string file = g_FindDataFile("accguide.txt");
         if ( !file.empty() ) {
             try {
-                CSeq_id::LoadAccessionGuide(file);
-            } STD_CATCH_ALL_X(1, "CSeq_id::LoadAccessionGuide")
+                x_Load(file);
+            } STD_CATCH_ALL_X(1, "SAccGuide::SAccGuide")
         }
     }}
-    if ( !s_Guide.count ) {
+    if (count == 0) {
         ERR_POST_X(6, Info << "CSeq_id::IdentifyAccession: " // minor lie
                               "falling back on built-in rules.");
-        SAccGuide guide;
         static const unsigned int kNumBuiltInRules
             = sizeof(kBuiltInGuide) / sizeof(*kBuiltInGuide);
         for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
-            guide.AddRule(kBuiltInGuide[i]);
+            AddRule(kBuiltInGuide[i]);
         }
-        swap(guide, s_Guide);
     }
+    x_InitGeneral();
+}
 
-    if (s_Guide.general.empty()) {
+void SAccGuide::x_InitGeneral(void)
+{
+    if (general.empty()) {
         // Populate with a hard-coded list by default; there are only
         // a few tags to worry about, but listing them in accguide.txt
         // right away would yield warnings from old Toolkit versions.
@@ -953,10 +961,25 @@ static void s_LoadGuide(void)
             "SRA", "TI", "TR_ASSM_CH", "TRACE_ASSM", "TRACE_CHGR", NULL
         };
         for (const char* const* p = kNucDBs;  *p;  ++p) {
-            s_Guide.general[*p] = CSeq_id::eAcc_general_nuc;
+            general[*p] = CSeq_id::eAcc_general_nuc;
         }
     }
 }
+
+void SAccGuide::x_Load(const string& filename)
+{
+    CRef<ILineReader> in(ILineReader::New(filename));
+    x_Load(*in);
+}
+
+void SAccGuide::x_Load(ILineReader& in)
+{
+    do {
+        AddRule(*++in);
+    } while ( !in.AtEOF() );
+}
+
+static CSafeStatic<CRef<SAccGuide> > s_Guide;
 
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc)
 {
@@ -1062,13 +1085,13 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
         }
     }
 
-    if ( !s_Guide.count ) {
-        s_LoadGuide();
+    if (s_Guide->Empty()) {
+        s_Guide->Reset(new SAccGuide);
     }
 
     SIZE_TYPE digit_count = main_size - digit_pos - scaffold_flag_len;
-    EAccessionInfo ai = s_Guide.Find(SAccGuide::s_Key(digit_pos, digit_count),
-                                     main_acc);
+    EAccessionInfo ai
+        = (*s_Guide)->Find(SAccGuide::s_Key(digit_pos, digit_count), main_acc);
     switch (ai & eAcc_division_mask) {
     case eAcc_targeted:
     case eAcc_tsa:
@@ -1119,8 +1142,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
     {
         string db = GetGeneral().GetDb();
         NStr::ToUpper(db);
-        SAccGuide::TPrefixes::const_iterator it = s_Guide.general.find(db);
-        return it == s_Guide.general.end() ? eAcc_general : it->second;
+        SAccGuide::TPrefixes::const_iterator it = (*s_Guide)->general.find(db);
+        return it == (*s_Guide)->general.end() ? eAcc_general : it->second;
     }
 
     default:
@@ -1131,17 +1154,12 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
 
 void CSeq_id::LoadAccessionGuide(const string& filename)
 {
-    CRef<ILineReader> lr(ILineReader::New(filename));
-    LoadAccessionGuide(*lr);
+    s_Guide->Reset(new SAccGuide(filename));
 }
 
 void CSeq_id::LoadAccessionGuide(ILineReader& in)
 {
-    SAccGuide guide;
-    do {
-        guide.AddRule(*++in);
-    } while ( !in.AtEOF() );
-    swap(s_Guide, guide);
+    s_Guide->Reset(new SAccGuide(in));
 }
 
 
