@@ -256,6 +256,8 @@ public:
         /// Blob value should be set before the query execution, i.e. query
         /// should return non-NULL value. Setting non-NULL value after query
         /// execution won't work.
+        ///
+        /// @sa CDatabase::NewBookmark
         CBlobBookmark GetBookmark(void) const;
 
     private:
@@ -585,9 +587,18 @@ private:
 
 
 /// Object used to store bookmarks to blobs to be changed later.
+///
+/// @sa CQuery::CField::GetBookmark, CDatabase::NewBookmark
 class CBlobBookmark
 {
 public:
+    /// Blob type (if known). 
+    enum EBlobType {
+        eUnknown,
+        eText,
+        eBinary
+    };
+
     /// Get Blob output stream. Blob will be updated using the same
     /// database connection which this bookmark was create on.
     /// Thus it shouldn't have any active queries or bulk inserts by the time
@@ -615,6 +626,7 @@ public:
     CBlobBookmark& operator= (const CBlobBookmark& bm);
 
 private:
+    friend class CDatabase;
     friend class CQuery::CField;
 
     /// Create bookmark with the given implementation
@@ -930,7 +942,26 @@ public:
     ///   Name of the table to insert to
     /// @param autoflush
     ///   Number of rows to insert before the batch is committed to database
-    CBulkInsert NewBulkInsert(const string& table_name, int autoflush);           
+    CBulkInsert NewBulkInsert(const string& table_name, int autoflush);
+    /// Get new CBlobBookmark object.
+    ///
+    /// @param table_name
+    ///   Name of the table to update.
+    /// @param column_name
+    ///   Name of the column to update.
+    /// @param search_conditions
+    ///   SQL expression identifying the relevant row.  (Failure to
+    ///   match exactly one row yields undefined behavior, and may
+    ///   result in updating multiple rows in some cases.)
+    /// @param column_type
+    ///   General column type (text or binary), if known.  (Optional.)
+    /// @sa CQuery::CField::GetBookmark
+    CBlobBookmark NewBookmark(const string&            table_name,
+                              const string&            column_name,
+                              const string&            search_conditions,
+                              CBlobBookmark::EBlobType column_type
+                                  = CBlobBookmark::eUnknown);
+
 
 private:
     /// Database parameters

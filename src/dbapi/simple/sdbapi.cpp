@@ -1516,6 +1516,31 @@ CDatabase::NewBulkInsert(const string& table_name, int autoflush)
     return CBulkInsert(m_Impl, table_name, autoflush);
 }
 
+CBlobBookmark
+CDatabase::NewBookmark(const string& table_name, const string& column_name,
+                       const string& search_conditions,
+                       CBlobBookmark::EBlobType column_type)
+{
+    if (!m_Impl) {
+        NCBI_THROW(CSDB_Exception, eClosed,
+                   "Cannot create bookmark when not connected");
+    }
+
+    CDB_ITDescriptor::ETDescriptorType desc_type;
+    switch (column_type) {
+    case CBlobBookmark::eText:   desc_type = CDB_ITDescriptor::eText;    break;
+    case CBlobBookmark::eBinary: desc_type = CDB_ITDescriptor::eBinary;  break;
+    default:                     desc_type = CDB_ITDescriptor::eUnknown; break;
+    }
+
+    auto_ptr<I_ITDescriptor> desc
+        (new CDB_ITDescriptor(table_name, column_name, search_conditions,
+                              desc_type));
+                                                       
+    CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Impl, desc.release()));
+    return CBlobBookmark(bm);
+}
+
 
 inline
 CBulkInsertImpl::CBulkInsertImpl(CDatabaseImpl* db_impl,
