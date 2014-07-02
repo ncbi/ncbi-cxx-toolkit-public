@@ -69,11 +69,11 @@ typedef struct SFreqRatios {
  *          PAM250
  * @return NULL on error
  */
-SFreqRatios*
+NCBI_XBLAST_EXPORT SFreqRatios*
 _PSIMatrixFrequencyRatiosNew(const char* matrix_name);
 
 /** Deallocate the frequency ratios structure */
-SFreqRatios*
+NCBI_XBLAST_EXPORT SFreqRatios*
 _PSIMatrixFrequencyRatiosFree(SFreqRatios* freq_ratios);
 
 #ifdef __cplusplus
