@@ -455,10 +455,11 @@ CNCBlobAccessor::SetNewBlobExpire(int expire, int dead_time /* = 0 */)
 {
     x_CreateNewData();
     m_NewData->expire = expire;
-    dead_time = max(dead_time, expire);
-    if (m_CurData)
-        dead_time = max(m_CurData->dead_time, dead_time);
-    m_NewData->dead_time = dead_time;
+    int d_time = max(dead_time, expire);
+    if (dead_time == 0 && m_CurData) {
+        d_time = max(m_CurData->dead_time, d_time);
+    }
+    m_NewData->dead_time = d_time;
 }
 
 inline unsigned int

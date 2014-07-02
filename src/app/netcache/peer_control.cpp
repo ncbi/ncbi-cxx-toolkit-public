@@ -667,6 +667,17 @@ CNCPeerControl::FindIPbyName(const string& alias)
     return 0;
 }
 
+bool
+CNCPeerControl::HasPeerInThrottle(void)
+{
+    ITERATE(TControlMap, it_ctrl, s_Controls) {
+        if (it_ctrl->second->m_InThrottle) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void
 CNCPeerControl::SetServersForInitSync(Uint4 cnt_servers)
 {

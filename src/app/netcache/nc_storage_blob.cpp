@@ -732,8 +732,9 @@ CNCBlobVerManager::FinalizeWriting(SNCBlobVerData* ver_data)
         old_ver.Swap(m_CurVersion);
         m_CacheData->coord = m_CurVersion->coord;
         m_CacheData->dead_time = m_CurVersion->dead_time;
-        if (m_CacheData->saved_dead_time == 0)
+        if (m_CacheData->saved_dead_time != m_CacheData->dead_time) {
             CNCBlobStorage::ChangeCacheDeadTime(m_CacheData);
+        }
         m_CacheData->create_id = m_CurVersion->create_id;
         m_CacheData->create_server = m_CurVersion->create_server;
         m_CacheData->create_time = m_CurVersion->create_time;

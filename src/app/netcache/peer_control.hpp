@@ -100,6 +100,7 @@ public:
 
     static Uint4 FindIPbyAlias(Uint4 alias);
     static Uint4 FindIPbyName(const string& alias);
+    static bool  HasPeerInThrottle(void);
 
     static void SetServersForInitSync(Uint4 cnt_servers);
     static void ResetServersForInitSync(void);

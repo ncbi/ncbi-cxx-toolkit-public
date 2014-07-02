@@ -3566,12 +3566,14 @@ CNCMessageHandler::x_DoCmd_Remove(void)
         return &CNCMessageHandler::x_FinishCommand;
     }
 
-    m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
+    bool is_mirrored = CNCDistributionConf::CountServersForSlot(m_BlobSlot) != 0;
+    bool is_good = CNCServer::IsInitiallySynced() && !CNCPeerControl::HasPeerInThrottle();
+    unsigned int mirrored_ttl = is_good ? min(Uint4(300), x_GetBlobTTL()) : x_GetBlobTTL();
+    unsigned int local_ttl = 5;
+    m_BlobAccess->SetBlobTTL( is_mirrored ? mirrored_ttl : local_ttl);
     m_BlobAccess->SetBlobVersion(m_BlobVersion);
     int expire = CSrvTime::CurSecs() - 1;
     unsigned int ttl = m_BlobAccess->GetNewBlobTTL();
-    if (m_BlobAccess->IsBlobExists()  &&  m_BlobAccess->GetCurBlobTTL() > ttl)
-        ttl = m_BlobAccess->GetCurBlobTTL();
     m_BlobAccess->SetNewBlobExpire(expire, expire + ttl + 1);
     CNCBlobAccessor::PutSucceeded(m_BlobAccess->GetBlobKey());
     return &CNCMessageHandler::x_FinishReadingBlob;
