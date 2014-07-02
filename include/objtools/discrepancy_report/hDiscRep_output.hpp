@@ -1,8 +1,5 @@
-#ifndef OBJTOOLS_DiscOutput_HPP
-#define OBJTOOLS_DiscOutput_HPP
-
 /*  $Id$
- *===========================================================================
+ *==========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -24,7 +21,7 @@
  *
  *  Please cite the author in any work or product based on this material.
  *
- *===========================================================================
+ *==========================================================================
  *
  * Author:  Jie Chen
  *
@@ -33,118 +30,14 @@
  *
  */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiargs.hpp>
-
-// Object Manager includes
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-// #include <objtools/validator/validatorp.hpp>
-
-#include <serial/objistr.hpp>
-#include <serial/objhook.hpp>
-#include <serial/serial.hpp>
+#ifndef OBJTOOLS_DISCREPANCY_REPORT___OUTPUT__HPP
+#define OBJTOOLS_DISCREPANCY_REPORT___OUTPUT__HPP
 
 #ifdef __GNUC__
-#  warning "Header <objtools/discrepancy_report/hDiscRep_tests.hpp> are obsolete; please use <misc/discrepancy_report/hDiscRep_tests.hpp> instead!"
-#  warning "Header <objtools/discrepancy_report/clickable_itemhpp> are obsolete; please use <misc/discrepancy_report/clickable_item.hpp> instead!"
+#  warning "Header <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/hDiscRep_output.hpp> instead!"
 #endif // __GNUC__ 
 
-#include <misc/discrepancy_report/hDiscRep_tests.hpp>
-#include <misc/discrepancy_report/clickable_item.hpp>
+#include <misc/discrepancy_report/hDiscRep_output.hpp>
 
-#include <misc/xmlwrapp/xmlwrapp.hpp>
-
-BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-BEGIN_SCOPE(DiscRepNmSpc)
-
-class COutputConfig
-{
-  public:
-    bool     use_flag;
-    CNcbiOstream*  output_f;
-    bool     summary_report;
-    bool     add_output_tag;
-    bool     add_extra_output_tag;
-    bool     xml;
-};
- 
-struct s_fataltag {
-    string setting_name;
-    const char* description;
-    const char* notag_description;
-};
-
-enum EOnCallerGrp {
-    eMol = 0,
-    eCitSub,
-    eSource,
-    eFeature,
-    eSuspectText
-};
-
-typedef map <int, vector <unsigned> > UInt2UInts;
-class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
-{
-  public:
-    ~CDiscRepOutput () {};
-
-    void Export();
-    void Export(vector <CRef <CClickableText> >& item_list);
-    void Export(CClickableItem& c_item, const string& setting_name);
-    void Export(vector <CRef <CClickableItem> >& c_item, const string& setting_name);
-    
-  private:
-    Str2Int m_sOnCallerToolPriorities;
-    map <string, EOnCallerGrp> m_sOnCallerToolGroups;
-
-    void x_SortReport(UInt2UInts& prt_ord);
-    void x_Clear(UInt2UInts* prt_ord = 0);
-    void x_WriteDiscRepSummary(xml::node& root, UInt2UInts& m_PrtOrd);
-    bool x_NeedsTag(const string& setting_name, const string& desc, 
-                            const s_fataltag* tags, const unsigned& cnt);
-    void x_AddListOutputTags();
-    void x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
-                               xml::node& root,
-                               UInt2UInts& prt_ord, 
-                               bool use_flag, 
-                               bool IsSubcategory = false);
-    bool x_RmTagInDescp(string& str, const string& tag);
-    void x_WriteDiscRepSubcategories(
-                const vector <CRef <CClickableItem> >& subcategories, 
-                xml::node& node,
-                unsigned ident = 1);
-    bool x_SubsHaveTags(CRef <CClickableItem> c_item);
-    bool x_OkToExpand(CRef < CClickableItem > c_item);
-    bool x_SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
-    void x_WriteDiscRepItems(CRef <CClickableItem> c_item, 
-                                 const string& prefix, xml::node& node); 
-    void x_StandardWriteDiscRepItems(COutputConfig& oc, 
-                                     const CClickableItem* c_item, 
-                                     const string& prefix, 
-                                     bool list_features_if_subcat,
-                                     xml::node& node);
-    string x_GetDesc4GItem(string desc);
-    void x_OutputRepToGbenchItem(const CClickableItem& c_item,  
-                                 CClickableText& item);
-    void x_InitializeOnCallerToolPriorities();
-    void x_InitializeOnCallerToolGroups();
-    void x_OrderResult(UInt2UInts& ord2i_citem);
-    void x_GroupResult(map <EOnCallerGrp, string>& grp_idx_str);
-    void x_ReorderAndGroupOnCallerResults(UInt2UInts& ord2i_citem, 
-                                       map <EOnCallerGrp, string>& grp_idx_str);
-    string x_GetGrpName(EOnCallerGrp e_grp);
-    CRef <CClickableItem> x_CollectSameGroupToGbench(UInt2UInts& ord2i_citem, 
-                                             EOnCallerGrp e_grp, 
-                                             const string& grp_idxes);
-    void x_SendItemToGbench(CRef <CClickableItem> citem, 
-                            vector <CRef <CClickableText> >& item_list);
-};
-
-END_SCOPE(DiscRepNmSpc)
-END_NCBI_SCOPE
-
-#endif
+#endif  // OBJTOOLS_DISCREPANCY_REPORT___OUTPUT__HPP
 

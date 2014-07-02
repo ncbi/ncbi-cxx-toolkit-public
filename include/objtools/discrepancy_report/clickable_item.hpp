@@ -1,5 +1,5 @@
 /*  $Id$
- * ===========================================================================
+ * =========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -21,59 +21,20 @@
  *
  *  Please cite the author in any work or product based on this material.
  *
- * ===========================================================================
+ * =========================================================================
  *
  * Authors:  Colleen Bollin
  * Created:  17/09/2013 15:38:53
  */
 
 
-#ifndef OBJTOOLS_CLICKABLE_ITEM_H_
-#define OBJTOOLS_CLICKABLE_ITEM_H_
+#ifndef OBJTOOLS_DISCREPANCY_REPORT___CLICKABLE_ITEM__HPP
+#define OBJTOOLS_DISCREPANCY_REPORT___CLICKABLE_ITEM__HPP
 
-#include <corelib/ncbistd.hpp>
-#include <objects/seqfeat/Gene_ref.hpp>
-#include <objmgr/scope.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/SeqFeatData.hpp>
+#ifdef __GNUC__
+#  warning "Headers <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/clickable_item.hpp> instead!"
+#endif // __GNUC__ 
 
-BEGIN_NCBI_SCOPE
+#include <misc/discrepancy_report/clickable_item.hpp>
 
-USING_SCOPE(objects);
-
-class CClickableText;
-
-class CClickableText : public CObject
-{
-public:
-    CClickableText() : m_Text(""), m_IsSelected(false), m_IsExpanded(false), m_Objdescs() {}
-    CClickableText(const string& text, bool selected = false, bool expanded = false)
-        : m_Text(text), m_IsSelected(selected), m_IsExpanded(expanded) {}
-    ~CClickableText() {}
-
-    const string& GetText() const { return m_Text; }
-    void SetText(const string& text) { m_Text = text; }
-    bool IsSelected() const { return m_IsSelected; }
-    void SetSelected(bool selected = true);
-    bool IsExpanded() const { return m_IsExpanded; }
-    void SetExpanded(bool expanded = true, bool recurse = false); 
-    void SetOwnExpanded(bool expanded = true) { m_IsExpanded = expanded; };
-    const vector<CRef<CClickableText> >& GetSubitems() const { return m_Subitems; }
-    vector<CRef<CClickableText> >& SetSubitems() { return m_Subitems; }
-    const vector<CConstRef<CObject> >& GetObjects() const { return m_Objects; }
-    vector<CConstRef<CObject> >& SetObjects() { return m_Objects; }
-    const vector <string>& GetObjdescs() const { return m_Objdescs; }
-    vector <string>& SetObjdescs() { return m_Objdescs; } 
-
-protected:
-    string m_Text;
-    bool m_IsSelected;
-    bool m_IsExpanded;
-    vector<CRef<CClickableText> > m_Subitems;
-    vector<CConstRef<CObject> > m_Objects;
-    vector <string> m_Objdescs;
-};
-
-END_NCBI_SCOPE
-
-#endif  // OBJTOOLS_CLICKABLE_ITEM_H_
+#endif  // OBJTOOLS_DISCREPANCY_REPORT___CLICKABLE_ITEM__HPP

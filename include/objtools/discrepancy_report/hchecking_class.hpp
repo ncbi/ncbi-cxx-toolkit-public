@@ -1,8 +1,5 @@
-#ifndef OBJTOOLS_CHECKING_CLASS
-#define OBJTOOLS_CHECKING_CLASS
-
 /*  $Id$
- * ==========================================================================
+ * =========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -24,7 +21,7 @@
  *
  *  Please cite the author in any work or product based on this material.
  *
- * ==========================================================================
+ * =========================================================================
  *
  * Author:  Jie Chen
  *
@@ -32,81 +29,13 @@
  *   headfile of cpp discrepancy report checking class
  *
  */
-
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objmgr/seq_feat_handle.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objects/submit/Submit_block.hpp>
+#ifndef OBJTOOLS_DISCREPANCY_REPORT___HCHECKING_CLASS__HPP
+#define OBJTOOLS_DISCREPANCY_REPORT___HCHECKING_CLASS__HPP
 
 #ifdef __GNUC__
-#  warning "Header <objtools/discrepancy_report/hDiscRep_tests.hpp> is obsolete; please use <misc/discrepancy_report/hDiscRep_tests.hpp> instead!"
+#  warning "Header <objtools/discrepancy_report/*.hpp> are obsolete; please use <misc/discrepancy_report/hchecking_class.hpp> instead!"
 #endif // __GNUC__ 
 
-#include <misc/discrepancy_report/hDiscRep_tests.hpp>
+#include <misc/discrepancy_report/hchecking_class.hpp>
 
-BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-BEGIN_SCOPE(DiscRepNmSpc)
-
-   class CCheckingClass 
-   {
-      public:
-         CCheckingClass();
-
-         void CheckBioseq( CBioseq& bioseq );
-         void CheckSeqInstMol(CSeq_inst& seq_inst, CBioseq& bioseq); // not used
-         void CheckSeqEntry ( CRef <CSeq_entry> seq_entry);
-         void CheckBioseqSet ( CBioseq_set& bioseq_set);
-
-         bool HasLocusTag (void) {
-               return has_locus_tag;
-         };
-
-         void SetNumEntry(unsigned num_entry) { m_num_entry = num_entry; }
-         unsigned GetNumEntry() {return m_num_entry; }
-
-         template < class T >
-         void GoTests(vector <CRef < CTestAndRepData> >& test_category, 
-                         const T& obj) {
-            NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, 
-                                 test_category) {
-                  (*it)->SetNumEntry(GetNumEntry());
-                  (*it)->TestOnObj(obj);
-            }
-         };
-
-         static bool SortByFrom(const CSeq_feat* seqfeat1, 
-                                      const CSeq_feat* seqfeat2);
-
-      private:
-         unsigned m_num_entry;
-         void x_Clean();
-
-         bool CanGetOrgMod(const CBioSource& biosrc);
-         void CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h);
-
-         SAnnotSelector sel_seqfeat_4_seq_entry;
-         vector <CSeqdesc :: E_Choice> sel_seqdesc, sel_seqdesc_4_bioseq;
-
-         bool has_locus_tag;
-
-         vector < vector <const CSeq_feat*> * >  m_vec_sf;
-         vector < vector <const CSeqdesc*> * >   m_vec_desc;
-         vector < vector <const CSeq_entry*> * > m_vec_entry; 
-   };
-
-END_SCOPE(DiscRepNmSpc)
-END_NCBI_SCOPE
-
-#endif // OBJTOOLS_CHECKING_CLASS
+#endif // OBJTOOLS_DISCREPANCY_REPORT___HCHECKING_CLASS__HPP
