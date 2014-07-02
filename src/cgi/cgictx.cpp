@@ -671,9 +671,10 @@ static bool s_IsAllowedHeaderList(const string& headers)
 }
 
 
-static string s_HeaderToHttp(const CTempString& name)
+inline string s_HeaderToHttp(const char* name)
 {
-    return NStr::Replace(name, "-", "_");
+    string http_name(name);
+    return NStr::ToUpper(NStr::ReplaceInPlace(http_name, "-", "_"));
 }
 
 
@@ -695,8 +696,10 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
 
     // Preflight request processing - check more incoming headers.
     if (request.GetRequestMethod() == CCgiRequest::eMethod_OPTIONS) {
-        string method = request.GetRandomProperty(s_HeaderToHttp(kAC_RequestMethod));
-        string headers = request.GetRandomProperty(s_HeaderToHttp(kAC_RequestHeaders));
+        string method =
+            request.GetRandomProperty(s_HeaderToHttp(kAC_RequestMethod));
+        string headers =
+            request.GetRandomProperty(s_HeaderToHttp(kAC_RequestHeaders));
         if (!s_IsAllowedMethod(method)  ||  !s_IsAllowedHeaderList(headers)) {
             return false;
         }
