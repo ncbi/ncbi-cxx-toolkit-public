@@ -9,4 +9,6 @@ APP_PROJ = disc_report api_asndisc asndisc
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
+REQUIRES = LIBXSLT 
+
 WATCHERS = chenj
