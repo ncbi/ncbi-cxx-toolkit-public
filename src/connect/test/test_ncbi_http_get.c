@@ -192,8 +192,9 @@ int main(int argc, char* argv[])
     CONN_SetTimeout(conn, eIO_Open,      net_info->timeout);
     CONN_SetTimeout(conn, eIO_ReadWrite, net_info->timeout);
     while (fp  &&  !feof(fp)) {
-        n = fread(blk, 1, sizeof(blk), fp);
-        status = CONN_Write(conn, blk, n, &n, eIO_WritePersist);
+        static char block[20000/*to force non-default BUF allocations*/];
+        n = fread(block, 1, sizeof(block), fp);
+        status = CONN_Write(conn, block, n, &n, eIO_WritePersist);
         if (status != eIO_Success)
             CORE_LOGF(eLOG_Fatal, ("Write error: %s", IO_StatusStr(status)));
     }
