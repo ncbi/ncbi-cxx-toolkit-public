@@ -1704,6 +1704,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "EUMJ	s	Ehime University",
 "EUQ	s	Department of Entomology, Queensland University",
 "EUSL	c	Eastern University",
+"EVA	c	European Virus Archive",
 "EVCV	s	Erster Vorarlberger Coleopterische Verein",
 "EVMU	s	Everhart Museum, Natural History Department",
 "EWH	s	Ewha Womans University",
