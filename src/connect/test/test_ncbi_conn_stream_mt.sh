@@ -31,11 +31,14 @@ case "`expr '(' $$ / 10 ')' '%' 4`" in
   fi
   ;;
   1)
-  if [ "`echo ${CHECK_SIGNATURE:-Unknown} | grep -c '^MSVC'`" != "0" ]; then 
+  case "`echo ${CHECK_SIGNATURE:-Unknown}`" in
+    MSVC*|VS*)
     url='file:////?/c:/windows/system32/drivers/etc/hosts'
-  else
+    ;;
+    *)
     url='file:///etc/hosts'
-  fi
+    ;;
+  esac
   ;;
   2)
   url='ftp://ftp-ext.ncbi.nlm.nih.gov/README.ftp'
