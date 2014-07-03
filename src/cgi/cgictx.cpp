@@ -686,53 +686,7 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
         return false;
     }
 
-    string origin = request.GetRandomProperty(s_HeaderToHttp(kAC_Origin));
-    if ( !s_IsAllowedOrigin(origin) ) {
-        return false;
-    }
-    _ASSERT(!origin.empty());
-
-    // This is probably a CORS request. Send back the required headers.
-
-    // Preflight request processing - check more incoming headers.
-    if (request.GetRequestMethod() == CCgiRequest::eMethod_OPTIONS) {
-        string method =
-            request.GetRandomProperty(s_HeaderToHttp(kAC_RequestMethod));
-        string headers =
-            request.GetRandomProperty(s_HeaderToHttp(kAC_RequestHeaders));
-        if (!s_IsAllowedMethod(method)  ||  !s_IsAllowedHeaderList(headers)) {
-            return false;
-        }
-
-        response.SetHeaderValue(kAC_AllowOrigin, origin);
-        if ( TCORS_AllowCredentials::GetDefault() ) {
-            response.SetHeaderValue(kAC_AllowCredentials, "true");
-        }
-        string allow_methods = TCORS_AllowMethods::GetDefault();
-        if ( !allow_methods.empty() ) {
-            response.SetHeaderValue(kAC_AllowMethods, allow_methods);
-        }
-        string allow_headers = TCORS_AllowHeaders::GetDefault();
-        if ( !allow_headers.empty() ) {
-            response.SetHeaderValue(kAC_AllowHeaders, allow_headers);
-        }
-        string max_age = TCORS_MaxAge::GetDefault();
-        if ( !max_age.empty() ) {
-            response.SetHeaderValue(kAC_MaxAge, max_age);
-        }
-        response.WriteHeader();
-        return true;
-    }
-
-    // Normal CORS request (not a preflight).
-    response.SetHeaderValue(kAC_AllowOrigin, origin);
-    if ( TCORS_AllowCredentials::GetDefault() ) {
-        response.SetHeaderValue(kAC_AllowCredentials, "true");
-    }
-    string exp_headers = TCORS_ExposeHeaders::GetDefault();
-    if ( !exp_headers.empty() ) {
-        response.SetHeaderValue(kAC_ExposeHeaders, exp_headers);
-    }
+    bool result = false;
 
     //
     // Temporary JQuery based hack for browsers that don't yet support CORS
@@ -745,14 +699,62 @@ bool CCgiContext::ProcessCORSRequest(const CCgiRequest& request,
              method == CCgiRequest::eMethod_Other)
         &&  !jquery_callback.empty()) {
         string prefix = TCORS_JQuery_Callback_Prefix::GetDefault();
-        if (prefix != "*"  &&
-            !NStr::StartsWith(jquery_callback, prefix, NStr::eNocase)) {
-            return false;
+        if (prefix == "*"  ||
+            NStr::StartsWith(jquery_callback, prefix, NStr::eNocase)) {
+            response.m_JQuery_Callback = jquery_callback;
+            result = true;
         }
-        response.m_JQuery_Callback = jquery_callback;
     }
 
-    return false;
+    string origin = request.GetRandomProperty(s_HeaderToHttp(kAC_Origin));
+    if ( s_IsAllowedOrigin(origin) ) {
+        _ASSERT(!origin.empty());
+
+        // This is probably a CORS request. Send back the required headers.
+
+        // Preflight request processing - check more incoming headers.
+        if (request.GetRequestMethod() == CCgiRequest::eMethod_OPTIONS) {
+            string method = request.GetRandomProperty(s_HeaderToHttp(kAC_RequestMethod));
+            string headers = request.GetRandomProperty(s_HeaderToHttp(kAC_RequestHeaders));
+            if (s_IsAllowedMethod(method)  &&  s_IsAllowedHeaderList(headers)) {
+                response.SetHeaderValue(kAC_AllowOrigin, origin);
+                if ( TCORS_AllowCredentials::GetDefault() ) {
+                    response.SetHeaderValue(kAC_AllowCredentials, "true");
+                }
+                string allow_methods = TCORS_AllowMethods::GetDefault();
+                if ( !allow_methods.empty() ) {
+                    response.SetHeaderValue(kAC_AllowMethods, allow_methods);
+                }
+                string allow_headers = TCORS_AllowHeaders::GetDefault();
+                if ( !allow_headers.empty() ) {
+                    response.SetHeaderValue(kAC_AllowHeaders, allow_headers);
+                }
+                string max_age = TCORS_MaxAge::GetDefault();
+                if ( !max_age.empty() ) {
+                    response.SetHeaderValue(kAC_MaxAge, max_age);
+                }
+                result = true;
+            }
+        }
+        else {
+            // Normal CORS request (not a preflight).
+            response.SetHeaderValue(kAC_AllowOrigin, origin);
+            if ( TCORS_AllowCredentials::GetDefault() ) {
+                response.SetHeaderValue(kAC_AllowCredentials, "true");
+            }
+            string exp_headers = TCORS_ExposeHeaders::GetDefault();
+            if ( !exp_headers.empty() ) {
+                response.SetHeaderValue(kAC_ExposeHeaders, exp_headers);
+            }
+            result = true;
+        }
+    }
+
+    if ( result ) {
+        response.WriteHeader();
+    }
+
+    return result;
 }
 
 
