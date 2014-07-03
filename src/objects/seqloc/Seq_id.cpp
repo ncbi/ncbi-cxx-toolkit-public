@@ -1140,6 +1140,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
 
     case e_General:
     {
+        if (s_Guide->Empty()) {
+            s_Guide->Reset(new SAccGuide);
+        }
+
         string db = GetGeneral().GetDb();
         NStr::ToUpper(db);
         SAccGuide::TPrefixes::const_iterator it = (*s_Guide)->general.find(db);
