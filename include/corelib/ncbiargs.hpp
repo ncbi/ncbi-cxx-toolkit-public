@@ -83,6 +83,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbitime.hpp>
 #include <memory>
 #include <set>
 #include <list>
@@ -253,6 +254,9 @@ public:
 
     /// Get the argument as a directory.
     virtual const CDir& AsDirectory(void) const = 0;
+
+    /// Get the argument as a DateTime.
+    virtual const CTime& AsDateTime(void) const = 0;
 
     /// Close the file.
     virtual void CloseFile (void) const = 0;
@@ -518,6 +522,8 @@ public:
         eOutputFile, ///< Name of file (must be writeable)
         eIOFile,     ///< Name of file (must be writeable)
         eDirectory,  ///< Name of file directory
+        eDataSize,   ///< Integer number with possible "software" qualifiers (KB, KiB, et al)
+        eDateTime,   ///< DateTime string, formats "Y-M-DTh:m:s.l" or "Y/M/D h:m:s.l"
 
         k_EType_Size ///< For internal use only
     };

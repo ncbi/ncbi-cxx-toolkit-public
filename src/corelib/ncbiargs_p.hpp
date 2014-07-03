@@ -52,11 +52,14 @@
 //       CArg_Alnum       : CArg_String
 //       CArg_Int8        : CArg_String
 //          CArg_Integer  : CArg_Int8
+//       CArg_DataSize    : CArg_String
 //       CArg_Double      : CArg_String
 //       CArg_Boolean     : CArg_String
 //       CArg_InputFile   : CArg_String
 //       CArg_OutputFile  : CArg_String
 //       CArg_IOFile      : CArg_String
+//       CArg_Dir         : CArg_String
+//       CArg_DateTime    : CArg_String
 //    
 
 
@@ -72,6 +75,7 @@ public:
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
     virtual const CDir&    AsDirectory(void) const;
+    virtual const CTime&   AsDateTime(void) const;
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
@@ -93,6 +97,7 @@ public:
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
     virtual const CDir&    AsDirectory(void) const;
+    virtual const CTime&   AsDateTime(void) const;
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
@@ -113,6 +118,7 @@ public:
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
     virtual const CDir&    AsDirectory(void) const;
+    virtual const CTime&   AsDateTime(void) const;
 
     virtual CNcbiIstream&  AsInputFile (TFileFlags flags = 0) const;
     virtual CNcbiOstream&  AsOutputFile(TFileFlags flags = 0) const;
@@ -147,6 +153,17 @@ class CArg_Integer : public CArg_Int8
 public:
     CArg_Integer(const string& name, const string& value);
     virtual int AsInteger(void) const;
+};
+
+
+
+class CArg_DataSize : public CArg_String
+{
+public:
+    CArg_DataSize(const string& name, const string& value);
+    virtual Int8 AsInt8(void) const;
+protected:
+    Uint8 m_Integer;
 };
 
 
@@ -192,6 +209,16 @@ public:
 protected:
     CDir         m_Dir;
     TFileFlags   m_DescriptionFlags;
+};
+
+
+class CArg_DateTime : public CArg_String
+{
+public:
+    CArg_DateTime(const string& name, const string& value);
+    virtual const CTime&  AsDateTime() const;
+protected:
+    CTime        m_DateTime;
 };
 
 

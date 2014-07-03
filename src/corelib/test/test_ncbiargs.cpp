@@ -227,11 +227,27 @@ static void s_InitTest8(CArgDescriptions& arg_desc)
          "This is an optional argument with default value",
          CArgDescriptions::eString, "CORELIB",
          CArgDescriptions::fOptionalSeparator);
+
+    arg_desc.AddKey
+        ("datasize", "MandatoryKey",
+         "This is a mandatory DataSize key argument",
+         CArgDescriptions::eDataSize);
+
+    arg_desc.AddKey
+        ("datetime", "MandatoryKey",
+         "This is a mandatory DateTime key argument",
+         CArgDescriptions::eDateTime);
 }
 
 static void s_RunTest8(const CArgs& args, ostream& os)
 {
     os << "k=" << args["k"].AsString()  << endl;
+
+    os << "datasize=" << args["datasize"].AsString()  << endl;
+    os << "datasize=" << args["datasize"].AsInt8()  << endl;
+
+    os << "datetime=" << args["datetime"].AsString()  << endl;
+    os << "datetime=" << (args["datetime"].AsDateTime()).AsString()  << endl;
 }
 
 

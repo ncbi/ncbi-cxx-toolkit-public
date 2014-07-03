@@ -190,6 +190,7 @@ int           CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
 double        CArg_NoValue::AsDouble    (void) const { THROW_CArg_NoValue; }
 bool          CArg_NoValue::AsBoolean   (void) const { THROW_CArg_NoValue; }
 const CDir&   CArg_NoValue::AsDirectory (void) const { THROW_CArg_NoValue; }
+const CTime&  CArg_NoValue::AsDateTime  (void) const { THROW_CArg_NoValue; }
 CNcbiIstream& CArg_NoValue::AsInputFile (CArgValue::TFileFlags) const { THROW_CArg_NoValue; }
 CNcbiOstream& CArg_NoValue::AsOutputFile(CArgValue::TFileFlags) const { THROW_CArg_NoValue; }
 CNcbiIostream& CArg_NoValue::AsIOFile(CArgValue::TFileFlags) const { THROW_CArg_NoValue; }
@@ -222,6 +223,7 @@ int           CArg_ExcludedValue::AsInteger   (void) const { THROW_CArg_Excluded
 double        CArg_ExcludedValue::AsDouble    (void) const { THROW_CArg_ExcludedValue; }
 bool          CArg_ExcludedValue::AsBoolean   (void) const { THROW_CArg_ExcludedValue; }
 const CDir&   CArg_ExcludedValue::AsDirectory (void) const { THROW_CArg_ExcludedValue; }
+const CTime&  CArg_ExcludedValue::AsDateTime  (void) const { THROW_CArg_ExcludedValue; }
 CNcbiIstream& CArg_ExcludedValue::AsInputFile (CArgValue::TFileFlags) const { THROW_CArg_ExcludedValue; }
 CNcbiOstream& CArg_ExcludedValue::AsOutputFile(CArgValue::TFileFlags) const { THROW_CArg_ExcludedValue; }
 CNcbiIostream& CArg_ExcludedValue::AsIOFile(CArgValue::TFileFlags) const { THROW_CArg_ExcludedValue; }
@@ -285,6 +287,10 @@ const CDir& CArg_String::AsDirectory (void) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
     "Attempt to cast to a wrong (CDir) type", AsString()));}
 
+const CTime& CArg_String::AsDateTime (void) const
+{ NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
+    "Attempt to cast to a wrong (CTime) type", AsString()));}
+
 CNcbiIstream& CArg_String::AsInputFile(CArgValue::TFileFlags) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
     "Attempt to cast to a wrong (InputFile) type", AsString()));}
@@ -343,6 +349,25 @@ int CArg_Integer::AsInteger(void) const
     return static_cast<int> (m_Integer);
 }
 
+
+///////////////////////////////////////////////////////
+//  CArg_DataSize::
+
+inline CArg_DataSize::CArg_DataSize(const string& name, const string& value)
+    : CArg_String(name, value)
+{
+    try {
+        m_Integer = NStr::StringToUInt8_DataSize(value);
+    } catch (CException& e) {
+        NCBI_RETHROW(e, CArgException, eConvert, s_ArgExptMsg(GetName(),
+            "Argument cannot be converted", value));
+    }
+}
+
+Int8 CArg_DataSize::AsInt8(void) const
+{
+    return m_Integer;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -428,6 +453,39 @@ const CDir&  CArg_Dir::AsDirectory() const
     return m_Dir;
 }
 
+///////////////////////////////////////////////////////
+//  CArg_DateTime::
+
+CArg_DateTime::CArg_DateTime(const string& name, const string& value)
+    : CArg_String(name, value)
+{
+    string v(value);
+    bool hasZ = v.size() != 0 && v[v.size()-1] == 'Z';
+    if (hasZ) {
+        v[v.size()-1] = 'G';
+        v += "MT";
+    }
+    const char* fmt[] = {"Y-M-DTh:m:s.l", "Y/M/D h:m:s.l", nullptr};
+    bool res = false;
+    for (int i = 0; !res && fmt[i]; ++i) {
+        string f(fmt[i]);
+        if (hasZ) {f += 'Z';}
+        try {
+            new (&m_DateTime) CTime(v,CTimeFormat( f, CTimeFormat::fMatch_Weak));
+            res = true;
+        } catch (...) {
+        }
+    }
+    if (!res) {
+        NCBI_THROW(CArgException,eConvert, s_ArgExptMsg(GetName(),
+            "Argument cannot be converted",value));
+    }
+}
+
+const CTime&  CArg_DateTime::AsDateTime() const
+{
+    return m_DateTime;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -1053,6 +1111,12 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
         arg_value = new CArg_Dir(GetName(), value, GetFlags());
         break;
     }
+    case CArgDescriptions::eDataSize:
+        arg_value = new CArg_DataSize(GetName(), value);
+        break;
+    case CArgDescriptions::eDateTime:
+        arg_value = new CArg_DateTime(GetName(), value);
+        break;
     case CArgDescriptions::k_EType_Size: {
         _TROUBLE;
         NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
@@ -1853,7 +1917,9 @@ const char* CArgDescriptions::GetTypeName(EType type)
         "File_In",
         "File_Out",
         "File_IO",
-        "Directory"
+        "Directory",
+        "DataSize",
+        "DateTime"
     };
 
     if (type == k_EType_Size) {
@@ -2621,9 +2687,9 @@ void CArgDescriptions::x_PostCheck(CArgs&           args,
     if (m_PosArgs.size() <= n_plain  &&
         n_plain < m_PosArgs.size() + nExtra){
         NCBI_THROW(CArgException,eNoArg,
-            "Too few (" + NStr::UIntToString(n_plain - m_PosArgs.size()) +
+            "Too few (" + NStr::NumericToString(n_plain - m_PosArgs.size()) +
             ") unnamed positional arguments. Must define at least " +
-            NStr::UIntToString(nExtra));
+            NStr::NumericToString(nExtra));
     }
 
     // Compose an ordered list of args
