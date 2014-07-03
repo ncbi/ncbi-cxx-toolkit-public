@@ -377,7 +377,7 @@ gpipe_asn_proc needs gpipe_alnutil
 gpipe_asn_proc needs xmergetree
 gpipe_attr needs gpipe_property
 gpipe_best_placement needs gpipe_alnutil
-gpipe_clean_titles needs macro
+gpipe_clean_titles needs xdiscrepancy_report
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
 gpipe_common needs xconnect
@@ -1228,6 +1228,11 @@ xctools needs xncbi
 xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
+xdiscrepancy_report needs $(OBJMGR_LIBS)
+xdiscrepancy_report needs $(OBJREAD_LIBS)
+xdiscrepancy_report needs macro
+xdiscrepancy_report needs xmlwrapp
+xdiscrepancy_report needs xvalidate
 xerces-c needs3party $(CURL_LIBS)
 xerces-c needs3party $(DL_LIBS)
 xerces-c needs3party $(ORIG_LIBS)
