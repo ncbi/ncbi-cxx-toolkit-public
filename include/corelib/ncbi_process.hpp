@@ -281,25 +281,48 @@ public:
     int Wait(unsigned long timeout = kInfiniteTimeoutMs,
              CExitInfo* info = 0) const;
 
-    /// Flag indicating if diagnostics should be updated automatically
-    /// in the child process started by Fork().
-    enum EUpdateDiagFlag {
-        eSkipDiag = 0,   ///< Do not update diagnostics.
-        eUpdateDiag = 1  ///< Reset timer and log app-start message.
+    /// Forking flags.
+    enum FForkFlags {
+        fFF_UpdateDiag      = 1,  ///< Reset diagnostics timer and log an
+                                  ///< app-start message in the child process.
+        fFF_AllowExceptions = 2,  ///< Throw an exception if fork(2) failed.
     };
+    /// Bit-wise OR of FForkFlags @sa FForkFlags
+    typedef unsigned TForkFlags;
 
-    /// Fork (throw exception if the platform does not support fork),
-    /// update PID and GUID used for logging.
-    static TPid Fork(EUpdateDiagFlag flag = eUpdateDiag);
+    /// Fork the process. Update PID and GUID used for logging.
+    ///
+    /// @return In the parent process, the call returns the child process ID.
+    ///         In the child process, the call returns zero.
+    ///         In case of an error, unless the fFF_AllowExceptions flag is
+    ///         given, the call returns -1.
+    ///
+    /// @throw If the fFF_AllowExceptions flag is specified,
+    ///        throws a CCoreException in case of a fork(2) failure.
+    ///        If the platform does not support process forking,
+    ///        an exception is always thrown regardless of whether the
+    ///        fFF_AllowExceptions flag is specified.
+    ///
+    static TPid Fork(TForkFlags flags = fFF_UpdateDiag);
 
 
     /// Daemonization flags
     enum FDaemonFlags {
-        fDontChroot = 1,  ///< Don't change to "/"
-        fKeepStdin  = 2,  ///< Keep stdin open as "/dev/null" (RO)
-        fKeepStdout = 4,  ///< Keep stdout open as "/dev/null" (WO)
-        fImmuneTTY  = 8,  ///< Make daemon immune to opening of controlling TTY
-        fKeepParent = 16  ///< Do not exit the parent process but return
+        fDF_KeepCWD         = 1,    ///< Don't change CWD to "/"
+        fDF_KeepStdin       = 2,    ///< Keep stdin open as "/dev/null" (RO)
+        fDF_KeepStdout      = 4,    ///< Keep stdout open as "/dev/null" (WO)
+        fDF_ImmuneTTY       = 8,    ///< Make daemon immune to re-acquiring
+                                    ///< a controlling terminal
+        fDF_KeepParent      = 16,   ///< Do not exit the parent process
+                                    ///< but return
+        fDF_AllowExceptions = 32,   ///< Throw an exception in case
+                                    ///< of an error.
+
+        fDontChroot = fDF_KeepCWD,    ///< @deprecated Use fDF_KeepCWD instead
+        fKeepStdin  = fDF_KeepStdin,  ///< @deprecated Use fDF_KeepStdin instead
+        fKeepStdout = fDF_KeepStdout, ///< @deprecated Use fDF_KeepStdout
+        fImmuneTTY  = fDF_ImmuneTTY,  ///< @deprecated Use fDF_ImmuneTTY instead
+        fKeepParent = fDF_KeepParent  ///< @deprecated Use fDF_KeepParent
     };
     /// Bit-wise OR of FDaemonFlags @sa FDaemonFlags
     typedef unsigned int TDaemonFlags;
@@ -344,6 +367,10 @@ private:
     };
     static TPid sx_GetPid(EGetPidFlag flag);
     friend class CThread;
+#endif
+
+#ifdef NCBI_OS_UNIX
+    static TPid x_DaemonizeEx(const char* logfile, TDaemonFlags flags);
 #endif
 
     // itptr_t type can store both pid and process handle.

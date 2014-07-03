@@ -281,22 +281,26 @@ TPid CProcess::GetParentPid(void)
 #endif
 }
 
+static string s_ErrnoToString()
+{
+    int x_errno = errno;
+    const char* error = strerror(x_errno);
+    errno = x_errno;
+    return error != NULL && *error != '\0' ? string(error) :
+            ("errno=" + NStr::NumericToString(x_errno));
+}
 
-TPid CProcess::Fork(EUpdateDiagFlag flag)
+TPid CProcess::Fork(CProcess::TForkFlags flags)
 {
 #ifdef NCBI_OS_UNIX
     TPid pid = ::fork();
-    if (pid == (TPid) -1) {
-        int x_errno = errno;
-        const char* error = strerror(x_errno);
-        if (!error  ||  !*error)
-            error = "Unknown error";
-        errno = x_errno;
-        NCBI_THROW_FMT(CCoreException, eCore, "Cannot fork: " << error);
+    if ((flags & fFF_AllowExceptions) != 0 && pid == (TPid) -1) {
+        NCBI_THROW_FMT(CCoreException, eCore,
+                "Cannot fork: " << s_ErrnoToString());
     }
 
     CDiagContext::UpdateOnFork(
-        flag == eUpdateDiag ?
+        (flags & fFF_UpdateDiag) != 0 ?
         (CDiagContext::fOnFork_ResetTimer | CDiagContext::fOnFork_PrintStart)
         : 0);
     return pid;
@@ -306,139 +310,155 @@ TPid CProcess::Fork(EUpdateDiagFlag flag)
 #endif
 }
 
+namespace {
+    class CSafeRedirect
+    {
+    public:
+        CSafeRedirect(int fd, bool* success_flag) :
+            m_OrigFD(fd),
+            m_SuccessFlag(success_flag),
+            m_Redirected(false)
+        {
+            if ((m_DupFD = ::fcntl(fd, F_DUPFD, STDERR_FILENO + 1)) < 0) {
+                NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
+                        "Error duplicating file descriptor #" << fd <<
+                        ": " << s_ErrnoToString());
+            }
+        }
+        void Redirect(int new_fd)
+        {
+            if (new_fd != m_OrigFD) {
+                int error = ::dup2(new_fd, m_OrigFD);
+                int x_errno = errno;
+                ::close(new_fd);
+                if (error < 0) {
+                    errno = x_errno;
+                    NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
+                            "Error redirecting file descriptor #" << m_OrigFD <<
+                            ": " << s_ErrnoToString());
+                }
+                m_Redirected = true;
+            }
+        }
+        ~CSafeRedirect()
+        {
+            int x_errno = errno;
+            if (m_Redirected && !*m_SuccessFlag)
+                // Restore the original std I/O stream descriptor.
+                ::dup2(m_DupFD, m_OrigFD);
+            ::close(m_DupFD);
+            errno = x_errno;
+        }
+
+    private:
+        int m_OrigFD;
+        int m_DupFD;
+        bool* m_SuccessFlag;
+        bool m_Redirected;
+    };
+}
+
+#ifdef NCBI_OS_UNIX
+TPid CProcess::x_DaemonizeEx(const char* logfile, CProcess::TDaemonFlags flags)
+{
+    bool success_flag = false;
+
+    CSafeRedirect stdin_redirector(STDIN_FILENO, &success_flag);
+    CSafeRedirect stdout_redirector(STDOUT_FILENO, &success_flag);
+    CSafeRedirect stderr_redirector(STDERR_FILENO, &success_flag);
+
+    int new_fd;
+
+    if (flags & fDF_KeepStdin) {
+        if ((new_fd = ::open("/dev/null", O_RDONLY)) < 0) {
+            NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
+                    "Error opening /dev/null for reading: " <<
+                    s_ErrnoToString());
+        }
+        stdin_redirector.Redirect(new_fd);
+    }
+    if (flags & fDF_KeepStdout) {
+        if ((new_fd = ::open("/dev/null", O_WRONLY)) < 0) {
+            NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
+                    "Error opening /dev/null for writing: " <<
+                    s_ErrnoToString());
+        }
+        NcbiCout.flush();
+        ::fflush(stdout);
+        stdout_redirector.Redirect(new_fd);
+    }
+    if (logfile) {
+        if (!*logfile) {
+            if ((new_fd = ::open("/dev/null", O_WRONLY | O_APPEND)) < 0) {
+                NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
+                        "Error opening /dev/null for appending: " <<
+                        s_ErrnoToString());
+            }
+        } else {
+            if ((new_fd = ::open(logfile,
+                    O_WRONLY | O_APPEND | O_CREAT, 0666)) < 0) {
+                NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
+                        "Unable to open logfile \"" << logfile <<
+                        "\": " << s_ErrnoToString());
+            }
+        }
+        NcbiCerr.flush();
+        ::fflush(stderr);
+        stderr_redirector.Redirect(new_fd);
+    }
+    ::fflush(NULL);
+    TPid pid = Fork(fFF_UpdateDiag | fFF_AllowExceptions);
+    if (pid) {
+        // Parent process.
+        // No need to set success_flag to true here, because
+        // either this process must be terminated or
+        // the descriptors must be restored.
+        if ((flags & fDF_KeepParent) == 0)
+            ::_exit(0);
+        return (TPid) pid/*success*/;
+    }
+    // Child process.
+    success_flag = true;
+    ::setsid();
+    if (flags & fDF_ImmuneTTY) {
+        try {
+            if (Fork() != 0)
+                ::_exit(0); // Exit the second parent process
+        }
+        catch (CCoreException& e) {
+            ERR_POST_X(2, "[Daemonize]  Failed to immune from "
+                    "TTY accruals: " << e << " ... continuing anyways");
+        }
+    }
+    if (!(flags & fDF_KeepCWD))
+        if (::chdir("/") ) { /*no-op*/ };  // NB: "/" always exists
+    if (!(flags & fDF_KeepStdin))
+        ::fclose(stdin);
+    else
+        ::fflush(stdin);  // POSIX requires this
+    if (!(flags & fDF_KeepStdout))
+        ::fclose(stdout);
+    if (!logfile)
+        ::fclose(stderr);
+    return (TPid)(-1)/*success*/;
+}
+#endif /* NCBI_OS_UNIX */
 
 TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
 {
 #ifdef NCBI_OS_UNIX
-    int fdin  = ::fcntl(STDIN_FILENO,  F_DUPFD, STDERR_FILENO + 1);
-    int fdout = ::fcntl(STDOUT_FILENO, F_DUPFD, STDERR_FILENO + 1);
-    int fderr = ::fcntl(STDERR_FILENO, F_DUPFD, STDERR_FILENO + 1);
-
-    try {
-        if (flags & fKeepStdin) {
-            int nullr = ::open("/dev/null", O_RDONLY);
-            if (nullr < 0) {
-                NCBI_THROW(CCoreException, eCore, "Error opening /dev/null for reading");
-            }
-            if (nullr != STDIN_FILENO) {
-                int error = ::dup2(nullr, STDIN_FILENO);
-                int x_errno = errno;
-                ::close(nullr);
-                if (error < 0) {
-                    errno = x_errno;
-                    NCBI_THROW(CCoreException, eCore, "Error redirecting stdin");
-                }
-            }
-        }
-        if (flags & fKeepStdout) {
-            int nullw = ::open("/dev/null", O_WRONLY);
-            if (nullw < 0) {
-                NCBI_THROW(CCoreException, eCore, "Error opening /dev/null for writing");
-            }
-            NcbiCout.flush();
-            ::fflush(stdout);
-            if (nullw != STDOUT_FILENO) {
-                int error = ::dup2(nullw, STDOUT_FILENO);
-                int x_errno = errno;
-                ::close(nullw);
-                if (error < 0) {
-                    ::dup2(fdin, STDIN_FILENO);
-                    errno = x_errno;
-                    NCBI_THROW(CCoreException, eCore, "Error redirecting stdout");
-                }
-            }
-        }
-        if (logfile) {
-            int fd = (!*logfile ? ::open("/dev/null", O_WRONLY | O_APPEND) :
-                      ::open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666));
-            if (fd < 0) {
-                if (!*logfile) {
-                    NCBI_THROW(CCoreException, eCore,
-                            "Error opening /dev/null for appending");
-                }
-                NCBI_THROW_FMT(CCoreException, eCore,
-                        "Unable to open logfile \"" << string(logfile) << '"');
-            }
-            NcbiCerr.flush();
-            ::fflush(stderr);
-            if (fd != STDERR_FILENO) {
-                int error = ::dup2(fd, STDERR_FILENO);
-                int x_errno = errno;
-                ::close(fd);
-                if (error < 0) {
-                    ::dup2(fdin,  STDIN_FILENO);
-                    ::dup2(fdout, STDOUT_FILENO);
-                    errno = x_errno;
-                    NCBI_THROW(CCoreException, eCore, "Error redirecting stderr");
-                }
-            }
-        }
-        ::fflush(NULL);
-        TPid pid;
+    if (flags & fDF_AllowExceptions)
+        return CProcess::x_DaemonizeEx(logfile, flags);
+    else
         try {
-            pid = Fork();
+            return CProcess::x_DaemonizeEx(logfile, flags);
         }
-        catch (CCoreException&) {
-            int x_errno = errno;
-            ::dup2(fdin,  STDIN_FILENO);
-            ::dup2(fdout, STDOUT_FILENO);
-            ::dup2(fderr, STDERR_FILENO);
-            errno = x_errno;
-            throw;
+        catch (CException& e) {
+            ERR_POST_X(1, e);
         }
-        if (pid) {
-            // Parent thread (including fork error)
-            if ((flags & fKeepParent) != 0) {
-                ::dup2(fdin,  STDIN_FILENO);
-                ::dup2(fdout, STDOUT_FILENO);
-                ::dup2(fderr, STDERR_FILENO);
-            }
-            if (!(flags & fKeepParent)) {
-                ::_exit(0);
-            }
-            ::close(fdin);
-            ::close(fdout);
-            ::close(fderr);
-            return (TPid) pid/*success*/;
+        catch (exception& e) {
+            ERR_POST_X(1, e.what());
         }
-        // Child thread only
-        ::setsid();
-        if (flags & fImmuneTTY) {
-            try {
-                if (Fork() != 0)
-                    ::_exit(0); // Exit the second parent process
-            }
-            catch (CCoreException& e) {
-                ERR_POST_X(2, "[Daemonize]  Failed to immune from "
-                        "TTY accruals: " << e << " ... continuing anyways");
-            }
-        }
-        if (!(flags & fDontChroot))
-            if (::chdir("/") ) { /*dummy*/ };  // NB: "/" always exists
-        if (!(flags & fKeepStdin))
-            ::fclose(stdin);
-        else
-            ::fflush(stdin);  // POSIX requires this
-        ::close(fdin);
-        if (!(flags & fKeepStdout))
-            ::fclose(stdout);
-        ::close(fdout);
-        if (!logfile)
-            ::fclose(stderr);
-        ::close(fderr);
-        return (TPid)(-1)/*success*/;
-    }
-    catch (const string& what) {
-        int x_errno = errno;
-        const char* error = x_errno ? strerror(x_errno) : 0;
-        ERR_POST_X(1, "[Daemonize]  " + what
-                   + (error  &&  *error ? string(": ") + error : kEmptyStr));
-        ::close(fdin);
-        ::close(fdout);
-        ::close(fderr);
-        errno = x_errno;
-    }
-    /* caution: stream exceptions (if any) let through */
 #else
     NCBI_THROW(CCoreException, eCore,
                "CProcess::Daemonize() not implemented on this platform");
