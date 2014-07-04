@@ -310,6 +310,7 @@ TPid CProcess::Fork(CProcess::TForkFlags flags)
 #endif
 }
 
+#ifdef NCBI_OS_UNIX
 namespace {
     class CSafeRedirect
     {
@@ -358,7 +359,6 @@ namespace {
     };
 }
 
-#ifdef NCBI_OS_UNIX
 TPid CProcess::x_DaemonizeEx(const char* logfile, CProcess::TDaemonFlags flags)
 {
     bool success_flag = false;
