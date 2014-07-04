@@ -51,8 +51,8 @@ int main()
     _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == 0);
     _ASSERT(errno == EACCES  ||  errno == EPERM  ||  errno == ENOENT);
     _ASSERT(CProcess::Daemonize("./test_ncbi_os_unix.log",
-                                CProcess::fKeepCWD |
-                                CProcess::fKeepStdout) != 0);
+                                CProcess::fDF_KeepCWD |
+                                CProcess::fDF_KeepStdout) != 0);
 
     LOG_POST("Trying to daemonize at current location, expecting success");
     _ASSERT(access("./test_ncbi_os_unix.log", F_OK) == 0);
