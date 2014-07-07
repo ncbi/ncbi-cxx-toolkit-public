@@ -3490,6 +3490,8 @@ ct_param(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT datalen,
     CS_DYNAMIC *dyn;
     CS_PARAM **pparam;
     CS_PARAM *param;
+    int /* bool */ promote = (datafmt->datatype == CS_VARCHAR_TYPE  ||
+                              datafmt->datatype == CS_LONGCHAR_TYPE);
 
 
     tdsdump_log(TDS_DBG_FUNC, "ct_param()\n");
@@ -3498,10 +3500,27 @@ ct_param(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT datalen,
     if (cmd == NULL  ||  cmd->con == NULL)
         return CS_FAIL;
 
-    if (datafmt->datatype == CS_VARCHAR_TYPE  &&  IS_TDS7_PLUS(cmd->con->tds_socket))
-        datafmt->datatype = CS_NVARCHAR_TYPE;
-    if (datafmt->datatype == CS_LONGCHAR_TYPE  &&  IS_TDS7_PLUS(cmd->con->tds_socket))
-        datafmt->datatype = CS_NLONGCHAR_TYPE;
+    if (promote  &&  IS_TDS7_PLUS(cmd->con->tds_socket)) {
+        /* Actually promote only if non-ASCII characters are present */
+        CS_INT i;
+
+        promote = 0;
+        for (i = 0;  i < datalen;  ++i) {
+            if (((const char*)data)[i] & 0x80) {
+                promote = 1;
+                break;
+            }
+        }
+
+        if ( !promote ) {
+            /* pure ASCII, leave as is */
+        } else if (datafmt->datatype == CS_VARCHAR_TYPE) {
+            datafmt->datatype = CS_NVARCHAR_TYPE;
+        } else if (datafmt->datatype == CS_LONGCHAR_TYPE) {
+            datafmt->datatype = CS_NLONGCHAR_TYPE;
+        }
+    }
+
 
     switch (cmd->command_type) {
     case CS_RPC_CMD:
