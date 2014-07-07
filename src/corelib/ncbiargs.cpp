@@ -471,7 +471,7 @@ CArg_DateTime::CArg_DateTime(const string& name, const string& value)
         string f(fmt[i]);
         if (hasZ) {f += 'Z';}
         try {
-            new (&m_DateTime) CTime(v,CTimeFormat( f, CTimeFormat::fMatch_Weak));
+            new (&m_DateTime) CTime(v,CTimeFormat( f, CTimeFormat::fMatch_Weak | CTimeFormat::fFormat_Simple));
             res = true;
         } catch (...) {
         }
