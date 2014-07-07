@@ -261,9 +261,8 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
 
         try {
 
-            LOG_POST_X(4, Info 
-                       << "Trying ASN.1 binary top level object:" 
-                       << it->type_info.GetTypeInfo()->GetName() );
+            _TRACE("Trying ASN.1 binary top level object:" 
+                   << it->type_info.GetTypeInfo()->GetName() );
 
             m_StreamPos = input.GetStreamPos();
 
@@ -271,9 +270,9 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
             m_TopLevelMap.push_back(SObjectDescription(it->type_info, 
                                                        m_StreamPos));
 
-            LOG_POST_X(5, Info 
-                       << "ASN.1 binary top level object found:" 
-                       << it->type_info.GetTypeInfo()->GetName() );
+            _TRACE("Same type "
+                   << "ASN.1 binary top level object found:" 
+                   << it->type_info.GetTypeInfo()->GetName() );
         }
         catch (CEofException& ) {
             break;
