@@ -1133,46 +1133,6 @@ void CNewCleanup_imp::EMBLblockBC (
     UNIQUE_WITHOUT_SORT_KEYWORD_ON_EMBLBLOCK (emb, PCase);
 }
 
-// Erases spaces which are not inside angle brackets ("<" to ">").
-// returns true if there was a change
-static
-bool s_EraseSpacesOutsideBrackets( string &str )
-{
-    bool change_made = false;
-
-    string result;
-    result.reserve( str.length() );
-
-    bool in_brackets = false;
-    FOR_EACH_CHAR_IN_STRING( ch_iter, str ) {
-        const char ch = *ch_iter;
-        switch( ch ) {
-            case '<':
-                in_brackets = true;
-                result += ch;
-                break;
-            case '>':
-                in_brackets = false;
-                result += ch;
-                break;
-            case ' ':
-                if( in_brackets ) {
-                    result += ch;
-                } else {
-                    change_made = true;
-                }
-                break;
-            default:
-                result += ch;
-                break;
-        }
-    }
-
-    // swap is faster than assignment
-    result.swap( str );
-
-    return change_made;
-}
 
 // Give it a map that maps case-insensitive string to some other type, 
 // and it will return any matches that are a prefix for str.
