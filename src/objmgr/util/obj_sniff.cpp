@@ -182,9 +182,7 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
 
 void CObjectsSniffer::ProbeText(CObjectIStream& input)
 {
-    TCandidates::const_iterator it;
-    TCandidates::const_iterator it_prev_cand = m_Candidates.end();
-    TCandidates::const_iterator it_end = m_Candidates.end();
+    TCandidates::const_iterator last_cand = m_Candidates.end();
 
     string format_name;  // for LOG_POST messages
     if (input.GetDataFormat() == eSerial_AsnText) {
@@ -193,20 +191,17 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
         format_name = "XML";
     }
 
-    string header;
-
     try {
         while (true) {
             m_StreamPos = input.GetStreamPos();
-            header = input.ReadFileHeader();
+            string header = input.ReadFileHeader();
 
-            if (it_prev_cand != it_end) {
+            if ( last_cand != m_Candidates.end() ) {
                 // Check the previously found candidate first
                 // (performance optimization)
-                if (header == it_prev_cand->type_info.GetTypeInfo()->GetName()) {
-                    it = it_prev_cand;
+                if (header == last_cand->type_info.GetTypeInfo()->GetName()) {
+                    TCandidates::const_iterator it = last_cand;
                     CObjectInfo object_info(it->type_info.GetTypeInfo());
-
                     input.Read(object_info, CObjectIStream::eNoFileHeader);
                     m_TopLevelMap.push_back(
                         SObjectDescription(it->type_info, m_StreamPos));
@@ -218,14 +213,14 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
                 }
             }
 
+            bool found = false;
             // Scan through all candidates
-            for (it = m_Candidates.begin(); it < it_end; ++it) {
-                if (header == it->type_info.GetTypeInfo()->GetName()) {
-                    it_prev_cand = it;
-
+            ITERATE ( TCandidates, it, m_Candidates ) {
+                if ( header == it->type_info.GetTypeInfo()->GetName() ) {
                     CObjectInfo object_info(it->type_info.GetTypeInfo());
-
                     input.Read(object_info, CObjectIStream::eNoFileHeader);
+                    found = true;
+                    last_cand = it;
                     m_TopLevelMap.push_back(
                         SObjectDescription(it->type_info, m_StreamPos));
 
@@ -235,6 +230,10 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
                     break;
                 }
             } // for
+            if ( !found ) {
+                input.SetStreamPos(m_StreamPos);
+                return;
+            }
         } // while
     }
     catch (CEofException& /*ignored*/) {
@@ -242,48 +241,73 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
     catch (exception& e) {
         LOG_POST_X(3, Info << "Exception reading "
                    << format_name << " " << e.what());
+        input.SetStreamPos(m_StreamPos);
     }
 }
 
 
 void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
 {
-    TCandidates::const_iterator it;
+    TCandidates::const_iterator last_cand = m_Candidates.end();
+    for ( ;; ) {
+        m_StreamPos = input.GetStreamPos();
 
-    //
-    // Brute force interrogation of the source file.
-    //
-
-    it = m_Candidates.begin();
-    while (it < m_Candidates.end()) {
-
-        CObjectInfo object_info(it->type_info.GetTypeInfo());
-
-        try {
-
-            _TRACE("Trying ASN.1 binary top level object:" 
-                   << it->type_info.GetTypeInfo()->GetName() );
-
-            m_StreamPos = input.GetStreamPos();
-
-            input.Read(object_info);
-            m_TopLevelMap.push_back(SObjectDescription(it->type_info, 
-                                                       m_StreamPos));
-
-            _TRACE("Same type "
-                   << "ASN.1 binary top level object found:" 
-                   << it->type_info.GetTypeInfo()->GetName() );
+        if ( last_cand != m_Candidates.end() ) {
+            // Check the previously found candidate first
+            // (performance optimization)
+            try {
+                TCandidates::const_iterator it = last_cand;
+                CObjectInfo object_info(it->type_info.GetTypeInfo());
+                input.Read(object_info);
+                m_TopLevelMap.push_back(
+                    SObjectDescription(it->type_info, m_StreamPos));
+                _TRACE("Same type ASN.1 binary top level object found:" 
+                       << it->type_info.GetTypeInfo()->GetName());
+                continue;
+            }
+            catch ( CEofException& ) {
+                // no more objects
+                return;
+            }
+            catch ( exception& ) {
+                Reset();
+                input.SetStreamPos(m_StreamPos);
+            }
         }
-        catch (CEofException& ) {
+
+        bool found = false;
+        // Scan through all candidates
+        ITERATE ( TCandidates, it, m_Candidates ) {
+            if ( it == last_cand ) {
+                // already tried
+                continue;
+            }
+            try {
+                CObjectInfo object_info(it->type_info.GetTypeInfo());
+                input.Read(object_info);
+                found = true;
+                last_cand = it;
+                m_TopLevelMap.push_back(
+                    SObjectDescription(it->type_info, m_StreamPos));
+                LOG_POST_X(2, Info 
+                           << "ASN.1 binary top level object found:" 
+                           << it->type_info.GetTypeInfo()->GetName());
+                break;
+            }
+            catch ( CEofException& ) {
+                // no more objects
+                return;
+            }
+            catch ( exception& ) {
+                Reset();
+                input.SetStreamPos(m_StreamPos);
+            }
+        }
+        if ( !found ) {
+            // no matching candidate
             break;
         }
-        catch (exception& _DEBUG_ARG(e)) {
-            _TRACE("  failed to read: " << e.what());
-            Reset();
-            input.SetStreamPos(m_StreamPos);
-            ++it; // trying the next type.
-        }
-    }
+    } // while
 }
 
 

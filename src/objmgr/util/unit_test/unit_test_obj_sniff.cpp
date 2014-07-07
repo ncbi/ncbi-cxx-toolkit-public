@@ -79,6 +79,7 @@ BOOST_AUTO_TEST_CASE(Test_Text_Object1)
              << " object(s) in " << file_name << NcbiEndl;
     BOOST_REQUIRE(in->EndOfData());
     BOOST_REQUIRE(in->GetStreamPos() != NcbiInt8ToStreampos(0));
+    BOOST_REQUIRE_EQUAL(sniff.GetTopLevelMap().size(), 5u);
 }
 
 
@@ -100,6 +101,49 @@ BOOST_AUTO_TEST_CASE(Test_Bin_Object1)
              << " object(s) in " << file_name << NcbiEndl;
     BOOST_REQUIRE(in->EndOfData());
     BOOST_REQUIRE(in->GetStreamPos() != NcbiInt8ToStreampos(0));
+    BOOST_REQUIRE_EQUAL(sniff.GetTopLevelMap().size(), 4u);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Text_Object1_Fail)
+{
+    string file_name = "test_data/object1.asn";
+    ifstream file_in(file_name.c_str());
+    BOOST_REQUIRE(file_in);
+    AutoPtr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, file_in));
+    BOOST_REQUIRE(!in->EndOfData());
+    BOOST_REQUIRE_EQUAL(in->GetStreamPos(), NcbiInt8ToStreampos(0));
+    objects::CObjectsSniffer sniff;
+    sniff.AddCandidate(CObject_id::GetTypeInfo());
+    sniff.AddCandidate(CBioseq::GetTypeInfo());
+    sniff.AddCandidate(CSeq_entry::GetTypeInfo());
+    sniff.Probe(*in);
+    NcbiCout << "Found " << sniff.GetTopLevelMap().size()
+             << " object(s) in " << file_name << NcbiEndl;
+    BOOST_REQUIRE(!in->EndOfData());
+    BOOST_REQUIRE(in->GetStreamPos() != NcbiInt8ToStreampos(0));
+    BOOST_REQUIRE_EQUAL(sniff.GetTopLevelMap().size(), 1u);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Bin_Object1_Fail)
+{
+    string file_name = "test_data/object1.asb";
+    ifstream file_in(file_name.c_str(), IOS_BASE::binary);
+    BOOST_REQUIRE(file_in);
+    AutoPtr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnBinary, file_in));
+    BOOST_REQUIRE(!in->EndOfData());
+    BOOST_REQUIRE_EQUAL(in->GetStreamPos(), NcbiInt8ToStreampos(0));
+    objects::CObjectsSniffer sniff;
+    sniff.AddCandidate(CObject_id::GetTypeInfo());
+    sniff.AddCandidate(CBioseq::GetTypeInfo());
+    sniff.AddCandidate(CSeq_entry::GetTypeInfo());
+    sniff.Probe(*in);
+    NcbiCout << "Found " << sniff.GetTopLevelMap().size()
+             << " object(s) in " << file_name << NcbiEndl;
+    BOOST_REQUIRE(!in->EndOfData());
+    BOOST_REQUIRE(in->GetStreamPos() != NcbiInt8ToStreampos(0));
+    BOOST_REQUIRE_EQUAL(sniff.GetTopLevelMap().size(), 1u);
 }
 
 
@@ -121,4 +165,5 @@ BOOST_AUTO_TEST_CASE(Test_PipeText_Object1)
              << " object(s) in " << file_name << NcbiEndl;
     BOOST_REQUIRE(in->EndOfData());
     BOOST_REQUIRE(in->GetStreamPos() != NcbiInt8ToStreampos(0));
+    BOOST_REQUIRE_EQUAL(sniff.GetTopLevelMap().size(), 5u);
 }

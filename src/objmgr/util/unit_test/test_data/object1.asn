@@ -2,3 +2,6 @@ Object-id ::= id 2
 
 Seq-id ::= gi 2
 
+Seq-id ::= gi 2
+Seq-id ::= gi 2
+Object-id ::= str "2"
