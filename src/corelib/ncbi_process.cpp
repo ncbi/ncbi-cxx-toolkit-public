@@ -294,15 +294,16 @@ TPid CProcess::Fork(CProcess::TForkFlags flags)
 {
 #ifdef NCBI_OS_UNIX
     TPid pid = ::fork();
-    if ((flags & fFF_AllowExceptions) != 0 && pid == (TPid) -1) {
+    if (pid == 0)
+        // Only update PID and UID in the child process.
+        CDiagContext::UpdateOnFork((flags & fFF_UpdateDiag) != 0 ?
+                CDiagContext::fOnFork_ResetTimer |
+                        CDiagContext::fOnFork_PrintStart : 0);
+    else if (pid == (TPid) -1 && (flags & fFF_AllowExceptions) != 0) {
         NCBI_THROW_FMT(CCoreException, eCore,
                 "Cannot fork: " << s_ErrnoToString());
     }
 
-    CDiagContext::UpdateOnFork(
-        (flags & fFF_UpdateDiag) != 0 ?
-        (CDiagContext::fOnFork_ResetTimer | CDiagContext::fOnFork_PrintStart)
-        : 0);
     return pid;
 #else
     NCBI_THROW(CCoreException, eCore,
