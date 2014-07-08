@@ -54,6 +54,7 @@ class CFeatureItemBase;
 class CSequenceItem;
 class CSegmentItem;
 class CContigItem;
+class CGenomeProjectItem;
 
 
 class NCBI_FORMAT_EXPORT CGBSeqFormatter : public CFlatItemFormatter
@@ -79,6 +80,7 @@ public:
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
     virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os);
     virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os);
+    virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&);
 
 private:
     void x_WriteFileHeader(IFlatTextOStream& text_os);
