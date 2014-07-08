@@ -405,7 +405,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(3,11,0) );
+    SetVersion( CVersionInfo(3,11,2) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -1914,6 +1914,16 @@ void CProjBulderApp::ParseArguments(void)
         }
         m_CustomConfiguration.GetValue("__arg_arch", m_Arch);
 #endif
+
+        if (m_CustomConfiguration.GetValue("__arg_dtdep", v)) {
+            m_Dtdep = NStr::StringToBool(v);
+        }
+        if (m_CustomConfiguration.GetValue("__arg_noadddep", v)) {
+            m_AddMissingDep = !NStr::StringToBool(v);
+        }
+        if (m_CustomConfiguration.GetValue("__arg_libdep", v)) {
+            m_LibDep = NStr::StringToBool(v);
+        }
     } else {
         m_Dll            =   (bool)args["dll"];
         m_BuildPtb       = !((bool)args["nobuildptb"]);
@@ -2073,6 +2083,11 @@ void CProjBulderApp::ParseArguments(void)
         m_CustomConfiguration.AddDefinition("__arg_ide", NStr::IntToString(m_Ide));
         m_CustomConfiguration.AddDefinition("__arg_arch", m_Arch);
 #endif
+
+        m_CustomConfiguration.AddDefinition("__arg_dtdep", m_Dtdep ? "yes" : "no");
+        m_CustomConfiguration.AddDefinition("__arg_noadddep", m_AddMissingDep ? "no" : "yes");
+        m_CustomConfiguration.AddDefinition("__arg_libdep", m_LibDep ? "yes" : "no");
+
         // this replaces path separators in entry[j] with a native one
         for (int j=0; !entry[j].empty(); ++j) {
             if (m_CustomConfiguration.GetPathValue(entry[j], v)) {

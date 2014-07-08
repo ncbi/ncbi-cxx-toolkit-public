@@ -2042,7 +2042,9 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
         break;
     }
     if ( !CDirEntry(source_file_path).Exists() ) {
-        LOG_POST(Error << "Data specification for ASN project not found: " + proj_id.Id());
+        LOG_POST(
+            (GetApp().IsScanningWholeTree() ? Warning : Error)
+            << "Data specification for ASN project not found: " << source_file_path);
         return CProjKey();
     }
 

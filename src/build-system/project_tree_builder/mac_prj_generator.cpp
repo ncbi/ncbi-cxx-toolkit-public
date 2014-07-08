@@ -418,6 +418,13 @@ void CMacProjectGenerator::CreateConfigureScript(const string& name, bool with_g
     if (!GetApp().m_BuildPtb) {
         ofs << " -nobuildptb";
     }
+    if (GetApp().m_Dtdep) {
+        ofs << " -dtdep";
+    }
+    if (!GetApp().m_AddMissingDep) {
+        ofs << " -noadddep";
+    }
+    ofs << " -libdep " << (GetApp().m_LibDep ? "true" : "false");
     if (GetApp().m_AddMissingLibs) {
         ofs << " -ext";
     }
