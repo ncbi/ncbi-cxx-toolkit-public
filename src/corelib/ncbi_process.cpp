@@ -281,14 +281,27 @@ TPid CProcess::GetParentPid(void)
 #endif
 }
 
+#ifdef NCBI_OS_UNIX
+namespace {
+    class CErrnoKeeper
+    {
+    public:
+        CErrnoKeeper() : m_Errno(errno) {}
+        int GetErrno() const {return m_Errno;}
+        ~CErrnoKeeper() {errno = m_Errno;}
+    private:
+        int m_Errno;
+    };
+}
+
 static string s_ErrnoToString()
 {
-    int x_errno = errno;
-    const char* error = strerror(x_errno);
-    errno = x_errno;
+    CErrnoKeeper x_errno;
+    const char* error = strerror(x_errno.GetErrno());
     return error != NULL && *error != '\0' ? string(error) :
-            ("errno=" + NStr::NumericToString(x_errno));
+            ("errno=" + NStr::NumericToString(x_errno.GetErrno()));
 }
+#endif
 
 TPid CProcess::Fork(CProcess::TForkFlags flags)
 {
@@ -331,25 +344,24 @@ namespace {
         {
             if (new_fd != m_OrigFD) {
                 int error = ::dup2(new_fd, m_OrigFD);
-                int x_errno = errno;
-                ::close(new_fd);
                 if (error < 0) {
-                    errno = x_errno;
+                    CErrnoKeeper x_errno;
+                    ::close(new_fd);
                     NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
                             "Error redirecting file descriptor #" << m_OrigFD <<
                             ": " << s_ErrnoToString());
                 }
+                ::close(new_fd);
                 m_Redirected = true;
             }
         }
         ~CSafeRedirect()
         {
-            int x_errno = errno;
+            CErrnoKeeper x_errno;
             if (m_Redirected && !*m_SuccessFlag)
                 // Restore the original std I/O stream descriptor.
                 ::dup2(m_DupFD, m_OrigFD);
             ::close(m_DupFD);
-            errno = x_errno;
         }
 
     private:
@@ -455,9 +467,11 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
             return CProcess::x_DaemonizeEx(logfile, flags);
         }
         catch (CException& e) {
+            CErrnoKeeper x_errno;
             ERR_POST_X(1, e);
         }
         catch (exception& e) {
+            CErrnoKeeper x_errno;
             ERR_POST_X(1, e.what());
         }
 #else
