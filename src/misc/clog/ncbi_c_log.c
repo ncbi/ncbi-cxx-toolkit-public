@@ -2402,7 +2402,7 @@ extern char* NcbiLog_GetNextSubHitID(void)
 {
     TNcbiLog_Context ctx = NULL;
     char* hit_id = NULL;
-    int*  sub_id = NULL;
+    unsigned int* sub_id = NULL;
     char  buf[NCBILOG_HITID_MAX+1];
     int n;
 
@@ -2419,7 +2419,7 @@ extern char* NcbiLog_GetNextSubHitID(void)
         }
     } else {
         hit_id = (char*)sx_Info->phid;
-        sub_id = (int*)&sx_Info->phid_sub_id;
+        sub_id = (unsigned int*)&sx_Info->phid_sub_id;
         assert(hit_id[0]);
         if( !sx_Info->phid_is_logged ) {
             s_LogHitID(ctx, hit_id);
