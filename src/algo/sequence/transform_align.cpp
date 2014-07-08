@@ -485,7 +485,7 @@ RecalculateExonIdty(CSpliced_exon &exon)
     if (!exon.IsSetScores())
         return;
 
-    double idty = -1;
+    long idty = -1;
     if (exon.IsSetParts()) {
         int matches = 0;
         int total = 0;
@@ -514,14 +514,14 @@ RecalculateExonIdty(CSpliced_exon &exon)
                 break;
             }
         }
-        idty = double(matches) / total;
+        idty = matches * 10000000000l / total;
     }
 
     CScore_set::Tdata& exon_scores = exon.SetScores().Set();
     ERASE_ITERATE (CScore_set::Tdata, score_it, exon_scores) {
         if (idty >= 0 && (*score_it)->IsSetId() && (*score_it)->GetId().IsStr() &&
             (*score_it)->GetId().GetStr() == "idty") {
-            (*score_it)->SetValue().SetReal(idty);
+            (*score_it)->SetValue().SetReal(idty / 10000000000.);
         } else {
             exon_scores.erase(score_it);
         }

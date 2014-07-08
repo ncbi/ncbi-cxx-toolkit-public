@@ -6554,7 +6554,7 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     scores {
                       {
                         id str "idty",
-                        value real { 995850622406639, 10, -15 }
+                        value real { 9958506224, 10, -10 }
                       }
                     },
                     acceptor-before-exon {
@@ -6577,7 +6577,7 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     scores {
                       {
                         id str "idty",
-                        value real { 888888888888889, 10, -15 }
+                        value real { 8888888888, 10, -10 }
                       }
                     },
                     partial TRUE
@@ -6599,7 +6599,7 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     scores {
                       {
                         id str "idty",
-                        value real { 789473684210526, 10, -15 }
+                        value real { 7894736842, 10, -10 }
                       }
                     },
                     donor-after-exon {
@@ -6620,7 +6620,7 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     scores {
                       {
                         id str "idty",
-                        value real { 987179487179487, 10, -15 }
+                        value real { 9871794871, 10, -10 }
                       }
                     },
                     acceptor-before-exon {
@@ -7042,7 +7042,7 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                     scores {
                       {
                         id str "idty",
-                        value real { 999007936507937, 10, -15 }
+                        value real { 9990079365, 10, -10 }
                       }
                     },
                     acceptor-before-exon {
@@ -9988,7 +9988,7 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     scores {
                       {
                         id str "idty",
-                        value real { 888888888888889, 10, -15 }
+                        value real { 8888888888, 10, -10 }
                       }
                     },
                     partial TRUE
@@ -10029,7 +10029,7 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     scores {
                       {
                         id str "idty",
-                        value real { 888888888888889, 10, -15 }
+                        value real { 8888888888, 10, -10 }
                       }
                     },
                     partial TRUE
@@ -10047,7 +10047,7 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     scores {
                       {
                         id str "idty",
-                        value real { 777777777777778, 10, -15 }
+                        value real { 7777777777, 10, -10 }
                       }
                     },
                     partial TRUE
@@ -10090,7 +10090,7 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     scores {
                       {
                         id str "idty",
-                        value real { 80952380952381, 10, -14 }
+                        value real { 8095238095, 10, -10 }
                       }
                     },
                     acceptor-before-exon {
@@ -10150,7 +10150,7 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     scores {
                       {
                         id str "idty",
-                        value real { 888888888888889, 10, -15 }
+                        value real { 8888888888, 10, -10 }
                       }
                     },
                     donor-after-exon {
@@ -10213,7 +10213,7 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                     scores {
                       {
                         id str "idty",
-                        value real { 998242530755712, 10, -15 }
+                        value real { 9982425307, 10, -10 }
                       }
                     },
                     acceptor-before-exon {
@@ -11542,7 +11542,7 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                     scores {
                       {
                         id str "idty",
-                        value real { 998236331569665, 10, -15 }
+                        value real { 9982363315, 10, -10 }
                       }
                     },
                     donor-after-exon {
@@ -11805,7 +11805,7 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
                     scores {
                       {
                         id str "idty",
-                        value real { 931137724550898, 10, -15 }
+                        value real { 9311377245, 10, -10 }
                       }
                     },
                     acceptor-before-exon {
