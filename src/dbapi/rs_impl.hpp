@@ -47,6 +47,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CResultSetMetaData;
+
 class CResultSet : public CActiveObject, 
                    public IResultSet
 {
@@ -143,7 +145,7 @@ private:
 
     class CConnection* m_conn;
     CDB_Result *m_rs;
-    //CResultSetMetaDataImpl *m_metaData;
+    CResultSetMetaData *m_metaData;
     vector<CVariant> m_data;
     CRStream *m_istr;
     CWStream *m_ostr;

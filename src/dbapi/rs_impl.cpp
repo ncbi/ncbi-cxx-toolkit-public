@@ -58,6 +58,7 @@ BEGIN_NCBI_SCOPE
 CResultSet::CResultSet(CConnection* conn, CDB_Result *rs) : 
     m_conn(conn),
     m_rs(rs), 
+    m_metaData(NULL),
     m_istr(0), 
     m_ostr(0), 
     m_column(-1),
@@ -162,13 +163,16 @@ const CVariant& CResultSet::GetVariant(const CDBParamVariant& param)
 
 const IResultSetMetaData* CResultSet::GetMetaData(EOwnership ownership)
 {
-    CResultSetMetaData *md = new CResultSetMetaData(m_rs);
-    if( ownership == eNoOwnership )
-    {
-        md->AddListener(this);
-        AddListener(md);
+    if (ownership == eTakeOwnership) {
+        return new CResultSetMetaData(m_rs);
     }
-    return md;
+
+    if (m_metaData == NULL) {
+        m_metaData = new CResultSetMetaData(m_rs);
+        m_metaData->AddListener(this);
+        AddListener(m_metaData);
+    }
+    return m_metaData;
 }
 
 EDB_ResType CResultSet::GetResultType()
