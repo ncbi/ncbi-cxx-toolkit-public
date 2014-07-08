@@ -42,7 +42,10 @@
 #include <objects/gbseq/GBFeature.hpp>
 #include <objects/gbseq/GBInterval.hpp>
 #include <objects/gbseq/GBQualifier.hpp>
+#include <objects/gbseq/GBXref.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/misc/sequence_macros.hpp>
+
 #include <objmgr/scope.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -63,6 +66,7 @@
 #include <objtools/format/items/sequence_item.hpp>
 #include <objtools/format/items/segment_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
+#include <objtools/format/items/genome_project_item.hpp>
 #include "utils.hpp"
 
 
@@ -326,6 +330,39 @@ void CGBSeqFormatter::FormatVersion
  IFlatTextOStream&)
 {
     m_GBSeq->SetAccession_version(version.GetAccession());
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
+// DBLink
+
+void CGBSeqFormatter::FormatGenomeProject
+(const CGenomeProjectItem& gp,
+ IFlatTextOStream&)
+{
+    CGenomeProjectItem::TDBLinkLineVec dblinklines = gp.GetDBLinkLines();
+    if (dblinklines.size() == 0) return;
+
+    CGBSeq::TXrefs& xlist = m_GBSeq->SetXrefs();;
+
+    ITERATE( CGenomeProjectItem::TDBLinkLineVec, gp_it, dblinklines ) {
+        string line = *gp_it;
+        string first;
+        string second;
+        list<string> ids;
+        NStr::SplitInTwo( line, ":", first, second );
+        first = NStr::TruncateSpaces(first);
+        NStr::Split(second, ",", ids);
+        FOR_EACH_STRING_IN_LIST (s_itr, ids) {
+            string id = *s_itr;
+            id = NStr::TruncateSpaces(id);
+            CRef<CGBXref> xref(new CGBXref);
+            xref->SetDbname(first);
+            xref->SetId(id);
+            xlist.push_back(xref);
+        }
+    }
 }
 
 
