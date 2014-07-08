@@ -2323,7 +2323,7 @@ extern void NcbiLog_NewSession(void)
 
 /* Log request/app-wide hit id. See NcbiLog_GetNextSubHitID().
  */
-void s_LogHitID(TNcbiLog_Context ctx, char* hit_id)
+void s_LogHitID(TNcbiLog_Context ctx, const char* hit_id)
 {
     SNcbiLog_Param params[2];
 
@@ -2419,7 +2419,7 @@ extern char* NcbiLog_GetNextSubHitID(void)
         }
     } else {
         hit_id = (char*)sx_Info->phid;
-        sub_id = &(int)sx_Info->phid_sub_id;
+        sub_id = (int*)&sx_Info->phid_sub_id;
         assert(hit_id[0]);
         if( !sx_Info->phid_is_logged ) {
             s_LogHitID(ctx, hit_id);
