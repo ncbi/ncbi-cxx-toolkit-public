@@ -147,10 +147,8 @@ public:
     /// information about rows. They do not check if this information is
     /// consistent through all segments, but it should be.
 
-    /// Get number of rows in the alignment. The funcion returns number of
-    /// row in the first segment only, other segments may have different
-    /// number of rows.
-    size_t GetDim(void) const;
+    /// Get maximal number of rows in the alignment's segments.
+    size_t GetDim(void) const { return m_Dim; }
     /// Get seq-id for the given row. Throw exception if the row
     /// does not exist. The function uses row id from the first segment.
     /// Other segments may have different id for the same row.
