@@ -157,6 +157,7 @@ typedef enum {
 
 
 /** MT locking callback.
+ *
  *  @param user_data
  *    See "user_data" in NcbiLog_MTLock_Create()
  *  @param action
@@ -178,6 +179,7 @@ typedef int/*bool*/ (*FNcbiLog_MTLock_Handler)
 
 
 /** Create new MT lock.
+ *
  *  @param user_data
  *    Unspecified data to call "handler" with
  *  @param handler
@@ -194,6 +196,7 @@ extern TNcbiLog_MTLock NcbiLog_MTLock_Create
 
 
 /** Call cleanup action on the handler, then destroy it.
+ *
  *  @param lock
  *    A handle previously obtained from NcbiLog_MTLock_Create().
  *  @sa
@@ -203,6 +206,7 @@ extern void NcbiLog_MTLock_Delete(TNcbiLog_MTLock lock);
 
 
 /** Default implementation of simple MT locking callback.
+ *
  *  @param user_data
  *    Simple handler don't use this parameter; will be ignored.
  *  @param action
@@ -227,10 +231,11 @@ extern int/*bool*/ NcbiLog_Default_MTLock_Handler
  *  @sa NcbiLog_SetDestination
  */
 typedef enum {
-    eNcbiLog_Default,         /**< Try /log/<*>/<appname>.log, fallback to STDERR */
-    eNcbiLog_Stdlog,          /**< Try /log/<*>/<appname>.log,
-                                   fallback to ./<appname>.log, then to STDERR */
-    eNcbiLog_Cwd,             /**< Try ./<appname>.log, fallback to to STDERR */
+    eNcbiLog_Default,         /**< Try /log/<*>/<appname>.log; fallback
+                                   to STDERR */
+    eNcbiLog_Stdlog,          /**< Try /log/<*>/<appname>.log;  fallback
+                                   to ./<appname>.log, then to STDERR */
+    eNcbiLog_Cwd,             /**< Try ./<appname>.log, fallback to STDERR */
     eNcbiLog_Stdout,          /**< To standard output stream */
     eNcbiLog_Stderr,          /**< To standard error stream  */
     eNcbiLog_Disable          /**< Don't write it anywhere   */
@@ -250,6 +255,7 @@ typedef enum {
 
 
 /** Structure to describe pairs 'key=value', used to posting parameters.
+ *
  *  @sa NciLog_ReqStart, NcbiLog_Extra, NcbiLog_Perf
  */
 typedef struct {
@@ -301,6 +307,7 @@ typedef struct SContext_tag* TNcbiLog_Context;
  *  Only first call of NcbiLog_Init() have effect. All subsequent calls
  *  will be ignored. Preferable, in MT applications it should be called
  *  before creating any child thread uses logging.
+ *
  *  @param appname
  *    Set the application name shown in logs and used for logfile names.
  *    By default the name is unknown. The application name can be set only
@@ -337,6 +344,7 @@ extern void NcbiLog_Init(const char*               appname,
  *  This function should be called before any other API's function.
  *  Preferable, in MT applications it should be called before
  *  creating any child thread uses logging.
+ *
  *  @sa NcbiLog_Init, NcbiLog_InitST
  */
 extern void NcbiLog_InitMT(const char* appname);
@@ -344,6 +352,7 @@ extern void NcbiLog_InitMT(const char* appname);
 
 /** Version of NcbiLog_Init to use in single-threaded applications.
  *  This function should be called before any other API's function.
+ *
  *  @note
  *    You can call NcbiLog_InitST() instead of NcbiLog_Init[MT]()
  *    in MT applications also if you don't use logging from some
@@ -359,6 +368,7 @@ extern void NcbiLog_InitST(const char* appname);
  *  All subsequent calls will be ignored. You can skip it if you don't 
  *  wish to set up an application name for logging, all initialization
  *  will be done in background.
+ *
  *  @note
  *    Default MT locking implementation will be used, you cannot use
  *    your own locking using with this type on initialization.
@@ -385,6 +395,7 @@ extern void NcbiLog_InitForAttachedContext(const char* appname);
   * in single-threaded applications. Use it if you use API from single thread
   * only, it can be a little bit faster than NcbiLog_InitForAttachedContext()
   * because don't use MT-safety.
+  *
   * @sa 
   *   NcbiLog_InitForAttachedContext, NcbiLog_Init, NcbiLog_InitST,
   *   NcbiLog_Context_Create
@@ -395,6 +406,7 @@ extern void NcbiLog_InitForAttachedContextST(const char* appname);
 /** Destroy NcbiLog API.
  *  This function should be called last. After it any other API's calls
  *  will be ignored. For MT applications see also NcbiLog_Destroy_Thread().
+ *
  *  @sa
  *    NcbiLog_Init, NcbiLog_InitForAttachedContext
  */
@@ -406,6 +418,7 @@ extern void NcbiLog_Destroy(void);
  *  before NcbiLog_Destroy() call.
  *  Calling any other API function in the current thread except
  *  NcbiLog_Destroy() is prohibited and can lead to application crash.
+ *
  *  @note 
  *    Not necessary to call this function in single-threaded
  *    applications if NcbiLog_InitST() was used.
@@ -416,6 +429,7 @@ extern void NcbiLog_Destroy_Thread(void);
 
 
 /** Set up diagnostics destination.
+ *
  *  @param ds
  *    An enum value to specify an application's diagnostics destination.
  *  @return
@@ -434,98 +448,275 @@ extern void NcbiLog_Destroy_Thread(void);
 extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds);
 
 
-/** Set PID/TID values
+/** Set process ID (PID).
+ *
  *  @note
- *    This methods do not affect GUID value if called after starting logging.
+ *    This method does not affect GUID value if called after starting logging.
  */
 extern void NcbiLog_SetProcessId(TNcbiLog_PID pid);
+
+
+/** Set thread ID (TID).
+ *
+ *  @note
+ *    This method does not affect GUID value if called after starting logging.
+ */
 extern void NcbiLog_SetThreadId (TNcbiLog_TID tid);
 
 
-/** Set/get request ID. 
+/** Set current request ID (RID). 
  *  Calling this method before NcbiLog_AppRun() is not allowed.
  * 
  *  @note
- *    NcbiLog_SetRequestId() do not affect already started requests.
+ *    NcbiLog_SetRequestId() does not affect already started requests.
  *    Only newly started request will have new ID.
  *  @note
- *    NcbiLog_ReqStart() automaticaly increase request number. 
+ *    NcbiLog_ReqStart() automaticaly increases request number. 
  *    So, next request will start with (rid + 1).
- *  @sa NcbiLog_ReqStart
+ *  @sa
+ *    NcbiLog_GetRequestId, NcbiLog_ReqStart
  */
-extern void             NcbiLog_SetRequestId(TNcbiLog_Counter rid);
+extern void NcbiLog_SetRequestId(TNcbiLog_Counter rid);
+
+
+/** Get current request ID (RID).
+ * 
+ *  @sa
+ *    NcbiLog_SetRequestId, NcbiLog_ReqStart
+ */
 extern TNcbiLog_Counter NcbiLog_GetRequestId(void);
 
 
-/** This function allows a program to override the posting date and time
- *  that is logged. It can speed up a logging if date/time is already known
- *  before calling any post function.
+/** Set the posting date and time.
+ *  By default, system-provided time is used.
+ *  It can speed up a logging if date/time is already known before calling any
+ *  post function. It also can be used to alter the time of the posting.
  *  @param timer
  *    GMT date and time at which the message was posted (see time()).
  *    This time value will be converted to local date/time automatically.
  *    The current date/time will be used if this parameter is zero.
  *  @param nanoseconds
  *    Nanosecond part of the time.
- *  @note
- *    The set value will be used for all postings.
- *    To use system time again, call NcbiLog_SetTime(0,0).
+ *  @attention
+ *    The set value will be used for all subsequent postings!
+ *    To start using system time again, call NcbiLog_SetTime(0,0).
  */
 extern void NcbiLog_SetTime(time_t timer, unsigned long nanoseconds);
 
 
-/** This function allows a program to override the normal host string
- *  that is logged. Usually this value is either taken from the system.
- *  Using this method will override it with the user supplied string.
+/** Set the host name.
+ *  By default, this value is taken from the system.
+ *
  *  @param host
  *    New host name.
- *    Will be set to 'UNK_HOST' if parameter is NULL or empty string.
+ *    It will be set to 'UNK_HOST' if parameter is NULL or empty string.
  *  @note
- *    This method do not affect GUID value if called after starting logging.
+ *    This method does not affect GUID value if called after starting logging.
  */
 extern void NcbiLog_SetHost(const char* host);
 
 
-/** This function allows a program to override the normal client string
- *  that is logged. Usually this value is either taken from the 
- *  HTTP_CAF_PROXIED_HOST environment variable or, if that is not populated,
- *  set to 'UNK_CLIENT'. Using this method will override both of those with
- *  the user supplied string.
+/** Set client for the whole application.
+ *  This setting is effective in between requests, and for the requests for
+ *  which the client was not explicitly set (by calling NcbiLog_SetClient()).
+ *  
+ *  By default, this value is taken from the environment variables.
+ *  If that is not populated, it is set to 'UNK_CLIENT'.
+ *
  *  @param client
  *    New client name (IP address).
- *    Will be set to UNK_CLIENT if parameter is NULL or empty string.
- *  @note
- *    This value is reset by the NcbiLog_ReqStart(). If you are overriding
- *    the HTTP_CAF_PROXIED_HOST environment variable with your own value,
- *    you must recall NcbiLog_SetClient() with your string after every call
- *    to NcbiLog_ReqStart() in order to preserve your setting.
+ *    It will be set to 'UNK_CLIENT' if parameter is NULL or empty string.
  *  @sa
- *    NcbiLog_ReqStart
+ *    NcbiLog_SetClient
+ */
+extern void NcbiLog_AppSetClient(const char* client);
+
+
+/** Set client for the request.
+ *
+ *  This setting is effective for a single request:
+ *   - either for the current request -- if the call is made between
+ *     NcbiLog_ReqStart() and NcbiLog_ReqStop();
+ *   - or for the very next request -- if the call is made between
+ *     NcbiLog_ReqStop() and NcbiLog_ReqStart().
+ *  
+ *  If the client is not explicitly set for a request, this value is taken
+ *  from the environment variables. If that is not populated, then 
+ *  the application wide value (see NcbiLog_AppSetClient()) will be used
+ *  for the request.
+ *
+ *  @attention
+ *    NcbiLog_ReqStop() resets the client back to the application-wide value!
+ *  @param client
+ *    New client name (IP address).
+ *    It will be set to 'UNK_CLIENT' if parameter is NULL or empty string.
+ *  @sa
+ *    NcbiLog_AppSetClient, NcbiLog_ReqStart, NcbiLog_ReqStop
  */
 extern void NcbiLog_SetClient(const char* client);
 
 
-/** This function allows a program to override the normal session ID string
- *  that is logged. By default it is set to 'UNK_SESSION'. Using this method
- *  will override it with the user supplied string. Usually this value is
- *  taken from the ncbi_sid key in the standard NCBI web cookie.
- *  @param client
- *    New session ID (URL encoded).
- *    Will be set to 'UNK_SESSION' if parameter is NULL or empty string.
- *    Any spaces contained in the string will be URL-encoded.
- *  @note
- *    This value is reset by the NcbiLog_ReqStart() to 'UNK_SESSION'.
- *    If you are overriding it with your own value, you must recall
- *    NcbiLog_SetSession() with your string after every call to
- *    NcbiLog_ReqStart() in order to preserve your setting.
+/** Set session ID (SID) for the whole application.
+ *
+ *  This setting is effective in between requests, and for the requests for
+ *  which the client was not explicitly set (by calling either
+ *  NcbiLog_SetSession() or NcbiLog_NewSession()).
+ *
+ *  By default, SID is taken from the HTTP_NCBI_SID environment variable;
+ *  if that is not set, then -- from NCBI_LOG_SESSION_ID environment variable;
+ *  if that is not set, then -- SID is set to 'UNK_SESSION'.
+ *
+ *  @param session
+ *    New session ID. (It will be URL-encoded.)
+ *    It will be set to 'UNK_SESSION' if the parameter is NULL or empty string.
  *  @sa
- *    NcbiLog_ReqStart
+ *    NcbiLog_AppNewSession, NcbiLog_SetSession, NcbiLog_NewSession
+ */
+extern void NcbiLog_AppSetSession(const char* session);
+
+
+/** Auto-generate and then set brand-new application-wide session ID (SID).
+ *
+ *  @sa NcbiLog_AppSetSession
+ */
+extern void NcbiLog_AppNewSession(void);
+
+
+/** Set session ID (SID) for the request.
+ *
+ *  This setting is effective for a single request:
+ *   - either for the current request -- if the call is made between
+ *     NcbiLog_ReqStart() and NcbiLog_ReqStop();
+ *   - or for the very next request -- if the call is made between
+ *     NcbiLog_ReqStop() and NcbiLog_ReqStart().
+ *
+ *  If SID is not explicitly set for a request, then the application-
+ *  wide value (per NcbiLog_AppSetSession() or
+ *  NcbiLog_AppNewSession()) will be used for the request.
+ *
+ *  @attention
+ *    NcbiLog_ReqStop() resets the SID back to the application-wide value!
+ *  @param session
+ *    New session ID. (It will be URL-encoded.)
+ *    It will be set to 'UNK_SESSION' if the parameter is NULL or empty string.
+ *  @sa
+ *    NcbiLog_AppSetSession, NcbiLog_AppNewSession,
+ *    NcbiLog_ReqStart, NcbiLog_ReqStop
  */
 extern void NcbiLog_SetSession(const char* session);
 
 
-/** Set new posting level.
+/** Auto-generate and then set brand-new session ID (SID) for the request.
+ *
+ *  @sa NcbiLog_SetSession
+ */
+extern void NcbiLog_NewSession(void);
+
+
+/** Set hit ID (HID, a.k.a. PHID) for the whole application.
+ *
+ *  This setting is effective in between requests, and for the requests
+ *  for which the client was not explicitly set (by calling either
+ *  NcbiLog_SetHitID() or NcbiLog_NewHitID()).
+ *
+ *  By default, (P)HID is taken from the HTTP_NCBI_PHID environment variable;
+ *  if that is not set, then -- from NCBI_LOG_HIT_ID environment variable;
+ *  if that is not set, then -- it is set to an empty string.
+ *
+ *  @attention
+ *    If hit ID has been logged for application, the call will be ignored.
+ *    See NcbiLog_GetNextSubHitID().
+ *  @param hit_id
+ *    New (P)HID. (It will be URL-encoded.)
+ *    (P)HID will be unset if the parameter is NULL or point to empty string,
+ *    and PHID has not logged yet.
+ *  @sa
+ *    NcbiLog_AppNewHitID, NcbiLog_SetHitID, NcbiLog_NewHitID,
+ *    NcbiLog_GetNextSubHitID
+ */
+extern void NcbiLog_AppSetHitID(const char* hit_id);
+
+
+/** Auto-generate and then set brand-new application-wide hit ID
+ *  (HID, a.k.a. PHID).
+ *
+ *  @attention
+ *    It calls by default on NcbiLog_AppStart() if no user defined PHID
+ *    or environment variables are available. So usually you don't need
+ *    to call it manually. PHID can be redefined with NcbiLog_AppSetHitID()
+ *    at any time if not logged yet.
+ *  @attention
+ *    If hit ID has been already logged for application, the call
+ *    will be ignored. See NcbiLog_GetNextSubHitID().
+ *  @sa 
+ *    NcbiLog_AppSetHitID, NcbiLog_GetNextSubHitID
+ */
+extern void NcbiLog_AppNewHitID(void);
+
+
+/** Set hit ID (HID, a.k.a. PHID) for the request.
+ *
+ *  This setting is effective for a single request:
+ *   - either for the current request -- if the call is made between
+ *     NcbiLog_ReqStart() and NcbiLog_ReqStop();
+ *   - or for the very next request -- if the call is made between
+ *     NcbiLog_ReqStop() and NcbiLog_ReqStart().
+ *
+ *  If (P)HID is not explicitly set for a request, then the application-
+ *  wide value (per NcbiLog_AppSetHitID() or
+ *  NcbiLog_AppNewHitID()) will be used for the request.
+ *
+ *  @attention
+ *    NcbiLog_ReqStop() resets the (P)HID back to the application-wide value!
+ *  @attention
+ *    If hit ID has been already logged for the current request, the call
+ *    will be ignored. See NcbiLog_GetNextSubHitID().
+ *  @param hit_id
+ *    New (P)HID. (It will be URL-encoded.)
+ *    (P)HID will be unset if the parameter is NULL or point to empty string,
+ *    and PHID has not logged yet.
+ *  @sa
+ *    NcbiLog_AppSetHitID, NcbiLog_AppNewHitID,
+ *    NcbiLog_ReqStart, NcbiLog_ReqStop, NcbiLog_GetNextSubHitID
+ */
+extern void NcbiLog_SetHitID(const char* hit_id);
+
+
+/** Auto-generate and then set brand-new hit ID (HID, a.k.a. PHID)
+ *  for the request.
+ *
+ *  @attention
+ *    If hit ID has been already logged for the current request, the call
+ *    will be ignored. See NcbiLog_GetNextSubHitID().
+ *  @sa
+ *    NcbiLog_SetHitID, NcbiLog_GetNextSubHitID
+ */
+extern void NcbiLog_NewHitID(void);
+
+
+/** Generate a sub-hit ID based on the currently effective
+ *  (whether it's request-specific or application-wide) hit ID.
+ *
+ *  This function automatically log current app/request hit ID if not logged yet.
+ *  This is a single method that do logging such information.
+ *
+ *  @return
+ *    Generated sub-hit ID.
+ *    If hit id is not set, return NULL.
+ *  @attention
+ *    The caller is responsible for freeing the returned sub-hit ID string!
+ *    Use free().
+ *  @sa
+  *   NcbiLog_AppSetHitID, NcbiLog_SetHitID
+ */
+extern char* NcbiLog_GetNextSubHitID(void);
+
+
+/** Set new posting severity threshold.
  *  All messages with severity lower than specified will be ignored.
- *  Always returns the active level. 
+ *
+ *  @return
+ *    The severity threshold that was in effect before this call.
  */
 extern ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev);
 
@@ -547,6 +738,7 @@ extern ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev);
  *  or one of its variants. Or, you can hard-code application name on the
  *  compilation step, using "-D NCBI_C_LOG_APPNAME=appname" in the compiler's
  *  command line for this API.
+ *
  *  @note
  *    You should call this method first, before using any other API methods.
  *  @note
@@ -568,9 +760,10 @@ extern TNcbiLog_Context NcbiLog_Context_Create(void);
 
 
 /** Attach logging context object to the C Logging API.
+ *
  *  @note
  *    You should call this method before logging or using any other
- *    methods that change context information. All API methods works
+ *    methods that change context information. All API methods work
  *    with attached context only, otherwise you can get unexpected results.
  *  @param ctx
  *    A handle previously obtained from NcbiLog_Context_Create().
@@ -584,6 +777,7 @@ extern int /*bool*/ NcbiLog_Context_Attach(TNcbiLog_Context ctx);
 
 
 /** Detach logging context object from the C Logging API.
+ *
  *  @note
  *    The C Logging API cannot be used without any context attached.
  *  @return
@@ -595,6 +789,7 @@ extern void NcbiLog_Context_Detach(void);
 
 
 /** Destroy context structure.
+ *
  *  @note
  *    NcbiLog_Context_Detach() should be called before context destroying.
  *  @param ctx
@@ -617,12 +812,14 @@ extern void NcbiLog_Context_Destroy(TNcbiLog_Context ctx);
  *  the application runtime duration. If not called explicitly,
  *  NcbiLog_AppStart() is called by most other functions (but application
  *  arguments will not be logged in this case).
+ *
  *  @param argc
  *    The count of arguments that follow in argv (from main()).
  *  @param argv
  *    An array of null-terminated strings representing command-line
  *    arguments of the program (from main()).
- *  @sa NcbiLog_AppRun, NcbiLog_AppStop
+ *  @sa
+ *    NcbiLog_AppRun, NcbiLog_AppStop
  */
 extern void NcbiLog_AppStart(const char* argv[]);
 
@@ -646,7 +843,7 @@ extern void NcbiLog_AppRun(void);
 extern void NcbiLog_AppStop(int exit_status);
 
 
-/** The same as NcbiLog_AppStop(), but accept also a signal number,
+/** The same as NcbiLog_AppStop(), except it also accepts a signal number,
  *  if application exited due to a signal.
  *
  *  @sa NcbiLog_AppStart, NcbiLog_AppStop

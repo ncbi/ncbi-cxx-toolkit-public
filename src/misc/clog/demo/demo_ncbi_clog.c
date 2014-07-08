@@ -81,13 +81,29 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
        NcbiLog_SetHost("SOMEHOSTNAME");
     */
 
+    /* Set process/thread ID
+       NcbiLog_SetProcessId(pid);
+       NcbiLog_SetThreadId(tid);
+    */
+
     /* Set log_site
        NcbiLog_SetLogSite("");
     */
 
-    /* Set process/thread ID
-       NcbiLog_SetProcessId(pid);
-       NcbiLog_SetThreadId(tid);
+    /* Set app-wide client.
+       Use value from environment variables or "UNK_CLIENT" by default.
+       NcbiLog_AppSetClient("192.168.1.0");
+    */
+
+    /* Set app-wide session
+       Use value from environment variables or "UNK_SESSION" by default.
+       NcbiLog_AppSession("APP-WIDE-SESSION"); -- set from string, or
+       NcbiLog_AppNewSession(); -- generate new one
+    */
+
+    /* Set app-wide hit ID
+       Use value from environment variables, or generate new one by default.
+       NcbiLog_AppSetHitID("APP-WIDE-HIT-ID");
     */
 
     /* Start application */
@@ -118,6 +134,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 
     /* Request without parameters */
     {{
+        /* Set request hit ID if necessary
+            NcbiLog_SetHitID("REQUEST-HIT-ID");
+            NcbiLog_NewHitID(); -- generate new one
+        */
         NcbiLog_ReqStart(NULL);
         NcbiLog_ReqStop(200, 1, 2);
     }}
@@ -127,7 +147,7 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
         NcbiLog_Error("Message printed between requests");
     }}
 
-    /* Request without parameters -- new ID */
+    /* Request without parameters -- new request ID */
     {{
         NcbiLog_SetRequestId(10);
         NcbiLog_ReqStart(NULL);

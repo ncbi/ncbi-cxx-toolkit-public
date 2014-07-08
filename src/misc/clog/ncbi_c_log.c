@@ -105,6 +105,7 @@
 #define UNKNOWN_HOST         "UNK_HOST"
 #define UNKNOWN_CLIENT       "UNK_CLIENT"
 #define UNKNOWN_SESSION      "UNK_SESSION"
+#define UNKNOWN_HITID        ""
 #define UNKNOWN_APPNAME      "UNK_APP"
 
 
@@ -384,11 +385,15 @@ void s_AppStart(TNcbiLog_Context ctx, const char* argv[]);
     }
 
 
+/* Forward declaration */
+void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params);
+void s_ExtraStr(TNcbiLog_Context ctx, const char* params);
+
+
 
 /******************************************************************************
  *  Aux. functions
  */
-
 
 /** Sleep the specified number of microseconds.
     Portable and ugly. But we don't need more precision version here,
@@ -534,7 +539,7 @@ static TNcbiLog_TID s_GetTID(void)
 /** Create unique process ID.
  *  Adapted from C++ Toolkit code: see CDiagContect::x_CreateUID().
  */
-static TNcbiLog_Int8 s_GetGUID(void)
+static TNcbiLog_Int8 s_CreateUID(void)
 {
     TNcbiLog_PID   pid = s_GetPID();
     time_t         t = time(0);
@@ -551,13 +556,30 @@ static TNcbiLog_Int8 s_GetGUID(void)
     h &= 0xFFFF;
     /* The low 4 bits are reserved as GUID generator version number.
        We use version #3. Actually we use C++ version #1 algorithm here, 
-       but assign new version number to distinguish the Ncbi C logging API
+       but assign new version number to distinguish the NCBI C logging API
        from the C++ API.
     */
     return ((TNcbiLog_Int8)h << 48) |
            (((TNcbiLog_Int8)pid & 0xFFFF) << 32) |
            (((TNcbiLog_Int8)t & 0xFFFFFFF) << 4) |
            3; 
+}
+
+
+static TNcbiLog_Int8 s_UpdateUID(void)
+{
+    time_t t;
+    if ( !sx_Info->guid ) {
+        sx_Info->guid = s_CreateUID();
+        return sx_Info->guid;
+    }
+    /* Update with current timestamp */
+    t = time(0);
+    /* Clear old timestamp */
+    sx_Info->guid &= ~((TNcbiLog_Int8)0xFFFFFFF << 4);
+    /* Add current timestamp */
+    sx_Info->guid |= (((TNcbiLog_Int8)t & 0xFFFFFFF) << 4);
+    return sx_Info->guid;
 }
 
 
@@ -667,21 +689,16 @@ static int/*bool*/ s_GetTimeStr
 }
 
 
-/** logic: This routine is called during start up and again in NcbiLog_ReqStart(). 
- *  If there's a client value set in the environment, we use that -- 
- *  otherwise (not in this function), if there's a previously user-supplied
- *  value, use that -- otherwise, fall back to UNK_CLIENT.
+/** This routine is called during start up and again in NcbiLog_ReqStart(). 
  */
-static const char* s_GetClientIP(void)
+static const char* s_GetClient_Env(void)
 {
     static const char* client = NULL;
     const char* ext = NULL;
-    if ( client ) {
-        return client;
-    }
+
     ext = getenv("HTTP_CAF_EXTERNAL");
     if ( !ext  ||  !ext[0] ) {
-        // !HTTP_CAF_EXTERNAL
+        /* !HTTP_CAF_EXTERNAL */
         if ( (client = getenv("HTTP_CLIENT_HOST")) != NULL  &&  client[0] ) {
             return client;
         }
@@ -697,6 +714,39 @@ static const char* s_GetClientIP(void)
     }
     return NULL;
 }
+
+
+/** This routine is called during start up and again in NcbiLog_ReqStart(). 
+ */
+static const char* s_GetSession_Env(void)
+{
+    static const char* session = NULL;
+
+    if ( (session = getenv("HTTP_NCBI_SID")) != NULL  &&  session[0] ) {
+        return session;
+    }
+    if ( (session = getenv("NCBI_LOG_SESSION_ID")) != NULL  &&  session[0] ) {
+        return session;
+    }
+    return NULL;
+}
+
+
+/** This routine is called during start up and again in NcbiLog_ReqStart(). 
+ */
+static const char* s_GetHitID_Env(void)
+{
+    static const char* phid = NULL;
+
+    if ( (phid = getenv("HTTP_NCBI_PHID")) != NULL  &&  phid[0] ) {
+        return phid;
+    }
+    if ( (phid = getenv("NCBI_LOG_HIT_ID")) != NULL  &&  phid[0] ) {
+        return phid;
+    }
+    return NULL;
+}
+
 
 
 /* The URL-encoding table
@@ -1095,7 +1145,7 @@ static const char* s_GetToolkitRCLogLocation()
             }}
             /* continue to next line */
         }
-        if (memcmp(line, kSectionName, sizeof(kSectionName)) == 0) {
+        if (memcmp(line, kSectionName, sizeof(kSectionName)) >= 0) {
             inside_section = 1;
         }
     }
@@ -1314,7 +1364,7 @@ static void s_InitDestination(const char* logfile_path)
                 if (sx_Info->server_port) {
                     int n;
                     n = sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
-                    VERIFY(n > 0);
+                    assert(n > 0);
                     if (s_SetLogFilesDir(xdir)) {
                         sx_Info->reuse_file_names = 1;
                         return;
@@ -1394,7 +1444,7 @@ static void s_SetHost(const char* host)
 }
 
 
-static void s_SetClient(TNcbiLog_Context ctx, const char* client)
+static void s_SetClient(char* dst, const char* client)
 {
     if (client  &&  *client) {
         size_t len;
@@ -1402,11 +1452,106 @@ static void s_SetClient(TNcbiLog_Context ctx, const char* client)
         if (len > NCBILOG_CLIENT_MAX) { 
             len = NCBILOG_CLIENT_MAX;
         }
-        memcpy((char*)ctx->client, client, len);
-        ctx->client[len] = '\0';
+        memcpy(dst, client, len);
+        dst[len] = '\0';
     } else {
-        ctx->client[0] = '\0';
+        dst[0] = '\0';
     }
+}
+
+
+static void s_SetSession(char* dst, const char* session)
+{
+    if (session  &&  *session) {
+        /* URL-encode */
+        size_t len, r_len, w_len;
+        len = strlen(session);
+        s_URL_Encode(session, len, &r_len, dst, 3*NCBILOG_SESSION_MAX, &w_len);
+        dst[w_len] = '\0';
+    } else {
+        dst[0] = '\0';
+    }
+}
+
+
+static void s_SetHitID(char* dst, const char* hit_id)
+{
+    if (hit_id &&  *hit_id) {
+        /*TODO: Validate hit ID ?? */
+        /* URL-encode */
+        size_t len, r_len, w_len;
+        len = strlen(hit_id);
+        s_URL_Encode(hit_id, len, &r_len, dst, 3*NCBILOG_HITID_MAX, &w_len);
+        dst[w_len] = '\0';
+    } else {
+        dst[0] = '\0';
+    }
+}
+
+
+int/*bool*/ s_IsInsideRequest(TNcbiLog_Context ctx)
+{
+    ENcbiLog_AppState state;
+
+    /* Get application state (context-specific) */
+    state = (ctx->state == eNcbiLog_NotSet) ? sx_Info->state : ctx->state;
+    switch (state) {
+    case eNcbiLog_RequestBegin:
+    case eNcbiLog_Request:
+        return 1;
+    default:
+        break;
+    }
+    return 0;
+}
+
+
+char* s_GenerateSID_Str(char* dst)
+{
+    int x_guid_hi, x_guid_lo;
+    int n;
+    x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
+    x_guid_lo = (int) (sx_Info->guid & 0xFFFFFFFF);
+    n = sprintf(dst, "%08X%08X_%04" NCBILOG_UINT8_FORMAT_SPEC "SID", 
+        x_guid_hi, x_guid_lo, sx_Info->rid);
+    if (n <= 0) {
+        return NULL;
+    }
+    dst[n] = '\0';
+    return dst;
+}
+
+
+char* s_GenerateHitID_Str(char* dst)
+{
+    TNcbiLog_UInt8 hi, tid, rid, us, lo;
+    unsigned int b0, b1, b2, b3;
+    time_t time_sec;
+    unsigned long time_ns;
+    int n;
+
+    if ( !sx_Info->guid ) {
+        sx_Info->guid = s_CreateUID();
+    }
+    hi  = sx_Info->guid;
+    b3  = (unsigned int)((hi >> 32) & 0xFFFFFFFF);
+    b2  = (unsigned int)(hi & 0xFFFFFFFF);
+    tid = (s_GetTID() & 0xFFFFFF) << 40;
+    rid = (TNcbiLog_UInt8)(sx_Info->rid & 0xFFFFFF) << 16;
+    if (!s_GetTimeT(&time_sec, &time_ns)) {
+        us = 0;
+    } else {
+        us = (time_ns/1000/16) & 0xFFFF;
+    }
+    lo = tid | rid | us;
+    b1 = (unsigned int)((lo >> 32) & 0xFFFFFFFF);
+    b0 = (unsigned int)(lo & 0xFFFFFFFF);
+    n = sprintf(dst, "%08X%08X%08X%08X", b3, b2, b1, b0);
+    if (n <= 0) {
+        return NULL;
+    }
+    dst[n] = '\0';
+    return dst;
 }
 
 
@@ -1479,10 +1624,11 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
     char              x_time[24];
     int               x_guid_hi, x_guid_lo;
     int               n;
+    int               inside_request;
 
     /* Calculate GUID */
     if ( !sx_Info->guid ) {
-        sx_Info->guid = s_GetGUID();
+        sx_Info->guid = s_CreateUID();
     }
     x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
     x_guid_lo = (int) (sx_Info->guid & 0xFFFFFFFF);
@@ -1490,6 +1636,15 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
     /* Get application state (context-specific) */
     x_st = (ctx->state == eNcbiLog_NotSet) ? sx_Info->state : ctx->state;
     x_state = sx_AppStateStr[x_st];
+    switch (x_st) {
+        case eNcbiLog_RequestBegin:
+        case eNcbiLog_Request:
+        case eNcbiLog_RequestEnd:
+            inside_request = 1;
+            break;
+        default:
+            inside_request = 0;
+    }
 
     /* Get posting time string (current or specified by user) */
     if (!sx_Info->post_time.sec) {
@@ -1511,9 +1666,20 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
     x_pid     = sx_Info->pid        ? sx_Info->pid            : s_GetPID();
     x_rid     = ctx->rid            ? ctx->rid                : 0;
     x_host    = sx_Info->host[0]    ? (char*)sx_Info->host    : UNKNOWN_HOST;
-    x_client  = ctx->client[0]      ? (char*)ctx->client      : UNKNOWN_CLIENT;
-    x_session = ctx->session[0]     ? (char*)ctx->session     : UNKNOWN_SESSION;
     x_appname = sx_Info->appname[0] ? (char*)sx_Info->appname : UNKNOWN_APPNAME;
+
+    /* client */
+    if (inside_request  &&  ctx->is_client_set) {
+        x_client = ctx->client[0] ? (char*)ctx->client : UNKNOWN_CLIENT;
+    } else {
+        x_client = sx_Info->client[0] ? (char*)sx_Info->client : UNKNOWN_CLIENT;
+    }
+    /* session */
+    if (inside_request  &&  ctx->is_client_set) {
+        x_session = ctx->session[0] ? (char*)ctx->session : UNKNOWN_SESSION;
+    } else {
+        x_session = sx_Info->session[0] ? (char*)sx_Info->session : UNKNOWN_SESSION;
+    }
 
     n = sprintf(sx_Info->message,
         "%05" NCBILOG_UINT8_FORMAT_SPEC "/%03" NCBILOG_UINT8_FORMAT_SPEC \
@@ -2056,7 +2222,7 @@ void NcbiLog_SetThreadId(TNcbiLog_TID tid)
 void NcbiLog_SetRequestId(TNcbiLog_Counter rid)
 {
     MT_LOCK_API;
-    // Enforce setting request id only after NcbiLog_AppRun()
+    /* Enforce setting request id only after NcbiLog_AppRun() */
     if (sx_Info->state == eNcbiLog_NotSet  ||
         sx_Info->state == eNcbiLog_AppBegin) {
         TROUBLE;
@@ -2094,12 +2260,29 @@ void NcbiLog_SetHost(const char* host)
 }
 
 
+void NcbiLog_AppSetClient(const char* client)
+{
+    MT_LOCK_API;
+    s_SetClient((char*)sx_Info->client, client);
+    MT_UNLOCK;
+}
+
+
 void NcbiLog_SetClient(const char* client)
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
     ctx = s_GetContext();
-    s_SetClient(ctx, client);
+    s_SetClient(ctx->client, client);
+    ctx->is_client_set = 1;
+    MT_UNLOCK;
+}
+
+
+void NcbiLog_AppSetSession(const char* session)
+{
+    MT_LOCK_API;
+    s_SetSession((char*)sx_Info->session, session);
     MT_UNLOCK;
 }
 
@@ -2109,17 +2292,154 @@ void NcbiLog_SetSession(const char* session)
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
     ctx = s_GetContext();
+    s_SetSession(ctx->session, session);
+    ctx->is_session_set = 1;
+    MT_UNLOCK;
+}
 
-    if (session  &&  *session) {
-        /* URL-encode session name */
-        size_t len, r_len, w_len;
-        len = strlen(session);
-        s_URL_Encode(session, len, &r_len, (char*)ctx->session, 3*NCBILOG_SESSION_MAX, &w_len);
-        ctx->session[w_len] = '\0';
-    } else {
-        ctx->session[0] = '\0';
+
+extern void NcbiLog_AppNewSession(void)
+{
+    char session[NCBILOG_SESSION_MAX+1]; 
+    MT_LOCK_API;
+    s_UpdateUID();
+    s_SetSession((char*)sx_Info->session, s_GenerateSID_Str(session));
+    MT_UNLOCK;
+}
+
+
+extern void NcbiLog_NewSession(void)
+{
+    char session[NCBILOG_SESSION_MAX+1]; 
+    TNcbiLog_Context ctx = NULL;
+    MT_LOCK_API;
+    ctx = s_GetContext();
+    s_UpdateUID();
+    s_SetSession(ctx->session, s_GenerateSID_Str(session));
+    ctx->is_session_set = 1;
+    MT_UNLOCK;
+}
+
+
+/* Log request/app-wide hit id. See NcbiLog_GetNextSubHitID().
+ */
+void s_LogHitID(TNcbiLog_Context ctx, char* hit_id)
+{
+    SNcbiLog_Param params[2];
+
+    assert(hit_id  &&  hit_id[0]);
+
+    params[0].key   = "ncbi_phid";
+    params[0].value = hit_id;
+    params[1].key   = NULL;
+    params[1].value = NULL;
+    s_Extra(ctx, params);
+}
+
+/* Force log specified hit ID.
+   We don't need MT locking here, because this method can be used from ncbi_applog only.
+ */
+void NcbiLogP_LogHitID(const char* hit_id)
+{
+    TNcbiLog_Context ctx = NULL;
+    //MT_LOCK_API;
+    ctx = s_GetContext();
+    s_LogHitID(ctx, hit_id);
+    //MT_UNLOCK;
+}
+
+
+extern void NcbiLog_AppSetHitID(const char* hit_id)
+{
+    MT_LOCK_API;
+    if ( !sx_Info->phid_is_logged ) {
+        s_SetHitID((char*)sx_Info->phid, hit_id);
     }
     MT_UNLOCK;
+}
+
+
+void NcbiLog_SetHitID(const char* hit_id)
+{
+    TNcbiLog_Context ctx = NULL;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+    if ( !ctx->phid_is_logged ) {
+        s_SetHitID(ctx->phid, hit_id);
+    }
+    MT_UNLOCK;
+}
+
+
+extern void NcbiLog_AppNewHitID(void)
+{
+    char phid_str[NCBILOG_HITID_MAX+1]; 
+
+    MT_LOCK_API;
+    if ( !sx_Info->phid_is_logged ) {
+        s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str));
+    }
+    MT_UNLOCK;
+}
+
+
+extern void NcbiLog_NewHitID(void)
+{
+    char phid_str[NCBILOG_HITID_MAX+1]; 
+    TNcbiLog_Context ctx = NULL;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+    if ( !ctx->phid_is_logged ) {
+        s_SetHitID(ctx->phid, s_GenerateHitID_Str(phid_str));
+    }
+    MT_UNLOCK;
+}
+
+
+extern char* NcbiLog_GetNextSubHitID(void)
+{
+    TNcbiLog_Context ctx = NULL;
+    char* hit_id = NULL;
+    int*  sub_id = NULL;
+    char  buf[NCBILOG_HITID_MAX+1];
+    int n;
+
+    MT_LOCK_API;
+    ctx = s_GetContext();
+
+    /* Take request specific hit ID if set */
+    if (s_IsInsideRequest(ctx)  &&  ctx->phid[0]) {
+        hit_id = ctx->phid;
+        sub_id = &ctx->phid_sub_id;
+        if( !ctx->phid_is_logged ) {
+            s_LogHitID(ctx, hit_id);
+            ctx->phid_is_logged = 1;
+        }
+    } else {
+        hit_id = (char*)sx_Info->phid;
+        sub_id = &(int)sx_Info->phid_sub_id;
+        assert(hit_id[0]);
+        if( !sx_Info->phid_is_logged ) {
+            s_LogHitID(ctx, hit_id);
+            sx_Info->phid_is_logged = 1;
+        }
+    }
+
+    /* Generate sub hit ID */
+    assert(strlen(hit_id) + 6 <= NCBILOG_HITID_MAX);
+    if (strlen(hit_id) + 6 > NCBILOG_HITID_MAX) {
+        MT_UNLOCK;
+        return NULL;
+    }
+    n = sprintf(buf, "%s.%d", hit_id, ++(*sub_id));
+    assert(n > 0);
+
+    MT_UNLOCK;
+
+    return s_StrDup(buf);
+
 }
 
 
@@ -2133,10 +2453,6 @@ ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev)
     return prev;
 }
 
-/* Forward declaration */
-void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params);
-void s_ExtraStr(TNcbiLog_Context ctx, const char* params);
-
 
 /** Print "start" message. 
  *  We should print "start" message always, before any other message.
@@ -2147,6 +2463,25 @@ void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     int    i, n;
     size_t pos;
     char*  buf;
+
+    /* Try to get app-wide client from environment */
+    if (!sx_Info->client[0]) {
+        s_SetClient((char*)sx_Info->client, s_GetClient_Env());
+    }
+    /* Try to get app-wide session from environment */
+    if (!sx_Info->session[0]) {
+        s_SetSession((char*)sx_Info->session, s_GetSession_Env());
+    }
+    /* Try to get app-wide hit ID from environment, or generate it */
+    if (!sx_Info->phid[0]) {
+        const char* phid_env = s_GetHitID_Env();
+        if (phid_env) {
+            s_SetHitID((char*)sx_Info->phid, phid_env);
+        } else {
+            char phid_str[NCBILOG_HITID_MAX+1]; 
+            s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str));
+        }
+    }
 
     s_SetState(ctx, eNcbiLog_AppBegin);
     /* Prefix */
@@ -2246,21 +2581,28 @@ static size_t s_ReqStart(TNcbiLog_Context ctx)
     sx_Info->rid++;
     ctx->rid = sx_Info->rid;
 
-    /* Try to get client IP from environment, if unknown */
-    if  ( !ctx->client[0] ) {
-        s_SetClient(ctx, s_GetClientIP());
+    /* Try to get client IP from environment, if not set by user */
+    if (!ctx->is_client_set) {
+        const char* ip = s_GetClient_Env();
+        if (ip && *ip) {
+            s_SetClient(ctx->client, ip);
+            ctx->is_client_set = 1;
+        }
     }
 
-    /* Create fake session id, if unknown */
-    if ( !ctx->session[0] ) {
-        int x_guid_hi, x_guid_lo;
-        x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
-        x_guid_lo = (int) (sx_Info->guid & 0xFFFFFFFF);
-        n = sprintf((char*)ctx->session, "%08X%08X_%04" NCBILOG_UINT8_FORMAT_SPEC "SID", 
-                     x_guid_hi, x_guid_lo, sx_Info->rid);
-        if (n <= 0) {
-            return 0;
+    /* Try to get session id from environment, or generate new one,
+       if not set by user */
+    if (!ctx->is_session_set) {
+        const char* sid = s_GetSession_Env();
+        if (sid && *sid) {
+            s_SetSession(ctx->session, sid);
+        } else {
+            /* Unknown, create new session id */
+            char session[NCBILOG_SESSION_MAX+1]; 
+            s_UpdateUID();
+            s_SetSession(ctx->session, s_GenerateSID_Str(session));
         }
+        ctx->is_session_set = 1;
     }
     
     /* Prefix */
@@ -2295,6 +2637,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
     size_t n, pos;
 
     MT_LOCK_API;
+
     ctx = s_GetContext();
     /* Common request info */
     pos = s_ReqStart(ctx);
@@ -2315,6 +2658,7 @@ void NcbiLogP_ReqStartStr(const char* params)
     size_t n, pos;
 
     MT_LOCK_API;
+
     ctx = s_GetContext();
     /* Common request info */
     pos = s_ReqStart(ctx);
@@ -2324,6 +2668,7 @@ void NcbiLogP_ReqStartStr(const char* params)
     VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
+
     MT_UNLOCK;
 }
 
@@ -2362,11 +2707,21 @@ void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
     VERIFY(n > 0);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
-    /* Reset state, request, client and session id's */
+    /* Reset state */
     s_SetState(ctx, eNcbiLog_AppRun);
+
+    /* Special case: request hit id has logged, but not app-wide one */
+    if ( ctx->phid_is_logged  &&  !sx_Info->phid_is_logged ) {
+        /* Log app-wide hit id after current request */
+        s_LogHitID(ctx, (char*)sx_Info->phid);
+        sx_Info->phid_is_logged = 1;
+    }
+
+    /* Reset request, client, session and hit id's */
     ctx->rid = 0;
-    ctx->client[0]  = '\0';
-    ctx->session[0] = '\0';
+    ctx->client[0]  = '\0';  ctx->is_client_set  = 0;
+    ctx->session[0] = '\0';  ctx->is_session_set = 0;
+    ctx->phid[0]    = '\0';  ctx->phid_sub_id = 0;  ctx->phid_is_logged = 0;
 
     MT_UNLOCK;
 }

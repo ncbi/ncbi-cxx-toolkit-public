@@ -58,9 +58,11 @@
 
  /*
  Command lines:
-    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE] [-timestamp TIME]  // -> app_token
+    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-phid PHID]
+                                      [-logsite SITE] [-timestamp TIME]  // -> app_token
     ncbi_applog stop_app      <token> -status STATUS [-timestamp TIME]
-    ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] [-timestamp TIME]  // -> request_token
+    ncbi_applog start_request <token> [-sid SID] [-phid PHID] [-rid RID] [-client IP]
+                                      [-param PAIRS] [-timestamp TIME]  // -> request_token
     ncbi_applog stop_request  <token> -status STATUS [-input N] [-output N] [-timestamp TIME]
     ncbi_applog post          <token> [-severity SEV] [-timestamp TIME] -message MESSAGE
     ncbi_applog extra         <token> [-param PAIRS]  [-timestamp TIME]
@@ -68,12 +70,13 @@
     ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-logsite]
                                       [-pid] [-rid] [-sid] [-srvport] [-app_start_time] [-req_start_time]
 
-Special commands (must be used without <token> parameter):
+  Special commands (must be used without <token> parameter):
     ncbi_applog raw           -file <applog_formatted_logs.txt> [-logsite SITE]
     ncbi_applog raw           -file - [-logsite SITE]
-Note, that ncbi_applog will skip any line in non-applog format.
 
-Environment/registry settings:
+  Note, that ncbi_applog will skip any line in non-applog format.
+
+  Environment/registry settings:
      1) Logging CGI (used if /log is not accessible on current machine)
             Registry file:
                 [NCBI]
@@ -108,7 +111,9 @@ USING_NCBI_SCOPE;
 /// Default CGI used by default if /log directory is not writable on current machine.
 /// Can be redefined in the configuration file.
 const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
+//#if DEBUG
 //const char* kDefaultCGI = "http://intrawebdev2.be-md/staff/ivanov/ncbi_applog.cgi";
+//#endif
 
 
 /// Regular expression to check lines of raw logs.
@@ -235,6 +240,8 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("sid", "SID", "Session ID (application-wide value). Each request can have it's own session identifier.", CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey
+            ("phid", "PHID", "Hit ID (application-wide value). Each request can have it's own hit identifier.", CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey
@@ -286,6 +293,8 @@ void CNcbiApplogApp::Init(void)
             ("token", "Session token, obtained from stdout for <start_app> command or previous request.", CArgDescriptions::eString);
         arg->AddDefaultKey
             ("sid", "SID", "Session ID.", CArgDescriptions::eString, kEmptyStr);
+        arg->AddDefaultKey
+            ("phid", "PHID", "Hit ID.", CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey
             ("rid", "RID", "Request ID number (0 if not specified).", CArgDescriptions::eInteger, "0");
         arg->AddDefaultKey
@@ -627,8 +636,9 @@ string CNcbiApplogApp::GenerateToken(ETokenType type) const
 ETokenType CNcbiApplogApp::ParseToken()
 {
     // Minimal token looks as:
-    //     "name=STR&pid=NUM&guid=HEX&asid=STR&atime=N.N"
-    // Also, can have: 'rsid', 'rtime', 'client', 'host', 'srvport', 'logsite'.
+    //     "name=STR&pid=NUM&guid=HEX&atime=N.N"
+    // Also, can have: 
+    //     asid, rsid, rtime, client, host, srvport, logsite.
 
     ETokenType type = eApp;
 
@@ -752,7 +762,7 @@ void CNcbiApplogApp::SetInfo()
     g_info->psn   = 0;
     g_ctx->tsn    = 0;
     
-    // We dont have serial posting numbers, so replace it with
+    // We don't have serial posting numbers, so replace it with
     // generated ID, it should increase with each posting and this is enough.
     // Next formula used:
     //     ((time from app start in microseconds) / 100) % numeric_limits<Uint4>::max()
@@ -786,12 +796,12 @@ void CNcbiApplogApp::SetInfo()
     if (!m_Info.client.empty()) {
         NcbiLog_SetClient(m_Info.client.c_str());
     }
-    // If session ID (SID) is not passed to start_request, 
-    // the application-wide session ID will be used.
+    // Session ID
+    if (!m_Info.sid_app.empty()) {
+        NcbiLog_AppSetSession(m_Info.sid_app.c_str());
+    }
     if (!m_Info.sid_req.empty()) {
         NcbiLog_SetSession(m_Info.sid_req.c_str());
-    } else if (!m_Info.sid_app.empty()) {
-        NcbiLog_SetSession(m_Info.sid_app.c_str());
     }
 }
 
@@ -1023,7 +1033,7 @@ int CNcbiApplogApp::Run(void)
     // -----------------------------------------------------------------------
 
     // -----  start_app  -----------------------------------------------------
-    // ncbi_applog start_app -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE] -> token
+    // ncbi_applog start_app -pid PID -appname NAME [-host HOST] [-sid SID] [-phid PHID] [-logsite SITE] -> token
 
     if (cmd == "start_app") {
         m_Info.pid  = args["pid"].AsInteger();
@@ -1033,7 +1043,10 @@ int CNcbiApplogApp::Run(void)
         }
         m_Info.sid_app = args["sid"].AsString();
         if (m_Info.sid_app.empty()) {
-            m_Info.sid_app = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
+            m_Info.sid_app = GetEnvironment().Get("HTTP_NCBI_SID");
+            if (m_Info.sid_app.empty()) {
+                m_Info.sid_app = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
+            }
         }
         m_Info.logsite = args["logsite"].AsString();
         if (m_Info.logsite.empty()) {
@@ -1045,6 +1058,17 @@ int CNcbiApplogApp::Run(void)
         if (!m_Info.logsite.empty()) {
             string extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
             NcbiLogP_ExtraStr(extra.c_str());
+        }
+        // Print hit id if specified
+        string phid = args["phid"].AsString();
+        if (phid.empty()) {
+            phid = GetEnvironment().Get("HTTP_NCBI_PHID");
+            if (phid.empty()) {
+                phid = GetEnvironment().Get("NCBI_LOG_HIT_ID");
+            }
+        }
+        if (!phid.empty()) {
+            NcbiLogP_LogHitID(NStr::URLEncode(phid).c_str());
         }
         token_gen_type = eApp;
     } else 
@@ -1059,11 +1083,12 @@ int CNcbiApplogApp::Run(void)
     } else  
 
     // -----  start_request  -------------------------------------------------
-    // ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] -> request_token
+    // ncbi_applog start_request <token> [-sid SID] [-phid PHID] [-rid RID] [-client IP] [-param PAIRS] -> request_token
 
     if (cmd == "start_request") {
         m_Info.sid_req = args["sid"].AsString();
         m_Info.rid = args["rid"].AsInteger();
+        // Adjust request identifier.
         // It will be increased back inside the C Logging API
         if (m_Info.rid) {
             m_Info.rid--;
@@ -1083,6 +1108,11 @@ int CNcbiApplogApp::Run(void)
                 params = extra + "&" + params;
                 NcbiLogP_ReqStartStr(params.c_str());
             }
+        }
+        // Print hit id if specified
+        string phid = args["phid"].AsString();
+        if (!phid.empty()) {
+            NcbiLogP_LogHitID(NStr::URLEncode(phid).c_str());
         }
         token_gen_type = eRequest;
     } else 

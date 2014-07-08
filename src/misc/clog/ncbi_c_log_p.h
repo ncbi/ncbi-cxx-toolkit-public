@@ -51,6 +51,7 @@ extern "C" {
 #define NCBILOG_HOST_MAX     256
 #define NCBILOG_CLIENT_MAX   256
 #define NCBILOG_SESSION_MAX  256
+#define NCBILOG_HITID_MAX    256
 #define NCBILOG_APPNAME_MAX  1024
 
 
@@ -105,11 +106,19 @@ struct SInfo_tag {
     TNcbiLog_Counter  psn;                      /**< Serial number of the posting within the process     */
     STime             post_time;                /**< GMT time at which the message was posted, 
                                                      use current time if it is not specified (equal to 0)*/
-    int/*bool*/       user_posting_time;        /**< If TRUE use post_time as is, and never change it    */
+    int/*bool*/       user_posting_time;        /**< If 1 use post_time as is, and never change it       */
     char              host[NCBILOG_HOST_MAX+1]; /**< Name of the host where the process runs 
                                                      (UNK_HOST if unknown)                               */
-    char              appname[3*NCBILOG_APPNAME_MAX+1]; /**< Name of the application (UNK_APP if unknown)*/
-    
+    char              appname[3*NCBILOG_APPNAME_MAX+1];
+                                                /**< Name of the application (UNK_APP if unknown)        */
+    char              client[NCBILOG_CLIENT_MAX+1];       
+                                                /**< App-wide client IP address (UNK_CLIENT if unknown)  */
+    char              session[3*NCBILOG_SESSION_MAX+1];    
+                                                /**< App-wide session ID (UNK_SESSION if unknown)        */
+    char              phid[3*NCBILOG_HITID_MAX+1];    
+                                                /**< App-wide hit ID (empty string if unknown)           */
+    int/*bool*/       phid_is_logged;           /**< 1 if request 'phid' has already logged              */
+    unsigned int      phid_sub_id;              /**< App-wide sub-hit ID counter                         */
     char*             message;                  /**< Buffer used to collect a message and log it         */
 
     /* Control parameters */
@@ -146,9 +155,15 @@ struct SContext_tag {
                                                 /**< Local value, use global value if equal to 0         */
     ENcbiLog_AppState state;                    /**< Application state                                   */
                                                 /**< Local value, use global value if eNcbiLog_NotSet    */
-    char  client  [NCBILOG_CLIENT_MAX+1];       /**< Client IP address (UNK_CLIENT if unknown)           */
-    char  session [3*NCBILOG_SESSION_MAX+1];    /**< Session ID (UNK_SESSION if unknown)                 */
-    STime req_start_time;                       /**< Rrequest start time                                 */
+    char  client [NCBILOG_CLIENT_MAX+1];        /**< Request specific client IP address                  */
+    int/*bool*/  is_client_set;                 /**< 1 if request 'client' has set, even to empty        */
+    char  session[3*NCBILOG_SESSION_MAX+1];     /**< Request specific session ID                         */
+    int/*bool*/  is_session_set;                /**< 1 if request 'session' has set, even to empty       */
+    char  phid   [3*NCBILOG_HITID_MAX+1];       /**< Request specific hit ID                             */
+    int/*bool*/  phid_is_logged;                /**< 1 if request 'phid' has already logged              */
+    unsigned int phid_sub_id;                   /**< Request specific sub-hit ID counter                 */
+
+    STime req_start_time;                       /**< Request start time                                  */
 };
 typedef struct SContext_tag TNcbiLog_Context_Data;
 
@@ -208,6 +223,14 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params);
  *  @sa NcbiLog_Extra
  */
 extern void NcbiLogP_ExtraStr(const char* params);
+
+
+/** Force log specified hit ID.
+ *  This method is not used in the C Logging API, but needed for
+ *  ncbi_applog utility. 
+ *  'hit_id' parameter should be preliminary URL-encoded.
+ */
+extern void NcbiLogP_LogHitID(const char* hit_id);
 
 
 /** Post already prepared line in applog format to the applog.
