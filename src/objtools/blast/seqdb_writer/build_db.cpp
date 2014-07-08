@@ -719,10 +719,15 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     } else {
         iflags |= CFastaReader::fNoParseID;
     }
+
+    iflags |= CFastaReader::fQuickIDCheck;
     
     TFlags flags = (TFlags) iflags;
     
     m_FastaReader = new CFastaReader(*m_LineReader, flags);
+    m_FastaReader->IgnoreProblem(ILineError::eProblem_ModifierFoundButNoneExpected);
+    m_FastaReader->IgnoreProblem(ILineError::eProblem_TooManyAmbiguousResidues);
+    
 }
 
 CFastaBioseqSource::~CFastaBioseqSource()

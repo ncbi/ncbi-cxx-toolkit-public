@@ -274,6 +274,9 @@ CBlastFastaInputSource::x_InitInputReader()
    	flags+= CFastaReader::fHyphensIgnoreAndWarn;
 
     flags+= CFastaReader::fDisableNoResidues;
+    // Do not check more than few characters in local ID for illegal characters.
+    // Illegal characters can be things like = and we want to let those through.
+    flags+= CFastaReader::fQuickIDCheck;
 
     if (m_Config.GetDataLoaderConfig().UseDataLoaders()) {
         m_InputReader.reset
@@ -287,6 +290,8 @@ CBlastFastaInputSource::x_InitInputReader()
         m_InputReader.reset(new CCustomizedFastaReader(*m_LineReader, flags,
                                        m_Config.GetSeqLenThreshold2Guess()));
     }
+
+    m_InputReader->IgnoreProblem(ILineError::eProblem_ModifierFoundButNoneExpected);
 
     CRef<CSeqIdGenerator> idgen
         (new CSeqIdGenerator(m_Config.GetLocalIdCounterInitValue(),
