@@ -41,15 +41,15 @@ public class ArgsParser {
     private String m_BuildRoot, m_BuildRootToSolution;
     private String m_SolutionPath, m_SolutionFile, m_SolutionFileExt;
     private String m_extroot, m_projtag, m_ide, m_arch, m_logfile, m_conffile;
-    private String m_Unknown;
+    private String m_Libdep, m_Unknown;
     private boolean m_dll;
-    public boolean m_nobuildptb, m_ext, m_nws, m_i, m_dtdep;
+    public boolean m_nobuildptb, m_ext, m_nws, m_i, m_dtdep, m_noadddep;
     private boolean m_projtagFromLst;
     private String m_ArgsFile;
 
     public ArgsParser() {
         m_Undef = new String("UNDEFINED");
-        m_dll = m_nobuildptb = m_ext = m_nws = false;
+        m_dll = m_nobuildptb = m_ext = m_nws = m_noadddep = false;
         m_i = m_dtdep = false;
         m_Unknown = new String();
         m_nCmd = 0;
@@ -76,6 +76,7 @@ public class ArgsParser {
                     case cfg:        --m_nCmd;            break;
                     case i:          m_i          = true; break;
                     case dtdep:      m_dtdep      = true; break;
+                    case noadddep:   m_noadddep   = true; break;
                 }
             } else {
                 if (dest != eArg.undefined) {
@@ -91,6 +92,9 @@ public class ArgsParser {
                             break;
                         case conffile:
                             m_conffile = toCanonicalPath(args[i]);
+                            break;
+                        case libdep:
+                            m_Libdep = args[i];
                             break;
                         case args:
                             m_ArgsFile = toCanonicalPath(args[i]);
@@ -177,6 +181,13 @@ public class ArgsParser {
             if (m_dtdep) {
                 vcmd.add("-" + eArg.dtdep.toString());
             }
+            if (m_noadddep) {
+                vcmd.add("-" + eArg.noadddep.toString());
+            }
+            if (m_Libdep != null && m_Libdep.length() != 0) {
+                vcmd.add("-" + eArg.libdep.toString());
+                vcmd.add(m_Libdep);
+            } /*else if (m_projtagFromLst) {
             if (m_nws) {
                 vcmd.add("-" + eArg.nws.toString());
             }
@@ -369,6 +380,8 @@ public class ArgsParser {
         cfg,
         i,
         dtdep,
+        noadddep,
+        libdep,
         args
     }
     private eArg toEnum(String a) {
