@@ -246,7 +246,10 @@ void s_FindBestSubRange(const CMergeTree& Tree, const TEquivList& Path)
 {
 
     int F = 0, L = 0;
-    int BF = numeric_limits<int>::max(), BL = -1;
+#ifdef MERGE_TREE_VERBOSE_DEBUG
+    int BF = numeric_limits<int>::max();
+#endif
+    int BL = -1;
     int BestScore = numeric_limits<int>::min();
 
     TEquivList CurrPath;
@@ -266,7 +269,9 @@ void s_FindBestSubRange(const CMergeTree& Tree, const TEquivList& Path)
         CurrPath.insert(CurrPath.begin(),Path[F]);
         int CurrScore = Tree.Score(CurrPath);
         if(CurrScore >= BestScore) {
+#ifdef MERGE_TREE_VERBOSE_DEBUG
             BF = F;
+#endif
             BestScore = CurrScore;
         }
     }
@@ -621,7 +626,9 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
             }
         }
         
+#ifdef MERGE_TREE_VERBOSE_DEBUG
         int AccumScore = 0;
+#endif
         TEquivList AccumEquivs;
         for(int Loop = 0; Loop < 3; Loop++) {
         ITERATE(TAlignEquivListMap, OrigAlignIter, AlignEquivs) {
@@ -655,10 +662,11 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
                 if(Path.empty())
                     break;
                 
-                int NewScore = Tree.Score(Path);
 #ifdef MERGE_TREE_VERBOSE_DEBUG
+                int NewScore = Tree.Score(Path);
                 if(AccumScore > NewScore)
                     cerr << "BACKWARDS!" << endl;
+                AccumScore = NewScore;
 #endif
 
                 //AccumEquivs.clear();
@@ -666,7 +674,6 @@ void CTreeAlignMerger::Merge_Pairwise(const list< CRef<CSeq_align> >& Input,
                 EquivRangeBuilder.MergeAbuttings(Path, Abutted);
                 sort(Abutted.begin(), Abutted.end());
                 s_EquivDiff(AccumEquivs, Abutted);
-                AccumScore = NewScore;
                 AccumEquivs = Abutted;
                 //AccumEquivs.insert(AccumEquivs.end(), Path.begin(), Path.end());
 
@@ -768,7 +775,7 @@ CTreeAlignMerger::x_MakeSeqAlign(TEquivList& Equivs,
 		CRef<CDense_seg> Temp = Denseg.FillUnaligned();
 		Denseg.Assign(*Temp);
 	} catch(CException& e) {
-		LOG_POST(Error << MSerial_AsnText << Denseg);
+		LOG_POST(Error << e.ReportAll() << MSerial_AsnText << Denseg);
         throw;
 	}
 	Denseg.Compact();
@@ -777,7 +784,7 @@ CTreeAlignMerger::x_MakeSeqAlign(TEquivList& Equivs,
 		New->Validate(true);
 		return New;
 	} catch(CException& e) {
-		LOG_POST(Error << MSerial_AsnText << Denseg);
+		LOG_POST(Error << e.ReportAll() << MSerial_AsnText << Denseg);
         throw;
 	}
 
@@ -846,23 +853,19 @@ void CAlignDistGraph::Print()
         cerr << "NearestMap: " << NearestMap.size() << endl;
         cerr << "NearestDistMap: " << NearestDistMap.size() << endl;
         cerr << "AlignEquivMap: " << AlignEquivMap.size() << endl;
-#endif
         TSeqPos MinD = numeric_limits<TSeqPos>::max();
         size_t MinI;
         ITERATE(TIndexIndexMap, IndexIter, NearestMap) {
             size_t CI = IndexIter->first;
-            size_t OI = IndexIter->second;
             TSeqPos CD = NearestDistMap[CI];
-#ifdef MERGE_TREE_VERBOSE_DEBUG
+            size_t OI = IndexIter->second;
             cerr << "Near Pair : " << CI << " x " << OI << " => " << CD << endl;
-#endif
             
             if(CD < MinD) {
                 MinD = CD;
                 MinI = CI;
             }
         }
-#ifdef MERGE_TREE_VERBOSE_DEBUG
         cerr << "Minimum : " << MinI << " => " << MinD << endl;
         if(AlignEquivMap.size() != NearestMap.size()) {
             ITERATE(TAlignEquivListMap, AlignIter, AlignEquivMap) {

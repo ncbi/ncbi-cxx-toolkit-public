@@ -232,7 +232,7 @@ void CMergeTree::AddEquiv(CEquivRange NewEquiv)
     }
 
     if(HasAfters) { 
-        size_t BUps=0, BDowns=0;
+        //size_t BUps=0, BDowns=0;
         int MaxUD=0, MaxDD=0;
         if(Befores.empty()) {
             ITERATE(set<TMergeNode>, LeafIter, m_Leaves) {
@@ -242,7 +242,7 @@ void CMergeTree::AddEquiv(CEquivRange NewEquiv)
                 MaxUD = max(MaxUD, Depth);
             }
             Explored.clear(); Inserted.clear();
-            BUps = Befores.size();
+            //BUps = Befores.size();
         }
         
         if(Befores.empty()) {
@@ -250,7 +250,7 @@ void CMergeTree::AddEquiv(CEquivRange NewEquiv)
             // and because of input sorting, finds them in less time than top-down
             x_FindBefores(NewNode, m_Root, Befores, Explored, Inserted, MaxDD);
             Explored.clear(); Inserted.clear();
-            BDowns = Befores.size();
+            //BDowns = Befores.size();
         }
 
         #ifdef MERGE_TREE_VERBOSE_DEBUG
@@ -776,16 +776,18 @@ void CMergeTree::Search(TEquivList& Path, bool Once)
 TMergeNode CMergeTree::x_Search_Recur(TMergeNode CurrNode, 
                                 TBitVec& Explored, TMergeNode& UnBest)
 {
+#ifdef MERGE_TREE_VERBOSE_DEBUG
     bool DEBUG_CURR_NODE = false;
     if(CurrNode->Id == -1)
         DEBUG_CURR_NODE = true;
+#endif
     
 
     if(Explored.get(CurrNode->Id)) {
 #ifdef MERGE_TREE_VERBOSE_DEBUG
         if(DEBUG_CURR_NODE) cerr << __LINE__ << endl;
 #endif
-            return CurrNode;
+        return CurrNode;
     }
 
     Explored.set(CurrNode->Id, true);
@@ -939,10 +941,12 @@ TMergeNode CMergeTree::x_Search_Iter(TMergeNode StartNode,
             continue;
         }
 
+#ifdef MERGE_TREE_VERBOSE_DEBUG
         bool DEBUG_CURR_NODE = false;
         if(Frame->CurrNode->Id == -1)
             DEBUG_CURR_NODE = true;
-
+#endif
+        
         if(Explored.get(Frame->CurrNode->Id)) {
 #ifdef MERGE_TREE_VERBOSE_DEBUG
             if(DEBUG_CURR_NODE) cerr << __LINE__ << endl;
