@@ -404,7 +404,7 @@ CGencollIdMapper::x_Init(void)
     }}
     {{
         SSeqMapSelector  Sel;
-        Sel.SetResolveCount(-1);
+        Sel.SetResolveCount(numeric_limits<size_t>::max());
         m_DownMapper_Deep.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Down, Sel));
     }}
 
