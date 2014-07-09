@@ -358,7 +358,7 @@ bool CGff2Reader::x_ParseFeatureGff(
     //  Parse the record and determine which ID the given feature will pertain 
     //  to:
     //
-    CGff2Record* pRecord = x_CreateRecord();
+    auto_ptr<CGff2Record> pRecord(x_CreateRecord());
     try {
         pRecord->AssignFromGff(strLine);
     }
@@ -405,7 +405,6 @@ bool CGff2Reader::x_ParseFeatureGff(
         annots.push_back( pAnnot );      
     }
  
-    delete pRecord;
     return true; 
 };
 
@@ -660,10 +659,14 @@ bool CGff2Reader::xAlignmentSetSegment(
     
     string gapInfo;
     vector<string> gapParts;
-    if (!gff.GetAttribute("Gap", gapInfo)) {
-        return false;
+    if (gff.GetAttribute("Gap", gapInfo)) 
+    {
+        NStr::Tokenize(gapInfo, " ", gapParts);
     }
-    NStr::Tokenize(gapInfo, " ", gapParts);
+    else
+    {
+        gapParts.push_back(string("M") + NStr::IntToString(gff.SeqStop()-gff.SeqStart()+1));
+    }
     int gapCount = gapParts.size();
 
     //meta
@@ -707,7 +710,7 @@ bool CGff2Reader::xAlignmentSetSegment(
     }
     //lengths
     for (int i=0; i < gapCount; ++i) {
-        denseg.SetLens().push_back(NStr::StringToInt(gapParts[i].substr(1)));
+        denseg.SetLens().push_back(NStr::StringToInt(CTempString(gapParts[i],1,string::npos)));
     }
     //strands
     ENa_strand targetStrand = eNa_strand_plus;
@@ -875,7 +878,6 @@ bool CGff2Reader::x_FeatureTrimQualifiers(
     // if so, and with the same value, then the qualifier is allowed to live
     // otherwise it is subfeature specific and hence removed from the feature
     TQual& quals = pFeature->SetQual();
-    const TAttrs& attrs = record.Attributes();
     for (TQual::iterator it = quals.begin(); it != quals.end(); /**/) {
         const string& qualKey = (*it)->GetQual();
         if (NStr::StartsWith(qualKey, "gff_")) {
@@ -1213,6 +1215,7 @@ CGff2Reader::x_ParseDbtag(
 //  ============================================================================
 {
     CRef< CDbtag > pDbtag( new CDbtag() );
+    static const char* digits = "0123456789";
     string strDb, strTag;
     NStr::SplitInTwo( str, ":", strDb, strTag );
 
@@ -1226,12 +1229,11 @@ CGff2Reader::x_ParseDbtag(
 
     if ( ! strTag.empty() ) {
         pDbtag->SetDb( strDb );
-        try {
+        if (strTag.find_first_not_of(digits, 0) == string::npos)
             pDbtag->SetTag().SetId( NStr::StringToUInt( strTag ) );
-        }
-        catch ( ... ) {
+        else
             pDbtag->SetTag().SetStr( strTag );
-        }
+
     }
     else {
         pDbtag->SetDb( "unknown" );
