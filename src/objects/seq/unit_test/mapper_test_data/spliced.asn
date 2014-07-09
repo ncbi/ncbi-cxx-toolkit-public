@@ -354,3 +354,179 @@ Seq-align ::= {
     product-length 100
   }
 }
+
+-- Trimming indels: mapping alignment
+Seq-align ::= {
+  type disc,
+  segs disc {
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 2,
+        ids {
+          gi 4,
+          gi 5
+        },
+        starts {
+          10,
+          100,
+          30,
+          130
+        },
+        lens {
+          20,
+          20
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 2,
+        ids {
+          gi 4,
+          gi 5
+        },
+        starts {
+          50,
+          160,
+          70,
+          190
+        },
+        lens {
+          20,
+          20
+        }
+      }
+    }
+  }
+}
+-- Trimming indels: original
+Seq-align ::= {
+  type partial,
+  segs spliced {
+    product-id gi 2,
+    genomic-id gi 4,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1000,
+        product-end nucpos 1084,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 15,
+          genomic-ins 10,
+          diag 20,
+          genomic-ins 5,
+          match 50
+        }
+      }
+    }
+  }
+}
+-- Trimming indels: mapped
+Seq-align ::= {
+  type partial,
+  segs spliced {
+    product-id gi 2,
+    genomic-id gi 5,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1010,
+        product-end nucpos 1034,
+        genomic-start 100,
+        genomic-end 149,
+        parts {
+          match 5,
+          genomic-ins 10,
+          diag 5,
+          genomic-ins 10,
+          diag 15,
+          genomic-ins 5
+        }
+      },
+      {
+        product-start nucpos 1035,
+        product-end nucpos 1074,
+        genomic-start 160,
+        genomic-end 209,
+        parts {
+          match 20,
+          genomic-ins 10,
+          match 20
+        }
+      }
+    }
+  }
+}
+-- Trimming indels: original-2
+Seq-align ::= {
+  type partial,
+  segs spliced {
+    product-id gi 2,
+    genomic-id gi 4,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1000,
+        product-end nucpos 1079,
+        genomic-start 0,
+        genomic-end 99,
+        parts {
+          match 15,
+          genomic-ins 10,
+          diag 20,
+          genomic-ins 10,
+          match 45
+        }
+      }
+    }
+  }
+}
+-- Trimming indels: mapped-2
+Seq-align ::= {
+  type partial,
+  segs spliced {
+    product-id gi 2,
+    genomic-id gi 5,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1010,
+        product-end nucpos 1034,
+        genomic-start 100,
+        genomic-end 149,
+        parts {
+          match 5,
+          genomic-ins 10,
+          diag 5,
+          genomic-ins 10,
+          diag 15,
+          genomic-ins 5
+        }
+      },
+      {
+        product-start nucpos 1035,
+        product-end nucpos 1069,
+        genomic-start 160,
+        genomic-end 209,
+        parts {
+          genomic-ins 5,
+          match 15,
+          genomic-ins 10,
+          match 20
+        }
+      }
+    }
+  }
+}

@@ -602,6 +602,14 @@ void TestMapping_Spliced()
     mapper.reset(CreateMapperFromSeq_locs(in));
     cout << "  Mapping spliced-seg through multiple ranges" << endl;
     TestMappingSeq_align(*mapper, in);
+
+    CSeq_align mapping;
+    in >> MSerial_AsnText >> mapping;
+    mapper.reset(new CSeq_loc_Mapper_Base(mapping, 1));
+    cout << "  Trimming indels" << endl;
+    TestMappingSeq_align(*mapper, in);
+    cout << "  Trimming indels - 2" << endl;
+    TestMappingSeq_align(*mapper, in);
 }
 
 
