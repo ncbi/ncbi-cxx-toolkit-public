@@ -485,7 +485,7 @@ RecalculateExonIdty(CSpliced_exon &exon)
     if (!exon.IsSetScores())
         return;
 
-    long idty = -1;
+    Int8 idty = -1;
     if (exon.IsSetParts()) {
         int matches = 0;
         int total = 0;
@@ -514,7 +514,7 @@ RecalculateExonIdty(CSpliced_exon &exon)
                 break;
             }
         }
-        idty = matches * 10000000000l / total;
+        idty = matches * NCBI_CONST_INT8(10000000000) / total;
     }
 
     CScore_set::Tdata& exon_scores = exon.SetScores().Set();
