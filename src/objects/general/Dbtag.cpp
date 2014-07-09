@@ -549,7 +549,7 @@ static const char kHomdSeq[] = "http://www.homd.org/seq=";
 // but NOT entirely, in case-sensitive ASCII-betical order as above)
 typedef SStaticPair<CDbtag::EDbtagType, const char*>    TDbtUrl;
 static const TDbtUrl sc_url_prefix[] = {
-    { CDbtag::eDbtagType_AFTOL, "http://aftol1.biology.duke.edu/pub/displayTaxonInfo?aftol_id=" },
+    { CDbtag::eDbtagType_AFTOL, "http://wasabi.lutzonilab.net/pub/displayTaxonInfo?aftol_id=" },
     { CDbtag::eDbtagType_APHIDBASE, "http://webapps1.genouest.org/grs-1.0/grs?reportID=chado_genome_report&objectID=" },
     { CDbtag::eDbtagType_ASAP, "https://asap.ahabs.wisc.edu/annotation/php/feature_info.php?FeatureID=" },
     { CDbtag::eDbtagType_ATCC, "http://www.atcc.org/Products/All/" },
