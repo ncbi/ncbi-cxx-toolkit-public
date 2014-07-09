@@ -459,19 +459,15 @@ const CDir&  CArg_Dir::AsDirectory() const
 CArg_DateTime::CArg_DateTime(const string& name, const string& value)
     : CArg_String(name, value)
 {
-    string v(value);
-    bool hasZ = v.size() != 0 && v[v.size()-1] == 'Z';
-    if (hasZ) {
-        v[v.size()-1] = 'G';
-        v += "MT";
-    }
+    bool hasZ = value.size() != 0 && value[value.size()-1] == 'Z';
     const char* fmt[] = {"Y-M-DTh:m:s.l", "Y/M/D h:m:s.l", nullptr};
     bool res = false;
     for (int i = 0; !res && fmt[i]; ++i) {
-        string f(fmt[i]);
-        if (hasZ) {f += 'Z';}
         try {
-            new (&m_DateTime) CTime(v,CTimeFormat( f, CTimeFormat::fMatch_Weak | CTimeFormat::fFormat_Simple));
+            new (&m_DateTime) CTime(
+                value,
+                CTimeFormat( fmt[i], CTimeFormat::fMatch_Weak | CTimeFormat::fFormat_Simple),
+                hasZ ? CTime::eGmt : CTime::eLocal);
             res = true;
         } catch (...) {
         }
