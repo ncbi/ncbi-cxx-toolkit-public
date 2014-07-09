@@ -430,7 +430,7 @@ protected:
 
     // genomic sequence
     vector<char>          m_genomic;
-    CRef<objects::CSeqMap>         m_GenomicSeqMap;
+    CConstRef<objects::CSeqMap>         m_GenomicSeqMap;
 
     // max space to look beyond end hits
     size_t                m_max_genomic_ext;

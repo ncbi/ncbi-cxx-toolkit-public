@@ -622,7 +622,7 @@ void CSplign::x_LoadSequence(vector<char>* seq,
                 CRef<CSeq_id> tmp_id(new CSeq_id());
                 tmp_id->Assign(seqid);
                 CSeq_loc tmp_loc(*tmp_id, start, finish, strand);
-                m_GenomicSeqMap = CSeqMap::CreateSeqMapForSeq_loc(tmp_loc, GetScope());
+                m_GenomicSeqMap = CSeqMap::GetSeqMapForSeq_loc(tmp_loc, GetScope());
             }
             seq->resize(1 + finish - start);
             copy(s.begin(), s.end(), seq->begin());
@@ -1933,7 +1933,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 } else {
                     TSeqPos from =  prev->m_box[3];
                     TSeqPos length = ii->m_box[2] - prev->m_box[3] + 1;
-                    if(m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),  from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) { //gap, trim.
+                    if(m_GenomicSeqMap && m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),  from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) { //gap, trim.
                         
                         /* TEST OUTPUT   
                         CSeqMap_CI smit = m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),   from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
