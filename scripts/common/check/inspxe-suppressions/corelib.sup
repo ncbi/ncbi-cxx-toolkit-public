@@ -34,7 +34,7 @@ suppression = {
 	stacks = {
 		allocation={
 			!!!;
-			func=InitializeStatic,src=ncbimtx.cpp,line=155,func_line=13;
+			func=InitializeStatic,src=ncbimtx.cpp;
 		}
 	}
 }
@@ -54,7 +54,17 @@ suppression = {
 	stacks = {
 		allocation={
 			!!!;
-			mod=test_ncbi_system.exe,func=CInternalRWLock,src=ncbimtx.cpp,line=579,func_line=2;
+			mod=test_ncbi_system.exe,func=CInternalRWLock,src=ncbimtx.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ncbimtx.cpp - CInternalRWLock - synchronization object handle problem"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			src=ncbimtx.cpp,func=CInternalRWLock;
 		}
 	}
 }
@@ -84,7 +94,7 @@ suppression = {
 	stacks = {
 		allocation={
 			...;
-			func=SetDiagStream,src=ncbidiag.cpp,line=6510,func_line=14;
+			func=SetDiagStream,src=ncbidiag.cpp;
 		}
 	}
 }
@@ -104,7 +114,7 @@ suppression = {
 	stacks = {
 		allocation={
 			...;
-			func=x_Init,src=ncbi_safe_static.hpp,line=416,func_line=6;
+			func=x_Init,src=ncbi_safe_static.hpp;
 		}
 	}
 }

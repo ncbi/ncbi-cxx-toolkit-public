@@ -8,3 +8,13 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "s_CORE_MT_Lock_default_handler - leaked handle"
+	type = {kernel_handle_leak}
+	stacks = {
+		allocation={
+			!!!;
+			src=ncbi_core.c,func=s_CORE_MT_Lock_default_handler;
+		}
+	}
+}
