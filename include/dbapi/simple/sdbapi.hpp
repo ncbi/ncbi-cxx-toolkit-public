@@ -1051,6 +1051,10 @@ void CSDB_DeadlockException::x_InitErrCode(CException::EErrCode err_code)
 inline
 CSDB_ConnectionParam::CSDB_ConnectionParam(const string& url_string /* = kEmptyStr */)
 {
+    if (url_string.empty()) {
+        return;
+    }
+
     if (NStr::StartsWith(url_string, "dbapi://"))
         m_Url.SetUrl(url_string);
     else
