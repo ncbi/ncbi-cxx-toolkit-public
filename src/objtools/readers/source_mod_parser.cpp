@@ -797,8 +797,8 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CProt_ref>& prot)
         prot->SetName().push_back(mod->value);
     }
 
-    // prot_desc
-    if ((mod = FindMod("prot_desc")) != NULL) {
+    // prot[ein]_desc
+    if ((mod = FindMod("prot_desc", "protein_desc")) != NULL) {
         prot->SetDesc( mod->value );
     }
     
