@@ -18618,6 +18618,20 @@ BOOST_AUTO_TEST_CASE(Test_OrgModAutofix)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_RmCultureNotes)
+{
+    CRef<CSubSource> ss(new CSubSource());
+    ss->SetSubtype(CSubSource::eSubtype_other);
+    ss->SetName("a; [mixed bacterial source]; b");
+    ss->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->GetName(), "a; b");
+    ss->SetName("[uncultured (using species-specific primers) bacterial source]");
+    ss->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->GetName(), "amplified with species-specific primers");
+   
+}
+
+
 void CheckStrings(vector<string>& seen, vector<string>& expected)
 {
     vector<string>::iterator it1 = seen.begin();

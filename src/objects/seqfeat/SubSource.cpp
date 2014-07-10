@@ -3286,6 +3286,83 @@ void CSubSource::AutoFix()
 }
     
 
+static const char * s_RemovableCultureNotes[] = {
+ "[uncultured (using universal primers)]",
+ "[uncultured (using universal primers) bacterial source]",
+ "[cultured bacterial source]",
+ "[enrichment culture bacterial source]",
+ "[mixed bacterial source (cultured and uncultured)]",
+ "[uncultured]; [universal primers]",
+ "[mixed bacterial source]",
+ "[virus wizard]",
+ "[cDNA derived from mRNA, purified viral particles]",
+ "[cDNA derived from mRNA, whole cell/tissue lysate]",
+ "[cDNA derived from genomic RNA, whole cell/tissue lysate]",
+ "[cDNA derived from genomic RNA, purified viral particles]",
+ "[universal primers]",
+ "[uncultured; wizard]",
+ "[uncultured; wizard; spans unknown]",
+ "[cultured; wizard]",
+ "[cultured; wizard; spans unknown]",
+ "[intergenic wizard]",
+ "[intergenic wizard; spans unknown]",
+ "[Microsatellite wizard]",
+ "[Microsatellite wizard; multiple repeats]",
+ "[D-loop wizard]",
+ "[D-loop wizard; spans unknown]",
+ "[D-loop wizard; spans known]",
+ NULL
+};
+
+static const char * s_ReplaceableCultureNotes[] = {
+ "[uncultured (with species-specific primers)]",
+ "[uncultured]; [amplified with species-specific primers]",
+ "[uncultured (using species-specific primers) bacterial source]",
+ "[amplified with species-specific primers]",
+ NULL
+};
+
+void CSubSource::RemoveCultureNotes (string& value)
+{
+    if (NStr::IsBlank(value)) {
+        return;
+    }
+
+    for (size_t i = 0; s_RemovableCultureNotes[i] != NULL; i++) {
+        string to_remove = s_RemovableCultureNotes[i];
+        size_t remove_len = to_remove.length();
+        size_t pos = NStr::FindNoCase(value, to_remove);
+        while (pos != string::npos) {
+            size_t extra_len = strspn (value.c_str() + pos + remove_len, " ;");
+            value = value.substr(0, pos) + value.substr(pos + remove_len + extra_len);
+            pos = NStr::FindNoCase(value, to_remove);
+        }
+    }
+    // remove leading/trailing semicolons
+    while (NStr::StartsWith(value, " ") || NStr::StartsWith(value, ";")) {
+        value = value.substr(1);
+    }
+    while (NStr::EndsWith(value, " ") || NStr::EndsWith(value, ";")) {
+        value = value.substr(0, value.length() - 1);
+    }
+
+    for (size_t i = 0; s_ReplaceableCultureNotes[i] != NULL; i++) {
+        if (NStr::EqualNocase(value, s_ReplaceableCultureNotes[i])) {
+            value = "amplified with species-specific primers";
+            break;
+        }
+    }
+}
+
+
+void CSubSource::RemoveCultureNotes ()
+{
+    if (IsSetName()) {
+        RemoveCultureNotes(SetName());
+    }
+}
+
+
 // CCountryLine
 CCountryLine::CCountryLine 
 (const string & country_name, double y, double min_x, double max_x, double scale)
@@ -4250,8 +4327,6 @@ int CLatLonCountryMap::AdjustAndRoundDistance (double distance)
 {
   return AdjustAndRoundDistance (distance, m_Scale);
 }
-
-
 
 
 

@@ -183,6 +183,9 @@ public:
     static string AutoFix(TSubtype subtype, const string& value);
     void AutoFix();
 
+    static void RemoveCultureNotes(string& value);
+    void RemoveCultureNotes();
+
 private:
     // Prohibit copy constructor and assignment operator
     CSubSource(const CSubSource& value);
