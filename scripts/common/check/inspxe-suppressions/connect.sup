@@ -18,3 +18,31 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "ConnNetInfo_Create/Clone (1)"
+	type = {uninitialized_memory_access}
+	stacks = {
+		allocation={
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_Create;
+		}
+		{
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_Clone;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_Create/Clone (1)"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		allocation={
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_Create;
+		}
+		{
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_Clone;
+		}
+	}
+}
