@@ -493,17 +493,22 @@ string CSubSource::FixDateFormat (const string& orig_date)
 }
 
 
-// ISO Formate for date is exactly 10 characters long
+// ISO Formate for date is exactly 10 characters long OR exactly 7 characters long.
+// For ten characters:
 // First four characters must be digits, represent year.
 // Fifth character must be dash.
 // Sixth and seventh characters must be digits, represent month, use zero padding.
 // Eighth character must be dash.
 // Ninth and tenth characters must be digits, represent day, use zero padding.
+// For 7 characters:
+// First four characters must be digits, represent year.
+// Fifth character must be dash.
+// Sixth and seventh characters must be digits, represent month, use zero padding.
 bool CSubSource::IsISOFormatDate (const string& orig_date)
 {
     string cpy = orig_date;
     NStr::TruncateSpacesInPlace(cpy);
-    if (cpy.length() != 10) {
+    if (cpy.length() != 10 && cpy.length() != 7) {
         return false;
     }
     bool rval = true;
@@ -524,11 +529,14 @@ bool CSubSource::IsISOFormatDate (const string& orig_date)
         try {
             int year = NStr::StringToInt(cpy.substr(0, 4));
             int month = NStr::StringToInt(cpy.substr(5, 2));
-            int day = NStr::StringToInt(cpy.substr(8, 2));
             if (month < 1 || month > 12) {
                 rval = false;
-            } else if (!IsDayValueOkForMonth(day, month, year)) {
-                rval = false;
+            }
+            if (cpy.length() == 10) { // has day 
+                int day = NStr::StringToInt(cpy.substr(8, 2));
+                if (!IsDayValueOkForMonth(day, month, year)) {
+                    rval = false;
+                }
             }
         } catch (...) {
             rval = false;
@@ -546,10 +554,12 @@ CRef<CDate> CSubSource::GetDateFromISODate(const string& orig_date)
         CRef<CDate> date(new CDate());
         int year_val = NStr::StringToInt(cpy.substr(0, 4));
         int month_val = NStr::StringToInt(cpy.substr(5, 2));
-        int day_val = NStr::StringToInt(cpy.substr(8, 2));
         date->SetStd().SetYear (year_val);
         date->SetStd().SetMonth (month_val);
-        date->SetStd().SetDay (day_val);
+        if (cpy.length() > 7) {
+            int day_val = NStr::StringToInt(cpy.substr(8, 2));
+            date->SetStd().SetDay (day_val);
+        }
         return date;
     } catch (...) {
         return CRef<CDate>(NULL);

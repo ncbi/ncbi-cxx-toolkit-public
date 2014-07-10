@@ -6132,6 +6132,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
     BOOST_CHECK_EQUAL(bad_format, false);
     BOOST_CHECK_EQUAL(in_future, false);
 
+    CSubSource::IsCorrectDateFormat("2014-06", bad_format, in_future);
+    BOOST_CHECK_EQUAL(bad_format, false);
+    BOOST_CHECK_EQUAL(in_future, false);
+
 }
 
 
