@@ -285,7 +285,7 @@ public:
     enum FForkFlags {
         fFF_UpdateDiag      = 1,  ///< Reset diagnostics timer and log an
                                   ///< app-start message in the child process.
-        fFF_AllowExceptions = 2,  ///< Throw an exception if fork(2) failed.
+        fFF_AllowExceptions = 32, ///< Throw an exception if fork(2) failed.
     };
     /// Bit-wise OR of FForkFlags @sa FForkFlags
     typedef unsigned TForkFlags;
