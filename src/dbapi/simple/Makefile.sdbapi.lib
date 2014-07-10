@@ -8,4 +8,4 @@ WATCHERS = ucko
 
 
 USES_LIBRARIES =  \
-    $(XCONNEXT) dbapi ncbi_xdbapi_ftds xconnect xutil
+    $(XCONNEXT) dbapi ncbi_xdbapi_ftds xconnect
