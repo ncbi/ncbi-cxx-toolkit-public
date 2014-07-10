@@ -1040,7 +1040,6 @@ CTest_BlobStorage::x_Remove(void)
 
 // from
 // CNCMessageHandler::x_DoCmd_Remove
-//gur
 #if 0
         m_BlobAccess->SetBlobTTL(m_AppSetup->blob_ttl);
 #else
@@ -1054,12 +1053,10 @@ CTest_BlobStorage::x_Remove(void)
         m_BlobAccess->SetBlobVersion(0);
         int expire = CSrvTime::CurSecs() - 1;
         unsigned int ttl = m_BlobAccess->GetNewBlobTTL();
-//gur
 #if 0
         if (m_BlobAccess->IsBlobExists()  &&  m_BlobAccess->GetCurBlobTTL() > ttl)
             ttl = m_BlobAccess->GetCurBlobTTL();
 #endif
-//gur
         m_BlobAccess->SetNewBlobExpire(expire, expire + ttl + 1);
 
 // from

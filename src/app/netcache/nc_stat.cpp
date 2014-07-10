@@ -804,6 +804,7 @@ CNCStat::PrintToLogs(CTempString stat_name)
 void CNCStat::PrintState(CSrvSocketTask& task)
 {
     string is("\": "), iss("\": \""), eol(",\n\""), str("_str");
+    task.WriteText(eol).WriteText("period"     ).WriteText(iss).WriteText(m_StatName).WriteText("\"");
     task.WriteText(eol).WriteText("db_files"     ).WriteText(is ).WriteNumber( m_EndState.db_files);
     task.WriteText(eol).WriteText("db_size"      ).WriteText(str).WriteText(iss)
                                      .WriteText( NStr::UInt8ToString_DataSize( m_EndState.db_size)).WriteText("\"");

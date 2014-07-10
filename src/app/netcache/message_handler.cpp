@@ -3251,12 +3251,15 @@ CNCMessageHandler::x_DoCmd_Health(void)
 {
     LOG_CURRENT_FUNCTION
     const char* health_coeff = "1";
-    if (CNCBlobStorage::NeedStopWrite())
+    if (CNCBlobStorage::NeedStopWrite()) {
         health_coeff = "0";
-    else if (!CNCServer::IsCachingComplete())
+    } else if (!CNCServer::IsCachingComplete()) {
         health_coeff = "0.1";
-    else if (!CNCServer::IsInitiallySynced())
+    } else if (!CNCServer::IsInitiallySynced()) {
         health_coeff = "0.5";
+    } else if (CNCPeerControl::HasPeerInThrottle()) {
+        health_coeff = "0.8";
+    }
     WriteText("OK:HEALTH_COEFF=").WriteText(health_coeff).WriteText("\n");
     WriteText("OK:UP_TIME=").WriteNumber(CNCServer::GetUpTime()).WriteText("\n");
     WriteText("OK:CACHING_COMPLETE=").WriteText(CNCServer::IsCachingComplete()? "yes": "no").WriteText("\n");
@@ -3337,7 +3340,7 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         } else if (section == "mirror") {
             CNCDistributionConf::WriteSetup(*this);
         } else if (section == "stat") {
-            CSrvRef<CNCStat> stat = CNCStat::GetStat("life", false);
+            CSrvRef<CNCStat> stat = CNCStat::GetStat("1min", false);
             if (stat) {
                 stat->PrintState(*this);
             }
