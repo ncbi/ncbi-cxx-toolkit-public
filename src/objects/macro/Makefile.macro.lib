@@ -8,4 +8,4 @@ WATCHERS = bollin kans chenj
 ASN_DEP = genome_collection seqset
 
 USES_LIBRARIES =  \
-    xser
+    $(SEQ_LIBS) pub
