@@ -1362,9 +1362,7 @@ static void s_InitDestination(const char* logfile_path)
                 }
                 /* server port */
                 if (sx_Info->server_port) {
-                    int n;
-                    n = sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
-                    assert(n > 0);
+                    sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
                     if (s_SetLogFilesDir(xdir)) {
                         sx_Info->reuse_file_names = 1;
                         return;
@@ -2434,10 +2432,12 @@ extern char* NcbiLog_GetNextSubHitID(void)
         return NULL;
     }
     n = sprintf(buf, "%s.%d", hit_id, ++(*sub_id));
-    assert(n > 0);
 
     MT_UNLOCK;
 
+    if (n <= 0) {
+        return NULL;
+    }
     return s_StrDup(buf);
 
 }
