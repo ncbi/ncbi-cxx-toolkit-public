@@ -19,4 +19,4 @@ WATCHERS = lavr
 
 
 USES_LIBRARIES =  \
-    xncbi
+    $(NCBI_C_ncbi) xncbi

@@ -11,4 +11,4 @@ WATCHERS = lavr
 
 
 USES_LIBRARIES =  \
-    $(GNUTLS_LIBS) connect
+    $(GCRYPT_LIBS) $(GNUTLS_LIBS) connect
