@@ -1121,7 +1121,11 @@ void CSplign::Run(THitRefs* phitrefs)
                                       min_singleton_idty_final,
                                       true);
     comps.SetMaxIntron(m_MaxIntron);
-    comps.Run(hitrefs.begin(), hitrefs.end());
+    if( GetTestType() == kTestType_20_28_90_cut20 ) {
+        comps.Run(hitrefs.begin(), hitrefs.end(), GetScope());
+    } else {
+        comps.Run(hitrefs.begin(), hitrefs.end());
+    }
 
     pair<size_t,size_t> dim (comps.GetCounts()); // (count_total, count_unmasked)
     if(dim.second > 0) {
