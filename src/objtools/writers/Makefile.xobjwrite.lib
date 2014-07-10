@@ -21,4 +21,4 @@ SRC = agp_write \
 WATCHERS = ludwigf boukn kornbluh gotvyans
 
 USES_LIBRARIES =  \
-    $(OBJREAD_LIBS) xalnmgr variation_utils variation xutil xncbi
+    $(OBJREAD_LIBS) variation_utils xalnmgr

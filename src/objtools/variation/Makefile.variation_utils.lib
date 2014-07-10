@@ -4,3 +4,5 @@ LIB = variation_utils
 SRC = variation_utils
 
 ASN_DEP = blastdb genome_collection submit variation
+USES_LIBRARIES =  \
+    variation xobjutil
