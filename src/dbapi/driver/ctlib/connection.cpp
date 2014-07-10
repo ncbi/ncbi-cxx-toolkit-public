@@ -708,12 +708,11 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
         if (dbdesc != NULL) {
             p_desc = x_GetNativeITDescriptor(*dbdesc);
         }
-        if (p_desc != NULL
-            &&  static_cast<CTL_ITDescriptor*>(p_desc)->m_Desc.textptrlen <= 0)
-        {
-            return x_SendUpdateWrite(*dbdesc, stream, size);
-        } else {
+        if (p_desc == NULL) {
             return false;
+        } else if (static_cast<CTL_ITDescriptor*>(p_desc)->m_Desc.textptrlen
+                   <= 0) {
+            return x_SendUpdateWrite(*dbdesc, stream, size);
         }
     }
 
