@@ -1299,26 +1299,29 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     }
 
     // output
-    m_outsuffix = m_outsuffix.empty() ?
-                   ((args.find("s") != end) ? args["s"] : ".dr") : m_outsuffix;
+    m_outsuffix 
+       = m_outsuffix.empty() ?
+            ((args.find("s") != end) ? args["s"] : ".dr") : m_outsuffix;
     string output_f = (args.find("o") != end) ? args["o"] : kEmptyStr;
     m_outdir= (args.find("r") != end) ? GetDirStr(args["r"]) : kEmptyStr;
     if (!output_f.empty() && !m_outdir.empty()) {
         NCBI_USER_THROW("-o and -r are incompatible: specify the output file name with the full path.");
     }
-
+    if (m_outdir.empty() && m_indir.empty() && output_f.empty()) {
+        m_outdir = "./";
+    }
     if (output_f.empty() && !thisInfo.infile.empty()) {
        CFile file(thisInfo.infile);
        output_f = file.GetDir() + file.GetBase() + m_outsuffix;
     }
-    if (m_outdir.empty() && m_indir.empty()) m_outdir = "./";
     if (!m_outdir.empty() 
                && !CDir(m_outdir).Exists() && !CDir(m_outdir).Create()) {
        NCBI_USER_THROW("Unable to create output directory " + m_outdir);
     }
 
     thisInfo.output_config.output_f 
-     = output_f.empty() ? 0 : new CNcbiOfstream((m_outdir + output_f).c_str());
+       = output_f.empty() ? 
+             0 : new CNcbiOfstream((m_outdir + output_f).c_str());
     strtmp = (args.find("S") != end) ? args["S"] : "false";
     thisInfo.output_config.summary_report 
        = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t"));
@@ -3405,13 +3408,14 @@ bool CRepConfig :: x_IsExpandable(const string& setting_name)
 
 void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
 {
+   _TRACE("CRepConfig :: x_GoGetRep");
    string strtmp;
    NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
        CRef < CClickableItem > c_item (new CClickableItem);
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp)
                                     != thisInfo.test_item_list.end()) {
- cerr << "GoGetRep " << strtmp << endl;
+ //cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             c_item->expanded = x_IsExpandable(strtmp);
@@ -3432,7 +3436,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            c_item->expanded = x_IsExpandable(strtmp);
            (*it)->GetReport(c_item);
- cerr << "GoGetRep " << (*it)->GetName() << endl;
+ // cerr << "GoGetRep " << (*it)->GetName() << endl;
        }
    }
 };
@@ -3496,10 +3500,10 @@ void CRepConfig :: RunMultiObjects()
       const CBioseq_set* seq_set = dynamic_cast<const CBioseq_set*>(ptr);
       
       if (seq_submit) {
-         thisInfo.seq_submit = CRef <CSeq_submit> ((CSeq_submit*)seq_submit);
+         thisInfo.seq_submit =CRef <CSeq_submit> ((CSeq_submit*)seq_submit);
          if (thisInfo.seq_submit->IsEntrys()) {
            ITERATE (list <CRef <CSeq_entry> >, it,
-                                  thisInfo.seq_submit->GetData().GetEntrys()) {
+                              thisInfo.seq_submit->GetData().GetEntrys()) {
               AddNumEntry();
               CheckThisSeqEntry(*it);
            }
