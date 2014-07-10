@@ -55,6 +55,7 @@
 #include <objects/seq/Seq_literal.hpp>
 
 #include <objmgr/seq_map.hpp>
+#include <objmgr/scope.hpp>
 #include <objmgr/seq_map_ci.hpp>
 
 #include <algorithm>
@@ -72,11 +73,10 @@ public:
     typedef typename THit::TCoord TCoord;
 
     CGapInfo(const CSeq_id& id, CScope *scope) {
+        m_scope = scope;
         m_flipped = false;
         if(scope) {
-            CRef<CSeq_loc> seqloc(new CSeq_loc);
-            seqloc->SetWhole().Assign(id);
-            m_seq_map = CSeqMap::GetSeqMapForSeq_loc(*seqloc, scope);
+            m_seq_map = & (scope->GetBioseqHandle(id).GetSeqMap() );
         }
     }
 
@@ -94,8 +94,8 @@ public:
             to = new_to;
         }
         bool res = false;
-        if(m_seq_map) {
-            CSeqMap_CI it = m_seq_map->ResolvedRangeIterator(m_scope,  from, from - to + 1, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
+        if(m_scope && m_seq_map) {
+            CSeqMap_CI it = m_seq_map->ResolvedRangeIterator(m_scope,  from, to - from + 1, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
             for( ; it; ++it) {
                 CConstRef<CSeq_literal> lit = it.GetRefGapLiteral();
                 if(lit && !lit->IsBridgeable()) {
@@ -753,7 +753,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
 
                         //prohibit to go over non-bridgable gaps in subject
                         if(good) {
-                            if( (hbox[3] <= phcbox[2]) && m_gap_info && m_gap_info->IntersectsNonBridgeableGap(hbox[3], phcbox[2])) {
+                            if( (phcbox[3] <= hbox[2]) && m_gap_info && m_gap_info->IntersectsNonBridgeableGap(phcbox[3], hbox[2])) {
                                 good = false;
                             }
                         }
@@ -1353,10 +1353,10 @@ void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
         }
     }
 
-    CGapInfo<THit> gapi( *(*istart)->GetSubjId(), scope);
 
     // minus
     {{
+        CGapInfo<THit> gapi( *(*istart)->GetSubjId(), scope);
         // flip
         gapi.Flip(minus_subj_min, minus_subj_max);
         for(ii = ib; ii != iplus_beg; ++ii) {
@@ -1392,6 +1392,7 @@ void CCompartmentAccessor<THit>::Run(typename THitRefs::iterator istart,
 
     // plus
     {{
+        CGapInfo<THit> gapi( *(*istart)->GetSubjId(), scope);
         CCompartmentFinder<THit> finder (iplus_beg, ie, &gapi);
         finder.SetPenalty(m_Penalty);
         finder.SetMinMatches(m_MinMatches);
