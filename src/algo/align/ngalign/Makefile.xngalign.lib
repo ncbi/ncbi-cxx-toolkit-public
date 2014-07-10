@@ -18,4 +18,4 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 
 USES_LIBRARIES =  \
-    $(BLAST_INPUT_LIBS) xalgoalignnw xalgoalignutil  xmergetree
+    $(BLAST_INPUT_LIBS) xalgoalignnw xalgoalignutil xmergetree
