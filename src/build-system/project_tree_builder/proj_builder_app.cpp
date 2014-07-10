@@ -2606,7 +2606,9 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
 
             list<string> third_list;
 #if DO_PATCHTREEMAKEFILES
-            third_list.push_back(third);
+            if (!third.empty()) {
+                third_list.push_back(third);
+            }
 #else
             if (CSymResolver::IsDefine(third)) {
                 string resolved;
