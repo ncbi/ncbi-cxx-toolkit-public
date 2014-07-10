@@ -1708,7 +1708,7 @@ Optional Packages:
  --with-plugin-auto-load always enable the plugin manager by default
  --with-bundles          build bundles in addition to dylibs on Mac OS X
  --with-bin-release      build executables suitable for public release
- --with-mt               compile in a MultiThread-safe manner
+ --without-mt            support only single-threaded operation
  --with-openmp           enable OpenMP extensions for all projects
  --with-64               compile to 64-bit code
  --with-universal        build universal binaries on Mac OS X
@@ -6065,8 +6065,12 @@ compiler_root=`echo $CXX | sed -ne 's:\(.*\)[/\\]bin[/\\].*:\1:p'`
 
 
 #### Multi-Thread safety
-with_mt=${with_mt:="no"}
-if test "$with_mt" = "yes" ; then
+# Historically off by default; respect that when reconfiguring old builds.
+if test -z "$with_mt" -a -f "$NCBI_OLD_STATUS_DIR/-MT.enabled"; then
+    with_mt=no
+fi
+
+if test "$with_mt" != "no" ; then
    case "$host_os:$compiler" in
     darwin* | irix* | cygwin* | *:Cray ) ;;
     solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
@@ -6074,10 +6078,20 @@ if test "$with_mt" = "yes" ; then
     *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
     *:Compaq | *:GCC | *:ICC )  : ${MT_FLAG:="-pthread"} ;;
     *:VisualAge              )  : ${MT_FLAG:="-qthreaded"} ;;
-    * )   { { echo "$as_me:$LINENO: error: Do not know how to build MT-safe with compiler $CXX $compiler_ver" >&5
-echo "$as_me: error: Do not know how to build MT-safe with compiler $CXX $compiler_ver" >&2;}
+    * )
+       msg="Do not know how to build MT-safe with compiler $CXX $compiler_ver"
+       case "$with_mt" in
+          yes ) { { echo "$as_me:$LINENO: error: $msg" >&5
+echo "$as_me: error: $msg" >&2;}
    { (exit 1); exit 1; }; } ;;
+          ''  ) { echo "$as_me:$LINENO: WARNING: $msg" >&5
+echo "$as_me: WARNING: $msg" >&2;}; with_mt=no ;;
+       esac
+       ;;
    esac
+fi
+
+if test "$with_mt" != "no" ; then
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT -D_THREAD_SAFE"
    case "$host_os:$compiler" in
      solaris2.10:GCC ) : ${THREAD_LIBS:="-lposix4"} ;;

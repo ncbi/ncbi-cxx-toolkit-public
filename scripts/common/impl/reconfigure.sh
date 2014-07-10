@@ -86,6 +86,9 @@ if test -n "$old_PATH"; then
     PATH=$old_PATH
 fi
 
+NCBI_OLD_STATUS_DIR=$status_dir
+export NCBI_OLD_STATUS_DIR
+
 ### Startup banner
 
 cat <<EOF

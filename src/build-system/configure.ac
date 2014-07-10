@@ -142,7 +142,7 @@ AC_ARG_WITH(bundles,
 AC_ARG_WITH(bin-release,
    [ --with-bin-release      build executables suitable for public release])
 AC_ARG_WITH(mt,
-   [ --with-mt               compile in a MultiThread-safe manner])
+   [ --without-mt            support only single-threaded operation])
 AC_ARG_WITH(openmp,
    [ --with-openmp           enable OpenMP extensions for all projects])
 AC_ARG_WITH(64,
@@ -1006,8 +1006,12 @@ changequote([, ])dnl
 
 
 #### Multi-Thread safety
-with_mt=${with_mt:="no"}
-if test "$with_mt" = "yes" ; then
+# Historically off by default; respect that when reconfiguring old builds.
+if test -z "$with_mt" -a -f "$NCBI_OLD_STATUS_DIR/-MT.enabled"; then
+    with_mt=no
+fi
+
+if test "$with_mt" != "no" ; then
    case "$host_os:$compiler" in
     darwin* | irix* | cygwin* | *:Cray ) ;;
     solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
@@ -1015,8 +1019,17 @@ if test "$with_mt" = "yes" ; then
     *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
     *:Compaq | *:GCC | *:ICC )  : ${MT_FLAG:="-pthread"} ;;
     *:VisualAge              )  : ${MT_FLAG:="-qthreaded"} ;;
-    * )   AC_MSG_ERROR([Do not know how to build MT-safe with compiler $CXX $compiler_ver]) ;;
+    * )
+       msg="Do not know how to build MT-safe with compiler $CXX $compiler_ver"
+       case "$with_mt" in
+          yes ) AC_MSG_ERROR([$msg]) ;;
+          ''  ) AC_MSG_WARN([$msg]); with_mt=no ;;
+       esac
+       ;;
    esac
+fi
+
+if test "$with_mt" != "no" ; then
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT -D_THREAD_SAFE"
    case "$host_os:$compiler" in
      solaris2.10:GCC ) : ${THREAD_LIBS:="-lposix4"} ;;
