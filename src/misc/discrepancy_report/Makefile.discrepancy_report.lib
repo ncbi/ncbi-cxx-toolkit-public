@@ -16,4 +16,4 @@ ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
 WATCHERS = chenj bollin
 
 USES_LIBRARIES =  \
-    $(OBJMGR_LIBS) $(OBJREAD_LIBS) macro xvalidate xmlwrapp
+    $(OBJMGR_LIBS) $(OBJREAD_LIBS) macro xmlwrapp xvalidate
