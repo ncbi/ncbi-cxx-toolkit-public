@@ -194,7 +194,7 @@ private:
     Uint2 m_CntActiveSyncs;
     Uint2 m_CntNWErrors;
     Uint2 m_CntNWThrottles;
-    bool  m_InThrottle;
+    bool  m_InThrottle, m_MaybeThrottle;
     bool  m_HasBGTasks;
     bool  m_InitiallySynced;
     TNCClientHubsList m_Clients;

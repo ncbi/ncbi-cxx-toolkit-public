@@ -159,6 +159,7 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
       m_CntNWErrors(0),
       m_CntNWThrottles(0),
       m_InThrottle(false),
+      m_MaybeThrottle(false),
       m_HasBGTasks(false),
       m_InitiallySynced(false)
 {
@@ -183,6 +184,7 @@ CNCPeerControl::RegisterConnError(void)
     CMiniMutexGuard guard(m_ObjLock);
     if (m_FirstNWErrTime == 0)
         m_FirstNWErrTime = CSrvTime::Current().AsUSec();
+    m_MaybeThrottle = true;
     if (++m_CntNWErrors >= CNCDistributionConf::GetCntErrorsToThrottle()) {
         m_InThrottle = true;
         m_ThrottleStart = CSrvTime::Current().AsUSec();
@@ -194,6 +196,7 @@ void
 CNCPeerControl::RegisterConnSuccess(void)
 {
     CMiniMutexGuard guard(m_ObjLock);
+    m_MaybeThrottle = false;
     m_InThrottle = false;
     m_FirstNWErrTime = 0;
     m_CntNWErrors = 0;
@@ -648,7 +651,7 @@ CNCPeerControl::FindIPbyAlias(Uint4 alias)
 {
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;
-        if (!peer->m_InThrottle && peer->m_HostAlias == alias) {
+        if (!peer->m_MaybeThrottle && peer->m_HostAlias == alias) {
             return peer->m_HostIP;
         }
     }
@@ -660,7 +663,7 @@ CNCPeerControl::FindIPbyName(const string& alias)
 {
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;
-        if (!peer->m_InThrottle && peer->m_HostIPname == alias) {
+        if (!peer->m_MaybeThrottle && peer->m_HostIPname == alias) {
             return peer->m_HostIP;
         }
     }
@@ -671,7 +674,7 @@ bool
 CNCPeerControl::HasPeerInThrottle(void)
 {
     ITERATE(TControlMap, it_ctrl, s_Controls) {
-        if (it_ctrl->second->m_InThrottle) {
+        if (it_ctrl->second->m_MaybeThrottle) {
             return true;
         }
     }
