@@ -578,16 +578,6 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
 
     ResetEnvSybase();
 
-    string app_name = GetDiagContext().GetAppName();
-    if (app_name.empty()) {
-#ifdef FTDS_IN_USE
-        app_name = "DBAPI-ftds64";
-#else
-        app_name = "DBAPI-ctlib";
-#endif
-    }
-    SetApplicationName(NStr::PrintableString(app_name));
-
     CS_RETCODE r = reuse_context ? Check(cs_ctx_global(version, &m_Context)) :
         Check(cs_ctx_alloc(version, &m_Context));
     if (r != CS_SUCCEED) {
@@ -781,6 +771,25 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
                            NULL)) == CS_SUCCEED;
 }
 
+
+string CTLibContext::GetApplicationName(void) const
+{
+    CMutexGuard mg(m_CtxMtx);
+    string app_name = impl::CDriverContext::GetApplicationName();
+    if (app_name.empty()) {
+        app_name = GetDiagContext().GetAppName();
+        if (app_name.empty()) {
+#ifdef FTDS_IN_USE
+            app_name = "DBAPI-ftds64";
+#else
+            app_name = "DBAPI-ctlib";
+#endif
+        }
+        app_name = NStr::PrintableString(app_name);
+        const_cast<CTLibContext*>(this)->SetApplicationName(app_name);
+    }
+    return app_name;
+}
 
 unsigned int
 CTLibContext::GetLoginTimeout(void) const

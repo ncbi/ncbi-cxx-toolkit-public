@@ -238,6 +238,8 @@ public:
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
+    virtual string GetApplicationName(void) const;
+
     virtual unsigned int GetLoginTimeout(void) const;
     virtual unsigned int GetTimeout     (void) const;
 
