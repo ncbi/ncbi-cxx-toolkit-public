@@ -1112,6 +1112,7 @@ CDiagContext::CDiagContext(void)
       m_Host(new CEncodedString),
       m_Username(new CEncodedString),
       m_AppName(new CEncodedString),
+      m_AppNameSet(false),
       m_LoggedHitId(false),
       m_ExitCode(0),
       m_ExitSig(0),
@@ -1551,8 +1552,11 @@ void CDiagContext::SetHostIP(const string& ip)
 
 const string& CDiagContext::GetAppName(void) const
 {
-    if ( m_AppName->IsEmpty() ) {
+    if ( !m_AppNameSet ) {
         m_AppName->SetString(CNcbiApplication::GetAppName());
+        if ( CNcbiApplication::Instance() ) {
+            m_AppNameSet = true;
+        }
     }
     return m_AppName->GetOriginalString();
 }
@@ -1560,18 +1564,22 @@ const string& CDiagContext::GetAppName(void) const
 
 const string& CDiagContext::GetEncodedAppName(void) const
 {
+    if ( !m_AppNameSet ) {
+        GetAppName(); // Initialize app name
+    }
     return m_AppName->GetEncodedString();
 }
 
 
 void CDiagContext::SetAppName(const string& app_name)
 {
-    if ( !m_AppName->IsEmpty() ) {
+    if ( m_AppNameSet ) {
         // AppName can be set only once
         ERR_POST("Application name cannot be changed.");
         return;
     }
     m_AppName->SetString(app_name);
+    m_AppNameSet = true;
     if ( m_AppName->IsEncoded() ) {
         ERR_POST("Illegal characters in application name: '" << app_name <<
             "', using URL-encode.");
@@ -2368,8 +2376,8 @@ void CDiagContext::SetDefaultHitID(const string& hit_id)
     CDiagLock lock(CDiagLock::eWrite);
     if ( !m_DefaultHitId.get() ) {
         m_DefaultHitId.reset(new string);
-        m_LoggedHitId = false;
     }
+    m_LoggedHitId = false;
     *m_DefaultHitId = hit_id;
 }
 

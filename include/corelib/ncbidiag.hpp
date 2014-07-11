@@ -2279,6 +2279,7 @@ private:
     string                              m_HostIP;
     auto_ptr<CEncodedString>            m_Username;
     auto_ptr<CEncodedString>            m_AppName;
+    mutable bool                        m_AppNameSet;
     mutable auto_ptr<CEncodedString>    m_DefaultSessionId;
     mutable auto_ptr<string>            m_DefaultHitId;
     mutable bool                        m_LoggedHitId;
@@ -2621,7 +2622,7 @@ private:
 
 class CAsyncDiagThread;
 
-class CAsyncDiagHandler : public CDiagHandler
+class NCBI_XNCBI_EXPORT CAsyncDiagHandler : public CDiagHandler
 {
 public:
     CAsyncDiagHandler(void);
