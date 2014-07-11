@@ -415,10 +415,10 @@ public:
 
     /// Get number of retries. If not set returns the global default
     /// value ($CONN_MAX_TRY - 1).
-    const THttpRetries& GetRetries(void) const { return m_Retries; }
+    THttpRetries GetRetries(void) const { return m_Retries; }
     /// Set number of retries. If not set, the global default
     /// value is used ($CONN_MAX_TRY - 1).
-    void SetRetries(const THttpRetries& retries) { m_Retries = retries; }
+    void SetRetries(THttpRetries retries) { m_Retries = retries; }
 
 private:
     friend class CHttpSession;
@@ -480,9 +480,9 @@ public:
     /// @param url
     ///   URL to send request to.
     /// @sa NewRequest() CHttpRequest
-    CHttpResponse Get(const CUrl&         url,
-                      const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
-                      const THttpRetries& retries = null);
+    CHttpResponse Get(const CUrl&     url,
+                      const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                      THttpRetries    retries = null);
 
     /// Shortcut for POST requests.
     /// @param url
@@ -494,11 +494,11 @@ public:
     ///   Content-type. If empty, application/x-www-form-urlencoded
     ///   is used.
     /// @sa NewRequest() CHttpRequest
-    CHttpResponse Post(const CUrl&         url,
-                       CTempString         data,
-                       CTempString         content_type = kEmptyStr,
-                       const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
-                       const THttpRetries& retries = null);
+    CHttpResponse Post(const CUrl&     url,
+                       CTempString     data,
+                       CTempString     content_type = kEmptyStr,
+                       const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                       THttpRetries    retries = null);
 
     /// Get all stored cookies.
     const CHttpCookies& Cookies(void) const { return m_Cookies; }
@@ -535,19 +535,19 @@ private:
 /// no data like cookies is shared between multiple requests.
 /// @sa CHttpSession::Get()
 NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpGet(const CUrl&         url,
-                        const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
-                        const THttpRetries& retries = null);
+CHttpResponse g_HttpGet(const CUrl&     url,
+                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries    retries = null);
 
 /// Shortcut for POST request. Each request uses a separate session,
 /// no data like cookies is shared between multiple requests.
 /// @sa CHttpSession::Post()
 NCBI_XCONNECT_EXPORT
-CHttpResponse g_HttpPost(const CUrl&         url,
-                         CTempString         data,
-                         CTempString         content_type = kEmptyStr,
-                         const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
-                         const THttpRetries& retries = null);
+CHttpResponse g_HttpPost(const CUrl&     url,
+                         CTempString     data,
+                         CTempString     content_type = kEmptyStr,
+                         const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                         THttpRetries    retries = null);
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -756,9 +756,9 @@ CHttpRequest CHttpSession::NewRequest(const CUrl& url, ERequestMethod method)
 }
 
 
-CHttpResponse CHttpSession::Get(const CUrl&         url,
-                                const CTimeout&     timeout,
-                                const THttpRetries& retries)
+CHttpResponse CHttpSession::Get(const CUrl&     url,
+                                const CTimeout& timeout,
+                                THttpRetries    retries)
 {
     CHttpRequest req = NewRequest(url, eGet);
     req.SetTimeout(timeout);
@@ -767,11 +767,11 @@ CHttpResponse CHttpSession::Get(const CUrl&         url,
 }
 
 
-CHttpResponse CHttpSession::Post(const CUrl&         url,
-                                 CTempString         data,
-                                 CTempString         content_type,
-                                 const CTimeout&     timeout,
-                                 const THttpRetries& retries)
+CHttpResponse CHttpSession::Post(const CUrl&     url,
+                                 CTempString     data,
+                                 CTempString     content_type,
+                                 const CTimeout& timeout,
+                                 THttpRetries    retries)
 {
     CHttpRequest req = NewRequest(url, ePost);
     req.SetTimeout(timeout);
@@ -816,20 +816,20 @@ string CHttpSession::x_GetCookies(const CUrl& url) const
 }
 
 
-CHttpResponse g_HttpGet(const CUrl&         url,
-                        const CTimeout&     timeout,
-                        const THttpRetries& retries)
+CHttpResponse g_HttpGet(const CUrl&     url,
+                        const CTimeout& timeout,
+                        THttpRetries    retries)
 {
     CRef<CHttpSession> session(new CHttpSession);
     return session->Get(url, timeout, retries);
 }
 
 
-CHttpResponse g_HttpPost(const CUrl&         url,
-                         CTempString         data,
-                         CTempString         content_type,
-                         const CTimeout&     timeout,
-                         const THttpRetries& retries)
+CHttpResponse g_HttpPost(const CUrl&     url,
+                         CTempString     data,
+                         CTempString     content_type,
+                         const CTimeout& timeout,
+                         THttpRetries    retries)
 {
     CRef<CHttpSession> session(new CHttpSession);
     return session->Post(url, data, content_type, timeout, retries);
