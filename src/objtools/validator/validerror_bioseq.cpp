@@ -1005,7 +1005,21 @@ void CValidError_bioseq::ValidateBioseqContext(
 
     // Check that proteins in nuc_prot set have a CdRegion
     if ( CdError(bsh) ) {
-        PostErr(eDiag_Error, eErr_SEQ_PKG_NoCdRegionPtr,
+        EDiagSev sev = eDiag_Error;
+        CBioseq_set_Handle bssh = GetNucProtSetParent (bsh);
+        if (bssh) {
+            CBioseq_Handle nbsh = GetNucBioseq (bssh);
+            if (nbsh) {
+                CSeqdesc_CI desc( nbsh, CSeqdesc::e_Molinfo );
+                const CMolInfo* mi = desc ? &(desc->GetMolinfo()) : 0;
+                CMolInfo::TTech tech = mi->IsSetTech() ? 
+                    mi->GetTech() : CMolInfo::eTech_unknown;
+                if (tech == CMolInfo::eTech_wgs) {
+                    sev = eDiag_Critical;
+                }
+            }
+        }
+        PostErr(sev, eErr_SEQ_PKG_NoCdRegionPtr,
             "No CdRegion in nuc-prot set points to this protein", 
             seq);
     }
