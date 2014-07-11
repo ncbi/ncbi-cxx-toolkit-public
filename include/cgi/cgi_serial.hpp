@@ -110,13 +110,13 @@ public:
 
     void flush(bool write_empty_data = false) 
     {
-        if (m_str.get() == NULL  &&  !write_empty_data)
-            return;
-
-        auto_ptr<CNcbiOstrstream> strm(m_str.release());
-        string s = CNcbiOstrstreamToString(*strm);
-        // Historically counted, but did not output, a final \0.
-        m_Ostream << (s.size() + 1) << ' ' << s;
+        if (m_str.get() != NULL) {
+            auto_ptr<CNcbiOstrstream> strm(m_str.release());
+            string s = CNcbiOstrstreamToString(*strm);
+            // Historically counted, but did not output, a final \0.
+            m_Ostream << (s.size() + 1) << ' ' << s;
+        } else if (write_empty_data)
+            m_Ostream << 1 << ' ';
     }
 
 private:
