@@ -289,13 +289,36 @@ static void CheckExpectedQuals (CConstRef<CSeq_feat> feat,
     }}
 }
 
+NCBITEST_INIT_CMDLINE(descrs)
+{
+    // Add calls like this for each command-line argument to be used.
+    descrs->AddFlag("v", "Verbose: tests produce extra output");
+}
+
+// convenience functions for accessing the above cmd line opts
+namespace {
+    bool IsVerbose()
+    {
+        return CNcbiApplication::Instance()->GetArgs()["v"];
+    }
+
+    void SerializeOutIfVerbose(const string & note, const CSerialObject & obj)
+    {
+        if( ! IsVerbose() ) {
+            return;
+        }
+
+        cerr << "Verbose output: " << note << ": "
+             << MSerial_AsnText << obj << endl;
+    }
+}
 
 ///
 /// Test a simple table
 ///
 BOOST_AUTO_TEST_CASE(Test_FeatureTableWithGeneAndCodingRegion)
 {
-    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table1); 
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table1);
     const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
 
     BOOST_REQUIRE(ftable.size() == 2);
@@ -1799,3 +1822,47 @@ BOOST_AUTO_TEST_CASE(TestIfHandlesWhenJunkAfterFeature)
     s_ReadOneTableFromString(
         sc_Table15 );
 }
+
+
+static const char * sc_Table16 = "\
+>Feature lcl|seq1\n\
+<1\t32\trRNA\n\
+\t\tProduct\t18S ribosomal RNA\n\
+33\t170\tmisc_RNA\n\
+\t\tProduct\tinternal transcribed spacer 1\n\
+\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestCaseInsensitivity)
+{
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table16);
+    SerializeOutIfVerbose("TestCaseInsensitivity initial annot", *annot);
+
+    const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+
+    BOOST_REQUIRE_EQUAL(ftable.size(), 2);
+    BOOST_REQUIRE(ftable.front()->IsSetData());
+    BOOST_REQUIRE(ftable.back()->IsSetData());
+
+    // make sure rRNA products are processed right, just in case
+    const CSeqFeatData & feat_data_0 = ftable.front()->GetData();
+    BOOST_CHECK_EQUAL(
+        feat_data_0.GetSubtype(), CSeqFeatData::eSubtype_rRNA);
+    BOOST_CHECK_EQUAL(
+        feat_data_0.GetRna().GetExt().GetName(), "18S ribosomal RNA");
+
+    const CSeqFeatData & feat_data_1 = ftable.back()->GetData();
+    // make sure it's a miscRNA
+    BOOST_CHECK_EQUAL(
+        feat_data_1.GetSubtype(),
+        CSeqFeatData::eSubtype_otherRNA // subtype otherRNA is used for miscRNA
+    );
+    // The "Product" in the input table should have become "product" in the
+    // output
+    BOOST_CHECK_EQUAL(
+        ftable.back()->GetNamedQual("Product"), "");
+    BOOST_CHECK_EQUAL(
+        ftable.back()->GetNamedQual("product"),
+        "internal transcribed spacer 1");
+}
+

@@ -610,6 +610,10 @@ static const TSubSrcKey subsrc_key_to_subtype [] = {
 typedef CStaticPairArrayMap <const char*, CSubSource::ESubtype, PCase_CStr> TSubSrcMap;
 DEFINE_STATIC_ARRAY_MAP(TSubSrcMap, sm_SubSrcKeys, subsrc_key_to_subtype);
 
+// case-insensitive version of sm_SubSrcKeys
+typedef CStaticPairArrayMap <const char*, CSubSource::ESubtype, PNocase_CStr> TSubSrcNoCaseMap;
+DEFINE_STATIC_ARRAY_MAP(
+    TSubSrcNoCaseMap, sm_SubSrcNoCaseKeys, subsrc_key_to_subtype);
 
 typedef SStaticPair<const char *, COrgMod::ESubtype> TOrgModKey;
 
@@ -654,6 +658,7 @@ static const TOrgModKey orgmod_key_to_subtype [] = {
     {  "synonym",            COrgMod::eSubtype_synonym             },
     {  "teleomorph",         COrgMod::eSubtype_teleomorph          },
     {  "type",               COrgMod::eSubtype_type                },
+    {  "type_material",      COrgMod::eSubtype_type_material       },
     {  "variety",            COrgMod::eSubtype_variety             }
 };
 
@@ -1706,9 +1711,25 @@ bool CFeature_table_reader_imp::x_AddGBQualToFeature (
 {
     if (qual.empty ()) return false;
 
+    // need this pointer because references can't be repointed
+    const string *p_normalized_qual = &qual;
+
+    // normalize qual if needed, especially regarding case, and
+    // use as-is if no normalization applies
+    string potential_normalized_qual;
+    const CSeqFeatData::EQualifier qual_type =
+        CSeqFeatData::GetQualifierType(qual);
+    if( qual_type != CSeqFeatData::eQual_bad ) {
+        // swap is constant time
+        CSeqFeatData::GetQualifierAsString(qual_type).swap(potential_normalized_qual);;
+        if( ! potential_normalized_qual.empty() ) {
+            p_normalized_qual = &potential_normalized_qual;
+        }
+    }
+
     CSeq_feat::TQual& qlist = sfp->SetQual ();
     CRef<CGb_qual> gbq (new CGb_qual);
-    gbq->SetQual (qual);
+    gbq->SetQual (*p_normalized_qual);
     if (x_StringIsJustQuotes (val)) {
         gbq->SetVal (kEmptyStr);
     } else {
