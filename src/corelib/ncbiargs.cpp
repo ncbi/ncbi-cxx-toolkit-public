@@ -460,7 +460,7 @@ CArg_DateTime::CArg_DateTime(const string& name, const string& value)
     : CArg_String(name, value)
 {
     bool hasZ = value.size() != 0 && value[value.size()-1] == 'Z';
-    const char* fmt[] = {"Y-M-DTh:m:s.l", "Y/M/D h:m:s.l", nullptr};
+    const char* fmt[] = {"Y-M-DTh:m:g", "Y/M/D h:m:g", nullptr};
     bool res = false;
     for (int i = 0; !res && fmt[i]; ++i) {
         try {
