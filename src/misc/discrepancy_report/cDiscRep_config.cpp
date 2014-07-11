@@ -1322,6 +1322,10 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     thisInfo.output_config.output_f 
        = output_f.empty() ? 
              0 : new CNcbiOfstream((m_outdir + output_f).c_str());
+    if (!(thisInfo.output_config.output_f->good())) {
+          NCBI_USER_THROW("Your output file can't be generated: " + (m_outdir + output_f));
+    }
+
     strtmp = (args.find("S") != end) ? args["S"] : "false";
     thisInfo.output_config.summary_report 
        = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t"));
@@ -3415,7 +3419,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp)
                                     != thisInfo.test_item_list.end()) {
- //cerr << "GoGetRep " << strtmp << endl;
+// cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             c_item->expanded = x_IsExpandable(strtmp);
@@ -3439,6 +3443,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
  // cerr << "GoGetRep " << (*it)->GetName() << endl;
        }
    }
+   _TRACE("CRepConfig :: x_GoGetRep");
 };
 
 void CRepConfig :: CollectRepData()
@@ -3491,6 +3496,7 @@ void CRepConfig :: Run()
 
 void CRepConfig :: RunMultiObjects()
 {
+   if (!m_objs) return;
    ITERATE (vector <CConstRef <CObject> >, it, *m_objs) {
       const CObject* ptr = (*it).GetPointer();
 
