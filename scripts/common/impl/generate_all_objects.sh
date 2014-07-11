@@ -32,9 +32,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/stax/taxon/taxon.dtd \
   src/internal/ncbils2/asn/login.asn src/internal/ncbils2/auth/*xml/*.dtd \
   src/internal/geo/cgi/geo*/objects/geo*.asn \
-  src/internal/geo/meta/objects/geometa.asn \
   src/internal/asn_cache/lib/cache_blob.asn \
-  src/internal/idxext/snp/libs/eudocsum/eudocsum.xsd \
   src/internal/mapview/objects/*/*.asn \
   src/internal/gbench/packages/pkg_radar/*/*.asn \
   src/internal/gbench/app/sviewer/objects/*.asn \
