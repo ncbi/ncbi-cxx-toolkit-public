@@ -523,7 +523,7 @@ public:
         eIOFile,     ///< Name of file (must be writeable)
         eDirectory,  ///< Name of file directory
         eDataSize,   ///< Integer number with possible "software" qualifiers (KB, KiB, et al)
-        eDateTime,   ///< DateTime string, formats "Y-M-DTh:m:s.l" or "Y/M/D h:m:s.l"
+        eDateTime,   ///< DateTime string, formats "Y-M-DTh:m:gZ" or "Y/M/D h:m:gZ"
 
         k_EType_Size ///< For internal use only
     };
