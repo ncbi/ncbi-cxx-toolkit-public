@@ -2132,6 +2132,7 @@ END_SUBTYPE
 
 START_SUBTYPE(source)
     ADD_QUAL(PCR_primers);
+    ADD_QUAL(altitude);
     ADD_QUAL(bio_material);
     ADD_QUAL(cell_line);
     ADD_QUAL(cell_type);
@@ -2193,6 +2194,7 @@ START_SUBTYPE(source)
     ADD_QUAL(tissue_type);
     ADD_QUAL(transgenic);
     ADD_QUAL(transposon);
+    ADD_QUAL(type_material);
     ADD_QUAL(usedin);
     ADD_QUAL(variety);
     ADD_QUAL(virion);
@@ -2856,6 +2858,7 @@ typedef SStaticPair<CSeqFeatData::EQualifier, const char*> TQualPair;
 static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_bad, "bad" },
     { CSeqFeatData::eQual_allele, "allele" },
+    { CSeqFeatData::eQual_altitude, "altitude" },
     { CSeqFeatData::eQual_anticodon, "anticodon" },
     { CSeqFeatData::eQual_artificial_location, "artificial_location" },
     { CSeqFeatData::eQual_bio_material, "bio_material" },
@@ -2974,6 +2977,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_transl_except, "transl_except" },
     { CSeqFeatData::eQual_transl_table, "transl_table" },
     { CSeqFeatData::eQual_transposon, "transposon" },
+    { CSeqFeatData::eQual_type_material, "type_material" },
     { CSeqFeatData::eQual_UniProtKB_evidence, "UniProtKB_evidence" },
     { CSeqFeatData::eQual_usedin, "usedin" },
     { CSeqFeatData::eQual_variety, "variety" },
@@ -2983,28 +2987,48 @@ static const TQualPair kQualPairs[] = {
 typedef CStaticPairArrayMap<CSeqFeatData::EQualifier, const char*> TQualsMap;
 DEFINE_STATIC_ARRAY_MAP(TQualsMap, sc_QualPairs, kQualPairs);
 
+// inverse of sc_QualPairs
+typedef map<
+    string, CSeqFeatData::EQualifier, PNocase> TQualsInverseMap;
+
+static
+TQualsInverseMap *s_CreateNameToQualsMap()
+{
+    AutoPtr<TQualsInverseMap> pNewMap(new TQualsInverseMap);
+
+    ITERATE(TQualsMap, pair_it, sc_QualPairs) {
+        // if dups, only the last is used
+        (*pNewMap)[pair_it->second] = pair_it->first;
+    }
+
+    return pNewMap.release();
+}
+
 string CSeqFeatData::GetQualifierAsString(EQualifier qual)
 {
     TQualsMap::const_iterator iter = sc_QualPairs.find(qual);
-    return (iter != sc_QualPairs.end()) ? iter->second : "";
+    return (iter != sc_QualPairs.end()) ? iter->second : kEmptyStr;
 }
 
 
-CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual)
+CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual, NStr::ECase search_case)
 {
-    CSeqFeatData::EQualifier type = CSeqFeatData::eQual_bad;;
+    // create inverse of sc_QualPairs if not already created
+    static CSafeStatic<TQualsInverseMap> pNameToQualsMap(
+        s_CreateNameToQualsMap, 0);
 
-    TQualsMap::const_iterator iter = sc_QualPairs.begin();
-    while (iter != sc_QualPairs.end() && !NStr::Equal(qual, iter->second)) {
-        ++iter;
-    }
-    if (iter != sc_QualPairs.end()) {
-        type = iter->first;
-    } else if (NStr::EqualNocase(qual, "specific_host")) {
-        type = CSeqFeatData::eQual_host;
+    TQualsInverseMap::const_iterator find_iter =
+        pNameToQualsMap->find(qual);
+    if( find_iter != pNameToQualsMap->end() && NStr::Equal(qual, find_iter->first, search_case) ) {
+        return find_iter->second;
     }
 
-    return type;
+    // special case
+    if( NStr::Equal(qual, "specific_host", search_case) ) {
+        return CSeqFeatData::eQual_host;
+    }
+
+    return CSeqFeatData::eQual_bad;
 }
 
 

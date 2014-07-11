@@ -317,6 +317,7 @@ public:
     {
         eQual_bad = 0,
         eQual_allele,
+        eQual_altitude,
         eQual_anticodon,
         eQual_artificial_location,
         eQual_bio_material,
@@ -439,6 +440,7 @@ public:
         eQual_transl_except,
         eQual_transl_table,
         eQual_transposon,
+        eQual_type_material,
         eQual_UniProtKB_evidence,
         eQual_usedin,
         eQual_variety,
@@ -459,11 +461,13 @@ public:
     const TQualifiers& GetMandatoryQualifiers(void) const;
     static const TQualifiers& GetMandatoryQualifiers(ESubtype subtype);
     
-    /// Convert a qualifier from an enumerated value to a string representation.
+    /// Convert a qualifier from an enumerated value to a string representation
+    /// or empty if not found.
     static string GetQualifierAsString(EQualifier qual);
 
-    // convert string to enumerated value
-    static EQualifier GetQualifierType(const string& qual);
+    /// convert qual string to enumerated value
+    static EQualifier GetQualifierType(
+        const string& qual, NStr::ECase search_case = NStr::eNocase);
 
     NCBI_DEPRECATED
     static string GetQulifierAsString(EQualifier qual)
