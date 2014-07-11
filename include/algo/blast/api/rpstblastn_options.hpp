@@ -79,6 +79,9 @@ protected:
     /// Overrides SubjectSequenceOptionsDefaults for RPS-TBLASTN options
     void SetQueryOptionDefaults();
 
+    /// Overrides SetGappedExtensionDefaults for RPS-TBLASTN options
+    void SetGappedExtensionDefaults();
+
 private:
     /// Disallow copy constructor
     CRPSTBlastnOptionsHandle(const CRPSTBlastnOptionsHandle& rhs);
