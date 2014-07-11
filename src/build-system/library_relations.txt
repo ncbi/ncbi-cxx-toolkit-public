@@ -273,6 +273,8 @@ fbsdstd_g needs3party $(ORIG_LIBS)
 fcgi needs3party $(ORIG_LIBS)
 featdef needs xser
 freetype needs3party $(ORIG_LIBS)
+fscreen needs agp_lookup
+fscreen needs dbapi_util_blobstore
 ftgl needs3party $(FREETYPE_LIBS)
 ftgl needs3party $(OPENGL_LIBS)
 ftgl needs3party $(ORIG_LIBS)
@@ -842,8 +844,9 @@ refseq_aln_source needs $(COMPRESS_LIBS)
 refseq_aln_source needs dbapi
 refseq_aln_source needs ncbi_xdbapi_ftds
 refseq_aln_source needs xalgoalignsplign
+refseq_ctl needs $(GPIPE_GENCOLL_LIBS)
+refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs gpinit_access
-refseq_ctl needs xregexp
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
