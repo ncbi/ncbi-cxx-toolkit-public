@@ -45,7 +45,7 @@
 
 #define NST_PROTOCOL_VERSION 1
 
-#define READ_CHUNK_SIZE (4 * 1024)
+#define READ_CHUNK_SIZE (64 * 1024)
 
 #define WRITE_BUFFER_SIZE (64 * 1024)
 #define READ_BUFFER_SIZE (64 * 1024)
@@ -988,34 +988,15 @@ CJsonNode SNetStorageObjectRPC::x_MkRequest(const string& request_type)
 
 void SNetStorageObjectImpl::Read(string* data)
 {
-    data->resize(data->capacity() == 0 ? READ_CHUNK_SIZE : data->capacity());
+    char buffer[READ_CHUNK_SIZE];
 
-    size_t bytes_read = Read(const_cast<char*>(data->data()), data->capacity());
+    data->resize(0);
 
-    data->resize(bytes_read);
-
-    if (bytes_read < data->capacity())
-        return;
-
-    vector<string> chunks(1, *data);
-
-    while (!Eof()) {
-        string buffer(READ_CHUNK_SIZE, '\0');
-
-        bytes_read = Read(const_cast<char*>(buffer.data()), buffer.length());
-
-        if (bytes_read < buffer.length()) {
-            buffer.resize(bytes_read);
-            chunks.push_back(buffer);
-            break;
-        }
-
-        chunks.push_back(buffer);
-    }
+    do
+        data->append(buffer, Read(buffer, sizeof(buffer)));
+    while (!Eof());
 
     Close();
-
-    *data = NStr::Join(chunks, kEmptyStr);
 }
 
 struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
