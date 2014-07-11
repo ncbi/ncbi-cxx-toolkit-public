@@ -447,6 +447,11 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
 {
     m_OptHandle->SetCompositionBasedStats(eNoCompositionBasedStats);
+    // no cbs for rpsblast
+    CRef<CBlastRPSOptionsHandle> rps_opts(new CBlastRPSOptionsHandle());
+    rps_opts->SetEvalueThreshold(m_OptHandle->GetDomainInclusionThreshold());
+    rps_opts->SetCompositionBasedStats(false);
+
     m_OptHandle->SetEvalueThreshold(5);
 
     TSeqLocVector query;
@@ -461,7 +466,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
                                          CSearchDatabase::eBlastDbIsProtein));
     CRef<CLocalDbAdapter> domain_dbadapter(new CLocalDbAdapter(*m_DomainDb));
     CDeltaBlast deltablast(query_factory, dbadapter, domain_dbadapter,
-                           m_OptHandle);
+                           m_OptHandle, rps_opts);
 
     CSearchResultSet results(*deltablast.Run());
 

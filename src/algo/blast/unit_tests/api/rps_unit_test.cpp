@@ -298,7 +298,8 @@ BOOST_AUTO_TEST_CASE(testPreliminarySearch)
 BOOST_AUTO_TEST_CASE(TestCBSFreqsNotFound)
 {
     // make sure that the '.freq' file does not exist for the test database
-    CFile freq_file(m_DbName + ".freq");
+    string dbname = "data/deltatest_nocbs";
+    CFile freq_file(dbname + ".freq");
     BOOST_REQUIRE(!freq_file.Exists());
 
     // set coposition based statistics to 1 (requires .freq file)
@@ -311,7 +312,7 @@ BOOST_AUTO_TEST_CASE(TestCBSFreqsNotFound)
     TSeqLocVector query_v;
     query_v.push_back(*query);
 
-    CSearchDatabase dbinfo(m_DbName, CSearchDatabase::eBlastDbIsProtein);
+    CSearchDatabase dbinfo(dbname, CSearchDatabase::eBlastDbIsProtein);
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(query_v));
 
     // exception must be throws when the file is not found
