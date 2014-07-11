@@ -111,13 +111,13 @@ static const char* kWeekdayFull [7] = {
 // Default value for time/timespan format
 static const char* kDefaultFormatTime      = "M/D/Y h:m:s";
 static const char* kDefaultFormatSpan      = "-S.n";
-static const char* kDefaultFormatStopWatch = "-S.n";
+static const char* kDefaultFormatStopWatch = "S.n";
 
 // Set of the checked format symbols.
 // For CStopWatch class the format symbols are equal
 // to kFormatSymbolsSpan also.
-static const char* kFormatSymbolsTime = "yYMbBDdhHmsSzZwWlrpP";
-static const char* kFormatSymbolsSpan = "-dhHmMsSnN";
+static const char* kFormatSymbolsTime = "yYMbBDdhHmsSlrgGzZwWpP";
+static const char* kFormatSymbolsSpan = "-dhHmMsSnNgG";
 
 // Character used to escape formatted symbols.
 const char kFormatEscapeSymbol = '$';
@@ -294,9 +294,9 @@ CTimeFormat::CTimeFormat(void)
 }
 
 
-CTimeFormat::CTimeFormat(const CTimeFormat& format)
+CTimeFormat::CTimeFormat(const CTimeFormat& fmt)
 {
-    *this = format;
+    *this = fmt;
 }
 
 
@@ -312,13 +312,38 @@ CTimeFormat::CTimeFormat(const string& fmt, TFlags flags)
 }
 
 
-CTimeFormat& CTimeFormat::operator= (const CTimeFormat& format)
+void CTimeFormat::SetFormat(const string& fmt, TFlags flags)
 {
-    if ( &format == this ) {
+    // Checks flags compatibility
+    int f = fFormat_Simple | fFormat_Ncbi;
+    if ( (flags & f) == f ) {
+        NCBI_THROW(CTimeException, eFormat, 
+            "Incompatible flags specified together: fFormat_Simple | fFormat_Ncbi");
+    }
+    if ( (flags & f) == 0 ) {
+        flags |= fFormat_Simple;  // default
+    }
+
+    if ( (flags & fMatch_Strict) && (flags & fMatch_Weak) ) {
+        NCBI_THROW(CTimeException, eFormat, 
+            "Incompatible flags specified together: fMatch_Strict | fMatch_Weak)");
+    }
+    if ( (flags & (fMatch_Strict|fMatch_Weak)) == 0 ) {
+        flags |= fMatch_Strict;  // default
+    }
+
+    m_Str   = fmt;
+    m_Flags = flags;
+}
+
+
+CTimeFormat& CTimeFormat::operator= (const CTimeFormat& fmt)
+{
+    if ( &fmt == this ) {
         return *this;
     }
-    m_Str   = format.m_Str;
-    m_Flags = format.m_Flags;
+    m_Str   = fmt.m_Str;
+    m_Flags = fmt.m_Flags;
     return *this;
 }
 
@@ -409,7 +434,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     enum EHourFormat{
         e24, eAM, ePM
     };
-    EHourFormat hourformat = e24;
+    EHourFormat hour_format = e24;
     bool is_12hour = false;
 
     int weekday = -1;
@@ -544,10 +569,10 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
         // Timezone (local time in format GMT+HHMM)
         if (*fff == 'p'  ||  *fff == 'P') {
             if (NStr::strncasecmp(sss, "AM", 2) == 0) {
-                hourformat = eAM;
+                hour_format = eAM;
                 sss += 2;
             } else if (NStr::strncasecmp(sss, "PM", 2) == 0) {
-                hourformat = ePM;
+                hour_format = ePM;
                 sss += 2;
             }
             continue;
@@ -633,6 +658,36 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
             m_Data.nanosec = (Int4)value;
             is_time_present = true;
             break;
+        case 'g':
+        case 'G':
+            CHECK_RANGE_SEC(value);
+            m_Data.sec = (unsigned char)value;
+            if ( *sss == '.' ) {
+                *sss++;
+                char* s = value_str;
+                // Limit fraction of second to 9 digits max,
+                // ignore all other digits in string if any.
+                for (size_t len = 9;
+                    len  &&  *sss  &&  isdigit((unsigned char)(*sss));  len--) {
+                    *s++ = *sss++;
+                }
+                *s = '\0';
+                long value = NStr::StringToLong(value_str);
+                int n = strlen(value_str);
+                // 'n' cannot have more then 9 (max for nanoseconds) - see above.
+                _ASSERT(n <= 9);
+                for (;  n < 9;  n++) {
+                    value *= 10;
+                }
+                CHECK_RANGE_NSEC(value);
+                m_Data.nanosec = (Int4)value;
+                // Ignore extra digits
+                while ( isdigit((unsigned char)(*sss)) ) {
+                    sss++;
+                }
+            }
+            is_time_present = true;
+            break;
         default:
             NCBI_THROW(CTimeException, eFormat,
                        "Format '" + fmt + "' is incorrect");
@@ -640,7 +695,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
     }
 
     // Correct 12-hour time if needed
-    if (is_12hour  &&  hourformat == ePM) {
+    if (is_12hour  &&  hour_format == ePM) {
         m_Data.hour += 12;
     }
 
@@ -792,17 +847,20 @@ CTime::CTime(const struct tm& t, ETimeZonePrecision tzp)
 }
 
 
-CTime::CTime(const string& str, const CTimeFormat& format,
+CTime::CTime(const string& str, const CTimeFormat& fmt,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
     memset(&m_Data, 0, sizeof(m_Data));
-    m_Data.tz = tz;
+    _ASSERT(eLocal > 0);
+    _ASSERT(eGmt   > 0);
+    if ( !m_Data.tz ) {
+        m_Data.tz = tz;
+    }
     m_Data.tzprec = tzp;
-
-    if (format.IsEmpty()) {
+    if (fmt.IsEmpty()) {
         x_Init(str, GetFormat());
     } else {
-        x_Init(str, format);
+        x_Init(str, fmt);
     }
 }
 
@@ -997,14 +1055,14 @@ int CTime::MonthNameToNum(const string& month)
 }
 
 
-string CTime::MonthNumToName(int month, ENameFormat format)
+string CTime::MonthNumToName(int month, ENameFormat fmt)
 {
     if (month < 1  ||  month > 12) {
         NCBI_THROW(CTimeException, eArgument,
                    "Invalid month number " + NStr::IntToString(month));
     }
     month--;
-    return format == eFull ? kMonthFull[month] : kMonthAbbr[month];
+    return fmt == eFull ? kMonthFull[month] : kMonthAbbr[month];
 }
 
 
@@ -1026,34 +1084,34 @@ int CTime::DayOfWeekNameToNum(const string& day)
 }
 
 
-string CTime::DayOfWeekNumToName(int day, ENameFormat format)
+string CTime::DayOfWeekNumToName(int day, ENameFormat fmt)
 {
     if (day < 0  ||  day > 6) {
         return kEmptyStr;
     }
-    return format == eFull ? kWeekdayFull[day] : kWeekdayAbbr[day];
+    return fmt == eFull ? kWeekdayFull[day] : kWeekdayAbbr[day];
 }
 
 
-void CTime::SetFormat(const CTimeFormat& format)
+void CTime::SetFormat(const CTimeFormat& fmt)
 {
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    CTimeFormat* ptr = new CTimeFormat(format);
+    CTimeFormat* ptr = new CTimeFormat(fmt);
     s_TlsFormatTime.SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
 CTimeFormat CTime::GetFormat(void)
 {
-    CTimeFormat format;
+    CTimeFormat fmt;
     CTimeFormat* ptr = s_TlsFormatTime.GetValue();
     if ( !ptr ) {
-        format.SetFormat(kDefaultFormatTime);
+        fmt.SetFormat(kDefaultFormatTime);
     } else {
-        format = *ptr;
+        fmt = *ptr;
     }
-    return format;
+    return fmt;
 }
 
 
@@ -1131,6 +1189,14 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
         case 'r': s_AddZeroPadInt(str, t->NanoSecond() / 1000, 6);
                   break;
         case 'S': s_AddZeroPadInt(str, t->NanoSecond(), 9); break;
+        case 'G': s_AddZeroPadInt2(str, t->Second());
+                  str += ".";
+                  s_AddZeroPadInt(str, t->NanoSecond(), 9, true);
+                  break;
+        case 'g': s_AddInt(str, t->Second());
+                  str += ".";
+                  s_AddZeroPadInt(str, t->NanoSecond(), 9, true);
+                  break;
         case 'p': str += ( t->Hour() < 12) ? "am" : "pm" ;  break;
         case 'P': str += ( t->Hour() < 12) ? "AM" : "PM" ;  break;
         case 'z': {
@@ -1698,6 +1764,11 @@ bool CTime::IsValid(void) const
     if ( IsEmpty() )
         return true;
 
+    _ASSERT(m_Data.tz);
+    if ( !m_Data.tz ) {
+        return false;
+    }
+
     if (Year() < 1583) // first Gregorian date February 24, 1582
         return false;
     if (Month()  < 1  ||  Month()  > 12)
@@ -2123,12 +2194,12 @@ CTimeSpan::CTimeSpan(long days, long hours, long minutes, long seconds,
 }
 
 
-CTimeSpan::CTimeSpan(const string& str, const CTimeFormat& format)
+CTimeSpan::CTimeSpan(const string& str, const CTimeFormat& fmt)
 {
-    if (format.IsEmpty()) {
+    if (fmt.IsEmpty()) {
         x_Init(str, GetFormat());
     } else {
-        x_Init(str, format);
+        x_Init(str, fmt);
     }
 }
 
@@ -2143,14 +2214,17 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
     bool is_format_symbol = !is_escaped;
 
     const char* fff;
+    char  f;
     const char* sss = str.c_str();
     int   sign = 1;
 
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
+        f = *fff;
+
         // Skip preceding symbols for some formats
         if ( !is_format_symbol ) {
-            if ( *fff == kFormatEscapeSymbol )  {
+            if ( f == kFormatEscapeSymbol )  {
                 is_format_symbol = true;
                 continue;
             }
@@ -2159,33 +2233,37 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
             is_format_symbol = false;
         }
         // Non-format symbols
-        if (strchr(kFormatSymbolsSpan, *fff) == 0) {
-            if (*fff == *sss) {
+        if (strchr(kFormatSymbolsSpan, f) == 0) {
+            if (f == *sss) {
                 sss++;
                 continue;  // skip matching non-format symbols
             }
             break;  // error: non-matching non-format symbols
         }
 
+
         // Sign: if specified that the time span is negative
-        if (*fff == '-') {
+        if (f == '-') {
             if (*sss == '-') {
                 sign = -1;
                 sss++;
             }
             continue;
         }
+
+    read_next_value:
+
         // Other format symbols -- read the next data ingredient
-        char value_str[21];
+        char value_str[10];
         char* s = value_str;
-        for (size_t len = 20;
+        for (size_t len = 9;
              len  &&  *sss  &&  isdigit((unsigned char)(*sss));  len--) {
             *s++ = *sss++;
         }
         *s = '\0';
         long value = NStr::StringToLong(value_str);
 
-        switch ( *fff ) {
+        switch ( f ) {
         case 'd':
             m_Sec += value * 86400L;
             break;
@@ -2209,6 +2287,43 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
             break;
         case 'n':
             m_NanoSec = value;
+            break;
+        case 'g':
+            m_Sec += value;
+            if ( *sss == '.' ) {
+                // Read fraction
+                *sss++;
+                f = '\1';
+                goto read_next_value;
+            }
+            break;
+        case 'G':
+            m_Sec = value;
+            if ( *sss == '.' ) {
+                // Read fraction
+                *sss++;
+                f = '\1';
+                goto read_next_value;
+            }
+            break;
+        case '\1':
+            {
+                // Special format symbol.
+                // Process a fraction of a second for format symbols 'g' and 'G'.
+                // Convert value to nanoseconds.
+                int n = strlen(value_str);
+                // 'n' cannot have more then 9 (max for nanoseconds) - see above.
+                _ASSERT(n <= 9);
+                for (;  n < 9;  n++) {
+                    value *= 10;
+                }
+                m_NanoSec = value;
+                // Limit fraction of second to 9 digits max,
+                // ignore all other digits in string if any.
+                while ( isdigit((unsigned char)(*sss)) ) {
+                    sss++;
+                }
+            }
             break;
         default:
             NCBI_THROW(CTimeException, eFormat, "Format '" + fmt + "' is incorrect");
@@ -2251,25 +2366,25 @@ void CTimeSpan::x_Normalize(void)
 }
 
 
-void CTimeSpan::SetFormat(const CTimeFormat& format)
+void CTimeSpan::SetFormat(const CTimeFormat& fmt)
 {
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    CTimeFormat* ptr = new CTimeFormat(format);
+    CTimeFormat* ptr = new CTimeFormat(fmt);
     s_TlsFormatSpan.SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
 CTimeFormat CTimeSpan::GetFormat(void)
 {
-    CTimeFormat format;
+    CTimeFormat fmt;
     CTimeFormat* ptr = s_TlsFormatSpan.GetValue();
     if ( !ptr ) {
-        format.SetFormat(kDefaultFormatSpan);
+        fmt.SetFormat(kDefaultFormatSpan);
     } else {
-        format = *ptr;
+        fmt = *ptr;
     }
-    return format;
+    return fmt;
 }
 
 
@@ -2279,6 +2394,7 @@ string CTimeSpan::AsString(const CTimeFormat& format) const
     str.reserve(64); // try to save on memory allocations
     string fmt;
     CTimeFormat::TFlags fmt_flags;
+
     if ( format.IsEmpty() ) {
         CTimeFormat f = GetFormat();
         fmt       = f.GetString();
@@ -2323,6 +2439,14 @@ string CTimeSpan::AsString(const CTimeFormat& format) const
         case 'S': s_AddInt(str, abs(GetCompleteSeconds()));
                   break;
         case 'n': s_AddZeroPadInt(str, abs(GetNanoSecondsAfterSecond()), 9);
+                  break;
+        case 'g': s_AddInt(str, abs(x_Second()));
+                  str += ".";
+                  s_AddZeroPadInt(str, abs(GetNanoSecondsAfterSecond()), 9, true);
+                  break;
+        case 'G': s_AddInt(str, abs(GetCompleteSeconds()));
+                  str += ".";
+                  s_AddZeroPadInt(str, abs(GetNanoSecondsAfterSecond()), 9, true);
                   break;
         default : str += *it;
                   break;
@@ -3331,6 +3455,7 @@ CStopWatch::CStopWatch(bool start)
     }
 } // NCBI_FAKE_WARNING
 
+
 double CStopWatch::GetTimeMark()
 {
 #if defined(NCBI_OS_MSWIN)
@@ -3354,7 +3479,6 @@ double CStopWatch::GetTimeMark()
 
 #else
     // For Unixes, we use gettimeofday()
-
     struct timeval time;
     if ( gettimeofday (&time, 0) ) {
         return 0.0;
@@ -3364,36 +3488,36 @@ double CStopWatch::GetTimeMark()
 }
 
 
-void CStopWatch::SetFormat(const CTimeFormat& format)
+void CStopWatch::SetFormat(const CTimeFormat& fmt)
 {
     // Here we do not need to delete a previous value stored in the TLS.
     // The TLS will destroy it using s_TlsFormatCleanup().
-    CTimeFormat* ptr = new CTimeFormat(format);
+    CTimeFormat* ptr = new CTimeFormat(fmt);
     s_TlsFormatStopWatch.SetValue(ptr, s_TlsFormatCleanup);
 }
 
 
 CTimeFormat CStopWatch::GetFormat(void)
 {
-    CTimeFormat format;
+    CTimeFormat fmt;
     CTimeFormat* ptr = s_TlsFormatStopWatch.GetValue();
     if ( !ptr ) {
-        format.SetFormat(kDefaultFormatStopWatch);
+        fmt.SetFormat(kDefaultFormatStopWatch);
     } else {
-        format = *ptr;
+        fmt = *ptr;
     }
-    return format;
+    return fmt;
 }
 
 
-string CStopWatch::AsString(const CTimeFormat& format) const
+string CStopWatch::AsString(const CTimeFormat& fmt) const
 {
-    CTimeSpan ts(Elapsed());
-    if ( format.IsEmpty() ) {
-        CTimeFormat fmt = GetFormat();
-        return ts.AsString(fmt);
+    double e = Elapsed();
+    CTimeSpan ts(e < 0.0 ? 0.0 : e);
+    if ( fmt.IsEmpty() ) {
+        return ts.AsString(GetFormat());
     }
-    return ts.AsString(format);
+    return ts.AsString(fmt);
 }
 
 

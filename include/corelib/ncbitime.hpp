@@ -35,10 +35,10 @@
 
 /// @file ncbitime.hpp
 /// Defines:
-///   CTimeFormat    - storage class for fime format.
+///   CTimeFormat    - storage class for time format.
 ///   CTime          - standard Date/Time class to represent an absolute time.
 ///   CTimeSpan      - class to represents a relative time span.
-///   CStopWatch     - stop watch class to measure elasped time.
+///   CStopWatch     - stop watch class to measure elapsed time.
 ///   CTimeout       - timeout interval for various I/O etc activity.
 ///   CNanoTimeout   - timeout interval with nanoseconds precision.
 ///   CDeadline      - timeout that use absolute time mark (deadline time).
@@ -123,6 +123,9 @@ class NCBI_XNCBI_EXPORT CTimeFormat
 public:
     /// Flags.
     ///
+    /// @note
+    ///   It not specified otherwise, format have fDefault value "by default",
+    ///   that mean simple format string and strict matching.
     /// @sa SetFormat, AsString
     enum EFlags {
         /// Use single characters as format symbols.
@@ -132,6 +135,7 @@ public:
         /// a characters that are a format symbols. 
         /// To include symbol '$' use '$$'.
         fFormat_Ncbi       = (1 << 1),
+
         /// A time string should strictly match the format string.
         fMatch_Strict      = (1 << 5),       ///< eg "Y" and "1997"
         /// A time/format string can have extra trailing format symbols,
@@ -172,7 +176,7 @@ public:
     CTimeFormat(void);
 
     /// Copy constructor.
-    CTimeFormat(const CTimeFormat& format);
+    CTimeFormat(const CTimeFormat& fmt);
 
     /// Constructor.
     ///
@@ -185,7 +189,7 @@ public:
     CTimeFormat(const string& fmt, TFlags flags = fDefault);
 
     /// Assignment operator.
-    CTimeFormat& operator= (const CTimeFormat& format);
+    CTimeFormat& operator= (const CTimeFormat& fmt);
 
     /// Set the current time format.
     ///
@@ -194,7 +198,7 @@ public:
     /// @param flags
     ///   Flags specifying how to match a time string against format string.
     /// @sa
-    ///   GetFormat, EFormat
+    ///   GetFormat, EFormat, EFlags
     void SetFormat(const char* fmt, TFlags flags = fDefault);
 
     /// Set the current time format.
@@ -272,7 +276,7 @@ public:
 
     /// Which initial value to use for timezone.
     enum ETimeZone {
-        eLocal,       ///< Use local time
+        eLocal = 1,   ///< Use local time
         eGmt          ///< Use GMT (Greenwich Mean Time)
     };
 
@@ -430,9 +434,11 @@ public:
     ///   implies the format, that was previously setup using SetFormat()
     ///   method, or default "M/D/Y h:m:s".
     /// @param tz
-    ///   Whether to use local time (default) or GMT.
-    /// @param tzp
-    ///   What time zone precision to use.
+    ///   If current format contains 'Z', then objects timezone will be set to:
+    ///     - eGMT if "str" has word "GMT" in the appropriate position;
+    ///     - eLocal otherwise.
+    ///   If current format does not contain 'Z', objects timezone
+    ///   will be set to 'tz' value.
     /// @sa AsString, operator=
     explicit CTime(const string& str, const CTimeFormat& fmt = kEmptyStr,
                    ETimeZone tz = eLocal,
@@ -444,16 +450,18 @@ public:
     /// Assignment operator.
     CTime& operator= (const CTime& t);
 
-    /// Assignment operator.
+    /// Assignment operator from string.
     ///
     /// If current format contains 'Z', then objects timezone will be set to:
     ///   - eGMT if "str" has word "GMT" in the appropriate position;
     ///   - eLocal otherwise.
     /// If current format does not contain 'Z', objects timezone
     /// will not be changed.
-    /// NOTE: This operator expect a string in the format, 
-    ///       that was previously setup using SetFormat() method.
-    /// @sa CTime constructor from string, AsString
+    /// @note
+    ///   This operator expect a string in the format, that was previously
+    ///   set using SetFormat() method.
+    /// @sa
+    ///   CTime constructor from string, AsString
     CTime& operator= (const string& str);
 
     /// Set time using time_t time value.
@@ -546,7 +554,7 @@ public:
     /// Set the current time format.
     ///
     /// The default format is: "M/D/Y h:m:s".
-    /// @param format
+    /// @param fmt
     ///   An object contains string of letters describing the time
     ///   format and its type. The format letters have
     ///   the following meanings:
@@ -564,6 +572,9 @@ public:
     ///   - l = milliseconds as decimal number (000-999)
     ///   - r = microseconds as decimal number (000000-999999)
     ///   - S = nanosecond as decimal number   (000000000-999999999)
+    ///   - G = seconds and fraction part of second as double value
+    ///         ("s.nnn") with floating number (1-9) of digits after dot.
+    ///   - g = same as "G" but w/o leading "0" if number of seconds < 10.
     ///   - P = am/pm                          (AM/PM)
     ///   - p = am/pm                          (am/pm)
     ///   - Z = timezone format                (GMT or none)
@@ -582,7 +593,7 @@ public:
     ///   current year.
     /// @sa
     ///   CTimeFormat, GetFormat, AsString
-    static void SetFormat(const CTimeFormat& format);
+    static void SetFormat(const CTimeFormat& fmt);
 
     /// Get the current time format.
     ///
@@ -1108,8 +1119,8 @@ public:
     string TimeZoneName(void);
 
 private:
-    /// Helper method to set time value from string "str" using "format".
-    void x_Init(const string& str, const CTimeFormat& format);
+    /// Helper method to set time value from string "str" using format "fmt".
+    void x_Init(const string& str, const CTimeFormat& fmt);
 
     /// Helper method to set time from 'time_t' -- If "t" not specified,
     /// then set to current time.
@@ -1167,7 +1178,7 @@ private:
         // as stored during the last call to x_AdjustTime***().
         Int4          adjTimeDiff NCBI_TIME_BITFIELD(18);
         // Timezone and precision
-        ETimeZone     tz          NCBI_TIME_BITFIELD(2);  // local/GMT
+        ETimeZone     tz          NCBI_TIME_BITFIELD(3);  // local/GMT
         ETimeZonePrecision tzprec NCBI_TIME_BITFIELD(4);  // Time zone precision
         NCBI_TIME_EMPTY_BITFIELD  // Force alignment
         Int4          nanosec;
@@ -1275,6 +1286,10 @@ public:
     ///   - s = seconds, "S" modulo 60 (-59 - 59)
     ///   - N = total whole number of nanoseconds stored in the time span
     ///   - n = nanoseconds (-999999999 - 999999999)
+    ///   - G = total whole number of seconds and part of second as double value
+    ///         ("S.nnn") with floating number (1-9) of digits after dot.
+    ///   - g = seconds, "S" modulo 60 and part of second as double value
+    ///         ("s.nnn") with floating number (1-9) of digits after dot.
     /// @sa
     ///   CTimeFormat, GetFormat, AsString
     static void SetFormat(const CTimeFormat& format);
@@ -1290,14 +1305,14 @@ public:
 
     /// Transform time span to string.
     ///
-    /// @param format
+    /// @param fmt
     ///   Format specifier used to convert time span to string.
-    ///   If "format" is not defined, then GetFormat() will be used.
+    ///   If format is not defined, then GetFormat() will be used.
     /// @return
     ///   A string representation of time span in specified format.
     /// @sa
     ///   CTimeFormat, GetFormat, SetFormat
-    string AsString(const CTimeFormat& format = kEmptyStr) const;
+    string AsString(const CTimeFormat& fmt = kEmptyStr) const;
 
     /// Return span time as string using the format returned by GetFormat().
     operator string(void) const;
@@ -1465,8 +1480,8 @@ private:
     /// Seconds after the minute = -59..59
     int x_Second(void) const;
 
-    /// Helper method to set time value from string "str" using "format".
-    void x_Init(const string& str, const CTimeFormat& format);
+    /// Helper method to set time value from string "str" using format "fmt".
+    void x_Init(const string& str, const CTimeFormat& fmt);
 
     /// Helper method to normalize stored time value.
     void x_Normalize(void);
@@ -1724,7 +1739,7 @@ private:
 ///
 /// CStopWatch --
 ///
-/// Define a stop watch class to measure elasped time.
+/// Define a stop watch class to measure elapsed time.
 
 class NCBI_XNCBI_EXPORT CStopWatch
 {
@@ -1741,7 +1756,7 @@ public:
 
     /// Constructor.
     /// Start timer if argument is true.
-    /// @deprecated Use CStopWatch(EStat) constuctor instead.
+    /// @deprecated Use CStopWatch(EStat) constructor instead.
     NCBI_DEPRECATED_CTOR(CStopWatch(bool start));
 
     /// Start the timer.
@@ -1774,18 +1789,18 @@ public:
 
     /// Set the current stopwatch time format.
     ///
-    /// The default format is: "-S.n".
-    /// @param format
+    /// The default format is: "S.n".
+    /// @param fmt
     ///   Format specifier used to convert time span to string.
-    ///   If "format" is not defined, then GetFormat() will be used.
+    ///   If format is not defined, then GetFormat() will be used.
     ///   Uses the same time format as CTimeSpan class.
     /// @sa
     ///   CTimeFormat, CTimeSpan::SetFormat, AsString
-    static void SetFormat(const CTimeFormat& format);
+    static void SetFormat(const CTimeFormat& fmt);
 
     /// Get the current stopwatch time format.
     ///
-    /// The default format is: "-S.n".
+    /// The default format is: "S.n".
     /// @return
     ///   An object describing the time format.
     ///   The letters having the same means that for CTimeSpan.
@@ -1798,13 +1813,13 @@ public:
     /// According to used OS, the double representation can provide much
     /// finer grained time control. The string representation is limited
     /// by nanoseconds.
-    /// @param format
-    ///   If "format" is not defined, then GetFormat() will be used.
+    /// @param fmt
+    ///   If format is not defined, then GetFormat() will be used.
     ///   Format specifier used to convert value returned by Elapsed()
     ///   to string.
     /// @sa
     ///   CTimeSpan::AsString, CTimeFormat, Elapsed, GetFormat, SetFormat
-    string AsString(const CTimeFormat& format = kEmptyStr) const;
+    string AsString(const CTimeFormat& fmt = kEmptyStr) const;
 
     /// Return stopwatch time as string using the format returned
     /// by GetFormat().
@@ -2007,17 +2022,9 @@ ostream& operator<< (ostream& os, const CTime& t)
 //
 
 inline
-void CTimeFormat::SetFormat(const string& fmt, TFlags flags)
-{
-    m_Str   = fmt;
-    m_Flags = flags;
-}
-
-inline
 void CTimeFormat::SetFormat(const char* fmt, TFlags flags)
 {
-    m_Str   = fmt;
-    m_Flags = flags;
+    SetFormat(string(fmt), flags);
 }
 
 inline

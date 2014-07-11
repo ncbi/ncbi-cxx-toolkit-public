@@ -478,6 +478,8 @@ static void s_TestFormats(void)
         {"M/D/Y h:m:s z",           1},
 #endif
         {"M/D/Y Z h:m:s",           1},
+        {"M/D/Y h:m:G",             0},
+        {"M/D/Y h:m g",             0},
         {"smhyMD",                  1},
         {"y||||M++++D   h===ms",    1},
         {"   yM[][D   h:,.,.,ms  ", 1},
@@ -834,6 +836,37 @@ static void s_TestFormats(void)
         t.SetSecond(30);
         assert(t == t0);
     }}
+
+    // Formats with floating numbers of seconds ("g", "G")
+    {{
+        CTime t;
+        {{
+            t.SetFormat("g");
+            t = "3";
+            assert(t.AsString()      == "3.0");
+            assert(t.AsString("s.S") == "03.000000000");
+            t = "3.45";
+            assert(t.AsString()      == "3.45");
+            assert(t.AsString("s.S") == "03.450000000");
+            // long string with ignored symbols after 9th digit.
+            t = "3.123456789123456";
+            assert(t.AsString()      == "3.123456789");
+            assert(t.AsString("s.S") == "03.123456789");
+        }}
+        {{
+            t.SetFormat("G");
+            t = "3";
+            assert(t.AsString()      == "03.0");
+            assert(t.AsString("s.S") == "03.000000000");
+            t = "3.45";
+            assert(t.AsString()      == "03.45");
+            assert(t.AsString("s.S") == "03.450000000");
+            // long string with ignored symbols after 9th digit.
+            t = "3.123456789123456";
+            assert(t.AsString()      == "03.123456789");
+            assert(t.AsString("s.S") == "03.123456789");
+        }}
+    }}
 }
 
 
@@ -1183,6 +1216,37 @@ static void s_TestTimeSpan(void)
         assert(t == CTimeSpan("49.999999999"));
     }}
 
+    // Formats with floating numbers of seconds ("g", "G")
+    {{
+        CTimeSpan t;
+        {{
+            t.SetFormat("g");
+            t = "123";
+            assert(t.AsString()      == "3.0");
+            assert(t.AsString("s.n") == "3.000000000");
+            t = "123.45";
+            assert(t.AsString()      == "3.45");
+            assert(t.AsString("s.n") == "3.450000000");
+            // long string with ignored symbols after 9th digit.
+            t = "123.123456789123456";
+            assert(t.AsString()      == "3.123456789");
+            assert(t.AsString("s.n") == "3.123456789");
+        }}
+        {{
+            t.SetFormat("G");
+            t = "123";
+            assert(t.AsString()      == "123.0");
+            assert(t.AsString("S.n") == "123.000000000");
+            t = "123.45";
+            assert(t.AsString()      == "123.45");
+            assert(t.AsString("S.n") == "123.450000000");
+            // long string with ignored symbols after 9th digit.
+            t = "123.123456789123456";
+            assert(t.AsString()      == "123.123456789");
+            assert(t.AsString("S.n") == "123.123456789");
+        }}
+    }}
+
     // Formats
     {{
         static const char* s_Fmt[] = {
@@ -1192,12 +1256,16 @@ static void s_TestTimeSpan(void)
             "H",
             "M",
             "d",
+            "G",
+            "g",
             "-d h:m:s.n",
             "-H m:s",
             "-S",
             "-H",
             "-M",
             "-d",
+            "-G",
+            "-g",
             0
         };
 
