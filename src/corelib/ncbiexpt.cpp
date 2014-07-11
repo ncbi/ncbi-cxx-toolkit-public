@@ -788,4 +788,12 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
 #endif
 
 
+// Function declared in ncbimics.hpp
+void g_ThrowOnNull(void)
+{
+    NCBI_THROW(CCoreException, eNullPtr,
+        "Attempt to access NULL CNullable value.");
+}
+
+
 END_NCBI_SCOPE

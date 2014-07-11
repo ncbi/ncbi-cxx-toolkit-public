@@ -691,6 +691,85 @@ private:
 
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CNullable --
+///
+/// A value whith 'unassigned' state.
+///
+
+
+/// Define "null" pointer value.
+enum ENull {
+    null = 0
+};
+
+
+// Default callback for null value - throws CCoreException.
+void g_ThrowOnNull(void);
+
+// Default callback template.
+template <class TValue>
+struct SThrowOnNull
+{
+    TValue operator()(void) const
+    {
+        g_ThrowOnNull();
+    }
+};
+
+
+/// Template class allowing to store a value or null (unassigned) state.
+/// TNullToValue functor can be used to perform an action when the value
+/// is requested from a null object. By default CCoreException is thrown.
+/// To perform other actions (e.g. provide a default value) the functor
+/// must define 'TValue operator()(void) const' method.
+template <class TValue, class TNullToValue = SThrowOnNull<TValue> >
+class CNullable
+{
+public:
+    /// Create an empty nullable.
+    CNullable(ENull = null)
+        : m_IsNull(true) {}
+    /// Initialize nullable with a specific value.
+    CNullable(TValue value)
+        : m_IsNull(false), m_Value(value) {}
+
+    /// Check if the object is unassigned.
+    bool IsNull(void) const
+    {
+        return m_IsNull;
+    }
+
+    /// Get nullable value.
+    /// If NULL, then call FNullToValue and use the value return by the latter.
+    /// @attention  The default implementation of TNullToValue (g_ThrowOnNull)
+    ///             throws an exception! 
+    operator TValue(void) const
+    {
+        return m_IsNull ? TNullToValue()() : m_Value;
+    }
+
+    /// Assign a value to the nullable.
+    CNullable& operator= (TValue value)
+    {
+        m_IsNull = false; m_Value = value;
+        return *this;
+    }
+    
+    /// Reset nullable to unassigned state.
+    CNullable& operator= (ENull  null_value)
+    {
+        m_IsNull = true;
+        return *this;
+    }
+
+private:
+    bool   m_IsNull;
+    TValue m_Value;
+};
+
+
 // "min" and "max" templates
 //
 

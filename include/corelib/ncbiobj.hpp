@@ -62,13 +62,6 @@ class CObject;
 class CObjectEx;
 
 
-/// Define "null" pointer value.
-enum ENull {
-    null = 0
-};
-
-
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CObjectException --

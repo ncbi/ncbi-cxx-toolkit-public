@@ -438,6 +438,12 @@ void CHttpFormData::WriteFormData(CNcbiOstream& out) const
 }
 
 
+bool CHttpFormData::IsEmpty(void) const
+{
+    return !m_Entries.empty()  ||  !m_Providers.empty();
+}
+
+
 ///////////////////////////////////////////////////////
 //  CHttpResponse::
 //
@@ -523,6 +529,24 @@ void CHttpResponse::x_ParseHeader(const char* header)
 //
 
 
+unsigned short SGetHttpDefaultRetries::operator()(void) const
+{
+    #define STR(s) #s
+    char buf[16];
+    ConnNetInfo_GetValue(0, REG_CONN_MAX_TRY, buf, sizeof(buf), STR(DEF_CONN_MAX_TRY));
+    unsigned short maxtry = atoi(buf);
+    return maxtry ? maxtry - 1 : 0;
+}
+
+
+inline
+unsigned short RetriesToMaxtry(unsigned short retries)
+{
+    retries++;
+    return retries ? retries : retries - 1;
+}
+
+
 CHttpRequest::CHttpRequest(CHttpSession& session,
                            const CUrl&   url,
                            EReqMethod    method)
@@ -530,8 +554,7 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
       m_Url(url),
       m_Method(method),
       m_Headers(new CHttpHeaders),
-      m_Timeout(CTimeout::eDefault),
-      m_MaxTry(0)
+      m_Timeout(CTimeout::eDefault)
 {
 }
 
@@ -591,27 +614,6 @@ CHttpFormData& CHttpRequest::FormData(void)
 }
 
 
-unsigned short CHttpRequest::GetRetries(void) const
-{
-    if ( m_MaxTry ) {
-        return m_MaxTry - 1;
-    }
-    // Get the default value
-    SConnNetInfo* connnetinfo = ConnNetInfo_Create(0);
-    unsigned short maxtry = connnetinfo->max_try;
-    ConnNetInfo_Destroy(connnetinfo);
-    return maxtry ? maxtry - 1 : 0;
-}
-
-
-CHttpRequest& CHttpRequest::SetRetries(unsigned short retries)
-{
-    retries++;
-    m_MaxTry = retries ? retries : retries - 1;
-    return *this;
-}
-
-
 void CHttpRequest::x_InitConnection(bool use_form_data)
 {
     if (m_Response  ||  m_Stream) {
@@ -632,8 +634,8 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         STimeout sto;
         ConnNetInfo_SetTimeout(connnetinfo, g_CTimeoutToSTimeout(m_Timeout, sto));
     }
-    if ( m_MaxTry ) {
-        connnetinfo->max_try = m_MaxTry;
+    if ( !m_Retries.IsNull() ) {
+        connnetinfo->max_try = RetriesToMaxtry(m_Retries);
     }
 
     m_Stream.Reset(new TStreamRef);
@@ -722,6 +724,21 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
 }
 
 
+CHttpRequest& CHttpRequest::SetTimeout(const CTimeout& timeout)
+{
+    m_Timeout = timeout;
+    return *this;
+}
+
+
+CHttpRequest& CHttpRequest::SetTimeout(unsigned int sec,
+                                       unsigned int usec)
+{
+    m_Timeout.Set(sec, usec);
+    return *this;
+}
+
+
 ///////////////////////////////////////////////////////
 //  CHttpSession::
 //
@@ -739,17 +756,26 @@ CHttpRequest CHttpSession::NewRequest(const CUrl& url, ERequestMethod method)
 }
 
 
-CHttpResponse CHttpSession::Get(const CUrl& url)
+CHttpResponse CHttpSession::Get(const CUrl&         url,
+                                const CTimeout&     timeout,
+                                const THttpRetries& retries)
 {
-    return NewRequest(url, eGet).Execute();
+    CHttpRequest req = NewRequest(url, eGet);
+    req.SetTimeout(timeout);
+    req.SetRetries(retries);
+    return req.Execute();
 }
 
 
-CHttpResponse CHttpSession::Post(const CUrl& url,
-                                 CTempString data,
-                                 CTempString content_type)
+CHttpResponse CHttpSession::Post(const CUrl&         url,
+                                 CTempString         data,
+                                 CTempString         content_type,
+                                 const CTimeout&     timeout,
+                                 const THttpRetries& retries)
 {
     CHttpRequest req = NewRequest(url, ePost);
+    req.SetTimeout(timeout);
+    req.SetRetries(retries);
     if ( content_type.empty() ) {
         content_type = kContentType_FormUrlEnc;
     }
@@ -787,6 +813,26 @@ string CHttpSession::x_GetCookies(const CUrl& url) const
         cookies += it->AsString(CHttpCookie::eHTTPRequest);
     }
     return cookies;
+}
+
+
+CHttpResponse g_HttpGet(const CUrl&         url,
+                        const CTimeout&     timeout,
+                        const THttpRetries& retries)
+{
+    CRef<CHttpSession> session(new CHttpSession);
+    return session->Get(url, timeout, retries);
+}
+
+
+CHttpResponse g_HttpPost(const CUrl&         url,
+                         CTempString         data,
+                         CTempString         content_type,
+                         const CTimeout&     timeout,
+                         const THttpRetries& retries)
+{
+    CRef<CHttpSession> session(new CHttpSession);
+    return session->Post(url, data, content_type, timeout, retries);
 }
 
 

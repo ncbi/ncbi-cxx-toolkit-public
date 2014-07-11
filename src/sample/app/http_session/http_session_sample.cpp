@@ -56,7 +56,7 @@ public:
     virtual void Init(void);
     virtual int Run(void);
 
-    void PrintResponse(const CHttpSession& session,
+    void PrintResponse(const CHttpSession* session,
                        const CHttpResponse& response);
 
 private:
@@ -153,7 +153,7 @@ int CHttpSessionApp::Run(void)
             cout << "HEAD " << *it << endl;
             CHttpRequest req = session.NewRequest(*it, CHttpSession::eHead);
             SetupRequest(req);
-            PrintResponse(session, req.Execute());
+            PrintResponse(&session, req.Execute());
             cout << "-------------------------------------" << endl << endl;
         }
     }
@@ -164,7 +164,7 @@ int CHttpSessionApp::Run(void)
             cout << "GET " << *it << endl;
             CHttpRequest req = session.NewRequest(*it);
             SetupRequest(req);
-            PrintResponse(session, req.Execute());
+            PrintResponse(&session, req.Execute());
             cout << "-------------------------------------" << endl << endl;
         }
     }
@@ -175,7 +175,7 @@ int CHttpSessionApp::Run(void)
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
         SetupRequest(req);
         NcbiStreamCopy(req.ContentStream(), cin);
-        PrintResponse(session, req.Execute());
+        PrintResponse(&session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }
 
@@ -194,7 +194,7 @@ int CHttpSessionApp::Run(void)
         CHttpRequest req = session.NewRequest(url, CHttpSession::eHead);
         SetupRequest(req);
         CHttpResponse resp = req.Execute();
-        PrintResponse(session, resp);
+        PrintResponse(&session, resp);
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -203,7 +203,7 @@ int CHttpSessionApp::Run(void)
         cout << "GET (no args) " << sample_url << endl;
         CHttpRequest req = session.NewRequest(url);
         SetupRequest(req);
-        PrintResponse(session, req.Execute());
+        PrintResponse(&session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -214,7 +214,7 @@ int CHttpSessionApp::Run(void)
         url_with_args.GetArgs().SetValue("message", "GET data");
         CHttpRequest req = session.NewRequest(url_with_args);
         SetupRequest(req);
-        PrintResponse(session, req.Execute());
+        PrintResponse(&session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -225,7 +225,7 @@ int CHttpSessionApp::Run(void)
         SetupRequest(req);
         CHttpFormData& data = req.FormData();
         data.AddEntry("message", "POST data");
-        PrintResponse(session, req.Execute());
+        PrintResponse(&session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -236,7 +236,7 @@ int CHttpSessionApp::Run(void)
         SetupRequest(req);
         CHttpFormData& data = req.FormData();
         data.AddProvider("message", new CTestDataProvider);
-        PrintResponse(session, req.Execute());
+        PrintResponse(&session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -248,15 +248,15 @@ int CHttpSessionApp::Run(void)
         req.Headers().SetValue(CHttpHeaders::eContentType, "application/x-www-form-urlencoded");
         CNcbiOstream& out = req.ContentStream();
         out << "message=POST manual data";
-        PrintResponse(session, req.Execute());
+        PrintResponse(&session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
     {{
         // POST using shortcut
         cout << "POST (shortcut) " << sample_url << endl;
-        CHttpResponse response = session.Post(url, "message=POST%20shortcut%20data");
-        PrintResponse(session, response);
+        CHttpResponse response = g_HttpPost(url, "message=POST%20shortcut%20data");
+        PrintResponse(0, response);
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -265,7 +265,7 @@ int CHttpSessionApp::Run(void)
         cout << "GET (404) " << bad_url << endl;
         CHttpRequest req = session.NewRequest(bad_url);
         SetupRequest(req);
-        PrintResponse(session, req.Execute());
+        PrintResponse(&session, req.Execute());
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -274,7 +274,7 @@ int CHttpSessionApp::Run(void)
 
 
 
-void CHttpSessionApp::PrintResponse(const CHttpSession& session,
+void CHttpSessionApp::PrintResponse(const CHttpSession* session,
                                     const CHttpResponse& response)
 {
     cout << "Status: " << response.GetStatusCode() << " "
@@ -288,9 +288,9 @@ void CHttpSessionApp::PrintResponse(const CHttpSession& session,
         }
     }
 
-    if ( m_PrintCookies ) {
+    if (m_PrintCookies  &&  session) {
         cout << "--- Cookies ---" << endl;
-        ITERATE(CHttpCookies, it, session.Cookies()) {
+        ITERATE(CHttpCookies, it, session->Cookies()) {
             cout << it->AsString(CHttpCookie::eHTTPResponse) << endl;
         }
     }

@@ -370,6 +370,13 @@ private:
 };
 
 
+struct SGetHttpDefaultRetries
+{
+    unsigned short operator()(void) const;
+};
+
+typedef CNullable<unsigned short, SGetHttpDefaultRetries> THttpRetries;
+
 /// HTTP request
 class NCBI_XCONNECT_EXPORT CHttpRequest
 {
@@ -408,10 +415,10 @@ public:
 
     /// Get number of retries. If not set returns the global default
     /// value ($CONN_MAX_TRY - 1).
-    unsigned short GetRetries(void) const;
+    const THttpRetries& GetRetries(void) const { return m_Retries; }
     /// Set number of retries. If not set, the global default
     /// value is used ($CONN_MAX_TRY - 1).
-    CHttpRequest& SetRetries(unsigned short retries);
+    void SetRetries(const THttpRetries& retries) { m_Retries = retries; }
 
 private:
     friend class CHttpSession;
@@ -446,7 +453,7 @@ private:
     CRef<TStreamRef>    m_Stream;
     CRef<CHttpResponse> m_Response; // current response or null
     CTimeout            m_Timeout;
-    unsigned short      m_MaxTry;
+    THttpRetries        m_Retries;
 };
 
 
@@ -473,7 +480,9 @@ public:
     /// @param url
     ///   URL to send request to.
     /// @sa NewRequest() CHttpRequest
-    CHttpResponse Get(const CUrl& url);
+    CHttpResponse Get(const CUrl&         url,
+                      const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                      const THttpRetries& retries = null);
 
     /// Shortcut for POST requests.
     /// @param url
@@ -485,9 +494,11 @@ public:
     ///   Content-type. If empty, application/x-www-form-urlencoded
     ///   is used.
     /// @sa NewRequest() CHttpRequest
-    CHttpResponse Post(const CUrl& url,
-                       CTempString data,
-                       CTempString content_type = kEmptyStr);
+    CHttpResponse Post(const CUrl&         url,
+                       CTempString         data,
+                       CTempString         content_type = kEmptyStr,
+                       const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                       const THttpRetries& retries = null);
 
     /// Get all stored cookies.
     const CHttpCookies& Cookies(void) const { return m_Cookies; }
@@ -520,6 +531,25 @@ private:
 };
 
 
+/// Shortcut for GET request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Get()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpGet(const CUrl&         url,
+                        const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                        const THttpRetries& retries = null);
+
+/// Shortcut for POST request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Post()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPost(const CUrl&         url,
+                         CTempString         data,
+                         CTempString         content_type = kEmptyStr,
+                         const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                         const THttpRetries& retries = null);
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CHttpSessionException --
@@ -543,27 +573,6 @@ public:
 
     NCBI_EXCEPTION_DEFAULT(CHttpSessionException, CException);
 };
-
-
-inline bool CHttpFormData::IsEmpty(void) const
-{
-    return !m_Entries.empty()  ||  !m_Providers.empty();
-}
-
-
-inline CHttpRequest& CHttpRequest::SetTimeout(const CTimeout& timeout)
-{
-    m_Timeout = timeout;
-    return *this;
-}
-
-
-inline CHttpRequest& CHttpRequest::SetTimeout(unsigned int sec,
-                                              unsigned int usec)
-{
-    m_Timeout.Set(sec, usec);
-    return *this;
-}
 
 
 END_NCBI_SCOPE
