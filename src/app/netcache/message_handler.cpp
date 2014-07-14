@@ -3486,7 +3486,9 @@ CNCMessageHandler::x_DoCmd_SetValid(void)
 
     if (m_BlobAccess->GetCurBlobVersion() != m_BlobVersion) {
         GetDiagCtx()->SetRequestStatus(eStatus_RaceCond);
-        WriteText("OK:WARNING:BLOB was changed.\n");
+        WriteText("OK:WARNING:BLOB was changed");
+        WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
+        WriteText("\n");
     }
     else {
         x_ProlongVersionLife();
