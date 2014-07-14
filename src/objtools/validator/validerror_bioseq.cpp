@@ -4400,7 +4400,7 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
         if (tag == eSeqlocPartial_Nostop && stop < len - 1 && vec.IsInGap(stop + 1)) {
             is_gap = true;
             return true;
-        } else if (tag == eSeqlocPartial_Nostart && start > 0 && vec.IsInGap(start - 1)) {
+        } else if (tag == eSeqlocPartial_Nostart && start > 0  && start < len && vec.IsInGap(start - 1)) {
             is_gap = true;
             return true;
         }

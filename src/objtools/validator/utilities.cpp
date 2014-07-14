@@ -1279,7 +1279,7 @@ bool s_PartialAtGapOrNs (
     try {
         if (tag == sequence::eSeqlocPartial_Nostop && stop < len - 1 && vec.IsInGap(stop + 1)) {
             return true;
-        } else if (tag == sequence::eSeqlocPartial_Nostart && start > 0 && vec.IsInGap(start - 1)) {
+        } else if (tag == sequence::eSeqlocPartial_Nostart && start > 0 && start < len && vec.IsInGap(start - 1)) {
             return true;
         }
     } catch ( exception& ) {
