@@ -1336,9 +1336,12 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                               )
 {
     if (
-        /* (msg->severity == 0  &&  msg->msgnumber == 0)  ||*/
-        // commented out because nobody remember why it is there and PubSeqOS does
-        // send messages with 0 0 that need to be processed
+        (msg->severity == 0  &&  msg->msgnumber == 0
+         &&  CTempString(msg->text, msg->textlen)
+             .find_first_not_of("\t\n\r ") == NPOS) ||
+        // PubSeqOS sends messages with 0 0 that need to be processed, so
+        // ignore only those whose text consists entirely of whitespace
+        // (as MS SQL sends in some cases).
         msg->msgnumber == 3621 ||  // The statement has been terminated.
         msg->msgnumber == 3980 ||  // The request failed to run because the batch is aborted...
         msg->msgnumber == 5701 ||  // Changed database context to ...
