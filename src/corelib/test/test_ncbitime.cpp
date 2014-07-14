@@ -1223,14 +1223,14 @@ static void s_TestTimeSpan(void)
             t.SetFormat("g");
             t = "123";
             assert(t.AsString()      == "3.0");
-            assert(t.AsString("s.n") == "3.000000000");
+            assert(t.AsString("s.n") == "03.000000000");
             t = "123.45";
             assert(t.AsString()      == "3.45");
-            assert(t.AsString("s.n") == "3.450000000");
+            assert(t.AsString("s.n") == "03.450000000");
             // long string with ignored symbols after 9th digit.
             t = "123.123456789123456";
             assert(t.AsString()      == "3.123456789");
-            assert(t.AsString("s.n") == "3.123456789");
+            assert(t.AsString("s.n") == "03.123456789");
         }}
         {{
             t.SetFormat("G");

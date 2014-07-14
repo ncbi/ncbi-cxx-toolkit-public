@@ -663,7 +663,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
             CHECK_RANGE_SEC(value);
             m_Data.sec = (unsigned char)value;
             if ( *sss == '.' ) {
-                *sss++;
+                sss++;
                 char* s = value_str;
                 // Limit fraction of second to 9 digits max,
                 // ignore all other digits in string if any.
@@ -2292,7 +2292,7 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
             m_Sec += value;
             if ( *sss == '.' ) {
                 // Read fraction
-                *sss++;
+                sss++;
                 f = '\1';
                 goto read_next_value;
             }
@@ -2301,7 +2301,7 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
             m_Sec = value;
             if ( *sss == '.' ) {
                 // Read fraction
-                *sss++;
+                sss++;
                 f = '\1';
                 goto read_next_value;
             }
