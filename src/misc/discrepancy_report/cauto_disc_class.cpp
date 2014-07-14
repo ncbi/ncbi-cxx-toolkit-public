@@ -37,131 +37,13 @@
 #include <misc/discrepancy_report/hauto_disc_class.hpp>
 
 BEGIN_NCBI_SCOPE
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(DiscRepAutoNmSpc);
 
-void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_E_ETC( CSeq_feat & arg0_raw )
-{ // type Sequence
-  CRef<CSeq_feat> raw_ref( &arg0_raw );
-  CSeq_feat_EditHandle efh;
-
-  CRef<CSeq_feat> new_feat;
-
-  try {
-    // Try to use an edit handle so we can update the object manager
-    efh = CSeq_feat_EditHandle( m_Scope.GetSeq_featHandle( arg0_raw ) );
-    new_feat.Reset( new CSeq_feat );
-    new_feat->Assign( arg0_raw );
-  } catch(...) {
-    new_feat.Reset( &arg0_raw );
-  }
-
-  CSeq_feat &arg0 = *new_feat;
-
-  // m_NewSeqEntry.CheckSeqFeat( arg0 );  // no tests at the SeqFeat level
-
-  if( efh ) {
-    efh.Replace(arg0);
-    arg0_raw.Assign( arg0 );
-  }
-
-} // end of x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_E_ETC
-
-void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_ETC( CSeq_feat & arg0 )
-{ // type Reference
-    x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_E_ETC( arg0 );
-} // end of x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_ETC
-
-template< typename Tcontainer_ncbi_cref_cseq_feat_ >
-void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_ETC( Tcontainer_ncbi_cref_cseq_feat_ & arg0 )
-{ // type UniSequence
-  NON_CONST_ITERATE( typename Tcontainer_ncbi_cref_cseq_feat_, iter, arg0 ) { 
-    x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_ETC( **iter );
-  }
-} // end of x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_ETC
-
-void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_E_data_ETC( CSeq_annot::C_Data & arg0 )
-{ // type Choice
-  switch( arg0.Which() ) {
-  case CSeq_annot::C_Data::e_Ftable:
-    x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_ETC( arg0.SetFtable() );
-    break;
-  default:
-    break;
-  }
-} // end of x_LookAtSeqEntry_set_set_annot_E_E_data_ETC
-
-void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_E_ETC( CSeq_annot & arg0 )
-{ // type Sequence
-  if( arg0.IsSetData() ) {
-    x_LookAtSeqEntry_set_set_annot_E_E_data_ETC( arg0.SetData() );
-  }
-} // end of x_LookAtSeqEntry_set_set_annot_E_E_ETC
-
-void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_ETC( CSeq_annot & arg0 )
-{ // type Reference
-    x_LookAtSeqEntry_set_set_annot_E_E_ETC( arg0 );
-} // end of x_LookAtSeqEntry_set_set_annot_E_ETC
-
-template< typename Tcontainer_ncbi_cref_cseq_annot_ >
-void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_ETC( Tcontainer_ncbi_cref_cseq_annot_ & arg0 )
-{ // type UniSequence
-  NON_CONST_ITERATE( typename Tcontainer_ncbi_cref_cseq_annot_, iter, arg0 ) { 
-    x_LookAtSeqEntry_set_set_annot_E_ETC( **iter );
-  }
-} // end of x_LookAtSeqEntry_set_set_annot_ETC
-
-void CAutoDiscClass::x_LookAtSeqEntry_seq_seq_inst_inst_ext_ext_map( CMap_ext & arg0 )
-{ // type Reference
-  if( arg0.IsSet() ) {
-    x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_ETC( arg0.Set() );
-  }
-} // end of x_LookAtSeqEntry_seq_seq_inst_inst_ext_ext_map
-
-void CAutoDiscClass::x_LookAtSeqEntry_seq_seq_inst_inst_ext_ext( CSeq_ext & arg0 )
-{ // type Choice
-  switch( arg0.Which() ) {
-  case CSeq_ext::e_Map:
-    x_LookAtSeqEntry_seq_seq_inst_inst_ext_ext_map( arg0.SetMap() );
-    break;
-  default:
-    break;
-  }
-} // end of x_LookAtSeqEntry_seq_seq_inst_inst_ext_ext
-
-void CAutoDiscClass::x_LookAtSeqEntry_seq_seq_inst_inst_ext( CSeq_ext & arg0 )
-{ // type Reference
-    x_LookAtSeqEntry_seq_seq_inst_inst_ext_ext( arg0 );
-} // end of x_LookAtSeqEntry_seq_seq_inst_inst_ext
-
-void CAutoDiscClass::x_LookAtSeqEntry_seq_seq_inst_inst( CSeq_inst & arg0 )
-{ // type Sequence
-  m_NewSeqEntry.CheckSeqInstMol( arg0, *m_LastArg_x_LookAtSeqEntry_seq_seq );
-  if( arg0.IsSetExt() ) {
-    x_LookAtSeqEntry_seq_seq_inst_inst_ext( arg0.SetExt() );
-  }
-} // end of x_LookAtSeqEntry_seq_seq_inst_inst
-
-void CAutoDiscClass::x_LookAtSeqEntry_seq_seq_inst( CSeq_inst & arg0 )
-{ // type Reference
-    x_LookAtSeqEntry_seq_seq_inst_inst( arg0 );
-} // end of x_LookAtSeqEntry_seq_seq_inst
-
 void CAutoDiscClass::x_LookAtSeqEntry_seq_seq( CBioseq & arg0 )
 { // type Sequence
-  m_LastArg_x_LookAtSeqEntry_seq_seq = &arg0;
-
   m_NewSeqEntry.CheckBioseq( arg0 );
-  if( arg0.IsSetAnnot() ) {
-    x_LookAtSeqEntry_set_set_annot_ETC( arg0.SetAnnot() );
-  }
-  if( arg0.IsSetInst() ) {
-    x_LookAtSeqEntry_seq_seq_inst( arg0.SetInst() );
-  }
-
-  m_LastArg_x_LookAtSeqEntry_seq_seq = NULL;
 } // end of x_LookAtSeqEntry_seq_seq
 
 void CAutoDiscClass::x_LookAtSeqEntry_seq( CBioseq & arg0 )
@@ -185,9 +67,6 @@ void CAutoDiscClass::x_LookAtSeqEntry_set_set_seq_set( Tcontainer_ncbi_cref_cseq
 void CAutoDiscClass::x_LookAtSeqEntry_set_set( CBioseq_set & arg0 )
 { // type Sequence
   m_NewSeqEntry.CheckBioseqSet( arg0 );
-  if( arg0.IsSetAnnot() ) {
-    x_LookAtSeqEntry_set_set_annot_ETC( arg0.SetAnnot() );
-  }
   if( arg0.IsSetSeq_set() ) {
     x_LookAtSeqEntry_set_set_seq_set( arg0.SetSeq_set() );
   }
@@ -211,5 +90,6 @@ void CAutoDiscClass::LookAtSeqEntry( CSeq_entry & arg0 )
     break;
   }
 } // end of LookAtSeqEntry
+
 
 END_NCBI_SCOPE
