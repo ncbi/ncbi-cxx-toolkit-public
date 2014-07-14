@@ -2987,8 +2987,7 @@ static bool s_IsWGSPattern(string &wgsAccession)
 		NStr::SplitInTwo(wgsAccession,".",wgsAccession,version);                
 	}
 
-    string wgsProj = wgsAccession.substr(0,kWgsProjLength);
-    string wgsId = wgsAccession.substr(kWgsProjLength + 1);    
+    string wgsProj = wgsAccession.substr(0,kWgsProjLength);    
     for (size_t i = 0; i < wgsProj.length(); i ++){
         if(!isalpha(wgsProj[i]&0xff)) {
             isWGS = false;
@@ -2996,7 +2995,7 @@ static bool s_IsWGSPattern(string &wgsAccession)
         }
     }
     if(isWGS) {
-        wgsId = wgsAccession.substr(kWgsProjLength);
+        string wgsId = wgsAccession.substr(kWgsProjLength);
         if(wgsId.length() >= kWgsProjIDLengthMin && wgsId.length() <= kWgsProjIDLengthMax) {
             for (size_t i = 0; i < wgsId.length(); i ++){
                 if(!isdigit(wgsId[i]&0xff)) {
@@ -3004,6 +3003,9 @@ static bool s_IsWGSPattern(string &wgsAccession)
                     break;
                 }
             }
+        }
+        else {
+            isWGS = false;
         }
     }
     return isWGS;
