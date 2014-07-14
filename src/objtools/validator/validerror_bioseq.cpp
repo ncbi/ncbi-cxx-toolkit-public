@@ -5695,8 +5695,11 @@ void s_SetUpXrefPairs(
                 CRef<CMatchmRNA> match_rna(new CMatchmRNA(*it));
                 TMrnaToMatchInsertResult insert_result =
                     mrnaToMatch.insert(make_pair(*it, match_rna));
-                _ASSERT(insert_result.second); // make sure it inserted
-                // mrnaToMatch[*it] = match_rna;
+                // make sure it inserted
+                if( ! insert_result.second ) {
+                    // always fails
+                    _ASSERT("mRNA to Match Insert Falure" == 0);
+                }
                 mrna_list.push_back(match_rna);
             }
         }
