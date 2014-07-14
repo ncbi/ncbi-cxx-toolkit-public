@@ -262,14 +262,18 @@ CSQLITE_Exception::GetErrCodeString(void) const
 #ifdef HAVE_SQLITE3ASYNC_H
 
 /// Background thread for executing all asynchronous writings to databases
-static CRef<CThread> s_AsyncWritesThread;
+static CSafeStatic< CRef<CThread> > s_AsyncWritesThread;
+DEFINE_STATIC_FAST_MUTEX(s_AsyncThreadInitMutex);
 
 void
 CSQLITE_Global::RunAsyncWritesThread(void)
 {
-    if (s_AsyncWritesThread.IsNull()) {
-        s_AsyncWritesThread = new CSQLITE_AsyncWritesThread();
-        s_AsyncWritesThread->Run();
+    if ( s_AsyncWritesThread->IsNull() ) {
+        CFastMutexGuard lock(s_AsyncThreadInitMutex);
+        if ( s_AsyncWritesThread->IsNull() ) {
+            *s_AsyncWritesThread = new CSQLITE_AsyncWritesThread();
+            (*s_AsyncWritesThread)->Run();
+        }
     }
 }
 
@@ -292,8 +296,12 @@ CSQLITE_Global::Finalize(void)
 #ifdef HAVE_SQLITE3ASYNC_H
     _VERIFY(sqlite3async_control(SQLITEASYNC_HALT, SQLITEASYNC_HALT_IDLE)
                                                                 == SQLITE_OK);
-    if (s_AsyncWritesThread.NotNull()) {
-        s_AsyncWritesThread->Join();
+    if ( s_AsyncWritesThread->NotNull() ) {
+        CFastMutexGuard lock(s_AsyncThreadInitMutex);
+        if ( s_AsyncWritesThread->NotNull() ) {
+            (*s_AsyncWritesThread)->Join();
+            s_AsyncWritesThread->Reset();
+        }
     }
     sqlite3async_shutdown();
 #endif
