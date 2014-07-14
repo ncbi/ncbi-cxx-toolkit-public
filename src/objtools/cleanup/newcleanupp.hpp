@@ -161,6 +161,10 @@ public:
         CSeq_feat& sf
     );
 
+    void BasicCleanupBioSource (
+        CBioSource& src
+    );
+
     void BasicCleanupSeqEntryHandle (
         CSeq_entry_Handle& seh
     );

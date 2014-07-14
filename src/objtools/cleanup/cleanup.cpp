@@ -136,6 +136,15 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
 }
 
 
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioSource& src, Uint4 options)
+{
+    CRef<CCleanupChange> changes(makeCleanupChange(options));
+    CNewCleanup_imp clean_i(changes, options);
+    clean_i.BasicCleanupBioSource(src);
+    return changes;
+}
+
+
 CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_entry_Handle& seh, Uint4 options)
 {
     CRef<CCleanupChange> changes(makeCleanupChange(options));

@@ -85,6 +85,8 @@ public:
     CConstRef<CCleanupChange> BasicCleanup(CSeq_annot& sa,  Uint4 options = 0);
     /// Cleanup a Seq-feat. 
     CConstRef<CCleanupChange> BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
+    /// Cleanup a BioSource. 
+    CConstRef<CCleanupChange> BasicCleanup(CBioSource& src,   Uint4 options = 0);
 
     // Handle versions.
     CConstRef<CCleanupChange> BasicCleanup(CSeq_entry_Handle& seh, Uint4 options = 0);

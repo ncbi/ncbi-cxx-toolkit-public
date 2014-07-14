@@ -699,3 +699,15 @@ BOOST_AUTO_TEST_CASE(Test_CleanPCRPrimerSeq)
     BOOST_CHECK_EQUAL(reaction.GetReverse().Get().front()->GetSeq(), "cttctg<OTHER>ctacaaataagaatcgatctc");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_CleanBioSource)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("  Homo sapiens  ");
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup (*src);
+    BOOST_CHECK_EQUAL(src->GetOrg().GetTaxname(), "Homo sapiens");
+}
