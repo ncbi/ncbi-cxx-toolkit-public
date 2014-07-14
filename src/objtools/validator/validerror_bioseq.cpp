@@ -5696,6 +5696,9 @@ void s_SetUpXrefPairs(
                 TMrnaToMatchInsertResult insert_result =
                     mrnaToMatch.insert(make_pair(*it, match_rna));
                 // make sure it inserted
+                // (Use this if-statement instead of plain _ASSERT
+                // because otherwise the
+                // compiler may say that insert_result is unused.)
                 if( ! insert_result.second ) {
                     // always fails
                     _ASSERT("mRNA to Match Insert Falure" == 0);
