@@ -1020,6 +1020,11 @@ public:
      *  document has <root><node/></root>, due to a bug in libxml2 (at least
      *  till version 2.9.1). The workaround is to use "/root/node" or
      *  "//root/node" depending on circumstances.
+     * @attention
+     *  XPath query cannot match nodes that belong specifically to the default
+     *  namespace. Please see a detailed discussion (and solution) on that in
+     *  the C++ Toolkit book:
+     *  http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_xmlwrapp/#ch_xmlwrapp.Run_an_XPath_Query_with_a_De
      * @note
      *  If the query result is a scalar value (e.g. count() function) then
      *  the result set will have a single node of the following format:
@@ -1043,6 +1048,11 @@ public:
      *  document has <root><node/></root>, due to a bug in libxml2 (at least
      *  till version 2.9.1). The workaround is to use "/root/node" or
      *  "//root/node" depending on circumstances.
+     * @attention
+     *  XPath query cannot match nodes that belong specifically to the default
+     *  namespace. Please see a detailed discussion (and solution) on that in
+     *  the C++ Toolkit book:
+     *  http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_xmlwrapp/#ch_xmlwrapp.Run_an_XPath_Query_with_a_De
      * @note
      *  If the query result is a scalar value (e.g. count() function) then
      *  the result set will have a single node of the following format:
@@ -1068,6 +1078,11 @@ public:
      *  document has <root><node/></root>, due to a bug in libxml2 (at least
      *  till version 2.9.1). The workaround is to use "/root/node" or
      *  "//root/node" depending on circumstances.
+     * @attention
+     *  XPath query cannot match nodes that belong specifically to the default
+     *  namespace. Please see a detailed discussion (and solution) on that in
+     *  the C++ Toolkit book:
+     *  http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_xmlwrapp/#ch_xmlwrapp.Run_an_XPath_Query_with_a_De
      * @exception
      *  Throws exceptions in case of problems
      * @note
@@ -1097,6 +1112,11 @@ public:
      *  document has <root><node/></root>, due to a bug in libxml2 (at least
      *  till version 2.9.1). The workaround is to use "/root/node" or
      *  "//root/node" depending on circumstances.
+     * @attention
+     *  XPath query cannot match nodes that belong specifically to the default
+     *  namespace. Please see a detailed discussion (and solution) on that in
+     *  the C++ Toolkit book:
+     *  http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_xmlwrapp/#ch_xmlwrapp.Run_an_XPath_Query_with_a_De
      * @exception
      *  Throws exceptions in case of problems
      * @note
