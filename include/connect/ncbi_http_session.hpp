@@ -42,7 +42,7 @@
 #include <connect/ncbi_conn_stream.hpp>
 
 
-/** @addtogroup Diagnostics
+/** @addtogroup HttpSession
  *
  * @{
  */
