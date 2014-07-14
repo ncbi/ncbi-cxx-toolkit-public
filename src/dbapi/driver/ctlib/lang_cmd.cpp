@@ -62,6 +62,7 @@ namespace ftds64_ctlib
 CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn, const string& query)
 : CBaseCmd(conn, query)
 , m_RowCount(-1)
+, m_DbgInfo(new TDbgInfo(conn.GetDbgInfo()))
 , m_IsActive(true)
 {
     if (conn.m_ActiveCmd) {
@@ -75,6 +76,7 @@ CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn, const string& cursor_name,
                          const string& query)
 : CBaseCmd(conn, cursor_name, query)
 , m_RowCount(-1)
+, m_DbgInfo(new TDbgInfo(conn.GetDbgInfo()))
 , m_IsActive(true)
 {
     if (conn.m_ActiveCmd) {

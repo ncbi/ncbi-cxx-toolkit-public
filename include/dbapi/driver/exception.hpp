@@ -48,6 +48,7 @@
 BEGIN_NCBI_SCOPE
 
 class CDB_Object;
+class CDBConnParams;
 class CDBParams;
 
 BEGIN_SCOPE(impl)
@@ -142,6 +143,40 @@ public:
         TParams params;
     };
 
+    struct SContext : public CObject {
+        SContext() { }
+        SContext(const CDBConnParams& params);
+
+        void UpdateFrom(const SContext& ctx);
+
+        string server_name;
+        string username;
+        string database_name;
+        string extra_msg;
+    };
+
+    struct SMessageInContext {
+        SMessageInContext(const string& msg, const SContext& context)
+            :  message(msg), context(&context)
+            { }
+        SMessageInContext(const string& msg = kEmptyStr)
+            : message(msg)
+            { }
+        SMessageInContext(const char*   msg)
+            : message(msg)
+            { }
+
+        SMessageInContext operator+(const SContext& context) const;
+
+        string              message;
+        CConstRef<SContext> context;
+
+    private:
+        friend class CDB_Exception;
+        friend class CSDB_Exception;
+        operator const string&(void) const { return message; }
+    };
+
     // access
     // DEPRECATED, Will be removed soon.
     NCBI_DEPRECATED
@@ -164,16 +199,23 @@ public:
     const string& Message(void) const { return GetMsg();               }
     const string& OriginatedFrom() const { return GetModule();         }
 
-    void SetServerName(const string& name) { m_ServerName = name;      }
-    const string& GetServerName(void) const { return m_ServerName;     }
+    void SetServerName(const string& sn) { x_SetContext().server_name = sn; }
+    const string& GetServerName(void) const { return m_Context->server_name; }
 
-    void SetUserName(const string& name) { m_UserName = name;          }
-    const string& GetUserName(void) const { return m_UserName;         }
+    void SetUserName(const string& name) { x_SetContext().username = name; }
+    const string& GetUserName(void) const { return m_Context->username; }
 
+    void SetDatabaseName(const string& d) { x_SetContext().database_name = d; }
+    const string& GetDatabaseName(void) const
+        { return m_Context->database_name; }
+
+    const SContext& GetContext(void) const { return *m_Context; }
+    void ApplyContext(const SContext& context)
+        { x_SetContext().UpdateFrom(context); }
     void SetFromConnection(const impl::CConnection& connection);
 
-    void SetExtraMsg(const string& msg) { m_ExtraMsg = msg;            }
-    const string& GetExtraMsg(void) const { return m_ExtraMsg;         }
+    void SetExtraMsg(const string& msg)   { x_SetContext().extra_msg = msg; }
+    const string& GetExtraMsg(void) const { return m_Context->extra_msg; }
 
     void SetParams(const CDBParams* params);
     void SetParams(const CDBParams& params) { SetParams(&params); }
@@ -195,15 +237,16 @@ public:
     CDB_Exception(const CDiagCompileInfo& info,
                   const CException* prev_exception,
                   EErrCode err_code,
-                  const string& message,
+                  const SMessageInContext& message,
                   EDiagSev severity,
                   int db_err_code)
         : CException(info,
                      prev_exception,
                      (CException::EErrCode)err_code,
-                     message,
+                     message.message,
                      severity )
         , m_DBErrCode(db_err_code)
+        , m_Context(message.context)
         , m_SybaseSeverity(0)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_Exception, CException);
 
@@ -213,16 +256,34 @@ protected:
 protected:
     void x_StartOfWhat(ostream& out) const;
     void x_EndOfWhat  (ostream& out) const;
+    void x_Init(const CDiagCompileInfo& info, const string& message,
+                const CException* prev_exception, EDiagSev severity);
     virtual void x_Assign(const CException& src);
     void x_InitCDB(int db_error_code) { m_DBErrCode = db_error_code; }
+    SContext& x_SetContext(void);
 
 private:
-    string  m_ServerName;
-    string  m_UserName;
-    int     m_SybaseSeverity;
-    string  m_ExtraMsg;
-    CRef<SParams> m_Params;
+    CConstRef<SContext> m_Context;
+    int                 m_SybaseSeverity;
+    CRef<SParams>       m_Params;
 };
+
+inline
+CDB_Exception::SMessageInContext operator+(const string& msg,
+                                           const CDB_Exception::SContext& ctx)
+{
+    return CDB_Exception::SMessageInContext(msg, ctx);
+}
+
+inline
+CDB_Exception::SMessageInContext operator+(const char* msg,
+                                           const CDB_Exception::SContext& ctx)
+{
+    return CDB_Exception::SMessageInContext(msg, ctx);
+}
+
+ostream& operator<<(ostream &os, const CDB_Exception::SContext& ctx);
+ostream& operator<<(ostream &os, const CDB_Exception::SMessageInContext& msg);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -231,7 +292,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_DSEx : public CDB_Exception
 public:
     CDB_DSEx(const CDiagCompileInfo& info,
              const CException* prev_exception,
-             const string& message,
+             const SMessageInContext& message,
              EDiagSev severity,
              int db_err_code)
         : CDB_Exception(info, prev_exception,
@@ -251,7 +312,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_RPCEx : public CDB_Exception
 public:
     CDB_RPCEx(const CDiagCompileInfo& info,
               const CException* prev_exception,
-              const string& message,
+              const SMessageInContext& message,
               EDiagSev severity,
               int db_err_code,
               const string& proc_name,
@@ -289,7 +350,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_SQLEx : public CDB_Exception
 public:
     CDB_SQLEx(const CDiagCompileInfo& info,
               const CException* prev_exception,
-              const string& message,
+              const SMessageInContext& message,
               EDiagSev severity,
               int db_err_code,
               const string& sql_state,
@@ -327,7 +388,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_DeadlockEx : public CDB_Exception
 public:
     CDB_DeadlockEx(const CDiagCompileInfo& info,
                    const CException* prev_exception,
-                   const string& message)
+                   const SMessageInContext& message)
        : CDB_Exception(info,
                        prev_exception,
                        CDB_Exception::eDeadlock,
@@ -347,7 +408,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_TimeoutEx : public CDB_Exception
 public:
     CDB_TimeoutEx(const CDiagCompileInfo& info,
                   const CException* prev_exception,
-                  const string& message,
+                  const SMessageInContext& message,
                   int db_err_code)
        : CDB_Exception(info,
                        prev_exception,
@@ -367,25 +428,21 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_ClientEx : public CDB_Exception
 public:
     CDB_ClientEx(const CDiagCompileInfo& info,
                  const CException* prev_exception,
-                 const string& message,
+                 const SMessageInContext& message,
                  EDiagSev severity,
                  int db_err_code,
-                 const string& dbg_info,
+                 const SContext& dbg_info,
                  const impl::CConnection& connection,
                  const CDBParams* params)
        : CDB_Exception(info, prev_exception, CDB_Exception::eClient,
-                       message, severity, db_err_code)
+                       message + dbg_info, severity, db_err_code)
     {
-        // Many callers already supply it.
-        if ( !NStr::EndsWith(message, dbg_info) ) {
-            AddToMessage(dbg_info);
-        }
         SetFromConnection(connection);
         SetParams(params);
     }
     CDB_ClientEx(const CDiagCompileInfo& info,
                  const CException* prev_exception,
-                 const string& message,
+                 const SMessageInContext& message,
                  EDiagSev severity,
                  int db_err_code)
        : CDB_Exception(info,
@@ -407,7 +464,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_TruncateEx : public CDB_Exception
 public:
     CDB_TruncateEx(const CDiagCompileInfo& info,
                    const CException* prev_exception,
-                   const string& message,
+                   const SMessageInContext& message,
                    int db_err_code)
        : CDB_Exception(info,
                        prev_exception,

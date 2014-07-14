@@ -255,15 +255,15 @@ private:
         return rc;
     }
     template <typename T>
-    T Check(T rc, const string& extra_msg)
+    T Check(T rc, const TDbgInfo& dbg_info)
     {
-        CheckFunctCall(extra_msg);
+        CheckFunctCall(dbg_info);
         return rc;
     }
     RETCODE CheckDead(RETCODE rc);
 
     void CheckFunctCall(void);
-    void CheckFunctCall(const string& extra_msg);
+    void CheckFunctCall(const TDbgInfo& dbg_info);
 
     template <typename T>
     T CheckWhileOpening(T rc)
@@ -273,12 +273,7 @@ private:
     }
     void CheckFunctCallWhileOpening(void);
 
-    string GetDbgInfo(void) const;
-
-    string GetBaseDbgInfo(void) const
-    {
-        return " " + GetExecCntxInfo();
-    }
+    const TDbgInfo& GetDbgInfo(void) const;
 
 private:
     const CDBParams* GetBindParams(void) const;
@@ -326,32 +321,32 @@ public:
 
     RETCODE Check(RETCODE rc)
     {
-        return GetConnection().Check(rc, GetDbgInfo(false));
+        return GetConnection().Check(rc, GetDbgInfo());
     }
     void CheckFunctCall(void)
     {
-        GetConnection().CheckFunctCall(GetDbgInfo(false));
+        GetConnection().CheckFunctCall(GetDbgInfo());
     }
 
     void SetExecCntxInfo(const string& info)
     {
-        m_ExecCntxInfo = info;
+        m_DbgInfo->extra_msg = info;
     }
     const string& GetExecCntxInfo(void) const
     {
-        return m_ExecCntxInfo;
+        return m_DbgInfo->extra_msg;
     }
 
-    string GetDbgInfo(bool want_space = true) const
+    typedef CDBL_Connection::TDbgInfo TDbgInfo;
+    const TDbgInfo& GetDbgInfo(void) const
     {
-        return (want_space ? string(" ") : kEmptyStr) + GetExecCntxInfo() + " "
-            + GetConnection().GetExecCntxInfo();
+        return *m_DbgInfo;
     }
 
 protected:
 //     bool             m_HasFailed;
     int              m_RowCount;
-    string           m_ExecCntxInfo;
+    CRef<TDbgInfo>   m_DbgInfo;
 
 private:
     DBPROCESS*       m_Cmd;
@@ -608,9 +603,9 @@ protected:
                            SDBL_ColDescr* fmt,
                            CDB_Object* item_buff);
 
-    string GetDbgInfo(void) const
+    const CDBL_Connection::TDbgInfo& GetDbgInfo(void) const
     {
-        return " " + GetConnection().GetExecCntxInfo();
+        return GetConnection().GetDbgInfo();
     }
 
     const CDBParams* GetBindParams(void) const 
@@ -916,8 +911,8 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 inline
-string CDBL_Connection::GetDbgInfo(void) const {
-    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : GetBaseDbgInfo();
+const CDBL_Connection::TDbgInfo& CDBL_Connection::GetDbgInfo(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : CConnection::GetDbgInfo();
 }
 
 inline

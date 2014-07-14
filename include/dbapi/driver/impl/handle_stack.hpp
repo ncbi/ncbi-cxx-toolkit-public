@@ -52,6 +52,8 @@ public:
     CDBHandlerStack& operator= (const CDBHandlerStack& s);
 
 public:
+    typedef CDB_Exception::SContext TDbgInfo;
+
     size_t GetSize(void) const
     {
         return m_Stack.size();
@@ -60,12 +62,12 @@ public:
     void Push(CDB_UserHandler* h, EOwnership ownership = eNoOwnership);
     void Pop (CDB_UserHandler* h, bool last = true);
 
-    void PostMsg(CDB_Exception* ex, const string& extra_msg = kEmptyStr,
+    void PostMsg(CDB_Exception* ex, const TDbgInfo* dbg_info = NULL,
                  const CConnection* connection = NULL,
                  const CDBParams* params = NULL) const;
     // Return TRUE if exceptions have been successfully processed.
     bool HandleExceptions(const CDB_UserHandler::TExceptions&  exeptions,
-                          const string& extra_msg,
+                          const TDbgInfo* dbg_info = NULL,
                           const CConnection* connection = NULL,
                           const CDBParams* params = NULL) const;
 
@@ -129,7 +131,7 @@ public:
     typedef deque<CRef<CUserHandlerWrapper> > TContainer;
 
 private:
-    void x_AddDetails(CDB_Exception& ex, const string& extra_msg,
+    void x_AddDetails(CDB_Exception& ex, const TDbgInfo* dbg_info,
                       const CConnection* conn, const CDBParams* params) const;
 
     TContainer m_Stack;

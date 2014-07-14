@@ -56,6 +56,7 @@ CDBL_Cmd::CDBL_Cmd(CDBL_Connection& conn, DBPROCESS* cmd, const string& query)
     : CBaseCmd(conn, query),
       // m_HasFailed(false),
       m_RowCount(-1),
+      m_DbgInfo(new TDbgInfo(conn.GetDbgInfo())),
       m_Cmd(cmd),
       m_IsActive(true)
 {
@@ -70,6 +71,7 @@ CDBL_Cmd::CDBL_Cmd(CDBL_Connection& conn, DBPROCESS* cmd,
     : CBaseCmd(conn, cursor_name, query),
       // m_HasFailed(false),
       m_RowCount(-1),
+      m_DbgInfo(new TDbgInfo(conn.GetDbgInfo())),
       m_Cmd(cmd),
       m_IsActive(true)
 {

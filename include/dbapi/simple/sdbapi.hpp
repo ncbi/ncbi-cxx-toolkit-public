@@ -90,8 +90,33 @@ public:
     /// Returns any underlying DBAPI error code, or else CException::eInvalid.
     CDB_Exception::TErrCode GetDBErrCode(void) const;
 
+    const string& GetServerName(void) const;
+    const string& GetUserName(void) const;
+    const string& GetDatabaseName(void) const;
+
+    /// Returns any additional context (typically, the relevant SQL
+    /// statement or database operation).
+    const string& GetExtraMsg(void) const;
+
+    void ReportExtra(ostream& os) const;
+
     // Standard exception boilerplate code.
-    NCBI_EXCEPTION_DEFAULT(CSDB_Exception, CException);
+    CSDB_Exception(const CDiagCompileInfo& info,
+                   const CException* prev_exception,
+                   EErrCode err_code,
+                   const CDB_Exception::SMessageInContext& message,
+                   EDiagSev severity = eDiag_Error)
+        : CException(info, prev_exception, (CException::EErrCode)err_code,
+                     message.message, severity)
+        , m_Context(message.context)
+        NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CSDB_Exception, CException);
+
+protected:
+    void x_Init(const CDiagCompileInfo& info, const string& message,
+                const CException* prev_exception, EDiagSev severity);
+
+private:
+    CConstRef<CDB_Exception::SContext> m_Context;
 };
 
 
@@ -274,6 +299,7 @@ public:
         CField(CQueryImpl* q, SQueryParamInfo* param_info);
         ~CField(void);
 
+        const CDB_Exception::SContext& x_GetContext(void) const;
 
         /// Flag showing whether this field is for parameter or column value
         bool                             m_IsParam;
@@ -352,6 +378,7 @@ public:
         /// to anything else.
         CRowIterator(CQueryImpl* q, bool is_end);
 
+        const CDB_Exception::SContext& x_GetContext(void) const;
 
         /// Query iterator was created for
         CRef<CQueryImpl> m_Query;
@@ -1032,6 +1059,29 @@ CException::TErrCode CSDB_Exception::GetDBErrCode(void) const
     return dbex ? dbex->GetErrCode() : eInvalid;
 }
 
+inline
+const string& CSDB_Exception::GetServerName(void) const
+{
+    return m_Context->server_name;
+}
+
+inline
+const string& CSDB_Exception::GetUserName(void) const
+{
+    return m_Context->username;
+}
+
+inline
+const string& CSDB_Exception::GetDatabaseName(void) const
+{
+    return m_Context->database_name;
+}
+
+inline
+const string& CSDB_Exception::GetExtraMsg(void) const
+{
+    return m_Context->extra_msg;
+}
 
 inline
 void CSDB_DeadlockException::x_Init(const CDiagCompileInfo&, const string&,

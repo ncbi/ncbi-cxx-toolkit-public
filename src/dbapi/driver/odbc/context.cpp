@@ -182,31 +182,16 @@ CODBC_Reporter::CODBC_Reporter(const impl::CDBHandlerStack* hs,
 , m_Handle(h)
 , m_HType(ht)
 , m_Connection(connection)
-, m_ParentReporter(parent_reporter)
+, m_DbgInfo(parent_reporter == NULL ? new TDbgInfo
+            : new TDbgInfo(parent_reporter->GetDbgInfo()))
 {
+    if (connection) {
+        m_DbgInfo->UpdateFrom(connection->impl::CConnection::GetDbgInfo());
+    }
 }
 
 CODBC_Reporter::~CODBC_Reporter(void)
 {
-}
-
-string
-CODBC_Reporter::GetExtraMsg(void) const
-{
-    const CODBC_Reporter* next = this;
-    // Start one level up when establishing a new connection.
-    if (m_ParentReporter == NULL  &&  m_Connection != NULL) {
-        next = &m_Connection->m_Reporter;
-    }
-
-    string result;
-    do {
-        result += " ";
-        result += next->m_ExtraMsg;
-        next    = next->m_ParentReporter;
-    } while (next != NULL);
-
-    return result;
 }
 
 void CODBC_Reporter::ReportErrors(void) const
@@ -230,8 +215,8 @@ void CODBC_Reporter::ReportErrors(void) const
                                Msg, eMsgStrLen, &MsgLen);
 
         if (rc != SQL_NO_DATA) {
-            string err_msg(CODBCString(Msg).AsUTF8());
-            err_msg += GetExtraMsg();
+            CDB_Exception::SMessageInContext err_msg(CODBCString(Msg).AsUTF8(),
+                                                     GetDbgInfo());
 
             switch( rc ) {
             case SQL_SUCCESS:
@@ -271,8 +256,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 break;
 
             case SQL_SUCCESS_WITH_INFO:
-                err_msg = "Message is too long to be retrieved";
-                err_msg += GetExtraMsg();
+                err_msg.message = "Message is too long to be retrieved";
 
                 {
                     CDB_DSEx dse(DIAG_COMPILE_INFO,
@@ -286,8 +270,8 @@ void CODBC_Reporter::ReportErrors(void) const
                 continue;
 
             default:
-                err_msg = "SQLGetDiagRec failed (memory corruption suspected";
-                err_msg += GetExtraMsg();
+                err_msg.message
+                    = "SQLGetDiagRec failed (memory corruption suspected";
 
                 {
                     CDB_ClientEx ce(DIAG_COMPILE_INFO,
@@ -306,28 +290,10 @@ void CODBC_Reporter::ReportErrors(void) const
     }
 }
 
-void CODBC_Reporter::ReportError(CDB_Exception& ex) const
-{
-    string extra_msg = GetExtraMsg();
-    if ( !NStr::EndsWith(ex.GetMsg(), extra_msg) ) {
-        ex.AddToMessage(extra_msg);
-    }
-    x_PostMsg(ex, true);
-}
-
 void CODBC_Reporter::x_PostMsg(CDB_Exception& ex, bool always_throw) const
 {
     const CDBParams* params = NULL;
     if (m_Connection != NULL) {
-        const string& conn_msg = m_Connection->m_Reporter.m_ExtraMsg;
-        // Explicitly setting the exception's server name and user name fields
-        // keeps SetFromConnection from duplicating SERVER: and USER: info.
-        if (ex.GetServerName().empty() && conn_msg.find(" SERVER: ") != NPOS) {
-            ex.SetServerName(m_Connection->ServerName());
-        }
-        if (ex.GetUserName().empty()  &&  conn_msg.find(" USER: ") != NPOS) {
-            ex.SetUserName(m_Connection->UserName());
-        }
         params = m_Connection->GetBindParams();
     }
 
@@ -338,7 +304,7 @@ void CODBC_Reporter::x_PostMsg(CDB_Exception& ex, bool always_throw) const
         ex.SetParams(params);
         throw ex;
     } else {
-        m_HStack->PostMsg(&ex, kEmptyStr, m_Connection, params);
+        m_HStack->PostMsg(&ex, &GetDbgInfo(), m_Connection, params);
     }
 }
 
@@ -365,7 +331,8 @@ CODBCContext::CODBCContext(SQLLEN version,
 /**/
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
-        string err_message = "Cannot allocate a context" + m_Reporter.GetExtraMsg();
+        CDB_Exception::SMessageInContext err_message
+            ("Cannot allocate a context", m_Reporter.GetDbgInfo());
         DATABASE_DRIVER_ERROR( err_message, 400001 );
     }
 
@@ -460,10 +427,9 @@ CODBCContext::x_Close(bool delete_conn)
 void
 CODBCContext::SetupErrorReporter(const CDBConnParams& params)
 {
-    string extra_msg = " SERVER: " + params.GetServerName() + "; USER: " + params.GetUserName();
-
     CMutexGuard mg(m_CtxMtx);
-    m_Reporter.SetExtraMsg( extra_msg );
+    m_Reporter.SetServerName(params.GetServerName());
+    m_Reporter.SetUserName(params.GetUserName());
 }
 
 

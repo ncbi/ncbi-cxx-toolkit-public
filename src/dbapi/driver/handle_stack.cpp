@@ -125,11 +125,13 @@ CDBHandlerStack& CDBHandlerStack::operator= (const CDBHandlerStack& s)
 }
 
 
-void CDBHandlerStack::x_AddDetails(CDB_Exception& ex, const string& extra_msg,
+void CDBHandlerStack::x_AddDetails(CDB_Exception& ex, const TDbgInfo* dbg_info,
                                    const CConnection* conn,
                                    const CDBParams* params) const
 {
-    ex.SetExtraMsg(extra_msg);
+    if (dbg_info != NULL) {
+        ex.ApplyContext(*dbg_info);
+    }
     if (conn != NULL) {
         ex.SetFromConnection(*conn);
     }
@@ -138,11 +140,11 @@ void CDBHandlerStack::x_AddDetails(CDB_Exception& ex, const string& extra_msg,
     }
 }
 
-void CDBHandlerStack::PostMsg(CDB_Exception* ex, const string& extra_msg,
+void CDBHandlerStack::PostMsg(CDB_Exception* ex, const TDbgInfo* dbg_info,
                               const CConnection* connection,
                               const CDBParams* params) const
 {
-    x_AddDetails(*ex, extra_msg, connection, params);
+    x_AddDetails(*ex, dbg_info, connection, params);
     REVERSE_ITERATE(TContainer, cit, m_Stack) {
         if ( cit->NotNull() && cit->GetNCObject().GetHandler()->HandleIt(ex) )
         {
@@ -153,7 +155,7 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex, const string& extra_msg,
 
 
 bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions& exceptions,
-                                       const string& extra_msg,
+                                       const TDbgInfo* dbg_info,
                                        const CConnection* connection,
                                        const CDBParams* params) const
 {
@@ -161,7 +163,7 @@ bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions& excep
     TExceptions remaining, still_remaining;
 
     ITERATE (TExceptions, it, exceptions) {
-        x_AddDetails(**it, extra_msg, connection, params);
+        x_AddDetails(**it, dbg_info, connection, params);
         remaining.push_back(*it);
     }
 

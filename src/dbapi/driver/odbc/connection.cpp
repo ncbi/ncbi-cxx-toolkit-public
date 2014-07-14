@@ -51,6 +51,13 @@
     NCBI_ODBC_THROW(ex_class, message, err_code, severity)
 // No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
+// Accommodate all the code of the form
+//     string err_message = "..." + GetDbgInfo();
+//     DATABASE_DRIVER_ERROR(err_message, ...);
+// which will still pick up the desired context due to
+// NCBI_DATABASE_THROW's above redefinition.
+#define GetDbgInfo() 0
+
 BEGIN_NCBI_SCOPE
 
 bool IsBCPCapable(void)
@@ -114,13 +121,12 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
 void
 CODBC_Connection::x_SetupErrorReporter(const CDBConnParams& params)
 {
-    string extra_msg = " SERVER: " + params.GetServerName() + "; USER: " + params.GetUserName();
-
     _ASSERT(m_Link);
 
     m_Reporter.SetHandle(m_Link);
     m_Reporter.SetHandlerStack(GetMsgHandlers());
-    m_Reporter.SetExtraMsg( extra_msg );
+    m_Reporter.SetServerName(params.GetServerName());
+    m_Reporter.SetUserName(params.GetUserName());
 }
 
 void CODBC_Connection::x_Connect(
@@ -204,7 +210,7 @@ void CODBC_Connection::x_Connect(
         string err;
 
         err += "Cannot connect to the server '" + server_name;
-        err += "' as user '" + params.GetUserName() + "'" + m_Reporter.GetExtraMsg();
+        err += "' as user '" + params.GetUserName() + "'";
         DATABASE_DRIVER_ERROR( err, 100011 );
     }
 }
@@ -931,7 +937,6 @@ CStatementBase::CheckSIE(int rc, const char* msg, unsigned int msg_num) const
 
             err_message.append(msg);
             err_message.append(" (memory corruption suspected).");
-            err_message.append(GetDbgInfo());
 
             DATABASE_DRIVER_ERROR( err_message, 420001 );
         }
@@ -962,7 +967,6 @@ CStatementBase::CheckSIENd(int rc, const char* msg, unsigned int msg_num) const
 
             err_message.append(msg);
             err_message.append(" (memory corruption suspected).");
-            err_message.append(GetDbgInfo());
 
             DATABASE_DRIVER_ERROR( err_message, 420001 );
         }

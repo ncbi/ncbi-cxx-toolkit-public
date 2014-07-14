@@ -95,12 +95,11 @@ CConnection::CConnection(CDriverContext& dc,
 , m_MsgHandlers(dc.GetConnHandlerStack())
 , m_Interface(NULL)
 , m_ResProc(NULL)
+, m_ExceptionContext(new TDbgInfo(params))
 , m_ServerType(params.GetServerType())
 , m_ServerTypeIsKnown(false)
-, m_Server(params.GetServerName())
 , m_Host(params.GetHost())
 , m_Port(params.GetPort())
-, m_User(params.GetUserName())
 , m_Passwd(params.GetPassword())
 , m_Pool(params.GetParam("pool_name"))
 , m_Reusable(params.GetParam("is_pooled") == "true")
@@ -278,7 +277,7 @@ CDB_Result* CConnection::Create_Result(impl::CResult& result)
 
 const string& CConnection::ServerName(void) const
 {
-    return m_Server;
+    return m_ExceptionContext->server_name;
 }
 
 Uint4 CConnection::Host(void) const
@@ -294,7 +293,7 @@ Uint2 CConnection::Port(void) const
 
 const string& CConnection::UserName(void) const
 {
-    return m_User;
+    return m_ExceptionContext->username;
 }
 
 
@@ -352,14 +351,14 @@ CConnection::SetDatabaseName(const string& name)
         auto_stmt->Send();
         auto_stmt->DumpResults();
 
-        m_Database = name;
+        m_ExceptionContext->database_name = name;
     }
 }
 
 const string&
 CConnection::GetDatabaseName(void) const
 {
-    return m_Database;
+    return m_ExceptionContext->database_name;
 }
 
 I_ConnectionExtra::TSockHandle

@@ -51,7 +51,8 @@ public:
 public:
     void Accept(const CDB_Exception& e);
     void Handle(const CDBHandlerStack& handler);
-    void Handle(const CDBHandlerStack& handler, const string& msg = kEmptyStr,
+    void Handle(const CDBHandlerStack& handler,
+                const CDB_Exception::SContext* dbg_info = NULL,
                 const CConnection* conn = NULL, const CDBParams* par = NULL);
     void SetClosingConnect(bool value);
     bool IsClosingConnect(void);

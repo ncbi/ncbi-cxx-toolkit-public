@@ -47,6 +47,13 @@
 #define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
     NCBI_ODBC_RETHROW(prev_ex, ex_class, message, err_code, severity)
 
+// Accommodate all the code of the form
+//     string err_message = "..." + GetDbgInfo();
+//     DATABASE_DRIVER_ERROR(err_message, ...);
+// which will still pick up the desired context due to
+// NCBI_DATABASE_(RE)THROW's above redefinitions.
+#define GetDbgInfo() 0
+
 
 BEGIN_NCBI_SCOPE
 

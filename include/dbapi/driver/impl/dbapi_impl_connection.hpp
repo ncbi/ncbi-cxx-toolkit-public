@@ -89,13 +89,13 @@ public:
     bool IsMultibyteClientEncoding(void) const;
     EEncoding GetClientEncoding(void) const;
 
-    void SetExtraMsg(const string& msg) const
+    void SetExtraMsg(const string& msg) // const
     {
-        m_ExtraMsg = msg;
+        m_ExceptionContext->extra_msg = msg;
     }
     const string& GetExtraMsg(void) const
     {
-        return m_ExtraMsg;
+        return m_ExceptionContext->extra_msg;
     }
 
 
@@ -113,9 +113,10 @@ public:
     }
     const string& GetDatabaseName(void) const;
 
-    const string& GetExecCntxInfo(void) const
+    typedef CDB_Exception::SContext TDbgInfo;
+    virtual const TDbgInfo& GetDbgInfo(void) const
     {
-        return m_ExecCntxInfo;
+        return *m_ExceptionContext;
     }
 
 public:
@@ -274,9 +275,9 @@ protected:
         return m_SecureLogin;
     }
 
-    void SetExecCntxInfo(const string& info)
+    TDbgInfo& SetDbgInfo(void)
     {
-        m_ExecCntxInfo = info;
+        return *m_ExceptionContext;
     }
 
     void SetServerType(CDBConnParams::EServerType type)
@@ -300,15 +301,13 @@ private:
     CInterfaceHook<CDB_Connection>  m_Interface;
     CDB_ResultProcessor*            m_ResProc;
 
+    CRef<TDbgInfo>                  m_ExceptionContext;
     CDBConnParams::EServerType      m_ServerType;
     bool                            m_ServerTypeIsKnown;
 
-    const string   m_Server;
     const Uint4    m_Host;
     const Uint2    m_Port;
-    const string   m_User;
     const string   m_Passwd;
-    string         m_Database;
     const string   m_Pool;
     const bool     m_Reusable;
     bool           m_OpenFinished;
@@ -316,8 +315,6 @@ private:
     const bool     m_BCPable; //< Does this connection support BCP (It is related to Context, actually)
     const bool     m_SecureLogin;
     bool           m_Opened;
-    string         m_ExecCntxInfo;
-    mutable string m_ExtraMsg;
 };
 
 } // namespace impl

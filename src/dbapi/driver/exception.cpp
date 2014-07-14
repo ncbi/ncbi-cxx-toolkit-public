@@ -56,6 +56,64 @@ CDB_Exception::SParams::~SParams(void)
     }
 }
 
+CDB_Exception::SContext::SContext(const CDBConnParams& params)
+    : server_name(params.GetServerName()),
+      username(params.GetUserName())
+      // database_name(params.GetDatabaseName())
+{
+}
+
+void CDB_Exception::SContext::UpdateFrom(const SContext& ctx)
+{
+    // favor new context
+    if ( !ctx.server_name.empty()   ) { server_name   = ctx.server_name;   }
+    if ( !ctx.username.empty()      ) { username      = ctx.username;      }
+    if ( !ctx.database_name.empty() ) { database_name = ctx.database_name; }
+    if ( !ctx.extra_msg.empty()     ) { extra_msg     = ctx.extra_msg;     }
+}
+
+ostream& operator<<(ostream &os, const CDB_Exception::SContext& ctx)
+{
+    const char* delim = kEmptyCStr;
+    if ( !ctx.server_name.empty() ) { 
+        os << delim << "SERVER: '" << ctx.server_name << '\'';
+        delim = " ";
+    }
+    if ( !ctx.username.empty() ) {
+        os << delim << "USER: '" << ctx.username << '\'';
+        delim = " ";
+    }
+    if ( !ctx.database_name.empty() ) {
+        os << delim << "DATABASE: '" << ctx.database_name << '\'';
+        delim = " ";
+    }
+    if ( !ctx.extra_msg.empty() ) {
+        os << delim << ctx.extra_msg;
+    }
+    return os;
+}
+
+CDB_Exception::SMessageInContext CDB_Exception::SMessageInContext::operator+
+(const SContext& new_context) const
+{
+    if (context.Empty()) {
+        return SMessageInContext(message, new_context);
+    } else {
+        CRef<SContext> merged_context(new SContext(*context));
+        merged_context->UpdateFrom(new_context);
+        return SMessageInContext(message, *merged_context);
+    }
+}
+
+ostream& operator<<(ostream &os, const CDB_Exception::SMessageInContext& msg)
+{
+    os << msg.message;
+    if (msg.context.NotEmpty()) {
+        os << ' ' << *msg.context;
+    }
+    return os;
+}
+
 EDB_Severity
 CDB_Exception::Severity(void) const
 {
@@ -120,15 +178,15 @@ void CDB_Exception::SetFromConnection(const impl::CConnection& connection)
 {
     if (GetServerName().empty()  &&  !connection.ServerName().empty()) {
         SetServerName(connection.ServerName());
-        AddToMessage(" SERVER: '" + connection.ServerName() + '\'');
+        // AddToMessage(" SERVER: '" + connection.ServerName() + '\'');
     }
     if (GetUserName().empty()  &&  !connection.UserName().empty()) {
         SetUserName(connection.UserName());
-        AddToMessage(" USER: '" + connection.UserName() + '\'');
+        // AddToMessage(" USER: '" + connection.UserName() + '\'');
     }
-    if ( !connection.GetDatabaseName().empty()
-        &&  GetMsg().find(" DATABASE: ") == NPOS) {
-        AddToMessage(" DATABASE: '" + connection.GetDatabaseName() + '\'');
+    if (GetDatabaseName().empty()  &&  !connection.GetDatabaseName().empty()) {
+        SetDatabaseName(connection.GetDatabaseName());
+        // AddToMessage(" DATABASE: '" + connection.GetDatabaseName() + '\'');
     }
 }
 
@@ -173,10 +231,8 @@ CDB_Exception::ReportExtra(ostream& out) const
 void
 CDB_Exception::x_StartOfWhat(ostream& out) const
 {
-    if ( !GetExtraMsg().empty()  &&  GetMsg().find(GetExtraMsg()) == NPOS) {
-        out << GetExtraMsg() << ' ';
-    }
-    out << "[";
+    out << *m_Context;
+    out << " [";
     out << SeverityString();
     out << " #";
     out << NStr::IntToString( GetDBErrCode() );
@@ -211,6 +267,16 @@ CDB_Exception::x_EndOfWhat(ostream& out) const
     }
 }
 
+static CSafeStatic<CDB_Exception::SContext> kEmptyContext;
+
+void CDB_Exception::x_Init(const CDiagCompileInfo& info, const string& message,
+                           const CException* prev_exception, EDiagSev severity)
+{
+    CException::x_Init(info, message, prev_exception, severity);
+    if (m_Context.Empty()) {
+        m_Context.Reset(&kEmptyContext.Get());
+    }
+}
 
 void
 CDB_Exception::x_Assign(const CException& src)
@@ -220,13 +286,19 @@ CDB_Exception::x_Assign(const CException& src)
     CException::x_Assign(src);
 
     m_DBErrCode = other.m_DBErrCode;
-    m_ServerName = other.m_ServerName;
-    m_UserName = other.m_UserName;
+    m_Context   = other.m_Context;
     m_SybaseSeverity = other.m_SybaseSeverity;
-    m_ExtraMsg = other.m_ExtraMsg;
     m_Params = other.m_Params;
 }
 
+CDB_Exception::SContext& CDB_Exception::x_SetContext(void)
+{
+    // Unshare if necessary
+    if ( !m_Context->ReferencedOnlyOnce() ) {
+        m_Context.Reset(new SContext(*m_Context));
+    }
+    return const_cast<SContext&>(*m_Context);
+}
 
 const char*
 CDB_Exception::GetErrCodeString(void) const

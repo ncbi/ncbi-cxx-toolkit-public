@@ -435,17 +435,6 @@ void s_PassException(CDB_Exception& ex, const string& server_name,
     ex.SetUserName(user_name);
     ex.SetSybaseSeverity(severity);
     ex.SetParams(params);
-
-    if (ex.GetSeverity() != eDiag_Info) {
-        string msg =
-            " SERVER: '" + server_name +
-            "' USER: '" + user_name + "'" +
-            (ex.GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-             ex.GetExtraMsg() + "'")
-            ;
-        ex.AddToMessage(msg);
-    }
-
     GetDBLExceptionStorage().Accept(ex);
 }
 
@@ -459,8 +448,9 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
 {
     string server_name;
     string user_name;
-    string message = dberrstr;
     const CDBParams* params = NULL;
+
+    CDB_Exception::SMessageInContext message = dberrstr;
 
     CFastMutexGuard ctx_mg(s_CtxMutex);
 
@@ -470,7 +460,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     if ( link ) {
         server_name = link->ServerName();
         user_name = link->UserName();
-        message += link->GetDbgInfo();
+        message.context.Reset(&link->GetDbgInfo());
         params = link->GetBindParams();
     }
 
@@ -567,11 +557,12 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 {
     string server_name;
     string user_name;
-    string message = msgtxt;
     const CDBParams* params = NULL;
 
     if (msgno == 5701 || msgno == 5703 || msgno == 5704)
         return;
+
+    CDB_Exception::SMessageInContext message = msgtxt;
 
     CFastMutexGuard ctx_mg(s_CtxMutex);
 
@@ -581,7 +572,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
     if ( link ) {
         server_name = link->ServerName();
         user_name = link->UserName();
-        message += link->GetDbgInfo();
+        message.context.Reset(&link->GetDbgInfo());
         params = link->GetBindParams();
     } else {
         server_name = srvname;
@@ -630,7 +621,8 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
 void CDBLibContext::CheckFunctCall(void)
 {
-    GetDBLExceptionStorage().Handle(GetCtxHandlerStack(), GetExtraMsg());
+    _ASSERT(GetExtraMsg().empty());
+    GetDBLExceptionStorage().Handle(GetCtxHandlerStack(), NULL);
 }
 
 ///////////////////////////////////////////////////////////////////////

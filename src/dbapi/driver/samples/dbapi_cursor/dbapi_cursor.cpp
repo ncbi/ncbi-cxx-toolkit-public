@@ -221,7 +221,7 @@ CDbapiCursorApp::RunSample(void)
     }
 
     int status = RunOneSample("text");
-    if (GetDriverName() != "odbc"  &&  GetDriverName() != "dblib") {
+    if (GetDriverName() == "ftds") {
         status |= RunOneSample("image");
     }
     if (GetServerType() == eMsSql) {

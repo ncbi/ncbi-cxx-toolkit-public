@@ -137,10 +137,6 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     }
 #endif
 
-    string extra_msg = " SERVER: " + params.GetServerName() + 
-        "; USER: " + params.GetUserName();
-    SetExtraMsg(extra_msg);
-
     CheckWhileOpening(ct_callback(NULL,
                            x_GetSybaseConn(),
                            CS_SET,
@@ -318,7 +314,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 CS_RETCODE
 CTL_Connection::Check(CS_RETCODE rc)
 {
-    GetCTLExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg(), this,
+    GetCTLExceptionStorage().Handle(GetMsgHandlers(), &GetDbgInfo(), this,
                                     GetBindParams());
 
     return rc;
@@ -326,9 +322,9 @@ CTL_Connection::Check(CS_RETCODE rc)
 
 
 CS_RETCODE
-CTL_Connection::Check(CS_RETCODE rc, const string& extra_msg)
+CTL_Connection::Check(CS_RETCODE rc, const TDbgInfo& dbg_info)
 {
-    GetCTLExceptionStorage().Handle(GetMsgHandlers(), extra_msg, this,
+    GetCTLExceptionStorage().Handle(GetMsgHandlers(), &dbg_info, this,
                                     GetBindParams());
 
     return rc;
@@ -339,7 +335,7 @@ CTL_Connection::CheckWhileOpening(CS_RETCODE rc)
 {
     const impl::CDBHandlerStack& handlers = GetOpeningMsgHandlers();
     if (handlers.GetSize() > 0) {
-        GetCTLExceptionStorage().Handle(handlers, GetExtraMsg(), this,
+        GetCTLExceptionStorage().Handle(handlers, &GetDbgInfo(), this,
                                         GetBindParams());
         return rc;
     } else {

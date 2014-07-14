@@ -353,7 +353,7 @@ protected:
 
 public:
     CS_RETCODE Check(CS_RETCODE rc);
-    CS_RETCODE Check(CS_RETCODE rc, const string& extra_msg);
+    CS_RETCODE Check(CS_RETCODE rc, const TDbgInfo& dbg_info);
     CS_INT GetBLKVersion(void) const;
 
     const CTLibContext& GetCTLibContext(void) const
@@ -429,12 +429,7 @@ protected:
         GetNativeConnection().SetDead(flag);
     }
 
-    string GetDbgInfo(void) const;
-
-    string GetBaseDbgInfo(void) const
-    {
-        return " " + GetExecCntxInfo();
-    }
+    const TDbgInfo& GetDbgInfo(void) const;
 
     virtual void SetTimeout(size_t nof_secs);
     virtual void SetCancelTimeout(size_t nof_secs);
@@ -508,11 +503,11 @@ protected:
     // Result-related ...
     void SetExecCntxInfo(const string& info)
     {
-        m_ExecCntxInfo = info;
+        m_DbgInfo->extra_msg = info;
     }
     const string& GetExecCntxInfo(void) const
     {
-        return m_ExecCntxInfo;
+        return m_DbgInfo->extra_msg;
     }
 
     bool IsDead(void) const
@@ -532,15 +527,15 @@ protected:
         }
     }
 
-    string GetDbgInfo(bool want_space = true) const
+    typedef CTL_Connection::TDbgInfo TDbgInfo;
+    const TDbgInfo& GetDbgInfo(void) const
     {
-        return (want_space ? string(" ") : kEmptyStr) + GetExecCntxInfo() + " "
-            + GetConnection().GetExecCntxInfo();
+        return *m_DbgInfo;
     }
 
 protected:
     int             m_RowCount;
-    string          m_ExecCntxInfo;
+    CRef<TDbgInfo>  m_DbgInfo;
 
 private:
     bool            m_IsActive;
@@ -961,7 +956,7 @@ protected:
     }
 
     //
-    string GetDbgInfo(void) const
+    const CTL_Connection::TDbgInfo& GetDbgInfo(void) const
     {
         return GetConnection().GetDbgInfo();
     }
@@ -1179,8 +1174,8 @@ namespace ctlib {
 }
 
 inline
-string CTL_Connection::GetDbgInfo(void) const {
-    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : GetBaseDbgInfo();
+const CTL_Connection::TDbgInfo& CTL_Connection::GetDbgInfo(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : CConnection::GetDbgInfo();
 }
 
 inline
@@ -1214,7 +1209,7 @@ inline
 CS_RETCODE
 CTL_CmdBase::Check(CS_RETCODE rc)
 {
-    return GetConnection().Check(rc, GetDbgInfo(false));
+    return GetConnection().Check(rc, GetDbgInfo());
 }
 
 inline

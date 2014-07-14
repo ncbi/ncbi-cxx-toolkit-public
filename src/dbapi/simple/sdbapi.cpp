@@ -54,6 +54,10 @@ BEGIN_NCBI_SCOPE
         NCBI_RETHROW(ex, CSDB_Exception, eLowLevel, "");    \
     }
 
+#define SDBAPI_THROW(code, msg) \
+    NCBI_THROW(CSDB_Exception, code, \
+               CDB_Exception::SMessageInContext(msg, x_GetContext()))
+    
 
 
 const char*
@@ -71,6 +75,29 @@ CSDB_Exception::GetErrCodeString(void) const
     case eLowLevel:     return "eLowLevel";
     case eWrongParams:  return "eWrongParams";
     default:            return CException::GetErrCodeString();
+    }
+}
+
+static CSafeStatic<CDB_Exception::SContext> kEmptyContext;
+
+void CSDB_Exception::ReportExtra(ostream& os) const
+{
+    os << *m_Context;
+}
+
+void CSDB_Exception::x_Init(const CDiagCompileInfo&, const string&,
+                            const CException* prev, EDiagSev)
+{
+    const CDB_Exception* dbex = dynamic_cast<const CDB_Exception*>(prev);
+    if (dbex == NULL) {
+        if (m_Context.Empty()) {
+            m_Context.Reset(&kEmptyContext.Get());
+        }
+    } else if (m_Context.Empty()) {
+        m_Context.Reset(&dbex->GetContext());
+    } else {
+        const_cast<CDB_Exception::SContext&>(*m_Context)
+            .UpdateFrom(dbex->GetContext());
     }
 }
 
@@ -801,10 +828,10 @@ CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
              ||  m_Url.GetPassword().empty()
              ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/"))
     {
-        NCBI_THROW_FMT(CSDB_Exception, eURLFormat,
-                       "Connection parameters miss at least one essential part"
-                       " (host, user, password, or database [as \"path\"]): "
-                       << m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
+        NCBI_THROW(CSDB_Exception, eURLFormat,
+                   "Connection parameters miss at least one essential part"
+                   " (host, user, password, or database [as \"path\"]): "
+                   + m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
     }
     return m_Url.ComposeUrl(CUrlArgs::eAmp_Char);
 }
@@ -1306,8 +1333,15 @@ CSDBAPI::UpdateMirror(const string& dbservice,
 inline
 CConnHolder::CConnHolder(IConnection* conn)
     : m_Conn(conn),
-      m_CntOpen(0)
-{}
+      m_CntOpen(0),
+      m_Context(new CDB_Exception::SContext)
+{
+    if (conn != NULL) {
+        m_Context->server_name   = conn->GetCDB_Connection()->ServerName();
+        m_Context->username      = conn->GetCDB_Connection()->UserName();
+        m_Context->database_name = conn->GetDatabase();
+    }
+}
 
 CConnHolder::~CConnHolder(void)
 {
@@ -1332,6 +1366,12 @@ CConnHolder::CloseRef(void)
     if (--m_CntOpen == 0) {
         m_Conn->Close();
     }
+}
+
+inline
+const CDB_Exception::SContext& CConnHolder::GetContext(void) const
+{
+    return *m_Context;
 }
 
 
@@ -1387,6 +1427,13 @@ inline IConnection*
 CDatabaseImpl::GetConnection(void)
 {
     return m_Conn->GetConn();
+}
+
+inline
+const CDB_Exception::SContext&
+CDatabaseImpl::GetContext(void) const
+{
+    return m_Conn->GetContext();
 }
 
 
@@ -1551,9 +1598,11 @@ CBulkInsertImpl::CBulkInsertImpl(CDatabaseImpl* db_impl,
       m_Autoflush(autoflush),
       m_RowsWritten(0),
       m_ColsWritten(0),
-      m_WriteStarted(false)
+      m_WriteStarted(false),
+      m_Context(new CDB_Exception::SContext(db_impl->GetContext()))
 {
     m_BI = db_impl->GetConnection()->GetBulkInsert(table_name);
+    m_Context->extra_msg = "Bulk insertion into " + table_name;
 }
 
 CBulkInsertImpl::~CBulkInsertImpl(void)
@@ -1567,25 +1616,30 @@ CBulkInsertImpl::~CBulkInsertImpl(void)
     delete m_BI;
 }
 
+inline
+const CDB_Exception::SContext& CBulkInsertImpl::x_GetContext(void) const
+{
+    return *m_Context;
+}
+
 void
 CBulkInsertImpl::x_CheckCanWrite(int col)
 {
     if (!m_BI) {
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "Cannot write into completed CBulkInsert");
+        SDBAPI_THROW(eClosed, "Cannot write into completed CBulkInsert");
     }
     if (!m_DBImpl->IsOpen()) {
         m_BI->Cancel();
         delete m_BI;
         m_BI = NULL;
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "Cannot write into CBulkInsert when CDatabase was closed");
+        SDBAPI_THROW(eClosed,
+                     "Cannot write into CBulkInsert when CDatabase was closed");
     }
     if (col != 0  &&  col > int(m_Cols.size())) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
-                   "Too many values were written to CBulkInsert: "
-                   + NStr::NumericToString(col) + " > "
-                   + NStr::NumericToString(m_Cols.size()));
+        SDBAPI_THROW(eInconsistent,
+                     "Too many values were written to CBulkInsert: "
+                     + NStr::NumericToString(col) + " > "
+                     + NStr::NumericToString(m_Cols.size()));
     }
 }
 
@@ -1615,12 +1669,12 @@ CBulkInsertImpl::Bind(int col, ESDB_Type type)
 {
     x_CheckCanWrite(0);
     if (m_WriteStarted) {
-        NCBI_THROW(CSDB_Exception, eStarted,
-                   "Cannot bind columns when already started to insert");
+        SDBAPI_THROW(eStarted,
+                     "Cannot bind columns when already started to insert");
     }
     if (col - 1 != int(m_Cols.size())) {
-        NCBI_THROW(CSDB_Exception, eNotInOrder,
-                   "Cannot bind columns in CBulkInsert randomly");
+        SDBAPI_THROW(eNotInOrder,
+                     "Cannot bind columns in CBulkInsert randomly");
     }
     m_Cols.push_back(CVariant(s_ConvertType(type)));
     if (type == eSDB_StringUCS2  ||  type == eSDB_TextUCS2) {
@@ -1633,10 +1687,10 @@ CBulkInsertImpl::EndRow(void)
 {
     x_CheckCanWrite(0);
     if (m_ColsWritten != int(m_Cols.size())) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
-                   "Not enough values were written to CBulkInsert: "
-                   + NStr::NumericToString(m_ColsWritten) + " != "
-                   + NStr::NumericToString(m_Cols.size()));
+        SDBAPI_THROW(eInconsistent,
+                     "Not enough values were written to CBulkInsert: "
+                     + NStr::NumericToString(m_ColsWritten) + " != "
+                     + NStr::NumericToString(m_Cols.size()));
     }
     try {
         m_BI->AddRow();
@@ -1902,7 +1956,8 @@ CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
       m_MinRowCount(0),
       m_MaxRowCount(kMax_Auto),
       m_RowCount(-1),
-      m_Status(-1)
+      m_Status(-1),
+      m_Context(new CDB_Exception::SContext(m_DBImpl->GetContext()))
 {
     m_Stmt = db_impl->GetConnection()->GetStatement();
 }
@@ -1917,9 +1972,13 @@ CQueryImpl::~CQueryImpl(void)
     delete m_Stmt;
 }
 
-string
+const CDB_Exception::SContext&
 CQueryImpl::x_GetContext(void) const
 {
+    if ( !m_Context->extra_msg.empty() ) {
+        return *m_Context;
+    }
+
     CNcbiOstrstream oss;
     oss << (m_IsSP ? "RPC: " : "SQL: ");
     oss << m_Sql;
@@ -1937,21 +1996,21 @@ CQueryImpl::x_GetContext(void) const
             delim = ", ";
         }
     }
-    return CNcbiOstrstreamToString(oss);
+    m_Context->extra_msg = CNcbiOstrstreamToString(oss);
+    return *m_Context;
 }
 
 void
 CQueryImpl::x_CheckCanWork(bool need_rs /* = false */) const
 {
     if (!m_DBImpl->IsOpen()) {
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "CQuery is not operational because CDatabase was closed");
+        SDBAPI_THROW(eClosed,
+                     "CQuery is not operational because CDatabase was closed");
     }
     if (need_rs  &&  !m_CurRS
         &&  !const_cast<CQueryImpl*>(this)->HasMoreResultSets())
     {
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "CQuery is closed or never executed");
+        SDBAPI_THROW(eClosed, "CQuery is closed or never executed");
     }
 }
 
@@ -2058,6 +2117,7 @@ CQueryImpl::ClearParameters(void)
 {
     x_CheckCanWork();
     x_ClearAllParams();
+    m_Context->extra_msg.clear();
 }
 
 inline void
@@ -2119,7 +2179,7 @@ inline void
 CQueryImpl::Execute(void)
 {
     if (m_IsSP  ||  m_Sql.empty()) {
-        NCBI_THROW(CSDB_Exception, eInconsistent, "No statement to execute.");
+        SDBAPI_THROW(eInconsistent, "No statement to execute.");
     }
 
     x_CheckCanWork();
@@ -2457,15 +2517,15 @@ inline void
 CQueryImpl::RequireRowCount(unsigned int min_rows, unsigned int max_rows)
 {
     if ( !m_Executed ) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
-                   "RequireRowCount must follow Execute or ExecuteSP,"
-                   " which reset any requirements.");
+        SDBAPI_THROW(eInconsistent,
+                     "RequireRowCount must follow Execute or ExecuteSP,"
+                     " which reset any requirements.");
     }
     if (min_rows > max_rows) {
-        NCBI_THROW(CSDB_Exception, eWrongParams,
-                   "Inconsistent row-count constraints: "
-                   + NStr::NumericToString(min_rows) + " > "
-                   + NStr::NumericToString(max_rows));
+        SDBAPI_THROW(eWrongParams,
+                     "Inconsistent row-count constraints: "
+                     + NStr::NumericToString(min_rows) + " > "
+                     + NStr::NumericToString(max_rows));
     }
     x_CheckCanWork();
     _TRACE("RequireRowCount(" << min_rows << ", " << max_rows << ')');
@@ -2673,6 +2733,12 @@ CQuery::CRowIterator::operator= (const CRowIterator& ri)
 CQuery::CRowIterator::~CRowIterator(void)
 {}
 
+inline
+const CDB_Exception::SContext& CQuery::CRowIterator::x_GetContext(void) const
+{
+    return m_Query->x_GetContext();
+}
+
 unsigned int
 CQuery::CRowIterator::GetResultSetNo(void)
 {
@@ -2719,8 +2785,7 @@ CQuery::CRowIterator&
 CQuery::CRowIterator::operator++ (void)
 {
     if (m_IsEnd  ||  m_Query->IsFinished()) {
-        NCBI_THROW(CSDB_Exception, eInconsistent,
-                   "Cannot increase end() iterator");
+        SDBAPI_THROW(eInconsistent, "Cannot increase end() iterator");
     }
     m_Query->Next();
     return *this;
@@ -2738,6 +2803,11 @@ CQuery::CRowIterator::operator[](CTempString col) const
     return m_Query->GetColumn(string(col));
 }
 
+inline
+const CDB_Exception::SContext& CQuery::CField::x_GetContext(void) const
+{
+    return m_Query->x_GetContext();
+}
 
 string
 CQuery::CField::AsString(void) const
@@ -2817,9 +2887,9 @@ CQuery::CField::AsVector(void) const
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
     if (var_type != eDB_Image  &&  var_type != eDB_Text) {
-        NCBI_THROW(CSDB_Exception, eUnsupported,
-                   string("Method is unsupported for this type of data: ")
-                   + CDB_Object::GetTypeName(var_type, false));
+        SDBAPI_THROW(eUnsupported,
+                     string("Method is unsupported for this type of data: ")
+                     + CDB_Object::GetTypeName(var_type, false));
     }
     string value = var_val.GetString();
     // WorkShop cannot eat string::iterators in vector<>::insert (although due
@@ -2838,9 +2908,9 @@ CQuery::CField::AsIStream(void) const
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
     if (var_type != eDB_Image  &&  var_type != eDB_Text) {
-        NCBI_THROW(CSDB_Exception, eUnsupported,
-                   string("Method is unsupported for this type of data: ")
-                   + CDB_Object::GetTypeName(var_type, false));
+        SDBAPI_THROW(eUnsupported,
+                     string("Method is unsupported for this type of data: ")
+                     + CDB_Object::GetTypeName(var_type, false));
     }
     m_ValueForStream = var_val.GetString();
     m_IStream.reset
@@ -2860,9 +2930,9 @@ CQuery::CField::GetOStream(size_t blob_size, TBlobOStreamFlags flags) const
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
     if (m_IsParam  ||  (var_type != eDB_Image  &&  var_type != eDB_Text)) {
-        NCBI_THROW(CSDB_Exception, eUnsupported,
-                   string("Method is unsupported for this type of data: ")
-                   + CDB_Object::GetTypeName(var_type, false));
+        SDBAPI_THROW(eUnsupported,
+                     string("Method is unsupported for this type of data: ")
+                     + CDB_Object::GetTypeName(var_type, false));
     }
     try {
         IConnection* conn = m_Query->GetConnection()->CloneConnection();
@@ -2891,9 +2961,9 @@ CQuery::CField::GetBookmark(void) const
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
     if (m_IsParam  ||  (var_type != eDB_Image  &&  var_type != eDB_Text)) {
-        NCBI_THROW(CSDB_Exception, eUnsupported,
-                   string("Method is unsupported for this type of data: ")
-                   + CDB_Object::GetTypeName(var_type, false));
+        SDBAPI_THROW(eUnsupported,
+                     string("Method is unsupported for this type of data: ")
+                     + CDB_Object::GetTypeName(var_type, false));
     }
     CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Query->GetDatabase(),
                                                      var_val.ReleaseITDescriptor()));

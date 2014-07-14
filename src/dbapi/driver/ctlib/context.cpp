@@ -689,7 +689,8 @@ CTLibContext::~CTLibContext()
 CS_RETCODE
 CTLibContext::Check(CS_RETCODE rc) const
 {
-    GetCTLExceptionStorage().Handle(GetCtxHandlerStack(), GetExtraMsg());
+    _ASSERT(GetExtraMsg().empty());
+    GetCTLExceptionStorage().Handle(GetCtxHandlerStack(), NULL);
 
     return rc;
 }
@@ -1097,17 +1098,6 @@ void PassException(CDB_Exception& ex,
     ex.SetUserName(user_name);
     ex.SetSybaseSeverity(severity);
     ex.SetParams(params);
-
-    /* if (ex.GetSeverity() != eDiag_Info) */ {
-        string msg =
-            " SERVER: '" + server_name +
-            "' USER: '" + user_name + "'" +
-            (ex.GetExtraMsg().empty() ? "" : " CONTEXT: '" +
-             ex.GetExtraMsg() + "'")
-            ;
-        ex.AddToMessage(msg);
-    }
-
     GetCTLExceptionStorage().Accept(ex);
 }
 
@@ -1168,9 +1158,10 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
     CPointerPot*    p_pot = NULL;
     CTL_Connection* ctl_conn = NULL;
     CTLibContext*   ctl_ctx = NULL;
-    string          message;
     string          server_name;
     string          user_name;
+
+    CDB_Exception::SMessageInContext message;
 
     try {
         CMutexGuard mg(s_CTLCtxMtx);
@@ -1183,7 +1174,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
             return CS_SUCCEED;
         }
         if (msg->msgstring) {
-            message.append(msg->msgstring);
+            message.message = msg->msgstring;
         }
 
         // Retrieve CDBHandlerStack ...
@@ -1242,7 +1233,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         const CDBParams*       params = NULL;
         if (ctl_conn) {
             handlers = &ctl_conn->GetMsgHandlers();
-            message += ctl_conn->GetDbgInfo();
+            message.context.Reset(&ctl_conn->GetDbgInfo());
             params = ctl_conn->GetBindParams();
         } else
             handlers = &ctl_ctx->GetCtxHandlerStack();
@@ -1357,9 +1348,10 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     CPointerPot*    p_pot = NULL;
     CTL_Connection* ctl_conn = NULL;
     CTLibContext*   ctl_ctx = NULL;
-    string          message;
     string          server_name;
     string          user_name;
+
+    CDB_Exception::SMessageInContext message;
 
     try {
         CMutexGuard mg(s_CTLCtxMtx);
@@ -1424,10 +1416,10 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
             return CS_SUCCEED;
 
         if ( msg->text ) {
-            message += msg->text;
+            message.message = msg->text;
         }
         if (ctl_conn) {
-            message += ctl_conn->GetDbgInfo();
+            message.context.Reset(&ctl_conn->GetDbgInfo());
             params = ctl_conn->GetBindParams();
         }
 

@@ -602,14 +602,14 @@ RETCODE CDBL_Connection::CheckDead(RETCODE rc)
 
 void CDBL_Connection::CheckFunctCall(void)
 {
-    GetDBLExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg(), this,
+    GetDBLExceptionStorage().Handle(GetMsgHandlers(), &GetDbgInfo(), this,
                                     GetBindParams());
 }
 
 
-void CDBL_Connection::CheckFunctCall(const string& extra_msg)
+void CDBL_Connection::CheckFunctCall(const TDbgInfo& dbg_info)
 {
-    GetDBLExceptionStorage().Handle(GetMsgHandlers(), extra_msg, this,
+    GetDBLExceptionStorage().Handle(GetMsgHandlers(), &dbg_info, this,
                                     GetBindParams());
 }
 
@@ -618,7 +618,7 @@ void CDBL_Connection::CheckFunctCallWhileOpening(void)
 {
     const impl::CDBHandlerStack& handlers = GetOpeningMsgHandlers();
     if (handlers.GetSize() > 0) {
-        GetDBLExceptionStorage().Handle(handlers, GetExtraMsg(),
+        GetDBLExceptionStorage().Handle(handlers, &GetDbgInfo(),
                                         this, GetBindParams());
     } else {
         GetDBLibCtx().CheckFunctCall();

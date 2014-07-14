@@ -131,12 +131,7 @@ protected:
     virtual void SetTimeout(size_t nof_secs);
     virtual void SetCancelTimeout(size_t nof_secs);
 
-    string GetDbgInfo(void) const;
-
-    string GetBaseDbgInfo(void) const
-    {
-        return " " + GetExecCntxInfo();
-    }
+    const TDbgInfo& GetDbgInfo(void) const;
 
 private:
     friend class CMySQL_LangCmd;
@@ -175,16 +170,17 @@ protected:
 
     void SetExecCntxInfo(const string& info)
     {
-        m_ExecCntxInfo = info;
+        m_DbgInfo->extra_msg = info;
     }
     const string& GetExecCntxInfo(void) const
     {
-        return m_ExecCntxInfo;
+        return m_DbgInfo->extra_msg;
     }
-    string GetDbgInfo(void) const
+
+    typedef CMySQL_Connection::TDbgInfo TDbgInfo;
+    const TDbgInfo& GetDbgInfo(void) const
     {
-        return " " + GetExecCntxInfo() + " "
-            + GetConnection().GetExecCntxInfo();
+        return *m_DbgInfo;
     }
 
 public:
@@ -206,7 +202,7 @@ private:
     }
 
     CMySQL_Connection* m_Connect;
-    string             m_ExecCntxInfo;
+    CRef<TDbgInfo>     m_DbgInfo;
     bool               m_HasMoreResults;
     bool               m_IsActive;
 };
@@ -243,7 +239,7 @@ protected:
         return *m_Connect;
     }
 
-    string GetDbgInfo(void) const
+    const CMySQL_Connection::TDbgInfo& GetDbgInfo(void) const
     {
         return GetConnection().GetDbgInfo();
     }
@@ -279,8 +275,8 @@ NCBI_EntryPoint_xdbapi_mysql(
 
 /////////////////////////////////////////////////////////////////////////////
 inline
-string CMySQL_Connection::GetDbgInfo(void) const {
-    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : GetBaseDbgInfo();
+const CMySQL_Connection::TDbgInfo& CMySQL_Connection::GetDbgInfo(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : CConnection::GetDbgInfo();
 }
 
 inline

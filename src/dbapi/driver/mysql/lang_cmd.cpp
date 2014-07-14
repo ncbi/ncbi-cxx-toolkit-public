@@ -50,6 +50,7 @@ CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection& conn,
                                const string&      lang_query) :
     impl::CBaseCmd(conn, lang_query),
     m_Connect(&conn),
+    m_DbgInfo(new TDbgInfo(conn.GetDbgInfo())),
     m_HasMoreResults(false),
     m_IsActive(false)
 {

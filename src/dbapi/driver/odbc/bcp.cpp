@@ -47,6 +47,13 @@
     NCBI_ODBC_THROW(ex_class, message, err_code, severity)
 // No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
+// Accommodate all the code of the form
+//     string err_message = "..." + GetDbgInfo();
+//     DATABASE_DRIVER_ERROR(err_message, ...);
+// which will still pick up the desired context due to
+// NCBI_DATABASE_THROW's above redefinition.
+#define GetDbgInfo() 0
+
 BEGIN_NCBI_SCOPE
 
 #define DBDATETIME4_days(x) ((x)->numdays)
@@ -532,7 +539,6 @@ bool CODBC_BCPInCmd::Send(void)
                     } else {
                         err_text = "bcp_moretext for image failed.";
                     }
-                    err_text += GetDbgInfo();
                     DATABASE_DRIVER_ERROR( err_text, 423006 );
                 }
 

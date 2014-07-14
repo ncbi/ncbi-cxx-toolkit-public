@@ -48,6 +48,8 @@ public:
     IConnection* GetConn(void) const;
     void AddOpenRef(void);
     void CloseRef(void);
+    
+    const CDB_Exception::SContext& GetContext(void) const;
 
 private:
     CConnHolder(const CConnHolder&);
@@ -55,6 +57,7 @@ private:
 
     IConnection* m_Conn;
     Uint4        m_CntOpen;
+    CRef<CDB_Exception::SContext> m_Context;
 };
 
 class CDatabaseImpl : public CObject
@@ -68,6 +71,8 @@ public:
     void Close();
 
     IConnection* GetConnection(void);
+
+    const CDB_Exception::SContext& GetContext(void) const;
 
 private:
     CRef<CConnHolder>   m_Conn;
@@ -99,6 +104,7 @@ private:
     void x_CheckCanWrite(int col);
     void x_CheckWriteStarted(void);
 
+    const CDB_Exception::SContext& x_GetContext(void) const;
 
     CRef<CDatabaseImpl> m_DBImpl;
     IBulkInsert*        m_BI;
@@ -107,6 +113,8 @@ private:
     int                 m_RowsWritten;
     int                 m_ColsWritten;
     bool                m_WriteStarted;
+
+    CRef<CDB_Exception::SContext> m_Context;
 };
 
 
@@ -157,8 +165,10 @@ public:
     CDatabaseImpl* GetDatabase(void) const;
     IConnection* GetConnection(void);
 
+    // Historically private, but useful for CQuery's inner classes too.
+    const CDB_Exception::SContext& x_GetContext(void) const;
+
 private:
-    string x_GetContext(void) const;
     void x_CheckCanWork(bool need_rs = false) const;
     void x_SetOutParameter(const string& name, const CVariant& value);
     void x_ClearAllParams(void);
@@ -195,6 +205,7 @@ private:
     int                 m_Status;
     TColNumsMap         m_ColNums;
     TFields             m_Fields;
+    mutable CRef<CDB_Exception::SContext> m_Context;
 };
 
 
@@ -206,6 +217,8 @@ public:
     CNcbiOstream& GetOStream(size_t blob_size, TBlobOStreamFlags flags);
 
 private:
+    const CDB_Exception::SContext& x_GetContext(void) const;
+
     CRef<CDatabaseImpl> m_DBImpl;
     auto_ptr<I_ITDescriptor> m_Descr;
     auto_ptr<CWStream> m_OStream;

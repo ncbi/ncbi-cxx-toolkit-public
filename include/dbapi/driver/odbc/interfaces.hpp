@@ -111,7 +111,9 @@ public:
     void ReportErrors(void) const;
 
     NCBI_NORETURN
-    void ReportError(CDB_Exception& ex) const;
+    void ReportError(CDB_Exception& ex) const {
+        x_PostMsg(ex, true);
+    }
 
     void SetHandlerStack(impl::CDBHandlerStack& hs) {
         m_HStack = &hs;
@@ -122,10 +124,21 @@ public:
     void SetHandleType(SQLSMALLINT ht) {
         m_HType = ht;
     }
-    void SetExtraMsg(const string& em) {
-        m_ExtraMsg = em;
+
+    typedef CDB_Exception::SContext TDbgInfo;
+    const TDbgInfo& GetDbgInfo(void) const {
+        return *m_DbgInfo;
     }
-    string GetExtraMsg(void) const;
+
+    void SetServerName(const string& server_name) {
+        m_DbgInfo->server_name = server_name;
+    }
+    void SetUserName(const string& username) {
+        m_DbgInfo->username = username;
+    }
+    void SetExtraMsg(const string& em) {
+        m_DbgInfo->extra_msg = em;
+    }
 
 private:
     CODBC_Reporter(void);
@@ -136,8 +149,7 @@ private:
     const impl::CDBHandlerStack* m_HStack;
     SQLHANDLE               m_Handle;
     SQLSMALLINT             m_HType;
-    const CODBC_Reporter*   m_ParentReporter;
-    string                  m_ExtraMsg;
+    CRef<TDbgInfo>          m_DbgInfo;
     const CODBC_Connection* m_Connection;
 };
 
@@ -305,10 +317,11 @@ protected:
     // for NCBI_DATABASE_THROW_ANNOTATED
     const CDBParams* GetBindParams(void) const;
 
-    string GetDbgInfo(void) const
+    const TDbgInfo& GetDbgInfo(void) const
     {
-        return m_Reporter.GetExtraMsg();
+        return m_Reporter.GetDbgInfo();
     }
+
     void ReportErrors(void)
     {
         m_Reporter.ReportErrors();
@@ -369,10 +382,12 @@ public:
     {
         m_Reporter.SetExtraMsg( msg );
     }
-    string GetDbgInfo(void) const
+
+    const CODBC_Connection::TDbgInfo& GetDbgInfo(void) const
     {
-        return m_Reporter.GetExtraMsg();
+        return m_Reporter.GetDbgInfo();
     }
+
     void ReportErrors(void) const
     {
         m_Reporter.ReportErrors();
@@ -773,10 +788,11 @@ protected:
         GetStatementBase().ReportError(ex);
     }
 
-    string GetDbgInfo(void) const
+    const CODBC_Connection::TDbgInfo& GetDbgInfo(void) const
     {
         return GetStatementBase().GetDbgInfo();
     }
+
     const CDBParams* GetBindParams(void) const 
     {
         return &m_Stmt.GetBindParams();
@@ -877,7 +893,7 @@ protected:
     virtual bool            SkipItem(void);
 
 protected:
-    string GetDbgInfo(void) const
+    const CODBC_Connection::TDbgInfo& GetDbgInfo(void) const
     {
         return m_Cmd->GetDbgInfo();
     }

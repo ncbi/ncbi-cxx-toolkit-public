@@ -84,7 +84,8 @@ void CDBExceptionStorage::Accept(CDB_Exception const& e)
 
 
 void CDBExceptionStorage::Handle(const CDBHandlerStack& handler,
-                                 const string& msg, const CConnection* conn,
+                                 const CDB_Exception::SContext* dbg_info,
+                                 const CConnection* conn,
                                  const CDBParams* par)
 {
     typedef CGuard<CDB_UserHandler::TExceptions, SNoLock, SUnLock> TGuard;
@@ -93,7 +94,7 @@ void CDBExceptionStorage::Handle(const CDBHandlerStack& handler,
         CFastMutexGuard mg(m_Mutex);
         TGuard guard(m_Exceptions);
 
-        handler.HandleExceptions(m_Exceptions, msg, conn, par);
+        handler.HandleExceptions(m_Exceptions, dbg_info, conn, par);
     }
 }
 
