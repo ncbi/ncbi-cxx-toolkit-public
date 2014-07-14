@@ -143,7 +143,7 @@ public:
         TParams params;
     };
 
-    struct SContext : public CObject {
+    struct NCBI_DBAPIDRIVER_EXPORT SContext : public CObject {
         SContext() { }
         SContext(const CDBConnParams& params);
 
@@ -155,7 +155,7 @@ public:
         string extra_msg;
     };
 
-    struct SMessageInContext {
+    struct NCBI_DBAPIDRIVER_EXPORT SMessageInContext {
         SMessageInContext(const string& msg, const SContext& context)
             :  message(msg), context(&context)
             { }
