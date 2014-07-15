@@ -6071,7 +6071,11 @@ void CValidError_feat::CheckForThreeBaseNonsense (
     x_FindTranslationStops(*tmp_cds, got_stop, show_stop, unable_to_translate, alt_start, transl_prot);
 
     if (NStr::Equal (transl_prot, "*")) {
-        PostErr (eDiag_Critical, eErr_SEQ_FEAT_NonsenseIntron, "Triplet intron encodes stop codon", feat);
+        EDiagSev sev = eDiag_Critical;
+        if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+            sev = eDiag_Error;
+        }
+        PostErr (sev, eErr_SEQ_FEAT_NonsenseIntron, "Triplet intron encodes stop codon", feat);
     }
 }
 
