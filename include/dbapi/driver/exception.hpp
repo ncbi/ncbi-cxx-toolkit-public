@@ -282,8 +282,8 @@ CDB_Exception::SMessageInContext operator+(const char* msg,
     return CDB_Exception::SMessageInContext(msg, ctx);
 }
 
-ostream& operator<<(ostream &os, const CDB_Exception::SContext& ctx);
-ostream& operator<<(ostream &os, const CDB_Exception::SMessageInContext& msg);
+NCBI_DBAPIDRIVER_EXPORT ostream& operator<<(ostream &os, const CDB_Exception::SContext& ctx);
+NCBI_DBAPIDRIVER_EXPORT ostream& operator<<(ostream &os, const CDB_Exception::SMessageInContext& msg);
 
 
 ////////////////////////////////////////////////////////////////////////////////
