@@ -1016,6 +1016,7 @@ private:
     bool m_Abort;
     CDB_Connection& m_Conn;
     int m_TranCount;
+    string m_SavepointName;
 };
 
 
@@ -1028,9 +1029,18 @@ CAutoTrans::CSubject DBAPI_MakeTrans(CDB_Connection& connection)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-/// RAII transaction support.
-/// Resource Acquisition Is Initialization (RAII) programming style in intended 
-/// to revert a transaction automatically if any exception occurs in a code block.
+/// Establish an automatically managed SQL transaction on the
+/// specified connection for the duration of the immediately following
+/// code block: DBAPI_TRANSACTION(connection) { ... }
+///
+/// Automatically COMMIT upon reaching the end of the block normally.
+/// Automatically ROLLBACK upon leaving the block early, via a break
+/// or return statement or uncaught exception.  A client crash or
+/// severed connection will trigger an implicit server-side ROLLBACK.
+///
+/// Nested transactions are possible, and will use savepoints for
+/// inner transactions so they can fail cleanly (without also
+/// canceling outer transactions).
 #define DBAPI_TRANSACTION(connection) \
 for(ncbi::CAutoTrans auto_trans(ncbi::DBAPI_MakeTrans(connection)); \
     auto_trans.Continue(); \

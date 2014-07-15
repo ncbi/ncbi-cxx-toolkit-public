@@ -155,11 +155,24 @@ enum ESP_ParamType {
     eSP_InOut   ///< Parameter can be returned from stored procedure
 };
 
+/// (S)DBAPI_TRANSACTION glue for CDatabase.
+CAutoTrans::CSubject DBAPI_MakeTrans(CDatabase& db);
 /// (S)DBAPI_TRANSACTION glue for CQuery.
 CAutoTrans::CSubject DBAPI_MakeTrans(CQuery& query);
-/// RAII transaction support for SDBAPI.
-#define SDBAPI_TRANSACTION(query) DBAPI_TRANSACTION(query)
 
+/// Establish an automatically managed anonymous SQL transaction on
+/// the specified object's connection for the duration of the
+/// immediately following code block: SDBAPI_TRANSACTION(obj) { ... }
+///
+/// Automatically COMMIT upon reaching the end of the block normally.
+/// Automatically ROLLBACK upon leaving the block early, via a break
+/// or return statement or uncaught exception.  A client crash or
+/// severed connection will trigger an implicit server-side ROLLBACK.
+///
+/// Nested transactions are possible, and will use savepoints for
+/// inner transactions so they can fail cleanly (without also
+/// canceling outer transactions).
+#define SDBAPI_TRANSACTION(obj) DBAPI_TRANSACTION(obj)
 
 /// Object used to execute queries and stored procedures on the database
 /// server and retrieve result sets.
@@ -991,6 +1004,8 @@ public:
 
 
 private:
+    friend CAutoTrans::CSubject DBAPI_MakeTrans(CDatabase& db);
+
     /// Database parameters
     CSDB_ConnectionParam m_Params;
     /// Database implementation object

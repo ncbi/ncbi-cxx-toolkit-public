@@ -1219,6 +1219,14 @@ CAutoTrans::CAutoTrans(const CSubject& subject)
 {
     BeginTransaction();
     m_TranCount = GetTranCount();
+    if (m_TranCount > 1) {
+        m_SavepointName = "ncbi_dbapi_txn_"
+            + NStr::NumericToString(reinterpret_cast<intptr_t>(this), 0, 16);
+        auto_ptr<CDB_LangCmd> auto_stmt
+            (m_Conn.LangCmd("SAVE TRANSACTION " + m_SavepointName));
+        auto_stmt->Send();
+        auto_stmt->DumpResults();
+    }
 }
 
 
@@ -1270,9 +1278,17 @@ CAutoTrans::Commit(void)
 void
 CAutoTrans::Rollback(void)
 {
-    auto_ptr<CDB_LangCmd> auto_stmt(m_Conn.LangCmd("ROLLBACK"));
+    auto_ptr<CDB_LangCmd> auto_stmt
+        (m_Conn.LangCmd("ROLLBACK TRANSACTION " + m_SavepointName));
     auto_stmt->Send();
     auto_stmt->DumpResults();
+    if (m_SavepointName.empty()) {
+        _ASSERT(m_TranCount == 1);
+    } else {
+        // Formally unwind via an empty commit, as a rollback would
+        // also cancel outer transactions.
+        Commit();
+    }
 }
 
 

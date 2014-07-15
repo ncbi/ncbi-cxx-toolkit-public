@@ -2701,6 +2701,11 @@ CBlobBookmark::GetOStream(size_t blob_size, CQuery::EAllowLog log_it) const
                       (log_it == CQuery::eDisableLog) ? fBOS_SkipLogging : 0);
 }
 
+CAutoTrans::CSubject DBAPI_MakeTrans(CDatabase& db)
+{
+    return DBAPI_MakeTrans(*db.m_Impl->GetConnection());
+}
+
 CAutoTrans::CSubject DBAPI_MakeTrans(CQuery& query)
 {
     return DBAPI_MakeTrans(*query.m_Impl->GetConnection());
