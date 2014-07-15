@@ -2309,7 +2309,7 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
     if (m_HttpMode == eNoHttp) {
         x_UnsetFlag(fConfirmOnFinish);
         WriteText(s_MsgForStatus[eStatus_NotFound]);
-        if (m_AgeMax != 0) {
+        if (m_AgeMax != 0 && m_BlobAccess->IsBlobExists()) {
             WriteText(", AGE=").WriteNumber(m_AgeCur);
             WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
         }
