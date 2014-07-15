@@ -3399,6 +3399,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     TSeqPos len = 0;
     TSeqPos seg = 0;
     bool last_is_gap = false;
+    int prev_gap_linkage = -1;
+    int prev_gap_type = -1;
+    int gap_linkage = -1;
+    int gap_type = -1;
     size_t num_gaps = 0;
     size_t num_adjacent_gaps = 0;
     bool non_interspersed_gaps = false;
@@ -3429,6 +3433,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 non_interspersed_gaps = true;
             }
             last_is_gap = false;
+            prev_gap_linkage = -1;
+            prev_gap_type = -1;
+            gap_linkage = -1;
+            gap_type = -1;
             first = false;
             break;
         }
@@ -3452,6 +3460,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     non_interspersed_gaps = true;
                 }
                 last_is_gap = false;
+                prev_gap_linkage = -1;
+                prev_gap_type = -1;
+                gap_linkage = -1;
+                gap_type = -1;
                 const CSeq_data& data = lit.GetSeq_data();
                 vector<TSeqPos> badIdx;
                 CSeqportUtil::Validate(data, &badIdx);
@@ -3503,10 +3515,18 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     }
                 }
             } else {
+                gap_linkage = -1;
+                gap_type = -1;
                 if ( lit.IsSetSeq_data() && lit.GetSeq_data().IsGap() ) {
                     const CSeq_data& data = lit.GetSeq_data();
                     if (data.Which() == CSeq_data::e_Gap) {
                         const CSeq_gap& gap = data.GetGap();
+
+                        if(gap.IsSetType())
+                            gap_type = gap.GetType();
+                        if(gap.IsSetLinkage())
+                            gap_linkage = gap.GetLinkage();
+
                         if (gap.IsSetLinkage_evidence()) {
                             int linkcount = 0;
                             int linkevarray [12];
@@ -3606,9 +3626,13 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                             "First delta seq component is a gap", seq);
                     }
                 }
-                if ( last_is_gap ) {
+
+                if(last_is_gap &&
+                   (prev_gap_type == gap_type ||
+                    prev_gap_linkage != gap_linkage ||
+                    gap_linkage != CSeq_gap::eLinkage_unlinked))
                     ++num_adjacent_gaps;
-                }
+
                 if ( !lit.CanGetLength()  ||  lit.GetLength() == 0 ) {
                     if (!lit.IsSetFuzz() || !lit.GetFuzz().IsLim() || lit.GetFuzz().GetLim() != CInt_fuzz::eLim_unk) {
                         PostErr(s_IsSwissProt(seq) ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
@@ -3624,6 +3648,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     }
                 }
                 last_is_gap = true;
+                prev_gap_type = gap_type;
+                prev_gap_linkage = gap_linkage;
                 ++num_gaps;
             }
             first = false;
