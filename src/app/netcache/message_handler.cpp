@@ -2309,7 +2309,7 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
     if (m_HttpMode == eNoHttp) {
         x_UnsetFlag(fConfirmOnFinish);
         WriteText(s_MsgForStatus[eStatus_NotFound]);
-        if (m_AgeCur != 0) {
+        if (m_AgeMax != 0) {
             WriteText(", AGE=").WriteNumber(m_AgeCur);
             WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
         }
@@ -3426,7 +3426,7 @@ CNCMessageHandler::x_DoCmd_Get(void)
 
     if (m_HttpMode == eNoHttp) {
         WriteText("OK:BLOB found. SIZE=").WriteNumber(blob_size);
-        if (m_AgeCur != 0) {
+        if (m_AgeMax != 0) {
             WriteText(", AGE=").WriteNumber(m_AgeCur);
         }
         WriteText("\n");
@@ -3463,7 +3463,7 @@ CNCMessageHandler::x_DoCmd_GetLast(void)
     WriteText("OK:BLOB found. SIZE=").WriteNumber(blob_size);
     WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
     WriteText(", VALID=").WriteText(m_BlobAccess->IsCurVerExpired()? "false": "true");
-    if (m_AgeCur != 0) {
+    if (m_AgeMax != 0) {
         WriteText(", AGE=").WriteNumber(m_AgeCur);
     }
     WriteText("\n");
