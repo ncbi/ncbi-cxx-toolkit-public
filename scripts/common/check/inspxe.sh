@@ -31,9 +31,15 @@ while [ -d "$rd" ]; do
   rd="${1}.i_$n"
 done
 
+
+# Add .exe extension to the first argument, name of the program
+
+cmdline=`echo $* | sed "s|^$1|$1.exe|"`
+
+
 # Run test
 
-"$inspxe" -collect mi3 -knob detect-resource-leaks=false -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $*
+"$inspxe" -collect mi3 -knob detect-resource-leaks=false -result-dir $rd -return-app-exitcode -suppression-file "$suppress_dir" -- $cmdline
 app_result=$?
 "$inspxe" -report problems -report-all -result-dir $rd
 insp_result=$?
