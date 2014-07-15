@@ -970,6 +970,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
     if (pos != NPOS) {
         m_Browser = eIE;
         m_Engine  = eEngine_IE;
+        m_BrowserName = "Internet Explorer";
         m_BrowserVersion = m_EngineVersion;
         pos += search.length();
         s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
