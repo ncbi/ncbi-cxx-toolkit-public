@@ -69,11 +69,21 @@ using namespace objects;
 
 const char * TBL2ASN_APP_VER = "10.0";
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//  Demo application
-//
-
+class CTable2AsnLogger: public CMessageListenerLenient
+{
+public:
+    CTable2AsnLogger(): m_enable_log(false) {}
+    bool m_enable_log;
+protected:
+    virtual void PutProgress(
+        const string & sMessage,
+        const Uint8 iNumDone = 0,
+        const Uint8 iNumTotal = 0 ) 
+    {
+        if (m_enable_log)
+            CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
+    }
+};
 
 class CTbl2AsnApp : public CNcbiApplication
 {
@@ -110,7 +120,7 @@ private:
 
     CRef<CObjectManager> m_ObjMgr;
     CTable2AsnContext    m_context;
-    CRef<CMessageListenerBase> m_logger;
+    CRef<CTable2AsnLogger> m_logger;
     auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
 
     //auto_ptr<CObjectIStream> m_In;
@@ -238,7 +248,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("L", "Force Local protein_id/transcript_id");
     arg_desc->AddFlag("T", "Remote Taxonomy Lookup");               // done
     arg_desc->AddFlag("P", "Remote Publication Lookup");            // done
-    arg_desc->AddFlag("W", "Log Progress");
+    arg_desc->AddFlag("W", "Log Progress");                         // done
     arg_desc->AddFlag("K", "Save Bioseq-set");
 
     arg_desc->AddOptionalKey("H", "String", "Hold Until Publish\n\
@@ -308,7 +318,6 @@ void CTbl2AsnApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-
 int CTbl2AsnApp::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -316,9 +325,11 @@ int CTbl2AsnApp::Run(void)
     Setup(args);
 
     m_LogStream = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCout;
-    m_logger.Reset(new CMessageListenerLenient());
+    m_logger.Reset(new CTable2AsnLogger);
     m_logger->SetProgressOstream(m_LogStream);
     m_context.m_logger = m_logger;
+    m_logger->m_enable_log = args["W"].AsBoolean();
+
 
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
     // adjust here to make the inputs to table2asn match tbl2asn expectations

@@ -2660,14 +2660,14 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     // if sequence ID is a list, use just one sequence ID string    
     string real_seqid = seqid;
     if (!NStr::IsBlank(real_seqid)) {
-        try {
-            CSeq_id seq_id (seqid);
-        } catch (...) {
+        //try {
+        //    CSeq_id seq_id (seqid);
+        //} catch (...) {
             CBioseq::TId ids;
             CSeq_id::ParseIDs(ids, seqid);
             real_seqid.clear();
             ids.front()->GetLabel(&real_seqid, CSeq_id::eFasta);
-        }
+        //}
     }
 
     // Use this to efficiently find the best CDS for a prot feature
@@ -3168,6 +3168,16 @@ void CFeature_table_reader::ReadSequinFeatureTables(
     ITableFilter *filter
 )
 {
+    // let's use map to speedup matching on very large files, see SQD-1847
+    auto CSeqIdLessLambda = [](const CSeq_id* left, const CSeq_id* right) { return left < right; };
+    map<const CSeq_id*, CRef<CBioseq>, decltype(CSeqIdLessLambda)> seq_map(CSeqIdLessLambda);
+
+    for (CTypeIterator<CBioseq> seqit(entry);  seqit;  ++seqit) {
+        ITERATE (CBioseq::TId, seq_id, seqit->GetId()) {
+            seq_map[seq_id->GetPointer()].Reset(&*seqit);
+        }
+    }
+
     while ( !reader.AtEOF() ) {
         CRef<CSeq_annot> annot = ReadSequinFeatureTable(reader, flags, pMessageListener, filter);
         if (entry.IsSeq()) { // only one place to go
@@ -3183,14 +3193,7 @@ void CFeature_table_reader::ReadSequinFeatureTables(
         const CSeq_id*   feat_id = feat.GetLocation().GetId();
         CBioseq*         seq     = NULL;
         _ASSERT(feat_id); // we expect a uniform sequence ID
-        for (CTypeIterator<CBioseq> seqit(entry);  seqit  &&  !seq;  ++seqit) {
-            ITERATE (CBioseq::TId, seq_id, seqit->GetId()) {
-                if (feat_id->Match(**seq_id)) {
-                    seq = &*seqit;
-                    break;
-                }
-            }
-        }
+        seq = seq_map[feat_id].GetPointer();
         if (seq) { // found a match
             seq->SetAnnot().push_back(annot);
         } else { // just package on the set
