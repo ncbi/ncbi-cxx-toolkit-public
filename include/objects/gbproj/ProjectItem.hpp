@@ -44,6 +44,8 @@
 #include <corelib/ncbitime.hpp>
 #include <objects/gbproj/ProjectItem_.hpp>
 
+#include <set>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -90,6 +92,10 @@ public:
     void     SetUserObject(CObject* object);
     CObject* GetUserObject();
 
+    bool     HasTag(const string& tag) const { return (m_Tags.find(tag) != m_Tags.end()); }
+    void     AddTag(const string& tag) { m_Tags.insert(tag); }
+    void     RemoveTag(const string& tag) { m_Tags.erase(tag); }
+
 private:
     // Prohibit copy constructor and assignment operator
     CProjectItem(const CProjectItem& value);
@@ -97,6 +103,7 @@ private:
 
 protected:
 	CRef<CObject>   m_UserObject;
+    set<string>     m_Tags;
 };
 
 /////////////////// CProjectItem inline methods
