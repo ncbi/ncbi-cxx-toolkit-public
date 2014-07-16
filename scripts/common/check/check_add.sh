@@ -102,7 +102,7 @@ x_requires="$reg_build $req_check"
 
 # Get list of watchers
 x_makefile="$x_srcdir/Makefile.$x_test.app"
-x_watchers=`grep '^ *WATCHERS' "$x_makefile" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
+x_watchers=`grep '^ *WATCHERS' "$x_makefile" | sed -e 's/^.*=//' -e 's/,/ /g' -e 's/;/ /g' -e 's/^[ ]*//'`
 if [ -z "$x_watchers" ]; then
    # Watchers not found in the project's makefile, continue searching in Makefile.in files
    f=$x_makefile;
@@ -111,7 +111,7 @@ if [ -z "$x_watchers" ]; then
       test $f = '.' &&  f=''
       x_makefile="$f/Makefile.in"
       if [ -f "$x_makefile" ] ; then
-         x_watchers=`grep '^ *WATCHERS' "$x_makefile" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
+         x_watchers=`grep '^ *WATCHERS' "$x_makefile" | sed -e 's/^.*=//' -e 's/,/ /g' -e 's/;/ /g' -e 's/^[ ]*//'`
          test -n "$x_watchers"  &&  f=''
       else
          f=''
