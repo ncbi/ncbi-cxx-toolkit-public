@@ -7281,6 +7281,7 @@ Seq-annot ::= {
       data gene {
         locus "snoRNA:CG32479-a",
         syn {
+          "chr3L:874744..875006",
           "CR43576",
           "Dmel\CR43576"
         },
@@ -7336,6 +7337,12 @@ Seq-annot ::= {
             version 3
           }
         }
+      },
+      dbxref {
+        {
+          db "FLYBASE",
+          tag str "FBtr0309760"
+        }
       }
     }
   }
@@ -7370,10 +7377,6 @@ Seq-annot ::= {
         {
           db "miRBase",
           tag str "MI0011289"
-        },
-        {
-          db "GeneID",
-          tag id 12798493
         }
       }
     },
@@ -7396,6 +7399,12 @@ Seq-annot ::= {
             accession "NW_001848856",
             version 1
           }
+        }
+      },
+      dbxref {
+        {
+          db "FLYBASE",
+          tag str "FBtr0304240"
         }
       }
     },
@@ -7420,6 +7429,10 @@ Seq-annot ::= {
         }
       },
       dbxref {
+        {
+          db "FLYBASE",
+          tag str "FBtr0304241"
+        },
         {
           db "miRBase",
           tag str "MIMAT0011784"
@@ -7447,6 +7460,10 @@ Seq-annot ::= {
         }
       },
       dbxref {
+        {
+          db "FLYBASE",
+          tag str "FBtr0304242"
+        },
         {
           db "miRBase",
           tag str "MIMAT0011785"
@@ -7480,10 +7497,6 @@ Seq-annot ::= {
         {
           db "FLYBASE",
           tag str "FBgn0085813"
-        },
-        {
-          db "GeneID",
-          tag id 5740420
         }
       }
     },
@@ -7506,6 +7519,12 @@ Seq-annot ::= {
             accession "NW_001848859",
             version 1
           }
+        }
+      },
+      dbxref {
+        {
+          db "FLYBASE",
+          tag str "FBtr0114268"
         }
       }
     }
