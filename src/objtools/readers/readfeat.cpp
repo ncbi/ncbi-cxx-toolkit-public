@@ -3159,6 +3159,14 @@ void CFeature_table_reader::ReadSequinFeatureTables(
     return ReadSequinFeatureTables(reader, entry, flags, pMessageListener, filter);
 }
 
+struct SCSeqidCompare
+{
+  inline
+  bool operator()(const CSeq_id* left, const CSeq_id* right)
+  { 
+     return left < right;
+  };
+};
 
 void CFeature_table_reader::ReadSequinFeatureTables(
     ILineReader& reader,
@@ -3169,8 +3177,7 @@ void CFeature_table_reader::ReadSequinFeatureTables(
 )
 {
     // let's use map to speedup matching on very large files, see SQD-1847
-    auto CSeqIdLessLambda = [](const CSeq_id* left, const CSeq_id* right) { return left < right; };
-    map<const CSeq_id*, CRef<CBioseq>, decltype(CSeqIdLessLambda)> seq_map(CSeqIdLessLambda);
+    map<const CSeq_id*, CRef<CBioseq>, SCSeqidCompare> seq_map;
 
     for (CTypeIterator<CBioseq> seqit(entry);  seqit;  ++seqit) {
         ITERATE (CBioseq::TId, seq_id, seqit->GetId()) {
