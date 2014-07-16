@@ -406,7 +406,7 @@ void CInfoCache_Base::SetMaxGCQueueSize(size_t max_size)
 {
     TCacheMutex::TWriteLockGuard guard(m_CacheMutex);
     m_MaxGCQueueSize = max_size;
-    m_MinGCQueueSize = m_MaxGCQueueSize*0.9;
+    m_MinGCQueueSize = size_t(m_MaxGCQueueSize*0.9);
     if ( m_CurGCQueueSize > m_MaxGCQueueSize ) {
         x_GC();
     }

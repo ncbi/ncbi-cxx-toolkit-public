@@ -565,7 +565,7 @@ void CLoadLockSetter::SetSeq_entry(CSeq_entry& entry,
 static inline
 CReaderRequestResult::TExpirationTime sx_GetCurrentTime(void)
 {
-    return time(0);
+    return CReaderRequestResult::TExpirationTime(time(0));
 }
 
 

@@ -1100,7 +1100,7 @@ bool CId2ReaderBase::LoadBlobSet(CReaderRequestResult& result,
     }
 
     bool loaded_blob_ids = false;
-    int processed_requests = 0;
+    size_t processed_requests = 0;
     if ( m_AvoidRequest & fAvoidRequest_nested_get_blob_info ) {
         if ( !x_LoadSeq_idBlob_idsSet(result, seq_ids) ) {
             return false;
@@ -1223,7 +1223,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     // prepare serial nums and result state
     size_t request_count = packet.Get().size();
     int start_serial_num =
-        m_RequestSerialNumber.Add(request_count) - request_count;
+        int(m_RequestSerialNumber.Add(request_count) - request_count);
     {{
         int cur_serial_num = start_serial_num;
         NON_CONST_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
