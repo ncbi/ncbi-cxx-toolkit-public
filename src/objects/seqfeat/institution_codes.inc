@@ -1866,7 +1866,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "FSAG	s	Faculte des Sciences Agronomiques de Gembloux",
 "FSC<CAN>	c	Fredericton Stock Culture Collection",
 "FSC<USA-CA>	s	California State University, Biology Department",
-"FSCA	s	Florida State Collection of Arthropods, The Museum of Entomology",
+"FSCA	s	Florida State Collection of Arthropods, Florida Department of  Agriculture and Consumer Services, Division of Plant Industry",
 "FSCL	s	Florida Southern College, Biology Department",
 "FSFRL	s	Far Seas Fisheries Research Laboratory",
 "FSIU	s	Laboratory of Fisheries, Department of Oceanography",
