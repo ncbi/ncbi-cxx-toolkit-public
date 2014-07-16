@@ -423,7 +423,7 @@ public:
 
     explicit CInfoCache_Base(CInfoManager::TMainMutex& mutex);
     CInfoCache_Base(CInfoManager::TMainMutex& mutex, size_t max_size);
-    ~CInfoCache_Base(void);
+    virtual ~CInfoCache_Base(void);
 
     size_t GetMaxGCQueueSize(void) const
         {

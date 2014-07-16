@@ -41,6 +41,7 @@
 #include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
 #include <util/mutex_pool.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 #include <objtools/data_loaders/genbank/blob_id.hpp>
 #include <objtools/data_loaders/genbank/impl/info_cache.hpp>
 
@@ -303,7 +304,7 @@ public:
 };
 
 
-class CLoadLockSeqIds :
+class NCBI_XREADER_EXPORT CLoadLockSeqIds :
     public CGBInfoManager::TCacheSeqIds::TInfoLock
 {
     typedef CGBInfoManager::TCacheSeqIds::TInfoLock TParent;
@@ -341,7 +342,7 @@ public:
 };
 
 
-class CLoadLockGi :
+class NCBI_XREADER_EXPORT CLoadLockGi :
     public CGBInfoManager::TCacheGi::TInfoLock
 {
     typedef CGBInfoManager::TCacheGi::TInfoLock TParent;
@@ -375,7 +376,7 @@ public:
 };
 
 
-class CLoadLockAcc :
+class NCBI_XREADER_EXPORT CLoadLockAcc :
     public CGBInfoManager::TCacheAcc::TInfoLock
 {
     typedef CGBInfoManager::TCacheAcc::TInfoLock TParent;
@@ -409,7 +410,7 @@ public:
 };
 
 
-class CLoadLockLabel :
+class NCBI_XREADER_EXPORT CLoadLockLabel :
     public CGBInfoManager::TCacheLabel::TInfoLock
 {
     typedef CGBInfoManager::TCacheLabel::TInfoLock TParent;
@@ -438,7 +439,7 @@ public:
 };
 
 
-class CLoadLockTaxId :
+class NCBI_XREADER_EXPORT CLoadLockTaxId :
     public CGBInfoManager::TCacheTaxId::TInfoLock
 {
     typedef CGBInfoManager::TCacheTaxId::TInfoLock TParent;
@@ -467,7 +468,7 @@ public:
 };
 
 
-class CLoadLockBlobIds :
+class NCBI_XREADER_EXPORT CLoadLockBlobIds :
     public CGBInfoManager::TCacheBlobIds::TInfoLock
 {
     typedef CGBInfoManager::TCacheBlobIds::TInfoLock TParent;
@@ -514,7 +515,7 @@ public:
 };
 
 
-class CLoadLockBlobState :
+class NCBI_XREADER_EXPORT CLoadLockBlobState :
     public CGBInfoManager::TCacheBlobState::TInfoLock
 {
     typedef CGBInfoManager::TCacheBlobState::TInfoLock TParent;
@@ -537,7 +538,7 @@ public:
 };
 
 
-class CLoadLockBlobVersion :
+class NCBI_XREADER_EXPORT CLoadLockBlobVersion :
     public CGBInfoManager::TCacheBlobVersion::TInfoLock
 {
     typedef CGBInfoManager::TCacheBlobVersion::TInfoLock TParent;

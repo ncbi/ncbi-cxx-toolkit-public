@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XREADER_EXPORT CStandaloneRequestResult :
+class CStandaloneRequestResult :
     public CReaderRequestResult
 {
 public:
