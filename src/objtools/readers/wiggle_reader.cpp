@@ -779,10 +779,7 @@ bool CWiggleReader::xTryGetDoubleSimple(double& v)
         }
         else if ( (c == ' ' || c == '\t' || c == '\0') && digits ) {
             m_CurLine.clear();
-            v = ret;
-            if ( negate ) {
-                ret = -ret;
-            }
+            v = (negate ? -ret : ret);
             return true;
         }
         else {
