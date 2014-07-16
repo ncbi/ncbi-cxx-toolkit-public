@@ -367,6 +367,8 @@ public:
     void x_LoadChunks(const TChunkIds& chunk_ids) const;
 
     CTSE_Split_Info& GetSplitInfo(void);
+    const CTSE_Split_Info& GetSplitInfo(void) const;
+    bool HasSplitInfo(void) const;
     bool x_NeedsDelayedMainChunk(void) const;
 
     const CSeq_id_Handle& GetRequestedId(void) const;
@@ -462,6 +464,7 @@ private:
 
 
     void x_Initialize(void);
+    void x_Reset(void); // can be called after incomplete loading
    
     void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);

@@ -294,6 +294,28 @@ void CTSE_Info::x_Initialize(void)
 }
 
 
+void CTSE_Info::x_Reset(void)
+{
+    m_Bioseq_sets.clear();
+    m_Bioseqs.clear();
+    m_Removed_Bioseq_sets.clear();
+    m_Removed_Bioseqs.clear();
+    m_Split.Reset();
+    m_SetObjectInfo.Reset();
+    m_NamedAnnotObjs.clear();
+    m_IdAnnotInfoMap.clear();
+    m_FeatIdIndex.clear();
+    m_BaseTSE.reset();
+    m_EditSaver.Reset();
+    m_InternalBioObjNumber = 0;
+    m_BioObjects.clear();
+            
+    m_Object.Reset();
+    m_Which = CSeq_entry::e_not_set;
+    m_Contents.Reset();
+}
+
+
 void CTSE_Info::SetBlobVersion(TBlobVersion version)
 {
     _ASSERT(version >= 0);
@@ -1314,9 +1336,23 @@ CBioseq_Info& CTSE_Info::x_GetBioseq(const CSeq_id_Handle& id)
 }
 
 
+bool CTSE_Info::HasSplitInfo(void) const
+{
+    return m_Split;
+}
+
+
+const CTSE_Split_Info& CTSE_Info::GetSplitInfo(void) const
+{
+    _ASSERT(HasSplitInfo());
+    return *m_Split;
+}
+
+
 CTSE_Split_Info& CTSE_Info::GetSplitInfo(void)
 {
     if ( !m_Split ) {
+        _ASSERT(m_LoadState == eNotLoaded);
         m_Split = new CTSE_Split_Info(GetBlobId(), GetBlobVersion());
         CRef<ITSE_Assigner> listener(new CTSE_Default_Assigner);
         m_Split->x_TSEAttach(*this, listener); 
