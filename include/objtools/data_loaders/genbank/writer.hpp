@@ -33,7 +33,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/plugin_manager.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
 #include <util/cache/icache.hpp>
 #include <vector>
 #include <list>

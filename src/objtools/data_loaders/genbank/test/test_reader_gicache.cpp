@@ -28,8 +28,8 @@
 #include <objmgr/object_manager.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/standalone_result.hpp>
 #include <objtools/data_loaders/genbank/gicache/reader_gicache.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
@@ -113,8 +113,8 @@ int CTestApplication::Run(void)
                 NcbiCout << "none" << NcbiEndl;
                 continue;
             }
-            CLoadLockSeq_ids seq_ids(request, seq_id);
-            CSeq_id_Handle acc_ver = seq_ids->GetAccVer();
+            CLoadLockAcc lock(request, seq_id);
+            CSeq_id_Handle acc_ver = lock.GetAccVer();
             NcbiCout << acc_ver;
             NcbiCout << NcbiEndl;
         }

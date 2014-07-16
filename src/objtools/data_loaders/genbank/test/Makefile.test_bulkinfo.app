@@ -8,21 +8,22 @@ LIB = xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_COPY = bad_len.ids
+CHECK_COPY = bad_len.ids all_readers.sh
 
-CHECK_CMD = test_bulkinfo -type gi
-CHECK_CMD = test_bulkinfo -type acc
-CHECK_CMD = test_bulkinfo -type label
-CHECK_CMD = test_bulkinfo -type taxid
-CHECK_CMD = test_bulkinfo -type length
-CHECK_CMD = test_bulkinfo -type type
-CHECK_CMD = test_bulkinfo -type state
-CHECK_CMD = test_bulkinfo -type gi -idlist bad_len.ids
-CHECK_CMD = test_bulkinfo -type acc -idlist bad_len.ids
-CHECK_CMD = test_bulkinfo -type label -idlist bad_len.ids
-CHECK_CMD = test_bulkinfo -type taxid -idlist bad_len.ids
-CHECK_CMD = test_bulkinfo -type length -idlist bad_len.ids
-CHECK_CMD = test_bulkinfo -type type -idlist bad_len.ids
-CHECK_CMD = test_bulkinfo -type state -idlist bad_len.ids
+CHECK_CMD = all_readers.sh test_bulkinfo -type gi /CHECK_NAME=test_bulkinfo_gi
+CHECK_CMD = all_readers.sh test_bulkinfo -type acc /CHECK_NAME=test_bulkinfo_acc
+CHECK_CMD = all_readers.sh test_bulkinfo -type label /CHECK_NAME=test_bulkinfo_label
+CHECK_CMD = all_readers.sh test_bulkinfo -type taxid /CHECK_NAME=test_bulkinfo_taxid
+CHECK_CMD = all_readers.sh test_bulkinfo -type length /CHECK_NAME=test_bulkinfo_length
+CHECK_CMD = all_readers.sh test_bulkinfo -type type /CHECK_NAME=test_bulkinfo_type
+CHECK_CMD = all_readers.sh test_bulkinfo -type state /CHECK_NAME=test_bulkinfo_state
+
+CHECK_CMD = all_readers.sh test_bulkinfo -type gi -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_gi
+CHECK_CMD = all_readers.sh test_bulkinfo -type acc -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_acc
+CHECK_CMD = all_readers.sh test_bulkinfo -type label -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_label
+CHECK_CMD = all_readers.sh test_bulkinfo -type taxid -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_taxid
+CHECK_CMD = all_readers.sh test_bulkinfo -type length -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_length
+CHECK_CMD = all_readers.sh test_bulkinfo -type type -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_type
+CHECK_CMD = all_readers.sh test_bulkinfo -type state -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_state
 
 WATCHERS = vasilche

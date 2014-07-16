@@ -50,8 +50,8 @@
 #include <util/mutex_pool.hpp>
 
 #include <objtools/data_loaders/genbank/blob_id.hpp>
-#include <objtools/data_loaders/genbank/gbload_util.hpp>
-#include <objtools/data_loaders/genbank/cache_manager.hpp>
+#include <objtools/data_loaders/genbank/impl/gbload_util.hpp>
+#include <objtools/data_loaders/genbank/impl/cache_manager.hpp>
 
 #include <util/cache/icache.hpp>
 
@@ -68,9 +68,6 @@ class CSeqref;
 class CBlob_id;
 class CHandleRange;
 class CSeq_entry;
-class CLoadInfoSeq_ids;
-class CLoadInfoBlob_ids;
-class CLoadInfoBlobState;
 class CLoadInfoBlob;
 
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
@@ -96,6 +93,7 @@ class CLoadInfoBlob;
 //
 
 class CGBReaderRequestResult;
+class CGBInfoManager;
 
 
 class NCBI_XLOADER_GENBANK_EXPORT CGBReaderCacheManager : public CReaderCacheManager
@@ -198,8 +196,12 @@ public:
     virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret);
     virtual void GetLabels(const TIds& ids, TLoaded& loader, TLabels& ret);
     virtual void GetTaxIds(const TIds& ids, TLoaded& loader, TTaxIds& ret);
-    //virtual void GetSequenceStates(const TIds& ids, TLoaded& loader,
-    //                               TSequenceStates& ret);
+    virtual void GetSequenceLengths(const TIds& ids, TLoaded& loaded,
+                                    TSequenceLengths& ret);
+    virtual void GetSequenceTypes(const TIds& ids, TLoaded& loaded,
+                                  TSequenceTypes& ret);
+    virtual void GetSequenceStates(const TIds& ids, TLoaded& loader,
+                                   TSequenceStates& ret);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
@@ -287,12 +289,6 @@ public:
     const TRealBlobId& GetRealBlobId(const TBlobId& blob_id) const;
     const TRealBlobId& GetRealBlobId(const CTSE_Info& tse_info) const;
 
-    CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const string& key);
-    CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const CSeq_id_Handle& key);
-    typedef pair<CSeq_id_Handle, string>                      TLoadKeyBlob_ids;
-    CRef<CLoadInfoBlob_ids> GetLoadInfoBlob_ids(const TLoadKeyBlob_ids& key);
-    CRef<CLoadInfoBlobState> GetLoadInfoBlobState(const CBlob_id& key);
-
     // params modifying access methods
     // argument params should be not-null
     // returned value is not null - subnode will be created if necessary
@@ -316,7 +312,14 @@ public:
     static string GetParam(const TParamTree* params,
                            const string& param_name);
 
-    CReadDispatcher& GetDispatcher(void);
+    CReadDispatcher& GetDispatcher(void)
+        {
+            return *m_Dispatcher;
+        }
+    CGBInfoManager& GetInfoManager(void)
+        {
+            return *m_InfoManager;
+        }
 
     enum ECacheType {
         fCache_Id   = CGBReaderCacheManager::fCache_Id,
@@ -349,6 +352,16 @@ public:
             m_AlwaysLoadExternal = flag;
         }
 
+    bool GetAddWGSMasterDescr(void) const
+        {
+            return m_AddWGSMasterDescr;
+        }
+
+    void SetAddWGSMasterDescr(bool flag)
+        {
+            m_AddWGSMasterDescr = flag;
+        }
+
 protected:
     friend class CGBReaderRequestResult;
 
@@ -371,21 +384,10 @@ private:
     // Get reader name from the GB loader params.
     string x_GetReaderName(const TParamTree* params) const;
 
-    typedef CLoadInfoMap<string, CLoadInfoSeq_ids>            TLoadMapSeq_ids;
-    typedef CLoadInfoMap<CSeq_id_Handle, CLoadInfoSeq_ids>    TLoadMapSeq_ids2;
-    typedef CLoadInfoMap<TLoadKeyBlob_ids, CLoadInfoBlob_ids> TLoadMapBlob_ids;
-    typedef CLoadInfoMap<CBlob_id, CLoadInfoBlobState>        TLoadMapBlobStates;
-
     CInitMutexPool          m_MutexPool;
 
     CRef<CReadDispatcher>   m_Dispatcher;
-
-    TLoadMapSeq_ids         m_LoadMapSeq_ids;
-    TLoadMapSeq_ids2        m_LoadMapSeq_ids2;
-    TLoadMapBlob_ids        m_LoadMapBlob_ids;
-    TLoadMapBlobStates      m_LoadMapBlobStates;
-
-    //CTimer                  m_Timer;
+    CRef<CGBInfoManager>    m_InfoManager;
 
     // Information about all available caches
     CGBReaderCacheManager   m_CacheManager;
@@ -393,6 +395,7 @@ private:
     TExpirationTimeout      m_IdExpirationTimeout;
 
     bool                    m_AlwaysLoadExternal;
+    bool                    m_AddWGSMasterDescr;
 
     //
     // private code

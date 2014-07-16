@@ -32,16 +32,15 @@
 #include <corelib/rwstream.hpp>
 
 #include <objtools/data_loaders/genbank/writer.hpp>
-#include <objtools/data_loaders/genbank/processor.hpp>
-#include <objtools/data_loaders/genbank/processors.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/processor.hpp>
+#include <objtools/data_loaders/genbank/impl/processors.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/reader.hpp>
-#include <objtools/data_loaders/genbank/statistics.hpp>
+#include <objtools/data_loaders/genbank/impl/statistics.hpp>
 
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
-#include <objtools/data_loaders/genbank/split_parser.hpp>
-//#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/impl/split_parser.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <objmgr/impl/tse_split_info.hpp>
@@ -92,8 +91,6 @@ NCBI_PARAM_DEF_EX(int, GENBANK, READER_STATS, 0,
                   eParam_NoThread, GENBANK_READER_STATS);
 NCBI_PARAM_DEF_EX(bool, GENBANK, CACHE_RECOMPRESS, true,
                   eParam_NoThread, GENBANK_CACHE_RECOMPRESS);
-NCBI_PARAM_DEF_EX(bool, GENBANK, ADD_WGS_MASTER, true,
-                  eParam_NoThread, GENBANK_ADD_WGS_MASTER);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -361,14 +358,6 @@ static bool s_CacheRecompress(void)
 }
 
 
-static bool s_AddWGSMasterParam(void)
-{
-    static const bool s_Value =
-        NCBI_PARAM_TYPE(GENBANK, ADD_WGS_MASTER)::GetDefault();
-    return s_Value;
-}
-
-
 void CProcessor::SetSeqEntryReadHooks(CObjectIStream& in)
 {
     if ( TryStringPack() ) {
@@ -423,20 +412,6 @@ inline
 CWriter* CProcessor::GetWriter(const CReaderRequestResult& result) const
 {
     return m_Dispatcher->GetWriter(result, CWriter::eBlobWriter);
-}
-
-
-bool CProcessor::IsLoaded(CReaderRequestResult& result,
-                          const TBlobId& blob_id,
-                          TChunkId chunk_id,
-                          CLoadLockBlob& blob)
-{
-    if ( chunk_id == kMain_ChunkId ) {
-        return result.IsBlobLoaded(blob_id);
-    }
-    else {
-        return blob->GetSplitInfo().GetChunk(chunk_id).IsLoaded();
-    }
 }
 
 
@@ -611,7 +586,7 @@ public:
         if ( HasMasterId(seq) ) {
             // register master descr chunk
             seq.x_AddDescrChunkId(s_GetGoodDescrMask(),
-                                  CProcessor::kMasterWGS_ChunkId);
+                                  kMasterWGS_ChunkId);
         }
     }
 };
@@ -644,7 +619,7 @@ class CWGSMasterChunkInfo : public CTSE_Chunk_Info
 {
 public:
     CWGSMasterChunkInfo(const CSeq_id_Handle& master_idh)
-        : CTSE_Chunk_Info(CProcessor::kMasterWGS_ChunkId),
+        : CTSE_Chunk_Info(kMasterWGS_ChunkId),
           m_MasterId(master_idh)
         {
         }
@@ -654,25 +629,6 @@ public:
 
 
 END_LOCAL_NAMESPACE;
-
-
-void CProcessor::SetLoaded(CReaderRequestResult& result,
-                           const TBlobId& blob_id,
-                           TChunkId chunk_id,
-                           CLoadLockBlob& blob)
-{
-    if ( chunk_id == kMain_ChunkId ) {
-        if ( !blob.IsLoaded() ) {
-            blob.SetLoaded();
-        }
-        if ( !blob->IsUnavailable() ) {
-            result.AddTSE_Lock(blob);
-        }
-    }
-    else {
-        blob->GetSplitInfo().GetChunk(chunk_id).SetLoaded();
-    }
-}
 
 
 void CProcessor::LoadWGSMaster(CDataLoader* loader,
@@ -686,44 +642,18 @@ void CProcessor::LoadWGSMaster(CDataLoader* loader,
 }
 
 
-void CProcessor::AddWGSMaster(CReaderRequestResult& result,
-                              const TBlobId& /*blob_id*/,
-                              TChunkId chunk_id,
-                              CLoadLockBlob& blob)
+void CProcessor::AddWGSMaster(CLoadLockSetter& blob)
 {
-    if ( chunk_id == kMain_ChunkId &&
-         !blob.IsLoaded() &&
-         s_AddWGSMasterParam() &&
-         result.GetLoaderPtr() ) {
-        CTSE_Info::TSeqIds ids;
-        blob->GetBioseqsIds(ids);
-        ITERATE ( CTSE_Info::TSeqIds, it, ids ) {
-            if ( CSeq_id_Handle id = s_GetWGSMasterSeq_id(*it) ) {
-                CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id));
-                blob->GetSplitInfo().AddChunk(*chunk);
-                CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterChunk(id));
-                blob->SetBioseqUpdater(upd);
-                break;
-            }
-        }
-    }
-}
-
-
-void CProcessor::SetSeq_entry(CReaderRequestResult& /*result*/,
-                              const TBlobId& /*blob_id*/,
-                              TChunkId chunk_id,
-                              CLoadLockBlob& blob,
-                              CRef<CSeq_entry> entry,
-                              CTSE_SetObjectInfo* set_info)
-{
-    if ( entry ) {
-        if ( chunk_id == kMain_ChunkId ) {
-            blob->SetSeq_entry(*entry, set_info);
-        }
-        else {
-            blob->GetSplitInfo().GetChunk(chunk_id).
-                x_LoadSeq_entry(*entry, set_info);
+    CTSE_Info::TSeqIds ids;
+    CTSE_LoadLock& lock = blob.GetTSE_LoadLock();
+    lock->GetBioseqsIds(ids);
+    ITERATE ( CTSE_Info::TSeqIds, it, ids ) {
+        if ( CSeq_id_Handle id = s_GetWGSMasterSeq_id(*it) ) {
+            CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id));
+            lock->GetSplitInfo().AddChunk(*chunk);
+            CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterChunk(id));
+            lock->SetBioseqUpdater(upd);
+            break;
         }
     }
 }
@@ -741,7 +671,7 @@ namespace {
         _ASSERT(processor);
         return writer->OpenBlobStream(result, blob_id, chunk_id, *processor);
         /*
-        if ( chunk_id == CProcessor::kMain_ChunkId ) {
+        if ( chunk_id == kMain_ChunkId ) {
             return writer->OpenBlobStream(result, blob_id, *processor);
         }
         else {
@@ -786,55 +716,54 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
                                       TChunkId chunk_id,
                                       CObjectIStream& obj_stream) const
 {
-    CLoadLockBlobState state_lock(result, blob_id);
-    CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, chunk_id, blob) ) {
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    if ( blob.IsLoadedChunk() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_ID1: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
     }
     CID1server_back reply;
+    CStreamDelayBufferGuard guard;
+    CWriter* writer = GetWriter(result);
+    if ( writer ) {
+        guard.StartDelayBuffer(obj_stream);
+    }
+    SetSeqEntryReadHooks(obj_stream);
+
     {{
-        CStreamDelayBufferGuard guard;
-        CWriter* writer = GetWriter(result);
-        if ( writer ) {
-            guard.StartDelayBuffer(obj_stream);
-        }
-        SetSeqEntryReadHooks(obj_stream);
-
-        {{
-            CReaderRequestResultRecursion r(result);
+        CReaderRequestResultRecursion r(result);
                 
-            obj_stream >> reply;
+        obj_stream >> reply;
             
-            LogStat(r, blob_id,
-                    CGBRequestStatistics::eStat_LoadBlob,
-                    "CProcessor_ID1: read data",
-                    obj_stream.GetStreamPos());
-        }}
-
-        TBlobVersion version = GetVersion(reply);
-        if ( version >= 0 ) {
-            m_Dispatcher->SetAndSaveBlobVersion(result, blob_id, state_lock,
-                                                version);
-        }
-
-        if ( writer && state_lock.IsLoadedBlobVersion() ) {
-            SaveBlob(result, blob_id, chunk_id, writer,
-                     guard.EndDelayBuffer());
-        }
+        LogStat(r, blob_id,
+                CGBRequestStatistics::eStat_LoadBlob,
+                "CProcessor_ID1: read data",
+                obj_stream.GetStreamPos());
     }}
-    TSeqEntryInfo entry = GetSeq_entry(result, blob_id, blob, reply);
-    SetSeq_entry(result, blob_id, chunk_id, blob, entry.first);
-    blob->SetBlobState(entry.second);
-    SetLoaded(result, blob_id, chunk_id, blob);
+
+    TBlobVersion version = GetVersion(reply);
+    if ( version >= 0 ) {
+        result.SetAndSaveBlobVersion(blob_id, version);
+    }
+        
+    TSeqEntryInfo entry = GetSeq_entry(result, blob_id, reply);
+    result.SetAndSaveBlobState(blob_id, entry.second);
+    CLoadLockSetter setter(blob);
+    if ( !setter.IsLoaded() ) {
+        setter.SetSeq_entry(*entry.first);
+        setter.SetLoaded();
+    }
+        
+    if ( writer && version >= 0 ) {
+        SaveBlob(result, blob_id, chunk_id, writer,
+                 guard.EndDelayBuffer());
+    }
 }
 
 
 CProcessor_ID1::TSeqEntryInfo
 CProcessor_ID1::GetSeq_entry(CReaderRequestResult& result,
                              const TBlobId& blob_id,
-                             CLoadLockBlob& blob,
                              CID1server_back& reply) const
 {
     TSeqEntryInfo entry;
@@ -912,8 +841,6 @@ CProcessor_ID1::GetSeq_entry(CReaderRequestResult& result,
                        "CProcessor_ID1::GetSeq_entry: "
                        "bad ID1server-back type: "<<reply.Which());
     }
-
-    m_Dispatcher->SetAndSaveBlobState(result, blob_id, entry.second);
     return entry;
 }
 
@@ -1010,63 +937,60 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
                                           TChunkId chunk_id,
                                           CObjectIStream& obj_stream) const
 {
-    CLoadLockBlobState state_lock(result, blob_id);
-    CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, chunk_id, blob) ) {
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    if ( blob.IsLoadedChunk() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_ID1_SNP: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
     }
     CTSE_SetObjectInfo set_info;
     CID1server_back reply;
-    TSeqEntryInfo entry;
-    CRef<CSeq_entry> seq_entry;
     {{
-        {{
-            CReaderRequestResultRecursion r(result);
+        CReaderRequestResultRecursion r(result);
             
-            CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
-                                              Begin(reply),
-                                              set_info);
+        CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
+                                          Begin(reply),
+                                          set_info);
             
-            LogStat(r, blob_id,
-                    CGBRequestStatistics::eStat_LoadSNPBlob,
-                    "CProcessor_ID1: read SNP data",
-                    obj_stream.GetStreamPos());
-        }}
-
-        TBlobVersion version = GetVersion(reply);
-        if ( version >= 0 ) {
-            m_Dispatcher->SetAndSaveBlobVersion(result, blob_id, state_lock,
-                                                version);
-        }
-
-        entry = GetSeq_entry(result, blob_id, blob, reply);
-
-        CWriter* writer = GetWriter(result);
-        if ( writer && state_lock.IsLoadedBlobVersion() ) {
-            if ( set_info.m_Seq_annot_InfoMap.empty() || !entry.first ) {
-                const CProcessor_ID1* prc =
-                    dynamic_cast<const CProcessor_ID1*>
-                    (&m_Dispatcher->GetProcessor(eType_St_Seq_entry));
-                if ( prc ) {
-                    prc->SaveBlob(result, blob_id, chunk_id, writer, reply);
-                }
-            }
-            else {
-                const CProcessor_St_SE_SNPT* prc =
-                    dynamic_cast<const CProcessor_St_SE_SNPT*>
-                    (&m_Dispatcher->GetProcessor(eType_St_Seq_entry_SNPT));
-                if ( prc ) {
-                    prc->SaveSNPBlob(result, blob_id, chunk_id, blob, writer,
-                                     *entry.first, set_info);
-                }
-            }
-        }
+        LogStat(r, blob_id,
+                CGBRequestStatistics::eStat_LoadSNPBlob,
+                "CProcessor_ID1: read SNP data",
+                obj_stream.GetStreamPos());
     }}
-    SetSeq_entry(result, blob_id, chunk_id, blob, entry.first, &set_info);
-    blob->SetBlobState(entry.second);
-    SetLoaded(result, blob_id, chunk_id, blob);
+
+    TBlobVersion version = GetVersion(reply);
+    if ( version >= 0 ) {
+        result.SetAndSaveBlobVersion(blob_id, version);
+    }
+    TSeqEntryInfo entry = GetSeq_entry(result, blob_id, reply);
+    result.SetAndSaveBlobState(blob_id, entry.second);
+        
+    CLoadLockSetter setter(blob);
+    if ( !setter.IsLoaded() ) {
+        setter.SetSeq_entry(*entry.first, &set_info);
+        setter.SetLoaded();
+    }
+        
+    CWriter* writer = GetWriter(result);
+    if ( writer && version >= 0 ) {
+        if ( set_info.m_Seq_annot_InfoMap.empty() || !entry.first ) {
+            const CProcessor_ID1* prc =
+                dynamic_cast<const CProcessor_ID1*>
+                (&m_Dispatcher->GetProcessor(eType_St_Seq_entry));
+            if ( prc ) {
+                prc->SaveBlob(result, blob_id, chunk_id, writer, reply);
+            }
+        }
+        else {
+            const CProcessor_St_SE_SNPT* prc =
+                dynamic_cast<const CProcessor_St_SE_SNPT*>
+                (&m_Dispatcher->GetProcessor(eType_St_Seq_entry_SNPT));
+            if ( prc ) {
+                prc->SaveSNPBlob(result, blob_id, chunk_id, writer,
+                                 *entry.first, entry.second, set_info);
+            }
+        }
+    }
 }
 
 
@@ -1103,8 +1027,8 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
                                      TChunkId chunk_id,
                                      CObjectIStream& obj_stream) const
 {
-    CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, chunk_id, blob) ) {
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    if ( blob.IsLoadedChunk() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_SE: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
@@ -1130,20 +1054,28 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
                     obj_stream.GetStreamPos());
         }}
 
+        
+        CLoadLockSetter setter(blob);
+        if ( !setter.IsLoaded() ) {
+            setter.SetSeq_entry(*seq_entry);
+            if ( chunk_id == kMain_ChunkId &&
+                 result.GetAddWGSMasterDescr() ) {
+                AddWGSMaster(setter);
+            }
+            setter.SetLoaded();
+        }
+
         if ( writer ) {
             const CProcessor_St_SE* prc =
                 dynamic_cast<const CProcessor_St_SE*>
                 (&m_Dispatcher->GetProcessor(eType_St_Seq_entry));
             if ( prc ) {
-                prc->SaveBlob(result, blob_id, chunk_id, blob, writer,
+                prc->SaveBlob(result, blob_id, chunk_id,
+                              setter.GetBlobState(), writer,
                               guard.EndDelayBuffer());
             }
         }
     }}
-
-    SetSeq_entry(result, blob_id, chunk_id, blob, seq_entry);
-    AddWGSMaster(result, blob_id, chunk_id, blob);
-    SetLoaded(result, blob_id, chunk_id, blob);
 }
 
 
@@ -1151,18 +1083,18 @@ CWriter* CProcessor_SE::x_GetWriterToSaveBlob(CReaderRequestResult& result,
                                               const CBlob_id& blob_id,
                                               const char* processor_name) const
 {
-    CLoadLockBlobState state_lock(result, blob_id);
-    if ( !state_lock.IsLoadedBlobVersion() ) {
+    if ( !result.IsLoadedBlobVersion(blob_id) ) {
         ERR_POST_X(4, "CProcessor_"<<processor_name<<"::ProcessObjStream: "
                    "blob version is not set");
         return 0;
     }
+    CLoadLockBlobState state_lock(result, blob_id);
     if ( !state_lock.IsLoadedBlobState() ) {
         ERR_POST_X(4, "CProcessor_"<<processor_name<<"::ProcessObjStream: "
                    "blob state is not set");
         return 0;
     }
-    if ( state_lock->GetBlobState() & CBioseq_Handle::fState_no_data ) {
+    if ( state_lock.GetBlobState() & CBioseq_Handle::fState_no_data ) {
         ERR_POST_X(5, "CProcessor_"<<processor_name<<"::ProcessObjStream: "
                    "state no_data is set");
         return 0;
@@ -1204,8 +1136,9 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
                                          TChunkId chunk_id,
                                          CObjectIStream& obj_stream) const
 {
-    CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, chunk_id, blob) ) {
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    CLoadLockSetter setter(blob);
+    if ( setter.IsLoaded() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_SE_SNP: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
@@ -1236,11 +1169,11 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
                 if ( prc ) {
                     if ( seq_entry ) {
                         prc->SaveBlob(result, blob_id, chunk_id,
-                                      blob, writer, *seq_entry);
+                                      setter.GetBlobState(), writer, *seq_entry);
                     }
                     else {
                         prc->SaveNoBlob(result, blob_id, chunk_id,
-                                        blob->GetBlobState(), writer);
+                                        setter.GetBlobState(), writer);
                     }
                 }
             }
@@ -1249,14 +1182,14 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
                     dynamic_cast<const CProcessor_St_SE_SNPT*>
                     (&m_Dispatcher->GetProcessor(eType_St_Seq_entry_SNPT));
                 if ( prc ) {
-                    prc->SaveSNPBlob(result, blob_id, chunk_id, blob, writer,
-                                     *seq_entry, set_info);
+                    prc->SaveSNPBlob(result, blob_id, chunk_id, writer,
+                                     *seq_entry, setter.GetBlobState(), set_info);
                 }
             }
         }
     }}
-    SetSeq_entry(result, blob_id, chunk_id, blob, seq_entry, &set_info);
-    SetLoaded(result, blob_id, chunk_id, blob);
+    setter.SetSeq_entry(*seq_entry, &set_info);
+    setter.SetLoaded();
 }
 
 
@@ -1293,13 +1226,7 @@ void CProcessor_St_SE::ProcessObjStream(CReaderRequestResult& result,
                                         TChunkId chunk_id,
                                         CObjectIStream& obj_stream) const
 {
-    CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, chunk_id, blob) ) {
-        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "CProcessor_St_SE: "
-                       "double load of "<<blob_id<<'/'<<chunk_id);
-    }
-
+    CLoadLockBlob blob(result, blob_id, chunk_id);
     TBlobState blob_state;
 
     {{
@@ -1313,8 +1240,13 @@ void CProcessor_St_SE::ProcessObjStream(CReaderRequestResult& result,
                 obj_stream.GetStreamPos());
     }}
 
-    m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob_state);
+    result.SetAndSaveBlobState(blob_id, blob_state);
     if ( blob_state & CBioseq_Handle::fState_no_data ) {
+        CLoadLockSetter setter(blob);
+        if ( !setter.IsLoaded() ) {
+            setter.SetLoaded();
+        }
+
         CWriter* writer = x_GetWriterToSaveBlob(result, blob_id, "St_SE");
         if ( writer ) {
             const CProcessor_St_SE* prc =
@@ -1322,10 +1254,9 @@ void CProcessor_St_SE::ProcessObjStream(CReaderRequestResult& result,
                 (&m_Dispatcher->GetProcessor(eType_St_Seq_entry));
             if ( prc ) {
                 prc->SaveNoBlob(result, blob_id, chunk_id,
-                                blob->GetBlobState(), writer);
+                                blob_state, writer);
             }
         }
-        SetLoaded(result, blob_id, chunk_id, blob);
     }
     else {
         CProcessor_SE::ProcessObjStream(result, blob_id, chunk_id, obj_stream);
@@ -1368,18 +1299,18 @@ void CProcessor_St_SE::WriteBlobState(CNcbiOstream& stream,
 void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
                                 const TBlobId& blob_id,
                                 TChunkId chunk_id,
-                                const CLoadLockBlob& blob,
+                                TBlobState blob_state,
                                 CWriter* writer,
                                 CRef<CByteSource> byte_source) const
 {
-    SaveBlob(result, blob_id, chunk_id, blob, writer, byte_source->Open());
+    SaveBlob(result, blob_id, chunk_id, blob_state, writer, byte_source->Open());
 }
 
 
 void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
                                 const TBlobId& blob_id,
                                 TChunkId chunk_id,
-                                const CLoadLockBlob& blob,
+                                TBlobState blob_state,
                                 CWriter* writer,
                                 CRef<CByteSourceReader> reader) const
 {
@@ -1390,7 +1321,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
         return;
     }
     try {
-        WriteBlobState(**stream, blob->GetBlobState());
+        WriteBlobState(**stream, blob_state);
         CWriter::WriteBytes(**stream, reader);
         stream->Close();
     }
@@ -1402,7 +1333,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
 void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
                                 const TBlobId& blob_id,
                                 TChunkId chunk_id,
-                                const CLoadLockBlob& blob,
+                                TBlobState blob_state,
                                 CWriter* writer,
                                 const TOctetStringSequence& data) const
 {
@@ -1413,7 +1344,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
         return;
     }
     try {
-        WriteBlobState(**stream, blob->GetBlobState());
+        WriteBlobState(**stream, blob_state);
         CWriter::WriteBytes(**stream, data);
         stream->Close();
     }
@@ -1425,7 +1356,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
 void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
                                 const TBlobId& blob_id,
                                 TChunkId chunk_id,
-                                const CLoadLockBlob& blob,
+                                TBlobState blob_state,
                                 CWriter* writer,
                                 const CSeq_entry& seq_entry) const
 {
@@ -1439,7 +1370,7 @@ void CProcessor_St_SE::SaveBlob(CReaderRequestResult& result,
         {{
             CObjectOStreamAsnBinary obj_stream(**stream);
             obj_stream.SetFlags(CObjectOStream::fFlagNoAutoFlush);
-            WriteBlobState(obj_stream, blob->GetBlobState());
+            WriteBlobState(obj_stream, blob_state);
             obj_stream << seq_entry;
         }}
         stream->Close();
@@ -1503,15 +1434,16 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
                                           TChunkId chunk_id,
                                           CNcbiIstream& stream) const
 {
-    CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, chunk_id, blob) ) {
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    CLoadLockSetter setter(blob);
+    if ( setter.IsLoaded() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_St_SE_SNPT: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
     }
 
     TBlobState blob_state = ReadBlobState(stream);
-    m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob_state);
+    result.SetAndSaveBlobState(blob_id, blob_state);
 
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     CTSE_SetObjectInfo set_info;
@@ -1531,19 +1463,19 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
     
     CWriter* writer = GetWriter(result);
     if ( writer ) {
-        SaveSNPBlob(result, blob_id, chunk_id, blob, writer, *seq_entry, set_info);
+        SaveSNPBlob(result, blob_id, chunk_id, writer, *seq_entry, blob_state, set_info);
     }
-    SetSeq_entry(result, blob_id, chunk_id, blob, seq_entry, &set_info);
-    SetLoaded(result, blob_id, chunk_id, blob);
+    setter.SetSeq_entry(*seq_entry, &set_info);
+    setter.SetLoaded();
 }
 
 
 void CProcessor_St_SE_SNPT::SaveSNPBlob(CReaderRequestResult& result,
                                         const TBlobId& blob_id,
                                         TChunkId chunk_id,
-                                        const CLoadLockBlob& blob,
                                         CWriter* writer,
                                         const CSeq_entry& seq_entry,
+                                        TBlobState blob_state,
                                         const CTSE_SetObjectInfo& set_info) const
 {
     _ASSERT(writer);
@@ -1553,7 +1485,7 @@ void CProcessor_St_SE_SNPT::SaveSNPBlob(CReaderRequestResult& result,
         return;
     }
     try {
-        WriteBlobState(**stream, blob->GetBlobState());
+        WriteBlobState(**stream, blob_state);
         CSeq_annot_SNP_Info_Reader::Write(**stream,
                                           ConstBegin(seq_entry), set_info);
         stream->Close();
@@ -1623,8 +1555,8 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                                  int split_version,
                                  const CID2_Reply_Data* skel) const
 {
-    CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, chunk_id, blob) ) {
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    if ( blob.IsLoadedChunk() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_ID2: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
@@ -1657,10 +1589,16 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                     "CProcessor_ID2: parsed Seq-entry",
                     data_size);
         }}
-
-        blob->SetBlobState(blob_state);
-
-        SetSeq_entry(result, blob_id, chunk_id, blob, entry);
+        
+        result.SetAndSaveBlobState(blob_id, blob_state);
+        CLoadLockSetter setter(blob);
+        if ( !setter.IsLoaded() ) {
+            setter.SetSeq_entry(*entry);
+            if ( result.GetAddWGSMasterDescr() ) {
+                AddWGSMaster(setter);
+            }
+            setter.SetLoaded();
+        }
         
         CWriter* writer = GetWriter(result);
         if ( writer ) {
@@ -1673,7 +1611,7 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                     (&m_Dispatcher->GetProcessor(eType_St_Seq_entry));
                 if ( prc ) {
                     prc->SaveBlob(result, blob_id, chunk_id,
-                                  blob, writer, data.GetData());
+                                  blob_state, writer, data.GetData());
                 }
             }
             else {
@@ -1723,11 +1661,15 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             }}
         }
 
-        blob->SetBlobState(blob_state);
+        result.SetAndSaveBlobState(blob_id, blob_state);
+        CLoadLockSetter setter(blob);
+        if ( !setter.IsLoaded() ) {
+            CTSE_LoadLock& lock = setter.GetTSE_LoadLock();
+            lock->GetSplitInfo().SetSplitVersion(split_version);
+            CSplitParser::Attach(*lock, *split_info);
+            setter.SetLoaded();
+        }
 
-        CSplitParser::Attach(*blob, *split_info);
-        blob->GetSplitInfo().SetSplitVersion(split_version);
-        
         CWriter* writer = GetWriter(result);
         if ( writer ) {
             if ( with_skeleton ) {
@@ -1758,8 +1700,8 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                        "CProcessor_ID2: "
                        "ID2S-Chunk in main reply");
         }
-        CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(chunk_id);
-        if ( chunk_info.IsLoaded() ) {
+        CLoadLockSetter setter(blob);
+        if ( setter.IsLoaded() ) {
             break;
         }
         CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
@@ -1768,13 +1710,14 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             CReaderRequestResultRecursion r(result);
             
             x_ReadData(data, Begin(*chunk), data_size);
-            CSplitParser::Load(chunk_info, *chunk);
+            CSplitParser::Load(setter.GetTSE_Chunk_Info(), *chunk);
             
-            LogStat(r, blob_id, chunk_info.GetChunkId(),
+            LogStat(r, blob_id, chunk_id,
                     CGBRequestStatistics::eStat_ParseChunk,
                     "CProcessor_ID2: parsed split chunk",
                     data_size);
         }}
+        setter.SetLoaded();
         
         CWriter* writer = GetWriter(result);
         if ( writer ) {
@@ -1787,8 +1730,6 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
                        "CProcessor_ID2: "
                        "invalid data type: "<<data.GetData_type());
     }
-    AddWGSMaster(result, blob_id, chunk_id, blob);
-    SetLoaded(result, blob_id, chunk_id, blob);
 }
 
 
@@ -2238,22 +2179,6 @@ bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id,
 }
 
 
-bool CProcessor_ExtAnnot::IsExtAnnot(const TBlobId& blob_id,
-                                     CLoadLockBlob& blob)
-{
-    if ( !IsExtAnnot(blob_id) || blob->HasSeq_entry() ) {
-        return false;
-    }
-    try {
-        // ok it's special processing of external annotation
-        return !blob->GetSplitInfo().GetChunk(kDelayedMain_ChunkId).IsLoaded();
-    }
-    catch ( CException& ) {
-    }
-    return false;
-}
-
-
 void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
                                   const TBlobId& blob_id,
                                   TChunkId chunk_id) const
@@ -2263,8 +2188,9 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
                        "CProcessor_ExtAnnot: "
                        "bad blob "<<blob_id<<'/'<<chunk_id);
     }
-    CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, chunk_id, blob) ) {
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    CLoadLockSetter setter(blob);
+    if ( setter.IsLoaded() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_ExtAnnot: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
@@ -2327,10 +2253,10 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     }
     _ASSERT(!db_name.empty());
     if ( name.IsNamed() ) {
-        blob->SetName(name);
+        setter.GetTSE_LoadLock()->SetName(name);
     }
 
-    TGi gi = GI_FROM(int, blob_id.GetSatKey());
+    TGi gi = blob_id.GetSatKey();
     CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
     CSeq_id seq_id;
     seq_id.SetGeneral().SetDb(db_name);
@@ -2344,10 +2270,10 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     }
     chunk->x_AddBioseqPlace(0);
     chunk->x_AddBioseqId(seh);
-    blob->GetSplitInfo().AddChunk(*chunk);
-    _ASSERT(blob->x_NeedsDelayedMainChunk());
+    setter.GetSplitInfo().AddChunk(*chunk);
+    _ASSERT(setter.GetTSE_LoadLock()->x_NeedsDelayedMainChunk());
 
-    SetLoaded(result, blob_id, chunk_id, blob);
+    setter.SetLoaded();
 
     CWriter* writer = GetWriter(result);
     if ( writer ) {
@@ -2395,7 +2321,8 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
     _ASSERT(info.IsSetAnnotInfo());
     const CBlob_id& blob_id = *info.GetBlob_id();
     CLoadLockBlob blob(result, blob_id);
-    if ( IsLoaded(result, blob_id, kMain_ChunkId, blob) ) {
+    CLoadLockSetter setter(blob);
+    if ( setter.IsLoaded() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_AnnotInfo: "
                        "double load of "<<blob_id);
@@ -2409,7 +2336,7 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
         // create special external annotations blob
         CAnnotName name(annot_info.GetName());
         if ( name.IsNamed() && !ExtractZoomLevel(name.GetName(), 0, 0) ) {
-            blob->SetName(name);
+            setter.GetTSE_LoadLock()->SetName(name);
         }
 
         vector<SAnnotTypeSelector> types;
@@ -2448,10 +2375,10 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
             chunk->x_AddAnnotType(name, *it, loc);
         }
     }
-    blob->GetSplitInfo().AddChunk(*chunk);
-    _ASSERT(blob->x_NeedsDelayedMainChunk());
+    setter.GetSplitInfo().AddChunk(*chunk);
+    _ASSERT(setter.GetTSE_LoadLock()->x_NeedsDelayedMainChunk());
 
-    SetLoaded(result, blob_id, kMain_ChunkId, blob);
+    setter.SetLoaded();
 }
 
 

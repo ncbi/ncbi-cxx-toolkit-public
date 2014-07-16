@@ -36,8 +36,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CLoadLockSeq_ids;
-class CLoadLockBlob_ids;
 
 class NCBI_XREADER_GICACHE_EXPORT CGICacheReader : public CReader
 {

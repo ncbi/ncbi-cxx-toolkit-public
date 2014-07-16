@@ -30,9 +30,9 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_config.hpp>
-#include <objtools/data_loaders/genbank/reader_service.hpp>
+#include <objtools/data_loaders/genbank/impl/reader_service.hpp>
 #include <objtools/data_loaders/genbank/reader_service_params.h>
-#include <objtools/data_loaders/genbank/reader_id2_base.hpp>
+#include <objtools/data_loaders/genbank/impl/reader_id2_base.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbithr.hpp>
 #include <connect/ncbi_socket.hpp>

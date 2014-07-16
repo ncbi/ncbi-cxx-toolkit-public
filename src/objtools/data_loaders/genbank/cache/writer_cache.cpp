@@ -32,8 +32,8 @@
 #include <objtools/data_loaders/genbank/cache/writer_cache_entry.hpp>
 #include <objtools/data_loaders/genbank/cache/reader_cache_params.h>
 #include <objtools/data_loaders/genbank/readers.hpp> // for entry point
-#include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
 
 #include <corelib/rwstream.hpp>
 #include <corelib/plugin_manager_store.hpp>
@@ -129,7 +129,7 @@ void CCacheWriter::SaveStringSeq_ids(CReaderRequestResult& result,
         return;
     }
 
-    CLoadLockSeq_ids ids(result, seq_id);
+    CLoadLockSeqIds ids(result, seq_id);
     WriteSeq_ids(seq_id, ids);
 }
 
@@ -192,10 +192,10 @@ void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
         return;
     }
 
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids.IsLoadedGi() ) {
+    CLoadLockGi lock(result, seq_id);
+    if ( lock.IsLoadedGi() ) {
         CStoreBuffer str;
-        str.StoreInt4(GI_TO(Int4, ids->GetGi()));
+        str.StoreInt4(GI_TO(Int4, lock.GetGi()));
         x_WriteId(seq_id, GetGiSubkey(), str);
     }
 }
@@ -208,7 +208,7 @@ void CCacheWriter::SaveSeq_idSeq_ids(CReaderRequestResult& result,
         return;
     }
 
-    CLoadLockSeq_ids ids(result, seq_id);
+    CLoadLockSeqIds ids(result, seq_id);
     WriteSeq_ids(GetIdKey(seq_id), ids);
 }
 
@@ -220,10 +220,10 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
         return;
     }
 
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids.IsLoadedGi() ) {
+    CLoadLockGi lock(result, seq_id);
+    if ( lock.IsLoadedGi() ) {
         CStoreBuffer str;
-        str.StoreInt4(GI_TO(Int4, ids->GetGi()));
+        str.StoreInt4(GI_TO(Int4, lock.GetGi()));
         x_WriteId(GetIdKey(seq_id), GetGiSubkey(), str);
     }
 }
@@ -236,10 +236,10 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
         return;
     }
 
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids.IsLoadedAccVer() ) {
+    CLoadLockAcc lock(result, seq_id);
+    if ( lock.IsLoadedAccVer() ) {
         string str;
-        if ( CSeq_id_Handle acc = ids->GetAccVer() ) {
+        if ( CSeq_id_Handle acc = lock.GetAccVer() ) {
             str = acc.AsString();
         }
         x_WriteId(GetIdKey(seq_id), GetAccVerSubkey(), str);
@@ -254,9 +254,9 @@ void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
         return;
     }
 
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids.IsLoadedLabel() ) {
-        const string& str = ids->GetLabel();
+    CLoadLockLabel lock(result, seq_id);
+    if ( lock.IsLoadedLabel() ) {
+        const string& str = lock.GetLabel();
         x_WriteId(GetIdKey(seq_id), GetLabelSubkey(), str);
     }
 }
@@ -269,23 +269,23 @@ void CCacheWriter::SaveSeq_idTaxId(CReaderRequestResult& result,
         return;
     }
 
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids.IsLoadedTaxId() ) {
+    CLoadLockTaxId lock(result, seq_id);
+    if ( lock.IsLoadedTaxId() ) {
         CStoreBuffer str;
-        str.StoreInt4(ids->GetTaxId());
+        str.StoreInt4(lock.GetTaxId());
         x_WriteId(GetIdKey(seq_id), GetTaxIdSubkey(), str);
     }
 }
 
 
 void CCacheWriter::WriteSeq_ids(const string& key,
-                                const CLoadLockSeq_ids& ids)
+                                const CLoadLockSeqIds& lock)
 {
     if( !m_IdCache) {
         return;
     }
 
-    if ( !ids.IsLoaded() ) {
+    if ( !lock.IsLoaded() ) {
         return;
     }
 
@@ -301,7 +301,7 @@ void CCacheWriter::WriteSeq_ids(const string& key,
 
         CWStream w_stream(writer.release(), 0, 0, CRWStreambuf::fOwnAll);
         CObjectOStreamAsnBinary obj_stream(w_stream);
-        CFixedSeq_ids seq_ids = ids->GetSeq_ids();
+        CFixedSeq_ids seq_ids = lock.GetSeq_ids();
         static_cast<CObjectOStream&>(obj_stream). // cast because of protected
             WriteUint4(CStoreBuffer::ToUint4(seq_ids.size()));
         ITERATE ( CFixedSeq_ids, it, seq_ids ) {
@@ -329,7 +329,7 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
         return;
     }
 
-    CLoadLockBlob_ids ids(result, seq_id, sel);
+    CLoadLockBlobIds ids(result, seq_id, sel);
     if ( !ids.IsLoaded() ) {
         return;
     }
@@ -338,8 +338,8 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     GetBlob_idsSubkey(sel, subkey, true_subkey);
     CStoreBuffer str;
     str.StoreInt4(BLOB_IDS_MAGIC);
-    str.StoreUint4(ids->GetState());
-    CFixedBlob_ids blob_ids = ids->GetBlob_ids();
+    CFixedBlob_ids blob_ids = ids.GetBlob_ids();
+    str.StoreUint4(blob_ids.GetState());
     str.StoreUint4(str.ToUint4(blob_ids.size()));
     ITERATE ( CFixedBlob_ids, it, blob_ids ) {
         const CBlob_Info& info = *it;
@@ -498,11 +498,18 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
     }
 
     try {
-        CLoadLockBlob blob(result, blob_id);
-        _ASSERT(blob.GetBlobVersion() >= 0);
+        CLoadLockBlob blob(result, blob_id, chunk_id);
+        TBlobVersion version = blob.GetKnownBlobVersion();
+        if ( version < 0 ) {
+            CLoadLockBlobVersion version_lock(result, blob_id, eAlreadyLoaded);
+            if ( version_lock ) {
+                version = version_lock.GetBlobVersion();
+            }
+        }
+        _ASSERT(version >= 0);
         CRef<CBlobStream> stream
             (new CCacheBlobStream(m_BlobCache, GetBlobKey(blob_id),
-                                  blob.GetBlobVersion(),
+                                  version,
                                   GetBlobSubkey(blob, chunk_id)));
         if ( !stream->CanWrite() ) {
             return null;

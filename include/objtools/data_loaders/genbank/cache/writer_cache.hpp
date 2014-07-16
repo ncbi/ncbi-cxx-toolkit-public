@@ -40,7 +40,7 @@ class ICache;
 
 BEGIN_SCOPE(objects)
 
-class CLoadLockSeq_ids;
+class CSeq_id;
 
 class NCBI_XREADER_CACHE_EXPORT CCacheWriter : public CWriter,
                                                public CCacheHolder,
@@ -80,7 +80,7 @@ public:
 
     virtual bool CanWrite(EType type) const;
 
-    void WriteSeq_ids(const string& key, const CLoadLockSeq_ids& ids);
+    void WriteSeq_ids(const string& key, const CLoadLockSeqIds& ids);
 
     virtual void InitializeCache(CReaderCacheManager& cache_manager,
                                  const TPluginManagerParamTree* params);

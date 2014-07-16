@@ -31,7 +31,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/data_loaders/genbank/incr_time.hpp>
+#include <objtools/data_loaders/genbank/impl/incr_time.hpp>
 #include <connect/ncbi_types.h>
 #include <connect/ncbi_server_info.h>
 #include <connect/ncbi_conn_stream.hpp>

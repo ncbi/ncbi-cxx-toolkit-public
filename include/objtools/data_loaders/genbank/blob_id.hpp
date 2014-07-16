@@ -55,7 +55,7 @@ public:
         {
             return m_SubSat;
         }
-    int GetSatKey() const
+    TIntId GetSatKey() const
         {
             return m_SatKey;
         }
@@ -103,7 +103,7 @@ public:
         {
             m_SubSat = v;
         }
-    void SetSatKey(int v)
+    void SetSatKey(TIntId v)
         {
             m_SatKey = v;
         }
@@ -111,7 +111,7 @@ public:
 protected:
     int m_Sat;
     int m_SubSat;
-    int m_SatKey;
+    TIntId m_SatKey;
 };
 
 
@@ -119,6 +119,14 @@ inline CNcbiOstream& operator<<(CNcbiOstream& ostr, const CBlob_id& id)
 {
     return id.Dump(ostr);
 }
+
+
+typedef int TChunkId;
+enum {
+    kMain_ChunkId       = -1, // not a chunk, but main Seq-entry
+    kMasterWGS_ChunkId  = kMax_Int-1, // chunk with master WGS descr
+    kDelayedMain_ChunkId= kMax_Int // main Seq-entry with delayed ext annot
+};
 
 
 enum EBlobContentsMask

@@ -28,8 +28,8 @@
 #include <objmgr/object_manager.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/standalone_result.hpp>
 #include <objtools/data_loaders/genbank/id1/reader_id1.hpp>
 
 #include <connect/ncbi_core_cxx.hpp>
@@ -102,17 +102,17 @@ int CTestApplication::Run(void)
             CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(GI_FROM(int, gi));
             CStandaloneRequestResult request(seq_id);
             dispatcher->LoadSeq_idSeq_ids(request, seq_id);
-            CLoadLockSeq_ids seq_ids(request, seq_id);
+            CLoadLockSeqIds seq_ids(request, seq_id);
             NcbiCout << "  ids:";
-            CFixedSeq_ids ids2 = seq_ids->GetSeq_ids();
+            CFixedSeq_ids ids2 = seq_ids.GetSeq_ids();
             ITERATE ( CFixedSeq_ids, i, ids2 ) {
                 NcbiCout << " " << i->AsString();
             }
             NcbiCout << NcbiEndl;
             
-            CLoadLockBlob_ids blob_ids(request, seq_id, 0);
+            CLoadLockBlobIds blob_ids(request, seq_id, 0);
             dispatcher->LoadSeq_idBlob_ids(request, seq_id, 0);
-            CFixedBlob_ids ids = blob_ids->GetBlob_ids();
+            CFixedBlob_ids ids = blob_ids.GetBlob_ids();
             ITERATE ( CFixedBlob_ids, i, ids ) {
                 const CBlob_Info& blob_info = *i;
                 CConstRef<CBlob_id> blob_id = blob_info.GetBlob_id();
@@ -123,7 +123,7 @@ int CTestApplication::Run(void)
                 }
                 CLoadLockBlob blob(request, *blob_id);
                 dispatcher->LoadBlob(request, *blob_id);
-                if ( !blob.IsLoaded() ) {
+                if ( !blob.IsLoadedBlob() ) {
                     NcbiCout << "blob is not available" << NcbiEndl;
                     continue;
                 }

@@ -29,7 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/data_loaders/genbank/split_parser.hpp>
+#include <objtools/data_loaders/genbank/impl/split_parser.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
@@ -406,7 +406,8 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
     case CID2S_Seq_loc::e_Whole_gi_range:
     {
         const CID2S_Gi_Range& wr = loc.GetWhole_gi_range();
-        for ( TGi gi = wr.GetStart(), end = GI_FROM(TIntId, GI_TO(TIntId, gi) + wr.GetCount()); gi < end; ++gi )
+        int n = wr.GetCount();
+        for ( TGi gi = wr.GetStart(); n--; ++gi )
             x_AddGiWhole(vec, gi);
         break;
     }

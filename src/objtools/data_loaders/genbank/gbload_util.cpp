@@ -30,7 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objtools/data_loaders/genbank/gbload_util.hpp>
+#include <objtools/data_loaders/genbank/impl/gbload_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/error_codes.hpp>
 #include <objmgr/impl/handle_range.hpp>

@@ -29,10 +29,10 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
-#include <objtools/data_loaders/genbank/reader_id1_base.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/processors.hpp>
+#include <objtools/data_loaders/genbank/impl/reader_id1_base.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/processors.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -67,24 +67,21 @@ bool CId1ReaderBase::LoadStringSeq_ids(CReaderRequestResult& /*result*/,
 bool CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                               const TBlobId& blob_id)
 {
-    if ( result.IsBlobLoaded(blob_id) ) {
+    CLoadLockBlob blob(result, blob_id);
+    if ( blob.IsLoadedBlob() ) {
         return true;
     }
 
     if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
-        const int chunk_id = CProcessor::kMain_ChunkId;
-        CLoadLockBlob blob(result, blob_id);
-        if ( !CProcessor::IsLoaded(result, blob_id, chunk_id, blob) ) {
-            dynamic_cast<const CProcessor_ExtAnnot&>
-                (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
-                .Process(result, blob_id, chunk_id);
-        }
-        _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id, blob));
+        dynamic_cast<const CProcessor_ExtAnnot&>
+            (m_Dispatcher->GetProcessor(CProcessor::eType_ExtAnnot))
+            .Process(result, blob_id, kMain_ChunkId);
+        _ASSERT(blob.IsLoadedBlob());
         return true;
     }
 
-    GetBlob(result, blob_id, CProcessor::kMain_ChunkId);
-    _ASSERT(result.IsBlobLoaded(blob_id));
+    GetBlob(result, blob_id, kMain_ChunkId);
+    _ASSERT(blob.IsLoadedBlob());
     return true;
 }
 
@@ -105,7 +102,7 @@ bool CId1ReaderBase::LoadBlobState(CReaderRequestResult& result,
 bool CId1ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
                                      const TBlobId& blob_id)
 {
-    CLoadLockBlobState blob(result, blob_id);
+    CLoadLockBlobVersion blob(result, blob_id);
     if ( blob.IsLoadedBlobVersion() ) {
         return true;
     }
@@ -118,32 +115,17 @@ bool CId1ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
 bool CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
                                const TBlobId& blob_id, TChunkId chunk_id)
 {
-    if ( !CProcessor_ExtAnnot::IsExtAnnot(blob_id, chunk_id) ) {
-        return CReader::LoadChunk(result, blob_id, chunk_id);
-    }
-    
-    CLoadLockBlob blob(result, blob_id);
-    _ASSERT(blob && blob.IsLoaded());
-    CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(chunk_id);
-    if ( chunk_info.IsLoaded() ) {
+    _ASSERT(CProcessor_ExtAnnot::IsExtAnnot(blob_id, chunk_id));
+    _ASSERT(chunk_id == kDelayedMain_ChunkId);
+
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    _ASSERT(blob.IsLoadedBlob());
+    if ( blob.IsLoadedChunk() ) {
         return true;
     }
-
-    CInitGuard init(chunk_info, result);
-    if ( init ) {
-        try {
-            GetBlob(result, blob_id, chunk_id);
-            _ASSERT(CProcessor::IsLoaded(result, blob_id, chunk_id,blob));
-        }
-        catch ( CLoaderException& exc ) {
-            if ( exc.GetErrCode() == exc.eNoConnection ) {
-                return false;
-            }
-            else {
-                throw;
-            }
-        }
-    }
+    
+    GetBlob(result, blob_id, chunk_id);
+    _ASSERT(blob.IsLoadedChunk());
     return true;
 }
 

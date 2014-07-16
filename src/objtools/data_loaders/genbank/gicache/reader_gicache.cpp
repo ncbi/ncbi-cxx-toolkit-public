@@ -35,8 +35,8 @@
 #include <objtools/data_loaders/genbank/gicache/reader_gicache_entry.hpp>
 #include <objtools/data_loaders/genbank/gicache/reader_gicache_params.h>
 #include <objtools/data_loaders/genbank/readers.hpp> // for entry point
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
@@ -140,7 +140,7 @@ bool CGICacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                                       const CSeq_id_Handle& seq_id)
 {
     if ( seq_id.IsGi() ) {
-        CLoadLockSeq_ids ids(result, seq_id);
+        CLoadLockAcc ids(result, seq_id);
         char buffer[256];
         int got;
         {{

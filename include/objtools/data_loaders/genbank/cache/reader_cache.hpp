@@ -47,8 +47,6 @@ class CByteSource;
 BEGIN_SCOPE(objects)
 
 class CSeq_id;
-class CID2_Reply_Data;
-class CLoadLockSeq_ids;
 
 /// structure for common cache reader&writer implementation
 struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
@@ -90,13 +88,9 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     static string GetBlobKey(const CBlob_id& blob_id);
 
     /// BLOB cache subkeys:
-    enum {
-        kMain_ChunkId       = -1, // not a chunk, but main Seq-entry
-        kMasterWGS_ChunkId  = kMax_Int-1, // chunk with master WGS descr
-        kDelayedMain_ChunkId= kMax_Int // main Seq-entry with delayed ext annot
-    };
-
     static string GetBlobSubkey(CLoadLockBlob& blob,
+                                int chunk_id = kMain_ChunkId);
+    static string GetBlobSubkey(int split_version,
                                 int chunk_id = kMain_ChunkId);
 
     static int GetDebugLevel(void);
@@ -193,7 +187,7 @@ public:
                    const TBlobId& blob_id, TChunkId chunk_id);
 
     bool ReadSeq_ids(CReaderRequestResult& result,
-                     const string& key, CLoadLockSeq_ids& ids);
+                     const string& key, CLoadLockSeqIds& ids);
 
     int GetRetryCount(void) const;
     bool MayBeSkippedOnErrors(void) const;

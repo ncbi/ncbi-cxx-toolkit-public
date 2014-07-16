@@ -29,7 +29,7 @@
 *
 */
 
-#include <objtools/data_loaders/genbank/processor.hpp>
+#include <objtools/data_loaders/genbank/impl/processor.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <vector>
 #include <list>
@@ -67,7 +67,6 @@ public:
     typedef pair<CRef<CSeq_entry>, int> TSeqEntryInfo; // entry & state
     TSeqEntryInfo GetSeq_entry(CReaderRequestResult& result,
                                const TBlobId& blob_id,
-                               CLoadLockBlob& blob,
                                CID1server_back& reply) const;
 
     void SaveBlob(CReaderRequestResult& result,
@@ -160,19 +159,19 @@ public:
     void SaveBlob(CReaderRequestResult& result,
                   const TBlobId& blob_id,
                   TChunkId chunk_id,
-                  const CLoadLockBlob& blob,
+                  TBlobState blob_state,
                   CWriter* writer,
                   CRef<CByteSource> byte_source) const;
     void SaveBlob(CReaderRequestResult& result,
                   const TBlobId& blob_id,
                   TChunkId chunk_id,
-                  const CLoadLockBlob& blob,
+                  TBlobState blob_state,
                   CWriter* writer,
                   CRef<CByteSourceReader> reader) const;
     void SaveBlob(CReaderRequestResult& result,
                   const TBlobId& blob_id,
                   TChunkId chunk_id,
-                  const CLoadLockBlob& blob,
+                  TBlobState blob_state,
                   CWriter* writer,
                   const CSeq_entry& seq_entry) const;
     typedef vector<char> TOctetString;
@@ -180,7 +179,7 @@ public:
     void SaveBlob(CReaderRequestResult& result,
                   const TBlobId& blob_id,
                   TChunkId chunk_id,
-                  const CLoadLockBlob& blob,
+                  TBlobState blob_state,
                   CWriter* writer,
                   const TOctetStringSequence& data) const;
 
@@ -209,9 +208,9 @@ public:
     void SaveSNPBlob(CReaderRequestResult& result,
                      const TBlobId& blob_id,
                      TChunkId chunk_id,
-                     const CLoadLockBlob& blob,
                      CWriter* writer,
                      const CSeq_entry& seq_entry,
+                     TBlobState blob_state,
                      const CTSE_SetObjectInfo& set_info) const;
 };
 
@@ -352,7 +351,7 @@ public:
 
     static bool IsExtAnnot(const TBlobId& blob_id);
     static bool IsExtAnnot(const TBlobId& blob_id, TChunkId chunk_id);
-    static bool IsExtAnnot(const TBlobId& blob_id, CLoadLockBlob& blob);
+    //static bool IsExtAnnot(const TBlobId& blob_id, CLoadLockBlob& blob);
 
     void Process(CReaderRequestResult& result,
                  const TBlobId& blob_id,

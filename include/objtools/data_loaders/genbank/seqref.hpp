@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects)
 class NCBI_XREADER_EXPORT CSeqref : public CObject
 {
 public:
-    typedef pair<pair<int, int>, int> TKeyByTSE;
+    typedef pair<pair<int, int>, TIntId> TKeyByTSE;
 
     enum EBlobFlags {
         fPossible    = 1 << 16,
@@ -74,15 +74,15 @@ public:
     typedef int TSubSat;
 
     CSeqref(void);
-    CSeqref(int gi, int sat, int satkey);
-    CSeqref(int gi, int sat, int satkey, TSubSat subsat, TFlags flags);
+    CSeqref(TGi gi, int sat, TIntId satkey);
+    CSeqref(TGi gi, int sat, TIntId satkey, TSubSat subsat, TFlags flags);
     virtual ~CSeqref(void);
     
     const string print(void)    const;
     const string printTSE(void) const;
     static const string printTSE(const TKeyByTSE& key);
 
-    int GetGi() const
+    TGi GetGi() const
         {
             return m_Gi;
         }
@@ -94,7 +94,7 @@ public:
         {
             return m_SubSat;
         }
-    int GetSatKey() const
+    TIntId GetSatKey() const
         {
             return m_SatKey;
         }
@@ -172,10 +172,10 @@ public:
 protected:
     TFlags  m_Flags;
 
-    int m_Gi;
+    TGi m_Gi;
     int m_Sat;
     int m_SubSat; // external features mask
-    int m_SatKey;
+    TIntId m_SatKey;
     int m_Version;
 };
 

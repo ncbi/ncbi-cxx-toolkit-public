@@ -65,9 +65,6 @@ class CID2S_Reply_Get_Chunk;
 class CID2S_Chunk_Id;
 class CID2S_Chunk;
 
-class CLoadLockSeq_ids;
-class CLoadLockBlob_ids;
-
 class CReaderRequestResult;
 struct SId2LoadedSet;
 
@@ -117,7 +114,7 @@ public:
                    TContentsMask mask,
                    const SAnnotSelector* sel);
     bool LoadBlobs(CReaderRequestResult& result,
-                   CLoadLockBlob_ids blobs,
+                   const CLoadLockBlobIds& blobs,
                    TContentsMask mask,
                    const SAnnotSelector* sel);
     bool LoadBlob(CReaderRequestResult& result,

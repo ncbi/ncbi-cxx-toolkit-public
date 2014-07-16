@@ -30,8 +30,8 @@
 *
 */
 
-#include <objtools/data_loaders/genbank/reader_id1_base.hpp>
-#include <objtools/data_loaders/genbank/reader_service.hpp>
+#include <objtools/data_loaders/genbank/impl/reader_id1_base.hpp>
+#include <objtools/data_loaders/genbank/impl/reader_service.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -40,8 +40,6 @@ BEGIN_SCOPE(objects)
 class CID1server_back;
 class CID1server_request;
 class CID1server_maxcomplex;
-class CLoadLockSeq_ids;
-class CLoadLockBlob_ids;
 
 class NCBI_XREADER_ID1_EXPORT CId1Reader : public CId1ReaderBase
 {

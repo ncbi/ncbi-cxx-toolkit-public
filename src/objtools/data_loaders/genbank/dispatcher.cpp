@@ -28,12 +28,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
 #include <objtools/data_loaders/genbank/reader.hpp>
 #include <objtools/data_loaders/genbank/writer.hpp>
-#include <objtools/data_loaders/genbank/processor.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/statistics.hpp>
+#include <objtools/data_loaders/genbank/impl/processor.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/statistics.hpp>
 #include <objtools/error_codes.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
@@ -250,7 +250,7 @@ namespace {
     {
     public:
         typedef string TKey;
-        typedef CLoadLockSeq_ids TLock;
+        typedef CLoadLockSeqIds TLock;
         CCommandLoadStringSeq_ids(CReaderRequestResult& result,
                                   const TKey& key)
             : CReadDispatcherCommand(result),
@@ -289,7 +289,7 @@ namespace {
     {
     public:
         typedef CSeq_id_Handle TKey;
-        typedef CLoadLockSeq_ids TLock;
+        typedef CLoadLockSeqIds TLock;
         CCommandLoadSeq_idSeq_ids(CReaderRequestResult& result,
                                   const TKey& key)
             : CReadDispatcherCommand(result),
@@ -328,7 +328,7 @@ namespace {
     {
     public:
         typedef CSeq_id_Handle TKey;
-        typedef CLoadLockSeq_ids TLock;
+        typedef CLoadLockGi TLock;
         CCommandLoadSeq_idGi(CReaderRequestResult& result,
                              const TKey& key)
             : CReadDispatcherCommand(result),
@@ -367,7 +367,7 @@ namespace {
     {
     public:
         typedef CSeq_id_Handle TKey;
-        typedef CLoadLockSeq_ids TLock;
+        typedef CLoadLockAcc TLock;
         CCommandLoadSeq_idAccVer(CReaderRequestResult& result,
                                  const TKey& key)
             : CReadDispatcherCommand(result),
@@ -406,7 +406,7 @@ namespace {
     {
     public:
         typedef CSeq_id_Handle TKey;
-        typedef CLoadLockSeq_ids TLock;
+        typedef CLoadLockLabel TLock;
         CCommandLoadSeq_idLabel(CReaderRequestResult& result,
                                 const TKey& key)
             : CReadDispatcherCommand(result),
@@ -445,7 +445,7 @@ namespace {
     {
     public:
         typedef CSeq_id_Handle TKey;
-        typedef CLoadLockSeq_ids TLock;
+        typedef CLoadLockTaxId TLock;
         CCommandLoadSeq_idTaxId(CReaderRequestResult& result,
                                 const TKey& key)
             : CReadDispatcherCommand(result),
@@ -484,17 +484,40 @@ namespace {
         TLock m_Lock;
     };
 
-    bool s_Blob_idsLoaded(CLoadLockBlob_ids& ids, CLoadLockSeq_ids& seq_ids)
+    bool s_Blob_idsLoaded(CLoadLockBlobIds& ids,
+                          const CLoadLockSeqIds& seq_ids)
     {
         if ( ids.IsLoaded() ) {
             return true;
         }
         // check if seq-id is known as absent
-        if ( seq_ids.IsLoaded() &&
-             (seq_ids->GetState() & CBioseq_Handle::fState_no_data) ) {
-            // mark blob-ids as absent too
-            ids.SetNoBlob_ids(seq_ids->GetState());
+        if ( seq_ids.IsLoaded() ) {
+            CFixedSeq_ids::TState state = seq_ids.GetState();
+            if ( state & CBioseq_Handle::fState_no_data ) {
+                // mark blob-ids as absent too
+                ids.SetNoBlob_ids(state);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool s_Blob_idsLoaded(CLoadLockBlobIds& ids,
+                          CReaderRequestResult& result,
+                          const CSeq_id_Handle& seq_id)
+    {
+        if ( ids.IsLoaded() ) {
             return true;
+        }
+        // check if seq-id is known as absent
+        CLoadLockSeqIds seq_ids(result, seq_id, eAlreadyLoaded);
+        if ( seq_ids ) {
+            CFixedSeq_ids::TState state = seq_ids.GetState();
+            if ( state & CBioseq_Handle::fState_no_data ) {
+                // mark blob-ids as absent too
+                ids.SetNoBlob_ids(state);
+                return true;
+            }
         }
         return false;
     }
@@ -503,20 +526,19 @@ namespace {
     {
     public:
         typedef CSeq_id_Handle TKey;
-        typedef CLoadLockSeq_ids TPreLock;
-        typedef CLoadLockBlob_ids TLock;
+        typedef CLoadLockBlobIds TLock;
         CCommandLoadSeq_idBlob_ids(CReaderRequestResult& result,
                                    const TKey& key,
                                    const SAnnotSelector* sel)
             : CReadDispatcherCommand(result),
               m_Key(key), m_Selector(sel),
-              m_PreLock(result, key), m_Lock(result, key, sel)
+              m_Lock(result, key, sel)
             {
             }
 
         bool IsDone(void)
             {
-                return s_Blob_idsLoaded(m_Lock, m_PreLock);
+                return s_Blob_idsLoaded(m_Lock, GetResult(), m_Key);
             }
         bool Execute(CReader& reader)
             {
@@ -540,7 +562,6 @@ namespace {
     private:
         TKey m_Key;
         const SAnnotSelector* m_Selector;
-        TPreLock m_PreLock;
         TLock m_Lock;
     };
 
@@ -774,7 +795,7 @@ namespace {
     {
     public:
         typedef CBlob_id TKey;
-        typedef CLoadLockBlobState TLock;
+        typedef CLoadLockBlobVersion TLock;
         CCommandLoadBlobVersion(CReaderRequestResult& result,
                                 const TKey& key)
             : CReadDispatcherCommand(result),
@@ -810,19 +831,21 @@ namespace {
     };
 
     bool s_AllBlobsAreLoaded(CReaderRequestResult& result,
-                             const CLoadLockBlob_ids& blobs,
+                             const CLoadLockBlobIds& blobs,
                              CReadDispatcher::TContentsMask mask,
                              const SAnnotSelector* sel)
     {
         _ASSERT(blobs.IsLoaded());
 
-        CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
+        CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
         ITERATE ( CFixedBlob_ids, it, blob_ids ) {
             const CBlob_Info& info = *it;
-            if ( info.Matches(mask, sel) ) {
-                if ( !result.IsBlobLoaded(*info.GetBlob_id()) ) {
-                    return false;
-                }
+            if ( !info.Matches(mask, sel) ) {
+                continue;
+            }
+            CLoadLockBlob blob(result, *info.GetBlob_id());
+            if ( !blob.IsLoadedBlob() ) {
+                return false;
             }
         }
         return true;
@@ -831,7 +854,7 @@ namespace {
     class CCommandLoadBlobs : public CReadDispatcherCommand
     {
     public:
-        typedef CLoadLockBlob_ids TIds;
+        typedef CLoadLockBlobIds TIds;
         typedef CReadDispatcher::TContentsMask TMask;
         CCommandLoadBlobs(CReaderRequestResult& result,
                           TIds ids, TMask mask, const SAnnotSelector* sel)
@@ -873,21 +896,20 @@ namespace {
     {
     public:
         typedef CSeq_id_Handle TKey;
-        typedef CLoadLockSeq_ids TSeqIds;
-        typedef CLoadLockBlob_ids TIds;
+        typedef CLoadLockBlobIds TIds;
         typedef CReadDispatcher::TContentsMask TMask;
         CCommandLoadSeq_idBlobs(CReaderRequestResult& result,
                                 const TKey& key, TMask mask,
                                 const SAnnotSelector* sel)
             : CReadDispatcherCommand(result),
-              m_Key(key), m_SeqIds(result, key), m_Ids(result, key, sel),
+              m_Key(key), m_Ids(result, key, sel),
               m_Mask(mask), m_Selector(sel)
             {
             }
 
         bool IsDone(void)
             {
-                return s_Blob_idsLoaded(m_Ids, m_SeqIds) &&
+                return s_Blob_idsLoaded(m_Ids, GetResult(), m_Key) &&
                     s_AllBlobsAreLoaded(GetResult(),
                                         m_Ids, m_Mask, m_Selector);
             }
@@ -912,7 +934,6 @@ namespace {
         
     private:
         TKey m_Key;
-        TSeqIds m_SeqIds;
         TIds m_Ids;
         TMask m_Mask;
         const SAnnotSelector* m_Selector;
@@ -922,18 +943,20 @@ namespace {
     {
     public:
         typedef CBlob_id TKey;
+        typedef CLoadLockBlob TLock;
         CCommandLoadBlob(CReaderRequestResult& result,
                          const TKey& key,
                          const CBlob_Info* blob_info = 0)
             : CReadDispatcherCommand(result),
               m_Key(key),
+              m_Lock(result, key),
               m_BlobInfo(blob_info)
             {
             }
 
         bool IsDone(void)
             {
-                return GetResult().IsBlobLoaded(m_Key);
+                return m_Lock.IsLoadedBlob();
             }
         bool Execute(CReader& reader)
             {
@@ -960,6 +983,7 @@ namespace {
         
     private:
         TKey m_Key;
+        TLock m_Lock;
         const CBlob_Info* m_BlobInfo;
     };
 
@@ -974,15 +998,14 @@ namespace {
                           const TKey& key,
                           TChunkId chunk_id)
             : CReadDispatcherCommand(result),
-              m_Key(key), m_Lock(result, key),
-              m_ChunkId(chunk_id),
-              m_ChunkInfo(m_Lock->GetSplitInfo().GetChunk(chunk_id))
+              m_Key(key), m_Lock(result, key, chunk_id),
+              m_ChunkId(chunk_id)
             {
             }
 
         bool IsDone(void)
             {
-                return m_ChunkInfo.IsLoaded();
+                return m_Lock.IsLoadedChunk();
             }
         bool Execute(CReader& reader)
             {
@@ -1008,7 +1031,6 @@ namespace {
         TKey m_Key;
         TLock m_Lock;
         TChunkId m_ChunkId;
-        TChunkInfo& m_ChunkInfo;
     };
 
     class CCommandLoadChunks : public CReadDispatcherCommand
@@ -1019,7 +1041,6 @@ namespace {
         typedef int TChunkId;
         typedef vector<TChunkId> TChunkIds;
         typedef CTSE_Chunk_Info TChunkInfo;
-        typedef vector<CTSE_Chunk_Info*> TChunkInfos;
         CCommandLoadChunks(CReaderRequestResult& result,
                            const TKey& key,
                            const TChunkIds chunk_ids)
@@ -1027,16 +1048,12 @@ namespace {
               m_Key(key), m_Lock(result, key),
               m_ChunkIds(chunk_ids)
             {
-                ITERATE(TChunkIds, it, m_ChunkIds) {
-                    m_ChunkInfos.push_back(
-                        &m_Lock->GetSplitInfo().GetChunk(*it));
-                }
             }
 
         bool IsDone(void)
             {
-                ITERATE(TChunkInfos, it, m_ChunkInfos) {
-                    if ( !(*it)->IsLoaded() ) {
+                ITERATE ( TChunkIds, it, m_ChunkIds ) {
+                    if ( !m_Lock.IsLoadedChunk(*it) ) {
                         return false;
                     }
                 }
@@ -1051,10 +1068,10 @@ namespace {
                 CNcbiOstrstream str;
                 str << "LoadChunks(" << m_Key.ToString() << ", {";
                 int cnt = 0;
-                ITERATE(TChunkInfos, it, m_ChunkInfos) {
-                    if ( !(*it)->IsLoaded() ) {
+                ITERATE ( TChunkIds, it, m_ChunkIds ) {
+                    if ( !m_Lock.IsLoadedChunk(*it) ) {
                         if ( cnt++ ) str << ',';
-                        str << ' ' << (*it)->GetChunkId();
+                        str << ' ' << *it;
                     }
                 }
                 str << " }): data not found";
@@ -1068,8 +1085,8 @@ namespace {
             {
                 CNcbiOstrstream str;
                 int cnt = 0;
-                ITERATE(TChunkInfos, it, m_ChunkInfos) {
-                    int id = (*it)->GetChunkId();
+                ITERATE ( TChunkIds, it, m_ChunkIds ) {
+                    int id = *it;
                     if ( id >= 0 && id < kMax_Int ) {
                         if ( !cnt ) {
                             str << "chunk(" << m_Key.ToString() << '.';
@@ -1092,7 +1109,6 @@ namespace {
         TKey m_Key;
         TLock m_Lock;
         TChunkIds m_ChunkIds;
-        TChunkInfos m_ChunkInfos;
     };
 
     class CCommandLoadBlobSet : public CReadDispatcherCommand
@@ -1110,17 +1126,21 @@ namespace {
             {
                 CReaderRequestResult& result = GetResult();
                 ITERATE(TIds, id, m_Ids) {
-                    CLoadLockSeq_ids seq_ids(result, *id);
-                    CLoadLockBlob_ids blob_ids(result, *id, 0);
-                    if ( !s_Blob_idsLoaded(blob_ids, seq_ids) ) {
+                    CLoadLockBlobIds blob_ids(result, *id, 0);
+                    if ( !blob_ids ) {
                         return false;
                     }
-                    CFixedBlob_ids ids = blob_ids->GetBlob_ids();
+                    if ( !s_Blob_idsLoaded(blob_ids, result, *id) ) {
+                        return false;
+                    }
+                    CFixedBlob_ids ids = blob_ids.GetBlob_ids();
                     ITERATE ( CFixedBlob_ids, it, ids ) {
-                        if ( it->Matches(fBlobHasCore, 0) ) {
-                            if ( !result.IsBlobLoaded(*it->GetBlob_id()) ) {
-                                return false;
-                            }
+                        if ( !it->Matches(fBlobHasCore, 0) ) {
+                            continue;
+                        }
+                        CLoadLockBlob blob(result, *it->GetBlob_id());
+                        if ( !blob.IsLoadedBlob() ) {
+                            return false;
                         }
                     }
                 }
@@ -1381,7 +1401,7 @@ void CReadDispatcher::LoadBlobs(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadBlobs(CReaderRequestResult& result,
-                                CLoadLockBlob_ids blobs,
+                                const CLoadLockBlobIds& blobs,
                                 TContentsMask mask,
                                 const SAnnotSelector* sel)
 {
@@ -1428,56 +1448,6 @@ void CReadDispatcher::LoadBlobSet(CReaderRequestResult& result,
 {
     CCommandLoadBlobSet command(result, seq_ids);
     Process(command);
-}
-
-
-void CReadDispatcher::SetAndSaveBlobState(CReaderRequestResult& result,
-                                          const TBlobId& blob_id,
-                                          TBlobState state) const
-{
-    CLoadLockBlobState lock(result, blob_id);
-    SetAndSaveBlobState(result, blob_id, lock, state);
-}
-
-
-void CReadDispatcher::SetAndSaveBlobState(CReaderRequestResult& result,
-                                          const TBlobId& blob_id,
-                                          CLoadLockBlobState& lock,
-                                          TBlobState state) const
-{
-    if ( lock.IsLoadedBlobState() && lock->GetBlobState() == state ) {
-        return;
-    }
-    lock.SetLoadedBlobState(state);
-    CWriter *writer = GetWriter(result, CWriter::eIdWriter);
-    if( writer ) {
-        writer->SaveBlobState(result, blob_id, state);
-    }
-}
-
-
-void CReadDispatcher::SetAndSaveBlobVersion(CReaderRequestResult& result,
-                                            const TBlobId& blob_id,
-                                            TBlobVersion version) const
-{
-    CLoadLockBlobState lock(result, blob_id);
-    SetAndSaveBlobVersion(result, blob_id, lock, version);
-}
-
-
-void CReadDispatcher::SetAndSaveBlobVersion(CReaderRequestResult& result,
-                                            const TBlobId& blob_id,
-                                            CLoadLockBlobState& lock,
-                                            TBlobVersion version) const
-{
-    if ( lock.IsLoadedBlobVersion() && lock->GetBlobVersion() == version ) {
-        return;
-    }
-    lock.SetLoadedBlobVersion(version);
-    CWriter *writer = GetWriter(result, CWriter::eIdWriter);
-    if( writer ) {
-        writer->SaveBlobVersion(result, blob_id, version);
-    }
 }
 
 

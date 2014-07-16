@@ -34,7 +34,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_param.hpp>
-#include <objtools/data_loaders/genbank/statistics.hpp>
+#include <objtools/data_loaders/genbank/impl/statistics.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -51,7 +51,7 @@ class CReadDispatcher;
 class CWriter;
 class CID2_Reply_Data;
 class CLoadLockBlob;
-class CTSE_SetObjectInfo;
+class CLoadLockSetter;
 class CTSE_Chunk_Info;
 class CDataLoader;
 struct STimeSizeStatistics;
@@ -86,12 +86,6 @@ public:
     virtual EType GetType(void) const = 0;
     virtual TMagic GetMagic(void) const = 0;
 
-    enum {
-        kMain_ChunkId       = -1, // not a chunk, but main Seq-entry
-        kMasterWGS_ChunkId  = kMax_Int-1, // chunk with master WGS descr
-        kDelayedMain_ChunkId= kMax_Int // main Seq-entry with delayed ext annot
-    };
-
     virtual void ProcessStream(CReaderRequestResult& result,
                                const TBlobId& blob_id,
                                TChunkId chunk_id,
@@ -115,27 +109,13 @@ public:
     static void SetSeqEntryReadHooks(CObjectIStream& in);
     static void SetSNPReadHooks(CObjectIStream& in);
 
-    static bool IsLoaded(CReaderRequestResult& result,
-                         const TBlobId& blob_id,
-                         TChunkId chunk_id,
-                         CLoadLockBlob& blob);
     static void SetLoaded(CReaderRequestResult& result,
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
-    static void AddWGSMaster(CReaderRequestResult& result,
-                             const TBlobId& blob_id,
-                             TChunkId chunk_id,
-                             CLoadLockBlob& blob);
+    static void AddWGSMaster(CLoadLockSetter& blob);
     static void LoadWGSMaster(CDataLoader* loader,
                               CRef<CTSE_Chunk_Info> chunk);
-
-    static void SetSeq_entry(CReaderRequestResult& /*result*/,
-                             const TBlobId& /*blob_id*/,
-                             TChunkId chunk_id,
-                             CLoadLockBlob& blob,
-                             CRef<CSeq_entry> entry,
-                             CTSE_SetObjectInfo* set_info = 0);
 
 protected:
     CProcessor(CReadDispatcher& dispatcher);

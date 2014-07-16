@@ -35,8 +35,8 @@
 #include <objtools/data_loaders/genbank/id1/reader_id1_entry.hpp>
 #include <objtools/data_loaders/genbank/id1/reader_id1_params.h>
 #include <objtools/data_loaders/genbank/readers.hpp> // for entry point
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
@@ -292,8 +292,8 @@ DEFINE_STATIC_ARRAY_MAP(TSatMap, sc_SatMap, sc_SatIndex);
 bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
                               const CSeq_id_Handle& seq_id)
 {
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids.IsLoadedGi() ) {
+    CLoadLockGi lock(result, seq_id);
+    if ( lock.IsLoadedGi() ) {
         return true;
     }
 
@@ -310,7 +310,7 @@ bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
     else {
         gi = ZERO_GI;
     }
-    SetAndSaveSeq_idGi(result, seq_id, ids, gi);
+    SetAndSaveSeq_idGi(result, seq_id, gi);
     return true;
 }
 
@@ -318,8 +318,8 @@ bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
 bool CId1Reader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
                                    const CSeq_id_Handle& seq_id)
 {
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids.IsLoaded() ) {
+    CLoadLockSeqIds ids_lock(result, seq_id);
+    if ( ids_lock.IsLoaded() ) {
         return true;
     }
     
@@ -337,28 +337,28 @@ bool CId1Reader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
             // only one source Seq-id and no synonyms
             TSeqIds seq_ids;
             seq_ids.push_back(seq_id);
-            ids.SetLoadedSeq_ids(0, CFixedSeq_ids(eTakeOwnership, seq_ids));
+            ids_lock.SetLoadedSeq_ids(CFixedSeq_ids(eTakeOwnership, seq_ids));
             return true;
         }
     }
-    
-    m_Dispatcher->LoadSeq_idGi(result, seq_id);
-    if ( ids.IsLoaded() ) {
-        return true;
+
+    CLoadLockGi gi_lock(result, seq_id);
+    if ( !gi_lock.IsLoaded() ) {
+        m_Dispatcher->LoadSeq_idGi(result, seq_id);
     }
-    TGi gi = ids->GetGi();
-    if (gi == ZERO_GI) {
+    TGi gi = gi_lock.GetGi();
+    if ( gi == ZERO_GI ) {
         // no gi -> no Seq-ids
-        ids.SetNoSeq_ids(0);
+        SetAndSaveNoSeq_idSeq_ids(result, seq_id, gi_lock);
         return true;
     }
 
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
-    CLoadLockSeq_ids gi_ids(result, gi_handle);
-    m_Dispatcher->LoadSeq_idSeq_ids(result, gi_handle);
-
-    // copy Seq-id list from gi to original seq-id
-    ids.SetLoadedSeq_ids(gi_ids);
+    CLoadLockSeqIds gi_ids_lock(result, gi_handle);
+    if ( !gi_ids_lock.IsLoaded() ) {
+        m_Dispatcher->LoadSeq_idSeq_ids(result, gi_handle);
+    }
+    SetAndSaveSeq_idSeq_ids(result, seq_id, gi_ids_lock);
     return true;
 }
 
@@ -366,7 +366,7 @@ bool CId1Reader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
 bool CId1Reader::LoadGiSeq_ids(CReaderRequestResult& result,
                               const CSeq_id_Handle& seq_id)
 {
-    CLoadLockSeq_ids ids(result, seq_id);
+    CLoadLockSeqIds ids(result, seq_id);
     if ( ids.IsLoaded() ) {
         return true;
     }
@@ -380,7 +380,7 @@ bool CId1Reader::LoadGiSeq_ids(CReaderRequestResult& result,
         gi = seq_id.GetSeqId()->GetGi();
     }
     if ( gi == ZERO_GI ) {
-        ids.SetNoSeq_ids(0);
+        SetAndSaveNoSeq_idSeq_ids(result, seq_id, 0);
         return true;
     }
 
@@ -393,7 +393,7 @@ bool CId1Reader::LoadGiSeq_ids(CReaderRequestResult& result,
     x_ResolveId(result, id1_reply, id1_request);
 
     if ( !id1_reply.IsIds() ) {
-        ids.SetNoSeq_ids(0);
+        SetAndSaveNoSeq_idSeq_ids(result, seq_id, 0);
         return true;
     }
 
@@ -402,7 +402,7 @@ bool CId1Reader::LoadGiSeq_ids(CReaderRequestResult& result,
     ITERATE(CID1server_back::TIds, it, reply_ids) {
         seq_ids.push_back(CSeq_id_Handle::GetHandle(**it));
     }
-    SetAndSaveSeq_idSeq_ids(result, seq_id, ids, 0,
+    SetAndSaveSeq_idSeq_ids(result, seq_id,
                             CFixedSeq_ids(eTakeOwnership, seq_ids));
     return true;
 }
@@ -412,7 +412,7 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                    const CSeq_id_Handle& seq_id,
                                    const SAnnotSelector* sel)
 {
-    CLoadLockBlob_ids ids(result, seq_id, sel);
+    CLoadLockBlobIds ids(result, seq_id, sel);
     if ( ids.IsLoaded() ) {
         return true;
     }
@@ -440,28 +440,30 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                     blob_id->SetSatKey(num);
                     blob_id->SetSubSat(iter->second.second);
                     blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
-                    ids.SetLoadedBlob_ids(0, CFixedBlob_ids(eTakeOwnership, blob_ids));
+                    ids.SetLoadedBlob_ids(CFixedBlob_ids(eTakeOwnership, blob_ids));
                     return true;
                 }
             }
         }
     }
 
-    CLoadLockSeq_ids seq_ids(result, seq_id);
-    m_Dispatcher->LoadSeq_idGi(result, seq_id);
-    TGi gi = seq_ids->GetGi();
-    if (gi == ZERO_GI) {
-        // no gi -> no blobs
-        ids.SetNoBlob_ids(0);
+    CLoadLockGi gi_lock(result, seq_id);
+    if ( !gi_lock.IsLoaded() ) {
+        m_Dispatcher->LoadSeq_idGi(result, seq_id);
+    }
+    TGi gi = gi_lock.GetGi();
+    if ( gi == ZERO_GI ) {
+        // no gi -> no Seq-ids
+        SetAndSaveNoSeq_idBlob_ids(result, seq_id, sel, gi_lock);
         return true;
     }
 
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
-    CLoadLockBlob_ids gi_ids(result, gi_handle, 0);
-    m_Dispatcher->LoadSeq_idBlob_ids(result, gi_handle, 0);
-
-    // copy Seq-id list from gi to original seq-id
-    ids.SetLoadedBlob_ids(gi_ids);
+    CLoadLockBlobIds gi_ids_lock(result, gi_handle, 0);
+    if ( !gi_ids_lock.IsLoaded() ) {
+        m_Dispatcher->LoadSeq_idBlob_ids(result, gi_handle, 0);
+    }
+    SetAndSaveSeq_idBlob_ids(result, seq_id, sel, ids, gi_ids_lock);
     return true;
 }
 
@@ -471,7 +473,7 @@ const int kSat_BlobError = -1;
 bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id)
 {
-    CLoadLockBlob_ids ids(result, seq_id, 0);
+    CLoadLockBlobIds ids(result, seq_id, 0);
     if ( ids.IsLoaded() ) {
         return true;
     }
@@ -550,7 +552,7 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
                 ext_feat -= bit;
                 CRef<CBlob_id> blob_id(new CBlob_id);
                 blob_id->SetSat(GetAnnotSat(bit));
-                blob_id->SetSatKey(GI_TO(int, gi));
+                blob_id->SetSatKey(gi);
                 blob_id->SetSubSat(bit);
                 blob_ids.push_back(CBlob_Info(blob_id, fBlobHasExtAnnot));
             }
@@ -566,8 +568,8 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
         }
         blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
     }
-    SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids, state,
-                             CFixedBlob_ids(eTakeOwnership, blob_ids));
+    SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids,
+                             CFixedBlob_ids(eTakeOwnership, blob_ids, state));
     return true;
 }
 
@@ -664,14 +666,11 @@ void CId1Reader::GetBlob(CReaderRequestResult& result,
                          const TBlobId& blob_id,
                          TChunkId chunk_id)
 {
-    CConn conn(result, this);
-    if ( chunk_id == CProcessor::kMain_ChunkId ) {
-        CLoadLockBlob blob(result, blob_id);
-        if ( blob.IsLoaded() ) {
-            conn.Release();
-            return;
-        }
+    CLoadLockBlob blob(result, blob_id, chunk_id);
+    if ( blob.IsLoadedChunk() ) {
+        return;
     }
+    CConn conn(result, this);
     {{
         CID1server_request request;
         x_SetBlobRequest(request, blob_id);

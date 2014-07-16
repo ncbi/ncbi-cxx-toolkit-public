@@ -29,9 +29,9 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/writer.hpp>
-#include <objtools/data_loaders/genbank/processor.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
-#include <objtools/data_loaders/genbank/cache_manager.hpp>
+#include <objtools/data_loaders/genbank/impl/processor.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/cache_manager.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <util/bytesrc.hpp>

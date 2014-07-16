@@ -40,7 +40,6 @@ BEGIN_SCOPE(objects)
 class CTSE_Info;
 class CTSE_Chunk_Info;
 class CSeq_annot_SNP_Info;
-class CLoadLockBlob_ids;
 
 class NCBI_XREADER_EXPORT CId1ReaderBase : public CReader
 {

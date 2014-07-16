@@ -30,16 +30,20 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/processors.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/processors.hpp>
+#include <objtools/data_loaders/genbank/impl/info_cache.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+using namespace GBL;
 
 static const CReaderRequestResult::TBlobState kBlobStateNotSet = -1;
 static const CReaderRequestResult::TBlobVersion kBlobVersionNotSet = -1;
@@ -53,64 +57,30 @@ static inline TThreadSystemID GetThreadId(void)
 }
 
 
-DEFINE_STATIC_FAST_MUTEX(sx_ExpirationTimeMutex);
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CResolveInfo
-/////////////////////////////////////////////////////////////////////////////
-
-CLoadInfo::CLoadInfo(void)
-    : m_ExpirationTime(0)
-{
-}
-
-
-CLoadInfo::~CLoadInfo(void)
-{
-}
-
-
-inline
-void CLoadInfo::x_SetLoaded(TExpirationTime expiration_time)
-{
-    _ASSERT(expiration_time > 0);
-    if ( !m_LoadLock ) {
-        m_LoadLock.Reset(new CObject);
-        m_ExpirationTime = expiration_time;
-    }
-    else {
-        if ( expiration_time > m_ExpirationTime ) {
-            m_ExpirationTime = expiration_time;
-        }
-    }
-}
-
-
-void CLoadInfo::SetLoaded(TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    x_SetLoaded(expiration_time);
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CFixedSeq_ids
 /////////////////////////////////////////////////////////////////////////////
 
-CFixedSeq_ids::CFixedSeq_ids(void)
-    : m_Ref(new TObject)
+CFixedSeq_ids::CFixedSeq_ids(TState state)
+    : m_State(state | CBioseq_Handle::fState_no_data),
+      m_Ref(new TObject)
 {
 }
 
 
-CFixedSeq_ids::CFixedSeq_ids(const TList& list)
-    : m_Ref(new TObject(list))
+CFixedSeq_ids::CFixedSeq_ids(const TList& list, TState state)
+    : m_State(state),
+      m_Ref(new TObject(list))
 {
+    if ( list.empty() ) {
+        state |= CBioseq_Handle::fState_no_data;
+    }
 }
 
 
-CFixedSeq_ids::CFixedSeq_ids(ENcbiOwnership ownership, TList& list)
+CFixedSeq_ids::CFixedSeq_ids(ENcbiOwnership ownership, TList& list,
+                             TState state)
+    : m_State(state)
 {
     CRef<TObject> ref(new TObject);
     if ( ownership == eTakeOwnership ) {
@@ -123,516 +93,75 @@ CFixedSeq_ids::CFixedSeq_ids(ENcbiOwnership ownership, TList& list)
 }
 
 
-void CFixedSeq_ids::clear(void)
+TGi CFixedSeq_ids::FindGi(void) const
 {
-    if ( !empty() ) {
-        m_Ref = new TObject;
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// CFixedBlob_ids
-/////////////////////////////////////////////////////////////////////////////
-
-CFixedBlob_ids::CFixedBlob_ids(void)
-    : m_Ref(new TObject)
-{
-}
-
-
-CFixedBlob_ids::CFixedBlob_ids(const TList& list)
-    : m_Ref(new TObject(list))
-{
-}
-
-
-CFixedBlob_ids::CFixedBlob_ids(ENcbiOwnership ownership, TList& list)
-{
-    CRef<TObject> ref(new TObject);
-    if ( ownership == eTakeOwnership ) {
-        swap(ref->GetData(), list);
-    }
-    else {
-        ref->GetData() = list;
-    }
-    m_Ref = ref;
-}
-
-
-void CFixedBlob_ids::clear(void)
-{
-    if ( !empty() ) {
-        m_Ref = new TObject;
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// CLoadInfoSeq_ids
-/////////////////////////////////////////////////////////////////////////////
-
-CLoadInfoSeq_ids::CLoadInfoSeq_ids(void)
-    : m_ExpirationTimeGi(0),
-      m_ExpirationTimeAcc(0),
-      m_ExpirationTimeLabel(0),
-      m_ExpirationTimeTaxId(0),
-      m_State(0)
-{
-}
-
-
-CLoadInfoSeq_ids::CLoadInfoSeq_ids(const CSeq_id_Handle& /*seq_id*/)
-    : m_ExpirationTimeGi(0),
-      m_ExpirationTimeAcc(0),
-      m_ExpirationTimeLabel(0),
-      m_ExpirationTimeTaxId(0),
-      m_State(0)
-{
-}
-
-
-CLoadInfoSeq_ids::CLoadInfoSeq_ids(const string& /*seq_id*/)
-    : m_ExpirationTimeGi(0),
-      m_ExpirationTimeAcc(0),
-      m_ExpirationTimeLabel(0),
-      m_ExpirationTimeTaxId(0),
-      m_State(0)
-{
-}
-
-
-CLoadInfoSeq_ids::~CLoadInfoSeq_ids(void)
-{
-}
-
-
-bool CLoadInfoSeq_ids::SetLoadedSeq_ids(TState state,
-                                        const CFixedSeq_ids& seq_ids,
-                                        TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= GetExpirationTime() ) {
-        return false;
-    }
-    m_State = state;
-    m_Seq_ids = seq_ids;
-    x_SetLoaded(expiration_time);
-    return true;
-}
-
-
-bool CLoadInfoSeq_ids::SetNoSeq_ids(TState state,
-                                    TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= GetExpirationTime() ) {
-        return false;
-    }
-    m_State = state;
-    m_Seq_ids.clear();
-    x_SetLoaded(expiration_time);
-    return true;
-}
-
-
-CFixedSeq_ids CLoadInfoSeq_ids::GetSeq_ids(void) const
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    _ASSERT(GetExpirationTime() > 0);
-    return m_Seq_ids;
-}
-
-
-bool CLoadInfoSeq_ids::IsEmpty(void) const
-{
-    return GetSeq_ids().empty();
-}
-
-
-bool CLoadInfoSeq_ids::IsLoadedGi(const CReaderRequestResult& rr)
-{
-    if ( rr.GetStartTime() < m_ExpirationTimeGi ) {
-        return true;
-    }
-    if ( !IsLoaded(rr) ) {
-        return false;
-    }
     TGi gi = ZERO_GI;
-    TSeq_ids ids = GetSeq_ids();
-    ITERATE ( TSeq_ids, it, ids ) {
+    ITERATE ( CFixedSeq_ids, it, *this ) {
         if ( it->Which() == CSeq_id::e_Gi ) {
-            if ( it->IsGi() ) {
-                gi = it->GetGi();
-            }
-            else {
-                gi = it->GetSeqId()->GetGi();
-            }
+            gi = it->GetGi();
             break;
         }
     }
-    SetLoadedGi(gi, GetExpirationTime());
-    return true;
+    return gi;
 }
 
 
-bool CLoadInfoSeq_ids::SetLoadedGi(TGi gi,
-                                   TExpirationTime expiration_time)
+CSeq_id_Handle CFixedSeq_ids::FindAccVer(void) const
 {
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= m_ExpirationTimeGi ) {
-        return false;
-    }
-    m_Gi = gi;
-    m_ExpirationTimeGi = expiration_time;
-    return true;
-}
-
-
-bool CLoadInfoSeq_ids::IsLoadedAccVer(const CReaderRequestResult& rr)
-{
-    if ( rr.GetStartTime() < m_ExpirationTimeAcc ) {
-        return true;
-    }
-    if ( !IsLoaded(rr) ) {
-        return false;
-    }
     CSeq_id_Handle acc;
-    TSeq_ids ids = GetSeq_ids();
-    ITERATE ( TSeq_ids, it, ids ) {
+    ITERATE ( CFixedSeq_ids, it, *this ) {
         if ( !it->IsGi() && it->GetSeqId()->GetTextseq_Id() ) {
             acc = *it;
             break;
         }
     }
-    SetLoadedAccVer(acc, GetExpirationTime());
-    return true;
+    return acc;
 }
 
 
-CSeq_id_Handle CLoadInfoSeq_ids::GetAccVer(void) const
+string CFixedSeq_ids::FindLabel(void) const
 {
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    _ASSERT(m_ExpirationTimeAcc > 0);
-    _ASSERT(!m_Acc || m_Acc.GetSeqId()->GetTextseq_Id());
-    return m_Acc;
-}
-
-
-bool CLoadInfoSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc,
-                                       TExpirationTime expiration_time)
-{
-    if ( acc && acc.Which() == CSeq_id::e_Gi ) {
-        _ASSERT(acc.GetGi() == ZERO_GI);
-        return SetLoadedAccVer(CSeq_id_Handle(), expiration_time);
-    }
-    _ASSERT(!acc || acc.GetSeqId()->GetTextseq_Id());
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= m_ExpirationTimeAcc ) {
-        return false;
-    }
-    m_ExpirationTimeAcc = expiration_time;
-    m_Acc = acc;
-    return true;
-}
-
-
-bool CLoadInfoSeq_ids::IsLoadedLabel(const CReaderRequestResult& rr)
-{
-    if ( rr.GetStartTime() < m_ExpirationTimeLabel ) {
-        return true;
-    }
-    if ( !IsLoaded(rr) ) {
-        return false;
-    }
-    TSeq_ids ids = GetSeq_ids();
-    string label = objects::GetLabel(ids);
-    SetLoadedLabel(label, GetExpirationTime());
-    return true;
-}
-
-
-string CLoadInfoSeq_ids::GetLabel(void) const
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    _ASSERT(m_ExpirationTimeLabel > 0);
-    return m_Label;
-}
-
-
-bool CLoadInfoSeq_ids::SetLoadedLabel(const string& label,
-                                      TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= m_ExpirationTimeLabel ) {
-        return false;
-    }
-    m_Label = label;
-    m_ExpirationTimeLabel = expiration_time;
-    return true;
-}
-
-
-bool CLoadInfoSeq_ids::IsLoadedTaxId(const CReaderRequestResult& rr)
-{
-    if ( rr.GetStartTime() < m_ExpirationTimeTaxId ) {
-        return true;
-    }
-    if ( IsLoaded(rr) && (m_State & CBioseq_Handle::fState_no_data) ) {
-        // update no taxid for unknown sequences
-        SetLoadedTaxId(0, GetExpirationTime());
-        return true;
-    }
-    return false;
-}
-
-
-bool CLoadInfoSeq_ids::SetLoadedTaxId(int taxid,
-                                      TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= m_ExpirationTimeTaxId ) {
-        return false;
-    }
-    m_TaxId = taxid;
-    m_ExpirationTimeTaxId = expiration_time;
-    return true;
+    return objects::GetLabel(*this);
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CLoadInfoBlob_ids
+// CFixedBlob_ids
 /////////////////////////////////////////////////////////////////////////////
 
-CLoadInfoBlob_ids::CLoadInfoBlob_ids(const TSeq_id& id,
-                                     const SAnnotSelector* /*sel*/)
-    : m_Seq_id(id),
-      m_State(0)
+CFixedBlob_ids::CFixedBlob_ids(TState state)
+    : m_State(state | CBioseq_Handle::fState_no_data),
+      m_Ref(new TObject)
 {
 }
 
 
-CLoadInfoBlob_ids::CLoadInfoBlob_ids(const pair<TSeq_id, string>& key)
-    : m_Seq_id(key.first),
-      m_State(0)
+CFixedBlob_ids::CFixedBlob_ids(const TList& list,
+                               TState state)
+    : m_State(state),
+      m_Ref(new TObject(list))
 {
-}
-
-
-CLoadInfoBlob_ids::~CLoadInfoBlob_ids(void)
-{
-}
-
-
-CFixedBlob_ids CLoadInfoBlob_ids::GetBlob_ids(void) const
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    _ASSERT(GetExpirationTime() > 0);
-    return m_Blob_ids;
-}
-
-
-bool CLoadInfoBlob_ids::SetNoBlob_ids(TState state,
-                                      TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= GetExpirationTime() ) {
-        return false;
-    }
-    m_State = state;
-    m_Blob_ids.clear();
-    x_SetLoaded(expiration_time);
-    return true;
-}
-
-
-bool CLoadInfoBlob_ids::SetLoadedBlob_ids(TState state,
-                                          const CFixedBlob_ids& blob_ids,
-                                          TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= GetExpirationTime() ) {
-        return false;
-    }
-    m_State = state;
-    m_Blob_ids = blob_ids;
-    x_SetLoaded(expiration_time);
-    return true;
-}
-
-
-bool CLoadLockBlob_ids::SetNoBlob_ids(TInfo::TState state)
-{
-    return Get().SetNoBlob_ids(state, GetNewExpirationTime());
-}
-
-
-bool CLoadLockBlob_ids::SetLoadedBlob_ids(TInfo::TState state,
-                                          const TInfo::TBlobIds& blob_ids)
-{
-    return Get().SetLoadedBlob_ids(state, blob_ids, GetNewExpirationTime());
-}
-
-
-bool CLoadLockBlob_ids::SetLoadedBlob_ids(const CLoadLockBlob_ids& ids2)
-{
-    return Get().SetLoadedBlob_ids(ids2->GetState(),
-                                   ids2->GetBlob_ids(),
-                                   ids2->GetExpirationTime());
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CLoadInfoBlob
-/////////////////////////////////////////////////////////////////////////////
-#if 0
-CLoadInfoBlob::CLoadInfoBlob(const TBlobId& id)
-    : m_Blob_id(id),
-      m_Blob_State(eState_normal)
-{
-}
-
-
-CLoadInfoBlob::~CLoadInfoBlob(void)
-{
-}
-
-
-CRef<CTSE_Info> CLoadInfoBlob::GetTSE_Info(void) const
-{
-    return m_TSE_Info;
-}
-#endif
-
-/////////////////////////////////////////////////////////////////////////////
-// CLoadInfoLock
-/////////////////////////////////////////////////////////////////////////////
-
-CLoadInfoLock::CLoadInfoLock(CReaderRequestResult& owner,
-                             const CRef<CLoadInfo>& info)
-    : m_Owner(owner),
-      m_Info(info),
-      m_Guard(m_Info->m_LoadLock, owner)
-{
-}
-
-
-CLoadInfoLock::~CLoadInfoLock(void)
-{
-}
-
-
-void CLoadInfoLock::ReleaseLock(void)
-{
-    m_Guard.Release();
-    m_Owner.ReleaseLoadLock(m_Info);
-}
-
-
-void CLoadInfoLock::SetLoaded(TExpirationTime expiration_timeout)
-{
-    m_Info->SetLoaded(expiration_timeout);
-    ReleaseLock();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CLoadLock_Base
-/////////////////////////////////////////////////////////////////////////////
-
-void CLoadLock_Base::Lock(TInfo& info, TMutexSource& src)
-{
-    m_RequestResult = &src;
-    m_Info.Reset(&info);
-    if ( !m_Info->IsLoaded(*m_RequestResult) ) {
-        m_Lock = src.GetLoadLock(m_Info);
+    if ( empty() ) {
+        m_State |= CBioseq_Handle::fState_no_data;
     }
 }
 
 
-void CLoadLock_Base::SetLoaded(TExpirationTime expiration_time)
+CFixedBlob_ids::CFixedBlob_ids(ENcbiOwnership ownership, TList& list,
+                               TState state)
+    : m_State(state)
 {
-    m_Lock->SetLoaded(expiration_time);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CLoadLockSeq_ids
-/////////////////////////////////////////////////////////////////////////////
-
-
-CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src, const string& seq_id)
-{
-    CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
-    Lock(*info, src);
-}
-
-
-CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
-                                   const CSeq_id_Handle& seq_id)
-    : m_Blob_ids(src, seq_id, 0)
-{
-    CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
-    Lock(*info, src);
-    if ( !IsLoaded() ) {
-        src.SetRequestedId(seq_id);
+    CRef<TObject> ref(new TObject);
+    if ( ownership == eTakeOwnership ) {
+        swap(ref->GetData(), list);
     }
-}
-
-
-CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
-                                   const CSeq_id_Handle& seq_id,
-                                   const SAnnotSelector* sel)
-    : m_Blob_ids(src, seq_id, sel)
-{
-    CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
-    Lock(*info, src);
-    if ( !IsLoaded() ) {
-        src.SetRequestedId(seq_id);
+    else {
+        ref->GetData() = list;
     }
-}
-
-
-bool CLoadLockSeq_ids::SetNoSeq_ids(TInfo::TState state)
-{
-    return Get().SetNoSeq_ids(state, GetNewExpirationTime());
-}
-
-
-bool CLoadLockSeq_ids::SetLoadedSeq_ids(TInfo::TState state,
-                                        const CFixedSeq_ids& seq_ids)
-{
-    return Get().SetLoadedSeq_ids(state, seq_ids, GetNewExpirationTime());
-}
-
-
-bool CLoadLockSeq_ids::SetLoadedSeq_ids(const CLoadLockSeq_ids& ids2)
-{
-    return Get().SetLoadedSeq_ids(ids2->GetState(),
-                                  ids2->GetSeq_ids(),
-                                  ids2->GetExpirationTime());
-}
-
-
-bool CLoadLockSeq_ids::SetLoadedGi(TGi gi)
-{
-    return Get().SetLoadedGi(gi, GetNewExpirationTime());
-}
-
-
-bool CLoadLockSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc)
-{
-    return Get().SetLoadedAccVer(acc, GetNewExpirationTime());
-}
-
-
-bool CLoadLockSeq_ids::SetLoadedLabel(const string& label)
-{
-    return Get().SetLoadedLabel(label, GetNewExpirationTime());
-}
-
-
-bool CLoadLockSeq_ids::SetLoadedTaxId(int taxid)
-{
-    return Get().SetLoadedTaxId(taxid, GetNewExpirationTime());
+    m_Ref = ref;
+    if ( empty() ) {
+        m_State |= CBioseq_Handle::fState_no_data;
+    }
 }
 
 
@@ -748,224 +277,282 @@ bool CBlob_Annot_Info::Matches(const SAnnotSelector* sel) const
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CLoadLockBlob_ids
-/////////////////////////////////////////////////////////////////////////////
-
-
-CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
-                                     const CSeq_id_Handle& seq_id,
-                                     const SAnnotSelector* sel)
-{
-    TMutexSource::TKeyBlob_ids key;
-    key.first = seq_id;
-    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
-        ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
-                  sel->GetNamedAnnotAccessions() ) {
-            key.second += it->first;
-            key.second += ',';
-        }
-    }
-    CRef<TInfo> info = src.GetInfoBlob_ids(key);
-    Lock(*info, src);
-    if ( !IsLoaded() ) {
-        src.SetRequestedId(seq_id);
-    }
-}
-
-
-CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
-                                     const CSeq_id_Handle& seq_id,
-                                     const string& na_accs)
-{
-    TMutexSource::TKeyBlob_ids key(seq_id, na_accs);
-    CRef<TInfo> info = src.GetInfoBlob_ids(key);
-    Lock(*info, src);
-    if ( !IsLoaded() ) {
-        src.SetRequestedId(seq_id);
-    }
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CLoadInfoBlobState
-/////////////////////////////////////////////////////////////////////////////
-
-
-CLoadInfoBlobState::CLoadInfoBlobState(const CBlob_id& blob_id)
-    : m_Blob_id(blob_id),
-      m_BlobState(kBlobStateNotSet),
-      m_BlobVersion(kBlobVersionNotSet),
-      m_ExpirationTimeBlobVersion(0)
-{
-}
-
-
-CLoadInfoBlobState::~CLoadInfoBlobState(void)
-{
-}
-
-
-bool CLoadInfoBlobState::SetLoadedBlobState(TBlobState blob_state,
-                                            TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= GetExpirationTime() ) {
-        return false;
-    }
-    m_BlobState = blob_state;
-    x_SetLoaded(expiration_time);
-    return true;
-}
-
-
-bool CLoadInfoBlobState::IsLoadedBlobState(const CReaderRequestResult& rr)
-{
-    return IsLoaded(rr);
-}
-
-
-bool CLoadInfoBlobState::IsLoadedBlobVersion(const CReaderRequestResult& rr)
-{
-    if ( rr.GetStartTime() < m_ExpirationTimeBlobVersion ) {
-        return true;
-    }
-    if ( IsLoaded(rr) && (m_BlobState & CBioseq_Handle::fState_no_data) ) {
-        // update no blob version for unknown sequences
-        SetLoadedBlobVersion(0, GetExpirationTime());
-        return true;
-    }
-    return false;
-}
-
-
-bool CLoadInfoBlobState::SetLoadedBlobVersion(TBlobVersion blob_version,
-                                              TExpirationTime expiration_time)
-{
-    CFastMutexGuard guard(sx_ExpirationTimeMutex);
-    if ( expiration_time <= m_ExpirationTimeBlobVersion ) {
-        return false;
-    }
-    m_BlobVersion = blob_version;
-    m_ExpirationTimeBlobVersion = expiration_time;
-    return true;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CLoadLockBlobState
-/////////////////////////////////////////////////////////////////////////////
-
-
-CLoadLockBlobState::CLoadLockBlobState(TMutexSource& src,
-                                       const CBlob_id& blob_id)
-{
-    CRef<TInfo> info = src.GetInfoBlobState(blob_id);
-    Lock(*info, src);
-}
-
-
-bool CLoadLockBlobState::SetLoadedBlobState(TInfo::TBlobState blob_state)
-{
-    m_RequestResult->SetBlobBlobState(*this, blob_state);
-    return Get().SetLoadedBlobState(blob_state, GetNewExpirationTime());
-}
-
-
-bool CLoadLockBlobState::SetLoadedBlobVersion(TInfo::TBlobVersion blob_version)
-{
-    m_RequestResult->SetBlobBlobVersion(*this, blob_version);
-    return Get().SetLoadedBlobVersion(blob_version, GetNewExpirationTime());
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 // CLoadLockBlob
 /////////////////////////////////////////////////////////////////////////////
-#if 0
-CLoadLockBlob::CLoadLockBlob(TMutexSource& src, const CBlob_id& blob_id)
+
+
+CLoadLockBlob::CLoadLockBlob(CReaderRequestResult& result,
+                             const CBlob_id& blob_id,
+                             TChunkId chunk_id)
+    : TParent(result.GetLoadLockBlob(blob_id)),
+      m_Blob_id(blob_id)
 {
-    for ( ;; ) {
-        CRef<TInfo> info = src.GetInfoBlob(blob_id);
-        Lock(*info, src);
-        if ( src.AddTSE_Lock(*this) ) {
-            // locked
-            break;
-        }
-        else {
-            // failed to lock
-            if ( !IsLoaded() ) {
-                // not loaded yet -> OK
-                break;
-            }
-            else {
-                if ( info->IsNotLoadable() ) {
-                    // private or withdrawn
-                    break;
-                }
-                // already loaded and dropped while trying to lock
-                // we need to repeat locking procedure
-            }
-        }
+    x_ObtainTSE_LoadLock(result);
+    if ( chunk_id != kMain_ChunkId ) {
+        SelectChunk(chunk_id);
     }
 }
-#endif
 
-CLoadLockBlob::CLoadLockBlob(void)
-    : m_Result(0)
+
+CLoadLockBlob::~CLoadLockBlob(void)
 {
 }
 
 
-CLoadLockBlob::CLoadLockBlob(CReaderRequestResult& src,
-                             const CBlob_id& blob_id)
-    : CTSE_LoadLock(src.GetBlobLoadLock(blob_id)),
-      m_Result(&src),
-      m_BlobId(blob_id)
+CTSE_LoadLock& CLoadLockBlob::GetTSE_LoadLock(void)
 {
-    if ( IsLoaded() ) {
-        src.AddTSE_Lock(*this);
+    if ( !m_TSE_LoadLock ) {
+        CReaderRequestResult& result =
+            dynamic_cast<CReaderRequestResult&>(GetRequestor());
+        x_ObtainTSE_LoadLock(result);
+        _ASSERT(m_TSE_LoadLock);
+        _ASSERT(m_TSE_LoadLock.IsLoaded());
+    }
+    return m_TSE_LoadLock;
+}
+
+
+CLoadLockBlob::TBlobVersion CLoadLockBlob::GetKnownBlobVersion(void) const
+{
+    if ( !m_TSE_LoadLock ) {
+        return kBlobVersionNotSet;
+    }
+    return m_TSE_LoadLock->GetBlobVersion();
+}
+
+
+const CTSE_Split_Info& CLoadLockBlob::GetSplitInfo(void) const
+{
+    _ASSERT(m_TSE_LoadLock);
+    return m_TSE_LoadLock->GetSplitInfo();
+}
+
+
+bool CLoadLockBlob::NeedsDelayedMainChunk(void) const
+{
+    return m_TSE_LoadLock && m_TSE_LoadLock->HasSplitInfo() &&
+        m_TSE_LoadLock->GetSplitInfo().x_NeedsDelayedMainChunk();
+}
+
+
+void CLoadLockBlob::SelectChunk(TChunkId chunk_id)
+{
+    if ( chunk_id == kMain_ChunkId ) {
+        m_Chunk = null;
     }
     else {
-        if ( src.GetRequestedId() ) {
-            (**this).SetRequestedId(src.GetRequestedId());
+        _ASSERT(m_TSE_LoadLock.IsLoaded());
+        m_Chunk = &GetSplitInfo().GetChunk(chunk_id);
+        _ASSERT(m_Chunk && m_Chunk->GetChunkId() == chunk_id);
+    }
+}
+
+
+TChunkId CLoadLockBlob::GetSelectedChunkId(void) const
+{
+    return m_Chunk? m_Chunk->GetChunkId(): kMain_ChunkId;
+}
+
+
+bool CLoadLockBlob::IsLoadedChunk(void) const
+{
+    if ( !m_Chunk ) {
+        return IsLoadedBlob();
+    }
+    else {
+        return m_Chunk->IsLoaded();
+    }
+}
+
+
+bool CLoadLockBlob::IsLoadedChunk(TChunkId chunk_id) const
+{
+    if ( chunk_id == kMain_ChunkId ) {
+        return IsLoadedBlob();
+    }
+    else {
+        if ( m_Chunk && m_Chunk->GetChunkId() == chunk_id ) {
+            return m_Chunk->IsLoaded();
+        }
+        _ASSERT(IsLoadedBlob());
+        return GetData()->GetSplitInfo().GetChunk(chunk_id).IsLoaded();
+    }
+}
+
+
+void CLoadLockBlob::x_ObtainTSE_LoadLock(CReaderRequestResult& result)
+{
+    if ( TParent::IsLoaded() ) {
+        m_TSE_LoadLock = GetData();
+        _ASSERT(m_TSE_LoadLock);
+        _ASSERT(m_TSE_LoadLock.IsLoaded());
+        result.x_AddTSE_LoadLock(m_TSE_LoadLock);
+        return;
+    }
+    m_TSE_LoadLock = result.GetTSE_LoadLockIfLoaded(m_Blob_id);
+    if ( m_TSE_LoadLock ) {
+        _ASSERT(m_TSE_LoadLock.IsLoaded());
+        TParent::SetLoaded(m_TSE_LoadLock);
+        result.x_AddTSE_LoadLock(m_TSE_LoadLock);
+        return;
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CLoadLockChunkSetter
+/////////////////////////////////////////////////////////////////////////////
+
+
+CLoadLockSetter::CLoadLockSetter(CLoadLockBlob& lock)
+{
+    x_Init(lock, lock.GetSelectedChunkId());
+}
+
+
+CLoadLockSetter::CLoadLockSetter(CLoadLockBlob& lock,
+                                 TChunkId chunk_id)
+{
+    x_Init(lock, chunk_id);
+}
+
+
+CLoadLockSetter::CLoadLockSetter(CReaderRequestResult& result,
+                                 const CBlob_id& blob_id,
+                                 TChunkId chunk_id)
+    : TParent(result.GetLoadLockBlob(blob_id))
+{
+    x_ObtainTSE_LoadLock(result, blob_id);
+    if ( chunk_id != kMain_ChunkId ) {
+        x_SelectChunk(chunk_id);
+    }
+}
+
+
+void CLoadLockSetter::x_Init(CLoadLockBlob& lock, TChunkId chunk_id)
+{
+    TParent::operator=(lock);
+    m_TSE_LoadLock = lock.m_TSE_LoadLock;
+    if ( chunk_id == kMain_ChunkId ) {
+        if ( !m_TSE_LoadLock ) {
+            CReaderRequestResult& result =
+                dynamic_cast<CReaderRequestResult&>(GetRequestor());
+            x_ObtainTSE_LoadLock(result, lock.m_Blob_id);
+        }
+    }
+    else {
+        _ASSERT(m_TSE_LoadLock);
+        _ASSERT(m_TSE_LoadLock.IsLoaded());
+        if ( chunk_id == lock.GetSelectedChunkId() ) {
+            m_Chunk = &const_cast<CTSE_Chunk_Info&>(*lock.m_Chunk);
+        }
+        else {
+            x_SelectChunk(chunk_id);
         }
     }
 }
 
 
-bool CLoadLockBlob::IsSetBlobState(void) const
+CLoadLockSetter::~CLoadLockSetter(void)
 {
-    return m_Result->IsSetBlobState(m_BlobId);
+    if ( !IsLoaded() ) {
+        ERR_POST("Incomplete loading");
+    }
 }
 
 
-CLoadLockBlob::TBlobState CLoadLockBlob::GetBlobState(void) const
+bool CLoadLockSetter::IsLoaded(void) const
 {
-    return m_Result->GetBlobState(m_BlobId);
+    if ( !m_Chunk ) {
+        return m_TSE_LoadLock.IsLoaded();
+    }
+    else {
+        return m_Chunk->IsLoaded();
+    }
 }
 
 
-void CLoadLockBlob::SetBlobState(TBlobState state)
+void CLoadLockSetter::SetLoaded(void)
 {
-    m_Result->SetBlobState(m_BlobId, state);
+    _ASSERT(!IsLoaded());
+    if ( !m_Chunk ) {
+        m_TSE_LoadLock.SetLoaded();
+        TParent::SetLoaded(m_TSE_LoadLock);
+        CReaderRequestResult& result =
+            dynamic_cast<CReaderRequestResult&>(GetRequestor());
+        result.x_AddTSE_LoadLock(m_TSE_LoadLock);
+    }
+    else {
+        m_Chunk->SetLoaded();
+    }
 }
 
 
-bool CLoadLockBlob::IsSetBlobVersion(void) const
+void CLoadLockSetter::x_SelectChunk(TChunkId chunk_id)
 {
-    return m_Result->IsSetBlobVersion(m_BlobId);
+    if ( chunk_id == kMain_ChunkId ) {
+        m_Chunk = null;
+    }
+    else {
+        _ASSERT(m_TSE_LoadLock.IsLoaded());
+        m_Chunk = &GetSplitInfo().GetChunk(chunk_id);
+        _ASSERT(m_Chunk && m_Chunk->GetChunkId() == chunk_id);
+    }
 }
 
 
-CLoadLockBlob::TBlobVersion CLoadLockBlob::GetBlobVersion(void) const
+void CLoadLockSetter::x_ObtainTSE_LoadLock(CReaderRequestResult& result,
+                                           const CBlob_id& blob_id)
 {
-    return m_Result->GetBlobVersion(m_BlobId);
+    if ( TParent::IsLoaded() ) {
+        m_TSE_LoadLock = GetData();
+        _ASSERT(m_TSE_LoadLock);
+        _ASSERT(m_TSE_LoadLock.IsLoaded());
+        result.x_AddTSE_LoadLock(m_TSE_LoadLock);
+        return;
+    }
+    m_TSE_LoadLock = result.GetTSE_LoadLock(blob_id);
+    _ASSERT(m_TSE_LoadLock);
+    if ( m_TSE_LoadLock.IsLoaded() ) {
+        TParent::SetLoaded(m_TSE_LoadLock);
+        result.x_AddTSE_LoadLock(m_TSE_LoadLock);
+        return;
+    }
+    CLoadLockBlobState state(result, blob_id, eAlreadyLoaded);
+    if ( state ) {
+        m_TSE_LoadLock->SetBlobState(state.GetBlobState());
+    }
+    CLoadLockBlobVersion version(result, blob_id, eAlreadyLoaded);
+    if ( version ) {
+        m_TSE_LoadLock->SetBlobVersion(version.GetBlobVersion());
+    }
 }
 
 
-void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
+CTSE_Split_Info& CLoadLockSetter::GetSplitInfo(void)
 {
-    m_Result->SetBlobVersion(m_BlobId, version);
+    _ASSERT(m_TSE_LoadLock);
+    return m_TSE_LoadLock->GetSplitInfo();
+}
+
+
+CLoadLockSetter::TBlobState CLoadLockSetter::GetBlobState(void) const
+{
+    _ASSERT(m_TSE_LoadLock);
+    return m_TSE_LoadLock->GetBlobState();
+}
+
+
+void CLoadLockSetter::SetSeq_entry(CSeq_entry& entry,
+                                   CTSE_SetObjectInfo* set_info)
+{
+    _ASSERT(!IsLoaded());
+    if ( !m_Chunk ) {
+        m_TSE_LoadLock->SetSeq_entry(entry, set_info);
+    }
+    else {
+        m_Chunk->x_LoadSeq_entry(entry, set_info);
+    }
 }
 
 
@@ -976,15 +563,18 @@ void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
 
 // helper method to get system time for expiration
 static inline
-CLoadInfo::TExpirationTime sx_GetCurrentTime(void)
+CReaderRequestResult::TExpirationTime sx_GetCurrentTime(void)
 {
     return time(0);
 }
 
 
-CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
-    : m_Level(0),
-      m_Cached(false),
+CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id,
+                                           CReadDispatcher& dispatcher,
+                                           CGBInfoManager& manager)
+    : GBL::CInfoRequestor(manager),
+      m_ReadDispatcher(dispatcher),
+      m_Level(0),
       m_RequestedId(requested_id),
       m_RecursionLevel(0),
       m_RecursiveTime(0),
@@ -995,17 +585,35 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
 }
 
 
-CLoadInfo::TExpirationTime
+CWriter* CReaderRequestResult::GetIdWriter(void) const
+{
+    return m_ReadDispatcher.GetWriter(*this, CWriter::eIdWriter);
+}
+
+
+CWriter* CReaderRequestResult::GetBlobWriter(void) const
+{
+    return m_ReadDispatcher.GetWriter(*this, CWriter::eBlobWriter);
+}
+
+
+CReaderRequestResult::TExpirationTime
 CReaderRequestResult::GetNewIdExpirationTime(void) const
 {
     return GetStartTime()+GetIdExpirationTimeout();
 }
 
 
-CLoadInfo::TExpirationTime
+CReaderRequestResult::TExpirationTime
 CReaderRequestResult::GetIdExpirationTimeout(void) const
 {
     return 2*3600;
+}
+
+
+bool CReaderRequestResult::GetAddWGSMasterDescr(void) const
+{
+    return false;
 }
 
 
@@ -1030,175 +638,28 @@ void CReaderRequestResult::SetRequestedId(const CSeq_id_Handle& requested_id)
 }
 
 
-CReaderRequestResult::TBlobLoadInfo&
-CReaderRequestResult::x_GetBlobLoadInfo(const CBlob_id& blob_id)
-{
-    TBlobLoadLocks::iterator iter = m_BlobLoadLocks.lower_bound(blob_id);
-    if ( iter == m_BlobLoadLocks.end() || iter->first != blob_id ) {
-        TBlobLoadLocks::value_type node(blob_id,
-                                        TBlobLoadInfo(CLoadLockBlobState(*this, blob_id),
-                                                      CTSE_LoadLock()));
-        iter = m_BlobLoadLocks.insert(iter, node);
-    }
-    return iter->second;
-}
-
-
 CTSE_LoadLock CReaderRequestResult::GetBlobLoadLock(const CBlob_id& blob_id)
 {
-    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
-    if ( !info.second ) {
-        info.second = GetTSE_LoadLock(blob_id);
-        if ( info.first.IsLoadedBlobState() ) {
-            info.second->SetBlobState(info.first->GetBlobState());
-        }
-        else if ( info.second.IsLoaded() ) {
-            TBlobState state = info.second->GetBlobState();
-            _ASSERT(state != kBlobStateNotSet);
-            info.first.SetLoadedBlobState(state);
-        }
-        if ( info.first.IsLoadedBlobVersion() ) {
-            info.second->SetBlobVersion(info.first->GetBlobVersion());
-        }
-        else if ( info.second.IsLoaded() ) {
-            TBlobVersion version = info.second->GetBlobVersion();
-            if ( version != kBlobVersionNotSet ) {
-                info.first.SetLoadedBlobVersion(version);
-            }
-        }
-    }
-    return info.second;
-}
-
-
-bool CReaderRequestResult::IsBlobLoaded(const CBlob_id& blob_id)
-{
-    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
-    if ( !info.second ) {
-        info.second = GetTSE_LoadLockIfLoaded(blob_id);
-        if ( !info.second ) {
-            return false;
-        }
-        _ASSERT(info.second.IsLoaded());
-        if ( !info.first.IsLoadedBlobState() ) {
-            TBlobState state = info.second->GetBlobState();
-            _ASSERT(state != kBlobStateNotSet);
-            info.first.SetLoadedBlobState(state);
-        }
-        if ( !info.first.IsLoadedBlobVersion() ) {
-            TBlobVersion version = info.second->GetBlobVersion();
-            if ( version != kBlobVersionNotSet ) {
-                info.first.SetLoadedBlobVersion(version);
-            }
-        }
-    }
-    if ( info.second.IsLoaded() ) {
-        return true;
-    }
-    return false;
-}
-
-
-bool CReaderRequestResult::SetBlobState(const CBlob_id& blob_id,
-                                        TBlobState blob_state)
-{
-    bool changed = false;
-    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
-    if ( info.first.SetLoadedBlobState(blob_state) ) {
-        changed = true;
-    }
-    if ( info.second && info.second->GetBlobState() != blob_state ) {
-        info.second->SetBlobState(blob_state);
-        changed = true;
-    }
-    return changed;
-}
-
-
-void CReaderRequestResult::SetBlobBlobState(const CLoadLockBlobState& lock,
-                                            TBlobState blob_state)
-{
-    TBlobLoadInfo& info = x_GetBlobLoadInfo(lock->GetBlob_id());
-    if ( info.second && info.second->GetBlobState() != blob_state ) {
-        info.second->SetBlobState(blob_state);
-    }
-}
-
-
-bool CReaderRequestResult::IsSetBlobState(const CBlob_id& blob_id)
-{
-    return x_GetBlobLoadInfo(blob_id).first.IsLoadedBlobState();
-}
-
-
-CReaderRequestResult::TBlobState
-CReaderRequestResult::GetBlobState(const CBlob_id& blob_id)
-{
-    _ASSERT(IsSetBlobState(blob_id));
-    return x_GetBlobLoadInfo(blob_id).first->GetBlobState();
-}
-
-
-bool CReaderRequestResult::SetBlobVersion(const CBlob_id& blob_id,
-                                          TBlobVersion blob_version)
-{
-    bool changed = false;
-    TBlobLoadInfo& info = x_GetBlobLoadInfo(blob_id);
-    if ( info.first.SetLoadedBlobVersion(blob_version) ) {
-        changed = true;
-    }
-    if ( info.second && info.second->GetBlobVersion() != blob_version ) {
-        info.second->SetBlobVersion(blob_version);
-        changed = true;
-    }
-    return changed;
-}
-
-
-void CReaderRequestResult::SetBlobBlobVersion(const CLoadLockBlobState& lock,
-                                              TBlobVersion blob_version)
-{
-    TBlobLoadInfo& info = x_GetBlobLoadInfo(lock->GetBlob_id());
-    if ( info.second && info.second->GetBlobVersion() != blob_version ) {
-        info.second->SetBlobVersion(blob_version);
-    }
-}
-
-
-bool CReaderRequestResult::IsSetBlobVersion(const CBlob_id& blob_id)
-{
-    return x_GetBlobLoadInfo(blob_id).first.IsLoadedBlobVersion();
-}
-
-
-CReaderRequestResult::TBlobVersion
-CReaderRequestResult::GetBlobVersion(const CBlob_id& blob_id)
-{
-    _ASSERT(IsSetBlobVersion(blob_id));
-    return x_GetBlobLoadInfo(blob_id).first->GetBlobVersion();
+    return CTSE_LoadLock();
 }
 
 
 bool CReaderRequestResult::SetNoBlob(const CBlob_id& blob_id,
                                      TBlobState blob_state)
 {
+    SetLoadedBlobState(blob_id, blob_state);
     CLoadLockBlob blob(*this, blob_id);
-    if ( blob.IsLoaded() ) {
-        return false;
+    if ( !blob.IsLoadedBlob() ) {
+        CLoadLockSetter setter(blob);
+        setter.SetLoaded();
+        return true;
     }
-    SetBlobState(blob_id, blob_state);
-    blob.SetLoaded();
-    return true;
+    return false;
 }
 
 
 void CReaderRequestResult::ReleaseNotLoadedBlobs(void)
 {
-    NON_CONST_ITERATE ( TBlobLoadLocks, it, m_BlobLoadLocks ) {
-        if ( it->second.second && !it->second.second.IsLoaded() ) {
-            it->second.second.Reset();
-        }
-    }
 }
 
 
@@ -1209,100 +670,15 @@ void CReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& /*idh*/,
 }
 
 
-#if 0
-void CReaderRequestResult::SetTSE_Info(CLoadLockBlob& blob,
-                                       const CRef<CTSE_Info>& tse)
+void CReaderRequestResult::x_AddTSE_LoadLock(const CTSE_LoadLock& lock)
 {
-    blob->m_TSE_Info = tse;
-    AddTSE_Lock(AddTSE(tse, blob->GetBlob_id()));
-    SetLoaded(blob);
+    m_TSE_LockSet.insert(lock);
 }
 
-
-CRef<CTSE_Info> CReaderRequestResult::GetTSE_Info(const CLoadLockBlob& blob)
-{
-    return blob->GetTSE_Info();
-}
-
-
-void CReaderRequestResult::SetTSE_Info(const CBlob_id& blob_id,
-                                       const CRef<CTSE_Info>& tse)
-{
-    CLoadLockBlob blob(*this, blob_id);
-    SetTSE_Info(blob, tse);
-}
-
-
-CRef<CTSE_Info> CReaderRequestResult::GetTSE_Info(const CBlob_id& blob_id)
-{
-    return GetTSE_Info(CLoadLockBlob(*this, blob_id));
-}
-#endif
-
-CRef<CLoadInfoLock>
-CReaderRequestResult::GetLoadLock(const CRef<CLoadInfo>& info)
-{
-    CRef<CLoadInfoLock>& lock = m_LockMap[info];
-    if ( !lock ) {
-        lock = new CLoadInfoLock(*this, info);
-    }
-    else {
-        _ASSERT(lock->Referenced());
-    }
-    return lock;
-}
-
-
-void CReaderRequestResult::ReleaseLoadLock(const CRef<CLoadInfo>& info)
-{
-    m_LockMap[info] = null;
-}
-
-
-void CReaderRequestResult::AddTSE_Lock(const TTSE_Lock& tse_lock)
-{
-    _ASSERT(tse_lock);
-    m_TSE_LockSet.insert(tse_lock);
-}
-
-#if 0
-bool CReaderRequestResult::AddTSE_Lock(const TKeyBlob& blob_id)
-{
-    return AddTSE_Lock(CLoadLockBlob(*this, blob_id));
-}
-
-
-bool CReaderRequestResult::AddTSE_Lock(const CLoadLockBlob& blob)
-{
-    CRef<CTSE_Info> tse = blob->GetTSE_Info();
-    if ( !tse ) {
-        return false;
-    }
-    TTSE_Lock tse_lock = LockTSE(tse);
-    if ( !tse_lock ) {
-        return false;
-    }
-    AddTSE_Lock(tse_lock);
-    return true;
-}
-
-
-TTSE_Lock CReaderRequestResult::LockTSE(CRef<CTSE_Info> /*tse*/)
-{
-    return TTSE_Lock();
-}
-
-
-TTSE_Lock CReaderRequestResult::AddTSE(CRef<CTSE_Info> /*tse*/,
-                                       const TKeyBlob& blob_id)
-{
-    return TTSE_Lock();
-}
-#endif
 
 void CReaderRequestResult::SaveLocksTo(TTSE_LockSet& locks)
 {
-    ITERATE ( TTSE_LockSet, it, GetTSE_LockSet() ) {
+    ITERATE ( TTSE_LockSet, it, m_TSE_LockSet ) {
         locks.insert(*it);
     }
 }
@@ -1310,12 +686,27 @@ void CReaderRequestResult::SaveLocksTo(TTSE_LockSet& locks)
 
 void CReaderRequestResult::ReleaseLocks(void)
 {
-    m_BlobLoadLocks.clear();
     m_TSE_LockSet.clear();
-    NON_CONST_ITERATE ( TLockMap, it, m_LockMap ) {
-        it->second = null;
-    }
 }
+
+
+CReaderRequestResult::TExpirationTime
+CReaderRequestResult::GetRequestTime(void) const
+{
+    return GetStartTime();
+}
+
+
+CReaderRequestResult::TExpirationTime
+CReaderRequestResult::GetNewExpirationTime(void) const
+{
+    return GetNewIdExpirationTime();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CReaderRequestResultRecursion
+/////////////////////////////////////////////////////////////////////////////
 
 
 CReaderRequestResultRecursion::CReaderRequestResultRecursion(
@@ -1352,104 +743,803 @@ double CReaderRequestResultRecursion::GetCurrentRequestTime(void) const
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CStandaloneRequestResult
+// CGBLoaderManager
 /////////////////////////////////////////////////////////////////////////////
 
 
-CStandaloneRequestResult::
-CStandaloneRequestResult(const CSeq_id_Handle& requested_id)
-    : CReaderRequestResult(requested_id)
+CGBInfoManager::CGBInfoManager(size_t gc_size)
+    : m_CacheAcc(GetMainMutex(), gc_size),
+      m_CacheSeqIds(GetMainMutex(), gc_size),
+      m_CacheGi(GetMainMutex(), gc_size),
+      m_CacheStrSeqIds(GetMainMutex(), gc_size),
+      m_CacheStrGi(GetMainMutex(), gc_size),
+      m_CacheLabel(GetMainMutex(), gc_size),
+      m_CacheTaxId(GetMainMutex(), gc_size),
+      m_CacheBlobIds(GetMainMutex(), gc_size),
+      m_CacheBlobState(GetMainMutex(), gc_size),
+      m_CacheBlobVersion(GetMainMutex(), gc_size),
+      m_CacheBlob(GetMainMutex(), 0)
 {
 }
 
 
-CStandaloneRequestResult::~CStandaloneRequestResult(void)
+CGBInfoManager::~CGBInfoManager(void)
 {
-    ReleaseLocks();
 }
 
 
-CRef<CLoadInfoSeq_ids>
-CStandaloneRequestResult::GetInfoSeq_ids(const string& key)
+CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& id)
+    : TParent(result.GetLoadLockSeqIds(id))
 {
-    CRef<CLoadInfoSeq_ids>& ret = m_InfoSeq_ids[key];
-    if ( !ret ) {
-        ret = new CLoadInfoSeq_ids();
+}
+
+
+CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
+                                 const string& id)
+    : TParent(result.GetLoadLockSeqIds(id))
+{
+}
+
+CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
+                                 const CSeq_id_Handle& id,
+                                 EAlreadyLoaded)
+    : TParent(result.GetLoadedSeqIds(id))
+{
+}
+
+
+CLoadLockSeqIds::CLoadLockSeqIds(CReaderRequestResult& result,
+                                 const string& id,
+                                 EAlreadyLoaded)
+    : TParent(result.GetLoadedSeqIds(id))
+{
+}
+
+
+CLoadLockAcc::CLoadLockAcc(CReaderRequestResult& result,
+                           const CSeq_id_Handle& id)
+    : TParent(result.GetLoadLockAcc(id))
+{
+}
+
+
+CLoadLockGi::CLoadLockGi(CReaderRequestResult& result,
+                         const CSeq_id_Handle& id)
+    : TParent(result.GetLoadLockGi(id))
+{
+}
+
+
+CLoadLockGi::CLoadLockGi(CReaderRequestResult& result,
+                         const string& id)
+    : TParent(result.GetLoadLockGi(id))
+{
+}
+
+
+CLoadLockLabel::CLoadLockLabel(CReaderRequestResult& result,
+                               const CSeq_id_Handle& id)
+    : TParent(result.GetLoadLockLabel(id))
+{
+}
+
+
+CLoadLockTaxId::CLoadLockTaxId(CReaderRequestResult& result,
+                               const CSeq_id_Handle& id)
+    : TParent(result.GetLoadLockTaxId(id))
+{
+}
+
+
+CLoadLockBlobIds::CLoadLockBlobIds(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& id,
+                                   const SAnnotSelector* sel)
+    : TParent(result.GetLoadLockBlobIds(id, sel)),
+      m_Seq_id(id)
+{
+}
+CLoadLockBlobIds::CLoadLockBlobIds(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& id,
+                                   const SAnnotSelector* sel,
+                                   EAlreadyLoaded)
+    : TParent(result.GetLoadedBlobIds(id, sel)),
+      m_Seq_id(id)
+{
+}
+
+
+CLoadLockBlobState::CLoadLockBlobState(CReaderRequestResult& result,
+                                       const CBlob_id& id)
+    : TParent(result.GetLoadLockBlobState(id))
+{
+}
+
+
+CLoadLockBlobState::CLoadLockBlobState(CReaderRequestResult& result,
+                                       const CBlob_id& id,
+                                       EAlreadyLoaded)
+    : TParent(result.GetLoadedBlobState(id))
+{
+}
+
+
+CLoadLockBlobVersion::CLoadLockBlobVersion(CReaderRequestResult& result,
+                                           const CBlob_id& id)
+    : TParent(result.GetLoadLockBlobVersion(id))
+{
+}
+
+
+CLoadLockBlobVersion::CLoadLockBlobVersion(CReaderRequestResult& result,
+                                           const CBlob_id& id,
+                                           EAlreadyLoaded)
+    : TParent(result.GetLoadedBlobVersion(id))
+{
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> Seq-ids
+
+bool
+CReaderRequestResult::IsLoadedSeqIds(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheSeqIds.IsLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingSeqIds(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheSeqIds.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockIds
+CReaderRequestResult::GetLoadLockSeqIds(const CSeq_id_Handle& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheSeqIds.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockIds
+CReaderRequestResult::GetLoadedSeqIds(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheSeqIds.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedSeqIds(const CSeq_id_Handle& id,
+                                      const CFixedSeq_ids& value)
+{
+    return GetGBInfoManager().m_CacheSeqIds.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// string -> Seq-ids
+
+bool
+CReaderRequestResult::IsLoadedSeqIds(const string& id)
+{
+    return GetGBInfoManager().m_CacheStrSeqIds.IsLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingSeqIds(const string& id)
+{
+    return GetGBInfoManager().m_CacheStrSeqIds.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockIds
+CReaderRequestResult::GetLoadLockSeqIds(const string& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheStrSeqIds.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockIds
+CReaderRequestResult::GetLoadedSeqIds(const string& id)
+{
+    return GetGBInfoManager().m_CacheStrSeqIds.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedSeqIds(const string& id,
+                                      const CFixedSeq_ids& value)
+{
+    return GetGBInfoManager().m_CacheStrSeqIds.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Copy info
+
+
+bool
+CReaderRequestResult::SetLoadedSeqIds(const CSeq_id_Handle& id,
+                                      const CLoadLockSeqIds& ids)
+{
+    CLoadLockSeqIds lock(*this, id);
+    return lock.SetLoadedSeq_ids(ids);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedBlobIds(const CSeq_id_Handle& id,
+                                       const SAnnotSelector* sel,
+                                       const CLoadLockBlobIds& ids)
+{
+    CLoadLockBlobIds lock(*this, id, sel);
+    return lock.SetLoadedBlob_ids(ids);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> Acc.Ver
+
+bool
+CReaderRequestResult::IsLoadedAcc(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheAcc.IsLoaded(*this, id) ||
+        IsLoadedSeqIds(id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingAcc(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheAcc.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockAcc
+CReaderRequestResult::GetLoadLockAcc(const CSeq_id_Handle& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    TInfoLockAcc lock =
+        GetGBInfoManager().m_CacheAcc.GetLoadLock(*this, id, do_not_wait);
+
+    if ( !lock.IsLoaded() ) {
+        TInfoLockIds ids_lock = GetLoadedSeqIds(id);
+        if ( ids_lock ) {
+            UpdateAccFromSeqIds(lock, ids_lock);
+        }
     }
-    return ret;
+    return lock;
 }
 
 
-CRef<CLoadInfoSeq_ids>
-CStandaloneRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
+CReaderRequestResult::TInfoLockAcc
+CReaderRequestResult::GetLoadedAcc(const CSeq_id_Handle& id)
 {
-    CRef<CLoadInfoSeq_ids>& ret = m_InfoSeq_ids2[key];
-    if ( !ret ) {
-        ret = new CLoadInfoSeq_ids();
+    return GetGBInfoManager().m_CacheAcc.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedAcc(const CSeq_id_Handle& id,
+                                   const CSeq_id_Handle& value)
+{
+    return GetGBInfoManager().m_CacheAcc.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-ids -> Acc.Ver
+
+bool CReaderRequestResult::UpdateAccFromSeqIds(TInfoLockAcc& acc_lock,
+                                               const TInfoLockIds& ids_lock)
+{
+    if ( acc_lock.IsLoaded() ) {
+        return false;
     }
-    return ret;
+    return acc_lock.SetLoaded(ids_lock.GetData().FindAccVer(),
+                              ids_lock.GetExpirationTime());
 }
 
 
-CRef<CLoadInfoBlob_ids>
-CStandaloneRequestResult::GetInfoBlob_ids(const TKeyBlob_ids& key)
+bool CReaderRequestResult::SetLoadedAccFromSeqIds(const CSeq_id_Handle& id,
+                                                  const CLoadLockSeqIds& ids)
 {
-    CRef<CLoadInfoBlob_ids>& ret = m_InfoBlob_ids[key];
-    if ( !ret ) {
-        ret = new CLoadInfoBlob_ids(key.first, 0);
+    CSeq_id_Handle acc = ids.GetSeq_ids().FindAccVer();
+    TExpirationTime exp_time = ids.GetExpirationTime();
+    return GetGBInfoManager().m_CacheAcc.SetLoaded(*this, id, acc, exp_time);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-ids <-> GI
+
+bool
+CReaderRequestResult::SetLoadedSeqIdsFromZeroGi(const CSeq_id_Handle& id,
+                                                const CLoadLockGi& gi_lock)
+{
+    _ASSERT(gi_lock.IsLoadedGi() && gi_lock.GetGi() == ZERO_GI);
+    CLoadLockSeqIds lock(*this, id);
+    TBlobState state = CBioseq_Handle::fState_no_data;
+    return lock.SetLoadedSeq_ids(CFixedSeq_ids(state),
+                                 gi_lock.GetExpirationTimeGi());
+}
+
+
+bool
+CReaderRequestResult::SetLoadedBlobIdsFromZeroGi(const CSeq_id_Handle& id,
+                                                 const SAnnotSelector* sel,
+                                                 const CLoadLockGi& gi_lock)
+{
+    _ASSERT(gi_lock.IsLoadedGi() && gi_lock.GetGi() == ZERO_GI);
+    CLoadLockBlobIds lock(*this, id, sel);
+    TBlobState state = CBioseq_Handle::fState_no_data;
+    return lock.SetNoBlob_ids(state,
+                              gi_lock.GetExpirationTimeGi());
+}
+
+
+bool CReaderRequestResult::UpdateGiFromSeqIds(TInfoLockGi& gi_lock,
+                                              const TInfoLockIds& ids_lock)
+{
+    if ( gi_lock.IsLoaded() ) {
+        return false;
     }
-    return ret;
+    return gi_lock.SetLoaded(ids_lock.GetData().FindGi(),
+                             ids_lock.GetExpirationTime());
 }
 
 
-CRef<CLoadInfoBlobState>
-CStandaloneRequestResult::GetInfoBlobState(const TKeyBlobState& key)
+bool CReaderRequestResult::SetLoadedGiFromSeqIds(const CSeq_id_Handle& id,
+                                                 const CLoadLockSeqIds& ids)
 {
-    CRef<CLoadInfoBlobState>& ret = m_InfoBlobStates[key];
-    if ( !ret ) {
-        ret = new CLoadInfoBlobState(key);
+    TGi gi = ids.GetSeq_ids().FindGi();
+    TExpirationTime exp_time = ids.GetExpirationTime();
+    return GetGBInfoManager().m_CacheGi.SetLoaded(*this, id, gi, exp_time);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> GI
+
+bool
+CReaderRequestResult::IsLoadedGi(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheGi.IsLoaded(*this, id) ||
+        IsLoadedSeqIds(id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingGi(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheGi.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockGi
+CReaderRequestResult::GetLoadLockGi(const CSeq_id_Handle& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    TInfoLockGi lock =
+        GetGBInfoManager().m_CacheGi.GetLoadLock(*this, id, do_not_wait);
+    if ( !lock.IsLoaded() ) {
+        TInfoLockIds ids_lock = GetLoadedSeqIds(id);
+        if ( ids_lock ) {
+            UpdateGiFromSeqIds(lock, ids_lock);
+        }
     }
-    return ret;
+    return lock;
 }
 
 
-CTSE_LoadLock
-CStandaloneRequestResult::GetTSE_LoadLock(const CBlob_id& blob_id)
+CReaderRequestResult::TInfoLockGi
+CReaderRequestResult::GetLoadedGi(const CSeq_id_Handle& id)
 {
-    if ( !m_DataSource ) {
-        m_DataSource = new CDataSource;
+    return GetGBInfoManager().m_CacheGi.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedGi(const CSeq_id_Handle& id,
+                                  const TGi& value)
+{
+    return GetGBInfoManager().m_CacheGi.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// string -> GI
+
+bool
+CReaderRequestResult::IsLoadedGi(const string& id)
+{
+    return GetGBInfoManager().m_CacheStrGi.IsLoaded(*this, id) ||
+        IsLoadedSeqIds(id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingGi(const string& id)
+{
+    return GetGBInfoManager().m_CacheStrGi.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockGi
+CReaderRequestResult::GetLoadLockGi(const string& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    TInfoLockGi lock =
+        GetGBInfoManager().m_CacheStrGi.GetLoadLock(*this, id, do_not_wait);
+    if ( !lock.IsLoaded() ) {
+        TInfoLockIds ids_lock = GetLoadedSeqIds(id);
+        if ( ids_lock ) {
+            UpdateGiFromSeqIds(lock, ids_lock);
+        }
     }
-    CDataLoader::TBlobId key(new CBlob_id(blob_id));
-    return m_DataSource->GetTSE_LoadLock(key);
+    return lock;
 }
 
 
-CTSE_LoadLock
-CStandaloneRequestResult::GetTSE_LoadLockIfLoaded(const CBlob_id& blob_id)
+CReaderRequestResult::TInfoLockGi
+CReaderRequestResult::GetLoadedGi(const string& id)
 {
-    if ( !m_DataSource ) {
-        m_DataSource = new CDataSource;
+    return GetGBInfoManager().m_CacheStrGi.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedGi(const string& id,
+                                  const TGi& value)
+{
+    return GetGBInfoManager().m_CacheStrGi.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-ids -> Label
+
+bool CReaderRequestResult::UpdateLabelFromSeqIds(TInfoLockLabel& label_lock,
+                                                 const TInfoLockIds& ids_lock)
+{
+    if ( label_lock.IsLoaded() ) {
+        return false;
     }
-    CDataLoader::TBlobId key(new CBlob_id(blob_id));
-    return m_DataSource->GetTSE_LoadLockIfLoaded(key);
+    return label_lock.SetLoaded(ids_lock.GetData().FindLabel(),
+                                ids_lock.GetExpirationTime());
 }
 
 
-CStandaloneRequestResult::operator CInitMutexPool&(void)
+bool CReaderRequestResult::SetLoadedLabelFromSeqIds(const CSeq_id_Handle& id,
+                                                    const CLoadLockSeqIds& ids)
 {
-    return m_MutexPool;
+    string label = ids.GetSeq_ids().FindLabel();
+    TExpirationTime exp_time = ids.GetExpirationTime();
+    return GetGBInfoManager().m_CacheLabel.SetLoaded(*this, id, label, exp_time);
 }
 
 
-CStandaloneRequestResult::TConn CStandaloneRequestResult::GetConn(void)
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> Label
+
+bool
+CReaderRequestResult::IsLoadedLabel(const CSeq_id_Handle& id)
 {
-    return 0;
+    return GetGBInfoManager().m_CacheLabel.IsLoaded(*this, id);
 }
 
 
-void CStandaloneRequestResult::ReleaseConn(void)
+bool
+CReaderRequestResult::MarkLoadingLabel(const CSeq_id_Handle& id)
 {
+    return GetGBInfoManager().m_CacheLabel.MarkLoading(*this, id);
 }
+
+
+CReaderRequestResult::TInfoLockLabel
+CReaderRequestResult::GetLoadLockLabel(const CSeq_id_Handle& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheLabel.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockLabel
+CReaderRequestResult::GetLoadedLabel(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheLabel.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedLabel(const CSeq_id_Handle& id,
+                                     const string& value)
+{
+    return GetGBInfoManager().m_CacheLabel.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> TaxID
+
+bool
+CReaderRequestResult::IsLoadedTaxId(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheTaxId.IsLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingTaxId(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheTaxId.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockTaxId
+CReaderRequestResult::GetLoadLockTaxId(const CSeq_id_Handle& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheTaxId.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockTaxId
+CReaderRequestResult::GetLoadedTaxId(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheTaxId.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedTaxId(const CSeq_id_Handle& id,
+                                     const TTaxId& value)
+{
+    return GetGBInfoManager().m_CacheTaxId.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> BlobIds
+
+bool
+CReaderRequestResult::IsLoadedBlobIds(const CSeq_id_Handle& id,
+                                      const SAnnotSelector* sel)
+{
+    TKeyBlob_ids key = s_KeyBlobIds(id, sel);
+    return GetGBInfoManager().m_CacheBlobIds.IsLoaded(*this, key);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingBlobIds(const CSeq_id_Handle& id,
+                                         const SAnnotSelector* sel)
+{
+    TKeyBlob_ids key = s_KeyBlobIds(id, sel);
+    return GetGBInfoManager().m_CacheBlobIds.MarkLoading(*this, key);
+}
+
+
+CReaderRequestResult::TInfoLockBlobIds
+CReaderRequestResult::GetLoadLockBlobIds(const CSeq_id_Handle& id,
+                                         const SAnnotSelector* sel)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    TKeyBlob_ids key = s_KeyBlobIds(id, sel);
+    return GetGBInfoManager().m_CacheBlobIds.GetLoadLock(*this, key, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockBlobIds
+CReaderRequestResult::GetLoadedBlobIds(const CSeq_id_Handle& id,
+                                       const SAnnotSelector* sel)
+{
+    TKeyBlob_ids key = s_KeyBlobIds(id, sel);
+    return GetGBInfoManager().m_CacheBlobIds.GetLoaded(*this, key);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedBlobIds(const CSeq_id_Handle& id,
+                                       const SAnnotSelector* sel,
+                                       const CFixedBlob_ids& value)
+{
+    TKeyBlob_ids key = s_KeyBlobIds(id, sel);
+    LOG_POST("SetLoadedBlobIds("<<id<<","<<key.second<<")");
+    return GetGBInfoManager().m_CacheBlobIds.SetLoaded(*this, key, value);
+}
+
+
+CReaderRequestResult::TKeyBlob_ids
+CReaderRequestResult::s_KeyBlobIds(const CSeq_id_Handle& seq_id,
+                                   const SAnnotSelector* sel)
+{
+    TKeyBlob_ids key;
+    key.first = seq_id;
+    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+        ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it,
+                  sel->GetNamedAnnotAccessions() ) {
+            key.second += it->first;
+            key.second += ',';
+        }
+    }
+    return key;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Blob state
+
+bool CReaderRequestResult::SetLoadedBlobState(const CBlob_id& blob_id,
+                                              TBlobState state)
+{
+    bool changed = GetGBInfoManager().m_CacheBlobState.SetLoaded(*this,
+                                                                 blob_id,
+                                                                 state);
+    if ( changed ) {
+        // set to TSE_Info
+        CLoadLockBlob blob(*this, blob_id);
+        if ( blob.IsLoadedBlob() ) {
+            blob.GetTSE_LoadLock()->SetBlobState(state);
+        }
+    }
+    return changed;
+}
+
+
+bool CReaderRequestResult::IsLoadedBlobState(const CBlob_id& blob_id)
+{
+    return GetGBInfoManager().m_CacheBlobState.IsLoaded(*this, blob_id);
+}
+
+
+CReaderRequestResult::TInfoLockBlobState
+CReaderRequestResult::GetLoadLockBlobState(const CBlob_id& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheBlobState.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockBlobState
+CReaderRequestResult::GetLoadedBlobState(const CBlob_id& id)
+{
+    return GetGBInfoManager().m_CacheBlobState.GetLoaded(*this, id);
+}
+
+
+void CReaderRequestResult::SetAndSaveBlobState(const TKeyBlob& blob_id,
+                                               TBlobVersion blob_state)
+{
+    if ( !SetLoadedBlobState(blob_id, blob_state) ) {
+        return;
+    }
+    if ( CWriter* writer = GetIdWriter() ) {
+        writer->SaveBlobState(*this, blob_id, blob_state);
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Blob version
+
+bool CReaderRequestResult::SetLoadedBlobVersion(const CBlob_id& blob_id,
+                                                TBlobVersion version)
+{
+    bool changed = GetGBInfoManager().m_CacheBlobVersion.SetLoaded(*this,
+                                                                   blob_id,
+                                                                   version);
+    if ( changed ) {
+        // set to TSE_Info
+        CLoadLockBlob blob(*this, blob_id);
+        if ( blob.IsLoadedBlob() ) {
+            TBlobVersion old_version = blob.GetKnownBlobVersion();
+            if ( old_version < 0 ) {
+                blob.GetTSE_LoadLock()->SetBlobVersion(version);
+            }
+            _ASSERT(blob.GetKnownBlobVersion() == version);
+        }
+    }
+    return changed;
+}
+
+
+bool CReaderRequestResult::IsLoadedBlobVersion(const CBlob_id& blob_id)
+{
+    return GetGBInfoManager().m_CacheBlobVersion.IsLoaded(*this, blob_id);
+}
+
+
+CReaderRequestResult::TInfoLockBlobVersion
+CReaderRequestResult::GetLoadLockBlobVersion(const CBlob_id& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheBlobVersion.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockBlobVersion
+CReaderRequestResult::GetLoadedBlobVersion(const CBlob_id& id)
+{
+    return GetGBInfoManager().m_CacheBlobVersion.GetLoaded(*this, id);
+}
+
+
+void CReaderRequestResult::SetAndSaveBlobVersion(const TKeyBlob& blob_id,
+                                                 TBlobVersion version)
+{
+    if ( !SetLoadedBlobVersion(blob_id, version) ) {
+        return;
+    }
+    if ( CWriter* writer = GetIdWriter() ) {
+        writer->SaveBlobVersion(*this, blob_id, version);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Blob
+
+CReaderRequestResult::TInfoLockBlob
+CReaderRequestResult::GetLoadLockBlob(const CBlob_id& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheBlob.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockBlob
+CReaderRequestResult::GetLoadedBlob(const CBlob_id& id)
+{
+    return GetGBInfoManager().m_CacheBlob.GetLoaded(*this, id);
+}
+
+
+/*
+void CReaderRequestResult::SetSeq_entry(const TKeyBlob& blob_id,
+                                        CLoadLockBlob& blob,
+                                        TChunkId chunk_id,
+                                        CRef<CSeq_entry> entry,
+                                        CTSE_SetObjectInfo* set_info)
+{
+    if ( !entry ) {
+        return;
+    }
+    if ( chunk_id == kMain_ChunkId ) {
+        blob->SetSeq_entry(*entry, set_info);
+    }
+    else {
+        blob->GetSplitInfo().GetChunk(chunk_id).
+            x_LoadSeq_entry(*entry, set_info);
+    }
+}
+*/
 
 
 END_SCOPE(objects)

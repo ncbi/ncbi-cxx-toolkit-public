@@ -28,7 +28,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <objtools/data_loaders/genbank/incr_time.hpp>
+#include <objtools/data_loaders/genbank/impl/incr_time.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <cmath>
 

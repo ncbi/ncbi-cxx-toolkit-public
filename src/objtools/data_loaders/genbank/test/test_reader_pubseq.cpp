@@ -31,8 +31,8 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <objtools/data_loaders/genbank/pubseq/reader_pubseq.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/standalone_result.hpp>
 #include <objmgr/impl/tse_info.hpp>
 
 #include <connect/ncbi_util.h>
@@ -58,9 +58,9 @@ int main()
 
         CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
         CStandaloneRequestResult request(seq_id);
-        CLoadLockBlob_ids blob_ids(request, seq_id, 0);
+        CLoadLockBlobIds blob_ids(request, seq_id, 0);
         dispatcher->LoadSeq_idBlob_ids(request, seq_id, 0);
-        CFixedBlob_ids ids = blob_ids->GetBlob_ids();
+        CFixedBlob_ids ids = blob_ids.GetBlob_ids();
         ITERATE ( CFixedBlob_ids, i, ids ) {
             const CBlob_Info& blob_info = *i;
             CConstRef<CBlob_id> blob_id = blob_info.GetBlob_id();
@@ -70,7 +70,7 @@ int main()
       
             CLoadLockBlob blob(request, *blob_id);
             dispatcher->LoadBlob(request, *blob_id);
-            if ( !blob.IsLoaded() ) {
+            if ( !blob.IsLoadedBlob() ) {
                 cout << "blob is not available\n";
                 continue;
             }

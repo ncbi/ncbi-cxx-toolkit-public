@@ -33,8 +33,8 @@
 #include <corelib/ncbi_param.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/gbloader_params.h>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
+#include <objtools/data_loaders/genbank/impl/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
 
 #include <objtools/data_loaders/genbank/reader_interface.hpp>
 #include <objtools/data_loaders/genbank/writer_interface.hpp>
@@ -86,7 +86,6 @@ NCBI_PARAM_DEF_EX(string, GENBANK, LOADER_METHOD, kEmptyStr,
                   eParam_NoThread, GENBANK_LOADER_METHOD);
 typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
 
-
 #if defined(HAVE_PUBSEQ_OS)
 static const char* const DEFAULT_DRV_ORDER = "ID2:PUBSEQOS:ID1";
 #else
@@ -114,10 +113,6 @@ public:
 
     //virtual TConn GetConn(void);
     //virtual void ReleaseConn(void);
-    virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const string& id);
-    virtual CRef<CLoadInfoSeq_ids> GetInfoSeq_ids(const CSeq_id_Handle& id);
-    virtual CRef<CLoadInfoBlob_ids> GetInfoBlob_ids(const TKeyBlob_ids& id);
-    virtual CRef<CLoadInfoBlobState> GetInfoBlobState(const TKeyBlobState& id);
     virtual CTSE_LoadLock GetTSE_LoadLock(const TKeyBlob& blob_id);
     virtual CTSE_LoadLock GetTSE_LoadLockIfLoaded(const TKeyBlob& blob_id);
     virtual void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
@@ -128,6 +123,8 @@ public:
     CInitMutexPool& GetMutexPool(void) { return m_Loader->m_MutexPool; }
 
     virtual TExpirationTime GetIdExpirationTimeout(void) const;
+
+    virtual bool GetAddWGSMasterDescr(void) const;
 
     friend class CGBDataLoader;
 
@@ -481,10 +478,6 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
         catch ( CException& /*ignored*/ ) {
         }
     }
-    m_LoadMapSeq_ids.SetMaxSize(queue_size);
-    m_LoadMapSeq_ids2.SetMaxSize(queue_size);
-    m_LoadMapBlob_ids.SetMaxSize(queue_size);
-    m_LoadMapBlobStates.SetMaxSize(queue_size);
 
     m_IdExpirationTimeout = DEFAULT_ID_EXPIRATION_TIMEOUT;
     if ( gb_params ) {
@@ -521,8 +514,25 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
             }
         }
     }
+    m_AddWGSMasterDescr = true;
+    if ( gb_params ) {
+        string param =
+            GetParam(gb_params, NCBI_GBLOADER_PARAM_ADD_WGS_MASTER);
+        if ( !param.empty() ) {
+            try {
+                m_AddWGSMasterDescr = NStr::StringToBool(param);
+            }
+            catch ( CException& exc ) {
+                NCBI_RETHROW_FMT(exc, CLoaderException, eBadConfig,
+                                 "Bad value of parameter "
+                                 NCBI_GBLOADER_PARAM_ADD_WGS_MASTER
+                                 ": \""<<param<<"\"");
+            }
+        }
+    }
     
     m_Dispatcher = new CReadDispatcher;
+    m_InfoManager = new CGBInfoManager(queue_size);
     
     // now we create readers & writers
     if ( params.GetReaderPtr() ) {
@@ -742,7 +752,7 @@ CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id_Handle& sih)
     TBlobId id = GetBlobId(sih);
     if ( id ) {
         const TRealBlobId& blob_id = GetRealBlobId(id);
-        return ConstRef(new CSeqref(0, blob_id.GetSat(), blob_id.GetSatKey()));
+        return ConstRef(new CSeqref(ZERO_GI, blob_id.GetSat(), blob_id.GetSatKey()));
     }
     return CConstRef<CSeqref>();
 }
@@ -760,11 +770,10 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
         return TBlobId();
     }
     CGBReaderRequestResult result(this, sih);
-    CLoadLockSeq_ids seq_ids(result, sih);
-    CLoadLockBlob_ids blobs(result, sih, 0);
+    CLoadLockBlobIds blobs(result, sih, 0);
     m_Dispatcher->LoadSeq_idBlob_ids(result, sih, 0);
 
-    CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
+    CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
     ITERATE ( CFixedBlob_ids, it, blob_ids ) {
         if ( it->Matches(fBlobHasCore, 0) ) {
             return TBlobId(it->GetBlob_id().GetPointer());
@@ -797,11 +806,11 @@ void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
         return;
     }
     CGBReaderRequestResult result(this, idh);
-    CLoadLockSeq_ids seq_ids(result, idh);
-    if ( !seq_ids.IsLoaded() ) {
+    CLoadLockSeqIds lock(result, idh);
+    if ( !lock.IsLoaded() ) {
         m_Dispatcher->LoadSeq_idSeq_ids(result, idh);
     }
-    ids = seq_ids->GetSeq_ids();
+    ids = lock.GetSeq_ids();
 }
 
 
@@ -811,11 +820,11 @@ CSeq_id_Handle CGBDataLoader::GetAccVer(const CSeq_id_Handle& idh)
         return null;
     }
     CGBReaderRequestResult result(this, idh);
-    CLoadLockSeq_ids seq_ids(result, idh);
-    if ( !seq_ids.IsLoadedAccVer() ) {
+    CLoadLockAcc lock(result, idh);
+    if ( !lock.IsLoadedAccVer() ) {
         m_Dispatcher->LoadSeq_idAccVer(result, idh);
     }
-    return seq_ids->GetAccVer();
+    return lock.GetAccVer();
 }
 
 
@@ -825,11 +834,11 @@ TGi CGBDataLoader::GetGi(const CSeq_id_Handle& idh)
         return ZERO_GI;
     }
     CGBReaderRequestResult result(this, idh);
-    CLoadLockSeq_ids seq_ids(result, idh);
-    if ( !seq_ids.IsLoadedGi() ) {
+    CLoadLockGi lock(result, idh);
+    if ( !lock.IsLoadedGi() ) {
         m_Dispatcher->LoadSeq_idGi(result, idh);
     }
-    return seq_ids->GetGi();
+    return lock.GetGi();
 }
 
 
@@ -839,11 +848,11 @@ string CGBDataLoader::GetLabel(const CSeq_id_Handle& idh)
         return string();
     }
     CGBReaderRequestResult result(this, idh);
-    CLoadLockSeq_ids seq_ids(result, idh);
-    if ( !seq_ids.IsLoadedLabel() ) {
+    CLoadLockLabel lock(result, idh);
+    if ( !lock.IsLoadedLabel() ) {
         m_Dispatcher->LoadSeq_idLabel(result, idh);
     }
-    return seq_ids->GetLabel();
+    return lock.GetLabel();
 }
 
 
@@ -853,11 +862,11 @@ int CGBDataLoader::GetTaxId(const CSeq_id_Handle& idh)
         return -1;
     }
     CGBReaderRequestResult result(this, idh);
-    CLoadLockSeq_ids seq_ids(result, idh);
-    if ( !seq_ids.IsLoadedTaxId() ) {
+    CLoadLockTaxId lock(result, idh);
+    if ( !lock.IsLoadedTaxId() ) {
         m_Dispatcher->LoadSeq_idTaxId(result, idh);
     }
-    int taxid = seq_ids.IsLoadedTaxId()? seq_ids->GetTaxId(): -1;
+    int taxid = lock.IsLoadedTaxId()? lock.GetTaxId(): -1;
     if ( taxid == -1 ) {
         return CDataLoader::GetTaxId(idh);
     }
@@ -874,14 +883,13 @@ int CGBDataLoader::GetSequenceState(const CSeq_id_Handle& sih)
         return kNotFound;
     }
     CGBReaderRequestResult result(this, sih);
-    CLoadLockSeq_ids seq_ids(result, sih);
-    CLoadLockBlob_ids blobs(result, sih, 0);
+    CLoadLockBlobIds blobs(result, sih, 0);
     m_Dispatcher->LoadSeq_idBlob_ids(result, sih, 0);
 
-    CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
+    CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
     ITERATE ( CFixedBlob_ids, it, blob_ids ) {
         if ( it->Matches(fBlobHasCore, 0) ) {
-            return blobs->GetState();
+            return blob_ids.GetState();
         }
     }
     return kNotFound;
@@ -940,15 +948,167 @@ void CGBDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 }
 
 
+static const bool s_LoadBulkBlobs = true;
+
+
+void CGBDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
+                                       TSequenceLengths& ret)
+{
+    if ( !s_LoadBulkBlobs ) {
+        CDataLoader::GetSequenceLengths(ids, loaded, ret);
+        return;
+    }
+    if ( ids.empty() ) {
+        return;
+    }
+    CGBReaderRequestResult result(this, ids[0]);
+    vector<CSeq_id_Handle> load_ids;
+    size_t count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        // add into loading set
+        load_ids.push_back(ids[i]);
+    }
+    if ( load_ids.empty() ) {
+        // nothing to load
+        return;
+    }
+    sort(load_ids.begin(), load_ids.end());
+    m_Dispatcher->LoadBlobSet(result, load_ids);
+    // update sequence types
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        const CSeq_id_Handle& id = ids[i];
+        if ( CReadDispatcher::CannotProcess(id) ) {
+            continue;
+        }
+
+        CLoadLockBlobIds blob_ids_lock(result, id, 0);
+        CFixedBlob_ids blob_ids = blob_ids_lock.GetBlob_ids();
+        ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+            const CBlob_Info& info = *it;
+            const CBlob_id& blob_id = *info.GetBlob_id();
+            if ( !info.Matches(fBlobHasCore, 0) ) {
+                continue;
+            }
+            CLoadLockBlob blob(result, blob_id);
+            _ASSERT(blob.IsLoadedBlob());
+            CTSE_LoadLock& lock = blob.GetTSE_LoadLock();
+            _ASSERT(lock);
+            if ( CConstRef<CBioseq_Info> seq = lock->FindMatchingBioseq(id) ) {
+                ret[i] = seq->GetBioseqLength();
+                loaded[i] = true;
+                break;
+            }
+        }
+    }
+}
+
+
+void CGBDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
+                                     TSequenceTypes& ret)
+{
+    if ( !s_LoadBulkBlobs ) {
+        CDataLoader::GetSequenceTypes(ids, loaded, ret);
+        return;
+    }
+    TTSE_LockSets lock_sets;
+    size_t count = ids.size();
+    _ASSERT(ids.size() == loaded.size());
+    _ASSERT(ids.size() == ret.size());
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        // add into loading set
+        lock_sets[ids[i]];
+    }
+    if ( lock_sets.empty() ) {
+        // nothing to load
+        return;
+    }
+    GetBlobs(lock_sets);
+    // update sequence types
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] ) {
+            continue;
+        }
+        if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        TTSE_LockSet& locks = lock_sets[ids[i]];
+        ITERATE(TTSE_LockSet, it, locks) {
+            CConstRef<CBioseq_Info> bs_info =
+                (*it)->FindMatchingBioseq(ids[i]);
+            if ( bs_info ) {
+                ret[i] = bs_info->GetInst_Mol();
+                loaded[i] = true;
+                break;
+            }
+        }
+    }
+}
+
+
+void CGBDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded,
+                                      TSequenceStates& ret)
+{
+    CDataLoader::GetSequenceStates(ids, loaded, ret);
+    return;
+    /*
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        if ( CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        CGBReaderRequestResult result(this, ids[0]);
+        m_Dispatcher->LoadSequenceStates(result, ids, loaded, ret);
+        return;
+    }
+
+
+    
+    const int kNotFound = (CBioseq_Handle::fState_not_found |
+                           CBioseq_Handle::fState_no_data);
+
+    if ( CReadDispatcher::CannotProcess(sih) ) {
+        return kNotFound;
+    }
+    CGBReaderRequestResult result(this, sih);
+    CLoadLockBlobIds blobs(result, sih, 0);
+    m_Dispatcher->LoadSeq_idBlob_ids(result, sih, 0);
+
+    CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
+    ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+        if ( it->Matches(fBlobHasCore, 0) ) {
+            return blobs->GetState();
+        }
+    }
+    return kNotFound;
+    */
+}
+
+
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const TRealBlobId& blob_id = GetRealBlobId(id);
     CGBReaderRequestResult result(this, CSeq_id_Handle());
-    CLoadLockBlobState lock(result, blob_id);
+    CLoadLockBlobVersion lock(result, blob_id);
     if ( !lock.IsLoadedBlobVersion() ) {
         m_Dispatcher->LoadBlobVersion(result, blob_id);
     }
-    return lock->GetBlobVersion();
+    return lock.GetBlobVersion();
 }
 
 
@@ -1025,7 +1185,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
             best.Reset();
     }
 */
-    if ( !best ) {
+    if ( !best || conflict ) {
         _TRACE("CGBDataLoader::ResolveConflict("<<handle.AsString()<<"): "
                "conflict");
     }
@@ -1190,11 +1350,12 @@ CGBDataLoader::GetBlobById(const TBlobId& id)
     const TRealBlobId& blob_id = GetRealBlobId(id);
 
     CGBReaderRequestResult result(this, CSeq_id_Handle());
-    if ( !result.IsBlobLoaded(blob_id) )
-        m_Dispatcher->LoadBlob(result, blob_id);
     CLoadLockBlob blob(result, blob_id);
-    _ASSERT(blob.IsLoaded());
-    return blob;
+    if ( !blob.IsLoadedBlob() ) {
+        m_Dispatcher->LoadBlob(result, blob_id);
+    }
+    _ASSERT(blob.IsLoadedBlob());
+    return blob.GetTSE_LoadLock();
 }
 
 
@@ -1329,33 +1490,35 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
     }
 
     CGBReaderRequestResult result(this, sih);
-    CLoadLockSeq_ids seq_ids(result, sih);
     m_Dispatcher->LoadBlobs(result, sih, mask, sel);
-    CLoadLockBlob_ids blobs(result, sih, sel);
+    CLoadLockBlobIds blobs(result, sih, sel);
     _ASSERT(blobs.IsLoaded());
 
-    if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
-        if ( blobs->GetState() == CBioseq_Handle::fState_no_data ) {
+    CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
+    if ( (blob_ids.GetState() & CBioseq_Handle::fState_no_data) != 0 ) {
+        if ( blob_ids.GetState() == CBioseq_Handle::fState_no_data ) {
             // default state - return empty lock set
             return locks;
         }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
-                    "blob state error for "+sih.AsString(), blobs->GetState());
+                    "blob state error for "+sih.AsString(),
+                    blob_ids.GetState());
     }
 
-    CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
     ITERATE ( CFixedBlob_ids, it, blob_ids ) {
         const CBlob_Info& info = *it;
         const CBlob_id& blob_id = *info.GetBlob_id();
         if ( info.Matches(mask, sel) ) {
             CLoadLockBlob blob(result, blob_id);
-            _ASSERT(blob.IsLoaded());
-            if ( blob->GetBlobState() & CBioseq_Handle::fState_no_data ) {
+            _ASSERT(blob.IsLoadedBlob());
+            CTSE_LoadLock& lock = blob.GetTSE_LoadLock();
+            _ASSERT(lock);
+            if ( lock->GetBlobState() & CBioseq_Handle::fState_no_data ) {
                 NCBI_THROW2(CBlobStateException, eBlobStateError,
                             "blob state error for "+blob_id.ToString(),
-                            blob->GetBlobState());
+                            lock->GetBlobState());
             }
-            locks.insert(blob);
+            locks.insert(lock);
         }
     }
     result.SaveLocksTo(locks);
@@ -1369,23 +1532,23 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
     TNamedAnnotNames names;
 
     CGBReaderRequestResult result(this, sih);
-    CLoadLockSeq_ids seq_ids(result, sih);
     SAnnotSelector sel;
     sel.IncludeNamedAnnotAccession("NA*");
-    CLoadLockBlob_ids blobs(result, sih, &sel);
+    CLoadLockBlobIds blobs(result, sih, &sel);
     m_Dispatcher->LoadSeq_idBlob_ids(result, sih, &sel);
     _ASSERT(blobs.IsLoaded());
 
-    if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
-        if ( blobs->GetState() == CBioseq_Handle::fState_no_data ) {
+    CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
+    if ( (blob_ids.GetState() & CBioseq_Handle::fState_no_data) != 0) {
+        if ( blob_ids.GetState() == CBioseq_Handle::fState_no_data ) {
             // default state - return empty name set
             return names;
         }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
-                    "blob state error for "+sih.AsString(), blobs->GetState());
+                    "blob state error for "+sih.AsString(),
+                    blob_ids.GetState());
     }
 
-    CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
     ITERATE ( CFixedBlob_ids, it, blob_ids ) {
         const CBlob_Info& info = *it;
         if ( !info.IsSetAnnotInfo() ) {
@@ -1408,7 +1571,6 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
     TNamedAnnotNames names;
 
     CGBReaderRequestResult result(this, sih);
-    CLoadLockSeq_ids seq_ids(result, sih);
     SAnnotSelector sel;
     if ( !ExtractZoomLevel(named_acc, 0, 0) ) {
         sel.IncludeNamedAnnotAccession(CombineWithZoomLevel(named_acc, -1));
@@ -1416,20 +1578,21 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
     else {
         sel.IncludeNamedAnnotAccession(named_acc);
     }
-    CLoadLockBlob_ids blobs(result, sih, &sel);
+    CLoadLockBlobIds blobs(result, sih, &sel);
     m_Dispatcher->LoadSeq_idBlob_ids(result, sih, &sel);
     _ASSERT(blobs.IsLoaded());
 
-    if ((blobs->GetState() & CBioseq_Handle::fState_no_data) != 0) {
-        if ( blobs->GetState() == CBioseq_Handle::fState_no_data ) {
+    CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
+    if ( (blob_ids.GetState() & CBioseq_Handle::fState_no_data) != 0 ) {
+        if ( blob_ids.GetState() == CBioseq_Handle::fState_no_data ) {
             // default state - return empty name set
             return names;
         }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
-                    "blob state error for "+sih.AsString(), blobs->GetState());
+                    "blob state error for "+sih.AsString(),
+                    blob_ids.GetState());
     }
 
-    CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
     ITERATE ( CFixedBlob_ids, it, blob_ids ) {
         const CBlob_Info& info = *it;
         if ( !info.IsSetAnnotInfo() ) {
@@ -1448,7 +1611,7 @@ CGBDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
 void CGBDataLoader::GetChunk(TChunk chunk)
 {
     CReader::TChunkId id = chunk->GetChunkId();
-    if ( id == CProcessor::kMasterWGS_ChunkId ) {
+    if ( id == kMasterWGS_ChunkId ) {
         CProcessor::LoadWGSMaster(this, chunk);
     }
     else {
@@ -1466,7 +1629,7 @@ void CGBDataLoader::GetChunks(const TChunkSet& chunks)
     TChunkIdMap chunk_ids;
     ITERATE(TChunkSet, it, chunks) {
         CReader::TChunkId id = (*it)->GetChunkId();
-        if ( id == CProcessor::kMasterWGS_ChunkId ) {
+        if ( id == kMasterWGS_ChunkId ) {
             CProcessor::LoadWGSMaster(this, *it);
         }
         else {
@@ -1492,8 +1655,6 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
         if ( CReadDispatcher::CannotProcess(id) ) {
             continue;
         }
-        CLoadLockSeq_ids seq_ids_lock(result, id);
-        CLoadLockBlob_ids blob_ids_lock(result, id, 0);
         ids.push_back(id);
     }
     m_Dispatcher->LoadBlobSet(result, ids);
@@ -1503,21 +1664,21 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
         if ( CReadDispatcher::CannotProcess(id) ) {
             continue;
         }
-        CLoadLockBlob_ids blob_ids_lock(result, id, 0);
-        CFixedBlob_ids blob_ids = blob_ids_lock->GetBlob_ids();
+        CLoadLockBlobIds blob_ids_lock(result, id, 0);
+        CFixedBlob_ids blob_ids = blob_ids_lock.GetBlob_ids();
         ITERATE ( CFixedBlob_ids, it, blob_ids ) {
             const CBlob_Info& info = *it;
             const CBlob_id& blob_id = *info.GetBlob_id();
             if ( info.Matches(mask, 0) ) {
                 CLoadLockBlob blob(result, blob_id);
-                _ASSERT(blob.IsLoaded());
+                _ASSERT(blob.IsLoadedBlob());
                 /*
                 if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
                     // Ignore bad blobs
                     continue;
                 }
                 */
-                tse_set->second.insert(result.GetTSE_LoadLock(blob_id));
+                tse_set->second.insert(blob.GetTSE_LoadLock());
             }
         }
     }
@@ -1571,38 +1732,12 @@ void CGBDataLoader::DropTSE(CRef<CTSE_Info> /* tse_info */)
 }
 
 
-CRef<CLoadInfoSeq_ids>
-CGBDataLoader::GetLoadInfoSeq_ids(const string& key)
-{
-    return m_LoadMapSeq_ids.Get(key);
-}
-
-
-CRef<CLoadInfoSeq_ids>
-CGBDataLoader::GetLoadInfoSeq_ids(const CSeq_id_Handle& key)
-{
-    return m_LoadMapSeq_ids2.Get(key);
-}
-
-
-CRef<CLoadInfoBlob_ids>
-CGBDataLoader::GetLoadInfoBlob_ids(const TLoadKeyBlob_ids& key)
-{
-    return m_LoadMapBlob_ids.Get(key);
-}
-
-
-CRef<CLoadInfoBlobState>
-CGBDataLoader::GetLoadInfoBlobState(const CBlob_id& key)
-{
-    return m_LoadMapBlobStates.Get(key);
-}
-
-
 CGBReaderRequestResult::
 CGBReaderRequestResult(CGBDataLoader* loader,
                        const CSeq_id_Handle& requested_id)
-    : CReaderRequestResult(requested_id),
+    : CReaderRequestResult(requested_id,
+                           loader->GetDispatcher(),
+                           loader->GetInfoManager()),
       m_Loader(loader)
 {
 }
@@ -1616,34 +1751,6 @@ CGBReaderRequestResult::~CGBReaderRequestResult(void)
 CGBDataLoader* CGBReaderRequestResult::GetLoaderPtr(void)
 {
     return m_Loader;
-}
-
-
-CRef<CLoadInfoSeq_ids>
-CGBReaderRequestResult::GetInfoSeq_ids(const string& key)
-{
-    return GetLoader().GetLoadInfoSeq_ids(key);
-}
-
-
-CRef<CLoadInfoSeq_ids>
-CGBReaderRequestResult::GetInfoSeq_ids(const CSeq_id_Handle& key)
-{
-    return GetLoader().GetLoadInfoSeq_ids(key);
-}
-
-
-CRef<CLoadInfoBlob_ids>
-CGBReaderRequestResult::GetInfoBlob_ids(const TKeyBlob_ids& key)
-{
-    return GetLoader().GetLoadInfoBlob_ids(key);
-}
-
-
-CRef<CLoadInfoBlobState>
-CGBReaderRequestResult::GetInfoBlobState(const TKeyBlobState& key)
-{
-    return GetLoader().GetLoadInfoBlobState(key);
 }
 
 
@@ -1681,6 +1788,13 @@ CGBReaderRequestResult::GetIdExpirationTimeout(void) const
 }
 
 
+bool
+CGBReaderRequestResult::GetAddWGSMasterDescr(void) const
+{
+    return m_Loader->GetAddWGSMasterDescr();
+}
+
+
 /*
 bool CGBDataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
 {
@@ -1696,12 +1810,6 @@ string CGBDataLoader::BlobIdToString(const TBlobId& id) const
     return bid.ToString();
 }
 */
-
-CReadDispatcher& CGBDataLoader::GetDispatcher(void)
-{
-    return *m_Dispatcher;
-}
-
 
 void CGBReaderCacheManager::RegisterCache(ICache& cache,
                                           ECacheType cache_type)

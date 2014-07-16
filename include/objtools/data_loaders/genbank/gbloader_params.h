@@ -63,5 +63,7 @@
 #define NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT "ID_EXPIRATION_TIMEOUT"
 /* Load external annotations for other loaders */
 #define NCBI_GBLOADER_PARAM_ALWAYS_LOAD_EXTERNAL "ALWAYS_LOAD_EXTERNAL"
+/* Add WGS master descriptors to all WGS sequences */
+#define NCBI_GBLOADER_PARAM_ADD_WGS_MASTER "ADD_WGS_MASTER"
 
 #endif

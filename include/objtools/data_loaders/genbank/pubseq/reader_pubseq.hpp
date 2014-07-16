@@ -30,7 +30,7 @@
 *
 */
 
-#include <objtools/data_loaders/genbank/reader_id1_base.hpp>
+#include <objtools/data_loaders/genbank/impl/reader_id1_base.hpp>
 
 BEGIN_NCBI_SCOPE
 

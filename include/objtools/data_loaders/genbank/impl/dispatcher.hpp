@@ -35,7 +35,8 @@
 #include <corelib/plugin_manager.hpp>
 #include <objtools/data_loaders/genbank/reader.hpp>
 #include <objtools/data_loaders/genbank/writer.hpp>
-#include <objtools/data_loaders/genbank/processor.hpp>
+#include <objtools/data_loaders/genbank/impl/processor.hpp>
+#include <objtools/data_loaders/genbank/impl/request_result.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -50,7 +51,6 @@ class CTSE_Chunk_Info;
 class CSeq_annot_SNP_Info;
 
 class CReaderRequestResult;
-class CLoadLockBlob_ids;
 class CLoadLockBlob;
 class CReadDispatcherCommand;
 struct STimeStatistics;
@@ -123,7 +123,7 @@ public:
                    TContentsMask mask,
                    const SAnnotSelector* sel);
     void LoadBlobs(CReaderRequestResult& result,
-                   CLoadLockBlob_ids blobs,
+                   const CLoadLockBlobIds& blobs,
                    TContentsMask mask,
                    const SAnnotSelector* sel);
     void LoadBlob(CReaderRequestResult& result,
@@ -137,21 +137,6 @@ public:
                     const TChunkIds& chunk_ids);
     void LoadBlobSet(CReaderRequestResult& result,
                      const TIds& seq_ids);
-
-    void SetAndSaveBlobState(CReaderRequestResult& result,
-                             const TBlobId& blob_id,
-                             TBlobState state) const;
-    void SetAndSaveBlobState(CReaderRequestResult& result,
-                             const TBlobId& blob_id,
-                             CLoadLockBlobState& lock,
-                             TBlobState state) const;
-    void SetAndSaveBlobVersion(CReaderRequestResult& result,
-                               const TBlobId& blob_id,
-                               TBlobVersion version) const;
-    void SetAndSaveBlobVersion(CReaderRequestResult& result,
-                               const TBlobId& blob_id,
-                               CLoadLockBlobState& lock,
-                               TBlobVersion version) const;
 
     void CheckReaders(void) const;
     void Process(CReadDispatcherCommand& command,

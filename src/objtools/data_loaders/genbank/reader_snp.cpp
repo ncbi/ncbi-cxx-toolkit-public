@@ -31,7 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
-#include <objtools/data_loaders/genbank/processor.hpp> //for hooks
+#include <objtools/data_loaders/genbank/impl/processor.hpp> //for hooks
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
