@@ -69,6 +69,8 @@ int ReadFastaQueries(const string& filename,
     }
 
     CFastaReader fasta_reader(line_reader, flags);
+    fasta_reader.IgnoreProblem(
+                      ILineError::eProblem_ModifierFoundButNoneExpected);
 
     if (id_generator) {
         fasta_reader.SetIDGenerator(*id_generator);
@@ -116,6 +118,8 @@ int ReadMsa(const string& filename, CRef<CSeq_align>& align,
     }
 
     CFastaReader fasta_reader(line_reader, flags);
+    fasta_reader.IgnoreProblem(
+                      ILineError::eProblem_ModifierFoundButNoneExpected);
 
     if (id_generator) {
         fasta_reader.SetIDGenerator(*id_generator);
