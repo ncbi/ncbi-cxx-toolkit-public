@@ -812,7 +812,12 @@ void CBedReader::xSetFeatureBedData(
 //  ----------------------------------------------------------------------------
 {
     CSeqFeatData& data = feature->SetData();
-    data.SetRegion() = fields[3];
+	if (fields.size() >= 4  &&  fields[3] != ".") {
+		data.SetRegion() = fields[3];
+	}
+	else {
+		data.SetRegion() = fields[0];
+	}
     
     CRef<CUser_object> pDisplayData(new CUser_object());
     if (fields.size() < 5  ||  fields[4] == ".") {
