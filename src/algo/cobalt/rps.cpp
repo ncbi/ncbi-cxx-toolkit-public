@@ -426,6 +426,8 @@ CMultiAligner::x_FindRPSHits(TSeqLocVector& queries,
     opts->SetEvalueThreshold(max(m_Options->GetRpsEvalue(), 10.0));
     opts->SetFilterString("F");
     opts->SetHitlistSize(m_Options->GetDomainHitlistSize());
+    (dynamic_cast<CBlastRPSOptionsHandle*>(opts.GetNonNullPointer()))
+        ->SetCompositionBasedStats(false);
 
     // run RPS blast
 
