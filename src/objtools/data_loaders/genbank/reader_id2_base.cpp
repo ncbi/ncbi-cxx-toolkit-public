@@ -1223,7 +1223,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     // prepare serial nums and result state
     size_t request_count = packet.Get().size();
     int start_serial_num =
-        int(m_RequestSerialNumber.Add(request_count) - request_count);
+        int(m_RequestSerialNumber.Add(int(request_count)) - request_count);
     {{
         int cur_serial_num = start_serial_num;
         NON_CONST_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
