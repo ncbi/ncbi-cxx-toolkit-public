@@ -14,6 +14,10 @@ else
     echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
     methods="ID1 ID2"
 fi
+if ! test -f "$status_dir/DLL_BUILD.enabled"; then
+    NCBI_LOAD_PLUGINS_FROM_DLLS=1
+    export NCBI_LOAD_PLUGINS_FROM_DLLS
+fi
 
 # netcache port on localhost
 case "$NCBI_CONFIG_OVERRIDES" in
@@ -96,7 +100,6 @@ for method in $methods; do
             esac
         fi
     done
-    unset NCBI_LOAD_PLUGINS_FROM_DLLS
 done
 
 exit $exitcode
