@@ -465,7 +465,7 @@ public:
                      const CConstObjectInfo& object)
         {
             const CSeq_annot* ptr = CType<CSeq_annot>::Get(object);
-            m_Index.insert(TIndex::value_type(ConstRef(ptr), m_Index.size()));
+            m_Index.insert(TIndex::value_type(ConstRef(ptr), CSeq_annot_SNP_Info_Reader::TAnnotIndex(m_Index.size())));
             DefaultWrite(stream, object);
         }
             
