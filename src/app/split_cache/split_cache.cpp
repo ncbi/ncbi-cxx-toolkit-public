@@ -78,16 +78,13 @@
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/request_result.hpp>
-#include <objtools/data_loaders/genbank/cache/reader_cache.hpp>
 #include <objtools/data_loaders/genbank/cache/writer_cache.hpp>
-#include <objtools/data_loaders/genbank/processors.hpp>
-#include <objtools/data_loaders/genbank/dispatcher.hpp>
+#include <objtools/data_loaders/genbank/impl/standalone_result.hpp>
+#include <objtools/data_loaders/genbank/impl/processors.hpp>
 #include <objtools/error_codes.hpp>
 #include <objmgr/split/split_exceptions.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
-#include <objmgr/impl/synonyms.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
@@ -816,6 +813,32 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
 }
 
 
+static int kSplitVersion = 1;
+
+
+static void x_InitBlob(CReaderRequestResult& result,
+                       const CBlob_id& blob_id,
+                       CDataLoader::TBlobVersion version)
+{
+    result.SetLevel(1);
+    result.SetLoadedBlobVersion(blob_id, version);
+    CLoadLockSetter(result, blob_id)
+        .GetSplitInfo().SetSplitVersion(kSplitVersion);
+}
+
+
+static string x_GetSubkey0(void)
+{
+    return SCacheInfo::GetBlobSubkey(kSplitVersion, 0);
+}
+
+
+static string x_GetSubkey1(void)
+{
+    return SCacheInfo::GetBlobSubkey(kSplitVersion, -1);
+}
+
+
 void CSplitCacheApp::ProcessBlob(const CSeq_id_Handle& idh,
                                  const CBioseq_Handle& bh,
                                  const CBlob_id& blob_id,
@@ -829,27 +852,18 @@ void CSplitCacheApp::ProcessBlob(const CSeq_id_Handle& idh,
     string key = SCacheInfo::GetBlobKey(blob_id);
     if ( m_Cache.get() ) {
         CStandaloneRequestResult result(idh);
-        result.SetLevel(1);
-        CLoadLockBlob blob(result, blob_id);
-        blob.SetBlobVersion(version);
-        blob->GetSplitInfo().SetSplitVersion(1);
+        x_InitBlob(result, blob_id, version);
         if ( m_Resplit ) {
-            if ( m_Cache->GetSize(key, version,
-                                  SCacheInfo::GetBlobSubkey(blob, 0)) ||
-                 m_Cache->GetSize(key, version,
-                                  SCacheInfo::GetBlobSubkey(blob, -1) )) {
+            if ( m_Cache->GetSize(key, version, x_GetSubkey0()) ||
+                 m_Cache->GetSize(key, version, x_GetSubkey1()) ) {
                 WAIT_LINE << "Removing old cache data...";
-                m_Cache->Remove(key, version,
-                                SCacheInfo::GetBlobSubkey(blob, 0));
-                m_Cache->Remove(key, version,
-                                SCacheInfo::GetBlobSubkey(blob, -1));
+                m_Cache->Remove(key, version, x_GetSubkey0());
+                m_Cache->Remove(key, version, x_GetSubkey1());
             }
         }
         else {
-            if ( m_Cache->GetSize(key, version,
-                                  SCacheInfo::GetBlobSubkey(blob, 0)) &&
-                 m_Cache->GetSize(key, version,
-                                  SCacheInfo::GetBlobSubkey(blob, -1)) ) {
+            if ( m_Cache->GetSize(key, version, x_GetSubkey0()) &&
+                 m_Cache->GetSize(key, version, x_GetSubkey1()) ) {
                 LINE("Already split: skipping");
                 return;
             }
@@ -953,9 +967,9 @@ void CSplitCacheApp::ProcessBlob(const CSeq_id_Handle& idh,
         CReadDispatcher& disp = m_Loader->GetDispatcher();
         CStandaloneRequestResult result(idh);
         result.SetLevel(1);
+        result.SetLoadedBlobVersion(blob_id, version);
         CLoadLockBlob blob_lock(result, blob_id);
-        blob_lock.SetBlobVersion(version);
-        blob_lock->GetSplitInfo().SetSplitVersion(1);
+        CLoadLockSetter(blob_lock).GetSplitInfo().SetSplitVersion(1);
         {{
             const CProcessor_ID2AndSkel& proc_skel =
                 dynamic_cast<const CProcessor_ID2AndSkel&>(
@@ -970,7 +984,7 @@ void CSplitCacheApp::ProcessBlob(const CSeq_id_Handle& idh,
             proc_skel.SaveDataAndSkel(result,
                                       blob_id,
                                       0,
-                                      CProcessor::kMain_ChunkId,
+                                      kMain_ChunkId,
                                       disp.GetWriter(result,
                                                      CWriter::eBlobWriter),
                                       1,
@@ -1018,27 +1032,18 @@ void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry, const string& key)
 
     if ( m_Cache.get() ) {
         CStandaloneRequestResult result(idh);
-        result.SetLevel(1);
-        CLoadLockBlob blob(result, blob_id);
-        blob.SetBlobVersion(version);
-        blob->GetSplitInfo().SetSplitVersion(1);
+        x_InitBlob(result, blob_id, version);
         if ( m_Resplit ) {
-            if ( m_Cache->GetSize(key, version,
-                                  SCacheInfo::GetBlobSubkey(blob, 0)) ||
-                 m_Cache->GetSize(key, version,
-                                  SCacheInfo::GetBlobSubkey(blob, -1) )) {
+            if ( m_Cache->GetSize(key, version, x_GetSubkey0()) ||
+                 m_Cache->GetSize(key, version, x_GetSubkey1()) ) {
                 WAIT_LINE << "Removing old cache data...";
-                m_Cache->Remove(key, version,
-                                SCacheInfo::GetBlobSubkey(blob, 0));
-                m_Cache->Remove(key, version,
-                                SCacheInfo::GetBlobSubkey(blob, -1));
+                m_Cache->Remove(key, version, x_GetSubkey0());
+                m_Cache->Remove(key, version, x_GetSubkey1());
             }
         }
         else {
-            if ( m_Cache->GetSize(key, version,
-                                  SCacheInfo::GetBlobSubkey(blob, 0)) &&
-                 m_Cache->GetSize(key, version,
-                                  SCacheInfo::GetBlobSubkey(blob, -1)) ) {
+            if ( m_Cache->GetSize(key, version, x_GetSubkey0()) &&
+                 m_Cache->GetSize(key, version, x_GetSubkey1()) ) {
                 LINE("Already split: skipping");
                 return;
             }
@@ -1112,10 +1117,7 @@ void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry, const string& key)
 
         CReadDispatcher& disp = m_Loader->GetDispatcher();
         CStandaloneRequestResult result(idh);
-        result.SetLevel(1);
-        CLoadLockBlob blob_lock(result, blob_id);
-        blob_lock.SetBlobVersion(version);
-        blob_lock->GetSplitInfo().SetSplitVersion(1);
+        x_InitBlob(result, blob_id, version);
         {{
             const CProcessor_ID2AndSkel& proc_skel =
                 dynamic_cast<const CProcessor_ID2AndSkel&>(
@@ -1130,7 +1132,7 @@ void CSplitCacheApp::ProcessEntry(const CSeq_entry& entry, const string& key)
             proc_skel.SaveDataAndSkel(result,
                                       blob_id,
                                       0,
-                                      CProcessor::kMain_ChunkId,
+                                      kMain_ChunkId,
                                       disp.GetWriter(result,
                                                      CWriter::eBlobWriter),
                                       1,
