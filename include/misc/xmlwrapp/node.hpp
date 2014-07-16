@@ -135,7 +135,7 @@ public:
         type_throw_if_exists    ///< throw exception if ns with the same prefix exists
     };
 
-    /// emun to specify how to remove namespace definitions
+    /// enum to specify how to remove namespace definitions
     enum ns_definition_erase_type {
         type_ns_def_erase_if_not_used,  ///< Remove the definition only if it
                                         ///< is not in use.
@@ -150,6 +150,13 @@ public:
                                         ///< no namespace (otherwise).
     };
 
+    /// enum to specify what namespaces to include into the list of the
+    /// node effective namespaces
+    enum effective_ns_list_type {
+        type_ns_all,                ///< include all namespaces
+        type_ns_only_default,       ///< include only default namespace
+        type_ns_only_non_default    ///< include only non-default namespaces
+    };
 
     /**
      * Helper struct for creating a xml::node of type_cdata.
@@ -1275,6 +1282,15 @@ public:
 
     //####################################################################
     /**
+     * Provides a list of effective namespaces for the node.
+     *
+     * @param which Specifies what namespaces should be included into the list.
+    **/
+    ns_list_type get_effective_namespaces (effective_ns_list_type
+                                                     which=type_ns_all) const;
+
+    //####################################################################
+    /**
      * Write a node and all of its children to the given stream.
      *
      * @param stream The stream to write the node as XML.
@@ -1345,7 +1361,6 @@ private:
     // XML XPath support
     void* create_xpath_context (const xml::xpath_expression& expr) const;
     void* evaluate_xpath_expression (const xml::xpath_expression& expr, void* context) const;
-    ns_list_type get_effective_namespaces (bool excludeDefault = false) const;
 
     // XSLT extensions support
     friend void ::xslt_ext_func_cb(void *, int);

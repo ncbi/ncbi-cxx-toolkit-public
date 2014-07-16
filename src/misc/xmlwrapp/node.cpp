@@ -816,14 +816,17 @@ const xml::node_set xml::node::run_xpath_query (const xml::xpath_expression& exp
 }
 //####################################################################
 xml::node_set xml::node::run_xpath_query (const char *  expr) {
-    return run_xpath_query(xpath_expression(expr, get_effective_namespaces(true)));
+    return run_xpath_query(xpath_expression(expr,
+                get_effective_namespaces(type_ns_only_non_default)));
 }
 //####################################################################
 const xml::node_set xml::node::run_xpath_query (const char *  expr) const {
-    return run_xpath_query(xpath_expression(expr, get_effective_namespaces(true)));
+    return run_xpath_query(xpath_expression(expr,
+                get_effective_namespaces(type_ns_only_non_default)));
 }
 //####################################################################
-ns_list_type xml::node::get_effective_namespaces (bool excludeDefault) const {
+ns_list_type
+xml::node::get_effective_namespaces (effective_ns_list_type which) const {
     if (!pimpl_->xmlnode_)
         throw xml::exception("invalid node to get effective namespaces");
 
@@ -836,14 +839,22 @@ ns_list_type xml::node::get_effective_namespaces (bool excludeDefault) const {
         return nspaces;
 
     while (*current != NULL) {
-        if (excludeDefault) {
-            if ((*current)->prefix != NULL)
+        switch (which) {
+            case type_ns_only_default:
+                if ((*current)->prefix == NULL)
+                    nspaces.push_back(ns(*current));
+                break;
+            case type_ns_only_non_default:
+                if ((*current)->prefix != NULL)
+                    nspaces.push_back(ns(*current));
+                break;
+            case type_ns_all:
                 nspaces.push_back(ns(*current));
+                break;
         }
-        else
-            nspaces.push_back(ns(*current));
         ++current;
     }
+
     if (nsList)
         xmlFree(nsList);
     return nspaces;
