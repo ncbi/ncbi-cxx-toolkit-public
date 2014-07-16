@@ -507,12 +507,12 @@ public:
     void SetSql(CTempString sql);
     /// Execute sql statement.
     /// All result sets left from previous statement or stored procedure
-    /// execution are purged.  The query reverts to MultiSet mode, with
+    /// execution are purged.  The query reverts to SingleSet mode, with
     /// no row count requirements.
     void Execute(void);
     /// Execute stored procedure with given name.
     /// All result sets left from previous statement or stored procedure
-    /// execution are purged.  The query reverts to MultiSet mode, with
+    /// execution are purged.  The query reverts to SingleSet mode, with
     /// no row count requirements.
     void ExecuteSP(CTempString sp);
 

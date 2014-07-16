@@ -1943,7 +1943,7 @@ CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
       m_Stmt(NULL),
       m_CallStmt(NULL),
       m_CurRS(NULL),
-      m_IgnoreBounds(false),
+      m_IgnoreBounds(true),
       m_HasExplicitMode(false),
       m_RSBeginned(false),
       m_RSFinished(true),
@@ -2384,12 +2384,10 @@ CQueryImpl::HasMoreResultSets(void)
                 break;
             case eDB_RowResult:
                 if (++m_CurRSNo == 2  &&  !m_HasExplicitMode ) {
-                    ERR_POST_X(16, Warning
+                    ERR_POST_X(16, Info
                                << "Multiple SDBAPI result sets found, but"
                                " neither SingleSet nor MultiSet explicitly"
-                               " requested.  Defaulting to MultiSet per"
-                               " historic behavior, but future versions may"
-                               " default to SingleSet.  "
+                               " requested.  Now defaulting to SingleSet.  "
                                << x_GetContext());
                 }
                 if ( !m_IgnoreBounds ) {
