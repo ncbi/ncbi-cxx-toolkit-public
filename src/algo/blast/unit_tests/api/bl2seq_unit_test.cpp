@@ -68,12 +68,6 @@
 
 #include "test_objmgr.hpp"
 
-#ifdef NCBI_OS_DARWIN
-#include <corelib/plugin_manager_store.hpp>
-#include <objmgr/data_loader_factory.hpp>
-#include <objtools/data_loaders/genbank/processors.hpp>
-#endif
-
 #include <util/random_gen.hpp>
 
 #include <corelib/test_boost.hpp>
