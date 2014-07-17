@@ -841,9 +841,8 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
       /* Set the database length for new FSC */
       if (sbp->gbp) {
           Int8 dbl = total_length;
-          /* if a database length is overriden and we are
-             not in bl2seq mode */
-          if (dbl && eff_len_options->db_length) {
+          /* Override the database length or set one (e.g., blast2seq). */
+          if (eff_len_options->db_length) {
               dbl = eff_len_options->db_length;
           }
           sbp->gbp->db_length = 
