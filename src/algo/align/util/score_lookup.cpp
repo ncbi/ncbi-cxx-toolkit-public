@@ -1251,6 +1251,54 @@ private:
     CRangeCollection<TSeqPos> m_CoveredRanges;
 };
 
+//////////////////////////////////////////////////////////////////////////////
+
+class CScore_OrdinalPos : public CScoreLookup::IScore
+{
+public:
+    CScore_OrdinalPos(int row)
+        : m_Row(row)
+    {
+    }
+
+    virtual void PrintHelp(CNcbiOstream& ostr) const
+    {
+        ostr <<
+            "restrict to the first N subjects seen for each query";
+    }
+
+    virtual EComplexity GetComplexity() const { return eEasy; };
+
+    virtual bool IsInteger() const { return true; };
+
+    virtual double Get(const CSeq_align& align, CScope* ) const
+    {
+        int index_row = m_Row;
+        int alt_row = abs(index_row - 1);
+        CSeq_id_Handle id1 = CSeq_id_Handle::GetHandle(align.GetSeq_id(index_row));
+        CSeq_id_Handle id2 = CSeq_id_Handle::GetHandle(align.GetSeq_id(alt_row));
+        TOrdinalPos& ranks = m_Ids[id1];
+        TOrdinalPos::iterator it = ranks.find(id2);
+        if (it == ranks.end()) {
+            it = ranks.insert(TOrdinalPos::value_type(id2, ranks.size())).first;
+
+            /**
+            LOG_POST(Error << "  q=" << qid
+                     << "  s=" << id2
+                     << "  ord=" << it->second);
+                     **/
+        }
+        return it->second;
+    }
+
+private:
+    typedef map<CSeq_id_Handle, size_t> TOrdinalPos;
+    typedef map<CSeq_id_Handle, TOrdinalPos> TIds;
+
+    int m_Row;
+    mutable TIds m_Ids;
+};
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -1792,6 +1840,16 @@ void CScoreLookup::x_Init()
         (TScoreDictionary::value_type
          ("subject_overlap_nogaps",
           CIRef<IScore>(new CScore_Overlap(1, false))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("subject_ordinal_pos",
+          CIRef<IScore>(new CScore_OrdinalPos(0))));
+
+    m_Scores.insert
+        (TScoreDictionary::value_type
+         ("query_ordinal_pos",
+          CIRef<IScore>(new CScore_OrdinalPos(1))));
 
     m_Scores.insert
         (TScoreDictionary::value_type

@@ -1818,7 +1818,7 @@ void CTabularFormatter::SetFormat(const string& format)
     CRegexp text_re2("text\\(([^)]*)\\)");
 
     vector<string> toks;
-    s_Split(format, " \t\n\r", toks);
+    s_Split(format, " \t\n\r,", toks);
 
     ITERATE (vector<string>, it, toks) {
         string s = *it;
