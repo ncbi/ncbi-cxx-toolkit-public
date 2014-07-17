@@ -702,7 +702,11 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
         return x_SendUpdateWrite(*dbdesc, stream, size);
     } else if (descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
         if (dbdesc != NULL) {
-            p_desc = x_GetNativeITDescriptor(*dbdesc);
+            try {
+                p_desc = x_GetNativeITDescriptor(*dbdesc);
+            } catch (CDB_Exception&) { // apparently not a legacy column type
+                return x_SendUpdateWrite(*dbdesc, stream, size);
+            }
         }
         if (p_desc == NULL) {
             return false;
@@ -828,7 +832,7 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_ITDescriptor& desc,
                        "Invalid blob descriptor (originally tied to a cursor"
                        " that has been advanced or destroyed",
                        110040);
-#ifdef FTDS_IN_USE // Only ever neeed with MS SQL Server
+#ifdef FTDS_IN_USE // Only ever needed with MS SQL Server
     // Always start with an empty column for simplicity.
     auto_ptr<CDB_LangCmd> lcmd(LangCmd("UPDATE " + desc.TableName() + " SET "
                                        + desc.ColumnName() + " = 0x WHERE "
@@ -1063,23 +1067,65 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
 , impl::CSendDataCmd(conn, nof_bytes)
 , m_DescrType(CDB_ITDescriptor::eUnknown)
 , m_DumpResults(dump_results)
+, m_UseUpdateWrite(false)
 {
     CHECK_DRIVER_ERROR(!nof_bytes, "Wrong (zero) data size." + GetDbgInfo(), 110092);
 
     I_ITDescriptor* p_desc = NULL;
 
     // check what type of descriptor we've got
-    if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+    if (descr_in.DescriptorType() == CTL_ITDESCRIPTOR_TYPE_CURSOR) {
+        m_UseUpdateWrite = true;
+    } else if (descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
         // this is not a native descriptor
-        p_desc = GetConnection().x_GetNativeITDescriptor(
-            dynamic_cast<CDB_ITDescriptor&> (descr_in)
-            );
-        if(p_desc == 0) {
-            DATABASE_DRIVER_ERROR( "ct_command failedCannot retrieve I_ITDescriptor." + GetDbgInfo(), 110093 );
+        try {
+            p_desc = GetConnection().x_GetNativeITDescriptor
+                (dynamic_cast<CDB_ITDescriptor&>(descr_in));
+            if (p_desc == NULL) {
+                DATABASE_DRIVER_ERROR("Cannot retrieve I_ITDescriptor.",
+                                      110093);
+            } else if (static_cast<CTL_ITDescriptor*>(p_desc)->m_Desc.textptrlen
+                       <= 0) {
+                m_UseUpdateWrite = true;
+            }
+        } catch (CDB_Exception&) {
+            m_UseUpdateWrite = true;
         }
     }
 
-    auto_ptr<I_ITDescriptor> d_guard(p_desc);
+    if (m_UseUpdateWrite) {
+#ifdef FTDS_IN_USE
+        CDB_ITDescriptor& desc = dynamic_cast<CDB_ITDescriptor&>(descr_in);
+        m_DescrType = desc.GetColumnType();
+
+        CHECK_DRIVER_ERROR(desc.DescriptorType()
+                           == CTL_ITDESCRIPTOR_TYPE_CURSOR
+                           &&  !(static_cast<CTL_CursorITDescriptor&>(desc)
+                                 .IsValid()),
+                           "Invalid blob descriptor (originally tied to a"
+                           " cursor that has been advanced or destroyed",
+                           110094);
+
+        // Always start with an empty column for simplicity.
+        auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd
+                                   ("UPDATE " + desc.TableName() + " SET "
+                                    + desc.ColumnName() + " = 0x WHERE "
+                                    + desc.SearchConditions()));
+        CHECK_DRIVER_ERROR( !lcmd->Send(), "Failed to send command", 110095);
+        while (lcmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> result(lcmd->Result());
+        }
+        CHECK_DRIVER_ERROR(lcmd->HasFailed(),
+                           "Failed to prepare " + desc.TableName()
+                           + " to receive blob",
+                           110096);
+        m_SQL = "UPDATE " + desc.TableName() + " SET " + desc.ColumnName()
+            + " .WRITE(@chunk, NULL, NULL) WHERE " + desc.SearchConditions();
+        return;
+#else
+        DATABASE_DRIVER_ERROR("Cannot retrieve I_ITDescriptor.", 110093);
+#endif
+    }
 
     if (Check(ct_command(x_GetSybaseCmd(),
                          CS_SEND_DATA_CMD,
@@ -1091,6 +1137,8 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
         != CS_SUCCEED) {
         DATABASE_DRIVER_ERROR( "ct_command failed." + GetDbgInfo(), 110093 );
     }
+
+    auto_ptr<I_ITDescriptor> d_guard(p_desc);
 
     CTL_ITDescriptor& desc = p_desc ? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
         dynamic_cast<CTL_ITDescriptor&> (descr_in);
@@ -1132,7 +1180,57 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     if (nof_bytes > GetBytes2Go())
         nof_bytes = GetBytes2Go();
 
-    if (Check(ct_send_data(x_GetSybaseCmd(), (void*) chunk_ptr, (CS_INT) nof_bytes)) != CS_SUCCEED){
+    if (m_UseUpdateWrite) {
+#ifdef FTDS_IN_USE
+        CHECK_DRIVER_ERROR(Check(ct_command(x_GetSybaseCmd(), CS_LANG_CMD,
+                                            &m_SQL[0], m_SQL.size(), CS_END))
+                           != CS_SUCCEED,
+                           "ct_command failed.", 110097);
+
+        // MS recommends making the chunk size a multiple of 8040 bytes
+        // for best performance, but that would require using a FreeTDS
+        // version new enough to support TDS 7.2 or higher.
+        char buff[4000];
+        char* p  = buff;
+        size_t n = sizeof(buff);
+        if ( !m_UTF8Fragment.empty() ) {
+            memcpy(p, m_UTF8Fragment.data(), m_UTF8Fragment.size());
+            p += m_UTF8Fragment.size();
+            n -= m_UTF8Fragment.size();
+            m_UTF8Fragment.clear();
+        }
+        if (nof_bytes > n) {
+            nof_bytes = n;
+        }
+        memcpy(p, chunk_ptr, nof_bytes);
+        n = nof_bytes + p - buff;
+
+        // Avoid accidentally splitting up multi-byte UTF-8 sequences,
+        // while taking care not to interfere with binary data or
+        // non-UTF-8 text.
+        if (m_DescrType != CDB_ITDescriptor::eBinary) {
+            SIZE_TYPE l = impl::GetValidUTF8Len(CTempString(buff, n));
+            if (l < n) {
+                m_UTF8Fragment.assign(buff + l, n - l);
+                n = l;
+            }
+        }
+        auto_ptr<CDB_Object> chunk;
+        if (m_DescrType == CDB_ITDescriptor::eBinary) {
+            chunk.reset(new CDB_VarBinary(buff, n));
+        } else {
+            chunk.reset(new CDB_VarChar(buff, n));
+        }
+        CS_DATAFMT fmt;
+        memset(&fmt, 0, sizeof(fmt));
+        fmt.status = CS_INPUTVALUE;
+        AssignCmdParam(*chunk, "@chunk", fmt, false /* declare_only */);
+#else
+        _TROUBLE;
+#endif
+    } else if (Check(ct_send_data(x_GetSybaseCmd(), (void*) chunk_ptr,
+                                  (CS_INT) nof_bytes))
+               != CS_SUCCEED) {
         DATABASE_DRIVER_ERROR( "ct_send_data failed." + GetDbgInfo(), 190001 );
     }
 
@@ -1144,7 +1242,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
     SetBytes2Go(bytes2go);
 
-    if ( bytes2go )
+    if (bytes2go > 0  &&  !m_UseUpdateWrite)
         return nof_bytes;
 
     CTL_LRCmd::SetWasSent();
@@ -1154,7 +1252,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         DATABASE_DRIVER_ERROR( "ct_send failed." + GetDbgInfo(), 190004 );
     }
 
-    if (m_DumpResults)
+    if (m_DumpResults  ||  bytes2go > 0)
         CTL_LRCmd::DumpResults();
     return nof_bytes;
 }

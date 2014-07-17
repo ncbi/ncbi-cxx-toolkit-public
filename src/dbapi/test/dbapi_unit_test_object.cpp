@@ -2534,7 +2534,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "   id NUMERIC IDENTITY NOT NULL, \n"
-                "   vc_max VARCHAR(MAX) NULL"
+                "   vc_max NVARCHAR(MAX) NULL"
                 ") \n";
 
             auto_stmt->ExecuteUpdate( sql );
@@ -2618,6 +2618,36 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
             }
         }
 
+        // Streaming ...
+        {
+            string long_msg = "New text.";
+            for (int i = 0;  i < 4000;  ++i) {
+                // Embedding U+2019 to test Unicode handling.
+                long_msg += "  Let\xe2\x80\x99s make it long!";
+            }
+            // Modify the table ...
+            {
+                CDB_ITDescriptor desc(table_name, "vc_max", "1 = 1",
+                                      CDB_ITDescriptor::eText);
+                auto_stmt->GetBlobOStream(desc, long_msg.size()) << long_msg
+                                                                 << flush;
+            }
+            // Actual check ...
+            {
+                auto_stmt->SendSql("SELECT vc_max FROM " + table_name);
+                while (auto_stmt->HasMoreResults()) {
+                    if(auto_stmt->HasRows()) {
+                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                        BOOST_CHECK(rs.get() != NULL);
+
+                        BOOST_CHECK(rs->Next());
+                        const string value = rs->GetVariant(1).GetString();
+                        BOOST_CHECK_EQUAL(value.size(), long_msg.size());
+                        // BOOST_CHECK_EQUAL(value, msg);
+                    }
+                }
+            }
+        }
     }
     catch(const CDB_Exception& ex) {
         DBAPI_BOOST_FAIL(ex);

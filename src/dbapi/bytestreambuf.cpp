@@ -147,7 +147,8 @@ CT_INT_TYPE CByteStreamBuf::overflow(CT_INT_TYPE c)
         m_AutoTrans.reset();
     }
     if( put > 0 ) {
-        setp(getPBuf(), getPBuf() + m_size );
+        memmove(pbase(), pbase() + put, pptr() - pbase() - put);
+        pbump(-int(put));
 
         if( ! CT_EQ_INT_TYPE(c, CT_EOF) )
             sputc(CT_TO_CHAR_TYPE(c));

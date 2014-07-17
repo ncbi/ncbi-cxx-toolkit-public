@@ -885,7 +885,12 @@ protected:
 
 private:
     CDB_ITDescriptor::ETDescriptorType m_DescrType;
+#ifdef FTDS_IN_USE
+    string m_SQL;
+    string m_UTF8Fragment;
+#endif
     bool m_DumpResults;
+    bool m_UseUpdateWrite;
 };
 
 

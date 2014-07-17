@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "   id NUMERIC IDENTITY NOT NULL, \n"
-                "   vc_max VARCHAR(MAX) NULL"
+                "   vc_max NVARCHAR(MAX) NULL"
                 ") \n";
 
             query.SetSql( sql );
@@ -375,6 +375,36 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
                 ITERATE(CQuery, it, query.SingleSet()) {
                     const string value = it[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), msg.size());
+                    // BOOST_CHECK_EQUAL(value, msg);
+                }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+            }
+        }
+
+        // Streaming ...
+        {
+            string long_msg = "New text.";
+            for (int i = 0;  i < 4000;  ++i) {
+                // Embedding U+2019 to test Unicode handling.
+                long_msg += "  Let\xe2\x80\x99s make it long!";
+            }
+            // Modify the table ...
+            {
+                CBlobBookmark bookmark
+                    = GetDatabase().NewBookmark(table_name, "vc_max", "1 = 1",
+                                                CBlobBookmark::eText);
+                bookmark.GetOStream(long_msg.size()) << long_msg;
+            }
+            // Actual check ...
+            {
+                sql = "SELECT vc_max FROM " + table_name + " ORDER BY id";
+
+                query.SetSql( sql );
+                query.Execute();
+                query.RequireRowCount(1);
+                ITERATE(CQuery, it, query.SingleSet()) {
+                    const string value = it[1].AsString();
+                    BOOST_CHECK_EQUAL(value.size(), long_msg.size());
                     // BOOST_CHECK_EQUAL(value, msg);
                 }
                 BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
