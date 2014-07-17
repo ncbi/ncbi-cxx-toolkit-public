@@ -220,8 +220,18 @@ CReaderBase::ProcessError(
 //  ----------------------------------------------------------------------------
 {
     err.SetLineNumber( m_uLineNumber );
-    if (!pContainer  ||  !pContainer->PutError(err)) {
+    if (!pContainer) {
         err.Throw();
+    }
+    if (!pContainer->PutError(err)) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Fatal,
+            0,
+            "Error allowance exceeded",
+            ILineError::eProblem_GeneralParsingError) );
+        pErr->Throw();
+        //err.Throw();
     }
 }
 

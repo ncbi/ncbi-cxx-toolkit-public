@@ -232,7 +232,13 @@ bool CGff2Record::AssignFromGff(
     
     TokenizeGFF(columns, strRawInput);
     if ( columns.size() < 9 ) {
-        return false;
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Bad data line: not enough columns",
+            ILineError::eProblem_FeatureBadStartAndOrStop) );
+        pErr->Throw();
     }
     //  to do: more sanity checks
 

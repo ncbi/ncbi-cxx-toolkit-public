@@ -360,7 +360,9 @@ bool CGff2Reader::x_ParseFeatureGff(
     //
     auto_ptr<CGff2Record> pRecord(x_CreateRecord());
     try {
-        pRecord->AssignFromGff(strLine);
+        if (!pRecord->AssignFromGff(strLine)) {
+			return false;
+		}
     }
     catch(CObjReaderLineException& err) {
         ProcessError(err, pEC);
