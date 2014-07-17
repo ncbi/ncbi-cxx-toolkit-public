@@ -903,7 +903,15 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         }
     }
     // Iterate source and destination ranges.
-    const TSeqPos src_bioseq_len = ( source.GetId() ? src_width * ( GetSequenceLength( *source.GetId() ) - 1 ) + (src_width - 1) : src_total_len );
+    const TSeqPos src_bioseq_len =
+        (source.GetId() ? src_width*(GetSequenceLength( *source.GetId()) - 1)
+        + (src_width - 1) : src_total_len);
+    TSeqPos last_src_start, last_src_len, last_dst_start, last_dst_len;
+    bool last_src_reverse, last_dst_reverse;
+    CSeq_id_Handle last_src_id, last_dst_id;
+    // Must be non-zero.
+    // Zero group can be used for alignment rows which failed to map.
+    m_CurrentGroup++;
     while (src_it  &&  dst_it) {
         // If sequence types were detected using lengths, set them now.
         if (src_type != eSeq_unknown) {
@@ -913,10 +921,43 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             SetSeqTypeById(dst_it.GetSeq_id_Handle(), dst_type);
         }
         // Add new mapping range. This will adjust starts and lengths.
+        if (last_src_id  &&
+            src_it.GetSeq_id_Handle() == last_src_id  &&
+            IsReverse(src_it.GetStrand()) == last_src_reverse) {
+            if ( !last_src_reverse ) {
+                if (last_src_start + last_src_len != src_start) {
+                    m_CurrentGroup++;
+                }
+            }
+            else {
+                if (src_start + src_len != last_src_start) {
+                    m_CurrentGroup++;
+                }
+            }
+        }
+        if (last_dst_id  &&
+            dst_it.GetSeq_id_Handle() == last_dst_id  &&
+            IsReverse(dst_it.GetStrand()) == last_dst_reverse) {
+            if ( !last_dst_reverse ) {
+                if (last_dst_start + last_dst_len != dst_start) {
+                    m_CurrentGroup++;
+                }
+            }
+            else {
+                if (dst_start + dst_len != last_dst_start) {
+                    m_CurrentGroup++;
+                }
+            }
+        }
+        last_src_start = src_start;
+        last_src_len = src_len;
+        last_dst_start = dst_start;
+        last_dst_len = dst_len;
         x_NextMappingRange(
             src_it.GetSeq_id(), src_start, src_len, src_it.GetStrand(),
             dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand(),
             dst_it.GetFuzzFrom(), dst_it.GetFuzzTo(), frame, dst_total_len, src_bioseq_len );
+        // Start new group on a gap in src or dst.
         // If the whole source or destination range was used, increment the
         // iterator.
         // This part may not work correctly if whole locations are
@@ -939,6 +980,12 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 src_start = src_it.GetRange().GetFrom()*src_width;
                 src_len = x_GetRangeLength(src_it)*src_width;
             }
+            if (last_src_id != src_it.GetSeq_id_Handle() ||
+                last_src_reverse != IsReverse(src_it.GetStrand())) {
+                m_CurrentGroup++;
+            }
+            last_src_id = src_it.GetSeq_id_Handle();
+            last_src_reverse = IsReverse(src_it.GetStrand());
         }
         if (dst_len == 0  &&  ++dst_it) {
             TRange rg = dst_it.GetRange();
@@ -954,6 +1001,12 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 dst_start = dst_it.GetRange().GetFrom()*dst_width;
                 dst_len = x_GetRangeLength(dst_it)*dst_width;
             }
+            if (last_dst_id != dst_it.GetSeq_id_Handle() ||
+                last_dst_reverse != IsReverse(dst_it.GetStrand())) {
+                m_CurrentGroup++;
+            }
+            last_dst_id = dst_it.GetSeq_id_Handle();
+            last_dst_reverse = IsReverse(dst_it.GetStrand());
         }
     }
     // Remember the direction of source and destination. This information

@@ -333,20 +333,47 @@ Seq-align ::= {
     exons {
       {
         product-start nucpos 100,
-        product-end nucpos 314,
+        product-end nucpos 109,
         genomic-start 10,
+        genomic-end 19,
+        parts {
+          match 10
+        }
+      },
+      {
+        product-start nucpos 200,
+        product-end nucpos 209,
+        genomic-start 30,
+        genomic-end 39,
+        parts {
+          match 10
+        }
+      },
+      {
+        product-start nucpos 210,
+        product-end nucpos 214,
+        genomic-start 50,
+        genomic-end 54,
+        parts {
+          match 2,
+          mismatch 3
+        }
+      },
+      {
+        product-start nucpos 300,
+        product-end nucpos 304,
+        genomic-start 55,
+        genomic-end 59,
+        parts {
+          mismatch 5
+        }
+      },
+      {
+        product-start nucpos 305,
+        product-end nucpos 314,
+        genomic-start 70,
         genomic-end 79,
         parts {
-          match 10,
-          genomic-ins 10,
-          product-ins 90,
-          match 10,
-          genomic-ins 10,
-          match 2,
-          mismatch 3,
-          product-ins 85,
-          mismatch 5,
-          genomic-ins 10,
           mismatch 10
         }
       }
