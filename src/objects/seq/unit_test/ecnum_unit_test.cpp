@@ -102,3 +102,29 @@ BOOST_AUTO_TEST_CASE(s_TestGetReplacement)
     BOOST_CHECK_THROW(CProt_ref::GetECNumberReplacement("9.8.7.6"),
                       CCoreException);
 }
+
+
+
+BOOST_AUTO_TEST_CASE(Test_EcNumberCleanup)
+{
+    CRef<CProt_ref> prot(new CProt_ref());
+    prot->SetEc().push_back("4.2.1.16"); // to be replaced
+    prot->SetEc().push_back("1.1.1.1"); //specific, do not change
+    prot->AutoFixEC();
+    BOOST_CHECK_EQUAL(prot->GetEc().front(), "4.3.1.19");
+    BOOST_CHECK_EQUAL(prot->GetEc().back(), "1.1.1.1");
+    prot->ResetEc();
+    prot->SetEc().push_back("1.-.-.-"); // ambiguous, to be removed
+    prot->SetEc().push_back("asdf"); // bad format, to be removed
+    prot->SetEc().push_back("9.8.7.6"); // unknown, to be removed
+    prot->RemoveBadEC();
+    BOOST_CHECK_EQUAL(prot->IsSetEc(), false);
+    prot->SetEc().push_back("4.2.1.16"); // to be replaced
+    prot->SetEc().push_back("1.1.1.1"); //specific, do not change
+    prot->SetEc().push_back("1.-.-.-"); // ambiguous, to be removed
+    prot->SetEc().push_back("asdf"); // bad format, to be removed
+    prot->SetEc().push_back("9.8.7.6"); // unknown, to be removed
+    prot->RemoveBadEC();
+    BOOST_CHECK_EQUAL(prot->GetEc().front(), "4.3.1.19");
+    BOOST_CHECK_EQUAL(prot->GetEc().back(), "1.1.1.1");
+}

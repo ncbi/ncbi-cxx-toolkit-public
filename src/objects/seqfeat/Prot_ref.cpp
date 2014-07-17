@@ -270,6 +270,45 @@ bool CProt_ref::IsValidECNumberFormat (const string&  ecno)
 }
 
 
+void CProt_ref::AutoFixEC()
+{
+    if (!IsSetEc()) {
+        return;
+    }
+    CProt_ref::TEc::iterator it = SetEc().begin();
+    while (it != SetEc().end()) {
+        if (GetECNumberStatus(*it) == eEC_replaced) {
+            string new_val = GetECNumberReplacement(*it);
+            if (!NStr::IsBlank(new_val)) {
+                *it = new_val;
+            }
+        }
+        it++;
+    }
+
+}
+
+
+void CProt_ref::RemoveBadEC()
+{
+    AutoFixEC();
+    if (!IsSetEc()) {
+        return;
+    }
+    CProt_ref::TEc::iterator it = SetEc().begin();
+    while (it != SetEc().end()) {
+        if (GetECNumberStatus(*it) != eEC_specific) {
+            it = SetEc().erase(it);
+        } else {
+            it++;
+        }
+    }
+    if (SetEc().empty()) {
+        ResetEc();
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

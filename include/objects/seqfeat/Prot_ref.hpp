@@ -91,6 +91,8 @@ public:
     static EECNumberFileStatus GetECNumReplacedStatus();
     static EECNumberFileStatus GetECNumSpecificStatus();
 
+    void AutoFixEC();
+    void RemoveBadEC();
 
 private:
     // Prohibit copy constructor and assignment operator
