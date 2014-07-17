@@ -133,5 +133,3 @@ int CGridWorkerNode::x_WNCleanUp()
 }
 
 END_NCBI_SCOPE
-
-#endif // WN_CLEANUP__HPP
