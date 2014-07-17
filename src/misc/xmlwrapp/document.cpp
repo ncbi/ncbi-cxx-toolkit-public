@@ -317,6 +317,12 @@ xml::document& xml::document::operator= (const document &other) {
     return *this;
 }
 //####################################################################
+xml::document& xml::document::assign (const document &other) {
+    document tmp(other);
+    swap(tmp);
+    return *this;
+}
+//####################################################################
 void xml::document::swap (document &other) {
     std::swap(pimpl_, other.pimpl_);
 }

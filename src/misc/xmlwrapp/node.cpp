@@ -306,6 +306,12 @@ xml::node::node (const node &other) {
     ap.release();
 } /* NCBI_FAKE_WARNING */
 //####################################################################
+xml::node& xml::node::assign (const node &other) {
+    node tmp_node(other);
+    swap(tmp_node);
+    return *this;
+}
+//####################################################################
 xml::node& xml::node::operator= (const node &other) {
     node tmp_node(other);                   /* NCBI_FAKE_WARNING */
     swap(tmp_node);

@@ -199,6 +199,18 @@ public:
 
     //####################################################################
     /**
+     * Copy another document object into this one. This document object will
+     * be an exact copy of the other document after the assignement.
+     *
+     * @param other The document to copy from.
+     * @return *this.
+     * @author Denis Vakatov
+    **/
+    //####################################################################
+    document& assign (const document &other);
+
+    //####################################################################
+    /**
      * Clean up after an XML document object.
      *
      * @author Peter Jones

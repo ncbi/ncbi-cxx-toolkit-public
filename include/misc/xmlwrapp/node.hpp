@@ -319,6 +319,18 @@ public:
 
     //####################################################################
     /**
+     * Copy another node object into this one. This node object will
+     * be an exact copy of the other node after the assignement.
+     *
+     * @param other The node to copy from.
+     * @return *this
+     * @author Denis Vakatov
+    **/
+    //####################################################################
+    node& assign (const node &other);
+
+    //####################################################################
+    /**
      * Class destructor
      *
      * @author Peter Jones
