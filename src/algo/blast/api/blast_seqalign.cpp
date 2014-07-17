@@ -1328,13 +1328,7 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         const Uint4 kOid = hsp_list->oid;
         TSeqPos subj_length = 0;
         CRef<CSeq_id> subject_id;
-	if (prog == eBlastTypeBlastp
-	    ||  prog == eBlastTypeBlastn
-	    ||  prog == eBlastTypeBlastx) {
-	  GetSequenceLengthAndId(seqinfo_src, kOid, subject_id, NULL);
-	} else {
-	  GetSequenceLengthAndId(seqinfo_src, kOid, subject_id, &subj_length);
-	}
+        GetSequenceLengthAndId(seqinfo_src, kOid, subject_id, &subj_length);
         
         // Union subject sequence ranges
         vector <TSeqRange> ranges;
@@ -1508,13 +1502,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     TSeqPos subj_length = 0;
 
     // Subject is the same for all queries, so retrieve its id right away
-    if (prog == eBlastTypeBlastp
-	||  prog == eBlastTypeBlastn
-	||  prog == eBlastTypeBlastx) {
-      GetSequenceLengthAndId(&seqinfo_src, subj_idx, subject_id, NULL);
-    } else {
-      GetSequenceLengthAndId(&seqinfo_src, subj_idx, subject_id, &subj_length);
-    }
+    GetSequenceLengthAndId(&seqinfo_src, subj_idx, subject_id, &subj_length);
     // For blastn, we may need to fix the strand in the HSPs, as the engine
     // doesn't expect negative subject strands
     const ENa_strand kSubjStrand = seqinfo_src.GetSeqLoc(subj_idx)->GetStrand();
