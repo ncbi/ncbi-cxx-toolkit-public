@@ -1022,6 +1022,20 @@ public:
     /// connections failed then method will return FALSE, otherwise TRUE.
     static bool Init(void);
 
+    /// Report the specified application name to servers.
+    ///
+    /// By default, this will be the same name reported to AppLog
+    /// (typically autodetected).  Any changes will take effect for
+    /// subsequent connections, but won't affect preexisting ones.
+    ///
+    /// @sa GetApplicationName()
+    static void SetApplicationName(const CTempString& name);
+
+    /// Check SDBAPI's application name setting.
+    ///
+    /// @sa SetApplicationName()
+    static string GetApplicationName(void);
+
     /// @sa UpdateMirror
     enum EMirrorStatus {
         eMirror_Steady,      ///< Mirror is working on the same server as before

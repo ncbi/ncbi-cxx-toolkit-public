@@ -1006,6 +1006,17 @@ CSDBAPI::Init(void)
 }
 
 
+void CSDBAPI::SetApplicationName(const CTempString& name)
+{
+    s_GetDBContext()->SetApplicationName(name);
+}
+
+string CSDBAPI::GetApplicationName(void)
+{
+    return s_GetDBContext()->GetApplicationName();
+}
+
+
 enum EMirrorConnState {
     eConnInitializing,
     eConnNotConnected,
