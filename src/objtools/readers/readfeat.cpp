@@ -3164,7 +3164,7 @@ struct SCSeqidCompare
   inline
   bool operator()(const CSeq_id* left, const CSeq_id* right) const
   { 
-     return left < right;
+     return *left < *right;
   };
 };
 
