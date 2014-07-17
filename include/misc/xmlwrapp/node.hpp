@@ -1268,7 +1268,8 @@ public:
      * Convert the node and all its children into XML text and set the given
      * string to that text.
      *
-     * @param xml The string to set the node's XML data to.
+     * @param xml The string to set the node's XML data to (the string is not
+     *          cleared; the content is appended to the string).
      * @param flags
      *        Bitwise mask of the save options. Does not affect XSLT result.
      *        documents.
