@@ -1,20 +1,22 @@
-#! /bin/sh
+#! /bin/bash
 #$Id$
 
-status_dir="../../../../../status"
+status_dir="$CFG_LIB/../status"
+if ! test -d "$status_dir"; then
+    status_dir="../../../../../status"
+fi
 
 if test "$1" = "-id2"; then
     shift
     methods="ID2"
 elif test -f "$status_dir/PubSeqOS.enabled"; then
     methods="PUBSEQOS ID1 ID2"
-    NCBI_LOAD_PLUGINS_FROM_DLLS=1
-    export NCBI_LOAD_PLUGINS_FROM_DLLS
 else
     echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
     methods="ID1 ID2"
 fi
 if ! test -f "$status_dir/DLL_BUILD.enabled"; then
+    # enable dll plugins for ftds and bdb
     NCBI_LOAD_PLUGINS_FROM_DLLS=1
     export NCBI_LOAD_PLUGINS_FROM_DLLS
 fi
