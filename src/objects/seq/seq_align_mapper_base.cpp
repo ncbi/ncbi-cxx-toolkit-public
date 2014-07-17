@@ -1663,7 +1663,24 @@ x_GetDstExon(CSpliced_seg&              spliced,
             if ( !spliced.IsSetProduct_type() ) {
                 CSeq_loc_Mapper_Base::ESeqType prod_type =
                     m_LocMapper.GetSeqTypeById(prod_id);
-                aln_protein = (prod_type == CSeq_loc_Mapper_Base::eSeq_prot);
+                // If the product is not mapped try to use the original
+                // product type. If a protein was mapped to an unknown type,
+                // throw.
+                if (prod_type == CSeq_loc_Mapper_Base::eSeq_unknown  &&  m_OrigExon) {
+                    if ( m_OrigExon->GetProduct_start().IsProtpos() ) {
+                        if (!prod_row.m_Mapped) {
+                            aln_protein = true;
+                        }
+                        else {
+                            NCBI_THROW(CAnnotMapperException, eOtherError,
+                                "Can not map protein product to a sequence "
+                                "of unknown type.");
+                        }
+                    }
+                }
+                else {
+                    aln_protein = (prod_type == CSeq_loc_Mapper_Base::eSeq_prot);
+                }
                 spliced.SetProduct_type(aln_protein ?
                     CSpliced_seg::eProduct_type_protein
                     : CSpliced_seg::eProduct_type_transcript);
