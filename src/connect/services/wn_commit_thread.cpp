@@ -72,7 +72,7 @@ CWorkerNodeJobContext* CJobCommitterThread::AllocJobContext()
     return job_context;
 }
 
-void CJobCommitterThread::PutJobContextBackAndCommitJob(
+void CJobCommitterThread::RecycleJobContextAndCommitJob(
         CWorkerNodeJobContext* job_context)
 {
     job_context->m_FirstCommitAttempt = true;

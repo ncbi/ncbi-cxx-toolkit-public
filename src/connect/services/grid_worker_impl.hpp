@@ -1,6 +1,5 @@
-#ifndef WN_COMMIT_THREAD__HPP
-#define WN_COMMIT_THREAD__HPP
-
+#ifndef CONNECT_SERVICES__GRID_WORKER_IMPL__HPP
+#define CONNECT_SERVICES__GRID_WORKER_IMPL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -30,74 +29,66 @@
  * Authors:  Dmitry Kazimirov
  *
  * File Description:
- *    NetSchedule Worker Node - job committer thread, declarations.
+ *    Common NetSchedule Worker Node declarations
  */
 
-#include <connect/services/grid_worker.hpp>
+#include <corelib/ncbistl.hpp>
 
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 //
-/// @internal
-class CRequestContextSwitcher
+
+///@internal
+class CWorkerNodeRequest : public CStdRequest
 {
 public:
-    CRequestContextSwitcher(CRequestContext* new_request_context)
+    CWorkerNodeRequest(CWorkerNodeJobContext* context) :
+        m_JobContext(context)
     {
-        m_SavedRequestContext = &CDiagContext::GetRequestContext();
-        CDiagContext::SetRequestContext(new_request_context);
     }
 
-    ~CRequestContextSwitcher()
-    {
-        CDiagContext::SetRequestContext(m_SavedRequestContext);
-    }
+    virtual void Process();
 
 private:
-    CRef<CRequestContext> m_SavedRequestContext;
+    CWorkerNodeJobContext* m_JobContext;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+
+#define NO_EVENT ((void*) 0)
+#define SUSPEND_EVENT ((void*) 1)
+#define RESUME_EVENT ((void*) 2)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+
+bool g_IsRequestStartEventEnabled();
+bool g_IsRequestStopEventEnabled();
 
 /////////////////////////////////////////////////////////////////////////////
 //
 /// @internal
-class CJobCommitterThread : public CThread
+class CMainLoopThread : public CThread
 {
 public:
-    CJobCommitterThread(CGridWorkerNode* worker_node) :
+    CMainLoopThread(CGridWorkerNode* worker_node) :
         m_WorkerNode(worker_node),
         m_Semaphore(0, 1)
     {
     }
 
-    CWorkerNodeJobContext* AllocJobContext();
-
-    void RecycleJobContextAndCommitJob(CWorkerNodeJobContext* job_context);
-
     void Stop();
 
 private:
-    typedef CWorkerNodeTimeline<CWorkerNodeJobContext> TCommitJobTimeline;
-
     virtual void* Main();
-
-    bool x_CommitJob(CWorkerNodeJobContext* job_context);
-
-    void WakeUp()
-    {
-        if (m_ImmediateActions.IsEmpty())
-            m_Semaphore.Post();
-    }
 
     CGridWorkerNode* m_WorkerNode;
     CSemaphore m_Semaphore;
-    TCommitJobTimeline m_ImmediateActions, m_Timeline, m_JobContextPool;
-    CFastMutex m_TimelineMutex;
-
-    typedef CGuard<CFastMutex, SSimpleUnlock<CFastMutex>,
-            SSimpleLock<CFastMutex> > TFastMutexUnlockGuard;
 };
 
 END_NCBI_SCOPE
 
-#endif // WN_COMMIT_THREAD__HPP
+#endif /* CONNECT_SERVICES__GRID_WORKER_IMPL__HPP */

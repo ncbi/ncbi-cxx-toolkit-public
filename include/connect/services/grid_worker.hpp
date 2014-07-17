@@ -356,11 +356,16 @@ public:
 
     bool IsCanceled() const { return m_JobCommitted == eCanceled; }
 
-    IWorkerNodeCleanupEventSource* GetCleanupEventSource();
+    IWorkerNodeCleanupEventSource* GetCleanupEventSource()
+    {
+        return m_CleanupEventSource;
+    }
 
     CGridWorkerNode& GetWorkerNode() const {return m_WorkerNode;}
 
     CWorkerNodeJobContext(CGridWorkerNode& worker_node);
+
+    void Reset();
 
 protected:
     friend class CJobCommitterThread;
@@ -373,8 +378,6 @@ protected:
 
     void x_PrintRequestStop();
     virtual void x_RunJob();
-
-    void Reset();
 
     CGridWorkerNode&     m_WorkerNode;
     CNetScheduleJob      m_Job;
@@ -634,6 +637,7 @@ class CWorkerNodeIdleThread;
 class CJobCommitterThread;
 class IGridWorkerNodeApp_Listener;
 class CWNJobWatcher;
+class CMainLoopThread;
 /// Grid Worker Node
 ///
 /// It gets jobs from a NetSchedule server and runs them simultaneously
@@ -737,7 +741,10 @@ public:
     static void DisableDefaultRequestEventLogging(
         EDisabledRequestEvents disabled_events = eDisableStartStop);
 
-    IWorkerNodeCleanupEventSource* GetCleanupEventSource();
+    IWorkerNodeCleanupEventSource* GetCleanupEventSource()
+    {
+        return m_CleanupEventSource;
+    }
 
     unsigned GetCurrentJobGeneration() {return m_CurrentJobGeneration;}
     void Suspend(bool pullback, unsigned timeout);
@@ -858,6 +865,7 @@ private:
     bool x_GetNextJob(CNetScheduleJob& job);
 
     friend class CWNJobWatcher;
+    friend class CMainLoopThread;
     friend class CWorkerNodeRequest;
 public:
     void x_ReturnJob(const CNetScheduleJob& job);
