@@ -140,7 +140,8 @@ CStaticTls<CUsedTlsBases> CUsedTlsBases::sm_UsedTlsBases;
 // Main thread needs a usual safe-static-ref for proper cleanup --
 // there's no thread which can do it on destruction.
 static CSafeStatic<CUsedTlsBases>
-s_MainUsedTlsBases(0, s_CleanupMainUsedTlsBases);
+s_MainUsedTlsBases(0, s_CleanupMainUsedTlsBases,
+                   CSafeStaticLifeSpan::eLifeSpan_Longest);
 
 CUsedTlsBases& CUsedTlsBases::GetUsedTlsBases(void)
 {
@@ -589,6 +590,9 @@ void CThread::sx_SetThreadPid(TPid pid)
 
 bool CThread::Run(TRunMode flags)
 {
+    // make sure static CUsedTlsBases is initalized before leaving Run()
+    CUsedTlsBases::GetUsedTlsBases();
+
     // Do not allow the new thread to run until m_Handle is set
     CFastMutexGuard state_guard(s_ThreadMutex);
 
