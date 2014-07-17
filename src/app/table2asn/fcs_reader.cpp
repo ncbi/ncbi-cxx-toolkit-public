@@ -141,7 +141,7 @@ void CForeignContaminationScreenReportReader::LoadFile(ILineReader& reader)
         vector<string> values;
         NStr::Tokenize(current, "\t", values);
         if (values.size() == 5)
-        {               
+        {
             TColumns& new_cols = m_data["lcl|" + values[0]];
             new_cols.name = values[0];
             new_cols.length = NStr::StringToInt(values[1]);
@@ -185,7 +185,7 @@ void CForeignContaminationScreenReportReader::xTrimLiteral(objects::CSeq_literal
         CSeqUtil::TCoding src_coding = xGetCoding(lit.GetSeq_data().Which());
         switch (lit.GetSeq_data().Which())
         {
-        case CSeq_data::e_Iupacna: 
+        case CSeq_data::e_Iupacna:
             encoded_str = &lit.SetSeq_data().SetIupacna().Set();
             break;
         case CSeq_data::e_Iupacaa:
@@ -353,11 +353,11 @@ bool CForeignContaminationScreenReportReader::AnnotateOrRemove(CSeq_entry& entry
         if (data.mode == 'M')
         {
             if (m_context.m_fcs_trim && entry.GetSeq().IsSetInst())
-            {              
+            {
                 if (entry.GetSeq().GetInst().IsSetExt())
                     xTrimExt(entry.SetSeq().SetInst(), data.locs);
                 else
-                    xTrimData(entry.SetSeq().SetInst(), data.locs);                
+                    xTrimData(entry.SetSeq().SetInst(), data.locs);
 
                 if (xCheckLen(entry.GetSeq()))
                     return true;

@@ -15,6 +15,9 @@ class CDate;
 class IMessageListener;
 class CUser_object;
 class CBioSource;
+class CScope;
+class CObjectManager;
+class CSeq_entry_EditHandle;
 };
 
 #include <objects/seq/Seqdesc.hpp>
@@ -73,7 +76,7 @@ public:
     bool   m_remove_unnec_xref;
     bool   L;
     bool   W;
-    bool   K;
+    bool   m_save_bioseq_set;
     string c;
     string ZOutFile;
     string zOufFile;
@@ -110,6 +113,7 @@ public:
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
     void ApplySourceQualifiers(CSerialObject& obj, const string& src_qualifiers) const;
+    void ApplySourceQualifiers(objects::CSeq_entry_EditHandle& obj, const string& src_qualifiers) const;
 
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
@@ -118,7 +122,7 @@ public:
     bool ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry) const;
-    CRef<CSerialObject> 
+    CRef<CSerialObject>
         CreateSubmitFromTemplate(CRef<objects::CSeq_entry> object) const;
     CRef<CSerialObject>
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
@@ -132,7 +136,11 @@ public:
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;
+    CRef<objects::CSeq_descr>  m_descr_template;
     objects::IMessageListener* m_logger;
+
+    CRef<objects::CScope>      m_scope;
+    CRef<objects::CObjectManager> m_ObjMgr;
 private:
 };
 

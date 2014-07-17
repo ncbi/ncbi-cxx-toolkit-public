@@ -140,7 +140,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
             vector<string> values;
             NStr::Tokenize(current, "\t", values);
             if (!values[0].empty())
-            {               
+            {
                 // try to find destination sequence
                 CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
                 CBioseq* dest = FindObjectById(container, id);
@@ -202,7 +202,7 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
             vector<string> values;
             NStr::Tokenize(current, "\t", values);
             if (!values[0].empty())
-            {               
+            {
                 // try to find destination sequence
                 CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
                 CBioseq* dest = FindObjectById(container, id);

@@ -17,7 +17,7 @@ public:
     COpticalxml2asnOperator();
     ~COpticalxml2asnOperator();
 
-    CRef<objects::CSeq_entry> 
+    CRef<objects::CSeq_entry>
     LoadXML(const string& FileIn, const CTable2AsnContext& context);
     static
     void UpdatePubDate(CSerialObject& obj);

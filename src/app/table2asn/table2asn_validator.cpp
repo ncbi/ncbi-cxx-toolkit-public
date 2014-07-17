@@ -27,14 +27,11 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
-void CTable2AsnValidator::Validate(const CSeq_entry& entry)
+void CTable2AsnValidator::Validate(CSeq_entry_Handle& handle)
 {
-   validator::CValidator validator(*CObjectManager::GetInstance());
+    validator::CValidator validator(handle.GetScope().GetObjectManager());
 
-   CScope scope(*CObjectManager::GetInstance());
-    //scope.AddTopLevelSeqEntry(entry);
-
-   //CConstRef<CValidError> errors = validator.Validate(entry, &scope);
+    CConstRef<CValidError> errors = validator.Validate(handle);
 }
 
 void CTable2AsnValidator::Cleanup(CSeq_entry& entry)
@@ -42,12 +39,12 @@ void CTable2AsnValidator::Cleanup(CSeq_entry& entry)
     CCleanup cleanup;
     cleanup.BasicCleanup(entry, 0);
 
-    LinkCDSmRNAbyLabelAndLocation(entry);
+    //LinkCDSmRNAbyLabelAndLocation(entry);
 
 }
 
 void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CSeq_entry& entry)
-{ 
+{
     if (entry.IsSeq())
     {
         LinkCDSmRNAbyLabelAndLocation(entry.SetSeq());
@@ -127,7 +124,7 @@ void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(objects::CBioseq_set& bi
 }
 
 void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CBioseq& bioseq)
-{ 
+{
     if (!bioseq.IsSetAnnot())
         return;
 
@@ -135,7 +132,7 @@ void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CBioseq& bioseq)
 }
 
 void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CBioseq::TAnnot& annot)
-{ 
+{
     for (CBioseq::TAnnot::iterator annot_it = annot.begin(); annot.end() != annot_it; ++annot_it)
     {
         if (!(**annot_it).IsFtable()) continue;
@@ -147,7 +144,7 @@ void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CBioseq::TAnnot& annot)
         {
             CRef<CSeq_feat> feature = (*feat_it);
 
-            if (!feature->IsSetData()) 
+            if (!feature->IsSetData())
                 continue;
 
             if (feature->GetData().IsCdregion() || IsmRNA(feature->GetData()))
@@ -172,8 +169,8 @@ void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CBioseq::TAnnot& annot)
                         feature::GetLabel(*current, &label, feature::fFGL_Content);
 
                         if (NStr::Compare(feat_label, label) != 0)
-                          continue; 
-                
+                          continue;
+
                         CRef<CSeq_feat> cds, mrna;
                         if (feature->GetData().IsCdregion())
                         {
@@ -200,10 +197,10 @@ void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CBioseq::TAnnot& annot)
                                  //<< CSeqFeatData::SelectionName(element->GetData().Which())
                                  << endl;
 #endif
-                            break; 
+                            break;
                             // stop the inner loop
                         }
-                    } 
+                    }
                 }  // inner loop locating counterpart
             } // if cdregion or mRNA
         } // iterate over feature table
@@ -212,7 +209,7 @@ void CTable2AsnValidator::LinkCDSmRNAbyLabelAndLocation(CBioseq::TAnnot& annot)
 
 #ifdef XXX
 static void LinkCDSmRNAbyLabelAndLocationCallback (
-  BioseqPtr bsp, 
+  BioseqPtr bsp,
   Pointer userdata
 )
 

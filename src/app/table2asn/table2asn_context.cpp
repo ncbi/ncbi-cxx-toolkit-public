@@ -125,7 +125,7 @@ void x_ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifi
 
         x_ApplySourceQualifiers(bioseq, smp);
 #if 0
-//        if( TestFlag(fUnknModThrow) ) 
+//        if( TestFlag(fUnknModThrow) )
         {
             CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
             if( ! unused_mods.empty() )
@@ -177,6 +177,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_output(0),
     m_copy_genid_to_note(false),
     m_remove_unnec_xref(false),
+    m_save_bioseq_set(false),
     m_ProjectVersionNumber(0),
     m_flipped_struc_cmt(false),
     m_RemoteTaxonomyLookup(false),
@@ -209,6 +210,14 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     uf->SetNum(1);
     uf->SetData().SetStr(data);
     SetUserObject(SD, type).SetData().push_back(uf);
+}
+
+void CTable2AsnContext::ApplySourceQualifiers(objects::CSeq_entry_EditHandle& obj, const string& src_qualifiers) const
+{
+    for (CBioseq_CI it(obj); *it; ++it)
+    {
+        x_ApplySourceQualifiers(*(CBioseq*)it->GetEditHandle().GetCompleteBioseq().GetPointer(), src_qualifiers);
+    }
 }
 
 void CTable2AsnContext::ApplySourceQualifiers(CSerialObject& obj, const string& src_qualifiers) const
@@ -395,7 +404,7 @@ CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>
         submit->SetData().SetEntrys().clear();
         submit->SetData().SetEntrys().push_back(object);
         return CRef<CSerialObject>(submit);
-    }     
+    }
 
     return CRef<CSerialObject>(object);
 }
@@ -431,12 +440,12 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
 
 #if 0
         if (m_submit_template->IsSetSub() &&
-            m_submit_template->GetSub().IsSetContact() && 
+            m_submit_template->GetSub().IsSetContact() &&
             m_submit_template->GetSub().GetContact().IsSetContact())
         {
             CRef<CAuthor> author(new CAuthor);
             author->Assign(m_submit_template->GetSub().GetContact().GetContact());
-            CRef<CPub> pub(new CPub);               
+            CRef<CPub> pub(new CPub);
             pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
 
             CRef<CSeqdesc> desc(new CSeqdesc);
@@ -477,7 +486,7 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
     {
         CSeq_entry_Base::TSet::TSeq_set& data = entry.SetSet().SetSeq_set();
         NON_CONST_ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
-        {     
+        {
             MergeWithTemplate(**it);
         }
     }
@@ -490,15 +499,23 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
 
 void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const
 {
+    string base;
+    CDirEntry::SplitPath(m_current_file, 0, &base, 0);
+    CRef<CSeq_id> id(new CSeq_id(string("lcl|") + base));
+
+    CBioseq* bioseq;
     if (entry.IsSeq())
     {
-        string base;
-        CDirEntry::SplitPath(m_current_file, 0, &base, 0);
-        CRef<CSeq_id> id(new CSeq_id(string("lcl|") + base));
-        entry.SetSeq().SetId().clear();
-        entry.SetSeq().SetId().push_back(id);
-        // now it's good to rename features ....
+        bioseq = &entry.SetSeq();
     }
+    else
+    if (entry.IsSet())
+    {
+        bioseq = &entry.SetSet().SetSeq_set().front()->SetSeq();
+    }
+    bioseq->SetId().clear();
+    bioseq->SetId().push_back(id);
+    // now it's good to rename features ....
 }
 
 void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const

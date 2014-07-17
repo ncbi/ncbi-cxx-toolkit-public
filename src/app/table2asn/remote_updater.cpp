@@ -61,6 +61,9 @@
 #include "remote_updater.hpp"
 #include "table2asn_context.hpp"
 
+#include <objmgr/seq_descr_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
@@ -71,7 +74,7 @@ namespace
 
 int FindPMID(CMLAClient& mlaClient, const CPub_equiv::Tdata& arr)
 {
-    ITERATE(CPub_equiv::Tdata, item_it, arr)                
+    ITERATE(CPub_equiv::Tdata, item_it, arr)
     {
         if ((**item_it).IsPmid())
         {
@@ -136,7 +139,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
         if (taxid != new_taxid)
         {
             m_context.m_logger->PutError(
-                *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0,
                 "Conflicting taxonomy info provided: taxid " + NStr::IntToString(taxid)));
 
             if (taxid <= 0)
@@ -144,7 +147,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
             else
             {
                 m_context.m_logger->PutError(
-                    *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                    *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0,
                     "taxonomy ID for the name '" + org.GetTaxname() + "' was determined as " + NStr::IntToString(taxid)));
                 return;
             }
@@ -153,7 +156,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
     if (taxid <= 0)
     {
         m_context.m_logger->PutError(
-            *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+            *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0,
                 "No unique taxonomy ID found for the name '" + org.GetTaxname() + "'"));
         return;
     }
@@ -184,6 +187,15 @@ CRemoteUpdater::~CRemoteUpdater()
 {
     if (m_taxClient.get() != 0)
         m_taxClient->Fini();
+}
+
+void CRemoteUpdater::UpdatePubReferences(objects::CSeq_entry_EditHandle& obj)
+{
+    //for (CSeq_descr_CI it(obj); it; ++it)
+    for (CBioseq_CI it(obj); it; ++it)
+    {
+        xUpdatePubReferences(it->GetEditHandle().SetDescr());
+    }
 }
 
 void CRemoteUpdater::UpdatePubReferences(CSerialObject& obj)
@@ -217,8 +229,12 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
     if (!entry.IsSetDescr())
         return;
 
+    xUpdatePubReferences(entry.SetDescr());
+}
 
-    CSeq_descr::Tdata& descr = entry.SetDescr().Set();
+void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
+{
+    CSeq_descr::Tdata& descr = seq_descr.Set();
     size_t count = descr.size();
     CSeq_descr::Tdata::iterator it = descr.begin();
 
@@ -237,8 +253,8 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
             CreatePubPMID(*m_mlaClient, arr, id);
         }
         else
-        // nothing was found             
-        NON_CONST_ITERATE(CPub_equiv::Tdata, item_it, arr)                
+        // nothing was found
+        NON_CONST_ITERATE(CPub_equiv::Tdata, item_it, arr)
         {
             if ((**item_it).IsArticle())
             try

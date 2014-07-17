@@ -50,6 +50,7 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <serial/typeinfo.hpp>
 #include <objects/seq/Pubdesc.hpp>
@@ -409,7 +410,7 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
         doc = new document(in, &msg);
     }
     catch(...) {
-        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, 
+        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
             "No data found in " + FileIn + ": " + msg.print()));
         return -1;
     }
@@ -436,7 +437,7 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
             }
             if (name.empty()) {
                 m_logger->PutError(
-                    *CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0, 
+                    *CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
                     "No chromosome name found in RESTRICTION_MAP - ID '" + id + "' was used"));
                 name = id;
             }

@@ -7,12 +7,13 @@ namespace objects
 {
     class CSeq_entry;
     class CBioseq;
+    class CSeq_entry_Handle;
 };
 
 class CTable2AsnValidator
 {
 public:
-    void Validate(const objects::CSeq_entry& entry);
+    void Validate(objects::CSeq_entry_Handle& handle);
     void Cleanup(objects::CSeq_entry& entry);
     void LinkCDSmRNAbyLabelAndLocation(objects::CBioseq_set& bioseq);
     void LinkCDSmRNAbyLabelAndLocation(objects::CBioseq& bioseq);

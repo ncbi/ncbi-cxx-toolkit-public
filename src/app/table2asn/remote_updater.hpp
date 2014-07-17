@@ -9,11 +9,11 @@ class CSeq_entry;
 class CSeq_submit;
 class CSeq_descr;
 class CSeqdesc;
-class IMessageListener;
 class CMLAClient;
 class CBioseq;
 class CTaxon1;
 class COrg_ref;
+class CSeq_entry_EditHandle;
 };
 
 class CTable2AsnContext;
@@ -26,10 +26,12 @@ public:
    ~CRemoteUpdater();
 
    void UpdatePubReferences(CSerialObject& obj);
+   void UpdatePubReferences(objects::CSeq_entry_EditHandle& obj);
 
    void UpdateOrgReferences(objects::CSeq_entry& entry);
 private:
    void xUpdatePubReferences(objects::CSeq_entry& entry);
+   void xUpdatePubReferences(objects::CSeq_descr& descr);
    void xUpdateOrgTaxname(objects::COrg_ref& org);
 
    CRef<objects::CMLAClient>  m_mlaClient;

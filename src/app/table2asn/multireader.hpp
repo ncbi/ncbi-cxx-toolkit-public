@@ -29,7 +29,7 @@ public:
 
    CRef<objects::CSeq_entry> LoadFile(const string& ifname);
    void Cleanup(CRef<objects::CSeq_entry>);
-   void WriteObject(CSerialObject&, ostream& );
+   void WriteObject(const CSerialObject&, ostream&);
    void ApplyAdditionalProperties(objects::CSeq_entry& entry);
    void LoadTemplate(CTable2AsnContext& context, const string& ifname);
    void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc);
@@ -45,6 +45,8 @@ private:
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadASN1(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
+    CRef<objects::CSeq_entry> xReadBed(CNcbiIstream& instream);
+
     auto_ptr<CObjectIStream> xCreateASNStream(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
 

@@ -62,12 +62,16 @@
 #include <objtools/readers/message_listener.hpp>
 #include "table2asn_validator.hpp"
 
+//#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
 using namespace objects;
 
 const char * TBL2ASN_APP_VER = "10.0";
+
+#define USE_SCOPE
 
 class CTable2AsnLogger: public CMessageListenerLenient
 {
@@ -78,7 +82,7 @@ protected:
     virtual void PutProgress(
         const string & sMessage,
         const Uint8 iNumDone = 0,
-        const Uint8 iNumTotal = 0 ) 
+        const Uint8 iNumTotal = 0 )
     {
         if (m_enable_log)
             CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
@@ -116,9 +120,8 @@ private:
     void ProcessRNAFile(const string& pathname, CSeq_entry& result);
     void ProcessPRTFile(const string& pathname, CSeq_entry& result);
 
-    CRef<CScope> BuildScope(void);
+    CRef<CScope> GetScope(void);
 
-    CRef<CObjectManager> m_ObjMgr;
     CTable2AsnContext    m_context;
     CRef<CTable2AsnLogger> m_logger;
     auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
@@ -171,7 +174,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("E", "Recurse");
     arg_desc->AddOptionalKey("t", "InFile", "Template File",
-        CArgDescriptions::eInputFile);                              
+        CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey
         ("a", "String", "File Type\n\
@@ -188,7 +191,7 @@ void CTbl2AsnApp::Init(void)
                         b ASN.1 for -M flag", CArgDescriptions::eString, "a");
 
     arg_desc->AddFlag("s", "Read FASTAs as Set");              // done
-    arg_desc->AddFlag("g", "Genomic Product Set");              
+    arg_desc->AddFlag("g", "Genomic Product Set");
     arg_desc->AddFlag("J", "Delayed Genomic Product Set ");
     arg_desc->AddDefaultKey
         ("F", "String", "Feature ID Links\n\
@@ -237,7 +240,7 @@ void CTbl2AsnApp::Init(void)
                                             Begin, Middle, End Gap Characters,\n\
                                             Missing Characters, Match Characters", CArgDescriptions::eString);
 
-    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID");  
+    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID");
     arg_desc->AddFlag("S", "Smart Feature Annotation");
 
     arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
@@ -249,7 +252,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("T", "Remote Taxonomy Lookup");               // done
     arg_desc->AddFlag("P", "Remote Publication Lookup");            // done
     arg_desc->AddFlag("W", "Log Progress");                         // done
-    arg_desc->AddFlag("K", "Save Bioseq-set");
+    arg_desc->AddFlag("K", "Save Bioseq-set");                      // done
 
     arg_desc->AddOptionalKey("H", "String", "Hold Until Publish\n\
                                             y Hold for One Year\n\
@@ -295,19 +298,20 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger); //done
-    arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);          //done
-    arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);            //done
-    arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString); //done
+    // all new options are done
+    arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("gaps-min", "Integer", "minunim run of Ns recognised as a gap", CArgDescriptions::eInteger); //done
-    arg_desc->AddOptionalKey("gaps-unknown", "Integer", "exact number of Ns recognised as a gap with unknown length", CArgDescriptions::eInteger); //done
+    arg_desc->AddOptionalKey("gaps-min", "Integer", "minunim run of Ns recognised as a gap", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("gaps-unknown", "Integer", "exact number of Ns recognised as a gap with unknown length", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("min-threshold", "Integer", "minimun length of sequence", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
     arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
     arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
 
-    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
+    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
 
     // Program description
     string prog_description = "Converts files of various formats to ASN.1\n";
@@ -379,6 +383,8 @@ int CTbl2AsnApp::Run(void)
     m_context.m_NucProtSet = args["u"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
+    m_context.m_save_bioseq_set = args["K"].AsBoolean();
+
     m_context.m_remove_unnec_xref = args["U"].AsBoolean();
     if (args["M"])
     {
@@ -420,7 +426,7 @@ int CTbl2AsnApp::Run(void)
     {
         const string& gaps = args["a"].AsString();
         if (gaps.length() > 2 && gaps[0] == 'r')
-        {            
+        {
             switch (*(gaps.end()-1))
             {
             case 'u':
@@ -461,7 +467,7 @@ int CTbl2AsnApp::Run(void)
     if (args["H"])
     {
         try
-        {   
+        {
             CTime time(args["H"].AsString(), "M/D/Y" );
             m_context.m_HoldUntilPublish.Reset(new CDate(time, CDate::ePrecision_day));
         }
@@ -524,7 +530,7 @@ int CTbl2AsnApp::Run(void)
     }
     catch (CException& e)
     {
-        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, 
+        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error,
             "", 0, "", "", "",
             e.GetMsg()));
     }
@@ -534,14 +540,14 @@ int CTbl2AsnApp::Run(void)
         return 0;
     else
     {
-        int errors = m_logger->LevelCount(eDiag_Critical) + 
-                     m_logger->LevelCount(eDiag_Error) + 
+        int errors = m_logger->LevelCount(eDiag_Critical) +
+                     m_logger->LevelCount(eDiag_Error) +
                      m_logger->LevelCount(eDiag_Fatal);
         // all errors reported as failure
         if (errors > 0)
             return 1;
-        
-        // only warnings reported as 2 
+
+        // only warnings reported as 2
         if (m_logger->LevelCount(eDiag_Warning)>0)
             return 2;
 
@@ -551,12 +557,16 @@ int CTbl2AsnApp::Run(void)
 }
 
 
-CRef<CScope> CTbl2AsnApp::BuildScope (void)
+CRef<CScope> CTbl2AsnApp::GetScope (void)
 {
-    CRef<CScope> scope(new CScope (*m_ObjMgr));
-    scope->AddDefaults();
+    if (m_context.m_ObjMgr.Empty())
+    {
+        m_context.m_ObjMgr = CObjectManager::GetInstance();
 
-    return scope;
+        m_context.m_scope.Reset(new CScope (*m_context.m_ObjMgr));
+        m_context.m_scope->AddDefaults();
+    }
+    return m_context.m_scope;
 }
 
 void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
@@ -629,12 +639,26 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     else
         result = m_context.CreateSubmitFromTemplate(entry);
 
+#ifdef USE_SCOPE
+    CSeq_entry_Handle entry_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry);
+    CSeq_entry_EditHandle entry_edit_handle = entry_handle.GetEditHandle();
+#endif
+
     if (m_context.m_RemotePubLookup)
     {
+#ifdef USE_SCOPE
+        m_remote_updater->UpdatePubReferences(entry_edit_handle);
+#else
         m_remote_updater->UpdatePubReferences(*result);
+#endif
     }
 
+
+#ifdef USE_SCOPE
+    m_context.ApplySourceQualifiers(entry_edit_handle, m_context.m_source_qualifiers);
+#else
     m_context.ApplySourceQualifiers(*result, m_context.m_source_qualifiers);
+#endif
 
     if (avoid_submit_block)
     {
@@ -649,7 +673,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         validator.Cleanup(*entry);
     }
 
-    validator.Validate(*entry);
+    validator.Validate(entry_handle);
 
 
 }
@@ -701,7 +725,20 @@ void CTbl2AsnApp::ProcessOneFile()
         CRef<CSerialObject> obj;
         ProcessOneFile(obj);
         if (!IsDryRun())
-            m_reader->WriteObject(*obj, *output);
+        {
+            const CSerialObject* to_write = obj;
+            if (m_context.m_save_bioseq_set)
+            {
+                if (obj->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+                {
+                    const CSeq_entry* se = (const CSeq_entry*)obj.GetPointer();
+                    if (se->IsSet())
+                        to_write = &se->GetSet();
+                }
+            }
+
+            m_reader->WriteObject(*to_write, *output);
+        }
     }
     catch(...)
     {
@@ -748,13 +785,13 @@ void CTbl2AsnApp::Setup(const CArgs& args)
     // Setup MT-safety for CONNECT library
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
-    // Create object manager
-    m_ObjMgr = CObjectManager::GetInstance();
+    // Create object manager and scope
+    GetScope();
     if ( args["r"] ) {
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
-        //CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
+        //CGBDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
     }
 }
 

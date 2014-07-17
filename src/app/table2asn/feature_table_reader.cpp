@@ -209,10 +209,10 @@ namespace
         }
         return CRef<CSeq_entry>();
     }
-  
+
 
     CRef<CSeq_entry> TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag, CConstRef<CSeq_entry> proteins)
-    {       
+    {
         CRef<CSeq_entry> pentry = LocateProtein(proteins, feature);
         if (pentry.NotEmpty())
             return pentry;
@@ -292,7 +292,7 @@ namespace
         }
         else
         {
-            CSeq_id::ParseIDs(protein->SetId(), protein_ids,                                
+            CSeq_id::ParseIDs(protein->SetId(), protein_ids,
                   CSeq_id::fParse_ValidLocal
                 | CSeq_id::fParse_PartialOK);
         }
@@ -336,7 +336,8 @@ namespace
         if (!molinfo_desc->SetMolinfo().IsSetBiomol())
             molinfo_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
 
-        if (newentry->GetSeq().IsNa() &&
+        if (newentry->IsSeq() && newentry->GetSeq().IsSetInst() &&
+            newentry->GetSeq().IsNa() &&
             newentry->GetSeq().IsSetInst())
         {
             newentry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
@@ -401,6 +402,9 @@ namespace
 
 void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
 {
+    if (entry.IsSeq() && !entry.GetSeq().IsSetInst() )
+        return;
+
     switch(entry.Which())
     {
     case CSeq_entry::e_Seq:
@@ -497,10 +501,10 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
         CRef<CSeq_entry> seq = *seq_it;
         if (seq->IsSeq() &&
             seq->GetSeq().IsSetInst() &&
-            seq->GetSeq().IsNa() && 
+            seq->GetSeq().IsNa() &&
             seq->GetSeq().IsSetAnnot() )
         {
-            for (CBioseq::TAnnot::iterator annot_it = seq->SetSeq().SetAnnot().begin(); 
+            for (CBioseq::TAnnot::iterator annot_it = seq->SetSeq().SetAnnot().begin();
                 seq->SetSeq().SetAnnot().end() != annot_it;)
             {
                 CRef<CSeq_annot> seq_annot(*annot_it);
@@ -551,10 +555,10 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
                         seq->SetSeq().SetAnnot().erase(annot_it++);
                         continue;
                     }
-                        
+
                     }
                     ++annot_it;
-                }                 
+                }
             if (seq->GetSeq().GetAnnot().empty())
             {
                 seq->SetSeq().ResetAnnot();
@@ -607,7 +611,7 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
 
-    CProSplign aligner;  
+    CProSplign aligner;
     ITERATE(CSeq_entry::TSet::TSeq_set, prot_it, possible_proteins.GetSet().GetSeq_set())
     {
         scope.AddBioseq((**prot_it).GetSeq());
@@ -620,7 +624,7 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
             CRef<CSeq_id> seq_id(new CSeq_id);
             seq_id->Assign(*bio_it->GetBioseqCore()->GetId().front());
                 //bio_it->GetId().front().GetSeqId());
-                //seq_it->GetSeq_entryCore()->GetSeq().GetId().front());  
+                //seq_it->GetSeq_entryCore()->GetSeq().GetId().front());
             CRef<CSeq_loc> genomic(new CSeq_loc);
             genomic->SetWhole(*seq_id);
             genomic->SetId(*seq_id);
@@ -636,7 +640,7 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
                 NStr::ReplaceInPlace(name, "|", "_");
 
                 CNcbiOfstream ostr((name + ".align").c_str());
-                ostr << MSerial_AsnText 
+                ostr << MSerial_AsnText
                     << MSerial_VerifyNo;
                 ostr << *align;
 #endif
@@ -646,25 +650,6 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
             }
         }
     }
-
-    /*
-    switch(entry.Which())
-    {
-    case CSeq_entry::e_Seq:
-        if (entry.GetSeq().IsNa() && entry.GetSeq().IsSetInst())
-        {
-        }
-        break;
-    case CSeq_entry::e_Set:
-        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
-        {
-            AddProteins(possible_proteins, **it);
-        }
-        break;
-    default:
-        break;
-    }
-*/
 }
 
 END_NCBI_SCOPE

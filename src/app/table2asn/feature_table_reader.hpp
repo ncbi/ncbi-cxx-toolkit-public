@@ -22,11 +22,11 @@ public:
    CFeatureTableReader(objects::IMessageListener* logger): m_logger(logger)
    {
    }
-// MergeCDSFeatures looks for cdregion features in the feature tables 
-//    in sequence annotations and creates protein sequences based on them 
+// MergeCDSFeatures looks for cdregion features in the feature tables
+//    in sequence annotations and creates protein sequences based on them
 //    as well as converting the sequence or a seq-set into nuc-prot-set
    void MergeCDSFeatures(objects::CSeq_entry& obj);
-// This method reads 5 column table and attaches these features 
+// This method reads 5 column table and attaches these features
 //    to corresponding sequences
 // This method requires certain postprocessing of plain features added
    void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader);

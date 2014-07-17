@@ -32,7 +32,7 @@ public:
 //#sequence name, length, span(s), M/X, apparent source
     struct Tloc
     {
-        int    start;  // starting at zero 
+        int    start;  // starting at zero
         int    len;
     };
 
@@ -54,8 +54,8 @@ protected:
     const CTable2AsnContext& m_context;
 
     bool AnnotateOrRemove(objects::CSeq_entry& entry) const;
-    void xTrimData(objects::CSeq_inst& inst, const Tlocs& col) const; 
-    void xTrimExt(objects::CSeq_inst& inst, const Tlocs& col) const; 
+    void xTrimData(objects::CSeq_inst& inst, const Tlocs& col) const;
+    void xTrimExt(objects::CSeq_inst& inst, const Tlocs& col) const;
     void xTrimLiteral(objects::CSeq_literal& lit, int start, int end) const;
     bool xCheckLen(const objects::CBioseq& inst) const;
 };
