@@ -1183,21 +1183,20 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
 
 double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CEResidueVec& mrna, const CAlignMap& mrnamap, TIVec starts[3],  TIVec stops[3], int& best_frame, int& best_start, int& best_stop, bool extend5p) const
 {
-    //    const CTerminal& acceptor    = *m_data->m_acceptor;
-    //    const CTerminal& donor       = *m_data->m_donor;
+    const CTerminal& acceptor    = *m_data->m_acceptor;
+    const CTerminal& donor       = *m_data->m_donor;
     const CTerminal& stt         = *m_data->m_start;
     const CTerminal& stp         = *m_data->m_stop;
     const CCodingRegion& cdr     = *m_data->m_cdr;
     const CNonCodingRegion& ncdr = *m_data->m_ncdr;
     int contig_len = m_data->m_seq.size();
     EStrand strand = model.Strand();
-    //    const vector<CModelExon>& exons = model.Exons();
-    //    int num_exons = model.Exons().size();
+    const vector<CModelExon>& exons = model.Exons();
+    int num_exons = model.Exons().size();
 
     const CDoubleStrandSeq& ds = m_data->m_ds;
     TDVec splicescr(mrna.size(),0);
 
-    /*
     if(strand == ePlus) {
         int shift = -1;
         for(int i = 1; i < num_exons; ++i) {
@@ -1269,8 +1268,6 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
             }
         }
     }
-    */
-
 
     TDVec cdrscr[3];
     for(int frame = 0; frame < 3; ++frame) {
