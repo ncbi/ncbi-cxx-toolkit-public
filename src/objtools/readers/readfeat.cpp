@@ -3162,7 +3162,7 @@ void CFeature_table_reader::ReadSequinFeatureTables(
 struct SCSeqidCompare
 {
   inline
-  bool operator()(const CSeq_id* left, const CSeq_id* right)
+  bool operator()(const CSeq_id* left, const CSeq_id* right) const
   { 
      return left < right;
   };
