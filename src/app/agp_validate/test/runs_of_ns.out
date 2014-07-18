@@ -30,7 +30,7 @@ Components                   : 12 (F:7, D:5)
 
 Gaps                   :  4 (N)
 - do not break scaffold:  3
-  fragment, linkage yes:  3
+  fragment, linkage yes:  3 (100% of N gaps have length=5000)
 - break it, linkage no :  1
 	telomere       :  1
 

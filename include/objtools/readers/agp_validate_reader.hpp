@@ -151,6 +151,7 @@ public:
   virtual ~IAgpRowOutput() {}
 };
 
+class XPrintTotalsItem;
 class NCBI_XOBJREAD_EXPORT CAgpValidateReader : public CAgpReader
 {
 public:
@@ -176,6 +177,7 @@ public:
 
   void SetRowOutput(IAgpRowOutput* row_output);
 
+  typedef map<int,int> TMapIntInt;
 protected:
   void x_PrintTotals(CNcbiOstream& out=cout, bool use_xml=false); // without comment counts or ids not in AGP
   void x_PrintIdsNotInAgp(CNcbiOstream& out=cout, bool use_xml=false);
@@ -250,13 +252,20 @@ protected:
   typedef pair<string, CCompSpans> TCompIdSpansPair;
   TCompId2Spans m_CompId2Spans;
 
-  typedef map<int,int> TMapIntInt;
   typedef pair<int,int> TPairIntInt;
   TMapIntInt m_ln_ev_flags2count;
 
   typedef pair<TMapIntInt::iterator, bool> TMapIntIntResult;
   TMapIntInt m_Ngap_ln2count;
   TMapIntInt m_Ugap_ln2count;
+
+  TMapIntInt m_NgapByType_ln2count[CAgpRow::eGapCount+CAgpRow::eGapYes_count];
+
+  // returns: first=plain text string for the end of line, second= attributes for XML tag (cnt, pct, mf_len)
+  // uses m_NgapByType_ln2count[]
+  void x_GetMostFreqGapsText(int gap_type, string& eol_text, string& attrs);
+
+  void x_PrintGapCountsLine(XPrintTotalsItem& xprint, int gap_type, const string& label=NcbiEmptyString);
 
   // an optional callback object
   IAgpRowOutput* m_row_output;

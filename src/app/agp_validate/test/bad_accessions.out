@@ -50,9 +50,9 @@ Components                   : 4095 (W)
 Gaps                   : 4092 (N)
 - do not break scaffold: 3741
   clone   , linkage yes:    4
-  fragment, linkage yes: 3737
+  fragment, linkage yes: 3737 (943 or 25.2% of N gaps have length=10)
 - break it, linkage no :  351
-	contig         :  348
+	contig         :  348 (136 or 39.1% of N gaps have length=100)
 	centromere     :    1
 	short_arm      :    1
 	telomere       :    1

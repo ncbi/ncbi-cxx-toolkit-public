@@ -246,12 +246,12 @@ Components                   : 113 (W:99, F:10, D:2, O:1, P:1)
 Gaps                   : 101 (N)
 - do not break scaffold:  89
   clone   , linkage yes:   1
-  fragment, linkage yes:  87
+  fragment, linkage yes:  87 (26 or 29.9% of N gaps have length=100)
   repeat  , linkage yes:   1
 - break it, linkage no :  12
 	clone          :   1
 	repeat         :   1
-	contig         :   9
+	contig         :   9 (100% of N gaps have length=50000)
 	telomere       :   1
 
 Most frequent N gap_length (25.7% or 26 lines): 100

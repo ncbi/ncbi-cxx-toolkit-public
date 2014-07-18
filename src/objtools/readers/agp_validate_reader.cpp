@@ -75,6 +75,7 @@ void CAgpValidateReader::Reset(bool for_chr_from_scaf)
   m_ln_ev_flags2count.clear();
   m_Ngap_ln2count.clear();
   m_Ugap_ln2count.clear();
+  for( int i=0; i<CAgpRow::eGapCount+CAgpRow::eGapYes_count; i++ ) m_NgapByType_ln2count[i].clear();
 
   m_max_comp_beg=m_max_obj_beg=0;
   m_has_partial_comp=m_has_comp_of_unknown_len=false;
@@ -156,22 +157,24 @@ void CAgpValidateReader::OnGapOrComponent()
     m_GapCount++;
     m_gapsInLastObject++;
 
+    int i = m_this_row->gap_type;
+    if(m_this_row->linkage) i+= CAgpRow::eGapCount;
+    NCBI_ASSERT( i < (int)(sizeof(m_GapTypeCnt)/sizeof(m_GapTypeCnt[0])),
+      "m_GapTypeCnt[] index out of bounds" );
+    m_GapTypeCnt[i]++;
+
     // count number of gaps for each gap length
     TMapIntInt* p_gap_len2count;
     if(m_this_row->component_type=='N') {
       p_gap_len2count = &m_Ngap_ln2count;
+      TMapIntIntResult res = m_NgapByType_ln2count[i].insert(TPairIntInt( m_this_row->gap_length, 1));
+      if(!res.second) res.first->second++;
     }
     else {
       p_gap_len2count = &m_Ugap_ln2count;
     }
     TMapIntIntResult res = p_gap_len2count->insert(TPairIntInt( m_this_row->gap_length, 1));
     if(!res.second) res.first->second++;
-
-    int i = m_this_row->gap_type;
-    if(m_this_row->linkage) i+= CAgpRow::eGapCount;
-    NCBI_ASSERT( i < (int)(sizeof(m_GapTypeCnt)/sizeof(m_GapTypeCnt[0])),
-      "m_GapTypeCnt[] index out of bounds" );
-    m_GapTypeCnt[i]++;
 
     if(m_this_row->gap_length < 10) {
       m_AgpErr->Msg(CAgpErrEx::W_ShortGap);
@@ -654,6 +657,7 @@ void CAgpValidateReader::OnObjectChange()
  *  - if the first character of the label was non-alphanum:
  *      prefix the tag with last_tag,
  *    else: save the tag to last_tag (for possible future use).
+ *
  */
 class XPrintTotalsItem
 {
@@ -752,6 +756,84 @@ public:
     m_eol_text="\n"; // reset to default (AFTER printing whatever was there)
   }
 };
+
+// returns percentage with one decimal, e.g.: "22.2"
+// suggested output string: "(6 or 22.2% with length=100)"
+// (all with length=100)
+// (length=100)
+string MostFrequentGapSize(CAgpValidateReader::TMapIntInt& ln2count, int& mf_len, int& mf_len_cnt )
+{
+  mf_len=0;
+  mf_len_cnt=0;
+
+  int gap_cnt=0;
+  for(CAgpValidateReader::TMapIntInt::iterator it = ln2count.begin();  it != ln2count.end(); ++it) {
+    if(mf_len_cnt < it->second) {
+      mf_len_cnt = it->second;
+      mf_len = it->first;
+    }
+    gap_cnt+=it->second;
+  }
+
+  // report the most frequent gap length/count only if:
+  // - more than 1 gap, all gaps same length
+  // - more than 10 gaps
+  // = more than 2 AND more than 10% AND length is divisible by 10
+  if(mf_len_cnt>1 && mf_len_cnt==gap_cnt) return "100";
+  if(mf_len_cnt>=10 || (mf_len_cnt>2 && mf_len_cnt*10>=gap_cnt && mf_len%10==0) ) {
+    string pct;
+    NStr::DoubleToString(pct, 100.0*mf_len_cnt/gap_cnt, 1, NStr::fDoubleFixed);
+    return pct;
+  }
+
+  return NcbiEmptyString; // no reporting of lengths
+}
+
+// returns: first=plain text string for the end of line, second=XML tag and attributes
+void CAgpValidateReader::x_GetMostFreqGapsText(int gap_type, string& eol_text, string& attrs)
+{
+  // sample eol_text:
+  //   " (6 or 22.2% with length=100)"
+  //   " (100% with length=100)"
+
+  TMapIntInt &len2count = m_NgapByType_ln2count[gap_type];
+  int mf_len, mf_len_cnt;
+  string pct = MostFrequentGapSize(len2count, mf_len, mf_len_cnt);
+
+  if(pct.size()) {
+    eol_text = " (";
+    if(pct!="100") eol_text += NStr::IntToString(mf_len_cnt) + " or ";
+    //eol_text += pct +"% with length="+ NStr::IntToString(mf_len)+")\n";
+    eol_text += pct +"% of N gaps have length="+ NStr::IntToString(mf_len)+")\n";
+
+    attrs =" mf_len=\""+NStr::IntToString(mf_len)+"\"";
+    attrs+=" cnt=\""+NStr::IntToString(mf_len_cnt)+"\"";
+    attrs+=" pct=\""+pct+"\"";
+  }
+}
+
+void CAgpValidateReader::x_PrintGapCountsLine(XPrintTotalsItem& xprint, int gap_type, const string& label)
+{
+  if(m_GapTypeCnt[gap_type]==0) return;
+
+  string str_gap_type = CAgpRow::GapTypeToString(
+    gap_type>CAgpRow::eGapCount ? gap_type-CAgpRow::eGapCount : gap_type
+  );
+  string attrs;
+  x_GetMostFreqGapsText(gap_type, xprint.m_eol_text, attrs);
+
+  xprint.line(
+    label.size() ? label : (
+      string("\t") + str_gap_type +
+      string("               ").substr(0, 15-str_gap_type.size() ) + ": "
+    ),
+
+    m_GapTypeCnt[gap_type],
+
+    xprint.last_tag + "\"" + str_gap_type + "\"" + attrs
+  );
+
+}
 
 void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // without comment counts
 {
@@ -933,60 +1015,35 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
     int breakCnt     = linkageNoCnt  - m_GapTypeCnt[CAgpRow::eGapFragment];
 
     xprint.line("- do not break scaffold: ", doNotBreakCnt, "GapsWithinScaf");
+    string attrs;
     if(doNotBreakCnt) {
       xprint.last_tag="GapsWithinScaf_byType linkage=\"yes\" type=";
-      if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ])
-        xprint.line("  clone   , linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapClone   ]);
-      if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment])
-        xprint.line("  fragment, linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapFragment]);
-
-      if(m_GapTypeCnt[                   CAgpRow::eGapFragment])
-        xprint.line("  fragment, linkage no : ", m_GapTypeCnt[                   CAgpRow::eGapFragment],
-        "GapsWithinScaf_byType linkage=\"no\" type=\"fragment\""
-        );
-
-      if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ])
-        xprint.line("  repeat  , linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapRepeat  ]);
-      if(m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold  ])
-        xprint.line("  scaffold, linkage yes: ", m_GapTypeCnt[CAgpRow::eGapCount+CAgpRow::eGapScaffold]);
+      x_PrintGapCountsLine(xprint, CAgpRow::eGapCount+CAgpRow::eGapClone   , "  clone   , linkage yes: ");
+      x_PrintGapCountsLine(xprint, CAgpRow::eGapCount+CAgpRow::eGapFragment, "  fragment, linkage yes: ");
+      xprint.last_tag="GapsWithinScaf_byType linkage=\"no\" type="; // anomalous non-breaking gap type from AGP version 1.1
+      x_PrintGapCountsLine(xprint,                    CAgpRow::eGapFragment, "  fragment, linkage no : ");
+      xprint.last_tag="GapsWithinScaf_byType linkage=\"yes\" type=";
+      x_PrintGapCountsLine(xprint, CAgpRow::eGapCount+CAgpRow::eGapRepeat  , "  repeat  , linkage yes: ");
+      x_PrintGapCountsLine(xprint, CAgpRow::eGapCount+CAgpRow::eGapScaffold, "  scaffold, linkage yes: ");
     }
 
     xprint.line("- break it, linkage no : ", breakCnt, "GapsBreakScaf");
     if(breakCnt) {
       xprint.last_tag="GapsBreakScaf_byType linkage=\"no\" type=";
       for(int i=0; i<CAgpRow::eGapCount; i++) {
-        if(i==CAgpRow::eGapFragment) continue;
-        if(m_GapTypeCnt[i])
-          /*
-          out<< "\n\t"
-              << setw(15) << setiosflags(IOS_BASE::left) << CAgpRow::GapTypeToString(i)
-              << ": " << ALIGN_W( m_GapTypeCnt[i] );
-          */
-          xprint.line(
-            string("\t") + CAgpRow::GapTypeToString(i) +
-            string("               ").substr(0, 15-strlen(CAgpRow::GapTypeToString(i)) ) + ": ",
-            m_GapTypeCnt[i]
-          );
+        if(i==CAgpRow::eGapFragment) continue; // not scaffold-breaking, was printed before
+        x_PrintGapCountsLine(xprint, i );
       }
     }
 
     if(m_Ngap_ln2count.size()) {
 
-      int mf_len=0;
-      int mf_len_cnt=0;
-      int gap_cnt=0; // only N or only U
-      for(TMapIntInt::iterator it = m_Ngap_ln2count.begin();  it != m_Ngap_ln2count.end(); ++it) {
-        if(mf_len_cnt < it->second) {
-          mf_len_cnt = it->second;
-          mf_len = it->first;
-        }
-        gap_cnt+=it->second;
-      }
+      // most frequent
+      int mf_len, mf_len_cnt;
+      string pct = MostFrequentGapSize(m_Ngap_ln2count, mf_len, mf_len_cnt);
 
-      if(mf_len_cnt>1) {
+      if(pct.size()) {
         xprint.line();
-        string pct;
-        NStr::DoubleToString(pct, 100.0*mf_len_cnt/gap_cnt, 1, NStr::fDoubleFixed);
 
         string label = "Most frequent N gap_length (" + pct + "% or " +
           NStr::IntToString(mf_len_cnt) + " lines): ";

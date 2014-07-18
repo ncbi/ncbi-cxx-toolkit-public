@@ -22,7 +22,7 @@ Components                   : 95 (W)
 
 Gaps                   : 72 (N)
 - do not break scaffold: 72
-  fragment, linkage yes: 72
+  fragment, linkage yes: 72 (20 or 27.8% of N gaps have length=100)
 - break it, linkage no :  0
 
 Most frequent N gap_length (27.8% or 20 lines): 100
@@ -60,9 +60,9 @@ Components                   : 23 (W)
 Gaps                   : 22 (N)
 - do not break scaffold:  0
 - break it, linkage no : 22
-	contig         : 22
+	contig         : 22 (100% of N gaps have length=50000)
 
-Most frequent N gap_length (100.0% or 22 lines): 50000
+Most frequent N gap_length (100% or 22 lines): 50000
 
 Object names:  1
   chrY      :  1
@@ -95,7 +95,7 @@ Components                   : 95 (W)
 
 Gaps                   : 72 (N)
 - do not break scaffold: 72
-  fragment, linkage yes: 72
+  fragment, linkage yes: 72 (20 or 27.8% of N gaps have length=100)
 - break it, linkage no :  0
 
 Most frequent N gap_length (27.8% or 20 lines): 100
@@ -148,7 +148,7 @@ Components                   : 23 (W)
 Gaps                   : 22 (N)
 - do not break scaffold:  0
 - break it, linkage no : 22
-	contig         : 22
+	contig         : 22 (21 or 95.5% of N gaps have length=50000)
 
 Most frequent N gap_length (95.5% or 21 lines): 50000
 
