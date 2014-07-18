@@ -293,12 +293,12 @@ extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
     }
 
     /* write remaining data */
-    dst = head->data + head->skip;
     assert(head->skip >= size);
+    head->skip -= size;
+    dst = head->data + head->skip;
     if (dst != src)
         memmove(dst, src, size);
     (*buf)->size += size;
-    head->skip -= size;
     return 1/*true*/;
 }
 
