@@ -424,8 +424,9 @@ typedef enum {
  * @param username
  *  Selects which username to get (most preferably)
  * @return
- *  Return 0 when the user name cannot be determined or stored (e.g. buffer
- *  too small); otherwise, return "buf".
+ *  Return NULL when the user name cannot be stored (e.g. buffer too small);
+ *  otherwise, return "buf".  Return "buf" as an empty string "" if the user
+ *  name cannot be determined.
  * @note
  *  For some OSes the username selector may not effect any differences,
  *  and for some OS releases, it may cause different results.
@@ -440,6 +441,8 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetUsernameEx
 
 
 /** Equivalent to CORE_GetUsernameEx(buf, bufsize, eNCBI_UsernameLogin)
+ * except that it always returns non-empty "buf" when successful, or NULL
+ * otherwise (i.e. when the username cannot be either obtained or stored).
  * @sa
  *  CORE_GetUsernameEx, ECORE_Username
  */

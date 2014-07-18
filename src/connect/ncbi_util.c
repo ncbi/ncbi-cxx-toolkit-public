@@ -681,6 +681,8 @@ static char* x_Savestr(const char* str, char* buf, size_t bufsize)
         size_t len = strlen(str);
         if (len++ < bufsize)
             return (char*) memcpy(buf, str, len);
+        if (bufsize)
+            *buf = '\0';
         errno = ERANGE;
     } else
         errno = EINVAL;
@@ -740,7 +742,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 #  ifdef NCBI_OS_MSWIN
     if (GetUserName(temp, &size)) {
         assert(size < sizeof(temp)/sizeof(temp[0]) - 1);
-        temp[size] = (TCHAR) 0;
+        temp[size] = (TCHAR) '\0';
         login = UTIL_TcharToUtf8(temp);
         buf = x_Savestr(login, buf, bufsize);
         UTIL_ReleaseBuffer(login);
@@ -844,7 +846,8 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 
 extern const char* CORE_GetUsername(char* buf, size_t bufsize)
 {
-    return CORE_GetUsernameEx(buf, bufsize, eCORE_UsernameLogin);
+    const char* rv = CORE_GetUsernameEx(buf, bufsize, eCORE_UsernameLogin);
+    return rv  &&  *rv ? rv : 0;
 }
 
 
