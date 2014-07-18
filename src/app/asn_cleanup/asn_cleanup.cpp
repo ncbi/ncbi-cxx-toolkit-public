@@ -45,6 +45,8 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
@@ -179,6 +181,15 @@ int CCleanupApp::Run(void)
 	CONNECT_Init(&GetConfig());
 
     const CArgs&   args = GetArgs();
+
+
+#ifdef HAVE_PUBSEQ_OS
+    // we may require PubSeqOS readers at some point, so go ahead and make
+    // sure they are properly registered
+    GenBankReaders_Register_Pubseq();
+    GenBankReaders_Register_Pubseq2();
+    DBAPI_RegisterDriver_FTDS();
+#endif
 
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
@@ -657,6 +668,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
-//    return CCleanupApp().AppMain(argc, argv, 0, eDS_ToStderr, "config.ini");
-    return CCleanupApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return CCleanupApp().AppMain(argc, argv);
 }

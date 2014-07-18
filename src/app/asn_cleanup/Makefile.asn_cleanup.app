@@ -8,10 +8,14 @@
 
 APP = asn_cleanup
 SRC = asn_cleanup
-LIB = $(XFORMAT_LIBS) xobjutil xalnmgr xcleanup valid valerr xregexp entrez2cli \
-    entrez2 tables $(OBJMGR_LIBS) $(PCRE_LIB)
+LIB = $(XFORMAT_LIBS) xobjutil xalnmgr xcleanup valid valerr xregexp \
+	  entrez2cli entrez2 tables \
+	  ncbi_xdbapi_ftds dbapi dbapi_driver $(FTDS_LIB) \
+	  $(ncbi_xreader_pubseqos2) \
+	  $(OBJMGR_LIBS) $(PCRE_LIB)
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(FTDS_LIBS) \
+	   $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
 
