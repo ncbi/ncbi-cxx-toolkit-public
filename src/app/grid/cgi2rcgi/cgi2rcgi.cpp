@@ -109,7 +109,7 @@ public:
     CCgiContext& GetCGIContext() { return m_CgiContext; }
 
     void SelectView(const string& view_name);
-    void SetCompleteResponse(CNcbiIstream& is);
+    void SetCompleteResponse(CNcbiIstream& is, const string& jquery_callback);
     bool NeedRenderPage() const { return m_NeedRenderPage; }
 
 public:
@@ -253,10 +253,29 @@ void CGridCgiContext::SelectView(const string& view_name)
     m_Page.AddTagMap("STAT_VIEW", new CHTMLText("<@VIEW_" + view_name + "@>"));
 }
 
-void CGridCgiContext::SetCompleteResponse(CNcbiIstream& is)
+void CGridCgiContext::SetCompleteResponse(CNcbiIstream& is,
+        const string& jquery_callback)
 {
-    m_CgiContext.GetResponse().out() << is.rdbuf();
     m_NeedRenderPage = false;
+    if (jquery_callback.empty())
+        NcbiStreamCopy(m_CgiContext.GetResponse().out(), is);
+    else {
+        CNcbiOstream& out = m_CgiContext.GetResponse().out();
+        string header_line;
+        while (getline(is, header_line)) {
+            NStr::TruncateSpacesInPlace(header_line, NStr::eTrunc_End);
+            if (header_line.empty())
+                break;
+            if (NStr::StartsWith(header_line, "Content-Type", NStr::eNocase))
+                out << "Content-Type: text/javascript\r\n";
+            else if (!NStr::StartsWith(header_line,
+                    "Content-Length", NStr::eNocase))
+                out << header_line << "\r\n";
+        }
+        out << "\r\n" << jquery_callback << '(';
+        NcbiStreamCopy(out, is);
+        out << ')';
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -294,7 +313,8 @@ private:
         eTerminated
     };
 
-    EJobPhase x_CheckJobStatus(CGridCgiContext& grid_ctx);
+    EJobPhase x_CheckJobStatus(CGridCgiContext& grid_ctx,
+            const string& jquery_callback);
 
     int m_RefreshDelay;
     int m_FirstDelay;
@@ -319,6 +339,7 @@ private:
     int    m_CancelGoBackDelay;
     string m_DateFormat;
     string m_ElapsedTimeFormat;
+    bool m_InterceptJQueryCallback;
 
     auto_ptr<CHTMLPage> m_Page;
     auto_ptr<CHTMLPage> m_CustomHTTPHeader;
@@ -481,6 +502,9 @@ void CCgi2RCgiApp::Init()
 
     m_ElapsedTimeFormat = config.GetString(cgi2rcgi_section,
         "elapsed_time_format", "S");
+
+    m_InterceptJQueryCallback = config.GetBool("CGI", "CORS_JQuery_Callback_Enable",
+        false, IRegistry::eReturn);
 }
 
 CCgiContext* CCgi2RCgiApp::CreateContextWithFlags(CNcbiArguments* args,
@@ -556,6 +580,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 {
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
+    CCgiRequest& request = ctx.GetRequest();
     CCgiResponse& response = ctx.GetResponse();
     m_Response = &response;
 
@@ -586,6 +611,17 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     m_NetScheduleAPI.UpdateAuthString();
 
     try {
+        string jquery_callback;
+
+        if (m_InterceptJQueryCallback) {
+            TCgiEntries& entries = request.GetEntries();
+            TCgiEntries::iterator jquery_callback_it = entries.find("callback");
+            if (jquery_callback_it != entries.end()) {
+                jquery_callback = jquery_callback_it->second;
+                entries.erase(jquery_callback_it);
+            }
+        }
+
         EJobPhase phase = eTerminated;
 
         grid_ctx.PullUpPersistentEntry(kSinceTime);
@@ -594,7 +630,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             if (!job_key.empty()) {
                 GetDiagContext().Extra().Print("ctg_poll", "true");
 
-                phase = x_CheckJobStatus(grid_ctx);
+                phase = x_CheckJobStatus(grid_ctx, jquery_callback);
 
                 if (phase == eTerminated)
                     grid_ctx.Clear();
@@ -632,10 +668,10 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                     // Prepare the input data.
                     CNcbiOstream& os = m_GridClient->GetOStream();
                     // Send the input data.
-                    ctx.GetRequest().Serialize(os);
+                    request.Serialize(os);
                     string saved_content(kEmptyStr);
                     try {
-                        saved_content = ctx.GetRequest().GetContent();
+                        saved_content = request.GetContent();
                     }
                     catch (...) {
                         // An exception is normal when the content
@@ -667,7 +703,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                         break;
 
                     default:
-                        phase = x_CheckJobStatus(grid_ctx);
+                        phase = x_CheckJobStatus(grid_ctx, jquery_callback);
                     }
 
                     if (phase != eTerminated) {
@@ -773,13 +809,14 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
         stringstream header_stream;
         m_CustomHTTPHeader->Print(header_stream, CNCBINode::ePlainText);
         string header_line;
+        CNcbiOstream& out = response.out();
         while (header_stream.good()) {
             getline(header_stream, header_line);
             if (!header_line.empty())
-                response.out() << header_line << "\r\n";
+                out << header_line << "\r\n";
         }
         response.WriteHeader();
-        m_Page->Print(response.out(), CNCBINode::eHTML);
+        m_Page->Print(out, CNCBINode::eHTML);
     }
     catch (exception& e) {
         ERR_POST("Failed to compose/send " << m_Title <<
@@ -814,7 +851,7 @@ void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
 
 
 CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
-        CGridCgiContext& grid_ctx)
+        CGridCgiContext& grid_ctx, const string& jquery_callback)
 {
     string job_key = grid_ctx.GetPersistentEntryValue("job_key");
 
@@ -870,7 +907,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
             CNcbiIstream& is = m_GridClient->GetIStream();
 
             if (m_GridClient->GetBlobSize() > 0)
-                grid_ctx.SetCompleteResponse(is);
+                grid_ctx.SetCompleteResponse(is, jquery_callback);
             else {
                 switch (m_TargetEncodeMode) {
                 case CHTMLPlainText::eHTMLEncode:
