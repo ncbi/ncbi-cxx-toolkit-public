@@ -576,6 +576,27 @@ bool CRegexpTemplateFilter::TestAttribute(const string& attr_name,
     return regexp.IsMatch(node_stream.str());
 }
 
+#define CALLBACK_PARAM "callback="
+
+static void s_RemoveCallbackParameter(string* query_string)
+{
+    SIZE_TYPE callback_pos = NStr::Find(*query_string, CALLBACK_PARAM);
+
+    if (callback_pos == NPOS)
+        return;
+
+    // See if 'callback' is the last parameter in the query string.
+    const char* callback_end = strchr(query_string->c_str() +
+            callback_pos + sizeof(CALLBACK_PARAM) - 1, '&');
+    if (callback_end != NULL)
+        query_string->erase(callback_pos,
+                callback_end - query_string->data() - callback_pos + 1);
+    else if (callback_pos == 0)
+        query_string->clear();
+    else if (query_string->at(callback_pos - 1) == '&')
+        query_string->erase(callback_pos - 1);
+}
+
 int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 {
     // Given "CGI context", get access to its "HTTP request" and
@@ -619,6 +640,14 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             if (jquery_callback_it != entries.end()) {
                 jquery_callback = jquery_callback_it->second;
                 entries.erase(jquery_callback_it);
+                string query_string_param(
+                        CCgiRequest::GetPropertyName(eCgi_QueryString));
+                const char* query_string_env = getenv(query_string_param.c_str());
+                if (query_string_env != NULL) {
+                    string query_string = query_string_env;
+                    s_RemoveCallbackParameter(&query_string);
+                    setenv(query_string_param.c_str(), query_string.c_str(), true);
+                }
             }
         }
 
