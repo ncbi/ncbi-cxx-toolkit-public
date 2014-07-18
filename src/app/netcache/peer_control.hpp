@@ -34,6 +34,7 @@
 
 #include "sync_log.hpp"
 #include "nc_db_info.hpp"
+#include "nc_stat.hpp"
 #include <set>
 
 
@@ -119,6 +120,7 @@ public:
                               const CNCBlobAccessor* accessor);
     static Uint8 GetMirrorQueueSize(void);
     static Uint8 GetMirrorQueueSize(Uint8 srv_id);
+    static void ReadCurState(SNCStateStat& state);
 
     void SetSlotsForInitSync(Uint2 cnt_slots);
     void ResetSlotsForInitSync();

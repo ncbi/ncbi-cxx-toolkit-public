@@ -37,7 +37,6 @@
 #include "distribution_conf.hpp"
 #include "nc_storage_blob.hpp"
 #include "netcached.hpp"
-#include "nc_stat.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -268,8 +267,9 @@ CNCPeerControl::GetPooledConn(void)
 {
     CMiniMutexGuard guard(m_ObjLock);
     CNCActiveHandler* conn = x_GetPooledConnImpl();
-    if (conn)
+    if (conn) {
         ++m_ActiveConns;
+    }
     return conn;
 }
 
@@ -644,6 +644,20 @@ CNCPeerControl::GetMirrorQueueSize(Uint8 srv_id)
     CNCPeerControl* peer = Peer(srv_id);
     CMiniMutexGuard guard(peer->m_ObjLock);
     return peer->m_SmallMirror.size() + peer->m_BigMirror.size();
+}
+
+void
+CNCPeerControl::ReadCurState(SNCStateStat& state)
+{
+    Uint4 active = 0,  bg = 0;
+    ITERATE(TControlMap, it_ctrl, s_Controls) {
+        CNCPeerControl* peer = it_ctrl->second;
+        active += peer->m_ActiveConns;
+        bg += peer->m_BGConns;
+    }
+    state.mirror_queue_size = CNCPeerControl::GetMirrorQueueSize();
+    state.peer_active_conns = active;
+    state.peer_bg_conns = bg;
 }
 
 Uint4

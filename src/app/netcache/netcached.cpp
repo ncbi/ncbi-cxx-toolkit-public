@@ -589,7 +589,7 @@ void
 CNCServer::ReadCurState(SNCStateStat& state)
 {
     CNCBlobStorage::MeasureDB(state);
-    state.mirror_queue_size = CNCPeerControl::GetMirrorQueueSize();
+    CNCPeerControl::ReadCurState(state);
     state.sync_log_size = CNCSyncLog::GetLogSize();
     CWriteBackControl::ReadState(state);
 }

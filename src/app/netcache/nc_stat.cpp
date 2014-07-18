@@ -259,6 +259,8 @@ CNCStat::x_ClearStats(void)
     m_GarbageSize.Initialize();
     m_CntBlobs.Initialize();
     m_CntKeys.Initialize();
+    m_MirrorActiveConns.Initialize();
+    m_MirrorBGConns.Initialize();
     m_MirrorQSize.Initialize();
     m_SyncLogSize.Initialize();
     m_WBMemSize.Initialize();
@@ -358,6 +360,8 @@ CNCStat::x_AddStats(CNCStat* src_stat)
     m_GarbageSize.AddValues(src_stat->m_GarbageSize);
     m_CntBlobs.AddValues(src_stat->m_CntBlobs);
     m_CntKeys.AddValues(src_stat->m_CntKeys);
+    m_MirrorActiveConns.AddValues(src_stat->m_MirrorActiveConns);
+    m_MirrorBGConns.AddValues(src_stat->m_MirrorBGConns);
     m_MirrorQSize.AddValues(src_stat->m_MirrorQSize);
     m_SyncLogSize.AddValues(src_stat->m_SyncLogSize);
     m_WBMemSize.AddValues(src_stat->m_WBMemSize);
@@ -600,6 +604,8 @@ CNCStat::SaveCurStateStat(const SNCStateStat& state)
     stat->m_GarbageSize.AddValue(state.db_garb);
     stat->m_CntBlobs.AddValue(state.cnt_blobs);
     stat->m_CntKeys.AddValue(state.cnt_keys);
+    stat->m_MirrorActiveConns.AddValue(state.peer_active_conns);
+    stat->m_MirrorBGConns.AddValue(state.peer_bg_conns);
     stat->m_MirrorQSize.AddValue(state.mirror_queue_size);
     stat->m_SyncLogSize.AddValue(state.sync_log_size);
     stat->m_WBMemSize.AddValue(state.wb_size);
@@ -728,6 +734,14 @@ CNCStat::PrintToLogs(CTempString stat_name)
         .PrintParam("end_keys", m_EndState.cnt_keys)
         .PrintParam("avg_keys", m_CntKeys.GetAverage())
         .PrintParam("max_keys", m_CntKeys.GetMaximum())
+        .PrintParam("start_peer_active_conns", m_StartState.peer_active_conns)
+        .PrintParam("end_peer_active_conns", m_EndState.peer_active_conns)
+        .PrintParam("avg_peer_active_conns", m_MirrorActiveConns.GetAverage())
+        .PrintParam("max_peer_active_conns", m_MirrorActiveConns.GetMaximum())
+        .PrintParam("start_peer_bg_conns", m_StartState.peer_bg_conns)
+        .PrintParam("end_peer_bg_conns", m_EndState.peer_bg_conns)
+        .PrintParam("avg_peer_bg_conns", m_MirrorBGConns.GetAverage())
+        .PrintParam("max_peer_bg_conns", m_MirrorBGConns.GetAverage())
         .PrintParam("start_mirror_q_size", m_StartState.mirror_queue_size)
         .PrintParam("end_mirror_q_size", m_EndState.mirror_queue_size)
         .PrintParam("avg_mirror_q_size", m_MirrorQSize.GetAverage())
@@ -938,6 +952,18 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
                     << g_ToSizeStr(m_WBMemSize.GetMaximum()) << ", releasable "
                     << g_ToSizeStr(m_WBReleasable.GetMaximum()) << ", releasing "
                     << g_ToSizeStr(m_WBReleasing.GetMaximum()) << endl;
+    proxy << "Start mirror connections - "
+                    << g_ToSmartStr(m_StartState.peer_active_conns) << " active, "
+                    << g_ToSmartStr(m_StartState.peer_bg_conns) << " bg" << endl;
+    proxy << "End mirror connections - "
+                    << g_ToSmartStr(m_EndState.peer_active_conns) << " active, "
+                    << g_ToSmartStr(m_EndState.peer_bg_conns) << " bg" << endl;
+    proxy << "Avg mirror connections - "
+                    << g_ToSmartStr(m_MirrorActiveConns.GetAverage()) << " active, "
+                    << g_ToSmartStr(m_MirrorBGConns.GetAverage()) << " bg" << endl;
+    proxy << "Max mirror connections - "
+                    << g_ToSmartStr(m_MirrorActiveConns.GetMaximum()) << " active, "
+                    << g_ToSmartStr(m_MirrorBGConns.GetMaximum()) << " bg" << endl;
     proxy << "Start queues - "
                     << g_ToSmartStr(m_StartState.mirror_queue_size) << " mirror, "
                     << g_ToSmartStr(m_StartState.sync_log_size) << " sync log" << endl;
