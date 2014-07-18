@@ -183,20 +183,20 @@ int CCleanupApp::Run(void)
     const CArgs&   args = GetArgs();
 
 
-#ifdef HAVE_PUBSEQ_OS
-    // we may require PubSeqOS readers at some point, so go ahead and make
-    // sure they are properly registered
-    GenBankReaders_Register_Pubseq();
-    GenBankReaders_Register_Pubseq2();
-    DBAPI_RegisterDriver_FTDS();
-#endif
-
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
     if ( !m_Objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
     if (args["gbload"]) {
+#ifdef HAVE_PUBSEQ_OS
+        // we may require PubSeqOS readers at some point, so go ahead and make
+        // sure they are properly registered
+        GenBankReaders_Register_Pubseq();
+        GenBankReaders_Register_Pubseq2();
+        DBAPI_RegisterDriver_FTDS();
+#endif
+
         CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
     }
 
