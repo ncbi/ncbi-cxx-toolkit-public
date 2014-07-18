@@ -86,11 +86,11 @@ ifeq "" "$(OBJ_DIRS)"
   %.d: $(srcdir)/%.c
 	$(make_c_dep)
 else
-  CPP_DEP_HERE = $(patsubst %.cpp,%.d,$(wildcard $(SRC:%=%.cpp)))
-  C_DEP_HERE = $(patsubst %.c,%.d,$(wildcard $(SRC:%=%.c)))
+  CPP_DEP_HERE = $(CPP_OBJ_HERE:%@obj_ext@=%.d)
+  C_DEP_HERE   = $(C_OBJ_HERE:%@obj_ext@=%.d)
   ifneq "$(srcdir)" "."
-    CPP_DEP_THERE = $(patsubst $(srcdir)/%.cpp,%.d,$(wildcard $(SRC:%=$(srcdir)/%.cpp)))
-    C_DEP_THERE = $(patsubst $(srcdir)/%.c,%.d,$(wildcard $(SRC:%=$(srcdir)/%.c)))
+    CPP_DEP_THERE = $(CPP_OBJ_THERE:%@obj_ext@=%.d)
+    C_DEP_THERE   = $(C_OBJ_THERE:%@obj_ext@=%.d)
   endif
   $(CPP_DEP_HERE): %.d: %.cpp
 	$(make_cpp_dep)
