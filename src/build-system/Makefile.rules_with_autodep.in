@@ -7,6 +7,7 @@
 #  auto-dependencies build rules for GNU make
 #################################
 
+ifeq "$(NODEPGOALS)" ""
 
 ###  C/C++ compilation
 include $(builddir)/Makefile.rules
@@ -115,4 +116,6 @@ endif
 ifdef GCCPCH
  include $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE)
 endif
+endif
+
 endif
