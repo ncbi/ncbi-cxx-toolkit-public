@@ -215,6 +215,8 @@ void CForeignContaminationScreenReportReader::xTrimLiteral(objects::CSeq_literal
         case CSeq_data::e_Ncbistdaa:
             encoded_vec = &lit.SetSeq_data().SetNcbistdaa().Set();
             break;
+        default:
+            return;
         }
         string decoded;
         if (encoded_vec)

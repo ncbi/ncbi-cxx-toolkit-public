@@ -131,8 +131,6 @@ private:
     //bool m_Continue;
     //bool m_OnlyAnnots;
 
-    string m_cleanup;
-
     //EDiagSev m_LowCutoff;
     //EDiagSev m_HighCutoff;
 
@@ -343,7 +341,7 @@ int CTbl2AsnApp::Run(void)
 
     //m_DoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
     if (args["c"])
-        m_cleanup = args["c"].AsString();
+        m_context.m_cleanup = args["c"].AsString();
 
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
@@ -483,6 +481,16 @@ int CTbl2AsnApp::Run(void)
 
     if (args["N"])
         m_context.m_ProjectVersionNumber = args["N"].AsInteger();
+
+    if (args["C"])
+    {
+        m_context.m_genome_center_id = args["C"].AsString();
+        if (m_context.m_ProjectVersionNumber>0)
+            m_context.m_genome_center_id += NStr::NumericToString(m_context.m_ProjectVersionNumber);
+    }
+
+    if (args["V"])
+        m_context.m_validate = args["V"].AsString();
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
     if (args["o"])
@@ -640,8 +648,13 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         result = m_context.CreateSubmitFromTemplate(entry);
 
 #ifdef USE_SCOPE
-    CSeq_entry_Handle entry_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry);
-    CSeq_entry_EditHandle entry_edit_handle = entry_handle.GetEditHandle();
+    CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
+
+    if (!m_context.m_genome_center_id.empty())
+    {
+        m_context.MakeGenomeCenterId(entry_edit_handle);
+    }
+
 #endif
 
     if (m_context.m_RemotePubLookup)
@@ -668,12 +681,15 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     CTable2AsnValidator validator;
 
-    if (!m_cleanup.empty())
+    if (!m_context.m_cleanup.empty())
     {
         validator.Cleanup(*entry);
     }
 
-    validator.Validate(entry_handle);
+#ifdef USE_SCOPE
+    if (!m_context.m_validate.empty())
+      validator.Validate(entry_edit_handle);
+#endif
 
 
 }

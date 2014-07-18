@@ -65,8 +65,8 @@ public:
     CRef<objects::CDate> m_HoldUntilPublish;
     string F;
     string A;
-    string C;
-    string V;
+    string m_genome_center_id;
+    string m_validate;
     bool   J;
     bool   m_copy_genid_to_note;
     string G;
@@ -84,7 +84,8 @@ public:
     string m_master_genome_flag;
     string l;
     string m;
-    string m_single_structure_cmt;
+    string m_cleanup;
+    string m_single_structure_cmt;   
     int    m_ProjectVersionNumber;
     bool   m_flipped_struc_cmt;
     bool   m_RemoteTaxonomyLookup;
@@ -127,12 +128,18 @@ public:
     CRef<CSerialObject>
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
 
+    typedef void (*BioseqVisitorMethod)(CTable2AsnContext& context, objects::CBioseq& bioseq);
+    void VisitAllBioseqs(objects::CSeq_entry& entry, BioseqVisitorMethod m);
+
     void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src) const;
     void MergeWithTemplate(objects::CSeq_entry& entry) const;
     void SetSeqId(objects::CSeq_entry& entry) const;
     void CopyFeatureIdsToComments(objects::CSeq_entry& entry) const;
     void RemoveUnnecessaryXRef(objects::CSeq_entry& entry) const;
     void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
+
+    void MakeGenomeCenterId(objects::CSeq_entry_EditHandle& entry);
+    static void MakeGenomeCenterId(CTable2AsnContext& context, objects::CBioseq& bioseq);
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

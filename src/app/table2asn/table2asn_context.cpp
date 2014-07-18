@@ -503,7 +503,7 @@ void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const
     CDirEntry::SplitPath(m_current_file, 0, &base, 0);
     CRef<CSeq_id> id(new CSeq_id(string("lcl|") + base));
 
-    CBioseq* bioseq;
+    CBioseq* bioseq = 0;
     if (entry.IsSeq())
     {
         bioseq = &entry.SetSeq();
@@ -586,6 +586,67 @@ void CTable2AsnContext::SmartFeatureAnnotation(CSeq_entry& entry) const
     if (numgene == 0)
         return;
 
+}
+
+void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry_EditHandle& entry_h)
+{
+    CSeq_entry& entry = (CSeq_entry&)*entry_h.GetCompleteSeq_entry();
+    CScope& scope = entry_h.GetScope();
+    scope.RemoveTopLevelSeqEntry(entry_h);
+    VisitAllBioseqs(entry, &CTable2AsnContext::MakeGenomeCenterId);
+    entry_h = scope.AddTopLevelSeqEntry(entry).GetEditHandle();   
+}
+
+void CTable2AsnContext::VisitAllBioseqs(objects::CSeq_entry& entry, BioseqVisitorMethod m)
+{
+    if (entry.IsSeq())
+    {
+        m(*this, entry.SetSeq());
+    }
+    else
+    if (entry.IsSet()) 
+    {
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.SetSet().SetSeq_set())
+        {
+            VisitAllBioseqs(**it_se, m);
+        }
+    }
+}
+
+
+void CTable2AsnContext::MakeGenomeCenterId(CTable2AsnContext& context, CBioseq& bioseq)
+{    
+    if (context.m_genome_center_id.empty()) return;
+
+    CTempString db = context.m_genome_center_id;
+
+    NON_CONST_ITERATE(CBioseq::TId, id_it, bioseq.SetId())
+    {           
+        CSeq_id* seq_id(*id_it);
+        if (seq_id == 0) continue;
+
+        const CObject_id* obj_id;
+        switch (seq_id->Which())
+        {
+        case CSeq_id::e_Local:
+            obj_id = &seq_id->GetLocal();            
+            break;
+        case CSeq_id::e_General:
+            obj_id = &seq_id->GetGeneral().GetTag();
+            break;
+        default:
+            continue;
+        }
+        if (obj_id->IsId())
+            seq_id->SetGeneral().SetTag().SetId(obj_id->GetId());
+        else
+        {
+            string id = obj_id->GetStr();
+            seq_id->SetGeneral().SetTag().SetStr(id);
+        }
+
+        seq_id->SetGeneral().SetDb(db);                      
+    }
 }
 
 END_NCBI_SCOPE
