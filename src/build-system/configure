@@ -875,6 +875,9 @@ DBAPI_ODBC
 THREAD_LIBS
 NCBIATOMIC_LIB
 OPENMP_FLAGS
+UNSAFE_MATH_FLAG
+SSE4_1_FLAG
+AES_FLAG
 NETWORK_LIBS
 NETWORK_PURE_LIBS
 RESOLVER_LIBS
@@ -12215,8 +12218,10 @@ fi
 
 
 
+
 for ac_header in atomic.h dlfcn.h ieeefp.h poll.h sys/epoll.h sys/mount.h \
-                 sys/sockio.h sys/statvfs.h sys/sysinfo.h sys/vfs.h
+                 sys/sockio.h sys/statvfs.h sys/sysinfo.h sys/vfs.h \
+                 x86intrin.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -22673,6 +22678,245 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+orig_CFLAGS=$CFLAGS
+
+{ echo "$as_me:$LINENO: checking whether $CC supports -funsafe-math-optimizations" >&5
+echo $ECHO_N "checking whether $CC supports -funsafe-math-optimizations... $ECHO_C" >&6; }
+if test "${ncbi_cv_cc_unsafe_math+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CFLAGS="$orig_CFLAGS -funsafe-math-optimizations"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_cc_unsafe_math=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_cc_unsafe_math=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_cc_unsafe_math" >&5
+echo "${ECHO_T}$ncbi_cv_cc_unsafe_math" >&6; }
+
+{ echo "$as_me:$LINENO: checking whether $CC supports -msse4.1" >&5
+echo $ECHO_N "checking whether $CC supports -msse4.1... $ECHO_C" >&6; }
+if test "${ncbi_cv_cc_sse4_1+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CFLAGS="$orig_CFLAGS -msse4.1"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_cc_sse4_1=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_cc_sse4_1=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_cc_sse4_1" >&5
+echo "${ECHO_T}$ncbi_cv_cc_sse4_1" >&6; }
+
+{ echo "$as_me:$LINENO: checking whether $CC supports -maes" >&5
+echo $ECHO_N "checking whether $CC supports -maes... $ECHO_C" >&6; }
+if test "${ncbi_cv_cc_aes+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CFLAGS="$orig_CFLAGS -maes"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_cc_aes=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_cc_aes=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_cc_aes" >&5
+echo "${ECHO_T}$ncbi_cv_cc_aes" >&6; }
+
+CFLAGS=$orig_CFLAGS
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+if test $ncbi_cv_cc_unsafe_math = yes; then
+   UNSAFE_MATH_FLAG=-funsafe-math-optimizations
+else
+   UNSAFE_MATH_FLAG=
+fi
+
+if test $ncbi_cv_cc_sse4_1 = yes; then
+   SSE4_1_FLAG=-msse4.1
+else
+   SSE4_1_FLAG=
+fi
+
+if test $ncbi_cv_cc_aes = yes; then
+   AES_FLAG=-maes
+else
+   AES_FLAG=
+fi
+
 
 ### Check for the availability of other packages
 ### --------------------------------------------
@@ -40076,6 +40320,9 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -41098,6 +41345,9 @@ DBAPI_ODBC!$DBAPI_ODBC$ac_delim
 THREAD_LIBS!$THREAD_LIBS$ac_delim
 NCBIATOMIC_LIB!$NCBIATOMIC_LIB$ac_delim
 OPENMP_FLAGS!$OPENMP_FLAGS$ac_delim
+UNSAFE_MATH_FLAG!$UNSAFE_MATH_FLAG$ac_delim
+SSE4_1_FLAG!$SSE4_1_FLAG$ac_delim
+AES_FLAG!$AES_FLAG$ac_delim
 NETWORK_LIBS!$NETWORK_LIBS$ac_delim
 NETWORK_PURE_LIBS!$NETWORK_PURE_LIBS$ac_delim
 RESOLVER_LIBS!$RESOLVER_LIBS$ac_delim
@@ -41119,9 +41369,6 @@ TLS_INCLUDE!$TLS_INCLUDE$ac_delim
 TLS_LIBS!$TLS_LIBS$ac_delim
 SYBASE_PATH!$SYBASE_PATH$ac_delim
 SYBASE_LCL_PATH!$SYBASE_LCL_PATH$ac_delim
-SYBASE_INCLUDE!$SYBASE_INCLUDE$ac_delim
-SYBASE_LIBS!$SYBASE_LIBS$ac_delim
-SYBASE_DLLS!$SYBASE_DLLS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -41163,6 +41410,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+SYBASE_INCLUDE!$SYBASE_INCLUDE$ac_delim
+SYBASE_LIBS!$SYBASE_LIBS$ac_delim
+SYBASE_DLLS!$SYBASE_DLLS$ac_delim
 SYBASE_DBLIBS!$SYBASE_DBLIBS$ac_delim
 MYSQL_INCLUDE!$MYSQL_INCLUDE$ac_delim
 MYSQL_LIBS!$MYSQL_LIBS$ac_delim
@@ -41257,9 +41507,6 @@ ncbi_java!$ncbi_java$ac_delim
 NCBI_C_ncbi!$NCBI_C_ncbi$ac_delim
 BINCOPY!$BINCOPY$ac_delim
 APP_NOCOPY!$APP_NOCOPY$ac_delim
-APP_OR_NULL!$APP_OR_NULL$ac_delim
-IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
-IF_REBUILDING_CONDITIONALLY!$IF_REBUILDING_CONDITIONALLY$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -41301,6 +41548,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+APP_OR_NULL!$APP_OR_NULL$ac_delim
+IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
+IF_REBUILDING_CONDITIONALLY!$IF_REBUILDING_CONDITIONALLY$ac_delim
 IF_DEACTIVATING!$IF_DEACTIVATING$ac_delim
 configurables_mfname!$configurables_mfname$ac_delim
 CC_FILTER!$CC_FILTER$ac_delim
@@ -41327,7 +41577,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 24; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 27; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

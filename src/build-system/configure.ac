@@ -2962,7 +2962,8 @@ fi
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
 AC_CHECK_HEADERS(atomic.h dlfcn.h ieeefp.h poll.h sys/epoll.h sys/mount.h \
-                 sys/sockio.h sys/statvfs.h sys/sysinfo.h sys/vfs.h)
+                 sys/sockio.h sys/statvfs.h sys/sysinfo.h sys/vfs.h \
+                 x86intrin.h)
 case "$host_os" in
    cygwin*) AC_CHECK_HEADERS(winternl.h) ;;
 esac
@@ -3674,6 +3675,47 @@ if test "$ncbi_cv_sys_unaligned_reads" = yes; then
              [Define to 1 if your system permits reading integers from
               unaligned addresses.])
 fi
+
+AC_LANG_PUSH(C)
+orig_CFLAGS=$CFLAGS
+
+AC_CACHE_CHECK([whether $CC supports -funsafe-math-optimizations],
+               ncbi_cv_cc_unsafe_math,
+   [CFLAGS="$orig_CFLAGS -funsafe-math-optimizations"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+       [ncbi_cv_cc_unsafe_math=yes], [ncbi_cv_cc_unsafe_math=no])])
+
+AC_CACHE_CHECK([whether $CC supports -msse4.1], ncbi_cv_cc_sse4_1,
+   [CFLAGS="$orig_CFLAGS -msse4.1"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+       [ncbi_cv_cc_sse4_1=yes], [ncbi_cv_cc_sse4_1=no])])
+
+AC_CACHE_CHECK([whether $CC supports -maes], ncbi_cv_cc_aes,
+   [CFLAGS="$orig_CFLAGS -maes"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+       [ncbi_cv_cc_aes=yes], [ncbi_cv_cc_aes=no])])
+
+CFLAGS=$orig_CFLAGS
+AC_LANG_POP(C)
+
+if test $ncbi_cv_cc_unsafe_math = yes; then
+   UNSAFE_MATH_FLAG=-funsafe-math-optimizations
+else
+   UNSAFE_MATH_FLAG=
+fi
+
+if test $ncbi_cv_cc_sse4_1 = yes; then
+   SSE4_1_FLAG=-msse4.1
+else
+   SSE4_1_FLAG=
+fi
+
+if test $ncbi_cv_cc_aes = yes; then
+   AES_FLAG=-maes
+else
+   AES_FLAG=
+fi
+
 
 ### Check for the availability of other packages
 ### --------------------------------------------
@@ -7155,6 +7197,9 @@ AC_SUBST(DBAPI_ODBC)
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NCBIATOMIC_LIB)
 AC_SUBST(OPENMP_FLAGS)
+AC_SUBST(UNSAFE_MATH_FLAG)
+AC_SUBST(SSE4_1_FLAG)
+AC_SUBST(AES_FLAG)
 AC_SUBST(NETWORK_LIBS)
 AC_SUBST(NETWORK_PURE_LIBS)
 AC_SUBST(RESOLVER_LIBS)
