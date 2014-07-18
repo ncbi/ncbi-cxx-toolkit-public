@@ -265,13 +265,21 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoEx
 /** Same as "SERV_GetInfoEx(., ., ., ., 0, 0, 0)" -- i.e. w/o the "skip" array,
  * and w/o "host_info".
  * @sa
- *  SERV_GetInfoEx
+ *  SERV_GetInfoEx, SERV_Open
  */
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfo
 (const char*          service,
  TSERV_Type           types,
  unsigned int         preferred_host,
  const SConnNetInfo*  net_info
+ );
+
+/** Same as "SERV_GetInfo(., fSERV_Any, SERV_ANYHOST, ConnNetInfo_Create(service))".
+ * @sa
+ *  SERV_GetInfo, SERV_OpenSimple
+ */
+extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoSimple
+(const char*          service
  );
 
 

@@ -420,18 +420,34 @@ static SSERV_Info* s_GetInfo(const char*         service,
                              const char*         val,
                              HOST_INFO*          host_info)
 {
-    SSERV_Info* info = 0;
+    SSERV_Info* info;
     SERV_ITER iter = s_Open(service, 0/*not mask*/, types,
                             preferred_host, preferred_port, preference,
                             net_info, skip, n_skip,
                             external, arg, val,
                             &info, host_info);
     assert(!iter  ||  iter->op);
-    if (iter  &&  !info) {
-        /* All LOCAL/DISPD searches end up here, but none LBSMD ones */
+    if (!iter)
+        info = 0;
+    else if (!info) /* all LOCAL/DISPD searches here, but no LBSMD ones */
         info = s_GetNextInfo(iter, host_info, 1/*internal*/);
-    }
+    else if (info == (SSERV_Info*)(-1L))
+        info = 0;
     SERV_Close(iter);
+    return info;
+}
+
+
+extern SSERV_Info* SERV_GetInfoSimple(const char* service)
+{
+    SConnNetInfo* net_info = ConnNetInfo_Create(service);
+    SSERV_Info* info = s_GetInfo(service, fSERV_Any,
+                                 SERV_ANYHOST/*preferred_host*/,
+                                 0/*preferred_port*/, 0.0/*preference*/,
+                                 net_info, 0/*skip*/, 0/*n_skip*/,
+                                 0/*not external*/, 0/*arg*/, 0/*val*/,
+                                 0/*host_info*/);
+    ConnNetInfo_Destroy(net_info);
     return info;
 }
 
@@ -458,7 +474,7 @@ extern SSERV_Info* SERV_GetInfoEx(const char*         service,
                                   HOST_INFO*          host_info)
 {
     return s_GetInfo(service, types,
-                     preferred_host, 0/*preferred_host*/, 0.0/*preference*/,
+                     preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
                      net_info, skip, n_skip,
                      0/*not external*/, 0/*arg*/, 0/*val*/,
                      host_info);
