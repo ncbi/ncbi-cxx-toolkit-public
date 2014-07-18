@@ -377,7 +377,7 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
     iter->data = data;
 
     if (g_NCBI_ConnectRandomSeed == 0) {
-        g_NCBI_ConnectRandomSeed = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
+        g_NCBI_ConnectRandomSeed  = iter->time ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
     }
 
