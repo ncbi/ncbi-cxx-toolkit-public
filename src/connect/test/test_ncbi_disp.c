@@ -36,6 +36,7 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "test_assert.h"  /* This header must go last */
 
@@ -95,6 +96,22 @@ static const char* x_Bits(TNcbiCapacity capacity)
 }
 
 
+static double x_TimeDiff(const struct timeval* end,
+                         const struct timeval* beg)
+{
+    if (end->tv_sec < beg->tv_sec)
+        return 0.0;
+    if (end->tv_usec < beg->tv_usec) {
+        if (end->tv_sec == beg->tv_sec)
+            return 0.0;
+        return (end->tv_sec - beg->tv_sec - 1)
+            + (end->tv_usec - beg->tv_usec + 1000000) / 1000000.0;
+    }
+    return (end->tv_sec - beg->tv_sec)
+        + (end->tv_usec - beg->tv_usec) / 1000000.0;
+}
+
+
 /* One can define env.var. 'service'_CONN_HOST to reroute dispatching
  * information to particular dispatching host (instead of default).
  */
@@ -104,6 +121,7 @@ int main(int argc, const char* argv[])
     const char* service = argc > 1 ? argv[1] : "bounce";
     SConnNetInfo* net_info;
     const SSERV_Info* info;
+    struct timeval start;
     const char* value;
     int n_found = 0;
     SERV_ITER iter;
@@ -145,6 +163,8 @@ int main(int argc, const char* argv[])
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
+    if (gettimeofday(&start, 0) != 0)
+        memset(&start, 0, sizeof(start));
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
                       (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
@@ -153,12 +173,17 @@ int main(int argc, const char* argv[])
     ConnNetInfo_Destroy(net_info);
     if (iter) {
         HOST_INFO hinfo;
-        CORE_LOGF(eLOG_Trace,("%s service mapper has been successfully opened",
-                              SERV_MapperName(iter)));
         while ((info = SERV_GetNextInfoEx(iter, &hinfo)) != 0) {
-            char* info_str = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Note, ("Server #%d `%s' = %s", ++n_found,
-                                  SERV_CurrentName(iter), info_str));
+            struct timeval stop;
+            double elapsed;
+            char* info_str;
+            if (gettimeofday(&stop, 0) != 0)
+                memset(&stop, 0, sizeof(stop));
+            elapsed = x_TimeDiff(&stop, &start);
+            info_str = SERV_WriteInfo(info);
+            CORE_LOGF(eLOG_Note, ("Server #%-2d (%.6fs) `%s' = %s", ++n_found,
+                                  elapsed, SERV_CurrentName(iter),
+                                  info_str ? info_str : "?"));
             if (hinfo) {
                 static const char kTimeFormat[] = "%m/%d/%y %H:%M:%S";
                 time_t t;
@@ -223,9 +248,13 @@ int main(int argc, const char* argv[])
                                       e? "\"": "", e? e: "NULL", e? "\"": ""));
                 free(hinfo);
             }
-            free(info_str);
+            if (info_str)
+                free(info_str);
+            if (gettimeofday(&start, 0) != 0)
+                memcpy(&start, &stop, sizeof(start));
         }
-        CORE_LOG(eLOG_Trace, "Resetting service mapper");
+        CORE_LOGF(eLOG_Trace, ("Resetting the %s service mapper",
+                               SERV_MapperName(iter)));
         SERV_Reset(iter);
         CORE_LOG(eLOG_Trace, "Service mapper has been reset");
         if (n_found && !(info = SERV_GetNextInfo(iter)))
