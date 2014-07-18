@@ -36,8 +36,8 @@
  * Functions:
  *   BUF_SetChunkSize
  *   BUF_Size
- *   BUF_Prepend
- *   BUF_Append
+ *   BUF_Prepend[Ex]
+ *   BUF_Append[Ex]
  *   BUF_Write
  *   BUF_PushBack
  *   BUF_Peek
@@ -90,12 +90,26 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_Size(BUF buf);
 
 
 /*!
- * Prepend a block of data (of the specified size) to the
- * beginning of the buffer (to be read first).  Note that unlike
- * BUF_Pushback(), in this call the data is not copied into the buffer
- * but instead is just linked in from the original location.
- * Return non-zero (true) if succeeded, zero (false) if failed.
+ * Prepend a block of data (of the specified size) at the beginning of the
+ * buffer (to be read first).  Note that unlike BUF_Pushback(), in this call
+ * the data is not copied into the buffer but instead is just linked in from
+ * the original location.  Return non-zero (true) if succeeded, zero (false)
+ * if failed.
  */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_PrependEx
+(BUF*   pBuf,
+ void*  base,       /* base to be "free"d when the buffer chunk is unlinked  */
+ size_t alloc_size, /* usable size of "data" (0 to make the use read-only)   */
+ void*  data,       /* points to data to be prepended by linking in the list */
+ size_t size        /* size of "data" occupied                               */
+ );
+
+
+/*!
+ * Equivalent to BUF_PrependEx(pBuf, 0, 0, data, size)
+ * NOTE: the prepended chunk is thus read-only and will not be auto-freed.
+ */
+
 extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Prepend
 (BUF*        pBuf,
  const void* data,
@@ -104,11 +118,23 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Prepend
 
 
 /*!
- * Append a block of data (of the specified size) past the end
- * of the buffer (to be read last).  Note that unlike
- * BUF_Write(), in this call the data is not copied to the buffer
- * but instead is just linked in from the original location.
- * Return non-zero (true) if succeeded, zero (false) if failed.
+ * Append a block of data (of the specified size) past the end of the buffer
+ * (to be read last).  Note that unlike BUF_Write(), in this call the data is
+ * not copied to the buffer but instead is just linked in from the original
+ * location.  Return non-zero (true) if succeeded, zero (false) if failed.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_AppendEx
+(BUF*   pBuf,
+ void*  base,       /* base to be "free"d when the chunk is unlinked        */
+ size_t alloc_size, /* usable size of "data" (0 to make the use read-only)  */
+ void*  data,       /* points to data to be appended by linking in the list */
+ size_t size        /* size of "data" occupied                              */
+ );
+
+
+/*!
+ * Equivalent to BUF_AppendEx(pBuf, 0, 0, data, size)
+ * NOTE: the appended chunk is thus read-only and will not be auto-freed.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Append
 (BUF*        pBuf,
@@ -122,6 +148,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Append
  * On error (failed memory allocation), return zero value;
  * otherwise return non-zero (i.e. including when "size" passed as 0).
  * NOTE:  if "*pBuf" == NULL then create it if necessary (e.g. if size != 0).
+ * NOTE:  writing immediately past the end of the data into an unoccupied space
+ * of a chunk that was previosuly appended with BUF_AppendEx() results in a
+ * zero copy operation (just the pointers updated as necessary).
  */
 extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
 (BUF*        pBuf,

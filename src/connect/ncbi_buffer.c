@@ -40,7 +40,7 @@
  */
 typedef struct SBufChunkTag {
     struct SBufChunkTag* next;
-    size_t extent;      /* total allocated size of "data" (0 if none)        */
+    size_t extent;      /* total allocated size of "data" (0 if none/RO)     */
     size_t skip;        /* # of bytes already discarded(read) from the chunk */
     size_t size;        /* of data (including the discarded "skip" bytes)    */
     void*  base;        /* base ptr of the data chunk if to be free()'d      */
@@ -54,7 +54,7 @@ struct SNcbiBuf {
     SBufChunk* list;    /* the linked list of chunks                         */
     SBufChunk* last;    /* shortcut to the last chunk in the list            */
     size_t     unit;    /* chunk size unit                                   */
-    size_t     size;    /* total buffer size; m.b.consistent at all times    */
+    size_t     size;    /* total buffer size; must be consistent at all times*/
 };
 
 
@@ -112,15 +112,14 @@ static SBufChunk* s_AllocChunk(size_t data_size, size_t chunk_size)
     chunk->extent = alloc_size;
     chunk->skip   = 0;
     chunk->size   = 0;
-    chunk->base   = 0/*not yet used*/;
+    chunk->base   = 0;
     chunk->data   = alloc_size ? (char*) chunk + sizeof(*chunk) : 0;
     return chunk;
 }
 
 
-/*not yet public*/
-int/*bool*/ BUF_AppendEx(BUF* buf, void* base, size_t alloc_size,
-                         void* data, size_t size)
+extern int/*bool*/ BUF_AppendEx(BUF* buf, void* base, size_t alloc_size,
+                                void* data, size_t size)
 {
     SBufChunk* chunk;
 
@@ -159,9 +158,8 @@ extern int/*bool*/ BUF_Append(BUF* buf, const void* data, size_t size)
 }
 
 
-/*not yet public*/
-int/*bool*/ BUF_PrependEx(BUF* buf, void* base, size_t alloc_size,
-                          void* data, size_t size)
+extern int/*bool*/ BUF_PrependEx(BUF* buf, void* base, size_t alloc_size,
+                                 void* data, size_t size)
 {
     SBufChunk* chunk;
 
@@ -247,7 +245,9 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
     }
 
     if (pending) {
-        memcpy(tail->data + tail->size, src, pending);
+        void* dst = tail->data + tail->size;
+        if (dst != src)
+            memmove(dst, src, pending);
         tail->size += pending;
     }
     (*buf)->size += pending + size;
@@ -258,6 +258,7 @@ extern int/*bool*/ BUF_Write(BUF* buf, const void* src, size_t size)
 extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
 {
     SBufChunk* head;
+    void* dst;
 
     if (!size)
         return 1/*true*/;
@@ -277,6 +278,7 @@ extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
         if (!(head = s_AllocChunk(size -= skip, (*buf)->unit)))
             return 0/*false*/;
         if (skip) {
+            /* fill up the skip area */
             memcpy(next->data, (const char*) src + size, skip);
             (*buf)->size += skip;
             next->skip = 0;
@@ -290,11 +292,13 @@ extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
         (*buf)->list = head;
     }
 
-    /* write data */
+    /* write remaining data */
+    dst = head->data + head->skip;
     assert(head->skip >= size);
-    head->skip -= size;
-    memcpy(head->data + head->skip, src, size);
+    if (dst != src)
+        memmove(dst, src, size);
     (*buf)->size += size;
+    head->skip -= size;
     return 1/*true*/;
 }
 
