@@ -25,10 +25,10 @@ POSTBUILD: echo FAKE postbuild COMMAND for $platform
 
 
 
-Linux32-Centos  : icc     : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux32-Centos  : icc     : ICC.sh 2013          --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux32-Centos  : gcc     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-Linux64-Centos  : icc     : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64-Centos  : icc     : ICC.sh 2013          --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux64-Centos  : gcc : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 FreeBSD32  : plain     : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
