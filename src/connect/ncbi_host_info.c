@@ -54,9 +54,9 @@ HOST_INFO HINFO_Create(unsigned int addr, const void* hinfo, size_t hinfo_size,
 
     if (!hinfo)
         return 0;
-    e_s = env && *env ? strlen(env) + 1 : 0;
-    a_s = arg && *arg ? strlen(arg) + 1 : 0;
-    v_s = a_s &&  val ? strlen(val) + 1 : 0;
+    e_s = env  &&  *env ? strlen(env) + 1 : 0;
+    a_s = arg  &&  *arg ? strlen(arg) + 1 : 0;
+    v_s = a_s  &&   val ? strlen(val) + 1 : 0;
     size = sizeof(*host_info) + hinfo_size;
     if (!(host_info = (SHOST_Info*) calloc(1, size + e_s + a_s + v_s)))
         return 0;
@@ -110,6 +110,7 @@ extern double HINFO_CpuClock(const HOST_INFO host_info)
         return 0.0;
     return LBSM_HINFO_CpuClock(host_info);
 }
+
 
 extern int HINFO_TaskCount(const HOST_INFO host_info)
 {
