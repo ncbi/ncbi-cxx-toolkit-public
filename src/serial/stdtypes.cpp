@@ -1195,6 +1195,12 @@ void CPrimitiveTypeInfoString::SetValueChar(TObjectPtr object,
     CPrimitiveTypeFunctions<TObjectType>::Get(object).assign(1, value);
 }
 
+bool CPrimitiveTypeInfoString::IsType(TTypeInfo type) const
+{
+    return  this == type || type == CStdTypeInfo<string>::GetTypeInfo();
+//            || type == CStdTypeInfo<ncbi::utf8_string_type>::GetTypeInfo();
+}
+
 TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)
 {
     static TTypeInfo info = CreateTypeInfo();

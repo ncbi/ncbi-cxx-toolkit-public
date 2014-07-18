@@ -223,6 +223,7 @@ public:
         return m_Type;
     }
     bool IsStringStore(void) const;
+    virtual bool IsType(TTypeInfo type) const;
 private:
     EType m_Type;
 };
