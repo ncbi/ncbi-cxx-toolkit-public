@@ -857,7 +857,7 @@ public:
 
     /// Get number of days in the month.
     ///
-    /// Number of days = 1..31
+    /// Number of days = 28..31
     int DaysInMonth(void) const;
 
     /// Add specified years and adjust for daylight saving time.

@@ -3483,9 +3483,9 @@ double CStopWatch::GetTimeMark()
         return 0.0;
     }
     return double(bigint.QuadPart) / freq;
-
 #else
     // For Unixes, we use gettimeofday()
+
     struct timeval time;
     if ( gettimeofday (&time, 0) ) {
         return 0.0;

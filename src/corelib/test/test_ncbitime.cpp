@@ -949,6 +949,11 @@ static void s_TestGMT(void)
         CTime t21(2013, 11, 3, 0, 59, 0, 0, CTime::eLocal, CTime::eHour);
         CTime t22(2013, 11, 3, 2,  0, 0, 0, CTime::eLocal, CTime::eHour);
         assert(t22.GetTimeT()/3600 - t21.GetTimeT()/3600 == 3);
+
+        // Check for underlying implementations not based on time_t (MSWIN)
+        t.GetCurrentTimeT(&timer);
+        time_t now = time(0);
+        assert(timer <= now  &&  now - timer < 5);
     }}
 
     //------------------------------------------------------------------------
