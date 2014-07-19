@@ -344,7 +344,7 @@ private:
     public:
         CHttpStreamRef(void) {}
         virtual ~CHttpStreamRef(void) {}
-        bool IsInitialized(void) const { return m_ConnStream.get(); }
+        bool IsInitialized(void) const { return m_ConnStream.get() ? true : false; }
         CConn_HttpStream& GetConnStream(void) const { return *m_ConnStream; }
         void SetConnStream(CConn_HttpStream* stream) { m_ConnStream.reset(stream); }
     private:
