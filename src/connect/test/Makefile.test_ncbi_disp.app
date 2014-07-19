@@ -11,5 +11,3 @@ CHECK_CMD =
 CHECK_TIMEOUT = 30
 
 WATCHERS = lavr
-
-REQUIRES = unix
