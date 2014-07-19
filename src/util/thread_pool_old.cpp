@@ -66,7 +66,7 @@ void CStdPoolOfThreads::KillAllThreads(TKillFlags flags)
         if (n != n2) {
             ERR_POST(Warning << "Registered " << n2 << " threads but expected "
                      << n);
-            if (n2 > n) {
+            if (n < n2) {
                 n = n2;
             }
         }
