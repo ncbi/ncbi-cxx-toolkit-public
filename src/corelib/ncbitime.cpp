@@ -38,7 +38,6 @@
 #include <stdlib.h>
 
 #if defined(NCBI_OS_MSWIN)
-#  include <sys/timeb.h>
 #  include <windows.h>
 #elif defined(NCBI_OS_UNIX)
 #  include <sys/time.h>
@@ -315,7 +314,7 @@ CTimeFormat::CTimeFormat(const string& fmt, TFlags flags)
 void CTimeFormat::SetFormat(const string& fmt, TFlags flags)
 {
     // Checks flags compatibility
-    int f = fFormat_Simple | fFormat_Ncbi;
+    TFlags f = fFormat_Simple | fFormat_Ncbi;
     if ( (flags & f) == f ) {
         NCBI_THROW(CTimeException, eFormat, 
             "Incompatible flags specified together: fFormat_Simple | fFormat_Ncbi");
@@ -1261,8 +1260,8 @@ time_t CTime::GetTimeT(void) const
     t.tm_isdst = -1;
 #if defined(NCBI_OS_DARWIN)
     time_t tt = mktime(&t);
-    if ( tt == -1 ) {
-        return -1;
+    if ( tt == (time_t)(-1L) ) {
+        return tt;
     }
     return IsGmtTime() ? tt+t.tm_gmtoff : tt;
 #elif defined(HAVE_TIMEGM)
@@ -1271,8 +1270,8 @@ time_t CTime::GetTimeT(void) const
     struct tm *ttemp;
     time_t timer;
     timer = mktime(&t);
-    if ( timer == -1 ) {
-        return -1;
+    if ( timer == (time_t)(-1L) ) {
+        return timer;
     }
 
     // Correct timezone for GMT time
@@ -1290,8 +1289,8 @@ time_t CTime::GetTimeT(void) const
         t.tm_year  = Year()-1900;
         t.tm_isdst = -1;
         timer = mktime(&t);
-        if ( timer == -1 ) {
-            return -1;
+        if ( timer == (time_t)(-1L) ) {
+            return timer;
         }
 
 #  if defined(HAVE_LOCALTIME_R)
@@ -1302,7 +1301,7 @@ time_t CTime::GetTimeT(void) const
         ttemp = localtime(&timer);
 #  endif
         if (ttemp == NULL)
-            return -1;
+            return (time_t)(-1L);
         if (ttemp->tm_isdst > 0  &&  Daylight())
             timer += 3600;
     }
@@ -1359,11 +1358,11 @@ CTime& CTime::SetTimeTM(const struct tm& t)
 
 TDBTimeU CTime::GetTimeDBU(void) const
 {
-    TDBTimeU dbt;
-    CTime t  = GetLocalTime();
+    CTime t = GetLocalTime();
     unsigned first = s_Date2Number(CTime(1900, 1, 1));
     unsigned curr  = s_Date2Number(t);
 
+    TDBTimeU dbt;
     dbt.days = (Uint2)(curr - first);
     dbt.time = (Uint2)(t.Hour() * 60 + t.Minute());
     return dbt;
@@ -1372,14 +1371,14 @@ TDBTimeU CTime::GetTimeDBU(void) const
 
 TDBTimeI CTime::GetTimeDBI(void) const
 {
-    TDBTimeI dbt;
-    CTime t  = GetLocalTime();
+    CTime t = GetLocalTime();
     unsigned first = s_Date2Number(CTime(1900, 1, 1));
     unsigned curr  = s_Date2Number(t);
 
+    TDBTimeI dbt;
     dbt.days = (Int4)(curr - first);
-    dbt.time = (Int4)((t.Hour() * 3600 + t.Minute() * 60 + t.Second()) * 300) +
-               (Int4)((double)t.NanoSecond() * 300 / kNanoSecondsPerSecond);
+    dbt.time = (Int4)((t.Hour() * 3600 + t.Minute() * 60 + t.Second()) * 300 +
+                      (Int8(t.NanoSecond()) * 300) / kNanoSecondsPerSecond);
     return dbt;
 }
 
@@ -1407,8 +1406,7 @@ CTime& CTime::SetTimeDBI(const TDBTimeI& t)
     time.SetTimeZonePrecision(GetTimeZonePrecision());
     time.AddDay(t.days);
     time.AddSecond(t.time / 300);
-    time.AddNanoSecond((long)((t.time % 300) *
-                              (double)kNanoSecondsPerSecond / 300));
+    time.AddNanoSecond(long((Int8(t.time % 300) * kNanoSecondsPerSecond)/300));
     time.ToTime(GetTimeZone());
 
     *this = time;
@@ -1428,28 +1426,32 @@ CTime& CTime::x_SetTimeMTSafe(const time_t* value)
 void CTime::GetCurrentTimeT(time_t* sec, long* nanosec)
 {
     _ASSERT(sec);
-    long ns = 0;
-#if defined(NCBI_OS_MSWIN)
-    struct _timeb timebuffer;
-    _ftime(&timebuffer);
-    *sec = timebuffer.time;
-    ns = (long) timebuffer.millitm *
-         (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
+    long ns;
+#if   defined(NCBI_OS_MSWIN)
+    FILETIME systime;
+    Uint8    systemp;
 
+    GetSystemTimeAsFileTime(&systime);
+
+    systemp   = systime.dwHighDateTime;
+    systemp <<= 32;
+    systemp  |= systime.dwLowDateTime;
+    *sec      =  systemp / 10000000  - NCBI_CONST_UINT8(11644473600);
+    ns        = (systemp % 10000000) * 100;
 #elif defined(NCBI_OS_UNIX)
     struct timeval tp;
-    if (gettimeofday(&tp,0) == -1) {
-        *sec = -1;
-    } else {
+    if (gettimeofday(&tp,0) == 0) {
         *sec = tp.tv_sec;
-        ns = long((double)tp.tv_usec *
-                  (double)kNanoSecondsPerSecond /
-                  (double)kMicroSecondsPerSecond);
+        ns   = tp.tv_usec * (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    } else {
+        *sec = (time_t)(-1L);
+        ns   = 0;
     }
 #else
     *sec = time(0);
+    ns   = 0;
 #endif
-    if (*sec == (time_t)(-1)) {
+    if (*sec == (time_t)(-1L)) {
         NCBI_THROW(CTimeException, eConvert,
                    "Unable to get time value");
     }
@@ -1829,7 +1831,7 @@ CTime& CTime::ToTime(ETimeZone tz)
         struct tm* t;
         time_t timer;
         timer = GetTimeT();
-        if (timer == -1)
+        if (timer == (time_t)(-1L))
             return *this;
 
         // MT-Safe protect
@@ -1994,7 +1996,7 @@ string CTime::TimeZoneOffsetStr(void)
 string CTime::TimeZoneName(void)
 {
     time_t timer = GetTimeT();
-    if (timer == -1) {
+    if (timer == (time_t)(-1L)) {
        return kEmptyStr;
     }
     // MT-Safe protect
@@ -3174,11 +3176,16 @@ CDeadline::CDeadline(const CTimeout& timeout)
 void CDeadline::x_Now(void)
 {
 #if defined(NCBI_OS_MSWIN)
-    struct _timeb timebuffer;
-    _ftime(&timebuffer);
-    m_Seconds     = timebuffer.time;
-    m_Nanoseconds = (unsigned int) timebuffer.millitm *
-        (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
+    FILETIME systime;
+    Uint8    systemp;
+
+    GetSystemTimeAsFileTime(&systime);
+
+    systemp   = systime.dwHighDateTime;
+    systemp <<= 32;
+    systemp  |= systime.dwLowDateTime;
+    m_Seconds     =  systemp / 10000000  - NCBI_CONST_UINT8(11644473600);
+    m_Nanoseconds = (systemp % 10000000) * 100;
 #else
 #  if 0
     struct timespec timebuffer;

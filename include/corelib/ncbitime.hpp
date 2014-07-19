@@ -130,9 +130,9 @@ public:
     enum EFlags {
         /// Use single characters as format symbols.
         fFormat_Simple     = (1 << 0),
-        /// Specify that each format symbol have a preceding symbol '$'.
-        /// This can be useful if you want to include to format string
-        /// a characters that are a format symbols. 
+        /// Specify each format symbol with a preceding symbol '$'.
+        /// This can be useful if your format string includes output characters
+        /// that otherwise can be treated as format symbols.
         /// To include symbol '$' use '$$'.
         fFormat_Ncbi       = (1 << 1),
 
@@ -194,7 +194,7 @@ public:
     /// Set the current time format.
     ///
     /// @param fmt
-    ///   String of letters describing the time format.
+    ///   String of symbols describing the time format.
     /// @param flags
     ///   Flags specifying how to match a time string against format string.
     /// @sa
@@ -204,7 +204,7 @@ public:
     /// Set the current time format.
     ///
     /// @param fmt
-    ///   String of letters describing the time format.
+    ///   String of symbols describing the time format.
     /// @param flags
     ///   Flags specifying how to match a time string against format string.
     /// @sa
@@ -214,7 +214,7 @@ public:
     /// Get format string.
     ///
     /// @return
-    ///   A string of letters describing the time format.
+    ///   A string of symbols describing the time format.
     /// @sa SetFormat, GetFlags
     const string& GetString(void) const;
 
@@ -230,7 +230,7 @@ public:
 
     /// Get predefined format.
     /// @param fmt
-    ///   String of letters describing the time format.
+    ///   String of symbols describing the time format.
     /// @param fmt_type
     ///   Specify type of the format string.
     /// @return
@@ -555,9 +555,9 @@ public:
     ///
     /// The default format is: "M/D/Y h:m:s".
     /// @param fmt
-    ///   An object contains string of letters describing the time
-    ///   format and its type. The format letters have
-    ///   the following meanings:
+    ///   An object contains string of symbols describing the time
+    ///   format and its type. The following format letters have
+    ///   the special meaning:
     ///   - Y = year with century
     ///   - y = year without century           (00-99)
     ///   - M = month as decimal number        (01-12)
@@ -589,7 +589,7 @@ public:
     ///   if format string contains "z" (time shift) format symbol.
     ///   Also, it cannot be used if time format is ambiguous, like "Y/D".
     ///   Note, that you still can use "Y/M", or even "Y", where month and
-    ///   day will be defined to 1; or "M/D", where year will be set as
+    ///   day will be defined as 1; or "M/D", where year will be set as the
     ///   current year.
     /// @sa
     ///   CTimeFormat, GetFormat, AsString
@@ -657,10 +657,10 @@ public:
     ///   Output timezone. This is a difference in seconds between GMT time
     ///   and local time for some place (for example, for EST5 timezone
     ///   its value is 18000). This parameter works only with local time.
-    ///   If the time object have GMT time that it is ignored.
+    ///   If the time object contains GMT time then it is ignored.
     ///   Before transformation to string the time will be converted to output
-    ///   timezone. Timezone can be printed as string 'GMT[+|-]HHMM' using
-    ///   format symbol 'z'. By default current timezone is used.
+    ///   timezone. Timezone can be printed as a string 'GMT[+|-]HHMM' using
+    ///   the format symbol 'z'. By default the current timezone is used.
     /// @sa
     ///   GetFormat, SetFormat
     string AsString(const CTimeFormat& format = kEmptyStr,
