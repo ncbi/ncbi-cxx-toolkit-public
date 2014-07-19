@@ -165,6 +165,7 @@ AMMS	s	Academy of Military Medical Sciences
 AMNH	sb	American Museum of Natural History
 AMNH:Fish	s	American Museum of Natural History, Ichthyology Collection
 AMNH:Herp	s	American Museum of Natural History, Herpetology collection
+AMNH:ORN	s	American Museum of Natural History, Ornithology Collection
 AMNH<ISL>	s	Icelandic Institute of Natural History, Akureyri Division
 AMNZ	s	Auckland Institute and Museum
 AMO	s	Herbario AMO
@@ -6484,6 +6485,7 @@ UW	s	University of Washington Fish Collection
 UWA	s	University of Western Australia, Botany Department
 UWBM	s	University of Washington, Burke Museum
 UWBM:Mamm	s	University of Washington, Burke Museum, Burke Museum's mammal collection
+UWBM:ORN	s	University of Washington, Burke Museum, Ornithology Collection
 UWC	s	University of the Western Cape, Botany Department
 UWCC<USA-WA>	c	University of Washington Culture Collection
 UWCP	s	University of Wroclaw
