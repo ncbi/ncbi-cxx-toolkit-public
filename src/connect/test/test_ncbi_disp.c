@@ -36,8 +36,11 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <time.h>
-#include <sys/time.h>
-
+#ifdef NCBI_OS_MSWIN
+#  include <windows.h>
+#else
+#  include <sys/time.h>
+#endif
 #include "test_assert.h"  /* This header must go last */
 
 
@@ -94,6 +97,37 @@ static const char* x_Bits(TNcbiCapacity capacity)
     sprintf(buf, "(%hu)", capacity);
     return buf;
 }
+
+
+#ifdef NCBI_OS_MSWIN
+
+static int x_gettimeofday(struct timeval* tv)
+{
+    FILETIME         systime;
+    unsigned __int64 sysusec;
+
+    if (!tv)
+        return -1;
+
+    GetSystemTimeAsFileTime(&systime);
+
+    sysusec   = systime.dwHighDateTime;
+    sysusec <<= 32;
+    sysusec  |= systime.dwLowDateTime;
+    sysusec  += 5;
+    sysusec  /= 10;
+
+    tv->tv_usec = (long)(sysusec % 1000000);
+    tv->tv_sec  = (long)(sysusec / 1000000 - 11644473600Ui64);
+
+    return 0;
+}
+
+#else
+
+#  define x_gettimeofday(tv)  gettimeofday(tv, 0)
+
+#endif
 
 
 static double x_TimeDiff(const struct timeval* end,
@@ -163,7 +197,7 @@ int main(int argc, const char* argv[])
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
-    if (gettimeofday(&start, 0) != 0)
+    if (x_gettimeofday(&start) != 0)
         memset(&start, 0, sizeof(start));
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
                       (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
@@ -177,7 +211,7 @@ int main(int argc, const char* argv[])
             struct timeval stop;
             double elapsed;
             char* info_str;
-            if (gettimeofday(&stop, 0) != 0)
+            if (x_gettimeofday(&stop) != 0)
                 memset(&stop, 0, sizeof(stop));
             elapsed = x_TimeDiff(&stop, &start);
             info_str = SERV_WriteInfo(info);
@@ -250,7 +284,7 @@ int main(int argc, const char* argv[])
             }
             if (info_str)
                 free(info_str);
-            if (gettimeofday(&start, 0) != 0)
+            if (x_gettimeofday(&start) != 0)
                 memcpy(&start, &stop, sizeof(start));
         }
         CORE_LOGF(eLOG_Trace, ("Resetting the %s service mapper",
