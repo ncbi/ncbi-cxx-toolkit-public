@@ -453,17 +453,20 @@ int CAsnvalApp::Run(void)
         NCBI_THROW(CException, eUnknown, "Specific argument -a must be used along with -b flags" );
     }
 
+    bool execption_caught = false;
     try {
-    ConstructOutputStreams();
+        ConstructOutputStreams();
 
-    if ( args["p"] ) {
-        ValidateOneDirectory (args["p"].AsString(), args["u"]);
-    } else {
-        if (args["i"]) {
-            ValidateOneFile (args["i"].AsString());
+        if ( args["p"] ) {
+            ValidateOneDirectory (args["p"].AsString(), args["u"]);
+        } else {
+            if (args["i"]) {
+                ValidateOneFile (args["i"].AsString());
+            }
         }
-    }
-    } catch (CException) {
+    } catch (CException& e) {
+        ERR_POST(Error << e);
+        execption_caught = true;
     }
 
     time_t stop_time = time(NULL);
@@ -475,7 +478,7 @@ int CAsnvalApp::Run(void)
 
     DestroyOutputStreams();
 
-    if (m_Reported > 0) {
+    if (m_Reported > 0  ||  execption_caught) {
         return 1;
     } else {
         return 0;
