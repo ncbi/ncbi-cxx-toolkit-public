@@ -69,24 +69,24 @@ void CTMgr_ClientInfo::SetContext(const CTMgr_ClientInfo::TContext& value)
     NStr::Tokenize(value, major_delim, major_tokens, NStr::fSplit_ByPattern);
     bool is_context = true;
 
-    for (const auto& maj_tok : major_tokens) {
+    ITERATE (TTokens, it, major_tokens) {
         if (is_context) {
-            context = maj_tok;
+            context = *it;
             CTMgr_ClientInfo_Base::SetContext(context);
             is_context = false;
         }
         else {
             TTokens minor_tokens;
-            NStr::Tokenize(maj_tok, minor_delim, minor_tokens);
+            NStr::Tokenize(*it, minor_delim, minor_tokens);
             bool is_key = true;
             CRef<CTMgr_AttrSpec> attr(new CTMgr_AttrSpec());
-            for (const auto& min_tok : minor_tokens) {
+            ITERATE (TTokens, min_it, minor_tokens) {
                 if (is_key) {
-                    attr->SetKey(min_tok);
+                    attr->SetKey(*min_it);
                     is_key = false;
                 }
                 else {
-                    attr->SetValue(min_tok);
+                    attr->SetValue(*min_it);
                 }
             }            
             SetContext_attrs().push_back(attr);
