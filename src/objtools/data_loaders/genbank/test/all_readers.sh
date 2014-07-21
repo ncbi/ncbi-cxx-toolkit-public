@@ -53,9 +53,6 @@ case "$NCBI_CONFIG_OVERRIDES" in
 esac
 
 init_cache() {
-    # Temporarily disable cache tests due to deadlock
-    # in thread stopping in safe static destructors.
-    return 1; 
     if test -n "$nc"; then
         echo "Init netcache $nc/$ncs"
         for c in $ncs; do
