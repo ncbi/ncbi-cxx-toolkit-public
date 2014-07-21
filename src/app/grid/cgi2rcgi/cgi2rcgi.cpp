@@ -521,7 +521,7 @@ CCgiContext* CCgi2RCgiApp::CreateContextWithFlags(CNcbiArguments* args,
 
     // The 'env' argument is only valid in FastCGI mode.
     if (env == NULL)
-        env = const_cast<CNcbiEnvironment*>(&GetEnvironment());
+        env = &SetEnvironment();
 
     size_t content_length = 0;
 
@@ -642,12 +642,11 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                 entries.erase(jquery_callback_it);
                 string query_string_param(
                         CCgiRequest::GetPropertyName(eCgi_QueryString));
-                CNcbiEnvironment* env =
-                        const_cast<CNcbiEnvironment*>(&GetEnvironment());
-                string query_string = env->Get(query_string_param);
+                CNcbiEnvironment& env = SetEnvironment();
+                string query_string = env.Get(query_string_param);
                 if (!query_string.empty()) {
                     s_RemoveCallbackParameter(&query_string);
-                    env->Set(query_string_param, query_string);
+                    env.Set(query_string_param, query_string);
                 }
             }
         }
