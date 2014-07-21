@@ -327,15 +327,33 @@ private:
 
     CStaticTlsHelper(FUserCleanup user_cleanup,
                      TLifeSpan    life_span)
-        : CSafeStaticPtr_Base(SelfCleanup, user_cleanup, life_span)
+        : CSafeStaticPtr_Base(sx_SelfCleanup, user_cleanup, life_span)
     {}
 
-    static void SelfCleanup(void** ptr)
+    void Set(CTlsBase* object)
     {
-        CTlsBase* tmp = static_cast<CTlsBase*>(*ptr);
-        if (tmp) {
-            tmp->x_Destroy();
-            *ptr = NULL;
+        CMutexGuard guard(CSafeStaticPtr_Base::sm_Mutex);
+        if ( m_Ptr == 0 ) {
+            // Set the new object and register for cleanup
+            if ( object ) {
+                m_Ptr = object;
+                CSafeStaticGuard::Register(this);
+            }
+        }
+    }
+
+    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static,
+                               CMutexGuard& guard)
+    {
+        CStaticTlsHelper* this_ptr = static_cast<CStaticTlsHelper*>(safe_static);
+        if ( CTlsBase* ptr = static_cast<CTlsBase*>(this_ptr->m_Ptr) ) {
+            FUserCleanup user_cleanup = this_ptr->m_UserCleanup;
+            this_ptr->m_Ptr = 0;
+            guard.Release();
+            if ( user_cleanup ) {
+                user_cleanup(ptr);
+            }
+            ptr->x_Destroy();
         }
     }
 };
@@ -452,6 +470,12 @@ public:
 
     /// Get the list of used TLS-es for the current thread
     static CUsedTlsBases& GetUsedTlsBases(void);
+
+    /// Clear used TLS-es for the current thread
+    static void ClearAllCurrentThread(void);
+
+    /// Init TLS, call before creating thread
+    static void Init(void);
 
 private:
     typedef set<CTlsBase*> TTlsSet;
@@ -591,37 +615,14 @@ private:
     static void sx_SetThreadPid(TPid pid);
 #endif
 
-    static unsigned int sm_ThreadsCount;  ///< Total amount of threads
+    static volatile unsigned int sm_ThreadsCount;  ///< Total amount of threads
+
+    /// initalize new thread id, must be called from Wrapper().
+    void x_InitializeThreadId(void);
 
     /// Function to use (internally) as the thread's startup function
     static TWrapperRes Wrapper(TWrapperArg arg);
     friend TWrapperRes ThreadWrapperCaller(TWrapperArg arg);
-
-    struct SThreadInfo {
-        CThread* thread_ptr;
-        TID      thread_id;
-    };
-
-    /// To store "CThread" object related to the current (running) thread
-    static CStaticTls<SThreadInfo>* sm_ThreadsTls;
-    static bool sm_MainThreadIdInitialized;
-
-    /// Safe access to "sm_ThreadsTls"
-    static CStaticTls<SThreadInfo>& GetThreadsTls(void)
-    {
-        if ( !sm_ThreadsTls ) {
-            CreateThreadsTls();
-        }
-        return *sm_ThreadsTls;
-    }
-
-    static void sx_CleanupThreadInfo(SThreadInfo* info, void* cleanup_data);
-    static SThreadInfo* sx_InitThreadInfo(CThread* thread_obj);
-    static int sx_GetNextThreadId(void);
-
-    /// sm_ThreadsTls initialization and cleanup functions
-    static void CreateThreadsTls(void);
-    friend void s_CleanupThreadsTls(void* /* ptr */);
 
     /// Prohibit copying and assigning
     CThread(const CThread&);
@@ -705,26 +706,7 @@ template <class TValue>
 inline
 void CStaticTls<TValue>::x_SafeInit(void)
 {
-    bool mutex_locked = false;
-    if ( m_SafeHelper.Init_Lock(&mutex_locked) ) {
-        // Init the object and register for cleanup
-        try {
-            x_Init();
-            m_SafeHelper.m_Ptr = this;
-            CSafeStaticGuard::Register(&m_SafeHelper);
-        }
-        catch (CException& e) {
-            m_SafeHelper.Init_Unlock(mutex_locked);
-            NCBI_RETHROW_SAME(e,
-                              "CStaticTls::x_CheckInit: Register() failed");
-        }
-        catch (...) {
-            m_SafeHelper.Init_Unlock(mutex_locked);
-            NCBI_THROW(CCoreException, eCore,
-                       "CStaticTls::x_CheckInit: Register() failed");
-        }
-    }
-    m_SafeHelper.Init_Unlock(mutex_locked);
+    m_SafeHelper.Set(this);
 }
 #endif
 
@@ -732,29 +714,6 @@ void CStaticTls<TValue>::x_SafeInit(void)
 /////////////////////////////////////////////////////////////////////////////
 //  CThread::
 //
-
-inline
-CThread::TID CThread::GetSelf(void)
-{
-    SThreadInfo* info = GetThreadsTls().GetValue();
-    if (!info  &&  sm_MainThreadIdInitialized) {
-        // Info has not been set - this is a native thread,
-        // need to assign an ID.
-        info = sx_InitThreadInfo(0);
-    }
-    // If zero, it is main thread which has no CThread object
-    return info ? info->thread_id : 0;
-}
-
-
-inline
-CThread* CThread::GetCurrentThread(void)
-{
-    // Get pointer to the current thread object
-    SThreadInfo* info = GetThreadsTls().GetValue();
-    return info ? info->thread_ptr : 0;
-}
-
 
 inline
 TThreadHandle CThread::GetThreadHandle()

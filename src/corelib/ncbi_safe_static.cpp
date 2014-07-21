@@ -80,37 +80,7 @@ CSafeStaticLifeSpan& CSafeStaticLifeSpan::GetDefault(void)
 
 // Protective mutex and the owner thread ID to avoid
 // multiple initializations and deadlocks
-DEFINE_STATIC_MUTEX(s_Mutex);
-
-static CThreadSystemID s_MutexOwner;
-// true if s_MutexOwner has been set (while the mutex is locked)
-static bool            s_MutexLocked;
-
-bool CSafeStaticPtr_Base::Init_Lock(bool* mutex_locked)
-{
-    // Check if already locked by the same thread to avoid deadlock
-    // in case of nested calls to Get() by T constructor
-    // Lock only if unlocked or locked by another thread
-    // to prevent initialization by another thread
-    CThreadSystemID id = CThreadSystemID::GetCurrent();
-    if (!s_MutexLocked  ||  s_MutexOwner != id) {
-        s_Mutex.Lock();
-        s_MutexLocked = true;
-        *mutex_locked = true;
-        s_MutexOwner = id;
-    }
-    return m_Ptr == 0;
-}
-
-
-void CSafeStaticPtr_Base::Init_Unlock(bool mutex_locked)
-{
-    // Unlock the mutex only if it was locked by the same call to Get()
-    if ( mutex_locked ) {
-        s_MutexLocked = false;
-        s_Mutex.Unlock();
-    }
-}
+DEFINE_CLASS_STATIC_MUTEX(CSafeStaticPtr_Base::sm_Mutex);
 
 
 int CSafeStaticPtr_Base::x_GetCreationOrder(void)
@@ -122,11 +92,10 @@ int CSafeStaticPtr_Base::x_GetCreationOrder(void)
 
 CSafeStaticPtr_Base::~CSafeStaticPtr_Base(void)
 {
-    bool mutex_locked = false;
-    if ( x_IsStdStatic()  &&  !Init_Lock(&mutex_locked) ) {
-        x_Cleanup();
+    if ( x_IsStdStatic() ) {
+        CMutexGuard guard(sm_Mutex);
+        x_Cleanup(guard);
     }
-    Init_Unlock(mutex_locked);
 }
 
 
@@ -159,7 +128,7 @@ static CSafeStaticGuard* sh_CleanupGuard;
 
 CSafeStaticGuard::~CSafeStaticGuard(void)
 {
-    CMutexGuard guard(s_Mutex);
+    CMutexGuard guard(CSafeStaticPtr_Base::sm_Mutex);
 
     // Protect CSafeStaticGuard destruction
     if ( sh_CleanupGuard ) {
@@ -173,9 +142,14 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
     }
     assert(sm_RefCount == 0);
 
-    // Call Cleanup() for all variables registered
-    NON_CONST_ITERATE(TStack, it, *sm_Stack) {
-        (*it)->x_Cleanup();
+    for ( int pass = 0; pass < 3; ++pass ) {
+        // Call Cleanup() for all variables registered
+        TStack cur_Stack;
+        swap(cur_Stack, *sm_Stack);
+        NON_CONST_ITERATE(TStack, it, cur_Stack) {
+            (*it)->x_Cleanup(guard);
+            guard.Guard(CSafeStaticPtr_Base::sm_Mutex);
+        }
     }
 
     delete sm_Stack;

@@ -109,7 +109,8 @@ public:
 
 protected:
     /// Cleanup function type used by derived classes
-    typedef void (*FSelfCleanup)(CSafeStaticPtr_Base* safe_static);
+    typedef void (*FSelfCleanup)(CSafeStaticPtr_Base* safe_static,
+                                 CMutexGuard& guard);
 
     /// Constructor.
     ///
@@ -135,14 +136,9 @@ protected:
     /// Pointer to the data
     void* m_Ptr;
 
-    /// Prepare to the object initialization: check current thread, lock
-    /// the mutex and store its state to "mutex_locked", return "true"
-    /// if the object must be created or "false" if already created.
-    bool Init_Lock(bool* mutex_locked);
-    /// Finalize object initialization: release the mutex if "mutex_locked".
-    void Init_Unlock(bool mutex_locked);
+    DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 
-private:
+protected:
     friend class CSafeStatic_Less;
 
     FSelfCleanup m_SelfCleanup;   // Derived class' cleanup function
@@ -161,14 +157,11 @@ private:
 
     // To be called by CSafeStaticGuard on the program termination
     friend class CSafeStaticGuard;
-    void x_Cleanup(void)
+    void x_Cleanup(CMutexGuard& guard)
     {
-        if ( m_UserCleanup )
-            m_UserCleanup(m_Ptr);
         if ( m_SelfCleanup )
-            m_SelfCleanup(this);
+            m_SelfCleanup(this, guard);
     }
-
 };
 
 
@@ -210,7 +203,7 @@ public:
     /// Add new on-demand variable to the cleanup stack.
     static void Register(CSafeStaticPtr_Base* ptr)
     {
-        if ( ptr->x_IsStdStatic() ) {
+        if ( sm_RefCount > 0 && ptr->x_IsStdStatic() ) {
             // Do not add the object to the stack
             return;
         }
@@ -408,8 +401,8 @@ private:
     CSafeStatic& operator=(const CSafeStatic&);
 
     void x_Init(void) {
-        bool mutex_locked = false;
-        if ( Init_Lock(&mutex_locked) ) {
+        CMutexGuard guard(sm_Mutex);
+        if ( m_Ptr == 0 ) {
             // Create the object and register for cleanup
             T* ptr = 0;
             try {
@@ -420,30 +413,27 @@ private:
             }
             catch (CException& e) {
                 TAllocator::s_RemoveReference(ptr);
-                m_Ptr = 0;
-                Init_Unlock(mutex_locked);
                 NCBI_RETHROW_SAME(e, "CSafeStatic::Init: Register() failed");
             }
             catch (...) {
                 TAllocator::s_RemoveReference(ptr);
-                m_Ptr = 0;
-                Init_Unlock(mutex_locked);
                 NCBI_THROW(CCoreException,eCore,
                            "CSafeStatic::Init: Register() failed");
             }
         }
-        Init_Unlock(mutex_locked);
     }
 
     // "virtual" cleanup function
-    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static)
+    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static,
+                               CMutexGuard& guard)
     {
         TThisType* this_ptr = static_cast<TThisType*>(safe_static);
-        T* tmp = static_cast<T*>(this_ptr->m_Ptr);
-        if ( tmp ) {
-            this_ptr->m_Callbacks.Cleanup(*tmp);
-            TAllocator::s_RemoveReference(tmp);
+        if ( T* ptr = static_cast<T*>(this_ptr->m_Ptr) ) {
+            TCallbacks callbacks = this_ptr->m_Callbacks;
             this_ptr->m_Ptr = 0;
+            guard.Release();
+            callbacks.Cleanup(*ptr);
+            TAllocator::s_RemoveReference(ptr);
         }
     }
 
@@ -518,12 +508,19 @@ private:
     void x_Init(FUserCreate user_create);
 
     // "virtual" cleanup function
-    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static)
+    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static,
+                               CMutexGuard& guard)
     {
         CSafeStaticPtr<T>* this_ptr = static_cast<CSafeStaticPtr<T>*>(safe_static);
-        T* tmp = static_cast<T*> (this_ptr->m_Ptr);
-        this_ptr->m_Ptr = 0;
-        delete tmp;
+        if ( T* ptr = static_cast<T*>(this_ptr->m_Ptr) ) {
+            CSafeStaticPtr_Base::FUserCleanup user_cleanup = this_ptr->m_UserCleanup;
+            this_ptr->m_Ptr = 0;
+            guard.Release();
+            if ( user_cleanup ) {
+                user_cleanup(ptr);
+            }
+            delete ptr;
+        }
     }
 };
 
@@ -594,13 +591,18 @@ private:
     void x_Init(FUserCreate user_create);
 
     // "virtual" cleanup function
-    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static)
+    static void sx_SelfCleanup(CSafeStaticPtr_Base* safe_static,
+                               CMutexGuard& guard)
     {
         CSafeStaticRef<T>* this_ptr = static_cast<CSafeStaticRef<T>*>(safe_static);
-        T* tmp = static_cast<T*> (this_ptr->m_Ptr);
-        if ( tmp ) {
-            tmp->RemoveReference();
+        if ( T* ptr = static_cast<T*>(this_ptr->m_Ptr) ) {
+            CSafeStaticPtr_Base::FUserCleanup user_cleanup = this_ptr->m_UserCleanup;
             this_ptr->m_Ptr = 0;
+            guard.Release();
+            if ( user_cleanup ) {
+                user_cleanup(ptr);
+            }
+            ptr->RemoveReference();
         }
     }
 };
@@ -623,24 +625,14 @@ template <class T>
 inline
 void CSafeStaticPtr<T>::Set(T* object)
 {
-    bool mutex_locked = false;
-    if ( Init_Lock(&mutex_locked) ) {
+    CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr == 0 ) {
         // Set the new object and register for cleanup
-        try {
+        if ( object ) {
             m_Ptr = object;
             CSafeStaticGuard::Register(this);
         }
-        catch (CException& e) {
-            Init_Unlock(mutex_locked);
-            NCBI_RETHROW_SAME(e, "CSafeStaticPtr::Set: Register() failed");
-        }
-        catch (...) {
-            Init_Unlock(mutex_locked);
-            NCBI_THROW(CCoreException,eCore,
-                       "CSafeStaticPtr::Set: Register() failed");
-        }
     }
-    Init_Unlock(mutex_locked);
 }
 
 
@@ -648,28 +640,12 @@ template <class T>
 inline
 void CSafeStaticPtr<T>::x_Init(void)
 {
-    bool mutex_locked = false;
-    if ( Init_Lock(&mutex_locked) ) {
+    CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr == 0 ) {
         // Create the object and register for cleanup
-        T* ptr = 0;
-        try {
-            ptr = new T;
-            CSafeStaticGuard::Register(this);
-            m_Ptr = ptr;
-        }
-        catch (CException& e) {
-            delete ptr;
-            Init_Unlock(mutex_locked);
-            NCBI_RETHROW_SAME(e, "CSafeStaticPtr::Init: Register() failed");
-        }
-        catch (...) {
-            delete ptr;
-            Init_Unlock(mutex_locked);
-            NCBI_THROW(CCoreException,eCore,
-                       "CSafeStaticPtr::Init: Register() failed");
-        }
+        m_Ptr = new T;
+        CSafeStaticGuard::Register(this);
     }
-    Init_Unlock(mutex_locked);
 }
 
 
@@ -678,27 +654,14 @@ template <class FUserCreate>
 inline
 void CSafeStaticPtr<T>::x_Init(FUserCreate user_create)
 {
-    bool mutex_locked = false;
-    if ( Init_Lock(&mutex_locked) ) {
+    CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr == 0 ) {
         // Create the object and register for cleanup
-        try {
-            T* ptr = user_create();
-            m_Ptr = ptr;
-            if ( m_Ptr ) {
-                CSafeStaticGuard::Register(this);
-            }
-        }
-        catch (CException& e) {
-            Init_Unlock(mutex_locked);
-            NCBI_RETHROW_SAME(e, "CSafeStaticPtr::Init: Register() failed");
-        }
-        catch (...) {
-            Init_Unlock(mutex_locked);
-            NCBI_THROW(CCoreException,eCore,
-                       "CSafeStaticPtr::Init: Register() failed");
+        m_Ptr = user_create();
+        if ( m_Ptr ) {
+            CSafeStaticGuard::Register(this);
         }
     }
-    Init_Unlock(mutex_locked);
 }
 
 
@@ -706,27 +669,15 @@ template <class T>
 inline
 void CSafeStaticRef<T>::Set(T* object)
 {
-    bool mutex_locked = false;
-    if ( Init_Lock(&mutex_locked) ) {
+    CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr == 0 ) {
         // Set the new object and register for cleanup
-        try {
-            if ( object ) {
-                object->AddReference();
-                m_Ptr = object;
-                CSafeStaticGuard::Register(this);
-            }
-        }
-        catch (CException& e) {
-            Init_Unlock(mutex_locked);
-            NCBI_RETHROW_SAME(e, "CSafeStaticRef::Set: Register() failed");
-        }
-        catch (...) {
-            Init_Unlock(mutex_locked);
-            NCBI_THROW(CCoreException,eCore,
-                       "CSafeStaticRef::Set: Register() failed");
+        if ( object ) {
+            object->AddReference();
+            m_Ptr = object;
+            CSafeStaticGuard::Register(this);
         }
     }
-    Init_Unlock(mutex_locked);
 }
 
 
@@ -734,26 +685,14 @@ template <class T>
 inline
 void CSafeStaticRef<T>::x_Init(void)
 {
-    bool mutex_locked = false;
-    if ( Init_Lock(&mutex_locked) ) {
+    CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr == 0 ) {
         // Create the object and register for cleanup
-        try {
-            T* ptr = new T;
-            ptr->AddReference();
-            m_Ptr = ptr;
-            CSafeStaticGuard::Register(this);
-        }
-        catch (CException& e) {
-            Init_Unlock(mutex_locked);
-            NCBI_RETHROW_SAME(e, "CSafeStaticRef::Init: Register() failed");
-        }
-        catch (...) {
-            Init_Unlock(mutex_locked);
-            NCBI_THROW(CCoreException,eCore,
-                       "CSafeStaticRef::Init: Register() failed");
-        }
+        T* ptr = new T;
+        ptr->AddReference();
+        m_Ptr = ptr;
+        CSafeStaticGuard::Register(this);
     }
-    Init_Unlock(mutex_locked);
 }
 
 
@@ -762,28 +701,16 @@ template <class FUserCreate>
 inline
 void CSafeStaticRef<T>::x_Init(FUserCreate user_create)
 {
-    bool mutex_locked = false;
-    if ( Init_Lock(&mutex_locked) ) {
+    CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr == 0 ) {
         // Create the object and register for cleanup
-        try {
-            CRef<T> ref(user_create());
-            if ( ref ) {
-                ref->AddReference();
-                m_Ptr = ref.Release();
-                CSafeStaticGuard::Register(this);
-            }
-        }
-        catch (CException& e) {
-            Init_Unlock(mutex_locked);
-            NCBI_RETHROW_SAME(e, "CSafeStaticRef::Init: Register() failed");
-        }
-        catch (...) {
-            Init_Unlock(mutex_locked);
-            NCBI_THROW(CCoreException,eCore,
-                       "CSafeStaticRef::Init: Register() failed");
+        T* ptr = user_create();
+        if ( ptr ) {
+            ptr->AddReference();
+            m_Ptr = ptr;
+            CSafeStaticGuard::Register(this);
         }
     }
-    Init_Unlock(mutex_locked);
 }
 
 

@@ -82,7 +82,7 @@ void CUsedTlsBases::ClearAll(void)
     CTlsBase* used_tls = NULL;
     NON_CONST_ITERATE(TTlsSet, it, m_UsedTls) {
         CTlsBase* tls = *it;
-        // Do not cleanup it now - this will cause infinit recursion
+        // Do not cleanup it now - this will cause infinite recursion
         if (tls == &sm_UsedTlsBases.Get()) {
             used_tls = tls;
             continue;
@@ -125,12 +125,12 @@ void CUsedTlsBases::Deregister(CTlsBase* tls)
 }
 
 
-void s_CleanupUsedTlsBases(CUsedTlsBases* tls, void*)
+static void s_CleanupUsedTlsBases(CUsedTlsBases* tls, void*)
 {
     delete tls;
 }
 
-void s_CleanupMainUsedTlsBases(CUsedTlsBases& tls)
+static void s_CleanupMainUsedTlsBases(CUsedTlsBases& tls)
 {
     tls.ClearAll();
 }
@@ -157,6 +157,20 @@ CUsedTlsBases& CUsedTlsBases::GetUsedTlsBases(void)
         sm_UsedTlsBases.SetValue(tls, s_CleanupUsedTlsBases);
     }
     return *tls;
+}
+
+
+void CUsedTlsBases::Init(void)
+{
+    sm_UsedTlsBases.Get();
+}
+
+
+void CUsedTlsBases::ClearAllCurrentThread(void)
+{
+    if ( CUsedTlsBases* tls = sm_UsedTlsBases.GetValue() ) {
+        tls->ClearAll();
+    }
 }
 
 
@@ -392,25 +406,61 @@ CExitThreadException::~CExitThreadException(void)
 // will not proceed until after the appropriate Run() is finished.
 DEFINE_STATIC_FAST_MUTEX(s_ThreadMutex);
 
-unsigned int CThread::sm_ThreadsCount = 0;
+volatile unsigned int CThread::sm_ThreadsCount = 0;
 
 
 // Internal storage for thread objects and related variables/functions
-CStaticTls<CThread::SThreadInfo>* CThread::sm_ThreadsTls;
+static DECLARE_TLS_VAR(CThread*, sx_ThreadPtr);
+static DECLARE_TLS_VAR(CThread::TID, sx_ThreadId);
+static bool sm_MainThreadIdInitialized = false;
+static const CThread::TID kMainThreadId = ~CThread::TID(0);
 
 
-void s_CleanupThreadsTls(void* /* ptr */)
+static int sx_GetNextThreadId(void)
 {
-    CThread::sm_ThreadsTls = 0;  // Indicate that the TLS is destroyed
+    CFastMutexGuard guard(s_ThreadMutex);
+    static int s_ThreadCount = 0;
+    return ++s_ThreadCount;
 }
 
 
-void CThread::CreateThreadsTls(void)
+void CThread::x_InitializeThreadId(void)
 {
-    static CStaticTls<SThreadInfo> s_ThreadsTls(s_CleanupThreadsTls,
-                                                CSafeStaticLifeSpan::eLifeSpan_Longest);
+    _ASSERT(!sx_ThreadPtr);
+    _ASSERT(!sx_ThreadId);
+    sx_ThreadPtr = this;
+    sx_ThreadId = sx_GetNextThreadId();
+}
 
-    sm_ThreadsTls = &s_ThreadsTls;
+
+void CThread::InitializeMainThreadId(void)
+{
+    // mark main thread
+    _ASSERT(!sx_ThreadPtr);
+    _ASSERT(!sx_ThreadId);
+    sx_ThreadPtr = 0;
+    sx_ThreadId = kMainThreadId;
+    sm_MainThreadIdInitialized = true;
+}
+
+
+CThread* CThread::GetCurrentThread(void)
+{
+    // Get pointer to the current thread object
+    return sx_ThreadPtr;
+}
+
+
+CThread::TID CThread::GetSelf(void)
+{
+    TID id = sx_ThreadId;
+    if ( !id && sm_MainThreadIdInitialized ) {
+        // Info has not been set - this is a native thread,
+        // main thread is already assigned so we can assign new thread an ID.
+        sx_ThreadId = id = sx_GetNextThreadId();
+    }
+    // kMainThreadId is marker for main thread
+    return id == kMainThreadId? 0: id;
 }
 
 
@@ -426,8 +476,8 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     CThread* thread_obj = static_cast<CThread*>(arg);
 
     // Set Toolkit thread ID.
-    SThreadInfo* info = sx_InitThreadInfo(thread_obj);
-    xncbi_Validate(info->thread_id != 0,
+    thread_obj->x_InitializeThreadId();
+    xncbi_Validate(GetSelf() != 0,
                    "CThread::Wrapper() -- error assigning thread ID");
 
 #if defined NCBI_THREAD_PID_WORKAROUND
@@ -487,7 +537,7 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
     }
 
     // Cleanup local storages used by this thread
-    CUsedTlsBases::GetUsedTlsBases().ClearAll();
+    CUsedTlsBases::ClearAllCurrentThread();
 
     {{
         CFastMutexGuard state_guard(s_ThreadMutex);
@@ -590,8 +640,7 @@ void CThread::sx_SetThreadPid(TPid pid)
 
 bool CThread::Run(TRunMode flags)
 {
-    // make sure static CUsedTlsBases is initalized before leaving Run()
-    CUsedTlsBases::GetUsedTlsBases();
+    CUsedTlsBases::Init();
 
     // Do not allow the new thread to run until m_Handle is set
     CFastMutexGuard state_guard(s_ThreadMutex);
@@ -801,42 +850,6 @@ bool CThread::Discard(void)
 void CThread::OnExit(void)
 {
     return;
-}
-
-
-int CThread::sx_GetNextThreadId(void)
-{
-    CFastMutexGuard guard(s_ThreadMutex);
-    static int s_ThreadCount = 0;
-    return ++s_ThreadCount;
-}
-
-
-void CThread::sx_CleanupThreadInfo(SThreadInfo* info, void* /*cleanup_data*/)
-{
-    delete info;
-}
-
-
-CThread::SThreadInfo* CThread::sx_InitThreadInfo(CThread* thread_obj)
-{
-    SThreadInfo* info = new SThreadInfo;
-    info->thread_ptr = thread_obj;
-    info->thread_id = sx_GetNextThreadId();
-    GetThreadsTls().SetValue(info, sx_CleanupThreadInfo, 0);
-    return info;
-}
-
-
-bool CThread::sm_MainThreadIdInitialized = false;
-
-void CThread::InitializeMainThreadId(void)
-{
-    SThreadInfo* info = new SThreadInfo;
-    info->thread_ptr = 0;
-    info->thread_id = 0;
-    GetThreadsTls().SetValue(info, sx_CleanupThreadInfo, 0);
-    sm_MainThreadIdInitialized = true;
 }
 
 
