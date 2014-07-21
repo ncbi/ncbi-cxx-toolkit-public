@@ -1121,11 +1121,7 @@ void CSplign::Run(THitRefs* phitrefs)
                                       min_singleton_idty_final,
                                       true);
     comps.SetMaxIntron(m_MaxIntron);
-    if( GetTestType() == kTestType_20_28_90_cut20 ) {
-        comps.Run(hitrefs.begin(), hitrefs.end(), GetScope());
-    } else {
-        comps.Run(hitrefs.begin(), hitrefs.end());
-    }
+    comps.Run(hitrefs.begin(), hitrefs.end());
 
     pair<size_t,size_t> dim (comps.GetCounts()); // (count_total, count_unmasked)
     if(dim.second > 0) {
@@ -1935,42 +1931,44 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 if(first) {
                     first = false;
                 } else {
-                    TSeqPos from =  prev->m_box[3];
-                    TSeqPos length = ii->m_box[2] - prev->m_box[3] + 1;
-                    if(m_GenomicSeqMap && m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),  from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) { //gap, trim.
-                        
-                        /* TEST OUTPUT   
-                        CSeqMap_CI smit = m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),   from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
-                        CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
-                        string type = "not_gap";
-                        if(smit.GetType() == CSeqMap::eSeqGap) type = "gap";
-                        cout<<"Type: "<<type;
-                        if(slit) {
-                            cout<<" Position: "<<smit.GetPosition()+1;
-                            cout<<" Length: "<<smit.GetLength();
-                            cout<<" End Position: "<<smit.GetEndPosition()+1;
+                    if(prev->m_exon) {//if not exon, it will be trimmed later anyway
+                        TSeqPos from =  prev->m_box[3];
+                        TSeqPos length = ii->m_box[2] - prev->m_box[3] + 1;
+                        if(m_GenomicSeqMap && m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),  from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap)) { //gap, trim.
+                            
+                            /* TEST OUTPUT      
+                               CSeqMap_CI smit = m_GenomicSeqMap->ResolvedRangeIterator(GetScope(),   from, length, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);   
+                               CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral(); 
+                               string type = "not_gap";    
+                               if(smit.GetType() == CSeqMap::eSeqGap) type = "gap";    
+                               cout<<"Type: "<<type;   
+                               if(slit) {  
+                               cout<<" Position: "<<smit.GetPosition()+1;  
+                               cout<<" Length: "<<smit.GetLength();    
+                               cout<<" End Position: "<<smit.GetEndPosition()+1;   
+                               }   
+                               cout<<endl; 
+                            */
+                            
+                            if(test_type == kTestType_20_28_90_cut20) {
+                                prev->ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                                ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                            } else {
+                                prev->ImproveFromRight(Seq1, Seq2, m_aligner);
+                                ii->ImproveFromLeft(Seq1, Seq2, m_aligner);                                                
+                            }                        
+                            //add gaps if needed        
+                            if( ii->m_box[0] > prev->m_box[1] + 1) {
+                                TSegment sgap;
+                                sgap.m_box[0] = prev->m_box[1] + 1;
+                                sgap.m_box[2] = prev->m_box[3] + 1;
+                                sgap.m_box[1] = ii->m_box[0] - 1;
+                                sgap.m_box[3] = ii->m_box[2] - 1;
+                                sgap.SetToGap();
+                                ii = segments.insert(ii, sgap);
+                                ++ii;
+                            }                        
                         }
-                        cout<<endl;
-                        */
-                        
-                        if(test_type == kTestType_20_28_90_cut20) {
-                            prev->ImproveFromRight1(Seq1, Seq2, m_aligner);                
-                            ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
-                        } else {
-                            prev->ImproveFromRight(Seq1, Seq2, m_aligner);
-                            ii->ImproveFromLeft(Seq1, Seq2, m_aligner);                                                
-                        }                        
-                        //add gaps if needed    
-                        if( ii->m_box[0] > prev->m_box[1] + 1) {
-                            TSegment sgap;
-                            sgap.m_box[0] = prev->m_box[1] + 1;
-                            sgap.m_box[2] = prev->m_box[3] + 1;
-                            sgap.m_box[1] = ii->m_box[0] - 1;
-                            sgap.m_box[3] = ii->m_box[2] - 1;
-                            sgap.SetToGap();
-                            ii = segments.insert(ii, sgap);
-                            ++ii;
-                        }                        
                     }
                 }
                 prev = ii;
