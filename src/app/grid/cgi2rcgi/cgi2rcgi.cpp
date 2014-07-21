@@ -642,11 +642,12 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                 entries.erase(jquery_callback_it);
                 string query_string_param(
                         CCgiRequest::GetPropertyName(eCgi_QueryString));
-                const char* query_string_env = getenv(query_string_param.c_str());
-                if (query_string_env != NULL) {
-                    string query_string = query_string_env;
+                CNcbiEnvironment* env =
+                        const_cast<CNcbiEnvironment*>(&GetEnvironment());
+                string query_string = env->Get(query_string_param);
+                if (!query_string.empty()) {
                     s_RemoveCallbackParameter(&query_string);
-                    setenv(query_string_param.c_str(), query_string.c_str(), true);
+                    env->Set(query_string_param, query_string);
                 }
             }
         }
