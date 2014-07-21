@@ -71,6 +71,8 @@
 #include <objects/biblio/Author.hpp>
 #include <objects/biblio/Auth_list.hpp>
 
+#include <objects/seqfeat/Gb_qual.hpp>
+
 #include "table2asn_context.hpp"
 #include "objtools/edit/dblink_field.hpp"
 
@@ -175,6 +177,7 @@ void x_ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifi
 
 CTable2AsnContext::CTable2AsnContext():
     m_output(0),
+    m_delay_genprodset(false),
     m_copy_genid_to_note(false),
     m_remove_unnec_xref(false),
     m_save_bioseq_set(false),
@@ -646,6 +649,29 @@ void CTable2AsnContext::MakeGenomeCenterId(CTable2AsnContext& context, CBioseq& 
         }
 
         seq_id->SetGeneral().SetDb(db);                      
+    }
+}
+
+void CTable2AsnContext::MakeDelayGenProdSet(CTable2AsnContext& context, CSeq_feat& feature)
+{
+    if (!feature.IsSetQual())
+        return;
+
+    NON_CONST_ITERATE(CSeq_feat::TQual, it, feature.SetQual())
+    {
+        if ((**it).GetQual() == "protein_id")
+            (**it).SetQual("orig_protein_id");
+        else
+        if ((**it).GetQual() == "transcript_id")
+            (**it).SetQual("orig_transcript_id");
+    }
+}
+
+void CTable2AsnContext::VisitAllFeatures(CSeq_entry_EditHandle& entry_h, FeatureVisitorMethod m)
+{
+    for (CFeat_CI feat_it(entry_h); feat_it; ++feat_it)
+    {
+        m(*this, *(CSeq_feat*)feat_it->GetOriginalSeq_feat().GetPointer());
     }
 }
 

@@ -18,6 +18,7 @@ class CBioSource;
 class CScope;
 class CObjectManager;
 class CSeq_entry_EditHandle;
+class CSeq_feat;
 };
 
 #include <objects/seq/Seqdesc.hpp>
@@ -67,7 +68,7 @@ public:
     string A;
     string m_genome_center_id;
     string m_validate;
-    bool   J;
+    bool   m_delay_genprodset;
     bool   m_copy_genid_to_note;
     string G;
     bool   R;
@@ -129,7 +130,10 @@ public:
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
 
     typedef void (*BioseqVisitorMethod)(CTable2AsnContext& context, objects::CBioseq& bioseq);
+    typedef void (*FeatureVisitorMethod)(CTable2AsnContext& context, objects::CSeq_feat& bioseq);
     void VisitAllBioseqs(objects::CSeq_entry& entry, BioseqVisitorMethod m);
+    void VisitAllBioseqs(objects::CSeq_entry_EditHandle& entry_h, BioseqVisitorMethod m);
+    void VisitAllFeatures(objects::CSeq_entry_EditHandle& entry_h, FeatureVisitorMethod m);
 
     void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src) const;
     void MergeWithTemplate(objects::CSeq_entry& entry) const;
@@ -140,6 +144,7 @@ public:
 
     void MakeGenomeCenterId(objects::CSeq_entry_EditHandle& entry);
     static void MakeGenomeCenterId(CTable2AsnContext& context, objects::CBioseq& bioseq);
+    static void MakeDelayGenProdSet(CTable2AsnContext& context, objects::CSeq_feat& feature);
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

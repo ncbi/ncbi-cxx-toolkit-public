@@ -190,7 +190,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("s", "Read FASTAs as Set");              // done
     arg_desc->AddFlag("g", "Genomic Product Set");
-    arg_desc->AddFlag("J", "Delayed Genomic Product Set ");
+    arg_desc->AddFlag("J", "Delayed Genomic Product Set ");    // done
     arg_desc->AddDefaultKey
         ("F", "String", "Feature ID Links\n\
                         o By Overlap\n\
@@ -238,7 +238,7 @@ void CTbl2AsnApp::Init(void)
                                             Begin, Middle, End Gap Characters,\n\
                                             Missing Characters, Match Characters", CArgDescriptions::eString);
 
-    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID");
+    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID"); // candidate to remove
     arg_desc->AddFlag("S", "Smart Feature Annotation");
 
     arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
@@ -380,6 +380,11 @@ int CTbl2AsnApp::Run(void)
     m_context.m_HandleAsSet = args["s"].AsBoolean();
     m_context.m_NucProtSet = args["u"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
+
+    m_context.m_delay_genprodset = args["J"].AsBoolean();
+    if (m_context.m_delay_genprodset)
+        m_context.m_GenomicProductSet = true;
+
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
 
@@ -653,6 +658,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (!m_context.m_genome_center_id.empty())
     {
         m_context.MakeGenomeCenterId(entry_edit_handle);
+    }
+
+    if (m_context.m_delay_genprodset)
+    {
+        m_context.VisitAllFeatures(entry_edit_handle, m_context.MakeDelayGenProdSet);
     }
 
 #endif
