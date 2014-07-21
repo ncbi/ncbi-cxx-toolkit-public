@@ -2534,7 +2534,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
                 "   id NUMERIC IDENTITY NOT NULL, \n"
-                "   vc_max NVARCHAR(MAX) NULL"
+                "   vc_max VARCHAR(MAX) NULL"
                 ") \n";
 
             auto_stmt->ExecuteUpdate( sql );
@@ -2622,8 +2622,7 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
         {
             string long_msg = "New text.";
             for (int i = 0;  i < 4000;  ++i) {
-                // Embedding U+2019 to test Unicode handling.
-                long_msg += "  Let\xe2\x80\x99s make it long!";
+                long_msg += "  Let's make it long!";
             }
             // Modify the table ...
             {
@@ -2653,6 +2652,66 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
         DBAPI_BOOST_FAIL(ex);
     }
     catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_NVARCHAR_MAX_Stream)
+{
+    string sql;
+    const string table_name = "#test_nvarchar_max_stream_table";
+    // const string table_name = "DBAPI_Sample..test_varchar_max_stream_table";
+
+    try {
+        auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
+
+        // Create table ...
+        if (table_name[0] =='#') {
+            sql =
+                "CREATE TABLE " + table_name + " ( \n"
+                "   id NUMERIC IDENTITY NOT NULL, \n"
+                "   vc_max NVARCHAR(MAX) NULL"
+                ") \n";
+
+            auto_stmt->ExecuteUpdate( sql );
+        }
+
+        // Insert initial data.
+	auto_stmt->ExecuteUpdate( "INSERT INTO " + table_name
+				  + "(vc_max) VALUES(' ')" );
+
+        // Streaming ...
+        {
+            string long_msg = "New text.";
+            for (int i = 0;  i < 4000;  ++i) {
+                // Embedding U+2019 to test Unicode handling.
+                long_msg += "  Let\xe2\x80\x99s make it long!";
+            }
+            // Modify the table ...
+            {
+                CDB_ITDescriptor desc(table_name, "vc_max", "1 = 1",
+                                      CDB_ITDescriptor::eText);
+                auto_stmt->GetBlobOStream(desc, long_msg.size()) << long_msg
+                                                                 << flush;
+            }
+            // Actual check ...
+            {
+                auto_stmt->SendSql("SELECT vc_max FROM " + table_name);
+                while (auto_stmt->HasMoreResults()) {
+                    if(auto_stmt->HasRows()) {
+                        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                        BOOST_CHECK(rs.get() != NULL);
+
+                        BOOST_CHECK(rs->Next());
+                        const string value = rs->GetVariant(1).GetString();
+                        BOOST_CHECK_EQUAL(value.size(), long_msg.size());
+                        // BOOST_CHECK_EQUAL(value, msg);
+                    }
+                }
+            }
+        }
+    } catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
     }
 }
