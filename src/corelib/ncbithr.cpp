@@ -140,8 +140,7 @@ CStaticTls<CUsedTlsBases> CUsedTlsBases::sm_UsedTlsBases;
 // Main thread needs a usual safe-static-ref for proper cleanup --
 // there's no thread which can do it on destruction.
 static CSafeStatic<CUsedTlsBases>
-s_MainUsedTlsBases(0, s_CleanupMainUsedTlsBases,
-                   CSafeStaticLifeSpan::eLifeSpan_Longest);
+s_MainUsedTlsBases(0, s_CleanupMainUsedTlsBases);
 
 CUsedTlsBases& CUsedTlsBases::GetUsedTlsBases(void)
 {
