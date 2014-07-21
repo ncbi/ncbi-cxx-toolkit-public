@@ -30,7 +30,7 @@
  */
 
 #ifndef OBJTOOLS_WRITERS___WIGGLE_WRITER__HPP
-#define OBJTOOLS_READERS___WIGGLE_WRITER__HPP
+#define OBJTOOLS_WRITERS___WIGGLE_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seq_annot.hpp>
