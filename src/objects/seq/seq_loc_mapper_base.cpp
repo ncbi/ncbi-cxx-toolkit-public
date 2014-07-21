@@ -906,8 +906,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     const TSeqPos src_bioseq_len =
         (source.GetId() ? src_width*(GetSequenceLength( *source.GetId()) - 1)
         + (src_width - 1) : src_total_len);
-    TSeqPos last_src_start, last_src_len, last_dst_start, last_dst_len;
-    bool last_src_reverse, last_dst_reverse;
+    TSeqPos last_src_start = 0, last_src_len = 0;
+    TSeqPos last_dst_start = 0, last_dst_len = 0;
+    bool last_src_reverse = false, last_dst_reverse = false;
     CSeq_id_Handle last_src_id, last_dst_id;
     // Must be non-zero.
     // Zero group can be used for alignment rows which failed to map.
