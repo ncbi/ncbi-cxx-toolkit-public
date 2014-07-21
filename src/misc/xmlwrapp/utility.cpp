@@ -77,25 +77,28 @@ namespace impl {
 
     //####################################################################
     void printf2string (std::string &s, const char *message, va_list ap) {
-	char buffer[512];
+        char buffer[512];
 
-	std::memset(buffer, 0, sizeof(buffer));
+        std::memset(buffer, 0, sizeof(buffer));
 
-	// XXX vsnprintf is non-standard
-	if (vsnprintf(buffer, sizeof(buffer), message, ap) > 0) {
-	    std::string::size_type size = std::strlen(buffer);
+        // XXX vsnprintf is non-standard
+        if (vsnprintf(buffer, sizeof(buffer), message, ap) > 0) {
+            std::string::size_type size = std::strlen(buffer);
 
-	    if (buffer[size-1] == '\n') --size;
-	    s.assign(buffer, size);
-	}
+            if (buffer[size-1] == '\n')
+                --size;
+            s.assign(buffer, size);
+        }
     }
     //####################################################################
     bool ns_util::node_ns_match (xmlNode *nd, const ns *nspace) {
         if (nd == NULL)
-            throw exception( "Internal logic error. Node must be supplied to check matching a namespace." );
+            throw exception( "Internal logic error. Node must be supplied to "
+                             "check matching a namespace." );
 
         // NULL namespace matches everything
-        if (nspace == NULL) return true;
+        if (nspace == NULL)
+            return true;
 
         if (nd->ns == NULL)
             return nspace->is_void();
@@ -105,10 +108,12 @@ namespace impl {
     //####################################################################
     bool ns_util::attr_ns_match (xmlAttr *at, const ns *nspace) {
         if (at == NULL)
-            throw exception( "Internal logic error. Attribute must be supplied to check matching a namespace." );
+            throw exception( "Internal logic error. Attribute must be "
+                             "supplied to check matching a namespace." );
 
         // NULL namespace matches everything
-        if (nspace == NULL) return true;
+        if (nspace == NULL)
+            return true;
 
         if (at->ns == NULL)
             return nspace->is_void();
@@ -118,17 +123,20 @@ namespace impl {
     //####################################################################
     bool ns_util::default_attr_ns_match (xmlAttribute *dat, const ns *nspace) {
         if (dat == NULL)
-            throw exception( "Internal logic error. Default attribute must be supplied to check matching a namespace." );
+            throw exception( "Internal logic error. Default attribute must be"
+                             " supplied to check matching a namespace." );
 
         // NULL namespace matches everything
-        if (nspace == NULL) return true;
+        if (nspace == NULL)
+            return true;
 
         // Default attributes do not have prefix and uri. They have only
         // prefix.
         if (dat->prefix == NULL)
             return nspace->is_void();
 
-        return strcmp(nspace->get_prefix(), reinterpret_cast<const char*>(dat->prefix)) == 0;
+        return strcmp(nspace->get_prefix(),
+                      reinterpret_cast<const char*>(dat->prefix)) == 0;
     }
     //####################################################################
     int convert_to_libxml2_save_options (int options) {
@@ -136,15 +144,31 @@ namespace impl {
 
         // The if statements below are to avoid problems if the libxml2
         // enumeration values are extended or change their positions
-        if ((options & save_op_no_format) == 0)   libxml2_options |= XML_SAVE_FORMAT;
-        if (options & save_op_no_decl)            libxml2_options |= XML_SAVE_NO_DECL;
-        if (options & save_op_no_empty)           libxml2_options |= XML_SAVE_NO_EMPTY;
-        if (options & save_op_no_xhtml)           libxml2_options |= XML_SAVE_NO_XHTML;
+        if ((options & save_op_no_format) == 0)
+            libxml2_options |= XML_SAVE_FORMAT;
+        if (options & save_op_no_decl)
+            libxml2_options |= XML_SAVE_NO_DECL;
+        if (options & save_op_no_empty)
+            libxml2_options |= XML_SAVE_NO_EMPTY;
+        if (options & save_op_no_xhtml)
+            libxml2_options |= XML_SAVE_NO_XHTML;
 
         #if LIBXML_VERSION >= 20702
-        if (options & save_op_xhtml)              libxml2_options |= XML_SAVE_XHTML;
-        if ((options & save_op_not_as_xml) == 0)  libxml2_options |= XML_SAVE_AS_XML;
-        if (options & save_op_as_html)            libxml2_options |= XML_SAVE_AS_HTML;
+        if (options & save_op_xhtml)
+            libxml2_options |= XML_SAVE_XHTML;
+        if ((options & save_op_not_as_xml) == 0)
+            libxml2_options |= XML_SAVE_AS_XML;
+        if (options & save_op_as_html)
+            libxml2_options |= XML_SAVE_AS_HTML;
+        #endif
+
+        #if LIBXML_VERSION >= 20708
+        if (options & save_op_with_non_significant_ws) {
+            // libxml2 checks XML_SAVE_WSNONSIG only if XML_SAVE_FORMAT is not
+            // set therefore the XML_SAVE_FORMAT must be removed.
+            libxml2_options &= ~XML_SAVE_FORMAT;
+            libxml2_options |= XML_SAVE_WSNONSIG;
+        }
         #endif
 
         return libxml2_options;

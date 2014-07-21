@@ -64,6 +64,11 @@ namespace xml {
         save_op_not_as_xml  = 1 << 21,  ///< Do not force XML serialization on HTML doc. Ignored if libxml2 version is < 2.7.2
         save_op_as_html     = 1 << 22,  ///< Force HTML serialization on XML doc. Ignored if libxml2 version is < 2.7.2
 
+        /// Format with non-significant whitespace. Ignored if libxml2 version
+        /// is < 2.7.8. This flag will automatically set the save_op_no_format
+        /// as well due to libxml2 implementation.
+        save_op_with_non_significant_ws = 1 << 23,
+
         save_op_default     = 0         ///< Default is:
                                         ///< - no compression
                                         ///< - to format save output and
