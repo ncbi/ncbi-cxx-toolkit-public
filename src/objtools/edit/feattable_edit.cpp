@@ -107,7 +107,6 @@ void CFeatTableEdit::InferParentGenes()
     for ( ; it; ++it) {
         const CSeq_feat& rna = it->GetOriginalFeature();
         CRef<CSeq_feat> pGene = xMakeGeneForMrna(rna);
-        const CSeq_loc& rnaLoc = rna.GetLocation();
         if (!pGene) {
             continue;
         }
