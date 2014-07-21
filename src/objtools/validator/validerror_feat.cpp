@@ -5644,6 +5644,9 @@ static const string s_RefseqExceptionStrings [] = {
     "mismatches in transcription",
     "mismatches in translation",
     "adjusted for low-quality genome",
+    "23S ribosomal RNA and 5S ribosomal RNA overlap",
+    "5S ribosomal RNA and 16S ribosomal RNA overlap",
+    "5S ribosomal RNA and 23S ribosomal RNA overlap"
 };
 
 
@@ -5785,14 +5788,14 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             "Exception explanation text is also found in feature comment", feat);
     }
     if (refseq_except) {
-        bool other_exp = false;
-        for (size_t i = 0; !other_exp && i < sizeof(s_RefseqExceptionStrings) / sizeof(string); i++) {
+        bool found_just_the_exception = false;
+        for (size_t i = 0; !found_just_the_exception && i < sizeof(s_RefseqExceptionStrings) / sizeof(string); i++) {
             if (NStr::EqualNocase (s_RefseqExceptionStrings[i], str)) {
-                other_exp = true;
+                found_just_the_exception = true;
             }
         }
 
-        if ( other_exp ) {
+        if ( ! found_just_the_exception ) {
             PostErr (eDiag_Warning, eErr_SEQ_FEAT_ExceptionProblem, 
                      "Genome processing exception should not be combined with other explanations", feat);
         }

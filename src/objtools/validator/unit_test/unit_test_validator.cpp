@@ -12424,8 +12424,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranscriptMismatches)
     mrna->SetExcept(true);
     mrna->SetExcept_text ("mismatches in transcription");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ExceptionProblem",
-                      "Genome processing exception should not be combined with other explanations"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -13200,13 +13198,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
     // multiple ref-seq exceptions
     feat->SetExcept_text("unclassified transcription discrepancy, RNA editing");
     feat->SetComment("misc_feature needs a comment");
-    CLEAR_ERRORS
-//    expected_errors[0]->SetErrMsg("Genome processing exception should not be combined with other explanations");
-//    expected_errors[0]->SetAccession("NC_123456");
- //   expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[0]->SetErrMsg("Genome processing exception should not be combined with other explanations");
+    expected_errors[0]->SetAccession("NC_123456");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
     // not legal (is warning for NC or NT)
     feat->SetExcept_text("not a legal exception");
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Warning, "ExceptionProblem", "not a legal exception is not a legal exception explanation"));
@@ -13214,6 +13212,21 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // these are now legal for RefSeq
+    feat->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    feat->SetData().SetRna().SetExt().SetName("23S ribosomal RNA");
+    feat->ResetComment();
+    feat->SetExcept_text("23S ribosomal RNA and 5S ribosomal RNA overlap");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetExcept_text("5S ribosomal RNA and 16S ribosomal RNA overlap");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    feat->SetExcept_text("5S ribosomal RNA and 23S ribosomal RNA overlap");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
@@ -14987,12 +15000,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ErroneousException)
 
     STANDARD_SETUP
 
-    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ExceptionProblem", 
-                               "Genome processing exception should not be combined with other explanations"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ErroneousException",
                                "CDS has unclassified exception but only difference is 1 mismatches out of 121 residues"));
-    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ExceptionProblem", 
-                               "Genome processing exception should not be combined with other explanations"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "ErroneousException",
                                "mRNA has unclassified exception but only difference is 1 mismatches out of 366 bases"));
     eval = validator.Validate(seh, options);
