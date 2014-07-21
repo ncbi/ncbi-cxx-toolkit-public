@@ -35,7 +35,7 @@
  */
 
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
 
 
@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 static size_t kMax_BlobSize= (size_t) kMax_Int;
 
 // The storage with the sequential access
-class C_SA_Storage
+class C_SA_Storage : public CObject
 {
 public:
     virtual size_t  Read  (void*       buff, size_t nof_bytes) = 0;

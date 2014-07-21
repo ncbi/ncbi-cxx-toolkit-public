@@ -114,7 +114,7 @@ typedef CGenericSqlString<wchar_t> CWSqlString;
 
 
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_DBAPIDRIVER_EXPORT CWString
+class NCBI_DBAPIDRIVER_EXPORT CWString : public CObject
 {
 public:
     CWString(void);
@@ -296,6 +296,7 @@ public:
 
     virtual EDB_Type    GetType() const = 0;
     virtual CDB_Object* Clone()   const = 0;
+    virtual CDB_Object* ShallowClone() const { return Clone(); }
     virtual void AssignValue(const CDB_Object& v) = 0;
 
     // Create and return a new object (with internal value NULL) of type "type".
@@ -454,7 +455,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_String : public CDB_Object
 {
 public:
     CDB_String(void);
-    CDB_String(const CDB_String& other);
+    CDB_String(const CDB_String& other, bool share_data = false);
     explicit CDB_String(const string& s,
                         EEncoding enc = eEncoding_Unknown);
     explicit CDB_String(const char* s,
@@ -485,7 +486,7 @@ public:
 
     operator const string&(void) const
     {
-        return m_WString;
+        return *m_WString;
     }
 
 public:
@@ -493,7 +494,7 @@ public:
     // enc - expected source string encoding.
     const wstring& AsWString(EEncoding enc) const
     {
-        return IsNULL() ? kEmptyWStr : m_WString.AsUnicode(enc);
+        return IsNULL() ? kEmptyWStr : m_WString->AsUnicode(enc);
     }
 
     NCBI_DEPRECATED const wchar_t* AsUnicode(EEncoding enc) const;
@@ -506,7 +507,7 @@ public:
 
     size_t Size(void) const
     {
-        return IsNULL() ? 0 : m_WString.GetSymbolNum();
+        return IsNULL() ? 0 : m_WString->GetSymbolNum();
     }
 
     const char* Data(void) const
@@ -543,12 +544,12 @@ public:
                                   bool convert_raw_bytes = false) const;
 
 private:
-    CWString m_WString;
+    CRef<CWString> m_WString;
     EBulkEnc m_BulkInsertionEnc;
 
     // Avoid explicit static_cast<const string&>(m_WString) constructs,
     // which trigger internal errors under ICC 12.
-    const string& x_GetWString() const { return m_WString; }
+    const string& x_GetWString() const { return *m_WString; }
 };
 
 
@@ -557,6 +558,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_VarChar : public CDB_String
 {
 public:
     CDB_VarChar(void);
+    CDB_VarChar(const CDB_VarChar& v, bool share_data = false);
     CDB_VarChar(const string& s,
                 EEncoding enc = eEncoding_Unknown);
     CDB_VarChar(const char* s,
@@ -589,6 +591,7 @@ public:
 public:
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
     virtual void AssignValue(const CDB_Object& v);
 };
 
@@ -606,7 +609,7 @@ public:
              EEncoding enc = eEncoding_Unknown);
     CDB_Char(size_t s, const TStringUCS2& v);
     // CDB_Char(size_t s, const TCharUCS2* str);
-    CDB_Char(const CDB_Char& v);
+    CDB_Char(const CDB_Char& v, bool share_data = false);
     virtual ~CDB_Char(void);
 
 public:
@@ -628,6 +631,7 @@ public:
 public:
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
 
     virtual void AssignValue(const CDB_Object& v);
 
@@ -653,7 +657,7 @@ public:
                  EEncoding enc = eEncoding_Unknown);
     CDB_LongChar(size_t s, const TStringUCS2& v);
     // CDB_LongChar(size_t len, const TCharUCS2* str);
-    CDB_LongChar(const CDB_LongChar& v);
+    CDB_LongChar(const CDB_LongChar& v, bool share_data = false);
     virtual ~CDB_LongChar();
 
 public:
@@ -677,6 +681,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
 
     virtual void AssignValue(const CDB_Object& v);
 
@@ -691,6 +696,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_VarBinary : public CDB_Object
 {
 public:
     CDB_VarBinary();
+    CDB_VarBinary(const CDB_VarBinary& v, bool share_data = false);
     CDB_VarBinary(const void* v, size_t l);
     virtual ~CDB_VarBinary(void);
 
@@ -701,16 +707,19 @@ public:
    
     //
     const void* Value() const
-        { return IsNULL() ? NULL : (void*) m_Value.data(); }
+        { return IsNULL() ? NULL : (void*) m_Value->GetData().data(); }
     const void* Data()  const  { return Value(); }
-    size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
+    size_t      Size()  const
+        { return IsNULL() ? 0 : m_Value->GetData().size(); }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
     virtual void AssignValue(const CDB_Object& v);
 
 protected:
-    string m_Value;
+    typedef CObjectFor<string> TValue;
+    CRef<TValue> m_Value;
 };
 
 
@@ -721,7 +730,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_Binary : public CDB_Object
 public:
     CDB_Binary(size_t s = 1);
     CDB_Binary(size_t s, const void* v, size_t v_size);
-    CDB_Binary(const CDB_Binary& v);
+    CDB_Binary(const CDB_Binary& v, bool share_data = false);
     virtual ~CDB_Binary();
 
 public:
@@ -731,18 +740,22 @@ public:
 
     //
     const void* Value() const
-        { return IsNULL() ? NULL : (void*) m_Value.data(); }
+        { return IsNULL() ? NULL : (void*) m_Value->GetData().data(); }
     const void* Data()  const  { return Value(); }
-    size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
+    size_t      Size()  const
+        { return IsNULL() ? 0 : m_Value->GetData().size(); }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
 
     virtual void AssignValue(const CDB_Object& v);
 
 protected:
+    typedef CObjectFor<string> TValue;
+
     size_t m_Size;
-    string m_Value;
+    CRef<TValue> m_Value;
 };
 
 
@@ -753,7 +766,7 @@ public:
 
     CDB_LongBinary(size_t s = K8_1);
     CDB_LongBinary(size_t s, const void* v, size_t v_size);
-    CDB_LongBinary(const CDB_LongBinary& v);
+    CDB_LongBinary(const CDB_LongBinary& v, bool share_data = false);
     virtual ~CDB_LongBinary();
 
 public:
@@ -763,20 +776,24 @@ public:
 
     //
     const void* Value() const
-        { return IsNULL() ? NULL : (void*) m_Value.data(); }
+        { return IsNULL() ? NULL : (void*) m_Value->GetData().data(); }
     const void* Data()  const  { return Value(); }
-    size_t      Size()  const  { return IsNULL() ? 0 : m_Value.size(); }
+    size_t      Size()  const
+        { return IsNULL() ? 0 : m_Value->GetData().size(); }
     size_t  DataSize()  const  { return m_DataSize; }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
 
     virtual void AssignValue(const CDB_Object& v);
 
 protected:
+    typedef CObjectFor<string> TValue;
+
     size_t m_Size;
     size_t m_DataSize;
-    string m_Value;
+    CRef<TValue> m_Value;
 };
 
 
@@ -852,6 +869,7 @@ public:
 protected:
     // 'ctors
     CDB_Stream();
+    CDB_Stream(const CDB_Stream& s, bool share_data = false);
     virtual ~CDB_Stream();
 
 private:
@@ -866,6 +884,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_Image : public CDB_Stream
 {
 public:
     CDB_Image(void);
+    CDB_Image(const CDB_Image& image, bool share_data = false);
     virtual ~CDB_Image(void);
 
 public:
@@ -873,6 +892,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
 };
 
 
@@ -882,6 +902,7 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_Text : public CDB_Stream
 {
 public:
     CDB_Text(void);
+    CDB_Text(const CDB_Text& text, bool share_data = false);
     virtual ~CDB_Text(void);
 
 public:
@@ -898,6 +919,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual CDB_Object* ShallowClone() const;
 
 private:
     EBulkEnc m_Encoding;

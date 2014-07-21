@@ -855,7 +855,8 @@ inline size_t my_strnlen(const TChar* str, size_t maxlen)
 
 /////////////////////////////////////////////////////////////////////////////
 inline
-string MakeString(const string& s, string::size_type size)
+CRef<CWString> MakeString(const string& s, string::size_type size,
+                          EEncoding enc = eEncoding_Unknown)
 {
     string value(s, 0, size);
 
@@ -863,12 +864,14 @@ string MakeString(const string& s, string::size_type size)
         value.resize(size, ' ');
     }
 
-    return value;
+    return CRef<CWString>(new CWString(value, enc));
 }
 
 inline
-string MakeString(const TStringUCS2& s, TStringUCS2::size_type size)
+CRef<CWString> MakeString(const TStringUCS2& s, TStringUCS2::size_type size,
+                          EEncoding enc = eEncoding_Unknown)
 {
+    _ASSERT(enc == eEncoding_Unknown);
     TStringUCS2 value(s, 0, size);
 
     if (size != TStringUCS2::npos) {
@@ -876,12 +879,15 @@ string MakeString(const TStringUCS2& s, TStringUCS2::size_type size)
     }
 
     s_MakeLittleEndian(value);
-    return string((const char*)value.data(), value.size() * sizeof(TCharUCS2));
+    return CRef<CWString>(new CWString((const char*)value.data(),
+                                       value.size() * sizeof(TCharUCS2)));
 }
 
 template <typename TChar>
 inline
-string MakeString(const TChar* s, typename basic_string<TChar>::size_type size)
+CRef<CWString> MakeString(const TChar* s,
+                          typename basic_string<TChar>::size_type size,
+                          EEncoding enc = eEncoding_Unknown)
 {
     typedef basic_string<TChar> TStr;
     if (s == NULL) {
@@ -908,15 +914,18 @@ CDB_String::CDB_String(void)
 }
 
 
-CDB_String::CDB_String(const CDB_String& other)
+CDB_String::CDB_String(const CDB_String& other, bool share_data)
     : CDB_Object(other), m_WString(other.m_WString),
       m_BulkInsertionEnc(other.m_BulkInsertionEnc)
 {
+    if (other.m_WString.NotEmpty()  &&  !share_data) {
+        m_WString.Reset(new CWString(*other.m_WString));
+    }
 }
 
 
 CDB_String::CDB_String(const string& s, EEncoding enc)
-    : CDB_Object(false), m_WString(s, enc),
+    : CDB_Object(false), m_WString(new CWString(s, enc)),
       m_BulkInsertionEnc(eBulkEnc_RawBytes)
 {
 }
@@ -925,7 +934,7 @@ CDB_String::CDB_String(const string& s, EEncoding enc)
 CDB_String::CDB_String(const char* s,
                        string::size_type size,
                        EEncoding enc)
-    : CDB_Object(s == NULL), m_WString(MakeString(s, size), enc),
+    : CDB_Object(s == NULL), m_WString(MakeString(s, size, enc)),
       m_BulkInsertionEnc(eBulkEnc_RawBytes)
 {
 }
@@ -934,7 +943,7 @@ CDB_String::CDB_String(const char* s,
 CDB_String::CDB_String(const string& s,
                        string::size_type size,
                        EEncoding enc) 
-    : CDB_Object(false), m_WString(MakeString(s, size), enc),
+    : CDB_Object(false), m_WString(MakeString(s, size, enc)),
       m_BulkInsertionEnc(eBulkEnc_RawBytes)
 {
 }
@@ -994,14 +1003,14 @@ CDB_String& CDB_String::operator= (const TStringUCS2& s)
 
 CDB_String::operator const char*(void) const
 {
-    return m_WString.AsCString();
+    return m_WString.Empty() ? kEmptyCStr : m_WString->AsCString();
 }
 
 
 #ifdef HAVE_WSTRING
 const wchar_t* CDB_String::AsUnicode(EEncoding enc) const
 {
-    return IsNULL() ? NULL : m_WString.AsUnicode(enc).c_str();
+    return IsNULL() ? NULL : m_WString->AsUnicode(enc).c_str();
 }
 #endif
 
@@ -1009,7 +1018,8 @@ const wchar_t* CDB_String::AsUnicode(EEncoding enc) const
 void CDB_String::Assign(const CDB_String& other)
 {
     SetNULL(other.IsNULL());
-    m_WString = other.m_WString;
+    m_WString.Reset((IsNULL() || other.m_WString.Empty()) ? NULL
+                    : new CWString(*other.m_WString));
     m_BulkInsertionEnc = other.m_BulkInsertionEnc;
 }
 
@@ -1021,10 +1031,10 @@ void CDB_String::Assign(const char* s,
     if ( s ) {
         SetNULL(false);
 
-        if (size == string::npos) {
-            m_WString.Assign(string(s), enc);
+        if (m_WString.NotEmpty()  &&  size == string::npos) {
+            m_WString->Assign(string(s), enc);
         } else {
-            m_WString.Assign(MakeString(s, size), enc);
+            m_WString.Reset(MakeString(s, size, enc));
         }
     } else {
         SetNULL();
@@ -1040,7 +1050,7 @@ void CDB_String::Assign(const string& s,
                         EEncoding enc)
 {
     SetNULL(false);
-    m_WString.Assign(MakeString(s, size), enc);
+    m_WString.Reset(MakeString(s, size, enc));
     if (m_BulkInsertionEnc == eBulkEnc_RawUCS2) {
         m_BulkInsertionEnc = eBulkEnc_UCS2FromChar;
     }
@@ -1053,7 +1063,7 @@ void CDB_String::Assign(const TCharUCS2* s,
 {
     if ( s ) {
         SetNULL(false);
-        m_WString.Assign(MakeString(s, size));
+        m_WString.Reset(MakeString(s, size));
     } else {
         SetNULL();
     }
@@ -1066,7 +1076,7 @@ void CDB_String::Assign(const TStringUCS2& s,
                         TStringUCS2::size_type size)
 {
     SetNULL(false);
-    m_WString.Assign(MakeString(s, size));
+    m_WString.Reset(MakeString(s, size));
     m_BulkInsertionEnc = eBulkEnc_RawUCS2;
 }
 
@@ -1076,7 +1086,7 @@ void CDB_String::GetBulkInsertionData(CTempString* ts, bool convert_raw_bytes)
 {
     _ASSERT(ts);
 
-    if (IsNULL()) {
+    if (IsNULL()  ||  m_WString.Empty()) {
         ts->clear();
         return;
     }
@@ -1093,7 +1103,7 @@ void CDB_String::GetBulkInsertionData(CTempString* ts, bool convert_raw_bytes)
         break;
     case eBulkEnc_UCS2FromChar:
     {
-        const TStringUCS2& s2 = m_WString.AsUCS2_LE();
+        const TStringUCS2& s2 = m_WString->AsUCS2_LE();
         ts->assign((char*) s2.data(), s2.size() * sizeof(TCharUCS2));
         break;
     }
@@ -1125,6 +1135,12 @@ get_string_size_varchar(const TChar* str,
 //
 
 CDB_VarChar::CDB_VarChar(void)
+{
+}
+
+
+CDB_VarChar::CDB_VarChar(const CDB_VarChar& v, bool share_data)
+: CDB_String(v, share_data)
 {
 }
 
@@ -1227,6 +1243,12 @@ CDB_Object* CDB_VarChar::Clone() const
 }
 
 
+CDB_Object* CDB_VarChar::ShallowClone() const
+{
+    return IsNULL() ? new CDB_VarChar() : new CDB_VarChar(*this, true);
+}
+
+
 void CDB_VarChar::AssignValue(const CDB_Object& v)
 {
     CHECK_DRIVER_ERROR(v.GetType() != eDB_VarChar,
@@ -1273,8 +1295,8 @@ CDB_Char::CDB_Char(size_t s, const TStringUCS2& v)
 }
 
 
-CDB_Char::CDB_Char(const CDB_Char& v) :
-    CDB_String(v),
+CDB_Char::CDB_Char(const CDB_Char& v, bool share_data) :
+    CDB_String(v, share_data),
     m_Size(v.m_Size)
 {
 }
@@ -1351,6 +1373,11 @@ CDB_Object* CDB_Char::Clone() const
     return new CDB_Char(*this);
 }
 
+CDB_Object* CDB_Char::ShallowClone() const
+{
+    return new CDB_Char(*this, true);
+}
+
 void CDB_Char::AssignValue(const CDB_Object& v)
 {
     CHECK_DRIVER_ERROR(v.GetType() != eDB_Char,
@@ -1422,8 +1449,8 @@ CDB_LongChar::CDB_LongChar(size_t s,
 }
 
 
-CDB_LongChar::CDB_LongChar(const CDB_LongChar& v) :
-    CDB_String(v),
+CDB_LongChar::CDB_LongChar(const CDB_LongChar& v, bool share_data) :
+    CDB_String(v, share_data),
     m_Size(v.m_Size)
 {
 }
@@ -1501,6 +1528,11 @@ CDB_Object* CDB_LongChar::Clone() const
     return new CDB_LongChar(*this);
 }
 
+CDB_Object* CDB_LongChar::ShallowClone() const
+{
+    return new CDB_LongChar(*this, true);
+}
+
 
 void CDB_LongChar::AssignValue(const CDB_Object& v)
 {
@@ -1528,6 +1560,14 @@ CDB_VarBinary::CDB_VarBinary(void)
 { 
 }
 
+CDB_VarBinary::CDB_VarBinary(const CDB_VarBinary& v, bool share_data)
+    : CDB_Object(v), m_Value(v.m_Value)
+{
+    if (v.m_Value.NotEmpty()  &&  !share_data) {
+        m_Value.Reset(new TValue(*v.m_Value));
+    }
+}
+
 CDB_VarBinary::CDB_VarBinary(const void* v, size_t l) 
 { 
     SetValue(v, l); 
@@ -1540,9 +1580,13 @@ CDB_VarBinary::~CDB_VarBinary(void)
 void CDB_VarBinary::SetValue(const void* v, size_t l)
 {
     if (v  &&  l) {
-        m_Value.assign(static_cast<const char*>(v), l);
+        if (m_Value.Empty()) {
+            m_Value.Reset(new TValue);
+        }
+        m_Value->GetData().assign(static_cast<const char*>(v), l);
         SetNULL(false);
     } else {
+        m_Value.Reset();
         SetNULL();
     }
 }
@@ -1552,7 +1596,8 @@ CDB_VarBinary& CDB_VarBinary::operator= (const CDB_VarBinary& v)
 {
     if (this != &v) {
         SetNULL(v.IsNULL());
-        m_Value = v.m_Value;
+        m_Value.Reset((IsNULL() || v.m_Value.Empty()) ? NULL
+                      : new TValue(*v.m_Value));
     }
 
     return *this;
@@ -1567,7 +1612,12 @@ EDB_Type CDB_VarBinary::GetType() const
 
 CDB_Object* CDB_VarBinary::Clone() const
 {
-    return IsNULL() ? new CDB_VarBinary : new CDB_VarBinary(m_Value.data(), m_Value.size());
+    return IsNULL() ? new CDB_VarBinary : new CDB_VarBinary(*this);
+}
+
+CDB_Object* CDB_VarBinary::ShallowClone() const
+{
+    return IsNULL() ? new CDB_VarBinary : new CDB_VarBinary(*this, true);
 }
 
 
@@ -1599,11 +1649,12 @@ CDB_Binary::CDB_Binary(size_t s, const void* v, size_t v_size)
 }
 
 
-CDB_Binary::CDB_Binary(const CDB_Binary& v)
+CDB_Binary::CDB_Binary(const CDB_Binary& v, bool share_data)
+    : CDB_Object(v), m_Size(v.m_Size), m_Value(v.m_Value)
 {
-    SetNULL(v.IsNULL());
-    m_Size = v.m_Size;
-    m_Value = v.m_Value;
+    if (v.m_Value.NotEmpty()  &&  !share_data) {
+        m_Value.Reset(new TValue(*v.m_Value));
+    }
 }
 
 
@@ -1612,10 +1663,15 @@ void CDB_Binary::SetValue(const void* v, size_t v_size)
     if (v && v_size) {
         CheckBinaryTruncation(v_size, m_Size);
 
-        m_Value.assign(static_cast<const char*>(v), min(v_size, m_Size));
-        m_Value.resize(m_Size, '\0');
+        if (m_Value.Empty()) {
+            m_Value.Reset(new TValue);
+        }
+        m_Value->GetData().assign(static_cast<const char*>(v),
+                                  min(v_size, m_Size));
+        m_Value->GetData().resize(m_Size, '\0');
         SetNULL(false);
     } else {
+        m_Value.Reset();
         SetNULL();
     }
 }
@@ -1626,7 +1682,8 @@ CDB_Binary& CDB_Binary::operator= (const CDB_Binary& v)
     if (this != &v) {
         SetNULL(v.IsNULL());
         m_Size = v.m_Size;
-        m_Value = v.m_Value;
+        m_Value.Reset((IsNULL() || v.m_Value.Empty()) ? NULL
+                      : new TValue(*v.m_Value));
     }
 
     return *this;
@@ -1642,6 +1699,11 @@ EDB_Type CDB_Binary::GetType() const
 CDB_Object* CDB_Binary::Clone() const
 {
     return IsNULL() ? new CDB_Binary(m_Size) : new CDB_Binary(*this);
+}
+
+CDB_Object* CDB_Binary::ShallowClone() const
+{
+    return IsNULL() ? new CDB_Binary(m_Size) : new CDB_Binary(*this, true);
 }
 
 
@@ -1680,12 +1742,15 @@ CDB_LongBinary::CDB_LongBinary(size_t s, const void* v, size_t v_size)
 }
 
 
-CDB_LongBinary::CDB_LongBinary(const CDB_LongBinary& v)
-: m_Size(v.m_Size)
+CDB_LongBinary::CDB_LongBinary(const CDB_LongBinary& v, bool share_data)
+: CDB_Object(v)
+, m_Size(v.m_Size)
 , m_DataSize(v.m_DataSize)
 , m_Value(v.m_Value)
 {
-    SetNULL(v.IsNULL());
+    if (v.m_Value.NotEmpty()  &&  !share_data) {
+        m_Value.Reset(new TValue(*v.m_Value));
+    }
 }
 
 
@@ -1694,10 +1759,14 @@ void CDB_LongBinary::SetValue(const void* v, size_t v_size)
     if (v && v_size) {
         m_DataSize = min(v_size, m_Size);
         CheckBinaryTruncation(v_size, m_Size);
-        m_Value.assign(static_cast<const char*>(v), m_DataSize);
-        m_Value.resize(m_Size, '\0');
+        if (m_Value.Empty()) {
+            m_Value.Reset(new TValue);
+        }
+        m_Value->GetData().assign(static_cast<const char*>(v), m_DataSize);
+        m_Value->GetData().resize(m_Size, '\0');
         SetNULL(false);
     } else {
+        m_Value.Reset();
         SetNULL();
         m_DataSize = 0;
     }
@@ -1711,6 +1780,8 @@ CDB_LongBinary& CDB_LongBinary::operator= (const CDB_LongBinary& v)
         m_Size = v.m_Size;
         m_DataSize = v.m_DataSize;
         m_Value = v.m_Value;
+        m_Value.Reset((IsNULL() || v.m_Value.Empty()) ? NULL
+                      : new TValue(*v.m_Value));
     }
 
     return *this;
@@ -1726,6 +1797,11 @@ EDB_Type CDB_LongBinary::GetType() const
 CDB_Object* CDB_LongBinary::Clone() const
 {
     return new CDB_LongBinary(*this);
+}
+
+CDB_Object* CDB_LongBinary::ShallowClone() const
+{
+    return new CDB_LongBinary(*this, true);
 }
 
 
@@ -1864,6 +1940,19 @@ CDB_Stream::CDB_Stream()
     : CDB_Object(true)
 {
     m_Store = new CMemStore;
+    m_Store->AddReference();
+}
+
+CDB_Stream::CDB_Stream(const CDB_Stream& s, bool share_data)
+    : CDB_Object(s), m_Store(s.m_Store)
+{
+    if (share_data) {
+        m_Store->AddReference();
+    } else {
+        m_Store = new CMemStore;
+        m_Store->AddReference();
+        Assign(s);
+    }
 }
 
 CDB_Stream& CDB_Stream::Assign(const CDB_Stream& v)
@@ -1872,8 +1961,9 @@ CDB_Stream& CDB_Stream::Assign(const CDB_Stream& v)
     m_Store->Truncate();
     if ( !IsNULL() ) {
         char buff[1024];
-        CMemStore* s = v.m_Store;
+        CMemStore* s = const_cast<CMemStore*>(&*v.m_Store);
         size_t pos = s->Tell();
+        s->Seek(0L, C_RA_Storage::eHead);
         for (size_t n = s->Read((void*) buff, sizeof(buff));
              n > 0;
              n = s->Read((void*) buff, sizeof(buff))) {
@@ -1936,7 +2026,7 @@ void CDB_Stream::AssignValue(const CDB_Object& v)
 CDB_Stream::~CDB_Stream()
 {
     try {
-        delete m_Store;
+        m_Store->RemoveReference();
     }
     NCBI_CATCH_ALL_X( 7, NCBI_CURRENT_FUNCTION )
 }
@@ -1947,6 +2037,11 @@ CDB_Stream::~CDB_Stream()
 //
 
 CDB_Image::CDB_Image(void)
+{
+}
+
+CDB_Image::CDB_Image(const CDB_Image& image, bool share_data)
+    : CDB_Stream(image, share_data)
 {
 }
 
@@ -1966,13 +2061,12 @@ EDB_Type CDB_Image::GetType() const
 
 CDB_Object* CDB_Image::Clone() const
 {
-    CHECK_DRIVER_ERROR(
-        !IsNULL(),
-        "Clone for the non NULL image is not supported",
-        1
-        );
+    return new CDB_Image(*this);
+}
 
-    return new CDB_Image;
+CDB_Object* CDB_Image::ShallowClone() const
+{
+    return new CDB_Image(*this, true);
 }
 
 
@@ -1982,6 +2076,11 @@ CDB_Object* CDB_Image::Clone() const
 
 CDB_Text::CDB_Text(void)
     : m_Encoding(eBulkEnc_RawBytes)
+{
+}
+
+CDB_Text::CDB_Text(const CDB_Text& text, bool share_data)
+    : CDB_Stream(text, share_data), m_Encoding(text.m_Encoding)
 {
 }
 
@@ -2057,13 +2156,12 @@ EDB_Type CDB_Text::GetType() const
 
 CDB_Object* CDB_Text::Clone() const
 {
-    CHECK_DRIVER_ERROR(
-        !IsNULL(),
-        "Clone for the non-NULL text is not supported",
-        1
-        );
+    return new CDB_Text(*this);
+}
 
-    return new CDB_Text;
+CDB_Object* CDB_Text::ShallowClone() const
+{
+    return new CDB_Text(*this, true);
 }
 
 
