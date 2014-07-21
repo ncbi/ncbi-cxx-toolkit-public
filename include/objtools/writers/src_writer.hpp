@@ -30,7 +30,7 @@
  */
 
 #ifndef OBJTOOLS_WRITERS___SRC_WRITER__HPP
-#define OBJTOOLS_READERS___SRC_WRITER__HPP
+#define OBJTOOLS_WRITERS___SRC_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/bioseq_handle.hpp>
