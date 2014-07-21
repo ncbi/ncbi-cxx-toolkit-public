@@ -174,8 +174,51 @@ static bool AlnScoreDescendingSort(CRef<CSeq_align> const& info1,
     return (score1 > score2);
 }
 
+
+void CVecscreen::x_GetEdgeRanges(const objects::CSeq_align& seqalign,
+                                 TSeqPos master_len,
+                                 TSeqPos& start_edge,
+                                 TSeqPos& end_edge)
+{
+    int score, sum_n, num_ident;
+    TSeqPos aln_start, aln_stop;
+    double bits, evalue;
+    list<TGi> use_this_gi;
+    
+    aln_start = min(seqalign.GetSeqRange(0).GetTo(), 
+                    seqalign.GetSeqRange(0).GetFrom());
+    aln_stop = max(seqalign.GetSeqRange(0).GetTo(), 
+                   seqalign.GetSeqRange(0).GetFrom());
+    CAlignFormatUtil::GetAlnScores(seqalign, score, bits, evalue,
+                                   sum_n, num_ident,use_this_gi);
+    if(aln_start < kTerminalFexibility ){
+        if (aln_stop > start_edge) {
+            if(score >= kTerminalMatchScore[eStrong]){
+                start_edge=aln_stop;
+            } else if (score >= kTerminalMatchScore[eModerate]){
+                start_edge=aln_stop;
+            } else if (score >= kTerminalMatchScore[eWeak] && m_ShowWeakMatch){
+                start_edge=aln_stop;
+            }
+        }
+    } else if (aln_stop > master_len - 1 - kTerminalFexibility){
+        if (aln_start < end_edge) {
+            if(score >= kTerminalMatchScore[eStrong]){
+                end_edge = aln_start;
+            } else if (score >= kTerminalMatchScore[eModerate]){
+                end_edge = aln_start;
+            } else if (score >= kTerminalMatchScore[eWeak] && m_ShowWeakMatch){
+                end_edge = aln_start;
+            }
+            
+        }
+    }
+}
+
 CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
-                                                 TSeqPos master_len)
+                                                 TSeqPos master_len,
+                                                 TSeqPos start_edge,
+                                                 TSeqPos end_edge)
 {
     int score, sum_n, num_ident;
     TSeqPos aln_start, aln_stop;
@@ -191,6 +234,16 @@ CVecscreen::MatchType CVecscreen::x_GetMatchType(const CSeq_align& seqalign,
     if(aln_start < kTerminalFexibility || 
        aln_stop > master_len - 1 - kTerminalFexibility){
         //terminal match       
+        if(score >= kTerminalMatchScore[eStrong]){
+            return eStrong;
+        } else if (score >= kTerminalMatchScore[eModerate]){
+            return eModerate;
+        } else if (score >= kTerminalMatchScore[eWeak] && m_ShowWeakMatch){
+            return eWeak;
+        }
+    } else if ((int)aln_start - (int)start_edge <= 1 || 
+               (int)aln_stop + 1 >= (int) end_edge){
+        //terminal match if abutting or within another terminal hit       
         if(score >= kTerminalMatchScore[eStrong]){
             return eStrong;
         } else if (score >= kTerminalMatchScore[eModerate]){
@@ -325,9 +378,17 @@ void CVecscreen::x_MergeSeqalign(CSeq_align_set& seqalign)
     for(unsigned int i = 0; i < catagorized_seqalign.size(); i ++){
         catagorized_seqalign[i] = new CSeq_align_set;
     }
+
+    //find edges of terminal hits  
+
+    TSeqPos start_edge = 0, end_dege = m_MasterLen - 1 ;
+    ITERATE(CSeq_align_set::Tdata, iter, seqalign.Get()){
+        x_GetEdgeRanges(**iter, m_MasterLen, start_edge, end_dege);
+    }
+
     //seperate seqalign with different catagory
     ITERATE(CSeq_align_set::Tdata, iter, seqalign.Get()){
-        MatchType type = x_GetMatchType(**iter, m_MasterLen);
+        MatchType type = x_GetMatchType(**iter, m_MasterLen, start_edge, end_dege);
         if(type != eNoMatch){
             CRef<CSeq_align> new_align(new CSeq_align);
             new_align->Assign(**iter);

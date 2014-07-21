@@ -187,13 +187,20 @@ protected:
     void x_MergeLowerRankSeqalign(objects::CSeq_align_set& seqalign_higher,
                                   objects::CSeq_align_set& seqalign_lower);
 
+
+    void x_GetEdgeRanges(const objects::CSeq_align& seqalign,
+                         TSeqPos master_len,
+                         TSeqPos& start_edge,
+                         TSeqPos& end_edge);
     ///Get match type
     ///@param seqalign: the seqalign
     ///@param master_len: the master seq length
     ///@return: the type
     ///
     MatchType x_GetMatchType(const objects::CSeq_align& seqalign,
-                             TSeqPos master_len);
+                             TSeqPos master_len,
+                             TSeqPos start_edge,
+                             TSeqPos end_edge);
 
     ///Build non overlapping internal match list
     ///@param seqalign_vec: a vecter of catagorized seqalign set
