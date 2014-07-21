@@ -3297,6 +3297,9 @@ void CSubSource::AutoFix()
     
 
 static const char * s_RemovableCultureNotes[] = {
+ "[BankIt_uncultured16S_wizard]; [universal primers]; [tgge]",
+ "[BankIt_uncultured16S_wizard]; [universal primers]; [dgge]",
+ "[BankIt_uncultured16S_wizard]; [universal primers]",
  "[uncultured (using universal primers)]",
  "[uncultured (using universal primers) bacterial source]",
  "[cultured bacterial source]",
@@ -3325,6 +3328,9 @@ static const char * s_RemovableCultureNotes[] = {
 };
 
 static const char * s_ReplaceableCultureNotes[] = {
+ "[BankIt_uncultured16S_wizard]; [species_specific primers]; [tgge]",
+ "[BankIt_uncultured16S_wizard]; [species_specific primers]; [dgge]",
+ "[BankIt_uncultured16S_wizard]; [species_specific primers]",
  "[uncultured (with species-specific primers)]",
  "[uncultured]; [amplified with species-specific primers]",
  "[uncultured (using species-specific primers) bacterial source]",
@@ -3369,6 +3375,9 @@ void CSubSource::RemoveCultureNotes ()
 {
     if (IsSetName()) {
         RemoveCultureNotes(SetName());
+        if (NStr::IsBlank(GetName())) {
+            ResetName();
+        }
     }
 }
 

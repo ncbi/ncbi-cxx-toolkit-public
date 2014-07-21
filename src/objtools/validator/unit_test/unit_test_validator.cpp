@@ -18641,7 +18641,12 @@ BOOST_AUTO_TEST_CASE(Test_RmCultureNotes)
     ss->SetName("[uncultured (using species-specific primers) bacterial source]");
     ss->RemoveCultureNotes();
     BOOST_CHECK_EQUAL(ss->GetName(), "amplified with species-specific primers");
-   
+    ss->SetName("[BankIt_uncultured16S_wizard]; [universal primers]; [tgge]");
+    ss->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->IsSetName(), false);
+    ss->SetName("[BankIt_uncultured16S_wizard]; [species_specific primers]; [dgge]");
+    ss->RemoveCultureNotes();
+    BOOST_CHECK_EQUAL(ss->GetName(), "amplified with species-specific primers");
 }
 
 
