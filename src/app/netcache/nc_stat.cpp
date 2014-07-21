@@ -819,6 +819,8 @@ void CNCStat::PrintState(CSrvSocketTask& task)
 {
     string is("\": "), iss("\": \""), eol(",\n\""), str("_str");
     task.WriteText(eol).WriteText("period"     ).WriteText(iss).WriteText(m_StatName).WriteText("\"");
+
+    task.WriteText(eol).WriteText("progress_cmds"     ).WriteText(is ).WriteNumber( m_EndState.progress_cmds);
     task.WriteText(eol).WriteText("db_files"     ).WriteText(is ).WriteNumber( m_EndState.db_files);
     task.WriteText(eol).WriteText("db_size"      ).WriteText(str).WriteText(iss)
                                      .WriteText( NStr::UInt8ToString_DataSize( m_EndState.db_size)).WriteText("\"");
@@ -826,6 +828,10 @@ void CNCStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("db_garb"      ).WriteText(is ).WriteNumber( m_EndState.db_garb);
     task.WriteText(eol).WriteText("cnt_blobs"    ).WriteText(is ).WriteNumber( m_EndState.cnt_blobs);
     task.WriteText(eol).WriteText("cnt_keys"     ).WriteText(is ).WriteNumber( m_EndState.cnt_keys);
+    task.WriteText(eol).WriteText("peer_active_conns"     ).WriteText(is ).WriteNumber( m_EndState.peer_active_conns);
+    task.WriteText(eol).WriteText("peer_bg_conns"     ).WriteText(is ).WriteNumber( m_EndState.peer_bg_conns);
+    task.WriteText(eol).WriteText("mirror_queue_size"     ).WriteText(is ).WriteNumber( m_EndState.mirror_queue_size);
+    task.WriteText(eol).WriteText("sync_log_size"     ).WriteText(is ).WriteNumber( m_EndState.sync_log_size);
     task.WriteText(eol).WriteText("wb_size"      ).WriteText(str).WriteText(iss)
                                       .WriteText(NStr::UInt8ToString_DataSize( m_EndState.wb_size)).WriteText("\"");
     task.WriteText(eol).WriteText("wb_size"      ).WriteText(is ).WriteNumber( m_EndState.wb_size);
