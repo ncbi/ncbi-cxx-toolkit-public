@@ -151,13 +151,19 @@ done
 # Compiler dir (copy all .pdb and configurable files files for debug purposes)
 echo "[`basename $script`] Installing .pdb files..."
 makedir "$cldir" -p
-pdb_files=`find "$builddir"/compilers -type f -a \( -name '*.pdb' -o  -name '*.c' -o  -name '*.cpp' \) 2>/dev/null`
+pdb_files=`find "$builddir/compilers/$compiler" -type f -a \( -name '*.pdb' -o  -name '*.c' -o  -name '*.cpp' \) 2>/dev/null`
 cd "$cldir"
 for pdb in $pdb_files ; do
+  # Do not copy .pdb for executable files to save space
+  exe=`echo $pdb | sed -e 's|\.pdb$|\.exe|'`
+  if test -x "$exe" ; then
+    continue
+  fi
   rel_dir=`echo $pdb | sed -e "s|$builddir/compilers/||" -e 's|/[^/]*$||'`
   makedir "$rel_dir" -p
   cp -pr "$pdb" "$rel_dir"
 done
+
 
 # Compiler dir (other common stuff)
 makedir "$cldir"/$compiler/static -p
