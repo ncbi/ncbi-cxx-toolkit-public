@@ -213,7 +213,7 @@ CDB_Exception::SetParams(const CDBParams* params)
         try {
             const CDB_Object* v = params->GetValue(i);
             if (v != NULL) {
-                p.value = v->Clone();
+                p.value = v->ShallowClone();
             }
         } catch (exception&) {
         }

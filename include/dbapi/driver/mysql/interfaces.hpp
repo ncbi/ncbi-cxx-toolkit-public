@@ -138,7 +138,7 @@ private:
     friend class CMySQL_RowResult;
 
     // for NCBI_DATABASE_THROW_ANNOTATED
-    const CDBParams* GetBindParams(void) const;
+    const CDBParams* GetLastParams(void) const;
 
     MYSQL          m_MySQL;
     CMySQL_LangCmd* m_ActiveCmd;
@@ -244,9 +244,9 @@ protected:
         return GetConnection().GetDbgInfo();
     }
 
-    const CDBParams* GetBindParams(void) const 
+    const CDBParams* GetLastParams(void) const 
     {
-        return GetConnection().GetBindParams();
+        return GetConnection().GetLastParams();
     }
 
 
@@ -280,8 +280,8 @@ const CMySQL_Connection::TDbgInfo& CMySQL_Connection::GetDbgInfo(void) const {
 }
 
 inline
-const CDBParams* CMySQL_Connection::GetBindParams(void) const {
-    return m_ActiveCmd ? &m_ActiveCmd->GetBindParams() : NULL;
+const CDBParams* CMySQL_Connection::GetLastParams(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->GetLastParams() : NULL;
 }
 
 END_NCBI_SCOPE

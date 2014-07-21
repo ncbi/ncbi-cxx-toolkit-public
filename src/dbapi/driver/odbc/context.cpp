@@ -294,7 +294,7 @@ void CODBC_Reporter::x_PostMsg(CDB_Exception& ex, bool always_throw) const
 {
     const CDBParams* params = NULL;
     if (m_Connection != NULL) {
-        params = m_Connection->GetBindParams();
+        params = m_Connection->GetLastParams();
     }
 
     if (always_throw) {

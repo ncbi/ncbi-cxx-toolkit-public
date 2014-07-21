@@ -341,10 +341,10 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 
 #define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
     NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
-        GetDbgInfo(), GetConnection(), GetBindParams())
+        GetDbgInfo(), GetConnection(), GetLastParams())
 #define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
     NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
-        severity, GetDbgInfo(), GetConnection(), GetBindParams())
+        severity, GetDbgInfo(), GetConnection(), GetLastParams())
 
 
 /////////////////////////////////////////////////////////////////////////////

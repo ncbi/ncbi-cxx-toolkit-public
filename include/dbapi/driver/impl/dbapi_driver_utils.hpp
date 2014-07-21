@@ -130,6 +130,8 @@ public:
         bool out_param = false
         );
 
+    virtual CDBParams* SemiShallowClone(void) const;
+
 private:
     impl::CDB_Params* m_Bindings;
 };

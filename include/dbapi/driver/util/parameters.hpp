@@ -93,6 +93,9 @@ public:
 	return m_Locked;
     }
 
+    /// Yield a lightweight copy of these parameters, sharing
+    /// representations for variable-length datatypes.
+    CDB_Params* SemiShallowClone(void) const;
 private:
     // No exceptions are thrown ...
     bool GetParamNumInternal(const string& param_name, unsigned int& param_num) const;

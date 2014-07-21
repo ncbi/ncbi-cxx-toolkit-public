@@ -161,7 +161,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
 #undef NCBI_DATABASE_THROW
 #define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
     NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
-        GetDbgInfo(), *this, GetBindParams())
+        GetDbgInfo(), *this, GetLastParams())
 // No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
 
@@ -603,14 +603,14 @@ RETCODE CDBL_Connection::CheckDead(RETCODE rc)
 void CDBL_Connection::CheckFunctCall(void)
 {
     GetDBLExceptionStorage().Handle(GetMsgHandlers(), &GetDbgInfo(), this,
-                                    GetBindParams());
+                                    GetLastParams());
 }
 
 
 void CDBL_Connection::CheckFunctCall(const TDbgInfo& dbg_info)
 {
     GetDBLExceptionStorage().Handle(GetMsgHandlers(), &dbg_info, this,
-                                    GetBindParams());
+                                    GetLastParams());
 }
 
 
@@ -619,7 +619,7 @@ void CDBL_Connection::CheckFunctCallWhileOpening(void)
     const impl::CDBHandlerStack& handlers = GetOpeningMsgHandlers();
     if (handlers.GetSize() > 0) {
         GetDBLExceptionStorage().Handle(handlers, &GetDbgInfo(),
-                                        this, GetBindParams());
+                                        this, GetLastParams());
     } else {
         GetDBLibCtx().CheckFunctCall();
     }
@@ -629,7 +629,7 @@ void CDBL_Connection::CheckFunctCallWhileOpening(void)
 #undef NCBI_DATABASE_THROW
 #define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
     NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
-        GetDbgInfo(), GetConnection(), &GetBindParams())
+        GetDbgInfo(), GetConnection(), GetLastParams())
 
 /////////////////////////////////////////////////////////////////////////////
 //

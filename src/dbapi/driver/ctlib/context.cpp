@@ -1234,7 +1234,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         if (ctl_conn) {
             handlers = &ctl_conn->GetMsgHandlers();
             message.context.Reset(&ctl_conn->GetDbgInfo());
-            params = ctl_conn->GetBindParams();
+            params = ctl_conn->GetLastParams();
         } else
             handlers = &ctl_ctx->GetCtxHandlerStack();
         if (handlers->HandleMessage(msg->severity, msg->msgnumber, msg->msgstring))
@@ -1420,7 +1420,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         }
         if (ctl_conn) {
             message.context.Reset(&ctl_conn->GetDbgInfo());
-            params = ctl_conn->GetBindParams();
+            params = ctl_conn->GetLastParams();
         }
 
         if (msg->msgnumber == 1205 /*DEADLOCK*/) {

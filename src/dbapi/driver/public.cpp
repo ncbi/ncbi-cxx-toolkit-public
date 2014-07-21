@@ -713,6 +713,7 @@ bool CDB_LangCmd::Send()
 {
     CHECK_COMMAND( m_CmdImpl );
     TRACE_PARAMS(m_CmdImpl->GetBindParams());
+    m_CmdImpl->SaveInParams();
     return m_CmdImpl->Send();
 }
 
@@ -807,6 +808,7 @@ bool CDB_RPCCmd::Send()
     CHECK_COMMAND( m_CmdImpl );
     _TRACE("Calling remote procedure " << GetProcName());
     TRACE_PARAMS(m_CmdImpl->GetBindParams());
+    m_CmdImpl->SaveInParams();
     return m_CmdImpl->Send();
 }
 
@@ -937,6 +939,7 @@ bool CDB_BCPInCmd::SendRow()
     if (m_CmdImpl->m_RowsSent++ == 0) {
         TRACE_PARAMS(m_CmdImpl->GetBindParams());
     }
+    m_CmdImpl->SaveInParams();
     return m_CmdImpl->Send();
 }
 
@@ -1014,6 +1017,7 @@ CDB_Result* CDB_CursorCmd::Open()
 bool CDB_CursorCmd::Update(const string& table_name, const string& upd_query)
 {
     CHECK_COMMAND( m_CmdImpl );
+    m_CmdImpl->SaveInParams();
     return m_CmdImpl->Update(table_name, upd_query);
 }
 

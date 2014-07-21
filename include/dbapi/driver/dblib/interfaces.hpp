@@ -276,7 +276,7 @@ private:
     const TDbgInfo& GetDbgInfo(void) const;
 
 private:
-    const CDBParams* GetBindParams(void) const;
+    const CDBParams* GetLastParams(void) const;
 
     CDBLibContext* m_DBLibCtx;
     LOGINREC*      m_Login;
@@ -608,9 +608,9 @@ protected:
         return GetConnection().GetDbgInfo();
     }
 
-    const CDBParams* GetBindParams(void) const 
+    const CDBParams* GetLastParams(void) const 
     {
-        return m_Connect ? m_Connect->GetBindParams() : NULL;
+        return m_Connect ? m_Connect->GetLastParams() : NULL;
     }
 
 private:
@@ -916,13 +916,8 @@ const CDBL_Connection::TDbgInfo& CDBL_Connection::GetDbgInfo(void) const {
 }
 
 inline
-const CDBParams* CDBL_Connection::GetBindParams(void) const {
-    // Calling CDBL_RPCCmd::GetBindParams within an error handler can
-    // deadlock, but specifically testing for it fails because
-    // dynamic_cast only reliably handles types known to the main
-    // executable, as opposed to plugins.  No other derived classes
-    // override GetBindParams anyway.
-    return m_ActiveCmd ? &m_ActiveCmd->impl::CBaseCmd::GetBindParams() : NULL;
+const CDBParams* CDBL_Connection::GetLastParams(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->impl::CBaseCmd::GetLastParams() : NULL;
 }
 
 inline

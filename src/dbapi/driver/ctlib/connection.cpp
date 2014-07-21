@@ -307,7 +307,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 #undef NCBI_DATABASE_THROW
 #define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
     NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
-        GetDbgInfo(), *this, GetBindParams())
+        GetDbgInfo(), *this, GetLastParams())
 // No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
 
@@ -315,7 +315,7 @@ CS_RETCODE
 CTL_Connection::Check(CS_RETCODE rc)
 {
     GetCTLExceptionStorage().Handle(GetMsgHandlers(), &GetDbgInfo(), this,
-                                    GetBindParams());
+                                    GetLastParams());
 
     return rc;
 }
@@ -325,7 +325,7 @@ CS_RETCODE
 CTL_Connection::Check(CS_RETCODE rc, const TDbgInfo& dbg_info)
 {
     GetCTLExceptionStorage().Handle(GetMsgHandlers(), &dbg_info, this,
-                                    GetBindParams());
+                                    GetLastParams());
 
     return rc;
 }
@@ -336,7 +336,7 @@ CTL_Connection::CheckWhileOpening(CS_RETCODE rc)
     const impl::CDBHandlerStack& handlers = GetOpeningMsgHandlers();
     if (handlers.GetSize() > 0) {
         GetCTLExceptionStorage().Handle(handlers, &GetDbgInfo(), this,
-                                        GetBindParams());
+                                        GetLastParams());
         return rc;
     } else {
         return GetCTLibContext().Check(rc);
@@ -1051,7 +1051,7 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 #undef NCBI_DATABASE_THROW
 #define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
     NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
-        GetDbgInfo(), GetConnection(), &GetBindParams())
+        GetDbgInfo(), GetConnection(), GetLastParams())
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -237,6 +237,10 @@ public:
         CDB_Object* value, 
         bool out_param = false
         );
+
+    /// Yield a lightweight copy of these parameters, sharing
+    /// representations for variable-length datatypes.
+    virtual CDBParams* SemiShallowClone(void) const = 0;
 };
 
 

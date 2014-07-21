@@ -166,6 +166,23 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
 }
 
 
+CDB_Params* CDB_Params::SemiShallowClone(void) const
+{
+    auto_ptr<CDB_Params> result(new CDB_Params);
+    SParam empty_param;
+    ITERATE (deque<SParam>, it, m_Params) {
+        result->m_Params.push_back(empty_param);
+        SParam& p = result->m_Params.back();
+
+        p.m_Name   = it->m_Name;
+        p.m_Param  = ((it->m_Param == NULL) ? NULL
+                      : it->m_Param->ShallowClone());
+        p.m_Status = (it->m_Status & ~fBound) | fSet;
+    }
+    return result.release();
+}
+
+
 CDB_Params::~CDB_Params()
 {
 }

@@ -214,6 +214,12 @@ CDBParams& CDBBindedParams::Set(
     return *this;
 }
 
+CDBParams* CDBBindedParams::SemiShallowClone(void) const
+{
+    auto_ptr<impl::CDB_Params> p(m_Bindings->SemiShallowClone());
+    return new CDBBindedParams(*p.release());
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 CCachedRowInfo::SInfo::SInfo(void)
 : m_MaxSize(0) 

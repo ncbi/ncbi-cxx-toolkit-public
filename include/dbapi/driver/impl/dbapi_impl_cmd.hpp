@@ -158,6 +158,8 @@ public:
     /// Get meta-information about defined parameters. 
     virtual CDBParams& GetDefineParams(void);
 
+    const CDBParams* GetLastParams(void) const
+        { return WasSent() ? m_LastInParams.get() : &m_InParams; }
 
     /// Add more text to the language command
     bool More(const string& query_text)
@@ -292,6 +294,13 @@ private:
     void AttachTo(CDB_BCPInCmd*     interface);
     void AttachTo(CDB_CursorCmd*    interface);
 
+    void SaveInParams(void)
+    {
+        // Use m_InParams rather than calling GetBindParams, which may try
+        // to use the connection and conflict with other ongoing usage.
+        m_LastInParams.reset(m_InParams.SemiShallowClone());
+    }
+
 private:
     CInterfaceHook<CDB_LangCmd>     m_InterfaceLang;
     CInterfaceHook<CDB_RPCCmd>      m_InterfaceRPC;
@@ -313,6 +322,8 @@ private:
 
     unsigned int    m_RowsSent;
     unsigned int    m_BatchesSent;
+
+    auto_ptr<CDBParams> m_LastInParams;
 };
 
 

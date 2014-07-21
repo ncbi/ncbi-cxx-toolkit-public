@@ -315,7 +315,7 @@ protected:
 
 protected:
     // for NCBI_DATABASE_THROW_ANNOTATED
-    const CDBParams* GetBindParams(void) const;
+    const CDBParams* GetLastParams(void) const;
 
     const TDbgInfo& GetDbgInfo(void) const
     {
@@ -793,9 +793,9 @@ protected:
         return GetStatementBase().GetDbgInfo();
     }
 
-    const CDBParams* GetBindParams(void) const 
+    const CDBParams* GetLastParams(void) const 
     {
-        return &m_Stmt.GetBindParams();
+        return m_Stmt.GetLastParams();
     }
     const CODBC_Connection& GetConnection(void) const
     {
@@ -952,8 +952,8 @@ protected:
 
 ///////////////////////////////////////////////////////////////////////////
 inline
-const CDBParams* CODBC_Connection::GetBindParams(void) const {
-    return m_ActiveStmt ? &m_ActiveStmt->GetBindParams() : NULL;
+const CDBParams* CODBC_Connection::GetLastParams(void) const {
+    return m_ActiveStmt ? m_ActiveStmt->GetLastParams() : NULL;
 }
 
 END_NCBI_SCOPE

@@ -461,7 +461,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         server_name = link->ServerName();
         user_name = link->UserName();
         message.context.Reset(&link->GetDbgInfo());
-        params = link->GetBindParams();
+        params = link->GetLastParams();
     }
 
     switch (dberr) {
@@ -573,7 +573,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         server_name = link->ServerName();
         user_name = link->UserName();
         message.context.Reset(&link->GetDbgInfo());
-        params = link->GetBindParams();
+        params = link->GetLastParams();
     } else {
         server_name = srvname;
     }

@@ -449,7 +449,7 @@ private:
     CS_CONNECTION* x_GetSybaseConn(void) const { return m_Handle.GetNativeHandle(); }
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
 
-    const CDBParams* GetBindParams(void) const;
+    const CDBParams* GetLastParams(void) const;
 
     CTLibContext*       m_Cntx;
     CTL_CmdBase*        m_ActiveCmd;
@@ -523,7 +523,7 @@ protected:
         if (IsDead()) {
             NCBI_DATABASE_THROW_ANNOTATED(CDB_ClientEx, "Connection has died.",
                                           122010, eDiag_Error, GetDbgInfo(),
-                                          GetConnection(), &GetBindParams());
+                                          GetConnection(), GetLastParams());
         }
     }
 
@@ -989,9 +989,9 @@ protected:
         return GetConnection().IsDead();
     }
     
-    const CDBParams* GetBindParams(void) const 
+    const CDBParams* GetLastParams(void) const 
     {
-        return m_Connect ? m_Connect->GetBindParams() : NULL;
+        return m_Connect ? m_Connect->GetLastParams() : NULL;
     }
 
     void CheckIsDead(void) const
@@ -999,7 +999,7 @@ protected:
         if (IsDead()) {
             NCBI_DATABASE_THROW_ANNOTATED(CDB_ClientEx, "Connection has died.",
                                           122011, eDiag_Error, GetDbgInfo(),
-                                          GetConnection(), GetBindParams());
+                                          GetConnection(), GetLastParams());
         }
     }
 
@@ -1184,16 +1184,8 @@ const CTL_Connection::TDbgInfo& CTL_Connection::GetDbgInfo(void) const {
 }
 
 inline
-const CDBParams* CTL_Connection::GetBindParams(void) const {
-    // Calling CTL_RPCCmd::GetBindParams within an error handler works
-    // poorly, since it tries to run a query to get parameter
-    // information.  (When using Sybase libraries, this attempt can
-    // yield outright deadlocks; FreeTDS fares better in that regard,
-    // but still produces no useful results.)  However, specifically
-    // testing for CTL_RPCCmd fails because dynamic_cast only reliably
-    // handles types known to the main executable, as opposed to
-    // plugins.  No other derived classes override GetBindParams anyway.
-    return m_ActiveCmd ? &m_ActiveCmd->impl::CBaseCmd::GetBindParams() : NULL;
+const CDBParams* CTL_Connection::GetLastParams(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->GetLastParams() : NULL;
 }
 
 inline

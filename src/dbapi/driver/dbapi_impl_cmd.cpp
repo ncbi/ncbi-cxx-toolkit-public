@@ -105,6 +105,7 @@ CBaseCmd::~CBaseCmd(void)
 
 CDBParams& CBaseCmd::GetBindParams(void)
 {
+    m_LastInParams.reset();
     return m_InParams;
 }
 
