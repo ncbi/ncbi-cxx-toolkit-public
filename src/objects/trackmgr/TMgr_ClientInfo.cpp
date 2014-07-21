@@ -56,15 +56,15 @@ CTMgr_ClientInfo::~CTMgr_ClientInfo(void)
 }
 
 void CTMgr_ClientInfo::SetContext(const CTMgr_ClientInfo::TContext& value)
-{    
+{
     // parse the context, if necessary
     typedef vector<string> TTokens;
-    
+
     static const string major_delim("::");
     static const string minor_delim(":");
 
-    CTMgr_ClientInfo::TContext context = value;
-    
+    TContext context = value;
+
     TTokens major_tokens;
     NStr::Tokenize(value, major_delim, major_tokens, NStr::fSplit_ByPattern);
     bool is_context = true;
@@ -76,20 +76,13 @@ void CTMgr_ClientInfo::SetContext(const CTMgr_ClientInfo::TContext& value)
             is_context = false;
         }
         else {
-            TTokens minor_tokens;
-            NStr::Tokenize(*it, minor_delim, minor_tokens);
-            bool is_key = true;
-            CRef<CTMgr_AttrSpec> attr(new CTMgr_AttrSpec());
-            ITERATE (TTokens, min_it, minor_tokens) {
-                if (is_key) {
-                    attr->SetKey(*min_it);
-                    is_key = false;
-                }
-                else {
-                    attr->SetValue(*min_it);
-                }
-            }            
-            SetContext_attrs().push_back(attr);
+            string key, val;
+            if (NStr::SplitInTwo(*it, minor_delim, key, val)) {
+                CRef<CTMgr_AttrSpec> attr(new CTMgr_AttrSpec());
+                attr->SetKey(key);
+                attr->SetValue(val);
+                SetContext_attrs().push_back(attr);
+            }
         }
     }
 }
