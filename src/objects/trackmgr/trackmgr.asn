@@ -51,7 +51,8 @@ TMgr-GenomeContext ::= CHOICE {
 TMgr-ClientInfo ::= SEQUENCE {
     client-name VisibleString,
     context VisibleString OPTIONAL,
-    inhouse BOOLEAN DEFAULT FALSE
+    inhouse BOOLEAN DEFAULT FALSE,
+    context-attrs SET OF TMgr-AttrSpec OPTIONAL
     --permission keys etc
 }
 
