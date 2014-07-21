@@ -234,7 +234,7 @@ void CBlastTabularInfo::x_PrintSubjectAllSeqIds(void)
 
 void CBlastTabularInfo::x_PrintSubjectGi(void)
 {
-    m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eGi);
+    m_Ostream << s_GetSeqIdListString(m_SubjectId, eGi);
 }
 
 void CBlastTabularInfo::x_PrintSubjectAllGis(void)
@@ -248,12 +248,12 @@ void CBlastTabularInfo::x_PrintSubjectAllGis(void)
 
 void CBlastTabularInfo::x_PrintSubjectAccession(void)
 {
-    m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eAccession);
+    m_Ostream << s_GetSeqIdListString(m_SubjectId, eAccession);
 }
 
 void CBlastTabularInfo::x_PrintSubjectAccessionVersion(void)
 {
-    m_Ostream << s_GetSeqIdListString(m_SubjectIds[0], eAccVersion);
+    m_Ostream << s_GetSeqIdListString(m_SubjectId, eAccVersion);
 }
 
 void CBlastTabularInfo::x_PrintSubjectAllAccessions(void)
@@ -691,11 +691,9 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
 
     // Extract the full list of subject ids
     bool setSubjectIds = (x_IsFieldRequested(eSubjectAllSeqIds) ||
-        x_IsFieldRequested(eSubjectGi) ||
-        x_IsFieldRequested(eSubjectAllGis) ||
-        x_IsFieldRequested(eSubjectAccession) ||
-        x_IsFieldRequested(eSubjectAllAccessions) ||
-        x_IsFieldRequested(eSubjAccessionVersion));
+    					  x_IsFieldRequested(eSubjectAllGis) ||
+                          x_IsFieldRequested(eSubjectAllAccessions));
+
 
     bool setSubjectTaxInfo = (x_IsFieldRequested(eSubjectTaxIds) ||
     						  x_IsFieldRequested(eSubjectSciNames) ||
@@ -706,13 +704,18 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     bool setSubjectTitle = (x_IsFieldRequested(eSubjectTitle) ||
 			  	  	  	  	x_IsFieldRequested(eSubjectAllTitles));
 
+    bool setSubjectId = (x_IsFieldRequested(eSubjectSeqId) ||
+    		 	 	 	 x_IsFieldRequested(eSubjectGi) ||
+    		 	 	 	 x_IsFieldRequested(eSubjectAccession) ||
+    		 	 	 	 x_IsFieldRequested(eSubjAccessionVersion));
+
     if(setSubjectIds || setSubjectTaxInfo || setSubjectTitle ||
-       x_IsFieldRequested(eSubjectStrand) || x_IsFieldRequested(eSubjectSeqId))
+       x_IsFieldRequested(eSubjectStrand) || setSubjectId)
     {
         try {
        		const CBioseq_Handle& subject_bh =
                 scope.GetBioseqHandle(align.GetSeq_id(1));
-            if(x_IsFieldRequested(eSubjectSeqId)) {
+            if(setSubjectId) {
             	SetSubjectId(subject_bh);
             }
             subject_is_na = subject_bh.IsNa();
