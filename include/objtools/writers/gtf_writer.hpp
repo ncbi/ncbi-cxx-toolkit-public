@@ -30,7 +30,7 @@
  */
 
 #ifndef OBJTOOLS_WRITERS___GTF_WRITER__HPP
-#define OBJTOOLS_READERS___GTF_WRITER__HPP
+#define OBJTOOLS_WRITERS___GTF_WRITER__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/object_manager.hpp>
