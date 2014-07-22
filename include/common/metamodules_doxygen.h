@@ -790,6 +790,12 @@
  * Genome Workbench application and support classes
  */
 
+/** @defgroup GUI_MACRO_SCRIPTS_UTIL Macro language classes
+ *  @ingroup GUI
+ * 
+ */
+
+
 /* ========================================================================= */
 
 
