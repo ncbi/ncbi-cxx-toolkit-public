@@ -2027,7 +2027,7 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
             string msg = CNcbiOstrstreamToString(os);
             NCBI_THROW(CInputException, eInvalidInput, msg);
         }
-        if (val < 0 || val >= static_cast<int>(eEndValue)) {
+        if (val < 0 || val >= static_cast<int>(eJson)) {
             string msg("Formatting choice is out of range");
             throw std::out_of_range(msg);
         }
