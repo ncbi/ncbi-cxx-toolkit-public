@@ -3413,14 +3413,13 @@ bool CRepConfig :: x_IsExpandable(const string& setting_name)
 
 void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
 {
-   _TRACE("CRepConfig :: x_GoGetRep");
    string strtmp;
    NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
        CRef < CClickableItem > c_item (new CClickableItem);
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp)
                                     != thisInfo.test_item_list.end()) {
-cerr << "GoGetRep " << strtmp << endl;
+//cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             c_item->expanded = x_IsExpandable(strtmp);
@@ -3441,10 +3440,9 @@ cerr << "GoGetRep " << strtmp << endl;
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            c_item->expanded = x_IsExpandable(strtmp);
            (*it)->GetReport(c_item);
-cerr << "GoGetRep " << (*it)->GetName() << endl;
+//cerr << "GoGetRep " << (*it)->GetName() << endl;
        }
    }
-   _TRACE("CRepConfig :: x_GoGetRep");
 };
 
 void CRepConfig :: CollectRepData()

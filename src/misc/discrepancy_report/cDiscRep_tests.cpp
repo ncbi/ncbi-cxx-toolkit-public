@@ -8512,6 +8512,12 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
      else if (qual_name_rpt == "plasmid") {
        qual_name_rpt += "-name";
      }
+     else if (qual_name_rpt == "collection_date") {
+       qual_name_rpt = "collection-date";
+     }
+     else if (qual_name_rpt == "isolation_source") {
+       qual_name_rpt = "isolation-source";
+     }
      pre_idx = -1;
      ITERATE (vector <int>, jt, it->second) {
        cur_idx = *jt;
@@ -9073,18 +9079,6 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 
    unsigned pre_cnt = comb_src_ls.size(); 
    string desc;
-   ITERATE (vector <const CSeq_feat*>, it, biosrc_feat) {
-     desc = GetDiscItemText(**it);
-     comb_desc_ls.push_back(desc); // for combine_seqentry_reports
-     const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
-     comb_src_ls.push_back(CConstRef <CBioSource> (&biosrc));  // for combine_seqentry_reports
-     objs.push_back(CConstRef <CObject> (*it));
-/*
-     this_desc_ls.push_back(desc);
-     this_src_ls.push_back(CConstRef <CObject> (&biosrc));
-*/
-   }
-
    i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
       desc = GetDiscItemText(**it, *(biosrc_seqdesc_seqentry[i]));
@@ -9093,7 +9087,6 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
       const CBioSource& biosrc = (*it)->GetSource();
       comb_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
       objs.push_back(CConstRef <CObject>(*it));
-//      this_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
       i++;
    }
    unsigned tot_cnt = comb_src_ls.size();
