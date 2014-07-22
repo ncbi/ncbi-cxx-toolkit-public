@@ -75,7 +75,15 @@ struct doc_impl {
 
     node                    root_;
     std::string             version_;
+
+    // Note: the value of the member is in sync with what is in the
+    // doc_->encoding most of the time except one case. When a read doment does
+    // not have an encoding spec and then doc.get_encoding() is called then:
+    // - the encoding_ member will be updated with a default "ISO-8859-1"
+    // - the doc->encoding will preserve the NULL value
+    // It seems OK as the serialization results with both values look the same.
     mutable std::string     encoding_;
+
     xml::dtd                internal_subset_;
     xml::dtd                external_subset_;
     bool                    owe_;

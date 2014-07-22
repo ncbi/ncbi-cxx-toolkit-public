@@ -362,7 +362,8 @@ void xml::document::set_version (const char *version) {
 }
 //####################################################################
 const std::string& xml::document::get_encoding (void) const {
-    if (pimpl_->encoding_.empty()) pimpl_->encoding_ = const_default_encoding;
+    if (pimpl_->encoding_.empty())
+        pimpl_->encoding_ = const_default_encoding;
     return pimpl_->encoding_;
 }
 //####################################################################
@@ -578,6 +579,9 @@ void xml::document::save_to_string (std::string &s,
     }
 
     int libxml2_options = convert_to_libxml2_save_options(flags);
+
+    // In theory it was possible to use the pimpl_->doc_->encoding
+    // value however a cached value is used instead.
     const char *enc = pimpl_->encoding_.empty() ? 0 : pimpl_->encoding_.c_str();
     xmlSaveCtxtPtr  ctxt = xmlSaveToIO(save_to_string_cb, NULL, &s,
                                        enc, libxml2_options);
@@ -611,6 +615,9 @@ void xml::document::save_to_stream (std::ostream &stream,
     }
 
     int libxml2_options = convert_to_libxml2_save_options(flags);
+
+    // In theory it was possible to use the pimpl_->doc_->encoding
+    // value however a cached value is used instead.
     const char *enc = pimpl_->encoding_.empty() ? 0 : pimpl_->encoding_.c_str();
     xmlSaveCtxtPtr  ctxt = xmlSaveToIO(save_to_stream_cb, NULL, &stream,
                                        enc, libxml2_options);
@@ -644,6 +651,9 @@ bool xml::document::save_to_file (const char *filename,
     }
 
     int libxml2_options = convert_to_libxml2_save_options(flags);
+
+    // In theory it was possible to use the pimpl_->doc_->encoding
+    // value however a cached value is used instead.
     const char *enc = pimpl_->encoding_.empty() ? 0 : pimpl_->encoding_.c_str();
     xmlSaveCtxtPtr  ctxt = xmlSaveToFilename(filename,
                                              enc, libxml2_options);
