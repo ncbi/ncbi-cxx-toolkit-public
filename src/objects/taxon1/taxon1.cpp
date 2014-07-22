@@ -141,7 +141,7 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
 	    SetLastError( "ERROR: Init(): Unable to create net info" );
 	    return false;
 	}
-	pNi->max_try = reconnect_attempts;
+	pNi->max_try = reconnect_attempts + 1;
 	ConnNetInfo_SetTimeout( pNi, timeout );
 
         auto_ptr<CConn_ServiceStream>
