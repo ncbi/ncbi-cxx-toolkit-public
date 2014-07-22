@@ -62,16 +62,19 @@ init_cache() {
             fi
         done
         if test -n "$nc"; then
-            return 0;
+            return 0
         fi
         unset NCBI_CONFIG_OVERRIDES
-   fi
-   if ! test -f "$status_dir/BerkeleyDB.enabled"; then
-       return 1
-   fi
-   echo "Init BDB cache"
-   rm -rf .genbank_cache
-   return 0
+    fi
+    if ! test -f "$status_dir/BerkeleyDB.enabled"; then
+        return 1
+    fi
+    if ! test -f "$status_dir/MT.enabled"; then
+        return 1
+    fi
+    echo "Init BDB cache"
+    rm -rf .genbank_cache
+    return 0
 }
 
 exitcode=0
@@ -82,7 +85,7 @@ for method in $methods; do
         elif test "$cache" = 2; then
             if ! init_cache; then
                 echo "Skipping cache test"
-                break;
+                break
             fi
             m="cache;$method"
         else
