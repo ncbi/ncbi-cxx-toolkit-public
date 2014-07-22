@@ -113,6 +113,8 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
         SetLastError( "ERROR: Init(): Already initialized" );
         return false;
     }
+    SConnNetInfo* pNi = NULL;
+
     try {
         // Open connection to Taxonomy service
         CTaxon1_req req;
@@ -134,9 +136,19 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
         }
         auto_ptr<CObjectOStream> pOut;
         auto_ptr<CObjectIStream> pIn;
+	pNi = ConnNetInfo_Create( m_pchService );
+	if( pNi == NULL ) {
+	    SetLastError( "ERROR: Init(): Unable to create net info" );
+	    return false;
+	}
+	pNi->max_try = reconnect_attempts;
+	ConnNetInfo_SetTimeout( pNi, timeout );
+
         auto_ptr<CConn_ServiceStream>
             pServer( new CConn_ServiceStream(m_pchService, fSERV_Any,
-                                             0, 0, m_timeout) );
+                                             pNi, 0, m_timeout) );
+	ConnNetInfo_Destroy( pNi );
+	pNi = NULL;
 
 #ifdef USE_TEXT_ASN
         m_eDataFormat = eSerial_AsnText;
@@ -168,13 +180,16 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
     } catch( exception& e ) {
         SetLastError( e.what() );
     }
-    // Clean streams
+    // Clean up streams
     delete m_pIn;
     delete m_pOut;
     delete m_pServer;
     m_pIn = NULL;
     m_pOut = NULL;
     m_pServer = NULL;
+    if( pNi ) {
+	ConnNetInfo_Destroy( pNi );
+    }
     return false;
 }
 
