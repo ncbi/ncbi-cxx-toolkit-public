@@ -187,7 +187,7 @@ int CSampleSoapClientApplication::Run(void)
                     v2->GetVersionStruct().GetMinor() << ":  " <<
                     v2->GetVersionStruct().GetClientID() << endl;
         } else if (fault) {
-            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring();
+            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring() << endl;
         }
 
         CMath ops;
@@ -210,7 +210,7 @@ int CSampleSoapClientApplication::Run(void)
                 cout << *i << endl;
             }
         } else if (fault) {
-            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring();
+            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring() << endl;
         }
     } catch (CEofException&) {
         cout << "service unavailable" << endl;
