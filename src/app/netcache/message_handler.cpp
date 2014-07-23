@@ -2220,6 +2220,7 @@ CNCMessageHandler::x_GetCurSlotServers(void)
                 CNCBlobAccessor::HasPutSucceeded(m_BlobKey);
         }
         if (!m_ThisServerIsMain) {
+            CWriteBackControl::AnotherServerMain();
             for (size_t i = 0; i < m_CheckSrvs.size(); ++i) {
                 if (Uint4(m_CheckSrvs[i] >> 32) == main_srv_ip) {
                     Uint8 srv_id = m_CheckSrvs[i];

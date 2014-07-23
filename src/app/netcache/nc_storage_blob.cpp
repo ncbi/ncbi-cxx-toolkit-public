@@ -31,6 +31,7 @@
 #include "nc_storage_blob.hpp"
 #include "nc_storage.hpp"
 #include "nc_stat.hpp"
+#include "netcached.hpp"
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -79,6 +80,13 @@ static int s_FailedReserve=0;
 static CAtomicCounter s_FailedCounter;
 static set<string> s_FailedKeys;
 
+static Uint8 s_AnotherServerMain = 0;
+static Uint8 s_HaveNewerBlob = 0;
+
+static Uint8 s_BlobSync = 0;
+static Uint8 s_BlobSyncTDiff = 0;
+static Uint8 s_BlobSyncMaxTDiff = 0;
+
 static const size_t kVerManagerSize = sizeof(CNCBlobVerManager)
                                       + sizeof(CCurVerReader);
 static const size_t kDefChunkMapsSize
@@ -92,21 +100,23 @@ static const size_t kDefChunkMapsSize
 static bool
 s_IsCurVerOlder(const SNCBlobVerData* cur_ver, const SNCBlobVerData* new_ver)
 {
+    bool res = true;
     if (cur_ver) {
-        if (cur_ver->create_time != new_ver->create_time)
-            return cur_ver->create_time < new_ver->create_time;
-        else if (cur_ver->create_server != new_ver->create_server)
-            return cur_ver->create_server < new_ver->create_server;
-        else if (cur_ver->create_id != new_ver->create_id)
-            return cur_ver->create_id < new_ver->create_id;
-        else if (cur_ver->expire != new_ver->expire)
-            return cur_ver->expire < new_ver->expire;
-        else if (cur_ver->ver_expire != new_ver->ver_expire)
-            return cur_ver->ver_expire < new_ver->ver_expire;
-        else
-            return cur_ver->dead_time < new_ver->dead_time;
+        if (cur_ver->create_time != new_ver->create_time) {
+            res = cur_ver->create_time < new_ver->create_time;
+        } else if (cur_ver->create_server != new_ver->create_server) {
+            res = cur_ver->create_server < new_ver->create_server;
+        } else if (cur_ver->create_id != new_ver->create_id) {
+            res = cur_ver->create_id < new_ver->create_id;
+        } else if (cur_ver->expire != new_ver->expire) {
+            res = cur_ver->expire < new_ver->expire;
+        } else if (cur_ver->ver_expire != new_ver->ver_expire) {
+            res = cur_ver->ver_expire < new_ver->ver_expire;
+        } else {
+            res = cur_ver->dead_time < new_ver->dead_time;
+        }
     }
-    return true;
+    return res;
 }
 
 Uint8 GetWBSoftSizeLimit(void) {
@@ -494,6 +504,42 @@ CWriteBackControl::ReadState(SNCStateStat& state)
     state.wb_size = (ssize_t(s_WBCurSize) > 0? s_WBCurSize: 0);
     state.wb_releasable = (ssize_t(s_WBReleasableSize) > 0? s_WBReleasableSize: 0);
     state.wb_releasing = (ssize_t(s_WBReleasingSize) > 0? s_WBReleasingSize: 0);
+
+    state.cnt_another_server_main = s_AnotherServerMain;
+    state.cnt_newer_blob = s_HaveNewerBlob;
+    Uint8 prev = s_BlobSync;
+    if (prev != 0) {
+        state.avg_timediff_blob = s_BlobSyncTDiff / prev;
+        state.max_timediff_blob = s_BlobSyncMaxTDiff;
+    } else {
+        state.avg_timediff_blob = 0;
+        state.max_timediff_blob = 0;
+    }
+}
+
+void CWriteBackControl::AnotherServerMain(void)
+{
+    AtomicAdd( s_AnotherServerMain, 1);
+}
+
+void CWriteBackControl::StartSyncBlob(Uint8 create_time)
+{
+    if (!CNCServer::IsInitiallySynced()) {
+        return;
+    }
+    Uint8 tdiff = CSrvTime::Current().AsUSec() - create_time;
+    Uint8 prev = s_BlobSync;
+    Uint8 prevdiff = s_BlobSyncTDiff;
+    AtomicAdd(s_BlobSync, 1);
+    AtomicAdd(s_BlobSyncTDiff, tdiff);
+    if (prev > s_BlobSync || prevdiff > s_BlobSyncTDiff) {
+        s_BlobSync = 0;
+        s_BlobSyncTDiff = 0;
+        s_BlobSyncMaxTDiff = 0;
+    }
+    if (s_BlobSyncMaxTDiff < tdiff) {
+        s_BlobSyncMaxTDiff = tdiff;
+    }
 }
 
 
@@ -861,26 +907,40 @@ CWBMemDeleter::ExecuteRCU(void)
 
 
 SNCBlobVerData::SNCBlobVerData(void)
-    : has_error(false),
-      is_cur_version(false),
-      meta_has_changed(false),
-      move_or_rewrite(false),
-      is_releasable(false),
-      need_write_all(false),
-      need_stop_write(false),
-      need_mem_release(false),
-      delete_scheduled(false),
-      map_move_counter(0),
-      last_access_time(0),
-      need_write_time(0),
-      cnt_chunks(0),
-      cur_chunk_num(0),
-      chunk_maps(NULL),
-      saved_access_time(0),
-      meta_mem(0),
-      data_mem(0),
-      releasable_mem(0),
-      releasing_mem(0)
+    :   size(0),
+        create_time(0),
+        create_server(0),
+        create_id(0),
+        ttl(0),
+        expire(0),
+        dead_time(0),
+        blob_ver(0),
+        ver_ttl(0),
+        ver_expire(0),
+        chunk_size(0),
+        map_size(0),
+        map_depth(0),
+        has_error(false),
+        is_cur_version(false),
+        meta_has_changed(false),
+        move_or_rewrite(false),
+        is_releasable(false),
+        need_write_all(false),
+        need_stop_write(false),
+        need_mem_release(false),
+        delete_scheduled(false),
+        map_move_counter(0),
+        last_access_time(0),
+        need_write_time(0),
+        cnt_chunks(0),
+        cur_chunk_num(0),
+        chunk_maps(NULL),
+        manager(NULL),
+        saved_access_time(0),
+        meta_mem(0),
+        data_mem(0),
+        releasable_mem(0),
+        releasing_mem(0)
 {
     //AtomicAdd(s_CntVers, 1);
     //Uint8 cnt = AtomicAdd(s_CntVers, 1);
@@ -1457,8 +1517,12 @@ CNCBlobAccessor::Finalize(void)
 bool
 CNCBlobAccessor::ReplaceBlobInfo(const SNCBlobVerData& new_info)
 {
-    if (!s_IsCurVerOlder(m_CurData, &new_info))
+    if (!s_IsCurVerOlder(m_CurData, &new_info)) {
+        if (m_CurData->dead_time != new_info.dead_time ) {
+            AtomicAdd(s_HaveNewerBlob, 1);
+        }
         return false;
+    }
 
     x_CreateNewData();
     m_NewData->create_time = new_info.create_time;

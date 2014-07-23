@@ -263,6 +263,9 @@ public:
     static void Initialize(void);
     static void ReadState(SNCStateStat& state);
 
+    static void AnotherServerMain(void);
+    static void StartSyncBlob(Uint8 create_time);
+
 private:
     CWriteBackControl(void);
     virtual ~CWriteBackControl(void);
@@ -411,6 +414,13 @@ inline void
 CNCBlobAccessor::SetBlobCreateTime(Uint8 create_time)
 {
     x_CreateNewData();
+    Uint8 prev = GetCurBlobCreateTime();
+    if (create_time < prev) {
+// new data cannot be created earlier than the current one.
+// due to time differences between servers, or who knows what else..
+// anyway, check here
+        create_time = prev + 1;
+    }
     m_NewData->create_time = create_time;
 }
 

@@ -1326,6 +1326,7 @@ CNCActiveHandler::x_ReadCopyPut(void)
     if (m_Proxy->NeedEarlyClose()  ||  (m_CmdFromClient  &&  !m_Client))
         return &Me::x_CloseCmdAndConn;
 
+    CWriteBackControl::StartSyncBlob(m_BlobAccess->GetCurBlobCreateTime());
     m_BlobAccess->SetPosition(0);
     x_StartWritingBlob();
     return &Me::x_WriteBlobData;

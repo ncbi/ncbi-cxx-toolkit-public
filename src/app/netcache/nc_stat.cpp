@@ -841,7 +841,11 @@ void CNCStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("wb_releasing" ).WriteText(str).WriteText(iss)
                                       .WriteText(NStr::UInt8ToString_DataSize( m_EndState.wb_releasing)).WriteText("\"");
     task.WriteText(eol).WriteText("wb_releasing" ).WriteText(is ).WriteNumber( m_EndState.wb_releasing);
-    task.WriteText(eol).WriteText("progress_cmds").WriteText(is ).WriteNumber( m_EndState.progress_cmds);
+    
+    task.WriteText(eol).WriteText("cnt_another_server_main" ).WriteText(is ).WriteNumber( m_EndState.cnt_another_server_main);
+    task.WriteText(eol).WriteText("cnt_newer_blob" ).WriteText(is ).WriteNumber( m_EndState.cnt_newer_blob);
+    task.WriteText(eol).WriteText("avg_timediff_blob" ).WriteText(is ).WriteNumber( m_EndState.avg_timediff_blob);
+    task.WriteText(eol).WriteText("max_timediff_blob" ).WriteText(is ).WriteNumber( m_EndState.max_timediff_blob);
     m_SrvStat->PrintState(task);
 }
 
@@ -958,6 +962,18 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
                     << g_ToSizeStr(m_WBMemSize.GetMaximum()) << ", releasable "
                     << g_ToSizeStr(m_WBReleasable.GetMaximum()) << ", releasing "
                     << g_ToSizeStr(m_WBReleasing.GetMaximum()) << endl;
+    proxy << "Blob storage start - "
+                    << m_StartState.cnt_another_server_main << " requests for alient blobs, "
+                    << m_StartState.cnt_newer_blob << " cancelled updates (have newer), "
+                    << (double)m_StartState.avg_timediff_blob / kUSecsPerMSec << " avg blob sync delay (msec) "
+                    << (double)m_StartState.max_timediff_blob / kUSecsPerMSec << " max blob sync delay  (msec) "
+                    << endl;
+    proxy << "Blob storage end - "
+                    << m_EndState.cnt_another_server_main << " requests for alient blobs, "
+                    << m_EndState.cnt_newer_blob << " cancelled updates (have newer), "
+                    << (double)m_EndState.avg_timediff_blob / kUSecsPerMSec << " avg blob sync delay (msec) "
+                    << (double)m_EndState.max_timediff_blob / kUSecsPerMSec << " max blob sync delay  (msec) "
+                    << endl;
     proxy << "Start mirror connections - "
                     << g_ToSmartStr(m_StartState.peer_active_conns) << " active, "
                     << g_ToSmartStr(m_StartState.peer_bg_conns) << " bg" << endl;

@@ -58,6 +58,10 @@ struct SNCStateStat
     size_t wb_size;
     size_t wb_releasable;
     size_t wb_releasing;
+    Uint8  cnt_another_server_main;
+    Uint8  cnt_newer_blob;    // blob replacing cancelled, because current blob is newer
+    Uint8  avg_timediff_blob; // average time diff between 'now' and blob creation time for replaced blobs
+    Uint8  max_timediff_blob; // maximum time diff between 'now' and blob creation time for replaced blobs
 };
 
 
