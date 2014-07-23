@@ -7034,7 +7034,8 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                                  feat);
                     }
                 } else if (from_end <= 0) {
-                    if (!NStr::Equal (except_char, "*")) {
+                    if (NStr::Equal(cb_trans, except_char)
+                        || !loc.IsPartialStop(eExtreme_Biological)) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
                                  "Unexpected transl_except " + except_char
                                  + " at position " + NStr::SizetToString (prot_pos + 1)
