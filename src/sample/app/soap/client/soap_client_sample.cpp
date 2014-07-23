@@ -178,7 +178,7 @@ int CSampleSoapClientApplication::Run(void)
         if (v1) {
             cout << v1->GetText() << endl;
         } else if (fault) {
-            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring() << endl;
+            ERR_POST(Error << fault->GetFaultcode() << ": " << fault->GetFaultstring());
         }
 
         CConstRef<CVersionResponse> v2 = ws.GetVersion("C++ SOAP client",&fault);
@@ -187,7 +187,7 @@ int CSampleSoapClientApplication::Run(void)
                     v2->GetVersionStruct().GetMinor() << ":  " <<
                     v2->GetVersionStruct().GetClientID() << endl;
         } else if (fault) {
-            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring() << endl;
+            ERR_POST(Error << fault->GetFaultcode() << ": " << fault->GetFaultstring());
         }
 
         CMath ops;
@@ -210,16 +210,16 @@ int CSampleSoapClientApplication::Run(void)
                 cout << *i << endl;
             }
         } else if (fault) {
-            cout << "ERROR: " << fault->GetFaultcode() << ": " << fault->GetFaultstring() << endl;
+            ERR_POST(Error << fault->GetFaultcode() << ": " << fault->GetFaultstring());
         }
     } catch (CEofException&) {
-        cout << "service unavailable" << endl;
+        ERR_POST(Error << "service unavailable");
         throw;
     } catch (CException&) {
-        cout << "request failed" << endl;
+        ERR_POST(Error << "request failed");
         throw;
     }
-    cout << "done" << endl;
+//    cout << "done" << endl;
     return 0;
 }
 
