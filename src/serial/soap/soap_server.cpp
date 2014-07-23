@@ -239,7 +239,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
 // send it back
     if (!input_ok) {
         // http://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383529
-        response.SetStatus(500);
+        response.SetStatus(500, "Internal Server Error");
     }
     response.WriteHeader();
     {
