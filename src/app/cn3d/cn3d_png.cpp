@@ -644,12 +644,12 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas,
         if ((fmt=aglChoosePixelFormat(NULL, 0, attrib)) == NULL)
         	throw "aglChoosePixelFormat failed";
         // try to share display lists with current "regular" context
-        if ((ctx=aglCreateContext(fmt, currentCtx)) == NULL) {
-            WARNINGMSG("aglCreateContext with shared lists failed");
+//        if ((ctx=aglCreateContext(fmt, currentCtx)) == NULL) {
+//            WARNINGMSG("aglCreateContext with shared lists failed");
         	shareDisplayLists = false;
         	if ((ctx=aglCreateContext(fmt, NULL)) == NULL)
         	    throw "aglCreateContext without shared lists failed";
-        }
+//        }
 
         // attach off-screen buffer to this context
         if (!aglSetOffScreen(ctx, outputWidth, bufferHeight, bytesPerPixel * outputWidth, base))
