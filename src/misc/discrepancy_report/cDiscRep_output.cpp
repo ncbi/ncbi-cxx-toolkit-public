@@ -494,8 +494,8 @@ bool CDiscRepOutput :: x_RmTagInDescp(string& str, const string& tag)
 
 void CDiscRepOutput :: x_WriteDiscRepSummary(xml::node& xml_root, UInt2UInts& prt_ord)
 {
-  string desc, strtmp;
-
+  string desc, strtmp, setting_name;
+  bool is_SusProdNm = false;
 
   //ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
   CRef <CClickableItem> c_item;
@@ -516,20 +516,22 @@ void CDiscRepOutput :: x_WriteDiscRepSummary(xml::node& xml_root, UInt2UInts& pr
       }
       else strtmp = "INFO";
 
+      setting_name = c_item->setting_name;
       xml::node::iterator 
           xit = xml_root.insert(xml_root.end(), 
                                    xml::node("message", desc.c_str()));
+      is_SusProdNm = ("SUSPECT_PRODUCT_NAMES" == setting_name);
       if (!oc.xml) {
-         *(oc.output_f) << c_item->setting_name << ": " << desc << endl;
+         *(oc.output_f) << setting_name << ": " << desc << endl;
       }
       else { 
          // set attributes:
-         xit->get_attributes().insert("code", (c_item->setting_name).c_str());
+         xit->get_attributes().insert("code", setting_name.c_str());
          xit->get_attributes().insert("prefix", "Summary");
          xit->get_attributes().insert("severity", strtmp.c_str());
       }
-      if ("SUSPECT_PRODUCT_NAMES" == c_item->setting_name) {
-           x_WriteDiscRepSubcategories(c_item->subcategories, *xit);
+      if (is_SusProdNm) {
+           x_WriteDiscRepSubcategories(c_item->subcategories, xml_root);
       }
     }
   }
@@ -552,8 +554,8 @@ void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickable
         sub_node.get_attributes().insert("prefix", "Summary");
         sub_node.get_attributes().insert("severity", "INFO");
       }
-      x_WriteDiscRepSubcategories( (*it)->subcategories, sub_node, ident+1);
       xml_node.push_back(sub_node);
+      x_WriteDiscRepSubcategories( (*it)->subcategories, xml_node, ident+1);
    }
 } // WriteDiscRepSubcategories
 
@@ -617,29 +619,17 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
       desc = c_item->description;
       if ( desc.empty() ) continue;
 
-      xml::node::iterator
-        xit = xml_root.insert(xml_root.end(),
-                                xml::node("message", desc.c_str()));
       // prefix
       if (use_flag) {
           prefix = "DiscRep_";
           prefix += IsSubcategory ? "SUB:" : "ALL:";
           
-          xml_prefix = prefix.substr(0, prefix.size()-1);
-
           strtmp = c_item->setting_name;
           prefix += strtmp.empty()? " " : strtmp + ": ";
       }
  
       // FATAL tag
-      if (x_RmTagInDescp(desc, "FATAL: ")) {
-         prefix = "FATAL: " + prefix;
-         xml_severity = "FATAL";
-      }
-      else xml_severity = "INFO";
-      xit->get_attributes().insert("code", (c_item->setting_name).c_str());
-      xit->get_attributes().insert("prefix", xml_prefix.c_str());
-      xit->get_attributes().insert("severity", xml_severity.c_str());
+      if (x_RmTagInDescp(desc, "FATAL: ")) prefix = "FATAL: " + prefix;
 
       if ( (oc.add_output_tag || oc.add_extra_output_tag) 
                && (prefix.find("FATAL: ") != string::npos 
@@ -660,7 +650,7 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
             if (ptr == NULL || ptr != prefix)
               SetStringValue (&prefix, "FATAL", ExistingTextOption_prefix_colon 
 */
-         x_WriteDiscRepItems(c_item, prefix, *xit);
+         x_WriteDiscRepItems(c_item, prefix, xml_root);
       }
       if ( x_OkToExpand (c_item) ) {
         for (i = 0; i< c_item->subcategories.size() -1; i++) {
@@ -668,11 +658,11 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
         }
         if (use_flag 
                && c_item->setting_name == "DISC_INCONSISTENT_BIOSRC_DEFLINE") {
-             x_WriteDiscRepDetails(c_item->subcategories, *xit, 
+             x_WriteDiscRepDetails(c_item->subcategories, xml_root, 
                                     prt_ord, false, false);
         } 
         else {
-             x_WriteDiscRepDetails(c_item->subcategories, *xit,
+             x_WriteDiscRepDetails(c_item->subcategories, xml_root,
                                     prt_ord, oc.use_flag, true);
         }
       } 
