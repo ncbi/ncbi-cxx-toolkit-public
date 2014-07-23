@@ -366,7 +366,7 @@ static void s_TlsSetValue(void* ptr)
 
 
 /* Print application start message, if not done yet */
-void s_AppStart(TNcbiLog_Context ctx, const char* argv[]);
+static void s_AppStart(TNcbiLog_Context ctx, const char* argv[]);
 #define CHECK_APP_START(ctx)      \
     if (sx_Info->state == eNcbiLog_NotSet) { \
         s_AppStart(ctx, NULL);    \
@@ -386,8 +386,8 @@ void s_AppStart(TNcbiLog_Context ctx, const char* argv[]);
 
 
 /* Forward declaration */
-void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params);
-void s_ExtraStr(TNcbiLog_Context ctx, const char* params);
+static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params);
+static void s_ExtraStr(TNcbiLog_Context ctx, const char* params);
 
 
 
