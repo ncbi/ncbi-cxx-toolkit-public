@@ -705,11 +705,24 @@ extern void NcbiLog_NewHitID(void);
  *    If hit id is not set, return NULL.
  *  @attention
  *    The caller is responsible for freeing the returned sub-hit ID string!
- *    Use free().
+ *    Use free() or NcbiLog_FreeMemory().
  *  @sa
-  *   NcbiLog_AppSetHitID, NcbiLog_SetHitID
+  *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory
  */
 extern char* NcbiLog_GetNextSubHitID(void);
+
+
+/** Free memory allocated inside the C logging API.
+ *
+ * Can be useful when using from JAVA/Python wrappers, that cannot deallocate
+ * memory directly.
+ *
+ *  @param ptr
+ *    Pointer to allocated memory.
+ *  @sa
+  *   NcbiLog_GetNextSubHitID
+ */
+extern void NcbiLog_FreeMemory(void* ptr);
 
 
 /** Set new posting severity threshold.

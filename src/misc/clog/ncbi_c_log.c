@@ -1487,7 +1487,7 @@ static void s_SetHitID(char* dst, const char* hit_id)
 }
 
 
-int/*bool*/ s_IsInsideRequest(TNcbiLog_Context ctx)
+static int/*bool*/ s_IsInsideRequest(TNcbiLog_Context ctx)
 {
     ENcbiLog_AppState state;
 
@@ -1504,7 +1504,7 @@ int/*bool*/ s_IsInsideRequest(TNcbiLog_Context ctx)
 }
 
 
-char* s_GenerateSID_Str(char* dst)
+static char* s_GenerateSID_Str(char* dst)
 {
     int x_guid_hi, x_guid_lo;
     int n;
@@ -1520,7 +1520,7 @@ char* s_GenerateSID_Str(char* dst)
 }
 
 
-char* s_GenerateHitID_Str(char* dst)
+static char* s_GenerateHitID_Str(char* dst)
 {
     TNcbiLog_UInt8 hi, tid, rid, us, lo;
     unsigned int b0, b1, b2, b3;
@@ -1849,7 +1849,7 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
  *  NcbiLog
  */
 
-void s_Init(const char* appname) 
+static void s_Init(const char* appname) 
 {
     size_t len, r_len, w_len;
     char* app = NULL;
@@ -2134,7 +2134,7 @@ static void s_SetState(TNcbiLog_Context ctx, ENcbiLog_AppState state)
 }
 
 
-ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
+extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 {
     char* logfile = NULL;
     MT_LOCK_API;
@@ -2167,7 +2167,7 @@ ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds)
 }
 
 
-ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port)
+extern ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned int port)
 {
     char* logfile = NULL;
     MT_LOCK_API;
@@ -2199,7 +2199,7 @@ ENcbiLog_Destination NcbiLogP_SetDestination(ENcbiLog_Destination ds, unsigned i
 }
 
 
-void NcbiLog_SetProcessId(TNcbiLog_PID pid)
+extern void NcbiLog_SetProcessId(TNcbiLog_PID pid)
 {
     MT_LOCK_API;
     sx_Info->pid = pid;
@@ -2207,7 +2207,7 @@ void NcbiLog_SetProcessId(TNcbiLog_PID pid)
 }
 
 
-void NcbiLog_SetThreadId(TNcbiLog_TID tid)
+extern void NcbiLog_SetThreadId(TNcbiLog_TID tid)
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
@@ -2217,7 +2217,7 @@ void NcbiLog_SetThreadId(TNcbiLog_TID tid)
 }
 
 
-void NcbiLog_SetRequestId(TNcbiLog_Counter rid)
+extern void NcbiLog_SetRequestId(TNcbiLog_Counter rid)
 {
     MT_LOCK_API;
     /* Enforce setting request id only after NcbiLog_AppRun() */
@@ -2230,7 +2230,7 @@ void NcbiLog_SetRequestId(TNcbiLog_Counter rid)
 }
 
 
-TNcbiLog_Counter NcbiLog_GetRequestId(void)
+extern TNcbiLog_Counter NcbiLog_GetRequestId(void)
 {
     TNcbiLog_Counter rid;
     MT_LOCK_API;
@@ -2240,7 +2240,7 @@ TNcbiLog_Counter NcbiLog_GetRequestId(void)
 }
 
 
-void NcbiLog_SetTime(time_t time_sec, unsigned long time_ns)
+extern void NcbiLog_SetTime(time_t time_sec, unsigned long time_ns)
 {
     MT_LOCK_API;
     sx_Info->post_time.sec = time_sec;
@@ -2250,7 +2250,7 @@ void NcbiLog_SetTime(time_t time_sec, unsigned long time_ns)
 }
 
 
-void NcbiLog_SetHost(const char* host)
+extern void NcbiLog_SetHost(const char* host)
 {
     MT_LOCK_API;
     s_SetHost(host);
@@ -2258,7 +2258,7 @@ void NcbiLog_SetHost(const char* host)
 }
 
 
-void NcbiLog_AppSetClient(const char* client)
+extern void NcbiLog_AppSetClient(const char* client)
 {
     MT_LOCK_API;
     s_SetClient((char*)sx_Info->client, client);
@@ -2266,7 +2266,7 @@ void NcbiLog_AppSetClient(const char* client)
 }
 
 
-void NcbiLog_SetClient(const char* client)
+extern void NcbiLog_SetClient(const char* client)
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
@@ -2277,7 +2277,7 @@ void NcbiLog_SetClient(const char* client)
 }
 
 
-void NcbiLog_AppSetSession(const char* session)
+extern void NcbiLog_AppSetSession(const char* session)
 {
     MT_LOCK_API;
     s_SetSession((char*)sx_Info->session, session);
@@ -2285,7 +2285,7 @@ void NcbiLog_AppSetSession(const char* session)
 }
 
 
-void NcbiLog_SetSession(const char* session)
+extern void NcbiLog_SetSession(const char* session)
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
@@ -2321,7 +2321,7 @@ extern void NcbiLog_NewSession(void)
 
 /* Log request/app-wide hit id. See NcbiLog_GetNextSubHitID().
  */
-void s_LogHitID(TNcbiLog_Context ctx, const char* hit_id)
+static void s_LogHitID(TNcbiLog_Context ctx, const char* hit_id)
 {
     SNcbiLog_Param params[2];
 
@@ -2337,7 +2337,7 @@ void s_LogHitID(TNcbiLog_Context ctx, const char* hit_id)
 /* Force log specified hit ID.
    We don't need MT locking here, because this method can be used from ncbi_applog only.
  */
-void NcbiLogP_LogHitID(const char* hit_id)
+extern void NcbiLogP_LogHitID(const char* hit_id)
 {
     TNcbiLog_Context ctx = NULL;
     //MT_LOCK_API;
@@ -2357,7 +2357,7 @@ extern void NcbiLog_AppSetHitID(const char* hit_id)
 }
 
 
-void NcbiLog_SetHitID(const char* hit_id)
+extern void NcbiLog_SetHitID(const char* hit_id)
 {
     TNcbiLog_Context ctx = NULL;
 
@@ -2439,11 +2439,18 @@ extern char* NcbiLog_GetNextSubHitID(void)
         return NULL;
     }
     return s_StrDup(buf);
-
 }
 
 
-ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev)
+extern void NcbiLog_FreeMemory(void* ptr)
+{
+    if (ptr) {
+        free(ptr);
+    }
+}
+
+
+extern ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev)
 {
     ENcbiLog_Severity prev;
     MT_LOCK_API;
@@ -2458,7 +2465,7 @@ ENcbiLog_Severity NcbiLog_SetPostLevel(ENcbiLog_Severity sev)
  *  We should print "start" message always, before any other message.
  *  The NcbiLog_AppStart() is just a wrapper for this with checks and MT locking.
  */
-void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
+static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
 {
     int    i, n;
     size_t pos;
@@ -2510,7 +2517,7 @@ void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
 }
 
 
-void NcbiLog_AppStart(const char* argv[])
+extern void NcbiLog_AppStart(const char* argv[])
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
@@ -2520,7 +2527,7 @@ void NcbiLog_AppStart(const char* argv[])
 }
 
 
-void NcbiLog_AppRun(void)
+extern void NcbiLog_AppRun(void)
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
@@ -2531,13 +2538,13 @@ void NcbiLog_AppRun(void)
 }
 
 
-void NcbiLog_AppStop(int exit_status)
+extern void NcbiLog_AppStop(int exit_status)
 {
     NcbiLog_AppStopSignal(exit_status, 0);
 }
 
 
-void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
+extern void NcbiLog_AppStopSignal(int exit_status, int exit_signal)
 {
     TNcbiLog_Context ctx = NULL;
     int    n;
@@ -2652,7 +2659,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
 }
 
 
-void NcbiLogP_ReqStartStr(const char* params)
+extern void NcbiLogP_ReqStartStr(const char* params)
 {
     TNcbiLog_Context ctx = NULL;
     size_t n, pos;
@@ -2673,7 +2680,7 @@ void NcbiLogP_ReqStartStr(const char* params)
 }
 
 
-void NcbiLog_ReqRun(void)
+extern void NcbiLog_ReqRun(void)
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
@@ -2684,7 +2691,7 @@ void NcbiLog_ReqRun(void)
 }
 
 
-void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
+extern void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 {
     TNcbiLog_Context ctx = NULL;
     int    n;
@@ -2727,7 +2734,7 @@ void NcbiLog_ReqStop(int status, size_t bytes_rd, size_t bytes_wr)
 }
 
 
-void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
+static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
 {
     int    n;
     size_t nu, pos;
@@ -2749,7 +2756,7 @@ void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
 }
 
 
-void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
+static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
 {
     int    n;
     size_t nu, pos;
@@ -2771,7 +2778,7 @@ void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
 }
 
 
-void NcbiLog_Extra(const SNcbiLog_Param* params)
+extern void NcbiLog_Extra(const SNcbiLog_Param* params)
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
@@ -2782,7 +2789,7 @@ void NcbiLog_Extra(const SNcbiLog_Param* params)
 }
 
 
-void NcbiLogP_ExtraStr(const char* params)
+extern void NcbiLogP_ExtraStr(const char* params)
 {
     TNcbiLog_Context ctx = NULL;
     MT_LOCK_API;
@@ -2793,8 +2800,8 @@ void NcbiLogP_ExtraStr(const char* params)
 }
 
 
-void NcbiLog_Perf(int status, double timespan,
-                  const SNcbiLog_Param* params)
+extern void NcbiLog_Perf(int status, double timespan,
+                         const SNcbiLog_Param* params)
 {
     TNcbiLog_Context ctx = NULL;
     int    n;
@@ -2823,7 +2830,7 @@ void NcbiLog_Perf(int status, double timespan,
 }
 
 
-void NcbiLogP_PerfStr(int status, double timespan, const char* params)
+extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
 {
     TNcbiLog_Context ctx = NULL;
     size_t n, pos;
@@ -2851,22 +2858,22 @@ void NcbiLogP_PerfStr(int status, double timespan, const char* params)
 }
 
 
-void NcbiLog_Trace(const char* msg)
+extern void NcbiLog_Trace(const char* msg)
 {
     s_PrintMessage(eNcbiLog_Trace, msg);
 }
 
-void NcbiLog_Info(const char* msg)
+extern void NcbiLog_Info(const char* msg)
 {
     s_PrintMessage(eNcbiLog_Info, msg);
 }
 
-void NcbiLog_Warning(const char* msg)
+extern void NcbiLog_Warning(const char* msg)
 {
     s_PrintMessage(eNcbiLog_Warning, msg);
 }
 
-void NcbiLog_Error(const char* msg)
+extern void NcbiLog_Error(const char* msg)
 {
     s_PrintMessage(eNcbiLog_Error, msg);
 }
@@ -2876,13 +2883,13 @@ void NcbiLog_Critical(const char* msg)
     s_PrintMessage(eNcbiLog_Critical, msg);
 }
 
-void NcbiLog_Fatal(const char* msg)
+extern void NcbiLog_Fatal(const char* msg)
 {
     s_PrintMessage(eNcbiLog_Fatal, msg);
 }
 
 
-void NcbiLogP_Raw(const char* line)
+extern void NcbiLogP_Raw(const char* line)
 {
     FILE* f = NULL;
 
@@ -2939,17 +2946,17 @@ void NcbiLogP_Raw(const char* line)
  *  Logging setup functions --- for internal use only
  */
 
-TNcbiLog_Info* NcbiLogP_GetInfoPtr(void)
+extern TNcbiLog_Info* NcbiLogP_GetInfoPtr(void)
 {
     return (TNcbiLog_Info*)sx_Info;
 }
 
-TNcbiLog_Context NcbiLogP_GetContextPtr(void)
+extern TNcbiLog_Context NcbiLogP_GetContextPtr(void)
 {
     return s_GetContext();
 }
 
- int NcbiLogP_DisableChecks(int /*bool*/ disable)
+ extern int NcbiLogP_DisableChecks(int /*bool*/ disable)
  {
     int current = sx_DisableChecks;
     sx_DisableChecks = disable;
