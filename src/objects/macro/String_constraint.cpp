@@ -589,7 +589,7 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
                rval = false;
     }
     else {
-      string tmp_match = GetMatch_text();
+      string tmp_match = CanGetMatch_text()? GetMatch_text() : kEmptyStr;
       if (GetIgnore_weasel()) {
          tmp_match = x_SkipWeasel(tmp_match);
       }
