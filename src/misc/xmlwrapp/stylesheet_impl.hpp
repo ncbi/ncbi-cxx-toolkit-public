@@ -48,6 +48,10 @@
 #include "extension_function_impl.hpp"
 #include "extension_element_impl.hpp"
 
+#if __cplusplus >= 199711L
+    #include <mutex>
+#endif
+
 namespace xslt {
     class extension_function;
     class extension_element;
@@ -84,10 +88,26 @@ namespace xslt {
         {
             stylesheet_refcount (void) : count_(0) {}
 
-            void inc_ref (void) { ++count_; }
-            size_t dec_ref (void) { return --count_; }
+            void inc_ref (void) {
+                #if __cplusplus >= 199711L
+                std::lock_guard<std::mutex>     lock(count_lock_);
+                #endif
+                ++count_;
+            }
+            size_t dec_ref (void) {
+                #if __cplusplus >= 199711L
+                std::lock_guard<std::mutex>     lock(count_lock_);
+                #endif
+                return --count_;
+            }
 
-            size_t  count_;
+            private:
+                #if __cplusplus >= 199711L
+                // This mutex makes applying of the same stylesheet from
+                // different threads thread-safe.
+                std::mutex      count_lock_;
+                #endif
+                size_t          count_;
         };
 
 

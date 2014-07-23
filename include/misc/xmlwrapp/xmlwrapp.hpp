@@ -37,6 +37,27 @@
  *       API and functionality requirements.
  */
 
+/*
+ * @attention
+ * Thread safety
+ * It is thread-safe to process different documents from different threads.
+ * It is not thread-safe to modify the same document from different threads.
+ * It is thread-safe to perform non-modifying operations on the same document
+ * from different thread except of the following cases:
+ * 1. Applying the same stylesheet to different documents. (Note: this
+ *    operation is thread-safe only if your compiler is C++11 conformant.)
+ * 2. Using copies of an XPath query result node sets from different threads.
+ * 3. For a certain node the following operations are not thread-safe to be
+ *    performed from different threads:
+ *    - dereferencing the node iterator
+ *    - dereferencin the node attributes iterator
+ *    - searching for an attribute of the node
+ *
+ * For more details see the 'Thread Safety' section in the C++ Toolkit Book at:
+ * http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_xmlwrapp/
+ */
+
+
 #ifndef _xmlwrapp_xmlwrapp_h_
 #define _xmlwrapp_xmlwrapp_h_
 

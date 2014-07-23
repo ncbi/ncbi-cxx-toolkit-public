@@ -174,7 +174,7 @@ extern "C" {
             xmlXPathObjectPtr   current_arg = valuePop(ctxt);
 
             args.insert(args.begin(),
-                        xslt::xpath_object(reinterpret_cast<void*>(current_arg)));
+                    xslt::xpath_object(reinterpret_cast<void*>(current_arg)));
             args[0].set_from_xslt();
         }
 
@@ -224,7 +224,8 @@ extern "C" {
         ext_elem_key                key;
         key.first = reinterpret_cast<const char *>(instruction_node->name);
         if (instruction_node->ns != NULL && instruction_node->ns->href != NULL)
-            key.second = reinterpret_cast<const char *>(instruction_node->ns->href);
+            key.second =
+                reinterpret_cast<const char *>(instruction_node->ns->href);
 
         ext_elems_map_type::iterator    found = s_impl->ext_elements_.find(key);
         if (found == s_impl->ext_elements_.end())
@@ -303,8 +304,8 @@ extern "C"
 static void error_cb(void *c, const char *message, ...)
 {
     xsltTransformContextPtr ctxt = static_cast<xsltTransformContextPtr>(c);
-    xslt::impl::stylesheet_impl *s_impl = static_cast<xslt::impl::stylesheet_impl*>(
-                                                                ctxt->_private);
+    xslt::impl::stylesheet_impl *s_impl =
+                    static_cast<xslt::impl::stylesheet_impl*>(ctxt->_private);
 
     s_impl->errors_occured_ = true;
 
@@ -365,7 +366,8 @@ xmlDocPtr apply_stylesheet(xslt::impl::stylesheet_impl *s_impl,
                 ctxt,
                 reinterpret_cast<const xmlChar*>(k->first.first.c_str()),
                 reinterpret_cast<const xmlChar*>(k->first.second.c_str()),
-                reinterpret_cast<xsltTransformFunction>(xslt_ext_element_cb)) != 0) {
+                reinterpret_cast<xsltTransformFunction>
+                                                (xslt_ext_element_cb)) != 0) {
             xsltFreeTransformContext(ctxt);
             throw xslt::exception("Error registering extension element " +
                                   k->first.first);
