@@ -1170,37 +1170,106 @@ namespace {
 
 
     static inline
-    bool sx_CanHaveTranscriptId(CSeqFeatData::ESubtype type)
+    bool sx_CanMatchByQual(CSeqFeatData::ESubtype type)
     {
         return
             type == CSeqFeatData::eSubtype_mRNA ||
             type == CSeqFeatData::eSubtype_cdregion;
     }
 
+    
+    static const char kQual_transcript_id[] = "transcript_id";
+    static const char kQual_orig_transcript_id[] = "orig_transcript_id";
+    static const char kQual_orig_protein_id[] = "orig_protein_id";
+    enum {
+        kQualPriority_transcript_id,
+        kQualPriority_orig_transcript_id,
+        kQualPriority_orig_protein_id,
+        kQualPriority_count
+    };
 
-    static
-    const CGb_qual* sx_GetTranscriptId(const CMappedFeat& feat)
-    {
-        if ( feat.IsSetQual() &&
-             sx_CanHaveTranscriptId(feat.GetFeatSubtype()) ) {
+    struct SMatchingQuals {
+        CConstRef<CGb_qual> qq[kQualPriority_count];
+
+
+        static bool HasMatch(const CMappedFeat& feat)
+        {
+            if ( !feat.IsSetQual() ) {
+                return false;
+            }
+            if ( !sx_CanMatchByQual(feat.GetFeatSubtype()) ) {
+                return false;
+            }
             CConstRef<CSeq_feat> f = feat.GetSeq_feat();
             const CSeq_feat::TQual& qual = f->GetQual();
             ITERATE ( CSeq_feat::TQual, it, qual ) {
-                if ( (*it)->GetQual() == "transcript_id" &&
-                     (*it)->IsSetVal() ) {
-                    return *it;
+                if ( (*it)->IsSetVal() ) {
+                    const string& qual = (*it)->GetQual();
+                    if ( qual == kQual_orig_protein_id ||
+                         qual == kQual_orig_transcript_id ||
+                         qual == kQual_transcript_id ) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        
+        explicit SMatchingQuals(const CMappedFeat& feat)
+        {
+            if ( !feat.IsSetQual() ) {
+                return;
+            }
+            if ( !sx_CanMatchByQual(feat.GetFeatSubtype()) ) {
+                return;
+            }
+            CConstRef<CSeq_feat> f = feat.GetSeq_feat();
+            const CSeq_feat::TQual& qual = f->GetQual();
+            ITERATE ( CSeq_feat::TQual, it, qual ) {
+                if ( (*it)->IsSetVal() ) {
+                    const string& qual = (*it)->GetQual();
+                    if ( qual == kQual_orig_protein_id ) {
+                        qq[kQualPriority_orig_protein_id] = *it;
+                    }
+                    else if ( qual == kQual_orig_transcript_id ) {
+                        qq[kQualPriority_orig_transcript_id] = *it;
+                    }
+                    else if ( qual == kQual_transcript_id ) {
+                        qq[kQualPriority_transcript_id] = *it;
+                    }
                 }
             }
         }
-        return 0;
+        
+        
+        Uint1 GetMatch(const SMatchingQuals& quals2) const
+        {
+            for ( int i = 0; i < kQualPriority_count; ++i ) {
+                if ( qq[i] && quals2.qq[i] &&
+                     qq[i]->GetVal() == quals2.qq[i]->GetVal() ) {
+                    return Uint1(i+1);
+                }
+            }
+            return 0;
+        }
+    };
+
+
+    static inline
+    bool sx_CanMatchByQual(const CMappedFeat& feat)
+    {
+        return SMatchingQuals::HasMatch(feat);
     }
 
 
     static inline
-    bool sx_GetTranscriptIdMatch(const CGb_qual* id1,
-                                 const CGb_qual* id2)
+    Uint1 sx_GetQualMatch(const CMappedFeat& feat1,
+                          const CMappedFeat& feat2)
     {
-        return id1 && id2 && id1->GetVal() == id2->GetVal();
+        SMatchingQuals quals1(feat1);
+        SMatchingQuals quals2(feat2);
+        return quals1.GetMatch(quals2);
     }
 
 
@@ -1500,8 +1569,10 @@ namespace {
     Int1 s_GetParentQuality(const CFeatTree::CFeatInfo& feat,
                             const CFeatTree::CFeatInfo& parent)
     {
-        return sx_GetTranscriptIdMatch(feat.m_TranscriptId,
-                                       parent.m_TranscriptId);
+        if ( feat.m_CanMatchByQual && parent.m_CanMatchByQual ) {
+            return sx_GetQualMatch(feat.m_Feat, parent.m_Feat);
+        }
+        return 0;
     }
 
     class CFeatTreeParentTypeIndex : public CObject
@@ -1694,7 +1765,7 @@ void CFeatTree::AddFeature(const CMappedFeat& feat)
         m_InfoArray.push_back(&info);
         info.m_AddIndex = index;
         info.m_Feat = feat;
-        info.m_TranscriptId = sx_GetTranscriptId(feat);
+        info.m_CanMatchByQual = sx_CanMatchByQual(feat);
     }
     else {
         _ASSERT(m_InfoMap.size() == m_InfoArray.size());
@@ -2431,6 +2502,7 @@ CMappedFeat CFeatTree::GetBestGene(const CMappedFeat& feat,
 
 CFeatTree::CFeatInfo::CFeatInfo(void)
     : m_AddIndex(0),
+      m_CanMatchByQual(false),
       m_IsSetParent(false),
       m_IsSetChildren(false),
       m_MultiId(false),
