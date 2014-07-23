@@ -269,6 +269,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 unsigned int num_digits = 0;
                 unsigned int num_letters = 0;
                 size_t num_underscores = 0;
+                bool internal_S = false;
                 bool letter_after_digit = false;
                 bool bad_id_chars = false;
                 size_t i = 0;
@@ -276,6 +277,14 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 for ( ; i < acc.length(); ++i ) {
                     if ( isupper((unsigned char) acc[i]) ) {
                         num_letters++;
+                        if ( num_digits > 0  ||  num_underscores > 1 ) {
+                            if (acc[i] == 'S' && num_letters == 5 && num_digits == 2 && (! internal_S)) {
+                                num_letters--;
+                                internal_S = true;
+                            } else {
+                                letter_after_digit = true;
+                            }
+                         }
                     } else if ( isdigit((unsigned char) acc[i]) ) {
                         num_digits++;
                     } else if ( acc[i] == '_' ) {
@@ -302,7 +311,9 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 } else if (num_letters == 3 && num_digits == 5 && ctx.IsAa()) {
                 } else if (num_letters == 2 && num_digits == 6 && ctx.IsAa() &&
                     ctx.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
-                } else if ( num_letters == 4  && 
+                } else if (num_letters == 4 && internal_S &&
+                          (num_digits == 8 || num_digits == 9 || num_digits == 10) && ctx.IsNa()) {
+                } else if ( num_letters == 4  &&
                             (num_digits == 8  ||  num_digits == 9)  && 
                             ctx.IsNa() ) {
                 } else {
@@ -588,7 +599,7 @@ void CValidError_bioseq::ValidateSeqIds
             if ( tsid  &&  tsid->IsSetAccession() ) {
                 const string& acc = tsid->GetAccession();
                     
-                is_wgs |= acc.length() == 12  ||  acc.length() == 13;
+                is_wgs |= acc.length() == 12  ||  acc.length() == 13  ||  acc.length() == 14  ||  acc.length() == 15;
 
 
                 if ( has_gi ) {
