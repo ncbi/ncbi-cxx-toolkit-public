@@ -334,8 +334,10 @@ bool CDllResolver::TryCandidate(const string& file_name,
     }
     catch (CCoreException& ex)
     {
-        if (ex.GetErrCode() != CCoreException::eDll)
+        if (ex.GetErrCode() != CCoreException::eDll) {
             throw;
+        }
+        NCBI_REPORT_EXCEPTION_X(2, "CDllResolver::TryCandidate() failed", ex);
         return false;
     }
 
