@@ -1246,6 +1246,7 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
         }
 
         int part_count = 0;
+        int mapped_exon_len = 0;
         for (CSeq_loc_CI part_it(*mrna_loc);  part_it;  ++part_it) {
             ++part_count;
             if (prev_product_to<0) {
@@ -1285,7 +1286,12 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
 
             CConstRef<CSeq_loc> part = part_it.GetRangeAsSeq_loc();
             CRef<CSeq_loc> genomic_loc = to_genomic.Map(*part);
-           CSeqVector vec(*genomic_loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
+
+            for (CSeq_loc_CI it(*genomic_loc); it; ++it) {
+                mapped_exon_len += it.GetRange().GetLength();
+            }
+
+            CSeqVector vec(*genomic_loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
             string seq;
             vec.GetSeqData(0, vec.size(), seq);
 
@@ -1295,7 +1301,9 @@ SImplementation::x_CollectMrnaSequence(CSeq_inst& inst,
 
             prev_product_to = part_it.GetRange().GetTo();
         }
-        if (part_count > 1 && has_indel != NULL) {
+        if (has_indel != NULL &&
+            (part_count > 1 ||
+             mapped_exon_len != loc_it.GetRange().GetLength())) {
             *has_indel = true;
         }
             

@@ -10447,3 +10447,84 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location packed-int {
+        {
+          from 8679,
+          to 8720,
+          strand plus,
+          id gi 523529002,
+          fuzz-to lim circle
+        },
+        {
+          from 0,
+          to 420,
+          strand plus,
+          id gi 523529002,
+          fuzz-from lim circle
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      except TRUE,
+      product whole local str "MRNA_20",
+      location packed-int {
+        {
+          from 8679,
+          to 8720,
+          strand plus,
+          id gi 523529002
+        },
+        {
+          from 0,
+          to 420,
+          strand plus,
+          id gi 523529002
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      except TRUE,
+      product whole gi 490919202,
+      location packed-int {
+        {
+          from 8679,
+          to 8720,
+          strand plus,
+          id gi 523529002,
+          fuzz-to lim circle
+        },
+        {
+          from 0,
+          to 420,
+          strand plus,
+          id gi 523529002,
+          fuzz-from lim circle
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "hypothetical protein"
+            }
+          }
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    }
+  }
+}

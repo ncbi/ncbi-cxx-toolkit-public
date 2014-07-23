@@ -19834,3 +19834,110 @@ ENSCNLKLTKYFGLDMKFNSLIMLSEEQKVERDIKLIELYSKYNQLIQSSSFNNEELAMLKEKLFSF"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "MRNA_20"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 462,
+        seq-data ncbi2na '380F2482777C7D82E34100003CFD1C0106CD0E40ECFAC423AE34
+14DE08D40E071C010B3FDFC3D083F400F0BCE43D38070E7F0403C0E3A5BDDC7E7F3E1FE6E383FB
+2049100570792430B0C4DDB8378DBCCB19A80C0BA4C0BCF52FD34F100109E38CF2DF03C6E3F01B
+BC3D2D870FA00F8FE3E09700'H,
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_20",
+                genomic-id gi 523529002,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 41,
+                    genomic-start 8679,
+                    genomic-end 8720,
+                    parts {
+                      match 3,
+                      diag 39
+                    },
+                    partial FALSE
+                  },
+                  {
+                    product-start nucpos 42,
+                    product-end nucpos 461,
+                    genomic-start 0,
+                    genomic-end 420,
+                    parts {
+                      genomic-ins 1,
+                      diag 417,
+                      match 3
+                    },
+                    partial FALSE
+                  }
+                },
+                product-length 462,
+                modifiers {
+                  start-codon-found TRUE,
+                  stop-codon-found TRUE
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              product whole gi 490919202,
+              location int {
+                from 0,
+                to 461,
+                id local str "MRNA_20"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 490919202
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 153,
+        seq-data iupacaa "MKLAEALLLRSDQQKKIISLKQRINANVLVQDGDQPSEDPNELLKQVFSLIQ
+EFQKLSYAIHETNALTKLNDGRSLLALLTLRDEFVEQHKTLTAAISNTSRESDRYSTREIKWHKVIPVSSLQKQADDI
+SLKLRDLNVLIQSTNWKIDLIEA"
+      }
+    }
+  }
+}
