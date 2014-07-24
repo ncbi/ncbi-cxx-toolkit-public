@@ -1531,7 +1531,8 @@ case "$host_os:$compiler" in
          ncbi_cv_prog_cc_export_all,
          [orig_LDFLAGS=$LDFLAGS
           ncbi_cv_prog_cc_export_all=no
-          for x in -Wl,--export-all-symbols -rdynamic -Wl,-E; do
+          for x in -Wl,--export-all-symbols -Wl,-export-dynamic -rdynamic \
+                   -Wl,-E; do
              LDFLAGS="$x $orig_LDFLAGS"
              AC_LINK_IFELSE([AC_LANG_PROGRAM([],[])],
                 [ncbi_cv_prog_cc_export_all=$x])
