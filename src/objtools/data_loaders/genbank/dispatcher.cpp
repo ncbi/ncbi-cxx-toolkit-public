@@ -1510,7 +1510,7 @@ void CReadDispatcher::LoadBlobSet(CReaderRequestResult& result,
 }
 
 
-bool CReadDispatcher::SetBlobState(int i,
+bool CReadDispatcher::SetBlobState(size_t i,
                                    CReaderRequestResult& result,
                                    const TIds& ids, TLoaded& loaded,
                                    TStates& ret)
