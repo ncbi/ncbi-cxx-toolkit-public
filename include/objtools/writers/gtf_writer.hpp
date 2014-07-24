@@ -90,7 +90,8 @@ protected:
         CMappedFeat );
     virtual bool x_WriteFeatureCdsFragments(
         CGtfRecord&,
-        const CSeq_loc& );
+		const CSeq_loc&,
+        CMappedFeat );							//mRNA parent
 
     bool x_SplitCdsLocation(
         CMappedFeat,

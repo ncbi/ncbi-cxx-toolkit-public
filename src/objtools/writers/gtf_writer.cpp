@@ -48,6 +48,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <objtools/writers/gff2_write_data.hpp>
 #include <objtools/writers/gtf_write_data.hpp>
@@ -207,7 +208,6 @@ bool CGtfWriter::x_WriteFeatureCds(
     if ( ! pParent->AssignFromAsn( mf ) ) {
         return false;
     }
-
     CRef< CSeq_loc > pLocStartCodon;
     CRef< CSeq_loc > pLocCode;
     CRef< CSeq_loc > pLocStopCodon;
@@ -215,21 +215,24 @@ bool CGtfWriter::x_WriteFeatureCds(
         return false;
     }
 
+	feature::CFeatTree& featTree = context.FeatTree();
+	CMappedFeat mRNA = feature::GetBestMrnaForCds(mf, &featTree);
+
     if ( pLocCode ) {
         pParent->CorrectType( "CDS" );
-        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocCode ) ) {
+        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocCode, mRNA ) ) {
             return false;
         }
     }
     if ( pLocStartCodon ) {
         pParent->CorrectType( "start_codon" );
-        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocStartCodon ) ) {
+        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocStartCodon, mRNA ) ) {
             return false;
         }
     }
     if ( pLocStopCodon ) {
         pParent->CorrectType( "stop_codon" );
-        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocStopCodon ) ) {
+        if ( ! x_WriteFeatureCdsFragments( *pParent, *pLocStopCodon, mRNA ) ) {
             return false;
         }
     }
@@ -239,24 +242,34 @@ bool CGtfWriter::x_WriteFeatureCds(
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeatureCdsFragments(
     CGtfRecord& record,
-    const CSeq_loc& location )
+	const CSeq_loc& cdsLoc,
+    CMappedFeat mRna)
 //  ----------------------------------------------------------------------------
 {
-    typedef list<CRef<CSeq_interval> > SUBINTS;
-    const SUBINTS& subints = location.GetPacked_int().Get();
-    for ( SUBINTS::const_iterator it = subints.begin(); it != subints.end(); ++it ) {
-        const CSeq_interval& subint = **it;
+    typedef list<CRef<CSeq_interval> > EXONS;
+	typedef EXONS::const_iterator EXONIT;
+
+	CRef<CSeq_loc> pRnaLoc(new CSeq_loc(CSeq_loc::e_Mix));
+	pRnaLoc->Add(mRna.GetLocation());
+	pRnaLoc->ChangeToPackedInt();
+	const EXONS& rnaExons = pRnaLoc->GetPacked_int().Get();
+
+    const EXONS& cdsExons = cdsLoc.GetPacked_int().Get();
+	int count = 0;
+    for ( EXONIT cdsIt = cdsExons.begin(); cdsIt != cdsExons.end(); ++cdsIt ) {
+		count++;
+        const CSeq_interval& cdsExon = **cdsIt;
         unsigned int uExonNumber = 0;
-        for ( TExonCit xit = m_exonMap.begin(); xit != m_exonMap.end(); ++xit ) {
-            const CSeq_interval& compint = *(xit->second);
-            if ( compint.GetFrom() <= subint.GetFrom()  &&  compint.GetTo() >= subint.GetTo() ) {
-                uExonNumber = xit->first;
-                break;
+		for (EXONIT rnaIt = rnaExons.begin(); rnaIt != rnaExons.end(); ++rnaIt) {
+			const CSeq_interval& rnaExon = **rnaIt;
+			uExonNumber++;
+            if ( rnaExon.GetFrom() <= cdsExon.GetFrom()  &&  rnaExon.GetTo() >= cdsExon.GetTo() ) {
+                 break;
             }
         }
         CGtfRecord* pRecord = new CGtfRecord(record);
-        pRecord->MakeChildRecord( record, subint, uExonNumber );
-        pRecord->SetCdsPhase( subints, location.GetStrand() );
+        pRecord->MakeChildRecord( record, cdsExon, uExonNumber );
+        pRecord->SetCdsPhase( cdsExons, cdsLoc.GetStrand() );
         x_WriteRecord( pRecord );
     }
     return true;
