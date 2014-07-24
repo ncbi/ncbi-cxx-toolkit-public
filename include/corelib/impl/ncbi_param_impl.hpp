@@ -41,68 +41,85 @@
 BEGIN_NCBI_SCOPE
 
 
-// std::string wrapper - prevents duplicate memory deallocation.
-class CSafeParamString
+template<class TValue>
+class CSafeStatic_Proxy
 {
 public:
-    CSafeParamString(void)
-        : m_Str(new string)
+    CSafeStatic_Proxy(void)
     {}
 
-    CSafeParamString(const CSafeParamString& str)
-        : m_Str(new string)
-    {
-        if ( str.m_Str ) {
-            *m_Str = *str.m_Str;
-        }
-    }
-
-    CSafeParamString(const string& str)
-        : m_Str(new string(str))
+    CSafeStatic_Proxy(TValue value)
+        : m_Value(value)
     {
     }
 
-    CSafeParamString(const char* str)
-        : m_Str(new string(str))
+    CSafeStatic_Proxy& operator=(TValue value)
     {
-    }
-
-    ~CSafeParamString(void)
-    {
-        delete m_Str;
-        m_Str = 0;
-    }
-
-    operator const string&(void) const {
-        return m_Str ? *m_Str : kEmptyStr;
-    }
-
-    CSafeParamString& operator=(const CSafeParamString& str)
-    {
-        if ( m_Str ) {
-            *m_Str = *str.m_Str;
-        }
+        m_Value = value;
         return *this;
     }
 
-    CSafeParamString& operator=(const string& str)
+    operator TValue& (void)
     {
-        if ( m_Str ) {
-            *m_Str = str;
-        }
-        return *this;
-    }
-
-    CSafeParamString& operator=(const char* str)
-    {
-        if ( m_Str ) {
-            *m_Str = str;
-        }
-        return *this;
+        return m_Value;
     }
 
 private:
-    string* m_Str;
+    mutable TValue m_Value;
+};
+
+
+template<>
+class CSafeStatic_Proxy<string>
+{
+public:
+    CSafeStatic_Proxy(void)
+        : m_Value(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Longest, 1))
+    {}
+
+    CSafeStatic_Proxy(const string& value)
+        : m_Value(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Longest, 1))
+    {
+        m_Value.Get() = value;
+    }
+
+    CSafeStatic_Proxy(const char* value)
+        : m_Value(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Longest, 1))
+    {
+        m_Value.Get() = value;
+    }
+
+    CSafeStatic_Proxy(const CSafeStatic_Proxy& proxy)
+        : m_Value(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Longest, 1))
+    {
+        m_Value.Get() = proxy.m_Value.Get();
+    }
+
+    CSafeStatic_Proxy& operator=(const CSafeStatic_Proxy& proxy)
+    {
+        m_Value.Get() = proxy.m_Value.Get();
+        return *this;
+    }
+
+    CSafeStatic_Proxy& operator=(const string& value)
+    {
+        m_Value.Get() = value;
+        return *this;
+    }
+
+    CSafeStatic_Proxy& operator=(const char* value)
+    {
+        m_Value.Get() = value;
+        return *this;
+    }
+
+    operator string&(void)
+    {
+        return m_Value.Get();
+    }
+
+private:
+    mutable CSafeStatic<string> m_Value;
 };
 
 
@@ -111,6 +128,7 @@ template<class TValue>
 struct SParamDescription
 {
     typedef TValue TValueType;
+    typedef CSafeStatic_Proxy<TValue> TStaticValue;
     // Initialization function. The string returned is converted to
     // the TValue type the same way as when loading from other sources.
     typedef string (*FInitFunc)(void);
@@ -118,25 +136,7 @@ struct SParamDescription
     const char*           section;
     const char*           name;
     const char*           env_var_name;
-    TValue                default_value;
-    FInitFunc             init_func;
-    TNcbiParamFlags       flags;
-};
-
-
-// SParamDescription specialization for string
-template<>
-struct SParamDescription<string>
-{
-    typedef string TValueType;
-    // Initialization function. The string returned is converted to
-    // the TValue type the same way as when loading from other sources.
-    typedef string (*FInitFunc)(void);
-
-    const char*           section;
-    const char*           name;
-    const char*           env_var_name;
-    CSafeParamString      default_value;
+    TStaticValue          default_value;
     FInitFunc             init_func;
     TNcbiParamFlags       flags;
 };
@@ -156,12 +156,13 @@ template<class TValue>
 struct SParamEnumDescription
 {
     typedef TValue TValueType;
+    typedef CSafeStatic_Proxy<TValue> TStaticValue;
     typedef string (*FInitFunc)(void);
 
     const char*           section;
     const char*           name;
     const char*           env_var_name;
-    TValue                default_value;
+    TStaticValue          default_value;
     FInitFunc             init_func;
     TNcbiParamFlags       flags;
 

@@ -210,9 +210,10 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
         typedef tagtype TTagType;                                           \
         typedef type TValueType;                                            \
         typedef desctype<TValueType> TDescription;                          \
+        typedef TDescription::TStaticValue TStaticValue;                    \
         typedef CStaticTls< type > TTls;                                    \
         static TDescription sm_ParamDescription;                            \
-        static TValueType sm_Default;                                       \
+        static TStaticValue sm_Default;                                     \
         static bool sm_DefaultInitialized;                                  \
         static TTls sm_ValueTls;                                            \
         static CParamBase::EParamState sm_State;                            \
@@ -236,8 +237,8 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
 
 // Defenition of SNcbiParamDesc_XXXX static members common for normal
 // and enum parameters.
-#define X_NCBI_PARAM_STATIC_DEF(type, descname, defval)                     \
-    type descname::sm_Default = defval;                                     \
+#define X_NCBI_PARAM_STATIC_DEF(descname, defval)                           \
+    descname::TStaticValue descname::sm_Default = defval;                   \
     bool descname::sm_DefaultInitialized = false;                           \
     descname::TTls descname::sm_ValueTls;                                   \
     CParamBase::EParamState descname::sm_State = CParamBase::eState_NotSet  \
@@ -294,8 +295,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     SParamDescription< type >                                               \
     X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
         { #section, #name, 0, default_value, NULL, eParam_Default };        \
-    X_NCBI_PARAM_STATIC_DEF(type,                                           \
-        X_NCBI_PARAM_DECLNAME(section, name),                               \
+    X_NCBI_PARAM_STATIC_DEF(X_NCBI_PARAM_DECLNAME(section, name),           \
         default_value)
 
 
@@ -306,8 +306,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     SParamDescription< type >                                               \
     X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
         { #section, #name, 0, default_value, init, eParam_Default };        \
-    X_NCBI_PARAM_STATIC_DEF(type,                                           \
-        X_NCBI_PARAM_DECLNAME(section, name),                               \
+    X_NCBI_PARAM_STATIC_DEF(X_NCBI_PARAM_DECLNAME(section, name),           \
         default_value)
 
 
@@ -318,8 +317,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     SParamDescription< type >                                               \
     X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
         { #section, #name, #env, default_value, NULL, flags };              \
-    X_NCBI_PARAM_STATIC_DEF(type,                                           \
-        X_NCBI_PARAM_DECLNAME(section, name),                               \
+    X_NCBI_PARAM_STATIC_DEF(X_NCBI_PARAM_DECLNAME(section, name),           \
         default_value)
 
 
@@ -331,8 +329,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     SParamDescription< type >                                               \
     X_NCBI_PARAM_DECLNAME(section, name)::sm_ParamDescription =             \
         { #section, #name, #env, def_value, init, flags };                  \
-    X_NCBI_PARAM_STATIC_DEF(type,                                           \
-        X_NCBI_PARAM_DECLNAME(section, name),                               \
+    X_NCBI_PARAM_STATIC_DEF(X_NCBI_PARAM_DECLNAME(section, name),           \
         def_value)
 
 
@@ -343,7 +340,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     SParamDescription< type >                                                \
     X_NCBI_PARAM_DECLNAME_SCOPE(scope, section, name)::sm_ParamDescription = \
         { #section, #name, 0, default_value, NULL, eParam_Default };         \
-    X_NCBI_PARAM_STATIC_DEF(type,                                            \
+    X_NCBI_PARAM_STATIC_DEF(                                                 \
         X_NCBI_PARAM_DECLNAME_SCOPE(scope, section, name),                   \
         default_value)
 
@@ -361,8 +358,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
         { #section, #name, 0, default_value, NULL, eParam_Default,          \
           X_NCBI_PARAM_ENUMNAME(section, name),                             \
           ArraySize(X_NCBI_PARAM_ENUMNAME(section, name)) };                \
-    X_NCBI_PARAM_STATIC_DEF(type,                                           \
-        X_NCBI_PARAM_DECLNAME(section, name),                               \
+    X_NCBI_PARAM_STATIC_DEF(X_NCBI_PARAM_DECLNAME(section, name),           \
         default_value)
 
 
@@ -376,8 +372,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
         { #section, #name, #env, default_value, NULL, flags,                \
           X_NCBI_PARAM_ENUMNAME(section, name),                             \
           ArraySize(X_NCBI_PARAM_ENUMNAME(section, name)) };                \
-    X_NCBI_PARAM_STATIC_DEF(type,                                           \
-        X_NCBI_PARAM_DECLNAME(section, name),                               \
+    X_NCBI_PARAM_STATIC_DEF(X_NCBI_PARAM_DECLNAME(section, name),           \
         default_value)
 
 
