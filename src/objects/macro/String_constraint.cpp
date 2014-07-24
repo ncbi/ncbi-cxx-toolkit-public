@@ -608,8 +608,13 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
         } 
 
         size_t pFound;
-        pFound = GetCase_sensitive()?
+        if (pattern.empty()) {
+          pFound = false;
+        }
+        else {
+           pFound = GetCase_sensitive()?
                     search.find(pattern) : NStr::FindNoCase(search, pattern);
+        }
         switch (GetMatch_location()) 
         {
           case eString_location_contains:
