@@ -113,6 +113,9 @@ bioscgi needs biosample
 bioscgi needs xcgi
 biosconvert needs biosample
 biosconvert needs xvalidate
+biosvalidate needs $(SDBAPI_LIB)
+biosvalidate needs xconnect
+biosvalidate needs xmlwrapp
 biotree needs general
 biotree_db needs biotree
 biotree_db needs gpipe_common
