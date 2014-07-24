@@ -116,7 +116,7 @@ public:
     void LoadStates(CReaderRequestResult& result,
                     const TIds ids, TLoaded& loaded, TStates& ret);
  
-    static bool SetBlobState(int i,
+    static bool SetBlobState(size_t i,
                              CReaderRequestResult& result,
                              const TIds& ids, TLoaded& loaded,
                              TStates& ret);
