@@ -104,6 +104,7 @@ public:
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
+    typedef vector<TBlobState> TStates;
     void LoadAccVers(CReaderRequestResult& result,
                      const TIds ids, TLoaded& loaded, TIds& ret);
     void LoadGis(CReaderRequestResult& result,
@@ -112,7 +113,14 @@ public:
                     const TIds ids, TLoaded& loaded, TLabels& ret);
     void LoadTaxIds(CReaderRequestResult& result,
                     const TIds ids, TLoaded& loaded, TTaxIds& ret);
+    void LoadStates(CReaderRequestResult& result,
+                    const TIds ids, TLoaded& loaded, TStates& ret);
  
+    static bool SetBlobState(int i,
+                             CReaderRequestResult& result,
+                             const TIds& ids, TLoaded& loaded,
+                             TStates& ret);
+
     void LoadBlobState(CReaderRequestResult& result,
                        const TBlobId& blob_id);
     void LoadBlobVersion(CReaderRequestResult& result,

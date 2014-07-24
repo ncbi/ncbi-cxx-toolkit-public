@@ -99,6 +99,8 @@ public:
                     const TIds& ids, TLoaded& loaded, TLabels& ret);
     bool LoadTaxIds(CReaderRequestResult& result,
                     const TIds& ids, TLoaded& loaded, TTaxIds& ret);
+    bool LoadStates(CReaderRequestResult& result,
+                    const TIds& ids, TLoaded& loaded, TStates& ret);
 
     bool LoadBlobState(CReaderRequestResult& result,
                        const TBlobId& blob_id);

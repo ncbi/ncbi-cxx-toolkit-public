@@ -723,6 +723,51 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
 }
 
 
+bool CId2ReaderBase::LoadStates(CReaderRequestResult& result,
+                                const TIds& ids, TLoaded& loaded, TStates& ret)
+{
+    size_t max_request_size = GetMaxIdsRequestSize();
+    if ( max_request_size <= 1 ) {
+        return CReader::LoadStates(result, ids, loaded, ret);
+    }
+
+    size_t count = ids.size();
+    CID2_Request_Packet packet;
+    size_t packet_start = 0;
+    
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( CReadDispatcher::SetBlobState(i, result, ids, loaded, ret) ) {
+            continue;
+        }
+        
+        CRef<CID2_Request> req(new CID2_Request);
+        x_SetResolve(req->SetRequest().SetGet_blob_id(), *ids[i].GetSeqId());
+        if ( packet.Set().empty() ) {
+            packet_start = i;
+        }
+        packet.Set().push_back(req);
+        if ( packet.Set().size() == max_request_size ) {
+            x_ProcessPacket(result, packet, 0);
+            size_t count = i+1;
+            for ( size_t i = packet_start; i < count; ++i ) {
+                CReadDispatcher::SetBlobState(i, result, ids, loaded, ret);
+            }
+            packet.Set().clear();
+        }
+    }
+
+    if ( !packet.Set().empty() ) {
+        x_ProcessPacket(result, packet, 0);
+
+        for ( size_t i = packet_start; i < count; ++i ) {
+            CReadDispatcher::SetBlobState(i, result, ids, loaded, ret);
+        }
+    }
+
+    return true;
+}
+
+
 bool CId2ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                         const CSeq_id_Handle& seq_id,
                                         const SAnnotSelector* sel)

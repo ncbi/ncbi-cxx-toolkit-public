@@ -631,6 +631,26 @@ bool CReader::LoadTaxIds(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadStates(CReaderRequestResult& result,
+                         const TIds& ids, TLoaded& loaded, TStates& ret)
+{
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        CLoadLockBlobIds lock(result, ids[i]);
+        if ( !lock.IsLoaded() ) {
+            m_Dispatcher->LoadSeq_idBlob_ids(result, ids[i], 0);
+        }
+        if ( lock.IsLoaded() ) {
+            CReadDispatcher::SetBlobState(i, result, ids, loaded, ret);
+        }
+    }
+    return true;
+}
+
+
 bool CReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
                                  const SAnnotSelector* sel)
