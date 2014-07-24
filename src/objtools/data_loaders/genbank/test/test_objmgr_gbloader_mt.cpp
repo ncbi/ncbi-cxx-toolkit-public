@@ -76,10 +76,14 @@ private:
     CObjectManager *m_ObjMgr;
     int             m_Start;
     int             m_Stop;
+    bool            m_Verbose;
 };
 
-CTestThread::CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop)
-    : m_mode(id), m_Scope(&scope), m_ObjMgr(&objmgr), m_Start(start), m_Stop(stop)
+CTestThread::CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,
+                         int start, int stop)
+    : m_mode(id), m_Scope(&scope), m_ObjMgr(&objmgr),
+      m_Start(start), m_Stop(stop),
+      m_Verbose(false)
 {
     LOG_POST("Thread " << start << " - " << stop << " - started");
 }
@@ -117,7 +121,9 @@ void* CTestThread::Main(void)
         x.SetGi(gi);
         CBioseq_Handle h = s->GetBioseqHandle(x);
         if ( !h ) {
-            LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " :: not found in ID");
+            if ( m_Verbose ) {
+                LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " :: not found in ID");
+            }
         } else {
             //CObjectOStreamAsn oos(NcbiCout);
             CConstRef<CBioseq> core = h.GetBioseqCore();
@@ -126,7 +132,9 @@ void* CTestThread::Main(void)
                 //NcbiCout << NcbiEndl;
                 ;
             }
-            LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " OK");
+            if ( m_Verbose ) {
+                LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " OK");
+            }
         }
         s->ResetHistory();
     }
@@ -164,7 +172,9 @@ int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
     
     for (unsigned i=0; i<thread_count; ++i)
         {
-            thr[i] = new CTestThread(test_mode, *pOm, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
+            thr[i] = new CTestThread(test_mode, *pOm, scope,
+                                     c_TestFrom+i*step,
+                                     c_TestFrom+(i+1)*step);
             thr[i]->Run(CThread::fRunAllowST);
         }
     

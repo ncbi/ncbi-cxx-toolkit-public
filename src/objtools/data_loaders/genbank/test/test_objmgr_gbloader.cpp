@@ -70,7 +70,14 @@ using namespace objects;
 class CTestApplication : public CNcbiApplication
 {
 public:
+    CTestApplication(void)
+        : m_Verbose(false)
+        {
+        }
+
     virtual int Run( void);
+
+    bool m_Verbose;
 };
 
 
@@ -96,7 +103,7 @@ int CTestApplication::Run()
         if ( !sr ) {
             ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
         }
-        else {
+        else if ( m_Verbose ) {
             LOG_POST("Gi (" << gi << "):: sat="<<sr->GetSat()<<
                      " satkey="<<sr->GetSatKey());
         }
@@ -121,36 +128,48 @@ int CTestApplication::Run()
             }
             CSeqVector v = h.GetSeqVector();
             v.SetIupacCoding();
-            LOG_POST("Vector size = " << v.size());
+            if ( m_Verbose ) {
+                LOG_POST("Vector size = " << v.size());
+            }
             string vs;
             for (TSeqPos cc = 0; cc < v.size(); cc++) {
                 vs += v[cc];
                 if (cc > 40) break;
             }
-            LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
+            if ( m_Verbose ) {
+                LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
+            }
             CRef<CSeq_loc> loc(new CSeq_loc);
             loc->SetWhole().SetGi(gi);
             int fcount = 0;
             {{ // Creating a block to destroy the iterator after using it
                 CFeat_CI feat_it1(scope, *loc, CSeqFeatData::e_Cdregion);
-                LOG_POST("Iterating CDS features, no references resolving");
+                if ( m_Verbose ) {
+                    LOG_POST("Iterating CDS features, no references resolving");
+                }
                 for ( ; feat_it1;  ++feat_it1) {
                     fcount++;
                 }
             }}
-            LOG_POST("CDS count (non-resolved) = " << fcount);
+            if ( m_Verbose ) {
+                LOG_POST("CDS count (non-resolved) = " << fcount);
+            }
             fcount = 0;
             {{ // Creating a block to destroy the iterator after using it
                 CFeat_CI feat_it2(scope, *loc,
                                   SAnnotSelector(CSeqFeatData::e_Cdregion)
                                   .SetResolveAll());
-                LOG_POST("Iterating CDS features, resolving references");
+                if ( m_Verbose ) {
+                    LOG_POST("Iterating CDS features, resolving references");
+                }
                 for ( ; feat_it2;  ++feat_it2) {
                     fcount++;
                 }
             }}
-            LOG_POST("CDS count (resolved) = " << fcount);
-            LOG_POST("Gi (" << gi << "):: OK");
+            if ( m_Verbose ) {
+                LOG_POST("CDS count (resolved) = " << fcount);
+                LOG_POST("Gi (" << gi << "):: OK");
+            }
         }
     }
 
