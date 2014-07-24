@@ -172,8 +172,6 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
             memmove(s, str + reserve, n + 1);
             s = str + strlen(str);
         }
-
-        assert(info->flag < (int)(sizeof(kFlags) / sizeof(kFlags[0])));
         for (n = 0;  n < sizeof(kFlags) / sizeof(kFlags[0]);  ++n) {
             if (info->flag == kFlags[n].val) {
                 s += sprintf(s, " %s", kFlags[n].tag);

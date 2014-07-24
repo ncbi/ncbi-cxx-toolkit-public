@@ -2695,7 +2695,7 @@ static EIO_Status s_Recv(SOCK    sock,
 
         /* success/EOF? */
         if (x_read >= 0  ||
-            (x_read < 0  &&  ((error = SOCK_ERRNO) == SOCK_ENOTCONN    ||
+            (x_read < 0  &&  ((error = SOCK_ERRNO) == SOCK_ENOTCONN    ||  /*NCBI_FAKE_WARNING*/
                               error                == SOCK_ETIMEDOUT   ||
                               error                == SOCK_ENETRESET   ||
                               error                == SOCK_ECONNRESET  ||

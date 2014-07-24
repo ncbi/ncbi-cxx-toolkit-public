@@ -1071,7 +1071,7 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
     {
         class CInPlaceConnIniter : protected CConnIniter
         {
-        } conn_initer;
+        } conn_initer;  /*NCBI_FAKE_WARNING*/
     }
     bool svc = x_IsIdentifier(url);
 
