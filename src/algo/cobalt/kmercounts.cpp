@@ -593,7 +593,7 @@ void CBinaryKmerCounts::Reset(const objects::CSeq_loc& seq,
 
             // if Xaa are found till the end of sequence exit
             if (i >= seq_len - kmer_len + 1) {
-                return;
+                break;
             }
         }
 
