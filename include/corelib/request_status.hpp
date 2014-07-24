@@ -55,6 +55,9 @@ class NCBI_XNCBI_EXPORT CRequestStatus
 {
 public:
     enum ECode {
+        e100_Continue               = 100,
+        e101_SwitchingProtocols     = 101,
+
         e200_Ok                     = 200,
         e201_Created                = 201,
         e202_Accepted               = 202,

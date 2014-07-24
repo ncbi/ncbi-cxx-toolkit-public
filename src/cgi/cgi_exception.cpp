@@ -58,6 +58,8 @@ string CCgiException::GetStdStatusMessage(EStatusCode code)
 {
     switch ( code ) {
     case eStatusNotSet: return "Status not set";
+    case e100_Continue: return "Continue";
+    case e101_SwitchingProtocols: return "Switching Protocols";
     case e200_Ok: return "OK";
     case e201_Created: return "Created";
     case e202_Accepted: return "Accepted";

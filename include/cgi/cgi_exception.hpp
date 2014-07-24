@@ -65,6 +65,9 @@ public:
     enum EStatusCode {
         eStatusNotSet               = 0,   ///< Internal value - code not set
 
+        e100_Continue               = CRequestStatus::e100_Continue,
+        e101_SwitchingProtocols     = CRequestStatus::e101_SwitchingProtocols,
+
         e200_Ok                     = CRequestStatus::e200_Ok,
         e201_Created                = CRequestStatus::e201_Created,
         e202_Accepted               = CRequestStatus::e202_Accepted,
