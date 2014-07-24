@@ -19,8 +19,8 @@ Usage() {
 }
 
 case "`uname -m`" in
-    x86_64 ) bits=64 ; cce=cce ;;
-    *      ) bits=32 ; cce=cc  ;;
+    x86_64 ) arch=intel64 ;;
+    *      ) arch=ia32    ;;
 esac
 
 if ls -d /usr/local/intel/[Cc]* >/dev/null 2>&1; then
@@ -34,9 +34,9 @@ case "$1" in
   8.0         ) search=$intel_root/compiler80/bin                ;;
   [1-9].*.*   ) search=$intel_root/cc*/$1/bin                    ;;
   9* | 10*    ) search=$intel_root/cc*/$1.*/bin                  ;;
-  11*         ) search=$intel_root/Compiler/$1*/*/bin/i*$bits    ;;
+  11*         ) search=$intel_root/Compiler/$1*/*/bin/$arch      ;;
   12*         ) search=$intel_root/Compiler/$1/bin               ;;
-  *13.[15]*   ) search=$intel_root/Compiler/13.5.192/bin/i*$bits ;;
+  *13.[15]*   ) search=$intel_root/Compiler/13.5.192/bin/$arch   ;;
   13* | 2013  ) search=$intel_root/2013/bin                      ;;
   *           ) search=                                          ;;
 esac
@@ -57,22 +57,21 @@ if [ -n "$search" ]; then
 fi
 
 $CXX -V -help >/dev/null 2>&1
-if test "$?" -ne 0 ; then
+status=$?
+if test "$status" -ne 0 ; then
+   if test "$status" -eq 127; then
+      echo "ERROR:  cannot find Intel C++ compiler ($CXX)."
+   else
+      echo "ERROR:  cannot run Intel C++ compiler ($CXX)."
+      echo "Please check license (server) availability."
+   fi
    cat <<EOF
-ERROR:  cannot find Intel C++ compiler ($CXX)
 
-HINT:  if you are at NCBI, try to specify the following:
- Linux:
+HINT:  if you are at NCBI, try to run the following command:
    sh, bash:
-      PATH="$intel_root/$cce/10.0.21/bin:\$PATH"
-      LD_LIBRARY_PATH="$intel_root/$cce/10.0.21/lib:\$LD_LIBRARY_PATH"
-      export PATH LD_LIBRARY_PATH
-      INTEL_LICENSE_FILE="$intel_root/$cce/10.0.21/licenses"
-      export INTEL_LICENSE_FILE
+      . $intel_root/Compiler/13.5.192/bin/iccvars.sh $arch
    tcsh:
-      setenv PATH            $intel_root/$cce/10.0.21/bin:\$PATH
-      setenv LD_LIBRARY_PATH $intel_root/$cce/10.0.21/lib:\$LD_LIBRARY_PATH
-      setenv INTEL_LICENSE_FILE $intel_root/$cce/10.0.21/licenses
+      source $intel_root/Compiler/13.5.192/bin/iccvars.csh $arch
 
 EOF
     exit 1
