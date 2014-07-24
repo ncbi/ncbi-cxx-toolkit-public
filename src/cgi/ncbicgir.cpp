@@ -274,7 +274,10 @@ void CCgiResponse::SetStatus(unsigned int code, const string& reason)
         THROW1_TRACE(runtime_error,
                      "CCgiResponse::SetStatus() -- code too big, exceeds 999");
     }
-    SetHeaderValue(sm_HTTPStatusName, NStr::UIntToString(code) + ' ' + reason);
+    SetHeaderValue(sm_HTTPStatusName, NStr::UIntToString(code) + ' ' +
+        (reason.empty() ?
+        CCgiException::GetStdStatusMessage(CCgiException::EStatusCode(code))
+        : reason));
     CDiagContext::GetRequestContext().SetRequestStatus(code);
 }
 

@@ -117,8 +117,10 @@ public:
     string      GetStatusMessage(void) const
         {
             return m_StatusMessage.empty() ?
-                sx_GetStdStatusMessage(m_StatusCode) : m_StatusMessage;
+                GetStdStatusMessage(m_StatusCode) : m_StatusMessage;
         }
+
+    static string GetStdStatusMessage(EStatusCode code);
 
     NCBI_EXCEPTION_DEFAULT(CCgiException, CException);
 
@@ -133,8 +135,6 @@ protected:
     virtual void x_Assign(const CException& src);
 
 private:
-    static string sx_GetStdStatusMessage(EStatusCode code);
-
     EStatusCode m_StatusCode;
     string      m_StatusMessage;
 };

@@ -54,7 +54,7 @@ void CCgiException::x_Assign(const CException& src)
 }
 
 
-string CCgiException::sx_GetStdStatusMessage(EStatusCode code)
+string CCgiException::GetStdStatusMessage(EStatusCode code)
 {
     switch ( code ) {
     case eStatusNotSet: return "Status not set";
