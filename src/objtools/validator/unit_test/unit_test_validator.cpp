@@ -2101,7 +2101,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         expected_errors[0]->SetAccession(id_str);
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
-        if (id_str.length() == 12 || id_str.length() == 13) {
+        if (id_str.length() == 12 || id_str.length() == 13 || id_str.length() == 14 || id_str.length() == 15) {
             expected_errors.push_back(new CExpectedError(id_str, eDiag_Error, "Inconsistent", "WGS accession should have Mol-info.tech of wgs"));
         }
 
@@ -2149,7 +2149,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
 
-        if (id_str.length() == 12 || id_str.length() == 13) {
+        if (id_str.length() == 12 || id_str.length() == 13 || id_str.length() == 14 || id_str.length() == 15) {
             delete expected_errors[1];
             expected_errors.pop_back();
         }
@@ -2219,7 +2219,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
         scope.RemoveTopLevelSeqEntry(seh);
         unit_test_util::ChangeNucId(entry, bad_id);
         unit_test_util::ChangeProtId(entry, good_prot_id);
-        if (id_str.length() == 12 ||id_str.length() == 13) {
+        if (id_str.length() == 12 ||id_str.length() == 13 ||id_str.length() == 14 ||id_str.length() == 15) {
             SetTech (entry->SetSet().SetSeq_set().front(), CMolInfo::eTech_wgs);
         }
         seh = scope.AddTopLevelSeqEntry(*entry);
