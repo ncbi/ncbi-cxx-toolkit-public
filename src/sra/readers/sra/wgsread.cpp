@@ -478,21 +478,26 @@ CRef<CSeq_id> CWGSSeqIterator::GetGiSeq_id(void) const
 CRef<CSeq_id> CWGSSeqIterator::GetGeneralSeq_id(void) const
 {
     CRef<CSeq_id> id;
-    if ( !GetDb().m_IdPrefixWithVersion.empty() ) {
+    CTempString contig = GetContigName();
+    SIZE_TYPE colon = contig.rfind(':');
+    if ( colon != NPOS ) {
+        id = new CSeq_id;
+        CDbtag& tag = id->SetGeneral();
+        tag.SetDb(contig.substr(0, colon));
+        tag.SetTag().SetStr(contig.substr(colon+1));
+    }
+    else if ( !GetDb().m_IdPrefixWithVersion.empty() && !contig.empty() ) {
         // gnl
-        CTempString str = GetContigName();
-        if ( !str.empty() ) {
-            id = new CSeq_id;
-            CDbtag& tag = id->SetGeneral();
-            string db = "WGS:"+GetDb().m_IdPrefixWithVersion;
-            tag.SetDb(db);
-            db += ':';
-            if ( NStr::StartsWith(str, db) ) {
-                tag.SetTag().SetStr(str.substr(db.size()));
-            }
-            else {
-                tag.SetTag().SetStr(str);
-            }
+        id = new CSeq_id;
+        CDbtag& tag = id->SetGeneral();
+        string db = "WGS:"+GetDb().m_IdPrefixWithVersion;
+        tag.SetDb(db);
+        db += ':';
+        if ( NStr::StartsWith(contig, db) ) {
+            tag.SetTag().SetStr(contig.substr(db.size()));
+        }
+        else {
+            tag.SetTag().SetStr(contig);
         }
     }
     return id;
