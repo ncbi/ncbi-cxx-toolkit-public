@@ -445,16 +445,14 @@ string CGtfRecord::x_MrnaToTranscriptId(
     CMappedFeat mf)
 //  ============================================================================
 {
-    if ( mf.IsSetProduct() ) {
-        string product;
-        if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
-            return product;
-        }
-        return mf.GetProduct().GetId()->GetSeqIdString( true );
-    }
-    else { 
-        return x_GenericTranscriptId( mf );
-    }
+	if (!mf  || !mf.IsSetProduct()) {
+		return x_GenericTranscriptId( mf );
+	}
+	string product;
+	if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
+		return product;
+	}
+	return mf.GetProduct().GetId()->GetSeqIdString( true );
 }
     
 //  =============================================================================
@@ -462,27 +460,23 @@ string CGtfRecord::x_CdsToGeneId(
     CMappedFeat mapped_feature )
 //  ============================================================================
 {
-    try {
-        CMappedFeat gene = x_CdsFeatureToGeneParent( mapped_feature );
-        return x_GeneToGeneId( gene );
-    }
-    catch(...) {
-        return "";
-    } 
+    CMappedFeat gene = x_CdsFeatureToGeneParent( mapped_feature );
+	if (!gene) {
+		return "";
+	}
+    return x_GeneToGeneId( gene );
 }
 
 //  =============================================================================
 string CGtfRecord::x_CdsToTranscriptId(
-    CMappedFeat mapped_feature )
+    CMappedFeat mf )
 //  ============================================================================
 {
-    try {
-        CMappedFeat mrna = x_CdsFeatureToMrnaParent( mapped_feature );
-        return x_MrnaToTranscriptId( mrna );
-    }
-    catch( ... ) {
-        return x_GenericTranscriptId( mapped_feature );
-    }
+    CMappedFeat mrna = x_CdsFeatureToMrnaParent(mf);
+	if (!mrna) {
+		return x_GenericTranscriptId(mf);
+	}
+    return x_MrnaToTranscriptId(mrna);
 }
 
 //  ============================================================================

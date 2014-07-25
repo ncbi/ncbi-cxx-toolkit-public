@@ -249,13 +249,26 @@ bool CGtfWriter::x_WriteFeatureCdsFragments(
     typedef list<CRef<CSeq_interval> > EXONS;
 	typedef EXONS::const_iterator EXONIT;
 
+    const EXONS& cdsExons = cdsLoc.GetPacked_int().Get();
+	int count = 0;
+
+	if (!mRna) {
+		for ( EXONIT cdsIt = cdsExons.begin(); cdsIt != cdsExons.end(); ++cdsIt ) {
+			count++;
+			const CSeq_interval& cdsExon = **cdsIt;
+			CGtfRecord* pRecord = new CGtfRecord(record);
+			pRecord->MakeChildRecord( record, cdsExon);
+			pRecord->SetCdsPhase( cdsExons, cdsLoc.GetStrand() );
+			x_WriteRecord( pRecord );
+		}
+		return true;
+	}
+
 	CRef<CSeq_loc> pRnaLoc(new CSeq_loc(CSeq_loc::e_Mix));
 	pRnaLoc->Add(mRna.GetLocation());
 	pRnaLoc->ChangeToPackedInt();
 	const EXONS& rnaExons = pRnaLoc->GetPacked_int().Get();
 
-    const EXONS& cdsExons = cdsLoc.GetPacked_int().Get();
-	int count = 0;
     for ( EXONIT cdsIt = cdsExons.begin(); cdsIt != cdsExons.end(); ++cdsIt ) {
 		count++;
         const CSeq_interval& cdsExon = **cdsIt;
