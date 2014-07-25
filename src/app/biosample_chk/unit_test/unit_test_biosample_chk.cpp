@@ -54,6 +54,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <common/ncbi_export.h>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 
@@ -321,6 +322,25 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1833)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GP_9113)
+{
+    CBioSource src;
+    src.SetOrg().SetTaxname("a");
+    CBioSource smpl;
+    smpl.SetOrg().SetTaxname("a");
+    smpl.SetOrg().SetTaxId(123);
+
+    try {
+        src.UpdateWithBioSample(smpl, true);
+        BOOST_CHECK_EQUAL(src.GetOrg().GetDb().front()->GetTag().GetId(), 123);
+    } catch (CException& e) {
+        BOOST_CHECK_EQUAL("Unexpected exception", e.GetMsg());
+    }
+
+    
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_FuzzyStrainMatch)
 {
     BOOST_CHECK_EQUAL(COrgMod::FuzzyStrainMatch("abc", "ABC"), true);
@@ -330,6 +350,37 @@ BOOST_AUTO_TEST_CASE(Test_FuzzyStrainMatch)
     BOOST_CHECK_EQUAL(COrgMod::FuzzyStrainMatch("a/b d", "AB:C"), false);
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_1836)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("Porphyromonas sp. KLE 1280");
+    CRef<CDbtag> taxid(new CDbtag());
+    taxid->SetDb("taxon");
+    taxid->SetTag().SetId(997829);
+    src->SetOrg().SetDb().push_back(taxid);
+    CRef<COrgMod> m1(new COrgMod());
+    m1->SetSubtype(COrgMod::eSubtype_strain);
+    m1->SetSubname("KLE 1280");
+    src->SetOrg().SetOrgname().SetMod().push_back(m1);
+
+    CRef<CBioSource> smpl(new CBioSource());
+    smpl->Assign(*src);
+
+    CRef<CDbtag> hmp(new CDbtag());
+    hmp->SetDb("HMP");
+    hmp->SetTag().SetId(1121);
+    src->SetOrg().SetDb().push_back(hmp);
+
+    try {
+        src->UpdateWithBioSample(*smpl, false);
+        BOOST_CHECK_EQUAL(src->GetOrg().GetDb().size(), 2);
+    } catch (CException& e) {
+        BOOST_CHECK_EQUAL("Unexpected exception", e.GetMsg());
+    }
+
+    
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

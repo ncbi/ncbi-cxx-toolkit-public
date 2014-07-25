@@ -650,6 +650,12 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
     ITERATE(TFieldDiffList, it, diffs) {
         if (NStr::EqualNocase((*it)->GetFieldName(), "Organism Name")) {
             SetOrg().SetTaxname((*it)->GetSampleVal());
+        } else if (NStr::EqualNocase((*it)->GetFieldName(), "Tax ID")) {
+            try {
+                SetOrg().SetTaxId(atoi((*it)->GetSampleVal().c_str()));
+            } catch (...) {
+                NCBI_THROW(CException, eUnknown, "Non-integer Tax ID value");
+            }
         } else {
             try {
                 COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue((*it)->GetFieldName());
