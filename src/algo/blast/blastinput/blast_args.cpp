@@ -217,9 +217,9 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
-    arg_desc.AddFlag(kArgSumStats,
-                     "Use sum statistics",
-                     true);
+    arg_desc.AddOptionalKey(kArgSumStats, "bool_value",
+                     	 	"Use sum statistics",
+                     	 	CArgDescriptions::eBoolean);
 
     arg_desc.SetCurrentGroup("");
 }
@@ -290,8 +290,8 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         }
     }
 
-    if (args[kArgSumStats]) {
-        opt.SetSumStatisticsMode(true);
+    if (args.Exist(kArgSumStats) && args[kArgSumStats]) {
+        opt.SetSumStatisticsMode(args[kArgSumStats].AsBoolean());
     }
 }
 
@@ -898,9 +898,11 @@ CLargestIntronSizeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgMaxIntronLength, "length", 
                     "Length of the largest intron allowed in a translated "
                     "nucleotide sequence when linking multiple distinct "
-                    "alignments (a negative value disables linking)",
+                    "alignments",
                     CArgDescriptions::eInteger,
                     NStr::IntToString(kDfltArgMaxIntronLength));
+    arg_desc.SetConstraint(kArgMaxIntronLength,
+                           new CArgAllowValuesGreaterThanOrEqual(0));
     arg_desc.SetCurrentGroup("");
 }
 
@@ -912,12 +914,9 @@ CLargestIntronSizeArgs::ExtractAlgorithmOptions(const CArgs& args,
         return;
     }
 
-    if (args[kArgMaxIntronLength].AsInteger() < 0) {
-        opt.SetSumStatisticsMode(false);
-    } else {
-        opt.SetSumStatisticsMode();
-        opt.SetLongestIntronLength(args[kArgMaxIntronLength].AsInteger());
-    }
+    // sum statistics are defauled to be on unless a cmdline option is set
+    opt.SetLongestIntronLength(args[kArgMaxIntronLength].AsInteger());
+   
 }
 
 void
