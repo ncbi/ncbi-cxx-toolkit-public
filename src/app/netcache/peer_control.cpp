@@ -175,6 +175,7 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
     }
     m_HostIPname = CTaskServer::IPToString(m_HostIP);
     m_HostAlias = CNCDistributionConf::CreateHostAlias(m_HostIP, Uint4(m_SrvId));
+    m_HostProtocol = 0;
 }
 
 void
@@ -189,18 +190,30 @@ CNCPeerControl::RegisterConnError(void)
         m_ThrottleStart = CSrvTime::Current().AsUSec();
         ++m_CntNWThrottles;
     }
+    m_HostProtocol = 0;
 }
 
 void
 CNCPeerControl::RegisterConnSuccess(void)
 {
-    CMiniMutexGuard guard(m_ObjLock);
-    m_MaybeThrottle = false;
-    m_InThrottle = false;
-    m_FirstNWErrTime = 0;
-    m_CntNWErrors = 0;
-    m_CntNWThrottles = 0;
-    m_ThrottleStart = 0;
+    bool ask = false;
+    {
+        CMiniMutexGuard guard(m_ObjLock);
+        m_MaybeThrottle = false;
+        m_InThrottle = false;
+        m_FirstNWErrTime = 0;
+        m_CntNWErrors = 0;
+        m_CntNWThrottles = 0;
+        m_ThrottleStart = 0;
+        ask = m_HostProtocol == 0;
+    }
+    if (ask) {
+// the answer will come some time in the future
+// until that, we use backward compatible protocol
+        // ask once only
+        m_HostProtocol = 1;
+        GetBGConn()->AskPeerVersion();
+    }
 }
 
 bool
@@ -225,6 +238,7 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
                     m_HostIP = host;
                     m_HostIPname = CTaskServer::IPToString(m_HostIP);
                     m_HostAlias = CNCDistributionConf::CreateHostAlias(m_HostIP, Uint4(m_SrvId));
+                    m_HostProtocol = 0;
                     SRV_LOG(Warning, "IP address change: host "
                         << CNCDistributionConf::GetFullPeerName(m_SrvId));
                 }
@@ -793,6 +807,13 @@ CNCPeerControl::RegisterSyncStop(bool is_passive,
 void CNCPeerControl::AbortInitialSync(void)
 {
     m_FirstNWErrTime = 1;
+}
+
+void CNCPeerControl::SetHostProtocol(Uint8 ver)
+{
+//    AtomicCAS(m_HostProtocol, 0, ver);
+    ver = max((Uint8)1, ver);
+    m_HostProtocol = ver;
 }
 
 bool

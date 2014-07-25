@@ -326,6 +326,14 @@ CNCActiveHandler::SearchMeta(CRequestContext* cmd_ctx, const string& raw_key)
     x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
+void CNCActiveHandler::AskPeerVersion(void)
+{
+    m_CurCmd = ePeerVersion;
+    m_CmdToSend.resize(0);
+    m_CmdToSend += "VERSION";
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
+}
+
 void
 CNCActiveHandler::CopyPurge(CRequestContext* cmd_ctx,
                              const string& cache_name,
@@ -1939,6 +1947,35 @@ CNCActiveHandler::x_ReadSyncProInfoAnswer(void)
     return NULL;
 }
 
+CNCActiveHandler::State
+CNCActiveHandler::x_ReadPeerVersion(void)
+{
+    Uint8 ver = 0;
+    try {
+        list<CTempString> tokens;
+        NStr::Split(m_Response, "&", tokens);
+        ITERATE( list<CTempString>, t, tokens) {
+            if (NStr::StartsWith(*t, "protocol_version")) {
+                CTempString one, two;
+                if (NStr::SplitInTwo(*t, "=", one, two)) {
+                    list<CTempString> v;
+                    NStr::Split(two, ".", v);
+                    if (v.size() >= 3) {
+                        for (int i=0; i<3; ++i) {
+                            ver = ver * 100 + NStr::StringToUInt8( v.front());
+                            v.pop_front();
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    } catch (...) {
+    }
+    m_Peer->SetHostProtocol(ver);
+    return &Me::x_FinishCommand;
+}
+
 void
 CNCActiveHandler::x_DoProlongOur(void)
 {
@@ -2048,6 +2085,8 @@ CNCActiveHandler::x_WaitOneLineAnswer(void)
         return &Me::x_ReadSyncGetHeader;
     case eSyncProInfo:
         return &Me::x_ReadSyncProInfoAnswer;
+    case ePeerVersion:
+        return &Me::x_ReadPeerVersion;
     default:
         abort();
     }

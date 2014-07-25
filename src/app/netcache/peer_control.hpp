@@ -151,6 +151,7 @@ public:
     static CAtomicCounter   sm_CopyReqsRejected;
 
     void AbortInitialSync(void);
+    void SetHostProtocol(Uint8 ver);
 
 private:
     CNCPeerControl(Uint8 srv_id);
@@ -183,6 +184,7 @@ private:
     string m_HostIPname;
     string m_Hostname;
     Uint4 m_HostAlias;
+    Uint8 m_HostProtocol;
     CMiniMutex m_ObjLock;
     TNCPeerConnsList m_PooledConns;
     TNCPeerConnsList m_BusyConns;

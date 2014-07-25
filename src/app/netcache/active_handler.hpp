@@ -127,6 +127,7 @@ public:
     bool IsBlobExists(void);
     const SNCBlobSummary& GetBlobSummary(void);
 
+    void AskPeerVersion(void);
     void CopyPurge(CRequestContext* cmd_ctx,
                  const string& cache,
                  const CSrvTime& when);
@@ -266,7 +267,8 @@ private:
         eSyncBList,
         eSyncGet,
         eSyncProlongPeer,
-        eSyncProInfo
+        eSyncProInfo,
+        ePeerVersion
     };
 
 
@@ -321,6 +323,7 @@ private:
     State x_ReadSyncGetAnswer(void);
     State x_ReadBlobData(void);
     State x_ReadSyncProInfoAnswer(void);
+    State x_ReadPeerVersion(void);
     State x_ExecuteProInfoCmd(void);
 
     void x_SetSlotAndBucketAndVerifySlot(Uint2 slot);
