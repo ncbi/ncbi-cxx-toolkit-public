@@ -211,8 +211,11 @@ CNCPeerControl::RegisterConnSuccess(void)
 // the answer will come some time in the future
 // until that, we use backward compatible protocol
         // ask once only
-        m_HostProtocol = 1;
-        GetBGConn()->AskPeerVersion();
+        CNCActiveHandler* conn = GetBGConn();
+        if (conn) {
+            m_HostProtocol = 1;
+            conn->AskPeerVersion();
+        }
     }
 }
 
