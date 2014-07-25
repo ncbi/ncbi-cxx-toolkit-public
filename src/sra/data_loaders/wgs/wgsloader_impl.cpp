@@ -88,8 +88,7 @@ NCBI_PARAM_DEF_EX(bool, WGS_LOADER, MASTER_DESCR, true,
 
 static bool GetMasterDescrParam(void)
 {
-    static NCBI_PARAM_TYPE(WGS_LOADER, MASTER_DESCR) s_Value;
-    return s_Value.Get();
+    return NCBI_PARAM_TYPE(WGS_LOADER, MASTER_DESCR)().Get();
 }
 
 
@@ -196,7 +195,8 @@ bool CWGSBlobId::operator==(const CBlobId& id) const
 CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     const CWGSDataLoader::SLoaderParams& params)
     : m_WGSVolPath(params.m_WGSVolPath),
-      m_FoundFiles(GetGCSize())
+      m_FoundFiles(GetGCSize()),
+      m_AddWGSMasterDescr(GetMasterDescrParam())
 {
     if ( m_WGSVolPath.empty() && params.m_WGSFiles.empty() ) {
         m_WGSVolPath = GetWGSVolPath();
@@ -560,6 +560,7 @@ void CWGSFileInfo::x_Initialize(CWGSDataLoader_Impl& impl,
 {
     m_WGSDb = CWGSDb(impl.m_Mgr, prefix, impl.m_WGSVolPath);
     m_WGSPrefix = m_WGSDb->GetIdPrefixWithVersion();
+    m_AddWGSMasterDescr = impl.GetAddWGSMasterDescr();
     for ( int i = 0; i < 2; ++i ) {
         m_FirstBadRowId[i] = 0;
     }
@@ -573,7 +574,7 @@ void CWGSFileInfo::x_Initialize(CWGSDataLoader_Impl& impl,
 
 void CWGSFileInfo::x_InitMasterDescr(void)
 {
-    if ( !GetMasterDescrParam() ) {
+    if ( !m_AddWGSMasterDescr ) {
         return;
     }
     CRef<CSeq_id> id = m_WGSDb->GetMasterSeq_id();

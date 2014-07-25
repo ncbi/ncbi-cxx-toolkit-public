@@ -106,6 +106,9 @@ public:
     virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     virtual CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
 
+    bool GetAddWGSMasterDescr(void) const;
+    void SetAddWGSMasterDescr(bool flag);
+
 private:
     typedef CParamLoaderMaker<CWGSDataLoader, SLoaderParams> TMaker;
     friend class CParamLoaderMaker<CWGSDataLoader, SLoaderParams>;

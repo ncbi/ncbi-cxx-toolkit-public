@@ -270,6 +270,18 @@ CSeq_inst::TMol CWGSDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
 }
 
 
+bool CWGSDataLoader::GetAddWGSMasterDescr(void) const
+{
+    return m_Impl->GetAddWGSMasterDescr();
+}
+
+
+void CWGSDataLoader::SetAddWGSMasterDescr(bool flag)
+{
+    m_Impl->SetAddWGSMasterDescr(flag);
+}
+
+
 END_SCOPE(objects)
 
 // ===========================================================================

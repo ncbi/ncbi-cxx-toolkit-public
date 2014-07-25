@@ -112,6 +112,7 @@ protected:
 
     string m_WGSPrefix;
     mutable CMutex m_WGSMutex;
+    bool m_AddWGSMasterDescr;
     CWGSDb m_WGSDb;
     Uint8 m_FirstBadRowId[2];
 };
@@ -160,6 +161,16 @@ public:
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& idh);
 
+    bool GetAddWGSMasterDescr(void) const
+        {
+            return m_AddWGSMasterDescr;
+        }
+
+    void SetAddWGSMasterDescr(bool flag)
+        {
+            m_AddWGSMasterDescr = flag;
+        }
+
 protected:
     friend class CWGSFileInfo;
 
@@ -179,6 +190,7 @@ private:
     string  m_WGSVolPath;
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
+    bool m_AddWGSMasterDescr;
 };
 
 END_SCOPE(objects)
