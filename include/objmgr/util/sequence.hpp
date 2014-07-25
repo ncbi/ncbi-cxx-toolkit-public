@@ -856,9 +856,18 @@ public:
         const CSeq_gap & seq_gap,
         SGapModText & out_gap_mod_text );
 
-private:
+protected:
     CNcbiOstream&       m_Out;
     auto_ptr<sequence::CDeflineGenerator> m_Gen;
+
+    virtual void x_WriteSeqIds    ( const CBioseq& bioseq,
+                                    const CSeq_loc* location);
+    virtual void x_WriteModifiers ( const CBioseq_Handle & handle );
+    virtual void x_WriteSeqTitle  ( const CBioseq& bioseq,
+                                    CScope* scope,
+                                    const string& custom_title);
+
+private:
     CConstRef<CSeq_loc> m_SoftMask;
     CConstRef<CSeq_loc> m_HardMask;
     TSeqPos             m_Width;
@@ -870,13 +879,6 @@ private:
     TCharBuf            m_Dashes, m_LC_Ns, m_LC_Xs, m_UC_Ns, m_UC_Xs;
 
     sequence::CDeflineGenerator::TUserFlags x_GetTitleFlags(void) const;
-
-    void x_WriteSeqIds    ( const CBioseq& bioseq,
-                            const CSeq_loc* location);
-    void x_WriteModifiers ( const CBioseq_Handle & handle );
-    void x_WriteSeqTitle  ( const CBioseq& bioseq,
-                            CScope* scope,
-                            const string& custom_title);
 
     void x_PrintStringModIfNotDup(
         bool *seen, const CTempString & key, const CTempString & value );
