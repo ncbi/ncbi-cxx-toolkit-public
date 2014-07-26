@@ -579,7 +579,7 @@ BRG	s	University of Guyana, Biology Department
 BRGE	s	Laboratoire de Genetique des Plantes Superieures
 BRH	s	Ministry of Natural Resources, Local Government, and the Environment
 BRI	s	Brisbane Botanic Gardens Mt Coot-tha
-BRIP	sc	Department of Primary Industries
+BRIP	sc	The Plant Pathology Herbarium, Department of Agriculture, Fisheries and Forestry
 BRIST	s	University of Bristol, Botany Department
 BRISTM	s	Bristol Museum and Art Gallery
 BRIT	s	Botanical Research Institute of Texas
@@ -6180,6 +6180,7 @@ UK<USA-KY>	s	University of Kentucky
 UKEN	s	University of Kentucky
 UKKP	c	Universiti Kebangsaan Kultur Perubatan
 UKKY	s	University of Kunming
+UKM<DEU>	s	Universitaetsklinikum Muenster
 UKMB	s	Universiti Kebangsaan Malaysia, Botany Department
 UKMHC	s	Universiti Kebangsaan Malaysia
 UKMHC:HC	s	Universiti Kebangsaan Malaysia, Herpetological Collection
