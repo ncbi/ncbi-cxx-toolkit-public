@@ -167,8 +167,6 @@ bool CGtfWriter::x_WriteFeatureMrna(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    m_exonMap.clear();
-
     CRef<CGtfRecord> pMrna( new CGtfRecord( context ) );
     if ( ! pMrna->AssignFromAsn( mf ) ) {
         return false;
@@ -190,7 +188,6 @@ bool CGtfWriter::x_WriteFeatureMrna(
             CRef<CGtfRecord> pExon( 
                 new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
             pExon->MakeChildRecord( *pMrna, subint, uExonNumber );
-			m_exonMap[uExonNumber++] = *it;
             x_WriteRecord( pExon );
         }
     }

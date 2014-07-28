@@ -100,11 +100,6 @@ protected:
         CRef< CSeq_loc >& ) const;
 
     SAnnotSelector x_GetAnnotSelector();
-
-    typedef map< int, CRef< CSeq_interval > > TExonMap;
-    typedef TExonMap::const_iterator TExonCit;
-    TExonMap m_exonMap;
-//    unsigned int m_uFlags;
 };
 
 END_objects_SCOPE

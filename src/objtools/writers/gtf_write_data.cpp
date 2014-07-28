@@ -259,6 +259,19 @@ bool CGtfRecord::x_AssignAttributesFromAsnExtended(
 		}
         break;
 
+//	case CSeq_feat::TData::eSubtype_C_region:
+//	case CSeq_feat::TData::eSubtype_D_segment:
+//	case CSeq_feat::TData::eSubtype_J_segment:
+//	case CSeq_feat::TData::eSubtype_V_segment: {
+//        m_strGeneId = x_MrnaToGeneId(mf);
+//        m_strTranscriptId = x_MrnaToTranscriptId(mf);
+//
+//        string strProduct = x_MrnaToProduct(mf);
+//        if ( ! strProduct.empty() ) {
+//            SetAttribute("product", strProduct); 
+//        }
+//		break;
+//	}
     case CSeq_feat::TData::eSubtype_cdregion: {
 
             m_strGeneId = x_CdsToGeneId(mf);
