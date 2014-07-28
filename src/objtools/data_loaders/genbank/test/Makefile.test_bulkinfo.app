@@ -26,4 +26,6 @@ CHECK_CMD = all_readers.sh test_bulkinfo -type length -idlist bad_len.ids /CHECK
 CHECK_CMD = all_readers.sh test_bulkinfo -type type -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_type
 CHECK_CMD = all_readers.sh test_bulkinfo -type state -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_state
 
+CHECK_TIMEOUT = 400
+
 WATCHERS = vasilche
