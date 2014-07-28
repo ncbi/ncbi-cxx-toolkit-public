@@ -382,5 +382,42 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1836)
     
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_1865)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("Salmo salar");
+
+    CRef<CBioSource> smpl(new CBioSource());
+    smpl->Assign(*src);
+    CRef<COrgMod> om(new COrgMod());
+    om->SetSubtype(COrgMod::eSubtype_strain);
+    om->SetSubname("missing");
+    smpl->SetOrg().SetOrgname().SetMod().push_back(om);
+
+    try {
+        src->UpdateWithBioSample(*smpl, false);
+        BOOST_CHECK_EQUAL(src->GetOrg().IsSetOrgMod(), false);
+    } catch (CException& e) {
+        BOOST_CHECK_EQUAL("Unexpected exception", e.GetMsg());
+    }
+
+    CRef<COrgMod> om2(new COrgMod());
+    om2->SetSubtype(COrgMod::eSubtype_strain);
+    om2->SetSubname("wild");
+    src->SetOrg().SetOrgname().SetMod().push_back(om2);
+
+    try {
+        // this should delete the strain on src
+        src->UpdateWithBioSample(*smpl, true);
+        BOOST_CHECK_EQUAL(src->GetOrg().IsSetOrgMod(), false);
+    } catch (CException& e) {
+        BOOST_CHECK_EQUAL("Unexpected exception", e.GetMsg());
+    }
+
+    
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

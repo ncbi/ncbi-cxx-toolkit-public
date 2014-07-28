@@ -766,7 +766,7 @@ CBioSource::TNameValList CBioSource::x_GetOrgModNameValPairs() const
     TNameValList list;
     if (IsSetOrgMod()) {
         ITERATE(COrgName::TMod, it, GetOrg().GetOrgname().GetMod()) {
-            if ((*it)->IsSetSubname() && (*it)->IsSetSubtype()) {
+            if ((*it)->IsSetSubname() && (*it)->IsSetSubtype() && !IsStopWord((*it)->GetSubname())) {
                 string label;
                 if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
                     label = kOrgModNote;
