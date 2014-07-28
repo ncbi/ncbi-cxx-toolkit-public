@@ -34,6 +34,7 @@
 
 #include "dbapi_driver_sample_base.hpp"
 #include <corelib/ncbiargs.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -63,24 +64,15 @@ CDbapiDriverSampleApp::~CDbapiDriverSampleApp()
 CDbapiDriverSampleApp::EServerType
 CDbapiDriverSampleApp::GetServerType(void) const
 {
-    if ( GetServerName() == "STRAUSS" ||
-         GetServerName() == "MOZART" ||
-         GetServerName() == "SCHUMANN" ||
-         GetServerName() == "CLEMENTI" ||
-         GetServerName() == "DBAPI_DEV1" ||
-         GetServerName() == "OBERON" ||
-         GetServerName() == "TAPER" ||
-         GetServerName() == "THALBERG" ||
-         NStr::StartsWith(GetServerName(), "BARTOK") ) {
+    switch (CCPPToolkitConnParams::GetServerType(GetServerName())) {
+    case CCPPToolkitConnParams::eSybaseSQLServer:
+    case CCPPToolkitConnParams::eSybaseOpenServer:
         return eSybase;
-    } else if (NStr::StartsWith(GetServerName(), "MS_DEV") ||
-               NStr::StartsWith(GetServerName(), "MSSQL") ||
-               NStr::StartsWith(GetServerName(), "MSDEV")
-               ) {
+    case CCPPToolkitConnParams::eMSSqlServer:
         return eMsSql;
+    default:
+        return eUnknown;
     }
-
-    return eUnknown;
 }
 
 

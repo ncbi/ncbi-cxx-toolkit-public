@@ -742,6 +742,11 @@ CCPPToolkitConnParams::GetServerType(const CTempString& server_name)
         || NStr::CompareNocase(server_name, 0, 9, "DBAPI_DEV") == 0
         || NStr::CompareNocase(server_name, 0, 8, "SCHUBERT") == 0
         || NStr::CompareNocase(server_name, 0, 9, "DBAPI_SYB") == 0
+        || NStr::CompareNocase(server_name, 0, 7, "STRAUSS") == 0
+        || NStr::CompareNocase(server_name, 0, 6, "MOZART") == 0
+        || NStr::CompareNocase(server_name, 0, 6, "OBERON") == 0
+        || NStr::CompareNocase(server_name, 0, 8, "THALBERG") == 0
+        || NStr::CompareNocase(server_name, 0, 6, "BARTOK") == 0
         )
     {
         return eSybaseSQLServer;
