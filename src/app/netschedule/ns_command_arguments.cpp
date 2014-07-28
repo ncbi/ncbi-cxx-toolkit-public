@@ -49,7 +49,6 @@ void SNSCommandArguments::x_Reset()
     start_after_job_id  = 0;
     count               = 0;
     client_data_version = -1;
-    job_status          = CNetScheduleAPI::eJobNotFound;
 
     cmd.erase();
     auth_token.erase();
@@ -67,7 +66,7 @@ void SNSCommandArguments::x_Reset()
     qname.erase();
     qclass.erase();
     sid.erase();
-    job_status_string.erase();
+    job_statuses_string.erase();
     aff_to_add.erase();
     aff_to_del.erase();
     start_after.erase();
@@ -87,6 +86,8 @@ void SNSCommandArguments::x_Reset()
     effective = false;
     pullback = false;
     blacklist = true;
+
+    job_statuses.clear();
 
     return;
 }
@@ -298,8 +299,18 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
             break;
         case 's':
             if (key == "status") {
-                job_status = CNetScheduleAPI::StringToStatus(val);
-                job_status_string = val;
+                job_statuses_string = val;
+
+                if (!job_statuses_string.empty()) {
+                    list<string>    statuses;
+                    NStr::Split(job_statuses_string, ",", statuses,
+                                NStr::eNoMergeDelims);
+
+                    for (list<string>::const_iterator k = statuses.begin();
+                         k != statuses.end(); ++k )
+                        job_statuses.push_back(
+                                        CNetScheduleAPI::StringToStatus(*k));
+                }
             }
             else if (key == "sid") {
                 sid = NStr::ParseEscapes(val);

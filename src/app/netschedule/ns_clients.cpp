@@ -89,7 +89,8 @@ void CNSClientId::Update(unsigned int            peer_addr,
 
         // The only recognized value for the moment is 'admin'
         if (m_ClientType != "admin")
-            LOG_POST(Warning << "Unsupported client_type value at the "
+            LOG_POST(Message << Warning <<
+                                "Unsupported client_type value at the "
                                 "handshake phase. Supported value is: admin. "
                                 "Received: " << m_ClientType);
     }

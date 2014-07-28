@@ -291,7 +291,8 @@ bool CNetScheduleDApp::x_WritePid(void) const
         string      pid_file = args[kPidFileArgName].AsString();
 
         if (pid_file == "-") {
-            LOG_POST(Warning << "PID file cannot be standard output and only "
+            LOG_POST(Message << Warning <<
+                                "PID file cannot be standard output and only "
                                 "file name is accepted. Ignore and continue.");
             return false;
         }
@@ -300,7 +301,7 @@ bool CNetScheduleDApp::x_WritePid(void) const
         if (access(pid_file.c_str(), F_OK) == 0) {
             // File exists
             if (access(pid_file.c_str(), W_OK) != 0) {
-                LOG_POST(Warning << "PID file is not writable. "
+                LOG_POST(Message << Warning << "PID file is not writable. "
                                     "Ignore and continue.");
                 return false;
             }
@@ -309,7 +310,8 @@ bool CNetScheduleDApp::x_WritePid(void) const
         // File does not exist or write access is granted
         FILE *  f = fopen(pid_file.c_str(), "w");
         if (f == NULL) {
-            LOG_POST(Warning << "Error opening PID file for writing. "
+            LOG_POST(Message << Warning <<
+                                "Error opening PID file for writing. "
                                 "Ignore and continue.");
             return false;
         }

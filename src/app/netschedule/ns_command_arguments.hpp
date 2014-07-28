@@ -52,7 +52,6 @@ struct SNSCommandArguments
     unsigned int    start_after_job_id;
     unsigned int    count;
     int             client_data_version;
-    TJobStatus      job_status;
 
     string          cmd;
     string          auth_token;
@@ -70,7 +69,7 @@ struct SNSCommandArguments
     string          qname;
     string          qclass;
     string          sid;
-    string          job_status_string;
+    string          job_statuses_string;
     string          aff_to_add;
     string          aff_to_del;
     string          start_after;
@@ -90,6 +89,8 @@ struct SNSCommandArguments
     bool            effective;
     bool            pullback;
     bool            blacklist;  // RETURN2 only: add or not to blacklist
+
+    vector<TJobStatus>  job_statuses;
 
     void AssignValues(TNSProtoParams &           params,
                       const string &             command,

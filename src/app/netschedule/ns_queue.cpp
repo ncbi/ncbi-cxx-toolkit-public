@@ -1006,8 +1006,8 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
             LOG_POST(Message << Warning << "Client '" << client.GetNode()
                              << "' deletes unknown affinity '"
                              << *k << "'. Ignored.");
-            msgs.push_back("eAffinityNotFound:unknown affinity to delete: " +
-                           *k);
+            msgs.push_back("eAffinityNotFound:"
+                           "unknown affinity to delete: " + *k);
             continue;
         }
 
@@ -1942,45 +1942,73 @@ CQueue::x_GetEstimatedJobLifetime(unsigned int   job_id,
 }
 
 
-list<string>
-CQueue::CancelGroupAndAffinity(const CNSClientId &  client,
-                               const string &       group,
-                               const string &       affinity_token,
-                               bool                 logging)
+void
+CQueue::CancelSelectedJobs(const CNSClientId &         client,
+                           const string &              group,
+                           const string &              aff_token,
+                           const vector<TJobStatus> &  job_statuses,
+                           bool                        logging,
+                           vector<string> &            warnings)
 {
-    list<string>        warnings;
-    TNSBitVector        group_jobs;
-    TNSBitVector        affinity_jobs;
+    if (group.empty() && aff_token.empty() && job_statuses.empty()) {
+        // This possible if there was only 'Canceled' status and
+        // it was filtered out. A warning for this case is already produced
+        return;
+    }
+
+    TNSBitVector        jobs_to_cancel;
+    vector<TJobStatus>  statuses;
+
+    if (job_statuses.empty()) {
+        // All statuses
+        statuses.push_back(CNetScheduleAPI::ePending);
+        statuses.push_back(CNetScheduleAPI::eRunning);
+        statuses.push_back(CNetScheduleAPI::eCanceled);
+        statuses.push_back(CNetScheduleAPI::eFailed);
+        statuses.push_back(CNetScheduleAPI::eDone);
+        statuses.push_back(CNetScheduleAPI::eReading);
+        statuses.push_back(CNetScheduleAPI::eConfirmed);
+        statuses.push_back(CNetScheduleAPI::eReadFailed);
+    }
+    else {
+        // The user specified statuses explicitly
+        // The list validity is checked by the caller.
+        statuses = job_statuses;
+    }
+
     CFastMutexGuard     guard(m_OperationLock);
+    jobs_to_cancel = m_StatusTracker.GetJobs(statuses);
 
     if (!group.empty()) {
         try {
-            group_jobs = m_GroupRegistry.GetJobs(group);
-        } catch (...)
-        {
+            jobs_to_cancel &= m_GroupRegistry.GetJobs(group);
+        } catch (...) {
+            jobs_to_cancel.clear();
             warnings.push_back("eGroupNotFound:job group " + group +
                                " is not found");
+            if (logging)
+                LOG_POST(Message << Warning <<
+                         "Job group '" + group +
+                         "' is not found. No jobs are canceled.");
         }
     }
 
-    if (!affinity_token.empty()) {
-        unsigned int    aff_id = m_AffinityRegistry.GetIDByToken(
-                                                            affinity_token);
-        if (aff_id == 0)
-            warnings.push_back("eAffinityNotFound:" + affinity_token +
+    if (!aff_token.empty()) {
+        unsigned int    aff_id = m_AffinityRegistry.GetIDByToken(aff_token);
+        if (aff_id == 0) {
+            jobs_to_cancel.clear();
+            warnings.push_back("eAffinityNotFound:" + aff_token +
                                " is not found");
+            if (logging)
+                LOG_POST(Message << Warning <<
+                         "Affinity '" + aff_token +
+                         "' is not found. No jobs are canceled.");
+        }
         else
-            affinity_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
+            jobs_to_cancel &= m_AffinityRegistry.GetJobsWithAffinity(aff_id);
     }
 
-    if (!group.empty() && !affinity_token.empty())
-        x_CancelJobs(client, group_jobs & affinity_jobs, logging);
-    else if (!group.empty())
-        x_CancelJobs(client, group_jobs, logging);
-    else
-        x_CancelJobs(client, affinity_jobs, logging);
-
-    return warnings;
+    x_CancelJobs(client, jobs_to_cancel, logging);
 }
 
 
@@ -3437,19 +3465,21 @@ string CQueue::PrintJobDbStat(const CNSClientId &  client,
 }
 
 
-string CQueue::PrintAllJobDbStat(const CNSClientId &  client,
-                                 const string &       group,
-                                 TJobStatus           job_status,
-                                 unsigned int         start_after_job_id,
-                                 unsigned int         count)
+string CQueue::PrintAllJobDbStat(const CNSClientId &         client,
+                                 const string &              group,
+                                 const string &              aff_token,
+                                 const vector<TJobStatus> &  job_statuses,
+                                 unsigned int                start_after_job_id,
+                                 unsigned int                count,
+                                 bool                        logging)
 {
     m_ClientsRegistry.MarkAsAdmin(client);
 
     // Form a bit vector of all jobs to dump
-    vector<CNetScheduleAPI::EJobStatus>     statuses;
-    TNSBitVector                            jobs_to_dump;
+    vector<TJobStatus>      statuses;
+    TNSBitVector            jobs_to_dump;
 
-    if (job_status == CNetScheduleAPI::eJobNotFound) {
+    if (job_statuses.empty()) {
         // All statuses
         statuses.push_back(CNetScheduleAPI::ePending);
         statuses.push_back(CNetScheduleAPI::eRunning);
@@ -3461,20 +3491,41 @@ string CQueue::PrintAllJobDbStat(const CNSClientId &  client,
         statuses.push_back(CNetScheduleAPI::eReadFailed);
     }
     else {
-        // The user specified one state explicitly
-        statuses.push_back(job_status);
+        // The user specified statuses explicitly
+        // The list validity is checked by the caller.
+        statuses = job_statuses;
     }
 
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
-
         jobs_to_dump = m_StatusTracker.GetJobs(statuses);
-    }}
 
-    // Check if a certain group has been specified
-    if (!group.empty())
-        jobs_to_dump &= m_GroupRegistry.GetJobs(group);
+        // Check if a certain group has been specified
+        if (!group.empty()) {
+            try {
+                jobs_to_dump &= m_GroupRegistry.GetJobs(group);
+            } catch (...) {
+                jobs_to_dump.clear();
+                if (logging)
+                    LOG_POST(Message << Warning <<
+                             "Job group '" + group +
+                             "' is not found. No jobs to dump.");
+            }
+        }
+
+        if (!aff_token.empty()) {
+            unsigned int    aff_id = m_AffinityRegistry.GetIDByToken(aff_token);
+            if (aff_id == 0) {
+                jobs_to_dump.clear();
+                if (logging)
+                    LOG_POST(Message << Warning <<
+                             "Affinity '" + aff_token +
+                             "' is not found. No jobs to dump.");
+            } else
+                jobs_to_dump &= m_AffinityRegistry.GetJobsWithAffinity(aff_id);
+        }
+    }}
 
     return x_DumpJobs(jobs_to_dump, start_after_job_id, count);
 }
@@ -3484,6 +3535,9 @@ string CQueue::x_DumpJobs(const TNSBitVector &    jobs_to_dump,
                           unsigned int            start_after_job_id,
                           unsigned int            count)
 {
+    if (!jobs_to_dump.any())
+        return "";
+
     // Skip the jobs which should not be dumped
     TNSBitVector::enumerator    en(jobs_to_dump.first());
     while (en.valid() && *en <= start_after_job_id)

@@ -161,7 +161,7 @@ class Scenario1303( TestBase ):
         jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
                                                             "node", "session" )
         self.ns.putJob( 'TEST', jobID, authToken, 0,
-                         'blah-out', 'node', 'session' )
+                        'blah-out', 'node', 'session' )
 
         output = execAny( ns_client, "READ" )
         values = parse_qs( output, True, True )
@@ -1354,3 +1354,215 @@ class Scenario1326( TestBase ):
         if "group: 1 ('group1')" not in output:
             raise Exception( "Unexpected group of the job" )
         return True
+
+
+class Scenario1400( TestBase ):
+    " Scenario 1400 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "DUMP of jobs with certain affinity"
+
+    def execute( self ):
+        " Returns True if successfull "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1400' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        # No such affinity, there must be nothing
+        output = execAny( ns_client, "DUMP aff=888", isMultiline = True )
+        if len( output ) != 0:
+            raise Exception( "Expected no dumped jobs by non existing "
+                             "affinity, received some" )
+
+        output = execAny( ns_client, "DUMP group=888", isMultiline = True )
+        if len( output ) != 0:
+            raise Exception( "Expected no dumped jobs by non existing "
+                             "group, received some" )
+
+        execAny( ns_client, "SUBMIT blah aff=777 group=111" )
+        execAny( ns_client, "SUBMIT blah aff=777 group=222" )
+        execAny( ns_client, "SUBMIT blah aff=999 group=111" )
+
+        # DUMP by affinity
+        output = execAny( ns_client, "DUMP aff=777", isMultiline = True )
+        jobCount = "\n".join( output ).count( "affinity: 1 ('777')" )
+        if jobCount != 2:
+            raise Exception( "Expected two jobs dumped by affinity, "
+                             "received " + str( jobCount ) )
+
+        output = execAny( ns_client, "DUMP aff=999", isMultiline = True )
+        jobCount = "\n".join( output ).count( "affinity: 2 ('999')" )
+        if jobCount != 1:
+            raise Exception( "Expected one job dumped by affinity, "
+                             "received " + str( jobCount ) )
+
+        # DUMP by group
+        output = execAny( ns_client, "DUMP group=111", isMultiline = True )
+        jobCount = "\n".join( output ).count( "group: 1 ('111')" )
+        if jobCount != 2:
+            raise Exception( "Expected two jobs dumped by group, "
+                             "received " + str( jobCount ) )
+
+        output = execAny( ns_client, "DUMP group=222", isMultiline = True )
+        jobCount = "\n".join( output ).count( "group: 2 ('222')" )
+        if jobCount != 1:
+            raise Exception( "Expected one job dumped by group, "
+                             "received " + str( jobCount ) )
+
+        # DUMP by affinity and group
+        output = execAny( ns_client, "DUMP group=222 aff=777", isMultiline = True )
+        jobCount = "\n".join( output ).count( "group: 2 ('222')" )
+        if jobCount != 1:
+            raise Exception( "Expected one jobs dumped by group and affinity, "
+                             "received " + str( jobCount ) )
+
+        output = execAny( ns_client, "DUMP group=222 aff=999", isMultiline = True )
+        if len( output ) != 0:
+            raise Exception( "Expected no jobs dumped by group and affinity, "
+                             "received " + str( jobCount ) )
+
+        return True
+
+
+class Scenario1401( TestBase ):
+    " Scenario 1401 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "DUMP of jobs with certain affinity"
+
+    def execute( self ):
+        " Returns True if successfull "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1401' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        execAny( ns_client, "SUBMIT blah" )
+        output = execAny( ns_client, "DUMP status=PENDING", isMultiline = True )
+        jobCount = "\n".join( output ).count( 'status: Pending' )
+        if jobCount != 1:
+            raise Exception( "Expected one job in the output, received " +
+                             str( jobCount ) )
+
+        output = execAny( ns_client, "DUMP status=Done", isMultiline = True )
+        if len( output ) != 0:
+            raise Exception( "Expected no jobs dumped by status, "
+                             "received " + str( jobCount ) )
+
+        output = execAny( ns_client, "DUMP status=invented", isMultiline = True )
+        if len( output ) != 0:
+            raise Exception( "Expected no jobs dumped by invented status, "
+                             "received " + str( jobCount ) )
+
+        # Submit a second job
+        execAny( ns_client, "SUBMIT blah" )
+        output = execAny( ns_client, "GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0" )
+
+        output = execAny( ns_client, "DUMP status=running", isMultiline = True )
+        jobCount = "\n".join( output ).count( 'status: Running' )
+        if jobCount != 1:
+            raise Exception( "Expected one running job in the output, received " +
+                             str( jobCount ) )
+
+        output = execAny( ns_client, "DUMP status=running,invented,pending", isMultiline = True )
+        jobCount = "\n".join( output ).count( 'status: ' )
+        if jobCount != 2:
+            raise Exception( "Expected two (running and pending) jobs in the output, received " +
+                             str( jobCount ) )
+        return True
+
+class Scenario1402( TestBase ):
+    " Scenario 1402 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "CANCEL of jobs in certain state"
+
+    def execute( self ):
+        " Returns True if successfull "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1402' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        execAny( ns_client, "CANCEL status=done" )
+
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Pending']:
+            raise Exception( "Expected 'Pending' status, received '" +
+                             values[ 'job_status' ] + "'" )
+
+        execAny( ns_client, "CANCEL status=PENDING" )
+
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Canceled']:
+            raise Exception( "Expected 'Canceled' status, received '" +
+                             values[ 'job_status' ] + "'" )
+        return True
+
+class Scenario1403( TestBase ):
+    " Scenario 1403 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        self.warning = None
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        self.warning = msg
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "CANCEL of jobs in certain state"
+
+    def execute( self ):
+        " Returns True if successfull "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1403' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        jobID1 = self.ns.submitJob( 'TEST', 'blah' )
+        jobID2 = self.ns.submitJob( 'TEST', 'blah' )
+
+        execAny( ns_client, "GET" )
+        execAny( ns_client, "CANCEL status=Running,splitting" )
+
+        output = execAny( ns_client, 'SST2 ' + jobID1 )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Canceled']:
+            raise Exception( "Expected 'Canceled' status, received '" +
+                             values[ 'job_status' ] + "'" )
+
+        output = execAny( ns_client, 'SST2 ' + jobID2 )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Pending']:
+            raise Exception( "Expected 'Pending' status, received '" +
+                             values[ 'job_status' ] + "'" )
+        return True
+

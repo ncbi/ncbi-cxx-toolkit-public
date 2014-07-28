@@ -244,6 +244,10 @@ private:
     string x_GetDiagSection(void) const;
     string x_GetBdbSection(void) const;
 
+    vector<TJobStatus>  x_RemoveDuplicateStatuses(
+                                            const vector<TJobStatus> &  src,
+                                            vector<string> &  warnings) const;
+
     // Data
     size_t                          m_MsgBufferSize;
     char *                          m_MsgBuffer;

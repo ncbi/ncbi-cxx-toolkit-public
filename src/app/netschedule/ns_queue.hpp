@@ -276,10 +276,12 @@ public:
 
     void CancelAllJobs(const CNSClientId &  client,
                        bool                 logging);
-    list<string> CancelGroupAndAffinity(const CNSClientId &  client,
-                                        const string &       group,
-                                        const string &       affinity_token,
-                                        bool                 logging);
+    void CancelSelectedJobs(const CNSClientId &         client,
+                            const string &              group,
+                            const string &              aff_token,
+                            const vector<TJobStatus> &  statuses,
+                            bool                        logging,
+                            vector<string> &            warnings);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
@@ -396,11 +398,13 @@ public:
     string PrintJobDbStat(const CNSClientId &  client,
                           unsigned int         job_id);
     // Dump all job records
-    string PrintAllJobDbStat(const CNSClientId &  client,
-                             const string &       group,
-                             TJobStatus           job_status,
-                             unsigned int         start_after_job_id,
-                             unsigned int         count);
+    string PrintAllJobDbStat(const CNSClientId &         client,
+                             const string &              group,
+                             const string &              aff_token,
+                             const vector<TJobStatus> &  job_statuses,
+                             unsigned int                start_after_job_id,
+                             unsigned int                count,
+                             bool                        logging);
 
     unsigned CountStatus(TJobStatus) const;
     void StatusStatistics(TJobStatus                  status,
