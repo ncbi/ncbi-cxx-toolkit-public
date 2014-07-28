@@ -12,8 +12,16 @@ Seq-annot ::= {
       type str "Track Data",
       data {
         {
+          label str "description",
+          data str "Item RGB demonstration"
+        },
+        {
           label str "itemRgb",
-          data str """On"""
+          data str "On"
+        },
+        {
+          label str "name",
+          data str "ItemRGBDemo"
         },
         {
           label str "visibility",
@@ -120,8 +128,16 @@ Seq-annot ::= {
       type str "Track Data",
       data {
         {
+          label str "description",
+          data str "Item RGB demonstration"
+        },
+        {
           label str "itemRgb",
-          data str """On"""
+          data str "On"
+        },
+        {
+          label str "name",
+          data str "ItemRGBDemo"
         },
         {
           label str "visibility",
@@ -228,8 +244,16 @@ Seq-annot ::= {
       type str "Track Data",
       data {
         {
+          label str "description",
+          data str "Item RGB demonstration"
+        },
+        {
           label str "itemRgb",
-          data str """On"""
+          data str "On"
+        },
+        {
+          label str "name",
+          data str "ItemRGBDemo"
         },
         {
           label str "visibility",

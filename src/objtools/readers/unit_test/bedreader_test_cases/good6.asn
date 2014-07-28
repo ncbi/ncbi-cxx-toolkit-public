@@ -13,7 +13,15 @@ Seq-annot ::= {
       data {
         {
           label str "colorByStrand",
-          data str """255,0,0 0,0,255"""
+          data str "255,0,0 0,0,255"
+        },
+        {
+          label str "description",
+          data str "Color by strand demonstration"
+        },
+        {
+          label str "name",
+          data str "ColorByStrandDemo"
         },
         {
           label str "visibility",

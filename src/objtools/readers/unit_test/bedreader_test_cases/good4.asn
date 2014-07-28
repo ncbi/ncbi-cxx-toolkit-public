@@ -2,6 +2,15 @@ Seq-annot ::= {
   desc {
     name "MACS peaks for Mouse_h3k27ac_FL1_p00001",
     user {
+      type str "Track Data",
+      data {
+        {
+          label str "name",
+          data str "MACS peaks for Mouse_h3k27ac_FL1_p00001"
+        }
+      }
+    },
+    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {

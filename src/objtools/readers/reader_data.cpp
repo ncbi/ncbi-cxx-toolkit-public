@@ -95,19 +95,21 @@ bool CTrackData::ParseLine(
     for ( cit++; cit != linedata.end(); ++cit ) {
         string key, value;
         NStr::SplitInTwo( *cit, "=", key, value );
+        value = NStr::Replace(value, "\"", " ");
+        NStr::TruncateSpacesInPlace(value);
         if ( key == "type" ) {
             m_strType = value;
-            continue;
+            //continue;
         }
         if ( key == "name" ) {
             m_strName = NStr::Replace(value, "\"", " ");
             NStr::TruncateSpacesInPlace(m_strName);
-            continue;
+            //continue;
         }
         if ( key == "description" ) {
             m_strDescription = NStr::Replace(value, "\"", " ");
             NStr::TruncateSpacesInPlace(m_strDescription);
-            continue;
+            //continue;
         }
         m_Data[ key ] = value;
     }
