@@ -84,7 +84,7 @@ extern size_t BUF_Size(BUF buf)
         return 0;
 
     for (size = 0, chunk = buf->list;  chunk;  chunk = chunk->next) {
-        /* NB: no empty blocks allowed within the list */
+        /* NB: no empty chunks allowed within the list */
         assert(chunk->size > chunk->skip);
         size += chunk->size - chunk->skip;
     }
@@ -123,8 +123,11 @@ extern int/*bool*/ BUF_AppendEx(BUF* buf, void* base, size_t alloc_size,
 {
     SBufChunk* chunk;
 
-    if (!size)
+    if (!size) {
+        if (base)
+            free(base);
         return 1/*true*/;
+    }
     if (!data)
         return 0/*false*/;
 
@@ -163,8 +166,11 @@ extern int/*bool*/ BUF_PrependEx(BUF* buf, void* base, size_t alloc_size,
 {
     SBufChunk* chunk;
 
-    if (!size)
+    if (!size) {
+        if (base)
+            free(base);
         return 1/*true*/;
+    }
     if (!data)
         return 0/*false*/;
     
@@ -399,7 +405,7 @@ extern size_t BUF_Read(BUF buf, void* dst, size_t size)
             todo = 0;
             break;
         }
-        /* discard the whole chunk */
+        /* discard the entire chunk */
         if (!(buf->list = head->next))
             buf->last = 0;
         if (head->base)
