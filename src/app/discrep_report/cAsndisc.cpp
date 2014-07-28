@@ -43,7 +43,7 @@
 #include <dbapi/driver/drivers.hpp>
 
 
-#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <misc/discrepancy_report/hDiscRep_config.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
@@ -80,7 +80,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("e", "EnableTests", 
                               "List of enabled tests, seperated by ','",
                               CArgDescriptions::eString); 
-    arg_desc->AddOptionalKey("i", "InputFile", "Single input file (mandatory)", 
+    arg_desc->AddOptionalKey("i", "InputFile","Single input file (mandatory)",
                                 CArgDescriptions::eString);
     arg_desc->AddOptionalKey("o", "OutputFile", "Single output file",
                                 CArgDescriptions::eString);
@@ -92,8 +92,8 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("r", "OutPath", "Output Directory", 
                               CArgDescriptions::eString);
     arg_desc->AddDefaultKey("R", "Remote", 
-                          "Allow GenBank data loader: 'T' = true, 'F' = false",
-                           CArgDescriptions::eBoolean, "T");
+                         "Allow GenBank data loader: 'T' = true, 'F' = false",
+                          CArgDescriptions::eBoolean, "T");
     arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", 
                               CArgDescriptions::eString, ".dr");
     arg_desc->AddDefaultKey("S", "SummaryReport", 

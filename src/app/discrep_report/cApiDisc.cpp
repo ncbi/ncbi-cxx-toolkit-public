@@ -41,7 +41,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
-#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <misc/discrepancy_report/hDiscRep_config.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
