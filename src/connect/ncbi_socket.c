@@ -6595,13 +6595,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 }
 
 
-#ifdef __GNUC__
-inline
-#endif /*__GNUC__*/
-static EIO_Status s_PushBack(SOCK sock, const void* buf, size_t size)
-{
-    return BUF_PushBack(&sock->r_buf, buf, size) ? eIO_Success : eIO_Unknown;
-}
+#define s_PushBack(s, b, l)  BUF_PushBack(&(s)->r_buf, b, l)
 
 
 extern EIO_Status SOCK_ReadLine(SOCK    sock,
@@ -6673,13 +6667,11 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
             done = 1/*true*/;
         if (done  &&  cr_seen) {
             c = '\r';
-            if (s_PushBack(sock, &c, 1) != eIO_Success)
+            if (!s_PushBack(sock, &c, 1))
                 status = eIO_Unknown;
         }
-        if (i < x_size
-            &&  s_PushBack(sock, &x_buf[i], x_size - i) != eIO_Success) {
+        if (i < x_size  &&  !s_PushBack(sock, &x_buf[i], x_size - i))
             status = eIO_Unknown;
-        }
     } while (!done  &&  status == eIO_Success);
 
     if (len < size)
@@ -6704,7 +6696,7 @@ extern EIO_Status SOCK_PushBack(SOCK        sock,
         return eIO_Closed;
     }
 
-    return s_PushBack(sock, buf, size);
+    return s_PushBack(sock, buf, size) ? eIO_Success : eIO_Unknown;
 }
 
 
