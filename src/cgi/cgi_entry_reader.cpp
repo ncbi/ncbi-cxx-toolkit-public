@@ -308,11 +308,23 @@ CCgiEntryReaderContext::x_DelimitedRead(string& s, SIZE_TYPE n)
             ++m_BytePos;
         }
     } else {
-        if (n != 1) {
-            AutoArray<char> buffer(n);
-            m_In.get(buffer.get(), n, delim);
-            s.assign(buffer.get(), (size_t)m_In.gcount());
-            m_BytePos += (size_t)m_In.gcount();
+        s.clear();
+        while (n > 1) {
+            char buffer[4097];
+            m_In.get(buffer, min(n, sizeof(buffer)), delim);
+            size_t n_read = m_In.gcount();
+            s.append(buffer, n_read);
+            m_BytePos += n_read;
+            n -= n_read;
+            if (m_In.eof()) {
+                break;
+            } else {
+                CT_INT_TYPE next = m_In.peek();
+                if (CT_EQ_INT_TYPE(next, CT_EOF)
+                    ||  CT_EQ_INT_TYPE(next, CT_TO_INT_TYPE(delim))) {
+                    break;
+                }
+            }
         }
         if (m_ContentLength != CCgiRequest::kContentLengthUnknown
             &&  m_BytePos == m_ContentLength - 1  &&  !m_In.eof() ) {
