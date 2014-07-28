@@ -903,6 +903,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 feat_it_ptr.reset( new CFeat_CI(bioseq_handle, range, strand, sel) );
             }
             else {
+                sel.SetSearchUnresolved();
                 feat_it_ptr.reset( new CFeat_CI(scope, loc, sel) );
             }
         }
