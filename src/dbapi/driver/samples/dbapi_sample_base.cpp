@@ -156,7 +156,7 @@ CDbapiSampleApp::Init()
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", \
                       "gateway", "odbc"
 #elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "DBAPI_DEV1"
+#define DEF_SERVER    "DBAPI_DEV3"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway", \
                       "odbc"

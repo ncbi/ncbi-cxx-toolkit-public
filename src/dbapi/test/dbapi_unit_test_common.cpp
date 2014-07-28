@@ -440,7 +440,7 @@ CUnitTestParams::GetServerType(void) const
         if (NStr::EqualNocase(server_name, 0, 6, "DBAPI_")
             &&  (NStr::EqualNocase(server_name, 6, 3, "DEV")
                  ||  NStr::EqualNocase(server_name, 6, 3, "SYB")))
-        { // DBAPI_DEV1, DBAPI_SYB_TEST, etc.
+        { // DBAPI_DEV3, DBAPI_SYB155_TEST, etc.
             return eSybaseSQLServer;
         }
     }
