@@ -38,6 +38,7 @@
 #include <corelib/ncbienv.hpp>
 
 #include <dbapi/simple/sdbapi.hpp>
+#include <dbapi/driver/dbapi_driver_conn_params.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -213,9 +214,8 @@ int CSdbapiTest::Run()
         query.RequireRowCount(0);
         query.VerifyDone();
 
-        if(NStr::CompareNocase(server, "DBAPI_DEV1") == 0
-           ||  NStr::CompareNocase(server, "DBAPI_SYB_TEST") == 0)
-        {
+        if (CCPPToolkitConnParams::GetServerType(server)
+            != CCPPToolkitConnParams::eMSSqlServer) {
             sql = "create procedure SampleProc \
     @id int, \
     @f float, \
