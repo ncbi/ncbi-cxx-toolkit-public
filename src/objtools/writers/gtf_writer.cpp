@@ -187,7 +187,7 @@ bool CGtfWriter::x_WriteFeatureMrna(
             CSeq_interval& subint = **it;
             CRef<CGtfRecord> pExon( 
                 new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
-            pExon->MakeChildRecord( *pMrna, subint, uExonNumber );
+            pExon->MakeChildRecord( *pMrna, subint, uExonNumber++ );
             x_WriteRecord( pExon );
         }
     }
