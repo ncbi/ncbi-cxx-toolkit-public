@@ -50,6 +50,22 @@ NCBI_XALGOSEQ_EXPORT
 CRef<objects::CBioseq> SeqLocToBioseq(const objects::CSeq_loc& loc,
                                       objects::CScope& scope);
 
+/// Compute the normalized Shannon entropy for a sequence of IUPACna bases
+///
+/// The algorithm is as described in:
+///
+///   http://en.wikipedia.org/wiki/Shannon_entropy
+///
+/// This follows the scheme for normalized representation, and assumes that the
+/// input contains IUPACna bases.  Ambiguities are not fully handled.
+/// The return value is a real-valued number ranging from 0..1.  Typical
+/// interpretations of values are:
+/// - Less than 0.5 implies that the sequence has low complexity
+/// - 0.0 implies that the sequence is a homopolymer
+
+double ComputeNormalizedEntropy(const CTempString& sequence,
+                                size_t word_size);
+
 END_NCBI_SCOPE
 
 #endif // ALGO_SEQUENCE___UTIL__HPP

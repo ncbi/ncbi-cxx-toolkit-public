@@ -167,4 +167,34 @@ SeqLocToBioseq(const objects::CSeq_loc& loc, objects::CScope& scope)
     return bioseq;
 }
 
+
+
+double ComputeNormalizedEntropy(const CTempString& sequence,
+                               size_t word_size)
+{
+    typedef map<CTempString, double> TCounts;
+    TCounts counts;
+    double total = sequence.size() - word_size;
+    for (size_t i = word_size;  i < sequence.size();  ++i) {
+        CTempString t(sequence, i - word_size, word_size);
+        TCounts::iterator it =
+            counts.insert(TCounts::value_type(t, 0)).first;
+        it->second += 1;
+    }
+
+    NON_CONST_ITERATE (TCounts, it, counts) {
+        it->second /= total;
+    }
+
+    double entropy = 0;
+    ITERATE (TCounts, it, counts) {
+        entropy += it->second * log(it->second);
+    }
+    double denom = pow(4, word_size);
+    denom = min(denom, total);
+    entropy = -entropy / log(denom);
+    return max<double>(0.0, entropy);
+}
+
+
 END_NCBI_SCOPE
