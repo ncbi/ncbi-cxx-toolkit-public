@@ -149,6 +149,20 @@ bool CReadUtil::GetTrackAssembly(
 }
 
 //  ----------------------------------------------------------------------------
+bool CReadUtil::GetTrackOffset(
+    const CSeq_annot& annot,
+    int& value)
+//  ----------------------------------------------------------------------------
+{
+    string offset;
+    if (!GetTrackValue(annot, "offset", offset)) {
+        return false;
+    }
+    value = NStr::StringToInt(offset);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CReadUtil::GetTrackValue(
     const CSeq_annot& annot,
     const string& key,

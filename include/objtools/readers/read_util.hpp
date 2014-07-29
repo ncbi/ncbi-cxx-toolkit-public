@@ -84,6 +84,10 @@ public:
     static bool GetTrackAssembly(
         const CSeq_annot& annot,
         string& value);
+    static bool GetTrackOffset(
+        const CSeq_annot& annot,
+        int& value);
+
     static bool GetTrackValue(
         const CSeq_annot& annot,
         const string& key,
