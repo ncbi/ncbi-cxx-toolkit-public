@@ -17,7 +17,9 @@ SRC = agp_write \
       vcf_writer \
       ucsc_writer \
       src_writer
-      
+
+DLL_LIB = variation_utils
+
 WATCHERS = ludwigf boukn kornbluh gotvyans
 
 USES_LIBRARIES =  \
