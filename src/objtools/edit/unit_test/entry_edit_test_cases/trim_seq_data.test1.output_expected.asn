@@ -1,0 +1,292 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Escherichia coli DH5a"
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Zhang",
+                  first "Hongfa",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Ren",
+                  first "Jing",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "You",
+                  first "Chunping",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Xu",
+                  first "Dan",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Han",
+                  first "Mei",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Liao",
+                  first "Wenyan",
+                  initials "W."
+                }
+              }
+            },
+            affil std {
+              affil "State Key Laboratory of Dairy Biotechnology, Technology
+ Center of Bright Dairy & Food Co., Ltd",
+              city "Shanghai",
+              sub "Shanghai",
+              country "China",
+              street "1518, West Jiangchang Road",
+              postal-code "200436"
+            }
+          },
+          title "A Simple PCR Method for Gene Walking of Bacteria"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SeriousSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 7
+        },
+        {
+          label str "month",
+          data int 11
+        },
+        {
+          label str "day",
+          data int 14
+        },
+        {
+          label str "year",
+          data int 2012
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Zhang",
+                  first "Hongfa",
+                  initials "H."
+                }
+              },
+              {
+                name name {
+                  last "Ren",
+                  first "Jing",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "You",
+                  first "Chunping",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Xu",
+                  first "Dan",
+                  initials "D."
+                }
+              },
+              {
+                name name {
+                  last "Han",
+                  first "Mei",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Liao",
+                  first "Wenyan",
+                  initials "W."
+                }
+              }
+            },
+            affil std {
+              affil "State Key Laboratory of Dairy Biotechnology, Technology
+ Center of Bright Dairy & Food Co., Ltd",
+              city "Shanghai",
+              sub "Shanghai",
+              country "China",
+              street "1518, West Jiangchang Road",
+              postal-code "200436"
+            }
+          },
+          date std {
+            year 2012,
+            month 11,
+            day 14
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "DH5a-357R-3",
+        general {
+          db "NCBIFILE",
+          tag str "11bacterium submit-92-3-3/DH5a-357R-3"
+        },
+        general {
+          db "TMSMART",
+          tag id 34071178
+        }
+      },
+      descr {
+        title "Escherichia coli DH5a D,D-heptose 1,7-bisphosphate
+ phosphatase,partial cds",
+        molinfo {
+          biomol genomic
+        },
+        create-date std {
+          year 2012,
+          month 10,
+          day 28
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "DH5a-357R-3"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 600,
+        seq-data ncbi2na '8244BF8067858BA3A1EB67A68588ED8DE8EB373CF95934D64AB2
+EF822FD94ADE63E590144D6A8E7FED24663CFE4CF8CE967DF33AEA6303C823392926BE6981BA81
+00B9EB9B1AB0173C65E09200669A3EAEF0325E9217964263000924005A4438F008E26BE0300393
+FF59FB7D78961D5CC399753611A68EE0D1F4440496BDAF8220035E03D2AF877808A026C331945D
+984B89E0259B64'H
+      }
+    },
+    seq {
+      id {
+        local str "DH5a-357R-3_1",
+        general {
+          db "NCBIFILE",
+          tag str "11bacterium submit-92-3-3/DH5a-357R-3_1"
+        },
+        general {
+          db "TMSMART",
+          tag id 34071179
+        }
+      },
+      descr {
+        title "D,D-heptose 1,7-bisphosphate phosphatase, partial [Escherichia
+ coli DH5a]",
+        molinfo {
+          biomol peptide,
+          tech concept-trans-a,
+          completeness no-left
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "DH5a-357R-3_1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 127,
+        seq-data ncbieaa "EAQFETLTEWMDWSLADRDVDLDGIYYCPHHPQGSVEEFRQVCDCRKPHPGM
+LLSARDYLHIDMAASYMVGDKLEDMQAAVAANVGTKVLVRTGKPITPEAENAADWVLNSLADLPQAIKKQQKPAQ"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "D,D-heptose 1,7-bisphosphate phosphatase"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 126,
+                id local str "DH5a-357R-3_1",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "DH5a-357R-3_1",
+          location int {
+            from 0,
+            to 383,
+            strand plus,
+            id local str "DH5a-357R-3",
+            fuzz-from lim lt
+          }
+        }
+      }
+    }
+  }
+}
