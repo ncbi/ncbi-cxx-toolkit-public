@@ -53,17 +53,25 @@ public:
 
     const string& GetText() const { return m_Text; }
     void SetText(const string& text) { m_Text = text; }
+
     bool IsSelected() const { return m_IsSelected; }
     void SetSelected(bool selected = true);
+
     bool IsExpanded() const { return m_IsExpanded; }
     void SetExpanded(bool expanded = true, bool recurse = false); 
     void SetOwnExpanded(bool expanded = true) { m_IsExpanded = expanded; };
+
     const vector<CRef<CClickableText> >& GetSubitems() const { return m_Subitems; }
     vector<CRef<CClickableText> >& SetSubitems() { return m_Subitems; }
+
     const vector<CConstRef<CObject> >& GetObjects() const { return m_Objects; }
     vector<CConstRef<CObject> >& SetObjects() { return m_Objects; }
+
     const vector <string>& GetObjdescs() const { return m_Objdescs; }
     vector <string>& SetObjdescs() { return m_Objdescs; } 
+
+    vector <string>& SetAccessions() { return m_Accessions; }
+    const vector <string>& GetAccessions() const { return m_Accessions; }
 
 protected:
     string m_Text;
@@ -72,6 +80,7 @@ protected:
     vector<CRef<CClickableText> > m_Subitems;
     vector<CConstRef<CObject> > m_Objects;
     vector <string> m_Objdescs;
+    vector <string> m_Accessions;
 };
 
 END_NCBI_SCOPE

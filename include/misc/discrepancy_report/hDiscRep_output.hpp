@@ -56,12 +56,18 @@ BEGIN_SCOPE(DiscRepNmSpc)
 class COutputConfig
 {
   public:
-    bool     use_flag;
-    CNcbiOstream*  output_f;
-    bool     summary_report;
-    bool     add_output_tag;
-    bool     add_extra_output_tag;
-    bool     xml;
+    enum EMessageOptions {
+       e_All = 0,
+       e_Fatal
+    };
+
+    bool             use_flag;
+    CNcbiOstream*    output_f;
+    bool             summary_report;
+    bool             add_output_tag;
+    bool             add_extra_output_tag;
+    bool             xml;
+    EMessageOptions  msg_level;
 };
  
 struct s_fataltag {

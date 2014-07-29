@@ -668,10 +668,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string ListAuthNames(const CAuth_list& auths);
       string ListAllAuths(const CPubdesc& pubdesc);
 
+      string GetSeqId4BioseqSet(const string& desc);
+      string GetFeatId(const CFeat_id& feat_id);
+
       static const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id::E_Choice);
       string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
       static string PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
-      static string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool range_only = false);
+      static string SeqLocPrintUseBestID(const CSeq_loc& seq_loc,bool range_only = false);
       string GetLocusTagForFeature(const CSeq_feat& seq_feat);
       string GetProdNmForCD(const CSeq_feat& cd_feat);
 

@@ -224,7 +224,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
         static CRef < CScope >                    scope;
         static string                             infile;
-//        static string                             report
         static ETestCategoryFlags                 report;
         static COutputConfig                      output_config;
         static CRef <CRepConfig>                  config;
@@ -239,6 +238,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static bool                               expand_srcqual_report;
         static string                             report_lineage;
         static bool                               exclude_dirsub;
+        static string                             xml_label;
 
         static Str2CombDt                         rRNATerms;
         static vector <string>                    bad_gene_names_contained;
@@ -281,7 +281,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static map <ETechnique_type, CMolInfo::ETech>   techtp_mitech;
         static map <ETechnique_type, string>            techtp_name;
         static vector <string>                          s_putative_replacements;
-//        static vector <string>                          fix_type_names;
         static map <ECDSGeneProt_field, string>         cgp_field_name;
         static map <ECDSGeneProt_feature_type_constraint, string>          cgp_feat_name;
         static map <EMolecule_type, string>             moltp_name;
