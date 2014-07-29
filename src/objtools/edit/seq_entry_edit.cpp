@@ -35,6 +35,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seg_ext.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objmgr/scope.hpp>
@@ -46,6 +47,9 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objtools/edit/edit_exception.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
@@ -1586,6 +1590,1073 @@ void ResetLinkageEvidence(CSeq_ext& ext)
         }
     }
 }
+
+
+/*******************************************************************************
+**** HIGH-LEVEL API
+****
+**** Trim functions
+*******************************************************************************/
+
+/// Trim sequence data and all associated annotation
+void TrimSequenceAndAnnotation(CBioseq_Handle bsh, 
+                               const TCuts& cuts,
+                               EInternalTrimType internal_cut_conversion)
+{
+    // Should be a nuc!
+    if (!bsh.IsNucleotide()) {
+        return;
+    }
+
+    // Sort the cuts 
+    TCuts sorted_cuts;
+    GetSortedCuts(bsh, cuts, sorted_cuts, internal_cut_conversion);
+
+    // Get length of nuc sequence before trimming
+    TSeqPos original_nuc_len = 0;
+    if (bsh.CanGetInst() && bsh.GetInst().CanGetLength()) {
+        original_nuc_len = bsh.GetInst().GetLength();
+    }
+
+    // Trim sequence data
+    if (bsh.CanGetInst()) {
+        // Make a copy of seq_inst
+        CRef<CSeq_inst> copy_inst(new CSeq_inst());
+        copy_inst->Assign(bsh.GetInst());
+
+        // Modify the copy of seq_inst
+        TrimSeqData(bsh, copy_inst, sorted_cuts);
+
+        // Update the original seq_inst with the modified copy
+        bsh.GetEditHandle().SetInst(*copy_inst);
+    }
+
+    // Trim Seq-feat annotation
+    SAnnotSelector feat_sel(CSeq_annot::C_Data::e_Ftable);
+    CFeat_CI feat_ci(bsh, feat_sel);
+    for (; feat_ci; ++feat_ci) {
+        // Make a copy of the feature
+        CRef<CSeq_feat> copy_feat(new CSeq_feat());
+        copy_feat->Assign(feat_ci->GetOriginalFeature());
+
+        // Detect complete deletions of feature
+        bool bFeatureDeleted = false;
+
+        // Detect case where feature was not deleted but merely trimmed
+        bool bFeatureTrimmed = false;
+
+        // Modify the copy of the feature
+        TrimSeqFeat(copy_feat, sorted_cuts, bFeatureDeleted, bFeatureTrimmed);
+
+        if (bFeatureDeleted) {
+            // Delete the feature
+            // If the feature was a cdregion, delete the protein and
+            // renormalize the nuc-prot set
+            DeleteProteinAndRenormalizeNucProtSet(*feat_ci);
+        }
+        else 
+        if (bFeatureTrimmed) {
+            // Further modify the copy of the feature
+            AdjustCdregionFrame(original_nuc_len, copy_feat, sorted_cuts);
+
+            // Retranslate the coding region using the new nuc sequence
+            RetranslateCdregion(bsh, copy_feat, sorted_cuts);
+
+            // Update the original feature with the modified copy
+            CSeq_feat_EditHandle feat_eh(*feat_ci);
+            feat_eh.Replace(*copy_feat);
+        }
+    }
+
+    // Trim Seq-align annotation
+    SAnnotSelector align_sel(CSeq_annot::C_Data::e_Align);
+    CAlign_CI align_ci(bsh, align_sel);
+    for (; align_ci; ++align_ci) {
+        // Only DENSEG type is supported
+        const CSeq_align& align = *align_ci;
+        if ( align.CanGetSegs() && 
+             align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
+        {
+            // Make sure mandatory fields are present in the denseg
+            const CDense_seg& denseg = align.GetSegs().GetDenseg();
+            if (! (denseg.CanGetDim() && denseg.CanGetNumseg() && 
+                   denseg.CanGetIds() && denseg.CanGetStarts() &&
+                   denseg.CanGetLens()) )
+            {
+                continue;
+            }
+
+            // Make a copy of the alignment
+            CRef<CSeq_align> copy_align(new CSeq_align());
+            copy_align->Assign(align_ci.GetOriginalSeq_align());
+
+            // Modify the copy of the alignment
+            TrimSeqAlign(bsh, copy_align, sorted_cuts);
+
+            // Update the original alignment with the modified copy
+            align_ci.GetSeq_align_Handle().Replace(*copy_align);
+        }
+    }
+
+    // Trim Seq-graph annotation
+    SAnnotSelector graph_sel(CSeq_annot::C_Data::e_Graph);
+    CGraph_CI graph_ci(bsh, graph_sel);
+    for (; graph_ci; ++graph_ci) {
+        // Only certain types of graphs are supported.
+        // See C Toolkit function GetGraphsProc in api/sqnutil2.c
+        const CMappedGraph& graph = *graph_ci;
+        if ( graph.IsSetTitle() && 
+             (NStr::CompareNocase( graph.GetTitle(), "Phrap Quality" ) == 0 ||
+              NStr::CompareNocase( graph.GetTitle(), "Phred Quality" ) == 0 ||
+              NStr::CompareNocase( graph.GetTitle(), "Gap4" ) == 0) )
+        {
+            // Make a copy of the graph
+            CRef<CSeq_graph> copy_graph(new CSeq_graph());
+            copy_graph->Assign(graph.GetOriginalGraph());
+
+            // Modify the copy of the graph
+            TrimSeqGraph(bsh, copy_graph, sorted_cuts);
+
+            // Update the original graph with the modified copy
+            graph.GetSeq_graph_Handle().Replace(*copy_graph);
+        }
+    }
+}
+
+
+/*******************************************************************************
+**** LOW-LEVEL API
+****
+**** Trim functions divided up into trimming separate distinct objects, i.e.,
+**** the sequence data itself and all associated annotation.
+****
+**** Used by callers who need access to each edited object so that they can 
+**** pass these edited objects to a command undo/redo framework, for example.
+*******************************************************************************/
+
+/// Helper functor to compare cuts during sorting
+class CRangeCmp : public binary_function<TRange, TRange, bool>
+{
+public:
+    enum ESortOrder {
+        eAscending,
+        eDescending
+    };
+
+    explicit CRangeCmp(ESortOrder sortorder = eAscending)
+      : m_sortorder(sortorder) {};
+
+    bool operator()(const TRange& a1, const TRange& a2) 
+    {
+        if (m_sortorder == eAscending) {
+            if (a1.GetTo() == a2.GetTo()) {
+                // Tiebreaker
+                return a1.GetFrom() < a2.GetFrom();
+            }
+            return a1.GetTo() < a2.GetTo();
+        }
+        else {
+            if (a1.GetTo() == a2.GetTo()) {
+                // Tiebreaker
+                return a1.GetFrom() > a2.GetFrom();
+            }
+            return a1.GetTo() > a2.GetTo();
+        }
+    };
+
+private:
+    ESortOrder m_sortorder;
+};
+
+
+/// Assumes sorted_cuts are sorted in Ascending order!
+static void s_MergeCuts(TCuts& sorted_cuts)
+{
+    // Merge abutting and overlapping cuts
+    TCuts::iterator it;
+    for (it = sorted_cuts.begin(); it != sorted_cuts.end(); ) {
+        TRange& cut = *it;
+        TSeqPos to = cut.GetTo();
+
+        // Does next cut exist?
+        if ( it+1 != sorted_cuts.end() ) {
+            TRange& next_cut = *(it+1);
+            TSeqPos next_from = next_cut.GetFrom();
+            TSeqPos next_to = next_cut.GetTo();
+
+            if ( next_from <= (to + 1) ) {
+                // Current and next cuts abut or overlap
+                // So adjust current cut and delete next cut
+                cut.SetTo(next_to);
+                sorted_cuts.erase(it+1);
+
+                // Post condition after erase:
+                // Since "it" is before the erase, "it" stays valid
+                // and still refers to current cut
+            }
+            else {
+                ++it;
+            }
+        }
+        else {
+            // I'm done
+            break;
+        }
+    }
+}
+
+
+/// Adjust any internal cuts to terminal cuts
+static void s_AdjustInternalCutLocations(TCuts& cuts, 
+                                         TSeqPos seq_length,
+                                         EInternalTrimType internal_cut_conversion)
+{
+    for (TCuts::size_type ii = 0; ii < cuts.size(); ++ii) {
+        TRange& cut = cuts[ii];
+        TSeqPos from = cut.GetFrom();
+        TSeqPos to = cut.GetTo();
+
+        // Is it an internal cut?
+        if (from != 0 && to != seq_length-1) {
+            if (internal_cut_conversion == eTrimToClosestEnd) {
+                // Extend the cut to the closest end
+                if (from - 0 < seq_length-1 - to) {
+                    cut.SetFrom(0);
+                }
+                else {
+                    cut.SetTo(seq_length-1);
+                }
+            }
+            else 
+            if (internal_cut_conversion == eTrimTo5PrimeEnd) {
+                // Extend the cut to 5' end
+                cut.SetFrom(0);
+            }
+            else {
+                // Extend the cut to 3' end
+                cut.SetTo(seq_length-1);
+            }
+        }
+    }
+}
+
+
+/// 1) Merge abutting and overlapping cuts.
+/// 2) Adjust any internal cuts to terminal cuts according to option.
+/// 3) Sort the cuts from greatest to least so that sequence
+///    data and annotation will be deleted from greatest loc to smallest loc.
+///    That way we don't have to adjust coordinate values after 
+///    each cut.
+void GetSortedCuts(CBioseq_Handle bsh, 
+                   const TCuts& cuts,
+                   TCuts& sorted_cuts,
+                   EInternalTrimType internal_cut_conversion)
+{
+    sorted_cuts = cuts;
+
+    /***************************************************************************
+     * Merge abutting and overlapping cuts
+     * Adjust internal cuts to terminal cuts
+    ***************************************************************************/
+    CRangeCmp asc(CRangeCmp::eAscending);
+    sort(sorted_cuts.begin(), sorted_cuts.end(), asc);
+
+    // Merge abutting and overlapping cuts
+    s_MergeCuts(sorted_cuts);
+
+    // Adjust internal cuts to terminal cuts
+    s_AdjustInternalCutLocations(sorted_cuts, bsh.GetBioseqLength(), 
+                                 internal_cut_conversion);
+
+
+    /***************************************************************************
+     * Sort the cuts in descending order
+    ***************************************************************************/
+    // Sort the ranges from greatest to least so that sequence
+    // data and annotation will be deleted from greatest loc to smallest loc.
+    // That way we don't have to adjust coordinate values after 
+    // each delete.
+    CRangeCmp descend(CRangeCmp::eDescending);
+    sort(sorted_cuts.begin(), sorted_cuts.end(), descend);
+}
+
+
+/// Trim sequence data
+void TrimSeqData(CBioseq_Handle bsh, 
+                 CRef<CSeq_inst> inst, 
+                 const TCuts& sorted_cuts)
+{
+    // Should be a nuc!
+    if (!bsh.IsNucleotide()) {
+        return;
+    }
+
+    // There should be sequence data
+    if ( !(bsh.CanGetInst() && bsh.GetInst().IsSetSeq_data()) ) {
+        return;
+    }
+
+    // Copy residues to buffer
+    CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+    string seq_string;
+    vec.GetSeqData(0, vec.size(), seq_string);
+
+    // Delete residues per cut
+    for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
+        const TRange& cut = sorted_cuts[ii];
+        TSeqPos start = cut.GetFrom();
+        TSeqPos length = cut.GetTo() - start + 1;
+        seq_string.erase(start, length);
+    }
+
+    // Update sequence length and sequence data
+    inst->SetLength(seq_string.size());
+    inst->SetSeq_data().SetIupacna(*new CIUPACna(seq_string));
+    CSeqportUtil::Pack(&inst->SetSeq_data());
+}
+
+
+static void s_GetTrimCoordinates(CBioseq_Handle bsh,
+                                 const TCuts& sorted_cuts,
+                                 TSeqPos& trim_start,
+                                 TSeqPos& trim_stop)
+{
+    // Set defaults
+    trim_start = 0;
+    trim_stop = bsh.GetInst().GetLength() - 1;
+
+    // Assumptions :
+    // All cuts have been sorted.  Internal cuts were converted to terminal.
+    for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
+        const TRange& cut = sorted_cuts[ii];
+        TSeqPos from = cut.GetFrom();
+        TSeqPos to = cut.GetTo();
+
+        // Left-side terminal cut.  Update trim_start if necessary.
+        if ( from == 0 ) {
+            if ( trim_start <= to ) {
+                trim_start = to + 1;
+            }
+        }
+
+        // Right-side terminal cut.  Update trim_stop if necessary.
+        if ( to == bsh.GetInst().GetLength() - 1 ) {
+            if ( trim_stop >= from ) {
+                trim_stop = from - 1;
+            }
+        }
+    }
+}
+
+
+static void s_SeqIntervalDelete(CRef<CSeq_interval> interval, 
+                                TSeqPos cut_from,
+                                TSeqPos cut_to,
+                                bool& bCompleteCut,
+                                bool& bTrimmed)
+{
+    // These are required fields
+    if ( !(interval->CanGetFrom() && interval->CanGetTo()) ) {
+        return;
+    }
+
+    // Feature location
+    TSeqPos feat_from = interval->GetFrom();
+    TSeqPos feat_to = interval->GetTo();
+
+    // Size of the cut
+    TSeqPos cut_size = cut_to - cut_from + 1;
+
+    // Case 1: feature is located completely before the cut
+    if (feat_to < cut_from)
+    {
+        // Nothing needs to be done - cut does not affect feature
+        return;
+    }
+
+    // Case 2: feature is completely within the cut
+    if (feat_from >= cut_from && feat_to <= cut_to)
+    {
+        // Feature should be deleted
+        bCompleteCut = true;
+        return;
+    }
+
+    // Case 3: feature is completely past the cut
+    if (feat_from > cut_to)
+    {
+        // Shift the feature by the cut_size
+        feat_from -= cut_size;
+        feat_to -= cut_size;
+        interval->SetFrom(feat_from);
+        interval->SetTo(feat_to);
+        bTrimmed = true;
+        return;
+    }
+
+    /***************************************************************************
+     * Cases below are partial overlapping cases
+    ***************************************************************************/
+    // Case 4: Cut is completely inside the feature 
+    //         OR
+    //         Cut is to the "left" side of the feature (i.e., feat_from is 
+    //         inside the cut)
+    //         OR
+    //         Cut is to the "right" side of the feature (i.e., feat_to is 
+    //         inside the cut)
+    if (feat_to > cut_to) {
+        // Left side cut or cut is completely inside feature
+        feat_to -= cut_size;
+    }
+    else {
+        // Right side cut
+        feat_to = cut_from - 1;
+    }
+
+    // Take care of the feat_from from the left side cut case
+    if (feat_from >= cut_from) {
+        feat_from = cut_to + 1;
+        feat_from -= cut_size;
+    }
+
+    interval->SetFrom(feat_from);
+    interval->SetTo(feat_to);
+    bTrimmed = true;
+}
+
+
+static void s_SeqLocDelete(CRef<CSeq_loc> loc, 
+                           TSeqPos from, 
+                           TSeqPos to,
+                           bool& bCompleteCut,
+                           bool& bTrimmed)
+{
+    // Given a seqloc and a range, cut the seqloc
+
+    switch(loc->Which())
+    {
+        // Single interval
+        case CSeq_loc::e_Int:
+        {
+            CRef<CSeq_interval> interval(new CSeq_interval);
+            interval->Assign(loc->GetInt());
+            s_SeqIntervalDelete(interval, from, to, bCompleteCut, bTrimmed);
+            loc->SetInt(*interval);
+        }
+        break;
+
+        // Multiple intervals
+        case CSeq_loc::e_Packed_int:
+        {
+            CRef<CSeq_loc::TPacked_int> intervals(new CSeq_loc::TPacked_int);
+            intervals->Assign(loc->GetPacked_int());
+            if (intervals->CanGet()) {
+                // Process each interval in the list
+                CPacked_seqint::Tdata::iterator it;
+                for (it = intervals->Set().begin(); 
+                     it != intervals->Set().end(); ) 
+                {
+                    // Initial value: assume that all intervals 
+                    // will be deleted resulting in bCompleteCut = true.
+                    // Later on if any interval is not deleted, then set
+                    // bCompleteCut = false
+                    if (it == intervals->Set().begin()) {
+                        bCompleteCut = true;
+                    }
+
+                    bool bDeleted = false;
+                    s_SeqIntervalDelete(*it, from, to, bDeleted, bTrimmed);
+
+                    // Should interval be deleted from list?
+                    if (bDeleted) {
+                        it = intervals->Set().erase(it);
+                    }
+                    else {
+                        ++it;
+                        bCompleteCut = false;
+                    }
+                }
+
+                // Update the original list
+                loc->SetPacked_int(*intervals);
+            }
+        }
+        break;
+
+        // Multiple seqlocs
+        case CSeq_loc::e_Mix:
+        {
+            CRef<CSeq_loc_mix> mix(new CSeq_loc_mix);
+            mix->Assign(loc->GetMix());
+            if (mix->CanGet()) {
+                // Process each seqloc in the list
+                CSeq_loc_mix::Tdata::iterator it;
+                for (it = mix->Set().begin(); 
+                     it != mix->Set().end(); ) 
+                {
+                    // Initial value: assume that all seqlocs
+                    // will be deleted resulting in bCompleteCut = true.
+                    // Later on if any seqloc is not deleted, then set
+                    // bCompleteCut = false
+                    if (it == mix->Set().begin()) {
+                        bCompleteCut = true;
+                    }
+
+                    bool bDeleted = false;
+                    s_SeqLocDelete(*it, from, to, bDeleted, bTrimmed);
+
+                    // Should seqloc be deleted from list?
+                    if (bDeleted) {
+                        it = mix->Set().erase(it);
+                    }
+                    else {
+                        ++it;
+                        bCompleteCut = false;
+                    }
+                }
+
+                // Update the original list
+                loc->SetMix(*mix);
+            }
+        }
+        break;
+
+        // Other choices not supported yet 
+        default:
+        {           
+        }
+        break;
+    }
+}
+
+
+static void s_UpdateSeqGraphLoc(CRef<CSeq_graph> graph, 
+                                const TCuts& sorted_cuts)
+{
+    for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
+        const TRange& cut = sorted_cuts[ii];
+        TSeqPos from = cut.GetFrom();
+        TSeqPos to = cut.GetTo();
+
+        if (graph->CanGetLoc()) {
+            CRef<CSeq_graph::TLoc> new_loc(new CSeq_graph::TLoc);
+            new_loc->Assign(graph->GetLoc());
+            bool bDeleted = false;
+            bool bTrimmed = false;
+            s_SeqLocDelete(new_loc, from, to, bDeleted, bTrimmed);
+            graph->SetLoc(*new_loc);
+        }
+    }
+}
+
+
+/// Trim Seq-graph annotation 
+void TrimSeqGraph(CBioseq_Handle bsh, 
+                  CRef<CSeq_graph> graph, 
+                  const TCuts& sorted_cuts)
+{
+    // Get range that original seqgraph data covers
+    TSeqPos graph_start = graph->GetLoc().GetStart(eExtreme_Positional);
+    TSeqPos graph_stop = graph->GetLoc().GetStop(eExtreme_Positional);
+
+    // Get range of trimmed sequence
+    TSeqPos trim_start;
+    TSeqPos trim_stop;
+    s_GetTrimCoordinates(bsh, sorted_cuts, trim_start, trim_stop);
+
+    // Determine range over which to copy seqgraph data from old to new
+    TSeqPos copy_start = graph_start;
+    if (trim_start > graph_start) {
+        copy_start = trim_start;
+    }
+    TSeqPos copy_stop = graph_stop;
+    if (trim_stop < graph_stop) {
+        copy_stop = trim_stop;
+    }
+
+    // Copy over seqgraph data values.  Handle BYTE type only (see 
+    // C Toolkit's GetGraphsProc function in api/sqnutil2.c)
+    CSeq_graph::TGraph& dst_data = graph->SetGraph();
+    switch ( dst_data.Which() ) {
+    case CSeq_graph::TGraph::e_Byte:
+        // Keep original min, max, axis
+
+        // Copy start/stop values are relative to bioseq coordinate system.
+        // Change them so that they are relative to the BYTE values container.
+        copy_start -= graph_start;
+        copy_stop -= graph_start;
+
+        // Update data values
+        dst_data.SetByte().SetValues().assign(
+            dst_data.GetByte().GetValues().begin() + copy_start,
+            dst_data.GetByte().GetValues().begin() + copy_stop + 1);
+
+        // Update numvals
+        graph->SetNumval(copy_stop - copy_start + 1);
+
+        // Update seqloc
+        s_UpdateSeqGraphLoc(graph, sorted_cuts);
+        break;
+    }
+}
+
+
+bool s_FindSegment(const CDense_seg& denseg,
+                   CDense_seg::TDim row,
+                   TSeqPos pos,
+                   CDense_seg::TNumseg& seg,
+                   TSeqPos& seg_start)
+{
+    for (seg = 0; seg < denseg.GetNumseg(); ++seg) {
+        TSignedSeqPos start = denseg.GetStarts()[seg * denseg.GetDim() + row];
+        TSignedSeqPos len   = denseg.GetLens()[seg];
+        if (start != -1) {
+            if (pos >= start  &&  pos < start + len) {
+                seg_start = start;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void s_CutDensegSegment(CRef<CSeq_align> align, 
+                        CDense_seg::TDim row,
+                        TSeqPos pos)
+{
+    // Find the segment where pos occurs for the sequence (identified by 
+    // row).
+    // If pos is not the start of the segment, cut the segment in two, with 
+    // one of the segments using pos as the new start.
+
+
+    // Find the segment where pos lies
+    const CDense_seg& denseg = align->GetSegs().GetDenseg();
+    CDense_seg::TNumseg foundseg; 
+    TSeqPos seg_start;
+    if ( !s_FindSegment(denseg, row, pos, foundseg, seg_start) ) {
+        return;
+    }
+
+    // Found our segment seg
+    // If pos falls on segment boundary, do nothing
+    if (pos == seg_start) {
+        return;
+    }
+
+
+    // Cut the segment :
+    // 1) Allocate a new denseg with numseg size = original size + 1
+    // 2) Copy elements before the cut
+    // 3) Split segment at pos
+    // 4) Copy elements after the cut
+    // 5) Replace old denseg with new denseg
+
+    // Allocate a new denseg with numseg size = original size + 1
+    CRef<CDense_seg> new_denseg(new CDense_seg);    
+    new_denseg->SetDim( denseg.GetDim() );
+    new_denseg->SetNumseg( denseg.GetNumseg() + 1 );
+    ITERATE( CDense_seg::TIds, idI, denseg.GetIds() ) {
+        CSeq_id *si = new CSeq_id;
+        si->Assign(**idI);
+        new_denseg->SetIds().push_back( CRef<CSeq_id>(si) );
+    }
+
+    // Copy elements (starts, lens, strands) before the cut (up to and including
+    // foundseg-1 in original denseg)
+    for (CDense_seg::TNumseg curseg = 0; curseg < foundseg; ++curseg) {
+        // Copy starts
+        for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); ++curdim) {
+            TSeqPos index = curseg * denseg.GetDim() + curdim;
+            new_denseg->SetStarts().push_back( denseg.GetStarts()[index] );
+        }
+
+        // Copy lens
+        new_denseg->SetLens().push_back( denseg.GetLens()[curseg] );
+
+        // Copy strands
+        if ( denseg.IsSetStrands() ) {
+            for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); 
+                 ++curdim) 
+            {
+                TSeqPos index = curseg * denseg.GetDim() + curdim;
+                new_denseg->SetStrands().push_back(denseg.GetStrands()[index]);
+            }
+        }
+    }
+
+    // Split segment at pos
+    // First find the lengths of the split segments, first_len and second_len
+    TSeqPos first_len, second_len;
+    TSeqPos index = foundseg * denseg.GetDim() + row;
+    if ( !denseg.IsSetStrands() || denseg.GetStrands()[index] != eNa_strand_minus )
+    {
+        first_len  = pos - seg_start;
+        second_len = denseg.GetLens()[foundseg] - first_len;
+    } 
+    else {
+        second_len = pos - seg_start;
+        first_len  = denseg.GetLens()[foundseg] - second_len;
+    }   
+
+    // Set starts, strands, and lens for the split segments (foundseg and foundseg+1)
+    // Populate foundseg in new denseg
+    for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); ++curdim) {
+        TSeqPos index = foundseg * denseg.GetDim() + curdim;
+        if (denseg.GetStarts()[index] == -1) {
+            new_denseg->SetStarts().push_back(-1);
+        }
+        else if (!denseg.IsSetStrands() || denseg.GetStrands()[index] != eNa_strand_minus) {
+            new_denseg->SetStarts().push_back(denseg.GetStarts()[index]);
+        }
+        else {
+            new_denseg->SetStarts().push_back(denseg.GetStarts()[index] + second_len);
+        }
+
+        if (denseg.IsSetStrands()) {
+            new_denseg->SetStrands().push_back(denseg.GetStrands()[index]);
+        }
+    }    
+    new_denseg->SetLens().push_back(first_len);
+    // Populate foundseg+1 in new denseg
+    for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); ++curdim) {
+        TSeqPos index = foundseg * denseg.GetDim() + curdim;
+        if (denseg.GetStarts()[index] == -1) {
+            new_denseg->SetStarts().push_back(-1);
+        }
+        else if (!denseg.IsSetStrands() || denseg.GetStrands()[index] != eNa_strand_minus) {
+            new_denseg->SetStarts().push_back(denseg.GetStarts()[index] + first_len);
+        }
+        else {
+            new_denseg->SetStarts().push_back(denseg.GetStarts()[index]);
+        }
+
+        if (denseg.IsSetStrands()) {
+            new_denseg->SetStrands().push_back(denseg.GetStrands()[index]);
+        }
+    }    
+    new_denseg->SetLens().push_back(second_len);
+
+    // Copy elements (starts, lens, strands) after the cut (starting from foundseg+1 in 
+    // original denseg)
+    for (CDense_seg::TNumseg curseg = foundseg+1; curseg < denseg.GetNumseg(); ++curseg) {
+        // Copy starts
+        for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); ++curdim) {
+            TSeqPos index = curseg * denseg.GetDim() + curdim;
+            new_denseg->SetStarts().push_back( denseg.GetStarts()[index] );
+        }
+
+        // Copy lens
+        new_denseg->SetLens().push_back( denseg.GetLens()[curseg] );
+
+        // Copy strands
+        if ( denseg.IsSetStrands() ) {
+            for (CDense_seg::TDim curdim = 0; curdim < denseg.GetDim(); 
+                 ++curdim) 
+            {
+                TSeqPos index = curseg * denseg.GetDim() + curdim;
+                new_denseg->SetStrands().push_back(denseg.GetStrands()[index]);
+            }
+        }
+    }
+
+    // Update 
+    align->SetSegs().SetDenseg(*new_denseg);
+}
+
+
+/// Trim Seq-align annotation
+void TrimSeqAlign(CBioseq_Handle bsh, 
+                  CRef<CSeq_align> align, 
+                  const TCuts& sorted_cuts)
+{
+    // Assumption:  only DENSEG type is supported so caller should
+    // ensure only denseg alignments are passed in.
+    const CDense_seg& denseg = align->GetSegs().GetDenseg();
+
+    // On which "row" of the denseg does the bsh seqid lie?
+    const CDense_seg::TIds& ids = denseg.GetIds();
+    CDense_seg::TDim row = -1;
+    for (CDense_seg::TIds::size_type rr = 0; rr < ids.size(); ++rr) {
+        if (ids[rr]->Match( *(bsh.GetSeqId()) )) {
+            row = rr;
+            break;
+        }
+    }
+    if ( row < 0 || !denseg.CanGetDim() || row >= denseg.GetDim() ) {
+        return;
+    }
+
+    // Make the cuts
+    for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
+        const TRange& cut = sorted_cuts[ii];
+        TSeqPos cut_from = cut.GetFrom();
+        TSeqPos cut_to = cut.GetTo();
+
+        TSeqPos cut_len = cut_to - cut_from + 1;
+        if (cut_to < cut_from) {
+            cut_len = cut_from - cut_to + 1;
+            cut_from = cut_to;
+        } 
+
+        // Note: row is 0-based
+
+        // May need to cut the segment at both start and stop positions
+        // if they do not fall on segment boundaries
+        s_CutDensegSegment(align, row, cut_from);
+        s_CutDensegSegment(align, row, cut_from + cut_len);
+
+        // Update segment start values for the trimmed sequence row
+        for (CDense_seg::TNumseg curseg = 0; curseg < denseg.GetNumseg(); ++curseg) {
+            TSeqPos index = curseg * denseg.GetDim() + row;
+            TSeqPos seg_start = denseg.GetStarts()[index];
+            if (seg_start < 0) {
+                // This indicates a gap, no change needed
+            }
+            else if (seg_start < cut_from) {
+                // This is before the cut, no change needed
+            }
+            else if (seg_start >= cut_from && 
+                     seg_start + denseg.GetLens()[curseg] <= cut_from + cut_len) {
+                // This is in the gap, indicate it with a -1
+                align->SetSegs().SetDenseg().SetStarts()[index] = -1;
+            }
+            else {
+                // This is after the cut - subtract the cut_len
+                align->SetSegs().SetDenseg().SetStarts()[index] -= cut_len;
+            }
+        }
+    }
+}
+
+
+/// Trim Seq-feat annotation
+void TrimSeqFeat(CRef<CSeq_feat> feat, 
+                 const TCuts& sorted_cuts,
+                 bool& bFeatureDeleted, 
+                 bool& bFeatureTrimmed)
+{
+    for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
+        const TRange& cut = sorted_cuts[ii];
+        TSeqPos from = cut.GetFrom();
+        TSeqPos to = cut.GetTo();
+
+        // Update Seqloc "feature made from" 
+        if (feat->CanGetLocation()) {
+            CRef<CSeq_feat::TLocation> new_location(new CSeq_feat::TLocation);
+            new_location->Assign(feat->GetLocation());
+            s_SeqLocDelete(new_location, from, to, bFeatureDeleted, bFeatureTrimmed);
+            feat->SetLocation(*new_location);
+
+            // No need to cut anymore nor update.  Feature will be completely
+            // deleted.  
+            if (bFeatureDeleted) {
+                return;
+            }
+        }
+
+        // Update Seqloc "product of process"
+        if (feat->CanGetProduct()) {
+            CRef<CSeq_feat::TProduct> new_product(new CSeq_feat::TProduct);
+            new_product->Assign(feat->GetProduct());
+            bool bProdDeleted = false;
+            bool bProdTrimmed = false;
+            s_SeqLocDelete(new_product, from, to, bProdDeleted, bProdTrimmed);
+            feat->SetProduct(*new_product);
+        }
+    }
+}
+
+
+/// Secondary function needed after trimming Seq-feat.
+/// If the trim completely covers the feature (boolean reference bFeatureDeleted
+/// from TrimSeqFeat() returns true), then delete protein sequence and 
+/// re-normalize nuc-prot set.
+void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h)
+{
+    // Delete the feature
+    CSeq_feat_EditHandle feat_eh(feat_h);
+    feat_eh.Remove();
+
+    // If the feature was a Cdregion, then delete the protein sequence
+    CMappedFeat mapped_feat(feat_h);
+    if ( mapped_feat.IsSetData() && 
+         mapped_feat.GetData().Which() == CSeqFeatData::e_Cdregion &&
+         mapped_feat.IsSetProduct() )
+    {
+        // Use Cdregion feat.product seqloc to get protein bioseq handle
+        CBioseq_Handle prot_h = 
+            mapped_feat.GetScope().GetBioseqHandle(mapped_feat.GetProduct());
+
+        // Should be a protein!
+        if ( prot_h.IsProtein() && !prot_h.IsRemoved() ) {
+            // Delete the protein
+            CBioseq_EditHandle prot_eh(prot_h);
+            prot_eh.Remove();
+
+            // If lone nuc remains, renormalize the nuc-prot set
+            CBioseq_set_Handle bssh = prot_h.GetParentBioseq_set();
+            if (bssh && bssh.IsSetClass() 
+                && bssh.GetClass() == CBioseq_set::eClass_nuc_prot
+                && !bssh.IsEmptySeq_set() 
+                && bssh.GetBioseq_setCore()->GetSeq_set().size() == 1) 
+            {
+                // Renormalize the lone nuc that's inside the nuc-prot set into  
+                // a nuc bioseq.  This call will remove annots/descrs from the 
+                // set and attach them to the seq.
+                bssh.GetParentEntry().GetEditHandle().ConvertSetToSeq();
+            }
+        }
+    }
+}
+
+
+/// Secondary function needed after trimming Seq-feat.
+/// If TrimSeqFeat()'s bFeatureTrimmed returns true, then adjust cdregion frame.
+void AdjustCdregionFrame(TSeqPos original_nuc_len, 
+                         CRef<CSeq_feat> cds,
+                         const TCuts& sorted_cuts)
+{
+    // Get partialness and strand of location before cutting
+    bool bIsPartialStart = false;
+    ENa_strand eStrand = eNa_strand_unknown;
+    if (cds->CanGetLocation()) {
+        bIsPartialStart = cds->GetLocation().IsPartialStart(eExtreme_Biological);
+        eStrand = cds->GetLocation().GetStrand(); 
+    }
+
+    for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
+        const TRange& cut = sorted_cuts[ii];
+        TSeqPos from = cut.GetFrom();
+        TSeqPos to = cut.GetTo();
+
+        // Adjust Seq-feat.data.cdregion frame
+        if (cds->CanGetData() && 
+            cds->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion &&
+            cds->GetData().IsCdregion())
+        {
+            // Make a copy
+            CRef<CCdregion> new_cdregion(new CCdregion);
+            new_cdregion->Assign(cds->GetData().GetCdregion());
+
+            // Edit the copy
+            if ( (eStrand == eNa_strand_minus &&
+                  to == original_nuc_len - 1 &&
+                  bIsPartialStart)
+                 ||
+                 (eStrand != eNa_strand_minus && 
+                  from == 0 && 
+                  bIsPartialStart) )
+            {
+                TSeqPos old_frame = new_cdregion->GetFrame();
+                if (old_frame == 0) {
+                    old_frame = 1;
+                }
+
+                TSignedSeqPos new_frame = old_frame - ((to - from + 1) % 3);
+                if (new_frame < 1) {
+                    new_frame += 3;
+                }
+                new_cdregion->SetFrame((CCdregion::EFrame)new_frame);
+            }
+
+            // Update the original
+            cds->SetData().SetCdregion(*new_cdregion);
+        }
+    }
+}
+
+
+/// Secondary function needed after trimming Seq-feat.
+/// If TrimSeqFeat()'s bFeatureTrimmed returns true, then make new protein
+/// sequence.
+CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
+                                    CRef<CSeq_feat> cds,
+                                    CRef<CSeq_inst> new_inst)
+{
+    CRef<CBioseq> new_protein_bioseq;
+    if (new_inst->IsSetSeq_data()) {
+        // Generate new protein sequence data and length
+        new_protein_bioseq = CSeqTranslator::TranslateToProtein(*cds, new_scope);
+        if (new_protein_bioseq->GetInst().GetSeq_data().IsIupacaa()) 
+        {
+            new_inst->SetSeq_data().SetIupacaa().Set( 
+                new_protein_bioseq->GetInst().GetSeq_data().GetIupacaa().Get());
+            new_inst->SetLength( new_protein_bioseq->GetInst().GetLength() );
+        }
+        else if (new_protein_bioseq->GetInst().GetSeq_data().IsNcbieaa()) 
+        {
+            new_inst->SetSeq_data().SetNcbieaa().Set( 
+                new_protein_bioseq->GetInst().GetSeq_data().GetNcbieaa().Get());
+            new_inst->SetLength( new_protein_bioseq->GetInst().GetLength() );
+        }
+    }
+    return new_protein_bioseq;
+}
+
+
+/// Secondary function needed after trimming Seq-feat.
+/// If TrimSeqFeat()'s bFeatureTrimmed returns true, then retranslate cdregion.
+void RetranslateCdregion(CBioseq_Handle nuc_bsh, 
+                         CRef<CSeq_feat> cds,
+                         const TCuts& sorted_cuts)
+{
+    if ( cds->IsSetData() && 
+         cds->GetData().Which() == CSeqFeatData::e_Cdregion &&
+         cds->IsSetProduct() )
+    {
+        // Use Cdregion.Product to get handle to protein bioseq 
+        CScope& new_scope = nuc_bsh.GetScope();
+        CBioseq_Handle prot_bsh = new_scope.GetBioseqHandle(cds->GetProduct());
+        if (!prot_bsh.IsProtein()) {
+            return;
+        }
+
+        // Make a copy 
+        CRef<CSeq_inst> new_inst(new CSeq_inst());
+        new_inst->Assign(prot_bsh.GetInst());
+
+        // Edit the copy
+        CRef<CBioseq> new_protein_bioseq = 
+            SetNewProteinSequence(new_scope, cds, new_inst);
+        if ( !new_protein_bioseq ) {
+            return;
+        }
+
+        // Update the original
+        CBioseq_EditHandle prot_eh = prot_bsh.GetEditHandle();
+        prot_eh.SetInst(*new_inst);
+
+        // If protein feature exists, update it
+        SAnnotSelector sel(CSeqFeatData::e_Prot);
+        CFeat_CI prot_feat_ci(prot_bsh, sel);
+        for ( ; prot_feat_ci; ++prot_feat_ci ) {
+            // Make a copy
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(prot_feat_ci->GetOriginalFeature());
+
+            if ( new_feat->CanGetLocation() &&
+                 new_feat->GetLocation().IsInt() &&
+                 new_feat->GetLocation().GetInt().CanGetTo() )
+            {
+                // Edit the copy
+                new_feat->SetLocation().SetInt().SetTo(
+                    new_protein_bioseq->GetLength() - 1);
+
+                // Update the original
+                CSeq_feat_EditHandle prot_feat_eh(*prot_feat_ci);
+                prot_feat_eh.Replace(*new_feat);
+            }
+        }
+    }
+}
+
+/*******************************************************************************
+**** LOW-LEVEL API
+****
+**** Trim functions 
+*******************************************************************************/
 
 
 END_SCOPE(edit)

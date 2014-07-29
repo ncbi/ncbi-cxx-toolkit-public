@@ -176,6 +176,114 @@ NCBI_XOBJEDIT_EXPORT
 void ResetLinkageEvidence(CSeq_ext& ext, CLinkage_evidence::TType evidence_type);
 
 
+/*******************************************************************************
+**** HIGH-LEVEL API
+****
+**** Trim functions
+*******************************************************************************/
+
+/// A list of trim coordinates 
+typedef CRange<TSeqPos> TRange;
+typedef vector<TRange> TCuts;
+
+/// Any internal cut listed in TCuts will be converted to a terminal cut 
+/// using one of these options.  The default is eTrimToClosestEnd.
+enum EInternalTrimType {
+    eTrimToClosestEnd = 0,  // default
+    eTrimTo5PrimeEnd,
+    eTrimTo3PrimeEnd
+};
+
+/// Trim sequence data and all associated annotation
+NCBI_XOBJEDIT_EXPORT
+void TrimSequenceAndAnnotation(CBioseq_Handle bsh, 
+                               const TCuts& cuts,
+                               EInternalTrimType internal_cut_conversion = eTrimToClosestEnd);
+
+
+/*******************************************************************************
+**** LOW-LEVEL API
+****
+**** Trim functions divided up into trimming separate distinct objects, i.e.,
+**** the sequence data itself and all associated annotation.
+****
+**** Used by callers who need access to each edited object so that they can 
+**** pass these edited objects to a command undo/redo framework, for example.
+*******************************************************************************/
+
+/// 1) Merge abutting and overlapping cuts.
+/// 2) Adjust any internal cuts to terminal cuts according to option.
+/// 3) Sort the cuts from greatest to least so that sequence
+///    data and annotation will be deleted from greatest loc to smallest loc.
+///    That way we don't have to adjust coordinate values after 
+///    each cut.
+NCBI_XOBJEDIT_EXPORT
+void GetSortedCuts(CBioseq_Handle bsh, 
+                   const TCuts& cuts,
+                   TCuts& sorted_cuts,
+                   EInternalTrimType internal_cut_conversion = eTrimToClosestEnd);
+
+/// Trim sequence data
+NCBI_XOBJEDIT_EXPORT
+void TrimSeqData(CBioseq_Handle bsh, 
+                 CRef<CSeq_inst> inst, 
+                 const TCuts& sorted_cuts);
+
+/// Trim Seq-graph annotation 
+NCBI_XOBJEDIT_EXPORT
+void TrimSeqGraph(CBioseq_Handle bsh, 
+                  CRef<CSeq_graph> graph, 
+                  const TCuts& sorted_cuts);
+
+/// Trim Seq-align annotation
+NCBI_XOBJEDIT_EXPORT
+void TrimSeqAlign(CBioseq_Handle bsh, 
+                  CRef<CSeq_align> align, 
+                  const TCuts& sorted_cuts);
+
+/// Trim Seq-feat annotation
+NCBI_XOBJEDIT_EXPORT
+void TrimSeqFeat(CRef<CSeq_feat> feat, 
+                 const TCuts& sorted_cuts,
+                 bool& bFeatureDeleted, 
+                 bool& bFeatureTrimmed);
+
+/// Secondary function needed after trimming Seq-feat.
+/// If the trim completely covers the feature (boolean reference bFeatureDeleted
+/// from TrimSeqFeat() returns true), then delete protein sequence and 
+/// re-normalize nuc-prot set.
+NCBI_XOBJEDIT_EXPORT
+void DeleteProteinAndRenormalizeNucProtSet(const CSeq_feat_Handle& feat_h);
+
+/// Secondary function needed after trimming Seq-feat.
+/// If TrimSeqFeat()'s bFeatureTrimmed returns true, then adjust cdregion frame.
+NCBI_XOBJEDIT_EXPORT
+void AdjustCdregionFrame(TSeqPos original_nuc_len, 
+                         CRef<CSeq_feat> cds,
+                         const TCuts& sorted_cuts);
+
+/// Secondary function needed after trimming Seq-feat.
+/// If TrimSeqFeat()'s bFeatureTrimmed returns true, then make new protein
+/// sequence.
+NCBI_XOBJEDIT_EXPORT
+CRef<CBioseq> SetNewProteinSequence(CScope& new_scope,
+                                    CRef<CSeq_feat> cds,
+                                    CRef<CSeq_inst> new_inst);
+
+/// Secondary function needed after trimming Seq-feat.
+/// If TrimSeqFeat()'s bFeatureTrimmed returns true, then retranslate cdregion.
+NCBI_XOBJEDIT_EXPORT
+void RetranslateCdregion(CBioseq_Handle nuc_bsh, 
+                         CRef<CSeq_feat> cds,
+                         const TCuts& sorted_cuts);
+
+/*******************************************************************************
+**** LOW-LEVEL API
+****
+**** Trim functions 
+*******************************************************************************/
+
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
