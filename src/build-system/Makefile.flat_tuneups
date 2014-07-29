@@ -58,28 +58,22 @@ all_dirs ?= $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
 main_hintees = algo/cobalt/demo app/grid/remote_app cgi connect \
     connect/daemons connect/ext connect/test dbapi/driver/ctlib/samples \
     dbapi/driver/ftds64/ctlib/samples dbapi/test dbapi/test/driver \
-    objmgr/test sample/app/cgi sample/app/cgires
+    objmgr/test sample/app/cgi sample/app/cgi/cgires
 
-sra_hintees_ = libs/align libs/axf libs/kdb libs/klib libs/kns libs/kproc \
-    libs/krypto libs/sra libs/sraxf libs/vdb libs/vfs libs/vxf libs/wgsxf \
-    tools/bam-loader tools/sra-dump tools/sra-load tools/sra-pileup \
-    tools/vdb-decrypt
-sra_hintees = $(sra_hintees_:%=sra/sdk/%)
-
-gpipe_hintees_ = action_nodes/src/altloci_load align_db/user_if/AnnotAlignsDb \
-    align_db/user_if/GenomeAlignsDb app/action_nodes app/aligndb app/gbench \
-    app/gencoll/gc_update_complete_genomes app/gnomon app/remap app/repeats \
-    app/validation app/worker_nodes/blast app/worker_nodes/genemark \
-    gencoll/src/gcaccess/get_assembly gpinit/src/gui_build_output \
-    objects/genomecoll
+gpipe_hintees_ = app/action_nodes app/aligndb app/fscr app/gbench \
+    app/gencoll/altloci_load app/gencoll/ftp_reports app/gpinit app/kmer \
+    app/pathogen_pipeline app/remap app/repeats app/worker_nodes/blast \
+    common/jira gencoll/src/asmmetric gencoll/src/gcaccess/get_assembly \
+    gencoll/src/web gpexec/src/app gpinit/src/build_config \
+    gpinit/src/gui_build_output objects/genomecoll web/cgi/gpinit
 gpipe_hintees = $(gpipe_hintees_:%=gpipe/%)
 
-internal_hintees_ = asn_cache/lib gench/app/sviewer/seqgraphic gnomon \
-    $(gpipe_hintees) portal/backend/HTB pubmedxml/Libs/PubmedServer \
-    snp/qa/snp_validate $(sra_hintees) txserver
+internal_hintees_ = ID/utils algo/align/prosplign asn_cache/lib \
+    blast/SplitDB/auxcomm blast/vdb/blastn eutils/eutilsapp geo/auth \
+    geo/gds/analyze geo/geocgi $(gpipe_hintees) portal/backend/HTB txserver
 internal_hintees = $(internal_hintees_:%=internal/%)
 
-potential_hintees = $(main_hintees) $(sra_hintees) $(internal_hintees)
+potential_hintees = $(main_hintees) $(internal_hintees)
 hintees = $(filter $(potential_hintees:%=%/),$(all_dirs))
 
 # all_files.real : $(all_dirs:%=%.files.real) ;
