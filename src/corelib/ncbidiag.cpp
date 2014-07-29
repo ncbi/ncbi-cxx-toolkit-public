@@ -736,7 +736,7 @@ struct SRequestCtxWrapper
 inline Uint8 s_GetThreadId(void)
 {
     if (TPrintSystemTID::GetDefault()) {
-        return (Uint8)(CThreadSystemID::GetCurrent().m_ID); // GCC 3.4.6 gives warning - ignore it.
+        return (Uint8)GetCurrentThreadSystemID(); // GCC 3.4.6 gives warning - ignore it.
     } else {
         return CThread::GetSelf();
     }
@@ -824,24 +824,24 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
     // mid-execution would both add overhead and open up uncatchable
     // opportunities for inappropriate recursion.
 
-    static volatile CThreadSystemID s_LastThreadID
+    static volatile TThreadSystemID s_LastThreadID
         = THREAD_SYSTEM_ID_INITIALIZER;
 
     if (s_ThreadDataState != eInitialized) {
         // Avoid false positives, while also taking care not to call
         // anything that might itself produce diagnostics.
-        CThreadSystemID thread_id = CThreadSystemID::GetCurrent();
+        TThreadSystemID thread_id = GetCurrentThreadSystemID();
         switch (s_ThreadDataState) {
         case eInitialized:
             break;
 
         case eUninitialized:
             s_ThreadDataState = eInitializing;
-            s_LastThreadID.Set(thread_id);
+            s_LastThreadID = thread_id;
             break;
 
         case eInitializing:
-            if (s_LastThreadID.Is(thread_id)) {
+            if (s_LastThreadID == thread_id) {
                 cerr << "FATAL ERROR: inappropriate recursion initializing NCBI"
                         " diagnostic framework." << endl;
                 Abort();
@@ -850,11 +850,11 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 
         case eDeinitialized:
             s_ThreadDataState = eReinitializing;
-            s_LastThreadID.Set(thread_id);
+            s_LastThreadID = thread_id;
             break;
 
         case eReinitializing:
-            if (s_LastThreadID.Is(thread_id)) {
+            if (s_LastThreadID == thread_id) {
                 cerr << "FATAL ERROR: NCBI diagnostic framework no longer"
                         " initialized." << endl;
                 Abort();

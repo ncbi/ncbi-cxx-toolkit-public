@@ -259,7 +259,7 @@ void CTestCondVarApp::Consume(int idx)
         {
             SSystemMutex& sysmtx = m_BufferLock;
             assert(sysmtx.m_Count == 1);
-            assert(sysmtx.m_Owner.Is( CThreadSystemID::GetCurrent()));
+            assert(sysmtx.m_Owner == GetCurrentThreadSystemID());
             assert(m_BufferLock.TryLock());
             assert(sysmtx.m_Count == 2);
             m_BufferLock.Unlock();

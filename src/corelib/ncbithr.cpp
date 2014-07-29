@@ -854,16 +854,7 @@ void CThread::OnExit(void)
 
 void CThread::GetSystemID(TThreadSystemID* id)
 {
-#if defined(NCBI_WIN32_THREADS)
-    // Can not use GetCurrentThread() since it also requires
-    // DuplicateHandle() and CloseHandle() to be called for the result.
-    *id = GetCurrentThreadId();
-#elif defined(NCBI_POSIX_THREADS)
-    *id = pthread_self();
-#else
-    *id = 0;
-#endif
-    return;
+    *id = GetCurrentThreadSystemID();
 }
 
 

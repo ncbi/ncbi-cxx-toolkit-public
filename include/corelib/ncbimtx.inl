@@ -106,8 +106,7 @@ inline
 void SSystemMutex::InitializeDynamic(void)
 {
     m_Mutex.InitializeDynamic();
-    CThreadSystemID id = THREAD_SYSTEM_ID_INITIALIZER;
-    m_Owner.Set(id);
+    m_Owner = 0;
     m_Count = 0;
 }
 

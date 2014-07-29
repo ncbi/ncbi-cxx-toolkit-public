@@ -80,7 +80,7 @@ void WriteMutexEvent(void* mutex_ptr, const char* message)
         mode, perm);
     CNcbiOstrstream str_os;
     str_os << mutex_ptr << " "
-        << CThreadSystemID::GetCurrent().m_ID << " "
+        << GetCurrentThreadSystemID() << " "
         << message << "\n";
     write(handle, str_os.str(), str_os.pcount());
     str_os.rdbuf()->freeze(false);
@@ -302,8 +302,8 @@ void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics lock)
 {
     m_Mutex.CheckInitialized();
 
-    CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count > 0 && m_Owner.Is(owner) ) {
+    TThreadSystemID owner = GetCurrentThreadSystemID();
+    if ( m_Count > 0 && m_Owner == owner ) {
         // Don't lock twice, just increase the counter
         m_Count++;
         return;
@@ -312,7 +312,7 @@ void SSystemMutex::Lock(SSystemFastMutex::ELockSemantics lock)
     // Lock the mutex and remember the owner
     m_Mutex.Lock(lock);
     assert(m_Count == 0);
-    m_Owner.Set(owner);
+    m_Owner = owner;
     m_Count = 1;
 }
 
@@ -320,8 +320,8 @@ bool SSystemMutex::TryLock(void)
 {
     m_Mutex.CheckInitialized();
 
-    CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count > 0 && m_Owner.Is(owner) ) {
+    TThreadSystemID owner = GetCurrentThreadSystemID();
+    if ( m_Count > 0 && m_Owner == owner ) {
         // Don't lock twice, just increase the counter
         m_Count++;
         return true;
@@ -330,7 +330,7 @@ bool SSystemMutex::TryLock(void)
     // If TryLock is successful, remember the owner
     if ( m_Mutex.TryLock() ) {
         assert(m_Count == 0);
-        m_Owner.Set(owner);
+        m_Owner = owner;
         m_Count = 1;
         return true;
     }
@@ -345,8 +345,8 @@ void SSystemMutex::Unlock(SSystemFastMutex::ELockSemantics lock)
 
     // No unlocks by threads other than owner.
     // This includes no unlocks of unlocked mutex.
-    CThreadSystemID owner = CThreadSystemID::GetCurrent();
-    if ( m_Count == 0 || m_Owner.IsNot(owner) ) {
+    TThreadSystemID owner = GetCurrentThreadSystemID();
+    if ( m_Count == 0 || m_Owner != owner ) {
         ThrowNotOwned();
     }
 
@@ -608,9 +608,9 @@ CRWLock::~CRWLock(void)
 }
 
 
-inline bool CRWLock::x_MayAcquireForReading(CThreadSystemID self_id)
+inline bool CRWLock::x_MayAcquireForReading(TThreadSystemID self_id)
 {
-    _ASSERT(self_id == CThreadSystemID::GetCurrent());
+    _ASSERT(self_id == GetCurrentThreadSystemID());
     if (m_Count < 0) { // locked for writing, possibly by self
         // return m_Owner.Is(self_id);
         return false; // allow special handling of self-locked cases
@@ -759,7 +759,7 @@ void CRWLock::ReadLock(void)
     }
 #endif
 
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
 
     // Lock mutex now, unlock before exit.
     // (in fact, it will be unlocked by the waiting function for a while)
@@ -769,7 +769,7 @@ void CRWLock::ReadLock(void)
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
     if ( !x_MayAcquireForReading(self_id) ) {
-        if (m_Count < 0  &&  m_Owner.Is(self_id)) {
+        if (m_Count < 0  &&  m_Owner == self_id) {
             _VERIFY(interlocked_dec_max(&m_Count, 0));
         }
         else {
@@ -847,7 +847,7 @@ bool CRWLock::TryReadLock(void)
     }
 #endif
 
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
@@ -856,7 +856,7 @@ bool CRWLock::TryReadLock(void)
 #endif
 
     if ( !x_MayAcquireForReading(self_id) ) {
-        if (m_Count >= 0  ||  m_Owner.IsNot(self_id)) {
+        if (m_Count >= 0  ||  m_Owner != self_id) {
             // (due to be) W-locked by another thread
             return false;
         }
@@ -907,7 +907,7 @@ bool CRWLock::TryReadLock(const CTimeout& timeout)
     }
 #endif
 
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
 
     // Lock mutex now, unlock before exit.
     // (in fact, it will be unlocked by the waiting function for a while)
@@ -917,7 +917,7 @@ bool CRWLock::TryReadLock(const CTimeout& timeout)
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
     if ( !x_MayAcquireForReading(self_id) ) {
-        if (m_Count < 0  &&  m_Owner.Is(self_id)) {
+        if (m_Count < 0  &&  m_Owner == self_id) {
             _VERIFY(interlocked_dec_max(&m_Count, 0));
         }
         else {
@@ -1006,7 +1006,7 @@ void CRWLock::WriteLock(void)
     return;
 #else
 
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
@@ -1014,7 +1014,7 @@ void CRWLock::WriteLock(void)
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
 
-    if ( m_Count < 0 && m_Owner.Is(self_id) ) {
+    if ( m_Count < 0 && m_Owner == self_id ) {
         // W-locked by the same thread
         _VERIFY(interlocked_dec_max(&m_Count, 0));
     }
@@ -1084,7 +1084,7 @@ void CRWLock::WriteLock(void)
         xncbi_Validate(m_Count >= 0,
                        "CRWLock::WriteLock() - invalid readers counter");
         interlocked_set(&m_Count, -1);
-        m_Owner.Set(self_id);
+        m_Owner = self_id;
     }
 
     // No readers allowed
@@ -1099,7 +1099,7 @@ bool CRWLock::TryWriteLock(void)
     return true;
 #else
 
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
@@ -1109,7 +1109,7 @@ bool CRWLock::TryWriteLock(void)
 
     if ( m_Count < 0 ) {
         // W-locked
-        if ( m_Owner.IsNot(self_id) ) {
+        if ( m_Owner != self_id ) {
             // W-locked by another thread
             return false;
         }
@@ -1134,7 +1134,7 @@ bool CRWLock::TryWriteLock(void)
                        "error locking R&W-semaphores");
 #endif
         interlocked_set(&m_Count, -1);
-        m_Owner.Set(self_id);
+        m_Owner = self_id;
     }
 
     // No readers allowed
@@ -1159,7 +1159,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
         return TryWriteLock();
     }
 
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
@@ -1167,7 +1167,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
     CFastMutexGuard guard(m_RW->m_Mutex);
 #endif
 
-    if ( m_Count < 0 && m_Owner.Is(self_id) ) {
+    if ( m_Count < 0 && m_Owner == self_id ) {
         // W-locked by the same thread
         _VERIFY(interlocked_dec_max(&m_Count, 0));
     }
@@ -1266,7 +1266,7 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
         xncbi_Validate(m_Count >= 0,
                        "CRWLock::TryWriteLock() - invalid readers counter");
         interlocked_set(&m_Count, -1);
-        m_Owner.Set(self_id);
+        m_Owner = self_id;
     }
 
     // No readers allowed
@@ -1288,7 +1288,7 @@ void CRWLock::Unlock(void)
     }
 #endif
 
-    CThreadSystemID self_id = CThreadSystemID::GetCurrent();
+    TThreadSystemID self_id = GetCurrentThreadSystemID();
 
 #if defined(NCBI_USE_CRITICAL_SECTION)
     CWin32MutexHandleGuard guard(m_RW->m_Mutex);
@@ -1298,7 +1298,7 @@ void CRWLock::Unlock(void)
 
     if (m_Count < 0) {
         // Check it is R-locked or W-locked by the same thread
-        xncbi_Validate(m_Owner.Is(self_id),
+        xncbi_Validate(m_Owner == self_id,
                        "CRWLock::Unlock() - "
                        "RWLock is locked by another thread");
         _VERIFY(interlocked_inc_max(&m_Count, 0));
@@ -1340,7 +1340,7 @@ void CRWLock::Unlock(void)
         }
         if (m_Flags & fTrackReaders) {
             // Check if the unlocking thread is in the owners list
-            vector<CThreadSystemID>::iterator found =
+            vector<TThreadSystemID>::iterator found =
                 find(m_Readers.begin(), m_Readers.end(), self_id);
             _ASSERT(found != m_Readers.end());
             m_Readers.erase(found);
@@ -2148,7 +2148,7 @@ bool CConditionVariable::WaitForSignal(CMutex&           mutex,
                    "WaitForSignal: mutex lock count not 1");
     }
 #if defined(NCBI_OS_MSWIN)
-    if (!sys_mtx.m_Owner.Is(CThreadSystemID::GetCurrent())) {
+    if ( sys_mtx.m_Owner != GetCurrentThreadSystemID() ) {
         NCBI_THROW(CConditionVariableException, eMutexOwner,
                    "WaitForSignal: mutex not owned by the current thread");
     }

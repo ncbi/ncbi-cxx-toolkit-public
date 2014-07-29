@@ -151,6 +151,22 @@ typedef HANDLE TSystemMutex;
 
 
 
+/// Get the current thread ID.
+static inline TThreadSystemID GetCurrentThreadSystemID(void)
+{
+#if defined(NCBI_NO_THREADS)
+    return TThreadSystemID(0);
+#elif defined(NCBI_POSIX_THREADS)
+    return pthread_self();
+#elif defined(NCBI_WIN32_THREADS)
+    return GetCurrentThreadId();
+#endif
+}
+
+/// Use in defining initial value of system mutex.
+#define THREAD_SYSTEM_ID_INITIALIZER 0
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CThreadSystemID --
@@ -172,13 +188,7 @@ public:
     static CThreadSystemID GetCurrent(void)
         {
             CThreadSystemID tid;
-#if defined(NCBI_NO_THREADS)
-            tid.m_ID = TID(0);
-#elif defined(NCBI_POSIX_THREADS)
-            tid.m_ID = pthread_self();
-#elif defined(NCBI_WIN32_THREADS)
-            tid.m_ID = GetCurrentThreadId();
-#endif
+            tid.m_ID = GetCurrentThreadSystemID();
             return tid;
         }
 
@@ -208,11 +218,6 @@ public:
             return m_ID != tid.m_ID;
         }
 };
-
-
-/// Use in defining initial value of system mutex.
-#define THREAD_SYSTEM_ID_INITIALIZER { 0 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -397,7 +402,7 @@ struct SSystemMutex
 {
     SSystemFastMutex m_Mutex; ///< Mutex value
 
-    volatile CThreadSystemID m_Owner; ///< Platform-dependent owner thread ID
+    volatile TThreadSystemID m_Owner; ///< Platform-dependent owner thread ID
 
     volatile int m_Count; ///< # of recursive (in the same thread) locks
 
@@ -1010,7 +1015,7 @@ private:
 
     auto_ptr<CInternalRWLock>  m_RW;    ///< Platform-dependent RW-lock data
 
-    volatile CThreadSystemID   m_Owner; ///< Writer ID, one of the readers ID
+    volatile TThreadSystemID   m_Owner; ///< Writer ID, one of the readers ID
 
     volatile long              m_Count; ///< Number of readers (if >0) or
                                         ///< writers (if <0)
@@ -1018,10 +1023,10 @@ private:
     volatile unsigned int      m_WaitingWriters; ///< Number of writers waiting;
                                                  ///< zero if not keeping track
 
-    vector<CThreadSystemID>    m_Readers;   ///< List of all readers or writers
+    vector<TThreadSystemID>    m_Readers;   ///< List of all readers or writers
                                             ///< for debugging
 
-    bool x_MayAcquireForReading(CThreadSystemID self_id);
+    bool x_MayAcquireForReading(TThreadSystemID self_id);
 
     /// Private copy constructor to disallow initialization.
     CRWLock(const CRWLock&);

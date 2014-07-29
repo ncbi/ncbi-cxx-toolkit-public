@@ -91,7 +91,7 @@ bool CTestDiagApp::Thread_Run(int idx)
         s_ErrLine = __LINE__ + 1;
     ERR_POST("ERROR message from thread " + NStr::IntToString(idx));
     for ( int i = 0; i < 1000000; ++i ) {
-        CThreadSystemID::GetCurrent();
+        GetCurrentThreadSystemID();
         //CThread::GetSelf();
     }
     return true;
