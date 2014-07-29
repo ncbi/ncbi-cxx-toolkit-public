@@ -83,6 +83,7 @@ USING_SCOPE(validator);
 #include "process_eutils.hpp"
 #include "process_fasta.hpp"
 #include "process_flatfile.hpp"
+#include "process_invert.hpp"
 #include "process_gene_overlap.hpp"
 #include "process_macrotest.hpp"
 #include "process_prosplign.hpp"
@@ -176,6 +177,7 @@ void CStreamTestApp::Init()
                                         "flatfile",
                                         "gene-overlap",
                                         "gpipe-defline",
+                                        "invert",
                                         "macrotest",
                                         "prosplign",
                                         "seqvector",
@@ -321,6 +323,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "gpipe-defline" ) {
         pProcess = new CDeflineProcess (true, true);
+    }
+    if ( testcase == "invert" ) {
+        pProcess = new CInvertProcess;
     }
     if ( testcase == "macrotest" ) {
         pProcess = new CMacroTestProcess;
