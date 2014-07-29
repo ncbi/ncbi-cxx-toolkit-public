@@ -75,6 +75,7 @@ public:
     string Type() const { return m_strType; };
     string Description() const { return m_strDescription; };
     string Name() const { return m_strName; };
+    bool ContainsData() const { return !m_Data.empty(); };
 
 protected:
     TrackData m_Data;

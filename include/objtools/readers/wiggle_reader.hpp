@@ -293,11 +293,12 @@ public:
     //  helpers:
     //
 protected:
-    void 
-    xReadBrowser();
+    bool 
+    xProcessBrowserLine(
+        IMessageListener*);
 
-    void 
-    xReadTrack(
+    bool 
+    xProcessTrackLine(
         IMessageListener*);
 
     void
@@ -449,11 +450,7 @@ protected:
     double m_GapValue;
     bool m_SingleAnnot;
     bool m_OmitZeros;
-    string m_TrackName;
-    string m_TrackDescription;
-    typedef map<string, string> TTrackParams;
-    TTrackParams m_TrackParams;
-    string m_TrackTypeValue;
+
     enum ETrackType {
         eTrackType_invalid,
         eTrackType_wiggle_0,

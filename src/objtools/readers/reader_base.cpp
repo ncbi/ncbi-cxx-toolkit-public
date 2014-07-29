@@ -390,6 +390,9 @@ void CReaderBase::x_AssignTrackData(
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
+    if (!m_pTrackDefaults->ContainsData()) {
+        return;
+    }
     CAnnot_descr& desc = annot->SetDesc();
     CRef<CUser_object> trackdata( new CUser_object() );
     trackdata->SetType().SetStr( "Track Data" );
@@ -415,7 +418,6 @@ void CReaderBase::x_AssignTrackData(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::x_ParseTrackLine(
     const string& strLine,
-    CRef<CSeq_annot>& annot,
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {

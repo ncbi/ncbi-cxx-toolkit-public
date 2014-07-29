@@ -61,6 +61,8 @@
 #include <objects/seqres/Real_graph.hpp>
 #include <objects/seqres/Byte_graph.hpp>
 
+#include "reader_data.hpp"
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
@@ -106,15 +108,25 @@ CWiggleReader::ReadSeqAnnot(
     if (lr.AtEOF()) {
         return CRef<CSeq_annot>();
     }
+    bool haveData = false;
     while ( xGetLine(lr) ) {
+        if (NStr::StartsWith(m_CurLine, "track")) {
+            if (haveData) {
+                --m_uLineNumber;
+                lr.UngetLine();
+                break;
+            }
+            if (xProcessTrackLine(pMessageListener)) {
+                continue;
+            }
+        }
+            
+        if (xProcessBrowserLine(pMessageListener)) {
+            continue;
+        }
+
         CTempString s = xGetWord(pMessageListener);
-        if ( s == "browser" ) {
-            xReadBrowser();
-        }
-        else if ( s == "track" ) {
-            xReadTrack(pMessageListener);
-        }
-        else if ( s == "fixedStep" ) {
+        if ( s == "fixedStep" ) {
             SFixedStepInfo fixedStepInfo;
             xGetFixedStepInfo(fixedStepInfo, pMessageListener);
             if (!m_ChromId.empty() && fixedStepInfo.mChrom != m_ChromId) {
@@ -122,6 +134,7 @@ CWiggleReader::ReadSeqAnnot(
                 return xGetAnnot();
             }
             xReadFixedStepData(fixedStepInfo, lr, pMessageListener);
+            haveData = true;
         }
         else if ( s == "variableStep" ) {
             SVarStepInfo varStepInfo;
@@ -131,9 +144,11 @@ CWiggleReader::ReadSeqAnnot(
                 return xGetAnnot();
             }
             xReadVariableStepData(varStepInfo, lr, pMessageListener);
+            haveData = true;
         }
         else {
             xReadBedLine(s, pMessageListener);
+            haveData = true;
         }
     }
     return xGetAnnot();
@@ -502,9 +517,11 @@ CRef<CSeq_graph> CWiggleReader::xMakeGraph(void)
     
     xSetTotalLoc(*graph_loc, *chrom_id);
 
-    if ( !m_TrackName.empty() ) {
-        graph->SetTitle(m_TrackName);
+    string trackName = m_pTrackDefaults->Name();
+    if (!trackName.empty()) {
+        graph->SetTitle(trackName);
     }
+       
     graph->SetComp(stat.m_Span);
     graph->SetA(stat.m_Step);
     graph->SetB(stat.m_Min);
@@ -545,28 +562,20 @@ CRef<CSeq_annot> CWiggleReader::xMakeAnnot(void)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    if ( !m_TrackDescription.empty() ) {
+    string trackDescription = m_pTrackDefaults->Description();
+    if (!trackDescription.empty()) {
         CRef<CAnnotdesc> desc(new CAnnotdesc);
-        desc->SetTitle(m_TrackDescription);
+        desc->SetTitle(trackDescription);
         annot->SetDesc().Set().push_back(desc);
     }
-    if ( !m_TrackName.empty() ) {
+
+    string trackName = m_pTrackDefaults->Name();
+    if (!trackName.empty()) {
         CRef<CAnnotdesc> desc(new CAnnotdesc);
-        desc->SetName(m_TrackName);
+        desc->SetName(trackName);
         annot->SetDesc().Set().push_back(desc);
     }
-    if ( !m_TrackParams.empty() ) {
-        CRef<CAnnotdesc> desc(new CAnnotdesc);
-        annot->SetDesc().Set().push_back(desc);
-        CUser_object& user = desc->SetUser();
-        user.SetType().SetStr("Track Data");
-        ITERATE ( TTrackParams, it, m_TrackParams ) {
-            CRef<CUser_field> field(new CUser_field);
-            field->SetLabel().SetStr(it->first);
-            field->SetData().SetStr(it->second);
-            user.SetData().push_back(field);
-        }
-    }
+    x_AssignTrackData(annot);
     return annot;
 }
 
@@ -910,27 +919,34 @@ void CWiggleReader::xSetChrom(CTempString chrom)
 }
 
 //  ----------------------------------------------------------------------------
-void CWiggleReader::xReadBrowser(void)
+bool CWiggleReader::xProcessBrowserLine(
+    IMessageListener* pMl)
 //  ----------------------------------------------------------------------------
 {
+    if (!NStr::StartsWith(m_CurLine, "browser")) {
+        return false;
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
-void CWiggleReader::xReadTrack(
+bool CWiggleReader::xProcessTrackLine(
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    m_TrackName = "User Track";
-    m_TrackDescription.clear();
-    m_TrackTypeValue.clear();
+    if (!NStr::StartsWith(m_CurLine, "track")) {
+        return false;
+    }
+    this->x_ParseTrackLine(m_CurLine, pMessageListener);
+
+    xGetWord(pMessageListener);
+
     m_TrackType = eTrackType_invalid;
-    m_TrackParams.clear();
     while ( xSkipWS() ) {
         CTempString name = xGetParamName(pMessageListener);
         CTempString value = xGetParamValue(pMessageListener);
         if ( name == "type" ) {
-            m_TrackTypeValue = value;
-            if ( value == "wiggle_0" ) {
+             if ( value == "wiggle_0" ) {
                 m_TrackType = eTrackType_wiggle_0;
             }
             else if ( value == "bedGraph" ) {
@@ -945,15 +961,6 @@ void CWiggleReader::xReadTrack(
                 ProcessError(*pErr, pMessageListener);
             }
         }
-        else if ( name == "name" ) {
-            m_TrackName = value;
-        }
-        else if ( name == "description" ) {
-            m_TrackDescription = value;
-        }
-        else {
-            m_TrackParams[name] = value;
-        }
     }
     if ( m_TrackType == eTrackType_invalid ) {
         AutoPtr<CObjReaderLineException> pErr(
@@ -963,6 +970,7 @@ void CWiggleReader::xReadTrack(
             "Unknown track type") );
         ProcessError(*pErr, pMessageListener);
     }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

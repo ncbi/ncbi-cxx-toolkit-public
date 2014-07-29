@@ -183,7 +183,6 @@ protected:
         
     virtual bool x_ParseTrackLine(
         const string&,
-        CRef<CSeq_annot>&,
         IMessageListener*);
         
     virtual void x_SetBrowserRegion(

@@ -102,13 +102,11 @@ bool CTrackData::ParseLine(
             //continue;
         }
         if ( key == "name" ) {
-            m_strName = NStr::Replace(value, "\"", " ");
-            NStr::TruncateSpacesInPlace(m_strName);
+            m_strName = value;
             //continue;
         }
         if ( key == "description" ) {
-            m_strDescription = NStr::Replace(value, "\"", " ");
-            NStr::TruncateSpacesInPlace(m_strDescription);
+            m_strDescription = value;
             //continue;
         }
         m_Data[ key ] = value;

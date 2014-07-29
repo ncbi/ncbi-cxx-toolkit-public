@@ -276,7 +276,7 @@ CBedReader::xParseTrackLine(
         m_columncount = 0;
     }
     m_currentId.clear();
-    if (!CReaderBase::x_ParseTrackLine(strLine, current, pEC)) {
+    if (!CReaderBase::x_ParseTrackLine(strLine, pEC)) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,

@@ -1,7 +1,7 @@
 Seq-annot ::= {
   desc {
     title "fixedStep format",
-    name "fixedStep2",
+    name "fixedStep1",
     user {
       type str "Track Data",
       data {
@@ -14,6 +14,10 @@ Seq-annot ::= {
           data str "0,200,100"
         },
         {
+          label str "description",
+          data str "fixedStep format"
+        },
+        {
           label str "graphType",
           data str "points"
         },
@@ -22,8 +26,16 @@ Seq-annot ::= {
           data str "100:50:20"
         },
         {
+          label str "name",
+          data str "fixedStep1"
+        },
+        {
           label str "priority",
           data str "20"
+        },
+        {
+          label str "type",
+          data str "wiggle_0"
         },
         {
           label str "viewLimits",
@@ -121,6 +133,10 @@ Seq-annot ::= {
           data str "0,200,100"
         },
         {
+          label str "description",
+          data str "fixedStep format"
+        },
+        {
           label str "graphType",
           data str "points"
         },
@@ -129,8 +145,16 @@ Seq-annot ::= {
           data str "100:50:20"
         },
         {
+          label str "name",
+          data str "fixedStep2"
+        },
+        {
           label str "priority",
           data str "20"
+        },
+        {
+          label str "type",
+          data str "wiggle_0"
         },
         {
           label str "viewLimits",

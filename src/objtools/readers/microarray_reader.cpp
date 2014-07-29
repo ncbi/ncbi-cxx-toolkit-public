@@ -339,7 +339,7 @@ bool CMicroArrayReader::xParseTrackLine(
     m_iExpScale = -1;
     m_iExpStep = -1;
     
-    if (!CReaderBase::x_ParseTrackLine( strLine, annot, pEC)) {
+    if (!CReaderBase::x_ParseTrackLine( strLine, pEC)) {
         return false;
     }
     if ( m_iFlags & fReadAsBed ) {
