@@ -36,6 +36,8 @@
 #include <objmgr/seq_vector.hpp>
 #include <objects/seq/seqport_util.hpp>
 
+#include <math.h>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -190,7 +192,7 @@ double ComputeNormalizedEntropy(const CTempString& sequence,
     ITERATE (TCounts, it, counts) {
         entropy += it->second * log(it->second);
     }
-    double denom = pow(4, word_size);
+    double denom = pow((double)4.0, (int)word_size);
     denom = min(denom, total);
     entropy = -entropy / log(denom);
     return max<double>(0.0, entropy);
