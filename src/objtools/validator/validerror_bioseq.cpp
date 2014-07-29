@@ -1621,7 +1621,7 @@ public:
     bool operator()(const string& lhs, const string& rhs) const
     {
         if( lhs.length() != rhs.length() ) {
-            return (lhs.length() - rhs.length());
+            return (lhs.length() - rhs.length() < 0);
         }
         return NStr::CompareNocase (lhs, rhs) < 0;
     }
