@@ -255,6 +255,8 @@ static void s_RunTest8(const CArgs& args, ostream& os)
 // Position arguments - advanced
 static void s_InitTest7(CArgDescriptions& arg_desc)
 {
+    arg_desc.SetPositionalMode(CArgDescriptions::ePositionalMode_Loose);
+
     arg_desc.AddPositional
         ("p2",
          "This is a plain argument",  CArgDescriptions::eString);

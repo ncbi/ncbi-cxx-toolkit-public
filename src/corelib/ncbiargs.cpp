@@ -2368,16 +2368,19 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
 {
     // Argument name
     string name;
+    bool is_keyflag = false;
 
     // Check if to start processing the args as positional
-    if (*n_plain == kMax_UInt) {
+    if (*n_plain == kMax_UInt || m_PositionalMode == ePositionalMode_Loose) {
         // Check for the "--" delimiter
         if (arg1.compare("--") == 0) {
-            *n_plain = 0;  // pos.args started
+            if (*n_plain == kMax_UInt) {
+                *n_plain = 0;  // pos.args started
+            }
             return false;
         }
         size_t  argssofar = args.GetAll().size();
-        // Check if argument has not a key/flag syntax
+        // Check if argument has key/flag syntax
         if ((arg1.length() > 1)  &&  arg1[0] == '-') {
             name = arg1.substr(1);
             TArgsCI it = m_Args.end();
@@ -2396,16 +2399,21 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
                 name = name.substr(0, eq);
             }
             if (m_PositionalMode == ePositionalMode_Loose) {
+                is_keyflag = x_Find(name) != m_Args.end();
                 // If not a valid key/flag, treat it as a positional value
-                if (!VerifyName(name)  ||  x_Find(name) == m_Args.end()) {
-                    *n_plain = 0;  // pos.args started
+                if (!VerifyName(name)  ||  !is_keyflag) {
+                    if (*n_plain == kMax_UInt) {
+                        *n_plain = 0;  // pos.args started
+                    }
                 }
             }
         } else {
             if (m_OpeningArgs.size() > argssofar) {
                 return x_CreateArg(arg1, m_OpeningArgs[argssofar], have_arg2, arg2, *n_plain, args);
             }
-            *n_plain = 0;  // pos.args started
+            if (*n_plain == kMax_UInt) {
+                *n_plain = 0;  // pos.args started
+            }
         }
     }
 
@@ -2413,7 +2421,7 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     bool arg2_used = false;
 
     // Extract name of positional argument
-    if (*n_plain != kMax_UInt) {
+    if (*n_plain != kMax_UInt && !is_keyflag) {
         if (*n_plain < m_PosArgs.size()) {
             name = m_PosArgs[*n_plain];  // named positional argument
         } else {
