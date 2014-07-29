@@ -31,7 +31,11 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_base.hpp>
 
@@ -124,6 +128,74 @@ CRef<CSeq_id> CReadUtil::AsSeqId(
     catch(...) {
     }
     return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, rawId));
+}
+
+//  ----------------------------------------------------------------------------
+bool CReadUtil::GetTrackName(
+    const CSeq_annot& annot,
+    string& value)
+//  ----------------------------------------------------------------------------
+{
+    return GetTrackValue(annot, "name", value);
+}
+
+//  ----------------------------------------------------------------------------
+bool CReadUtil::GetTrackAssembly(
+    const CSeq_annot& annot,
+    string& value)
+//  ----------------------------------------------------------------------------
+{
+    return GetTrackValue(annot, "db", value);
+}
+
+//  ----------------------------------------------------------------------------
+bool CReadUtil::GetTrackValue(
+    const CSeq_annot& annot,
+    const string& key,
+    string& value)
+//  -----------------------------------------------------------------------------
+{
+    const string sTrackDataClass("Track Data");
+
+    if (!annot.IsSetDesc()) {
+        return false;
+    }
+    const CAnnot_descr::Tdata& descr = annot.GetDesc().Get();
+    for (CAnnot_descr::Tdata::const_iterator ait = descr.begin(); 
+            ait != descr.end(); ++ait) {
+        const CAnnotdesc& desc = **ait;
+        if (!desc.IsUser()) {
+            continue;
+        }
+        const CUser_object& user = desc.GetUser();
+        if (!user.IsSetType()) {
+            continue;
+        }
+        const CObject_id& oid = user.GetType();
+        if (!oid.IsStr()  ||  oid.GetStr() != sTrackDataClass) {
+            continue;
+        }
+        if (!user.IsSetData()) {
+            continue;
+        }
+        const CUser_object::TData& fields = user.GetData();
+        for (CUser_object::TData::const_iterator fit = fields.begin();
+                fit != fields.end(); ++fit) {
+            const CUser_field& field = **fit; 
+            if (!field.IsSetLabel()  ||  !field.GetLabel().IsStr()) {
+                continue;
+            }
+            if (field.GetLabel().GetStr() != key) {
+                continue;
+            }
+            if (!field.IsSetData()  ||  !field.GetData().IsStr()) {
+                return false;
+            }
+            value = field.GetData().GetStr();
+            return true;
+        }
+    }
+    return false;
 }
 
 END_objects_SCOPE

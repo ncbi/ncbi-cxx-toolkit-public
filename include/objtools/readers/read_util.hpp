@@ -64,6 +64,30 @@ public:
 
     static const TGi kMinNumericGi;
 
+    /// Extract track information that should be present if the data originated from
+    /// a UCSC data file. "name" and "db" have their designated accessors to recognize
+    /// their special importance. The third variant can be used to access arbitrary 
+    /// track values.
+    /// @param annot
+    //      the Seq-annot to inspect.
+    //  @param key
+    //      the specific track line parameter to look up.
+    //  @param value
+    //      the value the caller asked for.
+    //  @return
+    ///     true if the requested information os available and the value parameter is
+    ///     good to use.
+    ///     false otherwise. 
+    static bool GetTrackName(
+        const CSeq_annot& annot,
+        string& value);
+    static bool GetTrackAssembly(
+        const CSeq_annot& annot,
+        string& value);
+    static bool GetTrackValue(
+        const CSeq_annot& annot,
+        const string& key,
+        string& value);
 };
 
 END_SCOPE(objects)
