@@ -128,6 +128,7 @@ public:
     static bool IsStopWord(const string& value);
 
     void AutoFix();
+    void RemoveCultureNotes();
 
     bool RemoveSubSource(unsigned int subtype);
     bool RemoveOrgMod(unsigned int subtype);

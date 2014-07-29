@@ -1206,6 +1206,29 @@ void CBioSource::AutoFix()
 }
 
 
+void CBioSource::RemoveCultureNotes()
+{
+    if (IsSetSubtype()) {
+        CBioSource::TSubtype::iterator it = SetSubtype().begin();
+        while (it != SetSubtype().end()) {
+            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_other) {
+                CSubSource::RemoveCultureNotes((*it)->SetName());
+                if (NStr::IsBlank((*it)->GetName())) {
+                    it = SetSubtype().erase(it);
+                } else {
+                    it++;
+                }
+            } else {
+                it++;
+            }
+        }
+        if (GetSubtype().empty()) {
+            ResetSubtype();
+        }
+    }
+}
+
+
 bool CBioSource::RemoveSubSource(unsigned int subtype)
 {
     bool rval = false;
