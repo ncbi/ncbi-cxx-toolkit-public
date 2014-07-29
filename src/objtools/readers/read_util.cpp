@@ -156,9 +156,11 @@ bool CReadUtil::GetTrackOffset(
 {
     string offset;
     if (!GetTrackValue(annot, "offset", offset)) {
-        return false;
+        value = 0;
     }
-    value = NStr::StringToInt(offset);
+    else {
+        value = NStr::StringToInt(offset);
+    }
     return true;
 }
 
