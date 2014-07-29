@@ -38,10 +38,6 @@ Makefile: $(srcdir)/Makefile.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
 $(SUB_MF_IN):
-	@-cd $(srcdir)  &&  test -d CVS  &&  \
-	    cvs upd -ld -D 1970-01-01 `basename \`dirname $@\``
-	@-cd $(srcdir)  &&  test -d CVS  &&  \
-	    cvs upd -A `basename \`dirname $@\``/Makefile.in
 	$(MKDIR) -p `dirname $@`
 	test -f $@  ||  $(COPY) $(build_sys_dir)/Makefile.in.skel $@
 
