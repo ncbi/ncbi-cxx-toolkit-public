@@ -1381,6 +1381,7 @@ deserializer<BV, DEC>::deserialize_gap(unsigned char btype, decoder_type& dec,
     case set_block_arrgap_egamma:
         {
             unsigned arr_len = this->read_id_list(dec, btype, this->id_array_);
+            gap_temp_block_[0] = 0; // reset unused bits in gap header
             gap_len = gap_set_array(gap_temp_block_, this->id_array_, arr_len);
             break;
         }
