@@ -80,7 +80,10 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("e", "EnableTests", 
                               "List of enabled tests, seperated by ','",
                               CArgDescriptions::eString); 
-    arg_desc->AddOptionalKey("i", "InputFile","Single input file (mandatory)",
+    arg_desc->AddOptionalKey("i", "InputFile", "Single input file (mandatory)", 
+                                CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("M", "MessageLevel", 
+        "Output message level: 'a': add FATAL tags and output all messages, 'f': add FATAL tags and output FATAL messages only",
                                 CArgDescriptions::eString);
     arg_desc->AddOptionalKey("o", "OutputFile", "Single output file",
                                 CArgDescriptions::eString);
@@ -92,8 +95,8 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("r", "OutPath", "Output Directory", 
                               CArgDescriptions::eString);
     arg_desc->AddDefaultKey("R", "Remote", 
-                         "Allow GenBank data loader: 'T' = true, 'F' = false",
-                          CArgDescriptions::eBoolean, "T");
+                          "Allow GenBank data loader: 'T' = true, 'F' = false",
+                           CArgDescriptions::eBoolean, "T");
     arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", 
                               CArgDescriptions::eString, ".dr");
     arg_desc->AddDefaultKey("S", "SummaryReport", 
@@ -116,7 +119,7 @@ int CDiscRepApp :: Run(void)
 
 #ifdef HAVE_PUBSEQ_OS
     // we may require PubSeqOS readers at some point, so go ahead and make
-    //         // sure they are properly registered
+    // sure they are properly registered
     GenBankReaders_Register_Pubseq();
     GenBankReaders_Register_Pubseq2();
     DBAPI_RegisterDriver_FTDS();
@@ -155,7 +158,14 @@ int CDiscRepApp :: Run(void)
 
 int main(int argc, const char* argv[])
 {
-    //  SetDiagTrace(eDT_Enable);
-    SetDiagPostLevel(eDiag_Error);
-    return CDiscRepApp().AppMain(argc, argv);
+//  SetDiagTrace(eDT_Enable);
+   SetDiagPostLevel(eDiag_Error);
+
+   try {
+     return CDiscRepApp().AppMain(argc, argv);
+   }
+   catch(CException& eu) {
+      ERR_POST( eu.GetMsg());
+      return 1;
+   }
 }
