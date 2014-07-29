@@ -89,7 +89,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
     }
     m_Accession = id.GetSeqIdString();
 
-    if ( ctx.IsWGS()  && ctx.GetLocation().IsWhole() ) {
+    if ( ctx.IsWGS()  && ctx.GetLocation().IsWhole() && ctx.GetTech() == CMolInfo::eTech_wgs ) {
         size_t acclen = m_Accession.length();
         m_WGSAccession = m_Accession;
         if (acclen >= 12) {
