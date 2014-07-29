@@ -96,9 +96,11 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     void Export(vector <CRef <CClickableItem> >& c_item, const string& setting_name);
     
   private:
-    Str2Int m_sOnCallerToolPriorities;
-    map <string, EOnCallerGrp> m_sOnCallerToolGroups;
+    Str2Int                    m_OnCallerToolPriorities;
+    Str2Str                    m_TestDesc;
+    map <string, EOnCallerGrp> m_OnCallerToolGroups;
 
+    void x_InitTestDesc();
     void x_SortReport(UInt2UInts& prt_ord);
     void x_Clear(UInt2UInts* prt_ord = 0);
     void x_WriteDiscRepSummary(xml::node& root, UInt2UInts& m_PrtOrd);
