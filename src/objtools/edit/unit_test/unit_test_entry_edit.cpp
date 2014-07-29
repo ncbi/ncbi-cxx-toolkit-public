@@ -567,5 +567,97 @@ BOOST_AUTO_TEST_CASE(Test_ConvertRawToDeltaByNs)
 }
 
 
+static bool s_FindLocalId(const CBioseq_Handle& bsh, const string& sLocalid)
+{
+    const CBioseq_Handle::TId& ids = bsh.GetId();
+    ITERATE( CBioseq_Handle::TId, id_itr, ids ) {
+        const CSeq_id_Handle& id_handle = *id_itr;
+        CConstRef<CSeq_id> id = id_handle.GetSeqIdOrNull();
+        if ( !id ) {
+            continue;
+        }
+
+        if ( id->IsLocal() ) {
+            // Found localid
+            const CObject_id& localid = id->GetLocal();
+            if ( localid.IsStr() ) {
+                // Are the string values equal?
+                return localid.GetStr() == sLocalid;
+            }
+        }
+    }
+
+    return false;
+}
+
+
+BOOST_AUTO_TEST_CASE(TrimSeqData)
+{
+    cout << "Testing FUNCTION: TrimSeqData" << endl;
+
+    TMapTestNameToTestFiles & mapOfTests = s_mapFunctionToVecOfTests["trim_seq_data"];
+
+    BOOST_CHECK( ! mapOfTests.empty() );
+
+    NON_CONST_ITERATE( TMapTestNameToTestFiles, test_it, mapOfTests ) {
+        const string & sTestName = (test_it->first);
+        cout << "Running TEST: " << sTestName << endl;
+
+        TMapTestFiles & test_stage_map = (test_it->second);
+
+        BOOST_REQUIRE( test_stage_map.size() == 2u );
+
+        // Get the input/output files
+        const CFile & input_entry_file = test_stage_map["input_entry"];
+        const CFile & output_expected_file = test_stage_map["output_expected"];
+
+        CRef<CSeq_entry> pInputEntry = s_ReadAndPreprocessEntry( input_entry_file.GetPath() );
+        CRef<CSeq_entry> pOutputExpectedEntry = s_ReadAndPreprocessEntry( output_expected_file.GetPath() );
+
+        CSeq_entry_Handle entry_h = s_pScope->AddTopLevelSeqEntry(*pInputEntry);
+        CSeq_entry_Handle expected_entry_h = s_pScope->AddTopLevelSeqEntry(*pOutputExpectedEntry);
+
+        // Find the bioseq that we will trim
+        CBioseq_CI bioseq_ci( entry_h );
+        for( ; bioseq_ci; ++bioseq_ci ) {
+            const CBioseq_Handle& bsh = *bioseq_ci;
+            if (s_FindLocalId(bsh, "DH5a-357R-3")) {
+                // Create the cuts from known vector contamination
+                // Seqid DH5a-357R-3 has two vector locations
+                edit::TRange cut1(600, 643);
+                edit::TRange cut2(644, 646);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+                cuts.push_back(cut2);
+
+                // Sort the cuts
+                edit::TCuts sorted_cuts;
+                BOOST_CHECK_NO_THROW(edit::GetSortedCuts( bsh, cuts, sorted_cuts ));
+
+                // Create a copy of inst
+                CRef<CSeq_inst> copy_inst(new CSeq_inst());
+                copy_inst->Assign(bsh.GetInst());
+
+                // Make changes to the inst copy 
+                BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
+
+                // Update the input seqentry with the changes
+                bsh.GetEditHandle().SetInst(*copy_inst);
+
+                break;
+            }
+        }
+
+        // Are the changes what we expect?
+        BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
+             *entry_h.GetCompleteSeq_entry(),
+             *expected_entry_h.GetCompleteSeq_entry()) );
+
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
