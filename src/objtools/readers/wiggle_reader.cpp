@@ -118,7 +118,6 @@ CWiggleReader::ReadSeqAnnot(
             SFixedStepInfo fixedStepInfo;
             xGetFixedStepInfo(fixedStepInfo, pMessageListener);
             if (!m_ChromId.empty() && fixedStepInfo.mChrom != m_ChromId) {
-                cerr << fixedStepInfo.mChrom << endl;
                 lr.UngetLine();
                 return xGetAnnot();
             }
