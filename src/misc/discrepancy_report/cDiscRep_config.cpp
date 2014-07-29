@@ -73,6 +73,7 @@ bool                                CDiscRepInfo :: expand_defline_on_set;
 bool                                CDiscRepInfo :: expand_srcqual_report;
 string                              CDiscRepInfo :: report_lineage;
 bool                                CDiscRepInfo :: exclude_dirsub;
+string                              CDiscRepInfo :: xml_label(" XmlIds:");
 Str2CombDt                          CDiscRepInfo :: rRNATerms;
 vector <string>                     CDiscRepInfo :: bad_gene_names_contained;
 vector <string>                     CDiscRepInfo :: short_auth_nms;
@@ -1298,6 +1299,17 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
        }
     }
 
+    // -M message reported level
+    thisInfo.output_config.msg_level = COutputConfig :: e_All;
+    if (args.find("M") != end) {
+      if (args["M"] == "f" || args["M"] == "a") {
+         thisInfo.output_config.add_output_tag = true;
+         if (args["M"] == "f") {
+            thisInfo.output_config.msg_level = COutputConfig :: e_Fatal;
+         }
+      }
+    }
+
     // output
     m_outsuffix 
        = m_outsuffix.empty() ?
@@ -1368,6 +1380,11 @@ void CRepConfig :: ReadArgs(const CArgs& args)
     // report_tp
     if (args["P"]) {
       arg_map["P"] = args["P"].AsString();
+    }
+
+    // message level
+    if (args["M"]) {
+       arg_map["M"] = args["M"].AsString();
     }
 
     // output
@@ -3419,7 +3436,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
        strtmp = (*it)->GetName();
        if (thisInfo.test_item_list.find(strtmp)
                                     != thisInfo.test_item_list.end()) {
-//cerr << "GoGetRep " << strtmp << endl;
+cerr << "GoGetRep " << strtmp << endl;
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             c_item->expanded = x_IsExpandable(strtmp);
@@ -3440,7 +3457,7 @@ void CRepConfig :: x_GoGetRep(vector < CRef < CTestAndRepData> >& test_category)
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            c_item->expanded = x_IsExpandable(strtmp);
            (*it)->GetReport(c_item);
-//cerr << "GoGetRep " << (*it)->GetName() << endl;
+cerr << "GoGetRep " << (*it)->GetName() << endl;
        }
    }
 };

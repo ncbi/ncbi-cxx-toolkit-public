@@ -1456,7 +1456,7 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
     else {
       strtmp = Blob2Str(*str_cons);
       Str2Blob(strtmp, tmp_cons);
-      tmp_match = tmp_cons.GetMatch_text();
+      tmp_match = tmp_cons.CanGetMatch_text() ? tmp_cons.GetMatch_text() : kEmptyStr;
       if (str_cons->GetIgnore_weasel()) {
             tmp_cons.SetMatch_text(SkipWeasel(str_cons->GetMatch_text()));
       }
@@ -1515,9 +1515,12 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
                 pFound = string::npos;
               }
               else {
-  	        pFound = (str_cons->GetCase_sensitive()) ?
+                if (pattern.empty()) pFound = false;
+                else {
+  	          pFound = (str_cons->GetCase_sensitive()) ?
                              pFound = search.find(pattern, pFound+1):
                                NStr::FindNoCase(search, pattern, pFound+1);
+                }
               }
             }
             break;

@@ -51,9 +51,6 @@ USING_SCOPE(objects);
 USING_SCOPE(DiscRepNmSpc);
 
 static CDiscRepInfo thisInfo;
-static string       strtmp;
-static COutputConfig& oc = thisInfo.output_config;
-static CTestGrp     thisGrp;
 
 static const s_fataltag extra_fatal [] = {
         {"MISSING_GENOMEASSEMBLY_COMMENTS", NULL, NULL}
@@ -131,6 +128,8 @@ bool CDiscRepOutput :: x_NeedsTag(const string& setting_name, const string& desc
 void CDiscRepOutput :: x_AddListOutputTags()
 {
   string setting_name, desc, sub_desc;
+  COutputConfig& oc = thisInfo.output_config;
+
   bool na_cnt_grt1 = false;
   vector <string> arr;
   ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
@@ -443,6 +442,8 @@ void CDiscRepOutput :: x_Clear(UInt2UInts* prt_ord)
 // for asndisc
 void CDiscRepOutput :: Export()
 {
+   COutputConfig& oc = thisInfo.output_config;
+
    UInt2UInts prt_ord;
    x_SortReport(prt_ord);
 
@@ -468,8 +469,7 @@ void CDiscRepOutput :: Export()
     // set some document settings
     xmldoc.set_is_standalone(true);
     xmldoc.set_encoding("UTF-8");
-    
- //    cout << xmldoc;
+
     *(oc.output_f) << xmldoc;
   }
   oc.output_f->flush();
@@ -496,8 +496,8 @@ void CDiscRepOutput :: x_WriteDiscRepSummary(xml::node& xml_root, UInt2UInts& pr
 {
   string desc, strtmp, setting_name;
   bool is_SusProdNm = false;
+  COutputConfig& oc = thisInfo.output_config;
 
-  //ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
   CRef <CClickableItem> c_item;
 
   ITERATE (UInt2UInts, it, prt_ord) {
@@ -509,22 +509,32 @@ void CDiscRepOutput :: x_WriteDiscRepSummary(xml::node& xml_root, UInt2UInts& pr
 
       // FATAL tag
       if (x_RmTagInDescp(desc, "FATAL: ")) {
+/*
          if (!oc.xml) {
             *(oc.output_f)  << "FATAL: ";
          }
+*/
          strtmp = "FATAL";
       }
       else strtmp = "INFO";
+      
+      // msg level
+      if ( oc.msg_level == COutputConfig :: e_Fatal && strtmp != "FATAL") {
+         continue;
+      }
+      if (strtmp == "FATAL" && !oc.xml) {
+            *(oc.output_f)  << "FATAL: ";
+      }
 
       setting_name = c_item->setting_name;
-      xml::node::iterator 
-          xit = xml_root.insert(xml_root.end(), 
-                                   xml::node("message", desc.c_str()));
       is_SusProdNm = ("SUSPECT_PRODUCT_NAMES" == setting_name);
       if (!oc.xml) {
          *(oc.output_f) << setting_name << ": " << desc << endl;
       }
       else { 
+         xml::node::iterator 
+             xit = xml_root.insert(xml_root.end(), 
+                                   xml::node("message", desc.c_str()));
          // set attributes:
          xit->get_attributes().insert("code", setting_name.c_str());
          xit->get_attributes().insert("prefix", "Summary");
@@ -541,20 +551,28 @@ void CDiscRepOutput :: x_WriteDiscRepSummary(xml::node& xml_root, UInt2UInts& pr
 
 void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, xml::node& xml_node, unsigned ident)
 {
+   COutputConfig& oc = thisInfo.output_config;
    unsigned i;
+   string desc;
    ITERATE (vector <CRef <CClickableItem> >, it, subcategories) {
-      xml::node sub_node("message", (*it)->description.c_str());
+      desc == (*it)->description;
+      if (oc.msg_level == COutputConfig :: e_Fatal 
+               && desc.find("FATAL: ") == string::npos) {
+          continue;
+      }
       if (!oc.xml) {
          for (i=0; i< ident; i++) *(oc.output_f) << "\t"; 
-         *(oc.output_f) << (*it)->description  << endl; 
+         *(oc.output_f) << desc << endl; 
       }
       else {
+        xml::node sub_node("message", desc.c_str());
+
          // set attributes:
         sub_node.get_attributes().insert("code",((*it)->setting_name.c_str()));
         sub_node.get_attributes().insert("prefix", "Summary");
         sub_node.get_attributes().insert("severity", "INFO");
+        xml_node.push_back(sub_node);
       }
-      xml_node.push_back(sub_node);
       x_WriteDiscRepSubcategories( (*it)->subcategories, xml_node, ident+1);
    }
 } // WriteDiscRepSubcategories
@@ -562,6 +580,8 @@ void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickable
 
 bool CDiscRepOutput :: x_OkToExpand(CRef < CClickableItem > c_item) 
 {
+  COutputConfig& oc = thisInfo.output_config;
+
   if (c_item->setting_name == "DISC_FEATURE_COUNT") {
        return false;
   }
@@ -596,6 +616,7 @@ bool CDiscRepOutput :: x_SubsHaveTags(CRef <CClickableItem> c_item)
 
 void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, xml::node& xml_root, UInt2UInts& prt_ord, bool use_flag, bool IsSubcategory)
 {
+  COutputConfig& oc = thisInfo.output_config;
   string prefix, desc, strtmp;
   unsigned i, j;
   vector <unsigned> prt_idx;
@@ -614,7 +635,9 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
 
   string xml_prefix, xml_severity;
   CRef <CClickableItem> c_item;
+  bool is_fatal;
   for (j=0; j< prt_idx.size(); j++) {
+      is_fatal = false;
       c_item = disc_rep_dt[prt_idx[j]];
       desc = c_item->description;
       if ( desc.empty() ) continue;
@@ -629,11 +652,15 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
       }
  
       // FATAL tag
-      if (x_RmTagInDescp(desc, "FATAL: ")) prefix = "FATAL: " + prefix;
+      if (x_RmTagInDescp(desc, "FATAL: ")) {
+          prefix = "FATAL: " + prefix;
+          is_fatal = true;
+      }
+
+      if (oc.msg_level == COutputConfig :: e_Fatal && !is_fatal) continue;
 
       if ( (oc.add_output_tag || oc.add_extra_output_tag) 
-               && (prefix.find("FATAL: ") != string::npos 
-                        || x_SubsHaveTags(c_item)) ) {
+               && (is_fatal || x_SubsHaveTags(c_item)) ) {
             c_item->expanded = true;
       }
       // summary report
@@ -690,10 +717,10 @@ bool CDiscRepOutput :: x_SuppressItemListForFeatureTypeForOutputFiles(const stri
 
 void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix, xml::node& xml_node)
 {
+   COutputConfig& oc = thisInfo.output_config;
    string strtmp, xml_prefix, xml_severity;
    if (oc.use_flag && 
          x_SuppressItemListForFeatureTypeForOutputFiles(c_item->setting_name)){
-
 
        if (!prefix.empty()) {
          if (!oc.xml) {
@@ -780,12 +807,38 @@ void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CCli
              vnp = list_copy;
            }
         */
-    unsigned obj_i=0;
+    string xmlids(kEmptyStr), feat_id, seq_id, seq_loc;
+    size_t pos;
+    vector <string> arr;
     ITERATE (vector <string>, it, c_item->item_list) {
+      // remove XmlIds from description;
+      if ( (pos = (*it).find(thisInfo.xml_label)) != string::npos ) {
+          desc = (*it).substr(0, pos);
+          xmlids = (*it).substr(pos + thisInfo.xml_label.size());
+          arr.clear();
+          arr = NStr::Tokenize(xmlids, ",", arr);
+          seq_id = (arr.size() >= 1) ? arr[0] : kEmptyStr;
+          feat_id = (arr.size() >= 2) ? arr[1] : kEmptyStr;
+          seq_loc = (arr.size() >= 3) ? arr[2] : kEmptyStr;
+      } 
+      else {
+        desc = (*it);
+        feat_id = seq_id = seq_loc = kEmptyStr;
+      }
       if (!oc.xml) {
-          *(oc.output_f) << *it << endl;
+          *(oc.output_f) << desc << endl;
       }
       else {
+        xml::node sub_node("message", desc.c_str());
+        xml::attributes& att = sub_node.get_attributes();
+        att.insert("code",(c_item->setting_name.c_str()));
+        att.insert("prefix", xml_prefix.c_str());
+        att.insert("severity", xml_severity.c_str());
+        if (!seq_id.empty())  att.insert("seq-id", seq_id.c_str());
+        if (!feat_id.empty()) att.insert("feat-id", feat_id.c_str());
+        if (!seq_loc.empty()) att.insert("seq-loc", seq_loc.c_str());
+
+/*
         const CObject* ptr = (c_item->obj_list[obj_i++]).GetPointer();
         const CSeq_entry* entry = dynamic_cast<const CSeq_entry*>(ptr);
         const CBioseq* bioseq = dynamic_cast<const CBioseq*>(ptr);
@@ -921,6 +974,7 @@ void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CCli
               att.insert("feat-id", strtmp.c_str()); 
            }
         } // if (seq_ft)
+*/
         xml_node.push_back(sub_node);
       }
     }
@@ -942,9 +996,30 @@ string CDiscRepOutput :: x_GetDesc4GItem(string desc)
 void CDiscRepOutput :: x_OutputRepToGbenchItem(const CClickableItem& c_item,  CClickableText& item) 
 {
    if (!c_item.item_list.empty()) {
+      vector <string> v_desc = c_item.item_list;
+      vector <string> v_acc;
+      v_acc.reserve(c_item.item_list.size());
+      size_t pos;
+      string strtmp;
+      vector <string> arr;
+      NON_CONST_ITERATE (vector <string>, it, v_desc) {
+         if ( (pos = (*it).find(thisInfo.xml_label)) != string::npos) {
+            (*it) = (*it).substr(0, pos);
+            strtmp = (*it).substr(pos + thisInfo.xml_label.size());
+            arr.clear();
+            arr = NStr::Tokenize(strtmp, ",", arr);
+            v_acc.push_back(arr[0]);
+         }
+      }
       item.SetObjdescs().insert(item.SetObjdescs().end(), 
+                                  v_desc.begin(), 
+                                  v_desc.end());
+/*
                                 c_item.item_list.begin(), 
                                 c_item.item_list.end());
+*/
+      item.SetAccessions().insert(item.SetAccessions().end(),
+                                     v_acc.begin(), v_acc.end());
       if (!c_item.obj_list.empty()) {
             item.SetObjects().insert(item.SetObjects().end(), 
                                      c_item.obj_list.begin(),
@@ -1240,6 +1315,7 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(UInt2UInts& o
     new_item->setting_name = "DISC_CATEGORY_HEADER";
     new_item->description = x_GetGrpName(e_grp);
     new_item->expanded = true;
+    string strtmp;
     ITERATE (vector <string>, it, arr) {
         idx = NStr::StringToUInt(*it);
         strtmp = thisInfo.disc_report_data[idx]->setting_name;
@@ -1322,6 +1398,8 @@ void CDiscRepOutput :: x_SendItemToGbench(CRef <CClickableItem> citem, vector <C
 // for gbench
 void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
 {
+   const COutputConfig& oc = thisInfo.output_config;
+
    if (!thisInfo.disc_report_data.empty()) {
       if (oc.add_output_tag || oc.add_extra_output_tag) {
          x_AddListOutputTags(); 
