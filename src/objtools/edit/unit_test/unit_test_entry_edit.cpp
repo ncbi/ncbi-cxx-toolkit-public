@@ -47,6 +47,7 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/graph_ci.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <map>
@@ -623,7 +624,7 @@ BOOST_AUTO_TEST_CASE(TrimSeqData)
             const CBioseq_Handle& bsh = *bioseq_ci;
             if (s_FindLocalId(bsh, "DH5a-357R-3")) {
                 // Create the cuts from known vector contamination
-                // Seqid DH5a-357R-3 has two vector locations
+                // Seqid "DH5a-357R-3" has two vector locations
                 edit::TRange cut1(600, 643);
                 edit::TRange cut2(644, 646);
                 edit::TCuts cuts;
@@ -645,6 +646,141 @@ BOOST_AUTO_TEST_CASE(TrimSeqData)
                 bsh.GetEditHandle().SetInst(*copy_inst);
 
                 break;
+            }
+        }
+
+        // Are the changes what we expect?
+        BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
+             *entry_h.GetCompleteSeq_entry(),
+             *expected_entry_h.GetCompleteSeq_entry()) );
+
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TrimSeqGraph)
+{
+    cout << "Testing FUNCTION: TrimSeqGraph" << endl;
+
+    TMapTestNameToTestFiles & mapOfTests = s_mapFunctionToVecOfTests["trim_seq_graph"];
+
+    BOOST_CHECK( ! mapOfTests.empty() );
+
+    NON_CONST_ITERATE( TMapTestNameToTestFiles, test_it, mapOfTests ) {
+        const string & sTestName = (test_it->first);
+        cout << "Running TEST: " << sTestName << endl;
+
+        TMapTestFiles & test_stage_map = (test_it->second);
+
+        BOOST_REQUIRE( test_stage_map.size() == 2u );
+
+        // Get the input/output files
+        const CFile & input_entry_file = test_stage_map["input_entry"];
+        const CFile & output_expected_file = test_stage_map["output_expected"];
+
+        CRef<CSeq_entry> pInputEntry = s_ReadAndPreprocessEntry( input_entry_file.GetPath() );
+        CRef<CSeq_entry> pOutputExpectedEntry = s_ReadAndPreprocessEntry( output_expected_file.GetPath() );
+
+        CSeq_entry_Handle entry_h = s_pScope->AddTopLevelSeqEntry(*pInputEntry);
+        CSeq_entry_Handle expected_entry_h = s_pScope->AddTopLevelSeqEntry(*pOutputExpectedEntry);
+
+        // Find the bioseq(s) that we will trim
+        CBioseq_CI bioseq_ci( entry_h );
+        for( ; bioseq_ci; ++bioseq_ci ) {
+            const CBioseq_Handle& bsh = *bioseq_ci;
+
+            if (s_FindLocalId(bsh, "cont1.86")) {
+                // Create the cuts from known vector contamination
+                // Seqid "cont1.86" has vector
+                edit::TRange cut1(913, 948);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                // Sort the cuts
+                edit::TCuts sorted_cuts;
+                BOOST_CHECK_NO_THROW(edit::GetSortedCuts( bsh, cuts, sorted_cuts ));
+
+                // Iterate over bioseq graphs
+                SAnnotSelector graph_sel(CSeq_annot::C_Data::e_Graph);
+                CGraph_CI graph_ci(bsh, graph_sel);
+                for (; graph_ci; ++graph_ci) {
+                    // Only certain types of graphs are supported.
+                    // See C Toolkit function GetGraphsProc in api/sqnutil2.c
+                    const CMappedGraph& graph = *graph_ci;
+                    if ( graph.IsSetTitle() && 
+                         (NStr::CompareNocase( graph.GetTitle(), "Phrap Quality" ) == 0 ||
+                          NStr::CompareNocase( graph.GetTitle(), "Phred Quality" ) == 0 ||
+                          NStr::CompareNocase( graph.GetTitle(), "Gap4" ) == 0) )
+                    {
+                        // Make a copy of the graph
+                        CRef<CSeq_graph> copy_graph(new CSeq_graph());
+                        copy_graph->Assign(graph.GetOriginalGraph());
+
+                        // Modify the copy of the graph
+                        BOOST_CHECK_NO_THROW(edit::TrimSeqGraph(bsh, copy_graph, sorted_cuts));
+
+                        // Update the original graph with the modified copy
+                        graph.GetSeq_graph_Handle().Replace(*copy_graph);
+                    }
+                }
+
+                // Create a copy of inst
+                CRef<CSeq_inst> copy_inst(new CSeq_inst());
+                copy_inst->Assign(bsh.GetInst());
+
+                // Make changes to the inst copy 
+                BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
+
+                // Update the input seqentry with the changes
+                bsh.GetEditHandle().SetInst(*copy_inst);
+            }
+
+            if (s_FindLocalId(bsh, "cont1.95")) {
+                // Create the cuts from known vector contamination
+                // Seqid "cont1.95" has vector
+                edit::TRange cut1(0, 30);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                // Sort the cuts
+                edit::TCuts sorted_cuts;
+                BOOST_CHECK_NO_THROW(edit::GetSortedCuts( bsh, cuts, sorted_cuts ));
+
+                // Iterate over bioseq graphs
+                SAnnotSelector graph_sel(CSeq_annot::C_Data::e_Graph);
+                CGraph_CI graph_ci(bsh, graph_sel);
+                for (; graph_ci; ++graph_ci) {
+                    // Only certain types of graphs are supported.
+                    // See C Toolkit function GetGraphsProc in api/sqnutil2.c
+                    const CMappedGraph& graph = *graph_ci;
+                    if ( graph.IsSetTitle() && 
+                         (NStr::CompareNocase( graph.GetTitle(), "Phrap Quality" ) == 0 ||
+                          NStr::CompareNocase( graph.GetTitle(), "Phred Quality" ) == 0 ||
+                          NStr::CompareNocase( graph.GetTitle(), "Gap4" ) == 0) )
+                    {
+                        // Make a copy of the graph
+                        CRef<CSeq_graph> copy_graph(new CSeq_graph());
+                        copy_graph->Assign(graph.GetOriginalGraph());
+
+                        // Modify the copy of the graph
+                        BOOST_CHECK_NO_THROW(edit::TrimSeqGraph(bsh, copy_graph, sorted_cuts));
+
+                        // Update the original graph with the modified copy
+                        graph.GetSeq_graph_Handle().Replace(*copy_graph);
+                    }
+                }
+
+                // Create a copy of inst
+                CRef<CSeq_inst> copy_inst(new CSeq_inst());
+                copy_inst->Assign(bsh.GetInst());
+
+                // Make changes to the inst copy 
+                BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
+
+                // Update the input seqentry with the changes
+                bsh.GetEditHandle().SetInst(*copy_inst);
             }
         }
 
