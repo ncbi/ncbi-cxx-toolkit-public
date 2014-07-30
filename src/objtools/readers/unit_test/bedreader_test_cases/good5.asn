@@ -52,43 +52,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    title "Clone Paired Reads",
-    name "pairedReads",
-    user {
-      type str "Track Data",
-      data {
-        {
-          label str "description",
-          data str "Clone Paired Reads"
-        },
-        {
-          label str "name",
-          data str "pairedReads"
-        },
-        {
-          label str "useScore",
-          data str "1"
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 4
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 4,
       data region "22524",
       location int {
         from 144804319,
@@ -106,43 +72,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    title "Clone Paired Reads",
-    name "pairedReads",
-    user {
-      type str "Track Data",
-      data {
-        {
-          label str "description",
-          data str "Clone Paired Reads"
-        },
-        {
-          label str "name",
-          data str "pairedReads"
-        },
-        {
-          label str "useScore",
-          data str "1"
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 4
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 7,
       data region "22524",
       location int {
         from 144804319,
@@ -160,43 +92,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    title "Clone Paired Reads",
-    name "pairedReads",
-    user {
-      type str "Track Data",
-      data {
-        {
-          label str "description",
-          data str "Clone Paired Reads"
-        },
-        {
-          label str "name",
-          data str "pairedReads"
-        },
-        {
-          label str "useScore",
-          data str "1"
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 4
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 10,
       data region "22524",
       location int {
         from 144804319,

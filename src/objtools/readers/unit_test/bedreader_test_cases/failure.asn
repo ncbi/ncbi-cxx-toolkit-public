@@ -9,7 +9,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 2
+          data int 5
         },
         {
           label str "warnings",
@@ -691,45 +691,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 2
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 67,
       data region "chr21:14389130",
       location int {
         from 38935302,
@@ -759,7 +723,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 70,
       data region "chr2:108698106",
       location int {
         from 87165710,
@@ -789,7 +753,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 73,
       data region "chr2:112833382",
       location int {
         from 87169137,
@@ -819,7 +783,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 76,
       data region "chr2:109909065",
       location int {
         from 87169137,
@@ -849,7 +813,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 79,
       data region "chr2:110696873",
       location int {
         from 87169833,
@@ -879,7 +843,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 82,
       data region "chr2:111008549",
       location int {
         from 87169833,
@@ -909,7 +873,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 85,
       data region "chr2:106361548",
       location int {
         from 87172103,
@@ -939,7 +903,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 88,
       data region "chr2:107813171",
       location int {
         from 87172103,
@@ -969,7 +933,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 91,
       data region "chr2:87796598",
       location int {
         from 87172339,
@@ -999,7 +963,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 94,
       data region "chr2:89758415",
       location int {
         from 89309447,
@@ -1029,7 +993,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 97,
       data region "chr2:89119346",
       location int {
         from 89344031,
@@ -1059,7 +1023,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 100,
       data region "chr1:147126126",
       location int {
         from 91821870,
@@ -1089,7 +1053,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 103,
       data region "chr4:9390160",
       location int {
         from 91855573,
@@ -1119,7 +1083,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 106,
       data region "chr2:95829982",
       location int {
         from 98071946,
@@ -1149,7 +1113,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 109,
       data region "chr2:97223537",
       location int {
         from 98118780,
@@ -1179,7 +1143,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 112,
       data region "chr2:110498651",
       location int {
         from 110643430,
@@ -1209,7 +1173,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 115,
       data region "chr2:87205359",
       location int {
         from 112477294,
@@ -1239,7 +1203,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 118,
       data region "chr2:130923990",
       location int {
         from 131159126,
@@ -1269,7 +1233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 121,
       data region "chr2:130875596",
       location int {
         from 131207520,
@@ -1299,7 +1263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 124,
       data region "chr21:13903024",
       location int {
         from 132347804,
@@ -1329,7 +1293,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 127,
       data region "chr18:14448685",
       location int {
         from 132387744,
@@ -1359,7 +1323,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 130,
       data region "chr14:19002235",
       location int {
         from 132390793,
@@ -1389,7 +1353,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 133,
       data region "chr14:18670209",
       location int {
         from 132390793,
@@ -1419,7 +1383,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 136,
       data region "chr22:14554068",
       location int {
         from 132390793,
@@ -1449,7 +1413,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 139,
       data region "chr15:19249348",
       location int {
         from 132402796,
@@ -1477,45 +1441,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 2
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 142,
       data region "chr7:6839334",
       location int {
         from 75395349,
@@ -1545,7 +1473,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 145,
       data region "chr2:71097596",
       location int {
         from 75395461,
@@ -1575,7 +1503,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 148,
       data region "chr9:92543437",
       location int {
         from 75395823,
@@ -1605,7 +1533,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 151,
       data region "chr3:126909543",
       location int {
         from 75396043,
@@ -1635,7 +1563,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 154,
       data region "chr4:9061592",
       location int {
         from 75396046,
@@ -1665,7 +1593,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 157,
       data region "chr11:71273515",
       location int {
         from 75396050,
@@ -1695,7 +1623,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 160,
       data region "chr12:8451847",
       location int {
         from 75399482,
@@ -1725,7 +1653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 163,
       data region "chr11:67491067",
       location int {
         from 75399482,
@@ -1755,7 +1683,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 166,
       data region "chr3:131215882",
       location int {
         from 75399482,
@@ -1785,7 +1713,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 169,
       data region "chr4:3853644",
       location int {
         from 75399482,
@@ -1815,7 +1743,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 172,
       data region "chr8:12579058",
       location int {
         from 75399482,
@@ -1845,7 +1773,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 175,
       data region "chr7:97407030",
       location int {
         from 75399482,
@@ -1875,7 +1803,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 178,
       data region "chr8:11921305",
       location int {
         from 75399482,
@@ -1905,7 +1833,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 181,
       data region "chr3:75723299",
       location int {
         from 75399495,
@@ -1935,7 +1863,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 184,
       data region "chr11:70999665",
       location int {
         from 75399638,
@@ -1965,7 +1893,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 187,
       data region "chr4:4171888",
       location int {
         from 75399656,
@@ -1995,7 +1923,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 190,
       data region "chr4:9117207",
       location int {
         from 75399656,
@@ -2025,7 +1953,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 193,
       data region "chr11:67240278",
       location int {
         from 75400447,
@@ -2055,7 +1983,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 196,
       data region "chr7:6866133",
       location int {
         from 75400447,
@@ -2085,7 +2013,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 199,
       data region "chr4:4202883",
       location int {
         from 75400447,
@@ -2115,7 +2043,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 202,
       data region "chr11:70973507",
       location int {
         from 75400698,
@@ -2145,7 +2073,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 205,
       data region "chr4:9085995",
       location int {
         from 75400699,
@@ -2175,7 +2103,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 208,
       data region "chr3:8698573",
       location int {
         from 75400834,
@@ -2205,7 +2133,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 211,
       data region "chr14:51284433",
       location int {
         from 75403575,
@@ -2235,7 +2163,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 214,
       data region "chr2:71127527",
       location int {
         from 75403808,
@@ -2263,45 +2191,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 2
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 217,
       data region "chr4:156604574",
       location int {
         from 117218983,
@@ -2331,7 +2223,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 220,
       data region "chr3:40268649",
       location int {
         from 117219756,
@@ -2361,7 +2253,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 223,
       data region "chr4:9085997",
       location int {
         from 4057448,
@@ -2391,7 +2283,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 226,
       data region "chr3:75691842",
       location int {
         from 4089186,
@@ -2421,7 +2313,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 229,
       data region "chr11:67461374",
       location int {
         from 4090758,
@@ -2451,7 +2343,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 232,
       data region "chr7:6844164",
       location int {
         from 4129373,
@@ -2481,7 +2373,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 235,
       data region "chr11:67230612",
       location int {
         from 4140035,
@@ -2511,7 +2403,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 238,
       data region "chr4:48867038",
       location int {
         from 49512111,
@@ -2541,7 +2433,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 241,
       data region "chr21_random:1395347",
       location int {
         from 49551450,
@@ -2571,7 +2463,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 244,
       data region "chr1:142000054",
       location int {
         from 49551450,
@@ -2601,7 +2493,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 247,
       data region "chr1:141555632",
       location int {
         from 49551450,
@@ -2631,7 +2523,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 250,
       data region "chr1:142232487",
       location int {
         from 49551454,
@@ -2661,7 +2553,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 253,
       data region "chr21_random:696417",
       location int {
         from 49586657,
@@ -2691,7 +2583,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 256,
       data region "chr1:142125824",
       location int {
         from 49586657,
@@ -2721,7 +2613,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 259,
       data region "chr4:69522590",
       location int {
         from 69487950,
@@ -2751,7 +2643,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 262,
       data region "chr4:69088958",
       location int {
         from 69518098,
@@ -2781,7 +2673,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 265,
       data region "chr4:70137240",
       location int {
         from 70206698,
@@ -2811,7 +2703,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 268,
       data region "chr4:69682547",
       location int {
         from 70218695,
@@ -2841,7 +2733,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 271,
       data region "chr1:241280910",
       location int {
         from 120324227,
@@ -2871,7 +2763,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 274,
       data region "chr1:220709278",
       location int {
         from 120324227,
@@ -2901,7 +2793,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 277,
       data region "chr7:128044528",
       location int {
         from 120324227,
@@ -2931,7 +2823,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 280,
       data region "chr7:45760056",
       location int {
         from 120327364,
@@ -2961,7 +2853,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 283,
       data region "chr10:38717799",
       location int {
         from 120330385,
@@ -2991,7 +2883,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 286,
       data region "chr1:222206214",
       location int {
         from 120330891,
@@ -3021,7 +2913,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 289,
       data region "chr3:199389111",
       location int {
         from 120331063,
@@ -3049,45 +2941,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 2
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 292,
       data region "chr15:26868634",
       location int {
         from 7281891,
@@ -3117,7 +2973,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 295,
       data region "chr15:20643238",
       location int {
         from 7281891,
@@ -3147,7 +3003,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 298,
       data region "chr13:91392956",
       location int {
         from 7282037,
@@ -3177,7 +3033,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 301,
       data region "chr5:34292131",
       location int {
         from 20796038,
@@ -3207,7 +3063,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 304,
       data region "chr5:70152246",
       location int {
         from 21935603,
@@ -3237,7 +3093,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 307,
       data region "chr5:69277188",
       location int {
         from 21935603,
@@ -3267,7 +3123,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 310,
       data region "chr8_random:894489",
       location int {
         from 21935603,
@@ -3297,7 +3153,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 313,
       data region "chr5:68985116",
       location int {
         from 69085281,
@@ -3327,7 +3183,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 316,
       data region "chr5:21320039",
       location int {
         from 69085281,
@@ -3357,7 +3213,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 319,
       data region "chr5:70565192",
       location int {
         from 69085281,
@@ -3387,7 +3243,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 322,
       data region "chr5:70000001",
       location int {
         from 69089387,
@@ -3417,7 +3273,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 325,
       data region "chr6:26952550",
       location int {
         from 69098915,
@@ -3447,7 +3303,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 328,
       data region "chr5:34209558",
       location int {
         from 69129328,
@@ -3477,7 +3333,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 331,
       data region "chr5:69564857",
       location int {
         from 69162379,
@@ -3507,7 +3363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 334,
       data region "chr5:69861233",
       location int {
         from 69164245,
@@ -3537,7 +3393,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 337,
       data region "chr5:69125143",
       location int {
         from 69964245,
@@ -3567,7 +3423,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 340,
       data region "chr15:39358254",
       location int {
         from 72314393,
@@ -3597,7 +3453,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 343,
       data region "chr3:39351282",
       location int {
         from 79654185,
@@ -3627,7 +3483,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 346,
       data region "chr17:2156490",
       location int {
         from 79654568,
@@ -3657,7 +3513,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 349,
       data region "chr5:160656889",
       location int {
         from 105875084,
@@ -3687,7 +3543,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 352,
       data region "chr5:175282971",
       location int {
         from 177133499,
@@ -3717,7 +3573,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 355,
       data region "chr10:102132230",
       location int {
         from 470625,
@@ -3747,7 +3603,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 358,
       data region "chr5:874953",
       location int {
         from 730526,
@@ -3777,7 +3633,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 361,
       data region "chr5:870759",
       location int {
         from 731946,
@@ -3805,45 +3661,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 2
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 364,
       data region "chr19:62596",
       location int {
         from 60001,
@@ -3873,7 +3693,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 367,
       data region "chr15:100218755",
       location int {
         from 60001,
@@ -3903,7 +3723,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 370,
       data region "chr1:59871",
       location int {
         from 60001,
@@ -3933,7 +3753,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 373,
       data region "chr5:180687205",
       location int {
         from 71232,
@@ -3963,7 +3783,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 376,
       data region "chr1:576306",
       location int {
         from 71232,
@@ -3993,7 +3813,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 379,
       data region "chr1:317847",
       location int {
         from 71232,
@@ -4023,7 +3843,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 382,
       data region "chr8:69037",
       location int {
         from 71232,
@@ -4053,7 +3873,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 385,
       data region "chr6:170763718",
       location int {
         from 71232,
@@ -4083,7 +3903,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 388,
       data region "chr11:50001",
       location int {
         from 78035,
@@ -4113,7 +3933,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 391,
       data region "chr4:165404733",
       location int {
         from 121770,
@@ -4143,7 +3963,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 394,
       data region "chr4:119775133",
       location int {
         from 121770,
@@ -4173,7 +3993,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 397,
       data region "chr20:62384800",
       location int {
         from 121770,
@@ -4203,7 +4023,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 400,
       data region "chr2:242710710",
       location int {
         from 121770,
@@ -4233,7 +4053,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 403,
       data region "chr16:88765479",
       location int {
         from 121770,
@@ -4263,7 +4083,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 406,
       data region "chr10:38780518",
       location int {
         from 121770,
@@ -4293,7 +4113,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 409,
       data region "chr1:241259066",
       location int {
         from 121770,
@@ -4323,7 +4143,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 412,
       data region "chr1:222180910",
       location int {
         from 121770,
@@ -4353,7 +4173,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 415,
       data region "chr1:246761",
       location int {
         from 121770,
@@ -4383,7 +4203,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 418,
       data region "chr1:100446",
       location int {
         from 121770,
@@ -4413,7 +4233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 421,
       data region "chrY:25917960",
       location int {
         from 121770,
@@ -4443,7 +4263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 424,
       data region "chrY:24832433",
       location int {
         from 121770,
@@ -4473,7 +4293,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 427,
       data region "chr7:35997",
       location int {
         from 121770,
@@ -4503,7 +4323,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 430,
       data region "chr1:226217483",
       location int {
         from 132153,
@@ -4533,7 +4353,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 433,
       data region "chr3:199433310",
       location int {
         from 132998,
@@ -4563,7 +4383,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 436,
       data region "chr1:226228229",
       location int {
         from 134498,
@@ -4591,45 +4411,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 2
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 439,
       data region "chr7:99749329",
       location int {
         from 72505219,
@@ -4659,7 +4443,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 442,
       data region "chr7:101762408",
       location int {
         from 72505730,
@@ -4689,7 +4473,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 445,
       data region "chr7:6006877",
       location int {
         from 72505733,
@@ -4719,7 +4503,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 448,
       data region "chr7:66382877",
       location int {
         from 72505784,
@@ -4749,7 +4533,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 451,
       data region "chr7:74165688",
       location int {
         from 72506862,
@@ -4779,7 +4563,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 454,
       data region "chr7:74963306",
       location int {
         from 72507382,
@@ -4809,7 +4593,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 457,
       data region "chr7:75988834",
       location int {
         from 72507583,
@@ -4839,7 +4623,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 460,
       data region "chr7:101763716",
       location int {
         from 72509358,
@@ -4869,7 +4653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 463,
       data region "chr7:5021058",
       location int {
         from 72513706,
@@ -4899,7 +4683,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 466,
       data region "chr7:44007800",
       location int {
         from 72514424,
@@ -4929,7 +4713,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 469,
       data region "chr7:101982507",
       location int {
         from 72514431,
@@ -4959,7 +4743,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 472,
       data region "chr7:102081744",
       location int {
         from 72514431,
@@ -4989,7 +4773,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 475,
       data region "chr7:71967069",
       location int {
         from 72515514,
@@ -5019,7 +4803,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 478,
       data region "chr7:6718743",
       location int {
         from 72517600,
@@ -5049,7 +4833,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 481,
       data region "chr7:71978189",
       location int {
         from 72524729,
@@ -5079,7 +4863,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 484,
       data region "chr7:66379643",
       location int {
         from 72524729,
@@ -5109,7 +4893,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 487,
       data region "chr7:44004601",
       location int {
         from 72524729,
@@ -5139,7 +4923,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 490,
       data region "chr7:102078582",
       location int {
         from 72524729,
@@ -5169,7 +4953,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 493,
       data region "chr7:101979352",
       location int {
         from 72524729,
@@ -5199,7 +4983,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 496,
       data region "chr7:101781242",
       location int {
         from 72524729,
@@ -5229,7 +5013,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 499,
       data region "chr7:76525807",
       location int {
         from 72524729,
@@ -5259,7 +5043,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 502,
       data region "chr7:76006755",
       location int {
         from 72524729,
@@ -5289,7 +5073,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 505,
       data region "chr7:99741831",
       location int {
         from 72524745,
@@ -5319,7 +5103,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 508,
       data region "chr7:99747939",
       location int {
         from 72524745,
@@ -5349,7 +5133,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 511,
       data region "chr7:99746549",
       location int {
         from 72524745,
@@ -5377,45 +5161,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 2
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 514,
       data region "chr8:6920769",
       location int {
         from 7451370,
@@ -5445,7 +5193,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 517,
       data region "chr21:32908455",
       location int {
         from 7451402,
@@ -5475,7 +5223,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 520,
       data region "chr9:92012179",
       location int {
         from 7452326,
@@ -5505,7 +5253,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 523,
       data region "chr2:71089542",
       location int {
         from 7452341,
@@ -5535,7 +5283,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 526,
       data region "chr3:131238600",
       location int {
         from 7454113,
@@ -5565,7 +5313,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 529,
       data region "chr11:3371163",
       location int {
         from 7454113,
@@ -5595,7 +5343,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 532,
       data region "chr7:6888313",
       location int {
         from 7454136,
@@ -5625,7 +5373,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 535,
       data region "chr4:3875626",
       location int {
         from 7454164,
@@ -5655,7 +5403,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 538,
       data region "chr4:9360519",
       location int {
         from 7454165,
@@ -5685,7 +5433,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 541,
       data region "chr11:67262163",
       location int {
         from 7454165,
@@ -5715,7 +5463,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 544,
       data region "chr3:75504785",
       location int {
         from 7454168,
@@ -5745,7 +5493,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 547,
       data region "chr2:135440462",
       location int {
         from 7454949,
@@ -5775,7 +5523,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 550,
       data region "chr16:5196077",
       location int {
         from 7457438,
@@ -5805,7 +5553,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 553,
       data region "chr8:7459581",
       location int {
         from 7465990,
@@ -5835,7 +5583,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 556,
       data region "chr8:12503726",
       location int {
         from 7466506,
@@ -5865,7 +5613,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 559,
       data region "chr16:5227441",
       location int {
         from 7466532,
@@ -5895,7 +5643,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 562,
       data region "chr12:8430157",
       location int {
         from 7469328,
@@ -5925,7 +5673,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 565,
       data region "chr8:12556963",
       location int {
         from 7469328,
@@ -5955,7 +5703,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 568,
       data region "chr8:12499047",
       location int {
         from 7469328,
@@ -5985,7 +5733,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 571,
       data region "chr8:7062652",
       location int {
         from 7469330,
@@ -6015,7 +5763,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 574,
       data region "chr8:7961723",
       location int {
         from 7469330,
@@ -6045,7 +5793,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 577,
       data region "chr8:7453400",
       location int {
         from 7472171,
@@ -6075,7 +5823,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 580,
       data region "chr8:6933975",
       location int {
         from 7472171,
@@ -6105,7 +5853,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 583,
       data region "chr4:9140171",
       location int {
         from 7472171,
@@ -6135,7 +5883,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 586,
       data region "chr3:131205013",
       location int {
         from 7472171,
@@ -6163,45 +5911,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 3
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 589,
       data region "chr19:41463703",
       location int {
         from 42250592,
@@ -6231,7 +5943,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 592,
       data region "chr19:41461169",
       location int {
         from 42250592,
@@ -6261,7 +5973,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 595,
       data region "chr19:41458614",
       location int {
         from 42250592,
@@ -6291,7 +6003,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 598,
       data region "chr19:41456073",
       location int {
         from 42250592,
@@ -6321,7 +6033,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 601,
       data region "chr19:41453572",
       location int {
         from 42250592,
@@ -6351,7 +6063,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 604,
       data region "chr19:41451064",
       location int {
         from 42250592,
@@ -6381,7 +6093,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 607,
       data region "chr19:42475995",
       location int {
         from 42250615,
@@ -6411,7 +6123,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 610,
       data region "chr19:42465897",
       location int {
         from 42250615,
@@ -6441,7 +6153,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 613,
       data region "chr19:42463370",
       location int {
         from 42250615,
@@ -6471,7 +6183,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 616,
       data region "chr21_random:1626884",
       location int {
         from 42255826,
@@ -6501,7 +6213,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 619,
       data region "chr4_random:440055",
       location int {
         from 42256031,
@@ -6531,7 +6243,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 622,
       data region "chrY:11699281",
       location int {
         from 42256177,
@@ -6561,7 +6273,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 625,
       data region "chr22_random:134236",
       location int {
         from 42256831,
@@ -6591,7 +6303,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 628,
       data region "chr14:18816820",
       location int {
         from 42256999,
@@ -6621,7 +6333,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 631,
       data region "chr2:132230283",
       location int {
         from 42257025,
@@ -6651,7 +6363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 634,
       data region "chr14:18887857",
       location int {
         from 42257682,
@@ -6681,7 +6393,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 637,
       data region "chr22:14442363",
       location int {
         from 42259640,
@@ -6711,7 +6423,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 640,
       data region "chr2:132265544",
       location int {
         from 42260970,
@@ -6741,7 +6453,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 643,
       data region "chr22:14840105",
       location int {
         from 42260974,
@@ -6771,7 +6483,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 646,
       data region "chr14:18431514",
       location int {
         from 42260974,
@@ -6801,7 +6513,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 649,
       data region "chr2:132293365",
       location int {
         from 42275441,
@@ -6831,7 +6543,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 652,
       data region "chr18:14978964",
       location int {
         from 42275441,
@@ -6861,7 +6573,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 655,
       data region "chr9:42877954",
       location int {
         from 42288090,
@@ -6891,7 +6603,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 658,
       data region "chr4:44835871",
       location int {
         from 42290032,
@@ -6921,7 +6633,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 661,
       data region "chr4:44725101",
       location int {
         from 42305867,
@@ -6949,45 +6661,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 664,
       data region "chr8:62277368",
       location int {
         from 32223916,
@@ -7017,7 +6693,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 667,
       data region "chr7:148661941",
       location int {
         from 32223916,
@@ -7047,7 +6723,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 670,
       data region "chr10:74347114",
       location int {
         from 32223916,
@@ -7077,7 +6753,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 673,
       data region "chr5:93043974",
       location int {
         from 32223917,
@@ -7107,7 +6783,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 676,
       data region "chrX:14762218",
       location int {
         from 32223920,
@@ -7137,7 +6813,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 679,
       data region "chr20:37039542",
       location int {
         from 32223920,
@@ -7167,7 +6843,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 682,
       data region "chr15:90629971",
       location int {
         from 32223921,
@@ -7197,7 +6873,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 685,
       data region "chr11:61854925",
       location int {
         from 32223941,
@@ -7227,7 +6903,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 688,
       data region "chr10:97938808",
       location int {
         from 32223941,
@@ -7257,7 +6933,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 691,
       data region "chr1:27405937",
       location int {
         from 32223941,
@@ -7287,7 +6963,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 694,
       data region "chr3:151139144",
       location int {
         from 32224022,
@@ -7317,7 +6993,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 697,
       data region "chr15:70978488",
       location int {
         from 32224022,
@@ -7347,7 +7023,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 700,
       data region "chrX:123242079",
       location int {
         from 32224022,
@@ -7377,7 +7053,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 703,
       data region "chr11:74467661",
       location int {
         from 32224023,
@@ -7407,7 +7083,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 706,
       data region "chr8:68260068",
       location int {
         from 32224037,
@@ -7437,7 +7113,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 709,
       data region "chrX:34386793",
       location int {
         from 34144852,
@@ -7467,7 +7143,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 712,
       data region "chrX:37282363",
       location int {
         from 34476800,
@@ -7497,7 +7173,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 715,
       data region "chrX:34874283",
       location int {
         from 34476804,
@@ -7527,7 +7203,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 718,
       data region "chrX:36941001",
       location int {
         from 34476804,
@@ -7557,7 +7233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 721,
       data region "chrX:34054773",
       location int {
         from 34476872,
@@ -7587,7 +7263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 724,
       data region "chrX:36885447",
       location int {
         from 34674331,
@@ -7617,7 +7293,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 727,
       data region "chrX:36931424",
       location int {
         from 34955672,
@@ -7647,7 +7323,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 730,
       data region "chrX:34386725",
       location int {
         from 34964362,
@@ -7675,45 +7351,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 733,
       data region "chr15:82665405",
       location int {
         from 27570809,
@@ -7743,7 +7383,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 736,
       data region "chr15:80848244",
       location int {
         from 27570809,
@@ -7773,7 +7413,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 739,
       data region "chr15:80759617",
       location int {
         from 27570809,
@@ -7803,7 +7443,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 742,
       data region "chr15:80461702",
       location int {
         from 27570809,
@@ -7833,7 +7473,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 745,
       data region "chr15:98166919",
       location int {
         from 27570841,
@@ -7863,7 +7503,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 748,
       data region "chr15:83554483",
       location int {
         from 27570841,
@@ -7893,7 +7533,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 751,
       data region "chr15:80944033",
       location int {
         from 27570874,
@@ -7923,7 +7563,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 754,
       data region "chr15:80557449",
       location int {
         from 27570876,
@@ -7953,7 +7593,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 757,
       data region "chrY:24781212",
       location int {
         from 27571823,
@@ -7983,7 +7623,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 760,
       data region "chr15:83527197",
       location int {
         from 27573645,
@@ -8013,7 +7653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 763,
       data region "chr15_random:577755",
       location int {
         from 27576545,
@@ -8043,7 +7683,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 766,
       data region "chr15_random:654890",
       location int {
         from 27578661,
@@ -8073,7 +7713,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 769,
       data region "chr15_random:436350",
       location int {
         from 27580088,
@@ -8103,7 +7743,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 772,
       data region "chr15:28156284",
       location int {
         from 27583472,
@@ -8133,7 +7773,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 775,
       data region "chr15:28626449",
       location int {
         from 27584589,
@@ -8163,7 +7803,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 778,
       data region "chr15:28494802",
       location int {
         from 27584589,
@@ -8193,7 +7833,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 781,
       data region "chr15:82854552",
       location int {
         from 27593688,
@@ -8223,7 +7863,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 784,
       data region "chr15:80892022",
       location int {
         from 27593688,
@@ -8253,7 +7893,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 787,
       data region "chr15:80505497",
       location int {
         from 27593688,
@@ -8283,7 +7923,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 790,
       data region "chr15:76796891",
       location int {
         from 27593691,
@@ -8313,7 +7953,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 793,
       data region "chr15_random:629715",
       location int {
         from 27595052,
@@ -8343,7 +7983,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 796,
       data region "chr15:88633240",
       location int {
         from 27595052,
@@ -8373,7 +8013,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 799,
       data region "chrY:26051376",
       location int {
         from 27595052,
@@ -8403,7 +8043,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 802,
       data region "chr15:98146252",
       location int {
         from 27595779,
@@ -8433,7 +8073,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 805,
       data region "chr15_random:592353",
       location int {
         from 27596013,
@@ -8461,45 +8101,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 808,
       data region "chr5:180648268",
       location int {
         from 38699243,
@@ -8529,7 +8133,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 811,
       data region "chr7:56412763",
       location int {
         from 38702639,
@@ -8559,7 +8163,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 814,
       data region "chr4:119740816",
       location int {
         from 38706353,
@@ -8589,7 +8193,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 817,
       data region "chr7:39768429",
       location int {
         from 38706630,
@@ -8619,7 +8223,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 820,
       data region "chr11:50027222",
       location int {
         from 38708518,
@@ -8649,7 +8253,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 823,
       data region "chr7:64915204",
       location int {
         from 38710789,
@@ -8679,7 +8283,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 826,
       data region "chr7:51426962",
       location int {
         from 38718749,
@@ -8709,7 +8313,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 829,
       data region "chr7:62818399",
       location int {
         from 38719114,
@@ -8739,7 +8343,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 832,
       data region "chr7:56865879",
       location int {
         from 38719114,
@@ -8769,7 +8373,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 835,
       data region "chr7:55782289",
       location int {
         from 38722069,
@@ -8799,7 +8403,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 838,
       data region "chr1:307583",
       location int {
         from 38727789,
@@ -8829,7 +8433,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 841,
       data region "chr1:661630",
       location int {
         from 38733581,
@@ -8859,7 +8463,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 844,
       data region "chr1:658224",
       location int {
         from 38733581,
@@ -8889,7 +8493,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 847,
       data region "chr3:199426573",
       location int {
         from 38733581,
@@ -8919,7 +8523,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 850,
       data region "chr11:118420",
       location int {
         from 38733581,
@@ -8949,7 +8553,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 853,
       data region "chr5:180680497",
       location int {
         from 38733581,
@@ -8979,7 +8583,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 856,
       data region "chr17_random:737256",
       location int {
         from 38733581,
@@ -9009,7 +8613,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 859,
       data region "chr17_random:739204",
       location int {
         from 38733661,
@@ -9039,7 +8643,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 862,
       data region "chr1:226219922",
       location int {
         from 38734817,
@@ -9069,7 +8673,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 865,
       data region "chr7:45818565",
       location int {
         from 38737560,
@@ -9099,7 +8703,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 868,
       data region "chr7:55777054",
       location int {
         from 38737560,
@@ -9129,7 +8733,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 871,
       data region "chr7:55778602",
       location int {
         from 38737560,
@@ -9159,7 +8763,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 874,
       data region "chr7:56392722",
       location int {
         from 38737566,
@@ -9189,7 +8793,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 877,
       data region "chr7:55771829",
       location int {
         from 38739078,
@@ -9219,7 +8823,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 880,
       data region "chr7:55777895",
       location int {
         from 38739127,
@@ -9247,45 +8851,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 883,
       data region "chr3:127133636",
       location int {
         from 67552123,
@@ -9315,7 +8883,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 886,
       data region "chr8:12321710",
       location int {
         from 67554688,
@@ -9345,7 +8913,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 889,
       data region "chr12:8270437",
       location int {
         from 67554688,
@@ -9375,7 +8943,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 892,
       data region "chr8:12072429",
       location int {
         from 67554688,
@@ -9405,7 +8973,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 895,
       data region "chr11:71153513",
       location int {
         from 67555705,
@@ -9435,7 +9003,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 898,
       data region "chr11:71147982",
       location int {
         from 67600425,
@@ -9465,7 +9033,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 901,
       data region "chr4:9200002",
       location int {
         from 67632199,
@@ -9495,7 +9063,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 904,
       data region "chr4_random:386039",
       location int {
         from 67637378,
@@ -9525,7 +9093,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 907,
       data region "chr16:5136793",
       location int {
         from 67639266,
@@ -9555,7 +9123,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 910,
       data region "chr8:6992273",
       location int {
         from 67655592,
@@ -9585,7 +9153,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 913,
       data region "chr7:97341933",
       location int {
         from 67661407,
@@ -9615,7 +9183,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 916,
       data region "chr16:5250068",
       location int {
         from 67666863,
@@ -9645,7 +9213,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 919,
       data region "chr4:9162786",
       location int {
         from 67668175,
@@ -9675,7 +9243,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 922,
       data region "chr8:6956728",
       location int {
         from 67670379,
@@ -9705,7 +9273,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 925,
       data region "chr4:4108333",
       location int {
         from 67670707,
@@ -9735,7 +9303,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 928,
       data region "chr3:75651459",
       location int {
         from 67670707,
@@ -9765,7 +9333,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 931,
       data region "chr8:12511916",
       location int {
         from 67674651,
@@ -9795,7 +9363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 934,
       data region "chr3:15139122",
       location int {
         from 67688853,
@@ -9825,7 +9393,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 937,
       data region "chr12:8400001",
       location int {
         from 67690221,
@@ -9855,7 +9423,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 940,
       data region "chr16:5227441",
       location int {
         from 67704795,
@@ -9885,7 +9453,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 943,
       data region "chr11:3540527",
       location int {
         from 67704796,
@@ -9915,7 +9483,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 946,
       data region "chr8:6920792",
       location int {
         from 67704796,
@@ -9945,7 +9513,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 949,
       data region "chr12:8415931",
       location int {
         from 67704796,
@@ -9975,7 +9543,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 952,
       data region "chr4:9131602",
       location int {
         from 67704798,
@@ -10005,7 +9573,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 955,
       data region "chr8:12542713",
       location int {
         from 67704798,
@@ -10033,45 +9601,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 958,
       data region "chr3:122007424",
       location int {
         from 32876074,
@@ -10101,7 +9633,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 961,
       data region "chr12:74726229",
       location int {
         from 32876085,
@@ -10131,7 +9663,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 964,
       data region "chr6:25131223",
       location int {
         from 33138677,
@@ -10161,7 +9693,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 967,
       data region "chr12:36942355",
       location int {
         from 34121013,
@@ -10191,7 +9723,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 970,
       data region "chr18:1170",
       location int {
         from 34260147,
@@ -10221,7 +9753,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 973,
       data region "chr10:50001",
       location int {
         from 34264720,
@@ -10251,7 +9783,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 976,
       data region "chr9:140186660",
       location int {
         from 34285673,
@@ -10281,7 +9813,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 979,
       data region "chr3:199325213",
       location int {
         from 34285673,
@@ -10311,7 +9843,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 982,
       data region "chrY:18112805",
       location int {
         from 34293494,
@@ -10341,7 +9873,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 985,
       data region "chrY:18971848",
       location int {
         from 34293494,
@@ -10371,7 +9903,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 988,
       data region "chr1:798324",
       location int {
         from 34313274,
@@ -10401,7 +9933,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 991,
       data region "chr4:191135878",
       location int {
         from 34313285,
@@ -10431,7 +9963,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 994,
       data region "chr12:36862812",
       location int {
         from 34315478,
@@ -10461,7 +9993,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 997,
       data region "chr16:88678782",
       location int {
         from 34317039,
@@ -10491,7 +10023,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1000,
       data region "chr20:25834289",
       location int {
         from 37856695,
@@ -10521,7 +10053,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1003,
       data region "chr7:57756130",
       location int {
         from 37856695,
@@ -10551,7 +10083,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1006,
       data region "chr20:28049325",
       location int {
         from 37856695,
@@ -10581,7 +10113,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1009,
       data region "chr15:45126137",
       location int {
         from 37887204,
@@ -10611,7 +10143,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1012,
       data region "chr12:34012280",
       location int {
         from 38656088,
@@ -10641,7 +10173,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1015,
       data region "chr1:104661053",
       location int {
         from 42474419,
@@ -10671,7 +10203,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1018,
       data region "chr16:2658389",
       location int {
         from 56893293,
@@ -10701,7 +10233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1021,
       data region "chr7:102603017",
       location int {
         from 63954365,
@@ -10731,7 +10263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1024,
       data region "chr7:35200001",
       location int {
         from 64069979,
@@ -10761,7 +10293,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1027,
       data region "chr12:130478150",
       location int {
         from 131716479,
@@ -10791,7 +10323,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1030,
       data region "chr12:130382030",
       location int {
         from 132106474,
@@ -10819,45 +10351,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1033,
       data region "chr14:102910048",
       location int {
         from 67840882,
@@ -10887,7 +10383,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1036,
       data region "chrX:44485200",
       location int {
         from 67840884,
@@ -10917,7 +10413,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1039,
       data region "chr1:158502681",
       location int {
         from 67840885,
@@ -10947,7 +10443,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1042,
       data region "chr12:9739150",
       location int {
         from 68405702,
@@ -10977,7 +10473,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1045,
       data region "chr11:61854926",
       location int {
         from 68405702,
@@ -11007,7 +10503,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1048,
       data region "chr10:74347093",
       location int {
         from 68405702,
@@ -11037,7 +10533,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1051,
       data region "chr1:27405928",
       location int {
         from 68405702,
@@ -11067,7 +10563,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1054,
       data region "chr6:70471593",
       location int {
         from 68405702,
@@ -11097,7 +10593,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1057,
       data region "chr2:197952363",
       location int {
         from 68405702,
@@ -11127,7 +10623,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1060,
       data region "chr8:62277368",
       location int {
         from 68405702,
@@ -11157,7 +10653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1063,
       data region "chr5:93043992",
       location int {
         from 68405702,
@@ -11187,7 +10683,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1066,
       data region "chr2:204345303",
       location int {
         from 68405702,
@@ -11217,7 +10713,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1069,
       data region "chr8:68260066",
       location int {
         from 68405707,
@@ -11247,7 +10743,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1072,
       data region "chr10:97938806",
       location int {
         from 68405709,
@@ -11277,7 +10773,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1075,
       data region "chrX:32133836",
       location int {
         from 68405711,
@@ -11307,7 +10803,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1078,
       data region "chr11:71008682",
       location int {
         from 68476306,
@@ -11337,7 +10833,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1081,
       data region "chr10:15077488",
       location int {
         from 68476306,
@@ -11367,7 +10863,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1084,
       data region "chr2:71109485",
       location int {
         from 68476306,
@@ -11397,7 +10893,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1087,
       data region "chr3:126904827",
       location int {
         from 68476306,
@@ -11427,7 +10923,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1090,
       data region "chr3:75478151",
       location int {
         from 68476306,
@@ -11457,7 +10953,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1093,
       data region "chr9:92543437",
       location int {
         from 68476306,
@@ -11487,7 +10983,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1096,
       data region "chr3:8704800",
       location int {
         from 68476306,
@@ -11517,7 +11013,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1099,
       data region "chr3:113723164",
       location int {
         from 68476306,
@@ -11547,7 +11043,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1102,
       data region "chr2:95575980",
       location int {
         from 68476306,
@@ -11577,7 +11073,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1105,
       data region "chr14:51293403",
       location int {
         from 68476306,
@@ -11605,45 +11101,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1108,
       data region "chr19:23801728",
       location int {
         from 103840291,
@@ -11673,7 +11133,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1111,
       data region "chr2:62226939",
       location int {
         from 103840291,
@@ -11703,7 +11163,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1114,
       data region "chr3:111883744",
       location int {
         from 103840291,
@@ -11733,7 +11193,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1117,
       data region "chr3:198197868",
       location int {
         from 103840291,
@@ -11763,7 +11223,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1120,
       data region "chr13:20433375",
       location int {
         from 103840292,
@@ -11793,7 +11253,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1123,
       data region "chr1:152617218",
       location int {
         from 103840292,
@@ -11823,7 +11283,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1126,
       data region "chr8:81633581",
       location int {
         from 103840292,
@@ -11853,7 +11313,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1129,
       data region "chr6:112783639",
       location int {
         from 103840292,
@@ -11883,7 +11343,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1132,
       data region "chrX:99297461",
       location int {
         from 103840294,
@@ -11913,7 +11373,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1135,
       data region "chr13:66738883",
       location int {
         from 103840295,
@@ -11943,7 +11403,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1138,
       data region "chrX:86844924",
       location int {
         from 103840295,
@@ -11973,7 +11433,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1141,
       data region "chr15:50965007",
       location int {
         from 103840295,
@@ -12003,7 +11463,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1144,
       data region "chrX:44485199",
       location int {
         from 103840297,
@@ -12033,7 +11493,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1147,
       data region "chr16:72531971",
       location int {
         from 103840304,
@@ -12063,7 +11523,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1150,
       data region "chr14:101325768",
       location int {
         from 104229396,
@@ -12093,7 +11553,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1153,
       data region "chr2:207889756",
       location int {
         from 104415664,
@@ -12123,7 +11583,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1156,
       data region "chr14:103812092",
       location int {
         from 104741047,
@@ -12153,7 +11613,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1159,
       data region "chr14:103810800",
       location int {
         from 104741047,
@@ -12183,7 +11643,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1162,
       data region "chr13:23795100",
       location int {
         from 104917254,
@@ -12213,7 +11673,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1165,
       data region "chr13:23820227",
       location int {
         from 104930032,
@@ -12243,7 +11703,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1168,
       data region "chr13:22400005",
       location int {
         from 104932138,
@@ -12273,7 +11733,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1171,
       data region "chr13:22416817",
       location int {
         from 104949251,
@@ -12303,7 +11763,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1174,
       data region "chr13:22440394",
       location int {
         from 104965247,
@@ -12333,7 +11793,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1177,
       data region "chr13:23864958",
       location int {
         from 104966347,
@@ -12363,7 +11823,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1180,
       data region "chr14:104486902",
       location int {
         from 105407937,
@@ -12391,45 +11851,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1183,
       data region "chr10:27642290",
       location int {
         from 20087141,
@@ -12459,7 +11883,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1186,
       data region "chr15:19469972",
       location int {
         from 20198576,
@@ -12489,7 +11913,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1189,
       data region "chr14:105448270",
       location int {
         from 20208187,
@@ -12519,7 +11943,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1192,
       data region "chr2:87426952",
       location int {
         from 20306470,
@@ -12549,7 +11973,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1195,
       data region "chr2:91070920",
       location int {
         from 20309082,
@@ -12579,7 +12003,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1198,
       data region "chr22:20934170",
       location int {
         from 20312296,
@@ -12609,7 +12033,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1201,
       data region "chr2:89918834",
       location int {
         from 20316815,
@@ -12639,7 +12063,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1204,
       data region "chr22:15385668",
       location int {
         from 20318543,
@@ -12669,7 +12093,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1207,
       data region "chr15:18764436",
       location int {
         from 20318548,
@@ -12699,7 +12123,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1210,
       data region "chr16:33233125",
       location int {
         from 20326990,
@@ -12729,7 +12153,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1213,
       data region "chr16:32235697",
       location int {
         from 20326990,
@@ -12759,7 +12183,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1216,
       data region "chr10:42031911",
       location int {
         from 20331904,
@@ -12789,7 +12213,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1219,
       data region "chr10:39067640",
       location int {
         from 20331904,
@@ -12819,7 +12243,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1222,
       data region "chr21_random:409816",
       location int {
         from 20331904,
@@ -12849,7 +12273,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1225,
       data region "chr2:91530607",
       location int {
         from 20331904,
@@ -12879,7 +12303,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1228,
       data region "chr9:67011441",
       location int {
         from 20334567,
@@ -12909,7 +12333,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1231,
       data region "chr9:66675552",
       location int {
         from 20334567,
@@ -12939,7 +12363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1234,
       data region "chr9:69367311",
       location int {
         from 20334567,
@@ -12969,7 +12393,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1237,
       data region "chr9:69001851",
       location int {
         from 20334567,
@@ -12999,7 +12423,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1240,
       data region "chr9:69580470",
       location int {
         from 20334567,
@@ -13029,7 +12453,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1243,
       data region "chr9:42774513",
       location int {
         from 20334567,
@@ -13059,7 +12483,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1246,
       data region "chrY:12049702",
       location int {
         from 20341887,
@@ -13089,7 +12513,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1249,
       data region "chr16:33271049",
       location int {
         from 20345908,
@@ -13119,7 +12543,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1252,
       data region "chr16:33217137",
       location int {
         from 20347061,
@@ -13149,7 +12573,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1255,
       data region "chr19:38161908",
       location int {
         from 20433040,
@@ -13177,45 +12601,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1258,
       data region "chr1:147271085",
       location int {
         from 33081227,
@@ -13245,7 +12633,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1261,
       data region "chr7:61440551",
       location int {
         from 33081826,
@@ -13275,7 +12663,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1264,
       data region "chr16:33424970",
       location int {
         from 33084339,
@@ -13305,7 +12693,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1267,
       data region "chr16:45046841",
       location int {
         from 33085883,
@@ -13335,7 +12723,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1270,
       data region "chr16:32954437",
       location int {
         from 33086683,
@@ -13365,7 +12753,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1273,
       data region "chr7:61066346",
       location int {
         from 33086945,
@@ -13395,7 +12783,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1276,
       data region "chr16:45031622",
       location int {
         from 33092168,
@@ -13425,7 +12813,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1279,
       data region "chr9:69454933",
       location int {
         from 33092453,
@@ -13455,7 +12843,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1282,
       data region "chr9:69655853",
       location int {
         from 33092453,
@@ -13485,7 +12873,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1285,
       data region "chr9:42709701",
       location int {
         from 33092453,
@@ -13515,7 +12903,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1288,
       data region "chr2:91607960",
       location int {
         from 33093354,
@@ -13545,7 +12933,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1291,
       data region "chr10:41939732",
       location int {
         from 33093696,
@@ -13575,7 +12963,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1294,
       data region "chr9:69089931",
       location int {
         from 33093696,
@@ -13605,7 +12993,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1297,
       data region "chr7:64687650",
       location int {
         from 33093696,
@@ -13635,7 +13023,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1300,
       data region "chr7:61404593",
       location int {
         from 33093696,
@@ -13665,7 +13053,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1303,
       data region "chr21:13433681",
       location int {
         from 33093696,
@@ -13695,7 +13083,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1306,
       data region "chr18:15200683",
       location int {
         from 33093696,
@@ -13725,7 +13113,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1309,
       data region "chr16:33736262",
       location int {
         from 33093696,
@@ -13755,7 +13143,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1312,
       data region "chr2:91338340",
       location int {
         from 33093696,
@@ -13785,7 +13173,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1315,
       data region "chr2:132525355",
       location int {
         from 33093696,
@@ -13815,7 +13203,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1318,
       data region "chr2:91010797",
       location int {
         from 33093696,
@@ -13845,7 +13233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1321,
       data region "chr7:61470843",
       location int {
         from 33093696,
@@ -13875,7 +13263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1324,
       data region "chr7:53169596",
       location int {
         from 33093696,
@@ -13905,7 +13293,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1327,
       data region "chr13:17983322",
       location int {
         from 33093697,
@@ -13935,7 +13323,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1330,
       data region "chr17:22292185",
       location int {
         from 33094648,
@@ -13963,45 +13351,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1333,
       data region "chr17:16636938",
       location int {
         from 5068084,
@@ -14031,7 +13383,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1336,
       data region "chr17:55607832",
       location int {
         from 5071643,
@@ -14061,7 +13413,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1339,
       data region "chr17:20270282",
       location int {
         from 5071643,
@@ -14091,7 +13443,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1342,
       data region "chr17:16641867",
       location int {
         from 5071643,
@@ -14121,7 +13473,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1345,
       data region "chr17:20263570",
       location int {
         from 5078129,
@@ -14151,7 +13503,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1348,
       data region "chr17:16635154",
       location int {
         from 5078129,
@@ -14181,7 +13533,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1351,
       data region "chr17:16737853",
       location int {
         from 5079879,
@@ -14211,7 +13563,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1354,
       data region "chr17:5026274",
       location int {
         from 5084394,
@@ -14241,7 +13593,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1357,
       data region "chr17:5025118",
       location int {
         from 5085550,
@@ -14271,7 +13623,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1360,
       data region "chr17:5826166",
       location int {
         from 5885442,
@@ -14301,7 +13653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1363,
       data region "chr17:4485780",
       location int {
         from 6558479,
@@ -14331,7 +13683,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1366,
       data region "chr17:4473329",
       location int {
         from 6744218,
@@ -14361,7 +13713,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1369,
       data region "chr17:30543928",
       location int {
         from 7384656,
@@ -14391,7 +13743,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1372,
       data region "chr8:11225849",
       location int {
         from 7384659,
@@ -14421,7 +13773,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1375,
       data region "chrX:27519971",
       location int {
         from 9725157,
@@ -14451,7 +13803,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1378,
       data region "chrX:72659045",
       location int {
         from 12044463,
@@ -14481,7 +13833,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1381,
       data region "chr18:55942118",
       location int {
         from 12139480,
@@ -14511,7 +13863,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1384,
       data region "chr14:88692274",
       location int {
         from 12139481,
@@ -14541,7 +13893,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1387,
       data region "chr1:110638548",
       location int {
         from 12139481,
@@ -14571,7 +13923,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1390,
       data region "chrX:75024399",
       location int {
         from 12139484,
@@ -14601,7 +13953,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1393,
       data region "chr17:14074585",
       location int {
         from 13923280,
@@ -14631,7 +13983,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1396,
       data region "chr17:20423108",
       location int {
         from 13927309,
@@ -14661,7 +14013,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1399,
       data region "chr17:15608200",
       location int {
         from 13927309,
@@ -14691,7 +14043,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1402,
       data region "chr17:13864005",
       location int {
         from 14133860,
@@ -14721,7 +14073,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1405,
       data region "chr17:20423108",
       location int {
         from 14136170,
@@ -14749,45 +14101,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1408,
       data region "chr2:201635996",
       location int {
         from 29991473,
@@ -14817,7 +14133,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1411,
       data region "chr6:5553758",
       location int {
         from 29991478,
@@ -14847,7 +14163,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1414,
       data region "chr15:33480122",
       location int {
         from 29991486,
@@ -14877,7 +14193,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1417,
       data region "chr3:149366003",
       location int {
         from 29991487,
@@ -14907,7 +14223,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1420,
       data region "chr11:73743077",
       location int {
         from 29991502,
@@ -14937,7 +14253,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1423,
       data region "chr6:27599205",
       location int {
         from 29991635,
@@ -14967,7 +14283,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1426,
       data region "chr10:46552815",
       location int {
         from 29991649,
@@ -14997,7 +14313,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1429,
       data region "chr7:86988652",
       location int {
         from 29991837,
@@ -15027,7 +14343,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1432,
       data region "chr2:41237177",
       location int {
         from 29991839,
@@ -15057,7 +14373,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1435,
       data region "chr16:50237169",
       location int {
         from 29991840,
@@ -15087,7 +14403,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1438,
       data region "chr2:33715013",
       location int {
         from 29991840,
@@ -15117,7 +14433,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1441,
       data region "chr19:11637549",
       location int {
         from 29991840,
@@ -15147,7 +14463,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1444,
       data region "chr13:20420092",
       location int {
         from 29991842,
@@ -15177,7 +14493,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1447,
       data region "chr4:75022857",
       location int {
         from 29991842,
@@ -15207,7 +14523,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1450,
       data region "chr12:91801622",
       location int {
         from 29991843,
@@ -15237,7 +14553,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1453,
       data region "chr15:65707182",
       location int {
         from 29991844,
@@ -15267,7 +14583,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1456,
       data region "chr12:9071058",
       location int {
         from 29991844,
@@ -15297,7 +14613,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1459,
       data region "chr19:47025503",
       location int {
         from 29991844,
@@ -15327,7 +14643,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1462,
       data region "chr7:84450747",
       location int {
         from 29991844,
@@ -15357,7 +14673,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1465,
       data region "chr17:2156806",
       location int {
         from 29991845,
@@ -15387,7 +14703,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1468,
       data region "chrX:118238710",
       location int {
         from 29991845,
@@ -15417,7 +14733,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1471,
       data region "chrX:73609240",
       location int {
         from 29991845,
@@ -15447,7 +14763,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1474,
       data region "chr4:79127711",
       location int {
         from 29991846,
@@ -15477,7 +14793,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1477,
       data region "chr1:177691651",
       location int {
         from 29991847,
@@ -15507,7 +14823,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1480,
       data region "chr2:206991943",
       location int {
         from 29991847,
@@ -15535,45 +14851,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1483,
       data region "chr7:35997",
       location int {
         from 172444,
@@ -15603,7 +14883,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1486,
       data region "chrY:25917960",
       location int {
         from 172444,
@@ -15633,7 +14913,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1489,
       data region "chrY:24831364",
       location int {
         from 172444,
@@ -15663,7 +14943,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1492,
       data region "chr4:119774661",
       location int {
         from 172444,
@@ -15693,7 +14973,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1495,
       data region "chr20:62390543",
       location int {
         from 172444,
@@ -15723,7 +15003,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1498,
       data region "chr2:242710710",
       location int {
         from 172444,
@@ -15753,7 +15033,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1501,
       data region "chr4:165404733",
       location int {
         from 172444,
@@ -15783,7 +15063,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1504,
       data region "chr19:8257714",
       location int {
         from 8336858,
@@ -15813,7 +15093,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1507,
       data region "chr19:11859299",
       location int {
         from 11924702,
@@ -15843,7 +15123,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1510,
       data region "chr19:20698402",
       location int {
         from 20729179,
@@ -15873,7 +15153,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1513,
       data region "chr19:20521019",
       location int {
         from 20906562,
@@ -15903,7 +15183,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1516,
       data region "chr11:77474144",
       location int {
         from 21047697,
@@ -15933,7 +15213,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1519,
       data region "chr19:21679808",
       location int {
         from 21820511,
@@ -15963,7 +15243,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1522,
       data region "chr19:22931600",
       location int {
         from 22344463,
@@ -15993,7 +15273,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1525,
       data region "chr19:22730150",
       location int {
         from 22485879,
@@ -16023,7 +15303,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1528,
       data region "chr19:22293478",
       location int {
         from 22880113,
@@ -16053,7 +15333,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1531,
       data region "chr19:22136303",
       location int {
         from 23139760,
@@ -16083,7 +15363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1534,
       data region "chr19:42367579",
       location int {
         from 37642101,
@@ -16113,7 +15393,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1537,
       data region "chr19:41455485",
       location int {
         from 37745019,
@@ -16143,7 +15423,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1540,
       data region "chr19:42469104",
       location int {
         from 37759558,
@@ -16173,7 +15453,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1543,
       data region "chr4:132864286",
       location int {
         from 37759566,
@@ -16203,7 +15483,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1546,
       data region "chr9:69885246",
       location int {
         from 37774057,
@@ -16233,7 +15513,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1549,
       data region "chr21_random:1203777",
       location int {
         from 37774057,
@@ -16263,7 +15543,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1552,
       data region "chr9:45331118",
       location int {
         from 37774057,
@@ -16293,7 +15573,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1555,
       data region "chr9:42240611",
       location int {
         from 37774057,
@@ -16321,45 +15601,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1558,
       data region "chr7:126723378",
       location int {
         from 57608200,
@@ -16389,7 +15633,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1561,
       data region "chr1:218708738",
       location int {
         from 57608208,
@@ -16419,7 +15663,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1564,
       data region "chr20:57366749",
       location int {
         from 57913254,
@@ -16449,7 +15693,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1567,
       data region "chr20:57346649",
       location int {
         from 57933354,
@@ -16479,7 +15723,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1570,
       data region "chr20:59954175",
       location int {
         from 60518053,
@@ -16509,7 +15753,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1573,
       data region "chr20:59951448",
       location int {
         from 60520780,
@@ -16539,7 +15783,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1576,
       data region "chr20:61710533",
       location int {
         from 62238864,
@@ -16569,7 +15813,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1579,
       data region "chr20:61709308",
       location int {
         from 62240089,
@@ -16599,7 +15843,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1582,
       data region "chr22:23903629",
       location int {
         from 62271061,
@@ -16629,7 +15873,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1585,
       data region "chr8:23392620",
       location int {
         from 62563463,
@@ -16659,7 +15903,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1588,
       data region "chr20:62228371",
       location int {
         from 62756605,
@@ -16689,7 +15933,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1591,
       data region "chr20:62227049",
       location int {
         from 62757927,
@@ -16719,7 +15963,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1594,
       data region "chr20:62276739",
       location int {
         from 62804789,
@@ -16749,7 +15993,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1597,
       data region "chr20:62275233",
       location int {
         from 62806295,
@@ -16779,7 +16023,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1600,
       data region "chr8:129570927",
       location int {
         from 62904853,
@@ -16809,7 +16053,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1603,
       data region "chr2:114078080",
       location int {
         from 62913378,
@@ -16839,7 +16083,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1606,
       data region "chr17_random:809736",
       location int {
         from 62913378,
@@ -16869,7 +16113,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1609,
       data region "chr10:135369609",
       location int {
         from 62913378,
@@ -16899,7 +16143,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1612,
       data region "chr8:146533",
       location int {
         from 62913378,
@@ -16929,7 +16173,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1615,
       data region "chr21:46938686",
       location int {
         from 62913378,
@@ -16959,7 +16203,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1618,
       data region "chr22:49588001",
       location int {
         from 62913378,
@@ -16989,7 +16233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1621,
       data region "chr5:180835530",
       location int {
         from 62913378,
@@ -17019,7 +16263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1624,
       data region "chr1:222178681",
       location int {
         from 62920017,
@@ -17049,7 +16293,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1627,
       data region "chr19:123444",
       location int {
         from 62920099,
@@ -17079,7 +16323,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1630,
       data region "chr17_random:746790",
       location int {
         from 62920099,
@@ -17107,45 +16351,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1633,
       data region "chr13:51978316",
       location int {
         from 10946566,
@@ -17175,7 +16383,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1636,
       data region "chr22:37084197",
       location int {
         from 10948097,
@@ -17205,7 +16413,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1639,
       data region "chr22:15493781",
       location int {
         from 10948663,
@@ -17235,7 +16443,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1642,
       data region "chrY:27047554",
       location int {
         from 10969592,
@@ -17265,7 +16473,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1645,
       data region "chr22:15478915",
       location int {
         from 10975031,
@@ -17295,7 +16503,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1648,
       data region "chr3:97801760",
       location int {
         from 10975067,
@@ -17325,7 +16533,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1651,
       data region "chr13:51791099",
       location int {
         from 10983459,
@@ -17355,7 +16563,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1654,
       data region "chr13:51970665",
       location int {
         from 10985513,
@@ -17385,7 +16593,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1657,
       data region "chr22:37111520",
       location int {
         from 10988468,
@@ -17415,7 +16623,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1660,
       data region "chr20:51643206",
       location int {
         from 10989910,
@@ -17445,7 +16653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1663,
       data region "chr22:37123891",
       location int {
         from 10989915,
@@ -17475,7 +16683,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1666,
       data region "chr20:51651684",
       location int {
         from 10991423,
@@ -17505,7 +16713,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1669,
       data region "chr13_random:158153",
       location int {
         from 11001970,
@@ -17535,7 +16743,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1672,
       data region "chr2:91239587",
       location int {
         from 11002914,
@@ -17565,7 +16773,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1675,
       data region "chr1:147137497",
       location int {
         from 11002914,
@@ -17595,7 +16803,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1678,
       data region "chr7:151704323",
       location int {
         from 11076835,
@@ -17625,7 +16833,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1681,
       data region "chr18:14850578",
       location int {
         from 11097542,
@@ -17655,7 +16863,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1684,
       data region "chr5:180632347",
       location int {
         from 11097542,
@@ -17685,7 +16893,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1687,
       data region "chr9:46595333",
       location int {
         from 11097542,
@@ -17715,7 +16923,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1690,
       data region "chr9:44264236",
       location int {
         from 11097542,
@@ -17745,7 +16953,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1693,
       data region "chr22:41758260",
       location int {
         from 11107402,
@@ -17775,7 +16983,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1696,
       data region "chrY:772882",
       location int {
         from 11116643,
@@ -17805,7 +17013,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1699,
       data region "chrX:772882",
       location int {
         from 11116643,
@@ -17835,7 +17043,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1702,
       data region "chr22:15874979",
       location int {
         from 11146518,
@@ -17865,7 +17073,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1705,
       data region "chr13_random:8814",
       location int {
         from 11154484,
@@ -17893,45 +17101,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1708,
       data region "chr22:18989600",
       location int {
         from 20488780,
@@ -17961,7 +17133,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1711,
       data region "chr22:17092538",
       location int {
         from 21515447,
@@ -17991,7 +17163,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1714,
       data region "chr1:116959144",
       location int {
         from 21581964,
@@ -18021,7 +17193,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1717,
       data region "chr2:91072029",
       location int {
         from 22604170,
@@ -18051,7 +17223,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1720,
       data region "chr2:87426952",
       location int {
         from 22604170,
@@ -18081,7 +17253,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1723,
       data region "chr15:19583553",
       location int {
         from 22604170,
@@ -18111,7 +17283,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1726,
       data region "chr15:18572310",
       location int {
         from 22604170,
@@ -18141,7 +17313,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1729,
       data region "chr2:89918834",
       location int {
         from 22608693,
@@ -18171,7 +17343,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1732,
       data region "chr22:15385668",
       location int {
         from 22610408,
@@ -18201,7 +17373,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1735,
       data region "chr15:18764436",
       location int {
         from 22610413,
@@ -18231,7 +17403,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1738,
       data region "chr16:33233125",
       location int {
         from 22618879,
@@ -18261,7 +17433,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1741,
       data region "chr16:32235697",
       location int {
         from 22618879,
@@ -18291,7 +17463,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1744,
       data region "chr21_random:409816",
       location int {
         from 22623723,
@@ -18321,7 +17493,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1747,
       data region "chr2:91530607",
       location int {
         from 22623723,
@@ -18351,7 +17523,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1750,
       data region "chr10:42031911",
       location int {
         from 22623723,
@@ -18381,7 +17553,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1753,
       data region "chr10:39067640",
       location int {
         from 22623723,
@@ -18411,7 +17583,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1756,
       data region "chr9:67012836",
       location int {
         from 22626382,
@@ -18441,7 +17613,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1759,
       data region "chr9:66675552",
       location int {
         from 22626382,
@@ -18471,7 +17643,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1762,
       data region "chr9:69379663",
       location int {
         from 22626382,
@@ -18501,7 +17673,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1765,
       data region "chr9:69580400",
       location int {
         from 22626382,
@@ -18531,7 +17703,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1768,
       data region "chr9:42774513",
       location int {
         from 22626382,
@@ -18561,7 +17733,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1771,
       data region "chr9:69014160",
       location int {
         from 22626382,
@@ -18591,7 +17763,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1774,
       data region "chrY:12049702",
       location int {
         from 22640587,
@@ -18621,7 +17793,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1777,
       data region "chr22:23387423",
       location int {
         from 23673450,
@@ -18651,7 +17823,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1780,
       data region "chr22:23012716",
       location int {
         from 23679399,
@@ -18679,45 +17851,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1783,
       data region "chr1:146177098",
       location int {
         from 144829234,
@@ -18747,7 +17883,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1786,
       data region "chr1:146024740",
       location int {
         from 144847777,
@@ -18777,7 +17913,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1789,
       data region "chr1:144727693",
       location int {
         from 144847777,
@@ -18807,7 +17943,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1792,
       data region "chr1:147326116",
       location int {
         from 144850367,
@@ -18837,7 +17973,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1795,
       data region "chr1:144952435",
       location int {
         from 144847050,
@@ -18867,7 +18003,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1798,
       data region "chr1:144974595",
       location int {
         from 144898038,
@@ -18897,7 +18033,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1801,
       data region "chr1:146020797",
       location int {
         from 144860890,
@@ -18927,7 +18063,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1804,
       data region "chr1:144723753",
       location int {
         from 144860890,
@@ -18957,7 +18093,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1807,
       data region "chr1:147304783",
       location int {
         from 144861308,
@@ -18987,7 +18123,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1810,
       data region "chr1:146694567",
       location int {
         from 144810725,
@@ -19017,7 +18153,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1813,
       data region "chr1:146047114",
       location int {
         from 144810725,
@@ -19047,7 +18183,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 1816,
       data region "chr1:144750070",
       location int {
         from 144810725,
@@ -19077,7 +18213,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 1819,
       data region "chr1:144004163",
       location int {
         from 144810725,
@@ -19107,7 +18243,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 1822,
       data region "chr1:16765984",
       location int {
         from 144810725,
@@ -19137,7 +18273,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 1825,
       data region "chr1:142857141",
       location int {
         from 144810725,
@@ -19167,7 +18303,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 1828,
       data region "chr1_random:607800",
       location int {
         from 144811668,
@@ -19197,7 +18333,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 1831,
       data region "chr1:147360882",
       location int {
         from 144811668,
@@ -19227,7 +18363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 1834,
       data region "chr1:21667688",
       location int {
         from 144811668,
@@ -19257,7 +18393,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 1837,
       data region "chr1:147006246",
       location int {
         from 144811670,
@@ -19287,7 +18423,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 1840,
       data region "chr1:146844161",
       location int {
         from 144811670,
@@ -19317,7 +18453,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 1843,
       data region "chr1:146481972",
       location int {
         from 144813567,
@@ -19347,7 +18483,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 1846,
       data region "chr1:204239331",
       location int {
         from 143880004,
@@ -19377,7 +18513,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 1849,
       data region "chr7:64900509",
       location int {
         from 143971071,
@@ -19407,7 +18543,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 1852,
       data region "chr1:147969581",
       location int {
         from 143871003,
@@ -19437,7 +18573,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 1855,
       data region "chrX:119751962",
       location int {
         from 115968517,
@@ -19465,45 +18601,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1858,
       data region "chr15:80768314",
       location int {
         from 82629052,
@@ -19533,7 +18633,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1861,
       data region "chr15:80554651",
       location int {
         from 82629052,
@@ -19563,7 +18663,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1864,
       data region "chr15_random:659790",
       location int {
         from 82629052,
@@ -19593,7 +18693,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1867,
       data region "chr15:76836534",
       location int {
         from 82605785,
@@ -19623,7 +18723,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1870,
       data region "chr15:76048779",
       location int {
         from 82603804,
@@ -19653,7 +18753,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1873,
       data region "chr15:83572703",
       location int {
         from 82941439,
@@ -19683,7 +18783,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1876,
       data region "chr15:83722774",
       location int {
         from 82942870,
@@ -19713,7 +18813,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1879,
       data region "chr15:89382886",
       location int {
         from 82941505,
@@ -19741,45 +18841,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 4
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1882,
       data region "chr17:31675623",
       location int {
         from 34725849,
@@ -19809,7 +18873,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1885,
       data region "chr17:31574056",
       location int {
         from 34725849,
@@ -19839,7 +18903,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1888,
       data region "chr17_random:1253582",
       location int {
         from 34725849,
@@ -19869,7 +18933,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1891,
       data region "chr17:42976804",
       location int {
         from 36350425,
@@ -19897,45 +18961,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 5
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1894,
       data region "chr7_random:266723",
       location int {
         from 1,
@@ -19965,7 +18993,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1897,
       data region "chr17_random:11225",
       location int {
         from 1,
@@ -19995,7 +19023,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1900,
       data region "chr17_random:1",
       location int {
         from 11225,
@@ -20025,7 +19053,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1903,
       data region "chr3:75773019",
       location int {
         from 87528,
@@ -20055,7 +19083,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1906,
       data region "chr5:97939946",
       location int {
         from 117596,
@@ -20085,7 +19113,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1909,
       data region "chr10:126666935",
       location int {
         from 118301,
@@ -20115,7 +19143,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1912,
       data region "chr1:68398897",
       location int {
         from 118541,
@@ -20145,7 +19173,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1915,
       data region "chr9:66225924",
       location int {
         from 134773,
@@ -20173,45 +19201,9 @@ Seq-annot ::= {
           }
         }
       }
-    }
-  }
-}
-Seq-annot ::= {
-  desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 5
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
     },
-    user {
-      type str "NCBI_BED_COLUMN_COUNT",
-      data {
-        {
-          label str "NCBI_BED_COLUMN_COUNT",
-          data int 6
-        }
-      }
-    }
-  },
-  data ftable {
     {
-      id local id 1,
+      id local id 1918,
       data region "chr17:57690142",
       location int {
         from 34739167,
@@ -20241,7 +19233,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local id 1921,
       data region "chr17:31510534",
       location int {
         from 34739167,
@@ -20271,7 +19263,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 1924,
       data region "chr17_random:1365515",
       location int {
         from 34739167,
@@ -20301,7 +19293,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 1927,
       data region "chr17:55528555",
       location int {
         from 34739170,
@@ -20331,7 +19323,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 1930,
       data region "chr17:55436845",
       location int {
         from 34740259,
@@ -20361,7 +19353,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local id 1933,
       data region "chr17:33408655",
       location int {
         from 34740259,
@@ -20391,7 +19383,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local id 1936,
       data region "chr17_random:1031189",
       location int {
         from 34740259,
@@ -20421,7 +19413,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 1939,
       data region "chr17:23012358",
       location int {
         from 34741431,
@@ -20451,7 +19443,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 1942,
       data region "chr17_random:1011920",
       location int {
         from 34743565,
@@ -20481,7 +19473,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 1945,
       data region "chr17:55438128",
       location int {
         from 34743981,
@@ -20511,7 +19503,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 1948,
       data region "chr17_random:1029234",
       location int {
         from 34743981,

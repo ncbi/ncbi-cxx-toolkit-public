@@ -175,14 +175,6 @@ CBedReader::ReadSeqAnnot(
             ProcessError(err, pEC);
             continue;
         }
-        if (fields[0] != m_currentId) {
-            //record id has changed
-            if (featureCount > 0) {
-                --m_uLineNumber;
-                lr.UngetLine();
-                break;
-            }
-        }
         if (xParseFeature(fields, annot, featureCount, pEC)) {
             ++featureCount;
             continue;
