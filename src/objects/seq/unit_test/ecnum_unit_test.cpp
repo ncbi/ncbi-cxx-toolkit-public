@@ -114,14 +114,15 @@ BOOST_AUTO_TEST_CASE(Test_EcNumberCleanup)
     BOOST_CHECK_EQUAL(prot->GetEc().front(), "4.3.1.19");
     BOOST_CHECK_EQUAL(prot->GetEc().back(), "1.1.1.1");
     prot->ResetEc();
-    prot->SetEc().push_back("1.-.-.-"); // ambiguous, to be removed
+    prot->SetEc().push_back("1.-.-.-"); // ambiguous, keep
     prot->SetEc().push_back("asdf"); // bad format, to be removed
     prot->SetEc().push_back("9.8.7.6"); // unknown, to be removed
     prot->RemoveBadEC();
-    BOOST_CHECK_EQUAL(prot->IsSetEc(), false);
+    BOOST_CHECK_EQUAL(prot->IsSetEc(), true);
+    BOOST_CHECK_EQUAL(prot->GetEc().front(), "1.-.-.-");
+    prot->ResetEc();
     prot->SetEc().push_back("4.2.1.16"); // to be replaced
     prot->SetEc().push_back("1.1.1.1"); //specific, do not change
-    prot->SetEc().push_back("1.-.-.-"); // ambiguous, to be removed
     prot->SetEc().push_back("asdf"); // bad format, to be removed
     prot->SetEc().push_back("9.8.7.6"); // unknown, to be removed
     prot->RemoveBadEC();

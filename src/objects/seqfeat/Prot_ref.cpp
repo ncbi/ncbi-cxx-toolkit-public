@@ -297,7 +297,10 @@ void CProt_ref::RemoveBadEC()
     }
     CProt_ref::TEc::iterator it = SetEc().begin();
     while (it != SetEc().end()) {
-        if (GetECNumberStatus(*it) != eEC_specific) {
+        EECNumberStatus status = GetECNumberStatus(*it);
+        if (status == eEC_deleted ||
+            status == eEC_unknown ||
+            status == eEC_replaced) {
             it = SetEc().erase(it);
         } else {
             it++;
