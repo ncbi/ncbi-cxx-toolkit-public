@@ -614,7 +614,10 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
             start_offset = vp.GetStart_offset();
         }
 
-        bool is_cdsstop_relative = cds_last_pos && pnt.GetPoint() > cds_last_pos;
+        bool is_cdsstop_relative = cds_last_pos 
+                                && (   pnt.GetPoint()  > cds_last_pos
+                                    || pnt.GetPoint() == cds_last_pos && vp.IsSetStart_offset());
+                                       //VAR-1076
 
         loc_str = s_OffsetPointToString(
                 vp.GetLoc().GetPnt().GetPoint(),
