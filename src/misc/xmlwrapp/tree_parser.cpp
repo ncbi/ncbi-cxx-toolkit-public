@@ -43,6 +43,7 @@
 **/
 
 // xmlwrapp includes
+#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/tree_parser.hpp>
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/exception.hpp>

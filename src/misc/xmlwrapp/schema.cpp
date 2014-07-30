@@ -36,6 +36,7 @@
 **/
 
 // xmlwrapp includes
+#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/schema.hpp>
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/exception.hpp>

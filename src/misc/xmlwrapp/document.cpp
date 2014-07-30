@@ -42,6 +42,7 @@
 **/
 
 // xmlwrapp includes
+#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/dtd.hpp>

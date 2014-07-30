@@ -48,6 +48,7 @@
 #endif
 
 // xmlwrapp includes
+#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/event_parser.hpp>
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/exception.hpp>

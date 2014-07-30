@@ -44,6 +44,7 @@
 **/
 
 // xmlwrapp includes
+#include "allow_auto_ptr.hpp"
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/node_set.hpp>
