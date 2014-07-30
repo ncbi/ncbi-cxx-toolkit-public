@@ -889,7 +889,7 @@ CTL_CursorResult::~CTL_CursorResult()
 
 CTL_ITDescriptor::CTL_ITDescriptor()
 {
-    memset(&m_Desc, 0, sizeof(m_Desc));
+    memset(&m_Desc, 0xDB, sizeof(m_Desc));
     return;
 }
 
