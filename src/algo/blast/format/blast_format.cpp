@@ -108,8 +108,10 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_IsIterative(false),
           m_BaseFile(kEmptyStr),
           m_XMLFileCount(0),
-          m_LineLength(align_format::kDfltLineLength)
+          m_LineLength(align_format::kDfltLineLength),
+          m_OrigExceptionMask(outfile.exceptions())
 {
+    m_Outfile.exceptions(NcbiBadbit);
     m_DbName = db_adapter.GetDatabaseName();
     m_IsBl2Seq = (m_DbName == kEmptyStr ? true : false);
     if (m_IsBl2Seq) {
@@ -202,8 +204,10 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
           m_IsIterative(false),
           m_BaseFile(kEmptyStr),
           m_XMLFileCount(0),
-          m_LineLength(align_format::kDfltLineLength)
+          m_LineLength(align_format::kDfltLineLength),
+          m_OrigExceptionMask(outfile.exceptions())
 {
+    m_Outfile.exceptions(NcbiBadbit);
     m_DbInfo.assign(dbinfo_list.begin(), dbinfo_list.end());
     vector< CBlastFormatUtil::SDbInfo >::const_iterator itInfo;
     for (itInfo = m_DbInfo.begin(); itInfo != m_DbInfo.end(); itInfo++)
@@ -251,6 +255,14 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
         m_Program = "deltablast";
     }
     m_IsIterative = opts.IsIterativeSearch();
+}
+
+CBlastFormat::~CBlastFormat()
+{
+    try {
+        m_Outfile.exceptions(m_OrigExceptionMask);
+    } catch (...) {/*ignore exceptions*/}
+    m_Outfile.flush();
 }
 
 static const string kHTML_Prefix =
@@ -305,7 +317,7 @@ CBlastFormat::PrintProlog()
         return;
     }
 
-    m_Outfile << "\n\n";
+    m_Outfile << NcbiEndl << NcbiEndl;
     if (m_Program == "deltablast") {
         CBlastFormatUtil::BlastPrintReference(m_IsHTML, kFormatLineLength, 
                               m_Outfile, CReference::eDeltaBlast);
@@ -365,7 +377,7 @@ CBlastFormat::x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary)
         ? summary.GetPsiUngappedKarlinBlk() 
         : summary.GetUngappedKarlinBlk();
     const Blast_GumbelBlk *gbp = summary.GetGumbelBlk();
-    m_Outfile << "\n";
+    m_Outfile << NcbiEndl;
     if (kbp_ungap) {
         CBlastFormatUtil::PrintKAParameters(kbp_ungap->Lambda, 
                                             kbp_ungap->K, kbp_ungap->H,
@@ -1525,7 +1537,7 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
         return;
     }
 
-    m_Outfile << "\n\n";
+    m_Outfile << NcbiEndl << NcbiEndl;
     if (m_Program == "deltablast" && !m_DomainDbInfo.empty()) {
         m_Outfile << "Conserved Domain";
         CBlastFormatUtil::PrintDbReport(m_DomainDbInfo, kFormatLineLength,

@@ -157,6 +157,8 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
 #define BLAST_OUT_OF_MEMORY         4
 /// Command line binary exit code: Network error encountered
 #define BLAST_NETWORK_ERROR         5
+/// Command line binary exit code: error when writing output
+#define BLAST_OUTPUT_ERROR          6
 /// Command line binary exit code: unknown error
 #define BLAST_UNKNOWN_ERROR         255
 
@@ -218,15 +220,25 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
             exit_code = BLAST_UNKNOWN_ERROR;                                \
         }                                                                   \
     }                                                                       \
+    catch (const CIOException& e) {                                         \
+        if (e.GetErrCode() == CIOException::eFlush) {                       \
+            LOG_POST(Error << "BLAST failed to write output: " << e.GetMsg());\
+            exit_code = BLAST_OUTPUT_ERROR;                                 \
+        }                                                                   \
+    }                                                                       \
     catch (const CException& e) {                                           \
         LOG_POST(Error << "Error: " << e.what());                           \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
     }                                                                       \
-    catch (const std::bad_alloc&) {                                       \
+    catch (const std::ios::failure& e) {                                    \
+        LOG_POST(Error << "BLAST failed to write output");                  \
+        exit_code = BLAST_OUTPUT_ERROR;                                     \
+    }                                                                       \
+    catch (const std::bad_alloc&) {                                         \
         LOG_POST(Error << "BLAST ran out of memory");                       \
         exit_code = BLAST_OUT_OF_MEMORY;                                    \
     }                                                                       \
-    catch (const exception& e) {                                            \
+    catch (const std::exception& e) {                                       \
         LOG_POST(Error << "Error: " << e.what());                           \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
     }                                                                       \

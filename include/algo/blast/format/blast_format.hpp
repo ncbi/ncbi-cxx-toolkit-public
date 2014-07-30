@@ -165,6 +165,9 @@ public:
                  const string& custom_output_format = kEmptyStr,
                  bool is_vdb = false);
 
+    /// Class destructor
+    ~CBlastFormat();
+
     /// Print the header of the blast report
     void PrintProlog();
 
@@ -340,6 +343,8 @@ private:
     int m_XMLFileCount;
 
     size_t m_LineLength;
+
+    IOS_BASE::iostate m_OrigExceptionMask;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
