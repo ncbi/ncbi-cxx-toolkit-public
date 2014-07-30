@@ -1,4 +1,7 @@
 #!/bin/sh
+PATH=/bin:/usr/bin
+export PATH
+
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`

@@ -3,11 +3,13 @@
 
 ### Project-list-based recursive builds
 
+include $(builddir)/Makefile.mk
+
 PROJECTS = $(builddir)/projects.pseudo.i
 
 # Some preprocessors only accept files with appropriate extensions....
 $(builddir)/projects.pseudo.c: $(PROJECTS_)
-	$(RM) -f $@
+	$(RM) $@
 	$(if $(wildcard $(PROJECTS_)),$(LN_S) "$(PROJECTS_)",echo ".*" >) $@
 
 PROJECTS_CPPFLAGS=$(if $(PROJECTS_),-I$(dir $(PROJECTS_)),) \
@@ -16,15 +18,15 @@ PROJECTS_CPPFLAGS=$(if $(PROJECTS_),-I$(dir $(PROJECTS_)),) \
 
 $(PROJECTS): $(builddir)/projects.pseudo.c
 	$(CPP) $(PROJECTS_CPPFLAGS) $(builddir)/projects.pseudo.c \
-	    | sed -e '/#/d' > $@
+	    | $(SED) -e '/#/d' > $@
 
 $(builddir)/projects.pseudo.d: $(builddir)/projects.pseudo.c
 	$(CC) $(PROJECTS_CPPFLAGS) $(DEPFLAGS) $(builddir)/projects.pseudo.c \
 	  $(DEPFLAGS_POST) \
-	    | sed -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	    | $(SED) -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
 	       -e 's%\$$(wildcard [^:]*$(obj_ext)) *:%$(PROJECTS) $@ :%g' > $@_
 	test -s $@_
-	mv -f $@_ $@
+	/bin/mv -f $@_ $@
 
 -include $(builddir)/projects.pseudo.d
 
@@ -41,7 +43,7 @@ endif
 RELEVANT_FILE = $(builddir)/relevant.patterns
 $(RELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
 	@if test -s "$(PROJECTS)"; then \
-	    sed -e '/ update-only$$/d; /^$$/d; /^-/d; s@^@build/@' \
+	    $(SED) -e '/ update-only$$/d; /^$$/d; /^-/d; s@^@build/@' \
 	        -e 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:' \
 	      $(PROJECTS); \
 	else \
@@ -52,8 +54,8 @@ IRRELEVANT_FILE = $(builddir)/irrelevant.patterns
 $(IRRELEVANT_FILE): $(PROJECTS) $(top_srcdir)/src/build-system/Makefile.meta.in
 	echo '^$$' $(PATTERN_FILTER) > $@
 ifneq "$(wildcard $(PROJECTS_))" ""
-	sed -ne 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:; s@^-@build/@p' $(PROJECTS) \
-	    $(PATTERN_FILTER) >> $@
+	$(SED) -ne 's:\([^$$/\\]\)\(\$$*\)$$:\1/\2:; s@^-@build/@p' \
+	    $(PROJECTS) $(PATTERN_FILTER) >> $@
 endif
 
 # Commands to see whether project directories are relevant.
@@ -73,15 +75,15 @@ $(RELEVANT_SUB_FILE): $(RELEVANT_FILE)
 	    esac; \
 	    echo $$path; \
 	    while [ "$$path" != build ]; do \
-	        path=`dirname $$path` ; \
+	        path=`/usr/bin/dirname $$path` ; \
 	        echo "$$path/\$$"; \
 	    done; \
 	done < $(RELEVANT_FILE) | \
-	    sort -u $(PATTERN_FILTER) > $(RELEVANT_SUB_FILE)
+	    /usr/bin/sort -u $(PATTERN_FILTER) > $(RELEVANT_SUB_FILE)
 
 IRRELEVANT_SUB_FILE = $(builddir)/irrelevant.prefixes
 $(IRRELEVANT_SUB_FILE): $(IRRELEVANT_FILE)
-	grep -v '[^^]\$$$$' $(IRRELEVANT_FILE) \
+	$(GREP) -v '[^^]\$$$$' $(IRRELEVANT_FILE) \
 	    $(PATTERN_FILTER) > $(IRRELEVANT_SUB_FILE)
 
 auto-relevance.mk: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
@@ -122,11 +124,11 @@ endif
 # .SECONDEXPANSION:
 
 all_p.real: $(call deps_p,all_l) configurables
-	@-$(RM) -f .built_p
-	@-echo "`date`: building in subdirectories of $(CURDIR)" > .building
+	@-$(RM) .built_p
+	@-echo "`$(DATE)`: building in subdirectories of $(CURDIR)" > .building
 	$(call cmds_p,all)
-	@-$(RM) -f .building
-	@-echo "`date`: recursive build succeeded in $(CURDIR)" > .built_p
+	@-$(RM) .building
+	@-echo "`$(DATE)`: recursive build succeeded in $(CURDIR)" > .built_p
 
 check_p.real:
 	$(call make_check,check_add_p)

@@ -2027,6 +2027,11 @@ fi
 
 #### Tools
 AC_PROG_LN_S
+case "$LN_S" in
+    /*) ;;
+    * ) LN_S=/bin/$LN_S ;;
+esac
+
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cr, ErrorCannotFind_AR)
 if test "x$RANLIB" != "x:"; then
@@ -2106,7 +2111,7 @@ if test -x $orig_NCBI/bin/distcc.sh ; then
 fi
 
 if test "$with_distcc" = "yes" ; then
-   AC_CHECK_PROG(DISTCC, distcc, distcc, [])
+   AC_PATH_PROG(DISTCC, distcc, distcc, [])
    if test -n "$DISTCC" ; then
       # Test distcc reasonably thoroughly to avoid possible gotchas.
       cat > distcctest.c << EOF
@@ -2183,7 +2188,7 @@ if test -z "$with_ccache"  -a  -n "$DISTCC"  -a  -z "$CCACHE_DIR" ; then
 fi
 
 if test "$with_ccache" != "no"; then
-   AC_CHECK_PROG(CCACHE, ccache, ccache, [])
+   AC_PATH_PROG(CCACHE, ccache, ccache, [])
    if test -n "$CCACHE" ; then
       if test -n "$CC_WRAPPER"; then
          CC_WRAPPER="CCACHE_PREFIX=$CC_WRAPPER $CCACHE"
@@ -2211,6 +2216,7 @@ else
    AC_MSG_RESULT(no)
 fi
 
+AC_PATH_PROG(SED, sed)
 AC_PATH_PROG(TOUCH, touch, [], /bin:/usr/bin:$PATH)
 dnl AC_PATH_PROG(GREP, grep)
 AC_PROG_EGREP
@@ -2226,7 +2232,7 @@ AC_MSG_RESULT($EGREP_Q)
 
 AC_CHECK_PROG(VALGRIND_PATH, valgrind, valgrind)
 
-AC_PATH_PROG(LDD, ldd)
+AC_PATH_PROG(LDD, ldd, [], /bin:/usr/bin:$PATH)
 if test -n "$LDD"; then
    AC_MSG_CHECKING([whether $LDD accepts -r])
    if $LDD -r /bin/ls >/dev/null 2>&1; then
@@ -2747,7 +2753,7 @@ if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
 
-BINCOPY="cp -p"
+BINCOPY="/bin/cp -p"
 MAC_BINCOPY="/Developer/Tools/CpMac -p"
 if test "$with_bincopy" != "yes"; then
    AC_CACHE_CHECK([whether cross-directory hard links work],
@@ -2761,7 +2767,7 @@ if test "$with_bincopy" != "yes"; then
        fi
        rm -rf conftestdir conftestfile])
    if test "$ncbi_cv_sys_xdir_ln" = "yes"; then
-      BINCOPY="ln -f"
+      BINCOPY="/bin/ln -f"
       MAC_BINCOPY="\$(top_srcdir)/scripts/common/impl/ln_mac.sh"
    fi
 fi
@@ -7564,6 +7570,7 @@ $build_flat
 ******* CONFIGURATION SUCCESSFUL *******
 EOCONF
 ], [
+PATH='/bin:/usr/bin:\$PATH'
 status_dir='$status_dir'
 builddir='$builddir'
 build_root='$build_root'

@@ -38,7 +38,7 @@ Makefile: $(srcdir)/Makefile.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
 
 $(SUB_MF_IN):
-	$(MKDIR) -p `dirname $@`
+	$(MKDIR) -p `/usr/bin/dirname $@`
 	test -f $@  ||  $(COPY) $(build_sys_dir)/Makefile.in.skel $@
 
 $(builddir)/Makefile%: $(build_sys_dir)/Makefile%.in $(config_status)

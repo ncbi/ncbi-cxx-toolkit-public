@@ -4,18 +4,24 @@
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
 #################################
 
+orig_PATH=$PATH
+PATH=/bin:/usr/bin
+
 script_name=`basename $0`
 script_args="$*"
 
 action="$1"
 shift 1
 
-orig_PATH=$PATH
-PATH=/bin:/usr/bin
-
-case "`basename \"$action\"`" in
-  cp | cp\ * | ln | ln\ * ) rm="rm -f" ;;
-  * ) rm=: ;;
+base_action=`basename "$action"`
+case "$base_action" in
+  cp | cp\ * | ln | ln\ * )
+      action=/bin/$base_action
+      rm="rm -f"
+      ;;
+  * )
+      rm=:
+      ;;
 esac
 
 if test "$1" = "-q" ; then
@@ -65,11 +71,11 @@ ExecAction()
   dest_file="$2"
   cmp -s "$src_file" "$dest_file"  ||
   ExecHelper "$dest_file" $action "$src_file"  ||
-  case "`basename \"$action\"`" in
+  case "$base_action" in
     ln | ln\ -f )
       test "$quiet" = yes || echo "failed; trying \"cp -p ...\" instead"
-      cmd="cp -p $src_file $dest_file"
-      ExecHelper "$dest_file" cp -p "$src_file"  ||
+      cmd="/bin/cp -p $src_file $dest_file"
+      ExecHelper "$dest_file" /bin/cp -p "$src_file"  ||
       Usage "\"$cmd\" failed"
       ;;
     *) Usage "\"$cmd\" failed" ;;

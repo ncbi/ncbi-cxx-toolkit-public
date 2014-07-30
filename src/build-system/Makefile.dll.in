@@ -90,7 +90,8 @@ ifneq "$(patsubst %,$(LDD_R),$(wildcard $(XDLL)))" ""
   ifneq "$(DLL_DEP)" ""
     ifeq "" "$(findstring q,$(MAKEFLAGS))"
       ifneq (,$(filter-out $(ALT_GOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
-        NEWER := $(shell find $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP) -newer $(XDLL) 2>/dev/null)
+        NEWER := $(shell /usr/bin/find $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP) \
+                                       -newer $(XDLL) 2>/dev/null)
         ifeq "$(NEWER)" ""
           JUST_TOUCH = 1
         endif

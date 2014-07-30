@@ -8,7 +8,7 @@ ifeq "$(IS_CHECK)" "Y"
 endif
 
 # 1: name
-warn_one_sub_proj = echo 'Warning: non-existent sub-project "$(1)"'
+warn_one_sub_proj = /bin/echo 'Warning: non-existent sub-project "$(1)"'
 
 # 1: name, 2: target, 3: is_expendable?
 define make_one_sub_proj_r_nonl
@@ -37,10 +37,10 @@ rec_targets_r = $(base_targets:%=%_r)
 $(rec_targets_r): %_r: %_r.needs-reqs
 all_r.real: all_l.real
 	@-$(RM) -f .built_r
-	@-echo "`date`: building in subdirectories of $(CURDIR)" > .building
+	@-echo "`$(DATE)`: building in subdirectories of $(CURDIR)" > .building
 	$(call make_each_sub_proj_r,all_r)
 	@-$(RM) -f .building
-	@-echo "`date`: recursive build succeeded in $(CURDIR)" > .built_r
+	@-echo "`$(DATE)`: recursive build succeeded in $(CURDIR)" > .built_r
 
 check_r.real:
 	$(call make_check,check_add_r)

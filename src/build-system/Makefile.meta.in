@@ -41,8 +41,10 @@ PROJECTS_ = @PROJECTS@
 DEPFLAGS  = @DEPFLAGS@
 DEPFLAGS_POST = @DEPFLAGS_POST@
 obj_ext   = @obj_ext@
+GREP      = @GREP@
 EGREP     = @EGREP@
 EGREP_Q   = @EGREP_Q@
+SED       = @SED@
 OSTYPE    = @OSTYPE@
 
 deactivate = unlink

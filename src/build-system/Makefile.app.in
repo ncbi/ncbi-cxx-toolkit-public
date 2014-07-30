@@ -52,7 +52,7 @@ endif
 include $(builddir)/Makefile.$(Rules)
 
 ASK_REBUILD = \
-    base=`echo $$l | sed -e 's,.*/\.\([^.]*\)\.dep$$,\1,'`; \
+    base=`echo $$l | $(SED) -e 's,.*/\.\([^.]*\)\.dep$$,\1,'`; \
     if (cd "$$builddir" && $(MAKE) $(MFLAGS) -q \
         -f "$(builddir)/Makefile.lib.tmpl" \
         srcdir="$$srcdir" TMPL="$$tmpl" all) ; then \
@@ -113,7 +113,7 @@ $(XAPP): $(DLL_DEP) $(XOBJ) $(XLIBDEP)
 	done; \
 	if [ $$relink_after_all = false ]; then \
 	    if [ -w $(bindir)/$(XAPP) ]  &&  \
-	      cmp -s $(XAPP) $(bindir)/$(XAPP); then \
+	      /usr/bin/cmp -s $(XAPP) $(bindir)/$(XAPP); then \
 	        d=$(bindir); \
 	    else \
 	        d=.; \

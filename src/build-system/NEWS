@@ -10,3 +10,5 @@ reconfigure after minor changes.
 2011-10-05: new @FEATURES@ variable for the unit test framework.
 
 2012-02-27: new @TOUCH@ variable to avoid hard-coded paths.
+
+2014-07-30: new @SED@ variable to avoid PATH lookup.

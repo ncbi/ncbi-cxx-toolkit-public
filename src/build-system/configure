@@ -682,6 +682,7 @@ STRIP
 DISTCC
 CCACHE
 TAIL
+SED
 TOUCH
 GREP
 EGREP
@@ -7625,6 +7626,11 @@ else
 echo "${ECHO_T}no, using $LN_S" >&6; }
 fi
 
+case "$LN_S" in
+    /*) ;;
+    * ) LN_S=/bin/$LN_S ;;
+esac
+
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
 set dummy ${ac_tool_prefix}ranlib; ac_word=$2
@@ -8041,20 +8047,22 @@ if test "$with_distcc" = "yes" ; then
 set dummy distcc; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_DISTCC+set}" = set; then
+if test "${ac_cv_path_DISTCC+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -n "$DISTCC"; then
-  ac_cv_prog_DISTCC="$DISTCC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+  case $DISTCC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DISTCC="$DISTCC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_DISTCC="distcc"
+    ac_cv_path_DISTCC="$as_dir/$ac_word$ac_exec_ext"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -8062,9 +8070,11 @@ done
 done
 IFS=$as_save_IFS
 
+  test -z "$ac_cv_path_DISTCC" && ac_cv_path_DISTCC="distcc"
+  ;;
+esac
 fi
-fi
-DISTCC=$ac_cv_prog_DISTCC
+DISTCC=$ac_cv_path_DISTCC
 if test -n "$DISTCC"; then
   { echo "$as_me:$LINENO: result: $DISTCC" >&5
 echo "${ECHO_T}$DISTCC" >&6; }
@@ -8173,20 +8183,22 @@ if test "$with_ccache" != "no"; then
 set dummy ccache; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_CCACHE+set}" = set; then
+if test "${ac_cv_path_CCACHE+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -n "$CCACHE"; then
-  ac_cv_prog_CCACHE="$CCACHE" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+  case $CCACHE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CCACHE="$CCACHE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
   for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CCACHE="ccache"
+    ac_cv_path_CCACHE="$as_dir/$ac_word$ac_exec_ext"
     echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -8194,9 +8206,11 @@ done
 done
 IFS=$as_save_IFS
 
+  test -z "$ac_cv_path_CCACHE" && ac_cv_path_CCACHE="ccache"
+  ;;
+esac
 fi
-fi
-CCACHE=$ac_cv_prog_CCACHE
+CCACHE=$ac_cv_path_CCACHE
 if test -n "$CCACHE"; then
   { echo "$as_me:$LINENO: result: $CCACHE" >&5
 echo "${ECHO_T}$CCACHE" >&6; }
@@ -8275,6 +8289,46 @@ else
    { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
 fi
+
+# Extract the first word of "sed", so it can be a program name with args.
+set dummy sed; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_SED+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $SED in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SED="$SED" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_SED="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+SED=$ac_cv_path_SED
+if test -n "$SED"; then
+  { echo "$as_me:$LINENO: result: $SED" >&5
+echo "${ECHO_T}$SED" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
 
 # Extract the first word of "touch", so it can be a program name with args.
 set dummy touch; ac_word=$2
@@ -8542,7 +8596,8 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
+as_dummy="/bin:/usr/bin:$PATH"
+for as_dir in $as_dummy
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
@@ -10781,7 +10836,7 @@ if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
 
-BINCOPY="cp -p"
+BINCOPY="/bin/cp -p"
 MAC_BINCOPY="/Developer/Tools/CpMac -p"
 if test "$with_bincopy" != "yes"; then
    { echo "$as_me:$LINENO: checking whether cross-directory hard links work" >&5
@@ -10801,7 +10856,7 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_sys_xdir_ln" >&5
 echo "${ECHO_T}$ncbi_cv_sys_xdir_ln" >&6; }
    if test "$ncbi_cv_sys_xdir_ln" = "yes"; then
-      BINCOPY="ln -f"
+      BINCOPY="/bin/ln -f"
       MAC_BINCOPY="\$(top_srcdir)/scripts/common/impl/ln_mac.sh"
    fi
 fi
@@ -40896,6 +40951,7 @@ cat >>$CONFIG_STATUS <<_ACEOF
 # INIT-COMMANDS
 #
 
+PATH='/bin:/usr/bin:\$PATH'
 status_dir='$status_dir'
 builddir='$builddir'
 build_root='$build_root'
@@ -41071,6 +41127,7 @@ STRIP!$STRIP$ac_delim
 DISTCC!$DISTCC$ac_delim
 CCACHE!$CCACHE$ac_delim
 TAIL!$TAIL$ac_delim
+SED!$SED$ac_delim
 TOUCH!$TOUCH$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
@@ -41093,7 +41150,6 @@ GCRYPT_INCLUDE!$GCRYPT_INCLUDE$ac_delim
 GCRYPT_LIBS!$GCRYPT_LIBS$ac_delim
 LIBGNUTLS_CONFIG!$LIBGNUTLS_CONFIG$ac_delim
 GNUTLS_INCLUDE!$GNUTLS_INCLUDE$ac_delim
-GNUTLS_LIBS!$GNUTLS_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -41135,6 +41191,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+GNUTLS_LIBS!$GNUTLS_LIBS$ac_delim
 OPENSSL_INCLUDE!$OPENSSL_INCLUDE$ac_delim
 OPENSSL_LIBS!$OPENSSL_LIBS$ac_delim
 KRB5_CONFIG!$KRB5_CONFIG$ac_delim
@@ -41231,7 +41288,6 @@ ncbi_runpath!$ncbi_runpath$ac_delim
 c_ncbi_runpath!$c_ncbi_runpath$ac_delim
 LINK!$LINK$ac_delim
 C_LINK!$C_LINK$ac_delim
-TAIL_N!$TAIL_N$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -41273,6 +41329,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+TAIL_N!$TAIL_N$ac_delim
 EGREP_Q!$EGREP_Q$ac_delim
 LDD_R!$LDD_R$ac_delim
 FAST_CFLAGS!$FAST_CFLAGS$ac_delim
@@ -41369,7 +41426,6 @@ OPENSSL_STATIC_LIBS!$OPENSSL_STATIC_LIBS$ac_delim
 TLS_INCLUDE!$TLS_INCLUDE$ac_delim
 TLS_LIBS!$TLS_LIBS$ac_delim
 SYBASE_PATH!$SYBASE_PATH$ac_delim
-SYBASE_LCL_PATH!$SYBASE_LCL_PATH$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -41411,6 +41467,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+SYBASE_LCL_PATH!$SYBASE_LCL_PATH$ac_delim
 SYBASE_INCLUDE!$SYBASE_INCLUDE$ac_delim
 SYBASE_LIBS!$SYBASE_LIBS$ac_delim
 SYBASE_DLLS!$SYBASE_DLLS$ac_delim
@@ -41507,7 +41564,6 @@ JDK_INCLUDE!$JDK_INCLUDE$ac_delim
 ncbi_java!$ncbi_java$ac_delim
 NCBI_C_ncbi!$NCBI_C_ncbi$ac_delim
 BINCOPY!$BINCOPY$ac_delim
-APP_NOCOPY!$APP_NOCOPY$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -41549,6 +41605,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+APP_NOCOPY!$APP_NOCOPY$ac_delim
 APP_OR_NULL!$APP_OR_NULL$ac_delim
 IF_REBUILDING_LIBS!$IF_REBUILDING_LIBS$ac_delim
 IF_REBUILDING_CONDITIONALLY!$IF_REBUILDING_CONDITIONALLY$ac_delim
@@ -41578,7 +41635,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 27; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 28; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

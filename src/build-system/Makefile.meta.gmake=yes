@@ -1,6 +1,10 @@
 # -*- makefile-gmake -*-
 # $Id$
 
+ifeq "" "$(findstring /,$(MAKE))"
+  MAKE := $(word 1,$(wildcard $(patsubst %,%/$(MAKE),$(subst :, ,$(PATH)))))
+endif
+
 # Work around GNU Make's tendency to double its automatic
 # --jobserver-fds=* flag's usage with each level of recursion, by
 # constructing an alternate MFLAGS_NR variable that limits its

@@ -45,7 +45,9 @@ install-toolkit:
 	fi
 	-rm -f $(libdir)/lib*-static.a
 	cd $(libdir)  && \
-	    for x in *.a; do ln -s "$$x" "`basename \"$$x\" .a`-static.a"; done
+	    for x in *.a; do \
+	        $(LN_S) "$$x" "`/usr/bin/basename \"$$x\" .a`-static.a"; \
+	    done
 	cd $(includedir0) && find * -name CVS -prune -o -print |\
             cpio -pd $(pincludedir)
 	$(INSTALL) -m 644 $(incdir)/* $(pincludedir)

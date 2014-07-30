@@ -12,6 +12,8 @@ ifeq "$(NODEPGOALS)" ""
 ###  C/C++ compilation
 include $(builddir)/Makefile.rules
 
+ECHO = /bin/echo
+
 @GCCPCH@GCCPCH = 1
 
 ifdef GCCPCH
@@ -47,30 +49,30 @@ ifeq "no" "$(SKIP_DEP_RULES)"
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	 | sed -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	 | $(SED) -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
 	       -e 's%\$$(wildcard $(*F)@obj_ext@) *:%$*@obj_ext@ $@ :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' $(FIXPCH) > $@_ \
-	  &&  test -s $@_  &&  mv -f $@_ $@
+	  &&  test -s $@_  &&  /bin/mv -f $@_ $@
 D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
 	 $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	 | sed -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
+	 | $(SED) -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
 	       -e 's%\$$(wildcard ncbi_pch_impl@obj_ext@) *:%$$(pchdir)/$(PCHMODE) $$(builddir)/corelib/ncbi_pch_impl.d.$(PCHMODE) :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' > $@_ \
-	  &&  test -s $@_  &&  mv -f $@_ $@
+	  &&  test -s $@_  &&  /bin/mv -f $@_ $@
 
 define make_cpp_dep
-	@echo Updating dependency information for $<.
+	@$(ECHO) Updating dependency information for $<.
 	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)  ||  \
 	    (echo "FAILED COMMAND: $(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL)" \
                   "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
 endef
 
 define make_c_dep
-	@echo Updating dependency information for $<.
+	@$(ECHO) Updating dependency information for $<.
 	@$(CC_WRAPPER) $(CC)   $(D_TAIL)  ||  \
 	    (echo "FAILED COMMAND: $(CC_WRAPPER) $(CC) $(DEPFLAGS_ALL)" \
                   "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
