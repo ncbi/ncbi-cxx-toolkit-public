@@ -1525,7 +1525,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     else {        
         deflFrmID = deflId = NStr::NumericToString(sdl->gi);        
         deflFastaSeq = "gi|" + NStr::NumericToString(sdl->gi);
-        deflFastaSeq = sdl->alnIDFasta;
+        deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);        
         deflAccs = sdl->id->AsFastaString();
     }
     

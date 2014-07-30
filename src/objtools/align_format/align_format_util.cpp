@@ -1492,8 +1492,8 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
         if(previous_id.Empty() || !cur_id.Match(*previous_id)) {
             if(count >= seqIdList.size()) {  
                 break;
-            }         
-            string idString = cur_id.AsFastaString();
+            }
+            string idString = NStr::TruncateSpaces(cur_id.AsFastaString());
             if(hitsMap.find(idString) != hitsMap.end()) {                                         
                 temp =  new CSeq_align_set;
                 temp->Set().push_back(*iter);
