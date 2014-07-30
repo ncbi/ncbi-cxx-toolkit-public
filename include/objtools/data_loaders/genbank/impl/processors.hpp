@@ -115,6 +115,7 @@ public:
 protected:
     CWriter* x_GetWriterToSaveBlob(CReaderRequestResult& result,
                                    const CBlob_id& blob_id,
+                                   CLoadLockSetter& setter,
                                    const char* processor_name) const;
 };
 

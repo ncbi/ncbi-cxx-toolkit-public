@@ -976,7 +976,7 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
         if ( set_info.m_Seq_annot_InfoMap.empty() || !entry.first ) {
             const CProcessor_ID1* prc =
                 dynamic_cast<const CProcessor_ID1*>
-                (&m_Dispatcher->GetProcessor(eType_St_Seq_entry));
+                (&m_Dispatcher->GetProcessor(eType_ID1));
             if ( prc ) {
                 prc->SaveBlob(result, blob_id, chunk_id, writer, reply);
             }
@@ -1028,7 +1028,8 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
                                      CObjectIStream& obj_stream) const
 {
     CLoadLockBlob blob(result, blob_id, chunk_id);
-    if ( blob.IsLoadedChunk() ) {
+    CLoadLockSetter setter(blob);
+    if ( setter.IsLoaded() ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        "CProcessor_SE: "
                        "double load of "<<blob_id<<'/'<<chunk_id);
@@ -1036,7 +1037,7 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     {{
         CStreamDelayBufferGuard guard;
-        CWriter* writer = x_GetWriterToSaveBlob(result, blob_id, "SE");
+        CWriter* writer = x_GetWriterToSaveBlob(result, blob_id, setter, "SE");
         if ( writer ) {
             guard.StartDelayBuffer(obj_stream);
         }
@@ -1055,15 +1056,12 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
         }}
 
         
-        CLoadLockSetter setter(blob);
-        if ( !setter.IsLoaded() ) {
-            setter.SetSeq_entry(*seq_entry);
-            if ( chunk_id == kMain_ChunkId &&
-                 result.GetAddWGSMasterDescr() ) {
-                AddWGSMaster(setter);
-            }
-            setter.SetLoaded();
+        setter.SetSeq_entry(*seq_entry);
+        if ( chunk_id == kMain_ChunkId &&
+             result.GetAddWGSMasterDescr() ) {
+            AddWGSMaster(setter);
         }
+        setter.SetLoaded();
 
         if ( writer ) {
             const CProcessor_St_SE* prc =
@@ -1081,6 +1079,7 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
 
 CWriter* CProcessor_SE::x_GetWriterToSaveBlob(CReaderRequestResult& result,
                                               const CBlob_id& blob_id,
+                                              CLoadLockSetter& setter,
                                               const char* processor_name) const
 {
     if ( !result.IsLoadedBlobVersion(blob_id) ) {
@@ -1088,13 +1087,7 @@ CWriter* CProcessor_SE::x_GetWriterToSaveBlob(CReaderRequestResult& result,
                    "blob version is not set");
         return 0;
     }
-    CLoadLockBlobState state_lock(result, blob_id);
-    if ( !state_lock.IsLoadedBlobState() ) {
-        ERR_POST_X(4, "CProcessor_"<<processor_name<<"::ProcessObjStream: "
-                   "blob state is not set");
-        return 0;
-    }
-    if ( state_lock.GetBlobState() & CBioseq_Handle::fState_no_data ) {
+    if ( setter.GetBlobState() & CBioseq_Handle::fState_no_data ) {
         ERR_POST_X(5, "CProcessor_"<<processor_name<<"::ProcessObjStream: "
                    "state no_data is set");
         return 0;
@@ -1146,7 +1139,7 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
     CTSE_SetObjectInfo set_info;
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
     {{
-        CWriter* writer = x_GetWriterToSaveBlob(result, blob_id, "SE_SNP");
+        CWriter* writer = x_GetWriterToSaveBlob(result, blob_id, setter, "SE_SNP");
 
         {{
             CReaderRequestResultRecursion r(result);
@@ -1247,7 +1240,7 @@ void CProcessor_St_SE::ProcessObjStream(CReaderRequestResult& result,
             setter.SetLoaded();
         }
 
-        CWriter* writer = x_GetWriterToSaveBlob(result, blob_id, "St_SE");
+        CWriter* writer = GetWriter(result);
         if ( writer ) {
             const CProcessor_St_SE* prc =
                 dynamic_cast<const CProcessor_St_SE*>
