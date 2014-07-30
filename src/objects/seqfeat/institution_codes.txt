@@ -6145,7 +6145,8 @@ UFPB	s	Departamento de Sistematica e Ecologia
 UFPEDA	c	Universidade Federal de Pernambuco
 UFRG	s	Instituto de Biologia
 UFRGS	s	Universidade Federale do Rio Grande do Sul
-UFRJ	sc	Universidade Federal Rural do Rio de Janeiro
+UFRJ<herbarium>	sc	Herbario e Colecao Fitopathologica "Verlande Duarte Silveira"
+UFRJ<museum>	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro
 UFRJIM	c	Departamento de Microbiologia Medica
 UFRN	s	Universidade Federal do Rio Grande do Norte
 UFS	s	Nyabyeya Forestry College, Department of Environmental Forestry
