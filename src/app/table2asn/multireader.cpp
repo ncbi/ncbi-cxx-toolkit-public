@@ -439,7 +439,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     if (m_context.m_gapNmin > 0)
     {
         pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
-        if (m_context.m_gaps_evidence>0)
+        if (m_context.m_gaps_evidence>=0)
             pReader->SetGapsLinkageEvidence((CLinkage_evidence::EType)m_context.m_gaps_evidence);
     }
 
