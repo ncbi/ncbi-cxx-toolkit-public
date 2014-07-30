@@ -8206,7 +8206,6 @@ done
 done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_CCACHE" && ac_cv_path_CCACHE="ccache"
   ;;
 esac
 fi

@@ -2188,7 +2188,7 @@ if test -z "$with_ccache"  -a  -n "$DISTCC"  -a  -z "$CCACHE_DIR" ; then
 fi
 
 if test "$with_ccache" != "no"; then
-   AC_PATH_PROG(CCACHE, ccache, ccache, [])
+   AC_PATH_PROG(CCACHE, ccache)
    if test -n "$CCACHE" ; then
       if test -n "$CC_WRAPPER"; then
          CC_WRAPPER="CCACHE_PREFIX=$CC_WRAPPER $CCACHE"
