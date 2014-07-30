@@ -43,7 +43,7 @@
 #endif /*fabs*/
 #define  fabs(v)  ((v) < 0.0 ? -(v) : (v))
 
-#define MAX_IP_ADDR_LEN  16 /* sizeof("255.255.255.255") */
+#define MAX_IP_ADDR_LEN  16  /*sizeof("255.255.255.255")*/
 
 
 /*****************************************************************************
@@ -225,7 +225,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             ++end;
         verify((len = (size_t)(end - str)) > 0);
         if (*str != ':') {
-            if (strcspn(str, "=") > len) {
+            if (strcspn(str, "=") >= len) {
                 size_t i;
                 for (i = 0;  i < sizeof(kFlags) / sizeof(kFlags[0]);  ++i) {
                     if (len == kFlags[i].len
