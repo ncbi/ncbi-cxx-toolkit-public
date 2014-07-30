@@ -1379,6 +1379,15 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
+    } else if ( label_str == "Annotation Version") {
+        string fst;
+        string snd;
+        NStr::Replace( data_str, " Annotation Release ", "/", fst );
+        NStr::Replace( fst, " ", "_", snd );
+        result << "<a href=\"http://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
+               << snd
+               << "\">" << data_str << "</a>";
+        return CNcbiOstrstreamToString(result);
     } else {
         // normalize case: nothing to do
         return data_str;
