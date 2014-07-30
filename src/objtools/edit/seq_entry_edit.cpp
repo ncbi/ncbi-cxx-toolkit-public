@@ -1598,7 +1598,8 @@ void ResetLinkageEvidence(CSeq_ext& ext)
 **** Trim functions
 *******************************************************************************/
 
-/// Trim sequence data and all associated annotation
+/// Implementation detail: first trim all associated annotation, then 
+/// trim sequence data
 void TrimSequenceAndAnnotation(CBioseq_Handle bsh, 
                                const TCuts& cuts,
                                EInternalTrimType internal_cut_conversion)
@@ -1611,25 +1612,6 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
     // Sort the cuts 
     TCuts sorted_cuts;
     GetSortedCuts(bsh, cuts, sorted_cuts, internal_cut_conversion);
-
-    // Get length of nuc sequence before trimming
-    TSeqPos original_nuc_len = 0;
-    if (bsh.CanGetInst() && bsh.GetInst().CanGetLength()) {
-        original_nuc_len = bsh.GetInst().GetLength();
-    }
-
-    // Trim sequence data
-    if (bsh.CanGetInst()) {
-        // Make a copy of seq_inst
-        CRef<CSeq_inst> copy_inst(new CSeq_inst());
-        copy_inst->Assign(bsh.GetInst());
-
-        // Modify the copy of seq_inst
-        TrimSeqData(bsh, copy_inst, sorted_cuts);
-
-        // Update the original seq_inst with the modified copy
-        bsh.GetEditHandle().SetInst(*copy_inst);
-    }
 
     // Trim Seq-feat annotation
     SAnnotSelector feat_sel(CSeq_annot::C_Data::e_Ftable);
@@ -1657,6 +1639,12 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
         else 
         if (bFeatureTrimmed) {
             // Further modify the copy of the feature
+
+            // Get length of nuc sequence before trimming
+            TSeqPos original_nuc_len = 0;
+            if (bsh.CanGetInst() && bsh.GetInst().CanGetLength()) {
+                original_nuc_len = bsh.GetInst().GetLength();
+            }
             AdjustCdregionFrame(original_nuc_len, copy_feat, sorted_cuts);
 
             // Retranslate the coding region using the new nuc sequence
@@ -1720,6 +1708,19 @@ void TrimSequenceAndAnnotation(CBioseq_Handle bsh,
             // Update the original graph with the modified copy
             graph.GetSeq_graph_Handle().Replace(*copy_graph);
         }
+    }
+
+    // Trim sequence data
+    if (bsh.CanGetInst()) {
+        // Make a copy of seq_inst
+        CRef<CSeq_inst> copy_inst(new CSeq_inst());
+        copy_inst->Assign(bsh.GetInst());
+
+        // Modify the copy of seq_inst
+        TrimSeqData(bsh, copy_inst, sorted_cuts);
+
+        // Update the original seq_inst with the modified copy
+        bsh.GetEditHandle().SetInst(*copy_inst);
     }
 }
 
