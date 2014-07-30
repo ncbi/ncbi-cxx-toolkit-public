@@ -308,68 +308,6 @@ namespace
         return pentry;
     }
 
-    void ConvertSeqIntoSeqSet(CSeq_entry& entry)
-    {
-        CRef<CSeq_entry> newentry(new CSeq_entry);
-        newentry->SetSeq(entry.SetSeq());
-
-        entry.SetSet().SetSeq_set().push_back(newentry);
-        MoveSomeDescr(entry, newentry->SetSeq());
-        entry.SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
-
-        CRef<CSeqdesc> molinfo_desc;
-        NON_CONST_ITERATE(CSeq_descr::Tdata, it, newentry->SetDescr().Set())
-        {
-            if ((**it).IsMolinfo())
-            {
-                molinfo_desc = *it;
-                break;
-            }
-        }
-
-        if (molinfo_desc.Empty())
-        {
-           molinfo_desc.Reset(new CSeqdesc);
-           newentry->SetDescr().Set().push_back(molinfo_desc);
-        }
-        //molinfo_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
-        if (!molinfo_desc->SetMolinfo().IsSetBiomol())
-            molinfo_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
-
-        if (newentry->IsSeq() && newentry->GetSeq().IsSetInst() &&
-            newentry->GetSeq().IsNa() &&
-            newentry->GetSeq().IsSetInst())
-        {
-            newentry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
-        }
-        newentry->Parentize();
-    }
-
-    bool CheckIfNeedConversion(const CSeq_entry& entry)
-    {
-        ITERATE(CSeq_entry::TAnnot, annot_it, entry.GetAnnot())
-        {
-            if ((**annot_it).IsFtable())
-            {
-                ITERATE(CSeq_annot::C_Data::TFtable, feat_it, (**annot_it).GetData().GetFtable())
-                {
-                    if((**feat_it).CanGetData())
-                    {
-                        switch ((**feat_it).GetData().Which())
-                        {
-                        case CSeqFeatData::e_Cdregion:
-                            return true;
-                        default:
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     CRef<CSeq_annot> FindORF(const CBioseq& bioseq)
     {
         if (bioseq.IsNa())
@@ -396,9 +334,6 @@ namespace
         }
         return CRef<CSeq_annot>();
     }
-
-
-
 }
 
 void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
@@ -655,6 +590,75 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
         }
     }
 }
+
+bool CFeatureTableReader::CheckIfNeedConversion(const CSeq_entry& entry) const
+{
+    ITERATE(CSeq_entry::TAnnot, annot_it, entry.GetAnnot())
+    {
+        if ((**annot_it).IsFtable())
+        {
+            ITERATE(CSeq_annot::C_Data::TFtable, feat_it, (**annot_it).GetData().GetFtable())
+            {
+                if((**feat_it).CanGetData())
+                {
+                    switch ((**feat_it).GetData().Which())
+                    {
+                    case CSeqFeatData::e_Cdregion:
+                        return true;
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+void CFeatureTableReader::ConvertSeqIntoSeqSet(CSeq_entry& entry) const
+{
+    if (entry.IsSeq())
+    {
+        CRef<CSeq_entry> newentry(new CSeq_entry);
+        newentry->SetSeq(entry.SetSeq());
+        CBioseq& bioseq = newentry->SetSeq();
+        entry.SetSet().SetSeq_set().push_back(newentry);
+
+        MoveSomeDescr(entry, bioseq);
+
+        CRef<CSeqdesc> molinfo_desc;
+        NON_CONST_ITERATE(CSeq_descr::Tdata, it, bioseq.SetDescr().Set())
+        {
+            if ((**it).IsMolinfo())
+            {
+                molinfo_desc = *it;
+                break;
+            }
+        }
+
+        if (molinfo_desc.Empty())
+        {
+            molinfo_desc.Reset(new CSeqdesc);
+            bioseq.SetDescr().Set().push_back(molinfo_desc);
+        }
+        //molinfo_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+        if (!molinfo_desc->SetMolinfo().IsSetBiomol())
+            molinfo_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+
+        if (bioseq.IsSetInst() &&
+            bioseq.IsNa() &&
+            bioseq.IsSetInst())
+        {
+            bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
+        }
+        entry.SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+        entry.Parentize();
+    }
+}
+
+
+
 
 END_NCBI_SCOPE
 

@@ -59,6 +59,8 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/Date.hpp>
 
+#include <objects/seq/Linkage_evidence.hpp>
+
 #include <objtools/readers/message_listener.hpp>
 #include "table2asn_validator.hpp"
 
@@ -188,30 +190,30 @@ void CTbl2AsnApp::Init(void)
                         e PHRAP/ACE\n\
                         b ASN.1 for -M flag", CArgDescriptions::eString, "a");
 
-    arg_desc->AddFlag("s", "Read FASTAs as Set");              // done
+    arg_desc->AddFlag("s", "Read FASTAs as Set");                          // done
     arg_desc->AddFlag("g", "Genomic Product Set");
-    arg_desc->AddFlag("J", "Delayed Genomic Product Set ");    // done
+    arg_desc->AddFlag("J", "Delayed Genomic Product Set ");                // done
     arg_desc->AddDefaultKey
         ("F", "String", "Feature ID Links\n\
                         o By Overlap\n\
                         p By Product", CArgDescriptions::eString, "o");
 
     arg_desc->AddOptionalKey
-        ("A", "String", "Accession", CArgDescriptions::eString);  // done
+        ("A", "String", "Accession", CArgDescriptions::eString);           // done
     arg_desc->AddOptionalKey
-        ("C", "String", "Genome Center Tag", CArgDescriptions::eString);
+        ("C", "String", "Genome Center Tag", CArgDescriptions::eString);   // almost done
     arg_desc->AddOptionalKey
-        ("n", "String", "Organism Name", CArgDescriptions::eString); // done
+        ("n", "String", "Organism Name", CArgDescriptions::eString);       // done
     arg_desc->AddOptionalKey
-        ("j", "String", "Source Qualifiers", CArgDescriptions::eString); // done
+        ("j", "String", "Source Qualifiers", CArgDescriptions::eString);   // done
     arg_desc->AddOptionalKey
-        ("y", "String", "Comment", CArgDescriptions::eString); // done
+        ("y", "String", "Comment", CArgDescriptions::eString);             // done
     arg_desc->AddOptionalKey
-        ("Y", "InFile", "Comment File", CArgDescriptions::eInputFile); // done
+        ("Y", "InFile", "Comment File", CArgDescriptions::eInputFile);     // done
     arg_desc->AddOptionalKey
         ("D", "InFile", "Descriptors File", CArgDescriptions::eInputFile); // done
     arg_desc->AddOptionalKey
-        ("f", "InFile", "Single Table File", CArgDescriptions::eInputFile); // done
+        ("f", "InFile", "Single Table File", CArgDescriptions::eInputFile);// done
 
     arg_desc->AddOptionalKey
         ("k", "String", "CDS Flags (combine any of the following letters)\n\
@@ -285,14 +287,14 @@ void CTbl2AsnApp::Init(void)
                                             t TSA", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("l", "String", "Add type of evidence used to assert linkage across assembly gaps (only for TSA records). Must be one of the following:\n\
-                                            paired-ends\n\
-                                            align-genus\n\
-                                            align-xgenus\n\
-                                            align-trnscpt\n\
-                                            within-clone\n\
-                                            clone-contig\n\
-                                            map\n\
-                                            strobe", CArgDescriptions::eString);
+                            paired-ends\n\
+                            align-genus\n\
+                            align-xgenus\n\
+                            align-trnscpt\n\
+                            within-clone\n\
+                            clone-contig\n\
+                            map\n\
+                            strobe", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
@@ -304,6 +306,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("gaps-min", "Integer", "minunim run of Ns recognised as a gap", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("gaps-unknown", "Integer", "exact number of Ns recognised as a gap with unknown length", CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("min-threshold", "Integer", "minimun length of sequence", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
     arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
@@ -448,6 +451,22 @@ int CTbl2AsnApp::Run(void)
         m_context.m_gapNmin = args["gaps-min"].AsInteger();
     if (args["gaps-unknown"])
         m_context.m_gap_Unknown_length = args["gaps-unknown"].AsInteger();
+    if (args["l"])
+    {
+        const CEnumeratedTypeValues::TNameToValue& 
+            linkage_evidence_to_value_map = CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
+
+        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(args["l"].AsString());
+        if (it == linkage_evidence_to_value_map.end())
+        {
+            NCBI_THROW(CArgException, eConvert,
+                "Unrecognized linkage evidence " + args["l"].AsString());
+        }
+        else
+        {
+        m_context.m_gaps_evidence = it->second;
+        }
+    }
 
     if (m_context.m_gapNmin < 0)
         m_context.m_gapNmin = 0;

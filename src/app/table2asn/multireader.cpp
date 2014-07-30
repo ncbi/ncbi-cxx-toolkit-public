@@ -437,7 +437,11 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
             "File format not supported", 0);
     }
     if (m_context.m_gapNmin > 0)
+    {
         pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
+        if (m_context.m_gaps_evidence>0)
+            pReader->SetGapsLinkageEvidence((CLinkage_evidence::EType)m_context.m_gaps_evidence);
+    }
 
     int max_seqs = kMax_Int;
     CRef<CSeq_entry> result = pReader->ReadSet(max_seqs, m_context.m_logger);
@@ -671,20 +675,9 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 
     case CSeq_entry::e_Set:
         {
-            if (!entry.SetSet().IsSetClass())
-            {
-                entry.SetSet().SetClass(CBioseq_set_Base::eClass_genbank);
-            }
-#if 0
-            if (m_context.m_GenomicProductSet)
-            {
-                //entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
-            }
-            if (m_context.m_NucProtSet)
-            {
-                //entry.SetSet().SetClass(CBioseq_set_Base::eClass_nuc_prot);
-            }
-#endif
+            if (!entry.GetSet().IsSetClass())
+                entry.SetSet().SetClass(CBioseq_set::eClass_genbank);
+
             NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
             {
                 ApplyAdditionalProperties(**it);

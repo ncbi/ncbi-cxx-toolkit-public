@@ -194,6 +194,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_gapNmin(0),
     m_gap_Unknown_length(0),
     m_minimal_sequence_length(0),
+    m_gaps_evidence(-1),
     m_fcs_trim(false),
     m_avoid_submit_block(false)
 {

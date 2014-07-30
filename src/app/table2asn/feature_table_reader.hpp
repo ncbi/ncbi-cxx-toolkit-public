@@ -22,10 +22,13 @@ public:
    CFeatureTableReader(objects::IMessageListener* logger): m_logger(logger)
    {
    }
+   bool CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
+   void ConvertSeqIntoSeqSet(objects::CSeq_entry& entry) const;
 // MergeCDSFeatures looks for cdregion features in the feature tables
 //    in sequence annotations and creates protein sequences based on them
 //    as well as converting the sequence or a seq-set into nuc-prot-set
    void MergeCDSFeatures(objects::CSeq_entry& obj);
+   void ParseCdregions(objects::CSeq_entry& entry);
 // This method reads 5 column table and attaches these features
 //    to corresponding sequences
 // This method requires certain postprocessing of plain features added
@@ -36,7 +39,6 @@ public:
    void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
    CRef<objects::CSeq_entry> m_replacement_protein;
 private:
-   void ParseCdregions(objects::CSeq_entry& entry);
    objects::IMessageListener* m_logger;
 };
 

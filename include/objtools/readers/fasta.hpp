@@ -218,6 +218,9 @@ public:
        TSeqPos gapNmin, TSeqPos gap_Unknown_length);
 
     void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
+    void SetGapsLinkageEvidence(const string& evidence);
+    void SetGapsLinkageEvidence(CLinkage_evidence::EType evidence);
+
     void IgnoreProblem(ILineError::EProblem problem);
 
 protected:
@@ -382,6 +385,7 @@ private:
     CSourceModParser::TMods m_BadMods;
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
+    SGap::TLinkEvidSet      m_gaps_linkage_evidence;
     vector<SLineTextAndLoc> m_CurrentSeqTitles;
     CRef<CSourceModParser::CModFilter> m_pModFilter;
     std::vector<ILineError::EProblem> m_ignorable;

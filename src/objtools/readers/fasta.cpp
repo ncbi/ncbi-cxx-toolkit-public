@@ -1114,7 +1114,9 @@ void CFastaReader::x_CloseGap(
         TGapRef pGap( new SGap(
             pos, len,
             eKnownSize,
-            LineNumber()) );
+            LineNumber(),
+            CConstRef<SGap::TGapTypeObj>(0),
+            m_gaps_linkage_evidence));
 
         m_Gaps.push_back(pGap);
         m_TotalGapLength += len;
@@ -2158,6 +2160,22 @@ CFastaReader::SGap::SGap(
         m_pGapType(pGapType),
         m_setOfLinkageEvidence(setOfLinkageEvidence)
 {
+}
+
+
+void CFastaReader::SetGapsLinkageEvidence(CLinkage_evidence::EType evidence)
+{
+   m_gaps_linkage_evidence.emplace(evidence);
+}
+
+void CFastaReader::SetGapsLinkageEvidence(const string& evidence)
+{
+    CLinkage_evidence::TLinkage_evidence list_evidence;
+    CLinkage_evidence::GetLinkageEvidence(list_evidence, evidence);
+    ITERATE(CLinkage_evidence::TLinkage_evidence, it, list_evidence)
+    {
+        m_gaps_linkage_evidence.emplace((CLinkage_evidence::EType)(**it).GetType());
+    }
 }
 
 void CFastaReader::HandleGaps(objects::CSeq_entry& entry, TSeqPos gapNmin, TSeqPos gap_Unknown_length)
