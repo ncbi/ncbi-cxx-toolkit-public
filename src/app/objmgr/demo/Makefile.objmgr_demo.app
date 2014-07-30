@@ -18,4 +18,10 @@ LIB = ncbi_xloader_blastdb seqdb blastdb \
 LIBS = $(SQLITE3_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
+
+CHECK_COPY = all_readers.sh
+
+CHECK_CMD = all_readers.sh objmgr_demo -id 568815307 -resolve all -adaptive
+CHECK_CMD = all_readers.sh objmgr_demo -id ABYI02000001 -resolve all -adaptive
+
 WATCHERS = vasilche
