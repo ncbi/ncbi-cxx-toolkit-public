@@ -662,12 +662,22 @@ static const bool s_MakeFasta = 0;
 
 BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
 {
-    CStopWatch sw(CStopWatch::eStart);
-    CVDBMgr mgr;
-    CWGSDb wgs_db(mgr, "ALWZ01");
-    size_t limit_count = 30000, start_row = 1, count = 0;
-
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    CStopWatch sw(CStopWatch::eStart);
+    CScope::TIds ids;
+    {{
+        CVDBMgr mgr;
+        CWGSDb wgs_db(mgr, "ALWZ01");
+        size_t limit_count = 30000, start_row = 1, count = 0;
+        for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
+            ++count;
+            if (limit_count > 0 && count > limit_count)
+                break;
+            ids.push_back(CSeq_id_Handle::GetHandle(*it.GetAccSeq_id()));
+        }
+    }}
+
     CScope scope(*om);
     scope.AddDefaults();
 
@@ -680,13 +690,9 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
         fasta.reset(new CFastaOstream(*out));
     }
 
-    for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
-        ++count;
-        if (limit_count > 0 && count > limit_count)
-            break;
-
+    ITERATE ( CScope::TIds, it, ids ) {
         //scope.ResetHistory();
-        CBioseq_Handle scaffold = scope.GetBioseqHandle(*it.GetAccSeq_id());
+        CBioseq_Handle scaffold = scope.GetBioseqHandle(*it);
         if ( fasta.get() ) {
             fasta->Write(scaffold);
         }
@@ -697,12 +703,22 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
 
 BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
 {
-    CStopWatch sw(CStopWatch::eStart);
-    CVDBMgr mgr;
-    CWGSDb wgs_db(mgr, "ALWZ01");
-    size_t limit_count = 30000, start_row = 1, count = 0;
-
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    CStopWatch sw(CStopWatch::eStart);
+    CScope::TIds ids;
+    {{
+        CVDBMgr mgr;
+        CWGSDb wgs_db(mgr, "ALWZ01");
+        size_t limit_count = 30000, start_row = 1, count = 0;
+        for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
+            ++count;
+            if (limit_count > 0 && count > limit_count)
+                break;
+            ids.push_back(CSeq_id_Handle::GetHandle(*it.GetAccSeq_id()));
+        }
+    }}
+
     CScope scope(*om);
     scope.AddDefaults();
 
@@ -713,15 +729,6 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
         string outfile_name = "out.fsa";
         out.reset(new CNcbiOfstream(outfile_name.c_str()));
         fasta.reset(new CFastaOstream(*out));
-    }
-
-    CScope::TIds ids;
-    for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
-        ++count;
-        if (limit_count > 0 && count > limit_count)
-            break;
-
-        ids.push_back(CSeq_id_Handle::GetHandle(*it.GetAccSeq_id()));
     }
 
     CScope::TBioseqHandles handles = scope.GetBioseqHandles(ids);
