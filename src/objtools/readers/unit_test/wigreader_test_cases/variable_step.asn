@@ -1,23 +1,95 @@
 Seq-annot ::= {
   data seq-table {
     feat-type 0,
-    num-rows 7,
+    num-rows 14,
     columns {
       {
         header {
           field-name "Seq-table location"
         },
-        default loc int {
-          from 4799,
-          to 4851,
-          id gi 1010
+        default loc mix {
+          int {
+            from 4799,
+            to 4800,
+            id gi 1010
+          },
+          int {
+            from 4810,
+            to 4811,
+            id gi 1010
+          },
+          int {
+            from 4815,
+            to 4816,
+            id gi 1010
+          },
+          int {
+            from 4823,
+            to 4824,
+            id gi 1010
+          },
+          int {
+            from 4839,
+            to 4840,
+            id gi 1010
+          },
+          int {
+            from 4843,
+            to 4844,
+            id gi 1010
+          },
+          int {
+            from 4851,
+            to 4852,
+            id gi 1010
+          },
+          int {
+            from 6799,
+            to 6800,
+            id gi 1011
+          },
+          int {
+            from 6805,
+            to 6808,
+            id gi 1011
+          },
+          int {
+            from 6811,
+            to 6812,
+            id gi 1011
+          },
+          int {
+            from 6819,
+            to 6822,
+            id gi 1011
+          },
+          int {
+            from 6825,
+            to 6826,
+            id gi 1011
+          }
         }
       },
       {
         header {
           field-id location-id
         },
-        default id gi 1010
+        data id {
+          gi 1010,
+          gi 1010,
+          gi 1010,
+          gi 1010,
+          gi 1010,
+          gi 1010,
+          gi 1010,
+          gi 1011,
+          gi 1011,
+          gi 1011,
+          gi 1011,
+          gi 1011,
+          gi 1011,
+          gi 1011
+        }
       },
       {
         header {
@@ -30,64 +102,7 @@ Seq-annot ::= {
           4823,
           4839,
           4843,
-          4851
-        }
-      },
-      {
-        header {
-          field-name "span"
-        },
-        default int 1
-      },
-      {
-        header {
-          field-name "value_gap"
-        },
-        default real { 0, 10, 0 }
-      },
-      {
-        header {
-          field-name "values"
-        },
-        data real {
-          { 1, 10, 0 },
-          { 3, 10, 0 },
-          { 1, 10, 0 },
-          { 7, 10, 0 },
-          { 2, 10, 0 },
-          { 1, 10, 0 },
-          { 1, 10, 0 }
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  data seq-table {
-    feat-type 0,
-    num-rows 7,
-    columns {
-      {
-        header {
-          field-name "Seq-table location"
-        },
-        default loc int {
-          from 6799,
-          to 6825,
-          id gi 1011
-        }
-      },
-      {
-        header {
-          field-id location-id
-        },
-        default id gi 1011
-      },
-      {
-        header {
-          field-id location-from
-        },
-        data int {
+          4851,
           6799,
           6805,
           6807,
@@ -114,6 +129,13 @@ Seq-annot ::= {
           field-name "values"
         },
         data real {
+          { 1, 10, 0 },
+          { 3, 10, 0 },
+          { 1, 10, 0 },
+          { 7, 10, 0 },
+          { 2, 10, 0 },
+          { 1, 10, 0 },
+          { 1, 10, 0 },
           { 1, 10, 0 },
           { 3, 10, 0 },
           { 15, 10, -1 },

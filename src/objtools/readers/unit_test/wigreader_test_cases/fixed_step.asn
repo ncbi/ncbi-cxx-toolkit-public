@@ -58,7 +58,7 @@ Seq-annot ::= {
         },
         default loc int {
           from 1499,
-          to 4498,
+          to 4499,
           id other {
             accession "AC_000017",
             version 1
@@ -177,7 +177,7 @@ Seq-annot ::= {
         },
         default loc int {
           from 1499,
-          to 4498,
+          to 4499,
           id other {
             accession "AC_000018",
             version 1

@@ -67,6 +67,55 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+CRef<CSeq_loc> 
+CWiggleReader::xGetContainingLoc()
+//  ----------------------------------------------------------------------------
+{
+    if (m_Values.empty()) {
+        return CRef<CSeq_loc>();
+    }
+    CRef<CSeq_loc> pContainingLoc(new CSeq_loc);
+
+    int sortAndMergeFlags = CSeq_loc::fMerge_All;
+    if (this->xValuesAreFromSingleSequence()) {
+        sortAndMergeFlags = CSeq_loc::fMerge_SingleRange;
+    }
+    CWiggleReader::TValues::const_iterator cit = m_Values.begin();
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(cit->m_Chrom, m_iFlags);
+    CRef<CSeq_interval> pInterval(new CSeq_interval(*pId, cit->m_Pos,
+        cit->m_Pos + cit->m_Span));
+    pContainingLoc->SetInt(*pInterval);
+    for (cit++; cit != m_Values.end(); ++cit) {
+        CRef<CSeq_id> pId = CReadUtil::AsSeqId(cit->m_Chrom, m_iFlags);
+        CRef<CSeq_interval> pInterval(new CSeq_interval(*pId, cit->m_Pos,
+            cit->m_Pos + cit->m_Span));
+        CRef<CSeq_loc> pAdd(new CSeq_loc);
+        pAdd->SetInt(*pInterval);
+        pContainingLoc->Assign(
+            *pContainingLoc->Add(*pAdd, sortAndMergeFlags, 0));
+    }
+    return pContainingLoc;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CWiggleReader::xValuesAreFromSingleSequence() const
+//  ----------------------------------------------------------------------------
+{
+    if (m_Values.empty()) {
+        return false;
+    }
+    TValues::const_iterator cit = m_Values.begin();
+    string first = cit->m_Chrom;
+    for (cit++; cit != m_Values.end(); ++cit) {
+        if (cit->m_Chrom != first) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
@@ -99,6 +148,21 @@ CWiggleReader::ReadObject(
 //  ----------------------------------------------------------------------------                
 CRef<CSeq_annot>
 CWiggleReader::ReadSeqAnnot(
+    ILineReader& lr,
+    IMessageListener* pMessageListener ) 
+//  ----------------------------------------------------------------------------                
+{
+    if (m_iFlags & CWiggleReader::fAsGraph) {
+        return xReadSeqAnnotGraph(lr, pMessageListener);
+    }
+    else {
+        return xReadSeqAnnotTable(lr, pMessageListener);
+    }
+}
+
+//  ----------------------------------------------------------------------------                
+CRef<CSeq_annot>
+CWiggleReader::xReadSeqAnnotGraph(
     ILineReader& lr,
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
@@ -143,6 +207,65 @@ CWiggleReader::ReadSeqAnnot(
                 lr.UngetLine();
                 return xGetAnnot();
             }
+            xReadVariableStepData(varStepInfo, lr, pMessageListener);
+            haveData = true;
+        }
+        else {
+            xReadBedLine(s, pMessageListener);
+            haveData = true;
+        }
+    }
+    return xGetAnnot();
+}
+
+//  ----------------------------------------------------------------------------                
+CRef<CSeq_annot>
+CWiggleReader::xReadSeqAnnotTable(
+    ILineReader& lr,
+    IMessageListener* pMessageListener ) 
+//  ----------------------------------------------------------------------------                
+{
+    m_ChromId.clear();
+    m_Values.clear();
+    if (lr.AtEOF()) {
+        return CRef<CSeq_annot>();
+    }
+    xResetChromValues();
+    bool haveData = false;
+    while ( xGetLine(lr) ) {
+        if (NStr::StartsWith(m_CurLine, "track")) {
+            if (haveData) {
+                --m_uLineNumber;
+                lr.UngetLine();
+                break;
+            }
+            if (xProcessTrackLine(pMessageListener)) {
+                continue;
+            }
+        }
+            
+        if (xProcessBrowserLine(pMessageListener)) {
+            continue;
+        }
+
+        CTempString s = xGetWord(pMessageListener);
+        if ( s == "fixedStep" ) {
+            SFixedStepInfo fixedStepInfo;
+            xGetFixedStepInfo(fixedStepInfo, pMessageListener);
+            //if (!m_ChromId.empty() && fixedStepInfo.mChrom != m_ChromId) {
+            //    lr.UngetLine();
+            //    return xGetAnnot();
+            //}
+            xReadFixedStepData(fixedStepInfo, lr, pMessageListener);
+            haveData = true;
+        }
+        else if ( s == "variableStep" ) {
+            SVarStepInfo varStepInfo;
+            xGetVarStepInfo(varStepInfo, pMessageListener);
+            //if (!m_ChromId.empty() && varStepInfo.mChrom != m_ChromId) {
+            //    lr.UngetLine();
+            //    return xGetAnnot();
+            //}
             xReadVariableStepData(varStepInfo, lr, pMessageListener);
             haveData = true;
         }
@@ -386,8 +509,9 @@ void CWiggleReader::xSetTotalLoc(CSeq_loc& loc, CSeq_id& chrom_id)
 CRef<CSeq_table> CWiggleReader::xMakeTable(void)
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_table> table(new CSeq_table);
+    size_t size = m_Values.size();
 
+    CRef<CSeq_table> table(new CSeq_table);
     table->SetFeat_type(0);
 
     CRef<CSeq_id> chrom_id = xMakeChromId();
@@ -397,14 +521,26 @@ CRef<CSeq_table> CWiggleReader::xMakeTable(void)
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table->SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_name("Seq-table location");
-        col_id->SetDefault().SetLoc(*table_loc);
+        col_id->SetDefault().SetLoc(*xGetContainingLoc());
     }
 
     { // Seq-id
         CRef<CSeqTable_column> col_id(new CSeqTable_column);
         table->SetColumns().push_back(col_id);
         col_id->SetHeader().SetField_id(CSeqTable_column_info::eField_id_location_id);
-        col_id->SetDefault().SetId(*chrom_id);
+        //col_id->SetDefault().SetId(*chrom_id);
+        if (this->xValuesAreFromSingleSequence()) {
+            CRef<CSeq_id> pId = CReadUtil::AsSeqId(m_Values.front().m_Chrom, m_iFlags);
+            col_id->SetDefault().SetId(*pId);
+        }
+        else {
+            CSeqTable_multi_data::TId& seq_id = col_id->SetData().SetId();
+            seq_id.reserve(size);
+            for (TValues::const_iterator cit = m_Values.begin(); cit != m_Values.end(); ++cit) {
+                CRef<CSeq_id> pId = CReadUtil::AsSeqId(cit->m_Chrom, m_iFlags);
+                seq_id.push_back(pId);
+            }
+        }
     }
     
     // position
@@ -418,7 +554,6 @@ CRef<CSeq_table> CWiggleReader::xMakeTable(void)
     
     xSetTotalLoc(*table_loc, *chrom_id);
 
-    size_t size = m_Values.size();
     table->SetNum_rows(size);
     pos.reserve(size);
 
@@ -905,7 +1040,7 @@ void CWiggleReader::xDumpChromValues(void)
     if ( !m_SingleAnnot ) {
 //        xDumpAnnot();
     }
-    xResetChromValues();
+    //xResetChromValues();
 }
 
 //  ----------------------------------------------------------------------------
@@ -1053,6 +1188,7 @@ void CWiggleReader::xReadFixedStepData(
 {
     xSetChrom(fixedStepInfo.mChrom);
     SValueInfo value;
+    value.m_Chrom = fixedStepInfo.mChrom;
     value.m_Pos = fixedStepInfo.mStart-1;
     value.m_Span = fixedStepInfo.mSpan;
     while ( xGetLine(lr) ) {
@@ -1123,6 +1259,7 @@ void CWiggleReader::xReadVariableStepData(
 {
     xSetChrom(varStepInfo.mChrom);
     SValueInfo value;
+    value.m_Chrom = varStepInfo.mChrom;
     value.m_Span = varStepInfo.mSpan;
     while ( xGetLine(lr) ) {
         if ( !xTryGetPos(value.m_Pos, pMessageListener) ) {

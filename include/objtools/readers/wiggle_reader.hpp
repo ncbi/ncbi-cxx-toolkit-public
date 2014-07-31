@@ -82,6 +82,7 @@ struct SVarStepInfo {
 //  ============================================================================
 struct SValueInfo {
 //  ============================================================================
+    string m_Chrom;
     TSeqPos m_Pos;
     TSeqPos m_Span;
     double m_Value;
@@ -92,6 +93,9 @@ struct SValueInfo {
         return m_Pos + m_Span;
     }
     bool operator<(const SValueInfo& v) const {
+        if (m_Chrom != v.m_Chrom) {
+            return m_Chrom < v.m_Chrom;
+        }
         return m_Pos < v.m_Pos;
     }
 };
@@ -238,9 +242,8 @@ class NCBI_XOBJREAD_EXPORT CWiggleReader
     : public CReaderBase
 {
 public:
-    //
-    //  object management:
-    //
+    typedef vector<SValueInfo> TValues;
+
 public:
     CWiggleReader( 
         int =fDefaults );
@@ -253,11 +256,11 @@ public:
 public:
     enum EWiggleFlags {
         fDefaults = 0,
-        fJoinSame = 1<<0,
-        fAsByte = 1<<1,
-        fAsGraph = 1<<2,
-        fDumpStats = 1<<3,
-        fAsRaw = 1<<4,
+        fJoinSame = 1<<8,
+        fAsByte = 1<<9,
+        fAsGraph = 1<<10,
+        fDumpStats = 1<<11,
+        fAsRaw = 1<<12,
     };
     typedef int TFlags;
 
@@ -293,6 +296,16 @@ public:
     //  helpers:
     //
 protected:
+    CRef< CSeq_annot >
+    xReadSeqAnnotGraph(
+        ILineReader&,
+        IMessageListener* =0 );
+
+    CRef< CSeq_annot >
+    xReadSeqAnnotTable(
+        ILineReader&,
+        IMessageListener* =0 );
+
     bool 
     xProcessBrowserLine(
         IMessageListener*);
@@ -439,13 +452,18 @@ protected:
     xSetChrom(
         CTempString chrom);
 
+    CRef<CSeq_loc> 
+    xGetContainingLoc();
+
+    bool
+    xValuesAreFromSingleSequence() const;
+
     //
     //  data:
     //
 protected:
     CTempStringEx m_CurLine;
     string m_ChromId;
-    typedef vector<SValueInfo> TValues;
     TValues m_Values;
     double m_GapValue;
     bool m_SingleAnnot;
