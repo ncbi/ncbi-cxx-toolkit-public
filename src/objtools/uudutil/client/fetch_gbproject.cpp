@@ -33,6 +33,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/gbproj/GBProject_ver2.hpp>
+#include <objects/trackmgr/trackmgr__.hpp>
 #include <objtools/uudutil/project_storage.hpp>
 
 
@@ -68,6 +69,7 @@ CFetchGBProjectApp::Init(void)
                      CArgDescriptions::eString
                     );
 
+    arg_desc->AddFlag("s", "print stats");
     arg_desc->AddFlag("p", "print project");
     arg_desc->AddFlag("b", "print project as binary ASN.1");
     arg_desc->AddFlag("n", "avoiding printing output");
@@ -85,11 +87,17 @@ CFetchGBProjectApp::Run(void)
     if (args["n"].AsBoolean()) {
         CConstRef<CSerialObject> proj = prjstorage.GetObject(nckey);
     }
-    else if(args["b"].AsBoolean()) {
+    else if (args["b"].AsBoolean()) {
         NcbiCout << MSerial_AsnBinary << *prjstorage.GetObject(nckey);
     }
-    else if(args["p"].AsBoolean()) {
+    else if (args["p"].AsBoolean()) {
         NcbiCout << MSerial_AsnText << *prjstorage.GetObject(nckey);
+    }
+    else if (args["s"].AsBoolean()) {
+        auto_ptr<CObjectIStream> istr = prjstorage.GetObjectIstream(nckey);
+        CRef<objects::CTMgr_DatasetItem> stats_item(new objects::CTMgr_DatasetItem());
+        *istr >> *stats_item;
+        NcbiCout << MSerial_AsnText << *stats_item;
     }
     else {
         CProjectStorage::TAnnots annots = prjstorage.GetAnnots(nckey);

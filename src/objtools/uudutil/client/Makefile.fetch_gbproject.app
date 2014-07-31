@@ -11,7 +11,7 @@ SRC = fetch_gbproject
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
-LIB_s = uudutil gbproj submit seqset $(SEQ_LIBS) pub medline biblio general \
+LIB_s = uudutil trackmgr gbproj submit seqset $(SEQ_LIBS) pub medline biblio general \
       xser xconnserv xutil xconnect $(COMPRESS_LIBS) xncbi
 
 LIB = $(LIB_s:%=%$(STATIC))
