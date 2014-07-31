@@ -629,6 +629,29 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ip",      eNSPT_Str,  eNSPA_Required },
           // Session ID for application on behalf of which the info is requested.
           { "sid",     eNSPT_Str,  eNSPA_Required } } },
+
+    // another NC server notifies this one that the blob was updated there
+    // the blob data will come later (eg, via COPY_PUT)
+    { "COPY_UPD",
+        {&CNCMessageHandler::x_DoCmd_CopyUpdate,
+            "UPD",
+            fConfirmOnFinish + 
+            fNeedsBlobAccess + fNeedsStorageCache + fDoNotProxyToPeers
+                             + fDoNotCheckPassword,
+            eNCRead},
+          // Name of cache for blob (for NC-generated blob keys this will be
+          // empty).
+        { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
+          { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey (for NC-generated blob keys this will be empty).
+          { "subkey",  eNSPT_Str,  eNSPA_Required },
+          // time of the update
+          { "cr_time", eNSPT_Int,  eNSPA_Required },
+          // Server_id, where the update was made 
+          { "cr_srv",  eNSPT_Int,  eNSPA_Required },
+        }
+    },
     // Write the blob contents. This command is sent only by other NC servers
     // in response to client's PUT3 (or similar) command when the server where
     // client have sent initial command cannot execute it locally for any
@@ -2268,7 +2291,8 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     // All commands that have fUsesPeerSearch will operate on m_LatestExist and
     // m_LatestBlobSum, so we need to fill it here even if in next "if" we'll go
     // almost directly to m_CmdProcessor.
-    m_LatestExist = m_BlobAccess->IsBlobExists()
+    bool is_valid = m_BlobAccess->IsBlobExists() && m_BlobAccess->IsValid();
+    m_LatestExist = is_valid
                     &&  (x_IsFlagSet(fNoBlobVersionCheck)
                          ||  m_BlobAccess->GetCurBlobVersion() == m_BlobVersion);
     m_LatestSrvId = CNCDistributionConf::GetSelfID();
@@ -2289,11 +2313,23 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     }
 
     x_GetCurSlotServers();
-    if (m_ThisServerIsMain
+    if (is_valid && m_ThisServerIsMain
         &&  m_AppSetup->fast_on_main
         &&  CNCServer::IsInitiallySynced())
     {
         return &CNCMessageHandler::x_ExecuteOnLatestSrvId;
+    }
+    if (!is_valid) {
+        Uint8 srv_id = m_BlobAccess->GetValidServer();
+        if (srv_id) {
+            for (size_t i = 0; i < m_CheckSrvs.size(); ++i) {
+                if (m_CheckSrvs[i] == srv_id) {
+                    m_CheckSrvs.erase(m_CheckSrvs.begin() + i);
+                    m_CheckSrvs.insert(m_CheckSrvs.begin(), srv_id);
+                    break;
+                }
+            }
+        }
     }
 
     if (m_LatestExist  &&  m_Quorum != 0)
@@ -2571,6 +2607,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         write_event->orig_time = cur_time;
     }
 
+    bool new_blob = !m_BlobAccess->IsBlobExists();
     m_BlobAccess->Finalize();
     if (m_BlobAccess->HasError()) {
         delete write_event;
@@ -2586,6 +2623,13 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     if (!x_IsFlagSet(fCopyLogEvent)) {
         if (m_BlobAccess->GetNewBlobSize() < CNCDistributionConf::GetMaxBlobSizeSync()) {
             m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
+// if blob was just created, there is no need to 'mirror-update'
+            if (!new_blob && 
+                (m_Flags & eClientBlobWrite) == eClientBlobWrite && 
+                CNCDistributionConf::GetBlobUpdateHotline()) {
+                CNCPeerControl::MirrorUpdate(m_BlobKey, m_BlobSlot,
+                                             m_OrigRecNo, write_event->orig_time, m_BlobAccess);
+            }
             CNCPeerControl::MirrorWrite(m_BlobKey, m_BlobSlot,
                                         m_OrigRecNo, m_BlobAccess->GetNewBlobSize());
             // If fCopyLogEvent is not set then this blob comes from client and
@@ -3093,7 +3137,7 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
             unsigned int vttl = m_BlobAccess->GetCurVersionTTL();
             Uint8 creation = vttl != 0 ?
 // see x_ProlongVersionLife
-                (m_BlobAccess->GetCurVerExpire() - vttl) :
+                (m_LatestBlobSum->ver_expire - vttl) :
                 (m_LatestBlobSum->create_time / kUSecsPerSecond);
             m_AgeCur =  Uint8(cur_srv_time.Sec()) - creation;
             if (m_AgeCur > m_AgeMax) {
@@ -4047,7 +4091,7 @@ CNCMessageHandler::x_DoCmd_ProxyMeta(void)
         return &CNCMessageHandler::x_ReportBlobNotFound;
 
     WriteText("OK:SIZE=0 ");
-    WriteNumber(m_BlobAccess->GetCurBlobCreateTime()).WriteText(" ");
+    WriteNumber(m_BlobAccess->IsValid() ? m_BlobAccess->GetCurBlobCreateTime() : 123).WriteText(" ");
     WriteNumber(m_BlobAccess->GetCurCreateServer()).WriteText(" ");
     WriteNumber(m_BlobAccess->GetCurCreateId()).WriteText(" ");
     WriteNumber(m_BlobAccess->GetCurBlobDeadTime()).WriteText(" ");
@@ -4057,6 +4101,17 @@ CNCMessageHandler::x_DoCmd_ProxyMeta(void)
 
     return &CNCMessageHandler::x_FinishCommand;
 }
+
+CNCMessageHandler::State
+CNCMessageHandler::x_DoCmd_CopyUpdate(void)
+{
+    LOG_CURRENT_FUNCTION
+    if (m_BlobAccess->IsBlobExists()) {
+        m_BlobAccess->UpdateMeteInfo(m_CopyBlobInfo->create_server, m_CopyBlobInfo->create_time);
+    }
+    return &CNCMessageHandler::x_FinishCommand;
+}
+
 /*
 CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetBlobsList(void)

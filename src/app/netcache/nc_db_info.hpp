@@ -91,6 +91,8 @@ public:
     Uint8   create_time;
     Uint8   create_server;
     Uint4   create_id;
+    Uint8   updated_on_server;
+    Uint8   updated_at_time;
     unsigned int     ttl;
     int     expire;
     int     dead_time;

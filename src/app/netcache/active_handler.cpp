@@ -352,6 +352,32 @@ CNCActiveHandler::CopyPurge(CRequestContext* cmd_ctx,
 }
 
 void
+CNCActiveHandler::CopyUpdate(const string& raw_key,
+                const SNCBlobSummary& blob_sum)
+{
+    m_CurCmd = eNeedOnlyConfirm;
+
+    string cache_name, key, subkey;
+    CNCBlobStorage::UnpackBlobKey(raw_key, cache_name, key, subkey);
+
+    m_CmdToSend.resize(0);
+    m_CmdToSend += "COPY_UPD \"";
+    m_CmdToSend += cache_name;
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += key;
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += subkey;
+    m_CmdToSend += "\" ";
+    m_CmdToSend += NStr::UInt8ToString(blob_sum.create_time);
+    m_CmdToSend += " ";
+//    m_CmdToSend += NStr::UInt8ToString(blob_sum.create_server);
+    m_CmdToSend += NStr::UInt8ToString( CNCDistributionConf::GetSelfID());
+
+    CWriteBackControl::StartNotifyUpdateBlob(blob_sum.create_time);
+    x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
+}
+
+void
 CNCActiveHandler::CopyPut(CRequestContext* cmd_ctx,
                           const string& key,
                           Uint2 slot,

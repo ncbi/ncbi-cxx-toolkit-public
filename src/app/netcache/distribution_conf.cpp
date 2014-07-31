@@ -112,6 +112,7 @@ static Uint8    s_PeriodicSyncTimeout = 0;
 static Uint8    s_FailedSyncRetryDelay = 0;
 static Uint8    s_NetworkErrorTimeout = 0;
 static Uint8    s_MaxBlobSizeSync = 0;
+static bool     s_BlobUpdateHotline = true;
 
 static const char*  kNCReg_NCPoolSection       = "mirror";
 static string       kNCReg_NCServerPrefix      = "server_";
@@ -298,6 +299,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_NetworkErrorTimeout *= kUSecsPerSecond;
         s_MaxBlobSizeSync = NStr::StringToUInt8_DataSize(reg.GetString(
                            kNCReg_NCPoolSection, "max_blob_size_sync", "1 GB"));
+        s_BlobUpdateHotline =  reg.GetBool( kNCReg_NCPoolSection, "blob_update_hotline", true);
 
         if (s_SmallBlobBoundary > s_MaxBlobSizeSync) {
             SRV_LOG(Critical, log_pfx << "small_blob_max_size ("
@@ -393,6 +395,7 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("max_blob_size_sync").WriteText(str).WriteText(iss)
                                                    .WriteText(NStr::UInt8ToString_DataSize( s_MaxBlobSizeSync)).WriteText(eos);
     task.WriteText(eol).WriteText("max_blob_size_sync").WriteText(is ).WriteNumber( s_MaxBlobSizeSync);
+    task.WriteText(eol).WriteText("blob_update_hotline").WriteText(is ).WriteText( NStr::BoolToString(s_BlobUpdateHotline));
 }
 
 size_t
@@ -798,6 +801,12 @@ CNCDistributionConf::GetMaxBlobSizeSync(void)
 {
     return s_MaxBlobSizeSync;
 }
+
+bool
+ CNCDistributionConf::GetBlobUpdateHotline(void)
+ {
+    return s_BlobUpdateHotline;
+ }
 
 void
 CNCDistributionConf::PrintBlobCopyStat(Uint8 create_time, Uint8 create_server, Uint8 write_server)

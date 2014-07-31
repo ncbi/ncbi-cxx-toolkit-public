@@ -310,6 +310,14 @@ CNCPeerControl::x_ReserveBGConn(void)
     return true;
 }
 
+bool
+CNCPeerControl::x_ReserveBGConnNow(void)
+{
+    ++m_ActiveConns;
+    ++m_BGConns;
+    return true;
+}
+
 inline void
 CNCPeerControl::x_IncBGConns(void)
 {
@@ -553,10 +561,27 @@ CNCPeerControl::x_DeleteMirrorEvent(SNCMirrorEvent* event)
 {
     if (event->evt_type == eSyncWrite)
         delete event;
-    else if (event->evt_type == eSyncProlong)
+    else if (event->evt_type == eSyncProlong || event->evt_type == eSyncUpdate)
         delete (SNCMirrorProlong*)event;
     else
         abort();
+}
+
+void
+CNCPeerControl::x_ProcessUpdateEvent(SNCMirrorEvent* event)
+{
+    m_ObjLock.Lock();
+    if (x_ReserveBGConnNow()) {
+        CNCActiveHandler* conn = x_GetBGConnImpl();
+        if (conn) {
+            x_ProcessMirrorEvent(conn, event);
+        } else {
+            x_DeleteMirrorEvent(event);
+            x_UnreserveBGConn();
+        }
+    } else {
+        x_DeleteMirrorEvent(event);
+    }
 }
 
 void
@@ -569,6 +594,10 @@ CNCPeerControl::x_ProcessMirrorEvent(CNCActiveHandler* conn, SNCMirrorEvent* eve
         SNCMirrorProlong* prolong = (SNCMirrorProlong*)event;
         conn->CopyProlong(prolong->key, prolong->slot, prolong->orig_rec_no,
                           prolong->orig_time, prolong->blob_sum);
+    }
+    else if (event->evt_type == eSyncUpdate) {
+        SNCMirrorProlong* prolong = (SNCMirrorProlong*)event;
+        conn->CopyUpdate(prolong->key, prolong->blob_sum);
     }
     else
         abort();
@@ -613,6 +642,27 @@ CNCPeerControl::x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size)
             m_ObjLock.Unlock();
             sm_CopyReqsRejected.Add(1);
             x_DeleteMirrorEvent(event);
+        }
+    }
+}
+
+void
+CNCPeerControl::MirrorUpdate(const string& key,
+                              Uint2 slot,
+                              Uint8 orig_rec_no,
+                              Uint8 orig_time,
+                              const CNCBlobAccessor* accessor)
+{
+    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
+    ITERATE(TServersList, it_srv, servers) {
+        Uint8 srv_id = *it_srv;
+        CNCPeerControl* peer = Peer(srv_id);
+        if (peer->GetHostProtocol() >= 60700) {
+            SNCMirrorProlong* event = new SNCMirrorProlong(eSyncUpdate, slot, key,
+                                                   orig_rec_no, orig_time, accessor);
+            if (event) {
+                peer->x_ProcessUpdateEvent(event);
+            }
         }
     }
 }

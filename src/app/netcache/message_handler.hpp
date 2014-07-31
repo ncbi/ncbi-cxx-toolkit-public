@@ -188,6 +188,7 @@ public:
     State x_DoCmd_SyncCancel(void);
     State x_DoCmd_GetMeta(void);
     State x_DoCmd_ProxyMeta(void);
+    State x_DoCmd_CopyUpdate(void);
     //State x_DoCmd_GetBlobsList(void);
     /// Universal processor for all commands not implemented now.
     State x_DoCmd_NotImplemented(void);

@@ -966,6 +966,8 @@ CNCActiveSyncControl::x_DoEventSend(const SSyncTaskInfo& task_info,
 {
     SNCSyncEvent* event = *task_info.send_evt;
     switch (event->event_type) {
+    default:
+        break;
     case eSyncWrite:
         conn->SyncSend(this, event);
         break;
@@ -981,6 +983,8 @@ CNCActiveSyncControl::x_DoEventGet(const SSyncTaskInfo& task_info,
 {
     SNCSyncEvent* event = *task_info.get_evt;
     switch (event->event_type) {
+    default:
+        break;
     case eSyncWrite:
         conn->SyncRead(this, event);
         break;

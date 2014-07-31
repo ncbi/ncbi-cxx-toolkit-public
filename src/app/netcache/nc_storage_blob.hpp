@@ -156,6 +156,9 @@ public:
     Uint8 GetNewCreateServer(void) const;
     Uint4 GetCurCreateId(void) const;
     void SetCreateServer(Uint8 create_server, Uint4 create_id);
+    void UpdateMeteInfo(Uint8 upd_server, Uint8 upd_time);
+    bool IsValid(void) const;
+    Uint8 GetValidServer(void) const;
     string GetCurPassword(void) const;
     void SetPassword(CTempString password);
     bool ReplaceBlobInfo(const SNCBlobVerData& new_info);
@@ -265,6 +268,7 @@ public:
 
     static void AnotherServerMain(void);
     static void StartSyncBlob(Uint8 create_time);
+    static void StartNotifyUpdateBlob(Uint8 create_time);
 
 private:
     CWriteBackControl(void);
@@ -535,6 +539,27 @@ CNCBlobAccessor::SetCreateServer(Uint8 create_server,
     m_NewData->create_server = create_server;
     m_NewData->create_id = create_id;
 }
+inline void
+CNCBlobAccessor::UpdateMeteInfo(Uint8 upd_server, Uint8 upd_time)
+{
+    if (m_CurData->create_time < upd_time) {
+        m_CurData->updated_on_server = upd_server;
+        m_CurData->updated_at_time = upd_time;
+    }
+}
+
+inline bool
+CNCBlobAccessor::IsValid(void) const
+{
+    return m_CurData.NotNull()? (m_CurData->updated_on_server == 0) : true;
+}
+
+inline Uint8
+CNCBlobAccessor::GetValidServer(void) const
+{
+    return m_CurData.NotNull()? m_CurData->updated_on_server : 0;
+}
+
 
 inline Uint8
 CNCBlobAccessor::GetCurCreateServer(void) const

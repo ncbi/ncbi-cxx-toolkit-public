@@ -109,6 +109,11 @@ public:
 
     static CNCPeerControl* Peer(Uint8 srv_id);
 
+    static void MirrorUpdate(const string& key,
+                              Uint2 slot,
+                              Uint8 orig_rec_no,
+                              Uint8 orig_time,
+                              const CNCBlobAccessor* accessor);
     static void MirrorWrite(const string& key,
                             Uint2 slot,
                             Uint8 orig_rec_no,
@@ -152,6 +157,7 @@ public:
 
     void AbortInitialSync(void);
     void SetHostProtocol(Uint8 ver);
+    Uint8 GetHostProtocol(void) const;
 
 private:
     CNCPeerControl(Uint8 srv_id);
@@ -164,6 +170,7 @@ private:
     void x_SlotsInitiallySynced(Uint2 cnt_slots, bool aborted=false);
     CNCActiveHandler* x_GetPooledConnImpl(void);
     bool x_ReserveBGConn(void);
+    bool x_ReserveBGConnNow(void);
     void x_UnreserveBGConn(void);
     void x_IncBGConns(void);
     void x_DecBGConns(void);
@@ -174,6 +181,7 @@ private:
     CNCActiveHandler* x_GetBGConnImpl(void);
     bool x_DoReleaseConn(CNCActiveHandler* conn);
     void x_DeleteMirrorEvent(SNCMirrorEvent* event);
+    void x_ProcessUpdateEvent(SNCMirrorEvent* event);
     void x_ProcessMirrorEvent(CNCActiveHandler* conn, SNCMirrorEvent* event);
     void x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size);
     void x_UpdateHasTasks(void);
@@ -247,6 +255,12 @@ inline Uint8
 CNCPeerControl::GetNextSyncTime(void)
 {
     return m_NextSyncTime;
+}
+
+inline Uint8
+CNCPeerControl::GetHostProtocol(void) const
+{
+    return m_HostProtocol;
 }
 
 END_NCBI_SCOPE

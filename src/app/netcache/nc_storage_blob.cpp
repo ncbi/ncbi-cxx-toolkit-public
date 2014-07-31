@@ -87,6 +87,11 @@ static Uint8 s_BlobSync = 0;
 static Uint8 s_BlobSyncTDiff = 0;
 static Uint8 s_BlobSyncMaxTDiff = 0;
 
+static Uint8 s_BlobNotify = 0;
+static Uint8 s_BlobNotifyTDiff = 0;
+static Uint8 s_BlobNotifyMaxTDiff = 0;
+
+
 static const size_t kVerManagerSize = sizeof(CNCBlobVerManager)
                                       + sizeof(CCurVerReader);
 static const size_t kDefChunkMapsSize
@@ -509,11 +514,19 @@ CWriteBackControl::ReadState(SNCStateStat& state)
     state.cnt_newer_blob = s_HaveNewerBlob;
     Uint8 prev = s_BlobSync;
     if (prev != 0) {
-        state.avg_timediff_blob = s_BlobSyncTDiff / prev;
-        state.max_timediff_blob = s_BlobSyncMaxTDiff;
+        state.avg_tdiff_blobcopy = s_BlobSyncTDiff / prev;
+        state.max_tdiff_blobcopy = s_BlobSyncMaxTDiff;
     } else {
-        state.avg_timediff_blob = 0;
-        state.max_timediff_blob = 0;
+        state.avg_tdiff_blobcopy = 0;
+        state.max_tdiff_blobcopy = 0;
+    }
+    prev = s_BlobNotify;
+    if (prev != 0) {
+        state.avg_tdiff_blobnotify = s_BlobNotifyTDiff / prev;
+        state.max_tdiff_blobnotify = s_BlobNotifyMaxTDiff;
+    } else {
+        state.avg_tdiff_blobnotify = 0;
+        state.max_tdiff_blobnotify = 0;
     }
 }
 
@@ -539,6 +552,27 @@ void CWriteBackControl::StartSyncBlob(Uint8 create_time)
     }
     if (s_BlobSyncMaxTDiff < tdiff) {
         s_BlobSyncMaxTDiff = tdiff;
+    }
+}
+
+void
+CWriteBackControl::StartNotifyUpdateBlob(Uint8 create_time)
+{
+    if (!CNCServer::IsInitiallySynced()) {
+        return;
+    }
+    Uint8 tdiff = CSrvTime::Current().AsUSec() - create_time;
+    Uint8 prev = s_BlobNotify;
+    Uint8 prevdiff = s_BlobNotifyTDiff;
+    AtomicAdd(s_BlobNotify, 1);
+    AtomicAdd(s_BlobNotifyTDiff, tdiff);
+    if (prev > s_BlobNotify || prevdiff > s_BlobNotifyTDiff) {
+        s_BlobNotify = 0;
+        s_BlobNotifyTDiff = 0;
+        s_BlobNotifyMaxTDiff = 0;
+    }
+    if (s_BlobNotifyMaxTDiff < tdiff) {
+        s_BlobNotifyMaxTDiff = tdiff;
     }
 }
 
@@ -911,6 +945,8 @@ SNCBlobVerData::SNCBlobVerData(void)
         create_time(0),
         create_server(0),
         create_id(0),
+        updated_on_server(0),
+        updated_at_time(0),
         ttl(0),
         expire(0),
         dead_time(0),

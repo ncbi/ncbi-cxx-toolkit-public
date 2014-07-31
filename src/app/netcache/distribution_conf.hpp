@@ -116,6 +116,7 @@ public:
     static Uint8 GetFailedSyncRetryDelay(void);
     static Uint8 GetNetworkErrorTimeout(void);
     static Uint8 GetMaxBlobSizeSync(void);
+    static bool  GetBlobUpdateHotline(void);
 
     static const string& GetMirroringSizeFile(void);
     static const string& GetPeriodicLogFile(void);

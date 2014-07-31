@@ -143,6 +143,8 @@ public:
             goto x_WriteBlobData -> x_FinishWritingBlob ->
                 request confirmation -> x_WaitOneLineAnswer
     */
+    void CopyUpdate(const string& key,
+                    const SNCBlobSummary& blob_sum);
     void CopyPut(CRequestContext* cmd_ctx,
                  const string& key,
                  Uint2 slot,

@@ -60,8 +60,10 @@ struct SNCStateStat
     size_t wb_releasing;
     Uint8  cnt_another_server_main;
     Uint8  cnt_newer_blob;    // blob replacing cancelled, because current blob is newer
-    Uint8  avg_timediff_blob; // average time diff between 'now' and blob creation time for replaced blobs
-    Uint8  max_timediff_blob; // maximum time diff between 'now' and blob creation time for replaced blobs
+    Uint8  avg_tdiff_blobcopy; // average time diff between blob creation time and the time it is copied to mirror
+    Uint8  max_tdiff_blobcopy; // maximum time diff between blob creation time and the time it is copied to mirror
+    Uint8  avg_tdiff_blobnotify; // average time diff between blob update time and the time mirror is notified about that
+    Uint8  max_tdiff_blobnotify; // maximum time diff between blob update time and the time mirror is notified about that
 };
 
 

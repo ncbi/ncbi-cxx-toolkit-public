@@ -42,7 +42,8 @@ BEGIN_NCBI_SCOPE
 enum ENCSyncEvent
 {
     eSyncWrite,     //< Blob write event
-    eSyncProlong    //< Blob life time prolongation event
+    eSyncProlong,   //< Blob life time prolongation event
+    eSyncUpdate     //< blob changed notification
 };
 
 /// Single event record
