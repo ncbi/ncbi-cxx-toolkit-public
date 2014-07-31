@@ -56,7 +56,7 @@ CSeqFeatData :: ESubtype CFeature_field :: GetFeatSubtype() const
    string strtmp
            = ENUM_METHOD_NAME(EMacro_feature_type)()->FindName(GetType(), true);
    if (strtmp == "cds") {
-      strtmp == "cdregion";
+      strtmp = "cdregion";
    }
    else if (strtmp == "c-region") {
       strtmp = "C-region";
