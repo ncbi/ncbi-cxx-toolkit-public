@@ -314,7 +314,7 @@ bool CEnumDataType::CheckValue(const CDataValue& value) const
             if ( i->GetValue() == intValue->GetValue() )
                 return true;
         }
-        value.Warning("illegal INTEGER value: " + intValue->GetValue(), 14);
+        value.Warning("illegal INTEGER value: " + NStr::NumericToString(intValue->GetValue()), 14);
         return false;
     }
 

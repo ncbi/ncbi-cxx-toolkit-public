@@ -169,7 +169,8 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
         ref = false;
     }
     else {
-        _ASSERT("Unknown reference type: "+ref);
+        // Unknown reference type
+        _ASSERT(false);
     }
     
     if ( ref ) {
