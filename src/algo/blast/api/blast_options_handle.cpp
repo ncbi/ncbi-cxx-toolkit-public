@@ -228,6 +228,7 @@ CBlastOptionsFactory::GetTasks(ETaskSets choice /* = eAll */)
         retval.insert("blastx-fast");
         retval.insert("deltablast");
         retval.insert("tblastn");
+        retval.insert("tblastn-fast");
         retval.insert("psitblastn");
         retval.insert("tblastx");
     }
@@ -285,6 +286,9 @@ CBlastOptionsFactory::GetDocumentation(const string& task_name)
     } else if (task == "tblastn") {
         retval.assign("Search of a protein query against a (translated) ");
         retval += "nucleotide database";
+    } else if (task == "tblastn-fast") {
+        retval.assign("Search of a protein query against a (translated) ");
+        retval += "nucleotide database with parameters optimized for faster runtime";
     } else if (task == "psitblastn") {
         retval.assign("Search of a PSSM against a (translated) ");
         retval += "nucleotide database";
@@ -399,9 +403,18 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
         }
         retval = opts;
     }
-    else if (!NStr::CompareNocase(task, "tblastn"))
+    else if (!NStr::CompareNocase(task, "tblastn") ||
+    		 !NStr::CompareNocase(task, "tblastn-fast"))
     {
-         retval = CBlastOptionsFactory::Create(eTblastn, locality);
+    	CTBlastnOptionsHandle* opts =
+    	            dynamic_cast<CTBlastnOptionsHandle*>
+         (CBlastOptionsFactory::Create(eTblastn, locality));
+    	if(task == "tblastn-fast") {
+    		opts->SetWordSize(6);
+            opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
+            opts->SetWordThreshold(21.0);
+    	}
+    	retval = opts;
     }
     else if (!NStr::CompareNocase(task, "tblastx"))
     {

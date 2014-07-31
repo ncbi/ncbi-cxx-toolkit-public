@@ -59,6 +59,11 @@ CTblastnAppArgs::CTblastnAppArgs()
 
     static const string kDefaultTask = "tblastn";
     SetTask(kDefaultTask);
+    set<string> tasks;
+    tasks.insert(kDefaultTask);
+    tasks.insert("tblastn-fast");
+    arg.Reset(new CTaskCmdLineArgs(tasks, kDefaultTask));
+    m_Args.push_back(arg);
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
     m_BlastDbArgs->SetDatabaseMaskingSupport(true);
@@ -135,13 +140,21 @@ CRef<CBlastOptionsHandle>
 CTblastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
                                       const CArgs& args)
 {
+   	_ASSERT(args.Exist(kTask));
+    _ASSERT(args[kTask].HasValue());
     if (args.Exist(kArgPSIInputChkPntFile) && args[kArgPSIInputChkPntFile]) {
        CPSIBlastOptionsHandle * rv(new CPSIBlastOptionsHandle(locality));
        rv->SetPSITblastnDefaults();
+       if (args[kTask].AsString() == "blastx-fast") {
+           rv->SetWordSize(6);
+           rv->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
+           rv->SetWordThreshold(21.0);
+       }
        return CRef<CBlastOptionsHandle>(rv);
     }
-    else
-       return CRef<CBlastOptionsHandle>(new CTBlastnOptionsHandle(locality));
+    else {
+        return x_CreateOptionsHandleWithTask(locality, args[kTask].AsString());
+    }
 }
 
 CRef<objects::CPssmWithParameters>
