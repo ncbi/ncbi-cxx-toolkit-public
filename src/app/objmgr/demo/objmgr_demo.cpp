@@ -753,6 +753,10 @@ int CDemoApp::Run(void)
         }
     }
     else {
+#ifdef HAVE_PUBSEQ_OS
+        DBAPI_RegisterDriver_FTDS();
+        GenBankReaders_Register_Pubseq();
+#endif
         gb_loader = CGBDataLoader::RegisterInObjectManager(*pOm).GetLoader();
     }
 #ifdef HAVE_LDS2
