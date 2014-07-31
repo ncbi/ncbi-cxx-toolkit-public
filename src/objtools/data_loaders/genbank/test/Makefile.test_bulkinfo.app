@@ -4,9 +4,9 @@
 
 APP = test_bulkinfo
 SRC = test_bulkinfo
-LIB = xobjutil $(OBJMGR_LIBS)
+LIB = xobjutil $(OBJMGR_LIBS) ncbi_xdbapi_ftds $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC)
 
-LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = bad_len.ids all_readers.sh
 

@@ -40,7 +40,8 @@
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-//#include <internal/asn_cache/lib/asn_cache_loader.hpp>
+#include <objtools/data_loaders/genbank/readers.hpp>
+#include <dbapi/driver/drivers.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -256,8 +257,11 @@ CRef<CScope> s_MakeScope(void)
 {
     CRef<CScope> ret;
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
+#ifdef HAVE_PUBSEQ_OS
+    DBAPI_RegisterDriver_FTDS();
+    GenBankReaders_Register_Pubseq();
+#endif
     CGBDataLoader::RegisterInObjectManager(*pOm);
-    //CAsnCache_DataLoader::RegisterInObjectManager(*pOm, "/panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe_id_cache/refseq_prot_cache/", CObjectManager::eDefault, 88);
     
     ret = new CScope(*pOm);
     ret->AddDefaults();
