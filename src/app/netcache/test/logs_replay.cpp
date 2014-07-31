@@ -47,6 +47,7 @@
 # include <time.h>
 #endif
 
+#define DO_TEST 0
 
 USING_NCBI_SCOPE;
 
@@ -387,7 +388,11 @@ CReplayThread::CReplayThread(const string& file_name, const string& client_name)
     : m_NC(s_NCService, client_name)
 {
     x_Init();
+#if DO_TEST
+    m_NC.SetCommunicationTimeout(2000);
+#else
     m_NC.SetCommunicationTimeout(2);
+#endif
     m_InFile.Open(file_name, CFileIO::eOpen, CFileIO::eRead);
 }
 
@@ -396,7 +401,11 @@ CReplayThread::CReplayThread(const string& file_name, const string& cache_name,
     : m_NC(s_NCService, cache_name, client_name, flags)
 {
     x_Init();
+#if DO_TEST
+    m_NC.SetCommunicationTimeout(2000);
+#else
     m_NC.SetCommunicationTimeout(2);
+#endif
     m_InFile.Open(file_name, CFileIO::eOpen, CFileIO::eRead);
 }
 
@@ -480,6 +489,18 @@ CReplayThread::x_PutBlob(Uint8 key_id, bool gen_key, Uint8 size)
     string key;
     Uint8 blob_size = size;
     SKeyInfo* key_info = NULL;
+
+#if 0
+    if (m_IdKeys.size() > 50) {
+cout << "m_IdKeys.size = " << m_IdKeys.size() << endl;
+        if (s_GetRandom() % 4 == 0) {
+            key_id = s_GetRandom() % m_IdKeys.size();
+            gen_key = false;
+cout << "key_id = " << key_id << endl;
+        }
+    }
+#endif
+
     if (!gen_key) {
         TIdKeyMap::iterator it_key = m_IdKeys.find(key_id);
         if (it_key == m_IdKeys.end()) {
@@ -588,6 +609,12 @@ CReplayThread::x_GetBlob(Uint8 key_id)
             key_info->size = Uint8(-1);
             return;
         }
+#if DO_TEST
+else {
+ERR_POST(Warning << "Blob " << key_info->key <<
+" FOUND, was created at " << key_info->created);
+}
+#endif
         if (key_info->size != Uint8(-1)) {
             if (key_info->md5.empty()) {
                 ERR_POST(Critical << CTime(CTime::eCurrent).AsString("h:m:s.r")
@@ -855,10 +882,12 @@ CLogsReplayApp::Run(void)
 
     }
     CStopWatch watch(CStopWatch::eStart);
+#if !DO_TEST
     while (int(s_ThreadsFinished.Get()) != n_files) {
         SleepMilliSec(20000, eInterruptOnSignal);
         s_PrintStats(int(watch.Elapsed()));
     }
+#endif
     for (int i = 0; i < n_files; ++i) {
         s_Threads->at(i)->Join();
     }
