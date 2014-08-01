@@ -2411,7 +2411,7 @@ void TrimSeqAlign(CBioseq_Handle bsh,
         // Update segment start values for the trimmed sequence row
         for (CDense_seg::TNumseg curseg = 0; curseg < denseg.GetNumseg(); ++curseg) {
             TSeqPos index = curseg * denseg.GetDim() + row;
-            TSeqPos seg_start = denseg.GetStarts()[index];
+            TSignedSeqPos seg_start = denseg.GetStarts()[index];
             if (seg_start < 0) {
                 // This indicates a gap, no change needed
             }
