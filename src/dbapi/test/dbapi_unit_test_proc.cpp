@@ -63,8 +63,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                         break;
                     case eDB_StatusResult:
                         while( rs->Next() ) {
-                            int status = rs->GetVariant(1).GetInt4();
-                            status = status;
+                            _TRACE("status: " << rs->GetVariant(1).GetInt4());
                         }
                         break;
                     case eDB_ComputeResult:
@@ -93,8 +92,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                         break;
                     case eDB_StatusResult:
                         while( rs->Next() ) {
-                            int status = rs->GetVariant(1).GetInt4();
-                            status = status;
+                            _TRACE("status: " << rs->GetVariant(1).GetInt4());
                         }
                         break;
                     case eDB_ComputeResult:
@@ -215,8 +213,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 }
             }
             // Get status
-            int status = auto_stmt->GetReturnStatus();
-            status = status; // Get rid of warnings.
+            _TRACE("status: " << auto_stmt->GetReturnStatus());
         }
 
         if (false) {
@@ -267,8 +264,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
                 }
             }
             // Get status
-            int status = auto_stmt->GetReturnStatus();
-            status = status; // Get rid of warnings.
+            _TRACE("status: " << auto_stmt->GetReturnStatus());
         }
 
 
@@ -519,8 +515,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             }
 
             // Get status
-            int status = auto_stmt->GetReturnStatus();
-            status = status; // Get rid of warnings.
+            _TRACE("status: " << auto_stmt->GetReturnStatus());
         }
 
         // Temporary test ...
@@ -565,8 +560,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
             }
 
             // Get status
-            int status = auto_stmt->GetReturnStatus();
-            status = status; // Get rid of warnings.
+            _TRACE("status: " << auto_stmt->GetReturnStatus());
         }
     }
     catch(const CException& ex) {

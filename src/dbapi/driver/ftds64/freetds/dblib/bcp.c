@@ -3290,7 +3290,7 @@ _bcp_get_col_data(DBPROCESS * dbproc, TDSCOLUMN *bindcol)
 
 	/* if (Max) column length specified take that into consideration. */
 
-	if (!data_is_null && bindcol->column_bindlen >= 0) {
+	if (!data_is_null) {
 		if (bindcol->column_bindlen == 0)
 			data_is_null = 1;
 		else {

@@ -488,7 +488,7 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         case CS_INT_TYPE:      sz = sizeof(CS_INT);      break;
         case CS_BIT_TYPE:      sz = sizeof(CS_BIT);      break;
         case CS_LONG_TYPE:     sz = sizeof(v);           break;
-        default:               _TROUBLE;
+        default:               sz = 0;                   _TROUBLE;
         }
         my_ct_get_data(cmd, item_no, &v, sz, &outlen, is_null);
 #ifdef WORDS_BIGENDIAN
