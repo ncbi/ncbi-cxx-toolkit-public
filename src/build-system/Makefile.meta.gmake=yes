@@ -5,6 +5,18 @@ ifeq "" "$(findstring /,$(MAKE))"
   MAKE := $(word 1,$(wildcard $(patsubst %,%/$(MAKE),$(subst :, ,$(PATH)))))
 endif
 
+ifneq "" "$(findstring :,$(LD_LIBRARY_PATH))"
+  collect_libs = $(top_srcdir)/scripts/common/impl/collect_outside_libs.sh
+  ifeq "$(build_root)" ""
+    build_root = $(CURDIR)/..
+  endif
+  new_llp := $(shell $(collect_libs) $(build_root)/lib/outside)
+  ifneq "" "$(new_llp)"
+    LD_LIBRARY_PATH = $(new_llp)
+    export LD_LIBRARY_PATH
+  endif
+endif
+
 # Work around GNU Make's tendency to double its automatic
 # --jobserver-fds=* flag's usage with each level of recursion, by
 # constructing an alternate MFLAGS_NR variable that limits its
