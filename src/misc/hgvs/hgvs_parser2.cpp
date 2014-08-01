@@ -1253,7 +1253,8 @@ CRef<CVariation> CHgvsParser::x_deletion(TIterator const& i, const CContext& con
     CVariation_inst& var_inst = vr->SetData().SetInstance();
 
     var_inst.SetType(CVariation_inst::eType_del);
-    SetFirstPlacement(*vr).Assign(context.GetPlacement());
+    CVariantPlacement& p = SetFirstPlacement(*vr);
+    p.Assign(context.GetPlacement());
 
     CRef<CDelta_item> di(new CDelta_item);
     di->SetAction(CDelta_item::eAction_del_at);
@@ -1266,6 +1267,13 @@ CRef<CVariation> CHgvsParser::x_deletion(TIterator const& i, const CContext& con
         CRef<CSeq_literal> literal = x_raw_seq_or_len(it, context);
         ++it;
         SetFirstPlacement(*vr).SetSeq(*literal);
+
+        if(literal->GetLength() != CVariationUtil::s_GetLength(p, NULL)) {
+            CRef<CVariationException> ex(new CVariationException);
+            ex->SetCode(CVariationException::eCode_hgvs_parsing);
+            ex->SetMessage("Sequence length is inconsistent with location length");
+            p.SetExceptions().push_back(ex);
+        }
     }
 
     var_inst.SetDelta();
