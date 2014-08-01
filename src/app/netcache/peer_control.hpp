@@ -111,9 +111,7 @@ public:
 
     static void MirrorUpdate(const string& key,
                               Uint2 slot,
-                              Uint8 orig_rec_no,
-                              Uint8 orig_time,
-                              const CNCBlobAccessor* accessor);
+                              Uint8 update_time);
     static void MirrorWrite(const string& key,
                             Uint2 slot,
                             Uint8 orig_rec_no,

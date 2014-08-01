@@ -559,9 +559,9 @@ CNCPeerControl::ReleaseConn(CNCActiveHandler* conn)
 void
 CNCPeerControl::x_DeleteMirrorEvent(SNCMirrorEvent* event)
 {
-    if (event->evt_type == eSyncWrite)
+    if (event->evt_type == eSyncWrite || event->evt_type == eSyncUpdate)
         delete event;
-    else if (event->evt_type == eSyncProlong || event->evt_type == eSyncUpdate)
+    else if (event->evt_type == eSyncProlong)
         delete (SNCMirrorProlong*)event;
     else
         abort();
@@ -596,8 +596,7 @@ CNCPeerControl::x_ProcessMirrorEvent(CNCActiveHandler* conn, SNCMirrorEvent* eve
                           prolong->orig_time, prolong->blob_sum);
     }
     else if (event->evt_type == eSyncUpdate) {
-        SNCMirrorProlong* prolong = (SNCMirrorProlong*)event;
-        conn->CopyUpdate(prolong->key, prolong->blob_sum);
+        conn->CopyUpdate(event->key, event->orig_rec_no);
     }
     else
         abort();
@@ -649,17 +648,14 @@ CNCPeerControl::x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size)
 void
 CNCPeerControl::MirrorUpdate(const string& key,
                               Uint2 slot,
-                              Uint8 orig_rec_no,
-                              Uint8 orig_time,
-                              const CNCBlobAccessor* accessor)
+                              Uint8 update_time)
 {
     const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
         if (peer->GetHostProtocol() >= 60700) {
-            SNCMirrorProlong* event = new SNCMirrorProlong(eSyncUpdate, slot, key,
-                                                   orig_rec_no, orig_time, accessor);
+            SNCMirrorEvent* event = new SNCMirrorEvent(eSyncUpdate, slot, key, update_time);
             if (event) {
                 peer->x_ProcessUpdateEvent(event);
             }

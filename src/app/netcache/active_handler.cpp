@@ -352,8 +352,7 @@ CNCActiveHandler::CopyPurge(CRequestContext* cmd_ctx,
 }
 
 void
-CNCActiveHandler::CopyUpdate(const string& raw_key,
-                const SNCBlobSummary& blob_sum)
+CNCActiveHandler::CopyUpdate(const string& raw_key, Uint8 create_time)
 {
     m_CurCmd = eNeedOnlyConfirm;
 
@@ -368,12 +367,12 @@ CNCActiveHandler::CopyUpdate(const string& raw_key,
     m_CmdToSend += "\" \"";
     m_CmdToSend += subkey;
     m_CmdToSend += "\" ";
-    m_CmdToSend += NStr::UInt8ToString(blob_sum.create_time);
+    m_CmdToSend += NStr::UInt8ToString(create_time);
     m_CmdToSend += " ";
 //    m_CmdToSend += NStr::UInt8ToString(blob_sum.create_server);
     m_CmdToSend += NStr::UInt8ToString( CNCDistributionConf::GetSelfID());
 
-    CWriteBackControl::StartNotifyUpdateBlob(blob_sum.create_time);
+    CWriteBackControl::StartNotifyUpdateBlob(create_time);
     x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 

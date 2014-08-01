@@ -2285,6 +2285,17 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
         return &CNCMessageHandler::x_FinishCommand;
     }
 
+// send COPY_UPD notification early, before blob data is received
+//  another option is to send it in x_FinishReadingBlob,
+//      after m_BlobAccess->Finalize(), before  CNCPeerControl::MirrorWrite
+// sending the notification here we assume the risk that the blob will not be received correctly
+// and the notification will create confusion only (it will be corrected by periodic sync).
+    if (m_BlobAccess->IsBlobExists()  // if it is a new blob, there is no need to 'mirror-update'
+        && (m_Flags & eClientBlobWrite) == eClientBlobWrite // request from clients only
+        && CNCDistributionConf::GetBlobUpdateHotline()) {
+        CNCPeerControl::MirrorUpdate(m_BlobKey, m_BlobSlot, CSrvTime::Current().AsUSec());
+    }
+
     if (!x_IsFlagSet(fUsesPeerSearch))
         return m_CmdProcessor;
 
@@ -2607,7 +2618,6 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         write_event->orig_time = cur_time;
     }
 
-    bool new_blob = !m_BlobAccess->IsBlobExists();
     m_BlobAccess->Finalize();
     if (m_BlobAccess->HasError()) {
         delete write_event;
@@ -2623,13 +2633,6 @@ CNCMessageHandler::x_FinishReadingBlob(void)
     if (!x_IsFlagSet(fCopyLogEvent)) {
         if (m_BlobAccess->GetNewBlobSize() < CNCDistributionConf::GetMaxBlobSizeSync()) {
             m_OrigRecNo = CNCSyncLog::AddEvent(m_BlobSlot, write_event);
-// if blob was just created, there is no need to 'mirror-update'
-            if (!new_blob && 
-                (m_Flags & eClientBlobWrite) == eClientBlobWrite && 
-                CNCDistributionConf::GetBlobUpdateHotline()) {
-                CNCPeerControl::MirrorUpdate(m_BlobKey, m_BlobSlot,
-                                             m_OrigRecNo, write_event->orig_time, m_BlobAccess);
-            }
             CNCPeerControl::MirrorWrite(m_BlobKey, m_BlobSlot,
                                         m_OrigRecNo, m_BlobAccess->GetNewBlobSize());
             // If fCopyLogEvent is not set then this blob comes from client and
