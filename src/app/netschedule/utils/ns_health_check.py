@@ -309,26 +309,34 @@ def main():
 
     except socket.timeout, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 1, "communication timeout" ) )
+                log( BASE_SUPPRESS_CODE + 1,
+                     "(service " + serviceName + ") communication timeout" ) )
     except UnexpectedNSResponse, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 4, str( exc ) ) )
+                log( BASE_SUPPRESS_CODE + 4,
+                     "(service " + serviceName + ") " + str( exc ) ) )
     except NSError, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 4, str( exc ) ) )
+                log( BASE_SUPPRESS_CODE + 4,
+                     "(service " + serviceName + ") " + str( exc ) ) )
     except NSShuttingDown, exc:
-        return log( BASE_SUPPRESS_CODE, str( exc ) )
+        return log( BASE_SUPPRESS_CODE,
+                    "(service " + serviceName + ") " + str( exc ) )
     except NSAccessDenied, exc:
-        return log( BASE_NO_ACTION_ALERT_CODE + 4, str( exc ) )
+        return log( BASE_NO_ACTION_ALERT_CODE + 4,
+                    "(service " + serviceName + ") " + str( exc ) )
     except NSStaticCheckError, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 5, str( exc ) ) )
+                log( BASE_SUPPRESS_CODE + 5,
+                     "(service " + serviceName + ") " + str( exc ) ) )
     except Exception, exc:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 2, str( exc ) ) )
+                log( BASE_SUPPRESS_CODE + 2,
+                     "(service " + serviceName + ") " + str( exc ) ) )
     except:
         return pickPenaltyValue( lastCheckExitCode,
-                log( BASE_SUPPRESS_CODE + 3, "Unknown check script error" ) )
+                log( BASE_SUPPRESS_CODE + 3,
+                     "(service " + serviceName + ") Unknown check script error" ) )
 
     # Everything is fine
     # Calculate the value basing on the measured
