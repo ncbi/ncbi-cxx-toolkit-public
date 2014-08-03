@@ -498,7 +498,7 @@ gui_print needs gui_opengl
 gui_utils needs tables
 gui_utils needs xconnect
 gui_utils needs xutil
-guide_tree needs biotree
+guide_tree needs phytree_format
 guide_tree needs xconnserv
 gumbelparams needs tables
 gumbelparams needs xutil
