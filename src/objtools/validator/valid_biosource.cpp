@@ -1236,7 +1236,7 @@ void CValidError_imp::ValidateSubSource
 
     case CSubSource::eSubtype_fwd_primer_seq:
         {
-            char bad_ch;
+            char bad_ch = 0;
             if (!subsrc.IsSetName() || !CPCRPrimerSeq::IsValid(subsrc.GetName(), bad_ch)) {
                 x_ReportPCRSeqProblem("forward", bad_ch, obj, ctx);
             }
@@ -1245,7 +1245,7 @@ void CValidError_imp::ValidateSubSource
 
     case CSubSource::eSubtype_rev_primer_seq:
         {
-            char bad_ch;
+            char bad_ch = 0;
             if (!subsrc.IsSetName() || !CPCRPrimerSeq::IsValid(subsrc.GetName(), bad_ch)) {
                 x_ReportPCRSeqProblem("reverse", bad_ch, obj, ctx);
             }
