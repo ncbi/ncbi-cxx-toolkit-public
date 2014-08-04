@@ -87,13 +87,15 @@ bool CCit_sub::GetLabelV2(string* label, TLabelFlags flags) const
         GetAuthors().GetAffil().GetLabel(&affil, flags, eLabel_V2);
         if ((flags & fLabel_FlatEMBL) != 0
             &&  !NStr::StartsWith(affil, kToINSD)) {
-            *label += kToINSD + '\n';
+            *label += kToINSD;
+            *label += '\n';
         } else {
             *label += ' ';
         }
         *label += affil;
     } else if ((flags & fLabel_FlatEMBL) != 0) {
-        *label += kToINSD + '\n';
+        *label += kToINSD;
+        *label += '\n';
     }
 
     return true;
