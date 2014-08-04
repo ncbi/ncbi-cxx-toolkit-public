@@ -285,14 +285,12 @@ inline void _Construct(_T1* __p) {
 namespace std {
 
 template <class _Tp>
-#ifdef _STLP_DEBUG_UNINITIALIZED
 inline void _Destroy(_Tp* __pointer) {
+    __pointer->~_Tp();
+#ifdef _STLP_DEBUG_UNINITIALIZED
     memset((char*)__pointer, _STLP_SHRED_BYTE, sizeof(_Tp));
-}
-#else
-inline void _Destroy(_Tp* /*__pointer */) {
-}
 #endif /* if_STLP_DEBUG_UNINITIALIZED */
+}
 
 } /* namespace std */
 
