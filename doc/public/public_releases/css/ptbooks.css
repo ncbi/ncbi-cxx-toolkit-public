@@ -98,7 +98,9 @@ div#HTDisplay p a {
     color:#14376C;
 }
 
-
+div#tkb_internal, div#tkb_public {     /* this will hide both public and internal side bars*/
+  display:none;
+}
 
 /*************************************************
 * show and hide messages and Turn on/off links
