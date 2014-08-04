@@ -66,7 +66,7 @@ public:
 
     CSequnceProxy (CObject& obj)
     : s(dynamic_cast< CSequnceHelper<T>&>(obj))
-    , offset( NULL )
+    , offset(0)
     , value(s.getItem(offset))
     {
     }
