@@ -22822,23 +22822,24 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
+#include <emmintrin.h>
 int
 main ()
 {
-
+double v __attribute__((__vector_size__(16)));
+	   __builtin_ia32_shufpd(v, v, 1);
   ;
   return 0;
 }
 _ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
   *) ac_try_echo=$ac_try;;
 esac
 eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
+  (eval "$ac_link") 2>conftest.er1
   ac_status=$?
   grep -v '^ *+' conftest.er1 >conftest.err
   rm -f conftest.er1
@@ -22855,7 +22856,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
+	 { ac_try='test -s conftest$ac_exeext'
   { (case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
   *) ac_try_echo=$ac_try;;
@@ -22873,7 +22874,8 @@ sed 's/^/| /' conftest.$ac_ext >&5
 	ncbi_cv_cc_sse4_1=no
 fi
 
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
 fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_cc_sse4_1" >&5
 echo "${ECHO_T}$ncbi_cv_cc_sse4_1" >&6; }
@@ -22890,11 +22892,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
+#include <wmmintrin.h>
 int
 main ()
 {
-
+long long v __attribute__((__vector_size__(16)));
+	   __builtin_ia32_aesdec128(v, v);
   ;
   return 0;
 }
@@ -22966,7 +22969,7 @@ else
    SSE4_1_FLAG=
 fi
 
-if test $ncbi_cv_cc_aes = yes; then
+if test $ncbi_cv_cc_sse4_1 = yes -a $ncbi_cv_cc_aes = yes; then
    AES_FLAG=-maes
 else
    AES_FLAG=

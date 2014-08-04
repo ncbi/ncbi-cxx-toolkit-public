@@ -3694,12 +3694,16 @@ AC_CACHE_CHECK([whether $CC supports -funsafe-math-optimizations],
 
 AC_CACHE_CHECK([whether $CC supports -msse4.1], ncbi_cv_cc_sse4_1,
    [CFLAGS="$orig_CFLAGS -msse4.1"
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <emmintrin.h>],
+          [double v __attribute__((__vector_size__(16)));
+	   __builtin_ia32_shufpd(v, v, 1);])],
        [ncbi_cv_cc_sse4_1=yes], [ncbi_cv_cc_sse4_1=no])])
 
 AC_CACHE_CHECK([whether $CC supports -maes], ncbi_cv_cc_aes,
    [CFLAGS="$orig_CFLAGS -maes"
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <wmmintrin.h>],
+          [long long v __attribute__((__vector_size__(16)));
+	   __builtin_ia32_aesdec128(v, v);])],
        [ncbi_cv_cc_aes=yes], [ncbi_cv_cc_aes=no])])
 
 CFLAGS=$orig_CFLAGS
@@ -3717,7 +3721,7 @@ else
    SSE4_1_FLAG=
 fi
 
-if test $ncbi_cv_cc_aes = yes; then
+if test $ncbi_cv_cc_sse4_1 = yes -a $ncbi_cv_cc_aes = yes; then
    AES_FLAG=-maes
 else
    AES_FLAG=
