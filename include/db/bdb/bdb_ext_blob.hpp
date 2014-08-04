@@ -719,7 +719,7 @@ CBDB_ExtBlobStore<TBV>::x_ReadCache(unsigned               blob_id,
                 buf.resize_mem((size_t)size);
                 if (m_Compressor.get()) {
                     // check logicall correctness of the decompressed container
-                    Uint8 sz = m_CompressBuffer.size();
+                    _DEBUG_ARG(Uint8 sz = m_CompressBuffer.size();)
                     _ASSERT(offset < sz);
                     _ASSERT(offset + size <= sz);
                     ::memcpy(buf.data(),
