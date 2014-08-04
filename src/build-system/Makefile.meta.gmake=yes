@@ -7,10 +7,15 @@ endif
 
 ifneq "" "$(findstring :,$(LD_LIBRARY_PATH))"
   collect_libs = $(top_srcdir)/scripts/common/impl/collect_outside_libs.sh
-  ifeq "$(build_root)" ""
-    build_root = $(CURDIR)/..
+  ifneq "" "$(import_root)"
+    outside_lib_root = $(import_root)/../lib/outside
+  else
+    ifeq "" "$(build_root)"
+      build_root = $(CURDIR)/..
+    endif
+    outside_lib_root = $(build_root)/lib/outside
   endif
-  new_llp := $(shell $(collect_libs) $(build_root)/lib/outside)
+  new_llp := $(shell $(collect_libs) $(outside_lib_root))
   ifneq "" "$(new_llp)"
     LD_LIBRARY_PATH = $(new_llp)
     export LD_LIBRARY_PATH
