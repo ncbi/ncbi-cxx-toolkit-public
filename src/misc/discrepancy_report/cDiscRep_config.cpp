@@ -1528,6 +1528,8 @@ static const s_test_property test_list[] = {
      "Sequence contains unusual nucleotides"},
 
 // tests_on_Bioseq_CFeat
+   {"NO_PRODUCT_STRING", 
+     fGenomes | fDiscrepancy, "Products have string 'no product string in file'"},
    {"SUSPECT_PHRASES", 
      fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Suspect Phrases"},
    {"DISC_SUSPECT_RRNA_PRODUCTS", 
@@ -2199,6 +2201,11 @@ void CRepConfig :: GetTestList()
    if ( thisTest.tests_run.find("TEST_UNUSUAL_NT") != end_it) {
        thisGrp.tests_on_Bioseq_na.push_back(
            CRef <CTestAndRepData>(new CBioseq_TEST_UNUSUAL_NT));
+        if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("NO_PRODUCT_STRING") != end_it) {
+        thisGrp.tests_on_Bioseq_CFeat.push_back(
+            CRef <CTestAndRepData>(new CBioseq_NO_PRODUCT_STRING));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("SUSPECT_PHRASES") != end_it) {

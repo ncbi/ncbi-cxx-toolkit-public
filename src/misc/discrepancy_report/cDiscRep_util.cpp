@@ -1424,7 +1424,6 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
       arr = NStr::Tokenize(seq_loc_str, " ", arr);
       seq_loc_str = NStr::Join(arr, "");
 
-      if (thisInfo.output_config.xml) location.clear();
       if (!label.empty()) label += spaces ;
       if (!context_label.empty()) context_label +=  spaces;
       if (!location.empty() && !locus_tag.empty()) location += spaces;
