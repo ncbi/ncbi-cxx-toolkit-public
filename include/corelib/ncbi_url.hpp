@@ -337,7 +337,7 @@ public:
     ///
     /// @param url
     ///   String to parse as URL:
-    ///   Generic: [scheme://[user[:password]@]]host[:port][/path][?args]
+    ///   Generic: [scheme://[[user]:[password]@]]host[:port][/path][?args]
     ///   Special: scheme:[path]
     ///   The leading '/', if any, is included in path value.
     /// @param encoder
