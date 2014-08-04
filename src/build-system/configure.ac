@@ -3701,9 +3701,12 @@ AC_CACHE_CHECK([whether $CC supports -msse4.1], ncbi_cv_cc_sse4_1,
 
 AC_CACHE_CHECK([whether $CC supports -maes], ncbi_cv_cc_aes,
    [CFLAGS="$orig_CFLAGS -maes"
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <wmmintrin.h>],
-          [long long v __attribute__((__vector_size__(16)));
-	   __builtin_ia32_aesdec128(v, v);])],
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+          [#include <wmmintrin.h>
+           typedef long long TAESVec __attribute__((__vector_size__(16)));
+           TAESVec f(TAESVec v, TAESVec w) {
+              return __builtin_ia32_aesdec128(v, w);
+           }], [])],
        [ncbi_cv_cc_aes=yes], [ncbi_cv_cc_aes=no])])
 
 CFLAGS=$orig_CFLAGS
