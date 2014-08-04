@@ -126,8 +126,9 @@ namespace NCBI_NS_NCBI { /* the fake one */ }
 #endif
 
 #if !defined(NCBI_EAT_SEMICOLON)
+namespace DummyNS { class CDummyClassToEatSemicolon; }
 #  define NCBI_EAT_SEMICOLON(UniqueName)                \
-    extern int dummy_function_to_eat_semicolon()
+    using ::DummyNS::CDummyClassToEatSemicolon
 #endif
 
 #define BEGIN_NAMESPACE(ns) namespace ns { NCBI_EAT_SEMICOLON(ns)
