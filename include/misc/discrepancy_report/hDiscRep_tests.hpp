@@ -3358,8 +3358,18 @@ BEGIN_SCOPE(DiscRepNmSpc)
     private:
       bool x_CodeBreakIsStopCodon(const list <CRef <CCode_break> >& code_brk);
       bool x_IsBGPipe(const CSeqdesc* sdp); 
-      bool x_HasFieldStrNocase(const CUser_object& uobj, const string& field, 
-                                                                         const string& str);
+      bool x_HasFieldStrNocase(const CUser_object& uobj, 
+                                         const string& field, const string& str);
+  };
+
+  class CBioseq_NO_PRODUCT_STRING : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_NO_PRODUCT_STRING () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem> c_item);
+      virtual string GetName() const {return string("NO_PRODUCT_STRING"); }
   };
 
   class CBioseq_SUSPECT_PHRASES : public CBioseqTestAndRepData 
