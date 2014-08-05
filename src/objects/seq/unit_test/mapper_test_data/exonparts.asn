@@ -65,6 +65,7 @@ Seq-align ::= {
     product-id gi 3,
     genomic-id gi 5,
     product-strand plus,
+    genomic-strand plus,
     product-type transcript,
     exons {
       {
@@ -72,7 +73,6 @@ Seq-align ::= {
         product-end nucpos 479,
         genomic-start 1200,
         genomic-end 1489,
-        genomic-strand plus,
         parts {
           match 100,
           genomic-ins 30,
@@ -86,7 +86,6 @@ Seq-align ::= {
         product-end nucpos 769,
         genomic-start 1490,
         genomic-end 1789,
-        genomic-strand plus,
         parts {
           match 90,
           genomic-ins 50,
@@ -108,6 +107,7 @@ Seq-align ::= {
     product-id gi 3,
     genomic-id gi 5,
     product-strand plus,
+    genomic-strand minus,
     product-type transcript,
     exons {
       {
@@ -115,7 +115,6 @@ Seq-align ::= {
         product-end nucpos 479,
         genomic-start 1511,
         genomic-end 1800,
-        genomic-strand minus,
         parts {
           match 100,
           genomic-ins 30,
@@ -129,7 +128,6 @@ Seq-align ::= {
         product-end nucpos 769,
         genomic-start 1211,
         genomic-end 1510,
-        genomic-strand minus,
         parts {
           match 90,
           genomic-ins 50,
@@ -185,6 +183,7 @@ Seq-align ::= {
   segs spliced {
     product-id gi 5,
     genomic-id gi 3,
+    product-strand plus,
     genomic-strand plus,
     product-type transcript,
     exons {
@@ -193,7 +192,6 @@ Seq-align ::= {
         product-end nucpos 1319,
         genomic-start 200,
         genomic-end 299,
-        product-strand plus,
         parts {
           match 100
         },
@@ -204,7 +202,6 @@ Seq-align ::= {
         product-end nucpos 1609,
         genomic-start 330,
         genomic-end 579,
-        product-strand plus,
         parts {
           match 110,
           mismatch 50,
@@ -218,7 +215,6 @@ Seq-align ::= {
         product-end nucpos 1769,
         genomic-start 630,
         genomic-end 789,
-        product-strand plus,
         parts {
           match 100,
           mismatch 60
@@ -237,6 +233,7 @@ Seq-align ::= {
   segs spliced {
     product-id gi 5,
     genomic-id gi 3,
+    product-strand minus,
     genomic-strand plus,
     product-type transcript,
     exons {
@@ -245,7 +242,6 @@ Seq-align ::= {
         product-end nucpos 1780,
         genomic-start 200,
         genomic-end 299,
-        product-strand minus,
         parts {
           match 100
         },
@@ -256,7 +252,6 @@ Seq-align ::= {
         product-end nucpos 1680,
         genomic-start 330,
         genomic-end 579,
-        product-strand minus,
         parts {
           match 110,
           mismatch 50,
@@ -270,7 +265,6 @@ Seq-align ::= {
         product-end nucpos 1390,
         genomic-start 630,
         genomic-end 789,
-        product-strand minus,
         parts {
           match 100,
           mismatch 60
@@ -325,6 +319,7 @@ Seq-align ::= {
     product-id gi 3,
     genomic-id gi 5,
     product-strand plus,
+    genomic-strand minus,
     product-type transcript,
     exons {
       {
@@ -332,7 +327,6 @@ Seq-align ::= {
         product-end nucpos 479,
         genomic-start 1500,
         genomic-end 1789,
-        genomic-strand minus,
         parts {
           match 100,
           genomic-ins 30,
@@ -346,7 +340,6 @@ Seq-align ::= {
         product-end nucpos 769,
         genomic-start 1200,
         genomic-end 1499,
-        genomic-strand minus,
         parts {
           match 90,
           genomic-ins 50,
@@ -368,6 +361,7 @@ Seq-align ::= {
     product-id gi 3,
     genomic-id gi 5,
     product-strand plus,
+    genomic-strand plus,
     product-type transcript,
     exons {
       {
@@ -375,7 +369,6 @@ Seq-align ::= {
         product-end nucpos 479,
         genomic-start 1211,
         genomic-end 1500,
-        genomic-strand plus,
         parts {
           match 100,
           genomic-ins 30,
@@ -389,7 +382,6 @@ Seq-align ::= {
         product-end nucpos 769,
         genomic-start 1501,
         genomic-end 1800,
-        genomic-strand plus,
         parts {
           match 90,
           genomic-ins 50,
@@ -445,6 +437,7 @@ Seq-align ::= {
   segs spliced {
     product-id gi 5,
     genomic-id gi 3,
+    product-strand plus,
     genomic-strand minus,
     product-type transcript,
     exons {
@@ -453,7 +446,6 @@ Seq-align ::= {
         product-end nucpos 1319,
         genomic-start 690,
         genomic-end 789,
-        product-strand plus,
         parts {
           match 100
         },
@@ -464,7 +456,6 @@ Seq-align ::= {
         product-end nucpos 1609,
         genomic-start 410,
         genomic-end 659,
-        product-strand plus,
         parts {
           match 110,
           mismatch 50,
@@ -478,7 +469,6 @@ Seq-align ::= {
         product-end nucpos 1769,
         genomic-start 200,
         genomic-end 359,
-        product-strand plus,
         parts {
           match 100,
           mismatch 60
@@ -497,6 +487,7 @@ Seq-align ::= {
   segs spliced {
     product-id gi 5,
     genomic-id gi 3,
+    product-strand minus,
     genomic-strand minus,
     product-type transcript,
     exons {
@@ -505,7 +496,6 @@ Seq-align ::= {
         product-end nucpos 1780,
         genomic-start 690,
         genomic-end 789,
-        product-strand minus,
         parts {
           match 100
         },
@@ -516,7 +506,6 @@ Seq-align ::= {
         product-end nucpos 1680,
         genomic-start 410,
         genomic-end 659,
-        product-strand minus,
         parts {
           match 110,
           mismatch 50,
@@ -530,7 +519,6 @@ Seq-align ::= {
         product-end nucpos 1390,
         genomic-start 200,
         genomic-end 359,
-        product-strand minus,
         parts {
           match 100,
           mismatch 60
@@ -585,6 +573,7 @@ Seq-align ::= {
     product-id gi 3,
     genomic-id gi 5,
     product-strand minus,
+    genomic-strand plus,
     product-type transcript,
     exons {
       {
@@ -592,7 +581,6 @@ Seq-align ::= {
         product-end nucpos 759,
         genomic-start 1200,
         genomic-end 1489,
-        genomic-strand plus,
         parts {
           match 100,
           genomic-ins 30,
@@ -606,7 +594,6 @@ Seq-align ::= {
         product-end nucpos 459,
         genomic-start 1490,
         genomic-end 1789,
-        genomic-strand plus,
         parts {
           match 90,
           genomic-ins 50,
@@ -628,6 +615,7 @@ Seq-align ::= {
     product-id gi 3,
     genomic-id gi 5,
     product-strand minus,
+    genomic-strand minus,
     product-type transcript,
     exons {
       {
@@ -635,7 +623,6 @@ Seq-align ::= {
         product-end nucpos 759,
         genomic-start 1511,
         genomic-end 1800,
-        genomic-strand minus,
         parts {
           match 100,
           genomic-ins 30,
@@ -649,7 +636,6 @@ Seq-align ::= {
         product-end nucpos 459,
         genomic-start 1211,
         genomic-end 1510,
-        genomic-strand minus,
         parts {
           match 90,
           genomic-ins 50,
@@ -705,6 +691,7 @@ Seq-align ::= {
   segs spliced {
     product-id gi 5,
     genomic-id gi 3,
+    product-strand minus,
     genomic-strand plus,
     product-type transcript,
     exons {
@@ -713,7 +700,6 @@ Seq-align ::= {
         product-end nucpos 1759,
         genomic-start 200,
         genomic-end 299,
-        product-strand minus,
         parts {
           match 100
         },
@@ -724,7 +710,6 @@ Seq-align ::= {
         product-end nucpos 1659,
         genomic-start 330,
         genomic-end 579,
-        product-strand minus,
         parts {
           match 110,
           mismatch 50,
@@ -738,7 +723,6 @@ Seq-align ::= {
         product-end nucpos 1369,
         genomic-start 630,
         genomic-end 789,
-        product-strand minus,
         parts {
           match 100,
           mismatch 60
@@ -757,6 +741,7 @@ Seq-align ::= {
   segs spliced {
     product-id gi 5,
     genomic-id gi 3,
+    product-strand plus,
     genomic-strand plus,
     product-type transcript,
     exons {
@@ -765,7 +750,6 @@ Seq-align ::= {
         product-end nucpos 1340,
         genomic-start 200,
         genomic-end 299,
-        product-strand plus,
         parts {
           match 100
         },
@@ -776,7 +760,6 @@ Seq-align ::= {
         product-end nucpos 1630,
         genomic-start 330,
         genomic-end 579,
-        product-strand plus,
         parts {
           match 110,
           mismatch 50,
@@ -790,7 +773,773 @@ Seq-align ::= {
         product-end nucpos 1790,
         genomic-start 630,
         genomic-end 789,
+        parts {
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+
+-- =======================================
+-- ! Repeat all tests with local strands !
+-- =======================================
+
+-- Both rows on plus, map genomic to plus: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 4,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 200,
+        product-end nucpos 779,
+        genomic-start 200,
+        genomic-end 789,
         product-strand plus,
+        genomic-strand plus,
+        parts {
+          product-ins 20,
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60,
+          product-ins 10
+        }
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Both rows on plus, map genomic to plus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 5,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 220,
+        product-end nucpos 479,
+        genomic-start 1200,
+        genomic-end 1489,
+        parts {
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 520,
+        product-end nucpos 769,
+        genomic-start 1490,
+        genomic-end 1789,
+        parts {
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Both rows on plus, map genomic to minus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 5,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 220,
+        product-end nucpos 479,
+        genomic-start 1511,
+        genomic-end 1800,
+        parts {
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 520,
+        product-end nucpos 769,
+        genomic-start 1211,
+        genomic-end 1510,
+        parts {
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Both rows on plus, map product to plus: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 200,
+        product-end nucpos 779,
+        genomic-start 200,
+        genomic-end 789,
+        product-strand plus,
+        genomic-strand plus,
+        parts {
+          product-ins 20,
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60,
+          product-ins 10
+        }
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Both rows on plus, map product to plus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1220,
+        product-end nucpos 1319,
+        genomic-start 200,
+        genomic-end 299,
+        parts {
+          match 100
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1320,
+        product-end nucpos 1609,
+        genomic-start 330,
+        genomic-end 579,
+        parts {
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1610,
+        product-end nucpos 1769,
+        genomic-start 630,
+        genomic-end 789,
+        parts {
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Both rows on plus, map product to minus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand minus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1681,
+        product-end nucpos 1780,
+        genomic-start 200,
+        genomic-end 299,
+        parts {
+          match 100
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1391,
+        product-end nucpos 1680,
+        genomic-start 330,
+        genomic-end 579,
+        parts {
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1231,
+        product-end nucpos 1390,
+        genomic-start 630,
+        genomic-end 789,
+        parts {
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Genomic on minus, map genomic to minus: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 4,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 200,
+        product-end nucpos 779,
+        genomic-start 200,
+        genomic-end 789,
+        product-strand plus,
+        genomic-strand minus,
+        parts {
+          product-ins 20,
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60,
+          product-ins 10
+        }
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Genomic on minus, map genomic to minus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 5,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 220,
+        product-end nucpos 479,
+        genomic-start 1500,
+        genomic-end 1789,
+        parts {
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 520,
+        product-end nucpos 769,
+        genomic-start 1200,
+        genomic-end 1499,
+        parts {
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Genomic on minus, map genomic to plus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 5,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 220,
+        product-end nucpos 479,
+        genomic-start 1211,
+        genomic-end 1500,
+        parts {
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 520,
+        product-end nucpos 769,
+        genomic-start 1501,
+        genomic-end 1800,
+        parts {
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Genomic on minus, map product to plus: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 200,
+        product-end nucpos 779,
+        genomic-start 200,
+        genomic-end 789,
+        product-strand plus,
+        genomic-strand minus,
+        parts {
+          product-ins 20,
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60,
+          product-ins 10
+        }
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Genomic on minus, map product to plus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1220,
+        product-end nucpos 1319,
+        genomic-start 690,
+        genomic-end 789,
+        parts {
+          match 100
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1320,
+        product-end nucpos 1609,
+        genomic-start 410,
+        genomic-end 659,
+        parts {
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1610,
+        product-end nucpos 1769,
+        genomic-start 200,
+        genomic-end 359,
+        parts {
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Genomic on minus, map product to minus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand minus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1681,
+        product-end nucpos 1780,
+        genomic-start 690,
+        genomic-end 789,
+        parts {
+          match 100
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1391,
+        product-end nucpos 1680,
+        genomic-start 410,
+        genomic-end 659,
+        parts {
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1231,
+        product-end nucpos 1390,
+        genomic-start 200,
+        genomic-end 359,
+        parts {
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Product on minus, map genomic to plus: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 4,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 200,
+        product-end nucpos 779,
+        genomic-start 200,
+        genomic-end 789,
+        product-strand minus,
+        genomic-strand plus,
+        parts {
+          product-ins 20,
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60,
+          product-ins 10
+        }
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Product on minus, map genomic to plus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 5,
+    product-strand minus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 500,
+        product-end nucpos 759,
+        genomic-start 1200,
+        genomic-end 1489,
+        parts {
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 210,
+        product-end nucpos 459,
+        genomic-start 1490,
+        genomic-end 1789,
+        parts {
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Product on minus, map genomic to minus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 3,
+    genomic-id gi 5,
+    product-strand minus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 500,
+        product-end nucpos 759,
+        genomic-start 1511,
+        genomic-end 1800,
+        parts {
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 210,
+        product-end nucpos 459,
+        genomic-start 1211,
+        genomic-end 1510,
+        parts {
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Product on minus, map product to minus: original
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 4,
+    genomic-id gi 3,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 200,
+        product-end nucpos 779,
+        genomic-start 200,
+        genomic-end 789,
+        product-strand minus,
+        genomic-strand plus,
+        parts {
+          product-ins 20,
+          match 100,
+          genomic-ins 30,
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90,
+          genomic-ins 50,
+          match 100,
+          mismatch 60,
+          product-ins 10
+        }
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Product on minus, map product to minus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand minus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1660,
+        product-end nucpos 1759,
+        genomic-start 200,
+        genomic-end 299,
+        parts {
+          match 100
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1370,
+        product-end nucpos 1659,
+        genomic-start 330,
+        genomic-end 579,
+        parts {
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1210,
+        product-end nucpos 1369,
+        genomic-start 630,
+        genomic-end 789,
+        parts {
+          match 100,
+          mismatch 60
+        },
+        partial TRUE
+      }
+    },
+    product-length 580
+  }
+}
+
+-- Product on minus, map product to plus: expected
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 5,
+    genomic-id gi 3,
+    product-strand plus,
+    genomic-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 1241,
+        product-end nucpos 1340,
+        genomic-start 200,
+        genomic-end 299,
+        parts {
+          match 100
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1341,
+        product-end nucpos 1630,
+        genomic-start 330,
+        genomic-end 579,
+        parts {
+          match 110,
+          mismatch 50,
+          product-ins 40,
+          match 90
+        },
+        partial TRUE
+      },
+      {
+        product-start nucpos 1631,
+        product-end nucpos 1790,
+        genomic-start 630,
+        genomic-end 789,
         parts {
           match 100,
           mismatch 60

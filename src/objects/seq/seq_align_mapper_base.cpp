@@ -743,7 +743,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                 part_gen_start = -1;
             }
             else {
-                if ( !IsReverse(gen_strand) ) {
+                if ( !IsReverse(ex_gen_strand) ) {
                     part_gen_start = gen_start;
                     gen_start += seg_len;
                 }
@@ -762,7 +762,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                 part_prod_start = -1;
             }
             else {
-                if ( !IsReverse(prod_strand) ) {
+                if ( !IsReverse(ex_prod_strand) ) {
                     part_prod_start = prod_start;
                     prod_start += seg_len;
                 }
@@ -1564,7 +1564,7 @@ inline bool IsExonGap(CSpliced_exon_chunk::E_Choice chunk_type)
 
 
 // Create spliced-seg exon.
-void CSeq_align_Mapper_Base::
+bool CSeq_align_Mapper_Base::
 x_GetDstExon(CSpliced_seg&              spliced,
              TSegments::const_iterator& seg,
              CSeq_id_Handle&            gen_id,
@@ -1892,7 +1892,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 last_exon.ResetDonor_after_exon();
             }
         }
-        return;
+        return false;
     }
 
     if ( IsReverse(gen_strand) ) {
@@ -1959,6 +1959,7 @@ x_GetDstExon(CSpliced_seg&              spliced,
     }
     // Add the new exon to the spliced-seg.
     spliced.SetExons().push_back(exon);
+    return true;
 }
 
 
@@ -1991,45 +1992,47 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
             CSeq_id_Handle ex_prod_id;
             ENa_strand ex_gen_strand = eNa_strand_unknown;
             ENa_strand ex_prod_strand = eNa_strand_unknown;
-            (*it)->x_GetDstExon(spliced, seg, ex_gen_id, ex_prod_id,
+            bool added_exon = (*it)->x_GetDstExon(spliced, seg, ex_gen_id, ex_prod_id,
                 ex_gen_strand, ex_prod_strand, last_exon_partial,
                 last_gen_id, last_prod_id);
             partial = partial || last_exon_partial;
-            // Check if all exons have the same ids in genomic and product
-            // rows.
-            if (ex_gen_id) {
-                last_gen_id = ex_gen_id;
-                if ( !gen_id ) {
-                    gen_id = ex_gen_id;
+            if (added_exon) {
+                // Check if all exons have the same ids in genomic and product
+                // rows.
+                if (ex_gen_id) {
+                    last_gen_id = ex_gen_id;
+                    if ( !gen_id ) {
+                        gen_id = ex_gen_id;
+                    }
+                    else {
+                        single_gen_id &= gen_id == ex_gen_id;
+                    }
+                }
+                if (ex_prod_id) {
+                    if ( !prod_id ) {
+                        prod_id = ex_prod_id;
+                    }
+                    else {
+                        single_prod_id &= prod_id == ex_prod_id;
+                    }
+                }
+                // Check if all exons have the same strands.
+                if (ex_gen_strand != eNa_strand_unknown) {
+                    single_gen_str &= (gen_strand == eNa_strand_unknown) ||
+                        (gen_strand == ex_gen_strand);
+                    gen_strand = ex_gen_strand;
                 }
                 else {
-                    single_gen_id &= gen_id == ex_gen_id;
+                    single_gen_str &= gen_strand == eNa_strand_unknown;
                 }
-            }
-            if (ex_prod_id) {
-                if ( !prod_id ) {
-                    prod_id = ex_prod_id;
+                if (ex_prod_strand != eNa_strand_unknown) {
+                    single_prod_str &= (prod_strand == eNa_strand_unknown) ||
+                        (prod_strand == ex_prod_strand);
+                    prod_strand = ex_prod_strand;
                 }
                 else {
-                    single_prod_id &= prod_id == ex_prod_id;
+                    single_prod_str &= prod_strand == eNa_strand_unknown;
                 }
-            }
-            // Check if all exons have the same strands.
-            if (ex_gen_strand != eNa_strand_unknown) {
-                single_gen_str &= (gen_strand == eNa_strand_unknown) ||
-                    (gen_strand == ex_gen_strand);
-                gen_strand = ex_gen_strand;
-            }
-            else {
-                single_gen_str &= gen_strand == eNa_strand_unknown;
-            }
-            if (ex_prod_strand != eNa_strand_unknown) {
-                single_prod_str &= (prod_strand == eNa_strand_unknown) ||
-                    (prod_strand == ex_prod_strand);
-                prod_strand = ex_prod_strand;
-            }
-            else {
-                single_prod_str &= prod_strand == eNa_strand_unknown;
             }
         }
     }

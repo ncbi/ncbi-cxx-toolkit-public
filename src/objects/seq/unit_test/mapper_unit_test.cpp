@@ -982,6 +982,46 @@ void TestMapper_ExonPartsOrder()
     TestMappingSeq_align(mapper_plus, orig, in);
     cout << "  Product on minus, map product to plus" << endl;
     TestMappingSeq_align(mapper_minus, orig, in);
+
+    // CXX-5105 - if there's no global strand, per-exon one should be used.
+    // Run the same tests with local strand only.
+    cout << "Testing sort order of mapped exons, local strands" << endl;
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Both rows on plus, map genomic to plus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Both rows on plus, map genomic to minus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Both rows on plus, map product to plus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Both rows on plus, map product to minus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Genomic on minus, map genomic to minus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Genomic on minus, map genomic to plus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Genomic on minus, map product to plus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Genomic on minus, map product to minus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Product on minus, map genomic to plus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Product on minus, map genomic to minus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
+
+    in >> MSerial_AsnText >> orig;
+    cout << "  Product on minus, map product to minus" << endl;
+    TestMappingSeq_align(mapper_plus, orig, in);
+    cout << "  Product on minus, map product to plus" << endl;
+    TestMappingSeq_align(mapper_minus, orig, in);
 }
 
 

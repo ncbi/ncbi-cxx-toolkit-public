@@ -250,7 +250,8 @@ private:
     // 'partial' indicates if the original exon was truncated.
     // 'last_gen_id' and 'last_prod_id' provide the ids found in previous
     // exons (if any).
-    void x_GetDstExon(CSpliced_seg&              spliced,
+    // Return true if an exon was added to the spliced-seg, false otherwise.
+    bool x_GetDstExon(CSpliced_seg&              spliced,
                       TSegments::const_iterator& seg,
                       CSeq_id_Handle&            gen_id,
                       CSeq_id_Handle&            prod_id,
