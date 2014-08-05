@@ -493,6 +493,7 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
 string CNSClient::Print(const string &               node_name,
                         const CQueue *               queue,
                         const CNSAffinityRegistry &  aff_registry,
+                        const set< string > &        gc_clients,
                         bool                         verbose) const
 {
     string      buffer;
@@ -625,6 +626,11 @@ string CNSClient::Print(const string &               node_name,
               "OK:  DATA: '" + NStr::PrintableString(m_ClientData) + "'\n"
               "OK:  DATA VERSION: " +
                     NStr::NumericToString(m_ClientDataVersion) + "\n";
+
+    if (gc_clients.find(node_name) == gc_clients.end())
+        buffer += "OK:  WAS GARBAGE COLLECTED: FALSE\n";
+    else
+        buffer += "OK:  WAS GARBAGE COLLECTED: TRUE\n";
 
     return buffer;
 }

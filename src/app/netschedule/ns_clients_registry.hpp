@@ -130,11 +130,24 @@ class CNSClientsRegistry
         bool  IsPreferredByAny(unsigned int  aff_id) const;
         string  GetNodeName(unsigned int  id) const;
         bool  GetAffinityReset(const CNSClientId &   client) const;
+        void  StaleWNs(const CNSPreciseTime &  current_time,
+                       const CNSPreciseTime &  timeout,
+                       CNSAffinityRegistry &   aff_registry,
+                       CNSNotificationList &   notif_registry,
+                       bool                    is_log);
         void  Purge(const CNSPreciseTime &  current_time,
-                    const CNSPreciseTime &  timeout,
-                    CNSAffinityRegistry &   aff_registry,
-                    CNSNotificationList &   notif_registry,
+                    const CNSPreciseTime &  timeout_worker_node,
+                    unsigned int            min_worker_nodes,
+                    const CNSPreciseTime &  timeout_admin,
+                    unsigned int            min_admins,
+                    const CNSPreciseTime &  timeout_submitter,
+                    unsigned int            min_submitters,
+                    const CNSPreciseTime &  timeout_reader,
+                    unsigned int            min_readers,
+                    const CNSPreciseTime &  timeout_unknown,
+                    unsigned int            min_unknowns,
                     bool                    is_log);
+        bool  WasGarbageCollected(const CNSClientId &  client) const;
         void SetBlacklistTimeout(const CNSPreciseTime &  blacklist_timeout)
         { m_BlacklistTimeout = blacklist_timeout; }
         void RegisterSocketWriteError(const CNSClientId &  client);
@@ -149,6 +162,7 @@ class CNSClientsRegistry
                                                 // netschedule knows about
                                                 // ClientNode -> struct {}
                                                 // e.g. service10:9300 - > {}
+        set< string >               m_GCClients;// Garbage collected clients
         mutable CMutex              m_Lock;     // Lock for the map
 
         // Client IDs support
@@ -173,6 +187,33 @@ class CNSClientsRegistry
                                bool                         verbose) const;
 
         void  x_BuildWNAffinities(void);
+
+        // GC methods
+        void  x_PurgeWNs(const CNSPreciseTime &  current_time,
+                         const CNSPreciseTime &  timeout_worker_node,
+                         unsigned int            min_worker_nodes,
+                         bool                    is_log);
+        void  x_PurgeAdmins(const CNSPreciseTime &  current_time,
+                            const CNSPreciseTime &  timeout_admin,
+                            unsigned int            min_admins,
+                            bool                    is_log);
+        void  x_PurgeSubmitters(const CNSPreciseTime &  current_time,
+                                const CNSPreciseTime &  timeout_submitter,
+                                unsigned int            min_submitters,
+                                bool                    is_log);
+        void  x_PurgeReaders(const CNSPreciseTime &  current_time,
+                             const CNSPreciseTime &  timeout_reader,
+                             unsigned int            min_readers,
+                             bool                    is_log);
+        void  x_PurgeUnknowns(const CNSPreciseTime &  current_time,
+                              const CNSPreciseTime &  timeout_unknown,
+                              unsigned int            min_unknowns,
+                              bool                    is_log);
+        void  x_PurgeInactiveClients(const CNSPreciseTime &  current_time,
+                                     const CNSPreciseTime &  timeout,
+                                     unsigned int            min_clients,
+                                     unsigned int            client_type,
+                                     bool                    is_log);
 };
 
 

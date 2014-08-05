@@ -106,7 +106,17 @@ const CNSPreciseTime    default_pending_timeout(604800, 0);
 const CNSPreciseTime    default_max_pending_wait_timeout(0, 0);
 const bool              default_scramble_job_keys = false;
 
-
+// Queue client registry GC settings
+const CNSPreciseTime    default_client_registry_timeout_worker_node = CNSPreciseTime(3600, 0);
+const unsigned int      default_client_registry_min_worker_nodes = 20;
+const CNSPreciseTime    default_client_registry_timeout_admin = CNSPreciseTime(20, 0);
+const unsigned int      default_client_registry_min_admins = 10;
+const CNSPreciseTime    default_client_registry_timeout_submitter = CNSPreciseTime(20, 0);
+const unsigned int      default_client_registry_min_submitters = 10;
+const CNSPreciseTime    default_client_registry_timeout_reader = CNSPreciseTime(20, 0);
+const unsigned int      default_client_registry_min_readers = 10;
+const CNSPreciseTime    default_client_registry_timeout_unknown = CNSPreciseTime(20, 0);
+const unsigned int      default_client_registry_min_unknowns = 10;
 
 
 END_NCBI_SCOPE

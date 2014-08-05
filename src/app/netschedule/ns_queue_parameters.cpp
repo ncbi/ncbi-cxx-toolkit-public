@@ -74,6 +74,18 @@ SQueueParameters::SQueueParameters() :
     max_pending_wait_timeout(default_max_pending_wait_timeout),
     description(""),
     scramble_job_keys(default_scramble_job_keys),
+    client_registry_timeout_worker_node(
+                        default_client_registry_timeout_worker_node),
+    client_registry_min_worker_nodes(default_client_registry_min_worker_nodes),
+    client_registry_timeout_admin(default_client_registry_timeout_admin),
+    client_registry_min_admins(default_client_registry_min_admins),
+    client_registry_timeout_submitter(
+                        default_client_registry_timeout_submitter),
+    client_registry_min_submitters(default_client_registry_min_submitters),
+    client_registry_timeout_reader(default_client_registry_timeout_reader),
+    client_registry_min_readers(default_client_registry_min_readers),
+    client_registry_timeout_unknown(default_client_registry_timeout_unknown),
+    client_registry_min_unknowns(default_client_registry_min_unknowns),
     run_timeout_precision(default_run_timeout_precision)
 {}
 
@@ -111,6 +123,16 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     max_pending_wait_timeout = ReadMaxPendingWaitTimeout(reg, sname);
     description = ReadDescription(reg, sname);
     scramble_job_keys = ReadScrambleJobKeys(reg, sname);
+    client_registry_timeout_worker_node = ReadClientRegistryTimeoutWorkerNode(reg, sname);
+    client_registry_min_worker_nodes = ReadClientRegistryMinWorkerNodes(reg, sname);
+    client_registry_timeout_admin = ReadClientRegistryTimeoutAdmin(reg, sname);
+    client_registry_min_admins = ReadClientRegistryMinAdmins(reg, sname);
+    client_registry_timeout_submitter = ReadClientRegistryTimeoutSubmitter(reg, sname);
+    client_registry_min_submitters = ReadClientRegistryMinSubmitters(reg, sname);
+    client_registry_timeout_reader = ReadClientRegistryTimeoutReader(reg, sname);
+    client_registry_min_readers = ReadClientRegistryMinReaders(reg, sname);
+    client_registry_timeout_unknown = ReadClientRegistryTimeoutUnknown(reg, sname);
+    client_registry_min_unknowns = ReadClientRegistryMinUnknowns(reg, sname);
     run_timeout_precision = ReadRunTimeoutPrecision(reg, sname);
     linked_sections = ReadLinkedSections(reg, sname);
     return;
@@ -251,6 +273,82 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                 diff, "scramble_job_keys",
                 scramble_job_keys,
                 other.scramble_job_keys);
+
+
+    if (client_registry_timeout_worker_node !=
+                                    other.client_registry_timeout_worker_node)
+        AddParameterToDiffString(
+                diff, "client_registry_timeout_worker_node",
+                NS_FormatPreciseTimeAsSec(
+                                client_registry_timeout_worker_node),
+                NS_FormatPreciseTimeAsSec(
+                                other.client_registry_timeout_worker_node));
+
+    if (client_registry_min_worker_nodes !=
+                                    other.client_registry_min_worker_nodes)
+        AddParameterToDiffString(diff, "client_registry_min_worker_nodes",
+                                 client_registry_min_worker_nodes,
+                                 other.client_registry_min_worker_nodes);
+
+    if (client_registry_timeout_admin !=
+                                    other.client_registry_timeout_admin)
+        AddParameterToDiffString(
+                diff, "client_registry_timeout_admin",
+                NS_FormatPreciseTimeAsSec(
+                                client_registry_timeout_admin),
+                NS_FormatPreciseTimeAsSec(
+                                other.client_registry_timeout_admin));
+
+    if (client_registry_min_admins !=
+                                    other.client_registry_min_admins)
+        AddParameterToDiffString(diff, "client_registry_min_admins",
+                                 client_registry_min_admins,
+                                 other.client_registry_min_admins);
+
+    if (client_registry_timeout_submitter !=
+                                    other.client_registry_timeout_submitter)
+        AddParameterToDiffString(
+                diff, "client_registry_timeout_submitter",
+                NS_FormatPreciseTimeAsSec(
+                                client_registry_timeout_submitter),
+                NS_FormatPreciseTimeAsSec(
+                                other.client_registry_timeout_submitter));
+
+    if (client_registry_min_submitters !=
+                                    other.client_registry_min_submitters)
+        AddParameterToDiffString(diff, "client_registry_min_submitters",
+                                 client_registry_min_submitters,
+                                 other.client_registry_min_submitters);
+
+    if (client_registry_timeout_reader !=
+                                    other.client_registry_timeout_reader)
+        AddParameterToDiffString(
+                diff, "client_registry_timeout_reader",
+                NS_FormatPreciseTimeAsSec(
+                                client_registry_timeout_reader),
+                NS_FormatPreciseTimeAsSec(
+                                other.client_registry_timeout_reader));
+
+    if (client_registry_min_readers !=
+                                    other.client_registry_min_readers)
+        AddParameterToDiffString(diff, "client_registry_min_readers",
+                                 client_registry_min_readers,
+                                 other.client_registry_min_readers);
+
+    if (client_registry_timeout_unknown !=
+                                    other.client_registry_timeout_unknown)
+        AddParameterToDiffString(
+                diff, "client_registry_timeout_unknown",
+                NS_FormatPreciseTimeAsSec(
+                                client_registry_timeout_unknown),
+                NS_FormatPreciseTimeAsSec(
+                                other.client_registry_timeout_unknown));
+
+    if (client_registry_min_unknowns !=
+                                    other.client_registry_min_unknowns)
+        AddParameterToDiffString(diff, "client_registry_min_unknowns",
+                                 client_registry_min_unknowns,
+                                 other.client_registry_min_unknowns);
 
     if (include_description && description != other.description)
         AddParameterToDiffString(diff, "description",
@@ -408,7 +506,17 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "pending_timeout" + suffix + NS_FormatPreciseTimeAsSec(pending_timeout) + separator +
     prefix + "max_pending_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + separator +
     prefix + "run_timeout_precision" + suffix + NS_FormatPreciseTimeAsSec(run_timeout_precision) + separator +
-    prefix + "scramble_job_keys" + suffix + NStr::BoolToString(scramble_job_keys) + separator;
+    prefix + "scramble_job_keys" + suffix + NStr::BoolToString(scramble_job_keys) + separator +
+    prefix + "client_registry_timeout_worker_node" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node) + separator +
+    prefix + "client_registry_min_worker_nodes" + suffix + NStr::NumericToString(client_registry_min_worker_nodes) + separator +
+    prefix + "client_registry_timeout_admin" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_admin) + separator +
+    prefix + "client_registry_min_admins" + suffix + NStr::NumericToString(client_registry_min_admins) + separator +
+    prefix + "client_registry_timeout_submitter" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_submitter) + separator +
+    prefix + "client_registry_min_submitters" + suffix + NStr::NumericToString(client_registry_min_submitters) + separator +
+    prefix + "client_registry_timeout_reader" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_reader) + separator +
+    prefix + "client_registry_min_readers" + suffix + NStr::NumericToString(client_registry_min_readers) + separator +
+    prefix + "client_registry_timeout_unknown" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_unknown) + separator +
+    prefix + "client_registry_min_unknowns" + suffix + NStr::NumericToString(client_registry_min_unknowns) + separator;
 
     if (url_encoded) {
         result +=
@@ -464,7 +572,17 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "wnode_timeout=\"" + NS_FormatPreciseTimeAsSec(wnode_timeout) + "\"\n"
     "pending_timeout=\"" + NS_FormatPreciseTimeAsSec(pending_timeout) + "\"\n"
     "max_pending_wait_timeout=\"" + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + "\"\n"
-    "scramble_job_keys=\"" + NStr::BoolToString(scramble_job_keys) + "\"\n";
+    "scramble_job_keys=\"" + NStr::BoolToString(scramble_job_keys) + "\"\n"
+    "client_registry_timeout_worker_node=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node) + "\"\n"
+    "client_registry_min_worker_nodes=\"" + NStr::NumericToString(client_registry_min_worker_nodes) + "\"\n"
+    "client_registry_timeout_admin=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_admin) + "\"\n"
+    "client_registry_min_admins=\"" + NStr::NumericToString(client_registry_min_admins) + "\"\n"
+    "client_registry_timeout_submitter=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_submitter) + "\"\n"
+    "client_registry_min_submitters=\"" + NStr::NumericToString(client_registry_min_submitters) + "\"\n"
+    "client_registry_timeout_reader=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_reader) + "\"\n"
+    "client_registry_min_readers=\"" + NStr::NumericToString(client_registry_min_readers) + "\"\n"
+    "client_registry_timeout_unknown=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_unknown) + "\"\n"
+    "client_registry_min_unknowns=\"" + NStr::NumericToString(client_registry_min_unknowns) + "\"\n";
 
     for (map<string, string>::const_iterator  k = linked_sections.begin();
          k != linked_sections.end(); ++k)
@@ -741,6 +859,127 @@ SQueueParameters::ReadScrambleJobKeys(const IRegistry &  reg,
                                       const string &     sname)
 {
     return GetBoolNoErr("scramble_job_keys", false);
+}
+
+
+CNSPreciseTime
+SQueueParameters::ReadClientRegistryTimeoutWorkerNode(const IRegistry &  reg,
+                                                      const string &     sname)
+{
+    double  val = GetDoubleNoErr("client_registry_timeout_worker_node",
+                         double(default_client_registry_timeout_worker_node));
+    if (val <= 0.0 || val <= wnode_timeout)
+        return max(default_client_registry_timeout_worker_node,
+                   wnode_timeout + wnode_timeout);
+    return CNSPreciseTime(val);
+}
+
+
+unsigned int
+SQueueParameters::ReadClientRegistryMinWorkerNodes(const IRegistry &  reg,
+                                                   const string &     sname)
+{
+    unsigned int    val = GetIntNoErr("client_registry_min_worker_nodes",
+                                      default_client_registry_min_worker_nodes);
+    if (val <= 0)
+        return default_client_registry_min_worker_nodes;
+    return val;
+}
+
+
+CNSPreciseTime
+SQueueParameters::ReadClientRegistryTimeoutAdmin(const IRegistry &  reg,
+                                                 const string &     sname)
+{
+    double  val = GetDoubleNoErr("client_registry_timeout_admin",
+                         double(default_client_registry_timeout_admin));
+    if (val <= 0.0)
+        return default_client_registry_timeout_admin;
+    return CNSPreciseTime(val);
+}
+
+
+unsigned int
+SQueueParameters::ReadClientRegistryMinAdmins(const IRegistry &  reg,
+                                              const string &     sname)
+{
+    unsigned int    val = GetIntNoErr("client_registry_min_admins",
+                                      default_client_registry_min_admins);
+    if (val <= 0)
+        return default_client_registry_min_admins;
+    return val;
+}
+
+
+CNSPreciseTime
+SQueueParameters::ReadClientRegistryTimeoutSubmitter(const IRegistry &  reg,
+                                                     const string &     sname)
+{
+    double  val = GetDoubleNoErr("client_registry_timeout_submitter",
+                         double(default_client_registry_timeout_submitter));
+    if (val <= 0.0)
+        return default_client_registry_timeout_submitter;
+    return CNSPreciseTime(val);
+}
+
+
+unsigned int
+SQueueParameters::ReadClientRegistryMinSubmitters(const IRegistry &  reg,
+                                                  const string &     sname)
+{
+    unsigned int    val = GetIntNoErr("client_registry_min_submitters",
+                                      default_client_registry_min_submitters);
+    if (val <= 0)
+        return default_client_registry_min_submitters;
+    return val;
+}
+
+
+CNSPreciseTime
+SQueueParameters::ReadClientRegistryTimeoutReader(const IRegistry &  reg,
+                                                  const string &     sname)
+{
+    double  val = GetDoubleNoErr("client_registry_timeout_reader",
+                         double(default_client_registry_timeout_reader));
+    if (val <= 0.0)
+        return default_client_registry_timeout_reader;
+    return CNSPreciseTime(val);
+}
+
+
+unsigned int
+SQueueParameters::ReadClientRegistryMinReaders(const IRegistry &  reg,
+                                               const string &     sname)
+{
+    unsigned int    val = GetIntNoErr("client_registry_min_readers",
+                                      default_client_registry_min_readers);
+    if (val <= 0)
+        return default_client_registry_min_readers;
+    return val;
+}
+
+
+CNSPreciseTime
+SQueueParameters::ReadClientRegistryTimeoutUnknown(const IRegistry &  reg,
+                                                   const string &     sname)
+{
+    double  val = GetDoubleNoErr("client_registry_timeout_unknown",
+                         double(default_client_registry_timeout_unknown));
+    if (val <= 0.0)
+        return default_client_registry_timeout_unknown;
+    return CNSPreciseTime(val);
+}
+
+
+unsigned int
+SQueueParameters::ReadClientRegistryMinUnknowns(const IRegistry &  reg,
+                                                const string &     sname)
+{
+    unsigned int    val = GetIntNoErr("client_registry_min_unknowns",
+                                      default_client_registry_min_unknowns);
+    if (val <= 0)
+        return default_client_registry_min_unknowns;
+    return val;
 }
 
 

@@ -300,6 +300,21 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldUint4     run_timeout_precision_sec;
     CBDB_FieldUint4     run_timeout_precision_nsec;
     CBDB_FieldUint4     scramble_job_keys;
+    CBDB_FieldUint4     client_registry_timeout_worker_node_sec;
+    CBDB_FieldUint4     client_registry_timeout_worker_node_nsec;
+    CBDB_FieldUint4     client_registry_min_worker_nodes;
+    CBDB_FieldUint4     client_registry_timeout_admin_sec;
+    CBDB_FieldUint4     client_registry_timeout_admin_nsec;
+    CBDB_FieldUint4     client_registry_min_admins;
+    CBDB_FieldUint4     client_registry_timeout_submitter_sec;
+    CBDB_FieldUint4     client_registry_timeout_submitter_nsec;
+    CBDB_FieldUint4     client_registry_min_submitters;
+    CBDB_FieldUint4     client_registry_timeout_reader_sec;
+    CBDB_FieldUint4     client_registry_timeout_reader_nsec;
+    CBDB_FieldUint4     client_registry_min_readers;
+    CBDB_FieldUint4     client_registry_timeout_unknown_sec;
+    CBDB_FieldUint4     client_registry_timeout_unknown_nsec;
+    CBDB_FieldUint4     client_registry_min_unknowns;
 
     SQueueDescriptionDB()
     {
@@ -345,6 +360,36 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("run_timeout_precision_sec",     &run_timeout_precision_sec);
         BindData("run_timeout_precision_nsec",    &run_timeout_precision_nsec);
         BindData("scramble_job_keys",             &scramble_job_keys);
+        BindData("client_registry_timeout_worker_node_sec",
+                 &client_registry_timeout_worker_node_sec);
+        BindData("client_registry_timeout_worker_node_nsec",
+                 &client_registry_timeout_worker_node_nsec);
+        BindData("client_registry_min_worker_nodes",
+                 &client_registry_min_worker_nodes);
+        BindData("client_registry_timeout_admin_sec",
+                 &client_registry_timeout_admin_sec);
+        BindData("client_registry_timeout_admin_nsec",
+                 &client_registry_timeout_admin_nsec);
+        BindData("client_registry_min_admins",
+                 &client_registry_min_admins);
+        BindData("client_registry_timeout_submitter_sec",
+                 &client_registry_timeout_submitter_sec);
+        BindData("client_registry_timeout_submitter_nsec",
+                 &client_registry_timeout_submitter_nsec);
+        BindData("client_registry_min_submitters",
+                 &client_registry_min_submitters);
+        BindData("client_registry_timeout_reader_sec",
+                 &client_registry_timeout_reader_sec);
+        BindData("client_registry_timeout_reader_nsec",
+                 &client_registry_timeout_reader_nsec);
+        BindData("client_registry_min_readers",
+                 &client_registry_min_readers);
+        BindData("client_registry_timeout_unknown_sec",
+                 &client_registry_timeout_unknown_sec);
+        BindData("client_registry_timeout_unknown_nsec",
+                 &client_registry_timeout_unknown_nsec);
+        BindData("client_registry_min_unknowns",
+                 &client_registry_min_unknowns);
     }
 };
 

@@ -143,8 +143,9 @@ public:
     // Collect garbage from affinities
     void PurgeAffinities(void);
     void PurgeGroups(void);
-    void PurgeWNodes(void);
+    void StaleWNodes(void);
     void PurgeBlacklistedJobs(void);
+    void PurgeClientRegistry(void);
 
     // Notify all listeners
     void NotifyListeners(void);

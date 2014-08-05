@@ -2102,8 +2102,8 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                         &job,
                         m_RollbackAction,
                         added_pref_aff) == false) {
-        // Preferred affinities were reset for the client, so no job
-        // and bad request
+        // Preferred affinities were reset for the client, or the client had
+        // been garbage collected so no job and bad request
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:ePrefAffExpired:");
     } else {
@@ -3731,24 +3731,42 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
 
 bool CNetScheduleHandler::x_CanBeWithoutQueue(FProcessor  processor) const
 {
-    return processor == &CNetScheduleHandler::x_ProcessStatus ||                // STATUS/STATUS2
-           processor == &CNetScheduleHandler::x_ProcessDump ||                  // DUMP
-           processor == &CNetScheduleHandler::x_ProcessGetMessage ||            // MGET
-           processor == &CNetScheduleHandler::x_ProcessFastStatusS ||           // SST/SST2
-           processor == &CNetScheduleHandler::x_ProcessListenJob ||             // LISTEN
-           processor == &CNetScheduleHandler::x_ProcessCancel ||                // CANCEL
-           processor == &CNetScheduleHandler::x_ProcessPutMessage ||            // MPUT
-           processor == &CNetScheduleHandler::x_ProcessFastStatusW ||           // WST/WST2
-           processor == &CNetScheduleHandler::x_ProcessPut ||                   // PUT/PUT2
-           processor == &CNetScheduleHandler::x_ProcessReturn ||                // RETURN/RETURN2
-           processor == &CNetScheduleHandler::x_ProcessReschedule ||            // RESCHEDULE
-           processor == &CNetScheduleHandler::x_ProcessPutFailure ||            // FPUT/FPUT2
-           processor == &CNetScheduleHandler::x_ProcessJobExchange ||           // JXCG
-           processor == &CNetScheduleHandler::x_ProcessJobDelayExpiration ||    // JDEX
-           processor == &CNetScheduleHandler::x_ProcessJobDelayReadExpiration ||// JDREX
-           processor == &CNetScheduleHandler::x_ProcessConfirm ||               // CFRM
-           processor == &CNetScheduleHandler::x_ProcessReadFailed ||            // FRED
-           processor == &CNetScheduleHandler::x_ProcessReadRollback;            // RDRB
+    return // STATUS/STATUS2
+           processor == &CNetScheduleHandler::x_ProcessStatus ||
+           // DUMP
+           processor == &CNetScheduleHandler::x_ProcessDump ||
+           // MGET
+           processor == &CNetScheduleHandler::x_ProcessGetMessage ||
+           // SST/SST2
+           processor == &CNetScheduleHandler::x_ProcessFastStatusS ||
+           // LISTEN
+           processor == &CNetScheduleHandler::x_ProcessListenJob ||
+           // CANCEL
+           processor == &CNetScheduleHandler::x_ProcessCancel ||
+           // MPUT
+           processor == &CNetScheduleHandler::x_ProcessPutMessage ||
+           // WST/WST2
+           processor == &CNetScheduleHandler::x_ProcessFastStatusW ||
+           // PUT/PUT2
+           processor == &CNetScheduleHandler::x_ProcessPut ||
+           // RETURN/RETURN2
+           processor == &CNetScheduleHandler::x_ProcessReturn ||
+           // RESCHEDULE
+           processor == &CNetScheduleHandler::x_ProcessReschedule ||
+           // FPUT/FPUT2
+           processor == &CNetScheduleHandler::x_ProcessPutFailure ||
+           // JXCG
+           processor == &CNetScheduleHandler::x_ProcessJobExchange ||
+           // JDEX
+           processor == &CNetScheduleHandler::x_ProcessJobDelayExpiration ||
+           // JDREX
+           processor == &CNetScheduleHandler::x_ProcessJobDelayReadExpiration ||
+           // CFRM
+           processor == &CNetScheduleHandler::x_ProcessConfirm ||
+           // FRED
+           processor == &CNetScheduleHandler::x_ProcessReadFailed ||
+           // RDRB
+           processor == &CNetScheduleHandler::x_ProcessReadRollback;
 }
 
 

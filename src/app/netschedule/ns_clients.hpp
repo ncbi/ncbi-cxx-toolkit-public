@@ -208,6 +208,7 @@ class CNSClient
         string Print(const string &               node_name,
                      const CQueue *               queue,
                      const CNSAffinityRegistry &  aff_registry,
+                     const set< string > &        gc_clients,
                      bool                         verbose) const;
         unsigned int GetID(void) const
         { return m_ID; }
@@ -219,6 +220,8 @@ class CNSClient
         { m_Type |= type_to_append; }
         TNSBitVector  GetPreferredAffinities(void) const
         { return m_Affinities; }
+        bool HasPreferredAffinities(void) const
+        { return m_Affinities.any(); }
         ENSClientState GetState(void) const
         { return m_State; }
 

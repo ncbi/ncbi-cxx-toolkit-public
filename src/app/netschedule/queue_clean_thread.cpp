@@ -111,8 +111,9 @@ void CJobQueueCleanerThread::x_DoJob(void)
         m_QueueDB.Purge();
         m_QueueDB.PurgeAffinities();
         m_QueueDB.PurgeGroups();
-        m_QueueDB.PurgeWNodes();
+        m_QueueDB.StaleWNodes();
         m_QueueDB.PurgeBlacklistedJobs();
+        m_QueueDB.PurgeClientRegistry();
     }
     catch (CBDB_ErrnoException &  ex) {
         if (ex.IsNoMem()) {

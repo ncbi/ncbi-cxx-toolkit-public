@@ -80,6 +80,16 @@ struct SQueueParameters
     CNSPreciseTime  max_pending_wait_timeout;
     string          description;
     bool            scramble_job_keys;
+    CNSPreciseTime  client_registry_timeout_worker_node;
+    unsigned int    client_registry_min_worker_nodes;
+    CNSPreciseTime  client_registry_timeout_admin;
+    unsigned int    client_registry_min_admins;
+    CNSPreciseTime  client_registry_timeout_submitter;
+    unsigned int    client_registry_min_submitters;
+    CNSPreciseTime  client_registry_timeout_reader;
+    unsigned int    client_registry_min_readers;
+    CNSPreciseTime  client_registry_timeout_unknown;
+    unsigned int    client_registry_min_unknowns;
     map<string,
         string>     linked_sections;
 
@@ -128,10 +138,31 @@ struct SQueueParameters
     string          ReadWnodeHosts(const IRegistry &, const string &);
     CNSPreciseTime  ReadWnodeTimeout(const IRegistry &, const string &);
     CNSPreciseTime  ReadPendingTimeout(const IRegistry &, const string &);
-    CNSPreciseTime  ReadMaxPendingWaitTimeout(const IRegistry &, const string &);
+    CNSPreciseTime  ReadMaxPendingWaitTimeout(const IRegistry &,
+                                              const string &);
     string          ReadDescription(const IRegistry &, const string &);
     CNSPreciseTime  ReadRunTimeoutPrecision(const IRegistry &, const string &);
     bool            ReadScrambleJobKeys(const IRegistry &, const string &);
+    CNSPreciseTime  ReadClientRegistryTimeoutWorkerNode(const IRegistry &,
+                                                        const string &);
+    unsigned int    ReadClientRegistryMinWorkerNodes(const IRegistry &,
+                                                     const string &);
+    CNSPreciseTime  ReadClientRegistryTimeoutAdmin(const IRegistry &,
+                                                   const string &);
+    unsigned int    ReadClientRegistryMinAdmins(const IRegistry &,
+                                                const string &);
+    CNSPreciseTime  ReadClientRegistryTimeoutSubmitter(const IRegistry &,
+                                                       const string &);
+    unsigned int    ReadClientRegistryMinSubmitters(const IRegistry &,
+                                                    const string &);
+    CNSPreciseTime  ReadClientRegistryTimeoutReader(const IRegistry &,
+                                                    const string &);
+    unsigned int    ReadClientRegistryMinReaders(const IRegistry &,
+                                                 const string &);
+    CNSPreciseTime  ReadClientRegistryTimeoutUnknown(const IRegistry &,
+                                                     const string &);
+    unsigned int    ReadClientRegistryMinUnknowns(const IRegistry &,
+                                                  const string &);
     map<string,
         string>     ReadLinkedSections(const IRegistry &, const string &);
 };

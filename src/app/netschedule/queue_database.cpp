@@ -53,9 +53,11 @@ BEGIN_NCBI_SCOPE
 
 
 #define GetUIntNoErr(name, dflt) \
-    (unsigned) bdb_conf.GetInt("netschedule", name, CConfig::eErr_NoThrow, dflt)
+    (unsigned) bdb_conf.GetInt("netschedule", name, \
+                               CConfig::eErr_NoThrow, dflt)
 #define GetSizeNoErr(name, dflt) \
-    (unsigned) bdb_conf.GetDataSize("netschedule", name, CConfig::eErr_NoThrow, dflt)
+    (unsigned) bdb_conf.GetDataSize("netschedule", name, \
+                                    CConfig::eErr_NoThrow, dflt)
 #define GetBoolNoErr(name, dflt) \
     bdb_conf.GetBool("netschedule", name, CConfig::eErr_NoThrow, dflt)
 
@@ -232,7 +234,8 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
         } else {
             CFileIO f;
             char buf[32];
-            f.Open(ver_file.GetPath(), CFileIO_Base::eOpen, CFileIO_Base::eRead);
+            f.Open(ver_file.GetPath(), CFileIO_Base::eOpen,
+                                       CFileIO_Base::eRead);
             size_t n = f.Read(buf, sizeof(buf));
             db_storage_ver.append(buf, n);
             NStr::TruncateSpacesInPlace(db_storage_ver, NStr::eTrunc_End);
@@ -323,8 +326,9 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
                      << m_Env->GetMaxLocks() << " max locks, "
 //                    << m_Env->GetMaxLockers() << " max lockers, "
 //                    << m_Env->GetMaxLockObjects() << " max lock objects, "
-                     << (m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
-                                          "" : "a") << "syncronous transactions, "
+                     << (m_Env->GetTransactionSync() ==
+                                CBDB_Transaction::eTransSync ?
+                                      "" : "a") << "syncronous transactions, "
                      << m_Env->MutexGetMax() <<  " max mutexes");
 
 
@@ -385,39 +389,88 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.qclass = m_QueueDescriptionDB.qclass;
         params.timeout = CNSPreciseTime(m_QueueDescriptionDB.timeout_sec,
                                         m_QueueDescriptionDB.timeout_nsec);
-        params.notif_hifreq_interval = CNSPreciseTime(m_QueueDescriptionDB.notif_hifreq_interval_sec,
-                                                      m_QueueDescriptionDB.notif_hifreq_interval_nsec);
-        params.notif_hifreq_period = CNSPreciseTime(m_QueueDescriptionDB.notif_hifreq_period_sec,
-                                                    m_QueueDescriptionDB.notif_hifreq_period_nsec);
+        params.notif_hifreq_interval =
+            CNSPreciseTime(m_QueueDescriptionDB.notif_hifreq_interval_sec,
+                           m_QueueDescriptionDB.notif_hifreq_interval_nsec);
+        params.notif_hifreq_period =
+            CNSPreciseTime(m_QueueDescriptionDB.notif_hifreq_period_sec,
+                           m_QueueDescriptionDB.notif_hifreq_period_nsec);
         params.notif_lofreq_mult = m_QueueDescriptionDB.notif_lofreq_mult;
-        params.notif_handicap = CNSPreciseTime(m_QueueDescriptionDB.notif_handicap_sec,
-                                               m_QueueDescriptionDB.notif_handicap_nsec);
+        params.notif_handicap =
+            CNSPreciseTime(m_QueueDescriptionDB.notif_handicap_sec,
+                           m_QueueDescriptionDB.notif_handicap_nsec);
         params.dump_buffer_size = m_QueueDescriptionDB.dump_buffer_size;
-        params.dump_client_buffer_size = m_QueueDescriptionDB.dump_client_buffer_size;
+        params.dump_client_buffer_size =
+                            m_QueueDescriptionDB.dump_client_buffer_size;
         params.dump_aff_buffer_size = m_QueueDescriptionDB.dump_aff_buffer_size;
-        params.dump_group_buffer_size = m_QueueDescriptionDB.dump_group_buffer_size;
-        params.run_timeout = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_sec,
-                                            m_QueueDescriptionDB.run_timeout_nsec);
-        params.read_timeout = CNSPreciseTime(m_QueueDescriptionDB.read_timeout_sec,
-                                             m_QueueDescriptionDB.read_timeout_nsec);
+        params.dump_group_buffer_size =
+                            m_QueueDescriptionDB.dump_group_buffer_size;
+        params.run_timeout =
+            CNSPreciseTime(m_QueueDescriptionDB.run_timeout_sec,
+                           m_QueueDescriptionDB.run_timeout_nsec);
+        params.read_timeout =
+            CNSPreciseTime(m_QueueDescriptionDB.read_timeout_sec,
+                           m_QueueDescriptionDB.read_timeout_nsec);
         params.program_name = m_QueueDescriptionDB.program_name;
         params.failed_retries = m_QueueDescriptionDB.failed_retries;
-        params.blacklist_time = CNSPreciseTime(m_QueueDescriptionDB.blacklist_time_sec,
-                                               m_QueueDescriptionDB.blacklist_time_nsec);
+        params.blacklist_time =
+            CNSPreciseTime(m_QueueDescriptionDB.blacklist_time_sec,
+                           m_QueueDescriptionDB.blacklist_time_nsec);
         params.max_input_size = m_QueueDescriptionDB.max_input_size;
         params.max_output_size = m_QueueDescriptionDB.max_output_size;
         params.subm_hosts = m_QueueDescriptionDB.subm_hosts;
         params.wnode_hosts = m_QueueDescriptionDB.wnode_hosts;
-        params.wnode_timeout = CNSPreciseTime(m_QueueDescriptionDB.wnode_timeout_sec,
-                                              m_QueueDescriptionDB.wnode_timeout_nsec);
-        params.pending_timeout = CNSPreciseTime(m_QueueDescriptionDB.pending_timeout_sec,
-                                                m_QueueDescriptionDB.pending_timeout_nsec);
-        params.max_pending_wait_timeout = CNSPreciseTime(m_QueueDescriptionDB.max_pending_wait_timeout_sec,
-                                                         m_QueueDescriptionDB.max_pending_wait_timeout_nsec);
+        params.wnode_timeout =
+            CNSPreciseTime(m_QueueDescriptionDB.wnode_timeout_sec,
+                           m_QueueDescriptionDB.wnode_timeout_nsec);
+        params.pending_timeout =
+            CNSPreciseTime(m_QueueDescriptionDB.pending_timeout_sec,
+                           m_QueueDescriptionDB.pending_timeout_nsec);
+        params.max_pending_wait_timeout =
+            CNSPreciseTime(m_QueueDescriptionDB.max_pending_wait_timeout_sec,
+                           m_QueueDescriptionDB.max_pending_wait_timeout_nsec);
         params.description = m_QueueDescriptionDB.description;
-        params.run_timeout_precision = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_precision_sec,
-                                                      m_QueueDescriptionDB.run_timeout_precision_nsec);
-        params.scramble_job_keys = (m_QueueDescriptionDB.scramble_job_keys != 0);
+        params.run_timeout_precision =
+            CNSPreciseTime(m_QueueDescriptionDB.run_timeout_precision_sec,
+                           m_QueueDescriptionDB.run_timeout_precision_nsec);
+        params.scramble_job_keys =
+                            (m_QueueDescriptionDB.scramble_job_keys != 0);
+
+        params.client_registry_timeout_worker_node =
+            CNSPreciseTime(m_QueueDescriptionDB.
+                                client_registry_timeout_worker_node_sec,
+                           m_QueueDescriptionDB.
+                                client_registry_timeout_worker_node_nsec);
+        params.client_registry_min_worker_nodes =
+                        m_QueueDescriptionDB.client_registry_min_worker_nodes;
+        params.client_registry_timeout_admin =
+            CNSPreciseTime(m_QueueDescriptionDB.
+                                client_registry_timeout_admin_sec,
+                           m_QueueDescriptionDB.
+                                client_registry_timeout_admin_nsec);
+        params.client_registry_min_admins =
+                        m_QueueDescriptionDB.client_registry_min_admins;
+        params.client_registry_timeout_submitter =
+            CNSPreciseTime(m_QueueDescriptionDB.
+                                client_registry_timeout_submitter_sec,
+                           m_QueueDescriptionDB.
+                                client_registry_timeout_submitter_nsec);
+        params.client_registry_min_submitters =
+                        m_QueueDescriptionDB.client_registry_min_submitters;
+        params.client_registry_timeout_reader =
+            CNSPreciseTime(m_QueueDescriptionDB.
+                                client_registry_timeout_reader_sec,
+                           m_QueueDescriptionDB.
+                                client_registry_timeout_reader_nsec);
+        params.client_registry_min_readers =
+                        m_QueueDescriptionDB.client_registry_min_readers;
+        params.client_registry_timeout_unknown =
+            CNSPreciseTime(m_QueueDescriptionDB.
+                                client_registry_timeout_unknown_sec,
+                           m_QueueDescriptionDB.
+                                client_registry_timeout_unknown_nsec);
+        params.client_registry_min_unknowns =
+                        m_QueueDescriptionDB.client_registry_min_unknowns;
 
         // It is impossible to have the same entries twice in the DB
         queues[queue_name] = params;
@@ -467,15 +520,20 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.qclass = params.qclass;
     m_QueueDescriptionDB.timeout_sec = params.timeout.Sec();
     m_QueueDescriptionDB.timeout_nsec = params.timeout.NSec();
-    m_QueueDescriptionDB.notif_hifreq_interval_sec = params.notif_hifreq_interval.Sec();
-    m_QueueDescriptionDB.notif_hifreq_interval_nsec = params.notif_hifreq_interval.NSec();
-    m_QueueDescriptionDB.notif_hifreq_period_sec = params.notif_hifreq_period.Sec();
-    m_QueueDescriptionDB.notif_hifreq_period_nsec = params.notif_hifreq_period.NSec();
+    m_QueueDescriptionDB.notif_hifreq_interval_sec =
+                                params.notif_hifreq_interval.Sec();
+    m_QueueDescriptionDB.notif_hifreq_interval_nsec =
+                                params.notif_hifreq_interval.NSec();
+    m_QueueDescriptionDB.notif_hifreq_period_sec =
+                                params.notif_hifreq_period.Sec();
+    m_QueueDescriptionDB.notif_hifreq_period_nsec =
+                                params.notif_hifreq_period.NSec();
     m_QueueDescriptionDB.notif_lofreq_mult = params.notif_lofreq_mult;
     m_QueueDescriptionDB.notif_handicap_sec = params.notif_handicap.Sec();
     m_QueueDescriptionDB.notif_handicap_nsec = params.notif_handicap.NSec();
     m_QueueDescriptionDB.dump_buffer_size = params.dump_buffer_size;
-    m_QueueDescriptionDB.dump_client_buffer_size = params.dump_client_buffer_size;
+    m_QueueDescriptionDB.dump_client_buffer_size =
+                                params.dump_client_buffer_size;
     m_QueueDescriptionDB.dump_aff_buffer_size = params.dump_aff_buffer_size;
     m_QueueDescriptionDB.dump_group_buffer_size = params.dump_group_buffer_size;
     m_QueueDescriptionDB.run_timeout_sec = params.run_timeout.Sec();
@@ -494,12 +552,48 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.wnode_timeout_nsec = params.wnode_timeout.NSec();
     m_QueueDescriptionDB.pending_timeout_sec = params.pending_timeout.Sec();
     m_QueueDescriptionDB.pending_timeout_nsec = params.pending_timeout.NSec();
-    m_QueueDescriptionDB.max_pending_wait_timeout_sec = params.max_pending_wait_timeout.Sec();
-    m_QueueDescriptionDB.max_pending_wait_timeout_nsec = params.max_pending_wait_timeout.NSec();
+    m_QueueDescriptionDB.max_pending_wait_timeout_sec =
+                                params.max_pending_wait_timeout.Sec();
+    m_QueueDescriptionDB.max_pending_wait_timeout_nsec =
+                                params.max_pending_wait_timeout.NSec();
     m_QueueDescriptionDB.description = params.description;
-    m_QueueDescriptionDB.run_timeout_precision_sec = params.run_timeout_precision.Sec();
-    m_QueueDescriptionDB.run_timeout_precision_nsec = params.run_timeout_precision.NSec();
+    m_QueueDescriptionDB.run_timeout_precision_sec =
+                                params.run_timeout_precision.Sec();
+    m_QueueDescriptionDB.run_timeout_precision_nsec =
+                                params.run_timeout_precision.NSec();
     m_QueueDescriptionDB.scramble_job_keys = params.scramble_job_keys;
+
+
+    m_QueueDescriptionDB.client_registry_timeout_worker_node_sec =
+                params.client_registry_timeout_worker_node.Sec();
+    m_QueueDescriptionDB.client_registry_timeout_worker_node_nsec =
+                params.client_registry_timeout_worker_node.NSec();
+    m_QueueDescriptionDB.client_registry_min_worker_nodes =
+                params.client_registry_min_worker_nodes;
+    m_QueueDescriptionDB.client_registry_timeout_admin_sec =
+                params.client_registry_timeout_admin.Sec();
+    m_QueueDescriptionDB.client_registry_timeout_admin_nsec =
+                params.client_registry_timeout_admin.NSec();
+    m_QueueDescriptionDB.client_registry_min_admins =
+                params.client_registry_min_admins;
+    m_QueueDescriptionDB.client_registry_timeout_submitter_sec =
+                params.client_registry_timeout_submitter.Sec();
+    m_QueueDescriptionDB.client_registry_timeout_submitter_nsec =
+                params.client_registry_timeout_submitter.NSec();
+    m_QueueDescriptionDB.client_registry_min_submitters =
+                params.client_registry_min_submitters;
+    m_QueueDescriptionDB.client_registry_timeout_reader_sec =
+                params.client_registry_timeout_reader.Sec();
+    m_QueueDescriptionDB.client_registry_timeout_reader_nsec =
+                params.client_registry_timeout_reader.NSec();
+    m_QueueDescriptionDB.client_registry_min_readers =
+                params.client_registry_min_readers;
+    m_QueueDescriptionDB.client_registry_timeout_unknown_sec =
+                params.client_registry_timeout_unknown.Sec();
+    m_QueueDescriptionDB.client_registry_timeout_unknown_nsec =
+                params.client_registry_timeout_unknown.NSec();
+    m_QueueDescriptionDB.client_registry_min_unknowns =
+                params.client_registry_min_unknowns;
 
     m_QueueDescriptionDB.UpdateInsert();
 }
@@ -624,75 +718,107 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
              val != values.end(); ++val) {
             if (*val == "timeout")
                 params.timeout =
-                        params.ReadTimeout(reg, section_name);
+                    params.ReadTimeout(reg, section_name);
             else if (*val == "notif_hifreq_interval")
                 params.notif_hifreq_interval =
-                        params.ReadNotifHifreqInterval(reg, section_name);
+                    params.ReadNotifHifreqInterval(reg, section_name);
             else if (*val == "notif_hifreq_period")
                 params.notif_hifreq_period =
-                        params.ReadNotifHifreqPeriod(reg, section_name);
+                    params.ReadNotifHifreqPeriod(reg, section_name);
             else if (*val == "notif_lofreq_mult")
                 params.notif_lofreq_mult =
-                        params.ReadNotifLofreqMult(reg, section_name);
+                    params.ReadNotifLofreqMult(reg, section_name);
             else if (*val == "notif_handicap")
                 params.notif_handicap =
-                        params.ReadNotifHandicap(reg, section_name);
+                    params.ReadNotifHandicap(reg, section_name);
             else if (*val == "dump_buffer_size")
                 params.dump_buffer_size =
-                        params.ReadDumpBufferSize(reg, section_name);
+                    params.ReadDumpBufferSize(reg, section_name);
             else if (*val == "dump_client_buffer_size")
                 params.dump_client_buffer_size =
-                        params.ReadDumpClientBufferSize(reg, section_name);
+                    params.ReadDumpClientBufferSize(reg, section_name);
             else if (*val == "dump_aff_buffer_size")
                 params.dump_aff_buffer_size =
-                        params.ReadDumpAffBufferSize(reg, section_name);
+                    params.ReadDumpAffBufferSize(reg, section_name);
             else if (*val == "dump_group_buffer_size")
                 params.dump_group_buffer_size =
-                        params.ReadDumpGroupBufferSize(reg, section_name);
+                    params.ReadDumpGroupBufferSize(reg, section_name);
             else if (*val == "run_timeout")
                 params.run_timeout =
-                        params.ReadRunTimeout(reg, section_name);
+                    params.ReadRunTimeout(reg, section_name);
             else if (*val == "read_timeout")
                 params.read_timeout =
-                        params.ReadReadTimeout(reg, section_name);
+                    params.ReadReadTimeout(reg, section_name);
             else if (*val == "program")
                 params.program_name = params.ReadProgram(reg, section_name);
             else if (*val == "failed_retries")
                 params.failed_retries =
-                        params.ReadFailedRetries(reg, section_name);
+                    params.ReadFailedRetries(reg, section_name);
             else if (*val == "blacklist_time")
                 params.blacklist_time =
-                        params.ReadBlacklistTime(reg, section_name);
+                    params.ReadBlacklistTime(reg, section_name);
             else if (*val == "max_input_size")
                 params.max_input_size =
-                        params.ReadMaxInputSize(reg, section_name);
+                    params.ReadMaxInputSize(reg, section_name);
             else if (*val == "max_output_size")
                 params.max_output_size =
-                        params.ReadMaxOutputSize(reg, section_name);
+                    params.ReadMaxOutputSize(reg, section_name);
             else if (*val == "subm_host")
                 params.subm_hosts =
-                        params.ReadSubmHosts(reg, section_name);
+                    params.ReadSubmHosts(reg, section_name);
             else if (*val == "wnode_host")
                 params.wnode_hosts =
-                        params.ReadWnodeHosts(reg, section_name);
+                    params.ReadWnodeHosts(reg, section_name);
             else if (*val == "wnode_timeout")
                 params.wnode_timeout =
-                        params.ReadWnodeTimeout(reg, section_name);
+                    params.ReadWnodeTimeout(reg, section_name);
             else if (*val == "pending_timeout")
                 params.pending_timeout =
-                        params.ReadPendingTimeout(reg, section_name);
+                    params.ReadPendingTimeout(reg, section_name);
             else if (*val == "max_pending_wait_timeout")
                 params.max_pending_wait_timeout =
-                        params.ReadMaxPendingWaitTimeout(reg, section_name);
+                    params.ReadMaxPendingWaitTimeout(reg, section_name);
             else if (*val == "description")
                 params.description =
-                        params.ReadDescription(reg, section_name);
+                    params.ReadDescription(reg, section_name);
             else if (*val == "run_timeout_precision")
                 params.run_timeout_precision =
-                        params.ReadRunTimeoutPrecision(reg, section_name);
+                    params.ReadRunTimeoutPrecision(reg, section_name);
             else if (*val == "scramble_job_keys")
                 params.scramble_job_keys =
-                        params.ReadScrambleJobKeys(reg, section_name);
+                    params.ReadScrambleJobKeys(reg, section_name);
+            else if (*val == "client_registry_timeout_worker_node")
+                params.client_registry_timeout_worker_node =
+                    params.ReadClientRegistryTimeoutWorkerNode(reg,
+                                                               section_name);
+            else if (*val == "client_registry_min_worker_nodes")
+                params.client_registry_min_worker_nodes =
+                    params.ReadClientRegistryMinWorkerNodes(reg, section_name);
+            else if (*val == "client_registry_timeout_admin")
+                params.client_registry_timeout_admin =
+                    params.ReadClientRegistryTimeoutAdmin(reg, section_name);
+            else if (*val == "client_registry_min_admins")
+                params.client_registry_min_admins =
+                    params.ReadClientRegistryMinAdmins(reg, section_name);
+            else if (*val == "client_registry_timeout_submitter")
+                params.client_registry_timeout_submitter =
+                    params.ReadClientRegistryTimeoutSubmitter(reg,
+                                                              section_name);
+            else if (*val == "client_registry_min_submitters")
+                params.client_registry_min_submitters =
+                    params.ReadClientRegistryMinSubmitters(reg, section_name);
+            else if (*val == "client_registry_timeout_reader")
+                params.client_registry_timeout_reader =
+                    params.ReadClientRegistryTimeoutReader(reg, section_name);
+            else if (*val == "client_registry_min_readers")
+                params.client_registry_min_readers =
+                    params.ReadClientRegistryMinReaders(reg, section_name);
+            else if (*val == "client_registry_timeout_unknown")
+                params.client_registry_timeout_unknown =
+                    params.ReadClientRegistryTimeoutUnknown(reg, section_name);
+            else if (*val == "client_registry_min_unknowns")
+                params.client_registry_min_unknowns =
+                    params.ReadClientRegistryMinUnknowns(reg, section_name);
         }
 
         // Apply linked sections if so
@@ -1160,7 +1286,8 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
 
             k->second.first = new_queue->second;
             k->second.first.position = pos;
-            added_queues.push_back(make_pair(queue_name, k->second.first.qclass));
+            added_queues.push_back(make_pair(queue_name,
+                                             k->second.first.qclass));
             continue;
         }
 
@@ -1283,7 +1410,8 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
         if (!diff.empty())
             diff += ", ";
         diff += "\"added_queues\" {";
-        for (vector< pair<string, string> >::const_iterator  k = added_queues.begin();
+        for (vector< pair<string, string> >::const_iterator
+             k = added_queues.begin();
              k != added_queues.end(); ++k) {
                 if (k != added_queues.begin())
                     diff += ", ";
@@ -1344,12 +1472,14 @@ time_t  CQueueDataBase::Configure(const IRegistry &  reg,
     time_t  min_run_timeout_precision = 3;
     for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k)
-        min_run_timeout_precision = std::min(min_run_timeout_precision,
-                                             k->second.run_timeout_precision.Sec());
+        min_run_timeout_precision =
+                std::min(min_run_timeout_precision,
+                         k->second.run_timeout_precision.Sec());
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
          k != m_Queues.end(); ++k)
-        min_run_timeout_precision = std::min(min_run_timeout_precision,
-                                             k->second.first.run_timeout_precision.Sec());
+        min_run_timeout_precision =
+                std::min(min_run_timeout_precision,
+                         k->second.first.run_timeout_precision.Sec());
     return min_run_timeout_precision;
 }
 
@@ -1701,7 +1831,8 @@ string CQueueDataBase::GetQueueClassesInfo(void) const
         output += "OK:[qclass " + k->first + "]\n" +
                   k->second.GetPrintableParameters(false, false);
 
-        for (map<string, string>::const_iterator j = k->second.linked_sections.begin();
+        for (map<string, string>::const_iterator
+             j = k->second.linked_sections.begin();
              j != k->second.linked_sections.end(); ++j) {
             string  prefix((j->first).c_str() + strlen("linked_section_"));
             string  section_name = j->second;
@@ -1746,7 +1877,8 @@ string CQueueDataBase::GetQueueInfo(void) const
         output += "OK:[queue " + k->first + "]\n" +
                   x_SingleQueueInfo(k).GetPrintableParameters(true, false);
 
-        for (map<string, string>::const_iterator j = k->second.first.linked_sections.begin();
+        for (map<string, string>::const_iterator
+             j = k->second.first.linked_sections.begin();
              j != k->second.first.linked_sections.end(); ++j) {
             string  prefix((j->first).c_str() + strlen("linked_section_"));
             string  section_name = j->second;
@@ -2325,14 +2457,14 @@ void CQueueDataBase::PurgeGroups(void)
 }
 
 
-void CQueueDataBase::PurgeWNodes(void)
+void CQueueDataBase::StaleWNodes(void)
 {
     // Worker nodes have the last access time in seconds since 1970
     // so there is no need to purge them more often than once a second
     static CNSPreciseTime   last_purge(0, 0);
     CNSPreciseTime          current_time = CNSPreciseTime::Current();
 
-    if (current_time == last_purge)
+    if (current_time.Sec() == last_purge.Sec())
         return;
     last_purge = current_time;
 
@@ -2340,7 +2472,7 @@ void CQueueDataBase::PurgeWNodes(void)
         CRef<CQueue>  queue = x_GetQueueAt(index);
         if (queue.IsNull())
             break;
-        queue->PurgeWNodes(current_time);
+        queue->StaleWNodes(current_time);
         if (x_CheckStopPurge())
             break;
     }
@@ -2364,6 +2496,29 @@ void CQueueDataBase::PurgeBlacklistedJobs(void)
         if (queue.IsNull())
             break;
         queue->PurgeBlacklistedJobs();
+        if (x_CheckStopPurge())
+            break;
+    }
+}
+
+
+void CQueueDataBase::PurgeClientRegistry(void)
+{
+    static CNSPreciseTime   period(5, 0);
+    static CNSPreciseTime   last_time(0, 0);
+    CNSPreciseTime          current_time = CNSPreciseTime::Current();
+
+    // Run this check once in five seconds
+    if (current_time - last_time < period)
+        return;
+
+    last_time = current_time;
+
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        queue->PurgeClientRegistry(current_time);
         if (x_CheckStopPurge())
             break;
     }

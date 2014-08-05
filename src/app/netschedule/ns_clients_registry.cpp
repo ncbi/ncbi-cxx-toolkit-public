@@ -396,9 +396,10 @@ CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
     // The container itself is not changed.
     // The changes are in what the element holds.
     unsigned short                      wait_port = 0;
+    string                              client_name = client.GetNode();
     CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  worker_node =
-                                             m_Clients.find(client.GetNode());
+                                             m_Clients.find(client_name);
 
     if (worker_node != m_Clients.end()) {
         client_was_found = true;
@@ -417,6 +418,10 @@ CNSClientsRegistry::ClearWorkerNode(const CNSClientId &    client,
                                    // least one preferred aff
         }
     }
+
+    // Client explicitly said good bye. No need to remember it if it was
+    // garbage collected previously.
+    m_GCClients.erase(client_name);
 
     return wait_port;
 }
@@ -465,7 +470,8 @@ CNSClientsRegistry::x_PrintSelected(const TNSBitVector &         batch,
 
     for ( ; k != m_Clients.end(); ++k) {
         if (batch[k->second.GetID()]) {
-            buffer += k->second.Print(k->first, queue, aff_registry, verbose);
+            buffer += k->second.Print(k->first, queue, aff_registry,
+                                      m_GCClients, verbose);
             ++printed;
             if (printed >= batch.count())
                 break;
@@ -706,9 +712,10 @@ CNSClientsRegistry::SetPreferredAffinities(const CNSClientId &   client,
     if (!client.IsComplete())
         return;
 
+    string                      client_name = client.GetNode();
     CMutexGuard                 guard(m_Lock);
     map< string,
-         CNSClient >::iterator  found = m_Clients.find(client.GetNode());
+         CNSClient >::iterator  found = m_Clients.find(client_name);
 
     if (found == m_Clients.end())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -716,6 +723,10 @@ CNSClientsRegistry::SetPreferredAffinities(const CNSClientId &   client,
                    "' to update preferred affinities");
 
     found->second.SetPreferredAffinities(aff_to_set);
+
+    // Remove the client from the GC collected, because it affects affinities
+    // only which are re-set here anyway
+    m_GCClients.erase(client_name);
     x_BuildWNAffinities();
 }
 
@@ -776,11 +787,11 @@ string  CNSClientsRegistry::GetNodeName(unsigned int  id) const
 
 
 void
-CNSClientsRegistry::Purge(const CNSPreciseTime &  current_time,
-                          const CNSPreciseTime &  timeout,
-                          CNSAffinityRegistry &   aff_registry,
-                          CNSNotificationList &   notif_registry,
-                          bool                    is_log)
+CNSClientsRegistry::StaleWNs(const CNSPreciseTime &  current_time,
+                             const CNSPreciseTime &  timeout,
+                             CNSAffinityRegistry &   aff_registry,
+                             CNSNotificationList &   notif_registry,
+                             bool                    is_log)
 {
     // Checks if any of the worker nodes are inactive for too long
     bool                                    need_aff_rebuild = false;
@@ -789,6 +800,8 @@ CNSClientsRegistry::Purge(const CNSPreciseTime &  current_time,
 
     for ( ; k != m_Clients.end(); ++k ) {
 
+        if ((k->second.GetType() & CNSClient::eWorkerNode) == 0)
+            continue;
         if (k->second.GetState() != CNSClient::eActive)
             continue;
 
@@ -839,6 +852,29 @@ CNSClientsRegistry::Purge(const CNSPreciseTime &  current_time,
 }
 
 
+void  CNSClientsRegistry::Purge(const CNSPreciseTime &  current_time,
+                                const CNSPreciseTime &  timeout_worker_node,
+                                unsigned int            min_worker_nodes,
+                                const CNSPreciseTime &  timeout_admin,
+                                unsigned int            min_admins,
+                                const CNSPreciseTime &  timeout_submitter,
+                                unsigned int            min_submitters,
+                                const CNSPreciseTime &  timeout_reader,
+                                unsigned int            min_readers,
+                                const CNSPreciseTime &  timeout_unknown,
+                                unsigned int            min_unknowns,
+                                bool                    is_log)
+{
+    CMutexGuard     guard(m_Lock);
+
+    x_PurgeWNs(current_time, timeout_worker_node, min_worker_nodes, is_log);
+    x_PurgeAdmins(current_time, timeout_admin, min_admins, is_log);
+    x_PurgeSubmitters(current_time, timeout_submitter, min_submitters, is_log);
+    x_PurgeReaders(current_time, timeout_reader, min_readers, is_log);
+    x_PurgeUnknowns(current_time, timeout_unknown, min_unknowns, is_log);
+}
+
+
 unsigned int  CNSClientsRegistry::x_GetNextID(void)
 {
     CFastMutexGuard     guard(m_LastIDLock);
@@ -860,6 +896,205 @@ void  CNSClientsRegistry::x_BuildWNAffinities(void)
         if (k->second.GetType() & CNSClient::eWorkerNode)
             m_WNAffinities |= k->second.GetPreferredAffinities();
 }
+
+
+bool
+CNSClientsRegistry::WasGarbageCollected(const CNSClientId &  client) const
+{
+    if (!client.IsComplete())
+        return false;
+
+    CMutexGuard                                 guard(m_Lock);
+    return m_GCClients.find(client.GetNode()) != m_GCClients.end();
+}
+
+
+// Compares last access time of two clients basing on their identifiers
+class AgeFunctor
+{
+    public:
+        AgeFunctor(map< string, CNSClient > &  clients) :
+            m_Clients(clients)
+        {}
+
+        bool operator () (const string &  lhs, const string &  rhs)
+        {
+            return m_Clients[ lhs ].GetLastAccess() <
+                   m_Clients[ rhs ].GetLastAccess();
+        }
+
+    private:
+        map< string, CNSClient > &    m_Clients;
+};
+
+
+// Must be called under the lock
+void
+CNSClientsRegistry::x_PurgeWNs(const CNSPreciseTime &  current_time,
+                               const CNSPreciseTime &  timeout_worker_node,
+                               unsigned int            min_worker_nodes,
+                               bool                    is_log)
+{
+    map< string, CNSClient >::iterator      k = m_Clients.begin();
+    list< string >                          inactive;
+    unsigned int                            inactive_count = 0;
+    unsigned int                            total_count = 0;
+
+    // Count active and inactive worker nodes
+    for ( ; k != m_Clients.end(); ++k ) {
+
+        if ((k->second.GetType() & CNSClient::eWorkerNode) == 0)
+            continue;
+
+        ++total_count;
+        if (k->second.GetState() != CNSClient::eActive) {
+            if (current_time - k->second.GetLastAccess() >
+                timeout_worker_node) {
+                ++inactive_count;
+                inactive.push_back(k->first);
+            }
+        }
+    }
+
+    if (total_count <= min_worker_nodes || inactive_count == 0)
+        return;
+
+    // Calculate the number of records to be deleted
+    unsigned int    active_count = total_count - inactive_count;
+    unsigned int    remove_count = 0;
+    if (active_count >= min_worker_nodes)
+        remove_count = inactive_count;
+    else
+        remove_count = total_count - min_worker_nodes;
+
+    // Sort the inactive ones to delete the oldest
+    inactive.sort(AgeFunctor(m_Clients));
+
+    // Delete the oldest records
+    for (list<string>::iterator  j = inactive.begin();
+         j != inactive.end() && remove_count > 0; ++j, --remove_count) {
+
+        // The affinity reset flag is NOT set if:
+        // - the client issued CLEAR
+        // - the client did not have preferred affinities
+        // It makes sense to memo the client only if it had preferred
+        // affinities.
+        if (m_Clients[*j].GetAffinityReset())
+            m_GCClients.insert(*j);
+
+        if (m_GCClients.size() > 100000)
+            ERR_POST("Garbage collected worker node list exceeds 100000 "
+                     "records. There are currently " << m_GCClients.size() <<
+                     " records.");
+        m_Clients.erase(*j);
+    }
+}
+
+
+// Must be called under the lock
+void
+CNSClientsRegistry::x_PurgeAdmins(const CNSPreciseTime &  current_time,
+                                  const CNSPreciseTime &  timeout_admin,
+                                  unsigned int            min_admins,
+                                  bool                    is_log)
+{
+    x_PurgeInactiveClients(current_time, timeout_admin, min_admins,
+                           CNSClient::eAdmin, is_log);
+}
+
+
+// Must be called under the lock
+void
+CNSClientsRegistry::x_PurgeSubmitters(const CNSPreciseTime &  current_time,
+                                      const CNSPreciseTime &  timeout_submitter,
+                                      unsigned int            min_submitters,
+                                      bool                    is_log)
+{
+    x_PurgeInactiveClients(current_time, timeout_submitter, min_submitters,
+                           CNSClient::eSubmitter, is_log);
+}
+
+
+// Must be called under the lock
+void
+CNSClientsRegistry::x_PurgeReaders(const CNSPreciseTime &  current_time,
+                                   const CNSPreciseTime &  timeout_reader,
+                                   unsigned int            min_readers,
+                                   bool                    is_log)
+{
+    x_PurgeInactiveClients(current_time, timeout_reader, min_readers,
+                           CNSClient::eReader, is_log);
+}
+
+
+// Must be called under the lock
+void
+CNSClientsRegistry::x_PurgeUnknowns(const CNSPreciseTime &  current_time,
+                                    const CNSPreciseTime &  timeout_unknown,
+                                    unsigned int            min_unknowns,
+                                    bool                    is_log)
+{
+    x_PurgeInactiveClients(current_time, timeout_unknown, min_unknowns,
+                           0, is_log);
+}
+
+
+void
+CNSClientsRegistry::x_PurgeInactiveClients(const CNSPreciseTime &  current_time,
+                                           const CNSPreciseTime &  timeout,
+                                           unsigned int            min_clients,
+                                           unsigned int            client_type,
+                                           bool                    is_log)
+{
+    map< string, CNSClient >::iterator      k = m_Clients.begin();
+    list< string >                          inactive;
+    unsigned int                            inactive_count = 0;
+    unsigned int                            total_count = 0;    // of given type
+
+    // Count active and inactive admins
+    for ( ; k != m_Clients.end(); ++k ) {
+
+        if (client_type == 0) {
+            if (k->second.GetType() != 0)
+                continue;
+        } else {
+            if ((k->second.GetType() & client_type) == 0)
+                continue;
+            // Worker nodes are handled separately
+            if (k->second.GetType() & CNSClient::eWorkerNode)
+                continue;
+        }
+
+        ++total_count;
+        if (current_time - k->second.GetLastAccess() > timeout) {
+            ++inactive_count;
+            inactive.push_back(k->first);
+        }
+    }
+
+    if (total_count <= min_clients || inactive_count == 0)
+        return;
+
+    // Calculate the number of records to be deleted
+    unsigned int    active_count = total_count - inactive_count;
+    unsigned int    remove_count = 0;
+    if (active_count >= min_clients)
+        remove_count = inactive_count;
+    else
+        remove_count = total_count - min_clients;
+
+    // Sort the inactive ones to delete the oldest
+    inactive.sort(AgeFunctor(m_Clients));
+
+    // Delete the oldest records
+    for (list<string>::iterator  j = inactive.begin();
+         j != inactive.end() && remove_count > 0; ++j, --remove_count) {
+        m_Clients.erase(*j);
+    }
+    return;
+
+}
+
 
 END_NCBI_SCOPE
 

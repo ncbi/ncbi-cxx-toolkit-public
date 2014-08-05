@@ -389,8 +389,9 @@ public:
     unsigned int  DeleteBatch(unsigned int  max_deleted);
     unsigned int  PurgeAffinities(void);
     unsigned int  PurgeGroups(void);
-    void          PurgeWNodes(const CNSPreciseTime &  current_time);
+    void          StaleWNodes(const CNSPreciseTime &  current_time);
     void          PurgeBlacklistedJobs(void);
+    void          PurgeClientRegistry(const CNSPreciseTime &  current_time);
 
     CBDB_FileCursor& GetEventsCursor();
 
@@ -666,6 +667,18 @@ private:
     CJobGCRegistry              m_GCRegistry;
 
     TPauseStatus                m_PauseStatus;
+
+    // Client registry garbage collector settings
+    CNSPreciseTime              m_ClientRegistryTimeoutWorkerNode;
+    unsigned int                m_ClientRegistryMinWorkerNodes;
+    CNSPreciseTime              m_ClientRegistryTimeoutAdmin;
+    unsigned int                m_ClientRegistryMinAdmins;
+    CNSPreciseTime              m_ClientRegistryTimeoutSubmitter;
+    unsigned int                m_ClientRegistryMinSubmitters;
+    CNSPreciseTime              m_ClientRegistryTimeoutReader;
+    unsigned int                m_ClientRegistryMinReaders;
+    CNSPreciseTime              m_ClientRegistryTimeoutUnknown;
+    unsigned int                m_ClientRegistryMinUnknowns;
 };
 
 

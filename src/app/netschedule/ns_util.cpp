@@ -112,8 +112,7 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (val < max_connections_low_limit ||
             val > max_connections_high_limit) {
             well_formed = false;
-            LOG_POST(Message << Warning <<
-                     NS_OutOfLimitMessage(section, "max_connections",
+            ERR_POST(NS_OutOfLimitMessage(section, "max_connections",
                                           max_connections_low_limit,
                                           max_connections_high_limit));
         }
@@ -130,8 +129,7 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
             max_threads_val > max_threads_high_limit) {
             well_formed = false;
             max_threads_ok = false;
-            LOG_POST(Message << Warning <<
-                     NS_OutOfLimitMessage(section, "max_threads",
+            ERR_POST(NS_OutOfLimitMessage(section, "max_threads",
                                           max_threads_low_limit,
                                           max_threads_high_limit));
         }
@@ -148,8 +146,7 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
             init_threads_val > init_threads_high_limit) {
             well_formed = false;
             init_threads_ok = false;
-            LOG_POST(Message << Warning <<
-                     NS_OutOfLimitMessage(section, "init_threads",
+            ERR_POST(NS_OutOfLimitMessage(section, "init_threads",
                                           init_threads_low_limit,
                                           init_threads_high_limit));
         }
@@ -158,11 +155,11 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
     if (max_threads_ok && init_threads_ok) {
         if (init_threads_val > max_threads_val) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " values "
-                             << NS_RegValName(section, "max_threads") << " and "
-                             << NS_RegValName(section, "init_threads")
-                             << " break the mandatory condition "
-                                "init_threads <= max_threads");
+            ERR_POST(g_LogPrefix << " values " <<
+                     NS_RegValName(section, "max_threads") << " and " <<
+                     NS_RegValName(section, "init_threads") <<
+                     " break the mandatory condition "
+                     "init_threads <= max_threads");
         }
     }
 
@@ -178,9 +175,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
                                                default_network_timeout);
         if (network_timeout_val <= 0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "network_timeout")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "network_timeout") <<
+                     " must be > 0");
         }
     }
 
@@ -209,9 +206,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (del_batch_size_val <= 0) {
             well_formed = false;
             del_batch_size_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "del_batch_size")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "del_batch_size") <<
+                     " must be > 0");
         }
     }
 
@@ -225,9 +222,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (markdel_batch_size_val <= 0) {
             well_formed = false;
             markdel_batch_size_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "markdel_batch_size")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "markdel_batch_size") <<
+                     " must be > 0");
         }
     }
 
@@ -241,9 +238,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (scan_batch_size_val <= 0) {
             well_formed = false;
             scan_batch_size_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "scan_batch_size")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "scan_batch_size") <<
+                     " must be > 0");
         }
     }
 
@@ -257,31 +254,31 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (purge_timeout_val <= 0.0) {
             well_formed = false;
             purge_timeout_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "purge_timeout")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "purge_timeout") <<
+                     " must be > 0");
         }
     }
 
     if (scan_batch_size_ok && markdel_batch_size_ok) {
         if (scan_batch_size_val < markdel_batch_size_val) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " values "
-                             << NS_RegValName(section, "scan_batch_size") << " and "
-                             << NS_RegValName(section, "markdel_batch_size")
-                             << " break the mandatory condition "
-                                "markdel_batch_size <= scan_batch_size");
+            ERR_POST(g_LogPrefix << " values " <<
+                     NS_RegValName(section, "scan_batch_size") << " and " <<
+                     NS_RegValName(section, "markdel_batch_size") <<
+                     " break the mandatory condition "
+                     "markdel_batch_size <= scan_batch_size");
         }
     }
 
     if (markdel_batch_size_ok && del_batch_size_ok) {
         if (markdel_batch_size_val < del_batch_size_val) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " values "
-                             << NS_RegValName(section, "markdel_batch_size") << " and "
-                             << NS_RegValName(section, "del_batch_size")
-                             << " break the mandatory condition "
-                                "del_batch_size <= markdel_batch_size");
+            ERR_POST(g_LogPrefix << " values " <<
+                     NS_RegValName(section, "markdel_batch_size") << " and " <<
+                     NS_RegValName(section, "del_batch_size") <<
+                     " break the mandatory condition "
+                     "del_batch_size <= markdel_batch_size");
         }
     }
 
@@ -294,9 +291,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
                                                        default_stat_interval);
         if (stat_interval_val <= 0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "stat_interval")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "stat_interval") <<
+                     " must be > 0");
         }
     }
 
@@ -309,9 +306,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
                                                         default_max_affinities);
         if (max_affinities_val <= 0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "max_affinities")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "max_affinities") <<
+                     " must be > 0");
         }
     }
 
@@ -319,13 +316,14 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
                                                 "max_client_data");
     well_formed = well_formed && max_client_data_ok;
     if (max_client_data_ok) {
-        unsigned int    max_client_data_val = reg.GetInt(section, "max_client_data",
-                                                         default_max_client_data);
+        unsigned int    max_client_data_val =
+                                    reg.GetInt(section, "max_client_data",
+                                               default_max_client_data);
         if (max_client_data_val <= 0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "max_client_data")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "max_client_data") <<
+                     " must be > 0");
         }
     }
 
@@ -343,10 +341,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
             affinity_high_mark_percentage_val >= 100) {
             well_formed = false;
             affinity_high_mark_percentage_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section,
-                                              "affinity_high_mark_percentage")
-                             << " must be between 0 and 100");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "affinity_high_mark_percentage") <<
+                     " must be between 0 and 100");
         }
     }
 
@@ -364,10 +361,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
             affinity_low_mark_percentage_val >= 100) {
             well_formed = false;
             affinity_low_mark_percentage_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section,
-                                              "affinity_low_mark_percentage")
-                             << " must be between 0 and 100");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "affinity_low_mark_percentage") <<
+                     " must be between 0 and 100");
         }
     }
 
@@ -384,10 +380,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (affinity_high_removal_val <= 0) {
             well_formed = false;
             affinity_high_removal_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section,
-                                              "affinity_high_removal")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "affinity_high_removal") <<
+                     " must be > 0");
         }
     }
 
@@ -404,10 +399,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (affinity_low_removal_val <= 0) {
             well_formed = false;
             affinity_low_removal_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section,
-                                              "affinity_low_removal")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "affinity_low_removal") <<
+                     " must be > 0");
         }
     }
 
@@ -425,10 +419,9 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
             affinity_dirt_percentage_val >= 100) {
             well_formed = false;
             affinity_dirt_percentage_ok = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section,
-                                              "affinity_dirt_percentage")
-                             << " must be between 0 and 100");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "affinity_dirt_percentage") <<
+                     " must be between 0 and 100");
         }
     }
 
@@ -437,13 +430,13 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (affinity_low_mark_percentage_val >=
             affinity_high_mark_percentage_val) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " values "
-                 << NS_RegValName(section, "affinity_low_mark_percentage")
-                 << " and "
-                 << NS_RegValName(section, "affinity_high_mark_percentage")
-                 << " break the mandatory condition "
-                    "affinity_low_mark_percentage < "
-                    "affinity_high_mark_percentage");
+            ERR_POST(g_LogPrefix << " values " <<
+                     NS_RegValName(section, "affinity_low_mark_percentage") <<
+                     " and " <<
+                     NS_RegValName(section, "affinity_high_mark_percentage") <<
+                     " break the mandatory condition "
+                     "affinity_low_mark_percentage < "
+                     "affinity_high_mark_percentage");
         }
     }
 
@@ -452,24 +445,24 @@ bool NS_ValidateServerSection(const IRegistry &  reg)
         if (affinity_dirt_percentage_val >=
             affinity_low_mark_percentage_val) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " values "
-                 << NS_RegValName(section, "affinity_low_mark_percentage")
-                 << " and "
-                 << NS_RegValName(section, "affinity_dirt_percentage")
-                 << " break the mandatory condition "
-                    "affinity_dirt_percentage < affinity_low_mark_percentage");
+            ERR_POST(g_LogPrefix << " values " <<
+                     NS_RegValName(section, "affinity_low_mark_percentage") <<
+                     " and " <<
+                     NS_RegValName(section, "affinity_dirt_percentage") <<
+                     " break the mandatory condition "
+                     "affinity_dirt_percentage < affinity_low_mark_percentage");
         }
     }
 
     if (affinity_high_removal_ok && affinity_low_removal_ok) {
         if (affinity_high_removal_val < affinity_low_removal_val) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " values "
-                << NS_RegValName(section, "affinity_high_removal")
-                << " and "
-                << NS_RegValName(section, "affinity_low_removal")
-                << " break the mandatory condition "
-                   "affinity_low_removal <= affinity_high_removal");
+            ERR_POST(g_LogPrefix << " values " <<
+                     NS_RegValName(section, "affinity_high_removal") <<
+                     " and " <<
+                     NS_RegValName(section, "affinity_low_removal") <<
+                     " break the mandatory condition "
+                     "affinity_low_removal <= affinity_high_removal");
         }
     }
 
@@ -516,9 +509,9 @@ bool NS_ValidateClasses(const IRegistry &  reg,
 
         if (queue_class.empty()) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << "queue class section "
-                             << section_name << " name is malformed. "
-                                "Class name is expected.");
+            ERR_POST(g_LogPrefix << "queue class section " <<
+                     section_name << " name is malformed. "
+                                     "Class name is expected.");
             continue;
         }
 
@@ -552,9 +545,9 @@ bool NS_ValidateQueues(const IRegistry &  reg,
 
         if (queue_name.empty()) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << "queue section "
-                             << section_name << " name is malformed. "
-                                "Queue name is expected.");
+            ERR_POST(g_LogPrefix << "queue section " <<
+                     section_name << " name is malformed. "
+                                     "Queue name is expected.");
             continue;
         }
 
@@ -592,9 +585,8 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_timeout));
         if (value <= 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "timeout")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "timeout") << " must be > 0");
         }
     }
 
@@ -607,9 +599,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
         value = (int(value * 10)) / 10.0;
         if (value <= 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "notif_hifreq_interval")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "notif_hifreq_interval") <<
+                     " must be > 0");
         }
     }
 
@@ -621,9 +613,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_notif_hifreq_period));
         if (value <= 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "notif_hifreq_period")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "notif_hifreq_period") <<
+                     " must be > 0");
         }
     }
 
@@ -635,9 +627,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                   default_notif_lofreq_mult);
         if (value <= 0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "notif_lofreq_mult")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "notif_lofreq_mult") <<
+                     " must be > 0");
         }
     }
 
@@ -649,9 +641,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       default_notif_handicap);
         if (value < 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "notif_handicap")
-                             << " must be > 0.0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "notif_handicap") <<
+                     " must be > 0.0");
         }
     }
 
@@ -663,17 +655,15 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                   default_dump_buffer_size);
         if (value < int(default_dump_buffer_size)) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "dump_buffer_size")
-                             << " must not be less than "
-                             << default_dump_buffer_size);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "dump_buffer_size") <<
+                     " must not be less than " << default_dump_buffer_size);
         }
         else if (value > int(max_dump_buffer_size)) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "dump_buffer_size")
-                             << " must not be larger than "
-                             << max_dump_buffer_size);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "dump_buffer_size") <<
+                     " must not be larger than " << max_dump_buffer_size);
         }
     }
 
@@ -685,17 +675,17 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                   default_dump_client_buffer_size);
         if (value < int(default_dump_client_buffer_size)) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "dump_client_buffer_size")
-                             << " must not be less than "
-                             << default_dump_client_buffer_size);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "dump_client_buffer_size") <<
+                     " must not be less than " <<
+                     default_dump_client_buffer_size);
         }
         else if (value > int(max_dump_client_buffer_size)) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "dump_client_buffer_size")
-                             << " must not be larger than "
-                             << max_dump_client_buffer_size);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "dump_client_buffer_size") <<
+                     " must not be larger than " <<
+                     max_dump_client_buffer_size);
         }
     }
 
@@ -707,17 +697,15 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                   default_dump_aff_buffer_size);
         if (value < int(default_dump_aff_buffer_size)) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "dump_aff_buffer_size")
-                             << " must not be less than "
-                             << default_dump_aff_buffer_size);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "dump_aff_buffer_size") <<
+                     " must not be less than " << default_dump_aff_buffer_size);
         }
         else if (value > int(max_dump_aff_buffer_size)) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "dump_aff_buffer_size")
-                             << " must not be larger than "
-                             << max_dump_aff_buffer_size);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "dump_aff_buffer_size") <<
+                     " must not be larger than " << max_dump_aff_buffer_size);
         }
     }
 
@@ -729,17 +717,16 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                   default_dump_group_buffer_size);
         if (value < int(default_dump_group_buffer_size)) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "dump_group_buffer_size")
-                             << " must not be less than "
-                             << default_dump_group_buffer_size);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "dump_group_buffer_size") <<
+                     " must not be less than " <<
+                     default_dump_group_buffer_size);
         }
         else if (value > int(max_dump_group_buffer_size)) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "dump_group_buffer_size")
-                             << " must not be larger than "
-                             << max_dump_group_buffer_size);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "dump_group_buffer_size") <<
+                     " must not be larger than " << max_dump_group_buffer_size);
         }
     }
 
@@ -751,9 +738,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_run_timeout));
         if (value < 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "run_timeout")
-                             << " must be >= 0.0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "run_timeout") <<
+                     " must be >= 0.0");
         }
     }
 
@@ -765,9 +752,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_read_timeout));
         if (value < 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "read_timeout")
-                             << " must be >= 0.0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "read_timeout") <<
+                     " must be >= 0.0");
         }
     }
 
@@ -779,9 +766,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_run_timeout_precision));
         if (value < 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "run_timeout_precision")
-                             << " must be >= 0.0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "run_timeout_precision") <<
+                     " must be >= 0.0");
         }
     }
 
@@ -796,9 +783,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                   default_failed_retries);
         if (value < 0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "failed_retries")
-                             << " must be > 0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "failed_retries") <<
+                     " must be > 0");
         }
     }
 
@@ -810,9 +797,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_blacklist_time));
         if (value < 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "blacklist_time")
-                             << " must be >= 0.0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "blacklist_time") <<
+                     " must be >= 0.0");
         }
     }
 
@@ -829,18 +816,18 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
         }
         catch (const CStringException &  ex) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "max_input_size")
-                             << " could not be converted to unsigned integer: "
-                             << ex.what());
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "max_input_size") <<
+                     " could not be converted to unsigned integer: " <<
+                     ex.what());
         }
 
         if (value > kNetScheduleMaxOverflowSize) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "max_input_size")
-                             << " must not be larger than "
-                             << kNetScheduleMaxOverflowSize);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "max_input_size") <<
+                     " must not be larger than " <<
+                     kNetScheduleMaxOverflowSize);
         }
     }
 
@@ -857,24 +844,25 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
         }
         catch (CStringException &  ex) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "max_output_size")
-                             << " could not be converted to unsigned integer: "
-                             << ex.what());
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "max_output_size") <<
+                     " could not be converted to unsigned integer: " <<
+                     ex.what());
         }
 
         if (value > kNetScheduleMaxOverflowSize) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "max_output_size")
-                             << " must not be larger than "
-                             << kNetScheduleMaxOverflowSize);
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "max_output_size") <<
+                     " must not be larger than " <<
+                     kNetScheduleMaxOverflowSize);
         }
     }
 
     well_formed = well_formed && NS_ValidateString(reg, section, "subm_host");
     well_formed = well_formed && NS_ValidateString(reg, section, "wnode_host");
 
+    double  wnode_timeout_value = double(default_wnode_timeout);
     bool    wnode_timeout_ok = NS_ValidateDouble(reg, section, "wnode_timeout");
     well_formed = well_formed && wnode_timeout_ok;
     if (wnode_timeout_ok) {
@@ -882,10 +870,11 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_wnode_timeout));
         if (value <= 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "wnode_timeout")
-                             << " must be > 0.0");
-        }
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "wnode_timeout") <<
+                     " must be > 0.0");
+        } else
+            wnode_timeout_value = value;
     }
 
     bool    pending_timeout_ok = NS_ValidateDouble(reg, section,
@@ -896,9 +885,9 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_pending_timeout));
         if (value <= 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section, "pending_timeout")
-                             << " must be > 0.0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "pending_timeout") <<
+                     " must be > 0.0");
         }
     }
 
@@ -910,10 +899,176 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                                       double(default_max_pending_wait_timeout));
         if (value < 0.0) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " value "
-                             << NS_RegValName(section,
-                                              "max_pending_wait_timeout")
-                             << " must be >= 0.0");
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "max_pending_wait_timeout") <<
+                     " must be >= 0.0");
+        }
+    }
+
+    bool    client_registry_timeout_worker_node_ok =
+                    NS_ValidateDouble(reg, section,
+                                      "client_registry_timeout_worker_node");
+    well_formed = well_formed && client_registry_timeout_worker_node_ok;
+    if (client_registry_timeout_worker_node_ok) {
+        double  value = reg.GetDouble(
+                        section,
+                        "client_registry_timeout_worker_node",
+                        double(default_client_registry_timeout_worker_node));
+        if (value <= 0.0 || value <= wnode_timeout_value) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section,
+                                   "client_registry_timeout_worker_node") <<
+                     " must be > 0.0 and > wnode_timeout");
+        }
+    }
+
+    bool    client_registry_min_worker_nodes_ok =
+                    NS_ValidateInt(reg, section,
+                                   "client_registry_min_worker_nodes");
+    well_formed = well_formed && client_registry_min_worker_nodes_ok;
+    if (client_registry_min_worker_nodes_ok) {
+        int    value = reg.GetInt(section, "client_registry_min_worker_nodes",
+                                  default_client_registry_min_worker_nodes);
+        if (value < 1) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section,
+                                   "client_registry_min_worker_nodes") <<
+                     " must be > 0");
+        }
+    }
+
+    bool    client_registry_timeout_admin_ok =
+                    NS_ValidateDouble(reg, section,
+                                      "client_registry_timeout_admin");
+    well_formed = well_formed && client_registry_timeout_admin_ok;
+    if (client_registry_timeout_admin_ok) {
+        double  value = reg.GetDouble(
+                        section,
+                        "client_registry_timeout_admin",
+                        double(default_client_registry_timeout_admin));
+        if (value <= 0.0) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section,
+                                   "client_registry_timeout_admin") <<
+                     " must be > 0.0");
+        }
+    }
+
+    bool    client_registry_min_admins_ok =
+                    NS_ValidateInt(reg, section,
+                                   "client_registry_min_admins");
+    well_formed = well_formed && client_registry_min_admins_ok;
+    if (client_registry_min_admins_ok) {
+        int    value = reg.GetInt(section, "client_registry_min_admins",
+                                  default_client_registry_min_admins);
+        if (value < 1) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section,
+                                   "client_registry_min_admins") <<
+                     " must be > 0");
+        }
+    }
+
+    bool    client_registry_timeout_submitter_ok =
+                    NS_ValidateDouble(reg, section,
+                                      "client_registry_timeout_submitter");
+    well_formed = well_formed && client_registry_timeout_submitter_ok;
+    if (client_registry_timeout_submitter_ok) {
+        double  value = reg.GetDouble(
+                        section,
+                        "client_registry_timeout_submitter",
+                        double(default_client_registry_timeout_submitter));
+        if (value <= 0.0) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section,
+                                   "client_registry_timeout_submitter") <<
+                     " must be > 0.0");
+        }
+    }
+
+    bool    client_registry_min_submitters_ok =
+                    NS_ValidateInt(reg, section,
+                                   "client_registry_min_submitters");
+    well_formed = well_formed && client_registry_min_submitters_ok;
+    if (client_registry_min_submitters_ok) {
+        int    value = reg.GetInt(section, "client_registry_min_submitters",
+                                  default_client_registry_min_submitters);
+        if (value < 1) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section,
+                                   "client_registry_min_submitters") <<
+                     " must be > 0");
+        }
+    }
+
+    bool    client_registry_timeout_reader_ok =
+                    NS_ValidateDouble(reg, section,
+                                      "client_registry_timeout_reader");
+    well_formed = well_formed && client_registry_timeout_reader_ok;
+    if (client_registry_timeout_reader_ok) {
+        double  value = reg.GetDouble(
+                        section,
+                        "client_registry_timeout_reader",
+                        double(default_client_registry_timeout_reader));
+        if (value <= 0.0) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "client_registry_timeout_reader") <<
+                     " must be > 0.0");
+        }
+    }
+
+    bool    client_registry_min_readers_ok =
+                    NS_ValidateInt(reg, section,
+                                   "client_registry_min_readers");
+    well_formed = well_formed && client_registry_min_readers_ok;
+    if (client_registry_min_readers_ok) {
+        int    value = reg.GetInt(section, "client_registry_min_readers",
+                                  default_client_registry_min_readers);
+        if (value < 1) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "client_registry_min_readers") <<
+                     " must be > 0");
+        }
+    }
+
+    bool    client_registry_timeout_unknown_ok =
+                    NS_ValidateDouble(reg, section,
+                                      "client_registry_timeout_unknown");
+    well_formed = well_formed && client_registry_timeout_unknown_ok;
+    if (client_registry_timeout_unknown_ok) {
+        double  value = reg.GetDouble(
+                        section,
+                        "client_registry_timeout_unknown",
+                        double(default_client_registry_timeout_unknown));
+        if (value <= 0.0) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section,
+                                   "client_registry_timeout_unknown") <<
+                     " must be > 0.0");
+        }
+    }
+
+    bool    client_registry_min_unknowns_ok =
+                    NS_ValidateInt(reg, section,
+                                   "client_registry_min_unknowns");
+    well_formed = well_formed && client_registry_min_unknowns_ok;
+    if (client_registry_min_unknowns_ok) {
+        int    value = reg.GetInt(section, "client_registry_min_unknowns",
+                                  default_client_registry_min_unknowns);
+        if (value < 1) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "client_registry_min_unknowns") <<
+                     " must be > 0");
         }
     }
 
@@ -938,9 +1093,8 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
 
         if (entry == "linked_section_") {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << " entry name "
-                             << NS_RegValName(section, entry)
-                             << " is malformed");
+            ERR_POST(g_LogPrefix << " entry name " <<
+                     NS_RegValName(section, entry) << " is malformed");
             continue;
         }
 
@@ -951,16 +1105,15 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
 
             if (ref_section.empty()) {
                 well_formed = false;
-                LOG_POST(Message << Warning << g_LogPrefix << " value of entry "
-                                 << NS_RegValName(section, entry)
-                                 << " must be supplied");
+                ERR_POST(g_LogPrefix << " value of entry " <<
+                         NS_RegValName(section, entry) << " must be supplied");
             } else if (find(available_sections.begin(),
                             available_sections.end(),
                             ref_section) == available_sections.end()) {
                 well_formed = false;
-                LOG_POST(Message << Warning << g_LogPrefix << " value of entry "
-                                 << NS_RegValName(section, entry)
-                                 << " refers to a non-existing section");
+                ERR_POST(g_LogPrefix << " value of entry " <<
+                         NS_RegValName(section, entry) <<
+                         " refers to a non-existing section");
             }
         }
     }
@@ -1004,19 +1157,16 @@ bool NS_ValidateServiceToQueueSection(const IRegistry &  reg,
         string      qname = reg.Get(section, service_name);
         if (qname.empty()) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << "service "
-                             << service_name
-                             << " does not point to a queue.");
+            ERR_POST(g_LogPrefix << "service " << service_name <<
+                     " does not point to a queue.");
             continue;
         }
 
         // Check that the queue name has been provided
         if (find(queues.begin(), queues.end(), qname) == queues.end()) {
             well_formed = false;
-            LOG_POST(Message << Warning << g_LogPrefix << "service "
-                             << service_name
-                             << " points to non-existent queue "
-                             << qname);
+            ERR_POST(g_LogPrefix << "service " << service_name <<
+                     " points to non-existent queue " << qname);
         }
     }
 
@@ -1052,9 +1202,8 @@ bool NS_ValidateBool(const IRegistry &  reg,
         reg.GetBool(section, entry, false);
     }
     catch (...) {
-        LOG_POST(Message << Warning << g_LogPrefix << "unexpected value of ["
-                         << NS_RegValName(section, entry)
-                         << ". Expected boolean value.");
+        ERR_POST(g_LogPrefix << "unexpected value of [" <<
+                 NS_RegValName(section, entry) << ". Expected boolean value.");
         return false;
     }
     return true;
@@ -1069,9 +1218,8 @@ bool NS_ValidateInt(const IRegistry &  reg,
         reg.GetInt(section, entry, 0);
     }
     catch (...) {
-        LOG_POST(Message << Warning << g_LogPrefix << "unexpected value of ["
-                         << NS_RegValName(section, entry)
-                         << ". Expected integer value.");
+        ERR_POST(g_LogPrefix << "unexpected value of [" <<
+                 NS_RegValName(section, entry) << ". Expected integer value.");
         return false;
     }
     return true;
@@ -1086,9 +1234,9 @@ bool NS_ValidateDouble(const IRegistry &  reg,
         reg.GetDouble(section, entry, 0.0);
     }
     catch (...) {
-        LOG_POST(Message << Warning << g_LogPrefix << "unexpected value of "
-                         << NS_RegValName(section, entry)
-                         << ". Expected floating point value.");
+        ERR_POST(g_LogPrefix << "unexpected value of " <<
+                 NS_RegValName(section, entry) <<
+                 ". Expected floating point value.");
         return false;
     }
     return true;
@@ -1103,9 +1251,8 @@ bool NS_ValidateString(const IRegistry &  reg,
         reg.GetString(section, entry, "");
     }
     catch (...) {
-        LOG_POST(Message << Warning << g_LogPrefix << "unexpected value of "
-                         << NS_RegValName(section, entry)
-                         << ". Expected string value.");
+        ERR_POST(g_LogPrefix << "unexpected value of " <<
+                 NS_RegValName(section, entry) << ". Expected string value.");
         return false;
     }
     return true;
