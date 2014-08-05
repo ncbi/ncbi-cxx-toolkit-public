@@ -31,14 +31,26 @@
 
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
-#include <objmgr/seq_vector.hpp>
 #include <algorithm>
+#include <corelib/ncbistd.hpp>
+
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Rsite_ref.hpp>
+#include <objects/seqloc/Seq_point.hpp>
+
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
+
 #include <algo/sequence/restriction.hpp>
 
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
+NCBI_PARAM_DECL(string, RESTRICTION_SITES, REBASE);
+NCBI_PARAM_DEF (string, RESTRICTION_SITES, REBASE, "");
+typedef NCBI_PARAM_TYPE(RESTRICTION_SITES, REBASE) TRebaseData;
 
 
 bool CRSpec::operator<(const CRSpec& rhs) const
@@ -128,6 +140,153 @@ ostream& operator<<(ostream& os, const CRSite& site)
 }
 
 
+CRSpec CRebase::MakeRSpec(const string& site)
+{
+    // site contains a string such as
+    // GACGTC, GACGT^C, GCAGC(8/12), or (8/13)GAGNNNNNCTC(13/8)
+
+    CRSpec spec;
+
+    int plus_cut, minus_cut;
+
+    string s = site;
+    if (s[0] == '(') {
+        string::size_type idx = s.find_first_of(")");
+        if (idx == std::string::npos) {
+            throw runtime_error(string("Error parsing site ")
+                                + site);
+        }
+        x_ParseCutPair(s.substr(0, idx + 1), plus_cut, minus_cut);
+        s.erase(0, idx + 1);
+        spec.SetPlusCuts().push_back(-plus_cut);
+        spec.SetMinusCuts().push_back(-minus_cut);
+    }
+    if (s[s.length() - 1] == ')') {
+        string::size_type idx = s.find_last_of("(");
+        if (idx == std::string::npos) {
+            throw runtime_error(string("Error parsing site ")
+                                + site);
+        }
+        x_ParseCutPair(s.substr(idx), plus_cut, minus_cut);
+        s.erase(idx);
+        spec.SetPlusCuts().push_back(plus_cut + s.length());
+        spec.SetMinusCuts().push_back(minus_cut + s.length());
+    }
+    for (unsigned int i = 0;  i < s.length();  i++) {
+        if (s[i] == '^') {
+
+            // This should be simple.  If we have
+            // G^GATCC, the cut on the plus strand is
+            // at 1, and on the minus it's at the
+            // symmetric position, 5.
+            // The complication is that TspRI
+            // is given as CASTGNN^, not NNCASTGNN^.
+            // Someone someday might write NNCASTGNN^,
+            // and something like ^NNGATC might arise,
+            // so code defensively.
+
+            s.erase(i, 1);
+            int plus_cut = i;
+
+            // this is the slightly complicated bit
+            // trim any leading and trailing N's;
+            // in case leading N's removed, adjust plus_cut accordingly
+            string::size_type idx = s.find_first_not_of("N");
+            if (idx == string::npos) {
+                // bizarre situation; all N's (possibly empty)
+                s.erase();
+                plus_cut = 0;
+            } else {
+                s.erase(0, idx);
+                plus_cut -= idx;
+            }
+            idx = s.find_last_not_of("N");
+            s.erase(idx + 1);
+
+            // plus strand cut
+            spec.SetPlusCuts().push_back(plus_cut);
+            // symmetric cut on minus strand
+            spec.SetMinusCuts().push_back(s.length() - plus_cut);
+            break;  // there better be just one '^'
+        }
+    }
+    spec.SetSeq(s);
+    return spec;
+}
+
+
+CREnzyme CRebase::MakeREnzyme(const string& name, const string& sites)
+{
+
+    CREnzyme re;
+
+    re.SetName(name);
+
+    vector<string> site_vec;
+    NStr::Tokenize(sites, ",", site_vec);
+    ITERATE (vector<string>, iter, site_vec) {
+        CRSpec spec = CRebase::MakeRSpec(*iter);
+        re.SetSpecs().push_back(spec);
+    }
+
+    return re;
+}
+
+
+string CRebase::GetDefaultDataPath()
+{
+    return TRebaseData::GetDefault();
+}
+
+
+void CRebase::x_ParseCutPair(const string& s, int& plus_cut, int& minus_cut)
+{
+    // s should look like "(8/13)"; plus_cut gets set to 8 and minus_cut to 13
+    list<string> l;
+    NStr::Split(s.substr(1, s.length() - 2), "/", l);
+    if (l.size() != 2) {
+        throw runtime_error(string("Couldn't parse cut locations ")
+                            + s);
+    }
+    plus_cut = NStr::StringToInt(l.front());
+    minus_cut = NStr::StringToInt(l.back());
+}
+
+
+void CRebase::ReadNARFormat(istream& input,
+                            vector<CREnzyme>& enzymes,
+                            enum EEnzymesToLoad which)
+{
+    string line;
+    CREnzyme enzyme;
+    string name;
+
+    while (getline(input, line)) {
+        vector<string> fields;
+        NStr::Tokenize(line, "\t", fields);
+        // the lines we're interested in have more than one field
+        if (fields.size() < 2) {
+            continue;
+        }
+        // name of enzyme is in field one or two (field zero is empty)
+        name = fields[1];
+        if (name == " ") {
+            if (which == ePrototype) {
+                continue;  // skip this non-protype
+            }
+            name = fields[2];
+        }
+        if (which == eCommercial && fields[5].empty()) {
+            continue;  // skip this commercially unavailable enzyme
+        }
+        string sites = fields[3];  // this contains a comma-separted list of sites,
+                            // usually just one (but TaqII has two)
+        enzyme = MakeREnzyme(name, sites);
+        enzymes.push_back(enzyme);
+    }
+}
+
+
 ostream& operator<<(ostream& os, const CREnzResult& er)
 {
     os << "Enzyme: " << er.GetEnzymeName() << endl;
@@ -194,6 +353,52 @@ private:
 };
 
 
+// helper functor for sorting CRef<CREnzResult> by the enzyme name
+struct SEnzymeNameCompare
+{
+    bool operator()
+        (const CRef<CREnzResult>& lhs, const CRef<CREnzResult>& rhs) const
+    {
+        return lhs->GetEnzymeName() < rhs->GetEnzymeName();
+    }
+};
+
+
+// helper functor for sorting CREnzyme by the enzyme name
+struct SNameCompare
+{
+    bool operator()
+        (const CREnzyme& lhs, const CREnzyme& rhs) const
+    {
+        return lhs.GetName() < rhs.GetName();
+    }
+};
+
+
+// helper functor for sorting by the number of definite sites
+struct SLessDefSites
+{
+    bool operator()
+        (const CRef<CREnzResult>& lhs, const CRef<CREnzResult>& rhs) const
+    {
+        return lhs->GetDefiniteSites().size() < rhs->GetDefiniteSites().size();
+    }
+};
+
+
+// helper functor for sorting CRef<CSeq_loc>s by location
+struct SLessSeq_loc
+{
+    bool operator()
+        (const CRef<CSeq_loc>& lhs, const CRef<CSeq_loc>& rhs) const
+    {
+        return (lhs->Compare(*rhs) < 0);
+    }
+};
+
+
+
+
 void CFindRSites::x_ExpandRecursion(string& s, unsigned int pos,
                                     CTextFsm<int>& fsm, int match_value)
 {
@@ -212,6 +417,218 @@ void CFindRSites::x_ExpandRecursion(string& s, unsigned int pos,
     }
     // restore original character
     s[pos] = orig_ch;
+}
+
+
+CFindRSites::CFindRSites(const string& refile,
+                         CRebase::EEnzymesToLoad which_enzymes,
+                         TFlags flags)
+    : m_Flags(flags)
+{
+    x_LoadREnzymeData(refile.empty()
+                          ? CRebase::GetDefaultDataPath()
+                          : refile,
+                      which_enzymes);
+}
+
+
+void CFindRSites::x_LoadREnzymeData(const string& refile,
+                                    CRebase::EEnzymesToLoad which_enzymes)
+{
+    if (! refile.empty()) {
+        ifstream istr(refile.c_str());
+        CRebase::ReadNARFormat(istr, m_Enzymes, which_enzymes);
+
+        if (m_Flags & fCombineIsoschizomers) {
+            // first sort alphabetically by enzyme name
+            sort(m_Enzymes.begin(), m_Enzymes.end(), SNameCompare());
+            // now combine isoschizomers
+            CREnzyme::CombineIsoschizomers(m_Enzymes);
+        }
+    }
+}
+
+
+// remap a child location to a parent
+static CRef<CSeq_loc> s_RemapChildToParent(const CSeq_loc& parent,
+                                           const CSeq_loc& child,
+                                           CScope* scope)
+{
+    CSeq_loc dummy_parent;
+    dummy_parent.SetWhole(const_cast<CSeq_id&>(sequence::GetId(parent, 0)));
+    SRelLoc converter(dummy_parent, child, scope);
+    converter.m_ParentLoc = &parent;
+    return converter.Resolve(scope);
+}
+
+static
+void s_AddSitesToAnnot(const vector<CRSite>& sites,
+                       const CREnzResult&    result,
+                       CSeq_annot&           annot,
+                       CScope&               scope,
+                       const CSeq_loc&       parent_loc,
+                       bool                  definite = true)
+{
+    const CSeq_id& id = sequence::GetId(parent_loc, 0);
+
+    ITERATE (vector<CRSite>, site, sites) {
+        // create feature
+        CRef<CSeq_feat> feat(new CSeq_feat());
+
+        // start to set up Rsite
+        feat->SetData().SetRsite().SetDb().SetDb("REBASE");
+        feat->SetData().SetRsite().SetDb()
+            .SetTag().SetStr("REBASE");
+
+        string str(result.GetEnzymeName());
+        if ( !definite ) {
+            str = "Possible " + str;
+        }
+        feat->SetData().SetRsite().SetStr(str);
+
+        //
+        // build our location
+        //
+
+        vector< CRef<CSeq_loc> > locs;
+
+        // a loc for the recognition site
+        CRef<CSeq_loc> recog_site(new CSeq_loc);
+        recog_site->SetInt().SetFrom(site->GetStart());
+        recog_site->SetInt().SetTo  (site->GetEnd());
+        recog_site->SetId(id);
+        locs.push_back(recog_site);
+
+        // locs for the cleavage sites
+        int negative_cut_locs = 0;  // count these exceptions
+        ITERATE (vector<int>, cut, site->GetPlusCuts()) {
+            if (*cut >= 0 ) {
+                CRef<CSeq_loc> cut_site(new CSeq_loc);
+                cut_site->SetPnt().SetPoint(*cut);
+                // indicate that the cut is to the "left"
+                cut_site->SetPnt()
+                    .SetFuzz().SetLim(CInt_fuzz::eLim_tl);
+                cut_site->SetPnt().SetStrand(eNa_strand_plus);
+                cut_site->SetId(id);
+                locs.push_back(cut_site);
+            } else {
+                negative_cut_locs++;
+            }
+        }
+
+        ITERATE (vector<int>, cut, site->GetMinusCuts()) {
+            if (*cut >= 0 ) {
+                CRef<CSeq_loc> cut_site(new CSeq_loc);
+                cut_site->SetPnt().SetPoint(*cut);
+                // indicate that the cut is to the "left"
+                cut_site->SetPnt()
+                    .SetFuzz().SetLim(CInt_fuzz::eLim_tl);
+                cut_site->SetPnt().SetStrand(eNa_strand_minus);
+                cut_site->SetId(id);
+                locs.push_back(cut_site);
+            } else {
+                negative_cut_locs++;
+            }
+        }
+
+        // comment for those few cases where there are
+        // cuts before the sequence begins
+        if (negative_cut_locs > 0) {
+            string a_comm = NStr::IntToString(negative_cut_locs)
+                + " cleavage sites are located before the"
+                " beginning of the sequence and are not reported";
+            feat->SetComment(a_comm);
+        }
+
+        sort(locs.begin(), locs.end(), SLessSeq_loc());
+        copy(locs.begin(), locs.end(),
+             back_inserter(feat->SetLocation().SetMix().Set()));
+
+        feat->SetLocation
+            (*s_RemapChildToParent(parent_loc, feat->GetLocation(), &scope));
+
+        // save in annot
+        annot.SetData().SetFtable().push_back(feat);
+    }
+}
+
+
+CRef<objects::CSeq_annot>
+CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
+{
+    // get sequence in binary (8na) form
+    CSeqVector vec(loc, scope, CBioseq_Handle::eCoding_Ncbi);
+
+    // a new feature table
+    CRef<CSeq_annot> annot(new CSeq_annot());
+
+    // a place to store results (one per enzyme)
+    typedef vector<CRef<CREnzResult> > TResults;
+    TResults results;
+
+    // do the big search
+    Find(vec, m_Enzymes, results);
+
+    // add description to annot
+    annot->SetNameDesc("Restriction sites");
+    annot->SetCreateDate(CTime(CTime::eCurrent));
+
+    // deal with stored enzyme results
+
+    sort(results.begin(), results.end(), SEnzymeNameCompare());
+
+    if (m_Flags & fSortByNumberOfSites) {
+        // do a stablesort so alphabetical order preserved
+        // within sets with the same number of sites
+        stable_sort(results.begin(), results.end(), SLessDefSites());
+    }
+
+    // count the number of definite and possible sites
+    int total_definite_sites = 0, total_possible_sites = 0;
+    int total_non_cutters = 0;
+    ITERATE (TResults, result, results) {
+        total_definite_sites += (*result)->GetDefiniteSites().size();
+        total_possible_sites += (*result)->GetPossibleSites().size();
+        if ((*result)->GetDefiniteSites().size()
+            + (*result)->GetPossibleSites().size() == 0) {
+            total_non_cutters++;
+        }
+    }
+    _TRACE("Found " << total_definite_sites << " definite and "
+           << total_possible_sites << " possible sites");
+
+    /**
+    // in order to build dialog efficiently,
+    // pre-allocate rows
+    int total_rows = total_definite_sites + total_possible_sites
+        + total_non_cutters;
+        **/
+
+    ITERATE (TResults, result, results) {
+
+        const vector<CRSite>& definite_sites =
+            (*result)->GetDefiniteSites();
+        const vector<CRSite>& possible_sites =
+            (*result)->GetPossibleSites();
+
+        //
+        // add features to annot
+        //
+        s_AddSitesToAnnot(definite_sites, **result, *annot, scope, loc);
+        s_AddSitesToAnnot(possible_sites, **result, *annot, scope, loc, false);
+    }
+
+    return annot;
+}
+
+
+CRef<objects::CSeq_annot>
+CFindRSites::GetAnnot(CBioseq_Handle bsh) const
+{
+    CSeq_id_Handle idh = sequence::GetId(bsh);
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetWhole().Assign(*idh.GetSeqId());
+    return GetAnnot(bsh.GetScope(), *loc);
 }
 
 

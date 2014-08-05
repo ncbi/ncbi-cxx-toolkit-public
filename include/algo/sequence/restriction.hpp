@@ -320,6 +320,39 @@ const vector<CRSpec>& CREnzyme::GetSpecs(void) const
 
 
 ///
+/// This class provides utilities for dealing with
+/// REBASE format restriction enzyme databases.
+///
+
+class NCBI_XALGOSEQ_EXPORT CRebase
+{
+public:
+    // build a CRSpec based on a string from REBASE
+    static CRSpec MakeRSpec(const string& site);
+
+    // build a CREnzyme based on two strings from REBASE
+    static CREnzyme MakeREnzyme(const string& name, const string& sites);
+
+    // whether to read all enzymes, only those commercially
+    // available, or the prototype for every recognition site
+    enum EEnzymesToLoad {
+        eAll,
+        eCommercial,
+        ePrototype
+    };
+    // read a REBASE file in "NAR" format
+    static void ReadNARFormat(istream& input,
+                              vector<CREnzyme>& enzymes,
+                              enum EEnzymesToLoad which);
+
+    static string GetDefaultDataPath();
+
+private:
+    static void x_ParseCutPair(const string& s, int& plus_cut, int& minus_cut);
+};
+
+
+///
 /// This class represents the results of a search for sites
 /// of a particular enzyme.
 /// It merely packages an enzyme name, a vector of
@@ -375,6 +408,22 @@ CREnzResult::CREnzResult(const string& enzyme_name,
 class NCBI_XALGOSEQ_EXPORT CFindRSites
 {
 public:
+    enum EFlags {
+        /// Lump together all enzymes with identical specificities.
+        fCombineIsoschizomers = (1 << 1),
+        fSortByNumberOfSites  = (1 << 2),
+        fDefault = fCombineIsoschizomers | fSortByNumberOfSites
+    };
+    typedef unsigned int TFlags;
+
+    CFindRSites(const string& refile = kEmptyStr,
+                CRebase::EEnzymesToLoad which_enzymes = CRebase::eAll,
+                TFlags flags = fDefault);
+
+    CRef<objects::CSeq_annot> GetAnnot(CScope& scope,
+                                       const CSeq_loc& loc) const;
+    CRef<objects::CSeq_annot> GetAnnot(CBioseq_Handle bsh) const;
+
     static void Find(const string& seq,
                      const vector<CREnzyme>& enzymes,
                      vector<CRef<CREnzResult> >& results);
@@ -386,6 +435,9 @@ public:
                      vector<CRef<CREnzResult> >& results);
 
 private:
+    void x_LoadREnzymeData(const string& refile,
+                           CRebase::EEnzymesToLoad which_enzymes);
+
     static void x_ExpandRecursion(string& s, unsigned int pos,
                                   CTextFsm<int>& fsm, int match_value);
     static void x_AddPattern(const string& pat, CTextFsm<int>& fsm,
@@ -395,6 +447,9 @@ private:
     template<class Seq>
     friend void x_FindRSite(const Seq& seq, const vector<CREnzyme>& enzymes,
                             vector<CRef<CREnzResult> >& results);
+
+    TFlags m_Flags;
+    vector<CREnzyme> m_Enzymes;
 };
 
 
