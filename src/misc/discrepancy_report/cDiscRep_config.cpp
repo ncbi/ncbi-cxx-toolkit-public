@@ -1649,7 +1649,6 @@ static const s_test_property test_list[] = {
      fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Missing Genes"},
    {"EXTRA_GENES", 
      fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Extra Genes"},
-   //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES"));
    {"OVERLAPPING_CDS", 
      fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Overlapping CDS"},
    {"RNA_CDS_OVERLAP", 
@@ -1660,8 +1659,9 @@ static const s_test_property test_list[] = {
    {"OVERLAPPING_GENES", 
      fGenomes | fDiscrepancy | fAsndisc | fMegaReport, "Overlapping Genes"},
    {"DISC_PROTEIN_NAMES", 
-     fGenomes | fAsndisc | fMegaReport, 
-     "Frequently appearing proteins"},
+     fAsndisc | fMegaReport, "Frequently appearing proteins"},
+   {"DISC_PROTEIN_NAMES_global", 
+     fGenomes, "All proteins have the same name: hypothetical proteins"},
    {"DISC_CDS_PRODUCT_FIND", 
      fOncaller | fMegaReport, "Coding region product contains suspect text"},
    {"EC_NUMBER_ON_UNKNOWN_PROTEIN", 
@@ -2469,6 +2469,11 @@ void CRepConfig :: GetTestList()
    if ( thisTest.tests_run.find("DISC_PROTEIN_NAMES") != end_it) {
        thisGrp.tests_on_Bioseq_CFeat.push_back(
                    CRef <CTestAndRepData>( new CBioseq_DISC_PROTEIN_NAMES));
+        if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("DISC_PROTEIN_NAMES_global") != end_it) {
+       thisGrp.tests_on_Bioseq_CFeat.push_back(
+                   CRef <CTestAndRepData>( new CBioseq_DISC_PROTEIN_NAMES_global));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_CDS_PRODUCT_FIND") != end_it) {
