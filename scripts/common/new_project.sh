@@ -286,6 +286,8 @@ CreateMakefile_Meta()
 ###  PATH TO A PRE-BUILT C++ TOOLKIT
 include Makefile.builddir
 
+import_root = .
+
 ###  LIST OF PROJECTS TO BUILD, SUITABLE FOR IN-TREE USE
 include Makefile.out
 
@@ -298,7 +300,6 @@ MAKE_LIB = \$(MAKE) -f Makefile.\$\${i}_lib \$(MFLAGS)
 MAKE_APP = \$(MAKE) -f Makefile.\$\${i}_app \$(MFLAGS)
 
 ###  DIRECT THE CHECK FRAMEWORK TO LOOK IN THE RIGHT PLACE
-import_root = .
 CHECK_ADD_KET += ; sed -e 's:[^ ]*\( ____ \):.\1:' check.sh.list > .csl && \
     mv .csl check.sh.list
 
