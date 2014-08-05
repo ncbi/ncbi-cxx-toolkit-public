@@ -104,11 +104,12 @@ bool IsPartOfUrl(
     //
     //  If it's a URL, it better start with a protocol specifier we approve of:
     //
-    static const string sc_ProtocolSpecifiers[] = {
+    static const char* sc_ProtocolSpecifiers[] = {
       "URL:",
       "http:",
+      "https:",
     };
-    DEFINE_STATIC_ARRAY_MAP(CStaticArraySet<string>, vProtocolSpecifiers, sc_ProtocolSpecifiers);
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(CStaticArraySet<string>, vProtocolSpecifiers, sc_ProtocolSpecifiers);
     size_t colon = sentence.find( ':', left_edge );
     if ( colon == string::npos ) {
         return false;
