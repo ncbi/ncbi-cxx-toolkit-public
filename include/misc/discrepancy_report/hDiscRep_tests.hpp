@@ -197,8 +197,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CClickableItem  : public CObject
   {
      public:
-       CClickableItem () : item_list(), subcategories(), expanded(false),
-                           next_sibling(false) {};
+       CClickableItem () {
+          setting_name = description = kEmptyStr;
+          item_list.clear();
+          subcategories.clear();
+          expanded = next_sibling = false,
+          obj_list.clear();
+       }                    
        ~CClickableItem () {};
 
        string                               setting_name;
