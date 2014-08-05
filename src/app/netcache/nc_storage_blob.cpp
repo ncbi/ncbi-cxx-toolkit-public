@@ -574,6 +574,14 @@ CWriteBackControl::RecordNotifyUpdateBlob(Uint8 update_received)
     }
 }
 
+void
+CWriteBackControl::ResetStatCounters(void)
+{
+    s_BlobSync = 0;
+    s_BlobSyncTDiff = 0;
+    s_BlobSyncMaxTDiff = 0;
+}
+
 
 void
 CNCBlobVerManager::x_DeleteCurVersion(void)

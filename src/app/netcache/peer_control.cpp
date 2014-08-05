@@ -191,6 +191,7 @@ CNCPeerControl::RegisterConnError(void)
         ++m_CntNWThrottles;
     }
     m_HostProtocol = 0;
+    CWriteBackControl::ResetStatCounters();
 }
 
 void

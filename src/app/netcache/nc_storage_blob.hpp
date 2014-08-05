@@ -266,9 +266,11 @@ public:
     static void Initialize(void);
     static void ReadState(SNCStateStat& state);
 
+    // statistics
     static void AnotherServerMain(void);
     static void StartSyncBlob(Uint8 create_time);
     static void RecordNotifyUpdateBlob(Uint8 update_received);
+    static void ResetStatCounters(void);
 
 private:
     CWriteBackControl(void);
