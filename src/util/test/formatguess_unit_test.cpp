@@ -310,6 +310,8 @@ static const char* kData_Hgvs =
     "NC_000023.9:g.107688969G>A\n"
     "NC_000023.9:g.107693786delG\n"
     "NG_008472.1:g.10295_10296insT\n";
+static const char* kData_NotHgvs = 
+    "Seq-annot ::= {desc {name Primer.\n";
 
 static const char* kData_Zip = 
     "\x50\x4b\x03\x04\x0a\x00\x00\x00\x00\x00\x41\x73\x58\x3f\xb3\xf1"
@@ -582,6 +584,13 @@ BOOST_AUTO_TEST_CASE(TestHgvs)
     CNcbiIstrstream str(kData_Hgvs);
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eHgvs);
+}
+
+BOOST_AUTO_TEST_CASE(TestNotHgvs)
+{
+    CNcbiIstrstream str(kData_NotHgvs);
+    CFormatGuess guess(str);
+    BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eHgvs);
 }
 
 BOOST_AUTO_TEST_CASE(TestZip)

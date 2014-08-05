@@ -66,7 +66,11 @@ static unsigned char symbol_type_table[256];
 static bool s_IsTokenPosInt(
     const string& strToken )
 {
-    return ( -1 != NStr::StringToNonNegativeInt( strToken ) );
+    try {
+        return ( -1 != NStr::StringToInt( strToken, NStr::fConvErr_NoThrow ) );
+    } catch(...) {
+        return false;
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -848,7 +852,11 @@ CFormatGuess::TestFormatAgp(
         return false;
     }
     ITERATE( list<string>, it, m_TestLines ) {
-        if ( !IsLineAgp( *it ) ) {
+        try {
+            if ( !IsLineAgp( *it ) ) {
+                return false;
+            }
+        } catch(...) {
             return false;
         }
     }
@@ -2419,7 +2427,7 @@ bool CFormatGuess::IsLineHgvs(
     const string& line )
 {
     // This simple check can mistake Newwick, so Newwick is checked first
-    //  /:(g|c|r|p|m|mt|n)\./  as in NC_000001.9:g.1234567C>T
+    //  /[:alnum:]+:(g|c|r|p|m|mt|n)\.[:alnum:]+/  as in NC_000001.9:g.1234567C>T
     int State = 0;
     ITERATE(string, Iter, line) {
         char Char = *Iter;
@@ -2430,27 +2438,37 @@ bool CFormatGuess::IsLineHgvs(
             Next = *NextI;
         
         if(State == 0) {
-            if(Char == ':')
-                State = 1;
+            if( isalnum(Char) )
+                State++;
         } else if(State == 1) {
+            if(Char == ':')
+                State++;
+        } else if(State == 2) {
             if (Char == 'g' ||
                 Char == 'c' ||
                 Char == 'r' ||
                 Char == 'p' ||
                 Char == 'n' ||
                 Char == 'm' ) {
-                State = 2;
+                State++;
                 if (Char=='m' && Next == 't') {
                     ++Iter;
                 }
+            } else {
+                return false;
             }
-        } else if(State == 2) {
+        } else if(State == 3) {
             if(Char == '.') 
-                State = 3;
+                State++;
+            else
+                return false;
+        } else if(State == 4) {
+            if( isalnum(Char) )
+                State++;
         }
     }
     
-    return (State == 3);    
+    return (State == 5);    
 }
 
 
