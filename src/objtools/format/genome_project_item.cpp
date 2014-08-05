@@ -77,7 +77,7 @@ const CGenomeProjectItem::TDBLinkLineVec & CGenomeProjectItem::GetDBLinkLines() 
 
 static string
 s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs, 
-                   const string &url_prefix, const bool is_html )
+                   const string &url_prefix, const string &alt_prefix, const bool is_html )
 {
     const char * pchPrefix = "";
 
@@ -89,7 +89,13 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
         }
         result << pchPrefix;
         if( is_html && ! url_prefix.empty() ) {
-            result << "<a href=\"" << url_prefix << id << "\">";
+            string url = url_prefix;
+            if (NStr::StartsWith (id, "SRZ") ||
+                NStr::StartsWith (id, "DRZ") ||
+                NStr::StartsWith (id, "ERZ")) {
+                url = "http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?analysis=";
+            }
+            result << "<a href=\"" << url << id << "\">";
         }
         result << id;
         if( is_html && ! url_prefix.empty() ) {
@@ -266,8 +272,12 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                         pStrs = pStrsDestroyer.get();
                     }
 
+                    string alt_url;
+                    if (NStr::Equal (label, "Sequence Read Archive")) {
+                        alt_url = "http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?analysis=";
+                    }
                     string dblinkValue = s_JoinLinkableStrs( 
-                        *pStrs, dbLinkLabelInfo.url, bHtml );
+                        *pStrs, dbLinkLabelInfo.url, alt_url, bHtml );
                     if( ! dblinkValue.empty() ) {
                         dblinkLines.push_back( 
                             pchNormalizedDbLinkLabel + string(": ") + dblinkValue );
