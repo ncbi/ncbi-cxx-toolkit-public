@@ -3686,6 +3686,17 @@ fi
 AC_LANG_PUSH(C)
 orig_CFLAGS=$CFLAGS
 
+AC_CACHE_CHECK([whether $CC supports SIMD vector arithmetic],
+               ncbi_cv_cc_vector_math,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+         [typedef int TVector __attribute__((vector_size(16)));],
+         [TVector v1, v2;  v1 ^= v2;])],
+      [ncbi_cv_cc_vector_math=yes], [ncbi_cv_cc_vector_math=no])])
+if test "$ncbi_cv_cc_vector_math" = yes; then
+   AC_DEFINE(HAVE_VECTOR_MATH, 1,
+      [Define to 1 if your C compiler supports SIMD vector calculations.])
+fi
+
 AC_CACHE_CHECK([whether $CC supports -funsafe-math-optimizations],
                ncbi_cv_cc_unsafe_math,
    [CFLAGS="$orig_CFLAGS -funsafe-math-optimizations"
@@ -3696,7 +3707,7 @@ AC_CACHE_CHECK([whether $CC supports -msse4.1], ncbi_cv_cc_sse4_1,
    [CFLAGS="$orig_CFLAGS -msse4.1"
     AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <emmintrin.h>],
           [double v __attribute__((__vector_size__(16)));
-	   __builtin_ia32_shufpd(v, v, 1);])],
+           __builtin_ia32_shufpd(v, v, 1);])],
        [ncbi_cv_cc_sse4_1=yes], [ncbi_cv_cc_sse4_1=no])])
 
 AC_CACHE_CHECK([whether $CC supports -maes], ncbi_cv_cc_aes,

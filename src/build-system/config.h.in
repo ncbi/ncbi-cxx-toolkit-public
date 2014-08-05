@@ -598,6 +598,9 @@
 /* Define to 1 if you have the `vasprintf' function. */
 #undef HAVE_VASPRINTF
 
+/* Define to 1 if your C compiler supports SIMD vector calculations. */
+#undef HAVE_VECTOR_MATH
+
 /* Define to 1 if you have the `vprintf' function. */
 #undef HAVE_VPRINTF
 
