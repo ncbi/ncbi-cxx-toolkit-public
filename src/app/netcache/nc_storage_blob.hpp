@@ -268,7 +268,7 @@ public:
 
     static void AnotherServerMain(void);
     static void StartSyncBlob(Uint8 create_time);
-    static void StartNotifyUpdateBlob(Uint8 create_time);
+    static void RecordNotifyUpdateBlob(Uint8 update_received);
 
 private:
     CWriteBackControl(void);
@@ -545,6 +545,7 @@ CNCBlobAccessor::UpdateMeteInfo(Uint8 upd_server, Uint8 upd_time)
     if (m_CurData->create_time < upd_time) {
         m_CurData->updated_on_server = upd_server;
         m_CurData->updated_at_time = upd_time;
+        m_CurData->update_received = CSrvTime().Current().AsUSec();
     }
 }
 

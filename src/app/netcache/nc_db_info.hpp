@@ -93,6 +93,7 @@ public:
     Uint4   create_id;
     Uint8   updated_on_server;
     Uint8   updated_at_time;
+    Uint8   update_received;
     unsigned int     ttl;
     int     expire;
     int     dead_time;

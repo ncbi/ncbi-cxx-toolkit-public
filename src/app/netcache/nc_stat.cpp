@@ -843,7 +843,6 @@ void CNCStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("wb_releasing" ).WriteText(is ).WriteNumber( m_EndState.wb_releasing);
     
     task.WriteText(eol).WriteText("cnt_another_server_main" ).WriteText(is ).WriteNumber( m_EndState.cnt_another_server_main);
-    task.WriteText(eol).WriteText("cnt_newer_blob" ).WriteText(is ).WriteNumber( m_EndState.cnt_newer_blob);
     task.WriteText(eol).WriteText("avg_tdiff_blobcopy" ).WriteText(is ).WriteNumber( m_EndState.avg_tdiff_blobcopy);
     task.WriteText(eol).WriteText("max_tdiff_blobcopy" ).WriteText(is ).WriteNumber( m_EndState.max_tdiff_blobcopy);
     task.WriteText(eol).WriteText("avg_tdiff_blobnotify" ).WriteText(is ).WriteNumber( m_EndState.avg_tdiff_blobnotify);
@@ -966,19 +965,17 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
                     << g_ToSizeStr(m_WBReleasing.GetMaximum()) << endl;
     proxy << "Blob storage start - "
                     << m_StartState.cnt_another_server_main << " requests for alient blobs, "
-                    << m_StartState.cnt_newer_blob << " cancelled updates (have newer), "
-                    << (double)m_StartState.avg_tdiff_blobcopy / kUSecsPerMSec << " avg blob sync delay (msec) "
-                    << (double)m_StartState.max_tdiff_blobcopy / kUSecsPerMSec << " max blob sync delay  (msec) "
-                    << (double)m_StartState.avg_tdiff_blobnotify / kUSecsPerMSec << " avg blob sync notify (msec) "
-                    << (double)m_StartState.max_tdiff_blobnotify / kUSecsPerMSec << " max blob sync notify  (msec) "
+                    << (double)m_StartState.avg_tdiff_blobcopy / kUSecsPerMSec << " avg blob update send delay (msec) "
+                    << (double)m_StartState.max_tdiff_blobcopy / kUSecsPerMSec << " max blob update send delay (msec) "
+                    << (double)m_StartState.avg_tdiff_blobnotify / kUSecsPerMSec << " avg blob update recv delay (msec) "
+                    << (double)m_StartState.max_tdiff_blobnotify / kUSecsPerMSec << " max blob update recv delay (msec) "
                     << endl;
     proxy << "Blob storage end - "
                     << m_EndState.cnt_another_server_main << " requests for alient blobs, "
-                    << m_EndState.cnt_newer_blob << " cancelled updates (have newer), "
-                    << (double)m_EndState.avg_tdiff_blobcopy / kUSecsPerMSec << " avg blob sync delay (msec) "
-                    << (double)m_EndState.max_tdiff_blobcopy / kUSecsPerMSec << " max blob sync delay  (msec) "
-                    << (double)m_EndState.avg_tdiff_blobnotify / kUSecsPerMSec << " avg blob sync notify (msec) "
-                    << (double)m_EndState.max_tdiff_blobnotify / kUSecsPerMSec << " max blob sync notify  (msec) "
+                    << (double)m_EndState.avg_tdiff_blobcopy / kUSecsPerMSec << " avg blob update send delay (msec) "
+                    << (double)m_EndState.max_tdiff_blobcopy / kUSecsPerMSec << " max blob update send delay (msec) "
+                    << (double)m_EndState.avg_tdiff_blobnotify / kUSecsPerMSec << " avg blob update recv delay (msec) "
+                    << (double)m_EndState.max_tdiff_blobnotify / kUSecsPerMSec << " max blob update recv delay (msec) "
                     << endl;
     proxy << "Start mirror connections - "
                     << g_ToSmartStr(m_StartState.peer_active_conns) << " active, "

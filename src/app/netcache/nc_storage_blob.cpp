@@ -81,7 +81,6 @@ static CAtomicCounter s_FailedCounter;
 static set<string> s_FailedKeys;
 
 static Uint8 s_AnotherServerMain = 0;
-static Uint8 s_HaveNewerBlob = 0;
 
 static Uint8 s_BlobSync = 0;
 static Uint8 s_BlobSyncTDiff = 0;
@@ -511,7 +510,6 @@ CWriteBackControl::ReadState(SNCStateStat& state)
     state.wb_releasing = (ssize_t(s_WBReleasingSize) > 0? s_WBReleasingSize: 0);
 
     state.cnt_another_server_main = s_AnotherServerMain;
-    state.cnt_newer_blob = s_HaveNewerBlob;
     Uint8 prev = s_BlobSync;
     if (prev != 0) {
         state.avg_tdiff_blobcopy = s_BlobSyncTDiff / prev;
@@ -556,12 +554,12 @@ void CWriteBackControl::StartSyncBlob(Uint8 create_time)
 }
 
 void
-CWriteBackControl::StartNotifyUpdateBlob(Uint8 create_time)
+CWriteBackControl::RecordNotifyUpdateBlob(Uint8 update_received)
 {
     if (!CNCServer::IsInitiallySynced()) {
         return;
     }
-    Uint8 tdiff = CSrvTime::Current().AsUSec() - create_time;
+    Uint8 tdiff = CSrvTime::Current().AsUSec() - update_received;
     Uint8 prev = s_BlobNotify;
     Uint8 prevdiff = s_BlobNotifyTDiff;
     AtomicAdd(s_BlobNotify, 1);
@@ -947,6 +945,7 @@ SNCBlobVerData::SNCBlobVerData(void)
         create_id(0),
         updated_on_server(0),
         updated_at_time(0),
+        update_received(0),
         ttl(0),
         expire(0),
         dead_time(0),
@@ -1547,6 +1546,9 @@ CNCBlobAccessor::Finalize(void)
         m_Buffer = NULL;
     }
     m_VerManager->FinalizeWriting(m_NewData);
+    if (m_CurData.NotNull() && m_CurData->update_received != 0) {
+        CWriteBackControl::RecordNotifyUpdateBlob(m_CurData->update_received);
+    }
     m_CurData = m_NewData;
 }
 
@@ -1554,9 +1556,6 @@ bool
 CNCBlobAccessor::ReplaceBlobInfo(const SNCBlobVerData& new_info)
 {
     if (!s_IsCurVerOlder(m_CurData, &new_info)) {
-        if (m_CurData->dead_time != new_info.dead_time ) {
-            AtomicAdd(s_HaveNewerBlob, 1);
-        }
         return false;
     }
 

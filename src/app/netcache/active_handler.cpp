@@ -372,7 +372,6 @@ CNCActiveHandler::CopyUpdate(const string& raw_key, Uint8 create_time)
 //    m_CmdToSend += NStr::UInt8ToString(blob_sum.create_server);
     m_CmdToSend += NStr::UInt8ToString( CNCDistributionConf::GetSelfID());
 
-    CWriteBackControl::StartNotifyUpdateBlob(create_time);
     x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
 
