@@ -2888,8 +2888,18 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_cds() const {return string("DISC_CDS_PRODUCT_FIND");}
       string GetName_ec() const {return string("EC_NUMBER_ON_UNKNOWN_PROTEIN"); }
       string GetName_pnm() const {return string("DISC_PROTEIN_NAMES"); }
+      string GetName_pnm_g() const {return string("DISC_PROTEIN_NAMES_global"); }
 
       bool EndsWithPattern(const string& pattern, const list <string>& strs);
+  };
+
+  class CBioseq_DISC_PROTEIN_NAMES_global : public CBioseq_test_on_protfeat
+  {
+    public:
+      virtual ~CBioseq_DISC_PROTEIN_NAMES_global () {};
+
+      virtual void GetReport(CRef <CClickableItem> c_item);
+      virtual string GetName() const {return CBioseq_test_on_protfeat::GetName_pnm_g(); }
   };
 
   class CBioseq_DISC_PROTEIN_NAMES : public CBioseq_test_on_protfeat
@@ -3839,14 +3849,21 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {return string("FEATURE_LOCATION_CONFLICT");}
 
     private:
-      void CheckFeatureTypeForLocationDiscrepancies(
+      void x_ReportFeat(const CSeq_feat& it, const CSeq_feat& jt,const string& feat_type);
+      CConstRef <CDelta_seq> x_GetDeltaSeqForPosition(unsigned pos, 
+                                      const CBioseq* bioseq, unsigned& endpoint);
+      bool x_IsDeltaSeqGap(CConstRef <CDelta_seq> delta);
+      bool x_Does5primerAbutGap(const CSeq_feat& feat, const CBioseq* bioseq);
+      bool x_Does3primerAbutGap(const CSeq_feat& feat, const CBioseq* bioseq);
+      void x_ReportConflictingFeats(const CSeq_feat& feat, const CSeq_feat& gene, 
+                                     const string& feat_type, const CBioseq* bioseq);
+      void x_CheckFeatureTypeForLocationDiscrepancies(
                                    const vector <const CSeq_feat*>& seq_feat,
-                                   const string& feat_type);
-      bool IsGeneLocationOk(const CSeq_feat* seq_feat, const CSeq_feat* gene);
-      bool IsMixStrand(const CSeq_feat* seq_feat);
-      bool IsMixedStrandGeneLocationOk(const CSeq_loc& feat_loc, 
+                                   const string& feat_type, const CBioseq* bioseq=0);
+      bool x_IsGeneLocationOk(const CSeq_feat* seq_feat, const CSeq_feat* gene);
+      bool x_IsMixStrand(const CSeq_feat* seq_feat);
+      bool x_IsMixedStrandGeneLocationOk(const CSeq_loc& feat_loc, 
                                        const CSeq_loc& gene_loc);
-//      bool GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2);
   };
 
   class CBioseq_on_locus_tags : public CBioseqTestAndRepData
