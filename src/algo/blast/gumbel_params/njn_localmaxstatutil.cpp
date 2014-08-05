@@ -92,8 +92,10 @@ size_t dimension2_) // dimension2 of equilProb_
     {
       for (j = 0; j < dimension2_; j++) 
       {
-         if (scoreMatrix_ [i][j] < min) min = scoreMatrix_ [i][j];
-         if (max < scoreMatrix_ [i][j]) max = scoreMatrix_ [i][j];
+         if (scoreMatrix_ [i][j] < min) 
+             min = scoreMatrix_ [i][j];
+         else if (max < scoreMatrix_ [i][j])
+             max = scoreMatrix_ [i][j];
       }
     }
 
