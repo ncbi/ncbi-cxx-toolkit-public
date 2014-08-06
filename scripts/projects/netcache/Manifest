@@ -22,3 +22,5 @@ ETC: src/app/netcache/netcached.ini
 Linux64-Centos : O2  : GCC.sh 4.4.2 --without-debug --with-mt
 Linux64-Centos : O2g  : GCC.sh 4.4.2 --without-debug --with-symbols --with-mt
 Linux64-Centos : d : GCC.sh 4.4.2 --without-debug --with-symbols --without-optimization --with-mt
+
+USE_COMPONENTS

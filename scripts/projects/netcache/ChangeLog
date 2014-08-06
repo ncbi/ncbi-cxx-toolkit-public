@@ -52,3 +52,21 @@ Corrected logging to log connection ID when establishing new connection.
 Corrected logging to make sure to add end-of-line when starting new message.
 Changed log messages to show peer name and port.
 Changed format of VERSION command reply.
+
+August 06, 2014
+version 6.7.0
+Added option to use different write-back timeouts during and after initial synchronization.
+Added options into GETCONF command to get detailed information about specific parts of configuration only.
+Modified behavior on disk spaceshortage: do not start periodic sync, forward incoming blobs to mirrors, request initial sync to be done when disk space is again available.
+Added possibility of storing blob keys for which blob data was not received successfully.
+Added limit size of blobs to store, or to mirror.
+Added primitive HTTP support (POST/PUT/GET/HEAD/DELETE commands).
+Added periodic check for changed IP address when failing to connect to peer.
+Reviewed and corrected blob storage code, corrected thread synchronization, reduced lock time on data collection.
+Added support for encoded keys (v3).
+Corrected calculation and modification of blob dead times, speed up blob removal in  case it is not mirrored.
+In SETVALID command, added reporting current blob version on version conflict.
+Added blob update notifications.
+Added version check when connecting to another instance of NC.
+Added into statistics count of peer connections and mirroring-related data.
+
