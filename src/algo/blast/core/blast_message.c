@@ -236,7 +236,7 @@ Blast_PerrorEx(Blast_Message* *msg,
         break;
     }
 
-    if (file_name && lineno > 0) {
+    if (new_msg && file_name && lineno > 0) {
         new_msg->origin = SMessageOriginNew(file_name, 
                                            (unsigned int) lineno);
     }
