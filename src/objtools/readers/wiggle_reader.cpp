@@ -193,20 +193,12 @@ CWiggleReader::xReadSeqAnnotGraph(
         if ( s == "fixedStep" ) {
             SFixedStepInfo fixedStepInfo;
             xGetFixedStepInfo(fixedStepInfo, pMessageListener);
-            if (!m_ChromId.empty() && fixedStepInfo.mChrom != m_ChromId) {
-                lr.UngetLine();
-                return xGetAnnot();
-            }
             xReadFixedStepData(fixedStepInfo, lr, pMessageListener);
             haveData = true;
         }
         else if ( s == "variableStep" ) {
             SVarStepInfo varStepInfo;
             xGetVarStepInfo(varStepInfo, pMessageListener);
-            if (!m_ChromId.empty() && varStepInfo.mChrom != m_ChromId) {
-                lr.UngetLine();
-                return xGetAnnot();
-            }
             xReadVariableStepData(varStepInfo, lr, pMessageListener);
             haveData = true;
         }
@@ -215,9 +207,10 @@ CWiggleReader::xReadSeqAnnotGraph(
             haveData = true;
         }
     }
-    return xGetAnnot();
+    xSetChrom("");
+    return m_Annot;
 }
-
+    
 //  ----------------------------------------------------------------------------                
 CRef<CSeq_annot>
 CWiggleReader::xReadSeqAnnotTable(
@@ -1011,7 +1004,8 @@ CRef<CSeq_annot> CWiggleReader::xGetAnnot()
     }
     CRef<CSeq_annot> pAnnot = xMakeAnnot();
     if (m_iFlags & fAsGraph) {
-        pAnnot->SetData().SetGraph().push_back(xMakeGraph());
+        //pAnnot->SetData().SetGraph().push_back(xMakeGraph());
+        pAnnot = xMakeGraphAnnot();
     }
     else {
         pAnnot->SetData().SetSeq_table(*xMakeTable());
@@ -1049,6 +1043,9 @@ void CWiggleReader::xSetChrom(CTempString chrom)
 {
     if ( chrom != m_ChromId ) {
         xDumpChromValues();
+        if (m_iFlags & CWiggleReader::fAsGraph) {
+            m_Values.clear();
+        }
         m_ChromId = chrom;
     }
 }
