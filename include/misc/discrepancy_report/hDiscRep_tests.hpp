@@ -1287,7 +1287,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       bool m_run_vou, m_run_str, m_run_cul, m_run_biom;
  
-      bool s_StringHasVoucherSN(const string& vou_nm);
+      bool x_StringHasVoucherSN(const string& vou_nm);
       void RunTests(const CBioSource& biosrc, 
                       const string& desc, 
                       CConstRef <CObject> obj_ref);
