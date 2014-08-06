@@ -943,31 +943,34 @@ void CProSplign::AssignGeneticCode(CScope& scope, const CSeq_id& gid, int gcode)
 
 CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& protein, const CSeq_loc& genomic_orig)
 {
-    CSeq_loc genomic;
-    genomic.Assign(genomic_orig);
-    const CSeq_id* nucid = genomic.GetId();
-    if (nucid == NULL)
+    CRef<CSeq_loc> genomic(new CSeq_loc);
+    genomic->Assign(genomic_orig);
+    CConstRef<CSeq_id> nucid(genomic->GetId());
+    if ( ! nucid )
         NCBI_THROW(CProSplignException, eGenericError, "genomic seq-loc has multiple ids or no id at all");
 
-    if (genomic.IsWhole()) {
+    if (genomic->IsWhole()) {
         // change to Interval, because Whole doesn't allow strand change - it's always unknown.
-        genomic.SetInt().SetFrom(0);
-        genomic.SetInt().SetTo(sequence::GetLength(*nucid, &scope)-1);
+        genomic->Assign(
+            *new CSeq_loc(
+                *SerialClone(*nucid), 0,
+                sequence::GetLength(*nucid, &scope)-1));
     }
 
     //check if from <=to
-    TSeqPos from = genomic.GetTotalRange().GetFrom();
-    TSeqPos to = genomic.GetTotalRange().GetTo();
+    TSeqPos from = genomic->GetTotalRange().GetFrom();
+    TSeqPos to = genomic->GetTotalRange().GetTo();
     if(from > to) {
         NCBI_THROW(CProSplignException, eGenericError, "genomic seq-loc has from > to");
     }
 
     CRef<CSeq_align> result;
 
-    switch (genomic.GetStrand()) {
+    switch (genomic->GetStrand()) {
     case eNa_strand_plus:
     case eNa_strand_minus:
-        result = m_implementation->FindGlobalAlignment(scope, protein, genomic);
+        result = m_implementation->FindGlobalAlignment(
+            scope, protein, *genomic);
         break;
     case eNa_strand_unknown:
     case eNa_strand_both:
@@ -975,11 +978,11 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
         // do both
         {
             auto_ptr<CImplementation> plus_data(m_implementation->clone());
-            genomic.SetStrand(eNa_strand_plus);
-            int plus_score = plus_data->FindGlobalAlignment_stage1(scope, protein, genomic);
+            genomic->SetStrand(eNa_strand_plus);
+            int plus_score = plus_data->FindGlobalAlignment_stage1(scope, protein, *genomic);
 
-            genomic.SetStrand(eNa_strand_minus);
-            int minus_score = m_implementation->FindGlobalAlignment_stage1(scope, protein, genomic);
+            genomic->SetStrand(eNa_strand_minus);
+            int minus_score = m_implementation->FindGlobalAlignment_stage1(scope, protein, *genomic);
             
             if (minus_score <= plus_score)
                 m_implementation = plus_data;
@@ -988,8 +991,9 @@ CRef<CSeq_align> CProSplign::FindGlobalAlignment(CScope& scope, const CSeq_id& p
         result = m_implementation->FindGlobalAlignment_stage2();
         break;
     default:
-        genomic.SetStrand(eNa_strand_plus);
-        result = m_implementation->FindGlobalAlignment(scope, protein, genomic);
+        genomic->SetStrand(eNa_strand_plus);
+        result = m_implementation->FindGlobalAlignment(
+            scope, protein, *genomic);
         break;
     }
 
