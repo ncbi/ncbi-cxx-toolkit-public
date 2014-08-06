@@ -43,22 +43,15 @@ template <class el>
 class MATR
 {
 public:
-  MATR() { pels = NULL; }
-  ~MATR() {  delete pels; }
-  void Free() {
-    delete pels;
-    pels = NULL;
-  }
   void Init(int rownum, int colnum) {
     coln = colnum;    
-    if(!pels) pels = new vector<el>;
-    if(pels->max_size()/colnum +1 <= /*(vector<el>::size_type)  bug in Linux*/(unsigned)rownum) throw bad_alloc();
+    if(pels.max_size()/colnum +1 <= /*(vector<el>::size_type)  bug in Linux*/(unsigned)rownum) throw bad_alloc();
     if(numeric_limits<unsigned long>::max()/colnum +1 <= /*(vector<el>::size_type)  bug in Linux*/(unsigned long)rownum) throw bad_alloc();
-    pels->resize(rownum*(unsigned long)colnum);
+    pels.resize(rownum*(unsigned long)colnum);
   }
-  el *operator[](int row) { return &(*pels)[0] + row*(unsigned long)coln; }
+  el *operator[](int row) { return &pels[0] + row*(unsigned long)coln; }
 private:
-    vector<el> *pels;
+    vector<el> pels;
     int coln;
 };
 
