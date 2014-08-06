@@ -64,6 +64,68 @@ namespace {
         }
         cerr << "END GAP SUMMARY" << endl;
     }
+
+    CRef<CScope> CreateScope()
+    {
+        DEFINE_STATIC_FAST_MUTEX(scope_mtx);
+        CFastMutexGuard guard(scope_mtx);
+
+        static CRef<CObjectManager> om;
+        if( ! om ) {
+            om.Reset(CObjectManager::GetInstance());
+            CGBDataLoader::RegisterInObjectManager(*om);
+        }
+
+        CRef<CScope> s_scope( new CScope(*om));
+        s_scope->AddDefaults();
+        return s_scope;
+    }
+
+    AutoPtr<CGapAnalysis::TVectorGapLengthSummary> AnalyzeSeqEntryTextAsn(
+        CNcbiIstream & in_text_asn,
+        CGapAnalysis::TAddFlag add_flags = CGapAnalysis::fAddFlag_Default)
+    {
+        CRef<CSeq_entry> pSeqEntry( new CSeq_entry );
+        in_text_asn >> MSerial_AsnText >> *pSeqEntry;
+
+        CSeq_entry_Handle entry_h =
+            CreateScope()->AddTopLevelSeqEntry(*pSeqEntry);
+        BOOST_REQUIRE( entry_h );
+
+        CGapAnalysis gap_analysis; 
+        gap_analysis.AddSeqEntryGaps(
+            entry_h,
+            CSeq_inst::eMol_not_set,
+            CBioseq_CI::eLevel_All,
+            add_flags);
+
+        return gap_analysis.GetGapLengthSummary();
+    }
+
+    struct SExpectedResult {
+        size_t gap_length;
+        size_t num_seqs;
+        size_t num_gaps;
+    };
+    void CheckExpectedResults(
+        CGapAnalysis::TVectorGapLengthSummary & basic_gap_summary,
+        SExpectedResult expected_results[],
+        size_t expected_results_len)
+    {
+        BOOST_CHECK_EQUAL( basic_gap_summary.size(), expected_results_len );
+        for( size_t idx = 0; idx < basic_gap_summary.size() ; ++idx ) {
+            const CGapAnalysis::SOneGapLengthSummary & one_gap_summary =
+                basic_gap_summary[idx];
+            const SExpectedResult & one_expected_result =
+                expected_results[idx];
+            BOOST_CHECK_EQUAL(
+                one_gap_summary.gap_length, one_expected_result.gap_length);
+            BOOST_CHECK_EQUAL(
+                one_gap_summary.num_seqs, one_expected_result.num_seqs);
+            BOOST_CHECK_EQUAL(
+                one_gap_summary.num_gaps, one_expected_result.num_gaps);
+        }
+    }
 }
 
 NCBITEST_INIT_CMDLINE(arg_desc)
@@ -72,47 +134,31 @@ NCBITEST_INIT_CMDLINE(arg_desc)
     // going to use.
 
     arg_desc->AddKey("in-data", "InputFile",
-                     "This is the input file used to run the test",
+                     "This is the basic input file used to run the test",
                      CArgDescriptions::eInputFile);
+    arg_desc->AddKey(
+        "in-letter-gap-data", "InputFile",
+        "This is the input file used to run the "
+        "'gaps as run of unknown bases' test",
+        CArgDescriptions::eInputFile);
 }
 
 BOOST_AUTO_TEST_CASE(TestBasic)
 {
-    CRef<CObjectManager> om = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*om);
-    CScope scope(*om);
-    scope.AddDefaults();
-
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-    CRef<CSeq_entry> pSeqEntry( new CSeq_entry );
-    args["in-data"].AsInputFile() >> MSerial_AsnText >> *pSeqEntry;
-
-    CSeq_entry_Handle entry_h = scope.AddTopLevelSeqEntry(*pSeqEntry);
-    BOOST_REQUIRE( entry_h );
-
-    CGapAnalysis gap_analysis; 
-    gap_analysis.AddSeqEntryGaps(entry_h);
 
     AutoPtr<CGapAnalysis::TVectorGapLengthSummary> basic_gap_summary =
-        gap_analysis.GetGapLengthSummary();
+        AnalyzeSeqEntryTextAsn(args["in-data"].AsInputFile());
     s_PrintSummary(*basic_gap_summary);
 
-    BOOST_CHECK_EQUAL( basic_gap_summary->size(), 4 );
-
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[0].gap_length, 5 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[1].gap_length, 10 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[2].gap_length, 40 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[3].gap_length, 101 );
-
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[0].num_seqs, 1 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[1].num_seqs, 1 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[2].num_seqs, 1 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[3].num_seqs, 2 );
-
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[0].num_gaps, 1 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[1].num_gaps, 1 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[2].num_gaps, 1 );
-    BOOST_CHECK_EQUAL( (*basic_gap_summary)[3].num_gaps, 3 );
+    SExpectedResult expected_results[] = {
+        { 5, 1, 1 },
+        { 10, 1, 1 },
+        { 40, 1, 1 },
+        { 101, 2, 3 },
+    };
+    CheckExpectedResults(
+        *basic_gap_summary, expected_results, ArraySize(expected_results));
 }
 
 BOOST_AUTO_TEST_CASE(TestSeqIdComparison)
@@ -133,4 +179,23 @@ BOOST_AUTO_TEST_CASE(TestSeqIdComparison)
     BOOST_CHECK_EQUAL( 
         gap_analysis.GetGapLengthSeqIds().find(kGapLength)->second.size(), 
         2 );
+}
+
+BOOST_AUTO_TEST_CASE(TestGapsAsLetters)
+{
+    const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+
+    AutoPtr<CGapAnalysis::TVectorGapLengthSummary> basic_gap_summary =
+        AnalyzeSeqEntryTextAsn(
+            args["in-letter-gap-data"].AsInputFile(),
+            CGapAnalysis::fAddFlag_IncludeUnknownBases);
+    s_PrintSummary(*basic_gap_summary);
+
+    SExpectedResult expected_results[] = {
+        { 1, 1, 2 },
+        { 2, 1, 1 },
+        { 10, 1, 1 }
+    };
+    CheckExpectedResults(
+        *basic_gap_summary, expected_results, ArraySize(expected_results));
 }

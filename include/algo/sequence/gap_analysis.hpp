@@ -43,6 +43,7 @@ BEGIN_SCOPE(objects)
 class CSeq_id;
 class CSeq_entry_Handle;
 class CBioseq_Handle;
+class CSeqMap_CI;
 
 /// Give this gaps, or handles containing gaps and then you can get 
 /// statistics on those gaps.
@@ -54,6 +55,17 @@ public:
     /// Use typedef in case we change the underlying
     typedef Uint8 TGapLength;
 
+    /// These flags control how gaps are added.
+    enum EAddFlag {
+        /// include seq-gaps
+        fAddFlag_IncludeSeqGaps      = (1 << 0),
+        /// include runs of N for nucs or X for prots.
+        fAddFlag_IncludeUnknownBases = (1 << 1),
+
+        fAddFlag_Default = fAddFlag_IncludeSeqGaps
+    };
+    typedef int TAddFlag;
+
     /// Calls AddGap for each gap anywhere under the given CSeq_entry.  In
     /// most cases, much more convenient than raw AddGap calls.
     ///
@@ -64,15 +76,23 @@ public:
     ///   It works the same way as it does for CBioseq_CI.
     /// @param level
     ///   Filter what bioseq levels to explore.
-    void AddSeqEntryGaps(const CSeq_entry_Handle & entry_h,
+    /// @param add_flags
+    ///   Specifies what counts as gaps.
+    void AddSeqEntryGaps(
+        const CSeq_entry_Handle & entry_h,
         CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
-        CBioseq_CI::EBioseqLevelFlag level = CBioseq_CI::eLevel_All);
+        CBioseq_CI::EBioseqLevelFlag level = CBioseq_CI::eLevel_All,
+        TAddFlag add_flags = fAddFlag_Default);
 
     /// Similar to AddSeqEntryGaps, but for one Bioseq.
     ///
     /// @param bioseq_h
     ///   This is the bioseq to explore for gaps.
-    void AddBioseqGaps(const CBioseq_Handle & bioseq_h);
+    /// @param add_flags
+    ///   Specifies what counts as gaps.
+    void AddBioseqGaps(
+        const CBioseq_Handle & bioseq_h,
+        TAddFlag add_flags = fAddFlag_Default);
 
     /// AddSeqEntryGaps is more convenient, but if you want finer-grained
     /// control you can use this function to tell this class about 
@@ -209,6 +229,17 @@ private:
         ESortGapLength sort_gap_length;
         ESortDir       sort_dir;
     };
+
+    /// Add gaps based on unknown bases which are letters.
+    /// @param seqmap_ci
+    ///   This specifies the segment on which we're adding the bases
+    /// @param bioseq_h
+    ///   As far as I can tell seqmap_ci doesn't record which bioseq it's
+    ///   iterating over, so this parameter also has to be passed in.  Feel
+    ///   free to remove this if a way to get bioseq from seqmap_ci turns up
+    void x_AddGapsFromBases(
+        const CSeqMap_CI & seqmap_ci,
+        const CBioseq_Handle & bioseq_h);
 };
 
 END_SCOPE(objects)

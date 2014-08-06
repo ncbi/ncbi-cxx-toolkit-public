@@ -74,6 +74,7 @@ private:
     CSeq_inst::EMol m_MolFilter;
     CRef<CScope> m_pScope;
     CGapAnalysis m_gapAnalysis;
+    CGapAnalysis::TAddFlag m_fGapAddFlags;
     CFastaReader::TFlags m_fFastaFlags;
 
     void x_ReadFileOrAccn(const string & sFileOrAccn);
@@ -90,9 +91,10 @@ private:
 
 CGapStatsApplication::CGapStatsApplication(void) :
     m_MolFilter(CSeq_inst::eMol_na),
-        m_fFastaFlags(
-            CFastaReader::fParseGaps |
-            CFastaReader::fLetterGaps)
+    m_fGapAddFlags(CGapAnalysis::fAddFlag_Default),
+    m_fFastaFlags(
+        CFastaReader::fParseGaps |
+        CFastaReader::fLetterGaps)
 {
     CRef<CObjectManager> pObjMgr( CObjectManager::GetInstance() );
     CGBDataLoader::RegisterInObjectManager(*pObjMgr);
@@ -157,6 +159,12 @@ void CGapStatsApplication::Init(void)
     arg_desc->SetConstraint("assume-mol", &(*new CArgAllow_Strings,
         "na", "aa"));
 
+    arg_desc->AddFlag(
+        "include-letter-gaps",
+        "If set, gaps represented as runs of unknown bases "
+        "(e.g. 'N' for nucs, 'X' for prots) are also counted, "
+        "not just Seq-gaps");
+
     arg_desc->SetCurrentGroup("HISTOGRAM");
 
     arg_desc->AddFlag("show-hist",
@@ -216,6 +224,10 @@ int CGapStatsApplication::Run(void)
         m_fFastaFlags |= CFastaReader::fAssumeProt;
     } else {
         NCBI_USER_THROW_FMT("Unsupported assume-mol: " << sAssumeMol);
+    }
+
+    if( args["include-letter-gaps"] ) {
+        m_fGapAddFlags |= CGapAnalysis::fAddFlag_IncludeUnknownBases;
     }
 
     // load given data into m_gapAnalysis
@@ -301,65 +313,64 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
             break;
         case CFormatGuess::eFasta: {
             CFastaReader fasta_reader(in_file, 
-                m_fFastaFlags );
+                                      m_fFastaFlags );
             pSeqEntry = fasta_reader.ReadSet();
             break;
         }
         default:
             NCBI_USER_THROW_FMT("This format is not yet supported: " 
-                << format_guesser.GetFormatName(eFormat) );
+                                << format_guesser.GetFormatName(eFormat) );
         }
 
-        if( eSerialDataFormat != eSerial_None ) {
-            if( ! pSeqEntry ) {
-                // try to parse as Seq-submit
-                in_file.seekg(0);
-                CRef<CSeq_submit> pSeqSubmit( new CSeq_submit );
-                try {
-                    in_file >> MSerial_Format(eSerialDataFormat) 
-                            >> *pSeqSubmit;
+        _ASSERT(eSerialDataFormat != eSerial_None);
+        if( ! pSeqEntry ) {
+            // try to parse as Seq-submit
+            in_file.seekg(0);
+            CRef<CSeq_submit> pSeqSubmit( new CSeq_submit );
+            try {
+                in_file >> MSerial_Format(eSerialDataFormat) 
+                        >> *pSeqSubmit;
 
-                    if( ! pSeqSubmit->IsEntrys() ||
-                        pSeqSubmit->GetData().GetEntrys().size() != 1 ) 
-                    {
-                        NCBI_USER_THROW(
-                            "Only Seq-submits with exactly one Seq-entry "
-                            "inside are supported.");
-                    }
-                    pSeqEntry = *pSeqSubmit->SetData().SetEntrys().begin();
-                } catch(...) {
-                    // keep going and try to parse another way
+                if( ! pSeqSubmit->IsEntrys() ||
+                    pSeqSubmit->GetData().GetEntrys().size() != 1 ) 
+                {
+                    NCBI_USER_THROW(
+                        "Only Seq-submits with exactly one Seq-entry "
+                        "inside are supported.");
                 }
-            } 
-            
-            if( ! pSeqEntry ) {
-                try {
-                    in_file.seekg(0);
-                    CRef<CSeq_entry> pNewSeqEntry( new CSeq_entry );
-                    in_file >> MSerial_Format(eSerialDataFormat) 
-                            >> *pNewSeqEntry;
-                    pSeqEntry = pNewSeqEntry;
-                } catch(...) {
-                    // keep going and try to parse another way
-                }
+                pSeqEntry = *pSeqSubmit->SetData().SetEntrys().begin();
+            } catch(...) {
+                // keep going and try to parse another way
             }
+        } 
             
-            if( ! pSeqEntry ) {
-                try {
-                    in_file.seekg(0);
-                    CRef<CBioseq> pBioseq( new CBioseq );
-                    in_file >> MSerial_Format(eSerialDataFormat) 
-                            >> *pBioseq;
-                    pSeqEntry.Reset( new CSeq_entry );
-                    pSeqEntry->SetSeq( *pBioseq );
-                } catch(...) {
-                }
-            } 
-            
-            if( ! pSeqEntry ) {
-                NCBI_USER_THROW_FMT("Unsupported object type for: " 
-                    << sFileOrAccn);
+        if( ! pSeqEntry ) {
+            try {
+                in_file.seekg(0);
+                CRef<CSeq_entry> pNewSeqEntry( new CSeq_entry );
+                in_file >> MSerial_Format(eSerialDataFormat) 
+                        >> *pNewSeqEntry;
+                pSeqEntry = pNewSeqEntry;
+            } catch(...) {
+                // keep going and try to parse another way
             }
+        }
+            
+        if( ! pSeqEntry ) {
+            try {
+                in_file.seekg(0);
+                CRef<CBioseq> pBioseq( new CBioseq );
+                in_file >> MSerial_Format(eSerialDataFormat) 
+                        >> *pBioseq;
+                pSeqEntry.Reset( new CSeq_entry );
+                pSeqEntry->SetSeq( *pBioseq );
+            } catch(...) {
+            }
+        } 
+            
+        if( ! pSeqEntry ) {
+            NCBI_USER_THROW_FMT("Unsupported object type for: " 
+                                << sFileOrAccn);
         }
 
         entry_h = m_pScope->AddTopLevelSeqEntry(*pSeqEntry);
@@ -367,16 +378,24 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
         // fall back on trying to load it as an accession
         CRef<CSeq_id> pSeqId( new CSeq_id(sFileOrAccn) );
         CBioseq_Handle bioseq_h = m_pScope->GetBioseqHandle(*pSeqId);
+        if( ! bioseq_h ) {
+            NCBI_USER_THROW_FMT(
+                "This accession could not be found: " <<
+                MSerial_AsnText << *pSeqId );
+        }
         entry_h = bioseq_h.GetParentEntry();
     }
 
-    if( entry_h ) {
+    _ASSERT(entry_h);
 
-        m_gapAnalysis.AddSeqEntryGaps(entry_h, m_MolFilter);
+    m_gapAnalysis.AddSeqEntryGaps(
+        entry_h,
+        m_MolFilter,
+        CBioseq_CI::eLevel_All,
+        m_fGapAddFlags);
 
-        // conserve memory
-        m_pScope->ResetDataAndHistory();
-    }
+    // conserve memory
+    m_pScope->ResetDataAndHistory();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -423,7 +442,8 @@ void CGapStatsApplication::x_PrintSummaryView(
     // print a note if any gaps are of length 0, which
     // means unknown
     if( bAnyGapOfLenZero ) {
-        cout << "* Note: Gap of length zero means 'completely unknown length'." << endl;
+        cout << "* Note: Gap of length zero means "
+             << "'completely unknown length'." << endl;
     }
 }
 
@@ -479,6 +499,6 @@ void CGapStatsApplication::x_PrintHistogram(
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CGapStatsApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CGapStatsApplication().AppMain(argc, argv);
 }
 

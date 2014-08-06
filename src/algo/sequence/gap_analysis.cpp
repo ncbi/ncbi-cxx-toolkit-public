@@ -37,32 +37,56 @@
 #include <algo/sequence/gap_analysis.hpp>
 
 #include <objmgr/seq_map_ci.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 void CGapAnalysis::AddSeqEntryGaps(
-    const CSeq_entry_Handle & entry_h,  
-    CSeq_inst::EMol filter, 
-    CBioseq_CI::EBioseqLevelFlag level)
+    const CSeq_entry_Handle & entry_h,
+    CSeq_inst::EMol filter,
+    CBioseq_CI::EBioseqLevelFlag level,
+    TAddFlag add_flags)
 {
     CBioseq_CI bioseq_ci(entry_h, filter, level);
     for( ; bioseq_ci; ++bioseq_ci ) {
-        AddBioseqGaps(*bioseq_ci);
+        AddBioseqGaps(*bioseq_ci, add_flags);
     }
 }
 
-void CGapAnalysis::AddBioseqGaps(const CBioseq_Handle & bioseq_h)
+void CGapAnalysis::AddBioseqGaps(
+    const CBioseq_Handle & bioseq_h,
+    TAddFlag add_flags)
 {
     // get CSeq_id of CBioseq
     TSeqIdConstRef pSeqId = bioseq_h.GetSeqId();
 
+    // flags control  what we look at
+    CSeqMap::TFlags seq_map_flags = 0;
+    if( add_flags & fAddFlag_IncludeSeqGaps ) {
+        seq_map_flags |= CSeqMap::fFindGap;
+    }
+    if( add_flags & fAddFlag_IncludeUnknownBases ) {
+        seq_map_flags |= CSeqMap::fFindData;
+    }
+
     SSeqMapSelector selector;
-    selector.SetFlags(CSeqMap::fFindGap);
+    selector.SetFlags(seq_map_flags);
     CSeqMap_CI seqmap_ci(bioseq_h, selector);
     for( ; seqmap_ci; ++seqmap_ci ) {
-        _ASSERT( seqmap_ci.GetType() == CSeqMap::eSeqGap );
-        AddGap( pSeqId, seqmap_ci.GetLength() );
+        CSeqMap::ESegmentType seg_type = seqmap_ci.GetType();
+        if(seg_type == CSeqMap::eSeqGap) {
+            _ASSERT(add_flags & fAddFlag_IncludeSeqGaps);
+            AddGap( pSeqId, seqmap_ci.GetLength() );
+        } else if( seg_type == CSeqMap::eSeqData) {
+            _ASSERT(add_flags & fAddFlag_IncludeUnknownBases);
+            x_AddGapsFromBases(seqmap_ci, bioseq_h);
+        } else {
+            ERR_POST(
+                Warning << 
+                "This segment type is not supported at this time: " <<
+                static_cast<int>(seg_type) );
+        }
     }
 }
 
@@ -150,6 +174,40 @@ bool CGapAnalysis::SOneGapLengthSummarySorter::operator()(
     default:
         NCBI_USER_THROW_FMT("Unknown sort_gap_length: " <<
             static_cast<int>(sort_gap_length) );
+    }
+}
+
+void CGapAnalysis::x_AddGapsFromBases(
+    const CSeqMap_CI & seqmap_ci, const CBioseq_Handle & bioseq_h)
+{
+    TSeqIdConstRef bioseq_seq_id = bioseq_h.GetSeqId();
+    const TSeqPos begin_pos = seqmap_ci.GetPosition();
+
+    // get location representing this segment's bases
+    CRef<CSeq_loc> loc_of_bases(
+        new CSeq_loc(
+            *SerialClone(*bioseq_seq_id),
+            begin_pos,
+            (begin_pos + seqmap_ci.GetLength() - 1)));
+    CSeqVector seq_vec(
+        *loc_of_bases, *seqmap_ci.GetScope(), CBioseq_Handle::eCoding_Iupac);
+    const char kGapChar = seq_vec.GetGapChar(
+        CSeqVectorTypes::eCaseConversion_upper);
+
+    // a simple "runs of unknown bases" algo
+    size_t size_of_curr_gap = 0;
+    CSeqVector_CI seq_vec_ci = seq_vec.begin();
+    for( ; seq_vec_ci; ++seq_vec_ci ) {
+        if( *seq_vec_ci == kGapChar ) {
+            ++size_of_curr_gap;
+        } else if( size_of_curr_gap > 0 ) {
+            AddGap(bioseq_seq_id, size_of_curr_gap);
+            size_of_curr_gap = 0;
+        }
+    }
+    if( size_of_curr_gap > 0 ){
+        AddGap(bioseq_seq_id, size_of_curr_gap);
+        size_of_curr_gap = 0;
     }
 }
 
