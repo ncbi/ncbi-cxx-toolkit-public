@@ -501,14 +501,15 @@ string CTestAndRepData :: FindReplaceString(const string& src, const string& sea
 
 bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)
 {
-  if (str.empty()) return false;
-  string pattern(CRegexp::Escape(phrase));
+  if (str.empty() || phrase.empty()) return false;
+  string pattern(CRegexp::Escape(phrase));   // excape the special meaning of some char
   pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
+  string sch_str(CRegexp::Escape(str));
   CRegexp::ECompile 
         comp_flag = case_sensitive ?
                       CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;
   CRegexp rx(pattern, comp_flag);
-  if (rx.IsMatch(str)) return true;
+  if (rx.IsMatch(sch_str)) return true;
   else return false;
 };
 
@@ -777,6 +778,7 @@ bool CTestAndRepData :: IsProdBiomol(const CBioseq& bioseq)
 
 
 
+static int seq_cnt=0;
 bool CTestAndRepData :: IsmRNASequenceInGenProdSet(const CBioseq& bioseq)
 {
    bool rval = false;
@@ -784,13 +786,16 @@ bool CTestAndRepData :: IsmRNASequenceInGenProdSet(const CBioseq& bioseq)
    CConstRef<CBioseq_set> bioseq_set = bioseq.GetParentSet();
 
    if (CSeq_inst::eMol_rna == bioseq.GetInst().GetMol() && bioseq_set.NotEmpty() ) {
-        if (CBioseq_set::eClass_gen_prod_set == bioseq_set->GetClass()) 
+        if (CBioseq_set::eClass_gen_prod_set == bioseq_set->GetClass()) {
              rval = IsProdBiomol(bioseq);
+        }
         else if (CBioseq_set::eClass_nuc_prot == bioseq_set->GetClass()) {
              CConstRef<CBioseq_set> bioseq_set_set = bioseq_set->GetParentSet();
-             if (bioseq_set_set.NotEmpty())
-                if (CBioseq_set::eClass_gen_prod_set == bioseq_set_set->GetClass())
+             if (bioseq_set_set.NotEmpty()) {
+                if (CBioseq_set::eClass_gen_prod_set == bioseq_set_set->GetClass()) {
                     rval = IsProdBiomol(bioseq);
+                }
+             }
         }
    }
    return rval;

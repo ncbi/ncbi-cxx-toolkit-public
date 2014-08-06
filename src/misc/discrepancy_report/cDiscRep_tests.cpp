@@ -5229,7 +5229,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: x_ReportFeat(const CSeq_feat& it, cons
 CConstRef <CDelta_seq> CBioseq_FEATURE_LOCATION_CONFLICT :: x_GetDeltaSeqForPosition(unsigned pos, const CBioseq* bioseq, unsigned& endpoint)
 {
    if (!bioseq || !bioseq->IsNa() 
-             || !bioseq->GetInst().GetRepr() != CSeq_inst :: eRepr_delta
+             || bioseq->GetInst().GetRepr() != CSeq_inst :: eRepr_delta
              || !bioseq->GetInst().CanGetExt() 
              || !bioseq->GetInst().GetExt().IsDelta()) {
       return CConstRef <CDelta_seq>(NULL);
@@ -5245,7 +5245,7 @@ CConstRef <CDelta_seq> CBioseq_FEATURE_LOCATION_CONFLICT :: x_GetDeltaSeqForPosi
             len = sequence::GetLength((*it)->GetLoc(), thisInfo.scope);
         }
         if (pos >= offset && pos < offset + len) {
-            pos = offset;
+            endpoint = offset;
             return (*it);
         } else {
             offset += len;
@@ -5302,11 +5302,6 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: x_ReportConflictingFeats(const CSeq_fe
    else {
        bool partial5 = feat.GetLocation().IsPartialStart(eExtreme_Positional);
        bool partial3 = feat.GetLocation().IsPartialStop(eExtreme_Positional);
-       if (feat.GetLocation().GetStrand() == eNa_strand_minus) {
-              bool tmp_part = partial5;
-              partial5 = partial3;
-              partial3 = tmp_part;
-           }
        if ( (!partial5 || !x_Does5primerAbutGap(feat, bioseq))
                       && (!partial3 || !x_Does3primerAbutGap(feat, bioseq)) )  {
                 x_ReportFeat(feat, gene, feat_type);
@@ -5329,22 +5324,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: x_CheckFeatureTypeForLocationDiscrepan
              if (x_IsGeneLocationOk(*it, *jt)) {
                  found_match = true;
              }
-             else   //x_ReportConflictingFeats(**it, **jt, feat_type, bioseq);
-#if 1
-              if ( (*it)->GetData().GetSubtype() 
-                            != CSeqFeatData::eSubtype_bad) {
-                strtmp = feat_type + "$";
-                thisInfo.test_item_list[GetName()]
-                            .push_back(strtmp + GetDiscItemText(**it));
-                thisInfo.test_item_list[GetName()]
-                            .push_back(strtmp + GetDiscItemText(**jt));
-                strtmp = "$" + feat_type;
-                thisInfo.test_item_objs[GetName()+strtmp]
-                            .push_back(CConstRef <CObject>(*it));
-                thisInfo.test_item_objs[GetName()+strtmp]
-                            .push_back(CConstRef <CObject>(*jt));
-              }
-#endif
+             else x_ReportConflictingFeats(**it, **jt, feat_type, bioseq);
           }
         }
         if (!found_match) {
@@ -5359,22 +5339,10 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: x_CheckFeatureTypeForLocationDiscrepan
          CConstRef <CSeq_feat> 
             gene_olp= sequence::GetBestOverlappingFeat(feat_loc,
                                                    CSeqFeatData::e_Gene,
-                                                   sequence::eOverlap_Contains,
+                                                   sequence::eOverlap_Contained,
                                                    *thisInfo.scope);
          if (gene_olp.NotEmpty() && !x_IsGeneLocationOk(*it, gene_olp.GetPointer())) {
-//             x_ReportConflictingFeats(**it, gene_olp.GetObject(), feat_type, bioseq);
-#if 1
-              strtmp = feat_type + "$";
-              thisInfo.test_item_list[GetName()]
-                   .push_back(strtmp + GetDiscItemText(**it));
-              thisInfo.test_item_list[GetName()]
-                   .push_back(strtmp + GetDiscItemText(*gene_olp.GetPointer()));
-              strtmp = "$" + feat_type;
-              thisInfo.test_item_objs[GetName()+strtmp]
-                         .push_back(CConstRef <CObject>(*it));
-              thisInfo.test_item_objs[GetName()+strtmp]
-                         .push_back(CConstRef <CObject>(gene_olp.GetPointer()));
-#endif 
+             x_ReportConflictingFeats(**it, gene_olp.GetObject(), feat_type, bioseq);
          }
      }
    }
@@ -8204,7 +8172,7 @@ void CBioseqSet_DISC_NONWGS_SETS_PRESENT :: GetReport(CRef <CClickableItem> c_it
 
 // CSeqEntryTestAndRepData
 // new method
-bool CSeqEntry_test_on_tax_cflts :: s_StringHasVoucherSN(const string& vou_nm)
+bool CSeqEntry_test_on_tax_cflts :: x_StringHasVoucherSN(const string& vou_nm)
 {
   vector <string> spec_vou;
   spec_vou.push_back("s.n.");
@@ -8218,22 +8186,17 @@ void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const str
    string tax_nm;
    tax_nm = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
    if (tax_nm.empty()) return; 
-/*
-   else tax_nm = "$" + tax_nm + "#";
-   string tax_desc(tax_nm + "#"  desc);
-*/
 
    string desc_tmp, strtmp;
    if (!biosrc.IsSetOrgMod()) return;
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
      strtmp = (*it)->GetSubname() + "$" + tax_nm + "#" + desc;
-//     desc_tmp = "$" + strtmp + "#" + tax_nm;
      desc_tmp = "$" + strtmp;
      switch ( (*it)->GetSubtype() ) {
 
        // DISC_SPECVOUCHER_TAXNAME_MISMATCH
        case COrgMod::eSubtype_specimen_voucher: 
-             if (m_run_vou && !s_StringHasVoucherSN(strtmp)) {
+             if (m_run_vou && !x_StringHasVoucherSN((*it)->GetSubname())) {
                  thisInfo.test_item_list[GetName_vou()].push_back(strtmp);
                  thisInfo.test_item_objs[GetName_vou() + desc_tmp]
                            .push_back(obj_ref);
@@ -8281,7 +8244,8 @@ void CSeqEntry_test_on_tax_cflts :: TestOnObj(const CSeq_entry& seq_entry)
 
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
-      RunTests( (*it)->GetData().GetBiosrc(), GetDiscItemText(**it), CConstRef <CObject> (*it));
+      RunTests( (*it)->GetData().GetBiosrc(), 
+                     GetDiscItemText(**it), CConstRef <CObject> (*it));
    }
   
    unsigned i=0;
