@@ -391,7 +391,7 @@ gpipe_common needs xmlwrapp
 gpipe_ftp needs $(XFORMAT_LIBS)
 gpipe_ftp needs gcaccess_utils
 gpipe_ftp needs gpinit
-gpipe_ftp needs xalgoalignutil
+gpipe_ftp needs gpipe_alnutil
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
 gpipe_ftp_new needs $(XFORMAT_LIBS)
