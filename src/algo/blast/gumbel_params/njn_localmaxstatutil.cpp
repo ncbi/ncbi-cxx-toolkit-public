@@ -85,8 +85,8 @@ size_t dimension2_) // dimension2 of equilProb_
     _ASSERT(Approx::relApprox (sum, 1.0, FUDGE * REL_TOL));
 
     Int4 s = 0;
-    Int4 min = kMax_I4;
-    Int4 max = kMin_I4;
+    Int4 min = scoreMatrix_[0][0];
+    Int4 max = scoreMatrix_[0][0];
 
     for (i = 0; i < dimension_; i++) 
     {
