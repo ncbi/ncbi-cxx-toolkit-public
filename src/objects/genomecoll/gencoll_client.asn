@@ -17,13 +17,15 @@ IMPORTS GC-Assembly FROM NCBI-GenomeCollection;
 
 GCClientRequest ::= CHOICE {
     get-assembly GCClient-GetAssemblyRequest,
-    get-chrtype-valid  GCClient-ValidateChrTypeLocRequest
+    get-chrtype-valid  GCClient-ValidateChrTypeLocRequest,
+    get-best-assembly GCClient-FindBestAssemblyRequest
 }
 
 
 GCClientResponse ::= CHOICE {
     get-assembly GC-Assembly,
     get-chrtype-valid  VisibleString,
+    get-best-assembly GCClient-FindBestAssemblyResponse,
     
     --  errors encountered at the server side.
     srvr-error GCClient-Error
@@ -108,6 +110,36 @@ GCClient-ValidateChrTypeLocResponse ::= SEQUENCE {
     result  VisibleString
 }
 
+
+GCClient-FindBestAssemblyFilter ::= INTEGER {
+    any(0),
+    latest(1),
+    major(2),
+    annotated(3)
+}
+
+GCClient-FindBestAssemblySort ::= INTEGER {
+    default(0),
+    latest(1),
+    major(2),
+    annotated(3)
+}
+
+GCClient-FindBestAssemblyRequest ::= SEQUENCE {
+    seq-id  VisibleString,
+
+    filter GCClient-FindBestAssemblyFilter DEFAULT any,
+
+    sort GCClient-FindBestAssemblySort DEFAULT default
+}
+
+GCClient-FindBestAssemblyResponse ::= SEQUENCE {
+    accession VisibleString OPTIONAL,
+    latest    BOOLEAN OPTIONAL,
+    major     BOOLEAN OPTIONAL,
+    annotated BOOLEAN OPTIONAL,
+    seq-ids   SET OF VisibleString
+}
 
 
 END

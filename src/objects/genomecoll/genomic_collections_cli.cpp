@@ -173,6 +173,31 @@ string CGenomicCollectionsService::ValidateChrType(string chrType, string chrLoc
 }
 
 
+CRef<CGCClient_FindBestAssemblyResponse> CGenomicCollectionsService::FindBestAssembly(const string& seq_id, int filter_type, int sort_type)
+{
+    CGCClient_FindBestAssemblyRequest  req;
+    CGCClientResponse reply;
+
+    req.SetSeq_id(seq_id);
+    req.SetFilter(filter_type);
+    req.SetSort(sort_type);
+
+#ifdef _DEBUG
+    ostringstream ostrstrm;
+    ostrstrm << "Making request -" << MSerial_AsnText << req;
+    LOG_POST(Info << ostrstrm.str());
+#endif
+
+    try {
+        return AskGet_best_assembly(req, &reply);
+    } catch (CException& ex) {
+        if(reply.Which() == CGCClientResponse::e_Srvr_error) {
+            NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
+        }
+        throw;
+    }
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
