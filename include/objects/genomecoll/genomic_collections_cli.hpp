@@ -44,6 +44,7 @@
 #include <objects/genomecoll/genomic_collections_cli_.hpp>
 #include <objects/genomecoll/GCClient_AttributeFlags.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
+#include <objects/genomecoll/GCClient_FindBestAssemblyR.hpp>
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -87,6 +88,11 @@ public:
 
 
     string ValidateChrType(string chrType, string chrLoc);
+
+    CRef<CGCClient_FindBestAssemblyResponse> FindBestAssembly
+        (const string& seq_id,
+         int filter_type = eGCClient_FindBestAssemblyFilter_any,
+         int sort_type = eGCClient_FindBestAssemblySort_default);
 
 private:
     // Prohibit copy constructor and assignment operator
