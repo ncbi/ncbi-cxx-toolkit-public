@@ -572,7 +572,8 @@ void
 CNCPeerControl::x_ProcessUpdateEvent(SNCMirrorEvent* event)
 {
     m_ObjLock.Lock();
-    if (x_ReserveBGConnNow()) {
+//    if (x_ReserveBGConnNow()) {
+    if (x_ReserveBGConn()) {
         CNCActiveHandler* conn = x_GetBGConnImpl();
         if (conn) {
             x_ProcessMirrorEvent(conn, event);
