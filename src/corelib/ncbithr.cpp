@@ -425,8 +425,10 @@ static int sx_GetNextThreadId(void)
 
 void CThread::x_InitializeThreadId(void)
 {
+#if defined(NCBI_THREADS)
     _ASSERT(!sx_ThreadPtr);
     _ASSERT(!sx_ThreadId);
+#endif
     sx_ThreadPtr = this;
     sx_ThreadId = sx_GetNextThreadId();
 }
@@ -435,8 +437,10 @@ void CThread::x_InitializeThreadId(void)
 void CThread::InitializeMainThreadId(void)
 {
     // mark main thread
+#if defined(NCBI_THREADS)
     _ASSERT(!sx_ThreadPtr);
     _ASSERT(!sx_ThreadId);
+#endif
     sx_ThreadPtr = 0;
     sx_ThreadId = kMainThreadId;
     sm_MainThreadIdInitialized = true;
