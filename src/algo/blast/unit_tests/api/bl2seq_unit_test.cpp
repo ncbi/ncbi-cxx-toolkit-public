@@ -852,6 +852,7 @@ BOOST_AUTO_TEST_CASE(PositiveMismatchOption) {
     }
 }
 
+// If a single query is fully masked, throw an exception (i.e.: an error)
 BOOST_AUTO_TEST_CASE(FullyMaskedSequence) {
     CSeq_id qid("ref|NT_024524.13");
     pair<TSeqPos, TSeqPos> range(27886902, 27886932);
@@ -871,13 +872,70 @@ BOOST_AUTO_TEST_CASE(FullyMaskedSequence) {
     options->SetGapXDropoff(100);
     options->SetMaskAtHash(false);
     CBl2Seq blaster(*query, *subj, *options);
+    bool caught_exception = false;
     try { blaster.Run(); }
     catch (const CException& e) {
+        caught_exception = true;
         const string msg1("invalid query sequence");
-        const string msg2("verify the query sequence(s) and/or filtering "
-                          "options");
-        BOOST_REQUIRE(string(e.what()).find(msg1) != NPOS);
-        BOOST_REQUIRE(string(e.what()).find(msg2) != NPOS);
+        BOOST_REQUIRE(e.GetMsg().find(msg1) != NPOS);
+        BOOST_REQUIRE(e.GetMsg().find(string(kBlastErrMsg_CantCalculateUngappedKAParams)) != NPOS);
+    }
+    BOOST_REQUIRE_EQUAL(true, caught_exception);
+}
+
+// In the case of multiple queries and one being masked, only emit a warning
+// N.B.: this doesn't test the MT case as MT unit tests aren't supported
+BOOST_AUTO_TEST_CASE(MultipleQueries1FullyMasked) {
+    const bool kHasProteinQuery(true);
+    CBlastInputSourceConfig iconfig(kHasProteinQuery);
+    const CSearchDatabase dbinfo("data/nt.41646578", CSearchDatabase::eBlastDbIsNucleotide);
+    CRef<CBlastOptionsHandle> opts_handle(CBlastOptionsFactory::Create(eTblastn));
+
+    CNcbiIfstream infile("data/mult_queries_1fully_masked.fsa");
+    CRef<CScope> scope = CBlastScopeSource(kHasProteinQuery).NewScope();
+    CRef<CBlastFastaInputSource> fasta_src
+        (new CBlastFastaInputSource(infile, iconfig));
+    CRef<CBlastInput> input(new CBlastInput(&*fasta_src));
+    TSeqLocVector query_vec = input->GetAllSeqLocs(*scope);
+
+    // The first iteration runs the search *without* splitting, the second one
+    // forces to use query splitting
+    for (int env = 0; env < 2; env++) {
+
+        CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_vec));
+        auto_ptr<CAutoEnvironmentVariable> envvar1, envvar2;
+        if (env) {
+            envvar1.reset(new CAutoEnvironmentVariable("OVERLAP_CHUNK_SIZE", NStr::SizetToString(10)));
+            envvar2.reset(new CAutoEnvironmentVariable("CHUNK_SIZE", NStr::SizetToString(100)));
+        }
+        CLocalBlast blaster(queries, opts_handle, dbinfo);
+        CRef<CSearchResultSet> results;
+        BOOST_REQUIRE_NO_THROW(results = blaster.Run());
+        BOOST_REQUIRE_EQUAL(3U, results->size());
+        for (size_t query_idx = 0; query_idx < results->size(); query_idx++) {
+            const string& warnings((*results)[query_idx].GetWarningStrings());
+            const string& errors((*results)[query_idx].GetErrorStrings());
+
+            CNcbiOstrstream oss;
+            if (env) {
+                oss << "Forced splitting of queries: ";
+            } else {
+                oss << "No splitting of queries: ";
+            }
+
+            if (query_idx == 0 || query_idx == 2) {
+                oss << " expected no warnings/errors, got errors='" << errors << "'; "
+                    << "warnings='" << warnings << "'";
+                const string msg = CNcbiOstrstreamToString(oss);
+                BOOST_CHECK_MESSAGE(kEmptyStr == warnings, msg);
+                BOOST_CHECK_MESSAGE(kEmptyStr == errors, msg);
+            } else {
+                oss << " expected warnings to match '" << kBlastErrMsg_CantCalculateUngappedKAParams
+                    << "; instead got '" << warnings << "'";
+                const string msg = CNcbiOstrstreamToString(oss);
+                BOOST_CHECK_MESSAGE(warnings.find(kBlastErrMsg_CantCalculateUngappedKAParams) != NPOS, msg);
+            }
+        }
     }
 }
 
@@ -3324,9 +3382,9 @@ BOOST_AUTO_TEST_CASE(testMultiSeqSearchSymmetry)
     // Repeat the tests above using the TSeqAlignVector
     TSeqAlignVector alignments = blaster.Run();
     BOOST_REQUIRE_EQUAL(num_seqs*num_seqs, alignments.size());
-    for (int q = 0; q < num_seqs; q++) {
-        for (int s = 0; s < num_seqs; s++) {
-            int idx1 = q*num_seqs + s;
+    for (size_t q = 0; q < num_seqs; q++) {
+        for (size_t s = 0; s < num_seqs; s++) {
+            size_t idx1 = q*num_seqs + s;
             CConstRef<CSeq_align_set> al1 = alignments[idx1];
             if (idx1 == (q*num_seqs+q)) {  // self-hit
                 BOOST_REQUIRE(al1.NotEmpty());
@@ -3342,7 +3400,7 @@ BOOST_AUTO_TEST_CASE(testMultiSeqSearchSymmetry)
                 BOOST_REQUIRE_EQUAL(seqlen, num_ident);
                 continue;
             }
-            int idx2 = s*num_seqs + q;
+            size_t idx2 = s*num_seqs + q;
             CConstRef<CSeq_align_set> al2 = alignments[idx2];
             if (al1.Empty() || al2.Empty()) {
                 BOOST_REQUIRE_EQUAL(al1.Empty(), al2.Empty());

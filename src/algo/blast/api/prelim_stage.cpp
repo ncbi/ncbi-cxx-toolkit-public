@@ -269,9 +269,7 @@ CBlastPrelimSearch::Run()
                 const string err_msg1("search cannot proceed due to errors "
                                      "in all contexts/frames of query "
                                      "sequences");
-                const string err_msg2("Warning: Could not calculate ungapped Karlin-Altschul "
-                                      "parameters due to an invalid query sequence or its translation. "
-                                      "Please verify the query sequence(s) and/or filtering options");
+                const string err_msg2(kBlastErrMsg_CantCalculateUngappedKAParams);
                 if (e.GetMsg().find(err_msg1) == NPOS && e.GetMsg().find(err_msg2) == NPOS) {
                     throw;
                 }

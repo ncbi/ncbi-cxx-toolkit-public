@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(CreateScoreBlockMaskedSequence)
 
      BlastScoreBlk* sbp = CSetupFactory::CreateScoreBlock(opts_memento.get(), query_data, &blast_seq_loc, search_messages);
 
-     BOOST_REQUIRE(search_messages.ToString().find("Could not calculate ungapped") != string::npos);
+     BOOST_REQUIRE(search_messages.ToString().find(kBlastErrMsg_CantCalculateUngappedKAParams) != string::npos);
      BOOST_REQUIRE(blast_seq_loc != NULL);
      BOOST_REQUIRE(sbp != NULL);
  

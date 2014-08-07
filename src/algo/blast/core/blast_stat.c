@@ -2771,9 +2771,7 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
           sbp->kbp_std[context] = Blast_KarlinBlkFree(sbp->kbp_std[context]);
           if (!Blast_QueryIsTranslated(program) ) {
              Blast_MessageWrite(blast_message, eBlastSevWarning, context,
-                "Could not calculate ungapped Karlin-Altschul parameters due "
-                "to an invalid query sequence or its translation. Please verify the "
-                "query sequence(s) and/or filtering options");
+             kBlastErrMsg_CantCalculateUngappedKAParams);
           }
           continue;
       }
@@ -2804,9 +2802,7 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
        /* Message for non-translated search issued above. */
        if (Blast_QueryIsTranslated(program) ) {
             Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext,
-                "Could not calculate ungapped Karlin-Altschul parameters due "
-                "to an invalid query sequence or its translation. Please verify the "
-                "query sequence(s) and/or filtering options");
+            kBlastErrMsg_CantCalculateUngappedKAParams);
        }
        status = 1;  /* Not a single context was valid. */
    }

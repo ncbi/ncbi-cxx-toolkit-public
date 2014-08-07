@@ -59,8 +59,12 @@ typedef enum {
    eBlastSevFatal
 } EBlastSeverity;
 
-extern NCBI_XBLAST_EXPORT const int kBlastMessageNoContext;  /**< No single context is known to cause the error 
-                                                 (probably a setup issue). */
+/*** No single context is known to cause the error (probably a setup issue). */
+extern NCBI_XBLAST_EXPORT 
+const int kBlastMessageNoContext;
+/*** Error message for failure to calculate ungapped Karlin-Altschul parameters */
+extern NCBI_XBLAST_EXPORT 
+const char* kBlastErrMsg_CantCalculateUngappedKAParams;  
 
 /** Structure to hold the a message from the core of the BLAST engine. */
 typedef struct Blast_Message {

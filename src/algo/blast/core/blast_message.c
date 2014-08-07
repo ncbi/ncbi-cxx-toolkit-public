@@ -39,6 +39,10 @@ static char const rcsid[] =
 
 /** Declared in blast_message.h as extern const. */
 const int kBlastMessageNoContext = -1;
+const char* kBlastErrMsg_CantCalculateUngappedKAParams
+    = "Could not calculate ungapped Karlin-Altschul parameters due "
+      "to an invalid query sequence or its translation. Please verify the "
+      "query sequence(s) and/or filtering options";
 
 /** Allocate a new SMessageOrigin structure
  * @param filename name of the file [in]
@@ -182,10 +186,10 @@ Blast_PerrorEx(Blast_Message* *msg,
         new_msg->context = context;
         break;
     case BLASTERR_NOVALIDKARLINALTSCHUL:
-        new_msg->message = strdup("Warning: Could not calculate ungapped Karlin-Altschul "
-                               "parameters due to an invalid query sequence or its translation. "
-                               "Please verify the query sequence(s) and/or filtering options");
-        new_msg->severity = eBlastSevError;
+        new_msg->message = strdup(kBlastErrMsg_CantCalculateUngappedKAParams);
+        /* this should be a warning when multiple queries are there and at
+         * least 1 is OK */
+        new_msg->severity = eBlastSevError; 
         new_msg->context = context;
         break;
 
