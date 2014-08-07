@@ -472,7 +472,7 @@ bool CSearch_func :: Match(const string& str) const
         // IsAllCaps (str);
         string alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
         string up_str = str;
-        if (up_str.find_first_not_of(alpha_str) == string::npos) {
+        if (up_str.find_first_not_of(alpha_str) != string::npos) {
            return false;
         }
         up_str = NStr::ToUpper(up_str);
