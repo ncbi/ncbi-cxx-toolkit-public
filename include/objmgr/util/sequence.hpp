@@ -656,64 +656,11 @@ const CBioSource* GetBioSource(const CBioseq_Handle& handle);
 ///   return the bioseq
 /// location referes to multiple bioseqs:
 ///   if parts of a segmentd bioseq, returns the segmentd bioseq.
-///   otherwise, return the first bioseq that could be found (first localy then,
-///   if flag is eGetBioseq_All, remote)
+///   otherwise, return the first bioseq that could be found
+///   (first localy then, if flag is eGetBioseq_All, remote)
 NCBI_XOBJUTIL_EXPORT
 CBioseq_Handle GetBioseqFromSeqLoc(const CSeq_loc& loc, CScope& scope,
     CScope::EGetBioseqFlag flag = CScope::eGetBioseq_Loaded);
-
-
-/// @deprecated  Unsupported and unused, per CXX-4305, it will be removed soon.
-enum ECreateBioseqFlags {
-    //< Create a delta sequence.  If this is not present, a raw sequence
-    //< is created
-    fBioseq_CreateDelta = 0x01,
-
-    //< Copy all descriptors into the new bioseq
-    fBioseq_CopyDescriptors = 0x02,
-
-    //< Project all annotations onto the new bioseq, and
-    //< create a new annotation for these
-    fBioseq_CopyAnnot = 0x04,
-
-    fBioseq_Defaults = fBioseq_CreateDelta
-};
-
-/// @deprecated  Unsupported and unused, per CXX-4305, it will be removed soon.
-typedef int TCreateBioseqFlags;
-
-/// @deprecated  Unsupported and unused, per CXX-4305, it will be removed soon.
-///
-/// Create a constructed bioseq from a location
-/// This function will construct a bioseq from a given location, using a set of
-/// options to control how the bioseq should be represented.  Options here
-/// include:
-///  - create a far-pointing delta-seq or a raw sequence
-///      - specify the depth of recursion for the delta bioseq
-///  - copy all bioseq descriptors
-/// @param bsh
-///   Source bioseq handle
-/// @param from
-///   Starting position of sequence
-/// @param to
-///   Ending position of sequence
-/// @param new_seq_id
-///   Seq-id for the newly created sequence
-/// @param opts
-///   The set of flags controlling how the sequence should be created
-/// @param delta_seq_level
-///   Level of recursion from which to pull the delta-seq components
-///   Level 0 = use the components in the source sequence;
-///   Level 1 = use the components from the components in the source sequence
-/// @return
-///   Newly created bioseq
-
-NCBI_DEPRECATED NCBI_XOBJUTIL_EXPORT
-CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
-                                     TSeqPos from, TSeqPos to,
-                                     const CSeq_id_Handle& new_seq_id,
-                                     TCreateBioseqFlags opts = fBioseq_Defaults,
-                                     int delta_seq_level = 1);
 
 
 /* @} */
