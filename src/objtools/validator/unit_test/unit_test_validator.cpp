@@ -18862,3 +18862,52 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     CheckStrings(seen, expected);
 }
 
+BOOST_AUTO_TEST_CASE(Test_VR_28)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", 
+                                                 eDiag_Warning, 
+                                                 "MultipleSourceQualifiers",
+                                                 "Multiple segment qualifiers present"));
+
+    // Mutliple segment qualifiers
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_segment, "1");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_segment, "2");
+    
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_segment, "");
+
+    // Multiple collected_by qualifiers
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collected_by, "Michael Hunter");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collected_by, "Steven Fisher");
+    expected_errors[0]->SetErrMsg("Multiple collected_by qualifiers present");
+    
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collected_by, "");
+
+    // Multiple identified_by qualifiers
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_identified_by, "Michael Hunter");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_identified_by, "Steven Fisher");
+    expected_errors[0]->SetErrMsg("Multiple identified_by qualifiers present");
+    
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_identified_by, "");
+
+    // Multiple collection_date qualifiers
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "31-May-2014");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "30-Apr-2014");
+    expected_errors[0]->SetErrMsg("Multiple collection_date qualifiers present");
+    
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "");
+
+    CLEAR_ERRORS
+}

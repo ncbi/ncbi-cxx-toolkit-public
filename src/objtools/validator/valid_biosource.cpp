@@ -626,6 +626,9 @@ void CValidError_imp::ValidateBioSource
     bool mating_type = false;
     bool iso_source = false;
     bool has_plasmid_name = false;
+    int collected_by_count = 0;
+    int identified_by_count = 0;
+    int segment_count = 0;
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE (ssit, bsrc) {
         ValidateSubSource (**ssit, obj, ctx);
@@ -850,6 +853,18 @@ void CValidError_imp::ValidateBioSource
             ++collection_date_count;
             break;
 
+        case CSubSource::eSubtype_collected_by:
+            ++collected_by_count;
+            break;
+
+        case CSubSource::eSubtype_identified_by:
+            ++identified_by_count;
+            break;
+
+        case CSubSource::eSubtype_segment:
+            ++segment_count;
+            break;
+
         default:
             break;
         }
@@ -923,6 +938,21 @@ void CValidError_imp::ValidateBioSource
     if (collection_date_count > 1) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
                    "Multiple collection_date qualifiers present", obj, ctx);
+    }
+
+    if (collected_by_count > 1) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+                   "Multiple collected_by qualifiers present", obj, ctx);
+    }
+
+    if (identified_by_count > 1) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+                   "Multiple identified_by qualifiers present", obj, ctx);
+    }
+
+    if (segment_count > 1) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleSourceQualifiers, 
+                   "Multiple segment qualifiers present", obj, ctx);
     }
 
     if ((fwd_primer_seq_count > 0 && rev_primer_seq_count == 0)
