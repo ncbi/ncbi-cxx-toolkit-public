@@ -442,7 +442,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
 
     status = Blast_ScoreBlkMatrixInit(program_number, scoring_options, sbp, get_path);
     if (status) {
-        Blast_Perror(blast_message, status, -1);
+        Blast_PerrorWithLocation(blast_message, status, kBlastMessageNoContext);
         return status;
     }
 
@@ -597,7 +597,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
 
     if ( (status = BlastSetup_Validate(query_info, *sbpp) != 0)) {
         if (*blast_message == NULL) {
-            Blast_Perror(blast_message, BLASTERR_INVALIDQUERIES, -1);
+            Blast_PerrorWithLocation(blast_message, status, kBlastMessageNoContext);
         }
         return 1;
     }
