@@ -152,8 +152,8 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
     const bool isValueInUTF8 = true;
 
     auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
-    string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem "
-                   "Suchprotokoll entfernen");
+    string str_ger("Au\xdf" "erdem k\xf6nnen Sie einzelne Eintr\xe4ge aus "
+                   "Ihrem Suchprotokoll entfernen");
 
     // Russian phrase in WINDOWS-1251 encoding ...
     const unsigned char str_rus[] =
@@ -343,8 +343,8 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
 
     string sql;
     auto_ptr<IStatement> auto_stmt( GetConnection().GetStatement() );
-    string str_ger("Außerdem können Sie einzelne Einträge aus Ihrem "
-                   "Suchprotokoll entfernen");
+    string str_ger("Au\xdf" "erdem k\xf6nnen Sie einzelne Eintr\xe4ge aus "
+                   "Ihrem Suchprotokoll entfernen");
 
 //     string str_utf8("\320\237\321\203\320\277\320\272\320\270\320\275");
     string str_utf8("\xD0\x9F\xD1\x83\xD0\xBF\xD0\xBA\xD0\xB8\xD0\xBD");
