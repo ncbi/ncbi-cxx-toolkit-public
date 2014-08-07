@@ -62,7 +62,7 @@ SplitQuery_GetChunkSize(EProgram program)
     char* chunk_sz_str = getenv("CHUNK_SIZE");
     if (chunk_sz_str && !NStr::IsBlank(chunk_sz_str)) {
         retval = NStr::StringToInt(chunk_sz_str);
-        _TRACE("DEBUG: Using query chunk size " << retval);
+        _TRACE("Using query chunk size from environment " << retval);
     } else {
 
         switch (program) {

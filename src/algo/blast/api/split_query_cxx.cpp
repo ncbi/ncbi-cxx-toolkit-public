@@ -85,6 +85,7 @@ ostream& operator<<(ostream& out, const CQuerySplitter& rhs)
         _ASSERT(query_id);
         
         for (size_t chunk_index = 0; chunk_index < kNumChunks; chunk_index++) {
+            ASSERT(rhs.m_SplitQueriesInChunk.size());
             CRef<CBlastQueryVector> queries_in_chunk = 
                 rhs.m_SplitQueriesInChunk[chunk_index];
 

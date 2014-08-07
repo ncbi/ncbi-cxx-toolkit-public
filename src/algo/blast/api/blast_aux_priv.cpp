@@ -116,7 +116,7 @@ string
 BlastErrorCode2String(Int2 error_code)
 {
     Blast_Message* blast_msg = NULL;
-    Blast_PerrorEx(&blast_msg, error_code, __FILE__, __LINE__, -1);
+    Blast_PerrorWithLocation(&blast_msg, error_code, kBlastMessageNoContext);
     string retval(blast_msg != NULL ? blast_msg->message : kEmptyStr);
     blast_msg = Blast_MessageFree(blast_msg);
     return retval;

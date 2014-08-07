@@ -59,7 +59,7 @@ SplitQuery_GetOverlapChunkSize(EBlastProgramType program)
     char* overlap_sz_str = getenv("OVERLAP_CHUNK_SIZE");
     if (overlap_sz_str && !NStr::IsBlank(overlap_sz_str)) {
         retval = NStr::StringToInt(overlap_sz_str);
-        _TRACE("DEBUG: Using overlap chunk size " << retval);
+        _TRACE("Using overlap chunk size from environment " << retval);
         return retval;
     }
 
