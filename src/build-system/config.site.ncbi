@@ -65,10 +65,9 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    FreeBSD32  ) : ${BOOST_PATH=$NCBI/boost-1.53.0-ncbi1} ;;
     Linux32    ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi3} ;;
-    Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.53.0-ncbi1} ;;
-    *          ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi2} ;;
+    SunOS*     ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi2} ;;
+    *          ) : ${BOOST_PATH=$NCBI/boost-1.53.0-ncbi1} ;;
 esac
 
 case "$ncbi_platform" in
@@ -126,6 +125,7 @@ esac
 
 case "$ncbi_platform" in
     FreeBSD32  ) : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2} ;;
+    *MAC       ) : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2} ;;
     *          ) : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi1} ;;
 esac
 
