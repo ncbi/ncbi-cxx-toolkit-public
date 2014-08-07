@@ -589,7 +589,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         CBioseq_Handle bsh = *bioseq_it;
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
 
-        CFastaOstream* fasta_os;
+        CFastaOstream* fasta_os = NULL;
 
         bool is_genomic = false;
         bool is_RNA = false;
@@ -653,6 +653,8 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
                 continue;
             }
         }
+
+        if ( fasta_os == NULL) continue;
 
         if ( m_DeflineOnly ) {
             fasta_os->WriteTitle(bsh);
