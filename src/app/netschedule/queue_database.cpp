@@ -413,6 +413,7 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
                            m_QueueDescriptionDB.read_timeout_nsec);
         params.program_name = m_QueueDescriptionDB.program_name;
         params.failed_retries = m_QueueDescriptionDB.failed_retries;
+        params.read_failed_retries = m_QueueDescriptionDB.read_failed_retries;
         params.blacklist_time =
             CNSPreciseTime(m_QueueDescriptionDB.blacklist_time_sec,
                            m_QueueDescriptionDB.blacklist_time_nsec);
@@ -542,6 +543,7 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.read_timeout_nsec = params.read_timeout.NSec();
     m_QueueDescriptionDB.program_name = params.program_name;
     m_QueueDescriptionDB.failed_retries = params.failed_retries;
+    m_QueueDescriptionDB.read_failed_retries = params.read_failed_retries;
     m_QueueDescriptionDB.blacklist_time_sec = params.blacklist_time.Sec();
     m_QueueDescriptionDB.blacklist_time_nsec = params.blacklist_time.NSec();
     m_QueueDescriptionDB.max_input_size = params.max_input_size;
@@ -754,6 +756,12 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "failed_retries")
                 params.failed_retries =
                     params.ReadFailedRetries(reg, section_name);
+            else if (*val == "read_failed_retries")
+                // See CXX-5161, the read_failed_retries depends on
+                // failed_retries
+                params.read_failed_retries =
+                    params.ReadReadFailedRetries(reg, section_name,
+                            params.ReadFailedRetries(reg, section_name));
             else if (*val == "blacklist_time")
                 params.blacklist_time =
                     params.ReadBlacklistTime(reg, section_name);

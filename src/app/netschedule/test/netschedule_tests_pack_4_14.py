@@ -485,6 +485,12 @@ class Scenario505( TestBase ):
             if reply[ 1 ] != '"queue_class_changes" {"class2" ' \
                 '{"failed_retries" [3333, 87]}}, "queue_changes" ' \
                 '{"q2" {"failed_retries" [3333, 87], ' \
+                '"max_output_size" [333, 444]}}' and \
+               reply[ 1 ] != '"queue_class_changes" {"class2" ' \
+                '{"failed_retries" [3333, 87], ' \
+                '"read_failed_retries" [3333, 87]}}, "queue_changes" ' \
+                '{"q2" {"failed_retries" [3333, 87], ' \
+                '"read_failed_retries" [3333, 87], ' \
                 '"max_output_size" [333, 444]}}':
                 raise Exception( 'Unexpected output for RECO (step 7): ' + reply[ 1 ] )
 

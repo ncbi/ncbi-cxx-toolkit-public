@@ -98,6 +98,9 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_RunTimeout(default_run_timeout),
     m_ReadTimeout(default_read_timeout),
     m_FailedRetries(default_failed_retries),
+    m_ReadFailedRetries(default_failed_retries),  // See CXX-5161, the same
+                                                  // default as for
+                                                  // failed_retries
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
     m_MaxOutputSize(kNetScheduleMaxDBDataSize),
     m_WNodeTimeout(default_wnode_timeout),
@@ -231,6 +234,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
 
     m_ReadTimeout           = params.read_timeout;
     m_FailedRetries         = params.failed_retries;
+    m_ReadFailedRetries     = params.read_failed_retries;
     m_BlacklistTime         = params.blacklist_time;
     m_MaxInputSize          = params.max_input_size;
     m_MaxOutputSize         = params.max_output_size;
@@ -2423,7 +2427,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                     } else {
                         event.SetEvent(CJobEvent::eReadFail);
                         // Check the number of tries first
-                        if (job.GetReadCount() <= m_FailedRetries) {
+                        if (job.GetReadCount() <= m_ReadFailedRetries) {
                             // The job needs to be re-scheduled for reading
                             target_status = CNetScheduleAPI::eDone;
                             path_option = CStatisticsCounters::eFail;
@@ -3095,7 +3099,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                     new_status = CNetScheduleAPI::eFailed;
             } else {
                 // Reading state
-                if (job.GetReadCount() > m_FailedRetries)
+                if (job.GetReadCount() > m_ReadFailedRetries)
                     new_status = CNetScheduleAPI::eReadFailed;
                 else
                     new_status = job.GetStatusBeforeReading();
@@ -3810,7 +3814,7 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &     client,
                 new_status = CNetScheduleAPI::ePending;
         } else {
             // The job was reading
-            if (job.GetReadCount() > m_FailedRetries)
+            if (job.GetReadCount() > m_ReadFailedRetries)
                 new_status = CNetScheduleAPI::eReadFailed;
             else
                 new_status = job.GetStatusBeforeReading();

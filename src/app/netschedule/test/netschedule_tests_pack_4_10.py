@@ -2686,7 +2686,7 @@ class Scenario167( TestBase ):
         state, \
         passport = self.ns.getJobsForReading2( 'TEST', -1, '',
                                                'node', 'session' )
-        time.sleep( 15 )
+        time.sleep( 20 )
 
         info = self.ns.getJobInfo( 'TEST', jobID )
         if info[ 'event' ] != 'ReadTimeout':

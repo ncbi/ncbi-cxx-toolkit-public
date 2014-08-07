@@ -620,6 +620,7 @@ private:
     CNSPreciseTime              m_ReadTimeout;
     // How many attempts to make on different nodes before failure
     unsigned                    m_FailedRetries;
+    unsigned                    m_ReadFailedRetries;
     CNSPreciseTime              m_BlacklistTime;
     unsigned                    m_MaxInputSize;
     unsigned                    m_MaxOutputSize;

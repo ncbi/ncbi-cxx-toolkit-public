@@ -778,13 +778,31 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
     bool    failed_retries_ok = NS_ValidateInt(reg, section,
                                                "failed_retries");
     well_formed = well_formed && failed_retries_ok;
+    int     failed_retries_value = default_failed_retries;
     if (failed_retries_ok) {
-        int    value = reg.GetInt(section, "failed_retries",
-                                  default_failed_retries);
+        int     value = reg.GetInt(section, "failed_retries",
+                                   default_failed_retries);
         if (value < 0) {
             well_formed = false;
             ERR_POST(g_LogPrefix << " value " <<
                      NS_RegValName(section, "failed_retries") <<
+                     " must be > 0");
+        } else {
+            failed_retries_value = value;
+        }
+    }
+
+    // Note: the default for the read_fail_retries is fail_retries
+    bool    read_failed_retries_ok = NS_ValidateInt(reg, section,
+                                                    "read_failed_retries");
+    well_formed = well_formed && read_failed_retries_ok;
+    if (read_failed_retries_ok) {
+        int    value = reg.GetInt(section, "read_failed_retries",
+                                  failed_retries_value);
+        if (value < 0) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "read_failed_retries") <<
                      " must be > 0");
         }
     }

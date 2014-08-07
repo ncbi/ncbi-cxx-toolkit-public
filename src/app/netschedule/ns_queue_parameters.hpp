@@ -70,6 +70,7 @@ struct SQueueParameters
     CNSPreciseTime  read_timeout;
     string          program_name;
     unsigned int    failed_retries;
+    unsigned int    read_failed_retries;
     CNSPreciseTime  blacklist_time;
     unsigned int    max_input_size;
     unsigned int    max_output_size;
@@ -131,6 +132,8 @@ struct SQueueParameters
     CNSPreciseTime  ReadReadTimeout(const IRegistry &, const string &);
     string          ReadProgram(const IRegistry &, const string &);
     unsigned int    ReadFailedRetries(const IRegistry &, const string &);
+    unsigned int    ReadReadFailedRetries(const IRegistry &, const string &,
+                                          unsigned int  failed_retries);
     CNSPreciseTime  ReadBlacklistTime(const IRegistry &, const string &);
     unsigned int    ReadMaxInputSize(const IRegistry &, const string &);
     unsigned int    ReadMaxOutputSize(const IRegistry &, const string &);

@@ -64,6 +64,9 @@ SQueueParameters::SQueueParameters() :
     read_timeout(default_read_timeout),
     program_name(""),
     failed_retries(default_failed_retries),
+    read_failed_retries(default_failed_retries),    // See CXX-5161, the same
+                                                    // default as for
+                                                    // failed_retries
     blacklist_time(default_blacklist_time),
     max_input_size(kNetScheduleMaxDBDataSize),
     max_output_size(kNetScheduleMaxDBDataSize),
@@ -113,6 +116,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     read_timeout = ReadReadTimeout(reg, sname);
     program_name = ReadProgram(reg, sname);
     failed_retries = ReadFailedRetries(reg, sname);
+    read_failed_retries = ReadReadFailedRetries(reg, sname, failed_retries);
     blacklist_time = ReadBlacklistTime(reg, sname);
     max_input_size = ReadMaxInputSize(reg, sname);
     max_output_size = ReadMaxOutputSize(reg, sname);
@@ -223,6 +227,11 @@ SQueueParameters::Diff(const SQueueParameters &  other,
         AddParameterToDiffString(diff, "failed_retries",
                                  failed_retries,
                                  other.failed_retries);
+
+    if (read_failed_retries != other.read_failed_retries)
+        AddParameterToDiffString(diff, "read_failed_retries",
+                                 read_failed_retries,
+                                 other.read_failed_retries);
 
     if (blacklist_time != other.blacklist_time)
         AddParameterToDiffString(
@@ -499,6 +508,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "run_timeout" + suffix + NS_FormatPreciseTimeAsSec(run_timeout) + separator +
     prefix + "read_timeout" + suffix + NS_FormatPreciseTimeAsSec(read_timeout) + separator +
     prefix + "failed_retries" + suffix + NStr::NumericToString(failed_retries) + separator +
+    prefix + "read_failed_retries" + suffix + NStr::NumericToString(read_failed_retries) + separator +
     prefix + "blacklist_time" + suffix + NS_FormatPreciseTimeAsSec(blacklist_time) + separator +
     prefix + "max_input_size" + suffix + NStr::NumericToString(max_input_size) + separator +
     prefix + "max_output_size" + suffix + NStr::NumericToString(max_output_size) + separator +
@@ -564,6 +574,7 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "run_timeout_precision=\"" + NS_FormatPreciseTimeAsSec(run_timeout_precision) + "\"\n"
     "program=\"" + program_name + "\"\n"
     "failed_retries=\"" + NStr::NumericToString(failed_retries) + "\"\n"
+    "read_failed_retries=\"" + NStr::NumericToString(read_failed_retries) + "\"\n"
     "blacklist_time=\"" + NS_FormatPreciseTimeAsSec(blacklist_time) + "\"\n"
     "max_input_size=\"" + NStr::NumericToString(max_input_size) + "\"\n"
     "max_output_size=\"" + NStr::NumericToString(max_output_size) + "\"\n"
@@ -736,7 +747,23 @@ unsigned int
 SQueueParameters::ReadFailedRetries(const IRegistry &  reg,
                                     const string &     sname)
 {
-    return GetIntNoErr("failed_retries", default_failed_retries);
+    int     val = GetIntNoErr("failed_retries", default_failed_retries);
+
+    if (val < 0)
+        return default_failed_retries;
+    return val;
+}
+
+unsigned int
+SQueueParameters::ReadReadFailedRetries(const IRegistry &  reg,
+                                        const string &     sname,
+                                        unsigned int       failed_retries)
+{
+    // The default for the read retries is failed_retries
+    int     val =  GetIntNoErr("read_failed_retries", failed_retries);
+    if (val < 0)
+        return failed_retries;
+    return val;
 }
 
 CNSPreciseTime

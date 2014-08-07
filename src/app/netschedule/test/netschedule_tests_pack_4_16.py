@@ -822,6 +822,10 @@ class Scenario1107( TestBase ):
                 raise Exception( 'RECO failed: ' + reply[ 1 ] )
             if reply[ 1 ] != '"queue_changes"' \
                              ' {"TEST" {"failed_retries" [0, 3], ' \
+                             '"scramble_job_keys" [true, false]}}' and \
+               reply[ 1 ] != '"queue_changes"' \
+                             ' {"TEST" {"failed_retries" [0, 3], ' \
+                             '"read_failed_retries" [0, 3], ' \
                              '"scramble_job_keys" [true, false]}}':
                 raise Exception( 'Unexpected output for RECO: ' + reply[ 1 ] )
 
