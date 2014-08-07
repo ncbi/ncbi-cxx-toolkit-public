@@ -6552,13 +6552,6 @@ void CNewCleanup_imp::x_CleanupECNumberList( CProt_ref::TEc & ec_num_list )
     }
 }
 
-static const char * const s_evCategoryNoSpace [] = {
-  "COORDINATES:",
-  "DESCRIPTION:",
-  "EXISTENCE:",
-  NULL
-};
-
 void CNewCleanup_imp::x_CleanupAndRepairInference( string &inference )
 {
     if( inference.empty() ) {
