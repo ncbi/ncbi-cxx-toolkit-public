@@ -70,7 +70,7 @@ void CSeedTop::x_ParsePattern()
             if (ch=='[' || ch=='{' || ch=='X' || (*unit).length()==1 || (*unit)[1]=='(') {
                 m_Units.push_back(SPatternUnit(*unit));
             } else {
-                for (int i=0; i<(*unit).length(); ++i) {
+                for (SIZE_TYPE i=0; i<(*unit).length(); ++i) {
                     m_Units.push_back(SPatternUnit(string(*unit, i, 1)));
                 }
             }
