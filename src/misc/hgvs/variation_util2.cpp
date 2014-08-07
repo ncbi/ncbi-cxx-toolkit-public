@@ -1196,11 +1196,6 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
         return;
     }
 
-    if(!v.GetData().IsInstance()) {
-        return;
-    }
-
-
     //Remap the placement to nucleotide
 
     const CVariation::TPlacements* placements = s_GetPlacements(v);
@@ -1238,8 +1233,22 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
     ChangeIdsInPlace(*nuc_loc, sequence::eGetId_ForceAcc, *m_scope);
 
     CConstRef<CDelta_item> delta =
-            v.GetData().GetInstance().GetDelta().size() != 1 ? CConstRef<CDelta_item>(NULL)
+           !v.GetData().IsInstance()                         ? CConstRef<CDelta_item>(NULL)
+          : v.GetData().GetInstance().GetDelta().size() != 1 ? CConstRef<CDelta_item>(NULL)
           : v.GetData().GetInstance().GetDelta().front();
+
+
+    if(!v.GetData().IsInstance()) {
+        // variation has "special" payload - nothing to do other than remap location
+        CRef<CVariantPlacement> p(new CVariantPlacement);
+        p->SetLoc(*nuc_loc);
+        p->SetMol(nuc_loc->GetId() ? GetMolType(*nuc_loc->GetId()) : CVariantPlacement::eMol_unknown);
+        CRef<CVariation> v2(new CVariation);
+        v2->SetData().Assign(v.GetData());
+        v2->SetPlacements().push_back(p);
+        v.Assign(*v2);
+        return;
+    }
 
     //See if the variation is simple-enough to process; if too complex, return "unknown-variation"
     if(!nuc_loc->IsInt() //complex nucleotide location
@@ -2198,27 +2207,23 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
       
         if(frameshift_phase == 0) {
 
-            //if translations' common suffix is long, will capture the sequence change up to it
-            //  prot_ref_str:  CWDADPLKRPTFKQIVQLIEKQISES*  -> C
-            //  prot_var_str: LPWDADPLKRPTFKQIVQLIEKQISES*  -> LP
-            //
-            //Otherwise will capture the change up to terminal codon in either reference or variant translation
-            //  prot_ref_str: WS*                           -> WS*
-            //  prot_var_str: CWDADPLKRPTFKQIVQLIEKQISES*   -> CWD
-            //  or
-            //  prot_ref_str: CWDADPLKRPTFKQIVQLIEKQISES*   -> CWD
-            //  prot_var_str: WS*                           -> WS*
             size_t suffix_len = GetCommonSuffixLen(prot_ref_str, prot_var_str);
-            if(   (prot_ref_str.size() == prot_var_str.size() && suffix_len > 0) 
-               || suffix_len > 3                                                    // VAR-872
-               || 2 * suffix_len >= max(prot_ref_str.size(), prot_var_str.size()))  // VAR-699
-            {
+            size_t min_len = min(prot_ref_str.size(), prot_var_str.size());
+            size_t ref_stop_pos = prot_ref_str.find('*');
+            size_t var_stop_pos = prot_var_str.find('*');
+            size_t min_stop_pos = min(ref_stop_pos, var_stop_pos);
+
+            // VAR-699, VAR-872
+            bool truncate_at_stop = min_stop_pos < min_len
+                                 && ref_stop_pos != var_stop_pos
+                                 && nuc_delta_len == 0;
+
+            if(truncate_at_stop) {
+                prot_ref_str.resize(min_stop_pos + 1);
+                prot_var_str.resize(min_stop_pos + 1);
+            } else {
                 prot_ref_str.resize(prot_ref_str.size() - suffix_len);
                 prot_var_str.resize(prot_var_str.size() - suffix_len);
-            } else if(NStr::EndsWith(prot_var_str, "*") && prot_ref_str.size() > prot_var_str.size()) {
-                prot_ref_str.resize(prot_var_str.size());
-            } else if(NStr::EndsWith(prot_ref_str, "*") && prot_var_str.size() > prot_ref_str.size()) {
-                prot_var_str.resize(prot_ref_str.size());
             }
         } else {
             //Keep the frst AA in case of frameshifts
