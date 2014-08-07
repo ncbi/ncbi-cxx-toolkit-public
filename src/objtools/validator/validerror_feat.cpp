@@ -6088,7 +6088,7 @@ void CValidError_feat::TranslateTripletIntrons (
 )
 
 {
-    TSeqPos last_start, last_stop, start, stop;
+    TSeqPos last_start = 0, last_stop = 0, start, stop;
 
     if (feat.IsSetExcept() || feat.IsSetExcept_text()) return;
     if (cdr.IsSetCode_break()) return;
