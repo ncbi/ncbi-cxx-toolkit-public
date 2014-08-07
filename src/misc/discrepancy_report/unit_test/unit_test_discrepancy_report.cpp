@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Pavel Ivanov, NCBI
+* Author:  Pavel Ivanov, J. Chen, NCBI
 *
 * File Description:
 *   Sample unit tests file for the mainstream test developing.
@@ -305,7 +305,7 @@ void RunAndCheckMultiReports(CRef <CSeq_entry> entry, const string& test_name, c
 void LookAndSave(CRef <CSeq_entry> entry, const string& file)
 {
    cerr << MSerial_AsnText << *entry << endl;
-   OutBlob(*entry, file);
+   OutBlob(*entry, "data4tests/" + file);
 };
 
 BOOST_AUTO_TEST_CASE(TEST_ORGANELLE_PRODUCTS)
@@ -1211,3 +1211,142 @@ BOOST_AUTO_TEST_CASE(SUSPECT_PHRASES)
    RunAndCheckTest(entry, "SUSPECT_PHRASES", 
             "7 cds comments or protein descriptions contain suspect phrases.");
 };
+
+BOOST_AUTO_TEST_CASE(DISC_SPECVOUCHER_TAXNAME_MISMATCH)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+   CRef <CSeq_entry> nuc_seq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   CRef <CSeq_entry> prot_seq = GetProteinSequenceFromGoodNucProtSet(entry);
+
+   // remove taxname at the seq-entry level
+   NON_CONST_ITERATE (list <CRef <CSeqdesc> >, it, entry->SetDescr().Set()) {
+     if ( (*it)->IsSource()) {
+       (*it)->SetSource().SetOrg().ResetTaxname();
+     }
+   }
+
+   // add biosoure, taxname, specvoucher
+   AddGoodSource(nuc_seq);
+   SetTaxname(nuc_seq, "Sebaea");
+   SetOrgMod(nuc_seq, COrgMod::eSubtype_specimen_voucher, "fake");
+
+   AddGoodSource(prot_seq);
+   SetTaxname(prot_seq, "microphylla");
+   SetOrgMod(prot_seq, COrgMod::eSubtype_specimen_voucher, "fake");
+
+   // add prot seq.
+   CRef <CSeq_entry> prot2 = MakeProteinForGoodNucProtSet("prot2");
+   AddGoodSource(prot2);
+   SetTaxname(prot2, "Sebaea microphylla");
+   SetOrgMod(prot2, COrgMod::eSubtype_specimen_voucher, "s.n.fake");
+   entry->SetSet().SetSeq_set().push_back(prot2);
+
+   // port3
+   CRef <CSeq_entry> prot3 = MakeProteinForGoodNucProtSet("prot3");
+   AddGoodSource(prot3);
+   SetTaxname(prot3, "Sebaea microphylla alternative");
+   SetOrgMod(prot3, COrgMod::eSubtype_specimen_voucher, "s.n.fake");
+   entry->SetSet().SetSeq_set().push_back(prot3);
+
+   // port4
+   CRef <CSeq_entry> prot4 = MakeProteinForGoodNucProtSet("prot4");
+   AddGoodSource(prot4);
+   SetTaxname(prot4, "Sebaea microphylla");
+   SetOrgMod(prot4, COrgMod::eSubtype_specimen_voucher, "s.n.");
+   entry->SetSet().SetSeq_set().push_back(prot4);
+
+   // port5
+   CRef <CSeq_entry> prot5 = MakeProteinForGoodNucProtSet("prot5");
+   AddGoodSource(prot5);
+   SetTaxname(prot5, "Sebaea microphylla alternative");
+   SetOrgMod(prot5, COrgMod::eSubtype_specimen_voucher, "s.n.");
+   entry->SetSet().SetSeq_set().push_back(prot5);
+
+   RunAndCheckTest(entry, "DISC_SPECVOUCHER_TAXNAME_MISMATCH", 
+             "4 BioSources have specimen voucher/taxname conflicts.");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_BIOMATERIAL_TAXNAME_MISMATCH)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+   CRef <CSeq_entry> nuc_seq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   CRef <CSeq_entry> prot_seq = GetProteinSequenceFromGoodNucProtSet(entry);
+   // add pro2
+   CRef <CSeq_entry> prot2 = MakeProteinForGoodNucProtSet("prot2");
+   entry->SetSet().SetSeq_set().push_back(prot2);
+
+   // remove taxname at the seq-entry level
+   NON_CONST_ITERATE (list <CRef <CSeqdesc> >, it, entry->SetDescr().Set()) {
+     if ( (*it)->IsSource()) {
+       (*it)->SetSource().SetOrg().ResetTaxname();
+     }
+   }
+
+   // add biosoure, taxname, bio-material
+   AddGoodSource(nuc_seq);
+   SetTaxname(nuc_seq, "Oryza brachyantha");
+   SetOrgMod(nuc_seq, COrgMod::eSubtype_bio_material, "IRGC:105720");
+
+   AddGoodSource(prot_seq);
+   SetTaxname(prot_seq, "Oryza brachyantha");
+   SetOrgMod(prot_seq, COrgMod::eSubtype_bio_material, "IRGC:105720");
+
+   AddGoodSource(prot2);
+   SetTaxname(prot2, "Oryza granulata");
+   SetOrgMod(prot2, COrgMod::eSubtype_bio_material, "IRGC:105720");
+
+   RunAndCheckTest(entry, "DISC_BIOMATERIAL_TAXNAME_MISMATCH", 
+      "3 biosources have biomaterial 'IRGC:105720' but do not have the same taxnames.");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_CULTURE_TAXNAME_MISMATCH)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+   CRef <CSeq_entry> nuc_seq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   CRef <CSeq_entry> prot_seq = GetProteinSequenceFromGoodNucProtSet(entry);
+
+   // remove taxname at the seq-entry level
+   NON_CONST_ITERATE (list <CRef <CSeqdesc> >, it, entry->SetDescr().Set()) {
+     if ( (*it)->IsSource()) {
+       (*it)->SetSource().SetOrg().ResetTaxname();
+     }
+   }
+
+   // add biosoure, taxname, culture_collection
+   AddGoodSource(nuc_seq);
+   SetTaxname(nuc_seq, "Pseudocercospora sp. CPC 1057");
+   SetOrgMod(nuc_seq, COrgMod::eSubtype_culture_collection, "CBS:124990");
+
+   AddGoodSource(prot_seq);
+   SetTaxname(prot_seq, "Mycosphaerella acaciigena");
+   SetOrgMod(prot_seq, COrgMod::eSubtype_culture_collection, "CBS:124990");
+
+   RunAndCheckTest(entry, "DISC_CULTURE_TAXNAME_MISMATCH", 
+ "2 biosources have culture collection 'CBS:124990' but do not have the same taxnames.");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_STRAIN_TAXNAME_MISMATCH)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+   CRef <CSeq_entry> nuc_seq = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   CRef <CSeq_entry> prot_seq = GetProteinSequenceFromGoodNucProtSet(entry);
+
+   // remove taxname at the seq-entry level
+   NON_CONST_ITERATE (list <CRef <CSeqdesc> >, it, entry->SetDescr().Set()) {
+     if ( (*it)->IsSource()) {
+       (*it)->SetSource().SetOrg().ResetTaxname();
+     }
+   }
+
+   // add biosoure, taxname, strain
+   AddGoodSource(nuc_seq);
+   SetTaxname(nuc_seq, "Pseudocercospora humuli");
+   SetOrgMod(nuc_seq, COrgMod::eSubtype_strain, "X1083");
+
+   AddGoodSource(prot_seq);
+   SetTaxname(prot_seq, "Pseudocercospora sp. GCH-2010a");
+   SetOrgMod(prot_seq, COrgMod::eSubtype_strain, "X1083");
+
+   RunAndCheckTest(entry, "DISC_STRAIN_TAXNAME_MISMATCH", 
+      "2 biosources have strain 'X1083' but do not have the same taxnames.");
+}

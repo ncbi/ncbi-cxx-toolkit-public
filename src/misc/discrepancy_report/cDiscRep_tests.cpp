@@ -8191,39 +8191,35 @@ void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const str
    if (!biosrc.IsSetOrgMod()) return;
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
      strtmp = (*it)->GetSubname() + "$" + tax_nm + "#" + desc;
-     desc_tmp = "$" + strtmp;
+     desc_tmp = "$" + (*it)->GetSubname() + "#" + tax_nm;
      switch ( (*it)->GetSubtype() ) {
 
        // DISC_SPECVOUCHER_TAXNAME_MISMATCH
        case COrgMod::eSubtype_specimen_voucher: 
              if (m_run_vou && !x_StringHasVoucherSN((*it)->GetSubname())) {
                  thisInfo.test_item_list[GetName_vou()].push_back(strtmp);
-                 thisInfo.test_item_objs[GetName_vou() + desc_tmp]
-                           .push_back(obj_ref);
+                 thisInfo.test_item_objs[GetName_vou() + desc_tmp].push_back(obj_ref);
              }
              break;
        // DISC_STRAIN_TAXNAME_MISMATCH
        case COrgMod::eSubtype_strain:
              if (m_run_str) {
                 thisInfo.test_item_list[GetName_str()].push_back(strtmp);
-                thisInfo.test_item_objs[GetName_str() + desc_tmp]
-                          .push_back(obj_ref);
+                thisInfo.test_item_objs[GetName_str() + desc_tmp].push_back(obj_ref);
              }
              break;
        // DISC_CULTURE_TAXNAME_MISMATCH
        case COrgMod::eSubtype_culture_collection:
              if (m_run_cul) {
                 thisInfo.test_item_list[GetName_cul()].push_back(strtmp);
-                thisInfo.test_item_objs[GetName_cul() + desc_tmp]
-                          .push_back(obj_ref);
+                thisInfo.test_item_objs[GetName_cul() + desc_tmp].push_back(obj_ref);
              }
              break;
        // DISC_BIOMATERIAL_TAXNAME_MISMATCH
        case COrgMod::eSubtype_bio_material:
              if (m_run_biom) { 
                  thisInfo.test_item_list[GetName_biom()].push_back(strtmp);
-                 thisInfo.test_item_objs[GetName_biom() + desc_tmp]
-                          .push_back(obj_ref);
+                 thisInfo.test_item_objs[GetName_biom() + desc_tmp].push_back(obj_ref);
              }
              break;
        default: break;
@@ -8283,7 +8279,7 @@ void CSeqEntry_test_on_tax_cflts :: GetReport_cflts(CRef <CClickableItem> c_item
        }
    }
    else {
-     bool cnt_sub = 0;
+     int cnt_sub = 0;
      ITERATE (Str2Strs, it, qual2tax_seqs) {
        tax2seqs.clear();
        GetTestItemList(it->second, tax2seqs, "#");

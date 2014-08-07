@@ -502,15 +502,27 @@ string CTestAndRepData :: FindReplaceString(const string& src, const string& sea
 bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string& phrase, bool case_sensitive, bool whole_word)
 {
   if (str.empty() || phrase.empty()) return false;
-  string pattern(CRegexp::Escape(phrase));   // excape the special meaning of some char
-  pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
-  string sch_str(CRegexp::Escape(str));
-  CRegexp::ECompile 
-        comp_flag = case_sensitive ?
-                      CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;
-  CRegexp rx(pattern, comp_flag);
-  if (rx.IsMatch(sch_str)) return true;
-  else return false;
+  size_t pos;
+  pos = case_sensitive ? NStr::FindCase(str, phrase) : NStr::FindNoCase(str, phrase);
+  unsigned len;
+  if (pos != string::npos) {
+    if (whole_word) {
+       len = phrase.size();
+       while (pos != string::npos) {
+         if ( (!pos || !isalnum(str[pos-1])) 
+                 && (pos + len == str.size() || !isalnum(str[pos+len]))) {
+             return true;
+         }
+         else {
+            pos = case_sensitive ? 
+                NStr::FindCase(str, phrase, pos+1): NStr::FindNoCase(str, phrase, pos+1);
+         }
+       }
+    }
+    else return true;
+  }
+
+  return false;
 };
 
 
@@ -777,8 +789,6 @@ bool CTestAndRepData :: IsProdBiomol(const CBioseq& bioseq)
 }
 
 
-
-static int seq_cnt=0;
 bool CTestAndRepData :: IsmRNASequenceInGenProdSet(const CBioseq& bioseq)
 {
    bool rval = false;
