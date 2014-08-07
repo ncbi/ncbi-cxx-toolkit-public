@@ -86,6 +86,7 @@ void SNSCommandArguments::x_Reset()
     effective = false;
     pullback = false;
     blacklist = true;
+    no_retries = false;
 
     job_statuses.clear();
 
@@ -253,6 +254,13 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 }
                 else
                     CDiagContext::GetRequestContext().SetHitID(ncbi_phid);
+            }
+            else if (key == "no_retries") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "no_retries accepted values are 0 and 1.");
+                no_retries = (tmp == 1);
             }
             break;
         case 'o':

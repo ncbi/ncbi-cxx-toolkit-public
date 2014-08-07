@@ -327,7 +327,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "err_msg",           eNSPT_Str, eNSPA_Optional      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "no_retries",        eNSPT_Int, eNSPA_Optional, "0" } } },
     { "RDRB",          { &CNetScheduleHandler::x_ProcessReadRollback,
                          eNS_Queue | eNS_Submitter | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -455,7 +456,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "job_return_code",   eNSPT_Int, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "no_retries",        eNSPT_Int, eNSPA_Optional, "0" } } },
     { "JXCG",          { &CNetScheduleHandler::x_ProcessJobExchange,
                          eNS_Queue | eNS_Worker | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Optchain      },
@@ -2181,6 +2183,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
                                 m_CommandArguments.err_msg,
                                 m_CommandArguments.output,
                                 m_CommandArguments.job_return_code,
+                                m_CommandArguments.no_retries,
                                 warning);
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
@@ -3298,7 +3301,8 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
                                             m_CommandArguments.job_key,
                                             job,
                                             m_CommandArguments.auth_token,
-                                            m_CommandArguments.err_msg);
+                                            m_CommandArguments.err_msg,
+                                            m_CommandArguments.no_retries);
     x_FinalizeReadCommand("FRED", old_status, job);
 }
 

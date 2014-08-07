@@ -314,7 +314,8 @@ public:
                                const string &        job_key,
                                CJob &                job,
                                const string &        auth_token,
-                               const string &        err_msg);
+                               const string &        err_msg,
+                               bool                  no_retries);
     // Return jobs to unread state without reservation
     TJobStatus  ReturnReadingJob(const CNSClientId &   client,
                                  unsigned int          job_id,
@@ -346,6 +347,7 @@ public:
                        const string &         err_msg,
                        const string &         output,
                        int                    ret_code,
+                       bool                   no_retries,
                        string                 warning);
 
     string  GetAffinityTokenByID(unsigned int  aff_id) const;
@@ -462,7 +464,8 @@ private:
                                       const string &       auth_token,
                                       const string &       err_msg,
                                       TJobStatus           target_status,
-                                      bool                 is_ns_rollback);
+                                      bool                 is_ns_rollback,
+                                      bool                 no_retries);
 
     struct x_SJobPick
     {

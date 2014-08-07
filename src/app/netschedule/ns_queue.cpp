@@ -2300,7 +2300,7 @@ TJobStatus  CQueue::ConfirmReadingJob(const CNSClientId &  client,
                                                 client, job_id, job_key,
                                                 job, auth_token, "",
                                                 CNetScheduleAPI::eConfirmed,
-                                                false);
+                                                false, false);
     m_ClientsRegistry.ClearReading(client, job_id);
     return old_status;
 }
@@ -2311,13 +2311,14 @@ TJobStatus  CQueue::FailReadingJob(const CNSClientId &  client,
                                    const string &       job_key,
                                    CJob &               job,
                                    const string &       auth_token,
-                                   const string &       err_msg)
+                                   const string &       err_msg,
+                                   bool                 no_retries)
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
                                                 client, job_id, job_key,
                                                 job, auth_token, err_msg,
                                                 CNetScheduleAPI::eReadFailed,
-                                                false);
+                                                false, no_retries);
     m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
     return old_status;
 }
@@ -2335,7 +2336,8 @@ TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
                                                 client, job_id, job_key,
                                                 job, auth_token, "",
                                                 target_status,
-                                                is_ns_rollback);
+                                                is_ns_rollback,
+                                                false);
     if (is_ns_rollback)
         m_ClientsRegistry.ClearReading(job_id);
     else
@@ -2351,7 +2353,8 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                                           const string &       auth_token,
                                           const string &       err_msg,
                                           TJobStatus           target_status,
-                                          bool                 is_ns_rollback)
+                                          bool                 is_ns_rollback,
+                                          bool                 no_retries)
 {
     CNSPreciseTime                              current_time =
                                                     CNSPreciseTime::Current();
@@ -2415,12 +2418,16 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                     job.SetReadCount(job.GetReadCount() - 1);
                     break;
                 case CNetScheduleAPI::eReadFailed:
-                    event.SetEvent(CJobEvent::eReadFail);
-                    // Check the number of tries first
-                    if (job.GetReadCount() <= m_FailedRetries) {
-                        // The job needs to be re-scheduled for reading
-                        target_status = CNetScheduleAPI::eDone;
-                        path_option = CStatisticsCounters::eFail;
+                    if (no_retries) {
+                        event.SetEvent(CJobEvent::eReadFinalFail);
+                    } else {
+                        event.SetEvent(CJobEvent::eReadFail);
+                        // Check the number of tries first
+                        if (job.GetReadCount() <= m_FailedRetries) {
+                            // The job needs to be re-scheduled for reading
+                            target_status = CNetScheduleAPI::eDone;
+                            path_option = CStatisticsCounters::eFail;
+                        }
                     }
                     break;
                 case CNetScheduleAPI::eConfirmed:
@@ -2689,6 +2696,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                            const string &         err_msg,
                            const string &         output,
                            int                    ret_code,
+                           bool                   no_retries,
                            string                 warning)
 {
     unsigned        failed_retries;
@@ -2758,7 +2766,10 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                 ERR_POST("No JobEvent for running job");
 
             event = &job.AppendEvent();
-            event->SetEvent(CJobEvent::eFail);
+            if (no_retries)
+                event->SetEvent(CJobEvent::eFinalFail);
+            else
+                event->SetEvent(CJobEvent::eFail);
             event->SetStatus(CNetScheduleAPI::eFailed);
             event->SetTimestamp(curr);
             event->SetErrorMsg(err_msg);
@@ -2767,23 +2778,32 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
             event->SetClientNode(client.GetNode());
             event->SetClientSession(client.GetSession());
 
-            unsigned                run_count = job.GetRunCount();
-            if (run_count <= failed_retries) {
-                job.SetStatus(CNetScheduleAPI::ePending);
-                event->SetStatus(CNetScheduleAPI::ePending);
-
-                new_status = CNetScheduleAPI::ePending;
-
-                rescheduled = true;
-            } else {
+            if (no_retries) {
                 job.SetStatus(CNetScheduleAPI::eFailed);
                 event->SetStatus(CNetScheduleAPI::eFailed);
-                new_status = CNetScheduleAPI::eFailed;
                 rescheduled = false;
                 if (m_Log)
-                    LOG_POST(Message << Warning << "Job failed, exceeded max "
-                                        "number of retries ("
-                                     << failed_retries << ")");
+                    LOG_POST(Message << Warning << "Job failed "
+                                        "unconditionally, no_retries = 1");
+            } else {
+                unsigned                run_count = job.GetRunCount();
+                if (run_count <= failed_retries) {
+                    job.SetStatus(CNetScheduleAPI::ePending);
+                    event->SetStatus(CNetScheduleAPI::ePending);
+
+                    new_status = CNetScheduleAPI::ePending;
+
+                    rescheduled = true;
+                } else {
+                    job.SetStatus(CNetScheduleAPI::eFailed);
+                    event->SetStatus(CNetScheduleAPI::eFailed);
+                    new_status = CNetScheduleAPI::eFailed;
+                    rescheduled = false;
+                    if (m_Log)
+                        LOG_POST(Message << Warning << "Job failed, exceeded "
+                                            "max number of retries ("
+                                         << failed_retries << ")");
+                }
             }
 
             job.SetOutput(output);

@@ -80,8 +80,10 @@ public:
         eDone,              // PUT, JXCG
         eReturn,            // RETURN
         eFail,              // FPUT
+        eFinalFail,         // FPUT2 with no_retries=1
         eRead,              // READ
         eReadFail,          // FRED
+        eReadFinalFail,     // FRED with no_retries=1
         eReadDone,          // CFRM
         eReadRollback,      // RDRB
         eClear,             // CLRN

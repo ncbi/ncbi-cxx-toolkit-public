@@ -53,8 +53,10 @@ static string   s_EventAsString[] = {
     "Done",             // eDone
     "Return",           // eReturn
     "Fail",             // eFail
+    "FinalFail",        // eFinalFail
     "Read",             // eRead
     "ReadFail",         // eReadFail
+    "ReadFinalFail",    // eReadFinalFail
     "ReadDone",         // eReadDone
     "ReadRollback",     // eReadRollback
     "Clear",            // eClear

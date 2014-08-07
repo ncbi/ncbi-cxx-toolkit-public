@@ -89,6 +89,7 @@ struct SNSCommandArguments
     bool            effective;
     bool            pullback;
     bool            blacklist;  // RETURN2 only: add or not to blacklist
+    bool            no_retries; // FPUT2 only
 
     vector<TJobStatus>  job_statuses;
 

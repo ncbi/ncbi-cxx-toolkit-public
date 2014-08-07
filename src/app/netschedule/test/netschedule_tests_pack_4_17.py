@@ -1566,3 +1566,90 @@ class Scenario1403( TestBase ):
                              values[ 'job_status' ] + "'" )
         return True
 
+
+class Scenario1404( TestBase ):
+    " scenario 1404 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        self.warning = None
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        self.warning = msg
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Forced job fail"
+
+    def execute( self ):
+        " Returns True if successfull "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1404' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        self.ns.submitJob( 'TEST', 'blah' )
+        jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                                            "node", "session" )
+        output = execAny( ns_client, 'FPUT2 job_key=' + jobID +
+                                     ' auth_token=' + authToken +
+                                     ' err_msg=nomessage output=none job_return_code=1 no_retries=1' )
+
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Failed']:
+            raise Exception( "Expected 'Failed' status, received '" +
+                             values[ 'job_status' ] + "'" )
+        return True
+
+class Scenario1405( TestBase ):
+    " scenario 1405 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        self.warning = None
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        self.warning = msg
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Forced read job fail"
+
+    def execute( self ):
+        " Returns True if successfull "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1404' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        self.ns.submitJob( 'TEST', 'blah' )
+        jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                                            "node", "session" )
+        output = execAny( ns_client, 'FPUT2 job_key=' + jobID +
+                                     ' auth_token=' + authToken +
+                                     ' err_msg=nomessage output=none job_return_code=1 no_retries=1' )
+        key, state, passport = self.ns.getJobsForReading2( 'TEST', -1, '',
+                                                           'node1',
+                                                           'session1' )
+
+        output = execAny( ns_client, 'FRED job_key=' + key +
+                                     ' auth_token=' + passport +
+                                     ' err_msg=nomessage no_retries=1' )
+
+        output = execAny( ns_client, 'SST2 ' + key )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['ReadFailed']:
+            raise Exception( "Expected 'ReadFailed' status, received '" +
+                             values[ 'job_status' ] + "'" )
+        return True
