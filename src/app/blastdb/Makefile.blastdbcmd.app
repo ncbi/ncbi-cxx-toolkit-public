@@ -1,4 +1,4 @@
-WATCHERS = camacho 
+WATCHERS = camacho fongah2
 
 APP = blastdbcmd
 SRC = blastdbcmd

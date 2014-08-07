@@ -1,4 +1,4 @@
-WATCHERS = camacho 
+WATCHERS = camacho fongah2
 
 APP = makeblastdb
 SRC = makeblastdb masked_range_set
