@@ -127,7 +127,7 @@ bool CSeq_gap::AddLinkageEvidence(CLinkage_evidence::TType evidence_type)
         ev->SetType(evidence_type);
         SetLinkage_evidence().push_back(ev);
     }
-    return found;
+    return found || changed;
 }
 
 
