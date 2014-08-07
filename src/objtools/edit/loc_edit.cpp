@@ -1539,7 +1539,6 @@ void SeqLocAdjustForInsert(CSeq_loc_equiv& equiv,
 {
     CSeq_loc_equiv::Tdata::iterator it = equiv.Set().begin();
     while (it != equiv.Set().end()) {
-        bool cut = false;
         SeqLocAdjustForInsert(**it, from, to, seqid);
         it++;
     }
