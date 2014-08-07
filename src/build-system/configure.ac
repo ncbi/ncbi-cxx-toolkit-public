@@ -1563,7 +1563,8 @@ if $CXX -v 2>&1 | grep -q clang; then
       ncbi_cv_prog_cxx_stdlib_libcxx,
       [orig_CXX=$CXX
        CXX="$orig_CXX -stdlib=libc++"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <stdexcept>],
+             [std::logic_error le("Inconceivable!");])],
           [ncbi_cv_prog_cxx_stdlib_libcxx=yes],
           [ncbi_cv_prog_cxx_stdlib_libcxx=no])
        CXX=$orig_CXX])
