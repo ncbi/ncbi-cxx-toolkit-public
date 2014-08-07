@@ -1558,6 +1558,18 @@ case "$host_os:$compiler" in
       ;;
 esac
 
+if $CXX -v 2>&1 | grep -q clang; then
+   AC_CACHE_CHECK([whether $CXX supports -stdlib=libc++],
+      ncbi_cv_prog_cxx_stdlib_libcxx,
+      [orig_CXX=$CXX
+       CXX="$orig_CXX -stdlib=libc++"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
+          [ncbi_cv_prog_cxx_stdlib_libcxx=yes],
+          [ncbi_cv_prog_cxx_stdlib_libcxx=no])
+       CXX=$orig_CXX])
+   test "$ncbi_cv_prog_cxx_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
+fi
+
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])
 
 case "$ac_cv_have_decl__LIBCPP_VERSION:$compiler:$compiler_version" in
