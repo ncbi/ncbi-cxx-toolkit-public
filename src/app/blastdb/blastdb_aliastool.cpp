@@ -38,6 +38,7 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbistre.hpp>
 #include <algo/blast/api/version.hpp>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include <objtools/blast/seqdb_writer/writedb.hpp>
@@ -96,7 +97,8 @@ private:
         }
         return retval;
     }
-    vector<string> x_GetDbsToAggregate() const;
+    vector<string> x_GetDbsToAggregate(const string dbs, const string file) const;
+    void x_AddVDBsToAliasFile( string filename, bool append, string title = kEmptyStr) const;
 };
 
 const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
@@ -133,7 +135,7 @@ void CBlastDBAliasApp::Init()
     dflt += " with the .bgl extension";
 
     const char* exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(), 
-		kArgGiList.c_str(), kArgOutput.c_str(), "dblist", "num_volumes" };
+		kArgGiList.c_str(), kArgOutput.c_str(), "dblist", "num_volumes", "vdblist" };
     arg_desc->SetCurrentGroup("GI file conversion options");
     arg_desc->AddOptionalKey("gi_file_in", "input_file",
                      "Text file to convert, should contain one GI per line",
@@ -196,7 +198,15 @@ void CBlastDBAliasApp::Init()
                              "A file containing a list of BLAST database names"
                              " to aggregate, one per line",
                              CArgDescriptions::eInputFile);
-    const char* key[] = { "dblist", "dblist_file" };
+    /* For VDBLIST */
+    arg_desc->AddOptionalKey("vdblist", "vdb_names",
+                             "A space separated list of VDB names to aggregate",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("vdblist_file", "file_name",
+                             "A file containing a list of vdb names"
+                             " to aggregate, one per line",
+                             CArgDescriptions::eInputFile);
+    const char* key[] = { "dblist", "dblist_file", "vdblist", "vdblist_file" };
     for (size_t i = 0; i < sizeof(key)/sizeof(*key); i++) {
         arg_desc->SetDependency(key[i], CArgDescriptions::eExcludes, kArgDb);
         arg_desc->SetDependency(key[i], CArgDescriptions::eExcludes, "num_volumes");
@@ -205,6 +215,7 @@ void CBlastDBAliasApp::Init()
         arg_desc->SetDependency(key[i], CArgDescriptions::eRequires, kArgDbTitle);
     }
     arg_desc->SetDependency("dblist", CArgDescriptions::eExcludes, "dblist_file");
+    arg_desc->SetDependency("vdblist", CArgDescriptions::eExcludes, "vdblist_file");
 
     CNcbiOstrstream msg;
     msg << "Number of volumes to aggregate, in which case the "
@@ -307,7 +318,7 @@ CBlastDBAliasApp::CreateAliasFile() const
 
     const EAliasFileFilterType alias_type = (isTiList ? eTiList : eGiList);
     if (args["dblist"].HasValue() || args["dblist_file"].HasValue()) {
-        vector<string> dbs2aggregate = x_GetDbsToAggregate();
+        vector<string> dbs2aggregate = x_GetDbsToAggregate("dblist", "dblist_file");
         CWriteDB_CreateAliasFile(args[kOutput].AsString(), dbs2aggregate,
                                  seq_type, gilist, title, alias_type);
     } else if (args["num_volumes"].HasValue()) {
@@ -315,23 +326,68 @@ CBlastDBAliasApp::CreateAliasFile() const
             static_cast<unsigned int>(args["num_volumes"].AsInteger());
         CWriteDB_CreateAliasFile(args[kOutput].AsString(), num_vols, seq_type,
                                  title);
-    } else {
+    } else if (args[kArgDb].HasValue()){
         CWriteDB_CreateAliasFile(args[kOutput].AsString(),
                                  args[kArgDb].AsString(),
                                  seq_type, gilist,
                                  title, alias_type);
     }
+
+    if (args["vdblist"].HasValue() || args["vdblist_file"].HasValue()) {
+    	CNcbiOstrstream fname;
+    	if (args["dblist"].HasValue() || args["dblist_file"].HasValue()) {
+    		fname << args[kOutput].AsString() << (seq_type == CWriteDB::eProtein ? ".pal" : ".nal");
+    		x_AddVDBsToAliasFile( CNcbiOstrstreamToString(fname), true );
+    	}
+    	else {
+    		fname << args[kOutput].AsString() << (seq_type == CWriteDB::eProtein ? ".pvl" : ".nvl");
+    		string title;
+    		if(args["title"].HasValue()) {
+    			title = args["title"].AsString();
+    		}
+    		x_AddVDBsToAliasFile( CNcbiOstrstreamToString(fname), false, title);
+    	}
+    }
 }
 
-vector<string> CBlastDBAliasApp::x_GetDbsToAggregate() const 
+void CBlastDBAliasApp::x_AddVDBsToAliasFile( string filename, bool append, string title) const
+{
+    vector<string> vdbs = x_GetDbsToAggregate("vdblist", "vdblist_file");
+    if(vdbs.empty()) {
+    	 LOG_POST(Warning <<"Empty vdb list");
+    	 return;
+    }
+
+	IOS_BASE::openmode op_mode = IOS_BASE::out;
+	if(append) {
+		op_mode |= IOS_BASE::app;
+	}
+	CNcbiOfstream alias_file(filename.c_str(), op_mode);
+
+	if(!append) {
+		alias_file <<  "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() << "\n#\n";
+	}
+
+	if(kEmptyStr != title) {
+		alias_file << "TITLE " << title << "\n";
+	}
+
+	 alias_file << "VDBLIST ";
+	 ITERATE(vector< string >, iter, vdbs) {
+		 alias_file << "\"" << *iter << "\" ";
+	 }
+	 alias_file << "\n";
+}
+
+vector<string> CBlastDBAliasApp::x_GetDbsToAggregate(const string dbs, const string file) const
 {
     vector<string> retval;
     const CArgs& args = GetArgs();
-    if (args["dblist"].HasValue()) {
-        const string dblist = args["dblist"].AsString();
+    if (args[dbs].HasValue()) {
+        const string dblist = args[dbs].AsString();
         NStr::Tokenize(dblist, " ", retval);
-    } else if (args["dblist_file"].HasValue()) {
-        CNcbiIstream& in(args["dblist_file"].AsInputFile());
+    } else if (args[file].HasValue()) {
+        CNcbiIstream& in(args[file].AsInputFile());
         string line;
         while (getline(in, line)) {
             line = NStr::TruncateSpaces(line);
