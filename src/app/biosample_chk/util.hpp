@@ -76,8 +76,8 @@ public:
     const string& GetSequenceId() const { return m_SequenceID; };
     void SetSequenceId(string id) { m_SequenceID = id; };
     const string& GetFieldName() const { return m_FieldName; };
-    const string& GetSrcVal() const { return m_SrcVal; };
-    const string& GetSampleVal() const { return m_SampleVal; };
+    const string& GetSrcVal() const { return CBioSource::IsStopWord(m_SrcVal) ? "" : m_SrcVal; };
+    const string& GetSampleVal() const { return CBioSource::IsStopWord(m_SampleVal) ? "" : m_SampleVal; };
     const string& GetBioSample() const { return m_BiosampleID; };
 
     int CompareAllButSequenceID(const CBiosampleFieldDiff& other);

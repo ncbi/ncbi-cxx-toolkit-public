@@ -1490,12 +1490,13 @@ bool CBiosampleChkApp::DoDiffsContainConflicts()
     bool printed_header = false;
 
     ITERATE (TBiosampleFieldDiffList, it, m_Diffs) {
-        if (!NStr::IsBlank((*it)->GetSrcVal())) {
+        string src_val = (*it)->GetSrcVal();
+        if (!NStr::IsBlank(src_val)) {
             if (!printed_header) {
                 *m_LogStream << "Conflict found for " << (*it)->GetSequenceId() << " for " << (*it)->GetBioSample() << endl;
                 printed_header = true;
             }
-            *m_LogStream << "\t" << (*it)->GetFieldName() << ": BioSource contains \"" << (*it)->GetSrcVal() << "\", BioSample contains \"" << (*it)->GetSampleVal() << "\"" << endl;
+            *m_LogStream << "\t" << (*it)->GetFieldName() << ": BioSource contains \"" << src_val << "\", BioSample contains \"" << (*it)->GetSampleVal() << "\"" << endl;
             rval = true;
         }
     }

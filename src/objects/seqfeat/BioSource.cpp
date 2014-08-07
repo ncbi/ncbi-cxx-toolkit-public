@@ -657,23 +657,28 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force)
                 NCBI_THROW(CException, eUnknown, "Non-integer Tax ID value");
             }
         } else {
+            string sample_val = (*it)->GetSampleVal();
+            if (IsStopWord(sample_val)) { 
+                sample_val = ""; 
+            }
             try {
                 COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue((*it)->GetFieldName());
                 RemoveOrgMod(subtype);
-                if (!NStr::IsBlank((*it)->GetSampleVal())) {
+                
+                if (!NStr::IsBlank(sample_val)) {
                     CRef<COrgMod> mod(new COrgMod());
                     mod->SetSubtype(subtype);
-                    mod->SetSubname((*it)->GetSampleVal());
+                    mod->SetSubname(sample_val);
                     SetOrg().SetOrgname().SetMod().push_back(mod);
                 }
             } catch (...) {
                 try {
                     CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue((*it)->GetFieldName());
                     RemoveSubSource(subtype);
-                    if (!NStr::IsBlank((*it)->GetSampleVal())) {
+                    if (!NStr::IsBlank(sample_val)) {
                         CRef<CSubSource> sub(new CSubSource());
                         sub->SetSubtype(subtype);
-                        sub->SetName((*it)->GetSampleVal());
+                        sub->SetName(sample_val);
                         SetSubtype().push_back(sub);
                     }
                 } catch (...) {
@@ -741,9 +746,22 @@ int s_iCompareNameVals (const CBioSource::TNameVal& f1, const CBioSource::TNameV
 {
     int cmp = NStr::Compare (f1.first, f2.first);
     if (cmp == 0) {
-        cmp = NStr::CompareNocase (f1.second, f2.second);
-        if (cmp == 0) {
-            cmp = NStr::Compare(f1.second, f2.second);
+        bool stop1 = CBioSource::IsStopWord(f1.second);
+        bool stop2 = CBioSource::IsStopWord(f2.second);
+        if (stop1 && stop2) {
+            // equal
+            cmp = 0;
+        } else if (stop1) {
+            // first is less
+            cmp = -1;
+        } else if (stop2) {
+            // second is less
+            cmp = 1;
+        } else {
+            cmp = NStr::CompareNocase (f1.second, f2.second);
+            if (cmp == 0) {
+                cmp = NStr::Compare(f1.second, f2.second);
+            }
         }
     }
     return cmp;
@@ -766,7 +784,7 @@ CBioSource::TNameValList CBioSource::x_GetOrgModNameValPairs() const
     TNameValList list;
     if (IsSetOrgMod()) {
         ITERATE(COrgName::TMod, it, GetOrg().GetOrgname().GetMod()) {
-            if ((*it)->IsSetSubname() && (*it)->IsSetSubtype() && !IsStopWord((*it)->GetSubname())) {
+            if ((*it)->IsSetSubname() && (*it)->IsSetSubtype()) {
                 string label;
                 if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
                     label = kOrgModNote;

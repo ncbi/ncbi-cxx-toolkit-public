@@ -173,13 +173,18 @@ void CBiosampleFieldDiff::PrintHeader(ncbi::CNcbiOstream & stream, bool show_seq
     
 void CBiosampleFieldDiff::Print(CNcbiOstream& stream, bool show_seq_id) const
 {
+    bool blank_sample = NStr::IsBlank(m_SampleVal);
+    bool blank_src = NStr::IsBlank(m_SrcVal);
+    if (blank_sample && blank_src) {
+        return;
+    }
     stream << m_BiosampleID << "\t";
     stream << m_FieldName << "\t";
     if (show_seq_id) {
         stream << m_SequenceID << "\t";
     }
-    stream << (NStr::IsBlank(m_SampleVal) ? "[[add]]" : m_SampleVal) << "\t";
-    stream << (NStr::IsBlank(m_SrcVal) ? "[[delete]]" : m_SrcVal) << endl;
+    stream << (blank_sample ? "[[add]]" : m_SampleVal) << "\t";
+    stream << (blank_src ? "[[delete]]" : m_SrcVal) << endl;
 }
 
 
@@ -192,9 +197,11 @@ void CBiosampleFieldDiff::Print(ncbi::CNcbiOstream & stream, const CBiosampleFie
         if (!NStr::EqualNocase(m_FieldName, prev.m_FieldName)) {
             stream << m_FieldName;
         }
+        bool blank_sample = NStr::IsBlank(m_SampleVal) || CBioSource::IsStopWord(m_SampleVal);
+        bool blank_src = NStr::IsBlank(m_SrcVal) || CBioSource::IsStopWord(m_SrcVal);
         stream << "\t";
         stream << m_SequenceID << "\t";
-        stream << m_SampleVal << "\t";
+        stream << (blank_sample ? "" : m_SampleVal) << "\t";
         stream << m_SrcVal << "\t";
         stream << endl;
     }
