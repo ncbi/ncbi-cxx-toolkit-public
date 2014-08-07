@@ -627,7 +627,7 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         CBioseq_Handle bsh = *bioseq_it;
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
 
-        CNcbiOstream* flatfile_os;
+        CNcbiOstream* flatfile_os = NULL;
 
         bool is_genomic = false;
         bool is_RNA = false;
@@ -689,6 +689,7 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
             }
         }
 
+        if ( flatfile_os == NULL ) continue;
 
         // generate flat file
         if ( args["from"]  ||  args["to"] ) {
