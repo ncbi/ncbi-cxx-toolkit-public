@@ -436,7 +436,7 @@ string CCgiContext::RetrieveTrackingId() const
     bool is_found = false;
     const CCgiEntry* entry =
         &m_Request->GetEntry(TCGI_TrackingCookieName::GetDefault(), &is_found);
-    if (is_found) {
+    if (is_found  &&  !entry->GetValue().empty()) {
         return entry->GetValue();
     }
 
@@ -447,7 +447,7 @@ string CCgiContext::RetrieveTrackingId() const
         return tid;
     const CCgiCookie* cookie = cookies.Find(
         TCGI_TrackingCookieName::GetDefault(), kEmptyStr, kEmptyStr);
-    if (cookie)
+    if (cookie  &&  !cookie->GetValue().empty())
         return cookie->GetValue();
     if (s_CheckCookieForTID(cookies, cookie_or_entry_name_2, tid))
         return tid;
@@ -465,7 +465,8 @@ string CCgiContext::RetrieveTrackingId() const
         return tid;
     }
 
-    return CDiagContext::GetRequestContext().IsSetSessionID() ?
+    return CDiagContext::GetRequestContext().IsSetSessionID() &&
+        !CDiagContext::GetRequestContext().GetSessionID().empty() ?
         CDiagContext::GetRequestContext().GetSessionID() :
         CDiagContext::GetRequestContext().SetSessionID();
 }
