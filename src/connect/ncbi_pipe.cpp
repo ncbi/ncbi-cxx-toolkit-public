@@ -754,6 +754,8 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
     // but Windows doesn't have asynchronous mechanism to read from a pipe.
     // NOTE: WaitForSingleObject() doesn't work with anonymous pipes.
 
+    unsigned wait_time_ms = 1;
+
     for (;;) {
         if ( (mask & CPipe::fStdOut)
              &&  m_ChildStdOut != INVALID_HANDLE_VALUE ) {
@@ -798,7 +800,9 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             }
             x_timeout -= x_sleep;
         }
-        SleepMilliSec(x_sleep);
+        SleepMilliSec(wait_time_ms);
+        if (wait_time_ms < 128)
+            wait_time_ms *= 2;
     }
 
     // We cannot poll child's stdin, so just copy corresponding flag
@@ -1930,7 +1934,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     bool err_done = false;
     bool in_done  = false;
     
-    const size_t buf_size = 4096;
+    const size_t buf_size = 64 * 1024;
     char buf[buf_size];
     size_t bytes_in_inbuf = 0;
     size_t total_bytes_written = 0;
