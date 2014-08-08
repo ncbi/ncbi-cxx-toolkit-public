@@ -471,7 +471,7 @@ const string& CConfig::x_GetString(const string&  driver_name,
         NCBI_THROW(CConfigException, eParameterMissing, msg);
     }
     if (tns.size() > 1 ) {
-        string msg = "There are more then 1 synonyms paramters ("; 
+        string msg = "There are more then 1 synonyms parameters ("; 
         ITERATE(list<const TParamTree*>, it, tns) {
             if (it != tns.begin()) msg += ", ";
             msg += (*it)->GetKey();
