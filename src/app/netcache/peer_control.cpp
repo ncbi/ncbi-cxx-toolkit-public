@@ -582,6 +582,7 @@ CNCPeerControl::x_ProcessUpdateEvent(SNCMirrorEvent* event)
             x_UnreserveBGConn();
         }
     } else {
+        m_ObjLock.Unlock();
         x_DeleteMirrorEvent(event);
     }
 }
