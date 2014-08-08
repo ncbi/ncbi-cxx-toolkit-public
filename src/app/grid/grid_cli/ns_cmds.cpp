@@ -737,8 +737,7 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
             if (std_stream.fail())
                 goto Error;
             bytes_read = (size_t) std_stream.gcount();
-            if (fwrite(buffer, 1, bytes_read,
-                    m_Opts.output_stream) < bytes_read)
+            if (fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
                 goto Error;
         }
 
@@ -749,15 +748,14 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
         CStringOrBlobStorageReader reader(data_or_blob_id, m_NetCacheAPI);
 
         while (reader.Read(buffer, sizeof(buffer), &bytes_read) != eRW_Eof)
-            if (fwrite(buffer, 1, bytes_read,
-                    m_Opts.output_stream) < bytes_read)
+            if (fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
                 goto Error;
     }
     catch (CStringOrBlobStorageRWException& e) {
         if (e.GetErrCode() != CStringOrBlobStorageRWException::eInvalidFlag)
             throw;
-        if (fwrite(data_or_blob_id.data(), 1, data_or_blob_id.length(),
-                m_Opts.output_stream) < data_or_blob_id.length())
+        if (fwrite(data_or_blob_id.data(), data_or_blob_id.length(), 1,
+                m_Opts.output_stream) != 1)
             goto Error;
     }
 
