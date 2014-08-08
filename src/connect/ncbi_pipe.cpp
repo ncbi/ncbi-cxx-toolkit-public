@@ -1934,7 +1934,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     bool err_done = false;
     bool in_done  = false;
     
-    const size_t buf_size = 64 * 1024;
+    const size_t buf_size = 16 * 1024;
     char buf[buf_size];
     size_t bytes_in_inbuf = 0;
     size_t total_bytes_written = 0;
