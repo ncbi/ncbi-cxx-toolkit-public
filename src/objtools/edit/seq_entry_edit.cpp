@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Mati Shomrat, NCBI
+* Author: Mati Shomrat, Jie Chen, NCBI
 *
 * File Description:
 *   High level Seq-entry edit, for meaningful combination of Seq-entries.
@@ -38,15 +38,16 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/align_ci.hpp>
-#include <objmgr/seq_annot_ci.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/seq_descr_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -123,6 +124,43 @@ namespace {
         TKeyVec m_keysInOriginalOrder;
     };
 }
+
+CConstRef <CDelta_seq> GetDeltaSeqForPosition(const unsigned pos, const CBioseq* bioseq, CScope* scope, unsigned& endpoint)
+{
+   if (!bioseq || !bioseq->IsNa()
+             || bioseq->GetInst().GetRepr() != CSeq_inst :: eRepr_delta
+             || !bioseq->GetInst().CanGetExt()
+             || !bioseq->GetInst().GetExt().IsDelta()) {
+      return CConstRef <CDelta_seq>(NULL);
+   }
+
+   size_t offset = 0;
+
+   int len = 0;
+   ITERATE (list <CRef <CDelta_seq> >, it, bioseq->GetInst().GetExt().GetDelta().Get()) {
+        if ((*it)->IsLiteral()) {
+            len = (*it)->GetLiteral().GetLength();
+        } else if ((*it)->IsLoc()) {
+            len = sequence::GetLength((*it)->GetLoc(), scope);
+        }
+        if (pos >= offset && pos < offset + len) {
+            endpoint = offset;
+            return (*it);
+        } else {
+            offset += len;
+        }
+   }
+   return (CConstRef <CDelta_seq>(NULL));
+};
+
+bool IsDeltaSeqGap(CConstRef <CDelta_seq> delta)
+{
+  if (delta->IsLoc()) return false;
+  if (delta->GetLiteral().CanGetSeq_data() && delta->GetLiteral().GetSeq_data().IsGap()){
+      return true;
+  }
+  else return false;
+};
 
 static void s_AddBioseqToPartsSet
 (CBioseq_set_EditHandle& parts,

@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Colleen Bollin, NCBI
+* Author:  Colleen Bollin, Jie Chen, NCBI
 *
 * File Description:
 *   Unit tests for the field handlers.
@@ -63,6 +63,8 @@
 #include <objects/macro/Search_func.hpp>
 #include <objects/macro/String_constraint.hpp>
 #include <objects/macro/Suspect_rule.hpp>
+#include <objects/macro/Word_substitution.hpp>
+#include <objects/macro/Word_substitution_set.hpp>
 #include <objects/medline/Medline_entry.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -663,6 +665,79 @@ BOOST_AUTO_TEST_CASE(Test_SuspectRule)
     rule->SetReplace().Reset();
     rule->SetReplace().SetReplace_func().SetSimple_replace().SetReplace("hypothetical protein");
     BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+
+    // string_constraint with ignore-words
+    test = "human";
+    rule->SetFind().Reset();
+    rule->SetFind().SetString_constraint().SetMatch_text("Homo sapiens");
+    rule->SetFind().SetString_constraint().SetMatch_location(eString_location_equals);
+    rule->SetFind().SetString_constraint().SetIgnore_space(true);
+    rule->SetFind().SetString_constraint().SetIgnore_punct(true);
+
+    CRef <CWord_substitution_set> word_subs(new CWord_substitution_set);
+    rule->SetFind().SetString_constraint().SetIgnore_words(word_subs.GetObject());
+
+    CRef <CWord_substitution> word_sub(new CWord_substitution);
+    word_sub->SetWord("Homo sapiens");
+    list <string> syns;
+    syns.push_back("human");
+    syns.push_back("Homo sapien");
+    syns.push_back("Homosapiens");
+    syns.push_back("Homo-sapiens");
+    syns.push_back("Homo spiens");
+    syns.push_back("Homo Sapience");
+    syns.push_back("homosapein");
+    syns.push_back("homosapiens");
+    syns.push_back("homosapien");
+    syns.push_back("homo_sapien");
+    syns.push_back("homo_sapiens");
+    syns.push_back("Homosipian");
+    word_sub->SetSynonyms() = syns;
+    rule->SetFind().SetString_constraint().SetIgnore_words().Set().push_back(word_sub);
+
+    word_sub.Reset(new CWord_substitution);
+    word_sub->SetWord("sapiens");
+    syns.clear();
+    syns.push_back("sapien");
+    syns.push_back("sapeins");
+    syns.push_back("sapein");
+    syns.push_back("sapins");
+    syns.push_back("sapens");
+    syns.push_back("sapin");
+    syns.push_back("sapen");
+    syns.push_back("sapians");
+    syns.push_back("sapian");
+    syns.push_back("sapies");
+    syns.push_back("sapie");
+    word_sub->SetSynonyms() = syns;
+    rule->SetFind().SetString_constraint().SetIgnore_words().Set().push_back(word_sub);
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    test = "human";
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    test = "human1";
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), false);
+    test = "Homo sapien";
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), true);
+    test = "Human sapien";
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), false);
+    test = "sapien";
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), false);
+
+    word_sub.Reset(new CWord_substitution);
+    // all the syns won't match because of missing word_sub.Word;
+    syns.clear();
+    syns.push_back("fruit");     
+    syns.push_back("apple");
+    syns.push_back("apple, pear");
+    syns.push_back("grape");
+    syns.push_back("peaches");
+    syns.push_back("peach");
+    word_sub->SetSynonyms() = syns;
+    rule->SetFind().SetString_constraint().SetIgnore_words().Set().push_back(word_sub);
+    test = "fruit";
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), false);
+    test = "pear, apple";
+    BOOST_CHECK_EQUAL(rule->ApplyToString(test), false);
 }
 
 
