@@ -93,13 +93,13 @@ public:
         s_SetParam(m_Request, m_Result);
         size_t output_size = context.GetWorkerNode().GetServerOutputSize();
         if (output_size == 0) {
-            // this means that NS internal storage is not supported and 
-            // we all input params will be save into NC anyway. So we are 
-            // putting all input into one blob.
+            // NetSchedule internal storage is not supported; all
+            // output will be stored in NetCache anyway, so it can
+            // be put into one blob.
             output_size = kMax_UInt;
         } else {
-            // here we need some empiric to calculate this size
-            // for now just reduce it by 10%
+            // Empiric estimation of the maximum output size
+            // (reduction by 10%).
             output_size = output_size - output_size / 10;
         }
         m_Result.SetMaxInlineSize(output_size);
@@ -173,7 +173,7 @@ public:
             throw;
         }
 
-        m_Result.SetRetCode(ret); 
+        m_Result.SetRetCode(ret);
         m_Result.Serialize(context.GetOStream());
 
         if (!finished_ok) {
