@@ -629,7 +629,9 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     // ini. summ_susrule
     CSummarizeSusProdRule summ_susrule;
 
-// unsigned ridx = 0;
+#if 0
+    unsigned ridx = 0;
+#endif
     ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                        thisInfo.suspect_prod_rules->Get()) {
        arr.clear();
@@ -646,14 +648,14 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
        arr.push_back(strtmp);  // test_name
        arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
        arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));
-/*
-if (arr[2].find("contains ';'") != string::npos) {
-  cerr << "arr.sz " << arr.size() << endl;
-cerr << "arr.s  " << arr[2] << "  ridx " << ridx  << endl;
-cerr << MSerial_AsnText << **rit << endl;
-}
-ridx ++;
-*/
+#if 0
+       if (arr[2].find("contains ';'") != string::npos) {
+            cerr << "arr.sz " << arr.size() << endl;
+            cerr << "arr.s  " << arr[2] << "  ridx " << ridx  << endl;
+            cerr << MSerial_AsnText << **rit << endl;
+       }
+       ridx ++;
+#endif 
        thisInfo.susrule_summ.push_back(arr);
     }
 
@@ -2965,13 +2967,13 @@ void CRepConfig :: GetTestList()
            CRef <CTestAndRepData>(new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC));
         if (++i >= sz) return;
    }
-/*
+#if 0
    if (thisTest.tests_run.find("DISC_SOURCE_QUALS_ASNDISC_oncaller") != end_it){
        thisGrp.tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                              new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller));
         if (++i >= sz) return;
    }
-*/
+#endif
    if ( thisTest.tests_run.find("DISC_UNPUB_PUB_WITHOUT_TITLE") != end_it) {
        thisGrp.tests_on_SeqEntry_feat_desc.push_back(
            CRef <CTestAndRepData>(new CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE));
@@ -3370,7 +3372,6 @@ void CRepConfAsndisc :: x_ProcessDir(const CDir& dir, bool one_ofile)
 
 
 // for Gbench
-// void CRepConfig :: CollectDefaultConfig(Str2Str& test_nm2conf_nm, const string& report)
 void CRepConfig :: CollectDefaultConfig(Str2Str& test_nm2conf_nm, ETestCategoryFlags report)
 {
    for (unsigned i=0; i< ArraySize(test_list); i++) {
@@ -3457,14 +3458,6 @@ cerr << "GoGetRep " << strtmp << endl;
                   thisInfo.disc_report_data.push_back(c_item);
             }
             (*it)->GetReport(c_item);
-
-/*
-            // adjustment of setting_name
-            if (strtmp.find("global") != string::npos 
-                   || strtmp.find("oncaller") != string::npos) {
-               c_item->setting_name= strtmp.substr(0, strtmp.find_last_of("_"));
-            }
-*/
        }
        else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
            c_item->expanded = x_IsExpandable(strtmp);

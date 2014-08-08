@@ -199,17 +199,17 @@ CRef <CSeq_entry> BuildGoodRnaSeq()
 
 CRef <CSeq_feat> MakeRNAFeatWithExtName(CRef <CSeq_entry> nuc_entry, CRNA_ref::EType type, const string ext_name)
 {
-   CRef <CSeq_feat> rna_feat(new CSeq_feat);
-   if (!ext_name.empty()) {
+  CRef <CSeq_feat> rna_feat(new CSeq_feat);
+  if (!ext_name.empty()) {
      CRef <CRNA_ref::C_Ext> rna_ext (new CRNA_ref::C_Ext);
      rna_ext->SetName(ext_name);
      rna_feat->SetData().SetRna().SetExt(*rna_ext);
-   }
-   rna_feat->SetData().SetRna().SetType(type);
-   rna_feat->SetLocation().SetInt().SetId().Assign(*(nuc_entry->GetSeq().GetId().front()));
-   rna_feat->SetLocation().SetInt().SetFrom(0);
-   rna_feat->SetLocation().SetInt().SetTo(nuc_entry->GetSeq().GetInst().GetLength()-1);
-   return rna_feat;
+  }
+  rna_feat->SetData().SetRna().SetType(type);
+  rna_feat->SetLocation().SetInt().SetId().Assign(*(nuc_entry->GetSeq().GetId().front()));
+  rna_feat->SetLocation().SetInt().SetFrom(0);
+  rna_feat->SetLocation().SetInt().SetTo(nuc_entry->GetSeq().GetInst().GetLength()-1);
+  return rna_feat;
 };
 
 
