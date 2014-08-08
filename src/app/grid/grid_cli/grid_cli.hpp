@@ -128,7 +128,11 @@
 
 #define NETSCHEDULE_CHECK_QUEUE "netschedule_check_queue"
 
+#ifndef NCBI_OS_MSWIN
 #define IO_BUFFER_SIZE (512 * 1024)
+#else
+#define IO_BUFFER_SIZE (16 * 1024)
+#endif
 
 BEGIN_NCBI_SCOPE
 
