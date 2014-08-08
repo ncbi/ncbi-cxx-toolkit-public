@@ -1,7 +1,3 @@
-#ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = "$Id$";
-#endif /* SKIP_DOXYGEN_PROCESSING */
-
 /*
 * ===========================================================================
 *
@@ -33,6 +29,10 @@ static char const rcsid[] = "$Id$";
 /** @file data4xml2format.cpp
  * Produce data required for generating BLAST XML2 output
  */
+
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] = "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -340,8 +340,6 @@ CCmdLineBlastXML2ReportData::GetEffectiveSearchSpace(int num) const
 
 int CCmdLineBlastXML2ReportData::GetQueryGeneticCode() const
 {
-	EProgram blast_prog = GetBlastTask();
-
 	if(Blast_QueryIsTranslated(m_Options->GetProgramType()))
 		return m_Options->GetQueryGeneticCode();
 
