@@ -3149,11 +3149,23 @@ static EIO_Status s_Send(SOCK        sock,
     for (;;) { /* optionally auto-resume if interrupted */
         int error = 0;
 
-        int x_written = send(sock->sock, (void*) data,
 #ifdef NCBI_OS_MSWIN
-                             /*WINSOCK wants it weird*/ (int)
-#endif /*NCBI_OS_MSWIN*/
+        /* It has been found that when sending more that 400MB (we didn't try
+         * sending less) in one send() op on Windows and then trying to
+         * immediately write 10 bytes more in a subsequent send() with a
+         * 2 sec timeout... oftentimes leads to a write timeout -- even though
+         * the 400MB send() returned success. Sending a smaller chunk of data
+         * fixes the problem.
+         */
+        int x_size = size <= 1024 * 1024 ?
+                     /*WINSOCK wants it weird*/ (int) size : 1024 * 1024;
+
+        int x_written = send(sock->sock, (void*) data,
+                             x_size, flag < 0 ? MSG_OOB : 0);
+#else
+        int x_written = send(sock->sock, (void*) data,
                              size, flag < 0 ? MSG_OOB : 0);
+#endif /*NCBI_OS_MSWIN*/
 
         if (x_written >= 0  ||
             (x_written < 0  &&  ((error = SOCK_ERRNO) == SOCK_EPIPE       ||
