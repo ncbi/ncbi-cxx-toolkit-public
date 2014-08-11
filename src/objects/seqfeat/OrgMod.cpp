@@ -511,8 +511,10 @@ COrgMod::FixStructuredVoucher(string& val, const string& v_type)
                 found = true;
             } else if (NStr::StartsWith(inst_code, it->first)
                        && inst_code.c_str()[it->first.length()] == '<') {
+                /*
                 new_inst_code = it->first;
                 rval = true;
+                */
             }
         }
         ++it;
