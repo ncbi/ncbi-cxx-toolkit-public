@@ -51,6 +51,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CGCClient_AssemblyInfo;
+
 /////////////////////////////////////////////////////////////////////////////
 class CGenomicCollectionsService : public CGenomicCollectionsService_Base
 {
@@ -89,7 +91,7 @@ public:
 
     string ValidateChrType(string chrType, string chrLoc);
 
-    CRef<CGCClient_FindBestAssemblyResponse> FindBestAssembly
+    CRef<CGCClient_AssemblyInfo> FindBestAssembly
         (const string& seq_id,
          int filter_type = eGCClient_FindBestAssemblyFilter_any,
          int sort_type = eGCClient_FindBestAssemblySort_default);

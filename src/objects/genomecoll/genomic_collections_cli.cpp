@@ -41,7 +41,8 @@
 #include <objects/genomecoll/genomic_collections_cli.hpp>
 #include <objects/genomecoll/GCClient_AttributeFlags.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
-#include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
+#include <objects/genomecoll/GCClient_AssemblyInfo.hpp>
+#include <objects/genomecoll/GCClient_BestAssembly.hpp>
 #include <objects/genomecoll/GCClient_Error.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
@@ -173,14 +174,15 @@ string CGenomicCollectionsService::ValidateChrType(string chrType, string chrLoc
 }
 
 
-CRef<CGCClient_FindBestAssemblyResponse> CGenomicCollectionsService::FindBestAssembly(const string& seq_id, int filter_type, int sort_type)
+CRef<CGCClient_AssemblyInfo> CGenomicCollectionsService::FindBestAssembly(const string& seq_id, int filter_type, int sort_type)
 {
     CGCClient_FindBestAssemblyRequest  req;
     CGCClientResponse reply;
 
-    req.SetSeq_id(seq_id);
+    req.SetSeq_id_acc().push_back(seq_id);
     req.SetFilter(filter_type);
     req.SetSort(sort_type);
+    req.SetAssembly_return_limit(1);
 
 #ifdef _DEBUG
     ostringstream ostrstrm;
@@ -189,10 +191,14 @@ CRef<CGCClient_FindBestAssemblyResponse> CGenomicCollectionsService::FindBestAss
 #endif
 
     try {
-        return AskGet_best_assembly(req, &reply);
-    } catch (CException& ex) {
-        if(reply.Which() == CGCClientResponse::e_Srvr_error) {
-            NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
+        CRef<CGCClient_BestAssembly::C_E> asm_info = AskGet_best_assembly(req, &reply)->Get().front();
+
+        return asm_info->CanGetAssembly() ?
+                CRef<CGCClient_AssemblyInfo>(&asm_info->SetAssembly()) :
+                CRef<CGCClient_AssemblyInfo>();
+    } catch (const CException& ex) {
+        if(reply.IsSrvr_error()) {
+            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
         }
         throw;
     }

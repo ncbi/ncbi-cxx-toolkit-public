@@ -25,7 +25,7 @@ GCClientRequest ::= CHOICE {
 GCClientResponse ::= CHOICE {
     get-assembly GC-Assembly,
     get-chrtype-valid  VisibleString,
-    get-best-assembly GCClient-FindBestAssemblyResponse,
+    get-best-assembly GCClient-BestAssembly,
     
     --  errors encountered at the server side.
     srvr-error GCClient-Error
@@ -126,20 +126,25 @@ GCClient-FindBestAssemblySort ::= INTEGER {
 }
 
 GCClient-FindBestAssemblyRequest ::= SEQUENCE {
-    seq-id  VisibleString,
+    seq-id-acc SET OF VisibleString,
 
     filter GCClient-FindBestAssemblyFilter DEFAULT any,
 
-    sort GCClient-FindBestAssemblySort DEFAULT default
+    sort GCClient-FindBestAssemblySort DEFAULT default,
+
+    assembly-return-limit INTEGER OPTIONAL
 }
 
-GCClient-FindBestAssemblyResponse ::= SEQUENCE {
-    accession VisibleString OPTIONAL,
-    latest    BOOLEAN OPTIONAL,
-    major     BOOLEAN OPTIONAL,
-    annotated BOOLEAN OPTIONAL,
-    seq-ids   SET OF VisibleString
+GCClient-AssemblyInfo ::= SEQUENCE {
+    accession VisibleString,
+    latest    BOOLEAN,
+    major     BOOLEAN,
+    annotated BOOLEAN
 }
 
+GCClient-BestAssembly ::= SET OF SEQUENCE {
+    assembly   GCClient-AssemblyInfo OPTIONAL, -- if not set then assembly is not found
+    seq-id-acc SET OF VisibleString
+}
 
 END
