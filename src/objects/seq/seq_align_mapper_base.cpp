@@ -1606,13 +1606,17 @@ x_GetDstExon(CSpliced_seg&              spliced,
     bool have_non_gaps = false; // are there any non-gap parts at all?
     // Continue iterating segments. Each segment becomes a new part.
     for ( ; seg != m_Segs.end(); ++seg) {
-        if (group_idx != -1  &&  seg->m_GroupIdx != group_idx) {
+        // Zero group may indicate that all mappings were applied to gaps.
+        // Do not break exon on such segments.
+        if (group_idx != -1  &&  seg->m_GroupIdx  &&  seg->m_GroupIdx != group_idx) {
             // New group found - start a new exon.
             partial_right = true;
             break;
         }
-        // Remember the last segment's group.
-        group_idx = seg->m_GroupIdx;
+        // Remember the last segment's group if non-zero.
+        if ( seg->m_GroupIdx ) {
+            group_idx = seg->m_GroupIdx;
+        }
 
         const SAlignment_Segment::SAlignment_Row& gen_row =
             seg->m_Rows[CSeq_loc_Mapper_Base::eSplicedRow_Gen];
