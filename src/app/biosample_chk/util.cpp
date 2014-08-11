@@ -198,7 +198,6 @@ void CBiosampleFieldDiff::Print(ncbi::CNcbiOstream & stream, const CBiosampleFie
             stream << m_FieldName;
         }
         bool blank_sample = NStr::IsBlank(m_SampleVal) || CBioSource::IsStopWord(m_SampleVal);
-        bool blank_src = NStr::IsBlank(m_SrcVal) || CBioSource::IsStopWord(m_SrcVal);
         stream << "\t";
         stream << m_SequenceID << "\t";
         stream << (blank_sample ? "" : m_SampleVal) << "\t";
