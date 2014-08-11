@@ -198,7 +198,10 @@ CVcfReader::ReadSeqAnnot(
     while ( ! lr.AtEOF() ) {
         m_uLineNumber++;
         string line = *(++lr);
-        NStr::TruncateSpacesInPlace( line );
+        NStr::TruncateSpacesInPlace(line);
+        if (line.empty()) {
+            continue;
+        }
         if (xProcessMetaLine(line, annot, pEC)) {
             continue;
         }
