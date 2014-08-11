@@ -1882,7 +1882,6 @@ void CNewCleanup_imp::OrgnameBC (
     }
 
     // special value fixes
-    /*
     EDIT_EACH_ORGMOD_ON_ORGNAME (it, onm) {
         COrgMod& omd = **it;
         switch (omd.GetSubtype()) {
@@ -1905,7 +1904,6 @@ void CNewCleanup_imp::OrgnameBC (
                 break;
         }
     }
-    */
 
     // erase structured notes that already match value
     // (Note: This is O(N^2).  Maybe worth converting to a faster algo?)
