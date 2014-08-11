@@ -148,7 +148,7 @@ Seq-align ::= { \
     }, \
     product-length 260 \
   } \
-} \ ";
+} ";
 
     CNcbiIstrstream istrs(buf.c_str());
     CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
