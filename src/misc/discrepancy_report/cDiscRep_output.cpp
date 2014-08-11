@@ -788,7 +788,9 @@ bool CDiscRepOutput :: x_OkToExpand(CRef < CClickableItem > c_item)
        return false;
   }
   else if ( (c_item->item_list.empty() || c_item->expanded)
-//                     ||oc.expand_report_categories[c_item->setting_name])
+#if 0
+                     ||oc.expand_report_categories[c_item->setting_name])
+#endif
              && !(c_item->subcategories.empty()) ) {
       return true;
   }
@@ -1052,10 +1054,6 @@ void CDiscRepOutput :: x_OutputRepToGbenchItem(const CClickableItem& c_item,  CC
       item.SetObjdescs().insert(item.SetObjdescs().end(), 
                                   v_desc.begin(), 
                                   v_desc.end());
-/*
-                                c_item.item_list.begin(), 
-                                c_item.item_list.end());
-*/
       item.SetAccessions().insert(item.SetAccessions().end(),
                                      v_acc.begin(), v_acc.end());
       if (!c_item.obj_list.empty()) {
@@ -1294,7 +1292,6 @@ void CDiscRepOutput :: x_OrderResult(UInt2UInts& ord2i_citem)
          pri = m_OnCallerToolPriorities.size() + i + 1;
       }
       ord2i_citem[pri].push_back((unsigned)i);
-      //ord2i_citem[pri] = i;
    }
 };
 
@@ -1357,7 +1354,6 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(UInt2UInts& o
     ITERATE (vector <string>, it, arr) {
         idx = NStr::StringToUInt(*it);
         strtmp = thisInfo.disc_report_data[idx]->setting_name;
-        // sub_ord2idx[m_OnCallerToolPriorities[strtmp]] = idx;
         sub_ord2idxes[m_OnCallerToolPriorities[strtmp]].push_back(idx);
     }
     switch (e_grp) {
@@ -1368,11 +1364,9 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(UInt2UInts& o
        {
           ITERATE (UInt2UInts, it, sub_ord2idxes) {
             ITERATE (vector <unsigned>, iit, it->second) {
-                new_item->subcategories
-                           .push_back(thisInfo.disc_report_data[*iit]);
-                                      //thisInfo.disc_report_data[it->second]);
+                new_item->subcategories.push_back(thisInfo.disc_report_data[*iit]);
             }
-            ord2i_citem[it->first].clear(); //  = -1;
+            ord2i_citem[it->first].clear();
           }  
           break;
        }
@@ -1386,7 +1380,6 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(UInt2UInts& o
                   NON_CONST_ITERATE (vector <CRef <CClickableItem> >, 
                                      sit, 
                                thisInfo.disc_report_data[*iit]->subcategories){
-//                       thisInfo.disc_report_data[it->second]->subcategories) {
                     if ((*sit)->description == "Typo") {
                         ITERATE (vector <CRef <CClickableItem> >, ssit, 
                                     (*sit)->subcategories) {
@@ -1405,12 +1398,10 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(UInt2UInts& o
              }
              else {
                 ITERATE (vector <unsigned>, iit, it->second) {
-                    new_item->subcategories
-                            .push_back(thisInfo.disc_report_data[*iit]);
-                                      //thisInfo.disc_report_data[it->second]);
+                    new_item->subcategories.push_back(thisInfo.disc_report_data[*iit]);
                 }
              }
-             ord2i_citem[it->first].clear(); //  = -1;
+             ord2i_citem[it->first].clear();
              if (new_item->subcategories.empty()) {
                 new_item.Reset(0);
              }

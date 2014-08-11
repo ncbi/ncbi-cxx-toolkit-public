@@ -5225,71 +5225,36 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: x_ReportFeat(const CSeq_feat& it, cons
    thisInfo.test_item_objs[GetName()+strtmp].push_back(CConstRef <CObject>(&jt));
 };
 
-
-CConstRef <CDelta_seq> CBioseq_FEATURE_LOCATION_CONFLICT :: x_GetDeltaSeqForPosition(unsigned pos, const CBioseq* bioseq, unsigned& endpoint)
+bool CBioseq_FEATURE_LOCATION_CONFLICT :: x_Does5primerAbutGap(const CSeq_feat& feat, CBioseq_Handle seq_hl)
 {
-   if (!bioseq || !bioseq->IsNa() 
-             || bioseq->GetInst().GetRepr() != CSeq_inst :: eRepr_delta
-             || !bioseq->GetInst().CanGetExt() 
-             || !bioseq->GetInst().GetExt().IsDelta()) {
-      return CConstRef <CDelta_seq>(NULL);
-   }
+  if (!seq_hl) return false;
 
-   size_t offset = 0;
+  unsigned start = feat.GetLocation().GetTotalRange().GetFrom();  // Positional
+  if (!start) return false;
 
-   int len = 0;
-   ITERATE (list <CRef <CDelta_seq> >, it, bioseq->GetInst().GetExt().GetDelta().Get()) {
-        if ((*it)->IsLiteral()) {
-            len = (*it)->GetLiteral().GetLength();
-        } else if ((*it)->IsLoc()) {
-            len = sequence::GetLength((*it)->GetLoc(), thisInfo.scope);
-        }
-        if (pos >= offset && pos < offset + len) {
-            endpoint = offset;
-            return (*it);
-        } else {
-            offset += len;
-        }
-   }
-   return (CConstRef <CDelta_seq>(NULL));
-};
-
-bool CBioseq_FEATURE_LOCATION_CONFLICT :: x_IsDeltaSeqGap(CConstRef <CDelta_seq> delta)
-{
-  if (!delta->GetLiteral().CanGetSeq_data() || delta->GetLiteral().GetSeq_data().IsGap()){
-      return true;
+  CSeqVector seq_vec(seq_hl, CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+  unsigned i=0;
+  for (CSeqVector_CI it = seq_vec.begin(); it; ++ it, i++) {
+     if (i < (start - 1) ) continue;
+     if (it.IsInGap()) return true;
   }
-  else return false;
+  return false;
 };
 
-bool CBioseq_FEATURE_LOCATION_CONFLICT :: x_Does5primerAbutGap(const CSeq_feat& feat, const CBioseq* bioseq)
-{
-  unsigned start = feat.GetLocation().GetTotalRange().GetFrom();
-  unsigned dsp_stop;
-
-  if (!bioseq) return false;
-
-  CConstRef <CDelta_seq> dsp = x_GetDeltaSeqForPosition(start-1, bioseq, dsp_stop);
-  if (dsp.Empty()) return false;
-  else if (x_IsDeltaSeqGap(dsp) && (dsp_stop == start - 1) ) {
-    return true;
-  }
-  else return false;
-};
-
-bool CBioseq_FEATURE_LOCATION_CONFLICT :: x_Does3primerAbutGap(const CSeq_feat& feat, const CBioseq* bioseq)
+bool CBioseq_FEATURE_LOCATION_CONFLICT :: x_Does3primerAbutGap(const CSeq_feat& feat, CBioseq_Handle seq_hl)
 {  
-  unsigned stop = feat.GetLocation().GetTotalRange().GetTo();
-  unsigned dsp_start;
+  if (!seq_hl) return false;
 
-  if (!bioseq) return false;
-
-  CConstRef <CDelta_seq> dsp = x_GetDeltaSeqForPosition(stop + 1, bioseq, dsp_start);
-  if (dsp.Empty()) return false;
-  else if (x_IsDeltaSeqGap(dsp) && (dsp_start == stop + 1 )) {
-    return true;
+  unsigned stop = feat.GetLocation().GetTotalRange().GetTo(); // positional
+ 
+  CSeqVector seq_vec(seq_hl, CBioseq_Handle::eCoding_Iupac, eNa_strand_plus); 
+  if (stop >= seq_vec.size() - 1) return false;
+  unsigned i=0;
+  for (CSeqVector_CI it = seq_vec.begin(); it; ++ it, i++) {
+     if (i < (stop +1) ) continue;
+     if (it.IsInGap()) return true;
   }
-  else return false;
+  return false;
 };
 
 void CBioseq_FEATURE_LOCATION_CONFLICT :: x_ReportConflictingFeats(const CSeq_feat& feat, const CSeq_feat& gene, const string& feat_type, const CBioseq* bioseq)
@@ -5300,10 +5265,12 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: x_ReportConflictingFeats(const CSeq_fe
         x_ReportFeat(feat, gene, feat_type);
    }
    else {
+       if (!bioseq) return;
        bool partial5 = feat.GetLocation().IsPartialStart(eExtreme_Positional);
        bool partial3 = feat.GetLocation().IsPartialStop(eExtreme_Positional);
-       if ( (!partial5 || !x_Does5primerAbutGap(feat, bioseq))
-                      && (!partial3 || !x_Does3primerAbutGap(feat, bioseq)) )  {
+       CBioseq_Handle seq_hl = thisInfo.scope->GetBioseqHandle(*bioseq);
+       if ( (!partial5 || !x_Does5primerAbutGap(feat, seq_hl))
+                      && (!partial3 || !x_Does3primerAbutGap(feat, seq_hl)) )  {
                 x_ReportFeat(feat, gene, feat_type);
        }
    }
