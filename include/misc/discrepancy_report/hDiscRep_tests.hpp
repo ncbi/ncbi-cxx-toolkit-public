@@ -3855,16 +3855,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
     private:
       void x_ReportFeat(const CSeq_feat& it, const CSeq_feat& jt,const string& feat_type);
-      CConstRef <CDelta_seq> x_GetDeltaSeqForPosition(unsigned pos, 
-                                      const CBioseq* bioseq, unsigned& endpoint);
-      bool x_IsDeltaSeqGap(CConstRef <CDelta_seq> delta);
-      bool x_Does5primerAbutGap(const CSeq_feat& feat, const CBioseq* bioseq);
-      bool x_Does3primerAbutGap(const CSeq_feat& feat, const CBioseq* bioseq);
+      bool x_Does5primerAbutGap(const CSeq_feat& feat, CBioseq_Handle bioseq);
+      bool x_Does3primerAbutGap(const CSeq_feat& feat, CBioseq_Handle bioseq);
       void x_ReportConflictingFeats(const CSeq_feat& feat, const CSeq_feat& gene, 
                                      const string& feat_type, const CBioseq* bioseq);
       void x_CheckFeatureTypeForLocationDiscrepancies(
                                    const vector <const CSeq_feat*>& seq_feat,
-                                   const string& feat_type, const CBioseq* bioseq=0);
+                                   const string& feat_type, const CBioseq* bioseq = 0);
       bool x_IsGeneLocationOk(const CSeq_feat* seq_feat, const CSeq_feat* gene);
       bool x_IsMixStrand(const CSeq_feat* seq_feat);
       bool x_IsMixedStrandGeneLocationOk(const CSeq_loc& feat_loc, 
