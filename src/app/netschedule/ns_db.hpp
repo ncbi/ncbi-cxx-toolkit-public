@@ -287,6 +287,8 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldUint4     read_failed_retries;
     CBDB_FieldUint4     blacklist_time_sec;
     CBDB_FieldUint4     blacklist_time_nsec;
+    CBDB_FieldUint4     read_blacklist_time_sec;
+    CBDB_FieldUint4     read_blacklist_time_nsec;
     CBDB_FieldUint4     max_input_size;
     CBDB_FieldUint4     max_output_size;
     CBDB_FieldLString   subm_hosts;
@@ -348,6 +350,8 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("read_failed_retries",           &read_failed_retries);
         BindData("blacklist_time_sec",            &blacklist_time_sec);
         BindData("blacklist_time_nsec",           &blacklist_time_nsec);
+        BindData("read_blacklist_time_sec",       &read_blacklist_time_sec);
+        BindData("read_blacklist_time_nsec",      &read_blacklist_time_nsec);
         BindData("max_input_size",                &max_input_size);
         BindData("max_output_size",               &max_output_size);
         BindData("subm_hosts",                    &subm_hosts);

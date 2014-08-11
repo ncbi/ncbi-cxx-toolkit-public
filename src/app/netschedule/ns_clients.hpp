@@ -166,13 +166,14 @@ class CNSClient
     public:
         CNSClient();
         CNSClient(const CNSClientId &  client_id,
-                  CNSPreciseTime *     blacklist_timeout);
+                  CNSPreciseTime *     blacklist_timeout,
+                  CNSPreciseTime *     read_blacklist_timeout);
         TNSBitVector GetRunningJobs(void) const
         { return m_RunningJobs; }
         TNSBitVector GetReadingJobs(void) const
         { return m_ReadingJobs; }
-        TNSBitVector GetBlacklistedJobs(void) const;
-        bool IsJobBlacklisted(unsigned int  job_id) const;
+        TNSBitVector GetRunBlacklistedJobs(void) const;
+        TNSBitVector GetReadBlacklistedJobs(void) const;
         void SetWaitPort(unsigned short  port)
         { m_WaitPort = port; }
         unsigned short GetWaitPort(void) const
@@ -189,7 +190,8 @@ class CNSClient
         void RegisterRunningJob(unsigned int  job_id);
         void RegisterReadingJob(unsigned int  job_id);
         void RegisterSubmittedJobs(size_t  count);
-        void RegisterBlacklistedJob(unsigned int  job_id);
+        void RegisterRunBlacklistedJob(unsigned int  job_id);
+        void RegisterReadBlacklistedJob(unsigned int  job_id);
         bool MoveReadingJobToBlacklist(unsigned int  job_id);
         bool MoveRunningJobToBlacklist(unsigned int  job_id);
         void UnregisterRunningJob(unsigned int  job_id);
@@ -248,7 +250,10 @@ class CNSClient
         unsigned int  GetPeerAddress(void) const
         { return m_Addr; }
 
-        void  CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
+        void  CheckRunBlacklistedJobsExisted(
+                                    const CJobStatusTracker &  tracker);
+        void  CheckReadBlacklistedJobsExisted(
+                                    const CJobStatusTracker &  tracker);
         int  SetClientData(const string &  data, int  data_version);
 
     private:
@@ -280,9 +285,13 @@ class CNSClient
         TNSBitVector    m_ReadingJobs;      // The jobs the client is currently
                                             // reading
         mutable
-        TNSBitVector    m_BlacklistedJobs;  // The jobs that should not be given
-                                            // to the node neither for
-                                            // executing nor for reading
+        TNSBitVector    m_RunBlacklistedJobs;
+                                            // The jobs that should not be given
+                                            // to the node for executing
+        mutable
+        TNSBitVector    m_ReadBlacklistedJobs;
+                                            // The jobs that should not be given
+                                            // to the reader for reading
         unsigned short  m_WaitPort;         // Port, provided in WGET command or
                                             // 0 otherwise
         unsigned int    m_ID;               // Client identifier, see comments
@@ -298,22 +307,35 @@ class CNSClient
                                             // to client inactivity timeout
         size_t          m_NumberOfSockErrors;
 
-        CNSPreciseTime *    m_BlacklistTimeout;
+        CNSPreciseTime *    m_RunBlacklistTimeout;
+        CNSPreciseTime *    m_ReadBlacklistTimeout;
         mutable
         map<unsigned int,
             CNSPreciseTime>
-                        m_BlacklistLimits;  // job id -> last second the job is
+                        m_RunBlacklistLimits;
+                                            // job id -> last second the job is
+                                            // in the blacklist
+        mutable
+        map<unsigned int,
+            CNSPreciseTime>
+                        m_ReadBlacklistLimits;
+                                            // job id -> last second the job is
                                             // in the blacklist
 
         string  x_TypeAsString(void) const;
-        void    x_AddToBlacklist(unsigned int  job_id);
-        void    x_UpdateBlacklist(void) const;
-        void    x_UpdateBlacklist(unsigned int  job_id) const;
-        string  x_GetBlacklistLimit(unsigned int  job_id) const;
+        void    x_AddToRunBlacklist(unsigned int  job_id);
+        void    x_AddToReadBlacklist(unsigned int  job_id);
+        void    x_UpdateRunBlacklist(void) const;
+        void    x_UpdateRunBlacklist(unsigned int  job_id) const;
+        void    x_UpdateReadBlacklist(void) const;
+        void    x_UpdateReadBlacklist(unsigned int  job_id) const;
+        string  x_GetRunBlacklistLimit(unsigned int  job_id) const;
+        string  x_GetReadBlacklistLimit(unsigned int  job_id) const;
 
         size_t  m_RunningJobsOpCount;
         size_t  m_ReadingJobsOpCount;
-        mutable size_t  m_BlacklistedJobsOpCount;
+        mutable size_t  m_RunBlacklistedJobsOpCount;
+        mutable size_t  m_ReadBlacklistedJobsOpCount;
         size_t  m_AffinitiesOpCount;
         size_t  m_WaitAffinitiesOpCount;
 
@@ -322,7 +344,8 @@ class CNSClient
 
         void x_RunningJobsOp(void);
         void x_ReadingJobsOp(void);
-        void x_BlacklistedOp(void) const;
+        void x_RunBlacklistedOp(void) const;
+        void x_ReadBlacklistedOp(void) const;
         void x_AffinitiesOp(void);
         void x_WaitAffinitiesOp(void);
 };

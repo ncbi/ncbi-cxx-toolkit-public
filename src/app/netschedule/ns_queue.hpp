@@ -622,6 +622,7 @@ private:
     unsigned                    m_FailedRetries;
     unsigned                    m_ReadFailedRetries;
     CNSPreciseTime              m_BlacklistTime;
+    CNSPreciseTime              m_ReadBlacklistTime;
     unsigned                    m_MaxInputSize;
     unsigned                    m_MaxOutputSize;
     CNSPreciseTime              m_WNodeTimeout;

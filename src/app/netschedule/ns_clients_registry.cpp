@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 
 CNSClientsRegistry::CNSClientsRegistry() :
-    m_LastID(0), m_BlacklistTimeout()
+    m_LastID(0), m_BlacklistTimeout(), m_ReadBlacklistTimeout()
 {}
 
 
@@ -79,7 +79,8 @@ CNSClientsRegistry::Touch(CNSClientId &          client,
 
     if (known_client == m_Clients.end()) {
         // The client is not known yet
-        CNSClient       new_ns_client(client, &m_BlacklistTimeout);
+        CNSClient       new_ns_client(client, &m_BlacklistTimeout,
+                                              &m_ReadBlacklistTimeout);
         unsigned int    client_id = x_GetNextID();
 
         new_ns_client.SetID(client_id);
@@ -145,14 +146,26 @@ CNSClientsRegistry::AppendType(const CNSClientId &  client,
 
 
 void
-CNSClientsRegistry::CheckBlacklistedJobsExisted(
+CNSClientsRegistry::CheckRunBlacklistedJobsExisted(
                                         const CJobStatusTracker &  tracker)
 {
     CMutexGuard                         guard(m_Lock);
     map< string, CNSClient >::iterator  k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k)
-        k->second.CheckBlacklistedJobsExisted(tracker);
+        k->second.CheckRunBlacklistedJobsExisted(tracker);
+}
+
+
+void
+CNSClientsRegistry::CheckReadBlacklistedJobsExisted(
+                                        const CJobStatusTracker &  tracker)
+{
+    CMutexGuard                         guard(m_Lock);
+    map< string, CNSClient >::iterator  k = m_Clients.begin();
+
+    for ( ; k != m_Clients.end(); ++k)
+        k->second.CheckReadBlacklistedJobsExisted(tracker);
 }
 
 
@@ -261,8 +274,8 @@ void  CNSClientsRegistry::AddToRunning(const CNSClientId &  client,
 
 // Updates the worker node blacklisted jobs list.
 // No need to check session id, it's done in Touch()
-void  CNSClientsRegistry::AddToBlacklist(const CNSClientId &  client,
-                                         unsigned int         job_id)
+void  CNSClientsRegistry::AddToRunBlacklist(const CNSClientId &  client,
+                                            unsigned int         job_id)
 {
     // Check if it is an old-style client
     if (!client.IsComplete())
@@ -277,7 +290,29 @@ void  CNSClientsRegistry::AddToBlacklist(const CNSClientId &  client,
                    "Cannot find client '" + client.GetNode() +
                    "' to set blacklisted job");
 
-    worker_node->second.RegisterBlacklistedJob(job_id);
+    worker_node->second.RegisterRunBlacklistedJob(job_id);
+}
+
+
+// Updates the reader blacklisted jobs list.
+// No need to check session id, it's done in Touch()
+void  CNSClientsRegistry::AddToReadBlacklist(const CNSClientId &  client,
+                                             unsigned int         job_id)
+{
+    // Check if it is an old-style client
+    if (!client.IsComplete())
+        return;
+
+    CMutexGuard                 guard(m_Lock);
+    map< string,
+         CNSClient >::iterator  reader = m_Clients.find(client.GetNode());
+
+    if (reader == m_Clients.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Cannot find client '" + client.GetNode() +
+                   "' to set blacklisted job");
+
+    reader->second.RegisterReadBlacklistedJob(job_id);
 }
 
 
@@ -555,17 +590,17 @@ CNSClientsRegistry::x_ResetWaiting(CNSClient &            client,
 static TNSBitVector     s_empty_vector = TNSBitVector();
 
 TNSBitVector
-CNSClientsRegistry::GetBlacklistedJobs(const CNSClientId &  client) const
+CNSClientsRegistry::GetRunBlacklistedJobs(const CNSClientId &  client) const
 {
     if (!client.IsComplete())
         return s_empty_vector;
 
-    return GetBlacklistedJobs(client.GetNode());
+    return GetRunBlacklistedJobs(client.GetNode());
 }
 
 
 TNSBitVector
-CNSClientsRegistry::GetBlacklistedJobs(const string &  client_node) const
+CNSClientsRegistry::GetRunBlacklistedJobs(const string &  client_node) const
 {
     CMutexGuard                         guard(m_Lock);
     map< string,
@@ -574,7 +609,31 @@ CNSClientsRegistry::GetBlacklistedJobs(const string &  client_node) const
     if (found == m_Clients.end())
         return s_empty_vector;
 
-    return found->second.GetBlacklistedJobs();
+    return found->second.GetRunBlacklistedJobs();
+}
+
+
+TNSBitVector
+CNSClientsRegistry::GetReadBlacklistedJobs(const CNSClientId &  client) const
+{
+    if (!client.IsComplete())
+        return s_empty_vector;
+
+    return GetReadBlacklistedJobs(client.GetNode());
+}
+
+
+TNSBitVector
+CNSClientsRegistry::GetReadBlacklistedJobs(const string &  client_node) const
+{
+    CMutexGuard                         guard(m_Lock);
+    map< string,
+         CNSClient >::const_iterator    found = m_Clients.find(client_node);
+
+    if (found == m_Clients.end())
+        return s_empty_vector;
+
+    return found->second.GetReadBlacklistedJobs();
 }
 
 

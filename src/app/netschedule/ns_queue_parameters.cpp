@@ -68,6 +68,9 @@ SQueueParameters::SQueueParameters() :
                                                     // default as for
                                                     // failed_retries
     blacklist_time(default_blacklist_time),
+    read_blacklist_time(default_blacklist_time),    // See CXX-4993, the same
+                                                    // default as for
+                                                    // blacklist_time
     max_input_size(kNetScheduleMaxDBDataSize),
     max_output_size(kNetScheduleMaxDBDataSize),
     subm_hosts(""),
@@ -118,6 +121,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     failed_retries = ReadFailedRetries(reg, sname);
     read_failed_retries = ReadReadFailedRetries(reg, sname, failed_retries);
     blacklist_time = ReadBlacklistTime(reg, sname);
+    read_blacklist_time = ReadReadBlacklistTime(reg, sname, blacklist_time);
     max_input_size = ReadMaxInputSize(reg, sname);
     max_output_size = ReadMaxOutputSize(reg, sname);
     subm_hosts = ReadSubmHosts(reg, sname);
@@ -238,6 +242,12 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                 diff, "blacklist_time",
                 NS_FormatPreciseTimeAsSec(blacklist_time),
                 NS_FormatPreciseTimeAsSec(other.blacklist_time));
+
+    if (read_blacklist_time != other.read_blacklist_time)
+        AddParameterToDiffString(
+                diff, "read_blacklist_time",
+                NS_FormatPreciseTimeAsSec(read_blacklist_time),
+                NS_FormatPreciseTimeAsSec(other.read_blacklist_time));
 
     if (max_input_size != other.max_input_size)
         AddParameterToDiffString(diff, "max_input_size",
@@ -510,6 +520,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "failed_retries" + suffix + NStr::NumericToString(failed_retries) + separator +
     prefix + "read_failed_retries" + suffix + NStr::NumericToString(read_failed_retries) + separator +
     prefix + "blacklist_time" + suffix + NS_FormatPreciseTimeAsSec(blacklist_time) + separator +
+    prefix + "read_blacklist_time" + suffix + NS_FormatPreciseTimeAsSec(read_blacklist_time) + separator +
     prefix + "max_input_size" + suffix + NStr::NumericToString(max_input_size) + separator +
     prefix + "max_output_size" + suffix + NStr::NumericToString(max_output_size) + separator +
     prefix + "wnode_timeout" + suffix + NS_FormatPreciseTimeAsSec(wnode_timeout) + separator +
@@ -576,6 +587,7 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "failed_retries=\"" + NStr::NumericToString(failed_retries) + "\"\n"
     "read_failed_retries=\"" + NStr::NumericToString(read_failed_retries) + "\"\n"
     "blacklist_time=\"" + NS_FormatPreciseTimeAsSec(blacklist_time) + "\"\n"
+    "read_blacklist_time=\"" + NS_FormatPreciseTimeAsSec(read_blacklist_time) + "\"\n"
     "max_input_size=\"" + NStr::NumericToString(max_input_size) + "\"\n"
     "max_output_size=\"" + NStr::NumericToString(max_output_size) + "\"\n"
     "subm_host=\"" + subm_hosts + "\"\n"
@@ -774,6 +786,17 @@ SQueueParameters::ReadBlacklistTime(const IRegistry &  reg,
                                  double(default_blacklist_time));
     if (val < 0)
         return default_blacklist_time;
+    return CNSPreciseTime(val);
+}
+
+CNSPreciseTime
+SQueueParameters::ReadReadBlacklistTime(const IRegistry &  reg,
+                                        const string &     sname,
+                                        const CNSPreciseTime &  blacklist_time)
+{
+    double  val = GetDoubleNoErr("read_blacklist_time", blacklist_time);
+    if (val < 0)
+        return blacklist_time;
     return CNSPreciseTime(val);
 }
 

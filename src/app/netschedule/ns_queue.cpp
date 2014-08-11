@@ -101,6 +101,10 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_ReadFailedRetries(default_failed_retries),  // See CXX-5161, the same
                                                   // default as for
                                                   // failed_retries
+    m_BlacklistTime(default_blacklist_time),
+    m_ReadBlacklistTime(default_blacklist_time),  // See CXX-4993, the same
+                                                  // default as for
+                                                  // blacklist_time
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
     m_MaxOutputSize(kNetScheduleMaxDBDataSize),
     m_WNodeTimeout(default_wnode_timeout),
@@ -236,6 +240,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_FailedRetries         = params.failed_retries;
     m_ReadFailedRetries     = params.read_failed_retries;
     m_BlacklistTime         = params.blacklist_time;
+    m_ReadBlacklistTime     = params.read_blacklist_time;
     m_MaxInputSize          = params.max_input_size;
     m_MaxOutputSize         = params.max_output_size;
     m_WNodeTimeout          = params.wnode_timeout;
@@ -264,7 +269,8 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_ClientRegistryTimeoutUnknown = params.client_registry_timeout_unknown;
     m_ClientRegistryMinUnknowns = params.client_registry_min_unknowns;
 
-    m_ClientsRegistry.SetBlacklistTimeout(m_BlacklistTime);
+    m_ClientsRegistry.SetBlacklistTimeouts(m_BlacklistTime,
+                                           m_ReadBlacklistTime);
 
     // program version control
     m_ProgramVersionList.Clear();
@@ -1533,7 +1539,7 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
     TimeLineRemove(job_id);
     m_ClientsRegistry.ClearExecuting(job_id);
     if (how == eWithBlacklist)
-        m_ClientsRegistry.AddToBlacklist(client, job_id);
+        m_ClientsRegistry.AddToRunBlacklist(client, job_id);
     m_GCRegistry.UpdateLifetime(job_id,
                                 job.GetExpirationTime(m_Timeout,
                                                       m_RunTimeout,
@@ -2210,7 +2216,7 @@ void CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
         TNSBitVector        candidates = m_StatusTracker.GetJobs(from_state);
 
         // Exclude blacklisted jobs
-        candidates -= m_ClientsRegistry.GetBlacklistedJobs(client);
+        candidates -= m_ClientsRegistry.GetReadBlacklistedJobs(client);
 
         if (!group.empty())
             // Apply restrictions on the group jobs if so
@@ -2535,7 +2541,7 @@ CQueue::x_FindPendingJob(const CNSClientId  &  client,
     unsigned int    wnode_aff_candidate = 0;
     unsigned int    exclusive_aff_candidate = 0;
     TNSBitVector    blacklisted_jobs =
-                    m_ClientsRegistry.GetBlacklistedJobs(client);
+                    m_ClientsRegistry.GetRunBlacklistedJobs(client);
     TNSBitVector    group_jobs = m_GroupRegistry.GetJobs(group, false);
 
     TNSBitVector    pref_aff;
@@ -2656,7 +2662,7 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
     if (!outdated_pending.any())
         return job_pick;
 
-    outdated_pending -= m_ClientsRegistry.GetBlacklistedJobs(client);
+    outdated_pending -= m_ClientsRegistry.GetRunBlacklistedJobs(client);
 
     if (!outdated_pending.any())
         return job_pick;
@@ -2831,7 +2837,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
         // Replace it with ClearExecuting(client, job_id) when all clients
         // provide their credentials and job passport is checked strictly
         m_ClientsRegistry.ClearExecuting(job_id);
-        m_ClientsRegistry.AddToBlacklist(client, job_id);
+        m_ClientsRegistry.AddToRunBlacklist(client, job_id);
 
         m_GCRegistry.UpdateLifetime(job_id,
                                     job.GetExpirationTime(m_Timeout,
@@ -3502,7 +3508,8 @@ void  CQueue::StaleWNodes(const CNSPreciseTime &  current_time)
 
 void CQueue::PurgeBlacklistedJobs(void)
 {
-    m_ClientsRegistry.CheckBlacklistedJobsExisted(m_StatusTracker);
+    m_ClientsRegistry.CheckRunBlacklistedJobsExisted(m_StatusTracker);
+    m_ClientsRegistry.CheckReadBlacklistedJobsExisted(m_StatusTracker);
 }
 
 

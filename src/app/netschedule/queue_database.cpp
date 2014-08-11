@@ -417,6 +417,9 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.blacklist_time =
             CNSPreciseTime(m_QueueDescriptionDB.blacklist_time_sec,
                            m_QueueDescriptionDB.blacklist_time_nsec);
+        params.read_blacklist_time =
+            CNSPreciseTime(m_QueueDescriptionDB.read_blacklist_time_sec,
+                           m_QueueDescriptionDB.read_blacklist_time_nsec);
         params.max_input_size = m_QueueDescriptionDB.max_input_size;
         params.max_output_size = m_QueueDescriptionDB.max_output_size;
         params.subm_hosts = m_QueueDescriptionDB.subm_hosts;
@@ -546,6 +549,10 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.read_failed_retries = params.read_failed_retries;
     m_QueueDescriptionDB.blacklist_time_sec = params.blacklist_time.Sec();
     m_QueueDescriptionDB.blacklist_time_nsec = params.blacklist_time.NSec();
+    m_QueueDescriptionDB.read_blacklist_time_sec =
+                                params.read_blacklist_time.Sec();
+    m_QueueDescriptionDB.read_blacklist_time_nsec =
+                                params.read_blacklist_time.NSec();
     m_QueueDescriptionDB.max_input_size = params.max_input_size;
     m_QueueDescriptionDB.max_output_size = params.max_output_size;
     m_QueueDescriptionDB.subm_hosts = params.subm_hosts;
@@ -765,6 +772,12 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "blacklist_time")
                 params.blacklist_time =
                     params.ReadBlacklistTime(reg, section_name);
+                // See CXX-4993, the read_blacklist_time depends on
+                // blacklist_time
+            else if (*val == "read_blacklist_time")
+                params.read_blacklist_time =
+                    params.ReadReadBlacklistTime(reg, section_name,
+                            params.ReadBlacklistTime(reg, section_name));
             else if (*val == "max_input_size")
                 params.max_input_size =
                     params.ReadMaxInputSize(reg, section_name);

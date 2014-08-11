@@ -77,8 +77,10 @@ class CNSClientsRegistry
                            unsigned int         job_id);
         void  AddToRunning(const CNSClientId &  client,
                            unsigned int         job_id);
-        void  AddToBlacklist(const CNSClientId &  client,
-                             unsigned int         job_id);
+        void  AddToRunBlacklist(const CNSClientId &  client,
+                                unsigned int         job_id);
+        void  AddToReadBlacklist(const CNSClientId &  client,
+                                 unsigned int         job_id);
         void  ClearReading(const CNSClientId &  client,
                            unsigned int         job_id);
         void  ClearReading(unsigned int  job_id);
@@ -94,8 +96,10 @@ class CNSClientsRegistry
                                         bool &                 client_was_found,
                                         string &               old_session,
                                         bool &                 pref_affs_were_reset);
-        TNSBitVector  GetBlacklistedJobs(const CNSClientId &  client) const;
-        TNSBitVector  GetBlacklistedJobs(const string &  client_node) const;
+        TNSBitVector  GetRunBlacklistedJobs(const CNSClientId &  client) const;
+        TNSBitVector  GetRunBlacklistedJobs(const string &  client_node) const;
+        TNSBitVector  GetReadBlacklistedJobs(const CNSClientId &  client) const;
+        TNSBitVector  GetReadBlacklistedJobs(const string &  client_node) const;
 
         string  PrintClientsList(const CQueue *               queue,
                                  const CNSAffinityRegistry &  aff_registry,
@@ -148,12 +152,18 @@ class CNSClientsRegistry
                     unsigned int            min_unknowns,
                     bool                    is_log);
         bool  WasGarbageCollected(const CNSClientId &  client) const;
-        void SetBlacklistTimeout(const CNSPreciseTime &  blacklist_timeout)
-        { m_BlacklistTimeout = blacklist_timeout; }
+        void SetBlacklistTimeouts(
+                                const CNSPreciseTime &  blacklist_timeout,
+                                const CNSPreciseTime &  read_blacklist_timeout)
+        { m_BlacklistTimeout = blacklist_timeout;
+          m_ReadBlacklistTimeout = read_blacklist_timeout; }
         void RegisterSocketWriteError(const CNSClientId &  client);
         void AppendType(const CNSClientId &  client,
                         unsigned int         type_to_append);
-        void CheckBlacklistedJobsExisted(const CJobStatusTracker &  tracker);
+        void CheckRunBlacklistedJobsExisted(
+                                        const CJobStatusTracker &  tracker);
+        void CheckReadBlacklistedJobsExisted(
+                                        const CJobStatusTracker &  tracker);
         int  SetClientData(const CNSClientId &  client,
                            const string &  data, int  data_version);
 
@@ -176,6 +186,7 @@ class CNSClientsRegistry
                                                     // assigned to all WNodes.
 
         CNSPreciseTime              m_BlacklistTimeout;
+        CNSPreciseTime              m_ReadBlacklistTimeout;
 
         unsigned int  x_GetNextID(void);
 

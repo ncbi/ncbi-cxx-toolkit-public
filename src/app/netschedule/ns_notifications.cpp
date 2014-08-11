@@ -401,7 +401,7 @@ CNSNotificationList::CheckOutdatedJobs(
     while (k != m_PassiveListeners.end()) {
         if (k->m_Reason == eGet && k->m_ExclusiveNewAff) {
             if ((outdated_jobs -
-                 clients_registry.GetBlacklistedJobs(k->m_ClientNode)).any()) {
+                 clients_registry.GetRunBlacklistedJobs(k->m_ClientNode)).any()) {
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
                                          k->m_NewFormat, k->m_Reason);
 
@@ -484,9 +484,14 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
         bool        should_send = false;
 
         // Check if all the jobs are in in its blacklist
-        if ((jobs -
-             clients_registry.GetBlacklistedJobs(
-                                    k->m_ClientNode)).any() == false) {
+        TNSBitVector        blacklisted_jobs;
+        if (k->m_Reason == eGet)
+            blacklisted_jobs = clients_registry.GetRunBlacklistedJobs(
+                                                            k->m_ClientNode);
+        else
+            blacklisted_jobs = clients_registry.GetReadBlacklistedJobs(
+                                                            k->m_ClientNode);
+        if ((jobs - blacklisted_jobs).any() == false) {
             ++k;
             continue;
         }

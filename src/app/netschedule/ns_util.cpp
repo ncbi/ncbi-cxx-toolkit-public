@@ -810,6 +810,7 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
     bool    blacklist_time_ok = NS_ValidateDouble(reg, section,
                                                   "blacklist_time");
     well_formed = well_formed && blacklist_time_ok;
+    double  blacklist_time_value = double(default_blacklist_time);
     if (blacklist_time_ok) {
         double  value = reg.GetDouble(section, "blacklist_time",
                                       double(default_blacklist_time));
@@ -817,6 +818,23 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
             well_formed = false;
             ERR_POST(g_LogPrefix << " value " <<
                      NS_RegValName(section, "blacklist_time") <<
+                     " must be >= 0.0");
+        } else {
+            blacklist_time_value = value;
+        }
+    }
+
+    // Note: the default for the read_blacklist_time is blacklist_time
+    bool   read_blacklist_time_ok = NS_ValidateDouble(reg, section,
+                                                      "read_blacklist_time");
+    well_formed = well_formed && read_blacklist_time_ok;
+    if (read_blacklist_time_ok) {
+        double  value = reg.GetDouble(section, "read_blacklist_time",
+                                      blacklist_time_value);
+        if (value < 0) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "read_blacklist_time") <<
                      " must be >= 0.0");
         }
     }
