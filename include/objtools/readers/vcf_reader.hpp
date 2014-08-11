@@ -183,6 +183,12 @@ public:
     //  helpers:
     //
 protected:
+    virtual bool 
+    xProcessTrackLine(
+        const string&,
+        CRef< CSeq_annot >&,
+        IMessageListener*);
+        
     virtual bool
     xProcessMetaLine(
         const string&,
@@ -218,6 +224,10 @@ protected:
         CRef<CSeq_annot>,
         IMessageListener*);
         
+    virtual bool
+    xAssignVcfMeta(
+        CRef<CSeq_annot> );
+
     virtual bool
     xAssignVariationAlleleSet(
         const CVcfData&,

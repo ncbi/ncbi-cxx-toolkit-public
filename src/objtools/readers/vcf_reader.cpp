@@ -192,15 +192,33 @@ CVcfReader::ReadSeqAnnot(
     CRef< CAnnot_descr > desc( new CAnnot_descr );
     annot->SetDesc( *desc );
     annot->SetData().SetFtable();
-    m_Meta.Reset( new CAnnotdesc );
-    m_Meta->SetUser().SetType().SetStr( "vcf-meta-info" );
+    if (!m_Meta) {
+        m_Meta.Reset( new CAnnotdesc );
+        m_Meta->SetUser().SetType().SetStr( "vcf-meta-info" );
+    }
 
+    unsigned int dataCount = 0;
     while ( ! lr.AtEOF() ) {
         m_uLineNumber++;
         string line = *(++lr);
         NStr::TruncateSpacesInPlace(line);
         if (line.empty()) {
             continue;
+        }
+        if (x_ParseBrowserLine(line, annot, pEC)) {
+            continue;
+        }
+        if (NStr::StartsWith(line, "track ")) {
+            if (dataCount > 0) {
+                --m_uLineNumber;
+                lr.UngetLine();
+                break;
+            }
+            else {
+                if (xProcessTrackLine(line, annot, pEC)) {
+                    continue;
+                }
+            }
         }
         if (xProcessMetaLine(line, annot, pEC)) {
             continue;
@@ -209,6 +227,7 @@ CVcfReader::ReadSeqAnnot(
             continue;
         }
         if (xProcessDataLine(line, annot, pEC)) {
+            ++dataCount;
             continue;
         }
         // still here? not good!
@@ -220,6 +239,8 @@ CVcfReader::ReadSeqAnnot(
             ILineError::eProblem_GeneralParsingError) );
         ProcessWarning(*pErr, pEC);
     }
+    x_AssignTrackData(annot);
+    xAssignVcfMeta(annot);
     return annot;
 }
 
@@ -485,13 +506,9 @@ CVcfReader::xProcessHeaderLine(
     CRef<CSeq_annot> pAnnot )
 //  ----------------------------------------------------------------------------
 {
-    if ( NStr::StartsWith( line, "##" ) ) {
+    if ( ! NStr::StartsWith( line, "#CHROM" ) ) {
         return false;
     }
-    if ( ! NStr::StartsWith( line, "#" ) ) {
-        return false;
-    }
-
     m_Meta->SetUser().AddField("meta-information", m_MetaDirectives);
 
     //
@@ -517,10 +534,18 @@ CVcfReader::xProcessHeaderLine(
     //  The header line signals the end of meta information, so migrate the
     //  accumulated meta information into the seq descriptor:
     //
-    if ( m_Meta ) {
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVcfMeta(
+    CRef<CSeq_annot> pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    if (m_Meta) {
         pAnnot->SetDesc().Set().push_back( m_Meta );
     }
-
     return true;
 }
 
@@ -1109,6 +1134,41 @@ CVcfReader::xProcessInfo(
         }
     }
     ext.AddField( "info", NStr::Join( infos, ";" ) );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xProcessTrackLine(
+    const string& strLine,
+    CRef< CSeq_annot >& current,
+    IMessageListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    if ( ! NStr::StartsWith( strLine, "track" ) ) {
+        return false;
+    }
+    vector<string> parts;
+    CReadUtil::Tokenize( strLine, " \t", parts );
+    if (parts.size() >= 3) {
+        const string digits("0123456789");
+        bool col2_is_numeric = 
+            (string::npos == parts[1].find_first_not_of(digits));
+        bool col3_is_numeric = 
+            (string::npos == parts[2].find_first_not_of(digits));
+        if (col2_is_numeric  &&  col3_is_numeric) {
+            return false;
+        }
+    }
+    if (!CReaderBase::x_ParseTrackLine(strLine, pEC)) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Warning,
+            0,
+            "Bad track line: Expected \"track key1=value1 key2=value2 ...\". Ignored.",
+            ILineError::eProblem_BadTrackLine) );
+        ProcessWarning(*pErr , pEC);    
+    }
     return true;
 }
 
