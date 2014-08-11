@@ -54,8 +54,10 @@
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 
+#include <objmgr/util/sequence.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
-
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -136,8 +138,6 @@ static void s_GetSplicedSegIdentityMismatch(CScope& scope,
 
     CSeqVector prod(prod_bsh, CBioseq_Handle::eCoding_Iupac);
 
-    const CTrans_table& tbl = CGen_code_table::GetTransTable(1);
-
     switch (align.GetSegs().GetSpliced().GetProduct_type()) {
     case CSpliced_seg::eProduct_type_transcript:
         {{
@@ -183,6 +183,15 @@ static void s_GetSplicedSegIdentityMismatch(CScope& scope,
 
     case CSpliced_seg::eProduct_type_protein:
         {{
+             int gcode = 1;
+             try {
+                 const COrg_ref& org_ref = sequence::GetOrg_ref(genomic_bsh);
+                 gcode = org_ref.GetOrgname().GetGcode();
+             }
+             catch (CException&) {
+             }
+             const CTrans_table& tbl = CGen_code_table::GetTransTable(gcode);
+
              char codon[3];
              codon[0] = codon[1] = codon[2] = 'N';
 
@@ -222,8 +231,10 @@ static void s_GetSplicedSegIdentityMismatch(CScope& scope,
                      //LOG_POST(Error << "    filling: " << prod_pos << ": " << prod_pos % 3 << ": " << gen_data[i]);
 
                      if (prod_pos % 3 == 2) {
-                         char residue = tbl.GetCodonResidue
-                             (tbl.SetCodonState(codon[0], codon[1], codon[2]));
+                         int state = tbl.SetCodonState(codon[0], codon[1], codon[2]);
+                         char residue = (prod_pos == 2
+                                         ? tbl.GetStartResidue(state)
+                                         : tbl.GetCodonResidue(state));
 
                          /// NOTE:
                          /// we increment identities/mismatches by 3 here,

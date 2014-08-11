@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = unit_test_alnmgr
+APP_PROJ = unit_test_alnmgr unit_test_score_builder
 SUB_PROJ =
 PROJ_TAG = test
 
