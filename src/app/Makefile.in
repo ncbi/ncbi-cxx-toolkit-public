@@ -12,9 +12,9 @@ SUB_PROJ = asn2asn asn2fasta asn2flat asnval asn_cleanup \
            multireader read_blast_result splign hfilter \
            annotwriter compart streamtest lds2_indexer \
 		   discrep_report biosample_chk gap_stats table2asn \
-           srcchk
+           srcchk tableval
 
-EXPENDABLE_SUB_PROJ = split_cache wig2table netcache rmblastn tableval
+EXPENDABLE_SUB_PROJ = split_cache wig2table netcache rmblastn
 
 REQUIRES = app
 
