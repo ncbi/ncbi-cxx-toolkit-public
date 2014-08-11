@@ -125,26 +125,26 @@ namespace {
     };
 }
 
-CConstRef <CDelta_seq> GetDeltaSeqForPosition(const unsigned pos, const CBioseq* bioseq, CScope* scope, unsigned& endpoint)
+CConstRef <CDelta_seq> GetDeltaSeqForPosition(const unsigned pos, const CBioseq_Handle seq_hl, CScope* scope, unsigned& left_endpoint)
 {
-   if (!bioseq || !bioseq->IsNa()
-             || bioseq->GetInst().GetRepr() != CSeq_inst :: eRepr_delta
-             || !bioseq->GetInst().CanGetExt()
-             || !bioseq->GetInst().GetExt().IsDelta()) {
+   if (!seq_hl || !seq_hl.IsNa() || !seq_hl.IsSetInst_Repr()
+             || seq_hl.GetInst_Repr() != CSeq_inst :: eRepr_delta
+             || !seq_hl.GetInst().CanGetExt()
+             || !seq_hl.GetInst().GetExt().IsDelta()) {
       return CConstRef <CDelta_seq>(NULL);
    }
 
    size_t offset = 0;
 
    int len = 0;
-   ITERATE (list <CRef <CDelta_seq> >, it, bioseq->GetInst().GetExt().GetDelta().Get()) {
+   ITERATE (list <CRef <CDelta_seq> >, it, seq_hl.GetInst_Ext().GetDelta().Get()) {
         if ((*it)->IsLiteral()) {
             len = (*it)->GetLiteral().GetLength();
         } else if ((*it)->IsLoc()) {
             len = sequence::GetLength((*it)->GetLoc(), scope);
         }
         if (pos >= offset && pos < offset + len) {
-            endpoint = offset;
+            left_endpoint = offset;
             return (*it);
         } else {
             offset += len;
@@ -160,6 +160,38 @@ bool IsDeltaSeqGap(CConstRef <CDelta_seq> delta)
       return true;
   }
   else return false;
+};
+
+bool Does5primerAbutGap(const CSeq_feat& feat, CBioseq_Handle seq_hl)
+{
+  if (!seq_hl) return false;
+
+  unsigned start = feat.GetLocation().GetTotalRange().GetFrom();  // Positional
+  if (!start) return false;
+
+  CSeqVector seq_vec(seq_hl, CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+  unsigned i=0;
+  for (CSeqVector_CI it = seq_vec.begin(); it; ++ it, i++) {
+     if (i < (start - 1) ) continue;
+     if (it.IsInGap()) return true;
+  }
+  return false;
+};
+
+bool Does3primerAbutGap(const CSeq_feat& feat, CBioseq_Handle seq_hl)
+{
+  if (!seq_hl) return false;
+
+  unsigned stop = feat.GetLocation().GetTotalRange().GetTo(); // positional
+
+  CSeqVector seq_vec(seq_hl, CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+  if (stop >= seq_vec.size() - 1) return false;
+  unsigned i=0;
+  for (CSeqVector_CI it = seq_vec.begin(); it; ++ it, i++) {
+     if (i < (stop + 1) ) continue;
+     if (it.IsInGap()) return true;
+  }
+  return false;
 };
 
 static void s_AddBioseqToPartsSet
