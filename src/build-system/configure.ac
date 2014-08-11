@@ -1246,12 +1246,17 @@ case "$host_os:$compiler" in
    if $CXX -v 2>&1 | grep -q Apple; then
       CFLAGS="-fpascal-strings $CFLAGS"
       CXXFLAGS="-fpascal-strings $CXXFLAGS"
-      $CXX -v 2>&1 | grep -q clang  ||  CXXFLAGS="-fno-permissive $CXXFLAGS"
+      if $CXX -v 2>&1 | grep -q clang; then
+         try_old_sdks=no
+      else
+         try_old_sdks=$with_ncbi_public
+         CXXFLAGS="-fno-permissive $CXXFLAGS"
+      fi
       # -flat_namespace is necessary for proper handling of shared libraries
       # that don't themselves link against all their dependencies.
       LDFLAGS="-flat_namespace $LDFLAGS"
 
-      if test "$with_ncbi_public" = yes; then
+      if test "$try_old_sdks" = yes; then
          sdks='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk'
          case "$host_os" in
             darwin?.* | darwin10.* ) # Mac OS X 10.6.x or older
@@ -1559,6 +1564,12 @@ case "$host_os:$compiler" in
 esac
 
 if $CXX -v 2>&1 | grep -q clang; then
+   case "$host_os:$CXX" in
+      darwin[[0-9]].*:/usr/bin/* | darwin1[[0-2]].*:/usr/bin/* )
+         ncbi_cv_prog_cxx_stdlib_libcxx=no
+         ;;
+   esac
+
    AC_CACHE_CHECK([whether $CXX supports -stdlib=libc++],
       ncbi_cv_prog_cxx_stdlib_libcxx,
       [orig_CXX=$CXX
@@ -1568,7 +1579,7 @@ if $CXX -v 2>&1 | grep -q clang; then
           [ncbi_cv_prog_cxx_stdlib_libcxx=yes],
           [ncbi_cv_prog_cxx_stdlib_libcxx=no])
        CXX=$orig_CXX])
-   test "$ncbi_cv_prog_cxx_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
+   test "$ncbi_cv_prog_cxx_stdlib_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
 fi
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])

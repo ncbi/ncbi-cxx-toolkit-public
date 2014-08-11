@@ -6312,12 +6312,17 @@ case "$host_os:$compiler" in
    if $CXX -v 2>&1 | grep -q Apple; then
       CFLAGS="-fpascal-strings $CFLAGS"
       CXXFLAGS="-fpascal-strings $CXXFLAGS"
-      $CXX -v 2>&1 | grep -q clang  ||  CXXFLAGS="-fno-permissive $CXXFLAGS"
+      if $CXX -v 2>&1 | grep -q clang; then
+         try_old_sdks=no
+      else
+         try_old_sdks=$with_ncbi_public
+         CXXFLAGS="-fno-permissive $CXXFLAGS"
+      fi
       # -flat_namespace is necessary for proper handling of shared libraries
       # that don't themselves link against all their dependencies.
       LDFLAGS="-flat_namespace $LDFLAGS"
 
-      if test "$with_ncbi_public" = yes; then
+      if test "$try_old_sdks" = yes; then
          sdks='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk'
          case "$host_os" in
             darwin?.* | darwin10.* ) # Mac OS X 10.6.x or older
@@ -6908,6 +6913,12 @@ echo "${ECHO_T}$ncbi_cv_prog_cc_new_dtags" >&6; }
 esac
 
 if $CXX -v 2>&1 | grep -q clang; then
+   case "$host_os:$CXX" in
+      darwin[0-9].*:/usr/bin/* | darwin1[0-2].*:/usr/bin/* )
+         ncbi_cv_prog_cxx_stdlib_libcxx=no
+         ;;
+   esac
+
    { echo "$as_me:$LINENO: checking whether $CXX supports -stdlib=libc++" >&5
 echo $ECHO_N "checking whether $CXX supports -stdlib=libc++... $ECHO_C" >&6; }
 if test "${ncbi_cv_prog_cxx_stdlib_libcxx+set}" = set; then
@@ -6978,7 +6989,7 @@ rm -f core conftest.err conftest.$ac_objext \
 fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_stdlib_libcxx" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cxx_stdlib_libcxx" >&6; }
-   test "$ncbi_cv_prog_cxx_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
+   test "$ncbi_cv_prog_cxx_stdlib_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
 fi
 
 { echo "$as_me:$LINENO: checking whether _LIBCPP_VERSION is declared" >&5
