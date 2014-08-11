@@ -200,7 +200,6 @@ CNCPeerControl::RegisterConnSuccess(void)
     bool ask = false;
     {
         CMiniMutexGuard guard(m_ObjLock);
-        m_MaybeThrottle = false;
         m_InThrottle = false;
         m_FirstNWErrTime = 0;
         m_CntNWErrors = 0;
@@ -754,7 +753,8 @@ bool
 CNCPeerControl::HasPeerInThrottle(void)
 {
     ITERATE(TControlMap, it_ctrl, s_Controls) {
-        if (it_ctrl->second->m_MaybeThrottle) {
+        if (!CNCDistributionConf::GetCommonSlots(it_ctrl->first).empty() && 
+            it_ctrl->second->m_MaybeThrottle) {
             return true;
         }
     }

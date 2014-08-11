@@ -150,6 +150,7 @@ static void
 s_CommitSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv)
 {
     CNCStat::PeerSyncFinished(slot_srv->peer->GetSrvId(), slot_srv->cnt_sync_ops, true);
+    slot_srv->peer->ConnOk();
     if (slot_srv->is_by_blobs)
         slot_srv->was_blobs_sync = true;
     if (!slot_srv->made_initial_sync  &&  !CNCServer::IsInitiallySynced())

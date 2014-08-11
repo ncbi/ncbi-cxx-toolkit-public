@@ -141,6 +141,7 @@ public:
 
     void RegisterConnError(void);
     void RegisterConnSuccess(void);
+    void ConnOk(void);
     void AssignClientConn(CNCActiveClientHub* hub);
     CNCActiveHandler* GetPooledConn(void);
     bool CreateNewSocket(CNCActiveHandler* conn);
@@ -260,6 +261,13 @@ CNCPeerControl::GetHostProtocol(void) const
 {
     return m_HostProtocol;
 }
+
+inline void
+CNCPeerControl::ConnOk(void)
+{
+    m_MaybeThrottle = false;
+}
+
 
 END_NCBI_SCOPE
 
