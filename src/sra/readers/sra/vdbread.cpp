@@ -178,7 +178,7 @@ string CVDBMgr::FindAccPath(const string& acc) const
 
 //#define GUARD_SDK
 #ifdef NCBI_COMPILER_MSVC
-# define GUARD_SDK_GET
+//# define GUARD_SDK_GET
 #endif
 
 #if defined GUARD_SDK || defined GUARD_SDK_GET
