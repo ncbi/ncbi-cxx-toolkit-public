@@ -97,9 +97,14 @@ s_BlastHSPCollectorRun(void* data, BlastHSPList* hsp_list)
       return -1;
 
    /* The HSP list should already be sorted by score coming into this function.
-    * Still check that this assumption is true.
+    * Still check that this assumption is true. Note that HSP list does not need to be
+    * sorted after preliminary stage for vdb search becuase of offset adjustment.
     */
-   ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
+#ifdef ERR_POST_EX_DEFINED
+   if(!Blast_HSPListIsSortedByScore(hsp_list)) {
+             ErrPostEx(SEV_WARNING, 0, 0, "HSP List is not sorted by score");
+   }
+#endif
    
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {
