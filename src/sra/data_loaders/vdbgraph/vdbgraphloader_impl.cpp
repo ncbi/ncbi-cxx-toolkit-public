@@ -55,7 +55,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   VDBGraphLoader
-NCBI_DEFINE_ERR_SUBCODE_X(6);
+NCBI_DEFINE_ERR_SUBCODE_X(8);
 
 class CObject;
 
@@ -221,7 +221,7 @@ CVDBGraphDataLoader_Impl::CVDBGraphDataLoader_Impl(const TVDBFiles& vdb_files)
 {
     ITERATE ( TVDBFiles, it, vdb_files ) {
         if ( GetDebugLevel() >= 2 ) {
-            LOG_POST_X(1, "CVDBGraphDataLoader: opening explict file "<<*it);
+            LOG_POST_X(1, "CVDBGraphDataLoader: opening explicit file "<<*it);
         }
         CRef<SVDBFileInfo> info(new SVDBFileInfo);
         info->m_VDBFile = *it;
@@ -229,6 +229,10 @@ CVDBGraphDataLoader_Impl::CVDBGraphDataLoader_Impl(const TVDBFiles& vdb_files)
         info->m_VDB = CVDBGraphDb(m_Mgr, *it);
         m_FixedFileMap[*it] = info;
         for ( CVDBGraphSeqIterator seq_it(info->m_VDB); seq_it; ++seq_it ) {
+            if ( GetDebugLevel() >= 3 ) {
+                LOG_POST_X(8, "CVDBGraphDataLoader: found id "<<
+                           seq_it.GetSeq_id_Handle());
+            }
             m_SeqIdIndex.insert
                 (TSeqIdIndex::value_type(seq_it.GetSeq_id_Handle(), info));
         }
@@ -534,7 +538,7 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
     CRef<CSeq_annot> annot =
         it.GetAnnot(COpenRange<TSeqPos>(from, to_open), name, flags);
     if ( GetDebugLevel() >= 6 ) {
-        LOG_POST_X(6, "CVDBGraphDataLoader: "
+        LOG_POST_X(7, "CVDBGraphDataLoader: "
                    "loaded "<<kTypeName[k]<<" chunk "<<blob_id.m_SeqId<<
                    " @ "<<from<<"-"<<(to_open-1)<<": "<<MSerial_AsnText<<*annot);
     }
