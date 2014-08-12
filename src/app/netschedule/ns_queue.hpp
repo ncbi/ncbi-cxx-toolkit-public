@@ -274,14 +274,14 @@ public:
                        CJob &               job,
                        bool                 is_ns_rollback = false);
 
-    void CancelAllJobs(const CNSClientId &  client,
-                       bool                 logging);
-    void CancelSelectedJobs(const CNSClientId &         client,
-                            const string &              group,
-                            const string &              aff_token,
-                            const vector<TJobStatus> &  statuses,
-                            bool                        logging,
-                            vector<string> &            warnings);
+    unsigned int  CancelAllJobs(const CNSClientId &  client,
+                                bool                 logging);
+    unsigned int  CancelSelectedJobs(const CNSClientId &         client,
+                                     const string &              group,
+                                     const string &              aff_token,
+                                     const vector<TJobStatus> &  statuses,
+                                     bool                        logging,
+                                     vector<string> &            warnings);
 
     TJobStatus GetJobStatus(unsigned job_id) const;
 
@@ -549,9 +549,9 @@ private:
     string x_DumpJobs(const TNSBitVector &   jobs_to_dump,
                       unsigned int           start_after_job_id,
                       unsigned int           count);
-    void x_CancelJobs(const CNSClientId &   client,
-                      const TNSBitVector &  jobs_to_cancel,
-                      bool                  logging);
+    unsigned int x_CancelJobs(const CNSClientId &   client,
+                              const TNSBitVector &  jobs_to_cancel,
+                              bool                  logging);
     CNSPreciseTime x_GetEstimatedJobLifetime(unsigned int   job_id,
                                              TJobStatus     status) const;
     CNSPreciseTime x_GetSubmitTime(unsigned int  job_id);

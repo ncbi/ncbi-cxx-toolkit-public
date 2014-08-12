@@ -1732,19 +1732,21 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
             }
         }
 
-        q->CancelSelectedJobs(m_ClientId, m_CommandArguments.group,
-                              m_CommandArguments.affinity_token,
-                              statuses,
-                              m_ConnContext.NotNull(), warnings);
+        unsigned int    count = q->CancelSelectedJobs(
+                                            m_ClientId,
+                                            m_CommandArguments.group,
+                                            m_CommandArguments.affinity_token,
+                                            statuses,
+                                            m_ConnContext.NotNull(), warnings);
         if (warnings.empty())
-            x_WriteMessage("OK:");
+            x_WriteMessage("OK:" + NStr::NumericToString(count));
         else {
             string  msg;
             for (vector<string>::const_iterator  k = warnings.begin();
                  k != warnings.end(); ++k) {
                 msg += "WARNING:" + *k + ";";
             }
-            x_WriteMessage("OK:" + msg);
+            x_WriteMessage("OK:" + msg + NStr::NumericToString(count));
         }
 
         x_PrintCmdRequestStop();
@@ -1762,15 +1764,15 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
                          "CANCEL for unknown job: " <<
                          m_CommandArguments.job_key);
             x_SetCmdRequestStatus(eStatus_NotFound);
-            x_WriteMessage("OK:WARNING:eJobNotFound:Job not found;");
+            x_WriteMessage("OK:WARNING:eJobNotFound:Job not found;0");
             break;
         case CNetScheduleAPI::eCanceled:
             x_WriteMessage("OK:WARNING:eJobAlreadyCanceled:"
-                           "Already canceled;");
+                           "Already canceled;0");
             x_LogCommandWithJob(job);
             break;
         default:
-            x_WriteMessage("OK:");
+            x_WriteMessage("OK:1");
             x_LogCommandWithJob(job);
     }
     x_PrintCmdRequestStop();
@@ -3429,8 +3431,8 @@ void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessCancelQueue(CQueue* q)
 {
-    q->CancelAllJobs(m_ClientId, m_ConnContext.NotNull());
-    x_WriteMessage("OK:");
+    unsigned int  count = q->CancelAllJobs(m_ClientId, m_ConnContext.NotNull());
+    x_WriteMessage("OK:" + NStr::NumericToString(count));
     x_PrintCmdRequestStop();
 }
 

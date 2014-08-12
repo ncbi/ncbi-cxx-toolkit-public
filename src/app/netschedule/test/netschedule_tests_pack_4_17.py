@@ -1653,3 +1653,56 @@ class Scenario1405( TestBase ):
             raise Exception( "Expected 'ReadFailed' status, received '" +
                              values[ 'job_status' ] + "'" )
         return True
+
+
+class Scenario1406( TestBase ):
+    " scenario 1406 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        self.warning = None
+        return
+
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        self.warning = msg
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Forced read job fail"
+
+    def execute( self ):
+        " Returns True if successfull "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1406' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        output = execAny( ns_client, 'CANCELQ' )
+        if output != "0":
+            raise Exception( "Expected 0 canceled jobs, received: " + str( output ) )
+
+        self.ns.submitJob( 'TEST', 'blah' )
+        output = execAny( ns_client, 'CANCELQ' )
+        if output != "1":
+            raise Exception( "Expected 1 canceled jobs, received: " + str( output ) )
+        output = execAny( ns_client, 'CANCELQ' )
+        if output != "0":
+            raise Exception( "Expected 0 canceled jobs, received: " + str( output ) )
+
+        self.ns.submitJob( 'TEST', 'blah' )
+        jobID, authToken, attrs, jobInput = self.ns.getJob( "TEST", -1, '', '',
+                                                            "node", "session" )
+
+        output = execAny( ns_client, 'CANCEL status=pending' )
+        if output != "0":
+            raise Exception( "Expected 0 canceled jobs, received: " + str( output ) )
+
+        output = execAny( ns_client, 'CANCEL status=running' )
+        if output != "1":
+            raise Exception( "Expected 1 canceled jobs, received: " + str( output ) )
+
+        return True

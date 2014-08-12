@@ -1896,8 +1896,8 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
 }
 
 
-void  CQueue::CancelAllJobs(const CNSClientId &  client,
-                            bool                 logging)
+unsigned int  CQueue::CancelAllJobs(const CNSClientId &  client,
+                                    bool                 logging)
 {
     vector<CNetScheduleAPI::EJobStatus> statuses;
 
@@ -1911,19 +1911,19 @@ void  CQueue::CancelAllJobs(const CNSClientId &  client,
     statuses.push_back(CNetScheduleAPI::eReadFailed);
 
     CFastMutexGuard     guard(m_OperationLock);
-    x_CancelJobs(client, m_StatusTracker.GetJobs(statuses),
-                 logging);
-    return;
+    return x_CancelJobs(client, m_StatusTracker.GetJobs(statuses),
+                        logging);
 }
 
 
-void CQueue::x_CancelJobs(const CNSClientId &   client,
-                          const TNSBitVector &  jobs_to_cancel,
-                          bool                  logging)
+unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
+                                  const TNSBitVector &  jobs_to_cancel,
+                                  bool                  logging)
 {
     CJob                        job;
     CNSPreciseTime              current_time = CNSPreciseTime::Current();
     TNSBitVector::enumerator    en(jobs_to_cancel.first());
+    unsigned int                count = 0;
     for (; en.valid(); ++en) {
         unsigned int    job_id = *en;
         TJobStatus      old_status = m_StatusTracker.GetStatus(job_id);
@@ -1997,7 +1997,10 @@ void CQueue::x_CancelJobs(const CNSClientId &   client,
         if (logging)
             GetDiagContext().Extra().Print("job_key", MakeJobKey(job_id))
                                     .Print("job_phid", job.GetNCBIPHID());
+
+        ++count;
     }
+    return count;
 }
 
 
@@ -2014,7 +2017,7 @@ CQueue::x_GetEstimatedJobLifetime(unsigned int   job_id,
 }
 
 
-void
+unsigned int
 CQueue::CancelSelectedJobs(const CNSClientId &         client,
                            const string &              group,
                            const string &              aff_token,
@@ -2025,7 +2028,7 @@ CQueue::CancelSelectedJobs(const CNSClientId &         client,
     if (group.empty() && aff_token.empty() && job_statuses.empty()) {
         // This possible if there was only 'Canceled' status and
         // it was filtered out. A warning for this case is already produced
-        return;
+        return 0;
     }
 
     TNSBitVector        jobs_to_cancel;
@@ -2080,7 +2083,7 @@ CQueue::CancelSelectedJobs(const CNSClientId &         client,
             jobs_to_cancel &= m_AffinityRegistry.GetJobsWithAffinity(aff_id);
     }
 
-    x_CancelJobs(client, jobs_to_cancel, logging);
+    return x_CancelJobs(client, jobs_to_cancel, logging);
 }
 
 
