@@ -656,12 +656,13 @@ BOOST_AUTO_TEST_CASE(TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 };
 
 
-void AddCDsWithComment(CRef <CSeq_entry> entry, const string& comment, int fm= -1, int to = -1);
-void AddCDsWithComment(CRef <CSeq_entry> entry, const string& comment, int fm, int to)
+CRef <CSeq_feat> AddCDsWithComment(CRef <CSeq_entry> entry, const string& comment, int fm= -1, int to = -1);
+CRef <CSeq_feat> AddCDsWithComment(CRef <CSeq_entry> entry, const string& comment, int fm, int to)
 {
    CRef <CSeq_feat> cds = MakeCDs(entry, fm, to);
    cds->SetComment(comment);
    AddFeat(cds, entry);
+   return cds;
 };
 
 BOOST_AUTO_TEST_CASE(MULTIPLE_CDS_ON_MRNA)
@@ -1399,14 +1400,21 @@ BOOST_AUTO_TEST_CASE(DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS)
           "2 RNA product_names or comments contain suspect phrase");
 };
 
-#if 0
 BOOST_AUTO_TEST_CASE(DISC_CDS_HAS_NEW_EXCEPTION)
 {
   CRef <CSeq_entry> entry = BuildGoodSeq();
-  AddCDsWithComment(entry, "cd1", 0, 10);
-   
-LookAndSave(entry, "DISC_CDS_HAS_NEW_EXCEPTION.sqn");
-  
-};
-#endif
+  CRef <CSeq_feat> cds = AddCDsWithComment(entry, "cd1", 0, 10);
+  cds->SetExcept_text("Annotated by transcript or proteomic data");
 
+  cds = AddCDsWithComment(entry, "cd2", 11, 20);
+  cds->SetExcept_text("heterogeneous population sequenced");
+ 
+  cds = AddCDsWithComment(entry, "cd3", 21, 30);
+  cds->SetExcept_text("low-quality sequence");
+
+  cds = AddCDsWithComment(entry, "cd4", 31, 40);
+  cds->SetExcept_text("Unextendable Partial Coding Region");
+  
+  RunAndCheckTest(entry, "DISC_CDS_HAS_NEW_EXCEPTION", 
+                      "3 coding regions have new exceptions");
+};
