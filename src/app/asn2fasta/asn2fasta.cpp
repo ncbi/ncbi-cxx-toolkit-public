@@ -48,6 +48,8 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq_macros.hpp>
 
+#include <objects/submit/Seq_submit.hpp>
+
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 
 #include <util/compress/zlib.hpp>
@@ -73,6 +75,7 @@ public:
     CSeq_entry_Handle ObtainSeqEntryFromSeqEntry(CObjectIStream& is);
     CSeq_entry_Handle ObtainSeqEntryFromBioseq(CObjectIStream& is);
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
+    CSeq_entry_Handle ObtainSeqEntryFromSeqSubmit(CObjectIStream& is);
 
     CFastaOstream* OpenFastaOstream(const string& name, bool use_stdout);
 
@@ -128,7 +131,7 @@ void CAsn2FastaApp::Init(void)
         arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
             CArgDescriptions::eString, "any" );
         arg_desc->SetConstraint( "type",
-            &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
+            &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set", "seq-submit" ) );
     }}
 
 
@@ -357,27 +360,44 @@ int CAsn2FastaApp::Run(void)
                 }
                 HandleSeqEntry(seh);
             }
+            else if ( asn_type == "seq-submit" ) {
+                //
+                //  Read object as a seq_submit, then process the first seq_entry:
+                //
+                seh = ObtainSeqEntryFromSeqSubmit(*is);
+                if ( !seh ) {
+                    NCBI_THROW(CException, eUnknown,
+                               "Unable to construct Seq-entry object" );
+                }
+                HandleSeqEntry(seh);
+            }
             else if ( asn_type == "any" ) {
                 //
                 //  Try the first three in turn:
                 //
+
+                set<TTypeInfo> known_types, matching_types;
+                known_types.insert(CSeq_entry::GetTypeInfo());
+                known_types.insert(CSeq_submit::GetTypeInfo());
+                known_types.insert(CBioseq_set::GetTypeInfo());
+                known_types.insert(CBioseq::GetTypeInfo());
+
                 size_t streampos = is->GetStreamPos();
                 while (!is->EndOfData()) {
-                    seh = ObtainSeqEntryFromSeqEntry(*is);
-                    if (!seh) {
-                        if (is->EndOfData()) {
-                            break;
-                        }
-                        is->ClearFailFlags(-1);
-                        is->SetStreamPos(streampos);
+                    matching_types = is->GuessDataType(known_types);
+                    if (matching_types.empty()) {
+                        NCBI_THROW(CException, eUnknown,
+                            "Unidentifiable object" );
+                    } else if (matching_types.size() > 1) {
+                        NCBI_THROW(CException, eUnknown,
+                            "Ambiguous object" );
+                    } else if (*matching_types.begin() == CSeq_entry::GetTypeInfo()) {
+                        seh = ObtainSeqEntryFromSeqEntry(*is);
+                    } else if (*matching_types.begin() == CSeq_submit::GetTypeInfo()) {
+                        seh = ObtainSeqEntryFromSeqSubmit(*is);
+                    } else if (*matching_types.begin() == CBioseq_set::GetTypeInfo()) {
                         seh = ObtainSeqEntryFromBioseqSet(*is);
-                    }
-                    if (!seh) {
-                        if (is->EndOfData()) {
-                            break;
-                        }
-                        is->ClearFailFlags(-1);
-                        is->SetStreamPos(streampos);
+                    } else if (*matching_types.begin() == CBioseq::GetTypeInfo()) {
                         seh = ObtainSeqEntryFromBioseq(*is);
                     }
                     if (!seh) {
@@ -410,10 +430,10 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromSeqEntry(
         }
         return m_Scope->AddTopLevelSeqEntry(*se);
     }
+    catch (CEofException&) { // ignore
+    }
     catch (CException& e) {
-        if (! (is.GetFailFlags() & is.eEOF)) {
-            ERR_POST(Error << e);
-        }
+        ERR_POST(Error << e);
     }
     return CSeq_entry_Handle();
 }
@@ -429,10 +449,10 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseq(
         CBioseq_Handle bsh = m_Scope->AddBioseq(*bs);
         return bsh.GetTopLevelEntry();
     }
+    catch (CEofException&) { // ignore
+    }
     catch (CException& e) {
-        if (! (is.GetFailFlags() & is.eEOF)) {
-            ERR_POST(Error << e);
-        }
+        ERR_POST(Error << e);
     }
     return CSeq_entry_Handle();
 }
@@ -447,10 +467,30 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseqSet(
         is >> entry->SetSet();
         return m_Scope->AddTopLevelSeqEntry(*entry);
     }
+    catch (CEofException&) { // ignore
+    }
     catch (CException& e) {
-        if (! (is.GetFailFlags() & is.eEOF)) {
-            ERR_POST(Error << e);
-        }
+        ERR_POST(Error << e);
+    }
+    return CSeq_entry_Handle();
+}
+
+//  --------------------------------------------------------------------------
+CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromSeqSubmit(
+    CObjectIStream& is)
+//  --------------------------------------------------------------------------
+{
+    try {
+        CRef<CSeq_entry> se(new CSeq_entry);
+        CRef<CSeq_submit> sub(new CSeq_submit());
+        is >> *sub;
+        se.Reset( sub->SetData().SetEntrys().front() );
+        return m_Scope->AddTopLevelSeqEntry(*se);
+    }
+    catch (CEofException&) { // ignore
+    }
+    catch (CException& e) {
+        ERR_POST(Error << e);
     }
     return CSeq_entry_Handle();
 }
