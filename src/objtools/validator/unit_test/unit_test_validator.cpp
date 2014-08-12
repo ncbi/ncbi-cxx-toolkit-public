@@ -18324,7 +18324,7 @@ BOOST_AUTO_TEST_CASE(Fix_Structured_Voucher)
 {
     string val = "USNM<USA>:12345";
     COrgMod::FixStructuredVoucher(val, "s");
-    BOOST_CHECK_EQUAL(val, "USNM:12345");
+    BOOST_CHECK_EQUAL(val, "USNM<USA>:12345");
 
     // can't fix, needs country code
     val = "ABS<CHN>:12345";
