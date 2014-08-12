@@ -1395,8 +1395,18 @@ BOOST_AUTO_TEST_CASE(DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS)
          rRNA = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA, "artificial");
    rRNA->SetData().SetRna().SetExt().SetGen().SetProduct("genes product");
    AddFeat(rRNA, entry);
-LookAndSave(entry, "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS.sqn");
    RunAndCheckTest(entry, "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS", 
           "2 RNA product_names or comments contain suspect phrase");
 };
+
+#if 0
+BOOST_AUTO_TEST_CASE(DISC_CDS_HAS_NEW_EXCEPTION)
+{
+  CRef <CSeq_entry> entry = BuildGoodSeq();
+  AddCDsWithComment(entry, "cd1", 0, 10);
+   
+LookAndSave(entry, "DISC_CDS_HAS_NEW_EXCEPTION.sqn");
+  
+};
+#endif
 
