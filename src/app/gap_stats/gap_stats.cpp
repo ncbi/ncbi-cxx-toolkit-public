@@ -91,7 +91,9 @@ private:
 
 CGapStatsApplication::CGapStatsApplication(void) :
     m_MolFilter(CSeq_inst::eMol_na),
-    m_fGapAddFlags(CGapAnalysis::fAddFlag_Default),
+    m_fGapAddFlags(
+        CGapAnalysis::fAddFlag_Default |
+        CGapAnalysis::fAddFlag_IncludeUnknownBases),
     m_fFastaFlags(
         CFastaReader::fParseGaps |
         CFastaReader::fLetterGaps)
@@ -159,12 +161,6 @@ void CGapStatsApplication::Init(void)
     arg_desc->SetConstraint("assume-mol", &(*new CArgAllow_Strings,
         "na", "aa"));
 
-    arg_desc->AddFlag(
-        "include-letter-gaps",
-        "If set, gaps represented as runs of unknown bases "
-        "(e.g. 'N' for nucs, 'X' for prots) are also counted, "
-        "not just Seq-gaps");
-
     arg_desc->SetCurrentGroup("HISTOGRAM");
 
     arg_desc->AddFlag("show-hist",
@@ -224,10 +220,6 @@ int CGapStatsApplication::Run(void)
         m_fFastaFlags |= CFastaReader::fAssumeProt;
     } else {
         NCBI_USER_THROW_FMT("Unsupported assume-mol: " << sAssumeMol);
-    }
-
-    if( args["include-letter-gaps"] ) {
-        m_fGapAddFlags |= CGapAnalysis::fAddFlag_IncludeUnknownBases;
     }
 
     // load given data into m_gapAnalysis
@@ -322,7 +314,8 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
                                 << format_guesser.GetFormatName(eFormat) );
         }
 
-        _ASSERT(eSerialDataFormat != eSerial_None);
+        _ASSERT(eSerialDataFormat != eSerial_None ||
+                eFormat == CFormatGuess::eFasta);
         if( ! pSeqEntry ) {
             // try to parse as Seq-submit
             in_file.seekg(0);
