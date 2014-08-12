@@ -59,9 +59,9 @@
 
 
 #define FULL_BLOCK_ADDR bm::all_set<true>::_block._p
-#define IS_VALID_ADDR(addr) (addr && (addr != FULL_BLOCK_ADDR))
-#define IS_FULL_BLOCK(addr) (addr == FULL_BLOCK_ADDR)
-#define IS_EMPTY_BLOCK(addr) (addr == 0)
+#define IS_VALID_ADDR(addr) bool(addr && (addr != FULL_BLOCK_ADDR))
+#define IS_FULL_BLOCK(addr) bool(addr == FULL_BLOCK_ADDR)
+#define IS_EMPTY_BLOCK(addr) bool(addr == 0)
 
 // Macro definitions to manipulate bits in pointers
 // This trick is based on the fact that pointers allocated by malloc are
@@ -86,7 +86,7 @@
 
 # define BMGAP_PTR(ptr) ((bm::gap_word_t*)BMPTR_CLEARBIT0(ptr))
 # define BMSET_PTRGAP(ptr) ptr = (bm::word_t*)BMPTR_SETBIT0(ptr)
-# define BM_IS_GAP(ptr) ( BMPTR_TESTBIT0(ptr)!=0 )
+# define BM_IS_GAP(ptr) bool(BMPTR_TESTBIT0(ptr) != 0)
 
 
 
