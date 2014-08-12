@@ -51,11 +51,25 @@
 
 #include <serial/objistr.hpp>
 
+#include <misc/xmlwrapp/xmlwrapp.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 namespace {
     typedef CTablePrinter::SEndOfCell CellEnd;
+
+    // this is for cases where the lack of a key in a map represents
+    // a programming bug.
+    Uint8 find_uint8_attr_or_die(
+        const xml::attributes & attrs,
+        const char * key)
+    {
+        xml::attributes::const_iterator find_iter = attrs.find(key);
+        _ASSERT(find_iter != attrs.end());
+        return NStr::StringToNumeric<Uint8>(find_iter->get_value());
+    }
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -77,10 +91,16 @@ private:
     CGapAnalysis::TAddFlag m_fGapAddFlags;
     CFastaReader::TFlags m_fFastaFlags;
 
+    enum EOutFormat {
+        eOutFormat_ASCIITable = 1,
+        eOutFormat_XML,
+    };
+    EOutFormat m_eOutFormat;
+
     void x_ReadFileOrAccn(const string & sFileOrAccn);
     void x_PrintSummaryView( 
         CGapAnalysis::ESortGapLength eSort,
-        CGapAnalysis::ESortDir eSortDir );
+        CGapAnalysis::ESortDir eSortDir);
     void x_PrintSeqsForGapLengths(void);
     void x_PrintHistogram(Uint8 num_bins,
         CHistogramBinning::EHistAlgo eHistAlgo);
@@ -96,7 +116,8 @@ CGapStatsApplication::CGapStatsApplication(void) :
         CGapAnalysis::fAddFlag_IncludeUnknownBases),
     m_fFastaFlags(
         CFastaReader::fParseGaps |
-        CFastaReader::fLetterGaps)
+        CFastaReader::fLetterGaps),
+    m_eOutFormat(eOutFormat_ASCIITable)
 {
     CRef<CObjectManager> pObjMgr( CObjectManager::GetInstance() );
     CGBDataLoader::RegisterInObjectManager(*pObjMgr);
@@ -126,6 +147,14 @@ void CGapStatsApplication::Init(void)
         "The files or accessions to do gap analysis on.  "
         "ASN.1, XML, and FASTA are some of the supported file formats.",
         CArgDescriptions::eString );
+
+    arg_desc->AddDefaultKey(
+        "out-format", "Format",
+        "Specifies how the results should be printed.",
+        CArgDescriptions::eString,
+        "ascii-table");
+    arg_desc->SetConstraint("out-format", &(*new CArgAllow_Strings,
+        "ascii-table", "xml"));
 
     arg_desc->AddDefaultKey("sort-on", "HowToSortResults",
         "Specify the order of the summary. length sorts on the gap length. "
@@ -222,6 +251,17 @@ int CGapStatsApplication::Run(void)
         NCBI_USER_THROW_FMT("Unsupported assume-mol: " << sAssumeMol);
     }
 
+    const string & sOutFormat = args["out-format"].AsString();
+    if( "ascii-table" == sOutFormat ) {
+        m_eOutFormat = eOutFormat_ASCIITable;
+    } else if( "xml" == sOutFormat ) {
+        m_eOutFormat = eOutFormat_XML;
+        // outermost XML node to hold everything
+        cout << "<result>" << endl;
+    } else {
+        _TROUBLE;
+    }
+
     // load given data into m_gapAnalysis
     // (Note that extra-arg indexing is 1-based )
     for(size_t ii = 1; ii <= args.GetNExtra(); ++ii ) {
@@ -269,6 +309,11 @@ int CGapStatsApplication::Run(void)
         }
 
         x_PrintHistogram(num_bins, eHistAlgo);
+    }
+
+    // close the result
+    if( m_eOutFormat == eOutFormat_XML ) {
+        cout << "</result>" << endl;
     }
 
     return 0;
@@ -398,21 +443,12 @@ void CGapStatsApplication::x_PrintSummaryView(
     CGapAnalysis::ESortGapLength eSort,
     CGapAnalysis::ESortDir eSortDir)
 {
+    // turn the data into XML, then into whatever output format is
+    // appropriate
+    xml::document gap_info_doc("summary");
+    xml::node & gap_info_root_node = gap_info_doc.get_root_node();
 
-
-    cout << "SUMMARY:" << endl;
-
-    bool bAnyGapOfLenZero = false;
-
-    const size_t kDigitsInUint8 = numeric_limits<Uint8>::digits10;
-    CTablePrinter::SColInfoVec vecColInfos;
-    vecColInfos.AddCol("Gap Length", kDigitsInUint8, 
-        CTablePrinter::eJustify_Right);
-    vecColInfos.AddCol("Num Seqs With Len", kDigitsInUint8, 
-        CTablePrinter::eJustify_Right);
-    vecColInfos.AddCol("Num Gaps with Len", kDigitsInUint8, 
-        CTablePrinter::eJustify_Right);
-    CTablePrinter table_printer(vecColInfos, cout);
+    xml::node gap_len_infos_node("gap_len_infos");
 
     AutoPtr<CGapAnalysis::TVectorGapLengthSummary> pGapLenSummary( 
         m_gapAnalysis.GetGapLengthSummary(eSort, eSortDir) );
@@ -423,20 +459,70 @@ void CGapStatsApplication::x_PrintSummaryView(
             *summary_unit_it;
         const CGapAnalysis::TGapLength gap_len =
             summary_unit.gap_length;
-        if( 0 == gap_len ) {
-            bAnyGapOfLenZero = true;
-        }
-        table_printer << gap_len << CellEnd();
-        table_printer << summary_unit.num_seqs << CellEnd();
-        table_printer << summary_unit.num_gaps << CellEnd();
-    }
-    cout << endl;
 
-    // print a note if any gaps are of length 0, which
-    // means unknown
-    if( bAnyGapOfLenZero ) {
-        cout << "* Note: Gap of length zero means "
-             << "'completely unknown length'." << endl;
+        xml::node one_gap_len_info("one_gap_len_info");
+
+        xml::attributes & one_gap_len_attributes =
+            one_gap_len_info.get_attributes();
+        one_gap_len_attributes.insert(
+            "len", NStr::NumericToString(gap_len).c_str());
+        one_gap_len_attributes.insert(
+            "num_seqs", NStr::NumericToString(summary_unit.num_seqs).c_str());
+        one_gap_len_attributes.insert(
+            "num_gaps", NStr::NumericToString(summary_unit.num_gaps).c_str());
+
+        gap_len_infos_node.insert(one_gap_len_info);
+    }
+    gap_info_root_node.insert(gap_len_infos_node);
+
+    if( m_eOutFormat == eOutFormat_XML ) {
+        // XML case is trivial since we've already formed it
+        gap_info_doc.save_to_stream(cout, xml::save_op_no_decl);
+    } else if( m_eOutFormat == eOutFormat_ASCIITable) {
+        // turn XML into an ASCII table
+
+        cout << "SUMMARY:" << endl;
+
+        bool bAnyGapOfLenZero = false;
+
+        const size_t kDigitsInUint8 = numeric_limits<Uint8>::digits10;
+        CTablePrinter::SColInfoVec vecColInfos;
+        vecColInfos.AddCol("Gap Length", kDigitsInUint8, 
+                           CTablePrinter::eJustify_Right);
+        vecColInfos.AddCol("Num Seqs With Len", kDigitsInUint8, 
+                           CTablePrinter::eJustify_Right);
+        vecColInfos.AddCol("Num Gaps with Len", kDigitsInUint8, 
+                           CTablePrinter::eJustify_Right);
+        CTablePrinter table_printer(vecColInfos, cout);
+
+        ITERATE(xml::node, one_gap_len_it, gap_len_infos_node) {
+            const xml::node & one_gap_len_node = *one_gap_len_it;
+            const xml::attributes & one_gap_len_info =
+                one_gap_len_node.get_attributes();
+            const CGapAnalysis::TGapLength gap_len =
+                find_uint8_attr_or_die(one_gap_len_info, "len");
+            const Uint8 num_seqs =
+                find_uint8_attr_or_die(one_gap_len_info, "num_seqs");
+            const Uint8 num_gaps =
+                find_uint8_attr_or_die(one_gap_len_info, "num_gaps");
+
+            if( 0 == gap_len ) {
+                bAnyGapOfLenZero = true;
+            }
+            table_printer << gap_len << CellEnd();
+            table_printer << num_seqs << CellEnd();
+            table_printer << num_gaps << CellEnd();
+        }
+        cout << endl;
+
+        // print a note if any gaps are of length 0, which
+        // means unknown
+        if( bAnyGapOfLenZero ) {
+            cout << "* Note: Gap of length zero means "
+                 << "'completely unknown length'." << endl;
+        }
+    } else {
+        _TROUBLE;
     }
 }
 
@@ -448,20 +534,56 @@ void CGapStatsApplication::x_PrintSeqsForGapLengths(void)
     const CGapAnalysis::TMapGapLengthToSeqIds & len_to_id_map =
         m_gapAnalysis.GetGapLengthSeqIds();
 
-    cout << "SEQ-IDS FOR EACH GAP-LENGTH:" << endl;
+    // turn into XML
+
+    xml::document gap_seqs_doc("seqs_for_gap_lens");
+    xml::node & gap_seqs_root_node = gap_seqs_doc.get_root_node();
+
     ITERATE(CGapAnalysis::TMapGapLengthToSeqIds, map_iter, len_to_id_map) {
         const CGapAnalysis::TGapLength iGapLength = map_iter->first;
-        cout << "\tSeq-ids with a gap of length " << iGapLength << ':' << endl;
+
+        xml::node gap_len_seq_ids("gap_len_seq_ids");
+        gap_len_seq_ids.get_attributes().insert(
+            "len", NStr::NumericToString(iGapLength).c_str());
+
         const CGapAnalysis::TSetSeqIdConstRef & seq_ids = map_iter->second;
         ITERATE( CGapAnalysis::TSetSeqIdConstRef, seq_id_it, seq_ids ) {
-            cout << "\t\t" << (*seq_id_it)->AsFastaString() << endl;
+            gap_len_seq_ids.insert(
+                xml::node("seq_id", (*seq_id_it)->AsFastaString().c_str()));
         }
+
+        gap_seqs_root_node.insert(gap_len_seq_ids);
     }
-    cout << endl;
+
+    // output
+    if( m_eOutFormat == eOutFormat_XML ) {
+        // trivial since already XML
+        gap_seqs_doc.save_to_stream(cout, xml::save_op_no_decl);
+    } else if ( m_eOutFormat == eOutFormat_ASCIITable ) {
+        // convert XML to ASCII table
+
+        cout << "SEQ-IDS FOR EACH GAP-LENGTH:" << endl;
+
+        ITERATE(xml::node, gap_len_node_it, gap_seqs_root_node) {
+            const CGapAnalysis::TGapLength iGapLength =
+                find_uint8_attr_or_die(
+                    gap_len_node_it->get_attributes(), "len");
+            cout << "\tSeq-ids with a gap of length "
+                 << iGapLength << ':' << endl;
+
+            ITERATE(xml::node, seq_id_node_it, *gap_len_node_it) {
+                cout << "\t\t" << seq_id_node_it->get_content() << endl;
+            }
+        }
+        cout << endl;
+
+    } else {
+        _TROUBLE;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
-//  x_PrintSeqsForGapLengths
+//  x_PrintHistogram
 
 void CGapStatsApplication::x_PrintHistogram(
     Uint8 num_bins,
@@ -470,19 +592,59 @@ void CGapStatsApplication::x_PrintHistogram(
     AutoPtr<CHistogramBinning::TListOfBins> pListOfBins(
         m_gapAnalysis.GetGapHistogram(num_bins, eHistAlgo) );
 
-    const size_t kDigitsInUint8 = numeric_limits<Uint8>::digits10;
-    CTablePrinter::SColInfoVec vecColInfos;
-    vecColInfos.AddCol("Range", 1 + 2*kDigitsInUint8);
-    vecColInfos.AddCol("Number in Range", kDigitsInUint8,
-        CTablePrinter::eJustify_Right);
-    CTablePrinter table_printer(vecColInfos, cout);
+    // convert histogram into XML
+    xml::document hist_doc("histogram");
+    xml::node & hist_root_node = hist_doc.get_root_node();
 
-    cout << "HISTOGRAM:" << endl;
     ITERATE( CHistogramBinning::TListOfBins, bin_iter, *pListOfBins ) {
         const CHistogramBinning::SBin & bin = *bin_iter;
-        table_printer << bin.first_number 
-                      << '-' << bin.last_number << CellEnd();
-        table_printer << bin.total_appearances << CellEnd();
+
+        xml::node bin_node("bin");
+        xml::attributes & bin_node_attrs =
+                bin_node.get_attributes();
+        bin_node_attrs.insert(
+            "start_inclusive",
+            NStr::NumericToString(bin.first_number).c_str());
+        bin_node_attrs.insert(
+            "end_inclusive",
+            NStr::NumericToString(bin.last_number).c_str());
+        bin_node_attrs.insert(
+            "num_appearances",
+            NStr::NumericToString(bin.total_appearances).c_str());
+
+        hist_root_node.insert(bin_node);
+    }
+
+    // output
+    if( m_eOutFormat == eOutFormat_XML ) {
+        // trivial since already XML
+        hist_doc.save_to_stream(cout, xml::save_op_no_decl);
+    } else if ( m_eOutFormat == eOutFormat_ASCIITable ) {
+        // convert XML to ASCII table
+
+        const size_t kDigitsInUint8 = numeric_limits<Uint8>::digits10;
+        CTablePrinter::SColInfoVec vecColInfos;
+        vecColInfos.AddCol("Range", 1 + 2*kDigitsInUint8);
+        vecColInfos.AddCol("Number in Range", kDigitsInUint8,
+                           CTablePrinter::eJustify_Right);
+        CTablePrinter table_printer(vecColInfos, cout);
+
+        cout << "HISTOGRAM:" << endl;
+
+        ITERATE(xml::node, bin_node_it, hist_root_node) {
+            const xml::attributes & bin_node_attrs =
+                bin_node_it->get_attributes();
+
+            const Uint8 start = find_uint8_attr_or_die(
+                bin_node_attrs, "start_inclusive");
+            const Uint8 end = find_uint8_attr_or_die(
+                bin_node_attrs, "end_inclusive");
+            const Uint8 num_appearances = find_uint8_attr_or_die(
+                bin_node_attrs, "num_appearances");
+
+            table_printer << start << '-' << end << CellEnd();
+            table_printer << num_appearances << CellEnd();
+        }
     }
 }
 
