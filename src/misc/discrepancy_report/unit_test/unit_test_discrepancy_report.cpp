@@ -1350,3 +1350,53 @@ BOOST_AUTO_TEST_CASE(DISC_STRAIN_TAXNAME_MISMATCH)
    RunAndCheckTest(entry, "DISC_STRAIN_TAXNAME_MISMATCH", 
       "2 biosources have strain 'X1083' but do not have the same taxnames.");
 }
+
+BOOST_AUTO_TEST_CASE(ADJACENT_PSEUDOGENES)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   // gene1
+   CRef <CSeq_feat> feat = BuildGoodFeat();
+   CRef <CSeq_feat> gene_ft = MakeGeneForFeature(feat);
+   gene_ft->SetLocation().SetInt().SetTo(20);
+   gene_ft->SetPseudo(true);
+   gene_ft->SetComment("disrupted");
+   AddFeat(gene_ft, entry);
+
+   // gene2
+   feat = BuildGoodFeat();
+   gene_ft = MakeGeneForFeature(feat);
+   gene_ft->SetLocation().SetInt().SetFrom(21);
+   gene_ft->SetLocation().SetInt().SetTo(30);
+   gene_ft->SetPseudo(true);
+   gene_ft->SetComment("disrupted");
+   AddFeat(gene_ft, entry);
+
+   // gene3
+   feat = BuildGoodFeat();
+   gene_ft = MakeGeneForFeature(feat);
+   gene_ft->SetLocation().SetInt().SetFrom(31);
+   gene_ft->SetPseudo(true);
+   gene_ft->SetComment("disrupted");
+   gene_ft->SetLocation().SetInt().SetStrand(eNa_strand_plus);
+   AddFeat(gene_ft, entry);
+
+   RunAndCheckTest(entry, "ADJACENT_PSEUDOGENES", "Adjacent pseudogenes have the same text: disrupted");
+};
+
+BOOST_AUTO_TEST_CASE(DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_feat> tRNA = BuildGoodtRNA(entry->GetSeq().GetId().front());
+   tRNA->SetComment("comment: IMG reference gene:2506377740");
+   
+   AddFeat(tRNA, entry);
+
+   CRef <CSeq_feat> 
+         rRNA = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA, "artificial");
+   rRNA->SetData().SetRna().SetExt().SetGen().SetProduct("genes product");
+   AddFeat(rRNA, entry);
+LookAndSave(entry, "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS.sqn");
+   RunAndCheckTest(entry, "DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS", 
+          "2 RNA product_names or comments contain suspect phrase");
+};
+
