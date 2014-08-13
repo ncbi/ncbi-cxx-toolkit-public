@@ -63,6 +63,11 @@ CColumnValidatorRegistry& CColumnValidatorRegistry::GetInstance()
     return m_singleton;
 }
 
+void CColumnValidatorRegistry::Register(const CTempString& name, const CTempString& alias)
+{
+    m_registry[name] = m_registry[alias];
+}
+
 void CColumnValidatorRegistry::Register(const CTempString& name, CColumnValidator* val)
 {
     m_registry[name] = val;
@@ -142,7 +147,7 @@ DEFINE_COL_VALIDATOR4(orgname, "taxname", "org", "organism")
 
     try
     {
-        int new_taxid = m_taxClient->GetTaxIdByName(value);
+        /*int new_taxid =*/ m_taxClient->GetTaxIdByName(value);
     }
     catch(const CException& ex)
     {
@@ -154,7 +159,7 @@ DEFINE_COL_VALIDATOR4(orgname, "taxname", "org", "organism")
 
 DEFINE_COL_VALIDATOR(genome)
 {
-    CBioSource::EGenome genome = CBioSource::GetGenomeByOrganelle (value);
+    /*CBioSource::EGenome genome =*/ CBioSource::GetGenomeByOrganelle (value);
     return false;
 }
 
@@ -170,7 +175,7 @@ DEFINE_COL_VALIDATOR(subsource)
 {
     try
     {
-    CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue(value);
+    /*CSubSource::TSubtype subtype = */CSubSource::GetSubtypeValue(value);
     }
     catch(CException& ex)
     {
@@ -188,7 +193,7 @@ DEFINE_COL_VALIDATOR(subtype)
 {
     try
     {
-    COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(value);
+    /*COrgMod::TSubtype subtype = */COrgMod::GetSubtypeValue(value);
     }
     catch(CException& ex)
     {
@@ -221,6 +226,37 @@ DEFINE_COL_VALIDATOR(strain)
 {
     return false;
 }
+
+DEFINE_COL_VALIDATOR(seqid)
+{
+    if (!value.empty())
+    try
+    {
+        CSeq_id id(value, CSeq_id::fParse_AnyLocal);
+    }
+    catch(const CException& ex)
+    {
+        error = ex.GetMsg();
+    }
+    
+    return false;
+}
+
+DEFINE_COL_VALIDATOR(date)
+{
+    if (!value.empty())
+    try
+    {
+        CTime time(value, "M/D/Y");
+    }
+    catch (const CTimeException& ex)
+    {
+        error = ex.GetMsg();
+    }
+
+    return false;
+}
+
 
 END_NCBI_SCOPE
 

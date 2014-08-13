@@ -153,6 +153,8 @@ void CTAbleValApp::Init(void)
         "Comma separated columns needs to be unique in file, use indices or names",
         CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("aliases", "InFile", "Filename of data type aliases.", CArgDescriptions::eInputFile);
+
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
 
     // Program description
@@ -204,8 +206,7 @@ int CTAbleValApp::Run(void)
         NStr::ToLower(m_unique_cols);
     }
     
-       
-
+     
     m_no_header = args["no-header"];
     m_skip_empty = args["skip-empty"];
     m_format = args["format"].AsString();
@@ -233,6 +234,9 @@ int CTAbleValApp::Run(void)
         if (!outputdir.Exists())
             outputdir.Create();
     }
+
+    if (args["aliases"])
+        CTabDelimitedValidator::RegisterAliases(args["aliases"].AsInputFile());
 
     try
     {

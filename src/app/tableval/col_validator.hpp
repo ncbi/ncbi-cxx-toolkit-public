@@ -24,6 +24,7 @@ protected:
 public:
     static CColumnValidatorRegistry& GetInstance();
     void Register(const CTempString& name, CColumnValidator* val);
+    void Register(const CTempString& name, const CTempString& alias);
     void UnRegister(CColumnValidator* val);
 
     bool IsSupported(const string& datatype) const; 

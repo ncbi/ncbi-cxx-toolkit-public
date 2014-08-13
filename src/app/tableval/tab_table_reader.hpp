@@ -18,11 +18,12 @@ class ILineReader;
   Usage examples
 */
 
-struct CTabDelimitedValidatorError
+struct CTabDelimitedValidatorMessage
 {
     string m_src;
     int m_row;
     int m_col;
+    bool m_warning;
     string m_msg;
 };
 
@@ -55,6 +56,7 @@ public:
        const CTempString& ignored, const CTempString& unique);
 
    void GenerateOutput(CNcbiOstream* out_stream, bool no_headers);
+   static void RegisterAliases(CNcbiIstream& in_stream);
 
 private:
     bool _Validate(int col_number, const CTempString& value);
@@ -65,7 +67,8 @@ private:
     bool _MakeColumns(const string& message, 
         const CTempString& columns, vector<bool>& col_defs);
 
-    void _ReportError(int col_number, const CTempString& error);
+    void _ReportError(int col_number, const CTempString& error, bool warning = false);
+    void _ReportWarning(int col_number, const CTempString& error);
     void _ReportTab(CNcbiOstream* out_stream);
     void _ReportXML(CNcbiOstream* out_stream, bool no_headers);
     int  m_current_row_number;
@@ -77,7 +80,7 @@ private:
 
     vector< map<string, int> > m_unique_values;
 
-    list<CTabDelimitedValidatorError> m_errors;
+    list<CTabDelimitedValidatorMessage> m_errors;
     e_Flags m_flags;
 };
 

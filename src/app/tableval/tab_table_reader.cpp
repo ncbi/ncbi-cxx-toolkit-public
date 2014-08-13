@@ -61,12 +61,18 @@ bool CTabDelimitedValidator::_Validate(int col_number, const CTempString& value)
     return isfatal;
 }
 
-void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& error)
+void CTabDelimitedValidator::_ReportWarning(int col_number, const CTempString& warning)
 {
-    CTabDelimitedValidatorError rec;
+    _ReportError(col_number, warning, true);
+}
+
+void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& error, bool warning)
+{
+    CTabDelimitedValidatorMessage rec;
     rec.m_col = col_number;
     rec.m_row = m_current_row_number;
     rec.m_msg = error;
+    rec.m_warning = warning;
     m_errors.push_back(rec);
 }
 
@@ -97,7 +103,7 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
                 if (!CColumnValidatorRegistry::GetInstance().IsSupported(m_col_defs[i]))
                 {
                     _ReportError(i,
-                        "Datatype " + m_col_defs[i] + " is not supported");
+                        "Datatype " + m_col_defs[i] + " is not supported", ignore_unknown);
                     if (ignore_unknown)
                     {
                        m_ignored_cols[i] = true;
@@ -124,11 +130,14 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
 void CTabDelimitedValidator::_ReportTab(CNcbiOstream* out_stream)
 {
     if (!m_errors.empty())
-        *out_stream << "Row" << "\t" << "Column" << "\t" << "Error" << endl;
+        *out_stream << "Row\tColumn\tError\tWarning" << endl;
 
-    ITERATE(list<CTabDelimitedValidatorError>, it, m_errors)
+    ITERATE(list<CTabDelimitedValidatorMessage>, it, m_errors)
     {
-        *out_stream << it->m_row << "\t" << it->m_col << "\t" << it->m_msg.c_str() << endl;
+        *out_stream << it->m_row << "\t" << it->m_col << "\t"
+            << (it->m_warning?"\t":it->m_msg.c_str())
+            << (it->m_warning?it->m_msg.c_str(): "\t")
+            << endl;
     }
 }
 
@@ -141,12 +150,13 @@ void CTabDelimitedValidator::_ReportXML(CNcbiOstream* out_stream, bool no_header
     xml::node& root = xmldoc.get_root_node();
 
     int i=0;
-    ITERATE(list<CTabDelimitedValidatorError>, it, m_errors)
+    ITERATE(list<CTabDelimitedValidatorMessage>, it, m_errors)
     {
-        xml::node new_node("error");
+        xml::node new_node(it->m_warning?"warning":"error");
         new_node.get_attributes().insert("row", NStr::IntToString(it->m_row).c_str());
         new_node.get_attributes().insert("column", NStr::IntToString(it->m_row).c_str());
-        new_node.get_attributes().insert("message", it->m_msg.c_str()); // will be handled correctly
+        new_node.get_attributes().insert("message", it->m_msg.c_str()); 
+        // will be handled correctly
         root.insert(new_node);
 
         i++;
@@ -267,7 +277,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
                     _ReportError(i, "Fatal error occured, stopping");
                     return;
                 }
-                if (m_unique_cols[i])
+                if (!values[i].empty() && m_unique_cols[i])
                 {
                     int& count = m_unique_values[i][values[i]];
                     if (count++)
@@ -291,6 +301,28 @@ void CTabDelimitedValidator::GenerateOutput(CNcbiOstream* out_stream, bool no_he
     if ( (m_flags & CTabDelimitedValidator::e_tab_xml_report) == CTabDelimitedValidator::e_tab_xml_report)
     {
         _ReportXML(out_stream, no_headers);
+    }
+}
+
+void CTabDelimitedValidator::RegisterAliases(CNcbiIstream& in_stream)
+{
+    CColumnValidatorRegistry& r = CColumnValidatorRegistry::GetInstance();
+    //r.Register("Collection date", "date");
+    //r.Register("Sequence ID", "seqid");
+
+    CRef<ILineReader> reader(ILineReader::New(in_stream));
+    while (!reader->AtEOF())
+    {
+        CTempString line = reader->GetCurrentLine();
+        if (line.empty())
+            continue;
+        if (line[0] == '#' || line[0] == ';')
+            continue;
+        CTempString name, alias;
+        NStr::SplitInTwo(line, "\t", name, alias);
+        if (name.empty() || alias.empty())
+            continue;
+        r.Register(name, alias);
     }
 }
 
