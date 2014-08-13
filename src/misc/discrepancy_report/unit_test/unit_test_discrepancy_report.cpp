@@ -39,6 +39,7 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -1418,3 +1419,25 @@ BOOST_AUTO_TEST_CASE(DISC_CDS_HAS_NEW_EXCEPTION)
   RunAndCheckTest(entry, "DISC_CDS_HAS_NEW_EXCEPTION", 
                       "3 coding regions have new exceptions");
 };
+
+BOOST_AUTO_TEST_CASE(TEST_CDS_HAS_CDD_XREF)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_feat> cds = AddCDsWithComment(entry, "cd1", 0, 10);
+   SetDbxref(cds, "CDD", 12345);
+   RunAndCheckTest(entry, "TEST_CDS_HAS_CDD_XREF", "1 feature has CDD Xrefs");
+};
+
+#if 0
+BOOST_AUTO_TEST_CASE(DISC_FEATURE_LIST)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+   CRef <CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   CRef <CSeq_feat> cds = nuc->GetSeq().GetAnnot().front()->GetData().GetFtable().front();
+   CRef <CSeq_feat> feat = MakemRNAForCDS(nuc->GetSeq().GetAnnot().front()->GetData().GetFtable().front());
+   
+
+LookAndSave(entry, "DISC_FEATURE_LIST.sqn");
+
+};
+#endif 
