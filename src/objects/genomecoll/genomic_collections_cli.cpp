@@ -42,6 +42,7 @@
 #include <objects/genomecoll/GCClient_AttributeFlags.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 #include <objects/genomecoll/GCClient_AssemblyInfo.hpp>
+#include <objects/genomecoll/GCClient_SeqIdAssemblyInfo.hpp>
 #include <objects/genomecoll/GCClient_BestAssembly.hpp>
 #include <objects/genomecoll/GCClient_Error.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
@@ -191,11 +192,11 @@ CRef<CGCClient_AssemblyInfo> CGenomicCollectionsService::FindBestAssembly(const 
 #endif
 
     try {
-        CRef<CGCClient_BestAssembly::C_E> asm_info = AskGet_best_assembly(req, &reply)->Get().front();
+        CRef<CGCClient_BestAssembly> assm = AskGet_best_assembly(req, &reply);
 
-        return asm_info->CanGetAssembly() ?
-                CRef<CGCClient_AssemblyInfo>(&asm_info->SetAssembly()) :
-                CRef<CGCClient_AssemblyInfo>();
+        return assm->CanGetAssemblies() && !assm->GetAssemblies().empty() ?
+               CRef<CGCClient_AssemblyInfo>(&assm->SetAssemblies().front()->SetAssembly()) :
+               CRef<CGCClient_AssemblyInfo>();
     } catch (const CException& ex) {
         if(reply.IsSrvr_error()) {
             NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);

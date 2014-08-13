@@ -142,9 +142,14 @@ GCClient-AssemblyInfo ::= SEQUENCE {
     annotated BOOLEAN
 }
 
-GCClient-BestAssembly ::= SET OF SEQUENCE {
-    assembly   GCClient-AssemblyInfo OPTIONAL, -- if not set then assembly is not found
+GCClient-SeqIdAssemblyInfo ::= SEQUENCE {
+    assembly   GCClient-AssemblyInfo,
     seq-id-acc SET OF VisibleString
+}
+
+GCClient-BestAssembly ::= SEQUENCE {
+    assemblies SET OF GCClient-SeqIdAssemblyInfo OPTIONAL,
+    unknown-seq-id-acc SET OF VisibleString OPTIONAL
 }
 
 END
