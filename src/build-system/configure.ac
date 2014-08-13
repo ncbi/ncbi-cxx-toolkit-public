@@ -1564,6 +1564,9 @@ case "$host_os:$compiler" in
 esac
 
 if $CXX -v 2>&1 | grep -q clang; then
+   CFLAGS="$CFLAGS -Wno-deprecated-register"
+   CXXFLAGS="$CXXFLAGS -Wno-deprecated-register"
+
    case "$host_os:$CXX" in
       darwin[[0-9]].*:/usr/bin/* | darwin1[[0-2]].*:/usr/bin/* )
          ncbi_cv_prog_cxx_stdlib_libcxx=no
