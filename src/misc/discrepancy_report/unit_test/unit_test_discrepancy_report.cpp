@@ -1428,16 +1428,26 @@ BOOST_AUTO_TEST_CASE(TEST_CDS_HAS_CDD_XREF)
    RunAndCheckTest(entry, "TEST_CDS_HAS_CDD_XREF", "1 feature has CDD Xrefs");
 };
 
-#if 0
 BOOST_AUTO_TEST_CASE(DISC_FEATURE_LIST)
 {
    CRef <CSeq_entry> entry = BuildGoodNucProtSet();
    CRef <CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
-   CRef <CSeq_feat> cds = nuc->GetSeq().GetAnnot().front()->GetData().GetFtable().front();
-   CRef <CSeq_feat> feat = MakemRNAForCDS(nuc->GetSeq().GetAnnot().front()->GetData().GetFtable().front());
-   
+   CRef <CSeq_feat> cds = entry->GetSet().GetAnnot().front()->GetData().GetFtable().front();
+   // add mRNA
+   CRef <CSeq_feat> feat = MakemRNAForCDS(cds);
+   AddFeat(feat, nuc);
 
-LookAndSave(entry, "DISC_FEATURE_LIST.sqn");
+   // add gene
+   feat = MakeGeneForFeature(cds);
+   AddFeat(feat, nuc);
 
+   // add RBS
+   feat = AddGoodImpFeat(nuc, "RBS");
+
+   // tRNA
+   feat = BuildtRNA(nuc->GetSeq().GetId().front());
+   AddFeat(feat, nuc);
+
+   // add more virious features if have time
+   RunAndCheckTest(entry, "DISC_FEATURE_LIST", "Feature List");
 };
-#endif 
