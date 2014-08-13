@@ -59,7 +59,6 @@ CSubSource::~CSubSource(void)
 {
 }
 
-
 void CSubSource::GetLabel(string* str) const
 {
     *str += '/';
@@ -1189,7 +1188,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
     // replace all '°' with space
     NStr::ReplaceInPlace(cpy, "\xC2\xB0", " ");
-    NStr::ReplaceInPlace(cpy, "°", " ");
+    NStr::ReplaceInPlace(cpy, "\xB0",     " ");
 
     // replace all '#' with ' '
     NStr::ReplaceInPlace (cpy, "#", " ");
