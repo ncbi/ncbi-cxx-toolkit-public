@@ -99,7 +99,7 @@ public:
     /// Clean an alignment according to our best guess of its biological
     /// representation.  Cleaning involves adjusting segments to satisfy our
     /// expectations of partial exonic alignments and account for unaligned
-    /// parts. Eg. stitching small gaps, trimming to codon boundaries.
+    /// parts. Eg. stitching small gaps (less than min_intron), trimming to codon boundaries.
     /// May shift product positions.
     CConstRef<objects::CSeq_align>
     CleanAlignment(const objects::CSeq_align& align);
