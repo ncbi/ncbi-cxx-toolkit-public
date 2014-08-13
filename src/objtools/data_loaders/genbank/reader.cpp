@@ -47,7 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DEFINE_ERR_SUBCODE_X(7);
+NCBI_DEFINE_ERR_SUBCODE_X(9);
 
 BEGIN_SCOPE(objects)
 
@@ -56,6 +56,36 @@ BEGIN_SCOPE(objects)
 #else
 # define TRACE_SET(m) LOG_POST('T'<<CThread::GetSelf()<<' '<<CTime(CTime::eCurrent)<<": "<<m)
 #endif
+
+CReader::CDebugPrinter::CDebugPrinter(CReader::TConn conn, const char* name)
+{
+    *this << name << '(' << conn << ")";
+    PrintHeader();
+}
+
+
+CReader::CDebugPrinter::CDebugPrinter(const char* name)
+{
+    *this << name;
+    PrintHeader();
+}
+
+
+void CReader::CDebugPrinter::PrintHeader(void)
+{
+    *this << ": ";
+#ifdef NCBI_THREADS
+    *this << "T" << CThread::GetSelf() << ' ';
+#endif
+    *this << CTime(CTime::eCurrent) << ": ";
+}
+
+
+CReader::CDebugPrinter::~CDebugPrinter()
+{
+    LOG_POST_X(9, Info << rdbuf());
+}
+
 
 #define DEFAULT_RETRY_COUNT 5
 #define DEFAULT_WAIT_TIME_ERRORS 2
@@ -360,7 +390,7 @@ CReader::TConn CReader::x_AllocConnection(bool oldest)
         }
         else if ( age < slot.m_RetryDelay ) {
             double wait_seconds = slot.m_RetryDelay - age;
-            LOG_POST_X(6, Warning << "CReader: waiting "<<
+            LOG_POST_X(8, Warning << "CReader: waiting "<<
                        wait_seconds<<"s before next command");
             _TRACE("CReader: waiting "<<wait_seconds<<
                    "s before next connection");
@@ -422,7 +452,7 @@ void CReader::x_AbortConnection(TConn conn, bool failed)
 void CReader::x_DisconnectAtSlot(TConn conn, bool failed)
 {
     if ( failed ) {
-        LOG_POST_X(5, Warning << "CReader("<<conn<<"): "
+        LOG_POST_X(4, Warning << "CReader("<<conn<<"): "
                    " GenBank connection failed: reconnecting...");
     }
     else {

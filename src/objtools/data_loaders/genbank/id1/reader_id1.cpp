@@ -78,30 +78,6 @@ BEGIN_SCOPE(objects)
 #define GENBANK_ID1_RANDOM_FAILS_FREQUENCY 20
 #define GENBANK_ID1_RANDOM_FAILS_RECOVER 0 // new + write + read
 
-namespace {
-    class CDebugPrinter : public CNcbiOstrstream
-    {
-    public:
-        CDebugPrinter(CId1Reader::TConn conn)
-            {
-                flush() << "CId1Reader(" << conn << "): ";
-#ifdef NCBI_THREADS
-                flush() << "T" << CThread::GetSelf() << ' ';
-#endif
-            }
-        ~CDebugPrinter()
-            {
-                LOG_POST_X(1, rdbuf());
-                /*
-                DEFINE_STATIC_FAST_MUTEX(sx_DebugPrinterMutex);
-                CFastMutexGuard guard(sx_DebugPrinterMutex);
-                (NcbiCout << rdbuf()).flush();
-                */
-            }
-    };
-}
-
-
 #ifdef GENBANK_ID1_RANDOM_FAILS
 static void SetRandomFail(CConn_IOStream& stream)
 {
@@ -253,7 +229,7 @@ void CId1Reader::x_ConnectAtSlot(TConn conn)
     }
     
     if ( GetDebugLevel() >= eTraceOpen ) {
-        CDebugPrinter s(conn);
+        CDebugPrinter s(conn, "CId1Reader");
         s << "New connection: " << x_ConnDescription(stream); 
     }
 
@@ -739,7 +715,7 @@ void CId1Reader::x_SendRequest(TConn conn,
     SetRandomFail(*stream);
 #endif
     if ( GetDebugLevel() >= eTraceConn ) {
-        CDebugPrinter s(conn);
+        CDebugPrinter s(conn, "CId1Reader");
         s << "Sending";
         if ( GetDebugLevel() >= eTraceASN ) {
             s << ": " << MSerial_AsnText << request;
@@ -760,7 +736,7 @@ void CId1Reader::x_SendRequest(TConn conn,
                      x_ConnDescription(*stream));
     }
     if ( GetDebugLevel() >= eTraceConn ) {
-        CDebugPrinter s(conn);
+        CDebugPrinter s(conn, "CId1Reader");
         s << "Sent ID1server-request.";
     }
 }
@@ -775,7 +751,7 @@ void CId1Reader::x_ReceiveReply(TConn conn,
     SetRandomFail(*stream);
 #endif
     if ( GetDebugLevel() >= eTraceConn ) {
-        CDebugPrinter s(conn);
+        CDebugPrinter s(conn, "CId1Reader");
         s << "Receiving ID1server-back...";
     }
     try {
@@ -788,7 +764,7 @@ void CId1Reader::x_ReceiveReply(TConn conn,
                      x_ConnDescription(*stream));
     }
     if ( GetDebugLevel() >= eTraceConn   ) {
-        CDebugPrinter s(conn);
+        CDebugPrinter s(conn, "CId1Reader");
         s << "Received";
         if ( GetDebugLevel() >= eTraceASN ) {
             s << ": " << MSerial_AsnText << reply;

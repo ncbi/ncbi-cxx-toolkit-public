@@ -142,16 +142,6 @@ public:
     };
     static int GetDebugLevel(void);
 
-    class NCBI_XREADER_EXPORT CDebugPrinter : public CNcbiOstrstream
-    {
-    public:
-        CDebugPrinter(TConn conn, const char* name);
-        CDebugPrinter(const char* name);
-        ~CDebugPrinter();
-
-        void PrintHeader(void);
-    };
-    
 protected:
     virtual string x_ConnDescription(TConn conn) const = 0;
 

@@ -443,30 +443,29 @@ namespace {
         }
         cache->GetBlobAccess(key, version, subkey, &m_Descr);
         
-        if ( SCacheInfo::GetDebugLevel() ) {
-            CNcbiOstrstream str;
-            str << "Cache:Read";
+        if ( SCacheInfo::GetDebugLevel() > 0 ) {
+            CReader::CDebugPrinter s("CCacheReader");
+            s << "Read";
             if ( get_current_version ) {
-                str << "V";
+                s << "V";
             }
-            str << ": "<<key<<","<<subkey;
+            s << ": "<<key<<","<<subkey;
             if ( !get_current_version ) {
-                str << ","<<version;
+                s << ","<<version;
             }
             if ( !Found() ) {
-                str << " not found";
+                s << " not found";
                 if ( get_current_version && GotCurrentVersion() ) {
-                    str << ", ver="<<m_Descr.current_version;
+                    s << ", ver="<<m_Descr.current_version;
                 }
             }
             else {
-                str << " found";
+                s << " found";
                 if ( get_current_version && GotCurrentVersion() ) {
-                    str << ", ver="<<m_Descr.current_version;
+                    s << ", ver="<<m_Descr.current_version;
                 }
             }
-            str << ", age="<<int(m_Descr.actual_age);
-            LOG_POST(Info<<str.rdbuf());
+            s << ", age="<<int(m_Descr.actual_age);
         }
         m_ExpirationTime = result.GetNewIdExpirationTime();
         if ( FoundSome() ) {
@@ -1049,9 +1048,9 @@ void CCacheReader::x_SetBlobVersionAsCurrent(CReaderRequestResult& result,
                                              TBlobVersion version)
 {
     // current blob version is still valid
-    if ( GetDebugLevel() ) {
-        LOG_POST(Info<<"Cache:SetBlobVersionAsCurrent"<<
-                 "("<<key<<", "<<subkey<<", "<<version<<")");
+    if ( GetDebugLevel() > 0 ) {
+        CDebugPrinter s("CCacheReader");
+        s << "SetBlobVersionAsCurrent("<<key<<", "<<subkey<<", "<<version<<")";
     }
     CConn conn(result, this);
     m_BlobCache->SetBlobVersionAsCurrent(key, subkey, version);

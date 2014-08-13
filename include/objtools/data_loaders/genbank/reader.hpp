@@ -260,6 +260,16 @@ public:
     virtual void ConnectFailed(TConn conn);
     virtual void SetNewConnectionDelayMicroSec(unsigned long micro_sec);
 
+    class NCBI_XREADER_EXPORT CDebugPrinter : public CNcbiOstrstream
+    {
+    public:
+        CDebugPrinter(TConn conn, const char* name);
+        CDebugPrinter(const char* name);
+        ~CDebugPrinter();
+
+        void PrintHeader(void);
+    };
+    
 protected:
     CReadDispatcher* m_Dispatcher;
 

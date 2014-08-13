@@ -97,37 +97,6 @@ int CId2ReaderBase::GetDebugLevel(void)
 }
 
 
-CId2ReaderBase::CDebugPrinter::CDebugPrinter(CReader::TConn conn,
-                                             const char* name)
-{
-    *this << name << '(' << conn << ')';
-    PrintHeader();
-}
-
-
-CId2ReaderBase::CDebugPrinter::CDebugPrinter(const char* name)
-{
-    *this << name;
-    PrintHeader();
-}
-
-
-void CId2ReaderBase::CDebugPrinter::PrintHeader(void)
-{
-    *this << ": ";
-#ifdef NCBI_THREADS
-    *this << "T" << CThread::GetSelf() << ' ';
-#endif
-    *this << CTime(CTime::eCurrent) << ": ";
-}
-
-
-CId2ReaderBase::CDebugPrinter::~CDebugPrinter()
-{
-    LOG_POST_X(1, rdbuf());
-}
-
-
 // Number of chunks allowed in a single request
 // 0 = unlimited request size
 // 1 = do not use packets or get-chunks requests
@@ -808,7 +777,7 @@ bool CId2ReaderBase::LoadBlobState(CReaderRequestResult& result,
         // workaround for possible incorrect reply on request for non-existent
         // external annotations
         if ( !lock.IsLoadedBlobState() ) {
-            ERR_POST_X(2, "ExtAnnot blob state is not loaded: "<<blob_id);
+            ERR_POST_X(5, "ExtAnnot blob state is not loaded: "<<blob_id);
             result.SetLoadedBlobState(blob_id, 0);
         }
     }
@@ -832,7 +801,7 @@ bool CId2ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
         // workaround for possible incorrect reply on request for non-existent
         // external annotations
         if ( !lock.IsLoadedBlobVersion() ) {
-            ERR_POST_X(2, "ExtAnnot blob version is not loaded: "<<blob_id);
+            ERR_POST_X(9, "ExtAnnot blob version is not loaded: "<<blob_id);
             result.SetLoadedBlobVersion(blob_id, 0);
         }
     }
@@ -2083,7 +2052,7 @@ void CId2ReaderBase::x_ProcessGetBlob(
                        "no data in reply: "<<blob_id);
             return;
         }
-        ERR_POST_X(6, "CId2ReaderBase: ID2-Reply-Get-Blob: "
+        ERR_POST_X(7, "CId2ReaderBase: ID2-Reply-Get-Blob: "
                    "no data in reply: "<<blob_id);
         SetAndSaveNoBlob(result, blob_id, chunk_id, blob_state);
         return;

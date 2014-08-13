@@ -175,8 +175,9 @@ void CCacheWriter::x_WriteId(const string& key,
                              size_t size)
 {
     try {
-        if ( GetDebugLevel() ) {
-            LOG_POST(Info<<"Cache:Write: "<<key<<","<<subkey<<" size="<<size);
+        if ( GetDebugLevel() > 0 ) {
+            CReader::CDebugPrinter s("CCacheWriter");
+            s<<key<<","<<subkey<<" size="<<size;
         }
         m_IdCache->Store(key, 0, subkey, data, size);
     }
@@ -290,8 +291,9 @@ void CCacheWriter::WriteSeq_ids(const string& key,
     }
 
     try {
-        if ( GetDebugLevel() ) {
-            LOG_POST(Info<<"Cache:Write: "<<key<<","<<GetSeq_idsSubkey());
+        if ( GetDebugLevel() > 0 ) {
+            CReader::CDebugPrinter s("CCacheWriter");
+            s<<key<<","<<GetSeq_idsSubkey();
         }
         auto_ptr<IWriter> writer
             (m_IdCache->GetWriteStream(key, 0, GetSeq_idsSubkey()));
@@ -423,8 +425,9 @@ public:
           m_Writer(cache->GetWriteStream(key, version, subkey))
         {
             _ASSERT(version >= 0);
-            if ( SCacheInfo::GetDebugLevel() ) {
-                LOG_POST(Info<<"Cache:Write: "<<key<<","<<subkey<<","<<version);
+            if ( SCacheInfo::GetDebugLevel() > 0 ) {
+                CReader::CDebugPrinter s("CCacheWriter");
+                s<<key<<","<<subkey<<","<<version;
             }
             if ( version == -1 ) {
                 ERR_POST("Cache:Write: "<<key<<","<<subkey<<","<<version);

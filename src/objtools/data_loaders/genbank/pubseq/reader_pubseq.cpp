@@ -81,7 +81,6 @@ BEGIN_SCOPE(objects)
 static CAtomicCounter s_pubseq_readers;
 #endif
 
-#ifdef _DEBUG
 NCBI_PARAM_DECL(int, GENBANK, PUBSEQOS_DEBUG);
 NCBI_PARAM_DEF_EX(int, GENBANK, PUBSEQOS_DEBUG, 0,
                   eParam_NoThread, GENBANK_PUBSEQOS_DEBUG);
@@ -92,9 +91,6 @@ static int GetDebugLevel(void)
         NCBI_PARAM_TYPE(GENBANK, PUBSEQOS_DEBUG)::GetDefault();
     return s_Value;
 }
-#else
-# define GetDebugLevel() (0)
-#endif
 
 #define RPC_GET_ASN         "id_get_asn"
 #define RPC_GET_BLOB_INFO   "id_get_blob_prop"
@@ -442,8 +438,8 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
     }
     
     if ( GetDebugLevel() >= 2 ) {
-        NcbiCout << "CPubseqReader::Connected to " << conn->ServerName()
-                 << NcbiEndl;
+        CDebugPrinter s(conn_, "CPubseqReader");
+        s << "Connected to " << conn->ServerName();
     }
 
     m_Connections[conn_].reset(conn.release());
@@ -734,19 +730,19 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                 TIntId sat_key = satKeyGot.Value();
                 
                 if ( GetDebugLevel() >= 5 ) {
-                    NcbiCout << "CPubseqReader::ResolveSeq_id"
+                    CDebugPrinter s(conn, "CPubseqReader");
+                    s << "ResolveSeq_id"
                         "(" << seq_id.AsString() << ")"
                         " gi=" << gi <<
                         " sat=" << sat <<
                         " satkey=" << sat_key <<
                         " extfeat=";
                     if ( extFeatGot.IsNULL() ) {
-                        NcbiCout << "NULL";
+                        s << "NULL";
                     }
                     else {
-                        NcbiCout << extFeatGot.Value();
+                        s << extFeatGot.Value();
                     }
-                    NcbiCout << NcbiEndl;
                 }
 
                 if ( giGot.IsNULL() || gi == ZERO_GI ) {
@@ -968,7 +964,7 @@ void CPubseqReader::GetBlobState(CReaderRequestResult& result,
         SPubseqReaderReceiveData data;
         x_ReceiveData(result, data, blob_id, *cmd, false);
         if ( data.dbr ) {
-            ERR_POST_X(5, "CPubseqReader: unexpected blob data");
+            ERR_POST_X(3, "CPubseqReader: unexpected blob data");
         }
     }}
     conn.Release();
