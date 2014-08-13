@@ -1266,9 +1266,21 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     }
 
     // prepare serial nums and result state
-    size_t request_count = packet.Get().size();
-    int start_serial_num =
-        int(m_RequestSerialNumber.Add(int(request_count)) - request_count);
+    int request_count = static_cast<int>(packet.Get().size());
+    int end_serial_num = m_RequestSerialNumber.Add(request_count);
+    if ( end_serial_num <= request_count ) {
+        // int overflow, adjust to 1
+        {{
+            DEFINE_STATIC_FAST_MUTEX(sx_Mutex);
+            CFastMutexGuard guard(sx_Mutex);
+            int num = m_RequestSerialNumber.Get();
+            if ( num <= request_count ) {
+                m_RequestSerialNumber.Set(1);
+            }
+        }}
+        end_serial_num = m_RequestSerialNumber.Add(request_count);
+    }
+    int start_serial_num = end_serial_num - request_count;
     {{
         int cur_serial_num = start_serial_num;
         NON_CONST_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
@@ -1309,7 +1321,7 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
         }}
 
         // process replies
-        size_t remaining_count = request_count;
+        int remaining_count = request_count;
         while ( remaining_count > 0 ) {
             reply.Reset(new CID2_Reply);
             if ( GetDebugLevel() >= eTraceConn ) {
@@ -1372,12 +1384,12 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
                     }
                 }
             }
-            size_t num = reply->GetSerial_number() - start_serial_num;
+            int num = reply->GetSerial_number() - start_serial_num;
             if ( reply->IsSetDiscard() ) {
                 // discard whole reply for now
                 continue;
             }
-            if ( num >= request_count || done[num] ) {
+            if ( num < 0 || num >= request_count || done[num] ) {
                 // unknown serial num - bad reply
                 if ( TErrorFlags error = x_GetError(result, *reply) ) {
                     if ( error & fError_inactivity_timeout ) {
