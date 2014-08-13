@@ -258,10 +258,8 @@ CRemoteBlastDbDataLoader::GetChunks(const TChunkSet& chunks_orig)
 }
 
 void
-CRemoteBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CRemoteBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
-    // dummy assignment to eliminate compiler and doxygen warnings
-    depth = depth;  
     ddc.SetFrame("CRemoteBlastDbDataLoader");
     DebugDumpValue(ddc,"m_DBName", m_DBName);
     DebugDumpValue(ddc,"m_DBType", m_DBType);

@@ -451,10 +451,8 @@ CBlastDbDataLoader::GetBlobById(const TBlobId& blob_id)
 
 
 void
-CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
-    // dummy assignment to eliminate compiler and doxygen warnings
-    depth = depth;  
     ddc.SetFrame("CBlastDbDataLoader");
     DebugDumpValue(ddc,"m_DBName", m_DBName);
     DebugDumpValue(ddc,"m_DBType", m_DBType);
