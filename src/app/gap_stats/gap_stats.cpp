@@ -86,7 +86,6 @@ public:
     virtual int  Run(void);
 private:
     CSeq_inst::EMol m_MolFilter;
-    CRef<CScope> m_pScope;
     CGapAnalysis m_gapAnalysis;
     CGapAnalysis::TAddFlag m_fGapAddFlags;
     CFastaReader::TFlags m_fFastaFlags;
@@ -96,6 +95,8 @@ private:
         eOutFormat_XML,
     };
     EOutFormat m_eOutFormat;
+
+    CRef<CScope> x_GetScope(void);
 
     void x_ReadFileOrAccn(const string & sFileOrAccn);
     void x_PrintSummaryView( 
@@ -119,10 +120,6 @@ CGapStatsApplication::CGapStatsApplication(void) :
         CFastaReader::fLetterGaps),
     m_eOutFormat(eOutFormat_ASCIITable)
 {
-    CRef<CObjectManager> pObjMgr( CObjectManager::GetInstance() );
-    CGBDataLoader::RegisterInObjectManager(*pObjMgr);
-    m_pScope.Reset( new CScope(*pObjMgr) );
-    m_pScope->AddDefaults();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -136,7 +133,7 @@ void CGapStatsApplication::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Gap analysis program");
+                              "Gap analysis program", false);
 
     // Describe the expected command-line arguments
 
@@ -218,6 +215,7 @@ void CGapStatsApplication::Init(void)
         "hist-algo", CArgDescriptions::eRequires, "show-hist" );
 
     // Setup arg.descriptions for this application
+    arg_desc->SetCurrentGroup(kEmptyStr);
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -320,6 +318,27 @@ int CGapStatsApplication::Run(void)
 }
 
 /////////////////////////////////////////////////////////////////////////////
+//  x_GetScope
+
+CRef<CScope>
+CGapStatsApplication::x_GetScope(void)
+{
+    DEFINE_STATIC_FAST_MUTEX(s_scope_mtx);
+    CFastMutexGuard guard(s_scope_mtx);
+
+    static CRef<CScope> s_scope;
+    if( ! s_scope ) {
+        // set up singleton scope
+        CRef<CObjectManager> pObjMgr( CObjectManager::GetInstance() );
+        CGBDataLoader::RegisterInObjectManager(*pObjMgr);
+        s_scope.Reset( new CScope(*pObjMgr) );
+        s_scope->AddDefaults();
+    }
+
+    return s_scope;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //  x_ReadFileOrAccn
 
 void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
@@ -411,11 +430,11 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
                                 << sFileOrAccn);
         }
 
-        entry_h = m_pScope->AddTopLevelSeqEntry(*pSeqEntry);
+        entry_h = x_GetScope()->AddTopLevelSeqEntry(*pSeqEntry);
     } else {
         // fall back on trying to load it as an accession
         CRef<CSeq_id> pSeqId( new CSeq_id(sFileOrAccn) );
-        CBioseq_Handle bioseq_h = m_pScope->GetBioseqHandle(*pSeqId);
+        CBioseq_Handle bioseq_h = x_GetScope()->GetBioseqHandle(*pSeqId);
         if( ! bioseq_h ) {
             NCBI_USER_THROW_FMT(
                 "This accession could not be found: " <<
@@ -433,7 +452,7 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
         m_fGapAddFlags);
 
     // conserve memory
-    m_pScope->ResetDataAndHistory();
+    x_GetScope()->ResetDataAndHistory();
 }
 
 /////////////////////////////////////////////////////////////////////////////
