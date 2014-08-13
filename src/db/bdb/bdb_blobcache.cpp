@@ -2633,7 +2633,8 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     unsigned volume_id = 0, split_id = 0;
 
     unsigned blob_id = GetBlobId(key, version, subkey);
-    if (!blob_id) return 0;
+    if (!blob_id)
+        return nullptr;
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
 
 
@@ -2655,7 +2656,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
             if (ret == eBDB_Ok) {
                 if (m_TimeStampFlag & fCheckExpirationAlways) {
                     if (x_CheckTimeStampExpired(*m_CacheAttrDB, curr)) {
-                        return false;
+                        return nullptr;
                     }
                 }
                 unsigned read_count = m_CacheAttrDB->read_count;
@@ -2676,13 +2677,13 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
                 ret = cur.Update();
 
             } else {
-                return false;
+                return nullptr;
             }
         }} // cursor
     }} // m_DB_Lock
 
     if (ret != eBDB_Ok) {
-        return false;
+        return nullptr;
     }
     _ASSERT(blob_id);
     trans.Commit();
@@ -2705,7 +2706,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     // Inline BLOB, reading from BDB storage
     if (blob_id == 0) {
-        return 0;
+        return nullptr;
     }
 
     unsigned coords[2];
