@@ -478,7 +478,7 @@ public:
     }
     static void operator delete(void* ptr) {
         add_alloc(-1);
-	RegisterDelete((CObjectWithTLS*)ptr);
+        RegisterDelete((CObjectWithTLS*)ptr);
         ::operator delete(ptr);
     }
     
@@ -615,12 +615,12 @@ void CTestTlsObjectApp::RunTest(void)
             void** p = new void*[COUNT2];
             for ( size_t i = 0; i < COUNT2; ++i ) {
                 add_alloc(1);
-		add_step();
+                add_step();
                 p[i] = ::operator new(OBJECT_SIZE);
             }
             for ( size_t i = 0; i < COUNT2; ++i ) {
                 add_alloc(-1);
-		add_step();
+                add_step();
                 ::operator delete(p[i]);
             }
             delete[] p;
@@ -630,12 +630,12 @@ void CTestTlsObjectApp::RunTest(void)
             int** p = new int*[COUNT2];
             for ( size_t i = 0; i < COUNT2; ++i ) {
                 add_alloc(1);
-		add_step();
-                p[i] = new int(i);
+                add_step();
+                p[i] = new int(int(i));
             }
             for ( size_t i = 0; i < COUNT2; ++i ) {
                 add_alloc(-1);
-		add_step();
+                add_step();
                 delete p[i];
             }
             delete[] p;
@@ -649,14 +649,14 @@ void CTestTlsObjectApp::RunTest(void)
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
             add_alloc(1);
-	    add_step();
+            add_step();
             ptr[i] = ::operator new(OBJECT_SIZE);
         }
         double t1 = sw.Elapsed();
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
             add_alloc(-1);
-	    add_step();
+            add_step();
             ::operator delete(ptr[i]);
         }
         double t2 = sw.Elapsed();
