@@ -1554,7 +1554,7 @@ const string& CDiagContext::GetAppName(void) const
 {
     if ( !m_AppNameSet ) {
         m_AppName->SetString(CNcbiApplication::GetAppName());
-        if ( CNcbiApplication::Instance() ) {
+        if (CNcbiApplication::Instance()  &&  !m_AppName->IsEmpty()) {
             m_AppNameSet = true;
         }
     }
