@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(TestUnicodeToAscii)
         u2a_translation = utf8::UnicodeToAscii(unidata[i]);
         NcbiCout << unidata[i] << " -> ";
         if (u2a_translation) {
-            NcbiCout << u2a_translation->Subst;
+            NcbiCout << NStr::PrintableString(u2a_translation->Subst);
         }
         NcbiCout << NcbiEndl;
         BOOST_CHECK (u2a_translation);
