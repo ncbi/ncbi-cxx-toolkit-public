@@ -1850,11 +1850,11 @@ BOOST_AUTO_TEST_CASE(TwoGiListsOneVolume)
 BOOST_AUTO_TEST_CASE(GetTaxIDs_gi_to_taxid)
 {
 
-    int gi1a = 446106212;
+    TGi gi1a = GI_FROM(int,446106212);
     int tax1 = 1386;
 
-    int gi2a = 494110381;
-    int gi2b = 30172867;
+    TGi gi2a = GI_FROM(int,494110381);
+    TGi gi2b = GI_FROM(int,30172867);
     int tax2a = 1678;
     int tax2b = 206672;
 
@@ -1871,7 +1871,7 @@ BOOST_AUTO_TEST_CASE(GetTaxIDs_gi_to_taxid)
 
     BOOST_REQUIRE(oid1 != oid2);
 
-    map<int, int> gi2taxid;
+    map<TGi, int> gi2taxid;
 
     db.GetTaxIDs(oid1, gi2taxid);
     BOOST_REQUIRE_EQUAL((int)gi2taxid.size(), 44);
