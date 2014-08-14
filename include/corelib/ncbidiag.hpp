@@ -832,6 +832,21 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SetPostFlags --
+///
+/// Set specific post flags.
+
+class SetPostFlags
+{
+public:
+    SetPostFlags(TDiagPostFlags flags)
+        : m_Flags(flags) {}
+    TDiagPostFlags m_Flags;         ///< flags to set
+};
+
+
 class CNcbiDiag;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -975,6 +990,13 @@ public:
         const CNcbiDiag& Put(const CStackTrace*,
                              const CStackTrace& stacktrace) const;
 
+    /// Helper method to set specific post flags.
+    ///
+    /// Example:
+    ///   CNcbiDiag() << SetPostFlags(eDPF_DateTime) << "My message";
+    const CNcbiDiag& Put(const NCBI_NS_NCBI::SetPostFlags*,
+                         const NCBI_NS_NCBI::SetPostFlags& flags) const;
+
     /// Helper method to handle various diagnostic stream manipulators.
     ///
     /// For example, to set the message severity level to INFO:
@@ -1112,6 +1134,15 @@ public:
     /// If the post flags have "eDPF_Default" set, then in the returned flags
     /// it will be reset and substituted by current default flags.
     TDiagPostFlags GetPostFlags(void) const;
+
+    /// Set new post flags for the current message.
+    void SetAllPostFlags(TDiagPostFlags flags) const;
+
+    /// Set specific post flags for the current message.
+    TDiagPostFlags SetPostFlags(TDiagPostFlags flags) const;
+
+    /// Clear specific post flags for the current message.
+    TDiagPostFlags ResetPostFlags(TDiagPostFlags flags) const;
 
     /// Display fatal error message.
     NCBI_XNCBI_EXPORT

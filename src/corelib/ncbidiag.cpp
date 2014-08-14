@@ -4462,6 +4462,11 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
         os << CFastLocalTime().GetLocalTime().AsString("M/D/y h:m:s ");
     }
+#ifdef NCBI_THREADS
+    if (IsSetDiagPostFlag(eDPF_TID, m_Flags)) {
+        os << 'T' << CThread::GetSelf() << ' ';
+    }
+#endif
     // "<file>"
     bool print_file = (m_File  &&  *m_File  &&
                        IsSetDiagPostFlag(eDPF_File, m_Flags));

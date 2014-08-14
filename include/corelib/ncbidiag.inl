@@ -326,6 +326,17 @@ inline TDiagPostFlags CNcbiDiag::GetPostFlags(void) const {
         m_PostFlags;
 }
 
+inline void CNcbiDiag::SetAllPostFlags(TDiagPostFlags flags) const {
+    m_PostFlags = flags;
+}
+
+inline TDiagPostFlags CNcbiDiag::SetPostFlags(TDiagPostFlags flags) const {
+    return (m_PostFlags = (GetPostFlags() | flags));
+}
+
+inline TDiagPostFlags CNcbiDiag::ResetPostFlags(TDiagPostFlags flags) const {
+    return (m_PostFlags = (GetPostFlags() & ~flags));
+}
 
 inline
 const char* CNcbiDiag::SeverityName(EDiagSev sev) {
@@ -367,6 +378,15 @@ const CNcbiDiag& CNcbiDiag::Put(const Severity*,
 {
     x_EndMess();
     m_Severity = severity.m_Level;
+    return *this;
+}
+
+inline
+const CNcbiDiag& CNcbiDiag::Put(const NCBI_NS_NCBI::SetPostFlags*,
+                                const NCBI_NS_NCBI::SetPostFlags& flags) const
+{
+    x_EndMess();
+    SetPostFlags(flags.m_Flags);
     return *this;
 }
 
