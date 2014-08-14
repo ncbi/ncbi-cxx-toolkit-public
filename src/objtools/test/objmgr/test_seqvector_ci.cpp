@@ -312,7 +312,7 @@ int CTestApp::Run(void)
         m_Vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     }
     else {
-        CScope* no_scope = 0;
+        static CScope* no_scope;
         m_Vect = CSeqVector(handle.GetSeqMap(), *no_scope,
                             CBioseq_Handle::eCoding_Iupac);
     }
