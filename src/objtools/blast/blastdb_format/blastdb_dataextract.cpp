@@ -64,7 +64,7 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
         m_Oid = id.GetOID();
     } else if (id.IsGi()) {
         m_Gi = id.GetGi();
-        m_BlastDb.GiToOid(m_Gi, m_Oid);
+        m_BlastDb.GiToOid(GI_TO(int,m_Gi), m_Oid);
         if (m_TargetOnly || ! get_data) target_gi = m_Gi;
     } else if (id.IsPig()) {
         m_BlastDb.PigToOid(id.GetPig(), m_Oid);
@@ -110,11 +110,11 @@ void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
 
     try {
         if (get_data) {
-            m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, target_gi, target_seq_id));
+            m_Bioseq.Reset(m_BlastDb.GetBioseq(m_Oid, GI_TO(int,target_gi), target_seq_id));
         }
-	else if (m_Gi <= 0)
+	else if (m_Gi <= ZERO_GI)
 	{  // If no GI, then all the Gi2XMaps will fail.
-	    m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, target_gi, target_seq_id));
+	    m_Bioseq.Reset(m_BlastDb.GetBioseqNoData(m_Oid, GI_TO(int,target_gi), target_seq_id));
 	}
 
     } catch (const CSeqDBException& e) {
@@ -144,11 +144,11 @@ string CBlastDBExtractor::ExtractPig() {
 
 string CBlastDBExtractor::ExtractGi() {
     x_SetGi();
-    return (m_Gi ? NStr::IntToString(m_Gi) : NOT_AVAILABLE);
+    return (m_Gi != ZERO_GI ? NStr::NumericToString(m_Gi) : NOT_AVAILABLE);
 }
 
 void CBlastDBExtractor::x_SetGi() {
-    if (m_Gi) return;
+    if (m_Gi != ZERO_GI) return;
     ITERATE(list<CRef<CSeq_id> >, itr, m_Bioseq->GetId()) {
         if ((*itr)->IsGi()) {
             m_Gi = (*itr)->GetGi();
@@ -320,7 +320,7 @@ void CBlastDBExtractor::x_SetGi2TitleMap()
 }
 
 string CBlastDBExtractor::ExtractAccession() {
-    if (m_Gi)
+    if (m_Gi != ZERO_GI)
     {
     	x_SetGi2AccMap();
     	return m_Gi2AccMap.second[m_Gi];
@@ -336,7 +336,7 @@ string CBlastDBExtractor::ExtractAccession() {
 }
 
 string CBlastDBExtractor::ExtractSeqId() {
-    if (m_Gi)
+    if (m_Gi != ZERO_GI)
     {
         x_SetGi2SeqIdMap();
         return m_Gi2SeqIdMap.second[m_Gi];
@@ -351,7 +351,7 @@ string CBlastDBExtractor::ExtractSeqId() {
 }
 
 string CBlastDBExtractor::ExtractTitle() {
-    if (m_Gi)
+    if (m_Gi != ZERO_GI)
     {
         x_SetGi2TitleMap();
         return m_Gi2TitleMap.second[m_Gi];
@@ -666,7 +666,7 @@ int CBlastDBExtractor::x_ExtractTaxId()
 {
     x_SetGi();
 
-    if (m_Gi) {
+    if (m_Gi != ZERO_GI) {
         if (m_Gi2TaxidMap.first != m_Oid)
         {
             m_Gi2TaxidMap.first = m_Oid;
@@ -684,7 +684,7 @@ void CBlastDBExtractor::x_ExtractLeafTaxIds(set<int>& taxids)
 {
     x_SetGi();
 
-    if (m_Gi) {
+    if (m_Gi != ZERO_GI) {
         if (m_Gi2TaxidSetMap.first != m_Oid)
         {
             m_Gi2TaxidSetMap.first = m_Oid;

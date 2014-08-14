@@ -366,7 +366,7 @@ CSeqDB::ESeqType CSeqDB::GetSequenceType() const
 }
 
 void CSeqDB::GetTaxIDs(int             oid,
-                       map<int, int> & gi_to_taxid,
+                       map<TGi, int> & gi_to_taxid,
                        bool            persist) const
 {
     m_Impl->Verify();
@@ -385,7 +385,7 @@ void CSeqDB::GetTaxIDs(int           oid,
 
 void CSeqDB::GetLeafTaxIDs(
         int                  oid,
-        map<int, set<int> >& gi_to_taxid_set,
+        map<TGi, set<int> >& gi_to_taxid_set,
         bool                 persist
 ) const
 {

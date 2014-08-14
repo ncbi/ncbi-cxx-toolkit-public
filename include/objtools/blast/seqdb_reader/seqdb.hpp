@@ -478,7 +478,7 @@ public:
     ///   If false, the map will be cleared before adding new entries.
     void GetLeafTaxIDs(
             int                  oid,
-            map<int, set<int> >& gi_to_taxid_set,
+            map<TGi, set<int> >& gi_to_taxid_set,
             bool                 persist = false
     ) const;
 
@@ -520,7 +520,7 @@ public:
     /// @param persist
     ///   If false, the map will be cleared before adding new entries.
     void GetTaxIDs(int             oid,
-                   map<int, int> & gi_to_taxid,
+                   map<TGi, int> & gi_to_taxid,
                    bool            persist = false) const;
 
     /// Get taxids for an OID.

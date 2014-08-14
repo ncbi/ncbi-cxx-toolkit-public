@@ -94,7 +94,7 @@ public:
         string retval;
         switch (m_EntryChoice) {
         case ePig:      retval = "PIG " + NStr::IntToString(GetPig()); break;
-        case eGi:       retval = "GI " + NStr::IntToString(GetGi()); break;
+        case eGi:       retval = "GI " + NStr::NumericToString(GetGi()); break;
         case eSeqId:    retval = "'" + GetStringId() + "'"; break;
         case eNone:
                         if (GetOID() != CBlastDBSeqId::kInvalid) {
@@ -125,7 +125,7 @@ public:
     bool IsOID() const { return m_EntryChoice == eNone || m_OID != kInvalid; }
 
     /// Retrieve this object's GI
-    int GetGi() const { return m_EntrySpecified.m_GI; }
+    TIntId GetGi() const { return m_EntrySpecified.m_GI; }
     /// Retrieve this object's PIG
     int GetPig() const { return m_EntrySpecified.m_PIG; }
     /// Retrieve this object's string identifier
@@ -154,7 +154,7 @@ private:
     /// Union to hold the memory of the data stored
     union {
         int m_PIG;              ///< Store a PIG
-        int m_GI;               ///< Store a GI
+        TIntId m_GI;               ///< Store a GI
         string* m_SequenceId;   ///< Store a sequence identifier as a string
     } m_EntrySpecified;
 
