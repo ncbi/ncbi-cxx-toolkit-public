@@ -32,7 +32,9 @@
  *    Common NetSchedule Worker Node declarations
  */
 
-#include <corelib/ncbistl.hpp>
+#include "wn_commit_thread.hpp"
+#include "wn_cleanup.hpp"
+#include "netschedule_api_impl.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -40,10 +42,150 @@ BEGIN_NCBI_SCOPE
 //
 
 ///@internal
+struct SWorkerNodeJobContextImpl : public CWorkerNodeTimelineEntry
+{
+    SWorkerNodeJobContextImpl(SGridWorkerNodeImpl* worker_node);
+
+    void Reset();
+
+    void x_SetCanceled() { m_JobCommitted = CWorkerNodeJobContext::eCanceled; }
+    void CheckIfCanceled();
+
+    void x_PrintRequestStop();
+    virtual void x_RunJob();
+
+    SGridWorkerNodeImpl* m_WorkerNode;
+    CNetScheduleJob m_Job;
+    CWorkerNodeJobContext::ECommitStatus m_JobCommitted;
+    size_t m_InputBlobSize;
+    unsigned int m_JobNumber;
+    bool m_ExclusiveJob;
+
+    CRef<CWorkerNodeCleanup> m_CleanupEventSource;
+
+    CRef<CRequestContext> m_RequestContext;
+    CRequestRateControl m_StatusThrottler;
+    CRequestRateControl m_ProgressMsgThrottler;
+    CNetScheduleExecutor m_NetScheduleExecutor;
+    CNetCacheAPI m_NetCacheAPI;
+    auto_ptr<CNcbiIstream> m_RStream;
+    auto_ptr<IEmbeddedStreamWriter> m_Writer;
+    auto_ptr<CNcbiOstream> m_WStream;
+
+    // Used for the job "pullback" mechanism.
+    unsigned m_JobGeneration;
+
+    CDeadline m_CommitExpiration;
+    bool      m_FirstCommitAttempt;
+};
+
+///@internal
+struct SGridWorkerNodeImpl : public CObject
+{
+    SGridWorkerNodeImpl(CNcbiApplication& app,
+            IWorkerNodeJobFactory* job_factory);
+
+    void AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
+                          EOwnership owner = eNoOwnership);
+
+    int Run(
+#ifdef NCBI_OS_UNIX
+            ESwitch daemonize,
+#endif
+            string procinfo_file_name);
+
+    void x_WNCoreInit();
+    void x_StartWorkerThreads();
+    void x_StopWorkerThreads();
+    int x_WNCleanUp();
+
+    const string& GetQueueName() const
+    {
+        return m_NetScheduleAPI.GetQueueName();
+    }
+    const string& GetClientName() const
+    {
+        return m_NetScheduleAPI->m_Service->m_ServerPool->m_ClientName;
+    }
+    const string& GetServiceName() const
+    {
+        return m_NetScheduleAPI->m_Service->m_ServiceName;
+    }
+
+    bool EnterExclusiveMode();
+    void LeaveExclusiveMode();
+    bool IsExclusiveMode() const {return m_IsProcessingExclusiveJob;}
+    bool WaitForExclusiveJobToFinish();
+
+    void SetJobPullbackTimer(unsigned seconds);
+    bool CheckForPullback(unsigned job_generation);
+
+    int OfflineRun();
+
+    auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
+
+    CNetCacheAPI m_NetCacheAPI;
+    CNetScheduleAPI m_NetScheduleAPI;
+    CNetScheduleExecutor m_NSExecutor;
+    CStdPoolOfThreads* m_ThreadPool;
+
+    unsigned int                 m_MaxThreads;
+    unsigned int                 m_NSTimeout;
+    mutable CFastMutex           m_JobProcessorMutex;
+    unsigned                     m_CommitJobInterval;
+    unsigned                     m_CheckStatusPeriod;
+    CSemaphore                   m_ExclusiveJobSemaphore;
+    bool                         m_IsProcessingExclusiveJob;
+    Uint8                        m_TotalMemoryLimit;
+    unsigned                     m_TotalTimeLimit;
+    time_t                       m_StartupTime;
+    unsigned                     m_QueueTimeout;
+
+    typedef map<IWorkerNodeJobWatcher*,
+            AutoPtr<IWorkerNodeJobWatcher> > TJobWatchers;
+    CFastMutex m_JobWatcherMutex;
+    TJobWatchers m_Watchers;
+
+    CRef<CWorkerNodeCleanup> m_CleanupEventSource;
+
+    IWorkerNodeJob* GetJobProcessor();
+
+    void x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
+                            IWorkerNodeJobWatcher::EEvent event);
+
+    set<SServerAddress> m_Masters;
+    set<unsigned int> m_AdminHosts;
+
+    void* volatile m_SuspendResumeEvent;
+    bool m_TimelineIsSuspended;
+    // Support for the job "pullback" mechanism.
+    CFastMutex m_JobPullbackMutex;
+    unsigned m_CurrentJobGeneration;
+    unsigned m_DefaultPullbackTimeout;
+    CDeadline m_JobPullbackTime;
+
+    bool x_AreMastersBusy() const;
+    auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
+
+    CRef<CJobCommitterThread> m_JobCommitterThread;
+    CRef<CWorkerNodeIdleThread>  m_IdleThread;
+
+    auto_ptr<IGridWorkerNodeApp_Listener> m_Listener;
+
+    CNcbiApplication& m_App;
+    bool m_SingleThreadForced;
+    bool m_LogRequested;
+    bool m_ProgressLogRequested;
+    size_t m_QueueEmbeddedOutputSize;
+    unsigned m_ThreadPoolTimeout;
+};
+
+
+///@internal
 class CWorkerNodeRequest : public CStdRequest
 {
 public:
-    CWorkerNodeRequest(CWorkerNodeJobContext* context) :
+    CWorkerNodeRequest(SWorkerNodeJobContextImpl* context) :
         m_JobContext(context)
     {
     }
@@ -51,7 +193,7 @@ public:
     virtual void Process();
 
 private:
-    CWorkerNodeJobContext* m_JobContext;
+    CWorkerNodeJobContext m_JobContext;
 };
 
 
@@ -74,19 +216,53 @@ bool g_IsRequestStopEventEnabled();
 class CMainLoopThread : public CThread
 {
 public:
-    CMainLoopThread(CGridWorkerNode* worker_node) :
+    CMainLoopThread(SGridWorkerNodeImpl* worker_node) :
         m_WorkerNode(worker_node),
-        m_Semaphore(0, 1)
+        m_Semaphore(0, 1),
+        m_DiscoveryIteration(1),
+        m_DiscoveryAction(
+                new SNotificationTimelineEntry(SServerAddress(0, 0), 0))
     {
+        m_ImmediateActions.Push(m_DiscoveryAction);
     }
 
     void Stop();
 
-private:
     virtual void* Main();
 
-    CGridWorkerNode* m_WorkerNode;
+private:
+    SGridWorkerNodeImpl* m_WorkerNode;
     CSemaphore m_Semaphore;
+    unsigned m_DiscoveryIteration;
+
+    typedef CWorkerNodeTimeline<SNotificationTimelineEntry,
+            SNotificationTimelineEntry::TRef> TNotificationTimeline;
+
+    TNotificationTimeline m_ImmediateActions, m_Timeline;
+
+    typedef set<SNotificationTimelineEntry*,
+            SNotificationTimelineEntry::SLess> TTimelineEntries;
+
+    TTimelineEntries m_TimelineEntryByAddress;
+
+    SNotificationTimelineEntry::TRef m_DiscoveryAction;
+
+    bool x_GetJobWithAffinityList(SNetServerImpl* server,
+            const CDeadline* timeout,
+            CNetScheduleJob& job,
+            CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
+            const string& affinity_list);
+    bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
+            const CDeadline* timeout,
+            CNetScheduleJob& job);
+    SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
+    bool x_PerformTimelineAction(TNotificationTimeline& timeline,
+            CNetScheduleJob& job);
+    bool x_EnterSuspendedState();
+    void x_ProcessRequestJobNotification();
+    bool x_WaitForNewJob(CNetScheduleJob& job);
+    bool x_GetNextJob(CNetScheduleJob& job);
+    void x_ReturnJob(const CNetScheduleJob& job);
 };
 
 END_NCBI_SCOPE

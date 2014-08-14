@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 class CWorkerNodeTimeline_Base;
 
-class NCBI_XCONNECT_EXPORT CWorkerNodeTimelineEntry
+class NCBI_XCONNECT_EXPORT CWorkerNodeTimelineEntry : public CObject
 {
 public:
     friend class CWorkerNodeTimeline_Base;
@@ -53,7 +53,6 @@ public:
         return m_Timeline == timeline;
     }
 
-    void Cut();
     void MoveTo(CWorkerNodeTimeline_Base* timeline);
 
     const CDeadline& GetTimeout() const {return m_Deadline;}
@@ -77,94 +76,110 @@ private:
 
 class NCBI_XCONNECT_EXPORT CWorkerNodeTimeline_Base
 {
-public:
+protected:
     friend class CWorkerNodeTimelineEntry;
 
     CWorkerNodeTimeline_Base() : m_Head(NULL), m_Tail(NULL)
     {
     }
 
-    CWorkerNodeTimelineEntry* GetHead() const {return m_Head;}
-
+public:
     bool IsEmpty() const {return m_Head == NULL;}
 
     void Push(CWorkerNodeTimelineEntry* new_entry)
     {
         _ASSERT(new_entry->m_Timeline == NULL);
-        if (m_Tail != NULL)
-            (m_Tail->m_Next = new_entry)->m_Prev = m_Tail;
-        else
-            (m_Head = new_entry)->m_Prev = NULL;
-        new_entry->m_Next = NULL;
-        (m_Tail = new_entry)->m_Timeline = this;
+        AttachTail(new_entry);
+        new_entry->AddReference();
     }
 
-    CWorkerNodeTimelineEntry* Shift()
+protected:
+    void AttachTail(CWorkerNodeTimelineEntry* new_tail)
+    {
+        new_tail->m_Timeline = this;
+        new_tail->m_Next = NULL;
+        if ((new_tail->m_Prev = m_Tail) != NULL)
+            m_Tail->m_Next = new_tail;
+        else
+            m_Head = new_tail;
+        m_Tail = new_tail;
+    }
+
+    CWorkerNodeTimelineEntry* DetachHead()
     {
         _ASSERT(m_Head != NULL);
-        CWorkerNodeTimelineEntry* old_head = m_Head;
-        if ((m_Head = old_head->m_Next) != NULL)
+        CWorkerNodeTimelineEntry* detached_head = m_Head;
+        if ((m_Head = detached_head->m_Next) != NULL)
             m_Head->m_Prev = NULL;
         else
             m_Tail = NULL;
-        old_head->m_Timeline = NULL;
-        return old_head;
+        detached_head->m_Timeline = NULL;
+        return detached_head;
+    }
+
+public:
+    void MoveHeadTo(CWorkerNodeTimeline_Base* timeline)
+    {
+        timeline->AttachTail(DetachHead());
     }
 
     void Clear()
     {
-        if (!IsEmpty()) {
-            CWorkerNodeTimelineEntry* entry = m_Head;
+        CWorkerNodeTimelineEntry* entry = m_Head;
+        if (entry != NULL) {
+            m_Tail = m_Head = NULL;
             do {
                 entry->m_Timeline = NULL;
-                entry = entry->m_Next;
+                CWorkerNodeTimelineEntry* next_entry = entry->m_Next;
+                entry->RemoveReference();
+                entry = next_entry;
             } while (entry != NULL);
-
-            m_Tail = m_Head = NULL;
         }
     }
 
-private:
+protected:
+    ~CWorkerNodeTimeline_Base()
+    {
+        Clear();
+    }
+
     CWorkerNodeTimelineEntry* m_Head;
     CWorkerNodeTimelineEntry* m_Tail;
 };
 
-inline void CWorkerNodeTimelineEntry::Cut()
-{
-    if (m_Timeline != NULL) {
-        if (m_Prev == NULL)
-            if ((m_Timeline->m_Head = m_Next) == NULL)
-                m_Timeline->m_Tail = NULL;
-            else
-                m_Next->m_Prev = NULL;
-        else if (m_Next == NULL)
-            (m_Timeline->m_Tail = m_Prev)->m_Next = NULL;
-        else
-            (m_Prev->m_Next = m_Next)->m_Prev = m_Prev;
-        m_Timeline = NULL;
-    }
-}
-
 inline void CWorkerNodeTimelineEntry::MoveTo(CWorkerNodeTimeline_Base* timeline)
 {
-    if (!IsInTimeline(timeline)) {
-        Cut();
-        timeline->Push(this);
+    if (m_Timeline != timeline) {
+        if (m_Timeline == NULL)
+            AddReference();
+        else {
+            if (m_Prev == NULL)
+                if ((m_Timeline->m_Head = m_Next) != NULL)
+                    m_Next->m_Prev = NULL;
+                else
+                    m_Timeline->m_Tail = NULL;
+            else if (m_Next == NULL)
+                (m_Timeline->m_Tail = m_Prev)->m_Next = NULL;
+            else
+                (m_Prev->m_Next = m_Next)->m_Prev = m_Prev;
+        }
+        timeline->AttachTail(this);
     }
 }
 
-template <typename TTimelineEntry>
+template <typename TTimelineEntry, typename TRefType>
 class CWorkerNodeTimeline : public CWorkerNodeTimeline_Base
 {
 public:
-    TTimelineEntry* GetHead() const
+    TRefType GetHead() const
     {
-        return static_cast<TTimelineEntry*>(
-                CWorkerNodeTimeline_Base::GetHead());
+        return TRefType(static_cast<TTimelineEntry*>(m_Head));
     }
-    TTimelineEntry* Shift()
+    void Shift(TRefType& ref)
     {
-        return static_cast<TTimelineEntry*>(CWorkerNodeTimeline_Base::Shift());
+        CWorkerNodeTimelineEntry* head = DetachHead();
+        ref = static_cast<TTimelineEntry*>(head);
+        head->RemoveReference();
     }
 };
 

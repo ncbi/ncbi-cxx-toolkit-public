@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "wn_commit_thread.hpp"
+#include "grid_worker_impl.hpp"
 
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_globals.hpp>
@@ -57,23 +58,25 @@ static void s_TlsCleanup(IWorkerNodeJob* p_value, void* /* data */ )
 /// @internal
 static CStaticTls<IWorkerNodeJob> s_tls;
 
-CWorkerNodeJobContext* CJobCommitterThread::AllocJobContext()
+CWorkerNodeJobContext CJobCommitterThread::AllocJobContext()
 {
     TFastMutexGuard mutex_lock(m_TimelineMutex);
 
     if (m_JobContextPool.IsEmpty())
-        return new CWorkerNodeJobContext(*m_WorkerNode);
+        return new SWorkerNodeJobContextImpl(m_WorkerNode);
 
-    CWorkerNodeJobContext* job_context = m_JobContextPool.Shift();
+    CWorkerNodeJobContext job_context;
+
+    m_JobContextPool.Shift(job_context);
 
     job_context->m_Job.Reset();
-    job_context->m_JobGeneration = m_WorkerNode->GetCurrentJobGeneration();
+    job_context->m_JobGeneration = m_WorkerNode->m_CurrentJobGeneration;
 
     return job_context;
 }
 
 void CJobCommitterThread::RecycleJobContextAndCommitJob(
-        CWorkerNodeJobContext* job_context)
+        SWorkerNodeJobContextImpl* job_context)
 {
     job_context->m_FirstCommitAttempt = true;
 
@@ -111,7 +114,7 @@ void* CJobCommitterThread::Main()
                     &nanosec);
 
             if (sec == 0 && nanosec == 0)
-                m_ImmediateActions.Push(m_Timeline.Shift());
+                m_Timeline.MoveHeadTo(&m_ImmediateActions);
             else {
                 bool wait_interrupted;
                 {
@@ -120,33 +123,24 @@ void* CJobCommitterThread::Main()
                     wait_interrupted = m_Semaphore.TryWait(sec, nanosec);
                 }
                 if (!wait_interrupted)
-                    m_ImmediateActions.Push(m_Timeline.Shift());
+                    m_Timeline.MoveHeadTo(&m_ImmediateActions);
             }
         }
 
-        while (!m_ImmediateActions.IsEmpty()) {
+        while (!m_ImmediateActions.IsEmpty())
             // Do not remove the job context from m_ImmediateActions
             // prior to calling x_CommitJob() to avoid race conditions
             // (otherwise, the semaphore can be Post()'ed multiple times
             // by the worker threads while this thread is in x_CommitJob()).
-            CWorkerNodeJobContext* job_context = m_ImmediateActions.GetHead();
-            if (x_CommitJob(job_context))
-                m_JobContextPool.Push(m_ImmediateActions.Shift());
-            else
-                m_Timeline.Push(m_ImmediateActions.Shift());
-        }
+            m_ImmediateActions.MoveHeadTo(
+                    x_CommitJob(m_ImmediateActions.GetHead()) ?
+                            &m_JobContextPool : &m_Timeline);
     } while (!CGridGlobals::GetInstance().IsShuttingDown());
-
-    while (!m_Timeline.IsEmpty())
-        delete m_Timeline.Shift();
-
-    while (!m_JobContextPool.IsEmpty())
-        delete m_JobContextPool.Shift();
 
     return NULL;
 }
 
-bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
+bool CJobCommitterThread::x_CommitJob(SWorkerNodeJobContextImpl* job_context)
 {
     TFastMutexUnlockGuard mutext_unlock(m_TimelineMutex);
 
@@ -155,25 +149,26 @@ bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
     bool recycle_job_context = false;
 
     try {
-        switch (job_context->GetCommitStatus()) {
+        switch (job_context->m_JobCommitted) {
         case CWorkerNodeJobContext::eDone:
-            m_WorkerNode->GetNSExecutor().PutResult(job_context->GetJob());
+            m_WorkerNode->m_NSExecutor.PutResult(job_context->m_Job);
             break;
 
         case CWorkerNodeJobContext::eFailure:
-            m_WorkerNode->GetNSExecutor().PutFailure(job_context->GetJob());
+            m_WorkerNode->m_NSExecutor.PutFailure(job_context->m_Job);
             break;
 
         case CWorkerNodeJobContext::eReturn:
-            m_WorkerNode->x_ReturnJob(job_context->GetJob());
+            m_WorkerNode->m_NSExecutor.ReturnJob(job_context->m_Job.job_id,
+                    job_context->m_Job.auth_token);
             break;
 
         case CWorkerNodeJobContext::eRescheduled:
-            m_WorkerNode->GetNSExecutor().Reschedule(job_context->GetJob());
+            m_WorkerNode->m_NSExecutor.Reschedule(job_context->m_Job);
             break;
 
         default: // Always eCanceled; eNotCommitted is overridden in x_RunJob().
-            ERR_POST("Job " << job_context->GetJob().job_id <<
+            ERR_POST("Job " << job_context->m_Job.job_id <<
                     " has been canceled");
         }
 
@@ -185,12 +180,12 @@ bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
         recycle_job_context = true;
     }
     catch (exception& e) {
-        unsigned commit_interval = m_WorkerNode->GetCommitJobInterval();
+        unsigned commit_interval = m_WorkerNode->m_CommitJobInterval;
         job_context->ResetTimeout(commit_interval);
         if (job_context->m_FirstCommitAttempt) {
             job_context->m_FirstCommitAttempt = false;
             job_context->m_CommitExpiration =
-                    CDeadline(m_WorkerNode->GetQueueTimeout(), 0);
+                    CDeadline(m_WorkerNode->m_QueueTimeout, 0);
         } else if (job_context->m_CommitExpiration <
                 job_context->GetTimeout()) {
             ERR_POST_X(64, "Could not commit " <<
@@ -211,7 +206,7 @@ bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
 }
 
 /// @internal
-IWorkerNodeJob* CGridWorkerNode::GetJobProcessor()
+IWorkerNodeJob* SGridWorkerNodeImpl::GetJobProcessor()
 {
     IWorkerNodeJob* ret = s_tls.GetValue();
     if (ret == NULL) {

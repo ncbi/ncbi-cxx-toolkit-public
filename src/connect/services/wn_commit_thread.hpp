@@ -35,6 +35,8 @@
 
 #include <connect/services/grid_worker.hpp>
 
+#include "timeline.hpp"
+
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
@@ -64,24 +66,25 @@ private:
 class CJobCommitterThread : public CThread
 {
 public:
-    CJobCommitterThread(CGridWorkerNode* worker_node) :
+    CJobCommitterThread(SGridWorkerNodeImpl* worker_node) :
         m_WorkerNode(worker_node),
         m_Semaphore(0, 1)
     {
     }
 
-    CWorkerNodeJobContext* AllocJobContext();
+    CWorkerNodeJobContext AllocJobContext();
 
-    void RecycleJobContextAndCommitJob(CWorkerNodeJobContext* job_context);
+    void RecycleJobContextAndCommitJob(SWorkerNodeJobContextImpl* job_context);
 
     void Stop();
 
 private:
-    typedef CWorkerNodeTimeline<CWorkerNodeJobContext> TCommitJobTimeline;
+    typedef CWorkerNodeTimeline<SWorkerNodeJobContextImpl,
+            CWorkerNodeJobContext> TCommitJobTimeline;
 
     virtual void* Main();
 
-    bool x_CommitJob(CWorkerNodeJobContext* job_context);
+    bool x_CommitJob(SWorkerNodeJobContextImpl* job_context);
 
     void WakeUp()
     {
@@ -89,7 +92,7 @@ private:
             m_Semaphore.Post();
     }
 
-    CGridWorkerNode* m_WorkerNode;
+    SGridWorkerNodeImpl* m_WorkerNode;
     CSemaphore m_Semaphore;
     TCommitJobTimeline m_ImmediateActions, m_Timeline, m_JobContextPool;
     CFastMutex m_TimelineMutex;

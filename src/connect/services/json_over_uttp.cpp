@@ -1170,8 +1170,8 @@ bool CJsonOverUTTPReader::x_AddNewNode(CJsonNode::TInstance new_node)
         m_CurrentNode.SetByKey(m_HashKey, new_node);
     } else
         // The current node is either a JSON object or an array,
-        // because if it was a non-container node, this method
-        // would not be called.
+        // because if it was a non-container node then this method
+        // wouldn't have been called.
         if (m_CurrentNode.IsArray())
             m_CurrentNode.Append(new_node);
         else {

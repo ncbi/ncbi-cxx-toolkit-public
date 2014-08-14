@@ -76,7 +76,7 @@ private:
 class CGridCleanupThread : public CThread
 {
 public:
-    CGridCleanupThread(CGridWorkerNode* worker_node,
+    CGridCleanupThread(SGridWorkerNodeImpl* worker_node,
         IGridWorkerNodeApp_Listener* listener) :
             m_WorkerNode(worker_node),
             m_Listener(listener),
@@ -90,7 +90,7 @@ protected:
     virtual void* Main();
 
 private:
-    CGridWorkerNode* m_WorkerNode;
+    SGridWorkerNodeImpl* m_WorkerNode;
     IGridWorkerNodeApp_Listener* m_Listener;
     CSemaphore m_Semaphore;
 };

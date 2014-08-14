@@ -23,10 +23,10 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko, Anatoliy Kuznetsov, Dmitry Kazimirov
+ * Authors:  Dmitry Kazimirov
  *
  * File Description:
- *    NetSchedule Worker Node implementation
+ *    Worker node offline mode implementation.
  */
 
 #include <ncbi_pch.hpp>
@@ -50,23 +50,49 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //
 
-void COfflineJobContext::PutProgressMessage(const string& msg,
+
+struct SOfflineJobContextImpl : public SWorkerNodeJobContextImpl
+{
+public:
+    SOfflineJobContextImpl(SGridWorkerNodeImpl* worker_node,
+            const string& output_dir_name,
+            CCompoundIDPool::TInstance compound_id_pool) :
+        SWorkerNodeJobContextImpl(worker_node),
+        m_OutputDirName(output_dir_name),
+        m_CompoundIDPool(compound_id_pool)
+    {
+    }
+
+    virtual void PutProgressMessage(const string& msg,
+        bool send_immediately = false);
+    virtual CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
+    virtual void JobDelayExpiration(unsigned runtime_inc);
+    virtual void x_RunJob();
+
+    string m_OutputDirName;
+    CCompoundIDPool m_CompoundIDPool;
+};
+
+
+void SOfflineJobContextImpl::PutProgressMessage(const string& msg,
         bool send_immediately)
 {
 }
 
-CNetScheduleAdmin::EShutdownLevel COfflineJobContext::GetShutdownLevel()
+CNetScheduleAdmin::EShutdownLevel SOfflineJobContextImpl::GetShutdownLevel()
 {
     return CGridGlobals::GetInstance().GetShutdownLevel();
 }
 
-void COfflineJobContext::JobDelayExpiration(unsigned runtime_inc)
+void SOfflineJobContextImpl::JobDelayExpiration(unsigned runtime_inc)
 {
 }
 
-void COfflineJobContext::x_RunJob()
+void SOfflineJobContextImpl::x_RunJob()
 {
-    m_RequestContext->SetRequestID((int) GetJobNumber());
+    CWorkerNodeJobContext this_job_context(this);
+
+    m_RequestContext->SetRequestID((int) this_job_context.GetJobNumber());
     m_RequestContext->SetAppState(eDiagAppState_RequestBegin);
 
     CRequestContextSwitcher request_state_guard(m_RequestContext);
@@ -77,7 +103,8 @@ void COfflineJobContext::x_RunJob()
     m_RequestContext->SetAppState(eDiagAppState_Request);
 
     try {
-        SetJobRetCode(m_WorkerNode.GetJobProcessor()->Do(*this));
+        this_job_context.SetJobRetCode(
+                m_WorkerNode->GetJobProcessor()->Do(this_job_context));
     }
     catch (CGridWorkerNodeException& ex) {
         switch (ex.GetErrCode()) {
@@ -86,47 +113,49 @@ void COfflineJobContext::x_RunJob()
             break;
 
         case CGridWorkerNodeException::eExclusiveModeIsAlreadySet:
-            if (IsLogRequested()) {
-                LOG_POST_X(21, "Job " << GetJobKey() <<
+            if (this_job_context.IsLogRequested()) {
+                LOG_POST_X(21, "Job " << this_job_context.GetJobKey() <<
                     " will be returned back to the queue "
                     "because it requested exclusive mode while "
                     "another job already has the exclusive status.");
             }
-            if (!IsJobCommitted())
-                ReturnJob();
+            if (!this_job_context.IsJobCommitted())
+                this_job_context.ReturnJob();
             break;
 
         default:
             ERR_POST_X(62, ex);
-            if (!IsJobCommitted())
-                ReturnJob();
+            if (!this_job_context.IsJobCommitted())
+                this_job_context.ReturnJob();
         }
     }
     catch (exception& e) {
-        ERR_POST_X(18, "job" << GetJobKey() << " failed: " << e.what());
-        if (!IsJobCommitted())
-            CommitJobWithFailure(e.what());
+        ERR_POST_X(18, "job" << this_job_context.GetJobKey() <<
+                " failed: " << e.what());
+        if (!this_job_context.IsJobCommitted())
+            this_job_context.CommitJobWithFailure(e.what());
     }
 
-    CloseStreams();
+    this_job_context.CloseStreams();
 
-    if (m_WorkerNode.IsExclusiveMode() && m_ExclusiveJob)
-        m_WorkerNode.LeaveExclusiveMode();
+    if (m_WorkerNode->IsExclusiveMode() && m_ExclusiveJob)
+        m_WorkerNode->LeaveExclusiveMode();
 
     if (!m_OutputDirName.empty()) {
         CNetScheduleJobSerializer job_serializer(m_Job, m_CompoundIDPool);
 
-        switch (GetCommitStatus()) {
-        case eDone:
+        switch (this_job_context.GetCommitStatus()) {
+        case CWorkerNodeJobContext::eDone:
             job_serializer.SaveJobOutput(CNetScheduleAPI::eDone,
                     m_OutputDirName, m_NetCacheAPI);
             break;
 
-        case eNotCommitted:
-            CommitJobWithFailure("Job was not explicitly committed");
+        case CWorkerNodeJobContext::eNotCommitted:
+            this_job_context.CommitJobWithFailure(
+                    "Job was not explicitly committed");
             /* FALL THROUGH */
 
-        case eFailure:
+        case CWorkerNodeJobContext::eFailure:
             job_serializer.SaveJobOutput(CNetScheduleAPI::eFailed,
                     m_OutputDirName, m_NetCacheAPI);
             break;
@@ -137,11 +166,9 @@ void COfflineJobContext::x_RunJob()
     }
 
     x_PrintRequestStop();
-
-    delete this;
 }
 
-int CGridWorkerNode::OfflineRun()
+int SGridWorkerNodeImpl::OfflineRun()
 {
     x_WNCoreInit();
 
@@ -189,13 +216,15 @@ int CGridWorkerNode::OfflineRun()
 
         if (dir_entry.IsFile()) {
             try {
-                auto_ptr<CWorkerNodeJobContext> job_context(
-                        new COfflineJobContext(*this, output_dir_name,
-                        m_NetScheduleAPI.GetCompoundIDPool()));
+                CRef<SOfflineJobContextImpl> job_context_impl(
+                        new SOfflineJobContextImpl(this, output_dir_name,
+                                m_NetScheduleAPI.GetCompoundIDPool()));
 
-                job_context->Reset();
+                CWorkerNodeJobContext job_context(job_context_impl);
 
-                CNetScheduleJobSerializer job_serializer(job_context->GetJob(),
+                job_context_impl->Reset();
+
+                CNetScheduleJobSerializer job_serializer(job_context.GetJob(),
                         m_NetScheduleAPI.GetCompoundIDPool());
 
                 job_serializer.LoadJobInput(dir_entry.GetPath());
@@ -216,14 +245,14 @@ int CGridWorkerNode::OfflineRun()
 
                 try {
                     m_ThreadPool->AcceptRequest(CRef<CStdRequest>(
-                            new CWorkerNodeRequest(job_context.get())));
+                            new CWorkerNodeRequest(job_context)));
                 } catch (CBlockingQueueException& ex) {
                     ERR_POST(ex);
                     // that must not happen after CBlockingQueue is fixed
                     _ASSERT(0);
                 }
 
-                job_context.release();
+                job_context_impl = NULL;
 
                 if (CGridGlobals::GetInstance().IsShuttingDown())
                     break;

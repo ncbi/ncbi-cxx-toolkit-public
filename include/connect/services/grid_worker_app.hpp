@@ -155,7 +155,7 @@ public:
 
     void RequestShutdown();
 
-    CGridWorkerNode* GetWorkerNode() const {return m_WorkerNode.get();}
+    CGridWorkerNode GetWorkerNode() const {return m_WorkerNode;}
 
 protected:
 
@@ -167,7 +167,7 @@ private:
 
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 
-    auto_ptr<CGridWorkerNode> m_WorkerNode;
+    CGridWorkerNode m_WorkerNode;
 
     CGridWorkerApp(const CGridWorkerApp&);
     CGridWorkerApp& operator=(const CGridWorkerApp&);
@@ -175,7 +175,7 @@ private:
 
 inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
 {
-    m_WorkerNode->SetListener(listener);
+    m_WorkerNode.SetListener(listener);
 }
 
 // Define GRID_WORKER_APP_NAME for use by the logging system.

@@ -31,13 +31,10 @@
 
 #include <ncbi_pch.hpp>
 
-#include "wn_commit_thread.hpp"
-#include "wn_cleanup.hpp"
 #include "grid_worker_impl.hpp"
-#include "netschedule_api_impl.hpp"
+#include "grid_control_thread.hpp"
 
 #include <connect/services/grid_globals.hpp>
-#include <connect/services/grid_control_thread.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
@@ -69,14 +66,21 @@ void CWorkerNodeRequest::Process()
 class CGridControlThread : public CThread
 {
 public:
-    CGridControlThread(CGridWorkerNode* worker_node,
+    CGridControlThread(SGridWorkerNodeImpl* worker_node,
         unsigned int start_port, unsigned int end_port) : m_Control(
-            new CWorkerNodeControlServer(worker_node, start_port, end_port)) {}
+            new CWorkerNodeControlServer(worker_node, start_port, end_port))
+    {
+    }
 
-    void Prepare() { m_Control->StartListening(); }
+    void Prepare() {m_Control->StartListening();}
 
-    unsigned short GetControlPort() { return m_Control->GetControlPort(); }
-    void Stop() { if (m_Control.get()) m_Control->RequestShutdown(); }
+    unsigned short GetControlPort() {return m_Control->GetControlPort();}
+
+    void Stop()
+    {
+        if (m_Control.get())
+            m_Control->RequestShutdown();
+    }
 
 protected:
     virtual void* Main(void)
@@ -103,7 +107,7 @@ class CWorkerNodeIdleThread : public CThread
 {
 public:
     CWorkerNodeIdleThread(IWorkerNodeIdleTask*,
-                          CGridWorkerNode& worker_node,
+                          SGridWorkerNodeImpl* worker_node,
                           unsigned run_delay,
                           unsigned int auto_shutdown);
 
@@ -164,7 +168,7 @@ private:
     }
 
     IWorkerNodeIdleTask* m_Task;
-    CGridWorkerNode& m_WorkerNode;
+    SGridWorkerNodeImpl* m_WorkerNode;
     auto_ptr<CWorkerNodeIdleTaskContext> m_TaskContext;
     mutable CSemaphore  m_Wait1;
     mutable CSemaphore  m_Wait2;
@@ -180,7 +184,7 @@ private:
 };
 
 CWorkerNodeIdleThread::CWorkerNodeIdleThread(IWorkerNodeIdleTask* task,
-                                             CGridWorkerNode& worker_node,
+                                             SGridWorkerNodeImpl* worker_node,
                                              unsigned run_delay,
                                              unsigned int auto_shutdown)
     : m_Task(task), m_WorkerNode(worker_node),
@@ -301,6 +305,12 @@ private:
 //
 CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
+    m_Impl(new SGridWorkerNodeImpl(app, job_factory))
+{
+}
+
+SGridWorkerNodeImpl::SGridWorkerNodeImpl(CNcbiApplication& app,
+        IWorkerNodeJobFactory* job_factory) :
     m_JobProcessorFactory(job_factory),
     m_ThreadPool(NULL),
     m_MaxThreads(1),
@@ -313,7 +323,6 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
     m_TotalTimeLimit(0),
     m_StartupTime(0),
     m_CleanupEventSource(new CWorkerNodeCleanup()),
-    m_DiscoveryIteration(0),
     m_SuspendResumeEvent(NO_EVENT),
     m_TimelineIsSuspended(false),
     m_CurrentJobGeneration(0),
@@ -323,27 +332,16 @@ CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
     m_App(app),
     m_SingleThreadForced(false)
 {
-    // Because m_TimelineSearchPattern.m_DiscoveryIteration == 0,
-    // this is also the DiscoveryAction object; add it to the timeline.
-    m_ImmediateActions.Push(&m_TimelineSearchPattern);
-
     if (!m_JobProcessorFactory.get())
         NCBI_THROW(CGridWorkerNodeException,
                  eJobFactoryIsNotSet, "The JobFactory is not set.");
 }
 
-CGridWorkerNode::~CGridWorkerNode()
-{
-    ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
-        delete *it;
-    }
-}
-
 void CGridWorkerNode::Init()
 {
-    m_Listener->OnInit(&m_App);
+    m_Impl->m_Listener->OnInit(&m_Impl->m_App);
 
-    IRWRegistry& reg = m_App.GetConfig();
+    IRWRegistry& reg = m_Impl->m_App.GetConfig();
 
     if (reg.GetBool("log", "merge_lines", false)) {
         SetDiagPostFlag(eDPF_PreMergeLines);
@@ -352,39 +350,40 @@ void CGridWorkerNode::Init()
 
     reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
 
-    m_NetScheduleAPI = CNetScheduleAPI(reg);
-    m_NetCacheAPI = CNetCacheAPI(reg, kEmptyStr, m_NetScheduleAPI);
+    m_Impl->m_NetScheduleAPI = CNetScheduleAPI(reg);
+    m_Impl->m_NetCacheAPI = CNetCacheAPI(reg,
+            kEmptyStr, m_Impl->m_NetScheduleAPI);
 }
 
 void CGridWorkerNode::Suspend(bool pullback, unsigned timeout)
 {
     if (pullback)
-        SetJobPullbackTimer(timeout);
-    if (SwapPointers(&m_SuspendResumeEvent, SUSPEND_EVENT) == NO_EVENT)
+        m_Impl->SetJobPullbackTimer(timeout);
+    if (SwapPointers(&m_Impl->m_SuspendResumeEvent, SUSPEND_EVENT) == NO_EVENT)
         CGridGlobals::GetInstance().InterruptUDPPortListening();
 }
 
 void CGridWorkerNode::Resume()
 {
-    if (SwapPointers(&m_SuspendResumeEvent, RESUME_EVENT) == NO_EVENT)
+    if (SwapPointers(&m_Impl->m_SuspendResumeEvent, RESUME_EVENT) == NO_EVENT)
         CGridGlobals::GetInstance().InterruptUDPPortListening();
 }
 
-void CGridWorkerNode::SetJobPullbackTimer(unsigned seconds)
+void SGridWorkerNodeImpl::SetJobPullbackTimer(unsigned seconds)
 {
     CFastMutexGuard mutex_guard(m_JobPullbackMutex);
     m_JobPullbackTime = CDeadline(seconds);
     ++m_CurrentJobGeneration;
 }
 
-bool CGridWorkerNode::CheckForPullback(unsigned job_generation)
+bool SGridWorkerNodeImpl::CheckForPullback(unsigned job_generation)
 {
     CFastMutexGuard mutex_guard(m_JobPullbackMutex);
     return job_generation != m_CurrentJobGeneration &&
             m_JobPullbackTime.IsExpired();
 }
 
-void CGridWorkerNode::x_WNCoreInit()
+void SGridWorkerNodeImpl::x_WNCoreInit()
 {
     const string kServerSec("server");
 
@@ -424,7 +423,7 @@ void CGridWorkerNode::x_WNCoreInit()
 
     CGridGlobals::GetInstance().SetReuseJobObject(reg.GetBool(kServerSec,
         "reuse_job_object", false, 0, CNcbiRegistry::eReturn));
-    CGridGlobals::GetInstance().SetWorker(*this);
+    CGridGlobals::GetInstance().SetWorker(this);
 
     m_LogRequested = reg.GetBool(kServerSec,
         "log", false, 0, IRegistry::eReturn);
@@ -434,7 +433,7 @@ void CGridWorkerNode::x_WNCoreInit()
         "thread_pool_timeout", 30, 0, IRegistry::eReturn);
 }
 
-void CGridWorkerNode::x_StartWorkerThreads()
+void SGridWorkerNodeImpl::x_StartWorkerThreads()
 {
     _ASSERT(m_MaxThreads > 0);
 
@@ -460,11 +459,24 @@ int CGridWorkerNode::Run(
 #endif
     string procinfo_file_name)
 {
+    return m_Impl->Run(
+#ifdef NCBI_OS_UNIX
+            daemonize,
+#endif
+            procinfo_file_name);
+}
+
+int SGridWorkerNodeImpl::Run(
+#ifdef NCBI_OS_UNIX
+    ESwitch daemonize,
+#endif
+    string procinfo_file_name)
+{
     x_WNCoreInit();
 
     const string kServerSec("server");
 
-    LOG_POST_X(50, Info << GetJobFactory().GetJobVersion() <<
+    LOG_POST_X(50, Info << m_JobProcessorFactory->GetJobVersion() <<
             " build " WN_BUILD_DATE);
 
     const IRegistry& reg = m_App.GetConfig();
@@ -650,8 +662,7 @@ int CGridWorkerNode::Run(
     m_NSExecutor = m_NetScheduleAPI.GetExecutor();
     m_NSExecutor->m_WorkerNodeMode = true;
 
-    CDeadline max_wait_for_servers(
-            TWorkerNode_MaxWaitForServers::GetDefault());
+    CDeadline max_wait_for_servers(TWorkerNode_MaxWaitForServers::GetDefault());
 
     for (;;) {
         try {
@@ -696,9 +707,9 @@ int CGridWorkerNode::Run(
         "auto_shutdown_if_idle", 0, 0, IRegistry::eReturn);
 
     if (idle_run_delay > 0)
-        task = GetJobFactory().GetIdleTask();
+        task = m_JobProcessorFactory->GetIdleTask();
     if (task || auto_shutdown > 0) {
-        m_IdleThread.Reset(new CWorkerNodeIdleThread(task, *this,
+        m_IdleThread.Reset(new CWorkerNodeIdleThread(task, this,
                 task ? idle_run_delay : auto_shutdown, auto_shutdown));
         m_IdleThread->Run();
         AddJobWatcher(*(new CIdleWatcher(*m_IdleThread)), eTakeOwnership);
@@ -710,7 +721,7 @@ int CGridWorkerNode::Run(
     LOG_POST_X(54, Info << "\n=================== NEW RUN : " <<
         CGridGlobals::GetInstance().GetStartTime().AsString() <<
             " ===================\n" <<
-        GetJobFactory().GetJobVersion() << " build " WN_BUILD_DATE <<
+        m_JobProcessorFactory->GetJobVersion() << " build " WN_BUILD_DATE <<
         " is started.\n"
         "Waiting for control commands on " << CSocketAPI::gethostname() <<
             ":" << control_thread->GetControlPort() << "\n"
@@ -721,10 +732,12 @@ int CGridWorkerNode::Run(
 
     x_StartWorkerThreads();
 
-    CRef<CMainLoopThread> main_loop_thread(new CMainLoopThread(this));
+    {
+        CRef<CMainLoopThread> main_loop_thread(new CMainLoopThread(this));
 
-    main_loop_thread->Run();
-    main_loop_thread->Join();
+        main_loop_thread->Run();
+        main_loop_thread->Join();
+    }
 
     LOG_POST_X(31, Info << "Shutting down...");
 
@@ -752,7 +765,7 @@ int CGridWorkerNode::Run(
     m_JobCommitterThread->Join();
 
     try {
-        GetNSExecutor().ClearNode();
+        m_NSExecutor.ClearNode();
     }
     catch (CNetServiceException& ex) {
         // if server does not understand this new command just ignore the error
@@ -778,7 +791,7 @@ int CGridWorkerNode::Run(
     return exit_code;
 }
 
-void CGridWorkerNode::x_StopWorkerThreads()
+void SGridWorkerNodeImpl::x_StopWorkerThreads()
 {
     if (m_ThreadPool != NULL) {
         try {
@@ -800,7 +813,7 @@ void CGridWorkerNode::RequestShutdown()
 }
 
 
-void CGridWorkerNode::AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
+void SGridWorkerNodeImpl::AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
                                            EOwnership owner)
 {
     if (m_Watchers.find(&job_watcher) == m_Watchers.end())
@@ -811,11 +824,11 @@ void CGridWorkerNode::AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
 
 void CGridWorkerNode::SetListener(IGridWorkerNodeApp_Listener* listener)
 {
-    m_Listener.reset(listener ? listener : new CGridWorkerNodeApp_Listener());
+    m_Impl->m_Listener.reset(
+            listener ? listener : new CGridWorkerNodeApp_Listener());
 }
 
-
-void CGridWorkerNode::x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
+void SGridWorkerNodeImpl::x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
     IWorkerNodeJobWatcher::EEvent event)
 {
     CFastMutexGuard guard(m_JobWatcherMutex);
@@ -829,21 +842,21 @@ void CGridWorkerNode::x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
 
 bool CGridWorkerNode::IsHostInAdminHostsList(const string& host) const
 {
-    if (m_AdminHosts.empty())
+    if (m_Impl->m_AdminHosts.empty())
         return true;
     unsigned int ha = CSocketAPI::gethostbyname(host);
-    if (m_AdminHosts.find(ha) != m_AdminHosts.end())
+    if (m_Impl->m_AdminHosts.find(ha) != m_Impl->m_AdminHosts.end())
         return true;
     unsigned int ha_lh = CSocketAPI::gethostbyname("");
     if (ha == ha_lh) {
         ha = CSocketAPI::gethostbyname("localhost");
-        if (m_AdminHosts.find(ha) != m_AdminHosts.end())
+        if (m_Impl->m_AdminHosts.find(ha) != m_Impl->m_AdminHosts.end())
             return true;
     }
     return false;
 }
 
-bool CGridWorkerNode::x_AreMastersBusy() const
+bool SGridWorkerNodeImpl::x_AreMastersBusy() const
 {
     ITERATE(set<SServerAddress>, it, m_Masters) {
         STimeout tmo = {0, 500};
@@ -853,7 +866,7 @@ bool CGridWorkerNode::x_AreMastersBusy() const
 
         CNcbiOstrstream os;
         os << GetClientName() << endl <<
-                GetNetScheduleAPI().GetQueueName()  << ";" <<
+                GetQueueName()  << ";" <<
                 GetServiceName() << endl <<
                 "GETLOAD" << endl << ends;
 
@@ -893,10 +906,141 @@ bool g_IsRequestStopEventEnabled()
             s_ReqEventsDisabled == CGridWorkerNode::eDisableStartOnly;
 }
 
+bool SGridWorkerNodeImpl::EnterExclusiveMode()
+{
+    if (m_ExclusiveJobSemaphore.TryWait()) {
+        _ASSERT(!m_IsProcessingExclusiveJob);
+
+        m_IsProcessingExclusiveJob = true;
+        return true;
+    }
+    return false;
+}
+
+void SGridWorkerNodeImpl::LeaveExclusiveMode()
+{
+    _ASSERT(m_IsProcessingExclusiveJob);
+
+    m_IsProcessingExclusiveJob = false;
+    m_ExclusiveJobSemaphore.Post();
+}
+
+bool SGridWorkerNodeImpl::WaitForExclusiveJobToFinish()
+{
+    if (m_ExclusiveJobSemaphore.TryWait(m_NSTimeout)) {
+        m_ExclusiveJobSemaphore.Post();
+        return true;
+    }
+    return false;
+}
+
 void CGridWorkerNode::DisableDefaultRequestEventLogging(
-    CGridWorkerNode::EDisabledRequestEvents disabled_events)
+        CGridWorkerNode::EDisabledRequestEvents disabled_events)
 {
     s_ReqEventsDisabled = disabled_events;
+}
+
+void CGridWorkerNode::ForceSingleThread()
+{
+    m_Impl->m_SingleThreadForced = true;
+}
+
+IWorkerNodeJobFactory& CGridWorkerNode::GetJobFactory()
+{
+    return *m_Impl->m_JobProcessorFactory;
+}
+
+unsigned CGridWorkerNode::GetMaxThreads() const
+{
+    return m_Impl->m_MaxThreads;
+}
+
+Uint8 CGridWorkerNode::GetTotalMemoryLimit() const
+{
+    return m_Impl->m_TotalMemoryLimit;
+}
+
+int CGridWorkerNode::GetTotalTimeLimit() const
+{
+    return m_Impl->m_TotalTimeLimit;
+}
+
+time_t CGridWorkerNode::GetStartupTime() const
+{
+    return m_Impl->m_StartupTime;
+}
+
+unsigned CGridWorkerNode::GetQueueTimeout() const
+{
+    return m_Impl->m_QueueTimeout;
+}
+
+unsigned CGridWorkerNode::GetCommitJobInterval() const
+{
+    return m_Impl->m_CommitJobInterval;
+}
+
+unsigned CGridWorkerNode::GetCheckStatusPeriod() const
+{
+    return m_Impl->m_CheckStatusPeriod;
+}
+
+string CGridWorkerNode::GetAppName() const
+{
+    CFastMutexGuard guard(m_Impl->m_JobProcessorMutex);
+    return m_Impl->m_JobProcessorFactory->GetAppName();
+}
+
+string CGridWorkerNode::GetAppVersion() const
+{
+    CFastMutexGuard guard(m_Impl->m_JobProcessorMutex);
+    return m_Impl->m_JobProcessorFactory->GetAppVersion();
+}
+
+string CGridWorkerNode::GetBuildDate() const
+{
+    CFastMutexGuard guard(m_Impl->m_JobProcessorMutex);
+    return m_Impl->m_JobProcessorFactory->GetAppBuildDate();
+}
+
+CNetCacheAPI CGridWorkerNode::GetNetCacheAPI() const
+{
+    return m_Impl->m_NetCacheAPI;
+}
+
+CNetScheduleAPI CGridWorkerNode::GetNetScheduleAPI() const
+{
+    return m_Impl->m_NetScheduleAPI;
+}
+
+CNetScheduleExecutor CGridWorkerNode::GetNSExecutor() const
+{
+    return m_Impl->m_NSExecutor;
+}
+
+IWorkerNodeCleanupEventSource* CGridWorkerNode::GetCleanupEventSource()
+{
+    return m_Impl->m_CleanupEventSource;
+}
+
+bool CGridWorkerNode::IsSuspended() const
+{
+    return m_Impl->m_TimelineIsSuspended;
+}
+
+const string& CGridWorkerNode::GetQueueName() const
+{
+    return m_Impl->GetQueueName();
+}
+
+const string& CGridWorkerNode::GetClientName() const
+{
+    return m_Impl->GetClientName();
+}
+
+const string& CGridWorkerNode::GetServiceName() const
+{
+    return m_Impl->GetServiceName();
 }
 
 END_NCBI_SCOPE

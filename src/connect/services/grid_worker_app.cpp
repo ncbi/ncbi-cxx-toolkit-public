@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "grid_worker_impl.hpp"
+
 #include <connect/services/grid_worker_app.hpp>
 
 #if defined(NCBI_OS_UNIX)
@@ -60,7 +62,7 @@ IWorkerNodeCleanupEventSource*
         dynamic_cast<const CGridWorkerApp*>(&m_App);
 
     _ASSERT(grid_app != NULL);
-    return grid_app->GetWorkerNode()->GetCleanupEventSource();
+    return grid_app->GetWorkerNode().GetCleanupEventSource();
 }
 
 CNetScheduleAPI CDefaultWorkerNodeInitContext::GetNetScheduleAPI() const
@@ -68,7 +70,7 @@ CNetScheduleAPI CDefaultWorkerNodeInitContext::GetNetScheduleAPI() const
     const CGridWorkerApp* grid_app =
         dynamic_cast<const CGridWorkerApp*>(&m_App);
 
-    return grid_app->GetWorkerNode()->GetNetScheduleAPI();
+    return grid_app->GetWorkerNode().GetNetScheduleAPI();
 }
 
 CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
@@ -76,7 +78,7 @@ CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
     const CGridWorkerApp* grid_app =
         dynamic_cast<const CGridWorkerApp*>(&m_App);
 
-    return grid_app->GetWorkerNode()->GetNetCacheAPI();
+    return grid_app->GetWorkerNode().GetNetCacheAPI();
 }
 
 void IGridWorkerNodeApp_Listener::OnInit(CNcbiApplication* /*app*/)
@@ -90,7 +92,7 @@ void CGridWorkerApp::Construct(
     IWorkerNodeJobFactory* job_factory,
     ESignalHandling signal_handling)
 {
-    m_WorkerNode.reset(new CGridWorkerNode(*this, job_factory));
+    m_WorkerNode = CGridWorkerNode(*this, job_factory);
 
 #if defined(NCBI_OS_UNIX)
     if (signal_handling == eStandardSignalHandling) {
@@ -129,8 +131,8 @@ void CGridWorkerApp::Init(void)
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
-    m_WorkerNode->Init();
-    m_WorkerNode->GetJobFactory().Init(GetInitContext());
+    m_WorkerNode.Init();
+    m_WorkerNode->m_JobProcessorFactory->Init(GetInitContext());
 }
 
 void CGridWorkerApp::SetupArgDescriptions(CArgDescriptions* arg_desc)
@@ -176,7 +178,7 @@ int CGridWorkerApp::Run(void)
     const CArgs& args = GetArgs();
 
     return args["offline-input-dir"] ? m_WorkerNode->OfflineRun() :
-        m_WorkerNode->Run(
+        m_WorkerNode.Run(
 #ifdef NCBI_OS_UNIX
             args["nodaemon"] ? eOff :
                     args["daemon"] ? eOn : eDefault,
@@ -187,8 +189,8 @@ int CGridWorkerApp::Run(void)
 
 void CGridWorkerApp::RequestShutdown()
 {
-    if (m_WorkerNode.get())
-        m_WorkerNode->RequestShutdown();
+    if (m_WorkerNode)
+        m_WorkerNode.RequestShutdown();
 }
 
 

@@ -94,7 +94,7 @@ private:
     mutable CMutex m_ActiveJobsMutex;
 
     friend class CGridGlobals;
-    void x_KillNode(CGridWorkerNode&);
+    void x_KillNode(CGridWorkerNode);
 
 private:
     CWNJobWatcher(const CWNJobWatcher&);
@@ -113,11 +113,10 @@ public:
 
     unsigned int GetNewJobNumber();
 
-    bool ReuseJobObject() const { return m_ReuseJobObject; }
-    void SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
-    void SetWorker(CGridWorkerNode& worker) { m_Worker = &worker; }
+    bool ReuseJobObject() const {return m_ReuseJobObject;}
+    void SetReuseJobObject(bool value) {m_ReuseJobObject = value;}
+    void SetWorker(SGridWorkerNodeImpl* worker) {m_Worker = worker;}
     void SetUDPPort(unsigned short udp_port) {m_UDPPort = udp_port;}
-
 
     /// Request node shutdown
     void RequestShutdown(CNetScheduleAdmin::EShutdownLevel level)
@@ -158,7 +157,7 @@ private:
     volatile int                               m_ExitCode;
     auto_ptr<CWNJobWatcher> m_JobWatcher;
     const CTime  m_StartTime;
-    CGridWorkerNode* m_Worker;
+    SGridWorkerNodeImpl* m_Worker;
     unsigned short m_UDPPort;
 
     CGridGlobals(const CGridGlobals&);

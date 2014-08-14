@@ -70,6 +70,7 @@ enum ENetScheduleQueuePauseMode {
 
 class CNetScheduleSubmitter;
 class CNetScheduleExecutor;
+class CNetScheduleJobReader;
 class CNetScheduleAdmin;
 
 struct CNetScheduleJob;
@@ -223,6 +224,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// Create an instance of CNetScheduleExecutor.
     CNetScheduleExecutor GetExecutor();
 
+    /// Create an instance of CNetScheduleJobReader.
+    CNetScheduleJobReader GetJobReader();
+
     CNetScheduleAdmin GetAdmin();
 
     CNetService GetService();
@@ -330,6 +334,9 @@ struct CNetScheduleJob
     {
         input.erase();
         affinity.erase();
+        client_ip.erase();
+        session_id.erase();
+        page_hit_id.erase();
         mask = CNetScheduleAPI::eEmptyMask;
         job_id.erase();
         ret_code = 0;
@@ -350,6 +357,7 @@ struct CNetScheduleJob
 
     string client_ip;
     string session_id;
+    string page_hit_id;
 
     CNetScheduleAPI::TJobMask  mask;
 
@@ -743,6 +751,66 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
 
 // Definition for backward compatibility.
 typedef CNetScheduleExecutor CNetScheduleExecuter;
+
+
+struct SNetScheduleJobReaderImpl;
+
+/// Smart pointer to a part of the NetSchedule API that allows to
+/// retrieve completed jobs.
+/// Objects of this class are returned by CNetScheduleAPI::GetJobReader().
+///
+/// @sa CNetScheduleAPI
+///
+class NCBI_XCONNECT_EXPORT CNetScheduleJobReader
+{
+    NCBI_NET_COMPONENT(NetScheduleJobReader);
+
+    /// Restrict job retrieval to the specified job group name.
+    ///
+    void SetJobGroup(const string& group_name);
+
+    /// Restrict job retrieval to the specified affinity.
+    ///
+    void SetAffinity(const string& affinity);
+
+    /// Possible outcomes of ReadNextJob() calls.
+    enum EReadNextJobResult {
+        eRNJ_JobReady,      ///< A job is returned.
+        eRNJ_Timeout,       ///< Operation has timed out.
+        eRNJ_NoMoreJobs,    ///< There are no more jobs matching
+                            ///< the requested criteria on the server.
+        eRNJ_Interrupt,     ///< ReadNextJob() has been interrupted.
+    };
+
+    /// Wait and return the next completed job.
+    ///
+    /// @param job     Structure to fill with information about the job.
+    ///                The following fields of the structure will be filled:
+    ///                - job_id
+    ///                - auth_token
+    ///                - affinity
+    ///                - client_ip
+    ///                - session_id
+    ///                - page_hit_id
+    ///
+    /// @param job_status Pointer to a variable where to store the final
+    ///                   status of the job.
+    ///
+    /// @param timeout Timeout to wait for job completion. By default,
+    ///                the method waits indefinitely.
+    ///
+    /// @return True if a completed job is returned. False if there
+    ///         are no more jobs matching the specified criteria.
+    ///
+    EReadNextJobResult ReadNextJob(CNetScheduleJob* job,
+        CNetScheduleAPI::EJobStatus* job_status,
+        CTimeout* timeout = NULL);
+
+    /// Abort waiting for a completed job in the above method.
+    /// Can be called from a signal handler or a parallel thread.
+    ///
+    void InterruptReading();
+};
 
 /////////////////////////////////////////////////////////////////////////////////////
 ////

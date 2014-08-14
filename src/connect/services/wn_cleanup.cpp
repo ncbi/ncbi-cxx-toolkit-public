@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "wn_cleanup.hpp"
+#include "grid_worker_impl.hpp"
 
 #include <connect/services/grid_globals.hpp>
 
@@ -105,14 +106,14 @@ void CWorkerNodeJobCleanup::CallEventHandlers()
 
 void* CGridCleanupThread::Main()
 {
-    m_WorkerNode->GetCleanupEventSource()->CallEventHandlers();
+    m_WorkerNode->m_CleanupEventSource->CallEventHandlers();
     m_Listener->OnGridWorkerStop();
     m_Semaphore.Post();
 
     return NULL;
 }
 
-int CGridWorkerNode::x_WNCleanUp()
+int SGridWorkerNodeImpl::x_WNCleanUp()
 {
     CRef<CGridCleanupThread> cleanup_thread(
         new CGridCleanupThread(this, m_Listener.get()));

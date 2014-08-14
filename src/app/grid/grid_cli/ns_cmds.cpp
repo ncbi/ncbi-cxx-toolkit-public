@@ -828,27 +828,53 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
 
     if (!IsOptionSet(eConfirmRead) && !IsOptionSet(eFailRead) &&
             !IsOptionSet(eRollbackRead)) {
-        string job_id, auth_token;
+        CNetScheduleJob job;
         CNetScheduleAPI::EJobStatus job_status;
 
-        if (m_NetScheduleSubmitter.Read(&job_id, &auth_token, &job_status,
-                m_Opts.timeout, m_Opts.job_group)) {
-            PrintLine(job_id);
+        CNetScheduleJobReader job_reader(m_NetScheduleAPI.GetJobReader());
+
+        if (IsOptionSet(eJobGroup))
+            job_reader.SetJobGroup(m_Opts.job_group);
+
+        if (IsOptionSet(eAffinity))
+            job_reader.SetJobGroup(m_Opts.affinity);
+
+        CNetScheduleJobReader::EReadNextJobResult rnj_result;
+
+        if (!IsOptionSet(eTimeout))
+            rnj_result = job_reader.ReadNextJob(&job, &job_status);
+        else {
+            CDeadline deadline(m_Opts.timeout, 0);
+            do {
+                CTimeout timeout(deadline.GetRemainingTime());
+                rnj_result = job_reader.ReadNextJob(&job,
+                        &job_status, &timeout);
+            } while (rnj_result == CNetScheduleJobReader::eRNJ_NoMoreJobs);
+        }
+
+        switch (rnj_result) {
+        case CNetScheduleJobReader::eRNJ_JobReady:
+            PrintLine(job.job_id);
             PrintLine(CNetScheduleAPI::StatusToString(job_status));
 
             if (IsOptionSet(eReliableRead))
-                PrintLine(auth_token);
+                PrintLine(job.auth_token);
             else {
                 if (job_status == CNetScheduleAPI::eDone) {
-                    CNetScheduleJob job;
-                    job.job_id = job_id;
                     m_NetScheduleSubmitter.GetJobDetails(job);
                     int ret_code = DumpJobInputOutput(job.output);
                     if (ret_code != 0)
                         return ret_code;
                 }
-                m_NetScheduleSubmitter.ReadConfirm(job_id, auth_token);
+                m_NetScheduleSubmitter.ReadConfirm(job.job_id, job.auth_token);
             }
+            break;
+
+        case CNetScheduleJobReader::eRNJ_Interrupt:
+            return 3;
+
+        default:
+            break;
         }
     } else {
         if (!IsOptionSet(eJobId)) {

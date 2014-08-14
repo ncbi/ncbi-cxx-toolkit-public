@@ -598,6 +598,11 @@ CNetScheduleExecutor CNetScheduleAPI::GetExecutor()
     return new SNetScheduleExecutorImpl(m_Impl);
 }
 
+CNetScheduleJobReader CNetScheduleAPI::GetJobReader()
+{
+    return new SNetScheduleJobReaderImpl(m_Impl);
+}
+
 CNetScheduleAdmin CNetScheduleAPI::GetAdmin()
 {
     return new SNetScheduleAdminImpl(m_Impl);

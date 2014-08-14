@@ -32,9 +32,10 @@
 #include <ncbi_pch.hpp>
 
 #include "netschedule_api_impl.hpp"
+#include "grid_worker_impl.hpp"
+#include "grid_control_thread.hpp"
 
 #include <connect/services/grid_globals.hpp>
-#include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_worker.hpp>
 
 #include <corelib/ncbistre.hpp>
@@ -162,7 +163,7 @@ public:
                          CNcbiOstream& os,
                          CWorkerNodeControlServer* control_server)
     {
-        const CGridWorkerNode& node = control_server->GetWorkerNode();
+        CGridWorkerNode node(control_server->GetWorkerNode());
 
         os << "OK:Application: " << node.GetAppName() <<
                 "\nVersion: " << node.GetAppVersion() <<
@@ -179,8 +180,8 @@ public:
                 "\nControl port: " << control_server->GetControlPort() <<
                 "\nNetCache client name: " << node.GetNetCacheAPI().
                         GetService().GetServerPool().GetClientName() <<
-                "\nNetSchedule client name: " << node.GetClientName() <<
-                "\nQueue name: " << node.GetQueueName() <<
+                "\nNetSchedule client name: " << node->GetClientName() <<
+                "\nQueue name: " << node->GetQueueName() <<
                 "\nNode ID: " << ns_api->m_ClientNode <<
                 "\nNode session: " << ns_api->m_ClientSession <<
                 "\nMaximum job threads: " << node.GetMaxThreads() << "\n";
@@ -191,7 +192,7 @@ public:
         if (CGridGlobals::GetInstance().IsShuttingDown())
             os << "The node is shutting down\n";
 
-        if (node.IsExclusiveMode())
+        if (node->IsExclusiveMode())
             os << "The node is processing an exclusive job\n";
 
         CGridGlobals::GetInstance().GetJobWatcher().Print(os);
@@ -231,19 +232,19 @@ public:
                               CNcbiOstream& os,
                               CWorkerNodeControlServer* control_server)
     {
-        const CGridWorkerNode& node = control_server->GetWorkerNode();
+        CGridWorkerNode node(control_server->GetWorkerNode());
 
-        if (NStr::FindCase(auth, node.GetClientName()) == NPOS) {
+        if (NStr::FindCase(auth, node->GetClientName()) == NPOS) {
             os <<"ERR:Wrong client name. Required: " <<
-                    node.GetClientName() << "\n";
+                    node->GetClientName() << "\n";
             return false;
         }
 
         CTempString qname, connection_info;
         NStr::SplitInTwo(queue, ";", qname, connection_info);
-        if (qname != node.GetQueueName()) {
+        if (qname != node->GetQueueName()) {
             os << "ERR:Wrong queue name. Required: " <<
-                    node.GetQueueName() << "\n";
+                    node->GetQueueName() << "\n";
             return false;
         }
 
@@ -325,8 +326,9 @@ private:
 };
 
 static STimeout kAcceptTimeout = {1,0};
+
 CWorkerNodeControlServer::CWorkerNodeControlServer(
-    CGridWorkerNode* worker_node,
+    SGridWorkerNodeImpl* worker_node,
     unsigned short start_port,
     unsigned short end_port) :
         m_WorkerNode(worker_node),

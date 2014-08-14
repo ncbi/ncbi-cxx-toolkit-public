@@ -115,7 +115,7 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
     }
 
     if (event != eJobStarted) {
-        CGridWorkerNode& worker_node = job_context.GetWorkerNode();
+        CGridWorkerNode worker_node(job_context.GetWorkerNode());
         Uint8 total_memory_limit = worker_node.GetTotalMemoryLimit();
         if (total_memory_limit > 0) {  // memory check requested
             size_t memory_usage;
@@ -189,14 +189,14 @@ void CWNJobWatcher::CheckForInfiniteLoop()
     }
 }
 
-void CWNJobWatcher::x_KillNode(CGridWorkerNode& worker)
+void CWNJobWatcher::x_KillNode(CGridWorkerNode worker)
 {
     CMutexGuard guard(m_ActiveJobsMutex);
     NON_CONST_ITERATE(TActiveJobs, it, m_ActiveJobs) {
         CNetScheduleJob& job = it->first->GetJob();
-        if (!it->second.flag) {
-            worker.x_ReturnJob(job);
-        } else {
+        if (!it->second.flag)
+            worker.GetNSExecutor().ReturnJob(job.job_id, job.auth_token);
+        else {
             job.error_msg = "Job execution time exceeded " +
                     NStr::NumericToString(
                             unsigned(it->second.elasped_time.Elapsed()));
@@ -250,7 +250,7 @@ void CGridGlobals::KillNode()
 {
     _ASSERT(m_Worker);
     if (m_Worker)
-        GetJobWatcher().x_KillNode(*m_Worker);
+        GetJobWatcher().x_KillNode(m_Worker);
 }
 
 void CGridGlobals::InterruptUDPPortListening()

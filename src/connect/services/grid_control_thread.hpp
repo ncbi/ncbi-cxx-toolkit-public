@@ -67,10 +67,10 @@ public:
                              CNcbiOstream& reply,
                              CWorkerNodeControlServer* control_server) = 0;
     };
-    CWorkerNodeControlServer(CGridWorkerNode* worker_node,
-        unsigned short start_port, unsigned short end_port);
+    CWorkerNodeControlServer(SGridWorkerNodeImpl* worker_node,
+            unsigned short start_port, unsigned short end_port);
 
-    CGridWorkerNode& GetWorkerNode() { return *m_WorkerNode; }
+    CGridWorkerNode GetWorkerNode() {return m_WorkerNode;}
 
     virtual ~CWorkerNodeControlServer();
 
@@ -86,7 +86,7 @@ protected:
     virtual void ProcessTimeout(void);
 
 private:
-    CGridWorkerNode* m_WorkerNode;
+    SGridWorkerNodeImpl* m_WorkerNode;
     volatile bool    m_ShutdownRequested;
     unsigned short m_Port;
 

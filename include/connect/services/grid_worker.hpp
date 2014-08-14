@@ -42,7 +42,6 @@
 #include "netcache_api.hpp"
 #include "error_codes.hpp"
 #include "grid_app_version_info.hpp"
-#include "timeline.hpp"
 
 #include <connect/connect_export.h>
 
@@ -177,6 +176,8 @@ public:
 class CGridWorkerNode;
 class CWorkerNodeRequest;
 
+struct SWorkerNodeJobContextImpl;
+
 /// Worker Node job context
 ///
 /// Context in which a job is running, gives access to input and output
@@ -184,18 +185,16 @@ class CWorkerNodeRequest;
 ///
 /// @sa IWorkerNodeJob
 ///
-class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext :
-        public CWorkerNodeTimelineEntry
+class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
 {
-public:
-    virtual ~CWorkerNodeJobContext() { }
+    NCBI_NET_COMPONENT(WorkerNodeJobContext);
 
     /// Get the associated job structure to access all of its fields.
-    const CNetScheduleJob& GetJob() const {return m_Job;}
-    CNetScheduleJob& GetJob() {return m_Job;}
+    const CNetScheduleJob& GetJob() const;
+    CNetScheduleJob& GetJob();
 
     /// Get a job key
-    const string& GetJobKey() const        { return m_Job.job_id; }
+    const string& GetJobKey() const;
 
     /// Get a job input string.
     ///
@@ -206,7 +205,7 @@ public:
     ///    (NetCache)  In this case use GetIStream method to get a stream with
     ///    an input data for the job
     ///
-    const string& GetJobInput() const      { return m_Job.input; }
+    const string& GetJobInput() const;
 
     /// Set a job's output. This string will be sent to
     /// the queue when job is done.
@@ -215,11 +214,11 @@ public:
     /// To send a large result use GetOStream method. Don't call this
     /// method after GetOStream method is called.
     ///
-    void          SetJobOutput(const string& output) { m_Job.output = output; }
+    void SetJobOutput(const string& output);
 
     /// Set the return code of the job.
     ///
-    void          SetJobRetCode(int ret_code) { m_Job.ret_code = ret_code; }
+    void SetJobRetCode(int ret_code);
 
     /// Get a stream with input data for a job. Stream is based on network
     /// data storage (NetCache). Size of the input data can be determined
@@ -229,7 +228,7 @@ public:
 
     /// Get the size of an input stream
     ///
-    size_t        GetInputBlobSize() const { return m_InputBlobSize; }
+    size_t GetInputBlobSize() const;
 
     /// Put progress message
     ///
@@ -335,11 +334,11 @@ public:
     /// requested by another job this job will be returned back to the queue.
     void RequestExclusiveMode();
 
-    const string& GetJobOutput() const { return m_Job.output; }
+    const string& GetJobOutput() const;
 
-    CNetScheduleAPI::TJobMask GetJobMask() const { return m_Job.mask; }
+    CNetScheduleAPI::TJobMask GetJobMask() const;
 
-    unsigned int GetJobNumber() const  { return m_JobNumber; }
+    unsigned int GetJobNumber() const;
 
     enum ECommitStatus {
         eDone,
@@ -350,92 +349,15 @@ public:
         eCanceled
     };
 
-    bool IsJobCommitted() const    { return m_JobCommitted != eNotCommitted; }
-    ECommitStatus GetCommitStatus() const    { return m_JobCommitted; }
+    bool IsJobCommitted() const;
+    ECommitStatus GetCommitStatus() const;
     static const char* GetCommitStatusDescription(ECommitStatus commit_status);
 
-    bool IsCanceled() const { return m_JobCommitted == eCanceled; }
+    bool IsCanceled() const;
 
-    IWorkerNodeCleanupEventSource* GetCleanupEventSource()
-    {
-        return m_CleanupEventSource;
-    }
+    IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
-    CGridWorkerNode& GetWorkerNode() const {return m_WorkerNode;}
-
-    CWorkerNodeJobContext(CGridWorkerNode& worker_node);
-
-    void Reset();
-
-protected:
-    friend class CJobCommitterThread;
-    friend class CWorkerNodeRequest;
-    /// Only a CGridWorkerNode can create an instance of this class
-    friend class CGridWorkerNode;
-
-    void x_SetCanceled() { m_JobCommitted = eCanceled; }
-    void CheckIfCanceled();
-
-    void x_PrintRequestStop();
-    virtual void x_RunJob();
-
-    CGridWorkerNode&     m_WorkerNode;
-    CNetScheduleJob      m_Job;
-    ECommitStatus        m_JobCommitted;
-    size_t               m_InputBlobSize;
-    unsigned int         m_JobNumber;
-    bool                 m_ExclusiveJob;
-
-    CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
-
-    CRef<CRequestContext> m_RequestContext;
-    CRequestRateControl m_StatusThrottler;
-    CRequestRateControl m_ProgressMsgThrottler;
-    CNetScheduleExecutor m_NetScheduleExecutor;
-    CNetCacheAPI m_NetCacheAPI;
-    auto_ptr<CNcbiIstream> m_RStream;
-    auto_ptr<IEmbeddedStreamWriter> m_Writer;
-    auto_ptr<CNcbiOstream> m_WStream;
-
-    // Used for the job "pullback" mechanism.
-    unsigned m_JobGeneration;
-
-    CDeadline m_CommitExpiration;
-    bool      m_FirstCommitAttempt;
-
-    /// The copy constructor and the assignment operator
-    /// are prohibited
-    CWorkerNodeJobContext(const CWorkerNodeJobContext&);
-    CWorkerNodeJobContext& operator=(const CWorkerNodeJobContext&);
-};
-
-class NCBI_XCONNECT_EXPORT COfflineJobContext : public CWorkerNodeJobContext
-{
-public:
-    COfflineJobContext(CGridWorkerNode& worker_node,
-            const string& output_dir_name,
-            CCompoundIDPool::TInstance compound_id_pool) :
-        CWorkerNodeJobContext(worker_node),
-        m_OutputDirName(output_dir_name),
-        m_CompoundIDPool(compound_id_pool)
-    {
-    }
-
-protected:
-    virtual void PutProgressMessage(const string& msg,
-        bool send_immediately = false);
-    virtual CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
-    virtual void JobDelayExpiration(unsigned runtime_inc);
-    virtual void x_RunJob();
-
-private:
-    string m_OutputDirName;
-    CCompoundIDPool m_CompoundIDPool;
-
-    /// The copy constructor and the assignment operator
-    /// are prohibited
-    COfflineJobContext(const COfflineJobContext&);
-    COfflineJobContext& operator=(const COfflineJobContext&);
+    CGridWorkerNode GetWorkerNode() const;
 };
 
 class CWorkerNodeIdleThread;
@@ -633,11 +555,9 @@ public:
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event) = 0;
 };
 
-class CWorkerNodeIdleThread;
-class CJobCommitterThread;
 class IGridWorkerNodeApp_Listener;
-class CWNJobWatcher;
-class CMainLoopThread;
+
+struct SGridWorkerNodeImpl;
 /// Grid Worker Node
 ///
 /// It gets jobs from a NetSchedule server and runs them simultaneously
@@ -649,13 +569,11 @@ class CMainLoopThread;
 ///
 class NCBI_XCONNECT_EXPORT CGridWorkerNode
 {
-public:
+    NCBI_NET_COMPONENT(GridWorkerNode);
+
     /// Construct a worker node using class factories
     ///
-    CGridWorkerNode(CNcbiApplication& app,
-        IWorkerNodeJobFactory* job_factory);
-
-    virtual ~CGridWorkerNode();
+    CGridWorkerNode(CNcbiApplication& app, IWorkerNodeJobFactory* job_factory);
 
     void Init();
 
@@ -667,69 +585,47 @@ public:
 #endif
             string procinfo_file_name = kEmptyStr);
 
-    int OfflineRun();
-
     void RequestShutdown();
 
-    void ForceSingleThread() { m_SingleThreadForced = true; }
-
-    void AddJobWatcher(IWorkerNodeJobWatcher& job_watcher,
-                          EOwnership owner = eNoOwnership);
+    void ForceSingleThread();
 
     void SetListener(IGridWorkerNodeApp_Listener* listener);
 
-    IWorkerNodeJobFactory& GetJobFactory() { return *m_JobProcessorFactory; }
+    IWorkerNodeJobFactory& GetJobFactory();
 
     /// Get the maximum threads running simultaneously
     ///
-    unsigned int GetMaxThreads() const { return m_MaxThreads; }
+    unsigned int GetMaxThreads() const;
 
     /// Get total memory limit (automatic restart if node grows more than that)
     ///
-    Uint8 GetTotalMemoryLimit() const { return m_TotalMemoryLimit; }
+    Uint8 GetTotalMemoryLimit() const;
 
     /// Get total time limit (automatic restart after that)
     ///
-    int GetTotalTimeLimit() const { return m_TotalTimeLimit; }
-    time_t GetStartupTime() const { return m_StartupTime; }
-    unsigned GetQueueTimeout() const {return m_QueueTimeout;}
+    int GetTotalTimeLimit() const;
+    time_t GetStartupTime() const;
+    unsigned GetQueueTimeout() const;
 
     bool IsHostInAdminHostsList(const string& host) const;
 
-    unsigned GetCommitJobInterval() const {return m_CommitJobInterval;}
-    unsigned GetCheckStatusPeriod() const {return m_CheckStatusPeriod;}
+    unsigned GetCommitJobInterval() const;
+    unsigned GetCheckStatusPeriod() const;
     size_t GetServerOutputSize();
 
     const string& GetQueueName() const;
 
     const string& GetClientName() const;
 
-    string GetAppName() const
-    {
-        CFastMutexGuard guard(m_JobProcessorMutex);
-        return m_JobProcessorFactory->GetAppName();
-    }
-    string GetAppVersion() const
-    {
-        CFastMutexGuard guard(m_JobProcessorMutex);
-        return m_JobProcessorFactory->GetAppVersion();
-    }
-    string GetBuildDate() const
-    {
-        CFastMutexGuard guard(m_JobProcessorMutex);
-        return m_JobProcessorFactory->GetAppBuildDate();
-    }
+    string GetAppName() const;
+    string GetAppVersion() const;
+    string GetBuildDate() const;
 
     const string& GetServiceName() const;
 
-    CNetCacheAPI GetNetCacheAPI() const { return m_NetCacheAPI; }
-    CNetScheduleAPI GetNetScheduleAPI() const { return m_NetScheduleAPI; }
-    CNetScheduleExecutor GetNSExecutor() const { return m_NSExecutor; }
-
-    bool EnterExclusiveMode();
-    void LeaveExclusiveMode();
-    bool IsExclusiveMode() const;
-    bool WaitForExclusiveJobToFinish();
+    CNetCacheAPI GetNetCacheAPI() const;
+    CNetScheduleAPI GetNetScheduleAPI() const;
+    CNetScheduleExecutor GetNSExecutor() const;
 
     /// Disable the automatic logging of request-start and
     /// request-stop events by the framework itself.
@@ -741,172 +637,12 @@ public:
     static void DisableDefaultRequestEventLogging(
         EDisabledRequestEvents disabled_events = eDisableStartStop);
 
-    IWorkerNodeCleanupEventSource* GetCleanupEventSource()
-    {
-        return m_CleanupEventSource;
-    }
+    IWorkerNodeCleanupEventSource* GetCleanupEventSource();
 
-    unsigned GetCurrentJobGeneration() {return m_CurrentJobGeneration;}
     void Suspend(bool pullback, unsigned timeout);
     void Resume();
-    bool IsSuspended() const {return m_TimelineIsSuspended;}
-    void SetJobPullbackTimer(unsigned seconds);
-    bool CheckForPullback(unsigned job_generation);
-
-private:
-    void x_WNCoreInit();
-    void x_StartWorkerThreads();
-    void x_StopWorkerThreads();
-    int x_WNCleanUp();
-
-    auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
-
-    CNetCacheAPI m_NetCacheAPI;
-    CNetScheduleAPI m_NetScheduleAPI;
-    CNetScheduleExecutor m_NSExecutor;
-    CStdPoolOfThreads* m_ThreadPool;
-
-    unsigned int                 m_MaxThreads;
-    unsigned int                 m_NSTimeout;
-    mutable CFastMutex           m_JobProcessorMutex;
-    unsigned                     m_CommitJobInterval;
-    unsigned                     m_CheckStatusPeriod;
-    CSemaphore                   m_ExclusiveJobSemaphore;
-    bool                         m_IsProcessingExclusiveJob;
-    Uint8                        m_TotalMemoryLimit;
-    unsigned                     m_TotalTimeLimit;
-    time_t                       m_StartupTime;
-    unsigned                     m_QueueTimeout;
-
-    typedef map<IWorkerNodeJobWatcher*,
-            AutoPtr<IWorkerNodeJobWatcher> > TJobWatchers;
-    CFastMutex m_JobWatcherMutex;
-    TJobWatchers m_Watchers;
-
-    CRef<IWorkerNodeCleanupEventSource> m_CleanupEventSource;
-
-    IWorkerNodeJob* GetJobProcessor();
-
-    friend class CWorkerNodeJobContext;
-    friend class COfflineJobContext;
-
-    void x_NotifyJobWatchers(const CWorkerNodeJobContext& job,
-                            IWorkerNodeJobWatcher::EEvent event);
-
-    set<SServerAddress> m_Masters;
-    set<unsigned int> m_AdminHosts;
-
-private:
-    struct SNotificationTimelineEntry : public CWorkerNodeTimelineEntry
-    {
-        SServerAddress m_ServerAddress;
-
-        unsigned m_DiscoveryIteration;
-
-        SNotificationTimelineEntry(const SServerAddress& server_address,
-                unsigned discovery_iteration) :
-            m_ServerAddress(server_address),
-            m_DiscoveryIteration(discovery_iteration)
-        {
-        }
-
-        // Special constructor for m_TimelineSearchPattern (see below).
-        SNotificationTimelineEntry() :
-            m_ServerAddress(0, 0),
-            m_DiscoveryIteration(0)
-        {
-        }
-
-        bool IsDiscoveryAction() const {return m_DiscoveryIteration == 0;}
-
-        struct SLess {
-            bool operator ()(const SNotificationTimelineEntry* left,
-                    const SNotificationTimelineEntry* right) const
-            {
-                return left->m_ServerAddress < right->m_ServerAddress;
-            }
-        };
-    };
-
-    unsigned m_DiscoveryIteration;
-
-    void* volatile m_SuspendResumeEvent;
-    bool m_TimelineIsSuspended;
-    // Support for the job "pullback" mechanism.
-    CFastMutex m_JobPullbackMutex;
-    unsigned m_CurrentJobGeneration;
-    unsigned m_DefaultPullbackTimeout;
-    CDeadline m_JobPullbackTime;
-
-    CWorkerNodeTimeline<SNotificationTimelineEntry>
-            m_ImmediateActions, m_Timeline;
-
-    typedef set<SNotificationTimelineEntry*,
-            SNotificationTimelineEntry::SLess> TTimelineEntries;
-
-    TTimelineEntries m_TimelineEntryByAddress;
-
-    SNotificationTimelineEntry m_TimelineSearchPattern;
-
-    bool x_GetJobWithAffinityList(SNetServerImpl* server,
-            const CDeadline* timeout,
-            CNetScheduleJob& job,
-            CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
-            const string& affinity_list);
-    bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
-            const CDeadline* timeout,
-            CNetScheduleJob& job);
-    SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
-    bool x_PerformTimelineAction(SNotificationTimelineEntry* action,
-            CNetScheduleJob& job);
-    bool x_EnterSuspendedState();
-    void x_ProcessRequestJobNotification();
-    bool x_WaitForNewJob(CNetScheduleJob& job);
-    bool x_GetNextJob(CNetScheduleJob& job);
-
-    friend class CWNJobWatcher;
-    friend class CMainLoopThread;
-    friend class CWorkerNodeRequest;
-public:
-    void x_ReturnJob(const CNetScheduleJob& job);
-
-private:
-    bool x_AreMastersBusy() const;
-    auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
-
-    CRef<CJobCommitterThread> m_JobCommitterThread;
-    CRef<CWorkerNodeIdleThread>  m_IdleThread;
-
-    auto_ptr<IGridWorkerNodeApp_Listener> m_Listener;
-
-    CNcbiApplication& m_App;
-    bool m_SingleThreadForced;
-    bool m_LogRequested;
-    bool m_ProgressLogRequested;
-    size_t m_QueueEmbeddedOutputSize;
-    unsigned m_ThreadPoolTimeout;
+    bool IsSuspended() const;
 };
-
-inline const string& CGridWorkerNode::GetQueueName() const
-{
-    return GetNetScheduleAPI().GetQueueName();
-}
-
-inline const string& CGridWorkerNode::GetClientName() const
-{
-    return GetNetScheduleAPI().GetService().GetServerPool().GetClientName();
-}
-
-inline const string& CGridWorkerNode::GetServiceName() const
-{
-    return GetNetScheduleAPI().GetService().GetServiceName();
-}
-
-inline bool CGridWorkerNode::IsExclusiveMode() const
-{
-    return m_IsProcessingExclusiveJob;
-}
-
 
 class NCBI_XCONNECT_EXPORT CGridWorkerNodeException : public CException
 {
