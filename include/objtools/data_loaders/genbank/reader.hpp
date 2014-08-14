@@ -266,8 +266,6 @@ public:
         CDebugPrinter(TConn conn, const char* name);
         CDebugPrinter(const char* name);
         ~CDebugPrinter();
-
-        void PrintHeader(void);
     };
     
 protected:

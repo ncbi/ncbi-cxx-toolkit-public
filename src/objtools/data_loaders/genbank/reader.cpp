@@ -54,36 +54,25 @@ BEGIN_SCOPE(objects)
 #if 1
 # define TRACE_SET(m)
 #else
-# define TRACE_SET(m) LOG_POST('T'<<CThread::GetSelf()<<' '<<CTime(CTime::eCurrent)<<": "<<m)
+# define TRACE_SET(m)                                                   \
+    LOG_POST(Info<<SetPostFlags(eDPF_DateTime|eDPF_TID)<<m)
 #endif
 
 CReader::CDebugPrinter::CDebugPrinter(CReader::TConn conn, const char* name)
 {
-    *this << name << '(' << conn << ")";
-    PrintHeader();
+    *this << name << '(' << conn << "): ";
 }
 
 
 CReader::CDebugPrinter::CDebugPrinter(const char* name)
 {
-    *this << name;
-    PrintHeader();
-}
-
-
-void CReader::CDebugPrinter::PrintHeader(void)
-{
-    *this << ": ";
-#ifdef NCBI_THREADS
-    *this << "T" << CThread::GetSelf() << ' ';
-#endif
-    *this << CTime(CTime::eCurrent) << ": ";
+    *this << name << ": ";
 }
 
 
 CReader::CDebugPrinter::~CDebugPrinter()
 {
-    LOG_POST_X(9, Info << rdbuf());
+    LOG_POST_X(9, Info << SetPostFlags(eDPF_DateTime|eDPF_TID) << rdbuf());
 }
 
 
