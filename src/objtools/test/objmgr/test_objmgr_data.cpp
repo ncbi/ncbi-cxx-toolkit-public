@@ -338,6 +338,10 @@ bool CTestOM::Thread_Run(int idx)
                 m_prefetch_manager = null;
             }
         }
+        if ( m_pass_count > 1 ) {
+            LOG_POST(SetPostFlags(eDPF_DateTime) <<
+                     ": starting pass " << (pass+1));
+        }
 
         const int kMaxErrorCount = 30;
         int error_count = 0, null_handle_count = 0;
