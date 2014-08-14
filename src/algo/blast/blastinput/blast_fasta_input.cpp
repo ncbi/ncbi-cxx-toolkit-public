@@ -292,6 +292,9 @@ CBlastFastaInputSource::x_InitInputReader()
     }
 
     m_InputReader->IgnoreProblem(ILineError::eProblem_ModifierFoundButNoneExpected);
+    m_InputReader->IgnoreProblem(ILineError::eProblem_TooLong);
+    //m_InputReader->IgnoreProblem(ILineError::eProblem_InvalidResidue);
+    //m_InputReader->IgnoreProblem(ILineError::eProblem_IgnoredResidue);
 
     CRef<CSeqIdGenerator> idgen
         (new CSeqIdGenerator(m_Config.GetLocalIdCounterInitValue(),
