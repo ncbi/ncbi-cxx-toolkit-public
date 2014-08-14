@@ -39562,11 +39562,6 @@ _ACEOF
 
 
 
-case "$with_sqlite3" in
-   yes | '' ) ;;
-   *        ) SQLITE3_PATH=$with_sqlite3 ;;
-esac
-
 
 # MongoDB
 if test -d "$MONGODB_PATH"; then

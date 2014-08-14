@@ -6654,11 +6654,6 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoapssl++,
        [soap s;])],
    $OPENSSL_LIBS $Z_LIBS)
 
-case "$with_sqlite3" in
-   yes | '' ) ;;
-   *        ) SQLITE3_PATH=$with_sqlite3 ;;
-esac
-
 
 # MongoDB
 if test -d "$MONGODB_PATH"; then
