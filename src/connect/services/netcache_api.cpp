@@ -359,7 +359,8 @@ unsigned SNetCacheAPIImpl::x_ExtractBlobAge(
 
     if (pos == string::npos) {
         NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
-                "No AGE field in " << cmd_name << " output");
+                       "No AGE field in " << cmd_name <<
+                       " output: \"" << exec_result.response << "\"");
     }
 
     return NStr::StringToUInt(exec_result.response.c_str() + pos +
