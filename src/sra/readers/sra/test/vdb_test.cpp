@@ -271,59 +271,149 @@ string Reverse(const string& s)
 }
 
 #if 0
-void CheckRc(const char* call, rc_t rc)
+#define CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
+
+#ifdef _MSC_VER
+# include <io.h>
+CRITICAL_SECTION sdk_mutex;
+#endif
+// low level SRA SDK test
+void CheckRc(rc_t rc, const char* code, const char* file, int line)
 {
     if ( rc ) {
-        char buffer[1024];
+        char buffer1[4096];
         size_t error_len;
-        RCExplain(rc, buffer, sizeof(buffer), &error_len);
-        cerr << call << ": SDK Error: 0x" << hex << rc << dec << ": " << buffer << endl;
+        RCExplain(rc, buffer1, sizeof(buffer1), &error_len);
+        char buffer2[8192];
+        unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
+                             file, line, code, rc, buffer1);
+        write(2, buffer2, len);
         exit(1);
     }
 }
-#define CheckRc(call) CheckRc(#call, call)
 
-#include <vdb/vdb-priv.h>
-#include <sra/sradb-priv.h>
-#include <sra/xf.h>
-#include <sra/sraschema.h>
-
-int LowLevelTest(const string& path)
+struct SThreadInfo
 {
-    RegisterSRASchemaMake(SRASchemaMake);
-    register_sraxf_functions();
-    register_vxf_functions();
-    register_axf_functions();
+#ifdef _MSC_VER
+    HANDLE thread_id;
+#else
+    pthread_t thread_id;
+#endif
+    const VCursor* cursor;
+    vector<uint32_t> columns;
+    uint64_t row_start;
+    uint64_t row_end;
 
-    for ( int i = 0; i < 10; ++i ) {
-        const VDBManager* mgr = 0;
-        const VDatabase* db = 0;
-        const VTable* table = 0;
-        const VCursor* cursor = 0;
+    void init_columns()
+    {
+#define ADD_COLUMN(name)                                            \
+        do {                                                        \
+            uint32_t column;                                        \
+            CALL(VCursorAddColumn(cursor, &column, name));          \
+            columns.push_back(column);                              \
+        } while(0)
+        
+        ADD_COLUMN("GI");
 
-        CheckRc(VDBManagerMakeRead(&mgr, 0));
-        CheckRc(VDBManagerOpenDBRead(mgr, &db, 0, path.c_str()));
-        CheckRc(VDatabaseOpenTableRead(db, &table, "PRIMARY_ALIGNMENT"));
-        CheckRc(VTableCreateCursorRead(table, &cursor));
-
-        uint32_t col_index;
-        CheckRc(VCursorAddColumn(cursor, &col_index, "(bool)HAS_REF_OFFSET"));
-        CheckRc(VCursorOpen(cursor));
-        for ( uint64_t row_id = 1; row_id <= 1; ++row_id ) {
-            const void* data;
-            uint32_t bit_off, bit_len, cnt;
-            CheckRc(VCursorCellDataDirect(cursor, row_id, col_index,
-                                          &bit_len, &data, &bit_off, &cnt));
-        }
-            
-        CheckRc(VCursorOpen(cursor));
-
-        CheckRc(VCursorRelease(cursor));
-        CheckRc(VTableRelease(table));
-        if ( db ) CheckRc(VDatabaseRelease(db));
-        CheckRc(VDBManagerRelease(mgr));
+#undef ADD_COLUMN
     }
-    cout << "Done" << endl;
+
+    void init(const VTable* table, size_t i)
+    {
+        cout << "Create cursor " << i << endl;
+
+        row_start = 1 + i * 10000;
+        row_end = row_start + 10000;
+
+        CALL(VTableCreateCursorRead(table, &cursor));
+        CALL(VCursorPermitPostOpenAdd(cursor));
+        CALL(VCursorOpen(cursor));
+
+        //init_columns();
+    }
+
+    void run()
+    {
+        const bool lock_col_mutex = 0;
+        const bool lock_get_mutex = 0;
+        if ( columns.empty() ) {
+            if ( lock_col_mutex ) EnterCriticalSection(&sdk_mutex);
+            init_columns();
+            if ( lock_col_mutex ) LeaveCriticalSection(&sdk_mutex);
+        }
+        for ( uint64_t row = row_start; row < row_end; ++row ) {
+            for ( size_t i = 0; i < columns.size(); ++i ) {
+                const void* data;
+                uint32_t bit_offset, bit_length;
+                uint32_t elem_count;
+                if ( lock_get_mutex ) EnterCriticalSection(&sdk_mutex);
+                CALL(VCursorCellDataDirect(cursor, row, columns[i],
+                                           &bit_length, &data, &bit_offset,
+                                           &elem_count));
+                if ( lock_get_mutex ) LeaveCriticalSection(&sdk_mutex);
+            }
+        }
+    }
+
+};
+
+#ifdef _MSC_VER
+DWORD
+#else
+void*
+#endif
+read_thread_func(void* arg)
+{
+    ((SThreadInfo*)arg)->run();
+    return 0;
+}
+
+int LowLevelTest(void)
+{
+    cout << "LowLevelTest for MT cursor read..." << endl;
+    const VDBManager* mgr = 0;
+    CALL(VDBManagerMakeRead(&mgr, 0));
+        
+    const VDatabase* db = 0;
+    CALL(VDBManagerOpenDBRead(mgr, &db, 0, "GAMP01"));
+        
+    const VTable* table = 0;
+    CALL(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
+
+    const size_t kNumCursors = 2;
+    SThreadInfo tinfo[kNumCursors];
+    for ( size_t i = 0; i < kNumCursors; ++i ) {
+        tinfo[i].init(table, i);
+    }
+#ifdef _MSC_VER
+    InitializeCriticalSection(&sdk_mutex);
+#endif
+    for ( size_t i = 0; i < kNumCursors; ++i ) {
+        cout << "Starting thread " << i << endl;
+#ifdef _MSC_VER
+        tinfo[i].thread_id = CreateThread(NULL, 0, read_thread_func,
+                                            &tinfo[i], 0, NULL);
+#else
+        pthread_create(&tinfo[i].thread_id, 0, read_thread_func, &tinfo[i]);
+#endif
+    }
+    for ( size_t i = 0; i < kNumCursors; ++i ) {
+        cout << "Waiting for thread " << i << endl;
+        void* ret = 0;
+#ifdef _MSC_VER
+        WaitForSingleObject(tinfo[i].thread_id, INFINITE);
+        CloseHandle(tinfo[i].thread_id);
+#else
+        pthread_join(tinfo[i].thread_id, &ret);
+#endif
+    }
+    for ( size_t i = 0; i < kNumCursors; ++i ) {
+        CALL(VCursorRelease(tinfo[i].cursor));
+    }
+    CALL(VTableRelease(table));
+    CALL(VDatabaseRelease(db));
+    CALL(VDBManagerRelease(mgr));
+    cout << "LowLevelTest done" << endl;
     return 0;
 }
 #endif
@@ -397,8 +487,10 @@ int CCSRATestApp::Run(void)
             }
         }
     }
-    
-    //return LowLevelTest(path);
+
+#ifdef CALL
+    return LowLevelTest();
+#endif
 
     string query_id;
     CRange<TSeqPos> query_range = CRange<TSeqPos>::GetWhole();
