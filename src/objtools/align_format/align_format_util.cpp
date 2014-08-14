@@ -2301,7 +2301,7 @@ void s_AddOtherRelatedInfoLinks(const list< CRef< CBlast_def_line > > &bdl,
             wid->GetLabel(&label, CSeq_id::eContent);                
             string url_link = kIdenticalProteinsUrl;
             string lnk_displ = "Identical Proteins";
-            url_link = s_MapLinkoutGenParam(url_link,rid,NStr::IntToString(gi),for_alignment, cur_align,label,lnk_displ);        
+            url_link = s_MapLinkoutGenParam(url_link,rid,NStr::NumericToString(gi),for_alignment, cur_align,label,lnk_displ);        
             url_link = CAlignFormatUtil::MapTemplate(kIdenticalProteinsDispl,"lnk",url_link);
             linkout_list.push_back(url_link);
         }
