@@ -42,14 +42,15 @@
 
 USING_NCBI_SCOPE;
 
+#ifdef NCBI_COMPILER_GCC
+# define inline __inline__ __attribute__((always_inline))
+#endif
+
 static CAtomicCounter alloc_count;
 static CAtomicCounter object_count;
 static CAtomicCounter::TValue total_steps;
 static CAtomicCounter current_step;
 
-#define SAVE_OPERATIONS 0
-
-#if SAVE_OPERATIONS
 static CAtomicCounter operation_count;
 static const size_t kMaxOperationCount = 50000000;
 struct SOperation {
@@ -61,11 +62,13 @@ static SOperation operations[kMaxOperationCount];
 
 inline void add_operation(int type, int size, void* ptr)
 {
+  /*
     size_t index = operation_count.Add(1)-1;
     _ASSERT(index < kMaxOperationCount);
     operations[index].type = type;
     operations[index].size = size;
     operations[index].ptr = ptr;
+  */
 }
 
 void check_operations()
@@ -92,14 +95,6 @@ void check_operations()
     }
     _ASSERT(allocated.empty());
 }
-#else
-inline void add_operation(int /*type*/, int /*size*/, void* /*ptr*/)
-{
-}
-void check_operations()
-{
-}
-#endif
 
 inline void add_alloc(int d)
 {
@@ -112,55 +107,6 @@ inline void add_step()
     if ( c % 1000000 == 0 ) {
         LOG_POST("step "<<c<<" of "<<total_steps);
     }
-}
-
-template<class C>
-inline C* call_new_arr(size_t count)
-{
-    add_alloc(1);
-    C* ptr = new C[count];
-    add_operation(2, count*sizeof(C), ptr);
-    return ptr;
-}
-
-template<class C>
-inline void call_delete_arr(C* ptr)
-{
-    add_alloc(-1);
-    add_operation(-2, sizeof(C), ptr);
-    delete[] ptr;
-}
-
-template<class C>
-inline C* call_new_single(void)
-{
-    add_alloc(1);
-    C* ptr = new C();
-    add_operation(1, sizeof(C), ptr);
-    return ptr;
-}
-
-template<class C>
-inline void call_delete_single(C* ptr)
-{
-    add_alloc(-1);
-    add_operation(-1, sizeof(C), ptr);
-    delete ptr;
-}
-
-inline void* call_new(size_t size)
-{
-    add_alloc(1);
-    void* ptr = ::operator new(size);
-    add_operation(3, size, ptr);
-    return ptr;
-}
-
-inline void call_delete(void* ptr)
-{
-    add_alloc(-1);
-    add_operation(-3, 0, ptr);
-    ::operator delete(ptr);
 }
 
 void error(const char* msg)
@@ -279,13 +225,15 @@ public:
     }
 
     static void* operator new(size_t s) {
-        CObjectWithNew* ptr = (CObjectWithNew*)call_new(s);
+        add_alloc(1);
+        CObjectWithNew* ptr = (CObjectWithNew*)::operator new(s);
         RegisterNew(ptr);
         return ptr;
     }
     static void operator delete(void* ptr) {
+        add_alloc(-1);
         RegisterDelete((CObjectWithNew*)ptr);
-        call_delete(ptr);
+        ::operator delete(ptr);
     }
     
 private:
@@ -341,7 +289,7 @@ static TTlsKey s_LastNewPtrMultiple_key;
 static
 void sx_EraseLastNewPtrMultiple(void* ptr)
 {
-    call_delete_single((TLastNewPtrMultiple*)ptr);
+    delete (TLastNewPtrMultiple*)ptr;
 }
 #endif
 
@@ -376,7 +324,7 @@ TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
     set = (TLastNewPtrMultiple*)pthread_getspecific(s_LastNewPtrMultiple_key);
 #  endif
     if ( !set ) {
-        set = call_new_single<TLastNewPtrMultiple>();
+        set = new TLastNewPtrMultiple();
 #  ifdef NCBI_WIN32_THREADS
         TlsSetValue(s_LastNewPtrMultiple_key, set);
 #  else
@@ -523,13 +471,15 @@ public:
     }
 
     static void* operator new(size_t s) {
-        CObjectWithTLS* ptr = (CObjectWithTLS*)call_new(s);
+        add_alloc(1);
+        CObjectWithTLS* ptr = (CObjectWithTLS*)::operator new(s);
         RegisterNew(ptr);
         return ptr;
     }
     static void operator delete(void* ptr) {
-        RegisterDelete((CObjectWithTLS*)ptr);
-        call_delete(ptr);
+        add_alloc(-1);
+	RegisterDelete((CObjectWithTLS*)ptr);
+        ::operator delete(ptr);
     }
     
 private:
@@ -573,7 +523,7 @@ template<class E, size_t S, bool Zero = true>
 class CArray {
 public:
     static void* operator new(size_t s) {
-        void* ptr = call_new(s);
+        void* ptr = ::operator new(s);
         if ( Zero ) {
             memset(ptr, 0, s);
         }
@@ -586,7 +536,7 @@ public:
         return ptr;
     }
     static void operator delete(void* ptr) {
-        call_delete(ptr);
+        ::operator delete(ptr);
     }
 
     E m_Array[S];
@@ -647,16 +597,7 @@ bool CTestTlsObjectApp::Thread_Run(int /*idx*/)
 }
 
 
-inline void check_fill(const void* ptr0, char kFill, size_t size)
-{
-    const char* ptr = static_cast<const char*>(ptr0);
-    for ( size_t i = 0; i < size; ++i ) {
-        _ASSERT(ptr[i] == kFill);
-    }
-}
-
-
-static const size_t COUNT = 20000;
+static const size_t COUNT = 2000;
 
 void CTestTlsObjectApp::RunTest(void)
 {
@@ -665,64 +606,78 @@ void CTestTlsObjectApp::RunTest(void)
         // prealloc
         {
             size_t size = (OBJECT_SIZE+16)*COUNT;
-            void* p = call_new(size);
+            void* p = ::operator new(size);
             memset(p, 1, size);
-            call_delete(p);
+            ::operator delete(p);
         }
         {
-            const char kFill = 2;
             const size_t COUNT2 = COUNT*2;
-            void** p = call_new_arr<void*>(COUNT2);
+            void** p = new void*[COUNT2];
             for ( size_t i = 0; i < COUNT2; ++i ) {
-                add_step();
-                p[i] = call_new(OBJECT_SIZE);
-                memset(p[i], kFill, OBJECT_SIZE);
+                add_alloc(1);
+		add_step();
+                p[i] = ::operator new(OBJECT_SIZE);
             }
             for ( size_t i = 0; i < COUNT2; ++i ) {
-                add_step();
-                check_fill(p[i], kFill, OBJECT_SIZE);
-                call_delete(p[i]);
+                add_alloc(-1);
+		add_step();
+                ::operator delete(p[i]);
             }
-            call_delete_arr(p);
+            delete[] p;
+        }
+        {
+            const size_t COUNT2 = COUNT*2;
+            int** p = new int*[COUNT2];
+            for ( size_t i = 0; i < COUNT2; ++i ) {
+                add_alloc(1);
+		add_step();
+                p[i] = new int(i);
+            }
+            for ( size_t i = 0; i < COUNT2; ++i ) {
+                add_alloc(-1);
+		add_step();
+                delete p[i];
+            }
+            delete[] p;
         }
     }
+    //return;
     CStopWatch sw;
     check_cnts();
     for ( int t = 0; t < 1; ++t ) {
-        const char kFill = 3;
-        void** ptr = call_new_arr<void*>(COUNT);
+        void** ptr = new void*[COUNT];
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
-            add_step();
-            ptr[i] = call_new(OBJECT_SIZE);
-            memset(ptr[i], kFill, OBJECT_SIZE);
+            add_alloc(1);
+	    add_step();
+            ptr[i] = ::operator new(OBJECT_SIZE);
         }
         double t1 = sw.Elapsed();
         sw.Start();
         for ( size_t i = 0; i < COUNT; ++i ) {
-            add_step();
-            check_fill(ptr[i], kFill, OBJECT_SIZE);
-            call_delete(ptr[i]);
+            add_alloc(-1);
+	    add_step();
+            ::operator delete(ptr[i]);
         }
         double t2 = sw.Elapsed();
         message("plain malloc", "create", t1, "delete", t2, COUNT);
-        call_delete_arr(ptr);
+        delete[] ptr;
     }
     check_cnts();
     {
         sw.Start();
-        void* ptr = call_new(sizeof(int));
+        int* ptr = new int;
         sx_PushLastNewPtr(ptr, 2);
         double t1 = sw.Elapsed();
         sw.Start();
         _VERIFY(sx_PopLastNewPtr(ptr));
-        call_delete(ptr);
+        delete ptr;
         double t2 = sw.Elapsed();
         message("tls", "set", t1, "get", t2, COUNT);
     }
     check_cnts();
     {
-        CObjectWithNew** ptr = call_new_arr<CObjectWithNew*>(COUNT);
+        CObjectWithNew** ptr = new CObjectWithNew*[COUNT];
         for ( size_t i = 0; i < COUNT; ++i ) {
             ptr[i] = 0;
         }
@@ -746,11 +701,11 @@ void CTestTlsObjectApp::RunTest(void)
         }
         double t2 = sw.Elapsed();
         message("new CObjectWithNew", "create", t1, "delete", t2, COUNT);
-        call_delete_arr(ptr);
+        delete[] ptr;
     }
     check_cnts();
     {
-        CObjectWithTLS** ptr = call_new_arr<CObjectWithTLS*>(COUNT);
+        CObjectWithTLS** ptr = new CObjectWithTLS*[COUNT];
         sw.Start();
         s_CurrentStep = "new CObjectWithTLS";
         s_CurrentInHeap = true;
@@ -779,11 +734,11 @@ void CTestTlsObjectApp::RunTest(void)
         }
         double t2 = sw.Elapsed();
         message("new CObjectWithTLS", "create", t1, "delete", t2, COUNT);
-        call_delete_arr(ptr);
+        delete[] ptr;
     }
     check_cnts();
     {
-        CRef<CObjectWithRef>* ptr = call_new_arr<CRef<CObjectWithRef> >(COUNT);
+        CRef<CObjectWithRef>* ptr = new CRef<CObjectWithRef>[COUNT];
         sw.Start();
         s_CurrentStep = "new CObjectWithRef";
         for ( size_t i = 0; i < COUNT; ++i ) {
@@ -809,11 +764,11 @@ void CTestTlsObjectApp::RunTest(void)
         }
         double t2 = sw.Elapsed();
         message("new CObjectWithRef", "create", t1, "delete", t2, COUNT);
-        call_delete_arr(ptr);
+        delete[] ptr;
     }
     check_cnts();
     {
-        CObjectWithNew** ptr = call_new_arr<CObjectWithNew*>(COUNT);
+        CObjectWithNew** ptr = new CObjectWithNew*[COUNT];
         for ( size_t i = 0; i < COUNT; ++i ) {
             ptr[i] = 0;
         }
@@ -837,11 +792,11 @@ void CTestTlsObjectApp::RunTest(void)
         }
         double t2 = sw.Elapsed();
         message("new CObjectWithNew()", "create", t1, "delete", t2, COUNT);
-        call_delete_arr(ptr);
+        delete[] ptr;
     }
     check_cnts();
     {
-        CObjectWithTLS** ptr = call_new_arr<CObjectWithTLS*>(COUNT);
+        CObjectWithTLS** ptr = new CObjectWithTLS*[COUNT];
         sw.Start();
         s_CurrentStep = "new CObjectWithTLS()";
         s_CurrentInHeap = true;
@@ -871,11 +826,11 @@ void CTestTlsObjectApp::RunTest(void)
         }
         double t2 = sw.Elapsed();
         message("new CObjectWithTLS()", "create", t1, "delete", t2, COUNT);
-        call_delete_arr(ptr);
+        delete[] ptr;
     }
     check_cnts();
     {
-        CRef<CObjectWithRef>* ptr = call_new_arr<CRef<CObjectWithRef> >(COUNT);
+        CRef<CObjectWithRef>* ptr = new CRef<CObjectWithRef>[COUNT];
         sw.Start();
         s_CurrentStep = "new CObjectWithRef()";
         for ( size_t i = 0; i < COUNT; ++i ) {
@@ -904,7 +859,7 @@ void CTestTlsObjectApp::RunTest(void)
         }
         double t2 = sw.Elapsed();
         message("new CObjectWithRef()", "create", t1, "delete", t2, COUNT);
-        call_delete_arr(ptr);
+        delete[] ptr;
     }
     check_cnts();
     {
@@ -977,7 +932,6 @@ bool CTestTlsObjectApp::TestApp_Exit(void)
     LOG_POST("Max memory VS: "<<max_total/(1024*1024.)<<" MB"<<
              " RSS: "<<max_resident/(1024*1024.)<<" MB"<<
              " SHR: "<<max_shared/(1024*1024.)<<" MB");
-    check_operations();
     NcbiCout << "Test completed." << NcbiEndl;
     return true;
 }
