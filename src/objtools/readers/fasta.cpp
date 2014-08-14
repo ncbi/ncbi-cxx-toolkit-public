@@ -2236,7 +2236,7 @@ void CFastaReader::PostWarning(
         (_sQualName), (_sQualValue),                            
         _eErrCode) );                 
     if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {    
-        ERR_POST_X(1, "FASTA-Reader: Warning: " + pLineExpt->Message()); 
+        LOG_POST_X(1, Warning << pLineExpt->Message()); 
     } else if ( ! pMessageListener || ! pMessageListener->PutError( *pLineExpt ) ) 
     {                                       
         throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, _eErrCode, _MessageStrmOps, _uLineNum, _eSeverity);
