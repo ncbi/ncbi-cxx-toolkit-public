@@ -33,6 +33,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/test_mt.hpp>
 #include <connect/ncbi_util.h>
+#include <util/random_gen.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -92,12 +93,12 @@ class CTestOM : public CThreadedApp
 {
 protected:
     virtual bool Thread_Run(int idx);
-    virtual bool TestApp_Args( CArgDescriptions& args);
+    virtual bool TestApp_Args(CArgDescriptions& args);
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 
     typedef vector<CConstRef<CSeq_feat> >   TFeats;
-    typedef pair<CSeq_id_Handle, bool>      TMapKey;
+    typedef pair<CSeq_id_Handle, int>       TMapKey;
     typedef map<TMapKey, string>            TFeatMap;
     typedef map<TMapKey, int>               TIntMap;
     typedef map<TMapKey, CBlobIdKey>        TBlobIdMap;
@@ -114,6 +115,7 @@ protected:
 
     TIds m_Ids;
 
+    int  m_num_orders;
     bool m_load_only;
     bool m_no_seq_map;
     bool m_no_snp;
@@ -271,9 +273,15 @@ bool CTestOM::Thread_Run(int idx)
     vector<CSeq_id_Handle> ids = m_Ids;
     
     // make them go in opposite directions
-    bool rev = idx % 2;
-    if ( rev ) {
+    int order = idx % 4;
+    if ( order == 1 ) {
         reverse(ids.begin(), ids.end());
+    }
+    else if ( order ) {
+        CRandom r(order);
+        for ( size_t i = 0; i < ids.size(); ++i ) {
+            swap(ids[i], ids[r.GetRand(i, ids.size()-1)]);
+        }
     }
 
     SAnnotSelector sel(CSeqFeatData::e_not_set);
@@ -307,6 +315,10 @@ bool CTestOM::Thread_Run(int idx)
                  new CPrefetchFeat_CIActionSource(CScopeSource::New(scope),
                                                   ids, sel));
         }
+        if ( m_pass_count > 1 ) {
+            LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID) <<
+                     ": starting pass " << (pass+1));
+        }
 
         static int error_count = 0;
         TFeats feats;
@@ -317,7 +329,7 @@ bool CTestOM::Thread_Run(int idx)
                 out << CTime(CTime::eCurrent).AsString() << " T" << idx
                     << ": " << i << ": " << sih.AsString();
             }
-            TMapKey key(sih, rev);
+            TMapKey key(sih, order);
             try {
                 // load sequence
                 bool preload_ids = !prefetch && ((idx ^ i) & 2) != 0;
@@ -545,6 +557,9 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
         ("idlist", "IdList",
          "File with list of Seq-ids to test",
          CArgDescriptions::eInputFile);
+    args.AddDefaultKey("num_orders", "NumOrders",
+                       "Number of different orders of iteration",
+                       CArgDescriptions::eInteger, "4");
     args.AddFlag("load_only", "Do not work with sequences - only load them");
     args.AddFlag("no_seq_map", "Do not scan CSeqMap on the sequence");
     args.AddFlag("no_snp", "Exclude SNP features from processing");
@@ -642,6 +657,7 @@ bool CTestOM::TestApp_Init(void)
             "accessions and gi from " <<
             g_gi_from << " to " << g_gi_to << ")..." << NcbiEndl;
     }
+    m_num_orders = args["num_orders"].AsInteger();
     m_load_only = args["load_only"];
     m_no_seq_map = args["no_seq_map"];
     m_no_snp = args["no_snp"];
