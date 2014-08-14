@@ -680,8 +680,8 @@ void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
     CSeq_interval& loc = graph->SetLoc().SetInt();
     loc.SetId(*GetRefId(flags));
     loc.SetFrom(0);
-    loc.SetTo(size-1);
-    graph->SetNumval(size);
+    loc.SetTo(TSeqPos(size-1));
+    graph->SetNumval(TSeqPos(size));
     CByte_graph& bytes = graph->SetGraph().SetByte();
     bytes.SetValues().swap(values);
     bytes.SetAxis(0);
