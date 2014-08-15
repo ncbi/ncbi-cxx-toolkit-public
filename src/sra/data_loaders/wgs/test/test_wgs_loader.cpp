@@ -770,7 +770,7 @@ BOOST_AUTO_TEST_CASE(WithdrawnCheck)
 }
 
 
-#ifdef NCBI_OS_DARWIN
+#if defined(NCBI_OS_DARWIN) || (defined(NCBI_OS_LINUX) && SIZEOF_VOIDP == 4)
 # define PAN1_PATH "/net/pan1"
 #else
 # define PAN1_PATH "//panfs/pan1"
