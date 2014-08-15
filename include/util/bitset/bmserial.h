@@ -2763,10 +2763,10 @@ serial_stream_iterator<DEC>::get_gap_block(bm::gap_word_t* dst_block)
               this->block_type_ == set_block_bit_1bit);
     BM_ASSERT(dst_block);
 
-    read_gap_block(this->decoder_,
-                   this->block_type_,
-                   dst_block,
-                   this->gap_head_);
+    this->read_gap_block(this->decoder_,
+                         this->block_type_,
+                         dst_block,
+                         this->gap_head_);
 
     ++(this->block_idx_);
     this->state_ = e_blocks;
