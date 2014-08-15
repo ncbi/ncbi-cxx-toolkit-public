@@ -355,8 +355,9 @@ CNCPeerControl::x_UnreserveBGConn(void)
 {
     m_ObjLock.Lock();
     x_DecBGConns();
-    x_DoReleaseConn(NULL);
-    m_ObjLock.Unlock();
+    if(x_DoReleaseConn(NULL)) {
+        m_ObjLock.Unlock();
+    }
 }
 
 CNCActiveHandler*
