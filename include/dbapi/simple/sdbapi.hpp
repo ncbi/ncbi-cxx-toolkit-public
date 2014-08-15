@@ -353,10 +353,10 @@ public:
         /// Row numbers are assigned consecutively to each row in all result
         /// sets returned starting with 1. Row number is not reset after
         /// passing result set boundary.
-        unsigned int GetRowNo(void);
+        unsigned int GetRowNo(void) const;
         /// Get number of currently active result set.
         /// All result sets are numbered starting with 1.
-        unsigned int GetResultSetNo(void);
+        unsigned int GetResultSetNo(void) const;
 
         /// Get column value by its number.
         /// All columns are numbered starting with 1.
@@ -365,13 +365,13 @@ public:
         const CField& operator[](CTempString col) const;
 
         /// Get number of columns in the current result set.
-        int GetTotalColumns(void);
+        int GetTotalColumns(void) const;
         /// Get name of the column with given number in the current result set.
         /// All columns are numbered starting with 1.
-        string GetColumnName(unsigned int col);
+        string GetColumnName(unsigned int col) const;
         /// Get type of the column with given number in the current result set.
         /// All columns are numbered starting with 1.
-        ESDB_Type GetColumnType(unsigned int col);
+        ESDB_Type GetColumnType(unsigned int col) const;
 
         /// Comparison of iterators.
         /// Only comparison with end() iterator makes sense. Otherwise all
@@ -520,12 +520,12 @@ public:
     /// This number is available only when all result sets are read or purged
     /// by call to PurgeResults().  At all other times, the method throws an
     /// exception.
-    int GetRowCount(void);
+    int GetRowCount(void) const;
     /// Get return status of stored procedure.
     /// Status is available only if stored procedure is executed via
     /// ExecuteSP() method and all result sets returned from the procedure are
     /// read or purged by call to PurgeResults().
-    int GetStatus(void);
+    int GetStatus(void) const;
 
     /// Check if any more result sets are available for reading.
     /// Advances to the next result set purging all remaining rows in current
@@ -566,22 +566,22 @@ public:
     void VerifyDone(EHowMuch how_much = eThisResultSet);
 
     /// Get total number of columns in the current result set
-    int GetTotalColumns(void);
+    int GetTotalColumns(void) const;
     /// Get name of the column with given number in the current result set.
     /// All columns are numbered starting with 1.
-    string GetColumnName(unsigned int col);
+    string GetColumnName(unsigned int col) const;
     /// Get type of the column with given number in the current result set
     /// All columns are numbered starting with 1.
-    ESDB_Type GetColumnType(unsigned int col);
+    ESDB_Type GetColumnType(unsigned int col) const;
     /// Get number of currently active result set.
     /// All result sets are numbered starting with 1.
-    unsigned int GetResultSetNo(void);
+    unsigned int GetResultSetNo(void) const;
     /// Get row number currently active.
     /// Row numbers are assigned consecutively to each row in all result
     /// sets returned starting with 1.  With eAllResultSets (default) or
     /// in MultiSet mode, row number is not reset after passing result set
     /// boundary.
-    unsigned int GetRowNo(EHowMuch how_much = eAllResultSets);
+    unsigned int GetRowNo(EHowMuch how_much = eAllResultSets) const;
 
     /// Convert this query to work like only one result set was returned
     /// effectively merging all result sets together. If some result sets
@@ -602,7 +602,7 @@ public:
     /// Start iterating through next result set.
     /// If some result set was already started to iterate through and end of it
     /// wasn't reached all remaining rows will be purged.
-    CRowIterator begin(void);
+    CRowIterator begin(void) const;
     /// Get iterator pointing to the end of the current result set or to the
     /// end of all result sets (depending on the setting changed with
     /// SingleSet() and MultiSet()). Method cannot be used to take two
@@ -610,7 +610,7 @@ public:
     /// end of all result sets. Which end is pointed to depends on the last
     /// call to SingleSet() or MultiSet() even if it was made after call to
     /// this method.
-    CRowIterator end(void);
+    CRowIterator end(void) const;
 
 private:
     friend class CDatabase;

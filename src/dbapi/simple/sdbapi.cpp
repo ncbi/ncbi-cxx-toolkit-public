@@ -2248,14 +2248,14 @@ CQueryImpl::SetIgnoreBounds(bool is_ignore)
 }
 
 inline unsigned int
-CQueryImpl::GetResultSetNo(void)
+CQueryImpl::GetResultSetNo(void) const
 {
     x_CheckCanWork();
     return m_CurRSNo;
 }
 
 inline unsigned int
-CQueryImpl::GetRowNo(CQuery::EHowMuch how_much)
+CQueryImpl::GetRowNo(CQuery::EHowMuch how_much) const
 {
     x_CheckCanWork();
     if (m_IgnoreBounds  ||  how_much == CQuery::eAllResultSets) {
@@ -2266,7 +2266,7 @@ CQueryImpl::GetRowNo(CQuery::EHowMuch how_much)
 }
 
 inline int
-CQueryImpl::GetRowCount(void)
+CQueryImpl::GetRowCount(void) const
 {
     x_CheckCanWork();
     if ( !IsFinished(CQuery::eAllResultSets) ) {
@@ -2279,7 +2279,7 @@ CQueryImpl::GetRowCount(void)
 }
 
 inline int
-CQueryImpl::GetStatus(void)
+CQueryImpl::GetStatus(void) const
 {
     x_CheckCanWork();
     if ( !IsFinished(CQuery::eAllResultSets) ) {
@@ -2485,7 +2485,7 @@ CQueryImpl::PurgeResults(void)
 }
 
 inline int
-CQueryImpl::GetTotalColumns(void)
+CQueryImpl::GetTotalColumns(void) const
 {
     x_CheckCanWork(true);
     try {
@@ -2495,7 +2495,7 @@ CQueryImpl::GetTotalColumns(void)
 }
 
 inline string
-CQueryImpl::GetColumnName(unsigned int col)
+CQueryImpl::GetColumnName(unsigned int col) const
 {
     x_CheckCanWork(true);
     try {
@@ -2505,7 +2505,7 @@ CQueryImpl::GetColumnName(unsigned int col)
 }
 
 inline ESDB_Type
-CQueryImpl::GetColumnType(unsigned int col)
+CQueryImpl::GetColumnType(unsigned int col) const
 {
     x_CheckCanWork(true);
     try {
@@ -2754,31 +2754,31 @@ const CDB_Exception::SContext& CQuery::CRowIterator::x_GetContext(void) const
 }
 
 unsigned int
-CQuery::CRowIterator::GetResultSetNo(void)
+CQuery::CRowIterator::GetResultSetNo(void) const
 {
     return m_Query->GetResultSetNo();
 }
 
 unsigned int
-CQuery::CRowIterator::GetRowNo(void)
+CQuery::CRowIterator::GetRowNo(void) const
 {
     return m_Query->GetRowNo();
 }
 
 int
-CQuery::CRowIterator::GetTotalColumns(void)
+CQuery::CRowIterator::GetTotalColumns(void) const
 {
     return m_Query->GetTotalColumns();
 }
 
 string
-CQuery::CRowIterator::GetColumnName(unsigned int col)
+CQuery::CRowIterator::GetColumnName(unsigned int col) const
 {
     return m_Query->GetColumnName(col);
 }
 
 ESDB_Type
-CQuery::CRowIterator::GetColumnType(unsigned int col)
+CQuery::CRowIterator::GetColumnType(unsigned int col) const
 {
     return m_Query->GetColumnType(col);
 }
@@ -3156,25 +3156,25 @@ CQuery::MultiSet(void)
 }
 
 unsigned int
-CQuery::GetResultSetNo(void)
+CQuery::GetResultSetNo(void) const
 {
     return m_Impl->GetResultSetNo();
 }
 
 unsigned int
-CQuery::GetRowNo(EHowMuch how_much)
+CQuery::GetRowNo(EHowMuch how_much) const
 {
     return m_Impl->GetRowNo(how_much);
 }
 
 int
-CQuery::GetRowCount(void)
+CQuery::GetRowCount(void) const
 {
     return m_Impl->GetRowCount();
 }
 
 int
-CQuery::GetStatus(void)
+CQuery::GetStatus(void) const
 {
     return m_Impl->GetStatus();
 }
@@ -3210,34 +3210,34 @@ CQuery::VerifyDone(EHowMuch how_much)
 }
 
 int
-CQuery::GetTotalColumns(void)
+CQuery::GetTotalColumns(void) const
 {
     return m_Impl->GetTotalColumns();
 }
 
 string
-CQuery::GetColumnName(unsigned int col)
+CQuery::GetColumnName(unsigned int col) const
 {
     return m_Impl->GetColumnName(col);
 }
 
 ESDB_Type
-CQuery::GetColumnType(unsigned int col)
+CQuery::GetColumnType(unsigned int col) const
 {
     return m_Impl->GetColumnType(col);
 }
 
 CQuery::CRowIterator
-CQuery::begin(void)
+CQuery::begin(void) const
 {
-    m_Impl->BeginNewRS();
-    return CRowIterator(m_Impl, false);
+    m_Impl.GetNCPointer()->BeginNewRS();
+    return CRowIterator(m_Impl.GetNCPointer(), false);
 }
 
 CQuery::CRowIterator
-CQuery::end(void)
+CQuery::end(void) const
 {
-    return CRowIterator(m_Impl, true);
+    return CRowIterator(m_Impl.GetNCPointer(), true);
 }
 
 END_NCBI_SCOPE

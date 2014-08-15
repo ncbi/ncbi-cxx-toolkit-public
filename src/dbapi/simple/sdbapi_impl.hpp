@@ -154,13 +154,13 @@ public:
     bool IsFinished(CQuery::EHowMuch how_much = CQuery::eThisResultSet) const;
 
     void SetIgnoreBounds(bool is_ignore);
-    unsigned int GetResultSetNo(void);
-    unsigned int GetRowNo(CQuery::EHowMuch how_much = CQuery::eAllResultSets);
-    int GetRowCount(void);
-    int GetStatus(void);
-    int GetTotalColumns(void);
-    string GetColumnName(unsigned int col);
-    ESDB_Type GetColumnType(unsigned int col);
+    unsigned int GetResultSetNo(void) const;
+    unsigned int GetRowNo(CQuery::EHowMuch how_much = CQuery::eAllResultSets) const;
+    int GetRowCount(void) const;
+    int GetStatus(void) const;
+    int GetTotalColumns(void) const;
+    string GetColumnName(unsigned int col) const;
+    ESDB_Type GetColumnType(unsigned int col) const;
 
     CDatabaseImpl* GetDatabase(void) const;
     IConnection* GetConnection(void);
