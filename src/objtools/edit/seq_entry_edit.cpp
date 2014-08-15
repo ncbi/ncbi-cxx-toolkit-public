@@ -2257,10 +2257,13 @@ void TrimSeqGraph(CBioseq_Handle bsh,
         copy_start -= graph_start;
         copy_stop -= graph_start;
 
-        // Update data values
-        dst_data.SetByte().SetValues().assign(
-            dst_data.GetByte().GetValues().begin() + copy_start,
-            dst_data.GetByte().GetValues().begin() + copy_stop + 1);
+        // Update data values via
+        // 1) copy over the new range to another container
+        // 2) swap
+        CByte_graph::TValues subset;
+        subset.assign(dst_data.GetByte().GetValues().begin() + copy_start,
+                      dst_data.GetByte().GetValues().begin() + copy_stop + 1);
+        dst_data.SetByte().SetValues().swap(subset);
 
         // Update numvals
         graph->SetNumval(copy_stop - copy_start + 1);
