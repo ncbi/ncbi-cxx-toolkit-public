@@ -1052,6 +1052,12 @@ string s_HtmlWrapModelEvidenceName( const SModelEvidance& me )
     return strm.str();
 }
 
+static
+string s_HtmlWrapTranscriptName( const string& name )
+{
+    return "<a href=\"" + strLinkBaseNuc + name + "\">" + name + "</a>";
+}
+
 string CCommentItem::GetStringForModelEvidance
 (const SModelEvidance& me,
  ECommentFormat format)
@@ -1078,7 +1084,8 @@ string CCommentItem::GetStringForModelEvidance
         int count = 0;
         string prefix = "";
         FOR_EACH_STRING_IN_LIST (str, me.assembly) {
-            text << prefix << *str;
+            const string tr_name = ( bHtml ? s_HtmlWrapTranscriptName(*str) : *str);
+            text << prefix << tr_name;
             count++;
             if (num_assm == count + 1) {
                 prefix = " and ";
