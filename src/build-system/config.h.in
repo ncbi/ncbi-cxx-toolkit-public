@@ -182,6 +182,9 @@
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
 
+/* Define to 1 if libavrocpp is available. */
+#undef HAVE_LIBAVRO
+
 /* Define to 1 if libbz2 is available. */
 #undef HAVE_LIBBZ2
 

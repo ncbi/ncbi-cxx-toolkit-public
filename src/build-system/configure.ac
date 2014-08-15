@@ -71,7 +71,7 @@ case "$with_3psw" in
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
-                     magic, curl, gsoap, mongodb],
+                     magic, curl, gsoap, avro, mongodb],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -449,6 +449,10 @@ AC_ARG_WITH(gsoap,
    [ --with-gsoap=DIR        use gSOAP++ installation in DIR])
 AC_ARG_WITH(gsoap2,
    [ --without-gsoap         do not use gSOAP++])
+AC_ARG_WITH(avro,
+   [ --with-avro=DIR         use Apache Avro installation in DIR])
+AC_ARG_WITH(avro2,
+   [ --without-avro          do not use Apache Avro])
 AC_ARG_WITH(mongodb,
    [ --with-mongodb=DIR      use MongoDB installation in DIR])
 AC_ARG_WITH(mongodb2,
@@ -512,7 +516,7 @@ ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic gsoap mongodb 3psw \
+gif jpeg tiff png xpm magic curl mimetic gsoap avro mongodb 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -553,8 +557,8 @@ for x_arg in "$@" ; do
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* | --with-ncbi-c=* | --with-sss=* \
-      | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* \
-      | --with-krb5=* | --with-curl=* | --with-gsoap=* | --with-mongodb=* \
+      | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
+      | --with-curl=* | --with-gsoap=* | --with-avro=* | --with-mongodb=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
@@ -5086,6 +5090,39 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           [ncbi_cv_lib_boost_filesystem=yes],
           [ncbi_cv_lib_boost_filesystem=no])])
 
+   BOOST_IOSTREAMS_LIBS=-lboost_iostreams${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_iostreams${BOOST_TAG}-static.a"; then
+       BOOST_IOSTREAMS_STATIC_LIBS=-lboost_iostreams${BOOST_TAG}-static
+   else
+       BOOST_IOSTREAMS_STATIC_LIBS=$BOOST_IOSTREAMS_LIBS
+   fi
+
+   AC_CACHE_CHECK([for Boost.Iostreams$in_path], ncbi_cv_lib_boost_iostreams,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_IOSTREAMS_LIBS $Z_LIBS $BZ2_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/iostreams/device/file_descriptor.hpp>]],
+              [[boost::iostreams::file_descriptor fd;]])],
+          [ncbi_cv_lib_boost_iostreams=yes],
+          [ncbi_cv_lib_boost_iostreams=no])])
+
+   BOOST_PROGRAM_OPTIONS_LIBS=-lboost_program_options${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_program_options${BOOST_TAG}-static.a"; then
+       BOOST_PROGRAM_OPTIONS_STATIC_LIBS=-lboost_program_options${BOOST_TAG}-static
+   else
+       BOOST_PROGRAM_OPTIONS_STATIC_LIBS=$BOOST_PROGRAM_OPTIONS_LIBS
+   fi
+
+   AC_CACHE_CHECK([for Boost.Program-Options$in_path],
+      ncbi_cv_lib_boost_program_options,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_PROGRAM_OPTIONS_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/program_options.hpp>]],
+              [[boost::program_options::option_description od;]])],
+          [ncbi_cv_lib_boost_program_options=yes],
+          [ncbi_cv_lib_boost_program_options=no])])
+
    BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor${BOOST_TAG}-static.a"; then
        BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}-static
@@ -5166,6 +5203,8 @@ else
    BOOST_LIBPATH=
    BOOST_TAG=
    ncbi_cv_lib_boost_filesystem=no
+   ncbi_cv_lib_boost_iostreams=no
+   ncbi_cv_lib_boost_program_options=no
    ncbi_cv_lib_boost_regex=no
    ncbi_cv_lib_boost_spirit=no
    ncbi_cv_lib_boost_system=no
@@ -5182,6 +5221,24 @@ else
    boost_fs_static_lib=
    BOOST_FILESYSTEM_LIBS=
    BOOST_FILESYSTEM_STATIC_LIBS=
+fi
+
+if test "$ncbi_cv_lib_boost_iostreams" != "no"; then
+   dnl AC_DEFINE(HAVE_BOOST_IOSTREAMS, 1,
+   dnl           [Define to 1 if the `Boost.Iostreams' library is available.])
+   NCBI_PACKAGE(Boost.Iostreams)
+else
+   BOOST_IOSTREAMS_LIBS=
+   BOOST_IOSTREAMS_STATIC_LIBS=
+fi
+
+if test "$ncbi_cv_lib_boost_program_options" != "no"; then
+   dnl AC_DEFINE(HAVE_BOOST_PROGRAM_OPTIONS, 1,
+   dnl           [Define to 1 if the `Boost.Program-Options' library is available.])
+   NCBI_PACKAGE(Boost.Program-Options)
+else
+   BOOST_PROGRAM_OPTIONS_LIBS=
+   BOOST_PROGRAM_OPTIONS_STATIC_LIBS=
 fi
 
 if test "$ncbi_cv_lib_boost_regex" != "no"; then
@@ -6655,6 +6712,40 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoapssl++,
    $OPENSSL_LIBS $Z_LIBS)
 
 
+# Apache Avro
+if test "$with_avro" != no; then
+   case "$with_avro" in
+      yes | '' ) ;;
+      *        ) AVRO_PATH=$with_avro ;;
+   esac
+   for d in "$AVRO_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
+            "$AVRO_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
+            "$AVRO_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
+            "$AVRO_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
+      if test -d "$d"; then
+         AVRO_PATH=$d
+         break
+      fi
+   done
+   if test -d "$AVRO_PATH"; then
+      NCBI_FIX_DIR(AVRO_PATH)
+   fi
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(avro, AVRO, avrocpp,
+   [AC_LANG_PROGRAM([#include <avro/Node.hh>],
+      [avro::Name name("foo");])],
+   [$BOOST_LIBPATH $BOOST_FILESYSTEM_LIBS $BOOST_SYSTEM_LIBS $BOOST_PROGRAM_OPTIONS_LIBS $BOOST_IOSTREAMS_LIBS $RT_LIBS $Z_LIBS $BZ2_LIBS],
+   [],
+   [$BOOST_INCLUDE])
+if test -n "$AVRO_LIBS"; then
+   if test -f "$AVRO_PATH/lib/libavrocpp_s.a"; then
+      AVRO_STATIC_LIBS="$AVRO_LIBPATH -lavrocpp_s $BOOST_LIBPATH $BOOST_FILESYSTEM_LIBS $BOOST_SYSTEM_LIBS $BOOST_PROGRAM_OPTIONS_LIBS $BOOST_IOSTREAMS_LIBS $RT_LIBS $Z_LIBS $BZ2_LIBS"
+   else
+      AVRO_STATIC_LIBS=$AVRO_LIBS
+   fi
+   AC_PATH_PROG(AVROGENCPP, avrogencpp, [], [$AVRO_PATH/bin:$PATH])
+fi
+
 # MongoDB
 if test -d "$MONGODB_PATH"; then
    NCBI_FIX_DIR(MONGODB_PATH)
@@ -7286,6 +7377,10 @@ AC_SUBST(BOOST_LIBPATH)
 AC_SUBST(BOOST_TAG)
 AC_SUBST(BOOST_FILESYSTEM_LIBS)
 AC_SUBST(BOOST_FILESYSTEM_STATIC_LIBS)
+AC_SUBST(BOOST_IOSTREAMS_LIBS)
+AC_SUBST(BOOST_IOSTREAMS_STATIC_LIBS)
+AC_SUBST(BOOST_PROGRAM_OPTIONS_LIBS)
+AC_SUBST(BOOST_PROGRAM_OPTIONS_STATIC_LIBS)
 AC_SUBST(BOOST_REGEX_LIBS)
 AC_SUBST(BOOST_REGEX_STATIC_LIBS)
 AC_SUBST(BOOST_SYSTEM_LIBS)
@@ -7353,6 +7448,7 @@ AC_SUBST(SQLITE3_STATIC_LIBS)
 AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(GSOAP_PATH)
+AC_SUBST(AVRO_STATIC_LIBS)
 AC_SUBST(MONGODB_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)

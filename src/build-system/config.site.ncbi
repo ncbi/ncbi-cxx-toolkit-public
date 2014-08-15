@@ -11,6 +11,7 @@ try_local() {
     # /sw (Mac)? /usr/sfw (Solaris)?
     for d in /usr /usr/local /usr/X11 /usr/openwin; do
         test -d "$d"  ||  continue
+        test -f "$d/include/avro"          &&  : ${AVRO_PATH=$d}
         test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
         test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
         test -d "$d/include/curl"          &&  : ${CURL_PATH=$d}
@@ -54,6 +55,10 @@ fi
 case "$ncbi_platform" in
     Linux32   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/32/\\1:&," ;;
     Linux64   ) ncbi_rpath_sed="s,$NCBI/\\(.*\\),/opt/ncbi/64/\\1:&," ;;
+esac
+
+case "$ncbi_platform" in
+    Linux64    ) : ${AVRO_PATH=$NCBI/avro-cpp-1.7.7} ;;
 esac
 
 case "$ncbi_platform" in
