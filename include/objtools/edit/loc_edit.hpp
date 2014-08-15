@@ -98,6 +98,8 @@ public:
     bool Interpret3Policy(const CSeq_feat& orig_feat, CScope& scope, bool& do_set_3_partial, bool& do_clear_3_partial) const;
     static CRef<CSeq_loc> ConvertToJoin(const CSeq_loc& orig_loc, bool &changed);
     static CRef<CSeq_loc> ConvertToOrder(const CSeq_loc& orig_loc, bool &changed);
+    static bool Extend5(CSeq_feat& feat, CScope& scope);
+    static bool Extend3(CSeq_feat& feat, CScope& scope);
     static bool HasNulls(const CSeq_loc& orig_loc);
 
 private:

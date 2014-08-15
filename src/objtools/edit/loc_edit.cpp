@@ -486,55 +486,7 @@ bool CLocationEditPolicy::ApplyPolicyToFeature(CSeq_feat& feat, CScope& scope) c
         feat.SetLocation().SetPartialStart(true, eExtreme_Biological);
         if (m_Extend5) {
             // extend end
-            CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
-            if (bsh || s_Know5WithoutBsh(feat.GetLocation())) {
-                ENa_strand strand = feat.GetLocation().GetStrand();
-                size_t start = feat.GetLocation().GetStart(eExtreme_Biological);
-                int diff = 0;
-                if (strand == eNa_strand_minus) {                
-                    if (start < bsh.GetInst_Length() - 1) {
-                        diff = bsh.GetInst_Length() - feat.GetLocation().GetStart(eExtreme_Biological) - 1;
-                        CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), bsh.GetInst_Length() - 1, &scope);
-                        if (new_loc) {
-                            feat.SetLocation().Assign(*new_loc);
-                        } else {
-                            diff = 0;
-                        }
-                    }
-                } else  if (start > 0) {
-                    diff = start;
-                    CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), 0, &scope);
-                    if (new_loc) {
-                        feat.SetLocation().Assign(*new_loc);
-                    } else {
-                        diff = 0;
-                    }
-                }
-                // adjust frame to maintain consistency
-                if (diff % 3 > 0 && feat.GetData().IsCdregion()) {
-                    int orig_frame = 0;
-                    if (feat.GetData().GetCdregion().IsSetFrame()) {
-                        if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_two) {
-                            orig_frame = 1;
-                        } else if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_three) {
-                            orig_frame = 2;
-                        }
-                    }
-                    CCdregion::EFrame new_frame = CCdregion::eFrame_not_set;
-                    switch ((3 + orig_frame - diff % 3) % 3) {
-                        case 1:
-                            new_frame = CCdregion::eFrame_two;
-                            break;
-                        case 2:
-                            new_frame = CCdregion::eFrame_three;
-                            break;
-                        default:
-                            new_frame = CCdregion::eFrame_not_set;
-                            break;
-                    }
-                    feat.SetData().SetCdregion().SetFrame(new_frame);
-                }
-            }
+            Extend5(feat, scope);
         }
     } else if (do_clear_5_partial) {
         feat.SetLocation().SetPartialStart(false, eExtreme_Biological);
@@ -547,24 +499,8 @@ bool CLocationEditPolicy::ApplyPolicyToFeature(CSeq_feat& feat, CScope& scope) c
     if (do_set_3_partial) {
         feat.SetLocation().SetPartialStop(true, eExtreme_Biological);
         if (m_Extend3) {
-            CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
-            if (bsh || s_Know3WithoutBsh(feat.GetLocation())) {
-                ENa_strand strand = feat.GetLocation().GetStrand();
-                size_t stop = feat.GetLocation().GetStop(eExtreme_Biological);
-                if (strand == eNa_strand_minus) {                
-                    if (stop > 0) {
-                        CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), 0, &scope);
-                        if (new_loc) {
-                            feat.SetLocation().Assign(*new_loc);
-                        }
-                    }
-                } else  if (stop < bsh.GetInst_Length() - 1) {
-                    CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), bsh.GetInst_Length() - 1, &scope);
-                    if (new_loc) {
-                        feat.SetLocation().Assign(*new_loc);
-                    }
-                }
-            }
+            // extend end
+            Extend3(feat, scope);
         }
     } else if (do_clear_3_partial) {
         feat.SetLocation().SetPartialStop(false, eExtreme_Biological);
@@ -695,6 +631,89 @@ CRef<CSeq_loc> CLocationEditPolicy::ConvertToOrder(const CSeq_loc& orig_loc, boo
 
     }
     return new_loc;
+}
+
+bool CLocationEditPolicy::Extend5(CSeq_feat& feat, CScope& scope)
+{
+    bool extend = false;
+    CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+    if (bsh || s_Know5WithoutBsh(feat.GetLocation())) {
+        ENa_strand strand = feat.GetLocation().GetStrand();
+        size_t start = feat.GetLocation().GetStart(eExtreme_Biological);
+        int diff = 0;
+        if (strand == eNa_strand_minus) {                
+            if (start < bsh.GetInst_Length() - 1) {
+                diff = bsh.GetInst_Length() - feat.GetLocation().GetStart(eExtreme_Biological) - 1;
+                CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), bsh.GetInst_Length() - 1, &scope);
+                if (new_loc) {
+                    feat.SetLocation().Assign(*new_loc);
+                    extend = true;
+                } else {
+                    diff = 0;
+                }
+            }
+        } else  if (start > 0) {
+            diff = start;
+            CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), 0, &scope);
+            if (new_loc) {
+                feat.SetLocation().Assign(*new_loc);
+                extend = true;
+            } else {
+                diff = 0;
+            }
+        }
+        // adjust frame to maintain consistency
+        if (diff % 3 > 0 && feat.GetData().IsCdregion()) {
+            int orig_frame = 0;
+            if (feat.GetData().GetCdregion().IsSetFrame()) {
+                if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_two) {
+                    orig_frame = 1;
+                } else if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_three) {
+                    orig_frame = 2;
+                }
+            }
+            CCdregion::EFrame new_frame = CCdregion::eFrame_not_set;
+            switch ((3 + orig_frame - diff % 3) % 3) {
+                case 1:
+                    new_frame = CCdregion::eFrame_two;
+                    break;
+                case 2:
+                    new_frame = CCdregion::eFrame_three;
+                    break;
+                default:
+                    new_frame = CCdregion::eFrame_not_set;
+                    break;
+            }
+            feat.SetData().SetCdregion().SetFrame(new_frame);
+        }
+    }
+    return extend;
+}
+
+bool CLocationEditPolicy::Extend3(CSeq_feat& feat, CScope& scope)
+{
+    bool extend = false;
+    CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+    if (bsh || s_Know3WithoutBsh(feat.GetLocation())) {
+        ENa_strand strand = feat.GetLocation().GetStrand();
+        size_t stop = feat.GetLocation().GetStop(eExtreme_Biological);
+        if (strand == eNa_strand_minus) {                
+            if (stop > 0) {
+                CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), 0, &scope);
+                if (new_loc) {
+                    feat.SetLocation().Assign(*new_loc);
+                    extend = true;
+                }
+            }
+        } else  if (stop < bsh.GetInst_Length() - 1) {
+            CRef<CSeq_loc> new_loc = SeqLocExtend(feat.GetLocation(), bsh.GetInst_Length() - 1, &scope);
+            if (new_loc) {
+                feat.SetLocation().Assign(*new_loc);
+                extend = true;
+            }
+        }
+    }
+    return extend;
 }
 
 
