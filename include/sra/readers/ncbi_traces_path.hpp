@@ -34,7 +34,7 @@
 
 #include <ncbiconf.h>
 
-#ifdef NCBI_OS_DARWIN
+#if defined(NCBI_OS_DARWIN) || (defined(NCBI_OS_LINUX) && SIZEOF_VOIDP == 4)
 # define PANFS_TRACES_PATH(num)  "/net/traces" num
 # define NETAPP_TRACES_PATH(num) "/net/traces" num
 #elif defined(NCBI_OS_MSWIN)
