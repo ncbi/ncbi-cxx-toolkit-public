@@ -2482,6 +2482,7 @@ void TrimSeqAlign(CBioseq_Handle bsh,
         s_CutDensegSegment(align, row, cut_from + cut_len);
 
         // Update segment start values for the trimmed sequence row
+        const CDense_seg& denseg = align->GetSegs().GetDenseg();
         for (CDense_seg::TNumseg curseg = 0; curseg < denseg.GetNumseg(); ++curseg) {
             TSeqPos index = curseg * denseg.GetDim() + row;
             TSignedSeqPos seg_start = denseg.GetStarts()[index];
