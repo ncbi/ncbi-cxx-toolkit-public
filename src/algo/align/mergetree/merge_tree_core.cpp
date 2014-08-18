@@ -91,8 +91,8 @@ CMergeTree::~CMergeTree()
 
         Curr->Parents.clear();
 
-        NON_CONST_SET_ITERATE(set<TMergeNode>, ChildIter, Curr->Children) {
-            (*ChildIter)->Parents.clear();
+        ITERATE(set<TMergeNode>, ChildIter, Curr->Children) {
+            ChildIter->GetNCPointer()->Parents.clear();
             Children.push_back(*ChildIter);
         }
         Curr->Children.clear();
