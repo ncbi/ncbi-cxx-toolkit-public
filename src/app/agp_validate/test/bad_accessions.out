@@ -19,7 +19,7 @@
 8187:gnl|AAJN|scaffold_1|gb	1	256777	1	W	AAJN04000001	1	256777	+
 	ERROR: invalid use of "|" character in object_id (column 1): Not enough fields for ID of type gb
 
-8188:
+8189:
 	ERROR, line skipped: empty line
 
 3 errors, 4 warnings, 4 notes; 3 not printed.
@@ -35,14 +35,14 @@
 NOTE: 1 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
 
-Objects                :    6
-- with single component:    2
+Objects                :    7
+- with single component:    3
 
-Scaffolds              :  354
-- with single component:   56
+Scaffolds              :  355
+- with single component:   57
 
-Components                   : 4095 (W)
-  orientation +              : 2674
+Components                   : 4096 (W:4095, F:1)
+  orientation +              : 2675
   orientation -              : 1421
   orientation ? (formerly 0) :    0
   orientation na             :    0
@@ -59,17 +59,19 @@ Gaps                   : 4092 (N)
 
 Most frequent N gap_length (23.1% or 944 lines):   10
 
-Object names                           :  6
+Object names                           :  7
   scaffold1.1|size2787216              :  1
   gnl|AAJN|scaffold_1|gb|CH476594|extra:  1
   gnl|AAJN|scaffold_1|gb|CH476594      :  1
   gnl|AAJN|scaffold_1|gb               :  1
   gnl|AAJN|scaffold_1                  :  1
   chr22                                :  1
+  10                                   :  1
 
-Component names                      :  4095
---------------- Nucleotide accessions:     6
+Component names                      :  4096
+--------------- Nucleotide accessions:     7
   AAJN[01000001..04000001]           :     6
+  CU633885.4                         :     1
 --------------- OTHER identifiers    :  4089
   ABGA[01001503..01404031].[1,111111]:  4055 (some local or misspelled)
   ABGA[01409238..01410146].1.1       :    26 (local or misspelled)
