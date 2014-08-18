@@ -101,8 +101,8 @@ CMicroArrayReader::CMicroArrayReader(
 //  ----------------------------------------------------------------------------
     : CReaderBase(flags),
       m_currentId(""),
-      m_usescore(false),
-      m_columncount(15)
+      m_columncount(15),
+      m_usescore(false)
 {
 }
 
