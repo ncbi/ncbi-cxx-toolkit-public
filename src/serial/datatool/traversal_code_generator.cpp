@@ -356,8 +356,8 @@ void CTraversalCodeGenerator::x_PruneEmptyNodes(
     // we traverse to find all callers of useful nodes and 
     // add those to the useful nodes set
     CAddToNodeSetCallback add_to_set_callback( usefulNodes );
-    NON_CONST_SET_ITERATE( CTraversalNode::TNodeSet, node_iter, nodesWithFunctions ) {
-        (*node_iter)->DepthFirst( add_to_set_callback, 
+    ITERATE( CTraversalNode::TNodeSet, node_iter, nodesWithFunctions ) {
+        node_iter->GetNCPointer()->DepthFirst( add_to_set_callback, 
             (CTraversalNode::fTraversalOpts_UpCallers) );
     }
 
