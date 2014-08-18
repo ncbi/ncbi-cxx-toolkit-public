@@ -2047,10 +2047,8 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
             sel.ExcludeFeatType(CSeqFeatData::e_Imp);
         }
         if ( cfg.HideRemoteImpFeatures() ) {
-            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation)
-               .ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon)
-               .ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron)
-               .ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
+            sel.ExcludeNamedAnnots("CDD")
+               .ExcludeNamedAnnots("SNP");
         }
         if ( cfg.HideSNPFeatures() ) {
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
