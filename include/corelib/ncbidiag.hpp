@@ -2092,10 +2092,7 @@ public:
     /// Create a temporary CDiagContext_Extra object. The object will print
     /// arguments automatically from destructor. Can be used like:
     ///   PrintRequestStart().Print(name1, val1).Print(name2, val2);
-    CDiagContext_Extra PrintRequestStart(void)
-    {
-        return CDiagContext_Extra(SDiagMessage::eEvent_RequestStart);
-    }
+    CDiagContext_Extra PrintRequestStart(void);
 
     /// Print request stop message (for request-driven applications)
     void PrintRequestStop(void);
@@ -2201,6 +2198,12 @@ public:
     /// Set new global default hit id. This value is used only if the per-request
     /// hit id is not set.
     void SetDefaultHitID(const string& hit_id);
+
+    /// Get host role (DEV/QA/TRY/PROD) from /etc/ncbi/role.
+    static const string& GetHostRole(void);
+
+    /// Get host location (be-md/st-va) from /etc/ncbi/location.
+    static const string& GetHostLocation(void);
 
     /// Write standard prefix to the stream. Use values from the message
     /// (PID/TID/RID etc.).

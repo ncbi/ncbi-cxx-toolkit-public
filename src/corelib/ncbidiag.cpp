@@ -1849,6 +1849,21 @@ void CDiagContext::PrintExtra(const string& message)
 }
 
 
+CDiagContext_Extra CDiagContext::PrintRequestStart(void)
+{
+    CDiagContext_Extra extra(SDiagMessage::eEvent_RequestStart);
+    const string& role = GetHostRole();
+    const string& loc = GetHostLocation();
+    if ( !role.empty() ) {
+        extra.Print("ncbi_role", role);
+    }
+    if ( !loc.empty() ) {
+        extra.Print("ncbi_location", loc);
+    }
+    return extra;
+}
+
+
 CDiagContext_Extra::CDiagContext_Extra(SDiagMessage::EEventType event_type)
     : m_EventType(event_type),
       m_Args(0),
@@ -2379,6 +2394,44 @@ void CDiagContext::SetDefaultHitID(const string& hit_id)
     }
     m_LoggedHitId = false;
     *m_DefaultHitId = hit_id;
+}
+
+
+inline string s_ReadString(const char* filename)
+{
+    string ret;
+    CNcbiIfstream in(filename);
+    if ( in.good() ) {
+        getline(in, ret);
+    }
+    return ret;
+}
+
+
+static CSafeStatic< auto_ptr<string> > s_HostRole;
+static CSafeStatic< auto_ptr<string> > s_HostLocation;
+
+const string& CDiagContext::GetHostRole(void)
+{
+    if ( !s_HostRole->get() ) {
+        CDiagLock lock(CDiagLock::eWrite);
+        auto_ptr<string> role(new string);
+        *role = s_ReadString("/etc/ncbi/role");
+        s_HostRole->reset(role.release());
+    }
+    return **s_HostRole;
+}
+
+
+const string& CDiagContext::GetHostLocation(void)
+{
+    if ( !s_HostLocation->get() ) {
+        CDiagLock lock(CDiagLock::eWrite);
+        auto_ptr<string> loc(new string);
+        *loc = s_ReadString("/etc/ncbi/location");
+        s_HostLocation->reset(loc.release());
+    }
+    return **s_HostLocation;
 }
 
 
