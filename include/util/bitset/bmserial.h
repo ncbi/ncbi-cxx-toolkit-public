@@ -1472,11 +1472,12 @@ unsigned deserializer<BV, DEC>::deserialize(bvector_type&        bv,
 
     if (!(header_flag & BM_HM_NO_GAPL)) 
     {
-        gap_word_t glevels[bm::gap_levels];
+        // levels in serialized file are obsolete
+        /*gap_word_t glevels[bm::gap_levels];*/
         // read GAP levels information
         for (i = 0; i < bm::gap_levels; ++i)
         {
-            glevels[i] = dec.get_16();
+            /*glevels[i] = */dec.get_16();
         }
     }
 
