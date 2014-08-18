@@ -146,6 +146,7 @@ CCgiCookie::CCgiCookie(const CCgiCookie& cookie)
 {
     m_Expires = cookie.m_Expires;
     m_Secure  = cookie.m_Secure;
+    m_HttpOnly = cookie.m_HttpOnly;
 }
 
 
@@ -163,6 +164,7 @@ CCgiCookie::CCgiCookie(const string& name,   const string& value,
     SetValue(value);
     m_Expires = kZeroTime;
     m_Secure = false;
+    m_HttpOnly = false;
 }
 
 
@@ -173,6 +175,7 @@ void CCgiCookie::Reset(void)
     m_Path.erase();
     m_Expires = kZeroTime;
     m_Secure = false;
+    m_HttpOnly = false;
     ResetInvalid(fInvalid_Any);
 }
 
@@ -190,6 +193,7 @@ void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
     m_Path    = cookie.m_Path;
     m_Expires = cookie.m_Expires;
     m_Secure  = cookie.m_Secure;
+    m_HttpOnly = cookie.m_HttpOnly;
 }
 
 
@@ -252,6 +256,8 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os,
             os << "; expires=" << x_ExpDate.c_str();
         if ( m_Secure )
             os << "; secure";
+        if ( m_HttpOnly )
+            os << "; HttpOnly";
 
         os << HTTP_EOL;
 

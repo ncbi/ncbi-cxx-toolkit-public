@@ -117,6 +117,7 @@ public:
     void SetExpDate(const tm& exp_date);   // GMT time (infinite if all zeros)
     void SetExpTime(const CTime& exp_time);// GMT time (infinite if all zeros)
     void SetSecure (bool secure);          // FALSE by default
+    void SetHttpOnly(bool http_only);      // FALSE by default
 
     /// All "const string& GetXXX(...)" methods beneath return reference
     /// to "NcbiEmptyString" if the requested attributre is not set
@@ -128,6 +129,7 @@ public:
     /// If exp.date is not set then return FALSE and dont assign "*exp_date"
     bool GetExpDate(tm* exp_date) const;
     bool GetSecure(void)          const;
+    bool GetHttpOnly(void)        const;
 
     /// Compare two cookies
     bool operator< (const CCgiCookie& cookie) const;
@@ -159,6 +161,7 @@ private:
     string         m_Path;
     tm             m_Expires;  // GMT time zone
     bool           m_Secure;
+    bool           m_HttpOnly;
     TInvalidFlag   m_InvalidFlag;
 
     enum EFieldType {
@@ -972,6 +975,9 @@ inline void CCgiCookie::SetExpDate(const tm& exp_date) {
 inline void CCgiCookie::SetSecure(bool secure) {
     m_Secure = secure;
 }
+inline void CCgiCookie::SetHttpOnly(bool http_only) {
+    m_HttpOnly = http_only;
+}
 
 // CCgiCookie::GetXXX()
 
@@ -989,6 +995,9 @@ inline const string& CCgiCookie::GetPath(void) const {
 }
 inline bool CCgiCookie::GetSecure(void) const {
     return m_Secure;
+}
+inline bool CCgiCookie::GetHttpOnly(void) const {
+    return m_HttpOnly;
 }
 
 inline CCgiCookie::TInvalidFlag CCgiCookie::IsInvalid(void) const
