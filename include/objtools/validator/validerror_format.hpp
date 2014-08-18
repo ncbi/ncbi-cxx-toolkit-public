@@ -91,6 +91,16 @@ public:
     vector<unsigned int> GetListOfErrorCodes(const CValidError& errors) const;
     vector<string> FormatCompleteSubmitterReport(const CValidError& errors, CScope& scope) const;
 
+    // for formatting the objects as presented by the validator
+    static string GetFeatureContentLabel (const CSeq_feat& feat, CRef<CScope> scope);
+    static string GetFeatureIdLabel (const CFeat_id& feat_id);
+    static string GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context);
+    static string GetDescriptorContent (const CSeqdesc& ds);
+    static string GetDescriptorLabel(const CSeqdesc& ds, const CSeq_entry& ctx, CRef<CScope> scope, bool suppress_context);
+    static string GetBioseqLabel (CBioseq_Handle bh);
+    static string GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> scope, bool suppress_context);
+    static string GetObjectLabel(const CObject& obj, const CSeq_entry& ctx, CRef<CScope> scope, bool suppress_context); 
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidErrorFormat(const CValidErrorFormat&);

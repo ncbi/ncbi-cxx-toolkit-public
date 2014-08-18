@@ -854,19 +854,12 @@ void GetAuthorsString (string *out_authors, const CAuth_list& auth_list)
         return;
     }
 
-    vector<CTempString> name_list;
-
-    // Since name_list must point to a string that lasts at least until
-    // the end of this function, we use temp_string_storage just
-    // as a place to store strings that we want to destroy when we exit
-    // the function.
-    vector<string> temp_string_storage;
+    vector<string> name_list;
 
     if (auth_list.GetNames().IsStd()) {
         ITERATE (CAuth_list::TNames::TStd, auth_it, auth_list.GetNames().GetStd()) {
             if ((*auth_it)->IsSetName()) {
-                temp_string_storage.push_back(kEmptyStr);
-                string & label = temp_string_storage.back();
+                string label = "";
                 (*auth_it)->GetName().GetLabel(&label);
                 name_list.push_back(label);
             }
