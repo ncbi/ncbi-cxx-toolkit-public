@@ -34,12 +34,15 @@
 
 #include <ncbiconf.h>
 
-#if defined(NCBI_OS_DARWIN) || (defined(NCBI_OS_LINUX) && SIZEOF_VOIDP == 4)
+#ifdef NCBI_OS_DARWIN
 # define PANFS_TRACES_PATH(num)  "/net/traces" num
 # define NETAPP_TRACES_PATH(num) "/net/traces" num
 #elif defined(NCBI_OS_MSWIN)
 # define PANFS_TRACES_PATH(num)  "//panfs/traces" num
 # define NETAPP_TRACES_PATH(num) "//traces" num
+#elif defined(NCBI_OS_LINUX) && SIZEOF_VOIDP == 4
+# define PANFS_TRACES_PATH(num)  "/net/traces" num
+# define NETAPP_TRACES_PATH(num) "/netmnt/traces" num
 #else
 # define PANFS_TRACES_PATH(num)  "/panfs/traces" num ".be-md.ncbi.nlm.nih.gov"
 # define NETAPP_TRACES_PATH(num) "/netmnt/traces" num
