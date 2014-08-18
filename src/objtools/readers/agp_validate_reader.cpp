@@ -368,7 +368,8 @@ void CAgpValidateReader::OnGapOrComponent()
       else if( div == CSeq_id::eAcc_htgs ) {
         if(m_this_row->component_type == 'W') m_AgpErr->Msg(CAgpErr::W_CompIsNotWgsTypeIs);
       }
-      else {
+      else if( div != CSeq_id::eAcc_other // no further classification
+      ) {
         if( string("ADF").find(m_this_row->component_type)!=NPOS ) m_AgpErr->Msg(CAgpErr::W_CompIsNotHtgTypeIs, m_this_row->GetComponentId());
       }
     }
