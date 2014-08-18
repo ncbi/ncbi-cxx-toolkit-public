@@ -74,7 +74,6 @@ bool                                CDiscRepInfo :: expand_srcqual_report;
 string                              CDiscRepInfo :: report_lineage;
 bool                                CDiscRepInfo :: exclude_dirsub;
 string                              CDiscRepInfo :: xml_label(" XmlIds:");
-Str2CombDt                          CDiscRepInfo :: rRNATerms;
 vector <string>                     CDiscRepInfo :: bad_gene_names_contained;
 vector <string>                     CDiscRepInfo :: short_auth_nms;
 vector <string>                     CDiscRepInfo :: spec_words_biosrc;
@@ -243,26 +242,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     // ini. of weasels
     strtmp = "candidate,hypothetical,novel,possible,potential,predicted,probable,putative,candidate,uncharacterized,unique";
     thisInfo.weasels = NStr::Tokenize(strtmp, ",", thisInfo.weasels);
-
-    // ini. of rRNATerms
-    const char* rRnaTerms[] = {
-        "16S,1000,0",
-        "18S,1000,0",
-        "23S,2000,0",
-        "25s,1000,0",
-        "26S,1000,0",
-        "28S,3300,0",
-        "small,1000,0",
-        "large,1000,0",
-        "5.8S,130,1",
-        "5S,90,1"
-    };
-    for (i=0; i< (int)ArraySize(rRnaTerms); i++) {
-        arr.clear();
-        arr = NStr::Tokenize(rRnaTerms[i], ",", arr);
-        thisInfo.rRNATerms[arr[0]].i_val = NStr::StringToInt(arr[1]);
-        thisInfo.rRNATerms[arr[0]].b_val = (arr[2] == "1");
-    }
 
     // ini. of bad_gene_names_contained
     strtmp = "putative,fragment,gene,orf,like";

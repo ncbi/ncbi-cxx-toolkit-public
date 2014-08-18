@@ -133,7 +133,122 @@ static string strtmp;
 static CSuspectRuleCheck rule_check;
 
 // CTestAndRepData
-string CTestAndRepData :: x_GetUserObjType(const CUser_object& user_obj)
+string CDiscRepUtil :: x_GetTwoFieldSubfield(const string& str, unsigned subfield)
+{
+  string strmp;
+
+  if (str.empty() || subfield > 2) {
+     return kEmptyStr;
+  }
+  if (!subfield) return str;
+  else {
+    size_t pos = str.find(':');
+    if (pos == string::npos) {
+       if (subfield == 1) return str;
+       else return kEmptyStr;
+    }
+    else {
+      if (subfield == 1) return str.substr(0, pos);
+      else {
+        strtmp = CTempString(str).substr(pos+1).empty();
+        if (!strtmp.empty()) return strtmp;
+        else return kEmptyStr;
+      }
+    }
+  }
+};
+
+string CDiscRepUtil :: GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const string& qual_name, unsigned subfield, const CString_constraint* str_cons)
+{
+  string str(kEmptyStr);
+
+  ITERATE (vector <CRef <CGb_qual> >, it, quals) {
+    if (NStr::EqualNocase( (*it)->GetQual(), qual_name)) {
+      str = (*it)->GetVal();
+      str = x_GetTwoFieldSubfield(str, subfield);
+      if ( str.empty()
+              || (str_cons && !str_cons->Empty() && !(str_cons->Match(str))) ) {
+           str = kEmptyStr;
+      }
+      else break;
+    }
+  }
+  return str;
+}
+
+
+string CDiscRepUtil :: GetRNAProductString(const CSeq_feat& seq_feat)
+{
+  const CRNA_ref& rna = seq_feat.GetData().GetRna();
+  string rna_str(kEmptyStr);
+  if (!rna.CanGetExt()) rna_str = seq_feat.GetNamedQual("product");
+  else {
+     const CRNA_ref::C_Ext& ext = rna.GetExt();
+     switch (ext.Which()) {
+       case CRNA_ref::C_Ext::e_Name:
+             rna_str = ext.GetName();
+             if (seq_feat.CanGetQual()
+                    && (rna_str.empty() || rna_str== "ncRNA"
+                          || rna_str== "tmRNA" || rna_str== "misc_RNA")) {
+                 rna_str = GetFirstGBQualMatch(seq_feat.GetQual(), (string)"product");
+             }
+             break;
+       case CRNA_ref::C_Ext::e_TRNA:
+              GetLabel(seq_feat, &rna_str, fFGL_Content);
+              rna_str = "tRNA-" + rna_str;
+              break;
+       case CRNA_ref::C_Ext::e_Gen:
+              if (ext.GetGen().CanGetProduct()) {
+                   rna_str = ext.GetGen().GetProduct();
+              }
+       default: break;
+     }
+  }
+  return rna_str;
+};
+
+struct rRNATerm {
+   string   keyword;
+   unsigned min_length;
+   bool     ignore_partial;
+};
+
+static const rRNATerm Terms[] = {
+    {"16S",   1000, false},   // keyword, min-length, ignore-partial
+    {"18S",   1000, false},
+    {"23S",   2000, false},
+    {"25s",   1000, false},
+    {"26S",   1000, false},
+    {"28S",   3300, false},
+    {"small", 1000, false},
+    {"large", 1000, false},
+    {"5.8S",  130,  true},
+    {"5S",    90,   true}
+};
+
+bool CDiscRepUtil :: IsShortrRNA(const CSeq_feat& feat, CScope* scope)
+{
+   if (!scope) return false;
+  
+   if ( (feat.GetData().GetSubtype() != CSeqFeatData :: eSubtype_rRNA)
+           || (feat.CanGetPartial() && feat.GetPartial()) ) {
+        return false;
+   }
+
+   unsigned len = sequence::GetCoverage(feat.GetLocation(), scope);
+   string rrna_name = GetRNAProductString(feat);
+   for (unsigned i=0; i< ArraySize(Terms); i++) {
+      if (NStr::FindNoCase(rrna_name, Terms[i].keyword) != string::npos
+              && len < Terms[i].min_length
+              && !Terms[i].ignore_partial ) {
+        return true;
+      }
+   }
+
+   return false;
+};
+
+const string& CTestAndRepData :: x_GetUserObjType(const CUser_object& user_obj) const
 {
   return (user_obj.GetType().IsStr() ? user_obj.GetType().GetStr() : kEmptyStr);
 };

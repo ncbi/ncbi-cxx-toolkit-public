@@ -65,7 +65,6 @@ USING_SCOPE(DiscRepNmSpc);
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
 
-static string strtmp;
 static vector <string> arr;
 static CDiscRepInfo thisInfo;
 
@@ -108,6 +107,8 @@ string CSuspectRuleCheck :: CopyListWithoutBankIt (const string& orig)
 
 bool CSuspectRuleCheck :: DoesObjectIdMatchStringConstraint (const CObject_id& obj_id, const CString_constraint& str_cons)
 {
+  string strtmp;
+
   if (IsStringConstraintEmpty (&str_cons)) return true;
   else {
      if (obj_id.IsId()) strtmp = NStr::IntToString(obj_id.GetId());
@@ -118,6 +119,8 @@ bool CSuspectRuleCheck :: DoesObjectIdMatchStringConstraint (const CObject_id& o
 
 bool CSuspectRuleCheck :: DoesTextMatchBankItId (const CSeq_id& sid, const CString_constraint& str_cons)
 {
+  string strtmp;
+
   const CDbtag& dbtag = sid.GetGeneral();
   if (dbtag.GetDb() != "BankIt") return false;
   string text = str_cons.CanGetMatch_text()? 
@@ -197,7 +200,7 @@ bool CSuspectRuleCheck :: DoesSeqIDListMeetStringConstraint (const vector <CSeq_
                 match = true;
           }
           else if ((pos = tag.GetStr().find_last_of('/')) != string::npos) {
-            strtmp = tag.GetStr().substr(0, pos);
+            string strtmp = tag.GetStr().substr(0, pos);
             if (DoesSingleStringMatchConstraint (strtmp, &str_cons)) {
               match = true;
             }
@@ -319,7 +322,7 @@ string CSuspectRuleCheck :: GetPubclassFromPub(const CPub& the_pub)
   output << the_pub.Which() << GetPubMLStatus(the_pub) 
          << (the_pub.IsArticle() ? the_pub.GetArticle().GetFrom().Which() :  0);
   
-  strtmp = output.str();
+  string strtmp = output.str();
   if (thisInfo.pub_class_quals.find(strtmp) != thisInfo.pub_class_quals.end()) 
      return thisInfo.pub_class_quals[strtmp];
   else {
@@ -343,9 +346,10 @@ string CSuspectRuleCheck :: GetAuthorListString (const CAuth_list& auth_ls, cons
     case CAuth_list::C_Names::e_Std:
       ITERATE (list <CRef <CAuthor> >, it, names.GetStd()) {
          //GetAuthorString( **it, use_initials);
-         strtmp =CSeqEntry_test_on_pub :: GetAuthNameList(**it, use_initials);
-         if (!strtmp.empty() && DoesStringMatchConstraint(strtmp, str_cons))
+         string strtmp =CSeqEntry_test_on_pub :: GetAuthNameList(**it, use_initials);
+         if (!strtmp.empty() && DoesStringMatchConstraint(strtmp, str_cons)) {
            str += strtmp + ", ";
+         }
       }
       break;
     case CAuth_list::C_Names::e_Ml:
@@ -676,6 +680,7 @@ string CSuspectRuleCheck :: GetPubFieldFromPub (const CPub& the_pub, EPublicatio
 bool CSuspectRuleCheck :: DoesPubFieldMatch (const CPubdesc& pub_desc, const CPub_field_constraint& field)
 {
   const CString_constraint& str_cons = field.GetConstraint();
+  string strtmp;
   EPublication_field pub_field = field.GetField();
   if (str_cons.GetNot_present()) {
     ITERATE (list <CRef <CPub> >, it, pub_desc.GetPub().Get()) {
@@ -697,6 +702,7 @@ bool CSuspectRuleCheck :: DoesPubFieldMatch (const CPubdesc& pub_desc, const CPu
 bool CSuspectRuleCheck :: DoesPubFieldSpecialMatch (const CPubdesc& pub_desc, const CPub_field_special_constraint& field)
 {
   const CPub_field_special_constraint_type& fcons_tp = field.GetConstraint();
+  string strtmp;
   ITERATE (list < CRef <CPub> >, it, pub_desc.GetPub().Get()) {
     strtmp = GetPubFieldFromPub(**it, field.GetField());
     if (!strtmp.empty()) {
@@ -1065,6 +1071,7 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
   char ch1, ch2;
   vector <string> word_word;
   bool has_word = !(str_cons->GetIgnore_words().Get().empty());
+  string strtmp;
   ITERATE (list <CRef <CWord_substitution> >, 
              it, 
              str_cons->GetIgnore_words().Get()) {
@@ -1454,7 +1461,7 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
         rval = true; 
     }
     else {
-      strtmp = Blob2Str(*str_cons);
+      string strtmp = Blob2Str(*str_cons);
       Str2Blob(strtmp, tmp_cons);
       tmp_match = tmp_cons.CanGetMatch_text() ? tmp_cons.GetMatch_text() : kEmptyStr;
       if (str_cons->GetIgnore_weasel()) {
@@ -1609,10 +1616,10 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
      if (len == str.size()) next_letter = ',';
      else next_letter = str[len];
      may_contain_plural 
-         = x_DoesStrContainPlural(arr[0], last_letter, second_to_last_letter, next_letter);
+        = x_DoesStrContainPlural(arr[0], last_letter, second_to_last_letter, next_letter);
   }
   else {
-    strtmp = str;
+    string strtmp = str;
     size_t pos;
     vector <string>::const_iterator jt;
     ITERATE (vector <string>, it, arr) { 
@@ -1730,7 +1737,7 @@ bool CSuspectRuleCheck :: InWordBeforeCytochromeOrCoenzyme(const string& start_s
   size_t pos = start_str.find_last_of(' ');
   string comp_str1, comp_str2;
   if (pos != string::npos) {
-      strtmp = CTempString(start_str).substr(0, pos);
+      string strtmp = CTempString(start_str).substr(0, pos);
       pos = strtmp.find_last_not_of(' ');
       if (pos != string::npos) {
          unsigned len = strtmp.size();
@@ -1798,11 +1805,12 @@ bool CSuspectRuleCheck :: StringContainsUnderscore(const string& search)
 { 
   if (search.find('_') == string::npos) return false;
 
+  string strtmp;
   arr.clear();
   arr = NStr::Tokenize(search, "_", arr);
   for (unsigned i=0; i< arr.size() - 1; i++) {
      strtmp = arr[i+1];
-     if (FollowedByFamily(strtmp)) continue;   // strtmp was changed in the FollowedByFamily
+     if (FollowedByFamily(strtmp)) continue; // strtmp was changed in the FollowedByFamily
      else if (arr[i].size() < 3 || search[arr[i].size()-1] == ' ') return true;
      else {
        strtmp = CTempString(arr[i]).substr(arr[i].size()-3);
@@ -1846,8 +1854,7 @@ bool CSuspectRuleCheck :: StringContainsUnbalancedParentheses(const string& sear
 {
   size_t pos = 0;
   char ch_src;
-  strtmp = kEmptyStr;
-  string sch_src(search);
+  string strtmp = kEmptyStr, sch_src(search);
   while (!sch_src.empty()) {
     pos = sch_src.find_first_of("()[]");
     if (pos == string::npos) {
@@ -2714,7 +2721,8 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
                 && DoesStringMatchConstraint ("pseudogene", illegal_qual))) { 
      /* pseudo */
      if (seq_feat.CanGetQual()) {
-        str =GetFirstGBQualMatch(seq_feat.GetQual(), "pseudogene", 0, str_cons);
+        str = CDiscRepUtil :: GetFirstGBQualMatch(seq_feat.GetQual(), 
+                                                          "pseudogene", 0, str_cons);
         if (str.empty() && seq_feat.CanGetPseudo() && seq_feat.GetPseudo()){
              str = "unqualified";
         }
@@ -2732,7 +2740,7 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
       }
     } 
     else if (seq_fdt.IsRna()) {
-      str = CBioseqTestAndRepData :: GetRNAProductString (seq_feat);
+      str = CDiscRepUtil :: GetRNAProductString (seq_feat);
     }
   }
   else { /* Gene fields */
@@ -2937,9 +2945,8 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
                               thisInfo.featquallegal_subfield[legal_qual] : 0;
                  if (feat_qual_name != "name" || feat_qual_name !="location"){
                       // gbqual > -1
-                    return GetFirstGBQualMatch(seq_feat.GetQual(), 
-                                               feat_qual_name, 
-                                               subfield, str_cons);
+                    return CDiscRepUtil :: GetFirstGBQualMatch(seq_feat.GetQual(), 
+                                                feat_qual_name, subfield, str_cons);
                  }
               }
               else {
@@ -2979,7 +2986,7 @@ bool CSuspectRuleCheck :: DoesObjectMatchFeatureFieldConstraint(const CSeq_feat&
   if (IsStringConstraintEmpty (&str_cons)) return true;
 
   CString_constraint tmp_cons;
-  strtmp = Blob2Str(str_cons);
+  string strtmp = Blob2Str(str_cons);
   Str2Blob(strtmp, tmp_cons);
   tmp_cons.SetNot_present(false);
   string str = GetQualFromFeature (feat, feat_field, &tmp_cons);
@@ -3031,7 +3038,7 @@ bool CSuspectRuleCheck :: DoesObjectMatchRnaQualConstraint (const CSeq_feat& seq
 
   CString_constraint tmp_cons;
   if (IsStringConstraintEmpty (&str_cons)) return true;
-  strtmp = Blob2Str(str_cons);
+  string strtmp = Blob2Str(str_cons);
   Str2Blob(strtmp, tmp_cons);
   tmp_cons.SetNot_present(false);
   str = GetRNAQualFromFeature (seq_feat, rna_qual, &tmp_cons);
@@ -3290,7 +3297,7 @@ bool CSuspectRuleCheck :: DoesBiosourceMatchConstraint (const CBioSource& biosrc
     if (field1 && !field2) {
       if ( AllowSourceQualMulti(field1) && str_cons->GetNot_present() ) {
           CString_constraint tmp_cons;
-          strtmp = Blob2Str(*str_cons);
+          string strtmp = Blob2Str(*str_cons);
           Str2Blob(strtmp, tmp_cons);
           tmp_cons.SetNot_present(false);
           str1 = GetSrcQualValue4FieldType (biosrc, *field1, &tmp_cons);
@@ -3371,44 +3378,6 @@ void CSuspectRuleCheck :: GetProtFromCodingRegion (CRef <CCGPSetData> cgp, const
   }
 };
 
-string CSuspectRuleCheck :: GetTwoFieldSubfield(const string& str, unsigned subfield)
-{
-  if (str.empty() || subfield > 2) return kEmptyStr;
-  if (!subfield) return str;
-  else {
-    size_t pos = str.find(':');
-    if (pos == string::npos) {
-      if (subfield == 1) return str;
-      else return kEmptyStr;
-    }
-    else {
-      if (subfield == 1) return str.substr(0, pos);
-      else {
-        strtmp = CTempString(str).substr(pos+1).empty();
-        if (!strtmp.empty()) return strtmp;
-        else return kEmptyStr;
-      }
-    }
-  }
-};
-
-string CSuspectRuleCheck :: GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const string& qual_name, unsigned subfield, const CString_constraint* str_cons)
-{
-  string str(kEmptyStr);
-  ITERATE (vector <CRef <CGb_qual> >, it, quals) {
-     if (NStr::EqualNocase( (*it)->GetQual(), qual_name)) {
-        str = (*it)->GetVal();
-        if (subfield) {
-            str = GetTwoFieldSubfield(str, subfield);
-        }
-        if (str.empty() || !DoesStringMatchConstraint (str, str_cons)) {
-           str = kEmptyStr;
-        }
-        else break;
-     }
-  }
-  return str;
-}
 
 string CSuspectRuleCheck :: GetFieldValueFromCGPSet (const CCGPSetData& c, ECDSGeneProt_field field, const CString_constraint* str_cons)
 {
@@ -3458,7 +3427,8 @@ string CSuspectRuleCheck :: GetFieldValueFromCGPSet (const CCGPSetData& c, ECDSG
         break;
       case eCDSGeneProt_field_gene_old_locus_tag:
         if (c.gene->CanGetQual()) 
-              str = GetFirstGBQualMatch(c.gene->GetQual(), "old_locus_tag", 0, str_cons);
+              str = CDiscRepUtil::GetFirstGBQualMatch(c.gene->GetQual(), 
+                                                          "old_locus_tag", 0, str_cons);
         break;
       default: break;
     }

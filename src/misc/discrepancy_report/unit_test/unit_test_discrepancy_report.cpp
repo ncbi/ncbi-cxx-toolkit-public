@@ -40,6 +40,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -698,6 +699,7 @@ BOOST_AUTO_TEST_CASE(NON_GENE_LOCUS_TAG)
     rrna = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA, "artificial");
    rrna->AddQualifier("locus_tag", "fake");
    AddFeat(rrna, entry);
+
    RunAndCheckTest(entry, "NON_GENE_LOCUS_TAG", 
                       "1 non-gene feature has locus tags.");
 };
@@ -1450,4 +1452,126 @@ BOOST_AUTO_TEST_CASE(DISC_FEATURE_LIST)
 
    // add more virious features if have time
    RunAndCheckTest(entry, "DISC_FEATURE_LIST", "Feature List");
+};
+
+BOOST_AUTO_TEST_CASE(ONCALLER_ORDERED_LOCATION)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_id> seq_id = entry->GetSeq().GetId().front();
+
+   CRef <CSeq_loc> mix_loc(new CSeq_loc());
+   CRef <CSeq_loc> loc (new CSeq_loc());
+   loc->SetInt().SetFrom(0);
+   loc->SetInt().SetTo(10);
+   loc->SetInt().SetId().Assign(*seq_id);
+   mix_loc->SetMix().Set().push_back(loc);
+
+   loc.Reset(new CSeq_loc(CSeq_loc::e_Null));
+   mix_loc->SetMix().Set().push_back(loc);
+
+   loc.Reset(new CSeq_loc);
+   loc->SetInt().SetFrom(30);
+   loc->SetInt().SetTo(40);
+   loc->SetInt().SetId().Assign(*seq_id);
+   mix_loc->SetMix().Set().push_back(loc);
+
+   loc.Reset(new CSeq_loc(CSeq_loc::e_Null));
+   mix_loc->SetMix().Set().push_back(loc);
+
+   loc.Reset(new CSeq_loc);
+   loc->SetInt().SetFrom(60);
+   loc->SetInt().SetTo(70);
+   loc->SetInt().SetId().Assign(*seq_id);
+   mix_loc->SetMix().Set().push_back(loc);
+
+   CRef <CSeq_feat> feat = AddGoodImpFeat(entry, "repeat_region");
+   feat->ResetLocation();
+   feat->SetLocation(*mix_loc);
+
+   RunAndCheckTest(entry, "ONCALLER_ORDERED_LOCATION", "1 feature has ordered locations");
+};
+
+BOOST_AUTO_TEST_CASE(ONCALLER_HAS_STANDARD_NAME)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_feat> feat = AddGoodImpFeat(entry, "exon");
+ 
+   CRef <CGb_qual> qual (new CGb_qual);
+   qual->SetQual("standard_name");
+   qual->SetVal("myexon");
+   vector <CRef <CGb_qual> > quals;
+   feat->SetQual() = quals;
+   feat->SetQual().push_back(qual);
+
+   RunAndCheckTest(entry, "ONCALLER_HAS_STANDARD_NAME", "1 feature has standard_name qualifier");
+};
+
+
+BOOST_AUTO_TEST_CASE(TEST_MRNA_OVERLAPPING_PSEUDO_GENE)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_feat> cds = AddCDsWithComment(entry, "cd1", 0, 50);
+
+   // add mRNA
+   CRef <CSeq_feat> feat = MakemRNAForCDS(cds);
+   AddFeat(feat, entry);
+   
+   // add gene
+   feat = MakeGeneForFeature(cds);
+   feat->SetPseudo(true);
+   AddFeat(feat, entry);
+   
+   RunAndCheckTest(entry, "TEST_MRNA_OVERLAPPING_PSEUDO_GENE", "1 Pseudogene has overlapping mRNAs.");
+};
+
+void MakeDeltaSeqWithoutGap(CRef <CSeq_entry> entry)
+{
+   entry->SetSeq().SetInst().ResetSeq_data();
+   entry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+   entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCC", objects::CSeq_inst::eMol_dna);
+   entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("TGGCCAAAATTGGCCAAAATTGGCCAA", objects::CSeq_inst::eMol_dna);
+   entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATG", objects::CSeq_inst::eMol_dna);
+   entry->SetSeq().SetInst().SetLength(49);
+   
+};
+
+
+void MakeDeltaSeqWithGap(CRef <CSeq_entry> entry)
+{
+   entry->SetSeq().SetInst().ResetSeq_data();
+   entry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+   entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("PRKTEIN", objects::CSeq_inst::eMol_aa);
+
+   // gap
+   CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+   gap_seg->SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
+   gap_seg->SetLiteral().SetLength(18);
+   entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+
+   entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("MGPRKTEIN", objects::CSeq_inst::eMol_aa);
+   entry->SetSeq().SetInst().SetLength(34);
+
+};
+
+BOOST_AUTO_TEST_CASE(DISC_GAPS)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+   CRef <CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   MakeDeltaSeqWithoutGap(nuc);
+   CRef <CSeq_feat> feat = AddGoodImpFeat(nuc, "gap");
+
+   CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+   MakeDeltaSeqWithGap(prot);
+
+   RunAndCheckTest(entry, "DISC_GAPS", "2 sequences contain gaps");
+};
+
+BOOST_AUTO_TEST_CASE(NO_PRODUCT_STRING)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+   CRef <CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+   prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().ResetName();
+   prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().push_back("no product string in file");
+
+   RunAndCheckTest(entry, "NO_PRODUCT_STRING", "1 product has \"no product string in file\"");
 };
