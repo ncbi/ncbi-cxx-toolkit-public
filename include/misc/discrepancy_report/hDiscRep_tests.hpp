@@ -482,11 +482,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool CanGetFieldString(const CCGPSetData& cgp, 
                              const ECDSGeneProt_field field, 
                              const CString_constraint& str_cons);
+#if 0
       string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, 
                                   const string& qual_name, 
                                   unsigned subfield = 0, 
                                   const CString_constraint* str_cons = 0);
       string GetTwoFieldSubfield(const string& str, unsigned subfield);
+#endif
       string GetFieldValue(const CCGPSetData& cgp, 
                            const CSeq_feat& feat, 
                            ECDSGeneProt_field val, 
@@ -570,8 +572,17 @@ BEGIN_SCOPE(DiscRepNmSpc)
       static bool IsAllCaps(const string& str);
       static bool IsAllLowerCase(const string& str);
       static bool IsAllPunctuation(const string& str);
-   
+      static bool IsShortrRNA(const CSeq_feat& feat, CScope* scope);
+      static string GetRNAProductString(const CSeq_feat& seq_feat);
+      static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, 
+                                  const string& qual_name, 
+                                  unsigned subfield = 0, 
+                                  const CString_constraint* str_cons = 0);
+
       static string digit_str, alpha_str;
+
+    private:
+      static string x_GetTwoFieldSubfield(const string& str, unsigned subfield);
   };
 
   class CTestAndRepData : public CObject
@@ -738,7 +749,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     protected:
       unsigned m_num_entry;
 
-      string x_GetUserObjType(const CUser_object& user_obj);
+      const string& x_GetUserObjType(const CUser_object& user_obj) const;
       bool CommentHasPhrase(string comment, const string& phrase);
       bool HasLineage(const CBioSource& biosrc, const string& type);
       bool IsEukaryotic(const CBioseq& bioseq);
@@ -2188,13 +2199,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
        virtual string GetName() const = 0;
 
-       static string GetRNAProductString(const CSeq_feat& seq_feat);
+//       static string GetRNAProductString(const CSeq_feat& seq_feat);
     
     protected:
        const CMolInfo* m_molinfo;
 
        bool GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2);
-       bool x_IsShortrRNA(const CSeq_feat* seq_ft);
+//       bool x_IsShortrRNA(const CSeq_feat* seq_ft);
        bool BioseqHasKeyword(const CBioseq& bioseq, const string& keywd);
        bool StrandOk(ENa_strand strand1, ENa_strand strand2);
        bool IsUnknown(const string& known_items, const unsigned idx);

@@ -239,7 +239,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static bool                               exclude_dirsub;
         static string                             xml_label;
 
-        static Str2CombDt                         rRNATerms;
         static vector <string>                    bad_gene_names_contained;
         static vector <string>                    rrna_standard_name; 
         static vector <string>                    short_auth_nms; 
