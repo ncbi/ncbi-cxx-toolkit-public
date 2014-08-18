@@ -48,6 +48,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/graph_ci.hpp>
+#include <objmgr/align_ci.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <map>
@@ -769,6 +770,205 @@ BOOST_AUTO_TEST_CASE(TrimSeqGraph)
 
                         // Update the original graph with the modified copy
                         graph.GetSeq_graph_Handle().Replace(*copy_graph);
+                    }
+                }
+
+                // Create a copy of inst
+                CRef<CSeq_inst> copy_inst(new CSeq_inst());
+                copy_inst->Assign(bsh.GetInst());
+
+                // Make changes to the inst copy 
+                BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
+
+                // Update the input seqentry with the changes
+                bsh.GetEditHandle().SetInst(*copy_inst);
+            }
+        }
+
+        // Are the changes what we expect?
+        BOOST_CHECK( s_AreSeqEntriesEqualAndPrintIfNot(
+             *entry_h.GetCompleteSeq_entry(),
+             *expected_entry_h.GetCompleteSeq_entry()) );
+
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(entry_h) );
+        BOOST_CHECK_NO_THROW( s_pScope->RemoveTopLevelSeqEntry(expected_entry_h) );
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TrimSeqAlign)
+{
+    cout << "Testing FUNCTION: TrimSeqAlign" << endl;
+
+    TMapTestNameToTestFiles & mapOfTests = s_mapFunctionToVecOfTests["trim_seq_align"];
+
+    BOOST_CHECK( ! mapOfTests.empty() );
+
+    NON_CONST_ITERATE( TMapTestNameToTestFiles, test_it, mapOfTests ) {
+        const string & sTestName = (test_it->first);
+        cout << "Running TEST: " << sTestName << endl;
+
+        TMapTestFiles & test_stage_map = (test_it->second);
+
+        BOOST_REQUIRE( test_stage_map.size() == 2u );
+
+        // Get the input/output files
+        const CFile & input_entry_file = test_stage_map["input_entry"];
+        const CFile & output_expected_file = test_stage_map["output_expected"];
+
+        CRef<CSeq_entry> pInputEntry = s_ReadAndPreprocessEntry( input_entry_file.GetPath() );
+        CRef<CSeq_entry> pOutputExpectedEntry = s_ReadAndPreprocessEntry( output_expected_file.GetPath() );
+
+        CSeq_entry_Handle entry_h = s_pScope->AddTopLevelSeqEntry(*pInputEntry);
+        CSeq_entry_Handle expected_entry_h = s_pScope->AddTopLevelSeqEntry(*pOutputExpectedEntry);
+
+        // Find the bioseq(s) that we will trim
+        CBioseq_CI bioseq_ci( entry_h );
+        for( ; bioseq_ci; ++bioseq_ci ) {
+            const CBioseq_Handle& bsh = *bioseq_ci;
+
+            if (s_FindLocalId(bsh, "CBS118702")) {
+                // Create the cuts from known vector contamination
+                // Seqid "CBS118702" has vector
+                edit::TRange cut1(479, 502);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                // Sort the cuts
+                edit::TCuts sorted_cuts;
+                BOOST_CHECK_NO_THROW(edit::GetSortedCuts( bsh, cuts, sorted_cuts ));
+
+                // Iterate over bioseq alignments
+                SAnnotSelector align_sel(CSeq_annot::C_Data::e_Align);
+                CAlign_CI align_ci(bsh, align_sel);
+                for (; align_ci; ++align_ci) {
+                    // Only DENSEG type is supported
+                    const CSeq_align& align = *align_ci;
+                    if ( align.CanGetSegs() && 
+                         align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
+                    {
+                        // Make sure mandatory fields are present in the denseg
+                        const CDense_seg& denseg = align.GetSegs().GetDenseg();
+                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() && 
+                               denseg.CanGetIds() && denseg.CanGetStarts() &&
+                               denseg.CanGetLens()) )
+                        {
+                            continue;
+                        }
+
+                        // Make a copy of the alignment
+                        CRef<CSeq_align> copy_align(new CSeq_align());
+                        copy_align->Assign(align_ci.GetOriginalSeq_align());
+
+                        // Modify the copy of the alignment
+                        BOOST_CHECK_NO_THROW(edit::TrimSeqAlign(bsh, copy_align, sorted_cuts));
+
+                        // Update the original alignment with the modified copy
+                        align_ci.GetSeq_align_Handle().Replace(*copy_align);
+                    }
+                }
+
+                // Create a copy of inst
+                CRef<CSeq_inst> copy_inst(new CSeq_inst());
+                copy_inst->Assign(bsh.GetInst());
+
+                // Make changes to the inst copy 
+                BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
+
+                // Update the input seqentry with the changes
+                bsh.GetEditHandle().SetInst(*copy_inst);
+            }
+
+            if (s_FindLocalId(bsh, "CBS124120")) {
+                // Create the cuts from known vector contamination
+                // Seqid "CBS124120" has vector
+                edit::TRange cut1(479, 502);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                // Sort the cuts
+                edit::TCuts sorted_cuts;
+                BOOST_CHECK_NO_THROW(edit::GetSortedCuts( bsh, cuts, sorted_cuts ));
+
+                // Iterate over bioseq alignments
+                SAnnotSelector align_sel(CSeq_annot::C_Data::e_Align);
+                CAlign_CI align_ci(bsh, align_sel);
+                for (; align_ci; ++align_ci) {
+                    // Only DENSEG type is supported
+                    const CSeq_align& align = *align_ci;
+                    if ( align.CanGetSegs() && 
+                         align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
+                    {
+                        // Make sure mandatory fields are present in the denseg
+                        const CDense_seg& denseg = align.GetSegs().GetDenseg();
+                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() && 
+                               denseg.CanGetIds() && denseg.CanGetStarts() &&
+                               denseg.CanGetLens()) )
+                        {
+                            continue;
+                        }
+
+                        // Make a copy of the alignment
+                        CRef<CSeq_align> copy_align(new CSeq_align());
+                        copy_align->Assign(align_ci.GetOriginalSeq_align());
+
+                        // Modify the copy of the alignment
+                        BOOST_CHECK_NO_THROW(edit::TrimSeqAlign(bsh, copy_align, sorted_cuts));
+
+                        // Update the original alignment with the modified copy
+                        align_ci.GetSeq_align_Handle().Replace(*copy_align);
+                    }
+                }
+
+                // Create a copy of inst
+                CRef<CSeq_inst> copy_inst(new CSeq_inst());
+                copy_inst->Assign(bsh.GetInst());
+
+                // Make changes to the inst copy 
+                BOOST_CHECK_NO_THROW(edit::TrimSeqData( bsh, copy_inst, sorted_cuts ));
+
+                // Update the input seqentry with the changes
+                bsh.GetEditHandle().SetInst(*copy_inst);
+            }
+
+            if (s_FindLocalId(bsh, "CBS534.83")) {
+                // Create the cuts from known vector contamination
+                // Seqid "CBS534.83" has vector
+                edit::TRange cut1(479, 502);
+                edit::TCuts cuts;
+                cuts.push_back(cut1);
+
+                // Sort the cuts
+                edit::TCuts sorted_cuts;
+                BOOST_CHECK_NO_THROW(edit::GetSortedCuts( bsh, cuts, sorted_cuts ));
+
+                // Iterate over bioseq alignments
+                SAnnotSelector align_sel(CSeq_annot::C_Data::e_Align);
+                CAlign_CI align_ci(bsh, align_sel);
+                for (; align_ci; ++align_ci) {
+                    // Only DENSEG type is supported
+                    const CSeq_align& align = *align_ci;
+                    if ( align.CanGetSegs() && 
+                         align.GetSegs().Which() == CSeq_align::C_Segs::e_Denseg )
+                    {
+                        // Make sure mandatory fields are present in the denseg
+                        const CDense_seg& denseg = align.GetSegs().GetDenseg();
+                        if (! (denseg.CanGetDim() && denseg.CanGetNumseg() && 
+                               denseg.CanGetIds() && denseg.CanGetStarts() &&
+                               denseg.CanGetLens()) )
+                        {
+                            continue;
+                        }
+
+                        // Make a copy of the alignment
+                        CRef<CSeq_align> copy_align(new CSeq_align());
+                        copy_align->Assign(align_ci.GetOriginalSeq_align());
+
+                        // Modify the copy of the alignment
+                        BOOST_CHECK_NO_THROW(edit::TrimSeqAlign(bsh, copy_align, sorted_cuts));
+
+                        // Update the original alignment with the modified copy
+                        align_ci.GetSeq_align_Handle().Replace(*copy_align);
                     }
                 }
 
