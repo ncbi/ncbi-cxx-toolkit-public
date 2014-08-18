@@ -150,7 +150,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
     }
 }
 
-string CGenomicCollectionsService::ValidateChrType(string chrType, string chrLoc)
+string CGenomicCollectionsService::ValidateChrType(const string& chrType, const string& chrLoc)
 {
     CGCClient_ValidateChrTypeLocRequest req;
     CGCClientResponse reply;

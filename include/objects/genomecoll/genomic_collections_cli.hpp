@@ -89,7 +89,7 @@ public:
          int compAttrFlags = eGCClient_AttributeFlags_none);
 
 
-    string ValidateChrType(string chrType, string chrLoc);
+    string ValidateChrType(const string& chrType, const string& chrLoc);
 
     CRef<CGCClient_AssemblyInfo> FindBestAssembly
         (const string& seq_id,
