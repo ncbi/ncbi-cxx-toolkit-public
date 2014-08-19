@@ -286,6 +286,7 @@ GC-AssemblyDesc ::= SEQUENCE {
     release-level INTEGER {
         major(0),
         patch(1),
+        minor(2),
         -- stopper
         other(255)
     } DEFAULT major,
