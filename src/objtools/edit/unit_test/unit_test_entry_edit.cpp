@@ -995,5 +995,44 @@ BOOST_AUTO_TEST_CASE(TrimSeqAlign)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_Unverified)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), false);
+
+    CRef<CSeqdesc> new_unv(new CSeqdesc());
+    new_unv->SetUser();
+    entry->SetSeq().SetDescr().Set().push_back(new_unv);
+    new_unv->SetUser().AddUnverifiedOrganism();
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), true);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), false);
+    CRef<CSeqdesc> unv = edit::FindUnverified(entry->GetSeq());
+    BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
+
+    new_unv->SetUser().AddUnverifiedFeature();
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), true);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), true);
+    unv = edit::FindUnverified(entry->GetSeq());
+    BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
+
+    new_unv->SetUser().RemoveUnverifiedOrganism();
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), true);
+    unv = edit::FindUnverified(entry->GetSeq());
+    BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
+
+    new_unv->SetUser().RemoveUnverifiedFeature();
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), false);
+    unv = edit::FindUnverified(entry->GetSeq());
+    BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
+    
+
+}
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

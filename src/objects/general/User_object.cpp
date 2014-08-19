@@ -579,6 +579,7 @@ CUser_object& CUser_object::SetExperiment(EExperiment category)
 const string kDBLink = "DBLink";
 const string kStructuredComment = "StructuredComment";
 const string kOriginalId = "OrginalID";
+const string kUnverified = "Unverified";
 
 CUser_object::EObjectType CUser_object::GetObjectType() const
 {
@@ -594,6 +595,8 @@ CUser_object::EObjectType CUser_object::GetObjectType() const
         rval = eObjectType_StructuredComment;
     } else if (NStr::Equal(label, kOriginalId)) {
         rval = eObjectType_OriginalId;
+    } else if (NStr::Equal(label, kUnverified)) {
+        rval = eObjectType_Unverified;
     }
     return rval;
 }
@@ -611,11 +614,126 @@ void CUser_object::SetObjectType(EObjectType obj_type)
         case eObjectType_OriginalId:
             SetType().SetStr(kOriginalId);
             break;
+        case eObjectType_Unverified:
+            SetType().SetStr(kUnverified);
+            break;
         case eObjectType_Unknown:
             ResetType();
             break;
     }
 }
+
+
+bool CUser_object::x_IsUnverifiedType(const string& val, const CUser_field& field) const
+{
+    if (field.IsSetLabel() && field.GetLabel().IsStr()
+        && NStr::Equal(field.GetLabel().GetStr(), "Type")
+        && field.IsSetData()
+        && field.GetData().IsStr()
+        && NStr::Equal(field.GetData().GetStr(), val)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CUser_object::x_IsUnverifiedType(const string& val) const
+{
+    if (GetObjectType() != eObjectType_Unverified) {
+        return false;
+    }
+    if (!IsSetData()) {
+        return false;
+    }
+    bool found = false;
+
+    ITERATE(CUser_object::TData, it, GetData()) {
+        if (x_IsUnverifiedType(val, **it)) {
+            found = true;
+        }
+    }
+    return found;
+}
+
+
+void CUser_object::x_AddUnverifiedType(const string& val)
+{
+    SetObjectType(eObjectType_Unverified);
+    if (x_IsUnverifiedType(val)) {
+        // value already set, nothing to do
+        return;
+    }
+    CRef<CUser_field> f(new CUser_field());
+    f->SetLabel().SetStr("Type");
+    f->SetData().SetStr(val);
+    SetData().push_back(f);
+}
+
+
+void CUser_object::x_RemoveUnverifiedType(const string& val)
+{
+    if (GetObjectType() != eObjectType_Unverified) {
+        return;
+    }
+    if (!IsSetData()) {
+        return;
+    }
+    CUser_object::TData::iterator it = SetData().begin();
+    while (it != SetData().end()) {
+        if (x_IsUnverifiedType(val, **it)) {
+            it = SetData().erase(it);
+        } else {
+            it++;
+        }
+    }
+    if (GetData().empty()) {
+        ResetData();
+    }
+}
+
+
+static const string kUnverifiedOrganism = "Organism";
+
+bool CUser_object::IsUnverifiedOrganism() const
+{
+    return x_IsUnverifiedType(kUnverifiedOrganism);
+}
+
+
+void CUser_object::AddUnverifiedOrganism()
+{
+    x_AddUnverifiedType(kUnverifiedOrganism);
+}
+
+
+void CUser_object::RemoveUnverifiedOrganism()
+{
+    x_RemoveUnverifiedType(kUnverifiedOrganism);
+}
+
+
+static const string kUnverifiedFeature = "Feature";
+
+bool CUser_object::IsUnverifiedFeature() const
+{
+    return x_IsUnverifiedType(kUnverifiedFeature);
+}
+
+
+void CUser_object::AddUnverifiedFeature()
+{
+    x_AddUnverifiedType(kUnverifiedFeature);
+}
+
+
+void CUser_object::RemoveUnverifiedFeature()
+{
+    x_RemoveUnverifiedType(kUnverifiedFeature);
+}
+
+
+
 
 
 END_objects_SCOPE // namespace ncbi::objects::

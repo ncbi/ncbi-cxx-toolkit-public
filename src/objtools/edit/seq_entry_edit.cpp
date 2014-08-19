@@ -2734,6 +2734,49 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
 *******************************************************************************/
 
 
+// For Unverified descriptors
+CRef<CSeqdesc> FindUnverified(const CBioseq& seq)
+{
+    if (!seq.IsSetDescr()) {
+        return CRef<CSeqdesc>(NULL);
+    }
+    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+        if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Unverified) {
+            return *it;
+        }
+    }
+    return CRef<CSeqdesc>(NULL);
+}
+
+
+bool IsUnverifiedOrganism(const CBioseq& seq)
+{
+    if (!seq.IsSetDescr()) {
+        return false;
+    }
+    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+        if ((*it)->IsUser() && (*it)->GetUser().IsUnverifiedOrganism()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool IsUnverifiedFeature(const CBioseq& seq)
+{
+    if (!seq.IsSetDescr()) {
+        return false;
+    }
+    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+        if ((*it)->IsUser() && (*it)->GetUser().IsUnverifiedFeature()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

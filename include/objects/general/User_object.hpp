@@ -153,17 +153,30 @@ public:
         eObjectType_Unknown = -1,
         eObjectType_DBLink,
         eObjectType_StructuredComment,
-        eObjectType_OriginalId
+        eObjectType_OriginalId,
+        eObjectType_Unverified
     };
 
     EObjectType GetObjectType() const;
     void SetObjectType(EObjectType obj_type);
+
+    // for Unverified User-objects: Can have Organism and/or Feature
+    bool IsUnverifiedOrganism() const;
+    void AddUnverifiedOrganism();
+    void RemoveUnverifiedOrganism();
+    bool IsUnverifiedFeature() const;
+    void AddUnverifiedFeature();
+    void RemoveUnverifiedFeature();
 
 private:
     /// Prohibit copy constructor and assignment operator
     CUser_object(const CUser_object& value);
     CUser_object& operator=(const CUser_object& value);
 
+    bool x_IsUnverifiedType(const string& val) const;
+    bool x_IsUnverifiedType(const string& val, const CUser_field& field) const;
+    void x_AddUnverifiedType(const string& val);
+    void x_RemoveUnverifiedType(const string& val);
 };
 
 
