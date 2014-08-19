@@ -2408,6 +2408,7 @@ static const char* const s_Countries[] = {
     "South Africa",
     "South Georgia and the South Sandwich Islands",
     "South Korea",
+    "South Sudan",
     "Southern Ocean",
     "Spain",
     "Spratly Islands",

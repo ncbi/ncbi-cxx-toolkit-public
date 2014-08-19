@@ -18317,6 +18317,8 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Yun Shui"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USSR: Kazakhstan, Kurtu"), "USSR: Kazakhstan, Kurtu");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA:"), "USA");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("south sudan"), "South Sudan");
+
 }
 
 
