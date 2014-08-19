@@ -973,70 +973,82 @@ BEGIN_NCBI_NAMESPACE;
 
 //  ITERATE
 //  NON_CONST_ITERATE
+//  REVERSE_ITERATE
+//  NON_CONST_REVERSE_ITERATE
 //  ERASE_ITERATE
 //
-// Useful macro to write 'for' statements with the STL container iterator as
+// Useful macros to write 'for' statements with the STL container iterator as
 // a variable.
 //
 
-/// ITERATE macro to sequence through container elements.
+// *ITERATE helper to enforce constness of the container reference
+template<typename Type>
+inline const Type& s_ITERATE_ConstRef(const Type& obj)
+{
+    return obj;
+}
+#define ITERATE_CONST(Cont) NCBI_NS_NCBI::s_ITERATE_ConstRef(Cont)
 
+// *ITERATE helper to verify that the container isn't a temporary object
 #ifdef _DEBUG
 template<typename Type>
 inline bool s_ITERATE_SameObject(const Type& obj1, const Type& obj2)
 {
     return &obj1 == &obj2;
 }
-# define ITERATE_GET_BEGIN(Cont) \
-    (NCBI_ASSERT_EXPR(NCBI_NS_NCBI::s_ITERATE_SameObject((Cont), (Cont)), "rvalue container in *ITERATE"), (Cont).begin())
-# define ITERATE_GET_RBEGIN(Cont) \
-    (NCBI_ASSERT_EXPR(NCBI_NS_NCBI::s_ITERATE_SameObject((Cont), (Cont)), "rvalue container in *ITERATE"), (Cont).rbegin())
+# define ITERATE_BEGIN(Cont, Begin)                                     \
+    (NCBI_ASSERT_EXPR(NCBI_NS_NCBI::s_ITERATE_SameObject(Cont, Cont),   \
+                      "rvalue container in *ITERATE"), (Cont).Begin())
 #else
-# define ITERATE_GET_BEGIN(Cont) (Cont).begin()
-# define ITERATE_GET_RBEGIN(Cont) (Cont).rbegin()
+# define ITERATE_BEGIN(Cont, Begin) ((Cont).Begin())
 #endif
 
-#define ITERATE(Type, Var, Cont) \
-    for ( Type::const_iterator Var = ITERATE_GET_BEGIN(Cont), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
+// *ITERATE helper macro to declare iterator variable
+#ifdef NCBI_HAVE_CXX11
+# define ITERATE_VAR(Type) auto
+#else
+# define ITERATE_VAR(Type) Type
+#endif
+
+/// ITERATE macro to sequence through container elements.
+#define ITERATE(Type, Var, Cont)                                        \
+    for ( ITERATE_VAR(Type::const_iterator)                             \
+              Var = ITERATE_BEGIN(ITERATE_CONST(Cont), begin),          \
+              NCBI_NAME2(Var,_end) = ITERATE_CONST(Cont).end();         \
+          Var != NCBI_NAME2(Var,_end);  ++Var )
 
 /// Non constant version of ITERATE macro.
-#define NON_CONST_ITERATE(Type, Var, Cont) \
-    for ( Type::iterator Var = ITERATE_GET_BEGIN(Cont);  Var != (Cont).end();  ++Var )
+#define NON_CONST_ITERATE(Type, Var, Cont)                              \
+    for ( ITERATE_VAR(Type::iterator) Var = ITERATE_BEGIN(Cont, begin); \
+          Var != (Cont).end();  ++Var )
 
-/// NON_CONST_ITERATE macro for STL sets.  A special macro is required because 
-/// STL sets iterate in a const manner even if you use their "iterator" type.
-/// Using this macro is discouraged because if you affect an object's state
-/// in such a way that it's ordering in the set should change, the set
-/// could be in an invalid state.
-/// The "REAL92137892" is just a random suffix to make the variable unique.
-/// The number has no significance.
-#define NON_CONST_SET_ITERATE( Type, Var, Cont) \
-    Type::key_type *Var = NULL;  \
-    Type::iterator Var##REAL92137892  = ITERATE_GET_BEGIN(Cont); \
-    Var = ( Var##REAL92137892 != (Cont).end() ? (Type::key_type *)&*Var##REAL92137892 : NULL ); \
-    for ( ; Var##REAL92137892 != (Cont).end(); \
-    ( ++Var##REAL92137892 != (Cont).end() ? Var = (Type::key_type *)&*(Var##REAL92137892) : Var = NULL ) )
+/// ITERATE macro to reverse sequence through container elements.
+#define REVERSE_ITERATE(Type, Var, Cont)                                \
+    for ( ITERATE_VAR(Type::const_reverse_iterator)                     \
+              Var = ITERATE_BEGIN(ITERATE_CONST(Cont), rbegin),         \
+              NCBI_NAME2(Var,_end) = ITERATE_CONST(Cont).rend();        \
+          Var != NCBI_NAME2(Var,_end);  ++Var )
 
-/// Non constant version with ability to erase current element, if container permits.
-/// Use only on containers, for which erase do not ruin other iterators into the container
-/// e.g., map, list, but NOT vector.
+/// Non constant version of REVERSE_ITERATE macro.
+#define NON_CONST_REVERSE_ITERATE(Type, Var, Cont)                      \
+    for ( ITERATE_VAR(Type::reverse_iterator)                           \
+              Var = ITERATE_BEGIN(Cont, rbegin);                        \
+          Var != (Cont).rend();  ++Var )
+
+/// Non-constant version with ability to erase current element, if container
+/// permits. Use only on containers, for which erase do not ruin other
+/// iterators into the container, e.g. map, list, but NOT vector.
 /// See also VECTOR_ERASE
 #define ERASE_ITERATE(Type, Var, Cont) \
-    for ( Type::iterator Var, NCBI_NAME2(Var,_next) = ITERATE_GET_BEGIN(Cont);   \
+    for ( ITERATE_VAR(Type::iterator) Var = ITERATE_BEGIN(Cont, begin), \
+              NCBI_NAME2(Var,_next) = Var;                              \
           (Var = NCBI_NAME2(Var,_next)) != (Cont).end() &&              \
               (++NCBI_NAME2(Var,_next), true); )
+
 /// Use this macro inside body of ERASE_ITERATE cycle to erase from
 /// vector-like container. Plain erase() call would invalidate Var_next
 /// iterator and would make the cycle controlling code to fail.
 #define VECTOR_ERASE(Var, Cont) (NCBI_NAME2(Var,_next) = (Cont).erase(Var))
-
-/// ITERATE macro to reverse sequence through container elements.
-#define REVERSE_ITERATE(Type, Var, Cont) \
-    for ( Type::const_reverse_iterator Var = ITERATE_GET_RBEGIN(Cont), NCBI_NAME2(Var,_end) = (Cont).rend();  Var != NCBI_NAME2(Var,_end);  ++Var )
-
-/// Non constant version of REVERSE_ITERATE macro.
-#define NON_CONST_REVERSE_ITERATE(Type, Var, Cont) \
-    for ( Type::reverse_iterator Var = ITERATE_GET_RBEGIN(Cont);  Var != (Cont).rend();  ++Var )
 
 /// The body of the loop will be run with Var equal to false and then true.
 /// The seemlingly excessive complexity of this macro is to get around a couple of limitations:
@@ -1055,8 +1067,6 @@ inline bool s_ITERATE_SameObject(const Type& obj1, const Type& obj2)
 /// Just repeat the body of the loop num_iters times
 #define ITERATE_SIMPLE(num_iters) \
     ITERATE_0_IDX( _dummy_idx_94768308_##__LINE__, num_iters ) // the number has no significance; it is entirely random.
-
-/// ITERATE_IDX, with the assumption of starting at 
 
 /// Type for sequence locations and lengths.
 ///
