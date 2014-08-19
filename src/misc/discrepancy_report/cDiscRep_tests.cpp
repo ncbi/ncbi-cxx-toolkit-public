@@ -392,8 +392,8 @@ void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem> c_item)
 bool CBioseq_DISC_BAD_BGPIPE_QUALS :: x_HasFieldStrNocase(const CUser_object& uobj, const string& field, const string& str)
 {
    string strtmp;
-   if (uobj.HasField(field)) {
-       const CUser_field& ufd = uobj.GetField(field);
+   if (uobj.HasField(field, "?")) {
+       const CUser_field& ufd = uobj.GetField(field, "?");
        if (!ufd.GetData().IsStr()) {
           return false;
        }
@@ -1141,7 +1141,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
 
    // DISC_EXON_INTRON_CONFLICT
    if (thisTest.tests_run.find(GetName_ei()) != end_it) {
-     string seq_id_desc(BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank));
+     string seq_id_desc(CDiscRepUtil::BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank));
      unsigned i=0;
      if (gene_feat.empty()) {
          /* no genes - just do all exons and introns present */
@@ -3371,7 +3371,7 @@ void CBioseq_GENE_PRODUCT_CONFLICT :: TestOnObj(const CBioseq& bioseq)
      }
 
      if (!(gene_label.empty())) {
-       prod_nm = GetProdNmForCD(**it);
+       prod_nm = CDiscRepUtil :: GetProdNmForCD(**it);
        prod_nm = prod_nm.empty()? "empty" : prod_nm;
        thisInfo.test_item_list[GetName()]
            .push_back(gene_label + "$" + prod_nm + "#" + GetDiscItemText(**it));
@@ -4608,8 +4608,8 @@ void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
     bool run_non_nt = (thisTest.tests_run.find(GetName_non_nt()) != end_it);
    
     const CSeq_id& 
-      new_seq_id =
-         BioseqToBestSeqId(*(bioseq_h.GetCompleteBioseq()), CSeq_id::e_Genbank);
+      new_seq_id = CDiscRepUtil::BioseqToBestSeqId(*(bioseq_h.GetCompleteBioseq()), 
+                                                          CSeq_id::e_Genbank);
     string id_str = new_seq_id.AsFastaString();
     id_str = CTempString(id_str).substr(id_str.find("|")+1);
 
@@ -5184,23 +5184,8 @@ bool CBioseq_FEATURE_LOCATION_CONFLICT :: x_Does5primerAbutGap(const CSeq_feat& 
   if (!start) return false;
 
   CSeqVector seq_vec(seq_hl, CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
-#if 0
-  if (seq_hl.CanGetInst_Seq_data()) {
-     if (seq_vec.IsInGap(start-1)) return true;
-     else return false;
-  }
-  else {
-#endif
-     unsigned i=0;
-     if (start > seq_vec.size()) return false;
-     for (CSeqVector_CI it = seq_vec.begin(); it; ++ it, i++) {
-        if (i < (start - 1) ) continue;
-        if (it.IsInGap()) return true;
-     }
-     return false;
-#if 0  
-  } 
-#endif
+  if (seq_vec.IsInGap(start-1)) return true;
+  else return false;
 };
 
 bool CBioseq_FEATURE_LOCATION_CONFLICT :: x_Does3primerAbutGap(const CSeq_feat& feat, CBioseq_Handle seq_hl)
@@ -5211,22 +5196,8 @@ bool CBioseq_FEATURE_LOCATION_CONFLICT :: x_Does3primerAbutGap(const CSeq_feat& 
  
   CSeqVector seq_vec(seq_hl, CBioseq_Handle::eCoding_Iupac, eNa_strand_plus); 
   if (stop >= seq_vec.size() - 1) return false;
-#if 0
-  if (seq_hl.CanGetInst_Seq_data()) {
-     if (seq_vec.IsInGap(stop+1)) return true;
-     else return false;
-  }
-  else {
-#endif 
-     unsigned i=0;
-     for (CSeqVector_CI it = seq_vec.begin(); it; ++ it, i++) {
-        if (i < (stop +1) ) continue;
-        if (it.IsInGap()) return true;
-     }
-     return false;
-#if 0 
-  } 
-#endif
+  if (seq_vec.IsInGap(stop+1)) return true;
+  else return false;
 };
 
 void CBioseq_FEATURE_LOCATION_CONFLICT :: x_ReportConflictingFeats(const CSeq_feat& feat, const CSeq_feat& gene, const string& feat_type, const CBioseq* bioseq)
@@ -6468,7 +6439,7 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
   string context_label;
   unsigned i; 
   ITERATE (vector <const CSeq_feat*>, it, trna_feat) {
-     GetSeqFeatLabel(**it, context_label);
+     CDiscRepUtil :: GetSeqFeatLabel(**it, context_label);
      i=0;
      ITERATE (Str2UInt, jt, thisInfo.desired_aaList) {
         if (context_label.find(jt->first) != string::npos) {
@@ -6637,7 +6608,7 @@ void CBioseq_test_on_rna :: FindDupRNAsInList(vector <const CSeq_feat*> feats, c
   string label;
   for (i=0; (int) i < (int)feats.size() -1; i++) {
     if (is_dup[i]) continue;
-    GetSeqFeatLabel(*feats[i], label);  // context_label in C
+    CDiscRepUtil :: GetSeqFeatLabel(*feats[i], label);  // context_label in C
     label2dup_objs[label].push_back(CConstRef <CObject> (feats[i]));
     is_dup[i] = 1;
     for (j=i+1; j< feats.size(); j++) {
@@ -6770,7 +6741,7 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
   }
 
   if (bioseq.IsAa()) return;
-  m_best_id_str = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank);
+  m_best_id_str = CDiscRepUtil::BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank);
   m_bioseq_desc = GetDiscItemText(bioseq);
   m_bioseq_obj = CConstRef <CObject> (&bioseq);
 
@@ -7477,7 +7448,7 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
 {
   string prod_nm;
   if (seq_feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
-     prod_nm = GetProdNmForCD(*seq_feat);
+     prod_nm = CDiscRepUtil::GetProdNmForCD(*seq_feat);
      if ( DoesStringContainPhrase(prod_nm, "ABC")
             || DoesStringContainPhrase(prod_nm, "transposon", false, false)
             || DoesStringContainPhrase(prod_nm, "transposase", false, false)){
@@ -7517,7 +7488,8 @@ void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
                     < loc_j.GetStart(eExtreme_Positional)) {
          break;
       }
-      if(!OverlappingProdNmSimilar(GetProdNmForCD(**it),GetProdNmForCD(**jt))){
+      if(!OverlappingProdNmSimilar(CDiscRepUtil::GetProdNmForCD(**it),
+                                       CDiscRepUtil::GetProdNmForCD(**jt))){
           continue;
       }
       ENa_strand strandj = loc_j.GetStrand();
@@ -7943,8 +7915,7 @@ void CBioseq_DUPLICATE_GENE_LOCUS :: TestOnObj(const CBioseq& bioseq)
      if ((*jt)->GetData().GetGene().CanGetLocus()) {
         locus = (*jt)->GetData().GetGene().GetLocus();
         if (!locus.empty()) {
-            location 
-                = i_num + BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank).AsFastaString();
+            location = i_num + CDiscRepUtil::BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank).AsFastaString();
             thisInfo.test_item_list[GetName()] .push_back(
                 location + "$" + locus + "#" + GetDiscItemText(**jt));
             thisInfo.test_item_objs[GetName() + "$" + location + "#" + locus]
@@ -10586,11 +10557,12 @@ void CSeqEntry_on_incnst_user :: x_ClassifyFlds(Str2Strs& key2ls, const string& 
 {
    const CUser_object& uobj = sd.GetUser();
    string label, strtmp;
-   // key = prefix
+   // key is prefix
    ITERATE (vector <string>, fid, key2ls[key]) {
+
       strtmp = kEmptyStr;
-      if (uobj.HasField(*fid)) {
-         const CUser_field::C_Data& dt = uobj.GetField(*fid).GetData();
+      if (uobj.HasField(*fid, "?")) {
+         const CUser_field::C_Data& dt = uobj.GetField(*fid, "?").GetData();
          if (setting_name == GetName_comm()) {
               strtmp = dt.IsStr()?
                          CUtf8::AsSingleByteString(dt.GetStr(), eEncoding_Ascii)
@@ -13208,46 +13180,6 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem> c_item)
 void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
 {
   validator :: EBioseqEndIsType begin_n, begin_gap, end_n, end_gap;
-
-#if 0
-
-CRef <CSeq_entry> entry (new CSeq_entry);
-entry->SetSeq(const_cast<CBioseq&>(bioseq));
-OutBlob(*entry, "long_seq.sqn");
-
-cerr << "len " << bioseq.GetLength() << endl;
-CBioseq_Handle seq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
-CSeqVector seq_vec(seq_hl, CBioseq_Handle::eCoding_Iupac);
-// auto_ptr <CSeqVector_CI > sit (new CSeqVector_CI);
-AutoPtr <CSeqVector_CI> sit;
-sit.reset(new CSeqVector_CI(seq_vec, 0));
-CSeqVector_CI* iter = sit.get();
-if (!iter) cerr << "iter is null\n";
-else cerr << "iter is not NULL\n";
-iter->SetPos(1);
-cerr << "auto done\n";
-for (CSeqVector_CI it = seq_vec.begin(); it; ++ it) {
-         if (it.IsInGap());
-cerr << "  " << *it << endl;
-};
-
-cerr << "outof loop\n";
-if (seq_vec.IsInGap(1));
-#if 0
-try {
-cerr << seq_vec.IsInGap(1) << endl;
-} catch (CException& eu) {
-cerr << eu.GetMsg() << endl;
-}
-#endif 
-cerr << "vec.len " << seq_vec.size() << endl;
-
-
-if (seq_hl) cerr << "yes\n";
-else cerr << "no \n";
-
-#endif
-
   validator::CheckBioseqEndsForNAndGap(thisInfo.scope->GetBioseqHandle(bioseq),
                                         begin_n, 
                                         begin_gap,

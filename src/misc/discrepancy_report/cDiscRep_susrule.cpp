@@ -2093,7 +2093,7 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CSeq_feat& feat,
        case CSeqFeatData::e_Rna:
          {
            if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
-             CTestAndRepData :: GetSeqFeatLabel(feat, str);
+             CDiscRepUtil :: GetSeqFeatLabel(feat, str);
              rval = DoesSingleStringMatchConstraint(str, &str_cons);
              if (!rval) {
                str = "tRNA-" + str;
@@ -2714,7 +2714,7 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
           || (is_illegal_qual 
                 && DoesStringMatchConstraint ("location", illegal_qual))) { 
       /* location */
-      return CTestAndRepData :: SeqLocPrintUseBestID (seq_feat.GetLocation());
+      return CDiscRepUtil :: SeqLocPrintUseBestID (seq_feat.GetLocation());
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_pseudo)
            || (is_illegal_qual 
