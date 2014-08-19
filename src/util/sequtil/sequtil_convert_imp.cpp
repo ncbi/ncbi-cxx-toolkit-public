@@ -698,8 +698,7 @@ SIZE_TYPE CSeqConvert_imp::x_Convert4naTo2na
                 case 3:
                     *dst = 
                         table[static_cast<Uint1>(*iter) * 2]           |
-                        table[static_cast<Uint1>(*(iter + 1)) * 2 + 1] &
-                        0xFC;
+                        (table[static_cast<Uint1>(*(iter + 1)) * 2 + 1] & 0xFC);
                     break;
                 }
             }
@@ -726,14 +725,12 @@ SIZE_TYPE CSeqConvert_imp::x_Convert4naTo2na
                 case 2:
                     *dst = 
                         table[static_cast<Uint1>(*iter) * 3]           |
-                        table[static_cast<Uint1>(*(iter + 1)) * 3 + 1] &
-                        0xF0;
+                        (table[static_cast<Uint1>(*(iter + 1)) * 3 + 1] & 0xF0);
                     break;
                 case 3:
                     *dst = 
                         table[static_cast<Uint1>(*iter) * 3]           |
-                        table[static_cast<Uint1>(*(iter + 1)) * 3 + 1] &
-                        0xFC;
+                        (table[static_cast<Uint1>(*(iter + 1)) * 3 + 1] & 0xFC);
                     break;
                 }
             }
