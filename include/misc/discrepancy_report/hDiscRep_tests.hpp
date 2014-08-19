@@ -562,6 +562,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                   char next_letter);
   };
 
+  
   class CDiscRepUtil
   {
     public:
@@ -581,8 +582,39 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       static string digit_str, alpha_str;
 
+      static const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id::E_Choice);
+      static string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
+      static string SeqLocPrintUseBestID(const CSeq_loc& seq_loc,bool range_only = false);
+      static string GetProdNmForCD(const CSeq_feat& cd_feat);
+      static void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);
+
+      // GetDiscrepancyItemTextEx()
+      static string GetDiscrepancyItemText(const CSeq_feat& obj, bool attach_ids = false);
+      static string GetDiscrepancyItemText(const CSeq_submit& seq_submit, 
+                                             bool attach_ids = false);
+      static string GetDiscrepancyItemText(const CBioseq& objtrue, 
+                                             bool attach_ids = false);
+      static string GetDiscrepancyItemText(const CBioseq_set& objs, 
+                                             bool attach_ids = false);
+      static string GetDiscrepancyItemText(const CSeqdesc& obj, 
+                               const CSeq_entry& seq_entry, bool attach_ids = false);
+      static string GetDiscrepancyItemText(const CSeqdesc& obj, 
+                               const CBioseq& bioseq, bool attach_ids = false);
+      static string GetDiscrepancyItemText(const CPerson_id& obj,
+                               const CSeq_entry& seq_entry, bool attach_ids = false);
+      static string GetDiscrepancyItemText(const CSeq_entry& seq_entry, 
+                                             bool attach_ids = false);
+
     private:
       static string x_GetTwoFieldSubfield(const string& str, unsigned subfield);
+      static string x_GetSeqId4BioseqSet(const string& desc);
+      static string x_GetDiscrepancyItemTextForBioseqSet(const CBioseq_set& obj);
+      static string x_GetFeatId(const CFeat_id& feat_id);
+      static string x_SeqDescLabelContent(const CSeqdesc& sd);
+      static CBioseq* x_GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
+      static const CSeq_feat* x_GetCDFeatFromProtFeat(const CSeq_feat& prot);
+      static string x_GetLocusTagForFeature(const CSeq_feat& seq_feat);
+      static string x_PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
   };
 
   class CTestAndRepData : public CObject
@@ -666,33 +698,22 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetNoCntComment(unsigned cnt, const string& single_str,const string& plural_str);
       string GetNoun(unsigned cnt, const string& str);
 
- //  GetDiscrepancyItemTextEx() 
-      const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
-      string SeqDescLabelContent(const CSeqdesc& sd);
+ //  GetDiscrepancyItemTextEx() with xml_ids
       string GetDiscItemText(const CSeq_feat& obj);
       string GetDiscItemText(const CSeq_submit& seq_submit);
       string GetDiscItemText(const CBioseq& obj);
-      string GetDiscItemTextForBioseqSet(const CBioseq_set& obj);
-      string GetDiscItemText(const CBioseq_set& obj);
+      string GetDiscItemText(const CBioseq_set& objs);
       string GetDiscItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry);
       string GetDiscItemText(const CSeqdesc& obj, const CBioseq& bioseq);
-      string GetDiscItemText(const CPerson_id& obj,const CSeq_entry& seq_entry);
+      string GetDiscItemText(const CPerson_id& obj, const CSeq_entry& seq_entry);
       string GetDiscItemText(const CSeq_entry& seq_entry);
 
-      CBioseq* GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
 
       string ListAuthNames(const CAuth_list& auths);
       string ListAllAuths(const CPubdesc& pubdesc);
 
-      string GetSeqId4BioseqSet(const string& desc);
-      string GetFeatId(const CFeat_id& feat_id);
 
       static const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id::E_Choice);
-      string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
-      static string PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
-      static string SeqLocPrintUseBestID(const CSeq_loc& seq_loc,bool range_only = false);
-      string GetLocusTagForFeature(const CSeq_feat& seq_feat);
-      string GetProdNmForCD(const CSeq_feat& cd_feat);
 
       static bool IsmRNASequenceInGenProdSet(const CBioseq& bioseq);
       static bool IsProdBiomol(const CBioseq& bioseq);
@@ -736,7 +757,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                           const string& phrase, 
                                           bool case_sensitive = true, 
                                           bool whole_word=true);
-      static void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);      
       static string GetSrcQualValue(const CBioSource& biosrc, 
                                     const string& qual_name, 
                                     bool is_subsrc = false, 
