@@ -392,8 +392,8 @@ void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem> c_item)
 bool CBioseq_DISC_BAD_BGPIPE_QUALS :: x_HasFieldStrNocase(const CUser_object& uobj, const string& field, const string& str)
 {
    string strtmp;
-   if (uobj.HasField(field, "?")) {
-       const CUser_field& ufd = uobj.GetField(field, "?");
+   if (uobj.HasField(field, kEmptyStr)) {
+       const CUser_field& ufd = uobj.GetField(field, kEmptyStr);
        if (!ufd.GetData().IsStr()) {
           return false;
        }
@@ -10561,8 +10561,8 @@ void CSeqEntry_on_incnst_user :: x_ClassifyFlds(Str2Strs& key2ls, const string& 
    ITERATE (vector <string>, fid, key2ls[key]) {
 
       strtmp = kEmptyStr;
-      if (uobj.HasField(*fid, "?")) {
-         const CUser_field::C_Data& dt = uobj.GetField(*fid, "?").GetData();
+      if (uobj.HasField(*fid, kEmptyStr)) {
+         const CUser_field::C_Data& dt = uobj.GetField(*fid, kEmptyStr).GetData();
          if (setting_name == GetName_comm()) {
               strtmp = dt.IsStr()?
                          CUtf8::AsSingleByteString(dt.GetStr(), eEncoding_Ascii)
