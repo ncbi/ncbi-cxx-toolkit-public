@@ -1035,6 +1035,162 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
 
 /////////////////////////////////////////////////////////////////////////////
 
+class CCharVector
+{
+public:
+    CCharVector(const char* str)
+        : m_begin(str),
+          m_end(str+strlen(str))
+        {
+        }
+
+    typedef char value_type;
+    typedef char* pointer;
+    typedef char& reference;
+    typedef const char* const_pointer;
+    typedef const char& const_reference;
+
+    typedef char* iterator;
+    typedef const char* const_iterator;
+
+    struct const_reverse_iterator {
+        const_reverse_iterator(const char* ptr)
+            : ptr(ptr)
+            {
+            }
+
+        bool operator==(const_reverse_iterator rhs) const
+            { return ptr == rhs.ptr; }
+        bool operator!=(const_reverse_iterator rhs) const
+            { return ptr != rhs.ptr; }
+        const_reverse_iterator& operator++()
+            { --ptr; return *this; }
+        const_reverse_iterator& operator--()
+            { ++ptr; return *this; }
+
+        char operator*() const { return ptr[-1]; }
+
+    private:
+        const char* ptr;
+    };
+    
+
+    const_iterator begin() const
+        {
+            return m_begin;
+        }
+    const_iterator end() const
+        {
+            return m_end;
+        }
+
+    const_reverse_iterator rbegin() const
+        {
+            return const_reverse_iterator(m_end);
+        }
+    const_reverse_iterator rend() const
+        {
+            return const_reverse_iterator(m_begin);
+        }
+
+    iterator begin()
+        {
+            throw runtime_error("non-const begin called");
+        }
+    iterator end()
+        {
+            throw runtime_error("non-const end called");
+        }
+
+    iterator rbegin()
+        {
+            throw runtime_error("non-const rbegin called");
+        }
+    iterator rend()
+        {
+            throw runtime_error("non-const rend called");
+        }
+
+private:
+    const char* m_begin;
+    const char* m_end;
+};
+
+template<class C>
+void TestIterateFor(const C&)
+{
+    typedef C Cont;
+    for ( int t = 0; t < 100; ++t ) {
+        Cont c;
+        for ( int i = 0; i < 100; ++i ) {
+            c.insert(c.end(), rand());
+        }
+        vector<int> pc1, pc2;
+        ITERATE ( typename Cont, it, c ) {
+            pc1.push_back(*it);
+        }
+        NON_CONST_ITERATE ( typename Cont, it, c ) {
+            *it += 1;
+        }
+        ITERATE ( typename Cont, it, c ) {
+            pc2.push_back(*it);
+        }
+        NON_CONST_ITERATE ( vector<int>, it, pc1 ) {
+            *it += 1;
+        }
+        vector<int> pc3, pc4;
+        REVERSE_ITERATE ( typename Cont, it, c ) {
+            pc3.push_back(*it);
+        }
+        NON_CONST_REVERSE_ITERATE ( typename Cont, it, c ) {
+            *it -= 1;
+        }
+        REVERSE_ITERATE ( typename Cont, it, c ) {
+            pc4.push_back(*it);
+        }
+        NON_CONST_ITERATE ( vector<int>, it, pc4 ) {
+            *it += 1;
+        }
+        reverse(pc3.begin(), pc3.end());
+        reverse(pc4.begin(), pc4.end());
+        
+        BOOST_CHECK(pc1 == pc2);
+        BOOST_CHECK(pc3 == pc4);
+        BOOST_CHECK(pc1 == pc3);
+    }
+}
+
+
+template<class C>
+void TestCIterate(C& c)
+{
+    typedef C Cont;
+    vector<int> pc1, pc2;
+    ITERATE ( typename Cont, it, c ) {
+        pc1.push_back(*it);
+    }
+    REVERSE_ITERATE ( typename Cont, it, c ) {
+        pc2.push_back(*it);
+    }
+    reverse(pc2.begin(), pc2.end());
+    BOOST_CHECK(pc1 == pc2);
+}
+
+
+template<class C>
+void TestCIterateFor(const C&)
+{
+    typedef C Cont;
+    for ( int t = 0; t < 100; ++t ) {
+        Cont c;
+        for ( int i = 0; i < 100; ++i ) {
+            c.insert(c.end(), rand());
+        }
+        TestCIterate(c);
+    }
+}
+
+
 template<class C>
 void TestEraseIterateFor(const C&)
 {
@@ -1106,6 +1262,19 @@ void TestEraseIterateForVec(const C&)
             BOOST_CHECK(pc == nc);
         }
     }
+}
+
+
+BOOST_AUTO_TEST_CASE(TestIterate)
+{
+    CCharVector cv("test");
+    set<int> ts;
+    list<int> tl;
+    vector<int> tv;
+    TestCIterate(cv);
+    TestCIterateFor(ts);
+    TestIterateFor(tl);
+    TestIterateFor(tv);
 }
 
 
