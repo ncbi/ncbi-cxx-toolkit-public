@@ -1190,8 +1190,7 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
 
 bool CGBDataLoader::HaveCache(TCacheType cache_type)
 {
-    typedef CReaderCacheManager::TCaches TCaches;
-    ITERATE(TCaches, it, m_CacheManager.GetCaches()) {
+    ITERATE(CReaderCacheManager::TCaches, it, m_CacheManager.GetCaches()) {
         if ((it->m_Type & cache_type) != 0) {
             return true;
         }
@@ -1204,8 +1203,7 @@ void CGBDataLoader::PurgeCache(TCacheType            cache_type,
                                time_t                access_timeout,
                                ICache::EKeepVersions keep_last_ver)
 {
-    typedef CReaderCacheManager::TCaches TCaches;
-    NON_CONST_ITERATE(TCaches, it, m_CacheManager.GetCaches()) {
+    ITERATE(CReaderCacheManager::TCaches, it, m_CacheManager.GetCaches()) {
         if ((it->m_Type & cache_type) != 0) {
             it->m_Cache->Purge(access_timeout, keep_last_ver);
         }
