@@ -663,6 +663,14 @@ CBioseq_Handle GetBioseqFromSeqLoc(const CSeq_loc& loc, CScope& scope,
     CScope::EGetBioseqFlag flag = CScope::eGetBioseq_Loaded);
 
 
+/// Return protein name from corresponding Prot-ref feature.
+/// Throws exception if the sequence is not a protein,
+/// or if there is no unambiguously best Prot-ref feature,
+/// or if the feature doesn't return non-empty label.
+NCBI_XOBJUTIL_EXPORT
+string GetProteinName(const CBioseq_Handle& seq);
+
+
 /* @} */
 
 

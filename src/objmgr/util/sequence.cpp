@@ -251,6 +251,56 @@ CBioseq_Handle GetBioseqFromSeqLoc
 }
 
 
+string GetProteinName(const CBioseq_Handle& seq)
+{
+    if ( !seq ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "GetProteinName: "
+                   "null handle");
+    }
+    if ( !seq.IsProtein() ) {
+        NCBI_THROW_FMT(CObjmgrUtilException, eBadSequenceType,
+                       "GetProteinName("<<GetId(seq, eGetId_Best)<<"): "
+                       "the sequence is not a protein");
+    }
+    TSeqPos seq_length = seq.GetBioseqLength();
+    TSeqPos best_length = 0;
+    vector<CMappedFeat> best_feats;
+    for ( CFeat_CI it(seq, CSeqFeatData::e_Prot); it; ++it ) {
+        COpenRange<TSeqPos> range = it->GetRange();
+        if ( range.GetToOpen() > seq_length ) {
+            range.SetToOpen(seq_length);
+        }
+        TSeqPos length = range.GetLength();
+        if ( length > best_length ) {
+            best_length = length;
+            best_feats.clear();
+        }
+        if ( length == best_length ) {
+            best_feats.push_back(*it);
+        }
+    }
+    if ( best_feats.empty() ) {
+        NCBI_THROW_FMT(CObjMgrException, eFindFailed,
+                       "GetProteinName("<<GetId(seq, eGetId_Best)<<"): "
+                       "the sequence does't have prot feature");
+    }
+    if ( best_feats.size() > 1 ) {
+        NCBI_THROW_FMT(CObjMgrException, eFindConflict,
+                       "GetProteinName("<<GetId(seq, eGetId_Best)<<"): "
+                       "the sequence have ambiguous prot feature");
+    }
+    string ret;
+    best_feats[0].GetData().GetProt().GetLabel(&ret);
+    if ( ret.empty() ) {
+        NCBI_THROW_FMT(CObjmgrUtilException, eBadFeature,
+                       "GetProteinName("<<GetId(seq, eGetId_Best)<<"): "
+                       "the prot feature doesn't return name");
+    }
+    return ret;
+}
+
+
 const char* CSeqIdFromHandleException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
