@@ -172,11 +172,22 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
 
     // 4. Create the BlastScoreBlk
     BlastSeqLoc* lookup_segments = NULL;
-    BlastScoreBlk* sbp = 
+    BlastScoreBlk* sbp = NULL;
+    try {
+    	sbp =
         CSetupFactory::CreateScoreBlock(opts_memento.get(), query_data, 
                                         &lookup_segments, retval->m_Messages, 
                                         &retval->m_Masks, 
                                         retval->m_InternalData->m_RpsData);
+    } catch (CBlastException & e) {
+    	const string  kCatchThisError (kBlastErrMsg_CantCalculateUngappedKAParams);
+    	if(e.GetMsg() == kCatchThisError) {
+    		return retval;
+    	}
+    	else {
+    		NCBI_RETHROW(e, CBlastException, eCoreBlastError, e.GetMsg());
+    	}
+    }
     CRef< CBlastSeqLocWrap > lookup_segments_wrap( 
             new CBlastSeqLocWrap( lookup_segments ) );
     retval->m_InternalData->m_ScoreBlk.Reset

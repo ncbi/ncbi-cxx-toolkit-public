@@ -873,14 +873,8 @@ BOOST_AUTO_TEST_CASE(FullyMaskedSequence) {
     options->SetMaskAtHash(false);
     CBl2Seq blaster(*query, *subj, *options);
     bool caught_exception = false;
-    try { blaster.Run(); }
-    catch (const CException& e) {
-        caught_exception = true;
-        const string msg1("invalid query sequence");
-        BOOST_REQUIRE(e.GetMsg().find(msg1) != NPOS);
-        BOOST_REQUIRE(e.GetMsg().find(string(kBlastErrMsg_CantCalculateUngappedKAParams)) != NPOS);
-    }
-    BOOST_REQUIRE_EQUAL(true, caught_exception);
+    CRef<CSearchResultSet> results;
+    BOOST_REQUIRE_NO_THROW(results = blaster.RunEx());
 }
 
 // In the case of multiple queries and one being masked, only emit a warning

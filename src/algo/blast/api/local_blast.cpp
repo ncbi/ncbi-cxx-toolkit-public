@@ -173,17 +173,6 @@ CLocalBlast::Run()
     // already.
 
     int status = m_PrelimSearch->CheckInternalData();
-    try {
-        m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
-        m_InternalData = m_PrelimSearch->Run();
-    } catch( CIndexedDbException & e ) { 
-        throw;
-    } catch (CBlastException & e) {
-    	if(e.GetErrCode() == CBlastException::eCoreBlastError) {
-    		throw;
-    	}
-    }catch (...) {
-    }
     if (status != 0)
     {
          // Search was not run, but we send back an empty CSearchResultSet.
@@ -193,30 +182,58 @@ CLocalBlast::Run()
          vector< CRef<CBlastAncillaryData> > ancill_vec;
          TSeqAlignVector sa_vec;
          size_t index;
+         EResultType res_type = eDatabaseSearch;
+         unsigned int num_subjects = 0;
+         if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb()) {
+        	 res_type = eSequenceComparison;
+             IBlastSeqInfoSrc *  subject_infosrc = m_LocalDbAdapter->MakeSeqInfoSrc();
+             if(subject_infosrc != NULL) {
+            	 num_subjects = subject_infosrc->Size();
+             }
+         }
+         TSearchMessages msg_vec;
          for (index=0; index<local_query_data->GetNumQueries(); index++)
          {
               CConstRef<objects::CSeq_id> query_id(local_query_data->GetSeq_loc(index)->GetId());
+              TQueryMessages q_msg;
+              local_query_data->GetQueryMessages(index, q_msg);
+              msg_vec.push_back(q_msg);
               seqid_vec.push_back(query_id);
               CRef<objects::CSeq_align_set> tmp_align;
               sa_vec.push_back(tmp_align);
               pair<double, double> tmp_pair(-1.0, -1.0);
               CRef<CBlastAncillaryData>  tmp_ancillary_data(new CBlastAncillaryData(tmp_pair, tmp_pair, tmp_pair, 0));
               ancill_vec.push_back(tmp_ancillary_data);
+
+              for(unsigned int i =1; i < num_subjects; i++)
+              {
+            	  TQueryMessages msg;
+                  msg_vec.push_back(msg);
+                  seqid_vec.push_back(query_id);
+                  CRef<objects::CSeq_align_set> tmp_align;
+                  sa_vec.push_back(tmp_align);
+           	      CRef<CBlastAncillaryData>  tmp_ancillary_data(new CBlastAncillaryData(tmp_pair, tmp_pair, tmp_pair, 0));
+           	      ancill_vec.push_back(tmp_ancillary_data);
+              }
          }
-         TSearchMessages msg_vec;
-         local_query_data->GetMessages(msg_vec);
-         EResultType res_type = eDatabaseSearch;
-         if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb()) {
-             res_type = eSequenceComparison;
-         }
-         CRef<CSearchResultSet> result_set(new CSearchResultSet(seqid_vec,
-                                                                sa_vec,
-                                                                msg_vec,
-                                                                ancill_vec, 0,
-                                                                res_type));
+         msg_vec.Combine(m_PrelimSearch->GetSearchMessages());
+
+         CRef<CSearchResultSet> result_set(new CSearchResultSet(seqid_vec, sa_vec, msg_vec, ancill_vec, 0, res_type));
          return result_set;
     }
     
+	try {
+	    m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
+	    m_InternalData = m_PrelimSearch->Run();
+	} catch( CIndexedDbException & e ) {
+	    throw;
+	} catch (CBlastException & e) {
+		if(e.GetErrCode() == CBlastException::eCoreBlastError) {
+			throw;
+		}
+	}catch (...) {
+	}
+
     //_ASSERT(m_InternalData);
     
     TSearchMessages search_msgs = m_PrelimSearch->GetSearchMessages();
