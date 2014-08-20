@@ -2647,10 +2647,12 @@ CNCMessageHandler::x_FinishReadingBlob(void)
                     return &CNCMessageHandler::x_PutToNextPeer;
             }
         } else {
-            SRV_LOG(Warning, "Received blob is too big and will not be mirrored:"
-                << " blob key:"     << m_RawKey //m_BlobKey
-                << " blob size: "   << m_BlobAccess->GetNewBlobSize()
-                << " max allowed: " << CNCDistributionConf::GetMaxBlobSizeSync());
+            if (CNCDistributionConf::GetWarnBlobSizeSync()) {
+                SRV_LOG(Warning, "Received blob is too big and will not be mirrored:"
+                    << " blob key:"     << m_RawKey //m_BlobKey
+                    << " blob size: "   << m_BlobAccess->GetNewBlobSize()
+                    << " max allowed: " << CNCDistributionConf::GetMaxBlobSizeSync());
+            }
             delete write_event;
         }
     }

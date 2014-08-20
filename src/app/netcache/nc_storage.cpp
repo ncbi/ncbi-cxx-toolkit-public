@@ -1955,12 +1955,6 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst)
                 abort();
 
             if (info_ptr->size > CNCDistributionConf::GetMaxBlobSizeSync()) {
-#if 0
-                SRV_LOG(Warning, "Stored blob is too big and will not be mirrored:"
-                    << " blob key:"     << info_ptr->key
-                    << " blob size: "   << info_ptr->size
-                    << " max allowed: " << CNCDistributionConf::GetMaxBlobSizeSync());
-#endif
                 continue;
             }
             SNCBlobSummary* blob_sum = new SNCBlobSummary();
