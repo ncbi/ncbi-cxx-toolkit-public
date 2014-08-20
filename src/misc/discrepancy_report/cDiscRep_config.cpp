@@ -74,6 +74,8 @@ bool                                CDiscRepInfo :: expand_srcqual_report;
 string                              CDiscRepInfo :: report_lineage;
 bool                                CDiscRepInfo :: exclude_dirsub;
 string                              CDiscRepInfo :: xml_label(" XmlIds:");
+string                              CDiscRepInfo :: digit_str("0123456789");
+string  CDiscRepInfo :: alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 vector <string>                     CDiscRepInfo :: bad_gene_names_contained;
 vector <string>                     CDiscRepInfo :: short_auth_nms;
 vector <string>                     CDiscRepInfo :: spec_words_biosrc;

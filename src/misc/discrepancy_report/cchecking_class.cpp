@@ -47,7 +47,6 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(DiscRepNmSpc);
 
-static string strtmp;
 static CDiscRepInfo  thisInfo;
 static CDiscTestInfo thisTest;
 static CTestGrp      thisGrp;

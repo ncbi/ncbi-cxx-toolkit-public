@@ -598,7 +598,7 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
    unsigned rule_idx;
    string strtmp;
    ITERATE (vector <const CSeq_feat*>, it, rrna_feat) {
-      check_val = CDiscRepUtil::GetRNAProductString(**it); 
+      check_val = GetRNAProductString(**it); 
       sf_text = GetDiscItemText(**it);
       rule_idx = 0;
       ITERATE (list <CRef <CSuspect_rule> >, rit, 
@@ -1141,7 +1141,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
 
    // DISC_EXON_INTRON_CONFLICT
    if (thisTest.tests_run.find(GetName_ei()) != end_it) {
-     string seq_id_desc(CDiscRepUtil::BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank));
+     string seq_id_desc(BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank));
      unsigned i=0;
      if (gene_feat.empty()) {
          /* no genes - just do all exons and introns present */
@@ -1828,7 +1828,7 @@ static const string suspect_rna_product_names[] = {
 };
 void CBioseq_test_on_suspect_phrase :: CheckForProdAndComment(const CSeq_feat& seq_feat)
 {
-  string prod_str = CDiscRepUtil::GetRNAProductString(seq_feat);                   
+  string prod_str = GetRNAProductString(seq_feat);                   
   string desc(GetDiscItemText(seq_feat));
   CConstRef <CObject> sf_ref(&seq_feat);
   string comm, name;
@@ -3085,7 +3085,7 @@ void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
 
      // DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA
      if (run_its) {
-         prod_str = CDiscRepUtil::GetRNAProductString(**it); 
+         prod_str = GetRNAProductString(**it); 
          if (NStr::FindNoCase(prod_str, "internal") != string::npos
                  || NStr::FindNoCase(prod_str, "transcribed") != string::npos
                  || NStr::FindNoCase(prod_str, "spacer") != string::npos) {
@@ -3095,7 +3095,7 @@ void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
      }
 
      // DISC_SHORT_RRNA
-     if (run_short && CDiscRepUtil::IsShortrRNA(**it, thisInfo.scope)) {
+     if (run_short && IsShortrRNA(**it, thisInfo.scope)) {
          thisInfo.test_item_list[GetName_short()].push_back(desc);
          thisInfo.test_item_objs[GetName_short()].push_back(rrna_ref);
      }
@@ -3371,7 +3371,7 @@ void CBioseq_GENE_PRODUCT_CONFLICT :: TestOnObj(const CBioseq& bioseq)
      }
 
      if (!(gene_label.empty())) {
-       prod_nm = CDiscRepUtil :: GetProdNmForCD(**it);
+       prod_nm = GetProdNmForCD(**it);
        prod_nm = prod_nm.empty()? "empty" : prod_nm;
        thisInfo.test_item_list[GetName()]
            .push_back(gene_label + "$" + prod_nm + "#" + GetDiscItemText(**it));
@@ -4608,7 +4608,7 @@ void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
     bool run_non_nt = (thisTest.tests_run.find(GetName_non_nt()) != end_it);
    
     const CSeq_id& 
-      new_seq_id = CDiscRepUtil::BioseqToBestSeqId(*(bioseq_h.GetCompleteBioseq()), 
+      new_seq_id = BioseqToBestSeqId(*(bioseq_h.GetCompleteBioseq()), 
                                                           CSeq_id::e_Genbank);
     string id_str = new_seq_id.AsFastaString();
     id_str = CTempString(id_str).substr(id_str.find("|")+1);
@@ -4761,7 +4761,7 @@ void CBioseq_RNA_NO_PRODUCT :: TestOnObj(const CBioseq& bioseq)
         continue;
      }
      
-     if ( (CDiscRepUtil::GetRNAProductString(**it)).empty()) {
+     if ( (GetRNAProductString(**it)).empty()) {
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
         thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
      }
@@ -6439,7 +6439,7 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
   string context_label;
   unsigned i; 
   ITERATE (vector <const CSeq_feat*>, it, trna_feat) {
-     CDiscRepUtil :: GetSeqFeatLabel(**it, context_label);
+     GetSeqFeatLabel(**it, context_label);
      i=0;
      ITERATE (Str2UInt, jt, thisInfo.desired_aaList) {
         if (context_label.find(jt->first) != string::npos) {
@@ -6608,7 +6608,7 @@ void CBioseq_test_on_rna :: FindDupRNAsInList(vector <const CSeq_feat*> feats, c
   string label;
   for (i=0; (int) i < (int)feats.size() -1; i++) {
     if (is_dup[i]) continue;
-    CDiscRepUtil :: GetSeqFeatLabel(*feats[i], label);  // context_label in C
+    GetSeqFeatLabel(*feats[i], label);  // context_label in C
     label2dup_objs[label].push_back(CConstRef <CObject> (feats[i]));
     is_dup[i] = 1;
     for (j=i+1; j< feats.size(); j++) {
@@ -6741,7 +6741,7 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
   }
 
   if (bioseq.IsAa()) return;
-  m_best_id_str = CDiscRepUtil::BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank);
+  m_best_id_str = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank);
   m_bioseq_desc = GetDiscItemText(bioseq);
   m_bioseq_obj = CConstRef <CObject> (&bioseq);
 
@@ -7271,7 +7271,7 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
     CSeqFeatData::ESubtype subtp = (*it)->GetData().GetSubtype();
     if ( subtp == CSeqFeatData::eSubtype_ncRNA
           || ( subtp == CSeqFeatData::eSubtype_tRNA && ignore_trna) ) continue;
-    if (CDiscRepUtil::IsShortrRNA(**it, thisInfo.scope)) continue;
+    if (IsShortrRNA(**it, thisInfo.scope)) continue;
     const CSeq_loc& loc_i = (*it)->GetLocation();
     ITERATE (vector <const CSeq_feat*>, jt, cd_feat) {
       const CSeq_loc& loc_j = (*jt)->GetLocation();
@@ -7448,7 +7448,7 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
 {
   string prod_nm;
   if (seq_feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
-     prod_nm = CDiscRepUtil::GetProdNmForCD(*seq_feat);
+     prod_nm = GetProdNmForCD(*seq_feat);
      if ( DoesStringContainPhrase(prod_nm, "ABC")
             || DoesStringContainPhrase(prod_nm, "transposon", false, false)
             || DoesStringContainPhrase(prod_nm, "transposase", false, false)){
@@ -7488,8 +7488,7 @@ void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
                     < loc_j.GetStart(eExtreme_Positional)) {
          break;
       }
-      if(!OverlappingProdNmSimilar(CDiscRepUtil::GetProdNmForCD(**it),
-                                       CDiscRepUtil::GetProdNmForCD(**jt))){
+      if(!OverlappingProdNmSimilar(GetProdNmForCD(**it), GetProdNmForCD(**jt))){
           continue;
       }
       ENa_strand strandj = loc_j.GetStrand();
@@ -7915,7 +7914,7 @@ void CBioseq_DUPLICATE_GENE_LOCUS :: TestOnObj(const CBioseq& bioseq)
      if ((*jt)->GetData().GetGene().CanGetLocus()) {
         locus = (*jt)->GetData().GetGene().GetLocus();
         if (!locus.empty()) {
-            location = i_num + CDiscRepUtil::BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank).AsFastaString();
+            location = i_num + BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank).AsFastaString();
             thisInfo.test_item_list[GetName()] .push_back(
                 location + "$" + locus + "#" + GetDiscItemText(**jt));
             thisInfo.test_item_objs[GetName() + "$" + location + "#" + locus]

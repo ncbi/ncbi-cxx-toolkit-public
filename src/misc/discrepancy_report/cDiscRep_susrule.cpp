@@ -65,11 +65,7 @@ USING_SCOPE(DiscRepNmSpc);
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
 
-static vector <string> arr;
 static CDiscRepInfo thisInfo;
-
-string CDiscRepUtil::digit_str("0123456789");
-string CDiscRepUtil::alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
 CBioseq_Handle CSuspectRuleCheck::m_bioseq_hl;
 
@@ -710,11 +706,11 @@ bool CSuspectRuleCheck :: DoesPubFieldSpecialMatch (const CPubdesc& pub_desc, co
          case CPub_field_special_constraint_type::e_Is_present: return true;
          case CPub_field_special_constraint_type::e_Is_not_present: return false;
          case CPub_field_special_constraint_type::e_Is_all_caps:
-           if (!CDiscRepUtil::IsAllCaps(strtmp)) return false;
+           if (!IsAllCaps(strtmp)) return false;
          case CPub_field_special_constraint_type::e_Is_all_lower:
-           if (!CDiscRepUtil::IsAllLowerCase (strtmp)) return false;
+           if (!IsAllLowerCase (strtmp)) return false;
          case CPub_field_special_constraint_type::e_Is_all_punct:
-           if (!CDiscRepUtil::IsAllPunctuation (strtmp)) return false;
+           if (!IsAllPunctuation (strtmp)) return false;
          default: break;
       }
     }
@@ -1006,7 +1002,7 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
     return kEmptyStr;
   }
   string ret_str(kEmptyStr);
-  arr.clear();
+  vector <string> arr;
   arr = NStr::Tokenize(str, " ", arr);
   if (arr.size() == 1) {
      return str;
@@ -1035,7 +1031,6 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
           ret_str += arr[i] + ' ';
   }
   ret_str += arr[arr.size()-1];
-  arr.clear();
   return (ret_str);
 };
 
@@ -1295,7 +1290,7 @@ bool CSuspectRuleCheck :: GetSpanFromHyphenInString(const string& str, const siz
 
 bool CSuspectRuleCheck :: StringIsPositiveAllDigits(const string& str)
 {
-   if (str.find_first_not_of(CDiscRepUtil::digit_str) != string::npos) return false;
+   if (str.find_first_not_of(thisInfo.digit_str) != string::npos) return false;
    else return true;
 };
 
@@ -1322,7 +1317,7 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
     }
   } 
   else if (StringIsPositiveAllDigits(second)) {
-    prefix_len = first.find_first_of(CDiscRepUtil::digit_str) + 1;
+    prefix_len = first.find_first_of(thisInfo.digit_str) + 1;
 
     new_str = CTempString(str).substr(prefix_len - 1);
     new_first = CTempString(first).substr(prefix_len - 1);
@@ -1368,11 +1363,11 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
         /* determine whether there is a suffix */
         size_t idx1, idx2, idx_str;
         string suf1, suf2, sub_str;
-        idx1 = first.find_first_not_of(CDiscRepUtil::digit_str);
+        idx1 = first.find_first_not_of(thisInfo.digit_str);
         suf1 = CTempString(first).substr(prefix_len + idx1);
-        idx2 = second.find_first_not_of(CDiscRepUtil::digit_str);
+        idx2 = second.find_first_not_of(thisInfo.digit_str);
         suf2 = CTempString(second).substr(prefix_len + idx2);
-        idx_str = str.find_first_not_of(CDiscRepUtil::digit_str);
+        idx_str = str.find_first_not_of(thisInfo.digit_str);
         sub_str = CTempString(str).substr(prefix_len + idx_str);
         if (suf1 == suf2 && suf1 == sub_str) {
           /* suffixes match */
@@ -1394,10 +1389,10 @@ bool CSuspectRuleCheck :: IsStringInSpanInList (const string& str, const string&
 {
   if (list.empty() || str.empty()) return false;
 
-  size_t idx = str.find_first_not_of(CDiscRepUtil::alpha_str);
+  size_t idx = str.find_first_not_of(thisInfo.alpha_str);
   if (idx == string::npos) return false;
 
-  idx = CTempString(str).substr(idx).find_first_not_of(CDiscRepUtil::digit_str);
+  idx = CTempString(str).substr(idx).find_first_not_of(thisInfo.digit_str);
 
   /* find ranges */
   size_t hyphen = list.find('-');
@@ -1445,15 +1440,15 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
     if (str_cons->GetIgnore_weasel()) {
          this_str = SkipWeasel(str);
     }
-    if (str_cons->GetIs_all_caps() && !CDiscRepUtil::IsAllCaps(this_str)) {
+    if (str_cons->GetIs_all_caps() && !IsAllCaps(this_str)) {
          rval = false;
     }
     else if (str_cons->GetIs_all_lower() 
-                 && !CDiscRepUtil::IsAllLowerCase(this_str)) {
+                 && !IsAllLowerCase(this_str)) {
                rval = false;
     }
     else if (str_cons->GetIs_all_punct() 
-               && !CDiscRepUtil::IsAllPunctuation(this_str)) {
+               && !IsAllPunctuation(this_str)) {
                rval = false;
     }
     else if (!str_cons->CanGetMatch_text() 
@@ -1606,7 +1601,7 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
   unsigned len;
 
   if (str.empty()) return false;
-  arr.clear();
+  vector <string> arr;
   arr = NStr::Tokenize(str, " ,", arr, NStr::eMergeDelims);
   if (arr.size() == 1) { // doesn't have ', ', or the last char is ', '
      len = arr[0].size();
@@ -1616,7 +1611,7 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
      if (len == str.size()) next_letter = ',';
      else next_letter = str[len];
      may_contain_plural 
-        = x_DoesStrContainPlural(arr[0], last_letter, second_to_last_letter, next_letter);
+       = x_DoesStrContainPlural(arr[0], last_letter, second_to_last_letter, next_letter);
   }
   else {
     string strtmp = str;
@@ -1643,7 +1638,6 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
       }
     }
   }
-  arr.clear();
   return may_contain_plural;
 };
 
@@ -1773,11 +1767,11 @@ bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& searc
   string sch_str = search;
   
   while (!sch_str.empty()) {
-      p = sch_str.find_first_of(CDiscRepUtil::digit_str);
+      p = sch_str.find_first_of(thisInfo.digit_str);
       if (p == string::npos) break;
       if (p && ( PrecededByOkPrefix(CTempString(sch_str).substr(0, p)) 
                   || InWordBeforeCytochromeOrCoenzyme (CTempString(sch_str).substr(0, p)) ) ) {
-        p2 = sch_str.find_first_not_of(CDiscRepUtil::digit_str, p+1);
+        p2 = sch_str.find_first_not_of(thisInfo.digit_str, p+1);
         if (p2 != string::npos) {
             sch_str = CTempString(sch_str).substr(p2);
             num_digits = 0;
@@ -1806,22 +1800,21 @@ bool CSuspectRuleCheck :: StringContainsUnderscore(const string& search)
   if (search.find('_') == string::npos) return false;
 
   string strtmp;
-  arr.clear();
+  vector <string> arr;
   arr = NStr::Tokenize(search, "_", arr);
   for (unsigned i=0; i< arr.size() - 1; i++) {
-     strtmp = arr[i+1];
-     if (FollowedByFamily(strtmp)) continue; // strtmp was changed in the FollowedByFamily
-     else if (arr[i].size() < 3 || search[arr[i].size()-1] == ' ') return true;
-     else {
+    strtmp = arr[i+1];
+    if (FollowedByFamily(strtmp)) continue; // strtmp was changed in the FollowedByFamily
+    else if (arr[i].size() < 3 || search[arr[i].size()-1] == ' ') return true;
+    else {
        strtmp = CTempString(arr[i]).substr(arr[i].size()-3);
        if ( (strtmp == "MFS" || strtmp == "TPR" || strtmp == "AAA")
                   && (isdigit(arr[i+1][0]) && !isdigit(arr[i+1][1])) )
           continue;
        else return true;
-     }
+    }
   }
 
-  arr.clear();
   return false;
 };
 
@@ -1835,7 +1828,7 @@ bool CSuspectRuleCheck :: IsPrefixPlusNumbers(const string& prefix, const string
   }
 
   size_t digit_len 
-           = search.find_first_not_of(CDiscRepUtil::digit_str, pattern_len);
+           = search.find_first_not_of(thisInfo.digit_str, pattern_len);
   if (digit_len != string::npos && digit_len == search.size()) {
       return true;
   }
@@ -1914,7 +1907,7 @@ bool CSuspectRuleCheck :: MatchesSearchFunc(const string& str, const CSearch_fun
       case CSearch_func::e_Prefix_and_numbers:
          return IsPrefixPlusNumbers (func.GetPrefix_and_numbers(), str);
       case CSearch_func::e_All_caps:
-         return CDiscRepUtil::IsAllCaps (str);
+         return IsAllCaps (str);
       case CSearch_func::e_Unbalanced_paren:
          return StringContainsUnbalancedParentheses (str);
       case CSearch_func::e_Too_long:
@@ -2084,7 +2077,6 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CSeq_feat& feat,
                          rval = DoesSingleStringMatchConstraint(*it, &str_cons);
                          if (rval) break;
                      }
-                     arr.clear();
                   }
                }
             }
@@ -2093,7 +2085,7 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CSeq_feat& feat,
        case CSeqFeatData::e_Rna:
          {
            if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
-             CDiscRepUtil :: GetSeqFeatLabel(feat, str);
+             GetSeqFeatLabel(feat, str);
              rval = DoesSingleStringMatchConstraint(str, &str_cons);
              if (!rval) {
                str = "tRNA-" + str;
@@ -2714,14 +2706,14 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
           || (is_illegal_qual 
                 && DoesStringMatchConstraint ("location", illegal_qual))) { 
       /* location */
-      return CDiscRepUtil :: SeqLocPrintUseBestID (seq_feat.GetLocation());
+      return SeqLocPrintUseBestID (seq_feat.GetLocation());
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_pseudo)
            || (is_illegal_qual 
                 && DoesStringMatchConstraint ("pseudogene", illegal_qual))) { 
      /* pseudo */
      if (seq_feat.CanGetQual()) {
-        str = CDiscRepUtil :: GetFirstGBQualMatch(seq_feat.GetQual(), 
+        str = GetFirstGBQualMatch(seq_feat.GetQual(), 
                                                           "pseudogene", 0, str_cons);
         if (str.empty() && seq_feat.CanGetPseudo() && seq_feat.GetPseudo()){
              str = "unqualified";
@@ -2740,7 +2732,7 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
       }
     } 
     else if (seq_fdt.IsRna()) {
-      str = CDiscRepUtil :: GetRNAProductString (seq_feat);
+      str = GetRNAProductString (seq_feat);
     }
   }
   else { /* Gene fields */
@@ -2945,7 +2937,7 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
                               thisInfo.featquallegal_subfield[legal_qual] : 0;
                  if (feat_qual_name != "name" || feat_qual_name !="location"){
                       // gbqual > -1
-                    return CDiscRepUtil :: GetFirstGBQualMatch(seq_feat.GetQual(), 
+                    return GetFirstGBQualMatch(seq_feat.GetQual(), 
                                                 feat_qual_name, subfield, str_cons);
                  }
               }
@@ -3427,8 +3419,7 @@ string CSuspectRuleCheck :: GetFieldValueFromCGPSet (const CCGPSetData& c, ECDSG
         break;
       case eCDSGeneProt_field_gene_old_locus_tag:
         if (c.gene->CanGetQual()) 
-              str = CDiscRepUtil::GetFirstGBQualMatch(c.gene->GetQual(), 
-                                                          "old_locus_tag", 0, str_cons);
+              str = GetFirstGBQualMatch(c.gene->GetQual(), "old_locus_tag", 0, str_cons);
         break;
       default: break;
     }
@@ -4041,45 +4032,6 @@ bool CSuspectRuleCheck :: DoesObjectMatchConstraint(const CSeq_feat& data, const
   }
   return true;
 }
-
-/*
-void CSuspectRuleCheck :: GetFeatIdString(const CFeat_id& id, vector <string>& arr)
-{
-   switch (id.Which()) {
-     case CFeat_id::e_Giim:
-       {
-         const CGiimport_id& giim = id.GetGiim();
-         if (giim.CanGetDb()) arr.push_back(giim.GetDb());
-         if (giim.CanGetRelease()) arr.push_back(giim.GetRelease());
-       };
-       break;
-     case CFeat_id::e_Local:
-        if (id.GetLocal().Is
-     default: break;               
-   }
-};
-
-void CSuspectRuleCheck :: GetStringsFromObject(const CSeq_feat& feat, vector <string>& arr)
-{
-   if (feat.CanGetId()) GetFeatIdString(feat.GetId(), arr);
-   GetDataString(feat.GetData(), arr);
-   if (feat.CanGetComment()) arr.push_back(feat.GetComment());
-   if (feat.CanProduct()) GetSeqLocString(feat, arr);
-   GetSeqLocString(feat, arr);
-   if (feat.CanGetQual()) GetQualString(feat.GetQual(), arr);
-   if (feat.CanGetTitle()) arr.push_back(feat.GetTitle());
-   if (feat.CanGetExt()) GetExtString(feat.GetExt(), arr);
-   if (feat.CanGetCit()) GetCitString(feat.GetCit(), arr);
-   if (feat.CanGetExp_ev()) GetExpevString(feat.GetExp_ev(), arr);
-   if (feat.CanGetDbxref()) GetDbxrefString(feat.GetDbxref(), arr);
-   if (feat.CanGetExcept_text()) arr.push_back(feat.GetExcept_text());
-   if (feat.CanGetIds()) 
-      ITERATE (list <CRef <CFeat_id> >, it, feat.GetIds()) GetFeatIdString((**it), arr);
-   if (feat.CanGetExts()) 
-      ITERATE (list <CRef <CUser_object> >, it, feat.GetExts()) GetExtString(**it, arr);
-   if (feat.CanGetSupport()) GetSupportString(feat.GetSupport(), arr);
-};
-*/
 
 bool CSuspectRuleCheck :: DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat, const CConstraint_choice_set& c_set)
 {
