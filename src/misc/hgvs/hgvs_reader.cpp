@@ -183,7 +183,7 @@ CHgvsReader::ReadSeqAnnot(
                         CObjReaderLineException::Create(
                             eDiag_Warning,
                             m_uLineNumber,
-                            string("CHgvsReader::ReadSeqAnnot Warning [") + code  + "] " + except.GetMessage(),
+                            string("Warning [") + code  + "] " + except.GetMessage(),
                             ILineError::eProblem_GeneralParsingError));
                     ProcessWarning(*err, pEC);
                 } 
@@ -196,7 +196,7 @@ CHgvsReader::ReadSeqAnnot(
                 CObjReaderLineException::Create(
                     eDiag_Error,
                     0,
-                    string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
+                    string("Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
                     ILineError::eProblem_GeneralParsingError));
                 ProcessError(*err, pEC);
         }
