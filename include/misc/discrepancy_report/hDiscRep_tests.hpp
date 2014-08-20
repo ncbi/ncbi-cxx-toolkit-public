@@ -186,6 +186,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                                   const string& str2,
                                                   const string& str3, 
                                                   const CSeq_feat& feat);
+  typedef void (*FAutofix)(vector <CConstRef <CObject> > ori_objs, 
+                               vector <CRef <CObject> > fixed_obj);
+
   struct s_SuspectProductNameData {
      const char* pattern;
      FSuspectProductNameSearchFunc search_func;
@@ -194,6 +197,46 @@ BEGIN_SCOPE(DiscRepNmSpc)
      FSuspectProductNameReplaceFunc replace_func;
   };
 
+
+  // DiscRepNmSpc public functions/constants 
+  string GetTwoFieldSubfield(const string& str, unsigned subfield);
+  string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals,
+                                  const string& qual_name,
+                                  unsigned subfield = 0,
+                                  const CString_constraint* str_cons = 0);
+  string GetRNAProductString(const CSeq_feat& seq_feat);
+  bool IsShortrRNA(const CSeq_feat& feat, CScope* scope);
+
+  const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id::E_Choice);
+  string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
+  string SeqLocPrintUseBestID(const CSeq_loc& seq_loc,bool range_only = false);
+  string GetProdNmForCD(const CSeq_feat& cd_feat);
+  void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);
+
+  // GetDiscrepancyItemTextEx()
+  string GetDiscrepancyItemText(const CSeq_feat& obj, bool attach_ids = false);
+  string GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool attach_ids = false);
+  string GetDiscrepancyItemText(const CBioseq& objtrue, bool attach_ids = false);
+  string GetDiscrepancyItemText(const CBioseq_set& objs, bool attach_ids = false);
+  string GetDiscrepancyItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry, bool attach_ids = false);
+  string GetDiscrepancyItemText(const CSeqdesc& obj, const CBioseq& bioseq, bool attach_ids = false);
+  string GetDiscrepancyItemText(const CPerson_id& obj, const CSeq_entry& seq_entry, bool attach_ids = false);
+  string GetDiscrepancyItemText(const CSeq_entry& seq_entry, bool attach_ids = false);
+
+  string GetSeqId4BioseqSet(const string& desc);
+  string GetDiscrepancyItemTextForBioseqSet(const CBioseq_set& obj);
+  string GetFeatId(const CFeat_id& feat_id);
+  string SeqDescLabelContent(const CSeqdesc& sd);
+  CBioseq* GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
+  const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
+  string GetLocusTagForFeature(const CSeq_feat& seq_feat);
+  string PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
+
+  bool IsWholeWord(const string& str, const string& phrase);
+  bool IsAllCaps(const string& str);
+  bool IsAllLowerCase(const string& str);
+  bool IsAllPunctuation(const string& str);
+
   class CClickableItem  : public CObject
   {
      public:
@@ -201,8 +244,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
           setting_name = description = kEmptyStr;
           item_list.clear();
           subcategories.clear();
-          expanded = next_sibling = false,
+          expanded = next_sibling = false;
           obj_list.clear();
+          fix_function = 0;
        }                    
        ~CClickableItem () {};
 
@@ -213,6 +257,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
        bool                                 expanded;
        bool                                 next_sibling;
        vector < CConstRef <CObject> >       obj_list;
+       FAutofix                             fix_function;
   };
 
   class CDiscTestInfo 
@@ -482,13 +527,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool CanGetFieldString(const CCGPSetData& cgp, 
                              const ECDSGeneProt_field field, 
                              const CString_constraint& str_cons);
-#if 0
-      string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, 
-                                  const string& qual_name, 
-                                  unsigned subfield = 0, 
-                                  const CString_constraint* str_cons = 0);
-      string GetTwoFieldSubfield(const string& str, unsigned subfield);
-#endif
       string GetFieldValue(const CCGPSetData& cgp, 
                            const CSeq_feat& feat, 
                            ECDSGeneProt_field val, 
@@ -560,61 +598,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                   char last_letter, 
                                   char second_to_last_letter, 
                                   char next_letter);
-  };
-
-  
-  class CDiscRepUtil
-  {
-    public:
-      CDiscRepUtil () {};
-      ~CDiscRepUtil () {};
-
-      static bool IsWholeWord(const string& str, const string& phrase);
-      static bool IsAllCaps(const string& str);
-      static bool IsAllLowerCase(const string& str);
-      static bool IsAllPunctuation(const string& str);
-      static bool IsShortrRNA(const CSeq_feat& feat, CScope* scope);
-      static string GetRNAProductString(const CSeq_feat& seq_feat);
-      static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, 
-                                  const string& qual_name, 
-                                  unsigned subfield = 0, 
-                                  const CString_constraint* str_cons = 0);
-
-      static string digit_str, alpha_str;
-
-      static const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id::E_Choice);
-      static string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
-      static string SeqLocPrintUseBestID(const CSeq_loc& seq_loc,bool range_only = false);
-      static string GetProdNmForCD(const CSeq_feat& cd_feat);
-      static void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);
-
-      // GetDiscrepancyItemTextEx()
-      static string GetDiscrepancyItemText(const CSeq_feat& obj, bool attach_ids = false);
-      static string GetDiscrepancyItemText(const CSeq_submit& seq_submit, 
-                                             bool attach_ids = false);
-      static string GetDiscrepancyItemText(const CBioseq& objtrue, 
-                                             bool attach_ids = false);
-      static string GetDiscrepancyItemText(const CBioseq_set& objs, 
-                                             bool attach_ids = false);
-      static string GetDiscrepancyItemText(const CSeqdesc& obj, 
-                               const CSeq_entry& seq_entry, bool attach_ids = false);
-      static string GetDiscrepancyItemText(const CSeqdesc& obj, 
-                               const CBioseq& bioseq, bool attach_ids = false);
-      static string GetDiscrepancyItemText(const CPerson_id& obj,
-                               const CSeq_entry& seq_entry, bool attach_ids = false);
-      static string GetDiscrepancyItemText(const CSeq_entry& seq_entry, 
-                                             bool attach_ids = false);
-
-    private:
-      static string x_GetTwoFieldSubfield(const string& str, unsigned subfield);
-      static string x_GetSeqId4BioseqSet(const string& desc);
-      static string x_GetDiscrepancyItemTextForBioseqSet(const CBioseq_set& obj);
-      static string x_GetFeatId(const CFeat_id& feat_id);
-      static string x_SeqDescLabelContent(const CSeqdesc& sd);
-      static CBioseq* x_GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
-      static const CSeq_feat* x_GetCDFeatFromProtFeat(const CSeq_feat& prot);
-      static string x_GetLocusTagForFeature(const CSeq_feat& seq_feat);
-      static string x_PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
   };
 
   class CTestAndRepData : public CObject
@@ -708,12 +691,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetDiscItemText(const CPerson_id& obj, const CSeq_entry& seq_entry);
       string GetDiscItemText(const CSeq_entry& seq_entry);
 
-
       string ListAuthNames(const CAuth_list& auths);
       string ListAllAuths(const CPubdesc& pubdesc);
-
-
-      static const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id::E_Choice);
 
       static bool IsmRNASequenceInGenProdSet(const CBioseq& bioseq);
       static bool IsProdBiomol(const CBioseq& bioseq);
@@ -2225,7 +2204,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
        const CMolInfo* m_molinfo;
 
        bool GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2);
-//       bool x_IsShortrRNA(const CSeq_feat* seq_ft);
        bool BioseqHasKeyword(const CBioseq& bioseq, const string& keywd);
        bool StrandOk(ENa_strand strand1, ENa_strand strand2);
        bool IsUnknown(const string& known_items, const unsigned idx);

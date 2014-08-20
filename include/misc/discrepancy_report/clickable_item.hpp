@@ -81,6 +81,7 @@ protected:
     vector<CConstRef<CObject> > m_Objects;
     vector <string> m_Objdescs;
     vector <string> m_Accessions;
+    string m_Setting_name;
 };
 
 END_NCBI_SCOPE

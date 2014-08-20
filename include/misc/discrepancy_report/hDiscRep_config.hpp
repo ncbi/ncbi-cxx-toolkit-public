@@ -238,6 +238,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static string                             report_lineage;
         static bool                               exclude_dirsub;
         static string                             xml_label;
+        static string                             digit_str;
+        static string                             alpha_str;
 
         static vector <string>                    bad_gene_names_contained;
         static vector <string>                    rrna_standard_name; 
