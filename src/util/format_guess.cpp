@@ -871,7 +871,13 @@ CFormatGuess::TestFormatNewick(
 //  -----------------------------------------------------------------------------
     // newick trees can be found in nexus files. check for that first as a special case
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
-        return false;
+        const int BUFFSIZE = 8096;
+        m_pTestBuffer = new char[BUFFSIZE];
+        m_Stream.read( m_pTestBuffer, BUFFSIZE );
+        m_iTestDataSize = m_Stream.gcount();
+        m_Stream.clear();  // in case we reached eof
+        CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
+        m_TestLines.push_back(m_pTestBuffer);
     }
 
     // Alignment files come in all different shapes and broken formats,
@@ -1468,8 +1474,14 @@ bool
 CFormatGuess::TestFormatHgvs(
     EMode /* not used */ )
 {
-    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
-        return false;
+    if ( ! EnsureStats() || ! EnsureSplitLines() ) {
+        const int BUFFSIZE = 1024;
+        m_pTestBuffer = new char[BUFFSIZE];
+        m_Stream.read( m_pTestBuffer, BUFFSIZE );
+        m_iTestDataSize = m_Stream.gcount();
+        m_Stream.clear();  // in case we reached eof
+        CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
+        m_TestLines.push_back(m_pTestBuffer);
     }
 
     unsigned int uHgvsLineCount = 0;
