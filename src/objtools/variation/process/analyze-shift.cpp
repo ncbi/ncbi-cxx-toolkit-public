@@ -163,7 +163,7 @@ bool CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvs
       orig_right = pos;
   }
 
-  CVariationNormalization::NormalizeVariation(a,CVariationNormalization::eDbSnp,*scope);
+  CVariationNormalization::NormalizeVariation(*a,CVariationNormalization::eDbSnp,*scope);
   const CSeq_loc &loc = a->GetData().GetFtable().front()->GetLocation();
   string ref;
   if (a->GetData().GetFtable().front()->GetData().GetVariation().GetData().IsSet())
