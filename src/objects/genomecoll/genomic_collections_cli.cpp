@@ -57,6 +57,16 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 const char* GENCOLL_URL = "http://www.ncbi.nlm.nih.gov/projects/r_gencoll/access/gc_get_assembly_v2.cgi";
 
+// constructor
+CGenomicCollectionsService::CGenomicCollectionsService(void)
+: m_url(GENCOLL_URL)
+{
+}
+
+CGenomicCollectionsService::CGenomicCollectionsService(const string& url)
+: m_url(url)
+{
+}
 
 // destructor
 CGenomicCollectionsService::~CGenomicCollectionsService(void)
@@ -66,7 +76,7 @@ CGenomicCollectionsService::~CGenomicCollectionsService(void)
 
 string CGenomicCollectionsService::x_GetURL()
 {
-    return GENCOLL_URL;
+    return m_url;
 }
 
 void CGenomicCollectionsService::x_Connect()

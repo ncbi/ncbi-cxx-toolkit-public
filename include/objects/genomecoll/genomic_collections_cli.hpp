@@ -56,10 +56,14 @@ class CGCClient_AssemblyInfo;
 /////////////////////////////////////////////////////////////////////////////
 class CGenomicCollectionsService : public CGenomicCollectionsService_Base
 {
+    string m_url;
+
     typedef CGenomicCollectionsService_Base Tparent;
 public:
     // constructor
     CGenomicCollectionsService(void);
+    CGenomicCollectionsService(const string& url);
+
     // destructor
     ~CGenomicCollectionsService(void);
 
@@ -105,11 +109,6 @@ private:
 
 /////////////////// CGenomicCollectionsService inline methods
 
-// constructor
-inline
-CGenomicCollectionsService::CGenomicCollectionsService(void)
-{
-}
 
 
 /////////////////// end of CGenomicCollectionsService inline methods
