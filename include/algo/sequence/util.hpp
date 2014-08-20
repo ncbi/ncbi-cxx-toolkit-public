@@ -42,6 +42,21 @@ class CBioseq;
 class CSeq_loc;
 END_SCOPE(objects)
 
+class CEntropyCalculator
+{
+public:
+    CEntropyCalculator(size_t sequence_size, size_t word_size);
+
+    double ComputeEntropy(const CTempString& sequence);
+
+private:
+    size_t m_WordSize;
+    size_t m_NumWords;
+    vector<CTempString> m_Words;
+    vector<double> m_EntropyValues;
+    double m_Denom;
+};
+
 // Create virtual Bioseq for masking original sequence with gaps.
 // New sequence will has Seq-id 'new_id'
 // Its Seq-inst object will be of type delta, and has reference to
