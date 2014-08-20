@@ -1481,6 +1481,65 @@ namespace {
     {
         return obj1.GetLoc().Equals(obj2.GetLoc());
     }
+
+    template<class Set>
+    bool sx_SameSets(const Set& old_set, const Set& new_set)
+    {
+        typename Set::const_iterator old_it = old_set.begin();
+        ITERATE ( typename Set, new_it, new_set ) {
+            if ( old_it == old_set.end() ) {
+                return false;
+            }
+            if ( !(*old_it)->Equals(**new_it) ) {
+                return false;
+            }
+            ++old_it;
+        }
+        return old_it == old_set.end();
+    }
+
+    bool sx_SameFeatIndex(const CAnnotObject_Info& info,
+                          const CSeq_feat& new_obj)
+    {
+        if ( info.GetFeatSubtype() != new_obj.GetData().GetSubtype() ) {
+            return false;
+        }
+        const CSeq_feat& old_obj = info.GetFeat();
+        if ( info.GetFeatType() == CSeqFeatData::e_Gene ) {
+            if ( !old_obj.GetData().GetGene().Equals(
+                     new_obj.GetData().GetGene()) ) {
+                return false;
+            }
+        }
+        if ( !sx_SameLocation(old_obj, new_obj) ) {
+            return false;
+        }
+        if ( old_obj.IsSetId() != new_obj.IsSetId() ) {
+            return false;
+        }
+        if ( old_obj.IsSetId() ) {
+            if ( !old_obj.GetId().Equals(new_obj.GetId()) ) {
+                return false;
+            }
+        }
+        if ( old_obj.IsSetIds() != new_obj.IsSetIds() ) {
+            return false;
+        }
+        if ( old_obj.IsSetIds() ) {
+            if ( !sx_SameSets(old_obj.GetIds(), new_obj.GetIds()) ) {
+                return false;
+            }
+        }
+        if ( old_obj.IsSetXref() != new_obj.IsSetXref() ) {
+            return false;
+        }
+        if ( old_obj.IsSetXref() ) {
+            if ( !sx_SameSets(old_obj.GetXref(), new_obj.GetXref()) ) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 
@@ -1609,8 +1668,7 @@ void CSeq_annot_Info::Replace(TAnnotIndex index, const CSeq_feat& new_obj)
         _ASSERT(!info.IsRemoved());
         x_MapAnnotObject(info);
     }
-    else if ( info.GetFeatSubtype() == new_obj.GetData().GetSubtype() &&
-              sx_SameLocation(info.GetFeat(), new_obj) ) {
+    else if ( sx_SameFeatIndex(info, new_obj) ) {
         // same index -> just replace
         info.x_SetObject(new_obj);
     }
