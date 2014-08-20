@@ -1630,15 +1630,27 @@ public:
     /// Flags for GetEntries()
     /// @sa GetEntries, GetEntriesPtr
     enum EGetEntriesFlags {
-        fIgnoreRecursive = (1<<1), ///< Suppress self recursive elements ("..")
-        fCreateObjects   = (1<<2), ///< Get objects accordingly to entry type
-                                   ///< (CFile,CDir,...), not just a CDirEntry
-        fNoCase          = (1<<3), ///< Use case insensitive compare by mask
-        fIgnorePath      = (1<<4), ///< Return only entries names, not full path
-        // These flags added for backward compatibility and will be removed
-        // in the future, so don't use it.
-        eAllEntries       = 0,
-        eIgnoreRecursive  = fIgnoreRecursive
+        fIgnoreRecursive = (1<<1), ///< Suppress "self recursive"
+                                   ///< elements (the directories "." 
+                                   ///< and "..").
+        fCreateObjects   = (1<<2), ///< Create appropriate subclasses
+                                   ///< of CDirEntry (CFile,CDir,...),
+                                   ///< not just CDirEntry objects.
+        fNoCase          = (1<<3), ///< Ignore upper and lower-case 
+                                   ///< differences when doing a mask 
+                                   ///< comparison. Makes the mask 
+                                   ///< case-insensitive.
+        fIgnorePath      = (1<<4), ///< Return only names of entries,
+                                   ///< not their full paths.
+
+        // Deprecated entries to be removed in the future
+        eAllEntries       = 0,     ///< \deprecated Only provided for
+                                   ///<   backward compatibility. Will be
+                                   ///<   removed in the future. Do not use.
+        eIgnoreRecursive  = fIgnoreRecursive 
+                                   ///< \deprecated Only provided for
+                                   ///<   backward compatibility. Will be
+                                   ///<   removed in the future. Do not use.
     };
     typedef int TGetEntriesFlags; ///< Binary OR of "EGetEntriesFlags"
 
