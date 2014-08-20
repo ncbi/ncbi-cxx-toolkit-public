@@ -77,7 +77,7 @@ public:
     typedef EGCClient_AttributeFlags EAttributeFlags;
 
     CRef<CGC_Assembly> GetAssembly
-        (string acc, 
+        (const string& acc, 
          int level = CGCClient_GetAssemblyRequest::eLevel_scaffold,
          int asmAttrFlags = eGCClient_AttributeFlags_none, 
          int chrAttrFlags = eGCClient_AttributeFlags_biosource, 

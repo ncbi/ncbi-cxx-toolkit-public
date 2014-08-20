@@ -93,7 +93,7 @@ void CGenomicCollectionsService::x_Connect()
 }
 
 
-CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(string acc, 
+CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, 
                                             int level, 
                                             int asmAttrFlags, 
                                             int chrAttrFlags, 
