@@ -1312,12 +1312,15 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
             choices.push_back(CSeqdesc::e_Molinfo);
             choices.push_back(CSeqdesc::e_Title);
             for (CBioseq_CI seq(handle.GetTopLevelEntry()); seq; ++seq) {
-                for (CSeqdesc_CI desc_ci(*seq, choices); desc_ci; ++desc_ci);
+                for (CSeqdesc_CI desc_ci(*seq, choices); desc_ci; ++desc_ci) {
+                }
             }
-            pair<size_t, size_t> counts(CollectDescriptors(*tse_core));
+#ifdef _DEBUG
             if ( !check_set_desc ) {
+                pair<size_t, size_t> counts = CollectDescriptors(*tse_core);
                 _ASSERT(counts.first + counts.second < content.GetDescCount());
             }
+#endif
         }
     }
     if ( check_assembly ) {
@@ -1340,12 +1343,16 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
     }
     {{
         NcbiCout << "Loading complete TSE..." << NcbiEndl;
+#ifdef _DEBUG
         CConstRef<CSeq_entry> complete_tse =
+#endif
             handle.GetTopLevelEntry().GetCompleteSeq_entry();
+#ifdef _DEBUG
         _ASSERT(tse_core == complete_tse);
-        pair<size_t, size_t> desc_counts(CollectDescriptors(*complete_tse));
+        pair<size_t, size_t> desc_counts = CollectDescriptors(*complete_tse);
         _ASSERT(desc_counts.first == content.GetSeqDescCount());
         _ASSERT(desc_counts.second == content.GetSetDescCount());
+#endif
     }}
 }
 
