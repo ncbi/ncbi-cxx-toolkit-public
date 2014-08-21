@@ -58,7 +58,7 @@
 #  include <sys/wait.h>
 
 #else
-#  error "Class CPipe is supported only on Windows and Unix"
+#  error "The CPipe class is supported only on Windows and Unix"
 #endif
 
 #define NCBI_USE_ERRCODE_X   Connect_Pipe
@@ -72,7 +72,7 @@ BEGIN_NCBI_SCOPE
 
 
 #if defined(NCBI_OS_MSWIN)
-    // Predefined timeout (in milliseconds)
+    // Timeout time slice (milliseconds)
     const unsigned long kWaitPrecision = 100;
 #endif
 
@@ -213,7 +213,8 @@ public:
     EIO_Status Open(const string& cmd, const vector<string>& args,
                     CPipe::TCreateFlags create_flags,
                     const string&       current_dir,
-                    const char* const   env[]);
+                    const char* const   env[],
+                    size_t              pipe_size);
     void       OpenSelf(void);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
     EIO_Status CloseHandle(CPipe::EChildIOHandle handle);
@@ -279,7 +280,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
                              CPipe::TCreateFlags   create_flags,
                              const string&         current_dir,
-                             const char* const     env[])
+                             const char* const     env[],
+                             size_t                pipe_size)
 {
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
     CFastMutexGuard guard_mutex(s_Mutex);
@@ -364,7 +366,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Create pipe for child's stdin
         _ASSERT(CPipe::fStdIn_Close);
         if ( !IS_SET(create_flags, CPipe::fStdIn_Close) ) {
-            if ( !::CreatePipe(&child_stdin, &m_ChildStdIn, &attr, 0) ) {
+            if ( !::CreatePipe(&child_stdin, &m_ChildStdIn,
+                               &attr, (DWORD) pipe_size) ) {
                 PIPE_THROW(::GetLastError(), "CreatePipe(stdin) failed");
             }
             ::SetHandleInformation(m_ChildStdIn, HANDLE_FLAG_INHERIT, 0);
@@ -452,6 +455,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         &&  child_stderr != child_stdout) {
         ::CloseHandle(child_stderr);
     }
+
     return status;
 }
 
@@ -522,6 +526,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
     if (status != eIO_Timeout) {
         x_Clear();
     }
+
     return status;
 }
 
@@ -557,10 +562,12 @@ EIO_Status CPipeHandle::CloseHandle(CPipe::EChildIOHandle handle)
 }
 
 
-EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read, 
+EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read, 
                              const CPipe::EChildIOHandle from_handle,
                              const STimeout* timeout) const
 {
+    _ASSERT(!n_read  ||  !*n_read);
+
     EIO_Status status = eIO_Unknown;
 
     try {
@@ -580,15 +587,16 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
         DWORD x_timeout   = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_avail = 0;
 
-        // Wait for data from the pipe with timeout.
+        // Wait for data from the pipe with a timeout.
         // Using a loop and periodically try PeekNamedPipe is inefficient,
-        // but Windows doesn't have asynchronous mechanism to read
-        // from a pipe.
+        // but Windows doesn't have asynchronous mechanism to read from a pipe.
         // NOTE:  WaitForSingleObject() doesn't work with anonymous pipes.
         // See CPipe::Poll() for more details.
+
+        unsigned long x_sleep = 1;
         for (;;) {
             if ( !::PeekNamedPipe(fd, NULL, 0, NULL, &bytes_avail, NULL) ) {
-                // Has peer closed connection?
+                // Has peer closed the connection?
                 DWORD error = ::GetLastError();
                 if (error != ERROR_BROKEN_PIPE) {
                     PIPE_THROW(error, "PeekNamedPipe() failed");
@@ -598,20 +606,24 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
             if ( bytes_avail ) {
                 break;
             }
-            unsigned long x_sleep = kWaitPrecision;
+
+            if ( !x_timeout ) {
+                return eIO_Timeout;
+            }
             if (x_timeout != INFINITE) {
                 if (x_sleep > x_timeout) {
                     x_sleep = x_timeout;
                 }
-                if ( !x_sleep ) {
-                    return eIO_Timeout;
-                }
                 x_timeout -= x_sleep;
             }
             SleepMilliSec(x_sleep);
+            x_sleep <<= 1;
+            if (x_sleep > kWaitPrecision) {
+                x_sleep = kWaitPrecision;
+            }
         }
-
         _ASSERT(bytes_avail);
+
         // We must read only "count" bytes of data regardless of
         // the amount available to read
         if (bytes_avail >         count) {
@@ -620,14 +632,15 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* read,
         if ( !::ReadFile(fd, buf, bytes_avail, &bytes_avail, NULL) ) {
             PIPE_THROW(::GetLastError(), "Failed to read data from pipe");
         }
-        if ( read ) {
-            *read = (size_t) bytes_avail;
+        if ( n_read ) {
+            *n_read = (size_t) bytes_avail;
         }
-        return eIO_Success;
+        status = eIO_Success;
     }
     catch (string& what) {
         ERR_POST_X(2, what);
     }
+
     return status;
 }
 
@@ -636,6 +649,8 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
                               size_t* n_written, const STimeout* timeout) const
 
 {
+    _ASSERT(!n_written  ||  !*n_written);
+
     EIO_Status status = eIO_Unknown;
 
     try {
@@ -651,13 +666,14 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
             return eIO_Success;
         }
 
-        DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
-        DWORD to_write  = (count > numeric_limits<DWORD>::max()
-                           ? numeric_limits<DWORD>::max()
-                           : (DWORD) count);
+        DWORD to_write      = (count > numeric_limits<DWORD>::max()
+                               ? numeric_limits<DWORD>::max()
+                               : (DWORD) count);
+        DWORD x_timeout     = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
         DWORD bytes_written = 0;
 
         // Try to write data into the pipe within specified time.
+        unsigned long x_sleep = 1;
         for (;;) {
             BOOL ok = ::WriteFile(m_ChildStdIn, (char*) buf, to_write,
                                   &bytes_written, NULL);
@@ -665,29 +681,36 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
                 break;
             }
             if ( !ok ) {
+                // NB: status == eIO_Unknown;
                 PIPE_THROW(::GetLastError(), "Failed to write data to pipe");
             }
-            DWORD x_sleep = kWaitPrecision;
+
+            if ( !x_timeout ) {
+                return eIO_Timeout;
+            }
             if (x_timeout != INFINITE) {
-                if ( x_timeout ) {
-                    if (x_sleep > x_timeout) {
-                        x_sleep = x_timeout;
-                    }
-                    x_timeout -= x_sleep;
-                } else {
-                    return eIO_Timeout;
+                if (x_sleep > x_timeout) {
+                    x_sleep = x_timeout;
                 }
+                x_timeout -= x_sleep;
             }
             SleepMilliSec(x_sleep);
+            x_sleep <<= 1;
+            if (x_sleep > kWaitPrecision) {
+                x_sleep = kWaitPrecision;
+            }
         }
+        _ASSERT(bytes_written);
+
         if ( n_written ) {
             *n_written = bytes_written;
         }
-        return eIO_Success;
+        status = eIO_Success;
     }
     catch (string& what) {
         ERR_POST_X(3, what);
     }
+
     return status;
 }
 
@@ -711,6 +734,7 @@ CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
     catch (string& what) {
         ERR_POST_X(4, what);
     }
+
     return poll;
 }
 
@@ -754,8 +778,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
     // but Windows doesn't have asynchronous mechanism to read from a pipe.
     // NOTE: WaitForSingleObject() doesn't work with anonymous pipes.
 
-    unsigned wait_time_ms = 1;
-
+    unsigned long x_sleep = 1;
     for (;;) {
         if ( (mask & CPipe::fStdOut)
              &&  m_ChildStdOut != INVALID_HANDLE_VALUE ) {
@@ -790,24 +813,26 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
         if ( poll ) {
             break;
         }
-        unsigned long x_sleep = kWaitPrecision;
+
+        if ( !x_timeout ) {
+            break;
+        }
         if (x_timeout != INFINITE) {
             if (x_sleep > x_timeout) {
                 x_sleep = x_timeout;
             }
-            if ( !x_sleep ) {
-                break;
-            }
             x_timeout -= x_sleep;
         }
-        SleepMilliSec(wait_time_ms);
-        if (wait_time_ms < 128)
-            wait_time_ms *= 2;
+        SleepMilliSec(x_sleep);
+        x_sleep <<= 1;
+        if (x_sleep > kWaitPrecision) {
+            x_sleep = kWaitPrecision;
+        }
     }
 
     // We cannot poll child's stdin, so just copy corresponding flag
     // from source to result mask before return
-    poll |= mask & CPipe::fStdIn ;
+    poll |= mask & CPipe::fStdIn;
     return poll;
 }
 
@@ -858,7 +883,8 @@ public:
                     const vector<string>& args,
                     CPipe::TCreateFlags   create_flags,
                     const string&         current_dir,
-                    const char* const     env[]);
+                    const char* const     env[],
+                    size_t                /*pipe_size, unused*/);
     void       OpenSelf(void);
     EIO_Status Close(int* exitcode, const STimeout* timeout);
     EIO_Status CloseHandle(CPipe::EChildIOHandle handle);
@@ -906,6 +932,7 @@ CPipeHandle::CPipeHandle(void)
       m_Pid((pid_t)(-1)), m_Flags(0),
       m_SelfHandles(false)
 {
+    return;
 }
 
 
@@ -1043,8 +1070,9 @@ static int s_ExecVPE(const char *file, char *const argv[], char *const envp[])
 
 static int x_SafeFD(int fd, int safe)
 {
-    if (fd == safe  ||  fd > STDERR_FILENO)
+    if (fd == safe  ||  fd > STDERR_FILENO) {
         return fd;
+    }
     int temp = ::fcntl(fd, F_DUPFD, STDERR_FILENO + 1);
     ::close(fd);
     return temp;
@@ -1069,7 +1097,8 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                              const vector<string>& args,
                              CPipe::TCreateFlags   create_flags,
                              const string&         current_dir,
-                             const char* const     env[])
+                             const char* const     env[],
+                             size_t                /*unused*/)
 
 {
     DEFINE_STATIC_FAST_MUTEX(s_Mutex);
@@ -1445,6 +1474,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
     catch (string& what) {
         ERR_POST_X(2, what);
     }
+
     return status;
 }
 
@@ -1453,6 +1483,8 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
                               size_t* n_written, const STimeout* timeout) const
 
 {
+    _ASSERT(!n_written  ||  !*n_written);
+
     EIO_Status status = eIO_Unknown;
 
     try {
@@ -1504,6 +1536,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
     catch (string& what) {
         ERR_POST_X(3, what);
     }
+
     return status;
 }
 
@@ -1527,6 +1560,7 @@ CPipe::TChildPollMask CPipeHandle::Poll(CPipe::TChildPollMask mask,
     catch (string& what) {
         ERR_POST_X(4, what);
     }
+
     return poll;
 }
 
@@ -1643,6 +1677,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
         }
         // continue
     }
+
     return poll;
 }
 
@@ -1667,14 +1702,16 @@ CPipe::CPipe(const string&         cmd,
              const vector<string>& args,
              TCreateFlags          create_flags,
              const string&         current_dir,
-             const char*   const   env[])
+             const char* const     env[],
+             size_t                pipe_size)
     : m_PipeHandle(0), m_ReadHandle(eStdOut),
       m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
 {
     auto_ptr<CPipeHandle> handle_ptr(new CPipeHandle);
     m_PipeHandle = handle_ptr.get();
-    EIO_Status status = Open(cmd, args, create_flags, current_dir, env);
+    EIO_Status status = Open(cmd, args, create_flags,
+                             current_dir, env, pipe_size);
     if (status != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen,
                    "CPipe::Open(): " + string(IO_StatusStr(status)));
@@ -1692,17 +1729,19 @@ CPipe::~CPipe()
 }
 
 
-EIO_Status CPipe::Open(const string& cmd, const vector<string>& args,
-                       TCreateFlags  create_flags,
-                       const string& current_dir,
-                       const char*   const env[])
+EIO_Status CPipe::Open(const string&         cmd,
+                       const vector<string>& args,
+                       TCreateFlags          create_flags,
+                       const string&         current_dir,
+                       const char* const     env[],
+                       size_t                pipe_size)
 {
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
     }
 
     EIO_Status status = m_PipeHandle->Open(cmd, args, create_flags,
-                                           current_dir, env);
+                                           current_dir, env, pipe_size);
     if (status == eIO_Success) {
         m_ReadStatus  = eIO_Success;
         m_WriteStatus = eIO_Success;
@@ -1902,7 +1941,8 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
                                const string&           current_dir,
                                const char* const       env[],
                                CPipe::IProcessWatcher* watcher,
-                               const STimeout*         kill_timeout)
+                               const STimeout*         kill_timeout,
+                               size_t                  pipe_size)
 {
     STimeout ktm;
 
@@ -1916,7 +1956,7 @@ CPipe::EFinish CPipe::ExecWait(const string&           cmd,
     EIO_Status st = pipe.Open(cmd, args, 
                               fStdErr_Open | fSigPipe_Restore
                               | fNewGroup | fKillOnClose,
-                              current_dir, env);
+                              current_dir, env, pipe_size);
     if (st != eIO_Success) {
         NCBI_THROW(CPipeException, eOpen, "Cannot execute \"" + cmd + "\"");
     }

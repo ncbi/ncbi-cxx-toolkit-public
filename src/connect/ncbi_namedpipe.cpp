@@ -48,7 +48,7 @@
 #  include <sys/types.h>
 
 #else
-#  error "Class CNamedPipe is supported only on Windows and Unix"
+#  error "The CNamedPipe class is supported only on Windows and Unix"
 #endif
 
 
@@ -158,7 +158,7 @@ static string s_WinError(DWORD error, string& message)
 // CNamedPipeHandle -- MS Windows version
 //
 
-const DWORD kSleepTime = 100;  // sleep time for timeouts (milliseconds)
+const unsigned long kWaitPrecision = 100;  // Timeout time slice (milliseconds)
 
 class CNamedPipeHandle
 {
@@ -241,6 +241,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
+        unsigned long x_sleep = 1;
         for (;;) {
             // Open existing pipe
             m_Pipe = ::CreateFile
@@ -257,8 +258,6 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
             if ( !x_timeout ) {
                 return eIO_Timeout;
             }
-
-            DWORD x_sleep = kSleepTime;
             if (x_timeout != INFINITE) {
                 if (x_sleep > x_timeout) {
                     x_sleep = x_timeout;
@@ -266,6 +265,10 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                 x_timeout -= x_sleep;
             }
             SleepMilliSec(x_sleep);
+            x_sleep <<= 1;
+            if (x_sleep > kWaitPrecision) {
+                x_sleep = kWaitPrecision;
+            }
         }
 
         m_ReadStatus  = eIO_Success;
@@ -338,10 +341,12 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             throw string("Named pipe closed");
         }
 
-        // Wait for the client to connect, or time out.
-        // NOTE:  WaitForSingleObject() does not work with pipes.
         DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
+        // Wait for the client to connect, or time out.
+        // NOTE:  WaitForSingleObject() does not work with pipes.
+
+        unsigned long x_sleep = 1;
         for (;;) {
             if ( ::ConnectNamedPipe(m_Pipe, NULL) ) {
                 break; // connected
@@ -358,8 +363,6 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             if ( !x_timeout ) {
                 return eIO_Timeout;
             }
-
-            DWORD x_sleep = kSleepTime;
             if (x_timeout != INFINITE) {
                 if (x_sleep > x_timeout) {
                     x_sleep = x_timeout;
@@ -367,6 +370,10 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
                 x_timeout -= x_sleep;
             }
             SleepMilliSec(x_sleep);
+            x_sleep <<= 1;
+            if (x_sleep > kWaitPrecision) {
+                x_sleep = kWaitPrecision;
+            }
         }
 
         // Pipe connected
@@ -435,12 +442,14 @@ EIO_Status CNamedPipeHandle::Close(void)
 EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
                                            DWORD*          in_avail)
 {
+    *in_avail = 0;
+
     DWORD x_timeout = timeout ? NcbiTimeoutToMs(timeout) : INFINITE;
 
     // Wait for data from the pipe with timeout.
     // NOTE:  WaitForSingleObject() does not work with pipes.
 
-    *in_avail = 0;
+    unsigned long x_sleep = 1;
     for (;;) {
         if ( !::PeekNamedPipe(m_Pipe, NULL, 0, NULL, in_avail, NULL) ) {
             // Has peer closed the connection?
@@ -460,8 +469,6 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
         if ( !x_timeout ) {
             return eIO_Timeout;
         }
-
-        DWORD x_sleep = kSleepTime;
         if (x_timeout != INFINITE) {
             if (x_sleep > x_timeout) {
                 x_sleep = x_timeout;
@@ -469,6 +476,10 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
             x_timeout -= x_sleep;
         }
         SleepMilliSec(x_sleep);
+        x_sleep <<= 1;
+        if (x_sleep > kWaitPrecision) {
+            x_sleep = kWaitPrecision;
+        }
     }
     _ASSERT(*in_avail);
 
@@ -479,12 +490,14 @@ EIO_Status CNamedPipeHandle::x_WaitForRead(const STimeout* timeout,
 EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                                   const STimeout* timeout)
 {
+    _ASSERT(n_read  &&  !*n_read);
+
     if (m_ReadStatus == eIO_Closed) {
         return eIO_Closed;
     }
+
     EIO_Status status;
 
-    _ASSERT(n_read  &&  !*n_read);
     try {
         if (m_Pipe == INVALID_HANDLE_VALUE) {
             status = eIO_Closed;
@@ -507,7 +520,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                     status = eIO_Unknown;
                     NAMEDPIPE_THROW(::GetLastError(),
                                     "Failed to read data from named pipe");
-                } // else NB:  status == eIO_Success
+                } // else NB: status == eIO_Success
             }
             *n_read = bytes_avail;
         } else if (status == eIO_Timeout) {
@@ -533,12 +546,14 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
                                    size_t* n_written, const STimeout* timeout)
 
 {
+    _ASSERT(n_written  &&  !*n_written);
+
     if (m_WriteStatus == eIO_Closed) {
         return eIO_Closed;
     }
+
     EIO_Status status;
 
-    _ASSERT(n_written  &&  !*n_written);
     try {
         if (m_Pipe == INVALID_HANDLE_VALUE) {
             status = eIO_Closed;
@@ -558,6 +573,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         // Wait for data from the pipe with timeout.
         // NOTE:  WaitForSingleObject() does not work with pipes.
 
+        unsigned long x_sleep = 1;
         for (;;) {
             if ( !::WriteFile(m_Pipe, buf, to_write, &bytes_written, NULL) ) {
                 // NB:  status == eIO_Unknown
@@ -581,8 +597,6 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
                 m_WriteStatus = eIO_Timeout;
                 return eIO_Timeout;
             }
-
-            DWORD x_sleep = kSleepTime;
             if (x_timeout != INFINITE) {
                 if (x_sleep > x_timeout) {
                     x_sleep = x_timeout;
@@ -590,6 +604,10 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
                 x_timeout -= x_sleep;
             }
             SleepMilliSec(x_sleep);
+            x_sleep <<= 1;
+            if (x_sleep > kWaitPrecision) {
+                x_sleep = kWaitPrecision;
+            }
         }
         _ASSERT(bytes_written);
 

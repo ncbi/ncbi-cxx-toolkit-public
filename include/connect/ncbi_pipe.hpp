@@ -150,7 +150,8 @@ public:
           const vector<string>& args,
           TCreateFlags          create_flags = 0,
           const string&         current_dir  = kEmptyStr,
-          const char* const     env[]        = 0);
+          const char* const     env[]        = 0,
+          size_t                pipe_size    = 0/*default*/);
 
     /// Destructor. 
     ///
@@ -191,7 +192,8 @@ public:
                     const vector<string>& args,
                     TCreateFlags          create_flags = 0,
                     const string&         current_dir  = kEmptyStr,
-                    const char* const     env[]        = 0);
+                    const char* const     env[]        = 0,
+                    size_t                pipe_size    = 0/*default*/);
 
     /// Open the standard streams of the current process.
     ///
@@ -469,7 +471,8 @@ public:
                             const string&         current_dir  = kEmptyStr,
                             const char* const     env[]        = 0,
                             IProcessWatcher*      watcher      = 0,
-                            const STimeout*       kill_timeout = 0);
+                            const STimeout*       kill_timeout = 0,
+                            size_t                pipe_size    = 0/*default*/);
 
 protected:
     CPipeHandle*   m_PipeHandle;        ///< Internal pipe handle that handles

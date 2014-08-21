@@ -208,11 +208,10 @@ static void s_WriteLine(FILE* fs, const string& str)
 static void s_ReadStream(istream& ios)
 {
     size_t total = 0;
-
     for (;;) {
         char   buf[kBufferSize];
         ios.read(buf, sizeof(buf));
-        size_t cnt = ios.gcount();
+        size_t cnt = (size_t) ios.gcount();
         ERR_POST(Info << cnt << " byte(s) read from stream"+string(":"+!cnt));
         if (cnt) {
             NcbiCerr.write(buf, cnt);
