@@ -1455,6 +1455,20 @@ void CValidError_imp::ValidateOrgRef
     string taxname = "";
     if (orgref.IsSetTaxname()) {
         taxname = orgref.GetTaxname();
+        if((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
+            NStr::EndsWith(taxname, " sp", NStr::eNocase)) &&
+           !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
+           !NStr::Equal(taxname, "Haemoproteus sp.", NStr::eNocase))
+        {
+            EDiagSev sev;
+            if(IsGenomeSubmission())
+                sev = eDiag_Error;
+            else
+                sev = eDiag_Warning;
+            PostObjErr(sev, eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
+                       "Organism \"" + taxname + "\" is undefined species and does not have a specific identifier.",
+                       obj, ctx);
+        }
         if (s_UnbalancedParentheses (taxname)) {
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
                        "Unbalanced parentheses in taxname '" + orgref.GetTaxname() + "'", obj, ctx);
