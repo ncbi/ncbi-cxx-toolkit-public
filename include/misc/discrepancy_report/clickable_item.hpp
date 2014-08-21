@@ -37,9 +37,12 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
+#include <misc/discrepancy_report/hDiscRep_tests.hpp>
+
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
+USING_SCOPE(DiscRepNmSpc);
 
 class CClickableText;
 
@@ -74,14 +77,15 @@ public:
     const vector <string>& GetAccessions() const { return m_Accessions; }
 
 protected:
-    string m_Text;
-    bool m_IsSelected;
-    bool m_IsExpanded;
+    string                        m_Text;
+    bool                          m_IsSelected;
+    bool                          m_IsExpanded;
     vector<CRef<CClickableText> > m_Subitems;
-    vector<CConstRef<CObject> > m_Objects;
-    vector <string> m_Objdescs;
-    vector <string> m_Accessions;
-    string m_Setting_name;
+    vector<CConstRef<CObject> >   m_Objects;
+    vector <string>               m_Objdescs;
+    vector <string>               m_Accessions;
+    string                        m_Setting_name;
+    FAutofix                      m_fix_func;
 };
 
 END_NCBI_SCOPE

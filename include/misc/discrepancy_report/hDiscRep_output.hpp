@@ -45,7 +45,6 @@
 #include <serial/objhook.hpp>
 #include <serial/serial.hpp>
 
-#include <misc/discrepancy_report/hDiscRep_tests.hpp>
 #include <misc/discrepancy_report/clickable_item.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 

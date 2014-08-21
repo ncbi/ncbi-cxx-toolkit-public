@@ -150,9 +150,16 @@
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 
+#if 0
+#include <objtools/edit/autofix.hpp>
+
+#include "/home/chenj/ObjEdit/trunk/c++/include/objtools/edit/autofix.hpp"
+#endif
+
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
 BEGIN_SCOPE(DiscRepNmSpc)
+
+USING_SCOPE(objects);
 
   typedef map < string, string> Str2Str;
   typedef map < string, vector < string > > Str2Strs;
@@ -186,8 +193,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                                   const string& str2,
                                                   const string& str3, 
                                                   const CSeq_feat& feat);
-  typedef void (*FAutofix)(vector <CConstRef <CObject> > ori_objs, 
-                               vector <CRef <CObject> > fixed_obj);
+  typedef void (*FAutofix)(vector <CConstRef <CObject> >& ori_objs, 
+                               vector <CRef <CObject> >& fixed_obj);
 
   struct s_SuspectProductNameData {
      const char* pattern;
@@ -214,14 +221,14 @@ BEGIN_SCOPE(DiscRepNmSpc)
   void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);
 
   // GetDiscrepancyItemTextEx()
-  string GetDiscrepancyItemText(const CSeq_feat& obj, bool attach_ids = false);
-  string GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool attach_ids = false);
-  string GetDiscrepancyItemText(const CBioseq& objtrue, bool attach_ids = false);
-  string GetDiscrepancyItemText(const CBioseq_set& objs, bool attach_ids = false);
-  string GetDiscrepancyItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry, bool attach_ids = false);
-  string GetDiscrepancyItemText(const CSeqdesc& obj, const CBioseq& bioseq, bool attach_ids = false);
-  string GetDiscrepancyItemText(const CPerson_id& obj, const CSeq_entry& seq_entry, bool attach_ids = false);
-  string GetDiscrepancyItemText(const CSeq_entry& seq_entry, bool attach_ids = false);
+  string GetDiscrepancyItemText(const CSeq_feat& obj, bool append_ids = false);
+  string GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool append_ids = false);
+  string GetDiscrepancyItemText(const CBioseq& objtrue, bool append_ids = false);
+  string GetDiscrepancyItemText(const CBioseq_set& objs, bool append_ids = false);
+  string GetDiscrepancyItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry, bool append_ids = false);
+  string GetDiscrepancyItemText(const CSeqdesc& obj, const CBioseq& bioseq, bool append_ids = false);
+  string GetDiscrepancyItemText(const CPerson_id& obj, const CSeq_entry& seq_entry, bool append_ids = false);
+  string GetDiscrepancyItemText(const CSeq_entry& seq_entry, bool append_ids = false);
 
   string GetSeqId4BioseqSet(const string& desc);
   string GetDiscrepancyItemTextForBioseqSet(const CBioseq_set& obj);
@@ -613,6 +620,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void TestOnObj(const CSeq_feat& seq_feat) = 0;
 
       virtual void GetReport(CRef <CClickableItem> c_item) = 0;
+      virtual FAutofix GetAutofixFunc() const { return 0; };
 
       virtual string GetName() const =0;
 
@@ -4065,6 +4073,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("OVERLAPPING_CDS");}
+//      virtual FAutofix GetAutofixFunc() const { return AutoFix::MarkOverlappingCDSs; } 
 
     private:
       bool OverlappingProdNmSimilar(const string& prod_nm1, const string& prod_nm2);
