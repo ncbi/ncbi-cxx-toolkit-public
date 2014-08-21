@@ -3455,22 +3455,22 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 }
 
 
-static string s_BaseDir(const string& dirname)
+static string s_ToFilesystemPath(const string& base_dir, const string& name)
 {
-    string retval = CDirEntry::AddTrailingPathSeparator(dirname);
-#ifdef NCBI_OS_MSWIN
-    // Replace backslashes with forward slashes
-    NStr::ReplaceInPlace(retval, "\\", "/");
-#endif //NCBI_OS_MSWIN
-    return retval;
+    string path(base_dir.empty()  ||  CDirEntry::IsAbsolutePath(name)
+                ? name : CDirEntry::ConcatPath(base_dir, name));
+    return CDirEntry::NormalizePath(path);
 }
 
 
-static string s_ToFilesystemPath(const string& base_dir, const string& name)
+static string s_BaseDir(const string& dirname)
 {
-    string path(CDirEntry::IsAbsolutePath(name)  ||  base_dir.empty()
-                ? name : CDirEntry::ConcatPath(base_dir, name));
-    return CDirEntry::NormalizePath(path);
+    string path = CDirEntry::AddTrailingPathSeparator(dirname);
+#ifdef NCBI_OS_MSWIN
+    // Replace backslashes with forward slashes
+    NStr::ReplaceInPlace(path, "\\", "/");
+#endif //NCBI_OS_MSWIN
+    return s_ToFilesystemPath(kEmptyStr, path);
 }
 
 
@@ -3917,7 +3917,7 @@ void CTar::SetMask(CMask*    mask, EOwnership  own,
 void CTar::SetBaseDir(const string& dirname)
 {
     string dir = s_BaseDir(dirname);
-    dir.swap(m_BaseDir);
+    m_BaseDir.swap(dir);
 }
 
 
@@ -3926,7 +3926,7 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files,
                                 const string& base_dir)
 {
     const size_t buffer_size = SIZE_OF(blocking_factor);
-    string basedir = s_BaseDir(base_dir);
+    string prefix = s_BaseDir(base_dir);
     Uint8 result = 0;
 
     ITERATE(TFiles, f, files) {
@@ -3934,8 +3934,8 @@ Uint8 CTar::EstimateArchiveSize(const TFiles& files,
         result += BLOCK_SIZE/*header*/ + ALIGN_SIZE(f->second);
 
         // Count in the long name (if any)
-        string path    = s_ToFilesystemPath(basedir, f->first);
-        string name    = s_ToArchiveName(basedir, path);
+        string path    = s_ToFilesystemPath(prefix, f->first);
+        string name    = s_ToArchiveName   (prefix, path);
         size_t namelen = name.size() + 1;
         if (namelen > sizeof(((SHeader*) 0)->name)) {
             result += BLOCK_SIZE/*long name header*/ + ALIGN_SIZE(namelen);

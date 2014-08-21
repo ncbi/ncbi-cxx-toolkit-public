@@ -294,8 +294,8 @@ static string x_DataSize(Uint8 size, bool binary = true)
     }
     CNcbiOstrstream os;
     os << NcbiFixed << NcbiSetprecision(prec) << (double) size / 1000.0
-       << (kSfx[idx] ?           kSfx[idx]               : "?")
-       << (kSfx[idx] ? "iB" + (!*kSfx[idx]  ||  !binary) : "");
+       << (kSfx[idx] ?         kSfx[idx]               : "?")
+       << (kSfx[idx] ? &"iB"[!*kSfx[idx]  ||  !binary] : "");
     return CNcbiOstrstreamToString(os);
 }
 
@@ -335,7 +335,9 @@ auto_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
     if (type == CDirEntry::eFile) {
         Uint8 size = CFile(name).GetLength();
         CNcbiIfstream ifs(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
-        return tar.Append(CTarUserEntryInfo(name, size), ifs);
+        return
+            tar.Append(CTarUserEntryInfo(CDirEntry::NormalizePath(name), size),
+                       ifs);
     }
     return tar.Append(name);
 }
@@ -357,7 +359,7 @@ int CTarTest::Run(void)
     }
 
     enum EAction {
-        eNone    =  0,
+        eNone    =       0,
         eCreate  = (1 << 0),
         eAppend  = (1 << 1),
         eUpdate  = (1 << 2),
