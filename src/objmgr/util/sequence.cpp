@@ -2018,67 +2018,6 @@ GetBestOverlappingFeat(const CSeq_feat& feat,
 
 namespace {
 
-void x_GetFeatsById(CSeqFeatData::ESubtype subtype,
-                    const CSeq_feat& feat,
-                    const CTSE_Handle& tse,
-                    list< CConstRef<CSeq_feat> >& result)
-{
-    vector<CSeq_feat_Handle> handles;
-    if ( feat.IsSetXref() ) {
-        ITERATE ( CSeq_feat::TXref, it, feat.GetXref() ) {
-            const CSeqFeatXref& xref = **it;
-            if ( xref.IsSetId() ) {
-                const CFeat_id& id = xref.GetId();
-                if ( id.IsLocal() ) {
-                    const CObject_id& obj_id = id.GetLocal();
-                    if ( obj_id.IsId() ) {
-                        int local_id = obj_id.GetId();
-                        handles = tse.GetFeaturesWithId(subtype, local_id);
-                        ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
-                            result.push_back(feat_it->GetSeq_feat());
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-void x_GetFeatsByXref(CSeqFeatData::ESubtype subtype,
-                      const CFeat_id& id,
-                      const CTSE_Handle& tse,
-                      list< CConstRef<CSeq_feat> >& result)
-{
-    if ( id.IsLocal() ) {
-        const CObject_id& obj_id = id.GetLocal();
-        if ( obj_id.IsId() ) {
-            int local_id = obj_id.GetId();
-            vector<CSeq_feat_Handle> handles =
-                tse.GetFeaturesWithId(subtype, local_id);
-            ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
-                result.push_back(feat_it->GetSeq_feat());
-            }
-        }
-    }
-}
-
-void x_GetFeatsByXref(CSeqFeatData::ESubtype subtype,
-                      const CSeq_feat& feat,
-                      const CTSE_Handle& tse,
-                      list< CConstRef<CSeq_feat> >& result)
-{
-    if ( feat.IsSetId() ) {
-        x_GetFeatsByXref(subtype, feat.GetId(), tse, result);
-    }
-    if ( feat.IsSetIds() ) {
-        ITERATE ( CSeq_feat::TIds, it, feat.GetIds() ) {
-            x_GetFeatsByXref(subtype, **it, tse, result);
-        }
-    }
-}
-
-
 CConstRef<CSeq_feat> x_GetFeatById(CSeqFeatData::ESubtype subtype,
                                    const CSeq_feat& feat,
                                    const CTSE_Handle& tse)

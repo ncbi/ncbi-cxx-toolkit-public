@@ -2339,14 +2339,6 @@ void CScope_Impl::x_LockMatchSet(TTSE_LockMatchSet& lock,
     }
 }
 
-namespace {
-    inline
-    string sx_GetDSName(const SSeqMatch_Scope& match)
-    {
-        return match.m_TSE_Lock->GetDSInfo().GetDataSource().GetName();
-    }
-}
-
 
 void CScope_Impl::RemoveFromHistory(CTSE_Handle tse)
 {
