@@ -485,24 +485,6 @@ namespace {
     };
 
     bool s_Blob_idsLoaded(CLoadLockBlobIds& ids,
-                          const CLoadLockSeqIds& seq_ids)
-    {
-        if ( ids.IsLoaded() ) {
-            return true;
-        }
-        // check if seq-id is known as absent
-        if ( seq_ids.IsLoaded() ) {
-            CFixedSeq_ids::TState state = seq_ids.GetState();
-            if ( state & CBioseq_Handle::fState_no_data ) {
-                // mark blob-ids as absent too
-                ids.SetNoBlob_ids(state);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    bool s_Blob_idsLoaded(CLoadLockBlobIds& ids,
                           CReaderRequestResult& result,
                           const CSeq_id_Handle& seq_id)
     {

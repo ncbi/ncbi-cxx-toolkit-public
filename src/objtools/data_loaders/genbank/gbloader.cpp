@@ -343,18 +343,6 @@ namespace {
         }
         return 0;
     }
-
-    void DumpParams(const TParams* params, const string& prefix = "")
-    {
-        if ( params ) {
-            for ( TParams::TNodeList_CI it = params->SubNodeBegin();
-                  it != params->SubNodeEnd(); ++it ) {
-                NcbiCout << prefix << (*it)->GetKey() << " = " << (*it)->GetValue().value
-                         << NcbiEndl;
-                DumpParams(static_cast<const TParams*>(*it), prefix + "  ");
-            }
-        }
-    }
 }
 
 
