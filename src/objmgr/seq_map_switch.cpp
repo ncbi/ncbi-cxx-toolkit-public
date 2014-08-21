@@ -102,11 +102,6 @@ struct SSeqPos
             minus_strand = !minus_strand;
         }
 };
-CNcbiOstream& operator<<(CNcbiOstream& out, const SSeqPos& pos)
-{
-    return out << pos.id.AsString() << " @ "
-               << pos.pos << (pos.minus_strand? " minus": " plus");
-}
 
 struct SSeq_align_Info
 {
@@ -240,8 +235,6 @@ struct SSeq_align_Info
                 }
                 CRange<int> m1 = GetMatchPos(range1, pos1);
                 CRange<int> m2 = GetMatchPos(range2, pos2);
-                //_TRACE("range1: "<<range1<<" pos1: "<<pos1<<" m1: "<<m1);
-                //_TRACE("range2: "<<range2<<" pos2: "<<pos2<<" m2: "<<m2);
                 if ( m1.GetTo() < 0 || m2.GetTo() < 0 ) {
                     return ret;
                 }
@@ -320,7 +313,6 @@ SSeq_align_Info::x_FindAlignMatch(SSeqPos pos1,
     bool exact = true;
     TSeqPos skip1 = 0, skip2 = 0, offset = 0, skip_pos = kInvalidSeqPos;
     while ( limit ) {
-        _TRACE("pos1="<<pos1<<" pos2="<<pos2);
         SMatch::TMatch add;
         TMatchMap::const_iterator miter =
             match_map.find(GetKey(pos1.id, pos2.id));
@@ -333,7 +325,6 @@ SSeq_align_Info::x_FindAlignMatch(SSeqPos pos1,
                 }
             }
         }
-        _TRACE("pos1="<<pos1<<" pos2="<<pos2<<" add="<<add.m1<<','<<add.m2);
         if ( !add ) {
             break;
         }
@@ -373,9 +364,6 @@ SSeq_align_Info::x_FindAlignMatch(SSeqPos pos1,
             limit -= len;
             offset += len;
         }
-    }
-    ITERATE ( TDifferences, i, diff ) {
-        _TRACE("pos: "<<i->first<<" ins: "<<i->second.first<<" del: "<<i->second.second);
     }
     return ret;
 }
