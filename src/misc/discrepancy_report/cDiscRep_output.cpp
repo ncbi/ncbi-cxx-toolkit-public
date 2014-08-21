@@ -1044,23 +1044,35 @@ void CDiscRepOutput :: x_OutputRepToGbenchItem(const CClickableItem& c_item,  CC
       vector <string> arr;
       NON_CONST_ITERATE (vector <string>, it, v_desc) {
          if ( (pos = (*it).find(thisInfo.xml_label)) != string::npos) {
-            (*it) = (*it).substr(0, pos);
             strtmp = (*it).substr(pos + thisInfo.xml_label.size());
+            (*it) = (*it).substr(0, pos);
             arr.clear();
-            arr = NStr::Tokenize(strtmp, ",", arr);
-            v_acc.push_back(arr[0]);
+            if (strtmp.empty()) {
+               v_acc.push_back(kEmptyStr);
+            }
+            else {
+               arr = NStr::Tokenize(strtmp, ",", arr);
+               v_acc.push_back(arr[0]);
+            }
          }
       }
       item.SetObjdescs().insert(item.SetObjdescs().end(), 
                                   v_desc.begin(), 
                                   v_desc.end());
-      item.SetAccessions().insert(item.SetAccessions().end(),
+      if (!v_acc.empty()) {
+         item.SetAccessions().insert(item.SetAccessions().end(),
                                      v_acc.begin(), v_acc.end());
+      }
+
       if (!c_item.obj_list.empty()) {
             item.SetObjects().insert(item.SetObjects().end(), 
                                      c_item.obj_list.begin(),
                                      c_item.obj_list.end());
       }
+
+#if 0
+      item.SetAutofixFunc(c_item);
+#endif
    }
    if (!c_item.subcategories.empty()) {
       string desc;

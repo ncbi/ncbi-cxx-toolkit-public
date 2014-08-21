@@ -952,7 +952,7 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_entry& seq_entry)
    return (GetDiscrepancyItemText(seq_entry, true));
 };
 
-string GetDiscrepancyItemText(const CSeq_entry& seq_entry, bool attach_ids)
+string GetDiscrepancyItemText(const CSeq_entry& seq_entry, bool append_ids)
 {
    string desc, seqid_str;
    if (seq_entry.IsSeq()) {
@@ -963,7 +963,7 @@ string GetDiscrepancyItemText(const CSeq_entry& seq_entry, bool attach_ids)
        desc = GetDiscrepancyItemTextForBioseqSet(seq_entry.GetSet());
        seqid_str = GetSeqId4BioseqSet(desc);
    }
-   if (attach_ids) {
+   if (append_ids) {
          desc += (thisInfo.xml_label + seqid_str);
    }
    if (thisInfo.infile.empty()) {
@@ -979,7 +979,7 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_submit& seq_submit)
 {
    return (GetDiscrepancyItemText(seq_submit, true));
 };
-string GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool attach_ids)
+string GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool append_ids)
 {
   string desc(kEmptyStr), seqid_str;
   if (seq_submit.GetData().IsEntrys()) {
@@ -998,7 +998,7 @@ string GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool attach_ids)
         }
      }
   }
-  if (attach_ids) {
+  if (append_ids) {
        desc += (thisInfo.xml_label + seqid_str);
   }
   if (thisInfo.infile.empty()) {
@@ -1047,7 +1047,7 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq_set& bioseq_set)
    return (GetDiscrepancyItemText(bioseq_set, true));
 }
 
-string GetDiscrepancyItemText(const CBioseq_set& bioseq_set, bool attach_ids)
+string GetDiscrepancyItemText(const CBioseq_set& bioseq_set, bool append_ids)
 {
    string     row_text;
    row_text = GetDiscrepancyItemTextForBioseqSet(bioseq_set);
@@ -1055,7 +1055,7 @@ string GetDiscrepancyItemText(const CBioseq_set& bioseq_set, bool attach_ids)
 
    if (row_text.empty()) return(kEmptyStr);
    else {
-      if (attach_ids) {
+      if (append_ids) {
            row_text += (thisInfo.xml_label + seqid_str);
       }
       if (thisInfo.infile.empty()) return row_text;
@@ -1196,13 +1196,13 @@ string CTestAndRepData :: GetDiscItemText(const CSeqdesc& seqdesc, const CBioseq
    return (GetDiscrepancyItemText(seqdesc, bioseq, true));
 };
 
-string GetDiscrepancyItemText(const CSeqdesc& seqdesc, const CBioseq& bioseq, bool attach_ids)
+string GetDiscrepancyItemText(const CSeqdesc& seqdesc, const CBioseq& bioseq, bool append_ids)
 {
   // what if no bioseq?
   string seqid_str = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank);
   string row_text = seqid_str + ": ";
   row_text += SeqDescLabelContent(seqdesc);
-  if (attach_ids) {
+  if (append_ids) {
        row_text += (thisInfo.xml_label + seqid_str);
   }
   if (thisInfo.infile.empty()) return row_text;
@@ -1214,7 +1214,7 @@ string CTestAndRepData :: GetDiscItemText(const CSeqdesc& seqdesc, const CSeq_en
 {
    return (GetDiscrepancyItemText(seqdesc, entry, true));
 }
-string GetDiscrepancyItemText(const CSeqdesc& seqdesc, const CSeq_entry& entry, bool attach_ids)
+string GetDiscrepancyItemText(const CSeqdesc& seqdesc, const CSeq_entry& entry, bool append_ids)
 {
   string row_text(kEmptyStr);
 
@@ -1238,7 +1238,7 @@ string GetDiscrepancyItemText(const CSeqdesc& seqdesc, const CSeq_entry& entry, 
      if (thisInfo.infile.empty()) return row_text;
      else return(thisInfo.infile + ": " + row_text);
   }
-  else return(GetDiscrepancyItemText(seqdesc, *bioseq, attach_ids));
+  else return(GetDiscrepancyItemText(seqdesc, *bioseq, append_ids));
 
 };
 
@@ -1247,7 +1247,7 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
 {
    return (GetDiscrepancyItemText(bioseq, true));
 }
-string GetDiscrepancyItemText(const CBioseq& bioseq, bool attach_ids)
+string GetDiscrepancyItemText(const CBioseq& bioseq, bool append_ids)
 {
    string len_txt = " (length " + NStr::IntToString(bioseq.GetLength());
    CSeq_data out_seq;
@@ -1295,7 +1295,7 @@ string GetDiscrepancyItemText(const CBioseq& bioseq, bool attach_ids)
    string row_text(kEmptyStr);
    if (!(thisInfo.infile.empty())) row_text = thisInfo.infile +": ";
    row_text += seqid_str + len_txt;
-   if (attach_ids) row_text += (thisInfo.xml_label + seqid_str);
+   if (append_ids) row_text += (thisInfo.xml_label + seqid_str);
    return (row_text);
 
 };
@@ -1553,7 +1553,7 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
    return (GetDiscrepancyItemText(seq_feat, true));
 }
 static const string spaces("     ");
-string GetDiscrepancyItemText(const CSeq_feat& seq_feat, bool attach_ids)
+string GetDiscrepancyItemText(const CSeq_feat& seq_feat, bool append_ids)
 {
       CSeq_feat* seq_feat_p = const_cast <CSeq_feat*>(&seq_feat);
 
@@ -1599,7 +1599,7 @@ string GetDiscrepancyItemText(const CSeq_feat& seq_feat, bool attach_ids)
       if (!context_label.empty()) context_label +=  spaces;
       if (!location.empty() && !locus_tag.empty()) location += spaces;
       strtmp = label + context_label + location + locus_tag;
-      if (attach_ids) {
+      if (append_ids) {
          strtmp += (thisInfo.xml_label + seq_id_str + "," + feat_id_str + "," + seq_loc_str + ",");
       }
       if (thisInfo.infile.empty()) {

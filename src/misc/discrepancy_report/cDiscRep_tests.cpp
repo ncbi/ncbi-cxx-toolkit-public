@@ -7537,6 +7537,23 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem> c_item)
      = GetOtherComment(c_item->item_list.size(), 
                         "coding region overlapps", "coding regions overlap")
         + " another coding region with a similar or identical name.";
+
+   c_item->fix_function = GetAutofixFunc();
+#if 0
+if (c_item->fix_function) {
+   vector <CRef <CObject> > fixed_objs;
+   c_item->fix_function(c_item->obj_list, fixed_objs);
+
+ITERATE (vector <CRef <CObject> >, it, fixed_objs) {
+  const CSeq_feat* feat = dynamic_cast <const CSeq_feat*>( (*it).GetPointer());
+  if (feat && feat->CanGetComment()) {
+ cerr << "new comment: " << feat->GetComment() << endl;
+  }
+}
+
+}
+#endif
+
 }; // OVERLAPPING_CDS
 
 
