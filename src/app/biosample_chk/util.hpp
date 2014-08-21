@@ -75,10 +75,10 @@ public:
     void Print(ncbi::CNcbiOstream & stream, const CBiosampleFieldDiff& prev);
     const string& GetSequenceId() const { return m_SequenceID; };
     void SetSequenceId(string id) { m_SequenceID = id; };
-    const string& GetFieldName() const { return m_FieldName; };
-    const string& GetSrcVal() const { return CBioSource::IsStopWord(m_SrcVal) ? string("") : m_SrcVal; };
-    const string& GetSampleVal() const { return CBioSource::IsStopWord(m_SampleVal) ? string("") : m_SampleVal; };
-    const string& GetBioSample() const { return m_BiosampleID; };
+    string GetFieldName() const { return m_FieldName; };
+    string GetSrcVal() const { return CBioSource::IsStopWord(m_SrcVal) ? string("") : m_SrcVal; };
+    string GetSampleVal() const { return CBioSource::IsStopWord(m_SampleVal) ? string("") : m_SampleVal; };
+    string GetBioSample() const { return m_BiosampleID; };
 
     int CompareAllButSequenceID(const CBiosampleFieldDiff& other);
     int Compare(const CBiosampleFieldDiff& other);
