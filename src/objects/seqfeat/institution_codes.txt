@@ -6118,6 +6118,7 @@ UDW	s	University of Durban-Westville, Botany Department
 UEA	s	University of East Anglia
 UEC	s	Universidade Estadual de Campinas, Departamento de Botanica
 UEFS	s	Laboratorio de Ictiologia
+UENF	s	Universidade Estadual do Norte Fluminense
 UESS	s	Universidad de El Salvador
 UEVH	s	Universidade de Evora, Departamento de Biologia
 UF	sb	University of Florida Museum of Natural History
@@ -6140,6 +6141,7 @@ UFMG<BRA>	s	Universidade Federal de Minas Gerais
 UFMI	s	Universidade Federal de Mato Grosso, Instituto de Biociencias
 UFMT	s	Universidade Federal de Mato Grosso
 UFNH	s	Utah Field House Natural History [address unknown]
+UFOP	s	 Universidade Federal de Ouro Preto
 UFP	s	Universidade Federal de Pernambuco, Departamento de Botanica
 UFPB	s	Departamento de Sistematica e Ecologia
 UFPEDA	c	Universidade Federal de Pernambuco
@@ -6150,6 +6152,7 @@ UFRJ<museum>	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro
 UFRJIM	c	Departamento de Microbiologia Medica
 UFRN	s	Universidade Federal do Rio Grande do Norte
 UFS	s	Nyabyeya Forestry College, Department of Environmental Forestry
+UFSC	s	Universidade Federal de Santa Catarina
 UFScarCC	c	Freshwater Microalgae Collection Cultures
 UFVB	s	Vicosa, Universidade Federal de Vicosa, Museum of Entomology
 UG<ESP>	s	Museo del Departamento de Estratigrafia y Paleontologia
@@ -6429,6 +6432,7 @@ USNM:LAB	b	National Museum of Natural History, Smithsonian Institution, Laborato
 USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals
 USNTC	s	U.S. National Tick Collection
 USON	s	Universidad de Sonora, Departamento de Investigaciones Cientificas y Technologicas
+USP<BRA>	s	Universidade de Sao Paulo
 USP<ESP>	s	Universidad San Pablo-CEU (Departamento de Biologia Vegetal (seccion Botanica)
 USP<FJI>	s	University of the South Pacific
 USPIY	s	K. D. Ushinsky Yaroslavl State Pedagogical University, Department of Botany
