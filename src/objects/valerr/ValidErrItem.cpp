@@ -656,6 +656,9 @@ other. Please make them consistent." } },
    { eErr_SEQ_DESCR_TaxonomyPlastidsProblem,
    { "TaxonomyPlastidsProblem",
 "Taxonomy lookup indicates that the plastids flag should be set for this organism." } },
+   { eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
+   { "OrganismIsUndefinedSpecies",
+"Organism is an undefined species and does not have a specific identifier." } },
 
 /* SEQ_GENERIC */
 
