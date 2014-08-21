@@ -308,15 +308,29 @@ void CBiosampleChkApp::ProcessAsnInput (void)
     // at a time.
     string header = m_In->ReadFileHeader();
 
-    if (header == "Seq-submit" ) {  // Seq-submit
-        ProcessSeqSubmit();
-    } else if ( header == "Seq-entry" ) {           // Seq-entry
-        ProcessSeqEntry();
-    } else if (header == "Bioseq-set" ) {  // Bioseq-set
-        ProcessSet();
-    } else {
+    bool unhandled = false;
+    try {
+        if (header == "Seq-submit" ) {  // Seq-submit
+            ProcessSeqSubmit();
+        } else if ( header == "Seq-entry" ) {           // Seq-entry
+            ProcessSeqEntry();
+        } else if (header == "Bioseq-set" ) {  // Bioseq-set
+            ProcessSet();
+        } else {
+            unhandled = true;
+        }
+    } catch (CException& e) {
+        if (NStr::StartsWith(e.GetMsg(), "duplicate Bioseq id")) {
+            *m_LogStream << e.GetMsg();
+            exit(4);
+        } else {
+            throw e;
+        }
+    }
+    if (unhandled) {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
+    
 }
 
 
