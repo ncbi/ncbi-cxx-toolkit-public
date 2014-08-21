@@ -2422,8 +2422,9 @@ public:
     enum EEscSeqRange {
         eEscSeqRange_Standard,   ///< Set char to the last (least significant
                                  ///< byte) of the escape sequence (default).
-        eEscSeqRange_FirstByte,  ///< Set char to the first byte of the
-        eEscSeqRange_Throw,      ///< escape sequence. Throw an exception.
+        eEscSeqRange_FirstByte,  ///< Set char to the first byte of the escape
+                                 ///< sequence.
+        eEscSeqRange_Throw,      ///< Throw an exception.
         eEscSeqRange_Errno,      ///< Set errno to ERANGE, return empty string.
         eEscSeqRange_User        ///< Set char to the user value
                                  ///< passed in another parameter.
