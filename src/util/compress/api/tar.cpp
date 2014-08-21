@@ -3465,12 +3465,13 @@ static string s_ToFilesystemPath(const string& base_dir, const string& name)
 
 static string s_BaseDir(const string& dirname)
 {
-    string path = CDirEntry::AddTrailingPathSeparator(dirname);
+    string path = s_ToFilesystemPath(kEmptyStr, dirname);
+    path += CDirEntry::GetPathSeparator();
 #ifdef NCBI_OS_MSWIN
     // Replace backslashes with forward slashes
     NStr::ReplaceInPlace(path, "\\", "/");
 #endif //NCBI_OS_MSWIN
-    return s_ToFilesystemPath(kEmptyStr, path);
+    return path;
 }
 
 
