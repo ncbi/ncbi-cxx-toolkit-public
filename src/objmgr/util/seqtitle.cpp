@@ -268,11 +268,11 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     }
 
     if (!(flags & fGetTitle_Reconstruct)) {
-        size_t search_depth = 0;
+        size_t search_depth = 0; // no limit
         // Ignore parents' titles for non-PDB proteins.
         if (hnd.GetBioseqMolType() == CSeq_inst::eMol_aa
             &&  pdb_id.IsNull()) {
-            search_depth = 1;
+            search_depth = 1; // only Bioseq's descriptors
         }
         CSeqdesc_CI it(hnd, CSeqdesc::e_Title, search_depth);
         if (it) {
@@ -669,16 +669,18 @@ bool GetTitle(const CBioseq& seq, string* title_ptr, TGetTitleFlags flags)
     }
 
     if (!(flags & fGetTitle_Reconstruct)) {
-        size_t search_depth = 0;
+        int max_level = kMax_Int; // no limit
         // Ignore parents' titles for non-PDB proteins.
         if (seq.IsAa()
             &&  pdb_id.IsNull()) {
-            search_depth = 1;
+            max_level = 0; // only Bioseq's descriptors
         }
-        int max_level = 0;
+        int level = 0;
         if ( CConstRef<CSeqdesc> desc =
-             seq.GetClosestDescriptor(CSeqdesc::e_Title, &max_level) ) {
-            title = desc->GetTitle();
+             seq.GetClosestDescriptor(CSeqdesc::e_Title, &level) ) {
+            if ( level <= max_level ) {
+                title = desc->GetTitle();
+            }
         }
     }
 
