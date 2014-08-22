@@ -159,9 +159,9 @@
 #endif
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(DiscRepNmSpc)
-
 USING_SCOPE(objects);
+
+BEGIN_SCOPE(DiscRepNmSpc)
 
   typedef map < string, string> Str2Str;
   typedef map < string, vector < string > > Str2Strs;
@@ -4074,7 +4074,7 @@ USING_SCOPE(objects);
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("OVERLAPPING_CDS");}
-//      virtual FAutofix GetAutofixFunc() const { return AutoFix::MarkOverlappingCDSs; } 
+      virtual FAutofix GetAutofixFunc() const; 
 
     private:
       bool OverlappingProdNmSimilar(const string& prod_nm1, const string& prod_nm2);
