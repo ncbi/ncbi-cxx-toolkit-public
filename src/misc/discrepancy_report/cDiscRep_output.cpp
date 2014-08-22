@@ -1070,9 +1070,8 @@ void CDiscRepOutput :: x_OutputRepToGbenchItem(const CClickableItem& c_item,  CC
                                      c_item.obj_list.end());
       }
 
-#if 0
-      item.SetAutofixFunc(c_item);
-#endif
+      item.SetSettingName(c_item.setting_name);
+      item.SetAutofixFunc(c_item.fix_function);
    }
    if (!c_item.subcategories.empty()) {
       string desc;
