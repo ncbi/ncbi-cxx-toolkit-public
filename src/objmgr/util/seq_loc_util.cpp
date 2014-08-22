@@ -271,10 +271,8 @@ bool IsValid(const CSeq_point& pt, CScope* scope)
 
 bool IsValid(const CPacked_seqpnt& pts, CScope* scope)
 {
-    typedef CPacked_seqpnt::TPoints TPoints;
-
     TSeqPos length = GetLength(pts.GetId(), scope);
-    ITERATE (TPoints, it, pts.GetPoints()) {
+    ITERATE (CPacked_seqpnt::TPoints, it, pts.GetPoints()) {
         if (*it >= length) {
             return false;
         }
