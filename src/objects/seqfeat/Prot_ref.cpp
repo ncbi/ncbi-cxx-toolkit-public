@@ -61,7 +61,7 @@ CProt_ref::~CProt_ref(void)
 // Appends a label to "label" based on content
 void CProt_ref::GetLabel(string* label) const
 {
-    if (IsSetName() && GetName().size() > 0) {
+    if (IsSetName() && !GetName().empty()) {
         *label += *GetName().begin();
     } else if (IsSetDesc()) {
         *label += GetDesc();
