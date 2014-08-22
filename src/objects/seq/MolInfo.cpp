@@ -118,7 +118,7 @@ string CMolInfo::GetBiomolName (CMolInfo::TBiomol biomol)
     string biomol_name = "";
     TBiomolMap::const_iterator g_iter = sm_BiomolKeys.begin();
     while (g_iter != sm_BiomolKeys.end() &&
-           unsigned(g_iter->second) != biomol) {
+           g_iter->second != biomol) {
         ++g_iter;
     }
     if (g_iter != sm_BiomolKeys.end()) {
