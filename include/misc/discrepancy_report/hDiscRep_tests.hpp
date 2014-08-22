@@ -150,11 +150,7 @@
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 
-#if 0
 #include <objtools/edit/autofix.hpp>
-#endif
-
-#include "/home/chenj/ObjEdit/trunk/c++/include/objtools/edit/autofix.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(DiscRepNmSpc)
