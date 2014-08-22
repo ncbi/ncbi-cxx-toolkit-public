@@ -35,6 +35,7 @@
 
 #include "netstorage.hpp"
 #include "compound_id.hpp"
+#include "netcache_api.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -345,6 +346,11 @@ private:
 
     string m_Locator;
 };
+
+NCBI_XCONNECT_EXPORT
+CNetStorageObject g_CreateNetStorage_NetCacheBlob(
+        CNetCacheAPI::TInstance nc_api,
+        const CNetCacheKey& nc_key);
 
 END_NCBI_SCOPE
 

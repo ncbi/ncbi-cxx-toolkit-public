@@ -163,6 +163,37 @@ ERW_Result CNetCacheReader::Read(void*   buf,
     return eRW_Success;
 }
 
+ERW_Result g_ReadFromNetCache(IReader* reader,
+        char* buf, size_t count, size_t* bytes_read)
+{
+    size_t iter_bytes_read;
+    size_t total_bytes_read = 0;
+    ERW_Result rw_res = eRW_Success;
+
+    while (count > 0) {
+        rw_res = reader->Read(buf, count, &iter_bytes_read);
+        if (rw_res == eRW_Success) {
+            total_bytes_read += iter_bytes_read;
+            buf += iter_bytes_read;
+            count -= iter_bytes_read;
+        } else if (rw_res == eRW_Eof)
+            break;
+        else {
+            const CNetCacheReader* netcache_reader =
+                    static_cast<CNetCacheReader*>(reader);
+            NCBI_THROW_FMT(CNetCacheException, eBlobClipped,
+                    "I/O error while reading NetCache BLOB " <<
+                    netcache_reader->GetBlobID() << ": " <<
+                    g_RW_ResultToString(rw_res));
+        }
+    }
+
+    if (bytes_read != NULL)
+        *bytes_read = total_bytes_read;
+
+    return rw_res;
+}
+
 ERW_Result CNetCacheReader::PendingCount(size_t* count)
 {
     if (m_CachingEnabled || m_BlobBytesToRead == 0) {

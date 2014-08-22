@@ -32,25 +32,10 @@
 
 #include <ncbi_pch.hpp>
 
-#include <connect/services/netstorage.hpp>
+#include "netstorageobjectinfo.hpp"
 
 
 BEGIN_NCBI_SCOPE
-
-struct SNetStorageObjectInfoImpl : public CObject
-{
-    SNetStorageObjectInfoImpl(const string& object_loc,
-            ENetStorageObjectLocation location,
-            CJsonNode::TInstance object_loc_info,
-            Uint8 file_size,
-            CJsonNode::TInstance storage_specific_info);
-
-    string m_ObjectLoc;
-    ENetStorageObjectLocation m_Location;
-    CJsonNode m_ObjectLocInfo;
-    Uint8 m_FileSize;
-    CJsonNode m_StorageSpecificInfo;
-};
 
 static const char* s_NCTimeFormat = "M/D/Y h:m:s.r";
 static const char* s_ISO8601TimeFormat = "Y-M-DTh:m:s.r";
@@ -78,22 +63,22 @@ CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
 }
 
 CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
-        const CJsonNode& file_info_node)
+        const CJsonNode& object_info_node)
 {
-    const string location_str(file_info_node.GetString("Location"));
+    const string location_str(object_info_node.GetString("Location"));
 
     ENetStorageObjectLocation location =
         location_str == "NetCache" ? eNFL_NetCache :
         location_str == "FileTrack" ? eNFL_FileTrack :
         location_str == "NotFound" ? eNFL_NotFound : eNFL_Unknown;
 
-    CJsonNode file_size_node(file_info_node.GetByKeyOrNull("Size"));
+    CJsonNode file_size_node(object_info_node.GetByKeyOrNull("Size"));
 
     Uint8 file_size = file_size_node ? (Uint8) file_size_node.AsInteger() : 0;
 
     m_Impl = new SNetStorageObjectInfoImpl(object_loc, location,
-            file_info_node.GetByKey("ObjectLocInfo"), file_size,
-            file_info_node.GetByKeyOrNull("StorageSpecificInfo"));
+            object_info_node.GetByKey("ObjectLocInfo"), file_size,
+            object_info_node.GetByKeyOrNull("StorageSpecificInfo"));
 }
 
 ENetStorageObjectLocation CNetStorageObjectInfo::GetLocation() const

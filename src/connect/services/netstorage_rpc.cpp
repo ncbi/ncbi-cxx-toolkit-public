@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include "netservice_api_impl.hpp"
+#include "netstorage_direct_nc.hpp"
 
 #include <connect/services/netstorage_admin.hpp>
 #include <connect/services/error_codes.hpp>
@@ -339,41 +340,6 @@ public:
     CJsonNode m_Hello;
 };
 
-struct SNetStorageRPC : public SNetStorageImpl
-{
-    SNetStorageRPC(const string& init_string, TNetStorageFlags default_flags);
-
-    virtual CNetStorageObject Create(TNetStorageFlags flags = 0);
-    virtual CNetStorageObject Open(const string& object_loc,
-            TNetStorageFlags flags = 0);
-    virtual string Relocate(const string& object_loc, TNetStorageFlags flags);
-    virtual bool Exists(const string& object_loc);
-    virtual void Remove(const string& object_loc);
-
-    CJsonNode Exchange(const CJsonNode& request,
-            CNetServerConnection* conn = NULL,
-            CNetServer::TInstance server_to_use = NULL);
-
-    void x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags);
-    void x_SetICacheNames(CJsonNode& node);
-    CJsonNode MkStdRequest(const string& request_type);
-    CJsonNode MkFileRequest(const string& request_type,
-            const string& object_loc);
-    CJsonNode MkFileRequest(const string& request_type,
-            const string& unique_key, TNetStorageFlags flags);
-
-    TNetStorageFlags m_DefaultFlags;
-    CNetService m_Service;
-
-    string m_NetStorageServiceName;
-    string m_NetCacheServiceName;
-    string m_CacheName;
-    string m_ClientName;
-    string m_AppDomain;
-
-    CAtomicCounter m_RequestNumber;
-};
-
 CRef<INetServerProperties> CNetStorageServerListener::AllocServerProperties()
 {
     return CRef<INetServerProperties>(new INetServerProperties);
@@ -571,12 +537,22 @@ CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 CNetStorageObject SNetStorageRPC::Open(const string& object_loc,
         TNetStorageFlags flags)
 {
+    CNetCacheKey nc_key;
+
+    if (CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(),
+            &nc_key, m_CompoundIDPool)) {
+        if (!m_NetCacheAPI)
+            m_NetCacheAPI = CNetCacheAPI(m_NetCacheServiceName, m_ClientName);
+        return g_CreateNetStorage_NetCacheBlob(m_NetCacheAPI, nc_key);
+    }
+
     return new SNetStorageObjectRPC(this, NULL, NULL,
             SNetStorageObjectRPC::eByGeneratedID,
             object_loc, flags, SNetStorageObjectRPC::eReady);
 }
 
-string SNetStorageRPC::Relocate(const string& object_loc, TNetStorageFlags flags)
+string SNetStorageRPC::Relocate(const string& object_loc,
+        TNetStorageFlags flags)
 {
     CJsonNode request(MkFileRequest("RELOCATE", object_loc));
 

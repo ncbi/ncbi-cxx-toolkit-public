@@ -85,6 +85,8 @@ public:
 
     virtual void Close();
 
+    const string& GetBlobID() const {return m_BlobID;}
+
 private:
     void SocketRead(void* buf, size_t count, size_t* bytes_read);
 

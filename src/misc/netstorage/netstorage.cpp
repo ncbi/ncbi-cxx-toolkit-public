@@ -86,6 +86,8 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
     TNetStorageFlags m_AvailableStorageMask;
 
     SFileTrackAPI m_FileTrackAPI;
+
+    CNetCacheAPI m_NetCacheAPI;
 };
 
 SNetStorageAPIImpl::SNetStorageAPIImpl(
@@ -195,8 +197,6 @@ struct SNetStorageObjectAPIImpl : public SNetStorageObjectImpl
 
     const ENetStorageObjectLocation* GetPossibleFileLocations(); // For reading.
     void ChooseLocation(); // For writing.
-
-    ERW_Result s_ReadFromNetCache(char* buf, size_t count, size_t* bytes_read);
 
     bool s_TryReadLocation(ENetStorageObjectLocation location,
             ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read);
@@ -345,35 +345,6 @@ void SNetStorageObjectAPIImpl::ChooseLocation()
     }
 }
 
-ERW_Result SNetStorageObjectAPIImpl::s_ReadFromNetCache(char* buf,
-        size_t count, size_t* bytes_read)
-{
-    size_t iter_bytes_read;
-    size_t total_bytes_read = 0;
-    ERW_Result rw_res = eRW_Success;
-
-    while (count > 0) {
-        rw_res = m_NetCacheReader->Read(buf, count, &iter_bytes_read);
-        if (rw_res == eRW_Success) {
-            total_bytes_read += iter_bytes_read;
-            buf += iter_bytes_read;
-            count -= iter_bytes_read;
-        } else if (rw_res == eRW_Eof)
-            break;
-        else {
-            NCBI_THROW(CNetStorageException, eIOError,
-                    "I/O error while reading NetCache BLOB");
-        }
-    }
-
-    m_NetCache_BytesRead += total_bytes_read;
-
-    if (bytes_read != NULL)
-        *bytes_read = total_bytes_read;
-
-    return rw_res;
-}
-
 bool SNetStorageObjectAPIImpl::s_TryReadLocation(
         ENetStorageObjectLocation location,
         ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read)
@@ -387,7 +358,9 @@ bool SNetStorageObjectAPIImpl::s_TryReadLocation(
 
         if (m_NetCacheReader.get() != NULL) {
             m_NetCache_BytesRead = 0;
-            *rw_res = s_ReadFromNetCache(buf, count, bytes_read);
+            *rw_res = g_ReadFromNetCache(m_NetCacheReader.get(),
+                    buf, count, bytes_read);
+            m_NetCache_BytesRead += *bytes_read;
             m_CurrentLocation = eNFL_NetCache;
             m_IOStatus = eNFS_ReadingFromNetCache;
             return true;
@@ -449,8 +422,12 @@ ERW_Result SNetStorageObjectAPIImpl::BeginOrContinueReading(
                 "Cannot open \"" << m_ObjectLoc.GetLoc() << "\" for reading.");
 
     case eNFS_ReadingFromNetCache:
-        return s_ReadFromNetCache(reinterpret_cast<char*>(buf),
-                count, bytes_read);
+        {
+            ERW_Result rw_res = g_ReadFromNetCache(m_NetCacheReader.get(),
+                    reinterpret_cast<char*>(buf), count, bytes_read);
+            m_NetCache_BytesRead += *bytes_read;
+            return rw_res;
+        }
 
     case eNFS_ReadingFromFileTrack:
         m_FileTrackRequest->Read(buf, count, bytes_read);
@@ -707,28 +684,19 @@ bool SNetStorageObjectAPIImpl::x_TryGetInfoFromLocation(
                     nc_server_to_use = GetNetCacheServer());
 
             CJsonNode blob_info = CJsonNode::NewObjectNode();
-            string line;
-            string key, val;
-            Uint8 blob_size = 0;
-            bool got_blob_size = false;
+            string line, key, val;
 
-            while (output.ReadLine(line)) {
-                if (!NStr::SplitInTwo(line, ": ",
+            while (output.ReadLine(line))
+                if (NStr::SplitInTwo(line, ": ",
                         key, val, NStr::fSplit_ByPattern))
-                    continue;
+                    blob_info.SetByKey(key, CJsonNode::GuessType(val));
 
-                blob_info.SetByKey(key, CJsonNode::GuessType(val));
+            CJsonNode size_node(blob_info.GetByKeyOrNull("Size"));
 
-                if (key == "Size") {
-                    blob_size = NStr::StringToUInt8(val,
-                            NStr::fConvErr_NoThrow);
-                    got_blob_size = blob_size != 0 || errno == 0;
-                }
-            }
-
-            if (!got_blob_size)
-                blob_size = m_NetICacheClient.GetSize(
-                        m_ObjectLoc.GetUniqueKey(), 0, kEmptyStr);
+            Uint8 blob_size = size_node && size_node.IsInteger() ?
+                    (Uint8) size_node.AsInteger() :
+                    m_NetICacheClient.GetSize(
+                            m_ObjectLoc.GetUniqueKey(), 0, kEmptyStr);
 
             *file_info = CNetStorageObjectInfo(m_ObjectLoc.GetLoc(),
                     eNFL_NetCache, m_ObjectLoc, blob_size, blob_info);
@@ -978,6 +946,15 @@ CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags)
 CNetStorageObject SNetStorageAPIImpl::Open(
         const string& object_loc, TNetStorageFlags flags)
 {
+    CNetCacheKey nc_key;
+
+    if (CNetCacheKey::ParseBlobKey(object_loc.data(), object_loc.length(),
+            &nc_key, m_CompoundIDPool)) {
+        if (!m_NetCacheAPI)
+            m_NetCacheAPI = CNetCacheAPI(CNetCacheAPI::eAppRegistry);
+        return g_CreateNetStorage_NetCacheBlob(m_NetCacheAPI, nc_key);
+    }
+
     flags &= m_AvailableStorageMask;
 
     CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<

@@ -1315,7 +1315,9 @@ int CGridCommandLineInterfaceApp::Run()
             case eOptionalID:
             case eOptionalObjectLoc:
                 MarkOptionAsExplicitlySet(eID);
+                MarkOptionAsExplicitlySet(eOptionalID);
                 MarkOptionAsExplicitlySet(eObjectLoc);
+                MarkOptionAsExplicitlySet(eOptionalObjectLoc);
                 /* FALL THROUGH */
             case eID:
             case eObjectLoc:

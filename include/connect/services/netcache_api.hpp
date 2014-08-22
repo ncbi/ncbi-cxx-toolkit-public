@@ -567,6 +567,11 @@ private:
     CBlobStorage_NetCache& operator=(CBlobStorage_NetCache&);
 };
 
+/// @internal
+NCBI_XCONNECT_EXPORT
+ERW_Result g_ReadFromNetCache(IReader* reader,
+        char* buf, size_t count, size_t* bytes_read);
+
 /* @} */
 
 END_NCBI_SCOPE

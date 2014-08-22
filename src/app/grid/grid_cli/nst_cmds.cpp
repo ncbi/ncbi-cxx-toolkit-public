@@ -226,7 +226,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    CNetStorageObject netstorage_object(IsOptionSet(eOptionalID) ?
+    CNetStorageObject netstorage_object(IsOptionSet(eOptionalObjectLoc) ?
             m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags) :
             m_NetStorage.Create(m_Opts.netstorage_flags));
 
@@ -250,7 +250,7 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
 
     netstorage_object.Close();
 
-    if (!IsOptionSet(eOptionalID))
+    if (!IsOptionSet(eOptionalObjectLoc))
         PrintLine(netstorage_object.GetLoc());
 
     return 0;
@@ -291,7 +291,7 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
 
     auto_ptr<CNetStorageObjectLoc> object_loc;
 
-    switch (IsOptionSet(eOptionalID, OPTION_N(0)) |
+    switch (IsOptionSet(eOptionalObjectLoc, OPTION_N(0)) |
             IsOptionSet(eObjectKey, OPTION_N(1)) |
             IsOptionSet(eNamespace, OPTION_N(2))) {
     case OPTION_N(0):
