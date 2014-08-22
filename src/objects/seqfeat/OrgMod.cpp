@@ -181,7 +181,7 @@ static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
         NStr::TruncateSpacesInPlace( tokens[1] );
         NStr::TruncateSpacesInPlace( tokens[2] );
         string& vouch_types = tokens[1];
-        for (int i = 0; i < vouch_types.size(); i++) {
+        for (size_t i = 0; i < vouch_types.size(); i++) {
             switch (vouch_types[i]) {
                 case 'b':
                     s_BiomaterialInstitutionCodeMap[tokens[0]] = tokens[2];
