@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Colleen Bollin
+ * Authors:  Colleen Bollin, J. Chen
  * Created:  17/09/2013 15:38:53
  */
 
@@ -49,9 +49,12 @@ class CClickableText;
 class CClickableText : public CObject
 {
 public:
-    CClickableText() : m_Text(""), m_IsSelected(false), m_IsExpanded(false), m_Objdescs() {}
+    CClickableText() : m_Text(""), 
+                          m_IsSelected(false), m_IsExpanded(false), 
+                          m_Objects(), m_Objdescs(), m_Subitems() {}
     CClickableText(const string& text, bool selected = false, bool expanded = false)
-        : m_Text(text), m_IsSelected(selected), m_IsExpanded(expanded) {}
+        : m_Text(text), m_IsSelected(selected), m_IsExpanded(expanded),
+            m_Objects(), m_Objdescs(), m_Subitems() {};
     ~CClickableText() {}
 
     const string& GetText() const { return m_Text; }
@@ -64,9 +67,11 @@ public:
     void SetExpanded(bool expanded = true, bool recurse = false); 
     void SetOwnExpanded(bool expanded = true) { m_IsExpanded = expanded; };
 
+    bool CanGetSubitems() const { return (!m_Subitems.empty()); };
     const vector<CRef<CClickableText> >& GetSubitems() const { return m_Subitems; }
     vector<CRef<CClickableText> >& SetSubitems() { return m_Subitems; }
 
+    bool CanGetItems() const {return (!m_Objects.empty() && !m_Objdescs.empty());};
     const vector<CConstRef<CObject> >& GetObjects() const { return m_Objects; }
     vector<CConstRef<CObject> >& SetObjects() { return m_Objects; }
 
@@ -76,6 +81,12 @@ public:
     vector <string>& SetAccessions() { return m_Accessions; }
     const vector <string>& GetAccessions() const { return m_Accessions; }
 
+    void SetSettingName(const string& str) { m_SettingName = str; }
+    const string& GetSettingName() const { return m_SettingName; }
+
+    void SetAutofixFunc(const FAutofix fix_func) { m_FixFunc = fix_func; }
+    FAutofix GetAutofixFunc() const { return m_FixFunc; }
+
 protected:
     string                        m_Text;
     bool                          m_IsSelected;
@@ -84,8 +95,8 @@ protected:
     vector<CConstRef<CObject> >   m_Objects;
     vector <string>               m_Objdescs;
     vector <string>               m_Accessions;
-    string                        m_Setting_name;
-    FAutofix                      m_fix_func;
+    string                        m_SettingName;
+    FAutofix                      m_FixFunc;
 };
 
 END_NCBI_SCOPE

@@ -152,9 +152,9 @@
 
 #if 0
 #include <objtools/edit/autofix.hpp>
+#endif
 
 #include "/home/chenj/ObjEdit/trunk/c++/include/objtools/edit/autofix.hpp"
-#endif
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(DiscRepNmSpc)
@@ -2227,7 +2227,6 @@ USING_SCOPE(objects);
 
        string GetFieldValueForObject(const CSeq_feat& seq_feat, 
                                      const CFeat_qual_choice& feat_qual);
-       CSeqFeatData::ESubtype GetFeatdefFromFeatureType(EMacro_feature_type feat_field_type);
        CConstRef <CSeq_feat> GetmRNAforCDS(const CSeq_feat& cd_feat, 
                                            const CSeq_entry& seq_entry);
        CConstRef <CProt_ref> GetProtRefForFeature(const CSeq_feat& seq_feat, 
@@ -4073,7 +4072,7 @@ USING_SCOPE(objects);
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("OVERLAPPING_CDS");}
-//      virtual FAutofix GetAutofixFunc() const { return AutoFix::MarkOverlappingCDSs; } 
+      virtual FAutofix GetAutofixFunc() const { return AutoFix::MarkOverlappingCDSs; } 
 
     private:
       bool OverlappingProdNmSimilar(const string& prod_nm1, const string& prod_nm2);
