@@ -317,6 +317,10 @@ bool CPhyTreeFormatter::ExpandCollapseSubtree(int node_id)
         else if (tracker.FoundSeqFromType()) {
             x_MarkNode(node, s_kSeqOfTypeNodeBgColor);
         }
+        int leafCount = tracker.GetLeafCount();
+        if(leafCount != 0) {            
+            node->SetFeature(GetFeatureTag(eLeafCountId),NStr::IntToString(leafCount));
+        }        
     }
     else {
 
@@ -478,13 +482,14 @@ bool CPhyTreeFormatter::x_IsLeafEx(const CBioTreeDynamic::CBioNode& node)
 
 void CPhyTreeFormatter::x_Collapse(CBioTreeDynamic::CBioNode& node)
 {
-    node.SetFeature(GetFeatureTag(eTreeSimplificationTagId), "1");
+    node.SetFeature(GetFeatureTag(eTreeSimplificationTagId), "1"); 
 }
 
 void CPhyTreeFormatter::x_Expand(CBioTreeDynamic::CBioNode& node)
 {
     node.SetFeature(GetFeatureTag(eTreeSimplificationTagId),
-                    s_kSubtreeDisplayed);
+                    s_kSubtreeDisplayed);    
+    node.SetFeature(GetFeatureTag(eLeafCountId), NStr::IntToString(0));    
 }
 
 
@@ -506,6 +511,10 @@ void CPhyTreeFormatter::x_CollapseSubtrees(CPhyTreeNodeGroupper& groupper)
         }
         else if (query_checker.HasSeqFromType()) {
             x_MarkNode(it->GetNode(), s_kSeqOfTypeNodeBgColor);
+        }
+        int leafCount = query_checker.GetLeafCount();
+        if(leafCount != 0) {            
+            it->GetNode()->SetFeature(GetFeatureTag(eLeafCountId), NStr::IntToString(leafCount));
         }
     }
 }
@@ -836,6 +845,8 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
     x_AddFeatureDesc(eTreeSimplificationTagId,
                      GetFeatureTag(eTreeSimplificationTagId), btc);
     x_AddFeatureDesc(eNodeInfoId, GetFeatureTag(eNodeInfoId), btc);
+    x_AddFeatureDesc(eLeafCountId,
+                     GetFeatureTag(eLeafCountId), btc);
 
     
     int num_leaves = 0;
@@ -1038,6 +1049,8 @@ CPhyTreeFormatter::CExpander::operator()(CBioTreeDynamic::CBioNode& node,
                             s_kSubtreeDisplayed);
 
             node.SetFeature(GetFeatureTag(eNodeColorId), "");
+
+            node.SetFeature(GetFeatureTag(eLeafCountId), NStr::IntToString(0));
         }
     }
     return eTreeTraverse;

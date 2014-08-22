@@ -264,6 +264,7 @@ CPhyTreeLabelTracker::CPhyTreeLabelTracker(const string& label_feature,
     }
 
     m_LabelsColors.clear();
+    m_LeafCount = 0;
 }
 
 ETreeTraverseCode CPhyTreeLabelTracker::operator() (
@@ -290,6 +291,7 @@ ETreeTraverseCode CPhyTreeLabelTracker::operator() (
             const string& color = node.GetFeature(m_ColorFeatureTag);
             
             m_LabelsColors[label] = color;
+            m_LeafCount++;
         }
     }
 
