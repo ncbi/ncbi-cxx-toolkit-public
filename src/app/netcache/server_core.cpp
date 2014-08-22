@@ -153,18 +153,19 @@ s_InitSignals(void)
 #endif
 }
 
-static bool
-s_LoadConfFile(void)
+static bool 
+s_LoadConfFile(CNcbiRegistry*& reg)
 {
-    s_Registry = new CNcbiRegistry();
+    reg = new CNcbiRegistry();
+#if 0
     CMetaRegistry::SEntry entry;
     if (s_ConfName.empty()) {
         entry = CMetaRegistry::Load(s_AppBaseName, CMetaRegistry::eName_Ini,
-                                    0, 0, s_Registry);
+                                    0, 0, reg);
     }
     else {
         entry = CMetaRegistry::Load(s_ConfName, CMetaRegistry::eName_AsIs,
-                                    0, 0, s_Registry);
+                                    0, 0, reg);
     }
     if (!entry.registry  &&  !s_ConfName.empty()) {
         SRV_LOG(Critical, "Configuration file \"" << s_ConfName
@@ -172,6 +173,19 @@ s_LoadConfFile(void)
         return false;
     }
     return true;
+#else
+    CNcbiIfstream ifs;
+    string ini(s_AppBaseName + ".ini");
+    if (!s_ConfName.empty()) {
+        ini = s_ConfName;
+    }
+    ifs.open( ini.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    if (!ifs.is_open()) {
+        return false;
+    }
+    reg->Read(ifs);
+    return true;
+#endif
 }
 
 static bool
@@ -180,7 +194,7 @@ s_ReadConfiguration(void)
     static const char kSection[] = "task_server";
 
     try {
-        if (!s_LoadConfFile())
+        if (!s_LoadConfFile(s_Registry))
             return false;
 
         s_SlowShutdownTO = s_Registry->GetInt(kSection, "slow_shutdown_timeout", 10);
@@ -194,6 +208,19 @@ s_ReadConfiguration(void)
     }
     catch (CException& ex) {
         SRV_LOG(Critical, "Bad configuration of CTaskServer: " << ex);
+        return false;
+    }
+    return true;
+}
+
+bool
+CTaskServer::ReadConfiguration( CNcbiRegistry*& reg)
+{
+    try {
+        if (!s_LoadConfFile(reg))
+            return false;
+    }
+    catch (CException&) {
         return false;
     }
     return true;
@@ -310,6 +337,12 @@ CTaskServer::Run(void)
 
 const CNcbiRegistry&
 CTaskServer::GetConfRegistry(void)
+{
+    return *s_Registry;
+}
+
+CNcbiRegistry&
+CTaskServer::SetConfRegistry(void)
 {
     return *s_Registry;
 }

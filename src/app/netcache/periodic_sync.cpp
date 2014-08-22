@@ -265,11 +265,12 @@ CNCPeriodicSync::Initialize(void)
     s_ShuffleList<SSyncSlotData*>(s_SlotsList);
 
     Uint4 cnt_to_sync = 0;
-    const TNCPeerList& peers = CNCDistributionConf::GetPeers();
+    TNCPeerList peers;
+    CNCDistributionConf::GetPeers(peers);
     ITERATE(TNCPeerList, it_peer, peers) {
         CNCPeerControl* peer = CNCPeerControl::Peer(it_peer->first);
-        const vector<Uint2>& commonSlots =
-                        CNCDistributionConf::GetCommonSlots(it_peer->first);
+        vector<Uint2> commonSlots;
+        CNCDistributionConf::GetCommonSlots(it_peer->first, commonSlots);
         ITERATE(vector<Uint2>, it_slot, commonSlots) {
             SSyncSlotData* slot_data = s_SlotsMap[*it_slot];
             SSyncSlotSrv* slot_srv = new SSyncSlotSrv(peer);

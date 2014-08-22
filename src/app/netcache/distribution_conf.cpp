@@ -320,6 +320,145 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     return true;
 }
 
+bool
+CNCDistributionConf::ReConfig(CNcbiRegistry& new_reg, string& err_message)
+{
+// we only add or remove peer servers, nothing else
+// also, we verify that paramaters of existing servers did not change.
+    CNcbiRegistry& old_reg = CTaskServer::SetConfRegistry();
+
+    string value, value_name, srv_name;
+    map<string, set<Uint2> > new_peers, old_peers;
+    list<CTempString> values;
+    int srv_idx;
+
+// new_reg
+    for (srv_idx = 0; ; ++srv_idx) {
+        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        srv_name = new_reg.Get(kNCReg_NCPoolSection, value_name);
+        if (srv_name.empty())
+            break;
+        if (new_peers.find(srv_name) != new_peers.end()) {
+            err_message = srv_name + ": Described more than once";
+            return false;
+        }
+        values.clear();
+        NStr::Split(srv_name, ":", values);
+        if (values.size() != 3) {
+            err_message = srv_name + ": Invalid peer server specification";
+            return false;
+        }
+        list<CTempString>::const_iterator it_fields = values.begin();
+        ++it_fields;
+        if (CTaskServer::GetIPByHost(*it_fields) == 0) {
+            err_message = srv_name + ": Host not found";
+            return false;
+        }
+        ++it_fields;
+        if (NStr::StringToUInt(*it_fields, NStr::fConvErr_NoThrow) == 0) {
+            err_message = srv_name + ": Host port not found";
+            return false;
+        }
+
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        value = new_reg.Get(kNCReg_NCPoolSection, value_name);
+        if (value.empty()) {
+            err_message = srv_name + ": No slots for server";
+            return false;
+        }
+        values.clear();
+        NStr::Split(value, ",", values);
+        ITERATE(list<CTempString>, it, values) {
+            Uint2 slot = NStr::StringToUInt(*it, NStr::fConvErr_NoThrow);
+            if (slot == 0) {
+                err_message = srv_name + ": Bad slot number: " + string(*it);
+                return false;
+            }
+            if (slot > s_MaxSlotNumber) {
+                err_message = srv_name + ": Slot numbers cannot exceed " + NStr::NumericToString(s_MaxSlotNumber);
+                return false;
+            }
+            if (new_peers[srv_name].find(slot) != new_peers[srv_name].end()) {
+                err_message = srv_name + ": Slot listed twice: " + string(*it);
+                return false;
+            }
+            new_peers[srv_name].insert(slot);
+        }
+    }
+// old_reg is already checked for errors
+    for (srv_idx = 0; ; ++srv_idx) {
+        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        srv_name = old_reg.Get(kNCReg_NCPoolSection, value_name);
+        if (srv_name.empty())
+            break;
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        value = old_reg.Get(kNCReg_NCPoolSection, value_name);
+        list<string> values;
+        NStr::Split(value, ",", values);
+        ITERATE(list<string>, it, values) {
+            old_peers[srv_name].insert( NStr::StringToUInt(*it, NStr::fConvErr_NoThrow));
+        }
+    }
+// compare (I am not sure though that slot lists should be identical)
+    map<string, set<Uint2> >::const_iterator pn, po;
+    for(pn = new_peers.begin(); pn != new_peers.end(); ++pn) {
+        po = old_peers.find(pn->first); 
+        if (po != old_peers.end()) {
+            if (pn->second.size() != po->second.size() ||
+                !std::equal(pn->second.begin(), pn->second.end(), po->second.begin())) {
+                err_message = pn->first + ": Slot lists differ in old and new configurations";
+                return false;
+            }
+        }
+    }
+    for(po = old_peers.begin(); po != old_peers.end(); ++po) {
+        pn = new_peers.find(po->first); 
+        if (pn != new_peers.end()) {
+            if (po->second.size() != pn->second.size() ||
+                !std::equal(po->second.begin(), po->second.end(), pn->second.begin())) {
+                err_message = po->first + ": Slot lists differ in old and new configurations";
+                return false;
+            }
+        }
+    }
+// now modify old registry to remember the changes
+    // remove old peers
+    for (srv_idx = old_peers.size(); srv_idx >=0; --srv_idx) {
+        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        old_reg.Set(kNCReg_NCPoolSection, value_name, kEmptyStr, CNcbiRegistry::fPersistent);
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        old_reg.Set(kNCReg_NCPoolSection, value_name, kEmptyStr, CNcbiRegistry::fPersistent);
+    }
+    // add new ones
+    for (srv_idx = 0; ; ++srv_idx) {
+        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        srv_name = new_reg.Get(kNCReg_NCPoolSection, value_name);
+        if (srv_name.empty())
+            break;
+        old_reg.Set(kNCReg_NCPoolSection, value_name, srv_name, CNcbiRegistry::fPersistent);
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        value = new_reg.Get(kNCReg_NCPoolSection, value_name);
+        old_reg.Set(kNCReg_NCPoolSection, value_name, value, CNcbiRegistry::fPersistent);
+    }
+
+// remove common peers
+    // here I assume common peers have identical slot lists
+    for(pn = new_peers.begin(); pn != new_peers.end(); ++pn) {
+        po = old_peers.find(pn->first); 
+        if (po != old_peers.end()) {
+            old_peers.erase(po);
+        }
+    }
+    for(po = old_peers.begin(); po != old_peers.end(); ++po) {
+        pn = new_peers.find(po->first); 
+        if (pn != new_peers.end()) {
+            new_peers.erase(pn);
+        }
+    }
+
+    return true;
+}
+
 void
 CNCDistributionConf::Finalize(void)
 {
@@ -427,16 +566,22 @@ CNCDistributionConf::GetServersForSlot(Uint2 slot)
     return result;
 }
 
-const TServersList&
-CNCDistributionConf::GetRawServersForSlot(Uint2 slot)
+void
+CNCDistributionConf::GetRawServersForSlot(Uint2 slot, TServersList& lst)
 {
-    return s_RawSlot2Servers[slot];
+    lst =  s_RawSlot2Servers[slot];
 }
 
-const vector<Uint2>&
-CNCDistributionConf::GetCommonSlots(Uint8 server)
+void
+CNCDistributionConf::GetCommonSlots(Uint8 server, vector<Uint2>& lst)
 {
-    return s_CommonSlots[server];
+    lst = s_CommonSlots[server];
+}
+
+bool
+CNCDistributionConf::HasCommonSlots(Uint8 server)
+{
+    return !s_CommonSlots[server].empty();
 }
 
 Uint8
@@ -445,10 +590,16 @@ CNCDistributionConf::GetSelfID(void)
     return s_SelfID;
 }
 
-const TNCPeerList&
-CNCDistributionConf::GetPeers(void)
+void
+CNCDistributionConf::GetPeers(TNCPeerList& lst)
 {
-    return s_Peers;
+    lst = s_Peers;
+}
+
+bool
+CNCDistributionConf::HasPeers(void)
+{
+    return !s_Peers.empty();
 }
 
 string
@@ -458,8 +609,12 @@ CNCDistributionConf::GetPeerNameOrEmpty(Uint8 srv_id)
     if (srv_id == s_SelfID) {
         name = s_SelfName;
     }
-    else if (s_Peers.find(srv_id) != s_Peers.end()) {
-        name = s_Peers[srv_id];
+    else {
+        TNCPeerList peers;
+        CNCDistributionConf::GetPeers(peers);
+        if (peers.find(srv_id) != peers.end()) {
+            name = peers[srv_id];
+        }
     }
     return name;
 }
@@ -485,16 +640,17 @@ CNCDistributionConf::GetFullPeerName(Uint8 srv_id)
 }
 
 
-TServersList
-CNCDistributionConf::GetPeerServers(void)
+void
+CNCDistributionConf::GetPeerServers(TServersList& lst)
 {
-    TServersList result;
-    ITERATE(TNCPeerList, it_peer, s_Peers)  {
+    lst.clear();
+    TNCPeerList peers;
+    CNCDistributionConf::GetPeers(peers);
+    ITERATE(TNCPeerList, it_peer, peers)  {
         if (GetSelfID() != it_peer->first) {
-            result.push_back(it_peer->first);
+            lst.push_back(it_peer->first);
         }
     }
-    return result;
 }
 
 void

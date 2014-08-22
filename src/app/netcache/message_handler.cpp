@@ -1276,7 +1276,18 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
-
+    // Re-read ini-file used by NetCache for configuration.
+    // Find changes and reconfigure
+    // Only few changes are supported
+    { "RECONF",
+        {&CNCMessageHandler::x_DoCmd_ReConfig,
+            "RECONF",
+            fNeedsAdminClient},
+        { 
+          // Netcached.ini section name
+          { "section", eNSPT_Str,  eNSPA_Required }
+        }
+    },
 
     { "PURGE",
         {&CNCMessageHandler::x_DoCmd_Purge,
@@ -1340,7 +1351,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "REINIT",   {&CNCMessageHandler::x_DoCmd_NotImplemented, "REINIT"} },
     { "REINIT",   {&CNCMessageHandler::x_DoCmd_NotImplemented, "IC_REINIT"},
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix } } },
-    { "RECONF",   {&CNCMessageHandler::x_DoCmd_NotImplemented, "RECONF"} },
+//    { "RECONF",   {&CNCMessageHandler::x_DoCmd_NotImplemented, "RECONF"} },
     { "LOG",      {&CNCMessageHandler::x_DoCmd_NotImplemented, "LOG"} },
     { "STAT",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "STAT"} },
     { "MONI",     {&CNCMessageHandler::x_DoCmd_NotImplemented, "MONITOR"} },
@@ -3323,10 +3334,11 @@ CNCMessageHandler::x_DoCmd_Health(void)
     WriteText("OK:N_DB_FILES=").WriteNumber(CNCBlobStorage::GetNDBFiles()).WriteText("\n");
     WriteText("OK:COPY_QUEUE_SIZE=").WriteNumber(CNCPeerControl::GetMirrorQueueSize()).WriteText("\n");
 
-    typedef map<Uint8, string> TPeers;
-    const TPeers& peers(CNCDistributionConf::GetPeers());
-    ITERATE(TPeers, it_peer, peers) {
-        WriteText("OK:QUEUE_SIZE_").WriteNumber(it_peer->first).WriteText("=").WriteNumber(CNCPeerControl::GetMirrorQueueSize(it_peer->first)).WriteText("\n");
+    TNCPeerList peers;
+    CNCDistributionConf::GetPeers(peers);
+    ITERATE(TNCPeerList, it_peer, peers) {
+//        WriteText("OK:QUEUE_SIZE_").WriteNumber(it_peer->first).WriteText("=").WriteNumber(CNCPeerControl::GetMirrorQueueSize(it_peer->first)).WriteText("\n");
+        WriteText("OK:QUEUE_SIZE_").WriteText(it_peer->second).WriteText("=").WriteNumber(CNCPeerControl::GetMirrorQueueSize(it_peer->first)).WriteText("\n");
     }
     WriteText("OK:SYNC_LOG_SIZE=").WriteNumber(CNCSyncLog::GetLogSize()).WriteText("\n");
 
@@ -3356,7 +3368,7 @@ CNCMessageHandler::x_DoCmd_Version(void)
               "&storage_version="  NETCACHED_STORAGE_VERSION
               "&protocol_version=" NETCACHED_PROTOCOL_VERSION
               "&build_date=" + NStr::URLEncode(NETCACHED_BUILD_DATE) +
-              "&mirrored=" + (NStr::BoolToString( !CNCDistributionConf::GetPeers().empty())))
+              "&mirrored=" + (NStr::BoolToString( CNCDistributionConf::HasPeers())))
         .WriteText("\n");
     return &CNCMessageHandler::x_FinishCommand;
 }
@@ -3405,6 +3417,36 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         WriteText(conf);
     }
     WriteText("\nOK:END\n");
+    return &CNCMessageHandler::x_FinishCommand;
+}
+
+CNCMessageHandler::State
+CNCMessageHandler::x_DoCmd_ReConfig(void)
+{
+    LOG_CURRENT_FUNCTION
+    TNSProtoParams& params = m_ParsedCmd.params;
+    string err_message("Unknown section name");
+    bool result = false;
+    if (params.find("section") != params.end()) {
+        string section(params["section"]);
+        if (section != "mirror") {
+            goto done;
+        }
+        CNcbiRegistry* new_reg = NULL;
+        if (!CTaskServer::ReadConfiguration(new_reg))
+        {
+            err_message = "Failed to load registry";
+            goto done;
+        }
+        result = CNCDistributionConf::ReConfig(*new_reg, err_message);
+        delete new_reg;
+    }
+done:
+    if (result) {
+        WriteText("OK:\n");
+    } else {
+        WriteText("ERR:").WriteText(err_message).WriteText("\n");
+    }
     return &CNCMessageHandler::x_FinishCommand;
 }
 
@@ -4188,7 +4230,7 @@ CNCMessageHandler::x_DoCmd_Purge(void)
     if (CNCBlobAccessor::Purge( m_PrevCache, m_CmdStartTime.AsUSec())) {
         CNCBlobStorage::SavePurgeData();
     }
-    m_CheckSrvs = CNCDistributionConf::GetPeerServers();
+    CNCDistributionConf::GetPeerServers(m_CheckSrvs);
     return &CNCMessageHandler::x_PurgeToNextPeer;
 }
 

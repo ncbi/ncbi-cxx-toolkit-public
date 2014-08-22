@@ -653,7 +653,8 @@ CNCPeerControl::MirrorUpdate(const string& key,
                               Uint2 slot,
                               Uint8 update_time)
 {
-    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
+    TServersList servers;
+    CNCDistributionConf::GetRawServersForSlot(slot, servers);
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
@@ -672,7 +673,8 @@ CNCPeerControl::MirrorWrite(const string& key,
                           Uint8 orig_rec_no,
                           Uint8 size)
 {
-    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
+    TServersList servers;
+    CNCDistributionConf::GetRawServersForSlot(slot, servers);
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
@@ -688,7 +690,8 @@ CNCPeerControl::MirrorProlong(const string& key,
                             Uint8 orig_time,
                             const CNCBlobAccessor* accessor)
 {
-    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
+    TServersList servers;
+    CNCDistributionConf::GetRawServersForSlot(slot, servers);
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
@@ -754,7 +757,7 @@ bool
 CNCPeerControl::HasPeerInThrottle(void)
 {
     ITERATE(TControlMap, it_ctrl, s_Controls) {
-        if (!CNCDistributionConf::GetCommonSlots(it_ctrl->first).empty() && 
+        if (CNCDistributionConf::HasCommonSlots(it_ctrl->first) && 
             it_ctrl->second->m_MaybeThrottle) {
             return true;
         }

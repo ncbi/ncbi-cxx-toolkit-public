@@ -166,6 +166,9 @@ public:
     /// FALSE otherwise. In case of unsuccessful initialization application
     /// should exit asap.
     static bool Initialize(int& argc, const char** argv);
+    /// Load (re-read) configuration from current conf file into another registry
+    /// It is used in RECONF command to find changes in the configuration
+    static bool ReadConfiguration( CNcbiRegistry*& reg);
     /// Finalizes TaskServer infrastructure. Method should be called even if
     /// Initialize() returned FALSE to give TaskServer a chance to finalize
     /// parts that were already initialized.
@@ -180,6 +183,8 @@ public:
 
     /// Obtains reference to registry read from application's ini-file.
     static const CNcbiRegistry& GetConfRegistry(void);
+    /// Used to modify original registry (to reflect RECONF modifications)
+    static CNcbiRegistry& SetConfRegistry(void);
     /// Returns time when this server application was started (when
     /// Initialize() method was called).
     static CSrvTime GetStartTime(void);
