@@ -2371,15 +2371,19 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
       }
 
       // DISC_DUP_DEFLINE 
-      if (run_dup && !bioseq.IsAa() && !title.empty()) {
-        strtmp = NStr::UIntToString(m_num_entry) + title;
-        strtmp = NStr::ToUpper(strtmp);
-        thisInfo.test_item_list[GetName_dup()].push_back(strtmp + "$" + desc);
-        thisInfo.test_item_objs[GetName_dup() +"$" + strtmp]
-                        .push_back(title_ref);
-      }
-      else {
-         thisInfo.test_item_list[GetName_dup()].push_back("no_title$" + desc);
+      if (run_dup) {
+        if (!bioseq.IsAa()) {
+           if (!title.empty()) {
+              strtmp = NStr::UIntToString(m_num_entry) + title;
+              strtmp = NStr::ToUpper(strtmp);
+              thisInfo.test_item_list[GetName_dup()].push_back(strtmp + "$" + desc);
+              thisInfo.test_item_objs[GetName_dup() +"$" + strtmp]
+                              .push_back(title_ref);
+           }
+           else {
+               thisInfo.test_item_list[GetName_dup()].push_back("no_title$" + desc);
+           }
+        }
       }
 
       // INCONSISTENT_SOURCE_DEFLINE
@@ -2457,7 +2461,7 @@ void CBioseq_DISC_DUP_DEFLINE :: GetReport(CRef <CClickableItem> c_item)
               iit = it;
            }
       }
-      else {
+      else {   // size == 1
          m_uniseqs.push_back(it->second[0]);
          strtmp = GetName()+ "$" + it->first;
          m_uniobjs.push_back(thisInfo.test_item_objs[strtmp][0]);
