@@ -15,7 +15,7 @@ LIB    = xobjedit
 
 ASN_DEP = seqset valid macro
 
-WATCHERS = bollin kornbluh gotvyans
+WATCHERS = bollin kornbluh gotvyans chenj
 
 
 USES_LIBRARIES =  \
