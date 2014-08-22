@@ -88,7 +88,8 @@ public:
         eLabelTagColorId,
         eTreeSimplificationTagId, ///< Is subtree collapsed
         eNodeInfoId,     ///< Used for denoting query nodes
-        eLastId = eNodeInfoId ///< Last Id (with largest index)
+        eLeafCountId,
+        eLastId = eLeafCountId ///< Last Id (with largest index)
     };
 
     
@@ -234,6 +235,7 @@ public:
         case eLabelTagColorId: return "$LABEL_TAG_COLOR";
         case eTreeSimplificationTagId : return "$NODE_COLLAPSED";
         case eNodeInfoId : return "node-info";
+        case eLeafCountId : return "leaf-count";
         default: return "";
         }
     }
@@ -552,7 +554,8 @@ private:
         /// Constructor
         CQueryNodeChecker(CBioTreeDynamic& tree)
             : m_HasQueryNode(false),
-              m_HasSeqFromType(false)
+              m_HasSeqFromType(false),
+              m_LeafCount(0)
         {
             const CBioTreeFeatureDictionary& fdict
                 = tree.GetFeatureDict();
@@ -578,6 +581,8 @@ private:
         /// was reached
         bool HasSeqFromType(void) const { return m_HasSeqFromType;}
 
+        int GetLeafCount (void) const { return m_LeafCount;}
+
         /// Expamine node: check if query node. Function invoked on each
         /// node by traversal function.
         /// @param node Tree root [in]
@@ -588,14 +593,14 @@ private:
         {
             if (delta == 0 || delta == 1) {
                 if (node.IsLeaf()) {
-
+                    m_LeafCount++;
                     if (node.GetFeature(GetFeatureTag(eNodeInfoId))
                         == kNodeInfoQuery) {
 
-                        m_HasQueryNode = true;
+                        m_HasQueryNode = true;                        
 
                         // stop searching further if a query node is found
-                        return eTreeTraverseStop;
+                        return eTreeTraverse;
                     }
 
                     if (node.GetFeature(GetFeatureTag(eNodeInfoId))
@@ -611,6 +616,7 @@ private:
     private:
         bool m_HasQueryNode;
         bool m_HasSeqFromType;
+        int m_LeafCount;
     };
 
 

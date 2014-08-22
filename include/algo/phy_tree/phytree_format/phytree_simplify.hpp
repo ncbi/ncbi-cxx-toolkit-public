@@ -121,6 +121,7 @@ public:
     unsigned int GetNumLabels(void) const {return m_LabelsColors.size();}
     bool FoundQueryNode(void) const {return m_FoundQueryNode;}
     bool FoundSeqFromType(void) const { return m_FoundSeqFromType;}
+    int GetLeafCount(void) const { return m_LeafCount;}
 
 protected:
     bool x_IsQuery(const CBioTreeDynamic::CBioNode& node) const;
@@ -133,6 +134,7 @@ protected:
     string m_Error;
     bool m_FoundQueryNode;
     bool m_FoundSeqFromType;
+    int m_LeafCount;
 };
 
 
