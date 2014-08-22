@@ -568,7 +568,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
         if ( !info ) { \
             typedef ClassName CClass; \
             typedef BaseClassName CClass_Base; \
-            DECLARE_BASE_OBJECT(ClassName); \
+            DECLARE_BASE_OBJECT(CClass); \
             typedef NCBI_NS_NCBI::TTypeInfo (*TGetter)(void); \
             TGetter getter = SerialRef Code; \
             info = new NCBI_NS_NCBI::CAliasTypeInfo(AliasName, getter()); \
@@ -589,7 +589,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
         if ( !info ) { \
             typedef ClassName CClass; \
             typedef BaseClassName CClass_Base; \
-            DECLARE_BASE_OBJECT(ClassName); \
+            DECLARE_BASE_OBJECT(CClass); \
             info = new NCBI_NS_NCBI::CAliasTypeInfo(AliasName, SerialRef Code); \
             NCBI_NS_NCBI::RegisterTypeInfoObject(info);
 #define BEGIN_ENUM_ALIAS_INFO(AliasName,ClassName,RefType,RefCode) \
