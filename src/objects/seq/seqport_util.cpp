@@ -1747,9 +1747,6 @@ CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFa
 // Function to initialize m_IndexString and m_StringIndex
 void CSeqportUtil_implementation::InitIndexCodeName()
 {
-    typedef list<CRef<CSeq_code_table> >      Ttables;
-    typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
-    
     m_IndexString[kName].resize(kNumCodes);
     m_IndexString[kSymbol].resize(kNumCodes);
     m_IndexComplement.resize(kNumCodes);
@@ -1760,14 +1757,14 @@ void CSeqportUtil_implementation::InitIndexCodeName()
     for (unsigned int ii = 0; ii < kNumCodes; ii++) {
         found[ii] = false;
     }
-    ITERATE (Ttables, it, m_SeqCodeSet->GetCodes()) {
+    ITERATE (CSeq_code_set::TCodes, it, m_SeqCodeSet->GetCodes()) {
         const ESeq_code_type& code = (*it)->GetCode();
         if (!found[code-1]) {
             found[code-1] = true;
             m_StartAt[code-1] = (*it)->IsSetStart_at() ?
                 (*it)->GetStart_at() : 0;
             TIndex i = m_StartAt[code-1];
-            ITERATE(Tcodes, is, (*it)->GetTable()) {                
+            ITERATE(CSeq_code_table::TTable, is, (*it)->GetTable()) {
                 m_IndexString[kSymbol][code-1].push_back((*is)->GetSymbol());
                 m_IndexString[kName][code-1].push_back((*is)->GetName());
                 m_StringIndex[code-1].insert
@@ -5786,10 +5783,8 @@ bool CSeqportUtil_implementation::IsCodeAvailable
 // Return true if code type is available
 bool CSeqportUtil_implementation::IsCodeAvailable (ESeq_code_type code_type)
 {
-    typedef list<CRef<CSeq_code_table> >      Ttables;
-    
     // Iterate through Seq-code-set looking for code type
-    ITERATE (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
+    ITERATE (CSeq_code_set::TCodes, i_ct, m_SeqCodeSet->GetCodes()) {
         if((*i_ct)->GetCode() == code_type) {
             return true;  
         }
@@ -5810,11 +5805,9 @@ CSeqportUtil::TPair  CSeqportUtil_implementation::GetCodeIndexFromTo
 CSeqportUtil::TPair CSeqportUtil_implementation::GetCodeIndexFromTo
 (ESeq_code_type code_type)
 {
-    typedef list<CRef<CSeq_code_table> >      Ttables;
-    
     // Iterate through Seq-code-set looking for code type
     TPair p;
-    ITERATE (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
+    ITERATE (CSeq_code_set::TCodes, i_ct, m_SeqCodeSet->GetCodes()) {
         if((*i_ct)->GetCode() == code_type) {
             if ( (*i_ct)->IsSetStart_at() ) {
                 p.first = static_cast<TIndex>((*i_ct)->GetStart_at());
@@ -5844,9 +5837,6 @@ const string& CSeqportUtil_implementation::GetCodeOrName
  TIndex         idx,
  bool           get_code) 
 {
-    typedef list<CRef<CSeq_code_table> >      Ttables;
-    typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
-
     if ( !m_IndexString[get_code][code_type-1].size() ) {
         throw CSeqportUtil::CBadType("GetCodeOrName");
     }
@@ -5872,9 +5862,6 @@ CSeqportUtil::TIndex CSeqportUtil_implementation::GetIndex
 (ESeq_code_type code_type, 
  const string&  code)
 {
-    typedef list<CRef<CSeq_code_table> >      Ttables;
-    typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
-    
     // Iterator to a map mapping a string code to a code index
     map<string, TIndex>::const_iterator pos;
     
