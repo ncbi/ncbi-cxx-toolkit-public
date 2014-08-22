@@ -461,11 +461,6 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
         TNetStorageFlags default_flags) :
     m_DefaultFlags(default_flags)
 {
-    if (init_string.empty()) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-            "initialization string cannot be empty");
-    }
-
     CUrlArgs url_parser(init_string);
 
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
@@ -490,11 +485,6 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
         }
     }
 
-    if (m_NetStorageServiceName.empty()) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "'nst' parameter is missing from the initialization string");
-    }
-
     m_RequestNumber.Set(0);
 
     CJsonNode hello(MkStdRequest("HELLO"));
@@ -511,11 +501,6 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
 
     m_Service->Init(this, m_NetStorageServiceName,
             NULL, kEmptyStr, s_NetStorageConfigSections);
-
-    if (m_Service->m_ServiceType == CNetService::eServiceNotDefined) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "NetStorage service name is not defined");
-    }
 }
 
 CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
