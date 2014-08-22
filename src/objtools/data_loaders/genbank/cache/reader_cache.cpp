@@ -70,7 +70,7 @@ int SCacheInfo::GetDebugLevel(void)
 }
 
 const int    SCacheInfo::BLOB_IDS_MAGIC = 0x32fd0108;
-const char*  SCacheInfo::BLOB_IDS_SUBKEY = "blobs8";
+const char* const SCacheInfo::BLOB_IDS_SUBKEY = "blobs8";
 
 string SCacheInfo::GetBlobKey(const CBlob_id& blob_id)
 {

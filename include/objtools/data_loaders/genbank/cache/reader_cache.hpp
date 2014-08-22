@@ -54,7 +54,7 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     typedef vector<int> TIdCacheData;
 
     static const int    BLOB_IDS_MAGIC;
-    static const char*  BLOB_IDS_SUBKEY;
+    static const char*  const BLOB_IDS_SUBKEY;
 
     //////////////////////////////////////////////////////////////////
     // Keys manipulation methods:
