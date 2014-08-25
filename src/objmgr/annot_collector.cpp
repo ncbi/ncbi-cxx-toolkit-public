@@ -615,56 +615,58 @@ struct CAnnotObjectType_Less
 class CCreateFeat
 {
 public:
-    const CSeq_feat& GetOriginalFeat(const CAnnotObject_Ref& ref,
-                                     const CAnnotObject_Info* info);
-    const CSeq_feat& GetMappedFeat(const CAnnotObject_Ref& ref,
-                                   const CAnnotObject_Info* info);
-    int GetCdregionOrder(const CAnnotObject_Ref& ref,
-                         const CAnnotObject_Info* info);
-    const char* GetImpKey(const CAnnotObject_Ref& ref,
-                          const CAnnotObject_Info* info);
+    CCreateFeat(const CAnnotObject_Ref& ref,
+                const CAnnotObject_Info* info)
+        : m_Ref(ref), m_Info(info)
+        {
+        }
+
+    const CSeq_feat& GetOriginalFeat(void);
+    const CSeq_feat& GetMappedFeat(void);
+    int GetCdregionOrder(void);
+    const char* GetImpKey(void);
 
     static const CSeq_loc& GetLoc(const CSeq_feat& feat, bool by_product) {
         return by_product? feat.GetProduct(): feat.GetLocation();
     }
 
-    ENa_strand GetStrand(const CAnnotObject_Ref& ref,
-                         const CAnnotObject_Info* info,
-                         bool by_product);
+    ENa_strand GetStrand(bool by_product);
 
-    const CSeq_loc* GetLoc(const CAnnotObject_Ref& ref,
-                           const CAnnotObject_Info* info,
-                           bool by_product);
+    const CSeq_loc* GetLoc(bool by_product);
+
+    bool HasFeatLabel(void);
+    string GetFeatLabel(void);
 
 private:
     CRef<CSeq_feat> m_CreatedOriginalFeat;
+    const CAnnotObject_Ref& m_Ref;
+    const CAnnotObject_Info* m_Info;
 };
 
 
-const CSeq_feat& CCreateFeat::GetOriginalFeat(const CAnnotObject_Ref& ref,
-                                              const CAnnotObject_Info* info)
+const CSeq_feat& CCreateFeat::GetOriginalFeat(void)
 {
-    if ( ref.IsPlainFeat() ) {
+    if ( m_Ref.IsPlainFeat() ) {
         // real Seq-feat exists
-        return *info->GetFeatFast();
+        return *m_Info->GetFeatFast();
     }
     else {
         // table feature
         if ( !m_CreatedOriginalFeat ) {
             CRef<CSeq_point> seq_pnt;
             CRef<CSeq_interval> seq_int;
-            if ( !info ) {
+            if ( !m_Info ) {
                 // SNP table feature
                 const CSeq_annot_SNP_Info& annot_snp_info =
-                    ref.GetSeq_annot_SNP_Info();
-                ref.GetSNP_Info().UpdateSeq_feat(m_CreatedOriginalFeat,
-                                                 seq_pnt, seq_int,
-                                                 annot_snp_info);
+                    m_Ref.GetSeq_annot_SNP_Info();
+                m_Ref.GetSNP_Info().UpdateSeq_feat(m_CreatedOriginalFeat,
+                                                   seq_pnt, seq_int,
+                                                   annot_snp_info);
             }
             else {
-                _ASSERT(ref.IsTableFeat());
-                ref.GetSeq_annot_Info().GetTableInfo().
-                    UpdateSeq_feat(ref.GetAnnotIndex(),
+                _ASSERT(m_Ref.IsTableFeat());
+                m_Ref.GetSeq_annot_Info().GetTableInfo().
+                    UpdateSeq_feat(m_Ref.GetAnnotIndex(),
                                    m_CreatedOriginalFeat, seq_pnt, seq_int);
             }
             _ASSERT(m_CreatedOriginalFeat);
@@ -674,12 +676,11 @@ const CSeq_feat& CCreateFeat::GetOriginalFeat(const CAnnotObject_Ref& ref,
 }
 
 
-const CSeq_feat& CCreateFeat::GetMappedFeat(const CAnnotObject_Ref& ref,
-                                            const CAnnotObject_Info* info)
+const CSeq_feat& CCreateFeat::GetMappedFeat(void)
 {
-    CAnnotMapping_Info& map = ref.GetMappingInfo();
+    CAnnotMapping_Info& map = m_Ref.GetMappingInfo();
     if ( !map.IsMapped() ) {
-        return GetOriginalFeat(ref, info);
+        return GetOriginalFeat();
     }
     if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_feat ) {
         // mapped Seq-feat is created already
@@ -687,17 +688,16 @@ const CSeq_feat& CCreateFeat::GetMappedFeat(const CAnnotObject_Ref& ref,
     }
     
     CRef<CSeq_feat> mapped_feat(new CSeq_feat);
-    map.InitializeMappedSeq_feat(GetOriginalFeat(ref, info), *mapped_feat);
+    map.InitializeMappedSeq_feat(GetOriginalFeat(), *mapped_feat);
     map.SetMappedSeq_feat(*mapped_feat);
     return map.GetMappedSeq_feat();
 }
 
 
-int CCreateFeat::GetCdregionOrder(const CAnnotObject_Ref& ref,
-                                  const CAnnotObject_Info* info)
+int CCreateFeat::GetCdregionOrder(void)
 {
     CCdregion::EFrame frame = 
-        GetMappedFeat(ref, info).GetData().GetCdregion().GetFrame();
+        GetMappedFeat().GetData().GetCdregion().GetFrame();
     if ( frame == CCdregion::eFrame_not_set ) {
         frame = CCdregion::eFrame_one;
     }
@@ -705,23 +705,20 @@ int CCreateFeat::GetCdregionOrder(const CAnnotObject_Ref& ref,
 }
 
 
-const char* CCreateFeat::GetImpKey(const CAnnotObject_Ref& ref,
-                                   const CAnnotObject_Info* info)
+const char* CCreateFeat::GetImpKey(void)
 {
     static const char* const variation_key = "variation";
-    if ( !info ) {
+    if ( !m_Info ) {
         return variation_key;
     }
-    return GetOriginalFeat(ref, info).GetData().GetImp().GetKey().c_str();
+    return GetOriginalFeat().GetData().GetImp().GetKey().c_str();
 }
 
 
-ENa_strand CCreateFeat::GetStrand(const CAnnotObject_Ref& ref,
-                                  const CAnnotObject_Info* info,
-                                  bool by_product)
+ENa_strand CCreateFeat::GetStrand(bool by_product)
 {
     try {
-        CAnnotMapping_Info& map = ref.GetMappingInfo();
+        CAnnotMapping_Info& map = m_Ref.GetMappingInfo();
         if ( map.IsMappedLocation() ) {
             // location is mapped
             if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_feat ) {
@@ -739,13 +736,13 @@ ENa_strand CCreateFeat::GetStrand(const CAnnotObject_Ref& ref,
         }
         else {
             // location is not mapped - use original
-            if ( !info ) {
+            if ( !m_Info ) {
                 // table SNP without mapping
                 return map.GetMappedStrand();
             }
             else {
                 // get location from the Seq-feat
-                return GetLoc(GetOriginalFeat(ref, info), by_product).GetStrand();
+                return GetLoc(GetOriginalFeat(), by_product).GetStrand();
             }
         }
     }
@@ -756,15 +753,13 @@ ENa_strand CCreateFeat::GetStrand(const CAnnotObject_Ref& ref,
 }
 
 
-const CSeq_loc* CCreateFeat::GetLoc(const CAnnotObject_Ref& ref,
-                                    const CAnnotObject_Info* info,
-                                    bool by_product)
+const CSeq_loc* CCreateFeat::GetLoc(bool by_product)
 {
-    if ( !info ) {
+    if ( !m_Info ) {
         // table SNP -> no mix
         return 0;
     }
-    CAnnotMapping_Info& map = ref.GetMappingInfo();
+    CAnnotMapping_Info& map = m_Ref.GetMappingInfo();
     if ( map.IsMappedLocation() ) {
         // location is mapped
         if ( map.GetMappedObjectType() == map.eMappedObjType_Seq_loc ) {
@@ -777,14 +772,52 @@ const CSeq_loc* CCreateFeat::GetLoc(const CAnnotObject_Ref& ref,
             return 0;
         }
         // get location from the Seq-feat
-        const CSeq_loc& loc = GetLoc(GetMappedFeat(ref, info), by_product);
+        const CSeq_loc& loc = GetLoc(GetMappedFeat(), by_product);
         return &loc;
     }
     else {
         // get location from the Seq-feat
-        const CSeq_loc& loc = GetLoc(GetOriginalFeat(ref, info), by_product);
+        const CSeq_loc& loc = GetLoc(GetOriginalFeat(), by_product);
         return &loc;
     }
+}
+
+
+bool CCreateFeat::HasFeatLabel(void)
+{
+    const CSeq_feat& feat = GetOriginalFeat();
+    return (feat.IsSetQual() && !feat.GetQual().empty()) ||
+        (feat.IsSetComment() && !feat.GetComment().empty());
+}
+
+
+string CCreateFeat::GetFeatLabel(void)
+{
+    string label;
+
+    const CSeq_feat& feat = GetOriginalFeat();
+
+    // Put Seq-feat qual into label
+    if ( feat.IsSetQual() ) {
+        ITERATE( CSeq_feat::TQual, it, feat.GetQual() ) {
+            label += label.empty()? '/': ' ';
+            label += (**it).GetQual();
+            if (!(**it).GetVal().empty()) {
+                label += '=';
+                label += (**it).GetVal();
+            }
+        }
+    }
+
+    // Put Seq-feat comment into label
+    if ( feat.IsSetComment() ) {
+        if ( !label.empty()) {
+            label += "; ";
+        }
+        label += feat.GetComment();
+    }
+
+    return label;
 }
 
 
@@ -856,11 +889,12 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             }
         }
 
-        CCreateFeat x_create, y_create;
+        CCreateFeat x_create(x, x_info);
+        CCreateFeat y_create(y, y_info);
 
         // compare strands
-        ENa_strand x_strand = x_create.GetStrand(x, x_info, m_ByProduct);
-        ENa_strand y_strand = y_create.GetStrand(y, y_info, m_ByProduct);
+        ENa_strand x_strand = x_create.GetStrand(m_ByProduct);
+        ENa_strand y_strand = y_create.GetStrand(m_ByProduct);
         bool x_minus = IsReverse(x_strand);
         bool y_minus = IsReverse(y_strand);
         if ( x_minus != y_minus ) {
@@ -869,8 +903,8 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         }
         
         // compare complex locations (mix or packed intervals)
-        const CSeq_loc* x_loc = x_create.GetLoc(x, x_info, m_ByProduct);
-        const CSeq_loc* y_loc = y_create.GetLoc(y, y_info, m_ByProduct);
+        const CSeq_loc* x_loc = x_create.GetLoc(m_ByProduct);
+        const CSeq_loc* y_loc = y_create.GetLoc(m_ByProduct);
         
         bool x_complex = x_loc && (x_loc->IsMix() || x_loc->IsPacked_int());
         bool y_complex = y_loc && (y_loc->IsMix() || y_loc->IsPacked_int());
@@ -900,15 +934,16 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
         // type dependent comparison
         if ( x_feat_type == CSeqFeatData::e_Cdregion ) {
             // compare frames of identical CDS ranges
-            int x_frame = x_create.GetCdregionOrder(x, x_info);
-            int y_frame = y_create.GetCdregionOrder(y, y_info);
+            int x_frame = x_create.GetCdregionOrder();
+            int y_frame = y_create.GetCdregionOrder();
             if ( x_frame != y_frame ) {
                 return x_frame < y_frame;
             }
         }
-        else if ( x_feat_type == CSeqFeatData::e_Imp ) {
-            const char* x_key = x_create.GetImpKey(x, x_info);
-            const char* y_key = y_create.GetImpKey(y, y_info);
+        else if ( x_feat_subtype == CSeqFeatData::eSubtype_imp ) {
+            // all non-standard imported features have the same subtype
+            const char* x_key = x_create.GetImpKey();
+            const char* y_key = y_create.GetImpKey();
 
             // compare labels of imp features
             if ( x_key != y_key ) {
@@ -918,10 +953,48 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
                 }
             }
         }
+        
+        if ( !m_ByProduct ) {
+            // order by product id
+            const CSeq_feat& x_feat = x_create.GetOriginalFeat();
+            const CSeq_feat& y_feat = y_create.GetOriginalFeat();
+            bool x_has_product = x_feat.IsSetProduct();
+            bool y_has_product = x_feat.IsSetProduct();
+            if ( x_has_product != y_has_product ) {
+                return !x_has_product; // without product first
+            }
+            if ( x_has_product ) {
+                const CSeq_id* x_id = x_feat.GetProduct().GetId();
+                const CSeq_id* y_id = y_feat.GetProduct().GetId();
+                if ( (x_id == NULL) != (y_id == NULL) ) {
+                    return x_id == NULL; // no product id first
+                }
+                if ( x_id ) {
+                    string x_id_str = x_id->AsFastaString();
+                    string y_id_str = y_id->AsFastaString();
+                    if ( int diff = NStr::CompareNocase(x_id_str, y_id_str) ) {
+                        return diff < 0;
+                    }
+                }
+            }
+        }
+
+        bool x_has_label = x_create.HasFeatLabel();
+        bool y_has_label = y_create.HasFeatLabel();
+        if ( x_has_label != y_has_label ) {
+            return !x_has_label; // no-label first
+        }
+        if ( x_has_label ) {
+            string x_label = x_create.GetFeatLabel();
+            string y_label = y_create.GetFeatLabel();
+            if ( int diff = NStr::CompareNocase(x_label, y_label) ) {
+                return diff < 0;
+            }
+        }
 
         if ( m_FeatComparator ) {
-            const CSeq_feat& x_feat = x_create.GetMappedFeat(x, x_info);
-            const CSeq_feat& y_feat = y_create.GetMappedFeat(y, y_info);
+            const CSeq_feat& x_feat = x_create.GetMappedFeat();
+            const CSeq_feat& y_feat = y_create.GetMappedFeat();
             if ( m_FeatComparator->Less(x_feat, y_feat, m_Scope) ) {
                 return true;
             }
