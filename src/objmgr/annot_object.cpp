@@ -604,31 +604,31 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
         {
             const CSeq_align::C_Segs::TDenseg& denseg =
                 align.GetSegs().GetDenseg();
-            int dim    = denseg.GetDim();
-            int numseg = denseg.GetNumseg();
+            size_t dim    = size_t(denseg.GetDim());
+            size_t numseg = size_t(denseg.GetNumseg());
             // claimed dimension may not be accurate :-/
-            if (numseg != (int)denseg.GetLens().size()) {
+            if (numseg != denseg.GetLens().size()) {
                 ERR_POST_X(4, Warning << "Invalid 'lens' size in denseg");
-                numseg = min(numseg, (int)denseg.GetLens().size());
+                numseg = min(numseg, denseg.GetLens().size());
             }
-            if (dim != (int)denseg.GetIds().size()) {
+            if (dim != denseg.GetIds().size()) {
                 ERR_POST_X(5, Warning << "Invalid 'ids' size in denseg");
-                dim = min(dim, (int)denseg.GetIds().size());
+                dim = min(dim, denseg.GetIds().size());
             }
-            if (dim*numseg != (int)denseg.GetStarts().size()) {
+            if (dim*numseg != denseg.GetStarts().size()) {
                 ERR_POST_X(6, Warning << "Invalid 'starts' size in denseg");
-                dim = min(dim*numseg, (int)denseg.GetStarts().size()) / numseg;
+                dim = min(dim*numseg, denseg.GetStarts().size()) / numseg;
             }
             if (denseg.IsSetStrands()
-                && dim*numseg != (int)denseg.GetStrands().size()) {
+                && dim*numseg != denseg.GetStrands().size()) {
                 ERR_POST_X(7, Warning << "Invalid 'strands' size in denseg");
-                dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
+                dim = min(dim*numseg, denseg.GetStrands().size()) / numseg;
             }
-            if ((int)hrmaps.size() < dim) {
+            if (hrmaps.size() < dim) {
                 hrmaps.resize(dim);
             }
-            for (int seg = 0;  seg < numseg;  seg++) {
-                for (int row = 0;  row < dim;  row++) {
+            for (size_t seg = 0;  seg < numseg;  seg++) {
+                for (size_t row = 0;  row < dim;  row++) {
                     if (denseg.GetStarts()[seg*dim + row] < 0 ) {
                         continue;
                     }
@@ -650,13 +650,14 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             const CSeq_align::C_Segs::TStd& std =
                 align.GetSegs().GetStd();
             ITERATE ( CSeq_align::C_Segs::TStd, it, std ) {
-                if ((int)hrmaps.size() < (*it)->GetDim()) {
+                size_t dim = size_t((*it)->GetDim());
+                if (hrmaps.size() < dim) {
                     hrmaps.resize((*it)->GetDim());
                 }
                 ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
                     CSeq_loc_CI row_it(**it_loc);
-                    for (int row = 0; row_it; ++row_it, ++row) {
-                        if (row >= (int)hrmaps.size()) {
+                    for (size_t row = 0; row_it; ++row_it, ++row) {
+                        if (row >= hrmaps.size()) {
                             hrmaps.resize(row + 1);
                         }
                         const CSeq_id& id = row_it.GetSeq_id();
@@ -674,23 +675,23 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
         {
             const CSeq_align::C_Segs::TPacked& packed =
                 align.GetSegs().GetPacked();
-            int dim    = packed.GetDim();
-            int numseg = packed.GetNumseg();
+            size_t dim    = size_t(packed.GetDim());
+            size_t numseg = size_t(packed.GetNumseg());
             // claimed dimension may not be accurate :-/
-            if (dim * numseg > (int)packed.GetStarts().size()) {
+            if (dim * numseg > packed.GetStarts().size()) {
                 dim = packed.GetStarts().size() / numseg;
             }
-            if (dim * numseg > (int)packed.GetPresent().size()) {
+            if (dim * numseg > packed.GetPresent().size()) {
                 dim = packed.GetPresent().size() / numseg;
             }
-            if (dim > (int)packed.GetLens().size()) {
+            if (dim > packed.GetLens().size()) {
                 dim = packed.GetLens().size();
             }
-            if ((int)hrmaps.size() < dim) {
+            if (hrmaps.size() < dim) {
                 hrmaps.resize(dim);
             }
-            for (int seg = 0;  seg < numseg;  seg++) {
-                for (int row = 0;  row < dim;  row++) {
+            for (size_t seg = 0;  seg < numseg;  seg++) {
+                for (size_t row = 0;  row < dim;  row++) {
                     if ( packed.GetPresent()[seg*dim + row] ) {
                         hrmaps[row].SetMasterSeq(master);
                         const CSeq_id& id = *packed.GetIds()[row];
