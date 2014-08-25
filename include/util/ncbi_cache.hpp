@@ -178,7 +178,7 @@ public:
     void SetCapacity(TSizeType new_capacity);
 
     /// Get current number of elements in the cache
-    TSizeType GetSize(void) const { return m_CacheSet.size(); }
+    TSizeType GetSize(void) const { return TSizeType(m_CacheSet.size()); }
 
     /// Truncate the cache leaving at most new_size elements.
     /// Does not affect cache capacity. If new_size is zero
