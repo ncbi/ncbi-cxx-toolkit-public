@@ -53,21 +53,27 @@ static void sx_RunTest(const string& file_name)
     string out_name = TEST_DIR+file_name+".out";
     CSeq_entry entry, ref_entry;
     {
-        ifstream in(asn_name.c_str());
+        CNcbiIfstream in(asn_name.c_str());
         in >> MSerial_AsnText >> entry;
     }
     entry.ReassignConflictingIds();
     {
-        ifstream in(ref_name.c_str());
+        CNcbiIfstream in(ref_name.c_str());
         in >> MSerial_AsnText >> ref_entry;
     }
     if ( !entry.Equals(ref_entry) ) {
         // update delayed parsing buffers for correct ASN.1 text indentation.
         for ( CStdTypeConstIterator<string> it(ConstBegin(entry)); it; ++it ) {
         }
-        ofstream out(out_name.c_str());
-        out << MSerial_AsnText << entry;
-        system(("diff "+out_name+" "+ref_name).c_str());
+        {
+            CNcbiOfstream out(out_name.c_str());
+            out << MSerial_AsnText << entry;
+        }
+#ifdef NCBI_OS_UNIX
+        // this call is just for displaying file difference in log
+        string cmd = "diff \""+out_name+"\" \""+ref_name+"\"";
+        BOOST_CHECK_EQUAL(system(cmd.c_str()), 0);
+#endif
         BOOST_CHECK(entry.Equals(ref_entry));
     }
 }
