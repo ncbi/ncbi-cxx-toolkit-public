@@ -651,7 +651,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
     CBitString::size_type len = 0;
     if (hex) {
         Uint1 byte;
-        obj.resize(4*data.size());
+        obj.resize(CBitString::size_type(4*data.size()));
         ITERATE( string, i, data) {
             byte = *i;
             if (byte) {
@@ -681,7 +681,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
         }
         Expect('H');
     } else {
-        obj.resize(data.size());
+        obj.resize(CBitString::size_type(data.size()));
         ITERATE( string, i, data) {
             if ( *i != 0 ) {
                 obj.set_bit(len);

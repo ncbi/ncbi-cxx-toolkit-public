@@ -1705,7 +1705,7 @@ void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
 #if BITSTRING_AS_VECTOR
     obj.reserve((--length)*8);
 #else
-    obj.resize((--length)*8);
+    obj.resize(CBitString::size_type((--length)*8));
     CBitString::size_type len = 0;
 #endif
 
