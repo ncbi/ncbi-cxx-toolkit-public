@@ -62,6 +62,10 @@ public:
         eUnknownLength,  ///< Can not resolve sequence length
         eBadAlignment,   ///< Unsuported or invalid alignment
         eBadFeature,     ///< Feature can not be used for mapping
+
+        /// An object can not be mapped - thrown by Map(CSeq_annot&).
+        eCanNotMap,
+
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;

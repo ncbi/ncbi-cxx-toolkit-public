@@ -57,6 +57,7 @@ const char* CAnnotMapperException::GetErrCodeString(void) const
     case eUnknownLength:    return "eUnknownLength";
     case eBadAlignment:     return "eBadAlignment";
     case eBadFeature:       return "eBadFeature";
+    case eCanNotMap:        return "eCanNotMap";
     case eOtherError:       return "eOtherError";
     default:                return CException::GetErrCodeString();
     }
@@ -1511,9 +1512,6 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CPacked_seg& pseg, size_t to_row)
 void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
                                          const CSeq_id&      to_id)
 {
-    // For spliced-segs the default begavior should be to merge mapped
-    // ranges by exon.
-    SetMergeBySeg();
     // Assume the same seq-id can not be used in both genomic and product rows,
     // try find the correct row.
     if (spliced.IsSetGenomic_id()  &&  spliced.GetGenomic_id().Equals(to_id)) {
@@ -3383,10 +3381,8 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
                 if ( reverse ) {
                     const SMappedRange& mrg = it->second[strand_idx].front();
                     // Check coordinates or group number.
-                    if (m_MergeFlag == eMergeAbutting) {
-                        no_merge = no_merge ||
-                            (mrg.range.GetFrom() != range.GetToOpen());
-                    }
+                    no_merge = no_merge ||
+                        (mrg.range.GetFrom() != range.GetToOpen());
                     if (m_MergeFlag == eMergeBySeg) {
                         no_merge = no_merge  ||  (mrg.group != group);
                     }
@@ -3394,10 +3390,8 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
                 else {
                     const SMappedRange& mrg = it->second[strand_idx].back();
                     // Check coordinates or group number.
-                    if (m_MergeFlag == eMergeAbutting) {
-                        no_merge = no_merge  ||
-                            (mrg.range.GetToOpen() != range.GetFrom());
-                    }
+                    no_merge = no_merge  ||
+                        (mrg.range.GetToOpen() != range.GetFrom());
                     if (m_MergeFlag == eMergeBySeg) {
                         no_merge = no_merge  ||  (mrg.group != group);
                     }
@@ -3817,8 +3811,12 @@ CRef<CSeq_graph> CSeq_loc_Mapper_Base::Map(const CSeq_graph& src_graph)
 }
 
 
-void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
+CSeq_loc_Mapper_Base::EMapResult
+CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
 {
+    EMapResult ret = eMapped_None;
+    size_t mapped_count = 0;
+    size_t non_mapped_count = 0;
     switch (annot.GetData().Which()) {
     case CSeq_annot::C_Data::e_Ftable:
         {
@@ -3841,8 +3839,18 @@ void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
                         mapped = mapped  ||  !loc->IsNull();
                     }
                 }
-                if ((flags & fAnnotMap_RemoveNonMapping)  &&  !mapped) {
-                    ftable.erase(it);
+                if ( mapped ) {
+                    mapped_count++;
+                }
+                else {
+                    non_mapped_count++;
+                    if (flags & fAnnotMap_RemoveNonMapping) {
+                        ftable.erase(it);
+                    }
+                    if (flags & fAnnotMap_ThrowOnFailure) {
+                        NCBI_THROW(CAnnotMapperException, eCanNotMap,
+                                   "Can not map seq-feat.");
+                    }
                 }
             }
             break;
@@ -3854,9 +3862,17 @@ void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
                 CRef<CSeq_align> align = Map(**it);
                 if ( align ) {
                     *it = align;
+                    mapped_count++;
                 }
-                else if (flags & fAnnotMap_RemoveNonMapping) {
-                    aligns.erase(it);
+                else {
+                    non_mapped_count++;
+                    if (flags & fAnnotMap_RemoveNonMapping) {
+                        aligns.erase(it);
+                    }
+                    if (flags & fAnnotMap_ThrowOnFailure) {
+                        NCBI_THROW(CAnnotMapperException, eCanNotMap,
+                                   "Can not map seq-align.");
+                    }
                 }
             }
             break;
@@ -3868,20 +3884,35 @@ void CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
                 CRef<CSeq_graph> graph = Map(**it);
                 if ( graph ) {
                     *it = graph;
+                    mapped_count++;
                 }
-                else if (flags & fAnnotMap_RemoveNonMapping) {
-                    graphs.erase(it);
+                else {
+                    non_mapped_count++;
+                    if (flags & fAnnotMap_RemoveNonMapping) {
+                        graphs.erase(it);
+                    }
+                    if (flags & fAnnotMap_ThrowOnFailure) {
+                        NCBI_THROW(CAnnotMapperException, eCanNotMap,
+                                   "Can not map seq-graph.");
+                    }
                 }
             }
             break;
         }
     default:
         {
+            if (flags & fAnnotMap_ThrowOnFailure) {
+                NCBI_THROW(CAnnotMapperException, eCanNotMap,
+                            "Can not map seq-annot - unsupported type.");
+            }
             ERR_POST_X(30, Warning << "Unsupported CSeq_annot type: " <<
                 annot.GetData().Which());
-            return;
         }
     }
+    if ( mapped_count ) {
+        ret = non_mapped_count ? eMapped_Some : eMapped_All;
+    }
+    return ret;
 }
 
 

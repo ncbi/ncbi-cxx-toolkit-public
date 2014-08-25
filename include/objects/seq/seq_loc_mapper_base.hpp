@@ -281,7 +281,6 @@ private:
 ///  Mapping locations and alignments between bioseqs through seq-locs,
 ///  features, alignments or between parts of segmented bioseqs.
 
-
 class NCBI_SEQ_EXPORT CSeq_loc_Mapper_Base : public CObject
 {
 public:
@@ -451,15 +450,30 @@ public:
         fAnnotMap_Both     = fAnnotMap_Location | fAnnotMap_Product,
 
         /// Remove annotations which can not be mapped with this mapper.
+        /// If the flag is not set, the original annotation is stored
+        /// in the seq-annot.
         fAnnotMap_RemoveNonMapping = 1 << 2,
+
+        /// Throw exception if an annotation can not be mapped.
+        fAnnotMap_ThrowOnFailure = 1 << 3,
 
         fAnnotMap_Default = fAnnotMap_Both
     };
     typedef int TAnnotMapFlags;
 
+    /// Result of seq-annot mapping
+    enum EMapResult {
+        /// No annotation was mapped, the input seq-annot is unchanged.
+        eMapped_None = 0,
+        /// Some (not all) annotations were mapped.
+        eMapped_Some,
+        /// All annotations were mapped, none was removed.
+        eMapped_All
+    };
+
     /// Map each object from the Seq-annot and replace the original
     /// with the mapped one.
-    void Map(CSeq_annot& annot, TAnnotMapFlags flags = fAnnotMap_Default);
+    EMapResult Map(CSeq_annot& annot, TAnnotMapFlags flags = fAnnotMap_Default);
 
     /// Check if the last mapping resulted in partial location
     /// (not all ranges from the original location could be mapped
