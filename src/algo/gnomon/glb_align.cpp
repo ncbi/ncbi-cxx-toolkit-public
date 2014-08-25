@@ -39,69 +39,57 @@ BEGIN_SCOPE(gnomon)
 
 using namespace std;
 
-TCharAlign GlbAlign(const CResidueVec& a, const CResidueVec& b, int rho, int sigma, const char delta[256][256], int end_gap_releif) {
-    //	rho - new gap penalty (one base gap rho+sigma), for end gaps rho-end_gap_releif
+CCigar GlbAlign(const  char* a, int na, const  char*  b, int nb, int rho, int sigma, const char delta[256][256]) {
+    //	rho - new gap penalty (one base gap rho+sigma)
     // sigma - extension penalty
-
-	int na = a.size();
-	int nb = b.size();
     
-    if(numeric_limits<int>::max()/(na+1) <= nb+1) throw bad_alloc();
-    
-	int* s = new(nothrow) int[nb+1];
-	int* sm = new(nothrow) int[nb+1];
-	int* gapb = new(nothrow) int[nb+1];
-	unsigned char* mtrx = new(nothrow) unsigned char[(na+1)*(nb+1)];
-	if(!s || ! sm || !gapb || !gapb || !mtrx) {
-		delete[] s;
-		delete[] sm;
-		delete[] gapb;
-		delete[] mtrx;
-		throw bad_alloc();
-	}
+	int* s = new int[nb+1];                                 // best scores in current a-raw
+	int* sm = new int[nb+1];                                // best scores in previous a-raw
+	int* gapb = new int[nb+1];                              // best score with b-gap
+    char* mtrx = new  char[(na+1)*(nb+1)];                  // backtracking info (Astart/Bstart gap start, Agap/Bgap best score has gap and should be backtracked to Asrt/Bsart)
 
     int rs = rho+sigma;
+    int bignegative = numeric_limits<int>::min()/2;
 
 	sm[0] = 0;
-	sm[1] = -rs+end_gap_releif;
-	for(int i = 2; i <= nb; ++i) 
-        sm[i] = sm[i-1]-sigma; 
-	s[0] = -rho-sigma+end_gap_releif;
-
+	sm[1] = -rs;                  // scores for --------------   (the best scores for i == -1)
+	for(int i = 2; i <= nb; ++i)  //            BBBBBBBBBBBBBB
+        sm[i] = sm[i-1]-sigma;    
+	s[0] = -rs;                   // score for A   (the best score for j == -1 and i == 0)
+                                  //           -
 	for(int i = 0; i <= nb; ++i) 
-        gapb[i] = sm[i];
+        gapb[i] = bignegative;
 	
 	enum{Agap = 1, Bgap = 2, Astart = 4, Bstart = 8};
 	
-	mtrx[0] = 0;
-	for(int i = 1; i <= nb; ++i) {
-        mtrx[i] = Agap;
+    mtrx[0] = 0;
+    for(int i = 1; i <= nb; ++i) {  // ---------------
+        mtrx[i] = Agap;             // BBBBBBBBBBBBBBB
     }
-	mtrx[1] |= Astart;
+    mtrx[1] |= Astart;
 	
-	unsigned char* m = mtrx+nb;
-    int gapa = 0, ss = 0;
+    char* m = mtrx+nb;
 	for(int i = 0; i < na; ++i) {
-		*(++m) = Bstart|Bgap;
-		gapa = s[0];
+		*(++m) = Bstart|Bgap;       //AAAAAAAAAAAAAAA
+                                    //---------------
+        int gapa = bignegative;
 		int ai = a[i];
-		
-		const char* matrix = delta[ai];
-		int* sp = &s[0];
+        const char* matrix = delta[ai];
+		int* sp = s;
 		for(int j = 0; j < nb; ) {
 			*(++m) = 0;
-			ss = sm[j]+matrix[b[j]];
+			int ss = sm[j]+matrix[(int)b[j]];
 
 			gapa -= sigma;
-			if(*sp-rs > gapa) {
-				gapa = *sp-rs;
+			if(*sp-rs > gapa) {    // for j == 0 this will open   AAAAAAAAAAA-  which could be used if mismatch is very expensive
+				gapa = *sp-rs;     //                             -----------B
 				*m |= Astart;
 			}
 			
 			int& gapbj = gapb[++j];
 			gapbj -= sigma;
-			if(sm[j]-rs > gapbj) {
-				gapbj = sm[j]-rs;
+			if(sm[j]-rs > gapbj) {  // for i == 0 this will open  BBBBBBBBBBB- which could be used if mismatch is very expensive
+				gapbj = sm[j]-rs;   //                            -----------A
 				*m |= Bstart;
 			}
 			 
@@ -122,60 +110,39 @@ TCharAlign GlbAlign(const CResidueVec& a, const CResidueVec& b, int rho, int sig
 			}
 		}
 		swap(sm,s);
-		s[0] = sm[0]-sigma; 
+		*s = *sm-sigma; 
 	}
-			
-	*m &= ~(Agap|Bgap);
-    int& gapbj = gapb[nb];
-    if(gapa > gapbj) {
-		if(ss <= gapa+end_gap_releif) {
-			*m |= Agap;
-		}
-	} else {
-		if(ss <= gapbj+end_gap_releif) {
-			*m |= Bgap;
-		}
-	}
-	
-	TCharAlign track;
 	
 	int ia = na-1;
 	int ib = nb-1;
 	m = mtrx+(na+1)*(nb+1)-1;
-	try {
-		while(ia >= 0 || ib >= 0) {
-			if(*m&Agap) {
-				bool enough = false;
-				while(!enough) {
-					track.first.push_back('-');
-					track.second.push_back(b[ib--]);
-					enough = *m&Astart;
-					--m;
-				}
-			} else if(*m&Bgap) {
-				bool enough = false;
-				while(!enough) {
-					track.first.push_back(a[ia--]);
-					track.second.push_back('-');
-					enough = *m&Bstart;
-					m -= nb+1;
-				}
-			} else {
-				track.first.push_back(a[ia--]);
-				track.second.push_back(b[ib--]);
-				m -= nb+2;
-			}
-		}
-	}
-	catch(bad_alloc) {
-		delete[] s;
-		delete[] sm;
-		delete[] gapb;
-		delete[] mtrx;
-		throw;
-	}
-	reverse(track.first.begin(),track.first.end());
-	reverse(track.second.begin(),track.second.end());
+    CCigar track(ia, ib);
+    while(ia >= 0 || ib >= 0) {
+        if(*m&Agap) {
+            int len = 1;
+            while(!(*m&Astart)) {
+                ++len;
+                --m;
+            }
+            --m;
+            ib -= len;
+            track.PushFront(CCigar::SElement(len,'D'));
+        } else if(*m&Bgap) {
+            int len = 1;
+            while(!(*m&Bstart)) {
+                ++len;
+                m -= nb+1;
+            }
+            m -= nb+1;
+            ia -= len;
+            track.PushFront(CCigar::SElement(len,'I'));
+        } else {
+            track.PushFront(CCigar::SElement(1,'M'));
+            --ia;
+            --ib;
+            m -= nb+2;
+        }
+    }
 	
 	delete[] s;
 	delete[] sm;
@@ -185,28 +152,404 @@ TCharAlign GlbAlign(const CResidueVec& a, const CResidueVec& b, int rho, int sig
 	return track;
 }
 
-int GetGlbAlignScore(const TCharAlign& align, int gopen, int gap, const char delta[256][256], int end_gap_releif) {
-    const CResidueVec& seq1 = align.first;
-    const CResidueVec& seq2 = align.second;
-    unsigned int len = seq1.size();
-	int score = 0;
-	for(unsigned int i = 0; i < len; ++i) {
-		if(seq1[i] == '-') {
-			if(i == 0 || seq1[i-1] != '-') score -= gopen+gap;
-			else score -= gap;
-		} else if(seq2[i] == '-') {
-			if(i == 0 || seq2[i-1] != '-') score -= gopen+gap;
-			else score -= gap;
-		} else {
-			score += delta[seq1[i]][seq2[i]];
+
+CCigar LclAlign(const  char* a, int na, const  char*  b, int nb, int rho, int sigma, const char delta[256][256]) {
+    //	rho - new gap penalty (one base gap rho+sigma)
+    // sigma - extension penalty
+
+	int* s = new int[nb+1];                                 // best scores in current a-raw
+	int* sm = new int[nb+1];                                // best scores in previous a-raw
+	int* gapb = new int[nb+1];                              // best score with b-gap
+    char* mtrx = new  char[(na+1)*(nb+1)];                  // backtracking info (Astart/Bstart gap start, Agap/Bgap best score has gap and should be backtracked to Asrt/Bsart; Zero stop bactracking)
+
+    int rs = rho+sigma;
+
+    enum{Agap = 1, Bgap = 2, Astart = 4, Bstart = 8, Zero = 16};
+    
+    for(int i = 0; i <= nb; ++i) {
+        sm[i] = 0;
+        mtrx[i] = Zero;
+        gapb[i] = 0;
+    }
+    s[0] = 0;
+
+    int max_score = 0;
+    char* max_ptr = mtrx;
+    char* m = mtrx+nb;
+	
+    for(int i = 0; i < na; ++i) {
+		*(++m) = Zero;
+		int gapa = 0;
+		int ai = a[i];
+        const char* matrix = delta[ai];
+		int* sp = s;
+		for(int j = 0; j < nb; ) {
+			*(++m) = 0;
+			int ss = sm[j]+matrix[(int)b[j]];
+
+            gapa -= sigma;
+			if(*sp-rs > gapa) {
+				gapa = *sp-rs;
+				*m |= Astart;
+			}
+			
+			int& gapbj = gapb[++j];
+			gapbj -= sigma;
+			if(sm[j]-rs > gapbj) {
+				gapbj = sm[j]-rs;
+				*m |= Bstart;
+			}
+			 
+			if(gapa > gapbj) {
+				if(ss > gapa) {
+					*(++sp) = ss;
+                    if(ss > max_score) {
+                        max_score = ss;
+                        max_ptr = m;
+                    }
+				} else {
+					*(++sp) = gapa;
+					*m |= Agap;
+				}
+			} else {
+				if(ss > gapbj) {
+					*(++sp) = ss;
+                    if(ss > max_score) {
+                        max_score = ss;
+                        max_ptr = m;
+                    }
+				} else {
+					*(++sp) = gapbj;
+					*m |= Bgap;
+				}
+			}
+            if(*sp <= 0) {
+                *sp = 0;
+                *m |= Zero;  
+            }
 		}
+		swap(sm,s);
 	}
-    if(seq1[0] == '-' || seq2[0] == '-') 
-        score -= end_gap_releif;
-    if(seq1[len-1] == '-' || seq2[len-1] == '-') 
-        score -= end_gap_releif;
-	return score;
+
+    int ia = (max_ptr-mtrx)/(nb+1)-1;
+    int ib = (max_ptr-mtrx)%(nb+1)-1;
+    CCigar track(ia, ib);
+    m = max_ptr;
+    while((ia >= 0 || ib >= 0) && !(*m&Zero)) {
+        if(*m&Agap) {
+            int len = 1;
+            while(!(*m&Astart)) {
+                ++len;
+                --m;
+            }
+            --m;
+            ib -= len;
+            track.PushFront(CCigar::SElement(len,'D'));
+        } else if(*m&Bgap) {
+            int len = 1;
+            while(!(*m&Bstart)) {
+                ++len;
+                m -= nb+1;
+            }
+            m -= nb+1;
+            ia -= len;
+            track.PushFront(CCigar::SElement(len,'I'));
+        } else {
+            track.PushFront(CCigar::SElement(1,'M'));
+            --ia;
+            --ib;
+            m -= nb+2;
+        }
+    }
+
+    delete[] s;
+    delete[] sm;
+    delete[] gapb;
+    delete[] mtrx;
+
+    return track;
 }
+
+
+CCigar LclAlign(const  char* a, int na, const  char*  b, int nb, int rho, int sigma, bool pinleft, bool pinright, const char delta[256][256]) {
+    //	rho - new gap penalty (one base gap rho+sigma)
+    // sigma - extension penalty
+
+	int* s = new int[nb+1];                                 // best scores in current a-raw
+	int* sm = new int[nb+1];                                // best scores in previous a-raw
+	int* gapb = new int[nb+1];                              // best score with b-gap
+    char* mtrx = new  char[(na+1)*(nb+1)];                  // backtracking info (Astart/Bstart gap start, Agap/Bgap best score has gap and should be backtracked to Asrt/Bsart; Zero stop bactracking)
+
+    int rs = rho+sigma;
+    int bignegative = numeric_limits<int>::min()/2;
+
+    enum{Agap = 1, Bgap = 2, Astart = 4, Bstart = 8, Zero = 16};
+    
+    sm[0] = 0;
+    mtrx[0] = 0;
+    gapb[0] = bignegative;  // not used
+    if(pinleft) {
+        if(nb > 0) {
+            sm[1] = -rs;
+            mtrx[1] = Astart|Agap;
+            gapb[1] = bignegative;
+            for(int i = 2; i <= nb; ++i) {
+                sm[i] = sm[i-1]-sigma;
+                mtrx[i] = Agap;
+                gapb[i] = bignegative;
+            }
+        }
+        s[0] = -rs; 
+    } else {
+        for(int i = 1; i <= nb; ++i) {
+            sm[i] = 0;
+            mtrx[i] = Zero;
+            gapb[i] = bignegative;
+        }
+        s[0] = 0;
+    }
+
+    int max_score = 0;
+    char* max_ptr = mtrx;
+	
+    char* m = mtrx+nb;
+	for(int i = 0; i < na; ++i) {
+		*(++m) = pinleft ? Bstart|Bgap : Zero;
+		int gapa = bignegative;
+		int ai = a[i];
+		
+		const char* matrix = delta[ai];
+		int* sp = s;
+		for(int j = 0; j < nb; ) {
+			*(++m) = 0;
+			int ss = sm[j]+matrix[(int)b[j]];
+
+            gapa -= sigma;
+			if(*sp-rs > gapa) {
+				gapa = *sp-rs;
+				*m |= Astart;
+			}
+			
+			int& gapbj = gapb[++j];
+			gapbj -= sigma;
+			if(sm[j]-rs > gapbj) {
+				gapbj = sm[j]-rs;
+				*m |= Bstart;
+			}
+			 
+			if(gapa > gapbj) {
+				if(ss > gapa) {
+					*(++sp) = ss;
+                    if(ss > max_score) {
+                        max_score = ss;
+                        max_ptr = m;
+                    }
+				} else {
+					*(++sp) = gapa;
+					*m |= Agap;
+				}
+			} else {
+				if(ss > gapbj) {
+					*(++sp) = ss;
+                    if(ss > max_score) {
+                        max_score = ss;
+                        max_ptr = m;
+                    }
+				} else {
+					*(++sp) = gapbj;
+					*m |= Bgap;
+				}
+			}
+            if(*sp <= 0 && !pinleft) {
+                *sp = 0;
+                *m |= Zero;  
+            }
+		}
+		swap(sm,s);
+        if(pinleft)
+            *s = *sm-sigma; 
+	}
+
+    int maxa, maxb;
+    if(pinright) {
+        maxa = na-1;
+        maxb = nb-1;
+        max_score = sm[nb];
+    } else {
+        maxa = (max_ptr-mtrx)/(nb+1)-1;
+        maxb = (max_ptr-mtrx)%(nb+1)-1;
+        m = max_ptr;
+    }
+    int ia = maxa;
+    int ib = maxb;
+    CCigar track(ia, ib);
+    while((ia >= 0 || ib >= 0) && !(*m&Zero)) {
+        if(*m&Agap) {
+            int len = 1;
+            while(!(*m&Astart)) {
+                ++len;
+                --m;
+            }
+            --m;
+            ib -= len;
+            track.PushFront(CCigar::SElement(len,'D'));
+        } else if(*m&Bgap) {
+            int len = 1;
+            while(!(*m&Bstart)) {
+                ++len;
+                m -= nb+1;
+            }
+            m -= nb+1;
+            ia -= len;
+            track.PushFront(CCigar::SElement(len,'I'));
+        } else {
+            track.PushFront(CCigar::SElement(1,'M'));
+            --ia;
+            --ib;
+            m -= nb+2;
+        }
+    }
+
+    delete[] s;
+    delete[] sm;
+    delete[] gapb;
+    delete[] mtrx;
+
+    return track;
+}
+
+CCigar VariBandAlign(const  char* a, int na, const  char*  b, int nb, int rho, int sigma, const char delta[256][256], const TSignedSeqRange* blimits) {
+    //	rho - new gap penalty (one base gap rho+sigma)
+    // sigma - extension penalty
+
+	int* s = new int[nb+1];                                 // best scores in current a-raw
+	int* sm = new int[nb+1];                                // best scores in previous a-raw
+	int* gapb = new int[nb+1];                              // best score with b-gap
+    char* mtrx = new  char[(na+1)*(nb+1)];                  // backtracking info (Astart/Bstart gap start, Agap/Bgap best score has gap and should be backtracked to Asrt/Bsart; Zero stop bactracking)
+
+    int rs = rho+sigma;
+
+    enum{Agap = 1, Bgap = 2, Astart = 4, Bstart = 8, Zero = 16};
+
+    for(int i = 0; i <= nb; ++i) {
+        s[i] = 0;
+        sm[i] = 0;
+        gapb[i] = 0;
+        mtrx[i] = Zero;
+    }
+
+    int max_score = 0;
+    char* max_ptr = mtrx;
+    char* m = mtrx+nb;
+	
+    const TSignedSeqRange* last = blimits+na;
+    while(true) {
+		int ai = *a++;
+		const char* matrix = delta[ai];
+
+        int bleft = blimits->GetFrom();
+        int bright = blimits->GetTo();
+        m += bleft;
+        *(++m) = Zero;
+		int gapa = 0;
+        int* sp = s+bleft;
+        *sp = 0;
+		for(int j = bleft; j <= bright; ) {
+			*(++m) = 0;
+			int ss = sm[j]+matrix[(int)b[j]];
+
+            gapa -= sigma;
+			if(*sp-rs > gapa) {
+				gapa = *sp-rs;
+				*m |= Astart;
+			}
+			
+			int& gapbj = gapb[++j];
+			gapbj -= sigma;
+			if(sm[j]-rs > gapbj) {
+				gapbj = sm[j]-rs;
+				*m |= Bstart;
+			}
+			 
+			if(gapa > gapbj) {
+				if(ss > gapa) {
+					*(++sp) = ss;
+                    if(ss > max_score) {
+                        max_score = ss;
+                        max_ptr = m;
+                    }
+				} else {
+					*(++sp) = gapa;
+					*m |= Agap;
+				}
+			} else {
+				if(ss > gapbj) {
+					*(++sp) = ss;
+                    if(ss > max_score) {
+                        max_score = ss;
+                        max_ptr = m;
+                    }
+				} else {
+					*(++sp) = gapbj;
+					*m |= Bgap;
+				}
+			}
+            if(*sp <= 0) {
+                *sp = 0;
+                *m |= Zero;  
+            }
+		}
+        if(++blimits == last)
+            break;
+
+		swap(sm,s);
+
+        int next = blimits->GetTo();
+        for( ; bright < next-1; ++bright)
+            *(++m) = Zero;
+        
+        m += nb-bright-1;
+	}
+  
+    int ia = (max_ptr-mtrx)/(nb+1)-1;
+    int ib = (max_ptr-mtrx)%(nb+1)-1;
+    CCigar track(ia, ib);
+    m = max_ptr;
+    while((ia >= 0 || ib >= 0) && !(*m&Zero)) {
+        if(*m&Agap) {
+            int len = 1;
+            while(!(*m&Astart)) {
+                ++len;
+                --m;
+            }
+            --m;
+            ib -= len;
+            track.PushFront(CCigar::SElement(len,'D'));
+        } else if(*m&Bgap) {
+            int len = 1;
+            while(!(*m&Bstart)) {
+                ++len;
+                m -= nb+1;
+            }
+            m -= nb+1;
+            ia -= len;
+            track.PushFront(CCigar::SElement(len,'I'));
+        } else {
+            track.PushFront(CCigar::SElement(1,'M'));
+            --ia;
+            --ib;
+            m -= nb+2;
+        }
+    }
+
+    delete[] s;
+    delete[] sm;
+    delete[] gapb;
+    delete[] mtrx;
+
+    return track;
+}
+
 
 SMatrix::SMatrix(int match, int mismatch) { // matrix for DNA
 
@@ -253,6 +596,27 @@ SMatrix::SMatrix(string name) { // matrix for proteins
         }
     }
 }
+
+double Entropy(const string& seq) {
+    int length = seq.size();
+    double tA = 1.e-8;
+    double tC = 1.e-8;
+    double tG = 1.e-8;
+    double tT = 1.e-8;
+    ITERATE(string, i, seq) {
+        switch(*i) {
+        case 'A': tA += 1; break;
+        case 'C': tC += 1; break;
+        case 'G': tG += 1; break;
+        case 'T': tT += 1; break;
+        default: break;
+        }
+    }
+    double entropy = -(tA*log(tA/length)+tC*log(tC/length)+tG*log(tG/length)+tT*log(tT/length))/(length*log(4));
+    
+    return entropy;
+}
+
 	
 
 END_SCOPE(gnomon)

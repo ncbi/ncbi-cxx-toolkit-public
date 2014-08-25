@@ -39,7 +39,115 @@ BEGIN_SCOPE(gnomon)
 
 using namespace std;
 
-typedef pair<CResidueVec,CResidueVec> TCharAlign;
+typedef pair<string,string> TCharAlign;
+
+class CCigar {
+public:
+    CCigar(int qto = -1, int sto = -1) : m_qfrom(qto+1), m_qto(qto), m_sfrom(sto+1), m_sto(sto) {}
+    struct SElement {
+        SElement(int l, char t) : m_len(l), m_type(t) {}
+        int m_len;
+        char m_type;  // 'M' 'D' 'I'
+    };
+    void PushFront(const SElement& el) {
+        if(el.m_type == 'M') {
+            m_qfrom -= el.m_len;
+            m_sfrom -= el.m_len;
+        } else if(el.m_type == 'D')
+            m_sfrom -= el.m_len;
+        else
+            m_qfrom -= el.m_len;
+            
+        if(m_elements.empty() || m_elements.front().m_type != el.m_type)
+            m_elements.push_front(el);
+        else
+            m_elements.front().m_len += el.m_len;
+    }
+    string CigarString(int qstart, int qlen) const {
+        string cigar;
+        ITERATE(list<SElement>, i, m_elements)
+            cigar += NStr::IntToString(i->m_len)+i->m_type;
+
+        int missingstart = qstart+m_qfrom;
+        if(missingstart > 0)
+            cigar = NStr::IntToString(missingstart)+"S"+cigar;
+        int missingend = qlen-1-m_qto-qstart;
+        if(missingend > 0)
+            cigar += NStr::IntToString(missingend)+"S";
+
+        return cigar;
+    }
+    TSignedSeqRange QueryRange() const { return TSignedSeqRange(m_qfrom, m_qto); }
+    TSignedSeqRange SubjectRange() const { return TSignedSeqRange(m_sfrom, m_sto); }
+    TCharAlign ToAlign(const  char* query, const  char* subject) const {
+        TCharAlign align;
+        query += m_qfrom;
+        subject += m_sfrom;
+        ITERATE(list<SElement>, i, m_elements) {
+            if(i->m_type == 'M') {
+                align.first.insert(align.first.end(), query, query+i->m_len);
+                query += i->m_len;
+                align.second.insert(align.second.end(), subject, subject+i->m_len);
+                subject += i->m_len;
+            } else if(i->m_type == 'D') {
+                align.first.insert(align.first.end(), i->m_len, '-');
+                align.second.insert(align.second.end(), subject, subject+i->m_len);
+                subject += i->m_len;
+            } else {
+                align.first.insert(align.first.end(), query, query+i->m_len);
+                query += i->m_len;
+                align.second.insert(align.second.end(), i->m_len, '-');
+            }
+        }
+
+        return align;
+    }
+    int Matches(const  char* query, const  char* subject) const {
+        int matches = 0;
+        query += m_qfrom;
+        subject += m_sfrom;
+        ITERATE(list<SElement>, i, m_elements) {
+            if(i->m_type == 'M') {
+                for(int l = 0; l < i->m_len; ++l) {
+                    if(*query == *subject)
+                        ++matches;
+                    ++query;
+                    ++subject;
+                }
+            } else if(i->m_type == 'D') {
+                subject += i->m_len;
+            } else {
+                query += i->m_len;
+            }
+        }
+
+        return matches;
+    }
+
+private:
+    list<SElement> m_elements;
+    int m_qfrom, m_qto, m_sfrom, m_sto;
+};
+
+//Needleman-Wunsch
+CCigar GlbAlign(const  char* query, int querylen, const  char* subject, int subjectlen, int gopen, int gapextend, const char delta[256][256]);
+
+//Smith-Waterman
+CCigar LclAlign(const  char* query, int querylen, const  char* subject, int subjectlen, int gopen, int gapextend, const char delta[256][256]);
+
+//Smith-Waterman with optional NW ends
+CCigar LclAlign(const  char* query, int querylen, const  char* subject, int subjectlen, int gopen, int gapextend, bool pinleft, bool pinright, const char delta[256][256]);
+
+//reduced matrix Smith-Waterman
+CCigar VariBandAlign(const  char* query, int querylen, const  char* subject, int subjectlen, int gopen, int gapextend, const char delta[256][256], const TSignedSeqRange* subject_limits);
+
+struct SMatrix
+{
+	SMatrix(int match, int mismatch);  // matrix for DNA
+    SMatrix(string name);  // matrix for proteins
+	
+	char matrix[256][256];
+};
 
 
 template<class T>
@@ -59,16 +167,7 @@ int EditDistance(const T &s1, const T & s2) {
 	return prevCol[len2];
 }
 
-TCharAlign GlbAlign(const CResidueVec& a, const CResidueVec& b, int rho, int sigma, const char delta[256][256], int end_gap_releif = 0);
-int GetGlbAlignScore(const TCharAlign& align, int gopen, int gap, const char delta[256][256], int end_gap_releif = 0);
-
-struct SMatrix
-{
-	SMatrix(int match, int mismatch);  // matrix for DNA
-    SMatrix(string name);  // matrix for proteins
-	
-	char matrix[256][256];
-};
+double Entropy(const string& seq);
 
 END_SCOPE(gnomon)
 END_SCOPE(ncbi)
