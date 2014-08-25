@@ -608,7 +608,7 @@ void CObjectOStreamXml::WriteUint8(Uint8 data)
     m_Output.PutUint8(data);
 }
 
-void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
+void CObjectOStreamXml::WriteDouble2(double data, unsigned digits)
 {
     if (m_SpecialCaseWrite) {
         x_SpecialCaseWrite();

@@ -685,7 +685,7 @@ void CObjectOStreamAsnBinary::WriteUint8(Uint8 data)
 
 static const size_t kMaxDoubleLength = 64;
 
-void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
+void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
 {
     char buffer[kMaxDoubleLength + 16];
     int width;

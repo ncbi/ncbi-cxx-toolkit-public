@@ -161,7 +161,7 @@ void CObjectOStreamAsn::WriteUint8(Uint8 data)
     m_Output.PutUint8(data);
 }
 
-void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
+void CObjectOStreamAsn::WriteDouble2(double data, unsigned digits)
 {
 #if 1
     if (isnan(data)) {

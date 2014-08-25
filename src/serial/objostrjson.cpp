@@ -180,7 +180,7 @@ void CObjectOStreamJson::WriteDouble(double data)
     WriteDouble2(data,DBL_DIG);
 }
 
-void CObjectOStreamJson::WriteDouble2(double data, size_t digits)
+void CObjectOStreamJson::WriteDouble2(double data, unsigned digits)
 {
     if (isnan(data)) {
         ThrowError(fInvalidData, "invalid double: not a number");
