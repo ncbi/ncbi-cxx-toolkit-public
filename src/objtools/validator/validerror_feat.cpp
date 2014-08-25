@@ -1770,6 +1770,118 @@ static bool s_ConsistentWithT (Char ch)
 }
 
 
+
+namespace {
+
+const string kSpliceSiteGTAG = "GT-AG";
+const string kSpliceSiteGCAG = "GC-AG";
+const string kSpliceSiteATAC = "AT-AC";
+const string kSpliceSiteGT = "GT";
+const string kSpliceSiteGC = "GC";
+const string kSpliceSiteAG = "AG";
+
+
+bool s_EqualsG(Char c)
+{
+    return c == 'G';
+}
+
+bool s_EqualsC(Char c)
+{
+    return c == 'C';
+}
+
+bool s_EqualsA(Char c)
+{
+    return c == 'A';
+}
+
+bool s_EqualsT(Char c)
+{
+    return c == 'T';
+}
+
+typedef Char const ( &TConstSpliceSite)[2];
+
+}
+
+static bool s_CheckAdjacentSpliceSites(const string& signature, ENa_strand strand, TConstSpliceSite donor, TConstSpliceSite acceptor)
+{
+    static 
+    struct tagSpliceSiteInfo
+    {
+        const string& id;
+        ENa_strand strand;
+        bool (* check_donor0)(Char);
+        bool (* check_donor1)(Char);
+        bool (* check_acceptor0)(Char);
+        bool (* check_acceptor1)(Char);
+    }
+    SpliceSiteInfo[] = {
+        // 5' << GT...AG <<
+        {kSpliceSiteGTAG, eNa_strand_plus, s_ConsistentWithG, s_ConsistentWithT, s_ConsistentWithA, s_ConsistentWithG},
+        //    >> CT...AC >>, reverse complement
+        {kSpliceSiteGTAG, eNa_strand_minus, s_ConsistentWithA, s_ConsistentWithC, s_ConsistentWithC, s_ConsistentWithT},
+        // 5' << GC...AG <<
+        {kSpliceSiteGCAG, eNa_strand_plus, s_EqualsG, s_EqualsC, s_EqualsA, s_EqualsG},
+        //    >> CT...GC >>, reverse complement
+        {kSpliceSiteGCAG, eNa_strand_minus, s_EqualsG, s_EqualsC, s_EqualsC, s_EqualsT},
+        // 5' << AT...AC <<
+        {kSpliceSiteATAC, eNa_strand_plus, s_EqualsA, s_EqualsT, s_EqualsA, s_EqualsC},
+        //    >> GT...AT >>, reverse complement
+        {kSpliceSiteATAC, eNa_strand_minus, s_EqualsA, s_EqualsT, s_EqualsG, s_EqualsT}
+    };
+    static int size = sizeof (SpliceSiteInfo) / sizeof(struct tagSpliceSiteInfo);
+
+    for (int i = 0; i < size; ++i) {
+        struct tagSpliceSiteInfo* entry = &SpliceSiteInfo[i];
+        if (strand == entry->strand && entry->id == signature) {
+            return (entry->check_donor0(donor[0]) && entry->check_donor1(donor[1]) && 
+                    entry->check_acceptor0(acceptor[0]) && entry->check_acceptor1(acceptor[1]));
+        }
+    }
+
+    NCBI_THROW (CCoreException, eCore, "Unknown splice site signature.");
+}
+
+
+static bool s_CheckSpliceSite(const string& signature, ENa_strand strand, TConstSpliceSite site)
+{
+    static 
+    struct tagSpliceSiteInfo
+    {
+        const string& id;
+        ENa_strand strand;
+        bool (* check_site0)(Char);
+        bool (* check_site1)(Char);
+    }
+    SpliceSiteInfo[] = {
+        // 5' << GT... <<
+        {kSpliceSiteGT, eNa_strand_plus, s_ConsistentWithG, s_ConsistentWithT}, 
+        //    >> ...AC >>, reverse complement
+        {kSpliceSiteGT, eNa_strand_minus, s_ConsistentWithA, s_ConsistentWithC},
+        // 5' << ...AG << 
+        {kSpliceSiteAG, eNa_strand_plus, s_ConsistentWithA, s_ConsistentWithG}, 
+        //    >> CT...>>, reverse complement
+        {kSpliceSiteAG, eNa_strand_minus, s_ConsistentWithC, s_ConsistentWithT},
+        // 5' << GC... << 
+        {kSpliceSiteGC, eNa_strand_plus, s_EqualsG, s_EqualsC},
+        //    >> ...GC >>, reverse complement
+        {kSpliceSiteGC, eNa_strand_minus, s_EqualsG, s_EqualsC} 
+    };
+    static int size = sizeof (SpliceSiteInfo) / sizeof(struct tagSpliceSiteInfo);
+
+    for (int i = 0; i < size; ++i) {
+        struct tagSpliceSiteInfo* entry = &SpliceSiteInfo[i];
+        if (strand == entry->strand && entry->id == signature) {
+            return (entry->check_site0(site[0]) && entry->check_site1(site[1]));
+        }
+    }
+
+    NCBI_THROW (CCoreException, eCore, "Unknown splice site signature.");
+}
+
+
 void CValidError_feat::ValidateIntron (
     const CSeq_feat& feat)
 {
@@ -1830,188 +1942,191 @@ void CValidError_feat::ValidateIntron (
 
     ENa_strand strand = loc.GetStrand();
 
+    if (eNa_strand_minus != strand && eNa_strand_plus != strand) {
+        strand = eNa_strand_plus;
+    }
+
     EDiagSev sev = eDiag_Warning;
     if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
         sev = eDiag_Info;
     }
 
-    if (!partial5) {
-        TSeqPos end = loc.GetStart (eExtreme_Biological);
-        if (vec.IsInGap (end)) {
-            //is ok
-        } else if (strand == eNa_strand_minus) {
-            if (end > 0 
-                && IsResidue (vec[end - 1]) && (s_ConsistentWithA(vec[end - 1]) || s_ConsistentWithG(vec[end - 1]))
-                && IsResidue (vec[end]) && s_ConsistentWithC(vec[end])) {
-                // matches donor
-            } else if (end == seq_len - 1) {
-                PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
-                         "Splice donor consensus (GT) not found at start of terminal intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label,
-                          feat);
-            } else {
-                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
-                         "Splice donor consensus (GT) not found at start of intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label,
-                          feat);
-            }
-        } else {
-            if (end < seq_len - 1
-                && IsResidue (vec[end]) && s_ConsistentWithG(vec[end])
-                && IsResidue (vec[end + 1]) && (s_ConsistentWithT(vec[end + 1]) || s_ConsistentWithC(vec[end + 1]))) {
-                // matches donor
-            } else if (end == 0) {
-                PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
-                         "Splice donor consensus (GT) not found at start of terminal intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label,
-                          feat);
-            } else {
-                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
-                         "Splice donor consensus (GT) not found at start of intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label,
-                          feat);
-            }
-        } 
+    bool donor_in_gap = false;
+    bool acceptor_in_gap = false;
+
+    TSeqPos end5 = loc.GetStart (eExtreme_Biological);
+    if (vec.IsInGap(end5)) {
+        donor_in_gap = true;
     }
-    if (!partial3) {
-        TSeqPos end = loc.GetStop (eExtreme_Biological);
-        if (vec.IsInGap (end)) {
-            //is ok
-        } else if (strand == eNa_strand_minus) {            
-            if (end < seq_len - 1
-                && IsResidue (vec[end]) && vec[end] == 'C'
-                && IsResidue (vec[end + 1]) && vec[end + 1] == 'T') {
-                // matches acceptor
-            } else if (end == 0) {
-                PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
-                          "Splice acceptor consensus (AG) not found at end of terminal intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label + ", but at end of sequence",
-                          feat);
-            } else {
-                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
-                         "Splice acceptor consensus (AG) not found at end of intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label,
-                          feat);
+
+    TSeqPos end3 = loc.GetStop (eExtreme_Biological);
+    if (vec.IsInGap(end3)) {
+        acceptor_in_gap = true;
+    }
+    
+    if (!partial5 && !partial3) {    
+        if (donor_in_gap && acceptor_in_gap) {
+            return;
+        }
+    }
+
+    Char donor[2];  // donor site signature
+    Char acceptor[2];  // acceptor site signature
+    bool donor_good = false;  // flag == "true" indicates that donor signature is in @donor
+    bool acceptor_good = false;  // flag == "true" indicates that acceptor signature is in @acceptor
+
+    // Read donor signature into @donor
+    if (!partial5 && !donor_in_gap) {
+        if (eNa_strand_minus == strand) {
+            if (end5 > 0 && IsResidue (vec[end5 - 1]) && IsResidue (vec[end5])) {
+                donor[0] = vec[end5 - 1];
+                donor[1] = vec[end5];
+                donor_good = true;
             }
-        } else {
-            if (end > 0
-                && IsResidue (vec[end - 1]) && s_ConsistentWithA(vec[end - 1])
-                && IsResidue (vec[end]) && s_ConsistentWithG(vec[end])) {
-                // matches acceptor
-            } else if (end == seq_len - 1) {
-                PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
-                          "Splice acceptor consensus (AG) not found at end of terminal intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label + ", but at end of sequence",
-                          feat);
-            } else {
-                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
-                         "Splice acceptor consensus (AG) not found at end of intron, position "
-                          + NStr::IntToString (end + 1) + " of " + label,
-                          feat);
+        }
+        else {
+            if( end5 < seq_len - 1 && IsResidue (vec[end5]) && IsResidue (vec[end5 + 1])) {
+                donor[0] = vec[end5];
+                donor[1] = vec[end5 + 1];
+                donor_good = true;
+            }
+        }
+    }
+
+    // Read acceptor signature into @acceptor
+    if (!partial3 && !acceptor_in_gap) {
+        if (eNa_strand_minus == strand) {
+            if (end3 <  seq_len - 1 && IsResidue (vec[end3]) && IsResidue (vec[end3 + 1])) {
+                acceptor[0] = vec[end3];
+                acceptor[1] = vec[end3 + 1];
+                acceptor_good = true;
+            }
+        }
+        else {
+            if (end3 > 0 && IsResidue (vec[end3 - 1]) && IsResidue (vec[end3])) {
+                acceptor[0] = vec[end3 - 1];
+                acceptor[1] = vec[end3];
+                acceptor_good = true;
+            }
+        }
+    }
+
+    // Check intron's both ends.
+    if (!partial5 && !partial3) {        
+        if (donor_good && acceptor_good) {
+            if (s_CheckAdjacentSpliceSites(kSpliceSiteGTAG, strand, donor, acceptor) ||
+                s_CheckAdjacentSpliceSites(kSpliceSiteGCAG, strand, donor, acceptor) ||
+                s_CheckAdjacentSpliceSites(kSpliceSiteATAC, strand, donor, acceptor)) {
+                return;
+            }
+        }
+    }
+
+    // Check 5'-most
+    if (!partial5) {
+        if (!donor_in_gap) {
+            bool not_found = true;
+            
+            if (donor_good) {
+                if (s_CheckSpliceSite(kSpliceSiteGT, strand, donor) ||
+                    s_CheckSpliceSite(kSpliceSiteGC, strand, donor)) {                    
+                    not_found = false;
+                }
+            }
+            //
+            if (not_found) {
+                if ((strand == eNa_strand_minus && end5 == seq_len - 1) ||
+                    (strand == eNa_strand_plus && end5 == 0)) {
+
+                    PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                            "Splice donor consensus (GT) not found at start of terminal intron, position "
+                            + NStr::IntToString (end5 + 1) + " of " + label,
+                            feat);
+                }
+                else {
+                    PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                             "Splice donor consensus (GT) not found at start of intron, position "
+                              + NStr::IntToString (end5 + 1) + " of " + label,
+                              feat);
+                }
+            }
+        }
+    }
+
+    // Check 3'-most
+    if (!partial3) {
+        if (!acceptor_in_gap) {
+            bool not_found = true;
+            
+            if (acceptor_good) {
+                if (s_CheckSpliceSite(kSpliceSiteAG, strand, acceptor)) {
+                    not_found = false;
+                }
+            }
+            
+            if (not_found) {
+                if ((strand == eNa_strand_minus && end3 == 0) ||
+                    (strand == eNa_strand_plus && end3 == seq_len - 1)) {
+                    PostErr (eDiag_Info, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                              "Splice acceptor consensus (AG) not found at end of terminal intron, position "
+                              + NStr::IntToString (end3 + 1) + " of " + label + ", but at end of sequence",
+                              feat);
+                }
+                else {
+                     PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                             "Splice acceptor consensus (AG) not found at end of intron, position "
+                              + NStr::IntToString (end3 + 1) + " of " + label,
+                              feat);
+               }
             }
         }
     }
 }
 
-
 void CValidError_feat::ValidateDonor 
 (ENa_strand strand, 
  TSeqPos    stop, 
- CSeqVector vec, 
+ const CSeqVector& vec, 
  TSeqPos    seq_len, 
  bool       rare_consensus_not_expected,
- string     label,
+ const string& label,
  bool       report_errors,
  bool       relax_to_warning,
  bool&      has_errors,
- const CSeq_feat& feat)
+ const CSeq_feat& feat,
+ bool is_last)
 {
+    char donor[2];
 
-    if (strand == eNa_strand_minus) {
-        // check donor on minus strand
-        if (stop > 1) {
-            if (vec.IsInGap(stop - 2) && vec.IsInGap (stop - 1)) {
-                // ok, location abuts gap
-                // suppress warning about UnnecessaryException
-                has_errors = true;
-            } else if (vec[stop - 1] > 250 || vec[stop - 2] > 250) {
-                has_errors = true;
-                if (report_errors) {
-                   PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
-                             "Bad sequence at splice donor after exon ending at position "
-                             + NStr::IntToString (stop + 1) + " of " + label,
-                             feat);
-                }
-            } else if (s_ConsistentWithC(vec[stop - 1]) && s_ConsistentWithA(vec[stop - 2])) {
-                // it's ok, it's abutting the reverse complement of GU
-            } else if (vec[stop - 1] == 'C' && vec[stop - 2] == 'G') {
-                // reverse complement of minor splice site GC
+    bool good_donor = ReadDonorSpliceSite(strand, stop, vec, seq_len, label, report_errors, relax_to_warning, has_errors, feat, donor);
+    if (good_donor) {
+        // Check canonical donor site: "GT"
+        if (!s_CheckSpliceSite(kSpliceSiteGT, strand, donor)) {
+            // Check non-canonical donor site: "GC"
+            if (s_CheckSpliceSite(kSpliceSiteGC, strand, donor)) {
                 if (rare_consensus_not_expected) {
                     has_errors = true;
                     if (report_errors) {
                         PostErr (eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
-                                 "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position "
-                                 + NStr::IntToString (stop + 1) + " of " + label,
-                                 feat);
+                                    "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position "
+                                    + NStr::IntToString (stop + 1) + " of " + label,
+                                    feat);
                     }
-                }
-            } else {
-                has_errors = true;
-                if (report_errors) {
-                    EDiagSev sev = eDiag_Error;
-                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
-                        sev = eDiag_Info;
-                    } else if (relax_to_warning) {
-                        sev = eDiag_Warning;
-                    }
-                    PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
-                             "Splice donor consensus (GT) not found after exon ending at position "
-                             + NStr::IntToString (stop + 1) + " of " + label,
-                             feat);
                 }
             }
-        }
-    } else {
-        // check for donor on plus strand
-        if (stop < seq_len - 2) {
-            if (vec.IsInGap(stop + 1) && vec.IsInGap (stop + 2)) {
-                // ok, location abuts gap
-                // suppress warning about UnnecessaryException
-                has_errors = true;
-            } else if (vec[stop + 1] > 250 || vec[stop + 2] > 250) {
-                has_errors = true;
-                if (report_errors) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
-                             "Bad sequence at splice donor after exon ending at position "
-                             + NStr::IntToString (stop + 1) + " of " + label,
-                             feat);
-                }
-            } else if (s_ConsistentWithG(vec[stop + 1]) && s_ConsistentWithT(vec[stop + 2])) {
-                // it's ok, it's abutting GT
-            } else if (vec[stop + 1] == 'G' && vec[stop + 2] == 'C') {
-                // minor splice site GC
-                if (rare_consensus_not_expected) {
-                    has_errors = true;
-                    if (report_errors) {
-                        PostErr (eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
-                                 "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position "
-                                 + NStr::IntToString (stop + 1) + " of " + label,
-                                 feat);
-                    }
-                }
-            } else {
+            else {
                 has_errors = true;
                 if (report_errors) {
                     EDiagSev sev = eDiag_Error;
-                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                    if (is_last || (m_Imp.IsGpipe() && m_Imp.IsGenomic())) {
                         sev = eDiag_Info;
                     } else if (relax_to_warning) {
                         sev = eDiag_Warning;
                     }
                     PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
-                             "Splice donor consensus (GT) not found after exon ending at position "
-                             + NStr::IntToString (stop + 1) + " of " + label,
-                             feat);
+                                "Splice donor consensus (GT) not found after exon ending at position "
+                                + NStr::IntToString (stop + 1) + " of " + label,
+                                feat);
                 }
             }
         }
@@ -2022,66 +2137,124 @@ void CValidError_feat::ValidateDonor
 void CValidError_feat::ValidateAcceptor 
 (ENa_strand strand, 
  TSeqPos    start, 
- CSeqVector vec, 
+ const CSeqVector& vec, 
  TSeqPos    seq_len, 
  bool       rare_consensus_not_expected,
- string     label,
+ const string& label,
  bool       report_errors,
  bool       relax_to_warning,
  bool&      has_errors,
+ const CSeq_feat& feat,
+ bool is_first)
+{
+    char acceptor[2];
+
+    bool good_acceptor = ReadAcceptorSpliceSite(strand, start, vec, seq_len, label, report_errors, relax_to_warning, has_errors, feat, acceptor);
+    if (good_acceptor) {
+        // Check canonical acceptor site: "AG"
+        if (!s_CheckSpliceSite(kSpliceSiteAG, strand, acceptor)) {
+            has_errors = true;
+            if (report_errors) {
+                EDiagSev sev = eDiag_Error;
+                if (is_first || (m_Imp.IsGpipe() && m_Imp.IsGenomic())) {
+                    sev = eDiag_Info;
+                } else if (relax_to_warning) {
+                    sev = eDiag_Warning;
+                }
+                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                            "Splice acceptor consensus (AG) not found before exon starting at position "
+                            + NStr::IntToString (start + 1) + " of " + label,
+                            feat);
+            }
+        }
+    }
+}
+
+
+void CValidError_feat::ValidateDonorAcceptorPair 
+(ENa_strand strand, 
+ TSeqPos stop, 
+ const CSeqVector& vec_donor, 
+ TSeqPos seq_len_donor, 
+ TSeqPos start, 
+ const CSeqVector& vec_acceptor, 
+ TSeqPos seq_len_acceptor,
+ bool rare_consensus_not_expected,
+ const string& label, 
+ bool report_errors, 
+ bool relax_to_warning, 
+ bool& has_errors, 
  const CSeq_feat& feat)
 {
-    if (strand == eNa_strand_minus) {
-        // check for acceptor on minus strand
-        if (start < seq_len - 2) {
-            if (vec.IsInGap(start + 1) && vec.IsInGap (start + 2)) {
-                // ok, location abuts gap
-                // suppress warning about UnnecessaryException
-                has_errors = true;
-            } else if (vec[start + 1] > 250 || vec[start + 2] > 250) {
-                has_errors = true;
-                if (report_errors) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
-                             "Bad sequence at splice acceptor before exon starting at position "
-                             + NStr::IntToString (start + 1) + " of " + label,
-                             feat);
-                }
-            } else if (s_ConsistentWithC(vec[start + 1]) && s_ConsistentWithT(vec[start + 2])) {
-                // it's ok, it's abutting the reverse complement of AG
-            } else {
+    char donor[2];
+    char acceptor[2];
+    
+    bool good_donor = ReadDonorSpliceSite(strand, stop, vec_donor, seq_len_donor, label, report_errors, relax_to_warning, has_errors, feat, donor);
+    bool good_acceptor = ReadAcceptorSpliceSite(strand, start, vec_acceptor, seq_len_acceptor, label, report_errors, relax_to_warning, has_errors, feat, acceptor);
+
+    if (good_donor && good_acceptor) {
+        // Check canonical adjacent splice sites: "GT-AG"
+        if (s_CheckAdjacentSpliceSites(kSpliceSiteGTAG, strand, donor, acceptor)) {
+            return; // canonical splice site found
+        }
+        // Check non-canonical adjacent splice sites: "GC-AG"
+        if (s_CheckAdjacentSpliceSites(kSpliceSiteGCAG, strand, donor, acceptor)) {
+            if (rare_consensus_not_expected) {
                 has_errors = true;
                 if (report_errors) {
-                    EDiagSev sev = eDiag_Error;
-                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
-                        sev = eDiag_Info;
-                    } else if (relax_to_warning) {
-                        sev = eDiag_Warning;
-                    }
-                    PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
-                             "Splice acceptor consensus (AG) not found before exon starting at position "
-                             + NStr::IntToString (start + 1) + " of " + label,
-                             feat);
+                    PostErr (eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
+                                "Rare splice donor/acceptor consensus (GC-AG) found instead of (GT-AG) after exon ending at position "
+                                + NStr::IntToString (stop + 1) + " and before exon starting at position " 
+                                + NStr::IntToString (start + 1) + " of " + label,
+                                feat);
                 }
             }
         }
-    } else {
-        // check for acceptor on plus strand
-        if (start > 1) {
-            if (vec.IsInGap(start - 2) && vec.IsInGap (start - 1)) {
-                // ok, location abuts gap
-                // suppress warning about UnnecessaryException
-                has_errors = true;
-            } else if (vec[start - 2] > 250 || vec[start - 1] > 250) {
-                has_errors = true;
-                if (report_errors) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
-                             "Bad sequence at splice acceptor before exon starting at position "
-                             + NStr::IntToString (start + 1) + " of " + label,
-                             feat);
+        // Check non-canonical adjacent splice sites: "AT-AC"
+        else if (s_CheckAdjacentSpliceSites(kSpliceSiteATAC, strand, donor, acceptor)) {
+            has_errors = true;
+            if (report_errors) {
+                PostErr (eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
+                            "Rare splice donor/acceptor consensus (AT-AC) found instead of (GT-AG) after exon ending at position "
+                            + NStr::IntToString (stop + 1) + " and before exon starting at position " 
+                            + NStr::IntToString (start + 1) + " of " + label,
+                            feat);
+            }
+        }
+        else {
+            // Check canonical donor site: "GT"
+            if (!s_CheckSpliceSite(kSpliceSiteGT, strand, donor)) {
+                // Check non-canonical donor site: "GC"
+                if (s_CheckSpliceSite(kSpliceSiteGC, strand, donor)) {
+                    if (rare_consensus_not_expected) {
+                        has_errors = true;
+                        if (report_errors) {
+                            PostErr (eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
+                                     "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position "
+                                     + NStr::IntToString (stop + 1) + " of " + label,
+                                     feat);
+                        }
+                    }
                 }
-            } else if (s_ConsistentWithA(vec[start - 2]) && s_ConsistentWithG(vec[start - 1])) {
-                // it's ok, it's abutting AG
-            } else {
+                else {
+                    has_errors = true;
+                    if (report_errors) {
+                        EDiagSev sev = eDiag_Error;
+                        if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                            sev = eDiag_Info;
+                        } else if (relax_to_warning) {
+                            sev = eDiag_Warning;
+                        }
+                        PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                                 "Splice donor consensus (GT) not found after exon ending at position "
+                                 + NStr::IntToString (stop + 1) + " of " + label,
+                                 feat);
+                    }
+                }
+            }
+
+            // Check canonical acceptor site: "AG"
+            if (!s_CheckSpliceSite(kSpliceSiteAG, strand, acceptor)) {
                 has_errors = true;
                 if (report_errors) {
                     EDiagSev sev = eDiag_Error;
@@ -2098,8 +2271,224 @@ void CValidError_feat::ValidateAcceptor
             }
         }
     }
+    else if (good_donor) {
+        // Check canonical donor site: "GT"
+        if (!s_CheckSpliceSite(kSpliceSiteGT, strand, donor)) {
+            // Check non-canonical donor site: "GC"
+            if (s_CheckSpliceSite(kSpliceSiteGC, strand, donor)) {
+                if (rare_consensus_not_expected) {
+                    has_errors = true;
+                    if (report_errors) {
+                        PostErr (eDiag_Info, eErr_SEQ_FEAT_RareSpliceConsensusDonor,
+                                    "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position "
+                                    + NStr::IntToString (stop + 1) + " of " + label,
+                                    feat);
+                    }
+                }
+            }
+            else {
+                has_errors = true;
+                if (report_errors) {
+                    EDiagSev sev = eDiag_Error;
+                    if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                        sev = eDiag_Info;
+                    } else if (relax_to_warning) {
+                        sev = eDiag_Warning;
+                    }
+                    PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                                "Splice donor consensus (GT) not found after exon ending at position "
+                                + NStr::IntToString (stop + 1) + " of " + label,
+                                feat);
+                }
+            }
+        }
+    }
+    else if (good_acceptor) {
+        // Check canonical acceptor site: "AG"
+        if (!s_CheckSpliceSite(kSpliceSiteAG, strand, acceptor)) {
+            has_errors = true;
+            if (report_errors) {
+                EDiagSev sev = eDiag_Error;
+                if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                    sev = eDiag_Info;
+                } else if (relax_to_warning) {
+                    sev = eDiag_Warning;
+                }
+                PostErr (sev, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                            "Splice acceptor consensus (AG) not found before exon starting at position "
+                            + NStr::IntToString (start + 1) + " of " + label,
+                            feat);
+            }
+        }
+    }
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////////
+// Return 
+//   - True if splice site basic validation passed and site's signature is in @site
+//   - False if splice site either in gap, or site's characters are invalid.  
+bool CValidError_feat::ReadDonorSpliceSite
+(ENa_strand strand, 
+ TSeqPos stop, 
+ const CSeqVector& vec, 
+ TSeqPos seq_len, 
+ const string& label, 
+ bool report_errors, 
+ bool relax_to_warning, 
+ bool& has_errors, 
+ const CSeq_feat& feat,
+ TSpliceSite site)
+{
+    bool in_gap;
+    bool bad_seq = false;
+
+    if (strand == eNa_strand_minus) {
+        // check donor and acceptor on minus strand
+        if (stop > 1) {
+            in_gap = (vec.IsInGap(stop - 2) && vec.IsInGap (stop - 1));
+            if (!in_gap) {
+                bad_seq = (vec[stop - 1] > 250 || vec[stop - 2] > 250);
+            }
+
+            if (in_gap) {
+                has_errors = true;
+                return false;
+            }
+            
+            if (bad_seq) {
+                has_errors = true;
+                if (report_errors) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                                "Bad sequence at splice donor after exon ending at position "
+                                + NStr::IntToString (stop + 1) + " of " + label,
+                                feat);
+                }
+                return false;
+            }
+            // Read splice site seq
+            site[0] = vec[stop - 2];
+            site[1] = vec[stop - 1];
+            return true;
+       }
+        else {
+            return false;
+        }
+    }
+    // Read donor splice site from plus strand
+    else {
+        if (stop < seq_len - 2) {
+            in_gap = (vec.IsInGap(stop + 1) && vec.IsInGap (stop + 2));
+            if (!in_gap) {
+                bad_seq = (vec[stop + 1] > 250 || vec[stop + 2] > 250);
+            }
+            if (in_gap) {
+                has_errors = true;
+                return false;
+            }
+            
+            if (bad_seq) {
+                has_errors = true;
+                if (report_errors) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusDonor,
+                             "Bad sequence at splice donor after exon ending at position "
+                             + NStr::IntToString (stop + 1) + " of " + label,
+                             feat);
+                }
+                return false;
+            }
+            site[0] = vec[stop + 1];
+            site[1] = vec[stop + 2];
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+// Return 
+//   - True if splice site basic validation passed and site's signature is in @site
+//   - False if splice site either in gap, or site's characters are invalid.  
+bool CValidError_feat::ReadAcceptorSpliceSite
+(ENa_strand strand, 
+ TSeqPos start, 
+ const CSeqVector& vec, 
+ TSeqPos seq_len,
+ const string& label, 
+ bool report_errors, 
+ bool relax_to_warning, 
+ bool& has_errors, 
+ const CSeq_feat& feat,
+ TSpliceSite site)
+{
+    bool in_gap;
+    bool bad_seq = false;
+
+    if (strand == eNa_strand_minus) {
+        // check donor and acceptor on minus strand
+        if (start < seq_len - 2) {
+            in_gap = (vec.IsInGap(start + 1) && vec.IsInGap (start + 2));
+            if (!in_gap) {
+                bad_seq = (vec[start + 1] > 250 || vec[start + 2] > 250);
+            }
+
+            if (in_gap) {
+                has_errors = true;
+                return false;
+            }
+            
+            if (bad_seq) {
+                has_errors = true;
+                if (report_errors) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                                "Bad sequence at splice acceptor before exon starting at position "
+                                + NStr::IntToString (start + 1) + " of " + label,
+                                feat);
+                }
+                return false;
+            }
+
+            site[0] = vec[start + 1];
+            site[1] = vec[start + 2];
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    // read acceptor splice site from plus strand
+    else {
+        if (start > 1) {
+            in_gap = (vec.IsInGap(start - 2) && vec.IsInGap (start - 1));
+            if (!in_gap) {
+                bad_seq = (vec[start - 2] > 250 || vec[start - 1] > 250);
+            }
+
+            if (in_gap) {
+                has_errors = true;
+                return false;
+            }
+            if (bad_seq) {
+                has_errors = true;
+                if (report_errors) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_NotSpliceConsensusAcceptor,
+                             "Bad sequence at splice acceptor before exon starting at position "
+                             + NStr::IntToString (start + 1) + " of " + label,
+                             feat);
+                }
+                return false;
+            }
+            site[0] = vec[start - 2];
+            site[1] = vec[start - 1];
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}
 
 void CValidError_feat::ValidateSplice(
     const CSeq_feat& feat, bool check_all)
@@ -2173,118 +2562,28 @@ void CValidError_feat::ValidateSplice(
         relax_to_warning = true;
     } 
 
+    // Default value for a strand is '+'
+    if (eNa_strand_unknown == strand) {
+        strand = eNa_strand_plus;
+    }
+
     // only check for errors if overlapping gene is not pseudo
     if (!IsOverlappingGenePseudo(feat)) {
-
-        // get overlapping mRNA - won't check endpoints if they coincide with
-        // endpoints of mRNA
-        TSeqPos mrna_start = 0, mrna_stop = 0;
-        bool set_mrna_start = false, set_mrna_stop = false;
-
-        CConstRef<CSeq_feat> mrna = GetBestOverlappingFeat(
-            loc,
-            CSeqFeatData::eSubtype_mRNA,
-            eOverlap_Contained,
-            *m_Scope);
-        if (mrna) {
-            if (!mrna->GetLocation().IsPartialStart(eExtreme_Biological)) {
-                mrna_start = mrna->GetLocation().GetStart(eExtreme_Biological);
-                set_mrna_start = true;
-            }
-            if (!mrna->GetLocation().IsPartialStop(eExtreme_Biological)) {
-                mrna_stop = mrna->GetLocation().GetStop(eExtreme_Biological);
-                set_mrna_stop = true;
-            }
-        }    
-
-        bool ignore_mrna_partial5 = false;
-        bool ignore_mrna_partial3 = false;
-        if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-            CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(
-                loc,
-                CSeqFeatData::eSubtype_cdregion,
-                eOverlap_Contains,
-                *m_Scope);
-            if (cds) {
-                if (!cds->GetLocation().IsPartialStart(eExtreme_Biological) 
-                    && cds->GetLocation().GetStart(eExtreme_Biological) == feat.GetLocation().GetStart(eExtreme_Biological)) {
-                    ignore_mrna_partial5 = true;
-                }
-                if (!cds->GetLocation().IsPartialStop(eExtreme_Biological) 
-                    && cds->GetLocation().GetStop(eExtreme_Biological) == feat.GetLocation().GetStop(eExtreme_Biological)) {
-                    ignore_mrna_partial3 = true;
-                }
-            }
+        CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
+        switch (subtype) {
+        case CSeqFeatData::eSubtype_exon:
+            ValidateSpliceExon(feat, bsh, strand, num_parts, report_errors, relax_to_warning, has_errors);
+            break;
+        case CSeqFeatData::eSubtype_mRNA:
+            ValidateSpliceMrna(feat, bsh, strand, num_parts, report_errors, relax_to_warning, has_errors);
+            break;
+        case CSeqFeatData::eSubtype_cdregion:
+            ValidateSpliceCdregion(feat, bsh, strand, num_parts, report_errors, relax_to_warning, has_errors);
+            break;
+        default:
+            NCBI_THROW (CCoreException, eCore, "ValidateSplice not implemented for this feature");
         }
-
-        bool rare_consensus_not_expected = s_RareConsensusNotExpected (bsh);
-        int part_num = 0;
-
-        for ( CSeq_loc_CI si(loc); si; ++si, ++part_num ) {
-            try {
-                const CSeq_loc& part = si.GetEmbeddingSeq_loc();
-                CSeq_loc::TRange range = si.GetRange();
-                CBioseq_Handle bsh_si = GetCache().GetBioseqHandleFromLocation(m_Scope, *si.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
-                    
-                if (bsh_si) {
-                    CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
-
-                    string label = GetBioseqIdLabel (*(bsh_si.GetCompleteBioseq()), true);
-
-                    TSeqPos start = part.GetStart(eExtreme_Biological);
-                    TSeqPos stop = part.GetStop(eExtreme_Biological);
-                    bool first = false;
-                    bool last = false;
-                    if (si.GetStrand() == eNa_strand_minus) {
-                        start = range.GetTo();
-                        stop = range.GetFrom();
-                    } else {
-                        start = range.GetFrom();
-                        stop = range.GetTo();
-                    }
-                    if (part_num == 0) {
-                        first = true;
-                    }
-                    if (part_num == num_parts - 1) {
-                        last = true;
-                    }
-
-                    bool checkExonDonor = false;
-                    bool checkExonAcceptor = false;
-                    if (check_all) {
-                        checkExonDonor = true;
-                        checkExonAcceptor = true;
-                        if (mrna) {
-                            if (set_mrna_stop && stop == mrna_stop && !mrna->GetLocation().IsPartialStop(eExtreme_Biological)) {
-                                checkExonDonor = false;
-                            }
-                            if (set_mrna_start && mrna && start == mrna_start && !mrna->GetLocation().IsPartialStart(eExtreme_Biological)) {
-                                checkExonAcceptor = false;
-                            }
-                        }
-                    }
-                        
-                    bool last_partial = last && part.IsPartialStop(eExtreme_Biological);
-                    bool first_partial = first && part.IsPartialStart(eExtreme_Biological);
-
-                    // check donor
-                    if (!last || (checkExonDonor && !last_partial) || (last && last_partial && !ignore_mrna_partial3)) {
-                        ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                       label, report_errors, relax_to_warning, has_errors, feat);
-                    }
-                                            
-                    // check acceptor
-                    if (!first || (checkExonAcceptor && !first_partial) || (first && first_partial && !ignore_mrna_partial5)) {
-                        ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
-                                       label, report_errors, relax_to_warning, has_errors, feat);
-                    }
-                }
-                  } catch (CException ) {
-                  } catch (std::exception ) {
-                // could get errors from CSeqVector
-            }
-        }
-    }                   
+    }
 
     if (!report_errors  &&  !has_errors  &&  !ribo_slip) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryException,
@@ -2292,6 +2591,299 @@ void CValidError_feat::ValidateSplice(
     }
 }
 
+void CValidError_feat::ValidateSpliceExon(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool relax_to_warning, bool& has_errors)
+{
+    const CSeq_loc& loc = feat.GetLocation();
+
+    bool rare_consensus_not_expected = s_RareConsensusNotExpected (bsh);
+
+    // Find overlapping feature - mRNA or gene - to identify start / stop exon
+    bool overlap_feat_partial_5; // set to true if 5'- most start of overlapping feature is partial
+    bool overlap_feat_partial_3; // set to true if 3'- most end of overlapping feature is partial
+    TSeqPos  overlap_feat_start; // start position of overlapping feature
+    TSeqPos  overlap_feat_stop;  // stop position of overlapping feature
+
+    bool overlap_feat_exists = false;
+    // Locate overlapping mRNA feature
+    CConstRef<CSeq_feat> mrna = GetBestOverlappingFeat(
+        loc,
+        CSeqFeatData::eSubtype_mRNA,
+        eOverlap_Contained,
+        *m_Scope);
+    if (mrna) {
+        overlap_feat_exists = true;
+        overlap_feat_partial_5 = mrna->GetLocation().IsPartialStart(eExtreme_Biological);
+        overlap_feat_start = mrna->GetLocation().GetStart(eExtreme_Biological);
+
+        overlap_feat_partial_3 = mrna->GetLocation().IsPartialStop(eExtreme_Biological);
+        overlap_feat_stop = mrna->GetLocation().GetStop(eExtreme_Biological);
+    }
+    else {
+        // Locate overlapping gene feature.
+        CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(
+            loc,
+            CSeqFeatData::eSubtype_gene,
+            eOverlap_Contained,
+            *m_Scope);
+        if (gene) {
+            overlap_feat_exists = true;
+            overlap_feat_partial_5 = gene->GetLocation().IsPartialStart(eExtreme_Biological);
+            overlap_feat_start = gene->GetLocation().GetStart(eExtreme_Biological);
+
+            overlap_feat_partial_3 = gene->GetLocation().IsPartialStop(eExtreme_Biological);
+            overlap_feat_stop = gene->GetLocation().GetStop(eExtreme_Biological);
+        }
+    }
+
+    CSeq_loc_CI si(loc);
+    try{
+        CSeq_loc::TRange range = si.GetRange();
+        CBioseq_Handle bsh_si = GetCache().GetBioseqHandleFromLocation(m_Scope, *si.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+
+        if (bsh_si) {
+            CSeqVector vec = bsh_si.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+            string label = GetBioseqIdLabel (*(bsh_si.GetCompleteBioseq()), true);
+
+            TSeqPos start, stop;
+            if (eNa_strand_minus == strand) {
+                start = range.GetTo();
+                stop = range.GetFrom();
+            }
+            else {
+                start = range.GetFrom();
+                stop = range.GetTo();
+            }
+
+            if (overlap_feat_exists) {
+                if (stop == overlap_feat_stop ) {
+                    if (overlap_feat_partial_3) {
+                        ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                        label, report_errors, relax_to_warning, has_errors, feat, true);
+                    }
+                }
+                else {
+                    ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                    label, report_errors, relax_to_warning, has_errors, feat, false);
+                }
+
+                if (start == overlap_feat_start) {
+                    if (overlap_feat_partial_5 ) {
+                        ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                        label, report_errors, relax_to_warning, has_errors, feat, true);
+                    }
+                }
+                else {
+                    ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                    label, report_errors, relax_to_warning, has_errors, feat, false);
+                }
+            }
+            else {
+                    // Overlapping feature - mRNA or gene - not found.
+                    ValidateDonor (strand, stop, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                    label, report_errors, relax_to_warning, has_errors, feat, false);
+                    ValidateAcceptor (strand, start, vec, bsh_si.GetInst_Length(), rare_consensus_not_expected,
+                                    label, report_errors, relax_to_warning, has_errors, feat, false);
+
+            }
+        }
+    } catch (CException ) {
+        ;
+    } catch (std::exception ) {
+        ;// could get errors from CSeqVector
+    }
+}
+
+void CValidError_feat::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool relax_to_warning, bool& has_errors)
+{
+    const CSeq_loc& loc = feat.GetLocation();
+
+    bool rare_consensus_not_expected = s_RareConsensusNotExpected (bsh);
+    int part_num = 0;
+
+    bool ignore_mrna_partial5 = false;
+    bool ignore_mrna_partial3 = false;
+
+    // Retrieve overlapping cdregion
+    CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(
+        loc,
+        CSeqFeatData::eSubtype_cdregion,
+        eOverlap_Contains,
+        *m_Scope);
+    if (cds) {
+        // If there is no UTR information, then the mRNA location should agree with its CDS location,
+        // but the mRNA should be marked partial at its 5' and 3' ends
+        // Do not check splice site (either donor or acceptor) if CDS location's start / stop is complete.
+        if (!cds->GetLocation().IsPartialStart(eExtreme_Biological) 
+            && cds->GetLocation().GetStart(eExtreme_Biological) == feat.GetLocation().GetStart(eExtreme_Biological)) {
+            ignore_mrna_partial5 = true;
+        }
+        if (!cds->GetLocation().IsPartialStop(eExtreme_Biological) 
+            && cds->GetLocation().GetStop(eExtreme_Biological) == feat.GetLocation().GetStop(eExtreme_Biological)) {
+            ignore_mrna_partial3 = true;
+        }
+    }
+
+    TSeqPos start;
+    TSeqPos stop;
+
+    CSeq_loc_CI head(loc);
+    if (head) {
+        // Validate acceptor site of 5'- most feature
+        const CSeq_loc& part = head.GetEmbeddingSeq_loc();
+        CSeq_loc::TRange range = head.GetRange();
+        CBioseq_Handle bsh_head = GetCache().GetBioseqHandleFromLocation(m_Scope, *head.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+        if (bsh_head) {
+            CSeqVector vec = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+            string label = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
+
+            if (strand == eNa_strand_minus) {
+                start = range.GetTo();
+            } else {
+                start = range.GetFrom();
+            }
+            if (part.IsPartialStart(eExtreme_Biological) && !ignore_mrna_partial5) {
+                ValidateAcceptor (strand, start, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
+                                    label, report_errors, relax_to_warning, has_errors, feat, true);
+            }
+        }
+
+        CSeq_loc_CI tail(loc);
+        ++tail;
+
+        // Validate adjacent (donor...acceptor) splice sites.
+        // @head is a location of exon that contibutes `donor site`
+        // @tail is a location of exon that contibutes `acceptor site`
+        for(; tail; ++head, ++tail) {
+            CSeq_loc::TRange range_head = head.GetRange();
+            CSeq_loc::TRange range_tail = tail.GetRange();
+            CBioseq_Handle bsh_head = GetCache().GetBioseqHandleFromLocation(m_Scope, *head.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+            CBioseq_Handle bsh_tail = GetCache().GetBioseqHandleFromLocation(m_Scope, *tail.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+            if (bsh_head && bsh_tail) {
+                CSeqVector vec_head = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+                CSeqVector vec_tail = bsh_tail.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+                string label_head = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
+
+                if (strand == eNa_strand_minus) {
+                    start = range_tail.GetTo();
+                    stop  = range_head.GetFrom();
+                } else {
+                    start = range_tail.GetFrom();
+                    stop = range_head.GetTo();
+                }
+                ValidateDonorAcceptorPair (strand, 
+                                            stop, vec_head, bsh_head.GetInst_Length(), 
+                                            start, vec_tail, bsh_tail.GetInst_Length(),
+                                            rare_consensus_not_expected,
+                                            label_head, report_errors, relax_to_warning, has_errors, feat);
+            }
+        }
+    }
+
+    // Validate donor site of 3'most feature 
+    if(head) {
+        const CSeq_loc& part = head.GetEmbeddingSeq_loc();
+        CSeq_loc::TRange range = head.GetRange();
+        CBioseq_Handle bsh_head = GetCache().GetBioseqHandleFromLocation(m_Scope, *head.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+        if (bsh_head) {
+            CSeqVector vec = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+            string label = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
+
+            if (strand == eNa_strand_minus) {
+                stop = range.GetFrom();
+            } else {
+                stop = range.GetTo();
+            }
+            if (part.IsPartialStop(eExtreme_Biological) && !ignore_mrna_partial3) {
+                ValidateDonor (strand, stop, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
+                                label, report_errors, relax_to_warning, has_errors, feat, true);
+            }
+        }
+    }
+}
+
+void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool relax_to_warning, bool& has_errors)
+{
+    const CSeq_loc& loc = feat.GetLocation();
+
+    bool rare_consensus_not_expected = s_RareConsensusNotExpected (bsh);
+    TSeqPos start;
+    TSeqPos stop;
+
+    CSeq_loc_CI head(loc);
+    if (head) {
+        // Validate acceptor site of 5'- most feature
+        const CSeq_loc& part = head.GetEmbeddingSeq_loc();
+        CSeq_loc::TRange range = head.GetRange();
+        CBioseq_Handle bsh_head = GetCache().GetBioseqHandleFromLocation(m_Scope, *head.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+        if (bsh_head) {
+                CSeqVector vec = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+                string label = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
+
+                if (strand == eNa_strand_minus) {
+                    start = range.GetTo();
+                } else {
+                    start = range.GetFrom();
+                }
+                if (part.IsPartialStart(eExtreme_Biological)) {
+                    ValidateAcceptor (strand, start, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
+                                      label, report_errors, relax_to_warning, has_errors, feat, true);
+                }
+        }
+
+        CSeq_loc_CI tail(loc);
+        ++tail;
+
+        // Validate adjacent (donor...acceptor) splice sites.
+        // @head is a location of exon that contibutes `donor site`
+        // @tail is a location of exon that contibutes `acceptor site`
+        for(; tail; ++head, ++tail) {
+            CSeq_loc::TRange range_head = head.GetRange();
+            CSeq_loc::TRange range_tail = tail.GetRange();
+            CBioseq_Handle bsh_head = GetCache().GetBioseqHandleFromLocation(m_Scope, *head.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+            CBioseq_Handle bsh_tail = GetCache().GetBioseqHandleFromLocation(m_Scope, *tail.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+            if (bsh_head && bsh_tail) {
+                    CSeqVector vec_head = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+                    CSeqVector vec_tail = bsh_tail.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+                    string label_head = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
+
+
+                    if (strand == eNa_strand_minus) {
+                        start = range_tail.GetTo();
+                        stop  = range_head.GetFrom();
+                    } else {
+                        start = range_tail.GetFrom();
+                        stop = range_head.GetTo();
+                    }
+                    ValidateDonorAcceptorPair (strand, 
+                                               stop, vec_head, bsh_head.GetInst_Length(), 
+                                               start, vec_tail, bsh_tail.GetInst_Length(),
+                                               rare_consensus_not_expected,
+                                               label_head, report_errors, relax_to_warning, has_errors, feat);
+            }
+        }
+    }
+
+    // Validate donor site of 3'most feature 
+    if(head) {
+        const CSeq_loc& part = head.GetEmbeddingSeq_loc();
+        CSeq_loc::TRange range = head.GetRange();
+        CBioseq_Handle bsh_head = GetCache().GetBioseqHandleFromLocation(m_Scope, *head.GetRangeAsSeq_loc(), m_Imp.GetTSE_Handle());
+        if (bsh_head) {
+                CSeqVector vec = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
+                string label = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
+
+                if (strand == eNa_strand_minus) {
+                    stop = range.GetFrom();
+                } else {
+                    stop = range.GetTo();
+                }
+                if (part.IsPartialStop(eExtreme_Biological)) {
+                    ValidateDonor (strand, stop, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
+                                    label, report_errors, relax_to_warning, has_errors, feat, true);
+                }
+        }
+    }
+}
 
 // note - list bad protein names in lower case, as search term is converted to lower case
 // before looking for exact match
@@ -4038,7 +4630,7 @@ void CValidError_feat::ValidateCompareVal (const string& val, const CSeq_feat& f
 
 TGi CValidError_feat::x_SeqIdToGiNumber(
     const string& seq_id,
-    const string database_name )
+    const string& database_name )
 {
     TGi gi = ZERO_GI;
     try {

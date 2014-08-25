@@ -15567,7 +15567,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor)
     STANDARD_SETUP
 
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "RareSpliceConsensusDonor",
-                               "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position 16 of lcl|nuc"));
+                               "Rare splice donor/acceptor consensus (GC-AG) found instead of (GT-AG) after exon ending at position 16 and before exon starting at position 47 of lcl|nuc"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -15577,7 +15577,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor)
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "RareSpliceConsensusDonor",
-                               "Rare splice donor consensus (GC) found instead of (GT) after exon ending at position 45 of lcl|nuc"));
+                               "Rare splice donor/acceptor consensus (GC-AG) found instead of (GT-AG) after exon ending at position 45 and before exon starting at position 14 of lcl|nuc"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -15585,6 +15585,39 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor)
     CLEAR_ERRORS    
 }
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RareSpliceConsensusDonor_VR_65)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    cds->SetLocation().Assign(*unit_test_util::MakeMixLoc(nuc->SetSeq().SetId().front()));
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[16] = 'A';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[17] = 'T';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = 'A';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = 'C';
+    CRef<CSeq_feat> intron = unit_test_util::MakeIntronForMixLoc(nuc->SetSeq().SetId().front());
+    unit_test_util::AddFeat(intron, nuc);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "RareSpliceConsensusDonor",
+                               "Rare splice donor/acceptor consensus (AT-AC) found instead of (GT-AG) after exon ending at position 16 and before exon starting at position 47 of lcl|nuc"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::RevComp(entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    CLEAR_ERRORS
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "RareSpliceConsensusDonor",
+                               "Rare splice donor/acceptor consensus (AT-AC) found instead of (GT-AG) after exon ending at position 45 and before exon starting at position 14 of lcl|nuc"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS    
+}
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefNotReciprocal)
 {
