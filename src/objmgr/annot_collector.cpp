@@ -447,7 +447,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    const SSNP_Info& snp,
                                    CSeq_loc_Conversion* cvt)
     : m_Seq_annot(annot_handle),
-      m_AnnotIndex(snp_annot.GetIndex(snp) | kSNPTableBit)
+      m_AnnotIndex(TAnnotIndex(snp_annot.GetIndex(snp)) | kSNPTableBit)
 {
     _ASSERT(IsSNPFeat());
     TSeqPos src_from = snp.GetFrom(), src_to = snp.GetTo();
@@ -2626,9 +2626,7 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                     sah.x_Set(annot_info, tseh);
                 }
                 
-                TSeqPos index = snp_it - snp_annot.begin() - 1;
                 do {
-                    ++index;
                     const SSNP_Info& snp = *snp_it;
                     if ( snp.NoMore(range) ) {
                         break;
