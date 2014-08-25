@@ -672,7 +672,7 @@ void CTime::x_Init(const string& str, const CTimeFormat& format)
                 }
                 *s = '\0';
                 long value = NStr::StringToLong(value_str);
-                int n = strlen(value_str);
+                size_t n = strlen(value_str);
                 // 'n' cannot have more then 9 (max for nanoseconds) - see above.
                 _ASSERT(n <= 9);
                 for (;  n < 9;  n++) {
@@ -2313,7 +2313,7 @@ void CTimeSpan::x_Init(const string& str, const CTimeFormat& format)
                 // Special format symbol.
                 // Process a fraction of a second for format symbols 'g' and 'G'.
                 // Convert value to nanoseconds.
-                int n = strlen(value_str);
+                size_t n = strlen(value_str);
                 // 'n' cannot have more then 9 (max for nanoseconds) - see above.
                 _ASSERT(n <= 9);
                 for (;  n < 9;  n++) {
@@ -2614,7 +2614,7 @@ string CTimeSpan::x_AsSmartString_Smart_Small(ERound rounding)
 
     result = NStr::LongToString(v1);
     bool plural = (v1 != 1);
-    int len = result.length();
+    size_t len = result.length();
 
     // Rounding
     if (rounding == eRound) {
