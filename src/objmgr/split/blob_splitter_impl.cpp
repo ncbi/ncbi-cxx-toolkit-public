@@ -300,7 +300,7 @@ void CBlobSplitterImpl::Add(const SAnnotPiece& piece)
 
 SChunkInfo* CBlobSplitterImpl::NextChunk(void)
 {
-    int chunk_id = m_Chunks.size();
+    int chunk_id = int(m_Chunks.size());
     if ( m_Chunks.find(0) == m_Chunks.end() )
         ++chunk_id;
     return &m_Chunks[chunk_id];
