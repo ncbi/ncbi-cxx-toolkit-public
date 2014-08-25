@@ -239,9 +239,9 @@ bool IsShortrRNA(const CSeq_feat& feat, CScope* scope)
    string rrna_name = GetRNAProductString(feat);
    for (unsigned i=0; i< ArraySize(Terms); i++) {
       if (NStr::FindNoCase(rrna_name, Terms[i].keyword) != string::npos
-              && len < Terms[i].min_length
-              && !Terms[i].ignore_partial ) {
-        return true;
+             && len < Terms[i].min_length
+             && (!Terms[i].ignore_partial || !feat.CanGetPartial() || !feat.GetPartial())){
+         return true;
       }
    }
 
