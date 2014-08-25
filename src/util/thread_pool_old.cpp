@@ -62,7 +62,7 @@ void CStdPoolOfThreads::KillAllThreads(TKillFlags flags)
     }}
 
     {{
-        size_t n2 = m_Threads.size();
+        TACValue n2 = TACValue(m_Threads.size());
         if (n != n2) {
             ERR_POST(Warning << "Registered " << n2 << " threads but expected "
                      << n);
