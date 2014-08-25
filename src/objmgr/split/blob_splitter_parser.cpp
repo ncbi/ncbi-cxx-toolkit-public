@@ -128,19 +128,19 @@ TSeqPos CBlobSplitterImpl::GetLength(const CSeq_data& src) const
 {
     switch ( src.Which() ) {
     case CSeq_data::e_Iupacna:
-        return src.GetIupacna().Get().size();
+        return TSeqPos(src.GetIupacna().Get().size());
     case CSeq_data::e_Iupacaa:
-        return src.GetIupacaa().Get().size();
+        return TSeqPos(src.GetIupacaa().Get().size());
     case CSeq_data::e_Ncbi2na:
-        return src.GetNcbi2na().Get().size()*4;
+        return TSeqPos(src.GetNcbi2na().Get().size()*4);
     case CSeq_data::e_Ncbi4na:
-        return src.GetNcbi4na().Get().size()*2;
+        return TSeqPos(src.GetNcbi4na().Get().size()*2);
     case CSeq_data::e_Ncbi8na:
-        return src.GetNcbi8na().Get().size();
+        return TSeqPos(src.GetNcbi8na().Get().size());
     case CSeq_data::e_Ncbi8aa:
-        return src.GetNcbi8aa().Get().size();
+        return TSeqPos(src.GetNcbi8aa().Get().size());
     case CSeq_data::e_Ncbieaa:
-        return src.GetNcbieaa().Get().size();
+        return TSeqPos(src.GetNcbieaa().Get().size());
     default:
         NCBI_THROW(CSplitException, eInvalidBlob,
                    "Invalid Seq-data");
