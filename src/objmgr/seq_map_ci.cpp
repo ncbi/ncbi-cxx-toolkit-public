@@ -448,7 +448,7 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
         if ( (m_Stack.size() & 63) == 0 ) {
             // check for self-recursion every 64'th stack frame
             const CSeqMap* top_seq_map = &m_Stack.back().x_GetSeqMap();
-            for ( int i = m_Stack.size()-2; i >= 0; --i ) {
+            for ( int i = int(m_Stack.size())-2; i >= 0; --i ) {
                 if ( &m_Stack[i].x_GetSeqMap() == top_seq_map ) {
                     NCBI_THROW(CSeqMapException, eSelfReference,
                                "Self-reference in CSeqMap");
@@ -904,7 +904,7 @@ void CSeqMap_I::SetSequence(const string&       buffer,
     case CSeq_data::e_##coding:             \
         CSeqConvert::Convert(               \
             buffer, buffer_coding,          \
-            0, buffer.size(),               \
+            0, TSeqPos(buffer.size()),      \
             new_data->Set##coding().Set(),  \
             CSeqUtil::e_##coding);          \
             break
@@ -926,7 +926,7 @@ void CSeqMap_I::SetSequence(const string&       buffer,
             CSeq_data::SelectionName(seq_data_coding));
         break;
     }
-    SetSeq_data(buffer.size(), *new_data);
+    SetSeq_data(TSeqPos(buffer.size()), *new_data);
     x_UpdateLength();
 }
 
