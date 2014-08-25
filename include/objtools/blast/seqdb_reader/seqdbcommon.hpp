@@ -631,7 +631,7 @@ public:
     /// Sort list if not already sorted.
     void InsureOrder()
     {
-        if (m_LastSortSize != (int)(m_Gis.size() + m_Tis.size() +m_Sis.size())) {
+        if (m_LastSortSize != (m_Gis.size() + m_Tis.size() +m_Sis.size())) {
             std::sort(m_Gis.begin(), m_Gis.end());
             std::sort(m_Tis.begin(), m_Tis.end());
             std::sort(m_Sis.begin(), m_Sis.end());
@@ -834,7 +834,7 @@ private:
     CSeqDBBitVector m_Visible;
     
     /// Zero if unsorted, or the size it had after the last sort.
-    int m_LastSortSize;
+    size_t m_LastSortSize;
 };
 
 
