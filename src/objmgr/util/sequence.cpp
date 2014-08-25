@@ -3188,8 +3188,8 @@ void x_Translate(const Container& seq,
 
     size_t i;
     size_t k;
-    size_t state = 0;
-    size_t start_state = 0;
+    int state = 0;
+    int start_state = 0;
     size_t length = usable_size / 3;
     bool check_start = (is_5prime_complete && frame == 0);
     bool first_time = true;
@@ -3307,7 +3307,7 @@ static void AddAAToDeltaSeq (CRef<CBioseq> prot, char residue)
 }
 
 
-static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, size_t add_len)
+static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, TSeqPos add_len)
 {
     if (prot->SetInst().SetExt().SetDelta().Set().empty()) {
         // create new segment for gap
@@ -3324,7 +3324,7 @@ static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, size_t add
             && ((unknown_length && last->SetLiteral().IsSetFuzz()) 
                  || (!unknown_length && !last->SetLiteral().IsSetFuzz()))) {
             // ok, already creating gap segment with correct fuzz
-            size_t len = prot->GetInst().GetExt().GetDelta().Get().back()->GetLiteral().GetLength();
+            TSeqPos len = prot->GetInst().GetExt().GetDelta().Get().back()->GetLiteral().GetLength();
             prot->SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetLength(len + add_len);
         } else {
             // create new segment for gap
@@ -3377,8 +3377,8 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     prot->SetInst().SetTopology(CSeq_inst::eTopology_linear);
 
     // reserve our space
-    const size_t usable_size = seq.size() - frame;
-    const size_t mod = usable_size % 3;
+    const TSeqPos usable_size = TSeqPos(seq.size()) - frame;
+    const TSeqPos mod = usable_size % 3;
 
     // get appropriate translation table
     const CTrans_table & tbl =
@@ -3391,17 +3391,17 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         ++start;
     }
 
-    size_t i;
-    size_t k;
-    size_t state = 0;
-    size_t length = usable_size / 3;
+    TSeqPos i;
+    TSeqPos k;
+    int state = 0;
+    TSeqPos length = usable_size / 3;
     bool check_start = (is_5prime_complete && frame == 0);
     bool first_time = true;
 
     for (i = 0;  i < length;  ++i) {
         bool is_gap = true;
         bool unknown_length = false;
-        size_t pos = (i * 3) + frame;
+        TSeqPos pos = (i * 3) + frame;
 
         if (start.HasZeroGapBefore()) {
             AddGapToDeltaSeq (prot, true, 0);
@@ -3441,7 +3441,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     if (mod) {
         bool is_gap = true;
         bool unknown_length = false;
-        size_t pos = (length * 3) + frame;
+        TSeqPos pos = (length * 3) + frame;
         for (k = 0;  k < mod;  ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
             if (seq.IsInGap(pos + k)) {
@@ -3478,7 +3478,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         }
     }
 
-    size_t prot_len = 0;
+    TSeqPos prot_len = 0;
     ITERATE (CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
         prot_len += (*seg_it)->GetLiteral().GetLength();
     }
@@ -3532,13 +3532,13 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
             string& last_seg = end->SetLiteral().SetSeq_data().SetIupacaa().Set();
             if (NStr::EndsWith(last_seg, "*")) {
                 last_seg = last_seg.substr(0, last_seg.length() - 1);
-                end->SetLiteral().SetLength(last_seg.length());
+                end->SetLiteral().SetLength(TSeqPos(last_seg.length()));
             }
         } else if (end->GetLiteral().GetSeq_data().IsNcbieaa()) {
             string& last_seg = end->SetLiteral().SetSeq_data().SetNcbieaa().Set();
             if (NStr::EndsWith(last_seg, "*")) {
                 last_seg = last_seg.substr(0, last_seg.length() - 1);
-                end->SetLiteral().SetLength(last_seg.length());
+                end->SetLiteral().SetLength(TSeqPos(last_seg.length()));
             }
         }
     }
@@ -3601,7 +3601,7 @@ bool CSeqTranslator::ChangeDeltaProteinToRawProtein(CRef<CBioseq> protein)
     protein->SetInst().ResetExt();
     protein->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
     protein->SetInst().SetSeq_data().SetIupacaa().Set(buffer);
-    protein->SetInst().SetLength(buffer.length());
+    protein->SetInst().SetLength(TSeqPos(buffer.length()));
     return true;
 }
 
@@ -4318,7 +4318,7 @@ void CSeqSearch::AddNucleotidePattern
 
     // record expansion of reverse complement of asymmetric pattern
     if (!symmetric  &&  (!x_IsJustTopStrand(flags))) {
-        size_t revcomp_cut_site = pattern.length() - cut_site;
+        TSeqPos revcomp_cut_site = TSeqPos(pattern.length()) - cut_site;
         x_AddNucleotidePattern(name, revcomp, revcomp_cut_site,
             eNa_strand_minus, flags);
     }
@@ -4346,7 +4346,7 @@ int CSeqSearch::Search
     // report matches (if any)
     if (m_Fsa.IsMatchFound(next_state)) {
         ITERATE(vector<TPatternInfo>, it, m_Fsa.GetMatches(next_state)) {
-            int start = position - it->GetSequence().length() + 1;
+            int start = position - int(it->GetSequence().length()) + 1;
 
             // prevent multiple reports of patterns for circular sequences.
             if (start < length) {
@@ -4370,18 +4370,18 @@ void CSeqSearch::Search(const CBioseq_Handle& bsh)
     }
 
     CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-    size_t seq_len = seq_vec.size();
-    size_t search_len = seq_len;
+    TSeqPos seq_len = seq_vec.size();
+    TSeqPos search_len = seq_len;
 
     // handle circular bioseqs
     CSeq_inst::ETopology topology = bsh.GetInst_Topology();
     if (topology == CSeq_inst::eTopology_circular) {
-        search_len += m_LongestPattern - 1;
+        search_len += TSeqPos(m_LongestPattern - 1);
     }
     
     int state = m_Fsa.GetInitialState();
 
-    for (size_t i = 0; i < search_len; ++i) {
+    for (TSeqPos i = 0; i < search_len; ++i) {
         state = Search(state, seq_vec[i % seq_len], i, seq_len);
     }
 }
