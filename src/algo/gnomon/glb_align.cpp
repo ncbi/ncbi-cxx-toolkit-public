@@ -612,7 +612,7 @@ double Entropy(const string& seq) {
         default: break;
         }
     }
-    double entropy = -(tA*log(tA/length)+tC*log(tC/length)+tG*log(tG/length)+tT*log(tT/length))/(length*log(4));
+    double entropy = -(tA*log(tA/length)+tC*log(tC/length)+tG*log(tG/length)+tT*log(tT/length))/(length*log(4.));
     
     return entropy;
 }
