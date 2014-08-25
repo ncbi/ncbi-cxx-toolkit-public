@@ -65,7 +65,6 @@
 #include <util/compress/zlib.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 
 #include <objtools/alnmgr/alnmix.hpp>
@@ -605,28 +604,11 @@ auto_ptr<CObjectIStream> GetIStream(string path, ESerialDataFormat serial_format
 
 //Note: we need to return the method because depending on the method
 //we will decide whether to use scope object for remapping.
-enum ELoadScopeMethod {eLoadScope_Failed, eLoadScope_LDS, eLoadScope_SeqEntry, eLoadScope_SeqAnnot, eLoadScope_GBR};
+enum ELoadScopeMethod {eLoadScope_Failed, eLoadScope_SeqEntry, eLoadScope_SeqAnnot, eLoadScope_GBR};
 typedef int TLoadScopeMethod;
 TLoadScopeMethod LoadScope(string arg_path, CScope& scope, ESerialDataFormat serial_format)
 {
     AutoPtr<CDirEntry> file_or_dir(new CDirEntry(arg_path));
-    if(file_or_dir->IsDir()) {
-        try {
-            _TRACE("Trying LDS");
-            CLDS_Database* ldsdb (new CLDS_Database(arg_path, ""));
-
-            ldsdb->Open(CLDS_Database::eReadOnly);
-            CLDS_DataLoader::RegisterInObjectManager(*CObjectManager::GetInstance(),
-                                                     *ldsdb,
-                                                     CObjectManager::eNonDefault);
-
-            scope.AddDataLoader(CLDS_DataLoader::GetLoaderNameFromArgs(*ldsdb));
-
-            _TRACE("Loaded from LDS");
-            return eLoadScope_LDS;
-        } catch (CException&) {}
-    }
-
 
     CDir::TEntries dir_entries;
     if(file_or_dir->IsDir()) {
@@ -1234,13 +1216,13 @@ void CXcompareAnnotsApplication::x_ProcessSeqAlignSetFromFile(string filename)
                     CRef<ILocMapper> loc_mapper;
 
                     //use m_scope_id instead of m_scope_q to create an aligner
-                    //because LDS source have seq-ids without versions, while the alignments are
+                    //because Local Data Storage source have seq-ids without versions, while the alignments are
                     //with versions (i.e. can't remap via versioned alignments from versionless
-                    //location from LDS). Need to think through whether this is a legit thing to do
+                    //location from local storage). Need to think through whether this is a legit thing to do
                     //A possible failure scenario is an alignment from an old build with
                     //old contig versions; we process a seq from SplignLDS source
                     //without a version, so a scope gets the latest one and naturally can't remap it
-                    //if target scope is loaded from LDS, tell the mapper to strip versions from mapped locations
+                    //if target scope is loaded from local starage, tell the mapper to strip versions from mapped locations
 
 
                     CRef<CSeq_loc_Mapper> simple_mapper(new CSeq_loc_Mapper(
