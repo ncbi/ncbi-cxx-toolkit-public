@@ -129,15 +129,13 @@ bool sx_IsProt(CSeq_inst::EMol mol)
 
 bool CBioseq_CI::x_SkipClass(CBioseq_set::TClass set_class)
 {
-    int pos = m_EntryStack.size();
-    while ( --pos >= 0 &&
-            m_EntryStack[pos].GetParentBioseq_set().GetClass() != set_class ) {
-        // level up
-    }
-    if ( pos < 0 ) {
-        return false;
-    }
-    while ( m_EntryStack.size() > size_t(pos+1) ) {
+    size_t pos = m_EntryStack.size();
+    do {
+        if ( pos == 0 ) { // no Bioseq-set with requested class is found
+            return false;
+        }
+    } while ( m_EntryStack[--pos].GetParentBioseq_set().GetClass() != set_class );
+    while ( m_EntryStack.size() > pos+1 ) {
         x_PopEntry(false);
     }
     x_PopEntry();
