@@ -1110,7 +1110,7 @@ int CDemoApp::Run(void)
             if ( scan_whole_sequence ) {
                 CStopWatch sw(CStopWatch::eStart);
                 NcbiCout << "Scanning sequence..." << NcbiFlush;
-                size_t pos = 0;
+                TSeqPos pos = 0;
                 try {
                     string buffer;
                     for ( CSeqVector_CI it(seq_vect); it; ) {
@@ -1131,7 +1131,7 @@ int CDemoApp::Run(void)
                             continue;
                         }
                         if ( (pos & 0xffff) == 0 ) {
-                            size_t cnt = min(size_t(99), seq_vect.size()-pos);
+                            TSeqPos cnt = min(TSeqPos(99), seq_vect.size()-pos);
                             it.GetSeqData(buffer, cnt);
                             pos += cnt;
                         }
