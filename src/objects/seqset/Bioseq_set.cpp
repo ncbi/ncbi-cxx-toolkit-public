@@ -193,7 +193,7 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
             *label += CNcbiOstrstreamToString(os);
             if (this->IsSetSeq_set()) {
                 const TSeq_set& sset = this->GetSeq_set();
-                int len = sset.size();
+                size_t len = sset.size();
                 if (len > 1) {
                     *label += " (" + NStr::SizetToString(sset.size()) + " components)";
                 } else if (len == 1) {
