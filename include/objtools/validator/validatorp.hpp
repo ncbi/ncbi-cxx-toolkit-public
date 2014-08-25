@@ -108,6 +108,7 @@ BEGIN_SCOPE(validator)
 
 // for convenience
 typedef CValidator::CCache CCache;
+typedef Char (& TSpliceSite)[2];
 
 /// Cache various information for one validation run.
 /// 
@@ -1089,12 +1090,12 @@ private:
     void ReportCdTransErrors(const CSeq_feat& feat,
         bool show_stop, bool got_stop, bool no_end, int ragged,
         bool report_errors, bool& has_errors);
-    void ValidateDonor (ENa_strand strand, TSeqPos stop, CSeqVector vec, TSeqPos seq_len,
+    void ValidateDonor (ENa_strand strand, TSeqPos stop, const CSeqVector& vec, TSeqPos seq_len,
                         bool rare_consensus_not_expected, 
-                        string label, bool report_errors, bool relax_to_warning, bool &has_errors, const CSeq_feat& feat);
-    void ValidateAcceptor (ENa_strand strand, TSeqPos start, CSeqVector vec, TSeqPos seq_len,
-                        bool rare_consensus_not_expected, 
-                        string label, bool report_errors, bool relax_to_warning, bool &has_errors, const CSeq_feat& feat);
+                        const string& label, bool report_errors, bool relax_to_warning, bool &has_errors, const CSeq_feat& feat, bool is_last);
+    void ValidateAcceptor (ENa_strand strand, TSeqPos start, const CSeqVector& vec, TSeqPos seq_len,
+                           bool rare_consensus_not_expected, 
+                           const string& label, bool report_errors, bool relax_to_warning, bool &has_errors, const CSeq_feat& feat, bool is_first);
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
     void ValidateBothStrands(const CSeq_feat& feat);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
@@ -1155,11 +1156,20 @@ private:
 
     bool Is5AtEndSpliceSiteOrGap(const CSeq_loc& loc);
 
-    TGi x_SeqIdToGiNumber(const string& seq_id, const string database_name );
+    TGi x_SeqIdToGiNumber(const string& seq_id, const string& database_name );
 
     void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
     void x_ReportECNumFileStatus(const CSeq_feat& feat);
 
+    void ValidateSpliceCdregion(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool relax_to_warning, bool& has_errors);
+    void ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool relax_to_warning, bool& has_errors);
+    void ValidateSpliceExon(const CSeq_feat& feat, const CBioseq_Handle& bsh, ENa_strand strand, int num_parts, bool report_errors, bool relax_to_warning, bool& has_errors);
+
+    void ValidateDonorAcceptorPair(ENa_strand strand, TSeqPos stop, const CSeqVector& vec_donor, TSeqPos seq_len_donor,
+                                     TSeqPos start, const CSeqVector& vec_acceptor,  TSeqPos seq_len_acceptor,
+                                     bool rare_consensus_not_expected, const string& label, bool report_errors,  bool relax_to_warning, bool& has_errors, const CSeq_feat& feat);
+    bool ReadDonorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeqVector& vec, TSeqPos seq_len, const string& label, bool report_errors, bool relax_to_warning, bool& has_errors, const CSeq_feat& feat, TSpliceSite site);
+    bool ReadAcceptorSpliceSite(ENa_strand strand, TSeqPos stop, const CSeqVector& vec, TSeqPos seq_len, const string& label, bool report_errors, bool relax_to_warning, bool& has_errors, const CSeq_feat& feat, TSpliceSite site);
 };
 
 
