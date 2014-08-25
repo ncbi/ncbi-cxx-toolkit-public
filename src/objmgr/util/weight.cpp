@@ -260,7 +260,7 @@ double GetProteinWeight(const string& iupac_aa_sequence)
     string ncbistdaa;
     SIZE_TYPE len =
         CSeqConvert::Convert(iupac_aa_sequence, CSeqUtil::e_Iupacaa,
-                             0, iupac_aa_sequence.size(),
+                             0, TSeqPos(iupac_aa_sequence.size()),
                              ncbistdaa, CSeqUtil::e_Ncbistdaa);
     if (len < iupac_aa_sequence.size()) {
         NCBI_THROW(CException, eUnknown,
