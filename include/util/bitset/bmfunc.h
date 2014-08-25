@@ -1393,7 +1393,7 @@ unsigned gap_set_array(T* buf, const T* arr, unsigned len)
         *pcurr = bm::gap_max_bits - 1;
     }
 
-    unsigned end = pcurr - buf;
+    unsigned end = unsigned(pcurr - buf);
 
     *buf = (T)((*buf & 7) + (end << 3));
     return end+1;
@@ -4429,7 +4429,7 @@ unsigned bit_count_nonzero_size(const T*     blk,
             }
             count += sizeof(gap_word_t);
             // count all bit-words now
-            count += (blk_j - blk) * sizeof(T);
+            count += unsigned((blk_j - blk) * sizeof(T));
             blk = blk_j;
         }
         ++blk;
@@ -4773,7 +4773,7 @@ template<typename T> T bit_convert_to_arr(T* BMRESTRICT dest,
 
     	copy_to_array_functor_inc<T> func(pcurr, bit_idx);
     	bit_for_each_4(val, func);    	
-    	unsigned word_bit_cnt = func.ptr() - pcurr;
+    	unsigned word_bit_cnt = unsigned(func.ptr() - pcurr);
         pcurr += word_bit_cnt;    
 
     } // for

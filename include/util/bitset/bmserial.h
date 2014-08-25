@@ -642,7 +642,7 @@ void serializer<BV>::gamma_gap_block(bm::gap_word_t* gap_block, bm::encoder& enc
 
         // evaluate gamma coding efficiency
         encoder::position_type enc_pos1 = enc.get_pos();
-        unsigned gamma_size = enc_pos1 - enc_pos0;        
+        size_t gamma_size = enc_pos1 - enc_pos0;        
         if (gamma_size > (len-1)*sizeof(gap_word_t))
         {
             enc.set_pos(enc_pos0);
@@ -688,7 +688,7 @@ void serializer<BV>::gamma_gap_array(const bm::gap_word_t* gap_array,
         }
 
         encoder::position_type enc_pos1 = enc.get_pos();
-        unsigned gamma_size = enc_pos1 - enc_pos0;            
+        size_t gamma_size = enc_pos1 - enc_pos0;            
         if (gamma_size > (arr_len)*sizeof(gap_word_t))
         {
             enc.set_pos(enc_pos0);
