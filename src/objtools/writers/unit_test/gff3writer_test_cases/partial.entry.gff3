@@ -127,8 +127,8 @@ NW_001838553.2	BestRefSeq	CDS	778044	778131	.	+	0	ID=cds4;Parent=rna6;Dbxref=Gen
 NW_001838553.2	BestRefSeq	CDS	783260	783434	.	+	2	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
 NW_001838553.2	BestRefSeq	CDS	878205	878313	.	+	1	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
 NW_001838553.2	BestRefSeq	CDS	892679	892780	.	+	0	ID=cds4;Parent=rna6;Dbxref=GeneID:64754,Genbank:NP_073580.1,HGNC:15513,HPRD:12297,MIM:608783;Name=NP_073580.1;Note=isoform 2 is encoded by transcript variant 2;gbkey=CDS;gene=SMYD3;product=histone-lysine N-methyltransferase SMYD3 isoform 2;protein_id=NP_073580.1
-NW_001838553.2	BestRefSeq	STS	321094	321318	.	+	.	ID=id65;Dbxref=UniSTS:940,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	BestRefSeq	STS	321094	321318	.	+	.	ID=id66;Dbxref=UniSTS:941,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	321094	321318	.	+	.	ID=id65;Dbxref=UniSTS:941,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	321094	321318	.	+	.	ID=id66;Dbxref=UniSTS:940,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	BestRefSeq	STS	327926	328063	.	+	.	ID=id67;Dbxref=UniSTS:98271,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	BestRefSeq	STS	327929	328057	.	+	.	ID=id68;Dbxref=UniSTS:80721,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	BestRefSeq	STS	353580	353699	.	+	.	ID=id69;Dbxref=UniSTS:82524,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
@@ -151,8 +151,8 @@ NW_001838553.2	BestRefSeq	STS	805682	805995	.	+	.	ID=id83;Dbxref=UniSTS:132338,G
 NW_001838553.2	BestRefSeq	STS	831739	832041	.	+	.	ID=id84;Dbxref=UniSTS:103864,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	BestRefSeq	STS	874675	874951	.	+	.	ID=id85;Dbxref=UniSTS:175926,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	RefSeq	STS	892722	893130	.	+	.	ID=id86;Dbxref=UniSTS:468707;gbkey=STS;gene=SMYD3
-NW_001838553.2	BestRefSeq	STS	892735	892960	.	+	.	ID=id87;Dbxref=UniSTS:40196,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
-NW_001838553.2	BestRefSeq	STS	892735	892960	.	+	.	ID=id88;Dbxref=UniSTS:40197,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	892735	892960	.	+	.	ID=id87;Dbxref=UniSTS:40197,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
+NW_001838553.2	BestRefSeq	STS	892735	892960	.	+	.	ID=id88;Dbxref=UniSTS:40196,GeneID:64754,HGNC:15513,HPRD:12297,MIM:608783;gbkey=STS;gene=SMYD3
 NW_001838553.2	RefSeq	STS	933254	933499	.	+	.	ID=id89;Dbxref=UniSTS:60388;gbkey=STS
 NW_001838553.2	RefSeq	STS	936989	937116	.	+	.	ID=id90;Dbxref=UniSTS:38207;gbkey=STS
 NW_001838553.2	BestRefSeq	gene	939212	1491823	.	-	.	ID=gene8;Dbxref=GeneID:55083,HGNC:25484,MIM:614026;Name=KIF26B;description=kinesin family member 26B;gbkey=Gene;gene=KIF26B
@@ -389,8 +389,8 @@ NW_001838553.2	BestRefSeq	exon	1957414	1957507	.	-	.	ID=id242;Parent=rna18;Dbxre
 NW_001838553.2	BestRefSeq	exon	1954735	1954876	.	-	.	ID=id243;Parent=rna18;Dbxref=GeneID:51029,Genbank:NM_016076.3,HGNC:24264,HPRD:15153,MIM:614638;Note=The RefSeq transcript has 2 substitutions compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=DESI2;product=desumoylating isopeptidase 2;transcript_id=NM_016076.3
 NW_001838553.2	BestRefSeq	exon	1937738	1941215	.	-	.	ID=id244;Parent=rna18;Dbxref=GeneID:51029,Genbank:NM_016076.3,HGNC:24264,HPRD:15153,MIM:614638;Note=The RefSeq transcript has 2 substitutions compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=DESI2;product=desumoylating isopeptidase 2;transcript_id=NM_016076.3
 NW_001838553.2	RefSeq	STS	1937774	1938019	.	+	.	ID=id245;Dbxref=UniSTS:77714;gbkey=STS;gene=DESI2
-NW_001838553.2	RefSeq	STS	1937846	1937947	.	+	.	ID=id246;Dbxref=UniSTS:116849;gbkey=STS;gene=DESI2
-NW_001838553.2	RefSeq	STS	1937846	1937947	.	+	.	ID=id247;Dbxref=UniSTS:854;gbkey=STS;gene=DESI2
+NW_001838553.2	RefSeq	STS	1937846	1937947	.	+	.	ID=id246;Dbxref=UniSTS:854;gbkey=STS;gene=DESI2
+NW_001838553.2	RefSeq	STS	1937846	1937947	.	+	.	ID=id247;Dbxref=UniSTS:116849;gbkey=STS;gene=DESI2
 NW_001838553.2	RefSeq	STS	1938032	1938171	.	+	.	ID=id248;Dbxref=UniSTS:55771;gbkey=STS;gene=DESI2
 NW_001838553.2	RefSeq	STS	1940945	1941080	.	+	.	ID=id249;Dbxref=UniSTS:48418;gbkey=STS;gene=DESI2
 NW_001838553.2	BestRefSeq	CDS	1993390	1993431	.	-	0	ID=cds11;Parent=rna18;Dbxref=GeneID:51029,Genbank:NP_057160.2,HGNC:24264,HPRD:15153,MIM:614638;Name=NP_057160.2;gbkey=CDS;gene=DESI2;product=desumoylating isopeptidase 2;protein_id=NP_057160.2
