@@ -63,8 +63,8 @@ public:
     void AddSegmentIds(const TIds& ids);
     void AddSegmentIds(const TIds2& ids);
 
-    size_t GetSegmentCount(void) const {
-        return m_SegSet.size();
+    int GetSegmentCount(void) const {
+        return int(m_SegSet.size());
     }
     int FindSeg(const CSeq_id_Handle& h) const;
     bool GetMinusStrand(int seg) const;
