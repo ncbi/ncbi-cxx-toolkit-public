@@ -68,7 +68,7 @@ CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                                    const SSNP_Info& snp_info,
                                    CCreatedFeat_Ref& created_ref)
     : m_Seq_annot(annot),
-      m_FeatIndex(annot.x_GetInfo().x_GetSNP_annot_Info().GetIndex(snp_info)
+      m_FeatIndex(TFeatIndex(annot.x_GetInfo().x_GetSNP_annot_Info().GetIndex(snp_info))
                   | kSNPTableBit),
       m_CreatedFeat(&created_ref)
 {
