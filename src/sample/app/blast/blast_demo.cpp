@@ -86,11 +86,11 @@ void CBlastDemoApplication::Init(void)
 
     arg_desc->AddKey
         ("program", "ProgramName",
-         "One of blastn, megablast, disc_megablast, blastp, blastx, tblastn, tblastx, rpsblast",
+         "One of blastn, megablast, dc-megablast, blastp, blastx, tblastn, tblastx, rpsblast",
          CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("program", &(*new CArgAllow_Strings,
-                "blastn", "megablast", "disc_megablast", "blastp", "blastx", "tblastn", "tblastx", "rpsblast"));
+                "blastn", "megablast", "dc-megablast", "blastp", "blastx", "tblastn", "tblastx", "rpsblast"));
 
     arg_desc->AddDefaultKey
         ("db", "DataBase",
