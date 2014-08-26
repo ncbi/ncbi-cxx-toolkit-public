@@ -22870,10 +22870,11 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 typedef int TVector __attribute__((vector_size(16)));
+          TVector f(TVector v1, TVector v2) { return v1 ^ v2 };
 int
 main ()
 {
-TVector v1, v2;  v1 ^= v2;
+TVector v1, v2, v3;  v3 = f(v1, v2);
   ;
   return 0;
 }

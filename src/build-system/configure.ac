@@ -3720,8 +3720,9 @@ orig_CFLAGS=$CFLAGS
 AC_CACHE_CHECK([whether $CC supports SIMD vector arithmetic],
                ncbi_cv_cc_vector_math,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-         [typedef int TVector __attribute__((vector_size(16)));],
-         [TVector v1, v2;  v1 ^= v2;])],
+         [typedef int TVector __attribute__((vector_size(16)));
+          TVector f(TVector v1, TVector v2) { return v1 ^ v2 };],
+         [TVector v1, v2, v3;  v3 = f(v1, v2);])],
       [ncbi_cv_cc_vector_math=yes], [ncbi_cv_cc_vector_math=no])])
 if test "$ncbi_cv_cc_vector_math" = yes; then
    AC_DEFINE(HAVE_VECTOR_MATH, 1,
