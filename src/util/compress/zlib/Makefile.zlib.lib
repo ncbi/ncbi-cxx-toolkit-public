@@ -1,7 +1,7 @@
 # $Id$
 
-SRC = adler32 ncbi_z_compress crc32 gzio uncompr deflate trees \
-      zutil inflate infback inftrees inffast
+SRC = adler32 crc32 deflate infback inffast inflate inftrees trees zutil \
+      ncbi_z_compress uncompr gzclose gzlib gzread gzwrite
 
 LIB = z
 
