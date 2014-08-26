@@ -215,7 +215,13 @@ public:
     static const TGapTypeMap & GetNameToGapTypeInfoMap(void);
     static
     void HandleGaps(objects::CSeq_entry& entry, 
-       TSeqPos gapNmin, TSeqPos gap_Unknown_length);
+       TSeqPos gapNmin, TSeqPos gap_Unknown_length, CLinkage_evidence::EType evidence = (CLinkage_evidence::EType)-1);
+
+    static
+    void HandleGaps(objects::CBioseq& bioseq, 
+       TSeqPos gapNmin, TSeqPos gap_Unknown_length, CLinkage_evidence::EType evidence);
+    static 
+    void ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min);
 
     void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
     void SetGapsLinkageEvidence(const string& evidence);

@@ -73,6 +73,11 @@ public:
                              TSeqPos pos, TSeqPos length,
                              string& dst, TCoding dst_coding);
 
+    // const char* to string
+    static SIZE_TYPE Convert(const CTempString& src, TCoding src_coding,
+                             TSeqPos pos, TSeqPos length,
+                             string& dst, TCoding dst_coding);
+
     // string to vector
     static SIZE_TYPE Convert(const string& src, TCoding src_coding,
                              TSeqPos pos, TSeqPos length,

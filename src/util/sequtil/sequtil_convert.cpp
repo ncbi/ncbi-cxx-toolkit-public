@@ -56,6 +56,20 @@ SIZE_TYPE CSeqConvert::Convert
                                     dst, dst_coding);
 }
 
+// const char* to string
+SIZE_TYPE CSeqConvert::Convert
+(const CTempString& src,
+ TCoding src_coding,
+ TSeqPos pos,
+ TSeqPos length,
+ string& dst, 
+ TCoding dst_coding)
+{
+    return CSeqConvert_imp::Convert(src, src_coding,
+                                    pos, length,
+                                    dst, dst_coding);
+}
+
 
 // string to vector
 SIZE_TYPE CSeqConvert::Convert

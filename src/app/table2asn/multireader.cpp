@@ -377,9 +377,10 @@ CMultiReader::xReadASN1(CNcbiIstream& instream)
     // guess object type
     const string sType = pObjIstrm->ReadFileHeader();
 
+    CRef<CSeq_entry> entry;
     // do the right thing depending on the input type
     if( sType == CBioseq_set::GetTypeInfo()->GetName() ) {
-        CRef<CSeq_entry> entry (new CSeq_entry);
+        entry.Reset(new CSeq_entry);
         pObjIstrm->Read(ObjectInfo(entry->SetSet()), CObjectIStream::eNoFileHeader);
 
         return entry;
@@ -389,7 +390,6 @@ CMultiReader::xReadASN1(CNcbiIstream& instream)
         CRef<CSeq_submit> submit (new CSeq_submit);
         pObjIstrm->Read(ObjectInfo(*submit), CObjectIStream::eNoFileHeader);
 
-        CRef<CSeq_entry> entry(new CSeq_entry);
         if (submit->GetData().GetEntrys().size() > 1)
         {
             entry.Reset(new CSeq_entry);
@@ -397,18 +397,20 @@ CMultiReader::xReadASN1(CNcbiIstream& instream)
         }
         else
             entry = *submit->SetData().SetEntrys().begin();
-
-        return entry;
     }
     else
     if( sType == CSeq_entry::GetTypeInfo()->GetName() ) {
-        CRef<CSeq_entry> entry (new CSeq_entry);
+        entry.Reset(new CSeq_entry);
         pObjIstrm->Read(ObjectInfo(*entry), CObjectIStream::eNoFileHeader);
-
-        return entry;
+    }
+    else
+    {
+        return CRef<CSeq_entry>();
     }
 
-    return CRef<CSeq_entry>();
+    if (m_context.m_gapNmin > 0)
+        CFastaReader::HandleGaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, (CLinkage_evidence::EType)m_context.m_gaps_evidence);
+    return entry;
 }
 
 //  ----------------------------------------------------------------------------
