@@ -180,6 +180,9 @@ public:
     bool CanGetDescr(void) const;
     const TDescr& GetDescr(void) const;
 
+    // annot
+    bool HasAnnots(void) const;
+
     // Utility methods/operators
 
     /// Check if handle points to a bioseq-set

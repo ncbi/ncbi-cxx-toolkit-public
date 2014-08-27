@@ -262,6 +262,12 @@ const CBioseq_set::TDescr& CBioseq_set_Handle::GetDescr(void) const
 }
 
 
+bool CBioseq_set_Handle::HasAnnots(void) const
+{
+    return x_GetInfo().HasAnnots();
+}
+
+
 CBioseq_set_Handle::TComplexityTable
 CBioseq_set_Handle::sm_ComplexityTable = {
     0, // not-set (0)
