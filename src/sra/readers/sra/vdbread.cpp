@@ -41,6 +41,7 @@
 #include <sra/sraschema.h>
 
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
 #include <objects/general/general__.hpp>
@@ -50,6 +51,7 @@
 #include <sra/error_codes.hpp>
 
 #include <cstring>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -90,12 +92,33 @@ CVFSManager::CVFSManager(void)
 /////////////////////////////////////////////////////////////////////////////
 // CVPath
 
-CVPath::CVPath(const string& path)
+CVPath::CVPath(const CVFSManager& mgr, const string& path, EType type)
 {
-    if ( rc_t rc = VPathMakeSysPath(x_InitPtr(), path.c_str()) ) {
-        *x_InitPtr() = 0;
-        NCBI_THROW3(CSraException, eInitFailed,
-                    "Cannot create VPath", rc, path);
+    x_Init(mgr, path, type);
+}
+
+
+CVPath::CVPath(const string& path, EType type)
+{
+    x_Init(CVFSManager(), path, type);
+}
+
+
+void CVPath::x_Init(const CVFSManager& mgr, const string& path, EType type)
+{
+    if ( type == eSys ) {
+        if ( rc_t rc = VFSManagerMakeSysPath(mgr, x_InitPtr(), path.c_str()) ) {
+            *x_InitPtr() = 0;
+            NCBI_THROW3(CSraException, eInitFailed,
+                        "Cannot create sys VPath", rc, path);
+        }
+    }
+    else {
+        if ( rc_t rc = VFSManagerMakeAccPath(mgr, x_InitPtr(), path.c_str()) ) {
+            *x_InitPtr() = 0;
+            NCBI_THROW3(CSraException, eInitFailed,
+                        "Cannot create acc VPath", rc, path);
+        }
     }
     if ( rc_t rc = VPathGetPath(*this, &m_Str) ) {
         NCBI_THROW3(CSraException, eInitFailed,
@@ -127,6 +150,7 @@ CVPathRet::operator string(void) const
 // CVResolver
 
 CVResolver::CVResolver(const CVFSManager& mgr, const CKConfig& cfg)
+    : m_Mgr(mgr)
 {
     if ( rc_t rc = VFSManagerMakeResolver(mgr, x_InitPtr(), cfg) ) {
         *x_InitPtr() = 0;
@@ -136,19 +160,34 @@ CVResolver::CVResolver(const CVFSManager& mgr, const CKConfig& cfg)
 }
 
 
+static
+bool s_HasDirSeparator(const string& s)
+{
+#ifdef NCBI_OS_MSWIN
+    return s.find_first_of("/\\") != NPOS;
+#else
+    return s.find('/') != NPOS;
+#endif
+}
+
+
 string CVResolver::Resolve(const string& acc_or_path) const
 {
-    if ( acc_or_path.find('/') != NPOS || acc_or_path.find('\\') != NPOS ) {
+    if ( s_HasDirSeparator(acc_or_path) ) {
         // already a path
         return acc_or_path;
     }
+    CVPath acc(m_Mgr, acc_or_path, CVPath::eAcc);
     CVPathRet ret;
-    rc_t rc = VResolverLocal(*this, CVPath(acc_or_path), ret.x_InitPtr());
+    rc_t rc = VResolverLocal(*this, acc, ret.x_InitPtr());
     if ( rc ) {
-        rc = VResolverRemote(*this, eProtocolHttp, CVPath(acc_or_path),
-                             ret.x_InitPtr());
+        rc = VResolverRemote(*this, eProtocolHttp, acc, ret.x_InitPtr());
     }
     if ( rc ) {
+        if ( CDirEntry(acc_or_path).Exists() ) {
+            // local file
+            return acc_or_path;
+        }
         *ret.x_InitPtr() = 0;
         NCBI_THROW3(CSraException, eNotFound,
                     "Cannot find acc path", rc, acc_or_path);
@@ -212,17 +251,12 @@ void CVDBMgr::x_Init(void)
 static
 string s_FixPath(const string& acc_or_path)
 {
-    if ( acc_or_path.find_first_of("/\\") != NPOS ) {
-        // VDB doesn't understand Windows path starting with backslash
-        CVPath vpath(acc_or_path);
-        string path = vpath;
-        // workaround for lost drive letter
-        if ( isalpha(acc_or_path[0]&0xff) && acc_or_path[1] == ':' &&
-             (path[0] != '/' ||
-              path[1] != toupper(acc_or_path[0]&0xff) ||
-              path[2] != '/') ) {
-            path = "/ " + path;
-            path[1] = toupper(acc_or_path[0]&0xff);
+    if ( s_HasDirSeparator(acc_or_path) ) {
+        string path = CDirEntry::CreateAbsolutePath(acc_or_path);
+        replace(path.begin(), path.end(), '\\', '/');
+        if ( path.length() > 1 && isalpha(path[0]&0xff) && path[1] == ':' ) {
+            path[1] = toupper(path[0]&0xff);
+            path[0] = '/';
         }
         //LOG_POST("FixPath \""<<acc_or_path<<"\" -> \""<<path<<"\"");
         return path;

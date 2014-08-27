@@ -103,7 +103,12 @@ public:
             m_Str.addr = 0;
             m_Str.size = 0;
         }
-    CVPath(const string& path);
+    enum EType {
+        eSys,
+        eAcc
+    };
+    CVPath(const CVFSManager& mgr, const string& path, EType type = eSys);
+    explicit CVPath(const string& path, EType type = eSys);
 
     const char* data(void) const
         {
@@ -118,6 +123,8 @@ public:
             return string(data(), size());
         }
 private:
+    void x_Init(const CVFSManager& mgr, const string& path, EType type);
+
     String m_Str;
 };
 
@@ -152,6 +159,9 @@ public:
         }
 
     string Resolve(const string& acc) const;
+
+private:
+    CVFSManager m_Mgr;
 };
 
 
