@@ -959,7 +959,7 @@ bool CAnnotObjectType_Less::operator()(const CAnnotObject_Ref& x,
             const CSeq_feat& x_feat = x_create.GetOriginalFeat();
             const CSeq_feat& y_feat = y_create.GetOriginalFeat();
             bool x_has_product = x_feat.IsSetProduct();
-            bool y_has_product = x_feat.IsSetProduct();
+            bool y_has_product = y_feat.IsSetProduct();
             if ( x_has_product != y_has_product ) {
                 return !x_has_product; // without product first
             }
