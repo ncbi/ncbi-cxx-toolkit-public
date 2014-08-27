@@ -486,6 +486,10 @@ void CTable2AsnContext::MergeSeqDescr(objects::CSeq_descr& dest, const objects::
 
 void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
 {
+    if (m_entry_template.IsNull() ||
+        !m_entry_template->IsSetDescr())
+        return;
+
     if (entry.IsSet())
     {
         CSeq_entry_Base::TSet::TSeq_set& data = entry.SetSet().SetSeq_set();
