@@ -156,6 +156,9 @@ static void s_AddProjItemToDll(const CProjectItemsTree& tree_src,
     if (!lib.m_External) {
         dll.m_External = false;
     }
+    if (lib.m_StyleObjcpp) {
+        dll.m_StyleObjcpp = true;
+    }
 
     CMsvcPrjProjectContext lib_context(lib);
     // Define empty configuration list -- to skip configurable file

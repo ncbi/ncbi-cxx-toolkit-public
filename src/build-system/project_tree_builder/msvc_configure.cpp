@@ -34,6 +34,7 @@
 #include "ptb_err_codes.hpp"
 #ifdef NCBI_XCODE_BUILD
   #include <sys/utsname.h>
+  #include <unistd.h>
 #endif
 
 BEGIN_NCBI_SCOPE
