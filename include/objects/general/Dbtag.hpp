@@ -202,7 +202,8 @@ public:
         eDbtagType_EnsemblGenomes,
         eDbtagType_TubercuList,
         eDbtagType_MedGen,
-        eDbtagType_CGD
+        eDbtagType_CGD,
+        eDbtagType_Assembly
     };
 
     enum EDbtagGroup {
