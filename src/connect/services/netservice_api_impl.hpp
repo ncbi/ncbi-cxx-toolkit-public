@@ -212,6 +212,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_Listener(listener),
         m_ServerPool(new SNetServerPoolImpl(api_name, client_name, listener)),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        m_ColoNetwork(0),
         m_AllowXSiteConnections(false),
 #endif
         m_UseSmartRetries(true)
