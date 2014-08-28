@@ -578,6 +578,28 @@ size_t GetMonthNumberFromString(const string& month)
 }
 
 
+vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
+{
+    vector<string> tokens;
+    string token_delimiters = " ,-/=_.";
+    size_t i;
+
+    string cpy = orig_date;
+    NStr::TruncateSpacesInPlace (cpy);
+
+    string one_token;    
+    for (i = 0; i < 4; i++) {
+        one_token = NStr::GetField (cpy, i, token_delimiters, NStr::eMergeDelims);
+        if (NStr::IsBlank (one_token)) {
+            break;
+        } else {
+            tokens.push_back (one_token);
+        }
+    }
+    return tokens;
+}
+
+
 string CSubSource::FixDateFormat (const string& test, bool month_first, bool& month_ambiguous)
 {
     string orig_date = test;
@@ -595,24 +617,15 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     size_t num_original_tokens = 0;
 
     month_ambiguous = false;
-    string cpy = orig_date;
-    NStr::TruncateSpacesInPlace (cpy);
-    vector<string> tokens;
-    string one_token;    
-    for (i = 0; i < 4; i++) {
-        one_token = NStr::GetField (cpy, i, token_delimiters, NStr::eMergeDelims);
-        if (NStr::IsBlank (one_token)) {
-            break;
-        } else {
-            tokens.push_back (one_token);
-        }
-    }
+    vector<string> tokens = x_GetDateTokens(orig_date);
+    
     num_original_tokens = tokens.size();
     if (tokens.size() < 1 || tokens.size() > 3) {
         // no tokens or too many tokens
         return "";
     }
 
+    string one_token;    
     vector<string>::iterator it = tokens.begin();
     while (it != tokens.end()) {
         one_token = *it;        
@@ -806,6 +819,67 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     }
 
     return reformatted_date;
+}
+
+
+void CSubSource::DetectDateFormat(const string& orig_date, bool& ambiguous, bool &day_first)
+{
+    ambiguous = false;
+    day_first = false;
+    vector<string> tokens = x_GetDateTokens(orig_date);
+    if (tokens.size() != 3) {
+        // can't do detection if there are more or less than three tokens
+        ambiguous = true;
+        return;
+    }
+    vector<int> nums;
+
+    // detection is only valid if all tokens are numbers and at least one is known to be the year
+    try {
+        ITERATE(vector<string>, it, tokens) {
+            nums.push_back(NStr::StringToInt (*it));
+        }
+    } catch ( ... ) {
+        // threw exception while converting to int
+        ambiguous = true;
+        return;
+    }
+    typedef enum EPos { eDay = 0, eMonth = 1, eYear = 2 };
+    vector<int> positions;
+    positions.push_back(0);
+    positions.push_back(0);
+    positions.push_back(0);
+    
+    int token_pos = 1;
+    ITERATE(vector<int>, it, nums) {
+        if (*it > 31) {
+            if (positions[eYear] > 0) {
+                // already found a year
+                ambiguous = true;
+                return;
+            }
+            positions[eYear] = token_pos;
+        } else if (*it > 12) {
+            if (positions[eDay] > 0) {
+                // already found a day
+                ambiguous = true;
+                return;
+            }
+            positions[eDay] = token_pos;
+        } else if (positions[eMonth] > 0) {
+            // already found a month
+            ambiguous = true;
+            return;
+        } else {
+            positions[eMonth] = token_pos;
+        }
+        token_pos++;
+    }
+    if (positions[eDay] < positions[eMonth]) {
+        day_first = true;
+    } else {
+        day_first = false;
+    }
 }
 
 

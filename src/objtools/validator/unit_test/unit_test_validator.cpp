@@ -18291,6 +18291,32 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_DetectDateFormat)
+{
+    bool ambiguous;
+    bool day_first;
+
+    CSubSource::DetectDateFormat("1-1-2010", ambiguous, day_first);
+    BOOST_CHECK_EQUAL(ambiguous, true);
+
+    CSubSource::DetectDateFormat("1-6-2010", ambiguous, day_first);
+    BOOST_CHECK_EQUAL(ambiguous, true);
+
+    CSubSource::DetectDateFormat("7-15-2010", ambiguous, day_first);
+    BOOST_CHECK_EQUAL(ambiguous, false);
+    BOOST_CHECK_EQUAL(day_first, false);
+
+    CSubSource::DetectDateFormat("2010 8 24", ambiguous, day_first);
+    BOOST_CHECK_EQUAL(ambiguous, false);
+    BOOST_CHECK_EQUAL(day_first, false);
+
+    CSubSource::DetectDateFormat("31-5-2008", ambiguous, day_first);
+    BOOST_CHECK_EQUAL(ambiguous, false);
+    BOOST_CHECK_EQUAL(day_first, true);
+
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
 {
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("United States"), "USA");

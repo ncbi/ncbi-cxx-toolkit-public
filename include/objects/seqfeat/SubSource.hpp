@@ -158,6 +158,7 @@ public:
 
     static string FixDateFormat(const string& orig_date);
     static string FixDateFormat(const string& orig_date, bool month_first, bool& month_ambiguous);
+    static void DetectDateFormat(const string& orig_date, bool& ambiguous, bool &day_first);
     static void IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool& precision_correct,
                                      bool& lat_in_range, bool& lon_in_range,
                                      double& lat_value, double& lon_value);
@@ -192,6 +193,7 @@ private:
     CSubSource& operator=(const CSubSource& value);
 
     static string x_ParseDateRangeWithDelimiter(const string& orig_date, const string& delim);
+    static vector<string> x_GetDateTokens(const string& orig_date);
     static CLatLonCountryId * x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
 
     // validation data read from external files
