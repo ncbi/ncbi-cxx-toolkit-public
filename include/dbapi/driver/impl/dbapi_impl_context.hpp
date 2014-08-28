@@ -71,7 +71,9 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
         fIsPooledSet     = 0x0200,
         fPoolMinSizeSet  = 0x0400,
         fPoolMaxSizeSet  = 0x0800,
-        fArgsSet         = 0x1000
+        fArgsSet         = 0x1000,
+        fPasswordFileSet = 0x2000,
+        fPasswordKeySet  = 0x4000
     };
     typedef unsigned int  TFlags;
 
@@ -81,6 +83,8 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     string  database;
     string  username;
     string  password;
+    string  password_file;   // just used by SDBAPI, at least for now
+    string  password_key_id; // just used by SDBAPI, at least for now
     string  login_timeout;
     string  io_timeout;
     string  cancel_timeout;
@@ -99,6 +103,8 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     bool IsDatabaseSet(void)     { return IsFlagSet(fDatabaseSet);      }
     bool IsUsernameSet(void)     { return IsFlagSet(fUsernameSet);      }
     bool IsPasswordSet(void)     { return IsFlagSet(fPasswordSet);      }
+    bool IsPasswordFileSet(void) { return IsFlagSet(fPasswordFileSet);  }
+    bool IsPasswordKeySet(void)  { return IsFlagSet(fPasswordKeySet);   }
     bool IsLoginTimeoutSet(void) { return IsFlagSet(fLoginTimeoutSet);  }
     bool IsIOTimeoutSet(void)    { return IsFlagSet(fIOTimeoutSet);     }
     bool IsCancelTimeoutSet(void){ return IsFlagSet(fCancelTimeoutSet); }

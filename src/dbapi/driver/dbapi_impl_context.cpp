@@ -719,6 +719,18 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         params->flags += SDBConfParams::fPasswordSet;
         params->password = reg.Get(section_name, "password");
     }
+    if (reg.HasEntry(section_name, "password_file",
+                     IRegistry::fCountCleared)) {
+        // password and password_file are mutually exclusive, but only SDBAPI
+        // actually honors the latter, so it will take care of throwing
+        // exceptions as necessary.
+        params->flags += SDBConfParams::fPasswordFileSet;
+        params->password_file = reg.Get(section_name, "password_file");
+    }
+    if (reg.HasEntry(section_name, "password_key", IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPasswordKeySet;
+        params->password_key_id = reg.Get(section_name, "password_key");
+    }
     if (reg.HasEntry(section_name, "login_timeout", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fLoginTimeoutSet;
         params->login_timeout = reg.Get(section_name, "login_timeout");

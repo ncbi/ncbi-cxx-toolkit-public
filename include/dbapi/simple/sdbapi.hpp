@@ -40,6 +40,7 @@
 #include <corelib/rwstream.hpp>
 #include <util/ncbi_url.hpp>
 #include <dbapi/dbapi.hpp>
+#include <dbapi/error_codes.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -775,6 +776,27 @@ CBulkInsert& EndRow(CBulkInsert& bi);
 
 class CDBConnParamsBase;
 
+
+/// Database password decryptor.
+///
+/// The general structure is public, but the full default
+/// implementation is only available within NCBI.
+class CSDB_Decryptor : public CObject
+{
+public:
+    string Decrypt(const string& ciphertext, const CTempString& key_id);
+
+protected:
+    virtual string x_Decrypt(const string& ciphertext, const string& key)
+#ifndef HAVE_LIBCONNEXT
+        = 0
+#endif
+        ;
+
+    virtual string x_GetKey(const CTempString& key_id);
+};
+
+
 /// Convenience class to initialize database connection parameters from
 /// URL-like strings and/or application configuration and/or hard-code.
 class CSDB_ConnectionParam
@@ -810,8 +832,10 @@ public:
     ///   - use_conn_pool
     ///   - conn_pool_minsize
     ///   - conn_pool_maxsize
+    ///   - password_file
+    ///   - password_key
     ///
-    ///   The last 6 parameters can also come as named URL parameters;
+    ///   The last 8 parameters can also come as named URL parameters;
     ///   "args" is a catch-all for any other parameters, which can appear
     ///   directly as URL parameters.  (Settings from the configuration file's
     ///   "args" string override URL parameters on an individual basis.)
@@ -842,6 +866,8 @@ public:
     enum EParam {
         eUsername,
         ePassword,
+        ePasswordFile,
+        ePasswordKeyID,
         eService,   ///< Database server (or alias, including LBSM service)
         ePort,      ///< Database server's port
         eDatabase,
@@ -883,6 +909,15 @@ public:
     /// database connection parameters
     CUrlArgs& GetArgs(void);
 
+    /// Use the specified password decryptor.
+    ///
+    /// @sa GetGlobalDecryptor
+    static void SetGlobalDecryptor(CRef<CSDB_Decryptor> decryptor);
+    /// Get the current password decryptor, if any.
+    ///
+    /// @sa SetGlobalDecryptor
+    static CRef<CSDB_Decryptor> GetGlobalDecryptor(void);
+
     /// Copy ctor (explicit, to avoid accidental copying)
     explicit CSDB_ConnectionParam(const CSDB_ConnectionParam& param);
     /// Assignment
@@ -898,6 +933,10 @@ private:
     /// Fill parameters for low-level DBAPI from what is set here and in the
     /// configuration file.
     void x_FillLowerParams(CDBConnParamsBase* params) const;
+
+    /// Determine what password to use, accounting for possible
+    /// encryption or indirection.
+    string x_GetPassword() const;
 
     static const char* x_GetName(EParam param);
 
@@ -1174,6 +1213,8 @@ CSDB_ConnectionParam::x_GetName(EParam param)
     switch (param) {
     case eUsername:         return "username";
     case ePassword:         return "password";
+    case ePasswordFile:     return "password_file";
+    case ePasswordKeyID:    return "password_key";
     case eService:          return "service";
     case ePort:             return "port";
     case eDatabase:         return "database";
@@ -1221,6 +1262,19 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
         return m_Url.GetPort();
     case eDatabase:
         return m_Url.GetPath().empty()? kEmptyStr: m_Url.GetPath().substr(1);
+    case ePasswordFile:
+    {
+        bool   found  = false;
+        string pwfile = m_Url.GetArgs().GetValue("password_file", &found);
+        if (found  &&  !m_Url.GetPassword().empty()) {
+            NCBI_THROW(CSDB_Exception, eURLFormat,
+                       "Password and password_file URL parameters"
+                       " are mutually exclusive.");
+            return kEmptyStr;
+        }
+        return pwfile;
+    }
+    case ePasswordKeyID:
     case eLoginTimeout:
     case eIOTimeout:
     case eExclusiveServer:
@@ -1250,6 +1304,10 @@ CSDB_ConnectionParam::Set(EParam param, const string& value)
     case eUsername:
         return m_Url.SetUser(value);
     case ePassword:
+        if ( !Get(ePasswordFile).empty() ) {
+            // XXX - issue diagnostics?
+            Set(ePasswordFile, kEmptyStr);
+        }
         return m_Url.SetPassword(value);
     case eService:
         m_Url.SetHost(value);
@@ -1259,6 +1317,13 @@ CSDB_ConnectionParam::Set(EParam param, const string& value)
         return m_Url.SetPort(value);
     case eDatabase:
         return m_Url.SetPath("/" + value);
+    case ePasswordFile:
+        if ( !Get(ePassword).empty() ) {
+            // XXX - issue diagnostics?
+            Set(ePassword, kEmptyStr);
+        }
+        return m_Url.GetArgs().SetValue("password_file", value);
+    case ePasswordKeyID:
     case eLoginTimeout:
     case eIOTimeout:
     case eExclusiveServer:
@@ -1291,6 +1356,14 @@ CDatabase::NewQuery(const string& sql)
     CQuery q = NewQuery();
     q.SetSql(sql);
     return q;
+}
+
+
+inline
+string CSDB_Decryptor::Decrypt(const string& ciphertext,
+                               const CTempString& key)
+{
+    return x_Decrypt(ciphertext, x_GetKey(key));
 }
 
 

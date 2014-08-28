@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/ncbi_safe_static.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
@@ -41,10 +42,15 @@
 #include "../rw_impl.hpp"
 
 
-BEGIN_NCBI_SCOPE
-
-
 #define NCBI_USE_ERRCODE_X  Dbapi_Sdbapi
+
+
+#ifdef HAVE_LIBCONNEXT
+#  include "sdb_decryptor.cpp"
+#endif
+
+
+BEGIN_NCBI_SCOPE
 
 
 #define SDBAPI_CATCH_LOWLEVEL()                             \
@@ -819,13 +825,55 @@ s_GetDBContext(void)
 }
 
 
+string CSDB_Decryptor::x_GetKey(const CTempString& key_id)
+{
+    string key;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app != NULL) {
+        key = app->GetConfig().GetString("DBAPI_key", key_id, kEmptyStr);
+    }
+
+#ifdef HAVE_LIBCONNEXT
+    if (key.empty()) {
+        key = s_GetBuiltInKey(key_id);
+    }
+#endif
+    if (key.empty()) {
+        NCBI_THROW(CSDB_Exception, eWrongParams,
+                   "Unknown password decryption key ID " + string(key_id));
+    }
+    return key;
+}
+
+
+DEFINE_STATIC_FAST_MUTEX(s_DecryptorMutex);
+static CSafeStatic<CRef<CSDB_Decryptor> > s_Decryptor;
+static bool s_DecryptorInitialized = false;
+
+void CSDB_ConnectionParam::SetGlobalDecryptor(CRef<CSDB_Decryptor> decryptor)
+{
+    CFastMutexGuard GUARD(s_DecryptorMutex);
+    s_Decryptor->Reset(decryptor);
+    s_DecryptorInitialized = true;
+}
+
+CRef<CSDB_Decryptor> CSDB_ConnectionParam::GetGlobalDecryptor(void)
+{
+    CFastMutexGuard GUARD(s_DecryptorMutex);
+    if ( !s_DecryptorInitialized ) {
+        s_Decryptor->Reset(new CSDB_Decryptor);
+        s_DecryptorInitialized = true;
+    }
+    return *s_Decryptor;
+}
+
 string
 CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
                                                 /* = eAllowIncomplete */) const
 {
     if (allow_incomplete == eThrowIfIncomplete
         &&  (m_Url.GetHost().empty()  ||  m_Url.GetUser().empty()
-             ||  m_Url.GetPassword().empty()
+             ||  (m_Url.GetPassword().empty()  &&  Get(ePasswordFile).empty())
              ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/"))
     {
         NCBI_THROW(CSDB_Exception, eURLFormat,
@@ -842,7 +890,9 @@ void CSDB_ConnectionParam::x_FillParamMap(void)
     m_ParamMap.clear();
 
     impl::SDBConfParams conf_params;
-    s_GetDBContext()->ReadDBConfParams(m_Url.GetHost(), &conf_params);
+    try {
+        s_GetDBContext()->ReadDBConfParams(m_Url.GetHost(), &conf_params);
+    } SDBAPI_CATCH_LOWLEVEL()
 
 #define COPY_PARAM_EX(en, gn, fn) \
     if (conf_params.Is##gn##Set()) \
@@ -862,6 +912,8 @@ void CSDB_ConnectionParam::x_FillParamMap(void)
     COPY_PARAM(Password, password);
     COPY_PARAM(Port,     port);
     COPY_PARAM(Database, database);
+    COPY_PARAM(PasswordFile, password_file);
+    COPY_PARAM_EX(PasswordKeyID, PasswordKey, password_key_id);
 
     COPY_NUM_PARAM (LoginTimeout,    LoginTimeout, login_timeout);
     COPY_NUM_PARAM (IOTimeout,       IOTimeout,    io_timeout);
@@ -886,6 +938,62 @@ void CSDB_ConnectionParam::x_FillParamMap(void)
             x_ReportOverride(x_GetName(it->first), s, it->second);
         }
     }
+
+    if (conf_params.IsPasswordSet()  &&  conf_params.IsPasswordFileSet()) {
+        NCBI_THROW(CSDB_Exception, eWrongParams,
+                   '[' + m_Url.GetHost() + ".dbservice] password and"
+                   " password_file parameters are mutually exclusive.");
+    }
+}
+
+string CSDB_ConnectionParam::x_GetPassword() const
+{
+    string password;
+
+    // Account for possible indirection.  Formal search order:
+    // 1. Password directly in configuration file.
+    // 2. Password filename in configuration file.
+    // 3. Password filename in URL.
+    // 4. Password directly in URL.
+    // However, if either the configuration file or the URL supplies
+    // both a direct password and a password filename, SDBAPI will
+    // throw an exception, so it doesn't matter that 3 and 4 are
+    // backward relative to 1 and 2.
+    TParamMap::const_iterator it = m_ParamMap.find(ePassword);
+    if (it != m_ParamMap.end()) {
+        password = it->second;
+    } else {
+        string pwfile = Get(ePasswordFile, eWithOverrides);
+        if (pwfile.empty()) {
+            password = Get(ePassword);
+        } else {
+            CNcbiIfstream in(pwfile.c_str(), IOS_BASE::in | IOS_BASE::binary);
+            if ( !in ) {
+                NCBI_THROW(CSDB_Exception, eNotExist, // eWrongParams?
+                           "Unable to open password file " + pwfile + ": " +
+                           NCBI_ERRNO_STR_WRAPPER(NCBI_ERRNO_CODE_WRAPPER()));
+            }
+            NcbiGetline(in, password, "\r\n");
+        }
+    }
+    
+    // Account for possible encryption.
+    string key_id = Get(ePasswordKeyID, eWithOverrides);
+    if ( !key_id.empty() ) {
+        CRef<CSDB_Decryptor> decryptor = GetGlobalDecryptor();
+        if (decryptor.NotEmpty()) {
+            password = decryptor->Decrypt(password, key_id);
+            ITERATE (string, pit, password) {
+                if ( !isprint((unsigned char)*pit) ) {
+                    NCBI_THROW(CSDB_Exception, eWrongParams,
+                               "Invalid character in supposedly decrypted"
+                               " password.");
+                }
+            }
+        }
+    }
+
+    return password;
 }
 
 void
@@ -893,7 +1001,7 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
 {
     params->SetServerName  (Get(eService,  eWithOverrides));
     params->SetUserName    (Get(eUsername, eWithOverrides));
-    params->SetPassword    (Get(ePassword, eWithOverrides));
+    params->SetPassword    (x_GetPassword());
     params->SetDatabaseName(Get(eDatabase, eWithOverrides));
 
     string port = Get(ePort, eWithOverrides);
