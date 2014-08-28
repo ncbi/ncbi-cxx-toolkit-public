@@ -122,6 +122,20 @@ public:
         {
             return string(data(), size());
         }
+
+    // Check if argument string is plain VDB accession,
+    // otherwise it's a system path.
+    static bool IsPlainAccession(const string& acc_or_path);
+
+    // Convert system path to a POSIX path, accepted by VDB.
+    // Note that only MS Windows requires this conversion.
+    static string ConvertSysPathToPOSIX(const string& sys_path);
+
+    // Convert system path to a POSIX path, accepted by VDB.
+    // Note that only MS Windows requires this conversion.
+    // Keep plain VDB accession unchanged.
+    static string ConvertAccOrSysPathToPOSIX(const string& acc_or_path);
+
 private:
     void x_Init(const CVFSManager& mgr, const string& path, EType type);
 
@@ -158,6 +172,8 @@ public:
         {
         }
 
+    // Resolve VDB accession to POSIX path.
+    // Keep non plain accession string unchanged.
     string Resolve(const string& acc) const;
 
 private:
@@ -659,6 +675,24 @@ public:
 
 typedef CVDBValueFor<uint16_t> CVDBUInt16Value;
 typedef CVDBValueFor<char> CVDBBytesValue;
+
+
+#ifndef NCBI_OS_MSWIN
+// Non-Windows paths are already POSIX
+inline
+string CVPath::ConvertSysPathToPOSIX(const string& sys_path)
+{
+    return sys_path;
+}
+
+
+// Non-Windows paths are already POSIX
+inline
+string CVPath::ConvertAccOrSysPathToPOSIX(const string& acc_or_path)
+{
+    return acc_or_path;
+}
+#endif
 
 
 END_SCOPE(objects)

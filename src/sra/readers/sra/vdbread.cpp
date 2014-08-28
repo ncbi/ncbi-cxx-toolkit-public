@@ -146,6 +146,53 @@ CVPathRet::operator string(void) const
 }
 
 
+#ifdef NCBI_OS_MSWIN
+static inline
+bool s_HasWindowsDriveLetter(const string& s)
+{
+    // first symbol is letter, and second symbol is colon (':')
+    return s.length() >= 2 && isalpha(s[0]&0xff) && s[1] == ':';
+}
+#endif
+
+
+bool CVPath::IsPlainAccession(const string& acc_or_path)
+{
+#ifdef NCBI_OS_MSWIN
+    return !s_HasWindowsDriveLetter(acc_or_path) &&
+        acc_or_path.find_first_of("/\\") == NPOS;
+#else
+    return acc_or_path.find('/') == NPOS;
+#endif
+}
+
+
+#ifdef NCBI_OS_MSWIN
+string CVPath::ConvertSysPathToPOSIX(const string& sys_path)
+{
+    // Convert Windows path with drive letter
+    // C:\Users\Public -> /C/Users/Public
+    string path = CDirEntry::CreateAbsolutePath(sys_path);
+    replace(path.begin(), path.end(), '\\', '/');
+    if ( s_HasWindowsDriveLetter(path) ) {
+        // move drive letter from first symbol to second (in place of ':')
+        path[1] = toupper(path[0]&0xff);
+        // add leading slash
+        path[0] = '/';
+    }
+    return path;
+}
+
+
+string CVPath::ConvertAccOrSysPathToPOSIX(const string& acc_or_path)
+{
+    return IsPlainAccession(acc_or_path) ?
+        acc_or_path :
+        ConvertSysPathToPOSIX(acc_or_path);
+}
+#endif
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CVResolver
 
@@ -160,20 +207,9 @@ CVResolver::CVResolver(const CVFSManager& mgr, const CKConfig& cfg)
 }
 
 
-static
-bool s_HasDirSeparator(const string& s)
-{
-#ifdef NCBI_OS_MSWIN
-    return s.find_first_of("/\\") != NPOS;
-#else
-    return s.find('/') != NPOS;
-#endif
-}
-
-
 string CVResolver::Resolve(const string& acc_or_path) const
 {
-    if ( s_HasDirSeparator(acc_or_path) ) {
+    if ( !CVPath::IsPlainAccession(acc_or_path) ) {
         // already a path
         return acc_or_path;
     }
@@ -247,32 +283,10 @@ void CVDBMgr::x_Init(void)
 }
 
 
-#ifdef NCBI_OS_MSWIN
-static
-string s_FixPath(const string& acc_or_path)
-{
-    if ( s_HasDirSeparator(acc_or_path) ) {
-        string path = CDirEntry::CreateAbsolutePath(acc_or_path);
-        replace(path.begin(), path.end(), '\\', '/');
-        if ( path.length() > 1 && isalpha(path[0]&0xff) && path[1] == ':' ) {
-            path[1] = toupper(path[0]&0xff);
-            path[0] = '/';
-        }
-        //LOG_POST("FixPath \""<<acc_or_path<<"\" -> \""<<path<<"\"");
-        return path;
-    }
-    return acc_or_path;
-}
-#else
-// do not need to fix path on non-Windows OS
-# define s_FixPath(path) (path)
-#endif
-
-
 void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
 {
     DECLARE_SDK_GUARD();
-    const string& path = s_FixPath(acc_or_path);
+    string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
     if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0, "%.*s",
                                         int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
@@ -326,7 +340,7 @@ void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot make default SRA schema", rc);
     }
-    const string& path = s_FixPath(acc_or_path);
+    string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
     if ( rc_t rc = VDBManagerOpenTableRead(mgr, x_InitPtr(), schema, "%.*s",
                                            int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;

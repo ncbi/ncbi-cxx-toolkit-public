@@ -167,7 +167,7 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
             return path;
         }
     }
-    if ( path_or_acc.find_first_of("/\\") == NPOS ) {
+    if ( CVPath::IsPlainAccession(path_or_acc) ) {
         // parse WGS accession
         // optional "NZ_" prefix
         SIZE_TYPE start = NStr::StartsWith(path_or_acc, "NZ_")? 3: 0;

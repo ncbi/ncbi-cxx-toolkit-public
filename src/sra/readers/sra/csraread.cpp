@@ -51,6 +51,7 @@
 #include <kdb/namelist.h>
 
 #include <sstream>
+#include <algorithm>
 
 BEGIN_NCBI_NAMESPACE;
 
@@ -231,11 +232,7 @@ CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
         m_SraIdPart = csra_path;
         // to avoid conflict with ref seq ids like gnl|SRA|SRR452437/scaffold_1
         // we replace all slashes ('/') with backslashes ('\\')
-        NON_CONST_ITERATE ( string, it, m_SraIdPart ) {
-            if ( *it == '/' ) {
-                *it = '\\';
-            }
-        }
+        replace(m_SraIdPart.begin(), m_SraIdPart.end(), '/', '\\');
     }
     else {
         CDirEntry::SplitPath(csra_path, 0, &m_SraIdPart);
@@ -636,7 +633,7 @@ CRef<CBioseq> CCSraRefSeqIterator::GetRefBioseq(ELoadData load) const
     const CCSraDb_Impl::SRefInfo& info = GetInfo();
     seq->SetId() = GetRefSeq_ids();
     const string& csra_path = m_Db->GetCSraPath();
-    if ( csra_path.find('/') == NPOS && csra_path.find('\\') == NPOS ) {
+    if ( CVPath::IsPlainAccession(csra_path) ) {
         // SRR accession
         CRef<CSeqdesc> desc(new CSeqdesc);
         string title =
