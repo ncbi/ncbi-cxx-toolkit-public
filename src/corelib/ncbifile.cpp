@@ -470,10 +470,11 @@ bool CDirEntry::IsAbsolutePath(const string& path)
         return false;
 
 #if defined(NCBI_OS_MSWIN)
-    // Absolute path is a path started with 'd:\', 'd:/' or  '\\' only.
+    // Absolute path is a path started with 'd:\', 'd:/', '\\' or '//' only.
     if ( ( isalpha((unsigned char)path[0])  &&  path[1] == ':'  &&
            (path[2] == '/'  || path[2] == '\\') )  ||
-           (path[0] == '\\'  &&  path[1] == '\\') ) {
+           ((path[0] == '\\' || path[0] == '/') && 
+            (path[1] == '\\' || path[1] == '/')) ) {
         return true;
     }
 #elif defined(NCBI_OS_UNIX)
@@ -490,10 +491,11 @@ bool CDirEntry::IsAbsolutePathEx(const string& path)
         return false;
 
     // Windows: 
-    // Absolute path is a path started with 'd:\', 'd:/' or  '\\' only.
+    // Absolute path is a path started with 'd:\', 'd:/', '\\' or '//' only.
     if ( ( isalpha((unsigned char)path[0])  &&  path[1] == ':'  &&
            (path[2] == '/'  || path[2] == '\\') )  ||
-           (path[0] == '\\'  &&  path[1] == '\\') ) {
+           ((path[0] == '\\' || path[0] == '/') && 
+            (path[1] == '\\' || path[1] == '/')) ) {
         return true;
     }
     // Unix
