@@ -387,41 +387,4 @@ void CNetScheduleAdmin::StatusSnapshot(
     }
 }
 
-void CNetScheduleAdmin::AffinitySnapshot(
-    CNetScheduleAdmin::TAffinityMap& affinity_map)
-{
-    static const SAffinityInfo new_affinity_info = {0, 0, 0, 0};
-
-    string cmd = "AFLS";
-    g_AppendClientIPAndSessionID(cmd);
-
-    string affinity_token, cnt_str;
-
-    for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
-            CNetService::eIncludePenalized); it; ++it) {
-        string cmd_output((*it).ExecWithRetry(cmd).response);
-        vector<CTempString> affinities;
-        NStr::Tokenize(cmd_output, "&", affinities);
-        ITERATE(vector<CTempString>, affinity, affinities) {
-            if (!NStr::SplitInTwo(*affinity, "=", affinity_token, cnt_str))
-                continue;
-
-            SAffinityInfo& affinity_info = affinity_map.insert(
-                TAffinityMap::value_type(affinity_token,
-                    new_affinity_info)).first->second;
-
-            vector<CTempString> counters;
-            NStr::Tokenize(cnt_str, ",", counters);
-
-            if (counters.size() != 4)
-                continue;
-
-            affinity_info.pending_job_count += NStr::StringToUInt(counters[0]);
-            affinity_info.running_job_count += NStr::StringToUInt(counters[1]);
-            affinity_info.dedicated_workers += NStr::StringToUInt(counters[2]);
-            affinity_info.tentative_workers += NStr::StringToUInt(counters[3]);
-        }
-    }
-}
-
 END_NCBI_SCOPE

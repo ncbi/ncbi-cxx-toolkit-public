@@ -314,7 +314,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 };
 
 
-/////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ////
 /// Job description
 ///
@@ -547,7 +547,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
             ENetScheduleQueuePauseMode* pause_mode = NULL);
 };
 
-/////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ////
 struct SNetScheduleExecutorImpl;
 
@@ -812,7 +812,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleJobReader
     void InterruptReading();
 };
 
-/////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ////
 
 struct SNetScheduleAdminImpl;
@@ -834,24 +834,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void StatusSnapshot(TStatusMap& status_map,
             const string& affinity_token = kEmptyStr,
             const string& job_group = kEmptyStr);
-
-    /// Affinity information returned by AffinitySnapshot().
-    struct SAffinityInfo {
-        unsigned pending_job_count;
-        unsigned running_job_count;
-        unsigned dedicated_workers;
-        unsigned tentative_workers;
-    };
-    /// Affinity map, shows the number of jobs and worker nodes per affinity.
-    typedef map<string, SAffinityInfo> TAffinityMap;
-
-    /// For each affinity, returns the number of jobs associated with it
-    /// as well as the number of worker nodes that are handling or have
-    /// requested this affinity.
-    ///
-    /// @param affinity_map
-    ///    Map of affinity tokens to job and worker node counters.
-    void AffinitySnapshot(TAffinityMap& affinity_map);
 
     /// Create an instance of the given queue class.
     /// @param qname

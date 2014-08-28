@@ -50,53 +50,7 @@ int CGridCommandLineInterfaceApp::PrintNetScheduleStats()
         PrintNetScheduleStats_Generic(eNetScheduleStatNotifications);
     else if (IsOptionSet(eAffinityInfo))
         PrintNetScheduleStats_Generic(eNetScheduleStatAffinities);
-    else if (IsOptionSet(eJobsByAffinity)) {
-        CNetScheduleAdmin::TAffinityMap affinity_map;
-
-        m_NetScheduleAdmin.AffinitySnapshot(affinity_map);
-
-        const char* format;
-        const char* format_cont;
-        string human_readable_format_buf;
-
-        if (m_Opts.output_format == eHumanReadable) {
-            size_t max_affinity_token_len = sizeof("Affinity");
-            ITERATE(CNetScheduleAdmin::TAffinityMap, it, affinity_map) {
-                if (max_affinity_token_len < it->first.length())
-                    max_affinity_token_len = it->first.length();
-            }
-            string sep(max_affinity_token_len + 47, '-');
-            printf("%-*s    Pending     Running   Dedicated   Tentative\n"
-                   "%-*s  job count   job count     workers     workers\n"
-                   "%s\n",
-                   int(max_affinity_token_len), "Affinity",
-                   int(max_affinity_token_len), "token",
-                   sep.c_str());
-
-            human_readable_format_buf = "%-" +
-                NStr::NumericToString(max_affinity_token_len);
-            human_readable_format_buf.append("s%11u %11u %11u %11u\n");
-            format_cont = format = human_readable_format_buf.c_str();
-        } else if (m_Opts.output_format == eRaw)
-            format_cont = format = "%s: %u, %u, %u, %u\n";
-        else { // Output format is eJSON.
-            printf("{");
-            format = "\n\t\"%s\": [%u, %u, %u, %u]";
-            format_cont = ",\n\t\"%s\": [%u, %u, %u, %u]";
-        }
-
-        ITERATE(CNetScheduleAdmin::TAffinityMap, it, affinity_map) {
-            printf(format, it->first.c_str(),
-                    it->second.pending_job_count,
-                    it->second.running_job_count,
-                    it->second.dedicated_workers,
-                    it->second.tentative_workers);
-            format = format_cont;
-        }
-
-        if (m_Opts.output_format == eJSON)
-            printf("\n}\n");
-    } else if (IsOptionSet(eActiveJobCount) || IsOptionSet(eJobsByStatus)) {
+    else if (IsOptionSet(eActiveJobCount) || IsOptionSet(eJobsByStatus)) {
         if (!IsOptionSet(eQueue) &&
                 (IsOptionSet(eAffinity) || IsOptionSet(eGroup))) {
             fprintf(stderr, GRID_APP_NAME ": invalid option combination.\n");
