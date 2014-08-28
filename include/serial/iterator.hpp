@@ -350,7 +350,7 @@ public:
                 LevelIterator* l( m_Stack[ m_Stack.size()-2 ].get());
                 ind = l->GetIndex();
             }
-            return ind - kInvalidMember - 1;
+            return int(ind - kInvalidMember - 1);
         }
 
     /// Return member index in sequence, or variant index in choice
@@ -360,7 +360,7 @@ public:
             if (!m_Stack.empty()) {
                 ind = m_Stack.back().get()->GetIndex();
             }
-            return ind - kInvalidMember - 1;
+            return int(ind - kInvalidMember - 1);
         }
 
 protected:
