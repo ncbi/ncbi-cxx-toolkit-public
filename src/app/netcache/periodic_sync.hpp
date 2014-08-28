@@ -57,12 +57,13 @@ enum ESyncInitiateResult {
 
 // Front end for periodic synchronization
 // The interface is for sync initiated by another peer only!
-// The initiative from the current peer is coming from the [hidden]
-// CNCPeerSyncThread.
+// The initiative from the current peer is coming from
+// CNCActiveSyncControl.
 class CNCPeriodicSync
 {
 public:
     static bool Initialize(void);
+    static void ReConfig(void);
     static void ReInitialize(void);
     static void Finalize(void);
 

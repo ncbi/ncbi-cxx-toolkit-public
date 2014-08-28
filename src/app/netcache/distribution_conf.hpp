@@ -46,6 +46,7 @@ public:
     // Reads settings from an ini file and fills data structures which are
     // frequently used by other dudes
     static bool Initialize(Uint2 control_port);
+    static bool InitMirrorConfig(const CNcbiRegistry& reg, string& err_message);
     static bool ReConfig(CNcbiRegistry& new_reg, string& err_message);
     static void Finalize(void);
 
@@ -61,11 +62,11 @@ public:
 
     // Provides server IDs which serve the given slot
     static size_t CountServersForSlot(Uint2 slot);
-    static TServersList GetServersForSlot(Uint2 slot);
-    static void GetRawServersForSlot(Uint2 slot, TServersList& lst);
+    static void GetServersForSlot(Uint2 slot, TServersList& lst);
+    static const TServersList& GetRawServersForSlot(Uint2 slot);
 
     // Provides common slots for the current and the given server
-    static void  GetCommonSlots(Uint8 server, vector<Uint2>& lst);
+    static const vector<Uint2>&  GetCommonSlots(Uint8 server);
     static bool  HasCommonSlots(Uint8 server);
 
     // Get the current server ID
@@ -76,7 +77,7 @@ public:
     static Uint4 CreateHostAlias(Uint4 ip, Uint4 port);
 
     // Get all partners "host:port" strings
-    static void GetPeers(TNCPeerList& lst);
+    static const TNCPeerList& GetPeers(void);
     static bool HasPeers(void);
 
     static string GetPeerNameOrEmpty(Uint8 srv_id);

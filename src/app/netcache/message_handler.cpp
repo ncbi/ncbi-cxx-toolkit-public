@@ -2228,7 +2228,7 @@ void
 CNCMessageHandler::x_GetCurSlotServers(void)
 {
     LOG_CURRENT_FUNCTION
-    m_CheckSrvs = CNCDistributionConf::GetServersForSlot(m_BlobSlot);
+    CNCDistributionConf::GetServersForSlot(m_BlobSlot, m_CheckSrvs);
     Uint4 main_srv_ip = 0;
     if (m_BlobKey[0] == '\1') {
         string cache_name, key, subkey;
@@ -3334,8 +3334,7 @@ CNCMessageHandler::x_DoCmd_Health(void)
     WriteText("OK:N_DB_FILES=").WriteNumber(CNCBlobStorage::GetNDBFiles()).WriteText("\n");
     WriteText("OK:COPY_QUEUE_SIZE=").WriteNumber(CNCPeerControl::GetMirrorQueueSize()).WriteText("\n");
 
-    TNCPeerList peers;
-    CNCDistributionConf::GetPeers(peers);
+    const TNCPeerList& peers = CNCDistributionConf::GetPeers();
     ITERATE(TNCPeerList, it_peer, peers) {
 //        WriteText("OK:QUEUE_SIZE_").WriteNumber(it_peer->first).WriteText("=").WriteNumber(CNCPeerControl::GetMirrorQueueSize(it_peer->first)).WriteText("\n");
         WriteText("OK:QUEUE_SIZE_").WriteText(it_peer->second).WriteText("=").WriteNumber(CNCPeerControl::GetMirrorQueueSize(it_peer->first)).WriteText("\n");
@@ -3424,6 +3423,11 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_ReConfig(void)
 {
     LOG_CURRENT_FUNCTION
+    if (!CNCServer::IsInitiallySynced()) {
+        WriteText("ERR:Initial sync not finished\n");
+        GetDiagCtx()->SetRequestStatus(eStatus_CondFailed);
+        return &CNCMessageHandler::x_FinishCommand;
+    }
     TNSProtoParams& params = m_ParsedCmd.params;
     string err_message("Unknown section name");
     bool result = false;
@@ -3439,6 +3443,10 @@ CNCMessageHandler::x_DoCmd_ReConfig(void)
             goto done;
         }
         result = CNCDistributionConf::ReConfig(*new_reg, err_message);
+        if (result) {
+            CNCPeriodicSync::ReConfig();
+        }
+
         delete new_reg;
     }
 done:

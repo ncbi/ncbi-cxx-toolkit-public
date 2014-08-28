@@ -43,8 +43,9 @@ BEGIN_NCBI_SCOPE
 
 
 typedef map<Uint8, CNCPeerControl*> TControlMap;
-// not needed, as I pre-create them all on initialization
-//static CMiniMutex s_MapLock;
+// "almost" not needed, as I pre-create them all on initialization
+// BUT I can add new peers on RECONF
+static CMiniMutex s_MapLock;
 static TControlMap s_Controls;
 static CAtomicCounter s_SyncOnInit;
 static CAtomicCounter s_WaitToOpenToClients;
@@ -108,11 +109,11 @@ CNCPeerControl::Initialize(void)
     s_ShutdownListener = new CNCPeerShutdown();
     CTaskServer::AddShutdownCallback(s_ShutdownListener);
 
-//    s_MapLock.Lock();
+    s_MapLock.Lock();
     NON_CONST_ITERATE(TControlMap, it, s_Controls) {
         it->second->SetRunnable();
     }
-//    s_MapLock.Unlock();
+    s_MapLock.Unlock();
 
     return true;
 }
@@ -128,7 +129,7 @@ CNCPeerControl*
 CNCPeerControl::Peer(Uint8 srv_id)
 {
     CNCPeerControl* ctrl;
-//    s_MapLock.Lock();
+    s_MapLock.Lock();
     TControlMap::const_iterator it = s_Controls.find(srv_id);
     it = s_Controls.find(srv_id);
     if (it == s_Controls.end()) {
@@ -141,7 +142,7 @@ CNCPeerControl::Peer(Uint8 srv_id)
     else {
         ctrl = it->second;
     }
-//    s_MapLock.Unlock();
+    s_MapLock.Unlock();
     return ctrl;
 }
 
@@ -653,8 +654,7 @@ CNCPeerControl::MirrorUpdate(const string& key,
                               Uint2 slot,
                               Uint8 update_time)
 {
-    TServersList servers;
-    CNCDistributionConf::GetRawServersForSlot(slot, servers);
+    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
@@ -673,8 +673,7 @@ CNCPeerControl::MirrorWrite(const string& key,
                           Uint8 orig_rec_no,
                           Uint8 size)
 {
-    TServersList servers;
-    CNCDistributionConf::GetRawServersForSlot(slot, servers);
+    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
@@ -690,8 +689,7 @@ CNCPeerControl::MirrorProlong(const string& key,
                             Uint8 orig_time,
                             const CNCBlobAccessor* accessor)
 {
-    TServersList servers;
-    CNCDistributionConf::GetRawServersForSlot(slot, servers);
+    const TServersList& servers = CNCDistributionConf::GetRawServersForSlot(slot);
     ITERATE(TServersList, it_srv, servers) {
         Uint8 srv_id = *it_srv;
         CNCPeerControl* peer = Peer(srv_id);
@@ -778,6 +776,12 @@ void
 CNCPeerControl::ResetServersForInitSync(void)
 {
     SetServersForInitSync(s_ServersToSync);
+}
+
+void
+CNCPeerControl::ReconfServersForInitSync(Uint4 cnt_servers)
+{
+    s_ServersToSync = cnt_servers;
 }
 
 bool
@@ -1015,12 +1019,12 @@ bool
 CNCPeerShutdown::ReadyForShutdown(void)
 {
     bool result = true;
-//    s_MapLock.Lock();
+    s_MapLock.Lock();
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;
         result &= peer->GetReadyForShutdown();
     }
-//    s_MapLock.Unlock();
+    s_MapLock.Unlock();
     return result;
 }
 

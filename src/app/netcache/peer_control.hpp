@@ -105,6 +105,7 @@ public:
 
     static void SetServersForInitSync(Uint4 cnt_servers);
     static void ResetServersForInitSync(void);
+    static void ReconfServersForInitSync(Uint4 cnt_servers);
     static bool HasServersForInitSync(void);
 
     static CNCPeerControl* Peer(Uint8 srv_id);
@@ -127,6 +128,7 @@ public:
 
     void SetSlotsForInitSync(Uint2 cnt_slots);
     void ResetSlotsForInitSync();
+    void ReconfSlotsForInitSync(Uint2 cnt_slots);
     void AddInitiallySyncedSlot(void);
     void RegisterSyncStop(bool is_passive,
                           Uint8& next_sync_time,
@@ -242,6 +244,12 @@ CNCPeerControl::ResetSlotsForInitSync()
 {
     SetSlotsForInitSync(m_OrigSlotsToInitSync);
     m_InitiallySynced = false;
+}
+
+inline void
+CNCPeerControl::ReconfSlotsForInitSync(Uint2 cnt_slots)
+{
+    m_OrigSlotsToInitSync = cnt_slots;
 }
 
 inline Uint8

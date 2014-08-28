@@ -265,12 +265,10 @@ CNCPeriodicSync::Initialize(void)
     s_ShuffleList<SSyncSlotData*>(s_SlotsList);
 
     Uint4 cnt_to_sync = 0;
-    TNCPeerList peers;
-    CNCDistributionConf::GetPeers(peers);
+    const TNCPeerList& peers = CNCDistributionConf::GetPeers();
     ITERATE(TNCPeerList, it_peer, peers) {
         CNCPeerControl* peer = CNCPeerControl::Peer(it_peer->first);
-        vector<Uint2> commonSlots;
-        CNCDistributionConf::GetCommonSlots(it_peer->first, commonSlots);
+        const vector<Uint2>& commonSlots = CNCDistributionConf::GetCommonSlots(it_peer->first);
         ITERATE(vector<Uint2>, it_slot, commonSlots) {
             SSyncSlotData* slot_data = s_SlotsMap[*it_slot];
             SSyncSlotSrv* slot_srv = new SSyncSlotSrv(peer);
@@ -298,6 +296,70 @@ CNCPeriodicSync::Initialize(void)
         CNCServer::InitialSyncComplete();
 
     return true;
+}
+
+void
+CNCPeriodicSync::ReConfig(void)
+{
+// all peers, old and new
+    set<CNCPeerControl*> all_peers;
+// map of common slots
+    map< Uint8, set<Uint2> > peer_slots;
+    const TNCPeerList& peers = CNCDistributionConf::GetPeers();
+    ITERATE(TNCPeerList, it_peer, peers) {
+        const vector<Uint2>& commonSlots = CNCDistributionConf::GetCommonSlots(it_peer->first);
+        peer_slots[it_peer->first].insert(commonSlots.begin(), commonSlots.end());
+    }
+// self slots do not change
+    const vector<Uint2>& self_slots = CNCDistributionConf::GetSelfSlots();
+// for each self slot
+    ITERATE(vector<Uint2>, it_slot, self_slots) {
+        SSyncSlotData* slot_data = s_SlotsMap[*it_slot];
+        slot_data->lock.Lock();
+        set<Uint8> processed;
+// verify old peers
+        ERASE_ITERATE(TSlotSrvsList, it_srv, slot_data->srvs) {
+            Uint8 srv_id = (*it_srv)->peer->GetSrvId();
+            all_peers.insert((*it_srv)->peer);
+            processed.insert(srv_id);
+            map< Uint8, set<Uint2> >::const_iterator p = peer_slots.find(srv_id);
+            if (p != peer_slots.end() && p->second.find( *it_slot) != p->second.end()) {
+// peer still exists and this slot is still common
+                continue;
+            }
+// peer is removed, or there is no common slots - remove this server from SyncData
+            VECTOR_ERASE(it_srv, slot_data->srvs);
+        }
+// look for new peers
+        for (map< Uint8, set<Uint2> >::const_iterator p = peer_slots.begin();
+            p != peer_slots.end(); ++p) {
+            if (processed.find(p->first) != processed.end()) {
+                continue;
+            }
+            processed.insert(p->first);
+            CNCPeerControl* peer = CNCPeerControl::Peer( p->first);
+            all_peers.insert(peer);
+// if we have common slot with this peer, add it into SyncData
+            if (p->second.find( *it_slot) != p->second.end()) {
+                SSyncSlotSrv* slot_srv = new SSyncSlotSrv( peer);
+                slot_data->srvs.push_back( slot_srv);
+            }
+        }
+        slot_data->lock.Unlock();
+    }
+// now get/change some counters
+    Uint4 cnt_to_sync = 0;
+    ITERATE( set<CNCPeerControl*>, it_peer, all_peers) {
+        map< Uint8, set<Uint2> >::const_iterator p = peer_slots.find((*it_peer)->GetSrvId());
+        if (p != peer_slots.end()) {
+            (*it_peer)->ReconfSlotsForInitSync(Uint2(p->second.size()));
+            if (p->second.size() != 0) {
+                ++cnt_to_sync;
+                CNCStat::AddSyncServer(p->first);
+            }
+        }
+    }
+    CNCPeerControl::ReconfServersForInitSync(cnt_to_sync);
 }
 
 void

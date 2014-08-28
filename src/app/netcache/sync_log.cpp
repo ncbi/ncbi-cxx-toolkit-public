@@ -134,13 +134,11 @@ s_ReadHeader(FILE* file)
         sync_data.remote_rec_no = record.remote_rec_no;
     }
 
-    TNCPeerList peers;
-    CNCDistributionConf::GetPeers(peers);
+    const TNCPeerList& peers = CNCDistributionConf::GetPeers();
     ERASE_ITERATE(TSyncedRecsMap, it_srv, s_SyncedData) {
         bool valid = false;
         if (peers.find(it_srv->first) != peers.end()) {
-            vector<Uint2> slots;
-            CNCDistributionConf::GetCommonSlots(it_srv->first, slots);
+            const vector<Uint2>& slots = CNCDistributionConf::GetCommonSlots(it_srv->first);
             if (!slots.empty()) {
                 valid = true;
                 TSrvSyncedMap& srv_map = it_srv->second;

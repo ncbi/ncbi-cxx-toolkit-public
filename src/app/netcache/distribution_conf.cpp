@@ -64,11 +64,24 @@ typedef map<Uint2, TSrvGroupsList>  TSrvGroupsMap;
 typedef map<Uint2, TServersList>    TSlot2SrvMap;
 typedef map<Uint8, vector<Uint2> >  TSrv2SlotMap;
 
-static TSrvGroupsMap s_Slot2Servers;
+struct SSrvMirrorInfo
+{
+    TNCPeerList   s_Peers;
+    TSlot2SrvMap  s_RawSlot2Servers;
+    TSrvGroupsMap s_Slot2Servers;
+    TSrv2SlotMap  s_CommonSlots;
+};
+static SSrvMirrorInfo* s_MirrorConf = NULL;
+#if 0
+static CMiniMutex s_MirrorConf;
+static TNCPeerList s_Peers;
 static TSlot2SrvMap s_RawSlot2Servers;
+static TSrvGroupsMap s_Slot2Servers;
 static TSrv2SlotMap s_CommonSlots;
-static vector<Uint2> s_SelfSlots;
+#endif
 static Uint2    s_MaxSlotNumber = 0;
+
+static vector<Uint2> s_SelfSlots;
 static Uint2    s_CntSlotBuckets = 0;
 static Uint2    s_CntTimeBuckets = 0;
 static Uint4    s_SlotRndShare  = numeric_limits<Uint4>::max();
@@ -81,7 +94,6 @@ static CMiniMutex s_KeyRndLock;
 static CRandom  s_KeyRnd(CRandom::TValue(time(NULL)));
 static string   s_SelfHostIP;
 static CAtomicCounter s_BlobId;
-static TNCPeerList s_Peers;
 static Uint4    s_SelfAlias = 0;
 static string   s_MirroringSizeFile;
 static string   s_PeriodicLogFile;
@@ -133,117 +145,18 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     s_SelfAlias = CNCDistributionConf::CreateHostAlias(self_host, control_port);
     s_BlobId.Set(0);
 
-    string reg_value;
-    bool found_self = false;
-    for (int srv_idx = 0; ; ++srv_idx) {
-        string value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
-        reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
-        if (reg_value.empty())
-            break;
-
-        list<CTempString> srv_fields;
-        NStr::Split(reg_value, ":", srv_fields);
-        if (srv_fields.size() != 3) {
-            SRV_LOG(Critical, log_pfx << "invalid peer server specification: '"
-                              << reg_value << "'");
-            return false;
-        }
-        list<CTempString>::const_iterator it_fields = srv_fields.begin();
-        string grp_name = *it_fields;
-        ++it_fields;
-        string host_str = *it_fields;
-        Uint4 host = CTaskServer::GetIPByHost(host_str);
-        ++it_fields;
-        string port_str = *it_fields;
-        Uint2 port = NStr::StringToUInt(port_str, NStr::fConvErr_NoThrow);
-        if (host == 0  ||  port == 0) {
-            SRV_LOG(Critical, log_pfx << "host does not exist ("
-                              << reg_value << ")");
-            return false;
-        }
-        Uint8 srv_id = (Uint8(host) << 32) + port;
-        string peer_str = host_str + ":" + port_str;
-        if (srv_id == s_SelfID) {
-            if (found_self) {
-                SRV_LOG(Critical, log_pfx << "self host mentioned twice");
-                return false;
-            }
-            found_self = true;
-            s_SelfGroup = grp_name;
-            s_SelfName = peer_str;
-        }
-        else {
-            if (s_Peers.find(srv_id) != s_Peers.end()) {
-                SRV_LOG(Critical, log_pfx << "host " << peer_str
-                                  << " mentioned twice");
-                return false;
-            }
-            s_Peers[srv_id] = peer_str;
-            // pre-create all peers
-            CNCPeerControl::Peer(srv_id);
-        }
-
-        // There must be corresponding description of slots
-        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
-        reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
-        if (reg_value.empty()) {
-            SRV_LOG(Critical, log_pfx << "no slots for a server "
-                              << srv_idx);
-            return false;
-        }
-
-        list<string> values;
-        NStr::Split(reg_value, ",", values);
-        ITERATE(list<string>, it, values) {
-            Uint2 slot = NStr::StringToUInt(*it, NStr::fConvErr_NoThrow);
-            if (slot == 0) {
-                SRV_LOG(Critical, log_pfx << "bad slot number " << *it);
-                return false;
-            }
-            TServersList& srvs = s_RawSlot2Servers[slot];
-            if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end()) {
-                SRV_LOG(Critical, log_pfx << "slot " << slot
-                                  << " provided twice for server " << srv_idx);
-                return false;
-            }
-            if (srv_id == s_SelfID) {
-                s_SelfSlots.push_back(slot);
-            } else {
-                srvs.push_back(srv_id);
-                s_Slot2Servers[slot].push_back(SSrvGroupInfo(srv_id, grp_name));
-            }
-            s_MaxSlotNumber = max(slot, s_MaxSlotNumber);
-        }
+    string err_message;
+    if (!InitMirrorConfig(reg, err_message)) {
+        SRV_LOG(Critical, log_pfx << err_message);
+        return false;
     }
+
     if (s_MaxSlotNumber <= 1) {
         s_MaxSlotNumber = 1;
         s_SlotRndShare = numeric_limits<Uint4>::max();
     }
     else {
         s_SlotRndShare = numeric_limits<Uint4>::max() / s_MaxSlotNumber + 1;
-    }
-
-    if (!found_self) {
-        if (s_Peers.size() != 0) {
-            SRV_LOG(Critical, log_pfx << "no description found for "
-                              "itself (port " << control_port << ")");
-            return false;
-        }
-        s_SelfSlots.push_back(1);
-        s_SelfGroup = "grp1";
-    }
-
-    ITERATE(TNCPeerList, it_peer, s_Peers)  {
-        Uint8 srv_id = it_peer->first;
-        vector<Uint2>& common_slots = s_CommonSlots[srv_id];
-        ITERATE(TSlot2SrvMap, it_slot, s_RawSlot2Servers) {
-            Uint2 slot = it_slot->first;
-            if (find(s_SelfSlots.begin(), s_SelfSlots.end(), slot) == s_SelfSlots.end())
-                continue;
-            const TServersList& srvs = it_slot->second;
-            if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end())
-                common_slots.push_back(it_slot->first);
-        }
     }
 
     s_MirroringSizeFile = reg.Get(kNCReg_NCPoolSection, "mirroring_log_file");
@@ -321,84 +234,176 @@ CNCDistributionConf::Initialize(Uint2 control_port)
 }
 
 bool
-CNCDistributionConf::ReConfig(CNcbiRegistry& new_reg, string& err_message)
+CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_message)
 {
-// we only add or remove peer servers, nothing else
-// also, we verify that paramaters of existing servers did not change.
-    CNcbiRegistry& old_reg = CTaskServer::SetConfRegistry();
+    SSrvMirrorInfo* mirrorCfg = new SSrvMirrorInfo;
+    SSrvMirrorInfo* prevMirrorCfg = ACCESS_ONCE(s_MirrorConf);
+    bool isReconf = prevMirrorCfg != NULL;
+    vector<Uint2> self_slots;
 
-    string value, value_name, srv_name;
-    map<string, set<Uint2> > new_peers, old_peers;
-    list<CTempString> values;
-    int srv_idx;
-
-// new_reg
-    for (srv_idx = 0; ; ++srv_idx) {
-        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
-        srv_name = new_reg.Get(kNCReg_NCPoolSection, value_name);
-        if (srv_name.empty())
+    string reg_value;
+    bool found_self = false;
+    for (int srv_idx = 0; ; ++srv_idx) {
+        string value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
+        if (reg_value.empty())
             break;
-        if (new_peers.find(srv_name) != new_peers.end()) {
-            err_message = srv_name + ": Described more than once";
-            return false;
-        }
-        values.clear();
-        NStr::Split(srv_name, ":", values);
-        if (values.size() != 3) {
+
+        string srv_name = reg_value;
+        list<CTempString> srv_fields;
+        NStr::Split(reg_value, ":", srv_fields);
+        if (srv_fields.size() != 3) {
             err_message = srv_name + ": Invalid peer server specification";
-            return false;
+            goto do_error;
         }
-        list<CTempString>::const_iterator it_fields = values.begin();
+        list<CTempString>::const_iterator it_fields = srv_fields.begin();
+        string grp_name = *it_fields;
         ++it_fields;
-        if (CTaskServer::GetIPByHost(*it_fields) == 0) {
+        string host_str = *it_fields;
+        Uint4 host = CTaskServer::GetIPByHost(host_str);
+        ++it_fields;
+        string port_str = *it_fields;
+        Uint2 port = NStr::StringToUInt(port_str, NStr::fConvErr_NoThrow);
+        if (host == 0  ||  port == 0) {
             err_message = srv_name + ": Host not found";
-            return false;
+            goto do_error;
         }
-        ++it_fields;
-        if (NStr::StringToUInt(*it_fields, NStr::fConvErr_NoThrow) == 0) {
-            err_message = srv_name + ": Host port not found";
-            return false;
+        Uint8 srv_id = (Uint8(host) << 32) + port;
+        string peer_str = host_str + ":" + port_str;
+        if (srv_id == s_SelfID) {
+            if (found_self) {
+                err_message = srv_name + ": Host described twice";
+                goto do_error;
+            }
+            found_self = true;
+            if (isReconf) {
+                if (s_SelfGroup != grp_name || s_SelfName != peer_str) {
+                    err_message = srv_name + ": Changes in self description prohibited";
+                    goto do_error;
+                }
+            } else {
+                s_SelfGroup = grp_name;
+                s_SelfName = peer_str;
+            }
+        }
+        else {
+            if (mirrorCfg->s_Peers.find(srv_id) != mirrorCfg->s_Peers.end()) {
+                err_message = srv_name +  + ": Described twice";
+                goto do_error;
+            }
+            mirrorCfg->s_Peers[srv_id] = peer_str;
+            // pre-create all peers
+            CNCPeerControl::Peer(srv_id);
         }
 
+        // There must be corresponding description of slots
         value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
-        value = new_reg.Get(kNCReg_NCPoolSection, value_name);
-        if (value.empty()) {
+        reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
+        if (reg_value.empty()) {
             err_message = srv_name + ": No slots for server";
-            return false;
+            goto do_error;
         }
-        values.clear();
-        NStr::Split(value, ",", values);
-        ITERATE(list<CTempString>, it, values) {
+
+        list<string> values;
+        NStr::Split(reg_value, ",", values);
+        ITERATE(list<string>, it, values) {
             Uint2 slot = NStr::StringToUInt(*it, NStr::fConvErr_NoThrow);
             if (slot == 0) {
                 err_message = srv_name + ": Bad slot number: " + string(*it);
-                return false;
+                goto do_error;
             }
-            if (slot > s_MaxSlotNumber) {
-                err_message = srv_name + ": Slot numbers cannot exceed " + NStr::NumericToString(s_MaxSlotNumber);
-                return false;
-            }
-            if (new_peers[srv_name].find(slot) != new_peers[srv_name].end()) {
+            TServersList& srvs = mirrorCfg->s_RawSlot2Servers[slot];
+            if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end()) {
                 err_message = srv_name + ": Slot listed twice: " + string(*it);
-                return false;
+                goto do_error;
             }
-            new_peers[srv_name].insert(slot);
+            if (srv_id == s_SelfID) {
+                if (isReconf) {
+                    self_slots.push_back(slot);
+                } else {
+                    s_SelfSlots.push_back(slot);
+                }
+            } else {
+                srvs.push_back(srv_id);
+                mirrorCfg->s_Slot2Servers[slot].push_back(SSrvGroupInfo(srv_id, grp_name));
+            }
+            if (isReconf) {
+                if (slot > s_MaxSlotNumber) {
+                    err_message = srv_name + ": Slot numbers cannot exceed " + NStr::NumericToString(s_MaxSlotNumber);
+                    goto do_error;
+                }
+            } else {
+                s_MaxSlotNumber = max(slot, s_MaxSlotNumber);
+            }
         }
     }
-// old_reg is already checked for errors
+    if (!found_self) {
+        if (mirrorCfg->s_Peers.size() != 0) {
+            err_message = CTaskServer::GetHostName() + ": Self description not found";
+            goto do_error;
+        }
+        if (!isReconf) {
+            s_SelfSlots.push_back(1);
+            s_SelfGroup = "grp1";
+        }
+    }
+
+    ITERATE(TNCPeerList, it_peer, mirrorCfg->s_Peers)  {
+        Uint8 srv_id = it_peer->first;
+        vector<Uint2>& common_slots = mirrorCfg->s_CommonSlots[srv_id];
+        ITERATE(TSlot2SrvMap, it_slot, mirrorCfg->s_RawSlot2Servers) {
+            Uint2 slot = it_slot->first;
+            if (find(s_SelfSlots.begin(), s_SelfSlots.end(), slot) == s_SelfSlots.end())
+                continue;
+            const TServersList& srvs = it_slot->second;
+            if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end())
+                common_slots.push_back(it_slot->first);
+        }
+    }
+
+    if (AtomicCAS(s_MirrorConf, prevMirrorCfg, mirrorCfg)) {
+        return true;
+    }
+do_error:
+    delete mirrorCfg;
+    return false;
+}
+
+bool
+CNCDistributionConf::ReConfig(CNcbiRegistry& new_reg, string& err_message)
+// we only add or remove peer servers, nothing else
+{
+    if (!InitMirrorConfig(CTaskServer::GetConfRegistry(), err_message)) {
+        return false;
+    }
+// modify old registry to remember the changes
+    CNcbiRegistry& old_reg = CTaskServer::SetConfRegistry();
+    // remove old peers
+    string value_name, value;
+    size_t srv_idx;
     for (srv_idx = 0; ; ++srv_idx) {
         value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
-        srv_name = old_reg.Get(kNCReg_NCPoolSection, value_name);
-        if (srv_name.empty())
-            break;
-        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
         value = old_reg.Get(kNCReg_NCPoolSection, value_name);
-        list<string> values;
-        NStr::Split(value, ",", values);
-        ITERATE(list<string>, it, values) {
-            old_peers[srv_name].insert( NStr::StringToUInt(*it, NStr::fConvErr_NoThrow));
+        if (value.empty()) {
+            break;
         }
+        old_reg.Set(kNCReg_NCPoolSection, value_name, kEmptyStr, CNcbiRegistry::fPersistent);
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        old_reg.Set(kNCReg_NCPoolSection, value_name, kEmptyStr, CNcbiRegistry::fPersistent);
     }
+    // add new ones
+    for (srv_idx = 0; ; ++srv_idx) {
+        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        value = new_reg.Get(kNCReg_NCPoolSection, value_name);
+        if (value.empty())
+            break;
+        old_reg.Set(kNCReg_NCPoolSection, value_name, value, CNcbiRegistry::fPersistent);
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        value = new_reg.Get(kNCReg_NCPoolSection, value_name);
+        old_reg.Set(kNCReg_NCPoolSection, value_name, value, CNcbiRegistry::fPersistent);
+    }
+
+#if 0
 // compare (I am not sure though that slot lists should be identical)
     map<string, set<Uint2> >::const_iterator pn, po;
     for(pn = new_peers.begin(); pn != new_peers.end(); ++pn) {
@@ -421,25 +426,6 @@ CNCDistributionConf::ReConfig(CNcbiRegistry& new_reg, string& err_message)
             }
         }
     }
-// now modify old registry to remember the changes
-    // remove old peers
-    for (srv_idx = old_peers.size(); srv_idx >=0; --srv_idx) {
-        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
-        old_reg.Set(kNCReg_NCPoolSection, value_name, kEmptyStr, CNcbiRegistry::fPersistent);
-        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
-        old_reg.Set(kNCReg_NCPoolSection, value_name, kEmptyStr, CNcbiRegistry::fPersistent);
-    }
-    // add new ones
-    for (srv_idx = 0; ; ++srv_idx) {
-        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
-        srv_name = new_reg.Get(kNCReg_NCPoolSection, value_name);
-        if (srv_name.empty())
-            break;
-        old_reg.Set(kNCReg_NCPoolSection, value_name, srv_name, CNcbiRegistry::fPersistent);
-        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
-        value = new_reg.Get(kNCReg_NCPoolSection, value_name);
-        old_reg.Set(kNCReg_NCPoolSection, value_name, value, CNcbiRegistry::fPersistent);
-    }
 
 // remove common peers
     // here I assume common peers have identical slot lists
@@ -455,7 +441,7 @@ CNCDistributionConf::ReConfig(CNcbiRegistry& new_reg, string& err_message)
             new_peers.erase(pn);
         }
     }
-
+#endif
     return true;
 }
 
@@ -484,14 +470,15 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
 
     // peers
     int idx=1;
-    ITERATE( TNCPeerList, p, s_Peers) {
+    SSrvMirrorInfo* mirrorConf = ACCESS_ONCE(s_MirrorConf);
+    ITERATE( TNCPeerList, p, mirrorConf->s_Peers) {
         task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteNumber(idx).WriteText(iss);
         task.WriteText(p->second).WriteText("\"");
 
         Uint8 srv_id = p->first;
         vector<Uint2> slots;
         // find slots servers by this peer
-        ITERATE(TSlot2SrvMap, it_slot, s_RawSlot2Servers) {
+        ITERATE(TSlot2SrvMap, it_slot, mirrorConf->s_RawSlot2Servers) {
             Uint2 slot = it_slot->first;
             const TServersList& srvs = it_slot->second;
             if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end()) {
@@ -546,42 +533,41 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
 size_t
 CNCDistributionConf::CountServersForSlot(Uint2 slot)
 {
-    return s_Slot2Servers[slot].size();
+    return s_MirrorConf->s_Slot2Servers[slot].size();
 }
 
-TServersList
-CNCDistributionConf::GetServersForSlot(Uint2 slot)
+void
+CNCDistributionConf::GetServersForSlot(Uint2 slot, TServersList& lst)
 {
-    TSrvGroupsList srvs = s_Slot2Servers[slot];
+    TSrvGroupsList srvs = s_MirrorConf->s_Slot2Servers[slot];
     random_shuffle(srvs.begin(), srvs.end());
-    TServersList result;
+    lst.clear();
     for (size_t i = 0; i < srvs.size(); ++i) {
         if (srvs[i].grp == s_SelfGroup)
-            result.push_back(srvs[i].srv_id);
+            lst.push_back(srvs[i].srv_id);
     }
     for (size_t i = 0; i < srvs.size(); ++i) {
         if (srvs[i].grp != s_SelfGroup)
-            result.push_back(srvs[i].srv_id);
+            lst.push_back(srvs[i].srv_id);
     }
-    return result;
 }
 
-void
-CNCDistributionConf::GetRawServersForSlot(Uint2 slot, TServersList& lst)
+const TServersList&
+CNCDistributionConf::GetRawServersForSlot(Uint2 slot)
 {
-    lst =  s_RawSlot2Servers[slot];
+    return s_MirrorConf->s_RawSlot2Servers[slot];
 }
 
-void
-CNCDistributionConf::GetCommonSlots(Uint8 server, vector<Uint2>& lst)
+const vector<Uint2>&
+CNCDistributionConf::GetCommonSlots(Uint8 server)
 {
-    lst = s_CommonSlots[server];
+    return s_MirrorConf->s_CommonSlots[server];
 }
 
 bool
 CNCDistributionConf::HasCommonSlots(Uint8 server)
 {
-    return !s_CommonSlots[server].empty();
+    return !s_MirrorConf->s_CommonSlots[server].empty();
 }
 
 Uint8
@@ -590,16 +576,16 @@ CNCDistributionConf::GetSelfID(void)
     return s_SelfID;
 }
 
-void
-CNCDistributionConf::GetPeers(TNCPeerList& lst)
+const TNCPeerList&
+CNCDistributionConf::GetPeers(void)
 {
-    lst = s_Peers;
+    return s_MirrorConf->s_Peers;
 }
 
 bool
 CNCDistributionConf::HasPeers(void)
 {
-    return !s_Peers.empty();
+    return !s_MirrorConf->s_Peers.empty();
 }
 
 string
@@ -610,10 +596,9 @@ CNCDistributionConf::GetPeerNameOrEmpty(Uint8 srv_id)
         name = s_SelfName;
     }
     else {
-        TNCPeerList peers;
-        CNCDistributionConf::GetPeers(peers);
+        const TNCPeerList& peers = CNCDistributionConf::GetPeers();
         if (peers.find(srv_id) != peers.end()) {
-            name = peers[srv_id];
+            name = peers.find(srv_id)->first;
         }
     }
     return name;
@@ -644,8 +629,7 @@ void
 CNCDistributionConf::GetPeerServers(TServersList& lst)
 {
     lst.clear();
-    TNCPeerList peers;
-    CNCDistributionConf::GetPeers(peers);
+    const TNCPeerList& peers = CNCDistributionConf::GetPeers();
     ITERATE(TNCPeerList, it_peer, peers)  {
         if (GetSelfID() != it_peer->first) {
             lst.push_back(it_peer->first);
