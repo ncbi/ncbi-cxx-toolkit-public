@@ -77,7 +77,7 @@ public:
     CSeq_entry_Handle ObtainSeqEntryFromBioseqSet(CObjectIStream& is);
     CSeq_entry_Handle ObtainSeqEntryFromSeqSubmit(CObjectIStream& is);
 
-    CFastaOstream* OpenFastaOstream(const string& name, bool use_stdout);
+    CFastaOstream* OpenFastaOstream(const string& argname, const string& strname, bool use_stdout);
 
     void PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_stream);
 
@@ -89,8 +89,6 @@ private:
     CRef<CScope>                m_Scope;
 
     auto_ptr<CFastaOstream>     m_Os;           // all sequence output stream
-    bool                        m_OnlyNucs;
-    bool                        m_OnlyProts;
 
     auto_ptr<CFastaOstream>     m_On;           // nucleotide output stream
     auto_ptr<CFastaOstream>     m_Og;           // genomic output stream
@@ -99,7 +97,15 @@ private:
     auto_ptr<CFastaOstream>     m_Ou;           // unknown output stream
     CNcbiOstream*               m_Oq;           // quality score output stream
 
-    bool m_DeflineOnly;
+    string                      m_OgHead;
+    string                      m_OgTail;
+    int                         m_OgIndex;
+    TSeqPos                     m_OgMax;
+    TSeqPos                     m_OgCurrLen;
+
+    bool                        m_OnlyNucs;
+    bool                        m_OnlyProts;
+    bool                        m_DeflineOnly;
 };
 
 //  --------------------------------------------------------------------------
@@ -182,6 +188,28 @@ void CAsn2FastaApp::Init(void)
         arg_desc->SetDependency("og", CArgDescriptions::eExcludes, "o");
         arg_desc->SetDependency("og", CArgDescriptions::eExcludes, "on");
 
+        arg_desc->AddOptionalKey("og_head", "GenomicOutputFileHead",
+            "Genomic output file name stem",
+            CArgDescriptions::eString);
+        /*
+        arg_desc->SetDependency("og_head", CArgDescriptions::eExcludes, "o");
+        arg_desc->SetDependency("og_head", CArgDescriptions::eExcludes, "on");
+        arg_desc->SetDependency("og_head", CArgDescriptions::eExcludes, "og");
+        */
+
+        arg_desc->AddOptionalKey("og_tail", "GenomicOutputFileTail",
+            "Genomic output file name suffix",
+            CArgDescriptions::eString);
+        /*
+        arg_desc->SetDependency("og_tail", CArgDescriptions::eExcludes, "o");
+        arg_desc->SetDependency("og_tail", CArgDescriptions::eExcludes, "on");
+        arg_desc->SetDependency("og_tail", CArgDescriptions::eExcludes, "og");
+        */
+
+        arg_desc->AddDefaultKey("x", "GenomeFileMaxSize",
+                                "Maximum size of each genomic fasta file in Mb",
+                                CArgDescriptions::eInteger, "1000");
+
         arg_desc->AddOptionalKey("or", "RNAOutputFile",
             "RNA output file name", CArgDescriptions::eOutputFile);
         arg_desc->SetDependency("or", CArgDescriptions::eExcludes, "o");
@@ -203,18 +231,34 @@ void CAsn2FastaApp::Init(void)
 }
 
 //  --------------------------------------------------------------------------
-CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& name, bool use_stdout)
+CFastaOstream* CAsn2FastaApp::OpenFastaOstream(const string& argname, const string& strname, bool use_stdout)
 //  --------------------------------------------------------------------------
 {
     const CArgs& args = GetArgs();
 
     if (! use_stdout) {
-        if (! args[name]) return NULL;
+        if (strname.empty()) {
+            if (argname.empty()) return NULL;
+            if (! args[argname]) return NULL;
+        }
     }
 
-    auto_ptr<CFastaOstream> fasta_os
-        ( new CFastaOstream( use_stdout? cout : args[name].AsOutputFile()
-         ) );
+    CNcbiOstream* os;
+    if (use_stdout) {
+        os = &NcbiCout;
+    } else if ( !strname.empty() ) {
+        // NB: This stream will leak unless explicitly managed.
+        // (An app-wide smart pointer should suffice.)
+        os = new CNcbiOfstream(strname.c_str());
+    } else {
+        const CArgs& args = GetArgs();
+        if (args[argname]) {
+            os = &args[argname].AsOutputFile();
+        } else {
+            return NULL;
+        }
+    }
+    auto_ptr<CFastaOstream> fasta_os(new CFastaOstream(*os));
 
     fasta_os->SetAllFlags(
         CFastaOstream::fInstantiateGaps |
@@ -268,22 +312,39 @@ int CAsn2FastaApp::Run(void)
     m_Scope->AddDefaults();
 
     // open the output streams
-    m_Os.reset( OpenFastaOstream ("o", false) );
-    m_On.reset( OpenFastaOstream ("on", false) );
-    m_Og.reset( OpenFastaOstream ("og", false) );
-    m_Or.reset( OpenFastaOstream ("or", false) );
-    m_Op.reset( OpenFastaOstream ("op", false) );
-    m_Ou.reset( OpenFastaOstream ("ou", false) );
+    m_Os.reset( OpenFastaOstream ("o", "", false) );
+    m_On.reset( OpenFastaOstream ("on", "", false) );
+    m_Og.reset( OpenFastaOstream ("og", "", false) );
+    m_Or.reset( OpenFastaOstream ("or", "", false) );
+    m_Op.reset( OpenFastaOstream ("op", "", false) );
+    m_Ou.reset( OpenFastaOstream ("ou", "", false) );
     m_Oq = args["oq"] ? &(args["oq"].AsOutputFile()) : NULL;
 
     m_OnlyNucs = args["nucs-only"];
     m_OnlyProts = args["prots-only"];
 
+    m_OgHead = "";
+    m_OgTail = "";
+    m_OgIndex = 0;
+    m_OgMax = 0;
+    m_OgCurrLen = 0;
+    if (args["og_head"] && args["og_tail"] && args["x"]) {
+        m_OgHead = args["og_head"].AsString();
+        m_OgTail = args["og_tail"].AsString();
+        m_OgMax = TSeqPos (args["x"].AsInteger() * 1000000);
+    }
+
+    if (! m_OgHead.empty() && ! m_OgTail.empty()) {
+        m_OgIndex++;
+        string ogx = m_OgHead + NStr::IntToString(m_OgIndex) + m_OgTail;
+        m_Og.reset( OpenFastaOstream ("", ogx, false) );
+    }
+
     if (m_Os.get() == NULL  &&  m_On.get() == NULL  &&  m_Og.get() == NULL  &&
         m_Or.get() == NULL  &&  m_Op.get() == NULL  &&  m_Ou.get() == NULL  &&
         m_Oq == NULL) {
         // No output (-o*) argument given - default to stdout
-        m_Os.reset( OpenFastaOstream ("", true) );
+        m_Os.reset( OpenFastaOstream ("", "", true) );
     }
 
     auto_ptr<CObjectIStream> is;
@@ -675,6 +736,17 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
                 fasta_os = m_On.get();
             } else if ( is_genomic && m_Og.get() != NULL ) {
                 fasta_os = m_Og.get();
+                if (! m_OgHead.empty() && ! m_OgTail.empty()) {
+                    TSeqPos len = bsr->GetLength();
+                    if ( m_OgCurrLen > 0 && m_OgCurrLen + len > m_OgMax ) {
+                        m_OgIndex++;
+                        m_OgCurrLen = 0;
+                        string ogx = m_OgHead + NStr::IntToString(m_OgIndex) + m_OgTail;
+                        m_Og.reset( OpenFastaOstream ("", ogx, false) );
+                        fasta_os = m_Og.get();
+                    }
+                    m_OgCurrLen += len;
+                }
             } else if ( is_RNA && m_Or.get() != NULL ) {
                 fasta_os = m_Or.get();
             } else {
