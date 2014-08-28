@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CGapsEditor
+class NCBI_XOBJEDIT_EXPORT CGapsEditor
 {
 public:
     // this will convert runs of Ns into Gaps
