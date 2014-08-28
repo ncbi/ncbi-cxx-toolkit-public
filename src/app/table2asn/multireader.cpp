@@ -59,6 +59,8 @@
 #include <objects/general/Date.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 
+#include <objtools/edit/gaps_edit.hpp>
+
 #include <corelib/ncbistre.hpp>
 
 #include <serial/iterator.hpp>
@@ -409,7 +411,7 @@ CMultiReader::xReadASN1(CNcbiIstream& instream)
     }
 
     if (m_context.m_gapNmin > 0)
-        CFastaReader::HandleGaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, (CLinkage_evidence::EType)m_context.m_gaps_evidence);
+        CGapsEditor::ConvertNs2Gaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, (CLinkage_evidence::EType)m_context.m_gaps_evidence);
     return entry;
 }
 
