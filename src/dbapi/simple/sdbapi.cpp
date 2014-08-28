@@ -860,10 +860,12 @@ void CSDB_ConnectionParam::SetGlobalDecryptor(CRef<CSDB_Decryptor> decryptor)
 CRef<CSDB_Decryptor> CSDB_ConnectionParam::GetGlobalDecryptor(void)
 {
     CFastMutexGuard GUARD(s_DecryptorMutex);
+#ifdef HAVE_LIBCONNEXT
     if ( !s_DecryptorInitialized ) {
         s_Decryptor->Reset(new CSDB_Decryptor);
         s_DecryptorInitialized = true;
     }
+#endif
     return *s_Decryptor;
 }
 
