@@ -49,12 +49,19 @@ public:
 
     double ComputeEntropy(const CTempString& sequence);
 
+    vector<double> ComputeSlidingWindowEntropy(const CTempString& sequence);
+
 private:
     size_t m_WordSize;
     size_t m_NumWords;
     vector<CTempString> m_Words;
     vector<double> m_EntropyValues;
     double m_Denom;
+
+    typedef map<CTempString, size_t> TCounts;
+
+    double x_Entropy(size_t count);
+    double x_Entropy(const TCounts &counts);
 };
 
 // Create virtual Bioseq for masking original sequence with gaps.

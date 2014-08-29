@@ -177,6 +177,8 @@ CEntropyCalculator::CEntropyCalculator(size_t sequence_size, size_t word_size)
 , m_Denom(log(min((double)m_NumWords,
                   pow(4.0, (int)word_size))))
 {
+    /// Special case for count 0; don't calculate, to avoid calling log(0)
+    m_EntropyValues[0] = 0;
 }
 
 double CEntropyCalculator::ComputeEntropy(const CTempString& sequence)
@@ -192,15 +194,64 @@ double CEntropyCalculator::ComputeEntropy(const CTempString& sequence)
     double entropy = 0;
     for (size_t i = 0, count = 1; i < m_NumWords; ++i, ++count) {
         if (i == m_NumWords-1 || m_Words[i] != m_Words[i+1]) {
-            double &entropy_value = m_EntropyValues[count];
-            if (entropy_value < 0) {
-                /// Lazy evaluation of entropy value
-                double fraction = (double)count / m_NumWords;
-                entropy_value = -fraction * log(fraction) / m_Denom;
-            }
-            entropy += entropy_value;
+            entropy += x_Entropy(count);
             count = 0;
         }
+    }
+    return max<double>(0.0, entropy);
+}
+
+vector<double> CEntropyCalculator::
+ComputeSlidingWindowEntropy(const CTempString& sequence)
+{
+    NCBI_ASSERT(sequence.size() - m_WordSize >= m_NumWords,
+                "Sequence too short");
+
+    size_t window = m_NumWords + m_WordSize;
+    TCounts counts;
+
+    for (size_t i = 0;  i < m_NumWords;  ++i) {
+        CTempString t(sequence, i, m_WordSize);
+        TCounts::iterator it =
+            counts.insert(TCounts::value_type(t, 0)).first;
+        ++it->second;
+    }
+
+    /// The first half-window all has the same entropy, calculated over the
+    /// beginning of the sequence
+    vector<double> results(window/2+1, x_Entropy(counts));
+
+    for (size_t pos = 0; pos < sequence.size()-window; ++pos) {
+        CTempString removed_word(sequence, pos, m_WordSize);
+        --counts[removed_word];
+        CTempString added_word(sequence, pos+m_NumWords, m_WordSize);
+        TCounts::iterator it =
+            counts.insert(TCounts::value_type(added_word, 0)).first;
+        ++it->second;
+        results.push_back(x_Entropy(counts));
+    }
+
+    /// last half-window again has the same entropy
+    results.resize(sequence.size(), x_Entropy(counts));
+    return results;
+}
+
+double CEntropyCalculator::x_Entropy(size_t count)
+{
+    double &entropy_value = m_EntropyValues[count];
+    if (entropy_value < 0) {
+        /// Lazy evaluation of entropy value
+        double fraction = (double)count / m_NumWords;
+        entropy_value = -fraction * log(fraction) / m_Denom;
+    }
+    return entropy_value;
+}
+
+double CEntropyCalculator::x_Entropy(const TCounts &counts)
+{
+    double entropy = 0;
+    ITERATE (TCounts, word_it, counts) {
+        entropy += x_Entropy(word_it->second);
     }
     return max<double>(0.0, entropy);
 }
