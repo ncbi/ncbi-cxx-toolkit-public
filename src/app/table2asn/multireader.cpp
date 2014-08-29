@@ -82,6 +82,23 @@ USING_SCOPE(objects);
 namespace
 {
 
+    class NCBI_XOBJREAD_EXPORT CFastaReaderEx : public CFastaReader {
+    public:
+        CFastaReaderEx(ILineReader& reader, TFlags flags) : CFastaReader(reader, flags)
+        {
+        };
+        virtual void AssembleSeq (IMessageListener * pMessageListener)
+        {
+            CFastaReader::AssembleSeq(pMessageListener);
+
+            CAutoAddDesc molinfo_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Molinfo);
+
+            if (!molinfo_desc.Set().SetMolinfo().IsSetBiomol())
+                molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+
+        }
+    };
+
 }
 //  ============================================================================
 void DumpMemory(const string& prefix)
@@ -435,7 +452,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
              |  CFastaReader::fValidate;
 
     CStreamLineReader lr( instream );
-    auto_ptr<CFastaReader> pReader(new CFastaReader(lr, m_iFlags));
+    auto_ptr<CFastaReader> pReader(new CFastaReaderEx(lr, m_iFlags));
     if (!pReader.get()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);

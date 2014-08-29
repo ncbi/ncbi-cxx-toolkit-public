@@ -58,6 +58,8 @@
 
 #include <objtools/readers/fasta.hpp>
 
+#include "table2asn_context.hpp"
+
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
@@ -627,24 +629,12 @@ void CFeatureTableReader::ConvertSeqIntoSeqSet(CSeq_entry& entry) const
 
         MoveSomeDescr(entry, bioseq);
 
-        CRef<CSeqdesc> molinfo_desc;
-        NON_CONST_ITERATE(CSeq_descr::Tdata, it, bioseq.SetDescr().Set())
-        {
-            if ((**it).IsMolinfo())
-            {
-                molinfo_desc = *it;
-                break;
-            }
-        }
+        CAutoAddDesc molinfo_desc(bioseq.SetDescr(), CSeqdesc::e_Molinfo);
 
-        if (molinfo_desc.Empty())
-        {
-            molinfo_desc.Reset(new CSeqdesc);
-            bioseq.SetDescr().Set().push_back(molinfo_desc);
-        }
-        //molinfo_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
-        if (!molinfo_desc->SetMolinfo().IsSetBiomol())
-            molinfo_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+        if (!molinfo_desc.Set().SetMolinfo().IsSetBiomol())
+            molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+        //molinfo_desc.Set().SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+
 
         if (bioseq.IsSetInst() &&
             bioseq.IsNa() &&
