@@ -1078,7 +1078,8 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
     }
 
     if (digit_pos == 0) {
-        if ( !has_version  &&  main_acc.find_first_not_of(kDigits) == NPOS) {
+        if ( !has_version  &&  main_acc[0] != '0'
+            &&  main_acc.find_first_not_of(kDigits) == NPOS) {
             return eAcc_gi; // just digits
         } else {
             return eAcc_unknown; // PDB already handled
