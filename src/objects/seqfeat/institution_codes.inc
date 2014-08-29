@@ -4500,6 +4500,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NSAC	s	Nova Scotia Agricultural College, Department of Environmental Sciences",
 "NSCA	s	North Scotland College of Agriculture",
 "NSCNFB	c	Novi Sad Collection of Nitrogen Fixing Bacteria",
+"NSCPM	c	National State Collection of Pathogenic Microorganisms",
 "NSDA	s	Nevada Division of Agriculture",
 "NSK	s	Siberian Central Botanical Garden, Laboratory for Plant Systematics and Floristic Genesis",
 "NSM<CAN>	s	Nova Scotia Museum of Natural History",
