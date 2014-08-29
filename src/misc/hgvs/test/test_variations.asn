@@ -1302,4 +1302,115 @@ Variation ::= {
     }
   }
 }
-
+Variation ::= {
+  name "NM_000100.3:c.-210_-95CCCCGCCCCGCG(2_3)",
+  description "",
+  placements {
+    {
+      loc int {
+        from 0,
+        to 11,
+        strand plus,
+        id other {
+          accession "NM_000100",
+          version 3
+        }
+      },
+      mol cdna,
+      start-offset -104,
+      stop-offset -93,
+      seq {
+        length 23
+      },
+      exceptions {
+        {
+          code seqfetch-intronic,
+          message "Can't get sequence for an offset-based location"
+        }
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 1476
+        }
+      },
+      gene-location 66
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 66
+  },
+  data instance {
+    type microsatellite,
+    delta {
+      {
+        seq literal {
+          length 12,
+          seq-data iupacna "CCCCGCCCCGCG"
+        },
+        multiplier 2,
+        multiplier-fuzz range {
+          max 3,
+          min 2
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_013236.2:c.1173+54822_1173+54826ATTCT(10_32)",
+  description "",
+  placements {
+    {
+      loc int {
+        from 1429,
+        to 1429,
+        strand plus,
+        id other {
+          accession "NM_013236",
+          version 2
+        }
+      },
+      mol cdna,
+      start-offset 54822,
+      stop-offset 54826,
+      seq {
+        length 5
+      },
+      exceptions {
+        {
+          code seqfetch-intronic,
+          message "Can't get sequence for an offset-based location"
+        }
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 25814
+        }
+      },
+      gene-location 8
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location intron
+  },
+  data instance {
+    type microsatellite,
+    delta {
+      {
+        seq literal {
+          length 5,
+          seq-data iupacna "ATTCT"
+        },
+        multiplier 10,
+        multiplier-fuzz range {
+          max 32,
+          min 10
+        }
+      }
+    }
+  }
+}
