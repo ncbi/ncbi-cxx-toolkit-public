@@ -264,3 +264,7 @@ Fixed problem with import_project script
 July 09, 2014
 version 3.11.2
 Fixed additional problems with import_project script
+
+August 28, 2014
+version 3.11.3
+XCode-related bug fix.
