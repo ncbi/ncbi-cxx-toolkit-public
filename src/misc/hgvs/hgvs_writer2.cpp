@@ -77,7 +77,9 @@ BEGIN_NCBI_SCOPE
 namespace variation {
 
 
-CRef<CVariantPlacement> CHgvsParser::x_AdjustPlacementForHgvs(const CVariantPlacement& p, const CVariation_inst& inst)
+CRef<CVariantPlacement> CHgvsParser::x_AdjustPlacementForHgvs(
+        const CVariantPlacement& p, 
+        const CVariation_inst& inst)
 {
     CRef<CVariantPlacement> placement(new CVariantPlacement);
     placement->Assign(p);
@@ -92,10 +94,21 @@ CRef<CVariantPlacement> CHgvsParser::x_AdjustPlacementForHgvs(const CVariantPlac
         //insertion: convert the loc to dinucleotide representation as necessary.
         CVariationUtil util(*m_scope);
         CVariationUtil::SFlankLocs flanks = util.CreateFlankLocs(p.GetLoc(), 1);
-        CRef<CSeq_loc> dinucleotide_loc = sequence::Seq_loc_Add(*flanks.upstream, p.GetLoc(), CSeq_loc::fSortAndMerge_All, NULL);
+        CRef<CSeq_loc> dinucleotide_loc = 
+            sequence::Seq_loc_Add( *flanks.upstream, 
+                                   p.GetLoc(), 
+                                   CSeq_loc::fSortAndMerge_All, 
+                                   NULL);
         placement->SetLoc(*dinucleotide_loc);
-    } else if(inst.GetType() == CVariation_inst::eType_microsatellite) {
-        CRef<CSeq_loc> loc = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
+    } else if(inst.GetType() == CVariation_inst::eType_microsatellite
+              && !p.IsSetStart_offset() 
+              && !p.IsSetStop_offset())
+    {
+        CRef<CSeq_loc> loc = 
+            sequence::Seq_loc_Merge( p.GetLoc(), 
+                                     CSeq_loc::fMerge_SingleRange, 
+                                     NULL);
+
         TSeqPos unit_length = x_GetInstLength(inst, p, false);
 
         if(loc->GetStrand() == eNa_strand_minus) {

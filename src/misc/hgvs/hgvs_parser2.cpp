@@ -1454,19 +1454,31 @@ CRef<CVariation> CHgvsParser::x_ssr(TIterator const& i, const CContext& context)
         ++it;
     }
 
+    CVariantPlacement& p = SetFirstPlacement(*vr);
+    p.Assign(context.GetPlacement());
 
 
-    SetFirstPlacement(*vr).Assign(context.GetPlacement());
-
+    // The location may either specify a repeat unit, 
+    // or point to the first base of a repeat unit.
+    // We normalize it so it is alwas the repeat unit.
 #if 1
-    if(!literal.IsNull() && literal->IsSetSeq_data() && literal->GetSeq_data().IsIupacna()) {
-        CRef<CSeq_loc> ssr_loc = FindSSRLoc(SetFirstPlacement(*vr).GetLoc(), literal->GetSeq_data().GetIupacna(), context.GetScope());
-        SetFirstPlacement(*vr).SetLoc().Assign(*ssr_loc);
+    if(   !literal.IsNull() 
+       && literal->IsSetSeq_data() 
+       && literal->GetSeq_data().IsIupacna()
+       && !p.IsSetStart_offset()
+       && !p.IsSetStop_offset())
+    {
+        CRef<CSeq_loc> ssr_loc = FindSSRLoc(
+                p.GetLoc(), 
+                literal->GetSeq_data().GetIupacna(), 
+                context.GetScope());
+        p.SetLoc().Assign(*ssr_loc);
+    } else if(p.IsSetStart_offset() && !p.IsSetStop_offset()) {
+        p.SetStop_offset(p.GetStart_offset() 
+                       + literal.IsNull() ? 0 : literal->GetLength() - 1);
     }
 #else
     if(SetFirstPlacement(*vr).GetLoc().IsPnt() && !literal.IsNull()) {
-        //The location may either specify a repeat unit, or point to the first base of a repeat unit.
-        //We normalize it so it is alwas the repeat unit.
         ExtendDownstream(SetFirstPlacement(*vr), literal->GetLength() - 1);
     }
 #endif
