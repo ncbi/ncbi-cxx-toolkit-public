@@ -33,6 +33,140 @@
 ################################################################################
 
 {
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 3)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__memp_pgwrite
+   fun:__memp_bhwrite
+   fun:__memp_sync_int
+   fun:__memp_fsync
+   fun:__db_sync
+   fun:__db_refresh
+   fun:__db_close
+   fun:__db_close_pp
+   fun:_ZN4ncbi12CBDB_RawFile7x_CloseENS0_12EIgnoreErrorE
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 2b)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__memp_pgwrite
+   fun:__memp_bhwrite
+   fun:__memp_sync_int
+   fun:__memp_trickle
+   fun:__memp_trickle_pp
+   fun:_ZN4ncbi8CBDB_Env11MempTrickleEiPi
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 2a)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_flush_int
+   fun:__log_flush
+   fun:__memp_sync_int
+   fun:__memp_trickle
+   fun:__memp_trickle_pp
+   fun:_ZN4ncbi8CBDB_Env11MempTrickleEiPi
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1d)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_fill
+   fun:__log_putr
+   fun:__log_put_next
+   fun:__log_put
+   fun:__bam_repl_log
+   fun:__bam_ritem
+   fun:__bam_iitem
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__dbc_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile9x_DB_CPutEP5__dbcP8__db_dbtS4_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1c)
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_flush_int
+   fun:__log_flush_commit
+   fun:__log_put
+   fun:__txn_regop_log
+   fun:__txn_commit
+   fun:__db_txn_auto_resolve
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b2)
+   Memcheck:Cond
+   fun:__log_putr
+   fun:__log_put_next
+   fun:__log_put
+   fun:__bam_split_log
+   fun:__bam_page
+   fun:__bam_split
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b1)
+   Memcheck:Cond
+   fun:__log_putr
+   fun:__log_put_next
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
+   fun:__bam_ovput
+   fun:__bam_iitem
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 1a)
+   Memcheck:Cond
+   fun:__log_putr
+   fun:__log_put_next
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
+   fun:__bam_broot
+   fun:__bam_root
+   fun:__bam_split
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
    Known LIBC bug (https://bugs.kde.org/show_bug.cgi?id=167483)
    Memcheck:Free
    fun:free
