@@ -443,6 +443,8 @@ static const char* const kECNum_ambiguous[] = {
     "3.1.8.n	Phosphoric triester hydrolases",
     "3.1.11.-	Exodeoxyribonucleases producing 5'-phosphomonoesters",
     "3.1.11.n	Exodeoxyribonucleases producing 5'-phosphomonoesters",
+    "3.1.12.-	Exodeoxyribonucleases producing 3'-phosphomonoesters",
+    "3.1.12.n	Exodeoxyribonucleases producing 3'-phosphomonoesters",
     "3.1.13.-	Exoribonucleases producing 5'-phosphomonoesters",
     "3.1.13.n	Exoribonucleases producing 5'-phosphomonoesters",
     "3.1.14.-	Exoribonucleases producing 3'-phosphomonoesters",
