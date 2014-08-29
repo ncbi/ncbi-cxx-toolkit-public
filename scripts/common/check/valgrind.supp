@@ -1,6 +1,6 @@
 # $Id$
 #
-# Valgrind suppression file (version 3.5.0).
+# Valgrind suppression file (version 3.5.0 -> 3.8.1).
 #
 ################################################################################
 #
@@ -116,7 +116,7 @@
 }
 
 {
-   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b2)
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b3)
    Memcheck:Cond
    fun:__log_putr
    fun:__log_put_next
@@ -124,6 +124,21 @@
    fun:__bam_split_log
    fun:__bam_page
    fun:__bam_split
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b2)
+   Memcheck:Cond
+   fun:__log_putr
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
+   fun:__bam_iitem
    fun:__bamc_put
    fun:__dbc_put
    fun:__db_put
