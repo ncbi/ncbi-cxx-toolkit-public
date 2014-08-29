@@ -9600,7 +9600,7 @@ special  CDG86183-CDG86301  embl_tpa_prot
 special  CDI30255-CDI40096  embl_tpa_prot
 special  CDK02602-CDK08087  embl_tpa_prot
 special  CDK08089-CDK12444  embl_tpa_prot
-special  CDM98737-CDM98850  embl_tpa_prot
+special  CDM98735-CDM98850  embl_tpa_prot
 ## Err on the side of caution on as yet unassigned IDs, and hope that
 ## there's not *too* much more backfilling.
 #special CEA09918-CZZ99999  unreserved_prot
