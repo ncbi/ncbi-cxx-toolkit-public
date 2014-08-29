@@ -384,19 +384,27 @@ int CTbl2AsnApp::Run(void)
     m_context.m_NucProtSet = args["u"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
 
+    m_context.m_remove_unnec_xref = args["U"].AsBoolean();
     m_context.m_delay_genprodset = args["J"].AsBoolean();
+    if (args["X"])
+    {
+       const string& extra = args["X"].AsString();
+       m_context.m_flipped_struc_cmt = extra.find('C')!=string::npos;
+    }
+
+    if (args["M"])
+    {
+        m_context.m_master_genome_flag = args["M"].AsString();
+        m_context.m_remove_unnec_xref = true;
+        m_context.m_delay_genprodset = true;
+    }
+
     if (m_context.m_delay_genprodset)
         m_context.m_GenomicProductSet = true;
 
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
 
-    m_context.m_remove_unnec_xref = args["U"].AsBoolean();
-    if (args["M"])
-    {
-        m_context.m_master_genome_flag = args["M"].AsString();
-        m_context.m_remove_unnec_xref = true;
-    }
 
     if (m_context.m_NucProtSet || m_context.m_GenomicProductSet)
     {

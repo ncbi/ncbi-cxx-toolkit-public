@@ -71,13 +71,18 @@ namespace
         switch (entry.Which())
         {
         case CSeq_entry::e_Seq:
-            if (entry.GetSeq().GetFirstId()->Compare(id) == CSeq_id::e_YES)
-                return &entry.SetSeq();
+            ITERATE(CBioseq::TId, it, entry.GetSeq().GetId())
+            {
+                if ((**it).Compare(id) == CSeq_id::e_YES)
+                   return &entry.SetSeq();
+            }
             break;
         case CSeq_entry::e_Set:
-            NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
+            NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set())
             {
-                return FindObjectById(**it, id);
+                CBioseq* obj = FindObjectById(**it, id);
+                if (obj)
+                    return obj;
             }
             break;
         default:
@@ -116,7 +121,16 @@ CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user
 
 void CStructuredCommentsReader::AddStructuredCommentToAllObjects(CSeq_entry& entry, const string& name, const string& value)
 {
-    AddStructuredComment(0, entry.SetDescr(), name, value);
+    if (entry.IsSet())
+    {
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        {
+            AddStructuredComment(0, (**it).SetDescr(), name, value);
+        }
+    }
+    else
+        AddStructuredComment(0, entry.SetSeq().SetDescr(), name, value);
+
 }
 
 void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& container)

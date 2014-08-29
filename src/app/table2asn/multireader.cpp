@@ -694,8 +694,14 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 
     if (!m_context.m_OrganismName.empty())
     {
-        CAutoAddDesc(entry.SetDescr(), CSeqdesc::e_Source).Set().SetSource().
-           SetOrg().SetTaxname(m_context.m_OrganismName);
+        CBioSource::TOrg& org(CAutoAddDesc(entry.SetDescr(), CSeqdesc::e_Source).Set().SetSource().SetOrg());
+        // we should reset taxid in case new name is different
+        if (org.IsSetTaxname() && org.GetTaxId() >0 && org.GetTaxname() != m_context.m_OrganismName)
+        {
+            org.SetTaxId(0);
+        }
+
+        org.SetTaxname(m_context.m_OrganismName);
     }
 }
 
