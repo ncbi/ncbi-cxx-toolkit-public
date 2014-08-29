@@ -1457,7 +1457,6 @@ CRef<CVariation> CHgvsParser::x_ssr(TIterator const& i, const CContext& context)
     CVariantPlacement& p = SetFirstPlacement(*vr);
     p.Assign(context.GetPlacement());
 
-
     // The location may either specify a repeat unit, 
     // or point to the first base of a repeat unit.
     // We normalize it so it is alwas the repeat unit.
@@ -1475,7 +1474,7 @@ CRef<CVariation> CHgvsParser::x_ssr(TIterator const& i, const CContext& context)
         p.SetLoc().Assign(*ssr_loc);
     } else if(p.IsSetStart_offset() && !p.IsSetStop_offset()) {
         p.SetStop_offset(p.GetStart_offset() 
-                       + literal.IsNull() ? 0 : literal->GetLength() - 1);
+                       + (literal.IsNull() ? 0 : literal->GetLength() - 1));
     }
 #else
     if(SetFirstPlacement(*vr).GetLoc().IsPnt() && !literal.IsNull()) {
