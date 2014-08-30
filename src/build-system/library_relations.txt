@@ -109,6 +109,7 @@ biosample needs $(SDBAPI_LIB)
 biosample needs xconnect
 biosample needs xmlwrapp
 biosample needs xregexp
+biosample needs xutil
 bioscgi needs biosample
 bioscgi needs xcgi
 biosconvert needs biosample
@@ -116,6 +117,7 @@ biosconvert needs xvalidate
 biosvalidate needs $(SDBAPI_LIB)
 biosvalidate needs xconnect
 biosvalidate needs xmlwrapp
+biosvalidate needs xutil
 biotree needs general
 biotree_db needs biotree
 biotree_db needs gpipe_common
@@ -870,6 +872,7 @@ sdbapi needs $(XCONNEXT)
 sdbapi needs dbapi
 sdbapi needs ncbi_xdbapi_ftds
 sdbapi needs xconnect
+sdbapi needs xutil
 sdncbiauth needs auxcomm_g
 sdncbiauth needs generic_db_core
 sdncbiauth needs muxex_g
