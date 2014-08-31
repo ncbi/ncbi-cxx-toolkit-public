@@ -82,7 +82,7 @@ USING_SCOPE(objects);
 namespace
 {
 
-    class NCBI_XOBJREAD_EXPORT CFastaReaderEx : public CFastaReader {
+    class CFastaReaderEx : public CFastaReader {
     public:
         CFastaReaderEx(ILineReader& reader, TFlags flags) : CFastaReader(reader, flags)
         {
