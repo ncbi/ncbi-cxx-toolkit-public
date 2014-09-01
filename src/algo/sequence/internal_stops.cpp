@@ -188,6 +188,10 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
     if (spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_transcript) {
         const CSeq_id& product_id = spliced_seg.GetProduct_id();
         CMappedFeat cds_on_rna = GetCdsOnMrna(product_id, scope);
+        if (!cds_on_rna) {
+            /// No CDS
+            return kEmptyStr;
+        }
         if (cds_on_rna.GetLocation().GetStrand() == eNa_strand_minus) {
             NCBI_THROW(CException, eUnknown, "minus strand cdregion on mrna is not supported");
         }
