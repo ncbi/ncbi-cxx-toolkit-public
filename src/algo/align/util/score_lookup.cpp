@@ -1655,6 +1655,10 @@ public:
             NCBI_THROW(CException, eUnknown, "Multiple gene features");
         }
 
+        if (!gene.GetNamedDbxref("GeneID")) {
+            NCBI_THROW(CException, eUnknown, "Gene id not set");
+        }
+
         return gene.GetNamedDbxref("GeneID")->GetTag().GetId();
     }
 
