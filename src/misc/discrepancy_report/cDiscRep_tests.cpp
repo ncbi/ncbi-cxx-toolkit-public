@@ -7377,7 +7377,7 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem> c_item)
 
 FAutofix CBioseq_OVERLAPPING_CDS :: GetAutofixFunc() const
 {
-	return AutoFix :: MarkOverlappingCDSs;
+   return AutoFix :: MarkOverlappingCDSs;
 };
 
 bool CBioseq_OVERLAPPING_CDS :: OverlappingProdNmSimilar(const string& prod_nm1, const string& prod_nm2)
@@ -9758,20 +9758,20 @@ bool CSeqEntry_test_on_biosrc :: DoTaxonIdsMatch(const COrg_ref& org1, const COr
 
 bool CSeqEntry_test_on_biosrc :: DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& biosrc)
 {
-   string digits("1234567890");
    string flu_substr, tax_name, year, coll_year, strtmp;
    size_t pos;
-   if (!biosrc.IsSetTaxname() || (tax_name=biosrc.GetTaxname()).empty()) return false;
-//   tax_name = biosrc.GetTaxname();
+   if (!biosrc.IsSetTaxname() || (tax_name = CTempString(biosrc.GetTaxname())).empty()) {
+     return false;
+   }
    flu_substr = tax_name.substr(0, 18);
    if (flu_substr == "Influenza A virus ") {
      if ( (pos = tax_name.find("(")) != string::npos) {
-       if ( (pos = CTempString(tax_name).substr(pos+1).find("(")) != string::npos) {
-          strtmp = tax_name.substr(0, pos);
+       if ( (pos = tax_name.find("(", pos+1)) != string::npos) {
+          strtmp = CTempString(tax_name.substr(0, pos));
           if ( (pos = strtmp.find_last_not_of(" ")) != string::npos) {
              if (isdigit(strtmp[pos])) {
-               pos = strtmp.substr(0, pos).find_last_not_of(digits); 
-               year = NStr::StringToUInt(CTempString(strtmp).substr(pos+1));
+               pos = strtmp.substr(0, pos).find_last_not_of(thisInfo.digit_str); 
+               year = strtmp.substr(pos+1);
              }
           };
        }
@@ -9779,9 +9779,9 @@ bool CSeqEntry_test_on_biosrc :: DoInfluenzaStrainAndCollectionDateMisMatch(cons
    }
    else if (flu_substr == "Influenza B virus ") {
      if ( (pos = tax_name.find("/")) != string::npos) {
-       if ( (pos = CTempString(tax_name).substr(pos+1).find_first_not_of(" "))!=string::npos) {
+       if ( (pos = tax_name.find_first_not_of(" ", pos+1)) != string::npos) {
          if (isdigit(tax_name[pos])) 
-           year = CTempString(tax_name).substr(pos);
+           year = tax_name.substr(pos);
        }
      }
    }
@@ -9792,13 +9792,17 @@ bool CSeqEntry_test_on_biosrc :: DoInfluenzaStrainAndCollectionDateMisMatch(cons
         ITERATE (list< CRef< CSubSource > >, it, biosrc.GetSubtype()) {
            if ( (*it)->GetSubtype() == CSubSource::eSubtype_collection_date) {
               strtmp = (*it)->GetName();
-              if ( (pos = strtmp.find("-")) == string::npos) {
+              if ( (pos = strtmp.find_last_of("-")) == string::npos) {
                  coll_year = strtmp;
               }
-              else if (!isdigit(strtmp[pos+1])) return true;
-              else coll_year = CTempString(strtmp).substr(pos+1);
-              if (year == coll_year) return true;
-              else return false;
+              else if (!isdigit(strtmp[pos+1])) {
+                 return true;
+              }
+              else {
+                coll_year = strtmp.substr(pos+1);
+              }
+              if (year == coll_year) return false;
+              else return true;
            }
         }
      }
