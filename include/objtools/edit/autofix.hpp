@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(AutoFix)
 
 NCBI_XOBJEDIT_EXPORT
-void MarkOverlappingCDSs(vector <CConstRef <CObject> >& ori_objs, vector <CRef <CObject> >& fixed_obj);
+void MarkOverlappingCDSs(vector <CRef <CObject> >& obj, vector <string>& msgs);
 
 USING_SCOPE(objects);
 
