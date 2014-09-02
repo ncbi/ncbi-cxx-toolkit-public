@@ -5478,7 +5478,14 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         }
     }
     else if ( m_Messages.get() ) {
+        // Flush the collected messages, if any, once the handle if available.
+        // If the process was forked, ignore messages collected by the parent.
+        CDiagContext::UpdatePID();
+        SDiagMessage::TPID pid = CDiagContext::GetPID();
         ITERATE(TMessages, it, *m_Messages) {
+            if (it->m_PID != pid) {
+                continue;
+            }
             CNcbiOstrstream str_os;
             str_os << *it;
             string str = CNcbiOstrstreamToString(str_os);
