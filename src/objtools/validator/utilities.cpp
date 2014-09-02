@@ -880,7 +880,8 @@ void GetAuthorsString (string *out_authors, const CAuth_list& auth_list)
     }
 
     // join most of them by commas, but the last one gets an "and"
-    CTempString last_author = name_list.back();
+    string last_author;
+    last_author.swap(name_list.back());
     name_list.pop_back();
     // swap is faster than assignment
     NStr::Join(name_list, ", ").swap(auth_str);
