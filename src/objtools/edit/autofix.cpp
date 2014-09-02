@@ -39,6 +39,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objtools/edit/autofix.hpp>
+#include <misc/discrepancy_report/hDiscRep_tests.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(AutoFix);
@@ -46,46 +47,32 @@ BEGIN_SCOPE(AutoFix);
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-//void MarkOverlappingCDSs(vector <CConstRef <CObject> > ori_objs, vector <CRef <CObject> > fixed_objs, CLogInfo* log )
-void MarkOverlappingCDSs(vector <CConstRef <CObject> >& ori_objs, vector <CRef <CObject> >& fixed_objs)
+void MarkOverlappingCDSs(vector <CRef <CObject> >& objs, vector <string>& msgs)
 {
   string kOverlappingCDSNoteText("overlaps another CDS with the same product name");
   string strtmp; 
-  CRef <CSeq_feat> fixed_feat;
-  ITERATE (vector <CConstRef <CObject> >, it, ori_objs) {
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>((*it).GetPointer());
-    fixed_feat.Reset(new CSeq_feat);
+  bool has_title = false;
+  if (!objs.empty()) {
+      msgs.push_back("Added \"overlaps another CDS with the same product name\" to CDS note for overlapping CDSs with similar product names\n");
+      has_title = true;
+  }
+  NON_CONST_ITERATE (vector <CRef <CObject> >, it, objs) {
+    CSeq_feat* feat = dynamic_cast<CSeq_feat*>((*it).GetPointer());
     if (feat) {
-       fixed_feat->Assign(*feat); 
        if (feat->GetData().IsCdregion() && feat->CanGetComment()) {
           strtmp = feat->GetComment();
           if (NStr::FindNoCase(strtmp, kOverlappingCDSNoteText) == string::npos) {
              strtmp += ("; " + kOverlappingCDSNoteText);
-             fixed_feat->SetComment(strtmp);
+             feat->SetComment(strtmp);
           }
        }
     }
-    fixed_objs.push_back(CRef <CObject>(fixed_feat.GetPointer()));
 
-#if 0
-    if (lip != NULL && lip->fp != NULL) {
-        if (!has_title) {
-          fprintf (lip->fp, "Added \"overlaps another CDS with the same product name\" to CDS note for overlapping CDSs with similar product names\n");
-          has_title = TRUE;
-        }
-
-        feat_txt = GetDiscrepancyItemText (vnp);
-        fprintf (lip->fp, "Added overlapping CDS note to %s", feat_txt);
-        feat_txt = MemFree (feat_txt);
-        lip->data_in_log = TRUE;
-    }
-#endif 
+    strtmp 
+      = DiscRepNmSpc :: GetDiscrepancyItemText (*(dynamic_cast<const CSeq_entry*>((*it).GetPointer())));
+    msgs.push_back ("Added overlapping CDS note to " + strtmp);
   }
-#if 0
-  if (has_title) {
-    fprintf (lip->fp, "\n");
-  }
-#endif
+  if (has_title) msgs.push_back("\n");
 };
 
 END_SCOPE(AutoFix);
