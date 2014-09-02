@@ -377,14 +377,25 @@ CAlignDepthFilter::FilterBothRows(const list<CRef<CSeq_align> >& Input,
     
     FilterOneRow(Input, FilteredQ, 0, DepthCutoff, PctIdentRescue);
     FilterOneRow(Input, FilteredS, 1, DepthCutoff, PctIdentRescue);
-  
-    FilteredI.resize( max(FilteredQ.size() ,  FilteredS.size()));
-    TAlignList::iterator End = set_intersection(FilteredQ.begin(), FilteredQ.end(),
-            FilteredS.begin(), FilteredS.end(),
-            FilteredI.begin() );
-    FilteredI.erase(End, FilteredI.end());
 
-    Output.insert(Output.end(), FilteredI.begin(), FilteredI.end());
+    // Walk the input in unison with the pair of intermediate filtered
+    // lists (sharing the same collation), and emit results in common.
+    FilteredI.resize( max(FilteredQ.size() ,  FilteredS.size()));
+    TAlignList::const_iterator AlignIterQ = FilteredQ.begin(),
+                               EndQ = FilteredQ.end();
+    TAlignList::const_iterator AlignIterS = FilteredS.begin(),
+                               EndS = FilteredS.end();
+    ITERATE(TAlignList, AlignIter, Input) {
+        // Break if we reach the end of a filtered list.
+        if (AlignIterQ == EndQ  ||  AlignIterS == EndS) break;
+        // Emit result if it's in common with both filtered lists.
+        if (*AlignIter == *AlignIterQ  &&  *AlignIter == *AlignIterS) {
+            Output.push_back(*AlignIter);
+        }
+        // Move to next in the filtered lists, if this alignment was present.
+        if (*AlignIter == *AlignIterQ) ++AlignIterQ;
+        if (*AlignIter == *AlignIterS) ++AlignIterS;
+    }
 }
 
 END_NCBI_SCOPE;
