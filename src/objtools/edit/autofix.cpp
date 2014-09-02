@@ -68,8 +68,10 @@ void MarkOverlappingCDSs(vector <CRef <CObject> >& objs, vector <string>& msgs)
        }
     }
 
+#if 0
     strtmp 
       = DiscRepNmSpc :: GetDiscrepancyItemText (*(dynamic_cast<const CSeq_entry*>((*it).GetPointer())));
+#endif
     msgs.push_back ("Added overlapping CDS note to " + strtmp);
   }
   if (has_title) msgs.push_back("\n");
