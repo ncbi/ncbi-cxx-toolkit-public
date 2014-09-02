@@ -244,7 +244,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
     string reg_value;
     bool found_self = false;
     for (int srv_idx = 0; ; ++srv_idx) {
-        string value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        string value_name = kNCReg_NCServerPrefix + NStr::NumericToString(srv_idx);
         reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
         if (reg_value.empty())
             break;
@@ -292,12 +292,10 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
                 goto do_error;
             }
             mirrorCfg->s_Peers[srv_id] = peer_str;
-            // pre-create all peers
-            CNCPeerControl::Peer(srv_id);
         }
 
         // There must be corresponding description of slots
-        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::NumericToString(srv_idx);
         reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
         if (reg_value.empty()) {
             err_message = srv_name + ": No slots for server";
@@ -362,6 +360,11 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
     }
 
     if (AtomicCAS(s_MirrorConf, prevMirrorCfg, mirrorCfg)) {
+// pre-create all peers
+        const TNCPeerList& peers = CNCDistributionConf::GetPeers();
+        ITERATE(TNCPeerList, p, peers) {
+            CNCPeerControl::Peer(p->first);
+        }
         return true;
     }
 do_error:
@@ -373,7 +376,7 @@ bool
 CNCDistributionConf::ReConfig(CNcbiRegistry& new_reg, string& err_message)
 // we only add or remove peer servers, nothing else
 {
-    if (!InitMirrorConfig(CTaskServer::GetConfRegistry(), err_message)) {
+    if (!InitMirrorConfig(new_reg, err_message)) {
         return false;
     }
 // modify old registry to remember the changes
@@ -382,23 +385,23 @@ CNCDistributionConf::ReConfig(CNcbiRegistry& new_reg, string& err_message)
     string value_name, value;
     size_t srv_idx;
     for (srv_idx = 0; ; ++srv_idx) {
-        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        value_name = kNCReg_NCServerPrefix + NStr::NumericToString(srv_idx);
         value = old_reg.Get(kNCReg_NCPoolSection, value_name);
         if (value.empty()) {
             break;
         }
         old_reg.Set(kNCReg_NCPoolSection, value_name, kEmptyStr, CNcbiRegistry::fPersistent);
-        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::NumericToString(srv_idx);
         old_reg.Set(kNCReg_NCPoolSection, value_name, kEmptyStr, CNcbiRegistry::fPersistent);
     }
     // add new ones
     for (srv_idx = 0; ; ++srv_idx) {
-        value_name = kNCReg_NCServerPrefix + NStr::IntToString(srv_idx);
+        value_name = kNCReg_NCServerPrefix + NStr::NumericToString(srv_idx);
         value = new_reg.Get(kNCReg_NCPoolSection, value_name);
         if (value.empty())
             break;
         old_reg.Set(kNCReg_NCPoolSection, value_name, value, CNcbiRegistry::fPersistent);
-        value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
+        value_name = kNCReg_NCServerSlotsPrefix + NStr::NumericToString(srv_idx);
         value = new_reg.Get(kNCReg_NCPoolSection, value_name);
         old_reg.Set(kNCReg_NCPoolSection, value_name, value, CNcbiRegistry::fPersistent);
     }
@@ -598,7 +601,7 @@ CNCDistributionConf::GetPeerNameOrEmpty(Uint8 srv_id)
     else {
         const TNCPeerList& peers = CNCDistributionConf::GetPeers();
         if (peers.find(srv_id) != peers.end()) {
-            name = peers.find(srv_id)->first;
+            name = peers.find(srv_id)->second;
         }
     }
     return name;

@@ -826,8 +826,12 @@ CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots, bool aborted)
         if (m_SlotsToInitSync == 0) {
             x_SrvInitiallySynced(succeeded);
             if (aborted && s_AbortedSyncClients.Add(-1) == 0) {
+#if 1
+                SRV_LOG(Error, "Initial sync: unable to synchronize with any server");
+#else
                 SRV_LOG(Critical, "Initial sync: unable to synchronize with any server");
                 CTaskServer::RequestShutdown(eSrvSlowShutdown);
+#endif
             }
             if (s_WaitToOpenToClients.Add(-1) == 0)
                 CNCServer::InitialSyncComplete();
