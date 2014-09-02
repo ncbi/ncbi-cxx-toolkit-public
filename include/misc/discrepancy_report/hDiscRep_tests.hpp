@@ -195,8 +195,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                                   const string& str2,
                                                   const string& str3, 
                                                   const CSeq_feat& feat);
-  typedef void (*FAutofix)(vector <CConstRef <CObject> >& ori_objs, 
-                               vector <CRef <CObject> >& fixed_obj);
+  typedef void (*FAutofix)(vector <CRef <CObject> >& obj, vector <string>& msgs);
 
   struct s_SuspectProductNameData {
      const char* pattern;
