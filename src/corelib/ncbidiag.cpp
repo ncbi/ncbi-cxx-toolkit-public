@@ -67,6 +67,7 @@ BEGIN_NCBI_SCOPE
 
 static bool s_DiagUseRWLock = false;
 DEFINE_STATIC_MUTEX(s_DiagMutex);
+DEFINE_STATIC_MUTEX(s_DiagPostMutex);
 static CSafeStatic<CRWLock> s_DiagRWLock;
 static CSafeStatic<CAtomicCounter_WithAutoInit> s_ReopenEntered;
 
@@ -117,7 +118,12 @@ public:
             }
             // For ePost use normal mutex below.
         }
-        s_DiagMutex.Lock();
+        if (m_LockType == ePost) {
+            s_DiagPostMutex.Lock();
+        }
+        else {
+            s_DiagMutex.Lock();
+        }
     }
 
     ~CDiagLock(void)
@@ -126,7 +132,12 @@ public:
             s_DiagRWLock->Unlock();
         }
         else {
-            s_DiagMutex.Unlock();
+            if (m_LockType == ePost) {
+                s_DiagPostMutex.Unlock();
+            }
+            else {
+                s_DiagMutex.Unlock();
+            }
         }
     }
 
@@ -389,9 +400,8 @@ void CDiagCollectGuard::x_Init(EDiagSev print_severity,
         csev = thr_data.GetCollectGuard()->GetCollectSeverity();
     }
     else {
-        CDiagLock lock(CDiagLock::eRead);
         psev = CDiagBuffer::sm_PostSeverity;
-        csev = CDiagBuffer::sm_PostSeverity;
+        csev = psev;
     }
     psev = CompareDiagPostLevel(psev, print_severity) > 0
         ? psev : print_severity;
@@ -1411,15 +1421,21 @@ CDiagContext::TUID CDiagContext::GetUID(void) const
 }
 
 
-string CDiagContext::GetStringUID(TUID uid) const
+void CDiagContext::GetStringUID(TUID uid, char* buf) const
 {
-    char buf[18];
-    if (uid == 0) {
-        uid = GetUID();
-    }
     int hi = int((uid >> 32) & 0xFFFFFFFF);
     int lo = int(uid & 0xFFFFFFFF);
     sprintf(buf, "%08X%08X", hi, lo);
+}
+
+
+string CDiagContext::GetStringUID(TUID uid) const
+{
+    char buf[17];
+    if (uid == 0) {
+        uid = GetUID();
+    }
+    GetStringUID(uid, buf);
     return string(buf);
 }
 
@@ -2204,7 +2220,6 @@ void CDiagContext::PrintRequestStop(void)
 
 EDiagAppState CDiagContext::GetGlobalAppState(void) const
 {
-    CDiagLock lock(CDiagLock::eRead);
     return m_AppState;
 }
 
@@ -2218,7 +2233,6 @@ EDiagAppState CDiagContext::GetAppState(void) const
 
 void CDiagContext::SetGlobalAppState(EDiagAppState state)
 {
-    CDiagLock lock(CDiagLock::eWrite);
     m_AppState = state;
 }
 
@@ -2232,7 +2246,6 @@ void CDiagContext::SetAppState(EDiagAppState state)
     case eDiagAppState_AppEnd:
         {
             ctx.SetAppState(eDiagAppState_NotSet);
-            CDiagLock lock(CDiagLock::eWrite);
             m_AppState = state;
             break;
         }
@@ -2276,9 +2289,16 @@ NCBI_PARAM_DEF_EX(string, Log, Session_Id, kEmptyStr, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(Log, Session_Id) TParamDefaultSessionId;
 
 
-const string& CDiagContext::GetDefaultSessionID(void) const
+DEFINE_STATIC_FAST_MUTEX(s_DefaultSidMutex);
+
+string CDiagContext::GetDefaultSessionID(void) const
 {
-    CDiagLock lock(CDiagLock::eRead);
+    CFastMutexGuard lock(s_DefaultSidMutex);
+    if (m_DefaultSessionId.get() && !m_DefaultSessionId->IsEmpty()) {
+        return m_DefaultSessionId->GetOriginalString();
+    }
+
+    // Needs initialization.
     if ( !m_DefaultSessionId.get() ) {
         m_DefaultSessionId.reset(new CEncodedString);
     }
@@ -2297,7 +2317,7 @@ const string& CDiagContext::GetDefaultSessionID(void) const
 
 void CDiagContext::SetDefaultSessionID(const string& session_id)
 {
-    CDiagLock lock(CDiagLock::eWrite);
+    CFastMutexGuard lock(s_DefaultSidMutex);
     if ( !m_DefaultSessionId.get() ) {
         m_DefaultSessionId.reset(new CEncodedString);
     }
@@ -2305,7 +2325,7 @@ void CDiagContext::SetDefaultSessionID(const string& session_id)
 }
 
 
-const string& CDiagContext::GetSessionID(void) const
+string CDiagContext::GetSessionID(void) const
 {
     CRequestContext& rctx = GetRequestContext();
     if ( rctx.IsSetExplicitSessionID() ) {
@@ -2315,7 +2335,7 @@ const string& CDiagContext::GetSessionID(void) const
 }
 
 
-const string& CDiagContext::GetEncodedSessionID(void) const
+string CDiagContext::GetEncodedSessionID(void) const
 {
     CRequestContext& rctx = GetRequestContext();
     if ( rctx.IsSetExplicitSessionID() ) {
@@ -2358,19 +2378,24 @@ NCBI_PARAM_DEF_EX(string, Log, Hit_Id, kEmptyStr, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(Log, Hit_Id) TParamHitId;
 
 
-const string& CDiagContext::GetDefaultHitID(void) const
+DEFINE_STATIC_FAST_MUTEX(s_DefaultHidMutex);
+
+string CDiagContext::GetDefaultHitID(void) const
 {
-    CDiagLock lock(CDiagLock::eRead);
+    CFastMutexGuard guard(s_DefaultHidMutex);
+    if (m_DefaultHitId.get()  &&  !m_DefaultHitId->empty()  &&  m_LoggedHitId) {
+        return *m_DefaultHitId;
+    }
+
     if ( !m_DefaultHitId.get() ) {
         m_DefaultHitId.reset(new string);
+    }
+    if ( m_DefaultHitId->empty() ) {
+        *m_DefaultHitId = CRequestContext::SelectLastHitID(
+            TParamHttpHitId::GetDefault());
         if ( m_DefaultHitId->empty() ) {
-            string phid = CRequestContext::SelectLastHitID(
-                TParamHttpHitId::GetDefault());
-            if ( phid.empty() ) {
-                phid = CRequestContext::SelectLastHitID(
-                    TParamHitId::GetDefault());
-            }
-            *m_DefaultHitId = phid;
+            *m_DefaultHitId = CRequestContext::SelectLastHitID(
+                TParamHitId::GetDefault());
         }
         if ( m_DefaultHitId->empty() ) {
             *m_DefaultHitId = GetNextHitID();
@@ -2388,7 +2413,7 @@ const string& CDiagContext::GetDefaultHitID(void) const
 
 void CDiagContext::SetDefaultHitID(const string& hit_id)
 {
-    CDiagLock lock(CDiagLock::eWrite);
+    CFastMutexGuard guard(s_DefaultHidMutex);
     if ( !m_DefaultHitId.get() ) {
         m_DefaultHitId.reset(new string);
     }
@@ -2415,9 +2440,11 @@ const string& CDiagContext::GetHostRole(void)
 {
     if ( !s_HostRole->get() ) {
         CDiagLock lock(CDiagLock::eWrite);
-        auto_ptr<string> role(new string);
-        *role = s_ReadString("/etc/ncbi/role");
-        s_HostRole->reset(role.release());
+        if ( !s_HostRole->get() ) {
+            auto_ptr<string> role(new string);
+            *role = s_ReadString("/etc/ncbi/role");
+            s_HostRole->reset(role.release());
+        }
     }
     return **s_HostRole;
 }
@@ -2427,9 +2454,11 @@ const string& CDiagContext::GetHostLocation(void)
 {
     if ( !s_HostLocation->get() ) {
         CDiagLock lock(CDiagLock::eWrite);
-        auto_ptr<string> loc(new string);
-        *loc = s_ReadString("/etc/ncbi/location");
-        s_HostLocation->reset(loc.release());
+        if ( !s_HostLocation->get() ) {
+            auto_ptr<string> loc(new string);
+            *loc = s_ReadString("/etc/ncbi/location");
+            s_HostLocation->reset(loc.release());
+        }
     }
     return **s_HostLocation;
 }
@@ -2470,10 +2499,11 @@ static const char* kUnknown_App     = "UNK_APP";
 void CDiagContext::WriteStdPrefix(CNcbiOstream& ostr,
                                   const SDiagMessage& msg) const
 {
-    string uid = GetStringUID(msg.GetUID());
+    char uid[17];
+    GetStringUID(msg.GetUID(), uid);
     const string& host = msg.GetHost();
     const string& client = msg.GetClient();
-    const string& session = msg.GetSession();
+    string session = msg.GetSession();
     const string& app = msg.GetAppName();
     const char* app_state = s_AppStateToStr(msg.GetAppState());
 
@@ -4875,7 +4905,7 @@ const string& SDiagMessage::GetClient(void) const
 }
 
 
-const string& SDiagMessage::GetSession(void) const
+string SDiagMessage::GetSession(void) const
 {
     return m_Data ? m_Data->m_Session
         : GetDiagContext().GetEncodedSessionID();
@@ -5062,7 +5092,6 @@ extern bool IsVisibleDiagPostLevel(EDiagSev sev)
     }
     EDiagSev sev2;
     {{
-        CDiagLock lock(CDiagLock::eRead);
         sev2 = AdjustApplogPrintableSeverity(CDiagBuffer::sm_PostSeverity);
     }}
     return CompareDiagPostLevel(sev, sev2) >= 0;
@@ -5449,7 +5478,6 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
         }
     }
     else if ( m_Messages.get() ) {
-        // Flush the collected messages, if any, once the handle if available
         ITERATE(TMessages, it, *m_Messages) {
             CNcbiOstrstream str_os;
             str_os << *it;

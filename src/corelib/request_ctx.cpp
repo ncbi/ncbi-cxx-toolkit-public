@@ -97,7 +97,7 @@ const string& CRequestContext::SetHitID(void)
 }
 
 
-const string& CRequestContext::GetHitID(void) const
+string CRequestContext::GetHitID(void) const
 {
     if ( x_IsSetProp(eProp_HitID) ) {
         x_LogHitID();

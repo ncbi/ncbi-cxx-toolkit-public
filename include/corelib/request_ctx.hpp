@@ -96,7 +96,7 @@ public:
     void          UnsetClientIP(void);
 
     /// Session ID
-    const string& GetSessionID(void) const;
+    string        GetSessionID(void) const;
     void          SetSessionID(const string& session);
     bool          IsSetSessionID(void) const;
     bool          IsSetExplicitSessionID(void) const; ///< Does not check default SID
@@ -104,12 +104,12 @@ public:
     /// Create and set new session ID
     const string& SetSessionID(void);
     /// Get URL-encoded session ID
-    const string& GetEncodedSessionID(void) const;
+    string        GetEncodedSessionID(void) const;
 
     /// Hit ID
     /// Get explicit hit id or the default one (from HTTP_NCBI_PHID or
     /// generated automatically at application start).
-    const string& GetHitID(void) const;
+    string        GetHitID(void) const;
     /// Set explicit hit id.
     void          SetHitID(const string& hit);
     /// Check if there's an explicit hit id or the default one.
@@ -358,7 +358,7 @@ void CRequestContext::UnsetClientIP(void)
 
 
 inline
-const string& CRequestContext::GetSessionID(void) const
+string CRequestContext::GetSessionID(void) const
 {
     return x_IsSetProp(eProp_SessionID) ?
         m_SessionID.GetOriginalString()
@@ -366,7 +366,7 @@ const string& CRequestContext::GetSessionID(void) const
 }
 
 inline
-const string& CRequestContext::GetEncodedSessionID(void) const
+string CRequestContext::GetEncodedSessionID(void) const
 {
     return x_IsSetProp(eProp_SessionID) ?
         m_SessionID.GetEncodedString()

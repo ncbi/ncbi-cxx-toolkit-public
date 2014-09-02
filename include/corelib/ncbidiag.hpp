@@ -1664,7 +1664,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     /// Access to strings stored in SDiagMessageData.
     const string& GetHost(void) const;
     const string& GetClient(void) const;
-    const string& GetSession(void) const;
+    string GetSession(void) const;
     const string& GetAppName(void) const;
     EDiagAppState GetAppState(void) const;
 
@@ -1978,6 +1978,9 @@ public:
     /// current time.
     /// If the source UID is 0, use the one from the diag context.
     TUID UpdateUID(TUID uid = 0) const;
+    /// Fill buffer with string representation of UID. The buffer size
+    /// must be at least 17 bytes.
+    void GetStringUID(TUID uid, char* buf) const;
 
     /// Create global unique request id.
     string GetNextHitID(void) const;
@@ -2170,15 +2173,15 @@ public:
     /// Get default session id. The session id may be set using
     /// SetDefaultSessionId(), NCBI_LOG_SESSION_ID env. variable
     /// or Log.Session_Id value in the INI file.
-    const string& GetDefaultSessionID(void) const;
+    string GetDefaultSessionID(void) const;
     /// Set new default session id. This value is used only if the per-request
     /// session id is not set.
     void SetDefaultSessionID(const string& session_id);
     /// Get the effective session id: the per-request session id if set,
     /// or the default session id.
-    const string& GetSessionID(void) const;
+    string GetSessionID(void) const;
     /// Get url-encoded session id.
-    const string& GetEncodedSessionID(void) const;
+    string GetEncodedSessionID(void) const;
 
     /// Get default client ip. The ip may be set using SetDefaultClientIP(),
     /// NCBI_LOG_CLIENT_IP env. variable or Log.Client_Ip value in the INI
@@ -2194,7 +2197,7 @@ public:
     /// or Log.Http_Hit_Id/Log.Hit_Id values in the INI file. The Http-value
     /// has higher priority. If none of the values is set, the default hit id
     /// is generated automatically.
-    const string& GetDefaultHitID(void) const;
+    string GetDefaultHitID(void) const;
     /// Set new global default hit id. This value is used only if the per-request
     /// hit id is not set.
     void SetDefaultHitID(const string& hit_id);
