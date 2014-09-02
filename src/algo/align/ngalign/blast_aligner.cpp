@@ -281,7 +281,8 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
         CSearchResults& Results = **SetIter;
         CConstRef<CSeq_align_set> AlignSet = Results.GetSeqAlign();
         if(!AlignSet->IsEmpty()) {
-            typedef map<CSeq_id_Handle, list<CRef<CSeq_align> > > TSubjectMap;
+            typedef map<CSeq_id_Handle, list<CRef<CSeq_align> >,
+                        CSeq_id_Handle::PLessOrdered > TSubjectMap;
             TSubjectMap SubjectMap;
             ITERATE(CSeq_align_set::Tdata, AlignIter, AlignSet->Get()) {
                 CSeq_id_Handle SubjectIdH = CSeq_id_Handle::GetHandle((*AlignIter)->GetSeq_id(1));
@@ -298,7 +299,7 @@ TAlignResultsRef CBlastAligner::GenerateAlignments(CScope& Scope,
             }
         }
     }
-            
+
     ITERATE(CSeq_align_set::Tdata, AlignIter, FilteredResults.Get()) {
         CRef<CSeq_align> Align = *AlignIter;
         Align->SetNamedScore(GetName(), 1);
