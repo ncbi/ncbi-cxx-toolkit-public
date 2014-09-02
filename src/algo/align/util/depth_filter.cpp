@@ -373,14 +373,13 @@ CAlignDepthFilter::FilterBothRows(const list<CRef<CSeq_align> >& Input,
                                         list<CRef<CSeq_align> >& Output, 
                                         size_t DepthCutoff, double PctIdentRescue)
 {
-    TAlignList FilteredQ, FilteredS, FilteredI;
+    TAlignList FilteredQ, FilteredS;
     
     FilterOneRow(Input, FilteredQ, 0, DepthCutoff, PctIdentRescue);
     FilterOneRow(Input, FilteredS, 1, DepthCutoff, PctIdentRescue);
 
     // Walk the input in unison with the pair of intermediate filtered
     // lists (sharing the same collation), and emit results in common.
-    FilteredI.resize( max(FilteredQ.size() ,  FilteredS.size()));
     TAlignList::const_iterator AlignIterQ = FilteredQ.begin(),
                                EndQ = FilteredQ.end();
     TAlignList::const_iterator AlignIterS = FilteredS.begin(),
