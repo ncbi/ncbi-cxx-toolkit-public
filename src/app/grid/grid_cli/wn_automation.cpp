@@ -83,7 +83,7 @@ bool SWorkerNodeAutomationObject::Call(const string& method,
     else if (method == "suspend") {
         bool pullback_mode = arg_array.NextBoolean(false);
         g_SuspendWorkerNode(m_WorkerNode,
-                pullback_mode, arg_array.NextInteger(0));
+                pullback_mode, (unsigned int) arg_array.NextInteger(0));
     } else if (method == "resume")
         g_ResumeWorkerNode(m_WorkerNode);
     else if (method == "shutdown")
