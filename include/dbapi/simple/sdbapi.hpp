@@ -1170,6 +1170,9 @@ inline
 CSDB_ConnectionParam::CSDB_ConnectionParam(const string& url_string /* = kEmptyStr */)
 {
     if (url_string.empty()) {
+        m_Url.SetScheme("dbapi");
+        m_Url.SetIsGeneric(true);
+        m_Url.GetArgs();
         return;
     }
 
