@@ -841,7 +841,7 @@ int CGridCommandLineInterfaceApp::Cmd_ReadJob()
 
         CNetScheduleJobReader::EReadNextJobResult rnj_result;
 
-        if (!IsOptionSet(eTimeout))
+        if (!IsOptionSet(eWaitTimeout))
             rnj_result = job_reader.ReadNextJob(&job, &job_status);
         else {
             CDeadline deadline(m_Opts.timeout, 0);

@@ -797,18 +797,18 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eSubmitterCommand, &CGridCommandLineInterfaceApp::Cmd_ReadJob,
-        READJOB_COMMAND, "Return the next job that's done or failed.",
-        "Incrementally harvest IDs of completed and failed jobs. This "
-        "command has two modes of operation: simple mode (without "
-        "acknowledgment) and reliable mode (with acknowledgment). "
-        "The former is the default; the latter is triggered by the "
-        "'--" RELIABLE_READ_OPTION "' option.\n\n"
+        READJOB_COMMAND, "Return the next finished job.",
+        "Incrementally harvest IDs of successfully completed, failed, "
+        "and canceled jobs. This command has two modes of operation: "
+        "simple mode (without acknowledgment) and reliable mode (with "
+        "acknowledgment). The former is the default; the latter is "
+        "triggered by the '--" RELIABLE_READ_OPTION "' option.\n\n"
         "In simple mode, if any of the specified NetSchedule servers "
-        "has a job that's done or failed, the ID of that job will be "
-        "printed on the first line, and its status - 'Done' or 'Failed' "
-        "- on the second line. Also, if the job is 'Done', its entire "
-        "output will be printed as well, starting from the third line "
-        "(unless the '--" OUTPUT_FILE_OPTION "' option is given, in "
+        "has a job that's done, failed, or canceled, the ID of that job will "
+        "be printed on the first line, and its status - 'Done', 'Failed', "
+        "or 'Canceled' - on the second line. Also, if the job is 'Done', "
+        "its entire output will be printed as well, starting from the third "
+        "line (unless the '--" OUTPUT_FILE_OPTION "' option is given, in "
         "which case the output goes to the specified file).\n\n"
         "After the job output has been successfully printed, the status "
         "of the job is immediately changed to 'Confirmed', which means "
@@ -816,20 +816,20 @@ struct SCommandDefinition {
         "In reliable mode, job reading is a two-step process. The first "
         "step, which is triggered by the '--" RELIABLE_READ_OPTION "' "
         "option, acquires a reading reservation. If there's a job that's "
-        "done or failed, its ID is printed on the first line along "
-        "with its final status ('Done' or 'Failed') on the next line "
-        "and a unique reservation token on the third line. This first "
+        "done, failed, or canceled, its ID is printed on the first line along "
+        "with its final status ('Done', 'Failed', or 'Canceled') on the next "
+        "line and a unique reservation token on the third line. This first "
         "step changes the status of the returned job from 'Done' to "
-        "'Reading'. The reading reservation is valid only for the "
-        "number of seconds defined by the '--" TIMEOUT_OPTION "' option. "
+        "'Reading'. The reading reservation is valid for a short period "
+        "of time configurable on the server. "
         "If the server does not receive a reading confirmation (see "
         "below) within this time frame, the job will change its status "
-        "back to the original status (either 'Done' or 'Failed').\n\n"
+        "back to the original status ('Done', 'Failed', or 'Canceled').\n\n"
         "The second step is activated by one of the following "
         "finalization options: '--" CONFIRM_READ_OPTION "', '--"
         ROLLBACK_READ_OPTION "', or '--" FAIL_READ_OPTION "'. Each of "
         "these options requires the reservation token that was issued "
-        "by NetSchedule during the first step to be specified as the "
+        "by NetSchedule during the first step to be passed as the "
         "argument for the option. The corresponding job ID must be "
         "provided with the '--" JOB_ID_OPTION "' option. The job must "
         "still be in the 'Reading' status. After the finalization "
@@ -839,15 +839,17 @@ struct SCommandDefinition {
         "    ================    ================\n"
         "    --" CONFIRM_READ_OPTION "      Confirmed\n"
         "    --" FAIL_READ_OPTION "         ReadFailed\n"
-        "    --" ROLLBACK_READ_OPTION "     Done or Failed\n\n"
+        "    --" ROLLBACK_READ_OPTION "     Done, Failed, or Canceled\n\n"
         "The 'Confirmed' status and the 'ReadFailed' status are final and "
         "cannot be changed, while '--" ROLLBACK_READ_OPTION "' makes the "
         "jobs available for subsequent '" READJOB_COMMAND "' commands.\n\n"
-        "In either mode, if there are no completed or failed jobs "
-        "in the queue, nothing will be printed and the exit code "
-        "will be zero.",
+        "In either mode, the '--" WAIT_TIMEOUT_OPTION "' option allows to "
+        "wait the specified number of seconds until a job becomes available "
+        "for reading. Without this option, if there are no completed, "
+        "failed, or canceled jobs in the queue, nothing will be printed "
+        "and the exit code will be zero.",
         {eNetSchedule, eQueue, eRemoteAppStdOut, eRemoteAppStdErr,
-            eOutputFile, eJobGroup, eReliableRead, eTimeout, eJobId,
+            eOutputFile, eJobGroup, eReliableRead, eWaitTimeout, eJobId,
             eConfirmRead, eRollbackRead, eFailRead, eErrorMessage,
             eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},

@@ -46,6 +46,10 @@
 #include <memory>
 #include <stdio.h>
 
+#ifdef NCBI_OS_LINUX
+#include <sys/prctl.h>
+#endif
+
 
 #define COMPATIBLE_NETSCHEDULE_VERSION "4.10.0"
 
@@ -70,6 +74,42 @@ void g_AppendClientIPAndSessionID(string& cmd, const string* default_session)
         cmd += " sid=\"";
         cmd += NStr::PrintableString(*default_session);
         cmd += '"';
+    }
+}
+
+SNetScheduleNotificationThread::SNetScheduleNotificationThread(
+        SNetScheduleAPIImpl* ns_api) :
+    m_API(ns_api),
+    m_StopThread(false)
+{
+    m_UDPSocket.SetReuseAddress(eOn);
+
+    STimeout rto;
+    rto.sec = rto.usec = 0;
+    m_UDPSocket.SetTimeout(eIO_Read, &rto);
+
+    EIO_Status status = m_UDPSocket.Bind(0);
+    if (status != eIO_Success) {
+        NCBI_THROW_FMT(CException, eUnknown,
+            "Could not bind a UDP socket: " << IO_StatusStr(status));
+    }
+
+    m_UDPPort = m_UDPSocket.GetLocalPort(eNH_HostByteOrder);
+}
+
+void SNetScheduleNotificationThread::CmdAppendPortAndTimeout(
+        string* cmd, const CDeadline* deadline)
+{
+    if (deadline != NULL) {
+        unsigned remaining_seconds = s_GetRemainingSeconds(*deadline);
+
+        if (remaining_seconds > 0) {
+            *cmd += " port=";
+            *cmd += NStr::UIntToString(GetPort());
+
+            *cmd += " timeout=";
+            *cmd += NStr::UIntToString(remaining_seconds);
+        }
     }
 }
 
@@ -119,6 +159,126 @@ int g_ParseNSOutput(const string& attr_string, const char* const* attr_names,
     return -1;
 }
 
+#define JOB_NOTIF_ATTR_COUNT 3
+
+SNetScheduleNotificationThread::ENotificationType
+        SNetScheduleNotificationThread::CheckNotification(string* ns_node)
+{
+    static const char* const attr_names[JOB_NOTIF_ATTR_COUNT] =
+        {"reason", "ns_node", "queue"};
+
+    string attr_values[JOB_NOTIF_ATTR_COUNT];
+
+    int defined_attrs = g_ParseNSOutput(m_Message,
+            attr_names, attr_values, JOB_NOTIF_ATTR_COUNT);
+
+    if (defined_attrs == -1 || attr_values[2] != m_API->m_Queue)
+        return eNT_Unknown;
+
+    *ns_node = attr_values[1];
+
+    if (defined_attrs != JOB_NOTIF_ATTR_COUNT)
+        return eNT_GetNotification;
+    else if (NStr::CompareCase(attr_values[0], CTempString("get", 3)) == 0)
+        return eNT_GetNotification;
+    else if (NStr::CompareCase(attr_values[0], CTempString("read", 4)) == 0)
+        return eNT_ReadNotification;
+    else
+        return eNT_Unknown;
+}
+
+void SServerNotifications::InterruptWait()
+{
+    CFastMutexGuard guard(m_Mutex);
+
+    if (m_Interrupted)
+        m_NotificationSemaphore.TryWait();
+    else {
+        m_Interrupted = true;
+        if (!m_ReadyServers.empty())
+            m_NotificationSemaphore.TryWait();
+    }
+
+    m_NotificationSemaphore.Post();
+}
+
+void SServerNotifications::RegisterServer(const string& ns_node)
+{
+    CFastMutexGuard guard(m_Mutex);
+
+    if (!m_ReadyServers.empty())
+        m_Interrupted = false;
+    else {
+        x_ClearInterruptFlag();
+        m_NotificationSemaphore.Post();
+    }
+
+    m_ReadyServers.insert(ns_node);
+}
+
+bool SServerNotifications::GetNextNotification(string* ns_node)
+{
+    CFastMutexGuard guard(m_Mutex);
+
+    x_ClearInterruptFlag();
+
+    if (m_ReadyServers.empty())
+        return false;
+
+    TReadyServers::iterator next_server = m_ReadyServers.begin();
+    *ns_node = *next_server;
+    m_ReadyServers.erase(next_server);
+
+    if (m_ReadyServers.empty())
+        // Make sure the notification semaphore count is reset to zero.
+        m_NotificationSemaphore.TryWait();
+
+    return true;
+}
+
+void* SNetScheduleNotificationThread::Main()
+{
+#ifdef NCBI_OS_LINUX
+    prctl(PR_SET_NAME, (unsigned long)
+            (CNcbiApplication::Instance()->GetProgramDisplayName() +
+                    "_nt").c_str(), 0, 0, 0);
+#endif
+
+    static const STimeout two_seconds = {2, 0};
+
+    size_t msg_len;
+    string server_host;
+
+    while (!m_StopThread)
+        if (m_UDPSocket.Wait(&two_seconds) == eIO_Success) {
+            if (m_StopThread)
+                break;
+
+            if (m_UDPSocket.Recv(m_Buffer, sizeof(m_Buffer), &msg_len,
+                    &server_host, NULL) == eIO_Success) {
+                while (msg_len > 0 && m_Buffer[msg_len - 1] == '\0')
+                    --msg_len;
+                m_Message.assign(m_Buffer, msg_len);
+
+                string ns_node;
+
+                ENotificationType notif_type = CheckNotification(&ns_node);
+
+                switch (notif_type) {
+                case eNT_GetNotification:
+                    m_GetNotifications.RegisterServer(ns_node);
+                    break;
+                case eNT_ReadNotification:
+                    m_ReadNotifications.RegisterServer(ns_node);
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    return NULL;
+}
+
 bool CNetScheduleNotificationHandler::ReceiveNotification(string* server_host)
 {
     size_t msg_len;
@@ -165,6 +325,16 @@ bool CNetScheduleNotificationHandler::WaitForNotification(
 void CNetScheduleNotificationHandler::PrintPortNumber()
 {
     printf("Using UDP port %hu\n", GetPort());
+}
+
+void SNetScheduleAPIImpl::StartNotificationThread()
+{
+    CFastMutexGuard guard(m_NotificationThreadMutex);
+
+    if (m_NotificationThread == NULL) {
+        m_NotificationThread = new SNetScheduleNotificationThread(this);
+        m_NotificationThread->Run();
+    }
 }
 
 /**********************************************************************/
@@ -231,8 +401,9 @@ void CNetScheduleServerListener::SetAffinitiesSynced(
     x_GetServerProperties(server_impl)->affs_synced = affs_synced;
 }
 
-CRef<SNetScheduleServerProperties> CNetScheduleServerListener::x_GetServerProperties(
-        SNetServerImpl* server_impl)
+CRef<SNetScheduleServerProperties>
+        CNetScheduleServerListener::x_GetServerProperties(
+                SNetServerImpl* server_impl)
 {
     return CRef<SNetScheduleServerProperties>(
             static_cast<SNetScheduleServerProperties*>(
@@ -426,6 +597,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
 {
     m_Service->Init(this, service_name,
         config, section, s_NetScheduleConfigSections);
+    StartNotificationThread();
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
@@ -438,6 +610,20 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
     m_AffinityPreference(parent->m_AffinityPreference),
     m_UseEmbeddedStorage(parent->m_UseEmbeddedStorage)
 {
+    StartNotificationThread();
+}
+
+SNetScheduleAPIImpl::~SNetScheduleAPIImpl()
+{
+    // Stop the notification handling thread.
+    CFastMutexGuard guard(m_NotificationThreadMutex);
+
+    if (m_NotificationThread != NULL) {
+        m_NotificationThread->m_StopThread = true;
+        CDatagramSocket().Send("INTERRUPT", sizeof("INTERRUPT"),
+                "127.0.0.1", m_NotificationThread->m_UDPPort);
+        m_NotificationThread->Join();
+    }
 }
 
 CNetScheduleAPI::CNetScheduleAPI(CNetScheduleAPI::EAppRegistry /*use_app_reg*/,
@@ -595,11 +781,13 @@ CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
 
 CNetScheduleExecutor CNetScheduleAPI::GetExecutor()
 {
+    m_Impl->StartNotificationThread();
     return new SNetScheduleExecutorImpl(m_Impl);
 }
 
 CNetScheduleJobReader CNetScheduleAPI::GetJobReader()
 {
+    m_Impl->StartNotificationThread();
     return new SNetScheduleJobReaderImpl(m_Impl);
 }
 
@@ -724,6 +912,31 @@ CNetScheduleAPI::EJobStatus SNetScheduleAPIImpl::GetJobStatus(const string& cmd,
     s_SetPauseMode(pause_mode, attr_values[2]);
 
     return CNetScheduleAPI::StringToStatus(attr_values[0]);
+}
+
+bool SNetScheduleAPIImpl::GetServerByNode(const string& ns_node,
+        CNetServer* server)
+{
+    SNetServerInPool* known_server; /* NCBI_FAKE_WARNING */
+
+    {{
+        CNetScheduleServerListener* listener = GetListener();
+
+        CFastMutexGuard guard(listener->m_ServerByNodeMutex);
+
+        CNetScheduleServerListener::TServerByNode::iterator
+            server_props_it(listener->m_ServerByNode.find(ns_node));
+
+        if (server_props_it == listener->m_ServerByNode.end())
+            return false;
+
+        known_server = server_props_it->second;
+    }}
+
+    *server = new SNetServerImpl(m_Service,
+            m_Service->m_ServerPool->ReturnServer(known_server));
+
+    return true;
 }
 
 const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()

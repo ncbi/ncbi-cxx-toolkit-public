@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 
 
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 
 #define SERVER_PARAMS_ASK_MAX_COUNT 100
@@ -83,7 +83,8 @@ public:
     bool NeedToSubmitAffinities(SNetServerImpl* server_impl);
     void SetAffinitiesSynced(SNetServerImpl* server_impl, bool affs_synced);
 
-    CRef<SNetScheduleServerProperties> x_GetServerProperties(SNetServerImpl* server_impl);
+    CRef<SNetScheduleServerProperties> x_GetServerProperties(
+            SNetServerImpl* server_impl);
 
     virtual CRef<INetServerProperties> AllocServerProperties();
 
@@ -109,6 +110,85 @@ public:
     bool m_WorkerNodeCompatMode;
 };
 
+// Node IDs of the servers that are ready
+// (i.e. the servers have sent notifications).
+typedef set<string> TReadyServers;
+
+// Structure that governs NetSchedule server notifications.
+struct SServerNotifications
+{
+    SServerNotifications() :
+        m_NotificationSemaphore(0, 1),
+        m_Interrupted(false)
+    {
+    }
+
+    bool Wait(const CDeadline& deadline)
+    {
+        return m_NotificationSemaphore.TryWait(deadline.GetRemainingTime());
+    }
+
+    void InterruptWait();
+
+    void RegisterServer(const string& ns_node);
+
+    bool GetNextNotification(string* ns_node);
+
+private:
+    void x_ClearInterruptFlag()
+    {
+        if (m_Interrupted) {
+            m_Interrupted = false;
+            m_NotificationSemaphore.TryWait();
+        }
+    }
+    // Semaphore that the worker node or the job reader can wait on.
+    // If count=0 then m_ReadyServers is empty and m_Interrupted=false;
+    // if count=1 then at least one server is ready or m_Interrupted=true.
+    CSemaphore m_NotificationSemaphore;
+    // Protection against concurrent access to m_ReadyServers.
+    CFastMutex m_Mutex;
+    // A set of NetSchedule node IDs that are ready.
+    TReadyServers m_ReadyServers;
+    // This flag is set when the wait must be interrupted.
+    bool m_Interrupted;
+};
+
+struct SNetScheduleNotificationThread : public CThread
+{
+    SNetScheduleNotificationThread(SNetScheduleAPIImpl* ns_api);
+
+    enum ENotificationType {
+        eNT_GetNotification,
+        eNT_ReadNotification,
+        eNT_Unknown,
+    };
+    ENotificationType CheckNotification(string* ns_node);
+
+    virtual void* Main();
+
+    unsigned short GetPort() const {return m_UDPPort;}
+
+    const string& GetMessage() const {return m_Message;}
+
+    void PrintPortNumber();
+
+    void CmdAppendPortAndTimeout(string* cmd, const CDeadline* deadline);
+
+    SNetScheduleAPIImpl* m_API;
+
+    CDatagramSocket m_UDPSocket;
+    unsigned short m_UDPPort;
+
+    char m_Buffer[1024];
+    string m_Message;
+
+    bool m_StopThread;
+
+    SServerNotifications m_GetNotifications;
+    SServerNotifications m_ReadNotifications;
+};
+
 struct SNetScheduleAPIImpl : public CObject
 {
     SNetScheduleAPIImpl(CConfig* config, const string& section,
@@ -117,6 +197,8 @@ struct SNetScheduleAPIImpl : public CObject
 
     // Special constructor for CNetScheduleAPI::GetServer().
     SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);
+
+    virtual ~SNetScheduleAPIImpl();
 
     CNetScheduleServerListener* GetListener()
     {
@@ -147,6 +229,8 @@ struct SNetScheduleAPIImpl : public CObject
         return m_Service.GetServer(nskey.host, nskey.port);
     }
 
+    bool GetServerByNode(const string& ns_node, CNetServer* server);
+
     static void VerifyJobGroupAlphabet(const string& job_group)
     {
         g_VerifyAlphabet(job_group, "job group name", eCC_BASE64_PI);
@@ -163,6 +247,8 @@ struct SNetScheduleAPIImpl : public CObject
     }
 
     static void VerifyQueueNameAlphabet(const string& queue_name);
+
+    void StartNotificationThread();
 
     CNetService m_Service;
 
@@ -185,6 +271,9 @@ struct SNetScheduleAPIImpl : public CObject
     bool m_UseEmbeddedStorage;
 
     CCompoundIDPool m_CompoundIDPool;
+
+    CFastMutex m_NotificationThreadMutex;
+    CRef<SNetScheduleNotificationThread> m_NotificationThread;
 };
 
 
@@ -292,7 +381,7 @@ struct SNotificationTimelineEntry : public CWorkerNodeTimelineEntry
 struct SNetScheduleJobReaderImpl : public CObject
 {
     SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl) :
-        m_NetScheduleAPI(ns_api_impl),
+        m_API(ns_api_impl),
         m_DiscoveryIteration(1),
         m_DiscoveryAction(
                 new SNotificationTimelineEntry(SServerAddress(0, 0), 0))
@@ -310,9 +399,7 @@ struct SNetScheduleJobReaderImpl : public CObject
 
     TTimelineEntries m_TimelineEntryByAddress;
 
-    CNetScheduleAPI m_NetScheduleAPI;
-
-    CNetScheduleNotificationHandler m_NotificationHandler;
+    CNetScheduleAPI m_API;
 
     string m_JobGroup;
     string m_Affinity;
@@ -326,9 +413,11 @@ struct SNetScheduleJobReaderImpl : public CObject
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             CNetScheduleJobReader::EReadNextJobResult* result);
-    void x_ProcessRequestJobNotification();
+    void x_ProcessReadJobNotifications();
 
     SNotificationTimelineEntry* x_GetTimelineEntry(SNetServerImpl* server_impl);
+
+    virtual ~SNetScheduleJobReaderImpl();
 
     unsigned m_DiscoveryIteration;
 
@@ -337,18 +426,15 @@ struct SNetScheduleJobReaderImpl : public CObject
 
 struct SNetScheduleAdminImpl : public CObject
 {
-    SNetScheduleAdminImpl(CNetScheduleAPI::TInstance ns_api_impl);
+    SNetScheduleAdminImpl(CNetScheduleAPI::TInstance ns_api_impl) :
+        m_API(ns_api_impl)
+    {
+    }
 
     typedef map<pair<string, unsigned int>, string> TIDsMap;
 
     CNetScheduleAPI m_API;
 };
-
-inline SNetScheduleAdminImpl::SNetScheduleAdminImpl(
-    CNetScheduleAPI::TInstance ns_api_impl) :
-    m_API(ns_api_impl)
-{
-}
 
 END_NCBI_SCOPE
 

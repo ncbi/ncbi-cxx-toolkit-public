@@ -66,8 +66,16 @@ SNotificationTimelineEntry*
             search_pattern.m_ServerAddress, m_DiscoveryIteration);
 
     m_TimelineEntryByAddress.insert(new_entry);
+    new_entry->AddReference();
 
     return new_entry;
+}
+
+SNetScheduleJobReaderImpl::~SNetScheduleJobReaderImpl()
+{
+    ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
+        (*it)->RemoveReference();
+    }
 }
 
 // True if a job is returned.
@@ -136,8 +144,11 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
         CNetScheduleAPI::EJobStatus* job_status,
         bool* no_more_jobs)
 {
-    string cmd(m_NotificationHandler.CmdAppendTimeoutAndClientInfo("READ",
-            timeout));
+    string cmd("READ");
+
+    m_API->m_NotificationThread->CmdAppendPortAndTimeout(&cmd, timeout);
+
+    g_AppendClientIPAndSessionID(cmd);
 
     CNetServer::SExecResult exec_result;
 
@@ -159,7 +170,7 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
 
     if (timeline_entry->IsDiscoveryAction()) {
         ++m_DiscoveryIteration;
-        for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate(
+        for (CNetServiceIterator it = m_API.GetService().Iterate(
                 CNetService::eIncludePenalized); it; ++it) {
             SNotificationTimelineEntry* srv_entry = x_GetTimelineEntry(*it);
             srv_entry->m_DiscoveryIteration = m_DiscoveryIteration;
@@ -176,7 +187,7 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
     if (timeline_entry->m_DiscoveryIteration != m_DiscoveryIteration)
         return false;
 
-    CNetServer server(m_NetScheduleAPI->m_Service.GetServer(
+    CNetServer server(m_API->m_Service.GetServer(
             timeline_entry->m_ServerAddress));
 
     timeline_entry->ResetTimeout(READJOB_TIMEOUT);
@@ -212,13 +223,15 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
     }
 }
 
-void SNetScheduleJobReaderImpl::x_ProcessRequestJobNotification()
+void SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
 {
+    string ns_node;
     CNetServer server;
 
-    if (m_NotificationHandler.CheckRequestJobNotification(
-            m_NetScheduleAPI.GetExecutor(), &server))
-        x_GetTimelineEntry(server)->MoveTo(&m_ImmediateActions);
+    while (m_API->m_NotificationThread->m_ReadNotifications.GetNextNotification(
+                &ns_node))
+        if (m_API->GetServerByNode(ns_node, &server))
+            x_GetTimelineEntry(server)->MoveTo(&m_ImmediateActions);
 }
 
 CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
@@ -239,18 +252,19 @@ CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
                     *job, job_status, &result))
                 return result;
 
-            while (!m_Impl->m_Timeline.IsEmpty() && m_Impl->m_Timeline.GetHead()->TimeHasCome())
+            while (!m_Impl->m_Timeline.IsEmpty() &&
+                    m_Impl->m_Timeline.GetHead()->TimeHasCome())
                 m_Impl->m_Timeline.MoveHeadTo(&m_Impl->m_ImmediateActions);
 
             // Check if there's a notification in the UDP socket.
-            while (m_Impl->m_NotificationHandler.ReceiveNotification())
-                m_Impl->x_ProcessRequestJobNotification();
+            m_Impl->x_ProcessReadJobNotifications();
         }
 
-        // FIXME Check for interrupt if (CGridGlobals::GetInstance().IsShuttingDown())
+        // FIXME Check for interrupt
+        // if (CGridGlobals::GetInstance().IsShuttingDown())
             // return eRNJ_Interrupt;
 
-        if (timeout_expiration_time != NULL &&
+        if (timeout_expiration_time == NULL ||
                 timeout_expiration_time->GetRemainingTime().IsZero())
             return eRNJ_Timeout;
 
@@ -260,13 +274,13 @@ CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
 
             if (timeout_expiration_time != NULL &&
                             !(next_event_time < *timeout_expiration_time)) {
-                if (!m_Impl->m_NotificationHandler.WaitForNotification(
-                        *timeout_expiration_time))
+                if (!m_Impl->m_API->m_NotificationThread->
+                        m_ReadNotifications.Wait(*timeout_expiration_time))
                     return eRNJ_Timeout;
-                m_Impl->x_ProcessRequestJobNotification();
-            } else if (m_Impl->m_NotificationHandler.WaitForNotification(
-                    next_event_time))
-                m_Impl->x_ProcessRequestJobNotification();
+                m_Impl->x_ProcessReadJobNotifications();
+            } else if (m_Impl->m_API->m_NotificationThread->
+                    m_ReadNotifications.Wait(next_event_time))
+                m_Impl->x_ProcessReadJobNotifications();
             else if (m_Impl->x_PerformTimelineAction(m_Impl->m_Timeline,
                     *job, job_status, &result))
                 return result;
@@ -276,11 +290,7 @@ CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
 
 void CNetScheduleJobReader::InterruptReading()
 {
-    /*try {
-        m_Impl->m_Semaphore.Post();
-    }
-    catch (...) {
-    }*/
+    m_Impl->m_API->m_NotificationThread->m_ReadNotifications.InterruptWait();
 }
 
 END_NCBI_SCOPE

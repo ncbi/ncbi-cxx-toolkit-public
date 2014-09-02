@@ -226,9 +226,9 @@ public:
         m_ImmediateActions.Push(m_DiscoveryAction);
     }
 
-    void Stop();
-
     virtual void* Main();
+
+    virtual ~CMainLoopThread();
 
 private:
     SGridWorkerNodeImpl* m_WorkerNode;

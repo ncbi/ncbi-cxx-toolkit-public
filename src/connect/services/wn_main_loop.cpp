@@ -258,7 +258,8 @@ void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
 void CWorkerNodeJobContext::JobDelayExpiration(unsigned runtime_inc)
 {
     try {
-        m_Impl->m_NetScheduleExecutor.JobDelayExpiration(GetJobKey(), runtime_inc);
+        m_Impl->m_NetScheduleExecutor.JobDelayExpiration(GetJobKey(),
+                runtime_inc);
     }
     catch (exception& ex) {
         ERR_POST_X(8, "CWorkerNodeJobContext::JobDelayExpiration: " <<
@@ -524,7 +525,8 @@ void* CMainLoopThread::Main()
                     ERR_POST_X(28, ex);
                     // that must not happen after CBlockingQueue is fixed
                     _ASSERT(0);
-                    job_context->m_JobCommitted = CWorkerNodeJobContext::eReturn;
+                    job_context->m_JobCommitted =
+                            CWorkerNodeJobContext::eReturn;
                     m_WorkerNode->m_JobCommitterThread->
                             RecycleJobContextAndCommitJob(job_context);
                 }
@@ -567,6 +569,13 @@ void* CMainLoopThread::Main()
     return NULL;
 }
 
+CMainLoopThread::~CMainLoopThread()
+{
+    ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
+        (*it)->RemoveReference();
+    }
+}
+
 bool CMainLoopThread::x_GetJobWithAffinityList(SNetServerImpl* server,
         const CDeadline* timeout, CNetScheduleJob& job,
         CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
@@ -594,7 +603,8 @@ bool CMainLoopThread::x_GetJobWithAffinityLadder(SNetServerImpl* server,
         string affinity_list = *it;
         if (++it == m_WorkerNode->m_NSExecutor->m_API->m_AffinityLadder.end())
             return x_GetJobWithAffinityList(server, timeout, job,
-                    m_WorkerNode->m_NSExecutor->m_AffinityPreference, affinity_list);
+                    m_WorkerNode->m_NSExecutor->m_AffinityPreference,
+                            affinity_list);
         else if (x_GetJobWithAffinityList(server, NULL, job,
                 CNetScheduleExecutor::ePreferredAffinities, affinity_list))
             return true;
@@ -617,6 +627,7 @@ SNotificationTimelineEntry*
             search_pattern.m_ServerAddress, m_DiscoveryIteration);
 
     m_TimelineEntryByAddress.insert(new_entry);
+    new_entry->AddReference();
 
     return new_entry;
 }
@@ -631,8 +642,9 @@ bool CMainLoopThread::x_PerformTimelineAction(
     if (timeline_entry->IsDiscoveryAction()) {
         if (!x_EnterSuspendedState()) {
             ++m_DiscoveryIteration;
-            for (CNetServiceIterator it = m_WorkerNode->m_NetScheduleAPI.GetService().Iterate(
-                    CNetService::eIncludePenalized); it; ++it) {
+            for (CNetServiceIterator it =
+                    m_WorkerNode->m_NetScheduleAPI.GetService().Iterate(
+                            CNetService::eIncludePenalized); it; ++it) {
                 SNotificationTimelineEntry* srv_entry = x_GetTimelineEntry(*it);
                 srv_entry->m_DiscoveryIteration = m_DiscoveryIteration;
                 if (!srv_entry->IsInTimeline())
@@ -713,8 +725,9 @@ void CMainLoopThread::x_ProcessRequestJobNotification()
     if (!x_EnterSuspendedState()) {
         CNetServer server;
 
-        if (m_WorkerNode->m_NSExecutor->m_NotificationHandler.CheckRequestJobNotification(
-                m_WorkerNode->m_NSExecutor, &server))
+        if (m_WorkerNode->m_NSExecutor->
+                m_NotificationHandler.CheckRequestJobNotification(
+                        m_WorkerNode->m_NSExecutor, &server))
             x_GetTimelineEntry(server)->MoveTo(&m_ImmediateActions);
     }
 }
@@ -730,7 +743,8 @@ bool CMainLoopThread::x_WaitForNewJob(CNetScheduleJob& job)
                 m_Timeline.MoveHeadTo(&m_ImmediateActions);
 
             // Check if there's a notification in the UDP socket.
-            while (m_WorkerNode->m_NSExecutor->m_NotificationHandler.ReceiveNotification())
+            while (m_WorkerNode->m_NSExecutor->
+                    m_NotificationHandler.ReceiveNotification())
                 x_ProcessRequestJobNotification();
         }
 
@@ -738,8 +752,9 @@ bool CMainLoopThread::x_WaitForNewJob(CNetScheduleJob& job)
             return false;
 
         if (!m_Timeline.IsEmpty()) {
-            if (m_WorkerNode->m_NSExecutor->m_NotificationHandler.WaitForNotification(
-                    m_Timeline.GetHead()->GetTimeout()))
+            if (m_WorkerNode->m_NSExecutor->
+                    m_NotificationHandler.WaitForNotification(
+                            m_Timeline.GetHead()->GetTimeout()))
                 x_ProcessRequestJobNotification();
             else if (x_PerformTimelineAction(m_Timeline, job))
                 return true;

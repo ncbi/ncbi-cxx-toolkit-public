@@ -796,8 +796,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleJobReader
     /// @param job_status Pointer to a variable where to store the final
     ///                   status of the job.
     ///
-    /// @param timeout Timeout to wait for job completion. By default,
-    ///                the method waits indefinitely.
+    /// @param timeout Timeout to wait for job completion.
+    ///                If NULL, the method returns immediately.
     ///
     /// @return True if a completed job is returned. False if there
     ///         are no more jobs matching the specified criteria.
