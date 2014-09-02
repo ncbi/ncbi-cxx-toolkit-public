@@ -40,7 +40,11 @@ BEGIN_NCBI_SCOPE
 class CNamedParameterList
 {
 public:
-    CNamedParameterList(int tag) : m_Tag(tag), m_MoreParams(NULL) {}
+    CNamedParameterList(int tag, const CNamedParameterList* more_params) :
+        m_Tag(tag),
+        m_MoreParams(more_params)
+    {
+    }
 
     operator const CNamedParameterList*() const {return this;}
 
@@ -61,8 +65,9 @@ template <typename TYPE>
 class CNamedParameterValue : public CNamedParameterList
 {
 public:
-    CNamedParameterValue(int tag, const TYPE& value) :
-        CNamedParameterList(tag),
+    CNamedParameterValue(int tag, const CNamedParameterList* more_params,
+            const TYPE& value) :
+        CNamedParameterList(tag, more_params),
         m_Value(value)
     {
     }
@@ -74,9 +79,19 @@ template <typename TYPE, int TAG>
 class CNamedParameter
 {
 public:
-    CNamedParameterValue<TYPE> operator =(const TYPE& value)
+    class CValue : public CNamedParameterValue<TYPE>
     {
-        return CNamedParameterValue<TYPE>(TAG, value);
+    public:
+        CValue(const TYPE& value,
+                const CNamedParameterList* more_params = NULL) :
+            CNamedParameterValue<TYPE>(TAG, more_params, value)
+        {
+        }
+    };
+
+    CValue operator =(const TYPE& value)
+    {
+        return CValue(value);
     }
 };
 

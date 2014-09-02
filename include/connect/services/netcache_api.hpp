@@ -57,63 +57,51 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-// Named parameters that can be used when calling
-// CNetCacheAPI methods that accept CNamedParameterList.
-enum ENetCacheNamedParameterTag {
-    eNetCacheNPT_TTL,
-    eNetCacheNPT_CachingMode,
-    eNetCacheNPT_MirroringMode,
-    eNetCacheNPT_ServerCheck,
-    eNetCacheNPT_ServerCheckHint,
-    eNetCacheNPT_Password,
-    eNetCacheNPT_ServerToUse,
-    eNetCacheNPT_MaxBlobAge,
-    eNetCacheNPT_ActualBlobAgePtr,
-    eNetCacheNPT_UseCompoundID,
-};
-
 /// Blob life span in seconds. If zero or greater than the
 /// server-side value, then the server-side TTL is used.
-#define nc_blob_ttl CNamedParameter<unsigned, eNetCacheNPT_TTL>()
+/// @see CNetCacheAPI::TBlobTTL
+#define nc_blob_ttl CNetCacheAPI::TBlobTTL()
 
 /// Caching mode.
-/// @see ECachingMode for details.
-#define nc_caching_mode CNamedParameter<CNetCacheAPI::ECachingMode, \
-        eNetCacheNPT_CachingMode>()
+/// @see CNetCacheAPI::TCachingMode for details.
+#define nc_caching_mode CNetCacheAPI::TCachingMode()
 
 /// Mirroring mode.
 /// @see CNetCacheAPI::EMirroringMode for details.
-#define nc_mirroring_mode CNamedParameter<CNetCacheAPI::EMirroringMode, \
-        eNetCacheNPT_MirroringMode>()
+#define nc_mirroring_mode CNetCacheAPI::TMirroringMode()
 
 /// For blob readers: whether to check if the primary
 /// server that stores the blob is still in service.
-#define nc_server_check CNamedParameter<ESwitch, eNetCacheNPT_ServerCheck>()
+/// @see CNetCacheAPI::TServerCheck
+#define nc_server_check CNetCacheAPI::TServerCheck()
 
 /// For blob writers: whether to advise the readers to check
 /// if the primary server that stores the blob is still in service.
-#define nc_server_check_hint CNamedParameter<bool, \
-        eNetCacheNPT_ServerCheckHint>()
+/// @see CNetCacheAPI::TServerCheckHint
+#define nc_server_check_hint CNetCacheAPI::TServerCheckHint()
 
 /// Blob password. Used to protect the blob when writing;
 /// required for reading a password-protected blob.
-#define nc_blob_password CNamedParameter<string, eNetCacheNPT_Password>()
+/// @see CNetCacheAPI::TBlobPassword
+#define nc_blob_password CNetCacheAPI::TBlobPassword()
 
 /// The server to use for the operation. Overrides whatever is
 /// defined in the constructor or the configuration file.
-#define nc_server_to_use CNamedParameter<CNetServer::TInstance, \
-        eNetCacheNPT_ServerToUse>()
+/// @see CNetCacheAPI::TServerToUse
+#define nc_server_to_use CNetCacheAPI::TServerToUse()
 
 /// Do not read the blob if its age is greater than the specified value.
-#define nc_max_age CNamedParameter<unsigned, eNetCacheNPT_MaxBlobAge>()
+/// @see CNetCacheAPI::TMaxBlobAge
+#define nc_max_age CNetCacheAPI::TMaxBlobAge()
 
 /// A pointer to an unsigned variable where the actual age of the blob
 /// must be stored.
-#define nc_actual_age CNamedParameter<unsigned*, \
-        eNetCacheNPT_ActualBlobAgePtr>()
+/// @see CNetCacheAPI::TActualBlobAgePtr
+#define nc_actual_age CNetCacheAPI::TActualBlobAgePtr()
 
 /// Whether to return NetCache keys in CompoundID format.
-#define nc_use_compound_id CNamedParameter<bool, eNetCacheNPT_UseCompoundID>()
+/// @see CNetCacheAPI::TUseCompoundID
+#define nc_use_compound_id CNetCacheAPI::TUseCompoundID()
 
 /* @} */
 
@@ -145,6 +133,14 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
         eCaching_AppDefault,
         eCaching_Disable,
         eCaching_Enable
+    };
+
+    /// Mirroring modes. eIfKeyMirrored unconditionally enables
+    /// mirroring for blobs that were created in mirroring mode.
+    enum EMirroringMode {
+        eMirroringDisabled,
+        eMirroringEnabled,
+        eIfKeyMirrored
     };
 
     /// Defines how this object must be initialized.
@@ -196,6 +192,21 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     CNetCacheAPI(const string& service_name, const string& client_name,
             CNetScheduleAPI::TInstance ns_api = NULL);
 
+    /// Named parameters that can be used when calling
+    /// CNetCacheAPI methods that accept CNamedParameterList.
+    enum ENamedParameterTag {
+        eNPT_BlobTTL,
+        eNPT_CachingMode,
+        eNPT_MirroringMode,
+        eNPT_ServerCheck,
+        eNPT_ServerCheckHint,
+        eNPT_Password,
+        eNPT_ServerToUse,
+        eNPT_MaxBlobAge,
+        eNPT_ActualBlobAgePtr,
+        eNPT_UseCompoundID,
+    };
+
     /// Put BLOB to server.  This method is blocking and waits
     /// for a confirmation from NetCache after all data is
     /// transferred.
@@ -238,15 +249,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
                    const void*   buf,
                    size_t        size,
                    const CNamedParameterList* optional = NULL);
-
-    /// @deprecated Please use PutData(key, buf, size, optional) instead.
-    NCBI_DEPRECATED string PutData(const string& key,
-                   const void*   buf,
-                   size_t        size,
-                   int           blob_ttl)
-    {
-        return PutData(key, buf, size, nc_blob_ttl = blob_ttl);
-    }
 
     /// Create a stream object for sending data to a blob.
     /// If the string "key" is empty, a new blob will be created
@@ -301,7 +303,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// @code
     /// size_t blob_size;
     /// auto_ptr<IReader> reader(nc_api.GetReader(key, &blob_size,
-    ///         CNetCacheAPI::caching_mode = CNetCacheAPI::eCaching_Disable));
+    ///         nc_caching_mode = CNetCacheAPI::eCaching_Disable));
     /// size_t bytes_read;
     /// size_t total_bytes_read = 0;
     ///
@@ -442,14 +444,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     void ProlongBlobLifetime(const string& blob_key, unsigned ttl,
             const CNamedParameterList* optional = NULL);
 
-    /// Mirroring modes. eIfKeyMirrored unconditionally enables
-    /// mirroring for blobs that were created in mirroring mode.
-    enum EMirroringMode {
-        eMirroringDisabled,
-        eMirroringEnabled,
-        eIfKeyMirrored
-    };
-
     void SetDefaultParameters(const CNamedParameterList* parameters);
 
     CNetCacheAdmin GetAdmin();
@@ -458,6 +452,98 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
 
     void SetCommunicationTimeout(const STimeout& to)
         {GetService().GetServerPool().SetCommunicationTimeout(to);}
+
+    /// Named parameter type for blob life span in seconds.
+    /// If zero or greater than the server-side value,
+    /// then the server-side TTL is used.
+    /// This type of parameter can be defined through the nc_blob_ttl
+    /// macro substitution, for example:
+    ///     nc_blob_ttl = 600
+    /// @see nc_blob_ttl
+    typedef CNamedParameter<unsigned, eNPT_BlobTTL> TBlobTTL;
+
+    /// Named parameter type for caching mode.
+    /// This type of parameter can be defined through the
+    /// nc_caching_mode macro substitution, for example:
+    ///     nc_caching_mode = CNetCacheAPI::eCaching_Disable
+    /// @see nc_caching_mode, ECachingMode
+    typedef CNamedParameter<ECachingMode, eNPT_CachingMode> TCachingMode;
+
+    /// Named parameter type for mirroring mode.
+    /// This type of parameter can be defined through the
+    /// nc_mirroring_mode macro substitution, for example:
+    ///     nc_mirroring_mode = CNetCacheAPI::eMirroringEnabled
+    /// @see nc_mirroring_mode, EMirroringMode
+    typedef CNamedParameter<EMirroringMode, eNPT_MirroringMode> TMirroringMode;
+
+    /// Named parameter type for whether blob reading methods
+    /// must check if the primary server that stores the blob
+    /// is still in service.
+    /// This type of parameter can be defined through the nc_server_check
+    /// macro substitution, for example:
+    ///     nc_server_check = eOn
+    /// @see nc_server_check
+    typedef CNamedParameter<ESwitch, eNPT_ServerCheck> TServerCheck;
+
+    /// Named parameter type for whether to advise the readers to check
+    /// if the primary server that stores the blob is still in service.
+    /// This type parameter only has effect during blob creation and
+    /// can be defined through the nc_server_check_hint macro substitution,
+    /// for example:
+    ///     nc_server_check_hint = true
+    /// @see nc_server_check_hint
+    typedef CNamedParameter<bool, eNPT_ServerCheckHint> TServerCheckHint;
+
+    /// Named parameter type for blob password. A blob created with a
+    /// password cannot be read without specifying the same password.
+    /// This type of parameter can be defined through the nc_blob_password
+    /// macro substitution, for example:
+    ///     nc_blob_password = "secret"
+    /// @see nc_blob_password
+    typedef CNamedParameter<string, eNPT_Password> TBlobPassword;
+
+    /// Named parameter type for specifying the server to use
+    /// for the operation. Overrides whatever is defined in the
+    /// constructor or the configuration file.
+    /// This type of parameter can be defined through the nc_server_to_use
+    /// macro substitution, for example:
+    ///     nc_server_to_use = netserver_object
+    /// @see nc_server_to_use
+    typedef CNamedParameter<CNetServer::TInstance,
+            eNPT_ServerToUse> TServerToUse;
+
+    /// Named parameter type to specify that the blob should not be read
+    /// if its age in seconds is greater than the specified value.
+    /// This type of parameter can be defined through the nc_max_age
+    /// macro substitution, for example:
+    ///     nc_max_age = 3600
+    /// @see nc_max_age
+    typedef CNamedParameter<unsigned, eNPT_MaxBlobAge> TMaxBlobAge;
+
+    /// Named parameter type for a pointer to a variable where the actual
+    /// age of the blob is to be stored.
+    /// This type of parameter can be defined through the nc_actual_age
+    /// macro substitution, for example:
+    ///     nc_actual_age = &blob_age
+    /// @see nc_actual_age
+    typedef CNamedParameter<unsigned*, eNPT_ActualBlobAgePtr> TActualBlobAgePtr;
+
+    /// Named parameter type to define whether to return NetCache
+    /// keys in CompoundID format.
+    /// This type of parameter can be defined through the
+    /// nc_use_compound_id macro substitution, for example:
+    ///     nc_use_compound_id = true
+    /// @see nc_use_compound_id
+    typedef CNamedParameter<bool, eNPT_UseCompoundID> TUseCompoundID;
+
+    /// @deprecated Please use PutData(key, buf, size, optional) instead.
+    NCBI_DEPRECATED string PutData(const string& key,
+                   const void*   buf,
+                   size_t        size,
+                   int           blob_ttl)
+    {
+        return PutData(key, buf, size, nc_blob_ttl = blob_ttl);
+    }
 
     /// Extract one of the servers comprising this service
     /// as a separate CNetCacheAPI object.

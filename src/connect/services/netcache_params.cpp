@@ -49,25 +49,25 @@ void CNetCacheAPIParameters::LoadNamedParameters(
         const CNamedParameterList* optional)
 {
     for (; optional; optional = optional->m_MoreParams)
-        if (optional->Is(eNetCacheNPT_TTL))
+        if (optional->Is(CNetCacheAPI::eNPT_BlobTTL))
             SetTTL(Get<unsigned>(optional));
-        else if (optional->Is(eNetCacheNPT_Password))
+        else if (optional->Is(CNetCacheAPI::eNPT_Password))
             SetPassword(Get<std::string>(optional));
-        else if (optional->Is(eNetCacheNPT_CachingMode))
+        else if (optional->Is(CNetCacheAPI::eNPT_CachingMode))
             SetCachingMode(Get<CNetCacheAPI::ECachingMode>(optional));
-        else if (optional->Is(eNetCacheNPT_MirroringMode))
+        else if (optional->Is(CNetCacheAPI::eNPT_MirroringMode))
             SetMirroringMode(Get<CNetCacheAPI::EMirroringMode>(optional));
-        else if (optional->Is(eNetCacheNPT_ServerCheck))
+        else if (optional->Is(CNetCacheAPI::eNPT_ServerCheck))
             SetServerCheck(Get<ESwitch>(optional));
-        else if (optional->Is(eNetCacheNPT_ServerCheckHint))
+        else if (optional->Is(CNetCacheAPI::eNPT_ServerCheckHint))
             SetServerCheckHint(Get<bool>(optional));
-        else if (optional->Is(eNetCacheNPT_ServerToUse))
+        else if (optional->Is(CNetCacheAPI::eNPT_ServerToUse))
             SetServerToUse(Get<CNetServer::TInstance>(optional));
-        else if (optional->Is(eNetCacheNPT_MaxBlobAge))
+        else if (optional->Is(CNetCacheAPI::eNPT_MaxBlobAge))
             SetMaxBlobAge(Get<unsigned>(optional));
-        else if (optional->Is(eNetCacheNPT_ActualBlobAgePtr))
+        else if (optional->Is(CNetCacheAPI::eNPT_ActualBlobAgePtr))
             SetActualBlobAgePtr(Get<unsigned*>(optional));
-        else if (optional->Is(eNetCacheNPT_UseCompoundID))
+        else if (optional->Is(CNetCacheAPI::eNPT_UseCompoundID))
             SetUseCompoundID(Get<bool>(optional));
 }
 
