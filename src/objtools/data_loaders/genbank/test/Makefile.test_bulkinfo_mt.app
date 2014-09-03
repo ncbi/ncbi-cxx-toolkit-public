@@ -19,14 +19,14 @@ CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type type -threads 8 /CHECK_NA
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type state /CHECK_NAME=test_bulkinfo_mt_state
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type hash /CHECK_NAME=test_bulkinfo_mt_hash
 
-CHECK_CMD = all_readers.sh test_bulkinfo_mt -type gi -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_gi
-CHECK_CMD = all_readers.sh test_bulkinfo_mt -type acc -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_acc
-CHECK_CMD = all_readers.sh test_bulkinfo_mt -type label -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_label
-CHECK_CMD = all_readers.sh test_bulkinfo_mt -type taxid -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_taxid
-CHECK_CMD = all_readers.sh test_bulkinfo_mt -type length -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_length
-CHECK_CMD = all_readers.sh test_bulkinfo_mt -type type -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_types
-CHECK_CMD = all_readers.sh test_bulkinfo_mt -type state -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_state
-CHECK_CMD = all_readers.sh test_bulkinfo_mt -type hash -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_hash
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type gi -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_bad_gi
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type acc -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_bad_acc
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type label -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_bad_label
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type taxid -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_bad_taxid
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type length -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_bad_length
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type type -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_bad_types
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type state -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_bad_state
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type hash -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_mt_bad_hash
 
 CHECK_TIMEOUT = 400
 
