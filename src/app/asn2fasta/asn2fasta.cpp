@@ -191,20 +191,16 @@ void CAsn2FastaApp::Init(void)
         arg_desc->AddOptionalKey("og_head", "GenomicOutputFileHead",
             "Genomic output file name stem",
             CArgDescriptions::eString);
-        /*
         arg_desc->SetDependency("og_head", CArgDescriptions::eExcludes, "o");
         arg_desc->SetDependency("og_head", CArgDescriptions::eExcludes, "on");
         arg_desc->SetDependency("og_head", CArgDescriptions::eExcludes, "og");
-        */
 
         arg_desc->AddOptionalKey("og_tail", "GenomicOutputFileTail",
             "Genomic output file name suffix",
             CArgDescriptions::eString);
-        /*
         arg_desc->SetDependency("og_tail", CArgDescriptions::eExcludes, "o");
         arg_desc->SetDependency("og_tail", CArgDescriptions::eExcludes, "on");
         arg_desc->SetDependency("og_tail", CArgDescriptions::eExcludes, "og");
-        */
 
         arg_desc->AddDefaultKey("x", "GenomeFileMaxSize",
                                 "Maximum size of each genomic fasta file in Mb",
