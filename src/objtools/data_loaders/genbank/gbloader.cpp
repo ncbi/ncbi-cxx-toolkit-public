@@ -1083,6 +1083,34 @@ void CGBDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded,
 }
 
 
+int CGBDataLoader::GetSequenceHash(const CSeq_id_Handle& sih)
+{
+    if ( CReadDispatcher::CannotProcess(sih) ) {
+        return 0;
+    }
+    CGBReaderRequestResult result(this, sih);
+    CLoadLockHash lock(result, sih);
+    if ( !lock.IsLoadedHash() ) {
+        m_Dispatcher->LoadSequenceHash(result, sih);
+    }
+    return lock.IsLoaded()? lock.GetHash(): 0;
+}
+
+
+void CGBDataLoader::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
+                                      TSequenceHashes& ret)
+{
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        CGBReaderRequestResult result(this, ids[i]);
+        m_Dispatcher->LoadHashes(result, ids, loaded, ret);
+        return;
+    }
+}
+
+
 CDataLoader::TBlobVersion CGBDataLoader::GetBlobVersion(const TBlobId& id)
 {
     const TRealBlobId& blob_id = GetRealBlobId(id);

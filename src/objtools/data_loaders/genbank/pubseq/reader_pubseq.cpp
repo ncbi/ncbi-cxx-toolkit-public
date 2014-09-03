@@ -953,6 +953,99 @@ bool CPubseqReader::LoadGiSeq_ids(CReaderRequestResult& result,
 }
 
 
+bool CPubseqReader::LoadSequenceHash(CReaderRequestResult& result,
+                                     const CSeq_id_Handle& seq_id)
+{
+    CLoadLockHash lock(result, seq_id);
+    if ( lock.IsLoaded() ) {
+        return true;
+    }
+
+    if ( seq_id.Which() == CSeq_id::e_Gi ) {
+        return LoadGiHash(result, seq_id);
+    }
+
+    CLoadLockGi gi_lock(result, seq_id);
+    if ( !gi_lock.IsLoadedGi() ) {
+        m_Dispatcher->LoadSeq_idGi(result, seq_id);
+        if ( lock.IsLoaded() ) {
+            return true;
+        }
+        if ( !gi_lock.IsLoadedGi() ) {
+            return false;
+        }
+    }
+    TGi gi = gi_lock.GetGi();
+    if (gi == ZERO_GI) {
+        // no gi -> no hash
+        result.SetLoadedHash(seq_id, 0);
+        return true;
+    }
+
+    CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
+    CLoadLockHash gi_hash(result, gi_handle);
+    m_Dispatcher->LoadSequenceHash(result, gi_handle);
+    if ( !gi_hash.IsLoadedHash() ) {
+        return false;
+    }
+    
+    // copy Seq-id list from gi to original seq-id
+    result.SetLoadedHash(seq_id, gi_hash.GetHash());
+    return true;
+}
+
+
+bool CPubseqReader::LoadGiHash(CReaderRequestResult& result,
+                               const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeqIds load_lock(result, seq_id);
+    if ( load_lock.IsLoaded() ) {
+        return true;
+    }
+    _ASSERT(seq_id.Which() == CSeq_id::e_Gi);
+    TGi gi = seq_id.GetGi();
+    if ( gi == ZERO_GI ) {
+        result.SetLoadedHash(seq_id, 0);
+        return true;
+    }
+
+    _TRACE("ResolveGi to Hash: " << gi);
+
+    CConn conn(result, this);
+    {{
+        TSeqIds ids;
+        CDB_Connection* db_conn = x_GetConnection(conn);
+    
+        AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_class"));
+        CDB_Int_For<TIntId> giIn(gi);
+        CDB_TinyInt hashIn = 1;
+        cmd->SetParam("@gi", &giIn);
+        cmd->SetParam("@ver", &hashIn);
+        cmd->Send();
+
+        int hash = 0;
+        while ( cmd->HasMoreResults() ) {
+            AutoPtr<CDB_Result> dbr(cmd->Result());
+            if ( !dbr.get() ) {
+                continue;
+            }
+            
+            if ( dbr->ResultType() == eDB_RowResult &&
+                      sx_FetchNextItem(*dbr, "hash") ) {
+                CDB_Int v;
+                dbr->GetItem(&v);
+                hash = v.Value();
+            }
+            while ( dbr->Fetch() )
+                ;
+        }
+        SetAndSaveSequenceHash(result, seq_id, hash);
+    }}
+    conn.Release();
+    return true;
+}
+
+
 void CPubseqReader::GetBlobState(CReaderRequestResult& result, 
                                  const CBlob_id& blob_id)
 {

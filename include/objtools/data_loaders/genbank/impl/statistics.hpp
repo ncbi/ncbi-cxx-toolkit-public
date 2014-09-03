@@ -59,6 +59,7 @@ public:
         eStat_ParseSNPBlob,
         eStat_ParseSplit,
         eStat_ParseChunk,
+        eStat_Hash,
 
         eStats_Count,
         eStat_Last = eStats_Count-1

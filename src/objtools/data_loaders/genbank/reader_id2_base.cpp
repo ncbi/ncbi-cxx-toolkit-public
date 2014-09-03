@@ -375,6 +375,33 @@ bool CId2ReaderBase::LoadSeq_idTaxId(CReaderRequestResult& result,
 }
 
 
+bool CId2ReaderBase::LoadSequenceHash(CReaderRequestResult& result,
+                                      const CSeq_id_Handle& seq_id)
+{
+    if ( m_AvoidRequest & fAvoidRequest_for_SequenceHash ) {
+        return CReader::LoadSequenceHash(result, seq_id);
+    }
+
+    CLoadLockHash lock(result, seq_id);
+    if ( lock.IsLoadedHash() ) {
+        return true;
+    }
+    CID2_Request req;
+    CID2_Request::C_Request::TGet_seq_id& get_id =
+        req.SetRequest().SetGet_seq_id();
+    get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_hash);
+    x_ProcessRequest(result, req, 0);
+
+    if ( !lock.IsLoadedHash() ) {
+        m_AvoidRequest |= fAvoidRequest_for_SequenceHash;
+        return true; // repeat
+    }
+
+    return true;
+}
+
+
 bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
                                  const TIds& ids, TLoaded& loaded, TIds& ret)
 {
@@ -684,6 +711,86 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
             }
             else {
                 m_AvoidRequest |= fAvoidRequest_for_Seq_id_taxid;
+            }
+        }
+    }
+
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadHashes(CReaderRequestResult& result,
+                                const TIds& ids, TLoaded& loaded, THashes& ret)
+{
+    size_t max_request_size = GetMaxIdsRequestSize();
+    if ( max_request_size <= 1 ||
+         (m_AvoidRequest & fAvoidRequest_for_SequenceHash) ) {
+        return CReader::LoadHashes(result, ids, loaded, ret);
+    }
+
+    size_t count = ids.size();
+    CID2_Request_Packet packet;
+    size_t packet_start = 0;
+    
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        if ( m_AvoidRequest & fAvoidRequest_for_SequenceHash ) {
+            return CReader::LoadHashes(result, ids, loaded, ret);
+        }
+        CLoadLockHash lock(result, ids[i]);
+        if ( lock.IsLoadedHash() ) {
+            ret[i] = lock.GetHash();
+            loaded[i] = true;
+            continue;
+        }
+        
+        CRef<CID2_Request> req(new CID2_Request);
+        CID2_Request::C_Request::TGet_seq_id& get_id =
+            req->SetRequest().SetGet_seq_id();
+        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_hash);
+        if ( packet.Set().empty() ) {
+            packet_start = i;
+        }
+        packet.Set().push_back(req);
+        if ( packet.Set().size() == max_request_size ) {
+            x_ProcessPacket(result, packet, 0);
+            size_t count = i+1;
+            for ( size_t i = packet_start; i < count; ++i ) {
+                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+                    continue;
+                }
+                CLoadLockHash lock(result, ids[i]);
+                if ( lock.IsLoadedHash() ) {
+                    ret[i] = lock.GetHash();
+                    loaded[i] = true;
+                    continue;
+                }
+                else {
+                    m_AvoidRequest |= fAvoidRequest_for_SequenceHash;
+                }
+            }
+            packet.Set().clear();
+        }
+    }
+
+    if ( !packet.Set().empty() ) {
+        x_ProcessPacket(result, packet, 0);
+
+        for ( size_t i = packet_start; i < count; ++i ) {
+            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+                continue;
+            }
+            CLoadLockHash lock(result, ids[i]);
+            if ( lock.IsLoadedHash() ) {
+                ret[i] = lock.GetHash();
+                loaded[i] = true;
+                continue;
+            }
+            else {
+                m_AvoidRequest |= fAvoidRequest_for_SequenceHash;
             }
         }
     }
@@ -1822,6 +1929,9 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         case CID2_Request_Get_Seq_id::eSeq_id_type_taxid:
             SetAndSaveSeq_idTaxId(result, seq_id, -1);
             break;
+        case CID2_Request_Get_Seq_id::eSeq_id_type_hash:
+            SetAndSaveSequenceHash(result, seq_id, 0);
+            break;
         default:
             break;
         }
@@ -1901,6 +2011,25 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             }
         }
         SetAndSaveSeq_idTaxId(result, seq_id, taxid, save);
+        break;
+    }}
+    case CID2_Request_Get_Seq_id::eSeq_id_type_hash:
+    {{
+        ESave save = eDoNotSave;
+        int hash = 0;
+        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+            const CSeq_id& id = **it;
+            if ( id.IsGeneral() ) {
+                const CDbtag& dbtag = id.GetGeneral();
+                const CObject_id& obj_id = dbtag.GetTag();
+                if ( obj_id.IsId() && dbtag.GetDb() == "HASH" ) {
+                    hash = obj_id.GetId();
+                    save = eSave;
+                    break;
+                }
+            }
+        }
+        SetAndSaveSequenceHash(result, seq_id, hash, save);
         break;
     }}
     default:

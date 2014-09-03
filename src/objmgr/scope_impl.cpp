@@ -3256,5 +3256,40 @@ void CScope_Impl::GetSequenceStates(TSequenceStates& ret,
 }
 
 
+int CScope_Impl::GetSequenceHash(const CSeq_id_Handle& idh)
+{
+    TConfReadLockGuard rguard(m_ConfLock);
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CPrefetchManager::IsActive();
+        int hash = it->GetDataSource().GetSequenceHash(idh);
+        if ( hash != 0 ) {
+            return hash;
+        }
+    }
+    return 0;
+}
+
+
+void CScope_Impl::GetSequenceHashes(TSequenceStates& ret,
+                                    const TIds& ids)
+{
+    size_t count = ids.size(), remaining = count;
+    ret.assign(count, 0);
+    vector<bool> loaded(count);
+    
+    TConfReadLockGuard rguard(m_ConfLock);
+    // Unknown bioseq, try to find in data sources
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( !remaining ) {
+            break;
+        }
+        CPrefetchManager::IsActive();
+        it->GetDataSource().GetSequenceHashes(ids, loaded, ret);
+        remaining = sx_CountFalse(loaded);
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -279,6 +279,22 @@ void CCacheWriter::SaveSeq_idTaxId(CReaderRequestResult& result,
 }
 
 
+void CCacheWriter::SaveSequenceHash(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id)
+{
+    if( !m_IdCache) {
+        return;
+    }
+
+    CLoadLockHash lock(result, seq_id);
+    if ( lock.IsLoadedHash() ) {
+        CStoreBuffer str;
+        str.StoreInt4(lock.GetHash());
+        x_WriteId(GetIdKey(seq_id), GetHashSubkey(), str);
+    }
+}
+
+
 void CCacheWriter::WriteSeq_ids(const string& key,
                                 const CLoadLockSeqIds& lock)
 {

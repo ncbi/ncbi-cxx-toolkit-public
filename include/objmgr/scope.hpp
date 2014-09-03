@@ -428,6 +428,11 @@ public:
     CBioseq_Handle::TBioseqStateFlags GetSequenceState(const CSeq_id_Handle& id,
                                                        EForceLoad force_load = eNoForceLoad);
 
+    // returns 0 if sequence or its hash is not known
+    typedef int TSequenceHash;
+    TSequenceHash GetSequenceHash(const CSeq_id& id);
+    TSequenceHash GetSequenceHash(const CSeq_id_Handle& id);
+
     /// Bulk retrieval methods
     typedef vector<CSeq_id_Handle> TSeq_id_Handles;
     TSeq_id_Handles GetAccVers(const TSeq_id_Handles& idhs,
@@ -472,6 +477,10 @@ public:
     void GetSequenceStates(TSequenceStates* results,
                            const TSeq_id_Handles& idhs,
                            EForceLoad force_load = eNoForceLoad);
+    typedef vector<TSequenceHash> TSequenceHashes;
+    TSequenceHashes GetSequenceHashes(const TSeq_id_Handles& idhs);
+    void GetSequenceHashes(TSequenceHashes* results,
+                           const TSeq_id_Handles& idhs);
 
     /// Get bioseq synonyms, resolving to the bioseq in this scope.
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id&        id);

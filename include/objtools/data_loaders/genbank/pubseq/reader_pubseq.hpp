@@ -67,6 +67,10 @@ public:
                            const CSeq_id_Handle& seq_id);
     bool LoadGiSeq_ids(CReaderRequestResult& result,
                        const CSeq_id_Handle& seq_id);
+    bool LoadSequenceHash(CReaderRequestResult& result,
+                          const CSeq_id_Handle& seq_id);
+    bool LoadGiHash(CReaderRequestResult& result,
+                    const CSeq_id_Handle& seq_id);
 
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,

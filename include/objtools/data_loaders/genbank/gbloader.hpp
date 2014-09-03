@@ -191,6 +191,7 @@ public:
     virtual string GetLabel(const CSeq_id_Handle& idh);
     virtual int GetTaxId(const CSeq_id_Handle& idh);
     virtual int GetSequenceState(const CSeq_id_Handle& idh);
+    virtual int GetSequenceHash(const CSeq_id_Handle& idh);
 
     virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret);
     virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret);
@@ -202,6 +203,8 @@ public:
                                   TSequenceTypes& ret);
     virtual void GetSequenceStates(const TIds& ids, TLoaded& loader,
                                    TSequenceStates& ret);
+    virtual void GetSequenceHashes(const TIds& ids, TLoaded& loader,
+                                   TSequenceHashes& ret);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);

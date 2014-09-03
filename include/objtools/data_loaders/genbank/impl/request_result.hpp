@@ -285,6 +285,8 @@ public:
     typedef GBL::CInfoCache<TKeyBlobIds, CFixedBlob_ids> TCacheBlobIds;
     typedef int TBlobState;
     typedef GBL::CInfoCache<CBlob_id, TBlobState> TCacheBlobState;
+    typedef int TSequenceHash;
+    typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceHash> TCacheHash;
     typedef int TBlobVersion;
     typedef GBL::CInfoCache<CBlob_id, TBlobVersion> TCacheBlobVersion;
     typedef GBL::CInfoCache<CBlob_id, CTSE_LoadLock> TCacheBlob;
@@ -297,6 +299,7 @@ public:
     TCacheStrGi m_CacheStrGi;
     TCacheLabel m_CacheLabel;
     TCacheTaxId m_CacheTaxId;
+    TCacheHash m_CacheHash;
     TCacheBlobIds m_CacheBlobIds;
     TCacheBlobState m_CacheBlobState;
     TCacheBlobVersion m_CacheBlobVersion;
@@ -462,6 +465,35 @@ public:
             return SetLoaded(data);
         }
     bool SetLoadedTaxId(const TData& data, TExpirationTime expiration_time)
+        {
+            return SetLoaded(data, expiration_time);
+        }
+};
+
+
+class NCBI_XREADER_EXPORT CLoadLockHash :
+    public CGBInfoManager::TCacheHash::TInfoLock
+{
+    typedef CGBInfoManager::TCacheHash::TInfoLock TParent;
+public:
+    CLoadLockHash(void)
+        {
+        }
+    CLoadLockHash(CReaderRequestResult& result, const CSeq_id_Handle& id);
+
+    bool IsLoadedHash(void) const
+        {
+            return IsLoaded();
+        }
+    TData GetHash(void) const
+        {
+            return GetData();
+        }
+    bool SetLoadedHash(const TData& data)
+        {
+            return SetLoaded(data);
+        }
+    bool SetLoadedHash(const TData& data, TExpirationTime expiration_time)
         {
             return SetLoaded(data, expiration_time);
         }
@@ -701,6 +733,8 @@ public:
     typedef CGBInfoManager::TCacheLabel::TInfoLock TInfoLockLabel;
     typedef CGBInfoManager::TTaxId TTaxId;
     typedef CGBInfoManager::TCacheTaxId::TInfoLock TInfoLockTaxId;
+    typedef CGBInfoManager::TSequenceHash TSequenceHash;
+    typedef CGBInfoManager::TCacheHash::TInfoLock TInfoLockHash;
     typedef CGBInfoManager::TCacheBlobIds::TInfoLock TInfoLockBlobIds;
     typedef CGBInfoManager::TCacheBlobState::TInfoLock TInfoLockBlobState;
     typedef CGBInfoManager::TCacheBlobVersion::TInfoLock TInfoLockBlobVersion;
@@ -784,6 +818,13 @@ public:
     TInfoLockTaxId GetLoadedTaxId(const CSeq_id_Handle& id);
     bool SetLoadedTaxId(const CSeq_id_Handle& id,
                         const TTaxId& value);
+
+    bool IsLoadedHash(const CSeq_id_Handle& id);
+    bool MarkLoadingHash(const CSeq_id_Handle& id);
+    TInfoLockHash GetLoadLockHash(const CSeq_id_Handle& id);
+    TInfoLockHash GetLoadedHash(const CSeq_id_Handle& id);
+    bool SetLoadedHash(const CSeq_id_Handle& id,
+                       const TSequenceHash& value);
 
     bool IsLoadedBlobIds(const CSeq_id_Handle& id,
                          const SAnnotSelector* sel);

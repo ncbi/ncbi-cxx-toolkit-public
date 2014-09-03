@@ -17,6 +17,7 @@ CHECK_CMD = all_readers.sh test_bulkinfo -type taxid /CHECK_NAME=test_bulkinfo_t
 CHECK_CMD = all_readers.sh test_bulkinfo -type length /CHECK_NAME=test_bulkinfo_length
 CHECK_CMD = all_readers.sh test_bulkinfo -type type /CHECK_NAME=test_bulkinfo_type
 CHECK_CMD = all_readers.sh test_bulkinfo -type state /CHECK_NAME=test_bulkinfo_state
+CHECK_CMD = all_readers.sh test_bulkinfo -type hash /CHECK_NAME=test_bulkinfo_hash
 
 CHECK_CMD = all_readers.sh test_bulkinfo -type gi -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_gi
 CHECK_CMD = all_readers.sh test_bulkinfo -type acc -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_acc
@@ -25,6 +26,7 @@ CHECK_CMD = all_readers.sh test_bulkinfo -type taxid -idlist bad_len.ids /CHECK_
 CHECK_CMD = all_readers.sh test_bulkinfo -type length -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_length
 CHECK_CMD = all_readers.sh test_bulkinfo -type type -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_type
 CHECK_CMD = all_readers.sh test_bulkinfo -type state -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_state
+CHECK_CMD = all_readers.sh test_bulkinfo -type hash -idlist bad_len.ids /CHECK_NAME=test_bulkinfo_hash
 
 CHECK_TIMEOUT = 400
 

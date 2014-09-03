@@ -368,6 +368,7 @@ public:
     TSeqPos GetSequenceLength(const CSeq_id_Handle& id, bool force_load);
     CSeq_inst::TMol GetSequenceType(const CSeq_id_Handle& id, bool force_load);
     int GetSequenceState(const CSeq_id_Handle& id, bool force_load);
+    int GetSequenceHash(const CSeq_id_Handle& id);
 
     // Get a set of bioseq lengths
     typedef vector<TSeqPos> TSequenceLengths;
@@ -381,6 +382,10 @@ public:
     typedef vector<int> TSequenceStates;
     void GetSequenceStates(TSequenceStates& ret,
                            const TIds& idhs, bool force_load);
+    // Get a set of sequence hashes
+    typedef vector<int> TSequenceHashes;
+    void GetSequenceHashes(TSequenceHashes& ret,
+                           const TIds& idhs);
 
 
 private:

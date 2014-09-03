@@ -787,7 +787,7 @@ void CScope::GetSequenceStates(TSequenceStates* results,
 {
     if ( !results ) {
         NCBI_THROW(CCoreException, eNullPtr,
-                   "CScope::GetSequenceTypes: null results pointer");
+                   "CScope::GetSequenceStates: null results pointer");
     }
     return m_Impl->GetSequenceStates(*results, ids, force_load == eForceLoad);
 }
@@ -798,6 +798,37 @@ CScope::TSequenceStates CScope::GetSequenceStates(const TSeq_id_Handles& ids,
 {
     TSequenceStates results;
     GetSequenceStates(&results, ids, force_load);
+    return results;
+}
+
+
+CScope::TSequenceHash CScope::GetSequenceHash(const CSeq_id& id)
+{
+    return GetSequenceHash(CSeq_id_Handle::GetHandle(id));
+}
+
+
+CScope::TSequenceHash CScope::GetSequenceHash(const CSeq_id_Handle& id)
+{
+    return m_Impl->GetSequenceHash(id);
+}
+
+
+void CScope::GetSequenceHashes(TSequenceHashes* results,
+                               const TSeq_id_Handles& ids)
+{
+    if ( !results ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "CScope::GetSequenceHashes: null results pointer");
+    }
+    return m_Impl->GetSequenceHashes(*results, ids);
+}
+
+
+CScope::TSequenceHashes CScope::GetSequenceHashes(const TSeq_id_Handles& ids)
+{
+    TSequenceHashes results;
+    GetSequenceHashes(&results, ids);
     return results;
 }
 

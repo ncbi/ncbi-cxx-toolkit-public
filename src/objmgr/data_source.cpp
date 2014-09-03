@@ -1483,6 +1483,21 @@ void CDataSource::GetSequenceStates(const TIds& ids, TLoaded& loaded,
 }
 
 
+int CDataSource::GetSequenceHash(const CSeq_id_Handle& idh)
+{
+    return m_Loader? m_Loader->GetSequenceHash(idh): 0;
+}
+
+
+void CDataSource::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
+                                    TSequenceHashes& ret)
+{
+    if ( m_Loader ) {
+        m_Loader->GetSequenceHashes(ids, loaded, ret);
+    }
+}
+
+
 void CDataSource::GetBlobs(TSeqMatchMap& match_map)
 {
     if ( match_map.empty() ) {

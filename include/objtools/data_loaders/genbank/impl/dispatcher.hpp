@@ -98,12 +98,15 @@ public:
                          const CSeq_id_Handle& seq_id);
     void LoadSeq_idTaxId(CReaderRequestResult& result,
                          const CSeq_id_Handle& seq_id);
+    void LoadSequenceHash(CReaderRequestResult& result,
+                          const CSeq_id_Handle& seq_id);
 
     // bulk requests
     typedef vector<bool> TLoaded;
     typedef vector<TGi> TGis;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
+    typedef vector<int> THashes;
     typedef vector<TBlobState> TStates;
     void LoadAccVers(CReaderRequestResult& result,
                      const TIds ids, TLoaded& loaded, TIds& ret);
@@ -113,6 +116,8 @@ public:
                     const TIds ids, TLoaded& loaded, TLabels& ret);
     void LoadTaxIds(CReaderRequestResult& result,
                     const TIds ids, TLoaded& loaded, TTaxIds& ret);
+    void LoadHashes(CReaderRequestResult& result,
+                    const TIds ids, TLoaded& loaded, THashes& ret);
     void LoadStates(CReaderRequestResult& result,
                     const TIds ids, TLoaded& loaded, TStates& ret);
  

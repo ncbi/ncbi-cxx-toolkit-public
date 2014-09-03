@@ -566,6 +566,16 @@ bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadSequenceHash(CReaderRequestResult& result,
+                               const CSeq_id_Handle& seq_id)
+{
+    if ( !result.IsLoadedHash(seq_id) ) {
+        result.SetLoadedHash(seq_id, 0);
+    }
+    return true;
+}
+
+
 bool CReader::LoadAccVers(CReaderRequestResult& result,
                           const TIds& ids, TLoaded& loaded, TIds& ret)
 {
@@ -643,6 +653,27 @@ bool CReader::LoadTaxIds(CReaderRequestResult& result,
         }
         if ( lock.IsLoadedTaxId() ) {
             ret[i] = lock.GetTaxId();
+            loaded[i] = true;
+        }
+    }
+    return true;
+}
+
+
+bool CReader::LoadHashes(CReaderRequestResult& result,
+                         const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+{
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        CLoadLockHash lock(result, ids[i]);
+        if ( !lock.IsLoadedHash() ) {
+            m_Dispatcher->LoadSequenceHash(result, ids[i]);
+        }
+        if ( lock.IsLoadedHash() ) {
+            ret[i] = lock.GetHash();
             loaded[i] = true;
         }
     }
@@ -1072,6 +1103,20 @@ void CReader::SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
     }
     if ( CWriter* writer = result.GetIdWriter() ) {
         writer->SaveSeq_idTaxId(result, seq_id);
+    }
+}
+
+
+void CReader::SetAndSaveSequenceHash(CReaderRequestResult& result,
+                                     const CSeq_id_Handle& seq_id,
+                                     int hash,
+                                     ESave save) const
+{
+    if ( !result.SetLoadedHash(seq_id, hash) || save != eSave ) {
+        return;
+    }
+    if ( CWriter* writer = result.GetIdWriter() ) {
+        writer->SaveSequenceHash(result, seq_id);
     }
 }
 

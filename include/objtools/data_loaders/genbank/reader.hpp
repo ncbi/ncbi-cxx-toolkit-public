@@ -88,6 +88,8 @@ public:
                                  const CSeq_id_Handle& seq_id);
     virtual bool LoadSeq_idTaxId(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id);
+    virtual bool LoadSequenceHash(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id);
 
     // bulk requests
     typedef vector<CSeq_id_Handle> TIds;
@@ -96,6 +98,7 @@ public:
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
     typedef vector<int> TStates;
+    typedef vector<int> THashes;
     virtual bool LoadAccVers(CReaderRequestResult& result,
                              const TIds& ids, TLoaded& loaded, TIds& ret);
     virtual bool LoadGis(CReaderRequestResult& result,
@@ -104,6 +107,8 @@ public:
                             const TIds& ids, TLoaded& loaded, TLabels& ret);
     virtual bool LoadTaxIds(CReaderRequestResult& result,
                             const TIds& ids, TLoaded& loaded, TTaxIds& ret);
+    virtual bool LoadHashes(CReaderRequestResult& result,
+                            const TIds& ids, TLoaded& loaded, THashes& ret);
     virtual bool LoadStates(CReaderRequestResult& result,
                             const TIds& ids, TLoaded& loaded, TStates& ret);
 
@@ -190,6 +195,9 @@ public:
     void SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id,
                                int taxid, ESave save = eSave) const;
+    void SetAndSaveSequenceHash(CReaderRequestResult& result,
+                                const CSeq_id_Handle& seq_id,
+                                int hash, ESave save = eSave) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
                                   const SAnnotSelector* sel,

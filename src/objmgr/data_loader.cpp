@@ -317,6 +317,12 @@ int CDataLoader::GetSequenceState(const CSeq_id_Handle& idh)
 }
 
 
+int CDataLoader::GetSequenceHash(const CSeq_id_Handle& idh)
+{
+    return 0;
+}
+
+
 void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
     size_t count = ids.size();
@@ -471,6 +477,12 @@ void CDataLoader::GetSequenceStates(const TIds& ids, TLoaded& loaded,
             loaded[i] = true;
         }
     }
+}
+
+
+void CDataLoader::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
+                                    TSequenceHashes& ret)
+{
 }
 
 

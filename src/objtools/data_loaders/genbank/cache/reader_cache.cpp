@@ -176,6 +176,12 @@ const char* SCacheInfo::GetTaxIdSubkey(void)
 }
 
 
+const char* SCacheInfo::GetHashSubkey(void)
+{
+    return "hash";
+}
+
+
 const char* SCacheInfo::GetSeq_idsSubkey(void)
 {
     return "ids4";
@@ -793,6 +799,35 @@ bool CCacheReader::LoadSeq_idTaxId(CReaderRequestResult& result,
     }
     conn.Release();
     lock.SetLoadedTaxId(taxid, str.GetExpirationTime());
+    return true;
+}
+
+
+bool CCacheReader::LoadSequenceHash(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+
+    CLoadLockHash lock(result, seq_id);
+    if ( lock.IsLoadedHash() ) {
+        return true;
+    }
+    
+    CConn conn(result, this);
+    CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetHashSubkey());
+    if ( !str.Found() ) {
+        conn.Release();
+        return false;
+    }
+    int hash = str.ParseInt4();
+    if ( !str.Done() ) {
+        conn.Release();
+        return false;
+    }
+    conn.Release();
+    lock.SetLoadedHash(hash, str.GetExpirationTime());
     return true;
 }
 

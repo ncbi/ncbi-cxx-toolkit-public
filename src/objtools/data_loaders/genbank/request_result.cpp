@@ -755,6 +755,7 @@ CGBInfoManager::CGBInfoManager(size_t gc_size)
       m_CacheStrGi(GetMainMutex(), gc_size),
       m_CacheLabel(GetMainMutex(), gc_size),
       m_CacheTaxId(GetMainMutex(), gc_size),
+      m_CacheHash(GetMainMutex(), gc_size),
       m_CacheBlobIds(GetMainMutex(), gc_size),
       m_CacheBlobState(GetMainMutex(), gc_size),
       m_CacheBlobVersion(GetMainMutex(), gc_size),
@@ -828,6 +829,13 @@ CLoadLockLabel::CLoadLockLabel(CReaderRequestResult& result,
 CLoadLockTaxId::CLoadLockTaxId(CReaderRequestResult& result,
                                const CSeq_id_Handle& id)
     : TParent(result.GetLoadLockTaxId(id))
+{
+}
+
+
+CLoadLockHash::CLoadLockHash(CReaderRequestResult& result,
+                             const CSeq_id_Handle& id)
+    : TParent(result.GetLoadLockHash(id))
 {
 }
 
@@ -1315,6 +1323,48 @@ CReaderRequestResult::SetLoadedTaxId(const CSeq_id_Handle& id,
                                      const TTaxId& value)
 {
     return GetGBInfoManager().m_CacheTaxId.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> Hash
+
+bool
+CReaderRequestResult::IsLoadedHash(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheHash.IsLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingHash(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheHash.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockHash
+CReaderRequestResult::GetLoadLockHash(const CSeq_id_Handle& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheHash.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockHash
+CReaderRequestResult::GetLoadedHash(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheHash.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedHash(const CSeq_id_Handle& id,
+                                    const TSequenceHash& value)
+{
+    return GetGBInfoManager().m_CacheHash.SetLoaded(*this, id, value);
 }
 
 

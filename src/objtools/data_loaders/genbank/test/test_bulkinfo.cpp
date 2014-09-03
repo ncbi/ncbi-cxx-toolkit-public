@@ -37,11 +37,13 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <dbapi/driver/drivers.hpp>
+#include <util/checksum.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -83,6 +85,7 @@ public:
     typedef vector<CSeq_id_Handle> TAccs;
     typedef vector<string> TLabels;
     typedef vector<int> TTaxIds;
+    typedef vector<int> THashes;
     typedef vector<TSeqPos> TLengths;
     typedef vector<CSeq_inst::TMol> TTypes;
     typedef vector<CBioseq_Handle::TBioseqStateFlags> TStates;
@@ -93,6 +96,7 @@ public:
         eBulk_acc,
         eBulk_label,
         eBulk_taxid,
+        eBulk_hash,
         eBulk_length,
         eBulk_type,
         eBulk_state
@@ -144,7 +148,8 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
          CArgDescriptions::eString, "gi");
     args.SetConstraint("type",
                        &(*new CArgAllow_Strings,
-                         "gi", "acc", "label", "taxid", "length", "type", "state"));
+                         "gi", "acc", "label", "taxid", "hash",
+                         "length", "type", "state"));
     args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("verbose", "Verbose results");
     args.AddFlag("single", "Use single id queries (non-bulk)");
@@ -233,6 +238,9 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     else if ( args["type"].AsString() == "taxid" ) {
         m_Type = eBulk_taxid;
     }
+    else if ( args["type"].AsString() == "hash" ) {
+        m_Type = eBulk_hash;
+    }
     else if ( args["type"].AsString() == "length" ) {
         m_Type = eBulk_length;
     }
@@ -293,6 +301,18 @@ void CTestApplication::Display(size_t i,
 }
 
 
+int GetHash(const CBioseq_Handle& bh)
+{
+    CChecksum sum(CChecksum::eCRC32INSD);
+    CSeqVector sv = bh.GetSeqVector(bh.eCoding_Iupac);
+    ITERATE ( CSeqVector, i, sv ) {
+        char c = *i;
+        sum.AddChars(&c, 1);
+    }
+    return sum.GetChecksum();
+}
+
+
 int CTestApplication::Run(void)
 {
     int run_count = GetArgs()["count"].AsInteger();
@@ -303,6 +323,7 @@ int CTestApplication::Run(void)
         TAccs accs, accs2, accsv;
         TLabels labels, labels2, labelsv;
         TTaxIds taxids, taxids2, taxidsv;
+        THashes hashes, hashes2, hashesv;
         TLengths lengths, lengths2, lengthsv;
         TTypes types, types2, typesv;
         TStates states, states2, statesv;
@@ -321,6 +342,9 @@ int CTestApplication::Run(void)
                 break;
             case eBulk_taxid:
                 taxids = scope->GetTaxIds(m_Ids, m_ForceLoad);
+                break;
+            case eBulk_hash:
+                hashes = scope->GetSequenceHashes(m_Ids);
                 break;
             case eBulk_length:
                 lengths = scope->GetSequenceLengths(m_Ids, m_ForceLoad);
@@ -345,6 +369,7 @@ int CTestApplication::Run(void)
             case eBulk_acc:   accs2.resize(count); break;
             case eBulk_label: labels2.resize(count); break;
             case eBulk_taxid: taxids2.resize(count); break;
+            case eBulk_hash:  hashes2.resize(count); break;
             case eBulk_length: lengths2.resize(count); break;
             case eBulk_type:  types2.resize(count); break;
             case eBulk_state: states2.resize(count); break;
@@ -362,6 +387,9 @@ int CTestApplication::Run(void)
                     break;
                 case eBulk_taxid:
                     taxids2[i] = scope->GetTaxId(m_Ids[i], m_ForceLoad);
+                    break;
+                case eBulk_hash:
+                    hashes2[i] = scope->GetSequenceHash(m_Ids[i]);
                     break;
                 case eBulk_length:
                     lengths2[i] = scope->GetSequenceLength(m_Ids[i], m_ForceLoad);
@@ -385,6 +413,7 @@ int CTestApplication::Run(void)
             case eBulk_acc:   accs = accs2; break;
             case eBulk_label: labels = labels2; break;
             case eBulk_taxid: taxids = taxids2; break;
+            case eBulk_hash:  hashes = hashes2; break;
             case eBulk_length: lengths = lengths2; break;
             case eBulk_type:  types = types2; break;
             case eBulk_state: states = states2; break;
@@ -399,6 +428,7 @@ int CTestApplication::Run(void)
             case eBulk_acc:   accsv.resize(count); break;
             case eBulk_label: labelsv.resize(count); break;
             case eBulk_taxid: taxidsv.resize(count); break;
+            case eBulk_hash:  hashesv.resize(count); break;
             case eBulk_length: lengthsv.resize(count); break;
             case eBulk_type:  typesv.resize(count); break;
             case eBulk_state: statesv.resize(count); break;
@@ -427,6 +457,9 @@ int CTestApplication::Run(void)
                 case eBulk_taxid:
                     taxidsv[i] = (h? GetTaxId(h): 0);
                     break;
+                case eBulk_hash:
+                    hashesv[i] = (h? GetHash(h): 0);
+                    break;
                 case eBulk_length:
                     lengthsv[i] = (h? h.GetBioseqLength():
                                    kInvalidSeqPos);
@@ -450,6 +483,7 @@ int CTestApplication::Run(void)
             case eBulk_acc:   accsv = accs2; break;
             case eBulk_label: labelsv = labels2; break;
             case eBulk_taxid: taxidsv = taxids2; break;
+            case eBulk_hash:  hashesv = hashes2; break;
             case eBulk_length: lengthsv = lengths2; break;
             case eBulk_type:  typesv = types2; break;
             case eBulk_state: statesv = states2; break;
@@ -461,6 +495,7 @@ int CTestApplication::Run(void)
             Display(i, "acc", accs, accs2, accsv);
             Display(i, "label", labels, labels2, labelsv);
             Display(i, "taxid", taxids, taxids2, taxidsv);
+            Display(i, "hash", hashes, hashes2, hashesv);
             Display(i, "length", lengths, lengths2, lengthsv);
             Display(i, "type", types, types2, typesv);
             Display(i, "state", states, states2, statesv);
@@ -471,6 +506,7 @@ int CTestApplication::Run(void)
         case eBulk_acc:   _ASSERT(accs == accs2); break;
         case eBulk_label: _ASSERT(labels == labels2); break;
         case eBulk_taxid: _ASSERT(taxids == taxids2); break;
+        case eBulk_hash:  _ASSERT(hashes == hashes2); break;
         case eBulk_length: _ASSERT(lengths == lengths2); break;
         case eBulk_type:  _ASSERT(types == types2); break;
         case eBulk_state: _ASSERT(states == states2); break;
@@ -480,6 +516,7 @@ int CTestApplication::Run(void)
         case eBulk_acc:   _ASSERT(accs == accsv); break;
         case eBulk_label: _ASSERT(labels == labelsv); break;
         case eBulk_taxid: _ASSERT(taxids == taxidsv); break;
+        case eBulk_hash:  _ASSERT(hashes == hashesv); break;
         case eBulk_length: _ASSERT(lengths == lengthsv); break;
         case eBulk_type:  _ASSERT(types == typesv); break;
         case eBulk_state: _ASSERT(states == statesv); break;
