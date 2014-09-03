@@ -6136,7 +6136,7 @@ SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
     return count;
 }
 
-CTempString CUtf8::x_GetErrorPos(const CTempString& src)
+CTempString CUtf8::x_GetErrorFragment(const CTempString& src)
 {
     CTempString::const_iterator err;
     SIZE_TYPE count = x_GetValidSymbolCount(src,err);
@@ -6155,7 +6155,7 @@ SIZE_TYPE CUtf8::GetSymbolCount( const CTempString& str)
     if (err != str.end()) {
         NCBI_THROW2(CStringException, eFormat,
                     string("Source string is not in UTF8 format: ") +
-                    NStr::PrintableString(x_GetErrorPos(str)),
+                    NStr::PrintableString(x_GetErrorFragment(str)),
                     (err - str.begin()));
     }
     return count;
@@ -6168,7 +6168,7 @@ string CUtf8::AsSingleByteString( const CTempString& str,
         if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
             NCBI_THROW2(CStringException, eBadArgs,
                 string("Source string is not in UTF8 format: ") +
-                NStr::PrintableString(x_GetErrorPos(str)),
+                NStr::PrintableString(x_GetErrorFragment(str)),
                 GetValidBytesCount(str));
         }
     }
@@ -6377,7 +6377,7 @@ void CUtf8::x_Validate(const CTempString& str)
     if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
         NCBI_THROW2(CStringException, eBadArgs,
             string("Source string is not in UTF8 format: ") +
-            NStr::PrintableString(x_GetErrorPos(str)),
+            NStr::PrintableString(x_GetErrorFragment(str)),
             GetValidBytesCount(str));
     }
 }

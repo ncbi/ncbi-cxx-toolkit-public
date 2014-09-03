@@ -3272,7 +3272,7 @@ private:
     static bool   x_EvalNext(char ch);
 
     // returns part of the string around an error in Utf8 encoding
-    static CTempString x_GetErrorPos(const CTempString& src);
+    static CTempString x_GetErrorFragment(const CTempString& src);
 
     template<class Type> class CNotImplemented {};
     friend class CStringUTF8_DEPRECATED;
@@ -5425,7 +5425,7 @@ CUtf8::x_AsBasicString(const CTempString& str,
         if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
             NCBI_THROW2(CStringException, eBadArgs,
                 string("Source string is not in UTF8 format: ") +
-                NStr::PrintableString(x_GetErrorPos(str)),
+                NStr::PrintableString(x_GetErrorFragment(str)),
                 GetValidBytesCount(str));
         }
     }
