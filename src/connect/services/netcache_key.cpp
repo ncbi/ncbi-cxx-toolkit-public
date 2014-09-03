@@ -200,6 +200,8 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
         try {
             CCompoundIDPool pool_obj(id_pool);
             CCompoundID cid(pool_obj.FromString(key));
+            if (cid.GetClass() != eCIC_NetCacheBlobKey)
+                return false;
             if (key_obj != NULL)
                 key_obj->m_Version = 2;
 
