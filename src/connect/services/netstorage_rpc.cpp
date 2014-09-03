@@ -769,52 +769,60 @@ size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
     if (m_EOF)
         return bytes_copied;
 
-    while (buf_size > 0) {
-        switch (m_UTTPReader.GetNextEvent()) {
-        case CUTTPReader::eChunkPart:
-        case CUTTPReader::eChunk:
-            m_CurrentChunk = m_UTTPReader.GetChunkPart();
-            m_CurrentChunkSize = m_UTTPReader.GetChunkPartSize();
+    try {
+        while (buf_size > 0) {
+            switch (m_UTTPReader.GetNextEvent()) {
+            case CUTTPReader::eChunkPart:
+            case CUTTPReader::eChunk:
+                m_CurrentChunk = m_UTTPReader.GetChunkPart();
+                m_CurrentChunkSize = m_UTTPReader.GetChunkPartSize();
 
-            if (m_CurrentChunkSize >= buf_size) {
-                memcpy(buf_pos, m_CurrentChunk, buf_size);
-                m_CurrentChunk += buf_size;
-                m_CurrentChunkSize -= buf_size;
-                return bytes_copied + buf_size;
-            }
+                if (m_CurrentChunkSize >= buf_size) {
+                    memcpy(buf_pos, m_CurrentChunk, buf_size);
+                    m_CurrentChunk += buf_size;
+                    m_CurrentChunkSize -= buf_size;
+                    return bytes_copied + buf_size;
+                }
 
-            memcpy(buf_pos, m_CurrentChunk, m_CurrentChunkSize);
-            buf_pos += m_CurrentChunkSize;
-            buf_size -= m_CurrentChunkSize;
-            bytes_copied += m_CurrentChunkSize;
-            m_CurrentChunkSize = 0;
-            break;
+                memcpy(buf_pos, m_CurrentChunk, m_CurrentChunkSize);
+                buf_pos += m_CurrentChunkSize;
+                buf_size -= m_CurrentChunkSize;
+                bytes_copied += m_CurrentChunkSize;
+                m_CurrentChunkSize = 0;
+                break;
 
-        case CUTTPReader::eControlSymbol:
-            if (m_UTTPReader.GetControlSymbol() != END_OF_DATA_MARKER) {
+            case CUTTPReader::eControlSymbol:
+                if (m_UTTPReader.GetControlSymbol() != END_OF_DATA_MARKER) {
+                    NCBI_THROW_FMT(CNetStorageException, eIOError,
+                            "NetStorage API: invalid end-of-data-stream "
+                            "terminator: " <<
+                                    (int) m_UTTPReader.GetControlSymbol());
+                }
+                m_EOF = true;
+                return bytes_copied;
+
+            case CUTTPReader::eEndOfBuffer:
+                s_ReadSocket(&m_Connection->m_Socket, m_ReadBuffer,
+                        READ_BUFFER_SIZE, &bytes_read);
+
+                m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
+                break;
+
+            default:
                 NCBI_THROW_FMT(CNetStorageException, eIOError,
-                        "NetStorage API: invalid end-of-data-stream "
-                        "terminator: " <<
-                                (int) m_UTTPReader.GetControlSymbol());
+                        "NetStorage API: invalid UTTP status "
+                        "while reading " << m_Locator);
             }
-            m_EOF = true;
-            return bytes_copied;
-
-        case CUTTPReader::eEndOfBuffer:
-            s_ReadSocket(&m_Connection->m_Socket, m_ReadBuffer,
-                    READ_BUFFER_SIZE, &bytes_read);
-
-            m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
-            break;
-
-        default:
-            NCBI_THROW_FMT(CNetStorageException, eIOError,
-                    "NetStorage API: invalid UTTP status "
-                    "while reading " << m_Locator);
         }
-    }
 
-    return bytes_copied;
+        return bytes_copied;
+    }
+    catch (exception&) {
+        m_State = eReady;
+        m_Connection->Close();
+        m_Connection = NULL;
+        throw;
+    }
 }
 
 bool SNetStorageObjectRPC::Eof()
@@ -834,31 +842,39 @@ bool SNetStorageObjectRPC::Eof()
 
 void SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size)
 {
-    switch (m_State) {
-    case eReady:
-        {
-            m_OriginalRequest = x_MkRequest("WRITE");
-
-            m_Locator = m_NetStorageRPC->Exchange(m_OriginalRequest,
-                    &m_Connection).GetString("ObjectLoc");
-
-            m_State = eWriting;
-        }
-        /* FALL THROUGH */
-
-    case eWriting:
-        s_SendUTTPChunk(reinterpret_cast<const char*>(buf_pos),
-                buf_size, &m_Connection->m_Socket);
-        break;
-
-    default: /* case eReading: */
+    if (m_State == eReading) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
             "Cannot write a NetStorage file while reading");
+    }
+
+    if (m_State == eReady) {
+        m_OriginalRequest = x_MkRequest("WRITE");
+
+        m_Locator = m_NetStorageRPC->Exchange(m_OriginalRequest,
+                &m_Connection).GetString("ObjectLoc");
+
+        m_State = eWriting;
+    }
+
+    try {
+        s_SendUTTPChunk(reinterpret_cast<const char*>(buf_pos),
+                buf_size, &m_Connection->m_Socket);
+    }
+    catch (exception&) {
+        m_State = eReady;
+        m_Connection->Close();
+        m_Connection = NULL;
+        throw;
     }
 }
 
 Uint8 SNetStorageObjectRPC::GetSize()
 {
+    if (m_State != eReady) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Cannot get object size while reading or writing");
+    }
+
     CJsonNode request(x_MkRequest("GETSIZE"));
 
     return (Uint8) m_NetStorageRPC->Exchange(request).GetInteger("Size");
@@ -866,6 +882,11 @@ Uint8 SNetStorageObjectRPC::GetSize()
 
 string SNetStorageObjectRPC::GetAttribute(const string& attr_name)
 {
+    if (m_State != eReady) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Cannot get object attribute while reading or writing");
+    }
+
     CJsonNode request(x_MkRequest("GETATTR"));
 
     request.SetString("AttrName", attr_name);
@@ -876,6 +897,11 @@ string SNetStorageObjectRPC::GetAttribute(const string& attr_name)
 void SNetStorageObjectRPC::SetAttribute(const string& attr_name,
         const string& attr_value)
 {
+    if (m_State != eReady) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Cannot set object attribute while reading or writing");
+    }
+
     CJsonNode request(x_MkRequest("SETATTR"));
 
     request.SetString("AttrName", attr_name);
@@ -886,6 +912,11 @@ void SNetStorageObjectRPC::SetAttribute(const string& attr_name,
 
 CNetStorageObjectInfo SNetStorageObjectRPC::GetInfo()
 {
+    if (m_State != eReady) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Cannot get object info while reading or writing");
+    }
+
     CJsonNode request(x_MkRequest("GETOBJECTINFO"));
 
     return CNetStorageObjectInfo(m_Locator, m_NetStorageRPC->Exchange(request));
@@ -893,12 +924,19 @@ CNetStorageObjectInfo SNetStorageObjectRPC::GetInfo()
 
 void SNetStorageObjectRPC::Close()
 {
-    switch (m_State) {
-    case eReading:
+    if (m_State == eReady)
+        return;
+
+    CNetServerConnection conn_copy(m_Connection);
+    m_Connection = NULL;
+
+    if (m_State == eReading) {
+        m_State = eReady;
+
         if (!m_EOF)
-            m_Connection->Close();
+            conn_copy->Close();
         else {
-            CSocket* sock = &m_Connection->m_Socket;
+            CSocket* sock = &conn_copy->m_Socket;
 
             CJsonOverUTTPReader json_reader;
             size_t bytes_read;
@@ -918,28 +956,17 @@ void SNetStorageObjectRPC::Close()
 
             s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock);
         }
-        m_Connection = NULL;
+    } else { /* m_State == eWriting */
         m_State = eReady;
-        break;
 
-    case eWriting:
-        {
-            s_SendEndOfData(&m_Connection->m_Socket);
+        CSocket* sock = &conn_copy->m_Socket;
 
-            CReadJsonFromSocket message_reader;
+        s_SendEndOfData(sock);
 
-            CSocket* sock = &m_Connection->m_Socket;
+        CReadJsonFromSocket message_reader;
 
-            s_TrapErrors(m_OriginalRequest,
-                    message_reader.ReadMessage(sock), sock);
-
-            m_Connection = NULL;
-            m_State = eReady;
-        }
-        break;
-
-    default:
-        break;
+        s_TrapErrors(m_OriginalRequest,
+                message_reader.ReadMessage(sock), sock);
     }
 }
 
