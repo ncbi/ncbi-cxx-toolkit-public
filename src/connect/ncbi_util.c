@@ -168,21 +168,21 @@ extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags flags)
 extern size_t UTIL_PrintableStringSize(const char* data, size_t size)
 {
     const unsigned char* c;
-    size_t retval;
+    size_t count;
     if (!data)
         return 0;
     if (!size)
         size = strlen(data);
-    retval = size;
-    for (c = (const unsigned char*) data;  size;  size--, c++) {
+    count = size;
+    for (c = (const unsigned char*) data;  count;  --count, ++c) {
         if (*c == '\t'  ||  *c == '\v'  ||  *c == '\b'  ||
             *c == '\r'  ||  *c == '\f'  ||  *c == '\a'  ||
             *c == '\\'  ||  *c == '\''  ||  *c == '"') {
-            retval++;
+            size++;
         } else if (*c == '\n'  ||  !isascii(*c)  ||  !isprint(*c))
-            retval += 3;
+            size += 3;
     }
-    return retval;
+    return size;
 }
 
 
@@ -430,10 +430,10 @@ extern char* LOG_ComposeMessage
     }
 
     if (call_data->raw_size) {
-        data_len = (sizeof(kRawData_Begin) + 20
-                    + UTIL_PrintableStringSize((const char*)
-                                               call_data->raw_data,
-                                               call_data->raw_size) +
+        data_len = (sizeof(kRawData_Begin)
+                    + 20 + UTIL_PrintableStringSize((const char*)
+                                                    call_data->raw_data,
+                                                    call_data->raw_size) +
                     sizeof(kRawData_End));
     }
 

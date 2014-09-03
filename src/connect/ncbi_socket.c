@@ -5370,8 +5370,8 @@ static EIO_Status s_RecvMsg(SOCK            sock,
 
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(eLOG_Note, sock, eIO_Read, x_msg,
-                        (size_t) x_read, &sin);
+                s_DoLog(eLOG_Note, sock, eIO_Read, x_msg, (size_t) x_read,
+                        &sin);
             }
 
             sock->n_read += (TNCBI_BigCount) x_read;
@@ -5501,8 +5501,8 @@ static EIO_Status s_SendMsg(SOCK           sock,
                                 (struct sockaddr*) &sin, sizeof(sin))) >= 0) {
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(eLOG_Note, sock, eIO_Write, x_msg,
-                        (size_t) x_written, &sin);
+                s_DoLog(eLOG_Note, sock, eIO_Write, x_msg, (size_t) x_written,
+                        &sin);
             }
 
             sock->w_len      = (TNCBI_BigCount) x_written;
