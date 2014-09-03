@@ -209,45 +209,45 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
 
   // DiscRepNmSpc public functions/constants 
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetTwoFieldSubfield(const string& str, unsigned subfield);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetFirstGBQualMatch (
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetTwoFieldSubfield(const string& str, unsigned subfield);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetFirstGBQualMatch (
                                            const vector <CRef <CGb_qual> >& quals,
                                            const string& qual_name,
                                            unsigned subfield = 0,
                                            const CString_constraint* str_cons = 0);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetRNAProductString(const CSeq_feat& seq_feat);
-  bool NCBI_DISCREPANCY_REPORT_EXPORT IsShortrRNA(const CSeq_feat& feat, CScope* scope);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetRNAProductString(const CSeq_feat& seq_feat);
+  NCBI_DISCREPANCY_REPORT_EXPORT bool IsShortrRNA(const CSeq_feat& feat, CScope* scope);
 
-  const NCBI_DISCREPANCY_REPORT_EXPORT CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, 
+  NCBI_DISCREPANCY_REPORT_EXPORT const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, 
                                                                   CSeq_id::E_Choice);
-  string NCBI_DISCREPANCY_REPORT_EXPORT BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
-  string NCBI_DISCREPANCY_REPORT_EXPORT SeqLocPrintUseBestID(const CSeq_loc& seq_loc,bool range_only = false);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetProdNmForCD(const CSeq_feat& cd_feat);
-  void NCBI_DISCREPANCY_REPORT_EXPORT GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);
+  NCBI_DISCREPANCY_REPORT_EXPORT string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
+  NCBI_DISCREPANCY_REPORT_EXPORT string SeqLocPrintUseBestID(const CSeq_loc& seq_loc,bool range_only = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetProdNmForCD(const CSeq_feat& cd_feat);
+  NCBI_DISCREPANCY_REPORT_EXPORT void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);
 
   // GetDiscrepancyItemTextEx()
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemText(const CSeq_feat& obj, bool append_ids = false);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool append_ids = false);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemText(const CBioseq& objtrue, bool append_ids = false);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemText(const CBioseq_set& objs, bool append_ids = false);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry, bool append_ids = false);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemText(const CSeqdesc& obj, const CBioseq& bioseq, bool append_ids = false);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemText(const CPerson_id& obj, const CSeq_entry& seq_entry, bool append_ids = false);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemText(const CSeq_entry& seq_entry, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeq_feat& obj, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CBioseq& objtrue, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CBioseq_set& objs, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeqdesc& obj, const CBioseq& bioseq, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CPerson_id& obj, const CSeq_entry& seq_entry, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeq_entry& seq_entry, bool append_ids = false);
 
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetSeqId4BioseqSet(const string& desc);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetDiscrepancyItemTextForBioseqSet(const CBioseq_set& obj);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetFeatId(const CFeat_id& feat_id);
-  string NCBI_DISCREPANCY_REPORT_EXPORT SeqDescLabelContent(const CSeqdesc& sd);
-  CBioseq* NCBI_DISCREPANCY_REPORT_EXPORT GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
-  const NCBI_DISCREPANCY_REPORT_EXPORT CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
-  string NCBI_DISCREPANCY_REPORT_EXPORT GetLocusTagForFeature(const CSeq_feat& seq_feat);
-  string NCBI_DISCREPANCY_REPORT_EXPORT PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetSeqId4BioseqSet(const string& desc);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemTextForBioseqSet(const CBioseq_set& obj);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetFeatId(const CFeat_id& feat_id);
+  NCBI_DISCREPANCY_REPORT_EXPORT string SeqDescLabelContent(const CSeqdesc& sd);
+  NCBI_DISCREPANCY_REPORT_EXPORT CBioseq* GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
+  NCBI_DISCREPANCY_REPORT_EXPORT const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetLocusTagForFeature(const CSeq_feat& seq_feat);
+  NCBI_DISCREPANCY_REPORT_EXPORT string PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
 
-  bool NCBI_DISCREPANCY_REPORT_EXPORT IsWholeWord(const string& str, const string& phrase);
-  bool NCBI_DISCREPANCY_REPORT_EXPORT IsAllCaps(const string& str);
-  bool NCBI_DISCREPANCY_REPORT_EXPORT IsAllLowerCase(const string& str);
-  bool NCBI_DISCREPANCY_REPORT_EXPORT IsAllPunctuation(const string& str);
+  NCBI_DISCREPANCY_REPORT_EXPORT bool IsWholeWord(const string& str, const string& phrase);
+  NCBI_DISCREPANCY_REPORT_EXPORT bool IsAllCaps(const string& str);
+  NCBI_DISCREPANCY_REPORT_EXPORT bool IsAllLowerCase(const string& str);
+  NCBI_DISCREPANCY_REPORT_EXPORT bool IsAllPunctuation(const string& str);
 
   class CClickableItem  : public CObject
   {
