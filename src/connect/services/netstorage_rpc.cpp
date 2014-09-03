@@ -449,6 +449,11 @@ SNetStorageObjectRPC::SNetStorageObjectRPC(SNetStorageRPC* netstorage_rpc,
 
 SNetStorageObjectRPC::~SNetStorageObjectRPC()
 {
+    try {
+        Close();
+    }
+    NCBI_CATCH_ALL("Error while implicitly closing a NetStorage object.");
+
     delete[] m_ReadBuffer;
 }
 
