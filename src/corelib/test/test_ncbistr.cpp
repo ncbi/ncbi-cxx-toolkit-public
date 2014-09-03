@@ -2939,8 +2939,8 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
     res += 127;
     BOOST_CHECK_EQUAL( strncmp(conv,res,256), 0);
 
-    string sample("micro=µ Agrave=À atilde=ã ccedil=ç"); /* NCBI_FAKE_WARNING */
-    string u8sample("micro=Âµ Agrave=Ã€ atilde=Ã£ ccedil=Ã§");
+    string sample("micro=\265 Agrave=\300 atilde=\343 ccedil=\347");
+    string u8sample("micro=\302\265 Agrave=\303\200 atilde=\303\243 ccedil=\303\247");
 
     u8str = CUtf8::AsUTF8( sample, eEncoding_ISO8859_1);
     u8str = CUtf8::AsUTF8( sample, eEncoding_ISO8859_1, CUtf8::eValidate);
@@ -3120,7 +3120,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
 
 // wrong Utf8
     {
-        string u8tmp("micro=Â Agrave=Ã€ atilde=Ã£ ccedil=Ã§");   /* NCBI_FAKE_WARNING */
+        string u8tmp("micro=\302 Agrave=\303\200 atilde=\303\243 ccedil=\303\247");
         string expected("micro=\\302 A");
         for (int i = 0; i < 3; ++i) {
             bool gotit = false;
@@ -3128,13 +3128,13 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
             try {
                 switch (i) {
                 case 0: {
-                    TStringUCS2  ws = CUtf8::AsBasicString<TCharUCS2>(u8tmp, NULL, CUtf8::eValidate);
+                    CUtf8::AsBasicString<TCharUCS2>(u8tmp, NULL, CUtf8::eValidate);
                 } break;
                 case 1: {
-                    size_t  x = CUtf8::GetSymbolCount(u8tmp);
+                    CUtf8::GetSymbolCount(u8tmp);
                 } break;
                 case 2: {
-                    string s = CUtf8::AsSingleByteString(u8tmp,eEncoding_Ascii, NULL, CUtf8::eValidate);
+                    CUtf8::AsSingleByteString(u8tmp,eEncoding_Ascii, NULL, CUtf8::eValidate);
                 } break;
                 }
             } catch (CStringException& e) {

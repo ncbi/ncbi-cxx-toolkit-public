@@ -6139,7 +6139,7 @@ SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
 CTempString CUtf8::x_GetErrorFragment(const CTempString& src)
 {
     CTempString::const_iterator err;
-    SIZE_TYPE count = x_GetValidSymbolCount(src,err);
+    x_GetValidSymbolCount(src,err);
     if (err == src.end()) {
         return CTempString();
     }
