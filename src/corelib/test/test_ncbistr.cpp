@@ -3117,6 +3117,34 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         BOOST_CHECK(s == s2);
         BOOST_CHECK(wss == wss2);
     }
+
+// wrong Utf8
+    {
+        string u8tmp("micro=� Agrave=À atilde=ã ccedil=ç");   /* NCBI_FAKE_WARNING */
+        string expected("micro=\\302 A");
+        for (int i = 0; i < 3; ++i) {
+            bool gotit = false;
+            string msg;
+            try {
+                switch (i) {
+                case 0: {
+                    TStringUCS2  ws = CUtf8::AsBasicString<TCharUCS2>(u8tmp, NULL, CUtf8::eValidate);
+                } break;
+                case 1: {
+                    size_t  x = CUtf8::GetSymbolCount(u8tmp);
+                } break;
+                case 2: {
+                    string s = CUtf8::AsSingleByteString(u8tmp,eEncoding_Ascii, NULL, CUtf8::eValidate);
+                } break;
+                }
+            } catch (CStringException& e) {
+                gotit = true;
+                msg = e.GetMsg();
+            }
+            BOOST_CHECK( gotit );
+            BOOST_CHECK( NStr::FindCase(msg, expected) != NPOS);
+        }
+    }
 }
 
 
