@@ -6136,13 +6136,26 @@ SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
     return count;
 }
 
+CTempString CUtf8::x_GetErrorPos(const CTempString& src)
+{
+    CTempString::const_iterator err;
+    SIZE_TYPE count = x_GetValidSymbolCount(src,err);
+    if (err == src.end()) {
+        return CTempString();
+    }
+    CTempString::const_iterator from = max(err - 32, src.begin());
+    CTempString::const_iterator to   = min(err + 16, src.end());
+    return CTempString(from, to - from);
+}
+
 SIZE_TYPE CUtf8::GetSymbolCount( const CTempString& str)
 {
     CTempString::const_iterator err;
     SIZE_TYPE count = x_GetValidSymbolCount(str,err);
     if (err != str.end()) {
         NCBI_THROW2(CStringException, eFormat,
-                    "String is not in UTF8 format",
+                    string("Source string is not in UTF8 format: ") +
+                    NStr::PrintableString(x_GetErrorPos(str)),
                     (err - str.begin()));
     }
     return count;
@@ -6154,7 +6167,9 @@ string CUtf8::AsSingleByteString( const CTempString& str,
     if (validate == eValidate) {
         if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
             NCBI_THROW2(CStringException, eBadArgs,
-                "Source string is not in UTF8 format", 0);
+                string("Source string is not in UTF8 format: ") +
+                NStr::PrintableString(x_GetErrorPos(str)),
+                GetValidBytesCount(str));
         }
     }
     if( encoding == eEncoding_UTF8) {
@@ -6361,7 +6376,9 @@ void CUtf8::x_Validate(const CTempString& str)
 {
     if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
         NCBI_THROW2(CStringException, eBadArgs,
-            "Source string is not in UTF8 format", 0);
+            string("Source string is not in UTF8 format: ") +
+            NStr::PrintableString(x_GetErrorPos(str)),
+            GetValidBytesCount(str));
     }
 }
 

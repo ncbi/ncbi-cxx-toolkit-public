@@ -3271,6 +3271,9 @@ private:
     static bool   x_EvalFirst(char ch, SIZE_TYPE& more);
     static bool   x_EvalNext(char ch);
 
+    // returns part of the string around an error in Utf8 encoding
+    static CTempString x_GetErrorPos(const CTempString& src);
+
     template<class Type> class CNotImplemented {};
     friend class CStringUTF8_DEPRECATED;
 };
@@ -5421,7 +5424,9 @@ CUtf8::x_AsBasicString(const CTempString& str,
     if (validate == eValidate) {
         if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
             NCBI_THROW2(CStringException, eBadArgs,
-                "Source string is not in UTF8 format", 0);
+                string("Source string is not in UTF8 format: ") +
+                NStr::PrintableString(x_GetErrorPos(str)),
+                GetValidBytesCount(str));
         }
     }
     TUnicodeSymbol max_char = (TUnicodeSymbol)numeric_limits<TChar>::max();
