@@ -196,6 +196,276 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
 
 
 
+SRemoteNodeData::SRemoteNodeData() :
+    m_NumberOfGiven(0),
+    m_Jobs(bm::BM_GAP),
+    m_BlacklistedJobs(bm::BM_GAP),
+    m_BlacklistTimeout(NULL),
+    m_WaitPort(0),
+    m_AffReset(false),
+    m_PrefAffinities(bm::BM_GAP),
+    m_WaitAffinities(bm::BM_GAP),
+    m_JobsOpCount(0),
+    m_BlacklistedJobsOpCount(0),
+    m_PrefAffinitiesOpCount(0),
+    m_WaitAffinitiesOpCount(0)
+{}
+
+
+SRemoteNodeData::SRemoteNodeData(CNSPreciseTime *  timeout) :
+    m_NumberOfGiven(0),
+    m_Jobs(bm::BM_GAP),
+    m_BlacklistedJobs(bm::BM_GAP),
+    m_BlacklistTimeout(timeout),
+    m_WaitPort(0),
+    m_AffReset(false),
+    m_PrefAffinities(bm::BM_GAP),
+    m_WaitAffinities(bm::BM_GAP),
+    m_JobsOpCount(0),
+    m_BlacklistedJobsOpCount(0),
+    m_PrefAffinitiesOpCount(0),
+    m_WaitAffinitiesOpCount(0)
+{}
+
+
+// Checks if jobs should be removed from the node blacklist
+void SRemoteNodeData::x_UpdateBlacklist(void) const
+{
+    if (m_BlacklistLimits.empty())
+        return;
+
+    CNSPreciseTime          current_time = CNSPreciseTime::Current();
+    vector<unsigned int>    to_be_removed;
+    map<unsigned int,
+        CNSPreciseTime>::const_iterator
+                            end_iterator = m_BlacklistLimits.end();
+
+    for (map<unsigned int,
+             CNSPreciseTime>::const_iterator k = m_BlacklistLimits.begin();
+         k != end_iterator; ++k) {
+        if (k->second < current_time)
+            to_be_removed.push_back(k->first);
+    }
+
+    for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
+         j != to_be_removed.end(); ++j) {
+        m_BlacklistedJobs.set_bit(*j, false);
+        x_BlacklistedOp();
+        m_BlacklistLimits.erase(*j);
+    }
+}
+
+
+// Checks if a single job is in a blacklist and
+// whether it should be removed from there
+void SRemoteNodeData::UpdateBlacklist(unsigned int  job_id) const
+{
+    if (m_BlacklistLimits.empty())
+        return;
+
+    if (m_BlacklistedJobs[job_id] == false)
+        return;
+
+    CNSPreciseTime                  current_time = CNSPreciseTime::Current();
+    map<unsigned int,
+        CNSPreciseTime>::iterator   found = m_BlacklistLimits.find(job_id);
+    if (found != m_BlacklistLimits.end()) {
+        if (found->second < current_time) {
+            m_BlacklistedJobs.set_bit(job_id, false);
+            x_BlacklistedOp();
+            m_BlacklistLimits.erase(found);
+        }
+    }
+}
+
+
+string SRemoteNodeData::GetBlacklistLimit(unsigned int  job_id) const
+{
+    map<unsigned int,
+        CNSPreciseTime>::iterator   found = m_BlacklistLimits.find(job_id);
+    if (found != m_BlacklistLimits.end())
+        return NS_FormatPreciseTime(found->second);
+    return "0.0";
+}
+
+
+void SRemoteNodeData::AddToBlacklist(unsigned int            job_id,
+                                     const CNSPreciseTime &  last_access)
+{
+    if (m_BlacklistTimeout == NULL) {
+        ERR_POST("Design error in NetSchedule. "
+                 "Blacklist timeout pointer must not be NULL. "
+                 "Ignore blacklisting request and continue.");
+        return;
+    }
+
+    if (*m_BlacklistTimeout == kTimeZero)
+        return;     // No need to blacklist the job (per configuration)
+
+    // Here: the job must be blacklisted. So be attentive to overflow.
+    CNSPreciseTime  last_time_in_list = last_access + *m_BlacklistTimeout;
+    if (last_time_in_list < last_access)
+        last_time_in_list = kTimeNever;  // overflow
+
+    m_BlacklistLimits[job_id] = last_time_in_list;
+    m_BlacklistedJobs.set_bit(job_id, true);
+    x_BlacklistedOp();
+}
+
+
+bool SRemoteNodeData::ClearPreferredAffinities(void)
+{
+    if (m_PrefAffinities.any()) {
+        m_PrefAffinities.clear();
+        x_PrefAffinitiesOp();
+        return true;
+    }
+    return false;
+}
+
+
+void SRemoteNodeData::RegisterJob(unsigned int  job_id)
+{
+    m_Jobs.set(job_id, true);
+    x_JobsOp();
+    ++m_NumberOfGiven;
+    return;
+}
+
+
+void SRemoteNodeData::UnregisterGivenJob(unsigned int  job_id)
+{
+    m_Jobs.set(job_id, false);
+    x_JobsOp();
+}
+
+
+// returns true if the modifications have been really made
+bool SRemoteNodeData::MoveJobToBlacklist(unsigned int  job_id)
+{
+    if (m_Jobs[job_id]) {
+        m_Jobs.set(job_id, false);
+        AddToBlacklist(job_id, CNSPreciseTime::Current());
+        x_JobsOp();
+        return true;
+    }
+    return false;
+}
+
+
+bool SRemoteNodeData::AddPreferredAffinity(unsigned int  aff)
+{
+    if (aff != 0) {
+        if (m_PrefAffinities[aff] == false) {
+            m_PrefAffinities.set_bit(aff, true);
+            x_PrefAffinitiesOp();
+            return true;
+        }
+    }
+    return false;
+}
+
+
+// Used in the notifications code to test if a notifications should be sent to
+// the client
+bool
+SRemoteNodeData::IsRequestedAffinity(const TNSBitVector &  aff,
+                                     bool                  use_preferred) const
+{
+    if ((m_WaitAffinities & aff).any())
+        return true;
+
+    if (use_preferred)
+        if ((m_PrefAffinities & aff).any())
+            return true;
+
+    return false;
+}
+
+
+void
+SRemoteNodeData::GCBlacklist(const CJobStatusTracker &   tracker,
+                             const vector<TJobStatus> &  match_states)
+{
+    // Checks if jobs should be removed from a reader blacklist
+    if (m_BlacklistLimits.empty())
+        return;
+
+    unsigned int            min_existed_id = tracker.GetMinJobID();
+    vector<unsigned int>    to_be_removed;
+
+    for (map<unsigned int,
+             CNSPreciseTime>::const_iterator k = m_BlacklistLimits.begin();
+         k != m_BlacklistLimits.end(); ++k) {
+        if (k->first < min_existed_id)
+            to_be_removed.push_back(k->first);
+        else {
+            TJobStatus      status = tracker.GetStatus(k->first);
+            for (vector<TJobStatus>::const_iterator j = match_states.begin();
+                 j != match_states.end(); ++j) {
+                if (status == *j) {
+                    to_be_removed.push_back(k->first);
+                    break;
+                }
+            }
+        }
+    }
+
+    for (vector<unsigned int>::const_iterator m = to_be_removed.begin();
+         m != to_be_removed.end(); ++m) {
+        m_BlacklistedJobs.set_bit(*m, false);
+        x_BlacklistedOp();
+        m_BlacklistLimits.erase(*m);
+    }
+}
+
+
+// Handles the following cases:
+// - GET2/READ with waiting has been interrupted by another GET2/READ
+// - CWGET/CWREAD received
+// - GET2/READ wait timeout is over
+void
+SRemoteNodeData::CancelWaiting(void)
+{
+    if (m_WaitAffinities.any())
+        ClearWaitAffinities();
+
+    m_WaitPort = 0;
+}
+
+
+void SRemoteNodeData::x_JobsOp(void) const
+{
+    if (++m_JobsOpCount >= k_OpLimitToOptimize) {
+        m_JobsOpCount = 0;
+        m_Jobs.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+void SRemoteNodeData::x_BlacklistedOp(void) const
+{
+    if (++m_BlacklistedJobsOpCount >= k_OpLimitToOptimize) {
+        m_BlacklistedJobsOpCount = 0;
+        m_BlacklistedJobs.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+void SRemoteNodeData::x_PrefAffinitiesOp(void) const
+{
+    if (++m_PrefAffinitiesOpCount >= k_OpLimitToOptimize) {
+        m_PrefAffinitiesOpCount = 0;
+        m_PrefAffinities.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
+void SRemoteNodeData::x_WaitAffinitiesOp(void) const
+{
+    if (++m_WaitAffinitiesOpCount >= k_OpLimitToOptimize) {
+        m_WaitAffinitiesOpCount = 0;
+        m_WaitAffinities.optimize(0, TNSBitVector::opt_free_0);
+    }
+}
+
 
 // The CNSClient implementation
 
@@ -211,27 +481,9 @@ CNSClient::CNSClient() :
     m_SessionResetTime(0, 0),
     m_LastAccess(0, 0),
     m_Session(),
-    m_RunningJobs(bm::BM_GAP),
-    m_ReadingJobs(bm::BM_GAP),
-    m_RunBlacklistedJobs(bm::BM_GAP),
-    m_ReadBlacklistedJobs(bm::BM_GAP),
-    m_WaitPort(0),
     m_ID(0),
-    m_Affinities(bm::BM_GAP),
-    m_WaitAffinities(bm::BM_GAP),
     m_NumberOfSubmitted(0),
-    m_NumberOfRead(0),
-    m_NumberOfRun(0),
-    m_AffReset(false),
     m_NumberOfSockErrors(0),
-    m_RunBlacklistTimeout(NULL),
-    m_ReadBlacklistTimeout(NULL),
-    m_RunningJobsOpCount(0),
-    m_ReadingJobsOpCount(0),
-    m_RunBlacklistedJobsOpCount(0),
-    m_ReadBlacklistedJobsOpCount(0),
-    m_AffinitiesOpCount(0),
-    m_WaitAffinitiesOpCount(0),
     m_ClientDataVersion(0)
 {}
 
@@ -250,28 +502,12 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
     m_SessionResetTime(0, 0),
     m_LastAccess(0, 0),
     m_Session(client_id.GetSession()),
-    m_RunningJobs(bm::BM_GAP),
-    m_ReadingJobs(bm::BM_GAP),
-    m_RunBlacklistedJobs(bm::BM_GAP),
-    m_ReadBlacklistedJobs(bm::BM_GAP),
-    m_WaitPort(0),
     m_ID(0),
-    m_Affinities(bm::BM_GAP),
-    m_WaitAffinities(bm::BM_GAP),
     m_NumberOfSubmitted(0),
-    m_NumberOfRead(0),
-    m_NumberOfRun(0),
-    m_AffReset(false),
     m_NumberOfSockErrors(0),
-    m_RunBlacklistTimeout(blacklist_timeout),
-    m_ReadBlacklistTimeout(read_blacklist_timeout),
-    m_RunningJobsOpCount(0),
-    m_ReadingJobsOpCount(0),
-    m_RunBlacklistedJobsOpCount(0),
-    m_ReadBlacklistedJobsOpCount(0),
-    m_AffinitiesOpCount(0),
-    m_WaitAffinitiesOpCount(0),
-    m_ClientDataVersion(0)
+    m_ClientDataVersion(0),
+    m_WNData(blacklist_timeout),
+    m_ReaderData(read_blacklist_timeout)
 {
     if (!client_id.IsComplete())
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -283,93 +519,16 @@ CNSClient::CNSClient(const CNSClientId &  client_id,
 }
 
 
-// Used when CLRN is received
-// Returns true if there was at least something in the preferred affinites list
-bool CNSClient::Clear(void)
-{
-    m_State = eQuit;
-    m_Session = "";
-    m_SessionResetTime = CNSPreciseTime::Current();
-
-    m_RunningJobs.clear();
-    x_RunningJobsOp();
-    m_ReadingJobs.clear();
-    x_ReadingJobsOp();
-
-    m_WaitAffinities.clear();
-    x_WaitAffinitiesOp();
-
-    if (m_Affinities.any()) {
-        m_Affinities.clear();
-        x_AffinitiesOp();
-        return true;
-    }
-    return false;
-}
-
-
-// Used when WN timeout is detected
-bool CNSClient::Purge(CNSAffinityRegistry &   aff_registry)
-{
-    m_State = eStale;
-    m_SessionResetTime = CNSPreciseTime::Current();
-
-    if (m_Affinities.any()) {
-        m_AffReset = true;
-        aff_registry.RemoveClientFromAffinities(m_ID, m_Affinities);
-        ClearPreferredAffinities();
-        return true;
-    }
-    return false;
-}
-
-
-TNSBitVector CNSClient::GetRunBlacklistedJobs(void) const
-{
-    // This will update the blacklisted jobs if necessery
-    x_UpdateRunBlacklist();
-    return m_RunBlacklistedJobs;
-}
-
-
-TNSBitVector CNSClient::GetReadBlacklistedJobs(void) const
-{
-    // This will update the blacklisted jobs if necessery
-    x_UpdateReadBlacklist();
-    return m_ReadBlacklistedJobs;
-}
-
-
-unsigned short CNSClient::GetAndResetWaitPort(void)
-{
-    unsigned short  old_port = m_WaitPort;
-
-    m_WaitPort = 0;
-    return old_port;
-}
-
-
-void CNSClient::RegisterRunningJob(unsigned int  job_id)
+void CNSClient::RegisterJob(unsigned int  job_id, ECommandGroup  cmd_group)
 {
     m_LastAccess = CNSPreciseTime::Current();
-    m_Type |= eWorkerNode;
-
-    m_RunningJobs.set(job_id, true);
-    x_RunningJobsOp();
-    ++m_NumberOfRun;
-    return;
-}
-
-
-void CNSClient::RegisterReadingJob(unsigned int  job_id)
-{
-    m_LastAccess = CNSPreciseTime::Current();
-    m_Type |= eReader;
-
-    m_ReadingJobs.set(job_id, true);
-    x_ReadingJobsOp();
-    ++m_NumberOfRead;
-    return;
+    if (cmd_group == eGet) {
+        m_Type |= eWorkerNode;
+        m_WNData.RegisterJob(job_id);
+    } else {
+        m_Type |= eReader;
+        m_ReaderData.RegisterJob(job_id);
+    }
 }
 
 
@@ -378,131 +537,47 @@ void CNSClient::RegisterSubmittedJobs(size_t  count)
     m_LastAccess = CNSPreciseTime::Current();
     m_Type |= eSubmitter;
     m_NumberOfSubmitted += count;
-    return;
 }
 
 
-void CNSClient::RegisterRunBlacklistedJob(unsigned int  job_id)
+void CNSClient::RegisterBlacklistedJob(unsigned int   job_id,
+                                       ECommandGroup  cmd_group)
 {
     // The type of the client should not be updated here.
-    // This operation is always prepended by GET so the client type is
+    // This operation is always prepended by GET/READ so the client type is
     // set anyway.
     m_LastAccess = CNSPreciseTime::Current();
-    x_AddToRunBlacklist(job_id);
+    if (cmd_group == eGet)
+        m_WNData.AddToBlacklist(job_id, m_LastAccess);
+    else
+        m_ReaderData.AddToBlacklist(job_id, m_LastAccess);
 }
 
 
-void CNSClient::RegisterReadBlacklistedJob(unsigned int  job_id)
-{
-    // The type of the client should not be updated here.
-    // This operation is always prepended by READ so the client type is
-    // set anyway.
-    m_LastAccess = CNSPreciseTime::Current();
-    x_AddToReadBlacklist(job_id);
-}
-
-
-void CNSClient::UnregisterReadingJob(unsigned int  job_id)
-{
-    m_ReadingJobs.set(job_id, false);
-    x_ReadingJobsOp();
-    return;
-}
-
-
-// returns true if the modifications have been really made
-bool CNSClient::MoveReadingJobToBlacklist(unsigned int  job_id)
-{
-    if (m_ReadingJobs[job_id]) {
-        m_ReadingJobs.set(job_id, false);
-        x_AddToReadBlacklist(job_id);
-        x_ReadingJobsOp();
-        return true;
-    }
-    return false;
-}
-
-
-void CNSClient::UnregisterRunningJob(unsigned int  job_id)
-{
-    m_RunningJobs.set(job_id, false);
-    x_RunningJobsOp();
-    return;
-}
-
-
-// returns true if the modifications have been really made
-bool CNSClient::MoveRunningJobToBlacklist(unsigned int  job_id)
-{
-    if (m_RunningJobs[job_id]) {
-        m_RunningJobs.set(job_id, false);
-        x_AddToRunBlacklist(job_id);
-        x_RunningJobsOp();
-        return true;
-    }
-    return false;
-}
-
-
-// It updates running and reading job vectors only in case if the client
-// session has been changed
-// Returns true if the preferred affinities had at least one bit and the
-// session has been changed
-bool CNSClient::Touch(const CNSClientId &  client_id,
-                      TNSBitVector &       running_jobs,
-                      TNSBitVector &       reading_jobs,
-                      bool &               session_was_reset,
-                      string &             old_session)
+// It updates running and reading job vectors
+// only in case if the client session has been changed
+void CNSClient::Touch(const CNSClientId &  client_id)
 {
     m_LastAccess = CNSPreciseTime::Current();
     m_State = eActive;
     m_ControlPort = client_id.GetControlPort();
     m_ClientHost = client_id.GetClientHost();
     m_Addr = client_id.GetAddress();
-    old_session = m_Session;
 
     // Check the session id
-    if (m_Session == client_id.GetSession()) {
-        session_was_reset = false;
-        return false;       // It's still the same session, nothing to check
-    }
+    if (m_Session == client_id.GetSession())
+        return;       // It's still the same session, nothing to check
 
-    session_was_reset = true;
-    m_SessionStartTime = CNSPreciseTime::Current();
-
-    // Here: new session so check if there are running or reading jobs
-    unsigned int    running_count = m_RunningJobs.count();
-    if (running_count > 0) {
-        running_jobs = m_RunningJobs;
-        m_RunningJobs.clear();
-        x_RunningJobsOp();
-    }
-
-    unsigned int    reading_count = m_ReadingJobs.count();
-    if (reading_count > 0) {
-        reading_jobs = m_ReadingJobs;
-        m_ReadingJobs.clear();
-        x_ReadingJobsOp();
-    }
-
-    // Update the session identifier
+    m_SessionStartTime = m_LastAccess;
+    m_SessionResetTime = m_LastAccess;
     m_Session = client_id.GetSession();
 
-    unsigned int    wait_aff_count = m_WaitAffinities.count();
-    if (wait_aff_count > 0) {
-        m_WaitAffinities.clear();
-        x_WaitAffinitiesOp();
-    }
+    // Affinity members are handled in the upper level of Touch()
+    // There is no need to do anything with the blacklisted jobs. If there are
+    // some jobs there they should stay in the list.
 
-    // There is no need to do anything neither with the blacklisted jobs
-    // nor submitted jobs
-
-    if (m_Affinities.any()) {
-        m_Affinities.clear();
-        x_AffinitiesOp();
-        return true;
-    }
-    return false;
+    m_WNData.m_AffReset = false;
+    m_ReaderData.m_AffReset = false;
 }
 
 
@@ -510,43 +585,41 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
 string CNSClient::Print(const string &               node_name,
                         const CQueue *               queue,
                         const CNSAffinityRegistry &  aff_registry,
-                        const set< string > &        gc_clients,
+                        const set< string > &        wn_gc_clients,
+                        const set< string > &        read_gc_clients,
                         bool                         verbose) const
 {
     string      buffer;
 
     buffer += "OK:CLIENT: '" + node_name + "'\n"
-              "OK:  STATUS: ";
-    if (m_State == eActive)
-        buffer += "active\n";
-    else if (m_State == eStale)
-        buffer += "stale\n";
-    else
-        buffer += "quit\n";
+              "OK:  STATUS: " + x_StateAsString() + "\n"
+              "OK:  PREFERRED AFFINITIES RESET: ";
+    if (m_WNData.m_AffReset) buffer += "TRUE\n";
+    else                     buffer += "FALSE\n";
 
-    buffer += "OK:  PREFERRED AFFINITIES RESET: ";
-    if (m_AffReset) buffer += "TRUE\n";
-    else            buffer += "FALSE\n";
+    buffer += "OK:  READER PREFERRED AFFINITIES RESET: ";
+    if (m_ReaderData.m_AffReset) buffer += "TRUE\n";
+    else                         buffer += "FALSE\n";
 
-    if (m_LastAccess == CNSPreciseTime())
+    if (m_LastAccess == kTimeZero)
         buffer += "OK:  LAST ACCESS: n/a\n";
     else
         buffer += "OK:  LAST ACCESS: " +
                   NS_FormatPreciseTime(m_LastAccess) + "\n";
 
-    if (m_SessionStartTime == CNSPreciseTime())
+    if (m_SessionStartTime == kTimeZero)
         buffer += "OK:  SESSION START TIME: n/a\n";
     else
         buffer += "OK:  SESSION START TIME: " +
                   NS_FormatPreciseTime(m_SessionStartTime) + "\n";
 
-    if (m_RegistrationTime == CNSPreciseTime())
+    if (m_RegistrationTime == kTimeZero)
         buffer += "OK:  REGISTRATION TIME: n/a\n";
     else
         buffer += "OK:  REGISTRATION TIME: " +
                   NS_FormatPreciseTime(m_RegistrationTime) + "\n";
 
-    if (m_SessionResetTime == CNSPreciseTime())
+    if (m_SessionResetTime == kTimeZero)
         buffer += "OK:  SESSION RESET TIME: n/a\n";
     else
         buffer += "OK:  SESSION RESET TIME: " +
@@ -576,80 +649,102 @@ string CNSClient::Print(const string &               node_name,
     buffer += "OK:  NUMBER OF SUBMITTED JOBS: " +
               NStr::NumericToString(m_NumberOfSubmitted) + "\n";
 
-    x_UpdateRunBlacklist();
+    TNSBitVector    blacklist = m_WNData.GetBlacklistedJobs();
     buffer += "OK:  NUMBER OF BLACKLISTED JOBS: " +
-              NStr::NumericToString(m_RunBlacklistedJobs.count()) + "\n";
-    if (verbose && m_RunBlacklistedJobs.any()) {
+              NStr::NumericToString(blacklist.count()) + "\n";
+    if (verbose && blacklist.any()) {
         buffer += "OK:  BLACKLISTED JOBS:\n";
 
-        TNSBitVector::enumerator    en(m_RunBlacklistedJobs.first());
+        TNSBitVector::enumerator    en(blacklist.first());
         for ( ; en.valid(); ++en) {
             unsigned int    job_id = *en;
             TJobStatus      status = queue->GetJobStatus(job_id);
             buffer += "OK:    " + queue->MakeJobKey(job_id) + " " +
-                      x_GetRunBlacklistLimit(job_id) + " " +
+                      m_WNData.GetBlacklistLimit(job_id) + " " +
                       CNetScheduleAPI::StatusToString(status) + "\n";
         }
     }
 
-    x_UpdateReadBlacklist();
+    blacklist = m_ReaderData.GetBlacklistedJobs();
     buffer += "OK:  NUMBER OF READ BLACKLISTED JOBS: " +
-              NStr::NumericToString(m_ReadBlacklistedJobs.count()) + "\n";
-    if (verbose && m_ReadBlacklistedJobs.any()) {
-        buffer += "OK:  BLACKLISTED JOBS:\n";
+              NStr::NumericToString(blacklist.count()) + "\n";
+    if (verbose && blacklist.any()) {
+        buffer += "OK:  READ BLACKLISTED JOBS:\n";
 
-        TNSBitVector::enumerator    en(m_ReadBlacklistedJobs.first());
+        TNSBitVector::enumerator    en(blacklist.first());
         for ( ; en.valid(); ++en) {
             unsigned int    job_id = *en;
             TJobStatus      status = queue->GetJobStatus(job_id);
             buffer += "OK:    " + queue->MakeJobKey(job_id) + " " +
-                      x_GetReadBlacklistLimit(job_id) + " " +
+                      m_ReaderData.GetBlacklistLimit(job_id) + " " +
                       CNetScheduleAPI::StatusToString(status) + "\n";
         }
     }
 
     buffer += "OK:  NUMBER OF RUNNING JOBS: " +
-              NStr::NumericToString(m_RunningJobs.count()) + "\n";
-    if (verbose && m_RunningJobs.any()) {
+              NStr::NumericToString(m_WNData.m_Jobs.count()) + "\n";
+    if (verbose && m_WNData.m_Jobs.any()) {
         buffer += "OK:  RUNNING JOBS:\n";
 
-        TNSBitVector::enumerator    en(m_RunningJobs.first());
+        TNSBitVector::enumerator    en(m_WNData.m_Jobs.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    " + queue->MakeJobKey(*en) + "\n";
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
-              NStr::NumericToString(m_NumberOfRun) + "\n";
+              NStr::NumericToString(m_WNData.m_NumberOfGiven) + "\n";
 
     buffer += "OK:  NUMBER OF READING JOBS: " +
-              NStr::NumericToString(m_ReadingJobs.count()) + "\n";
-    if (verbose && m_ReadingJobs.any()) {
+              NStr::NumericToString(m_ReaderData.m_Jobs.count()) + "\n";
+    if (verbose && m_ReaderData.m_Jobs.any()) {
         buffer += "OK:  READING JOBS:\n";
 
-        TNSBitVector::enumerator    en(m_ReadingJobs.first());
+        TNSBitVector::enumerator    en(m_ReaderData.m_Jobs.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    " + queue->MakeJobKey(*en) + "\n";
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR READING: " +
-              NStr::NumericToString(m_NumberOfRead) + "\n";
+              NStr::NumericToString(m_ReaderData.m_NumberOfGiven) + "\n";
 
     buffer += "OK:  NUMBER OF PREFERRED AFFINITIES: " +
-              NStr::NumericToString(m_Affinities.count()) + "\n";
-    if (verbose && m_Affinities.any()) {
+              NStr::NumericToString(m_WNData.m_PrefAffinities.count()) + "\n";
+    if (verbose && m_WNData.m_PrefAffinities.any()) {
         buffer += "OK:  PREFERRED AFFINITIES:\n";
 
-        TNSBitVector::enumerator    en(m_Affinities.first());
+        TNSBitVector::enumerator    en(m_WNData.m_PrefAffinities.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
     }
 
     buffer += "OK:  NUMBER OF REQUESTED AFFINITIES: " +
-              NStr::NumericToString(m_WaitAffinities.count()) + "\n";
-    if (verbose && m_WaitAffinities.any()) {
+              NStr::NumericToString(m_WNData.m_WaitAffinities.count()) + "\n";
+    if (verbose && m_WNData.m_WaitAffinities.any()) {
         buffer += "OK:  REQUESTED AFFINITIES:\n";
 
-        TNSBitVector::enumerator    en(m_WaitAffinities.first());
+        TNSBitVector::enumerator    en(m_WNData.m_WaitAffinities.first());
+        for ( ; en.valid(); ++en)
+            buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
+    }
+
+    buffer += "OK:  NUMBER OF READER PREFERRED AFFINITIES: " +
+              NStr::NumericToString(m_ReaderData.m_PrefAffinities.count()) +
+              "\n";
+    if (verbose && m_ReaderData.m_PrefAffinities.any()) {
+        buffer += "OK:  READER PREFERRED AFFINITIES:\n";
+
+        TNSBitVector::enumerator    en(m_ReaderData.m_PrefAffinities.first());
+        for ( ; en.valid(); ++en)
+            buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
+    }
+
+    buffer += "OK:  NUMBER OF READER REQUESTED AFFINITIES: " +
+              NStr::NumericToString(m_ReaderData.m_WaitAffinities.count()) +
+              "\n";
+    if (verbose && m_ReaderData.m_WaitAffinities.any()) {
+        buffer += "OK:  READER REQUESTED AFFINITIES:\n";
+
+        TNSBitVector::enumerator    en(m_ReaderData.m_WaitAffinities.first());
         for ( ; en.valid(); ++en)
             buffer += "OK:    '" + aff_registry.GetTokenByID(*en) + "'\n";
     }
@@ -660,164 +755,37 @@ string CNSClient::Print(const string &               node_name,
               "OK:  DATA VERSION: " +
                     NStr::NumericToString(m_ClientDataVersion) + "\n";
 
-    if (gc_clients.find(node_name) == gc_clients.end())
-        buffer += "OK:  WAS GARBAGE COLLECTED: FALSE\n";
+    if (wn_gc_clients.find(node_name) == wn_gc_clients.end())
+        buffer += "OK:  WN AFFINITIES GARBAGE COLLECTED: FALSE\n";
     else
-        buffer += "OK:  WAS GARBAGE COLLECTED: TRUE\n";
+        buffer += "OK:  WN AFFINITIES GARBAGE COLLECTED: TRUE\n";
+
+    if (read_gc_clients.find(node_name) == read_gc_clients.end())
+        buffer += "OK:  READER AFFINITIES GARBAGE COLLECTED: FALSE\n";
+    else
+        buffer += "OK:  READER AFFINITIES GARBAGE COLLECTED: TRUE\n";
 
     return buffer;
 }
 
 
-void  CNSClient::AddPreferredAffinities(const TNSBitVector &  aff)
-{
-    m_Type |= eWorkerNode;
-    m_Affinities |= aff;
-    m_AffReset = false;
-}
-
-
-bool  CNSClient::AddPreferredAffinity(unsigned int  aff)
-{
-    m_Type |= eWorkerNode;
-    m_AffReset = false;
-
-    if (aff != 0) {
-        if (m_Affinities[aff] == false) {
-            m_Affinities.set_bit(aff, true);
-            x_AffinitiesOp();
-            return true;
-        }
-    }
-    return false;
-}
-
-
-void  CNSClient::RemovePreferredAffinities(const TNSBitVector &  aff)
-{
-    m_Type |= eWorkerNode;
-    m_Affinities -= aff;
-    m_AffReset = false;
-}
-
-
-void  CNSClient::RemovePreferredAffinity(unsigned int  aff)
-{
-    m_Type |= eWorkerNode;
-    if (aff != 0) {
-        m_Affinities.set_bit(aff, false);
-        x_AffinitiesOp();
-    }
-    m_AffReset = false;
-}
-
-
-void  CNSClient::SetPreferredAffinities(const TNSBitVector &  aff)
-{
-    m_Type |= eWorkerNode;
-    m_Affinities = aff;
-    m_AffReset = false;
-}
-
-void  CNSClient::RegisterWaitAffinities(const TNSBitVector &  aff)
-{
-    m_Type |= eWorkerNode;
-    m_WaitAffinities = aff;
-    return;
-}
-
-
-// Used in the notifications code to test if a notifications should be sent to
-// the client
-bool  CNSClient::IsRequestedAffinity(const TNSBitVector &  aff,
-                                     bool                  use_preferred) const
-{
-    if ((m_WaitAffinities & aff).any())
-        return true;
-
-    if (use_preferred)
-        if ((m_Affinities & aff).any())
-            return true;
-
-    return false;
-}
-
-
-bool  CNSClient::ClearPreferredAffinities(void)
-{
-    if (m_Affinities.any()) {
-        m_Affinities.clear();
-        x_AffinitiesOp();
-        return true;
-    }
-    return false;
-}
-
-
 void
-CNSClient::CheckRunBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
+CNSClient::GCBlacklistedJobs(const CJobStatusTracker &  tracker,
+                             ECommandGroup              cmd_group)
 {
-    // Checks if jobs should be removed from a worker node blacklist
-    if (m_RunBlacklistLimits.empty())
-        return;
+    vector<TJobStatus>      match_states;
+    match_states.push_back(CNetScheduleAPI::eJobNotFound);
+    match_states.push_back(CNetScheduleAPI::eConfirmed);
+    match_states.push_back(CNetScheduleAPI::eReadFailed);
 
-    unsigned int            min_existed_id = tracker.GetMinJobID();
-    vector<unsigned int>    to_be_removed;
+    if (cmd_group == eGet) {
+        match_states.push_back(CNetScheduleAPI::eDone);
+        match_states.push_back(CNetScheduleAPI::eFailed);
+        match_states.push_back(CNetScheduleAPI::eCanceled);
 
-    for (map<unsigned int,
-             CNSPreciseTime>::const_iterator k = m_RunBlacklistLimits.begin();
-         k != m_RunBlacklistLimits.end(); ++k) {
-        if (k->first < min_existed_id)
-            to_be_removed.push_back(k->first);
-        else {
-            TJobStatus      status = tracker.GetStatus(k->first);
-            if (status == CNetScheduleAPI::eJobNotFound ||
-                status == CNetScheduleAPI::eCanceled ||
-                status == CNetScheduleAPI::eConfirmed ||
-                status == CNetScheduleAPI::eReadFailed)
-                to_be_removed.push_back(k->first);
-        }
-    }
-
-    for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
-         j != to_be_removed.end(); ++j) {
-        m_RunBlacklistedJobs.set_bit(*j, false);
-        x_RunBlacklistedOp();
-        m_RunBlacklistLimits.erase(*j);
-    }
-}
-
-
-void
-CNSClient::CheckReadBlacklistedJobsExisted(const CJobStatusTracker &  tracker)
-{
-    // Checks if jobs should be removed from a reader blacklist
-    if (m_ReadBlacklistLimits.empty())
-        return;
-
-    unsigned int            min_existed_id = tracker.GetMinJobID();
-    vector<unsigned int>    to_be_removed;
-
-    for (map<unsigned int,
-             CNSPreciseTime>::const_iterator k = m_ReadBlacklistLimits.begin();
-         k != m_ReadBlacklistLimits.end(); ++k) {
-        if (k->first < min_existed_id)
-            to_be_removed.push_back(k->first);
-        else {
-            TJobStatus      status = tracker.GetStatus(k->first);
-            if (status == CNetScheduleAPI::eJobNotFound ||
-                status == CNetScheduleAPI::eConfirmed ||
-                status == CNetScheduleAPI::eReadFailed)
-                to_be_removed.push_back(k->first);
-        }
-    }
-
-    for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
-         j != to_be_removed.end(); ++j) {
-        m_ReadBlacklistedJobs.set_bit(*j, false);
-        x_ReadBlacklistedOp();
-        m_ReadBlacklistLimits.erase(*j);
-    }
+        m_WNData.GCBlacklist(tracker, match_states);
+    } else
+        m_ReaderData.GCBlacklist(tracker, match_states);
 }
 
 
@@ -868,227 +836,17 @@ string  CNSClient::x_TypeAsString(void) const
 }
 
 
-void  CNSClient::x_AddToRunBlacklist(unsigned int  job_id)
+string  CNSClient::x_StateAsString(void) const
 {
-    if (m_RunBlacklistTimeout == NULL) {
-        ERR_POST("Design error in NetSchedule. "
-                 "Run blacklist timeout pointer must not be NULL. "
-                 "Ignoring blacklisting request and continue.");
-        return;
+    switch (m_State) {
+        case eActive:           return "active";
+        case eWNStale:          return "worker node stale";
+        case eReaderStale:      return "reader stale";
+        case eWNAndReaderStale: return "worker node stale | reader stale";
+        case eQuit:             return "quit";
+        default: ;
     }
-
-    if (*m_RunBlacklistTimeout == CNSPreciseTime())
-        return;     // No need to blacklist the job (per configuration)
-
-    // Here: the job must be blacklisted. So be attentive to overflow.
-    CNSPreciseTime  last_time_in_list = m_LastAccess + *m_RunBlacklistTimeout;
-    if (last_time_in_list < m_LastAccess)
-        last_time_in_list = CNSPreciseTime::Never();  // overflow
-
-    m_RunBlacklistLimits[job_id] = last_time_in_list;
-    m_RunBlacklistedJobs.set_bit(job_id, true);
-    x_RunBlacklistedOp();
-}
-
-
-void  CNSClient::x_AddToReadBlacklist(unsigned int  job_id)
-{
-    if (m_ReadBlacklistTimeout == NULL) {
-        ERR_POST("Design error in NetSchedule. "
-                 "Read blacklist timeout pointer must not be NULL. "
-                 "Ignoring blacklisting request and continue.");
-        return;
-    }
-
-    if (*m_ReadBlacklistTimeout == CNSPreciseTime())
-        return;     // No need to blacklist the job (per configuration)
-
-    // Here: the job must be blacklisted. So be attentive to overflow.
-    CNSPreciseTime  last_time_in_list = m_LastAccess + *m_ReadBlacklistTimeout;
-    if (last_time_in_list < m_LastAccess)
-        last_time_in_list = CNSPreciseTime::Never();  // overflow
-
-    m_ReadBlacklistLimits[job_id] = last_time_in_list;
-    m_ReadBlacklistedJobs.set_bit(job_id, true);
-    x_ReadBlacklistedOp();
-}
-
-
-void  CNSClient::x_UpdateRunBlacklist(void) const
-{
-    // Checks if jobs should be removed from a worker node blacklist
-    if (m_RunBlacklistLimits.empty())
-        return;
-
-    CNSPreciseTime          current_time = CNSPreciseTime::Current();
-    vector<unsigned int>    to_be_removed;
-    map<unsigned int,
-        CNSPreciseTime>::const_iterator
-                            end_iterator = m_RunBlacklistLimits.end();
-
-    for (map<unsigned int,
-             CNSPreciseTime>::const_iterator k = m_RunBlacklistLimits.begin();
-         k != end_iterator; ++k) {
-        if (k->second < current_time)
-            to_be_removed.push_back(k->first);
-    }
-
-    for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
-         j != to_be_removed.end(); ++j) {
-        m_RunBlacklistedJobs.set_bit(*j, false);
-        x_RunBlacklistedOp();
-        m_RunBlacklistLimits.erase(*j);
-    }
-}
-
-
-void  CNSClient::x_UpdateRunBlacklist(unsigned int  job_id) const
-{
-    // Checks if a single job is in a blacklist and
-    // whether it should be removed from there
-    if (m_RunBlacklistLimits.empty())
-        return;
-
-    if (m_RunBlacklistedJobs[job_id] == false)
-        return;
-
-    CNSPreciseTime                      current_time = CNSPreciseTime::Current();
-    map<unsigned int,
-        CNSPreciseTime>::iterator found = m_RunBlacklistLimits.find(job_id);
-    if (found != m_RunBlacklistLimits.end()) {
-        if (found->second < current_time) {
-            m_RunBlacklistedJobs.set_bit(job_id, false);
-            x_RunBlacklistedOp();
-            m_RunBlacklistLimits.erase(found);
-        }
-    }
-}
-
-
-void  CNSClient::x_UpdateReadBlacklist(void) const
-{
-    // Checks if jobs should be removed from a worker node blacklist
-    if (m_ReadBlacklistLimits.empty())
-        return;
-
-    CNSPreciseTime          current_time = CNSPreciseTime::Current();
-    vector<unsigned int>    to_be_removed;
-    map<unsigned int,
-        CNSPreciseTime>::const_iterator
-                            end_iterator = m_ReadBlacklistLimits.end();
-
-    for (map<unsigned int,
-             CNSPreciseTime>::const_iterator k = m_ReadBlacklistLimits.begin();
-         k != end_iterator; ++k) {
-        if (k->second < current_time)
-            to_be_removed.push_back(k->first);
-    }
-
-    for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
-         j != to_be_removed.end(); ++j) {
-        m_ReadBlacklistedJobs.set_bit(*j, false);
-        x_ReadBlacklistedOp();
-        m_ReadBlacklistLimits.erase(*j);
-    }
-}
-
-
-void  CNSClient::x_UpdateReadBlacklist(unsigned int  job_id) const
-{
-    // Checks if a single job is in a blacklist and
-    // whether it should be removed from there
-    if (m_ReadBlacklistLimits.empty())
-        return;
-
-    if (m_ReadBlacklistedJobs[job_id] == false)
-        return;
-
-    CNSPreciseTime                      current_time = CNSPreciseTime::Current();
-    map<unsigned int,
-        CNSPreciseTime>::iterator found = m_ReadBlacklistLimits.find(job_id);
-    if (found != m_ReadBlacklistLimits.end()) {
-        if (found->second < current_time) {
-            m_ReadBlacklistedJobs.set_bit(job_id, false);
-            x_ReadBlacklistedOp();
-            m_ReadBlacklistLimits.erase(found);
-        }
-    }
-}
-
-
-string
-CNSClient::x_GetRunBlacklistLimit(unsigned int  job_id) const
-{
-    map<unsigned int,
-        CNSPreciseTime>::iterator found = m_RunBlacklistLimits.find(job_id);
-    if (found != m_RunBlacklistLimits.end())
-        return NS_FormatPreciseTime(found->second);
-    return "0.0";
-}
-
-
-string
-CNSClient::x_GetReadBlacklistLimit(unsigned int  job_id) const
-{
-    map<unsigned int,
-        CNSPreciseTime>::iterator found = m_ReadBlacklistLimits.find(job_id);
-    if (found != m_ReadBlacklistLimits.end())
-        return NS_FormatPreciseTime(found->second);
-    return "0.0";
-}
-
-
-void CNSClient::x_RunningJobsOp(void)
-{
-    if (++m_RunningJobsOpCount >= k_OpLimitToOptimize) {
-        m_RunningJobsOpCount = 0;
-        m_RunningJobs.optimize(0, TNSBitVector::opt_free_0);
-    }
-}
-
-
-void CNSClient::x_ReadingJobsOp(void)
-{
-    if (++m_ReadingJobsOpCount >= k_OpLimitToOptimize) {
-        m_ReadingJobsOpCount = 0;
-        m_ReadingJobs.optimize(0, TNSBitVector::opt_free_0);
-    }
-}
-
-
-void CNSClient::x_RunBlacklistedOp(void) const
-{
-    if (++m_RunBlacklistedJobsOpCount >= k_OpLimitToOptimize) {
-        m_RunBlacklistedJobsOpCount = 0;
-        m_RunBlacklistedJobs.optimize(0, TNSBitVector::opt_free_0);
-    }
-}
-
-
-void CNSClient::x_ReadBlacklistedOp(void) const
-{
-    if (++m_ReadBlacklistedJobsOpCount >= k_OpLimitToOptimize) {
-        m_ReadBlacklistedJobsOpCount = 0;
-        m_ReadBlacklistedJobs.optimize(0, TNSBitVector::opt_free_0);
-    }
-}
-
-
-void CNSClient::x_AffinitiesOp(void)
-{
-    if (++m_AffinitiesOpCount >= k_OpLimitToOptimize) {
-        m_AffinitiesOpCount = 0;
-        m_Affinities.optimize(0, TNSBitVector::opt_free_0);
-    }
-}
-
-
-void CNSClient::x_WaitAffinitiesOp(void)
-{
-    if (++m_WaitAffinitiesOpCount >= k_OpLimitToOptimize) {
-        m_WaitAffinitiesOpCount = 0;
-        m_WaitAffinities.optimize(0, TNSBitVector::opt_free_0);
-    }
+    return "unknown";
 }
 
 END_NCBI_SCOPE

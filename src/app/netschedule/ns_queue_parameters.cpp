@@ -76,6 +76,7 @@ SQueueParameters::SQueueParameters() :
     subm_hosts(""),
     wnode_hosts(""),
     wnode_timeout(default_wnode_timeout),
+    reader_timeout(default_reader_timeout),
     pending_timeout(default_pending_timeout),
     max_pending_wait_timeout(default_max_pending_wait_timeout),
     description(""),
@@ -127,6 +128,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     subm_hosts = ReadSubmHosts(reg, sname);
     wnode_hosts = ReadWnodeHosts(reg, sname);
     wnode_timeout = ReadWnodeTimeout(reg, sname);
+    reader_timeout = ReadReaderTimeout(reg, sname);
     pending_timeout = ReadPendingTimeout(reg, sname);
     max_pending_wait_timeout = ReadMaxPendingWaitTimeout(reg, sname);
     description = ReadDescription(reg, sname);
@@ -274,6 +276,12 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                 diff, "wnode_timeout",
                 NS_FormatPreciseTimeAsSec(wnode_timeout),
                 NS_FormatPreciseTimeAsSec(other.wnode_timeout));
+
+    if (reader_timeout != other.reader_timeout)
+        AddParameterToDiffString(
+                diff, "reader_timeout",
+                NS_FormatPreciseTimeAsSec(reader_timeout),
+                NS_FormatPreciseTimeAsSec(other.reader_timeout));
 
     if (pending_timeout != other.pending_timeout)
         AddParameterToDiffString(
@@ -524,6 +532,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "max_input_size" + suffix + NStr::NumericToString(max_input_size) + separator +
     prefix + "max_output_size" + suffix + NStr::NumericToString(max_output_size) + separator +
     prefix + "wnode_timeout" + suffix + NS_FormatPreciseTimeAsSec(wnode_timeout) + separator +
+    prefix + "reader_timeout" + suffix + NS_FormatPreciseTimeAsSec(reader_timeout) + separator +
     prefix + "pending_timeout" + suffix + NS_FormatPreciseTimeAsSec(pending_timeout) + separator +
     prefix + "max_pending_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + separator +
     prefix + "run_timeout_precision" + suffix + NS_FormatPreciseTimeAsSec(run_timeout_precision) + separator +
@@ -593,6 +602,7 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "subm_host=\"" + subm_hosts + "\"\n"
     "wnode_host=\"" + wnode_hosts + "\"\n"
     "wnode_timeout=\"" + NS_FormatPreciseTimeAsSec(wnode_timeout) + "\"\n"
+    "reader_timeout=\"" + NS_FormatPreciseTimeAsSec(reader_timeout) + "\"\n"
     "pending_timeout=\"" + NS_FormatPreciseTimeAsSec(pending_timeout) + "\"\n"
     "max_pending_wait_timeout=\"" + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + "\"\n"
     "scramble_job_keys=\"" + NStr::BoolToString(scramble_job_keys) + "\"\n"
@@ -864,6 +874,17 @@ SQueueParameters::ReadWnodeTimeout(const IRegistry &  reg,
 }
 
 CNSPreciseTime
+SQueueParameters::ReadReaderTimeout(const IRegistry &  reg,
+                                    const string &     sname)
+{
+    double  val = GetDoubleNoErr("reader_timeout",
+                                 double(default_reader_timeout));
+    if (val <= 0)
+        return default_reader_timeout;
+    return CNSPreciseTime(val);
+}
+
+CNSPreciseTime
 SQueueParameters::ReadPendingTimeout(const IRegistry &  reg,
                                      const string &     sname)
 {
@@ -919,8 +940,9 @@ SQueueParameters::ReadClientRegistryTimeoutWorkerNode(const IRegistry &  reg,
     double  val = GetDoubleNoErr("client_registry_timeout_worker_node",
                          double(default_client_registry_timeout_worker_node));
     if (val <= 0.0 || val <= wnode_timeout)
-        return max(default_client_registry_timeout_worker_node,
-                   wnode_timeout + wnode_timeout);
+        return max(max(default_client_registry_timeout_worker_node,
+                       wnode_timeout + wnode_timeout),
+                   run_timeout + run_timeout);
     return CNSPreciseTime(val);
 }
 
@@ -991,8 +1013,10 @@ SQueueParameters::ReadClientRegistryTimeoutReader(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("client_registry_timeout_reader",
                          double(default_client_registry_timeout_reader));
-    if (val <= 0.0)
-        return default_client_registry_timeout_reader;
+    if (val <= 0.0 || val <= reader_timeout)
+        return max(max(default_client_registry_timeout_reader,
+                       reader_timeout + reader_timeout),
+                   read_timeout + read_timeout);
     return CNSPreciseTime(val);
 }
 

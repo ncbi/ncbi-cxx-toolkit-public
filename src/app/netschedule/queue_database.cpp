@@ -427,6 +427,9 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.wnode_timeout =
             CNSPreciseTime(m_QueueDescriptionDB.wnode_timeout_sec,
                            m_QueueDescriptionDB.wnode_timeout_nsec);
+        params.reader_timeout =
+            CNSPreciseTime(m_QueueDescriptionDB.reader_timeout_sec,
+                           m_QueueDescriptionDB.reader_timeout_nsec);
         params.pending_timeout =
             CNSPreciseTime(m_QueueDescriptionDB.pending_timeout_sec,
                            m_QueueDescriptionDB.pending_timeout_nsec);
@@ -559,6 +562,8 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.wnode_hosts = params.wnode_hosts;
     m_QueueDescriptionDB.wnode_timeout_sec = params.wnode_timeout.Sec();
     m_QueueDescriptionDB.wnode_timeout_nsec = params.wnode_timeout.NSec();
+    m_QueueDescriptionDB.reader_timeout_sec = params.reader_timeout.Sec();
+    m_QueueDescriptionDB.reader_timeout_nsec = params.reader_timeout.NSec();
     m_QueueDescriptionDB.pending_timeout_sec = params.pending_timeout.Sec();
     m_QueueDescriptionDB.pending_timeout_nsec = params.pending_timeout.NSec();
     m_QueueDescriptionDB.max_pending_wait_timeout_sec =
@@ -793,6 +798,9 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "wnode_timeout")
                 params.wnode_timeout =
                     params.ReadWnodeTimeout(reg, section_name);
+            else if (*val == "reader_timeout")
+                params.reader_timeout =
+                    params.ReadReaderTimeout(reg, section_name);
             else if (*val == "pending_timeout")
                 params.pending_timeout =
                     params.ReadPendingTimeout(reg, section_name);
@@ -2493,7 +2501,7 @@ void CQueueDataBase::StaleWNodes(void)
         CRef<CQueue>  queue = x_GetQueueAt(index);
         if (queue.IsNull())
             break;
-        queue->StaleWNodes(current_time);
+        queue->StaleNodes(current_time);
         if (x_CheckStopPurge())
             break;
     }
@@ -2592,7 +2600,7 @@ void CQueueDataBase::WakeupNotifThread(void)
 CNSPreciseTime
 CQueueDataBase::SendExactNotifications(void)
 {
-    CNSPreciseTime      next = CNSPreciseTime::Never();
+    CNSPreciseTime      next = kTimeNever;
     CNSPreciseTime      from_queue;
 
     for (unsigned int  index = 0; ; ++index) {

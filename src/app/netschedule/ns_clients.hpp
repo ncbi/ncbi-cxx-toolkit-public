@@ -138,6 +138,103 @@ class CNSClientId
 
 
 
+// The class stores common data for WNs and readers
+struct SRemoteNodeData
+{
+    public:
+        SRemoteNodeData();
+        SRemoteNodeData(CNSPreciseTime *  timeout);
+
+        TNSBitVector GetBlacklistedJobs(void) const
+        { x_UpdateBlacklist();
+          return m_BlacklistedJobs; }
+
+        void ClearJobs(void)
+        { m_Jobs.clear();
+          x_JobsOp(); }
+
+        void AddPreferredAffinities(const TNSBitVector &  aff)
+        { m_PrefAffinities |= aff;
+          x_PrefAffinitiesOp(); }
+
+        void RemovePreferredAffinities(const TNSBitVector &  aff)
+        { m_PrefAffinities -= aff;
+          x_PrefAffinitiesOp(); }
+
+        void RemovePreferredAffinity(unsigned int  aff)
+        { m_PrefAffinities.set_bit(aff, false);
+          x_PrefAffinitiesOp(); }
+
+        void SetPreferredAffinities(const TNSBitVector &  aff)
+        { m_PrefAffinities = aff;
+          m_AffReset = false;
+          x_PrefAffinitiesOp(); }
+
+        void SetWaitAffinities(const TNSBitVector &  aff)
+        { m_WaitAffinities = aff;
+          x_WaitAffinitiesOp(); }
+
+        void ClearWaitAffinities(void)
+        { m_WaitAffinities.clear();
+          x_WaitAffinitiesOp(); }
+
+        void UpdateBlacklist(unsigned int  job_id) const;
+        string GetBlacklistLimit(unsigned int  job_id) const;
+        void AddToBlacklist(unsigned int            job_id,
+                            const CNSPreciseTime &  last_access);
+        bool ClearPreferredAffinities(void);
+        void RegisterJob(unsigned int  job_id);
+        void UnregisterGivenJob(unsigned int  job_id);
+        bool MoveJobToBlacklist(unsigned int  job_id);
+        bool AddPreferredAffinity(unsigned int  aff);
+        bool IsRequestedAffinity(const TNSBitVector &  aff,
+                                 bool                  use_preferred) const;
+        void GCBlacklist(const CJobStatusTracker &   tracker,
+                         const vector<TJobStatus> &  match_states);
+        void CancelWaiting(void);
+
+    public:
+        size_t                      m_NumberOfGiven;
+
+        // Running or reading jobs
+        mutable TNSBitVector        m_Jobs;
+
+        // Black list support
+        mutable TNSBitVector        m_BlacklistedJobs;
+        CNSPreciseTime *            m_BlacklistTimeout;
+        mutable
+        map<unsigned int,
+            CNSPreciseTime>         m_BlacklistLimits;
+
+
+        // GET2/WGET or READ wait port
+        unsigned short              m_WaitPort;
+
+        // Affinities support
+        bool                        m_AffReset;
+        mutable TNSBitVector        m_PrefAffinities;
+        mutable TNSBitVector        m_WaitAffinities;
+
+    private:
+        mutable size_t              m_JobsOpCount;
+        mutable size_t              m_BlacklistedJobsOpCount;
+        mutable size_t              m_PrefAffinitiesOpCount;
+        mutable size_t              m_WaitAffinitiesOpCount;
+
+    private:
+        void x_ClearPreferredAffinities(void)
+        { m_PrefAffinities.clear();
+          x_PrefAffinitiesOp();
+        }
+
+        void x_UpdateBlacklist(void) const;
+        void x_JobsOp(void) const;
+        void x_BlacklistedOp(void) const;
+        void x_PrefAffinitiesOp(void) const;
+        void x_WaitAffinitiesOp(void) const;
+};
+
+
 // The CNSClient stores information about new style clients only;
 // The information includes the given jobs,
 // type of the client (worker node, submitter) etc.
@@ -158,9 +255,11 @@ class CNSClient
         };
 
         enum ENSClientState {
-            eActive = 1,
-            eStale  = 2,
-            eQuit   = 4
+            eActive           = 1,
+            eWNStale          = 2,
+            eReaderStale      = 4,
+            eWNAndReaderStale = 8,
+            eQuit             = 16
         };
 
     public:
@@ -168,98 +267,194 @@ class CNSClient
         CNSClient(const CNSClientId &  client_id,
                   CNSPreciseTime *     blacklist_timeout,
                   CNSPreciseTime *     read_blacklist_timeout);
-        TNSBitVector GetRunningJobs(void) const
-        { return m_RunningJobs; }
-        TNSBitVector GetReadingJobs(void) const
-        { return m_ReadingJobs; }
-        TNSBitVector GetRunBlacklistedJobs(void) const;
-        TNSBitVector GetReadBlacklistedJobs(void) const;
-        void SetWaitPort(unsigned short  port)
-        { m_WaitPort = port; }
-        unsigned short GetWaitPort(void) const
-        { return m_WaitPort; }
+
+        TNSBitVector GetJobs(ECommandGroup  cmd_group) const
+        { if (cmd_group == eGet) return m_WNData.m_Jobs;
+          return m_ReaderData.m_Jobs; }
+
+        void ClearJobs(ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) m_WNData.ClearJobs();
+          else                   m_ReaderData.ClearJobs();
+        }
+
+        TNSBitVector GetBlacklistedJobs(ECommandGroup  cmd_group) const
+        { if (cmd_group == eGet) return m_WNData.GetBlacklistedJobs();
+          return m_ReaderData.GetBlacklistedJobs(); }
+
+        void SetWaitPort(unsigned short  port, ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) m_WNData.m_WaitPort = port;
+          m_ReaderData.m_WaitPort = port; }
+
+        unsigned short GetWaitPort(ECommandGroup  cmd_group) const
+        { if (cmd_group == eGet) return m_WNData.m_WaitPort;
+          return m_ReaderData.m_WaitPort; }
+
         string GetSession(void) const
         { return m_Session; }
+
+        void SetSession(const string &  new_session)
+        { m_Session = new_session;
+          if (new_session == "")
+            m_SessionResetTime = CNSPreciseTime::Current(); }
+
         CNSPreciseTime GetLastAccess(void) const
         { return m_LastAccess; }
+
         void RegisterSocketWriteError(void)
         { ++m_NumberOfSockErrors; }
 
-        unsigned short GetAndResetWaitPort(void);
+        unsigned short GetAndResetWaitPort(ECommandGroup  cmd_group)
+        { SRemoteNodeData & data = m_ReaderData;
+          if (cmd_group == eGet) data = m_WNData;
+          unsigned short    old_port = data.m_WaitPort;
+          data.m_WaitPort = 0;
+          return old_port; }
 
-        void RegisterRunningJob(unsigned int  job_id);
-        void RegisterReadingJob(unsigned int  job_id);
-        void RegisterSubmittedJobs(size_t  count);
-        void RegisterRunBlacklistedJob(unsigned int  job_id);
-        void RegisterReadBlacklistedJob(unsigned int  job_id);
-        bool MoveReadingJobToBlacklist(unsigned int  job_id);
-        bool MoveRunningJobToBlacklist(unsigned int  job_id);
-        void UnregisterRunningJob(unsigned int  job_id);
-        void UnregisterReadingJob(unsigned int  job_id);
-
-        bool Clear(void);
-        bool Touch(const CNSClientId &  client_id,
-                   TNSBitVector &       running_jobs,
-                   TNSBitVector &       reading_jobs,
-                   bool &               session_was_reset,
-                   string &             old_session);
         void MarkAsAdmin(void)
         { m_Type |= eAdmin; }
-        bool Purge(CNSAffinityRegistry &   aff_registry);
 
+        unsigned int GetID(void) const
+        { return m_ID; }
+
+        void SetID(unsigned int  id)
+        { m_ID = id; }
+
+        unsigned int GetType(void) const
+        { return m_Type; }
+
+        void AppendType(unsigned int  type_to_append)
+        { m_Type |= type_to_append; }
+
+        bool MoveJobToBlacklist(unsigned int  job_id, ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) return m_WNData.MoveJobToBlacklist(job_id);
+          return m_ReaderData.MoveJobToBlacklist(job_id); }
+
+        void UnregisterJob(unsigned int  job_id, ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) m_WNData.UnregisterGivenJob(job_id);
+          else                   m_ReaderData.UnregisterGivenJob(job_id); }
+
+        ENSClientState GetState(void) const
+        { return m_State; }
+
+        void SetState(ENSClientState  new_state)
+        { m_State = new_state; }
+
+        TNSBitVector GetPreferredAffinities(ECommandGroup  cmd_group) const
+        { if (cmd_group == eGet) return m_WNData.m_PrefAffinities;
+          return m_ReaderData.m_PrefAffinities; }
+
+        bool HasPreferredAffinities(ECommandGroup  cmd_group) const
+        { if (cmd_group == eGet) return m_WNData.m_PrefAffinities.any();
+          return m_ReaderData.m_PrefAffinities.any(); }
+
+        TNSBitVector GetWaitAffinities(ECommandGroup  cmd_group) const
+        { if (cmd_group == eGet) return m_WNData.m_WaitAffinities;
+          return m_ReaderData.m_WaitAffinities; }
+
+        bool GetAffinityReset(ECommandGroup  cmd_group) const
+        { if (cmd_group == eGet) return m_WNData.m_AffReset;
+          return m_ReaderData.m_AffReset; }
+
+        void SetAffinityReset(bool  value, ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) m_WNData.m_AffReset = value;
+          else                   m_ReaderData.m_AffReset = value; }
+
+        bool HasWaitAffinities(ECommandGroup  cmd_group) const
+        { if (cmd_group == eGet) return m_WNData.m_WaitAffinities.any();
+          return m_ReaderData.m_WaitAffinities.any(); }
+
+        unsigned int GetPeerAddress(void) const
+        { return m_Addr; }
+
+        void ClearWaitAffinities(ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) m_WNData.ClearWaitAffinities();
+          else                   m_ReaderData.ClearWaitAffinities(); }
+
+        bool ClearPreferredAffinities(ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) return m_WNData.ClearPreferredAffinities();
+          return m_ReaderData.ClearPreferredAffinities(); }
+
+        void AddPreferredAffinities(const TNSBitVector &  aff,
+                                    ECommandGroup         cmd_group)
+        { if (cmd_group == eGet) { m_Type |= eWorkerNode;
+                                   m_WNData.AddPreferredAffinities(aff); }
+          else                   { m_Type |= eReader;
+                                   m_ReaderData.AddPreferredAffinities(aff); }
+        }
+
+        bool AddPreferredAffinity(unsigned int   aff,
+                                  ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) { m_Type |= eWorkerNode;
+                                   return m_WNData.AddPreferredAffinity(aff); }
+          m_Type |= eReader;
+          return m_ReaderData.AddPreferredAffinity(aff);
+        }
+
+        void RemovePreferredAffinities(const TNSBitVector &  aff,
+                                       ECommandGroup         cmd_group)
+        { if (cmd_group == eGet) { m_Type |= eWorkerNode;
+                                   m_WNData.RemovePreferredAffinities(aff); }
+          else                   { m_Type |= eReader;
+                                   m_ReaderData.RemovePreferredAffinities(aff); }
+        }
+
+        void RemovePreferredAffinity(unsigned int   aff,
+                                     ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) { m_Type |= eWorkerNode;
+                                   m_WNData.RemovePreferredAffinity(aff); }
+          else                   { m_Type |= eReader;
+                                   m_ReaderData.RemovePreferredAffinity(aff); }
+        }
+
+        void SetPreferredAffinities(const TNSBitVector &  aff,
+                                    ECommandGroup         cmd_group)
+        { if (cmd_group == eGet) { m_Type |= eWorkerNode;
+                                   m_WNData.SetPreferredAffinities(aff); }
+          else                   { m_Type |= eReader;
+                                   m_ReaderData.SetPreferredAffinities(aff); }
+        }
+
+        void SetWaitAffinities(const TNSBitVector &  aff,
+                               ECommandGroup         cmd_group)
+        { if (cmd_group == eGet) { m_Type |= eWorkerNode;
+                                   m_WNData.SetWaitAffinities(aff); }
+          else                   { m_Type |= eReader;
+                                   m_ReaderData.SetWaitAffinities(aff); }
+        }
+
+        bool IsRequestedAffinity(const TNSBitVector &  aff,
+                                 bool                  use_preferred,
+                                 ECommandGroup         cmd_group) const
+        { if (cmd_group == eGet)
+            return m_WNData.IsRequestedAffinity(aff, use_preferred);
+          return m_ReaderData.IsRequestedAffinity(aff, use_preferred);
+        }
+
+        void CancelWaiting(ECommandGroup  cmd_group)
+        { if (cmd_group == eGet) m_WNData.CancelWaiting();
+          else                   m_ReaderData.CancelWaiting();
+        }
+
+        void RegisterJob(unsigned int   job_id,
+                         ECommandGroup  cmd_group);
+        void RegisterSubmittedJobs(size_t  count);
+        void RegisterBlacklistedJob(unsigned int   job_id,
+                                    ECommandGroup  cmd_group);
+        int SetClientData(const string &  data, int  data_version);
+        void GCBlacklistedJobs(const CJobStatusTracker &  tracker,
+                               ECommandGroup              cmd_group);
+        void Touch(const CNSClientId &  client_id);
         string Print(const string &               node_name,
                      const CQueue *               queue,
                      const CNSAffinityRegistry &  aff_registry,
                      const set< string > &        gc_clients,
+                     const set< string > &        read_gc_clients,
                      bool                         verbose) const;
-        unsigned int GetID(void) const
-        { return m_ID; }
-        void SetID(unsigned int  id)
-        { m_ID = id; }
-        unsigned int GetType(void) const
-        { return m_Type; }
-        void AppendType(unsigned int  type_to_append)
-        { m_Type |= type_to_append; }
-        TNSBitVector  GetPreferredAffinities(void) const
-        { return m_Affinities; }
-        bool HasPreferredAffinities(void) const
-        { return m_Affinities.any(); }
-        ENSClientState GetState(void) const
-        { return m_State; }
-
-        void  AddPreferredAffinities(const TNSBitVector &  aff);
-        bool  AddPreferredAffinity(unsigned int  aff);
-        void  RemovePreferredAffinities(const TNSBitVector &  aff);
-        void  RemovePreferredAffinity(unsigned int  aff);
-        void  SetPreferredAffinities(const TNSBitVector &  aff);
-
-        // WGET support
-        void  RegisterWaitAffinities(const TNSBitVector &  aff);
-        TNSBitVector  GetWaitAffinities(void) const
-        { return m_WaitAffinities; }
-        bool  IsRequestedAffinity(const TNSBitVector &  aff,
-                                  bool                  use_preferred) const;
-        void  ClearWaitAffinities(void)
-        { m_WaitAffinities.clear(); }
-        bool  ClearPreferredAffinities(void);
-
-        bool  GetAffinityReset(void) const
-        { return m_AffReset; }
-        bool  AnyWaitAffinity(void) const
-        { return m_WaitAffinities.any(); }
-        unsigned int  GetPeerAddress(void) const
-        { return m_Addr; }
-
-        void  CheckRunBlacklistedJobsExisted(
-                                    const CJobStatusTracker &  tracker);
-        void  CheckReadBlacklistedJobsExisted(
-                                    const CJobStatusTracker &  tracker);
-        int  SetClientData(const string &  data, int  data_version);
 
     private:
-        ENSClientState  m_State;          // Client state
-                                          // If true => m_Session == "n/a"
-        unsigned int    m_Type;           // bit mask of ENSClientType
+        ENSClientState      m_State;          // Client state
+                                              // If true => m_Session == "n/a"
+        unsigned int        m_Type;           // bit mask of ENSClientType
 
         /* Note: at the handshake time a client may claim that it is an admin
          * user. It has nothing to do with how NS decides if an adminstritive
@@ -268,86 +463,31 @@ class CNSClient
          * STAT CLIENTS output. And nothing else. This might be misleading
          * however it is how it was requested to do.
          */
-        bool            m_ClaimedAdmin;
-        unsigned int    m_Addr;           // Client peer address
-        unsigned short  m_ControlPort;    // Worker node control port
-        string          m_ClientHost;     // Client host as given in the
-                                          // handshake line.
-        CNSPreciseTime  m_RegistrationTime;
-        CNSPreciseTime  m_SessionStartTime;
-        CNSPreciseTime  m_SessionResetTime;
-        CNSPreciseTime  m_LastAccess;     // The last time the client accessed
-                                          // netschedule
-        string          m_Session;        // Client session id
+        bool                m_ClaimedAdmin;
+        unsigned int        m_Addr;           // Client peer address
+        unsigned short      m_ControlPort;    // Worker node control port
+        string              m_ClientHost;     // Client host as given in the
+                                              // handshake line.
+        CNSPreciseTime      m_RegistrationTime;
+        CNSPreciseTime      m_SessionStartTime;
+        CNSPreciseTime      m_SessionResetTime;
+        CNSPreciseTime      m_LastAccess;     // The last time the client
+                                              // accessed netschedule
+        string              m_Session;
+        unsigned int        m_ID;             // Client identifier, see comments
+                                              // for CNSClientId::m_ID
+        size_t              m_NumberOfSubmitted;
+        size_t              m_NumberOfSockErrors;
 
-        TNSBitVector    m_RunningJobs;      // The jobs the client is currently
-                                            // executing
-        TNSBitVector    m_ReadingJobs;      // The jobs the client is currently
-                                            // reading
-        mutable
-        TNSBitVector    m_RunBlacklistedJobs;
-                                            // The jobs that should not be given
-                                            // to the node for executing
-        mutable
-        TNSBitVector    m_ReadBlacklistedJobs;
-                                            // The jobs that should not be given
-                                            // to the reader for reading
-        unsigned short  m_WaitPort;         // Port, provided in WGET command or
-                                            // 0 otherwise
-        unsigned int    m_ID;               // Client identifier, see comments
-                                            // for CNSClientId::m_ID
-        TNSBitVector    m_Affinities;       // The client preferred affinities
-        TNSBitVector    m_WaitAffinities;   // The list of affinities the client
-                                            // waits for on WGET
-        size_t          m_NumberOfSubmitted;// Number of submitted jobs
-        size_t          m_NumberOfRead;     // Number of jobs given for reading
-        size_t          m_NumberOfRun;      // Number of jobs given for
-                                            // executing
-        bool            m_AffReset;         // true => affinities were reset due
-                                            // to client inactivity timeout
-        size_t          m_NumberOfSockErrors;
+        string              m_ClientData;
+        int                 m_ClientDataVersion;
 
-        CNSPreciseTime *    m_RunBlacklistTimeout;
-        CNSPreciseTime *    m_ReadBlacklistTimeout;
-        mutable
-        map<unsigned int,
-            CNSPreciseTime>
-                        m_RunBlacklistLimits;
-                                            // job id -> last second the job is
-                                            // in the blacklist
-        mutable
-        map<unsigned int,
-            CNSPreciseTime>
-                        m_ReadBlacklistLimits;
-                                            // job id -> last second the job is
-                                            // in the blacklist
+        SRemoteNodeData     m_WNData;
+        SRemoteNodeData     m_ReaderData;
 
+    private:
         string  x_TypeAsString(void) const;
-        void    x_AddToRunBlacklist(unsigned int  job_id);
-        void    x_AddToReadBlacklist(unsigned int  job_id);
-        void    x_UpdateRunBlacklist(void) const;
-        void    x_UpdateRunBlacklist(unsigned int  job_id) const;
-        void    x_UpdateReadBlacklist(void) const;
-        void    x_UpdateReadBlacklist(unsigned int  job_id) const;
-        string  x_GetRunBlacklistLimit(unsigned int  job_id) const;
-        string  x_GetReadBlacklistLimit(unsigned int  job_id) const;
-
-        size_t  m_RunningJobsOpCount;
-        size_t  m_ReadingJobsOpCount;
-        mutable size_t  m_RunBlacklistedJobsOpCount;
-        mutable size_t  m_ReadBlacklistedJobsOpCount;
-        size_t  m_AffinitiesOpCount;
-        size_t  m_WaitAffinitiesOpCount;
-
-        string  m_ClientData;
-        int     m_ClientDataVersion;
-
-        void x_RunningJobsOp(void);
-        void x_ReadingJobsOp(void);
-        void x_RunBlacklistedOp(void) const;
-        void x_ReadBlacklistedOp(void) const;
-        void x_AffinitiesOp(void);
-        void x_WaitAffinitiesOp(void);
+        string  x_StateAsString(void) const;
 };
 
 

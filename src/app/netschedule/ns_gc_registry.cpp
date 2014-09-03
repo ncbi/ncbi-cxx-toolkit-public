@@ -171,7 +171,7 @@ CNSPreciseTime  CJobGCRegistry::GetPreciseSubmitTime(unsigned int  job_id) const
         SJobGCInfo>::const_iterator     attrs = m_JobsAttrs.find(job_id);
 
     if (attrs == m_JobsAttrs.end())
-        return CNSPreciseTime();
+        return kTimeZero;
 
     return attrs->second.m_SubmitTime;
 }

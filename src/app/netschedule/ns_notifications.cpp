@@ -78,7 +78,8 @@ string  SNSNotificationAttributes::Print(
             buffer += "OK:  EXPLICIT AFFINITIES: CLIENT NOT FOUND\n";
         else {
             TNSBitVector    wait_aff =
-                            clients_registry.GetWaitAffinities(m_ClientNode);
+                            clients_registry.GetWaitAffinities(m_ClientNode,
+                                                               eGet);
 
             if (wait_aff.any()) {
                 buffer += "OK:  EXPLICIT AFFINITIES:\n";
@@ -105,7 +106,8 @@ string  SNSNotificationAttributes::Print(
 
             // Need to print resolved preferred affinities
             TNSBitVector    pref_aff =
-                        clients_registry.GetPreferredAffinities(m_ClientNode);
+                        clients_registry.GetPreferredAffinities(m_ClientNode,
+                                                                eGet);
 
             if (pref_aff.any()) {
                 buffer += "OK:  USE PREFERRED AFFINITIES:\n";
@@ -142,7 +144,7 @@ string  SNSNotificationAttributes::Print(
     else
         buffer += s_False;
 
-    if (m_HifreqNotifyLifetime != CNSPreciseTime())
+    if (m_HifreqNotifyLifetime != kTimeZero)
         buffer += "OK:  HIGH FREQUENCY LIFE TIME: " +
                   NS_FormatPreciseTime(m_HifreqNotifyLifetime) + "\n";
     else
@@ -191,14 +193,14 @@ CNSNotificationList::RegisterListener(
                                 bool                  exclusive_new_affinity,
                                 bool                  new_format,
                                 const string &        group,
-                                ENotificationReason   reason)
+                                ECommandGroup         reason)
 {
     unsigned int                                address = client.GetAddress();
     list<SNSNotificationAttributes>::iterator   found;
     CMutexGuard                                 guard(m_ListenersLock);
 
 
-    found = x_FindListener(m_PassiveListeners, address, port);
+    found = x_FindListener(m_PassiveListeners, address, port, reason);
     if (found != m_PassiveListeners.end()) {
         // Passive was here
         found->m_Lifetime = CNSPreciseTime::Current() +
@@ -209,7 +211,7 @@ CNSNotificationList::RegisterListener(
         found->m_ExclusiveNewAff = exclusive_new_affinity;
         found->m_NewFormat = new_format;
         found->m_Group = group;
-        found->m_HifreqNotifyLifetime = CNSPreciseTime();
+        found->m_HifreqNotifyLifetime = kTimeZero;
         found->m_SlowRate = false;
         found->m_SlowRateCount = 0;
         found->m_Reason = reason;
@@ -224,7 +226,7 @@ CNSNotificationList::RegisterListener(
         return;
     }
 
-    found = x_FindListener(m_ActiveListeners, address, port);
+    found = x_FindListener(m_ActiveListeners, address, port, reason);
     if (found != m_ActiveListeners.end()) {
         // Active was here - remove it from the active list and insert a new
         // record into the passive list as it would be absolutely new one.
@@ -245,7 +247,7 @@ CNSNotificationList::RegisterListener(
     attributes.m_ExclusiveNewAff = exclusive_new_affinity;
     attributes.m_NewFormat = new_format;
     attributes.m_Group = group;
-    attributes.m_HifreqNotifyLifetime = CNSPreciseTime();
+    attributes.m_HifreqNotifyLifetime = kTimeZero;
     attributes.m_SlowRate = false;
     attributes.m_SlowRateCount = 0;
     attributes.m_Reason = reason;
@@ -259,25 +261,27 @@ CNSNotificationList::RegisterListener(
 
 
 void CNSNotificationList::UnregisterListener(const CNSClientId &  client,
-                                             unsigned short       port)
+                                             unsigned short       port,
+                                             ECommandGroup        cmd_group)
 {
-    UnregisterListener(client.GetAddress(), port);
+    UnregisterListener(client.GetAddress(), port, cmd_group);
 }
 
 
 void CNSNotificationList::UnregisterListener(unsigned int         address,
-                                             unsigned short       port)
+                                             unsigned short       port,
+                                             ECommandGroup        cmd_group)
 {
     CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   found;
 
-    found = x_FindListener(m_PassiveListeners, address, port);
+    found = x_FindListener(m_PassiveListeners, address, port, cmd_group);
     if (found != m_PassiveListeners.end()) {
         m_PassiveListeners.erase(found);
         return;
     }
 
-    found = x_FindListener(m_ActiveListeners, address, port);
+    found = x_FindListener(m_ActiveListeners, address, port, cmd_group);
     if (found != m_ActiveListeners.end())
         m_ActiveListeners.erase(found);
 }
@@ -316,7 +320,7 @@ CNSNotificationList::NotifyJobStatus(
 // so the notification flag should be reset.
 void CNSNotificationList::CheckTimeout(const CNSPreciseTime & current_time,
                                        CNSClientsRegistry &   clients_registry,
-                                       CNSAffinityRegistry &  aff_registry)
+                                       ECommandGroup          cmd_group)
 {
     list<SNSNotificationAttributes>::iterator   rec;
     CMutexGuard                                 guard(m_ListenersLock);
@@ -324,7 +328,7 @@ void CNSNotificationList::CheckTimeout(const CNSPreciseTime & current_time,
     // Passive records could only be deleted
     rec = m_PassiveListeners.begin();
     while (rec != m_PassiveListeners.end()) {
-        if (x_TestTimeout(current_time, clients_registry, aff_registry,
+        if (x_TestTimeout(current_time, clients_registry,
                           m_PassiveListeners, rec))
             continue;
         ++rec;
@@ -333,12 +337,12 @@ void CNSNotificationList::CheckTimeout(const CNSPreciseTime & current_time,
     // Active records could be deleted or moved to the passive list
     rec = m_ActiveListeners.begin();
     while (rec != m_ActiveListeners.end()) {
-        if (x_TestTimeout(current_time, clients_registry, aff_registry,
+        if (x_TestTimeout(current_time, clients_registry,
                           m_ActiveListeners, rec))
             continue;
 
-        if (rec->m_Reason == eGet) {
-            // Need to move the record to the passive list
+        // Need to move the record to the passive list
+        if (cmd_group == rec->m_Reason) {
             m_PassiveListeners.push_back(SNSNotificationAttributes(*rec));
             rec = m_ActiveListeners.erase(rec);
         }
@@ -351,14 +355,13 @@ void
 CNSNotificationList::NotifyPeriodically(
                                 const CNSPreciseTime & current_time,
                                 unsigned int           notif_lofreq_mult,
-                                CNSClientsRegistry &   clients_registry,
-                                CNSAffinityRegistry &  aff_registry)
+                                CNSClientsRegistry &   clients_registry)
 {
     CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_ActiveListeners.begin();
 
     while (k != m_ActiveListeners.end()) {
-        if (x_TestTimeout(current_time, clients_registry, aff_registry,
+        if (x_TestTimeout(current_time, clients_registry,
                           m_ActiveListeners, k))
             continue;
 
@@ -401,7 +404,7 @@ CNSNotificationList::CheckOutdatedJobs(
     while (k != m_PassiveListeners.end()) {
         if (k->m_Reason == eGet && k->m_ExclusiveNewAff) {
             if ((outdated_jobs -
-                 clients_registry.GetRunBlacklistedJobs(k->m_ClientNode)).any()) {
+                 clients_registry.GetBlacklistedJobs(k->m_ClientNode, eGet)).any()) {
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
                                          k->m_NewFormat, k->m_Reason);
 
@@ -426,7 +429,7 @@ void CNSNotificationList::Notify(unsigned int           job_id,
                                  CNSGroupsRegistry &    group_registry,
                                  const CNSPreciseTime & notif_highfreq_period,
                                  const CNSPreciseTime & notif_handicap,
-                                 ENotificationReason    reason)
+                                 ECommandGroup          reason)
 {
     TNSBitVector    aff_ids;
     TNSBitVector    jobs;
@@ -453,11 +456,11 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                             CNSGroupsRegistry &    group_registry,
                             const CNSPreciseTime & notif_highfreq_period,
                             const CNSPreciseTime & notif_handicap,
-                            ENotificationReason    reason)
+                            ECommandGroup          reason)
 {
     CNSPreciseTime  current_time = CNSPreciseTime::Current();
     TNSBitVector    all_preferred_affs =
-                                clients_registry.GetAllPreferredAffinities();
+                                clients_registry.GetAllPreferredAffinities(eGet);
     TNSBitVector    group_jobs;
 
 
@@ -471,7 +474,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
     list<SNSNotificationAttributes>::iterator   k = m_PassiveListeners.begin();
 
     while (k != m_PassiveListeners.end()) {
-        if (x_TestTimeout(current_time, clients_registry, aff_registry,
+        if (x_TestTimeout(current_time, clients_registry,
                           m_PassiveListeners, k))
             continue;
 
@@ -486,11 +489,11 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
         // Check if all the jobs are in in its blacklist
         TNSBitVector        blacklisted_jobs;
         if (k->m_Reason == eGet)
-            blacklisted_jobs = clients_registry.GetRunBlacklistedJobs(
-                                                            k->m_ClientNode);
+            blacklisted_jobs = clients_registry.GetBlacklistedJobs(
+                                                            k->m_ClientNode, eGet);
         else
-            blacklisted_jobs = clients_registry.GetReadBlacklistedJobs(
-                                                            k->m_ClientNode);
+            blacklisted_jobs = clients_registry.GetBlacklistedJobs(
+                                                            k->m_ClientNode, eRead);
         if ((jobs - blacklisted_jobs).any() == false) {
             ++k;
             continue;
@@ -514,7 +517,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                 should_send = clients_registry.IsRequestedAffinity(
                                                     k->m_ClientNode,
                                                     affinities,
-                                                    k->m_WnodeAff);
+                                                    k->m_WnodeAff, eGet);
         if (should_send == false) {
             if (k->m_ExclusiveNewAff) {
                 if (no_aff_jobs)
@@ -628,7 +631,7 @@ CNSNotificationList::x_AddToExactNotifications(
                                     unsigned short          port,
                                     const CNSPreciseTime &  when,
                                     bool                    new_format,
-                                    ENotificationReason     reason)
+                                    ECommandGroup           reason)
 {
     // The records in the m_ExactTimeNotifications list should be sorted in
     // accordance to the time when a notification should be sent.
@@ -672,11 +675,9 @@ CNSNotificationList::ClearExactGetNotifications(void)
 CNSPreciseTime
 CNSNotificationList::NotifyExactListeners(void)
 {
-    static CNSPreciseTime   never = CNSPreciseTime::Never();
-
     CMutexGuard     guard(m_ExactTimeNotifLock);
     if (m_ExactTimeNotifications.empty())
-        return never;
+        return kTimeNever;
 
     CNSPreciseTime  current = CNSPreciseTime::Current();
     while (!m_ExactTimeNotifications.empty()) {
@@ -693,7 +694,7 @@ CNSNotificationList::NotifyExactListeners(void)
         m_ExactTimeNotifications.erase(first);
     }
 
-    return never;
+    return kTimeNever;
 }
 
 
@@ -721,16 +722,19 @@ CNSNotificationList::AddToQueueResumedNotifications(unsigned int  address,
 
 CNSPreciseTime
 CNSNotificationList::GetPassiveNotificationLifetime(unsigned int  address,
-                                                    unsigned short  port) const
+                                                    unsigned short  port,
+                                                    ECommandGroup  cmd_group) const
 {
     CMutexGuard     guard(m_ListenersLock);
     for (list<SNSNotificationAttributes>::const_iterator
          k = m_PassiveListeners.begin();
          k != m_PassiveListeners.end(); ++k) {
-        if (k->m_Address == address && k->m_Port == port)
+        if (k->m_Address == address &&
+            k->m_Port == port &&
+            k->m_Reason == cmd_group)
             return k->m_Lifetime;
     }
-    return CNSPreciseTime();
+    return kTimeZero;
 }
 
 
@@ -739,7 +743,7 @@ CNSNotificationList::x_SendNotificationPacket(
                                 unsigned int            address,
                                 unsigned short          port,
                                 bool                    new_format,
-                                ENotificationReason     reason)
+                                ECommandGroup           reason)
 {
     if (new_format) {
         // Read notifications could only be of a new format
@@ -766,7 +770,6 @@ bool
 CNSNotificationList::x_TestTimeout(
                 const CNSPreciseTime &                       current_time,
                 CNSClientsRegistry &                         clients_registry,
-                CNSAffinityRegistry &                        aff_registry,
                 list<SNSNotificationAttributes> &            container,
                 list<SNSNotificationAttributes>::iterator &  record)
 {
@@ -776,8 +779,8 @@ CNSNotificationList::x_TestTimeout(
         if (!record->m_ClientNode.empty())
             // That was a new client, so we need to clean up the clients
             // and affinity registry
-            clients_registry.ResetWaiting(record->m_ClientNode,
-                                          aff_registry);
+            clients_registry.CancelWaiting(record->m_ClientNode,
+                                           record->m_Reason, false);
         record = container.erase(record);
         return true;
     }
@@ -942,13 +945,17 @@ void CGetJobNotificationThread::x_DoJob(void)
 
 
 list<SNSNotificationAttributes>::iterator
-CNSNotificationList::x_FindListener(list<SNSNotificationAttributes> &  container,
-                                    unsigned int                       address,
-                                    unsigned short                     port)
+CNSNotificationList::x_FindListener(
+                            list<SNSNotificationAttributes> &  container,
+                            unsigned int                       address,
+                            unsigned short                     port,
+                            ECommandGroup                      cmd_group)
 {
     for (list<SNSNotificationAttributes>::iterator k = container.begin();
          k != container.end(); ++k) {
-        if (k->m_Address == address && k->m_Port == port)
+        if (k->m_Address == address &&
+            k->m_Port == port &&
+            k->m_Reason == cmd_group)
             return k;
     }
     return container.end();

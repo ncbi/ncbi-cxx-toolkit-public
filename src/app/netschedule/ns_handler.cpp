@@ -1058,27 +1058,28 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         bool        client_was_found = false;
         bool        session_was_reset = false;
         string      old_session;
-        bool        pref_affs_were_reset = false;
+        bool        had_wn_pref_affs = false;
+        bool        had_reader_pref_affs = false;
 
         // The cient has a queue, so memorize the client
         queue_ptr->TouchClientsRegistry(m_ClientId, client_was_found,
                                         session_was_reset, old_session,
-                                        pref_affs_were_reset);
+                                        had_wn_pref_affs, had_reader_pref_affs);
         if (client_was_found && session_was_reset) {
             if (m_ConnContext.NotNull()) {
-                if (pref_affs_were_reset) {
-                    GetDiagContext().Extra()
-                        .Print("client_node", m_ClientId.GetNode())
-                        .Print("client_session", m_ClientId.GetSession())
-                        .Print("client_old_session", old_session)
-                        .Print("preferred_affinities_reset", "true");
-                } else {
-                    GetDiagContext().Extra()
-                        .Print("client_node", m_ClientId.GetNode())
-                        .Print("client_session", m_ClientId.GetSession())
-                        .Print("client_old_session", old_session)
-                        .Print("preferred_affinities_reset", "had none");
-                }
+                string  wn_val = "true";
+                if (!had_wn_pref_affs)
+                    wn_val = "had none";
+                string  reader_val = "true";
+                if (!had_reader_pref_affs)
+                    reader_val = "had none";
+
+                GetDiagContext().Extra()
+                    .Print("client_node", m_ClientId.GetNode())
+                    .Print("client_session", m_ClientId.GetSession())
+                    .Print("client_old_session", old_session)
+                    .Print("wn_preferred_affinities_reset", wn_val)
+                    .Print("reader_preferred_affinities_reset", reader_val);
             }
         }
     }
@@ -1918,7 +1919,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
         if (job.GetId())
             x_LogCommandWithJob(job);
 
-        if (added_pref_aff.empty() == false) {
+        if (!added_pref_aff.empty()) {
             if (m_ConnContext.NotNull()) {
                 GetDiagContext().Extra()
                     .Print("client_node", m_ClientId.GetNode())
@@ -3142,26 +3143,28 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
         bool        client_was_found = false;
         bool        session_was_reset = false;
         string      old_session;
-        bool        pref_affs_were_reset = false;
+        bool        had_wn_pref_affs = false;
+        bool        had_reader_pref_affs = false;
 
         queue_ptr->TouchClientsRegistry(m_ClientId, client_was_found,
                                         session_was_reset, old_session,
-                                        pref_affs_were_reset);
+                                        had_wn_pref_affs,
+                                        had_reader_pref_affs);
         if (client_was_found && session_was_reset) {
             if (m_ConnContext.NotNull()) {
-                if (pref_affs_were_reset) {
-                    GetDiagContext().Extra()
-                        .Print("client_node", m_ClientId.GetNode())
-                        .Print("client_session", m_ClientId.GetSession())
-                        .Print("client_old_session", old_session)
-                        .Print("preferred_affinities_reset", "true");
-                } else {
-                    GetDiagContext().Extra()
-                        .Print("client_node", m_ClientId.GetNode())
-                        .Print("client_session", m_ClientId.GetSession())
-                        .Print("client_old_session", old_session)
-                        .Print("preferred_affinities_reset", "had none");
-                }
+                string  wn_val = "true";
+                if (!had_wn_pref_affs)
+                    wn_val = "had none";
+                string  reader_val = "true";
+                if (!had_reader_pref_affs)
+                    reader_val = "had none";
+
+                GetDiagContext().Extra()
+                    .Print("client_node", m_ClientId.GetNode())
+                    .Print("client_session", m_ClientId.GetSession())
+                    .Print("client_old_session", old_session)
+                    .Print("wn_preferred_affinities_reset", wn_val)
+                    .Print("reader_preferred_affinities_reset", reader_val);
             }
         }
     }
@@ -3400,27 +3403,28 @@ void CNetScheduleHandler::x_ProcessSetClientData(CQueue* q)
 void CNetScheduleHandler::x_ProcessClearWorkerNode(CQueue* q)
 {
     bool        client_found = false;
-    bool        pref_affs_were_reset = false;
+    bool        had_wn_pref_affs = false;
+    bool        had_reader_pref_affs = false;
     string      old_session;
 
     q->ClearWorkerNode(m_ClientId, client_found,
-                       old_session, pref_affs_were_reset);
+                       old_session, had_wn_pref_affs, had_reader_pref_affs);
 
     if (client_found) {
         if (m_ConnContext.NotNull()) {
-            if (pref_affs_were_reset) {
-                GetDiagContext().Extra()
-                    .Print("client_node", m_ClientId.GetNode())
-                    .Print("client_session", m_ClientId.GetSession())
-                    .Print("client_old_session", old_session)
-                    .Print("preferred_affinities_reset", "true");
-            } else {
-                GetDiagContext().Extra()
-                    .Print("client_node", m_ClientId.GetNode())
-                    .Print("client_session", m_ClientId.GetSession())
-                    .Print("client_old_session", old_session)
-                    .Print("preferred_affinities_reset", "had none");
-            }
+            string      wn_val = "true";
+            if (!had_wn_pref_affs)
+                wn_val = "had none";
+            string      reader_val = "true";
+            if (!had_reader_pref_affs)
+                reader_val = "had none";
+
+            GetDiagContext().Extra()
+                .Print("client_node", m_ClientId.GetNode())
+                .Print("client_session", m_ClientId.GetSession())
+                .Print("client_old_session", old_session)
+                .Print("wn_preferred_affinities_reset", wn_val)
+                .Print("reader_preferred_affinities_reset", reader_val);
         }
     }
 

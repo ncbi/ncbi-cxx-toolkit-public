@@ -102,6 +102,7 @@ const CNSPreciseTime    default_read_timeout(10, 0);
 const unsigned int      default_failed_retries = 0;
 const CNSPreciseTime    default_blacklist_time = CNSPreciseTime(2147483647, 0);
 const CNSPreciseTime    default_wnode_timeout(40, 0);
+const CNSPreciseTime    default_reader_timeout(40, 0);
 const CNSPreciseTime    default_pending_timeout(604800, 0);
 const CNSPreciseTime    default_max_pending_wait_timeout(0, 0);
 const bool              default_scramble_job_keys = false;
@@ -113,7 +114,7 @@ const CNSPreciseTime    default_client_registry_timeout_admin = CNSPreciseTime(2
 const unsigned int      default_client_registry_min_admins = 10;
 const CNSPreciseTime    default_client_registry_timeout_submitter = CNSPreciseTime(20, 0);
 const unsigned int      default_client_registry_min_submitters = 10;
-const CNSPreciseTime    default_client_registry_timeout_reader = CNSPreciseTime(20, 0);
+const CNSPreciseTime    default_client_registry_timeout_reader = CNSPreciseTime(600, 0);
 const unsigned int      default_client_registry_min_readers = 10;
 const CNSPreciseTime    default_client_registry_timeout_unknown = CNSPreciseTime(20, 0);
 const unsigned int      default_client_registry_min_unknowns = 10;

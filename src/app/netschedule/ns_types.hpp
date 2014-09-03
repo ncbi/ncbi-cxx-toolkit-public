@@ -51,6 +51,17 @@
 
 BEGIN_NCBI_SCOPE
 
+// Distinguishes get and read for various situations:
+// - notifications
+// - affinities
+// etc
+enum ECommandGroup {
+    eGet,               // Comes from a worker node
+    eRead,              // Comes from a reader
+    eUndefined          // Comes from neither a wn nor a reader
+};
+
+
 typedef CBV_PoolBlockAlloc<bm::block_allocator, CFastMutex> TBlockAlloc;
 typedef bm::mem_alloc<TBlockAlloc, bm::ptr_allocator>       TMemAlloc;
 typedef bm::bvector<TMemAlloc>                              TNSBitVector;

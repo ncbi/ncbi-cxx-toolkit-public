@@ -54,20 +54,13 @@ class CQueueDataBase;
 
 
 
-// Distinguishes get and read notifications
-enum ENotificationReason {
-    eGet,
-    eRead
-};
-
-
 struct SNSNotificationAttributes
 {
-    ENotificationReason     m_Reason;
+    ECommandGroup   m_Reason;
 
-    unsigned int            m_Address;
-    unsigned short          m_Port;
-    CNSPreciseTime          m_Lifetime;
+    unsigned int    m_Address;
+    unsigned short  m_Port;
+    CNSPreciseTime  m_Lifetime;
 
     string          m_ClientNode;   // Non-empty for the new style clients
     bool            m_WnodeAff;     // true if I need to consider the node
@@ -102,7 +95,7 @@ struct SNSNotificationAttributes
 // which is going to be sent at exactly specified time
 struct SExactTimeNotification
 {
-    ENotificationReason     m_Reason;
+    ECommandGroup           m_Reason;
     unsigned int            m_Address;
     unsigned short          m_Port;
     CNSPreciseTime          m_TimeToSend;
@@ -138,11 +131,13 @@ class CNSNotificationList
                               bool                  exclusive_new_affinity,
                               bool                  new_format,
                               const string &        group,
-                              ENotificationReason   reason);
+                              ECommandGroup         cmd_group);
         void UnregisterListener(const CNSClientId &  client,
-                                unsigned short       port);
+                                unsigned short       port,
+                                ECommandGroup        cmd_group);
         void UnregisterListener(unsigned int         address,
-                                unsigned short       port);
+                                unsigned short       port,
+                                ECommandGroup        cmd_group);
 
         void NotifyJobStatus(unsigned int    address,
                              unsigned short  port,
@@ -151,11 +146,10 @@ class CNSNotificationList
                              size_t          last_event_index);
         void CheckTimeout(const CNSPreciseTime & current_time,
                           CNSClientsRegistry &   clients_registry,
-                          CNSAffinityRegistry &  aff_registry);
+                          ECommandGroup          cmd_group);
         void NotifyPeriodically(const CNSPreciseTime & current_time,
                                 unsigned int           notif_lofreq_mult,
-                                CNSClientsRegistry &   clients_registry,
-                                CNSAffinityRegistry &  aff_registry);
+                                CNSClientsRegistry &   clients_registry);
         void CheckOutdatedJobs(const TNSBitVector &    outdated_jobs,
                                CNSClientsRegistry &    clients_registry,
                                const CNSPreciseTime &  notif_highfreq_period);
@@ -166,7 +160,7 @@ class CNSNotificationList
                     CNSGroupsRegistry &    group_registry,
                     const CNSPreciseTime & notif_highfreq_period,
                     const CNSPreciseTime & notif_handicap,
-                    ENotificationReason    reason);
+                    ECommandGroup          cmd_group);
         void Notify(const TNSBitVector &   jobs,
                     const TNSBitVector &   affinities,
                     bool                   no_aff_jobs,
@@ -175,7 +169,7 @@ class CNSNotificationList
                     CNSGroupsRegistry &    group_registry,
                     const CNSPreciseTime & notif_highfreq_period,
                     const CNSPreciseTime & notif_handicap,
-                    ENotificationReason    reason);
+                    ECommandGroup          cmd_group);
         void onQueueResumed(bool  any_pending);
         string Print(const CNSClientsRegistry &   clients_registry,
                      const CNSAffinityRegistry &  aff_registry,
@@ -194,22 +188,22 @@ class CNSNotificationList
                                             bool  new_format);
         CNSPreciseTime
         GetPassiveNotificationLifetime(unsigned int  address,
-                                       unsigned short  port) const;
+                                       unsigned short  port,
+                                       ECommandGroup  cmd_group) const;
 
     private:
         void x_AddToExactNotifications(unsigned int  address,
                                        unsigned short  port,
                                        const CNSPreciseTime &  when,
                                        bool  new_format,
-                                       ENotificationReason  reason);
+                                       ECommandGroup  reason);
         void x_SendNotificationPacket(unsigned int            address,
                                       unsigned short          port,
                                       bool                    new_format,
-                                      ENotificationReason     reason);
+                                      ECommandGroup           reason);
         bool x_TestTimeout(
                 const CNSPreciseTime &       current_time,
                 CNSClientsRegistry &         clients_registry,
-                CNSAffinityRegistry &        aff_registry,
                 list<SNSNotificationAttributes> &            container,
                 list<SNSNotificationAttributes>::iterator &  record);
         bool x_IsInExactList(unsigned int  address, unsigned short  port) const;
@@ -228,7 +222,8 @@ class CNSNotificationList
         list<SNSNotificationAttributes>::iterator
                 x_FindListener(list<SNSNotificationAttributes> &  container,
                                unsigned int                       address,
-                               unsigned short                     port);
+                               unsigned short                     port,
+                               ECommandGroup                      cmd_group);
 
         CDatagramSocket     m_GetAndReadNotificationSocket;
         char                m_GetMsgBuffer[k_MessageBufferSize];

@@ -198,6 +198,9 @@ string NS_FormatPreciseTimeAsSec(const CNSPreciseTime &  t)
 }
 
 
+const CNSPreciseTime        kTimeNever = CNSPreciseTime::Never();
+const CNSPreciseTime        kTimeZero = CNSPreciseTime();
+
 END_NCBI_SCOPE
 
 #endif /* NS_PRECISE_TIME__HPP */

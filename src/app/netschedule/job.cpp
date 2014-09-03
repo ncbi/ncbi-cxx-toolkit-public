@@ -132,17 +132,17 @@ GetJobExpirationTime(const CNSPreciseTime &     last_touch,
                      const CNSPreciseTime &     event_time)
 {
     CNSPreciseTime  last_update = event_time;
-    if (last_update == CNSPreciseTime())
+    if (last_update == kTimeZero)
         last_update = last_touch;
 
     if (status == CNetScheduleAPI::eRunning) {
-        if (job_run_timeout != CNSPreciseTime())
+        if (job_run_timeout != kTimeZero)
             return last_update + job_run_timeout;
         return last_update + queue_run_timeout;
     }
 
     if (status == CNetScheduleAPI::eReading) {
-        if (job_read_timeout != CNSPreciseTime())
+        if (job_read_timeout != kTimeZero)
             return last_update + job_read_timeout;
         return last_update + queue_read_timeout;
     }
@@ -150,7 +150,7 @@ GetJobExpirationTime(const CNSPreciseTime &     last_touch,
     if (status == CNetScheduleAPI::ePending) {
         CNSPreciseTime  regular_expiration = last_update +
                                              queue_timeout;
-        if (job_timeout != CNSPreciseTime())
+        if (job_timeout != kTimeZero)
             regular_expiration = last_update + job_timeout;
         CNSPreciseTime  pending_expiration = job_submit_time +
                                              queue_pending_timeout;
@@ -160,7 +160,7 @@ GetJobExpirationTime(const CNSPreciseTime &     last_touch,
         return pending_expiration;
     }
 
-    if (job_timeout != CNSPreciseTime())
+    if (job_timeout != kTimeZero)
         return last_update + job_timeout;
     return last_update + queue_timeout;
 }
@@ -588,7 +588,7 @@ bool CJob::ShouldNotifySubmitter(const CNSPreciseTime &  current_time) const
 bool CJob::ShouldNotifyListener(const CNSPreciseTime &  current_time,
                                 TNSBitVector &          jobs_to_notify) const
 {
-    if (m_ListenerNotifAbsTime != CNSPreciseTime() &&
+    if (m_ListenerNotifAbsTime != kTimeZero &&
         m_ListenerNotifAddress != 0 &&
         m_ListenerNotifPort != 0) {
         if (m_ListenerNotifAbsTime >= current_time) {
@@ -622,11 +622,11 @@ string CJob::Print(const CQueue &               queue,
 
     result.reserve(2048);   // Voluntary; must be enough for most of the cases
 
-    if (m_Timeout == CNSPreciseTime())
+    if (m_Timeout == kTimeZero)
         timeout = queue_timeout;
-    if (m_RunTimeout == CNSPreciseTime())
+    if (m_RunTimeout == kTimeZero)
         run_timeout = queue_run_timeout;
-    if (m_ReadTimeout == CNSPreciseTime())
+    if (m_ReadTimeout == kTimeZero)
         read_timeout = queue_read_timeout;
 
     CNSPreciseTime  exp_time;
@@ -691,7 +691,7 @@ string CJob::Print(const CQueue &               queue,
     else
         result += "OK:subm_notif_port: n/a\n";
 
-    if (m_SubmNotifTimeout != CNSPreciseTime()) {
+    if (m_SubmNotifTimeout != kTimeZero) {
         CNSPreciseTime  subm_exp_time = m_Events[0].m_Timestamp +
                                         m_SubmNotifTimeout;
         result += "OK:subm_notif_expiration: " +
@@ -708,7 +708,7 @@ string CJob::Print(const CQueue &               queue,
                   CSocketAPI::gethostbyaddr(m_ListenerNotifAddress) + ":" +
                   NStr::NumericToString(m_ListenerNotifPort) + "\n";
 
-    if (m_ListenerNotifAbsTime != CNSPreciseTime())
+    if (m_ListenerNotifAbsTime != kTimeZero)
         result += "OK:listener_notif_expiration: " +
                   NS_FormatPreciseTime(m_ListenerNotifAbsTime) + "\n";
     else
@@ -736,7 +736,7 @@ string CJob::Print(const CQueue &               queue,
         // Time part
         result += "timestamp=";
         CNSPreciseTime  start = it->GetTimestamp();
-        if (start == CNSPreciseTime())
+        if (start == kTimeZero)
             result += "n/a ";
         else
             result += "'" + NS_FormatPreciseTime(start) + "' ";

@@ -913,6 +913,22 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
             wnode_timeout_value = value;
     }
 
+    double  reader_timeout_value = double(default_reader_timeout);
+    bool    reader_timeout_ok = NS_ValidateDouble(reg, section,
+                                                  "reader_timeout");
+    well_formed = well_formed && reader_timeout_ok;
+    if (reader_timeout_ok) {
+        double  value = reg.GetDouble(section, "reader_timeout",
+                                      double(default_reader_timeout));
+        if (value <= 0.0) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "reader_timeout") <<
+                     " must be > 0.0");
+        } else
+            reader_timeout_value = value;
+    }
+
     bool    pending_timeout_ok = NS_ValidateDouble(reg, section,
                                                    "pending_timeout");
     well_formed = well_formed && pending_timeout_ok;
@@ -1052,11 +1068,11 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
                         section,
                         "client_registry_timeout_reader",
                         double(default_client_registry_timeout_reader));
-        if (value <= 0.0) {
+        if (value <= 0.0 || value <= reader_timeout_value) {
             well_formed = false;
             ERR_POST(g_LogPrefix << " value " <<
                      NS_RegValName(section, "client_registry_timeout_reader") <<
-                     " must be > 0.0");
+                     " must be > 0.0 and > reader_timeout");
         }
     }
 

@@ -355,7 +355,8 @@ public:
     void ClearWorkerNode(const CNSClientId &  client,
                          bool &               client_was_found,
                          string &             old_session,
-                         bool &               pref_affs_were_reset);
+                         bool &               had_wn_pref_affs,
+                         bool &               had_reader_pref_affs);
 
     void NotifyListenersPeriodically(const CNSPreciseTime &  current_time);
     CNSPreciseTime NotifyExactListeners(void);
@@ -391,7 +392,7 @@ public:
     unsigned int  DeleteBatch(unsigned int  max_deleted);
     unsigned int  PurgeAffinities(void);
     unsigned int  PurgeGroups(void);
-    void          StaleWNodes(const CNSPreciseTime &  current_time);
+    void          StaleNodes(const CNSPreciseTime &  current_time);
     void          PurgeBlacklistedJobs(void);
     void          PurgeClientRegistry(const CNSPreciseTime &  current_time);
 
@@ -419,7 +420,8 @@ public:
                               bool &         client_was_found,
                               bool &         session_was_reset,
                               string &       old_session,
-                              bool &         pref_affs_were_reset);
+                              bool &         had_wn_pref_affs,
+                              bool &         had_reader_pref_affs);
     void MarkClientAsAdmin(const CNSClientId &  client);
     void RegisterSocketWriteError(const CNSClientId &  client);
 
@@ -541,7 +543,6 @@ private:
                                 const string &        group);
     bool x_UnregisterGetListener(const CNSClientId &  client,
                                  unsigned short       port);
-    bool x_UnregisterReadListener(const CNSClientId &  client);
 
     /// Erase jobs from all structures, request delayed db deletion
     void x_Erase(const TNSBitVector& job_ids);
@@ -626,6 +627,7 @@ private:
     unsigned                    m_MaxInputSize;
     unsigned                    m_MaxOutputSize;
     CNSPreciseTime              m_WNodeTimeout;
+    CNSPreciseTime              m_ReaderTimeout;
     CNSPreciseTime              m_PendingTimeout;
     CNSPreciseTime              m_MaxPendingWaitTimeout;
     // Client program version control

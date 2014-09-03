@@ -2897,9 +2897,14 @@ class Scenario172( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario172' )
         client = getClientInfo( ns_client, 'node' )
-        if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
-            raise Exception( "Wrong job in the client blacklist" )
+        if 'blacklisted_jobs' in client:
+            if len( client[ 'blacklisted_jobs' ] ) != 1 or \
+               client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
+                raise Exception( "Wrong job in the client blacklist" )
+        if 'read_blacklisted_jobs' in client:
+            if len( client[ 'read_blacklisted_jobs' ] ) != 1 or \
+               client[ 'read_blacklisted_jobs' ][ 0 ].split()[0] != jobID:
+                raise Exception( "Wrong job in the client blacklist" )
         return True
 
 class Scenario173( TestBase ):
@@ -2945,9 +2950,14 @@ class Scenario173( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario173' )
         client = getClientInfo( ns_client, 'node' )
-        if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
-            raise Exception( "Wrong job in the client blacklist" )
+        if 'blacklisted_jobs' in client:
+            if len( client[ 'blacklisted_jobs' ] ) != 1 or \
+               client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
+                raise Exception( "Wrong job in the client blacklist" )
+        if 'read_blacklisted_jobs' in client:
+            if len( client[ 'read_blacklisted_jobs' ] ) != 1 or \
+               client[ 'read_blacklisted_jobs' ][ 0 ].split()[0] != jobID:
+                raise Exception( "Wrong job in the client blacklist" )
         return True
 
 class Scenario174( TestBase ):
@@ -2992,9 +3002,14 @@ class Scenario174( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario173' )
         client = getClientInfo( ns_client, 'node' )
-        if len( client[ 'blacklisted_jobs' ] ) != 1 or \
-           client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
-            raise Exception( "Wrong job in the client blacklist" )
+        if 'blacklisted_jobs' in client:
+            if len( client[ 'blacklisted_jobs' ] ) != 1 or \
+               client[ 'blacklisted_jobs' ][ 0 ].split()[0] != jobID:
+                raise Exception( "Wrong job in the client blacklist" )
+        if 'read_blacklisted_jobs' in client:
+            if len( client[ 'read_blacklisted_jobs' ] ) != 1 or \
+               client[ 'read_blacklisted_jobs' ][ 0 ].split()[0] != jobID:
+                raise Exception( "Wrong job in the client blacklist" )
         return True
 
 class Scenario175( TestBase ):
@@ -4966,9 +4981,14 @@ class Scenario239( TestBase ):
         if aff[ 'affinity_token' ] != 'a1':
             raise Exception( "Expected aff token: a1, received: " + \
                              aff[ 'affinity_token' ] )
-        if aff[ 'number_of_clients__preferred' ] != 0:
-            raise Exception( "Expected 0 preferred clients, received: " + \
-                             str( aff[ 'number_of_clients__preferred' ] ) )
+        if 'number_of_clients__preferred' in aff:
+            if aff[ 'number_of_clients__preferred' ] != 0:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( aff[ 'number_of_clients__preferred' ] ) )
+        if 'number_of_wn_clients__preferred' in aff:
+            if aff[ 'number_of_wn_clients__preferred' ] != 0:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( aff[ 'number_of_wn_clients__preferred' ] ) )
         if aff[ 'number_of_clients__explicit_wget' ] != 0:
             raise Exception( "Expected 0 WGET clients, received: " + \
                              str( aff[ 'number_of_clients__explicit_wget' ] ) )
@@ -5011,11 +5031,16 @@ class Scenario240( TestBase ):
             raise Exception( "Expected aff token: a1, received: " + \
                              aff[ 'affinity_token' ] )
         if aff[ 'clients__explicit_wget' ] is not None:
-            raise Exception( "Expected 0 WGET clients, received: " + \
+            raise Exception( "Expected 0 WGET clients, received: " +
                              str( len( aff[ 'clients__explicit_wget' ] ) ) )
-        if aff[ 'clients__preferred' ] is not None:
-            raise Exception( "Expected 0 preferred clients, received: " + \
-                             str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'clients__preferred' in aff:
+            if aff[ 'clients__preferred' ] is not None:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'wn_clients__preferred' in aff:
+            if aff[ 'wn_clients__preferred' ] is not None:
+                raise Exception( "Expected 0 wn preferred clients, received: " +
+                                 str( len( aff[ 'wn_clients__preferred' ] ) ) )
         return True
 
 class Scenario241( TestBase ):
@@ -5040,18 +5065,30 @@ class Scenario241( TestBase ):
 
         aff = getAffinityInfo( ns_client, True, 1, 0 )
         if aff[ 'affinity_token' ] != 'a2':
-            raise Exception( "Expected aff token: a2, received: " + \
+            raise Exception( "Expected aff token: a2, received: " +
                              aff[ 'affinity_token' ] )
         if aff[ 'clients__explicit_wget' ] is not None:
-            raise Exception( "Expected 0 WGET clients, received: " + \
+            raise Exception( "Expected 0 WGET clients, received: " +
                              str( len( aff[ 'clients__explicit_wget' ] ) ) )
-        if len( aff[ 'clients__preferred' ] ) != 1:
-            raise Exception( "Expected 1 preferred client, received: " + \
-                             str( len( aff[ 'clients__preferred' ] ) ) )
-        if aff[ 'clients__preferred' ][ 0 ] != 'mynode':
-            raise Exception( "Unexpected preferred client. " \
-                             "Expected 'mynode', received: '" + \
-                             aff[ 'clients__preferred' ][ 0 ] + "'" )
+        if 'clients__preferred' in aff:
+            if len( aff[ 'clients__preferred' ] ) != 1:
+                raise Exception( "Expected 1 preferred client, received: " +
+                                 str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'wn_clients__preferred' in aff:
+            if len( aff[ 'wn_clients__preferred' ] ) != 1:
+                raise Exception( "Expected 1 preferred client, received: " +
+                                 str( len( aff[ 'wn_clients__preferred' ] ) ) )
+
+        if 'clients__preferred' in aff:
+            if aff[ 'clients__preferred' ][ 0 ] != 'mynode':
+                raise Exception( "Unexpected preferred client. "
+                                 "Expected 'mynode', received: '" +
+                                 aff[ 'clients__preferred' ][ 0 ] + "'" )
+        if 'wn_clients__preferred' in aff:
+            if aff[ 'wn_clients__preferred' ][ 0 ] != 'mynode':
+                raise Exception( "Unexpected preferred client. "
+                                 "Expected 'mynode', received: '" +
+                                 aff[ 'wn_clients__preferred' ][ 0 ] + "'" )
         return True
 
 class Scenario242( TestBase ):
@@ -5076,7 +5113,7 @@ class Scenario242( TestBase ):
 
         changeAffinity( ns_client, [], [ 'a3' ] )
 
-        aff = getAffinityInfo( ns_client, True, 0, 0 )
+        getAffinityInfo( ns_client, True, 0, 0 )
         return True
 
 class Scenario243( TestBase ):
@@ -5102,18 +5139,23 @@ class Scenario243( TestBase ):
 
         aff = getAffinityInfo( ns_client, True, 1, 0 )
         if aff[ 'jobs' ] is not None:
-            raise Exception( "Expected no jobs, received: " + \
+            raise Exception( "Expected no jobs, received: " +
                              str( len( aff[ 'jobs' ] ) ) )
 
         if aff[ 'affinity_token' ] != 'a4':
-            raise Exception( "Expected aff token: a4, received: " + \
+            raise Exception( "Expected aff token: a4, received: " +
                              aff[ 'affinity_token' ] )
         if aff[ 'clients__explicit_wget' ] is not None:
-            raise Exception( "Expected 0 WGET clients, received: " + \
+            raise Exception( "Expected 0 WGET clients, received: " +
                              str( len( aff[ 'clients__explicit_wget' ] ) ) )
-        if aff[ 'clients__preferred' ] is not None:
-            raise Exception( "Expected 0 preferred clients, received: " + \
-                             str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'clients__preferred' in aff:
+            if aff[ 'clients__preferred' ] is not None:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'wn_clients__preferred' in aff:
+            if aff[ 'wn_clients__preferred' ] is not None:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( len( aff[ 'wn_clients__preferred' ] ) ) )
         return True
 
 class Scenario244( TestBase ):
@@ -5139,20 +5181,25 @@ class Scenario244( TestBase ):
         execAny( ns_client, 'WGET 5000 10 aff=a5' )
         aff = getAffinityInfo( ns_client, True, 1, 0 )
         if aff[ 'affinity_token' ] != 'a5':
-            raise Exception( "Expected aff token: a5, received: " + \
+            raise Exception( "Expected aff token: a5, received: " +
                              aff[ 'affinity_token' ] )
         if aff[ 'jobs' ] is not None:
-            raise Exception( "Expected 0 job, received: " + \
+            raise Exception( "Expected 0 job, received: " +
                              str( len( aff[ 'jobs' ] ) ) )
         if len( aff[ 'clients__explicit_wget' ] ) != 1:
-            raise Exception( "Expected 1 WGET clients, received: " + \
+            raise Exception( "Expected 1 WGET clients, received: " +
                              str( len( aff[ 'clients__explicit_wget' ] ) ) )
         if aff[ 'clients__explicit_wget' ][ 0 ] != 'mynode':
-            raise Exception( "Expected explicit client 'mynode', received: " + \
+            raise Exception( "Expected explicit client 'mynode', received: " +
                              aff[ 'clients__explicit_wget' ][ 0 ] )
-        if aff[ 'clients__preferred' ] is not None:
-            raise Exception( "Expected 0 preferred clients, received: " + \
-                             str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'clients__preferred' in aff:
+            if aff[ 'clients__preferred' ] is not None:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'wn_clients__preferred' in aff:
+            if aff[ 'wn_clients__preferred' ] is not None:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( len( aff[ 'wn_clients__preferred' ] ) ) )
         return True
 
 class Scenario245( TestBase ):
@@ -5179,17 +5226,22 @@ class Scenario245( TestBase ):
 
         aff = getAffinityInfo( ns_client, True, 1, 0 )
         if aff[ 'affinity_token' ] != 'a6':
-            raise Exception( "Expected aff token: a6, received: " + \
+            raise Exception( "Expected aff token: a6, received: " +
                              aff[ 'affinity_token' ] )
         if aff[ 'jobs' ] is not None:
-            raise Exception( "Expected 0 job, received: " + \
+            raise Exception( "Expected 0 job, received: " +
                              str( len( aff[ 'jobs' ] ) ) )
         if aff[ 'clients__explicit_wget' ] is not None:
-            raise Exception( "Expected 0 WGET clients, received: " + \
+            raise Exception( "Expected 0 WGET clients, received: " +
                              str( len( aff[ 'clients__explicit_wget' ] ) ) )
-        if aff[ 'clients__preferred' ] is not None:
-            raise Exception( "Expected 0 preferred clients, received: " + \
-                             str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'clients__preferred' in aff:
+            if aff[ 'clients__preferred' ] is not None:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( len( aff[ 'clients__preferred' ] ) ) )
+        if 'wn_clients__preferred' in aff:
+            if aff[ 'wn_clients__preferred' ] is not None:
+                raise Exception( "Expected 0 preferred clients, received: " +
+                                 str( len( aff[ 'wn_clients__preferred' ] ) ) )
         return True
 
 class Scenario246( TestBase ):

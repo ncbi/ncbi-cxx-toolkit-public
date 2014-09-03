@@ -334,7 +334,7 @@ TNSBitVector
 CJobStatusTracker::GetOutdatedPendingJobs(CNSPreciseTime          timeout,
                                           const CJobGCRegistry &  gc_registry) const
 {
-    static CNSPreciseTime   s_LastTimeout = CNSPreciseTime();
+    static CNSPreciseTime   s_LastTimeout = kTimeZero;
     static unsigned int     s_LastCheckedJobID = 0;
     static const size_t     kMaxCandidates = 100;
 

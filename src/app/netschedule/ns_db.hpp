@@ -295,6 +295,8 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldLString   wnode_hosts;
     CBDB_FieldUint4     wnode_timeout_sec;
     CBDB_FieldUint4     wnode_timeout_nsec;
+    CBDB_FieldUint4     reader_timeout_sec;
+    CBDB_FieldUint4     reader_timeout_nsec;
     CBDB_FieldUint4     pending_timeout_sec;
     CBDB_FieldUint4     pending_timeout_nsec;
     CBDB_FieldUint4     max_pending_wait_timeout_sec;
@@ -358,6 +360,8 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("wnode_hosts",                   &wnode_hosts);
         BindData("wnode_timeout_sec",             &wnode_timeout_sec);
         BindData("wnode_timeout_nsec",            &wnode_timeout_nsec);
+        BindData("reader_timeout_sec",            &reader_timeout_sec);
+        BindData("reader_timeout_nsec",           &reader_timeout_nsec);
         BindData("pending_timeout_sec",           &pending_timeout_sec);
         BindData("pending_timeout_nsec",          &pending_timeout_nsec);
         BindData("max_pending_wait_timeout_sec",  &max_pending_wait_timeout_sec);

@@ -81,19 +81,78 @@ struct SNSJobsAffinity
 {
     const string *  m_AffToken;
     TNSBitVector    m_Jobs;
-    TNSBitVector    m_Clients;
+    TNSBitVector    m_WNClients;
+    TNSBitVector    m_ReaderClients;
     TNSBitVector    m_WaitGetClients;
+    TNSBitVector    m_WaitReadClients;
 
-    size_t          m_JobsOpCount;
-    size_t          m_ClientsOpCount;
-    size_t          m_WaitGetClientsOpCount;
 
     SNSJobsAffinity();
     bool CanBeDeleted(void) const;
 
-    void JobsOp(void);
-    void ClientsOp(void);
-    void WaitGetOp(void);
+    void AddJob(unsigned int  job_id)
+    { m_Jobs.set(job_id, true);
+      x_JobsOp();
+    }
+
+    void RemoveJob(unsigned int  job_id)
+    { m_Jobs.set(job_id, false);
+      x_JobsOp();
+    }
+
+    void AddWNClient(unsigned int  client_id)
+    { m_WNClients.set(client_id, true);
+      x_WNClientsOp();
+    }
+
+    void AddReaderClient(unsigned int  client_id)
+    { m_ReaderClients.set(client_id, true);
+      x_ReaderClientsOp();
+    }
+
+    void RemoveWNClient(unsigned int  client_id)
+    { m_WNClients.set(client_id, false);
+      x_WNClientsOp();
+    }
+
+    void RemoveReaderClient(unsigned int  client_id)
+    { m_ReaderClients.set(client_id, false);
+      x_ReaderClientsOp();
+    }
+
+    void AddWNWaitClient(unsigned int  client_id)
+    { m_WaitGetClients.set(client_id, true);
+      x_WaitGetOp();
+    }
+
+    void AddReadWaitClient(unsigned int  client_id)
+    { m_WaitReadClients.set(client_id, true);
+      x_WaitReadOp();
+    }
+
+    void RemoveWNWaitClient(unsigned int  client_id)
+    { m_WaitGetClients.set(client_id, false);
+      x_WaitGetOp();
+    }
+
+    void RemoveReadWaitClient(unsigned int  client_id)
+    { m_WaitReadClients.set(client_id, false);
+      x_WaitReadOp();
+    }
+
+    private:
+        void x_JobsOp(void);
+        void x_WNClientsOp(void);
+        void x_ReaderClientsOp(void);
+        void x_WaitGetOp(void);
+        void x_WaitReadOp(void);
+
+    private:
+        size_t      m_JobsOpCount;
+        size_t      m_WNClientsOpCount;
+        size_t      m_ReaderClientsOpCount;
+        size_t      m_WaitGetClientsOpCount;
+        size_t      m_WaitReadClientsCount;
 };
 
 
@@ -102,8 +161,10 @@ struct SAffinityStatistics
     string      m_Token;
     size_t      m_NumberOfPendingJobs;
     size_t      m_NumberOfRunningJobs;
-    size_t      m_NumberOfPreferred;
-    size_t      m_NumberOfWaitGet;
+    size_t      m_NumberOfWNPreferred;
+    size_t      m_NumberOfWNWaitGet;
+    size_t      m_NumberOfReaderPreferred;
+    size_t      m_NumberOfReaderWaitRead;
 };
 
 
@@ -124,7 +185,8 @@ class CNSAffinityRegistry
 
         unsigned int  ResolveAffinityToken(const string &  token,
                                            unsigned int    job_id,
-                                           unsigned int    client_id);
+                                           unsigned int    client_id,
+                                           ECommandGroup   command_group);
         TNSBitVector  ResolveAffinities(const list< string > &  tokens);
         unsigned int  ResolveAffinity(const string &  token);
         list< SAffinityStatistics >
@@ -133,13 +195,20 @@ class CNSAffinityRegistry
         TNSBitVector  GetRegisteredAffinities(void) const;
         void  RemoveJobFromAffinity(unsigned int  job_id, unsigned int  aff_id);
         size_t  RemoveClientFromAffinities(unsigned int          client_id,
-                                           const TNSBitVector &  aff_ids);
+                                           const TNSBitVector &  aff_ids,
+                                           ECommandGroup         cmd_group);
         size_t  RemoveWaitClientFromAffinities(unsigned int          client_id,
-                                               const TNSBitVector &  aff_ids);
-        void  AddClientToAffinity(unsigned int  client_id,
-                                  unsigned int  aff_id);
+                                               const TNSBitVector &  aff_ids,
+                                               ECommandGroup         cmd_group);
+        void  AddClientToAffinity(unsigned int   client_id,
+                                  unsigned int   aff_id,
+                                  ECommandGroup  cmd_group);
+        void  AddClientToAffinities(unsigned int          client_id,
+                                    const TNSBitVector &  aff_ids,
+                                    ECommandGroup         cmd_group);
         void  SetWaitClientForAffinities(unsigned int          client_id,
-                                         const TNSBitVector &  aff_ids);
+                                         const TNSBitVector &  aff_ids,
+                                         ECommandGroup         cmd_group);
 
         string Print(const CQueue *              queue,
                      const CNSClientsRegistry &  clients_registry,
@@ -166,7 +235,8 @@ class CNSAffinityRegistry
         size_t
         x_RemoveClientFromAffinities(unsigned int          client_id,
                                      const TNSBitVector &  aff_ids,
-                                     bool                  is_wait_client);
+                                     bool                  is_wait_client,
+                                     ECommandGroup         cmd_group);
         void x_Clear(void);
         void x_DeleteAffinity(unsigned int                   aff_id,
                               map<unsigned int,
@@ -203,6 +273,18 @@ class CNSAffinityRegistry
                            const CQueue *              queue,
                            const CNSClientsRegistry &  clients_registry,
                            bool                        verbose) const;
+        void x_AddClient(SNSJobsAffinity &  aff_data,
+                         unsigned int       client_id,
+                         ECommandGroup      command_group);
+        void x_RemoveClient(SNSJobsAffinity &  aff_data,
+                            unsigned int       client_id,
+                            ECommandGroup      command_group);
+        void x_AddWaitClient(SNSJobsAffinity &  aff_data,
+                             unsigned int       client_id,
+                             ECommandGroup      command_group);
+        void x_RemoveWaitClient(SNSJobsAffinity &  aff_data,
+                                unsigned int       client_id,
+                                ECommandGroup      command_group);
 };
 
 

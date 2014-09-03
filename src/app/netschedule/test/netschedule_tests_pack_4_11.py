@@ -539,10 +539,17 @@ class Scenario311( TestBase ):
         ns_admin = self.getNetScheduleService( 'TEST', 'scenario310' )
 
         affInfo = getAffinityInfo( ns_admin )
-        if affInfo[ 'affinity_token' ] != 'a0' or \
-           affInfo[ 'clients__preferred' ] != [ 'node1' ]:
+        if affInfo[ 'affinity_token' ] != 'a0':
             raise Exception( "Unexpected affinity registry content "
-                             "after adding 1 preferred affinity" )
+                             "after adding 1 preferred affinity (token)" )
+        if 'clients__preferred' in affInfo:
+            if affInfo[ 'clients__preferred' ] != [ 'node1' ]:
+                raise Exception( "Unexpected affinity registry content "
+                                "after adding 1 preferred affinity (node)" )
+        if 'wn_clients__preferred' in affInfo:
+            if affInfo[ 'wn_clients__preferred' ] != [ 'node1' ]:
+                raise Exception( "Unexpected affinity registry content "
+                                "after adding 1 preferred affinity (node)" )
         info = getClientInfo( ns_admin, 'node1' )
         if info[ 'preferred_affinities_reset' ] != False:
             raise Exception( "Expected to have preferred affinities non reset, "
@@ -559,10 +566,17 @@ class Scenario311( TestBase ):
                              str( info[ 'preferred_affinities_reset' ] ) )
 
         affInfo = getAffinityInfo( ns_admin )
-        if affInfo[ 'affinity_token' ] != 'a0' or \
-           affInfo[ 'clients__preferred' ] != None:
+        if affInfo[ 'affinity_token' ] != 'a0':
             raise Exception( "Unexpected affinity registry content "
-                             "after worker node is expired" )
+                             "after worker node is expired (token)" )
+        if 'clients__preferred' in affInfo:
+            if affInfo[ 'clients__preferred' ] != None:
+                raise Exception( "Unexpected affinity registry content "
+                                 "after worker node is expired (node)" )
+        if 'wn_clients__preferred' in affInfo:
+            if affInfo[ 'wn_clients__preferred' ] != None:
+                raise Exception( "Unexpected affinity registry content "
+                                 "after worker node is expired (node)" )
 
         try:
             output = execAny( ns_client,
@@ -618,10 +632,18 @@ class Scenario312( TestBase ):
                              str( info[ 'preferred_affinities_reset' ] ) )
 
         affInfo = getAffinityInfo( ns_admin )
-        if affInfo[ 'affinity_token' ] != 'a0' or \
-           affInfo[ 'clients__preferred' ] != None:
+        if affInfo[ 'affinity_token' ] != 'a0':
             raise Exception( "Unexpected affinity registry content "
-                             "after worker node is expired" )
+                             "after worker node is expired (token)" )
+        if 'clients__preferred' in affInfo:
+            if affInfo[ 'clients__preferred' ] != None:
+                raise Exception( "Unexpected affinity registry content "
+                                 "after worker node is expired (node)" )
+        if 'wn_clients__preferred' in affInfo:
+            if affInfo[ 'wn_clients__preferred' ] != None:
+                raise Exception( "Unexpected affinity registry content "
+                                 "after worker node is expired (node)" )
+
 
         if getNotificationInfo( ns_admin, True, 0 ) != None:
             raise Exception( "Expected no notification, got some" )

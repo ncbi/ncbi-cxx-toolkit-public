@@ -108,6 +108,7 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
     m_MaxOutputSize(kNetScheduleMaxDBDataSize),
     m_WNodeTimeout(default_wnode_timeout),
+    m_ReaderTimeout(default_reader_timeout),
     m_PendingTimeout(default_pending_timeout),
     m_KeyGenerator(server->GetHost(), server->GetPort(), queue_name),
     m_Log(server->IsLog()),
@@ -142,6 +143,8 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_ClientRegistryMinUnknowns(default_client_registry_min_unknowns)
 {
     _ASSERT(!queue_name.empty());
+    m_ClientsRegistry.SetRegistries(&m_AffinityRegistry,
+                                    &m_NotificationsList);
 }
 
 
@@ -244,6 +247,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_MaxInputSize          = params.max_input_size;
     m_MaxOutputSize         = params.max_output_size;
     m_WNodeTimeout          = params.wnode_timeout;
+    m_ReaderTimeout         = params.reader_timeout;
     m_PendingTimeout        = params.pending_timeout;
     m_MaxPendingWaitTimeout = CNSPreciseTime(params.max_pending_wait_timeout);
     m_NotifHifreqInterval   = params.notif_hifreq_interval;
@@ -335,7 +339,7 @@ CNSPreciseTime  CQueue::x_GetSubmitTime(unsigned int  job_id)
     if (events_cur.FetchFirst() == eBDB_Ok)
         return CNSPreciseTime(m_QueueDbBlock->events_db.timestamp_sec,
                               m_QueueDbBlock->events_db.timestamp_nsec);
-    return CNSPreciseTime();
+    return kTimeZero;
 }
 
 
@@ -434,7 +438,7 @@ unsigned CQueue::LoadStatusMatrix()
         CNSPreciseTime      submit_time(0, 0);
         if (status == CNetScheduleAPI::ePending) {
             submit_time = x_GetSubmitTime(job_id);
-            if (submit_time == CNSPreciseTime())
+            if (submit_time == kTimeZero)
                 submit_time = CNSPreciseTime::Current();  // Be on a safe side
         }
 
@@ -451,7 +455,7 @@ unsigned CQueue::LoadStatusMatrix()
                                                       m_RunTimeout,
                                                       m_ReadTimeout,
                                                       m_PendingTimeout,
-                                                      CNSPreciseTime()));
+                                                      kTimeZero));
         ++recs;
     }
 
@@ -531,7 +535,7 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
             }
             if (!aff_token.empty()) {
                 aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token,
-                                                                 job_id, 0);
+                                                        job_id, 0, eUndefined);
                 job.SetAffinityId(aff_id);
             }
             job.Flush(this);
@@ -617,9 +621,10 @@ CQueue::SubmitBatch(const CNSClientId &             client,
 
                 if (!aff_token.empty()) {
                     unsigned int    aff_id = m_AffinityRegistry.
-                                                ResolveAffinityToken(aff_token,
-                                                                     job_id_cnt,
-                                                                     0);
+                                            ResolveAffinityToken(aff_token,
+                                                                 job_id_cnt,
+                                                                 0,
+                                                                 eUndefined);
 
                     job.SetAffinityId(aff_id);
                     affinities.set_bit(aff_id, true);
@@ -721,7 +726,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
             m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eDone);
             m_StatisticsCounters.CountTransition(old_status,
                                                  CNetScheduleAPI::eDone);
-            m_ClientsRegistry.ClearExecuting(job_id);
+            m_ClientsRegistry.UnregisterJob(job_id, eGet);
 
             m_GCRegistry.UpdateLifetime(job_id,
                                         job.GetExpirationTime(m_Timeout,
@@ -820,13 +825,13 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                 if (wnode_affinity) {
                     // Check first that the were no preferred affinities reset
                     // for the client
-                    if (m_ClientsRegistry.GetAffinityReset(client))
+                    if (m_ClientsRegistry.GetAffinityReset(client, eGet))
                         return false;   // Affinity was reset, so
                                         // no job for the client
 
                     // It is possible that the client had been garbage
                     // collected
-                    if (m_ClientsRegistry.WasGarbageCollected(client))
+                    if (m_ClientsRegistry.WasGarbageCollected(client, eGet))
                         return false;
                 }
 
@@ -906,23 +911,19 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                     if (job_pick.exclusive && job_pick.aff_id != 0 &&
                         outdated_job == false) {
                         if (m_ClientsRegistry.IsPreferredByAny(
-                                                        job_pick.aff_id))
+                                                        job_pick.aff_id, eGet))
                             continue;  // Other WN grabbed this affinity already
                         bool added = m_ClientsRegistry.
-                                            UpdatePreferredAffinities(
-                                                client, job_pick.aff_id, 0);
-                        m_AffinityRegistry.AddClientToAffinity(client.GetID(),
-                                                               job_pick.aff_id);
+                                        UpdatePreferredAffinities(
+                                            client, job_pick.aff_id, 0, eGet);
                         if (added)
                             added_pref_aff = m_AffinityRegistry.GetTokenByID(
                                                             job_pick.aff_id);
                     }
                     if (outdated_job && job_pick.aff_id != 0) {
                         bool added = m_ClientsRegistry.
-                                            UpdatePreferredAffinities(
-                                                client, job_pick.aff_id, 0);
-                        m_AffinityRegistry.AddClientToAffinity(client.GetID(),
-                                                               job_pick.aff_id);
+                                        UpdatePreferredAffinities(
+                                            client, job_pick.aff_id, 0, eGet);
                         if (added)
                             added_pref_aff = m_AffinityRegistry.GetTokenByID(
                                                             job_pick.aff_id);
@@ -948,7 +949,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                                                                m_PendingTimeout,
                                                                curr));
                         TimeLineAdd(job_pick.job_id, curr + m_RunTimeout);
-                        m_ClientsRegistry.AddToRunning(client, job_pick.job_id);
+                        m_ClientsRegistry.RegisterJob(client, job_pick.job_id,
+                                                      eGet);
 
                         if (new_job->ShouldNotifyListener(curr, m_JobsToNotify))
                             m_NotificationsList.NotifyJobStatus(
@@ -1027,7 +1029,7 @@ void  CQueue::CancelWaitRead(const CNSClientId &  client)
     {{
         CFastMutexGuard     guard(m_OperationLock);
 
-        result = x_UnregisterReadListener(client);
+        result = m_ClientsRegistry.CancelWaiting(client, eRead);
     }}
 
     if (result == false)
@@ -1050,7 +1052,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
     list<string>    msgs;   // Warning messages for the socket
     unsigned int    client_id = client.GetID();
     TNSBitVector    current_affinities =
-                         m_ClientsRegistry.GetPreferredAffinities(client);
+                         m_ClientsRegistry.GetPreferredAffinities(client, eGet);
     TNSBitVector    aff_id_to_add;
     TNSBitVector    aff_id_to_del;
     bool            any_to_add = false;
@@ -1117,7 +1119,8 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
              k != aff_to_add.end(); ++k ) {
             unsigned int    aff_id =
                                  m_AffinityRegistry.ResolveAffinityToken(*k,
-                                                                 0, client_id);
+                                                                 0, client_id,
+                                                                 eGet);
 
             if (current_affinities[aff_id] == true) {
                 already_added_affinities.push_back(*k);
@@ -1143,16 +1146,13 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
                        "affinity to add: " + *j);
     }
 
-    if (any_to_del)
-        m_AffinityRegistry.RemoveClientFromAffinities(client_id,
-                                                      aff_id_to_del);
-
     if (any_to_add || any_to_del)
         m_ClientsRegistry.UpdatePreferredAffinities(client,
                                                     aff_id_to_add,
-                                                    aff_id_to_del);
+                                                    aff_id_to_del,
+                                                    eGet);
 
-    if (m_ClientsRegistry.WasGarbageCollected(client)) {
+    if (m_ClientsRegistry.WasGarbageCollected(client, eGet)) {
         LOG_POST(Message << Warning << "Client '" << client.GetNode()
                          << "' has been garbage collected and tries to "
                             "update its preferred affinities.");
@@ -1180,7 +1180,7 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
 
 
     TNSBitVector    current_affinities =
-                         m_ClientsRegistry.GetPreferredAffinities(client);
+                         m_ClientsRegistry.GetPreferredAffinities(client, eGet);
     {{
         CFastMutexGuard     guard(m_OperationLock);
         CNSTransaction      transaction(this);
@@ -1190,7 +1190,8 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
              k != aff.end(); ++k ) {
             unsigned int    aff_id =
                                  m_AffinityRegistry.ResolveAffinityToken(*k,
-                                                                 0, client_id);
+                                                                 0, client_id,
+                                                                 eGet);
 
             if (current_affinities[aff_id] == true)
                 already_added_aff_id.set(aff_id, true);
@@ -1201,13 +1202,7 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
         transaction.Commit();
     }}
 
-    TNSBitVector    aff_id_to_del = current_affinities - already_added_aff_id;
-
-    if (aff_id_to_del.any())
-        m_AffinityRegistry.RemoveClientFromAffinities(client_id,
-                aff_id_to_del);
-
-    m_ClientsRegistry.SetPreferredAffinities(client, aff_id_to_set);
+    m_ClientsRegistry.SetPreferredAffinities(client, aff_id_to_set, eGet);
 }
 
 
@@ -1232,8 +1227,8 @@ TJobStatus  CQueue::JobDelayExpiration(unsigned int            job_id,
         if (status != CNetScheduleAPI::eRunning)
             return status;
 
-        CNSPreciseTime  time_start = CNSPreciseTime();
-        CNSPreciseTime  run_timeout = CNSPreciseTime();
+        CNSPreciseTime  time_start = kTimeZero;
+        CNSPreciseTime  run_timeout = kTimeZero;
         {{
             CNSTransaction      transaction(this);
 
@@ -1242,7 +1237,7 @@ TJobStatus  CQueue::JobDelayExpiration(unsigned int            job_id,
 
             time_start = job.GetLastEvent()->GetTimestamp();
             run_timeout = job.GetRunTimeout();
-            if (run_timeout == CNSPreciseTime())
+            if (run_timeout == kTimeZero)
                 run_timeout = queue_run_timeout;
 
             if (time_start + run_timeout > curr + tm)
@@ -1258,8 +1253,8 @@ TJobStatus  CQueue::JobDelayExpiration(unsigned int            job_id,
 
         // No need to update the GC registry because the running (and reading)
         // jobs are skipped by GC
-        CNSPreciseTime      exp_time = CNSPreciseTime();
-        if (run_timeout != CNSPreciseTime())
+        CNSPreciseTime      exp_time = kTimeZero;
+        if (run_timeout != kTimeZero)
             exp_time = time_start + run_timeout;
 
         TimeLineMove(job_id, exp_time, curr + tm);
@@ -1283,8 +1278,8 @@ TJobStatus  CQueue::JobDelayReadExpiration(unsigned int            job_id,
         if (status != CNetScheduleAPI::eReading)
             return status;
 
-        CNSPreciseTime  time_start = CNSPreciseTime();
-        CNSPreciseTime  read_timeout = CNSPreciseTime();
+        CNSPreciseTime  time_start = kTimeZero;
+        CNSPreciseTime  read_timeout = kTimeZero;
         {{
             CNSTransaction      transaction(this);
 
@@ -1293,7 +1288,7 @@ TJobStatus  CQueue::JobDelayReadExpiration(unsigned int            job_id,
 
             time_start = job.GetLastEvent()->GetTimestamp();
             read_timeout = job.GetReadTimeout();
-            if (read_timeout == CNSPreciseTime())
+            if (read_timeout == kTimeZero)
                 read_timeout = queue_read_timeout;
 
             if (time_start + read_timeout > curr + tm)
@@ -1309,8 +1304,8 @@ TJobStatus  CQueue::JobDelayReadExpiration(unsigned int            job_id,
 
         // No need to update the GC registry because the running (and reading)
         // jobs are skipped by GC
-        CNSPreciseTime      exp_time = CNSPreciseTime();
-        if (read_timeout != CNSPreciseTime())
+        CNSPreciseTime      exp_time = kTimeZero;
+        if (read_timeout != kTimeZero)
             exp_time = time_start + read_timeout;
 
         TimeLineMove(job_id, exp_time, curr + tm);
@@ -1387,12 +1382,12 @@ TJobStatus  CQueue::SetJobListener(unsigned int            job_id,
                             // except of Cancel - there are no transitions from
                             // Cancel.
 
-        if (address == 0 || port == 0 || timeout == CNSPreciseTime()) {
+        if (address == 0 || port == 0 || timeout == kTimeZero) {
             // If at least one of the values is 0 => no notifications
             // So to make the job properly dumped put zeros everywhere.
             job.SetListenerNotifAddr(0);
             job.SetListenerNotifPort(0);
-            job.SetListenerNotifAbsTime(CNSPreciseTime());
+            job.SetListenerNotifAbsTime(kTimeZero);
             switched_on = false;
         } else {
             job.SetListenerNotifAddr(address);
@@ -1537,9 +1532,9 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
             break;
     }
     TimeLineRemove(job_id);
-    m_ClientsRegistry.ClearExecuting(job_id);
+    m_ClientsRegistry.UnregisterJob(job_id, eGet);
     if (how == eWithBlacklist)
-        m_ClientsRegistry.AddToRunBlacklist(client, job_id);
+        m_ClientsRegistry.RegisterBlacklistedJob(client, job_id, eGet);
     m_GCRegistry.UpdateLifetime(job_id,
                                 job.GetExpirationTime(m_Timeout,
                                                       m_RunTimeout,
@@ -1674,7 +1669,7 @@ TJobStatus  CQueue::RescheduleJob(const CNSClientId &     client,
     m_StatisticsCounters.CountToPendingRescheduled(1);
 
     TimeLineRemove(job_id);
-    m_ClientsRegistry.ClearExecuting(job_id);
+    m_ClientsRegistry.UnregisterJob(job_id, eGet);
     m_GCRegistry.UpdateLifetime(job_id,
                                 job.GetExpirationTime(m_Timeout,
                                                       m_RunTimeout,
@@ -1853,9 +1848,9 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
 
         TimeLineRemove(job_id);
         if (old_status == CNetScheduleAPI::eRunning)
-            m_ClientsRegistry.ClearExecuting(job_id);
+            m_ClientsRegistry.UnregisterJob(job_id, eGet);
         else if (old_status == CNetScheduleAPI::eReading)
-            m_ClientsRegistry.ClearReading(job_id);
+            m_ClientsRegistry.UnregisterJob(job_id, eRead);
 
         m_GCRegistry.UpdateLifetime(job_id,
                                     job.GetExpirationTime(m_Timeout,
@@ -1958,9 +1953,9 @@ unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
 
         TimeLineRemove(job_id);
         if (old_status == CNetScheduleAPI::eRunning)
-            m_ClientsRegistry.ClearExecuting(job_id);
+            m_ClientsRegistry.UnregisterJob(job_id, eGet);
         else if (old_status == CNetScheduleAPI::eReading)
-            m_ClientsRegistry.ClearReading(job_id);
+            m_ClientsRegistry.UnregisterJob(job_id, eRead);
 
         m_GCRegistry.UpdateLifetime(job_id,
                                     job.GetExpirationTime(m_Timeout,
@@ -2214,12 +2209,12 @@ void CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
             transaction.Commit();
         }}
 
-        x_UnregisterReadListener(client);
+        m_ClientsRegistry.CancelWaiting(client, eRead);
 
         TNSBitVector        candidates = m_StatusTracker.GetJobs(from_state);
 
         // Exclude blacklisted jobs
-        candidates -= m_ClientsRegistry.GetReadBlacklistedJobs(client);
+        candidates -= m_ClientsRegistry.GetBlacklistedJobs(client, eRead);
 
         if (!group.empty())
             // Apply restrictions on the group jobs if so
@@ -2257,7 +2252,7 @@ void CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
             event->SetClientNode(client.GetNode());
             event->SetClientSession(client.GetSession());
 
-            job->SetReadTimeout(CNSPreciseTime());
+            job->SetReadTimeout(kTimeZero);
             job->SetStatus(CNetScheduleAPI::eReading);
             job->SetReadCount(read_count);
             job->SetLastTouch(curr);
@@ -2272,7 +2267,7 @@ void CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
         m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eReading);
         m_StatisticsCounters.CountTransition(old_status,
                                              CNetScheduleAPI::eReading);
-        m_ClientsRegistry.AddToReading(client, job_id);
+        m_ClientsRegistry.RegisterJob(client, job_id, eRead);
 
         m_GCRegistry.UpdateLifetime(job_id,
                                     job->GetExpirationTime(m_Timeout,
@@ -2314,7 +2309,7 @@ TJobStatus  CQueue::ConfirmReadingJob(const CNSClientId &  client,
                                                 job, auth_token, "",
                                                 CNetScheduleAPI::eConfirmed,
                                                 false, false);
-    m_ClientsRegistry.ClearReading(client, job_id);
+    m_ClientsRegistry.UnregisterJob(client, job_id, eRead);
     return old_status;
 }
 
@@ -2332,7 +2327,7 @@ TJobStatus  CQueue::FailReadingJob(const CNSClientId &  client,
                                                 job, auth_token, err_msg,
                                                 CNetScheduleAPI::eReadFailed,
                                                 false, no_retries);
-    m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
+    m_ClientsRegistry.MoveJobToBlacklist(job_id, eRead);
     return old_status;
 }
 
@@ -2352,9 +2347,9 @@ TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
                                                 is_ns_rollback,
                                                 false);
     if (is_ns_rollback)
-        m_ClientsRegistry.ClearReading(job_id);
+        m_ClientsRegistry.UnregisterJob(job_id, eRead);
     else
-        m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
+        m_ClientsRegistry.MoveJobToBlacklist(job_id, eRead);
     return old_status;
 }
 
@@ -2544,18 +2539,18 @@ CQueue::x_FindPendingJob(const CNSClientId  &  client,
     unsigned int    wnode_aff_candidate = 0;
     unsigned int    exclusive_aff_candidate = 0;
     TNSBitVector    blacklisted_jobs =
-                    m_ClientsRegistry.GetRunBlacklistedJobs(client);
+                    m_ClientsRegistry.GetBlacklistedJobs(client, eGet);
     TNSBitVector    group_jobs = m_GroupRegistry.GetJobs(group, false);
 
     TNSBitVector    pref_aff;
     if (wnode_affinity) {
-        pref_aff = m_ClientsRegistry.GetPreferredAffinities(client);
+        pref_aff = m_ClientsRegistry.GetPreferredAffinities(client, eGet);
         wnode_affinity = wnode_affinity && pref_aff.any();
     }
 
     TNSBitVector    all_pref_aff;
     if (exclusive_new_affinity)
-        all_pref_aff = m_ClientsRegistry.GetAllPreferredAffinities();
+        all_pref_aff = m_ClientsRegistry.GetAllPreferredAffinities(eGet);
 
     if (explicit_aff || wnode_affinity || exclusive_new_affinity) {
         // Check all pending jobs
@@ -2665,7 +2660,7 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
     if (!outdated_pending.any())
         return job_pick;
 
-    outdated_pending -= m_ClientsRegistry.GetRunBlacklistedJobs(client);
+    outdated_pending -= m_ClientsRegistry.GetBlacklistedJobs(client, eGet);
 
     if (!outdated_pending.any())
         return job_pick;
@@ -2694,8 +2689,12 @@ string CQueue::GetAffinityList(const CNSClientId &    client)
         aff_list += NStr::URLEncode(k->m_Token) + '=' +
                     NStr::NumericToString(k->m_NumberOfPendingJobs) + "," +
                     NStr::NumericToString(k->m_NumberOfRunningJobs) + "," +
-                    NStr::NumericToString(k->m_NumberOfPreferred) + "," +
-                    NStr::NumericToString(k->m_NumberOfWaitGet);
+                    NStr::NumericToString(k->m_NumberOfWNPreferred) + "," +
+                    NStr::NumericToString(k->m_NumberOfWNWaitGet);
+
+        // NS 4.20.0 has more information: Read preferred affinities and read
+        // wait affinities. It was decided however that the AFLS command will
+        // not output them as they could break the old clients.
     }
     return aff_list;
 }
@@ -2839,8 +2838,8 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
 
         // Replace it with ClearExecuting(client, job_id) when all clients
         // provide their credentials and job passport is checked strictly
-        m_ClientsRegistry.ClearExecuting(job_id);
-        m_ClientsRegistry.AddToRunBlacklist(client, job_id);
+        m_ClientsRegistry.UnregisterJob(job_id, eGet);
+        m_ClientsRegistry.RegisterBlacklistedJob(client, job_id, eGet);
 
         m_GCRegistry.UpdateLifetime(job_id,
                                     job.GetExpirationTime(m_Timeout,
@@ -2895,7 +2894,8 @@ string  CQueue::GetAffinityTokenByID(unsigned int  aff_id) const
 void CQueue::ClearWorkerNode(const CNSClientId &  client,
                              bool &               client_was_found,
                              string &             old_session,
-                             bool &               pref_affs_were_reset)
+                             bool &               had_wn_pref_affs,
+                             bool &               had_reader_pref_affs)
 {
     // Get the running and reading jobs and move them to the corresponding
     // states (pending and done)
@@ -2905,17 +2905,10 @@ void CQueue::ClearWorkerNode(const CNSClientId &  client,
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
-        unsigned short      wait_port = m_ClientsRegistry.ClearWorkerNode(
-                                                client,
-                                                m_AffinityRegistry,
-                                                running_jobs,
-                                                reading_jobs,
-                                                client_was_found,
-                                                old_session,
-                                                pref_affs_were_reset);
+        m_ClientsRegistry.ClearClient(client, running_jobs, reading_jobs,
+                                      client_was_found, old_session,
+                                      had_wn_pref_affs, had_reader_pref_affs);
 
-        if (wait_port != 0)
-            m_NotificationsList.UnregisterListener(client, wait_port);
     }}
 
     if (running_jobs.any())
@@ -2946,7 +2939,7 @@ void CQueue::NotifyListenersPeriodically(const CNSPreciseTime &  current_time)
 
 
     // Check the configured notification interval
-    static CNSPreciseTime   last_notif_timeout = CNSPreciseTime::Never();
+    static CNSPreciseTime   last_notif_timeout = kTimeNever;
     static size_t           skip_limit = 0;
     static size_t           skip_count;
 
@@ -2968,12 +2961,9 @@ void CQueue::NotifyListenersPeriodically(const CNSPreciseTime &  current_time)
     if (m_StatusTracker.AnyPending())
         m_NotificationsList.NotifyPeriodically(current_time,
                                                m_NotifLofreqMult,
-                                               m_ClientsRegistry,
-                                               m_AffinityRegistry);
+                                               m_ClientsRegistry);
     else
-        m_NotificationsList.CheckTimeout(current_time,
-                                         m_ClientsRegistry,
-                                         m_AffinityRegistry);
+        m_NotificationsList.CheckTimeout(current_time, m_ClientsRegistry, eGet);
 }
 
 
@@ -2985,7 +2975,7 @@ CNSPreciseTime CQueue::NotifyExactListeners(void)
 
 string CQueue::PrintClientsList(bool verbose) const
 {
-    return m_ClientsRegistry.PrintClientsList(this, m_AffinityRegistry,
+    return m_ClientsRegistry.PrintClientsList(this,
                                               m_DumpClientBufferSize, verbose);
 }
 
@@ -3039,10 +3029,10 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                                      bool                    logging)
 {
     CJob                    job;
-    CNSPreciseTime          time_start = CNSPreciseTime();
-    CNSPreciseTime          run_timeout = CNSPreciseTime();
-    CNSPreciseTime          read_timeout = CNSPreciseTime();
-    CNSPreciseTime          exp_time = CNSPreciseTime();
+    CNSPreciseTime          time_start = kTimeZero;
+    CNSPreciseTime          run_timeout = kTimeZero;
+    CNSPreciseTime          read_timeout = kTimeZero;
+    CNSPreciseTime          exp_time = kTimeZero;
     TJobStatus              status;
     TJobStatus              new_status;
     CJobEvent::EJobEvent    event_type;
@@ -3071,20 +3061,20 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
             CJobEvent *     event = job.GetLastEvent();
             time_start = event->GetTimestamp();
             run_timeout = job.GetRunTimeout();
-            if (run_timeout == CNSPreciseTime())
+            if (run_timeout == kTimeZero)
                 run_timeout = queue_run_timeout;
 
             if (status == CNetScheduleAPI::eRunning &&
-                run_timeout == CNSPreciseTime())
+                run_timeout == kTimeZero)
                 // 0 timeout means the job never fails
                 return;
 
             read_timeout = job.GetReadTimeout();
-            if (read_timeout == CNSPreciseTime())
+            if (read_timeout == kTimeZero)
                 read_timeout = queue_read_timeout;
 
             if (status == CNetScheduleAPI::eReading &&
-                read_timeout == CNSPreciseTime())
+                read_timeout == kTimeZero)
                 // 0 timeout means the job never fails
                 return;
 
@@ -3140,13 +3130,13 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
         if (status == CNetScheduleAPI::eRunning) {
             if (new_status == CNetScheduleAPI::ePending) {
                 // Timeout and reschedule, put to blacklist as well
-                m_ClientsRegistry.ClearExecutingSetBlacklist(job_id);
+                m_ClientsRegistry.MoveJobToBlacklist(job_id, eGet);
                 m_StatisticsCounters.CountTransition(
                                             CNetScheduleAPI::eRunning,
                                             CNetScheduleAPI::ePending,
                                             CStatisticsCounters::eTimeout);
             } else {
-                m_ClientsRegistry.ClearExecuting(job_id);
+                m_ClientsRegistry.UnregisterJob(job_id, eGet);
                 m_StatisticsCounters.CountTransition(
                                             CNetScheduleAPI::eRunning,
                                             CNetScheduleAPI::eFailed,
@@ -3154,7 +3144,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
             }
         } else {
             if (new_status == CNetScheduleAPI::eReadFailed) {
-                m_ClientsRegistry.ClearReading(job_id);
+                m_ClientsRegistry.UnregisterJob(job_id, eRead);
                 m_StatisticsCounters.CountTransition(
                                             CNetScheduleAPI::eReading,
                                             CNetScheduleAPI::eReadFailed,
@@ -3162,7 +3152,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
             } else {
                 // The target status could be Done, Failed, Canceled.
                 // The job could be read again by another reader.
-                m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
+                m_ClientsRegistry.MoveJobToBlacklist(job_id, eRead);
                 m_StatisticsCounters.CountTransition(
                                             CNetScheduleAPI::eReading,
                                             new_status,
@@ -3499,20 +3489,20 @@ unsigned int  CQueue::PurgeGroups(void)
 }
 
 
-void  CQueue::StaleWNodes(const CNSPreciseTime &  current_time)
+void  CQueue::StaleNodes(const CNSPreciseTime &  current_time)
 {
     // Clears the worker nodes affinities if the workers are inactive for
     // the configured timeout
     CFastMutexGuard     guard(m_OperationLock);
-    m_ClientsRegistry.StaleWNs(current_time, m_WNodeTimeout,
-                            m_AffinityRegistry, m_NotificationsList, m_Log);
+    m_ClientsRegistry.StaleNodes(current_time, 
+                                 m_WNodeTimeout, m_ReaderTimeout, m_Log);
 }
 
 
 void CQueue::PurgeBlacklistedJobs(void)
 {
-    m_ClientsRegistry.CheckRunBlacklistedJobsExisted(m_StatusTracker);
-    m_ClientsRegistry.CheckReadBlacklistedJobsExisted(m_StatusTracker);
+    m_ClientsRegistry.GCBlacklistedJobs(m_StatusTracker, eGet);
+    m_ClientsRegistry.GCBlacklistedJobs(m_StatusTracker, eRead);
 }
 
 
@@ -3752,31 +3742,27 @@ void CQueue::TouchClientsRegistry(CNSClientId &  client,
                                   bool &         client_was_found,
                                   bool &         session_was_reset,
                                   string &       old_session,
-                                  bool &         pref_affs_were_reset)
+                                  bool &         had_wn_pref_affs,
+                                  bool &         had_reader_pref_affs)
 {
     TNSBitVector        running_jobs;
     TNSBitVector        reading_jobs;
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
-        unsigned short      wait_port = m_ClientsRegistry.Touch(
-                                                client,
-                                                m_AffinityRegistry,
-                                                running_jobs,
-                                                reading_jobs,
-                                                client_was_found,
-                                                session_was_reset,
-                                                old_session,
-                                                pref_affs_were_reset);
-        if (wait_port != 0)
-            m_NotificationsList.UnregisterListener(client, wait_port);
+        m_ClientsRegistry.Touch(client, running_jobs, reading_jobs,
+                                client_was_found, session_was_reset,
+                                old_session, had_wn_pref_affs,
+                                had_reader_pref_affs);
     }}
 
 
-    if (running_jobs.any())
-        x_ResetRunningDueToNewSession(client, running_jobs);
-    if (reading_jobs.any())
-        x_ResetReadingDueToNewSession(client, reading_jobs);
+    if (session_was_reset) {
+        if (running_jobs.any())
+            x_ResetRunningDueToNewSession(client, running_jobs);
+        if (reading_jobs.any())
+            x_ResetReadingDueToNewSession(client, reading_jobs);
+    }
 }
 
 
@@ -3983,7 +3969,8 @@ void CQueue::x_RegisterGetListener(const CNSClientId &   client,
                                          exclusive_new_affinity, new_format,
                                          group, eGet);
     if (client.IsComplete())
-        m_ClientsRegistry.SetWaiting(client, port, aff_ids, m_AffinityRegistry);
+        m_ClientsRegistry.SetNodeWaiting(client, port,
+                                         aff_ids, eGet);
     return;
 }
 
@@ -4003,38 +3990,20 @@ CQueue::x_RegisterReadListener(const CNSClientId &   client,
                                          reader_aff, any_aff,
                                          exclusive_new_affinity, true,
                                          group, eRead);
-    m_ClientsRegistry.SetWaiting(client, port, aff_ids, m_AffinityRegistry);
+    m_ClientsRegistry.SetNodeWaiting(client, port, aff_ids, eRead);
 }
 
 
 bool CQueue::x_UnregisterGetListener(const CNSClientId &  client,
                                      unsigned short       port)
 {
-    unsigned short      notif_port = port;
-
     if (client.IsComplete())
-        // New clients have the port in their registry record
-        notif_port = m_ClientsRegistry.ResetWaiting(client, m_AffinityRegistry);
+        return m_ClientsRegistry.CancelWaiting(client, eGet);
 
-    if (notif_port > 0) {
-        m_NotificationsList.UnregisterListener(client, notif_port);
+    if (port > 0) {
+        m_NotificationsList.UnregisterListener(client, port, eGet);
         return true;
     }
-
-    return false;
-}
-
-
-bool CQueue::x_UnregisterReadListener(const CNSClientId &  client)
-{
-    unsigned short  notif_port = m_ClientsRegistry.
-                                    ResetWaiting(client, m_AffinityRegistry);
-
-    if (notif_port > 0) {
-        m_NotificationsList.UnregisterListener(client, notif_port);
-        return true;
-    }
-
     return false;
 }
 
@@ -4250,8 +4219,8 @@ bool  CQueue::x_UpdateDB_GetJobNoLock(const CNSClientId &     client,
     // expiration timeout;
     // Note: run_timeout and read_timeout are not applicable because the
     //       job is guaranteed in the pending state
-    if (job.GetExpirationTime(m_Timeout, CNSPreciseTime(), CNSPreciseTime(),
-                              m_PendingTimeout, CNSPreciseTime()) <= curr) {
+    if (job.GetExpirationTime(m_Timeout, kTimeZero, kTimeZero,
+                              m_PendingTimeout, kTimeZero) <= curr) {
         // The job has expired, so mark it for deletion
         EraseJob(job_id);
 
@@ -4276,7 +4245,7 @@ bool  CQueue::x_UpdateDB_GetJobNoLock(const CNSClientId &     client,
     event.SetNodeAddr(client.GetAddress());
 
     job.SetStatus(CNetScheduleAPI::eRunning);
-    job.SetRunTimeout(CNSPreciseTime());
+    job.SetRunTimeout(kTimeZero);
     job.SetRunCount(run_count);
     job.SetLastTouch(curr);
 
