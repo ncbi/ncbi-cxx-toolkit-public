@@ -262,7 +262,7 @@ static int s_Client(int x_port, unsigned int max_try)
 
     id = (unsigned long) time(0);
 
-    for (m = 1; m <= max_try; m++) {
+    for (m = 1;  m <= max_try;  m++) {
         unsigned long tmp;
         unsigned int  k;
 
@@ -322,7 +322,7 @@ static int s_Client(int x_port, unsigned int max_try)
     if (m > max_try)
         return 1;
 
-    for (n = sizeof(unsigned long); n < msglen - 10; n++) {
+    for (n = sizeof(unsigned long);  n < msglen - 10;  n++) {
         if (buf[n] != buf[msglen + n])
             break;
     }
@@ -359,6 +359,7 @@ static int s_Client(int x_port, unsigned int max_try)
 
 int main(int argc, const char* argv[])
 {
+    unsigned short max_try;
     SConnNetInfo* net_info;
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
@@ -378,6 +379,7 @@ int main(int argc, const char* argv[])
     assert((net_info = ConnNetInfo_Create(0)) != 0);
     if (net_info->debug_printout)
         SOCK_SetDataLoggingAPI(eOn);
+    max_try = net_info->max_try;
     ConnNetInfo_Destroy(net_info);
 
     if (argc > 3) {
@@ -387,8 +389,7 @@ int main(int argc, const char* argv[])
     }
 
     if (strcasecmp(argv[1], "client") == 0) {
-        return s_Client(argv[2] ? atoi(argv[2]) : DEFAULT_PORT,
-                        net_info->max_try);
+        return s_Client(argv[2] ? atoi(argv[2]) : DEFAULT_PORT, max_try);
     }
     if (strcasecmp(argv[1], "server") == 0)
         return s_Server(argv[2] ? argv[2] : STR(DEFAULT_PORT));
