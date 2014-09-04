@@ -28,7 +28,7 @@
  * File Description:
  *     BLOB (image) fetch from NetCache.
  *     Takes three CGI arguments:
- *       key=NC_KEY
+ *       key=NETCACHE_KEY_OR_NETSTORAGE_LOCATOR
  *       fmt=mime/type  (default: "image/png")
  *       filename=Example.pdf
  *
@@ -52,7 +52,7 @@
 
 USING_NCBI_SCOPE;
 
-#define NETSTORAGE_IO_BUFFER_SIZE 4096
+#define NETSTORAGE_IO_BUFFER_SIZE (64 * 1024)
 
 /// NetCache BLOB/image fetch application
 ///
@@ -64,25 +64,7 @@ protected:
     virtual int OnException(std::exception& e, CNcbiOstream& os);
 
 private:
-    void x_FetchNetCacheBlob(
-        const CCgiRequest& request,
-        CCgiResponse& reply,
-        const string& key);
-    void x_FetchNetStorageObject(
-        const CCgiRequest& request,
-        CCgiResponse& reply,
-        const string& key);
-
-    enum {
-        eNoPassword,
-        ePasswordFromParam,
-        ePasswordFromCookie
-    } m_PasswordSource;
-
-    string m_PasswordSourceName;
-
     CCompoundIDPool m_CompoundIDPool;
-    CNetCacheAPI m_NetCacheAPI;
     CNetStorage m_NetStorage;
 };
 
@@ -93,32 +75,10 @@ void CNetCacheBlobFetchApp::Init()
 
     const CNcbiRegistry& reg = GetConfig();
 
-    string password_source = reg.GetString("ncfetch",
-        "password_source", kEmptyStr);
-    if (password_source.empty())
-        m_PasswordSource = eNoPassword;
-    else {
-        string source_type;
-        if (NStr::SplitInTwo(password_source, ":",
-                source_type, m_PasswordSourceName))
-            m_PasswordSource = m_PasswordSourceName.empty() ?
-                eNoPassword : source_type == "cookie" ?
-                    ePasswordFromCookie : ePasswordFromParam;
-        else if (source_type.empty())
-            m_PasswordSource = eNoPassword;
-        else {
-            m_PasswordSource = ePasswordFromParam;
-            m_PasswordSourceName = source_type;
-        }
-    }
-
-    m_NetCacheAPI = CNetCacheAPI(GRID_APP_NAME);
-
     string netstorage_init_string = reg.GetString("ncfetch",
             "netstorage", kEmptyStr);
 
-    if (!netstorage_init_string.empty())
-        m_NetStorage = CNetStorage(netstorage_init_string);
+    m_NetStorage = CNetStorage(netstorage_init_string);
 }
 
 int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
@@ -149,107 +109,29 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
     reply.SetContentType(fmt);
 
-    if (CNetCacheKey::ParseBlobKey(key.c_str(), key.length(), NULL))
-        x_FetchNetCacheBlob(request, reply, key);
-    else {
-        CCompoundID compound_id;
-        try {
-            compound_id = m_CompoundIDPool.FromString(key);
-        }
-        catch (CCompoundIDException&) {
-            NCBI_THROW_FMT(CArgException, eInvalidArg, "Invalid key: " << key);
-        }
-
-        switch (compound_id.GetClass()) {
-        case eCIC_NetCacheBlobKey:
-            x_FetchNetCacheBlob(request, reply, key);
-            break;
-        case eCIC_NetStorageObjectLoc:
-            if (m_NetStorage)
-                x_FetchNetStorageObject(request, reply, key);
-            else {
-                NCBI_THROW_FMT(CArgException, eInvalidArg,
-                    "NetStorage is not configured; key=" << key);
-            }
-            break;
-        default:
-            {
-                NCBI_THROW_FMT(CArgException, eInvalidArg,
-                        "Invalid key: " << key);
-            }
-        }
-    }
-
-    return 0;
-}
-
-void CNetCacheBlobFetchApp::x_FetchNetCacheBlob(
-        const CCgiRequest& request,
-        CCgiResponse& reply,
-        const string& key)
-{
-    size_t blob_size = 0;
-    auto_ptr<IReader> reader;
-    if (m_PasswordSource == eNoPassword)
-        reader.reset(m_NetCacheAPI.GetReader(key, &blob_size,
-            nc_caching_mode = CNetCacheAPI::eCaching_Disable));
-    else {
-        string password;
-        if (m_PasswordSource == ePasswordFromCookie) {
-            const CCgiCookie* cookie =
-                request.GetCookies().Find(m_PasswordSourceName, "", "");
-            if (!cookie) {
-                ERR_POST("Cookie '" << m_PasswordSourceName << "' not found");
-                NCBI_CGI_THROW_WITH_STATUS(CCgiException, eUnknown,
-                        "Password required.", CCgiException::e403_Forbidden);
-            }
-            password = cookie->GetValue();
-        } else {
-            bool password_found = false;
-            password = request.GetEntry(m_PasswordSourceName, &password_found);
-            if (!password_found) {
-                ERR_POST("CGI parameter '" <<
-                        m_PasswordSourceName << "' not found");
-                NCBI_CGI_THROW_WITH_STATUS(CCgiException, eUnknown,
-                        "Password required.", CCgiException::e403_Forbidden);
-            }
-        }
-        reader.reset(m_NetCacheAPI.GetReader(key, &blob_size,
-            (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
-            nc_blob_password = password)));
-    }
-    if (!reader.get()) {
-        ERR_POST("Could not retrieve blob " << key);
-        NCBI_THROW(CNetCacheException, eBlobNotFound, "Blob not found.");
-    }
-
     reply.WriteHeader();
 
-    LOG_POST(Info << "retrieved data: " << blob_size << " bytes");
-
-    CRStream in_stream(reader.get());
-    NcbiStreamCopy(reply.out(), in_stream);
-}
-
-void CNetCacheBlobFetchApp::x_FetchNetStorageObject(
-        const CCgiRequest& request,
-        CCgiResponse& reply,
-        const string& key)
-{
     CNetStorageObject netstorage_object(m_NetStorage.Open(key));
 
     char buffer[NETSTORAGE_IO_BUFFER_SIZE];
+
+    size_t total_bytes_written = 0;
 
     while (!netstorage_object.Eof()) {
         size_t bytes_read = netstorage_object.Read(buffer, sizeof(buffer));
 
         reply.out().write(buffer, bytes_read);
+        total_bytes_written += bytes_read;
 
         if (bytes_read < sizeof(buffer))
             break;
     }
 
     netstorage_object.Close();
+
+    LOG_POST(Info << "retrieved data: " << total_bytes_written << " bytes");
+
+    return 0;
 }
 
 int CNetCacheBlobFetchApp::OnException(std::exception& e, CNcbiOstream& os)
