@@ -2373,7 +2373,14 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     //set frameshift
     if(frameshift_phase != 0) {
-        prot_v->SetVariant_prop().SetEffect() |= CVariantProperties::eEffect_frameshift;
+        //note: SetEffect() contains magic-value in debug mode by default, not 0.
+        //prot_v->SetVariant_prop().SetEffect() |= CVariantProperties::eEffect_frameshift;
+        prot_v->SetVariant_prop().SetEffect(
+            CVariantProperties::eEffect_frameshift
+          | (      prot_v->IsSetVariant_prop() 
+                && prot_v->GetVariant_prop().GetEffect() 
+             ? prot_v->GetVariant_prop().GetEffect() : 0));
+
         prot_v->SetFrameshift().SetPhase(frameshift_phase);
     }
 
