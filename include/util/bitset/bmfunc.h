@@ -1265,7 +1265,7 @@ template<typename T> unsigned gap_set_value(unsigned val,
    @ingroup gapfunc
 */
 template<typename T> 
-unsigned gap_add_value(T* buf, T pos)
+unsigned gap_add_value(T* buf, unsigned pos)
 {
     BM_ASSERT(pos < bm::gap_max_bits);
 
