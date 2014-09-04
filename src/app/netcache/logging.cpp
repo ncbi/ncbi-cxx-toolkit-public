@@ -365,16 +365,16 @@ s_AddLogPrefix(SSrvThread* thr, SLogData* data, CRequestContext* diag_ctx = NULL
     s_AddToLog(data, CTaskServer::GetHostName(), 15);
     *data->cur_ptr++ = ' ';
 
-    const string* str = diag_ctx? &diag_ctx->GetClientIP(): &s_UnkClient;
-    if (str->empty())
-        str = &s_UnkClient;
-    s_AddToLog(data, *str, 15);
+    string str = diag_ctx? diag_ctx->GetClientIP(): s_UnkClient;
+    if (str.empty())
+        str = s_UnkClient;
+    s_AddToLog(data, str, 15);
     *data->cur_ptr++ = ' ';
 
-    str = diag_ctx? &diag_ctx->GetSessionID(): &s_UnkSession;
-    if (str->empty())
-        str = &s_UnkSession;
-    s_AddToLog(data, *str, 24);
+    str = diag_ctx? diag_ctx->GetSessionID(): s_UnkSession;
+    if (str.empty())
+        str = s_UnkSession;
+    s_AddToLog(data, str, 24);
     *data->cur_ptr++ = ' ';
 
     s_AddToLog(data, s_AppBaseName);

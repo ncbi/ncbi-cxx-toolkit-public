@@ -131,7 +131,6 @@ CNCPeerControl::Peer(Uint8 srv_id)
     CNCPeerControl* ctrl;
     s_MapLock.Lock();
     TControlMap::const_iterator it = s_Controls.find(srv_id);
-    it = s_Controls.find(srv_id);
     if (it == s_Controls.end()) {
         ctrl = new CNCPeerControl(srv_id);
         s_Controls[srv_id] = ctrl;
@@ -145,6 +144,26 @@ CNCPeerControl::Peer(Uint8 srv_id)
     s_MapLock.Unlock();
     return ctrl;
 }
+
+string
+CNCPeerControl::GetPeerNameOrEmpty(Uint8 srv_id)
+{
+    CNCPeerControl *ctrl = NULL;
+    s_MapLock.Lock();
+    TControlMap::const_iterator it = s_Controls.find(srv_id);
+    if (it != s_Controls.end()) {
+        ctrl = it->second;
+    }
+    s_MapLock.Unlock();
+    string res;
+    if (ctrl != NULL) {
+        res += ctrl->m_Hostname;
+        res += ':';
+        res += NStr::NumericToString(Uint2(ctrl->m_SrvId));
+    }
+    return res;
+}
+
 
 CNCPeerControl::CNCPeerControl(Uint8 srv_id)
     : m_SrvId(srv_id),

@@ -278,7 +278,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
             found_self = true;
             if (isReconf) {
                 if (s_SelfGroup != grp_name || s_SelfName != peer_str) {
-                    err_message = srv_name + ": Changes in self description prohibited";
+                    err_message = srv_name + ": Changes in self description prohibited (group or name)";
                     goto do_error;
                 }
             } else {
@@ -305,7 +305,8 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
         list<string> values;
         NStr::Split(reg_value, ",", values);
         ITERATE(list<string>, it, values) {
-            Uint2 slot = NStr::StringToUInt(*it, NStr::fConvErr_NoThrow);
+            Uint2 slot = NStr::StringToUInt(*it,
+                NStr::fConvErr_NoThrow | NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
             if (slot == 0) {
                 err_message = srv_name + ": Bad slot number: " + string(*it);
                 goto do_error;
@@ -316,11 +317,12 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
                 goto do_error;
             }
             if (srv_id == s_SelfID) {
-                if (isReconf) {
-                    self_slots.push_back(slot);
-                } else {
-                    s_SelfSlots.push_back(slot);
+                vector<Uint2>& slots = isReconf ? self_slots : s_SelfSlots;
+                if (find(slots.begin(), slots.end(), slot) != slots.end()) {
+                    err_message = srv_name + ": Slot listed twice: " + string(*it);
+                    goto do_error;
                 }
+                slots.push_back(slot);
             } else {
                 srvs.push_back(srv_id);
                 mirrorCfg->s_Slot2Servers[slot].push_back(SSrvGroupInfo(srv_id, grp_name));
@@ -343,6 +345,12 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
         if (!isReconf) {
             s_SelfSlots.push_back(1);
             s_SelfGroup = "grp1";
+        }
+    }
+    if (isReconf) {
+        if (!std::equal(s_SelfSlots.begin(), s_SelfSlots.end(), self_slots.begin())) {
+            err_message = s_SelfName + ": Changes in self description prohibited (slots)";
+            goto do_error;
         }
     }
 
@@ -602,6 +610,8 @@ CNCDistributionConf::GetPeerNameOrEmpty(Uint8 srv_id)
         const TNCPeerList& peers = CNCDistributionConf::GetPeers();
         if (peers.find(srv_id) != peers.end()) {
             name = peers.find(srv_id)->second;
+        } else {
+            name = CNCPeerControl::GetPeerNameOrEmpty(srv_id);
         }
     }
     return name;

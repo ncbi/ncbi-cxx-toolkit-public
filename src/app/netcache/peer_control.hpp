@@ -109,6 +109,7 @@ public:
     static bool HasServersForInitSync(void);
 
     static CNCPeerControl* Peer(Uint8 srv_id);
+    static string GetPeerNameOrEmpty(Uint8 srv_id);
 
     static void MirrorUpdate(const string& key,
                               Uint2 slot,
