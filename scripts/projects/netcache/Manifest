@@ -19,8 +19,8 @@ ETC: src/app/netcache/netcached.ini
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux64-Centos : O2  : GCC.sh 4.4.2 --without-debug --with-mt
-Linux64-Centos : O2g  : GCC.sh 4.4.2 --without-debug --with-symbols --with-mt
-Linux64-Centos : d : GCC.sh 4.4.2 --without-debug --with-symbols --without-optimization --with-mt
+Linux64-Centos : O2  : GCC.sh 4.8.1 --without-debug --with-mt
+Linux64-Centos : O2g  : GCC.sh 4.8.1 --without-debug --with-symbols --with-mt
+Linux64-Centos : d : GCC.sh 4.8.1 --without-debug --with-symbols --without-optimization --with-mt
 
 USE_COMPONENTS
