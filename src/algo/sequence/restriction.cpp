@@ -559,19 +559,12 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
     // get sequence in binary (8na) form
     CSeqVector vec(loc, scope, CBioseq_Handle::eCoding_Ncbi);
 
-    // a new feature table
-    CRef<CSeq_annot> annot(new CSeq_annot());
-
     // a place to store results (one per enzyme)
     typedef vector<CRef<CREnzResult> > TResults;
     TResults results;
 
     // do the big search
     Find(vec, m_Enzymes, results);
-
-    // add description to annot
-    annot->SetNameDesc("Restriction sites");
-    annot->SetCreateDate(CTime(CTime::eCurrent));
 
     // deal with stored enzyme results
 
@@ -604,18 +597,27 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
         + total_non_cutters;
         **/
 
-    ITERATE (TResults, result, results) {
+    CRef<CSeq_annot> annot;
+    if (total_definite_sites  ||  total_possible_sites) {
+        // a new feature table
+        annot.Reset(new CSeq_annot());
+        // add description to annot
+        annot->SetNameDesc("Restriction sites");
+        annot->SetCreateDate(CTime(CTime::eCurrent));
 
-        const vector<CRSite>& definite_sites =
-            (*result)->GetDefiniteSites();
-        const vector<CRSite>& possible_sites =
-            (*result)->GetPossibleSites();
+        ITERATE (TResults, result, results) {
 
-        //
-        // add features to annot
-        //
-        s_AddSitesToAnnot(definite_sites, **result, *annot, scope, loc);
-        s_AddSitesToAnnot(possible_sites, **result, *annot, scope, loc, false);
+            const vector<CRSite>& definite_sites =
+                (*result)->GetDefiniteSites();
+            const vector<CRSite>& possible_sites =
+                (*result)->GetPossibleSites();
+
+            //
+            // add features to annot
+            //
+            s_AddSitesToAnnot(definite_sites, **result, *annot, scope, loc);
+            s_AddSitesToAnnot(possible_sites, **result, *annot, scope, loc, false);
+        }
     }
 
     return annot;
