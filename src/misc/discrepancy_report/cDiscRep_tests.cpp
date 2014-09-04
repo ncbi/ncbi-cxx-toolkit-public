@@ -3375,7 +3375,7 @@ void CBioseq_GENE_PRODUCT_CONFLICT :: TestOnObj(const CBioseq& bioseq)
      }
 
      if (!(gene_label.empty())) {
-       prod_nm = GetProdNmForCD(**it);
+       prod_nm = GetProdNmForCD(**it, thisInfo.scope.GetPointer());
        prod_nm = prod_nm.empty()? "empty" : prod_nm;
        thisInfo.test_item_list[GetName()]
            .push_back(gene_label + "$" + prod_nm + "#" + GetDiscItemText(**it));
@@ -7377,7 +7377,7 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem> c_item)
 
 FAutofix CBioseq_OVERLAPPING_CDS :: GetAutofixFunc() const
 {
-   return AutoFix :: MarkOverlappingCDSs;
+   return MarkOverlappingCDSs;
 };
 
 bool CBioseq_OVERLAPPING_CDS :: OverlappingProdNmSimilar(const string& prod_nm1, const string& prod_nm2)
@@ -7456,7 +7456,7 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
 {
   string prod_nm;
   if (seq_feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
-     prod_nm = GetProdNmForCD(*seq_feat);
+     prod_nm = GetProdNmForCD(*seq_feat, thisInfo.scope.GetPointer());
      if ( DoesStringContainPhrase(prod_nm, "ABC")
             || DoesStringContainPhrase(prod_nm, "transposon", false, false)
             || DoesStringContainPhrase(prod_nm, "transposase", false, false)){
@@ -7496,7 +7496,8 @@ void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
                     < loc_j.GetStart(eExtreme_Positional)) {
          break;
       }
-      if(!OverlappingProdNmSimilar(GetProdNmForCD(**it), GetProdNmForCD(**jt))){
+      if(!OverlappingProdNmSimilar( GetProdNmForCD(**it, thisInfo.scope.GetPointer()), 
+                                     GetProdNmForCD(**jt, thisInfo.scope.GetPointer()))){
           continue;
       }
       ENa_strand strandj = loc_j.GetStrand();
@@ -13446,50 +13447,104 @@ void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
    }
 };
 
+void CBioseq_DISC_FEATURE_COUNT_oncaller :: x_AddSeqToAllSeqList(Str2Obj& seqs, const vector <string>& cntseq_ls, const string& feat)
+{
+   string seq, strtmp, cnt;
+   Str2Strs cnt2seqs;
+   GetTestItemList(cntseq_ls, cnt2seqs, "@");
+   vector <CConstRef <CObject> > objs;
+   unsigned i = 0;
+   ITERATE (Str2Strs, it, cnt2seqs) {
+      strtmp = GetName() + "$" + feat + "@" + it->first;
+      objs = thisInfo.test_item_objs[strtmp];
+      for (i=0; i< it->second.size(); i++) {
+         strtmp = (it->second)[i];
+         if (seqs.find(strtmp) == seqs.end()) {
+            seqs[strtmp] = objs[i];
+         }
+      }
+   }
+};
+
+void CBioseq_DISC_FEATURE_COUNT_oncaller :: x_CheckMissingFeatSeqs(vector <CConstRef <CObject> >& missing_ls, Str2Obj seqs, Str2Strs cnt2seqs)
+{
+   ITERATE (Str2Strs, it, cnt2seqs) {
+      ITERATE (vector <string>, sit, it->second) {
+         if (seqs.find(*sit) != seqs.end()) {
+            seqs.erase(seqs.find(*sit));           
+         }
+      }   
+   }
+   ITERATE (Str2Obj, it, seqs) {
+      missing_ls.push_back(it->second);
+   }
+};
+
+struct desc_obj {
+   vector <string> descs;
+   vector <CConstRef <CObject> >* objs;
+};
+
 void CBioseq_DISC_FEATURE_COUNT_oncaller :: GetReport(CRef <CClickableItem> c_item)
 {
-   Str2Strs feat2cnt_seq, cnt2seq;
+   Str2Strs feat2cnt_seq, cnt2seqs;
    GetTestItemList(c_item->item_list, feat2cnt_seq);
    c_item->item_list.clear();
-   vector <CConstRef <CObject> >* a_ls, *na_ls, *missing_ls;
+   vector <CConstRef <CObject> >* missing_all_a_ls, *missing_all_na_ls, *missing_objs;
+   vector <string> missing_all_a_descs, missing_all_na_descs, missing_descs;
    
-   a_ls = na_ls = 0;
+   missing_all_a_ls = missing_all_na_ls = 0;
+   Str2Obj na_seqs, a_seqs;
    string feat_nm, cnt_str;
    unsigned i_cnt, tot_cnt;
    ITERATE (Str2Strs, it, feat2cnt_seq) { 
       if (it->first == "missing_A") {
-          a_ls = &(thisInfo.test_item_objs[GetName() + "$" + it->first]);
+          missing_all_a_ls = &(thisInfo.test_item_objs[GetName() + "$" + it->first]);
+          missing_all_a_descs = feat2cnt_seq["missing_A"];
       }
       else if (it->first == "missing_nA") {
-          na_ls = &(thisInfo.test_item_objs[GetName() + "$" + it->first]);
+          missing_all_na_ls = &(thisInfo.test_item_objs[GetName() + "$" + it->first]);
+          missing_all_na_descs = feat2cnt_seq["missing_nA"];
+      }
+      else if (it->first.find("nA_") != string::npos) {
+          x_AddSeqToAllSeqList(na_seqs, it->second, it->first);
+      }
+      else {
+          x_AddSeqToAllSeqList(a_seqs, it->second, it->first);
       }
    }
    string strtmp;
+   vector <unsigned> has_feat;
    ITERATE (Str2Strs, it, feat2cnt_seq) {
       if (it->first.find("missing") == string::npos) { // feat$cnt@seq
-         cnt2seq.clear();
-         GetTestItemList(it->second, cnt2seq, "@");
+         cnt2seqs.clear();
+         GetTestItemList(it->second, cnt2seqs, "@");
+         missing_objs = 0;
          if (it->first.find("nA_") != string::npos) { 
             feat_nm = it->first.substr(3); 
-            if (na_ls && !na_ls->empty()) {
-              cnt2seq["0"] = feat2cnt_seq["missing_nA"];
-              missing_ls = na_ls;
+            if (missing_all_na_ls) {
+               missing_objs = missing_all_na_ls;
+               missing_descs = missing_all_na_descs;
             }
+            vector <CConstRef <CObject> > tmp_objs;
+            if (!missing_objs) missing_objs = &tmp_objs;
+               x_CheckMissingFeatSeqs(*missing_objs, na_seqs, cnt2seqs);
          }
          else {
-           feat_nm = it->first.substr(2); 
-           if (a_ls && !a_ls->empty()) {
-              cnt2seq["0"] = feat2cnt_seq["missing_A"];
-              missing_ls = a_ls;
-           }
+            feat_nm = it->first.substr(2); 
+            if (missing_all_a_ls) {
+               missing_objs = missing_all_a_ls;
+               missing_descs = missing_all_a_descs;
+            }
+               x_CheckMissingFeatSeqs(*missing_objs, a_seqs, cnt2seqs);
          }
-         if (cnt2seq.size() == 1) {
-           i_cnt = NStr::StringToUInt(cnt2seq.begin()->first) 
-                        * cnt2seq.begin()->second.size() ;
-           strtmp = GetName() + "$" + it->first + "@" + cnt2seq.begin()->first;
+         if (!missing_objs && cnt2seqs.size() == 1) {
+           i_cnt = NStr::StringToUInt(cnt2seqs.begin()->first) 
+                        * cnt2seqs.begin()->second.size() ;
+           strtmp = GetName() + "$" + it->first + "@" + cnt2seqs.begin()->first;
            CRef <CClickableItem> c_sub (new CClickableItem);
            c_sub->setting_name = GetName();
-           c_sub->item_list = cnt2seq.begin()->second;
+           c_sub->item_list = cnt2seqs.begin()->second;
            c_sub->obj_list = thisInfo.test_item_objs[strtmp];
            c_sub->description = feat_nm + ": " + NStr::UIntToString(i_cnt) 
                                      + (i_cnt >1? " present" : " presents");
@@ -13499,26 +13554,26 @@ void CBioseq_DISC_FEATURE_COUNT_oncaller :: GetReport(CRef <CClickableItem> c_it
             CRef <CClickableItem> c_sub (new CClickableItem);
             c_sub->setting_name = GetName();
             tot_cnt = 0;
-            ITERATE (Str2Strs, jt, cnt2seq) {
-               if (it->first == "0") {
-                  i_cnt = jt->second.size();
+               if (!missing_objs->empty()) {
+                  i_cnt = missing_objs->size();
                   CRef <CClickableItem> c_seq_sub(new CClickableItem);
                   c_seq_sub->setting_name = GetName();
-                  c_seq_sub->item_list = jt->second;
-                  c_seq_sub->obj_list = *missing_ls;
+                  c_seq_sub->item_list = missing_descs;
+                  c_seq_sub->obj_list = *missing_objs;
                   c_seq_sub->description = GetHasComment(i_cnt, "bioseq")
                                              + "0 " + feat_nm + " feature.";
                   c_sub->subcategories.push_back(c_seq_sub);
                }
-               else {
-                  i_cnt = NStr::StringToUInt(jt->first);
+            ITERATE (Str2Strs, jt, cnt2seqs) {
+               {
+                  i_cnt = NStr::StringToUInt(jt->first) * (jt->second.size());
                   strtmp = GetName() + "$" + it->first + "@" + jt->first;
                   string desc = jt->first + " " + feat_nm
                                    + GetNoun(i_cnt, " feature");
                   AddSubcategory(c_sub, strtmp, &(jt->second),
                          "bioseq", desc, e_HasComment, false);
+                  tot_cnt += i_cnt;
                }
-               tot_cnt += i_cnt;
             }
             c_sub->description = feat_nm + ": " + NStr::UIntToString(tot_cnt)
                                   + GetNoun(tot_cnt, " present") 

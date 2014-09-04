@@ -3,7 +3,7 @@
 # Build library "xdiscrepancy_report"
 ###############################
 
-SRC = cchecking_class cauto_disc_class cDiscRep_config cDiscRep_tests cDiscRep_output \
+SRC = cDiscRep_autofix cchecking_class cauto_disc_class cDiscRep_config cDiscRep_tests cDiscRep_output \
       cDiscRep_util cUtilib cDiscRep_susrule cDiscRep_summ cDiscRep_dt
 
 LIB = xdiscrepancy_report

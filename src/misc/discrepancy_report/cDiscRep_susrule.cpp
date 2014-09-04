@@ -2706,7 +2706,7 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
           || (is_illegal_qual 
                 && DoesStringMatchConstraint ("location", illegal_qual))) { 
       /* location */
-      return SeqLocPrintUseBestID (seq_feat.GetLocation());
+      return SeqLocPrintUseBestID (seq_feat.GetLocation(), thisInfo.scope.GetPointer());
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_pseudo)
            || (is_illegal_qual 
@@ -4049,7 +4049,7 @@ bool CSuspectRuleCheck :: DoesObjectMatchConstraintChoiceSet(const CSeq_feat& fe
 
 bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& bioseq_hl, const string& str, const CSeq_feat& feat, const CSuspect_rule& rule)
 {
-/*
+#if 0
 bool match = rule.StringMatchesSuspectProductRule(str);
 if (match) {
 cerr << "match " << match << endl;
@@ -4061,7 +4061,7 @@ if (match) {
 cerr << "strtmp " << strtmp << endl;
 }
 return match;
-*/
+#endif
 
 
   m_bioseq_hl = bioseq_hl;

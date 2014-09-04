@@ -762,22 +762,6 @@ bool CTestAndRepData :: IsEukaryotic(const CBioseq& bioseq)
 };
 
 
-/*
-bool CTestAndRepData :: IsEukaryotic(const CBioSource& biosrc)
-{
-   CBioSource :: EGenome genome = (CBioSource::EGenome) biosrc.GetGenome();
-   if (genome != CBioSource :: eGenome_mitochondrion
-                  && genome != CBioSource :: eGenome_chloroplast
-                  && genome != CBioSource :: eGenome_plastid
-                  && genome != CBioSource :: eGenome_apicoplast
-                  && HasLineage(biosrc, "Eukaryota")) {
-         return true; 
-   }
-   else return false;
-};
-*/
-
-
 bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc)
 {
    if (has_biosrc) { 
@@ -854,39 +838,33 @@ bool IsWholeWord(const string& str, const string& phrase)
 
 
 
-string GetProdNmForCD(const CSeq_feat& cd_feat)
+string GetProdNmForCD(const CSeq_feat& cd_feat, CScope* scope)
 {
-  // should be the longest CProt_ref on the bioseq pointed by the cds.GetProduct()
-     // check Xref first;
-     const CProt_ref* prot = cd_feat.GetProtXref();
-     if (prot && prot->CanGetName() && !prot->GetName().empty()) {
-        return ( *(prot->GetName().begin()) );
-     }
+  if (!scope) return kEmptyStr;
 
-     CConstRef <CSeq_feat> prot_seq_feat;
-     if (cd_feat.CanGetProduct()) {
-         prot_seq_feat 
-             = CConstRef <CSeq_feat> (
+  // should be the longest CProt_ref on the bioseq pointed by the cds.GetProduct()
+  // check Xref first;
+  const CProt_ref* prot = cd_feat.GetProtXref();
+  if (prot && prot->CanGetName() && !prot->GetName().empty()) {
+     return ( *(prot->GetName().begin()) );
+  }
+
+  CConstRef <CSeq_feat> prot_seq_feat;
+  if (cd_feat.CanGetProduct()) {
+     prot_seq_feat 
+        = CConstRef <CSeq_feat> (
                       sequence::GetBestOverlappingFeat(cd_feat.GetProduct(),
                                              CSeqFeatData::e_Prot, 
                                              sequence::eOverlap_Contains,
-                                             *thisInfo.scope));
-     }
-     if (prot_seq_feat.NotEmpty() && prot_seq_feat->GetData().IsProt()) {
-         const CProt_ref& prot = prot_seq_feat->GetData().GetProt();
-         if (prot.CanGetName() && !prot.GetName().empty()) {
-              return( *(prot.GetName().begin()) );
-         }
-     }
-/*
-     else {
-        const CProt_ref* prot = cd_feat.GetProtXref();
-        if (prot && prot->CanGetName() && !prot->GetName().empty()) {
-              return ( *(prot->GetName().begin()) );
-        }
-     }
-*/
-     return (kEmptyStr);
+                                             *scope));
+  }
+  if (prot_seq_feat.NotEmpty() && prot_seq_feat->GetData().IsProt()) {
+      const CProt_ref& prot = prot_seq_feat->GetData().GetProt();
+      if (prot.CanGetName() && !prot.GetName().empty()) {
+         return( *(prot.GetName().begin()) );
+      }
+  }
+  return (kEmptyStr);
 };
 
 
@@ -1245,23 +1223,26 @@ string GetDiscrepancyItemText(const CSeqdesc& seqdesc, const CSeq_entry& entry, 
 
 string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
 {
-   return (GetDiscrepancyItemText(bioseq, true));
-}
-string GetDiscrepancyItemText(const CBioseq& bioseq, bool append_ids)
-{
-   string len_txt = " (length " + NStr::IntToString(bioseq.GetLength());
-   CSeq_data out_seq;
-   vector <unsigned> idx;
    CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
    if (!bioseq_handle) return kEmptyStr;
+   return (GetDiscrepancyItemText(bioseq_handle, true));
+}
+string GetDiscrepancyItemText(const CBioseq_Handle& bioseq_hl, bool append_ids)
+{
+   if (!bioseq_hl) return kEmptyStr;
+
+   string len_txt = (bioseq_hl.CanGetInst_Length()) ?
+               (" (length " + NStr::IntToString(bioseq_hl.GetInst_Length())) : kEmptyStr;
+   CSeq_data out_seq;
+   vector <unsigned> idx;
    unsigned ambigs_cnt = 0, gap_cnt = 0;
    SSeqMapSelector sel(CSeqMap::fDefaultFlags);
-   if (bioseq.GetInst().CanGetSeq_data()) { 
-      for (CSeqMap_CI seqmap_ci(bioseq_handle, sel); seqmap_ci;  ++seqmap_ci){
+   if (bioseq_hl.CanGetInst_Seq_data()) { 
+      for (CSeqMap_CI seqmap_ci(bioseq_hl, sel); seqmap_ci;  ++seqmap_ci){
          if (seqmap_ci.GetType() == CSeqMap::eSeqGap) {
             gap_cnt += seqmap_ci.GetLength();
          }
-         else if (bioseq.IsNa()){
+         else if (bioseq_hl.IsNa()){
             ambigs_cnt += CSeqportUtil::GetAmbigs(seqmap_ci.GetRefData(),
                                                     &out_seq, &idx,
                                                     CSeq_data::e_Ncbi2na,
@@ -1271,17 +1252,17 @@ string GetDiscrepancyItemText(const CBioseq& bioseq, bool append_ids)
       }
    }
    else {
-      CSeqVector seq_vec(bioseq_handle, CBioseq_Handle::eCoding_Iupac);
+      CSeqVector seq_vec(bioseq_hl, CBioseq_Handle::eCoding_Iupac);
       for (CSeqVector_CI it = seq_vec.begin(); it; ++ it) {
          if (it.IsInGap()) gap_cnt ++;
-         else if (bioseq.IsNa() && (*it) != 'A' 
+         else if (bioseq_hl.IsNa() && (*it) != 'A' 
                       && (*it) != 'T' && (*it) != 'G' && (*it) != 'C') {
                   ambigs_cnt ++;
          }
       }
    }
  
-   if (bioseq.IsNa()) {
+   if (bioseq_hl.IsNa()) {
        if (ambigs_cnt >0) {
           len_txt += ", " + NStr::UIntToString(ambigs_cnt) + " other"; 
        }
@@ -1291,7 +1272,7 @@ string GetDiscrepancyItemText(const CBioseq& bioseq, bool append_ids)
    }
    len_txt += ")";
 
-   string seqid_str = BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank);
+   string seqid_str = BioseqToBestSeqIdString(*bioseq_hl.GetCompleteBioseq(),CSeq_id::e_Genbank);
    string row_text(kEmptyStr);
    if (!(thisInfo.infile.empty())) row_text = thisInfo.infile +": ";
    row_text += seqid_str + len_txt;
@@ -1330,15 +1311,16 @@ string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id :: E_Choice choice
 
 
 static const char* strandsymbol[] = {"", "", "c","b", "r"};
-string PrintSeqInt(const CSeq_interval& seq_int, bool range_only)
+string PrintSeqInt(const CSeq_interval& seq_int, CScope* scope, bool range_only)
 {
     string location(kEmptyStr);
+    if (!scope) return kEmptyStr;
 
     // Best seq_id
     if (!range_only) {
       const CSeq_id& seq_id = seq_int.GetId();
       if (!(seq_id.IsGenbank()) ) {
-         CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(seq_id);
+         CBioseq_Handle bioseq_hl = scope->GetBioseqHandle(seq_id);
          if (bioseq_hl) {
             const CSeq_id& 
                 new_seq_id = BioseqToBestSeqId(*(bioseq_hl.GetCompleteBioseq()),
@@ -1391,23 +1373,25 @@ string PrintSeqInt(const CSeq_interval& seq_int, bool range_only)
     return location;
 };
 
-string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool range_only)
+string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope* scope, bool range_only)
 {
+  if (!scope) return kEmptyStr;
+
   string locs, strtmp;
   string location(kEmptyStr);
   if (seq_loc.IsInt()) {
-     location = PrintSeqInt(seq_loc.GetInt(), range_only);
+     location = PrintSeqInt(seq_loc.GetInt(), scope, range_only);
   } 
   else if (seq_loc.IsMix()) {
      location = "(";
      ITERATE (list <CRef <CSeq_loc> >, it, seq_loc.GetMix().Get()) {
         if (it == seq_loc.GetMix().Get().begin()) {
-           strtmp = SeqLocPrintUseBestID(**it, range_only);
+           strtmp = SeqLocPrintUseBestID(**it, scope, range_only);
            location += strtmp;
            locs += strtmp;
         }
         else {
-           strtmp = SeqLocPrintUseBestID(**it, true);
+           strtmp = SeqLocPrintUseBestID(**it, scope, true);
            location += strtmp;
            locs += strtmp;
         }
@@ -1423,12 +1407,12 @@ string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool range_only)
      location = "(";
      ITERATE (list <CRef <CSeq_interval> >, it, seq_loc.GetPacked_int().Get()) {
         if (it == seq_loc.GetPacked_int().Get().begin()) {
-           strtmp = PrintSeqInt(**it, range_only);
+           strtmp = PrintSeqInt(**it, scope, range_only);
            location += strtmp;
            locs += strtmp;
         }
         else {
-           strtmp = PrintSeqInt(**it, true);
+           strtmp = PrintSeqInt(**it, scope, true);
            location += strtmp;
            locs += strtmp;
         }
@@ -1444,8 +1428,10 @@ string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool range_only)
 }
 
 
-string GetLocusTagForFeature(const CSeq_feat& seq_feat)
+string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope* scope)
 {
+  if (!scope) return kEmptyStr;
+
   string tag(kEmptyStr);
   if (seq_feat.GetData().IsGene()) {
     const CGene_ref& gene = seq_feat.GetData().GetGene();
@@ -1461,7 +1447,7 @@ string GetLocusTagForFeature(const CSeq_feat& seq_feat)
          gene= sequence::GetBestOverlappingFeat(seq_feat.GetLocation(),
                                                    CSeqFeatData::e_Gene,
 				                   sequence::eOverlap_Contained,
-                                                   *thisInfo.scope);
+                                                   *scope);
       if (gene.NotEmpty()) {
            tag = (gene->GetData().GetGene().CanGetLocus_tag()) ? gene->GetData().GetGene().GetLocus_tag() : kEmptyStr;
       }
@@ -1496,15 +1482,15 @@ void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label)
 };
 
 
-const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot)
+const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot, CScope* scope)
 {
+   if (!scope) return 0;
+
    // pay attention to multiple bioseqs when using GetBioseqFromSeqLoc
    CConstRef <CBioseq>
-       bioseq =
-           sequence::GetBioseqFromSeqLoc(prot.GetLocation(), 
-                                         *thisInfo.scope).GetCompleteBioseq();
+       bioseq = sequence::GetBioseqFromSeqLoc(prot.GetLocation(), *scope).GetCompleteBioseq();
    if (bioseq.NotEmpty()) {
-      const CSeq_feat* cds= sequence::GetCDSForProduct(*bioseq, thisInfo.scope);
+      const CSeq_feat* cds= sequence::GetCDSForProduct(*bioseq, scope);
       if (cds) return cds;
    }
    return 0;
@@ -1550,32 +1536,34 @@ string GetFeatId(const CFeat_id& feat_id)
 
 string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
 {
-   return (GetDiscrepancyItemText(seq_feat, true));
+   return (GetDiscrepancyItemText(seq_feat, thisInfo.scope.GetPointer(), true));
 }
 static const string spaces("     ");
-string GetDiscrepancyItemText(const CSeq_feat& seq_feat, bool append_ids)
+string GetDiscrepancyItemText(const CSeq_feat& seq_feat, CScope* scope, bool append_ids)
 {
-      CSeq_feat* seq_feat_p = const_cast <CSeq_feat*>(&seq_feat);
+  if (!scope) return kEmptyStr;
+  
+  CSeq_feat* seq_feat_p = const_cast <CSeq_feat*>(&seq_feat);
 
-      if ( seq_feat.GetData().IsProt()) {
-        const CSeq_feat* cds = GetCDFeatFromProtFeat(seq_feat);
-        if (cds) seq_feat_p = const_cast<CSeq_feat*>(cds);
-      }
+  if ( seq_feat.GetData().IsProt()) {
+     const CSeq_feat* cds = GetCDFeatFromProtFeat(seq_feat, scope);
+     if (cds) seq_feat_p = const_cast<CSeq_feat*>(cds);
+  }
    
-      string location = SeqLocPrintUseBestID (seq_feat_p->GetLocation()); 
-      string label = seq_feat_p->GetData().GetKey();
-      string locus_tag = GetLocusTagForFeature (*seq_feat_p);
-      string context_label(kEmptyStr);
-      if (seq_feat_p->GetData().IsCdregion()) { 
-          context_label = GetProdNmForCD(*seq_feat_p);
+  string location = SeqLocPrintUseBestID (seq_feat_p->GetLocation(), scope); 
+  string label = seq_feat_p->GetData().GetKey();
+  string locus_tag = GetLocusTagForFeature (*seq_feat_p, scope);
+  string context_label(kEmptyStr);
+  if (seq_feat_p->GetData().IsCdregion()) { 
+          context_label = GetProdNmForCD(*seq_feat_p, scope);
           if (context_label.empty()) {
              GetSeqFeatLabel(*seq_feat_p, context_label);
           }
-      }
-      else if (seq_feat_p->GetData().IsPub()) {
+  }
+  else if (seq_feat_p->GetData().IsPub()) {
                seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label);
-      }
-      else if (seq_feat_p->GetData().IsGene()) {
+  }
+  else if (seq_feat_p->GetData().IsGene()) {
              if (seq_feat_p->GetData().GetGene().CanGetLocus()
                   && !seq_feat_p->GetData().GetGene().GetLocus().empty()) {
                 context_label = seq_feat_p->GetData().GetGene().GetLocus(); 
@@ -1583,31 +1571,32 @@ string GetDiscrepancyItemText(const CSeq_feat& seq_feat, bool append_ids)
              else if (seq_feat_p->GetData().GetGene().CanGetDesc()) {
                 context_label = seq_feat_p->GetData().GetGene().GetDesc(); 
              }
-      } 
-      else GetSeqFeatLabel(*seq_feat_p, context_label);
+  } 
+  else GetSeqFeatLabel(*seq_feat_p, context_label);
 
-      // append necessary ids for reference later;
-      string feat_id_str = (seq_feat_p->CanGetId()) ?
+  // append necessary ids for reference later;
+  string feat_id_str = (seq_feat_p->CanGetId()) ?
                               GetFeatId(seq_feat_p->GetId()) : kEmptyStr;
-      string seq_id_str = CTempString(location).substr(0, location.find(":"));
-      string seq_loc_str = CTempString(location).substr(location.find(":") + 1);
-      vector <string> arr;
-      arr = NStr::Tokenize(seq_loc_str, " ", arr);
-      seq_loc_str = NStr::Join(arr, "");
+  string seq_id_str = CTempString(location).substr(0, location.find(":"));
+  string seq_loc_str = CTempString(location).substr(location.find(":") + 1);
+  vector <string> arr;
+  arr = NStr::Tokenize(seq_loc_str, " ", arr);
+  seq_loc_str = NStr::Join(arr, "");
 
-      if (!label.empty()) label += spaces ;
-      if (!context_label.empty()) context_label +=  spaces;
-      if (!location.empty() && !locus_tag.empty()) location += spaces;
-      strtmp = label + context_label + location + locus_tag;
-      if (append_ids) {
-         strtmp += (thisInfo.xml_label + seq_id_str + "," + feat_id_str + "," + seq_loc_str + ",");
-      }
-      if (thisInfo.infile.empty()) {
+  if (!label.empty()) label += spaces ;
+  if (!context_label.empty()) context_label +=  spaces;
+  if (!location.empty() && !locus_tag.empty()) location += spaces;
+  strtmp = label + context_label + location + locus_tag;
+  if (append_ids) {
+     strtmp += 
+        (thisInfo.xml_label + seq_id_str + "," + feat_id_str + "," + seq_loc_str + ",");
+  }
+  if (thisInfo.infile.empty()) {
          return strtmp;
-      }
-      else {
+  }
+  else {
           return (thisInfo.infile + ": " + strtmp); 
-      }
+  }
 }; // GetDiscrepancyItemText(const CSeqFeat& obj)
 
 
