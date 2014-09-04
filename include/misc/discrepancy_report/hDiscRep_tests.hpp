@@ -150,13 +150,7 @@
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 
-#if 1
-#include <objtools/edit/autofix.hpp>
-#endif
-
-#if 0
-#include "/home/chenj/ObjEdit/trunk/c++/include/objtools/edit/autofix.hpp"
-#endif
+#include <misc/discrepancy_report/hDiscRep_autofix.hpp>
 
 #include <common/ncbi_export.h>
 
@@ -197,8 +191,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                                   const string& str2,
                                                   const string& str3, 
                                                   const CSeq_feat& feat);
-  typedef void (*FAutofix)(vector <CRef <CObject> >& obj, vector <string>& msgs);
-
   struct s_SuspectProductNameData {
      const char* pattern;
      FSuspectProductNameSearchFunc search_func;
@@ -221,14 +213,15 @@ BEGIN_SCOPE(DiscRepNmSpc)
   NCBI_DISCREPANCY_REPORT_EXPORT const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, 
                                                                   CSeq_id::E_Choice);
   NCBI_DISCREPANCY_REPORT_EXPORT string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
-  NCBI_DISCREPANCY_REPORT_EXPORT string SeqLocPrintUseBestID(const CSeq_loc& seq_loc,bool range_only = false);
-  NCBI_DISCREPANCY_REPORT_EXPORT string GetProdNmForCD(const CSeq_feat& cd_feat);
+  NCBI_DISCREPANCY_REPORT_EXPORT string SeqLocPrintUseBestID(const CSeq_loc& seq_loc,
+                                                 CScope* scope, bool range_only = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetProdNmForCD(const CSeq_feat& cd_feat, CScope* scope);
   NCBI_DISCREPANCY_REPORT_EXPORT void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);
 
   // GetDiscrepancyItemTextEx()
-  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeq_feat& obj, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeq_feat& obj, CScope* scope, bool append_ids = false);
   NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeq_submit& seq_submit, bool append_ids = false);
-  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CBioseq& objtrue, bool append_ids = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CBioseq_Handle& obj_hl, bool append_ids = false);
   NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CBioseq_set& objs, bool append_ids = false);
   NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry, bool append_ids = false);
   NCBI_DISCREPANCY_REPORT_EXPORT string GetDiscrepancyItemText(const CSeqdesc& obj, const CBioseq& bioseq, bool append_ids = false);
@@ -240,9 +233,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
   NCBI_DISCREPANCY_REPORT_EXPORT string GetFeatId(const CFeat_id& feat_id);
   NCBI_DISCREPANCY_REPORT_EXPORT string SeqDescLabelContent(const CSeqdesc& sd);
   NCBI_DISCREPANCY_REPORT_EXPORT CBioseq* GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
-  NCBI_DISCREPANCY_REPORT_EXPORT const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
-  NCBI_DISCREPANCY_REPORT_EXPORT string GetLocusTagForFeature(const CSeq_feat& seq_feat);
-  NCBI_DISCREPANCY_REPORT_EXPORT string PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
+  NCBI_DISCREPANCY_REPORT_EXPORT const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot, CScope* scope);
+  NCBI_DISCREPANCY_REPORT_EXPORT string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope* scope);
+  NCBI_DISCREPANCY_REPORT_EXPORT string PrintSeqInt(const CSeq_interval& seq_int, 
+                                                CScope* scope, bool range_only = false);
 
   NCBI_DISCREPANCY_REPORT_EXPORT bool IsWholeWord(const string& str, const string& phrase);
   NCBI_DISCREPANCY_REPORT_EXPORT bool IsAllCaps(const string& str);
@@ -3989,6 +3983,11 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {
                      return CBioseq_on_feat_cnt::GetName_oncaller(); }
+    protected:
+       void x_AddSeqToAllSeqList(Str2Obj& seqs, 
+                              const vector <string>& cntseq_ls, const string& feat);
+       void x_CheckMissingFeatSeqs(vector <CConstRef <CObject> >& missing_ls, 
+                              Str2Obj seqs, Str2Strs cnt2seqs);
   };
 
   class CBioseq_DISC_FEATURE_COUNT : public CBioseq_on_feat_cnt
