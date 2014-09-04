@@ -1307,7 +1307,7 @@ CSDB_ConnectionParam::Set(EParam param, const string& value)
     case eUsername:
         return m_Url.SetUser(value);
     case ePassword:
-        if ( !Get(ePasswordFile).empty() ) {
+        if ( !value.empty()  &&  !Get(ePasswordFile).empty() ) {
             // XXX - issue diagnostics?
             Set(ePasswordFile, kEmptyStr);
         }
@@ -1321,7 +1321,7 @@ CSDB_ConnectionParam::Set(EParam param, const string& value)
     case eDatabase:
         return m_Url.SetPath("/" + value);
     case ePasswordFile:
-        if ( !Get(ePassword).empty() ) {
+        if ( !value.empty()  &&  !Get(ePassword).empty() ) {
             // XXX - issue diagnostics?
             Set(ePassword, kEmptyStr);
         }
