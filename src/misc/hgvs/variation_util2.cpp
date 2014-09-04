@@ -1965,6 +1965,7 @@ CRef<CVariation> CVariationUtil::x_CreateUnknownVariation(const CSeq_id& id, CVa
 CRef<CVariation> CreateUnknownProtConsequenceVariation(
         const CVariantPlacement& nuc_p, 
         const CSeq_feat& cds_feat,
+        bool is_frameshifting,
         CScope& scope)
 {
     CRef<CSeq_loc> prot_loc;
@@ -1972,8 +1973,14 @@ CRef<CVariation> CreateUnknownProtConsequenceVariation(
     try {
         CRef<CSeq_loc_Mapper> nuc2prot_mapper;
         CRef<CSeq_loc_Mapper> prot2nuc_mapper;
-        nuc2prot_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eLocationToProduct, &scope));
-        prot2nuc_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eProductToLocation, &scope));
+        nuc2prot_mapper.Reset(new CSeq_loc_Mapper(
+                    cds_feat, 
+                    CSeq_loc_Mapper::eLocationToProduct, 
+                    &scope));
+        prot2nuc_mapper.Reset(new CSeq_loc_Mapper(
+                    cds_feat, 
+                    CSeq_loc_Mapper::eProductToLocation, 
+                    &scope));
 
         prot_loc = nuc2prot_mapper->Map(nuc_p.GetLoc());
         codons_loc = prot2nuc_mapper->Map(*prot_loc);
@@ -1997,8 +2004,9 @@ CRef<CVariation> CreateUnknownProtConsequenceVariation(
     CRef<CVariantPlacement> prot_p(new CVariantPlacement);
     prot_p->SetLoc(*prot_loc);
     prot_p->SetMol(CVariantPlacement::eMol_protein);
-    prot_p->SetExceptions().push_back(CreateException("Cannot infer consequence; projecting location only", 
-                                                       CVariationException::eCode_inconsistent_consequence));
+    prot_p->SetExceptions().push_back(CreateException(
+                "Cannot infer consequence; projecting location only", 
+                CVariationException::eCode_inconsistent_consequence));
     v->SetPlacements().push_back(prot_p);
 
     CRef<CVariantPlacement> codons_p(new CVariantPlacement);
@@ -2010,6 +2018,10 @@ CRef<CVariation> CreateUnknownProtConsequenceVariation(
 
     CVariationMethod& m = v->SetMethod();
     m.SetMethod().push_back(CVariationMethod::eMethod_E_computational);
+
+    if(is_frameshifting) {
+        v->SetSo_terms().push_back(CVariationUtil::eSO_frameshift_variant);
+    }
 
     return v;
 }
@@ -2047,14 +2059,6 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         NCBI_THROW(CException, eUnknown, "Placement and CDS are on different seqs");
     }
 
-    //if placement is not a proper subset of CDS, create and return "unknown effect" variation
-    if(nuc_p.IsSetStart_offset()
-      || nuc_p.IsSetStop_offset()
-      || !Contains(cds_feat.GetLocation(), nuc_p.GetLoc(), m_scope))
-    {
-        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope);
-    }
-
     //create an inst-variation from the provided inst with the single specified placement
     CRef<CVariation> v(new CVariation);
     v->SetData().SetInstance().Assign(nuc_inst);
@@ -2069,15 +2073,12 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
     ChangeToDelins(*v);
     const CDelta_item& nuc_delta = *v->GetData().GetInstance().GetDelta().front();
 
-    //note: using type long instead of TSignedSeqPos is a bug on 64-bit systems: the result of the subtraction
-    //that's expected to be negative would be a BIG_NUMBER that is cast to type long without the wrap-around
-    //into negatives.
-    TSignedSeqPos nuc_delta_len = nuc_delta.GetSeq().GetLiteral().GetLength() - sequence::GetLength(p->GetLoc(), NULL);
+    // note: using type long instead of TSignedSeqPos is a bug on 64-bit systems: 
+    // the result of the subtraction that's expected to be negative would be a 
+    // BIG_NUMBER that is cast to type long without the wrap-around into negatives.
+    TSignedSeqPos nuc_delta_len = nuc_delta.GetSeq().GetLiteral().GetLength() 
+                                - sequence::GetLength(p->GetLoc(), NULL);
 
-    int frameshift_phase = nuc_delta_len % 3;
-    if(frameshift_phase < 0) {
-        frameshift_phase += 3;
-    }
 
     if(!SameOrientation(sequence::GetStrand(cds_feat.GetLocation(), NULL),
                         sequence::GetStrand(p->GetLoc(), NULL)))
@@ -2089,32 +2090,50 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     if(verbose) NcbiCerr << "Normalized variation: " << MSerial_AsnText << *v;
 
-    if(!nuc_delta.GetSeq().IsLiteral() || !nuc_delta.GetSeq().GetLiteral().IsSetSeq_data()) {
-        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope); 
-    }
 
     //Map to protein and back to get the affected codons.
-    //Note: need the scope because the cds_feat is probably gi-based, while our locs are probably accver-based
-
-    CRef<CSeq_loc_Mapper> nuc2prot_mapper;
-    CRef<CSeq_loc_Mapper> prot2nuc_mapper;
+    //Note: need the scope because the cds_feat is probably gi-based, 
+    //while our locs are probably accver-based
+    CRef<CSeq_loc_Mapper> nuc2prot_mapper, prot2nuc_mapper;
+    CRef<CSeq_loc> prot_loc, codons_loc;
     try {
-        nuc2prot_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eLocationToProduct, m_scope));
-        prot2nuc_mapper.Reset(new CSeq_loc_Mapper(cds_feat, CSeq_loc_Mapper::eProductToLocation, m_scope));
+        nuc2prot_mapper.Reset(new CSeq_loc_Mapper(
+                    cds_feat, 
+                    CSeq_loc_Mapper::eLocationToProduct, 
+                    m_scope));
+        prot2nuc_mapper.Reset(new CSeq_loc_Mapper(cds_feat, 
+                    CSeq_loc_Mapper::eProductToLocation, 
+                    m_scope));
+
+        prot_loc = nuc2prot_mapper->Map(p->GetLoc());
+        codons_loc = prot2nuc_mapper->Map(*prot_loc);
     } catch (CException&) {
-        //may legitimately throw if feature is not good for mapping (e.g. partial).
-        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope); 
+        // may legitimately throw if feature 
+        // is not good for mapping (e.g. partial).
     }
 
-    CRef<CSeq_loc> prot_loc = nuc2prot_mapper->Map(p->GetLoc());
-    CRef<CSeq_loc> codons_loc = prot2nuc_mapper->Map(*prot_loc);
+    const bool is_within_cds = Contains(cds_feat.GetLocation(), nuc_p.GetLoc(), m_scope);
 
-    if(codons_loc->IsNull()) {
-        //normally shouldn't happen, but may happen with dubious annotation, e.g. BC149603.1:c.1A>G.
-        //Mapping to protein coordinates returns NULL, probably because protein and cds lengths are inconsistent.
+    bool is_ok = !nuc_p.IsSetStart_offset()
+              && !nuc_p.IsSetStop_offset()
+              && is_within_cds
+              && !codons_loc->IsNull()
+              && nuc_delta.GetSeq().IsLiteral() 
+              && nuc_delta.GetSeq().GetLiteral().IsSetSeq_data();
 
-        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope); 
+    int frameshift_phase = nuc_delta_len % 3;
+    if(frameshift_phase < 0) {
+        frameshift_phase += 3;
     }
+
+    if(!is_ok) {
+        return CreateUnknownProtConsequenceVariation(
+                nuc_p, 
+                cds_feat, 
+                frameshift_phase != 0,
+                *m_scope);
+    } 
+
 
     string downstream_cds_suffix_seq_str; //cds sequence downstream of affected codons
     {{
@@ -2123,13 +2142,18 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         CRef<CSeq_loc> ext_cds_loc;
         {{
             SFlankLocs flocs = CreateFlankLocs(cds_feat.GetLocation(), 6);
-            ext_cds_loc = sequence::Seq_loc_Add(cds_feat.GetLocation(), *flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
+            ext_cds_loc = sequence::Seq_loc_Add(
+                    cds_feat.GetLocation(), 
+                    *flocs.downstream, 
+                    CSeq_loc::fSortAndMerge_All, NULL);
         }}
 
         CRef<CSeq_loc> downstream_cds_loc;
         {{
             SFlankLocs flocs = CreateFlankLocs(*codons_loc, 1000);
-            downstream_cds_loc = ext_cds_loc->Intersect(*flocs.downstream, CSeq_loc::fSortAndMerge_All, NULL);
+            downstream_cds_loc = ext_cds_loc->Intersect(
+                    *flocs.downstream, 
+                    CSeq_loc::fSortAndMerge_All, NULL);
         }}
 
         CRef<CSeq_literal> literal = x_GetLiteralAtLoc(*downstream_cds_loc);
@@ -2144,15 +2168,24 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
               (TSignedSeqPos)p->GetLoc().GetStart(eExtreme_Biological)
             - (TSignedSeqPos)codons_loc->GetStart(eExtreme_Biological));
 
-    codons_loc->SetId(sequence::GetId(p->GetLoc(), NULL)); //restore the original id, as mapping forward and back may have changed the type
-    ChangeIdsInPlace(*prot_loc, sequence::eGetId_ForceAcc, *m_scope); //not strictly required, but generally prefer accvers in the output for readability
-                                                                      //as we're dealing with various types of mols
+    codons_loc->SetId(sequence::GetId(p->GetLoc(), NULL)); 
+        // restore the original id, as mapping forward and back may have changed the type
+
+    ChangeIdsInPlace(*prot_loc, sequence::eGetId_ForceAcc, *m_scope); 
+        // not strictly required, but generally prefer accvers in the output for readability
+        // as we're dealing with various types of mols
 
     x_AdjustDelinsToInterval(*v, *codons_loc);
     AttachSeq(*v, 100000); //need enough sequnece to get create reference and variant translations downstream
+
     if(!v->GetPlacements().front()->GetSeq().IsSetSeq_data()) {
-        return CreateUnknownProtConsequenceVariation(nuc_p, cds_feat, *m_scope); 
+        return CreateUnknownProtConsequenceVariation(
+                nuc_p, 
+                cds_feat, 
+                frameshift_phase != 0,
+                *m_scope);
     }
+
     if(verbose) NcbiCerr << "Adjusted-for-codons " << MSerial_AsnText << *v;
 
     string nuc_ref_prefix = v->GetPlacements().front()->GetSeq().GetSeq_data().GetIupacna().Get();
