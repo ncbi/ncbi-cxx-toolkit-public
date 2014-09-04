@@ -394,8 +394,8 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
     }
 }
 
-#define PROT_CLIP 60
-#define PROT_CLIP_FRAC 0.1
+#define PROT_CLIP 120
+#define PROT_CLIP_FRAC 0.20
 
 void CAlignCollapser::ClipProteinToStartStop(CAlignModel& align) {
 
