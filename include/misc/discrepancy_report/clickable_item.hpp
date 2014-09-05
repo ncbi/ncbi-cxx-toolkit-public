@@ -62,10 +62,11 @@ public:
 
     bool IsSelected() const { return m_IsSelected; }
     void SetSelected(bool selected = true);
+    void SetSelfSelected(bool selected = true) { m_IsSelected = selected; };
 
     bool IsExpanded() const { return m_IsExpanded; }
     void SetExpanded(bool expanded = true, bool recurse = false); 
-    void SetOwnExpanded(bool expanded = true) { m_IsExpanded = expanded; };
+    void SetSelfExpanded(bool expanded = true) { m_IsExpanded = expanded; };
 
     bool CanGetSubitems() const { return (!m_Subitems.empty()); };
     const vector<CRef<CClickableText> >& GetSubitems() const { return m_Subitems; }
