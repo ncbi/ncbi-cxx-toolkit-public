@@ -841,25 +841,28 @@ public:
     ///   "args" string override URL parameters on an individual basis.)
     CSDB_ConnectionParam(const string& url_string = kEmptyStr);
 
-    /// Whether to throw an exception if the connection parameters are
-    /// incomplete, in the sense that at least one of the "essential" ('user',
-    /// 'password', 'server' or 'database') parameters is not set.
+    /// Flags affecting URL composition.
     ///
     /// @sa ComposeUrl
-    enum EThrowIfIncomplete {
-        /// Throw if any of essential connection parameters are not set
-        eThrowIfIncomplete,
-        /// Allow to compose an URL with some essential parameters not set
-        eAllowIncomplete
+    enum EComposeUrlFlags {
+        /// Throw an exception if missing any "essential" parameters.
+        /// (It's normally necessary to have the server name, the database
+        /// name, the username, and either a password or a password file.)
+        fThrowIfIncomplete = 0x1,
+        fHidePassword      = 0x2, /// Obscure passwords
+        // For compatibility with older code
+        eThrowIfIncomplete = fThrowIfIncomplete,
+        eAllowIncomplete   = 0
     };
+    typedef int TComposeUrlFlags; // Bitwise OR of EComposeUrlFlags
 
     /// Compose database connection URL string out of this class.
     ///
-    /// @param allow_incomplete
-    ///   Whether to allow composing the URL if any of the essential connection
-    ///   parameters is not set -- or to throw an exception in this case.
-    string ComposeUrl(EThrowIfIncomplete allow_incomplete = eAllowIncomplete)
-                      const;
+    /// @param flags
+    ///   Any desired flags from EComposeUrlFlags.
+    string ComposeUrl(TComposeUrlFlags flags = 0) const;
+
+    bool IsEmpty(void) const;
 
     /// "Essential" (e.g. those located before '?' in the URL) database
     /// connection parameters
@@ -891,6 +894,17 @@ public:
     /// Empty string means that it is not set.
     string Get(EParam param,
                EWithOverrides with_overrides = eWithoutOverrides) const;
+
+    /// Flags affecting parameter setting.
+    ///
+    /// @sa Set
+    enum ESetFlags {
+        /// The specified value is merely a default, which Set should ignore
+        /// if a non-empty setting for that parameter is already present.
+        fAsDefault = 0x1
+    };
+    typedef int TSetFlags; // Bitwise OR of ESetFlags
+
     /// Set one of the "essential" database connection parameters,
     /// unless overridden in a configuration file.
     ///
@@ -901,7 +915,18 @@ public:
     ///   Parameter to set
     /// @param value
     ///   The value to set the parameter to. Empty string un-sets it.
-    void   Set(EParam param, const string& value);
+    /// @param flags
+    ///   Any desired flags from ESetFlags.
+    CSDB_ConnectionParam& Set(EParam param, const string& value,
+                              TSetFlags flags = 0);
+    /// Merge existing settings with those from url_string.  The flags
+    /// indicate how to resolve conflicts.
+    CSDB_ConnectionParam& Set(const string& url_string, TSetFlags flags = 0);
+    /// Merge existing settings with those from param.  The flags
+    /// indicate how to resolve conflicts.
+    CSDB_ConnectionParam& Set(const CSDB_ConnectionParam& param,
+                              TSetFlags flags = 0);    
+
     /// Access to additional (e.g. those located after '?' in the URL)
     /// database connection parameters
     const CUrlArgs& GetArgs(void) const;
@@ -1295,37 +1320,52 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
     return string();
 }
 
-inline void
-CSDB_ConnectionParam::Set(EParam param, const string& value)
+inline CSDB_ConnectionParam&
+CSDB_ConnectionParam::Set(EParam param, const string& value, TSetFlags flags)
 {
     TParamMap::const_iterator it = m_ParamMap.find(param);
     if (it != m_ParamMap.end()) {
         x_ReportOverride(x_GetName(it->first), value, it->second);
     }
 
+    if ((flags & fAsDefault) != 0
+        &&  ( !Get(param).empty()
+              ||  (param == ePasswordFile  &&  !Get(ePassword).empty())
+              ||  (param == ePassword      &&  !Get(ePasswordFile).empty()) ))
+    {
+        return *this;
+    }
+
     switch (param) {
     case eUsername:
-        return m_Url.SetUser(value);
+        m_Url.SetUser(value);
+        return *this;
     case ePassword:
         if ( !value.empty()  &&  !Get(ePasswordFile).empty() ) {
             // XXX - issue diagnostics?
             Set(ePasswordFile, kEmptyStr);
         }
-        return m_Url.SetPassword(value);
+        m_Url.SetPassword(value);
+        return *this;
     case eService:
         m_Url.SetHost(value);
         x_FillParamMap();
-        return;
+        return *this;
     case ePort:
-        return m_Url.SetPort(value);
+        m_Url.SetPort(value);
+        return *this;
     case eDatabase:
-        return m_Url.SetPath("/" + value);
+        m_Url.SetPath("/" + value);
+        return *this;
     case ePasswordFile:
         if ( !value.empty()  &&  !Get(ePassword).empty() ) {
             // XXX - issue diagnostics?
             Set(ePassword, kEmptyStr);
         }
-        return m_Url.GetArgs().SetValue("password_file", value);
+        if ( !value.empty()  ||  m_Url.GetArgs().IsSetValue("password_file")) {
+            m_Url.GetArgs().SetValue("password_file", value);
+        }
+        return *this;
     case ePasswordKeyID:
     case eLoginTimeout:
     case eIOTimeout:
@@ -1333,12 +1373,28 @@ CSDB_ConnectionParam::Set(EParam param, const string& value)
     case eUseConnPool:
     case eConnPoolMinSize:
     case eConnPoolMaxSize:
-        return m_Url.GetArgs().SetValue(x_GetName(param), value);
+    {
+        string name = x_GetName(param);
+        if ( !value.empty()  ||  m_Url.GetArgs().IsSetValue(name)) {
+            m_Url.GetArgs().SetValue(name, value);
+        }
+        return *this;
+    }
     case eArgsString:
         m_Url.GetArgs().GetArgs().clear();
-        return m_Url.GetArgs().SetQueryString(value);
+        m_Url.GetArgs().SetQueryString(value);
+        return *this;
     }
     _ASSERT(false);
+    return *this;
+}
+
+
+inline CSDB_ConnectionParam&
+CSDB_ConnectionParam::Set(const string& url_string, TSetFlags flags)
+{
+    CSDB_ConnectionParam param(url_string);
+    return Set(param, flags);
 }
 
 

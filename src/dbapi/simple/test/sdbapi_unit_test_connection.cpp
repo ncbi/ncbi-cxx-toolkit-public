@@ -144,4 +144,39 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(Test_ConnParamOps)
+{
+    CSDB_ConnectionParam params1("dbapi://u1:p1@s1:123/?io_timeout=17&x1=v1"),
+                         params2("dbapi://s2/d2?password_file=pf2&x2=v2");
+    BOOST_CHECK_THROW(
+        params1.ComposeUrl(CSDB_ConnectionParam::fThrowIfIncomplete),
+        CSDB_Exception);
+    BOOST_CHECK_EQUAL(params1.ComposeUrl(),
+                      "dbapi://u1:p1@s1:123/?io_timeout=17&x1=v1");
+    BOOST_CHECK_EQUAL(params1.ComposeUrl(CSDB_ConnectionParam::fHidePassword),
+                      "dbapi://u1:(redacted)@s1:123/?io_timeout=17&x1=v1");
+    BOOST_CHECK_EQUAL(params2.ComposeUrl(),
+                      params2.ComposeUrl(CSDB_ConnectionParam::fHidePassword));
+
+    CSDB_ConnectionParam merge12(params1), merge12d(params1),
+                         merge21(params2), merge21d(params2);
+    merge12 .Set(params2);
+    merge12d.Set(params2, CSDB_ConnectionParam::fAsDefault);
+    // gets database name
+
+    merge21 .Set(params1);
+    merge21d.Set(params1, CSDB_ConnectionParam::fAsDefault);
+    // gets username, port, and io_timeout
+
+    BOOST_CHECK_EQUAL(merge12.ComposeUrl(), params2.ComposeUrl());
+    BOOST_CHECK_EQUAL(
+        merge12d.ComposeUrl(CSDB_ConnectionParam::fThrowIfIncomplete),
+        "dbapi://u1:p1@s1:123/d2?io_timeout=17&x1=v1");
+    BOOST_CHECK_EQUAL(merge21.ComposeUrl(), params1.ComposeUrl());
+    BOOST_CHECK_EQUAL(
+        merge21d.ComposeUrl(CSDB_ConnectionParam::fThrowIfIncomplete),
+        "dbapi://u1@s2:123/d2?password_file=pf2&x2=v2&io_timeout=17");
+}
+
 END_NCBI_SCOPE

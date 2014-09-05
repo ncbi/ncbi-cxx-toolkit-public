@@ -869,11 +869,11 @@ CRef<CSDB_Decryptor> CSDB_ConnectionParam::GetGlobalDecryptor(void)
     return *s_Decryptor;
 }
 
+
 string
-CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
-                                                /* = eAllowIncomplete */) const
+CSDB_ConnectionParam::ComposeUrl(TComposeUrlFlags flags) const
 {
-    if (allow_incomplete == eThrowIfIncomplete
+    if ((flags & fThrowIfIncomplete) != 0
         &&  (m_Url.GetHost().empty()  ||  m_Url.GetUser().empty()
              ||  (m_Url.GetPassword().empty()  &&  Get(ePasswordFile).empty())
              ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/"))
@@ -883,7 +883,44 @@ CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
                    " (host, user, password, or database [as \"path\"]): "
                    + m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
     }
+
+    if ((flags & fHidePassword) != 0  &&  !m_Url.GetPassword().empty()) {
+        CUrl redactee = m_Url;
+        redactee.SetPassword("(redacted)");
+        return redactee.ComposeUrl(CUrlArgs::eAmp_Char);
+    }
     return m_Url.ComposeUrl(CUrlArgs::eAmp_Char);
+}
+
+bool CSDB_ConnectionParam::IsEmpty(void) const
+{
+    // Can't use m_Url.IsEmpty(), because the URL will still have a
+    // scheme ("dbapi").
+    if ( !m_Url.GetUser().empty()  ||  !m_Url.GetPassword().empty()
+        ||  !m_Url.GetHost().empty()  ||  !m_Url.GetPort().empty()
+        ||  !m_Url.GetPath().empty() ) {
+        return false;
+    } else if ( !m_Url.HaveArgs() ) {
+        return true;
+    }
+
+    ITERATE (CUrlArgs::TArgs, it, m_Url.GetArgs().GetArgs()) {
+        if ( !it->value.empty() ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+CSDB_ConnectionParam&
+CSDB_ConnectionParam::Set(const CSDB_ConnectionParam& param,
+                          TSetFlags flags)
+{
+    for (int i = eUsername;  i <= eArgsString;  ++i) {
+        EParam ii = static_cast<EParam>(i);
+        Set(ii, param.Get(ii), flags);
+    }
+    return *this;
 }
 
 void CSDB_ConnectionParam::x_FillParamMap(void)
