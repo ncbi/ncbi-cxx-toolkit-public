@@ -1795,12 +1795,12 @@ void CTabularFormatter_NearestGap::Print(CNcbiOstream& ostr,
     TSeqRange CompRange = align.GetSeqRange(m_Row);
     
     TSeqPos MinGapDist = numeric_limits<TSeqPos>::max();
-    MinGapDist = min(MinGapDist, (TSeqPos)abs(((TSignedSeqPos)CompRange.GetFrom())-0)); 
-    MinGapDist = min(MinGapDist, (TSeqPos)abs(((TSignedSeqPos)CompRange.GetTo())-SeqLength)); 
+    MinGapDist = min(MinGapDist, (TSeqPos)abs((TSignedSeqPos)(CompRange.GetFrom()-0))); 
+    MinGapDist = min(MinGapDist, (TSeqPos)abs((TSignedSeqPos)(CompRange.GetTo()-SeqLength))); 
 
     ITERATE(list<TSeqRange>, GapIter, Gaps) {
-        MinGapDist = min(MinGapDist, (TSeqPos)abs(((TSignedSeqPos)CompRange.GetFrom())-GapIter->GetFrom())); 
-        MinGapDist = min(MinGapDist, (TSeqPos)abs(((TSignedSeqPos)CompRange.GetTo())-GapIter->GetTo()));
+        MinGapDist = min(MinGapDist, (TSeqPos)abs((TSignedSeqPos)(CompRange.GetFrom()-GapIter->GetFrom()))); 
+        MinGapDist = min(MinGapDist, (TSeqPos)abs((TSignedSeqPos)(CompRange.GetTo()-GapIter->GetTo())));
     }
 
     ostr << MinGapDist;
