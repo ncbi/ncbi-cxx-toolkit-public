@@ -38,6 +38,8 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/Rsite_ref.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -602,8 +604,13 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
         // a new feature table
         annot.Reset(new CSeq_annot());
         // add description to annot
-        annot->SetNameDesc("Restriction sites");
+        const string title("Restriction sites");
+        annot->SetNameDesc(title);
+        annot->SetTitleDesc(title);
         annot->SetCreateDate(CTime(CTime::eCurrent));
+        CRef<CAnnotdesc> region(new CAnnotdesc);
+        region->SetRegion().Assign(loc);
+        annot->SetDesc().Set().push_back(region);
 
         ITERATE (TResults, result, results) {
 
@@ -627,7 +634,7 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
 CRef<objects::CSeq_annot>
 CFindRSites::GetAnnot(CBioseq_Handle bsh) const
 {
-    CSeq_id_Handle idh = sequence::GetId(bsh);
+    CSeq_id_Handle idh = sequence::GetId(bsh, sequence::eGetId_Canonical);
     CRef<CSeq_loc> loc(new CSeq_loc);
     loc->SetWhole().Assign(*idh.GetSeqId());
     return GetAnnot(bsh.GetScope(), *loc);
