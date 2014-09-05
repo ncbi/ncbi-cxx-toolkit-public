@@ -274,11 +274,19 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
          CRef<CSeq_id> id(*(bioseq->GetId().begin()));
          if (id->IsGeneral() &&
              id->GetGeneral().GetDb() == "BL_ORD_ID") {
-             m_Out << ">" << s_GetTitle(bioseq) << endl;
+             m_Out << ">" << s_GetTitle(bioseq) << '\n';
              CScope scope(*CObjectManager::GetInstance());
              fasta.WriteSequence(scope.AddBioseq(*bioseq));
              continue;
          }
+         else if (id->IsLocal()) {
+	     string lcl_tmp = id->AsFastaString();
+	     lcl_tmp = lcl_tmp.erase(0,4);
+	     m_Out << ">" << lcl_tmp << " " << s_GetTitle(bioseq) << '\n';
+             CScope scope(*CObjectManager::GetInstance());
+             fasta.WriteSequence(scope.AddBioseq(*bioseq));
+	     continue;
+	 }
          if (config.m_UseCtrlA) {
              s_ReplaceCtrlAsInTitle(bioseq);
          }

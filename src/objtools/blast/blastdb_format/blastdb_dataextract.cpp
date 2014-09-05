@@ -347,6 +347,11 @@ string CBlastDBExtractor::ExtractSeqId() {
         	return NOT_AVAILABLE;
     }
     string retval = theId->AsFastaString();
+
+    // Remove "lcl|" on local ID.
+    if(theId->IsLocal())
+	retval = retval.erase(0, 4);
+
     return retval;
 }
 
