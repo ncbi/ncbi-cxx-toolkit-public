@@ -95,6 +95,7 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
 
             bool ignore_unknown = (m_flags & e_tab_ignore_unknown_types) == e_tab_ignore_unknown_types;
             map<string, int> types;
+            bool fatal = false;
             for(size_t i=0; i<m_col_defs.size(); ++i)
             {
                 if (m_ignored_cols[i])
@@ -110,7 +111,7 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
                        continue;
                     }
                     else
-                        return;
+                       fatal = true;
                 }
 
                 int count = ++types[m_col_defs[i]];
@@ -118,11 +119,12 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
                 {
                     // report only first occurance
                     _ReportError(i, "Column " + m_col_defs[i] + " is not unique");
+                    fatal = true;
                 }
                 
             }
-
-            _OperateRows(reader);
+            if (!fatal)
+               _OperateRows(reader);
         }
     }
 }
@@ -266,6 +268,8 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
                 {
                     if (m_required_cols[i])
                         _ReportError(i, "Missing required value");
+                    else
+                        continue;
                 }
                 else
                 if (m_ignored_cols[i])

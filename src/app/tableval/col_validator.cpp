@@ -249,7 +249,7 @@ DEFINE_COL_VALIDATOR(date)
     {
         CTime time(value, "M/D/Y");
     }
-    catch (const CTimeException& ex)
+    catch (const CException& ex)
     {
         error = ex.GetMsg();
     }
