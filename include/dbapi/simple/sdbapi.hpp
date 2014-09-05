@@ -1269,7 +1269,7 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
     {
         bool   found  = false;
         string pwfile = m_Url.GetArgs().GetValue("password_file", &found);
-        if (found  &&  !m_Url.GetPassword().empty()) {
+        if (found  &&  !pwfile.empty()  &&  !m_Url.GetPassword().empty()) {
             NCBI_THROW(CSDB_Exception, eURLFormat,
                        "Password and password_file URL parameters"
                        " are mutually exclusive.");
