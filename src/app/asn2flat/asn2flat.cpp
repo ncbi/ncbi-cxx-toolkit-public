@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_signal.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include <dbapi/driver/drivers.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
@@ -361,6 +362,7 @@ int CAsn2FlatApp::Run(void)
     // sure they are properly registered
     GenBankReaders_Register_Pubseq();
     GenBankReaders_Register_Pubseq2();
+    DBAPI_RegisterDriver_FTDS();
 #endif
 
 
