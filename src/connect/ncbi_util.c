@@ -631,26 +631,35 @@ extern const char* CORE_GetAppName(void)
  *  CORE_GetNcbiRequestID
  */
 
-extern const char* CORE_GetNcbiRequestID(ENcbiRequestID reqid)
+extern char* CORE_GetNcbiRequestID(ENcbiRequestID reqid)
 {
-    const char* id = g_CORE_GetRequestID ? g_CORE_GetRequestID(reqid) : 0;
-    if (id  &&  *id)
-        return id;
+    char* id;
+    CORE_LOCK_READ;
+    if (g_CORE_GetRequestID) {
+        id = g_CORE_GetRequestID(reqid);
+        CORE_UNLOCK;
+        assert(!id  ||  *id);
+        if (id)
+            return id;
+    } else
+        CORE_UNLOCK;
     switch (reqid) {
     case eNcbiRequestID_SID:
         id = getenv("HTTP_NCBI_SID");
         if (id  &&  *id)
-            return id;
-        return getenv("NCBI_LOG_SESSION_ID");
+            return strdup(id);
+        id = getenv("NCBI_LOG_SESSION_ID");
+        break;
     case eNcbiRequestID_HitID:
         id = getenv("HTTP_NCBI_PHID");
         if (id  &&  *id)
-            return id;
-        return getenv("NCBI_LOG_HIT_ID");
-    default:
+            return strdup(id);
+        id = getenv("NCBI_LOG_HIT_ID");
         break;
+    default:
+        return 0;
     }
-    return 0;
+    return id  &&  *id ? strdup(id) : 0;
 }
 
 

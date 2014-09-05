@@ -443,23 +443,34 @@ static const char* s_MakePath(const SConnNetInfo* net_info)
 
 static void x_SetRequestIDs(SConnNetInfo* net_info)
 {
-    char* tag;
-    const char* id = CORE_GetNcbiRequestID(eNcbiRequestID_SID);
-    if (id  &&  *id) {
-        if (!(tag = malloc(sizeof(HTTP_NCBI_SID) + 1 + strlen(id))))
+    char* id = CORE_GetNcbiRequestID(eNcbiRequestID_SID);
+    assert(!id  ||  *id);
+    if (id) {
+        char*  tag;
+        size_t len = strlen(id);
+        if (!(tag = (char*) realloc(id, sizeof(HTTP_NCBI_SID) + 1 + len))) {
             ConnNetInfo_DeleteUserHeader(net_info, HTTP_NCBI_SID);
-        else {
-            sprintf(tag, HTTP_NCBI_SID " %s", id);
+            free(id);
+        } else {
+            memmove(tag + sizeof(HTTP_NCBI_SID), tag, ++len);
+            memcpy (tag,         HTTP_NCBI_SID, sizeof(HTTP_NCBI_SID) - 1);
+            tag[sizeof(HTTP_NCBI_SID)] = ' ';
             ConnNetInfo_OverrideUserHeader(net_info, tag);
             free(tag);
         }
     }
     id = CORE_GetNcbiRequestID(eNcbiRequestID_HitID);
-    if (id  &&  *id) {
-        if (!(tag = malloc(sizeof(HTTP_NCBI_PHID) + 1 + strlen(id))))
+    assert(!id  ||  *id);
+    if (id) {
+        char*  tag;
+        size_t len = strlen(id);
+        if (!(tag = (char*) realloc(id, sizeof(HTTP_NCBI_PHID) + 1 + len))) {
             ConnNetInfo_DeleteUserHeader(net_info, HTTP_NCBI_PHID);
-        else {
-            sprintf(tag, HTTP_NCBI_PHID " %s", id);
+            free(id);
+        } else {
+            memmove(tag + sizeof(HTTP_NCBI_PHID), tag, ++len);
+            memcpy (tag,         HTTP_NCBI_PHID, sizeof(HTTP_NCBI_PHID) - 1);
+            tag[sizeof(HTTP_NCBI_PHID)] = ' ';
             ConnNetInfo_OverrideUserHeader(net_info, tag);
             free(tag);
         }

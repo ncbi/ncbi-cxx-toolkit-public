@@ -392,10 +392,11 @@ typedef enum {
 
 /** Obtain current NCBI request ID (if known, per thread).
  * @return
- *  Return NULL when the ID cannot be determined;
- *  otherwise, return a '\0'-terminated string.
+ *  Return NULL when the ID cannot be determined or an error has occurred;
+ *  otherwise, return a '\0'-terminated, non-empty string that is allocated
+ *  on the heap, and must be free()'d when no longer needed.
  */
-extern NCBI_XCONNECT_EXPORT const char* CORE_GetNcbiRequestID
+extern NCBI_XCONNECT_EXPORT char* CORE_GetNcbiRequestID
 (ENcbiRequestID reqid);
 
 

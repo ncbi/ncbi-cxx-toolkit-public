@@ -267,20 +267,23 @@ static const char* s_GetAppName(void)
  *                           NCBI Request ID                           *
  ***********************************************************************/
 extern "C" {
-static const char* s_GetRequestID(ENcbiRequestID reqid)
+static char* s_GetRequestID(ENcbiRequestID reqid)
 {
+    const char* id;
     switch (reqid) {
     case eNcbiRequestID_SID:
         if (!CDiagContext::GetRequestContext().IsSetSessionID()) {
             CDiagContext::GetRequestContext().SetSessionID();
         }
-        return CDiagContext::GetRequestContext().GetSessionID().c_str();
-    case eNcbiRequestID_HitID:
-        return CDiagContext::GetRequestContext().GetNextSubHitID().c_str();
-    default:
+        id = CDiagContext::GetRequestContext().GetSessionID().c_str();
         break;
+    case eNcbiRequestID_HitID:
+        id = CDiagContext::GetRequestContext().GetNextSubHitID().c_str();
+        break;
+    default:
+        return 0;
     }
-    return 0;
+    return id  &&  *id ? strdup(id) : 0;
 }
 }
 

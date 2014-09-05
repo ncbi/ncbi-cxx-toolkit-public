@@ -85,7 +85,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,    304,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  13);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  306,  33);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  22);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  23);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBSMD,    308,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Sendmail, 309,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  310,   9);
@@ -323,9 +323,11 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetAppName g_CORE_GetAppName;
 
 /******************************************************************************
  *  NCBI request ID support (return "as is" to the user)
+ *  Return NULL on error;  otherwise, the returned ID is a non-empty string
+ *  allocated on the heap, and must be free()'d when no longer needed.
  */
 
-typedef const char* (*FNcbiGetRequestID)(ENcbiRequestID);
+typedef char* (*FNcbiGetRequestID)(ENcbiRequestID);
 extern NCBI_XCONNECT_EXPORT FNcbiGetRequestID g_CORE_GetRequestID;
 
 
