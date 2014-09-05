@@ -352,7 +352,27 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
     s_CheckLocationPolicyResults(*cds, true, true, 0, 59);
     BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetFrame(), CCdregion::eFrame_three);
-    
+
+    // the protein sequence before and after the coding region extension should be the same
+    scope.RemoveTopLevelSeqEntry(seh);
+    cds->SetLocation().SetInt().SetFrom(2);
+    cds->SetLocation().SetInt().SetTo(25);
+    cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_one);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    string orig_prot_seq;
+    CSeqTranslator::Translate(*cds, scope, orig_prot_seq);
+
+    policy.SetPartial5Policy(edit::CLocationEditPolicy::ePartialPolicy_eSet);
+    policy.SetExtend5(true);
+    policy.SetPartial3Policy(edit::CLocationEditPolicy::ePartialPolicy_eNoChange);
+    policy.SetExtend3(false);
+    BOOST_CHECK_EQUAL(edit::ApplyPolicyToFeature(policy, *cds, scope, false, false), true);
+    cds = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    BOOST_CHECK_EQUAL(cds->GetData().GetCdregion().GetFrame(), CCdregion::eFrame_three);
+    string new_prot_seq;
+    CSeqTranslator::Translate(*cds, scope, new_prot_seq);
+    BOOST_CHECK_EQUAL(orig_prot_seq, new_prot_seq);
+
     // should not crash if Seq-entry not in scope
     scope.RemoveTopLevelSeqEntry(seh);
     CSeq_annot_Handle annot_handle = scope.AddSeq_annot(*(entry->GetAnnot().front()));
