@@ -287,7 +287,7 @@ bool CReadCmdExecutor::Consider(CNetServer server)
         }
     }
 
-    return true;
+    return !m_JobId.empty();
 }
 
 bool CNetScheduleSubmitter::Read(string* job_id, string* auth_token,
