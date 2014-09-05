@@ -1335,6 +1335,7 @@ CSDB_ConnectionParam::Set(EParam param, const string& value)
     case eConnPoolMaxSize:
         return m_Url.GetArgs().SetValue(x_GetName(param), value);
     case eArgsString:
+        m_Url.GetArgs().GetArgs().clear();
         return m_Url.GetArgs().SetQueryString(value);
     }
     _ASSERT(false);
