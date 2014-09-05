@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
 
     // look for frame fixing
     scope.RemoveTopLevelSeqEntry(seh);
-    cds->SetLocation().SetInt().SetFrom(1);
+    cds->SetLocation().SetInt().SetFrom(2);
     cds->SetLocation().SetInt().SetTo(26);
     cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_two);
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     s_CheckLocationPolicyResults(*cds, false, false, 0, 26);
 
     scope.RemoveTopLevelSeqEntry(seh);
-    cds->SetLocation().SetInt().SetFrom(2);
+    cds->SetLocation().SetInt().SetFrom(1);
     cds->SetLocation().SetInt().SetTo(26);
     cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_three);
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE(Test_ApplyPolicyToFeature)
     s_CheckLocationPolicyResults(*cds, false, false, 0, 26);
 
     scope.RemoveTopLevelSeqEntry(seh);
-    cds->SetLocation().SetInt().SetFrom(1);
+    cds->SetLocation().SetInt().SetFrom(2);
     cds->SetLocation().SetInt().SetTo(22);
     cds->SetData().SetCdregion().SetFrame(CCdregion::eFrame_not_set);
     seh = scope.AddTopLevelSeqEntry(*entry);

@@ -664,24 +664,24 @@ bool CLocationEditPolicy::Extend5(CSeq_feat& feat, CScope& scope)
         }
         // adjust frame to maintain consistency
         if (diff % 3 > 0 && feat.GetData().IsCdregion()) {
-            int orig_frame = 0;
+            int orig_frame = 1;
             if (feat.GetData().GetCdregion().IsSetFrame()) {
                 if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_two) {
-                    orig_frame = 1;
-                } else if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_three) {
                     orig_frame = 2;
+                } else if (feat.GetData().GetCdregion().GetFrame() == CCdregion::eFrame_three) {
+                    orig_frame = 3;
                 }
             }
             CCdregion::EFrame new_frame = CCdregion::eFrame_not_set;
-            switch ((3 + orig_frame - diff % 3) % 3) {
+            switch ((orig_frame + diff % 3) % 3) {
                 case 1:
-                    new_frame = CCdregion::eFrame_two;
+                    new_frame = CCdregion::eFrame_not_set;
                     break;
                 case 2:
-                    new_frame = CCdregion::eFrame_three;
+                    new_frame = CCdregion::eFrame_two;
                     break;
-                default:
-                    new_frame = CCdregion::eFrame_not_set;
+                case 0:
+                    new_frame = CCdregion::eFrame_three;
                     break;
             }
             feat.SetData().SetCdregion().SetFrame(new_frame);
