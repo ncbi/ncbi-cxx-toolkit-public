@@ -40095,10 +40095,10 @@ if test "$with_mongodb" != "no"; then
     MONGODB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       MONGODB_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_lib $BOOST_THREAD_LIBS"
+       MONGODB_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_lib $BOOST_REGEX_LIBS $BOOST_THREAD_LIBS"
     else
        MONGODB_INCLUDE=""
-       MONGODB_LIBS="-lmongoclient $BOOST_LIBPATH $boost_fs_lib $BOOST_THREAD_LIBS"
+       MONGODB_LIBS="-lmongoclient $BOOST_LIBPATH $boost_fs_lib $BOOST_REGEX_LIBS $BOOST_THREAD_LIBS"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for libmongoclient$in_path" >&5
@@ -40199,7 +40199,7 @@ _ACEOF
 # MongoDB's own library is normally static, but its supporting Boost
 # libraries might not be by default.
 if test -n "$MONGODB_LIBS"; then
-   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongodb $BOOST_LIBPATH $boost_fs_static_lib $BOOST_THREAD_STATIC_LIBS"
+   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongodb $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEXP_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS"
 else
    MONGODB_STATIC_LIBS=
 fi
