@@ -45,6 +45,8 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -1214,7 +1216,7 @@ void CTabularFormatter_SeqChrom::PrintHelpText(CNcbiOstream& ostr) const
         NCBI_THROW(CException, eUnknown,
         "only pairwise alignments are supported");
     }
-    ostr << " is a chromosome, its name";
+    ostr << " has a chromosome, its name";
 }
 
 void CTabularFormatter_SeqChrom::PrintHeader(CNcbiOstream& ostr) const
@@ -1253,6 +1255,67 @@ void CTabularFormatter_SeqChrom::Print(CNcbiOstream& ostr,
 
     ostr << Chrom;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+CTabularFormatter_SeqClone::CTabularFormatter_SeqClone(int row)
+: m_Row(row)
+{
+}
+
+void CTabularFormatter_SeqClone::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "If ";
+    if (m_Row == 0) {
+        ostr << "query";
+    } else if (m_Row == 1) {
+        ostr << "subject";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+        "only pairwise alignments are supported");
+    }
+    ostr << " has a clone, its name";
+}
+
+void CTabularFormatter_SeqClone::PrintHeader(CNcbiOstream& ostr) const
+{
+    if (m_Row == 0) {
+        ostr << "qclone";
+    } else if (m_Row == 1) {
+        ostr << "sclone";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+        "only pairwise alignments are supported");
+    }
+}
+
+void CTabularFormatter_SeqClone::Print(CNcbiOstream& ostr,
+                                       const CSeq_align& align)
+{
+    string Clone = "";
+   
+    try {
+        CBioseq_Handle Handle = m_Scores->GetScope().GetBioseqHandle(align.GetSeq_id(m_Row));
+        CSeqdesc_CI Iter(Handle, CSeqdesc::e_Source);
+        while(Iter) {
+            const CBioSource& BioSource = Iter->GetSource();
+            if(BioSource.CanGetSubtype()) {
+                ITERATE(CBioSource::TSubtype, SubIter, BioSource.GetSubtype()) {
+                    if( (*SubIter)->CanGetSubtype() &&
+                        (*SubIter)->GetSubtype() == CSubSource::eSubtype_clone &&
+                        (*SubIter)->CanGetName() ) {
+                        Clone = (*SubIter)->GetName();
+                    }
+                }
+            }
+            ++Iter;
+        }
+    } catch(...) {
+        Clone = "";
+    }
+
+    ostr << Clone;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 CTabularFormatter_Tech::CTabularFormatter_Tech(int row)
@@ -1530,6 +1593,67 @@ void CTabularFormatter_AsmUnit::Print(CNcbiOstream& ostr,
 
 //////////////////////////////////////////////////////////////////////////////
 
+CTabularFormatter_FullAsm::CTabularFormatter_FullAsm(int row, CConstRef<CGC_Assembly> gencoll)
+: m_Row(row), m_Gencoll(gencoll)
+{
+}
+
+void CTabularFormatter_FullAsm::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Full Assembly of ";
+    if (m_Row == 0) {
+        ostr << "query";
+    } else if (m_Row == 1) {
+        ostr << "sequence";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "only pairwise alignments are supported");
+    }
+    ostr << " sequence";
+}
+
+void CTabularFormatter_FullAsm::PrintHeader(CNcbiOstream& ostr) const
+{
+    if (m_Row == 0) {
+        ostr << "qfullasm";
+    } else if (m_Row == 1) {
+        ostr << "sfullasm";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "only pairwise alignments are supported");
+    }
+}
+
+void CTabularFormatter_FullAsm::Print(CNcbiOstream& ostr,
+                                      const CSeq_align& align)
+{
+    if(!m_Gencoll) {
+        return;
+    }
+    
+    CConstRef<CGC_Sequence> Seq;
+    CGC_Assembly::TSequenceList SeqList;
+    m_Gencoll->Find(CSeq_id_Handle::GetHandle(align.GetSeq_id(m_Row)), SeqList);
+    if(!SeqList.empty())
+        Seq = SeqList.front();
+
+    if(!Seq) {
+        return;
+    }
+
+    CConstRef<CGC_Assembly> FullAsm;
+    FullAsm = Seq->GetFullAssembly();
+    if(!FullAsm) {
+        return;
+    }
+
+    ostr << FullAsm->GetName();
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+
 CTabularFormatter_PatchType::CTabularFormatter_PatchType(int row, CConstRef<CGC_Assembly> gencoll)
 : m_Row(row), m_Gencoll(gencoll)
 {
@@ -1578,6 +1702,108 @@ void CTabularFormatter_PatchType::Print(CNcbiOstream& ostr,
         else if(Seq->GetPatch_type() == CGC_Sequence::ePatch_type_novel)
             ostr << "NOVEL";
     }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+CTabularFormatter_NearestGap::CTabularFormatter_NearestGap(int row, CConstRef<CGC_Assembly> gencoll)
+: m_Row(row), m_Gencoll(gencoll)
+{
+}
+
+void CTabularFormatter_NearestGap::PrintHelpText(CNcbiOstream& ostr) const
+{
+    ostr << "Nearest Gap, if any, or edge, of ";
+    if (m_Row == 0) {
+        ostr << "query";
+    } else if (m_Row == 1) {
+        ostr << "subject";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "only pairwise alignments are supported");
+    }
+    ostr << " sequence";
+}
+
+void CTabularFormatter_NearestGap::PrintHeader(CNcbiOstream& ostr) const
+{
+    if (m_Row == 0) {
+        ostr << "qnearestgap";
+    } else if (m_Row == 1) {
+        ostr << "snearestgap";
+    } else {
+        NCBI_THROW(CException, eUnknown,
+                   "only pairwise alignments are supported");
+    }
+}
+
+TSeqPos s_FindGaps(const CGC_Assembly& Assembly, 
+                   const CSeq_id& Id, 
+                   const TSeqPos Offset, 
+                   list<TSeqRange>& Gaps) 
+{
+    CConstRef<CGC_Sequence> Seq;
+    CGC_Assembly::TSequenceList SeqList;
+    //Seq = Assembly.Find(CSeq_id_Handle::GetHandle(Id));
+    Assembly.Find(CSeq_id_Handle::GetHandle(Id), SeqList);
+    if(SeqList.empty())
+        return 0;
+    Seq = SeqList.front();
+
+    if(!Seq)
+        return 0;
+    
+    if(!Seq->CanGetStructure())
+        return 0;
+
+    TSeqPos CurrStart = Offset;
+    ITERATE(CDelta_ext::Tdata, DeltaIter, Seq->GetStructure().Get()) {
+        if( (*DeltaIter)->IsLiteral()) {
+            if (!(*DeltaIter)->GetLiteral().CanGetSeq_data() ||
+                 (*DeltaIter)->GetLiteral().GetSeq_data().IsGap()) {
+                TSeqRange GapRange;
+                GapRange.SetFrom(CurrStart);
+                GapRange.SetLength((*DeltaIter)->GetLiteral().GetLength());
+                Gaps.push_back(GapRange);
+            }
+            CurrStart += (*DeltaIter)->GetLiteral().GetLength();
+        } else if( (*DeltaIter)->IsLoc()) {
+            s_FindGaps(Assembly, *(*DeltaIter)->GetLoc().GetId(), CurrStart, Gaps);
+            CurrStart += (*DeltaIter)->GetLoc().GetTotalRange().GetLength();
+        }
+    }
+    return CurrStart;
+}
+
+void CTabularFormatter_NearestGap::Print(CNcbiOstream& ostr,
+                                      const CSeq_align& align)
+{
+    if(!m_Gencoll) {
+        ostr << "*";
+        return;
+    }
+
+
+    list<TSeqRange> Gaps;
+    TSeqPos SeqLength = s_FindGaps(*m_Gencoll, align.GetSeq_id(m_Row), 0, Gaps);
+
+    if(SeqLength == 0) {
+        ostr << "*";
+        return;
+    }
+
+    TSeqRange CompRange = align.GetSeqRange(m_Row);
+    
+    TSeqPos MinGapDist = numeric_limits<TSeqPos>::max();
+    MinGapDist = min(MinGapDist, (TSeqPos)abs(((TSignedSeqPos)CompRange.GetFrom())-0)); 
+    MinGapDist = min(MinGapDist, (TSeqPos)abs(((TSignedSeqPos)CompRange.GetTo())-SeqLength)); 
+
+    ITERATE(list<TSeqRange>, GapIter, Gaps) {
+        MinGapDist = min(MinGapDist, (TSeqPos)abs(((TSignedSeqPos)CompRange.GetFrom())-GapIter->GetFrom())); 
+        MinGapDist = min(MinGapDist, (TSeqPos)abs(((TSignedSeqPos)CompRange.GetTo())-GapIter->GetTo()));
+    }
+
+    ostr << MinGapDist;
 }
 
 
@@ -1742,16 +1968,10 @@ void CTabularFormatter::s_RegisterStandardFields(CTabularFormatter &formatter)
             new CTabularFormatter_SeqChrom(0));
     formatter.RegisterField("schrom",
             new CTabularFormatter_SeqChrom(1));
-    formatter.RegisterField("qtech",
-            new CTabularFormatter_Tech(0));
-    formatter.RegisterField("stech",
-            new CTabularFormatter_Tech(1));
-    formatter.RegisterField("qdiscstrand",
-            new CTabularFormatter_DiscStrand(0));
-    formatter.RegisterField("sdiscstrand",
-            new CTabularFormatter_DiscStrand(1));
-    formatter.RegisterField("cigar",
-            new CTabularFormatter_Cigar);
+    formatter.RegisterField("qclone",
+            new CTabularFormatter_SeqClone(0));
+    formatter.RegisterField("sclone",
+            new CTabularFormatter_SeqClone(1));
     formatter.RegisterField("qtech",
             new CTabularFormatter_Tech(0));
     formatter.RegisterField("stech",
@@ -1770,8 +1990,12 @@ void CTabularFormatter::SetGencoll(CConstRef<CGC_Assembly> gencoll)
 {
     RegisterField("qasmunit", new CTabularFormatter_AsmUnit(0, gencoll));
     RegisterField("sasmunit", new CTabularFormatter_AsmUnit(1, gencoll));
+    RegisterField("qfullasm", new CTabularFormatter_FullAsm(0, gencoll));
+    RegisterField("sfullasm", new CTabularFormatter_FullAsm(1, gencoll));
     RegisterField("qpatchtype", new CTabularFormatter_PatchType(0, gencoll));
     RegisterField("spatchtype", new CTabularFormatter_PatchType(1, gencoll));
+    RegisterField("qnearestgap", new CTabularFormatter_NearestGap(0, gencoll));
+    RegisterField("snearestgap", new CTabularFormatter_NearestGap(1, gencoll));
 }
 
 /// Split a string, but ignore separators within parentheses

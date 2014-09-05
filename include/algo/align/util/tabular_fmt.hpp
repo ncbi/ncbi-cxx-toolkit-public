@@ -489,6 +489,20 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
+// Bioseq.descr.source.subtype.clone/name
+class CTabularFormatter_SeqClone : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_SeqClone(int row);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+private:
+    int m_Row;
+};
+
+/////////////////////////////////////////////////////////////////////////////
 // Bioseq.descr.molinfo.tech
 class CTabularFormatter_Tech : public CTabularFormatter::IFormatter
 {
@@ -577,6 +591,20 @@ private:
     CConstRef<objects::CGC_Assembly> m_Gencoll;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// CGC_Assembly::GetName()
+class CTabularFormatter_FullAsm : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_FullAsm(int row, CConstRef<objects::CGC_Assembly> gencoll);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+private:
+    int m_Row;
+    CConstRef<objects::CGC_Assembly> m_Gencoll;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // CGC_Sequence.patch_type
@@ -592,6 +620,22 @@ private:
     int m_Row;
     CConstRef<objects::CGC_Assembly> m_Gencoll;
 };
+
+/////////////////////////////////////////////////////////////////////////////
+// CGC_Sequence.patch_type
+class CTabularFormatter_NearestGap : public CTabularFormatter::IFormatter
+{
+public:
+    CTabularFormatter_NearestGap(int row, CConstRef<objects::CGC_Assembly> gencoll);
+    void PrintHelpText(CNcbiOstream& ostr) const;
+    void PrintHeader(CNcbiOstream& ostr) const;
+    void Print(CNcbiOstream& ostr,
+               const objects::CSeq_align& align);
+private:
+    int m_Row;
+    CConstRef<objects::CGC_Assembly> m_Gencoll;
+};
+
 
 
 
