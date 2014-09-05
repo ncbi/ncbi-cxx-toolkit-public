@@ -1085,7 +1085,7 @@ void CDiscRepOutput :: x_OutputRepToGbenchItem(const CClickableItem& c_item,  CC
       }
    }
    if (c_item.expanded) {
-         item.SetOwnExpanded();
+         item.SetSelfExpanded();
    }
 };
 
