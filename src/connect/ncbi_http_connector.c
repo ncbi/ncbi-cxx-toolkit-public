@@ -448,13 +448,13 @@ static void x_SetRequestIDs(SConnNetInfo* net_info)
     if (id) {
         char*  tag;
         size_t len = strlen(id);
-        if (!(tag = (char*) realloc(id, sizeof(HTTP_NCBI_SID) + 1 + len))) {
+        if (!(tag = (char*) realloc(id, ++len + sizeof(HTTP_NCBI_SID)))) {
             ConnNetInfo_DeleteUserHeader(net_info, HTTP_NCBI_SID);
             free(id);
         } else {
-            memmove(tag + sizeof(HTTP_NCBI_SID), tag, ++len);
+            memmove(tag + sizeof(HTTP_NCBI_SID), tag, len);
             memcpy (tag,         HTTP_NCBI_SID, sizeof(HTTP_NCBI_SID) - 1);
-            tag[sizeof(HTTP_NCBI_SID)] = ' ';
+            tag[sizeof(HTTP_NCBI_SID) - 1] = ' ';
             ConnNetInfo_OverrideUserHeader(net_info, tag);
             free(tag);
         }
@@ -464,13 +464,13 @@ static void x_SetRequestIDs(SConnNetInfo* net_info)
     if (id) {
         char*  tag;
         size_t len = strlen(id);
-        if (!(tag = (char*) realloc(id, sizeof(HTTP_NCBI_PHID) + 1 + len))) {
+        if (!(tag = (char*) realloc(id, ++len + sizeof(HTTP_NCBI_PHID)))) {
             ConnNetInfo_DeleteUserHeader(net_info, HTTP_NCBI_PHID);
             free(id);
         } else {
-            memmove(tag + sizeof(HTTP_NCBI_PHID), tag, ++len);
+            memmove(tag + sizeof(HTTP_NCBI_PHID), tag, len);
             memcpy (tag,         HTTP_NCBI_PHID, sizeof(HTTP_NCBI_PHID) - 1);
-            tag[sizeof(HTTP_NCBI_PHID)] = ' ';
+            tag[sizeof(HTTP_NCBI_PHID) - 1] = ' ';
             ConnNetInfo_OverrideUserHeader(net_info, tag);
             free(tag);
         }
