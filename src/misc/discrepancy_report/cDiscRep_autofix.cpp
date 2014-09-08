@@ -47,7 +47,7 @@ BEGIN_SCOPE(DiscRepNmSpc);
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-void MarkOverlappingCDSs(vector <CRef <CObject> >& objs, vector <string>& msgs)
+void MarkOverlappingCDSs(vector <CRef <CObject> >& objs, vector <string>& msgs, CScope* scope)
 {
   string kOverlappingCDSNoteText("overlaps another CDS with the same product name");
   string strtmp; 
@@ -68,7 +68,8 @@ void MarkOverlappingCDSs(vector <CRef <CObject> >& objs, vector <string>& msgs)
        }
     }
 
-    strtmp = GetDiscrepancyItemText (*(dynamic_cast<const CSeq_entry*>((*it).GetPointer())));
+    strtmp 
+       = GetDiscrepancyItemText (*(dynamic_cast<const CSeq_feat*>((*it).GetPointer())), scope);
     msgs.push_back ("Added overlapping CDS note to " + strtmp);
   }
   if (has_title) msgs.push_back("\n");

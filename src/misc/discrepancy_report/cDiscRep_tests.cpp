@@ -7375,11 +7375,6 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem> c_item)
 }; // CBioseq_RNA_CDS_OVERLAP :: GetReport
 
 
-FAutofix CBioseq_OVERLAPPING_CDS :: GetAutofixFunc() const
-{
-   return MarkOverlappingCDSs;
-};
-
 bool CBioseq_OVERLAPPING_CDS :: OverlappingProdNmSimilar(const string& prod_nm1, const string& prod_nm2)
 {
   bool str1_has_similarity_word = false, str2_has_similarity_word = false;

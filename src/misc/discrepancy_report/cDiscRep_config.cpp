@@ -48,6 +48,7 @@
 #include <misc/discrepancy_report/hDiscRep_summ.hpp>
 
 #include <sstream>
+#include <iostream>
 
 BEGIN_NCBI_SCOPE
 
@@ -1359,6 +1360,9 @@ void CRepConfig :: ReadArgs(const CArgs& args)
       arg_map["i"] = args["i"].AsString();
     }
     arg_map["a"] = args["a"].AsString();
+
+    // data type
+    m_data_binary = args["b"].AsBoolean();
 
     // report_tp
     if (args["P"]) {
@@ -3238,7 +3242,7 @@ void CRepConfAsndisc :: x_GuessFile()
           x_Fasta();
           break;
       default:
-         NCBI_USER_THROW("File format: " + NStr::UIntToString((unsigned)f_fmt) + " not supported");
+        NCBI_USER_THROW("File format: " + NStr::UIntToString((unsigned)f_fmt) + " not supported");
    }
 };
 
@@ -3293,10 +3297,11 @@ void CRepConfAsndisc :: x_BatchSeqSubmit(ESerialDataFormat datafm)
 
 void CRepConfAsndisc :: x_CatenatedSeqEntry()
 {
-   auto_ptr <CObjectIStream> 
-      ois (CObjectIStream::Open(eSerial_AsnText, thisInfo.infile));
+   ESerialDataFormat data_fmt = m_data_binary ? eSerial_AsnBinary : eSerial_AsnText;
+   auto_ptr <CObjectIStream> ois(CObjectIStream::Open(data_fmt, thisInfo.infile));
+
    while (!ois->EndOfData()) {
-        CRef <CSeq_entry> seq_entry;
+        CRef <CSeq_entry> seq_entry (new CSeq_entry);
         *ois >> *seq_entry;
         AddNumEntry();
         CheckThisSeqEntry(seq_entry); 

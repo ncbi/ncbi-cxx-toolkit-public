@@ -1620,18 +1620,21 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
     ITERATE (vector <string>, it, arr) { 
       pos = strtmp.find(*it);
       len = (*it).size();
-      if (len == 1) {
+      if (len != 1) {
+#if 0
          strtmp = CTempString(strtmp).substr(pos + len);
          strtmp = NStr::TruncateSpaces(strtmp, NStr::eTrunc_Begin);
          continue;
       }
-      last_letter = (*it)[len-1];
-      second_to_last_letter = (*it)[len-2];
-      if (len == strtmp.size()) next_letter = ',';
-      else next_letter = strtmp[pos+len];
-      may_contain_plural 
+#endif
+        last_letter = (*it)[len-1];
+        second_to_last_letter = (*it)[len-2];
+        if (len == strtmp.size()) next_letter = ',';
+        else next_letter = strtmp[pos+len];
+        may_contain_plural 
          = x_DoesStrContainPlural(*it, last_letter, second_to_last_letter, next_letter);
-      if (may_contain_plural) break;
+        if (may_contain_plural) break;
+      }
       jt = it;
       if (++jt != arr.end()) { // not jt++
          strtmp = CTempString(strtmp).substr(strtmp.find(*jt));
