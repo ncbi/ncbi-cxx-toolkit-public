@@ -125,7 +125,7 @@ public:
     /// If hit id is not set, return empty string.
     const string& GetNextSubHitID(void);
 
-    /// Request exit startus
+    /// Request exit status
     int  GetRequestStatus(void) const;
     void SetRequestStatus(int status);
     void SetRequestStatus(CRequestStatus::ECode code);
