@@ -114,7 +114,6 @@ public:
     {
         _ASSERT(id_vec.empty());
 
-        typedef CSeq_align::TDim TDim;
         typedef CSeq_align::TSegs TSegs;
 
         seq_align.Validate(true);
