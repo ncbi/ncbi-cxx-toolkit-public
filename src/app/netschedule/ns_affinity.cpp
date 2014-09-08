@@ -388,7 +388,7 @@ void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
     found->second.RemoveJob(job_id);
     if (found->second.CanBeDeleted())
         // Mark for deletion by the garbage collector
-        m_RemoveCandidates.set(aff_id, true);
+        m_RemoveCandidates.set_bit(aff_id);
     return;
 }
 
@@ -485,7 +485,7 @@ CNSAffinityRegistry::x_RemoveClientFromAffinities(
 
         if (found->second.CanBeDeleted()) {
             // Mark for the deletion by the garbage collector
-            m_RemoveCandidates.set(*en, true);
+            m_RemoveCandidates.set_bit(*en);
             ++del_count;
         }
     }
@@ -730,7 +730,7 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
     found->second.AddJob(job_id);
 
     // It is for sure that the affinity cannot be deleted
-    m_RemoveCandidates.set(aff_id, false);
+    m_RemoveCandidates.set_bit(aff_id, false);
     return;
 }
 
@@ -754,8 +754,8 @@ void  CNSAffinityRegistry::FinalizeAffinityDictionaryLoading(void)
 
         if (candidate->second.CanBeDeleted()) {
             // Garbage collector will pick it up
-            m_RegisteredAffinities.set(candidate->first, false);
-            m_RemoveCandidates.set(candidate->first, true);
+            m_RegisteredAffinities.set_bit(candidate->first, false);
+            m_RemoveCandidates.set_bit(candidate->first);
         }
     }
 
@@ -787,7 +787,7 @@ unsigned int  CNSAffinityRegistry::CollectGarbage(unsigned int  max_to_del)
     for ( ; en.valid(); ++en) {
         unsigned int        aff_id = *en;
 
-        m_RemoveCandidates.set(aff_id, false);
+        m_RemoveCandidates.set_bit(aff_id, false);
 
         map< unsigned int,
              SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
@@ -818,14 +818,14 @@ unsigned int  CNSAffinityRegistry::CheckRemoveCandidates(void)
              SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
 
         if (found == m_JobsAffinity.end()) {
-            m_RemoveCandidates.set(aff_id, false);
+            m_RemoveCandidates.set_bit(aff_id, false);
             continue;
         }
 
         if (found->second.CanBeDeleted())
             ++still_candidate;
         else
-            m_RemoveCandidates.set(aff_id, false);
+            m_RemoveCandidates.set_bit(aff_id, false);
     }
     return still_candidate;
 }
@@ -866,7 +866,7 @@ void CNSAffinityRegistry::x_DeleteAffinity(
     m_AffDictDB->aff_id = aff_id;
     m_AffDictDB->Delete(CBDB_File::eIgnoreError);
 
-    m_RegisteredAffinities.set(aff_id, false);
+    m_RegisteredAffinities.set_bit(aff_id, false);
     return;
 }
 

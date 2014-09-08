@@ -84,55 +84,46 @@ public:
     /// Add closed interval of ids to pending status
     void AddPendingBatch(unsigned job_id_from, unsigned job_id_to);
 
-    unsigned int  GetPendingJobFromSet(const TNSBitVector &  candidate_set);
-
     /// Provides a job id (or 0 if none) which is in the given state and is not
     /// in the unwanted jobs list
     unsigned int  GetJobByStatus(TJobStatus            status,
                                  const TNSBitVector &  unwanted_jobs,
                                  const TNSBitVector &  group_jobs,
                                  bool                  use_group) const;
+    unsigned int  GetJobByStatus(const vector<TJobStatus> &   statuses,
+                                 const TNSBitVector &         unwanted_jobs,
+                                 const TNSBitVector &         group_jobs,
+                                 bool                         use_group) const;
 
-    TNSBitVector  GetJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
-    TNSBitVector  GetJobs(CNetScheduleAPI::EJobStatus  status) const;
+    TNSBitVector  GetJobs(const vector<TJobStatus> &  statuses) const;
+    TNSBitVector  GetJobs(TJobStatus  status) const;
     TNSBitVector  GetOutdatedPendingJobs(CNSPreciseTime          timeout,
                                          const CJobGCRegistry &  gc_registry) const;
 
-    /// Logical AND of candidates and pending jobs
-    /// (candidate_set &= pending_set)
-    void PendingIntersect(TNSBitVector* candidate_set) const;
-
-    /// Logical AND with statuses ORed cleans up a list from non-existing
-    /// jobs
-    void GetAliveJobs(TNSBitVector& ids);
-
-    /// TRUE if we have pending jobs
+    // true if we have pending jobs
     bool AnyPending() const;
 
-    /// Get next job in the specified status, or first if job_id is 0
+    // Get next job in the specified status, or first if job_id is 0
     unsigned GetNext(TJobStatus status, unsigned job_id) const;
 
-    /// Set job status without logic control.
-    /// @param status
-    ///     Status to set (all other statuses are cleared)
-    ///     Non existing status code clears all statuses
-    void SetStatus(unsigned   job_id,
-                   TJobStatus status);
+    // Set job status without logic control.
+    // @param status
+    //     Status to set (all other statuses are cleared)
+    //     Non existing status code clears all statuses
+    void SetStatus(unsigned int  job_id, TJobStatus  status);
 
     void AddPendingJob(unsigned int  job_id);
 
     // Erase the job
     void Erase(unsigned job_id);
 
-    /// Set job status without any protection
-    void SetExactStatusNoLock(
-        unsigned   job_id,
-        TJobStatus status,
-        bool       set_clear);
+    // Set job status without any protection
+    void SetExactStatusNoLock(unsigned int  job_id, TJobStatus  status,
+                              bool  set_clear);
 
     // Return number of jobs in specified status/statuses
     unsigned int  CountStatus(TJobStatus  status) const;
-    unsigned int  CountStatus(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
+    unsigned int  CountStatus(const vector<TJobStatus> &  statuses) const;
 
     // Count all jobs in any status
     unsigned int  Count(void) const;
@@ -140,19 +131,19 @@ public:
 
     bool  AnyJobs(void) const;
     bool  AnyJobs(TJobStatus  status) const;
-    bool  AnyJobs(const vector<CNetScheduleAPI::EJobStatus> &  statuses) const;
+    bool  AnyJobs(const vector<TJobStatus> &  statuses) const;
 
     void StatusStatistics(TJobStatus                status,
                           TNSBitVector::statistics* st) const;
 
-    /// Clear status storage
-    ///
-    /// @param bv
-    ///    If not NULL all ids from the matrix are OR-ed with this vector
-    ///    (bv is not cleared)
+    // Clear status storage
+    //
+    // @param bv
+    //    If not NULL all ids from the matrix are OR-ed with this vector
+    //    (bv is not cleared)
     void ClearAll(TNSBitVector* bv = 0);
 
-    /// Optimize bitvectors memory
+    // Optimize bitvectors memory
     void OptimizeMem();
 
 private:

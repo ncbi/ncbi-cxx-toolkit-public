@@ -91,52 +91,52 @@ struct SNSJobsAffinity
     bool CanBeDeleted(void) const;
 
     void AddJob(unsigned int  job_id)
-    { m_Jobs.set(job_id, true);
+    { m_Jobs.set_bit(job_id);
       x_JobsOp();
     }
 
     void RemoveJob(unsigned int  job_id)
-    { m_Jobs.set(job_id, false);
+    { m_Jobs.set_bit(job_id, false);
       x_JobsOp();
     }
 
     void AddWNClient(unsigned int  client_id)
-    { m_WNClients.set(client_id, true);
+    { m_WNClients.set_bit(client_id);
       x_WNClientsOp();
     }
 
     void AddReaderClient(unsigned int  client_id)
-    { m_ReaderClients.set(client_id, true);
+    { m_ReaderClients.set_bit(client_id);
       x_ReaderClientsOp();
     }
 
     void RemoveWNClient(unsigned int  client_id)
-    { m_WNClients.set(client_id, false);
+    { m_WNClients.set_bit(client_id, false);
       x_WNClientsOp();
     }
 
     void RemoveReaderClient(unsigned int  client_id)
-    { m_ReaderClients.set(client_id, false);
+    { m_ReaderClients.set_bit(client_id, false);
       x_ReaderClientsOp();
     }
 
     void AddWNWaitClient(unsigned int  client_id)
-    { m_WaitGetClients.set(client_id, true);
+    { m_WaitGetClients.set_bit(client_id);
       x_WaitGetOp();
     }
 
     void AddReadWaitClient(unsigned int  client_id)
-    { m_WaitReadClients.set(client_id, true);
+    { m_WaitReadClients.set_bit(client_id);
       x_WaitReadOp();
     }
 
     void RemoveWNWaitClient(unsigned int  client_id)
-    { m_WaitGetClients.set(client_id, false);
+    { m_WaitGetClients.set_bit(client_id, false);
       x_WaitGetOp();
     }
 
     void RemoveReadWaitClient(unsigned int  client_id)
-    { m_WaitReadClients.set(client_id, false);
+    { m_WaitReadClients.set_bit(client_id, false);
       x_WaitReadOp();
     }
 

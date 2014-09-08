@@ -303,8 +303,17 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "READ",          { &CNetScheduleHandler::x_ProcessReading,
                          eNS_Queue | eNS_Submitter | eNS_Program },
-        { { "reader_aff",        eNSPT_Int, eNSPA_Optional, "0" },
-          { "any_aff",           eNSPT_Int, eNSPA_Optional, "1" },
+        { { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "port",              eNSPT_Int, eNSPA_Optional      },
+          { "timeout",           eNSPT_Int, eNSPA_Optional,     },
+          { "group",             eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "READ2",         { &CNetScheduleHandler::x_ProcessReading,
+                         eNS_Queue | eNS_Submitter | eNS_Program },
+        { { "reader_aff",        eNSPT_Int, eNSPA_Required, "0" },
+          { "any_aff",           eNSPT_Int, eNSPA_Required, "0" },
           { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, "0" },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "port",              eNSPT_Int, eNSPA_Optional      },
@@ -355,8 +364,21 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "CHRAFF",        { &CNetScheduleHandler::x_ProcessChangeAffinity,
+                         eNS_Queue | eNS_Submitter | eNS_Program },
+        { { "add",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "del",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETAFF",        { &CNetScheduleHandler::x_ProcessSetAffinity,
                          eNS_Queue | eNS_Worker | eNS_Program },
+        { { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "SETRAFF",       { &CNetScheduleHandler::x_ProcessSetAffinity,
+                         eNS_Queue | eNS_Submitter | eNS_Program },
         { { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
@@ -545,6 +567,7 @@ CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
       m_SingleCmdParser(sm_CommandMap),
       m_BatchHeaderParser(sm_BatchHeaderMap),
       m_BatchEndParser(sm_BatchEndMap),
+      m_ClientIdentificationPrinted(false),
       m_RollbackAction(NULL)
 {}
 
@@ -1054,6 +1077,7 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
 
     m_ClientId.CheckAccess(extra.checks, m_Server);
 
+    m_ClientIdentificationPrinted = false;
     if (queue_ptr) {
         bool        client_was_found = false;
         bool        session_was_reset = false;
@@ -1080,6 +1104,8 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
                     .Print("client_old_session", old_session)
                     .Print("wn_preferred_affinities_reset", wn_val)
                     .Print("reader_preferred_affinities_reset", reader_val);
+
+                m_ClientIdentificationPrinted = true;
             }
         }
     }
@@ -1472,23 +1498,17 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
 {
     // This functionality requires client name and the session
-    x_CheckNonAnonymousClient("use CHAFF command");
+    x_CheckNonAnonymousClient("use " + m_CommandArguments.cmd + " command");
 
     if (m_CommandArguments.aff_to_add.empty() &&
         m_CommandArguments.aff_to_del.empty()) {
-        LOG_POST(Message << Warning
-                         << "CHAFF with neither add list nor del list");
+        LOG_POST(Message << Warning << m_CommandArguments.cmd
+                         << " with neither add list nor del list");
         x_SetCmdRequestStatus(eStatus_BadRequest);
         x_WriteMessage("ERR:eInvalidParameter:");
         x_PrintCmdRequestStop();
         return;
     }
-
-    if (m_ConnContext.NotNull())
-        GetDiagContext().Extra()
-                .Print("client_node", m_ClientId.GetNode())
-                .Print("client_session", m_ClientId.GetSession());
-
 
     list<string>    aff_to_add_list;
     list<string>    aff_to_del_list;
@@ -1498,8 +1518,34 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     NStr::Split(m_CommandArguments.aff_to_del,
                 "\t,", aff_to_del_list, NStr::eNoMergeDelims);
 
+    // Check that the same affinity has not been mentioned in both add and del
+    // lists
+    for (list<string>::const_iterator k = aff_to_add_list.begin();
+         k != aff_to_add_list.end(); ++k) {
+        if (find(aff_to_del_list.begin(), aff_to_del_list.end(), *k) !=
+                aff_to_del_list.end()) {
+            x_SetCmdRequestStatus(eStatus_BadRequest);
+            x_WriteMessage("ERR:eInvalidParameter:Affinity " + *k +
+                           " is in both add and del lists");
+            x_PrintCmdRequestStop();
+            return;
+        }
+    }
+
+
+    // Here: prerequisites have been checked
+    if (m_ConnContext.NotNull() && m_ClientIdentificationPrinted == false)
+        GetDiagContext().Extra()
+                .Print("client_node", m_ClientId.GetNode())
+                .Print("client_session", m_ClientId.GetSession());
+
+    ECommandGroup   cmd_group = eGet;
+    if (m_CommandArguments.cmd == "CHRAFF")
+        cmd_group = eRead;
+
     list<string>  msgs = q->ChangeAffinity(m_ClientId, aff_to_add_list,
-                                                       aff_to_del_list);
+                                                       aff_to_del_list,
+                                                       cmd_group);
     if (msgs.empty())
         x_WriteMessage("OK:");
     else {
@@ -1516,9 +1562,9 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
 void CNetScheduleHandler::x_ProcessSetAffinity(CQueue* q)
 {
     // This functionality requires client name and the session
-    x_CheckNonAnonymousClient("use SETAFF command");
+    x_CheckNonAnonymousClient("use " + m_CommandArguments.cmd + " command");
 
-    if (m_ConnContext.NotNull())
+    if (m_ConnContext.NotNull() && m_ClientIdentificationPrinted == false)
         GetDiagContext().Extra()
                 .Print("client_node", m_ClientId.GetNode())
                 .Print("client_session", m_ClientId.GetSession());
@@ -1526,7 +1572,12 @@ void CNetScheduleHandler::x_ProcessSetAffinity(CQueue* q)
     list<string>    aff_to_set;
     NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_to_set, NStr::eNoMergeDelims);
-    q->SetAffinity(m_ClientId, aff_to_set);
+
+    ECommandGroup   cmd_group = eGet;
+    if (m_CommandArguments.cmd == "SETRAFF")
+        cmd_group = eRead;
+
+    q->SetAffinity(m_ClientId, aff_to_set, cmd_group);
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }
@@ -1921,10 +1972,14 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
 
         if (!added_pref_aff.empty()) {
             if (m_ConnContext.NotNull()) {
-                GetDiagContext().Extra()
-                    .Print("client_node", m_ClientId.GetNode())
-                    .Print("client_session", m_ClientId.GetSession())
-                    .Print("added_preferred_affinity", added_pref_aff);
+                if (m_ClientIdentificationPrinted)
+                    GetDiagContext().Extra()
+                        .Print("added_preferred_affinity", added_pref_aff);
+                else
+                    GetDiagContext().Extra()
+                        .Print("client_node", m_ClientId.GetNode())
+                        .Print("client_session", m_ClientId.GetSession())
+                        .Print("added_preferred_affinity", added_pref_aff);
             }
         }
         x_PrintGetJobResponse(q, job, cmdv2);
@@ -2114,10 +2169,14 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     } else {
         if (added_pref_aff.empty() == false) {
             if (m_ConnContext.NotNull()) {
-                GetDiagContext().Extra()
-                    .Print("client_node", m_ClientId.GetNode())
-                    .Print("client_session", m_ClientId.GetSession())
-                    .Print("added_preferred_affinity", added_pref_aff);
+                if (m_ClientIdentificationPrinted)
+                    GetDiagContext().Extra()
+                        .Print("added_preferred_affinity", added_pref_aff);
+                else
+                    GetDiagContext().Extra()
+                        .Print("client_node", m_ClientId.GetNode())
+                        .Print("client_session", m_ClientId.GetSession())
+                        .Print("added_preferred_affinity", added_pref_aff);
             }
         }
         x_PrintGetJobResponse(q, job, false);
@@ -3231,49 +3290,92 @@ void CNetScheduleHandler::x_ProcessGetConfiguration(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 {
-    x_CheckNonAnonymousClient("use READ command");
+    bool    cmdv2(m_CommandArguments.cmd == "READ2");
+
+    x_CheckNonAnonymousClient("use " + m_CommandArguments.cmd + " command");
     x_CheckPortAndTimeout();
-    x_CheckReadParameters();
+
+    if (cmdv2)
+        x_CheckReadParameters();
+    else {
+        // Affinity flags are for the second version of the command
+        m_CommandArguments.reader_affinity = false;
+        m_CommandArguments.exclusive_new_aff = false;
+
+        // This flag mimics the GET command behavior
+        m_CommandArguments.any_affinity =
+                                m_CommandArguments.affinity_token.empty();
+    }
 
     CJob            job;
-    string          job_affinity;
     bool            no_more_jobs = true;
+    string          added_pref_aff;
+
+    list<string>    aff_list;
+    NStr::Split(m_CommandArguments.affinity_token,
+                "\t,", aff_list, NStr::eNoMergeDelims);
 
     x_ClearRollbackAction();
-    q->GetJobForReadingOrWait(m_ClientId,
-                              m_CommandArguments.port,
-                              m_CommandArguments.timeout,
-                              m_CommandArguments.group,
-                              &job, &job_affinity,
-                              &no_more_jobs, m_RollbackAction);
+    if (q->GetJobForReadingOrWait(m_ClientId,
+                                  m_CommandArguments.port,
+                                  m_CommandArguments.timeout,
+                                  &aff_list,
+                                  m_CommandArguments.reader_affinity,
+                                  m_CommandArguments.any_affinity,
+                                  m_CommandArguments.exclusive_new_aff,
+                                  m_CommandArguments.group,
+                                  &job,
+                                  &no_more_jobs, m_RollbackAction,
+                                  added_pref_aff) == false) {
+        // Preferred affinities were reset for the client, so no job
+        // and bad request
+        x_SetCmdRequestStatus(eStatus_BadRequest);
+        x_WriteMessage("ERR:ePrefAffExpired:");
+    } else {
+        unsigned int    job_id = job.GetId();
+        string          job_key;
 
-    unsigned int    job_id = job.GetId();
-    string          job_key;
+        if (job_id) {
+            job_key = q->MakeJobKey(job_id);
+            x_WriteMessage("OK:job_key=" + job_key +
+                           "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
+                           "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
+                           "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
+                           "&auth_token=" + job.GetAuthToken() +
+                           "&status=" +
+                           CNetScheduleAPI::StatusToString(
+                                                job.GetStatusBeforeReading()) +
+                           "&affinity=" +
+                           NStr::URLEncode(q->GetAffinityTokenByID(
+                                                        job.GetAffinityId())));
+            x_ClearRollbackAction();
+            x_LogCommandWithJob(job);
 
-    if (job_id) {
-        job_key = q->MakeJobKey(job_id);
-        x_WriteMessage("OK:job_key=" + job_key +
-                       "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
-                       "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
-                       "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
-                       "&auth_token=" + job.GetAuthToken() +
-                       "&status=" +
-                       CNetScheduleAPI::StatusToString(
-                                            job.GetStatusBeforeReading()) +
-                       "&affinity=" + job_affinity);
-        x_ClearRollbackAction();
-        x_LogCommandWithJob(job);
-    }
-    else
-        x_WriteMessage("OK:no_more_jobs=" + NStr::BoolToString(no_more_jobs));
-
-    if (m_ConnContext.NotNull()) {
-        if (job_id)
-            GetDiagContext().Extra().Print("job_key", job_key);
+            if (!added_pref_aff.empty()) {
+                if (m_ConnContext.NotNull()) {
+                    if (m_ClientIdentificationPrinted)
+                        GetDiagContext().Extra()
+                            .Print("added_preferred_affinity", added_pref_aff);
+                    else
+                        GetDiagContext().Extra()
+                            .Print("client_node", m_ClientId.GetNode())
+                            .Print("client_session", m_ClientId.GetSession())
+                            .Print("added_preferred_affinity", added_pref_aff);
+                }
+            }
+        }
         else
-            GetDiagContext().Extra().Print("job_key", "None")
-                                    .Print("no_more_jobs", no_more_jobs);
+            x_WriteMessage("OK:no_more_jobs=" + NStr::BoolToString(no_more_jobs));
+
+        if (m_ConnContext.NotNull()) {
+            if (job_id)
+                GetDiagContext().Extra().Print("job_key", job_key);
+            else
+                GetDiagContext().Extra().Print("job_key", "None")
+                                        .Print("no_more_jobs", no_more_jobs);
+        }
     }
+
     x_PrintCmdRequestStop();
 }
 
@@ -3597,7 +3699,7 @@ void CNetScheduleHandler::x_CheckReadParameters(void)
         m_CommandArguments.any_affinity == true)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "It is forbidden to have both any_affinity and "
-                   "exclusive_new_aff READ flags set to 1.");
+                   "exclusive_new_aff READ2 flags set to 1.");
 }
 
 

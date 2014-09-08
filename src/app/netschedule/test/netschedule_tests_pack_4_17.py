@@ -11,7 +11,7 @@ Netschedule server tests pack for the features appeared in NS-4.17.0
 import time
 import socket
 from netschedule_tests_pack import TestBase
-from netschedule_tests_pack_4_10 import getClientInfo, changeAffinity, execAny
+from netschedule_tests_pack_4_10 import execAny
 
 # Works for python 2.5. Python 2.7 has it in urlparse module
 from cgi import parse_qs

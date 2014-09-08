@@ -202,13 +202,13 @@ unsigned int  CNSGroupsRegistry::AddJob(const string &  group,
 
     if (found != m_TokenToAttr.end()) {
         // Group exists
-        found->second->m_Jobs.set_bit(job_id, true);
+        found->second->m_Jobs.set_bit(job_id);
         return found->second->m_GroupId;
     }
 
     // New group, need to create a record
     unsigned int    group_id = x_CreateGroup(group);
-    m_IDToAttr[group_id]->m_Jobs.set_bit(job_id, true);
+    m_IDToAttr[group_id]->m_Jobs.set_bit(job_id);
     return group_id;
 }
 
@@ -224,7 +224,7 @@ void  CNSGroupsRegistry::AddJob(unsigned int    group_id,
     TGroupIDToAttrMap::iterator     found = m_IDToAttr.find(group_id);
 
     if (found != m_IDToAttr.end()) {
-        found->second->m_Jobs.set_bit(job_id, true);
+        found->second->m_Jobs.set_bit(job_id);
         return;
     }
 
@@ -344,8 +344,8 @@ void  CNSGroupsRegistry::FinalizeGroupDictionaryLoading(void)
 
         if (candidate->second->CanBeDeleted()) {
             // Garbage collector will pick it up
-            m_RegisteredGroups.set(candidate->first, false);
-            m_RemoveCandidates.set(candidate->first, true);
+            m_RegisteredGroups.set_bit(candidate->first, false);
+            m_RemoveCandidates.set_bit(candidate->first);
         }
     }
 
@@ -365,7 +365,7 @@ unsigned int  CNSGroupsRegistry::CollectGarbage(unsigned int  max_to_del)
     for ( ; en.valid(); ++en) {
         unsigned int        group_id = *en;
 
-        m_RemoveCandidates.set(group_id, false);
+        m_RemoveCandidates.set_bit(group_id, false);
 
         m_GroupDictDB->group_id = group_id;
         m_GroupDictDB->Delete(CBDB_File::eIgnoreError);
@@ -447,7 +447,7 @@ CNSGroupsRegistry::x_PrintSelected(const TNSBitVector &    batch,
     CMutexGuard                         guard(m_Lock);
     TGroupIDToAttrMap::const_iterator   k = m_IDToAttr.begin();
     for ( ; k != m_IDToAttr.end(); ++k ) {
-        if (batch[k->first]) {
+        if (batch.get_bit(k->first)) {
             buffer += x_PrintOne(*k->second, queue, verbose);
             ++printed;
             if (printed >= batch.count())
@@ -533,8 +533,8 @@ void  CNSGroupsRegistry::x_DeleteSingleInMemory(TGroupIDToAttrMap::iterator  to_
     }
 
     // Registered group
-    m_RegisteredGroups.set(group_id, false);
-    m_RemoveCandidates.set(group_id, true);
+    m_RegisteredGroups.set_bit(group_id, false);
+    m_RemoveCandidates.set_bit(group_id);
     return;
 }
 

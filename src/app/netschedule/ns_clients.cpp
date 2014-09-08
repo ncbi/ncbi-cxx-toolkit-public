@@ -263,7 +263,7 @@ void SRemoteNodeData::UpdateBlacklist(unsigned int  job_id) const
     if (m_BlacklistLimits.empty())
         return;
 
-    if (m_BlacklistedJobs[job_id] == false)
+    if (!m_BlacklistedJobs.get_bit(job_id))
         return;
 
     CNSPreciseTime                  current_time = CNSPreciseTime::Current();
@@ -326,7 +326,7 @@ bool SRemoteNodeData::ClearPreferredAffinities(void)
 
 void SRemoteNodeData::RegisterJob(unsigned int  job_id)
 {
-    m_Jobs.set(job_id, true);
+    m_Jobs.set_bit(job_id);
     x_JobsOp();
     ++m_NumberOfGiven;
     return;
@@ -335,7 +335,7 @@ void SRemoteNodeData::RegisterJob(unsigned int  job_id)
 
 void SRemoteNodeData::UnregisterGivenJob(unsigned int  job_id)
 {
-    m_Jobs.set(job_id, false);
+    m_Jobs.set_bit(job_id, false);
     x_JobsOp();
 }
 
@@ -343,8 +343,8 @@ void SRemoteNodeData::UnregisterGivenJob(unsigned int  job_id)
 // returns true if the modifications have been really made
 bool SRemoteNodeData::MoveJobToBlacklist(unsigned int  job_id)
 {
-    if (m_Jobs[job_id]) {
-        m_Jobs.set(job_id, false);
+    if (m_Jobs.get_bit(job_id)) {
+        m_Jobs.set_bit(job_id, false);
         AddToBlacklist(job_id, CNSPreciseTime::Current());
         x_JobsOp();
         return true;
@@ -356,8 +356,8 @@ bool SRemoteNodeData::MoveJobToBlacklist(unsigned int  job_id)
 bool SRemoteNodeData::AddPreferredAffinity(unsigned int  aff)
 {
     if (aff != 0) {
-        if (m_PrefAffinities[aff] == false) {
-            m_PrefAffinities.set_bit(aff, true);
+        if (!m_PrefAffinities.get_bit(aff)) {
+            m_PrefAffinities.set_bit(aff);
             x_PrefAffinitiesOp();
             return true;
         }

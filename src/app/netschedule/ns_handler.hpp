@@ -290,6 +290,10 @@ private:
     // Diagnostics context for the currently executed command
     CRef<CRequestContext>           m_CmdContext;
 
+    // true if client_node and client_session have already been preinted in
+    // extra prints
+    bool                            m_ClientIdentificationPrinted;
+
     // Rollback support
     CNSRollbackInterface *          m_RollbackAction;
 

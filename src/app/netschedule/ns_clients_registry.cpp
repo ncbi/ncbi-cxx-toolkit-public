@@ -461,7 +461,7 @@ CNSClientsRegistry::x_PrintSelected(const TNSBitVector &  batch,
     map< string, CNSClient >::const_iterator    k = m_Clients.begin();
 
     for ( ; k != m_Clients.end(); ++k) {
-        if (batch[k->second.GetID()]) {
+        if (batch.get_bit(k->second.GetID())) {
             buffer += k->second.Print(k->first, queue, *m_AffRegistry,
                                       m_GCWNodeClients, m_GCReaderClients,
                                       verbose);
@@ -830,8 +830,8 @@ CNSClientsRegistry::IsPreferredByAny(unsigned int   aff_id,
 {
     CMutexGuard     guard(m_Lock);
     if (cmd_group == eGet)
-        return m_WNodeAffinities[aff_id];
-    return m_ReaderAffinities[aff_id];
+        return m_WNodeAffinities.get_bit(aff_id);
+    return m_ReaderAffinities.get_bit(aff_id);
 }
 
 

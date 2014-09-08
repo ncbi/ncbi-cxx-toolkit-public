@@ -213,9 +213,11 @@ public:
 
     list<string> ChangeAffinity(const CNSClientId &     client,
                                 const list<string> &    aff_to_add,
-                                const list<string> &    aff_to_del);
+                                const list<string> &    aff_to_del,
+                                ECommandGroup           cmd_group);
     void SetAffinity(const CNSClientId &     client,
-                     const list<string> &    aff);
+                     const list<string> &    aff,
+                     ECommandGroup           cmd_group);
     int  SetClientData(const CNSClientId &  client,
                        const string &  data, int  data_version);
 
@@ -294,14 +296,18 @@ public:
 
     // Read-Confirm stage
     // Request done jobs for reading with timeout
-    void GetJobForReadingOrWait(const CNSClientId &       client,
+    bool GetJobForReadingOrWait(const CNSClientId &       client,
                                 unsigned int              port,
                                 unsigned int              timeout,
+                                const list<string> *      aff_list,
+                                bool                      reader_affinity,
+                                bool                      any_affinity,
+                                bool                      exclusive_new_affinity,
                                 const string &            group,
                                 CJob *                    job,
-                                string *                  affinity,
                                 bool *                    no_more_jobs,
-                                CNSRollbackInterface * &  rollback_action);
+                                CNSRollbackInterface * &  rollback_action,
+                                string &                  added_pref_aff);
     // Confirm reading of these jobs
     TJobStatus  ConfirmReadingJob(const CNSClientId &   client,
                                   unsigned int          job_id,
@@ -477,12 +483,13 @@ private:
     };
 
     x_SJobPick
-    x_FindPendingJob(const CNSClientId &    client,
-                     const TNSBitVector &   aff_ids,
-                     bool                   wnode_affinity,
-                     bool                   any_affinity,
-                     bool                   exclusive_new_affinity,
-                     const string &         group);
+    x_FindVacantJob(const CNSClientId &    client,
+                    const TNSBitVector &   aff_ids,
+                    bool                   use_pref_affinity,
+                    bool                   any_affinity,
+                    bool                   exclusive_new_affinity,
+                    const string &         group,
+                    ECommandGroup          cmd_group);
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
                              unsigned int         picked_earlier);
@@ -495,10 +502,11 @@ private:
                                     CJob &                  job,
                                     const CNSClientId &     client);
 
-    bool  x_UpdateDB_GetJobNoLock(const CNSClientId &     client,
-                                  const CNSPreciseTime &  curr,
-                                  unsigned int            job_id,
-                                  CJob &                  job);
+    void x_UpdateDB_ProvideJobNoLock(const CNSClientId &     client,
+                                     const CNSPreciseTime &  curr,
+                                     unsigned int            job_id,
+                                     ECommandGroup           cmd_group,
+                                     CJob &                  job);
 
     void x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                                  const CNSPreciseTime &  queue_read_timeout,

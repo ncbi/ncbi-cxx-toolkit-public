@@ -627,7 +627,7 @@ CQueue::SubmitBatch(const CNSClientId &             client,
                                                                  eUndefined);
 
                     job.SetAffinityId(aff_id);
-                    affinities.set_bit(aff_id, true);
+                    affinities.set_bit(aff_id);
                 }
                 else
                     no_aff_jobs = true;
@@ -678,9 +678,6 @@ CQueue::SubmitBatch(const CNSClientId &             client,
 }
 
 
-
-static const size_t     k_max_dead_locks = 10;  // max. dead lock repeats
-
 TJobStatus  CQueue::PutResult(const CNSClientId &     client,
                               const CNSPreciseTime &  curr,
                               unsigned int            job_id,
@@ -697,95 +694,65 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Output is too long");
 
-    size_t              dead_locks = 0; // dead lock counter
+    CFastMutexGuard     guard(m_OperationLock);
+    TJobStatus          old_status = GetJobStatus(job_id);
 
-    for (;;) {
-        try {
-            CFastMutexGuard     guard(m_OperationLock);
-            TJobStatus          old_status = GetJobStatus(job_id);
-
-            if (old_status == CNetScheduleAPI::eDone) {
-                m_StatisticsCounters.CountTransition(CNetScheduleAPI::eDone,
-                                                     CNetScheduleAPI::eDone);
-                return old_status;
-            }
-
-            if (old_status != CNetScheduleAPI::ePending &&
-                old_status != CNetScheduleAPI::eRunning &&
-                old_status != CNetScheduleAPI::eFailed)
-                return old_status;
-
-            {{
-                CNSTransaction      transaction(this);
-                x_UpdateDB_PutResultNoLock(job_id, auth_token, curr,
-                                           ret_code, output, job,
-                                           client);
-                transaction.Commit();
-            }}
-
-            m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eDone);
-            m_StatisticsCounters.CountTransition(old_status,
-                                                 CNetScheduleAPI::eDone);
-            m_ClientsRegistry.UnregisterJob(job_id, eGet);
-
-            m_GCRegistry.UpdateLifetime(job_id,
-                                        job.GetExpirationTime(m_Timeout,
-                                                              m_RunTimeout,
-                                                              m_ReadTimeout,
-                                                              m_PendingTimeout,
-                                                              curr));
-
-            TimeLineRemove(job_id);
-
-            if (job.ShouldNotifySubmitter(curr))
-                m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
-                                                    job.GetSubmNotifPort(),
-                                                    job_key,
-                                                    job.GetStatus(),
-                                                    job.GetLastEventIndex());
-            if (job.ShouldNotifyListener(curr, m_JobsToNotify))
-                m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
-                                                    job.GetListenerNotifPort(),
-                                                    job_key,
-                                                    job.GetStatus(),
-                                                    job.GetLastEventIndex());
-
-            // Notify the readers if the job has not been given for reading yet
-            if (m_ReadJobs[job_id] == false)
-                m_NotificationsList.Notify(job_id, job.GetAffinityId(),
-                                           m_ClientsRegistry,
-                                           m_AffinityRegistry,
-                                           m_GroupRegistry,
-                                           m_NotifHifreqPeriod,
-                                           m_HandicapTimeout,
-                                           eRead);
-            return old_status;
-        }
-        catch (CBDB_ErrnoException &  ex) {
-            if (ex.IsDeadLock()) {
-                if (++dead_locks < k_max_dead_locks) {
-                    ERR_POST("DeadLock repeat in CQueue::PutResult");
-                    SleepMilliSec(100);
-                    continue;
-                }
-            } else if (ex.IsNoMem()) {
-                if (++dead_locks < k_max_dead_locks) {
-                    ERR_POST("No resource repeat in CQueue::PutResult");
-                    SleepMilliSec(100);
-                    continue;
-                }
-            }
-
-            if (ex.IsDeadLock() || ex.IsNoMem()) {
-                string  message = "Too many transaction repeats in "
-                                  "CQueue::PutResult";
-                ERR_POST(message);
-                NCBI_THROW(CNetScheduleException, eTryAgain, message);
-            }
-
-            throw;
-        }
+    if (old_status == CNetScheduleAPI::eDone) {
+        m_StatisticsCounters.CountTransition(CNetScheduleAPI::eDone,
+                                             CNetScheduleAPI::eDone);
+        return old_status;
     }
+
+    if (old_status != CNetScheduleAPI::ePending &&
+        old_status != CNetScheduleAPI::eRunning &&
+        old_status != CNetScheduleAPI::eFailed)
+        return old_status;
+
+    {{
+        CNSTransaction      transaction(this);
+        x_UpdateDB_PutResultNoLock(job_id, auth_token, curr,
+                                   ret_code, output, job,
+                                   client);
+        transaction.Commit();
+    }}
+
+    m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eDone);
+    m_StatisticsCounters.CountTransition(old_status,
+                                         CNetScheduleAPI::eDone);
+    m_ClientsRegistry.UnregisterJob(job_id, eGet);
+
+    m_GCRegistry.UpdateLifetime(job_id,
+                                job.GetExpirationTime(m_Timeout,
+                                                      m_RunTimeout,
+                                                      m_ReadTimeout,
+                                                      m_PendingTimeout,
+                                                      curr));
+
+    TimeLineRemove(job_id);
+
+    if (job.ShouldNotifySubmitter(curr))
+        m_NotificationsList.NotifyJobStatus(job.GetSubmAddr(),
+                                            job.GetSubmNotifPort(),
+                                            job_key,
+                                            job.GetStatus(),
+                                            job.GetLastEventIndex());
+    if (job.ShouldNotifyListener(curr, m_JobsToNotify))
+        m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
+                                            job.GetListenerNotifPort(),
+                                            job_key,
+                                            job.GetStatus(),
+                                            job.GetLastEventIndex());
+
+    // Notify the readers if the job has not been given for reading yet
+    if (!m_ReadJobs.get_bit(job_id))
+        m_NotificationsList.Notify(job_id, job.GetAffinityId(),
+                                   m_ClientsRegistry,
+                                   m_AffinityRegistry,
+                                   m_GroupRegistry,
+                                   m_NotifHifreqPeriod,
+                                   m_HandicapTimeout,
+                                   eRead);
+    return old_status;
 }
 
 
@@ -809,196 +776,153 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
     // We need exactly 1 parameter - m_RunTimeout, so we can access it without
     // CQueueParamAccessor
 
-    size_t      dead_locks = 0;                 // dead lock counter
-
     // This is a worker node command, so mark the node type as a worker
     // node
     m_ClientsRegistry.AppendType(client, CNSClient::eWorkerNode);
 
+    TNSBitVector        aff_ids;
+
+    {{
+        CFastMutexGuard     guard(m_OperationLock);
+
+        if (wnode_affinity) {
+            // Check that the preferred affinities were not reset
+            if (m_ClientsRegistry.GetAffinityReset(client, eGet))
+                return false;
+
+            // Check that the client was garbage collected with preferred affs
+            if (m_ClientsRegistry.WasGarbageCollected(client, eGet))
+                return false;
+        }
+
+        // Resolve affinities and groups. It is supposed that the client knows
+        // better what affinities and groups to expect i.e. even if they do not
+        // exist yet, they may appear soon.
+        {{
+            CNSTransaction      transaction(this);
+
+            m_GroupRegistry.ResolveGroup(group);
+            aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
+            transaction.Commit();
+        }}
+
+        x_UnregisterGetListener(client, port);
+    }}
+
     for (;;) {
-        try {
-            TNSBitVector        aff_ids;
+        // No lock here to make it possible to pick a job
+        // simultaneously from many threads
+        x_SJobPick  job_pick = x_FindVacantJob(client, aff_ids,
+                                               wnode_affinity,
+                                               any_affinity,
+                                               exclusive_new_affinity,
+                                               group, eGet);
+        {{
+            bool                outdated_job = false;
+            CFastMutexGuard     guard(m_OperationLock);
 
-            {{
-                CFastMutexGuard     guard(m_OperationLock);
+            if (job_pick.job_id == 0) {
+                if (exclusive_new_affinity)
+                    // Second try only if exclusive new aff is set on
+                    job_pick = x_FindOutdatedPendingJob(client, 0);
 
-                if (wnode_affinity) {
-                    // Check first that the were no preferred affinities reset
-                    // for the client
-                    if (m_ClientsRegistry.GetAffinityReset(client, eGet))
-                        return false;   // Affinity was reset, so
-                                        // no job for the client
-
-                    // It is possible that the client had been garbage
-                    // collected
-                    if (m_ClientsRegistry.WasGarbageCollected(client, eGet))
-                        return false;
+                if (job_pick.job_id == 0) {
+                    if (timeout != 0) {
+                        // WGET:
+                        // There is no job, so the client might need to
+                        // be registered
+                        // in the waiting list
+                        if (port > 0)
+                            x_RegisterGetListener(
+                                    client, port, timeout, aff_ids,
+                                    wnode_affinity, any_affinity,
+                                    exclusive_new_affinity,
+                                    new_format, group);
+                    }
+                    return true;
                 }
+                outdated_job = true;
+            } else {
+                // Check that the job is still Pending; it could be
+                // grabbed by another WN or GC
+                if (GetJobStatus(job_pick.job_id) != CNetScheduleAPI::ePending)
+                    continue;   // Try to pick a job again
 
-                // Resolve affinities regardless whether it is GET or WGET. It
-                // is supposed that the client knows better what affinities to
-                // expect i.e. even if they do not exist yet, they may appear
-                // soon.
-                {{
-                    CNSTransaction      transaction(this);
-
-                    m_GroupRegistry.ResolveGroup(group);
-                    aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
-                    transaction.Commit();
-                }}
-
-                x_UnregisterGetListener(client, port);
-            }}
-
-            for (;;) {
-                // No lock here to make it possible to pick a job
-                // simultaneously from many threads
-                x_SJobPick  job_pick = x_FindPendingJob(client, aff_ids,
-                                                        wnode_affinity,
-                                                        any_affinity,
-                                                        exclusive_new_affinity,
-                                                        group);
-                {{
-                    bool                outdated_job = false;
-                    CFastMutexGuard     guard(m_OperationLock);
-
-                    if (job_pick.job_id == 0) {
-                        if (exclusive_new_affinity)
-                            // Second try only if exclusive new aff is set on
-                            job_pick = x_FindOutdatedPendingJob(client, 0);
-
-                        if (job_pick.job_id == 0) {
-                            if (timeout != 0) {
-                                // WGET:
-                                // There is no job, so the client might need to
-                                // be registered
-                                // in the waiting list
-                                if (port > 0)
-                                    x_RegisterGetListener(
-                                            client, port, timeout, aff_ids,
-                                            wnode_affinity, any_affinity,
-                                            exclusive_new_affinity,
-                                            new_format, group);
-                            }
-                            return true;
-                        }
-                        outdated_job = true;
-                    } else {
-                        // Check that the job is still Pending; it could be
-                        // grabbed by another WN or GC
-                        if (GetJobStatus(job_pick.job_id) !=
-                                CNetScheduleAPI::ePending)
-                            continue;   // Try to pick a job again
-
-                        if (exclusive_new_affinity) {
-                            if (m_GCRegistry.IsOutdatedJob(
-                                            job_pick.job_id,
-                                            m_MaxPendingWaitTimeout) == false) {
-                                x_SJobPick  outdated_pick =
-                                                x_FindOutdatedPendingJob(
-                                                            client,
-                                                            job_pick.job_id);
-                                if (outdated_pick.job_id != 0) {
-                                    job_pick = outdated_pick;
-                                    outdated_job = true;
-                                }
-                            }
-                        }
-                    }
-
-                    // The job is still pending, check if it was received as
-                    // with exclusive affinity
-                    if (job_pick.exclusive && job_pick.aff_id != 0 &&
-                        outdated_job == false) {
-                        if (m_ClientsRegistry.IsPreferredByAny(
-                                                        job_pick.aff_id, eGet))
-                            continue;  // Other WN grabbed this affinity already
-                        bool added = m_ClientsRegistry.
-                                        UpdatePreferredAffinities(
-                                            client, job_pick.aff_id, 0, eGet);
-                        if (added)
-                            added_pref_aff = m_AffinityRegistry.GetTokenByID(
-                                                            job_pick.aff_id);
-                    }
-                    if (outdated_job && job_pick.aff_id != 0) {
-                        bool added = m_ClientsRegistry.
-                                        UpdatePreferredAffinities(
-                                            client, job_pick.aff_id, 0, eGet);
-                        if (added)
-                            added_pref_aff = m_AffinityRegistry.GetTokenByID(
-                                                            job_pick.aff_id);
-                    }
-
-                    if (x_UpdateDB_GetJobNoLock(client, curr,
-                                                job_pick.job_id, *new_job)) {
-                        // The job is not expired and successfully read
-                        m_StatusTracker.SetStatus(job_pick.job_id,
-                                                  CNetScheduleAPI::eRunning);
-
-                        m_StatisticsCounters.CountTransition(
-                                                    CNetScheduleAPI::ePending,
-                                                    CNetScheduleAPI::eRunning);
-                        if (outdated_job)
-                            m_StatisticsCounters.CountOutdatedPick();
-
-                        m_GCRegistry.UpdateLifetime(
+                if (exclusive_new_affinity) {
+                    if (m_GCRegistry.IsOutdatedJob(
                                     job_pick.job_id,
-                                    new_job->GetExpirationTime(m_Timeout,
-                                                               m_RunTimeout,
-                                                               m_ReadTimeout,
-                                                               m_PendingTimeout,
-                                                               curr));
-                        TimeLineAdd(job_pick.job_id, curr + m_RunTimeout);
-                        m_ClientsRegistry.RegisterJob(client, job_pick.job_id,
-                                                      eGet);
-
-                        if (new_job->ShouldNotifyListener(curr, m_JobsToNotify))
-                            m_NotificationsList.NotifyJobStatus(
-                                            new_job->GetListenerNotifAddr(),
-                                            new_job->GetListenerNotifPort(),
-                                            MakeJobKey(new_job->GetId()),
-                                            new_job->GetStatus(),
-                                            new_job->GetLastEventIndex());
-
-                        // If there are no more pending jobs, let's clear the
-                        // list of delayed exact notifications.
-                        if (!m_StatusTracker.AnyPending())
-                            m_NotificationsList.ClearExactGetNotifications();
-
-                        rollback_action = new CNSGetJobRollback(
+                                    m_MaxPendingWaitTimeout) == false) {
+                        x_SJobPick  outdated_pick =
+                                        x_FindOutdatedPendingJob(
                                                     client, job_pick.job_id);
-                        return true;
+                        if (outdated_pick.job_id != 0) {
+                            job_pick = outdated_pick;
+                            outdated_job = true;
+                        }
                     }
-
-                    // Reset job_id and try again
-                    new_job->SetId(0);
-                }}
-            }
-        }
-        catch (CBDB_ErrnoException &  ex) {
-            if (ex.IsDeadLock()) {
-                if (++dead_locks < k_max_dead_locks) {
-                    ERR_POST("DeadLock repeat in CQueue::GetJobOrWait");
-                    SleepMilliSec(100);
-                    continue;
-                }
-            } else if (ex.IsNoMem()) {
-                if (++dead_locks < k_max_dead_locks) {
-                    ERR_POST("No resource repeat in CQueue::GetJobOrWait");
-                    SleepMilliSec(100);
-                    continue;
                 }
             }
 
-            if (ex.IsDeadLock() || ex.IsNoMem()) {
-                string  message = "Too many transaction repeats in "
-                                  "CQueue::GetJobOrWait";
-                ERR_POST(message);
-                NCBI_THROW(CNetScheduleException, eTryAgain, message);
+            // The job is still pending, check if it was received as
+            // with exclusive affinity
+            if (job_pick.exclusive && job_pick.aff_id != 0 &&
+                outdated_job == false) {
+                if (m_ClientsRegistry.IsPreferredByAny(
+                                                job_pick.aff_id, eGet))
+                    continue;  // Other WN grabbed this affinity already
+                bool added = m_ClientsRegistry.
+                                UpdatePreferredAffinities(
+                                    client, job_pick.aff_id, 0, eGet);
+                if (added)
+                    added_pref_aff = m_AffinityRegistry.GetTokenByID(
+                                                    job_pick.aff_id);
+            }
+            if (outdated_job && job_pick.aff_id != 0) {
+                bool added = m_ClientsRegistry.
+                                UpdatePreferredAffinities(
+                                    client, job_pick.aff_id, 0, eGet);
+                if (added)
+                    added_pref_aff = m_AffinityRegistry.GetTokenByID(
+                                                    job_pick.aff_id);
             }
 
-            throw;
-        }
+            x_UpdateDB_ProvideJobNoLock(client, curr, job_pick.job_id, eGet,
+                                        *new_job);
+            m_StatusTracker.SetStatus(job_pick.job_id,
+                                      CNetScheduleAPI::eRunning);
+
+            m_StatisticsCounters.CountTransition(
+                                        CNetScheduleAPI::ePending,
+                                        CNetScheduleAPI::eRunning);
+            if (outdated_job)
+                m_StatisticsCounters.CountOutdatedPick();
+
+            m_GCRegistry.UpdateLifetime(
+                        job_pick.job_id,
+                        new_job->GetExpirationTime(m_Timeout,
+                                                   m_RunTimeout,
+                                                   m_ReadTimeout,
+                                                   m_PendingTimeout,
+                                                   curr));
+            TimeLineAdd(job_pick.job_id, curr + m_RunTimeout);
+            m_ClientsRegistry.RegisterJob(client, job_pick.job_id, eGet);
+
+            if (new_job->ShouldNotifyListener(curr, m_JobsToNotify))
+                m_NotificationsList.NotifyJobStatus(
+                                new_job->GetListenerNotifAddr(),
+                                new_job->GetListenerNotifPort(),
+                                MakeJobKey(job_pick.job_id),
+                                new_job->GetStatus(),
+                                new_job->GetLastEventIndex());
+
+            // If there are no more pending jobs, let's clear the
+            // list of delayed exact notifications.
+            if (!m_StatusTracker.AnyPending())
+                m_NotificationsList.ClearExactGetNotifications();
+
+            rollback_action = new CNSGetJobRollback(client, job_pick.job_id);
+            return true;
+        }}
     }
     return true;
 }
@@ -1044,7 +968,8 @@ void  CQueue::CancelWaitRead(const CNSClientId &  client)
 list<string>
 CQueue::ChangeAffinity(const CNSClientId &     client,
                        const list<string> &    aff_to_add,
-                       const list<string> &    aff_to_del)
+                       const list<string> &    aff_to_del,
+                       ECommandGroup           cmd_group)
 {
     // It is guaranteed here that the client is a new style one.
     // I.e. it has both client_node and client_session.
@@ -1052,7 +977,8 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
     list<string>    msgs;   // Warning messages for the socket
     unsigned int    client_id = client.GetID();
     TNSBitVector    current_affinities =
-                         m_ClientsRegistry.GetPreferredAffinities(client, eGet);
+                         m_ClientsRegistry.GetPreferredAffinities(client,
+                                                                  cmd_group);
     TNSBitVector    aff_id_to_add;
     TNSBitVector    aff_id_to_del;
     bool            any_to_add = false;
@@ -1073,7 +999,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
             continue;
         }
 
-        if (current_affinities[aff_id] == false) {
+        if (!current_affinities.get_bit(aff_id)) {
             // This a try to delete something which has not been added or
             // deleted before.
             LOG_POST(Message << Warning << "Client '" << client.GetNode()
@@ -1086,7 +1012,7 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
         }
 
         // The affinity will really be deleted
-        aff_id_to_del.set(aff_id, true);
+        aff_id_to_del.set_bit(aff_id);
         any_to_del = true;
     }
 
@@ -1120,14 +1046,14 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
             unsigned int    aff_id =
                                  m_AffinityRegistry.ResolveAffinityToken(*k,
                                                                  0, client_id,
-                                                                 eGet);
+                                                                 cmd_group);
 
-            if (current_affinities[aff_id] == true) {
+            if (current_affinities.get_bit(aff_id)) {
                 already_added_affinities.push_back(*k);
                 continue;
             }
 
-            aff_id_to_add.set(aff_id, true);
+            aff_id_to_add.set_bit(aff_id);
             any_to_add = true;
         }
 
@@ -1150,9 +1076,9 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
         m_ClientsRegistry.UpdatePreferredAffinities(client,
                                                     aff_id_to_add,
                                                     aff_id_to_del,
-                                                    eGet);
+                                                    cmd_group);
 
-    if (m_ClientsRegistry.WasGarbageCollected(client, eGet)) {
+    if (m_ClientsRegistry.WasGarbageCollected(client, cmd_group)) {
         LOG_POST(Message << Warning << "Client '" << client.GetNode()
                          << "' has been garbage collected and tries to "
                             "update its preferred affinities.");
@@ -1164,7 +1090,8 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
 
 
 void  CQueue::SetAffinity(const CNSClientId &     client,
-                          const list<string> &    aff)
+                          const list<string> &    aff,
+                          ECommandGroup           cmd_group)
 {
     if (aff.size() > m_MaxAffinities) {
         NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
@@ -1180,7 +1107,8 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
 
 
     TNSBitVector    current_affinities =
-                         m_ClientsRegistry.GetPreferredAffinities(client, eGet);
+                         m_ClientsRegistry.GetPreferredAffinities(client,
+                                                                  cmd_group);
     {{
         CFastMutexGuard     guard(m_OperationLock);
         CNSTransaction      transaction(this);
@@ -1191,18 +1119,18 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
             unsigned int    aff_id =
                                  m_AffinityRegistry.ResolveAffinityToken(*k,
                                                                  0, client_id,
-                                                                 eGet);
+                                                                 cmd_group);
 
-            if (current_affinities[aff_id] == true)
-                already_added_aff_id.set(aff_id, true);
+            if (current_affinities.get_bit(aff_id))
+                already_added_aff_id.set_bit(aff_id);
 
-            aff_id_to_set.set(aff_id, true);
+            aff_id_to_set.set_bit(aff_id);
         }
 
         transaction.Commit();
     }}
 
-    m_ClientsRegistry.SetPreferredAffinities(client, aff_id_to_set, eGet);
+    m_ClientsRegistry.SetPreferredAffinities(client, aff_id_to_set, cmd_group);
 }
 
 
@@ -1868,7 +1796,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
 
         // Notify the readers if the job has not been given for reading yet
         // and it was not a rollback due to a socket write error
-        if (m_ReadJobs[job_id] == false && is_ns_rollback == false)
+        if (!m_ReadJobs.get_bit(job_id) && is_ns_rollback == false)
             m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
@@ -1980,7 +1908,7 @@ unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
                                                 job.GetLastEventIndex());
 
         // Notify the readers if the job has not been given for reading yet
-        if (m_ReadJobs[job_id] == false)
+        if (!m_ReadJobs.get_bit(job_id))
             m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
@@ -2172,129 +2100,130 @@ unsigned int  CQueue::x_ReadStartFromCounter(void)
 }
 
 
-void CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
-                                    unsigned int              port,
-                                    unsigned int              timeout,
-                                    const string &            group,
-                                    CJob *                    job,
-                                    string *                  affinity,
-                                    bool *                    no_more_jobs,
-                                    CNSRollbackInterface * &  rollback_action)
+bool
+CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
+                               unsigned int              port,
+                               unsigned int              timeout,
+                               const list<string> *      aff_list,
+                               bool                      reader_affinity,
+                               bool                      any_affinity,
+                               bool                      exclusive_new_affinity,
+                               const string &            group,
+                               CJob *                    job,
+                               bool *                    no_more_jobs,
+                               CNSRollbackInterface * &  rollback_action,
+                               string &                  added_pref_aff)
 {
-    CNSPreciseTime                          curr = CNSPreciseTime::Current();
-    vector<CNetScheduleAPI::EJobStatus>     from_state;
+    CNSPreciseTime      curr = CNSPreciseTime::Current();
+    TNSBitVector        aff_ids;
 
-    // This is a reader command, so mark the node type as a worker
-    // node
+    // This is a reader command, so mark the node type as a reader
     m_ClientsRegistry.AppendType(client, CNSClient::eReader);
 
-    from_state.push_back(CNetScheduleAPI::eDone);
-    from_state.push_back(CNetScheduleAPI::eFailed);
-    from_state.push_back(CNetScheduleAPI::eCanceled);
-
+    *no_more_jobs = false;
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
 
-        // Resolve affinities and groups. It is
-        // supposed that the client knows better what affinities and groups to
-        // expect i.e. even if they do not exist yet, they may appear
-        // soon.
+        if (reader_affinity) {
+            // Check that the preferred affinities were not reset
+            if (m_ClientsRegistry.GetAffinityReset(client, eRead))
+                return false;
+
+            // Check that the client was garbage collected with preferred affs
+            if (m_ClientsRegistry.WasGarbageCollected(client, eRead))
+                return false;
+        }
+
+        // Resolve affinities and groups. It is supposed that the client knows
+        // better what affinities and groups to expect i.e. even if they do not
+        // exist yet, they may appear soon.
         {{
             CNSTransaction      transaction(this);
 
             m_GroupRegistry.ResolveGroup(group);
-            // Uncomment when READ starts supporting affinities
-            // aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
+            aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
             transaction.Commit();
         }}
 
         m_ClientsRegistry.CancelWaiting(client, eRead);
-
-        TNSBitVector        candidates = m_StatusTracker.GetJobs(from_state);
-
-        // Exclude blacklisted jobs
-        candidates -= m_ClientsRegistry.GetBlacklistedJobs(client, eRead);
-
-        if (!group.empty())
-            // Apply restrictions on the group jobs if so
-            candidates &= m_GroupRegistry.GetJobs(group, false);
-
-        // Exclude those jobs which have been read or in a process of reading
-        candidates -= m_ReadJobs;
-
-        if (!candidates.any()) {
-            // No jobs for reading now however there could be in the future.
-            *affinity = "";
-            *no_more_jobs = x_NoMoreReadJobs(group);
-            if (timeout != 0 and port > 0)
-                x_RegisterReadListener(client, port, timeout,
-                                       TNSBitVector(), false, true, false,
-                                       group);
-            return;
-        }
-
-        unsigned int        job_id = *candidates.first();
-        TJobStatus          old_status = GetJobStatus(job_id);
-        {{
-            CNSTransaction     transaction(this);
-
-            // Fetch the job and update it and flush
-            job->Fetch(this, job_id);
-
-            unsigned int    read_count = job->GetReadCount() + 1;
-            CJobEvent *     event = &job->AppendEvent();
-
-            event->SetStatus(CNetScheduleAPI::eReading);
-            event->SetEvent(CJobEvent::eRead);
-            event->SetTimestamp(curr);
-            event->SetNodeAddr(client.GetAddress());
-            event->SetClientNode(client.GetNode());
-            event->SetClientSession(client.GetSession());
-
-            job->SetReadTimeout(kTimeZero);
-            job->SetStatus(CNetScheduleAPI::eReading);
-            job->SetReadCount(read_count);
-            job->SetLastTouch(curr);
-            job->Flush(this);
-
-            transaction.Commit();
-        }}
-
-        TimeLineAdd(job_id, curr + m_ReadTimeout);
-
-        // Update the memory cache
-        m_StatusTracker.SetStatus(job_id, CNetScheduleAPI::eReading);
-        m_StatisticsCounters.CountTransition(old_status,
-                                             CNetScheduleAPI::eReading);
-        m_ClientsRegistry.RegisterJob(client, job_id, eRead);
-
-        m_GCRegistry.UpdateLifetime(job_id,
-                                    job->GetExpirationTime(m_Timeout,
-                                                           m_RunTimeout,
-                                                           m_ReadTimeout,
-                                                           m_PendingTimeout,
-                                                           curr));
-
-        if (job->ShouldNotifyListener(curr, m_JobsToNotify))
-            m_NotificationsList.NotifyJobStatus(job->GetListenerNotifAddr(),
-                                                job->GetListenerNotifPort(),
-                                                MakeJobKey(job_id),
-                                                job->GetStatus(),
-                                                job->GetLastEventIndex());
-
-        rollback_action = new CNSReadJobRollback(client, job_id, old_status);
     }}
 
-    if (job->GetAffinityId() == 0)
-        *affinity = "";
-    else
-        *affinity = m_AffinityRegistry.GetTokenByID(job->GetAffinityId());
+    for (;;) {
+        // No lock here to make it possible to pick a job
+        // simultaneously from many threads
+        x_SJobPick  job_pick = x_FindVacantJob(client, aff_ids, reader_affinity,
+                                               any_affinity,
+                                               exclusive_new_affinity,
+                                               group, eRead);
 
-    *no_more_jobs = false;  // There is at least one - the one given
-    m_ReadJobs.set_bit(job->GetId());
-    ++m_ReadJobsOps;
-    return;
+        {{
+            CFastMutexGuard     guard(m_OperationLock);
+
+            if (job_pick.job_id == 0) {
+                *no_more_jobs = x_NoMoreReadJobs(group);
+                if (timeout != 0 && port > 0)
+                    x_RegisterReadListener(client, port, timeout, aff_ids,
+                                           reader_affinity, any_affinity,
+                                           exclusive_new_affinity, group);
+                return true;
+            }
+
+            // HERE: a job is picked
+            // Check that the job is still Done/Failed/Canceled
+            // it could be grabbed by another reader or GC
+            TJobStatus  old_status = GetJobStatus(job_pick.job_id);
+            if (old_status != CNetScheduleAPI::eDone &&
+                old_status != CNetScheduleAPI::eFailed &&
+                old_status != CNetScheduleAPI::eCanceled)
+                continue;   // try to pick another job
+
+            // The job is still in acceptable state. Check if it was received
+            // with exclusive affinity
+            if (job_pick.exclusive && job_pick.aff_id != 0) {
+                if (m_ClientsRegistry.IsPreferredByAny(job_pick.aff_id, eRead))
+                    continue;   // Other reader grabbed this affinity already
+
+                bool added = m_ClientsRegistry.UpdatePreferredAffinities(
+                                            client, job_pick.aff_id, 0, eRead);
+                if (added)
+                    added_pref_aff = m_AffinityRegistry.
+                                            GetTokenByID(job_pick.aff_id);
+            }
+
+            x_UpdateDB_ProvideJobNoLock(client, curr, job_pick.job_id,
+                                        eRead, *job);
+            m_StatusTracker.SetStatus(job_pick.job_id,
+                                      CNetScheduleAPI::eReading);
+
+            m_StatisticsCounters.CountTransition(old_status,
+                                                 CNetScheduleAPI::eReading);
+
+            m_GCRegistry.UpdateLifetime(job_pick.job_id,
+                                        job->GetExpirationTime(m_Timeout,
+                                                               m_RunTimeout,
+                                                               m_ReadTimeout,
+                                                               m_PendingTimeout,
+                                                               curr));
+            TimeLineAdd(job_pick.job_id, curr + m_ReadTimeout);
+            m_ClientsRegistry.RegisterJob(client, job_pick.job_id, eRead);
+
+
+            if (job->ShouldNotifyListener(curr, m_JobsToNotify))
+                m_NotificationsList.NotifyJobStatus(job->GetListenerNotifAddr(),
+                                                    job->GetListenerNotifPort(),
+                                                    MakeJobKey(job_pick.job_id),
+                                                    job->GetStatus(),
+                                                    job->GetLastEventIndex());
+
+            rollback_action = new CNSReadJobRollback(client, job_pick.job_id,
+                                                     old_status);
+            m_ReadJobs.set_bit(job_pick.job_id);
+            ++m_ReadJobsOps;
+            return true;
+        }}
+    }
+    return true;    // unreachable
 }
 
 
@@ -2527,52 +2456,68 @@ void CQueue::OptimizeMem()
 
 
 CQueue::x_SJobPick
-CQueue::x_FindPendingJob(const CNSClientId  &  client,
-                         const TNSBitVector &  aff_ids,
-                         bool                  wnode_affinity,
-                         bool                  any_affinity,
-                         bool                  exclusive_new_affinity,
-                         const string &        group)
+CQueue::x_FindVacantJob(const CNSClientId  &  client,
+                        const TNSBitVector &  aff_ids,
+                        bool                  use_pref_affinity,
+                        bool                  any_affinity,
+                        bool                  exclusive_new_affinity,
+                        const string &        group,
+                        ECommandGroup         cmd_group)
 {
     x_SJobPick      job_pick = { 0, false, 0 };
     bool            explicit_aff = aff_ids.any();
-    unsigned int    wnode_aff_candidate = 0;
+    bool            effective_use_pref_affinity = use_pref_affinity;
+    unsigned int    pref_aff_candidate_job_id = 0;
     unsigned int    exclusive_aff_candidate = 0;
-    TNSBitVector    blacklisted_jobs =
-                    m_ClientsRegistry.GetBlacklistedJobs(client, eGet);
     TNSBitVector    group_jobs = m_GroupRegistry.GetJobs(group, false);
+    TNSBitVector    blacklisted_jobs =
+                    m_ClientsRegistry.GetBlacklistedJobs(client, cmd_group);
 
     TNSBitVector    pref_aff;
-    if (wnode_affinity) {
-        pref_aff = m_ClientsRegistry.GetPreferredAffinities(client, eGet);
-        wnode_affinity = wnode_affinity && pref_aff.any();
+    if (use_pref_affinity) {
+        pref_aff = m_ClientsRegistry.GetPreferredAffinities(client, cmd_group);
+        effective_use_pref_affinity = use_pref_affinity && pref_aff.any();
     }
 
     TNSBitVector    all_pref_aff;
     if (exclusive_new_affinity)
-        all_pref_aff = m_ClientsRegistry.GetAllPreferredAffinities(eGet);
+        all_pref_aff = m_ClientsRegistry.GetAllPreferredAffinities(cmd_group);
 
-    if (explicit_aff || wnode_affinity || exclusive_new_affinity) {
-        // Check all pending jobs
-        TNSBitVector                pending_jobs =
-                            m_StatusTracker.GetJobs(CNetScheduleAPI::ePending);
-        TNSBitVector::enumerator    en(pending_jobs.first());
+    if (explicit_aff || effective_use_pref_affinity || exclusive_new_affinity) {
+        // Check all vacant jobs: pending jobs for eGet,
+        //                        done/failed/cancel jobs for eRead
+        TNSBitVector    vacant_jobs;
+        if (cmd_group == eGet)
+            vacant_jobs = m_StatusTracker.GetJobs(CNetScheduleAPI::ePending);
+        else {
+            vector<CNetScheduleAPI::EJobStatus>     from_state;
+            from_state.push_back(CNetScheduleAPI::eDone);
+            from_state.push_back(CNetScheduleAPI::eFailed);
+            from_state.push_back(CNetScheduleAPI::eCanceled);
+            vacant_jobs = m_StatusTracker.GetJobs(from_state);
+        }
 
-
+        TNSBitVector::enumerator    en(vacant_jobs.first());
         for (; en.valid(); ++en) {
             unsigned int    job_id = *en;
 
-            if (blacklisted_jobs[job_id] == true)
+            if (blacklisted_jobs.get_bit(job_id))
                 continue;
 
             if (!group.empty()) {
-                if (group_jobs[job_id] == false)
+                if (!group_jobs.get_bit(job_id))
+                    continue;
+            }
+
+            if (cmd_group == eRead) {
+                // Exclude jobs which have been read or in a process of reading
+                if (m_ReadJobs.get_bit(job_id))
                     continue;
             }
 
             unsigned int    aff_id = m_GCRegistry.GetAffinityID(job_id);
             if (aff_id != 0 && explicit_aff) {
-                if (aff_ids[aff_id] == true) {
+                if (aff_ids.get_bit(aff_id)) {
                     job_pick.job_id = job_id;
                     job_pick.exclusive = false;
                     job_pick.aff_id = aff_id;
@@ -2580,23 +2525,24 @@ CQueue::x_FindPendingJob(const CNSClientId  &  client,
                 }
             }
 
-            if (aff_id != 0 && wnode_affinity) {
-                if (pref_aff[aff_id] == true) {
+            if (aff_id != 0 && effective_use_pref_affinity) {
+                if (pref_aff.get_bit(aff_id)) {
                     if (explicit_aff == false) {
                         job_pick.job_id = job_id;
                         job_pick.exclusive = false;
                         job_pick.aff_id = aff_id;
                         return job_pick;
                     }
-                    if (wnode_aff_candidate == 0)
-                        wnode_aff_candidate = job_id;
+                    if (pref_aff_candidate_job_id == 0)
+                        pref_aff_candidate_job_id = job_id;
                     continue;
                 }
             }
 
             if (exclusive_new_affinity) {
-                if (aff_id == 0 || all_pref_aff[aff_id] == false) {
-                    if (explicit_aff == false && wnode_affinity == false) {
+                if (aff_id == 0 || all_pref_aff.get_bit(aff_id) == false) {
+                    if (explicit_aff == false &&
+                        effective_use_pref_affinity == false) {
                         job_pick.job_id = job_id;
                         job_pick.exclusive = true;
                         job_pick.aff_id = aff_id;
@@ -2608,8 +2554,8 @@ CQueue::x_FindPendingJob(const CNSClientId  &  client,
             }
         }
 
-        if (wnode_aff_candidate != 0) {
-            job_pick.job_id = wnode_aff_candidate;
+        if (pref_aff_candidate_job_id != 0) {
+            job_pick.job_id = pref_aff_candidate_job_id;
             job_pick.exclusive = false;
             job_pick.aff_id = 0;
             return job_pick;
@@ -2625,12 +2571,31 @@ CQueue::x_FindPendingJob(const CNSClientId  &  client,
     }
 
 
+    // The second condition looks strange and it covers a very specific
+    // scenario: some (older) worker nodes may originally come with the only
+    // flag set - use preferred affinities - while they have nothing in the
+    // list of preferred affinities yet. In this case a first pending job
+    // should be provided.
     if (any_affinity ||
-        (!explicit_aff && !wnode_affinity && !exclusive_new_affinity)) {
-        job_pick.job_id = m_StatusTracker.GetJobByStatus(
-                                    CNetScheduleAPI::ePending,
-                                    blacklisted_jobs,
-                                    group_jobs, !group.empty());
+        (!explicit_aff &&
+         use_pref_affinity && !effective_use_pref_affinity &&
+         !exclusive_new_affinity &&
+         cmd_group == eGet)) {
+        if (cmd_group == eGet)
+            job_pick.job_id = m_StatusTracker.GetJobByStatus(
+                                        CNetScheduleAPI::ePending,
+                                        blacklisted_jobs,
+                                        group_jobs, !group.empty());
+        else {
+            vector<CNetScheduleAPI::EJobStatus>     from_state;
+            from_state.push_back(CNetScheduleAPI::eDone);
+            from_state.push_back(CNetScheduleAPI::eFailed);
+            from_state.push_back(CNetScheduleAPI::eCanceled);
+            job_pick.job_id = m_StatusTracker.GetJobByStatus(
+                                        from_state,
+                                        blacklisted_jobs | m_ReadJobs,
+                                        group_jobs, !group.empty());
+        }
         job_pick.exclusive = false;
         job_pick.aff_id = 0;
         return job_pick;
@@ -2646,8 +2611,7 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
 {
     x_SJobPick      job_pick = { 0, false, 0 };
 
-    if (m_MaxPendingWaitTimeout.tv_sec == 0 &&
-        m_MaxPendingWaitTimeout.tv_nsec == 0)
+    if (m_MaxPendingWaitTimeout == kTimeZero)
         return job_pick;    // Not configured
 
     TNSBitVector    outdated_pending =
@@ -2864,7 +2828,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                                        eGet);
 
         if (new_status == CNetScheduleAPI::eFailed)
-            if (m_ReadJobs[job_id] == false)
+            if (!m_ReadJobs.get_bit(job_id))
                 m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                            m_ClientsRegistry,
                                            m_AffinityRegistry,
@@ -2922,8 +2886,7 @@ void CQueue::ClearWorkerNode(const CNSClientId &  client,
 // Triggered from a notification thread only
 void CQueue::NotifyListenersPeriodically(const CNSPreciseTime &  current_time)
 {
-    if (m_MaxPendingWaitTimeout.tv_sec != 0 ||
-        m_MaxPendingWaitTimeout.tv_nsec != 0) {
+    if (m_MaxPendingWaitTimeout != kTimeZero) {
         // Pending outdated timeout is configured, so check for
         // outdated jobs
         CFastMutexGuard     guard(m_OperationLock);
@@ -3171,7 +3134,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
         if (new_status == CNetScheduleAPI::eDone ||
             new_status == CNetScheduleAPI::eFailed ||
             new_status == CNetScheduleAPI::eCanceled)
-            if (m_ReadJobs[job_id] == false)
+            if (!m_ReadJobs.get_bit(job_id))
                 m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                            m_ClientsRegistry,
                                            m_AffinityRegistry,
@@ -3387,7 +3350,7 @@ unsigned int  CQueue::DeleteBatch(unsigned int  max_deleted)
                     m_QueueDbBlock->job_db.id = job_id;
                     m_QueueDbBlock->job_db.Delete();
                     ++del_rec;
-                    deleted_jobs.set_bit(job_id, true);
+                    deleted_jobs.set_bit(job_id);
                 } catch (CBDB_ErrnoException& ex) {
                     ERR_POST("BDB error " << ex.what());
                 }
@@ -3561,7 +3524,7 @@ string CQueue::PrintJobDbStat(const CNSClientId &  client,
     // Check first that the job has not been deleted yet
     {{
         CFastMutexGuard     guard(m_JobsToDeleteLock);
-        if (m_JobsToDelete[job_id])
+        if (m_JobsToDelete.get_bit(job_id))
             return "";
     }}
 
@@ -3869,7 +3832,7 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &     client,
     if (new_status == CNetScheduleAPI::eDone ||
         new_status == CNetScheduleAPI::eFailed ||
         new_status == CNetScheduleAPI::eCanceled)
-        if (m_ReadJobs[job_id] == false)
+        if (!m_ReadJobs.get_bit(job_id))
             m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
@@ -4201,58 +4164,44 @@ void CQueue::x_UpdateDB_PutResultNoLock(unsigned                job_id,
 
 // If the job.job_id != 0 => the job has been read successfully
 // Exception => DB errors
-// Return: true  => job is ok to get
-//         false => job is expired and was marked for deletion,
-//                  need to get another job
-bool  CQueue::x_UpdateDB_GetJobNoLock(const CNSClientId &     client,
-                                      const CNSPreciseTime &  curr,
-                                      unsigned int            job_id,
-                                      CJob &                  job)
+void CQueue::x_UpdateDB_ProvideJobNoLock(const CNSClientId &     client,
+                                         const CNSPreciseTime &  curr,
+                                         unsigned int            job_id,
+                                         ECommandGroup           cmd_group,
+                                         CJob &                  job)
 {
     CNSTransaction      transaction(this);
 
     if (job.Fetch(this, job_id) != CJob::eJF_Ok)
-        NCBI_THROW(CNetScheduleException, eInternalError,
-                   "Error fetching job");
+        NCBI_THROW(CNetScheduleException, eInternalError, "Error fetching job");
 
-    // The job has been read successfully, check if it is still within the
-    // expiration timeout;
-    // Note: run_timeout and read_timeout are not applicable because the
-    //       job is guaranteed in the pending state
-    if (job.GetExpirationTime(m_Timeout, kTimeZero, kTimeZero,
-                              m_PendingTimeout, kTimeZero) <= curr) {
-        // The job has expired, so mark it for deletion
-        EraseJob(job_id);
-
-        if (job.GetAffinityId() != 0)
-            m_AffinityRegistry.RemoveJobFromAffinity(
-                                    job_id, job.GetAffinityId());
-        if (job.GetGroupId() != 0)
-            m_GroupRegistry.RemoveJob(job.GetGroupId(), job_id);
-
-        return false;
-    }
-
-    unsigned        run_count = job.GetRunCount() + 1;
     CJobEvent &     event = job.AppendEvent();
-
-    event.SetStatus(CNetScheduleAPI::eRunning);
-    event.SetEvent(CJobEvent::eRequest);
     event.SetTimestamp(curr);
-
+    event.SetNodeAddr(client.GetAddress());
     event.SetClientNode(client.GetNode());
     event.SetClientSession(client.GetSession());
-    event.SetNodeAddr(client.GetAddress());
 
-    job.SetStatus(CNetScheduleAPI::eRunning);
-    job.SetRunTimeout(kTimeZero);
-    job.SetRunCount(run_count);
+    if (cmd_group == eGet) {
+        event.SetStatus(CNetScheduleAPI::eRunning);
+        event.SetEvent(CJobEvent::eRequest);
+    } else {
+        event.SetStatus(CNetScheduleAPI::eReading);
+        event.SetEvent(CJobEvent::eRead);
+    }
+
     job.SetLastTouch(curr);
+    if (cmd_group == eGet) {
+        job.SetStatus(CNetScheduleAPI::eRunning);
+        job.SetRunTimeout(kTimeZero);
+        job.SetRunCount(job.GetRunCount() + 1);
+    } else {
+        job.SetStatus(CNetScheduleAPI::eReading);
+        job.SetReadTimeout(kTimeZero);
+        job.SetReadCount(job.GetReadCount() + 1);
+    }
 
     job.Flush(this);
     transaction.Commit();
-
-    return true;
 }
 
 

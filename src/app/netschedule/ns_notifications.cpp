@@ -435,9 +435,9 @@ void CNSNotificationList::Notify(unsigned int           job_id,
     TNSBitVector    jobs;
 
     if (aff_id != 0)
-        aff_ids.set_bit(aff_id, true);
+        aff_ids.set_bit(aff_id);
 
-    jobs.set_bit(job_id, true);
+    jobs.set_bit(job_id);
 
     Notify(jobs, aff_ids, aff_id == 0,
            clients_registry, aff_registry, group_registry,

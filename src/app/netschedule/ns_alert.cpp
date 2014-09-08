@@ -56,8 +56,7 @@ string SNSAlertAttributes::Serialize(void) const
 {
     string      acknowledged;
 
-    if (m_AcknowledgedTimestamp.tv_sec == 0 &&
-        m_AcknowledgedTimestamp.tv_nsec == 0)
+    if (m_AcknowledgedTimestamp == kTimeZero)
         acknowledged = "n/a";
     else
         acknowledged = NS_FormatPreciseTime(m_AcknowledgedTimestamp);
