@@ -126,11 +126,11 @@ public:
     typedef unsigned int TChildPollMask;  ///< bit-wise OR of "EChildIOHandle"
 
     /// Constructor.
-    CPipe(void);
+    CPipe(size_t pipe_size = 0/*use default*/);
 
     /// Constructor.
     ///
-    /// Call the Open() method to open a pipe.
+    /// Call the Open() method to actually open the pipe.
     /// Throw CPipeException on failure to create the pipe.
     ///
     /// @param cmd
@@ -140,10 +140,10 @@ public:
     /// @param create_flags
     ///   Specifies the options to be applied when creating the pipe.
     /// @param current_dir
-    ///   Current directory for the new process if specified.
+    ///   Current working directory for the new process if specified.
     /// @param env
     ///   Pointer to vector with environment variables which will be used
-    ///   instead of current environment. Last value in an array must be NULL.
+    ///   instead of current environment.  Last value in an array must be NULL.
     /// @sa
     ///   Open
     CPipe(const string&         cmd,
@@ -151,23 +151,26 @@ public:
           TCreateFlags          create_flags = 0,
           const string&         current_dir  = kEmptyStr,
           const char* const     env[]        = 0,
-          size_t                pipe_size    = 0/*default*/);
+          size_t                pipe_size    = 0/*use default*/);
 
     /// Destructor. 
     ///
-    /// If the pipe was opened then close it by calling Close().
+    /// If the pipe was opened then the destructor first closes it by calling
+    /// Close().
+    /// @sa
+    ///   Close
     ~CPipe(void);
 
     /// Open pipe.
     ///
-    /// Create a pipe and execute a command with the vector of arguments
-    /// "args". The other end of the pipe is associated with the spawned
-    /// command's standard input/output/error according to "create_flags".
+    /// Execute a command with the vector of arguments "args".  The other end
+    /// of the pipe is associated with the spawned command's standard
+    /// input/output/error according to "create_flags".
     ///
     /// @param cmd
     ///   Command name to execute.
     ///   Note when specifying both "cmd" with relative path and non-empty
-    ///   "current_dir":  in run-time the current directory must be considered
+    ///   "current_dir":  at run-time the current directory must be considered
     ///   undefined, as it may still be the same of the parent process that
     ///   issues the call, or it can already be changed to the specified
     ///   "current_dir".  So, using the absolute path for "cmd" is always
@@ -177,9 +180,9 @@ public:
     /// @param create_flags
     ///   Specifies options to be applied when creating the pipe.
     /// @param current_dir
-    ///   Current directory for the new process.
-    ///   The string must be the absolute path.  On MS Windows it should
-    ///   also contain drive letter. If this parameter is empty, the new
+    ///   Current working directory for the new process.
+    ///   The string must be an absolute path.  On MS Windows it should
+    ///   also contain a drive letter. If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
     /// @param env
     ///   Pointer to vector with environment variables which will be used
@@ -193,7 +196,7 @@ public:
                     TCreateFlags          create_flags = 0,
                     const string&         current_dir  = kEmptyStr,
                     const char* const     env[]        = 0,
-                    size_t                pipe_size    = 0/*default*/);
+                    size_t                pipe_size    = 0/*use default*/);
 
     /// Open the standard streams of the current process.
     ///
@@ -212,7 +215,7 @@ public:
     /// Wait for the spawned child process to terminate and then close
     /// the associated pipe.
     ///
-    /// @note CPipe opened with OpenSelf() always closes with eIO_Success,
+    /// @note A CPipe opened with OpenSelf() always closes with eIO_Success,
     /// and *exitcode returned as 0 (yet the current process continues to run).
     ///
     /// @param exitcode
@@ -426,11 +429,11 @@ public:
     /// 
     /// @param cmd
     ///   Command name to execute.
-    ///   Be aware if the command contains relative path and 'current_dir'
-    ///   parameter is specified. Because on moment of execution the current
-    ///   directory is undefined, and can be still the same as in the parent
-    ///   process or already be changed to 'current_dir'. So, using absolute
-    ///   path is recommended in this case.
+    ///   Beware if both the command contains a relative path and 'current_dir'
+    ///   parameter is specified.  In this case, the current directory must
+    ///   be considered undefined, as it can either still be the same as in the
+    ///   parent process or already be changed to 'current_dir'.  So using of
+    ///   an absolute path is always recommended in such cases.
     /// @param args
     ///   Vector of string arguments for the command (argv[0] excluded).
     /// @param in
@@ -442,23 +445,24 @@ public:
     /// @param exit_code
     ///   The child process's exit_code
     /// @param current_dir
-    ///   Current directory for the new process.
-    ///   The string must be an absolute path. On MS Windows it should
-    ///   also contain drive letter. If this parameter is empty, the new
+    ///   Current working directory for the new process.
+    ///   The string must be an absolute path.  On MS Windows it should
+    ///   also contain a drive letter.  If this parameter is empty, the new
     ///   process will have the same current directory as the calling process.
     /// @param env
-    ///   Pointer to vector with environment variables which will be used
-    ///   instead of current environment. Last value in an array must be NULL.
+    ///   Pointer to a vector with environment variables, which will be used
+    ///   instead of the current environment.  Last element in the array must
+    ///   be NULL.
     /// @param watcher
     ///   Call back object to monitor the child process execution status
     /// @param kill_timeout
-    ///   Wait time  between first "soft" and second "hard"
-    ///   attempts to terminate the process. 
-    ///   Note, that on UNIX in case of zero or very small timeout
-    ///   the killing process can be not released and continue to persists
-    ///   as zombie process even after call of this function.
+    ///   Wait time between first "soft" and second "hard" attempts to
+    ///   terminate the process. 
+    ///   @note that on UNIX in case of a zero or a very small timeout
+    ///   the killed process may not be released immediately and continue to
+    ///   persist as a zombie process even after this call completes.
     /// @return 
-    ///   eDone if process has finished normally and eCanceled if a watcher 
+    ///   eDone if process has finished normally, or eCanceled if a watcher 
     ///   decided to stop it.
     ///
     /// @sa IProcessWatcher
@@ -475,10 +479,12 @@ public:
                             size_t                pipe_size    = 0/*default*/);
 
 protected:
+    size_t         m_PipeSize;          ///< Pipe size
+
     CPipeHandle*   m_PipeHandle;        ///< Internal pipe handle that handles
     EChildIOHandle m_ReadHandle;        ///< Default read handle
 
-    // Last IO status
+    // Last I/O status
     EIO_Status     m_ReadStatus;        ///< Last read status
     EIO_Status     m_WriteStatus;       ///< Last write status
 

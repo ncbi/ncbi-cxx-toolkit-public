@@ -76,10 +76,10 @@ class CNamedPipeHandle;
 ///    \\\\< machine_name>\\pipe\\< pipe_name>, (doxygen)
 ///
 ///    where "machine_name" is a network name of the PC and can be "." for
-///    access to the pipe on the same machine. The "pipe_name" part of the
-///    name can include any character other than a backslash, including
-///    numbers and special characters. The entire pipe name string can be up
-///    to 256 characters long. Pipe names are not case sensitive. 
+///    access to the pipe on the same machine.  The "pipe_name" part of the
+///    name can contain any character other than a backslash, including
+///    numbers and special characters.  The entire pipe name string can be up
+///    to 256 characters long.  Pipe names are not case sensitive. 
 ///
 /// For UNIXs the pipe name is a generic file name (with or without path).
 ///
@@ -97,14 +97,8 @@ class CNamedPipeHandle;
 class NCBI_XCONNECT_EXPORT CNamedPipe : protected CConnIniter
 {
 public:
-    /// Exposition of default pipe buffer sizes (can be used for "pipebufsize")
-    enum {
-        eDefaultBufSize    = 4096,      ///< portable default (also as 0)
-        eDefaultSysBufSize = kMax_Int   ///< use system-specific default
-    };
-
     /// Constructor.
-    CNamedPipe(void);
+    CNamedPipe(size_t pipe_size = 0/*default*/);
 
     /// Destructor. 
     virtual ~CNamedPipe();
@@ -193,10 +187,10 @@ protected:
     void x_SetName(const string& pipename);
 
 protected:
-    string            m_PipeName;          ///< pipe name 
-    CNamedPipeHandle* m_NamedPipeHandle;   ///< os-specific handle
-    size_t            m_PipeBufSize;       ///< pipe buffer size
+    size_t            m_PipeSize;          ///< pipe size
+    string            m_PipeName;          ///< pipe name
     bool              m_IsClientSide;      ///< client/server-side pipe
+    CNamedPipeHandle* m_NamedPipeHandle;   ///< os-specific handle
 
     /// Timeouts
     const STimeout*   m_OpenTimeout;       ///< eIO_Open
@@ -228,7 +222,7 @@ class NCBI_XCONNECT_EXPORT CNamedPipeClient : public CNamedPipe
 {
 public:
     /// Default constructor.
-    CNamedPipeClient(void);
+    CNamedPipeClient(size_t pipesize = 0/*use default*/);
 
     /// Constructor.
     ///
@@ -236,15 +230,15 @@ public:
     /// NOTE: Timeout from the argument becomes new open timeout.
     ///       See CNamedPipe class description about pipe names.
     CNamedPipeClient(const string&   pipename,
-                     const STimeout* timeout     = kDefaultTimeout,
-                     size_t          pipebufsize = 0/*use default*/);
+                     const STimeout* timeout  = kDefaultTimeout,
+                     size_t          pipesize = 0/*use default*/);
 
     /// Open a client-side pipe connection.
     ///
     /// NOTE: Should not be called if already opened.
     virtual EIO_Status Open(const string&   pipename,
-                            const STimeout* timeout     = kDefaultTimeout,
-                            size_t          pipebufsize = 0/*use default*/);
+                            const STimeout* timeout  = kDefaultTimeout,
+                            size_t          pipesize = 0/*use default*/);
 
     // Always returns eIO_Unknown in this class.
     virtual EIO_Status Create(const string&, const STimeout*, size_t);
@@ -265,7 +259,7 @@ class NCBI_XCONNECT_EXPORT CNamedPipeServer : public CNamedPipe
 {
 public:
     /// Default constructor.
-    CNamedPipeServer(void);
+    CNamedPipeServer(size_t pipesize = 0/*use default*/);
 
     /// Constructor.
     ///
@@ -278,15 +272,15 @@ public:
     ///     for each end of the named pipe is the specified size rounded
     ///     up to the next allocation boundary.
     CNamedPipeServer(const string&   pipename,
-                     const STimeout* timeout     = kDefaultTimeout,
-                     size_t          pipebufsize = 0/*use default*/);
+                     const STimeout* timeout  = kDefaultTimeout,
+                     size_t          pipesize = 0/*use default*/);
 
     /// Create a server-side pipe.
     ///
     /// NOTE: Should not be called if already created.
     virtual EIO_Status Create(const string&   pipename,
-                              const STimeout* timeout     = kDefaultTimeout,
-                              size_t          pipebufsize = 0/*use default*/);
+                              const STimeout* timeout  = kDefaultTimeout,
+                              size_t          pipesize = 0/*use default*/);
 
     /// Always returns eIO_Unknown in this class.
     virtual EIO_Status Open(const string&, const STimeout*, size_t);

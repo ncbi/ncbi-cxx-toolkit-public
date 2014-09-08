@@ -97,7 +97,7 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
 
 CConn_IOStream::~CConn_IOStream()
 {
-    x_Cleanup();
+    x_Destroy();
 }
 
 
@@ -156,11 +156,12 @@ EIO_Status CConn_IOStream::Close(void)
 }
 
 
-void CConn_IOStream::x_Cleanup(void)
+void CConn_IOStream::x_Destroy(void)
 {
     CConn_Streambuf* sb = m_CSb;
     m_CSb = 0;
     delete sb;
+    rdbuf(0);
 }
 
 
@@ -735,9 +736,8 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
 
 CConn_MemoryStream::~CConn_MemoryStream()
 {
-    // Explicitly call x_Cleanup() to avoid using deleted m_Ptr otherwise.
-    x_Cleanup();
-    rdbuf(0);
+    // Explicitly call x_Destroy() to avoid using deleted m_Ptr otherwise.
+    x_Destroy();
     delete[] (CT_CHAR_TYPE*) m_Ptr;
 }
 
@@ -790,9 +790,10 @@ static CConn_IOStream::TConn_Pair
 s_PipeConnectorBuilder(const string&         cmd,
                        const vector<string>& args,
                        CPipe::TCreateFlags   flags,
+                       size_t                pipe_size,
                        CPipe*&               pipe)
 {
-    pipe = new CPipe;
+    pipe = new CPipe(pipe_size);
     CONNECTOR c = PIPE_CreateConnector(cmd, args, flags, pipe, eNoOwnership);
     return CConn_IOStream::TConn_Pair(c, eIO_Unknown);
 }
@@ -801,10 +802,12 @@ s_PipeConnectorBuilder(const string&         cmd,
 CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const vector<string>& args,
                                    CPipe::TCreateFlags   flags,
+                                   size_t                pipe_size,
                                    const STimeout*       timeout,
                                    size_t                buf_size)
-    : CConn_IOStream(s_PipeConnectorBuilder(cmd, args, flags, m_Pipe),
-                     timeout, buf_size)
+    : CConn_IOStream(s_PipeConnectorBuilder(cmd, args, flags, pipe_size,
+                                            m_Pipe),
+                     timeout, buf_size), m_ExitCode(-1)
 {
     return;
 }
@@ -812,19 +815,31 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
 
 CConn_PipeStream::~CConn_PipeStream()
 {
-    // Explicitly do x_Cleanup() to avoid using dead m_Pipe in base class dtor
-    x_Cleanup();
-    rdbuf(0);
+    // Explicitly do x_Destroy() to avoid using dead m_Pipe in base class dtor
+    x_Destroy();
     delete m_Pipe;
 }
 
 
+EIO_Status CConn_PipeStream::Close(void)
+{
+    if (!flush())
+        return Status(eIO_Write);
+    // NB:  This can lead to wrong order for a close callback, if any fired by
+    // CConn_IOStream::Close():  the callback will be late and actually coming
+    // _after_ the pipe gets closed here.  There's no way to avoid this...
+    EIO_Status status = m_Pipe->Close(&m_ExitCode);
+    CConn_IOStream::Close();
+    return status;
+}
+
+
 CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
-                                             size_t          pipebufsize,
+                                             size_t          pipesize,
                                              const STimeout* timeout,
                                              size_t          buf_size)
     : CConn_IOStream(TConn_Pair(NAMEDPIPE_CreateConnector(pipename,
-                                                          pipebufsize),
+                                                          pipesize),
                                 eIO_Unknown),
                      timeout, buf_size)
 {

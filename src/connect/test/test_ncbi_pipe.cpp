@@ -318,7 +318,7 @@ int CTest::Run(void)
     // Unidirectional pipe (read from iostream)
     ERR_POST(Info << "TEST:  Unidirectional stream read");
     CConn_PipeStream ios(cmd.c_str(), args,
-                         CPipe::fStdIn_Close | share, &iotimeout);
+                         CPipe::fStdIn_Close | share, 0, &iotimeout);
     s_ReadStream(ios);
 
     status = ios.GetPipe().Close(&exitcode);
@@ -382,7 +382,7 @@ int CTest::Run(void)
     args.clear();
     args.push_back("3");
     ERR_POST(Info << "TEST:  Bidirectional stream");
-    CConn_PipeStream ps(app.c_str(), args, share, &iotimeout);
+    CConn_PipeStream ps(app.c_str(), args, share, 0, &iotimeout);
 
     NcbiCout << endl;
     for (int i = 5; i<=10; i++) {

@@ -223,7 +223,7 @@ public:
     /// would be impractical.
     /// @sa
     ///   CONN_Close
-    EIO_Status      Close(void);
+    virtual EIO_Status Close(void);
 
     /// Cancellation support.
     /// @note ICanceled implementation must be derived from CObject as its
@@ -242,7 +242,7 @@ public:
     CONN            GetCONN(void) const;
 
 protected:
-    void x_Cleanup(void);
+    void x_Destroy(void);
 
 private:
     CConn_Streambuf*      m_CSb;
@@ -667,6 +667,9 @@ protected:
 ///
 /// CConn_PipeStream for command piping
 ///
+/// @note Use caution when operating on the underlying pipe while it's being in
+///       use as it may cause undefined behavior.
+///
 /// @sa
 ///   CPipe
 ///
@@ -677,16 +680,23 @@ public:
     CConn_PipeStream
     (const string&         cmd,
      const vector<string>& args,
-     CPipe::TCreateFlags   flags    = 0,
-     const STimeout*       timeout  = kDefaultTimeout,
-     size_t                buf_size = kConn_DefaultBufSize
+     CPipe::TCreateFlags   flags     = 0,
+     size_t                pipe_size = 0,
+     const STimeout*       timeout   = kDefaultTimeout,
+     size_t                buf_size  = kConn_DefaultBufSize
      );
     virtual ~CConn_PipeStream();
 
-    CPipe& GetPipe(void) { return *m_Pipe; }
+    virtual EIO_Status Close(void);
+
+    /// A valid exit code is only made available after an explicit Close().
+    int    GetExitCode(void) const { return m_ExitCode; }
+
+    CPipe& GetPipe(void)           { return *m_Pipe; }
 
 protected:
-    CPipe* m_Pipe; ///< Underlying pipe.
+    CPipe* m_Pipe;      ///< Underlying pipe.
+    int    m_ExitCode;  ///< Process exit code.
 };
 
 
@@ -704,9 +714,9 @@ class NCBI_XCONNECT_EXPORT CConn_NamedPipeStream : public CConn_IOStream
 public:
     CConn_NamedPipeStream
     (const string&   pipename,
-     size_t          pipebufsize = 0/*default*/,
-     const STimeout* timeout     = kDefaultTimeout,
-     size_t          buf_size    = kConn_DefaultBufSize
+     size_t          pipesize = 0/*default*/,
+     const STimeout* timeout  = kDefaultTimeout,
+     size_t          buf_size = kConn_DefaultBufSize
      );
 };
 
