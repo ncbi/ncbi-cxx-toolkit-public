@@ -1364,9 +1364,13 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         }
 
         if (NStr::EqualNocase(db, "HGNC")) {
-            id = "HGNC:" + id;
+            if (!NStr::StartsWith(id, "HGNC:", NStr::eNocase)) {
+                id = "HGNC:" + id;
+            }
         } else if (NStr::EqualNocase(db, "MGI")) {
-            id = "MGI:" + id;
+            if (!NStr::StartsWith(id, "MGI:", NStr::eNocase)) {
+                id = "MGI:" + id;
+            }
         }
 
         if (NStr::EqualNocase(db, "GO")) {

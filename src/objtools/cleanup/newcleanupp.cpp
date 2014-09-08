@@ -2054,6 +2054,18 @@ void CNewCleanup_imp::DbtagBC (
     }
 
     CObject_id& oid = GET_MUTABLE (dbtag, Tag);
+
+    if (FIELD_IS (oid, Id)) {
+        const string& db = dbtag.GetDb();
+        if (NStr::EqualNocase (db, "HGNC") || NStr::EqualNocase (db, "MGI") ) {
+            int val = dbtag.GetTag().GetId();
+            string str = db + ":" + NStr::IntToString(val);
+            dbtag.SetTag().SetStr(str);
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
+        }
+        return;
+    }
+
     if (! FIELD_IS (oid, Str)) return;
 
     string& str = GET_MUTABLE(oid, Str);
@@ -2065,16 +2077,20 @@ void CNewCleanup_imp::DbtagBC (
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     } else if (NStr::EqualNocase (dbtag.GetDb(), "MGI") ) {
         if(NStr::StartsWith (dbtag.GetTag().GetStr(), "MGI:") || NStr::StartsWith (dbtag.GetTag().GetStr(), "MGD:")) {
+            /*
             dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (4));
             ChangeMade(CCleanupChange::eChangeDbxrefs);
+            */
         } else if( NStr::StartsWith( dbtag.GetTag().GetStr(), "J:", NStr::eNocase ) ) {
             dbtag.SetTag().SetStr("J");
             ChangeMade(CCleanupChange::eChangeDbxrefs);
         }
     } else if (NStr::EqualNocase (dbtag.GetDb(), "HGNC") ) {
         if(NStr::StartsWith (dbtag.GetTag().GetStr(), "HGNC:")) {
+            /*
             dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (5));
             ChangeMade(CCleanupChange::eChangeDbxrefs);
+            */
         }
     } else if (NStr::EqualNocase (dbtag.GetDb(), "RGD") ) {
         if(NStr::StartsWith (dbtag.GetTag().GetStr(), "RGD:")) {
