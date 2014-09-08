@@ -78,8 +78,8 @@ typedef struct STimeoutTag {
     unsigned int usec; /**< microseconds (modulo 1,000,000) */
 } STimeout;
 
-#define kDefaultTimeout  ((const STimeout*)(-1))
-#define kInfiniteTimeout ((const STimeout*)( 0))
+#define kDefaultTimeout   ((const STimeout*)(-1))
+#define kInfiniteTimeout  ((const STimeout*)( 0))
 
 
 extern NCBI_XCONNECT_EXPORT unsigned long NcbiTimeoutToMs
