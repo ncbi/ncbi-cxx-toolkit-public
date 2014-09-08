@@ -275,7 +275,7 @@ static char* s_GetRequestID(ENcbiRequestID reqid)
         if (!CDiagContext::GetRequestContext().IsSetSessionID()) {
             CDiagContext::GetRequestContext().SetSessionID();
         }
-        id = CDiagContext::GetRequestContext().GetSessionID();
+        CDiagContext::GetRequestContext().GetSessionID().swap(id);
         break;
     case eNcbiRequestID_HitID:
         id = CDiagContext::GetRequestContext().GetNextSubHitID();
