@@ -36,6 +36,14 @@
 
 BEGIN_NCBI_SCOPE
 
+void CSerialException::x_Assign(const CException& src)
+{
+    CException::x_Assign(src);
+
+    const CSerialException& other = dynamic_cast<const CSerialException&>(src);
+    m_FrameStack = other.m_FrameStack;
+}
+
 void CSerialException::AddFrameInfo(string frame_info)
 {
     m_FrameStack = frame_info + m_FrameStack;

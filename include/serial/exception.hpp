@@ -70,6 +70,10 @@ public:
     // Combine steram frames info into single message
     void AddFrameInfo(string frame_info);
     virtual void ReportExtra(ostream& out) const;
+
+protected:
+    virtual void x_Assign(const CException& src);
+
 private:
     string m_FrameStack;
 };
