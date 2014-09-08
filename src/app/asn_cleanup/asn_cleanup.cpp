@@ -87,7 +87,7 @@ public:
     bool ObtainSeqEntryFromBioseqSet( 
         auto_ptr<CObjectIStream>& is, 
         CRef<CSeq_entry>& se );
-        
+  
 private:
     // types
 
@@ -129,7 +129,7 @@ void CCleanupApp::Init(void)
         arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
             CArgDescriptions::eString, "any" );
         arg_desc->SetConstraint( "type", 
-            &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
+            &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set", "seq-submit" ) );
         
     }}
 
@@ -215,7 +215,8 @@ int CCleanupApp::Run(void)
     } 
     else {
         
-        if (args["sub"]) {  // submission
+            string asn_type = args["type"].AsString();
+        if (args["sub"] || asn_type == "seq-submit") {  // submission
             CRef<CSeq_submit> sub(new CSeq_submit);
             if (sub.Empty()) {
                 NCBI_THROW(CFlatException, eInternal, 
@@ -228,6 +229,9 @@ int CCleanupApp::Run(void)
                     NCBI_THROW(CFlatException, eInternal, "Could not create scope");
                 }
                 scope->AddDefaults();
+                CRef<CSeq_entry> se(new CSeq_entry);
+                se.Reset( sub->SetData().SetEntrys().front() );
+                HandleSeqEntry(se);
             }
         } else if ( args["id"] ) {
         
@@ -242,7 +246,6 @@ int CCleanupApp::Run(void)
             HandleSeqID( seqID );
             
         } else {
-            string asn_type = args["type"].AsString();
             CRef<CSeq_entry> se(new CSeq_entry);
             
             if ( asn_type == "seq-entry" ) {
