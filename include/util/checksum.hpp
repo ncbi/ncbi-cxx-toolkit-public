@@ -167,11 +167,12 @@ Uint4      ComputeFileCRC32(const string& path);
 ///
 /// Stream class to compute checksum for written data.
 ///
-class CChecksumStreamWriter : public IWriter
+class NCBI_XUTIL_EXPORT CChecksumStreamWriter : public IWriter
 {
 public:
     /// Construct object to compute checksum for written data.
     CChecksumStreamWriter(CChecksum::EMethod method);
+    virtual ~CChecksumStreamWriter(void);
 
     /// Virtual methods from IWriter
     virtual ERW_Result Write(const void* buf, size_t count,
@@ -267,29 +268,6 @@ inline
 Uint4 ComputeFileCRC32(const string& path)
 {
     return ComputeFileChecksum(path, CChecksum::eCRC32).GetChecksum();
-}
-
-inline
-CChecksumStreamWriter::CChecksumStreamWriter(CChecksum::EMethod method)
-    : m_Checksum(method)
-{
-}
-
-inline
-ERW_Result CChecksumStreamWriter::Write(const void* buf, size_t count,
-                                        size_t* bytes_written)
-{
-    m_Checksum.AddChars((const char*)buf, count);
-    if (bytes_written) {
-        *bytes_written = count;
-    }
-    return eRW_Success;
-}
-
-inline
-ERW_Result CChecksumStreamWriter::Flush(void)
-{
-    return eRW_Success;
 }
 
 inline

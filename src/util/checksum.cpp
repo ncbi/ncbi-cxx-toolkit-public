@@ -664,4 +664,35 @@ void CChecksum::PrintTables(CNcbiOstream& out)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CChecksumStreamWriter
+
+CChecksumStreamWriter::CChecksumStreamWriter(CChecksum::EMethod method)
+    : m_Checksum(method)
+{
+}
+
+
+CChecksumStreamWriter::~CChecksumStreamWriter(void)
+{
+}
+
+
+ERW_Result CChecksumStreamWriter::Write(const void* buf, size_t count,
+                                        size_t* bytes_written)
+{
+    m_Checksum.AddChars((const char*)buf, count);
+    if (bytes_written) {
+        *bytes_written = count;
+    }
+    return eRW_Success;
+}
+
+
+ERW_Result CChecksumStreamWriter::Flush(void)
+{
+    return eRW_Success;
+}
+
+
 END_NCBI_SCOPE
