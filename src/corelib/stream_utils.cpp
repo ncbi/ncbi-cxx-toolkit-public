@@ -566,6 +566,21 @@ streamsize CStreamUtils::Readsome(CNcbiIstream& is,
 }
 
 
+IReader::~IReader()
+{
+}
+
+
+IWriter::~IWriter()
+{
+}
+
+
+IReaderWriter::~IReaderWriter()
+{
+}
+
+
 ERW_Result CStreamReader::Read(void*   buf,
                                size_t  count,
                                size_t* bytes_read)

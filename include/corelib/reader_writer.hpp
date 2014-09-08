@@ -67,7 +67,7 @@ NCBI_XNCBI_EXPORT const char* g_RW_ResultToString(ERW_Result res);
 /// A very basic data-read interface.
 /// @sa
 ///  IWriter, IReaderWriter, CRStream
-class IReader
+class NCBI_XNCBI_EXPORT IReader
 {
 public:
     /// Read as many as "count" bytes into a buffer pointed to by the "buf"
@@ -101,14 +101,14 @@ public:
     /// both eRW_Success and zero "*count", or return eRW_NotImplemented alone.
     virtual ERW_Result PendingCount(size_t* count) = 0;
 
-    virtual ~IReader() { }
+    virtual ~IReader();
 };
 
 
 /// A very basic data-write interface.
 /// @sa
 ///  IReader, IReaderWriter, CWStream
-class IWriter
+class NCBI_XNCBI_EXPORT IWriter
 {
 public:
     /// Write up to "count" bytes from the buffer pointed to by the "buf"
@@ -125,18 +125,18 @@ public:
     /// Flush pending data (if any) down to the output device.
     virtual ERW_Result Flush(void) = 0;
 
-    virtual ~IWriter() { }
+    virtual ~IWriter();
 };
 
 
 /// A very basic data-read/write interface.
 /// @sa
 ///  IReader, IWriter, CRWStream
-class IReaderWriter : public virtual IReader,
-                      public virtual IWriter
+class NCBI_XNCBI_EXPORT IReaderWriter : public virtual IReader,
+                                        public virtual IWriter
 {
 public:
-    virtual ~IReaderWriter() { }
+    virtual ~IReaderWriter();
 };
 
 
