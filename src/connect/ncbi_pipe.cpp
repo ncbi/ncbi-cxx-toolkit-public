@@ -1734,9 +1734,7 @@ CPipe::CPipe(const string&         cmd,
 CPipe::~CPipe()
 {
     Close();
-    if ( m_PipeHandle ) {
-        delete m_PipeHandle;
-    }
+    delete m_PipeHandle;
 }
 
 
