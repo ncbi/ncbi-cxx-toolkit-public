@@ -51,10 +51,11 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(DiscRepNmSpc)
+USING_SCOPE(objects);
 
-typedef void (*FAutofix)(vector <CRef <CObject> >& obj, vector <string>& msgs);
+typedef void (*FAutofix)(vector <CRef <CObject> >& obj, vector <string>& msgs, CScope* scope);
 
-void NCBI_DISCREPANCY_REPORT_EXPORT MarkOverlappingCDSs(vector <CRef <CObject> >& obj, vector <string>& msgs);
+NCBI_DISCREPANCY_REPORT_EXPORT void MarkOverlappingCDSs(vector <CRef <CObject> >& obj, vector <string>& msgs, CScope* scope);
 
 END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE

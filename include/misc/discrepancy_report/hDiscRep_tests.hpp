@@ -4076,7 +4076,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const {return string("OVERLAPPING_CDS");}
-      virtual FAutofix GetAutofixFunc() const; 
+      virtual FAutofix GetAutofixFunc() const {return MarkOverlappingCDSs; }; 
 
     private:
       bool OverlappingProdNmSimilar(const string& prod_nm1, const string& prod_nm2);
