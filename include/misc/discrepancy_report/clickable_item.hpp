@@ -86,7 +86,7 @@ public:
     const string& GetSettingName() const { return m_SettingName; }
 
     void SetAutofixFunc(const FAutofix fix_func) { m_FixFunc = fix_func; }
-    FAutofix GetAutofixFunc() const { return m_FixFunc; }
+    const FAutofix GetAutofixFunc() const { return m_FixFunc; }
 
 protected:
     string                        m_Text;
