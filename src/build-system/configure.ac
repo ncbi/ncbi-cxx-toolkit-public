@@ -6748,6 +6748,10 @@ if test -n "$AVRO_LIBS"; then
 fi
 
 # MongoDB
+case "$with_mongodb" in
+   yes | no | '' ) ;;
+   *             ) MONGODB_PATH=$with_mongodb ;;
+esac
 if test -d "$MONGODB_PATH"; then
    NCBI_FIX_DIR(MONGODB_PATH)
 fi
