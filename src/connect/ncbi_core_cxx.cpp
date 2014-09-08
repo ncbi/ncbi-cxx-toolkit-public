@@ -269,21 +269,21 @@ static const char* s_GetAppName(void)
 extern "C" {
 static char* s_GetRequestID(ENcbiRequestID reqid)
 {
-    const char* id;
+    string id;
     switch (reqid) {
     case eNcbiRequestID_SID:
         if (!CDiagContext::GetRequestContext().IsSetSessionID()) {
             CDiagContext::GetRequestContext().SetSessionID();
         }
-        id = CDiagContext::GetRequestContext().GetSessionID().c_str();
+        id = CDiagContext::GetRequestContext().GetSessionID();
         break;
     case eNcbiRequestID_HitID:
-        id = CDiagContext::GetRequestContext().GetNextSubHitID().c_str();
+        id = CDiagContext::GetRequestContext().GetNextSubHitID();
         break;
     default:
         return 0;
     }
-    return id  &&  *id ? strdup(id) : 0;
+    return id.empty() ? 0 : strdup(id.c_str());
 }
 }
 
