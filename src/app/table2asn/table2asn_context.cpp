@@ -399,7 +399,7 @@ void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry) const
     }
 }
 
-CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry> object) const
+CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry> object, const string& toolname) const
 {
     if (m_submit_template.NotEmpty())
     {
@@ -407,6 +407,10 @@ CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>
         submit->Assign(*m_submit_template);
         submit->SetData().SetEntrys().clear();
         submit->SetData().SetEntrys().push_back(object);
+
+        submit->SetSub().SetSubtype(CSubmit_block::eSubtype_new);
+        submit->SetSub().SetTool(toolname);
+
         return CRef<CSerialObject>(submit);
     }
 

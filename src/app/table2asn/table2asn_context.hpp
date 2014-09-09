@@ -125,7 +125,7 @@ public:
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry) const;
     CRef<CSerialObject>
-        CreateSubmitFromTemplate(CRef<objects::CSeq_entry> object) const;
+        CreateSubmitFromTemplate(CRef<objects::CSeq_entry> object, const string& toolname) const;
     CRef<CSerialObject>
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
 

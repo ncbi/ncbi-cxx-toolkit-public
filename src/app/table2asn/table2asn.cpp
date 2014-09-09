@@ -71,8 +71,6 @@
 using namespace ncbi;
 using namespace objects;
 
-const char * TBL2ASN_APP_VER = "10.0";
-
 #define USE_SCOPE
 
 class CTable2AsnLogger: public CMessageListenerLenient
@@ -143,6 +141,7 @@ private:
 CTbl2AsnApp::CTbl2AsnApp(void):
     m_LogStream(0)
 {
+    SetVersion(CVersionInfo(1,0));
 }
 
 
@@ -677,7 +676,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);
     else
-        result = m_context.CreateSubmitFromTemplate(entry);
+        result = m_context.CreateSubmitFromTemplate(entry, GetAppName() + " " + GetVersion().Print());
 
 #ifdef USE_SCOPE
     CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
