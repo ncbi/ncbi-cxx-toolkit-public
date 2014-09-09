@@ -182,8 +182,6 @@ CBlastScopeSource::x_InitBlastDatabaseDataLoader(const string& dbname,
         // if the database isn't found, ignore the exception as the
         // remote BLAST database data loader will be tried next
         if (e.GetMsg().find("No alias or index file found ") != NPOS) {
-            ERR_POST(Warning << "Error initializing local BLAST database "
-                          << "data loader: '" << e.GetMsg() << "'");
             _TRACE("Error initializing local BLAST database "
                           << "data loader: '" << e.GetMsg() << "'");
         }
