@@ -56,6 +56,8 @@ public:
        TSeqPos gapNmin, TSeqPos gap_Unknown_length, CLinkage_evidence::EType evidence);
     static 
     void ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min);
+    static
+    void ConvertNs2Gaps(const CSeq_data& data, size_t len, CDelta_ext& ext, size_t gap_min);
 };
 
 END_SCOPE(objects)

@@ -997,11 +997,12 @@ void CFastaReader::ParseDataLine(
 
     bool bIgnorableHyphenSeen = false;
 
-    const char chLetterGap = ( bIsNuc ? 'N' : 'X');
+    const char chLetterGap_lc = ( bIsNuc ? 'N' : 'X');
+    const char chLetterGap_uc = ( bIsNuc ? 'n' : 'x');
     for (size_t pos = 0;  pos < len;  ++pos) {
         unsigned char c = s[pos];
         if ( ( (c == '-')         && bHyphensAreGaps) ||
-             ( (c == chLetterGap) && bAllowLetterGaps) )
+             ( (c == chLetterGap_lc || c == chLetterGap_uc) && bAllowLetterGaps) )
         {
             CloseMask();
             // open a gap
@@ -1010,7 +1011,7 @@ void CFastaReader::ParseDataLine(
                 ++pos2;
             }
             m_CurrentGapLength += pos2 - pos;
-            m_CurrentGapChar = c;
+            m_CurrentGapChar = toupper(c);
             pos = pos2 - 1;
         } else if( c == '-' && bHyphensIgnoreAndWarn ) {
             bIgnorableHyphenSeen = true;

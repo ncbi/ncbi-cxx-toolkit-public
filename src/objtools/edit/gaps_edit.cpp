@@ -23,11 +23,10 @@
 *
 * ===========================================================================
 *
-* Authors:  Aaron Ucko, NCBI
+* Authors:  Sergiy Gotvyanskyy, NCBI
 *
 * File Description:
-*   Reader for FASTA-format sequences.  (The writer is CFastaOStream, in
-*   src/objmgr/util/sequence.cpp.)
+*   Converts runs of 'N' or 'n' into a gap
 *
 * ===========================================================================
 */
@@ -54,14 +53,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min)
+void  CGapsEditor::ConvertNs2Gaps(const CSeq_data& data, size_t len, CDelta_ext& ext, size_t gap_min)
 {
-    if (inst.IsAa()  ||  !inst.IsSetSeq_data()  ||  inst.IsSetExt()) {
-        return;
-    }
     CSeqUtil::TCoding src_coding = CSeqUtil::e_not_set;
     CSeqUtil::TCoding dst_coding = CSeqUtil::e_Iupacna;
-    const CSeq_data& data = inst.GetSeq_data();
     string decoded;
     CTempString      src;
     switch (data.Which()) {
@@ -69,7 +64,7 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min)
     case CSeq_data::e_##x: \
         src.assign(&data.Get##x().Get()[0], data.Get##x().Get().size()); \
         src_coding = CSeqUtil::e_##x; \
-        CSeqConvert::Convert(src, src_coding, 0, inst.GetLength(), decoded,  dst_coding); \
+        CSeqConvert::Convert(src, src_coding, 0, len, decoded,  dst_coding); \
         break;
     CODING_CASE(Ncbi2na)
     CODING_CASE(Iupacna)
@@ -86,19 +81,20 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min)
         return;
     }
 
-    CDelta_ext& ext = inst.SetExt().SetDelta();
     {
         size_t index = 0;
         CTempString current(decoded);
         size_t start;
-        while (index + gap_min <= current.length() && ((start = current.find('N', index)) != CTempString::npos))
+        while (index + gap_min <= current.length() && ((start = current.find_first_of("Nn", index)) != CTempString::npos))
         {
-            size_t end = current.find_first_not_of("N", start);
+            size_t end = current.find_first_not_of("Nn", start);
             if (end == CTempString::npos)
                 end = current.length();
             if (end - start >= gap_min)
             {
-                ext.AddAndSplit(current, CSeq_data::e_Iupacna, start, true, true);
+                if (start > 0)
+                    ext.AddAndSplit(current, CSeq_data::e_Iupacna, start, false, true);
+
                 CDelta_seq& gap = ext.AddLiteral(end-start);
                 gap.SetLiteral().SetSeq_data().SetGap().SetType(CSeq_gap::eType_unknown);
                 current.assign(current.data(), end, current.length() - end);
@@ -107,8 +103,20 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min)
             index = end;
         }
         if (current.length() > 0)
-            ext.AddAndSplit(current, CSeq_data::e_Iupacna, current.length(), true, true);
+            ext.AddAndSplit(current, CSeq_data::e_Iupacna, current.length(), false, true);
     }
+}
+
+void CGapsEditor::ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min)
+{
+    if (inst.IsAa()  ||  !inst.IsSetSeq_data()  ||  inst.IsSetExt()) {
+        return;
+    }
+    const CSeq_data& data = inst.GetSeq_data();
+
+    CDelta_ext& ext = inst.SetExt().SetDelta();
+
+    ConvertNs2Gaps(data, inst.GetLength(), ext, gap_min);
 
     if (ext.Get().size() > 1) { // finalize
         inst.SetRepr(CSeq_inst::eRepr_delta);
@@ -133,14 +141,33 @@ void CGapsEditor::ConvertNs2Gaps(CBioseq& bioseq,
     }
 
     CSeq_inst& inst = bioseq.SetInst();
-    NON_CONST_ITERATE(CDelta_ext::Tdata, it, inst.SetExt().SetDelta().Set())
+
+    // since delta functions allows adding new literal to an end we create a copy of literal array 
+    // to iterate over
+
+    CDelta_ext::Tdata src_data = inst.GetExt().GetDelta().Get();
+    CDelta_ext& dst_data = inst.SetExt().SetDelta();
+    dst_data.Set().clear();
+
+    NON_CONST_ITERATE(CDelta_ext::Tdata, it, src_data)
     {
         if (!(**it).IsLiteral())
+        {
+            dst_data.Set().push_back(*it);
             continue;
+        }
 
         CDelta_seq::TLiteral& lit = (**it).SetLiteral();
+
+        // split a literal to elements if needed
         if (lit.IsSetSeq_data() && !lit.GetSeq_data().IsGap())
+        {
+            ConvertNs2Gaps(lit.GetSeq_data(), lit.GetLength(), dst_data, gapNmin);
             continue;
+        }
+
+        // otherwise add it as is and possible update some parameters
+        dst_data.Set().push_back(*it);
 
         if (lit.IsSetLength() && lit.GetLength() == gap_Unknown_length)
         {
