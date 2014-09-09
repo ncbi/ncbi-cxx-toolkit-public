@@ -339,9 +339,11 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
       smem( app_type < eGenerateMasks ? args["smem"].AsInteger() : 0 ),
       ids( 0 ), exclude_ids( 0 ),
       use_ba( app_type != eConvertCounts && args["use_ba"].AsBoolean() ),
-      text_match( app_type != eConvertCounts && args["text_match"].AsBoolean() ),
-      metadata( args["meta"].AsString() )
+      text_match( app_type != eConvertCounts && args["text_match"].AsBoolean() )
 {
+    if (args["meta"]) {
+        metadata = args["meta"].AsString();
+    }
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
     if(app_type == eConvertCounts)
