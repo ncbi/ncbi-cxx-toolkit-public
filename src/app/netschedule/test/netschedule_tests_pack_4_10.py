@@ -4378,31 +4378,6 @@ class Scenario219( TestBase ):
             raise Exception( "Expected a client. Received none." )
         return True
 
-class Scenario220( TestBase ):
-    " Scenario 220 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Provides the scenario "
-        return " AFLS as anonymous, AFLS as identified, " \
-               "check clients registry "
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.fromScratch()
-
-        ns_client = self.getNetScheduleService( 'TEST', 'scenario220' )
-        self.ns.getAffinityList( 'TEST' )
-        getClientInfo( ns_client, None, 0, 0 )
-
-        self.ns.getAffinityList( 'TEST', 'mynode', 'mysession' )
-        getClientInfo( ns_client, 'mynode', 1, 1 )
-        return True
-
 class Scenario221( TestBase ):
     " Scenario 221 "
 

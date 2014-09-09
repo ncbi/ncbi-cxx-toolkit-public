@@ -668,7 +668,7 @@ class Scenario1518( TestBase ):
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
         jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
 
-        ns_client = self.getNetScheduleService( 'TEST', 'scenario136' )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1518' )
         ns_client.set_client_identification( 'node', 'session' )
 
         receivedJobID = self.ns.getJob( 'TEST', -1, 'a1' )[ 0 ]
@@ -691,10 +691,202 @@ class Scenario1518( TestBase ):
         receivedJobID = values[ 'job_key' ][ 0 ]
 
         if jobID1 != receivedJobID:
-            raise Exception( "Received job ID does not match. Expected: " + \
+            raise Exception( "Received job ID does not match. Expected: " +
+                             jobID1 + " Received: " + receivedJobID )
+        return True
+
+class Scenario1519( TestBase ):
+    " Scenario 1519 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT with a1, restart netschedule, CHRAFF add=a1, READ2 reader_aff=1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a1' )
+
+        self.ns.shutdown()
+        self.ns.resetPID()
+        time.sleep( 15 )
+        if self.ns.isRunning():
+            raise Exception( "Cannot shutdown netschedule" )
+
+        self.ns.start()
+        if not self.ns.isRunning():
+            raise Exception( "Cannot start netschedule" )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1519' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        receivedJobID = self.ns.getJob( 'TEST', -1, 'a1' )[ 0 ]
+        if jobID1 != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client, "PUT " + jobID1 + " 0 nooutput" )
+
+        execAny( ns_client, "CHRAFF add=a1" )
+        output = execAny( ns_client, 'READ2 reader_aff=1 any_aff=0' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+
+        if jobID1 != receivedJobID:
+            raise Exception( "Received job ID does not match. Expected: " +
                              jobID1 + " Received: " + receivedJobID )
         return True
 
 
+class Scenario1520( TestBase ):
+    " Scenario 1520 "
 
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
 
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "READ2 with timeout and port and affinity a1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1520' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        execAny( ns_client,
+                 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+
+        # Submit a job
+        jobID = self.ns.submitJob( 'TEST', 'input' )
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client, "PUT " + jobID + " 0 nooutput" )
+
+        time.sleep( 3 )
+        result = self.getNotif( notifSocket )
+        if result != 0:
+            raise Exception( "Expect no notifications but received some" )
+        return True
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
+class Scenario1521( TestBase ):
+    " Scenario 1521 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "READ2 with timeout and port, and explicit aff a1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1521' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        execAny( ns_client,
+                 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=9007 timeout=5' )
+
+        # Submit a job
+        jobID = self.ns.submitJob( 'TEST', 'input', 'a1' )
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client, "PUT " + jobID + " 0 nooutput" )
+
+        time.sleep( 3 )
+        result = self.getNotif( notifSocket )
+        if result == 0:
+            raise Exception( "Expected notification(s), received nothing" )
+        return True
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
+class Scenario1522( TestBase ):
+    " Scenario 1522 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "READ2 with timeout and port, and explicit aff a1, and any_aff=1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1522' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        execAny( ns_client,
+                 'READ2 reader_aff=0 any_aff=1 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+
+        # Submit a job
+        jobID = self.ns.submitJob( 'TEST', 'input', 'a2' )
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client, "PUT " + jobID + " 0 nooutput" )
+
+        time.sleep( 3 )
+        result = self.getNotif( notifSocket )
+        if result == 0:
+            raise Exception( "Expected notification(s), received nothing" )
+        return True
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0

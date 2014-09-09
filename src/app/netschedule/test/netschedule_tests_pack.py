@@ -1043,38 +1043,6 @@ class Scenario38( TestBase ):
         return False
 
 
-class Scenario39( TestBase ):
-    " Scenario 39 "
-
-    def __init__( self, netschedule ):
-        TestBase.__init__( self, netschedule )
-        return
-
-    @staticmethod
-    def getScenario():
-        " Should return a textual description of the test "
-        return "Submit a job with one affinity, " \
-               "submit a job with another affinity, " \
-               "get the list of affinities"
-
-    def execute( self ):
-        " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
-
-        self.ns.submitJob( 'TEST', 'bla', 'myaffinity1' )
-        self.ns.submitJob( 'TEST', 'bla', 'myaffinity2' )
-
-        affList = self.ns.getAffinityList( 'TEST' )
-        if affList[ "myaffinity1" ][0] == 1 and \
-           affList[ "myaffinity2" ][0] == 1:
-            return True
-        return False
-
-
 class Scenario40( TestBase ):
     " Scenario 40 "
 

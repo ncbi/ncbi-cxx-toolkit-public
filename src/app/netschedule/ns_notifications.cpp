@@ -460,7 +460,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
 {
     CNSPreciseTime  current_time = CNSPreciseTime::Current();
     TNSBitVector    all_preferred_affs =
-                                clients_registry.GetAllPreferredAffinities(eGet);
+                                clients_registry.GetAllPreferredAffinities(reason);
     TNSBitVector    group_jobs;
 
 
@@ -487,13 +487,8 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
         bool        should_send = false;
 
         // Check if all the jobs are in in its blacklist
-        TNSBitVector        blacklisted_jobs;
-        if (k->m_Reason == eGet)
-            blacklisted_jobs = clients_registry.GetBlacklistedJobs(
-                                                            k->m_ClientNode, eGet);
-        else
-            blacklisted_jobs = clients_registry.GetBlacklistedJobs(
-                                                            k->m_ClientNode, eRead);
+        TNSBitVector    blacklisted_jobs = clients_registry.
+                                    GetBlacklistedJobs(k->m_ClientNode, reason);
         if ((jobs - blacklisted_jobs).any() == false) {
             ++k;
             continue;
@@ -517,7 +512,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                 should_send = clients_registry.IsRequestedAffinity(
                                                     k->m_ClientNode,
                                                     affinities,
-                                                    k->m_WnodeAff, eGet);
+                                                    k->m_WnodeAff, reason);
         if (should_send == false) {
             if (k->m_ExclusiveNewAff) {
                 if (no_aff_jobs)
