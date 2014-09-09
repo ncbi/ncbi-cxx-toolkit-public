@@ -371,6 +371,14 @@ CParam<TDescription>::CParam(EParamCacheFlag cache_flag)
 
 
 template<class TDescription>
+SSystemMutex& CParam<TDescription>::s_GetLock(void)
+{
+    DEFINE_STATIC_MUTEX(s_ParamValueLock);
+    return s_ParamValueLock;
+}
+
+
+template<class TDescription>
 typename CParam<TDescription>::TValueType&
 CParam<TDescription>::sx_GetDefault(bool force_reset)
 {
@@ -407,19 +415,25 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
         sx_GetState() = eState_Func;
     }
 
-    if ( sx_GetState() < eState_Config  &&  !sx_IsSetFlag(eParam_NoLoad) ) {
-        string config_value =
-            g_GetConfigString(TDescription::sm_ParamDescription.section,
-                                TDescription::sm_ParamDescription.name,
-                                TDescription::sm_ParamDescription.env_var_name,
-                                "");
-        if ( !config_value.empty() ) {
-            def = TParamParser::StringToValue(config_value,
-                TDescription::sm_ParamDescription);
+    if (sx_GetState() < eState_Config) {
+        if ( sx_IsSetFlag(eParam_NoLoad) ) {
+            EParamState& state = sx_GetState();
+            state = eState_Config; // No need to check anything else.
         }
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        sx_GetState() = app  &&  app->HasLoadedConfig()
-            ? eState_Config : eState_EnvVar;
+        else {
+            string config_value =
+                g_GetConfigString(TDescription::sm_ParamDescription.section,
+                                    TDescription::sm_ParamDescription.name,
+                                    TDescription::sm_ParamDescription.env_var_name,
+                                    "");
+            if ( !config_value.empty() ) {
+                def = TParamParser::StringToValue(config_value,
+                    TDescription::sm_ParamDescription);
+            }
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            sx_GetState() = app  &&  app->HasLoadedConfig()
+                ? eState_Config : eState_EnvVar;
+        }
     }
 
     return def;
@@ -475,7 +489,10 @@ void CParam<TDescription>::SetDefault(const TValueType& val)
 {
     CMutexGuard guard(s_GetLock());
     sx_GetDefault() = val;
-    sx_GetState() = eState_User;
+    EParamState& state = sx_GetState();
+    if (state < eState_User) {
+        state = eState_User;
+    }
 }
 
 
@@ -541,8 +558,17 @@ typename CParam<TDescription>::TValueType
 CParam<TDescription>::Get(void) const
 {
     if ( !m_ValueSet ) {
-        m_Value = GetThreadDefault();
-        m_ValueSet = true;
+        // The lock prevents multiple initializations with the default value
+        // in Get(), but does not prevent Set() from modifying the value
+        // while another thread is reading it.
+        CMutexGuard guard(s_GetLock());
+        if ( !m_ValueSet ) {
+            m_Value = GetThreadDefault();
+            if (GetState() >= eState_Config) {
+                // All sources checked or the value is set by user.
+                m_ValueSet = true;
+            }
+        }
     }
     return m_Value;
 }

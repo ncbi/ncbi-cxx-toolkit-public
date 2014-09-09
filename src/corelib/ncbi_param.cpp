@@ -47,13 +47,6 @@ BEGIN_NCBI_SCOPE
 /// Helper functions for getting values from registry/environment
 ///
 
-SSystemMutex& CParamBase::s_GetLock(void)
-{
-    DEFINE_STATIC_MUTEX(s_ParamValueLock);
-    return s_ParamValueLock;
-}
-
-
 const char* kNcbiConfigPrefix = "NCBI_CONFIG__";
 
 // g_GetConfigXxx() functions

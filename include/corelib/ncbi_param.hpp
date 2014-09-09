@@ -440,8 +440,8 @@ class NCBI_XNCBI_EXPORT CParamBase
 public:
     /// Current param state flag - indicates which possible sources for
     /// the param have been checked. This flag does not indicate where
-    /// does the current value originate from (except eState_User).
-    /// It just shows the stage of parameter loading process.
+    /// does the current value originate from. It just shows the stage
+    /// of parameter loading process.
     enum EParamState {
         eState_NotSet = 0, ///< The param's value has not been set yet
         eState_InFunc = 1, ///< The initialization function is being executed
@@ -450,9 +450,6 @@ public:
         eState_EnvVar = 4, ///< The environment variable has been checked
         eState_Config = 5  ///< The app. config file has been checked
     };
-
-protected:
-    static SSystemMutex& s_GetLock(void);
 };
 
 
@@ -520,12 +517,17 @@ public:
     /// Get current state of the param.
     static EParamState GetState(void);
 
-    /// Get current parameter value.
+    /// Get current parameter value. It is safe to get value from
+    /// multiple threads, but setting a new value is not MT-safe.
     TValueType Get(void) const;
     /// Set new parameter value (this instance only).
+    /// @note The method is not MT-safe. Use an additional external lock
+    /// if it's necessary for multiple threads to use the same variable.
     void Set(const TValueType& val);
     /// Reset value as if it has not been initialized yet. Next call to
     /// Get() will cache the thread default (or global default) value.
+    /// @note The method is not MT-safe. Use an additional external lock
+    /// if it's necessary for multiple threads to use the same variable.
     void Reset(void);
 
     /// Get global default value. If not yet set, attempts to load the value
@@ -548,6 +550,8 @@ public:
     static void ResetThreadDefault(void);
 
 private:
+    static SSystemMutex& s_GetLock(void);
+
     static TValueType& sx_GetDefault(bool force_reset = false);
     static TTls&       sx_GetTls    (void);
     static EParamState& sx_GetState(void);
