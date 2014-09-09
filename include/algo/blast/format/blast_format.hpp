@@ -423,7 +423,8 @@ private:
    /// binaries)
    /// @param alnset Alignment to wrap in a Seq-annot, must be non-NULL [in]
    CRef<objects::CSeq_annot> 
-   x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const;
+   x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset,
+                             const string& db_title) const;
 
    // Return true if the search is againist vdb databases
    bool x_IsVdbSearch()const;

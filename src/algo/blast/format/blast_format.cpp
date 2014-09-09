@@ -581,17 +581,27 @@ CBlastFormat::x_IsVdbSearch() const
 }
 // Port of jzmisc.c's AddAlignInfoToSeqAnnotEx (CVS revision 6.11)
 CRef<objects::CSeq_annot>
-CBlastFormat::x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset) const
+CBlastFormat::x_WrapAlignmentInSeqAnnot(CConstRef<objects::CSeq_align_set> alnset,
+                                        const string& db_title) const
 {
 	return CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(*alnset,
                                                            ProgramNameToEnum(m_Program),
-                                                           m_DbName, x_IsVdbSearch());
+                                                           m_DbName, db_title,
+                                                           x_IsVdbSearch());
 }
 
 void 
 CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
               CConstRef<blast::CBlastQueryVector> queries)
 {
+    string db_title;
+    if (!m_DbInfo.empty()) {
+        db_title = m_DbInfo.front().definition;
+        for (size_t i=1;i < m_DbInfo.size();i++) {
+            db_title += "; ";
+            db_title += m_DbInfo[i].definition;
+        }
+    }
 
     // ASN.1 formatting is straightforward
     if (m_FormatType == CFormattingArgs::eAsnText || m_FormatType == CFormattingArgs::eJsonSeqalign) {
@@ -599,9 +609,9 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
     	    CRef<CSeq_align_set> aln_set (new CSeq_align_set);
             CBlastFormatUtil::PruneSeqalign(*(results.GetSeqAlign()), *aln_set, m_HitlistSize);
             if(m_FormatType == CFormattingArgs::eAsnText)
-            	m_Outfile << MSerial_AsnText << *x_WrapAlignmentInSeqAnnot(aln_set);
+            	m_Outfile << MSerial_AsnText << *x_WrapAlignmentInSeqAnnot(aln_set, db_title);
             else
-            	m_Outfile << MSerial_Json << *x_WrapAlignmentInSeqAnnot(aln_set);
+            	m_Outfile << MSerial_Json << *x_WrapAlignmentInSeqAnnot(aln_set, db_title);
         }
         return;
     } else if (m_FormatType == CFormattingArgs::eAsnBinary) {
@@ -609,7 +619,7 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
             CRef<CSeq_align_set> aln_set (new CSeq_align_set);
             CBlastFormatUtil::PruneSeqalign(*(results.GetSeqAlign()), *aln_set, m_HitlistSize);
             m_Outfile << MSerial_AsnBinary <<
-                *x_WrapAlignmentInSeqAnnot(aln_set);
+                *x_WrapAlignmentInSeqAnnot(aln_set, db_title);
         }
         return;
     } else if (m_FormatType == CFormattingArgs::eXml) {

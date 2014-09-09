@@ -104,12 +104,14 @@ public:
      * 						  new seq annot object
      * 				program -- blast program enum
      * 				db_name -- database name
+     *              db_title -- database title
      * @output parm : seq annot object
      */
     static CRef<objects::CSeq_annot> CreateSeqAnnotFromSeqAlignSet(
     				   const objects::CSeq_align_set & alnset,
     				   blast::EProgram program,
     				   const string & db_name,
+                       const string & db_title,
     				   bool vdb_search = false);
 
 

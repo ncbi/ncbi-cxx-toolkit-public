@@ -325,6 +325,7 @@ CRef<objects::CSeq_annot>
 CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & alnset,
 												blast::EProgram program,
 												const string & db_name,
+                                                const string & db_title,
 												bool vdb_search)
 {
     CRef<CSeq_annot> retval(new CSeq_annot);
@@ -367,8 +368,7 @@ CBlastFormatUtil::CreateSeqAnnotFromSeqAlignSet(const objects::CSeq_align_set & 
     	else
     	{
     		bool is_nucl = Blast_SubjectIsNucleotide(EProgramToEBlastProgramType(program));
-    		CSeqDB seqdb(db_name, is_nucl ? CSeqDB::eNucleotide:CSeqDB::eProtein);
-    		blast_db_info->AddField( seqdb.GetTitle(), is_nucl );
+    		blast_db_info->AddField( db_title, is_nucl );
     	}
     }
 
