@@ -70,7 +70,7 @@ void MarkOverlappingCDSs(vector <CRef <CObject> >& objs, vector <string>& msgs, 
 
     strtmp 
        = GetDiscrepancyItemText (*(dynamic_cast<const CSeq_feat*>((*it).GetPointer())), scope);
-    msgs.push_back ("Added overlapping CDS note to " + strtmp);
+    msgs.push_back ("Added overlapping CDS note to " + strtmp + "\n");
   }
   if (has_title) msgs.push_back("\n");
 };
