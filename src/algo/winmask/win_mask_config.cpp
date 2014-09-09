@@ -341,7 +341,7 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args, EAppType type, bool determin
       use_ba( app_type != eConvertCounts && args["use_ba"].AsBoolean() ),
       text_match( app_type != eConvertCounts && args["text_match"].AsBoolean() )
 {
-    if (args["meta"]) {
+    if (args.Exist("meta")  &&  args["meta"]) {
         metadata = args["meta"].AsString();
     }
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
