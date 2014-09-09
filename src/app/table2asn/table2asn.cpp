@@ -620,6 +620,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         avoid_submit_block = m_context.m_avoid_submit_block;
         COpticalxml2asnOperator op;
         entry = op.LoadXML(m_context.m_current_file, m_context);
+        if (entry.IsNull())
+            return;
         entry->Parentize();
     }
     else
@@ -776,7 +778,7 @@ void CTbl2AsnApp::ProcessOneFile()
 
         CRef<CSerialObject> obj;
         ProcessOneFile(obj);
-        if (!IsDryRun())
+        if (!IsDryRun() && obj.NotEmpty())
         {
             const CSerialObject* to_write = obj;
             if (m_context.m_save_bioseq_set)

@@ -72,13 +72,15 @@ USING_SCOPE(objects);
 namespace
 {
 
-typedef pair<int,int> TFragm;
+typedef pair<pair<int,int>,int> TFragm;
 
 struct lt_fragment
 {
     bool operator()(const TFragm& p1, const TFragm& p2) const
     {
-        return ( p1.first < p2.first );
+        if (p1.first.first == p2.first.first)
+            return (p1.first.second < p2.first.second);
+        return (p1.first.first < p2.first.first);
     }
 };
 
@@ -88,16 +90,16 @@ public:
     COpticalChrData(const string& nm, const char *enzyme, bool is_linear=true) :
       m_name(nm), m_enzyme(enzyme), m_length(0), m_linear(is_linear) {};
 
-      void sortFragments(){ sort(m_fragments.begin(), m_fragments.end(), lt_fragment()); };
+      void sortFragments(){ m_fragments.sort(lt_fragment()); };
       void SetLength(){
           if (m_length == 0) {
-              ITERATE (vector <TFragm>, it, m_fragments)
+              ITERATE (list <TFragm>, it, m_fragments)
                   m_length += it->second;
           }
       };
       string m_name;
       string m_enzyme;
-      vector <TFragm> m_fragments;
+      list <TFragm> m_fragments;
       int m_length;
       bool m_linear;
 };
@@ -121,7 +123,7 @@ private:
     CBioSource& SetSourceOrg(CSeq_descr& SD);
 
 
-    vector <COpticalChrData> m_vchr;
+    list <COpticalChrData> m_vchr;
     IMessageListener* m_logger;
 
 public:
@@ -233,7 +235,7 @@ CRef<CSeq_entry> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2A
         container.Reset(new CSeq_entry);
     }
 
-    for (vector<COpticalChrData>::iterator it = m_vchr.begin(); it != m_vchr.end(); ++it)
+    for (list<COpticalChrData>::iterator it = m_vchr.begin(); it != m_vchr.end(); ++it)
     {
         CRef<CSeq_entry> new_entry(new CSeq_entry);
         if (context.m_entry_template.NotEmpty() && !context.m_avoid_submit_block)
@@ -290,7 +292,7 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
 
     CRef<CPacked_seqpnt> spnt(new CPacked_seqpnt());
     int addr = -1;
-    ITERATE (vector <TFragm>, fit, it.m_fragments) {
+    ITERATE (list <TFragm>, fit, it.m_fragments) {
         addr += fit->second;
         spnt->AddPoint(addr);
     }
@@ -361,9 +363,10 @@ CRef<CSeq_entry> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CT
 {
     auto_ptr<COpticalxml2asnOperatorImpl> m_impl(new COpticalxml2asnOperatorImpl(context.m_logger));
 
-    m_impl->GetOpticalXMLData(FileIn);
-
-    return m_impl->BuildOpticalASNData(context);
+    if (m_impl->GetOpticalXMLData(FileIn)>0)
+        return m_impl->BuildOpticalASNData(context);
+    else
+        return CRef<CSeq_entry>();
 };
 
 void COpticalxml2asnOperator::UpdatePubDate(CSerialObject& obj)
@@ -462,10 +465,25 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
                     if (NStr::Compare(fit->get_name(), "F") == 0) {
                         const attributes& at = fit->get_attributes();
                         attributes::const_iterator ait = at.find("I");
-                        int n = atoi(ait->get_value());
+                        TFragm fragm;
+                        CTempString s(ait->get_value());
+                        size_t n = s.find('.');
+
+                        if (n == CTempString::npos)
+                        {
+                            n = s.length();
+                            fragm.first.second = 0;
+                        }
+                        else
+                        {
+                            fragm.first.second = NStr::StringToInt(s.substr(n+1, s.length()-n-1));
+                        }
+
+                        fragm.first.first = NStr::StringToUInt(s.substr(0, n));
+
                         ait = at.find("S");
-                        int lng = atoi(ait->get_value());
-                        chr.m_fragments.push_back(make_pair(n, lng));
+                        fragm.second = atoi(ait->get_value());
+                        chr.m_fragments.push_back(fragm);
                     }
                 }
             }
