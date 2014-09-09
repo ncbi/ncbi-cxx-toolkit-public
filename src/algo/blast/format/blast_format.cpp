@@ -678,6 +678,9 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
 
         CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
         tabinfo.SetParseLocalIds(m_BelieveQuery);
+        if((m_IsBl2Seq && (!m_BelieveQuery))|| m_IsRemoteSearch) {
+        	tabinfo.SetParseSubjectDefline(true);
+        }
         tabinfo.SetQueryRange(m_QueryRange);
         if (ncbi::NStr::ToLower(m_Program) == string("blastn"))
         	tabinfo.SetNoFetch(true);

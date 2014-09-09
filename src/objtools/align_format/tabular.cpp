@@ -150,6 +150,7 @@ CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
     x_ResetFields();
     x_SetFieldDelimiter(delim);
     SetParseLocalIds(parse_local_ids);
+    SetParseSubjectDefline(false);
     SetNoFetch(false);
     m_QueryCovSubject.first = NA;
     m_QueryCovSubject.second = -1;
@@ -468,10 +469,7 @@ void CBlastTabularInfo::SetSubjectId(const CBioseq_Handle& bh)
 
     vector<CConstRef<objects::CSeq_id> > subject_id_list;
     ITERATE(CBioseq_Handle::TId, itr, bh.GetId()) {
-    	bool parse_local_id = (itr->GetSeqId()->IsLocal() &&
-    			               itr->GetSeqId()->GetLocal().IsStr() &&
-    			               (itr->GetSeqId()->GetLocal().GetStr().find("Subject_") == NPOS));
-    	CRef<CSeq_id> next_id = s_ReplaceLocalId(bh, itr->GetSeqId(), parse_local_id);
+    	CRef<CSeq_id> next_id = s_ReplaceLocalId(bh, itr->GetSeqId(), !m_ParseSubjectDefline );
     	subject_id_list.push_back(next_id);
     }
     CShowBlastDefline::GetSeqIdList(bh, subject_id_list, m_SubjectId);

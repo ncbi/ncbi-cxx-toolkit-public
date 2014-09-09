@@ -162,6 +162,10 @@ public:
     /// @param field Which field to test [in]
     void SetParseLocalIds(bool val) { m_ParseLocalIds = val; }
 
+    /// Should subject deflien be parsed for id or not?
+    /// @param val value to set [in]
+    void SetParseSubjectDefline(bool val) { m_ParseSubjectDefline = val; }
+
     /// Avoid fetching sequence (if possible)
     /// If the sequence is needed (e.g., will be formatted, it will be fetched)
     /// @param nofetch Do not fetch if true [in]
@@ -323,6 +327,8 @@ private:
     list<ETabularField> m_FieldsToShow; ///< Which fields to show?
     /// Should the query deflines be parsed for local IDs?
     bool m_ParseLocalIds;
+    /// Parse subejct defline?
+    bool m_ParseSubjectDefline;
     string m_BTOP;            /// Blast-traceback-operations.
 
     //TaxInfo
