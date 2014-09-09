@@ -135,7 +135,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-2.6.1} ;;
+    Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-1.0.0-rc0} ;;
 esac
 
 case "$ncbi_platform" in
