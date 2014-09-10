@@ -48,8 +48,39 @@ struct SSrvSocketInfo
 };
 
 
+/*
+    from here:
+    http://www.boost.org/doc/libs/1_56_0/doc/html/intrusive/usage.html
+
+    If there is a virtual inheritance relationship between the parent and
+    the member hook, then the distance between the parent and the hook is not
+    a compile-time fixed value so obtaining the address of the parent from
+    the member hook is not possible without reverse engineering compiler produced RTTI.
+    Apart from this, the non-standard pointer to member implementation for classes with
+    complex inheritance relationships in MSVC ABI compatible-compilers is not supported
+    by member hooks since it also depends on compiler-produced RTTI information. 
+
+    This means member hooks are potentially dangerous, because we DO use virtual inheritance here.
+    With Boost 1.53 this compiles on MSVC
+    With Boost 1.56 it does not.
+    With GCC it compiles so far... but.. who knows...
+*/
+#define NC_SOCKLIST_USE_MEMBER_HOOK  1
+#define NC_SOCKLIST_USE_BASE_HOOK    2
+#define NC_SOCKLIST_USE_STD_LIST     3
+#define NC_SOCKLIST_USE_TYPE         NC_SOCKLIST_USE_BASE_HOOK
+
+
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_MEMBER_HOOK
 struct SSrvSockList_tag;
 typedef intr::list_member_hook<intr::tag<SSrvSockList_tag> >    TSrvSockListHook;
+#elif NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_BASE_HOOK
+struct SSrvSockList_tag;
+typedef intr::list_base_hook<intr::tag<SSrvSockList_tag> >    TSrvSockListHook;
+#endif
+
+
+
 
 /// Task controlling a socket.
 /// This task always becomes runnable in 3 cases:
@@ -66,7 +97,12 @@ typedef intr::list_member_hook<intr::tag<SSrvSockList_tag> >    TSrvSockListHook
 /// returned from CSrvSocketFactory and TaskServer will attach it to just
 /// connected socket, or CSrvSocketTask::Connect() method should be called
 /// to create socket with other server.
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_BASE_HOOK
+class CSrvSocketTask : public virtual CSrvTask,  public SSrvSocketInfo,
+                       public TSrvSockListHook
+#else
 class CSrvSocketTask : public virtual CSrvTask, public SSrvSocketInfo
+#endif
 {
 public:
     CSrvSocketTask(void);
@@ -231,8 +267,10 @@ public:
     /// Amount left to proxy if proxying operation is in progress.
     /// Value is set only in source tasks for proxying.
     Uint8 m_ProxySize;
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_MEMBER_HOOK
     /// Hook to include the task to lists of open sockets.
     TSrvSockListHook m_SockListHook;
+#endif
     /// Read buffer.
     char* m_RdBuf;
     /// Write buffer.
@@ -311,16 +349,6 @@ public:
     ///
     string m_ConnReqId;
 };
-
-
-// Helper types to be used only inside TaskServer. It's placed here only to
-// keep all relevant pieces in one place.
-typedef intr::member_hook<CSrvSocketTask,
-                          TSrvSockListHook,
-                          &CSrvSocketTask::m_SockListHook>  TSockListHookOpt;
-typedef intr::list<CSrvSocketTask,
-                   TSockListHookOpt,
-                   intr::constant_time_size<false> >        TSockList;
 
 
 /// Factory that creates CSrvSocketTask-derived object for each connection

@@ -82,6 +82,21 @@ static const Uint2 kSockWriteBufSize = 2000;
 static const Uint1 kMaxCntListeningSocks = 16;
 
 
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_MEMBER_HOOK
+typedef intr::member_hook<CSrvSocketTask,
+                          TSrvSockListHook,
+                          &CSrvSocketTask::m_SockListHook>  TSockListHookOpt;
+typedef intr::list<CSrvSocketTask,
+                   TSockListHookOpt,
+                   intr::constant_time_size<false> >        TSockList;
+#elif NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_BASE_HOOK
+typedef intr::list<CSrvSocketTask,
+                   intr::base_hook<TSrvSockListHook>,
+                   intr::constant_time_size<false> >        TSockList;
+#elif NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_STD_LIST
+typedef std::list<CSrvSocketTask*> TSockList;
+#endif
+
 /// Per-thread structure containing information about sockets.
 struct SSocketsData
 {
@@ -640,7 +655,11 @@ s_SaveSocket(CSrvSocketTask* task)
 {
     SSrvThread* thr = GetCurThread();
     SSocketsData* socks = thr->socks;
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_STD_LIST
+    socks->sock_list.push_front(task);
+#else
     socks->sock_list.push_front(*task);
+#endif
     ++socks->sock_cnt;
 
     task->m_LastActive = CSrvTime::CurSecs();
@@ -665,7 +684,11 @@ s_DeleteOldestSockets(TSockList& lst)
     int limit_time = CSrvTime::CurSecs() - s_SocketTimeout;
     Uint1 cnt_old = 0;
     NON_CONST_ITERATE(TSockList, it, lst) {
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_STD_LIST
+        CSrvSocketTask* task = *it;
+#else
         CSrvSocketTask* task = &*it;
+#endif
         int active = task->m_LastActive;
         if (active >= limit_time)
             continue;
@@ -729,7 +752,11 @@ CheckConnectsTimeout(SSocketsData* socks)
 {
     TSockList& lst = socks->sock_list;
     NON_CONST_ITERATE(TSockList, it, lst) {
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_STD_LIST
+        CSrvSocketTask* task = *it;
+#else
         CSrvSocketTask* task = &*it;
+#endif
         if (task->m_ConnStartJfy != 0
             &&  s_CurJiffies - task->m_ConnStartJfy > s_ConnTimeout
             &&  task->m_RegWriteEvts == task->m_SeenWriteEvts
@@ -747,7 +774,11 @@ CleanSocketList(SSocketsData* socks)
     // Terminate all sockets which have their Terminate() method called already.
     TSockList& lst = socks->sock_list;
     ERASE_ITERATE(TSockList, it, lst) {
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_STD_LIST
+        CSrvSocketTask* task = *it;
+#else
         CSrvSocketTask* task = &*it;
+#endif
         if (task->m_TaskFlags & fTaskNeedTermination) {
             lst.erase(it);
             MarkTaskTerminated(task);
@@ -764,7 +795,11 @@ SetAllSocksRunnable(SSocketsData* socks)
 {
     TSockList& lst = socks->sock_list;
     NON_CONST_ITERATE(TSockList, it, lst) {
+#if NC_SOCKLIST_USE_TYPE == NC_SOCKLIST_USE_STD_LIST
+        (*it)->SetRunnable();
+#else
         it->SetRunnable();
+#endif
     }
 }
 
