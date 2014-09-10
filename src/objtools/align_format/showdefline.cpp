@@ -721,10 +721,13 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             }
         }
         if(!sdl->id.Empty()){
-            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") 
-                 != string::npos)){
-                out << sdl->id->AsFastaString();
-                line_length += sdl->id->AsFastaString().size();
+            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){
+            	string idStr = sdl->id->AsFastaString();
+            	if (strncmp(idStr.c_str(), "lcl|", 4) == 0) {
+            		idStr = sdl->id->AsFastaString().substr(4);
+            	}
+                out << idStr;
+                line_length += idStr.size();
             }
         }
         if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
