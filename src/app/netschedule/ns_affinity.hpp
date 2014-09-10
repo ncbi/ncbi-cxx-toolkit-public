@@ -192,6 +192,7 @@ class CNSAffinityRegistry
         list< SAffinityStatistics >
         GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const;
         TNSBitVector  GetJobsWithAffinity(unsigned int  aff_id) const;
+        TNSBitVector  GetJobsWithAffinities(const TNSBitVector &  affs) const;
         TNSBitVector  GetRegisteredAffinities(void) const;
         void  RemoveJobFromAffinity(unsigned int  job_id, unsigned int  aff_id);
         size_t  RemoveClientFromAffinities(unsigned int          client_id,

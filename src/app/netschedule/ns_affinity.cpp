@@ -362,6 +362,24 @@ CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 
 
 TNSBitVector
+CNSAffinityRegistry::GetJobsWithAffinities(const TNSBitVector &  affs) const
+{
+    TNSBitVector                            jobs;
+    TNSBitVector::enumerator                en(affs.first());
+    map< unsigned int,
+         SNSJobsAffinity >::const_iterator  found;
+    CMutexGuard                             guard(m_Lock);
+
+    for ( ; en.valid(); ++en) {
+        found = m_JobsAffinity.find(*en);
+        if (found != m_JobsAffinity.end())
+            jobs |= found->second.m_Jobs;
+    }
+    return jobs;
+}
+
+
+TNSBitVector
 CNSAffinityRegistry::GetRegisteredAffinities(void) const
 {
     CMutexGuard         guard(m_Lock);

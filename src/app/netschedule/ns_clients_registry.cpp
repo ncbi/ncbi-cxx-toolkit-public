@@ -979,19 +979,19 @@ unsigned int  CNSClientsRegistry::x_GetNextID(void)
 // Must be called under the lock
 void  CNSClientsRegistry::x_BuildAffinities(ECommandGroup  cmd_group)
 {
-    TNSBitVector &              target = m_WNodeAffinities;
-    CNSClient::ENSClientType    mask = CNSClient::eWorkerNode;
-
     if (cmd_group == eRead) {
-        target = m_ReaderAffinities;
-        mask = CNSClient::eReader;
+        m_ReaderAffinities.clear();
+        for (map< string, CNSClient >::const_iterator
+                k = m_Clients.begin(); k != m_Clients.end(); ++k )
+            if (k->second.GetType() & CNSClient::eReader)
+                m_ReaderAffinities |= k->second.GetPreferredAffinities(eRead);
+    } else {
+        m_WNodeAffinities.clear();
+        for (map< string, CNSClient >::const_iterator
+                k = m_Clients.begin(); k != m_Clients.end(); ++k )
+            if (k->second.GetType() & CNSClient::eWorkerNode)
+                m_WNodeAffinities |= k->second.GetPreferredAffinities(eGet);
     }
-
-    target.clear();
-    for (map< string, CNSClient >::const_iterator
-            k = m_Clients.begin(); k != m_Clients.end(); ++k )
-        if (k->second.GetType() & mask)
-            target |= k->second.GetPreferredAffinities(cmd_group);
 }
 
 

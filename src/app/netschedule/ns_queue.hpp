@@ -564,7 +564,12 @@ private:
     CNSPreciseTime x_GetEstimatedJobLifetime(unsigned int   job_id,
                                              TJobStatus     status) const;
     CNSPreciseTime x_GetSubmitTime(unsigned int  job_id);
-    bool x_NoMoreReadJobs(const string &  group);
+    bool x_NoMoreReadJobs(const CNSClientId &   client,
+                          const TNSBitVector &  aff_list,
+                          bool                  reader_affinity,
+                          bool                  any_affinity,
+                          bool                  exclusive_new_affinity,
+                          const string &        group);
 
 private:
     friend class CJob;

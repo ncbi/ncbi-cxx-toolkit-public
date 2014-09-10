@@ -3668,7 +3668,8 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
     // Checks that the given GETx/JXCG parameters make sense
     if (m_CommandArguments.wnode_affinity == false &&
         m_CommandArguments.any_affinity == false &&
-        m_CommandArguments.affinity_token.empty()) {
+        m_CommandArguments.affinity_token.empty() &&
+        m_CommandArguments.exclusive_new_aff == false) {
         LOG_POST(Message << Warning <<
                             "The job request without explicit affinities, "
                             "without preferred affinities and "
@@ -3688,7 +3689,8 @@ void CNetScheduleHandler::x_CheckReadParameters(void)
     // Checks that the given READ parameters make sense
     if (m_CommandArguments.reader_affinity == false &&
         m_CommandArguments.any_affinity == false &&
-        m_CommandArguments.affinity_token.empty()) {
+        m_CommandArguments.affinity_token.empty() &&
+        m_CommandArguments.exclusive_new_aff == false) {
         LOG_POST(Message << Warning <<
                             "The job read request without explicit affinities, "
                             "without preferred affinities and "

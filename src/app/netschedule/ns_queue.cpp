@@ -343,8 +343,20 @@ CNSPreciseTime  CQueue::x_GetSubmitTime(unsigned int  job_id)
 }
 
 
-bool CQueue::x_NoMoreReadJobs(const string &  group)
+bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
+                              const TNSBitVector &  aff_ids,
+                              bool                  reader_affinity,
+                              bool                  any_affinity,
+                              bool                  exclusive_new_affinity,
+                              const string &        group)
 {
+    // This certain condition guarantees that there will be no job given
+    if (!reader_affinity &&
+        !aff_ids.any() &&
+        !exclusive_new_affinity &&
+        !any_affinity)
+        return true;
+
     // Used only in the GetJobForReadingOrWait().
     // Operation lock has to be already taken.
     // Provides true if there are no more jobs for reading.
@@ -365,16 +377,47 @@ bool CQueue::x_NoMoreReadJobs(const string &  group)
     // reading. When calculating 'no_more_jobs' the only already read jobs must
     // be excluded.
     candidates |= m_StatusTracker.GetJobs(CNetScheduleAPI::eReading);
+    if (!candidates.any())
+        return true;
 
     // Apply the group limit if so
-    if (!group.empty())
+    if (!group.empty()) {
         candidates &= m_GroupRegistry.GetJobs(group, false);
+        if (!candidates.any())
+            return true;
+    }
 
+    // Deal with affinities
+    // The weakest condition is if any affinity is suitable
+    if (any_affinity)
+        return !candidates.any();
+
+    TNSBitVector        suitable_affinities;
+    TNSBitVector        all_aff;
+    TNSBitVector        all_pref_affs;
+    TNSBitVector        all_aff_jobs;           // All jobs with an affinity
+    TNSBitVector        no_aff_jobs;            // Jobs without any affinity
+
+    all_aff = m_AffinityRegistry.GetRegisteredAffinities();
+    all_pref_affs = m_ClientsRegistry.GetAllPreferredAffinities(eRead);
+    all_aff_jobs = m_AffinityRegistry.GetJobsWithAffinities(all_aff);
+    no_aff_jobs = candidates - all_aff_jobs;
+    if (exclusive_new_affinity && no_aff_jobs.any())
+        return false;
+
+    if (exclusive_new_affinity)
+        suitable_affinities = all_aff - all_pref_affs;
+    if (reader_affinity)
+        suitable_affinities |= m_ClientsRegistry.GetPreferredAffinities(client,
+                                                                        eRead);
+    suitable_affinities |= aff_ids;
+
+    candidates &= m_AffinityRegistry.GetJobsWithAffinities(suitable_affinities);
     return !candidates.any();
 }
 
 
-unsigned CQueue::LoadStatusMatrix()
+unsigned int  CQueue::LoadStatusMatrix(void)
 {
     unsigned int        recs = 0;
     CFastMutexGuard     guard(m_OperationLock);
@@ -973,6 +1016,11 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
 {
     // It is guaranteed here that the client is a new style one.
     // I.e. it has both client_node and client_session.
+    if (cmd_group == eGet)
+        m_ClientsRegistry.AppendType(client, CNSClient::eWorkerNode);
+    else
+        m_ClientsRegistry.AppendType(client, CNSClient::eReader);
+
 
     list<string>    msgs;   // Warning messages for the socket
     unsigned int    client_id = client.GetID();
@@ -1093,6 +1141,11 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
                           const list<string> &    aff,
                           ECommandGroup           cmd_group)
 {
+    if (cmd_group == eGet)
+        m_ClientsRegistry.AppendType(client, CNSClient::eWorkerNode);
+    else
+        m_ClientsRegistry.AppendType(client, CNSClient::eReader);
+
     if (aff.size() > m_MaxAffinities) {
         NCBI_THROW(CNetScheduleException, eTooManyPreferredAffinities,
                    "The client '" + client.GetNode() +
@@ -2161,7 +2214,9 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
             CFastMutexGuard     guard(m_OperationLock);
 
             if (job_pick.job_id == 0) {
-                *no_more_jobs = x_NoMoreReadJobs(group);
+                *no_more_jobs = x_NoMoreReadJobs(client, aff_ids,
+                                                 reader_affinity, any_affinity,
+                                                 exclusive_new_affinity, group);
                 if (timeout != 0 && port > 0)
                     x_RegisterReadListener(client, port, timeout, aff_ids,
                                            reader_affinity, any_affinity,
@@ -2552,7 +2607,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &  client,
                         exclusive_aff_candidate = job_id;
                 }
             }
-        }
+        } // end for
 
         if (pref_aff_candidate_job_id != 0) {
             job_pick.job_id = pref_aff_candidate_job_id;
