@@ -143,6 +143,10 @@ sub get_files_to_download
         print "$_\n" for (@blast_db_files);
     }
 
+    if (grep(/gss/, @ARGV) and not grep(/gss_annot/, @ARGV)) {
+        push @ARGV, qw(gss_annot);
+    }
+
     for my $requested_db (@ARGV) {
         for my $file (@blast_db_files) {
             next unless ($file =~ /\.tar\.gz$/);    
