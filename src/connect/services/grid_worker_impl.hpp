@@ -97,6 +97,7 @@ struct SGridWorkerNodeImpl : public CObject
     void x_WNCoreInit();
     void x_StartWorkerThreads();
     void x_StopWorkerThreads();
+    void x_ClearNode();
     int x_WNCleanUp();
 
     const string& GetQueueName() const

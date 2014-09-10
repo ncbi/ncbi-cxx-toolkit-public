@@ -36,6 +36,11 @@
 
 #include <connect/services/grid_globals.hpp>
 
+#ifdef NCBI_OS_UNIX
+#include <sys/types.h>
+#include <signal.h>
+#endif
+
 
 #define NCBI_USE_ERRCODE_X   ConnServ_WorkerNode
 
@@ -579,13 +584,11 @@ int SGridWorkerNodeImpl::Run(
 #ifdef NCBI_OS_UNIX
     if (is_daemon) {
         LOG_POST_X(53, "Entering UNIX daemon mode...");
-        bool daemon = CProcess::Daemonize("/dev/null",
-                                          CProcess::fDontChroot |
-                                          CProcess::fKeepStdin  |
-                                          CProcess::fKeepStdout);
-        if (!daemon) {
-            return 0;
-        }
+        CProcess::Daemonize("/dev/null",
+                CProcess::fDF_KeepCWD |
+                CProcess::fDF_KeepStdin |
+                CProcess::fDF_KeepStdout |
+                CProcess::fDF_AllowExceptions);
     }
 #endif
 
@@ -638,6 +641,48 @@ int SGridWorkerNodeImpl::Run(
 
     m_NetScheduleAPI.SetProgramVersion(m_JobProcessorFactory->GetJobVersion());
 
+    CRequestContext& request_context = CDiagContext::GetRequestContext();
+
+    request_context.SetSessionID(m_NetScheduleAPI->m_ClientSession);
+
+#ifdef NCBI_OS_UNIX
+    bool reliable_cleanup = reg.GetBool(kServerSec,
+            "reliable_cleanup", false, 0, CNcbiRegistry::eReturn);
+
+    if (reliable_cleanup) {
+        TPid child_pid = CProcess::Fork();
+        if (child_pid != 0) {
+            CProcess child_process(child_pid);
+            CProcess::CExitInfo exit_info;
+            child_process.Wait(kInfiniteTimeoutMs, &exit_info);
+
+            x_ClearNode();
+            remove(procinfo_file_name.c_str());
+
+            int retcode = 0;
+            if (exit_info.IsPresent()) {
+                if (exit_info.IsSignaled()) {
+                    int signum = exit_info.GetSignal();
+                    ERR_POST(Critical << "Child process " << child_pid <<
+                            " was terminated by signal " << signum);
+                    kill(getpid(), signum);
+                } else if (exit_info.IsExited()) {
+                    retcode = exit_info.GetExitCode();
+                    if (retcode == 0) {
+                        LOG_POST("Worker node process " << child_pid <<
+                                " terminated normally (exit code 0)");
+                    } else {
+                        ERR_POST(Error << "Worker node process " << child_pid <<
+                                " terminated with exit code " << retcode);
+                    }
+                }
+            }
+            // Exit the parent process with the same return code.
+            return retcode;
+        }
+    }
+#endif
+
     // Now that most of parameters have been checked, create the
     // "procinfo" file.
     if (!procinfo_file_name.empty()) {
@@ -654,10 +699,6 @@ int SGridWorkerNodeImpl::Run(
                 m_NetScheduleAPI->m_ClientSession.c_str());
         fclose(procinfo_file);
     }
-
-    CRequestContext& request_context = CDiagContext::GetRequestContext();
-
-    request_context.SetSessionID(m_NetScheduleAPI->m_ClientSession);
 
     m_NSExecutor = m_NetScheduleAPI.GetExecutor();
     m_NSExecutor->m_WorkerNodeMode = true;
@@ -741,8 +782,9 @@ int SGridWorkerNodeImpl::Run(
 
     LOG_POST_X(31, Info << "Shutting down...");
 
-    if (reg.GetBool(kServerSec,
-            "force_exit", false, 0, CNcbiRegistry::eReturn)) {
+    bool force_exit = reg.GetBool(kServerSec,
+            "force_exit", false, 0, CNcbiRegistry::eReturn);
+    if (force_exit) {
         ERR_POST_X(45, "Force exit (worker threads will not be waited for)");
     } else
         x_StopWorkerThreads();
@@ -764,20 +806,14 @@ int SGridWorkerNodeImpl::Run(
 
     m_JobCommitterThread->Join();
 
-    try {
-        m_NSExecutor.ClearNode();
-    }
-    catch (CNetServiceException& ex) {
-        // if server does not understand this new command just ignore the error
-        if (ex.GetErrCode() != CNetServiceException::eCommunicationError
-            || NStr::Find(ex.what(), "Server error:Unknown request") == NPOS) {
-            ERR_POST_X(35, "Could not unregister from NetSchedule services: "
-                       << ex);
-        }
-    }
-    catch (exception& ex) {
-        ERR_POST_X(36, "Could not unregister from NetSchedule services: " <<
-                ex.what());
+#ifdef NCBI_OS_UNIX
+    // Clear the node only if reliable CLRN mode is not enabled.
+    // Otherwise, the node will be cleared in the parent process.
+    if (!reliable_cleanup)
+#endif
+    {
+        x_ClearNode();
+        remove(procinfo_file_name.c_str());
     }
 
     int exit_code = x_WNCleanUp();
@@ -787,6 +823,11 @@ int SGridWorkerNodeImpl::Run(
     control_thread->Join();
 
     LOG_POST_X(38, Info << "Worker Node has been stopped.");
+
+    if (force_exit) {
+        SleepMilliSec(200);
+        _exit(exit_code);
+    }
 
     return exit_code;
 }
@@ -803,6 +844,25 @@ void SGridWorkerNodeImpl::x_StopWorkerThreads()
         catch (exception& ex) {
             ERR_POST_X(33, "Could not stop worker threads: " << ex.what());
         }
+    }
+}
+
+void SGridWorkerNodeImpl::x_ClearNode()
+{
+    try {
+        m_NSExecutor.ClearNode();
+    }
+    catch (CNetServiceException& ex) {
+        // if server does not understand this new command just ignore the error
+        if (ex.GetErrCode() != CNetServiceException::eCommunicationError
+            || NStr::Find(ex.what(), "Server error:Unknown request") == NPOS) {
+            ERR_POST_X(35, "Could not unregister from NetSchedule services: "
+                       << ex);
+        }
+    }
+    catch (exception& ex) {
+        ERR_POST_X(36, "Could not unregister from NetSchedule services: " <<
+                ex.what());
     }
 }
 

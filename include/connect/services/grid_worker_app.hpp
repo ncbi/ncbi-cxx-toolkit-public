@@ -119,14 +119,7 @@ class CGridWorkerNodeApp_Listener : public IGridWorkerNodeApp_Listener
 class NCBI_XCONNECT_EXPORT CGridWorkerApp : public CNcbiApplication
 {
 public:
-
-    enum ESignalHandling {
-        eStandardSignalHandling = 0,
-        eManualSignalHandling
-    };
-
-    CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                   ESignalHandling signal_handling = eStandardSignalHandling);
+    CGridWorkerApp(IWorkerNodeJobFactory* job_factory);
 
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
                    const CVersionInfo& version_info);
@@ -162,8 +155,7 @@ protected:
     const IWorkerNodeInitContext& GetInitContext();
 
 private:
-    void Construct(IWorkerNodeJobFactory* job_factory,
-        ESignalHandling signal_handling = eStandardSignalHandling);
+    void Construct(IWorkerNodeJobFactory* job_factory);
 
     auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 

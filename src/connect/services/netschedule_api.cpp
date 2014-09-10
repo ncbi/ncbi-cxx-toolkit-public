@@ -327,13 +327,31 @@ void CNetScheduleNotificationHandler::PrintPortNumber()
     printf("Using UDP port %hu\n", GetPort());
 }
 
-void SNetScheduleAPIImpl::StartNotificationThread()
+void SNetScheduleAPIImpl::AllocNotificationThread()
 {
     CFastMutexGuard guard(m_NotificationThreadMutex);
 
-    if (m_NotificationThread == NULL) {
+    if (m_NotificationThread == NULL)
         m_NotificationThread = new SNetScheduleNotificationThread(this);
+}
+
+void SNetScheduleAPIImpl::StartNotificationThread()
+{
+    if (m_NotificationThreadStartStopCounter.Add(1) == 0)
         m_NotificationThread->Run();
+}
+
+void SNetScheduleAPIImpl::StopNotificationThread()
+{
+    if (m_NotificationThreadStartStopCounter.Add(-1) == 1) {
+        CFastMutexGuard guard(m_NotificationThreadMutex);
+
+        if (m_NotificationThread != NULL) {
+            m_NotificationThread->m_StopThread = true;
+            CDatagramSocket().Send("INTERRUPT", sizeof("INTERRUPT"),
+                    "127.0.0.1", m_NotificationThread->m_UDPPort);
+            m_NotificationThread->Join();
+        }
     }
 }
 
@@ -597,7 +615,6 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
 {
     m_Service->Init(this, service_name,
         config, section, s_NetScheduleConfigSections);
-    StartNotificationThread();
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
@@ -610,20 +627,6 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
     m_AffinityPreference(parent->m_AffinityPreference),
     m_UseEmbeddedStorage(parent->m_UseEmbeddedStorage)
 {
-    StartNotificationThread();
-}
-
-SNetScheduleAPIImpl::~SNetScheduleAPIImpl()
-{
-    // Stop the notification handling thread.
-    CFastMutexGuard guard(m_NotificationThreadMutex);
-
-    if (m_NotificationThread != NULL) {
-        m_NotificationThread->m_StopThread = true;
-        CDatagramSocket().Send("INTERRUPT", sizeof("INTERRUPT"),
-                "127.0.0.1", m_NotificationThread->m_UDPPort);
-        m_NotificationThread->Join();
-    }
 }
 
 CNetScheduleAPI::CNetScheduleAPI(CNetScheduleAPI::EAppRegistry /*use_app_reg*/,
@@ -781,13 +784,13 @@ CNetScheduleSubmitter CNetScheduleAPI::GetSubmitter()
 
 CNetScheduleExecutor CNetScheduleAPI::GetExecutor()
 {
-    m_Impl->StartNotificationThread();
+    m_Impl->AllocNotificationThread();
     return new SNetScheduleExecutorImpl(m_Impl);
 }
 
 CNetScheduleJobReader CNetScheduleAPI::GetJobReader()
 {
-    m_Impl->StartNotificationThread();
+    m_Impl->AllocNotificationThread();
     return new SNetScheduleJobReaderImpl(m_Impl);
 }
 

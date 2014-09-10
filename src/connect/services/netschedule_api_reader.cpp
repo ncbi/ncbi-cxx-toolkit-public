@@ -76,6 +76,9 @@ SNetScheduleJobReaderImpl::~SNetScheduleJobReaderImpl()
     ITERATE(TTimelineEntries, it, m_TimelineEntryByAddress) {
         (*it)->RemoveReference();
     }
+
+    if (m_NotificationThreadIsRunning.Get() != 0)
+        m_API->StopNotificationThread();
 }
 
 // True if a job is returned.
@@ -239,6 +242,8 @@ CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
         CNetScheduleAPI::EJobStatus* job_status,
         CTimeout* timeout)
 {
+    m_Impl->x_StartNotificationThread();
+
     char deadline_object[sizeof(CDeadline)];
 
     CDeadline* timeout_expiration_time = timeout == NULL ? NULL :
@@ -290,6 +295,8 @@ CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
 
 void CNetScheduleJobReader::InterruptReading()
 {
+    m_Impl->x_StartNotificationThread();
+
     m_Impl->m_API->m_NotificationThread->m_ReadNotifications.InterruptWait();
 }
 

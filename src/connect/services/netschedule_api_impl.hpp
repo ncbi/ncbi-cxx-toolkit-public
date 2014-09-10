@@ -198,8 +198,6 @@ struct SNetScheduleAPIImpl : public CObject
     // Special constructor for CNetScheduleAPI::GetServer().
     SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);
 
-    virtual ~SNetScheduleAPIImpl();
-
     CNetScheduleServerListener* GetListener()
     {
         return static_cast<CNetScheduleServerListener*>(
@@ -248,7 +246,9 @@ struct SNetScheduleAPIImpl : public CObject
 
     static void VerifyQueueNameAlphabet(const string& queue_name);
 
+    void AllocNotificationThread();
     void StartNotificationThread();
+    void StopNotificationThread();
 
     CNetService m_Service;
 
@@ -274,6 +274,7 @@ struct SNetScheduleAPIImpl : public CObject
 
     CFastMutex m_NotificationThreadMutex;
     CRef<SNetScheduleNotificationThread> m_NotificationThread;
+    CAtomicCounter_WithAutoInit m_NotificationThreadStartStopCounter;
 };
 
 
@@ -400,6 +401,15 @@ struct SNetScheduleJobReaderImpl : public CObject
     TTimelineEntries m_TimelineEntryByAddress;
 
     CNetScheduleAPI m_API;
+
+    CAtomicCounter_WithAutoInit m_NotificationThreadIsRunning;
+
+    void x_StartNotificationThread()
+    {
+        if (m_NotificationThreadIsRunning.Get() == 0 &&
+                m_NotificationThreadIsRunning.Add(1) == 0)
+            m_API->StartNotificationThread();
+    }
 
     string m_JobGroup;
     string m_Affinity;

@@ -40,16 +40,17 @@
 
 /// @internal
 extern "C"
-void GridWorker_SignalHandler( int )
+void g_GridWorker_TermHandler(int /*sig*/)
 {
     try {
-        ncbi::CGridWorkerApp* app =
-            dynamic_cast<ncbi::CGridWorkerApp*>(ncbi::CNcbiApplication::Instance());
+        ncbi::CGridWorkerApp* app = dynamic_cast<ncbi::CGridWorkerApp*>(
+                ncbi::CNcbiApplication::Instance());
         if (app) {
             app->RequestShutdown();
         }
     }
-    catch (...) {}   // Make sure we don't throw an exception through the "C" layer
+    catch (...) { // Make sure we don't throw an exception through the "C" layer
+    }
 }
 #endif
 
@@ -88,25 +89,22 @@ void IGridWorkerNodeApp_Listener::OnInit(CNcbiApplication* /*app*/)
 /////////////////////////////////////////////////////////////////////////////
 //
 
-void CGridWorkerApp::Construct(
-    IWorkerNodeJobFactory* job_factory,
-    ESignalHandling signal_handling)
+void CGridWorkerApp::Construct(IWorkerNodeJobFactory* job_factory)
 {
     m_WorkerNode = CGridWorkerNode(*this, job_factory);
 
 #if defined(NCBI_OS_UNIX)
-    if (signal_handling == eStandardSignalHandling) {
     // attempt to get server gracefully shutdown on signal
-        signal(SIGINT,  GridWorker_SignalHandler);
-        signal(SIGTERM, GridWorker_SignalHandler);
-    }
+    signal(SIGINT,  g_GridWorker_TermHandler);
+    signal(SIGTERM, g_GridWorker_TermHandler);
+    signal(SIGUSR1, g_GridWorker_TermHandler);
+    signal(SIGUSR2, g_GridWorker_TermHandler);
 #endif
 }
 
-CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
-                               ESignalHandling signal_handling)
+CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory)
 {
-    Construct(job_factory, signal_handling);
+    Construct(job_factory);
 }
 
 CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
