@@ -351,12 +351,11 @@ class Scenario1510( TestBase ):
         receivedJobID = self.ns.getJob( 'TEST', -1, 'a1' )[ 0 ]
         if jobID != receivedJobID:
             raise Exception( "Unexpected job for execution" )
-
         execAny( ns_client, "PUT " + jobID + " 0 nooutput" )
 
         output = execAny( ns_client,
                           'READ2 reader_aff=1 any_aff=0' )
-        if output != "no_more_jobs=false":
+        if output != "no_more_jobs=true":
             raise Exception( "Expect no jobs, but received one." )
         return True
 
@@ -425,7 +424,7 @@ class Scenario1512( TestBase ):
 
         output = execAny( ns_client, 'READ2 reader_aff=1 any_aff=0' )
 
-        if output != "no_more_jobs=false":
+        if output != "no_more_jobs=true":
             raise Exception( "Expect no jobs, but received one." )
         return True
 
@@ -646,7 +645,7 @@ class Scenario1517( TestBase ):
         execAny( ns_client, "CHRAFF add=a7" )
         output = execAny( ns_client,
                           'READ2 reader_aff=1 any_aff=0 aff=a5' )
-        if output != "no_more_jobs=false":
+        if output != "no_more_jobs=true":
             raise Exception( "Expect no jobs, but received one." )
         return True
 
@@ -1442,4 +1441,432 @@ class Scenario1536( TestBase ):
             raise Exception( "Expect no job (it's in the blacklist), "
                              "but received one: " + output )
         return True
+
+class Scenario1537( TestBase ):
+    " Scenario 1537 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Read notifications and blacklists"
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1537' )
+        ns_client.set_client_identification( 'node', 'session' )
+        execAny( ns_client, "CHRAFF add=a0" )
+
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client, "PUT " + jobID + " 0 nooutput" )
+
+        output = execAny( ns_client,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        if jobID != receivedJobID:
+            raise Exception( "Received job ID does not match. Expected: " +
+                             jobID + " Received: " + receivedJobID )
+
+        execAny( ns_client, 'RDRB ' + jobID + ' ' + passport )
+        # Here: pending job and it is in the client black list
+
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario1537' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        output = execAny( ns_client2,
+                          'READ2 reader_aff=1 any_aff=1 exclusive_new_aff=0' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]
+
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        # The first client waits for a job
+        execAny( ns_client, "READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 "
+                            "aff=a0 port=9007 timeout=3" )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
+
+        # Return the job
+        execAny( ns_client2, 'RDRB ' + jobID + ' ' + passport )
+
+        result = self.getNotif( notifSocket )
+        if result != 0:
+            raise Exception( "Received notifications when not expected" )
+        return True
+
+class Scenario1538( TestBase ):
+    " Scenario 1538 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Notifications and exclusive affinities"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
+
+        # First client holds a0 affinity
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario1538' )
+        ns_client1.set_client_identification( 'node1', 'session1' )
+        execAny( ns_client1, "CHRAFF add=a0" )
+
+        # Second client holds a100 affinity
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario1538' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        execAny( ns_client2, "CHRAFF add=a100" )
+
+        # Socket to receive notifications
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client1, "PUT " + jobID + " 0 nooutput" )
+
+        # Second client tries to get the - should get nothing
+        output = execAny( ns_client2,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 '
+                          'port=9007 timeout=3' )
+        if output != "no_more_jobs=true":
+            raise Exception( "Expect no jobs, received: " + output )
+
+        time.sleep( 4 )
+        try:
+            # Exception is expected
+            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            raise Exception( "Expected no notifications, received one: " +
+                             data )
+        except Exception, exc:
+            if "Resource temporarily unavailable" not in str( exc ):
+                raise
+
+        # Second client tries to get another pending job
+        output = execAny( ns_client2,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 '
+                          'port=9007 timeout=3' )
+
+        # Should get notifications after this submit
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a5' )    # analysis:ignore
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client1, "PUT " + jobID + " 0 nooutput" )
+
+        time.sleep( 4 )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+
+        if "queue=TEST" not in data:
+            raise Exception( "Expected notification, received garbage: " +
+                             data )
+        return True
+
+class Scenario1539( TestBase ):
+    " Scenario 1539 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Read notifications and exclusive affinities"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
+
+        # First client holds a0 affinity
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario1539' )
+        ns_client1.set_client_identification( 'node1', 'session1' )
+        execAny( ns_client1, "CHRAFF add=a0" )
+
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client1, "PUT " + jobID + " 0 nooutput" )
+
+        output = execAny( ns_client1,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        passport = values[ 'auth_token' ][ 0 ]      # analysis:ignore
+
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected received job ID" )
+
+
+        # Second client holds a100 affinity
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario1539' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        execAny( ns_client2, "CHRAFF add=a100" )
+
+        # Socket to receive notifications
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        # Second client tries to get the pending job - should get nothing
+        output = execAny( ns_client2,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 '
+                          'port=9007 timeout=3' )
+        if output != "no_more_jobs=true":
+            raise Exception( "Expect no jobs, received: " + output )
+
+        time.sleep( 4 )
+        try:
+            # Exception is expected
+            data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            raise Exception( "Expected no notifications, received one: " +
+                             data )
+        except Exception, exc:
+            if "Resource temporarily unavailable" not in str( exc ):
+                raise
+
+        # Second client tries to get another job
+        output = execAny( ns_client2,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 '
+                          'port=9007 timeout=3' )
+
+        # Should get notifications after this clear because
+        # the a0 affinity becomes available
+        execAny( ns_client1, "CLRN" )
+
+        time.sleep( 4 )
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+
+        if "queue=TEST" not in data:
+            raise Exception( "Expected notification, received garbage: " +
+                             data )
+        return True
+
+class Scenario1540( TestBase ):
+    " Scenario 1540 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Reset client affinity"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        # First client holds a0 affinity
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario310' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+        execAny( ns_client, "CHRAFF add=a0" )
+
+        # Reader timeout is 5 sec
+        time.sleep( 7 )
+
+        ns_admin = self.getNetScheduleService( 'TEST', 'scenario310' )
+        info = getClientInfo( ns_admin, 'node1' )
+        if info[ 'reader_preferred_affinities_reset' ] != True:
+            raise Exception( "Expected to have preferred affinities reset, "
+                             "received: " +
+                             str( info[ 'reader_preferred_affinities_reset' ] ) )
+        return True
+
+class Scenario1541( TestBase ):
+    " Scenario 1541 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Reset client affinity"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        # First client holds a0 affinity
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1541' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+        execAny( ns_client, "CHRAFF add=a0" )
+
+        ns_admin = self.getNetScheduleService( 'TEST', 'scenario310' )
+
+        affInfo = getAffinityInfo( ns_admin )
+        if affInfo[ 'affinity_token' ] != 'a0':
+            raise Exception( "Unexpected affinity registry content "
+                             "after adding 1 reader preferred affinity (token)" )
+        if affInfo[ 'reader_clients__preferred' ] != [ 'node1' ]:
+            raise Exception( "Unexpected affinity registry content "
+                            "after adding 1 reader preferred affinity (node)" )
+        info = getClientInfo( ns_admin, 'node1' )
+        if info[ 'reader_preferred_affinities_reset' ] != False:
+            raise Exception( "Expected to have reader preferred affinities non reset, "
+                             "received: " +
+                             str( info[ 'reader_preferred_affinities_reset' ] ) )
+
+        # Reader timeout is 5 sec
+        time.sleep( 7 )
+
+        info = getClientInfo( ns_admin, 'node1' )
+        if info[ 'reader_preferred_affinities_reset' ] != True:
+            raise Exception( "Expected to have reader preferred affinities reset, "
+                             "received: " +
+                             str( info[ 'reader_preferred_affinities_reset' ] ) )
+
+        affInfo = getAffinityInfo( ns_admin )
+        if affInfo[ 'affinity_token' ] != 'a0':
+            raise Exception( "Unexpected affinity registry content "
+                             "after reader is expired (token)" )
+        if affInfo[ 'reader_clients__preferred' ] != None:
+            raise Exception( "Unexpected affinity registry content "
+                             "after reader is expired (node)" )
+
+        try:
+            output = execAny( ns_client,
+                              'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1' )
+        except Exception, excpt:
+            if "ePrefAffExpired" in str( excpt ) or "expired" in str( excpt ):
+                return True
+            raise
+
+        raise Exception( "Expected exception in READ2 and did not get it: " +
+                         output )
+
+class Scenario1542( TestBase ):
+    " Scenario 1542 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Reset client affinity"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        # First client holds a0 affinity
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1542' )
+        ns_client.set_client_identification( 'node1', 'session1' )
+        execAny( ns_client, "CHRAFF add=a0" )
+
+        ns_admin = self.getNetScheduleService( 'TEST', 'scenario1542' )
+
+        execAny( ns_client,
+                 'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=0 '
+                 'port=9007 timeout=4' )
+
+        info = getNotificationInfo( ns_admin )
+        if info[ 'client_node' ] != 'node1':
+            raise Exception( "Unexpected client in the notifications list: " +
+                             info[ 'client_node' ] )
+
+        # Reader timeout is 5 sec
+        time.sleep( 7 )
+
+        info = getClientInfo( ns_admin, 'node1' )
+        if info[ 'reader_preferred_affinities_reset' ] != True:
+            raise Exception( "Expected to have reader preferred affinities reset, "
+                             "received: " +
+                             str( info[ 'reader_preferred_affinities_reset' ] ) )
+
+        affInfo = getAffinityInfo( ns_admin )
+        if affInfo[ 'affinity_token' ] != 'a0':
+            raise Exception( "Unexpected affinity registry content "
+                             "after reader is expired (token)" )
+        if 'reader_clients__preferred' in affInfo:
+            if affInfo[ 'reader_clients__preferred' ] != None:
+                raise Exception( "Unexpected affinity registry content "
+                                 "after reader is expired (node)" )
+        return True
+
+class Scenario1543( TestBase ):
+    " Scenario 1543 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Change affinity, wait till reader expired, set affinity"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 7 )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1543' )
+        ns_client.set_client_identification( 'mynode', 'mysession' )
+        execAny( ns_client, "CHRAFF add=a1,a2" )
+
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+        if client[ 'reader_preferred_affinities_reset' ] != False:
+            raise Exception( "Expected non-resetted reader preferred affinities" )
+
+        # wait till the reader is expired
+        time.sleep( 12 )
+
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+        if client[ 'reader_preferred_affinities_reset' ] != True:
+            raise Exception( "Expected resetted reader preferred affinities" )
+        if client[ 'number_of_reader_preferred_affinities' ] != 0:
+            raise Exception( 'Unexpected length of reader_preferred_affinities' )
+
+        execAny( ns_client, 'SETRAFF' )
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+
+        if client[ 'reader_preferred_affinities_reset' ] != False:
+            raise Exception( "Expected non-resetted reader preferred affinities" \
+                             " after SETRAFF" )
+        if client[ 'number_of_reader_preferred_affinities' ] != 0:
+            raise Exception( 'Unexpected length of reader_preferred_affinities' )
+
+        execAny( ns_client, 'SETRAFF a4,a7' )
+        client = getClientInfo( ns_client, 'mynode', verbose = False )
+        if client[ 'reader_preferred_affinities_reset' ] != False:
+            raise Exception( "Expected non-resetted reader preferred affinities" \
+                             " after SETRAFF" )
+        if client[ 'number_of_reader_preferred_affinities' ] != 2:
+            raise Exception( 'Unexpected length of reader_preferred_affinities' )
+
+        return True
+
 

@@ -447,7 +447,7 @@ class Scenario801( TestBase ):
                 raise Exception( "First changed value is not found in the output" )
             if "&nc::added2=addval2" not in output:
                 raise Exception( "Second changed value is not found in the output" )
-        except Exception, exc:
+        except Exception:
             self.ns.disconnect()
             raise
 
@@ -826,7 +826,11 @@ class Scenario1107( TestBase ):
                reply[ 1 ] != '"queue_changes"' \
                              ' {"TEST" {"failed_retries" [0, 3], ' \
                              '"read_failed_retries" [0, 3], ' \
-                             '"scramble_job_keys" [true, false]}}':
+                             '"scramble_job_keys" [true, false]}}' and \
+                reply[ 1 ] != '"queue_changes" {"TEST" {"failed_retries" [0, 3], ' \
+                              '"read_failed_retries" [0, 3], ' \
+                              '"reader_timeout" ["40.0", "5.0"], ' \
+                              '"scramble_job_keys" [true, false]}}':
                 raise Exception( 'Unexpected output for RECO: ' + reply[ 1 ] )
 
             jobID = self.ns.submitJob( 'TEST', 'blah' )
