@@ -729,6 +729,11 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     /// Retrieve queue parameters from the server.
     const CNetScheduleAPI::SServerParams& GetServerParams();
 
+    /// Unregister client-listener. After this call, the
+    /// server will not try to send any notification messages or
+    /// maintain job affinity for the client.
+    void ClearNode();
+
     void AddPreferredAffinities(const vector<string>& affs_to_add)
         { ChangePreferredAffinities(&affs_to_add, NULL); }
 

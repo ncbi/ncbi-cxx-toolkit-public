@@ -238,6 +238,11 @@ const CNetScheduleAPI::SServerParams& CNetScheduleExecutor::GetServerParams()
     return m_Impl->m_API->GetServerParams();
 }
 
+void CNetScheduleExecutor::ClearNode()
+{
+    m_Impl->m_API->x_ClearNode();
+}
+
 void CNetScheduleExecutor::SetAffinityPreference(
         CNetScheduleExecutor::EJobAffinityPreference aff_pref)
 {
