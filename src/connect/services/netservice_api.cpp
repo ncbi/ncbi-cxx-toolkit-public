@@ -989,11 +989,11 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             }
             if (retry_count <= 0) {
                 NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-                        "Unable to execute [" << cmd <<
-                        "] on any of the discovered servers.");
+                        "Unable to send [" << cmd <<
+                        "] to any of the discovered servers.");
             }
 
-            LOG_POST(Warning << "Unable to execute [" << cmd << "] on any "
+            LOG_POST(Warning << "Unable to send [" << cmd << "] to any "
                     "of the discovered servers; will retry after delay.");
 
             SleepMilliSec(retry_delay);
