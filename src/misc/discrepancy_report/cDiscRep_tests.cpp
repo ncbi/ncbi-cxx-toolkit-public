@@ -7775,6 +7775,8 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   if (thisTest.is_Genes_oncall_run) return;
   thisTest.is_Genes_oncall_run = true;
 
+  if (gene_feat.empty()) return;
+
   bool run_missing = (thisTest.tests_run.find(GetName_missing()) != end_it);
   bool run_extra = (thisTest.tests_run.find(GetName_extra()) != end_it);
   if (!run_missing && !run_extra) return;
