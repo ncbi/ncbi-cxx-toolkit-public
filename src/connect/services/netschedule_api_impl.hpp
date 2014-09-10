@@ -250,6 +250,11 @@ struct SNetScheduleAPIImpl : public CObject
     void StartNotificationThread();
     void StopNotificationThread();
 
+    // Unregister client-listener. After this call, the
+    // server will not try to send any notification messages or
+    // maintain job affinity for the client.
+    void x_ClearNode();
+
     CNetService m_Service;
 
     string m_Queue;

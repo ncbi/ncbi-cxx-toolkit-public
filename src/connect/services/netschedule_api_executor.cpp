@@ -238,34 +238,6 @@ const CNetScheduleAPI::SServerParams& CNetScheduleExecutor::GetServerParams()
     return m_Impl->m_API->GetServerParams();
 }
 
-void CNetScheduleExecutor::ClearNode()
-{
-    string cmd("CLRN");
-    g_AppendClientIPAndSessionID(cmd);
-
-    for (CNetServiceIterator it = m_Impl->m_API->m_Service.
-            Iterate(CNetService::eIncludePenalized); it; ++it) {
-        CNetServer server = *it;
-
-        try {
-            CNetServer::SExecResult exec_result;
-            server->ConnectAndExec(cmd, exec_result);
-        } catch (CNetSrvConnException& e) {
-            if (m_Impl->m_API->m_Service.IsLoadBalanced()) {
-                ERR_POST(server->m_ServerInPool->m_Address.AsString() <<
-                    ": " << e.what());
-            }
-        } catch (CNetServiceException& e) {
-            if (e.GetErrCode() != CNetServiceException::eCommunicationError)
-                throw;
-            else {
-                ERR_POST_X(12, server->m_ServerInPool->m_Address.AsString() <<
-                    ": " << e.what());
-            }
-        }
-    }
-}
-
 void CNetScheduleExecutor::SetAffinityPreference(
         CNetScheduleExecutor::EJobAffinityPreference aff_pref)
 {

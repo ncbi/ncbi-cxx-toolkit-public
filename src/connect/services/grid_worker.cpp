@@ -39,6 +39,7 @@
 #ifdef NCBI_OS_UNIX
 #include <sys/types.h>
 #include <signal.h>
+#include <unistd.h>
 #endif
 
 
@@ -665,7 +666,7 @@ int SGridWorkerNodeImpl::Run(
                     int signum = exit_info.GetSignal();
                     ERR_POST(Critical << "Child process " << child_pid <<
                             " was terminated by signal " << signum);
-                    kill(getpid(), signum);
+                    kill(CProcess::GetCurrentPid(), signum);
                 } else if (exit_info.IsExited()) {
                     retcode = exit_info.GetExitCode();
                     if (retcode == 0) {
@@ -850,7 +851,7 @@ void SGridWorkerNodeImpl::x_StopWorkerThreads()
 void SGridWorkerNodeImpl::x_ClearNode()
 {
     try {
-        m_NSExecutor.ClearNode();
+        m_NetScheduleAPI->x_ClearNode();
     }
     catch (CNetServiceException& ex) {
         // if server does not understand this new command just ignore the error
