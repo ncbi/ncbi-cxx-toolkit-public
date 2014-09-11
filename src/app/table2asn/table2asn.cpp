@@ -574,11 +574,12 @@ int CTbl2AsnApp::Run(void)
             e.GetMsg()));
     }
 
-    m_logger->Dump(*m_LogStream);
     if (m_logger->Count() == 0)
         return 0;
     else
     {
+        m_logger->Dump(*m_LogStream);
+
         int errors = m_logger->LevelCount(eDiag_Critical) +
                      m_logger->LevelCount(eDiag_Error) +
                      m_logger->LevelCount(eDiag_Fatal);
