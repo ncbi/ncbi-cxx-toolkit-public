@@ -688,9 +688,11 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
                            << "SourceToProduct:"
                            " parent and child have opposite orientations");
             }
+            TSeqPos fr = (*it)->GetFrom();
+            TSeqPos to = (*it)->GetTo();
             (*it)->SetFrom(((*it)->GetFrom() - base_frame) / 3);
             (*it)->SetTo  (((*it)->GetTo()   - base_frame) / 3);
-            if ((flags & fS2P_AllowTer)  &&  (*it)->GetTo() == prot_length) {
+            if ((flags & fS2P_AllowTer)  &&  to == prot_length * 3  && fr < to ) {
                 --(*it)->SetTo();
             }
         }
