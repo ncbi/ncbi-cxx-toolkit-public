@@ -431,8 +431,12 @@ void CObjectIStreamAsnBinary::ReadBytes(string& str, size_t count)
         ThrowError(fIllegalCall, "illegal ReadBytes call");
     }
 #endif
-    if ( count == 0 )
+    if ( count == 0 ) {
+        if ( !str.empty() ) {
+            str.erase();
+        }
         return;
+    }
 #if CHECK_INSTREAM_LIMITS
     Int8 cur_pos = m_Input.GetStreamPosAsInt8();
     Int8 end_pos = cur_pos + count;
