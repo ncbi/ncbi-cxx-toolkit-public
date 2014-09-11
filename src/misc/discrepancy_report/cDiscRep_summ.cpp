@@ -648,12 +648,21 @@ string CSummarizeSusProdRule :: GetSequenceQualName (const CMolinfo_field& field
   return (fieldname + " " + val);
 }
 
+static const string rnatype_names[] = {
+  "preRNA",
+  "mRNA",
+  "tRNA",
+  "rRNA",
+  "ncRNA",
+  "tmRNA",
+  "misc_RNA"
+};
 string CSummarizeSusProdRule :: SummarizeRnaQual (const CRna_qual& rq)
 {
   string qualname = thisInfo.rnafield_names[rq.GetField()];
   if (qualname.empty()) return kEmptyStr;
 
-  string rnatypename = thisInfo.rnatype_names[(int)rq.GetType().Which()];
+  string rnatypename = rnatype_names[(int)rq.GetType().Which()];
 
   string s;
   if (rnatypename.empty()) s = "RNA " + qualname;

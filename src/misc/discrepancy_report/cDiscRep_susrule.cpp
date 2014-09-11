@@ -1652,10 +1652,26 @@ char CSuspectRuleCheck :: GetClose(char bp)
   else return bp;
 };
 
+
+static const string skip_bracket_paren[] = {
+  "(NAD(P)H)",
+  "(NAD(P))",
+  "(I)",
+  "(II)",
+  "(III)",
+  "(NADPH)",
+  "(NAD+)",
+  "(NAPPH/NADH)",
+  "(NADP+)",
+  "[acyl-carrier protein]",
+  "[acyl-carrier-protein]",
+  "(acyl carrier protein)"
+};
 bool CSuspectRuleCheck :: SkipBracketOrParen(const unsigned& idx, string& start)
 {
   bool rval = false;
   size_t ep, ns;
+  string strtmp;
 
   if (idx > 2 && CTempString(start).substr(idx-3, 6) == "NAD(P)") {
      rval = true;
@@ -1663,9 +1679,10 @@ bool CSuspectRuleCheck :: SkipBracketOrParen(const unsigned& idx, string& start)
   } 
   else {
      unsigned len;
-     ITERATE (vector <string>, it, thisInfo.skip_bracket_paren) {
-       len = (*it).size();
-       if (CTempString(start).substr(idx, len) == *it) {
+     for (unsigned i=0; i< ArraySize(skip_bracket_paren); i++) {
+       strtmp = skip_bracket_paren[i];
+       len = strtmp.size();
+       if (CTempString(start).substr(idx, len) == strtmp) {
          start = CTempString(start).substr(idx + len);
          rval = true;
          break;
@@ -1716,13 +1733,22 @@ bool CSuspectRuleCheck :: ContainsNorMoreSetsOfBracketsOrParentheses(const strin
   else return false;
 };
 
+static const string ok_num_prefix[] = {
+  "DUF",
+  "UPF",
+  "IS",
+  "TIGR",
+  "UCP",
+  "PUF",
+  "CHP"
+};
 bool CSuspectRuleCheck :: PrecededByOkPrefix (const string& start_str)
 {
   unsigned len_str = start_str.size();
   unsigned len_it;
-  ITERATE (vector <string>, it, thisInfo.ok_num_prefix) {
-    len_it = (*it).size();
-    if (len_str >= len_it && (CTempString(start_str).substr(len_str-len_it) == *it)) 
+  for (unsigned i=0; i< ArraySize(ok_num_prefix); i++) {
+    len_it = ok_num_prefix[i].size();
+    if (len_str >= len_it && (CTempString(start_str).substr(len_str-len_it) == ok_num_prefix[i])) 
           return true;
   }
   return false;

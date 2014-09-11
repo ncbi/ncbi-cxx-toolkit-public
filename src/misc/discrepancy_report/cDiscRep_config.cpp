@@ -77,31 +77,18 @@ bool                                CDiscRepInfo :: exclude_dirsub;
 string                              CDiscRepInfo :: xml_label(" XmlIds:");
 string                              CDiscRepInfo :: digit_str("0123456789");
 string  CDiscRepInfo :: alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-vector <string>                     CDiscRepInfo :: bad_gene_names_contained;
-vector <string>                     CDiscRepInfo :: short_auth_nms;
-vector <string>                     CDiscRepInfo :: spec_words_biosrc;
-vector <string>                     CDiscRepInfo :: suspicious_notes;
-vector <string>                     CDiscRepInfo :: trna_list;
-vector <string>                     CDiscRepInfo :: rrna_standard_name;
 Str2UInt                            CDiscRepInfo :: desired_aaList;
 Str2Str                             CDiscRepInfo :: state_abbrev;
 Str2Str                             CDiscRepInfo :: cds_prod_find;
-vector <string>                     CDiscRepInfo :: new_exceptions;
 Str2Str	                            CDiscRepInfo :: srcqual_keywords;
-vector <string>                     CDiscRepInfo :: kIntergenicSpacerNames;
-vector <string>                     CDiscRepInfo :: virus_lineage;
-vector <string>                     CDiscRepInfo :: strain_tax;
 Str2CombDt                          CDiscRepInfo :: fix_data;
 CConstRef<CSuspect_rule_set>        CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
-vector <string>                     CDiscRepInfo :: skip_bracket_paren;
-vector <string>                     CDiscRepInfo :: ok_num_prefix;
 map <EMacro_feature_type, CSeqFeatData::ESubtype> CDiscRepInfo :: feattype_featdef;
 Str2Str                             CDiscRepInfo :: featkey_modified;
 map <EMacro_feature_type, string>   CDiscRepInfo :: feattype_name;
 map <CRna_feat_type::E_Choice, CRNA_ref::EType>   CDiscRepInfo :: rnafeattp_rnareftp;
 map <ERna_field, EFeat_qual_legal>  CDiscRepInfo :: rnafield_featquallegal;
 map <ERna_field, string>            CDiscRepInfo :: rnafield_names;
-vector <string>                     CDiscRepInfo :: rnatype_names;
 map <CSeq_inst::EMol, string>       CDiscRepInfo :: mol_molname;
 map <CSeq_inst::EStrand, string>    CDiscRepInfo :: strand_strname;
 vector <string>                     CDiscRepInfo :: dblink_names;
@@ -232,48 +219,9 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     thisInfo.srcqual_keywords["variety"] = " var.";
     thisInfo.srcqual_keywords["pathovar"] = " pv.";
 
-    // ini. of new_exceptions
-    strtmp = "annotated by transcript or proteomic data,heterogeneous population sequenced,low-quality sequence region,unextendable partial coding region";
-    thisInfo.new_exceptions 
-        = NStr::Tokenize(strtmp, ",", thisInfo.new_exceptions);
-
-    // ini. of kIntergenicSpacerNames
-    strtmp = "trnL-trnF intergenic spacer,trnH-psbA intergenic spacer,trnS-trnG intergenic spacer,trnF-trnL intergenic spacer,psbA-trnH intergenic spacer,trnG-trnS intergenic spacer";
-    thisInfo.kIntergenicSpacerNames 
-         = NStr::Tokenize(strtmp, ",", thisInfo.kIntergenicSpacerNames);
-    
     // ini. of weasels
     strtmp = "candidate,hypothetical,novel,possible,potential,predicted,probable,putative,candidate,uncharacterized,unique";
     thisInfo.weasels = NStr::Tokenize(strtmp, ",", thisInfo.weasels);
-
-    // ini. of bad_gene_names_contained
-    strtmp = "putative,fragment,gene,orf,like";
-    thisInfo.bad_gene_names_contained 
-        = NStr::Tokenize(strtmp, ",", thisInfo.bad_gene_names_contained);
-
-    // ini. of suspicious notes
-    strtmp = "characterised,recognised,characterisation,localisation,tumour,uncharacterised,oxydase,colour,localise,faecal,orthologue,paralogue,homolog,homologue,intronless gene";
-    thisInfo.suspicious_notes 
-        = NStr::Tokenize(strtmp, ",", thisInfo.suspicious_notes);
-
-    // ini. of spec_words_biosrc;
-    strtmp = "institute,institution,University,College";
-    thisInfo.spec_words_biosrc 
-        = NStr::Tokenize(strtmp, ",", thisInfo.spec_words_biosrc);
-
-    // ini. of trna_list:
-    strtmp = "tRNA-Gap,tRNA-Ala,tRNA-Asx,tRNA-Cys,tRNA-Asp,tRNA-Glu,tRNA-Phe,tRNA-Gly,tRNA-His,tRNA-Ile,tRNA-Xle,tRNA-Lys,tRNA-Leu,tRNA-Met,tRNA-Asn,tRNA-Pyl,tRNA-Pro,tRNA-Gln,tRNA-Arg,tRNA-Ser,tRNA-Thr,tRNA-Sec,tRNA-Val,tRNA-Trp,tRNA-OTHER,tRNA-Tyr,tRNA-Glx,tRNA-TERM";
-    thisInfo.trna_list = NStr::Tokenize(strtmp, ",", thisInfo.trna_list);
-
-    // ini. of rrna_standard_name
-    strtmp = "5S ribosomal RNA,5.8S ribosomal RNA,12S ribosomal RNA,16S ribosomal RNA,18S ribosomal RNA,23S ribosomal RNA,26S ribosomal RNA,28S ribosomal RNA,large subunit ribosomal RNA,small subunit ribosomal RNA";
-    thisInfo.rrna_standard_name 
-        = NStr::Tokenize(strtmp,",",thisInfo.rrna_standard_name);
-
-    // ini. of short_auth_nms
-    strtmp = "de la,del,de,da,du,dos,la,le,van,von,der,den,di";
-    thisInfo.short_auth_nms 
-         = NStr::Tokenize(strtmp, ",", thisInfo.short_auth_nms);
 
     // ini. of desired_aaList
     thisInfo.desired_aaList["Ala"] = 1;
@@ -389,15 +337,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     thisInfo.cds_prod_find["faecal"] = "ContainsWholeWord";
     thisInfo.cds_prod_find["frame"] = "Empty";
     thisInfo.cds_prod_find["related"] = "EndsWithPattern";
-
-    // ini. of virus_lineage
-    strtmp = "Picornaviridae,Potyviridae,Flaviviridae,Togaviridae";
-    thisInfo.virus_lineage 
-        = NStr::Tokenize(strtmp, ",", thisInfo.virus_lineage); 
-
-    // ini. of strain_tax
-    strtmp = "type strain of,holotype strain of,paratype strain of,isotype strain of";
-    thisInfo.strain_tax = NStr::Tokenize(strtmp, ",", thisInfo.strain_tax);
 
     // ini. of spell_data for flat file text check
     const char* fix_data[] = {
@@ -678,16 +617,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
        }
     }
 
-    // ini of skip_bracket_paren
-    strtmp = "(NAD(P)H),(NAD(P)),(I),(II),(III),(NADPH),(NAD+),(NAPPH/NADH),(NADP+),[acyl-carrier protein],[acyl-carrier-protein],(acyl carrier protein)";
-    thisInfo.skip_bracket_paren 
-        = NStr::Tokenize(strtmp, ",", thisInfo.skip_bracket_paren);
-
-    // ini of ok_num_prefix
-    strtmp = "DUF,UPF,IS,TIGR,UCP,PUF,CHP";
-    thisInfo.ok_num_prefix
-        = NStr::Tokenize(strtmp, ",", thisInfo.ok_num_prefix);
-
     // ini of featkey_modified;
     thisInfo.featkey_modified["precursor_RNA"] = "preRNA";
     thisInfo.featkey_modified["C_region"] = "c_region";
@@ -748,12 +677,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
        thisInfo.rnafield_names[(ERna_field)i] = NStr::Join(arr, " ");
     }
 
-    // ini. of rnatype_names
-    strtmp = "preRNA,mRNA,tRNA,rRNA,ncRNA,tmRNA,misc_RNA";
-    thisInfo.rnatype_names 
-        = NStr::Tokenize(strtmp, ",", thisInfo.rnatype_names);
-    
-  
     // ini of mol_molname
     thisInfo.mol_molname[CSeq_inst::eMol_not_set] = kEmptyStr;
     thisInfo.mol_molname[CSeq_inst::eMol_dna] = "DNA";
