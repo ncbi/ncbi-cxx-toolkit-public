@@ -1439,6 +1439,17 @@ static bool s_FindWholeName (string taxname, string value)
     }
 }
 
+/**********************************************************/
+static bool s_IfContains(const char *name, const char *pat)
+{
+    const char *p;
+
+    p = strcasestr(name, pat);
+
+    if(p && (p == name || *(p - 1) == ' '))
+        return(true);
+    return(false);
+}
 
 void CValidError_imp::ValidateOrgRef
 (const COrg_ref&    orgref,
@@ -1458,7 +1469,9 @@ void CValidError_imp::ValidateOrgRef
         if((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
             NStr::EndsWith(taxname, " sp", NStr::eNocase)) &&
            !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
-           !NStr::Equal(taxname, "Haemoproteus sp.", NStr::eNocase))
+           !NStr::Equal(taxname, "Haemoproteus sp.", NStr::eNocase) &&
+           !s_IfContains(taxname.c_str(), (const char *) "endosymbiont ") &&
+           !s_IfContains(taxname.c_str(), (const char *) "symbiont "))
         {
             EDiagSev sev;
             if(IsGenomeSubmission())
@@ -3084,12 +3097,12 @@ CPCRSetList::~CPCRSetList(void)
 
 void CPCRSetList::AddFwdName (string name)
 {
-    int pcr_num = 0;
+    uint pcr_num = 0;
     if (NStr::StartsWith(name, "(") && NStr::EndsWith(name, ")") && NStr::Find(name, ",") != string::npos) {
         name = name.substr(1, name.length() - 2);
         vector<string> mult_names;
         NStr::Tokenize(name, ",", mult_names);
-        int name_num = 0;
+        uint name_num = 0;
         while (name_num < mult_names.size()) {
             while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetFwdName())) {
                 pcr_num++;
@@ -3115,12 +3128,12 @@ void CPCRSetList::AddFwdName (string name)
 
 void CPCRSetList::AddRevName (string name)
 {
-    int pcr_num = 0;
+    uint pcr_num = 0;
     if (NStr::StartsWith(name, "(") && NStr::EndsWith(name, ")") && NStr::Find(name, ",") != string::npos) {
         name = name.substr(1, name.length() - 2);
         vector<string> mult_names;
         NStr::Tokenize(name, ",", mult_names);
-        int name_num = 0;
+        uint name_num = 0;
         while (name_num < mult_names.size()) {
             while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetRevName())) {
                 pcr_num++;
@@ -3146,12 +3159,12 @@ void CPCRSetList::AddRevName (string name)
 
 void CPCRSetList::AddFwdSeq (string name)
 {
-    int pcr_num = 0;
+    uint pcr_num = 0;
     if (NStr::StartsWith(name, "(") && NStr::EndsWith(name, ")") && NStr::Find(name, ",") != string::npos) {
         name = name.substr(1, name.length() - 2);
         vector<string> mult_names;
         NStr::Tokenize(name, ",", mult_names);
-        int name_num = 0;
+        uint name_num = 0;
         while (name_num < mult_names.size()) {
             while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetFwdSeq())) {
                 pcr_num++;
@@ -3177,12 +3190,12 @@ void CPCRSetList::AddFwdSeq (string name)
 
 void CPCRSetList::AddRevSeq (string name)
 {
-    int pcr_num = 0;
+    uint pcr_num = 0;
     if (NStr::StartsWith(name, "(") && NStr::EndsWith(name, ")") && NStr::Find(name, ",") != string::npos) {
         name = name.substr(1, name.length() - 2);
         vector<string> mult_names;
         NStr::Tokenize(name, ",", mult_names);
-        int name_num = 0;
+        uint name_num = 0;
         while (name_num < mult_names.size()) {
             while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetRevSeq())) {
                 pcr_num++;
