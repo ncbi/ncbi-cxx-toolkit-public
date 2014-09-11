@@ -3975,6 +3975,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_gen() const {return string("DISC_FEATURE_COUNT"); }
   };
 
+  struct s_desc_objs {
+      vector <string> descs;
+      vector <CConstRef <CObject> > objs;
+  };
   class CBioseq_DISC_FEATURE_COUNT_oncaller : public CBioseq_on_feat_cnt
   {
     public: 
@@ -3986,8 +3990,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     protected:
        void x_AddSeqToAllSeqList(Str2Obj& seqs, 
                               const vector <string>& cntseq_ls, const string& feat);
-       void x_CheckMissingFeatSeqs(vector <CConstRef <CObject> >& missing_ls, 
-                              Str2Obj seqs, Str2Strs cnt2seqs);
+       void x_CheckMissingFeatSeqs(s_desc_objs& missing_ls, Str2Obj seqs, Str2Strs cnt2seqs);
   };
 
   class CBioseq_DISC_FEATURE_COUNT : public CBioseq_on_feat_cnt
