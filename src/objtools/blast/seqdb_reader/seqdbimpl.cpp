@@ -137,7 +137,7 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
             // This is a whole-database scan; it's always done in
             // approximate length mode.
 
-            x_ScanTotals(false, & m_NumSeqs, & m_TotalLength,
+            x_ScanTotals(true, & m_NumSeqs, & m_TotalLength,
                                & m_MaxLength, & m_MinLength, locked);
             m_Atlas.Verify(locked);
         } else {
