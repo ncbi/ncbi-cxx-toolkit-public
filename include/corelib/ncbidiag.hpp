@@ -942,7 +942,7 @@ public:
     /// Generic method to post to diagnostic stream.
     // Some compilers need to see the body right away, but others need
     // to meet CDiagBuffer first.
-    template<class X> const CNcbiDiag& Put(const void*, const X& x) const
+    template<class X> const CNcbiDiag& Put(const volatile void*, const X& x) const
 #ifdef NCBI_COMPILER_MSVC
     {
         m_Buffer.Put(*this, x);

@@ -252,7 +252,7 @@ inline const string& CDiagCompileInfo::GetFunction(void) const
 #ifdef NCBIDIAG_DEFER_GENERIC_PUT
 template<class X>
 inline
-const CNcbiDiag& CNcbiDiag::Put(const void*, const X& x) const
+const CNcbiDiag& CNcbiDiag::Put(const volatile void*, const X& x) const
 {
     m_Buffer.Put(*this, x);
     return *this;
