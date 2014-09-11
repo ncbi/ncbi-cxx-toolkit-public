@@ -91,6 +91,7 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 
 
 CNcbiApplication::CNcbiApplication(void)
+    : m_ConfigLoaded(false)
 {
     // Initialize UID and start timer
     GetDiagContext().GetUID();
@@ -276,6 +277,7 @@ void CNcbiApplication::x_TryInit(EAppDiagStream diag,
     } else {
         LoadConfig(*m_Config, NULL);
     }
+    m_ConfigLoaded = true;
 
     CDiagContext::SetupDiag(diag, m_Config, eDCM_Flush);
     CDiagContext::x_FinalizeSetupDiag();
@@ -808,6 +810,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
             m_ConfigPath = CMetaRegistry::FindRegistry
                 ("ncbi", CMetaRegistry::eName_RcOrIni);
         }
+        m_ConfigLoaded = true;
         return false;
     } else if (conf->empty()) {
         entry = CMetaRegistry::Load(basename, CMetaRegistry::eName_Ini, 0,
@@ -838,6 +841,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
             m_ConfigPath = CMetaRegistry::FindRegistry
                 ("ncbi", CMetaRegistry::eName_RcOrIni);
         }
+        m_ConfigLoaded = true;
         return false;
     } else if (entry.registry != static_cast<IRWRegistry*>(&reg)) {
         // should be impossible with new CMetaRegistry interface...
@@ -853,6 +857,7 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry&        reg,
         }
     }
     m_ConfigPath = entry.actual_name;
+    m_ConfigLoaded = true;
     return true;
 }
 

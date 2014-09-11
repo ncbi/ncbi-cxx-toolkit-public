@@ -253,6 +253,10 @@ public:
     /// Check if the config file has been loaded
     bool HasLoadedConfig(void) const;
 
+    /// Check if the application has finished loading confing file
+    /// (successfully or not).
+    bool FinishedLoadingConfig(void) const;
+
     /// Get the application's cached configuration parameters.
     const CNcbiRegistry& GetConfig(void) const;
     CNcbiRegistry& GetConfig(void);
@@ -584,6 +588,7 @@ private:
     EExitMode                  m_ExitCodeCond; ///< When to force it (if ever)
     bool                       m_DryRun;       ///< Dry run
     string                     m_DefaultConfig; ///< conf parameter to AppMain
+    bool                       m_ConfigLoaded;  ///< Finished loading config
 };
 
 
@@ -662,6 +667,11 @@ inline const string& CNcbiApplication::GetConfigPath(void) const
 inline bool CNcbiApplication::HasLoadedConfig(void) const
 {
     return !m_ConfigPath.empty();
+}
+
+inline bool CNcbiApplication::FinishedLoadingConfig(void) const
+{
+    return m_ConfigLoaded;
 }
 
 inline bool CNcbiApplication::ReloadConfig(CMetaRegistry::TFlags flags,

@@ -431,7 +431,7 @@ CParam<TDescription>::sx_GetDefault(bool force_reset)
                     TDescription::sm_ParamDescription);
             }
             CNcbiApplication* app = CNcbiApplication::Instance();
-            sx_GetState() = app  &&  app->HasLoadedConfig()
+            sx_GetState() = app  &&  app->FinishedLoadingConfig()
                 ? eState_Config : eState_EnvVar;
         }
     }
