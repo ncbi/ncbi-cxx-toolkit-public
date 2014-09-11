@@ -131,7 +131,7 @@ public:
     SQueueParameters QueueInfo(const string &  qname) const;
     string GetQueueNames(const string &  sep) const;
 
-    void Close(bool  drained_shutdown);
+    void Close(void);
     bool QueueExists(const string &  qname) const;
 
     // Remove old jobs

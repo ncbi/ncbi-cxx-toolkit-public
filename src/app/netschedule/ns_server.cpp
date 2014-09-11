@@ -61,6 +61,7 @@ CNetScheduleServer::CNetScheduleServer()
       m_LogStatisticsThreadFlag(default_log_statistics_thread),
       m_RefuseSubmits(false),
       m_UseHostname(default_use_hostname),
+      m_DBDrained(false),
       m_DeleteBatchSize(default_del_batch_size),
       m_MarkdelBatchSize(default_markdel_batch_size),
       m_ScanBatchSize(default_scan_batch_size),
@@ -326,11 +327,12 @@ void CNetScheduleServer::SetQueueDB(CQueueDataBase* qdb)
 }
 
 
-void CNetScheduleServer::SetShutdownFlag(int signum)
+void CNetScheduleServer::SetShutdownFlag(int  signum, bool  db_was_drained)
 {
     if (!m_Shutdown) {
         m_Shutdown = true;
         m_SigNum = signum;
+        m_DBDrained = db_was_drained;
     }
 }
 
@@ -341,7 +343,6 @@ unsigned int  CNetScheduleServer::Configure(const IRegistry &  reg,
 {
     return m_QueueDB->Configure(reg, diff);
 }
-
 
 unsigned CNetScheduleServer::CountActiveJobs() const
 {
@@ -593,7 +594,7 @@ CNetScheduleServer*  CNetScheduleServer::GetInstance(void)
 
 void CNetScheduleServer::Exit()
 {
-    m_QueueDB->Close(IsDrainShutdown());
+    m_QueueDB->Close();
 }
 
 

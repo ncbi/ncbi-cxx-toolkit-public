@@ -138,8 +138,7 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
             // That means the DB has more a queue allocated in a slot which
             // index exceeds the max tables configured in .ini file
             try {
-                // No drain closing
-                Close(false);
+                Close();
             } catch (...) {}
 
             NCBI_THROW(CNetScheduleException, eInvalidParameter,
@@ -163,8 +162,7 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
 CQueueDataBase::~CQueueDataBase()
 {
     try {
-        // No drain closing
-        Close(false);
+        Close();
     } catch (...) {}
 }
 
@@ -1762,7 +1760,7 @@ string CQueueDataBase::GetQueueNames(const string &  sep) const
 }
 
 
-void CQueueDataBase::Close(bool  drained_shutdown)
+void CQueueDataBase::Close(void)
 {
     // Check that we're still open
     if (!m_Env)
@@ -1773,13 +1771,24 @@ void CQueueDataBase::Close(bool  drained_shutdown)
     StopServiceThread();
     StopExecutionWatcherThread();
 
-    if (drained_shutdown) {
-        LOG_POST(Message << Warning <<
-                 "Drained shutdown: DB is not closed gracefully.");
+
+
+    if (m_Server->IsDrainShutdown() && m_Server->WasDBDrained()) {
+        // That was a not interrupted drain shutdown
+        LOG_POST("Drained shutdown: the DB has been successfully drained");
         m_QueueDescriptionDB.Close();
         x_SetSignallingFile(true);  // Create/update signalling file
         x_RemoveNeedReinitFile();
     } else {
+        // That was either:
+        // - hard shutdown
+        // - hard shutdown when drained shutdown is in process
+        if (m_Server->IsDrainShutdown())
+            LOG_POST(Message << Warning <<
+                     "Drained shutdown: DB draining has not been completed "
+                     "when a hard shutdown is received. "
+                     "Shutting down immediately.");
+
         m_Env->ForceTransactionCheckpoint();
         m_Env->CleanLog();
 

@@ -85,7 +85,9 @@ void  CServiceThread::x_CheckDrainShutdown(void)
     if (m_QueueDB.AnyJobs())
         return;     // There are still jobs
 
-    m_Server.SetShutdownFlag();
+    // 0 is a signal number
+    // true means the DB has been drained successfully
+    m_Server.SetShutdownFlag(0, true);
 }
 
 

@@ -66,7 +66,7 @@ public:
 
     void SetQueueDB(CQueueDataBase* qdb);
 
-    void SetShutdownFlag(int signum = 0);
+    void SetShutdownFlag(int signum = 0, bool  db_was_drained = false);
 
     const bool &  IsLog() const                       { return m_LogFlag; }
     const bool &  IsLogBatchEachJob() const           { return m_LogBatchEachJobFlag; }
@@ -128,6 +128,7 @@ public:
     unsigned GetAffinityLowRemoval(void) const          { return m_AffinityLowRemoval; }
     unsigned GetAffinityDirtPercentage(void) const      { return m_AffinityDirtPercentage; }
     bool IsDrainShutdown(void) const                   { return m_CurrentSubmitsCounter.Get() < kSubmitCounterInitialValue; }
+    bool WasDBDrained(void) const                      { return m_DBDrained; }
     void SetDrainShutdown(void)
     { m_CurrentSubmitsCounter.Add(-1*static_cast<int>(kSubmitCounterInitialValue)); }
     unsigned int  GetCurrentSubmitsCounter(void)        { return m_CurrentSubmitsCounter.Get(); }
@@ -183,6 +184,7 @@ private:
 
     // Support for shutdown with drain
     CAtomicCounter                              m_CurrentSubmitsCounter;
+    bool                                        m_DBDrained;
 
 
     // Purge() related parameters
