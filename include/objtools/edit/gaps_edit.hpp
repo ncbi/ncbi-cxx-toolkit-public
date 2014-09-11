@@ -49,11 +49,15 @@ public:
     // optionally specify linkage evidence or leave it default
     static
     void ConvertNs2Gaps(CSeq_entry& entry, 
-       TSeqPos gapNmin, TSeqPos gap_Unknown_length, CLinkage_evidence::EType evidence = (CLinkage_evidence::EType)-1);
+       TSeqPos gapNmin, TSeqPos gap_Unknown_length, 
+       CSeq_gap::EType gap_type = (CSeq_gap::EType)-1,
+       CLinkage_evidence::EType evidence = (CLinkage_evidence::EType)-1);
 
     static
     void ConvertNs2Gaps(CBioseq& bioseq, 
-       TSeqPos gapNmin, TSeqPos gap_Unknown_length, CLinkage_evidence::EType evidence);
+       TSeqPos gapNmin, TSeqPos gap_Unknown_length, 
+       CSeq_gap::EType gap_type,
+       CLinkage_evidence::EType evidence);
     static 
     void ConvertNs2Gaps(CBioseq::TInst& inst, size_t gap_min);
     static

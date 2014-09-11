@@ -428,7 +428,9 @@ CMultiReader::xReadASN1(CNcbiIstream& instream)
     }
 
     if (m_context.m_gapNmin > 0)
-        CGapsEditor::ConvertNs2Gaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, (CLinkage_evidence::EType)m_context.m_gaps_evidence);
+        CGapsEditor::ConvertNs2Gaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, 
+        (CSeq_gap::EType)m_context.m_gaps_type,
+        (CLinkage_evidence::EType)m_context.m_gaps_evidence);
     return entry;
 }
 
@@ -461,7 +463,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     {
         pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
         if (m_context.m_gaps_evidence>=0)
-            pReader->SetGapsLinkageEvidence((CLinkage_evidence::EType)m_context.m_gaps_evidence);
+            pReader->SetGapsLinkageEvidence((CSeq_gap::EType)m_context.m_gaps_type, (CLinkage_evidence::EType)m_context.m_gaps_evidence);
     }
 
     int max_seqs = kMax_Int;

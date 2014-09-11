@@ -60,6 +60,7 @@
 #include <objects/general/Date.hpp>
 
 #include <objects/seq/Linkage_evidence.hpp>
+#include <objects/seq/Seq_gap.hpp>
 
 #include <objtools/readers/message_listener.hpp>
 #include "table2asn_validator.hpp"
@@ -295,6 +296,19 @@ void CTbl2AsnApp::Init(void)
                             map\n\
                             strobe", CArgDescriptions::eString);  //done
 
+    arg_desc->AddOptionalKey("gaps-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
+                            unknown\n\
+                            fragment\n\
+                            clone\n\
+                            short_arm\n\
+                            heterochromatin\n\
+                            centromere\n\
+                            telomere\n\
+                            repeat\n\
+                            contig\n\
+                            scaffold\n\
+                            other", CArgDescriptions::eString);  //done
+
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
     // all new options are done
@@ -452,6 +466,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_gapNmin = args["gaps-min"].AsInteger();
     if (args["gaps-unknown"])
         m_context.m_gap_Unknown_length = args["gaps-unknown"].AsInteger();
+
     if (args["l"])
     {
         const CEnumeratedTypeValues::TNameToValue& 
@@ -465,8 +480,27 @@ int CTbl2AsnApp::Run(void)
         }
         else
         {
-        m_context.m_gaps_evidence = it->second;
+            m_context.m_gaps_evidence = it->second;
+            m_context.m_gaps_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
         }
+    }
+
+    if (args["gaps-type"] && args["l"])
+    {
+        const CEnumeratedTypeValues::TNameToValue& 
+            linkage_evidence_to_value_map = CSeq_gap::GetTypeInfo_enum_EType()->NameToValue();
+
+        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(args["gaps-type"].AsString());
+        if (it == linkage_evidence_to_value_map.end())
+        {
+            NCBI_THROW(CArgException, eConvert,
+                "Unrecognized gap type " + args["gaps-type"].AsString());
+        }
+        else
+        {
+            m_context.m_gaps_type = it->second;
+        }
+
     }
 
     if (m_context.m_gapNmin < 0)

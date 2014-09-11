@@ -215,8 +215,7 @@ public:
     static const TGapTypeMap & GetNameToGapTypeInfoMap(void);
 
     void SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length);
-    void SetGapsLinkageEvidence(const string& evidence);
-    void SetGapsLinkageEvidence(CLinkage_evidence::EType evidence);
+    void SetGapsLinkageEvidence(CSeq_gap::EType type, CLinkage_evidence::EType evidence);
 
     void IgnoreProblem(ILineError::EProblem problem);
 
@@ -382,7 +381,10 @@ private:
     CSourceModParser::TMods m_BadMods;
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
+
     SGap::TLinkEvidSet      m_gaps_linkage_evidence;
+    SGap::TNullableGapType  m_gaps_type;
+
     vector<SLineTextAndLoc> m_CurrentSeqTitles;
     CRef<CSourceModParser::CModFilter> m_pModFilter;
     std::vector<ILineError::EProblem> m_ignorable;
