@@ -5304,6 +5304,25 @@ string CDiagHandler::GetLogName(void)
 }
 
 
+bool CDiagHandler::AllowAsyncWrite(const SDiagMessage& /*msg*/) const
+{
+    return false;
+}
+
+
+string CDiagHandler::ComposeMessage(const SDiagMessage&, EDiagFileType*) const
+{
+    _ASSERT(0);
+    return kEmptyStr;
+}
+
+
+void CDiagHandler::WriteMessage(const char*, size_t, EDiagFileType)
+{
+    _ASSERT(0);
+}
+
+
 CStreamDiagHandler_Base::CStreamDiagHandler_Base(void)
 {
     SetLogName(kLogName_Stream);
@@ -5486,9 +5505,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
             if (it->m_PID != pid) {
                 continue;
             }
-            CNcbiOstrstream str_os;
-            str_os << *it;
-            string str = CNcbiOstrstreamToString(str_os);
+            string str = ComposeMessage(*it, 0);
             if (write(new_handle->GetHandle(), str.data(), str.size()))
                 {/*dummy*/}
         }
@@ -5539,14 +5556,52 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
     }}
 
     if (handle) {
-        CNcbiOstrstream str_os;
-        str_os << mess;
-        string str = CNcbiOstrstreamToString(str_os);
+        string str = ComposeMessage(mess, 0);
         if (write(handle->GetHandle(), str.data(), str.size()))
             {/*dummy*/}
  
         handle->RemoveReference();
     }
+}
+
+
+bool CFileHandleDiagHandler::AllowAsyncWrite(const SDiagMessage& /*msg*/) const
+{
+    return true;
+}
+
+
+string CFileHandleDiagHandler::ComposeMessage(const SDiagMessage& msg,
+                                              EDiagFileType*) const
+{
+    CNcbiOstrstream str_os;
+    str_os << msg;
+    return CNcbiOstrstreamToString(str_os);
+}
+
+
+void CFileHandleDiagHandler::WriteMessage(const char*   buf,
+                                          size_t        len,
+                                          EDiagFileType file_type)
+{
+    // Period is longer than for CFileDiagHandler to prevent double-reopening
+    // In async mode only one thread is writing messages and there's no need
+    // to use locks, but it's still necessary to check for nested reopening.
+    if (!m_ReopenTimer->IsRunning()  ||
+        m_ReopenTimer->Elapsed() >= kLogReopenDelay + 5)
+    {
+        if (s_ReopenEntered->Add(1) == 1) {
+            Reopen(fDefault);
+        }
+        s_ReopenEntered->Add(-1);
+    }
+
+    if (write(m_Handle->GetHandle(), buf, len))
+        {/*dummy*/}
+
+    // Skip collecting m_Messages - we don't have the original SDiagMessage
+    // here and can not store it. If for some reason Reopen() fails in async
+    // mode, some messages can be lost.
 }
 
 
@@ -5896,6 +5951,39 @@ void CFileDiagHandler::Reopen(TReopenFlags flags)
 }
 
 
+EDiagFileType CFileDiagHandler::x_GetDiagFileType(const SDiagMessage& msg) const
+{
+    if ( IsSetDiagPostFlag(eDPF_AppLog, msg.m_Flags) ) {
+        return msg.m_Event == SDiagMessage::eEvent_PerfLog
+            ? eDiagFile_Perf : eDiagFile_Log;
+    }
+    else {
+        switch ( msg.m_Severity ) {
+        case eDiag_Info:
+        case eDiag_Trace:
+            return eDiagFile_Trace;
+            break;
+        default:
+            return eDiagFile_Err;
+        }
+    }
+    // Never gets here anyway.
+    return eDiagFile_All;
+}
+
+
+CStreamDiagHandler_Base* CFileDiagHandler::x_GetHandler(EDiagFileType file_type) const
+{
+    switch ( file_type ) {
+    case eDiagFile_Err: return m_Err;
+    case eDiagFile_Log: return m_Log;
+    case eDiagFile_Trace: return m_Trace;
+    case eDiagFile_Perf: return m_Perf;
+    default: return 0;
+    }
+}
+
+
 void CFileDiagHandler::Post(const SDiagMessage& mess)
 {
     // Check time and re-open the streams
@@ -5914,24 +6002,62 @@ void CFileDiagHandler::Post(const SDiagMessage& mess)
     }
 
     // Output the message
-    CStreamDiagHandler_Base* handler = 0;
-    if ( IsSetDiagPostFlag(eDPF_AppLog, mess.m_Flags) ) {
-        handler = mess.m_Event == SDiagMessage::eEvent_PerfLog
-            ? m_Perf : m_Log;
-    }
-    else {
-        switch ( mess.m_Severity ) {
-        case eDiag_Info:
-        case eDiag_Trace:
-            handler = m_Trace;
-            break;
-        default:
-            handler = m_Err;
-        }
-    }
+    CStreamDiagHandler_Base* handler = x_GetHandler(x_GetDiagFileType(mess));
     if (handler)
         handler->Post(mess);
 }
+
+
+bool CFileDiagHandler::AllowAsyncWrite(const SDiagMessage& msg) const
+{
+    CStreamDiagHandler_Base* handler = x_GetHandler(x_GetDiagFileType(msg));
+    return handler  &&  handler->AllowAsyncWrite(msg);
+}
+
+
+string CFileDiagHandler::ComposeMessage(const SDiagMessage& msg,
+                                        EDiagFileType*      file_type) const
+{
+    EDiagFileType ft = x_GetDiagFileType(msg);
+    if ( file_type ) {
+        *file_type = ft;
+    }
+    CStreamDiagHandler_Base* handler = x_GetHandler(ft);
+    return handler ? handler->ComposeMessage(msg, file_type) : kEmptyStr;
+}
+
+
+void CFileDiagHandler::WriteMessage(const char*   buf,
+                                    size_t        len,
+                                    EDiagFileType file_type)
+{
+    // In async mode only one thread is writing messages and there's no need
+    // to use locks, but it's still necessary to check for nested reopening.
+    if (!m_ReopenTimer->IsRunning()  ||
+        m_ReopenTimer->Elapsed() >= kLogReopenDelay)
+    {
+        if (s_ReopenEntered->Add(1) == 1) {
+            Reopen(fDefault);
+        }
+        s_ReopenEntered->Add(-1);
+    }
+
+    CStreamDiagHandler_Base* handler = x_GetHandler(file_type);
+    if ( handler ) {
+        handler->WriteMessage(buf, len, file_type);
+    }
+}
+
+
+struct SAsyncDiagMessage
+{
+    SAsyncDiagMessage(void)
+        : m_Message(0), m_Composed(0), m_FileType(eDiagFile_All) {}
+
+    SDiagMessage* m_Message;
+    string*       m_Composed;
+    EDiagFileType m_FileType;
+};
 
 
 class CAsyncDiagThread : public CThread
@@ -5942,7 +6068,6 @@ public:
 
     virtual void* Main(void);
     void Stop(void);
-
 
     bool m_NeedStop;
     Uint2 m_CntWaiters;
@@ -5956,7 +6081,7 @@ public:
     CSemaphore m_QueueSem;
     CSemaphore m_DequeueSem;
 #endif
-    deque<SDiagMessage*> m_MsgQueue;
+    deque<SAsyncDiagMessage> m_MsgQueue;
     string m_ThreadSuffix;
 };
 
@@ -5967,6 +6092,7 @@ NCBI_PARAM_DECL(Uint4, Diag, Max_Async_Queue_Size);
 NCBI_PARAM_DEF_EX(Uint4, Diag, Max_Async_Queue_Size, 10000, eParam_NoThread,
                   DIAG_MAX_ASYNC_QUEUE_SIZE);
 typedef NCBI_PARAM_TYPE(Diag, Max_Async_Queue_Size) TMaxAsyncQueueSizeParam;
+static CSafeStatic<TMaxAsyncQueueSizeParam> s_MaxAsyncQueueSizeParam;
 
 
 CAsyncDiagHandler::CAsyncDiagHandler(void)
@@ -6030,11 +6156,18 @@ void
 CAsyncDiagHandler::Post(const SDiagMessage& mess)
 {
     CAsyncDiagThread* thr = m_AsyncThread;
-    SDiagMessage* save_msg = new SDiagMessage(mess);
+    SAsyncDiagMessage async;
+    if (thr->m_SubHandler->AllowAsyncWrite(mess)) {
+        async.m_Composed = new string(thr->m_SubHandler->
+            ComposeMessage(mess, &async.m_FileType));
+    }
+    else {
+        async.m_Message = new SDiagMessage(mess);
+    }
 
-    if (save_msg->m_Severity < GetDiagDieLevel()) {
+    if (mess.m_Severity < GetDiagDieLevel()) {
         CFastMutexGuard guard(thr->m_QueueLock);
-        while (Uint4(thr->m_MsgsInQueue.Get()) >= TMaxAsyncQueueSizeParam::GetDefault())
+        while (Uint4(thr->m_MsgsInQueue.Get()) >= s_MaxAsyncQueueSizeParam->Get())
         {
             ++thr->m_CntWaiters;
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
@@ -6046,7 +6179,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
 #endif
             --thr->m_CntWaiters;
         }
-        thr->m_MsgQueue.push_back(save_msg);
+        thr->m_MsgQueue.push_back(async);
         if (thr->m_MsgsInQueue.Add(1) == 1) {
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
             thr->m_QueueCond.SignalSome();
@@ -6057,7 +6190,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
     }
     else {
         thr->Stop();
-        thr->m_SubHandler->Post(*save_msg);
+        thr->m_SubHandler->Post(mess);
     }
 }
 
@@ -6078,6 +6211,36 @@ CAsyncDiagThread::CAsyncDiagThread(const string& thread_suffix)
 CAsyncDiagThread::~CAsyncDiagThread(void)
 {}
 
+
+const size_t kMessageBufSize = 1048576; // 1M
+
+struct SMessageBuffer
+{
+    char data[kMessageBufSize];
+    size_t pos;
+
+    SMessageBuffer(void) : pos(0) {}
+
+    bool Append(const string& str)
+    {
+        if (pos + str.size() >= kMessageBufSize) {
+            return false;
+        }
+        memcpy(&data[pos], str.data(), str.size());
+        pos += str.size();
+        return true;
+    }
+};
+
+
+/// Number of messages processed as a single batch by the asynchronous
+/// handler.
+NCBI_PARAM_DECL(Uint4, Diag, Async_Batch_Size);
+NCBI_PARAM_DEF_EX(Uint4, Diag, Async_Batch_Size, 10, eParam_NoThread,
+                  DIAG_ASYNC_BATCH_SIZE);
+typedef NCBI_PARAM_TYPE(Diag, Async_Batch_Size) TAsyncBatchSizeParam;
+
+
 void*
 CAsyncDiagThread::Main(void)
 {
@@ -6089,7 +6252,15 @@ CAsyncDiagThread::Main(void)
 #endif
     }
 
-    deque<SDiagMessage*> save_msgs;
+    const size_t batch_size = TAsyncBatchSizeParam::GetDefault();
+
+    const size_t buf_count = size_t(eDiagFile_All) + 1;
+    SMessageBuffer* buffers[buf_count];
+    for (size_t i = 0; i < buf_count; ++i) {
+        buffers[i] = 0;
+    }
+
+    deque<SAsyncDiagMessage> save_msgs;
     while (!m_NeedStop) {
         {{
             CFastMutexGuard guard(m_QueueLock);
@@ -6108,18 +6279,43 @@ CAsyncDiagThread::Main(void)
         }}
 
 drain_messages:
+        size_t queue_counter = 0;
         while (!save_msgs.empty()) {
-            SDiagMessage* msg = save_msgs.front();
+            SAsyncDiagMessage msg = save_msgs.front();
             save_msgs.pop_front();
-            m_SubHandler->Post(*msg);
-            delete msg;
-            m_MsgsInQueue.Add(-1);
-            if (m_CntWaiters != 0) {
+            if ( msg.m_Composed ) {
+                SMessageBuffer* buf = buffers[msg.m_FileType];
+                if ( !buf ) {
+                    buf = new SMessageBuffer;
+                    buffers[msg.m_FileType] = buf;
+                }
+                if ( !buf->Append(*msg.m_Composed) ) {
+                    // Not enough space in the buffer, try to flush.
+                    m_SubHandler->WriteMessage(buf->data, buf->pos, msg.m_FileType);
+                    buf->pos = 0;
+                    if ( !buf->Append(*msg.m_Composed) ) {
+                        // The message is too long to fit in the buffer.
+                        m_SubHandler->WriteMessage(msg.m_Composed->data(),
+                            msg.m_Composed->size(), msg.m_FileType);
+                    }
+                }
+                delete msg.m_Composed;
+            }
+            else {
+                _ASSERT(msg.m_Message);
+                m_SubHandler->Post(*msg.m_Message);
+                delete msg.m_Message;
+            }
+            if (++queue_counter >= batch_size  ||  save_msgs.empty()) {
+                m_MsgsInQueue.Add(-queue_counter);
+                queue_counter = 0;
+                if (m_CntWaiters != 0) {
 #ifdef NCBI_HAVE_CONDITIONAL_VARIABLE
-                m_DequeueCond.SignalSome();
+                    m_DequeueCond.SignalSome();
 #else
-                m_DequeueSem.Post();
+                    m_DequeueSem.Post();
 #endif
+                }
             }
         }
     }
@@ -6127,6 +6323,18 @@ drain_messages:
         save_msgs.swap(m_MsgQueue);
         goto drain_messages;
     }
+
+    for (size_t i = 0; i < buf_count; ++i) {
+        if ( !buffers[i] ) {
+            continue;
+        }
+        if ( buffers[i]->pos ) {
+            m_SubHandler->WriteMessage(buffers[i]->data,
+                buffers[i]->pos, EDiagFileType(i));
+        }
+        delete buffers[i];
+    }
+
     return NULL;
 }
 

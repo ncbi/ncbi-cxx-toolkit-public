@@ -2352,6 +2352,16 @@ NCBI_XNCBI_EXPORT CDiagContext& GetDiagContext(void);
 ///
 /// Base diagnostic handler class.
 
+/// Type of file for the output
+enum EDiagFileType
+{
+    eDiagFile_Err,    ///< Error log file
+    eDiagFile_Log,    ///< Access log file
+    eDiagFile_Trace,  ///< Trace log file
+    eDiagFile_Perf,   ///< Perf log file
+    eDiagFile_All     ///< All log files
+};
+
 class NCBI_XNCBI_EXPORT CDiagHandler
 {
 public:
@@ -2362,6 +2372,19 @@ public:
     virtual void Post(const SDiagMessage& mess) = 0;
     /// Post message to console regardless of its severity.
     virtual void PostToConsole(const SDiagMessage& mess);
+
+    /// Check if the handler supports async writes.
+    /// @sa ComposeMessage, WriteMessage
+    virtual bool AllowAsyncWrite(const SDiagMessage& msg) const;
+    /// Compose message without writing it. If async mode is not
+    /// supported, return empty string.
+    virtual string ComposeMessage(const SDiagMessage& msg,
+                                  EDiagFileType*      file_type) const;
+    /// Write string to the log. The string may contain multiple messages of
+    /// the same type.
+    virtual void WriteMessage(const char*   buf,
+                              size_t        len,
+                              EDiagFileType file_type);
 
     /// Get current diag posts destination
     virtual string GetLogName(void);
@@ -2526,6 +2549,13 @@ public:
     /// Post message to the handler.
     virtual void Post(const SDiagMessage& mess);
 
+    virtual bool AllowAsyncWrite(const SDiagMessage& msg) const;
+    virtual string ComposeMessage(const SDiagMessage& msg,
+                                  EDiagFileType*      file_type) const;
+    virtual void WriteMessage(const char*   buf,
+                              size_t        len,
+                              EDiagFileType file_type);
+
     bool Valid(void)
     {
         return m_Handle  ||  m_LowDiskSpace;
@@ -2559,16 +2589,6 @@ private:
 /// (application access log). Re-opens the files periodically
 /// to allow safe log rotation.
 
-/// Type of file for the output
-enum EDiagFileType
-{
-    eDiagFile_Err,    ///< Error log file
-    eDiagFile_Log,    ///< Access log file
-    eDiagFile_Trace,  ///< Trace log file
-    eDiagFile_Perf,   ///< Perf log file
-    eDiagFile_All     ///< All log files
-};
-
 class NCBI_XNCBI_EXPORT CFileDiagHandler : public CStreamDiagHandler_Base
 {
 public:
@@ -2583,6 +2603,13 @@ public:
     /// to file_name.trace file, all others go to file_name.err file.
     /// Application access messages go to file_name.log file.
     virtual void Post(const SDiagMessage& mess);
+
+    virtual bool AllowAsyncWrite(const SDiagMessage& msg) const;
+    virtual string ComposeMessage(const SDiagMessage& msg,
+                                  EDiagFileType*      file_type) const;
+    virtual void WriteMessage(const char*   buf,
+                              size_t        len,
+                              EDiagFileType file_type);
 
     /// Set new log file.
     ///
@@ -2624,6 +2651,11 @@ protected:
     virtual void SetLogName(const string& log_name);
 
 private:
+    // Get file type for the message.
+    EDiagFileType x_GetDiagFileType(const SDiagMessage& msg) const;
+    // Get sub-handler for the given file type.
+    CStreamDiagHandler_Base* x_GetHandler(EDiagFileType file_type) const;
+
     // Check if the object is owned and if it's used as more than one handler,
     // update ownership or delete the handler if necessary.
     void x_ResetHandler(CStreamDiagHandler_Base** ptr, bool* owned);
