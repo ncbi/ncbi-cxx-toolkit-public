@@ -23,7 +23,7 @@ public:
    {
    }
    bool CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
-   void ConvertSeqIntoSeqSet(objects::CSeq_entry& entry) const;
+   void ConvertSeqIntoSeqSet(objects::CSeq_entry& entry, bool nuc_prod_set) const;
 // MergeCDSFeatures looks for cdregion features in the feature tables
 //    in sequence annotations and creates protein sequences based on them
 //    as well as converting the sequence or a seq-set into nuc-prot-set

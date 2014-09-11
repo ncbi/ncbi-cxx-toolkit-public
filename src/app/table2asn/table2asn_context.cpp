@@ -87,18 +87,15 @@ namespace
 
 bool x_ApplyCreateDate(CSeq_entry& entry)
 {
-    bool need_update = false;
-    if (CAutoAddDesc::LocateDesc(entry.SetDescr(), CSeqdesc::e_Create_date).NotNull())
-        need_update = true;
-    else
-    {
-        CRef<CSeqdesc> create_date(new CSeqdesc);
+    CAutoAddDesc create_date_desc(entry.SetDescr(), CSeqdesc::e_Create_date);
+    if (create_date_desc.IsNull())
+    {   
         CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
-        create_date->SetCreate_date(*date);
-
-        entry.SetDescr().Set().push_back(create_date);
+        create_date_desc.Set().SetCreate_date(*date);
+        return false; // no need update_date    
     }
-    return need_update;
+    else
+        return true; // need update_date
 }
 
 void x_ApplySourceQualifiers(CBioseq& bioseq, CSourceModParser& smp)
@@ -307,15 +304,29 @@ bool CTable2AsnContext::ApplyCreateDate(CSeq_entry& entry) const
         need_update |= x_ApplyCreateDate(entry);
         break;
     case CSeq_entry::e_Set:
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        if (m_HandleAsSet)
         {
-            need_update |= x_ApplyCreateDate(**it);
+            NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+            {
+                need_update |= x_ApplyCreateDate(**it);
+            }
+        }
+        else
+        {
+            need_update |= x_ApplyCreateDate(entry);
         }
         break;
     default:
         break;
     }
     return need_update;
+}
+
+bool CAutoAddDesc::IsNull()
+{
+    if (m_desc.IsNull())
+        m_desc = LocateDesc(*m_descr, m_which);
+    return (m_desc.IsNull());
 }
 
 const CSeqdesc& CAutoAddDesc::Get()

@@ -54,9 +54,14 @@
 #include <algo/sequence/orf.hpp>
 #include <algo/align/prosplign/prosplign.hpp>
 
-#include "feature_table_reader.hpp"
+#include <objects/seqset/seqset_macros.hpp>
+#include <objects/seq/seq_macros.hpp>
 
+#include <algo/align/splign/compart_matching.hpp>
+#include <algo/align/util/compartment_finder.hpp>
 #include <objtools/readers/fasta.hpp>
+
+#include "feature_table_reader.hpp"
 
 #include "table2asn_context.hpp"
 
@@ -348,7 +353,7 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
     case CSeq_entry::e_Seq:
         if (CheckIfNeedConversion(entry))
         {
-            ConvertSeqIntoSeqSet(entry);
+            ConvertSeqIntoSeqSet(entry, true);
             ParseCdregions(entry);
         }
         break;
@@ -552,30 +557,29 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
 
-    CProSplign aligner;
-    ITERATE(CSeq_entry::TSet::TSeq_set, prot_it, possible_proteins.GetSet().GetSeq_set())
+    //CCompartmentFinder c_finder(;
+
+    CBioseq_CI bio_it(h_entry, CSeq_inst::eMol_na);
+    //CSeq_entry_CI seq_it(h_entry, CSeq_entry_CI::fRecursive, CSeq_entry::e_Seq);
+    //for (; seq_it; ++seq_it)
+    for (; bio_it; ++bio_it)
     {
-        scope.AddBioseq((**prot_it).GetSeq());
-        CBioseq_CI bio_it(h_entry, CSeq_inst::eMol_na);
-        //CSeq_entry_CI seq_it(h_entry, CSeq_entry_CI::fRecursive, CSeq_entry::e_Seq);
-        //for (; seq_it; ++seq_it)
-        for (; bio_it; ++bio_it)
+        const CBioseq_Handle& bs = *bio_it;
+        CRef<CSeq_loc> nucloc( bs.GetRangeSeq_loc (0, bs.GetInst_Length()));
+
+        ITERATE(CSeq_entry::TSet::TSeq_set, prot_it, possible_proteins.GetSet().GetSeq_set())
         {
-            CRef<CSeq_id> protein((**prot_it).GetSeq().GetId().front());
-            CRef<CSeq_id> seq_id(new CSeq_id);
-            seq_id->Assign(*bio_it->GetBioseqCore()->GetId().front());
-                //bio_it->GetId().front().GetSeqId());
-                //seq_it->GetSeq_entryCore()->GetSeq().GetId().front());
-            CRef<CSeq_loc> genomic(new CSeq_loc);
-            genomic->SetWhole(*seq_id);
-            genomic->SetId(*seq_id);
+            CBioseq_Handle protein_h = scope.AddBioseq((**prot_it).GetSeq());
             try
             {
                 CProSplignOutputOptions opts;
 
-                CRef<CSeq_align> align = aligner.FindAlignment(scope, *protein, *genomic, opts);
+                CProSplign aligner;
+                CRef<CSeq_align> alignment = aligner.FindAlignment(scope, *protein_h.GetSeqId(), *nucloc, opts);
 
-#ifdef _DEBUG
+#if 1
+                cout << MSerial_AsnText << *alignment << endl;
+#else
                 string name;
                 genomic->GetId()->GetLabel(&name);
                 NStr::ReplaceInPlace(name, "|", "_");
@@ -589,6 +593,7 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
             catch(CException& )
             {
             }
+            scope.RemoveBioseq(protein_h);
         }
     }
 }
@@ -618,7 +623,7 @@ bool CFeatureTableReader::CheckIfNeedConversion(const CSeq_entry& entry) const
     return false;
 }
 
-void CFeatureTableReader::ConvertSeqIntoSeqSet(CSeq_entry& entry) const
+void CFeatureTableReader::ConvertSeqIntoSeqSet(CSeq_entry& entry, bool nuc_prod_set) const
 {
     if (entry.IsSeq())
     {
@@ -642,7 +647,7 @@ void CFeatureTableReader::ConvertSeqIntoSeqSet(CSeq_entry& entry) const
         {
             bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
         }
-        entry.SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+        entry.SetSet().SetClass(nuc_prod_set?CBioseq_set::eClass_nuc_prot:CBioseq_set::eClass_gen_prod_set);
         entry.Parentize();
     }
 }

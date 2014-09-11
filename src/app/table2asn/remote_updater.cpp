@@ -156,7 +156,7 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
     if (taxid <= 0)
     {
         m_context.m_logger->PutError(
-            *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0,
+            *CLineError::Create(ILineError::eProblem_Unset, eDiag_Warning, "", 0,
                 "No unique taxonomy ID found for the name '" + org.GetTaxname() + "'"));
         return;
     }

@@ -200,7 +200,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey
         ("A", "String", "Accession", CArgDescriptions::eString);           // done
     arg_desc->AddOptionalKey
-        ("C", "String", "Genome Center Tag", CArgDescriptions::eString);   // almost done
+        ("C", "String", "Genome Center Tag", CArgDescriptions::eString);   // done
     arg_desc->AddOptionalKey
         ("n", "String", "Organism Name", CArgDescriptions::eString);       // done
     arg_desc->AddOptionalKey
@@ -276,7 +276,7 @@ void CTbl2AsnApp::Init(void)
                                              C Apply comments in .cmt files to all sequences\n\
                                              E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger); //done
 
     arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //done
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
@@ -293,7 +293,7 @@ void CTbl2AsnApp::Init(void)
                             within-clone\n\
                             clone-contig\n\
                             map\n\
-                            strobe", CArgDescriptions::eString);
+                            strobe", CArgDescriptions::eString);  //done
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
@@ -403,12 +403,6 @@ int CTbl2AsnApp::Run(void)
 
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
-
-
-    if (m_context.m_NucProtSet || m_context.m_GenomicProductSet)
-    {
-        m_context.m_HandleAsSet = true;
-    }
 
     if (args["taxname"])
         m_context.m_OrganismName = args["taxname"].AsString();
@@ -522,6 +516,12 @@ int CTbl2AsnApp::Run(void)
 
     if (args["V"])
         m_context.m_validate = args["V"].AsString();
+
+    if (m_context.m_HandleAsSet)
+    {
+        if (m_context.m_GenomicProductSet)
+            NCBI_THROW(CArgException, eConstraint, "-s flag cannot be used with -d, -e, -g, -l or -z");
+    }
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
     if (args["o"])
@@ -660,6 +660,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_copy_genid_to_note)
         m_context.CopyFeatureIdsToComments(*entry);
+
+    if (m_context.m_GenomicProductSet)
+    {
+        fr.ConvertSeqIntoSeqSet(*entry, false);
+    }
 
     if (m_context.m_RemoteTaxonomyLookup)
     {

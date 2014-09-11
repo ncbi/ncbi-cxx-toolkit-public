@@ -1,3 +1,37 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:   Sergiy Gotvyanskyy
+ *
+ * File Description:
+ *   Operator to construct cross reference link of
+ *   mRNA and CDS matchin by label and location
+ *
+ * ===========================================================================
+ */
+
 #include <ncbi_pch.hpp>
 
 #include <objects/seqfeat/RNA_ref.hpp>
@@ -77,82 +111,89 @@ void CreateReference(CSeq_feat& dest, const CSeq_feat& src)
 }
 
 
-void xLinkCDSmRNAbyLabelAndLocation(CBioseq::TAnnot& annot)
+void xLinkCDSmRNAbyLabelAndLocation(CSeq_annot::C_Data::TFtable& ftable)
 { 
-    for (CBioseq::TAnnot::iterator annot_it = annot.begin(); annot.end() != annot_it; ++annot_it)
+    for (CSeq_annot::TData::TFtable::iterator feat_it = ftable.begin();
+        ftable.end() != feat_it; ++feat_it)
     {
-        if (!(**annot_it).IsFtable()) continue;
+        CRef<CSeq_feat> feature = (*feat_it);
 
-        CRef<CSeq_annot> seq_annot(*annot_it);
-        CSeq_annot::C_Data::TFtable& ftable = seq_annot->SetData().SetFtable();
-        for (CSeq_annot::TData::TFtable::iterator feat_it = ftable.begin();
-            ftable.end() != feat_it; ++feat_it)
+        if (!feature->IsSetData()) 
+            continue;
+
+        if (! (feature->GetData().IsCdregion() || IsmRNA(feature->GetData())))
+            continue;
+
+        string feat_label;
+        feature::GetLabel(*feature, &feat_label, feature::fFGL_Content);
+
+        // locate counterpart starting from next element
+        CSeq_annot::TData::TFtable::iterator opp_it = feat_it;
+        ++opp_it;
+
+        CRef<CSeq_feat> best_fit;
+        int best_fit_size = -1;
+
+        for(; opp_it != ftable.end(); ++opp_it)
         {
-            CRef<CSeq_feat> feature = (*feat_it);
+            CRef<CSeq_feat> current = *opp_it;
 
-            if (!feature->IsSetData()) 
-                continue;
+            if (!current->IsSetData()) continue;
 
-            if (feature->GetData().IsCdregion() || IsmRNA(feature->GetData()))
+            if ( (IsmRNA(current->GetData()) && feature->GetData().IsCdregion()) ||
+                (current->GetData().IsCdregion() && IsmRNA(feature->GetData())) )
             {
-                string feat_label;
-                feature::GetLabel(*feature, &feat_label, feature::fFGL_Content);
+                string label;
+                feature::GetLabel(*current, &label, feature::fFGL_Content);
 
-                // locate counterpart starting from next element
-                CSeq_annot::TData::TFtable::iterator opp_it = feat_it;
-                ++opp_it;
+                if (NStr::Compare(feat_label, label) != 0)
+                    continue; 
 
-                for(; opp_it != ftable.end(); ++opp_it)
+                CRef<CSeq_feat> cds, mrna;
+                if (feature->GetData().IsCdregion())
                 {
-                    CRef<CSeq_feat> current = *opp_it;
+                    cds = feature;
+                    mrna = current;
+                }
+                else
+                {
+                    mrna = feature;
+                    cds = current;
+                }
 
-                    if (!current->IsSetData()) continue;
+                // is this the best?
+                // TODO: add choosing of the best mRNA*CDS combinations 
+                // instead of getting the first one
+                sequence::ECompare located = sequence::Compare(mrna->GetLocation(), cds->GetLocation(), 0);
+                switch (located)
+                {
+                case sequence::eContains:      ///< First CSeq_loc contains second
+                case sequence::eSame:          ///< CSeq_locs contain each other
+                    best_fit = current;
+                    break;
+                case sequence::eContained:     ///< First CSeq_loc contained by second
+                case sequence::eNoOverlap:     ///< CSeq_locs do not overlap
+                case sequence::eOverlap:       ///< CSeq_locs overlap
+                    break;
+                }          
 
-                    if ( (IsmRNA(current->GetData()) && feature->GetData().IsCdregion()) ||
-                        (current->GetData().IsCdregion() && IsmRNA(feature->GetData())) )
-                    {
-                        string label;
-                        feature::GetLabel(*current, &label, feature::fFGL_Content);
-
-                        if (NStr::Compare(feat_label, label) != 0)
-                          continue; 
-                
-                        CRef<CSeq_feat> cds, mrna;
-                        if (feature->GetData().IsCdregion())
-                        {
-                            cds = feature;
-                            mrna = current;
-                        }
-                        else
-                        {
-                            mrna = feature;
-                            cds = current;
-                        }
-
-                        // is this the best?
-                        // TODO: add choosing of the best mRNA*CDS combinations 
-                        // instead of getting the first one
-                        sequence::ECompare located = sequence::Compare(cds->GetLocation(), mrna->GetLocation(), 0);
-
-                        if (located == sequence::eContained || located == sequence::eSame)
-                        {
-                            // create cross references
-                            CreateReference(*cds, *mrna);
-                            CreateReference(*mrna, *cds);
+            } 
+        }  // inner loop locating counterpart
+        if (best_fit.NotEmpty())
+        {
+            // create cross references
+            CreateReference(*feature, *best_fit);
+            CreateReference(*best_fit, *feature);
 #ifdef _DEBUG_000
-                            cout << "Adding: "
-                                 << feat_label << ":" << label
-                                 //<< CSeqFeatData::SelectionName(element->GetData().Which())
-                                 << endl;
+            cout << "Adding: "
+                << feat_label << ":" << label
+                //<< CSeqFeatData::SelectionName(element->GetData().Which())
+                << endl;
 #endif
-                            break; 
-                            // stop the inner loop
-                        }
-                    } 
-                }  // inner loop locating counterpart
-            } // if cdregion or mRNA
-        } // iterate over feature table
-    } // iterate over annotations
+            break; 
+            // stop the inner loop
+        }
+    } // iterate over feature table
 }
 }
 
@@ -183,7 +224,14 @@ void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(objects::CBioseq_set& 
     if (!bioseq.IsSetAnnot())
         return;
 
-    xLinkCDSmRNAbyLabelAndLocation(bioseq.SetAnnot());
+    for (CBioseq::TAnnot::iterator annot_it = bioseq.SetAnnot().begin(); bioseq.SetAnnot().end() != annot_it; ++annot_it)
+    {
+        if (!(**annot_it).IsFtable()) continue;
+
+        CSeq_annot::C_Data::TFtable& ftable = (**annot_it).SetData().SetFtable();
+
+        xLinkCDSmRNAbyLabelAndLocation(ftable);
+    }
 }
 
 void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(CBioseq& bioseq)
@@ -191,7 +239,14 @@ void CCDStomRNALinkBuilder::LinkCDSmRNAbyLabelAndLocation(CBioseq& bioseq)
     if (!bioseq.IsSetAnnot())
         return;
 
-    xLinkCDSmRNAbyLabelAndLocation(bioseq.SetAnnot());
+    for (CBioseq::TAnnot::iterator annot_it = bioseq.SetAnnot().begin(); bioseq.SetAnnot().end() != annot_it; ++annot_it)
+    {
+        if (!(**annot_it).IsFtable()) continue;
+
+        CSeq_annot::C_Data::TFtable& ftable = (**annot_it).SetData().SetFtable();
+
+        xLinkCDSmRNAbyLabelAndLocation(ftable);
+    }
 }
 
 END_NCBI_SCOPE
