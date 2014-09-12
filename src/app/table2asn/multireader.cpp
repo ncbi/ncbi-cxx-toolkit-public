@@ -1007,10 +1007,7 @@ CRef<CSeq_entry> CMultiReader::LoadFile(const string& ifname)
         }
         if (m_context.m_descr_template.NotEmpty())
         {
-            read_entry->SetDescr().Set().insert(read_entry->SetDescr().Set().end(),
-                m_context.m_descr_template->Get().begin(),
-                m_context.m_descr_template->Get().end());
-
+            m_context.MergeSeqDescr(read_entry->SetDescr(), *m_context.m_descr_template);
         }
         if (!m_context.m_Comment.empty())
         {

@@ -657,6 +657,10 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         entry = op.LoadXML(m_context.m_current_file, m_context);
         if (entry.IsNull())
             return;
+        if (m_context.m_descr_template.NotEmpty())
+        {
+            m_context.MergeSeqDescr(entry->SetDescr(), *m_context.m_descr_template);
+        }
         entry->Parentize();
     }
     else
@@ -1009,6 +1013,6 @@ void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
 
 int main(int argc, const char* argv[])
 {
-    return CTbl2AsnApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTbl2AsnApp().AppMain(argc, argv, 0, eDS_Default, "table2asn.conf");
 }
 
