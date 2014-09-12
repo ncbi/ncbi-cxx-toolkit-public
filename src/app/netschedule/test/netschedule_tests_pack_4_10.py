@@ -5801,22 +5801,32 @@ class Scenario264( TestBase ):
         return "SUBMIT 1 job with group=222, SUBMIT 1 job with group=333, " \
                "GET a job, PUT the job, READ group=333, READ group=222"
 
+    def report_warning( self, msg, server ):
+        " Callback to report a warning "
+        self.warning = msg
+
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
         jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '222', '', '' )
-        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '333', '', '' )
+        self.ns.submitJob(  'TEST', 'bla', '', '333', '', '' )
 
         j1 = self.ns.getJob( 'TEST' )
         self.ns.putJob( 'TEST', j1[ 0 ], j1[ 1 ], 0 )
 
-        r1, s, p  = self.ns.getJobsForReading2( 'TEST', -1, "333", "n", "s" )
-        if r1 != "":
-            raise Exception( "Expected no job, received: " + r1 )
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario264' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
 
-        r2, s, p = self.ns.getJobsForReading2( 'TEST', -1, "222", "n", "s" )
-        if r2 != jobID1:
-            raise Exception( "Expected: " + jobID1 + ", got: " + r2 )
+        output = execAny( ns_client, 'READ group=333' )
+        if output != "" and output != "no_more_jobs=false":
+            raise Exception( "Expected no job, received: " + output )
+
+        output = execAny( ns_client, 'READ group=222' )
+        values = parse_qs( output, True, True )
+        receivedJobID = values[ 'job_key' ][ 0 ]
+        if receivedJobID != jobID1:
+            raise Exception( "Expected: " + jobID1 + ", got: " + output )
         return True
 
 class Scenario265( TestBase ):

@@ -43,7 +43,7 @@ CNetScheduleServer* CNetScheduleServer::sm_netschedule_server = 0;
 
 //////////////////////////////////////////////////////////////////////////
 /// NetScheduler threaded server implementation
-CNetScheduleServer::CNetScheduleServer()
+CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
     : m_BackgroundHost(this),
       m_RequestExecutor(this),
       m_Port(0),
@@ -70,7 +70,8 @@ CNetScheduleServer::CNetScheduleServer()
       m_MaxAffinities(default_max_affinities),
       m_MaxClientData(default_max_client_data),
       m_NodeID("not_initialized"),
-      m_SessionID("s" + x_GenerateGUID())
+      m_SessionID("s" + x_GenerateGUID()),
+      m_StartIDs(dbpath)
 {
     m_CurrentSubmitsCounter.Set(kSubmitCounterInitialValue);
     sm_netschedule_server = this;
@@ -162,7 +163,8 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         s_AddSeparator(what_changed);
         what_changed += "\"stat_interval\" [" +
                         NStr::NumericToString(m_StatInterval) +
-                        ", " + NStr::NumericToString(params.stat_interval) + "]";
+                        ", " + NStr::NumericToString(params.stat_interval) +
+                        "]";
     }
     m_StatInterval = params.stat_interval;
 
@@ -170,7 +172,8 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         s_AddSeparator(what_changed);
         what_changed += "\"max_client_data\" [" +
                         NStr::NumericToString(m_MaxClientData) +
-                        ", " + NStr::NumericToString(params.max_client_data) + "]";
+                        ", " + NStr::NumericToString(params.max_client_data) +
+                        "]";
     }
     m_MaxClientData = params.max_client_data;
 

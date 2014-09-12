@@ -172,6 +172,10 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
 {
     const string &   db_path     = params.db_path;
     const string &   db_log_path = params.db_log_path;
+
+    // First, load the previous session start job IDs if file existed
+    m_Server->LoadJobsStartIDs();
+
     if (reinit) {
         CDir(db_path).Remove();
         LOG_POST(Message << Warning
@@ -358,6 +362,11 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
 
     x_SetSignallingFile(false);
     x_CreateNeedReinitFile();
+
+    // Serialize the start job IDs file if it was deleted during the database
+    // initialization. Even if it is overwriting an existing file there is no
+    // performance issue at this point (it's done once anyway).
+    m_Server->SerializeJobsStartIDs();
 }
 
 

@@ -39,6 +39,7 @@
 #include "ns_server_params.hpp"
 #include "ns_queue.hpp"
 #include "ns_alert.hpp"
+#include "ns_start_ids.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -54,8 +55,95 @@ const unsigned int   kSubmitCounterInitialValue = 1000000000;
 class CNetScheduleServer : public CServer
 {
 public:
-    CNetScheduleServer();
+    CNetScheduleServer(const string &  dbpath);
     virtual ~CNetScheduleServer();
+
+    const bool & IsLog() const
+    { return m_LogFlag; }
+    const bool & IsLogBatchEachJob() const
+    { return m_LogBatchEachJobFlag; }
+    const bool & IsLogNotificationThread() const
+    { return m_LogNotificationThreadFlag; }
+    const bool & IsLogCleaningThread() const
+    { return m_LogCleaningThreadFlag; }
+    const bool & IsLogExecutionWatcherThread() const
+    { return m_LogExecutionWatcherThreadFlag; }
+    const bool & IsLogStatisticsThread() const
+    { return m_LogStatisticsThreadFlag; }
+    const unsigned int & GetStatInterval() const
+    { return m_StatInterval; }
+    bool GetRefuseSubmits() const
+    { return m_RefuseSubmits; }
+    void SetRefuseSubmits(bool  val)
+    { m_RefuseSubmits = val; }
+    unsigned GetInactivityTimeout(void) const
+    { return m_InactivityTimeout; }
+    string & GetHost()
+    { return m_Host; }
+    unsigned GetPort() const
+    { return m_Port; }
+    unsigned GetDeleteBatchSize(void) const
+    { return m_DeleteBatchSize; }
+    bool GetUseHostname(void) const
+    { return m_UseHostname; }
+    unsigned GetMarkdelBatchSize(void) const
+    { return m_MarkdelBatchSize; }
+    unsigned GetScanBatchSize(void) const
+    { return m_ScanBatchSize; }
+    double GetPurgeTimeout(void) const
+    { return m_PurgeTimeout; }
+    unsigned GetHostNetAddr() const
+    { return m_HostNetAddr; }
+    const CTime & GetStartTime(void) const
+    { return m_StartTime; }
+    CBackgroundHost & GetBackgroundHost()
+    { return m_BackgroundHost; }
+    CRequestExecutor & GetRequestExecutor()
+    { return m_RequestExecutor; }
+    unsigned GetMaxAffinities(void) const
+    { return m_MaxAffinities; }
+    unsigned int GetMaxClientData(void) const
+    { return m_MaxClientData; }
+    string GetNodeID(void) const
+    { return m_NodeID; }
+    string GetSessionID(void) const
+    { return m_SessionID; }
+    unsigned GetAffinityHighMarkPercentage(void) const
+    { return m_AffinityHighMarkPercentage; }
+    unsigned GetAffinityLowMarkPercentage(void) const
+    { return m_AffinityLowMarkPercentage; }
+    unsigned GetAffinityHighRemoval(void) const
+    { return m_AffinityHighRemoval; }
+    unsigned GetAffinityLowRemoval(void) const
+    { return m_AffinityLowRemoval; }
+    unsigned GetAffinityDirtPercentage(void) const
+    { return m_AffinityDirtPercentage; }
+    bool IsDrainShutdown(void) const
+    { return m_CurrentSubmitsCounter.Get() < kSubmitCounterInitialValue; }
+    bool WasDBDrained(void) const
+    { return m_DBDrained; }
+    void SetDrainShutdown(void)
+    { m_CurrentSubmitsCounter.Add(-1*static_cast<int>
+                                            (kSubmitCounterInitialValue)); }
+    unsigned int  GetCurrentSubmitsCounter(void)
+    { return m_CurrentSubmitsCounter.Get(); }
+    unsigned int  IncrementCurrentSubmitsCounter(void)
+    { return m_CurrentSubmitsCounter.Add(1); }
+    unsigned int  DecrementCurrentSubmitsCounter(void)
+    { return m_CurrentSubmitsCounter.Add(-1); }
+    const CNetScheduleAccessList & GetAdminHosts(void) const
+    { return m_AdminHosts; }
+    CCompoundIDPool GetCompoundIDPool(void) const
+    { return m_CompoundIDPool; }
+    void SetJobsStartID(const string &  qname, unsigned int  value)
+    { m_StartIDs.Set(qname, value); }
+    unsigned int GetJobsStartID(const string &  qname)
+    { return m_StartIDs.Get(qname); }
+    void LoadJobsStartIDs(void)
+    { m_StartIDs.Load(); }
+    void SerializeJobsStartIDs(void)
+    { m_StartIDs.Serialize(); }
+
 
     void AddDefaultListener(IServer_ConnectionFactory* factory);
     string SetNSParameters(const SNS_Parameters &  new_params,
@@ -63,18 +151,8 @@ public:
     string ReadServicesConfig(const CNcbiRegistry &  reg);
 
     virtual bool ShutdownRequested(void);
-
-    void SetQueueDB(CQueueDataBase* qdb);
-
     void SetShutdownFlag(int signum = 0, bool  db_was_drained = false);
-
-    const bool &  IsLog() const                       { return m_LogFlag; }
-    const bool &  IsLogBatchEachJob() const           { return m_LogBatchEachJobFlag; }
-    const bool &  IsLogNotificationThread() const     { return m_LogNotificationThreadFlag; }
-    const bool &  IsLogCleaningThread() const         { return m_LogCleaningThreadFlag; }
-    const bool &  IsLogExecutionWatcherThread() const { return m_LogExecutionWatcherThreadFlag; }
-    const bool &  IsLogStatisticsThread() const       { return m_LogStatisticsThreadFlag; }
-    const unsigned int &  GetStatInterval() const     { return m_StatInterval; }
+    void SetQueueDB(CQueueDataBase* qdb);
 
     // Queue handling
     unsigned int  Configure(const IRegistry &  reg,
@@ -103,47 +181,13 @@ public:
     string ResolveService(const string &  service) const;
     void GetServices(map<string, string> &  services) const;
 
-    bool GetRefuseSubmits() const               { return m_RefuseSubmits; }
-    void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }
-
-    unsigned GetInactivityTimeout(void) const   { return m_InactivityTimeout; }
-    string & GetHost()                          { return m_Host; }
-    unsigned GetPort() const                    { return m_Port; }
-    unsigned GetDeleteBatchSize(void) const     { return m_DeleteBatchSize; }
-    bool GetUseHostname(void) const             { return m_UseHostname; }
-    unsigned GetMarkdelBatchSize(void) const    { return m_MarkdelBatchSize; }
-    unsigned GetScanBatchSize(void) const       { return m_ScanBatchSize; }
-    double   GetPurgeTimeout(void) const        { return m_PurgeTimeout; }
-    unsigned GetHostNetAddr() const             { return m_HostNetAddr; }
-    const CTime& GetStartTime(void) const       { return m_StartTime; }
-    CBackgroundHost&  GetBackgroundHost()       { return m_BackgroundHost; }
-    CRequestExecutor& GetRequestExecutor()      { return m_RequestExecutor; }
-    unsigned GetMaxAffinities(void) const       { return m_MaxAffinities; }
-    unsigned int  GetMaxClientData(void) const  { return m_MaxClientData; }
-    string GetNodeID(void) const                { return m_NodeID; }
-    string GetSessionID(void) const             { return m_SessionID; }
-    unsigned GetAffinityHighMarkPercentage(void) const  { return m_AffinityHighMarkPercentage; }
-    unsigned GetAffinityLowMarkPercentage(void) const   { return m_AffinityLowMarkPercentage; }
-    unsigned GetAffinityHighRemoval(void) const         { return m_AffinityHighRemoval; }
-    unsigned GetAffinityLowRemoval(void) const          { return m_AffinityLowRemoval; }
-    unsigned GetAffinityDirtPercentage(void) const      { return m_AffinityDirtPercentage; }
-    bool IsDrainShutdown(void) const                   { return m_CurrentSubmitsCounter.Get() < kSubmitCounterInitialValue; }
-    bool WasDBDrained(void) const                      { return m_DBDrained; }
-    void SetDrainShutdown(void)
-    { m_CurrentSubmitsCounter.Add(-1*static_cast<int>(kSubmitCounterInitialValue)); }
-    unsigned int  GetCurrentSubmitsCounter(void)        { return m_CurrentSubmitsCounter.Get(); }
-    unsigned int  IncrementCurrentSubmitsCounter(void)  { return m_CurrentSubmitsCounter.Add(1); }
-    unsigned int  DecrementCurrentSubmitsCounter(void)  { return m_CurrentSubmitsCounter.Add(-1); }
-
     bool AdminHostValid(unsigned host) const;
     bool IsAdminClientName(const string &  name) const;
 
     void InitNodeID(const string &  db_path);
 
     static CNetScheduleServer*  GetInstance(void);
-    const CNetScheduleAccessList &  GetAdminHosts(void) const { return m_AdminHosts; }
     string GetAdminClientNames(void) const;
-    CCompoundIDPool GetCompoundIDPool(void) const { return m_CompoundIDPool; }
 
     string GetAlerts(void) const;
     string SerializeAlerts(void) const;
@@ -158,72 +202,74 @@ protected:
 
 private:
     // API for background threads
-    CNetScheduleBackgroundHost                  m_BackgroundHost;
-    CNetScheduleRequestExecutor                 m_RequestExecutor;
+    CNetScheduleBackgroundHost      m_BackgroundHost;
+    CNetScheduleRequestExecutor     m_RequestExecutor;
     // Host name where server runs
-    string                                      m_Host;
-    unsigned                                    m_Port;
-    unsigned                                    m_HostNetAddr;
-    mutable bool                                m_Shutdown;
-    int                                         m_SigNum;  ///< Shutdown signal number
-    /// Time to wait for the client (seconds)
-    unsigned                                    m_InactivityTimeout;
-    CQueueDataBase*                             m_QueueDB;
-    CTime                                       m_StartTime;
+    string                          m_Host;
+    unsigned                        m_Port;
+    unsigned                        m_HostNetAddr;
+    mutable bool                    m_Shutdown;
+    int                             m_SigNum;  // Shutdown signal number
+    // Time to wait for the client (seconds)
+    unsigned int                    m_InactivityTimeout;
+    CQueueDataBase *                m_QueueDB;
+    CTime                           m_StartTime;
 
-    /// Log related flags
-    bool                                        m_LogFlag;
-    bool                                        m_LogBatchEachJobFlag;
-    bool                                        m_LogNotificationThreadFlag;
-    bool                                        m_LogCleaningThreadFlag;
-    bool                                        m_LogExecutionWatcherThreadFlag;
-    bool                                        m_LogStatisticsThreadFlag;
+    // Log related flags
+    bool                            m_LogFlag;
+    bool                            m_LogBatchEachJobFlag;
+    bool                            m_LogNotificationThreadFlag;
+    bool                            m_LogCleaningThreadFlag;
+    bool                            m_LogExecutionWatcherThreadFlag;
+    bool                            m_LogStatisticsThreadFlag;
 
-    bool                                        m_RefuseSubmits;
-    bool                                        m_UseHostname;
+    bool                            m_RefuseSubmits;
+    bool                            m_UseHostname;
 
     // Support for shutdown with drain
-    CAtomicCounter                              m_CurrentSubmitsCounter;
-    bool                                        m_DBDrained;
+    CAtomicCounter                  m_CurrentSubmitsCounter;
+    bool                            m_DBDrained;
 
 
     // Purge() related parameters
-    unsigned int                                m_DeleteBatchSize;  // Max # of jobs to be deleted
-    unsigned int                                m_MarkdelBatchSize; // Max # of jobs to be marked for deletion
-    unsigned int                                m_ScanBatchSize;    // Max # of scanned jobs
-    double                                      m_PurgeTimeout;     // Interval between purges
-    unsigned int                                m_StatInterval;
+    unsigned int                    m_DeleteBatchSize;  // Max # for erasing
+    unsigned int                    m_MarkdelBatchSize; // Max # for marking
+    unsigned int                    m_ScanBatchSize;    // Max # of scanned
+    double                          m_PurgeTimeout;     // Time between purges
+    unsigned int                    m_StatInterval;
 
-    unsigned int                                m_MaxAffinities;
-    unsigned int                                m_MaxClientData;
+    unsigned int                    m_MaxAffinities;
+    unsigned int                    m_MaxClientData;
 
-    string                                      m_NodeID;           // From the ini file
-    string                                      m_SessionID;        // Generated
+    string                          m_NodeID;           // From the ini file
+    string                          m_SessionID;        // Generated
 
     // Affinity garbage collection settings
-    unsigned int                                m_AffinityHighMarkPercentage;
-    unsigned int                                m_AffinityLowMarkPercentage;
-    unsigned int                                m_AffinityHighRemoval;
-    unsigned int                                m_AffinityLowRemoval;
-    unsigned int                                m_AffinityDirtPercentage;
+    unsigned int                    m_AffinityHighMarkPercentage;
+    unsigned int                    m_AffinityLowMarkPercentage;
+    unsigned int                    m_AffinityHighRemoval;
+    unsigned int                    m_AffinityLowRemoval;
+    unsigned int                    m_AffinityDirtPercentage;
 
     // List of admin stations
-    CNetScheduleAccessList                      m_AdminHosts;
+    CNetScheduleAccessList          m_AdminHosts;
 
-    static CNetScheduleServer*                  sm_netschedule_server;
+    static CNetScheduleServer *     sm_netschedule_server;
 
-    mutable CRWLock                             m_AdminClientsLock;
-    vector<string>                              m_AdminClientNames;
-    CNSAlerts                                   m_Alerts;
+    mutable CRWLock                 m_AdminClientsLock;
+    vector<string>                  m_AdminClientNames;
+    CNSAlerts                       m_Alerts;
 
-    mutable CFastMutex                          m_ServicesLock;
-    map< string, string >                       m_Services;
+    mutable CFastMutex              m_ServicesLock;
+    map< string, string >           m_Services;
 
-    CCompoundIDPool                             m_CompoundIDPool;
+    CNSStartIDs                     m_StartIDs;
+
+    CCompoundIDPool                 m_CompoundIDPool;
 
 private:
-    string  x_GenerateGUID(void) const;
-    string  x_SetAdminClientNames(const string &  client_names);
+    string x_GenerateGUID(void) const;
+    string x_SetAdminClientNames(const string &  client_names);
 };
 
 

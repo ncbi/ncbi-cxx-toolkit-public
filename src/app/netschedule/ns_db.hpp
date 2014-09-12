@@ -404,20 +404,6 @@ struct SQueueDescriptionDB : public CBDB_File
 };
 
 
-struct SStartCounterDB : public CBDB_File
-{
-    CBDB_FieldUint4     pseudo_key;
-    CBDB_FieldUint4     start_from;
-
-    SStartCounterDB()
-    {
-        DisableNull();
-        BindKey("pseudo_key", &pseudo_key);
-        BindData("start_from", &start_from);
-    }
-};
-
-
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_DB__HPP */

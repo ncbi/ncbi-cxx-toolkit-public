@@ -91,37 +91,14 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
             fname = prefix + "_groupdict.db";
         group_dict_db.SetEnv(env);
         group_dict_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
-        if (group_tables_for_queue)
-            tname = "start_from";
-        else
-            fname = prefix + "_start_from.idx";
-        start_from_db.SetEnv(env);
-        start_from_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
     } catch (CBDB_ErrnoException&) {
         throw;
     }
 }
 
 
-void SQueueDbBlock::x_InitStartCounter(void)
-{
-    // Checks if there are any records in the start_from_db
-    // If not then creates a record with an initial value
-    start_from_db.pseudo_key = 1;
-    if (start_from_db.Fetch() == eBDB_NotFound) {
-        // There are no records, create the initial one
-        start_from_db.pseudo_key = 1;
-        start_from_db.start_from = 0;
-        start_from_db.UpdateInsert();
-    }
-}
-
-
 void SQueueDbBlock::Close()
 {
-    start_from_db.Close();
     group_dict_db.Close();
     aff_dict_db.Close();
     events_db.Close();
@@ -132,7 +109,6 @@ void SQueueDbBlock::Close()
 
 void SQueueDbBlock::Truncate()
 {
-    start_from_db.SafeTruncate();
     group_dict_db.SafeTruncate();
     aff_dict_db.SafeTruncate();
     events_db.SafeTruncate();

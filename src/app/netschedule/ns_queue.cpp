@@ -163,14 +163,14 @@ void CQueue::Attach(SQueueDbBlock* block)
     m_GroupRegistry.Attach(&m_QueueDbBlock->group_dict_db);
 
     // Here we have a db, so we can read the counter value we should start from
-    m_LastId = x_ReadStartFromCounter();
+    m_LastId = m_Server->GetJobsStartID(m_QueueName);
     m_SavedId = m_LastId + s_ReserveDelta;
     if (m_SavedId < m_LastId) {
         // Overflow
         m_LastId = 0;
         m_SavedId = s_ReserveDelta;
     }
-    x_UpdateStartFromCounter();
+    m_Server->SetJobsStartID(m_QueueName, m_SavedId);
 }
 
 
@@ -221,7 +221,6 @@ void CQueue::x_Detach(void)
     }
 
     m_QueueDbBlock = 0;
-    return;
 }
 
 
@@ -2090,7 +2089,7 @@ unsigned int CQueue::GetNextId()
             m_LastId = 1;
             m_SavedId = s_ReserveDelta;
         }
-        x_UpdateStartFromCounter();
+        m_Server->SetJobsStartID(m_QueueName, m_SavedId);
     }
     return m_LastId;
 }
@@ -2109,7 +2108,7 @@ unsigned int CQueue::GetNextJobIdForBatch(unsigned int  count)
         // Overflow
         m_LastId = count;
         m_SavedId = count + s_ReserveDelta;
-        x_UpdateStartFromCounter();
+        m_Server->SetJobsStartID(m_QueueName, m_SavedId);
     }
 
     // There were no overflow, check the reserved value
@@ -2120,36 +2119,10 @@ unsigned int CQueue::GetNextJobIdForBatch(unsigned int  count)
             m_LastId = count;
             m_SavedId = count + s_ReserveDelta;
         }
-        x_UpdateStartFromCounter();
+        m_Server->SetJobsStartID(m_QueueName, m_SavedId);
     }
 
     return m_LastId - count + 1;
-}
-
-
-void CQueue::x_UpdateStartFromCounter(void)
-{
-    // Updates the start_from value in the Berkley DB file
-    if (m_QueueDbBlock) {
-        // The only record is expected and its key is always 1
-        m_QueueDbBlock->start_from_db.pseudo_key = 1;
-        m_QueueDbBlock->start_from_db.start_from = m_SavedId;
-        m_QueueDbBlock->start_from_db.UpdateInsert();
-    }
-    return;
-}
-
-
-unsigned int  CQueue::x_ReadStartFromCounter(void)
-{
-    // Reads the start_from value from the Berkley DB file
-    if (m_QueueDbBlock) {
-        // The only record is expected and its key is always 1
-        m_QueueDbBlock->start_from_db.pseudo_key = 1;
-        m_QueueDbBlock->start_from_db.Fetch();
-        return m_QueueDbBlock->start_from_db.start_from;
-    }
-    return 1;
 }
 
 

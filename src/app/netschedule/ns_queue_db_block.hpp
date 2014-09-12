@@ -59,10 +59,6 @@ struct SQueueDbBlock
     SEventsDB               events_db;
     SAffinityDictDB         aff_dict_db;
     SGroupDictDB            group_dict_db;
-    SStartCounterDB         start_from_db;
-
-private:
-    void x_InitStartCounter(void);
 };
 
 
