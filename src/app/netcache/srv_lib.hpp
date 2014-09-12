@@ -442,6 +442,8 @@ public:
     { return NULL; }
     bool HasLoadedConfig(void)
     { return false; }
+    bool FinishedLoadingConfig(void)
+    { return false; }
     SDummyConfig GetConfig(void)
     { return SDummyConfig(); }
     CNcbiEnvironment& SetEnvironment(void)
