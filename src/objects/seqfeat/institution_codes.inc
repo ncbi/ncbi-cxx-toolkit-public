@@ -385,6 +385,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BCB	s	Universitat Autonoma de Barcelona, Unitat de Botanica",
 "BCC<ESP>	s	Universitat de Barcelona, Departament de Biologia Vegetal (Unitat de Botanica)",
 "BCC<THA>	c	BIOTEC Culture Collection",
+"BCCDC	c	BC Centre for Disease Control",
 "BCCM/DCG	c	The Belgian Co-ordinated Collections of Micro-organisms / DCG Diatoms Collection",
 "BCCM/IHEM	c	The Belgian Co-ordinated Collections of Micro-organisms / IHEM Biomedical Fungi and Yeasts Collection",
 "BCCM/ITM	c	The Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection",
