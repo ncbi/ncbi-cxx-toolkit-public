@@ -465,7 +465,7 @@ static CRef<CSeq_loc> s_RemapChildToParent(const CSeq_loc& parent,
 {
     CSeq_loc dummy_parent;
     dummy_parent.SetWhole(const_cast<CSeq_id&>(sequence::GetId(parent, 0)));
-    SRelLoc converter(dummy_parent, child, scope);
+    SRelLoc converter(dummy_parent, child, scope, SRelLoc::fNoMerge);
     converter.m_ParentLoc = &parent;
     return converter.Resolve(scope);
 }
@@ -553,8 +553,10 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
         copy(locs.begin(), locs.end(),
              back_inserter(feat->SetLocation().SetMix().Set()));
 
-        feat->SetLocation
-            (*s_RemapChildToParent(parent_loc, feat->GetLocation(), &scope));
+        feat->SetProduct().Assign(feat->GetLocation());
+        CRef<CSeq_loc> mapped =
+            s_RemapChildToParent(parent_loc, feat->GetLocation(), &scope);
+        feat->SetLocation(*mapped);
 
         // save in annot
         annot.SetData().SetFtable().push_back(feat);
