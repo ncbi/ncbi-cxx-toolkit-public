@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <algo/sequence/seq_match.hpp>
 #include <util/strsearch.hpp>
@@ -254,6 +255,8 @@ const vector<int>& CRSpec::GetMinusCuts(void) const
 class NCBI_XALGOSEQ_EXPORT CREnzyme
 {
 public:
+    typedef vector<CREnzyme> TEnzymes;
+
     // name of enzyme
     void SetName(const string& s);
     string& SetName(void);
@@ -272,7 +275,7 @@ public:
     // The cleavage sites must be the same for specificities
     // to be considered indentical (in addition to the
     // recognition sequenence).
-    static void CombineIsoschizomers(vector<CREnzyme>& enzymes);
+    static void CombineIsoschizomers(TEnzymes& enzymes);
 
 private:
     string m_Name;
@@ -327,6 +330,8 @@ const vector<CRSpec>& CREnzyme::GetSpecs(void) const
 class NCBI_XALGOSEQ_EXPORT CRebase
 {
 public:
+    typedef CREnzyme::TEnzymes TEnzymes;
+
     // build a CRSpec based on a string from REBASE
     static CRSpec MakeRSpec(const string& site);
 
@@ -342,7 +347,7 @@ public:
     };
     // read a REBASE file in "NAR" format
     static void ReadNARFormat(istream& input,
-                              vector<CREnzyme>& enzymes,
+                              TEnzymes& enzymes,
                               enum EEnzymesToLoad which);
 
     static string GetDefaultDataPath();
@@ -412,26 +417,31 @@ public:
         /// Lump together all enzymes with identical specificities.
         fCombineIsoschizomers = (1 << 1),
         fSortByNumberOfSites  = (1 << 2),
+        fSplitAnnotsByEnzyme  = (1 << 3),
         fDefault = fCombineIsoschizomers | fSortByNumberOfSites
     };
     typedef unsigned int TFlags;
+
+    typedef CREnzyme::TEnzymes TEnzymes;
+    typedef CBioseq::TAnnot TAnnot;
 
     CFindRSites(const string& refile = kEmptyStr,
                 CRebase::EEnzymesToLoad which_enzymes = CRebase::eAll,
                 TFlags flags = fDefault);
 
-    CRef<objects::CSeq_annot> GetAnnot(CScope& scope,
-                                       const CSeq_loc& loc) const;
-    CRef<objects::CSeq_annot> GetAnnot(CBioseq_Handle bsh) const;
+    TEnzymes& SetEnzymes();
+
+    TAnnot GetAnnot(CScope& scope, const CSeq_loc& loc) const;
+    TAnnot GetAnnot(CBioseq_Handle bsh) const;
 
     static void Find(const string& seq,
-                     const vector<CREnzyme>& enzymes,
+                     const TEnzymes& enzymes,
                      vector<CRef<CREnzResult> >& results);
     static void Find(const vector<char>& seq,
-                     const vector<CREnzyme>& enzymes,
+                     const TEnzymes& enzymes,
                      vector<CRef<CREnzResult> >& results);
     static void Find(const CSeqVector& seq,
-                     const vector<CREnzyme>& enzymes,
+                     const TEnzymes& enzymes,
                      vector<CRef<CREnzResult> >& results);
 
 private:
@@ -445,11 +455,11 @@ private:
     static bool x_IsAmbig(char nuc);
 
     template<class Seq>
-    friend void x_FindRSite(const Seq& seq, const vector<CREnzyme>& enzymes,
+    friend void x_FindRSite(const Seq& seq, const TEnzymes& enzymes,
                             vector<CRef<CREnzResult> >& results);
 
     TFlags m_Flags;
-    vector<CREnzyme> m_Enzymes;
+    TEnzymes m_Enzymes;
 };
 
 

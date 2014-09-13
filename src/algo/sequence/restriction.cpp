@@ -36,6 +36,7 @@
 
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/seqfeat/Rsite_ref.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seq/Annot_descr.hpp>
@@ -89,11 +90,11 @@ struct SCompareSpecs
 };
 
 
-void CREnzyme::CombineIsoschizomers(vector<CREnzyme>& enzymes)
+void CREnzyme::CombineIsoschizomers(TEnzymes& enzymes)
 {
     stable_sort(enzymes.begin(), enzymes.end(), SCompareSpecs());
-    vector<CREnzyme> result;
-    ITERATE (vector<CREnzyme>, enzyme, enzymes) {
+    TEnzymes result;
+    ITERATE (TEnzymes, enzyme, enzymes) {
         if (enzyme != enzymes.begin() &&
             enzyme->GetSpecs() == result.back().GetSpecs()) {
             result.back().SetName() += "/";
@@ -256,7 +257,7 @@ void CRebase::x_ParseCutPair(const string& s, int& plus_cut, int& minus_cut)
 
 
 void CRebase::ReadNARFormat(istream& input,
-                            vector<CREnzyme>& enzymes,
+                            TEnzymes& enzymes,
                             enum EEnzymesToLoad which)
 {
     string line;
@@ -434,6 +435,12 @@ CFindRSites::CFindRSites(const string& refile,
 }
 
 
+CFindRSites::TEnzymes& CFindRSites::SetEnzymes()
+{
+    return m_Enzymes;
+}
+
+
 void CFindRSites::x_LoadREnzymeData(const string& refile,
                                     CRebase::EEnzymesToLoad which_enzymes)
 {
@@ -555,9 +562,10 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
 }
 
 
-CRef<objects::CSeq_annot>
+CFindRSites::TAnnot
 CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
 {
+    CTime now(CTime::eCurrent);
     // get sequence in binary (8na) form
     CSeqVector vec(loc, scope, CBioseq_Handle::eCoding_Ncbi);
 
@@ -578,19 +586,54 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
         stable_sort(results.begin(), results.end(), SLessDefSites());
     }
 
-    // count the number of definite and possible sites
+    TAnnot annot;
     int total_definite_sites = 0, total_possible_sites = 0;
     int total_non_cutters = 0;
+
     ITERATE (TResults, result, results) {
-        total_definite_sites += (*result)->GetDefiniteSites().size();
-        total_possible_sites += (*result)->GetPossibleSites().size();
-        if ((*result)->GetDefiniteSites().size()
-            + (*result)->GetPossibleSites().size() == 0) {
-            total_non_cutters++;
+        const vector<CRSite>& definite_sites =
+            (*result)->GetDefiniteSites();
+        const vector<CRSite>& possible_sites =
+            (*result)->GetPossibleSites();
+
+        int count_definite_sites = definite_sites.size();
+        int count_possible_sites = possible_sites.size();
+
+        if (count_definite_sites  ||  count_possible_sites) {
+            total_definite_sites += count_definite_sites;
+            total_possible_sites += count_possible_sites;
+
+            if (m_Flags & fSplitAnnotsByEnzyme  ||  annot.empty()) {
+                CRef<CSeq_annot> new_annot(new CSeq_annot);
+                // add description to annot
+                const string title("Restriction sites");
+                new_annot->SetNameDesc(title);
+                new_annot->SetTitleDesc(title);
+                new_annot->SetCreateDate(now);
+                CRef<CAnnotdesc> region(new CAnnotdesc);
+                region->SetRegion().Assign(loc);
+                new_annot->SetDesc().Set().push_back(region);
+                if (m_Flags & fSplitAnnotsByEnzyme) {
+                    CRef<CUser_object> obj(new CUser_object);
+                    obj->SetType().SetStr("RestrictionSite");
+                    obj->AddField("enzyme", (**result).GetEnzymeName());
+                    new_annot->AddUserObject(*obj);
+                }
+                annot.push_back(new_annot);
+            }
+            CSeq_annot& curr_annot(*annot.back());
+
+            //
+            // add features to annot
+            //
+            s_AddSitesToAnnot(definite_sites,
+                              **result, curr_annot, scope, loc);
+            s_AddSitesToAnnot(possible_sites,
+                              **result, curr_annot, scope, loc, false);
+        } else {
+            ++total_non_cutters;
         }
     }
-    _TRACE("Found " << total_definite_sites << " definite and "
-           << total_possible_sites << " possible sites");
 
     /**
     // in order to build dialog efficiently,
@@ -599,39 +642,14 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
         + total_non_cutters;
         **/
 
-    CRef<CSeq_annot> annot;
-    if (total_definite_sites  ||  total_possible_sites) {
-        // a new feature table
-        annot.Reset(new CSeq_annot());
-        // add description to annot
-        const string title("Restriction sites");
-        annot->SetNameDesc(title);
-        annot->SetTitleDesc(title);
-        annot->SetCreateDate(CTime(CTime::eCurrent));
-        CRef<CAnnotdesc> region(new CAnnotdesc);
-        region->SetRegion().Assign(loc);
-        annot->SetDesc().Set().push_back(region);
-
-        ITERATE (TResults, result, results) {
-
-            const vector<CRSite>& definite_sites =
-                (*result)->GetDefiniteSites();
-            const vector<CRSite>& possible_sites =
-                (*result)->GetPossibleSites();
-
-            //
-            // add features to annot
-            //
-            s_AddSitesToAnnot(definite_sites, **result, *annot, scope, loc);
-            s_AddSitesToAnnot(possible_sites, **result, *annot, scope, loc, false);
-        }
-    }
+    _TRACE("Found " << total_definite_sites << " definite and "
+           << total_possible_sites << " possible sites");
 
     return annot;
 }
 
 
-CRef<objects::CSeq_annot>
+CFindRSites::TAnnot
 CFindRSites::GetAnnot(CBioseq_Handle bsh) const
 {
     CSeq_id_Handle idh = sequence::GetId(bsh, sequence::eGetId_Canonical);
@@ -665,7 +683,7 @@ bool CFindRSites::x_IsAmbig (char nuc)
 /// (e.g., string, vector<char>, CSeqVector),
 /// but it must yield ncbi8na.
 template<class Seq>
-void x_FindRSite(const Seq& seq, const vector<CREnzyme>& enzymes,
+void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                  vector<CRef<CREnzResult> >& results)
 {
 
@@ -680,7 +698,7 @@ void x_FindRSite(const Seq& seq, const vector<CREnzyme>& enzymes,
     CTextFsm<int> fsm;
 
     // iterate over enzymes
-    ITERATE (vector<CREnzyme>, enzyme, enzymes) {
+    ITERATE (TEnzymes, enzyme, enzymes) {
 
         results.push_back(CRef<CREnzResult> 
                           (new CREnzResult(enzyme->GetName())));
@@ -924,7 +942,7 @@ void x_FindRSite(const Seq& seq, const vector<CREnzyme>& enzymes,
 // CFindRSites::Find for various sequence containers
 
 void CFindRSites::Find(const string& seq,
-                       const vector<CREnzyme>& enzymes,
+                       const TEnzymes& enzymes,
                        vector<CRef<CREnzResult> >& results)
 {
     x_FindRSite(seq, enzymes, results);
@@ -932,7 +950,7 @@ void CFindRSites::Find(const string& seq,
 
 
 void CFindRSites::Find(const vector<char>& seq,
-                       const vector<CREnzyme>& enzymes,
+                       const TEnzymes& enzymes,
                        vector<CRef<CREnzResult> >& results)
 {
     x_FindRSite(seq, enzymes, results);
@@ -940,7 +958,7 @@ void CFindRSites::Find(const vector<char>& seq,
 
 
 void CFindRSites::Find(const CSeqVector& seq,
-                       const vector<CREnzyme>& enzymes,
+                       const TEnzymes& enzymes,
                        vector<CRef<CREnzResult> >& results)
 {
     string seq_ncbi8na;
