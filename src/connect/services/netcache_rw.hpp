@@ -87,6 +87,10 @@ public:
 
     const string& GetBlobID() const {return m_BlobID;}
 
+    Uint8 GetBlobSize() const {return m_BlobSize;}
+
+    bool Eof() const {return m_BlobBytesToRead == 0;}
+
 private:
     void SocketRead(void* buf, size_t count, size_t* bytes_read);
 

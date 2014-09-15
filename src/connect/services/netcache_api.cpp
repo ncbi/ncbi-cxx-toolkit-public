@@ -830,7 +830,7 @@ IReader* CNetCacheAPI::GetData(const string& key, size_t* blob_size,
     }
 }
 
-IReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
+CNetCacheReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
     size_t offset, size_t part_size,
     size_t* blob_size_ptr, const CNamedParameterList* optional)
 {

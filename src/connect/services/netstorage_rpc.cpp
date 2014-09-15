@@ -396,16 +396,19 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 
     virtual ~SNetStorageObjectRPC();
 
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
+
+    virtual ERW_Result Write(const void* buf, size_t count,
+            size_t* bytes_written);
+    virtual void Close();
+
     virtual string GetLoc();
-    virtual size_t Read(void* buffer, size_t buf_size);
     virtual bool Eof();
-    virtual void Write(const void* buffer, size_t buf_size);
     virtual Uint8 GetSize();
     virtual string GetAttribute(const string& attr_name);
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value);
     virtual CNetStorageObjectInfo GetInfo();
-    virtual void Close();
 
     CJsonNode x_MkRequest(const string& request_type);
 
@@ -702,14 +705,15 @@ string SNetStorageObjectRPC::GetLoc()
     return m_Locator;
 }
 
-size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
+ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
+        size_t* bytes_read)
 {
     if (m_State == eWriting) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
                 "Cannot read a NetStorage file while writing to it");
     }
 
-    size_t bytes_read;
+    size_t bytes_read_local;
 
     if (m_State == eReady) {
         m_OriginalRequest = x_MkRequest("READ");
@@ -731,9 +735,10 @@ size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
         CJsonOverUTTPReader json_reader;
 
         do {
-            s_ReadSocket(sock, m_ReadBuffer, READ_BUFFER_SIZE, &bytes_read);
+            s_ReadSocket(sock, m_ReadBuffer, READ_BUFFER_SIZE,
+                    &bytes_read_local);
 
-            m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
+            m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read_local);
 
         } while (!json_reader.ReadMessage(m_UTTPReader));
 
@@ -753,7 +758,9 @@ size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
             m_CurrentChunk += buf_size;
             m_CurrentChunkSize -= buf_size;
         }
-        return buf_size;
+        if (bytes_read != NULL)
+            *bytes_read = buf_size;
+        return eRW_Success;
     }
 
     if (m_CurrentChunkSize > 0) {
@@ -766,8 +773,11 @@ size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
 
     m_CurrentChunkSize = 0;
 
-    if (m_EOF)
-        return bytes_copied;
+    if (m_EOF) {
+        if (bytes_read != NULL)
+            *bytes_read = bytes_copied;
+        return eRW_Success;
+    }
 
     try {
         while (buf_size > 0) {
@@ -781,7 +791,9 @@ size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
                     memcpy(buf_pos, m_CurrentChunk, buf_size);
                     m_CurrentChunk += buf_size;
                     m_CurrentChunkSize -= buf_size;
-                    return bytes_copied + buf_size;
+                    if (bytes_read != NULL)
+                        *bytes_read = bytes_copied + buf_size;
+                    return eRW_Success;
                 }
 
                 memcpy(buf_pos, m_CurrentChunk, m_CurrentChunkSize);
@@ -799,13 +811,15 @@ size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
                                     (int) m_UTTPReader.GetControlSymbol());
                 }
                 m_EOF = true;
-                return bytes_copied;
+                if (bytes_read != NULL)
+                    *bytes_read = bytes_copied;
+                return eRW_Success;
 
             case CUTTPReader::eEndOfBuffer:
                 s_ReadSocket(&m_Connection->m_Socket, m_ReadBuffer,
-                        READ_BUFFER_SIZE, &bytes_read);
+                        READ_BUFFER_SIZE, &bytes_read_local);
 
-                m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
+                m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read_local);
                 break;
 
             default:
@@ -815,7 +829,9 @@ size_t SNetStorageObjectRPC::Read(void* buffer, size_t buf_size)
             }
         }
 
-        return bytes_copied;
+        if (bytes_read != NULL)
+            *bytes_read = bytes_copied;
+        return eRW_Success;
     }
     catch (exception&) {
         m_State = eReady;
@@ -840,7 +856,8 @@ bool SNetStorageObjectRPC::Eof()
     }
 }
 
-void SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size)
+ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
+        size_t* bytes_written)
 {
     if (m_State == eReading) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -859,6 +876,9 @@ void SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size)
     try {
         s_SendUTTPChunk(reinterpret_cast<const char*>(buf_pos),
                 buf_size, &m_Connection->m_Socket);
+        if (bytes_written != NULL)
+            *bytes_written = buf_size;
+        return eRW_Success;
     }
     catch (exception&) {
         m_State = eReady;
@@ -979,15 +999,43 @@ CJsonNode SNetStorageObjectRPC::x_MkRequest(const string& request_type)
                 m_UniqueKey, m_Flags);
 }
 
+ERW_Result SNetStorageObjectImpl::PendingCount(size_t* count)
+{
+    *count = 0;
+    return eRW_Success;
+}
+
+ERW_Result SNetStorageObjectImpl::Flush()
+{
+    return eRW_Success;
+}
+
+void SNetStorageObjectImpl::Abort()
+{
+    Close();
+}
+
+IReader& SNetStorageObjectImpl::GetReader()
+{
+    return *this;
+}
+
+IEmbeddedStreamWriter& SNetStorageObjectImpl::GetWriter()
+{
+    return *this;
+}
+
 void SNetStorageObjectImpl::Read(string* data)
 {
     char buffer[READ_CHUNK_SIZE];
 
     data->resize(0);
+    size_t bytes_read;
 
-    do
-        data->append(buffer, Read(buffer, sizeof(buffer)));
-    while (!Eof());
+    do {
+        Read(buffer, sizeof(buffer), &bytes_read);
+        data->append(buffer, bytes_read);
+    } while (!Eof());
 
     Close();
 }

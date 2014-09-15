@@ -34,6 +34,7 @@
  */
 
 #include "netstorage_rpc.hpp"
+#include "netcache_rw.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -58,17 +59,29 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     {
     }
 
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
+    virtual ERW_Result PendingCount(size_t* count);
+
+    virtual ERW_Result Write(const void* buf, size_t count,
+            size_t* bytes_written);
+    virtual ERW_Result Flush();
+    virtual void Close();
+    virtual void Abort();
+
+    virtual IReader& GetReader();
+    virtual IEmbeddedStreamWriter& GetWriter();
+
     virtual string GetLoc();
-    virtual size_t Read(void* buffer, size_t buf_size);
     virtual void Read(string* data);
     virtual bool Eof();
-    virtual void Write(const void* buffer, size_t buf_size);
     virtual Uint8 GetSize();
     virtual string GetAttribute(const string& attr_name);
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value);
     virtual CNetStorageObjectInfo GetInfo();
-    virtual void Close();
+
+    void x_InitReader();
+    void x_InitWriter();
 
     CNetCacheAPI m_NetCacheAPI;
 
@@ -76,9 +89,8 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     EState m_State;
 
     auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;
-    auto_ptr<IReader> m_NetCacheReader;
+    auto_ptr<CNetCacheReader> m_NetCacheReader;
     size_t m_BlobSize;
-    size_t m_BytesRead;
 };
 
 END_NCBI_SCOPE

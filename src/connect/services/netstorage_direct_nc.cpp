@@ -34,6 +34,7 @@
 
 #include "netstorage_direct_nc.hpp"
 #include "netstorageobjectinfo.hpp"
+#include "netcache_api_impl.hpp"
 
 #include <connect/services/netstorage_admin.hpp>
 #include <connect/services/error_codes.hpp>
@@ -96,7 +97,7 @@ string SNetStorage_NetCacheBlob::GetLoc()
         } \
     }
 
-size_t SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size)
+void SNetStorage_NetCacheBlob::x_InitReader()
 {
     if (m_State == eWriting) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -104,28 +105,48 @@ size_t SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size)
     }
 
     try {
-        if (m_State == eReady) {
-            try {
-                m_NetCacheReader.reset(m_NetCacheAPI.GetReader(
-                        m_NetCacheKey.GetKey(), &m_BlobSize));
-            }
-            CONVERT_NETCACHEEXCEPTION("read", "reading");
-            m_State = eReading;
-            m_BytesRead = 0;
-        }
+        m_NetCacheReader.reset(m_NetCacheAPI->GetPartReader(
+                m_NetCacheKey.GetKey(), 0, 0, &m_BlobSize, NULL));
+    }
+    CONVERT_NETCACHEEXCEPTION("read", "reading")
+    CONVERT_NETSERVICEEXCEPTION("reading")
 
-        size_t bytes_read;
-        g_ReadFromNetCache(m_NetCacheReader.get(),
-                reinterpret_cast<char*>(buffer), buf_size, &bytes_read);
-        m_BytesRead += bytes_read;
-        return bytes_read;
+    m_State = eReading;
+}
+
+ERW_Result SNetStorage_NetCacheBlob::Read(void* buffer, size_t buf_size,
+        size_t* bytes_read)
+{
+    if (m_State != eReading)
+        x_InitReader();
+
+    try {
+        return g_ReadFromNetCache(m_NetCacheReader.get(),
+                reinterpret_cast<char*>(buffer), buf_size, bytes_read);
     }
     CONVERT_NETSERVICEEXCEPTION("reading");
+}
+
+ERW_Result SNetStorage_NetCacheBlob::PendingCount(size_t* count)
+{
+    if (m_State != eReading) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "The blob is not being read; no pending data");
+    }
+    return m_NetCacheReader->PendingCount(count);
 }
 
 void SNetStorage_NetCacheBlob::Read(string* data)
 {
     m_NetCacheAPI.ReadData(m_NetCacheKey.GetKey(), *data);
+}
+
+IReader& SNetStorage_NetCacheBlob::GetReader()
+{
+    if (m_State != eReading)
+        x_InitReader();
+
+    return *m_NetCacheReader;
 }
 
 bool SNetStorage_NetCacheBlob::Eof()
@@ -135,7 +156,7 @@ bool SNetStorage_NetCacheBlob::Eof()
         return false;
 
     case eReading:
-        return m_BytesRead >= m_BlobSize;
+        return m_NetCacheReader->Eof();
 
     default: /* case eWriting: */
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -143,7 +164,7 @@ bool SNetStorage_NetCacheBlob::Eof()
     }
 }
 
-void SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size)
+void SNetStorage_NetCacheBlob::x_InitWriter()
 {
     if (m_State == eReading) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -151,23 +172,50 @@ void SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size)
     }
 
     try {
-        if (m_State == eReady) {
-            try {
-                string blob_key(m_NetCacheKey.GetKey());
-                m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&blob_key));
-            }
-            CONVERT_NETCACHEEXCEPTION("write", "writing");
-            m_State = eWriting;
-        }
+        string blob_key(m_NetCacheKey.GetKey());
+        m_NetCacheWriter.reset(m_NetCacheAPI.PutData(&blob_key));
+    }
+    CONVERT_NETCACHEEXCEPTION("write", "writing")
+    CONVERT_NETSERVICEEXCEPTION("writing")
 
-        m_NetCacheWriter->Write(buf_pos, buf_size);
+    m_State = eWriting;
+}
+
+ERW_Result SNetStorage_NetCacheBlob::Write(const void* buf_pos, size_t buf_size,
+        size_t* bytes_written)
+{
+    if (m_State != eWriting)
+        x_InitWriter();
+
+    try {
+        return m_NetCacheWriter->Write(buf_pos, buf_size, bytes_written);
     }
     CONVERT_NETSERVICEEXCEPTION("writing");
 }
 
+ERW_Result SNetStorage_NetCacheBlob::Flush()
+{
+    if (m_State != eWriting) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "The blob is not being written; cannot flush.");
+    }
+    return m_NetCacheWriter->Flush();
+}
+
+IEmbeddedStreamWriter& SNetStorage_NetCacheBlob::GetWriter()
+{
+    if (m_State != eWriting)
+        x_InitWriter();
+
+    return *m_NetCacheWriter;
+}
+
 Uint8 SNetStorage_NetCacheBlob::GetSize()
 {
-    return m_NetCacheAPI.GetBlobSize(m_NetCacheKey.GetKey());
+    if (m_State != eReading)
+        return m_NetCacheAPI.GetBlobSize(m_NetCacheKey.GetKey());
+    else
+        return m_NetCacheReader->GetBlobSize();
 }
 
 string SNetStorage_NetCacheBlob::GetAttribute(const string& /*attr_name*/)
@@ -227,6 +275,25 @@ void SNetStorage_NetCacheBlob::Close()
     case eWriting:
         m_State = eReady;
         m_NetCacheWriter->Close();
+        m_NetCacheWriter.reset();
+        break;
+
+    default:
+        break;
+    }
+}
+
+void SNetStorage_NetCacheBlob::Abort()
+{
+    switch (m_State) {
+    case eReading:
+        m_State = eReady;
+        m_NetCacheReader.reset();
+        break;
+
+    case eWriting:
+        m_State = eReady;
+        m_NetCacheWriter->Abort();
         m_NetCacheWriter.reset();
         break;
 

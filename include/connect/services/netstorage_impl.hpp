@@ -40,19 +40,34 @@
 BEGIN_NCBI_SCOPE
 
 /// @internal
-struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
+    public CObject,
+    public IReader,
+    public IEmbeddedStreamWriter
 {
+    /* IReader methods */
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read) = 0;
+    virtual ERW_Result PendingCount(size_t* count);
+
+    /* IEmbeddedStreamWriter methods */
+    virtual ERW_Result Write(const void* buf, size_t count,
+            size_t* bytes_written) = 0;
+    virtual ERW_Result Flush();
+    virtual void Close() = 0;
+    virtual void Abort();
+
+    /* More overridable methods */
+    virtual IReader& GetReader();
+    virtual IEmbeddedStreamWriter& GetWriter();
+
     virtual string GetLoc() = 0;
-    virtual size_t Read(void* buffer, size_t buf_size) = 0;
     virtual void Read(string* data);
     virtual bool Eof() = 0;
-    virtual void Write(const void* buffer, size_t buf_size) = 0;
     virtual Uint8 GetSize() = 0;
     virtual string GetAttribute(const string& attr_name) = 0;
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value) = 0;
     virtual CNetStorageObjectInfo GetInfo() = 0;
-    virtual void Close() = 0;
 };
 
 inline string CNetStorageObject::GetLoc()
@@ -62,12 +77,19 @@ inline string CNetStorageObject::GetLoc()
 
 inline size_t CNetStorageObject::Read(void* buffer, size_t buf_size)
 {
-    return m_Impl->Read(buffer, buf_size);
+    size_t bytes_read;
+    m_Impl->Read(buffer, buf_size, &bytes_read);
+    return bytes_read;
 }
 
 inline void CNetStorageObject::Read(string* data)
 {
     m_Impl->Read(data);
+}
+
+inline IReader& CNetStorageObject::GetReader()
+{
+    return m_Impl->GetReader();
 }
 
 inline bool CNetStorageObject::Eof()
@@ -77,12 +99,17 @@ inline bool CNetStorageObject::Eof()
 
 inline void CNetStorageObject::Write(const void* buffer, size_t buf_size)
 {
-    m_Impl->Write(buffer, buf_size);
+    m_Impl->Write(buffer, buf_size, NULL);
 }
 
 inline void CNetStorageObject::Write(const string& data)
 {
-    m_Impl->Write(data.data(), data.length());
+    m_Impl->Write(data.data(), data.length(), NULL);
+}
+
+inline IEmbeddedStreamWriter& CNetStorageObject::GetWriter()
+{
+    return m_Impl->GetWriter();
 }
 
 inline Uint8 CNetStorageObject::GetSize()

@@ -179,16 +179,20 @@ struct SNetStorageObjectAPIImpl : public SNetStorageObjectImpl
     {
     }
 
+    virtual ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
+
+    virtual ERW_Result Write(const void* buf, size_t count,
+            size_t* bytes_written);
+    virtual void Close();
+    virtual void Abort();
+
     virtual string GetLoc();
-    virtual size_t Read(void* buffer, size_t buf_size);
     virtual bool Eof();
-    virtual void Write(const void* buffer, size_t buf_size);
     virtual Uint8 GetSize();
     virtual string GetAttribute(const string& attr_name);
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value);
     virtual CNetStorageObjectInfo GetInfo();
-    virtual void Close();
 
     bool SetNetICacheClient();
     void DemandNetCache();
@@ -200,12 +204,6 @@ struct SNetStorageObjectAPIImpl : public SNetStorageObjectImpl
 
     bool s_TryReadLocation(ENetStorageObjectLocation location,
             ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read);
-
-    ERW_Result BeginOrContinueReading(
-            void* buf, size_t count, size_t* bytes_read = 0);
-
-    ERW_Result Write(const void* buf,
-            size_t count, size_t* bytes_written = 0);
 
     void Locate();
     bool LocateAndTry(ITryLocation* try_object);
@@ -386,7 +384,7 @@ bool SNetStorageObjectAPIImpl::s_TryReadLocation(
     return false;
 }
 
-ERW_Result SNetStorageObjectAPIImpl::BeginOrContinueReading(
+ERW_Result SNetStorageObjectAPIImpl::Read(
         void* buf, size_t count, size_t* bytes_read)
 {
     switch (m_IOStatus) {
@@ -394,14 +392,19 @@ ERW_Result SNetStorageObjectAPIImpl::BeginOrContinueReading(
         switch (m_CurrentLocation) {
         case eNFL_Unknown:
             {
+                size_t bytes_read_local = 0;
                 ERW_Result rw_res = eRW_Success;
                 const ENetStorageObjectLocation* location =
                         GetPossibleFileLocations();
 
                 do
                     if (s_TryReadLocation(*location, &rw_res,
-                            reinterpret_cast<char*>(buf), count, bytes_read))
+                            reinterpret_cast<char*>(buf), count,
+                                    &bytes_read_local)) {
+                        if (bytes_read != NULL)
+                            *bytes_read = bytes_read_local;
                         return rw_res;
+                    }
                 while (*++location != eNFL_NotFound);
             }
             m_CurrentLocation = eNFL_NotFound;
@@ -411,10 +414,15 @@ ERW_Result SNetStorageObjectAPIImpl::BeginOrContinueReading(
 
         default:
             {
+                size_t bytes_read_local = 0;
                 ERW_Result rw_res = eRW_Success;
                 if (s_TryReadLocation(m_CurrentLocation, &rw_res,
-                        reinterpret_cast<char*>(buf), count, bytes_read))
+                        reinterpret_cast<char*>(buf), count,
+                                &bytes_read_local)) {
+                    if (bytes_read != NULL)
+                        *bytes_read = bytes_read_local;
                     return rw_res;
+                }
             }
         }
 
@@ -423,9 +431,12 @@ ERW_Result SNetStorageObjectAPIImpl::BeginOrContinueReading(
 
     case eNFS_ReadingFromNetCache:
         {
+            size_t bytes_read_local = 0;
             ERW_Result rw_res = g_ReadFromNetCache(m_NetCacheReader.get(),
-                    reinterpret_cast<char*>(buf), count, bytes_read);
-            m_NetCache_BytesRead += *bytes_read;
+                    reinterpret_cast<char*>(buf), count, &bytes_read_local);
+            m_NetCache_BytesRead += bytes_read_local;
+            if (bytes_read != NULL)
+                *bytes_read = bytes_read_local;
             return rw_res;
         }
 
@@ -875,6 +886,16 @@ void SNetStorageObjectAPIImpl::Close()
     }
 }
 
+void SNetStorageObjectAPIImpl::Abort()
+{
+    if (m_IOStatus == eNFS_WritingToNetCache) {
+        m_IOStatus = eNFS_Closed;
+        m_NetCacheWriter->Abort();
+        m_NetCacheWriter.reset();
+    } else
+        Close();
+}
+
 SNetStorageObjectAPIImpl::~SNetStorageObjectAPIImpl()
 {
     try {
@@ -886,20 +907,6 @@ SNetStorageObjectAPIImpl::~SNetStorageObjectAPIImpl()
 string SNetStorageObjectAPIImpl::GetLoc()
 {
     return m_ObjectLoc.GetLoc();
-}
-
-size_t SNetStorageObjectAPIImpl::Read(void* buffer, size_t buf_size)
-{
-    size_t bytes_read;
-
-    BeginOrContinueReading(buffer, buf_size, &bytes_read);
-
-    return bytes_read;
-}
-
-void SNetStorageObjectAPIImpl::Write(const void* buffer, size_t buf_size)
-{
-    Write(buffer, buf_size, NULL);
 }
 
 CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags)
@@ -981,15 +988,14 @@ string SNetStorageAPIImpl::MoveFile(SNetStorageObjectAPIImpl* orig_file,
     // Use Read() to detect the current location of orig_file.
     size_t bytes_read;
 
-    orig_file->BeginOrContinueReading(buffer, sizeof(buffer), &bytes_read);
+    orig_file->Read(buffer, sizeof(buffer), &bytes_read);
 
     if (orig_file->m_CurrentLocation != new_file->m_CurrentLocation) {
         for (;;) {
             new_file->Write(buffer, bytes_read, NULL);
             if (orig_file->Eof())
                 break;
-            orig_file->BeginOrContinueReading(
-                    buffer, sizeof(buffer), &bytes_read);
+            orig_file->Read(buffer, sizeof(buffer), &bytes_read);
         }
 
         new_file->Close();

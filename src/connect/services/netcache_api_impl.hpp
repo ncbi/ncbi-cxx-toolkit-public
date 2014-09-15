@@ -87,7 +87,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     // Special constructor for CNetCacheAPI::GetServer().
     SNetCacheAPIImpl(SNetServerInPool* server, SNetCacheAPIImpl* parent);
 
-    IReader* GetPartReader(
+    CNetCacheReader* GetPartReader(
         const string& blob_id,
         size_t offset,
         size_t part_size,

@@ -192,6 +192,11 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     ///
     void Read(string* data);
 
+    /// Get a reference to the IReader interface, which then can be
+    /// fed to a CRStream object to turn it into an std::istream.
+    /// Make sure the CRWStreambuf::fOwnReader flag is NOT used.
+    IReader& GetReader();
+
     /// Check if the last Read() has hit EOF
     ///
     /// @return
@@ -215,6 +220,11 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     ///  is in reading mode
     ///
     void Write(const void* buffer, size_t buf_size);
+
+    /// Get a reference to the IWriter interface, which then can be
+    /// fed to a CWStream object to turn it into an std::ostream.
+    /// Make sure the CRWStreambuf::fOwnWriter flag is NOT used.
+    IEmbeddedStreamWriter& GetWriter();
 
     /// Write string to the object (starting at the current position)
     ///
