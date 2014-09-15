@@ -22,11 +22,12 @@ else
 fi
 
 test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
-test_tar=${CFG_BIN:-.}/${test_conn_tar:-test_tar}${exe}
-if [ ! -x $test_tar ]; then
+PATH="$CFG_BIN:.:$PATH"
+test_tar=${test_conn_tar:-test_tar}${exe}
+$test_tar -help >/dev/null 2>&1  ||  {
   echo "Test binary $test_tar not found.  Stop."
   exit 1
-fi
+}
 
 # Figure out whether the API is lf64 clean, also exclude notoriously slow platforms
 okay=false
