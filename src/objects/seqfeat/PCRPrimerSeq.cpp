@@ -234,6 +234,38 @@ bool CPCRPrimerSeq::TrimJunk(string& seq)
     return (orig != seq);
 }
 
+bool CPCRPrimerSeq::Fixi(string& seq)
+{
+    string orig(seq);
+    unsigned int pos = 0;
+    while (pos != string::npos && pos<seq.length())
+    {
+        pos = seq.find("I",pos);
+        if (pos != string::npos)
+        {
+            seq.replace(pos,1,"i");
+            pos++;
+        }
+    }
+    pos = 0;
+    while (pos != string::npos && pos<seq.length())
+    {
+        pos = seq.find("i",pos);
+        if (pos != string::npos)
+        {
+            string repl;
+            if(pos==0 || seq[pos-1]!='<')
+                repl = "<";
+            repl += "i";
+            if (pos==seq.length()-1 || seq[pos+1]!='>')
+                repl += ">";
+            seq.replace(pos,1,repl);
+            pos += repl.length();
+        }
+    }
+    
+    return (orig != seq);
+}
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
