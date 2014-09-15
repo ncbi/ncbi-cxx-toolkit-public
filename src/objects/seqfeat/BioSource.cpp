@@ -721,11 +721,13 @@ CBioSource::TNameValList CBioSource::GetNameValPairs() const
         list.push_back(TNameVal(kOrganismName, GetOrg().GetTaxname()));
     }
     if (IsSetOrg()) {
-        try {
-            int taxid = GetOrg().GetTaxId();
-            string val = NStr::NumericToString(taxid);
-            list.push_back(TNameVal(kTaxId, val));
-        } catch (...) {
+        int taxid = GetOrg().GetTaxId();
+        if (taxid > 0) {
+            try {
+                    string val = NStr::NumericToString(taxid);
+                    list.push_back(TNameVal(kTaxId, val));
+            } catch (...) {
+            }
         }
     }
 
