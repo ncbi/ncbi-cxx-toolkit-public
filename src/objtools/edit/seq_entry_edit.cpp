@@ -159,7 +159,7 @@ namespace {
     public:
         void Init()
         {            
-            resize(sizeof(descr_insert_order)/sizeof(int), kMax_Char);
+            resize(sizeof(descr_insert_order)/sizeof(char), kMax_Char);
             char index = 0;
             while (descr_insert_order[index] != 0)
             {
