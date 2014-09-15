@@ -32,6 +32,29 @@
 #
 ################################################################################
 
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_ovput() in bt_put.c:886
+   Memcheck:Param
+   pwrite64(buf)
+   ...
+   fun:__os_io
+   fun:__log_write
+   fun:__log_fill
+   fun:__log_putr
+   fun:__log_put_next
+   fun:__log_put
+   fun:__db_big_log
+   fun:__db_poff
+   fun:__bam_ovput
+   fun:__bam_iitem
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile9x_DB_CPutEP5__dbcP8__db_dbtS4_j
+}
+
 {
    BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack in __bam_broot() in bt_split.c:519 (Variant 3)
    Memcheck:Param
