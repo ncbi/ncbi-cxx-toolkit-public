@@ -296,9 +296,12 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     // Print basic database information
     out << "Database: " << m_BlastDb->GetTitle() << endl
         << "\t" << NStr::IntToString(m_BlastDb->GetNumSeqs(), kFlags)
-        << " sequences; "
-        << NStr::UInt8ToString(m_BlastDb->GetTotalLength(), kFlags)
-        << " total " << kLetters << endl << endl
+        << " sequences; ";
+        if(args["exact_length"])
+        	out << NStr::UInt8ToString(m_BlastDb->GetExactTotalLength(), kFlags);
+        else
+        	out << NStr::UInt8ToString(m_BlastDb->GetTotalLength(), kFlags);
+    out << " total " << kLetters << endl << endl
         << "Date: " << m_BlastDb->GetDate()
         << "\tLongest sequence: "
         << NStr::IntToString(m_BlastDb->GetMaxLength(), kFlags) << " "
@@ -671,6 +674,9 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetDependency("show_blastdb_search_path", CArgDescriptions::eExcludes,
                             "remove_redundant_dbs");
 
+    arg_desc->AddFlag("exact_length", "Get exact length for db info", true);
+    arg_desc->SetDependency("exact_length", CArgDescriptions::eRequires,
+                            "info");
     SetupArgDescriptions(arg_desc.release());
 }
 
