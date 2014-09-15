@@ -12,13 +12,13 @@ script_dir=`(cd "$script_dir"; pwd)`
 suppress_dir="$(cygpath -w $script_dir)\\inspxe-suppressions"
 
 
-# Check Intel Inspector XE 2013 presence
+# Check Intel Inspector XE 2015 presence
 
-if test -z "$INSPECTOR_XE_2013_DIR"; then
-   echo "Cannot find Intel Inspector XE 2013."
+if test -z "$INSPECTOR_XE_2015_DIR"; then
+   echo "Cannot find Intel Inspector XE 2015."
    exit 1 
 fi
-inspxe=`echo $(cygpath -u $INSPECTOR_XE_2013_DIR) | sed 's| |\ |g'`/bin32/inspxe-cl
+inspxe=`echo $(cygpath -u $INSPECTOR_XE_2015_DIR) | sed 's| |\ |g'`/bin32/inspxe-cl
 
 
 # Result directory name
