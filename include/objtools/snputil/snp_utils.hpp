@@ -359,9 +359,9 @@ template <class TPVariation> inline bool NSNPVariationHelper::x_CommonConvertFea
         ITERATE (CSeq_feat::TQual, it, SrcFeat.GetQual()) {
             const CGb_qual& qual = **it;
             if (qual.GetQual() == "replace") {
-                alleles.push_back(qual.GetVal());
-//				string sQualVal(qual.GetVal());
-//				alleles.push_back(sQualVal.empty() ? "-" : sQualVal);
+                //                alleles.push_back(qual.GetVal());
+				string sQualVal(qual.GetVal());
+				alleles.push_back(sQualVal.empty() ? "-" : sQualVal);
             }
         }
     }
