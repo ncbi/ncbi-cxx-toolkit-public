@@ -1593,7 +1593,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         int match_num = 0;
 		size_t sh = 0, ct =0;
 		for(; p < pe && q < qe; ++p, ++q, ++ct) {
-            if(*p == *q) {
+            if(toupper(*p) != 'N' && *p == *q) {
         		++match_num;
 		    	if( match_num >= (ct+1)*GetMinExonIdentity() ) { // % ident
 	    	    	sh = ct+1;
@@ -1609,7 +1609,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             ct = 1;
             match_num = 0;
             for(;p>=p0;--p,--q,++ct) {
-                if(*p == *q) {
+                if(toupper(*p) != 'N' && *p == *q) {
             		++match_num;
                 } else {
                     if( match_num < ct*kMinExonFlankIdty) {//cut flank
@@ -1626,7 +1626,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             s.m_box[1] += sh;
             s.m_box[3] += sh;
     		for(ct = 0,p = p0, q = q0; ct < sh; ++p, ++q, ++ct) {
-    		if(*p == *q) {
+    		if(toupper(*p) != 'N' && *p == *q) {
     			s.m_details.append(1, 'M');
 				} else {
 					s.m_details.append(1, 'R');

@@ -319,7 +319,7 @@ void CNWFormatter::SSegment::ImproveFromLeft1(const char* seq1, const char* seq2
     // -check the actual sequence chars
     size_t head = 0;
     while(i0_max > 0 && i1_max > 0) {
-        if(seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1]) {
+        if( toupper(seq1[m_box[0]+i0_max-1]) != 'N' && seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1] ) {
             --i0_max; --i1_max;
             ++head;
         }
@@ -428,7 +428,7 @@ void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
     // -check the actual sequence chars
     size_t head = 0;
     while(i0_max > 0 && i1_max > 0) {
-        if(seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1]) {
+        if( toupper (seq1[m_box[0]+i0_max-1]) != 'N' && seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1]) {
             --i0_max; --i1_max;
             ++head;
         }
@@ -591,7 +591,7 @@ void CNWFormatter::SSegment::ImproveFromRight1(const char* seq1, const char* seq
     // -check the actual sequences
     size_t tail = 0;
     while(i0_max < dimq  && i1_max < dims ) {
-        if(seq1[m_box[0]+i0_max] == seq2[m_box[2]+i1_max]) {
+        if( toupper(seq1[m_box[0]+i0_max]) != 'N' && seq1[m_box[0]+i0_max] == seq2[m_box[2]+i1_max]) {
             ++i0_max; ++i1_max;
             ++tail;
         }
@@ -702,7 +702,7 @@ void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2
     // -check the actual sequences
     size_t tail = 0;
     while(i0_max < dimq - 1  && i1_max < dims - 1) {
-        if(seq1[m_box[0]+i0_max+1] == seq2[m_box[2]+i1_max+1]) {
+        if( toupper(seq1[m_box[0]+i0_max+1]) != 'N' && seq1[m_box[0]+i0_max+1] == seq2[m_box[2]+i1_max+1] ) {
             ++i0_max; ++i1_max;
             ++tail;
         }
@@ -748,7 +748,7 @@ int CNWFormatter::SSegment::CanExtendRight(const vector<char>& mrna, const vecto
     int mind = mind0;
     int gind = m_box[3] + 1;
     for(; mind < mrna.size() && gind < genomic.size(); ++gind, ++mind) {
-        if( mrna[mind] != genomic[gind] ) break;
+        if( toupper(mrna[mind]) == 'N' || mrna[mind] != genomic[gind] ) break;
     }
     return mind - mind0;
 }
@@ -761,7 +761,7 @@ int CNWFormatter::SSegment::CanExtendLeft(const vector<char>& mrna, const vector
     int mind = mind0;
     int gind = (int)m_box[2] - 1;
     for(; mind >= 0 && gind >= 0; --mind, --gind) {
-        if( mrna[mind] != genomic[gind] ) break;
+        if(  toupper(mrna[mind]) == 'N' || mrna[mind] != genomic[gind] ) break;
     }
     return mind0 - mind;
 }
@@ -949,13 +949,15 @@ void CNWFormatter::MakeSegments(deque<SSegment>* psegments) const
 
                 cons_dels = 0;
 
-                if(*p1++ == *p2++) {
+                if(toupper(*p1) != 'N' && *p1 == *p2) {
                     ++matches;
                     *ii_ex++ = 'M';
                 }
                 else {
                     *ii_ex++ = 'R';
                 }
+                ++p1;
+                ++p2;
             } else if(noins) {
 
                 if(cons_dels == 0) {
