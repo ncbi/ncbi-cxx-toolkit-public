@@ -823,7 +823,7 @@ void CTbl2AsnApp::ProcessOneFile()
     if (!DryRun() && m_context.m_split_log_files)
     {
         log_name = GenerateOutputFilename(".log");
-        m_logger->SetProgressOstream(new CNcbiOfstream(log_name.GetPath()), eTakeOwnership);
+        m_logger->SetProgressOstream(new CNcbiOfstream(log_name.GetPath().c_str()), eTakeOwnership);
     }
 
     try
@@ -849,7 +849,7 @@ void CTbl2AsnApp::ProcessOneFile()
             if (m_context.m_output == 0)
             {
                 local_file = GenerateOutputFilename(".asn");
-                output = new CNcbiOfstream(local_file.GetPath());
+                output = new CNcbiOfstream(local_file.GetPath().c_str());
             }
             else
             {
