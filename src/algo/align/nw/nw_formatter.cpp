@@ -757,9 +757,9 @@ int CNWFormatter::SSegment::CanExtendRight(const vector<char>& mrna, const vecto
 //check if 100% extension is possible, returns the length of possible extension
 int CNWFormatter::SSegment::CanExtendLeft(const vector<char>& mrna, const vector<char>& genomic) const
 {
-    int mind0 = m_box[0] - 1;
+    int mind0 = (int)m_box[0] - 1;
     int mind = mind0;
-    int gind = m_box[2] - 1;
+    int gind = (int)m_box[2] - 1;
     for(; mind >= 0 && gind >= 0; --mind, --gind) {
         if( mrna[mind] != genomic[gind] ) break;
     }
@@ -793,8 +793,8 @@ void CNWFormatter::SSegment::ExtendLeft(const vector<char>& mrna, const vector<c
         Update(aligner);
         //fix annotation
         if( ( m_annot.size() > 2 ) && ( m_annot[2]  == '<' ) ) {
-            m_annot[1] =  (m_box[2] - 1) >= 0 ? genomic[m_box[2] - 1] : ' ';
-            m_annot[0] =  (m_box[2] - 2) >= 0 ? genomic[m_box[2] - 2] : ' ';
+            m_annot[1] =  m_box[2] >= 1 ? genomic[m_box[2] - 1] : ' ';
+            m_annot[0] =  m_box[2] >= 2 ? genomic[m_box[2] - 2] : ' ';
         }
     }
 }
