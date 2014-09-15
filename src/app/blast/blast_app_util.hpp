@@ -230,7 +230,7 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
         LOG_POST(Error << "Error: " << e.what());                           \
         exit_code = BLAST_UNKNOWN_ERROR;                                    \
     }                                                                       \
-    catch (const std::ios::failure& e) {                                    \
+    catch (const std::ios::failure&) {                                      \
         LOG_POST(Error << "BLAST failed to write output");                  \
         exit_code = BLAST_OUTPUT_ERROR;                                     \
     }                                                                       \
