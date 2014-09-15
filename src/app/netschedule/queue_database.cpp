@@ -431,6 +431,7 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.max_output_size = m_QueueDescriptionDB.max_output_size;
         params.subm_hosts = m_QueueDescriptionDB.subm_hosts;
         params.wnode_hosts = m_QueueDescriptionDB.wnode_hosts;
+        params.reader_hosts = m_QueueDescriptionDB.reader_hosts;
         params.wnode_timeout =
             CNSPreciseTime(m_QueueDescriptionDB.wnode_timeout_sec,
                            m_QueueDescriptionDB.wnode_timeout_nsec);
@@ -567,6 +568,7 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.max_output_size = params.max_output_size;
     m_QueueDescriptionDB.subm_hosts = params.subm_hosts;
     m_QueueDescriptionDB.wnode_hosts = params.wnode_hosts;
+    m_QueueDescriptionDB.reader_hosts = params.reader_hosts;
     m_QueueDescriptionDB.wnode_timeout_sec = params.wnode_timeout.Sec();
     m_QueueDescriptionDB.wnode_timeout_nsec = params.wnode_timeout.NSec();
     m_QueueDescriptionDB.reader_timeout_sec = params.reader_timeout.Sec();
@@ -802,6 +804,9 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "wnode_host")
                 params.wnode_hosts =
                     params.ReadWnodeHosts(reg, section_name);
+            else if (*val == "reader_host")
+                params.reader_hosts =
+                    params.ReadReaderHosts(reg, section_name);
             else if (*val == "wnode_timeout")
                 params.wnode_timeout =
                     params.ReadWnodeTimeout(reg, section_name);

@@ -138,6 +138,7 @@ public:
     unsigned GetFailedRetries() const;
     bool IsSubmitAllowed(unsigned host) const;
     bool IsWorkerAllowed(unsigned host) const;
+    bool IsReaderAllowed(unsigned host) const;
     bool IsProgramAllowed(const string &  program_name) const;
     void GetMaxIOSizesAndLinkedSections(
                 unsigned int &  max_input_size,
@@ -647,6 +648,8 @@ private:
     CNetScheduleAccessList      m_SubmHosts;
     // Host access list for job execution (workers)
     CNetScheduleAccessList      m_WnodeHosts;
+    // Host access list for job reading (readers)
+    CNetScheduleAccessList      m_ReaderHosts;
 
     CNetScheduleKeyGenerator    m_KeyGenerator;
 
@@ -737,6 +740,11 @@ inline bool CQueue::IsWorkerAllowed(unsigned host) const
 {
     // The m_WnodeHosts has internal lock anyway
     return host == 0  ||  m_WnodeHosts.IsAllowed(host);
+}
+inline bool CQueue::IsReaderAllowed(unsigned host) const
+{
+    // The m_ReaderHosts has internal lock anyway
+    return host == 0  ||  m_ReaderHosts.IsAllowed(host);
 }
 inline bool CQueue::IsProgramAllowed(const string &  program_name) const
 {

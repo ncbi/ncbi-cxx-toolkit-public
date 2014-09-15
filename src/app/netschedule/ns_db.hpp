@@ -293,6 +293,7 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldUint4     max_output_size;
     CBDB_FieldLString   subm_hosts;
     CBDB_FieldLString   wnode_hosts;
+    CBDB_FieldLString   reader_hosts;
     CBDB_FieldUint4     wnode_timeout_sec;
     CBDB_FieldUint4     wnode_timeout_nsec;
     CBDB_FieldUint4     reader_timeout_sec;
@@ -358,6 +359,7 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("max_output_size",               &max_output_size);
         BindData("subm_hosts",                    &subm_hosts);
         BindData("wnode_hosts",                   &wnode_hosts);
+        BindData("reader_hosts",                  &reader_hosts);
         BindData("wnode_timeout_sec",             &wnode_timeout_sec);
         BindData("wnode_timeout_nsec",            &wnode_timeout_nsec);
         BindData("reader_timeout_sec",            &reader_timeout_sec);

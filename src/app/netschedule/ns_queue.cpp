@@ -282,6 +282,7 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     }
     m_SubmHosts.SetHosts(params.subm_hosts);
     m_WnodeHosts.SetHosts(params.wnode_hosts);
+    m_ReaderHosts.SetHosts(params.reader_hosts);
 }
 
 

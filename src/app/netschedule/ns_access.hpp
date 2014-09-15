@@ -43,7 +43,8 @@ enum ENSCommandChecks {
     eNS_Admin     = 1 << 1,     // Check for admin permissions
     eNS_Submitter = 1 << 2,     // Check for the submitter hosts
     eNS_Worker    = 1 << 3,     // Check for wnode hosts
-    eNS_Program   = 1 << 4      // Check for program [and version]
+    eNS_Program   = 1 << 4,     // Check for program [and version]
+    eNS_Reader    = 1 << 5      // Check for the reader hosts
 };
 
 typedef unsigned int    TNSCommandChecks;

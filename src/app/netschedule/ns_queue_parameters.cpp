@@ -75,6 +75,7 @@ SQueueParameters::SQueueParameters() :
     max_output_size(kNetScheduleMaxDBDataSize),
     subm_hosts(""),
     wnode_hosts(""),
+    reader_hosts(""),
     wnode_timeout(default_wnode_timeout),
     reader_timeout(default_reader_timeout),
     pending_timeout(default_pending_timeout),
@@ -127,6 +128,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     max_output_size = ReadMaxOutputSize(reg, sname);
     subm_hosts = ReadSubmHosts(reg, sname);
     wnode_hosts = ReadWnodeHosts(reg, sname);
+    reader_hosts = ReadReaderHosts(reg, sname);
     wnode_timeout = ReadWnodeTimeout(reg, sname);
     reader_timeout = ReadReaderTimeout(reg, sname);
     pending_timeout = ReadPendingTimeout(reg, sname);
@@ -270,6 +272,11 @@ SQueueParameters::Diff(const SQueueParameters &  other,
         AddParameterToDiffString(diff, "wnode_host",
                                  wnode_hosts,
                                  other.wnode_hosts);
+
+    if (reader_hosts != other.reader_hosts)
+        AddParameterToDiffString(diff, "reader_host",
+                                 reader_hosts,
+                                 other.reader_hosts);
 
     if (wnode_timeout != other.wnode_timeout)
         AddParameterToDiffString(
@@ -553,6 +560,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
         prefix + "program_name" + suffix + NStr::URLEncode(program_name) + separator +
         prefix + "subm_hosts" + suffix + NStr::URLEncode(subm_hosts) + separator +
         prefix + "wnode_hosts" + suffix + NStr::URLEncode(wnode_hosts) + separator +
+        prefix + "reader_hosts" + suffix + NStr::URLEncode(reader_hosts) + separator +
         prefix + "description" + suffix + NStr::URLEncode(description);
         for (map<string, string>::const_iterator  k = linked_sections.begin();
              k != linked_sections.end(); ++k)
@@ -562,6 +570,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
         prefix + "program_name" + suffix + NStr::PrintableString(program_name) + separator +
         prefix + "subm_hosts" + suffix + NStr::PrintableString(subm_hosts) + separator +
         prefix + "wnode_hosts" + suffix + NStr::PrintableString(wnode_hosts) + separator +
+        prefix + "reader_hosts" + suffix + NStr::PrintableString(reader_hosts) + separator +
         prefix + "description" + suffix + NStr::PrintableString(description);
         for (map<string, string>::const_iterator  k = linked_sections.begin();
              k != linked_sections.end(); ++k)
@@ -601,6 +610,7 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "max_output_size=\"" + NStr::NumericToString(max_output_size) + "\"\n"
     "subm_host=\"" + subm_hosts + "\"\n"
     "wnode_host=\"" + wnode_hosts + "\"\n"
+    "reader_host=\"" + reader_hosts + "\"\n"
     "wnode_timeout=\"" + NS_FormatPreciseTimeAsSec(wnode_timeout) + "\"\n"
     "reader_timeout=\"" + NS_FormatPreciseTimeAsSec(reader_timeout) + "\"\n"
     "pending_timeout=\"" + NS_FormatPreciseTimeAsSec(pending_timeout) + "\"\n"
@@ -860,6 +870,13 @@ SQueueParameters::ReadWnodeHosts(const IRegistry &  reg,
                                  const string &     sname)
 {
     return reg.GetString(sname, "wnode_host", kEmptyStr);
+}
+
+string
+SQueueParameters::ReadReaderHosts(const IRegistry &  reg,
+                                  const string &     sname)
+{
+    return reg.GetString(sname, "reader_host", kEmptyStr);
 }
 
 CNSPreciseTime

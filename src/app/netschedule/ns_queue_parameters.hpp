@@ -77,6 +77,7 @@ struct SQueueParameters
     unsigned int    max_output_size;
     string          subm_hosts;
     string          wnode_hosts;
+    string          reader_hosts;
     CNSPreciseTime  wnode_timeout;
     CNSPreciseTime  reader_timeout;
     CNSPreciseTime  pending_timeout;
@@ -143,6 +144,7 @@ struct SQueueParameters
     unsigned int    ReadMaxOutputSize(const IRegistry &, const string &);
     string          ReadSubmHosts(const IRegistry &, const string &);
     string          ReadWnodeHosts(const IRegistry &, const string &);
+    string          ReadReaderHosts(const IRegistry &, const string &);
     CNSPreciseTime  ReadWnodeTimeout(const IRegistry &, const string &);
     CNSPreciseTime  ReadReaderTimeout(const IRegistry &, const string &);
     CNSPreciseTime  ReadPendingTimeout(const IRegistry &, const string &);

@@ -185,6 +185,14 @@ void CNSClientId::CheckAccess(TNSCommandChecks  cmd_reqs,
         }
     }
 
+    if (cmd_reqs & eNS_Reader) {
+        if ((m_PassedChecks & eNS_Reader) == 0) {
+            server->RegisterAlert(eAccess);
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: reader privileges required");
+        }
+    }
+
     if (cmd_reqs & eNS_Program) {
         if ((m_PassedChecks & eNS_Program) == 0) {
             server->RegisterAlert(eAccess);

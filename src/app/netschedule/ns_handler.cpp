@@ -244,7 +244,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CLRN",          { &CNetScheduleHandler::x_ProcessClearWorkerNode,
-                         eNS_Queue | eNS_Worker | eNS_Program },
+                         eNS_Queue | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
@@ -302,7 +302,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "group",             eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "READ",          { &CNetScheduleHandler::x_ProcessReading,
-                         eNS_Queue | eNS_Submitter | eNS_Program },
+                         eNS_Queue | eNS_Reader | eNS_Program },
         { { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "port",              eNSPT_Int, eNSPA_Optional      },
           { "timeout",           eNSPT_Int, eNSPA_Optional,     },
@@ -311,7 +311,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "READ2",         { &CNetScheduleHandler::x_ProcessReading,
-                         eNS_Queue | eNS_Submitter | eNS_Program },
+                         eNS_Queue | eNS_Reader | eNS_Program },
         { { "reader_aff",        eNSPT_Int, eNSPA_Required, "0" },
           { "any_aff",           eNSPT_Int, eNSPA_Required, "0" },
           { "exclusive_new_aff", eNSPT_Int, eNSPA_Optional, "0" },
@@ -323,14 +323,14 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CFRM",          { &CNetScheduleHandler::x_ProcessConfirm,
-                         eNS_Queue | eNS_Submitter | eNS_Program },
+                         eNS_Queue | eNS_Reader | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "FRED",          { &CNetScheduleHandler::x_ProcessReadFailed,
-                         eNS_Queue | eNS_Submitter | eNS_Program },
+                         eNS_Queue | eNS_Reader | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "err_msg",           eNSPT_Str, eNSPA_Optional      },
@@ -339,7 +339,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
           { "no_retries",        eNSPT_Int, eNSPA_Optional, "0" } } },
     { "RDRB",          { &CNetScheduleHandler::x_ProcessReadRollback,
-                         eNS_Queue | eNS_Submitter | eNS_Program },
+                         eNS_Queue | eNS_Reader | eNS_Program },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "auth_token",        eNSPT_Str, eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
@@ -365,7 +365,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CHRAFF",        { &CNetScheduleHandler::x_ProcessChangeAffinity,
-                         eNS_Queue | eNS_Submitter | eNS_Program },
+                         eNS_Queue | eNS_Reader | eNS_Program },
         { { "add",               eNSPT_Str, eNSPA_Optional, ""  },
           { "del",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
@@ -378,7 +378,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETRAFF",       { &CNetScheduleHandler::x_ProcessSetAffinity,
-                         eNS_Queue | eNS_Submitter | eNS_Program },
+                         eNS_Queue | eNS_Reader | eNS_Program },
         { { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
@@ -456,7 +456,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "CWREAD",        { &CNetScheduleHandler::x_ProcessCancelWaitRead,
-                         eNS_Queue | eNS_Submitter | eNS_Program },
+                         eNS_Queue | eNS_Reader | eNS_Program },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
@@ -1138,6 +1138,8 @@ void CNetScheduleHandler::x_UpdateClientPassedChecks(CQueue * q)
             m_ClientId.SetPassedChecks(eNS_Worker);
         if (q->IsSubmitAllowed(m_ClientId.GetAddress()))
             m_ClientId.SetPassedChecks(eNS_Submitter);
+        if (q->IsReaderAllowed(m_ClientId.GetAddress()))
+            m_ClientId.SetPassedChecks(eNS_Reader);
         if (q->IsProgramAllowed(m_ClientId.GetProgramName()))
             m_ClientId.SetPassedChecks(eNS_Program);
     }
