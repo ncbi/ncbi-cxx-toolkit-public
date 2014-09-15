@@ -700,7 +700,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
     CTextFsm<int> fsm;
 
     // iterate over enzymes
-    ITERATE (TEnzymes, enzyme, enzymes) {
+    ITERATE (CFindRSites::TEnzymes, enzyme, enzymes) {
 
         results.push_back(CRef<CREnzResult> 
                           (new CREnzResult(enzyme->GetName())));
