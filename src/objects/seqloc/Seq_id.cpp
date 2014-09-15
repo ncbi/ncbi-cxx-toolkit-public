@@ -2195,7 +2195,8 @@ int CSeq_id::BaseFastaNAScore(void) const
     case e_Pir: case e_Swissprot: case e_Prf:  return 255;
     case e_Local:                              return 230;
     case e_Gi:                                 return 120;
-    case e_General:                            return 50;
+    case e_General:
+        return GetGeneral().GetDb() == "TMSMART" ? 240 : 50;
     case e_Patent:                             return 40;
     case e_Gibbsq: case e_Gibbmt: case e_Pdb:  return 30;
     case e_Other:                              return 15;
@@ -2210,7 +2211,8 @@ int CSeq_id::BaseFastaAAScore(void) const
     case e_not_set: case e_Giim:   return 255;
     case e_Local:                  return 230;
     case e_Gi:                     return 120;
-    case e_General:                return 90;
+    case e_General:
+        return GetGeneral().GetDb() == "TMSMART" ? 240 : 90;
     case e_Patent:                 return 80;
     case e_Prf:                    return 70;
     case e_Pdb:                    return 50;
