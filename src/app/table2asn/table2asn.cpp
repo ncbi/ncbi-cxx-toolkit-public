@@ -112,6 +112,7 @@ private:
 
     void Setup(const CArgs& args);
 
+    string GenerateOutputFilename(const CTempString& ext) const;
     void ProcessOneFile();
     void ProcessOneFile(CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
@@ -131,20 +132,14 @@ private:
     CRef<CTable2AsnLogger> m_logger;
     auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
 
-    //auto_ptr<CObjectIStream> m_In;
-    //unsigned int m_Options;
     //bool m_Continue;
     //bool m_OnlyAnnots;
 
     //EDiagSev m_LowCutoff;
     //EDiagSev m_HighCutoff;
-
-    //CNcbiOstream* m_OutputStream;
-    CNcbiOstream* m_LogStream;
 };
 
-CTbl2AsnApp::CTbl2AsnApp(void):
-    m_LogStream(0)
+CTbl2AsnApp::CTbl2AsnApp(void)
 {
     int build_num = 
 #ifdef NCBI_PRODUCTION_VER
@@ -340,6 +335,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
+    arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
 
     // Program description
     string prog_description = "Converts files of various formats to ASN.1\n";
@@ -356,12 +352,17 @@ int CTbl2AsnApp::Run(void)
 
     Setup(args);
 
-    m_LogStream = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCout;
+    m_context.m_split_log_files = args["split-logs"].AsBoolean();
+    if (m_context.m_split_log_files && args["logfile"])
+    {
+        NCBI_THROW(CArgException, eConstraint,
+            "-logfile cannot be used with -split-logs");
+    }
+
     m_logger.Reset(new CTable2AsnLogger);
-    m_logger->SetProgressOstream(m_LogStream);
+    m_logger->SetProgressOstream(args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCout);
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
-
 
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
     // adjust here to make the inputs to table2asn match tbl2asn expectations
@@ -626,7 +627,7 @@ int CTbl2AsnApp::Run(void)
         return 0;
     else
     {
-        m_logger->Dump(*m_LogStream);
+        m_logger->Dump();
 
         int errors = m_logger->LevelCount(eDiag_Critical) +
                      m_logger->LevelCount(eDiag_Error) +
@@ -793,18 +794,18 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
 }
 
-string GenerateOutputStream(const CTable2AsnContext& m_context, const string& pathname)
+string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
 {
     string dir;
     string outputfile;
     string base;
-    CDirEntry::SplitPath(pathname, &dir, &base, 0);
+    CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, 0);
 
     outputfile = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
     outputfile += base;
-    outputfile += ".asn";
+    outputfile += ext;
 
-    return outputfile.c_str();
+    return outputfile;
 }
 
 void CTbl2AsnApp::ProcessOneFile()
@@ -817,26 +818,16 @@ void CTbl2AsnApp::ProcessOneFile()
             "File " + m_context.m_current_file + " does not exists"));
         return;
     }
+    
+    CFile log_name;
+    if (!DryRun() && m_context.m_split_log_files)
+    {
+        log_name = GenerateOutputFilename(".log");
+        m_logger->SetProgressOstream(new CNcbiOfstream(log_name.GetPath()), eTakeOwnership);
+    }
 
-    CNcbiOstream* output = 0;
-    auto_ptr<CNcbiOfstream> local_output(0);
-    CFile local_file;
     try
     {
-        if (!DryRun())
-        {
-            if (m_context.m_output == 0)
-            {
-                local_file = GenerateOutputStream(m_context, m_context.m_current_file);
-                local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
-                output = local_output.get();
-            }
-            else
-            {
-                output = m_context.m_output;
-            }
-        }
-
         CRef<CSerialObject> obj;
         ProcessOneFile(obj);
         if (!IsDryRun() && obj.NotEmpty())
@@ -852,16 +843,50 @@ void CTbl2AsnApp::ProcessOneFile()
                 }
             }
 
-            m_reader->WriteObject(*to_write, *output);
+            CFile local_file;
+            CNcbiOstream* output(0);
+
+            if (m_context.m_output == 0)
+            {
+                local_file = GenerateOutputFilename(".asn");
+                output = new CNcbiOfstream(local_file.GetPath());
+            }
+            else
+            {
+                output = m_context.m_output;
+            }
+
+            try
+            {
+                m_reader->WriteObject(*to_write, *output);
+                if (m_context.m_output == 0)
+                    delete output;
+                output = 0;
+            }
+            catch(...)
+            {
+                // if something goes wrong - remove the partial output to avoid confuse
+                if (m_context.m_output == 0)
+                {
+                    local_file.Remove();
+                    delete output;
+                }
+                throw;
+            }
+        }
+
+        if (!log_name.GetPath().empty())
+        {
+            m_logger->SetProgressOstream(&NcbiCout);
         }
     }
     catch(...)
     {
-        // if something goes wrong - remove the partial output to avoid confuse
-        if (local_output.get())
+        if (!log_name.GetPath().empty())
         {
-            local_file.Remove();
+            m_logger->SetProgressOstream(&NcbiCout);
         }
+
         throw;
     }
 }

@@ -113,6 +113,12 @@ public:
         size_t uPos ) { 
             return  *m_Errors[ uPos ]; }
     
+    virtual void Dump()
+    {
+        if (m_pProgressOstrm)
+            Dump(*m_pProgressOstrm);
+    }
+
     virtual void Dump(
         std::ostream& out )
     {

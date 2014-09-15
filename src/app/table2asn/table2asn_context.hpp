@@ -104,7 +104,7 @@ public:
     int    m_gaps_type;
     bool   m_fcs_trim;
     bool   m_avoid_submit_block;
-
+    bool   m_split_log_files;
 
     CRef<objects::CSeq_descr>  m_descriptors;
 
