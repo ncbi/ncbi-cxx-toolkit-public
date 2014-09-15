@@ -986,7 +986,8 @@ CDiagCollectGuard* CDiagContextThreadData::GetCollectGuard(void)
 
 void CDiagContextThreadData::CollectDiagMessage(const SDiagMessage& mess)
 {
-    if (m_DiagCollectionSize >= TDiagCollectLimit::GetDefault()) {
+    static CSafeStatic<TDiagCollectLimit> s_DiagCollectLimit;
+    if (m_DiagCollectionSize >= s_DiagCollectLimit->Get()) {
         m_DiagCollection.erase(m_DiagCollection.begin());
     }
     m_DiagCollection.push_back(mess);
@@ -1074,9 +1075,9 @@ typedef NCBI_PARAM_TYPE(Diag, UTC_Timestamp) TUtcTimestamp;
 
 static CTime s_GetFastTime(void)
 {
-    const static bool s_UtcTimestamp = TUtcTimestamp::GetDefault();
-    bool use_gmt = s_UtcTimestamp  &&  !CDiagContext::IsApplogSeverityLocked();
-    return use_gmt ? CTime(CTime::eCurrent, CTime::eGmt) : GetFastLocalTime();
+    static CSafeStatic<TUtcTimestamp> s_UtcTimestamp;
+    return (s_UtcTimestamp->Get() && !CDiagContext::IsApplogSeverityLocked()) ?
+        CTime(CTime::eCurrent, CTime::eGmt) : GetFastLocalTime();
 }
 
 
@@ -2342,6 +2343,7 @@ string CDiagContext::GetEncodedSessionID(void) const
         return rctx.GetEncodedSessionID();
     }
     GetDefaultSessionID(); // Make sure the default value is initialized.
+    CFastMutexGuard lock(s_DefaultSidMutex);
     _ASSERT(m_DefaultSessionId.get());
     return m_DefaultSessionId->GetEncodedString();
 }
@@ -2560,7 +2562,8 @@ void CDiagContext::x_StartRequest(void)
     // Print selected environment and registry values.
     CNcbiApplication* app = CNcbiApplication::Instance();
     if ( !app ) return;
-    string log_args = TLogEnvironment::GetDefault();
+    static CSafeStatic<TLogEnvironment> s_LogEnvironment;
+    string log_args = s_LogEnvironment->Get();
     if ( !log_args.empty() ) {
         list<string> log_args_list;
         NStr::Split(log_args, " ", log_args_list);
@@ -2573,7 +2576,8 @@ void CDiagContext::x_StartRequest(void)
         }
         extra.Flush();
     }
-    log_args = TLogRegistry::GetDefault();
+    static CSafeStatic<TLogRegistry> s_LogRegistry;
+    log_args = s_LogRegistry->Get();
     if ( !log_args.empty() ) {
         list<string> log_args_list;
         NStr::Split(log_args, " ", log_args_list);
@@ -2791,13 +2795,6 @@ bool CDiagContext::GetLogTruncate(void)
 void CDiagContext::SetLogTruncate(bool value)
 {
     TLogTruncateParam::SetDefault(value);
-}
-
-
-ios::openmode s_GetLogOpenMode(void)
-{
-    return ios::out |
-        (CDiagContext::GetLogTruncate() ? ios::trunc : ios::app);
 }
 
 
@@ -6092,7 +6089,6 @@ NCBI_PARAM_DECL(Uint4, Diag, Max_Async_Queue_Size);
 NCBI_PARAM_DEF_EX(Uint4, Diag, Max_Async_Queue_Size, 10000, eParam_NoThread,
                   DIAG_MAX_ASYNC_QUEUE_SIZE);
 typedef NCBI_PARAM_TYPE(Diag, Max_Async_Queue_Size) TMaxAsyncQueueSizeParam;
-static CSafeStatic<TMaxAsyncQueueSizeParam> s_MaxAsyncQueueSizeParam;
 
 
 CAsyncDiagHandler::CAsyncDiagHandler(void)
@@ -6165,6 +6161,7 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
         async.m_Message = new SDiagMessage(mess);
     }
 
+    static CSafeStatic<TMaxAsyncQueueSizeParam> s_MaxAsyncQueueSizeParam;
     if (mess.m_Severity < GetDiagDieLevel()) {
         CFastMutexGuard guard(thr->m_QueueLock);
         while (Uint4(thr->m_MsgsInQueue.Get()) >= s_MaxAsyncQueueSizeParam->Get())
