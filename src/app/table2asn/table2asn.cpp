@@ -62,7 +62,11 @@
 #include <objects/seq/Linkage_evidence.hpp>
 #include <objects/seq/Seq_gap.hpp>
 
+#include <objtools/edit/seq_entry_edit.hpp>
+
 #include <objtools/readers/message_listener.hpp>
+#include <common/ncbi_source_ver.h>
+
 #include "table2asn_validator.hpp"
 
 //#include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -142,7 +146,17 @@ private:
 CTbl2AsnApp::CTbl2AsnApp(void):
     m_LogStream(0)
 {
-    SetVersion(CVersionInfo(1,0));
+    int build_num = 
+#ifdef NCBI_PRODUCTION_VER
+    0
+#else
+#ifdef NCBI_DEVELOPMENT_VER 
+    NCBI_DEVELOPMENT_VER 
+#endif
+#endif
+    ;   
+
+    SetVersion(CVersionInfo(1,0,build_num));
 }
 
 
@@ -718,6 +732,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         if (m_context.ApplyCreateDate(*entry))
             m_context.ApplyUpdateDate(*entry);
     }
+
+    // make asn.1 look nicier
+    edit::SortSeqDescr(*entry);
 
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);

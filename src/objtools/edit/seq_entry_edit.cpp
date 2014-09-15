@@ -123,6 +123,75 @@ namespace {
     private:
         TKeyVec m_keysInOriginalOrder;
     };
+
+    static char descr_insert_order [] = {
+        CSeqdesc::e_Title,
+        CSeqdesc::e_Source,
+        CSeqdesc::e_Molinfo,
+        CSeqdesc::e_Het,
+        CSeqdesc::e_Pub,
+        CSeqdesc::e_Comment,
+        CSeqdesc::e_Name,
+        CSeqdesc::e_User,
+        CSeqdesc::e_Maploc,
+        CSeqdesc::e_Region,
+        CSeqdesc::e_Num,
+        CSeqdesc::e_Dbxref,
+        CSeqdesc::e_Mol_type,
+        CSeqdesc::e_Modif,
+        CSeqdesc::e_Method,
+        CSeqdesc::e_Org,
+        CSeqdesc::e_Sp,
+        CSeqdesc::e_Pir,
+        CSeqdesc::e_Prf,
+        CSeqdesc::e_Pdb,
+        CSeqdesc::e_Embl,
+        CSeqdesc::e_Genbank,
+        CSeqdesc::e_Modelev,
+        CSeqdesc::e_Create_date,
+        CSeqdesc::e_Update_date,
+        0
+    };
+
+    // inverted matrix to speed up the seqdesc sorting
+    class CSeqdescSortMap: public vector<char>
+    {
+    public:
+        void Init()
+        {            
+            resize(sizeof(descr_insert_order)/sizeof(int), kMax_Char);
+            char index = 0;
+            while (descr_insert_order[index] != 0)
+            {
+                if (descr_insert_order[index] >= size())
+                    resize(descr_insert_order[index], kMax_Char);
+                at(descr_insert_order[index]) = index;
+                ++index;
+            }
+        }
+    };
+    static CSeqdescSortMap seqdesc_sortmap;
+
+    struct CompareSeqdesc
+    {
+        CompareSeqdesc()
+        {
+            if (seqdesc_sortmap.empty())
+                seqdesc_sortmap.Init();
+        }
+
+        static char mapit(CSeqdesc::E_Choice c)
+        {
+            if (c<0 || c>=seqdesc_sortmap.size())
+                return kMax_Char;
+            return seqdesc_sortmap[c];
+        }
+
+        bool operator()(const CRef<CSeqdesc>& l, const CRef<CSeqdesc>& r) const
+        {
+            return mapit(l->Which()) < mapit(r->Which());
+        }
+    };
 }
 
 CConstRef <CDelta_seq> GetDeltaSeqForPosition(const unsigned pos, const CBioseq_Handle seq_hl, CScope* scope, unsigned& left_endpoint)
@@ -2776,6 +2845,20 @@ bool IsUnverifiedFeature(const CBioseq& seq)
     return false;
 }
 
+void SortSeqDescr(CSeq_descr& descr)
+{
+    descr.Set().sort(CompareSeqdesc());
+}
+
+void SortSeqDescr(CSeq_entry& entry)
+{
+    SortSeqDescr(entry.SetDescr());
+    if (entry.IsSet())
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set())
+    {
+        SortSeqDescr((**it));
+    }
+}
 
 END_SCOPE(edit)
 END_SCOPE(objects)

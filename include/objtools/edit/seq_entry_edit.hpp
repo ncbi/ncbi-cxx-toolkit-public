@@ -175,6 +175,12 @@ void AddLinkageEvidence(CSeq_ext& ext, CLinkage_evidence::TType evidence_type);
 NCBI_XOBJEDIT_EXPORT
 void ResetLinkageEvidence(CSeq_ext& ext, CLinkage_evidence::TType evidence_type);
 
+NCBI_XOBJEDIT_EXPORT
+void SortSeqDescr(CSeq_entry& entry);
+
+NCBI_XOBJEDIT_EXPORT
+void SortSeqDescr(CSeq_descr& entry);
+
 
 /*******************************************************************************
 **** HIGH-LEVEL API
