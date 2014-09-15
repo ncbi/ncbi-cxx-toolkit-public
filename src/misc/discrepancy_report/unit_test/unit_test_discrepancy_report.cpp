@@ -225,6 +225,8 @@ CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice cho
          break;
      case CSeqFeatData :: e_Biosrc:
          new_feat->SetData().SetBiosrc();
+     case CSeqFeatData :: e_Gene:
+         new_feat->SetData().SetGene();
      default: break;
    }
 
@@ -241,6 +243,8 @@ CRef <CSeq_feat> MakeNewFeat(CRef <CSeq_entry> entry, CSeqFeatData::E_Choice cho
      case CSeqFeatData::eSubtype_tRNA:
         new_feat->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
         break;
+     case CSeqFeatData::eSubtype_mRNA:
+        new_feat->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
      default: break;        
  
    }
@@ -1574,4 +1578,45 @@ BOOST_AUTO_TEST_CASE(NO_PRODUCT_STRING)
    prot->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().push_back("no product string in file");
 
    RunAndCheckTest(entry, "NO_PRODUCT_STRING", "1 product has \"no product string in file\"");
+};
+
+BOOST_AUTO_TEST_CASE(FEATURE_LOCATION_CONFLICT)
+{
+   // !IsEukaryotic ()
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   SetLineage(entry, "Viruses; ssRNA positive-strand viruses, no DNA stage; Flaviviridae; Flavivirus; Dengue virus group");
+   CRef <CSeq_feat> new_ft = MakeCDs(entry, 10, 20);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 5, 26);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 20, 50);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_not_set, CSeqFeatData::eSubtype_mRNA, 30, 40);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 27, 45);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any,35, 55);
+   AddFeat(new_ft, entry);
+
+   RunAndCheckTest(entry, "FEATURE_LOCATION_CONFLICT", 
+                                 "2 features have inconsistent gene locations"); 
+
+   // IsEukaryotic 
+   entry = BuildGoodSeq();
+   SetLineage(entry, "Eukaryota; Viridiplantae; Streptophyta;");
+   new_ft = MakeCDs(entry, 10, 20);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 5, 26);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 20, 50);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_not_set, CSeqFeatData::eSubtype_mRNA, 30, 40);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 27, 45);
+   AddFeat(new_ft, entry);
+   new_ft = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any,35, 55);
+   AddFeat(new_ft, entry);
+
+   RunAndCheckTest(entry, "FEATURE_LOCATION_CONFLICT", 
+                           "1 feature has inconsistent gene locations");
 };
