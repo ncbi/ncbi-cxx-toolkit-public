@@ -111,10 +111,9 @@ CSeqFeatData::ESubtype CAutoDefFeatureClause::GetMainFeatureSubtype()
 }
 
 
-bool CAutoDefFeatureClause::IsTransposon()
+bool CAutoDefFeatureClause::IsMobileElement()
 {
-    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region
-        || NStr::IsBlank(m_MainFeat.GetNamedQual("transposon"))) {
+    if (m_MainFeat.GetData().GetSubtype() != CSeqFeatData::eSubtype_mobile_element) {
         return false;
     } else {
         return true;
@@ -197,7 +196,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_ncRNA
         || subtype == CSeqFeatData::eSubtype_D_loop
         || IsNoncodingProductFeat()
-        || IsTransposon()
+        || IsMobileElement()
         || IsInsertionSequence()
         || IsControlRegion()
         || IsIntergenicSpacer()
@@ -285,7 +284,7 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
                 typeword = "endogenous virus";
                 return true;
             }
-            if (IsTransposon()) {
+            if (IsMobileElement()) {
                 typeword = "transposon";
                 return true;
             }
@@ -1333,7 +1332,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
     } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
         if (parent_subtype == CSeqFeatData::eSubtype_mRNA
             || parent_clause->IsInsertionSequence()
-            || parent_clause->IsTransposon()
+            || parent_clause->IsMobileElement()
             || parent_clause->IsEndogenousVirusSourceFeature()
             || parent_subtype == CSeqFeatData::eSubtype_operon
             || parent_clause->IsGeneCluster()) {
@@ -1341,12 +1340,12 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
         }
     } else if (IsInsertionSequence()
                || subtype == CSeqFeatData::eSubtype_gene
-               || IsTransposon()
+               || IsMobileElement()
                || IsNoncodingProductFeat()
                || subtype == CSeqFeatData::eSubtype_operon
                || IsGeneCluster()
                || IsIntergenicSpacer()) {
-        if (parent_clause->IsTransposon()
+        if (parent_clause->IsMobileElement()
             || parent_clause->IsInsertionSequence()
             || parent_clause->IsEndogenousVirusSourceFeature()
             || parent_subtype == CSeqFeatData::eSubtype_operon
@@ -1397,7 +1396,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base 
     if (loc_compare == sequence::eContained || loc_compare == sequence::eSame) {
         if (parent_clause->SameStrand(*m_ClauseLocation)) {
             return true;
-        } else if (parent_clause->IsTransposon()
+        } else if (parent_clause->IsMobileElement()
                    || parent_clause->IsInsertionSequence()
                    || parent_clause->IsEndogenousVirusSourceFeature()
                    || (parent_clause->IsGeneCluster() && gene_cluster_opp_strand)) {
@@ -1581,68 +1580,99 @@ bool CAutoDefNcRNAClause::x_GetProductName(string &product_name)
 }
 
 
-static string transposon_keywords [] = {
+static string mobile_element_keywords [] = {
+  "insertion sequence",
   "retrotransposon",
+  "non-LTR retrotransposon",
+  "transposon",
   "P-element",
   "transposable element",
   "integron",
   "superintegron",
-  "MITE"
+  "SINE",
+  "MITE",
+  "LINE"
 };
   
 
-CAutoDefTransposonClause::CAutoDefTransposonClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc)
+CAutoDefMobileElementClause::CAutoDefMobileElementClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc& mapped_loc)
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
-    string transposon_name = m_MainFeat.GetNamedQual("transposon");
+    string mobile_element_name = m_MainFeat.GetNamedQual("mobile_element_type");
     bool   found_keyword = false;
 
     m_Pluralizable = true;
 
-    if (NStr::IsBlank(transposon_name)) {
-        m_Description = "unnamed";
+    if (NStr::IsBlank(mobile_element_name)) {
+        m_Description = "";
         m_ShowTypewordFirst = false;
-        m_Typeword = "transposon";
+        m_Typeword = "mobile element";
     } else {
-        for (unsigned int k = 0; k < sizeof (transposon_keywords) / sizeof (string) && !found_keyword; k++) {
-            if (NStr::StartsWith(transposon_name, transposon_keywords[k])) {
-                m_Typeword = transposon_keywords[k];
-                if (NStr::Equal(transposon_name, transposon_keywords[k])) {
+        for (unsigned int k = 0; k < sizeof (mobile_element_keywords) / sizeof (string) && !found_keyword; k++) {
+            size_t pos;
+            if (NStr::StartsWith(mobile_element_name, mobile_element_keywords[k])) {
+                // keyword at the beginning
+                m_Typeword = mobile_element_keywords[k];
+                if (NStr::Equal(mobile_element_name, mobile_element_keywords[k])) {
                     m_ShowTypewordFirst = false;
-                    m_Description = "unnamed";
+                    m_Description = "";
                 } else {
                     m_ShowTypewordFirst = true;
-                    m_Description = transposon_name.substr(transposon_keywords[k].length());
+                    m_Description = mobile_element_name.substr(mobile_element_keywords[k].length());
                     NStr::TruncateSpacesInPlace(m_Description);
                 }
+                if (mobile_element_name.c_str()[mobile_element_keywords[k].length()] == '-') {
+                    // if keyword is hyphenated portion of name, no pluralization
+                    m_Pluralizable = false;
+                }
                 found_keyword = true;
-            } else if (NStr::EndsWith(transposon_name, transposon_keywords[k])) {
-                m_Typeword = transposon_keywords[k];
+            } else if (NStr::EndsWith(mobile_element_name, mobile_element_keywords[k])) {
+                // keyword at the end
+                m_Typeword = mobile_element_keywords[k];
                 m_ShowTypewordFirst = false;
-                m_Description = transposon_name.substr(0, transposon_name.length() - transposon_keywords[k].length());
+                m_Description = mobile_element_name.substr(0, mobile_element_name.length() - mobile_element_keywords[k].length());
                 NStr::TruncateSpacesInPlace(m_Description);
                 found_keyword = true;
+            } else if ((pos = NStr::Find(mobile_element_name, mobile_element_keywords[k])) != string::npos
+                       && isspace(mobile_element_name.c_str()[pos])) {
+                // keyword in the middle
+                m_Typeword = "";
+                m_ShowTypewordFirst = false;
+                m_Description = mobile_element_name.substr(pos);
+                m_Pluralizable = false;
             }
         }
         if (!found_keyword) {
-            m_ShowTypewordFirst = true;
-            m_Typeword = "transposon";
-            m_Description = transposon_name;
+            // keyword not in description
+            m_Typeword = "mobile element";
+            m_Description = mobile_element_name;
         }
     }
+    if (NStr::EqualNocase(m_Typeword, "integron")) {
+        m_ShowTypewordFirst = false;
+    }
+
     m_DescriptionChosen = true;
     m_TypewordChosen = true;
     m_ProductName = "";
-    m_ProductNameChosen = true;    
+    m_ProductNameChosen = true;   
+    NStr::TruncateSpacesInPlace(m_Description);
+    if (NStr::StartsWith(m_Description, ":")) {
+        m_Description = m_Description.substr(1);
+        NStr::TruncateSpacesInPlace(m_Description);
+    }
+    if (NStr::Equal(m_Description, "unnamed")) {
+        m_Description = "";
+    }
 }
 
 
-CAutoDefTransposonClause::~CAutoDefTransposonClause()
+CAutoDefMobileElementClause::~CAutoDefMobileElementClause()
 {
 }
 
 
-void CAutoDefTransposonClause::Label()
+void CAutoDefMobileElementClause::Label()
 {
     m_DescriptionChosen = true;
     x_GetGenericInterval (m_Interval);

@@ -304,16 +304,17 @@ void CAutoDefFeatureClause_Base::RemoveGenesMentionedElsewhere()
     unsigned int k, j;
     
     for (k = 0; k < m_ClauseList.size(); k++) {
-        if (m_ClauseList[k]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_gene
-            || m_ClauseList[k]->GetNumSubclauses() > 0) {
-            continue;
-        }
-        for (j = 0; j < m_ClauseList.size() && !m_ClauseList[k]->IsMarkedForDeletion(); j++) {
-            if (j != k && !m_ClauseList[j]->IsMarkedForDeletion() 
-                && m_ClauseList[j]->IsGeneMentioned(m_ClauseList[k])) {
-                m_ClauseList[k]->MarkForDeletion();
+        if (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_gene) {
+            for (j = 0; j < m_ClauseList.size() && !m_ClauseList[k]->IsMarkedForDeletion(); j++) {
+                if (j != k && !m_ClauseList[j]->IsMarkedForDeletion() 
+                    && m_ClauseList[j]->IsGeneMentioned(m_ClauseList[k])) {
+                    m_ClauseList[k]->MarkForDeletion();
+                }
             }
+        } else {
+            m_ClauseList[k]->RemoveGenesMentionedElsewhere();
         }
+
     }
 }
 
@@ -509,8 +510,7 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
         if (!NStr::IsBlank(m_ClauseList[k]->GetInterval())
             && NStr::Find(m_ClauseList[k]->GetInterval(), "partial") != 0
             && NStr::Find(m_ClauseList[k]->GetInterval(), "complete") != 0
-            && (NStr::Equal(this_typeword, "transposon")
-                || NStr::Equal(this_typeword, "insertion sequence")
+            && (m_ClauseList[k]->IsMobileElement()
                 || (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_biosrc
                     && NStr::Equal(this_typeword, "endogenous virus")))) {
             print_comma = false;
@@ -1095,13 +1095,13 @@ void CAutoDefFeatureClause_Base::CountUnknownGenes()
 }
 
 
-void CAutoDefFeatureClause_Base::SuppressTransposonAndInsertionSequenceSubfeatures()
+void CAutoDefFeatureClause_Base::SuppressMobileElementAndInsertionSequenceSubfeatures()
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        if (m_ClauseList[k]->IsTransposon() || m_ClauseList[k]->IsInsertionSequence()) {
+        if (m_ClauseList[k]->IsMobileElement() || m_ClauseList[k]->IsInsertionSequence()) {
             m_ClauseList[k]->SuppressSubfeatures();
         } else {
-            m_ClauseList[k]->SuppressTransposonAndInsertionSequenceSubfeatures();
+            m_ClauseList[k]->SuppressMobileElementAndInsertionSequenceSubfeatures();
         }
     }
 }

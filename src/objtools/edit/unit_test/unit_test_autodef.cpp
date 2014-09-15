@@ -803,5 +803,66 @@ BOOST_AUTO_TEST_CASE(Test_GB_3496)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_3458)
+{
+    // if second coding region does not have protein name, should still not be considered alternatively spliced
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> cds1 = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature (cds1);
+    gene1->SetData().SetGene().SetLocus("M1");
+    unit_test_util::AddFeat(gene1, nuc);
+    CRef<CSeq_feat> cds2 = unit_test_util::AddMiscFeature(nuc);
+    cds2->SetData().SetCdregion();
+    cds2->ResetComment();
+    cds2->SetLocation().SetInt().SetFrom(cds1->GetLocation().GetStart(eExtreme_Positional));
+    cds2->SetLocation().SetInt().SetTo(nuc->GetSeq().GetInst().GetLength() - 1);
+    CRef<CSeq_feat> gene2 = unit_test_util::MakeGeneForFeature (cds2);
+    gene2->SetData().SetGene().SetLocus("M2");
+    unit_test_util::AddFeat(gene2, nuc);
+    // make protein for second coding region, with no protein feature
+    CRef<CSeq_entry> pentry(new CSeq_entry());
+    pentry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    pentry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
+    pentry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPRKTEIN");
+    pentry->SetSeq().SetInst().SetLength(8);
+
+    CRef<objects::CSeq_id> pid(new objects::CSeq_id());
+    pid->SetLocal().SetStr ("prot2");
+    pentry->SetSeq().SetId().push_back(pid);
+    entry->SetSet().SetSeq_set().push_back(pentry);
+    cds2->SetProduct().SetWhole().SetLocal().SetStr("prot2");
+
+    AddTitle(nuc, "Sebaea microphylla M2 and fake protein name (M1) genes, complete cds.");
+    CheckDeflineMatches(entry, true);
+    
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3679)
+{
+    // if second coding region does not have protein name, should still not be considered alternatively spliced
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> cds1 = unit_test_util::GetCDSFromGoodNucProtSet (entry);
+    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature (cds1);
+    gene1->SetData().SetGene().SetLocus("M1");
+    unit_test_util::AddFeat(gene1, nuc);
+
+    CRef<CSeq_feat> integron = unit_test_util::AddMiscFeature(nuc);
+    integron->SetData().SetImp().SetKey("mobile_element");
+    CRef<CGb_qual> q(new CGb_qual());
+    q->SetQual("mobile_element_type");
+    q->SetVal("integron:class I");
+    integron->SetQual().push_back(q);
+    integron->SetLocation().SetInt().SetFrom(0);
+    integron->SetLocation().SetInt().SetTo(nuc->GetSeq().GetLength() - 1);
+
+
+    AddTitle(nuc, "Sebaea microphylla class I integron fake protein name (M1) gene, complete cds.");
+    CheckDeflineMatches(entry, true);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

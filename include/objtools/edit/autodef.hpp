@@ -102,7 +102,7 @@ public:
     void SetSuppressLocusTags(bool suppress_locus_tags);
     void SetGeneClusterOppStrand(bool gene_opp_strand);
     void SetSuppressFeatureAltSplice (bool suppress_alt_splice);
-    void SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress);
+    void SuppressMobileElementAndInsertionSequenceSubfeatures(bool suppress);
     void SetKeepExons(bool keep);
     void SetKeepIntrons(bool keep);
     void SetKeepPromoters(bool keep);
@@ -138,7 +138,7 @@ private:
     bool         m_SuppressAltSplicePhrase;
     bool         m_SuppressLocusTags;
     bool         m_GeneOppStrand;
-    bool         m_RemoveTransposonAndInsertionSequenceSubfeatures;
+    bool         m_RemoveMobileElementAndInsertionSequenceSubfeatures;
     bool         m_KeepExons;
     bool         m_KeepIntrons;
     bool         m_KeepPromoters;
@@ -254,9 +254,9 @@ void CAutoDef::SetSuppressFeatureAltSplice (bool suppress_alt_splice)
 
 
 inline
-void CAutoDef::SuppressTransposonAndInsertionSequenceSubfeatures(bool suppress)
+void CAutoDef::SuppressMobileElementAndInsertionSequenceSubfeatures(bool suppress)
 {
-    m_RemoveTransposonAndInsertionSequenceSubfeatures = suppress;
+    m_RemoveMobileElementAndInsertionSequenceSubfeatures = suppress;
 }
 
 

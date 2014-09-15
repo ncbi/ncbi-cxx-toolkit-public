@@ -51,7 +51,7 @@ public:
     
     virtual bool IsRecognizedFeature();
     
-    virtual bool IsTransposon();
+    virtual bool IsMobileElement();
     virtual bool IsInsertionSequence();
     virtual bool IsControlRegion();
     virtual bool IsEndogenousVirusSourceFeature();
@@ -121,14 +121,14 @@ protected:
 
 
 
-class NCBI_XOBJEDIT_EXPORT CAutoDefTransposonClause : public CAutoDefFeatureClause
+class NCBI_XOBJEDIT_EXPORT CAutoDefMobileElementClause : public CAutoDefFeatureClause
 {
 public:    
-    CAutoDefTransposonClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
-    ~CAutoDefTransposonClause();
+    CAutoDefMobileElementClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
+    ~CAutoDefMobileElementClause();
   
     virtual void Label();  
-    virtual bool IsTransposon() { return true; }
+    virtual bool IsMobileElement() { return true; }
 };
 
 
@@ -240,7 +240,7 @@ public:
     
     virtual bool IsRecognizedFeature() { return false; };
     
-    virtual bool IsTransposon() { return false; };
+    virtual bool IsMobileElement() { return false; };
     virtual bool IsInsertionSequence() { return false; };
     virtual bool IsControlRegion() { return false; };
     virtual bool IsEndogenousVirusSourceFeature() { return false; };

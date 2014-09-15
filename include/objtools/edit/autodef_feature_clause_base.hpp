@@ -65,7 +65,7 @@ public:
     virtual void AddToLocation(CRef<CSeq_loc> loc, bool also_set_partials = true);
     virtual bool SameStrand(const CSeq_loc& loc);
     virtual bool IsPartial() { return false; }
-    virtual bool IsTransposon() { return false; }
+    virtual bool IsMobileElement() { return false; }
     virtual bool IsInsertionSequence() { return false; }
     virtual bool IsControlRegion() { return false; }
     virtual bool IsEndogenousVirusSourceFeature() { return false; }
@@ -129,7 +129,7 @@ public:
     virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause) { return false; }
     virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand) { return false; }
     
-    virtual void SuppressTransposonAndInsertionSequenceSubfeatures();
+    virtual void SuppressMobileElementAndInsertionSequenceSubfeatures();
     
     void SuppressSubfeatures() { m_SuppressSubfeatures = true; }
     

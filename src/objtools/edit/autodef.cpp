@@ -67,7 +67,7 @@ CAutoDef::CAutoDef()
       m_SuppressAltSplicePhrase(false),
       m_SuppressLocusTags(false),
       m_GeneOppStrand(false),
-      m_RemoveTransposonAndInsertionSequenceSubfeatures(false),
+      m_RemoveMobileElementAndInsertionSequenceSubfeatures(false),
       m_KeepExons(false),
       m_KeepIntrons(false),
       m_KeepPromoters(false),
@@ -892,9 +892,9 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 				// others require more parsing
 				new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
 				subtype = new_clause->GetMainFeatureSubtype();
-				if (new_clause->IsTransposon()) {
+				if (new_clause->IsMobileElement()) {
 					delete new_clause;
-					new_clause = new CAutoDefTransposonClause(bh, cf, mapped_loc);
+					new_clause = new CAutoDefMobileElementClause(bh, cf, mapped_loc);
 				} else if (new_clause->IsSatelliteClause()) {
 					delete new_clause;
 					new_clause = new CAutoDefSatelliteClause(bh, cf, mapped_loc);
@@ -989,8 +989,8 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     main_clause.RemoveGenesMentionedElsewhere();
     main_clause.RemoveDeletedSubclauses();
     
-    if (m_RemoveTransposonAndInsertionSequenceSubfeatures) {
-        main_clause.SuppressTransposonAndInsertionSequenceSubfeatures();
+    if (m_RemoveMobileElementAndInsertionSequenceSubfeatures) {
+        main_clause.SuppressMobileElementAndInsertionSequenceSubfeatures();
     }
 
     // if this is a segment, remove genes, mRNAs, and CDSs
