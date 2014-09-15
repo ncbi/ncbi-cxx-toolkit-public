@@ -580,6 +580,16 @@ string COrgMod::FixStrain( const string& strain)
 }
 
 
+string COrgMod::FixHost(const string& value)
+{
+    string fix = value;
+    if (NStr::EqualNocase(fix, "human")) {
+        fix = "Homo sapiens";
+    }
+    return fix;
+}
+
+
 string COrgMod::AutoFix(TSubtype subtype, const string& value)
 {
     string new_val = "";
@@ -604,6 +614,9 @@ string COrgMod::AutoFix(TSubtype subtype, const string& value)
             break;
         case COrgMod::eSubtype_strain:
             new_val = FixStrain(value);
+            break;
+        case COrgMod::eSubtype_nat_host:
+            new_val = FixHost(value);
             break;
         default:
             break;

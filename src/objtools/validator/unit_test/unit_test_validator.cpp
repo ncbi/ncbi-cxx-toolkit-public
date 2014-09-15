@@ -18696,6 +18696,11 @@ BOOST_AUTO_TEST_CASE(Test_OrgModAutofix)
     om->SetSubname("DSM  567");
     om->AutoFix();
     BOOST_CHECK_EQUAL(om->GetSubname(), "DSM 567");
+
+    om->SetSubtype(COrgMod::eSubtype_nat_host);
+    om->SetSubname("human");
+    om->AutoFix();
+    BOOST_CHECK_EQUAL(om->GetSubname(), "Homo sapiens");
 }
 
 
