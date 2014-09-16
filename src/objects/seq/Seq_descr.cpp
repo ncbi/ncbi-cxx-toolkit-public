@@ -57,12 +57,11 @@ CSeq_descr::~CSeq_descr(void)
 NCBI_PARAM_DECL(bool, OBJECTS, SEQ_DESCR_ALLOW_EMPTY);
 NCBI_PARAM_DEF_EX(bool, OBJECTS, SEQ_DESCR_ALLOW_EMPTY, false,
                   eParam_NoThread, OBJECTS_SEQ_DESCR_ALLOW_EMPTY);
-static const bool s_SeqDescrAllowEmpty =
-    NCBI_PARAM_TYPE(OBJECTS, SEQ_DESCR_ALLOW_EMPTY)::GetDefault();
+static CSafeStatic<NCBI_PARAM_TYPE(OBJECTS, SEQ_DESCR_ALLOW_EMPTY)> s_SeqDescrAllowEmpty;
 
 void CSeq_descr::PostRead(void) const
 {
-    if ( !s_SeqDescrAllowEmpty && Get().empty() ) {
+    if ( !s_SeqDescrAllowEmpty->Get() && Get().empty() ) {
         NCBI_THROW(CSerialException, eInvalidData,
                    "empty Seq-descr is not allowed");
     }
@@ -71,7 +70,7 @@ void CSeq_descr::PostRead(void) const
 void CSeq_descr::PreWrite(void) const
 {
     static NCBI_PARAM_TYPE(OBJECTS, SEQ_DESCR_ALLOW_EMPTY) sx_Value;
-    if ( !s_SeqDescrAllowEmpty && Get().empty() ) {
+    if ( !s_SeqDescrAllowEmpty->Get() && Get().empty() ) {
         NCBI_THROW(CSerialException, eInvalidData,
                    "empty Seq-descr is not allowed");
     }

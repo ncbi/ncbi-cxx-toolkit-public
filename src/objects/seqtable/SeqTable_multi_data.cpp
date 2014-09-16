@@ -409,10 +409,9 @@ void CSeqTable_multi_data::CReserveHook::PreReadChoiceVariant(
     CObjectIStream& in,
     const CObjectInfoCV& variant)
 {
-    static const bool s_Reserve =
-        NCBI_PARAM_TYPE(OBJECTS, SEQ_TABLE_RESERVE)::GetDefault();
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJECTS, SEQ_TABLE_RESERVE)> s_Reserve;
 
-    if ( !s_Reserve ) {
+    if ( !s_Reserve->Get() ) {
         return;
     }
     if ( CSeq_table* table = CType<CSeq_table>::GetParent(in, 5, 2) ) {

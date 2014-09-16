@@ -656,8 +656,8 @@ NCBI_PARAM_DEF_EX(bool, OBJECTS, PACK_TEXTID, true,
                   eParam_NoThread, OBJECTS_PACK_TEXTID);
 static inline bool s_PackTextidEnabled(void)
 {
-    static const bool value = NCBI_PARAM_TYPE(OBJECTS, PACK_TEXTID)::GetDefault();
-    return value;
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJECTS, PACK_TEXTID)> value;
+    return value->Get();
 }
 
 NCBI_PARAM_DECL(bool, OBJECTS, PACK_GENERAL);
@@ -665,8 +665,8 @@ NCBI_PARAM_DEF_EX(bool, OBJECTS, PACK_GENERAL, true,
                   eParam_NoThread, OBJECTS_PACK_GENERAL);
 static inline bool s_PackGeneralEnabled(void)
 {
-    static const bool value = NCBI_PARAM_TYPE(OBJECTS, PACK_GENERAL)::GetDefault();
-    return value;
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJECTS, PACK_GENERAL)> value;
+    return value->Get();
 }
 
 static inline

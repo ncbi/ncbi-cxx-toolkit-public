@@ -1483,10 +1483,9 @@ NCBI_PARAM_DEF_EX(bool, OBJECTS, DENSE_SEG_RESERVE, true,
 void CDense_seg::CReserveHook::PreReadClassMember(CObjectIStream& in,
                                                   const CObjectInfoMI& member)
 {
-    static const bool s_Reserve =
-        NCBI_PARAM_TYPE(OBJECTS, DENSE_SEG_RESERVE)::GetDefault();
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJECTS, DENSE_SEG_RESERVE)> s_Reserve;
 
-    if ( !s_Reserve ) {
+    if ( !s_Reserve->Get() ) {
         return;
     }
     CDense_seg& ds = *CType<CDense_seg>::Get(member.GetClassObject());
