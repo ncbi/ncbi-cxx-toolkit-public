@@ -1620,3 +1620,71 @@ BOOST_AUTO_TEST_CASE(FEATURE_LOCATION_CONFLICT)
    RunAndCheckTest(entry, "FEATURE_LOCATION_CONFLICT", 
                            "1 feature has inconsistent gene locations");
 };
+
+BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_feat> 
+      feat = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 10, 20);
+   feat->SetData().SetGene().SetLocus_tag("HHV4_LMP-2A");
+   AddFeat(feat, entry);
+   feat = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 25, 30);
+   feat->SetData().SetGene().SetLocus_tag("HHV4_BCRF1.1");
+   AddFeat(feat, entry);
+   feat = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 35, 40);
+   feat->SetData().SetGene().SetLocus_tag("HHV4_EBNA-3B/EBNA-3C");
+   AddFeat(feat, entry);
+
+   RunAndCheckTest(entry, "BAD_LOCUS_TAG_FORMAT", "3 locus tags are incorrectly formatted.");
+}
+
+BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   CRef <CSeq_feat> 
+      feat = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 10, 20);
+   feat->SetData().SetGene().SetLocus_tag("HHV4_LMP-2A");
+   AddFeat(feat, entry);
+   feat = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 25, 30);
+   feat->SetData().SetGene().SetLocus_tag("HHV4_BCRF1.1");
+   AddFeat(feat, entry);
+   feat = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 35, 40);
+   feat->SetData().SetGene().SetLocus_tag("HHV4_EBNA-3B/EBNA-3C");
+   AddFeat(feat, entry);
+   feat = MakeNewFeat(entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 45, 50);
+   feat->SetData().SetGene().SetLocus_tag("Spy49_EBNA-3B/EBNA-3C");
+   AddFeat(feat, entry);
+
+   set <string> msgs;
+   msgs.insert("3 features have locus tag prefix HHV4");
+   msgs.insert("1 feature has locus tag prefix Spy49");
+   RunAndCheckMultiReports(entry, "INCONSISTENT_LOCUS_TAG_PREFIX", msgs);
+}
+
+BOOST_AUTO_TEST_CASE(DUPLICATE_LOCUS_TAGS)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   // seq1
+   CRef <CSeq_entry> seq = BuildGoodSeq();
+   CRef <CSeq_id> id (new CSeq_id());
+   entry->SetSet().SetSeq_set().push_back(seq); 
+   id->SetLocal().SetStr("good nuc1");
+   ChangeNucId(entry, id);
+   CRef <CSeq_feat> 
+        feat = MakeNewFeat(seq, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 10, 20);
+   feat->SetData().SetGene().SetLocus_tag("Spy49_EBNA-3B/EBNA-3C");
+   AddFeat(feat, seq);
+
+   // seq2
+   seq = BuildGoodSeq();
+   feat = MakeNewFeat(seq, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 30, 50);
+   feat->SetData().SetGene().SetLocus_tag("Spy49_EBNA-3B/EBNA-3C");
+   AddFeat(feat, seq);
+   entry->SetSet().SetSeq_set().push_back(seq);
+
+   RunAndCheckTest(entry, "DUPLICATE_LOCUS_TAGS", "2 genes have duplicate locus tags.");
+};
+
+BOOST_AUTO_TEST_CASE(DUPLICATE_LOCUS_TAGS_global)
+{
+};
