@@ -433,6 +433,12 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
     if (key.GetVersion() == 3) {
         /* Version 3 - no server address, only CRC32 of it: */
+        if (service.GetServiceType() != CNetService::eLoadBalancedService) {
+            NCBI_THROW_FMT(CNetSrvConnException, eLBNameNotFound,
+                key.GetKey() << ": NetCache key version 3 "
+                "requires an LBSM service name.");
+        }
+
         Uint4 crc32 = key.GetHostPortCRC32();
 
         for (CNetServiceIterator it(service.Iterate()); it; ++it) {
@@ -466,7 +472,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
         NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
                 key.GetKey() << ": unable to find a NetCache server "
-                "by the checksum from this key");
+                "by the checksum from this key.");
     }
 
     CNetServer primary_server(service.GetServer(key.GetHost(), key.GetPort()));
