@@ -84,9 +84,8 @@ NCBI_PARAM_DEF_EX(bool, GENBANK, SNP_TABLE_STAT, false,
 
 static bool CollectSNPStat(void)
 {
-    static const bool s_Value =
-        NCBI_PARAM_TYPE(GENBANK, SNP_TABLE_STAT)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, SNP_TABLE_STAT)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -230,9 +229,8 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
     }
     else {
 #ifdef _DEBUG
-        static const bool s_Value =
-            NCBI_PARAM_TYPE(GENBANK, SNP_TABLE_DUMP)::GetDefault();
-        if ( s_Value ) {
+        static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, SNP_TABLE_DUMP)> s_Value;
+        if ( s_Value->Get() ) {
             NcbiCerr <<
                 "CSNP_Seq_feat_hook::ReadContainerElement: complex SNP: " <<
                 SSNP_Info::s_SNP_Type_Label[snp_type] << ":\n" << 

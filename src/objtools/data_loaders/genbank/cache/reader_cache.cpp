@@ -64,9 +64,8 @@ NCBI_PARAM_DEF_EX(int, GENBANK, CACHE_DEBUG, 0,
 
 int SCacheInfo::GetDebugLevel(void)
 {
-    static const int s_Value =
-        NCBI_PARAM_TYPE(GENBANK, CACHE_DEBUG)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, CACHE_DEBUG)> s_Value;
+    return s_Value->Get();
 }
 
 const int    SCacheInfo::BLOB_IDS_MAGIC = 0x32fd0108;

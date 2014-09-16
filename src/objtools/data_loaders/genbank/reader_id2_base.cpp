@@ -91,9 +91,8 @@ NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_IDS_REQUEST_SIZE, 100,
 
 int CId2ReaderBase::GetDebugLevel(void)
 {
-    static const int s_Value =
-        NCBI_PARAM_TYPE(GENBANK, ID2_DEBUG)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, ID2_DEBUG)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -102,19 +101,15 @@ int CId2ReaderBase::GetDebugLevel(void)
 // 1 = do not use packets or get-chunks requests
 static size_t GetMaxChunksRequestSize(void)
 {
-    static const size_t s_Value =
-        (size_t)
-        NCBI_PARAM_TYPE(GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE)> s_Value;
+    return (size_t)s_Value->Get();
 }
 
 
 static size_t GetMaxIdsRequestSize(void)
 {
-    static size_t s_Value =
-        (size_t)
-        NCBI_PARAM_TYPE(GENBANK, ID2_MAX_IDS_REQUEST_SIZE)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, ID2_MAX_IDS_REQUEST_SIZE)> s_Value;
+    return (size_t)s_Value->Get();
 }
 
 

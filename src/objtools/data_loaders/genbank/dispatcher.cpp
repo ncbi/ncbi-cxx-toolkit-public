@@ -131,9 +131,8 @@ void CGBRequestStatistics::PrintStatistics(void)
 inline
 int CReadDispatcher::CollectStatistics(void)
 {
-    static const int s_Value =
-        NCBI_PARAM_TYPE(GENBANK, READER_STATS)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, READER_STATS)> s_Value;
+    return s_Value->Get();
 }
 
 

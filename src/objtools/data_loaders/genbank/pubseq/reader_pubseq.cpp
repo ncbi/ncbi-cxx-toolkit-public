@@ -87,9 +87,8 @@ NCBI_PARAM_DEF_EX(int, GENBANK, PUBSEQOS_DEBUG, 0,
 
 static int GetDebugLevel(void)
 {
-    static const int s_Value =
-        NCBI_PARAM_TYPE(GENBANK, PUBSEQOS_DEBUG)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, PUBSEQOS_DEBUG)> s_Value;
+    return s_Value->Get();
 }
 
 #define RPC_GET_ASN         "id_get_asn"

@@ -218,9 +218,8 @@ namespace {
 inline
 int CProcessor::CollectStatistics(void)
 {
-    static const int s_Value =
-        NCBI_PARAM_TYPE(GENBANK, READER_STATS)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, READER_STATS)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -314,12 +313,12 @@ void CProcessor::RegisterAllProcessors(CReadDispatcher& d)
 
 bool CProcessor::TryStringPack(void)
 {
-    static NCBI_PARAM_TYPE(GENBANK, SNP_PACK_STRINGS) s_Value;
-    if ( !s_Value.Get() ) {
+    typedef NCBI_PARAM_TYPE(GENBANK, SNP_PACK_STRINGS) TPackStrings;
+    if ( !TPackStrings::GetDefault() ) {
         return false;
     }
     if ( !CPackString::TryStringPack() ) {
-        s_Value.Set(false);
+        TPackStrings::SetDefault(false);
         return false;
     }
     return true;
@@ -328,33 +327,29 @@ bool CProcessor::TryStringPack(void)
 
 bool CProcessor::TrySNPSplit(void)
 {
-    static const bool s_Value =
-        NCBI_PARAM_TYPE(GENBANK, SNP_SPLIT)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, SNP_SPLIT)> s_Value;
+    return s_Value->Get();
 }
 
 
 bool CProcessor::TrySNPTable(void)
 {
-    static const bool s_Value =
-        NCBI_PARAM_TYPE(GENBANK, SNP_TABLE)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, SNP_TABLE)> s_Value;
+    return s_Value->Get();
 }
 
 
 static bool s_UseMemoryPool(void)
 {
-    static const bool s_Value =
-        NCBI_PARAM_TYPE(GENBANK, USE_MEMORY_POOL)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, USE_MEMORY_POOL)> s_Value;
+    return s_Value->Get();
 }
 
 
 static bool s_CacheRecompress(void)
 {
-    static const bool s_Value =
-        NCBI_PARAM_TYPE(GENBANK, CACHE_RECOMPRESS)::GetDefault();
-    return s_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(GENBANK, CACHE_RECOMPRESS)> s_Value;
+    return s_Value->Get();
 }
 
 
