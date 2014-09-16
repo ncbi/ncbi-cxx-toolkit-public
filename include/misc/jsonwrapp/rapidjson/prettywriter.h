@@ -138,8 +138,9 @@ protected:
 				RAPIDJSON_ASSERT(type == kStringType);  // if it's in object, then even number should be a name
 			level->valueCount++;
 		}
-		else
-			RAPIDJSON_ASSERT(type == kObjectType || type == kArrayType);
+// NCBI: removed to allow Document to be any type
+//		else
+//			RAPIDJSON_ASSERT(type == kObjectType || type == kArrayType);
 	}
 
 	void WriteIndent()  {

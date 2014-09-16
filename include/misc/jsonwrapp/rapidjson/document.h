@@ -802,7 +802,7 @@ this->allocator_ = &GetAllocator();
 	size_t GetStackCapacity() const { return stack_.GetCapacity(); }
 
 //NCBI: added AssignCopy method
-    void AssignCopy(const GenericDocument& src) {
+    void AssignCopy(const Value& src) {
 		ValueType::SetNull();
         src.Accept(*this);
 		this->RawAssign(*stack_.template Pop<ValueType>(1));

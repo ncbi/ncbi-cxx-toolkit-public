@@ -57,7 +57,7 @@ public:
 
 	char Peek() const {
         char c = in_->peek();
-        if (c == std::istream::traits_type::eof()) { c='0';}
+        if (c == std::istream::traits_type::eof()) { c='\0';}
         return c;
     }
 	char Take() {

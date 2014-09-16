@@ -247,7 +247,9 @@ public:
 			switch (stream.Peek()) {
 				case '{': ParseObject<parseFlags>(stream, handler); break;
 				case '[': ParseArray<parseFlags>(stream, handler); break;
-				default: RAPIDJSON_PARSE_ERROR("Expect either an object or array at root", stream.Tell());
+//NCBI:  changed to allow Document to be any type
+//				default: RAPIDJSON_PARSE_ERROR("Expect either an object or array at root", stream.Tell());
+                default: ParseValue<parseFlags>(stream, handler); break;
 			}
 //NCBI: removed skipping white spaces at the end and checking for EOF
 #if 0
