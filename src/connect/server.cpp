@@ -51,7 +51,7 @@ NCBI_PARAM_DECL(bool, server, Catch_Unhandled_Exceptions);
 NCBI_PARAM_DEF_EX(bool, server, Catch_Unhandled_Exceptions, true, 0,
                   CSERVER_CATCH_UNHANDLED_EXCEPTIONS);
 typedef NCBI_PARAM_TYPE(server, Catch_Unhandled_Exceptions) TParamServerCatchExceptions;
-
+static CSafeStatic<TParamServerCatchExceptions> s_ServerCatchExceptions;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -459,7 +459,7 @@ void CAcceptRequest::x_DoProcess(void)
 void CAcceptRequest::Process(void)
 {
     if (!m_Connection) return;
-    if (TParamServerCatchExceptions::GetDefault()) {
+    if (s_ServerCatchExceptions->Get()) {
         try {
             x_DoProcess();
         } STD_CATCH_ALL_X(5, "CAcceptRequest::Process");
@@ -512,7 +512,7 @@ void CServerConnectionRequest::x_Process(void)
 
 void CServerConnectionRequest::Process(void)
 {
-    if (TParamServerCatchExceptions::GetDefault()) {
+    if (s_ServerCatchExceptions->Get()) {
         try {
             x_Process();
         } NCBI_CATCH_ALL_X(6, "CServerConnectionRequest::Process");
@@ -804,7 +804,7 @@ void CServer::Run(void)
 
     m_ThreadPool = new CPoolOfThreads_ForServer(m_Parameters->max_threads,
                                                 m_ThreadSuffix);
-    if (TParamServerCatchExceptions::GetDefault()) {
+    if (s_ServerCatchExceptions->Get()) {
         try {
             x_DoRun();
         } catch (CException& ex) {
