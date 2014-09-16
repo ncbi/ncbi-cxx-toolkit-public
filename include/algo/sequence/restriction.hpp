@@ -267,6 +267,13 @@ public:
     vector<CRSpec>& SetSpecs(void);
     const vector<CRSpec>& GetSpecs(void) const;
 
+    void SetPrototype(const string& s = kEmptyStr);
+    const string& GetPrototype() const;
+    bool IsPrototype() const;
+
+    vector<string>& SetIsoschizomers(void);
+    const vector<string>& GetIsoschizomers(void) const;
+
     // reset everything
     void Reset(void);
 
@@ -279,6 +286,10 @@ public:
 
 private:
     string m_Name;
+    vector<string> m_Isoschizomers;
+
+    /// Prototype name, or none if this enzyme is a prototype.
+    string m_Prototype;
     vector<CRSpec> m_Specs;
 };
 
@@ -319,6 +330,41 @@ inline
 const vector<CRSpec>& CREnzyme::GetSpecs(void) const
 {
     return m_Specs;
+}
+
+
+inline
+const string& CREnzyme::GetPrototype(void) const
+{
+    return m_Prototype;
+}
+
+
+inline
+void CREnzyme::SetPrototype(const string& s)
+{
+    m_Prototype = s;
+}
+
+
+inline
+bool CREnzyme::IsPrototype(void) const
+{
+    return m_Prototype.empty();
+}
+
+
+inline
+vector<string>& CREnzyme::SetIsoschizomers(void)
+{
+    return m_Isoschizomers;
+}
+
+
+inline
+const vector<string>& CREnzyme::GetIsoschizomers(void) const
+{
+    return m_Isoschizomers;
 }
 
 
@@ -415,9 +461,11 @@ class NCBI_XALGOSEQ_EXPORT CFindRSites
 public:
     enum EFlags {
         /// Lump together all enzymes with identical specificities.
-        fCombineIsoschizomers = (1 << 1),
-        fSortByNumberOfSites  = (1 << 2),
-        fSplitAnnotsByEnzyme  = (1 << 3),
+        fFindIsoschizomers    = (1 << 1),
+        fCombineIsoschizomers = (1 << 2),
+        fSortByNumberOfSites  = (1 << 3),
+        fSplitAnnotsByEnzyme  = (1 << 4),
+        fFindPossibleSites    = (1 << 5),
         fDefault = fCombineIsoschizomers | fSortByNumberOfSites
     };
     typedef unsigned int TFlags;
@@ -429,6 +477,7 @@ public:
                 CRebase::EEnzymesToLoad which_enzymes = CRebase::eAll,
                 TFlags flags = fDefault);
 
+    const TEnzymes& GetEnzymes();
     TEnzymes& SetEnzymes();
 
     TAnnot GetAnnot(CScope& scope, const CSeq_loc& loc) const;
@@ -436,13 +485,16 @@ public:
 
     static void Find(const string& seq,
                      const TEnzymes& enzymes,
-                     vector<CRef<CREnzResult> >& results);
+                     vector<CRef<CREnzResult> >& results,
+                     TFlags flags = 0);
     static void Find(const vector<char>& seq,
                      const TEnzymes& enzymes,
-                     vector<CRef<CREnzResult> >& results);
+                     vector<CRef<CREnzResult> >& results,
+                     TFlags flags = 0);
     static void Find(const CSeqVector& seq,
                      const TEnzymes& enzymes,
-                     vector<CRef<CREnzResult> >& results);
+                     vector<CRef<CREnzResult> >& results,
+                     TFlags flags = 0);
 
 private:
     void x_LoadREnzymeData(const string& refile,
@@ -456,7 +508,8 @@ private:
 
     template<class Seq>
     friend void x_FindRSite(const Seq& seq, const TEnzymes& enzymes,
-                            vector<CRef<CREnzResult> >& results);
+                            vector<CRef<CREnzResult> >& results,
+                            CFindRSites::TFlags);
 
     TFlags m_Flags;
     TEnzymes m_Enzymes;

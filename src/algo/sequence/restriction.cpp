@@ -36,7 +36,6 @@
 
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/general/User_object.hpp>
 #include <objects/seqfeat/Rsite_ref.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seq/Annot_descr.hpp>
@@ -101,6 +100,7 @@ void CREnzyme::CombineIsoschizomers(TEnzymes& enzymes)
             result.back().SetName() += enzyme->GetName();
         } else {
             result.push_back(*enzyme);
+            result.back().SetPrototype();
         }
     }
     swap(enzymes, result);
@@ -263,6 +263,7 @@ void CRebase::ReadNARFormat(istream& input,
     string line;
     CREnzyme enzyme;
     string name;
+    TEnzymes::size_type prototype_idx(0);
 
     while (getline(input, line)) {
         vector<string> fields;
@@ -273,10 +274,12 @@ void CRebase::ReadNARFormat(istream& input,
         }
         // name of enzyme is in field one or two (field zero is empty)
         name = fields[1];
+        bool is_prototype(true);
         if (name == " ") {
             if (which == ePrototype) {
                 continue;  // skip this non-protype
             }
+            is_prototype = false;
             name = fields[2];
         }
         if (which == eCommercial && fields[5].empty()) {
@@ -286,6 +289,15 @@ void CRebase::ReadNARFormat(istream& input,
                             // usually just one (but TaqII has two)
         enzyme = MakeREnzyme(name, sites);
         enzymes.push_back(enzyme);
+
+        // Link isoschizomers with their prototypes.
+        if (is_prototype) {
+            prototype_idx = enzymes.size();
+        } else if (prototype_idx) {
+            CREnzyme& prototype = enzymes[prototype_idx - 1];
+            enzyme.SetPrototype(prototype.GetName());
+            prototype.SetIsoschizomers().push_back(name);
+        }
     }
 }
 
@@ -435,6 +447,12 @@ CFindRSites::CFindRSites(const string& refile,
 }
 
 
+const CFindRSites::TEnzymes& CFindRSites::GetEnzymes()
+{
+    return m_Enzymes;
+}
+
+
 CFindRSites::TEnzymes& CFindRSites::SetEnzymes()
 {
     return m_Enzymes;
@@ -576,7 +594,7 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
     TResults results;
 
     // do the big search
-    Find(vec, m_Enzymes, results);
+    Find(vec, m_Enzymes, results, m_Flags);
 
     // deal with stored enzyme results
 
@@ -615,12 +633,6 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
                 CRef<CAnnotdesc> region(new CAnnotdesc);
                 region->SetRegion().Assign(loc);
                 new_annot->SetDesc().Set().push_back(region);
-                if (m_Flags & fSplitAnnotsByEnzyme) {
-                    CRef<CUser_object> obj(new CUser_object);
-                    obj->SetType().SetStr("RestrictionSite");
-                    obj->AddField("enzyme", (**result).GetEnzymeName());
-                    new_annot->AddUserObject(*obj);
-                }
                 annot.push_back(new_annot);
             }
             CSeq_annot& curr_annot(*annot.back());
@@ -686,7 +698,8 @@ bool CFindRSites::x_IsAmbig (char nuc)
 /// but it must yield ncbi8na.
 template<class Seq>
 void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
-                 vector<CRef<CREnzResult> >& results)
+                 vector<CRef<CREnzResult> >& results,
+                 CFindRSites::TFlags flags)
 {
 
     results.clear();
@@ -701,6 +714,11 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
 
     // iterate over enzymes
     ITERATE (CFindRSites::TEnzymes, enzyme, enzymes) {
+        // Unless isoschizomers are requested, skip them.
+        if (! (flags & CFindRSites::fFindIsoschizomers  ||
+               enzyme->IsPrototype())) {
+            continue;
+        }
 
         results.push_back(CRef<CREnzResult> 
                           (new CREnzResult(enzyme->GetName())));
@@ -913,7 +931,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                     if (match == CSeqMatch::eYes) {
                         results[pattern->GetEnzymeIndex()]
                             ->SetDefiniteSites().push_back(site);
-                    } else {
+                    } else if (flags & CFindRSites::fFindPossibleSites) {
                         results[pattern->GetEnzymeIndex()]
                             ->SetPossibleSites().push_back(site);
                     }
@@ -945,29 +963,32 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
 
 void CFindRSites::Find(const string& seq,
                        const TEnzymes& enzymes,
-                       vector<CRef<CREnzResult> >& results)
+                       vector<CRef<CREnzResult> >& results,
+                       TFlags flags)
 {
-    x_FindRSite(seq, enzymes, results);
+    x_FindRSite(seq, enzymes, results, flags);
 }
 
 
 void CFindRSites::Find(const vector<char>& seq,
                        const TEnzymes& enzymes,
-                       vector<CRef<CREnzResult> >& results)
+                       vector<CRef<CREnzResult> >& results,
+                       TFlags flags)
 {
-    x_FindRSite(seq, enzymes, results);
+    x_FindRSite(seq, enzymes, results, flags);
 }
 
 
 void CFindRSites::Find(const CSeqVector& seq,
                        const TEnzymes& enzymes,
-                       vector<CRef<CREnzResult> >& results)
+                       vector<CRef<CREnzResult> >& results,
+                       TFlags flags)
 {
     string seq_ncbi8na;
     CSeqVector vec(seq);
     vec.SetNcbiCoding();
     vec.GetSeqData(0, vec.size(), seq_ncbi8na);
-    x_FindRSite(seq_ncbi8na, enzymes, results);
+    x_FindRSite(seq_ncbi8na, enzymes, results, flags);
 }
 
 
