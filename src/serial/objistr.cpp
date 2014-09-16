@@ -293,7 +293,8 @@ typedef NCBI_PARAM_TYPE(SERIAL, WRONG_CHARS_READ) TSerialFixChars;
 
 EFixNonPrint CObjectIStream::x_GetFixCharsMethodDefault(void) const
 {
-    return TSerialFixChars::GetDefault();
+    static CSafeStatic<TSerialFixChars> s_SerialFixChars;
+    return s_SerialFixChars->Get();
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -78,6 +78,7 @@ BEGIN_NCBI_SCOPE
 NCBI_PARAM_DECL(bool, SERIAL, FastWriteDouble);
 NCBI_PARAM_DEF(bool, SERIAL, FastWriteDouble, true);
 typedef NCBI_PARAM_TYPE(SERIAL, FastWriteDouble) TFastWriteDouble;
+static CSafeStatic<TFastWriteDouble> s_FastWriteDouble;
 
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
@@ -278,7 +279,8 @@ typedef NCBI_PARAM_TYPE(SERIAL, WRONG_CHARS_WRITE) TSerialFixChars;
 
 EFixNonPrint CObjectOStream::x_GetFixCharsMethodDefault(void) const
 {
-    return TSerialFixChars::GetDefault();
+    static CSafeStatic<TSerialFixChars> s_SerialFixChars;
+    return s_SerialFixChars->Get();
 }
 
 
@@ -291,7 +293,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_DataFormat(format),
       m_WriteNamedIntegersByValue(false),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
-      m_FastWriteDouble(TFastWriteDouble::GetDefault()),
+      m_FastWriteDouble(s_FastWriteDouble->Get()),
       m_SpecialCaseWrite(eWriteAsNormal),
       m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault())
