@@ -57,6 +57,8 @@ private:
 
     void x_TestOldFormat(TStringList& messages);
     void x_TestNewFormat(TStringList& messages);
+
+    auto_ptr<CAsyncDiagHandler> m_Async;
 };
 
 
@@ -71,6 +73,7 @@ bool CTestDiagApp::TestApp_Args(CArgDescriptions& args)
     args.AddOptionalKey("format", "Format", "Log format",
         CArgDescriptions::eString);
     args.SetConstraint("format", &(*new CArgAllow_Strings, "old", "new"));
+    args.AddFlag("async", "Use async diag handler", true);
     return true;
 }
 
@@ -111,11 +114,18 @@ bool CTestDiagApp::TestApp_Init(void)
              << " format)..."
              << NcbiEndl;
     SetDiagStream(&s_Sout);
+    if ( args["async"] ) {
+        m_Async.reset(new CAsyncDiagHandler);
+        m_Async->InstallToDiag();
+    }
     return true;
 }
 
 bool CTestDiagApp::TestApp_Exit(void)
 {
+    if ( m_Async.get() ) {
+        m_Async->RemoveFromDiag();
+    }
     // Verify the result
     string test_res = CNcbiOstrstreamToString(s_Sout);
     TStringList messages;
