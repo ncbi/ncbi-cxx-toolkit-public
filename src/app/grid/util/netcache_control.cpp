@@ -308,17 +308,17 @@ int CNetCacheControl::Run()
                     nc_caching_mode = CNetCacheAPI::eCaching_Disable));
                 break;
             case 2: /* use password */
-                reader.reset(CNetICachePasswordGuard(icache_client,
-                    password_arg.AsString())->GetReadStream(blob_address.key,
+                reader.reset(icache_client.GetReadStream(blob_address.key,
                     blob_address.version, blob_address.subkey, NULL,
-                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_blob_password = password_arg.AsString())));
                 break;
             case 3: /* use password and offset */
-                reader.reset(CNetICachePasswordGuard(icache_client,
-                    password_arg.AsString())->GetReadStreamPart(
+                reader.reset(icache_client.GetReadStreamPart(
                     blob_address.key, blob_address.version, blob_address.subkey,
                     offset, part_size, NULL,
-                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_blob_password = password_arg.AsString())));
             }
             if (!version_is_defined)
                 NcbiCerr << "Blob version: " <<
@@ -369,11 +369,16 @@ int CNetCacheControl::Run()
                     nc_client.PutData(&key,
                             nc_blob_password = password_arg.AsString()) :
                     nc_client.PutData(&key) :
-            password_arg.HasValue() ? CNetICachePasswordGuard(icache_client,
-                password_arg.AsString())->GetNetCacheWriter(blob_address.key,
-                    blob_address.version, blob_address.subkey) :
-                icache_client.GetNetCacheWriter(blob_address.key,
-                    blob_address.version, blob_address.subkey));
+            password_arg.HasValue() ?
+                    icache_client.GetNetCacheWriter(
+                            blob_address.key,
+                            blob_address.version,
+                            blob_address.subkey,
+                            nc_blob_password = password_arg.AsString()) :
+                    icache_client.GetNetCacheWriter(
+                            blob_address.key,
+                            blob_address.version,
+                            blob_address.subkey));
 
         if (!writer.get()) {
             NCBI_USER_THROW_FMT("Cannot create blob stream");
@@ -427,12 +432,12 @@ int CNetCacheControl::Run()
                 nc_client.Remove(key);
         else
             if (password_arg.HasValue())
-                CNetICachePasswordGuard(icache_client,
-                    password_arg.AsString())->Remove(blob_address.key,
-                        blob_address.version, blob_address.subkey);
+                icache_client.RemoveBlob(blob_address.key,
+                        blob_address.version, blob_address.subkey,
+                        nc_blob_password = password_arg.AsString());
             else
-                icache_client.Remove(blob_address.key,
-                    blob_address.version, blob_address.subkey);
+                icache_client.RemoveBlob(blob_address.key,
+                        blob_address.version, blob_address.subkey);
         break;
 
     case eCmdBlobInfo:

@@ -307,24 +307,24 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                 nc_caching_mode = CNetCacheAPI::eCaching_Disable));
             break;
         case OPTION_N(1): /* use password */
-            reader.reset(CNetICachePasswordGuard(m_NetICacheClient,
-                m_Opts.password)->GetReadStream(
+            reader.reset(m_NetICacheClient.GetReadStream(
                     m_Opts.icache_key.key,
                     m_Opts.icache_key.version,
                     m_Opts.icache_key.subkey,
                     NULL,
-                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_blob_password = m_Opts.password)));
             break;
         case OPTION_N(1) | OPTION_N(0): /* use password and offset */
-            reader.reset(CNetICachePasswordGuard(m_NetICacheClient,
-                m_Opts.password)->GetReadStreamPart(
+            reader.reset(m_NetICacheClient.GetReadStreamPart(
                     m_Opts.icache_key.key,
                     m_Opts.icache_key.version,
                     m_Opts.icache_key.subkey,
                     m_Opts.offset,
                     m_Opts.size,
                     NULL,
-                    nc_caching_mode = CNetCacheAPI::eCaching_Disable));
+                    (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
+                    nc_blob_password = m_Opts.password)));
         }
         if (!version_is_defined)
             NcbiCerr << "Blob version: " <<
@@ -389,17 +389,17 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
         ParseICacheKey();
 
         writer.reset(IsOptionSet(ePassword) ?
-            CNetICachePasswordGuard(m_NetICacheClient,
-                m_Opts.password)->GetNetCacheWriter(
+            m_NetICacheClient.GetNetCacheWriter(
                     m_Opts.icache_key.key,
                     m_Opts.icache_key.version,
                     m_Opts.icache_key.subkey,
-                    nc_blob_ttl = m_Opts.ttl) :
+                    (nc_blob_ttl = m_Opts.ttl,
+                    nc_blob_password = m_Opts.password)) :
             m_NetICacheClient.GetNetCacheWriter(
-                m_Opts.icache_key.key,
-                m_Opts.icache_key.version,
-                m_Opts.icache_key.subkey,
-                nc_blob_ttl = m_Opts.ttl));
+                    m_Opts.icache_key.key,
+                    m_Opts.icache_key.version,
+                    m_Opts.icache_key.subkey,
+                    nc_blob_ttl = m_Opts.ttl));
     }
 
     if (!writer.get()) {

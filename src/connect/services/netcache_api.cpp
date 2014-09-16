@@ -465,21 +465,6 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     }
 }
 
-CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
-    const string& password)
-{
-    if (!nc_api->m_DefaultParameters.GetPassword().empty()) {
-        NCBI_THROW(CNetCacheException, eAuthenticationError,
-            "Cannot reuse a password-protected NetCache API object.");
-    }
-    if (password.empty())
-        m_NetCacheAPI = nc_api;
-    else {
-        m_NetCacheAPI = new SNetCacheAPIImpl(*nc_api);
-        m_NetCacheAPI->m_DefaultParameters.SetPassword(password);
-    }
-}
-
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
         const string& conf_section /* = kEmptyStr */,
         CNetScheduleAPI::TInstance ns_api) :

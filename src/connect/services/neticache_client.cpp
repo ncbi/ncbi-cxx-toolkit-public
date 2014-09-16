@@ -218,22 +218,6 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
     icache_impl->m_ICacheCmdPrefix.append(") ");
 }
 
-CNetICachePasswordGuard::CNetICachePasswordGuard(
-    CNetICacheClient::TInstance ic_client,
-    const string& password)
-{
-    if (!ic_client->m_DefaultParameters.GetPassword().empty()) {
-        NCBI_THROW(CNetCacheException, eAuthenticationError,
-            "Cannot reuse a password-protected CNetICacheClient object.");
-    }
-    if (password.empty())
-        m_NetICacheClient = ic_client;
-    else {
-        m_NetICacheClient = new SNetICacheClientImpl(*ic_client);
-        m_NetICacheClient->m_DefaultParameters.SetPassword(password);
-    }
-}
-
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
     CNetCacheWriter* nc_writer, const CNetCacheAPIParameters* parameters)
 {

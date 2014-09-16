@@ -328,18 +328,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     void SetEventHandler(INetEventHandler* event_handler);
 };
 
-class NCBI_NET_CACHE_EXPORT CNetICachePasswordGuard
-{
-public:
-    CNetICachePasswordGuard(CNetICacheClient::TInstance ic_client,
-        const string& password);
-
-    CNetICacheClient* operator ->() {return &m_NetICacheClient;}
-
-private:
-    CNetICacheClient m_NetICacheClient;
-};
-
 extern NCBI_NET_CACHE_EXPORT const char* const kNetICacheDriverName;
 
 extern "C"
