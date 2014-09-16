@@ -288,15 +288,15 @@ static bool IsValidHitID(const string& hit) {
 
 void CRequestContext::SetHitID(const string& hit)
 {
+    static CSafeStatic<TOnBadHitId> action;
     if ( !IsValidHitID(hit) ) {
-        EOnBadHitID action = TOnBadHitId::GetDefault();
-        switch ( action ) {
+        switch ( action->Get() ) {
         case eOnBadPHID_Ignore:
             return;
         case eOnBadPHID_AllowAndReport:
         case eOnBadPHID_IgnoreAndReport:
             ERR_POST_X(27, "Bad hit ID format: " << hit);
-            if (action == eOnBadPHID_IgnoreAndReport) {
+            if (action->Get() == eOnBadPHID_IgnoreAndReport) {
                 return;
             }
             break;

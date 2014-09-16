@@ -123,17 +123,15 @@ NCBI_PARAM_ENUM_DEF_EX(EDiagSev,
                        EXCEPTION_STACK_TRACE_LEVEL);
 typedef NCBI_PARAM_TYPE(EXCEPTION, Stack_Trace_Level) TStackTraceLevelParam;
 
-static TStackTraceLevelParam s_StackTraceLevel;
-
 void CException::SetStackTraceLevel(EDiagSev level)
 {
-    s_StackTraceLevel.Set(level);
+    TStackTraceLevelParam::SetDefault(level);
 }
 
 
 EDiagSev CException::GetStackTraceLevel(void)
 {
-    return s_StackTraceLevel.Get();
+    return TStackTraceLevelParam::GetDefault();
 }
 
 
@@ -146,7 +144,7 @@ NCBI_PARAM_DEF_EX(bool,
                   EXCEPTION_ABORT_IF_CRITICAL);
 typedef NCBI_PARAM_TYPE(EXCEPTION, Abort_If_Critical) TAbortIfCritical;
 
-static TAbortIfCritical s_AbortIfCritical;
+static CSafeStatic<TAbortIfCritical> s_AbortIfCritical;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -169,7 +167,7 @@ CException::CException(const CDiagCompileInfo& info,
   m_Flags(0)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
-        s_AbortIfCritical.Get()) {
+        s_AbortIfCritical->Get()) {
         abort();
     }
     x_Init(info, message, prev_exception, severity);
@@ -190,7 +188,7 @@ CException::CException(const CDiagCompileInfo& info,
   m_Flags(args.GetFlags())
 {
     if (CompareDiagPostLevel(m_Severity, eDiag_Critical) >= 0  &&
-        s_AbortIfCritical.Get()) {
+        s_AbortIfCritical->Get()) {
         abort();
     }
     x_Init(info, message, prev_exception, m_Severity);
@@ -285,7 +283,7 @@ void CException::AddPrevious(const CException* prev_exception)
 CException& CException::SetSeverity(EDiagSev severity)
 {
     if (CompareDiagPostLevel(severity, eDiag_Critical) >= 0  &&
-        s_AbortIfCritical.Get()) {
+        s_AbortIfCritical->Get()) {
         abort();
     }
     m_Severity = severity;

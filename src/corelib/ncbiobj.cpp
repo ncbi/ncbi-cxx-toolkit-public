@@ -895,9 +895,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, ABORT_ON_COBJECT_THROW, false,
 void CObjectException::x_InitErrCode(CException::EErrCode err_code)
 {
     CCoreException::x_InitErrCode(err_code);
-    static const bool sx_abort_on_throw =
-        NCBI_PARAM_TYPE(NCBI, ABORT_ON_COBJECT_THROW)::GetDefault();
-    if ( sx_abort_on_throw ) {
+    if ( NCBI_PARAM_TYPE(NCBI, ABORT_ON_COBJECT_THROW)::GetDefault() ) {
         Abort();
     }
 }
@@ -914,15 +912,14 @@ void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 NCBI_PARAM_DECL(bool, NCBI, ABORT_ON_NULL);
 NCBI_PARAM_DEF_EX(bool, NCBI, ABORT_ON_NULL, false,
                   eParam_NoThread, NCBI_ABORT_ON_NULL);
-static const bool sx_abort_on_null =
-    NCBI_PARAM_TYPE(NCBI, ABORT_ON_NULL)::GetDefault();
+typedef NCBI_PARAM_TYPE(NCBI, ABORT_ON_NULL) TAbortOnNull;
 
 void CObject::ThrowNullPointerException(void)
 {
 #ifdef _DEBUG
     ERR_POST(Error << "NULL pointer exception: " << CStackTrace());
 #endif
-    if ( sx_abort_on_null ) {
+    if ( TAbortOnNull::GetDefault() ) {
         Abort();
     }
     NCBI_EXCEPTION_VAR(ex,
@@ -937,7 +934,7 @@ void CObject::ThrowNullPointerException(const type_info& type)
 #ifdef _DEBUG
     ERR_POST(Error << "NULL pointer exception: " << CStackTrace());
 #endif
-    if ( sx_abort_on_null ) {
+    if ( TAbortOnNull::GetDefault() ) {
         Abort();
     }
     NCBI_EXCEPTION_VAR(ex,
