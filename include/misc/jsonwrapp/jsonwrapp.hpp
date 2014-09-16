@@ -132,6 +132,9 @@ public:
     CJson_ConstNode(const CJson_ConstNode& n);
     CJson_ConstNode& operator=(const CJson_ConstNode& n);
 
+    bool operator!=(const CJson_ConstNode& n) const;
+    bool operator==(const CJson_ConstNode& n) const;
+
 protected:
     CJson_ConstNode(void) : m_Impl(0) {
     }
@@ -367,6 +370,9 @@ public:
     CJson_ConstArray(const CJson_ConstArray& n);
     CJson_ConstArray& operator=(const CJson_ConstArray& n);
 
+    bool operator!=(const CJson_ConstArray& n) const;
+    bool operator==(const CJson_ConstArray& n) const;
+
 protected:
     CJson_ConstArray(void)  {
     }
@@ -599,6 +605,9 @@ public:
     CJson_ConstObject(const CJson_ConstObject& v);
     CJson_ConstObject& operator=(const CJson_ConstObject& v);
 
+    bool operator!=(const CJson_ConstObject& n) const;
+    bool operator==(const CJson_ConstObject& n) const;
+
 protected:
     CJson_ConstObject(void) {
     }
@@ -816,7 +825,7 @@ private:
 /// Serializable, copyable container for JSON data.
 /// To be serializable, root value should be array or object type only.
 
-class CJson_Document : public CJson_Node
+class CJson_Document : public CJson_Value
 {
     typedef rapidjson::Document _DocImpl;
 
@@ -824,9 +833,13 @@ public:
     CJson_Document(CJson_Value::EJsonType type = CJson_Value::eObject);
     CJson_Document(const CJson_Document& v);
     CJson_Document& operator=(const CJson_Document& v);
+
+    CJson_Document(const CJson_ConstNode& v);
+    CJson_Document& operator=(const CJson_ConstNode& v);
+
     ~CJson_Document(void) {
     }
-    
+
     /// Read JSON data from a stream
     bool Read(std::istream& in);
 
@@ -912,6 +925,25 @@ inline CJson_ConstNode&
 CJson_ConstNode::operator=(const CJson_ConstNode& n) {
     m_Impl = n.m_Impl; return *this;
 }
+inline bool
+CJson_ConstNode::operator==(const CJson_ConstNode& n) const
+{
+    if (IsNull()) {
+        return n.IsNull();
+    } else if (IsValue()) {
+        return n.IsValue() && ToString() == n.ToString();
+    } else if (IsArray()) {
+        return n.IsArray() && GetArray() == n.GetArray();
+    } else if (IsObject()) {
+        return n.IsObject() && GetObject() == n.GetObject();
+    }
+    return false;
+}
+inline bool
+CJson_ConstNode::operator!=(const CJson_ConstNode& n) const
+{
+    return !this->operator==(n);
+}
 
 inline CJson_Node::CJson_Node(const CJson_Node& n)
     :  CJson_ConstNode(n) {
@@ -920,6 +952,7 @@ inline CJson_Node&
 CJson_Node::operator=(const CJson_Node& n) {
     CJson_ConstNode::operator=(n); return *this;
 }
+
 
 inline CJson_Node::EJsonType
 CJson_ConstNode::GetType(void) const {
@@ -1110,6 +1143,24 @@ inline CJson_ConstArray&
 CJson_ConstArray::operator=(const CJson_ConstArray& n) {
     CJson_ConstNode::operator=(n); return *this;
 }
+inline bool
+CJson_ConstArray::operator==(const CJson_ConstArray& n) const {
+    if (size() != n.size()) {
+        return false;
+    }
+    size_t i = 0, c = size();
+    for(; i<c; ++i) {
+        if ( at(i) != n.at(i)) {
+            return false;
+        }
+    }
+    return true;
+}
+inline bool
+CJson_ConstArray::operator!=(const CJson_ConstArray& n) const {
+    return !this->operator==(n);
+}
+
 inline CJson_Array::CJson_Array( const CJson_Array& n)
     :  CJson_Node(n) {
 }
@@ -1357,6 +1408,26 @@ inline CJson_ConstObject::CJson_ConstObject( const CJson_ConstObject& n)
 inline CJson_ConstObject&
 CJson_ConstObject::operator=(const CJson_ConstObject& n) {
     CJson_ConstNode::operator=(n); return *this;
+}
+inline bool
+CJson_ConstObject::operator==(const CJson_ConstObject& n) const
+{
+    if (size() != n.size()) {
+        return false;
+    }
+    const_iterator i = begin(), e = end();
+    for ( ; i != e; ++i) {
+        const_iterator another = n.find(i->name);
+        if (another == n.end() || another->value != i->value) {
+            return false;
+        }
+    }
+    return true;
+}
+inline bool
+CJson_ConstObject::operator!=(const CJson_ConstObject& n) const
+{
+    return !this->operator==(n);
 }
 inline CJson_Object::CJson_Object( const CJson_Object& n)
     :  CJson_Node(n) {
@@ -1868,9 +1939,18 @@ inline CJson_Document::CJson_Document( CJson_Value::EJsonType type) {
 }
 inline CJson_Document::CJson_Document(const CJson_Document& v) {
     m_DocImpl.AssignCopy(v.m_DocImpl);
+    m_Impl = &m_DocImpl;
 }
 inline CJson_Document& CJson_Document::operator=(const CJson_Document& v) {
     m_DocImpl.AssignCopy(v.m_DocImpl);
+    return *this;
+}
+inline CJson_Document::CJson_Document(const CJson_ConstNode& v) {
+    m_DocImpl.AssignCopy(*v.m_Impl);
+    m_Impl = &m_DocImpl;
+}
+inline CJson_Document& CJson_Document::operator=(const CJson_ConstNode& v) {
+    m_DocImpl.AssignCopy(*v.m_Impl);
     return *this;
 }
 

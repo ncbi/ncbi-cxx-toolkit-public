@@ -297,6 +297,9 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         CJson_Array a2 = a1.push_back_array();
         a2.push_back(2);
         a2.push_back("three");
+        CJson_Object o4 = a1.push_back_object();
+        o4["one"].SetValue().SetInt4(1);
+        o4["two"].SetValue().SetString("2");
         a1.push_back("last");
     }
 
@@ -394,13 +397,13 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         obj["obj2"].SetObject().at("obj3").SetObject().at("array").SetArray();
 
     BOOST_CHECK(!arr.empty());
-    BOOST_CHECK(arr.size() == 6);
+    BOOST_CHECK(arr.size() == 7);
     BOOST_CHECK(arr.back().GetValue().IsString());
     arr.push_back();
-    BOOST_CHECK(arr.size() == 7);
+    BOOST_CHECK(arr.size() == 8);
     BOOST_CHECK(arr.back().IsNull());
     arr.pop_back();
-    BOOST_CHECK(arr.size() == 6);
+    BOOST_CHECK(arr.size() == 7);
     BOOST_CHECK(arr.back().GetValue().IsString());
     BOOST_CHECK(arr.front().GetValue().IsNumber());
     BOOST_CHECK(arr[2].GetValue().IsBool());
@@ -503,6 +506,20 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
     }
 
     string filename( CDirEntry::GetTmpName() );
+
+    for (CJson_Array::const_iterator i = arr.begin(); i != arr.end(); ++i) {
+        CJson_Document doct(*i);
+        ofstream ofs(filename.c_str());
+        ofs << doct;
+        ofs.close();
+        ifstream ifs(filename.c_str());
+        if (ifs.is_open()) {
+            CJson_Document doct2;
+            ifs >> doct2;
+            BOOST_CHECK(doct == doct2);
+        }
+    }
+
     {
         ofstream ofs(filename.c_str());
         ofs << doc;
