@@ -69,9 +69,8 @@ NCBI_PARAM_DEF_EX(bool, OBJMGR, SCOPE_AUTORELEASE, true,
 
 static bool s_GetScopeAutoReleaseEnabled(void)
 {
-    static const bool sx_Value =
-        NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE)::GetDefault();
-    return sx_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE)> sx_Value;
+    return sx_Value->Get();
 }
 
 
@@ -81,9 +80,8 @@ NCBI_PARAM_DEF_EX(unsigned, OBJMGR, SCOPE_AUTORELEASE_SIZE, 10,
 
 static unsigned s_GetScopeAutoReleaseSize(void)
 {
-    static const unsigned sx_Value =
-        NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE_SIZE)::GetDefault();
-    return sx_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE_SIZE)> sx_Value;
+    return sx_Value->Get();
 }
 
 
@@ -93,9 +91,8 @@ NCBI_PARAM_DEF_EX(int, OBJMGR, SCOPE_POSTPONE_DELETE, 1,
 
 static int s_GetScopePostponeDelete(void)
 {
-    static const int sx_Value =
-        NCBI_PARAM_TYPE(OBJMGR, SCOPE_POSTPONE_DELETE)::GetDefault();
-    return sx_Value;
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJMGR, SCOPE_POSTPONE_DELETE)> sx_Value;
+    return sx_Value->Get();
 }
 
 
