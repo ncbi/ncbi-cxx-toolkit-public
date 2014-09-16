@@ -65,7 +65,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static bool s_DiagUseRWLock = false;
+static bool s_DiagUseRWLock = true;
 DEFINE_STATIC_MUTEX(s_DiagMutex);
 DEFINE_STATIC_MUTEX(s_DiagPostMutex);
 static CSafeStatic<CRWLock> s_DiagRWLock;
@@ -74,22 +74,36 @@ static CSafeStatic<CAtomicCounter_WithAutoInit> s_ReopenEntered;
 DEFINE_STATIC_FAST_MUTEX(s_ApproveMutex);
 
 
-void g_Diag_Use_RWLock(void)
+void g_Diag_Use_RWLock(bool enable)
 {
-    if (s_DiagUseRWLock) return; // already switched
+    if (s_DiagUseRWLock == enable) return; // already switched
     // Try to detect at least some dangerous situations.
     // This does not guarantee safety since some thread may
-    // be waiting for the mutex while we switch to RW-lock.
-    bool diag_mutex_unlocked = s_DiagMutex.TryLock();
-    // Mutex is locked - fail
-    _ASSERT(diag_mutex_unlocked);
-    if (!diag_mutex_unlocked) {
-        _TROUBLE;
-        NCBI_THROW(CCoreException, eCore,
-                   "Cannot switch diagnostic to RW-lock - mutex is locked.");
+    // be waiting for lock while we switch to the new method.
+    if ( enable ) {
+        bool diag_unlocked = s_DiagMutex.TryLock();
+        // Mutex is locked - fail
+        _ASSERT(diag_unlocked);
+        if (!diag_unlocked) {
+            _TROUBLE;
+            NCBI_THROW(CCoreException, eCore,
+                       "Cannot switch diagnostic to RW-lock - mutex is locked.");
+        }
+        s_DiagMutex.Unlock();
     }
-    s_DiagUseRWLock = true;
-    s_DiagMutex.Unlock();
+    else {
+        // Switch from RW-lock to mutex
+        bool diag_unlocked = s_DiagRWLock->TryWriteLock();
+        // RW-lock is locked - fail
+        _ASSERT(diag_unlocked);
+        if (!diag_unlocked) {
+            _TROUBLE;
+            NCBI_THROW(CCoreException, eCore,
+                       "Cannot switch diagnostic to mutex - RW-lock is locked.");
+        }
+        s_DiagRWLock->Unlock();
+    }
+    s_DiagUseRWLock = enable;
 }
 
 
@@ -1410,10 +1424,12 @@ void CDiagContext::x_CreateUID(void) const
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(s_CreateGUIDMutex);
+
 CDiagContext::TUID CDiagContext::GetUID(void) const
 {
     if ( !m_UID ) {
-        CDiagLock lock(CDiagLock::eWrite);
+        CFastMutexGuard guard(s_CreateGUIDMutex);
         if ( !m_UID ) {
             x_CreateUID();
         }
@@ -6209,22 +6225,61 @@ CAsyncDiagThread::~CAsyncDiagThread(void)
 {}
 
 
-const size_t kMessageBufSize = 1048576; // 1M
+NCBI_PARAM_DECL(size_t, Diag, Async_Buffer_Size);
+NCBI_PARAM_DEF_EX(size_t, Diag, Async_Buffer_Size, 32768,
+    eParam_NoThread, DIAG_ASYNC_BUFFER_SIZE);
+typedef NCBI_PARAM_TYPE(Diag, Async_Buffer_Size) TAsyncBufferSizeParam;
+
+NCBI_PARAM_DECL(size_t, Diag, Async_Buffer_Max_Lines);
+NCBI_PARAM_DEF_EX(size_t, Diag, Async_Buffer_Max_Lines, 100,
+    eParam_NoThread, DIAG_ASYNC_BUFFER_MAX_LINES);
+typedef NCBI_PARAM_TYPE(Diag, Async_Buffer_Max_Lines) TAsyncBufferMaxLinesParam;
+
 
 struct SMessageBuffer
 {
-    char data[kMessageBufSize];
+    char* data;
+    size_t size;
     size_t pos;
+    size_t lines;
+    size_t max_lines;
 
-    SMessageBuffer(void) : pos(0) {}
+    SMessageBuffer(void)
+        : data(0), size(0), pos(0), lines(0)
+    {
+        size = TAsyncBufferSizeParam::GetDefault();
+        if ( size ) {
+            data = new char[size];
+        }
+        max_lines = TAsyncBufferMaxLinesParam::GetDefault();
+    }
+
+    ~SMessageBuffer(void)
+    {
+        if ( data ) {
+            delete[](data);
+        }
+    }
+
+    bool IsEmpty(void)
+    {
+        return pos != 0;
+    }
+
+    void Clear(void)
+    {
+        pos = 0;
+        lines = 0;
+    }
 
     bool Append(const string& str)
     {
-        if (pos + str.size() >= kMessageBufSize) {
+        if (!size  ||  pos + str.size() >= size  ||  lines >= max_lines) {
             return false;
         }
         memcpy(&data[pos], str.data(), str.size());
         pos += str.size();
+        lines++;
         return true;
     }
 };
@@ -6232,8 +6287,8 @@ struct SMessageBuffer
 
 /// Number of messages processed as a single batch by the asynchronous
 /// handler.
-NCBI_PARAM_DECL(Uint4, Diag, Async_Batch_Size);
-NCBI_PARAM_DEF_EX(Uint4, Diag, Async_Batch_Size, 10, eParam_NoThread,
+NCBI_PARAM_DECL(int, Diag, Async_Batch_Size);
+NCBI_PARAM_DEF_EX(int, Diag, Async_Batch_Size, 10, eParam_NoThread,
                   DIAG_ASYNC_BATCH_SIZE);
 typedef NCBI_PARAM_TYPE(Diag, Async_Batch_Size) TAsyncBatchSizeParam;
 
@@ -6249,7 +6304,7 @@ CAsyncDiagThread::Main(void)
 #endif
     }
 
-    const size_t batch_size = TAsyncBatchSizeParam::GetDefault();
+    const int batch_size = TAsyncBatchSizeParam::GetDefault();
 
     const size_t buf_count = size_t(eDiagFile_All) + 1;
     SMessageBuffer* buffers[buf_count];
@@ -6276,7 +6331,7 @@ CAsyncDiagThread::Main(void)
         }}
 
 drain_messages:
-        size_t queue_counter = 0;
+        int queue_counter = 0;
         while (!save_msgs.empty()) {
             SAsyncDiagMessage msg = save_msgs.front();
             save_msgs.pop_front();
@@ -6286,10 +6341,18 @@ drain_messages:
                     buf = new SMessageBuffer;
                     buffers[msg.m_FileType] = buf;
                 }
-                if ( !buf->Append(*msg.m_Composed) ) {
-                    // Not enough space in the buffer, try to flush.
-                    m_SubHandler->WriteMessage(buf->data, buf->pos, msg.m_FileType);
-                    buf->pos = 0;
+                if ( !buf->size ) {
+                    // Do not use buffering.
+                    m_SubHandler->WriteMessage(msg.m_Composed->data(),
+                        msg.m_Composed->size(), msg.m_FileType);
+                }
+                else if ( !buf->Append(*msg.m_Composed) ) {
+                    // Not enough space in the buffer or no waiters,
+                    // try to flush if not empty.
+                    if ( !buf->IsEmpty() ) {
+                        m_SubHandler->WriteMessage(buf->data, buf->pos, msg.m_FileType);
+                        buf->Clear();
+                    }
                     if ( !buf->Append(*msg.m_Composed) ) {
                         // The message is too long to fit in the buffer.
                         m_SubHandler->WriteMessage(msg.m_Composed->data(),
@@ -6315,6 +6378,19 @@ drain_messages:
                 }
             }
         }
+        // Flush all buffers when the queue is empty and there are no waiters.
+        if (m_CntWaiters == 0) {
+            for (size_t i = 0; i < buf_count; ++i) {
+                if ( !buffers[i] ) {
+                    continue;
+                }
+                if ( !buffers[i]->IsEmpty() ) {
+                    m_SubHandler->WriteMessage(buffers[i]->data,
+                        buffers[i]->pos, EDiagFileType(i));
+                    buffers[i]->Clear();
+                }
+            }
+        }
     }
     if (m_MsgQueue.size() != 0) {
         save_msgs.swap(m_MsgQueue);
@@ -6325,7 +6401,7 @@ drain_messages:
         if ( !buffers[i] ) {
             continue;
         }
-        if ( buffers[i]->pos ) {
+        if ( !buffers[i]->IsEmpty() ) {
             m_SubHandler->WriteMessage(buffers[i]->data,
                 buffers[i]->pos, EDiagFileType(i));
         }
