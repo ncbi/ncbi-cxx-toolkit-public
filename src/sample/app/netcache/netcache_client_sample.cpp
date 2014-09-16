@@ -247,7 +247,7 @@ void CSampleNetCacheClient::DemoStream(void)
         *os << "line three" << NcbiEndl;
         NcbiCout << "Wrote three lines to blob: " << key << NcbiEndl;
 
-        // Streams are not written to the NetCache server until the stream
+        // Blobs are not finalized on the server side until the stream
         // is deleted.  So you could call os.reset() if you wanted to
         // access the blob in the same scope as the stream auto_ptr.
         //os.reset(); // not necessary in this example
@@ -359,9 +359,9 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
                 << "' to blob: " << key << NcbiEndl;
         }
 
-        // Writers do not actually write to the NetCache server until the
+        // The blob is not committed on the server side until the
         // writer is deleted or explicitly closed.
-        //writer->Close(); // not necessary in this example
+        writer->Close();
     }}
 
     // Read some data from NetCache.  This example just demonstrates how to
