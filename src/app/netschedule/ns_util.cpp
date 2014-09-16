@@ -758,20 +758,6 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
         }
     }
 
-    bool    run_timeout_precision_ok = NS_ValidateDouble(reg, section,
-                                                     "run_timeout_precision");
-    well_formed = well_formed && run_timeout_precision_ok;
-    if (run_timeout_precision_ok) {
-        double  value = reg.GetDouble(section, "run_timeout_precision",
-                                      double(default_run_timeout_precision));
-        if (value < 0.0) {
-            well_formed = false;
-            ERR_POST(g_LogPrefix << " value " <<
-                     NS_RegValName(section, "run_timeout_precision") <<
-                     " must be >= 0.0");
-        }
-    }
-
     well_formed = well_formed && NS_ValidateString(reg, section,
                                                    "program");
 

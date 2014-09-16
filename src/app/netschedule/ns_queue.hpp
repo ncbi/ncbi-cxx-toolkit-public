@@ -628,8 +628,6 @@ private:
     mutable CFastMutex          m_ParamLock;
     CNSPreciseTime              m_Timeout;         // Result exp. timeout
     CNSPreciseTime              m_RunTimeout;      // Execution timeout
-    // Its precision, set at startup only, not reconfigurable
-    CNSPreciseTime              m_RunTimeoutPrecision;
     CNSPreciseTime              m_ReadTimeout;
     // How many attempts to make on different nodes before failure
     unsigned                    m_FailedRetries;

@@ -120,6 +120,8 @@ struct SQueueParameters
     string GetPrintableParameters(bool  include_class,
                                   bool  url_encoded) const;
     string ConfigSection(bool is_class) const;
+    CNSPreciseTime  CalculateRuntimePrecision(void) const;
+
 
     // Parameters are always: registry and section name
     CNSPreciseTime  ReadTimeout(const IRegistry &, const string &);
@@ -151,7 +153,6 @@ struct SQueueParameters
     CNSPreciseTime  ReadMaxPendingWaitTimeout(const IRegistry &,
                                               const string &);
     string          ReadDescription(const IRegistry &, const string &);
-    CNSPreciseTime  ReadRunTimeoutPrecision(const IRegistry &, const string &);
     bool            ReadScrambleJobKeys(const IRegistry &, const string &);
     CNSPreciseTime  ReadClientRegistryTimeoutWorkerNode(const IRegistry &,
                                                         const string &);

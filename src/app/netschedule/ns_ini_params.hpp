@@ -97,7 +97,6 @@ const unsigned int      max_dump_aff_buffer_size = 10000;
 const unsigned int      default_dump_group_buffer_size = 100;
 const unsigned int      max_dump_group_buffer_size = 10000;
 const CNSPreciseTime    default_run_timeout(3600, 0);
-const CNSPreciseTime    default_run_timeout_precision(3, 0);
 const CNSPreciseTime    default_read_timeout(10, 0);
 const unsigned int      default_failed_retries = 0;
 const CNSPreciseTime    default_blacklist_time = CNSPreciseTime(2147483647, 0);

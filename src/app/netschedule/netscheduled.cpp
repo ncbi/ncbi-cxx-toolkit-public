@@ -219,13 +219,16 @@ int CNetScheduleDApp::Run(void)
 
     // [queue_*], [qclass_*] and [queues] sections
     // Scan and mount queues
-    string        diff;
-    unsigned int  min_run_timeout = qdb->Configure(reg, diff);
+    string          unused_diff;
+    CNSPreciseTime  min_run_timeout = qdb->Configure(reg, unused_diff);
 
-    min_run_timeout = min_run_timeout > 0 ? min_run_timeout : 2;
+    if (min_run_timeout < CNSPreciseTime(0.2))
+        min_run_timeout = CNSPreciseTime(0.2);
+
     LOG_POST(Message << Warning
                      << "Checking running jobs expiration: every "
-                     << min_run_timeout << " seconds");
+                     << NS_FormatPreciseTimeAsSec(min_run_timeout)
+                     << " seconds");
 
     // Save the process PID if PID is given
     if (!x_WritePid())

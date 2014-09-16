@@ -445,9 +445,6 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
             CNSPreciseTime(m_QueueDescriptionDB.max_pending_wait_timeout_sec,
                            m_QueueDescriptionDB.max_pending_wait_timeout_nsec);
         params.description = m_QueueDescriptionDB.description;
-        params.run_timeout_precision =
-            CNSPreciseTime(m_QueueDescriptionDB.run_timeout_precision_sec,
-                           m_QueueDescriptionDB.run_timeout_precision_nsec);
         params.scramble_job_keys =
                             (m_QueueDescriptionDB.scramble_job_keys != 0);
 
@@ -580,10 +577,6 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.max_pending_wait_timeout_nsec =
                                 params.max_pending_wait_timeout.NSec();
     m_QueueDescriptionDB.description = params.description;
-    m_QueueDescriptionDB.run_timeout_precision_sec =
-                                params.run_timeout_precision.Sec();
-    m_QueueDescriptionDB.run_timeout_precision_nsec =
-                                params.run_timeout_precision.NSec();
     m_QueueDescriptionDB.scramble_job_keys = params.scramble_job_keys;
 
 
@@ -822,9 +815,6 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "description")
                 params.description =
                     params.ReadDescription(reg, section_name);
-            else if (*val == "run_timeout_precision")
-                params.run_timeout_precision =
-                    params.ReadRunTimeoutPrecision(reg, section_name);
             else if (*val == "scramble_job_keys")
                 params.scramble_job_keys =
                     params.ReadScrambleJobKeys(reg, section_name);
@@ -1510,18 +1500,16 @@ time_t  CQueueDataBase::Configure(const IRegistry &  reg,
 
     // Calculate the new min_run_timeout: required at the time of loading
     // NetSchedule and not used while reconfiguring on the fly
-    time_t  min_run_timeout_precision = 3;
+    CNSPreciseTime      min_precision = kTimeNever;
     for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k)
-        min_run_timeout_precision =
-                std::min(min_run_timeout_precision,
-                         k->second.run_timeout_precision.Sec());
+        min_precision = std::min(min_precision,
+                                 k->second.CalculateRuntimePrecision());
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
          k != m_Queues.end(); ++k)
-        min_run_timeout_precision =
-                std::min(min_run_timeout_precision,
-                         k->second.first.run_timeout_precision.Sec());
-    return min_run_timeout_precision;
+        min_precision = std::min(min_precision,
+                                 k->second.first.CalculateRuntimePrecision());
+    return min_precision;
 }
 
 

@@ -93,8 +93,7 @@ SQueueParameters::SQueueParameters() :
     client_registry_timeout_reader(default_client_registry_timeout_reader),
     client_registry_min_readers(default_client_registry_min_readers),
     client_registry_timeout_unknown(default_client_registry_timeout_unknown),
-    client_registry_min_unknowns(default_client_registry_min_unknowns),
-    run_timeout_precision(default_run_timeout_precision)
+    client_registry_min_unknowns(default_client_registry_min_unknowns)
 {}
 
 
@@ -145,7 +144,6 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     client_registry_min_readers = ReadClientRegistryMinReaders(reg, sname);
     client_registry_timeout_unknown = ReadClientRegistryTimeoutUnknown(reg, sname);
     client_registry_min_unknowns = ReadClientRegistryMinUnknowns(reg, sname);
-    run_timeout_precision = ReadRunTimeoutPrecision(reg, sname);
     linked_sections = ReadLinkedSections(reg, sname);
     return;
 }
@@ -466,10 +464,6 @@ SQueueParameters::Diff(const SQueueParameters &  other,
         }
     }
 
-
-    // The run_timeout_precision parameter cannot be changed at run time so it
-    // is not compared here.
-
     return diff;
 }
 
@@ -542,7 +536,6 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "reader_timeout" + suffix + NS_FormatPreciseTimeAsSec(reader_timeout) + separator +
     prefix + "pending_timeout" + suffix + NS_FormatPreciseTimeAsSec(pending_timeout) + separator +
     prefix + "max_pending_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + separator +
-    prefix + "run_timeout_precision" + suffix + NS_FormatPreciseTimeAsSec(run_timeout_precision) + separator +
     prefix + "scramble_job_keys" + suffix + NStr::BoolToString(scramble_job_keys) + separator +
     prefix + "client_registry_timeout_worker_node" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node) + separator +
     prefix + "client_registry_min_worker_nodes" + suffix + NStr::NumericToString(client_registry_min_worker_nodes) + separator +
@@ -600,7 +593,6 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "dump_group_buffer_size=\"" + NStr::NumericToString(dump_group_buffer_size) + "\"\n"
     "run_timeout=\"" + NS_FormatPreciseTimeAsSec(run_timeout) + "\"\n"
     "read_timeout=\"" + NS_FormatPreciseTimeAsSec(read_timeout) + "\"\n"
-    "run_timeout_precision=\"" + NS_FormatPreciseTimeAsSec(run_timeout_precision) + "\"\n"
     "program=\"" + program_name + "\"\n"
     "failed_retries=\"" + NStr::NumericToString(failed_retries) + "\"\n"
     "read_failed_retries=\"" + NStr::NumericToString(read_failed_retries) + "\"\n"
@@ -632,6 +624,27 @@ string SQueueParameters::ConfigSection(bool is_class) const
         result += k->first + "=\"" + NStr::PrintableString(k->second) + "\"\n";
 
     return result;
+}
+
+
+CNSPreciseTime
+SQueueParameters::CalculateRuntimePrecision(void) const
+{
+    // Min(run_timeout, read_timeout) / 10
+    // but no less that 0.2 seconds
+    CNSPreciseTime      min_timeout = run_timeout;
+    if (read_timeout < min_timeout)
+        min_timeout = read_timeout;
+
+    // Divide by ten
+    min_timeout.tv_sec = min_timeout.tv_sec / 10;
+    min_timeout.tv_nsec = min_timeout.tv_nsec / 10;
+    min_timeout.tv_nsec += (min_timeout.tv_sec % 10) * (kNSecsPerSecond / 10);
+
+    static CNSPreciseTime       limit(0.2);
+    if (min_timeout < limit)
+        return limit;
+    return min_timeout;
 }
 
 
@@ -930,25 +943,12 @@ SQueueParameters::ReadDescription(const IRegistry &  reg,
     return reg.GetString(sname, "description", kEmptyStr);
 }
 
-CNSPreciseTime
-SQueueParameters::ReadRunTimeoutPrecision(const IRegistry &  reg,
-                                          const string &     sname)
-{
-    double  val = GetDoubleNoErr("run_timeout_precision",
-                                 double(default_run_timeout_precision));
-    if (val < 0)
-        val = 3.0;
-    return CNSPreciseTime(val);
-}
-
-
 bool
 SQueueParameters::ReadScrambleJobKeys(const IRegistry &  reg,
                                       const string &     sname)
 {
     return GetBoolNoErr("scramble_job_keys", false);
 }
-
 
 CNSPreciseTime
 SQueueParameters::ReadClientRegistryTimeoutWorkerNode(const IRegistry &  reg,

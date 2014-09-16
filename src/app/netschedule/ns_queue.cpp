@@ -231,11 +231,13 @@ void CQueue::SetParameters(const SQueueParameters &  params)
 
     m_Timeout    = params.timeout;
     m_RunTimeout = params.run_timeout;
-    if (params.run_timeout && !m_RunTimeLine) {
+    if (!m_RunTimeLine) {
         // One time only. Precision can not be reset.
-        m_RunTimeLine =
-            new CJobTimeLine(params.run_timeout_precision.Sec(), 0);
-        m_RunTimeoutPrecision = params.run_timeout_precision;
+        CNSPreciseTime  precision = params.CalculateRuntimePrecision();
+        unsigned int    interval_sec = precision.Sec();
+        if (interval_sec < 1)
+            interval_sec = 1;
+        m_RunTimeLine = new CJobTimeLine(interval_sec, 0);
     }
 
     m_ReadTimeout           = params.read_timeout;
