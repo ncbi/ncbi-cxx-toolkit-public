@@ -89,8 +89,8 @@ NCBI_PARAM_DEF_EX(int, BAM_LOADER, DEBUG, 0,
 
 static int GetDebugLevel(void)
 {
-    static NCBI_PARAM_TYPE(BAM_LOADER, DEBUG) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(BAM_LOADER, DEBUG)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -112,8 +112,8 @@ void CBAMDataLoader::SetPileupGraphsParamDefault(bool param)
 
 static bool GetPileupGraphsParam(void)
 {
-    NCBI_PARAM_TYPE(BAM_LOADER, PILEUP_GRAPHS) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(BAM_LOADER, PILEUP_GRAPHS)> s_Value;
+    return s_Value->Get();
 }
 
 

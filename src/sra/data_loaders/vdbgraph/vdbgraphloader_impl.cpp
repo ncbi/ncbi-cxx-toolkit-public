@@ -84,8 +84,8 @@ NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, DEBUG, 0,
 
 static int GetDebugLevel(void)
 {
-    static NCBI_PARAM_TYPE(VDBGRAPH_LOADER, DEBUG) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(VDBGRAPH_LOADER, DEBUG)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -95,8 +95,8 @@ NCBI_PARAM_DEF_EX(size_t, VDBGRAPH_LOADER, GC_SIZE, 10,
 
 static size_t GetGCSize(void)
 {
-    static NCBI_PARAM_TYPE(VDBGRAPH_LOADER, GC_SIZE) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(VDBGRAPH_LOADER, GC_SIZE)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -106,8 +106,8 @@ NCBI_PARAM_DEF_EX(size_t, VDBGRAPH_LOADER, MISSING_GC_SIZE, 10000,
 
 static size_t GetMissingGCSize(void)
 {
-    static NCBI_PARAM_TYPE(VDBGRAPH_LOADER, MISSING_GC_SIZE) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(VDBGRAPH_LOADER, MISSING_GC_SIZE)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -117,8 +117,8 @@ NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, USE_TABLE, 2,
 
 static int GetUseTable(void)
 {
-    static NCBI_PARAM_TYPE(VDBGRAPH_LOADER, USE_TABLE) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(VDBGRAPH_LOADER, USE_TABLE)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -128,8 +128,8 @@ NCBI_PARAM_DEF_EX(bool, VDBGRAPH_LOADER, DISABLE_ZOOM, false,
 
 static bool GetDisabledZoom(void)
 {
-    static NCBI_PARAM_TYPE(VDBGRAPH_LOADER, DISABLE_ZOOM) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(VDBGRAPH_LOADER, DISABLE_ZOOM)> s_Value;
+    return s_Value->Get();
 }
 
 

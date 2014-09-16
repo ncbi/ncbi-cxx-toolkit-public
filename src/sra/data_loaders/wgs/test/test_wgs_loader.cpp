@@ -64,7 +64,8 @@ NCBI_PARAM_DEF(int, WGS, REPORT_GENERAL_ID_ERROR, 0);
 
 static int GetReportGeneralIdError(void)
 {
-    return NCBI_PARAM_TYPE(WGS, REPORT_GENERAL_ID_ERROR)().Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(WGS, REPORT_GENERAL_ID_ERROR)> s_Value;
+    return s_Value->Get();
 }
 
 enum EMasterDescrType

@@ -88,8 +88,8 @@ NCBI_PARAM_DEF_EX(int, CSRA_LOADER, DEBUG, 0,
 
 static int GetDebugLevel(void)
 {
-    static NCBI_PARAM_TYPE(CSRA_LOADER, DEBUG) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, DEBUG)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -111,8 +111,8 @@ void CCSRADataLoader::SetPileupGraphsParamDefault(bool param)
 
 static bool GetPileupGraphsParam(void)
 {
-    NCBI_PARAM_TYPE(CSRA_LOADER, PILEUP_GRAPHS) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, PILEUP_GRAPHS)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -122,8 +122,8 @@ NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, QUALITY_GRAPHS, 0,
 
 static bool GetQualityGraphsParam(void)
 {
-    static NCBI_PARAM_TYPE(CSRA_LOADER, QUALITY_GRAPHS) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, QUALITY_GRAPHS)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -133,8 +133,8 @@ NCBI_PARAM_DEF_EX(int, CSRA_LOADER, MIN_MAP_QUALITY, 0,
 
 static int GetDefaultMinMapQuality(void)
 {
-    static NCBI_PARAM_TYPE(CSRA_LOADER, MIN_MAP_QUALITY) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, MIN_MAP_QUALITY)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -144,8 +144,8 @@ NCBI_PARAM_DEF_EX(int, CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS, 0,
 
 static int GetMaxSeparateSpotGroups(void)
 {
-    static NCBI_PARAM_TYPE(CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, MAX_SEPARATE_SPOT_GROUPS)> s_Value;
+    return s_Value->Get();
 }
 
 
@@ -155,8 +155,8 @@ NCBI_PARAM_DEF_EX(size_t, CSRA_LOADER, GC_SIZE, 10,
 
 static size_t GetGCSize(void)
 {
-    static NCBI_PARAM_TYPE(CSRA_LOADER, GC_SIZE) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA_LOADER, GC_SIZE)> s_Value;
+    return s_Value->Get();
 }
 
 

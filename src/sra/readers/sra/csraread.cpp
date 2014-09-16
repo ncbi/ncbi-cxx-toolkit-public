@@ -88,36 +88,36 @@ NCBI_PARAM_DEF_EX(bool, CSRA, PATH_IN_ID, true,
 
 static bool s_GetExplicitMateInfoParam(void)
 {
-    static NCBI_PARAM_TYPE(CSRA, EXPLICIT_MATE_INFO) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA, EXPLICIT_MATE_INFO)> s_Value;
+    return s_Value->Get();
 }
 
 
 static bool s_GetCigarInAlignExt(void)
 {
-    static NCBI_PARAM_TYPE(CSRA, CIGAR_IN_ALIGN_EXT) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA, CIGAR_IN_ALIGN_EXT)> s_Value;
+    return s_Value->Get();
 }
 
 
 static bool s_GetIncludeTechnicalReads(void)
 {
-    static NCBI_PARAM_TYPE(CSRA, INCLUDE_TECHNICAL_READS) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA, INCLUDE_TECHNICAL_READS)> s_Value;
+    return s_Value->Get();
 }
 
 
 static bool s_GetClipByQuality(void)
 {
-    static NCBI_PARAM_TYPE(CSRA, CLIP_BY_QUALITY) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA, CLIP_BY_QUALITY)> s_Value;
+    return s_Value->Get();
 }
 
 
 static bool s_GetPathInId(void)
 {
-    NCBI_PARAM_TYPE(CSRA, PATH_IN_ID) s_Value;
-    return s_Value.Get();
+    static CSafeStatic<NCBI_PARAM_TYPE(CSRA, PATH_IN_ID)> s_Value;
+    return s_Value->Get();
 }
 
 
