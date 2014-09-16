@@ -2992,6 +2992,17 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
                     ChangeMade(CCleanupChange::eChangeStrand);
                 }
             }
+
+            // normalize Seq-point fuzz tl to tr and decrement position
+            if (pnt.IsSetFuzz() && pnt.GetFuzz().IsLim() &&
+                pnt.GetFuzz().GetLim() == CInt_fuzz::eLim_tl) {
+                TSeqPos pos = pnt.GetPoint();
+                if (pos > 0) {
+                    pnt.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
+                    pnt.SetPoint(pos - 1);
+                    ChangeMade(CCleanupChange::eChangeSeqloc);
+                }
+            }
         }
         break;
     case CSeq_loc::e_Mix :
