@@ -2049,6 +2049,59 @@ bool CValidError_imp::IsWGSIntermediate(const CSeq_entry& se)
 }
 
 
+bool CValidError_imp::IsTSAIntermediate(const CBioseq& seq)
+{
+    bool tsa = false;
+
+    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
+        if ((*it)->IsMolinfo() && (*it)->GetMolinfo().IsSetTech()
+            && (*it)->GetMolinfo().GetTech() == CMolInfo::eTech_tsa) {
+            tsa = true;
+            break;
+        }
+    }
+    if (!tsa) {
+        return false;
+    }
+
+    bool is_other = false;
+    bool has_gi = false;
+
+    FOR_EACH_SEQID_ON_BIOSEQ (it, seq) {
+        if ((*it)->IsOther()) {
+            is_other = true;
+            break;
+        } else if ((*it)->IsGi()) {
+            has_gi = true;
+            break;
+        }
+    }
+    if (!is_other || has_gi) {
+        return false;
+    }
+
+    return true;
+}
+
+
+bool CValidError_imp::IsTSAIntermediate(const CSeq_entry& se)
+{
+    if (se.IsSeq()) {
+        return IsTSAIntermediate(se.GetSeq());
+    } else if (se.IsSet()) {
+        const CBioseq_set& set = se.GetSet();
+        FOR_EACH_SEQENTRY_ON_SEQSET (it, set) {
+            if ((*it)->IsSet()) {
+                return IsTSAIntermediate(**it);
+            } else if ((*it)->IsSeq() && (*it)->GetSeq().IsNa()) {
+                return IsTSAIntermediate((*it)->GetSeq());
+            }
+        }
+    }
+    return false;
+}
+
+
 void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
 {
     if(m_NoBioSource  &&  !m_IsPatent  &&  !m_IsPDB) {

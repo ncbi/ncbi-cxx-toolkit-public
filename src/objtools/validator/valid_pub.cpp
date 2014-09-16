@@ -1146,7 +1146,8 @@ void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
                 if (bsh) {
                     const CBioseq& nuc = *(bsh.GetCompleteBioseq());
                     if(!IsNoncuratedRefSeq (nuc, sev)
-                        && !IsWGSIntermediate(nuc)) {
+                        && !IsWGSIntermediate(nuc)
+                        && !IsTSAIntermediate(nuc)) {
                         PostErr (sev, eErr_SEQ_DESCR_NoPubFound, "No publications refer to this Bioseq.", seq);
                     }
                     return;
@@ -1154,7 +1155,8 @@ void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
             }
         }
         if (!IsNoncuratedRefSeq (seq, sev)
-            && !IsWGSIntermediate(seq)) {
+            && !IsWGSIntermediate(seq)
+            && !IsTSAIntermediate(seq)) {
             PostErr (sev, eErr_SEQ_DESCR_NoPubFound, "No publications refer to this Bioseq.", seq);
         }
     }
@@ -1191,10 +1193,24 @@ static bool s_CuratedRefSeqLowerToWarning (const CBioseq& seq)
     return false;
 }
 
-static bool s_IsWgs_or_TSA_Contig (const CBioseq& seq) 
+static bool s_IsWgs_Contig (const CBioseq& seq)
 {
     CSeq_inst::ERepr rp = seq.GetInst().GetRepr();
     if (rp == CSeq_inst::eRepr_virtual) return false;
+    IF_EXISTS_CLOSEST_MOLINFO (mi_ref, seq, NULL) {
+        const CMolInfo& molinf = (*mi_ref).GetMolinfo();
+        if (molinf.GetTech() == NCBI_TECH(wgs)) return true;
+        if (molinf.GetTech() == NCBI_TECH(tsa)) return true;
+    }
+    return false;
+}
+
+static bool s_IsTSA_Contig (const CBioseq& seq)
+{
+    /*
+    CSeq_inst::ERepr rp = seq.GetInst().GetRepr();
+    if (rp == CSeq_inst::eRepr_virtual) return false;
+    */
     IF_EXISTS_CLOSEST_MOLINFO (mi_ref, seq, NULL) {
         const CMolInfo& molinf = (*mi_ref).GetMolinfo();
         if (molinf.GetTech() == NCBI_TECH(wgs)) return true;
@@ -1213,7 +1229,8 @@ void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs
                 CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
                 if (   !s_IsNoncuratedRefSeq(*bioseq)  
                     && !s_IsGpipe(*bioseq)
-                    && !s_IsWgs_or_TSA_Contig(*bioseq) ) {
+                    && !s_IsWgs_Contig(*bioseq)
+                    && !s_IsTSA_Contig(*bioseq) ) {
                         EDiagSev sev = eDiag_Error;
                         if (s_CuratedRefSeqLowerToWarning(*bioseq)) {
                             sev = eDiag_Warning;

@@ -636,6 +636,8 @@ public:
     void AddProtWithoutFullRef(const CBioseq_Handle& seq);
     static bool IsWGSIntermediate(const CBioseq& seq);
     static bool IsWGSIntermediate(const CSeq_entry& se);
+    static bool IsTSAIntermediate(const CBioseq& seq);
+    static bool IsTSAIntermediate(const CSeq_entry& se);
     void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
     void ReportMissingBiosource(const CSeq_entry& se);
 
