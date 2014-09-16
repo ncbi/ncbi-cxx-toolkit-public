@@ -101,11 +101,6 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         size_t* n_read,
         size_t blob_size);
 
-    CNetServer GetServer(const CNetCacheKey& key)
-    {
-        return m_Service.GetServer(key.GetHost(), key.GetPort());
-    }
-
     virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer,
             const CNetCacheAPIParameters* parameters);
 
@@ -119,8 +114,6 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     unsigned x_ExtractBlobAge(const CNetServer::SExecResult& exec_result,
             const char* cmd_name);
-
-    CNetService FindOrCreateService(const CNetCacheKey& key);
 
     CNetServer::SExecResult ExecMirrorAware(
         const CNetCacheKey& key, const string& cmd,
@@ -138,6 +131,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     typedef map<string, CNetService> TNetServiceByName;
 
+    CFastMutex m_ServiceMapMutex;
     TNetServiceByName m_ServicesFromKeys;
 
     string m_TempDir;

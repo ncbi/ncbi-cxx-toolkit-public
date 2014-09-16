@@ -404,37 +404,72 @@ CNetServer SNetCacheMirrorTraversal::NextServer()
     return *(m_Iterator = m_Service.Iterate(m_PrimaryServer));
 }
 
-CNetService SNetCacheAPIImpl::FindOrCreateService(const CNetCacheKey& key)
-{
-    const string& service_name(key.GetServiceName());
-
-    if (service_name == m_Service.GetServiceName())
-        return m_Service;
-
-    pair<TNetServiceByName::iterator, bool> loc(m_ServicesFromKeys.insert(
-            TNetServiceByName::value_type(service_name, CNetService())));
-
-    if (!loc.second)
-        return loc.first->second;
-
-    CNetService new_service(new SNetServiceImpl(service_name, m_Service));
-
-    loc.first->second = new_service;
-
-    return new_service;
-}
-
 CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     const CNetCacheKey& key, const string& cmd,
     const CNetCacheAPIParameters* parameters,
     SNetServiceImpl::EServerErrorHandling error_handling)
 {
-    CNetServer primary_server(GetServer(key));
+
+    const string& service_name(key.GetServiceName());
 
     bool service_name_is_defined = !key.GetServiceName().empty();
 
+    CNetService service(m_Service);
+
+    if (service_name_is_defined && service_name != service.GetServiceName()) {
+        CFastMutexGuard guard(m_ServiceMapMutex);
+
+        pair<TNetServiceByName::iterator, bool> loc(m_ServicesFromKeys.insert(
+                TNetServiceByName::value_type(service_name, CNetService())));
+
+        service = !loc.second ? loc.first->second :
+                (loc.first->second =
+                        new SNetServiceImpl(service_name, service));
+    }
+
     bool key_is_mirrored = service_name_is_defined &&
-            !key.GetFlag(CNetCacheKey::fNCKey_SingleServer);
+            !key.GetFlag(CNetCacheKey::fNCKey_SingleServer) &&
+            parameters->GetMirroringMode() != CNetCacheAPI::eMirroringDisabled;
+
+    if (key.GetVersion() == 3) {
+        /* Version 3 - no server address, only CRC32 of it: */
+        Uint4 crc32 = key.GetHostPortCRC32();
+
+        for (CNetServiceIterator it(service.Iterate()); it; ++it) {
+            CNetServer server(*it);
+
+            if (CNetCacheKey::CalculateChecksum(
+                    CSocketAPI::ntoa(server.GetHost()),
+                            server.GetPort()) == crc32) {
+                // The server with the checksum from the key
+                // has been found in the service.
+
+                // TODO: cache the calculated checksums to resolve
+                // them into host:port immediately.
+
+                if (!key_is_mirrored)
+                    return server.ExecWithRetry(cmd);
+
+                CNetServer::SExecResult exec_result;
+
+                SNetCacheMirrorTraversal mirror_traversal(service,
+                        server, eOff /* turn off server check since
+                                        the server is discovered
+                                        through this service */);
+
+                m_Service->IterateUntilExecOK(cmd, exec_result,
+                        &mirror_traversal, error_handling);
+
+                return exec_result;
+            }
+        }
+
+        NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
+                key.GetKey() << ": unable to find a NetCache server "
+                "by the checksum from this key");
+    }
+
+    CNetServer primary_server(service.GetServer(key.GetHost(), key.GetPort()));
 
     ESwitch server_check = eDefault;
     parameters->GetServerCheck(&server_check);
@@ -442,20 +477,10 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         server_check = key.GetFlag(CNetCacheKey::fNCKey_NoServerCheck) ?
                 eOff : eOn;
 
-    if (!key_is_mirrored || parameters->GetMirroringMode() ==
-            CNetCacheAPI::eMirroringDisabled) {
-        if (service_name_is_defined && server_check != eOff &&
-                !FindOrCreateService(key)->IsInService(primary_server)) {
-            NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
-                    key.GetKey() << ": NetCache server " <<
-                    primary_server.GetServerAddress() << " could not be "
-                    "accessed because it is not registered for the service.");
-        }
-        return primary_server.ExecWithRetry(cmd);
-    } else {
+    if (key_is_mirrored) {
         CNetServer::SExecResult exec_result;
 
-        SNetCacheMirrorTraversal mirror_traversal(FindOrCreateService(key),
+        SNetCacheMirrorTraversal mirror_traversal(service,
                 primary_server, server_check);
 
         m_Service->IterateUntilExecOK(cmd, exec_result,
@@ -463,6 +488,16 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
 
         return exec_result;
     }
+
+    if (service_name_is_defined && server_check != eOff &&
+            !service->IsInService(primary_server)) {
+        NCBI_THROW_FMT(CNetSrvConnException, eServerNotInService,
+                key.GetKey() << ": NetCache server " <<
+                primary_server.GetServerAddress() << " could not be "
+                "accessed because it is not registered for the service.");
+    }
+
+    return primary_server.ExecWithRetry(cmd);
 }
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
