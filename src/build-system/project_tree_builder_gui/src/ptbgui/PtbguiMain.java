@@ -1663,7 +1663,8 @@ public class PtbguiMain extends javax.swing.JFrame {
             }
         });
 
-        jLabel13.setText("  version 1.3.3");
+        jLabel13.setText("  version 1.3.4");
+        jLabel13.setToolTipText("");
         jLabel13.setEnabled(false);
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());

@@ -187,7 +187,7 @@ public class ArgsParser {
             if (m_Libdep != null && m_Libdep.length() != 0) {
                 vcmd.add("-" + eArg.libdep.toString());
                 vcmd.add(m_Libdep);
-            } /*else if (m_projtagFromLst) {
+            }
             if (m_nws) {
                 vcmd.add("-" + eArg.nws.toString());
             }
