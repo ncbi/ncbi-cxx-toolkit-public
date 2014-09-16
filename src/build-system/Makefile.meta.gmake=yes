@@ -2,7 +2,10 @@
 # $Id$
 
 ifeq "" "$(findstring /,$(MAKE))"
-  MAKE := $(word 1,$(wildcard $(patsubst %,%/$(MAKE),$(subst :, ,$(PATH)))))
+  ABSMAKE := $(word 1,$(wildcard $(patsubst %,%/$(MAKE),$(subst :, ,$(PATH)))))
+  ifneq "" "$(ABSMAKE)" # Can fail on Cygwin for some reason
+    MAKE := $(ABSMAKE)
+  endif
 endif
 
 ifneq "" "$(findstring :,$(LD_LIBRARY_PATH))"
