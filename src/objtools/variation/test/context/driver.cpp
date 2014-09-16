@@ -352,7 +352,7 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
     strstr <<  MSerial_AsnText << *v2;
 
     content += strstr.str();
-       
+    
     int n = CompareVar(v1,v2, content, description); 
     return n;
 }

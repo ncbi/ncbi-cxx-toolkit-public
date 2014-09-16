@@ -287,15 +287,15 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
     *var_in1 >> *v1;      
     if (verbose)
     {
-        cerr << endl << "Input Variation" << endl;
-        cerr <<  MSerial_AsnText << *v1;
+        cout << endl << "Input Variation" << endl;
+        cout <<  MSerial_AsnText << *v1;
     }
     CVariationNormalization::NormalizeVariation(*v1,context,*scope);
 
     if (verbose)
     {
-        cerr << endl << "Output Variation" << endl;
-        cerr <<  MSerial_AsnText << *v1;
+        cout << endl << "Output Variation" << endl;
+        cout <<  MSerial_AsnText << *v1;
     }   
 
 
@@ -308,8 +308,8 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
     *var_in2 >> *v2;
     if (verbose)
     {
-        cerr << endl << "Desired Variation" << endl;
-        cerr <<  MSerial_AsnText << *v2;
+        cout << endl << "Desired Variation" << endl;
+        cout <<  MSerial_AsnText << *v2;
     }   
     int n = CompareVar(v1,v2); 
     return n;
@@ -330,9 +330,9 @@ void CContextApp::CheckShiftable(AutoPtr<CObjectIStream>& var_in1, CRef<CScope> 
             ref = *alleles.begin();
         bool r = CVariationNormalization::IsShiftable((*feat1)->SetLocation(),ref, *scope, type);
         if (r)
-            cerr << "Yes" << endl;
+            cout << "Yes" << endl;
         else
-            cerr << "No" << endl;
+            cout << "No" << endl;
     }
 
 }
@@ -399,7 +399,7 @@ int CContextApp::Run()
             n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, context, scope,verbose);
     }
     if (verbose)
-        cerr << endl << "Number of inconsistencies: " << n << endl;
+        cout << endl << "Number of inconsistencies: " << n << endl;
     
     if( args["f"] && !var_in2->EndOfData() ) 
         ERR_POST(Error << "File size does not match - Fixed file is larger" << Endm);

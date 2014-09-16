@@ -43,20 +43,32 @@ using namespace std;
 class CVariationUtilities
 {
 public:
-    static void CorrectRefAllele(CRef<CVariation>& v, CScope& scope);      
-    static void CorrectRefAllele(CVariation_ref& vr, const CSeq_loc& loc, CScope& scope);
-    static void CorrectRefAllele(CRef<CSeq_annot>& v, CScope& scope);
-    static void CorrectRefAllele(CVariation_ref& var, const string& new_ref); 
-    static bool IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope);
-    static int GetVariationType(const CVariation_ref& vr);
-    static void GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt);
+    static void   CorrectRefAllele(CRef<CVariation>& v, CScope& scope);      
+    static void   CorrectRefAllele(CVariation_ref& vr, const CSeq_loc& loc, CScope& scope);
+    static void   CorrectRefAllele(CRef<CSeq_annot>& v, CScope& scope);
+    static void   CorrectRefAllele(CVariation_ref& var, const string& new_ref); 
+
+    static bool   IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope);
+
+    static int    GetVariationType(const CVariation_ref& vr);
+    static void   GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt);
+    static void   GetVariationRefAlt(const CVariation& vr, string &ref,  vector<string> &alt);
 	static string GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
+
+    //Do all alleles in variation ref have a common repeat unit
+    // and thus possible to shift them.
+    static bool CommonRepeatUnit(const CVariation_ref& vr);
+    static bool CommonRepeatUnit(const CVariation& vr);
+    static bool CommonRepeatUnit(string alt1, string alt2);
 
 private:
     static string GetRefAlleleFromVP(CRef<CVariantPlacement> vp, CScope& scope, TSeqPos length);
     static void FixAlleles(CRef<CVariation> v, string old_ref, string new_ref);
     static void FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) ;
     static const unsigned int MAX_LEN=1000;
+
+    static bool x_isBaseRepeatingUnit(const string& candidate, const string& target);
+    static string x_RepeatedSubstring(const string &str) ;
 };
 
 class CVariationNormalization_base_cache
@@ -72,7 +84,7 @@ protected:
     static string x_CompactifySeq(string a);
 
     static CCache<string,CRef<CSeqVector> > m_cache;
-    static const unsigned int CCACHE_SIZE = 64;
+    static const unsigned int CCACHE_SIZE = 16;
 };
 
 template<class T>
@@ -83,19 +95,101 @@ public:
 	static void x_Shift(CSeq_annot& annot, CScope &scope);
 	static void x_Shift(CSeq_feat& feat, CScope &scope);
 
-    static void x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right, 
-                                  CSeqVector &seqvec, int &rtype);    
     static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type) {return T::x_ProcessShift(a,pos_left,pos_right,seqvec,type);}
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type) {T::x_ModifyLocation(loc,literal,a,pos_left,pos_right,type);}
     static bool x_IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type);
     static void x_ExpandLocation(CSeq_loc &loc, int pos_left, int pos_right);
+
+    struct SEndPosition {
+        SEndPosition(int l, int r, int nl, int nr) :
+            left(l), right(r), new_left(nl), new_right(nr) {}
+
+        SEndPosition(const SEndPosition& sep) :
+            left(sep.left), right(sep.right), 
+            new_left(sep.new_left), new_right(sep.new_right) {}
+
+        SEndPosition& operator=(SEndPosition sep)
+        {
+            swap(this->left,  sep.left);
+            swap(this->right, sep.right);
+            swap(this->new_left,  sep.new_left);
+            swap(this->new_right, sep.new_right);
+
+            return *this;
+        }
+
+
+        int left;
+        int right;
+        int new_left;
+        int new_right;
+
+        void CorrectNewPositions()
+        {
+            if (new_left == -1)
+            {
+                new_left = left;
+            }
+            if (new_right == -1)
+            {
+                new_right = right;
+            }
+        }
+        bool HasBadPositions()
+        {
+            if (new_left != left)
+            {
+                ERR_POST(Error <<  "Left position is ambiguous due to different leaf alleles" << Endm);
+                return true;
+            }
+            
+            if (new_right != right)
+            {
+                ERR_POST(Error <<  "Right position is ambiguous due to different leaf alleles" << Endm);
+                return true;
+            }
+
+            return false;
+        }
+
+        friend std::ostream& operator<< (ostream& stream, const SEndPosition& sep)
+        {
+            stream << sep.left << " " << sep.right 
+                << " " << sep.new_left << " " << sep.new_right;
+
+            return stream;
+        }
+
+        bool operator==(const SEndPosition& sep) const {
+            if( left == sep.left &&
+                right == sep.right &&
+                new_left == sep.new_left &&
+                new_right == sep.new_right)
+                return true;
+            return false;
+        }
+
+        //comp operator
+
+    };
+
+    static void x_ModifyDeleltionLocation(
+        CSeq_loc& loc, SEndPosition& sep, string& ref, 
+        CSeq_literal& ref_literal, 
+        CSeqVector& seqvec, int type);
+
+    static void x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  
+        CRef<CSeq_literal>& ref_seqliteral, string &ref, 
+        SEndPosition& end_position, 
+        CSeqVector& seqvec, int &rtype);    
+
 };
 
 class CVariationNormalizationLeft : public CVariationNormalization_base<CVariationNormalizationLeft>
 {
 public:
     static bool x_ProcessShift(string &a, int &pos_left, int &pos_right, CSeqVector &seqvec, int type);
-    static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right, int type);
+    static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal& literal, string a, int pos_left, int pos_right, int type);
 };
 
 class CVariationNormalizationInt : public CVariationNormalization_base<CVariationNormalizationInt>
