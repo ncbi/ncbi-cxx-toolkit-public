@@ -69,15 +69,11 @@ BEGIN_SCOPE(DiscRepNmSpc)
                return has_locus_tag;
          };
 
-         void SetNumEntry(unsigned num_entry) { m_num_entry = num_entry; }
-         unsigned GetNumEntry() {return m_num_entry; }
-
          template < class T >
          void GoTests(vector <CRef < CTestAndRepData> >& test_category, 
                          const T& obj) {
             NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, 
                                  test_category) {
-                  (*it)->SetNumEntry(GetNumEntry());
                   (*it)->TestOnObj(obj);
             }
          };
@@ -86,7 +82,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                       const CSeq_feat* seqfeat2);
 
       private:
-         unsigned m_num_entry;
          void x_Clean();
 
          bool CanGetOrgMod(const CBioSource& biosrc);

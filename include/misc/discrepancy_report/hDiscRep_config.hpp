@@ -240,6 +240,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static string                             xml_label;
         static string                             digit_str;
         static string                             alpha_str;
+        static unsigned                           num_entry;
 
         static Str2UInt                           desired_aaList;
         static Str2Str                            state_abbrev;

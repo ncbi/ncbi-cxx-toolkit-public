@@ -749,12 +749,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                     const CString_constraint* str_cons = 0);
       static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& seq_feat);
 
-      void SetNumEntry(unsigned num_entry) { m_num_entry = num_entry; };
-      unsigned GetNumEntry() { return m_num_entry; };
-
     protected:
-      unsigned m_num_entry;
-
       const string& x_GetUserObjType(const CUser_object& user_obj) const;
       bool CommentHasPhrase(string comment, const string& phrase);
       bool HasLineage(const CBioSource& biosrc, const string& type);
@@ -2078,15 +2073,11 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CSeqEntry_DISC_INCONSISTENT_MOLTYPES : public CSeqEntryTestAndRepData
   {
     public:
-      CSeqEntry_DISC_INCONSISTENT_MOLTYPES () : m_entry_no(0) { };
       virtual ~CSeqEntry_DISC_INCONSISTENT_MOLTYPES () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem> c_item);
       virtual string GetName() const { return string("DISC_INCONSISTENT_MOLTYPES");}
-
-    private:
-      unsigned m_entry_no;
   };
 
 
@@ -2101,7 +2092,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
     private:
       Str2Seqs m_tax_hap2seqs;
-      unsigned m_entry_cnt;
 
       bool SubSeqsMatch(CConstRef <CBioseq> seq1, 
                     unsigned beg1, 
@@ -3886,6 +3876,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CBioseq_on_locus_tags : public CBioseqTestAndRepData
   {
     public:
+      CBioseq_on_locus_tags () : m_num_bioseq(0) { };
       virtual ~CBioseq_on_locus_tags () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
@@ -3902,9 +3893,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
                 return string("DUPLICATE_LOCUS_TAGS_global"); }
 
     protected:
+      unsigned m_num_bioseq;
+
       bool x_IsLocationDirSub(const CSeq_loc& seq_location);
-      void x_GetReport_dup(CRef <CClickableItem> c_item, 
-                           const string& setting_name);
+      void x_CollectDupLocusTagGenes(vector <const CSeq_feat*>::const_iterator jt, 
+                 const string& setting_name, const string& locus_tag, const string& desc, 
+                 CConstRef <CObject> gene_ref, const string& entry_no = kEmptyStr);
   };
 
   class CBioseq_MISSING_LOCUS_TAGS : public CBioseq_on_locus_tags
@@ -3924,9 +3918,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DUPLICATE_LOCUS_TAGS_global() { };
       virtual string GetName() const {
                            return CBioseq_on_locus_tags::GetName_glodup();}
-      virtual void GetReport(CRef <CClickableItem> c_item) {
-           CBioseq_on_locus_tags :: x_GetReport_dup(c_item, GetName());
-      }
+      virtual void GetReport(CRef <CClickableItem> c_item); 
   };
 
   class CBioseq_DUPLICATE_LOCUS_TAGS : public CBioseq_on_locus_tags
@@ -3935,9 +3927,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_DUPLICATE_LOCUS_TAGS() { };
       virtual string GetName() const {
                                return CBioseq_on_locus_tags::GetName_dup();}
-      virtual void GetReport(CRef <CClickableItem> c_item) {
-           CBioseq_on_locus_tags :: x_GetReport_dup(c_item, GetName());
-      }
+      virtual void GetReport(CRef <CClickableItem> c_item);
   };
 
   class CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX : public CBioseq_on_locus_tags
