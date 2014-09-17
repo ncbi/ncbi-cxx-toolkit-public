@@ -1,6 +1,8 @@
 # $Id$
 # Pregenerated summary of library relations, for use by project_tree_builder.
 $(ORIG_LIBS) needs3party
+Assembly2Fscreen needs fscreen
+Assembly2Fscreen needs xid_utils
 BlastCgiUtils needs $(CONNEXT)
 BlastCgiUtils needs connect
 BlastCgiUtils needs xhtml
