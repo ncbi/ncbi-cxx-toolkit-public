@@ -419,7 +419,8 @@ public:
 
     /// Get total of rows returned.
     ///
-    /// Valid only after all rows are retrieved from a resultset
+    /// Valid only after all rows are retrieved from a resultset.
+    /// Even then, can be -1 if the server didn't indicate a count.
     virtual int GetRowCount() = 0;
 
     /// Get a writer for writing BLOBs using previously created
