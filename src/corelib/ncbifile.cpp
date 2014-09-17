@@ -5945,7 +5945,7 @@ void CFileIO::CreateTemporary(const string& dir,
 #  endif
 
 #else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-    pen(s_StdGetTmpName(dir.c_str(), prefix.c_str()), eCreateNew, eReadWrite);
+    Open(s_StdGetTmpName(dir.c_str(), prefix.c_str()), eCreateNew, eReadWrite);
 #endif
 
     m_AutoClose = true;
