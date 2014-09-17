@@ -50,13 +50,13 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /// CWriteDB_IndexFile class
-/// 
+///
 /// This manufactures blast database index files from input data.
 
 class CWriteDB_File : public CObject {
 public:
     // Setup and control
-    
+
     /// Constructor.
     ///
     /// The filename is constructed from basename, extension, and
@@ -76,7 +76,7 @@ public:
                   int            index,
                   Uint8          max_file_size,
                   bool           always_create);
-    
+
     /// Create and open the file.
     ///
     /// This method must be called before the first time that data is
@@ -88,12 +88,12 @@ public:
     /// be created optionally, such as ISAM files, which should only
     /// be created if the corresponding ID types are found.
     void Create();
-    
+
     /// Write contents of a string to the file.
     /// @param data Data to write.
     /// @return File offset after write.
     int Write(const CTempString & data);
-    
+
     /// Write an Int4 (in bigendian order) to the file.
     /// @param data String to write.
     /// @return File offset after write.
@@ -103,7 +103,7 @@ public:
         m_Offset += 4;
         return m_Offset;
     }
-    
+
     /// Write an Int8 (in bigendian order) to the file.
     /// @param data String to write.
     /// @return File offset after write.
@@ -113,7 +113,7 @@ public:
         m_Offset += 8;
         return m_Offset;
     }
-    
+
     /// Write contents of a string to the file, appending a NUL.
     /// @param data String to write.
     /// @return File offset after write.
@@ -122,13 +122,13 @@ public:
         Write(data);
         return Write(m_Nul);
     }
-    
+
     /// Close the file, flushing any remaining data to disk.
     void Close();
-    
+
     /// Rename this file, disincluding the volume index.
     virtual void RenameSingle();
-    
+
     /// Construct the short name for a volume.
     ///
     /// Volume names consist of the database base name, ".", and the
@@ -140,7 +140,7 @@ public:
     /// @param index Volume index.
     /// @return A short name.
     static string MakeShortName(const string & base, int index);
-    
+
     /// Get the current filename for this file.
     ///
     /// The filename is returned.  The data returned by this method
@@ -153,17 +153,17 @@ public:
     {
         return m_Fname;
     }
-    
+
 protected:
     /// True if the file has already been opened.
     bool m_Created;
-    
+
     /// Underlying 'output file' type used here.
     typedef ofstream TFile;
-    
+
     /// For convenience, a string containing one NUL character.
     string m_Nul; // init me
-    
+
     /// The default value for max_file_size.
     /// @return The max file size used if otherwise unspecified.
     Uint8 x_DefaultByteLimit()
@@ -171,7 +171,7 @@ protected:
         // 1 gb (marketing version) - 1; about a billion
         return 1000*1000*1000 - 1;
     }
-    
+
     /// This should flush any unwritten data to disk.
     ///
     /// This method must be implemented by derived classes to flush
@@ -180,20 +180,20 @@ protected:
     /// are written as the data is available.  For index (pin/nin) and
     /// ISAM files, this method does most of the disk I/O.
     virtual void x_Flush() = 0;
-    
+
     /// Build the filename for this file.
     void x_MakeFileName();
-    
+
     // Configuration
-    
+
     string m_BaseName;    ///< Database base name for all files.
     string m_Extension;   ///< File extension for this file.
     int    m_Index;       ///< Volume index.
     int    m_Offset;      ///< Stream position.
     Uint8  m_MaxFileSize; ///< Maximum file size in bytes.
-    
+
     // The file
-    
+
     bool   m_UseIndex; ///< True if filenames should use volume index.
     string m_Fname;    ///< Current filename for output file.
     TFile  m_RealFile; ///< Actual stream implementing the output file.
@@ -217,18 +217,18 @@ public:
                        const string & date,
                        int            index,
                        Uint8          max_file_size);
-    
+
     /// Returns true if another sequence can fit into the file.
     bool CanFit()
     {
-        _ASSERT(m_MaxFileSize > 1024);
-        
-        if (! m_OIDs)
+        _ASSERT(m_MaxFileSize > 1024UL);
+
+        if (m_OIDs == 0)
             return true;
-        
-        return m_DataSize < (m_MaxFileSize-12);
+
+        return m_DataSize < (m_MaxFileSize - 12UL);
     }
-    
+
     /// Add a sequence to a protein index file (pin).
     ///
     /// The index file does not need sequence data, so this method
@@ -242,15 +242,15 @@ public:
         if (length > m_MaxLength) {
             m_MaxLength = length;
         }
-        
-        m_OIDs ++;
+
+        m_OIDs++;
         m_Letters += length;
         m_DataSize += 8;
-        
+
         m_Hdr.push_back(hdr);
         m_Seq.push_back(seq);
     }
-    
+
     /// Add a sequence to a nucleotide index file (nin).
     ///
     /// The index file does not need sequence data, so this method
@@ -259,22 +259,22 @@ public:
     /// @param Sequence length in letters.
     /// @param hdr Length of binary ASN.1 header data.
     /// @param seq Length in bytes of packed sequence data.
-    /// @param seq Length in bytes of packed ambiguity data.
+    /// @param amb Length in bytes of packed ambiguity data.
     void AddSequence(int length, int hdr, int seq, int amb)
     {
         if (length > m_MaxLength) {
             m_MaxLength = length;
         }
-        
-        m_OIDs ++;
+
+        m_OIDs++;
         m_Letters += length;
-        
+
         m_DataSize += 12;
         m_Hdr.push_back(hdr);
         m_Seq.push_back(amb); // Not a bug.
         m_Amb.push_back(seq); // Also not a bug.
     }
-    
+
 private:
     /// Compute index file overhead.  This is the overhead used by all
     /// fields of the index file, and does account for padding.
@@ -283,10 +283,10 @@ private:
     /// @param D Create time string.
     /// @return Combined size of all meta-data fields in nin/pin file.
     int x_Overhead(const string & T, const string & D);
-    
+
     /// Flush index data to disk.
     virtual void x_Flush();
-    
+
     bool   m_Protein;   ///< True if this is a protein database.
     string m_Title;     ///< Title string for all database volumes.
     string m_Date;      ///< Database creation time stamp.
@@ -295,24 +295,24 @@ private:
     Uint8  m_DataSize;  ///< Required space for data once written to disk.
     Uint8  m_Letters;   ///< Letters of sequence data accumulated so far.
     int    m_MaxLength; ///< Length of longest sequence.
-    
+
     // Because the lengths are found via "next offset - this offset",
     // each array has an extra element.  (This is not necesary in the
     // case of m_Amb; the last element is never examined because of
     // the alternation of sequences and ambiguities.)
-    
+
     /// Start offset in header file of each OID's headers.
     ///
     /// The end offset is given by the start offset of the following
     /// OID's headers.
     vector<int> m_Hdr;
-    
+
     /// Offset in sequence file of each OID's sequence data.
     ///
     /// The end of the sequence data is given by the start offset of
     /// the ambiguity data for the same OID.
     vector<int> m_Seq;
-    
+
     /// Offset in sequence file of each OID's ambiguity data.
     ///
     /// The end of the ambiguity data is given by the start offset of
@@ -332,7 +332,7 @@ public:
                         bool           protein,
                         int            index,
                         Uint8          max_file_size);
-    
+
     /// Returns true if the specified amount of data would fit.
     ///
     /// If the specified amount of data (in bytes) would fit in the
@@ -342,13 +342,15 @@ public:
     /// @param size Size of new data in bytes.
     bool CanFit(int size)
     {
-        if (! m_DataSize) {
+        _ASSERT(size >= 0);
+
+        if (m_DataSize == 0UL) {
             return true;
         }
-        
-        return (m_DataSize + size) < m_MaxFileSize;
+
+        return (m_DataSize + (Uint8) size) < m_MaxFileSize;
     }
-    
+
     /// Add binary header data to this file.
     /// @param binhdr Binary ASN.1 version of header data. [in]
     /// @param offset Offset of end of header data. [out]
@@ -356,7 +358,7 @@ public:
     {
         m_DataSize = offset = Write(binhdr);
     }
-    
+
 private:
     /// Flush unwritten data to the output file.
     virtual void x_Flush()
@@ -364,7 +366,7 @@ private:
         // There is nothing to do here - header data is written as
         // soon as it is added.
     }
-    
+
     /// Amount of data written so far.
     Uint8 m_DataSize;
 };
@@ -382,7 +384,7 @@ public:
                           int            index,
                           Uint8          max_file_size,
                           Uint8          max_letters);
-    
+
     /// Returns true if the specified amount of data would fit.
     ///
     /// If the specified amount of data (in bytes) would fit in the
@@ -394,18 +396,21 @@ public:
     /// @param letters Number of sequence letters in new data.
     bool CanFit(int size, int letters)
     {
+        _ASSERT(size >= 0);
+        _ASSERT(letters >= 0);
+
         if (m_Offset <= 1) {
             return true;
         }
-        
-        if (m_BaseLimit &&
-            ((m_Letters + letters) > m_BaseLimit)) {
+
+        if ((m_BaseLimit != 0)  &&
+            ((m_Letters + (Uint8) letters) > m_BaseLimit)) {
             return false;
         }
-        
-        return ((m_Offset + (unsigned)size)  < m_MaxFileSize);
+
+        return ((Uint8)(m_Offset + size) < m_MaxFileSize);
     }
-    
+
     /// Add a protein sequence to this file.
     ///
     /// This method should only be called in the protein case.
@@ -421,7 +426,7 @@ public:
         offset = WriteWithNull(sequence);
         m_Letters += length;
     }
-    
+
     /// Add a nucleotide sequence to this file.
     ///
     /// This method should only be called in the nucleotide case.
@@ -442,7 +447,7 @@ public:
         off_amb = Write(ambig);
         m_Letters += length;
     }
-    
+
 private:
     /// Flush unwritten data to the output file.
     virtual void x_Flush()
@@ -450,7 +455,7 @@ private:
         // There is nothing to do here - sequence data is written as
         // soon as it is added.
     }
-    
+
     Uint8 m_Letters;   ///< Letters of sequence data added so far.
     Uint8 m_BaseLimit; ///< Limit on letters of sequence data.
     bool  m_Protein;   ///< True if this is a protein database.

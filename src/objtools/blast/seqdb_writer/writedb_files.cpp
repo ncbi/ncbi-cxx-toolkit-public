@@ -113,16 +113,24 @@ CWriteDB_File::CWriteDB_File(const string & basename,
       m_Offset     (0),
       m_MaxFileSize(max_file_size)
 {
+    // Define number of usable bits in m_Offset,
+    // deducting one for the sign bit.
+    static const int MAX_OFFSET_BITS = (sizeof m_Offset * 8) - 1;
+    // Define maximum allowed max_file_size.
+    static const Uint8 MAX_FILE_SIZE = (1L << MAX_OFFSET_BITS) - 1L;
+
     if (m_MaxFileSize == 0) {
         m_MaxFileSize = x_DefaultByteLimit();
+    } else {
+        _ASSERT(max_file_size <= MAX_FILE_SIZE);
     }
-    
+
     m_Nul.resize(1);
     m_Nul[0] = (char) 0;
-    
+
     m_UseIndex = (index >= 0);
     x_MakeFileName();
-    
+
     if (always_create) {
         Create();
     }
@@ -137,9 +145,12 @@ void CWriteDB_File::Create()
 
 int CWriteDB_File::Write(const CTempString & data)
 {
+    static const Uint8 MAX_OFFSET = (1L << ((sizeof m_Offset) * 8)) - 1L;
+
     _ASSERT(m_Created);
+    _ASSERT(((Uint8) m_Offset + data.length()) <= MAX_OFFSET);
     m_RealFile.write(data.data(), data.length());
-    
+
     m_Offset += data.length();
     return m_Offset;
 }
@@ -147,12 +158,12 @@ int CWriteDB_File::Write(const CTempString & data)
 string CWriteDB_File::MakeShortName(const string & base, int index)
 {
     ostringstream fns;
-    
+
     fns << base;
     fns << ".";
     fns << (index / 10);
     fns << (index % 10);
-    
+
     return fns.str();
 }
 
@@ -163,7 +174,7 @@ void CWriteDB_File::x_MakeFileName()
     } else {
         m_Fname = m_BaseName;
     }
-    
+
     m_Fname += ".";
     m_Fname += m_Extension;
 }
@@ -179,11 +190,11 @@ void CWriteDB_File::Close()
 void CWriteDB_File::RenameSingle()
 {
     _ASSERT(m_UseIndex == true);
-    
+
     string nm1 = m_Fname;
     m_UseIndex = false;
     x_MakeFileName();
-    
+
     CDirEntry fn1(nm1);
     fn1.Rename(m_Fname, CDirEntry::fRF_Overwrite);
 }
@@ -208,16 +219,16 @@ CWriteDB_IndexFile::CWriteDB_IndexFile(const string & dbname,
       m_MaxLength (0)
 {
     // Compute index overhead, rounding up.
-    
+
     m_Overhead = x_Overhead(title, date);
     m_Overhead = s_RoundUp(m_Overhead, 8);
     m_DataSize = m_Overhead;
-    
+
     // The '1' added to the sequence offset array refers to the fact
     // that sequence files contain an initial NUL byte.  This seems to
     // be for the benefit of the protein database scanning code, but
     // it is also done for nucleotide databases.
-    
+
     m_Hdr.push_back(0);
     m_Seq.push_back(1);
 }
@@ -231,26 +242,26 @@ int CWriteDB_IndexFile::x_Overhead(const string & T,
 void CWriteDB_IndexFile::x_Flush()
 {
     _ASSERT(m_Created);
-    
+
     int format_version = 4;
     int seq_type = (m_Protein ? 1 : 0);
-    
+
     // Pad the date string (see comments at top.)
-    
+
     string pad_date = m_Date;
     int count = 0;
-    
+
     while(x_Overhead(m_Title, pad_date) & 0x7) {
         pad_date.append(m_Nul);
         if (count != -1) {
             _ASSERT(count++ < 8);
         }
     }
-    
+
     // Write header
-    
+
     ostream & F = m_RealFile;
-    
+
     s_WriteInt4  (F, format_version);
     s_WriteInt4  (F, seq_type);
     s_WriteString(F, m_Title);
@@ -258,20 +269,20 @@ void CWriteDB_IndexFile::x_Flush()
     s_WriteInt4  (F, m_OIDs);
     s_WriteInt8LE(F, m_Letters);
     s_WriteInt4  (F, m_MaxLength);
-    
+
     for(unsigned i = 0; i < m_Hdr.size(); i++) {
         s_WriteInt4(F, m_Hdr[i]);
     }
-    
+
     for(unsigned i = 0; i < m_Seq.size(); i++) {
         s_WriteInt4(F, m_Seq[i]);
     }
-    
+
     // Should loop m_OID times, or not at all.
     for(unsigned i = 0; i < m_Amb.size(); i++) {
         s_WriteInt4(F, m_Amb[i]);
     }
-    
+
     // This extra index is added here because formatdb adds it.  SeqDB
     // depends on its existence, but I don't think anyone reads (or
     // needs) the data.  The last offset in the ambiguity column
@@ -279,7 +290,7 @@ void CWriteDB_IndexFile::x_Flush()
     // to the last offset in the sequence column.  But the last
     // sequence offset is not really a sequence start, it is the
     // 'extra' offset used by sequence length computations.
-    
+
     if (m_Amb.size()) {
         s_WriteInt4(F, m_Seq.back());
     }
@@ -321,7 +332,7 @@ CWriteDB_SequenceFile::CWriteDB_SequenceFile(const string & dbname,
     // The first null written here is for nucleotide sequences.
     // It doesn't seem necessary, but formatdb provides it, so I
     // will too.
-    
+
     WriteWithNull(string());
 }
 

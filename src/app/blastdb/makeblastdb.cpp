@@ -284,7 +284,7 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
                             CArgDescriptions::eString, "1GB");
-    arg_desc->AddOptionalKey("logfile", "File_Name", 
+    arg_desc->AddOptionalKey("logfile", "File_Name",
                              "File to which the program log should be redirected",
                              CArgDescriptions::eOutputFile,
                              CArgDescriptions::fAppend);
@@ -1056,14 +1056,14 @@ void CMakeBlastDBApp::x_BuildDatabase()
     string title = (args[kArgDbTitle].HasValue()
                     ? args[kArgDbTitle]
                     : args[kInput]).AsString();
-    if (!args[kArgDbTitle].HasValue() && input_fmt == eBlastDb) { 
+    if (!args[kArgDbTitle].HasValue() && input_fmt == eBlastDb) {
         vector<CTempString> names;
         SeqDB_SplitQuoted(args[kInput].AsString(), names);
         if (names.size() > 1) {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
                        "Please provide a title using -title");
         }
-        CRef<CSeqDB> dbhandle(new CSeqDB(names.front(), 
+        CRef<CSeqDB> dbhandle(new CSeqDB(names.front(),
             (is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide)));
         title = dbhandle->GetTitle();
     }
@@ -1120,6 +1120,10 @@ void CMakeBlastDBApp::x_BuildDatabase()
     // Max file size
 
     Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());
+    if (bytes >= (1L << 31)) {
+        NCBI_THROW(CInvalidDataException, eInvalidInput,
+                "max_file_sz must be < 2 GiB");
+    }
     *m_LogFile << "Maximum file size: "
                << Uint8ToString_DataSize(bytes) << endl;
 
