@@ -196,21 +196,19 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
     }
 }
 
-void CNetCacheServerListener::OnConnected(
-        CNetServerConnection::TInstance conn_impl)
+void CNetCacheServerListener::OnConnected(CNetServerConnection& connection)
 {
     CRef<SNetCacheServerProperties> server_props(
-            x_GetServerProperties(conn_impl->m_Server));
+            x_GetServerProperties(connection->m_Server));
 
     CFastMutexGuard guard(server_props->m_Mutex);
 
     if (server_props->mirroring_checked) {
         guard.Release();
-        conn_impl->WriteLine(m_Auth);
+        connection->WriteLine(m_Auth);
     } else {
-        CNetServerConnection conn(conn_impl);
         try {
-            string version_info(conn.Exec(m_Auth + "\r\nVERSION"));
+            string version_info(connection.Exec(m_Auth + "\r\nVERSION"));
 
             server_props->mirroring_checked = true;
 
@@ -226,8 +224,7 @@ void CNetCacheServerListener::OnConnected(
     }
 }
 
-void CNetCacheServerListener::OnError(
-    const string& err_msg, SNetServerImpl* server)
+void CNetCacheServerListener::OnError(const string& err_msg, CNetServer& server)
 {
     string message = server->m_ServerInPool->m_Address.AsString();
 
@@ -258,7 +255,7 @@ void CNetCacheServerListener::OnError(
 }
 
 void CNetCacheServerListener::OnWarning(const string& warn_msg,
-        SNetServerImpl* server)
+        CNetServer& server)
 {
     if (m_EventHandler)
         m_EventHandler->OnWarning(warn_msg, server);

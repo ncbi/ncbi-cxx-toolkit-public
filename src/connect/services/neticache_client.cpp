@@ -139,7 +139,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const string& client_name,
             const string& cache_name) :
         SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
-            client_name, new CNetICacheServerListener)),
+                client_name, new CNetICacheServerListener)),
         m_CacheName(cache_name),
         m_CacheFlags(ICache::fBestPerformance)
     {
@@ -148,7 +148,8 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     }
 
     CNetServer::SExecResult StickToServerAndExec(const string& cmd,
-        CNetServer::TInstance server_to_use = NULL);
+            const CNetCacheAPIParameters* parameters,
+            INetServerConnectionListener* conn_listener = NULL);
 
     string MakeStdCmd(const char* cmd_base, const string& blob_id,
         const CNetCacheAPIParameters* parameters,
@@ -176,8 +177,6 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 
     string m_CacheName;
     string m_ICacheCmdPrefix;
-
-    CNetServer m_SelectedServer;
 
     ICache::TFlags m_CacheFlags;
 };
@@ -229,7 +228,7 @@ CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
         cmd.append(" confirm=1");
     AppendClientIPSessionIDPassword(&cmd, parameters);
 
-    return StickToServerAndExec(cmd).conn;
+    return StickToServerAndExec(cmd, parameters).conn;
 }
 
 CNetICacheClient::CNetICacheClient(EAppRegistry use_app_reg,
@@ -277,14 +276,15 @@ STimeout CNetICacheClient::GetCommunicationTimeout() const
 }
 
 CNetServer::SExecResult SNetICacheClientImpl::StickToServerAndExec(
-        const string& cmd, CNetServer::TInstance server_to_use)
+        const string& cmd,
+        const CNetCacheAPIParameters* parameters,
+        INetServerConnectionListener* conn_listener)
 {
-    CNetServer selected_server(server_to_use != NULL ?
-            server_to_use : (CNetServer::TInstance) m_SelectedServer);
+    CNetServer selected_server(parameters->GetServerToUse());
 
     if (selected_server) {
         try {
-            return selected_server.ExecWithRetry(cmd);
+            return selected_server.ExecWithRetry(cmd, conn_listener);
         }
         catch (CNetSrvConnException& ex) {
             if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
@@ -296,7 +296,8 @@ CNetServer::SExecResult SNetICacheClientImpl::StickToServerAndExec(
 
     for (CNetServiceIterator it = m_Service.Iterate(); it; ++it) {
         try {
-            return (m_SelectedServer = *it).ExecWithRetry(cmd);
+            m_DefaultParameters.SetServerToUse(*it);
+            return (*it).ExecWithRetry(cmd, conn_listener);
         }
         catch (CNetSrvConnException& ex) {
             if (ex.GetErrCode() != CNetSrvConnException::eConnectionFailure &&
@@ -457,7 +458,7 @@ IReader* SNetICacheClientImpl::GetReadStreamPart(
         }
 
         CNetServer::SExecResult exec_result(
-                StickToServerAndExec(cmd, parameters.GetServerToUse()));
+                StickToServerAndExec(cmd, &parameters));
 
         unsigned* actual_age_ptr = parameters.GetActualBlobAgePtr();
         if (max_age > 0 && actual_age_ptr != NULL)
@@ -714,7 +715,8 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
             cmd += NStr::NumericToString(max_age);
         }
 
-        CNetServer::SExecResult exec_result(StickToServerAndExec(cmd));
+        CNetServer::SExecResult exec_result(StickToServerAndExec(cmd,
+                &m_DefaultParameters));
 
         string::size_type pos = exec_result.response.find("VER=");
 
@@ -760,13 +762,98 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
     }
 }
 
+class CSetValidWarningSuppressor : public CNetICacheServerListener
+{
+public:
+    CSetValidWarningSuppressor(
+            INetServerConnectionListener* delegate_listener,
+            const string& key,
+            const string& subkey,
+            int version) :
+        m_DelegateListener(delegate_listener),
+        m_Key(key),
+        m_Subkey(subkey),
+        m_Version(version)
+    {
+    }
+
+    virtual CRef<INetServerProperties> AllocServerProperties();
+    virtual CConfig* LoadConfigFromAltSource(CObject* api_impl,
+        string* new_section_name);
+    virtual void OnInit(CObject* api_impl,
+        CConfig* config, const string& config_section);
+    virtual void OnConnected(CNetServerConnection& connection);
+    virtual void OnError(const string& err_msg, CNetServer& server);
+    virtual void OnWarning(const string& warn_msg, CNetServer& server);
+
+    CRef<INetServerConnectionListener> m_DelegateListener;
+    string m_Key;
+    string m_Subkey;
+    int m_Version;
+};
+
+CRef<INetServerProperties> CSetValidWarningSuppressor::AllocServerProperties()
+{
+    return m_DelegateListener->AllocServerProperties();
+}
+
+CConfig* CSetValidWarningSuppressor::LoadConfigFromAltSource(CObject* api_impl,
+        string* new_section_name)
+{
+    return m_DelegateListener->LoadConfigFromAltSource(api_impl,
+            new_section_name);
+}
+
+void CSetValidWarningSuppressor::OnInit(CObject* api_impl,
+        CConfig* config, const string& config_section)
+{
+    m_DelegateListener->OnInit(api_impl, config, config_section);
+}
+
+void CSetValidWarningSuppressor::OnConnected(CNetServerConnection& connection)
+{
+    m_DelegateListener->OnConnected(connection);
+}
+
+void CSetValidWarningSuppressor::OnError(
+        const string& err_msg, CNetServer& server)
+{
+    m_DelegateListener->OnError(err_msg, server);
+}
+
+void CSetValidWarningSuppressor::OnWarning(
+        const string& warn_msg, CNetServer& server)
+{
+    SIZE_TYPE ver_pos = NStr::FindCase(warn_msg,
+            CTempString("VER=", sizeof("VER=") - 1));
+
+    if (ver_pos == NPOS)
+        m_DelegateListener->OnWarning(warn_msg, server);
+    else {
+        int version = atoi(warn_msg.c_str() + ver_pos + sizeof("VER=") - 1);
+        if (version < m_Version) {
+            ERR_POST("Cache actualization error (key \"" << m_Key <<
+                    "\", subkey \"" << m_Subkey <<
+                    "\"): the cached blob version downgraded from " <<
+                    m_Version << " to " << version);
+        }
+    }
+}
+
 void CNetICacheClient::SetBlobVersionAsCurrent(const string& key,
         const string& subkey, int version)
 {
-    CNetServer::SExecResult exec_result(m_Impl->StickToServerAndExec(
-        m_Impl->MakeStdCmd("SETVALID",
-                s_KeyVersionSubkeyToBlobID(key, version, subkey),
-                        &m_Impl->m_DefaultParameters)));
+    CRef<INetServerConnectionListener> warning_suppressor(
+            new CSetValidWarningSuppressor(m_Impl->m_Service->m_Listener,
+                    key, subkey, version));
+
+    CNetServer::SExecResult exec_result(
+            m_Impl->StickToServerAndExec(
+                    m_Impl->MakeStdCmd("SETVALID",
+                            s_KeyVersionSubkeyToBlobID(key, version, subkey),
+                            &m_Impl->m_DefaultParameters),
+                    &m_Impl->m_DefaultParameters,
+                    warning_suppressor));
 
     if (!exec_result.response.empty()) {
         ERR_POST("SetBlobVersionAsCurrent(\"" << key << "\", " <<
@@ -782,10 +869,12 @@ CNetServerMultilineCmdOutput CNetICacheClient::GetBlobInfo(const string& key,
 
     parameters.LoadNamedParameters(optional);
 
-    CNetServerMultilineCmdOutput output(m_Impl->StickToServerAndExec(
-        m_Impl->MakeStdCmd("GETMETA",
-            s_KeyVersionSubkeyToBlobID(key, version, subkey),
-                &parameters), parameters.GetServerToUse()));
+    CNetServerMultilineCmdOutput output(
+            m_Impl->StickToServerAndExec(
+                    m_Impl->MakeStdCmd("GETMETA",
+                            s_KeyVersionSubkeyToBlobID(key, version, subkey),
+                            &parameters),
+                    &parameters));
 
     output->SetNetCacheCompatMode();
 
@@ -809,7 +898,7 @@ void CNetICacheClient::PrintBlobInfo(const string& key,
 
 CNetServer CNetICacheClient::GetCurrentServer()
 {
-    return m_Impl->m_SelectedServer;
+    return m_Impl->m_DefaultParameters.GetServerToUse();
 }
 
 CNetService CNetICacheClient::GetService()
@@ -842,9 +931,11 @@ string SNetICacheClientImpl::ExecStdCmd(const char* cmd_base,
     const string& key, int version, const string& subkey,
     const CNetCacheAPIParameters* parameters)
 {
-    return StickToServerAndExec(MakeStdCmd(cmd_base,
-            s_KeyVersionSubkeyToBlobID(key, version, subkey),
-                    parameters), parameters->GetServerToUse()).response;
+    return StickToServerAndExec(
+            MakeStdCmd(cmd_base,
+                    s_KeyVersionSubkeyToBlobID(key, version, subkey),
+                    parameters),
+            parameters).response;
 }
 
 string CNetICacheClient::GetCacheName(void) const

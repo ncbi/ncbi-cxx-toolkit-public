@@ -77,7 +77,8 @@ struct SNetServerConnectionImpl : public CObject
     virtual void DeleteThis();
 
     void WriteLine(const string& line);
-    void ReadCmdOutputLine(string& result);
+    void ReadCmdOutputLine(string& result,
+            INetServerConnectionListener* conn_listener = NULL);
 
     void Close();
     void Abort();
@@ -90,26 +91,6 @@ struct SNetServerConnectionImpl : public CObject
     SNetServerConnectionImpl* m_NextFree;
 
     CSocket m_Socket;
-};
-
-class INetServerProperties : public CObject
-{
-};
-
-class INetServerConnectionListener : public CObject
-{
-public:
-    virtual CRef<INetServerProperties> AllocServerProperties() = 0;
-
-// Event handlers.
-public:
-    virtual CConfig* LoadConfigFromAltSource(CObject* api_impl,
-        string* new_section_name) = 0;
-    virtual void OnInit(CObject* api_impl,
-        CConfig* config, const string& config_section) = 0;
-    virtual void OnConnected(CNetServerConnection::TInstance conn_impl) = 0;
-    virtual void OnError(const string& err_msg, SNetServerImpl* server) = 0;
-    virtual void OnWarning(const string& warn_msg, SNetServerImpl* server) = 0;
 };
 
 class INetServerExecHandler
@@ -203,16 +184,20 @@ struct SNetServerImpl : public CObject
     {
     }
 
-    CNetServerConnection Connect(STimeout* timeout);
+    CNetServerConnection Connect(STimeout* timeout,
+            INetServerConnectionListener* conn_listener);
 
     CNetServerConnection GetConnectionFromPool();
 
-    void TryExec(INetServerExecHandler& handler, STimeout* timeout = NULL);
+    void TryExec(INetServerExecHandler& handler,
+            STimeout* timeout = NULL,
+            INetServerConnectionListener* conn_listener = NULL);
 
     void ConnectAndExec(const string& cmd,
             CNetServer::SExecResult& exec_result,
             STimeout* timeout = NULL,
-            INetServerExecListener* exec_listener = NULL);
+            INetServerExecListener* exec_listener = NULL,
+            INetServerConnectionListener* conn_listener = NULL);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static const char kXSiteFwd[];

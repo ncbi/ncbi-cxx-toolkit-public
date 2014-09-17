@@ -42,6 +42,11 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SNetServerImpl;                      ///< @internal
+struct SNetServerConnectionImpl;            ///< @internal
+struct SNetServerInfoImpl;                  ///< @internal
+struct SNetServerMultilineCmdOutputImpl;    ///< @internal
+
 // A host:port pair.
 struct SServerAddress {
     SServerAddress(unsigned h, unsigned short p) : host(h), port(p) {}
@@ -72,8 +77,31 @@ struct SServerAddress {
 
 ///////////////////////////////////////////////////////////////////////////
 //
-struct SNetServerConnectionImpl;
+class INetServerProperties : public CObject
+{
+};
 
+class CNetServerConnection;
+class CNetServer;
+
+class INetServerConnectionListener : public CObject
+{
+public:
+    virtual CRef<INetServerProperties> AllocServerProperties() = 0;
+
+// Event handlers.
+public:
+    virtual CConfig* LoadConfigFromAltSource(CObject* api_impl,
+        string* new_section_name) = 0;
+    virtual void OnInit(CObject* api_impl,
+        CConfig* config, const string& config_section) = 0;
+    virtual void OnConnected(CNetServerConnection& connection) = 0;
+    virtual void OnError(const string& err_msg, CNetServer& server) = 0;
+    virtual void OnWarning(const string& warn_msg, CNetServer& server) = 0;
+};
+
+///////////////////////////////////////////////////////////////////////////
+//
 class NCBI_XCONNECT_EXPORT CNetServerConnection
 {
     NCBI_NET_COMPONENT(NetServerConnection);
@@ -81,7 +109,9 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     /// Execute remote command 'cmd', wait for the reply,
     /// check that it starts with 'OK:', and return the
     /// remaining characters of the reply as a string.
-    string Exec(const string& cmd, STimeout* timeout = NULL);
+    string Exec(const string& cmd,
+            STimeout* timeout = NULL,
+            INetServerConnectionListener* conn_listener = NULL);
 };
 
 
@@ -96,8 +126,6 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////
 //
-struct SNetServerInfoImpl;
-
 class NCBI_XCONNECT_EXPORT CNetServerInfo
 {
     NCBI_NET_COMPONENT(NetServerInfo);
@@ -113,8 +141,6 @@ CNetServerInfo g_ServerInfoFromString(const string& server_info);
 
 ///////////////////////////////////////////////////////////////////////////
 //
-struct SNetServerImpl;
-
 class NCBI_XCONNECT_EXPORT CNetServer
 {
     NCBI_NET_COMPONENT(NetServer);
@@ -134,7 +160,8 @@ class NCBI_XCONNECT_EXPORT CNetServer
     /// This method makes as many as TServConn_ConnMaxRetries
     /// attempts to connect to the server and execute
     /// the specified command.
-    SExecResult ExecWithRetry(const string& cmd);
+    SExecResult ExecWithRetry(const string& cmd,
+            INetServerConnectionListener* conn_listener = NULL);
 
     /// Retrieve basic information about the server as
     /// attribute name-value pairs.
@@ -143,8 +170,6 @@ class NCBI_XCONNECT_EXPORT CNetServer
 
 ///////////////////////////////////////////////////////////////////////////
 //
-struct SNetServerMultilineCmdOutputImpl;
-
 class NCBI_XCONNECT_EXPORT CNetServerMultilineCmdOutput
 {
     NCBI_NET_COMPONENT(NetServerMultilineCmdOutput);

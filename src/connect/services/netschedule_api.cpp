@@ -545,13 +545,10 @@ void CNetScheduleServerListener::OnInit(
     SetAuthString(ns_impl);
 }
 
-void CNetScheduleServerListener::OnConnected(
-        CNetServerConnection::TInstance conn_impl)
+void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
 {
     if (!m_WorkerNodeCompatMode) {
-        CNetServerConnection conn(conn_impl);
-
-        string version_info(conn.Exec(m_Auth));
+        string version_info(connection.Exec(m_Auth));
 
         CNetServerInfo server_info(new SNetServerInfoImpl(version_info));
 
@@ -566,7 +563,7 @@ void CNetScheduleServerListener::OnConnected(
 
         if (!ns_node.empty() && !ns_session.empty()) {
             CRef<SNetScheduleServerProperties> server_props =
-                x_GetServerProperties(conn_impl->m_Server);
+                x_GetServerProperties(connection->m_Server);
 
             if (server_props->ns_node != ns_node ||
                     server_props->ns_session != ns_session) {
@@ -574,16 +571,16 @@ void CNetScheduleServerListener::OnConnected(
 
                 server_props->ns_node = ns_node;
                 server_props->ns_session = ns_session;
-                m_ServerByNode[ns_node] = conn_impl->m_Server->m_ServerInPool;
+                m_ServerByNode[ns_node] = connection->m_Server->m_ServerInPool;
                 server_props->affs_synced = false;
             }
         }
     } else
-        conn_impl->WriteLine(m_Auth);
+        connection->WriteLine(m_Auth);
 }
 
 void CNetScheduleServerListener::OnError(
-    const string& err_msg, SNetServerImpl* /*server*/)
+    const string& err_msg, CNetServer& /*server*/)
 {
     string code;
     string msg;
@@ -616,7 +613,7 @@ void CNetScheduleServerListener::OnError(
 }
 
 void CNetScheduleServerListener::OnWarning(const string& warn_msg,
-        SNetServerImpl* server)
+        CNetServer& server)
 {
     if (m_EventHandler)
         m_EventHandler->OnWarning(warn_msg, server);

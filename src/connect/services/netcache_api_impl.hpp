@@ -60,9 +60,9 @@ public:
         string* new_section_name);
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
-    virtual void OnConnected(CNetServerConnection::TInstance conn_impl);
-    virtual void OnError(const string& err_msg, SNetServerImpl* server);
-    virtual void OnWarning(const string& warn_msg, SNetServerImpl* server);
+    virtual void OnConnected(CNetServerConnection& connection);
+    virtual void OnError(const string& err_msg, CNetServer& server);
+    virtual void OnWarning(const string& warn_msg, CNetServer& server);
 
     static CRef<SNetCacheServerProperties> x_GetServerProperties(
             SNetServerImpl* server_impl);
