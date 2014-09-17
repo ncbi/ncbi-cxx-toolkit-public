@@ -112,8 +112,8 @@ void CBAMDataLoader::SetPileupGraphsParamDefault(bool param)
 
 static bool GetPileupGraphsParam(void)
 {
-    static CSafeStatic<NCBI_PARAM_TYPE(BAM_LOADER, PILEUP_GRAPHS)> s_Value;
-    return s_Value->Get();
+    NCBI_PARAM_TYPE(BAM_LOADER, PILEUP_GRAPHS) s_Value;
+    return s_Value.Get();
 }
 
 
