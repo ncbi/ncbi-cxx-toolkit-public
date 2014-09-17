@@ -3584,6 +3584,7 @@ static void s_SetFindFileError(void)
 {
     DWORD err = GetLastError();
     CNcbiError::SetWindowsError(err);
+    SetLastError(err); // set Windows error back
     switch (err) {
         case ERROR_NO_MORE_FILES:
         case ERROR_FILE_NOT_FOUND:
@@ -3737,6 +3738,10 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
     } else {
         s_SetFindFileError();
         delete contents;
+        if ( F_ISSET(flags, fThrowOnError) ) {
+            NCBI_THROW(CFileErrnoException, eFile,
+                       string("Cannot read directory ") + base_path);
+        }
         return NULL;
     }
 
@@ -3745,6 +3750,10 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
     DIR* dir = opendir(base_path.c_str());
     if ( !dir ) {
         delete contents;
+        if ( F_ISSET(flags, fThrowOnError) ) {
+            NCBI_THROW(CFileErrnoException, eFile,
+                       string("Cannot read directory ") + base_path);
+        }
         return NULL;
     }
     while (struct dirent* entry = readdir(dir)) {
@@ -3804,6 +3813,11 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
     } else {
         s_SetFindFileError();
         delete contents;
+        if ( F_ISSET(flags, fThrowOnError) ) {
+            cout << "--> " << errno << endl;
+            NCBI_THROW(CFileErrnoException, eFile,
+                       string("Cannot read directory ") + base_path);
+        }
         return NULL;
     }
 
@@ -3812,6 +3826,10 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
     DIR* dir = opendir(base_path.c_str());
     if ( !dir ) {
         delete contents;
+        if ( F_ISSET(flags, fThrowOnError) ) {
+            NCBI_THROW(CFileErrnoException, eFile,
+                       string("Cannot read directory ") + base_path);
+        }
         return NULL;
     }
     while (struct dirent* entry = readdir(dir)) {
@@ -5602,6 +5620,7 @@ const char* CFileException::GetErrCodeString(void) const
 const char* CFileErrnoException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
+    case eFile:            return "eFile";
     case eFileSystemInfo:  return "eFileSystemInfo";
     case eFileLock:        return "eFileLock";
     case eFileIO:          return "eFileIO";
@@ -5883,21 +5902,27 @@ void CFileIO::CreateTemporary(const string& dir,
             x_dir = CDir::GetTmpDir();
         }
     }
-    if (!x_dir.empty())
+    if (!x_dir.empty()) {
         x_dir = CDirEntry::AddTrailingPathSeparator(x_dir);
+    }
 
 #  if defined(NCBI_OS_UNIX)
     string pattern = x_dir + prefix + "XXXXXX";
-    AutoPtr<char, CDeleter<char> > filename(strdup(pattern.c_str()));
-    if ((m_Handle = mkstemp(filename.get())) == -1) {
+    if (pattern.length() > PATH_MAX) {
+        NCBI_THROW(CFileErrnoException, eFileIO, "Too long pattern");
+    }
+    char filename[PATH_MAX+1];
+    memcpy(filename, pattern.c_str(), pattern.length()+1);
+    if ((m_Handle = mkstemp(filename)) == -1) {
         NCBI_THROW(CFileErrnoException, eFileIO, "mkstemp(3) failed");
     }
-    m_Pathname = filename.get();
-    if (auto_remove == eRemoveASAP)
+    m_Pathname.assign(filename, pattern.length());
+    if (auto_remove == eRemoveASAP) {
         NcbiSys_remove(_T_XCSTRING(m_Pathname));
+    }
 
 #  elif defined(NCBI_OS_MSWIN)
-    char buffer[MAX_PATH+1];
+    char buffer[PATH_MAX+1];
     srand((unsigned) time(0));
     unsigned long ofs = rand();
 
@@ -5920,7 +5945,7 @@ void CFileIO::CreateTemporary(const string& dir,
 #  endif
 
 #else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-    Open(s_StdGetTmpName(dir.c_str(), prefix.c_str()), eCreateNew, eReadWrite);
+    pen(s_StdGetTmpName(dir.c_str(), prefix.c_str()), eCreateNew, eReadWrite);
 #endif
 
     m_AutoClose = true;

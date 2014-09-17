@@ -167,6 +167,7 @@ class NCBI_XNCBI_EXPORT CFileErrnoException : public CFileErrnoException_Base
 public:
     /// Error types
     enum EErrCode {
+        eFile,
         eFileSystemInfo,
         eFileLock,
         eFileIO
@@ -1642,6 +1643,8 @@ public:
                                    ///< case-insensitive.
         fIgnorePath      = (1<<4), ///< Return only names of entries,
                                    ///< not their full paths.
+        fThrowOnError    = (1<<5), ///< Throws an exceptions on error,
+                                   ///< instead of returning empty/null value.
 
         // Deprecated entries to be removed in the future
         eAllEntries       = 0,     ///< \deprecated Only provided for
@@ -1659,27 +1662,29 @@ public:
     /// @param mask
     ///   Use to select only entries that match this mask.
     ///   Do not use file mask if set to "kEmptyStr".
-    /// @param mode
-    ///   Defines which entries return.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(eCase -- default), or a
-    ///   case-insensitive compare (eNocase).
+    /// @param flags
+    ///   Flags defines behavior and which entries to return.
     /// @return
-    ///   An array containing all directory entries.
+    ///   A list containing all directory entries.
+    ///   Return empty list on error.
+    /// @note
+    ///   Use fThrowOnError to avoid getting empty list on error
+    ///   and throwing an exception instead.
     TEntries GetEntries(const string&    mask  = kEmptyStr,
                         TGetEntriesFlags flags = 0) const;
 
     /// Get directory entries based on the specified set of "masks".
     ///
-    /// @param mask
+    /// @param masks
     ///   Use to select only entries that match this set of masks.
-    /// @param mode
-    ///   Defines which entries return.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(eCase -- default), or a
-    ///   case-insensitive compare (eNocase).
+    /// @param flags
+    ///   Flags defines behavior and which entries to return.
     /// @return
-    ///   An array containing all directory entries.
+    ///   A list containing all directory entries.
+    ///   Return empty list on error.
+    /// @note
+    ///   Use fThrowOnError to avoid getting empty list on error
+    ///   and throwing an exception instead.
     TEntries GetEntries(const vector<string>& masks,
                         TGetEntriesFlags flags = 0) const;
 
@@ -1687,48 +1692,94 @@ public:
     ///
     /// @param mask
     ///   Use to select only entries that match this set of masks.
-    /// @param mode
-    ///   Defines which entries return.
-    /// @param use_case
-    ///   Whether to do a case sensitive compare(eCase -- default), or a
-    ///   case-insensitive compare (eNocase).
+    /// @param flags
+    ///   Flags defines behavior and which entries to return.
     /// @return
-    ///   An array containing all directory entries.
+    ///   A list containing all directory entries.
+    ///   Return empty list on error.
+    /// @note
+    ///   Use fThrowOnError to avoid getting empty list on error
+    ///   and throwing an exception instead.
     TEntries GetEntries(const CMask&     masks, 
                         TGetEntriesFlags flags = 0) const;
 
-
-    /// Versions of GetEntries() which returns pointer to TEntries.
+    /// Get directory entries based on the specified "mask".
     /// This methods are faster on big directories than GetEntries().
-    /// These methods return NULL on error.
-    /// NOTE: Do not forget to release allocated memory using return pointer.
+    ///
+    /// @param mask
+    ///   Use to select only entries that match this mask.
+    ///   Do not use file mask if set to "kEmptyStr".
+    /// @param flags
+    ///   Flags defines behavior and which entries to return.
+    /// @return
+    ///   A pointer to list of directory entries.
+    ///   NULL in the case of error.
+    /// @note
+    ///   Do not forget to release allocated memory using return pointer.
     TEntries* GetEntriesPtr(const string&    mask  = kEmptyStr,
                             TGetEntriesFlags flags = 0) const;
 
+    /// Get directory entries based on the specified set of "masks".
+    /// This methods are faster on big directories than GetEntries().
+    ///
+    /// @param mask
+    ///   Use to select only entries that match this set of masks.
+    /// @param flags
+    ///   Flags defines behavior and which entries to return.
+    /// @return
+    ///   A pointer to list of directory entries.
+    ///   NULL in the case of error.
+    /// @note
+    ///   Do not forget to release allocated memory using return pointer.
     TEntries* GetEntriesPtr(const vector<string>& masks,
                             TGetEntriesFlags flags = 0) const;
 
+    /// Get directory entries based on the specified set of "masks".
+    /// This methods are faster on big directories than GetEntries().
+    ///
+    /// @param mask
+    ///   Use to select only entries that match this set of masks.
+    /// @param flags
+    ///   Flags defines behavior and which entries to return.
+    /// @return
+    ///   A pointer to list of directory entries.
+    ///   NULL in the case of error.
+    /// @note
+    ///   Do not forget to release allocated memory using return pointer.
     TEntries* GetEntriesPtr(const CMask&     masks,
                             TGetEntriesFlags flags = 0) const;
 
     // OBSOLETE functions. Will be deleted soon.
     // Please use versions of GetEntries*() listed above.
+
     typedef TGetEntriesFlags EGetEntriesMode;
+    /// @deprecated  Use other variant of of GetEntries() instead.
+    NCBI_DEPRECATED 
     TEntries GetEntries    (const string&    mask,
                             EGetEntriesMode  mode,
                             NStr::ECase      use_case) const;
+    /// @deprecated  Use other variant of of GetEntries() instead.
+    NCBI_DEPRECATED 
     TEntries GetEntries    (const vector<string>& masks,
                             EGetEntriesMode  mode,
                             NStr::ECase      use_case) const;
+    /// @deprecated  Use other variant of of GetEntries() instead.
+    NCBI_DEPRECATED 
     TEntries GetEntries    (const CMask&     masks,
                             EGetEntriesMode  mode,
                             NStr::ECase      use_case) const;
+    /// @deprecated  Use other variant of of GetEntries() instead.
+    NCBI_DEPRECATED 
     TEntries* GetEntriesPtr(const string&    mask,
                             EGetEntriesMode  mode,
                             NStr::ECase      use_case) const;
+    /// @deprecated  Use other variant of of GetEntries() instead.
+    NCBI_DEPRECATED 
     TEntries* GetEntriesPtr(const vector<string>& masks,
                             EGetEntriesMode  mode,
                             NStr::ECase      use_case) const;
+    /// @deprecated  Use other variant of of GetEntries() instead.
+    NCBI_DEPRECATED 
     TEntries* GetEntriesPtr(const CMask&     masks,
                             EGetEntriesMode  mode,
                             NStr::ECase      use_case) const;
@@ -3321,7 +3372,7 @@ public:
     CFileReaderWriter_Base(void) {};
     /// Return system file handle associated with the file.
     TFileHandle GetFileHandle(void) { return m_File.GetFileHandle(); };
-    /// Get an underlaying fileio object
+    /// Get an underlaying file I/O object
     CFileIO& GetFileIO(void) { return m_File; }
 
 protected:
