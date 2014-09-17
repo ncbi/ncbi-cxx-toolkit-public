@@ -1060,7 +1060,7 @@ if test "$with_mt" != "no" ; then
    esac
    case "$compiler" in
       GCC )
-         if $CC -v | grep clang >/dev/null; then
+         if $CC -v 2>&1 | grep clang >/dev/null; then
             :
             # Will allegedly support -openmp at some point, but as of 3.4,
             # just parses it as specifying an output filename: -o penmp.
