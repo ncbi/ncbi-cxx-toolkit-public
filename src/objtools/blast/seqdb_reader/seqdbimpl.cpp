@@ -2462,5 +2462,27 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads)
 
 }
 
+int CSeqDBImpl::x_GetCacheID(CSeqDBLockHold &locked) const 
+{
+    int threadID = CThread::GetSelf();
+
+    if (m_NextCacheID < 0)
+	return m_CacheID[threadID];
+
+    int retval;
+    m_Atlas.Lock(locked);
+
+    if (m_CacheID.find(threadID) == m_CacheID.end()) {
+	m_CacheID[threadID] = m_NextCacheID++;
+    }
+    retval = m_CacheID[threadID];
+    if (m_NextCacheID == m_NumThreads) {
+	m_NextCacheID = -1;
+    }
+
+    m_Atlas.Unlock(locked);
+    return retval;
+}
+
 END_NCBI_SCOPE
 
