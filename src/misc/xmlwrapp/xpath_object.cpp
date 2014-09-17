@@ -33,7 +33,9 @@
 **/
 
 
-
+// For isnan(...), INT_MIN and INT_MAX
+#include <math.h>
+#include <limits.h>
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/xpath_object.hpp>
@@ -390,8 +392,10 @@ namespace xslt {
         if (pimpl_->obj_ == NULL)
             throw xslt::exception(kUninitialisedObject);
 
-        if (pimpl_->obj_->type == XPATH_NUMBER)
+        if (pimpl_->obj_->type == XPATH_NUMBER) {
+            test_int_convertability(pimpl_->obj_->floatval);
             return static_cast<int>(pimpl_->obj_->floatval);
+        }
 
         // Type differs, try to convert
         xmlXPathObjectPtr   copy = xmlXPathObjectCopy(pimpl_->obj_);
@@ -400,6 +404,13 @@ namespace xslt {
         copy = xmlXPathConvertNumber(copy);
         if (copy == NULL)
             throw xslt::exception(kConverToNumberFailed);
+
+        try {
+            test_int_convertability(copy->floatval);
+        } catch (...) {
+            xmlXPathFreeObject(copy);
+            throw;
+        }
 
         int  retval = static_cast<int>(copy->floatval);
         xmlXPathFreeObject(copy);
@@ -502,6 +513,16 @@ namespace xslt {
     bool xpath_object::get_from_xslt(void) const
     {
         return pimpl_->from_xslt_;
+    }
+
+    void xpath_object::test_int_convertability(double val) const
+    {
+        if (isnan(val) != 0)
+            throw xslt::exception("NaN cannot be converted to int");
+        if (val < INT_MIN)
+            throw xslt::exception("Value is too small to be converted to int");
+        if (val > INT_MAX)
+            throw xslt::exception("Value is too large to be converted to int");
     }
 
     xpath_object::xpath_object(void *  raw_object) :

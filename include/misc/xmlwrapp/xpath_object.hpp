@@ -248,6 +248,7 @@ private:
     void revoke_ownership (void) const;
     void set_from_xslt(void) const;
     bool get_from_xslt(void) const;
+    void test_int_convertability(double val) const;
     xpath_object (void *);
     friend void ::xslt_ext_func_cb(void *, int);
 
