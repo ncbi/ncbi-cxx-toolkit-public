@@ -173,15 +173,22 @@ CMergeAligner::x_MergeSeqAlignSet(CSeq_align_set& InAligns, objects::CScope& Sco
     CRef<CSeq_align_set> Out(new CSeq_align_set);
 
     try {
-        /**
-        CTreeAlignMerger merger;
-        merger.SetScope(&Scope);
-        merger.Merge(In, Out->Set());
-        **/
-
-        CAlignCleanup Cleaner(Scope);
-        Cleaner.FillUnaligned(true);
-        Cleaner.Cleanup(In, Out->Set());
+        switch(m_Mode) {
+        case eAlignCleanup:
+            {{
+                CTreeAlignMerger merger;
+                merger.SetScope(&Scope);
+                merger.Merge(In, Out->Set());
+                break;
+            }}
+        case eTreeAlignMerger:
+            {{
+                CAlignCleanup Cleaner(Scope);
+                Cleaner.FillUnaligned(true);
+                Cleaner.Cleanup(In, Out->Set());
+                break;
+            }}
+        }
     } catch(CException& e) {
         ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
         return CRef<CSeq_align_set>();

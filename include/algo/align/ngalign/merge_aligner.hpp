@@ -65,7 +65,21 @@ END_SCOPE(objects)
 class CMergeAligner : public IAlignmentFactory
 {
 public:
-    CMergeAligner(int Threshold) : m_Threshold(Threshold) { ; }
+    enum EMode {
+        /// Use the older (CAlignCleanup) merge algorithm.
+        eAlignCleanup,
+
+        /// Use the new (CTreeAlignMerger) merge algorithm.
+        eTreeAlignMerger,
+
+        eDefault = eAlignCleanup
+    };
+    typedef EMode TMode;
+
+    CMergeAligner(int Threshold, TMode mode = eAlignCleanup)
+        : m_Threshold(Threshold)
+        , m_Mode(mode)
+        { }
 
     string GetName() const { return "merge_aligner"; }
 
@@ -85,6 +99,7 @@ private:
     void x_SortAlignSet(objects::CSeq_align_set& AlignSet, int CompartFlags = 0);
 
     int m_Threshold;
+    TMode m_Mode;
 };
 
 
