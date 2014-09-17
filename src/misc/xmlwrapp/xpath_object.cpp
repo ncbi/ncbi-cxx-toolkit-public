@@ -33,10 +33,6 @@
 **/
 
 
-// For isnan(...), INT_MIN and INT_MAX
-#include <math.h>
-#include <limits.h>
-
 // xmlwrapp includes
 #include <misc/xmlwrapp/xpath_object.hpp>
 #include <misc/xmlwrapp/xslt_exception.hpp>
@@ -49,6 +45,19 @@
 // libxml2
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
+
+// For isnan(...)
+#if defined(_MSC_VER)
+#  include <float.h>
+#  if !defined(isnan)
+#    define isnan _isnan
+#  endif
+#else
+#  include <math.h>
+#endif
+
+// for INT_MIN and INT_MAX
+#include <limits.h>
 
 
 namespace xslt {
