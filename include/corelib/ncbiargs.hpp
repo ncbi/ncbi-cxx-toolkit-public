@@ -282,8 +282,24 @@ public:
         return m_Ordinal;
     }
 
+    enum EArgValueFlags {
+        fArgValue_HasDefault  = (1 << 0),  /// argument has default value
+        fArgValue_FromDefault = (1 << 1)   /// argument was not provided on command line
+    };
+    typedef unsigned int TArgValueFlags;
+
+    /// Get default value if any, as string.
+    ///
+    /// @param has_default
+    ///    Flags inidicate whether or not the argument has default value,
+    ///    and was it set from command line, or from the default.
+    const string& GetDefault(TArgValueFlags* has_default = NULL) const;
+
 protected:
     friend class CArgs;
+    friend class CArgDescDefault;
+    friend class CArgDescMandatory;
+    friend class CArgDesc_Flag;
 
     /// Protected constructor and destructor.
     ///
@@ -295,9 +311,12 @@ protected:
     {
         m_Ordinal = pos;
     }
+    void x_SetDefault(const string& def_value, bool from_def);
 
     string m_Name;          ///< Argument name
     size_t m_Ordinal;
+    string m_Default;
+    TArgValueFlags m_Flags;
 };
 
 

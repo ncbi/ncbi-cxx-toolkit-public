@@ -134,7 +134,7 @@ Int8 s_StringToInt8(const string& value)
 //  CArgValue::
 
 CArgValue::CArgValue(const string& name)
-    : m_Name(name), m_Ordinal(0)
+    : m_Name(name), m_Ordinal(0), m_Flags(0)
 {
     if ( !CArgDescriptions::VerifyName(m_Name, true) ) {
         NCBI_THROW(CArgException,eInvalidArg,
@@ -162,6 +162,22 @@ CArgValue::TStringArray& CArgValue::SetStringList()
         "Value lists not implemented for this argument: " + m_Name);
 }
 
+const string& CArgValue::GetDefault(TArgValueFlags* has_default) const
+{
+    if (has_default) {
+        *has_default = m_Flags;
+    }
+    return m_Default;
+}
+
+void CArgValue::x_SetDefault(const string& def_value, bool from_def)
+{
+    m_Default = def_value;
+    m_Flags |= fArgValue_HasDefault;
+    if (from_def) {
+        m_Flags |= fArgValue_FromDefault;
+    }
+}
 
 
 ///////////////////////////////////////////////////////
@@ -1148,6 +1164,10 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
         }
     }
 
+    const CArgDescDefault* dflt = dynamic_cast<const CArgDescDefault*> (this);
+    if (dflt) {
+        arg_value->x_SetDefault(dflt->GetDefaultValue(), false);
+    }
     return arg_value.Release();
 }
 
@@ -1247,7 +1267,11 @@ const string& CArgDescDefault::GetDefaultValue(void) const
 
 CArgValue* CArgDescDefault::ProcessDefault(void) const
 {
-    return ProcessArgument(GetDefaultValue());
+    CArgValue* v = ProcessArgument(GetDefaultValue());
+    if (v) {
+        v->x_SetDefault(GetDefaultValue(), true);
+    }
+    return v;
 }
 
 
@@ -1332,13 +1356,21 @@ string CArgDesc_Flag::GetUsageCommentAttr(void) const
 
 CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/) const
 {
-    return new CArg_Flag(GetName(), m_SetValue);
+    CArgValue* v = new CArg_Flag(GetName(), m_SetValue);
+    if (v) {
+        v->x_SetDefault(NStr::BoolToString(!m_SetValue), false);
+    }
+    return v;
 }
 
 
 CArgValue* CArgDesc_Flag::ProcessDefault(void) const
 {
-    return new CArg_Flag(GetName(), !m_SetValue);
+    CArgValue* v = new CArg_Flag(GetName(), !m_SetValue);
+    if (v) {
+        v->x_SetDefault(NStr::BoolToString(!m_SetValue), true);
+    }
+    return v;
 }
 
 
