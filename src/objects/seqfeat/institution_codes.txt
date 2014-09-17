@@ -879,6 +879,7 @@ CEPIM	c	Centro per gli Enterobatteri Patogeni per l'Italia Meridionale
 CEPM	c	CEPM- Centre d'Etudes sur le Polymorphisme des Micro-organismes
 CERL/BIC	s	United States Army, Biological Inventory Collection
 CERN	s	University
+CES	s	The Centre for Ecological Sciences,  Indian Institute of Science
 CESJ	s	Universidade Federal de Juiz de Fora, Departamento de Botanica
 CESK	s	Muzeum Teainska
 CEST	s	Central Experiment Station
@@ -1139,6 +1140,7 @@ CONV	s	Converse College, Biology Department
 COP<VEN>	s	Coleccion Ornitologica Phelps
 COR	s	Universidade Federal de Mato Grosso do Sul, Departamento de Ciencias do Ambiente
 CORB	s	Corchester School
+CORBIDI	s	Centro de Ornitologia y Biodiversidad
 CORD	s	Universidad Nacional de Cordoba, Facultad de Ciencias Exactas, Fisicas y Naturales
 Coriell	cb	Coriell Institute for Medical Research
 CORO	s	IUTAG, Departamento de Investigacion
