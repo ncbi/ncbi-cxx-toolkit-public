@@ -2291,8 +2291,10 @@ void CBioseq_CDS_TRNA_OVERLAP :: TestOnObj(const CBioseq& bioseq)
    string strtmp;
    ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
      strtmp = GetDiscItemText(**it);;
-     bioseq_cd_desc_list = NStr::UIntToString(m_num_entry)+bioseq_desc + "$" + strtmp;
-     bioseq_cd_desc_obj = NStr::UIntToString(m_num_entry)+bioseq_desc + "#" + strtmp;
+     bioseq_cd_desc_list 
+       = NStr::UIntToString(thisInfo.num_entry) + bioseq_desc + "$" + strtmp;
+     bioseq_cd_desc_obj 
+       = NStr::UIntToString(thisInfo.num_entry) + bioseq_desc + "#" + strtmp;
      CConstRef <CObject> cd_obj(*it); 
      cd_str = (*it)->GetLocation().GetStrand();
      cd_added = false;
@@ -2395,7 +2397,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
       if (run_dup) {
         if (!bioseq.IsAa()) {
            if (!title.empty()) {
-              strtmp = NStr::UIntToString(m_num_entry) + title;
+              strtmp = NStr::UIntToString(thisInfo.num_entry) + title;
               strtmp = NStr::ToUpper(strtmp);
               thisInfo.test_item_list[GetName_dup()].push_back(strtmp + "$" + desc);
               thisInfo.test_item_objs[GetName_dup() +"$" + strtmp]
@@ -5457,10 +5459,45 @@ bool CBioseq_on_locus_tags :: x_IsLocationDirSub(const CSeq_loc& seq_location)  
 
 
 bool exclude_dirsub = false;
+void CBioseq_on_locus_tags :: x_CollectDupLocusTagGenes(vector <const CSeq_feat*>::const_iterator jt, const string& setting_name, const string& locus_tag, const string& desc, CConstRef <CObject> gene_ref, const string& entry_no)
+{
+   set <string> sent_gene;
+   string strtmp, locus_tag_adj;
+
+   // 1st: dup locus-tag genes
+   thisInfo.test_item_list[setting_name].push_back(entry_no + "*" + locus_tag + "$" + desc);
+   thisInfo.test_item_objs[setting_name + "$" + entry_no + "*" + locus_tag].push_back(gene_ref);
+    
+   // 2nd: for adjacent genes.
+   if ((jt+1) != gene_feat.end()) {
+     const CGene_ref& gene_adj = (*(jt+1))->GetData().GetGene();
+     if (gene_adj.CanGetLocus_tag() 
+                  && !gene_adj.GetPseudo()&& !gene_adj.GetLocus_tag().empty() ) {
+        locus_tag_adj = gene_adj.GetLocus_tag();
+        if (locus_tag_adj == locus_tag) {
+          if (sent_gene.find(desc) == sent_gene.end()) {
+             thisInfo.test_item_list[setting_name + "_adj" + entry_no].push_back(desc);
+             thisInfo.test_item_objs[setting_name + "_adj" + entry_no].push_back(gene_ref);
+             sent_gene.insert(desc);
+          }
+          strtmp = GetDiscItemText(**(jt+1));
+          if (sent_gene.find(strtmp) == sent_gene.end()) {
+             thisInfo.test_item_list[setting_name + "_adj" + entry_no].push_back(strtmp);
+             thisInfo.test_item_objs[setting_name + "_adj" + entry_no]
+                 .push_back(CConstRef <CObject> (*(jt+1)));
+             sent_gene.insert(strtmp);
+          }
+        }
+     }
+   }
+};
+
 void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq) 
 {
   if (thisTest.is_LocusTag_run) return;
   thisTest.is_LocusTag_run = true;
+
+  m_num_bioseq ++;
 
   string locus_tag, locus_tag_adj;
   string test_desc, test_desc_adj;
@@ -5478,7 +5515,7 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
   vector <string> missing_texts;
   vector <CConstRef <CObject> > missing_objs;
   bool has_locus_tag = false;
-  string strtmp;
+  string strtmp, setting_nm;
   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
      const CGene_ref& gene = (*jt)->GetData().GetGene();
      if (gene.GetPseudo()) continue;  
@@ -5488,39 +5525,15 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
         locus_tag = gene.GetLocus_tag();
         if (!locus_tag.empty()) {
            has_locus_tag = true;
-           if (run_dup) { // DUPLICATE_LOCUS_TAGS
-              thisInfo.test_item_list[GetName_dup()]
-                        .push_back(locus_tag + "$" + test_desc);
-              thisInfo.test_item_objs[GetName_dup() +"$" + locus_tag]
-                        .push_back(gene_ref);
+           strtmp = NStr::UIntToString(thisInfo.num_entry)
+                               + NStr::UIntToString(m_num_bioseq);
+           if (run_dup) { // DUPLICATE_LOCUS_TAGS: in the same entry
+              x_CollectDupLocusTagGenes(jt, GetName_dup(), locus_tag, 
+                           test_desc, gene_ref, NStr::UIntToString(thisInfo.num_entry));
            }
-           if (run_glodup) { // DUPLICATE_LOCUS_TAGS(global)
-              // if adjacent gene has the same locus_tag: for globle check need
-              if ((jt+1) != gene_feat.end()) {
-               const CGene_ref& gene_adj = (*(jt+1))->GetData().GetGene();
-               if (gene_adj.CanGetLocus_tag() 
-                        && !gene_adj.GetPseudo() 
-                        && !gene_adj.GetLocus_tag().empty() ) {
-                  locus_tag_adj = gene_adj.GetLocus_tag();
-                  if (locus_tag_adj == locus_tag) {
-                      if (sent_gene.find(test_desc) == sent_gene.end()) {
-                         thisInfo.test_item_list[GetName_glodup()]
-                                .push_back(locus_tag + "$" + test_desc);
-                         thisInfo.test_item_objs[GetName_glodup()+"$"+locus_tag]
-                                .push_back(gene_ref);
-                         sent_gene.insert(test_desc);
-                      }
-                      strtmp = GetDiscItemText(**(jt+1));
-                      if (sent_gene.find(strtmp) == sent_gene.end()) {
-                         thisInfo.test_item_list[GetName_glodup()]
-                                .push_back(locus_tag + "$" + strtmp);
-                         thisInfo.test_item_objs[GetName_glodup()+"$"+locus_tag]
-                                .push_back(CConstRef <CObject> (*(jt+1)));
-                         sent_gene.insert(strtmp);
-                      }
-                  }
-              }
-             }
+           sent_gene.clear();
+           if (run_glodup) { // DUPLICATE_LOCUS_TAGS_global
+              x_CollectDupLocusTagGenes(jt, GetName_glodup(), locus_tag, test_desc, gene_ref);
            }
            pos = locus_tag.find('_');
            if (pos != string::npos) {
@@ -5597,35 +5610,72 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
   }
 };
 
-
-void CBioseq_on_locus_tags :: x_GetReport_dup(CRef <CClickableItem> c_item, const string& setting_name)
+void CBioseq_DUPLICATE_LOCUS_TAGS :: GetReport(CRef <CClickableItem> c_item)
 {
-   Str2Strs tag2dups;
-   GetTestItemList(c_item->item_list, tag2dups);
-   c_item->item_list.clear();
+  Str2Strs no2dups, tag2dups;
+  GetTestItemList(c_item->item_list, no2dups, "*");
+  c_item->item_list.clear();
 
-     unsigned cnt = 0;
-     bool copy_up;
-     ITERATE (Str2Strs, it, tag2dups) {
-        if (it->second.size() > 1) {
-            copy_up = (setting_name == GetName_glodup());
-            AddSubcategory(c_item, GetName() + "$" + it->first,
-                             &(it->second), "gene", "locus tag " + it->first,
-                             e_HasComment, copy_up);
-            cnt += it->second.size();
-        }
+  unsigned cnt = 0;
+  string strtmp;
+  ITERATE (Str2Strs, it, no2dups) {  // entry_no + "*" + locus + "$" + desc
+     cnt = 0;
+
+     if (it != no2dups.begin()) {
+        c_item.Reset(new CClickableItem);
+        c_item->setting_name = GetName();
+        thisInfo.disc_report_data.push_back(c_item);
      }
-     if (thisInfo.report != fDiscrepancy 
-               && !c_item->subcategories.empty()) {
-        if (setting_name == GetName_glodup()) {
-          c_item->description = GetIsComment(cnt, "gene") 
-                        + "adjacent to another gene with the same locus tag.";
-        }
-        else {
-          c_item->description 
-             = GetHasComment(cnt, "gene") + "duplicate locus tags.";
-        }
+     
+     tag2dups.clear();
+     GetTestItemList(it->second, tag2dups);
+     ITERATE (Str2Strs, tit, tag2dups) {
+       cnt += tit->second.size();
+       AddSubcategory(c_item, GetName() + "$" + it->first + "*" + tit->first, 
+                &(tit->second), "gene", 
+                "locus tag " + tit->first, e_HasComment, false);
      }
+     strtmp = GetName() + "_adj" + it->first;
+     if (thisInfo.test_item_list.find(strtmp) != thisInfo.test_item_list.end()) {
+        CRef <CClickableItem> c_adj(new CClickableItem);
+        c_adj->setting_name = GetName();
+        c_adj->item_list = thisInfo.test_item_list[GetName() + "_adj" + it->first];
+        c_adj->obj_list = thisInfo.test_item_objs[GetName() + "_adj" + it->first];
+        c_adj->description
+          = GetIsComment(c_adj->item_list.size(), "gene")
+                + "adjacent to another gene with the same locus tag.";
+        c_item->subcategories.push_back(c_adj);
+     } 
+     c_item->description = GetHasComment(cnt, "gene") + "duplicate locus tags.";
+  }
+};
+
+void CBioseq_DUPLICATE_LOCUS_TAGS_global :: GetReport(CRef <CClickableItem> c_item)
+{
+  Str2Strs tag2dups, bsq2dups;
+  GetTestItemList(c_item->item_list, tag2dups); 
+  c_item->item_list.clear();
+
+  unsigned cnt = 0;
+  string strtmp;
+  CRef <CClickableItem> c_adj(new CClickableItem);
+  ITERATE (Str2Strs, it, tag2dups) { 
+     strtmp = it->first.substr(1);
+     cnt += it->second.size();
+     AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), "gene", 
+                "locus tag " + strtmp, e_HasComment, false);
+  }
+  if ( thisInfo.test_item_list.find(GetName() + "_adj") != thisInfo.test_item_list.end() ) {
+     CRef <CClickableItem> c_adj(new CClickableItem);
+     c_adj->setting_name = GetName();
+     c_adj->item_list = thisInfo.test_item_list[GetName() + "_adj"];
+     c_adj->obj_list = thisInfo.test_item_objs[GetName() + "_adj"];
+     c_adj->description
+       = GetIsComment(c_adj->item_list.size(), "gene")
+             + "adjacent to another gene with the same locus tag.";
+     c_item->subcategories.push_back(c_adj);
+  }
+  c_item->description = GetHasComment(cnt, "gene") + "duplicate locus tags.";
 }
 
 void CBioseq_BAD_LOCUS_TAG_FORMAT :: GetReport(CRef <CClickableItem> c_item) 
@@ -6295,7 +6345,7 @@ void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
    CConstRef <CObject> seq_ref(&bioseq);
 
    // COUNT_PROTEINS
-   string i_num_entry = NStr::UIntToString(m_num_entry);
+   string i_num_entry = NStr::UIntToString(thisInfo.num_entry);
    if (thisTest.tests_run.find(GetName_cnt()) != end_it) {
        thisInfo.test_item_list[GetName_cnt()]
                   .push_back(i_num_entry + "$" + desc); 
@@ -6548,7 +6598,7 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
 
   i=0; 
   string strtmp;
-  string i_num_entry = "Entry" + NStr::UIntToString(m_num_entry);
+  string i_num_entry = "Entry" + NStr::UIntToString(thisInfo.num_entry);
   ITERATE (Str2UInt, it, thisInfo.desired_aaList) {
     if (num_present[i] < it->second)  {
        //   it->first + "_missing$" + m_bioseq_desc);
@@ -8022,7 +8072,7 @@ void CBioseq_DUPLICATE_GENE_LOCUS :: TestOnObj(const CBioseq& bioseq)
   Str2SubDt locus_list;
   Str2SubDt :: iterator it;
   string locus, location, i_num, strtmp;
-  i_num = NStr::UIntToString(m_num_entry);
+  i_num = NStr::UIntToString(thisInfo.num_entry);
   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
      if ((*jt)->GetData().GetGene().CanGetLocus()) {
         locus = (*jt)->GetData().GetGene().GetLocus();
@@ -9136,7 +9186,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
    thisTest.is_Quals_run = true;
 
    unsigned i;
-   if (m_num_entry > 1) {
+   if (thisInfo.num_entry > 1) {
      vector <string> tests;
      tests.push_back(GetName_sq());
      tests.push_back(GetName_sq_oncall());
@@ -11830,7 +11880,7 @@ void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: GetReport(CRef <CClickableItem> c_it
 void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: TestOnObj(const CSeq_entry& seq_entry)
 {
    string mol_nm, biomol_nm, entry_no, strtmp;
-   entry_no = NStr::UIntToString(m_entry_no);
+   entry_no = NStr::UIntToString(thisInfo.num_entry);
    for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry); b_ci; ++ b_ci) {
       if (b_ci->IsAa()) {
           continue;
@@ -11850,7 +11900,6 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: TestOnObj(const CSeq_entry& seq_ent
                  .push_back(CConstRef <CObject> (seq_ref.GetPointer()));
       }
    } 
-   m_entry_no ++;
 };
 
 
@@ -11963,7 +12012,7 @@ bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqsMatch(const vector <CConstRef <CBi
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportSameTaxHaplotypeDiffSequenceMismatch(Str2Seqs::const_iterator& iter, bool allow_Ndiff)
 {
    string strtmp = (string)"seq_diff_" + (allow_Ndiff ? "N" : "strict") 
-                        + "_" + NStr::UIntToString(m_entry_cnt);
+                        + "_" + NStr::UIntToString(thisInfo.num_entry);
    ITERATE (vector <CConstRef <CBioseq> >, it, iter->second) {
      thisInfo.test_item_list[GetName()].push_back(
                 strtmp + "$" + iter->first + "@" + GetDiscItemText(**it));
@@ -12036,14 +12085,14 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
          } 
       }
       if (mismatch) {
-          strtmp = "seq_same_N_" + NStr::UIntToString(m_entry_cnt) + "$";
+          strtmp = "seq_same_N_" + NStr::UIntToString(thisInfo.num_entry) + "$";
           ITERATE (vector <unsigned>, it, seqs_Ndiff_idx) {
              desc = GetDiscItemText(*seqs[*it]) + ": " + hap_tps[hap_idx[*it]];
              thisInfo.test_item_list[GetName()].push_back(strtmp + "$" + desc); 
              thisInfo.test_item_objs[GetName() + "$" + strtmp].push_back(
                                   CConstRef <CObject>(seqs[*it].GetPointer()));
           }
-          strtmp = "seq_same_strict_" + NStr::UIntToString(m_entry_cnt) + "$" 
+          strtmp = "seq_same_strict_" + NStr::UIntToString(thisInfo.num_entry) + "$" 
                                                   + NStr::UIntToString(i) + "#";
           ITERATE (vector <unsigned>, it, seqs_strict_idx) {
              desc = GetDiscItemText(*seqs[*it]) + ": " + hap_tps[hap_idx[*it]];
@@ -12347,11 +12396,14 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
    
    // Note - analysis should be performed separately for each SeqEntry, 
    // rather than for the list as a whole
+   // using thisInfo.num_entry instead
+#if 0
    if (thisInfo.test_item_list.find(GetName()) 
                   ==thisInfo.test_item_list.end()){
         m_entry_cnt = 0;
    }
    else m_entry_cnt ++;
+#endif
    string tax_nm;
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_subsrc_seqdesc) {
@@ -13217,7 +13269,7 @@ CRef <GeneralDiscSubDt> CSeqEntry_INCONSISTENT_BIOSOURCE :: AddSeqEntry(const CS
 
 void CSeqEntry_INCONSISTENT_BIOSOURCE :: TestOnObj(const CSeq_entry& seq_entry)
 {
-   if (m_num_entry > 1) {
+   if (thisInfo.num_entry > 1) {
      CRef <CClickableItem> c_item (new CClickableItem);
      c_item->setting_name = GetName();
      GetReport(c_item);
@@ -13226,7 +13278,6 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: TestOnObj(const CSeq_entry& seq_entry)
 
    bool found, has_na;
    unsigned i=0;
-//   string num_entry_str = "Entry" + NStr::UIntToString(m_num_entry);
    string biosrc_txt;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
       found = has_na = false;

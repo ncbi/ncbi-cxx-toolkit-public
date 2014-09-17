@@ -77,6 +77,8 @@ bool                                CDiscRepInfo :: exclude_dirsub;
 string                              CDiscRepInfo :: xml_label(" XmlIds:");
 string                              CDiscRepInfo :: digit_str("0123456789");
 string  CDiscRepInfo :: alpha_str("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+unsigned                            CDiscRepInfo :: num_entry = 0;
+
 Str2UInt                            CDiscRepInfo :: desired_aaList;
 Str2Str                             CDiscRepInfo :: state_abbrev;
 Str2Str                             CDiscRepInfo :: cds_prod_find;
@@ -1363,6 +1365,7 @@ void CRepConfig :: GetOrgModSubtpName(unsigned num1, unsigned num2, map <string,
 
 void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 {
+    thisInfo.num_entry ++;
     seq_entry->Parentize();
 
     // Create object manager
@@ -1381,7 +1384,6 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     }
 
     CCheckingClass myChecker;
-    myChecker.SetNumEntry(GetNumEntry());
     myChecker.CheckSeqEntry(seq_entry);
 
     // go through tests

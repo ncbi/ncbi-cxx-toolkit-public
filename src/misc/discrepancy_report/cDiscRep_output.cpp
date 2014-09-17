@@ -645,6 +645,8 @@ void CDiscRepOutput :: x_Clear(UInt2UInts* prt_ord)
    thisInfo.test_item_objs.clear();
    thisInfo.disc_report_data.clear();
    if (prt_ord) prt_ord->clear();
+  
+   thisInfo.num_entry = 0;
 };
 
 // for asndisc

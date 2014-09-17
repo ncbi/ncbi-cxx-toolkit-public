@@ -59,11 +59,8 @@ void CCheckingClass :: CheckSeqInstMol (CSeq_inst& seq_inst,
 
 CCheckingClass :: CCheckingClass()
 {
-   m_num_entry = 0;
-
    sel_seqfeat_4_seq_entry.IncludeFeatType(CSeqFeatData::e_Pub)
                           .IncludeFeatType(CSeqFeatData::e_Biosrc);
-
    sel_seqdesc.reserve(6);
    sel_seqdesc.push_back(CSeqdesc::e_Pub);
    sel_seqdesc.push_back(CSeqdesc::e_Comment);

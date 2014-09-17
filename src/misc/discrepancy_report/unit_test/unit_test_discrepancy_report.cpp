@@ -1674,6 +1674,15 @@ BOOST_AUTO_TEST_CASE(DUPLICATE_LOCUS_TAGS)
         feat = MakeNewFeat(seq, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 10, 20);
    feat->SetData().SetGene().SetLocus_tag("Spy49_EBNA-3B/EBNA-3C");
    AddFeat(feat, seq);
+   feat = MakeNewFeat(seq, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 25, 35);
+   feat->SetData().SetGene().SetLocus_tag("Spy49_EBNA-3B/EBNA-3C");
+   AddFeat(feat, seq);
+   feat = MakeNewFeat(seq, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 40, 50);
+   feat->SetData().SetGene().SetLocus_tag("Spy50");
+   AddFeat(feat, seq);
+   feat = MakeNewFeat(seq, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 55, 59);
+   feat->SetData().SetGene().SetLocus_tag("Spy50");
+   AddFeat(feat, seq);
 
    // seq2
    seq = BuildGoodSeq();
@@ -1682,9 +1691,6 @@ BOOST_AUTO_TEST_CASE(DUPLICATE_LOCUS_TAGS)
    AddFeat(feat, seq);
    entry->SetSet().SetSeq_set().push_back(seq);
 
-   RunAndCheckTest(entry, "DUPLICATE_LOCUS_TAGS", "2 genes have duplicate locus tags.");
-};
-
-BOOST_AUTO_TEST_CASE(DUPLICATE_LOCUS_TAGS_global)
-{
+   RunAndCheckTest(entry, "DUPLICATE_LOCUS_TAGS", "5 genes have duplicate locus tags.");
+   RunAndCheckTest(entry, "DUPLICATE_LOCUS_TAGS_global", "5 genes have duplicate locus tags.");
 };
