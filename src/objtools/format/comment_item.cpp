@@ -1263,6 +1263,11 @@ string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
 
     CNcbiOstrstream str;
 
+    // vecOfPoints elements are 1-based
+    const CPacked_seqpnt::TPoints & vecOfPoints =
+        pOpticalMapPoints->GetPoints();
+    _ASSERT( ! vecOfPoints.empty() );
+
     str << "This ";
     if( bHtml && ! sFiletrackURL.empty() ) {
         str << "<a href=\"" << sFiletrackURL << "\">";
@@ -1279,19 +1284,16 @@ string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
         // non-circular has an extra fragment because the
         // last fragment does NOT wrap around to continue on
         // the beginning of the bioseq.
-        ++uNumFrags;
+        if (uNumFrags > 1 && vecOfPoints[uNumFrags-1] < uBioseqLength - 1) {
+            ++uNumFrags;
+        }
     }
     str << uNumFrags;
     str << " piece" << ( (uNumFrags > 1) ? "s" : "" ) << ":";
 
-    // vecOfPoints elements are 1-based
-    const CPacked_seqpnt::TPoints & vecOfPoints =
-        pOpticalMapPoints->GetPoints();
-    _ASSERT( ! vecOfPoints.empty() );
-
     // prevEndPos and thisEndPos are 1-based
-    TSeqPos prevEndPos = 0;
-    TSeqPos thisEndPos = vecOfPoints[0];
+    TSeqPos prevEndPos = 1;
+    TSeqPos thisEndPos = vecOfPoints[0] + 1;
 
     // non-circular's first fragment is from 0 to the first rsite
     if ( ! bIsCircular ) {
@@ -1299,25 +1301,27 @@ string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
             str, prevEndPos, thisEndPos, uBioseqLength,
             eFragmentType_Normal );
     }
-    prevEndPos = thisEndPos;
+    prevEndPos = thisEndPos + 1;
 
     // regular fragments
     for( size_t idx = 1; idx < vecOfPoints.size(); ++idx ) {
-        thisEndPos = vecOfPoints[idx];
+        thisEndPos = vecOfPoints[idx] + 1;
         x_GetStringForOpticalMap_WriteFragmentLine(
             str, prevEndPos, thisEndPos, uBioseqLength,
             eFragmentType_Normal );
-        prevEndPos = thisEndPos;
+        prevEndPos = thisEndPos + 1;
     }
 
     // The last fragment for circular wraps around to the first rsite,
     // but for non-circular it ends at the end of the bioseq
-    thisEndPos = ( bIsCircular ? vecOfPoints[0] : uBioseqLength );
-    x_GetStringForOpticalMap_WriteFragmentLine(
-            str, prevEndPos, thisEndPos, uBioseqLength,
-            ( bIsCircular ? 
-              eFragmentType_WrapAround :
-              eFragmentType_Normal ) );
+    thisEndPos = ( bIsCircular ? vecOfPoints[0] + 1 : uBioseqLength );
+    if ( bIsCircular || prevEndPos < uBioseqLength - 1 ) {
+        x_GetStringForOpticalMap_WriteFragmentLine(
+                str, prevEndPos, thisEndPos, uBioseqLength,
+                ( bIsCircular ?
+                  eFragmentType_WrapAround :
+                  eFragmentType_Normal ) );
+    }
 
     return CNcbiOstrstreamToString(str);
 }
@@ -1662,9 +1666,9 @@ void CCommentItem::x_GetStringForOpticalMap_WriteFragmentLine(
 {
     str << '\n';
     str << "*  " 
-        << setw(7) << (1 + prevEndPos) 
+        << setw(7) << (prevEndPos) 
         << ' ' 
-        << setw(7) << thisEndPos
+        << setw(7) << (thisEndPos)
         << ": fragment of ";
 
     bool bLengthIsOkay = true; // until proven otherwise
@@ -1686,9 +1690,9 @@ void CCommentItem::x_GetStringForOpticalMap_WriteFragmentLine(
         str << "(ERROR: FRAGMENT IS OUTSIDE BIOSEQ BOUNDS)";
     } else {
         if( eFragmentType == eFragmentType_Normal ) {
-            str << (thisEndPos - prevEndPos);
+            str << (thisEndPos - prevEndPos + 1);
         } else {
-            str << (uBioseqLength + thisEndPos - prevEndPos);
+            str << (uBioseqLength + thisEndPos - prevEndPos + 1);
         }
     }
     str << " bp in length";
