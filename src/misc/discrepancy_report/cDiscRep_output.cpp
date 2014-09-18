@@ -125,6 +125,14 @@ bool CDiscRepOutput :: x_NeedsTag(const string& setting_name, const string& desc
 };
 
 
+void CDiscRepOutput :: x_AddFatalToSubcategories(vector <CRef <CClickableItem> >&  sub)
+{
+   NON_CONST_ITERATE (vector <CRef <CClickableItem> >, it, sub) {
+       (*it)->fatal = true;
+       if ( !((*it)->subcategories.empty()) ) x_AddFatalToSubcategories( (*it)->subcategories);
+   }
+};
+
 void CDiscRepOutput :: x_AddListOutputTags()
 {
   string setting_name, desc, sub_desc;
@@ -142,7 +150,7 @@ void CDiscRepOutput :: x_AddListOutputTags()
   }
  
   // AddOutpuTag
-  bool has_sub_trna_in_cds = false;
+  bool has_sub_fatal;
   NON_CONST_ITERATE (vector <CRef <CClickableItem> > , it, 
                                     thisInfo.disc_report_data) {
      setting_name = (*it)->setting_name;
@@ -152,29 +160,31 @@ void CDiscRepOutput :: x_AddListOutputTags()
      // check subcategories first;
      NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, 
                                                (*it)->subcategories) {
+        has_sub_fatal = false;
         sub_desc = (*sit)->description;
         if (x_NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
                || (oc.add_extra_output_tag 
-                      && x_NeedsTag(setting_name, sub_desc, extra_fatal, 
-                                                             extra_cnt)) ){
-           if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
-             if (sub_desc.find("some missing") != string::npos
-                       || sub_desc.find("some duplicate") != string::npos)
-                  (*sit)->description = "FATAL: " + sub_desc;
-
-           }
-           else if (setting_name == "RNA_CDS_OVERLAP"
+                      && x_NeedsTag(setting_name, sub_desc, extra_fatal, extra_cnt)) ){
+           if (setting_name == "RNA_CDS_OVERLAP"
                       && (sub_desc.find("contain ") != string::npos
-                            || sub_desc.find("contains ") != string::npos)) {
+                              || sub_desc.find("contains ") != string::npos)) {
                 ITERATE (vector <string>, iit, (*sit)->item_list) {
                    if ( (*iit).find(": tRNA\t") != string::npos) {
-                      has_sub_trna_in_cds = true;
                       (*sit)->description = "FATAL: " + sub_desc;
+                      (*sit)->fatal = true;
+                      has_sub_fatal = true;
                       break;
                    }
                 }
            }
-           else (*sit)->description = "FATAL: " + sub_desc;
+           else {
+              (*sit)->description = "FATAL: " + sub_desc;
+              (*sit)->fatal = true;
+               has_sub_fatal = true;
+           }
+           if (has_sub_fatal && !((*sit)->subcategories.empty())) {
+              x_AddFatalToSubcategories((*sit)->subcategories);
+           }
         }
      }
 
@@ -186,19 +196,25 @@ void CDiscRepOutput :: x_AddListOutputTags()
           if (NStr::FindNoCase(desc, "taxname (all present, all unique)") 
                   != string::npos) {
              if (na_cnt_grt1) {
-                   (*it)->description = "FATAL: " + (*it)->description;
+                (*it)->description = "FATAL: " + (*it)->description;
+                (*it)->fatal = true;
              }
           }
           else if (desc.find("some missing") != string::npos 
                        || desc.find("some duplicate") != string::npos) {
               (*it)->description = "FATAL: " + (*it)->description;
+              (*it)->fatal = true;
           }
         }
         else {
           (*it)->description = "FATAL: " + (*it)->description;
+          (*it)->fatal = true;
+        }
+        if ( (*it)->fatal && !((*it)->subcategories.empty())) {
+              x_AddFatalToSubcategories((*it)->subcategories);
         }
      } 
-     else if (setting_name == "RNA_CDS_OVERLAP" && has_sub_trna_in_cds) {
+     else if (has_sub_fatal) {
          (*it)->description = "FATAL: " + (*it)->description; 
      }
   } 
@@ -672,7 +688,7 @@ void CDiscRepOutput :: Export()
   if (!oc.xml) {
     *(oc.output_f) << "\n\nDetailed Report\n";
   }
-  x_InitTestDesc();
+  x_InitTestDesc();   // change code 
   x_WriteDiscRepDetails(thisInfo.disc_report_data, 
                               xml_root, prt_ord, oc.use_flag);
 
@@ -719,17 +735,16 @@ void CDiscRepOutput :: x_WriteDiscRepSummary(xml::node& xml_root, UInt2UInts& pr
       if ( desc.empty()) continue;
 
       // FATAL tag
-      if (x_RmTagInDescp(desc, "FATAL: ")) strtmp = "FATAL";
-      else strtmp = "INFO";
+      if (x_RmTagInDescp(desc, "FATAL: ") && !oc.xml) {
+           *(oc.output_f)  << "FATAL: ";
+      }
       
       // msg level
-      if ( oc.msg_level == COutputConfig :: e_Fatal && strtmp != "FATAL") {
+      if ( oc.msg_level == COutputConfig :: e_Fatal && !(c_item->fatal)) {
          continue;
       }
-      if (strtmp == "FATAL" && !oc.xml) {
-            *(oc.output_f)  << "FATAL: ";
-      }
 
+      strtmp = c_item->fatal ? "FATAL" : "INFO";
       setting_name = c_item->setting_name;
       is_SusProdNm = ("SUSPECT_PRODUCT_NAMES" == setting_name);
       if (!oc.xml) {
@@ -757,11 +772,10 @@ void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickable
 {
    COutputConfig& oc = thisInfo.output_config;
    unsigned i;
-   string desc;
+   string desc, strtmp;
    ITERATE (vector <CRef <CClickableItem> >, it, subcategories) {
       desc = (*it)->description;
-      if (oc.msg_level == COutputConfig :: e_Fatal 
-               && desc.find("FATAL: ") == string::npos) {
+      if (oc.msg_level == COutputConfig :: e_Fatal && !(*it)->fatal) {
           continue;
       }
       if (!oc.xml) {
@@ -772,9 +786,10 @@ void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickable
         xml::node sub_node("message", desc.c_str());
 
          // set attributes:
+        strtmp = (*it)->fatal ? "FATAL" : "INFO";
         sub_node.get_attributes().insert("code",((*it)->setting_name.c_str()));
         sub_node.get_attributes().insert("prefix", "Summary");
-        sub_node.get_attributes().insert("severity", "INFO");
+        sub_node.get_attributes().insert("severity", strtmp.c_str());
         xml_node.push_back(sub_node);
       }
       x_WriteDiscRepSubcategories( (*it)->subcategories, xml_node, ident+1);
@@ -841,9 +856,9 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
 
   string xml_prefix, xml_severity;
   CRef <CClickableItem> c_item;
-  bool is_fatal;
+  bool has_fatal;
   for (j=0; j< prt_idx.size(); j++) {
-      is_fatal = false;
+      has_fatal = false;
       c_item = disc_rep_dt[prt_idx[j]];
       desc = c_item->description;
       if ( desc.empty() ) continue;
@@ -860,13 +875,12 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
       // FATAL tag
       if (x_RmTagInDescp(desc, "FATAL: ")) {
           prefix = "FATAL: " + prefix;
-          is_fatal = true;
+          has_fatal = true;
       }
 
-      if (oc.msg_level == COutputConfig :: e_Fatal && !is_fatal) continue;
+      if (oc.msg_level == COutputConfig :: e_Fatal && !(c_item->fatal)) continue;
 
-      if ( (oc.add_output_tag || oc.add_extra_output_tag) 
-               && (is_fatal || x_SubsHaveTags(c_item)) ) {
+      if ( (oc.add_output_tag || oc.add_extra_output_tag) && has_fatal) {
             c_item->expanded = true;
       }
       // summary report
@@ -928,8 +942,7 @@ void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const s
          xml_prefix = (prefix.find("DiscRep_ALL") != string::npos) ?
                         "DiscRep_ALL" : "DiscRep_SUB";
        }
-       xml_severity = (prefix.find("FATAL: ") != string::npos) ?
-                          "FATAL" : "INFO";
+       xml_severity = c_item->fatal ? "FATAL" : "INFO";
        if (!oc.xml) {
           *(oc.output_f) << c_item->description << endl;
        }
@@ -956,7 +969,7 @@ void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const s
 } // WriteDiscRepItems()
 
 
-void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat, xml::node& xml_node)
+void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, CRef <CClickableItem> c_item, const string& prefix, bool list_features_if_subcat, xml::node& xml_node)
 {
   string xml_prefix, xml_severity, strtmp;
   if (!prefix.empty()) {
@@ -969,10 +982,7 @@ void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CCli
      else xml_prefix = "DiscRep_SUB";
   }
   string desc = c_item->description;
-  if (x_RmTagInDescp(desc, "FATAL: ")) {
-     xml_severity = "FATAL";
-  }
-  else xml_severity = "INFO";
+  xml_severity = c_item->fatal ? "FATAL" : "INFO";
   if (!oc.xml) {
       *(oc.output_f) << desc << endl;
   }
