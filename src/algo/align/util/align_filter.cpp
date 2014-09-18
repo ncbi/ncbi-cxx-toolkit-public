@@ -793,7 +793,7 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
                             if (syn_it != syns->begin()) {
                                 (*m_DryRunOutput) << ",";
                             }
-                            (*m_DryRunOutput) << (*syn_it)->first;
+                            (*m_DryRunOutput) << CSynonymsSet::GetSeq_id_Handle(syn_it);
                         }
                     }
                     (*m_DryRunOutput) << endl;
