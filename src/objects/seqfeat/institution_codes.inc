@@ -2789,6 +2789,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IUP	s	Indiana University of Pennsylvania, Biology Department",
 "IUQ	s	Laboratorio de Ictiologia",
 "IVAU	s	Instituut Voor Aardwetenschappen",
+"IVB	s	Institute of  Vertebrate Biology, Academy of Sciences of the Czech Republic",
 "IVF	s	Chinese Academy of Agricultural Sciences",
 "IVIC	s	Instituto Venezolano de Investigaciones Cientificas",
 "IVPP	s	Institute of Vertebrate Paleontology and Paleoanthropology",
