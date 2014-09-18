@@ -114,18 +114,22 @@ bool CTestDiagApp::TestApp_Init(void)
              << " format)..."
              << NcbiEndl;
     SetDiagStream(&s_Sout);
+#ifdef NCBI_THREADS
     if ( args["async"] ) {
         m_Async.reset(new CAsyncDiagHandler);
         m_Async->InstallToDiag();
     }
+#endif
     return true;
 }
 
 bool CTestDiagApp::TestApp_Exit(void)
 {
+#ifdef NCBI_THREADS
     if ( m_Async.get() ) {
         m_Async->RemoveFromDiag();
     }
+#endif
     // Verify the result
     string test_res = CNcbiOstrstreamToString(s_Sout);
     TStringList messages;
