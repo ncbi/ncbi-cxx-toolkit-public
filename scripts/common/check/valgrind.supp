@@ -81,7 +81,7 @@
    fun:__memp_pgwrite
    fun:__memp_bhwrite
    fun:__memp_sync_int
-   fun:__memp_trickle
+   ...
    fun:__memp_trickle_pp
    fun:_ZN4ncbi8CBDB_Env11MempTrickleEiPi
 }
@@ -96,7 +96,7 @@
    fun:__log_flush_int
    fun:__log_flush
    fun:__memp_sync_int
-   fun:__memp_trickle
+   ...
    fun:__memp_trickle_pp
    fun:_ZN4ncbi8CBDB_Env11MempTrickleEiPi
 }
@@ -110,15 +110,15 @@
    fun:__log_write
    fun:__log_fill
    fun:__log_putr
-   fun:__log_put_next
+   ...
    fun:__log_put
    fun:__db_addrem_log
    fun:__db_pitem
    fun:__bam_iitem
    fun:__bamc_put
    fun:__dbc_put
+   ...
    fun:__dbc_put_pp
-   fun:_ZN4ncbi12CBDB_RawFile9x_DB_CPutEP5__dbcP8__db_dbtS4_j
 }
 
 {
@@ -130,7 +130,7 @@
    fun:__log_write
    fun:__log_fill
    fun:__log_putr
-   fun:__log_put_next
+   ...
    fun:__log_put
    fun:__bam_repl_log
    fun:__bam_ritem
@@ -159,13 +159,29 @@
 }
 
 {
-   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b3)
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b4)
    Memcheck:Cond
    fun:__log_putr
-   fun:__log_put_next
+   ...
    fun:__log_put
    fun:__bam_split_log
-   fun:__bam_page
+   ...
+   fun:__bam_split
+   fun:__bamc_put
+   fun:__dbc_put
+   fun:__db_put
+   fun:__db_put_pp
+   fun:_ZN4ncbi12CBDB_RawFile8x_DB_PutEP8__db_dbtS2_j
+}
+
+{
+   BerkeleyDB 4.6.21.1 glitch -- uninit value created on stack (Variant 1b3)
+   Memcheck:Cond
+
+   fun:__log_putr
+   fun:__log_put
+   fun:__db_addrem_log
+   fun:__db_pitem
    fun:__bam_split
    fun:__bamc_put
    fun:__dbc_put
