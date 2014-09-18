@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
      scope.AddDataLoader(loader_name);
 
      CSeq_id seqid1("gnl|SRA|SRR066117.18823.2");
-     const TSeqPos seqlen1 = 193;
+     const TSeqPos seqlen1 = 112;
 
      BOOST_REQUIRE_EQUAL(seqlen1, scope.GetSequenceLength(seqid1));
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq3)
      scope.AddDataLoader(loader_name);
 
      CSeq_id seqid1("gnl|SRA|SRR066117.1.2");
-     const TSeqPos seqlen1 = 186;
+     const TSeqPos seqlen1 = 110;
 
      BOOST_REQUIRE_EQUAL(seqlen1, scope.GetSequenceLength(seqid1));
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
      scope.AddDataLoader(loader_name);
 
      CSeq_id seqid1("gnl|SRA|SRR066117.18823.2");
-     const TSeqPos seqlen1 = 146;
+     const TSeqPos seqlen1 = 102;
 
      BOOST_REQUIRE_EQUAL(seqlen1, scope.GetSequenceLength(seqid1));
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq6)
      scope.AddDataLoader(loader_name);
 
      CSeq_id seqid1("gnl|SRA|SRR066117.1.2");
-     const TSeqPos seqlen1 = 141;
+     const TSeqPos seqlen1 = 100;
 
      BOOST_REQUIRE_EQUAL(seqlen1, scope.GetSequenceLength(seqid1));
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
