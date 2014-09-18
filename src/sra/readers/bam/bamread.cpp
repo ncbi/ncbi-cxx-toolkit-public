@@ -38,6 +38,7 @@
 #include <klib/writer.h>
 #include <klib/text.h>
 #include <vfs/path.h>
+#include <vfs/manager.h>
 
 #include <corelib/ncbifile.hpp>
 #include <objects/general/general__.hpp>
@@ -393,6 +394,22 @@ static VPath* sx_GetVPath(const string& path)
 #else
     const char* c_path = path.c_str();
 #endif
+
+    VFSManager* mgr;
+    if ( rc_t rc = VFSManagerMake(&mgr)) {
+        NCBI_THROW2(CBamException, eInitFailed,
+                    "Cannot create VFSManager object", rc);
+    }
+    
+    VPath* kpath;
+    if ( rc_t rc = VFSManagerMakeSysPath ( mgr, &kpath, c_path ) ) {
+        NCBI_THROW2(CBamException, eInitFailed,
+                    "Cannot create VPath object", rc);
+    }
+    
+    VFSManagerRelease(mgr);
+    
+#if 0
     VPath* kpath;
     if ( rc_t rc = VPathMakeSysPath(&kpath, c_path) ) {
         NCBI_THROW2(CBamException, eInitFailed,
@@ -417,6 +434,7 @@ static VPath* sx_GetVPath(const string& path)
                         "Cannot create fixed VPath object", rc);
         }
     }
+#endif    
     return kpath;
 }
 

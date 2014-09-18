@@ -48,6 +48,7 @@
 #include <klib/rc.h>
 #include <klib/writer.h>
 #include <vfs/path.h>
+#include <vfs/manager.h>
 #include <align/align-access.h>
 
 #include <connect/ncbi_conn_stream.hpp>
@@ -316,10 +317,12 @@ int CBAMTestApp::Run(void)
     if ( 0 ) {
         const AlignAccessMgr* mgr = 0;
         CheckRc(AlignAccessMgrMake(&mgr));
+        VFSManager* vfs_mgr;
+        CheckRc(VFSManagerMake(&vfs_mgr));
         VPath* bam_path = 0;
-        CheckRc(VPathMakeSysPath(&bam_path, "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"));
+        CheckRc(VFSManagerMakeSysPath(vfs_mgr, &bam_path, "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"));
         VPath* bai_path = 0;
-        CheckRc(VPathMakeSysPath(&bai_path, "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam.bai"));
+        CheckRc(VFSManagerMakeSysPath(vfs_mgr, &bai_path, "/panfs/traces03.be-md.ncbi.nlm.nih.gov/1kg_pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam.bai"));
         
         for ( int count = 0; count < 2; ++count ) {
             cout << "Step: " << count+1 << endl;
@@ -332,6 +335,7 @@ int CBAMTestApp::Run(void)
         CheckRc(VPathRelease(bam_path));
         CheckRc(VPathRelease(bai_path));
         CheckRc(AlignAccessMgrRelease(mgr));
+        CheckRc(VFSManagerRelease(vfs_mgr));
         cout << "Success." << endl;
         return 0;
     }
