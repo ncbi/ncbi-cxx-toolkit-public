@@ -282,8 +282,11 @@ public:
     typedef map<CSeq_id_Handle, SSeqMatch_Scope> TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);
 
+    bool TSEIsReplaced(const TBlobId& blob_id) const;
+
 protected:
     friend class CScope_Impl;
+    friend class CTSE_ScopeInfo;
 
     SSeqMatch_Scope x_GetSeqMatch(const CSeq_id_Handle& idh);
     SSeqMatch_Scope x_FindBestTSE(const CSeq_id_Handle& idh);
@@ -315,6 +318,7 @@ private: // members
     TTSE_UnlockQueue            m_TSE_UnlockQueue;
     mutable TTSE_LockSetMutex   m_TSE_UnlockQueueMutex;
     CRef<CDataSource_ScopeInfo> m_EditDS;
+    set<TBlobId>                m_ReplacedTSEs;
 
 private: // to prevent copying
     CDataSource_ScopeInfo(const CDataSource_ScopeInfo&);
@@ -387,8 +391,9 @@ public:
     
     typedef map<CConstRef<CObject>, CRef<CObject> >  TEditInfoMap;
     void SetEditTSE(const CTSE_Lock& new_tse_lock,
-                    CDataSource_ScopeInfo& new_ds,
-                    const TEditInfoMap& edit_map);
+                    CDataSource_ScopeInfo& new_ds);
+    void ReplaceTSE(const CTSE_Info& old_tse);
+    void RestoreReplacedTSE(void);
 
     // gets locked CScopeInfo_Base object
     typedef CScopeInfo_Ref<CSeq_entry_ScopeInfo> TSeq_entry_Lock;
@@ -482,7 +487,7 @@ private: // members
     mutable const CTSE_ScopeInfo*   m_UsedByTSE;
     mutable TUsedTSE_LockSet        m_UsedTSE_Set;
 
-    mutable CTSE_ScopeUserLock  m_EditLock;
+    TBlobId                     m_ReplacedTSE;
 
     TScopeInfoMap               m_ScopeInfoMap;
 
@@ -497,7 +502,7 @@ class NCBI_XOBJMGR_EXPORT CBioseq_ScopeInfo : public CScopeInfo_Base
 public:
     typedef CRef<CTSE_ScopeInfo>                        TTSE_ScopeInfo;
     typedef set<CSeq_id_Handle>                         TSeq_idSet;
-    typedef vector< pair<TTSE_ScopeInfo, CSeq_id_Handle> >             TTSE_MatchSet;
+    typedef vector< pair<TTSE_ScopeInfo, CSeq_id_Handle> > TTSE_MatchSet;
     typedef CObjectFor<TTSE_MatchSet>                   TTSE_MatchSetObject;
     typedef CInitMutex<TTSE_MatchSetObject>             TAnnotRefInfo;
     typedef TIndexIds                                   TIds;

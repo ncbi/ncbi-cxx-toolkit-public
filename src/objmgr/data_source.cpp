@@ -897,10 +897,13 @@ void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
 void CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                                             const TTSE_Lock& tse,
                                             TTSE_LockMatchSet& ret,
-                                            const SAnnotSelector* sel)
+                                            const SAnnotSelector* sel,
+                                            bool external_only)
 {
-    // always add bioseq annotations
-    x_AddTSEBioseqAnnots(ret, bioseq, tse);
+    if ( !external_only ) {
+        // add bioseq annotations
+        x_AddTSEBioseqAnnots(ret, bioseq, tse);
+    }
 
     if ( m_Loader ) {
         // with loader installed we look only in TSE with bioseq,

@@ -190,13 +190,25 @@ public:
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
 
+    // annotations for sequence that is not in this data source
     void GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
                                    TTSE_LockMatchSet& tse_set,
                                    const SAnnotSelector* sel);
+    // annotations for sequence that is provided by this data source
+    // external_only = true means to exclude TSE with the sequence
     void GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                                    const TTSE_Lock& tse,
                                    TTSE_LockMatchSet& tse_set,
-                                   const SAnnotSelector* sel);
+                                   const SAnnotSelector* sel,
+                                   bool external_only = false);
+    // external annotations for sequence that is provided by this data source
+    void GetTSESetWithExternalAnnots(const CBioseq_Info& bioseq,
+                                     const TTSE_Lock& tse,
+                                     TTSE_LockMatchSet& tse_set,
+                                     const SAnnotSelector* sel)
+        {
+            GetTSESetWithBioseqAnnots(bioseq, tse, tse_set, sel, true);
+        }
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.

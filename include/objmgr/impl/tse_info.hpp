@@ -57,6 +57,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CScope_Impl;
+class CTSE_ScopeInfo;
 class CBioseq_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
@@ -447,6 +448,7 @@ private:
     friend class CTSE_Guard;
     friend class CDataSource;
     friend class CScope_Impl;
+    friend class CTSE_ScopeInfo;
     friend class CDataLoader;
     friend class CAnnot_Collector;
     friend class CSeq_entry_Info;

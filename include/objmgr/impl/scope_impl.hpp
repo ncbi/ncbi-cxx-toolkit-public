@@ -135,7 +135,7 @@ public:
     typedef map<CSeq_id_Handle, SSeq_id_ScopeInfo>   TSeq_idMap;
     typedef TSeq_idMap::value_type                   TSeq_idMapValue;
     typedef set<CSeq_id_Handle>                      TSeq_idSet;
-    typedef vector< pair<CTSE_Handle, CSeq_id_Handle> >             TTSE_LockMatchSet;
+    typedef vector< pair<CTSE_Handle, CSeq_id_Handle> > TTSE_LockMatchSet;
     typedef int                                      TPriority;
     typedef map<CConstRef<CObject>, CRef<CObject> >  TEditInfoMap;
     typedef map<CRef<CDataSource>, CRef<CDataSource_ScopeInfo> > TDSMap;
@@ -556,17 +556,31 @@ private:
 
     typedef CBioseq_ScopeInfo::TTSE_MatchSet TTSE_MatchSet;
     typedef CDataSource::TTSE_LockMatchSet TTSE_LockMatchSet_DS;
+
+    void x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
+                               CBioseq_ScopeInfo& binfo);
+    void x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
+                               TTSE_MatchSet* save_match,
+                               CBioseq_ScopeInfo& binfo,
+                               const SAnnotSelector* sel = 0);
+    void x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
+                               TSeq_idMapValue& info);
+    void x_GetTSESetWithAnnots(TTSE_LockMatchSet& lock,
+                               TTSE_MatchSet* save_match,
+                               TSeq_idMapValue& info,
+                               const SAnnotSelector* sel = 0);
+
     void x_AddTSESetWithAnnots(TTSE_LockMatchSet& lock,
-                               TTSE_MatchSet& match,
+                               TTSE_MatchSet* save_match,
                                const TTSE_LockMatchSet_DS& add,
                                CDataSource_ScopeInfo& ds_info);
     void x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
-                                     TTSE_MatchSet& match,
+                                     TTSE_MatchSet* save_match,
                                      const TSeq_idSet& ids,
-                                     CDataSource_ScopeInfo* excl_ds,
+                                     CBioseq_ScopeInfo* binfo,
                                      const SAnnotSelector* sel);
     void x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
-                                     TTSE_MatchSet& match,
+                                     TTSE_MatchSet* save_match,
                                      CBioseq_ScopeInfo& binfo,
                                      const SAnnotSelector* sel);
     void x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,

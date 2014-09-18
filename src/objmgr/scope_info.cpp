@@ -271,6 +271,9 @@ CDataSource_ScopeInfo::GetTSE_Lock(const CTSE_Lock& lock)
 {
     CTSE_ScopeUserLock ret;
     _ASSERT(lock);
+    if ( m_EditDS && TSEIsReplaced(lock->GetBlobId()) ) {
+        return ret;
+    }
     TTSE_ScopeInfo info;
     {{
         TTSE_InfoMapMutex::TWriteLockGuard guard(m_TSE_InfoMapMutex);
@@ -492,6 +495,7 @@ void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse,
     if ( tse.CanBeUnloaded() ) {
         x_UnindexTSE(tse);
     }
+    tse.RestoreReplacedTSE();
     _VERIFY(m_TSE_InfoMap.erase(tse.GetBlobId()));
     tse.m_TSE_LockCounter.Add(1); // to prevent storing into m_TSE_UnlockQueue
     // remove TSE lock completely
@@ -701,6 +705,9 @@ SSeqMatch_Scope CDataSource_ScopeInfo::x_FindBestTSE(const CSeq_id_Handle& idh)
         ITERATE ( CDataSource::TSeqMatches, it, matches ) {
             SSeqMatch_Scope nxt;
             x_SetMatch(nxt, *it);
+            if ( !nxt ) {
+                continue;
+            }
             if ( !ret || x_IsBetter(idh, *nxt.m_TSE_Lock, *ret.m_TSE_Lock) ) {
                 ret = nxt;
             }
@@ -749,8 +756,13 @@ void CDataSource_ScopeInfo::x_SetMatch(SSeqMatch_Scope& match,
 void CDataSource_ScopeInfo::x_SetMatch(SSeqMatch_Scope& match,
                                        const SSeqMatch_DS& ds_match)
 {
-    match.m_Seq_id = ds_match.m_Seq_id;
     match.m_TSE_Lock = GetTSE_Lock(ds_match.m_TSE_Lock);
+    if ( !match.m_TSE_Lock ) {
+        match.m_Seq_id.Reset();
+        match.m_Bioseq.Reset();
+        return;
+    }
+    match.m_Seq_id = ds_match.m_Seq_id;
     match.m_Bioseq = ds_match.m_Bioseq;
     _ASSERT(match.m_Seq_id);
     _ASSERT(match.m_Bioseq);
@@ -780,6 +792,9 @@ void CDataSource_ScopeInfo::GetBlobs(TSeqMatchMap& match_map)
         SSeqMatch_Scope& scope_match = match_map[ds_match->first];
         scope_match = x_GetSeqMatch(ds_match->first);
         x_SetMatch(scope_match, ds_match->second);
+        if ( !scope_match ) {
+            match_map.erase(ds_match->first);
+        }
     }
 }
 
@@ -788,6 +803,15 @@ bool CDataSource_ScopeInfo::TSEIsInQueue(const CTSE_ScopeInfo& tse) const
 {
     TTSE_LockSetMutex::TReadLockGuard guard(m_TSE_UnlockQueueMutex);
     return m_TSE_UnlockQueue.Contains(&tse);
+}
+
+
+bool CDataSource_ScopeInfo::TSEIsReplaced(const TBlobId& blob_id) const
+{
+    if ( m_EditDS ) {
+        return m_EditDS->TSEIsReplaced(blob_id);
+    }
+    return m_ReplacedTSEs.find(blob_id) != m_ReplacedTSEs.end();
 }
 
 
@@ -1027,8 +1051,7 @@ void CTSE_ScopeInfo::DropTSE_Lock(void)
 
 
 void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
-                                CDataSource_ScopeInfo& new_ds,
-                                const TEditInfoMap& edit_map)
+                                CDataSource_ScopeInfo& new_ds)
 {
     _ASSERT(!CanBeEdited());
     _ASSERT(new_ds.CanBeEdited());
@@ -1054,6 +1077,7 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
     }
 
     // convert scope info map
+    const TEditInfoMap& edit_map = new_tse_lock->m_BaseTSE->m_ObjectCopyMap;
     NON_CONST_ITERATE ( TScopeInfoMap, it, old_map ) {
         CConstRef<CObject> old_obj(it->first);
         _ASSERT(old_obj);
@@ -1081,6 +1105,31 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
 
     _ASSERT(&GetDSInfo() == &new_ds);
     _ASSERT(m_TSE_Lock == new_tse_lock);
+    
+    const_cast<CTSE_Info&>(*new_tse_lock).m_BaseTSE->m_ObjectCopyMap.clear();
+}
+
+
+void CTSE_ScopeInfo::RestoreReplacedTSE(void)
+{
+    if ( m_ReplacedTSE ) {
+        _ASSERT(m_DS_Info);
+        m_DS_Info->m_ReplacedTSEs.erase(m_ReplacedTSE);
+        m_ReplacedTSE = TBlobId();
+    }
+}
+
+
+void CTSE_ScopeInfo::ReplaceTSE(const CTSE_Info& old_tse)
+{
+    RestoreReplacedTSE();
+    _ASSERT(m_DS_Info);
+    m_ReplacedTSE = old_tse.GetBlobId();
+    if ( !m_DS_Info->m_ReplacedTSEs.insert(m_ReplacedTSE).second ) {
+        m_ReplacedTSE = TBlobId();
+        ERR_POST("CTSE_ScopeInfo::ReplaceTSE("<<
+                 old_tse.GetDescription()<<"): already replaced");
+    }
 }
 
 
@@ -1875,20 +1924,14 @@ CSynonymsSet::~CSynonymsSet(void)
 
 CSeq_id_Handle CSynonymsSet::GetSeq_id_Handle(const const_iterator& iter)
 {
-    return (*iter)->first;
-}
-
-
-CBioseq_Handle CSynonymsSet::GetBioseqHandle(const const_iterator& iter)
-{
-    return CBioseq_Handle((*iter)->first, *(*iter)->second.m_Bioseq_Info);
+    return *iter;
 }
 
 
 bool CSynonymsSet::ContainsSynonym(const CSeq_id_Handle& id) const
 {
    ITERATE ( TIdSet, iter, m_IdSet ) {
-        if ( (*iter)->first == id ) {
+        if ( *iter == id ) {
             return true;
         }
     }
@@ -1896,10 +1939,10 @@ bool CSynonymsSet::ContainsSynonym(const CSeq_id_Handle& id) const
 }
 
 
-void CSynonymsSet::AddSynonym(const value_type& syn)
+void CSynonymsSet::AddSynonym(const CSeq_id_Handle& id)
 {
-    _ASSERT(!ContainsSynonym(syn->first));
-    m_IdSet.push_back(syn);
+    _ASSERT(!ContainsSynonym(id));
+    m_IdSet.push_back(id);
 }
 
 

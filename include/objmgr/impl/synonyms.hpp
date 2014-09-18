@@ -35,7 +35,6 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-#include <objmgr/impl/scope_info.hpp>
 #include <vector>
 #include <utility>
 
@@ -55,7 +54,7 @@ class CBioseq_Handle;
 class NCBI_XOBJMGR_EXPORT CSynonymsSet : public CObject
 {
 public:
-    typedef pair<const CSeq_id_Handle, SSeq_id_ScopeInfo>* value_type;
+    typedef CSeq_id_Handle                                 value_type;
     typedef vector<value_type>                             TIdSet;
     typedef TIdSet::const_iterator                         const_iterator;
 
@@ -67,7 +66,6 @@ public:
     bool empty(void) const;
 
     static CSeq_id_Handle GetSeq_id_Handle(const const_iterator& iter);
-    static CBioseq_Handle GetBioseqHandle(const const_iterator& iter);
 
     void AddSynonym(const value_type& syn);
     bool ContainsSynonym(const CSeq_id_Handle& id) const;
