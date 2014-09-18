@@ -603,7 +603,7 @@ static bool s_IsAllowedOrigin(string& origin)
     }
 
     TStringList origins;
-    NStr::Split(allowed, " ", origins);
+    NStr::Split(allowed, ", ", origins);
     ITERATE(TStringList, it, origins) {
         if (NStr::EndsWith(origin, *it, NStr::eCase)) {
             return true;
@@ -651,12 +651,12 @@ static bool s_IsAllowedHeaderList(const string& headers)
     // Always allow simple headers.
     ah += kSimpleHeaders;
     NStr::ToUpper(ah);
-    NStr::Split(ah, " ", allowed);
+    NStr::Split(ah, ", ", allowed);
     allowed.sort();
 
     string rh = headers;
     NStr::ToUpper(rh);
-    NStr::Split(rh, " ", requested);
+    NStr::Split(rh, ", ", requested);
     requested.sort();
 
     TStringList::const_iterator ait = allowed.begin();
