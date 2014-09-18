@@ -122,7 +122,7 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
     void x_WriteDiscRepItems(CRef <CClickableItem> c_item, 
                                  const string& prefix, xml::node& node); 
     void x_StandardWriteDiscRepItems(COutputConfig& oc, 
-                                     const CClickableItem* c_item, 
+                                     CRef <CClickableItem> c_item, 
                                      const string& prefix, 
                                      bool list_features_if_subcat,
                                      xml::node& node);
@@ -141,6 +141,7 @@ class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
                                              const string& grp_idxes);
     void x_SendItemToGbench(CRef <CClickableItem> citem, 
                             vector <CRef <CClickableText> >& item_list);
+    void x_AddFatalToSubcategories(vector <CRef <CClickableItem> >&  sub);
 };
 
 END_SCOPE(DiscRepNmSpc)

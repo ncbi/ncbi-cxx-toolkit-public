@@ -249,9 +249,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
        CClickableItem () {
           setting_name = description = kEmptyStr;
           item_list.clear();
+          obj_list.clear();
           subcategories.clear();
           expanded = next_sibling = false;
-          obj_list.clear();
+          fatal = false;
           fix_function = 0;
        }                    
        ~CClickableItem () {};
@@ -259,10 +260,11 @@ BEGIN_SCOPE(DiscRepNmSpc)
        string                               setting_name;
        string                               description;
        vector < string >                    item_list;
+       vector < CConstRef <CObject> >       obj_list;
        vector < CRef <CClickableItem > >    subcategories;
        bool                                 expanded;
        bool                                 next_sibling;
-       vector < CConstRef <CObject> >       obj_list;
+       bool                                 fatal;
        FAutofix                             fix_function;
   };
 
