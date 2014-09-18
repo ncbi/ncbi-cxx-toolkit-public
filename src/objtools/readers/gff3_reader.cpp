@@ -239,8 +239,6 @@ bool CGff3Reader::xUpdateAnnotCds(
                 ++it) {
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(*it);
             if (fit != m_MapIdToFeature.end()) {
-                CRef<CSeq_feat> pF = fit->second;
-                const CSeq_loc& loc = pF->GetLocation();
                 if (!record.UpdateFeature(m_iFlags, fit->second)) {
                     return false;
                 }

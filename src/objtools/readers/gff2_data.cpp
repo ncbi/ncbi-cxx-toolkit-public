@@ -459,7 +459,7 @@ bool CGff2Record::UpdateFeature(
             target.GetInt().GetTo() >= SeqStop() ) {
         // indicates current feature location is a placeholder interval to be
         //  totally overwritten by the constituent sub-intervals
-        pFeature->SetLocation(*pAddLoc);
+        pFeature->SetLocation().SetMix().AddSeqLoc(*pAddLoc);
     }
     else {
         // indicates the feature location is already under construction
