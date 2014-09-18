@@ -133,6 +133,9 @@ static void s_RunTest0(const CArgs& args, ostream& os)
     assert(args.Exist("logfile"));
     assert(args["barfooetc"]);
 
+    assert(args["kd8"].GetDefault() == "123456789012");
+    assert(args["kd"].GetDefault()  == "123");
+
     if ( !args["logfile"] )
         return;
 
@@ -161,11 +164,23 @@ static void s_RunTest0(const CArgs& args, ostream& os)
         assert(is_thrown);
     }
 
+    CArgValue::TArgValueFlags flags = 0;
+
+    args["f1"].GetDefault(&flags);
+    assert((flags & CArgValue::fArgValue_HasDefault) != 0);
     if ( args["f1"] ) {
         assert(args["f1"].AsBoolean());
+        assert((flags & CArgValue::fArgValue_FromDefault) == 0);
+    } else {
+        assert((flags & CArgValue::fArgValue_FromDefault) != 0);
     }
+    args["f2"].GetDefault(&flags);
+    assert((flags & CArgValue::fArgValue_HasDefault) != 0);
     if ( args["f2"] ) {
         assert(args["f2"].AsBoolean());
+        assert((flags & CArgValue::fArgValue_FromDefault) != 0);
+    } else {
+        assert((flags & CArgValue::fArgValue_FromDefault) == 0);
     }
 
     // Extra (unnamed positional) arguments
@@ -268,8 +283,8 @@ static void s_InitTest7(CArgDescriptions& arg_desc)
          "This is a plain argument",  CArgDescriptions::eBoolean);
 
     arg_desc.AddFlag("f1", "Flag 1");
-    arg_desc.AddFlag("f2", "Flag 1");
-    arg_desc.AddFlag("f3", "Flag 1");
+    arg_desc.AddFlag("f2", "Flag 2");
+    arg_desc.AddFlag("f3", "Flag 3");
 
     arg_desc.SetDependency("p2", CArgDescriptions::eRequires, "#1");
     arg_desc.SetDependency("f1", CArgDescriptions::eExcludes, "#1");
