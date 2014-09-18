@@ -239,9 +239,9 @@ edirect needs ncqhst
 edirect needs txservbase
 egenedb needs $(COMPRESS_LIBS)
 egenedb needs $(CONNEXT)
-egenedb needs connect
 egenedb needs dbapi_driver_wrap_s
 egenedb needs entrezgene
+egenedb needs taxon1
 egenedomains needs $(OBJMGR_LIBS)
 egenedomains needs entrezgene
 egquery needs xser
