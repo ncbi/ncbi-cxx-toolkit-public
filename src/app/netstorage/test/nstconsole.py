@@ -78,6 +78,7 @@ class NetStorageConsole:
              'reconfigure':    self.reconfigure,
              'ackalert':       self.ackalert,
              'getmetadatainfo':self.getMetadataInfo,
+             'junk':           self.sendJunk,
            }
 
         self.__commandSN = 0
@@ -284,6 +285,18 @@ class NetStorageConsole:
                     'ClientIP':     hostIP,
                     'Client':       client,
                     'Service':      service,
+                    'Application':  'test/nstconsole.py',
+                    'Ticket':       'No ticket at all' }
+        self.exchange( message )
+        return
+
+    def sendJunk( self, arguments ):
+        " Sends an unterminated message "
+
+        self.__sock.send('4JUNK[\n')
+        message = { 'Type':         'HELLO',
+                    'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
                     'Application':  'test/nstconsole.py',
                     'Ticket':       'No ticket at all' }
         self.exchange( message )
