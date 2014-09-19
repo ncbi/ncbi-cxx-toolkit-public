@@ -1,3 +1,26 @@
+Release 4.20.0 based on SC-15 (2014-09-19)
+
+Improvements:
+    * NetSchedule: read blacklist (JIRA: CXX-4993)
+    * NetSchedule: READ to support affinities; +READ2 (JIRA: CXX-4994)
+    * NetSchedule: READ-group commands checks (JIRA: CXX-5004)
+    * NetSchedule: run_timeout_precision (JIRA: CXX-5014)
+    * NetSchedule: GC for the clients registry (JIRA: CXX-5024)
+    * NetSchedule -- an option to cancel only the pending jobs (JIRA: CXX-5103)
+    * NetSchedule -- allow WN to ultimately fail a job (FPUT2 no_retries)
+      (JIRA: CXX-5151)
+    * NetSchedule: separate setting for read retries (JIRA: CXX-5161)
+    * NetSchedule: CANCEL to report the number of canceled jobs
+      (JIRA: CXX-5168)
+    * NetSchedule: more robust handling of the first job number
+      (JIRA: CXX-5169)
+    * NetSchedule: SHUTDOWN after drained SHUTDOWN (JIRA: CXX-5177)
+    * NetSchedule: infinite loop while processing READ notifications
+      (JIRA: CXX-5212)
+    * NetSchedule: max timeout before a job is given for reading
+      (JIRA: CXX-5223)
+
+
 Release 4.19.0 cloned from 4.18.0 (2014-06-12)
 
 Improvements:
