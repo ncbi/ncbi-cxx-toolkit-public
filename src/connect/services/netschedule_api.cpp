@@ -337,13 +337,13 @@ void SNetScheduleAPIImpl::AllocNotificationThread()
 
 void SNetScheduleAPIImpl::StartNotificationThread()
 {
-    if (m_NotificationThreadStartStopCounter.Add(1) == 0)
+    if (m_NotificationThreadStartStopCounter.Add(1) == 1)
         m_NotificationThread->Run();
 }
 
 void SNetScheduleAPIImpl::StopNotificationThread()
 {
-    if (m_NotificationThreadStartStopCounter.Add(-1) == 1) {
+    if (m_NotificationThreadStartStopCounter.Add(-1) == 0) {
         CFastMutexGuard guard(m_NotificationThreadMutex);
 
         if (m_NotificationThread != NULL) {

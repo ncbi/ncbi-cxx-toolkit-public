@@ -412,7 +412,7 @@ struct SNetScheduleJobReaderImpl : public CObject
     void x_StartNotificationThread()
     {
         if (m_NotificationThreadIsRunning.Get() == 0 &&
-                m_NotificationThreadIsRunning.Add(1) == 0)
+                m_NotificationThreadIsRunning.Add(1) == 1)
             m_API->StartNotificationThread();
     }
 
