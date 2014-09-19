@@ -152,7 +152,8 @@ class CNSNotificationList
                                 CNSClientsRegistry &   clients_registry);
         void CheckOutdatedJobs(const TNSBitVector &    outdated_jobs,
                                CNSClientsRegistry &    clients_registry,
-                               const CNSPreciseTime &  notif_highfreq_period);
+                               const CNSPreciseTime &  notif_highfreq_period,
+                               ECommandGroup           cmd_group);
         void Notify(unsigned int           job_id,
                     unsigned int           aff_id,
                     CNSClientsRegistry &   clients_registry,

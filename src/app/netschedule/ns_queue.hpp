@@ -494,6 +494,9 @@ private:
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
                              unsigned int         picked_earlier);
+    x_SJobPick
+    x_FindOutdatedJobForReading(const CNSClientId &  client,
+                                unsigned int         picked_earlier);
 
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
                                     const string &          auth_token,
@@ -640,6 +643,7 @@ private:
     CNSPreciseTime              m_ReaderTimeout;
     CNSPreciseTime              m_PendingTimeout;
     CNSPreciseTime              m_MaxPendingWaitTimeout;
+    CNSPreciseTime              m_MaxPendingReadWaitTimeout;
     // Client program version control
     CQueueClientInfoList        m_ProgramVersionList;
     // Host access list for job submission

@@ -104,6 +104,7 @@ const CNSPreciseTime    default_wnode_timeout(40, 0);
 const CNSPreciseTime    default_reader_timeout(40, 0);
 const CNSPreciseTime    default_pending_timeout(604800, 0);
 const CNSPreciseTime    default_max_pending_wait_timeout(0, 0);
+const CNSPreciseTime    default_max_pending_read_wait_timeout(0, 0);
 const bool              default_scramble_job_keys = false;
 
 // Queue client registry GC settings

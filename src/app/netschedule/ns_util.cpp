@@ -943,6 +943,20 @@ bool NS_ValidateQueueParams(const IRegistry &  reg,
         }
     }
 
+    bool    max_pending_read_wait_timeout_ok = NS_ValidateDouble(reg, section,
+                                               "max_pending_read_wait_timeout");
+    well_formed = well_formed && max_pending_read_wait_timeout_ok;
+    if (max_pending_read_wait_timeout_ok) {
+        double  value = reg.GetDouble(section, "max_pending_read_wait_timeout",
+                                 double(default_max_pending_read_wait_timeout));
+        if (value < 0.0) {
+            well_formed = false;
+            ERR_POST(g_LogPrefix << " value " <<
+                     NS_RegValName(section, "max_pending_read_wait_timeout") <<
+                     " must be >= 0.0");
+        }
+    }
+
     bool    client_registry_timeout_worker_node_ok =
                     NS_ValidateDouble(reg, section,
                                       "client_registry_timeout_worker_node");

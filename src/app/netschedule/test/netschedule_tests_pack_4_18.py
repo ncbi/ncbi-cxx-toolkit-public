@@ -1869,4 +1869,102 @@ class Scenario1543( TestBase ):
 
         return True
 
+class Scenario1544( TestBase ):
+    " Scenario 1544 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "READ2 for outdated job"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 4 )
+
+        # Client #2 plays a passive role of holding an affinity (a2)
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario1544' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        execAny( ns_client2, "CHRAFF add=a2" )
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a2' )
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client2, "PUT " + jobID + " 0 nooutput" )
+
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario1544' )
+        ns_client1.set_client_identification( 'node1', 'session1' )
+        execAny( ns_client1, "CHRAFF add=a1" )
+
+        output = execAny( ns_client1,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1' )
+        if output != 'no_more_jobs=true':
+            raise Exception( "Expected no job, received: '" + output + "'" )
+
+        # 10 seconds till the job becomes obsolete
+        time.sleep( 12 )
+
+        output = execAny( ns_client1,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ][ 0 ]
+        if jobKey != jobID:
+            raise Exception( "Expected a job, received: '" + output + "'" )
+
+        return True
+
+class Scenario1545( TestBase ):
+    " Scenario 1545 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Notifications for outdated READ job"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 4 )
+
+        # Client #2 plays a passive role of holding an affinity (a2)
+        ns_client2 = self.getNetScheduleService( 'TEST', 'scenario1545' )
+        ns_client2.set_client_identification( 'node2', 'session2' )
+        execAny( ns_client2, "CHRAFF add=a2" )
+
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a2' )
+        receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
+        if jobID != receivedJobID:
+            raise Exception( "Unexpected job for execution" )
+        execAny( ns_client2, "PUT " + jobID + " 0 nooutput" )
+
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario1545' )
+        ns_client1.set_client_identification( 'node1', 'session1' )
+        execAny( ns_client1, "CHRAFF add=a1" )
+
+        # Socket to receive notifications
+        notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+        notifSocket.bind( ( "", 9007 ) )
+
+        # Second client tries to get the pending job - should get nothing
+        output = execAny( ns_client1,
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=15' )
+        if output != "no_more_jobs=true":
+            raise Exception( "Expect no jobs, received: " + output )
+
+        # 10 seconds till the job becomes outdated
+        time.sleep( 12 )
+
+        data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        if "queue=TEST" not in data:
+            raise Exception( "Expected notification, received garbage: " + data )
+        return True
+
+
 

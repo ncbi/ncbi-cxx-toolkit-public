@@ -119,7 +119,25 @@ void CJobGCRegistry::UpdateLifetime(unsigned int            job_id,
                    NStr::NumericToString(job_id) + ")");
 
     attrs->second.m_LifeTime = life_time;
-    return;
+}
+
+
+// Updates the time when a job became available for reading.
+// This time must be updated once only
+void
+CJobGCRegistry::UpdateReadVacantTime(unsigned int            job_id,
+                                     const CNSPreciseTime &  read_vacant_time)
+{
+    CFastMutexGuard                          guard(m_Lock);
+    map<unsigned int, SJobGCInfo>::iterator  attrs = m_JobsAttrs.find(job_id);
+
+    if (attrs == m_JobsAttrs.end())
+        NCBI_THROW(CNetScheduleException, eInternalError,
+                   "Updating read vacant time of non-registered job (ID: " +
+                   NStr::NumericToString(job_id) + ")");
+
+    if (attrs->second.m_ReadVacantTime == kTimeNever)
+        attrs->second.m_ReadVacantTime = read_vacant_time;
 }
 
 
@@ -164,7 +182,8 @@ unsigned int  CJobGCRegistry::GetGroupID(unsigned int  job_id) const
 }
 
 
-CNSPreciseTime  CJobGCRegistry::GetPreciseSubmitTime(unsigned int  job_id) const
+CNSPreciseTime
+CJobGCRegistry::GetPreciseSubmitTime(unsigned int  job_id) const
 {
     CFastMutexGuard                     guard(m_Lock);
     map<unsigned int,
@@ -177,13 +196,33 @@ CNSPreciseTime  CJobGCRegistry::GetPreciseSubmitTime(unsigned int  job_id) const
 }
 
 
+CNSPreciseTime
+CJobGCRegistry::GetPreciseReadVacantTime(unsigned int  job_id) const
+{
+    CFastMutexGuard                     guard(m_Lock);
+    map<unsigned int,
+        SJobGCInfo>::const_iterator     attrs = m_JobsAttrs.find(job_id);
+
+    if (attrs == m_JobsAttrs.end())
+        return kTimeNever;
+
+    return attrs->second.m_ReadVacantTime;
+}
+
+
 bool
 CJobGCRegistry::IsOutdatedJob(unsigned int            job_id,
+                              ECommandGroup           cmd_group,
                               const CNSPreciseTime &  timeout) const
 {
-    CNSPreciseTime  submit_time = GetPreciseSubmitTime(job_id);
-    submit_time += timeout;
-    return submit_time < CNSPreciseTime::Current();
+    CNSPreciseTime      available_time;
+
+    if (cmd_group == eGet)
+        available_time = GetPreciseSubmitTime(job_id);
+    else
+        available_time = GetPreciseReadVacantTime(job_id);
+
+    return (available_time + timeout) < CNSPreciseTime::Current();
 }
 
 END_NCBI_SCOPE

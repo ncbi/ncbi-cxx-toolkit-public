@@ -395,16 +395,17 @@ void
 CNSNotificationList::CheckOutdatedJobs(
                                 const TNSBitVector &    outdated_jobs,
                                 CNSClientsRegistry &    clients_registry,
-                                const CNSPreciseTime &  notif_highfreq_period)
+                                const CNSPreciseTime &  notif_highfreq_period,
+                                ECommandGroup           cmd_group)
 {
     CNSPreciseTime                              current_time = CNSPreciseTime::Current();
     CMutexGuard                                 guard(m_ListenersLock);
     list<SNSNotificationAttributes>::iterator   k = m_PassiveListeners.begin();
 
     while (k != m_PassiveListeners.end()) {
-        if (k->m_Reason == eGet && k->m_ExclusiveNewAff) {
+        if (k->m_ExclusiveNewAff) {
             if ((outdated_jobs -
-                 clients_registry.GetBlacklistedJobs(k->m_ClientNode, eGet)).any()) {
+                 clients_registry.GetBlacklistedJobs(k->m_ClientNode, cmd_group)).any()) {
                 x_SendNotificationPacket(k->m_Address, k->m_Port,
                                          k->m_NewFormat, k->m_Reason);
 

@@ -251,6 +251,8 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_ReaderTimeout         = params.reader_timeout;
     m_PendingTimeout        = params.pending_timeout;
     m_MaxPendingWaitTimeout = CNSPreciseTime(params.max_pending_wait_timeout);
+    m_MaxPendingReadWaitTimeout =
+                        CNSPreciseTime(params.max_pending_read_wait_timeout);
     m_NotifHifreqInterval   = params.notif_hifreq_interval;
     m_NotifHifreqPeriod     = params.notif_hifreq_period;
     m_NotifLofreqMult       = params.notif_lofreq_mult;
@@ -789,7 +791,8 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
                                             job.GetLastEventIndex());
 
     // Notify the readers if the job has not been given for reading yet
-    if (!m_ReadJobs.get_bit(job_id))
+    if (!m_ReadJobs.get_bit(job_id)) {
+        m_GCRegistry.UpdateReadVacantTime(job_id, curr);
         m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                    m_ClientsRegistry,
                                    m_AffinityRegistry,
@@ -797,6 +800,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
                                    m_NotifHifreqPeriod,
                                    m_HandicapTimeout,
                                    eRead);
+    }
     return old_status;
 }
 
@@ -872,18 +876,13 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                     job_pick = x_FindOutdatedPendingJob(client, 0);
 
                 if (job_pick.job_id == 0) {
-                    if (timeout != 0) {
-                        // WGET:
-                        // There is no job, so the client might need to
-                        // be registered
-                        // in the waiting list
-                        if (port > 0)
-                            x_RegisterGetListener(
-                                    client, port, timeout, aff_ids,
-                                    wnode_affinity, any_affinity,
-                                    exclusive_new_affinity,
-                                    new_format, group);
-                    }
+                    if (timeout != 0 && port > 0)
+                        // WGET: // There is no job, so the client might need to
+                        // be registered in the waiting list
+                        x_RegisterGetListener( client, port, timeout, aff_ids,
+                                               wnode_affinity, any_affinity,
+                                               exclusive_new_affinity,
+                                               new_format, group);
                     return true;
                 }
                 outdated_job = true;
@@ -895,7 +894,7 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
 
                 if (exclusive_new_affinity) {
                     if (m_GCRegistry.IsOutdatedJob(
-                                    job_pick.job_id,
+                                    job_pick.job_id, eGet,
                                     m_MaxPendingWaitTimeout) == false) {
                         x_SJobPick  outdated_pick =
                                         x_FindOutdatedPendingJob(
@@ -940,7 +939,7 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                                         CNetScheduleAPI::ePending,
                                         CNetScheduleAPI::eRunning);
             if (outdated_job)
-                m_StatisticsCounters.CountOutdatedPick();
+                m_StatisticsCounters.CountOutdatedPick(eGet);
 
             m_GCRegistry.UpdateLifetime(
                         job_pick.job_id,
@@ -1851,7 +1850,8 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
 
         // Notify the readers if the job has not been given for reading yet
         // and it was not a rollback due to a socket write error
-        if (!m_ReadJobs.get_bit(job_id) && is_ns_rollback == false)
+        if (!m_ReadJobs.get_bit(job_id) && is_ns_rollback == false) {
+            m_GCRegistry.UpdateReadVacantTime(job_id, current_time);
             m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
@@ -1859,6 +1859,7 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
                                        m_NotifHifreqPeriod,
                                        m_HandicapTimeout,
                                        eRead);
+        }
     }}
 
     if ((old_status == CNetScheduleAPI::eRunning ||
@@ -1963,7 +1964,8 @@ unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
                                                 job.GetLastEventIndex());
 
         // Notify the readers if the job has not been given for reading yet
-        if (!m_ReadJobs.get_bit(job_id))
+        if (!m_ReadJobs.get_bit(job_id)) {
+            m_GCRegistry.UpdateReadVacantTime(job_id, current_time);
             m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
@@ -1971,6 +1973,7 @@ unsigned int CQueue::x_CancelJobs(const CNSClientId &   client,
                                        m_NotifHifreqPeriod,
                                        m_HandicapTimeout,
                                        eRead);
+        }
 
         if (logging)
             GetDiagContext().Extra().Print("job_key", MakeJobKey(job_id))
@@ -2187,31 +2190,53 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                                group, eRead);
 
         {{
+            bool                outdated_job = false;
+            TJobStatus          old_status;
             CFastMutexGuard     guard(m_OperationLock);
 
             if (job_pick.job_id == 0) {
-                *no_more_jobs = x_NoMoreReadJobs(client, aff_ids,
+                if (exclusive_new_affinity)
+                    job_pick = x_FindOutdatedJobForReading(client, 0);
+
+                if (job_pick.job_id == 0) {
+                    *no_more_jobs = x_NoMoreReadJobs(client, aff_ids,
                                                  reader_affinity, any_affinity,
                                                  exclusive_new_affinity, group);
-                if (timeout != 0 && port > 0)
-                    x_RegisterReadListener(client, port, timeout, aff_ids,
+                    if (timeout != 0 && port > 0)
+                        x_RegisterReadListener(client, port, timeout, aff_ids,
                                            reader_affinity, any_affinity,
                                            exclusive_new_affinity, group);
-                return true;
-            }
+                    return true;
+                }
+                outdated_job = true;
+            } else {
+                // Check that the job is still Done/Failed/Canceled
+                // it could be grabbed by another reader or GC
+                old_status = GetJobStatus(job_pick.job_id);
+                if (old_status != CNetScheduleAPI::eDone &&
+                    old_status != CNetScheduleAPI::eFailed &&
+                    old_status != CNetScheduleAPI::eCanceled)
+                    continue;   // try to pick another job
 
-            // HERE: a job is picked
-            // Check that the job is still Done/Failed/Canceled
-            // it could be grabbed by another reader or GC
-            TJobStatus  old_status = GetJobStatus(job_pick.job_id);
-            if (old_status != CNetScheduleAPI::eDone &&
-                old_status != CNetScheduleAPI::eFailed &&
-                old_status != CNetScheduleAPI::eCanceled)
-                continue;   // try to pick another job
+                if (exclusive_new_affinity) {
+                    if (m_GCRegistry.IsOutdatedJob(
+                                    job_pick.job_id, eRead,
+                                    m_MaxPendingReadWaitTimeout) == false) {
+                        x_SJobPick  outdated_pick =
+                                        x_FindOutdatedJobForReading(
+                                                client, job_pick.job_id);
+                        if (outdated_pick.job_id != 0) {
+                            job_pick = outdated_pick;
+                            outdated_job = true;
+                        }
+                    }
+                }
+            }
 
             // The job is still in acceptable state. Check if it was received
             // with exclusive affinity
-            if (job_pick.exclusive && job_pick.aff_id != 0) {
+            if (job_pick.exclusive && job_pick.aff_id != 0 &&
+                outdated_job == false) {
                 if (m_ClientsRegistry.IsPreferredByAny(job_pick.aff_id, eRead))
                     continue;   // Other reader grabbed this affinity already
 
@@ -2222,6 +2247,16 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                             GetTokenByID(job_pick.aff_id);
             }
 
+            if (outdated_job && job_pick.aff_id != 0) {
+                bool added = m_ClientsRegistry.
+                                UpdatePreferredAffinities(
+                                        client, job_pick.aff_id, 0, eRead);
+                if (added)
+                    added_pref_aff = m_AffinityRegistry.GetTokenByID(
+                                                            job_pick.aff_id);
+            }
+
+            old_status = GetJobStatus(job_pick.job_id);
             x_UpdateDB_ProvideJobNoLock(client, curr, job_pick.job_id,
                                         eRead, *job);
             m_StatusTracker.SetStatus(job_pick.job_id,
@@ -2229,6 +2264,9 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
 
             m_StatisticsCounters.CountTransition(old_status,
                                                  CNetScheduleAPI::eReading);
+
+            if (outdated_job)
+                m_StatisticsCounters.CountOutdatedPick(eRead);
 
             m_GCRegistry.UpdateLifetime(job_pick.job_id,
                                         job->GetExpirationTime(m_Timeout,
@@ -2419,6 +2457,8 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
         target_status != CNetScheduleAPI::eReadFailed) {
         m_ReadJobs.set_bit(job_id, false);
         ++m_ReadJobsOps;
+
+        m_GCRegistry.UpdateReadVacantTime(job_id, current_time);
 
         // Notify the readers
         m_NotificationsList.Notify(job_id, job.GetAffinityId(),
@@ -2667,6 +2707,37 @@ CQueue::x_FindOutdatedPendingJob(const CNSClientId &  client,
 }
 
 
+CQueue::x_SJobPick
+CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
+                                   unsigned int         picked_earlier)
+{
+    x_SJobPick      job_pick = { 0, false, 0 };
+
+    if (m_MaxPendingReadWaitTimeout == kTimeZero)
+        return job_pick;    // Not configured
+
+    TNSBitVector    outdated_read_jobs =
+                        m_StatusTracker.GetOutdatedReadVacantJobs(
+                                m_MaxPendingReadWaitTimeout,
+                                m_ReadJobs, m_GCRegistry);
+    if (picked_earlier != 0)
+        outdated_read_jobs.set_bit(picked_earlier, false);
+
+    if (!outdated_read_jobs.any())
+        return job_pick;
+
+    outdated_read_jobs -= m_ClientsRegistry.GetBlacklistedJobs(client, eRead);
+
+    if (!outdated_read_jobs.any())
+        return job_pick;
+
+    job_pick.job_id = *outdated_read_jobs.first();
+    job_pick.aff_id = m_GCRegistry.GetAffinityID(job_pick.job_id);
+    job_pick.exclusive = job_pick.aff_id != 0;
+    return job_pick;
+}
+
+
 string CQueue::GetAffinityList(const CNSClientId &    client)
 {
     m_ClientsRegistry.MarkAsAdmin(client);
@@ -2859,7 +2930,8 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                                        eGet);
 
         if (new_status == CNetScheduleAPI::eFailed)
-            if (!m_ReadJobs.get_bit(job_id))
+            if (!m_ReadJobs.get_bit(job_id)) {
+                m_GCRegistry.UpdateReadVacantTime(job_id, curr);
                 m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                            m_ClientsRegistry,
                                            m_AffinityRegistry,
@@ -2867,6 +2939,7 @@ TJobStatus CQueue::FailJob(const CNSClientId &    client,
                                            m_NotifHifreqPeriod,
                                            m_HandicapTimeout,
                                            eRead);
+            }
 
         if (job.ShouldNotifyListener(curr, m_JobsToNotify))
             m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
@@ -2918,17 +2991,31 @@ void CQueue::ClearWorkerNode(const CNSClientId &  client,
 void CQueue::NotifyListenersPeriodically(const CNSPreciseTime &  current_time)
 {
     if (m_MaxPendingWaitTimeout != kTimeZero) {
-        // Pending outdated timeout is configured, so check for
-        // outdated jobs
+        // Pending outdated timeout is configured, so check outdated jobs
         CFastMutexGuard     guard(m_OperationLock);
-        TNSBitVector        outdated_pending =
+        TNSBitVector        outdated_jobs =
                                     m_StatusTracker.GetOutdatedPendingJobs(
                                         m_MaxPendingWaitTimeout,
                                         m_GCRegistry);
-        if (outdated_pending.any())
-            m_NotificationsList.CheckOutdatedJobs(outdated_pending,
+        if (outdated_jobs.any())
+            m_NotificationsList.CheckOutdatedJobs(outdated_jobs,
                                                   m_ClientsRegistry,
-                                                  m_NotifHifreqPeriod);
+                                                  m_NotifHifreqPeriod,
+                                                  eGet);
+    }
+
+    if (m_MaxPendingReadWaitTimeout != kTimeZero) {
+        // Read pending timeout is configured, so check read outdated jobs
+        CFastMutexGuard     guard(m_OperationLock);
+        TNSBitVector        outdated_jobs =
+                                    m_StatusTracker.GetOutdatedReadVacantJobs(
+                                        m_MaxPendingReadWaitTimeout,
+                                        m_ReadJobs, m_GCRegistry);
+        if (outdated_jobs.any())
+            m_NotificationsList.CheckOutdatedJobs(outdated_jobs,
+                                                  m_ClientsRegistry,
+                                                  m_NotifHifreqPeriod,
+                                                  eRead);
     }
 
 
@@ -3165,7 +3252,8 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
         if (new_status == CNetScheduleAPI::eDone ||
             new_status == CNetScheduleAPI::eFailed ||
             new_status == CNetScheduleAPI::eCanceled)
-            if (!m_ReadJobs.get_bit(job_id))
+            if (!m_ReadJobs.get_bit(job_id)) {
+                m_GCRegistry.UpdateReadVacantTime(job_id, curr_time);
                 m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                            m_ClientsRegistry,
                                            m_AffinityRegistry,
@@ -3173,6 +3261,7 @@ void CQueue::x_CheckExecutionTimeout(const CNSPreciseTime &  queue_run_timeout,
                                            m_NotifHifreqPeriod,
                                            m_HandicapTimeout,
                                            eRead);
+            }
 
         if (job.ShouldNotifyListener(curr_time, m_JobsToNotify))
             m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),
@@ -3863,7 +3952,8 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &     client,
     if (new_status == CNetScheduleAPI::eDone ||
         new_status == CNetScheduleAPI::eFailed ||
         new_status == CNetScheduleAPI::eCanceled)
-        if (!m_ReadJobs.get_bit(job_id))
+        if (!m_ReadJobs.get_bit(job_id)) {
+            m_GCRegistry.UpdateReadVacantTime(job_id, current_time);
             m_NotificationsList.Notify(job_id, job.GetAffinityId(),
                                        m_ClientsRegistry,
                                        m_AffinityRegistry,
@@ -3871,6 +3961,7 @@ TJobStatus  CQueue::x_ResetDueTo(const CNSClientId &     client,
                                        m_NotifHifreqPeriod,
                                        m_HandicapTimeout,
                                        eRead);
+        }
 
     if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
         m_NotificationsList.NotifyJobStatus(job.GetListenerNotifAddr(),

@@ -302,6 +302,8 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldUint4     pending_timeout_nsec;
     CBDB_FieldUint4     max_pending_wait_timeout_sec;
     CBDB_FieldUint4     max_pending_wait_timeout_nsec;
+    CBDB_FieldUint4     max_pending_read_wait_timeout_sec;
+    CBDB_FieldUint4     max_pending_read_wait_timeout_nsec;
     CBDB_FieldLString   description;
     CBDB_FieldUint4     scramble_job_keys;
     CBDB_FieldUint4     client_registry_timeout_worker_node_sec;
@@ -364,8 +366,14 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("reader_timeout_nsec",           &reader_timeout_nsec);
         BindData("pending_timeout_sec",           &pending_timeout_sec);
         BindData("pending_timeout_nsec",          &pending_timeout_nsec);
-        BindData("max_pending_wait_timeout_sec",  &max_pending_wait_timeout_sec);
-        BindData("max_pending_wait_timeout_nsec", &max_pending_wait_timeout_nsec);
+        BindData("max_pending_wait_timeout_sec",
+                 &max_pending_wait_timeout_sec);
+        BindData("max_pending_wait_timeout_nsec",
+                 &max_pending_wait_timeout_nsec);
+        BindData("max_pending_read_wait_timeout_sec",
+                 &max_pending_read_wait_timeout_sec);
+        BindData("max_pending_read_wait_timeout_nsec",
+                 &max_pending_read_wait_timeout_nsec);
         BindData("description",                   &description);
         BindData("scramble_job_keys",             &scramble_job_keys);
         BindData("client_registry_timeout_worker_node_sec",

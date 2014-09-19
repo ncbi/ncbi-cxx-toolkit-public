@@ -43,6 +43,7 @@
 #include <map>
 
 #include "ns_precise_time.hpp"
+#include "ns_types.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -55,6 +56,7 @@ struct SJobGCInfo
     unsigned int    m_GroupID;      // The job group ID
     CNSPreciseTime  m_LifeTime;     // The last second the job considered alive
     CNSPreciseTime  m_SubmitTime;   // Precise submit time
+    CNSPreciseTime  m_ReadVacantTime;
 
     SJobGCInfo() :
         m_AffinityID(0), m_GroupID(0), m_LifeTime()
@@ -63,7 +65,9 @@ struct SJobGCInfo
     SJobGCInfo(unsigned int  aff, unsigned int  group,
                const CNSPreciseTime &  life_time) :
         m_AffinityID(aff), m_GroupID(group), m_LifeTime(life_time)
-    {}
+    {
+        m_ReadVacantTime = kTimeNever;
+    }
 };
 
 
@@ -90,11 +94,15 @@ class CJobGCRegistry
                               unsigned int *          group_id);    // out: if deleted
         void UpdateLifetime(unsigned int            job_id,
                             const CNSPreciseTime &  life_time);
+        void UpdateReadVacantTime(unsigned int            job_id,
+                                  const CNSPreciseTime &  read_vacant_time);
         CNSPreciseTime  GetLifetime(unsigned int  job_id) const;
         unsigned int    GetAffinityID(unsigned int  job_id) const;
         unsigned int    GetGroupID(unsigned int  job_id) const;
         CNSPreciseTime  GetPreciseSubmitTime(unsigned int  job_id) const;
+        CNSPreciseTime  GetPreciseReadVacantTime(unsigned int  job_id) const;
         bool  IsOutdatedJob(unsigned int            job_id,
+                            ECommandGroup           cmd_group,
                             const CNSPreciseTime &  timeout) const;
 
     private:

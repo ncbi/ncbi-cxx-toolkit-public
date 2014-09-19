@@ -73,7 +73,7 @@ public:
     void CountNSSubmitRollback(size_t  count);
     void CountNSGetRollback(size_t  count);
     void CountNSReadRollback(size_t  count);
-    void CountOutdatedPick(void);
+    void CountOutdatedPick(ECommandGroup  cmd_group);
     void CountToPendingWithoutBlacklist(size_t  count);
     void CountToPendingRescheduled(size_t  count);
 
@@ -116,7 +116,8 @@ private:
     CAtomicCounter_WithAutoInit     m_ToFailedDueToReadNewSessionCounter;
     CAtomicCounter_WithAutoInit     m_ToFailedDueToReadClearCounter;
 
-    CAtomicCounter_WithAutoInit     m_PickedAsOutdated;
+    CAtomicCounter_WithAutoInit     m_PickedAsPendingOutdated;
+    CAtomicCounter_WithAutoInit     m_PickedAsReadOutdated;
 };
 
 

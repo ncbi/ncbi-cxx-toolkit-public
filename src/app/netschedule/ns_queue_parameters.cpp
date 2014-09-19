@@ -80,6 +80,7 @@ SQueueParameters::SQueueParameters() :
     reader_timeout(default_reader_timeout),
     pending_timeout(default_pending_timeout),
     max_pending_wait_timeout(default_max_pending_wait_timeout),
+    max_pending_read_wait_timeout(default_max_pending_read_wait_timeout),
     description(""),
     scramble_job_keys(default_scramble_job_keys),
     client_registry_timeout_worker_node(
@@ -132,6 +133,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     reader_timeout = ReadReaderTimeout(reg, sname);
     pending_timeout = ReadPendingTimeout(reg, sname);
     max_pending_wait_timeout = ReadMaxPendingWaitTimeout(reg, sname);
+    max_pending_read_wait_timeout = ReadMaxPendingReadWaitTimeout(reg, sname);
     description = ReadDescription(reg, sname);
     scramble_job_keys = ReadScrambleJobKeys(reg, sname);
     client_registry_timeout_worker_node = ReadClientRegistryTimeoutWorkerNode(reg, sname);
@@ -299,6 +301,12 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                 diff, "max_pending_wait_timeout",
                 NS_FormatPreciseTimeAsSec(max_pending_wait_timeout),
                 NS_FormatPreciseTimeAsSec(other.max_pending_wait_timeout));
+
+    if (max_pending_read_wait_timeout != other.max_pending_read_wait_timeout)
+        AddParameterToDiffString(
+                diff, "max_pending_read_wait_timeout",
+                NS_FormatPreciseTimeAsSec(max_pending_read_wait_timeout),
+                NS_FormatPreciseTimeAsSec(other.max_pending_read_wait_timeout));
 
     if (scramble_job_keys != other.scramble_job_keys)
         AddParameterToDiffString(
@@ -536,6 +544,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "reader_timeout" + suffix + NS_FormatPreciseTimeAsSec(reader_timeout) + separator +
     prefix + "pending_timeout" + suffix + NS_FormatPreciseTimeAsSec(pending_timeout) + separator +
     prefix + "max_pending_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + separator +
+    prefix + "max_pending_read_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_read_wait_timeout) + separator +
     prefix + "scramble_job_keys" + suffix + NStr::BoolToString(scramble_job_keys) + separator +
     prefix + "client_registry_timeout_worker_node" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node) + separator +
     prefix + "client_registry_min_worker_nodes" + suffix + NStr::NumericToString(client_registry_min_worker_nodes) + separator +
@@ -607,6 +616,7 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "reader_timeout=\"" + NS_FormatPreciseTimeAsSec(reader_timeout) + "\"\n"
     "pending_timeout=\"" + NS_FormatPreciseTimeAsSec(pending_timeout) + "\"\n"
     "max_pending_wait_timeout=\"" + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + "\"\n"
+    "max_pending_read_wait_timeout=\"" + NS_FormatPreciseTimeAsSec(max_pending_read_wait_timeout) + "\"\n"
     "scramble_job_keys=\"" + NStr::BoolToString(scramble_job_keys) + "\"\n"
     "client_registry_timeout_worker_node=\"" + NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node) + "\"\n"
     "client_registry_min_worker_nodes=\"" + NStr::NumericToString(client_registry_min_worker_nodes) + "\"\n"
@@ -931,6 +941,17 @@ SQueueParameters::ReadMaxPendingWaitTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("max_pending_wait_timeout",
                                  double(default_max_pending_wait_timeout));
+    if (val < 0)
+        val = 0;
+    return CNSPreciseTime(val);
+}
+
+CNSPreciseTime
+SQueueParameters::ReadMaxPendingReadWaitTimeout(const IRegistry &  reg,
+                                                const string &     sname)
+{
+    double  val = GetDoubleNoErr("max_pending_read_wait_timeout",
+                                 double(default_max_pending_read_wait_timeout));
     if (val < 0)
         val = 0;
     return CNSPreciseTime(val);

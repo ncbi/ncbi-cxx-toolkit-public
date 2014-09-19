@@ -919,14 +919,17 @@ class Scenario1317( TestBase ):
         jobID2, authToken2, attrs2, jobInput2 = self.ns.getJob( "TEST", -1, '', '',
                                                                 "node", "session" )
 
+        # Run timeout is set to 7 sec in the config file #3.
+        # So the test should complete before 7 seconds are over because otherwise
+        # the job is taken away from a WNode due to a timeout
         # Fail the non expected group2 job
         execAny( ns_client, "CANCEL group=group2" )
-        time.sleep( 7 )
+        time.sleep( 3 )
         if self.hasNotification( notifSocket ):
             raise Exception( "Expected no notifications, received some" )
 
         execAny( ns_client, "CANCEL group=group1" )
-        time.sleep( 7 )
+        time.sleep( 3 )
         if not self.hasNotification( notifSocket ):
             raise Exception( "Expected notification, received nothing" )
         return True

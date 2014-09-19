@@ -54,7 +54,8 @@ static CAtomicCounter_WithAutoInit  s_NSSubmitRollbackCounterTotal;
 static CAtomicCounter_WithAutoInit  s_NSGetRollbackCounterTotal;
 static CAtomicCounter_WithAutoInit  s_NSReadRollbackCounterTotal;
 static CAtomicCounter_WithAutoInit  s_DBDeleteCounterTotal;
-static CAtomicCounter_WithAutoInit  s_PickedAsOutdatedTotal;
+static CAtomicCounter_WithAutoInit  s_PickedAsPendingOutdatedTotal;
+static CAtomicCounter_WithAutoInit  s_PickedAsReadOutdatedTotal;
 
 // From running
 static CAtomicCounter_WithAutoInit  s_ToPendingDueToTimeoutCounterTotal;
@@ -257,7 +258,8 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
          .Print("ns_submit_rollbacks", m_NSSubmitRollbackCounter.Get())
          .Print("ns_get_rollbacks", m_NSGetRollbackCounter.Get())
          .Print("ns_read_rollbacks", m_NSReadRollbackCounter.Get())
-         .Print("picked_as_outdated", m_PickedAsOutdated.Get())
+         .Print("picked_as_pending_outdated", m_PickedAsPendingOutdated.Get())
+         .Print("picked_as_read_outdated", m_PickedAsReadOutdated.Get())
          .Print("dbdeletions", m_DBDeleteCounter.Get());
 
     for (size_t  index_from = 0;
@@ -329,8 +331,10 @@ string CStatisticsCounters::PrintTransitions(void) const
                     NStr::NumericToString(m_NSGetRollbackCounter.Get()) + "\n"
                     "OK:ns_read_rollbacks: " +
                     NStr::NumericToString(m_NSReadRollbackCounter.Get()) + "\n"
-                    "OK:picked_as_outdated: " +
-                    NStr::NumericToString(m_PickedAsOutdated.Get()) + "\n"
+                    "OK:picked_as_pending_outdated: " +
+                    NStr::NumericToString(m_PickedAsPendingOutdated.Get()) + "\n"
+                    "OK:picked_as_read_outdated: " +
+                    NStr::NumericToString(m_PickedAsReadOutdated.Get()) + "\n"
                     "OK:dbdeletions: " +
                     NStr::NumericToString(m_DBDeleteCounter.Get()) + "\n";
 
@@ -571,10 +575,15 @@ void CStatisticsCounters::CountNSReadRollback(size_t  count)
 }
 
 
-void CStatisticsCounters::CountOutdatedPick(void)
+void CStatisticsCounters::CountOutdatedPick(ECommandGroup  cmd_group)
 {
-    m_PickedAsOutdated.Add(1);
-    s_PickedAsOutdatedTotal.Add(1);
+    if (cmd_group == eGet) {
+        m_PickedAsPendingOutdated.Add(1);
+        s_PickedAsPendingOutdatedTotal.Add(1);
+    } else {
+        m_PickedAsReadOutdated.Add(1);
+        s_PickedAsReadOutdatedTotal.Add(1);
+    }
 }
 
 
@@ -608,7 +617,8 @@ void  CStatisticsCounters::PrintTotal(size_t  affinities)
          .Print("counters", "total")
          .Print("submits", s_SubmitCounterTotal.Get())
          .Print("ns_submit_rollbacks", s_NSSubmitRollbackCounterTotal.Get())
-         .Print("picked_as_outdated", s_PickedAsOutdatedTotal.Get())
+         .Print("picked_as_pending_outdated", s_PickedAsPendingOutdatedTotal.Get())
+         .Print("picked_as_read_outdated", s_PickedAsReadOutdatedTotal.Get())
          .Print("dbdeletions", s_DBDeleteCounterTotal.Get())
          .Print("affinities", affinities);
 

@@ -99,6 +99,9 @@ public:
     TNSBitVector  GetJobs(TJobStatus  status) const;
     TNSBitVector  GetOutdatedPendingJobs(CNSPreciseTime          timeout,
                                          const CJobGCRegistry &  gc_registry) const;
+    TNSBitVector  GetOutdatedReadVacantJobs(CNSPreciseTime          timeout,
+                                            const TNSBitVector &    read_jobs,
+                                            const CJobGCRegistry &  gc_registry) const;
 
     // true if we have pending jobs
     bool AnyPending() const;

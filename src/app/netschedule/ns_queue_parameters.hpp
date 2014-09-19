@@ -82,6 +82,7 @@ struct SQueueParameters
     CNSPreciseTime  reader_timeout;
     CNSPreciseTime  pending_timeout;
     CNSPreciseTime  max_pending_wait_timeout;
+    CNSPreciseTime  max_pending_read_wait_timeout;
     string          description;
     bool            scramble_job_keys;
     CNSPreciseTime  client_registry_timeout_worker_node;
@@ -152,6 +153,8 @@ struct SQueueParameters
     CNSPreciseTime  ReadPendingTimeout(const IRegistry &, const string &);
     CNSPreciseTime  ReadMaxPendingWaitTimeout(const IRegistry &,
                                               const string &);
+    CNSPreciseTime  ReadMaxPendingReadWaitTimeout(const IRegistry &,
+                                                  const string &);
     string          ReadDescription(const IRegistry &, const string &);
     bool            ReadScrambleJobKeys(const IRegistry &, const string &);
     CNSPreciseTime  ReadClientRegistryTimeoutWorkerNode(const IRegistry &,

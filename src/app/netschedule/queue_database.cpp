@@ -444,6 +444,9 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.max_pending_wait_timeout =
             CNSPreciseTime(m_QueueDescriptionDB.max_pending_wait_timeout_sec,
                            m_QueueDescriptionDB.max_pending_wait_timeout_nsec);
+        params.max_pending_read_wait_timeout =
+            CNSPreciseTime(m_QueueDescriptionDB.max_pending_read_wait_timeout_sec,
+                           m_QueueDescriptionDB.max_pending_read_wait_timeout_nsec);
         params.description = m_QueueDescriptionDB.description;
         params.scramble_job_keys =
                             (m_QueueDescriptionDB.scramble_job_keys != 0);
@@ -576,6 +579,10 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
                                 params.max_pending_wait_timeout.Sec();
     m_QueueDescriptionDB.max_pending_wait_timeout_nsec =
                                 params.max_pending_wait_timeout.NSec();
+    m_QueueDescriptionDB.max_pending_read_wait_timeout_sec =
+                                params.max_pending_read_wait_timeout.Sec();
+    m_QueueDescriptionDB.max_pending_read_wait_timeout_nsec =
+                                params.max_pending_read_wait_timeout.NSec();
     m_QueueDescriptionDB.description = params.description;
     m_QueueDescriptionDB.scramble_job_keys = params.scramble_job_keys;
 
@@ -812,6 +819,9 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "max_pending_wait_timeout")
                 params.max_pending_wait_timeout =
                     params.ReadMaxPendingWaitTimeout(reg, section_name);
+            else if (*val == "max_pending_read_wait_timeout")
+                params.max_pending_read_wait_timeout =
+                    params.ReadMaxPendingReadWaitTimeout(reg, section_name);
             else if (*val == "description")
                 params.description =
                     params.ReadDescription(reg, section_name);

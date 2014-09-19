@@ -379,6 +379,58 @@ CJobStatusTracker::GetOutdatedPendingJobs(CNSPreciseTime          timeout,
 }
 
 
+TNSBitVector
+CJobStatusTracker::GetOutdatedReadVacantJobs(CNSPreciseTime          timeout,
+                                             const TNSBitVector &    read_jobs,
+                                             const CJobGCRegistry &  gc_registry) const
+{
+    static CNSPreciseTime   s_LastTimeout = kTimeZero;
+    static unsigned int     s_LastCheckedJobID = 0;
+    static const size_t     kMaxCandidates = 100;
+
+    TNSBitVector            result;
+
+    if (timeout == kTimeZero)
+        return result;  // Not configured
+
+    size_t                  count = 0;
+    CNSPreciseTime          limit = CNSPreciseTime::Current() - timeout;
+    CReadLockGuard          guard(m_Lock);
+    TNSBitVector            candidates;
+
+    candidates = *m_StatusStor[(int) CNetScheduleAPI::eDone] |
+                 *m_StatusStor[(int) CNetScheduleAPI::eFailed] |
+                 *m_StatusStor[(int) CNetScheduleAPI::eCanceled];
+
+    // Exclude jobs which have been read or in a process of reading
+    candidates -= read_jobs;
+
+    if (s_LastTimeout != timeout) {
+        s_LastTimeout = timeout;
+        s_LastCheckedJobID = 0;
+    }
+
+    TNSBitVector::enumerator    en(candidates.first());
+    for (; en.valid() && count < kMaxCandidates; ++en, ++count) {
+        unsigned int    job_id = *en;
+        if (job_id <= s_LastCheckedJobID) {
+            result.set_bit(job_id, true);
+            continue;
+        }
+        if (gc_registry.GetPreciseReadVacantTime(job_id) < limit) {
+            s_LastCheckedJobID = job_id;
+            result.set_bit(job_id, true);
+            continue;
+        }
+
+        // No more old jobs
+        break;
+    }
+
+    return result;
+}
+
+
 bool CJobStatusTracker::AnyPending() const
 {
     const TNSBitVector &    bv = *m_StatusStor[(int) CNetScheduleAPI::ePending];
