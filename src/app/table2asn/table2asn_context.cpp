@@ -73,6 +73,9 @@
 
 #include <objects/seqfeat/Gb_qual.hpp>
 
+#include <objmgr/seqdesc_ci.hpp>
+#include "remote_updater.hpp"
+
 #include "table2asn_context.hpp"
 #include "objtools/edit/dblink_field.hpp"
 
@@ -191,8 +194,8 @@ CTable2AsnContext::CTable2AsnContext():
     m_gapNmin(0),
     m_gap_Unknown_length(0),
     m_minimal_sequence_length(0),
-    m_gaps_evidence(-1),
-    m_gaps_type(-1),
+    m_gap_evidence(-1),
+    m_gap_type(-1),
     m_fcs_trim(false),
     m_avoid_submit_block(false),
     m_split_log_files(false),
@@ -695,6 +698,23 @@ void CTable2AsnContext::VisitAllFeatures(CSeq_entry_EditHandle& entry_h, Feature
     for (CFeat_CI feat_it(entry_h); feat_it; ++feat_it)
     {
         m(*this, *(CSeq_feat*)feat_it->GetOriginalSeq_feat().GetPointer());
+    }
+}
+
+void CTable2AsnContext::UpdateOrgFromTaxon(CTable2AsnContext& context, objects::CSeqdesc& seqdesc)
+{
+    context.m_remote_updater->UpdateOrgFromTaxon(context.m_logger, seqdesc);
+}
+
+void CTable2AsnContext::VisitAllSeqDesc(objects::CSeq_entry_EditHandle& entry_h, SeqdescVisitorMethod m)
+{
+    for (CBioseq_CI bioseq_it(entry_h); bioseq_it; ++bioseq_it)
+    {
+        CSeqdesc_CI it(bioseq_it->GetEditHandle(), CSeqdesc::e_not_set, 0);
+        for (; it; ++it)
+        {
+            m(*this, (CSeqdesc&)*it);
+        }
     }
 }
 

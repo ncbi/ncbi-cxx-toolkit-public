@@ -23,9 +23,9 @@ class CSeq_feat;
 
 #include <objects/seq/Seqdesc.hpp>
 
+class CRemoteUpdater;
 // command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
-
 class CAutoAddDesc
 {
 public:
@@ -100,13 +100,15 @@ public:
     TSeqPos m_gapNmin;
     TSeqPos m_gap_Unknown_length;
     TSeqPos m_minimal_sequence_length;
-    int    m_gaps_evidence;
-    int    m_gaps_type;
+    int    m_gap_evidence;
+    int    m_gap_type;
     bool   m_fcs_trim;
     bool   m_avoid_submit_block;
     bool   m_split_log_files;
+    string m_asn1_suffix;
 
     CRef<objects::CSeq_descr>  m_descriptors;
+    auto_ptr<CRemoteUpdater>   m_remote_updater;
 
     //string conffile;
 
@@ -132,11 +134,15 @@ public:
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
 
     typedef void (*BioseqVisitorMethod)(CTable2AsnContext& context, objects::CBioseq& bioseq);
-    typedef void (*FeatureVisitorMethod)(CTable2AsnContext& context, objects::CSeq_feat& bioseq);
+    typedef void (*FeatureVisitorMethod)(CTable2AsnContext& context, objects::CSeq_feat& feature);
+    typedef void (*SeqdescVisitorMethod)(CTable2AsnContext& context, objects::CSeqdesc& seqdesc);
+
     void VisitAllBioseqs(objects::CSeq_entry& entry, BioseqVisitorMethod m);
     void VisitAllBioseqs(objects::CSeq_entry_EditHandle& entry_h, BioseqVisitorMethod m);
     void VisitAllFeatures(objects::CSeq_entry_EditHandle& entry_h, FeatureVisitorMethod m);
+    void VisitAllSeqDesc(objects::CSeq_entry_EditHandle& entry_h, SeqdescVisitorMethod m);
 
+    static void UpdateOrgFromTaxon(CTable2AsnContext& context, objects::CSeqdesc& seqdesc);
     void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src) const;
     void MergeWithTemplate(objects::CSeq_entry& entry) const;
     void SetSeqId(objects::CSeq_entry& entry) const;
@@ -150,7 +156,6 @@ public:
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;
-    CRef<objects::CSeq_descr>  m_descr_template;
     objects::IMessageListener* m_logger;
 
     CRef<objects::CScope>      m_scope;

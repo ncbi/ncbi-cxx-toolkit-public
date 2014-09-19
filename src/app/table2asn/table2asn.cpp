@@ -104,7 +104,6 @@ public:
 
 private:
 
-    auto_ptr<CRemoteUpdater> m_remote_updater;
     auto_ptr<CMultiReader> m_reader;
     CRef<CSeq_entry> m_replacement_proteins;
     CRef<CSeq_entry> m_possible_proteins;
@@ -180,6 +179,9 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddDefaultKey
         ("x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
+
+    arg_desc->AddDefaultKey
+        ("out-suffix", "String", "ASN.1 files suffix", CArgDescriptions::eString, ".sqn");
 
     arg_desc->AddFlag("E", "Recurse");
     arg_desc->AddOptionalKey("t", "InFile", "Template File",
@@ -305,7 +307,7 @@ void CTbl2AsnApp::Init(void)
                             map\n\
                             strobe", CArgDescriptions::eString);  //done
 
-    arg_desc->AddOptionalKey("gaps-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
+    arg_desc->AddOptionalKey("gap-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
                             unknown\n\
                             fragment\n\
                             clone\n\
@@ -381,7 +383,7 @@ int CTbl2AsnApp::Run(void)
     // at a time.
 
     m_reader.reset(new CMultiReader(m_context));
-    m_remote_updater.reset(new CRemoteUpdater(m_context));
+    m_context.m_remote_updater.reset(new CRemoteUpdater);
 
     if (args["fcs-file"])
     {
@@ -427,6 +429,8 @@ int CTbl2AsnApp::Run(void)
         m_context.m_delay_genprodset = true;
     }
 
+    m_context.m_asn1_suffix = args["out-suffix"].AsString();
+
     if (m_context.m_delay_genprodset)
         m_context.m_GenomicProductSet = true;
 
@@ -460,21 +464,32 @@ int CTbl2AsnApp::Run(void)
 
     if (args["a"])
     {
-        const string& gaps = args["a"].AsString();
-        if (gaps.length() > 2 && gaps[0] == 'r')
+        const string& a_arg = args["a"].AsString();
+        if (a_arg.length() > 2 && a_arg[0] == 'r')
         {
-            switch (*(gaps.end()-1))
+            switch (*(a_arg.end()-1))
             {
             case 'u':
                 m_context.m_gap_Unknown_length = 100; // yes, it's hardcoded value
-                // do not put break staterment here
+                // do not put break statement here
             case 'k':
-                m_context.m_gapNmin = NStr::StringToUInt(gaps.substr(1, gaps.length()-2));
+                m_context.m_gapNmin = NStr::StringToUInt(a_arg.substr(1, a_arg.length()-2));
                 break;
             default:
                 // error
                 break;
             }
+        }
+        else
+        if (a_arg.length() == 1)
+        switch (a_arg[0])
+        {
+            case 's':
+                m_context.m_HandleAsSet = true;
+                break;
+            default:
+                // error
+                break;
         }
     }
     if (args["gaps-min"])
@@ -495,25 +510,25 @@ int CTbl2AsnApp::Run(void)
         }
         else
         {
-            m_context.m_gaps_evidence = it->second;
-            m_context.m_gaps_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
+            m_context.m_gap_evidence = it->second;
+            m_context.m_gap_type = CSeq_gap::eType_scaffold; // for compatibility with tbl2asn
         }
     }
 
-    if (args["gaps-type"] && args["l"])
+    if (args["gap-type"])
     {
         const CEnumeratedTypeValues::TNameToValue& 
             linkage_evidence_to_value_map = CSeq_gap::GetTypeInfo_enum_EType()->NameToValue();
 
-        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(args["gaps-type"].AsString());
+        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(args["gap-type"].AsString());
         if (it == linkage_evidence_to_value_map.end())
         {
             NCBI_THROW(CArgException, eConvert,
-                "Unrecognized gap type " + args["gaps-type"].AsString());
+                "Unrecognized gap type " + args["gap-type"].AsString());
         }
         else
         {
-            m_context.m_gaps_type = it->second;
+            m_context.m_gap_type = it->second;
         }
 
     }
@@ -672,9 +687,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         entry = op.LoadXML(m_context.m_current_file, m_context);
         if (entry.IsNull())
             return;
-        if (m_context.m_descr_template.NotEmpty())
+        if (m_context.m_entry_template.NotEmpty() && m_context.m_entry_template->IsSetDescr())
         {
-            m_context.MergeSeqDescr(entry->SetDescr(), *m_context.m_descr_template);
+            m_context.MergeSeqDescr(entry->SetDescr(), m_context.m_entry_template->GetDescr());
         }
         entry->Parentize();
     }
@@ -720,11 +735,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         fr.ConvertSeqIntoSeqSet(*entry, false);
     }
 
-    if (m_context.m_RemoteTaxonomyLookup)
-    {
-        m_remote_updater->UpdateOrgReferences(*entry);
-    }
-
     m_context.ApplyAccession(*entry);
 
     if (do_dates)
@@ -737,6 +747,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     // make asn.1 look nicier
     edit::SortSeqDescr(*entry);
 
+    // this methods do not remove entry nor change it. But create 'result' object which either
+    // equal to 'entry' or contain reference to 'entry'.
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);
     else
@@ -760,9 +772,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (m_context.m_RemotePubLookup)
     {
 #ifdef USE_SCOPE
-        m_remote_updater->UpdatePubReferences(entry_edit_handle);
+        m_context.m_remote_updater->UpdatePubReferences(entry_edit_handle);
 #else
-        m_remote_updater->UpdatePubReferences(*result);
+        m_context.m_remote_updater->UpdatePubReferences(*result);
 #endif
     }
 
@@ -772,6 +784,15 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 #else
     m_context.ApplySourceQualifiers(*result, m_context.m_source_qualifiers);
 #endif
+
+    if (m_context.m_RemoteTaxonomyLookup)
+    {
+#ifdef USE_SCOPE
+        m_context.VisitAllSeqDesc(entry_edit_handle, m_context.UpdateOrgFromTaxon);
+#else
+        m_context.m_remote_updater->UpdateOrgReferences(*entry);
+#endif
+    }
 
     if (avoid_submit_block)
     {
@@ -848,7 +869,7 @@ void CTbl2AsnApp::ProcessOneFile()
 
             if (m_context.m_output == 0)
             {
-                local_file = GenerateOutputFilename(".asn");
+                local_file = GenerateOutputFilename(m_context.m_asn1_suffix);
                 output = new CNcbiOfstream(local_file.GetPath().c_str());
             }
             else

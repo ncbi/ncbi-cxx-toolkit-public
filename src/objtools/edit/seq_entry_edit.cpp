@@ -2852,7 +2852,8 @@ void SortSeqDescr(CSeq_descr& descr)
 
 void SortSeqDescr(CSeq_entry& entry)
 {
-    SortSeqDescr(entry.SetDescr());
+    if (entry.IsSetDescr())
+      SortSeqDescr(entry.SetDescr());
     if (entry.IsSet())
     NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set())
     {

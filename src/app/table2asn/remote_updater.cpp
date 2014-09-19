@@ -48,7 +48,7 @@
 #include <objects/pub/Pub.hpp>
 
 #include <objects/seqfeat/Org_ref_.hpp>
-#include <objects/taxon1/taxon1.hpp>
+#include <objects/taxon3/taxon3.hpp>
 #include <objects/biblio/Cit_art.hpp>
 #include <objects/biblio/ArticleIdSet.hpp>
 
@@ -59,7 +59,6 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include "remote_updater.hpp"
-#include "table2asn_context.hpp"
 
 #include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -67,6 +66,101 @@
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
+
+namespace objects
+{
+class CCachedTaxon3_impl
+{
+public:
+    typedef map<string, CRef<CT3Reply> > CCachedReplyMap;
+
+    void Init()
+    {
+        if (m_taxon.get() == 0)
+        {
+            m_taxon.reset(new CTaxon3);
+            m_taxon->Init();
+            m_cache.reset(new CCachedReplyMap);
+        }
+    }
+
+    CRef<COrg_ref> GetOrg(const COrg_ref& org, objects::IMessageListener* logger = 0)
+    {
+        CRef<COrg_ref> result;
+        CRef<CT3Reply> reply = GetOrgReply(org);
+        if (reply->IsError() && logger)
+        {
+            logger->PutError(
+                *CLineError::Create(ILineError::eProblem_Unset, eDiag_Warning, "", 0,
+                string("Taxon update: ") + 
+                (org.IsSetTaxname() ? org.GetTaxname() : NStr::IntToString(org.GetTaxId())) + ": " +
+                reply->GetError().GetMessage()));
+        }
+        else
+        if (reply->IsData() && reply->SetData().IsSetOrg())
+        {
+            result.Reset(&reply->SetData().SetOrg());
+        }
+        return result;
+    }
+
+    CRef<CT3Reply> GetOrgReply(const COrg_ref& in_org)
+    {
+        string id;
+        //CNcbiOstrstream ostream;
+        //ostream << MSerial_AsnText << **it << ends;
+        //id = ostream.str()
+
+        NStr::IntToString(id, in_org.GetTaxId());
+        if (in_org.IsSetTaxname())
+            id += in_org.GetTaxname();
+
+        CRef<CT3Reply>& reply = (*m_cache)[id];
+        if (/*id < 1 ||*/ reply.Empty())
+        {
+            CTaxon3_request request;
+
+            CRef<CT3Request> rq(new CT3Request);                    
+            CRef<COrg_ref> org(new COrg_ref);
+            org->Assign(in_org);
+            rq->SetOrg(*org);
+
+            request.SetRequest().push_back(rq);
+            CRef<CTaxon3_reply> result = m_taxon->SendRequest (request);
+            reply = *result->SetReply().begin();
+        }
+        else
+        {
+#ifdef _DEBUG
+            //cerr << "Using cache for:" << id << endl;
+#endif
+        }
+        return reply;
+    }
+
+    CRef<CTaxon3_reply> SendOrgRefList(const vector< CRef<COrg_ref> >& query, bool use_cache)
+    {
+        if (!use_cache)
+            return m_taxon->SendOrgRefList(query);
+
+        CRef<CTaxon3_reply> result(new CTaxon3_reply);
+
+        ITERATE (vector<CRef< COrg_ref> >, it, query)
+        {            
+            result->SetReply().push_back(GetOrgReply(**it));
+        }
+
+        return result;
+    }  
+protected:
+    static auto_ptr<CTaxon3> m_taxon;
+    static auto_ptr<CCachedReplyMap> m_cache;
+};
+
+auto_ptr<CTaxon3> CCachedTaxon3_impl::m_taxon;
+auto_ptr<CCachedTaxon3_impl::CCachedReplyMap> CCachedTaxon3_impl::m_cache;
+}
+
 USING_SCOPE(objects);
 
 namespace
@@ -116,82 +210,53 @@ void CreatePubPMID(CMLAClient& mlaClient, CPub_equiv::Tdata& arr, int id)
 
 }// end anonymous namespace
 
-void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
+
+void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeqdesc& obj)
+{
+    if (obj.IsOrg())
+    {
+        xUpdateOrgTaxname(logger, obj.SetOrg());
+    }
+    else
+    if (obj.IsSource() && obj.GetSource().IsSetOrg())
+    {
+        xUpdateOrgTaxname(logger, obj.SetSource().SetOrg());
+    }
+}
+
+void CRemoteUpdater::xUpdateOrgTaxname(objects::IMessageListener* logger, COrg_ref& org)
 {
     int taxid = org.GetTaxId();
     if (taxid == 0 && !org.IsSetTaxname())
         return;
 
-    bool is_species, is_uncultured;
-    string blast_name;
-
     if (m_taxClient.get() == 0)
     {
-        m_taxClient.reset(new CTaxon1);
+        m_taxClient.reset(new CCachedTaxon3_impl);
         m_taxClient->Init();
     }
-
-    int new_taxid = m_taxClient->GetTaxIdByName(org.GetTaxname());
-
-    if (taxid == 0)
-        taxid = new_taxid;
-    else
-        if (taxid != new_taxid)
-        {
-            m_context.m_logger->PutError(
-                *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0,
-                "Conflicting taxonomy info provided: taxid " + NStr::IntToString(taxid)));
-
-            if (taxid <= 0)
-                taxid = new_taxid;
-            else
-            {
-                m_context.m_logger->PutError(
-                    *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0,
-                    "taxonomy ID for the name '" + org.GetTaxname() + "' was determined as " + NStr::IntToString(taxid)));
-                return;
-            }
-        }
-
-    if (taxid <= 0)
-    {
-        m_context.m_logger->PutError(
-            *CLineError::Create(ILineError::eProblem_Unset, eDiag_Warning, "", 0,
-                "No unique taxonomy ID found for the name '" + org.GetTaxname() + "'"));
-        return;
-    }
-
-    CConstRef<COrg_ref> new_org = m_taxClient->GetOrgRef(taxid, is_species, is_uncultured, blast_name);
+        
+    CRef<COrg_ref> new_org = m_taxClient->GetOrg(org, logger);
     if (new_org.NotEmpty())
     {
-        if (org.IsSetOrgname() && org.GetOrgname().IsSetMod()) // we need to preserve mods if they set
-        {
-           const COrgName_Base::TMod mods = org.GetOrgname().GetMod();
-           org.Assign(*new_org);
-           if (!mods.empty())
-               org.SetOrgname().SetMod().insert(org.SetOrgname().SetMod().end(), mods.begin(), mods.end());
-        }
-        else
-        {
-           org.Assign(*new_org);
-        }
+        if (new_org->IsSetSyn())
+            new_org->ResetSyn();
+
+        org.Assign(*new_org);
     }
 }
 
-CRemoteUpdater::CRemoteUpdater(const CTable2AsnContext& ctx)
-    : m_context(ctx)
+CRemoteUpdater::CRemoteUpdater()
+    :m_enable_caching(true)
 {
 }
 
 CRemoteUpdater::~CRemoteUpdater()
 {
-    if (m_taxClient.get() != 0)
-        m_taxClient->Fini();
 }
 
 void CRemoteUpdater::UpdatePubReferences(objects::CSeq_entry_EditHandle& obj)
 {
-    //for (CSeq_descr_CI it(obj); it; ++it)
     for (CBioseq_CI it(obj); it; ++it)
     {
         xUpdatePubReferences(it->GetEditHandle().SetDescr());
@@ -273,13 +338,13 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
     }
 }
 
-void CRemoteUpdater::UpdateOrgReferences(objects::CSeq_entry& entry)
+void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeq_entry& entry)
 {
     if (entry.IsSet())
     {
         NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
-            UpdateOrgReferences(**it);
+            UpdateOrgFromTaxon(logger, **it);
         }
     }
 
@@ -291,12 +356,12 @@ void CRemoteUpdater::UpdateOrgReferences(objects::CSeq_entry& entry)
         CSeqdesc& desc = **it;
         if (desc.IsOrg())
         {
-            xUpdateOrgTaxname(desc.SetOrg());
+            xUpdateOrgTaxname(logger, desc.SetOrg());
         }
         else
         if (desc.IsSource() && desc.GetSource().IsSetOrg())
         {
-            xUpdateOrgTaxname(desc.SetSource().SetOrg());
+            xUpdateOrgTaxname(logger, desc.SetSource().SetOrg());
         }
     }
 }

@@ -11,35 +11,35 @@ class CSeq_descr;
 class CSeqdesc;
 class CMLAClient;
 class CBioseq;
-class CTaxon1;
 class COrg_ref;
 class CSeq_entry_EditHandle;
+class CCachedTaxon3_impl;
 };
 
-class CTable2AsnContext;
 class CSerialObject;
 
 class CRemoteUpdater
 {
 public:
-   CRemoteUpdater(const CTable2AsnContext& ctx);
+   CRemoteUpdater();
    ~CRemoteUpdater();
 
    void UpdatePubReferences(CSerialObject& obj);
    void UpdatePubReferences(objects::CSeq_entry_EditHandle& obj);
 
-   void UpdateOrgReferences(objects::CSeq_entry& entry);
+   void UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeq_entry& entry);
+   void UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeqdesc& obj);
+
 private:
    void xUpdatePubReferences(objects::CSeq_entry& entry);
    void xUpdatePubReferences(objects::CSeq_descr& descr);
-   void xUpdateOrgTaxname(objects::COrg_ref& org);
+   void xUpdateOrgTaxname(objects::IMessageListener* logger, objects::COrg_ref& org);
 
    CRef<objects::CMLAClient>  m_mlaClient;
-   auto_ptr<objects::CTaxon1> m_taxClient;
-   const CTable2AsnContext&   m_context;
+   auto_ptr<objects::CCachedTaxon3_impl>  m_taxClient;
+   bool m_enable_caching;
 };
 
 END_NCBI_SCOPE
 
 #endif
-

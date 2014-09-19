@@ -87,6 +87,13 @@ namespace
         CFastaReaderEx(ILineReader& reader, TFlags flags) : CFastaReader(reader, flags)
         {
         };
+        virtual void AssignMolType(IMessageListener * pMessageListener)
+        {
+            CFastaReader::AssignMolType(pMessageListener);
+            CSeq_inst& inst = SetCurrentSeq().SetInst();
+            if (!inst.IsSetMol() || inst.GetMol() ==  CSeq_inst::eMol_na)
+                inst.SetMol( CSeq_inst::eMol_dna);
+        }
         virtual void AssembleSeq (IMessageListener * pMessageListener)
         {
             CFastaReader::AssembleSeq(pMessageListener);
@@ -429,8 +436,8 @@ CMultiReader::xReadASN1(CNcbiIstream& instream)
 
     if (m_context.m_gapNmin > 0)
         CGapsEditor::ConvertNs2Gaps(*entry, m_context.m_gapNmin, m_context.m_gap_Unknown_length, 
-        (CSeq_gap::EType)m_context.m_gaps_type,
-        (CLinkage_evidence::EType)m_context.m_gaps_evidence);
+        (CSeq_gap::EType)m_context.m_gap_type,
+        (CLinkage_evidence::EType)m_context.m_gap_evidence);
     return entry;
 }
 
@@ -462,8 +469,8 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     if (m_context.m_gapNmin > 0)
     {
         pReader->SetMinGaps(m_context.m_gapNmin, m_context.m_gap_Unknown_length);
-        if (m_context.m_gaps_evidence>=0)
-            pReader->SetGapsLinkageEvidence((CSeq_gap::EType)m_context.m_gaps_type, (CLinkage_evidence::EType)m_context.m_gaps_evidence);
+        if (m_context.m_gap_evidence>=0 || m_context.m_gap_type>=0)
+            pReader->SetGapLinkageEvidence((CSeq_gap::EType)m_context.m_gap_type, (CLinkage_evidence::EType)m_context.m_gap_evidence);
     }
 
     int max_seqs = kMax_Int;
@@ -694,6 +701,20 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
     switch(entry.Which())
     {
     case CSeq_entry::e_Seq:
+        if (!m_context.m_OrganismName.empty() || m_context.m_taxid != 0)
+        {
+            CBioSource::TOrg& org(CAutoAddDesc(entry.SetDescr(), CSeqdesc::e_Source).Set().SetSource().SetOrg());
+            // we should reset taxid in case new name is different
+            if (org.IsSetTaxname() && org.GetTaxId() >0 && org.GetTaxname() != m_context.m_OrganismName)
+            {
+                org.SetTaxId(0);
+            }
+
+            if (!m_context.m_OrganismName.empty())
+                org.SetTaxname(m_context.m_OrganismName);
+            if (m_context.m_taxid != 0)
+                org.SetTaxId(m_context.m_taxid);
+        }
         break;
 
     case CSeq_entry::e_Set:
@@ -709,18 +730,6 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
         break;
     default:
         break;
-    }
-
-    if (!m_context.m_OrganismName.empty())
-    {
-        CBioSource::TOrg& org(CAutoAddDesc(entry.SetDescr(), CSeqdesc::e_Source).Set().SetSource().SetOrg());
-        // we should reset taxid in case new name is different
-        if (org.IsSetTaxname() && org.GetTaxId() >0 && org.GetTaxname() != m_context.m_OrganismName)
-        {
-            org.SetTaxId(0);
-        }
-
-        org.SetTaxname(m_context.m_OrganismName);
     }
 }
 
@@ -884,10 +893,10 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
         CRef<CSeqdesc> desc(new CSeqdesc);
         pObjIstrm->Read(ObjectInfo(*desc), CObjectIStream::eNoFileHeader);
 
-        if  (context.m_descr_template.Empty())
-             context.m_descr_template.Reset(new CSeq_descr);
+        if  (context.m_entry_template.Empty())
+            context.m_entry_template.Reset(new CSeq_entry);
 
-        context.m_descr_template->Set().push_back(desc);
+        context.m_entry_template->SetSeq().SetDescr().Set().push_back(desc);
 
         try {
             sType = pObjIstrm->ReadFileHeader();
@@ -1001,14 +1010,7 @@ CRef<CSeq_entry> CMultiReader::LoadFile(const string& ifname)
     CRef<CSeq_entry> read_entry = xReadFile(ifname);
     if (read_entry.NotEmpty())
     {
-        if (m_context.m_entry_template.NotEmpty())
-        {
-            m_context.MergeWithTemplate(*read_entry);
-        }
-        if (m_context.m_descr_template.NotEmpty())
-        {
-            m_context.MergeSeqDescr(read_entry->SetDescr(), *m_context.m_descr_template);
-        }
+        m_context.MergeWithTemplate(*read_entry);
         if (!m_context.m_Comment.empty())
         {
             CRef<CSeqdesc> value(new CSeqdesc());
