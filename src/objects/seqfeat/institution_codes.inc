@@ -3189,7 +3189,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "LeishCryoBank	c	International Cryobank of Leishmania",
 "LEIUG	s	Department of Geology Leicester University",
 "LEMA	s	Universite du Maine",
-"LEMQ	s	McGill University, Lyman Entomological Museum",
+"LEMQ	s	Lyman Entomological Museum, McGill University,",
 "LEMT	s	Ege University, Lodos Entomological Museum",
 "LENUD	s	Lenin University of Dagestan, Botany Department",
 "LEP	s	All-Union Institute for Plant Protection",
