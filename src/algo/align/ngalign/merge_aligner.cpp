@@ -176,16 +176,16 @@ CMergeAligner::x_MergeSeqAlignSet(CSeq_align_set& InAligns, objects::CScope& Sco
         switch(m_Mode) {
         case eAlignCleanup:
             {{
-                CTreeAlignMerger merger;
-                merger.SetScope(&Scope);
-                merger.Merge(In, Out->Set());
+                CAlignCleanup Cleaner(Scope);
+                Cleaner.FillUnaligned(true);
+                Cleaner.Cleanup(In, Out->Set());
                 break;
             }}
         case eTreeAlignMerger:
             {{
-                CAlignCleanup Cleaner(Scope);
-                Cleaner.FillUnaligned(true);
-                Cleaner.Cleanup(In, Out->Set());
+                CTreeAlignMerger merger;
+                merger.SetScope(&Scope);
+                merger.Merge(In, Out->Set());
                 break;
             }}
         }
