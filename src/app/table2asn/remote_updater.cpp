@@ -26,49 +26,39 @@
 * Author:  Sergiy Gotvyanskyy, NCBI
 *
 * File Description:
-*   Front-end class for making remote request to MLA
-*
+*   Front-end class for making remote request to MLA and taxon
+* 
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
 
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_descr.hpp>
-
-#include <objtools/format/context.hpp>
-#include <objtools/format/items/reference_item.hpp>
-#include <objmgr/object_manager.hpp>
+#include <objects/taxon3/taxon3.hpp>
 #include <objects/mla/mla_client.hpp>
 
-#include <objects/seq/Pubdesc.hpp>
+#include <objtools/readers/message_listener.hpp>
+#include <objtools/format/items/reference_item.hpp>
+
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 
-#include <objects/seqfeat/Org_ref_.hpp>
-#include <objects/taxon3/taxon3.hpp>
-#include <objects/biblio/Cit_art.hpp>
-#include <objects/biblio/ArticleIdSet.hpp>
-
-#include <objmgr/object_manager.hpp>
-#include <objtools/readers/message_listener.hpp>
-
+#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-
-#include "remote_updater.hpp"
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include <objmgr/seq_descr_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
+
+#include "remote_updater.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+BEGIN_SCOPE(edit)
 
-namespace objects
-{
 class CCachedTaxon3_impl
 {
 public:
@@ -107,16 +97,13 @@ public:
     CRef<CT3Reply> GetOrgReply(const COrg_ref& in_org)
     {
         string id;
-        //CNcbiOstrstream ostream;
-        //ostream << MSerial_AsnText << **it << ends;
-        //id = ostream.str()
 
         NStr::IntToString(id, in_org.GetTaxId());
         if (in_org.IsSetTaxname())
             id += in_org.GetTaxname();
 
         CRef<CT3Reply>& reply = (*m_cache)[id];
-        if (/*id < 1 ||*/ reply.Empty())
+        if (reply.Empty())
         {
             CTaxon3_request request;
 
@@ -153,13 +140,9 @@ public:
         return result;
     }  
 protected:
-    static auto_ptr<CTaxon3> m_taxon;
-    static auto_ptr<CCachedReplyMap> m_cache;
+    auto_ptr<CTaxon3> m_taxon;
+    auto_ptr<CCachedReplyMap> m_cache;
 };
-
-auto_ptr<CTaxon3> CCachedTaxon3_impl::m_taxon;
-auto_ptr<CCachedTaxon3_impl::CCachedReplyMap> CCachedTaxon3_impl::m_cache;
-}
 
 USING_SCOPE(objects);
 
@@ -246,8 +229,14 @@ void CRemoteUpdater::xUpdateOrgTaxname(objects::IMessageListener* logger, COrg_r
     }
 }
 
-CRemoteUpdater::CRemoteUpdater()
-    :m_enable_caching(true)
+CRemoteUpdater& CRemoteUpdater::GetInstance()
+{
+    static CRemoteUpdater instance;
+    return instance;
+}
+
+CRemoteUpdater::CRemoteUpdater(bool enable_caching)
+    :m_enable_caching(enable_caching)
 {
 }
 
@@ -366,4 +355,17 @@ void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objec
     }
 }
 
+void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeq_entry_EditHandle& obj)
+{
+    for (CBioseq_CI bioseq_it(obj); bioseq_it; ++bioseq_it)
+    {
+        for (CSeqdesc_CI desc_it(bioseq_it->GetEditHandle()); desc_it; ++desc_it)
+        {
+            UpdateOrgFromTaxon(logger, (CSeqdesc&)*desc_it);
+        }
+    }
+}
+
+END_SCOPE(edit)
+END_SCOPE(objects)
 END_NCBI_SCOPE

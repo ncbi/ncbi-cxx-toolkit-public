@@ -142,7 +142,7 @@ CTbl2AsnApp::CTbl2AsnApp(void)
 {
     int build_num = 
 #ifdef NCBI_PRODUCTION_VER
-    NCBI_PRODUCTION_VER
+    0
 #else
 #ifdef NCBI_DEVELOPMENT_VER 
     NCBI_DEVELOPMENT_VER 
@@ -189,25 +189,27 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddDefaultKey
         ("a", "String", "File Type\n\
-                        a Any\n\
-                        r20u Runs of 20+ Ns are gaps, 100 Ns are unknown length\n\
-                        r20k Runs of 20+ Ns are gaps, 100 Ns are known length\n\
-                        r10u Runs of 10+ Ns are gaps, 100 Ns are unknown length\n\
-                        r10k Runs of 10+ Ns are gaps, 100 Ns are known length\n\
-                        s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco, s9 Small-genome)\n\
-                        d FASTA Delta, di FASTA Delta with Implicit Gaps\n\
-                        l FASTA+Gap Alignment (l Batch, l1 Pop, l2 Phy, l3 Mut, l4 Eco, l9 Small-genome)\n\
-                        z FASTA with Gap Lines\n\
-                        e PHRAP/ACE\n\
-                        b ASN.1 for -M flag", CArgDescriptions::eString, "a");
+      a Any\n\
+      r20u Runs of 20+ Ns are gaps, 100 Ns are unknown length\n\
+      r20k Runs of 20+ Ns are gaps, 100 Ns are known length\n\
+      r10u Runs of 10+ Ns are gaps, 100 Ns are unknown length\n\
+      r10k Runs of 10+ Ns are gaps, 100 Ns are known length\n\
+      s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco,\n\
+        s9 Small-genome)\n\
+      d FASTA Delta, di FASTA Delta with Implicit Gaps\n\
+      l FASTA+Gap Alignment (l Batch, l1 Pop, l2 Phy, l3 Mut, l4 Eco,\n\
+        l9 Small-genome)\n\
+      z FASTA with Gap Lines\n\
+      e PHRAP/ACE\n\
+      b ASN.1 for -M flag", CArgDescriptions::eString, "a");
 
     arg_desc->AddFlag("s", "Read FASTAs as Set");                          // done
     arg_desc->AddFlag("g", "Genomic Product Set");
     arg_desc->AddFlag("J", "Delayed Genomic Product Set ");                // done
     arg_desc->AddDefaultKey
         ("F", "String", "Feature ID Links\n\
-                        o By Overlap\n\
-                        p By Product", CArgDescriptions::eString, "o");
+      o By Overlap\n\
+      p By Product", CArgDescriptions::eString, "o");
 
     arg_desc->AddOptionalKey
         ("A", "String", "Accession", CArgDescriptions::eString);           // done
@@ -228,35 +230,35 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey
         ("k", "String", "CDS Flags (combine any of the following letters)\n\
-                        c Annotate Longest ORF\n\
-                        r Allow Runon ORFs\n\
-                        m Allow Alternative Starts\n\
-                        k Set Conflict on Mismatch", CArgDescriptions::eString);
+      c Annotate Longest ORF\n\
+      r Allow Runon ORFs\n\
+      m Allow Alternative Starts\n\
+      k Set Conflict on Mismatch", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey
         ("V", "String", "Verification (combine any of the following letters)\n\
-                        v Validate with Normal Stringency\n\
-                        r Validate without Country Check\n\
-                        c BarCode Validation\n\
-                        b Generate GenBank Flatfile\n\
-                        g Generate Gene Report\n\
-                        t Validate with TSA Check", CArgDescriptions::eString);
+      v Validate with Normal Stringency\n\
+      r Validate without Country Check\n\
+      c BarCode Validation\n\
+      b Generate GenBank Flatfile\n\
+      g Generate Gene Report\n\
+      t Validate with TSA Check", CArgDescriptions::eString);
 
     arg_desc->AddFlag("q", "Seq ID from File Name");      // done
     arg_desc->AddFlag("u", "GenProdSet to NucProtSet");   // done
     arg_desc->AddFlag("I", "General ID to Note");         // done
 
     arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
-                                            n Nucleotide or p Protein,\n\
-                                            Begin, Middle, End Gap Characters,\n\
-                                            Missing Characters, Match Characters", CArgDescriptions::eString);
+      n Nucleotide or p Protein,\n\
+      Begin, Middle, End Gap Characters,\n\
+      Missing Characters, Match Characters", CArgDescriptions::eString);
 
     arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID"); // candidate to remove
     arg_desc->AddFlag("S", "Smart Feature Annotation");
 
     arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
-                                            s Special mRNA Titles\n\
-                                            r RefSeq mRNA Titles", CArgDescriptions::eString);
+      s Special mRNA Titles\n\
+      r RefSeq mRNA Titles", CArgDescriptions::eString);
 
     arg_desc->AddFlag("U", "Remove Unnecessary Gene Xref");
     arg_desc->AddFlag("L", "Force Local protein_id/transcript_id");
@@ -266,59 +268,61 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("K", "Save Bioseq-set");                      // done
 
     arg_desc->AddOptionalKey("H", "String", "Hold Until Publish\n\
-                                            y Hold for One Year\n\
-                                            mm/dd/yyyy", CArgDescriptions::eString); // done
+      y Hold for One Year\n\
+      mm/dd/yyyy", CArgDescriptions::eString); // done
 
     arg_desc->AddOptionalKey(
         "Z", "OutFile", "Discrepancy Report Output File", CArgDescriptions::eOutputFile);
 
     arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
-                                            d Correct Collection Dates (assume month first)\n\
-                                            D Correct Collection Dates (assume day first)\n\
-                                            b Append note to coding regions that overlap other coding regions with similar product names and do not contain 'ABC'\n\
-                                            x Extend partial ends of features by one or two nucleotides to abut gaps or sequence ends\n\
-                                            p Add exception to non-extendable partials\n\
-                                            s Add exception to short introns\n\
-                                            f Fix product names", CArgDescriptions::eString);
+      d Correct Collection Dates (assume month first)\n\
+      D Correct Collection Dates (assume day first)\n\
+      b Append note to coding regions that overlap other coding regions\n\
+        with similar product names and do not contain 'ABC'\n\
+      x Extend partial ends of features by one or two nucleotides to abut\n\
+        gaps or sequence ends\n\
+      p Add exception to non-extendable partials\n\
+      s Add exception to short introns\n\
+      f Fix product names", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
     arg_desc->AddOptionalKey("X",  "String", "Extra Flags (combine any of the following letters)\n\
-                                             A Automatic definition line generator\n\
-                                             C Apply comments in .cmt files to all sequences\n\
-                                             E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
+      A Automatic definition line generator\n\
+      C Apply comments in .cmt files to all sequences\n\
+      E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger); //done
 
     arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //done
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
-                                            n Normal\n\
-                                            b Big Sequence\n\
-                                            p Power Option\n\
-                                            t TSA", CArgDescriptions::eString);
+      n Normal\n\
+      b Big Sequence\n\
+      p Power Option\n\
+      t TSA", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("l", "String", "Add type of evidence used to assert linkage across assembly gaps (only for TSA records). Must be one of the following:\n\
-                            paired-ends\n\
-                            align-genus\n\
-                            align-xgenus\n\
-                            align-trnscpt\n\
-                            within-clone\n\
-                            clone-contig\n\
-                            map\n\
-                            strobe", CArgDescriptions::eString);  //done
+      paired-ends\n\
+      align-genus\n\
+      align-xgenus\n\
+      align-trnscpt\n\
+      within-clone\n\
+      clone-contig\n\
+      map\n\
+      strobe", CArgDescriptions::eString);  //done
 
     arg_desc->AddOptionalKey("gap-type", "String", "Set gap type for runs of Ns. Must be one of the following:\n\
-                            unknown\n\
-                            fragment\n\
-                            clone\n\
-                            short_arm\n\
-                            heterochromatin\n\
-                            centromere\n\
-                            telomere\n\
-                            repeat\n\
-                            contig\n\
-                            scaffold\n\
-                            other", CArgDescriptions::eString);  //done
+      unknown\n\
+      fragment\n\
+      clone\n\
+      short_arm\n\
+      heterochromatin\n\
+      centromere\n\
+      telomere\n\
+      repeat\n\
+      contig\n\
+      scaffold\n\
+      other", CArgDescriptions::eString);  //done
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
@@ -383,7 +387,7 @@ int CTbl2AsnApp::Run(void)
     // at a time.
 
     m_reader.reset(new CMultiReader(m_context));
-    m_context.m_remote_updater.reset(new CRemoteUpdater);
+    m_context.m_remote_updater.reset(new edit::CRemoteUpdater);
 
     if (args["fcs-file"])
     {

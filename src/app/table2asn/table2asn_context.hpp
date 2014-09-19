@@ -19,11 +19,16 @@ class CScope;
 class CObjectManager;
 class CSeq_entry_EditHandle;
 class CSeq_feat;
+
+namespace edit
+{
+    class CRemoteUpdater;
+};
+
 };
 
 #include <objects/seq/Seqdesc.hpp>
 
-class CRemoteUpdater;
 // command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
 class CAutoAddDesc
@@ -108,7 +113,7 @@ public:
     string m_asn1_suffix;
 
     CRef<objects::CSeq_descr>  m_descriptors;
-    auto_ptr<CRemoteUpdater>   m_remote_updater;
+    auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
 
     //string conffile;
 
