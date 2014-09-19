@@ -221,6 +221,9 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
 
 void CTable2AsnContext::ApplySourceQualifiers(objects::CSeq_entry_EditHandle& obj, const string& src_qualifiers) const
 {
+    if (src_qualifiers.empty())
+        return;
+
     for (CBioseq_CI it(obj); *it; ++it)
     {
         x_ApplySourceQualifiers(*(CBioseq*)it->GetEditHandle().GetCompleteBioseq().GetPointer(), src_qualifiers);
@@ -438,13 +441,6 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
 {
     if (m_submit_template.NotEmpty())
     {
-        if (m_entry_template.NotEmpty() && m_entry_template->IsSetDescr())
-        {
-            object->SetDescr().Set().insert(object->SetDescr().Set().end(),
-                m_entry_template->GetDescr().Get().begin(),
-                m_entry_template->GetDescr().Get().end());
-        }
-
         if (m_submit_template->IsSetSub() &&
             m_submit_template->GetSub().IsSetCit())
         {

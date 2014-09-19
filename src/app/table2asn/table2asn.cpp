@@ -142,7 +142,7 @@ CTbl2AsnApp::CTbl2AsnApp(void)
 {
     int build_num = 
 #ifdef NCBI_PRODUCTION_VER
-    0
+    NCBI_PRODUCTION_VER
 #else
 #ifdef NCBI_DEVELOPMENT_VER 
     NCBI_DEVELOPMENT_VER 
@@ -687,11 +687,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         entry = op.LoadXML(m_context.m_current_file, m_context);
         if (entry.IsNull())
             return;
-        if (m_context.m_entry_template.NotEmpty() && m_context.m_entry_template->IsSetDescr())
-        {
-            m_context.MergeSeqDescr(entry->SetDescr(), m_context.m_entry_template->GetDescr());
-        }
-        entry->Parentize();
     }
     else
     {
@@ -743,9 +738,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         if (m_context.ApplyCreateDate(*entry))
             m_context.ApplyUpdateDate(*entry);
     }
-
-    // make asn.1 look nicier
-    edit::SortSeqDescr(*entry);
 
     // this methods do not remove entry nor change it. But create 'result' object which either
     // equal to 'entry' or contain reference to 'entry'.
@@ -799,6 +791,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         // we need to fix cit-sub date
         //COpticalxml2asnOperator::UpdatePubDate(*result);
     }
+
+    // make asn.1 look nicier
+    edit::SortSeqDescr(*entry);
 
     CTable2AsnValidator validator;
 

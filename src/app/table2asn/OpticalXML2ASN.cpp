@@ -238,7 +238,7 @@ CRef<CSeq_entry> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2A
     for (list<COpticalChrData>::iterator it = m_vchr.begin(); it != m_vchr.end(); ++it)
     {
         CRef<CSeq_entry> new_entry(new CSeq_entry);
-        if (context.m_entry_template.NotEmpty() && !context.m_avoid_submit_block)
+        if (context.m_entry_template.NotEmpty())
             new_entry->Assign(*context.m_entry_template);
         BuildOpticalASNData(context, *it, new_entry->SetSeq());
 
@@ -305,12 +305,12 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
 
 void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& enzyme, const CTable2AsnContext& context)
 {
-    CSeq_descr::Tdata& TD = SD.Set();
-
     CBioSource& biosource = CAutoAddDesc(SD, CSeqdesc::e_Source).Set().SetSource();
     biosource.SetGenome(m_genome);
     if (context.m_taxid > 0)
         biosource.SetOrg().SetTaxId(context.m_taxid);
+    if (!context.m_OrganismName.empty())
+        biosource.SetOrg().SetTaxname(context.m_OrganismName);
 
     // Get strain
     if (!context.m_strain.empty())
@@ -330,9 +330,9 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
     //CRef<COrgMod> oldlin(new COrgMod(COrgMod::eSubtype_old_lineage, "old lineage"));
     //bs->SetOrg().SetOrgname().SetMod().push_back(oldlin);
 
-    if (biosource.IsSetTaxname())
+    if (biosource.IsSetOrg() && biosource.GetOrg().IsSetTaxname())
     {
-        string title = biosource.GetTaxname();
+        string title = biosource.GetOrg().GetTaxname();
         if (!context.m_strain.empty() && !NStr::EndsWith(title, context.m_strain))
             title += " " + context.m_strain;
         if (m_genome == CBioSource::eGenome_chromosome)
@@ -343,9 +343,8 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
             title += " " + enzyme;
         title += " whole genome map";
 
-        CRef<CSeqdesc> sd(new CSeqdesc());
-        sd->SetTitle(title);
-        TD.push_back(sd);
+        CAutoAddDesc title_desc(SD, CSeqdesc::e_Title);
+        title_desc.Set().SetTitle(title);
     }
 }
 
