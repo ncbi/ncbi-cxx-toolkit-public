@@ -1320,13 +1320,12 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
             }
         }
 
-        CAlignMap chainmap = chain.GetAlignMap();
         TSignedSeqRange new_limits = chain.Limits();
         ITERATE(TMemberPtrSet, im, conflict_members) {
             TSignedSeqRange alim = (*im)->m_align->Limits()&chain.Limits();
             if(alim.Empty())
                 continue;
-            alim = chainmap.ShrinkToRealPoints(alim);
+            alim = amap.ShrinkToRealPoints(alim);
             if(alim.Empty())
                 continue;
             if(alim.GetFrom() < noclip_limits.GetFrom()) {
@@ -1342,6 +1341,55 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
                 }
                 new_limits.SetTo(min(new_limits.GetTo(),from));
             }
+        }
+
+        int left_splice = -1;
+        int right_splice = -1;
+        for(int e = 1; e < (int)chain.Exons().size(); ++e) {
+            if(left_splice < 0 && chain.Exons()[e-1].m_ssplice && Include(new_limits,chain.Exons()[e-1].GetTo()))
+                left_splice = chain.Exons()[e-1].GetTo();
+            if(chain.Exons()[e].m_fsplice && Include(new_limits,chain.Exons()[e].GetFrom()))
+                right_splice = chain.Exons()[e].GetFrom();
+        }
+        map<int,double> left_weights;
+        double left_weights_total = 0.;
+        map<int,double> right_weights;
+        double right_weights_total = 0.;
+        ITERATE(TContained, i, chain.m_members) {
+            const CGeneModel& a = *(*i)->m_align;
+            TSignedSeqRange alim(amap.ShrinkToRealPoints(a.Limits()&chain.Limits(),false));
+            for(int e = 1; e < (int)a.Exons().size(); ++e) {
+                if(a.Exons()[e-1].m_ssplice && a.Exons()[e-1].GetTo() == left_splice) {
+                    left_weights[alim.GetFrom()] += a.Weight();
+                    left_weights_total += a.Weight();
+                }
+                if(a.Exons()[e].m_fsplice && a.Exons()[e].GetFrom() == right_splice) {
+                    right_weights[alim.GetTo()] += a.Weight();
+                    right_weights_total += a.Weight();
+                }
+            }
+        }
+        if(left_weights_total > 0.) {
+            int left = numeric_limits<int>::max();
+            double t = 0;
+            for(map<int,double>::reverse_iterator it = left_weights.rbegin(); it != left_weights.rend(); ++it) {
+                if(t < 0.9*left_weights_total)
+                    left = it->first;
+                t += it->second;
+            }
+            if(left < new_limits.GetFrom())
+                new_limits.SetFrom(left);
+        }
+        if(right_weights_total > 0.) {
+            int right = 0;
+            double t = 0;
+            for(map<int,double>::iterator it = right_weights.begin(); it != right_weights.end(); ++it) {
+                if(t < 0.9*right_weights_total)
+                    right = it->first;
+                t += it->second;
+            }
+            if(right > new_limits.GetTo())
+                new_limits.SetTo(right);
         }
 
         if(new_limits != chain.Limits()) {
@@ -3439,7 +3487,7 @@ void CChain::SetBestPlacement(TOrigAligns& orig_aligns) {
 
 struct SLinker
 {
-    SLinker() : m_member(0), m_value(0), m_left(0), m_not_wanted(false), m_count(0), m_not_wanted_count(0), m_connected(false) {}
+    SLinker() : m_member(0), m_value(0), m_matches(0), m_left(0), m_not_wanted(false), m_count(0), m_not_wanted_count(0), m_matches_count(0), m_connected(false) {}
     bool operator<(const SLinker& sl) const {
         if(m_range != sl.m_range)
             return m_range < sl.m_range; 
@@ -3455,10 +3503,12 @@ struct SLinker
     TSignedSeqRange m_range;
     TSignedSeqRange m_reading_frame;
     int m_value;
+    int m_matches;
     SLinker* m_left;
     bool m_not_wanted;
     int m_count;
     int m_not_wanted_count;
+    int m_matches_count;
     bool m_connected;
 };
 
@@ -3479,6 +3529,9 @@ void CChain::CalculateSupportAndWeightFromMembers() {
         CGeneModel* ai = mi->m_align;
         const CCDSInfo* cdsi = mi->m_cds_info;
         _ASSERT(mi->m_orig_align);
+        int matches = ai->AlignLen();
+        if(ai->Ident() > 0.)
+            matches = ai->Ident()*matches+0.5;
 
         bool pstop_outside_rf = false;
         for(int is = 0; is < (int)GetCdsInfo().PStops().size() && !pstop_outside_rf; ++is) {
@@ -3535,6 +3588,7 @@ void CChain::CalculateSupportAndWeightFromMembers() {
             sl.m_not_wanted = not_wanted;
             sl.m_member = mi;
             sl.m_value = 1;
+            sl.m_matches = matches;
             sl.m_range.SetFrom(left);
             if(!incompatible_ranges.empty()) {
                 sl.m_range.SetTo(incompatible_ranges.begin()->GetFrom()-1);
@@ -3620,6 +3674,7 @@ void CChain::CalculateSupportAndWeightFromMembers() {
         SLinker& sli = linkers[i];
         if(sli.m_range.GetFrom() == Limits().GetFrom()) {
             sli.m_count = sli.m_value;
+            sli.m_matches_count = sli.m_matches;
             if(sli.m_not_wanted)
                 sli.m_not_wanted_count = sli.m_value;
             sli.m_connected = true;
@@ -3640,11 +3695,14 @@ void CChain::CalculateSupportAndWeightFromMembers() {
                         continue;
 
                     int new_count = slj.m_count + sli.m_value;
+                    int new_matches_count = slj.m_matches_count + sli.m_matches;
                     int new_not_wanted_count = slj.m_not_wanted_count;
                     if(sli.m_not_wanted)
                         new_not_wanted_count += sli.m_value;
-                    if(!sli.m_connected || new_count < sli.m_count || (new_count == sli.m_count && new_not_wanted_count < sli.m_not_wanted_count)) {
+                    if(!sli.m_connected || new_count < sli.m_count || (new_count == sli.m_count && new_not_wanted_count < sli.m_not_wanted_count) || 
+                        (new_count == sli.m_count && new_not_wanted_count == sli.m_not_wanted_count && new_matches_count > sli.m_matches_count)) {
                         sli.m_count = new_count;
+                        sli.m_matches_count = new_matches_count;
                         sli.m_not_wanted_count = new_not_wanted_count;
                         sli.m_connected = true;
                         sli.m_left = &slj;
@@ -3657,7 +3715,8 @@ void CChain::CalculateSupportAndWeightFromMembers() {
     for(int i = 0; i < (int)linkers.size(); ++i) {
         SLinker& sli = linkers[i];
         if(sli.m_connected && sli.m_range.GetTo() == Limits().GetTo()) {
-            if(best_right == 0 || sli.m_count < best_right->m_count || (sli.m_count == best_right->m_count && sli.m_not_wanted_count < best_right->m_not_wanted_count))
+            if(best_right == 0 || sli.m_count < best_right->m_count || (sli.m_count == best_right->m_count && sli.m_not_wanted_count < best_right->m_not_wanted_count) ||
+                  (sli.m_count == best_right->m_count && sli.m_not_wanted_count == best_right->m_not_wanted_count && sli.m_matches_count >  best_right->m_matches_count))
                 best_right = &sli;
         }
     }
@@ -4143,6 +4202,12 @@ void CChain::ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& 
             core_lim = MaxCdsLimits();
         else
             core_lim = RealCdsLimits();
+        ITERATE (CGeneModel::TExons, e, Exons()) {
+            if(Include(e->Limits(),core_lim.GetFrom()))
+                core_lim.SetFrom(max(core_lim.GetFrom()-MIN_UTR_EXON,e->GetFrom()));
+            if(Include(e->Limits(),core_lim.GetTo()))
+                core_lim.SetTo(min(core_lim.GetTo()+MIN_UTR_EXON,e->GetTo()));
+        }
     } else {
         core_lim = Limits();
         if(Exons().size() > 1) {
