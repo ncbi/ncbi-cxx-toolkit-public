@@ -839,3 +839,23 @@ BOOST_AUTO_TEST_CASE(QualityTest)
     CFeat_CI feat_it(bh);
     BOOST_CHECK_EQUAL(feat_it.GetSize(), 116u);
 }
+
+
+BOOST_AUTO_TEST_CASE(GITest)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AABR01000100.1"));
+    BOOST_CHECK(bh);
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25725721));
+    BOOST_CHECK(bh);
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2));
+    BOOST_CHECK(!bh);
+}

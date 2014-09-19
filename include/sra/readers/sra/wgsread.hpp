@@ -114,6 +114,11 @@ public:
         return m_MasterDescr;
     }
 
+    // get GI range of sequences
+    pair<TGi, TGi> GetGiRange(void);
+    // get SEQUENCE row_id for a given GI or 0 if there is no GI
+    uint64_t GetGiRowId(TGi gi);
+
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
@@ -243,6 +248,15 @@ public:
     // returns 0 if accession is in wrong format
     uint64_t ParseScaffoldRow(CTempString acc) const {
         return GetObject().ParseScaffoldRow(acc);
+    }
+
+    // get GI range of sequences
+    pair<TGi, TGi> GetGiRange(void) const {
+        return GetNCObject().GetGiRange();
+    }
+    // get SEQUENCE row_id for a given GI or 0 if there is no GI
+    uint64_t GetGiRowId(TGi gi) const {
+        return GetNCObject().GetGiRowId(gi);
     }
 };
 

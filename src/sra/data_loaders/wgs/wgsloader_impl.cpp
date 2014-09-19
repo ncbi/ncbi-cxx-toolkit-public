@@ -309,6 +309,29 @@ CWGSDataLoader_Impl::SAccFileInfo
 CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
 {
     SAccFileInfo ret;
+    if ( idh.IsGi() ) {
+        TGi gi = idh.GetGi();
+        CMutexGuard guard(m_Mutex);
+        ITERATE ( TFixedFiles, it, m_FixedFiles ) {
+            uint64_t row_id = it->second->m_WGSDb.GetGiRowId(gi);
+            if ( row_id ) {
+                ret.file = it->second;
+                ret.row_id = row_id;
+                ret.is_scaffold = false;
+                ret.has_version = false;
+            }
+        }
+        ITERATE ( TFoundFiles, it, m_FoundFiles ) {
+            uint64_t row_id = it->second->m_WGSDb.GetGiRowId(gi);
+            if ( row_id ) {
+                ret.file = it->second;
+                ret.row_id = row_id;
+                ret.is_scaffold = false;
+                ret.has_version = false;
+            }
+        }
+        return ret;
+    }
     switch ( idh.Which() ) { // shortcut
     case CSeq_id::e_not_set:
     case CSeq_id::e_Local:
@@ -317,7 +340,6 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     case CSeq_id::e_Giim:
     case CSeq_id::e_Patent:
     case CSeq_id::e_General:
-    case CSeq_id::e_Gi:
     case CSeq_id::e_Pdb:
         return ret;
     default:

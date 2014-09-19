@@ -98,6 +98,11 @@ void CWGSTestApp::Init(void)
 
     arg_desc->AddFlag("print_seq", "Print loader Bioseq objects");
 
+    arg_desc->AddFlag("gi_range", "Print GI range if any");
+    arg_desc->AddOptionalKey("gi", "GI",
+                             "lookup by GI",
+                             CArgDescriptions::eInt8);
+
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
                             CArgDescriptions::eOutputFile,
@@ -390,6 +395,34 @@ int CWGSTestApp::Run(void)
             }
             if ( ++count >= limit_count ) {
                 break;
+            }
+        }
+    }
+
+    if ( args["gi_range"] ) {
+        pair<TGi, TGi> gi_range = wgs_db.GetGiRange();
+        if ( gi_range.second ) {
+            out << "GI range: " << gi_range.first << " - " << gi_range.second
+                << NcbiEndl;
+        }
+    }
+    if ( args["gi"] ) {
+        TGi gi = TIntId(args["gi"].AsInt8());
+        uint64_t row = wgs_db.GetGiRowId(gi);
+        if ( !row ) {
+            out << "GI "<<gi<<" not found" << NcbiEndl;
+        }
+        else {
+            out << "GI "<<gi<<" row: "<<row << NcbiEndl;
+            CWGSSeqIterator it(wgs_db, row);
+            if ( !it ) {
+                out << "No such row: "<<row << NcbiEndl;
+            }
+            else {
+                out << "GI "<<gi<<" len: "<<it.GetSeqLength() << NcbiEndl;
+                if ( print_seq ) {
+                    out << MSerial_AsnText << *it.GetBioseq();
+                }
             }
         }
     }

@@ -321,6 +321,41 @@ void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr)
 }
 
 
+pair<TGi, TGi> CWGSDb_Impl::GetGiRange(void)
+{
+    pair<TGi, TGi> ret;
+    CRef<SIdxTableCursor> idx = Idx();
+    if ( idx ) {
+        pair<int64_t, uint64_t> row_range = idx->m_Cursor.GetRowIdRange();
+        Put(idx);
+        if ( row_range.second ) {
+            ret.first = TIntId(row_range.first);
+            ret.second = TIntId(row_range.first + row_range.second - 1);
+        } 
+    }
+    return ret;
+}
+
+
+uint64_t CWGSDb_Impl::GetGiRowId(TGi gi)
+{
+    CRef<SIdxTableCursor> idx = Idx();
+    if ( !idx ) {
+        return 0;
+    }
+    try {
+        return *idx->NUC_ROW_ID(gi);
+    }
+    catch ( CSraException& exc ) {
+        if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
+            throw;
+        }
+        Put(idx);
+        return 0;
+    }
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSSeqIterator
 /////////////////////////////////////////////////////////////////////////////
