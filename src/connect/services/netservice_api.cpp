@@ -516,8 +516,6 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
         m_RebalanceStrategy = CreateDefaultRebalanceStrategy();
     }
 
-    m_PermanentConnection = eOn;
-
     if (m_ClientName.empty() || m_ClientName == "noname" ||
             NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -1051,11 +1049,6 @@ void CNetServerPool::SetCommunicationTimeout(const STimeout& to)
 const STimeout& CNetServerPool::GetCommunicationTimeout() const
 {
     return m_Impl->m_CommTimeout;
-}
-
-void CNetServerPool::SetPermanentConnection(ESwitch type)
-{
-    m_Impl->m_PermanentConnection = type;
 }
 
 CNetServiceIterator CNetService::Iterate(CNetService::EIterationMode mode)

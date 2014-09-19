@@ -114,10 +114,8 @@ inline SNetServerConnectionImpl::SNetServerConnectionImpl(
 void SNetServerConnectionImpl::DeleteThis()
 {
     // Return this connection to the pool.
-    if (m_Server->m_ServerInPool->m_ServerPool->m_PermanentConnection != eOff &&
-            m_Server->m_ServerInPool->m_CurrentConnectionGeneration.Get() ==
-                    m_Generation &&
-            m_Socket.GetStatus(eIO_Open) == eIO_Success) {
+    if (m_Server->m_ServerInPool->m_CurrentConnectionGeneration.Get() ==
+            m_Generation && m_Socket.GetStatus(eIO_Open) == eIO_Success) {
         TFastMutexGuard guard(
                 m_Server->m_ServerInPool->m_FreeConnectionListLock);
 

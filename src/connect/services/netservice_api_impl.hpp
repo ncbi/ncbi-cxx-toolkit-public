@@ -115,8 +115,6 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
     STimeout m_CommTimeout;
     STimeout m_FirstServerTimeout;
 
-    ESwitch m_PermanentConnection;
-
     int m_MaxConsecutiveIOFailures;
     int m_IOFailureThresholdNumerator;
     int m_IOFailureThresholdDenominator;

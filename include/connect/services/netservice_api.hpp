@@ -74,8 +74,6 @@ class NCBI_XCONNECT_EXPORT CNetServerPool
 
     void StickToServer(const string& host, unsigned short port);
 
-    void SetPermanentConnection(ESwitch type);
-
     void SetCommunicationTimeout(const STimeout& to);
     const STimeout& GetCommunicationTimeout() const;
 };
