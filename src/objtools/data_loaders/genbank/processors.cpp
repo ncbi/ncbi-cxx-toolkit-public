@@ -745,7 +745,9 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
     result.SetAndSaveBlobState(blob_id, entry.second);
     CLoadLockSetter setter(blob);
     if ( !setter.IsLoaded() ) {
-        setter.SetSeq_entry(*entry.first);
+        if ( entry.first ) {
+            setter.SetSeq_entry(*entry.first);
+        }
         setter.SetLoaded();
     }
         
@@ -962,7 +964,9 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
         
     CLoadLockSetter setter(blob);
     if ( !setter.IsLoaded() ) {
-        setter.SetSeq_entry(*entry.first, &set_info);
+        if ( entry.first ) {
+            setter.SetSeq_entry(*entry.first, &set_info);
+        }
         setter.SetLoaded();
     }
         
