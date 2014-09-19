@@ -226,7 +226,7 @@ CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
     cmd.append(nc_writer->GetBlobID());
     if (nc_writer->GetResponseType() == eNetCache_Wait)
         cmd.append(" confirm=1");
-    AppendClientIPSessionIDPassword(&cmd, parameters);
+    AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
 
     return StickToServerAndExec(cmd, parameters).conn;
 }
@@ -451,17 +451,11 @@ IReader* SNetICacheClientImpl::GetReadStreamPart(
                     ' ' + NStr::UInt8ToString((Uint8) part_size));
         }
 
-        unsigned max_age = parameters.GetMaxBlobAge();
-        if (max_age > 0) {
-            cmd += " age=";
-            cmd += NStr::NumericToString(max_age);
-        }
-
         CNetServer::SExecResult exec_result(
                 StickToServerAndExec(cmd, &parameters));
 
         unsigned* actual_age_ptr = parameters.GetActualBlobAgePtr();
-        if (max_age > 0 && actual_age_ptr != NULL)
+        if (parameters.GetMaxBlobAge() > 0 && actual_age_ptr != NULL)
             *actual_age_ptr = x_ExtractBlobAge(exec_result, cmd_name);
 
         return new CNetCacheReader(this, blob_id,
@@ -515,7 +509,9 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
 {
     if (blob_descr->return_current_version) {
         blob_descr->return_current_version_supported = true;
-        blob_descr->reader.reset(m_Impl->ReadCurrentBlobNotOlderThan(key, subkey,
+        blob_descr->reader.reset(m_Impl->ReadCurrentBlobNotOlderThan(
+                key,
+                subkey,
                 &blob_descr->blob_size,
                 &blob_descr->current_version,
                 &blob_descr->current_version_validity,
@@ -707,12 +703,16 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
     try {
         string blob_id(s_KeySubkeyToBlobID(key, subkey));
 
-        string cmd(MakeStdCmd("READLAST", blob_id,
-            &m_DefaultParameters));
+        string cmd;
 
-        if (max_age > 0) {
-            cmd += " age=";
-            cmd += NStr::NumericToString(max_age);
+        if (max_age == 0)
+            cmd = MakeStdCmd("READLAST", blob_id, &m_DefaultParameters);
+        else {
+            CNetCacheAPIParameters parameters(&m_DefaultParameters);
+
+            parameters.SetMaxBlobAge(max_age);
+
+            cmd = MakeStdCmd("READLAST", blob_id, &parameters);
         }
 
         CNetServer::SExecResult exec_result(StickToServerAndExec(cmd,
@@ -922,7 +922,7 @@ string SNetICacheClientImpl::MakeStdCmd(const char* cmd_base,
     if (!injection.empty())
         cmd.append(injection);
 
-    AppendClientIPSessionIDPassword(&cmd, parameters);
+    AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
 
     return cmd;
 }

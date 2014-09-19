@@ -39,9 +39,16 @@
 
 BEGIN_NCBI_SCOPE
 
+string SNetCacheAdminImpl::MakeAdminCmd(const char* cmd)
+{
+    string result(cmd);
+    m_API->AppendClientIPSessionID(&result);
+    return result;
+}
+
 void CNetCacheAdmin::ShutdownServer(EShutdownOption shutdown_option)
 {
-    string cmd(m_Impl->m_API->MakeCmd("SHUTDOWN"));
+    string cmd(m_Impl->MakeAdminCmd("SHUTDOWN"));
     if (shutdown_option == eDrain)
         cmd += " drain=1";
     m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
@@ -49,7 +56,7 @@ void CNetCacheAdmin::ShutdownServer(EShutdownOption shutdown_option)
 
 void CNetCacheAdmin::ReloadServerConfig()
 {
-    m_Impl->m_API->m_Service.ExecOnAllServers(m_Impl->m_API->MakeCmd("RECONF"));
+    m_Impl->m_API->m_Service.ExecOnAllServers(m_Impl->MakeAdminCmd("RECONF"));
 }
 
 void CNetCacheAdmin::Purge(const string& cache_name)
@@ -61,8 +68,8 @@ void CNetCacheAdmin::Purge(const string& cache_name)
 
 void CNetCacheAdmin::PrintConfig(CNcbiOstream& output_stream)
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("GETCONF"),
-        output_stream, CNetService::eMultilineOutput_NetCacheStyle);
+    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->MakeAdminCmd("GETCONF"),
+            output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream,
@@ -82,20 +89,20 @@ void CNetCacheAdmin::PrintStat(CNcbiOstream& output_stream,
         cmd += '"';
     }
 
-    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd(cmd.c_str()),
-        output_stream, CNetService::eMultilineOutput_NetCacheStyle);
+    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->MakeAdminCmd(cmd.c_str()),
+            output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::PrintHealth(CNcbiOstream& output_stream)
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("HEALTH"),
-        output_stream, CNetService::eMultilineOutput_NetCacheStyle);
+    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->MakeAdminCmd("HEALTH"),
+            output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
 void CNetCacheAdmin::GetServerVersion(CNcbiOstream& output_stream)
 {
-    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->m_API->MakeCmd("VERSION"),
-        output_stream, CNetService::eSingleLineOutput);
+    m_Impl->m_API->m_Service.PrintCmdOutput(m_Impl->MakeAdminCmd("VERSION"),
+            output_stream, CNetService::eSingleLineOutput);
 }
 
 

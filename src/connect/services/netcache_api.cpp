@@ -309,43 +309,41 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
 void SNetCacheAPIImpl::AppendClientIPSessionID(string* cmd)
 {
     CRequestContext& req = CDiagContext::GetRequestContext();
-    cmd->append(" \"");
+    cmd->append(" ip=\"");
     cmd->append(req.GetClientIP());
-    cmd->append("\" \"");
+    cmd->append("\" sid=\"");
     cmd->append(req.GetSessionID());
-    cmd->append("\"");
+    cmd->append(1, '\"');
 }
 
-void SNetCacheAPIImpl::AppendClientIPSessionIDPassword(string* cmd,
+void SNetCacheAPIImpl::AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
         const CNetCacheAPIParameters* parameters)
 {
     AppendClientIPSessionID(cmd);
 
     string password(parameters->GetPassword());
-    if (!password.empty())
-        cmd->append(password);
-}
+    if (!password.empty()) {
+        cmd->append(" pass=\"");
+        cmd->append(NStr::PrintableString(password));
+        cmd->append(1, '\"');
+    }
 
-string SNetCacheAPIImpl::MakeCmd(const char* cmd)
-{
-    string result(cmd);
-    AppendClientIPSessionID(&result);
-    return result;
-}
+    unsigned max_age = parameters->GetMaxBlobAge();
+    if (max_age > 0) {
+        cmd->append(" age=");
+        cmd->append(NStr::NumericToString(max_age));
+    }
 
-string SNetCacheAPIImpl::MakeCmd(const char* cmd,
-        const CNetCacheAPIParameters* parameters)
-{
-    string result(cmd);
-    AppendClientIPSessionIDPassword(&result, parameters);
-    return result;
+    cmd->append(" ncbi_phid=\"");
+    cmd->append(CDiagContext::GetRequestContext().GetHitID());
+    cmd->append(1, '\"');
 }
 
 string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const CNetCacheKey& key,
         const CNetCacheAPIParameters* parameters)
 {
     string result(cmd_base + key.StripKeyExtensions());
-    AppendClientIPSessionIDPassword(&result, parameters);
+    AppendClientIPSessionIDPasswordAgeHitID(&result, parameters);
     return result;
 }
 
@@ -565,7 +563,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
         cmd.append(stripped_blob_id);
     }
 
-    AppendClientIPSessionIDPassword(&cmd, parameters);
+    AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
 
     CNetServer::SExecResult exec_result;
 
@@ -795,7 +793,7 @@ void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl,
 
     parameters.LoadNamedParameters(optional);
 
-    m_Impl->AppendClientIPSessionIDPassword(&cmd, &parameters);
+    m_Impl->AppendClientIPSessionIDPasswordAgeHitID(&cmd, &parameters);
 
     m_Impl->ExecMirrorAware(key_obj, cmd, &parameters);
 }
@@ -878,7 +876,7 @@ CNetCacheReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
 
     parameters.LoadNamedParameters(optional);
 
-    AppendClientIPSessionIDPassword(&cmd, &parameters);
+    AppendClientIPSessionIDPasswordAgeHitID(&cmd, &parameters);
 
     unsigned max_age = parameters.GetMaxBlobAge();
     if (max_age > 0) {

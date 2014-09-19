@@ -105,10 +105,8 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
             const CNetCacheAPIParameters* parameters);
 
     void AppendClientIPSessionID(string* cmd);
-    void AppendClientIPSessionIDPassword(string* cmd,
+    void AppendClientIPSessionIDPasswordAgeHitID(string* cmd,
             const CNetCacheAPIParameters* parameters);
-    string MakeCmd(const char* cmd);
-    string MakeCmd(const char* cmd, const CNetCacheAPIParameters* parameters);
     string MakeCmd(const char* cmd_base, const CNetCacheKey& key,
             const CNetCacheAPIParameters* parameters);
 
@@ -148,6 +146,8 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 struct SNetCacheAdminImpl : public CObject
 {
     SNetCacheAdminImpl(SNetCacheAPIImpl* nc_api_impl);
+
+    string MakeAdminCmd(const char* cmd);
 
     CNetCacheAPI m_API;
 };
