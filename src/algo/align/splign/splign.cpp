@@ -1121,7 +1121,11 @@ void CSplign::Run(THitRefs* phitrefs)
                                       min_singleton_idty_final,
                                       true);
     comps.SetMaxIntron(m_MaxIntron);
-    comps.Run(hitrefs.begin(), hitrefs.end());
+     if( GetTestType() == kTestType_20_28_90_cut20 ) {
+         comps.Run(hitrefs.begin(), hitrefs.end(), GetScope());
+     } else {
+         comps.Run(hitrefs.begin(), hitrefs.end());
+     }
 
     pair<size_t,size_t> dim (comps.GetCounts()); // (count_total, count_unmasked)
     if(dim.second > 0) {
@@ -1504,6 +1508,54 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
         if(smax > range_right) {
             smax = range_right;
+        }
+
+        if(GetTestType() == kTestType_20_28_90_cut20) {
+            //prohibit extension to go over over non-bridgeable gaps    
+            if(phitrefs->size() > 1) {     
+                THit::TId id_query (phitrefs->front()->GetSubjId());       
+                CRef<CSeq_id> tmp_id(new CSeq_id());
+                tmp_id->Assign(*id_query);
+                CSeq_loc tmp_loc(*tmp_id, smin, smax, eNa_strand_plus);
+                CConstRef<CSeqMap> smap = CSeqMap::GetSeqMapForSeq_loc(tmp_loc, GetScope());
+                TSeqPos hitmin(span[2]);
+                TSeqPos hitmax(span[3]);
+                
+                //left  
+                if(smap && hitmin > smin) {
+                    TSeqPos tmplen = hitmin - smin;
+                    CSeqMap_CI smit = smap->ResolvedRangeIterator(GetScope(),   0, tmplen, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
+                    for(;smit; ++smit) {
+                        if(smit.GetType() == CSeqMap::eSeqGap) {
+                            CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
+                            if(slit && !slit->IsBridgeable()) {
+                                TSeqPos pos = smit.GetEndPosition();
+                                if(pos >= smin && pos < hitmin) {
+                                    smin = pos + 1;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                //right 
+                if(smap && smax > hitmax) {
+                    TSeqPos tmpbeg = hitmax - smin + 1;
+                    TSeqPos tmplen = smax - hitmax;
+                    CSeqMap_CI smit = smap->ResolvedRangeIterator(GetScope(),   tmpbeg, tmplen, eNa_strand_plus, size_t(-1), CSeqMap::fFindGap);
+                    for(;smit; ++smit) {
+                        if(smit.GetType() == CSeqMap::eSeqGap) {
+                            CConstRef<CSeq_literal> slit = smit.GetRefGapLiteral();
+                            if(slit && !slit->IsBridgeable()) {
+                                TSeqPos pos = smit.GetPosition();
+                                if(pos > hitmax && pos <= smax ) {
+                                    smax = pos - 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         m_genomic.clear();
