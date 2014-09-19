@@ -2428,12 +2428,16 @@ void CSeqDBImpl::GarbageCollect(void)
     m_Atlas.GarbageCollect(locked);
 }
 
-void CSeqDBImpl::SetNumberOfThreads(int num_threads)
+void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
 {
     CSeqDBLockHold locked(m_Atlas);
     m_Atlas.Lock(locked);
 
-    if (num_threads <= 1) num_threads = 0;
+    if (num_threads < 1) {
+        num_threads = 0;
+    } else if (num_threads == 1) {
+        num_threads = force_mt ? 1 : 0;
+    }
 
     if (num_threads > m_NumThreads ) {
 
@@ -2462,22 +2466,22 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads)
 
 }
 
-int CSeqDBImpl::x_GetCacheID(CSeqDBLockHold &locked) const 
+int CSeqDBImpl::x_GetCacheID(CSeqDBLockHold &locked) const
 {
     int threadID = CThread::GetSelf();
 
     if (m_NextCacheID < 0)
-	return m_CacheID[threadID];
+        return m_CacheID[threadID];
 
     int retval;
     m_Atlas.Lock(locked);
 
     if (m_CacheID.find(threadID) == m_CacheID.end()) {
-	m_CacheID[threadID] = m_NextCacheID++;
+        m_CacheID[threadID] = m_NextCacheID++;
     }
     retval = m_CacheID[threadID];
     if (m_NextCacheID == m_NumThreads) {
-	m_NextCacheID = -1;
+        m_NextCacheID = -1;
     }
 
     m_Atlas.Unlock(locked);

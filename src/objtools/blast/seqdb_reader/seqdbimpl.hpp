@@ -1098,7 +1098,7 @@ public:
     void GarbageCollect(void);
 
     /// Set number of threads
-    void SetNumberOfThreads(int num_threads);
+    void SetNumberOfThreads(int num_threads, bool force_mt = false);
 
     /// Retrieve the slice size used in internal mmap
     Int8 GetSliceSize() const{

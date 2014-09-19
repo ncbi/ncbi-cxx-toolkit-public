@@ -1210,11 +1210,11 @@ void CSeqDB::FlushOffsetRangeCache()
     m_Impl->FlushOffsetRangeCache();
 }
 
-void CSeqDB::SetNumberOfThreads(int num_threads)
+void CSeqDB::SetNumberOfThreads(int num_threads, bool force_mt)
 {
     m_Impl->Verify();
 
-    m_Impl->SetNumberOfThreads(num_threads);
+    m_Impl->SetNumberOfThreads(num_threads, force_mt);
 }
 
 string CSeqDB::ESeqType2String(ESeqType type)

@@ -1426,7 +1426,7 @@ public:
     /// multiple threads run.
     ///
     /// @param num_threads   Number of threads
-    void SetNumberOfThreads(int num_threads);
+    void SetNumberOfThreads(int num_threads, bool force_mt = false);
 
     /// Retrieve the current slice size used for mmap
     Int8 GetSliceSize() const;
