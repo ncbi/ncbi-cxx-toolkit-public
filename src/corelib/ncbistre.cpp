@@ -299,7 +299,7 @@ size_t NcbiStreamToString(string* str, CNcbiIstream& is, size_t pos)
         str_size += (size_t) count;
         if (str) {
             if ((size_t) count == buf_size) {
-                if (buf_size < (1UL << 16))
+                if (buf_size < (1UL << 20))
                     buf_size <<= 1;
                 str->resize(str_size + buf_size);
             } else
