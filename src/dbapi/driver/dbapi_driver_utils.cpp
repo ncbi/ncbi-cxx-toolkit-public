@@ -100,8 +100,8 @@ SIZE_TYPE GetValidUTF8Len(const CTempString& ts)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-CDBBindedParams::CDBBindedParams(CDB_Params& bindings) 
-: m_Bindings(&bindings)
+CDBBindedParams::CDBBindedParams(CDB_Params& bindings, EOwnership ownership) 
+: m_Bindings(&bindings, ownership)
 {
 }
 
@@ -217,7 +217,7 @@ CDBParams& CDBBindedParams::Set(
 CDBParams* CDBBindedParams::SemiShallowClone(void) const
 {
     auto_ptr<impl::CDB_Params> p(m_Bindings->SemiShallowClone());
-    return new CDBBindedParams(*p.release());
+    return new CDBBindedParams(*p.release(), eTakeOwnership);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

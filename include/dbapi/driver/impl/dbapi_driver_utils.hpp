@@ -103,7 +103,8 @@ class CDB_Params;
 class NCBI_DBAPIDRIVER_EXPORT CDBBindedParams : public CDBParams
 {
 public:
-    CDBBindedParams(impl::CDB_Params& bindings);
+    CDBBindedParams(impl::CDB_Params& bindings,
+                    EOwnership ownership = eNoOwnership);
 
 public:
     virtual unsigned int GetNum(void) const;
@@ -133,7 +134,7 @@ public:
     virtual CDBParams* SemiShallowClone(void) const;
 
 private:
-    impl::CDB_Params* m_Bindings;
+    AutoPtr<impl::CDB_Params> m_Bindings;
 };
 
 /////////////////////////////////////////////////////////////////////////////
