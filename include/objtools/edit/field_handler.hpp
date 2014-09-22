@@ -40,40 +40,12 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objtools/edit/string_constraint.hpp>
+#include <objtools/edit/apply_object.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
-
-
-class NCBI_XOBJEDIT_EXPORT CApplyObject : public CObject
-{
-public:
-    CApplyObject(CSeq_entry_Handle seh, CConstRef<CObject> orig, CRef<CObject> editable)
-        : m_SEH(seh), m_Original(orig), m_Editable(editable), m_Delete(false) {};
-
-    CApplyObject(CBioseq_Handle bsh, const CSeqdesc& desc);
-    CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype);
-    CApplyObject(CBioseq_Handle bsh, const string& user_label);
-    CApplyObject(CBioseq_Handle bsh, const CSeq_feat& feat);
-    CApplyObject(CBioseq_Handle bsh);
-    
-    bool PreExists() const { if (m_Original) return true; else return false; };
-    CObject& SetObject() { return *m_Editable; };
-    const CObject& GetObject() const { return *m_Editable; };
-    const CObject* GetOriginalObject() const {return m_Original.GetPointer();};
-    void ReplaceEditable(CObject& edit) { m_Editable.Reset(&edit); };
-    void DeleteEditable(bool do_delete = true) { m_Delete = do_delete; };
-    CSeq_entry_Handle GetSEH() const { return m_SEH; };
-    void ApplyChange();
-
-protected:
-    CSeq_entry_Handle m_SEH;
-    CConstRef<CObject> m_Original;
-    CRef<CObject> m_Editable;
-    bool m_Delete;
-};
 
 
 class NCBI_XOBJEDIT_EXPORT CFieldHandler : public CObject
@@ -95,8 +67,9 @@ public:
     virtual bool AllowMultipleValues() = 0;
     virtual vector<CConstRef<CObject> > GetRelatedObjects(const CObject& object, CRef<CScope> scope) = 0;
     virtual vector<CConstRef<CObject> > GetRelatedObjects(const CApplyObject& object) = 0;
+    virtual vector<CRef<CApplyObject> > GetRelatedApplyObjects(const CObject& object, CRef<CScope> scope);
     static bool QualifierNamesAreEquivalent (string name1, string name2);
-
+    static vector<CRef<CApplyObject> > GetApplyObjectsFromRelatedObjects(vector<CConstRef<CObject> >, CRef<CScope> scope);
 };
 
 
@@ -108,7 +81,6 @@ public:
 };
 
 
-NCBI_XOBJEDIT_EXPORT CSeq_entry_Handle GetSeqEntryForSeqdesc (CRef<CScope> scope, const CSeqdesc& seq_desc);
 NCBI_XOBJEDIT_EXPORT bool DoesObjectMatchFieldConstraint (const CObject& object, const string& field_name, CRef<CStringConstraint> string_constraint, CRef<CScope> scope);
 NCBI_XOBJEDIT_EXPORT bool DoesApplyObjectMatchFieldConstraint (const CApplyObject& object, const string& field_name, CRef<CStringConstraint> string_constraint);
 
