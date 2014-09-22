@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq3)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
 
-    string id = "ref|NZ_AAAA01000102";
+    string id = "ref|AAAA01000102";
     CScope scope(*om);
     scope.AddDefaults();
 
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq3)
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
     CBioseq_Handle bh = scope.GetBioseqHandle(idh);
     BOOST_REQUIRE(bh);
-    BOOST_CHECK_EQUAL(bh.GetState(), CBioseq_Handle::fState_dead);
+    BOOST_CHECK_EQUAL(bh.GetState(), CBioseq_Handle::fState_suppress_perm);
     if ( 0 ) {
         NcbiCout << MSerial_AsnText << *bh.GetCompleteObject();
     }
@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq4)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
 
-    string id = "ref|NZ_AAAA010000001";
+    string id = "ref|AAAA010000001";
     CScope scope(*om);
     scope.AddDefaults();
 
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq5)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
 
-    string id = "ref|NZ_AAAA0100000001";
+    string id = "ref|AAAA0100000001";
     CScope scope(*om);
     scope.AddDefaults();
 
@@ -531,7 +531,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq11)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
 
-    string id = "NZ_ACUJ01000001";
+    string id = "ACUJ01000001";
     CScope scope(*om);
     scope.AddDefaults();
 
@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq12)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
 
-    string id = "NZ_ACUJ01000001";
+    string id = "ACUJ01000001";
     CScope scope(*om);
     scope.AddDefaults();
 
@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq13)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
 
-    string id = "NZ_ACUJ01000001.3";
+    string id = "ACUJ01000001.1";
     CScope scope(*om);
     scope.AddDefaults();
 
@@ -594,7 +594,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq14)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
 
-    string id = "NZ_ACUJ01000001.1";
+    string id = "ACUJ01000001.3";
     CScope scope(*om);
     scope.AddDefaults();
 
