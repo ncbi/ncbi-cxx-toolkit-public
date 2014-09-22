@@ -17,7 +17,7 @@ from cgi import parse_qs
 
 
 VERBOSE = False
-COMMUNICATION_TIMEOUT = 5
+COMMUNICATION_TIMEOUT = 25
 
 
 def printStderr( msg ):
@@ -216,7 +216,12 @@ class NSCommandsSender:
             "READ":                 self.__read,
             "CFRM":                 self.__cfrm,
             "FRED":                 self.__fred,
-            "RDRB":                 self.__rdrb }
+            "RDRB":                 self.__rdrb,
+            "RESCHEDULE":           self.__reschedule,
+            "CWREAD":               self.__cwread,
+            "SETRAFF":              self.__setraff,
+            "CHRAFF":               self.__chraff,
+            "READ2":                self.__read2 }
         return
 
     def visitAll( self ):
@@ -563,6 +568,34 @@ class NSCommandsSender:
         jobKey, authToken = self.__read()
         self.__nsConnect.execute( "RDRB job_key=" + jobKey +
                                   " auth_token=" + authToken, False )
+        return
+
+    def __reschedule( self ):
+        jobKey, authToken = self.__get2()
+        self.__nsConnect.execute( "RESCHEDULE job_key=" + jobKey +
+                                  " auth_token=" + authToken + " aff=newaff",
+                                  False )
+        return
+
+    def __cwread( self ):
+        self.__nsConnect.execute( "READ2 reader_aff=0 any_aff=0 "
+                                  "aff=nonexisting port=9008 timeout=17",
+                                  False )
+        self.__nsConnect.execute( "CWREAD", False )
+        return
+
+    def __setraff( self ):
+        self.__nsConnect.execute( "SETRAFF aff=ra1,ra2,ra3", False )
+        return
+
+    def __chraff( self ):
+        self.__nsConnect.execute( "CHRAFF add=ra01,ra02,ra03 del=ra1,ra2,ra3",
+                                  False )
+        return
+
+    def __read2( self ):
+        self.__fput2()
+        self.__nsConnect.execute( "READ2 reader_aff=0 any_aff=1", False )
         return
 
 
