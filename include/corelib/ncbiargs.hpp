@@ -282,18 +282,24 @@ public:
         return m_Ordinal;
     }
 
+    /// Whether the argument:
+    /// @sa GetDefault()
     enum EArgValueFlags {
-        fArgValue_HasDefault  = (1 << 0),  /// argument has default value
-        fArgValue_FromDefault = (1 << 1)   /// argument was not provided on command line
+        fArgValue_HasDefault  = (1 << 0),  ///< Has default value
+        fArgValue_FromDefault = (1 << 1)   ///< Not provided in command line
     };
-    typedef unsigned int TArgValueFlags;
+    typedef unsigned int TArgValueFlags;  ///< Bitwise OR of "EArgValueFlags"
 
-    /// Get default value if any, as string.
+    /// Get default value of the argument.
     ///
-    /// @param has_default
-    ///    Flags inidicate whether or not the argument has default value,
-    ///    and was it set from command line, or from the default.
-    const string& GetDefault(TArgValueFlags* has_default = NULL) const;
+    /// @param flags
+    ///   Indicate whether the argument has default value, and if the arg's
+    ///   value was set from the command line or from the default value.
+    /// @return
+    ///   Default value, if specified for this argument.
+    ///   If the argument doesn't have a default value: empty string.
+    ///   If the argument is a flag: "false" or "true".
+    const string& GetDefault(TArgValueFlags* flags = NULL) const;
 
 protected:
     friend class CArgs;
