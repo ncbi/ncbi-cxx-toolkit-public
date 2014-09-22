@@ -50,11 +50,11 @@ class CClickableText : public CObject
 {
 public:
     CClickableText() : m_Text(""), 
-                          m_IsSelected(false), m_IsExpanded(false), 
+                          m_IsSelected(false), m_IsChecked(false), m_IsExpanded(false), 
                           m_Objects(), m_Objdescs(), m_Subitems() {}
-    CClickableText(const string& text, bool selected = false, bool expanded = false)
-        : m_Text(text), m_IsSelected(selected), m_IsExpanded(expanded),
-            m_Objects(), m_Objdescs(), m_Subitems() {};
+    CClickableText(const string& text, bool selected = false, bool expanded = false, bool checked = false)
+      : m_Text(text), m_IsSelected(selected), m_IsExpanded(expanded), 
+            m_IsChecked(checked), m_Objects(), m_Objdescs(), m_Subitems() {};
     ~CClickableText() {}
 
     const string& GetText() const { return m_Text; }
@@ -63,6 +63,9 @@ public:
     bool IsSelected() const { return m_IsSelected; }
     void SetSelected(bool selected = true);
     void SetSelfSelected(bool selected = true) { m_IsSelected = selected; };
+
+    bool IsChecked() const { return m_IsChecked; }
+    void SetSelfChecked(bool checked = true) { m_IsChecked = checked;} ;
 
     bool IsExpanded() const { return m_IsExpanded; }
     void SetExpanded(bool expanded = true, bool recurse = false); 
@@ -92,6 +95,7 @@ protected:
     string                        m_Text;
     bool                          m_IsSelected;
     bool                          m_IsExpanded;
+    bool                          m_IsChecked;
     vector<CRef<CClickableText> > m_Subitems;
     vector<CConstRef<CObject> >   m_Objects;
     vector <string>               m_Objdescs;
