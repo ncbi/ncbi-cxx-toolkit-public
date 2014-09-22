@@ -2141,7 +2141,7 @@ void NStr::DoubleToString(string& out_str, double value,
 {
     char buffer[kMaxDoubleStringSize];
     if (precision >= 0 ||
-        ((flags & fDoublePosix) && (isnan(value) || !finite(value)))) {
+        ((flags & fDoublePosix) && (isnan(value) || !finite(value) || value == 0.))) {
         SIZE_TYPE n = DoubleToString(value, precision, buffer,
                                      kMaxDoubleStringSize, flags);
         buffer[n] = '\0';
@@ -2182,8 +2182,17 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
 {
     char buffer[kMaxDoubleStringSize];
     int n = 0;
-    if ((flags & fDoublePosix) && (isnan(value) || !finite(value))) {
-        if (isnan(value)) {
+    if ((flags & fDoublePosix) && (isnan(value) || !finite(value) || value == 0.)) {
+        if (value == 0.) {
+            double zero = 0.;
+            if (memcmp(&value, &zero, sizeof(double)) == 0) {
+                strcpy(buffer, "0");
+                n = 2;
+            } else {
+                strcpy(buffer, "-0");
+                n = 3;
+            }
+        } else if (isnan(value)) {
             strcpy(buffer, "NaN");
             n = 4;
         } else if (value > 0.) {
@@ -2269,8 +2278,15 @@ SIZE_TYPE NStr::DoubleToString_Ecvt(double val, unsigned int precision,
         precision = DBL_DIG;
     }
     if (val == 0.) {
-        *buffer='0';
-        return 1;
+        double zero = 0.;
+        if (memcmp(&val, &zero, sizeof(double)) == 0) {
+            *buffer='0';
+            return 1;
+        }
+        *buffer='-';
+        *(++buffer)='0';
+        *sign = -1;
+        return 2;
     }
     *sign = val < 0. ? -1 : 1;
     if (*sign < 0) {
@@ -2476,6 +2492,10 @@ SIZE_TYPE NStr::DoubleToStringPosix(double val, unsigned int precision,
     if (digits_len == 0) {
         errno = 0;
         return 0;
+    }
+    if (val == 0.) {
+        strncpy(buffer,digits, digits_len);
+        return digits_len;
     }
     if (digits_len == 1 && dec == 0 && sign >=0) {
         *buffer = digits[0];
