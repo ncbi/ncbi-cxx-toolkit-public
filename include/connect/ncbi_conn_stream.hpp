@@ -339,7 +339,7 @@ inline CConn_IOStream& operator<< (CConn_IOStream& os,
 /// More details on that: <connect/ncbi_socket_connector.h>.
 ///
 /// @sa
-///   SOCK_Create
+///   SOCK_CreateConnector, SOCK_Create
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_SocketStream : public CConn_IOStream
@@ -498,6 +498,9 @@ public:
 /// kDefaultTimeout, it overrides a value supplied by the HTTP connector
 /// (the latter value is kept at SConnNetInfo::timeout).
 ///
+/// @sa
+///  HTTP_CreateConnector
+///
 
 class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_IOStream
 {
@@ -589,6 +592,9 @@ private:
 /// kDefaultTimeout, it overrides the value supplied by an underlying connector
 /// (the latter value is kept in SConnNetInfo::timeout).
 ///
+/// @sa
+///  SERVICE_CreateConnector
+///
 
 class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
 {
@@ -615,6 +621,9 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// In-memory stream (a la strstream or stringstream)
+///
+/// @sa
+///  MEMORY_CreateConnector
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
@@ -667,11 +676,14 @@ protected:
 ///
 /// CConn_PipeStream for command piping
 ///
-/// @note Use caution when operating on the underlying pipe while it's being in
-///       use as it may cause undefined behavior.
+/// @note Exercise caution when operating on the underlying pipe while it's
+/// being in use as it may cause undefined behavior.
+///
+/// Provided "timeout" is set at the connection level if different from
+/// kDefaultTimeout (which is infinite for this class be default).
 ///
 /// @sa
-///   CPipe
+///   PIPE_CreateConnector, CPipe
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_PipeStream : public CConn_IOStream
@@ -705,8 +717,11 @@ protected:
 ///
 /// CConn_NamedPipeStream for inter-process communication
 ///
+/// Provided "timeout" is set at the connection level if different from
+/// kDefaultTimeout (which is infinite for this class be default).
+///
 /// @sa
-///   CNamedPipe
+///   NAMEDPIPE_CreateConnector, CNamedPipe
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_NamedPipeStream : public CConn_IOStream
@@ -728,6 +743,13 @@ public:
 /// downloading and/or uploading to and from an FTP server.
 /// See <connect/ncbi_ftp_connector.h> for detailed explanations
 /// of supported features.
+///
+/// Provided "timeout" is set at the connection level, and if different from
+/// kDefaultTimeout, it overrides a value supplied by the FTP connector
+/// (the latter value is kept at SConnNetInfo::timeout).
+///
+/// @sa
+///  FTP_CreateConnector
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_FtpStream : public CConn_IOStream

@@ -838,8 +838,7 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
                                              size_t          pipesize,
                                              const STimeout* timeout,
                                              size_t          buf_size)
-    : CConn_IOStream(TConn_Pair(NAMEDPIPE_CreateConnector(pipename,
-                                                          pipesize),
+    : CConn_IOStream(TConn_Pair(NAMEDPIPE_CreateConnector(pipename, pipesize),
                                 eIO_Unknown),
                      timeout, buf_size)
 {
