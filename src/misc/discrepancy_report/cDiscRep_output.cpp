@@ -165,7 +165,13 @@ void CDiscRepOutput :: x_AddListOutputTags()
         if (x_NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
                || (oc.add_extra_output_tag 
                       && x_NeedsTag(setting_name, sub_desc, extra_fatal, extra_cnt)) ){
-           if (setting_name == "RNA_CDS_OVERLAP"
+           if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
+             if (sub_desc.find("some missing") != string::npos
+                       || sub_desc.find("some duplicate") != string::npos) {
+                  (*sit)->description = "FATAL: " + sub_desc;
+             }
+           }
+           else if (setting_name == "RNA_CDS_OVERLAP"
                       && (sub_desc.find("contain ") != string::npos
                               || sub_desc.find("contains ") != string::npos)) {
                 ITERATE (vector <string>, iit, (*sit)->item_list) {
@@ -880,7 +886,8 @@ void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > d
 
       if (oc.msg_level == COutputConfig :: e_Fatal && !(c_item->fatal)) continue;
 
-      if ( (oc.add_output_tag || oc.add_extra_output_tag) && has_fatal) {
+      if ( (oc.add_output_tag || oc.add_extra_output_tag) 
+                && (has_fatal || x_SubsHaveTags(c_item)) ) {
             c_item->expanded = true;
       }
       // summary report

@@ -1694,3 +1694,79 @@ BOOST_AUTO_TEST_CASE(DUPLICATE_LOCUS_TAGS)
    RunAndCheckTest(entry, "DUPLICATE_LOCUS_TAGS", "5 genes have duplicate locus tags.");
    RunAndCheckTest(entry, "DUPLICATE_LOCUS_TAGS_global", "5 genes have duplicate locus tags.");
 };
+
+BOOST_AUTO_TEST_CASE(DUPLICATE_GENE_LOCUS)
+{
+  CRef <CSeq_entry> entry(new CSeq_entry);
+   
+  // set 1: IsmRNASequenceInGenProdSet
+  CRef <CSeq_entry> gen_prot_set = BuildGoodGenProdSet();
+  CRef <CSeq_entry> seq_entry = gen_prot_set->SetSet().SetSeq_set().front();
+  seq_entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna); 
+  seq_entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+  CRef <CSeq_feat> 
+    feat = MakeNewFeat(seq_entry,CSeqFeatData::e_Gene,CSeqFeatData::eSubtype_any, 10, 20);
+  feat->SetData().SetGene().SetLocus("Spy50");
+  AddFeat(feat, seq_entry);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 25, 35);
+  feat->SetData().SetGene().SetLocus("Spy10");
+  AddFeat(feat, seq_entry);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 55, 59);
+  feat->SetData().SetGene().SetLocus("Spy50");
+  AddFeat(feat, seq_entry);
+
+  // nuc seq of nuc_prot set
+  CRef <CSeq_entry> nuc_prot_set = GetNucProtSetFromGenProdSet(gen_prot_set);
+  seq_entry = GetNucleotideSequenceFromGoodNucProtSet(nuc_prot_set);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 10, 20);
+  feat->SetData().SetGene().SetLocus("Spy50");
+  AddFeat(feat, seq_entry);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 25, 35);
+  feat->SetData().SetGene().SetLocus("Spy10");
+  AddFeat(feat, seq_entry);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 55, 59);
+  feat->SetData().SetGene().SetLocus("Spy50");
+
+  entry->SetSet().SetSeq_set().push_back(gen_prot_set);
+   
+  // 2nd set
+  CRef <CSeq_id> id2 (new CSeq_id);
+  id2->SetLocal().SetStr("good prot2");
+  gen_prot_set = BuildGoodGenProdSet();
+  seq_entry = gen_prot_set->SetSet().SetSeq_set().front();
+  seq_entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna); 
+  CRef <CSeq_id> id (new CSeq_id);
+  id->SetLocal().SetStr("good2");
+  ChangeId(seq_entry, id);
+  feat = MakeNewFeat(seq_entry,CSeqFeatData::e_Gene,CSeqFeatData::eSubtype_any, 10, 20);
+  feat->SetData().SetGene().SetLocus("Spy50");
+  AddFeat(feat, seq_entry);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 25, 35);
+  feat->SetData().SetGene().SetLocus("Spy10");
+  AddFeat(feat, seq_entry);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 55, 59);
+  feat->SetData().SetGene().SetLocus("Spy50");
+  AddFeat(feat, seq_entry);
+
+  nuc_prot_set = GetNucProtSetFromGenProdSet(gen_prot_set);
+  id->SetLocal().SetStr("good nuc2");
+  ChangeNucProtSetNucId(nuc_prot_set, id);
+  id->SetLocal().SetStr("good prot2");
+  ChangeNucProtSetProteinId(nuc_prot_set, id);
+
+  seq_entry = GetNucleotideSequenceFromGoodNucProtSet(nuc_prot_set);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 10, 20);
+  feat->SetData().SetGene().SetLocus("Spy50");
+  AddFeat(feat, seq_entry);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 25, 35);
+  feat->SetData().SetGene().SetLocus("Spy10");
+  AddFeat(feat, seq_entry);
+  feat = MakeNewFeat(seq_entry, CSeqFeatData::e_Gene, CSeqFeatData::eSubtype_any, 55, 59);
+  feat->SetData().SetGene().SetLocus("Spy50");
+
+  entry->SetSet().SetSeq_set().push_back(gen_prot_set);
+
+  RunAndCheckTest(entry, "DUPLICATE_GENE_LOCUS", 
+          "2 genes have the same locus as another gene on the same Bioseq.");
+   
+};
