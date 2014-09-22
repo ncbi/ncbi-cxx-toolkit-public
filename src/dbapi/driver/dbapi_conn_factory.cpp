@@ -336,7 +336,7 @@ CDBConnectionFactory::MakeDBConnection(
     SOpeningContext opening_ctx(ctx);
     CRef<CDB_UserHandler_Deferred> handler
         (new CDB_UserHandler_Deferred(ultimate_handlers));
-    opening_ctx.handlers.Push(&*handler);
+    opening_ctx.handlers.Push(&*handler, eTakeOwnership);
     
     // Store original query timeout ...
     unsigned int query_timeout = ctx.GetTimeout();
