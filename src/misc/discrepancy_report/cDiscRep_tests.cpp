@@ -2544,13 +2544,22 @@ void CBioseq_INCONSISTENT_SOURCE_DEFLINE :: GetReport(CRef <CClickableItem> c_it
               + tax2list.begin()->first;
    }
    else {
+      unsigned i, j, cnt = 0;
       ITERATE (Str2Strs, it, tax2list) {
-         AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),
-             "Organism description not found in definition line: " + it->first,
-              "", e_OtherComment, false);
+         for (i=0; i< it->second.size(); i += 2) {
+            CRef <CClickableItem> c_sub (new CClickableItem);
+            for (j = i; j <= i+1; j++) {
+               c_sub->item_list.push_back(it->second[j]);
+               c_sub->obj_list
+                  .push_back(thisInfo.test_item_objs[GetName() + "$" + it->first][j]);
+            }
+            c_sub->description
+               = "Organism description not found in definition line: " + it->first;
+            c_item->subcategories.push_back(c_sub);
+         }
+         cnt += (it->second.size()/2);
       }
-      c_item->description = GetDoesComment(tax2list.size(), "source") 
-                            + "not match definition lines.";
+      c_item->description = GetDoesComment(cnt, "source") + "not match definition lines.";
    }
 };
 
@@ -7683,20 +7692,6 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem> c_item)
         + " another coding region with a similar or identical name.";
 
    c_item->fix_function = GetAutofixFunc();
-#if 0
-if (c_item->fix_function) {
-   vector <CRef <CObject> > fixed_objs;
-   c_item->fix_function(c_item->obj_list, fixed_objs);
-
-ITERATE (vector <CRef <CObject> >, it, fixed_objs) {
-  const CSeq_feat* feat = dynamic_cast <const CSeq_feat*>( (*it).GetPointer());
-  if (feat && feat->CanGetComment()) {
- cerr << "new comment: " << feat->GetComment() << endl;
-  }
-}
-
-}
-#endif
 
 }; // OVERLAPPING_CDS
 
@@ -11393,10 +11388,12 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
               src_item = dynamic_cast<const CSourceItem&>(flat_item);
             const CBioSource* 
               biosrc = dynamic_cast <const CBioSource*>(src_item.GetObject());
-            CSeqdesc seqdesc;
-            seqdesc.SetSource().Assign(*biosrc);
-            strtmp = GetDiscItemText(seqdesc, *m_bsq);
-            obj_ref = x_GetObjRef(strtmp, sci);
+            if (biosrc) {
+               CSeqdesc seqdesc;
+               seqdesc.SetSource().Assign(*biosrc);
+               strtmp = GetDiscItemText(seqdesc, *m_bsq);
+               obj_ref = x_GetObjRef(strtmp, sci);
+            }
             break;
          }
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
@@ -11433,7 +11430,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
                       CFlatFileConfig::eMode_GBench,
                       CFlatFileConfig::eStyle_Normal,
                       CFlatFileConfig::fShowContigFeatures,
-         CFlatFileConfig::fViewAll,  // | CFlatFileConfig::fViewFirst,
+                      CFlatFileConfig::fViewAll | CFlatFileConfig::fViewFirst,
                       CFlatFileConfig::fGffGTFCompat,
                       (CFlatFileConfig::FGenbankBlocks)blocks,
                       &flatfile_find);
@@ -11463,7 +11460,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_
            c_item->item_list = jt->second;
            strtmp = setting_name + "$" + it->first + "#" + jt->first;
            c_item->obj_list = thisInfo.test_item_objs[strtmp];
-           RmvRedundancy(c_item->item_list, c_item->obj_list); // temp
+           // RmvRedundancy(c_item->item_list, c_item->obj_list); // temp, check SQD-1818
            c_item->description
               = GetContainsComment(c_item->item_list.size(), "object") 
                    + jt->first;
