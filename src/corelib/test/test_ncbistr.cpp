@@ -736,6 +736,8 @@ static const SStringDoublePosixTest s_StrToDoublePosix[] = {
     { "7E4294967306", HUGE_VAL, 0.},
     { "1.000000000000000000000000000001", 1., 0. },
     { "000.000000000000000000000000000001", 1e-30, 0.0000000000000001e-030 },
+    { "0.", 0., 0. },
+    { "-0", 0., 0. },
     {NULL,0,0}
 };
 
@@ -864,6 +866,11 @@ BOOST_AUTO_TEST_CASE(s_StringToDoublePosix)
     BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
     NStr::NumericToString(out, value, NStr::fDoublePosix);
     BOOST_CHECK( NStr::Compare(out, "-INF") == 0 );
+
+    value = NStr::StringToDoublePosix("-0", &endptr);
+    BOOST_CHECK( value == 0. );
+    NStr::DoubleToString(out, value, -1, NStr::fDoublePosix);
+    BOOST_CHECK( NStr::Compare(out, "-0") == 0 );
 }
 
 static const SStringNumericValues s_Str2NumNonPosixTests[] = {
