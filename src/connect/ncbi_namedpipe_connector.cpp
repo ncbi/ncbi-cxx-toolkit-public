@@ -48,10 +48,9 @@ USING_NCBI_SCOPE;
 
 // All internal data necessary to perform the (re)connect and i/o
 typedef struct {
-    CNamedPipeClient* pipe;         // pipe handle; NULL if not connected yet
+    CNamedPipeClient* pipe;         // pipe handle; non-NULL
     string            pipename;     // pipe name
-    size_t            pipebufsize;  // pipe buffer size
-    bool              is_open;      // true if pipe is open
+    size_t            pipesize;     // pipe size
 } SNamedPipeConnector;
 
 
@@ -83,21 +82,10 @@ static EIO_Status s_VT_Open
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-
-    _ASSERT(!xxx->is_open);
-
     if (!xxx->pipe) {
         return eIO_Unknown;  // blame operator "new" :-/
     }
-    if (xxx->pipe->SetTimeout(eIO_Open, timeout) != eIO_Success) {
-        return eIO_Unknown;
-    }
-    EIO_Status status = xxx->pipe->Open(xxx->pipename, timeout,
-                                        xxx->pipebufsize);
-    if (status == eIO_Success) {
-        xxx->is_open = true;
-    }
-    return status;
+    return xxx->pipe->Open(xxx->pipename, timeout, xxx->pipesize);
 }
 
 
@@ -108,7 +96,6 @@ static EIO_Status s_VT_Wait
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
     _ASSERT(event == eIO_Read  ||  event == eIO_Write);
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
     return xxx->pipe->Wait(event, timeout);
 }
 
@@ -121,7 +108,6 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
     if (xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
@@ -137,7 +123,6 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
     if (xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
@@ -150,7 +135,6 @@ static EIO_Status s_VT_Status
  EIO_Event dir)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
     return xxx->pipe->Status(dir);
 }
 
@@ -160,8 +144,6 @@ static EIO_Status s_VT_Close
  const STimeout* /*timeout*/)
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
-    xxx->is_open = false;
     return xxx->pipe->Close();
 }
 
@@ -210,7 +192,7 @@ BEGIN_NCBI_SCOPE
 
 extern CONNECTOR NAMEDPIPE_CreateConnector
 (const string& pipename,
- size_t        pipebufsize) 
+ size_t        pipesize) 
 {
     CONNECTOR            ccc;
     SNamedPipeConnector* xxx;
@@ -219,11 +201,10 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
         return 0;
 
     // Initialize internal data structures
-    xxx              = new SNamedPipeConnector;
-    xxx->pipe        = new CNamedPipeClient;
-    xxx->pipename    = pipename;
-    xxx->pipebufsize = pipebufsize;
-    xxx->is_open     = false;
+    xxx           = new SNamedPipeConnector;
+    xxx->pipe     = new CNamedPipeClient;
+    xxx->pipename = pipename;
+    xxx->pipesize = pipesize;
 
     // Initialize connector data
     ccc->handle  = xxx;

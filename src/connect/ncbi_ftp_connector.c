@@ -2181,6 +2181,7 @@ static EIO_Status s_VT_Close
 static void s_Setup
 (CONNECTOR connector)
 {
+    SFTPConnector*  xxx = (SFTPConnector*) connector->handle;
     SMetaConnector* meta = connector->meta;
 
     /* initialize virtual table */
@@ -2193,7 +2194,7 @@ static void s_Setup
     CONN_SET_METHOD(meta, read,     s_VT_Read,    connector);
     CONN_SET_METHOD(meta, status,   s_VT_Status,  connector);
     CONN_SET_METHOD(meta, close,    s_VT_Close,   connector);
-    meta->default_timeout = kInfiniteTimeout;
+    CONN_SET_DEFAULT_TIMEOUT(meta, xxx->info->timeout);
 }
 
 

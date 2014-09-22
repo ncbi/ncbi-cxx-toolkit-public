@@ -59,9 +59,10 @@ BEGIN_NCBI_SCOPE
 extern NCBI_XCONNECT_EXPORT CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,
- CPipe::TCreateFlags   create_flags = 0,
- CPipe*                pipe         = 0,
- EOwnership            own_pipe     = eTakeOwnership
+ CPipe::TCreateFlags   flags     = 0,
+ CPipe*                pipe      = 0,
+ EOwnership            own_pipe  = eTakeOwnership, /**< only if "pipe" given */
+ size_t                pipe_size = 0               /**< use default          */
 );
 
 

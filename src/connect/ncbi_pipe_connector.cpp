@@ -47,12 +47,12 @@ USING_NCBI_SCOPE;
 
 // All internal data necessary to perform the (re)connect and i/o
 typedef struct {
-    CPipe*              pipe;      // pipe handle; NULL if not connected yet
+    CPipe*              pipe;      // pipe handle; non-NULL
     string              cmd;       // program to execute
     vector<string>      args;      // program arguments
     CPipe::TCreateFlags flags;     // pipe create flags
-    bool                is_open;   // true if pipe is open
     bool                own_pipe;  // true if pipe is owned
+    size_t              pipe_size;
 } SPipeConnector;
 
 
@@ -97,17 +97,11 @@ static EIO_Status s_VT_Open
  const STimeout* /*timeout*/)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-
-    _ASSERT(!xxx->is_open);
-
     if (!xxx->pipe) {
-        return eIO_Unknown;
+        return eIO_Unknown;  // blame operator "new" :-/
     }
-    EIO_Status status = xxx->pipe->Open(xxx->cmd, xxx->args, xxx->flags);
-    if (status == eIO_Success) {
-        xxx->is_open = true;
-    }
-    return status;
+    return xxx->pipe->Open(xxx->cmd, xxx->args, xxx->flags,
+                           kEmptyStr, NULL, xxx->pipe_size);
 }
 
 
@@ -118,7 +112,6 @@ static EIO_Status s_VT_Wait
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     _ASSERT(event == eIO_Read  ||  event == eIO_Write);
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
     CPipe::TChildPollMask what = 0;
     if (event & eIO_Read)
         what |= CPipe::fDefault;
@@ -136,7 +129,6 @@ static EIO_Status s_VT_Write
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
     if (xxx->pipe->SetTimeout(eIO_Write, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
@@ -152,7 +144,6 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
     if (xxx->pipe->SetTimeout(eIO_Read, timeout) != eIO_Success) {
         return eIO_Unknown;
     }
@@ -165,7 +156,6 @@ static EIO_Status s_VT_Status
  EIO_Event dir)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
     return xxx->pipe->Status(dir);
 }
 
@@ -175,8 +165,6 @@ static EIO_Status s_VT_Close
  const STimeout* timeout)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
-    _ASSERT(xxx->is_open  &&  xxx->pipe);
-    xxx->is_open = false;
     xxx->pipe->SetTimeout(eIO_Close, timeout);
     return xxx->pipe->Close();
 }
@@ -229,9 +217,10 @@ BEGIN_NCBI_SCOPE
 extern CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,
- CPipe::TCreateFlags   create_flags,
+ CPipe::TCreateFlags   flags,
  CPipe*                pipe,
- EOwnership            own_pipe)
+ EOwnership            own_pipe,
+ size_t                pipe_size)
 {
     CONNECTOR       ccc;
     SPipeConnector* xxx;
@@ -240,13 +229,13 @@ extern CONNECTOR PIPE_CreateConnector
         return 0;
 
     // Initialize internal data structures
-    xxx           = new SPipeConnector;
-    xxx->pipe     = pipe ? pipe                       : new CPipe;
-    xxx->cmd      = cmd;
-    xxx->args     = args;
-    xxx->flags    = create_flags;
-    xxx->is_open  = false;
-    xxx->own_pipe = pipe ? own_pipe == eTakeOwnership : true;
+    xxx            = new SPipeConnector;
+    xxx->pipe      = pipe ? pipe                       : new CPipe;
+    xxx->cmd       = cmd;
+    xxx->args      = args;
+    xxx->flags     = flags;
+    xxx->own_pipe  = pipe ? own_pipe == eTakeOwnership : true;
+    xxx->pipe_size = pipe_size;
 
     // Initialize connector data
     ccc->handle  = xxx;
