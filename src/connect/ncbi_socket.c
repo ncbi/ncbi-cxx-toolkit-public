@@ -144,7 +144,7 @@
  */
 #if   defined(NCBI_OS_MSWIN)
 
-#  define SOCK_GHB_THREAD_SAFE  1  /* for gethostby...() */
+#  define SOCK_GHBX_MT_SAFE     1  /* for gethostby...() */
 #  define SOCK_SEND_SLICE       (1 << 10)  /* 1M */
 #  define SOCK_INVALID          INVALID_SOCKET
 #  define SOCK_ERRNO            WSAGetLastError()
@@ -1097,9 +1097,9 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #  else
         static const char suffix[] = "";
 
-#    ifndef SOCK_GHB_THREAD_SAFE
+#    ifndef SOCK_GHBX_MT_SAFE
         CORE_LOCK_WRITE;
-#    endif /*!SOCK_GHB_THREAD_SAFE*/
+#    endif /*!SOCK_GHBX_MT_SAFE*/
 
         he = gethostbyname(hostname);
         error = he ? 0 : h_errno + DNS_BASE;
@@ -1113,9 +1113,9 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
             memcpy(&host, he->h_addr, sizeof(host));
 
 #  ifndef HAVE_GETHOSTBYNAME_R
-#    ifndef SOCK_GHB_THREAD_SAFE
+#    ifndef SOCK_GHBX_MT_SAFE
         CORE_UNLOCK;
-#    endif /*!SOCK_GHB_THREAD_SAFE*/
+#    endif /*!SOCK_GHBX_MT_SAFE*/
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
         if (!host  &&  log) {
@@ -1281,9 +1281,9 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #  else /*HAVE_GETHOSTBYADDR_R*/
         static const char suffix[] = "";
 
-#    ifndef SOCK_GHB_THREAD_SAFE
+#    ifndef SOCK_GHBX_MT_SAFE
         CORE_LOCK_WRITE;
-#    endif /*!SOCK_GHB_THREAD_SAFE*/
+#    endif /*!SOCK_GHBX_MT_SAFE*/
 
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
         error = he ? 0 : h_errno + DNS_BASE;
@@ -1304,9 +1304,9 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
             strcpy(name, he->h_name);
 
 #  ifndef HAVE_GETHOSTBYADDR_R
-#    ifndef SOCK_GHB_THREAD_SAFE
+#    ifndef SOCK_GHBX_MT_SAFE
         CORE_UNLOCK;
-#    endif /*!SOCK_GHB_THREAD_SAFE*/
+#    endif /*!SOCK_GHBX_MT_SAFE*/
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!name  &&  log) {
