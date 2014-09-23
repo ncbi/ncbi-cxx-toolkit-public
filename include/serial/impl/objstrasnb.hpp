@@ -132,7 +132,23 @@ public:
     };
 
     enum ERealRadix {
-        eDecimal            = 0
+        eDecimal            = 0,
+        eDecimalEncoding    = 0xC0,
+
+        // ISO 6093 number representation (first content octet)
+        // http://www.itu.int/rec/T-REC-X.690-200811-I/en
+        // clause 8.5.8
+        eDecimal_NR1        = 1,
+        eDecimal_NR2        = 2,
+        eDecimal_NR3        = 3,
+
+        // Special values content octet
+        // http://www.itu.int/rec/T-REC-X.690-200811-I/en
+        // clause 8.5.9
+        ePositiveInfinity   = 0x40,
+        eNegativeInfinity   = 0x41,
+        eNotANumber         = 0x42,
+        eNegativeZero       = 0x43
     };
 
 
