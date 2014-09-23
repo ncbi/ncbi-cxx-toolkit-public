@@ -99,6 +99,7 @@ void CWGSTestApp::Init(void)
     arg_desc->AddFlag("print_seq", "Print loader Bioseq objects");
 
     arg_desc->AddFlag("gi_range", "Print GI range if any");
+    arg_desc->AddFlag("gi_check", "Check GI index");
     arg_desc->AddOptionalKey("gi", "GI",
                              "lookup by GI",
                              CArgDescriptions::eInt8);
@@ -305,6 +306,7 @@ int CWGSTestApp::Run(void)
     return LowLevelTest();
 #endif
 
+    uint64_t error_count = 0;
     const CArgs& args = GetArgs();
 
     string path = args["file"].AsString();
@@ -367,7 +369,7 @@ int CWGSTestApp::Run(void)
             it = CWGSSeqIterator(wgs_db, withdrawn);
         }
         size_t count = 0;
-        for ( ; it; ++it ) {
+        for ( ; limit_count && it; ++it ) {
             out << it.GetAccession()<<'.'<<it.GetAccVersion();
             if ( it.HasGi() ) {
                 out << " gi: "<<it.GetGi();
@@ -400,23 +402,67 @@ int CWGSTestApp::Run(void)
     }
 
     if ( args["gi_range"] ) {
-        pair<TGi, TGi> gi_range = wgs_db.GetGiRange();
+        pair<TGi, TGi> gi_range = wgs_db.GetNucGiRange();
         if ( gi_range.second ) {
-            out << "GI range: " << gi_range.first << " - " << gi_range.second
+            out << "Nucleotide GI range: "
+                << gi_range.first << " - " << gi_range.second
                 << NcbiEndl;
+        }
+        else {
+            out << "Nucleotide GI range is empty" << NcbiEndl;
+        }
+        gi_range = wgs_db.GetProtGiRange();
+        if ( gi_range.second ) {
+            out << "Protein GI range: "
+                << gi_range.first << " - " << gi_range.second
+                << NcbiEndl;
+        }
+        else {
+            out << "Protein GI range is empty" << NcbiEndl;
+        }
+    }
+    if ( args["gi_check"] ) {
+        typedef map<TGi, uint64_t> TGiIdx;
+        TGiIdx nuc_idx;
+        for ( CWGSGiIterator it(wgs_db, CWGSGiIterator::eNuc); it; ++it ) {
+            nuc_idx[it.GetGi()] = it.GetRowId();
+        }
+        for ( CWGSSeqIterator it(wgs_db); it; ++it ) {
+            if ( !it.HasGi() ) {
+                continue;
+            }
+            TGi gi = it.GetGi();
+            uint64_t row = it.GetCurrentRowId();
+            TGiIdx::iterator idx_it = nuc_idx.find(gi);
+            if ( idx_it == nuc_idx.end() ) {
+                ERR_POST("GI "<<gi<<" row="<<row<<" idx=none");
+                ++error_count;
+            }
+            else {
+                if ( idx_it->second != row ) {
+                    ERR_POST("GI "<<gi<<" row="<<row<<" idx="<<idx_it->second);
+                    ++error_count;
+                }
+                nuc_idx.erase(idx_it);
+            }
+        }
+        ITERATE ( TGiIdx, it, nuc_idx ) {
+            ERR_POST("GI "<<it->first<<" row=none"<<" idx="<<it->second);
+            ++error_count;
         }
     }
     if ( args["gi"] ) {
         TGi gi = TIntId(args["gi"].AsInt8());
-        uint64_t row = wgs_db.GetGiRowId(gi);
-        if ( !row ) {
+        CWGSGiIterator gi_it(wgs_db, gi);
+        if ( !gi_it ) {
             out << "GI "<<gi<<" not found" << NcbiEndl;
         }
-        else {
-            out << "GI "<<gi<<" row: "<<row << NcbiEndl;
-            CWGSSeqIterator it(wgs_db, row);
+        else if ( gi_it.GetSeqType() == gi_it.eNuc ) {
+            out << "GI "<<gi<<" Nucleotide row: "<<gi_it.GetRowId()
+                << NcbiEndl;
+            CWGSSeqIterator it(wgs_db, gi_it.GetRowId());
             if ( !it ) {
-                out << "No such row: "<<row << NcbiEndl;
+                out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
             }
             else {
                 out << "GI "<<gi<<" len: "<<it.GetSeqLength() << NcbiEndl;
@@ -424,6 +470,9 @@ int CWGSTestApp::Run(void)
                     out << MSerial_AsnText << *it.GetBioseq();
                 }
             }
+        }
+        else {
+            out << "GI "<<gi<<" Protein row: "<<gi_it.GetRowId() << NcbiEndl;
         }
     }
 
@@ -442,7 +491,7 @@ int CWGSTestApp::Run(void)
             it = CWGSScaffoldIterator(wgs_db);
         }
         size_t count = 0;
-        for ( ; it; ++it ) {
+        for ( ; limit_count && it; ++it ) {
             out << it.GetScaffoldName() << '\n';
             if ( print_seq ) {
                 out << MSerial_AsnText << *it.GetBioseq();
@@ -454,7 +503,7 @@ int CWGSTestApp::Run(void)
     }
 
     out << "Success." << NcbiEndl;
-    return 0;
+    return error_count? 1: 0;
 }
 
 

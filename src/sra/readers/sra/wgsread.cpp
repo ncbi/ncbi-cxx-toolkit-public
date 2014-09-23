@@ -110,7 +110,8 @@ CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDB& db)
 CWGSDb_Impl::SIdxTableCursor::SIdxTableCursor(const CVDB& db)
     : m_Table(db, "GI_IDX"),
       m_Cursor(m_Table),
-      INIT_VDB_COLUMN(NUC_ROW_ID)
+      INIT_OPTIONAL_VDB_COLUMN(NUC_ROW_ID),
+      INIT_OPTIONAL_VDB_COLUMN(PROT_ROW_ID)
 {
 }
 
@@ -321,38 +322,112 @@ void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr)
 }
 
 
-pair<TGi, TGi> CWGSDb_Impl::GetGiRange(void)
+pair<TGi, TGi> CWGSDb_Impl::GetNucGiRange(void)
 {
     pair<TGi, TGi> ret;
-    CRef<SIdxTableCursor> idx = Idx();
-    if ( idx ) {
-        pair<int64_t, uint64_t> row_range = idx->m_Cursor.GetRowIdRange();
+    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+        if ( idx->m_NUC_ROW_ID ) {
+            pair<int64_t, uint64_t> row_range =
+                idx->m_NUC_ROW_ID.GetRowIdRange(idx->m_Cursor);
+            if ( row_range.second ) {
+                ret.first = TIntId(row_range.first);
+                ret.second = TIntId(row_range.first + row_range.second - 1);
+            }
+        }
         Put(idx);
-        if ( row_range.second ) {
-            ret.first = TIntId(row_range.first);
-            ret.second = TIntId(row_range.first + row_range.second - 1);
-        } 
     }
     return ret;
 }
 
 
-uint64_t CWGSDb_Impl::GetGiRowId(TGi gi)
+pair<TGi, TGi> CWGSDb_Impl::GetProtGiRange(void)
 {
-    CRef<SIdxTableCursor> idx = Idx();
-    if ( !idx ) {
-        return 0;
-    }
-    try {
-        return *idx->NUC_ROW_ID(gi);
-    }
-    catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
-            throw;
+    pair<TGi, TGi> ret;
+    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+        if ( idx->m_PROT_ROW_ID ) {
+            pair<int64_t, uint64_t> row_range =
+                idx->m_PROT_ROW_ID.GetRowIdRange(idx->m_Cursor);
+            if ( row_range.second ) {
+                ret.first = TIntId(row_range.first);
+                ret.second = TIntId(row_range.first + row_range.second - 1);
+            }
         }
         Put(idx);
-        return 0;
     }
+    return ret;
+}
+
+
+pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
+{
+    pair<uint64_t, bool> ret;
+    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+        if ( idx->m_NUC_ROW_ID ) {
+            try {
+                ret.first = *idx->NUC_ROW_ID(gi);
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
+                    throw;
+                }
+            }
+        }
+        if ( !ret.first && idx->m_PROT_ROW_ID ) {
+            try {
+                ret.first = *idx->PROT_ROW_ID(gi);
+                if ( ret.first ) {
+                    ret.second = true;
+                }
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
+                    throw;
+                }
+            }
+        }
+        Put(idx);
+    }
+    return ret;
+}
+
+
+uint64_t CWGSDb_Impl::GetNucGiRowId(TGi gi)
+{
+    uint64_t ret = 0;
+    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+        if ( idx->m_NUC_ROW_ID ) {
+            try {
+                ret = *idx->NUC_ROW_ID(gi);
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
+                    throw;
+                }
+            }
+        }
+        Put(idx);
+    }
+    return ret;
+}
+
+
+uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
+{
+    uint64_t ret = 0;
+    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+        if ( idx->m_PROT_ROW_ID ) {
+            try {
+                ret = *idx->PROT_ROW_ID(gi);
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
+                    throw;
+                }
+            }
+        }
+        Put(idx);
+    }
+    return ret;
 }
 
 
@@ -1758,6 +1833,110 @@ CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(void) const
     GetIds(ret->SetId());
     ret->SetInst(*GetSeq_inst());
     return ret;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CWGSGiIterator
+/////////////////////////////////////////////////////////////////////////////
+
+
+CWGSGiIterator::CWGSGiIterator(void)
+    : m_CurrGi(ZERO_GI), m_FirstBadGi(ZERO_GI)
+{
+}
+
+
+CWGSGiIterator::CWGSGiIterator(const CWGSDb& wgs_db, ESeqType seq_type)
+{
+    x_Init(wgs_db, seq_type);
+    x_Settle();
+}
+
+
+CWGSGiIterator::CWGSGiIterator(const CWGSDb& wgs_db, TGi gi, ESeqType seq_type)
+{
+    x_Init(wgs_db, seq_type);
+    if ( *this ) {
+        TGi first_gi = m_CurrGi;
+        m_CurrGi = gi;
+        if ( gi < first_gi || gi >= m_FirstBadGi ) {
+            m_CurrRowId = 0;
+            m_CurrSeqType = eAll;
+            m_FirstBadGi = gi;
+        }
+        else if ( x_Excluded() ) {
+            m_FirstBadGi = gi;
+        }
+    }
+}
+
+
+CWGSGiIterator::~CWGSGiIterator(void)
+{
+    if ( m_Idx ) {
+        GetDb().Put(m_Idx);
+    }
+}
+
+
+void CWGSGiIterator::x_Init(const CWGSDb& wgs_db, ESeqType seq_type)
+{
+    m_Db = wgs_db;
+    m_Idx = GetDb().Idx();
+    if ( !m_Idx ) {
+        m_Db.Reset();
+        m_FirstBadGi = ZERO_GI;
+        m_CurrGi = ZERO_GI;
+        m_CurrRowId = 0;
+        m_CurrSeqType = eAll;
+        return;
+    }
+    m_FilterSeqType = seq_type;
+    if ( (seq_type == eProt || !m_Idx->m_NUC_ROW_ID) &&
+         (seq_type == eNuc || !m_Idx->m_PROT_ROW_ID) ) {
+        // no asked type of sequences in index
+        GetDb().Put(m_Idx);
+        m_Db.Reset();
+        m_FirstBadGi = ZERO_GI;
+        m_CurrGi = ZERO_GI;
+        m_CurrRowId = 0;
+        m_CurrSeqType = eAll;
+        return;
+    }
+    pair<int64_t, uint64_t> range = m_Idx->m_Cursor.GetRowIdRange();
+    m_FirstBadGi = TIntId(range.first+range.second);
+    m_CurrGi = TIntId(range.first);
+}
+
+
+bool CWGSGiIterator::x_Excluded(void)
+{
+    if ( m_FilterSeqType != eProt && m_Idx->m_NUC_ROW_ID ) {
+        m_CurrRowId = m_Idx->NUC_ROW_ID(m_CurrGi);
+        if ( m_CurrRowId ) {
+            m_CurrSeqType = eNuc;
+            return false;
+        }
+    }
+    if ( m_FilterSeqType != eNuc && m_Idx->m_PROT_ROW_ID ) {
+        m_CurrRowId = m_Idx->PROT_ROW_ID(m_CurrGi);
+        if ( m_CurrRowId ) {
+            m_CurrSeqType = eProt;
+            return false;
+        }
+    }
+    m_CurrSeqType = eAll;
+    m_CurrRowId = 0;
+    return true;
+}
+
+
+void CWGSGiIterator::x_Settle(void)
+{
+    while ( *this && x_Excluded() ) {
+        ++m_CurrGi;
+    }
 }
 
 

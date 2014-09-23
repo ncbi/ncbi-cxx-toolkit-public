@@ -62,6 +62,7 @@ class CUser_field;
 
 class CWGSSeqIterator;
 class CWGSScaffoldIterator;
+class CWGSGiIterator;
 
 class NCBI_SRAREAD_EXPORT CWGSDb_Impl : public CObject
 {
@@ -114,14 +115,23 @@ public:
         return m_MasterDescr;
     }
 
-    // get GI range of sequences
-    pair<TGi, TGi> GetGiRange(void);
-    // get SEQUENCE row_id for a given GI or 0 if there is no GI
-    uint64_t GetGiRowId(TGi gi);
+
+    // get GI range of nucleotide sequences
+    pair<TGi, TGi> GetNucGiRange(void);
+    // get GI range of proteine sequences
+    pair<TGi, TGi> GetProtGiRange(void);
+    // get row_id for a given GI or 0 if there is no GI
+    // the second value in returned value is true if the sequence is protein
+    pair<uint64_t, bool> GetGiRowId(TGi gi);
+    // get nucleotide row_id (SEQUENCE) for a given GI or 0 if there is no GI
+    uint64_t GetNucGiRowId(TGi gi);
+    // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
+    uint64_t GetProtGiRowId(TGi gi);
 
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
+    friend class CWGSGiIterator;
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
     struct SSeqTableCursor : public CObject {
@@ -175,6 +185,7 @@ protected:
         CVDBCursor m_Cursor;
 
         DECLARE_VDB_COLUMN_AS(uint64_t, NUC_ROW_ID);
+        DECLARE_VDB_COLUMN_AS(uint64_t, PROT_ROW_ID);
     };
 
     // get table accessor object for exclusive access
@@ -222,6 +233,7 @@ public:
     CWGSDb(void)
         {
         }
+    explicit
     CWGSDb(CWGSDb_Impl* impl)
         : CRef<CWGSDb_Impl>(impl)
         {
@@ -250,13 +262,26 @@ public:
         return GetObject().ParseScaffoldRow(acc);
     }
 
-    // get GI range of sequences
-    pair<TGi, TGi> GetGiRange(void) const {
-        return GetNCObject().GetGiRange();
+    // get GI range of nucleotide sequences
+    pair<TGi, TGi> GetNucGiRange(void) const {
+        return GetNCObject().GetNucGiRange();
     }
-    // get SEQUENCE row_id for a given GI or 0 if there is no GI
-    uint64_t GetGiRowId(TGi gi) const {
+    // get GI range of proteine sequences
+    pair<TGi, TGi> GetProtGiRange(void) const {
+        return GetNCObject().GetProtGiRange();
+    }
+    // get row_id for a given GI or 0 if there is no GI
+    // the second value in returned value is true if the sequence is protein
+    pair<uint64_t, bool> GetGiRowId(TGi gi) const {
         return GetNCObject().GetGiRowId(gi);
+    }
+    // get nucleotide row_id (SEQUENCE) for a given GI or 0 if there is no GI
+    uint64_t GetNucGiRowId(TGi gi) const {
+        return GetNCObject().GetNucGiRowId(gi);
+    }
+    // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
+    uint64_t GetProtGiRowId(TGi gi) const {
+        return GetNCObject().GetProtGiRowId(gi);
     }
 };
 
@@ -269,6 +294,7 @@ public:
         eIncludeWithdrawn
     };
     CWGSSeqIterator(void);
+    explicit
     CWGSSeqIterator(const CWGSDb& wgs_db,
                     EWithdrawn withdrawn = eExcludeWithdrawn);
     CWGSSeqIterator(const CWGSDb& wgs_db, uint64_t row,
@@ -284,8 +310,11 @@ public:
     uint64_t GetCurrentRowId(void) const {
         return m_CurrId;
     }
+    uint64_t GetFirstBadRowId(void) const {
+        return m_FirstBadId;
+    }
     uint64_t GetLastRowId(void) const {
-        return m_FirstBadId - 1;
+        return GetFirstBadRowId() - 1;
     }
 
     bool HasGi(void) const;
@@ -374,7 +403,7 @@ class NCBI_SRAREAD_EXPORT CWGSScaffoldIterator
 {
 public:
     CWGSScaffoldIterator(void);
-    CWGSScaffoldIterator(const CWGSDb& wgs_db);
+    explicit CWGSScaffoldIterator(const CWGSDb& wgs_db);
     CWGSScaffoldIterator(const CWGSDb& wgs_db, uint64_t row);
     CWGSScaffoldIterator(const CWGSDb& wgs_db, CTempString acc);
     ~CWGSScaffoldIterator(void);
@@ -389,8 +418,11 @@ public:
     uint64_t GetCurrentRowId(void) const {
         return m_CurrId;
     }
+    uint64_t GetFirstBadRowId(void) const {
+        return m_FirstBadId;
+    }
     uint64_t GetLastRowId(void) const {
-        return m_FirstBadId - 1;
+        return GetFirstBadRowId() - 1;
     }
 
     CTempString GetAccession(void) const;
@@ -424,6 +456,62 @@ private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SScfTableCursor> m_Scf; // VDB scaffold table accessor
     uint64_t m_CurrId, m_FirstBadId;
+};
+
+
+class NCBI_SRAREAD_EXPORT CWGSGiIterator
+{
+public:
+    enum ESeqType {
+        eNuc  = 1 << 0,
+        eProt = 1 << 1,
+        eAll  = eNuc | eProt
+    };
+    CWGSGiIterator(void);
+    explicit
+    CWGSGiIterator(const CWGSDb& wgs_db, ESeqType seq_type = eAll);
+    CWGSGiIterator(const CWGSDb& wgs_db, TGi gi, ESeqType seq_type = eAll);
+    ~CWGSGiIterator(void);
+
+    DECLARE_SAFE_BOOL_METHOD(m_CurrGi < m_FirstBadGi);
+
+    CWGSGiIterator& operator++(void) {
+        ++m_CurrGi;
+        x_Settle();
+        return *this;
+    }
+
+    // get currently selected gi
+    TGi GetGi(void) const {
+        return m_CurrGi;
+    }
+
+    // get currently selected gi type, eNuc or eProt
+    ESeqType GetSeqType(void) const {
+        return m_CurrSeqType;
+    }
+
+    // get currently selected gi row id in corresponding nuc or prot table
+    uint64_t GetRowId(void) const {
+        return m_CurrRowId;
+    }
+
+protected:
+    void x_Init(const CWGSDb& wgs_db, ESeqType seq_type);
+
+    CWGSDb_Impl& GetDb(void) const {
+        return m_Db.GetNCObject();
+    }
+
+    void x_Settle(void);
+    bool x_Excluded(void);
+    
+private:
+    CWGSDb m_Db;
+    CRef<CWGSDb_Impl::SIdxTableCursor> m_Idx; // VDB GI index table accessor
+    TGi m_CurrGi, m_FirstBadGi;
+    uint64_t m_CurrRowId;
+    ESeqType m_CurrSeqType, m_FilterSeqType;
 };
 
 
