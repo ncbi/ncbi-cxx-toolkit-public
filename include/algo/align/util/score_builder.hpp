@@ -148,6 +148,12 @@ private:
     Int8 m_EffectiveSearchSpace;
 
     void x_Initialize(blast::CBlastOptionsHandle& options);
+
+protected:
+    struct BlastScoreBlk *GetBlastScoreBlkPtr()
+    {
+        return m_ScoreBlk;
+    }
 };
 
 
