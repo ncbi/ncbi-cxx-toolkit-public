@@ -208,6 +208,8 @@ namespace {
         return 0;
     }
 
+    #if 0
+    // Not used anymore
     xmlNodePtr find_element(xmlNodePtr first) {
         while (first != 0) {
             if (first->type == XML_ELEMENT_NODE) return first;
@@ -216,6 +218,7 @@ namespace {
 
         return 0;
     }
+    #endif
 }
 //####################################################################
 xml::node::node (int) {
