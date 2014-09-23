@@ -140,20 +140,24 @@ string CCSRADataLoader::GetLoaderNameFromArgs(void)
 
 string CCSRADataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
 {
-    if ( params.m_CSRAFiles.empty() ) {
-        return "CCSRADataLoader:"+params.m_DirPath;
-    }
-    else {
-        CNcbiOstrstream str;
-        str << "CCSRADataLoader:" << params.m_DirPath;
-        if ( !params.m_CSRAFiles.empty() ) {
-            str << "/";
-            ITERATE ( vector<string>, it, params.m_CSRAFiles ) {
-                str << "+" << *it;
-            }
+    CNcbiOstrstream str;
+    str << "CCSRADataLoader:" << params.m_DirPath;
+    if ( !params.m_CSRAFiles.empty() ) {
+        str << "/files=";
+        ITERATE ( vector<string>, it, params.m_CSRAFiles ) {
+            str << "+" << *it;
         }
-        return CNcbiOstrstreamToString(str);
     }
+    if ( params.m_IdMapper ) {
+        str << "/mapper=" << params.m_IdMapper.get();
+    }
+    if ( !params.m_AnnotName.empty() ) {
+        str << "/name=" << params.m_AnnotName;
+    }
+    if ( params.m_MinMapQuality != -1 ) {
+        str << "/q=" << params.m_MinMapQuality;
+    }
+    return CNcbiOstrstreamToString(str);
 }
 
 
