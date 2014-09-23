@@ -434,6 +434,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BEG	c	International Bank for the Glomeromycota",
 "BEGO	s	Beth Gordon Institute",
 "BEI	s	American University of Beirut, Biology Department",
+"BEI<USA>	c	Microbiology and Infectious Diseases Resources (BEI Resources)",
 "BEL	s	Ulster Museum, Botany Department",
 "BELC	s	Beloit College, Biology Department",
 "BELUM	s	Ulster Museum, Belfast",
