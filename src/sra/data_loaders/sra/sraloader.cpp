@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 class CObject;
 
 NCBI_PARAM_DECL(bool, SRA_LOADER, TRIM);
-NCBI_PARAM_DEF_EX(bool, SRA_LOADER, TRIM, 0,
+NCBI_PARAM_DEF_EX(bool, SRA_LOADER, TRIM, false,
                   eParam_NoThread, SRA_LOADER_TRIM);
 
 BEGIN_SCOPE(objects)
