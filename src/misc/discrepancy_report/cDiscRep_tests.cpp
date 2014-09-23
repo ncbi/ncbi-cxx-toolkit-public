@@ -5638,6 +5638,7 @@ void CBioseq_DUPLICATE_LOCUS_TAGS :: GetReport(CRef <CClickableItem> c_item)
      tag2dups.clear();
      GetTestItemList(it->second, tag2dups);
      ITERATE (Str2Strs, tit, tag2dups) {
+       if (tit->second.size() == 1) continue;
        cnt += tit->second.size();
        AddSubcategory(c_item, GetName() + "$" + it->first + "*" + tit->first, 
                 &(tit->second), "gene", 
@@ -5654,7 +5655,9 @@ void CBioseq_DUPLICATE_LOCUS_TAGS :: GetReport(CRef <CClickableItem> c_item)
                 + "adjacent to another gene with the same locus tag.";
         c_item->subcategories.push_back(c_adj);
      } 
-     c_item->description = GetHasComment(cnt, "gene") + "duplicate locus tags.";
+     if (cnt) {
+       c_item->description = GetHasComment(cnt, "gene") + "duplicate locus tags.";
+     }
   }
 };
 
@@ -5668,6 +5671,7 @@ void CBioseq_DUPLICATE_LOCUS_TAGS_global :: GetReport(CRef <CClickableItem> c_it
   string strtmp;
   CRef <CClickableItem> c_adj(new CClickableItem);
   ITERATE (Str2Strs, it, tag2dups) { 
+     if (it->second.size() == 1) continue;
      strtmp = it->first.substr(1);
      cnt += it->second.size();
      AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), "gene", 
@@ -5683,7 +5687,9 @@ void CBioseq_DUPLICATE_LOCUS_TAGS_global :: GetReport(CRef <CClickableItem> c_it
              + "adjacent to another gene with the same locus tag.";
      c_item->subcategories.push_back(c_adj);
   }
-  c_item->description = GetHasComment(cnt, "gene") + "duplicate locus tags.";
+  if (cnt) {
+     c_item->description = GetHasComment(cnt, "gene") + "duplicate locus tags.";
+  }
 }
 
 void CBioseq_BAD_LOCUS_TAG_FORMAT :: GetReport(CRef <CClickableItem> c_item) 
