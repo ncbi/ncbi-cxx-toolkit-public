@@ -11,6 +11,8 @@ namespace objects
 {
     class CSeq_entry;
     class IMessageListener;
+    class CSeq_entry_Handle;
+    class CScope;
 };
 class CSerialObject;
 class ILineReader;
@@ -19,9 +21,8 @@ class ILineReader;
 class CFeatureTableReader
 {
 public:
-   CFeatureTableReader(objects::IMessageListener* logger): m_logger(logger)
-   {
-   }
+   CFeatureTableReader(objects::IMessageListener* logger);
+
    bool CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
    void ConvertSeqIntoSeqSet(objects::CSeq_entry& entry, bool nuc_prod_set) const;
 // MergeCDSFeatures looks for cdregion features in the feature tables
@@ -39,7 +40,11 @@ public:
    void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
    CRef<objects::CSeq_entry> m_replacement_protein;
 private:
+   CRef<objects::CSeq_entry> TranslateProtein(
+       objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 
+       const objects::CSeq_feat& feature, CTempString locustag);
    objects::IMessageListener* m_logger;
+   int m_local_id_counter;
 };
 
 END_NCBI_SCOPE

@@ -14,6 +14,7 @@ class CSeqdesc;
 class CSeq_descr;
 class COrg_ref;
 class CMLAClient;
+class CAuth_list;
 
 BEGIN_SCOPE(edit)
 
@@ -26,21 +27,23 @@ public:
    ~CRemoteUpdater();
 
    void UpdatePubReferences(CSerialObject& obj);
-   void UpdatePubReferences(objects::CSeq_entry_EditHandle& obj);
+   void UpdatePubReferences(CSeq_entry_EditHandle& obj);
 
-   void UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeq_entry& entry);
-   void UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeq_entry_EditHandle& obj);
-   void UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeqdesc& obj);
+   void UpdateOrgFromTaxon(IMessageListener* logger, CSeq_entry& entry);
+   void UpdateOrgFromTaxon(IMessageListener* logger, CSeq_entry_EditHandle& obj);
+   void UpdateOrgFromTaxon(IMessageListener* logger, CSeqdesc& obj);
+   static void ConvertToStandardAuthors(CAuth_list& auth_list);
 
    // Use either shared singleton or individual instances
    static CRemoteUpdater& GetInstance();
 
 private:
-   void xUpdatePubReferences(objects::CSeq_entry& entry);
-   void xUpdatePubReferences(objects::CSeq_descr& descr);
-   void xUpdateOrgTaxname(objects::IMessageListener* logger, objects::COrg_ref& org);
+   void xUpdatePubReferences(CSeq_entry& entry);
+   void xUpdatePubReferences(CSeq_descr& descr);
+   void xUpdateOrgTaxname(IMessageListener* logger, COrg_ref& org);
 
-   CRef<objects::CMLAClient>  m_mlaClient;
+
+   CRef<CMLAClient>  m_mlaClient;
    auto_ptr<CCachedTaxon3_impl>  m_taxClient;
    bool m_enable_caching;
 };

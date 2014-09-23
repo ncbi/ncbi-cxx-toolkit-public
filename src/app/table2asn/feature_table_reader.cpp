@@ -61,6 +61,9 @@
 #include <algo/align/util/compartment_finder.hpp>
 #include <objtools/readers/fasta.hpp>
 
+#include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
+
 #include "feature_table_reader.hpp"
 
 #include "table2asn_context.hpp"
@@ -96,34 +99,35 @@ namespace
 
     bool GetOrgName(string& name, const CSeq_entry& entry)
     {
-        if (entry.IsSet())
+        if (entry.IsSet() && entry.GetSet().IsSetDescr())
         {
             ITERATE(CSeq_descr_Base::Tdata, it, entry.GetSet().GetDescr().Get())
             {
+                if ((**it).IsSource())
+                {
+                    const CBioSource& source = (**it).GetSource();
+                    if (source.IsSetTaxname())
+                    {
+                        name = source.GetTaxname();
+                        return true;
+                    }
+                    if (source.IsSetOrgname())
+                    {
+                        if (source.GetOrgname().GetFlatName(name))
+                            return true;
+                    }
+                    if (source.IsSetOrg() && source.GetOrg().IsSetOrgname())
+                    {
+                        if (source.GetOrg().GetOrgname().GetFlatName(name))
+                            return true;
+                    }
+                }
                 if ((**it).IsOrg())
                 {
                     if ((**it).GetOrg().IsSetOrgname())
                     {
                         if ((**it).GetOrg().GetOrgname().GetFlatName(name))
                             return true;
-                    }
-                }
-                if ((**it).IsSource())
-                {
-                    if ((**it).GetSource().IsSetOrgname())
-                    {
-                        if ((**it).GetSource().GetOrgname().GetFlatName(name))
-                            return true;
-                    }
-                    if ((**it).GetSource().IsSetOrg())
-                    {
-                        if ((**it).GetSource().GetOrg().GetOrgname().GetFlatName(name))
-                            return true;
-                    }
-                    if ((**it).GetSource().IsSetTaxname())
-                    {
-                        name = (**it).GetSource().GetTaxname();
-                        return true;
                     }
                 }
             }
@@ -133,6 +137,82 @@ namespace
         {
         }
         return false;
+    }
+
+    struct SCSeqidCompare
+    {
+      inline
+      bool operator()(const CSeq_id* left, const CSeq_id* right) const
+      { 
+         return *left < *right;
+      };
+    };
+
+    const char mapids[] = {
+        CSeqFeatData::e_Cdregion,
+        CSeqFeatData::e_Rna,
+        CSeqFeatData::e_Gene,
+        CSeqFeatData::e_Org,
+        CSeqFeatData::e_Prot,
+        CSeqFeatData::e_Pub,              ///< publication applies to this seq
+        CSeqFeatData::e_Seq,              ///< to annotate origin from another seq
+        CSeqFeatData::e_Imp,
+        CSeqFeatData::e_Region,           ///< named region (globin locus)
+        CSeqFeatData::e_Comment,          ///< just a comment
+        CSeqFeatData::e_Bond,
+        CSeqFeatData::e_Site,
+        CSeqFeatData::e_Rsite,            ///< restriction site  (for maps really)
+        CSeqFeatData::e_User,             ///< user defined structure
+        CSeqFeatData::e_Txinit,           ///< transcription initiation
+        CSeqFeatData::e_Num,              ///< a numbering system
+        CSeqFeatData::e_Psec_str,
+        CSeqFeatData::e_Non_std_residue,  ///< non-standard residue here in seq
+        CSeqFeatData::e_Het,              ///< cofactor, prosthetic grp, etc, bound to seq
+        CSeqFeatData::e_Biosrc,
+        CSeqFeatData::e_Clone,
+        CSeqFeatData::e_Variation,
+        CSeqFeatData::e_not_set      ///< No variant selected
+    };
+
+    struct SSeqAnnotCompare
+    {
+        static inline
+        int mapwhich(CSeqFeatData::E_Choice c)
+        {
+            const char* m = mapids;
+            if (c == CSeqFeatData::e_Gene)
+                c = CSeqFeatData::e_Rna;
+
+            return strchr(m, c)-m;
+        }
+
+        inline
+        bool operator()(const CSeq_feat* left, const CSeq_feat* right) const
+        {
+            if (left->IsSetData() != right->IsSetData())
+               return left < right;
+            return mapwhich(left->GetData().Which()) < mapwhich(right->GetData().Which());
+        }
+    };
+
+    void PostProcessFeatureTable(CSeq_entry& entry, CSeq_annot::TData::TFtable& ftable, int& id)
+    {
+        ftable.sort(SSeqAnnotCompare());
+        for (CSeq_annot::C_Data::TFtable::iterator it = ftable.begin(); it != ftable.end(); )
+        {
+            if ((**it).IsSetData() && (**it).GetData().IsPub())
+            {
+                CRef<CSeqdesc> seqdesc(new CSeqdesc);
+                seqdesc->SetPub((**it).SetData().SetPub());
+                entry.SetDescr().Set().push_back(seqdesc);
+                ftable.erase(it++);
+                continue; // avoid iterator increment
+            }
+
+            if (!(**it).IsSetId())
+               (**it).SetId().SetLocal().SetId(++id);
+            it++;
+        }
     }
 
     bool GetProteinName(string& protein_name, const CSeq_feat& feature)
@@ -218,103 +298,6 @@ namespace
     }
 
 
-    CRef<CSeq_entry> TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag, CConstRef<CSeq_entry> proteins)
-    {
-        CRef<CSeq_entry> pentry = LocateProtein(proteins, feature);
-        if (pentry.NotEmpty())
-            return pentry;
-
-        CRef<CBioseq> protein = CSeqTranslator::TranslateToProtein(feature, scope);
-
-        if (protein.Empty())
-            return CRef<CSeq_entry>();
-
-        pentry.Reset(new CSeq_entry);
-        pentry->SetSeq(*protein);
-
-        string org_name;
-
-        GetOrgName(org_name, *top_entry_h.GetCompleteObject());
-
-        CRef<CSeqdesc> molinfo_desc(new CSeqdesc);
-        molinfo_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-        molinfo_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
-        pentry->SetSeq().SetDescr().Set().push_back(molinfo_desc);
-
-        string protein_name;
-        GetProteinName(protein_name, feature);
-        if (protein_name.empty())
-            protein_name = "hypothetical protein";
-
-        if (!locustag.empty())
-        {
-            protein_name += " ";
-            protein_name += locustag;
-        }
-
-#if 0
-        CRef<CSeq_annot> annot(new CSeq_annot);
-        CRef<CSeq_feat> feat(new CSeq_feat);
-        feat->SetData().SetProt().SetName().push_back(protein_name);
-        //feat->SetLocation().set
-        //Assign(feature.GetLocation());
-        annot->SetData().SetFtable().push_back(feat);
-        pentry->SetSeq().SetAnnot().push_back(annot);
-#endif
-
-        if (org_name.length() > 0)
-            protein_name += " [" + org_name + "]";
-
-        CRef<CSeqdesc> title_desc(new CSeqdesc);
-        title_desc->SetTitle(protein_name);
-        pentry->SetSeq().SetDescr().Set().push_back(title_desc);
-
-        string base_name;
-        CTempString protein_ids = GetQual(feature, "protein_id");
-
-        if (protein_ids.empty())
-        {
-            if (feature.IsSetProduct())
-            {
-    #if 0
-                const CSeq_id* id = feature.GetProduct().GetId();
-                if (id)
-                {
-                    id->GetLabel(&base_name, CSeq_id::eContent);
-                }
-                CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
-                protein->SetId().clear();
-                protein->SetId().push_back(newid);
-    #else
-                const CSeq_id* id = feature.GetProduct().GetId();
-                if (id)
-                {
-                    //id->GetLabel(&base_name, CSeq_id::eContent);
-                    CRef<CSeq_id> newid(new CSeq_id);
-                    newid->Assign(*id);
-                    protein->SetId().push_back(newid);
-                }
-    #endif
-            }
-        }
-        else
-        {
-            CSeq_id::ParseIDs(protein->SetId(), protein_ids,
-                  CSeq_id::fParse_ValidLocal
-                | CSeq_id::fParse_PartialOK);
-        }
-
-        if (protein->GetId().empty())
-        {
-            CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
-            protein->SetId().push_back(newid);
-        }
-
-        CBioseq_Handle bioseq_handle = scope.AddBioseq(*protein);
-
-        return pentry;
-    }
-
     CRef<CSeq_annot> FindORF(const CBioseq& bioseq)
     {
         if (bioseq.IsNa())
@@ -341,6 +324,111 @@ namespace
         }
         return CRef<CSeq_annot>();
     }
+}
+
+CFeatureTableReader::CFeatureTableReader(objects::IMessageListener* logger): m_logger(logger), m_local_id_counter(0)
+{
+}
+
+
+CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag)
+{
+    CRef<CSeq_entry> pentry = LocateProtein(m_replacement_protein, feature);
+    if (pentry.NotEmpty())
+        return pentry;
+
+    CRef<CBioseq> protein = CSeqTranslator::TranslateToProtein(feature, scope);
+
+    if (protein.Empty())
+        return CRef<CSeq_entry>();
+
+    pentry.Reset(new CSeq_entry);
+    pentry->SetSeq(*protein);
+
+    string org_name;
+
+    GetOrgName(org_name, *top_entry_h.GetCompleteObject());
+
+    CRef<CSeqdesc> molinfo_desc(new CSeqdesc);
+    molinfo_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    molinfo_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+    pentry->SetSeq().SetDescr().Set().push_back(molinfo_desc);
+
+    string protein_name;
+    GetProteinName(protein_name, feature);
+
+    if (protein_name.empty())
+        protein_name = locustag;
+
+    if (protein_name.empty())
+        protein_name = "hypothetical protein";
+
+    string title = protein_name;
+    if (org_name.length() > 0)
+        title += " [" + org_name + "]";
+
+    CRef<CSeqdesc> title_desc(new CSeqdesc);
+    title_desc->SetTitle(title);
+    pentry->SetSeq().SetDescr().Set().push_back(title_desc);
+
+    string base_name;
+    CTempString protein_ids = GetQual(feature, "protein_id");
+
+    if (protein_ids.empty())
+    {
+        if (feature.IsSetProduct())
+        {
+#if 0
+            const CSeq_id* id = feature.GetProduct().GetId();
+            if (id)
+            {
+                id->GetLabel(&base_name, CSeq_id::eContent);
+            }
+            CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
+            protein->SetId().clear();
+            protein->SetId().push_back(newid);
+#else
+            const CSeq_id* id = feature.GetProduct().GetId();
+            if (id)
+            {
+                //id->GetLabel(&base_name, CSeq_id::eContent);
+                CRef<CSeq_id> newid(new CSeq_id);
+                newid->Assign(*id);
+                protein->SetId().push_back(newid);
+            }
+#endif
+        }
+    }
+    else
+    {
+        CSeq_id::ParseIDs(protein->SetId(), protein_ids,
+                CSeq_id::fParse_ValidLocal
+            | CSeq_id::fParse_PartialOK);
+    }
+
+    if (protein->GetId().empty())
+    {
+        CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
+        protein->SetId().push_back(newid);
+    }
+
+#if 1
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    CRef<CSeq_feat> feat(new CSeq_feat);
+    feat->SetData().SetProt().SetName().push_back(protein_name);
+    //feat->SetLocation().Assign(feature.GetLocation());
+    feat->SetId().SetLocal().SetId(++m_local_id_counter);
+    feat->SetLocation().SetInt().SetFrom(0);       
+    feat->SetLocation().SetInt().SetTo(protein->GetInst().GetLength()-1);
+    //feat->SetLocation().SetInt().SetId().SetLocal().SetStr("debug");
+    feat->SetLocation().SetInt().SetId().Assign(*protein->GetId().front());
+    annot->SetData().SetFtable().push_back(feat);
+    pentry->SetSeq().SetAnnot().push_back(annot);
+#endif
+
+    CBioseq_Handle bioseq_handle = scope.AddBioseq(*protein);
+
+    return pentry;
 }
 
 void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
@@ -370,7 +458,51 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
 
 void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_reader)
 {
-    CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs, m_logger);
+    //CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs, m_logger);
+
+    // let's use map to speedup matching on very large files, see SQD-1847
+    map<const CSeq_id*, CRef<CBioseq>, SCSeqidCompare> seq_map;
+
+    for (CTypeIterator<CBioseq> seqit(entry);  seqit;  ++seqit) {
+        ITERATE (CBioseq::TId, seq_id, seqit->GetId()) {
+            seq_map[seq_id->GetPointer()].Reset(&*seqit);
+        }
+    }
+
+    while ( !line_reader.AtEOF() ) {
+        CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable(
+            line_reader, CFeature_table_reader::fCreateGenesFromCDSs, m_logger, 0/*filter*/);
+
+        if (annot.Empty() || !annot->IsSetData() || !annot->GetData().IsFtable() ||
+            annot->GetData().GetFtable().empty()) {
+            continue;
+        }
+
+        // otherwise, take the first feature, which should be representative
+        const CSeq_feat& feat    = *annot->GetData().GetFtable().front();
+        const CSeq_id*   feat_id = feat.GetLocation().GetId();
+        CBioseq*         seq     = NULL;
+        _ASSERT(feat_id); // we expect a uniform sequence ID
+        seq = seq_map[feat_id].GetPointer();
+        if (seq) { // found a match
+            if (false)
+            {
+                CNcbiOfstream debug_annot("annot.sqn");
+                debug_annot << MSerial_AsnText
+                            << MSerial_VerifyNo
+                            << *annot;
+            }
+            seq->SetAnnot().push_back(annot);
+        } else { // just package on the set
+            /*
+            ERR_POST_X(6, Warning
+                       << "ReadSequinFeatureTables: unable to find match for "
+                       << feat_id->AsFastaString());
+            entry.SetSet().SetAnnot().push_back(annot);
+            */
+        }
+    }
+
 }
 
 void CFeatureTableReader::FindOpenReadingFrame(objects::CSeq_entry& entry) const
@@ -457,6 +589,9 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
                 continue;
             }
 
+            // sort and number ids
+            PostProcessFeatureTable(entry, seq_annot->SetData().SetFtable(), m_local_id_counter);
+
             CTempString locustag;
             for (CSeq_annot::TData::TFtable::iterator feat_it = seq_annot->SetData().SetFtable().begin();
                 seq_annot->SetData().SetFtable().end() != feat_it;)
@@ -477,25 +612,19 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
                 else
                 if (data.IsCdregion())
                 {
-                    CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag, m_replacement_protein);
+                    data.SetCdregion().SetCode().SetId(11); //???
+                    data.SetCdregion().SetFrame(CCdregion::eFrame_one); //???
+                    CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag);
                     locustag.clear();
                     if (protein.NotEmpty())
                     {
+                        //data.SetCdregion().re
                         entry.SetSet().SetSeq_set().push_back(protein);
                         // move the cdregion into protein and step iterator to next
                         set_annot->SetData().SetFtable().push_back(feature);
                         seq_annot->SetData().SetFtable().erase(feat_it++);
                         continue; // avoid iterator increment
                     }
-                }
-                else
-                if (data.IsPub())
-                {
-                    CRef<CSeqdesc> seqdesc(new CSeqdesc);
-                    seqdesc->SetPub(data.SetPub());
-                    entry.SetDescr().Set().push_back(seqdesc);
-                    seq_annot->SetData().SetFtable().erase(feat_it++);
-                    continue; // avoid iterator increment
                 }
                 ++feat_it;
             }

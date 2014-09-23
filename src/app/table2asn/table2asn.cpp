@@ -711,9 +711,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (m_context.m_descriptors.NotNull())
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
 
-    ProcessSecretFiles(*entry);
-
     m_reader->ApplyAdditionalProperties(*entry);
+
+    m_context.ApplySourceQualifiers(*entry, m_context.m_source_qualifiers);
+
+    ProcessSecretFiles(*entry);
 
     CFeatureTableReader fr(m_logger);
     // this may convert seq into seq-set
@@ -773,13 +775,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         m_context.m_remote_updater->UpdatePubReferences(*result);
 #endif
     }
-
-
-#ifdef USE_SCOPE
-    m_context.ApplySourceQualifiers(entry_edit_handle, m_context.m_source_qualifiers);
-#else
-    m_context.ApplySourceQualifiers(*result, m_context.m_source_qualifiers);
-#endif
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
