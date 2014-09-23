@@ -47,28 +47,7 @@ class CDataLoader;
 class CWGSDataLoader_Impl;
 class CWGSSeqInfo;
 class CWGSFileInfo;
-
-class CWGSBlobId : public CBlobId
-{
-public:
-    CWGSBlobId(CTempString str);
-    CWGSBlobId(CTempString prefix, bool scaffold, Uint8 row_id);
-    ~CWGSBlobId(void);
-
-    // wgs file name or SRR accession
-    string m_WGSPrefix;
-    bool m_Scaffold;
-    Uint8 m_RowId;
-
-    // string blob id representation:
-    // eBlobType_annot_plain_id
-    string ToString(void) const;
-    void FromString(CTempString str);
-
-    bool operator<(const CBlobId& id) const;
-    bool operator==(const CBlobId& id) const;
-};
-
+class CWGSBlobId;
 
 class CWGSFileInfo : public CObject
 {
@@ -76,13 +55,31 @@ public:
     CWGSFileInfo(CWGSDataLoader_Impl& impl,
                  CTempString prefix);
     
-    CTempString GetWGSPrefix(void)
+    CTempString GetWGSPrefix(void) const
         {
             return m_WGSPrefix;
         }
 
-    bool IsValidRowId(bool scaffold, Uint8 row, SIZE_TYPE row_digits);
-    bool IsCorrectVersion(bool scaffold, Uint8 row, int version);
+    struct SAccFileInfo {
+        SAccFileInfo(void)
+            : row_id(0),
+              seq_type('\0'),
+              has_version(false),
+              version(0)
+            {
+            }
+        DECLARE_OPERATOR_BOOL_REF(file);
+
+        CRef<CWGSFileInfo> file;
+        Uint8 row_id;
+        char seq_type; // '\0' - regular nuc, 'S' - scaffold, 'P' - protein
+        bool has_version;
+        int version;
+    };
+
+    bool IsValidRowId(const SAccFileInfo& info, SIZE_TYPE row_digits);
+
+    bool IsCorrectVersion(const SAccFileInfo& info);
 
     CMutex& GetMutex(void) const
         {
@@ -114,7 +111,7 @@ protected:
     mutable CMutex m_WGSMutex;
     bool m_AddWGSMasterDescr;
     CWGSDb m_WGSDb;
-    Uint8 m_FirstBadRowId[2];
+    Uint8 m_FirstBadRowId, m_FirstBadScaffoldRowId, m_FirstBadProteinRowId;
 };
 
 
@@ -127,17 +124,8 @@ public:
     CRef<CWGSFileInfo> GetWGSFile(const string& acc);
 
     CRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
-    struct SAccFileInfo {
-        DECLARE_OPERATOR_BOOL_REF(file);
-
-        CRef<CWGSFileInfo> file;
-        Uint8 row_id;
-        bool is_scaffold;
-        bool has_version;
-        int version;
-    };
-    SAccFileInfo GetFileInfo(const string& acc);
-    SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
+    CWGSFileInfo::SAccFileInfo GetFileInfo(const string& acc);
+    CWGSFileInfo::SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
 
     CWGSSeqIterator GetSeqIterator(const CSeq_id_Handle& id,
                                    CWGSScaffoldIterator* iter2_ptr = 0);
@@ -192,6 +180,29 @@ private:
     TFoundFiles m_FoundFiles;
     bool m_AddWGSMasterDescr;
 };
+
+
+class CWGSBlobId : public CBlobId
+{
+public:
+    explicit CWGSBlobId(CTempString str);
+    explicit CWGSBlobId(const CWGSFileInfo::SAccFileInfo& info);
+    ~CWGSBlobId(void);
+
+    // wgs file name or SRR accession
+    string m_WGSPrefix;
+    char m_SeqType;
+    Uint8 m_RowId;
+
+    // string blob id representation:
+    // eBlobType_annot_plain_id
+    string ToString(void) const;
+    void FromString(CTempString str);
+
+    bool operator<(const CBlobId& id) const;
+    bool operator==(const CBlobId& id) const;
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

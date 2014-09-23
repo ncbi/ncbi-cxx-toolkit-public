@@ -124,10 +124,10 @@ CWGSBlobId::CWGSBlobId(CTempString str)
 }
 
 
-CWGSBlobId::CWGSBlobId(CTempString prefix, bool scaffold, Uint8 row_id)
-    : m_WGSPrefix(prefix),
-      m_Scaffold(scaffold),
-      m_RowId(row_id)
+CWGSBlobId::CWGSBlobId(const CWGSFileInfo::SAccFileInfo& info)
+    : m_WGSPrefix(info.file->GetWGSPrefix()),
+      m_SeqType(info.seq_type),
+      m_RowId(info.row_id)
 {
 }
 
@@ -140,7 +140,11 @@ CWGSBlobId::~CWGSBlobId(void)
 string CWGSBlobId::ToString(void) const
 {
     CNcbiOstrstream out;
-    out << m_WGSPrefix << '.' << (m_Scaffold? "S": "") << m_RowId;
+    out << m_WGSPrefix << '.';
+    if ( m_SeqType ) {
+        out << m_SeqType;
+    }
+    out << m_RowId;
     return CNcbiOstrstreamToString(out);
 }
 
@@ -154,12 +158,11 @@ void CWGSBlobId::FromString(CTempString str)
     }
     m_WGSPrefix = str.substr(0, dot);
     SIZE_TYPE pos = dot+1;
-    if ( str[pos] == 'S' ) {
-        m_Scaffold = true;
-        ++pos;
+    if ( str[pos] == 'S' || str[pos] == 'P' ) {
+        m_SeqType = str[pos++];
     }
     else {
-        m_Scaffold = false;
+        m_SeqType = '\0';
     }
     m_RowId = NStr::StringToNumeric<Uint8>(str.substr(dot+1));
 }
@@ -171,8 +174,8 @@ bool CWGSBlobId::operator<(const CBlobId& id) const
     if ( int diff = NStr::CompareNocase(m_WGSPrefix, wgs2.m_WGSPrefix) ) {
         return diff < 0;
     }
-    if ( m_Scaffold != wgs2.m_Scaffold ) {
-        return m_Scaffold < wgs2.m_Scaffold;
+    if ( m_SeqType != wgs2.m_SeqType ) {
+        return m_SeqType < wgs2.m_SeqType;
     }
     return m_RowId < wgs2.m_RowId;
 }
@@ -182,7 +185,7 @@ bool CWGSBlobId::operator==(const CBlobId& id) const
 {
     const CWGSBlobId& wgs2 = dynamic_cast<const CWGSBlobId&>(id);
     return m_RowId == wgs2.m_RowId &&
-        m_Scaffold == wgs2.m_Scaffold &&
+        m_SeqType == wgs2.m_SeqType &&
         m_WGSPrefix == wgs2.m_WGSPrefix;
 }
 
@@ -248,10 +251,10 @@ CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
 }
 
 
-CWGSDataLoader_Impl::SAccFileInfo
+CWGSFileInfo::SAccFileInfo
 CWGSDataLoader_Impl::GetFileInfo(const string& acc)
 {
-    SAccFileInfo ret;
+    CWGSFileInfo::SAccFileInfo ret;
     CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
     switch ( type & CSeq_id::eAcc_division_mask ) {
         // accepted accession types
@@ -278,26 +281,21 @@ CWGSDataLoader_Impl::GetFileInfo(const string& acc)
         }
     }
     SIZE_TYPE row_pos = prefix_len;
-    bool scaffold = false;
-    if ( acc[row_pos] == 'S' ) {
-        scaffold = true;
-        ++row_pos;
+    if ( acc[row_pos] == 'S' || acc[row_pos] == 'P' ) {
+        ret.seq_type = acc[row_pos++];
     }
     if ( acc.size() <= row_pos ) {
         return ret;
     }
-    Uint8 row_id = NStr::StringToNumeric<Uint8>(acc.substr(row_pos),
-                                                NStr::fConvErr_NoThrow);
-    if ( !row_id && errno ) {
+    ret.row_id = NStr::StringToNumeric<Uint8>(acc.substr(row_pos),
+                                              NStr::fConvErr_NoThrow);
+    if ( !ret.row_id && errno ) {
         return ret;
     }
     if ( CRef<CWGSFileInfo> info = GetWGSFile(prefix) ) {
         SIZE_TYPE row_digits = acc.size() - row_pos;
-        if ( info->IsValidRowId(scaffold, row_id, row_digits) ) {
+        if ( info->IsValidRowId(ret, row_digits) ) {
             ret.file = info;
-            ret.is_scaffold = scaffold;
-            ret.row_id = row_id;
-            ret.has_version = false;
             return ret;
         }
     }
@@ -305,28 +303,28 @@ CWGSDataLoader_Impl::GetFileInfo(const string& acc)
 }
 
 
-CWGSDataLoader_Impl::SAccFileInfo
+CWGSFileInfo::SAccFileInfo
 CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
 {
-    SAccFileInfo ret;
+    CWGSFileInfo::SAccFileInfo ret;
     if ( idh.IsGi() ) {
         TGi gi = idh.GetGi();
         CMutexGuard guard(m_Mutex);
         ITERATE ( TFixedFiles, it, m_FixedFiles ) {
-            uint64_t row_id = it->second->m_WGSDb.GetGiRowId(gi);
-            if ( row_id ) {
+            CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
+            if ( gi_it ) {
                 ret.file = it->second;
-                ret.row_id = row_id;
-                ret.is_scaffold = false;
+                ret.row_id = gi_it.GetRowId();
+                ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
                 ret.has_version = false;
             }
         }
         ITERATE ( TFoundFiles, it, m_FoundFiles ) {
-            uint64_t row_id = it->second->m_WGSDb.GetGiRowId(gi);
-            if ( row_id ) {
+            CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
+            if ( gi_it ) {
                 ret.file = it->second;
-                ret.row_id = row_id;
-                ret.is_scaffold = false;
+                ret.row_id = gi_it.GetRowId();
+                ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
                 ret.has_version = false;
             }
         }
@@ -357,9 +355,7 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     if ( text_id->IsSetVersion() ) {
         ret.has_version = true;
         ret.version = text_id->GetVersion();
-        if ( !ret.file->IsCorrectVersion(ret.is_scaffold,
-                                         ret.row_id,
-                                         ret.version) ) {
+        if ( !ret.file->IsCorrectVersion(ret) ) {
             ret.file = null;
         }
     }
@@ -376,10 +372,8 @@ CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetFileInfo(const CWGSBlobId& blob_id)
 CRef<CWGSBlobId> CWGSDataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
 {
     // return blob-id of blob with sequence
-    if ( SAccFileInfo info = GetFileInfo(idh) ) {
-        return Ref(new CWGSBlobId(info.file->GetWGSPrefix(),
-                                  info.is_scaffold,
-                                  info.row_id));
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        return Ref(new CWGSBlobId(info));
     }
     return null;
 }
@@ -390,13 +384,16 @@ CWGSDataLoader_Impl::GetSeqIterator(const CSeq_id_Handle& idh,
                                     CWGSScaffoldIterator* iter2_ptr)
 {
     // return blob-id of blob with sequence
-    if ( SAccFileInfo info = GetFileInfo(idh) ) {
-        if ( info.is_scaffold ) {
+    if ( CWGSFileInfo::SAccFileInfo info = GetFileInfo(idh) ) {
+        if ( info.seq_type == 'S' ) {
             if ( iter2_ptr ) {
                 *iter2_ptr = CWGSScaffoldIterator(info.file->GetDb(),
                                                   info.row_id);
             }
             return CWGSSeqIterator();
+        }
+        else if ( info.seq_type == 'P' ) {
+            ERR_POST("not supported");
         }
         else {
             return CWGSSeqIterator(info.file->GetDb(), info.row_id,
@@ -583,9 +580,7 @@ void CWGSFileInfo::x_Initialize(CWGSDataLoader_Impl& impl,
     m_WGSDb = CWGSDb(impl.m_Mgr, prefix, impl.m_WGSVolPath);
     m_WGSPrefix = m_WGSDb->GetIdPrefixWithVersion();
     m_AddWGSMasterDescr = impl.GetAddWGSMasterDescr();
-    for ( int i = 0; i < 2; ++i ) {
-        m_FirstBadRowId[i] = 0;
-    }
+    m_FirstBadRowId = m_FirstBadScaffoldRowId = m_FirstBadProteinRowId = 0;
     if ( GetDebugLevel() >= 1 ) {
         ERR_POST_X(1, "Opened WGS DB "<<prefix<<" -> "<<
                    GetWGSPrefix()<<" "<<m_WGSDb.GetWGSPath());
@@ -645,45 +640,58 @@ void CWGSFileInfo::x_InitMasterDescr(void)
 }
 
 
-bool CWGSFileInfo::IsValidRowId(bool scaffold,
-                                Uint8 row_id,
+bool CWGSFileInfo::IsValidRowId(const SAccFileInfo& info,
                                 SIZE_TYPE row_digits)
 {
-    if ( row_id == 0 || m_WGSDb->GetIdRowDigits() != row_digits ) {
+    if ( info.row_id == 0 || m_WGSDb->GetIdRowDigits() != row_digits ) {
         return false;
     }
     Uint8 first_bad_row_id;
     {{
         CMutexGuard guard(GetMutex());
-        first_bad_row_id = m_FirstBadRowId[scaffold];
-        if ( first_bad_row_id == 0 ) {
-            if ( scaffold ) {
-                first_bad_row_id = CWGSScaffoldIterator(m_WGSDb).GetLastRowId()+1;
+        if ( info.seq_type == 'S' ) {
+            Uint8& c_first_bad_row_id = m_FirstBadScaffoldRowId;
+            first_bad_row_id = c_first_bad_row_id;
+            if ( !first_bad_row_id ) {
+                CWGSScaffoldIterator it(m_WGSDb);
+                c_first_bad_row_id = first_bad_row_id = it.GetFirstBadRowId();
             }
-            else {
-                first_bad_row_id = CWGSSeqIterator(m_WGSDb).GetLastRowId()+1;
+        }
+        else if ( info.seq_type == 'P' ) {
+            ERR_POST("not supported");
+            return false;
+        }
+        else {
+            Uint8& c_first_bad_row_id = m_FirstBadRowId;
+            first_bad_row_id = c_first_bad_row_id;
+            if ( !first_bad_row_id ) {
+                CWGSSeqIterator it(m_WGSDb,
+                                   CWGSSeqIterator::eIncludeWithdrawn);
+                c_first_bad_row_id = first_bad_row_id = it.GetFirstBadRowId();
             }
-            m_FirstBadRowId[scaffold] = first_bad_row_id;
         }
     }}
-    return row_id < first_bad_row_id;
+    return info.row_id < first_bad_row_id;
 }
 
 
-bool CWGSFileInfo::IsCorrectVersion(bool scaffold,
-                                    Uint8 row_id,
-                                    int version)
+bool CWGSFileInfo::IsCorrectVersion(const SAccFileInfo& info)
 {
-    if ( row_id == 0 ) {
+    if ( info.row_id == 0 ) {
         return false;
     }
-    if ( scaffold ) {
-        return version == 1;
+    if ( info.seq_type == 'S' ) {
+        // scaffolds can have only version 1
+        return info.version == 1;
+    }
+    else if ( info.seq_type == 'P' ) {
+        ERR_POST("not supported");
+        return false;
     }
     else {
-        CWGSSeqIterator iter(m_WGSDb, row_id,
+        CWGSSeqIterator iter(m_WGSDb, info.row_id,
                              CWGSSeqIterator::eIncludeWithdrawn);
-        return iter && version == iter.GetAccVersion();
+        return iter && info.version == iter.GetAccVersion();
     }
 }
 
@@ -693,9 +701,12 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
 {
     if ( !load_lock.IsLoaded() ) {
         CRef<CBioseq> seq;
-        if ( blob_id.m_Scaffold ) {
+        if ( blob_id.m_SeqType == 'S' ) {
             CWGSScaffoldIterator it(GetDb(), blob_id.m_RowId);
             seq = it.GetBioseq();
+        }
+        else if ( blob_id.m_SeqType == 'P' ) {
+            ERR_POST("not supported");
         }
         else {
             CWGSSeqIterator it(GetDb(), blob_id.m_RowId,
