@@ -94,7 +94,7 @@ static int GetDebugLevel(void)
 
 
 NCBI_PARAM_DECL(bool, CSRA_LOADER, PILEUP_GRAPHS);
-NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, PILEUP_GRAPHS, 1,
+NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, PILEUP_GRAPHS, true,
                   eParam_NoThread, CSRA_LOADER_PILEUP_GRAPHS);
 
 bool CCSRADataLoader::GetPileupGraphsParamDefault(void)
@@ -117,7 +117,7 @@ static bool GetPileupGraphsParam(void)
 
 
 NCBI_PARAM_DECL(bool, CSRA_LOADER, QUALITY_GRAPHS);
-NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, QUALITY_GRAPHS, 0,
+NCBI_PARAM_DEF_EX(bool, CSRA_LOADER, QUALITY_GRAPHS, false,
                   eParam_NoThread, CSRA_LOADER_QUALITY_GRAPHS);
 
 static bool GetQualityGraphsParam(void)
