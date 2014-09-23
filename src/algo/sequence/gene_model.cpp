@@ -245,16 +245,6 @@ void CFeatureGenerator::ConvertLocToAnnot(
             "Can't find genomic sequence " + loc.GetId()->AsFastaString());
     }
 
-    const CMolInfo *mol_info = s_GetMolInfo(bsh);
-    if (!mol_info || !mol_info->CanGetBiomol() ||
-        mol_info->GetBiomol() != CMolInfo::eBiomol_genomic)
-    {
-        NCBI_THROW(CException, eUnknown,
-            "Not a genomic sequence: " + loc.GetId()->AsFastaString());
-    }
-
-    const COrg_ref &org = sequence::GetOrg_ref(bsh);
-
     TFeatureGeneratorFlags old_flags = GetFlags();
     TFeatureGeneratorFlags flags = old_flags;
 
@@ -341,11 +331,14 @@ void CFeatureGenerator::ConvertLocToAnnot(
                 "Non-whole number of codons with 3'-complete location");
         }
     }
-    if (org.IsSetGcode()) {
+
+    const COrg_ref* org = sequence::GetOrg_refOrNull(bsh);
+    if (org && org->IsSetGcode()) {
         CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E);
-        code->SetId(org.GetGcode());
+        code->SetId(org->GetGcode());
         cdregion.SetData().SetCdregion().SetCode().Set().push_back(code);
     }
+
     cdregion.SetLocation().Assign(cdregion_loc);
     cdregion.SetProduct().SetWhole(*prot_id);
 
