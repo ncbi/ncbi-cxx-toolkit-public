@@ -86,7 +86,6 @@ WebEnvAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    DataVal av;
    AsnTypePtr atp;
    Boolean isError = FALSE;
-   AsnReadFunc func;
    WebEnvPtr ptr;
 
    if (! loaded)
@@ -119,7 +118,6 @@ WebEnvAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == WEB_ENV_arguments) {
       ptr -> arguments = AsnGenericUserSeqOfAsnRead(aip, amp, atp, &isError, (AsnReadFunc) ArgumentAsnRead, (AsnOptFreeFunc) ArgumentFree);
@@ -168,7 +166,6 @@ erret:
 NLM_EXTERN Boolean LIBCALL 
 WebEnvAsnWrite(WebEnvPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 {
-   DataVal av;
    AsnTypePtr atp;
    Boolean retval = FALSE;
 
@@ -254,8 +251,6 @@ ArgumentAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    ArgumentPtr ptr;
 
    if (! loaded)
@@ -288,7 +283,6 @@ ArgumentAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == ARGUMENT_name) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -424,7 +418,6 @@ DbEnvAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    DataVal av;
    AsnTypePtr atp;
    Boolean isError = FALSE;
-   AsnReadFunc func;
    DbEnvPtr ptr;
 
    if (! loaded)
@@ -457,7 +450,6 @@ DbEnvAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == DB_ENV_name) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -604,8 +596,6 @@ QueryHistoryAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    QueryHistoryPtr ptr;
 
    if (! loaded)
@@ -638,7 +628,6 @@ QueryHistoryAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == QUERY_HISTORY_name) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -794,7 +783,6 @@ WebSettingsAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    DataVal av;
    AsnTypePtr atp;
    Boolean isError = FALSE;
-   AsnReadFunc func;
    WebSettingsPtr ptr;
 
    if (! loaded)
@@ -827,7 +815,6 @@ WebSettingsAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == WEB_SETTINGS_arguments) {
       ptr -> arguments = AsnGenericUserSeqOfAsnRead(aip, amp, atp, &isError, (AsnReadFunc) ArgumentAsnRead, (AsnOptFreeFunc) ArgumentFree);
@@ -869,7 +856,6 @@ erret:
 NLM_EXTERN Boolean LIBCALL 
 WebSettingsAsnWrite(WebSettingsPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 {
-   DataVal av;
    AsnTypePtr atp;
    Boolean retval = FALSE;
 
@@ -955,7 +941,6 @@ WebSavedAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    DataVal av;
    AsnTypePtr atp;
    Boolean isError = FALSE;
-   AsnReadFunc func;
    WebSavedPtr ptr;
 
    if (! loaded)
@@ -988,7 +973,6 @@ WebSavedAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == WEB_SAVED_queries) {
       ptr -> queries = AsnGenericUserSeqOfAsnRead(aip, amp, atp, &isError, (AsnReadFunc) NamedQueryAsnRead, (AsnOptFreeFunc) NamedQueryFree);
@@ -1030,7 +1014,6 @@ erret:
 NLM_EXTERN Boolean LIBCALL 
 WebSavedAsnWrite(WebSavedPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 {
-   DataVal av;
    AsnTypePtr atp;
    Boolean retval = FALSE;
 
@@ -1116,8 +1099,6 @@ NamedQueryAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    NamedQueryPtr ptr;
 
    if (! loaded)
@@ -1150,7 +1131,6 @@ NamedQueryAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == NAMED_QUERY_name) {
       ptr -> name = NameAsnRead(aip, atp);
@@ -1199,7 +1179,6 @@ erret:
 NLM_EXTERN Boolean LIBCALL 
 NamedQueryAsnWrite(NamedQueryPtr ptr, AsnIoPtr aip, AsnTypePtr orig)
 {
-   DataVal av;
    AsnTypePtr atp;
    Boolean retval = FALSE;
 
@@ -1298,8 +1277,6 @@ NamedItemSetAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    NamedItemSetPtr ptr;
 
    if (! loaded)
@@ -1332,7 +1309,6 @@ NamedItemSetAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == NAMED_ITEM_SET_name) {
       ptr -> name = NameAsnRead(aip, atp);
@@ -1478,8 +1454,6 @@ FilterValueAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    FilterValuePtr ptr;
 
    if (! loaded)
@@ -1512,7 +1486,6 @@ FilterValueAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == FILTER_VALUE_name) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -1645,8 +1618,6 @@ DbClipboardAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    DbClipboardPtr ptr;
 
    if (! loaded)
@@ -1679,7 +1650,6 @@ DbClipboardAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == DB_CLIPBOARD_name) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -1785,13 +1755,10 @@ NLM_EXTERN
 TimePtr LIBCALL
 TimeFree(ValNodePtr anp)
 {
-   Pointer pnt;
-
    if (anp == NULL) {
       return NULL;
    }
 
-   pnt = anp->data.ptrvalue;
    switch (anp->choice)
    {
    default:
@@ -1817,7 +1784,6 @@ TimeAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    AsnTypePtr atp;
    ValNodePtr anp;
    Uint1 choice;
-   Boolean isError = FALSE;
    Boolean nullIsError = FALSE;
    AsnReadFunc func;
 
@@ -1959,13 +1925,10 @@ NLM_EXTERN
 QueryCommandPtr LIBCALL
 QueryCommandFree(ValNodePtr anp)
 {
-   Pointer pnt;
-
    if (anp == NULL) {
       return NULL;
    }
 
-   pnt = anp->data.ptrvalue;
    switch (anp->choice)
    {
    default:
@@ -1997,7 +1960,6 @@ QueryCommandAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    AsnTypePtr atp;
    ValNodePtr anp;
    Uint1 choice;
-   Boolean isError = FALSE;
    Boolean nullIsError = FALSE;
    AsnReadFunc func;
 
@@ -2184,7 +2146,6 @@ QuerySearchAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    DataVal av;
    AsnTypePtr atp;
    Boolean isError = FALSE;
-   AsnReadFunc func;
    QuerySearchPtr ptr;
 
    if (! loaded)
@@ -2217,7 +2178,6 @@ QuerySearchAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == QUERY_SEARCH_db) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -2387,8 +2347,6 @@ QuerySelectAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    QuerySelectPtr ptr;
 
    if (! loaded)
@@ -2421,7 +2379,6 @@ QuerySelectAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == QUERY_SELECT_db) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -2555,13 +2512,10 @@ static
 Items_itemsPtr LIBCALL
 Items_itemsFree(ValNodePtr anp)
 {
-   Pointer pnt;
-
    if (anp == NULL) {
       return NULL;
    }
 
-   pnt = anp->data.ptrvalue;
    switch (anp->choice)
    {
    default:
@@ -2585,8 +2539,6 @@ QueryRelatedAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    QueryRelatedPtr ptr;
 
    if (! loaded)
@@ -2619,7 +2571,6 @@ QueryRelatedAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == QUERY_RELATED_base) {
       ptr -> base = QueryCommandAsnRead(aip, atp);
@@ -2680,7 +2631,6 @@ Items_itemsAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    AsnTypePtr atp;
    ValNodePtr anp;
    Uint1 choice;
-   Boolean isError = FALSE;
    Boolean nullIsError = FALSE;
    AsnReadFunc func;
 
@@ -2921,8 +2871,6 @@ ItemSetAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    ItemSetPtr ptr;
 
    if (! loaded)
@@ -2955,7 +2903,6 @@ ItemSetAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == ITEM_SET_items) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -3084,8 +3031,6 @@ FullTimeAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    FullTimePtr ptr;
 
    if (! loaded)
@@ -3118,7 +3063,6 @@ FullTimeAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == FULL_TIME_year) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
@@ -3283,8 +3227,6 @@ NameAsnRead(AsnIoPtr aip, AsnTypePtr orig)
 {
    DataVal av;
    AsnTypePtr atp;
-   Boolean isError = FALSE;
-   AsnReadFunc func;
    NamePtr ptr;
 
    if (! loaded)
@@ -3317,7 +3259,6 @@ NameAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    }
 
    atp = AsnReadId(aip,amp, atp);
-   func = NULL;
 
    if (atp == NAME_name) {
       if ( AsnReadVal(aip, atp, &av) <= 0) {
