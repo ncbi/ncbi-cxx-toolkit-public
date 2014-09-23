@@ -134,20 +134,18 @@ string CBAMDataLoader::GetLoaderNameFromArgs(void)
 
 string CBAMDataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
 {
-    if ( params.m_BamFiles.empty() ) {
-        return "BAMDataLoader:"+params.m_DirPath;
-    }
-    else {
-        CNcbiOstrstream str;
-        str << "BAMDataLoader:" << params.m_DirPath;
-        if ( !params.m_BamFiles.empty() ) {
-            str << "/";
-            ITERATE ( vector<SBamFileName>, it, params.m_BamFiles ) {
-                str << "+" << it->m_BamName;
-            }
+    CNcbiOstrstream str;
+    str << "CCSRADataLoader:" << params.m_DirPath;
+    if ( !params.m_BamFiles.empty() ) {
+        str << "/files=";
+        ITERATE ( vector<SBamFileName>, it, params.m_BamFiles ) {
+            str << "+" << it->m_BamName;
         }
-        return CNcbiOstrstreamToString(str);
     }
+    if ( params.m_IdMapper ) {
+        str << "/mapper=" << params.m_IdMapper.get();
+    }
+    return CNcbiOstrstreamToString(str);
 }
 
 
