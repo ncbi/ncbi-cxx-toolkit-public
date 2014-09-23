@@ -825,6 +825,9 @@ double CObjectIStreamAsn::ReadDouble(void)
     if ( base != 2 && base != 10 )
         ThrowError(fFormatError, "illegal REAL base (must be 2 or 10)");
 
+    if (mantissa == 0.) {
+        return mantissa;
+    }
     if ( base == 10 ) {     /* range checking only on base 10, for doubles */
         if ( exp > DBL_MAX_10_EXP )   /* exponent too big */
             ThrowError(fOverflow, "double overflow");

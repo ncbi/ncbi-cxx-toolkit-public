@@ -687,7 +687,9 @@ static const size_t kMaxDoubleLength = 64;
 void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
 {
     char buffer[kMaxDoubleLength + 16];
-    int width;
+    int width = 0;
+    Uint1 type = eDecimal;
+    WriteSysTag(eReal);
 
 #if 1
     if (isnan(data)) {
@@ -697,13 +699,23 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
         ThrowError(fInvalidData, "invalid double: infinite");
     }
 #else
-    if (isnan(data)) {
-        strncpy(buffer,"NOT-A-NUMBER", width = 12);
+// changed 21 Sep 2014
+// to enable later
+// also see below
+    if (data == 0.) {
+        double zero = 0.;
+        if (memcmp(&data, &zero, sizeof(double)) == 0) {
+            WriteLength(0);
+            return;
+        }
+        type = eNegativeZero;
+    } else if (isnan(data)) {
+        type = eNotANumber;
     } else if (!finite(data)) {
         if (data > 0) {
-            strncpy(buffer,"PLUS-INFINITY", width = 13);
+            type = ePositiveInfinity;
         } else {
-            strncpy(buffer,"MINUS-INFINITY", width = 14);
+            type = eNegativeInfinity;
         }
     }
     else
@@ -711,11 +723,7 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
     if (m_FastWriteDouble) {
         width = (int)NStr::DoubleToStringPosix(data, digits, buffer, sizeof(buffer));
     } else {
-#if 0
-        int shift = int(ceil(log10(fabs(data))));
-#else
         int shift = 0;
-#endif
         int precision = int(digits - shift);
         if ( precision < 0 )
             precision = 0;
@@ -732,13 +740,26 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
         if (dot) {
             *dot = '.'; // enforce C locale
         }
-
     }
 
-    WriteSysTag(eReal);
     WriteLength(width + 1);
-    WriteByte(eDecimal);
-    WriteBytes(buffer, width);
+    if (width) {
+// added 21 Sep 2014
+// to enable later
+#if 0
+        type = eDecimal_NR1;
+        if (strchr(buffer,'.')) {
+            type = eDecimal_NR2;
+        }
+        if (strpbrk(buffer,"eE") != NULL) {
+            type = eDecimal_NR3;
+        }
+#endif
+        WriteByte(type);
+        WriteBytes(buffer, width);
+    } else {
+        WriteByte(type);
+    }
 }
 
 void CObjectOStreamAsnBinary::WriteDouble(double data)

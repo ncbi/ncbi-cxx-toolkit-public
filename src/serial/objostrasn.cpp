@@ -185,7 +185,12 @@ void CObjectOStreamAsn::WriteDouble2(double data, unsigned digits)
     }
 #endif
     if ( data == 0.0 ) {
-        m_Output.PutString("{ 0, 10, 0 }");
+        double zero = 0.;
+        if (memcmp(&data, &zero, sizeof(double)) == 0) {
+            m_Output.PutString("{ 0, 10, 0 }");
+        } else {
+            m_Output.PutString("{ -0, 10, 0 }");
+        }
         return;
     }
 

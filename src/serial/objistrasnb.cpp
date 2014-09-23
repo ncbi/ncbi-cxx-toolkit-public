@@ -616,27 +616,39 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     ExpectSysTag(eReal);
     size_t length = ReadLength();
     if ( length < 2 ) {
-        ThrowError(fFormatError, "too short REAL data: length < 2");
+        if ( length == 0 ) {
+            EndOfTag();
+            return 0.;
+        }
+        Uint1 special = ReadByte();
+        EndOfTag();
+        if (special == ePositiveInfinity) {
+            return HUGE_VAL;
+        } else if (special == eNegativeInfinity) {
+            return -HUGE_VAL;
+        } else if (special == eNotANumber) {
+            return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
+        } else if (special == eNegativeZero) {
+            return -0.;
+        }
+        ThrowError(fFormatError, "Unrecognized REAL data");
     }
     if ( length > kMaxDoubleLength ) {
         ThrowError(fFormatError, "too long REAL data: length > "
             + NStr::SizetToString(kMaxDoubleLength));
     }
 
-    ExpectByte(eDecimal);
+    Uint1 type = ReadByte();
+    if ((type & eDecimalEncoding) != eDecimal) {
+        ThrowError(fNotImplemented, "Unsupported encoding of REAL data: encoding = "
+            + NStr::NumericToString(type));
+    }
     length--;
     char buffer[kMaxDoubleLength + 2];
     ReadBytes(buffer, length);
     EndOfTag();
     buffer[length] = 0;
     char* endptr;
-    if (NStr::strcasecmp(buffer,"PLUS-INFINITY") == 0) {
-        return HUGE_VAL;
-    } else if (NStr::strcasecmp(buffer,"MINUS-INFINITY") == 0) {
-        return -HUGE_VAL;
-    } else if (NStr::strcasecmp(buffer,"NOT-A-NUMBER") == 0) {
-        return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
-    }
     double data = NStr::StringToDoublePosix(buffer, &endptr);
     if ( *endptr != 0 ) {
         ThrowError(fFormatError, "bad REAL data string");
