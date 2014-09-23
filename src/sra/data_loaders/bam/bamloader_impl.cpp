@@ -95,7 +95,7 @@ static int GetDebugLevel(void)
 
 
 NCBI_PARAM_DECL(bool, BAM_LOADER, PILEUP_GRAPHS);
-NCBI_PARAM_DEF_EX(bool, BAM_LOADER, PILEUP_GRAPHS, 1,
+NCBI_PARAM_DEF_EX(bool, BAM_LOADER, PILEUP_GRAPHS, true,
                   eParam_NoThread, BAM_LOADER_PILEUP_GRAPHS);
 
 bool CBAMDataLoader::GetPileupGraphsParamDefault(void)
