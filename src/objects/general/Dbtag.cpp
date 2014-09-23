@@ -256,34 +256,28 @@ DEFINE_STATIC_ARRAY_MAP(TDbxrefTypeMap, sc_ApprovedProbeDb,  kApprovedProbeDbXre
 DEFINE_STATIC_ARRAY_MAP(TDbxrefSet,     sc_SkippableDbXrefs, kSkippableDbXrefs);
 
 struct STaxidTaxname {
-    STaxidTaxname( 
-        const string & genus,
-        const string & species,
-        const string & subspecies ) :
-        m_genus(genus), m_species(species), m_subspecies(subspecies) { }
-
-    string m_genus;
-    string m_species;
-    string m_subspecies;
+    const char* m_genus;
+    const char* m_species;
+    const char* m_subspecies;
 };
 // Is hard-coding this here the best way to do this?
 typedef SStaticPair<int, STaxidTaxname> TTaxIdTaxnamePair;
 static const TTaxIdTaxnamePair sc_taxid_taxname_pair[] = {
-    { 7955, STaxidTaxname("Danio", "rerio", kEmptyStr)  },
-    { 8022, STaxidTaxname("Oncorhynchus", "mykiss", kEmptyStr)  },
-    { 9606, STaxidTaxname("Homo", "sapiens", kEmptyStr)  },
-    { 9615, STaxidTaxname("Canis", "lupus", "familiaris")  },
-    { 9838, STaxidTaxname("Camelus", "dromedarius", kEmptyStr)  },
-    { 9913, STaxidTaxname("Bos", "taurus", kEmptyStr)  },
-    { 9986, STaxidTaxname("Oryctolagus", "cuniculus", kEmptyStr)  },
-    { 10090, STaxidTaxname("Mus", "musculus", kEmptyStr)  },
-    { 10093, STaxidTaxname("Mus", "pahari", kEmptyStr)  },
-    { 10094, STaxidTaxname("Mus", "saxicola", kEmptyStr)  },
-    { 10096, STaxidTaxname("Mus", "spretus", kEmptyStr)  },
-    { 10098, STaxidTaxname("Mus", "cookii", kEmptyStr)  },
-    { 10105, STaxidTaxname("Mus", "minutoides", kEmptyStr)  },
-    { 10116, STaxidTaxname("Rattus", "norvegicus", kEmptyStr)  },
-    { 10117, STaxidTaxname("Rattus", "rattus", kEmptyStr)  }
+    { 7955, { "Danio", "rerio", "" }  },
+    { 8022, { "Oncorhynchus", "mykiss", "" }  },
+    { 9606, { "Homo", "sapiens", "" }  },
+    { 9615, { "Canis", "lupus", "familiaris" }  },
+    { 9838, { "Camelus", "dromedarius", "" }  },
+    { 9913, { "Bos", "taurus", "" }  },
+    { 9986, { "Oryctolagus", "cuniculus", "" }  },
+    { 10090, { "Mus", "musculus", "" }  },
+    { 10093, { "Mus", "pahari", "" }  },
+    { 10094, { "Mus", "saxicola", "" }  },
+    { 10096, { "Mus", "spretus", "" }  },
+    { 10098, { "Mus", "cookii", "" }  },
+    { 10105, { "Mus", "minutoides", "" }  },
+    { 10116, { "Rattus", "norvegicus", "" }  },
+    { 10117, { "Rattus", "rattus", "" }  }
 };
 
 typedef CStaticPairArrayMap<int, STaxidTaxname> TTaxIdTaxnameMap;
