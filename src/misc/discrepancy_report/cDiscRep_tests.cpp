@@ -3088,7 +3088,6 @@ bool CBioseq_test_on_rrna :: NameNotStandard(const string& nm)
         is_no_case_equal = true; 
         break;
     }
-    else i++;
   }
 
   vector <string> arr;
@@ -11332,6 +11331,12 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
   block_text = CTestAndRepData::FindReplaceString(
                           block_text, m_taxname, "", false, true);
   CSeqdesc_CI sci(thisInfo.scope->GetBioseqHandle(*m_bsq), m_seqdesc_sel);
+#if 0
+if (block_text.find("homologue") != string::npos) {
+cerr << "block_text " << block_text << endl;
+}
+#endif
+
   ITERATE (Str2CombDt, it, thisInfo.fix_data) {
      string strtmp;
      CConstRef <CObject> obj_ref;
@@ -11430,7 +11435,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
                       CFlatFileConfig::eMode_GBench,
                       CFlatFileConfig::eStyle_Normal,
                       CFlatFileConfig::fShowContigFeatures,
-                      CFlatFileConfig::fViewAll | CFlatFileConfig::fViewFirst,
+                      CFlatFileConfig::fViewAll, // | CFlatFileConfig::fViewFirst,
                       CFlatFileConfig::fGffGTFCompat,
                       (CFlatFileConfig::FGenbankBlocks)blocks,
                       &flatfile_find);
