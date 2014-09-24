@@ -10528,3 +10528,71 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061,
+          fuzz-to lim circle
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061,
+          fuzz-from lim circle
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole local str "CDNA_59",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061
+        }
+      }
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      product whole local str "PROT_59",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061,
+          fuzz-to lim circle
+        },
+        {
+          from 0,
+          to 1448,
+          strand plus,
+          id gi 17158061,
+          fuzz-from lim circle
+        }
+      }
+    }
+  }
+}
