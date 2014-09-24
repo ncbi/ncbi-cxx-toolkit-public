@@ -580,7 +580,7 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
 }
 
 void CNetScheduleServerListener::OnError(
-    const string& err_msg, CNetServer& /*server*/)
+    const string& err_msg, CNetServer& server)
 {
     string code;
     string msg;
@@ -600,7 +600,9 @@ void CNetScheduleServerListener::OnError(
         NCBI_THROW(CNetServiceException, eCommunicationError, err_msg);
 
     case CNetScheduleException::eGroupNotFound:
-        // Ignore this error.
+    case CNetScheduleException::eAffinityNotFound:
+        // Convert these errors into warnings.
+        OnWarning(msg, server);
         break;
 
     case CNetScheduleException::eJobNotFound:
