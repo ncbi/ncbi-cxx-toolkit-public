@@ -6108,6 +6108,12 @@ if test "$with_libxml" != "no"; then
          LIBXML_INCLUDE="-I$LIBXML_PATH/include/libxml2 -I$LIBXML_PATH/include"
       elif test -d "$LIBXML_PATH/include/libxml"; then
          LIBXML_INCLUDE="-I$LIBXML_PATH/include";
+      else
+         case "$host_os" in
+            darwin* )
+               LIBXML_INCLUDE="-iwithsysroot $LIBXML_PATH/include/libxml2"
+               ;;
+         esac
       fi
       if test -d "$LIBXML_PATH/lib${bit64_sfx}"; then
          LIBXML_LIBPATH_="$LIBXML_PATH/lib${bit64_sfx}"
@@ -6117,7 +6123,10 @@ if test "$with_libxml" != "no"; then
       NCBI_RPATHIFY_COND(LIBXML_LIBPATH, $LIBXML_LIBPATH_)
       LIBXML_LIBS="$LIBXML_LIBPATH -lxml2"
    else
-      LIBXML_INCLUDE="-I/usr/include/libxml2"
+      case "$host_os" in
+         darwin* ) LIBXML_INCLUDE="-iwithsysroot /usr/include/libxml2" ;;
+         *       ) LIBXML_INCLUDE="-I/usr/include/libxml2" ;;
+      esac
       LIBXML_LIBS="-lxml2"
       in_path=
    fi

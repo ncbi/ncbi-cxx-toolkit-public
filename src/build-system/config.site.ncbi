@@ -7,6 +7,30 @@
 . `dirname $0`/../../scripts/common/common.sh
 ncbi_platform=`COMMON_DetectPlatform`
 
+case "$ncbi_platform" in
+    *MAC )
+        test() {
+            case "$#:$1:$2" in
+                2:-[dfx]:/* )
+                    if builtin test "$1" "$2"; then
+                        return 0
+                    else
+                        for x in /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/*.sdk"$2"; do
+                            if builtin test "$1" "$x"; then
+                                return 0
+                            fi
+                        done
+                        return 1
+                    fi
+                    ;;
+                * ) 
+                    builtin test "$@"
+                    ;;
+            esac
+        }
+        ;;
+esac
+
 try_local() {
     # /sw (Mac)? /usr/sfw (Solaris)?
     for d in /usr /usr/local /usr/X11 /usr/openwin; do
@@ -257,3 +281,7 @@ case "$ncbi_platform" in
 esac
 
 try_local
+
+case "$ncbi_platform" in
+    *MAC ) unset -f test ;;
+esac
