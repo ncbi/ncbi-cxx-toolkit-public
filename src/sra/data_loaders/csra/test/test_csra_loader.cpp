@@ -1327,3 +1327,8 @@ BOOST_AUTO_TEST_CASE(CheckPrivate1)
     BOOST_CHECK(!isError);
 }
 
+
+NCBITEST_INIT_TREE()
+{
+    NCBITEST_DISABLE(CheckPrivate1);
+}
