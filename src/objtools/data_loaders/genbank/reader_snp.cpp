@@ -209,7 +209,7 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 
 #ifdef _DEBUG
 NCBI_PARAM_DECL(bool, GENBANK, SNP_TABLE_DUMP);
-NCBI_PARAM_DEF_EX(bool, GENBANK, SNP_TABLE_DUMP, 0,
+NCBI_PARAM_DEF_EX(bool, GENBANK, SNP_TABLE_DUMP, false,
                   eParam_NoThread, GENBANK_SNP_TABLE_DUMP);
 #endif
 
