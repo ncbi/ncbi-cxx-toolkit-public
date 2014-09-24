@@ -766,12 +766,12 @@ BOOST_AUTO_TEST_CASE(FetchSeq8)
         //NcbiCout<<MSerial_AsnText<<*scope.GetBioseqHandle(idh).GetCompleteObject();
         NcbiCout << "Got reference handle in " << sw.Restart() << NcbiEndl;
     }
-    
+
     if ( 1 ) {
         sx_CheckNames(scope, *loc, annot_name);
         NcbiCout << "Got names in " << sw.Restart() << NcbiEndl;
     }
-    
+
     SAnnotSelector sel(CSeq_annot::C_Data::e_Align);
     sel.SetSearchUnresolved();
 
@@ -1297,4 +1297,33 @@ BOOST_AUTO_TEST_CASE(MultipleIds2)
     }
 }
 
+BOOST_AUTO_TEST_CASE(CheckPrivate1)
+{
+    CRef<CObjectManager> om = sx_GetOM();
+
+    CCSRADataLoader::SLoaderParams params;
+
+    string path("http://gapsview11.be-md.ncbi.nlm.nih.gov/49DCAC8956E9BD404735BC18EA2E7986C1674A6F/SRR1219902.sra");
+    params.m_CSRAFiles.push_back(path);
+
+    string loader_name;
+    bool isError(false);
+    try {
+
+        NcbiCout << "Trying to create a loader for: " << path << NcbiEndl << NcbiFlush;
+
+        loader_name = CCSRADataLoader::RegisterInObjectManager(*om, params,
+                                                 CObjectManager::eNonDefault, 90)
+        .GetLoader()->GetName();
+    } catch (CException& e) {
+        isError = true;
+        NcbiCout << "!!!! Caught error: " << e.GetMsg() << NcbiEndl;
+    }
+    if(!loader_name.empty()) {
+        NcbiCout << "Loader created successfully" << NcbiEndl;
+
+        sx_ReportCSraLoaderName(loader_name);
+    }
+    BOOST_CHECK(!isError);
+}
 
