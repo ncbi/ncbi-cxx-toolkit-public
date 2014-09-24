@@ -221,6 +221,7 @@ void GetLinkoutTypes(vector<TLinkoutTypeString>& rv)
     rv.push_back(make_pair(eStructure, string("eStructure")));
     rv.push_back(make_pair(eGeo, string("eGeo")));
     rv.push_back(make_pair(eGene, string("eGene")));
+    rv.push_back(make_pair(eFromVerifiedMaterial, string("eFromVerifiedMaterial")));
     rv.push_back(make_pair(eMapviewer, string("eMapviewer")));
     rv.push_back(make_pair(eGenomicSeq, string("eGenomicSeq")));
     rv.push_back(make_pair(eBioAssay, string("eBioAssay")));

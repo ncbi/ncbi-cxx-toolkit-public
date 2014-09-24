@@ -48,7 +48,8 @@ enum LinkoutTypes {
   eStructure              = (1<<2),  ///< Add Linkout for structure.
   eGeo                    = (1<<3),  ///< Add Linkout for Geo
   eGene                   = (1<<4),  ///< Add Linkout for Gene
-  eHitInMapviewer         = (1<<5),  ///< NCBI_DEPRECATED, use eMapviewer
+  eFromVerifiedMaterial   = (1<<5),  ///< Identifies sequences from verified material 
+                                     ///< (Entrez query: 177353[BioProject])
   eMapviewer              = (1<<6),  ///< The main blast link goes to entrez but we put on a linkout icon that goes to mapviewer.
   eGenomicSeq             = (1<<7),  ///< Is a genomic sequence.  Used for the genome+transcript database to show the genomic 
                                      ///< and transcript sequences separately.
