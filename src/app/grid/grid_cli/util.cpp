@@ -140,9 +140,10 @@ struct SExecAnyCmdToJson : public IExecToJson
 CJsonNode SExecAnyCmdToJson::ExecOn(CNetServer server)
 {
     if (!m_Multiline)
-        return CJsonNode::NewStringNode(server.ExecWithRetry(m_Cmd).response);
+        return CJsonNode::NewStringNode(server.ExecWithRetry(m_Cmd,
+                false).response);
 
-    CNetServerMultilineCmdOutput output(server.ExecWithRetry(m_Cmd));
+    CNetServerMultilineCmdOutput output(server.ExecWithRetry(m_Cmd, true));
 
     CJsonNode lines(CJsonNode::NewArrayNode());
     string line;
@@ -267,7 +268,8 @@ static CJsonNode s_WordsToJsonArray(const CTempString& str)
 
 CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
 {
-    CNetServerMultilineCmdOutput output(worker_node.ExecWithRetry("STAT"));
+    CNetServerMultilineCmdOutput output(
+            worker_node.ExecWithRetry("STAT", true));
 
     CJsonNode wn_info(CJsonNode::NewObjectNode());
 
@@ -405,12 +407,12 @@ void g_SuspendWorkerNode(CNetServer worker_node,
         cmd += " timeout=";
         cmd += NStr::NumericToString(timeout);
     }
-    worker_node.ExecWithRetry(cmd);
+    worker_node.ExecWithRetry(cmd, false);
 }
 
 void g_ResumeWorkerNode(CNetServer worker_node)
 {
-    worker_node.ExecWithRetry("RESUME");
+    worker_node.ExecWithRetry("RESUME", false);
 }
 
 void g_GetUserAndHost(string* user, string* host)

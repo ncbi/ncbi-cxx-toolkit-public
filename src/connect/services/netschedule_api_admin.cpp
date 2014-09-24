@@ -108,7 +108,7 @@ CNetServerMultilineCmdOutput CNetScheduleAdmin::DumpJob(const string& job_key)
 {
     string cmd("DUMP " + job_key);
     g_AppendClientIPAndSessionID(cmd);
-    return m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd);
+    return m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd, true);
 }
 
 void CNetScheduleAdmin::CancelAllJobs()
@@ -180,7 +180,7 @@ void CNetScheduleAdmin::GetQueueInfo(CNetServer server,
 {
     CNetServer::SExecResult exec_result;
 
-    server->ConnectAndExec(s_MkQINFCmd(queue_name), exec_result);
+    server->ConnectAndExec(s_MkQINFCmd(queue_name), false, exec_result);
 
     s_ParseQueueInfo(exec_result.response, queue_info);
 }
@@ -238,7 +238,7 @@ void CNetScheduleAdmin::GetWorkerNodes(
 
     for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
             CNetService::eIncludePenalized); it; ++it) {
-        CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
+        CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd, true));
         CNetServerMultilineCmdOutput output(exec_result);
 
         bool nodes_info = false;
@@ -334,7 +334,7 @@ void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 
         qlist.push_back(SServerQueueList(server));
 
-        CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
+        CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd, true));
         while (cmd_output.ReadLine(output_line))
             if (NStr::StartsWith(output_line, "[queue ") &&
                     output_line.length() > sizeof("[queue "))
@@ -371,7 +371,8 @@ void CNetScheduleAdmin::StatusSnapshot(
     try {
         for (CNetServiceIterator it = m_Impl->m_API->m_Service.Iterate(
                 CNetService::eIncludePenalized); it; ++it) {
-            CNetServerMultilineCmdOutput cmd_output((*it).ExecWithRetry(cmd));
+            CNetServerMultilineCmdOutput cmd_output(
+                    (*it).ExecWithRetry(cmd, true));
 
             while (cmd_output.ReadLine(output_line))
                 if (NStr::SplitInTwo(output_line, ":", st_str, cnt_str))

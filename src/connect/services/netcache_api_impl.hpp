@@ -115,6 +115,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 
     CNetServer::SExecResult ExecMirrorAware(
         const CNetCacheKey& key, const string& cmd,
+        bool multiline_output,
         const CNetCacheAPIParameters* parameters,
         SNetServiceImpl::EServerErrorHandling error_handling =
             SNetServiceImpl::eRethrowServerErrors);

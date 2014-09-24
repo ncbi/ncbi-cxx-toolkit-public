@@ -104,7 +104,7 @@ string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
     }
 
     CNetServer::SExecResult exec_result(
-            m_API->m_Service.FindServerAndExec(cmd));
+            m_API->m_Service.FindServerAndExec(cmd, false));
 
     if ((job.job_id = exec_result.response).empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -140,7 +140,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
     }
 
     CNetServer::SExecResult exec_result(
-        m_Impl->m_API->m_Service.FindServerAndExec(cmd));
+        m_Impl->m_API->m_Service.FindServerAndExec(cmd, false));
 
     cmd.reserve(max_input_size * 6);
     string host;
@@ -169,7 +169,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
             exec_result.conn->WriteLine(cmd);
         }
 
-        string resp = exec_result.conn.Exec("ENDB");
+        string resp = exec_result.conn.Exec("ENDB", false);
 
         if (resp.empty()) {
             NCBI_THROW(CNetServiceException, eProtocolError,
@@ -231,7 +231,7 @@ void CNetScheduleSubmitter::SubmitJobBatch(vector<CNetScheduleJob>& jobs,
 
     } // for
 
-    exec_result.conn.Exec("ENDS");
+    exec_result.conn.Exec("ENDS", false);
 }
 
 class CReadCmdExecutor : public INetServerFinder
@@ -259,7 +259,7 @@ private:
 
 bool CReadCmdExecutor::Consider(CNetServer server)
 {
-    string response = server.ExecWithRetry(m_Cmd).response;
+    string response = server.ExecWithRetry(m_Cmd, false).response;
 
     if (response.empty() || response[0] == '0')
         return false;
@@ -333,7 +333,7 @@ void SNetScheduleSubmitterImpl::FinalizeRead(const char* cmd_start,
 
     g_AppendClientIPAndSessionID(cmd);
 
-    m_API->GetServer(job_id).ExecWithRetry(cmd);
+    m_API->GetServer(job_id).ExecWithRetry(cmd, false);
 }
 
 void CNetScheduleSubmitter::ReadConfirm(const string& job_id,
@@ -471,7 +471,7 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
 
     g_AppendClientIPAndSessionID(cmd);
 
-    m_Message = ns_api->GetServer(job_id).ExecWithRetry(cmd).response;
+    m_Message = ns_api->GetServer(job_id).ExecWithRetry(cmd, false).response;
 
     string attr_values[2];
 

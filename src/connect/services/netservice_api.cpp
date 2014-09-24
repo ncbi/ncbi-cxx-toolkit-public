@@ -618,16 +618,14 @@ void CNetService::PrintCmdOutput(const string& cmd,
         if (load_balanced)
             output_stream << '[' << (*it).GetServerAddress() << ']' << endl;
 
-        CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
-
         switch (output_style) {
         case eSingleLineOutput:
-            output_stream << exec_result.response << endl;
+            output_stream << (*it).ExecWithRetry(cmd, false).response << endl;
             break;
 
         case eUrlEncodedOutput:
             {
-                CUrlArgs url_parser(exec_result.response);
+                CUrlArgs url_parser((*it).ExecWithRetry(cmd, false).response);
 
                 ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
                     output_stream << field->name <<
@@ -638,7 +636,8 @@ void CNetService::PrintCmdOutput(const string& cmd,
 
         default:
             {
-                CNetServerMultilineCmdOutput output(exec_result);
+                CNetServerMultilineCmdOutput output(
+                        (*it).ExecWithRetry(cmd, true));
 
                 if (output_style == eMultilineOutput_NetCacheStyle)
                     output->SetNetCacheCompatMode();
@@ -729,7 +728,8 @@ CNetServer SRandomServiceTraversal::NextServer()
     return ++m_Iterator ? *m_Iterator : CNetServer();
 }
 
-CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
+CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd,
+        bool multiline_output)
 {
     switch (m_Impl->m_ServiceType) {
     default: // CNetService::eServiceNotDefined
@@ -743,7 +743,8 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 
             SRandomServiceTraversal random_traversal(*this);
 
-            m_Impl->IterateUntilExecOK(cmd, exec_result, &random_traversal,
+            m_Impl->IterateUntilExecOK(cmd, multiline_output,
+                    exec_result, &random_traversal,
                     SNetServiceImpl::eIgnoreServerErrors);
 
             return exec_result;
@@ -755,7 +756,7 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
                     m_Impl->m_ServerPool->ReturnServer(
                     m_Impl->m_DiscoveredServers->m_Servers.front().first)));
 
-            return server.ExecWithRetry(cmd);
+            return server.ExecWithRetry(cmd, multiline_output);
         }
     }
 }
@@ -763,7 +764,7 @@ CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd)
 void CNetService::ExecOnAllServers(const string& cmd)
 {
     for (CNetServiceIterator it = Iterate(eIncludePenalized); it; ++it)
-        (*it).ExecWithRetry(cmd);
+        (*it).ExecWithRetry(cmd, false);
 }
 
 void SNetServiceImpl::DiscoverServersIfNeeded()
@@ -899,6 +900,7 @@ bool SNetServiceImpl::IsInService(CNetServer::TInstance server)
 }
 
 void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
+    bool multiline_output,
     CNetServer::SExecResult& exec_result,
     IServiceTraversal* service_traversal,
     SNetServiceImpl::EServerErrorHandling error_handling)
@@ -922,7 +924,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
     for (;;) {
         try {
-            server->ConnectAndExec(cmd, exec_result, timeout);
+            server->ConnectAndExec(cmd, multiline_output, exec_result, timeout);
             return;
         }
         catch (CNetCacheException& ex) {

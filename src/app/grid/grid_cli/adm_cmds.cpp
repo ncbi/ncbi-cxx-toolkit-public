@@ -469,7 +469,7 @@ int CGridCommandLineInterfaceApp::Cmd_Suspend()
                 for (;;) {
                     unsigned jobs_running = 0;
                     CNetServerMultilineCmdOutput stat_output(
-                            worker_node.ExecWithRetry("STAT"));
+                            worker_node.ExecWithRetry("STAT", true));
                     while (stat_output.ReadLine(output_line))
                         if (NStr::StartsWith(output_line, "Jobs Running: "))
                             jobs_running = NStr::StringToUInt(

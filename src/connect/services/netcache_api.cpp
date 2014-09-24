@@ -208,7 +208,7 @@ void CNetCacheServerListener::OnConnected(CNetServerConnection& connection)
         connection->WriteLine(m_Auth);
     } else {
         try {
-            string version_info(connection.Exec(m_Auth + "\r\nVERSION"));
+            string version_info(connection.Exec(m_Auth + "\r\nVERSION", false));
 
             server_props->mirroring_checked = true;
 
@@ -401,6 +401,7 @@ CNetServer SNetCacheMirrorTraversal::NextServer()
 
 CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
     const CNetCacheKey& key, const string& cmd,
+    bool multiline_output,
     const CNetCacheAPIParameters* parameters,
     SNetServiceImpl::EServerErrorHandling error_handling)
 {
@@ -449,7 +450,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 // them into host:port immediately.
 
                 if (!key_is_mirrored)
-                    return server.ExecWithRetry(cmd);
+                    return server.ExecWithRetry(cmd, multiline_output);
 
                 CNetServer::SExecResult exec_result;
 
@@ -458,8 +459,8 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                                         the server is discovered
                                         through this service */);
 
-                m_Service->IterateUntilExecOK(cmd, exec_result,
-                        &mirror_traversal, error_handling);
+                m_Service->IterateUntilExecOK(cmd, multiline_output,
+                        exec_result, &mirror_traversal, error_handling);
 
                 return exec_result;
             }
@@ -484,7 +485,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
         SNetCacheMirrorTraversal mirror_traversal(service,
                 primary_server, server_check);
 
-        m_Service->IterateUntilExecOK(cmd, exec_result,
+        m_Service->IterateUntilExecOK(cmd, multiline_output, exec_result,
                 &mirror_traversal, error_handling);
 
         return exec_result;
@@ -498,7 +499,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 "accessed because it is not registered for the service.");
     }
 
-    return primary_server.ExecWithRetry(cmd);
+    return primary_server.ExecWithRetry(cmd, multiline_output);
 }
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
@@ -568,11 +569,11 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
     CNetServer::SExecResult exec_result;
 
     if (write_existing_blob)
-        exec_result = ExecMirrorAware(key, cmd, parameters,
+        exec_result = ExecMirrorAware(key, cmd, false, parameters,
                 SNetServiceImpl::eIgnoreServerErrors);
     else {
         try {
-            exec_result = m_Service.FindServerAndExec(cmd);
+            exec_result = m_Service.FindServerAndExec(cmd, false);
         } catch (CNetSrvConnException& e) {
             SServerAddress* backup = s_GetFallbackServer();
 
@@ -585,7 +586,8 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
                 m_Service.GetServiceName() << ":" << e.what() <<
                 ". Connecting to backup server " << backup->AsString() << ".");
 
-            exec_result = m_Service.GetServer(*backup).ExecWithRetry(cmd);
+            exec_result =
+                    m_Service.GetServer(*backup).ExecWithRetry(cmd, false);
         }
     }
 
@@ -694,8 +696,10 @@ bool CNetCacheAPI::HasBlob(const string& blob_id,
     parameters.LoadNamedParameters(optional);
 
     try {
-        return m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("HASB ",
-                key, &parameters), &parameters).response[0] == '1';
+        return m_Impl->ExecMirrorAware(key,
+                m_Impl->MakeCmd("HASB ", key, &parameters),
+                false,
+                &parameters).response[0] == '1';
     }
     catch (CNetCacheException& e) {
         if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
@@ -714,8 +718,11 @@ size_t CNetCacheAPI::GetBlobSize(const string& blob_id,
 
     parameters.LoadNamedParameters(optional);
 
-    return CheckBlobSize(NStr::StringToUInt8(m_Impl->ExecMirrorAware(key,
-        m_Impl->MakeCmd("GSIZ ", key, &parameters), &parameters).response));
+    return CheckBlobSize(NStr::StringToUInt8(
+            m_Impl->ExecMirrorAware(key,
+                    m_Impl->MakeCmd("GSIZ ", key, &parameters),
+                    false,
+                    &parameters).response));
 }
 
 
@@ -729,11 +736,15 @@ void CNetCacheAPI::Remove(const string& blob_id,
     CNetCacheKey key(blob_id, m_Impl->m_CompoundIDPool);
 
     try {
-        m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("RMV2 ",
-                key, &parameters), &parameters);
-    } catch (std::exception& e) {
+        m_Impl->ExecMirrorAware(key,
+                m_Impl->MakeCmd("RMV2 ", key, &parameters),
+                false,
+                &parameters);
+    }
+    catch (std::exception& e) {
         ERR_POST("Could not remove blob \"" << blob_id << "\": " << e.what());
-    } catch (...) {
+    }
+    catch (...) {
         ERR_POST("Could not remove blob \"" << blob_id << "\"");
     }
 }
@@ -757,7 +768,7 @@ CNetServerMultilineCmdOutput CNetCacheAPI::GetBlobInfo(const string& blob_id,
     parameters.LoadNamedParameters(optional);
 
     CNetServerMultilineCmdOutput output(m_Impl->ExecMirrorAware(key,
-            cmd, &parameters));
+            cmd, true, &parameters));
 
     output->SetNetCacheCompatMode();
 
@@ -795,7 +806,7 @@ void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl,
 
     m_Impl->AppendClientIPSessionIDPasswordAgeHitID(&cmd, &parameters);
 
-    m_Impl->ExecMirrorAware(key_obj, cmd, &parameters);
+    m_Impl->ExecMirrorAware(key_obj, cmd, false, &parameters);
 }
 
 IReader* CNetCacheAPI::GetReader(const string& key, size_t* blob_size,
@@ -884,7 +895,8 @@ CNetCacheReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
         cmd += NStr::NumericToString(max_age);
     }
 
-    CNetServer::SExecResult exec_result(ExecMirrorAware(key, cmd, &parameters));
+    CNetServer::SExecResult exec_result(
+            ExecMirrorAware(key, cmd, false, &parameters));
 
     unsigned* actual_age_ptr = parameters.GetActualBlobAgePtr();
     if (max_age > 0 && actual_age_ptr != NULL)

@@ -329,7 +329,7 @@ CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
 {
     CNetScheduleStructuredOutputParser parser;
 
-    return parser.ParseObject(server.ExecWithRetry(m_Cmd).response);
+    return parser.ParseObject(server.ExecWithRetry(m_Cmd, false).response);
 }
 
 CJsonNode g_ExecStructuredNetScheduleCmdToJson(CNetScheduleAPI ns_api,
@@ -371,7 +371,7 @@ CJsonNode g_GenericStatToJson(CNetServer server,
     if (verbose)
         stat_cmd.append(" VERBOSE");
 
-    CNetServerMultilineCmdOutput output(server.ExecWithRetry(stat_cmd));
+    CNetServerMultilineCmdOutput output(server.ExecWithRetry(stat_cmd, true));
 
     CJsonNode entities(CJsonNode::NewArrayNode());
     CJsonNode entity_info;
@@ -432,7 +432,7 @@ CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
 {
     const string stat_cmd(verbose ? "STAT ALL" : "STAT");
 
-    CNetServerMultilineCmdOutput output(server.ExecWithRetry(stat_cmd));
+    CNetServerMultilineCmdOutput output(server.ExecWithRetry(stat_cmd, true));
 
     CJsonNode stat_info(CJsonNode::NewObjectNode());
     CJsonNode jobs_by_status(CJsonNode::NewObjectNode());;
@@ -527,7 +527,7 @@ struct SQueueInfoToJson : public IExecToJson
 
 CJsonNode SQueueInfoToJson::ExecOn(CNetServer server)
 {
-    CNetServerMultilineCmdOutput output(server.ExecWithRetry(m_Cmd));
+    CNetServerMultilineCmdOutput output(server.ExecWithRetry(m_Cmd, true));
 
     CJsonNode queue_map(CJsonNode::NewObjectNode());
     CJsonNode queue_params;

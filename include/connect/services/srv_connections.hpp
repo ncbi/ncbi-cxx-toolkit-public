@@ -110,6 +110,7 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     /// check that it starts with 'OK:', and return the
     /// remaining characters of the reply as a string.
     string Exec(const string& cmd,
+            bool multiline_output = false,
             STimeout* timeout = NULL,
             INetServerConnectionListener* conn_listener = NULL);
 };
@@ -161,6 +162,7 @@ class NCBI_XCONNECT_EXPORT CNetServer
     /// attempts to connect to the server and execute
     /// the specified command.
     SExecResult ExecWithRetry(const string& cmd,
+            bool multiline_output = false,
             INetServerConnectionListener* conn_listener = NULL);
 
     /// Retrieve basic information about the server as

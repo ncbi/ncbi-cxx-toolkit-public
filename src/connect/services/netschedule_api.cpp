@@ -366,7 +366,7 @@ void SNetScheduleAPIImpl::x_ClearNode()
 
         try {
             CNetServer::SExecResult exec_result;
-            server->ConnectAndExec(cmd, exec_result);
+            server->ConnectAndExec(cmd, false, exec_result);
         } catch (CNetSrvConnException& e) {
             if (m_Service.IsLoadBalanced()) {
                 ERR_POST(server->m_ServerInPool->m_Address.AsString() <<
@@ -548,7 +548,7 @@ void CNetScheduleServerListener::OnInit(
 void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
 {
     if (!m_WorkerNodeCompatMode) {
-        string version_info(connection.Exec(m_Auth));
+        string version_info(connection.Exec(m_Auth, false));
 
         CNetServerInfo server_info(new SNetServerInfoImpl(version_info));
 
@@ -985,7 +985,7 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
     string cmd("QINF2 " + m_Queue);
     g_AppendClientIPAndSessionID(cmd);
 
-    CUrlArgs url_parser(m_Service.FindServerAndExec(cmd).response);
+    CUrlArgs url_parser(m_Service.FindServerAndExec(cmd, false).response);
 
     enum {
         eMaxInputSize,
@@ -1034,7 +1034,8 @@ void CNetScheduleAPI::GetQueueParams(
 
     g_AppendClientIPAndSessionID(cmd);
 
-    CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd).response);
+    CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd,
+            false).response);
 
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
         queue_params[field->name] = field->value;
@@ -1047,7 +1048,8 @@ void CNetScheduleAPI::GetQueueParams(
     string cmd("GETP2");
     g_AppendClientIPAndSessionID(cmd);
 
-    CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd).response);
+    CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd,
+            false).response);
 
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
         queue_params[field->name] = field->value;

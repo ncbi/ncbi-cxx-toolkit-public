@@ -210,7 +210,7 @@ struct SNetScheduleAPIImpl : public CObject
         g_AppendClientIPAndSessionID(cmd);
 
         CNetServer::SExecResult exec_result;
-        GetServer(job_key)->ConnectAndExec(cmd, exec_result);
+        GetServer(job_key)->ConnectAndExec(cmd, false, exec_result);
 
         return exec_result.response;
     }

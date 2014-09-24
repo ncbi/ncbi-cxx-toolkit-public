@@ -208,7 +208,7 @@ void CNetScheduleExecutor::JobDelayExpiration(const string& job_key,
     cmd += ' ';
     cmd += NStr::NumericToString(runtime_inc);
     g_AppendClientIPAndSessionID(cmd);
-    m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd);
+    m_Impl->m_API->GetServer(job_key).ExecWithRetry(cmd, false);
 }
 
 class CGetJobCmdExecutor : public INetServerFinder
@@ -265,7 +265,7 @@ void SNetScheduleExecutorImpl::ClaimNewPreferredAffinity(
         for (CNetServiceIterator it =
                 m_API->m_Service.ExcludeServer(orig_server); it; ++it)
             try {
-                (*it).ExecWithRetry(new_preferred_aff_cmd);
+                (*it).ExecWithRetry(new_preferred_aff_cmd, false);
             }
             catch (CException& e) {
                 ERR_POST("Error while notifying " <<
@@ -306,7 +306,8 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
     CNetServer::SExecResult exec_result;
 
     try {
-        server->ConnectAndExec(get_cmd, exec_result, NULL, &get_cmd_listener);
+        server->ConnectAndExec(get_cmd, false,
+                exec_result, NULL, &get_cmd_listener);
     }
     catch (CNetScheduleException& e) {
         if (e.GetErrCode() != CNetScheduleException::ePrefAffExpired)
@@ -318,11 +319,12 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
             CFastMutexGuard guard(listener->m_AffinitySubmissionMutex);
 
             listener->SetAffinitiesSynced(server, false);
-            server->ConnectAndExec(MkSETAFFCmd(), exec_result);
+            server->ConnectAndExec(MkSETAFFCmd(), false,  exec_result);
             listener->SetAffinitiesSynced(server, true);
         }
 
-        server->ConnectAndExec(get_cmd, exec_result, NULL, &get_cmd_listener);
+        server->ConnectAndExec(get_cmd, false,
+                exec_result, NULL, &get_cmd_listener);
     }
 
     if (!g_ParseGetJobResponse(job, exec_result.response))
@@ -353,16 +355,21 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
     while (m_Impl->m_NotificationHandler.WaitForNotification(*deadline)) {
         CNetServer server;
         if (m_Impl->m_NotificationHandler.CheckRequestJobNotification(m_Impl,
-                &server) && g_ParseGetJobResponse(job, server.ExecWithRetry(
-                    m_Impl->m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
-                        base_cmd, deadline)).response)) {
+                &server) &&
+                g_ParseGetJobResponse(job,
+                        server.ExecWithRetry(
+                                m_Impl->m_NotificationHandler.
+                                        CmdAppendTimeoutAndClientInfo(
+                                                base_cmd, deadline),
+                                false).response)
+                ) {
             // Notify the rest of NetSchedule servers that
             // we are no longer listening on the UDP socket.
             string cancel_wget_cmd("CWGET");
             g_AppendClientIPAndSessionID(cancel_wget_cmd);
             for (CNetServiceIterator it =
                     m_Impl->m_API->m_Service.ExcludeServer(server); it; ++it)
-                (*it).ExecWithRetry(cancel_wget_cmd);
+                (*it).ExecWithRetry(cancel_wget_cmd, false);
 
             // Also, if a new preferred affinity is given by
             // the server, register it with the rest of servers.
@@ -470,7 +477,7 @@ bool CNetScheduleNotificationHandler::RequestJob(
     g_AppendClientIPAndSessionID(cancel_wget_cmd);
 
     while (--it)
-        (*it).ExecWithRetry(cancel_wget_cmd);
+        (*it).ExecWithRetry(cancel_wget_cmd, false);
 
     return true;
 }
@@ -509,11 +516,11 @@ void SNetScheduleExecutorImpl::ExecWithOrWithoutRetry(const string& job_key,
     CNetServer server(m_API->GetServer(job_key));
 
     if (!m_WorkerNodeMode)
-        server.ExecWithRetry(cmd);
+        server.ExecWithRetry(cmd, false);
     else {
         CNetServer::SExecResult exec_result;
 
-        server->ConnectAndExec(cmd, exec_result);
+        server->ConnectAndExec(cmd, false, exec_result);
     }
 }
 
@@ -552,7 +559,8 @@ void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
     cmd += '\"';
     g_AppendClientIPAndSessionID(cmd);
     CNetServer::SExecResult exec_result;
-    m_Impl->m_API->GetServer(job.job_id)->ConnectAndExec(cmd, exec_result);
+    m_Impl->m_API->GetServer(job.job_id)->ConnectAndExec(cmd,
+            false, exec_result);
 }
 
 void CNetScheduleExecutor::GetProgressMsg(CNetScheduleJob& job)
@@ -716,7 +724,7 @@ void CNetScheduleGETCmdListener::OnExec(
             CFastMutexGuard guard(listener->m_AffinitySubmissionMutex);
 
             if (listener->NeedToSubmitAffinities(conn_impl->m_Server)) {
-                conn.Exec(m_Executor->MkSETAFFCmd());
+                conn.Exec(m_Executor->MkSETAFFCmd(), false);
                 listener->SetAffinitiesSynced(conn_impl->m_Server, true);
             }
         }

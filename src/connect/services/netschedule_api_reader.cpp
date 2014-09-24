@@ -155,7 +155,7 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
 
     CNetServer::SExecResult exec_result;
 
-    server->ConnectAndExec(cmd, exec_result);
+    server->ConnectAndExec(cmd, false, exec_result);
 
     return s_ParseReadJobResponse(exec_result.response, job,
             job_status, no_more_jobs);

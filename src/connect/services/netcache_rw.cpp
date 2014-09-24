@@ -357,7 +357,7 @@ void CNetCacheWriter::Close()
     if (m_ResponseType == eNetCache_Wait) {
         try {
             string dummy;
-            m_Connection->ReadCmdOutputLine(dummy);
+            m_Connection->ReadCmdOutputLine(dummy, false);
         }
         catch (...) {
             AbortConnection();

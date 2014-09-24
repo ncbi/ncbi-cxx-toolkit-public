@@ -268,6 +268,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     };
 
     void IterateUntilExecOK(const string& cmd,
+        bool multiline_output,
         CNetServer::SExecResult& exec_result,
         IServiceTraversal* service_traversal,
         EServerErrorHandling error_handling);

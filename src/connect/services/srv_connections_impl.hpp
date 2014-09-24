@@ -78,6 +78,7 @@ struct SNetServerConnectionImpl : public CObject
 
     void WriteLine(const string& line);
     void ReadCmdOutputLine(string& result,
+            bool multiline_output,
             INetServerConnectionListener* conn_listener = NULL);
 
     void Close();
@@ -194,6 +195,7 @@ struct SNetServerImpl : public CObject
             INetServerConnectionListener* conn_listener = NULL);
 
     void ConnectAndExec(const string& cmd,
+            bool multiline_output,
             CNetServer::SExecResult& exec_result,
             STimeout* timeout = NULL,
             INetServerExecListener* exec_listener = NULL,

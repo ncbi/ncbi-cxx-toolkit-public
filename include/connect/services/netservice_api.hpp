@@ -117,7 +117,8 @@ class NCBI_XCONNECT_EXPORT CNetService
     EServiceType GetServiceType() const;
     bool IsLoadBalanced() const;
 
-    CNetServer::SExecResult FindServerAndExec(const string& cmd);
+    CNetServer::SExecResult FindServerAndExec(const string& cmd,
+            bool multiline_output = false);
 
     void ExecOnAllServers(const string& cmd);
 
