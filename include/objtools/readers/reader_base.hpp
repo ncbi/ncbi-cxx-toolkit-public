@@ -37,6 +37,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <util/format_guess.hpp>
 #include <util/line_reader.hpp>
+#include <util/icanceled.hpp>
 #include <objtools/readers/line_error.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -172,6 +173,14 @@ public:
         ILineReader& lr,
         IMessageListener* pErrors=0 );
        
+    void
+    SetProgressReportInterval(
+        unsigned int intv );
+
+    void
+    SetCanceler(
+        ICanceled* =0);
+
 protected:
     virtual void x_AssignTrackData(
         CRef<CSeq_annot>& );
@@ -181,35 +190,48 @@ protected:
         CRef<CSeq_annot>&,
         IMessageListener*);
         
-    virtual bool x_ParseTrackLine(
+    virtual bool xParseTrackLine(
         const string&,
         IMessageListener*);
         
-    virtual void x_SetBrowserRegion(
+    virtual void xSetBrowserRegion(
         const string&,
         CAnnot_descr&,
         IMessageListener*);
 
-    virtual void x_SetTrackData(
+    virtual void xSetTrackData(
         CRef<CSeq_annot>&,
         CRef<CUser_object>&,
         const string&,
-        const string& );
+        const string&);
                 
-    virtual void x_AddConversionInfo(
+    virtual void xAddConversionInfo(
         CRef< CSeq_annot >&,
         IMessageListener* );
                     
-    virtual void x_AddConversionInfo(
+    virtual void xAddConversionInfo(
         CRef< CSeq_entry >&,
-        IMessageListener* );
+        IMessageListener*);
     
-    virtual CRef<CUser_object> x_MakeAsnConversionInfo(
-        IMessageListener* );
+    virtual CRef<CUser_object> xMakeAsnConversionInfo(
+        IMessageListener*);
 
     bool xParseComment(
         const CTempString&,
         CRef<CSeq_annot>&);
+
+    virtual bool xReadInit();
+
+    virtual bool xProgressInit(
+        CNcbiIstream& istr);
+
+    void xReportProgress(
+        IMessageListener* =0 );
+
+    bool xIsReportingProgress() const;
+
+    
+    bool xIsOperationCanceled() const;
 
     void
     ProcessError(
@@ -235,8 +257,14 @@ protected:
     //  Data:
     //
     unsigned int m_uLineNumber;
+    unsigned int m_uProgressReportInterval;
+    unsigned int m_uNextProgressReport;
+    ios::streampos m_uMaxFilePos;
+
     TReaderFlags       m_iFlags;
     CTrackData*  m_pTrackDefaults;
+    CNcbiIstream* m_pInStream;
+    ICanceled* m_pCanceler;
 };
 
 END_objects_SCOPE

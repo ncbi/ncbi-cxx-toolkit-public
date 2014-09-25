@@ -321,7 +321,7 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>&);
 
-    virtual void x_SetTrackData(
+    virtual void xSetTrackData(
         CRef<CSeq_annot>&,
         CRef<CUser_object>&,
         const string&,

@@ -98,6 +98,7 @@
 #include <objtools/readers/ucscregion_reader.hpp>
 
 #include <algorithm>
+#include <ctime>
 
 #include "reader_data.hpp"
 
@@ -147,6 +148,10 @@ CReaderBase::CReaderBase(
     TReaderFlags flags) :
 //  ----------------------------------------------------------------------------
     m_uLineNumber(0),
+    m_uProgressReportInterval(0),
+    m_uMaxFilePos(0),
+    m_pInStream(0),
+    m_pCanceler(0),
     m_iFlags(flags)
 {
     m_pTrackDefaults = new CTrackData;
@@ -166,6 +171,7 @@ CReaderBase::ReadObject(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
+    xProgressInit(istr);
     CStreamLineReader lr( istr );
     return ReadObject( lr, pMessageListener );
 }
@@ -177,6 +183,7 @@ CReaderBase::ReadSeqAnnot(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
+    xProgressInit(istr);
     CStreamLineReader lr( istr );
     return ReadSeqAnnot( lr, pMessageListener );
 }
@@ -198,8 +205,11 @@ CReaderBase::ReadSeqEntry(
     IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
+    xProgressInit(istr);
     CStreamLineReader lr( istr );
-    return ReadSeqEntry( lr, pMessageListener );
+    CRef<CSeq_entry> pResult = ReadSeqEntry( lr, pMessageListener );
+    m_pInStream = 0;
+    return pResult;
 }
 
 //  ----------------------------------------------------------------------------
@@ -283,7 +293,7 @@ CReaderBase::ProcessWarning(
  }
 
 //  ----------------------------------------------------------------------------
-void CReaderBase::x_SetBrowserRegion(
+void CReaderBase::xSetBrowserRegion(
     const string& strRaw,
     CAnnot_descr& desc,
     IMessageListener* pEC)
@@ -378,7 +388,7 @@ bool CReaderBase::x_ParseBrowserLine(
                     "Bad browser line: incomplete position directive" ) );
                 ProcessError(*pErr, pEC);
             }
-            x_SetBrowserRegion(*it, desc, pEC);
+            xSetBrowserRegion(*it, desc, pEC);
         }
     }
 
@@ -431,7 +441,7 @@ bool CReaderBase::x_ParseTrackLine(
 }
 
 //  ----------------------------------------------------------------------------
-void CReaderBase::x_SetTrackData(
+void CReaderBase::xSetTrackData(
     CRef<CSeq_annot>& annot,
     CRef<CUser_object>& trackdata,
     const string& strKey,
@@ -454,58 +464,149 @@ bool CReaderBase::xParseComment(
 }
  
 //  ----------------------------------------------------------------------------
-void CReaderBase::x_AddConversionInfo(
+void CReaderBase::xAddConversionInfo(
     CRef<CSeq_annot >& annot,
-    IMessageListener *pMessageListener )
+    IMessageListener *pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    if ( !annot || !pMessageListener ) {
+    if (!annot || !pMessageListener) {
         return;
     }
-    if (0 == pMessageListener->LevelCount( eDiag_Critical )  &&
-        0 == pMessageListener->LevelCount( eDiag_Error ) &&
-        0 == pMessageListener->LevelCount( eDiag_Warning ) &&
-        0 == pMessageListener->LevelCount( eDiag_Info )) {
+    if (0 == pMessageListener->LevelCount(eDiag_Critical)  &&
+        0 == pMessageListener->LevelCount(eDiag_Error) &&
+        0 == pMessageListener->LevelCount(eDiag_Warning) &&
+        0 == pMessageListener->LevelCount(eDiag_Info)) {
         return;
     }
 
 
-    CRef<CAnnotdesc> user( new CAnnotdesc() );
-    user->SetUser( *x_MakeAsnConversionInfo( pMessageListener ) );
-    annot->SetDesc().Set().push_back( user );
+    CRef<CAnnotdesc> user(new CAnnotdesc());
+    user->SetUser(*xMakeAsnConversionInfo(pMessageListener));
+    annot->SetDesc().Set().push_back(user);
 }
 
 //  ----------------------------------------------------------------------------
-void CReaderBase::x_AddConversionInfo(
+void CReaderBase::xAddConversionInfo(
     CRef<CSeq_entry >& entry,
-    IMessageListener *pMessageListener )
+    IMessageListener *pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    if ( !entry || !pMessageListener ) {
+    if (!entry || !pMessageListener) {
         return;
     }
-    CRef<CSeqdesc> user( new CSeqdesc() );
-    user->SetUser( *x_MakeAsnConversionInfo( pMessageListener ) );
-    entry->SetDescr().Set().push_back( 
-        user );
+    CRef<CSeqdesc> user(new CSeqdesc());
+    user->SetUser(*xMakeAsnConversionInfo(pMessageListener));
+    entry->SetDescr().Set().push_back(user);
 }
 
 //  ----------------------------------------------------------------------------
-CRef<CUser_object> CReaderBase::x_MakeAsnConversionInfo(
+CRef<CUser_object> CReaderBase::xMakeAsnConversionInfo(
     IMessageListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CUser_object> conversioninfo( new CUser_object() );
-    conversioninfo->SetType().SetStr( "Conversion Info" );    
+    CRef<CUser_object> conversioninfo(new CUser_object());
+    conversioninfo->SetType().SetStr("Conversion Info");    
     conversioninfo->AddField( 
-        "critical errors", int ( pMessageListener->LevelCount( eDiag_Critical ) ) );
+        "critical errors", int(pMessageListener->LevelCount(eDiag_Critical)));
     conversioninfo->AddField( 
-        "errors", int ( pMessageListener->LevelCount( eDiag_Error ) ) );
+        "errors", int(pMessageListener->LevelCount(eDiag_Error)));
     conversioninfo->AddField( 
-        "warnings", int ( pMessageListener->LevelCount( eDiag_Warning ) ) );
+        "warnings", int(pMessageListener->LevelCount(eDiag_Warning)));
     conversioninfo->AddField( 
-        "notes", int ( pMessageListener->LevelCount( eDiag_Info ) ) );
+        "notes", int(pMessageListener->LevelCount(eDiag_Info)));
     return conversioninfo;
+}
+
+//  ----------------------------------------------------------------------------
+void CReaderBase::SetProgressReportInterval(
+    unsigned int intv)
+//  ----------------------------------------------------------------------------
+{
+    m_uProgressReportInterval = intv;
+    m_uNextProgressReport = (unsigned int)time(0) + intv;
+}
+
+//  ----------------------------------------------------------------------------
+bool CReaderBase::xIsReportingProgress() const
+//  ----------------------------------------------------------------------------
+{
+    if (0 == m_uProgressReportInterval) {
+        return false;
+    }
+    if (0 == m_pInStream) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+void CReaderBase::xReportProgress(
+    IMessageListener* pProgress)
+//  ----------------------------------------------------------------------------
+{
+    if (!xIsReportingProgress()) { // progress reports disabled
+        return;
+    }
+    unsigned int uCurrentTime = (unsigned int)time(0);
+    if (uCurrentTime < m_uNextProgressReport) { // not time yet
+        return;
+    }
+    // report something
+    ios::streampos curPos = m_pInStream->tellg();
+
+    stringstream progMessage;
+    progMessage 
+        << "Conversion progress: " << curPos << " of " << m_uMaxFilePos << " bytes.";
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Info,
+        m_uLineNumber,
+        progMessage.str(),
+        ILineError::eProblem_ProgressInfo) );
+    this->ProcessError(*pErr, pProgress);
+
+    m_uNextProgressReport += m_uProgressReportInterval;
+}
+
+//  ============================================================================
+bool CReaderBase::xReadInit()
+//  ============================================================================
+{
+    return true;
+}
+
+//  ============================================================================
+bool CReaderBase::xProgressInit(
+    CNcbiIstream& istr)
+//  ============================================================================
+{
+    if (0 == m_uProgressReportInterval) {
+        return true;
+    }
+    m_pInStream = &istr;
+    ios::streampos curPos = istr.tellg();
+    istr.seekg(0, ios::end);
+    m_uMaxFilePos = istr.tellg();
+    istr.seekg(curPos, ios::beg);
+    return true;
+}
+
+//  ============================================================================
+void CReaderBase::SetCanceler(
+    ICanceled* pCanceler)
+//  ============================================================================
+{
+    m_pCanceler = pCanceler;
+}
+
+//  ============================================================================
+bool CReaderBase::xIsOperationCanceled() const
+//  ============================================================================
+{
+    if (!m_pCanceler) {
+        return false;
+    }
+    return m_pCanceler->IsCanceled();
 }
 
 END_objects_SCOPE

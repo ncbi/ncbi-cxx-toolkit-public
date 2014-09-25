@@ -202,7 +202,7 @@ CMicroArrayReader::ReadSeqAnnot(
     if (0 == featureCount) {
         return CRef<CSeq_annot>();
     }
-    x_AddConversionInfo(annot, pEC);
+    xAddConversionInfo(annot, pEC);
     x_AssignTrackData( annot );
 
     if(m_columncount >= 3) {
@@ -386,43 +386,43 @@ void CMicroArrayReader::xSetTrackData(
 {
     CAnnot_descr& desc = annot->SetDesc();
 
-    if ( strKey == "useScore" ) {
-        m_usescore = ( 1 == NStr::StringToInt( strValue ) );
-        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
+    if (strKey == "useScore") {
+        m_usescore = (1 == NStr::StringToInt(strValue));
+        trackdata->AddField(strKey, NStr::StringToInt(strValue));
         return;
     }
-    if ( strKey == "name" ) {
-        CRef<CAnnotdesc> name( new CAnnotdesc() );
-        name->SetName( strValue );
-        desc.Set().push_back( name );
+    if (strKey == "name") {
+        CRef<CAnnotdesc> name(new CAnnotdesc());
+        name->SetName(strValue);
+        desc.Set().push_back(name);
         return;
     }
-    if ( strKey == "description" ) {
-        CRef<CAnnotdesc> title( new CAnnotdesc() );
-        title->SetTitle( strValue );
-        desc.Set().push_back( title );
+    if (strKey == "description") {
+        CRef<CAnnotdesc> title(new CAnnotdesc());
+        title->SetTitle(strValue);
+        desc.Set().push_back(title);
         return;
     }
-    if ( strKey == "visibility" ) {
-        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
+    if (strKey == "visibility") {
+        trackdata->AddField(strKey, NStr::StringToInt(strValue));
         return;
     }
-    if ( strKey == "expNames" ) {
-        trackdata->AddField( strKey, strValue );
+    if (strKey == "expNames") {
+        trackdata->AddField(strKey, strValue);
         m_strExpNames = strValue;
         return;
     }
-    if ( strKey == "expScale" ) {
-        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
-        m_iExpScale = NStr::StringToInt( strValue );
+    if (strKey == "expScale") {
+        trackdata->AddField(strKey, NStr::StringToInt(strValue));
+        m_iExpScale = NStr::StringToInt(strValue);
         return;
     }
-    if ( strKey == "expStep" ) {
-        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
-        m_iExpStep = NStr::StringToInt( strValue );
+    if (strKey == "expStep") {
+        trackdata->AddField(strKey, NStr::StringToInt(strValue));
+        m_iExpStep = NStr::StringToInt(strValue);
         return;
     }
-    CReaderBase::x_SetTrackData( annot, trackdata, strKey, strValue );
+    CReaderBase::xSetTrackData(annot, trackdata, strKey, strValue);
 }
 
 //  ----------------------------------------------------------------------------

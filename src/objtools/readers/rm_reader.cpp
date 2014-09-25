@@ -824,7 +824,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IMessageListener* pMessageLis
         ftable.push_back(feat);
     }
     // if (! record_counter) annot.Reset();
-    x_AddConversionInfo(annot, pMessageListener);
+    xAddConversionInfo(annot, pMessageListener);
     return annot;
 }
 

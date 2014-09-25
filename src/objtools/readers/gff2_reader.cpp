@@ -152,6 +152,8 @@ CGff2Reader::ReadSeqAnnots(
     IMessageListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
+    xReadInit();
+    xProgressInit(istr);
     CStreamLineReader lr( istr );
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
@@ -184,9 +186,8 @@ CGff2Reader::ReadSeqAnnotsNew(
 {
     string line;
     //int linecount = 0;
-
-    xReadInit();
     while ( ! lr.AtEOF() ) {
+        xReportProgress(pEC);
         ++m_uLineNumber;
         line = NStr::TruncateSpaces_Unsafe( *++lr );
         if ( line.empty() ) {
@@ -1256,6 +1257,9 @@ bool CGff2Reader::xAnnotPostProcess(
 bool CGff2Reader::xReadInit()
 //  ============================================================================
 {
+    if (!CReaderBase::xReadInit()) {
+        return false;
+    }
     return true;
 }
 

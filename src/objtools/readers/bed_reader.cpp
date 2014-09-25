@@ -187,7 +187,7 @@ CBedReader::ReadSeqAnnot(
     if (0 == featureCount) {
         return CRef<CSeq_annot>();
     }
-    x_AddConversionInfo(annot, pEC);
+    xAddConversionInfo(annot, pEC);
     x_AssignTrackData( annot );
 
     if(m_columncount >= 3) {
@@ -988,37 +988,37 @@ void CBedReader::x_SetFeatureLocation(
 }
 
 //  ----------------------------------------------------------------------------
-void CBedReader::x_SetTrackData(
+void CBedReader::xSetTrackData(
     CRef<CSeq_annot>& annot,
     CRef<CUser_object>& trackdata,
     const string& strKey,
-    const string& strValue )
+    const string& strValue)
 //  ----------------------------------------------------------------------------
 {
     CAnnot_descr& desc = annot->SetDesc();
 
-    if ( strKey == "useScore" ) {
-        m_usescore = ( 1 == NStr::StringToInt( strValue ) );
-        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
+    if (strKey == "useScore") {
+        m_usescore = (1 == NStr::StringToInt(strValue));
+        trackdata->AddField( strKey, NStr::StringToInt(strValue));
         return;
     }
-    if ( strKey == "name" ) {
-        CRef<CAnnotdesc> name( new CAnnotdesc() );
-        name->SetName( strValue );
-        desc.Set().push_back( name );
+    if (strKey == "name") {
+        CRef<CAnnotdesc> name(new CAnnotdesc());
+        name->SetName(strValue);
+        desc.Set().push_back(name);
         return;
     }
-    if ( strKey == "description" ) {
-        CRef<CAnnotdesc> title( new CAnnotdesc() );
-        title->SetTitle( strValue );
-        desc.Set().push_back( title );
+    if (strKey == "description") {
+        CRef<CAnnotdesc> title(new CAnnotdesc());
+        title->SetTitle(strValue);
+        desc.Set().push_back(title);
         return;
     }
-    if ( strKey == "visibility" ) {
-        trackdata->AddField( strKey, NStr::StringToInt( strValue ) );
+    if (strKey == "visibility") {
+        trackdata->AddField(strKey, NStr::StringToInt(strValue));
         return;
     }
-    CReaderBase::x_SetTrackData( annot, trackdata, strKey, strValue );
+    CReaderBase::xSetTrackData(annot, trackdata, strKey, strValue);
 }
 
 //  ----------------------------------------------------------------------------
