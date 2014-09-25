@@ -80,6 +80,17 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+NCBI_PARAM_DECL(bool, OBJMGR, KEEP_EXTERNAL_FOR_EDIT);
+NCBI_PARAM_DEF(bool, OBJMGR, KEEP_EXTERNAL_FOR_EDIT, false);
+
+static bool sx_KeepExternalAnnotsForEdit(void)
+{
+    static CSafeStatic<NCBI_PARAM_TYPE(OBJMGR, KEEP_EXTERNAL_FOR_EDIT)> sx_Value;
+    return sx_Value->Get();
+}
+
+
 #define EXCLUDE_EDITED_BIOSEQ_ANNOT_SET
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2300,7 +2311,8 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
         }
         CDataSource& ds = it->GetDataSource();
         TTSE_LockMatchSet_DS ds_lock;
-        if ( excl_ds && it->m_EditDS == excl_ds ) {
+        if ( excl_ds && it->m_EditDS == excl_ds &&
+             sx_KeepExternalAnnotsForEdit() ) {
             // add external annotations for edited sequences
             ds.GetTSESetWithExternalAnnots(bioseq->GetObjectInfo(),
                                            binfo->x_GetTSE_ScopeInfo().m_TSE_Lock,
