@@ -190,7 +190,7 @@ protected:
         CRef<CSeq_annot>&,
         IMessageListener*);
         
-    virtual bool xParseTrackLine(
+    virtual bool x_ParseTrackLine(
         const string&,
         IMessageListener*);
         
