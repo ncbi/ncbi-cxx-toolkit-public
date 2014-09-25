@@ -25,7 +25,7 @@ GCClientRequest ::= CHOICE {
 GCClientResponse ::= CHOICE {
     get-assembly GC-Assembly,
     get-chrtype-valid  VisibleString,
-    get-best-assembly GCClient-BestAssembly,
+    get-best-assembly GCClient-AssembliesForSequences,
     
     --  errors encountered at the server side.
     srvr-error GCClient-Error
@@ -142,14 +142,15 @@ GCClient-AssemblyInfo ::= SEQUENCE {
     annotated BOOLEAN
 }
 
-GCClient-SeqIdAssemblyInfo ::= SEQUENCE {
+GCClient-AssemblySequenceInfo ::= SEQUENCE {
     assembly   GCClient-AssemblyInfo,
-    seq-id-acc SET OF VisibleString
+    sequences-in-assembly SET OF VisibleString,
+    sequences-not-in-assembly SET OF VisibleString OPTIONAL
 }
 
-GCClient-BestAssembly ::= SEQUENCE {
-    assemblies SET OF GCClient-SeqIdAssemblyInfo OPTIONAL,
-    unknown-seq-id-acc SET OF VisibleString OPTIONAL
+GCClient-AssembliesForSequences ::= SEQUENCE {
+    assemblies SET OF GCClient-AssemblySequenceInfo OPTIONAL,
+    not-found-sequences SET OF VisibleString OPTIONAL
 }
 
 END

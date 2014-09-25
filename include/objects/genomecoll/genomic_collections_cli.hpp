@@ -52,6 +52,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CGCClient_AssemblyInfo;
+class CGCClient_AssemblySequenceInfo;
 
 /////////////////////////////////////////////////////////////////////////////
 class CGenomicCollectionsService : public CGenomicCollectionsService_Base
@@ -97,6 +98,16 @@ public:
 
     CRef<CGCClient_AssemblyInfo> FindBestAssembly
         (const string& seq_id,
+         int filter_type = eGCClient_FindBestAssemblyFilter_any,
+         int sort_type = eGCClient_FindBestAssemblySort_default);
+
+    CRef<CGCClient_AssemblySequenceInfo> FindBestAssembly
+        (const list<string>& seq_id,
+         int filter_type = eGCClient_FindBestAssemblyFilter_any,
+         int sort_type = eGCClient_FindBestAssemblySort_default);
+
+    CRef<CGCClient_AssembliesForSequences> FindAllAssemblies
+        (const list<string>& seq_id,
          int filter_type = eGCClient_FindBestAssemblyFilter_any,
          int sort_type = eGCClient_FindBestAssemblySort_default);
 

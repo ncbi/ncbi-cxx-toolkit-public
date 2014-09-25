@@ -42,8 +42,8 @@
 #include <objects/genomecoll/GCClient_AttributeFlags.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 #include <objects/genomecoll/GCClient_AssemblyInfo.hpp>
-#include <objects/genomecoll/GCClient_SeqIdAssemblyInfo.hpp>
-#include <objects/genomecoll/GCClient_BestAssembly.hpp>
+#include <objects/genomecoll/GCClient_AssemblySequenceI.hpp>
+#include <objects/genomecoll/GCClient_AssembliesForSequ.hpp>
 #include <objects/genomecoll/GCClient_Error.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
@@ -202,11 +202,70 @@ CRef<CGCClient_AssemblyInfo> CGenomicCollectionsService::FindBestAssembly(const 
 #endif
 
     try {
-        CRef<CGCClient_BestAssembly> assm = AskGet_best_assembly(req, &reply);
+        CRef<CGCClient_AssembliesForSequences> assm = AskGet_best_assembly(req, &reply);
 
         return assm->CanGetAssemblies() && !assm->GetAssemblies().empty() ?
                CRef<CGCClient_AssemblyInfo>(&assm->SetAssemblies().front()->SetAssembly()) :
                CRef<CGCClient_AssemblyInfo>();
+    } catch (const CException& ex) {
+        if(reply.IsSrvr_error()) {
+            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
+        }
+        throw;
+    }
+}
+
+
+CRef<CGCClient_AssemblySequenceInfo> CGenomicCollectionsService::FindBestAssembly(const list<string>& seq_id, int filter_type, int sort_type)
+{
+    CGCClient_FindBestAssemblyRequest  req;
+    CGCClientResponse reply;
+
+    req.SetSeq_id_acc().assign(seq_id.begin(), seq_id.end());
+    req.SetFilter(filter_type);
+    req.SetSort(sort_type);
+    req.SetAssembly_return_limit(1);
+
+#ifdef _DEBUG
+    ostringstream ostrstrm;
+    ostrstrm << "Making request -" << MSerial_AsnText << req;
+    LOG_POST(Info << ostrstrm.str());
+#endif
+
+    try {
+        CRef<CGCClient_AssembliesForSequences> assm = AskGet_best_assembly(req, &reply);
+
+        return assm->CanGetAssemblies() && !assm->GetAssemblies().empty() ?
+               CRef<CGCClient_AssemblySequenceInfo>(assm->SetAssemblies().front()) :
+               CRef<CGCClient_AssemblySequenceInfo>();
+    } catch (const CException& ex) {
+        if(reply.IsSrvr_error()) {
+            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
+        }
+        throw;
+    }
+}
+
+
+CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAllAssemblies(const list<string>& seq_id, int filter_type, int sort_type)
+{
+    CGCClient_FindBestAssemblyRequest  req;
+    CGCClientResponse reply;
+
+    req.SetSeq_id_acc().assign(seq_id.begin(), seq_id.end());
+    req.SetFilter(filter_type);
+    req.SetSort(sort_type);
+
+#ifdef _DEBUG
+    ostringstream ostrstrm;
+    ostrstrm << "Making request -" << MSerial_AsnText << req;
+    LOG_POST(Info << ostrstrm.str());
+#endif
+
+    try {
+        CRef<CGCClient_AssembliesForSequences> assm = AskGet_best_assembly(req, &reply);
+
+        return assm;
     } catch (const CException& ex) {
         if(reply.IsSrvr_error()) {
             NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
