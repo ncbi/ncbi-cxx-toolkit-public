@@ -3309,7 +3309,16 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
   if (thisTest.is_MRNA_run) return;
   thisTest.is_MRNA_run = true;
 
-  bool has_qual_ids = false;
+  bool run_cds = (thisTest.tests_run.find(GetName_cds()) != end_it);
+  bool run_ids = (thisTest.tests_run.find(GetName_ids()) != end_it);
+  
+  string strtmp = NStr::UIntToString(thisInfo.num_entry);
+  if (!run_cds && run_ids) {
+     ITERATE (vector <string>, it, 
+                  thisInfo.test_item_list[GetName_ids()]) {
+        if ( (*it) == (strtmp + "$yes")) return;
+     }
+  }
   if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna 
            || !IsEukaryotic(bioseq)) {
          return;
@@ -3330,9 +3339,6 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
     }
   }
  
-  bool run_cds = (thisTest.tests_run.find(GetName_cds()) != end_it);
-  bool run_ids = (thisTest.tests_run.find(GetName_ids()) != end_it);
-
   string feat_prod, mRNA_prod;
   CSeq_feat_Handle cd_hl;
   CSeq_entry* seq_entry = bioseq.GetParentEntry();
@@ -3346,6 +3352,7 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
   field_type->SetFeature_field(*feat_field);
 
   string desc;
+  bool has_qual_ids = false, has_mRNA = false;;
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
     if (IsPseudoSeqFeatOrXrefGene(*it)) continue;
     desc = GetDiscItemText(**it);
@@ -3358,6 +3365,8 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
        }
     }
     else {
+      has_mRNA = true;
+
       feat_prod = rule_check.GetQualFromFeature(**it, *feat_field);
       mRNA_prod = rule_check.GetQualFromFeature(*mRNA, *feat_field);
       // DISC_CDS_WITHOUT_MRNA
@@ -3376,9 +3385,13 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
   }
 
   // MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS
-  if (run_ids && !has_qual_ids && !m_noids) {
-      thisInfo.test_item_list[GetName_ids()].push_back("no");
-      m_noids = true;
+  if (run_ids && !cd_feat.empty() && has_mRNA) { 
+    if (has_qual_ids) {
+         thisInfo.test_item_list[GetName_ids()].push_back(strtmp + "$yes");
+    }
+    else {
+       thisInfo.test_item_list[GetName_ids()].push_back(strtmp + "$no");
+    }
   }
 };
 
@@ -3393,8 +3406,27 @@ void CBioseq_DISC_CDS_WITHOUT_MRNA :: GetReport(CRef <CClickableItem> c_item)
 
 void CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS :: GetReport(CRef <CClickableItem> c_item)
 {
+   bool has_qual;
+   Str2Strs hasids2entry;
+   GetTestItemList(c_item->item_list, hasids2entry);
    c_item->item_list.clear();
-   c_item->description = "no protein_id and transcript_id present.";
+   ITERATE (Str2Strs, it, hasids2entry) {
+      has_qual = false;
+      ITERATE (vector <string>, iit, it->second) {
+        if ((*iit) == "yes") {
+           has_qual = true;
+           break;
+        }
+      }
+      if (!has_qual) {
+           if (it != hasids2entry.begin()) {
+             c_item.Reset(new CClickableItem);
+             c_item->setting_name = GetName();
+             thisInfo.disc_report_data.push_back(c_item);
+           }
+           c_item->description = "no protein_id and transcript_id present.";
+      }
+   }
 };
 
 
@@ -11437,17 +11469,35 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
    CFlatfileTextFind flatfile_find(GetName());
    unsigned blocks = CFlatFileConfig::fGenbankBlocks_All 
                              & ~CFlatFileConfig::fGenbankBlocks_Sequence;
+   if (seq_entry.IsSet() && seq_entry.GetSet().CanGetClass() 
+                   && seq_entry.GetSet().GetClass() == CBioseq_set::eClass_genbank) {
+      ITERATE (list <CRef <CSeq_entry> >, it, seq_entry.GetSet().GetSeq_set()) {
+         CFlatFileConfig cfg(CFlatFileConfig::eFormat_GenBank,
+                      CFlatFileConfig::eMode_GBench,
+                      CFlatFileConfig::eStyle_Normal,
+                      CFlatFileConfig::fShowContigFeatures,
+                      CFlatFileConfig::fViewAll | CFlatFileConfig::fViewFirst,
+                      CFlatFileConfig::fGffGTFCompat,
+                      (CFlatFileConfig::FGenbankBlocks)blocks,
+                      &flatfile_find);
+         CFlatFileGenerator gen(cfg);
+         CSeq_entry_Handle entry_hl = thisInfo.scope->GetSeq_entryHandle(**it);
+         gen.Generate( entry_hl, cout);
+      }
+   }
+   else {
    CFlatFileConfig cfg(CFlatFileConfig::eFormat_GenBank,
                       CFlatFileConfig::eMode_GBench,
                       CFlatFileConfig::eStyle_Normal,
                       CFlatFileConfig::fShowContigFeatures,
-                      CFlatFileConfig::fViewAll, // | CFlatFileConfig::fViewFirst,
+                      CFlatFileConfig::fViewAll | CFlatFileConfig::fViewFirst,
                       CFlatFileConfig::fGffGTFCompat,
                       (CFlatFileConfig::FGenbankBlocks)blocks,
                       &flatfile_find);
    CFlatFileGenerator gen(cfg);
    CSeq_entry_Handle entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
    gen.Generate( entry_hl, cout); // slow
+   }
 };
 
 void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_type, const string& setting_name, CRef <CClickableItem> c_item)
