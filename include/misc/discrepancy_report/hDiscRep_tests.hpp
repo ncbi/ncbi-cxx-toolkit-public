@@ -3643,7 +3643,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CBioseq_on_mrna : public CBioseqTestAndRepData
   {
     public:
-      CBioseq_on_mrna () {m_noids = false;}
+      CBioseq_on_mrna () { m_entry_no = 0; }
       virtual ~CBioseq_on_mrna () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
@@ -3651,7 +3651,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const = 0;
 
     protected:
-       bool m_noids;
+       unsigned m_entry_no; 
 
        string GetName_cds() const {return string("DISC_CDS_WITHOUT_MRNA");}
        string GetName_ids() const {return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
