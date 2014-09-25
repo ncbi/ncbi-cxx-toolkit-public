@@ -1,10 +1,10 @@
 suppression = {
-	name = "dospawn - Kerner resource leak"
-	type = {kernel_handle_leak}
+	name = "ncbienv.cpp - CNcbiEnvironment::Reset() - access to _environ after putenv()"
+	type = {invalid_memory_access}
 	stacks = {
-		allocation={
+		{
 			!!!;
-			mod=MSVCR110D.dll,func=dospawn,src=dospawn.c,line=199,func_line=140;
+			src=ncbienv.cpp,func=Reset;
 		}
 	}
 }

@@ -17,12 +17,22 @@ suppression = {
 	}
 }
 suppression = {
-	name = "Unhandled exception"
+	name = "Unhandled exception - VS2010"
 	type = {prob_app_exception}
 	stacks = {
 		{
 			!!!;
 			mod=MSVCR110.dll,func=call_reportfault;
+		}
+	}
+}
+suppression = {
+	name = "Unhandled exception - VS2013"
+	type = {prob_app_exception}
+	stacks = {
+		{
+			!!!;
+			mod=MSVCR120.dll,func=call_reportfault;
 		}
 	}
 }
@@ -53,6 +63,26 @@ suppression = {
 		{
 			!!!;
 			mod=MSVCR110.dll,func=getenv_helper_nolock;
+		}
+	}
+}
+suppression = {
+	name = "::strchr()"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=MSVCR120.dll,func=strchr;
+		}
+	}
+}
+suppression = {
+	name = "::sysytem()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=MSVCR120.dll,func=system;
 		}
 	}
 }
@@ -93,6 +123,26 @@ suppression = {
 		allocation={
 			!!!;
 			mod=MSVCR110.dll,func=dospawn;
+		}
+	}
+}
+suppression = {
+	name = "::CreateProcess()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=kernel32.dll,func=CreateProcessA;
+		}
+	}
+}
+suppression = {
+	name = "::GetNamedSecurityInfo()"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ADVAPI32.dll,func=GetNamedSecurityInfoA;
 		}
 	}
 }
@@ -142,6 +192,16 @@ suppression = {
 		allocation={
 			...;
 			mod=ODBC32.dll;
+		}
+	}
+}
+suppression = {
+	name = "dbghelp.dll"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=dbghelp.dll;
 		}
 	}
 }
