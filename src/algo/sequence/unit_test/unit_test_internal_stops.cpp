@@ -447,3 +447,65 @@ Seq-align ::= { \
 
     BOOST_CHECK_EQUAL( atg_starts, 3 );
 }
+
+BOOST_AUTO_TEST_CASE(TestAtCircularEnd)
+{
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CScope scope(*om);
+    scope.AddDefaults();
+
+string buf = " \
+Seq-align ::= { \
+  type disc, \
+  dim 2, \
+  segs spliced { \
+    product-id gi 490246827, \
+    genomic-id gi 364515570, \
+    genomic-strand minus, \
+    product-type protein, \
+    exons { \
+      { \
+        product-start protpos { \
+          amin 0, \
+          frame 1 \
+        }, \
+        product-end protpos { \
+          amin 628, \
+          frame 3 \
+        }, \
+        genomic-start 5332055, \
+        genomic-end 5333941, \
+        parts { \
+          match 3, \
+          diag 1884 \
+        } \
+      } \
+    }, \
+    product-length 629, \
+    modifiers { \
+      start-codon-found TRUE, \
+      stop-codon-found TRUE \
+    } \
+  } \
+} \
+";
+
+    CNcbiIstrstream istrs(buf.c_str());
+
+    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+
+    CSeq_align align;
+    *istr >> align;
+
+    BOOST_CHECK_NO_THROW(align.Validate(true));
+
+    CInternalStopFinder int_stop_finder(scope);
+
+    for (int pad=33; pad > 30; --pad) {
+        pair<map<TSeqRange, bool>, set<TSeqRange> > starts_stops_ranges = int_stop_finder.FindStartStopRanges(align, pad);
+
+        BOOST_CHECK( starts_stops_ranges.first.find(TSeqRange(5333941,5333939)) != starts_stops_ranges.first.end() );
+        BOOST_CHECK_EQUAL( starts_stops_ranges.first[TSeqRange(5333941,5333939)], true );
+    }
+}
+

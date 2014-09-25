@@ -81,6 +81,7 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
             int genomic_length = bsh.GetBioseqLength();
 
             if (is_circular) {
+                //prevent self overlap
                 padding = min(padding, ((stop > start ? genomic_length : 0) - (stop - start +1))/2);
             }
             
@@ -241,6 +242,7 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
             }
         } else {
             mRNA.append(subject_seq);
+            next_prod_start += subject_seq.size();
         }
     }
 
