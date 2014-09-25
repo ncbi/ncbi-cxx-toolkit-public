@@ -110,7 +110,7 @@ static string s_FindUnicodeToAscii(void)
     return g_FindDataFile("unicode_to_ascii.txt");
 }
 NCBI_PARAM_DECL(string, NCBI, UnicodeToAscii); 
-NCBI_PARAM_DEF_WITH_INIT (string, NCBI, UnicodeToAscii, kEmptyStr, s_FindUnicodeToAscii);
+NCBI_PARAM_DEF_WITH_INIT (string, NCBI, UnicodeToAscii, "", s_FindUnicodeToAscii);
 
 /////////////////////////////////////////////////////////////////////////////
 // CUnicodeToAsciiTranslation helper class

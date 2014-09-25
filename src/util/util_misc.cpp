@@ -126,11 +126,11 @@ string g_GetPasswordFromConsole(const string& prompt)
 
 
 NCBI_PARAM_DECL  (string, NCBI, DataPath);
-NCBI_PARAM_DEF_EX(string, NCBI, DataPath, kEmptyStr, 0, NCBI_DATA_PATH);
+NCBI_PARAM_DEF_EX(string, NCBI, DataPath, "", 0, NCBI_DATA_PATH);
 typedef NCBI_PARAM_TYPE(NCBI, DataPath) TNCBIDataPath;
 
 NCBI_PARAM_DECL(string, NCBI, Data);
-NCBI_PARAM_DEF (string, NCBI, Data, kEmptyStr);
+NCBI_PARAM_DEF (string, NCBI, Data, "");
 typedef NCBI_PARAM_TYPE(NCBI, Data) TNCBIDataDir;
 
 typedef vector<string> TIgnoreDataFiles;
