@@ -704,7 +704,7 @@ CRef<CSeq_annot> CWiggleReader::xMakeAnnot(void)
         desc->SetName(trackName);
         annot->SetDesc().Set().push_back(desc);
     }
-    x_AssignTrackData(annot);
+    xAssignTrackData(annot);
     return annot;
 }
 
@@ -1070,7 +1070,7 @@ bool CWiggleReader::xProcessTrackLine(
     if (!NStr::StartsWith(m_CurLine, "track")) {
         return false;
     }
-    this->x_ParseTrackLine(m_CurLine, pMessageListener);
+    xParseTrackLine(m_CurLine, pMessageListener);
 
     xGetWord(pMessageListener);
 

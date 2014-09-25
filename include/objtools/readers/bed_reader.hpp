@@ -231,7 +231,6 @@ public:
 protected:
     virtual bool xParseTrackLine(
         const string&,
-        CRef< CSeq_annot >&,
         IMessageListener*);
         
     bool xParseFeature(

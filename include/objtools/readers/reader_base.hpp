@@ -182,15 +182,15 @@ public:
         ICanceled* =0);
 
 protected:
-    virtual void x_AssignTrackData(
+    virtual void xAssignTrackData(
         CRef<CSeq_annot>& );
                 
-    virtual bool x_ParseBrowserLine(
+    virtual bool xParseBrowserLine(
         const string&,
         CRef<CSeq_annot>&,
         IMessageListener*);
         
-    virtual bool x_ParseTrackLine(
+    virtual bool xParseTrackLine(
         const string&,
         IMessageListener*);
         

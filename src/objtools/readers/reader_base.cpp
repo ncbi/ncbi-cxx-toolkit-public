@@ -364,7 +364,7 @@ void CReaderBase::xSetBrowserRegion(
 }
     
 //  ----------------------------------------------------------------------------
-bool CReaderBase::x_ParseBrowserLine(
+bool CReaderBase::xParseBrowserLine(
     const string& strLine,
     CRef<CSeq_annot>& annot,
     IMessageListener* pEC)
@@ -396,7 +396,7 @@ bool CReaderBase::x_ParseBrowserLine(
 }
 
 //  ----------------------------------------------------------------------------
-void CReaderBase::x_AssignTrackData(
+void CReaderBase::xAssignTrackData(
     CRef<CSeq_annot>& annot )
 //  ----------------------------------------------------------------------------
 {
@@ -426,7 +426,7 @@ void CReaderBase::x_AssignTrackData(
 }
 
 //  ----------------------------------------------------------------------------
-bool CReaderBase::x_ParseTrackLine(
+bool CReaderBase::xParseTrackLine(
     const string& strLine,
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------

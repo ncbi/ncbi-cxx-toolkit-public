@@ -205,7 +205,7 @@ CVcfReader::ReadSeqAnnot(
         if (line.empty()) {
             continue;
         }
-        if (x_ParseBrowserLine(line, annot, pEC)) {
+        if (xParseBrowserLine(line, annot, pEC)) {
             continue;
         }
         if (NStr::StartsWith(line, "track ")) {
@@ -239,7 +239,7 @@ CVcfReader::ReadSeqAnnot(
             ILineError::eProblem_GeneralParsingError) );
         ProcessWarning(*pErr, pEC);
     }
-    x_AssignTrackData(annot);
+    xAssignTrackData(annot);
     xAssignVcfMeta(annot);
     return annot;
 }
@@ -1161,7 +1161,7 @@ CVcfReader::xProcessTrackLine(
             return false;
         }
     }
-    if (!CReaderBase::x_ParseTrackLine(strLine, pEC)) {
+    if (!CReaderBase::xParseTrackLine(strLine, pEC)) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,

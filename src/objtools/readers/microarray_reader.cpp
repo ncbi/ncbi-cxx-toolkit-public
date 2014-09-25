@@ -153,7 +153,7 @@ CMicroArrayReader::ReadSeqAnnot(
         if (xParseComment(line, annot)) {
             continue;
         }
-        if (x_ParseBrowserLine(line, annot, pEC)) {
+        if (xParseBrowserLine(line, annot, pEC)) {
             continue;
         }
         if (NStr::StartsWith(line, "track ")) {
@@ -163,7 +163,7 @@ CMicroArrayReader::ReadSeqAnnot(
                 break;
             }
             else {
-                if (xParseTrackLine(line, annot, pEC)) {
+                if (xParseTrackLine(line, pEC)) {
                     continue;
                 }
             }
@@ -203,7 +203,7 @@ CMicroArrayReader::ReadSeqAnnot(
         return CRef<CSeq_annot>();
     }
     xAddConversionInfo(annot, pEC);
-    x_AssignTrackData( annot );
+    xAssignTrackData( annot );
 
     if(m_columncount >= 3) {
         CRef<CUser_object> columnCountUser( new CUser_object() );
@@ -331,7 +331,6 @@ void CMicroArrayReader::xSetFeatureDisplayData(
 //  ----------------------------------------------------------------------------
 bool CMicroArrayReader::xParseTrackLine(
     const string& strLine,
-    CRef<CSeq_annot>& annot,
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -339,7 +338,7 @@ bool CMicroArrayReader::xParseTrackLine(
     m_iExpScale = -1;
     m_iExpStep = -1;
     
-    if (!CReaderBase::x_ParseTrackLine( strLine, pEC)) {
+    if (!CReaderBase::xParseTrackLine( strLine, pEC)) {
         return false;
     }
     if ( m_iFlags & fReadAsBed ) {

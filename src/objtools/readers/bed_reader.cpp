@@ -147,7 +147,7 @@ CBedReader::ReadSeqAnnot(
         if (xParseComment(line, annot)) {
             continue;
         }
-        if (x_ParseBrowserLine(line, annot, pEC)) {
+        if (xParseBrowserLine(line, annot, pEC)) {
             continue;
         }
         if (NStr::StartsWith(line, "track ")) {
@@ -157,7 +157,7 @@ CBedReader::ReadSeqAnnot(
                 break;
             }
             else {
-                if (xParseTrackLine(line, annot, pEC)) {
+                if (xParseTrackLine(line, pEC)) {
                     continue;
                 }
             }
@@ -188,7 +188,7 @@ CBedReader::ReadSeqAnnot(
         return CRef<CSeq_annot>();
     }
     xAddConversionInfo(annot, pEC);
-    x_AssignTrackData( annot );
+    xAssignTrackData( annot );
 
     if(m_columncount >= 3) {
         CRef<CUser_object> columnCountUser( new CUser_object() );
@@ -245,7 +245,6 @@ CBedReader::ReadObject(
 bool
 CBedReader::xParseTrackLine(
     const string& strLine,
-    CRef< CSeq_annot >& current,
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -268,7 +267,7 @@ CBedReader::xParseTrackLine(
         m_columncount = 0;
     }
     m_currentId.clear();
-    if (!CReaderBase::x_ParseTrackLine(strLine, pEC)) {
+    if (!CReaderBase::xParseTrackLine(strLine, pEC)) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
