@@ -40,12 +40,12 @@
 int main(int argc, char** argv)
 {
     /* Prepare to connect:  parse and check cmd.-line args, etc. */
-    const char*    host        = (argc > 1) ? argv[1] : "";
-    unsigned short port        = (argc > 2) ? (unsigned short) atoi(argv[2]):0;
-    const char*    path        = (argc > 3) ? argv[3] : "";
-    const char*    args        = (argc > 4) ? argv[4] : "";
-    const char*    inp_file    = (argc > 5) ? argv[5] : "";
-    const char*    user_header = (argc > 6) ? argv[6] : "";
+    const char*    host        = argc > 1 ? argv[1]       : "";
+    unsigned short port        = argc > 2 ? atoi(argv[2]) : 0;
+    const char*    path        = argc > 3 ? argv[3]       : "";
+    const char*    args        = argc > 4 ? argv[4]       : "";
+    const char*    inp_file    = argc > 5 ? argv[5]       : "";
+    const char*    user_header = argc > 6 ? argv[6]       : "";
 
     size_t   content_length;
     STimeout timeout;
