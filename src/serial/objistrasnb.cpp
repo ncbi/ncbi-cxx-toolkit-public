@@ -627,7 +627,7 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
         } else if (special == eNegativeInfinity) {
             return -HUGE_VAL;
         } else if (special == eNotANumber) {
-            return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
+            return NAN;
         } else if (special == eNegativeZero) {
             return -0.;
         }
@@ -2067,7 +2067,11 @@ void CObjectIStreamAsnBinary::SkipFNumber(void)
         ThrowError(fFormatError, "too long REAL data: length > "
             + NStr::SizetToString(kMaxDoubleLength));
 
-    ExpectByte(eDecimal);
+    Uint1 type = ReadByte();
+    if ((type & eDecimalEncoding) != eDecimal) {
+        ThrowError(fNotImplemented, "Unsupported encoding of REAL data: encoding = "
+            + NStr::NumericToString(type));
+    }
     length--;
     SkipBytes(length);
     EndOfTag();
