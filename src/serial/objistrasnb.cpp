@@ -627,7 +627,7 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
         } else if (special == eNegativeInfinity) {
             return -HUGE_VAL;
         } else if (special == eNotANumber) {
-            return NAN;
+	    return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
         } else if (special == eNegativeZero) {
             return -0.;
         }

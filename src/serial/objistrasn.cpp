@@ -800,7 +800,7 @@ double CObjectIStreamAsn::ReadDouble(void)
         } else if (NStr::strncasecmp(tmp.data(),"MINUS-INFINITY", 14) == 0) {
             return -HUGE_VAL;
         } else if (NStr::strncasecmp(tmp.data(),"NOT-A-NUMBER", 12) == 0) {
-            return NAN;
+	    return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
         }
         return NStr::StringToDouble( tmp, NStr::fDecimalPosix );
     }
