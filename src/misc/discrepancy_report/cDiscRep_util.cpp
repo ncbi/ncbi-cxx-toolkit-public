@@ -695,6 +695,7 @@ set <const CObject* > uni_objs;
   items.clear(); 
   objs.clear();
   unsigned i=0;
+#if 0  // Flat file reader returns different ref pointer for the same feature: genbank set
   ITERATE (vector <CConstRef <CObject> >, it, tmp_objs) {
      if (uni_objs.find((*it).GetPointer()) == uni_objs.end()) {
           items.push_back(tmp[i]);
@@ -703,7 +704,8 @@ set <const CObject* > uni_objs;
      }
      i++;
   }
-/*
+#endif
+
   ITERATE (vector <string>, it, tmp) {
     if (uni_item.find(*it) == uni_item.end()) {
       items.push_back(*it);
@@ -712,7 +714,6 @@ set <const CObject* > uni_objs;
     } 
     i++;
   }
-*/
 };
 
 

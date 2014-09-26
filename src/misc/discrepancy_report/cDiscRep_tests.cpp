@@ -11298,8 +11298,8 @@ CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bi
 
 CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CSourceItem& source_item)
 {
-  block_text 
-    = block_text.substr(0, block_text.find("ORGANISM")); // double check
+  // ORGANISM_BLOCK in C is omited
+  block_text = block_text.substr(0, block_text.find("ORGANISM")); 
   return unified_notify(block_text, ctx, source_item, 
                          CFlatFileConfig::fGenbankBlocks_Source);
 };
@@ -11363,21 +11363,87 @@ CConstRef <CObject> CFlatfileTextFind:: x_GetObjRef(const string& desc, CSeqdesc
   return obj_ref;
 }
 
+void CFlatfileTextFind :: x_GetDescAndObjRef4Seqdesc(CConstRef <CBioseq> bioseq, CSeqdesc :: E_Choice seqdesc_type, CSeqdesc& seqdesc, string& desc, CConstRef <CObject> obj_ref) 
+{
+   desc = kEmptyStr;
+   obj_ref.Reset(NULL);
+   if (!bioseq) return;
+
+   CSeq_entry* entry = bioseq->GetParentEntry();
+   string str0, str1;
+   switch(seqdesc_type) {
+     case CSeqdesc::e_Pub: 
+     case CSeqdesc::e_Source:
+          str0 = Blob2Str(seqdesc);
+          break;
+     case CSeqdesc::e_Genbank:
+       {
+          if (seqdesc.GetGenbank().CanGetKeywords()) {
+              list <string>& 
+                ls = const_cast<list <string>& >(seqdesc.GetGenbank().GetKeywords());
+              if (!ls.empty()) {
+                 ls.sort();
+                 ITERATE (list <string>, it, ls) {
+                    str0 += *it + ",";
+                 }
+                 str0 = str0.substr(0, str0.size()-1);
+              }
+          }
+          break;
+       }
+     default: str0 = kEmptyStr;
+   }
+   while (entry) {
+      CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*entry);
+      for (CSeqdesc_CI seqdesc_it(seq_entry_h, seqdesc_type, 1); 
+                                                seqdesc_it; ++seqdesc_it) {
+        str1 = kEmptyStr;
+        switch (seqdesc_type) {
+           case CSeqdesc::e_Pub: 
+           case CSeqdesc::e_Source: 
+                str1 = Blob2Str(*seqdesc_it);
+                break;
+           case CSeqdesc::e_Genbank:
+             {
+               
+               if (seqdesc_it->GetGenbank().CanGetKeywords()) {
+                  list <string>& ls = const_cast<list <string>&> (
+                                         seqdesc_it->GetGenbank().GetKeywords());
+                  if (!ls.empty()) {
+                     ls.sort();
+                     ITERATE (list <string>, it, ls) {
+                        str1 += (*it + ",");
+                        str1 = str1.substr(0, str1.size()-1);
+                     }
+                  }
+                  break;
+               }
+             }     
+           default: str1 = kEmptyStr;
+                    break;
+        }
+        if (str0 == str1 && !str1.empty()) {
+             desc = GetDiscItemText(seqdesc, *entry);
+             obj_ref.Reset(&(*seqdesc_it));
+             break;
+        }
+      };
+      if (desc.empty()) {
+          entry = entry->GetParentEntry();
+      }
+      else break;
+   }
+};
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
 {
   block_text = CTestAndRepData::FindReplaceString(
                           block_text, m_taxname, "", false, true);
   CSeqdesc_CI sci(thisInfo.scope->GetBioseqHandle(*m_bsq), m_seqdesc_sel);
-#if 0
-if (block_text.find("homologue") != string::npos) {
-cerr << "block_text " << block_text << endl;
-}
-#endif
 
+  string desc, strtmp;
+  CConstRef <CObject> obj_ref;
   ITERATE (Str2CombDt, it, thisInfo.fix_data) {
-     string strtmp;
-     CConstRef <CObject> obj_ref;
      if (CTestAndRepData :: DoesStringContainPhrase( 
                            block_text, it->first, false,  it->second.b_val)) {
        switch (which_block) {
@@ -11388,18 +11454,8 @@ cerr << "block_text " << block_text << endl;
               molinfo =dynamic_cast <const CMolInfo*>(locus_item.GetObject());
             CSeqdesc seqdesc;
             seqdesc.SetMolinfo().Assign(*molinfo);
-            strtmp = GetDiscItemText(seqdesc, *m_bsq);
-            obj_ref = x_GetObjRef(strtmp, sci);
-            break;
-         }
-         case CFlatFileConfig::fGenbankBlocks_Defline: {
-            const CDeflineItem&
-              def_item = dynamic_cast<const CDeflineItem&>(flat_item);
-            strtmp = def_item.GetDefline();
-            CSeqdesc seqdesc;
-            seqdesc.SetTitle(strtmp);
-            strtmp = GetDiscItemText(seqdesc, *m_bsq);
-            obj_ref = x_GetObjRef(strtmp, sci);
+            x_GetDescAndObjRef4Seqdesc(
+                m_bsq, CSeqdesc::e_Molinfo, seqdesc, desc, obj_ref);
             break;
          }
          case CFlatFileConfig::fGenbankBlocks_Keywords: {
@@ -11412,8 +11468,7 @@ cerr << "block_text " << block_text << endl;
             }
             CSeqdesc seqdesc;
             seqdesc.SetGenbank(gb_blk);
-            strtmp = GetDiscItemText(seqdesc, *m_bsq);
-            obj_ref = x_GetObjRef(strtmp, sci);
+            x_GetDescAndObjRef4Seqdesc(m_bsq, CSeqdesc::e_Genbank, seqdesc, desc,obj_ref);
             break;
          }
          case CFlatFileConfig::fGenbankBlocks_Reference: {
@@ -11422,8 +11477,7 @@ cerr << "block_text " << block_text << endl;
             const CPubdesc& pub = ref_item.GetPubdesc();
             CSeqdesc seqdesc;
             seqdesc.SetPub().Assign(pub);
-            strtmp = GetDiscItemText(seqdesc, *m_bsq);
-            obj_ref = x_GetObjRef(strtmp, sci);
+            x_GetDescAndObjRef4Seqdesc(m_bsq, CSeqdesc::e_Pub, seqdesc, desc, obj_ref);
             break;
          }
          case CFlatFileConfig::fGenbankBlocks_Source: {
@@ -11434,30 +11488,43 @@ cerr << "block_text " << block_text << endl;
             if (biosrc) {
                CSeqdesc seqdesc;
                seqdesc.SetSource().Assign(*biosrc);
-               strtmp = GetDiscItemText(seqdesc, *m_bsq);
-               obj_ref = x_GetObjRef(strtmp, sci);
+               x_GetDescAndObjRef4Seqdesc(
+                     m_bsq, CSeqdesc::e_Source, seqdesc, desc, obj_ref);
             }
             break;
          }
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
+            {
+              const CFeatureItemBase&
+                feat_item = dynamic_cast<const CFeatureItemBase&> (flat_item);
+              const CSeq_feat& sf = feat_item.GetFeat().GetOriginalFeature();
+              const CBioSource& biosrc = sf.GetData().GetBiosrc();
+              CSeqdesc seqdesc;
+              seqdesc.SetSource().Assign(biosrc);
+              x_GetDescAndObjRef4Seqdesc(
+                        m_bsq, CSeqdesc::e_Source, seqdesc, desc, obj_ref);
+              break;
+            }
          case CFlatFileConfig::fGenbankBlocks_FeatAndGap:
             {
               const CFeatureItemBase& 
                 feat_item = dynamic_cast<const CFeatureItemBase&> (flat_item);
               const CSeq_feat& sf = feat_item.GetFeat().GetOriginalFeature();
-              strtmp = GetDiscItemText(sf);
+              desc = GetDiscItemText(sf);
               obj_ref.Reset(&sf);
               break;
             }
-         default: strtmp = m_bioseq_desc;
+         default: desc = m_bioseq_desc;
                   obj_ref = CConstRef <CObject>(m_bsq.GetPointer());
        };
+       if (!desc.empty()) {
        strtmp 
-         =thisInfo.fix_data[it->first].s_val + "$" + it->first + "#" + strtmp;
+         = thisInfo.fix_data[it->first].s_val + "$" + it->first + "#" + desc;
        thisInfo.test_item_list[m_setting_name].push_back(strtmp);
        strtmp = m_setting_name + "$" + thisInfo.fix_data[it->first].s_val 
                  + "#" + it->first;
        thisInfo.test_item_objs[strtmp].push_back(obj_ref);
+       }
      }
   } 
 
@@ -11468,7 +11535,9 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
 {
    CFlatfileTextFind flatfile_find(GetName());
    unsigned blocks = CFlatFileConfig::fGenbankBlocks_All 
-                             & ~CFlatFileConfig::fGenbankBlocks_Sequence;
+                             & ~CFlatFileConfig::fGenbankBlocks_Sequence
+                             & ~CFlatFileConfig::fGenbankBlocks_Defline;
+   // not sure if the fViewFirst works as expected, so still keep the rm redundancy.
    if (seq_entry.IsSet() && seq_entry.GetSet().CanGetClass() 
                    && seq_entry.GetSet().GetClass() == CBioseq_set::eClass_genbank) {
       ITERATE (list <CRef <CSeq_entry> >, it, seq_entry.GetSet().GetSeq_set()) {
@@ -11521,7 +11590,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_
            c_item->item_list = jt->second;
            strtmp = setting_name + "$" + it->first + "#" + jt->first;
            c_item->obj_list = thisInfo.test_item_objs[strtmp];
-           // RmvRedundancy(c_item->item_list, c_item->obj_list); // temp, check SQD-1818
+           RmvRedundancy(c_item->item_list, c_item->obj_list); // temp, check SQD-1818
            c_item->description
               = GetContainsComment(c_item->item_list.size(), "object") 
                    + jt->first;
