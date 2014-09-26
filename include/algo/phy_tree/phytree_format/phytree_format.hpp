@@ -555,6 +555,7 @@ private:
         CQueryNodeChecker(CBioTreeDynamic& tree)
             : m_HasQueryNode(false),
               m_HasSeqFromType(false),
+              m_HasSeqFromVerifiedMat(false),              
               m_LeafCount(0)
         {
             const CBioTreeFeatureDictionary& fdict
@@ -583,6 +584,9 @@ private:
 
         int GetLeafCount (void) const { return m_LeafCount;}
 
+        bool HasSeqFromVerifiedMat(void) const { return m_HasSeqFromVerifiedMat;}
+        
+
         /// Expamine node: check if query node. Function invoked on each
         /// node by traversal function.
         /// @param node Tree root [in]
@@ -607,7 +611,14 @@ private:
                         == kNodeInfoSeqFromType) {
 
                         m_HasSeqFromType = true;
+                        // stop searching further if seq of type is found
+                        return eTreeTraverse;
                     }
+                    if (node.GetFeature(GetFeatureTag(eNodeInfoId))
+                        == kNodeInfoSeqFromVerifiedMat) {
+
+                        m_HasSeqFromVerifiedMat = true;
+                    }                    
                 }
             }
             return eTreeTraverse;
@@ -616,6 +627,7 @@ private:
     private:
         bool m_HasQueryNode;
         bool m_HasSeqFromType;
+        bool m_HasSeqFromVerifiedMat;        
         int m_LeafCount;
     };
 
@@ -653,6 +665,9 @@ public:
 
     /// Node feature "node-info" value for sequences from type
     static const string kNodeInfoSeqFromType;
+
+    static const string kNodeInfoSeqFromVerifiedMat;                        
+    
 };
 
 

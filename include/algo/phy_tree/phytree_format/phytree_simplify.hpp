@@ -121,11 +121,13 @@ public:
     unsigned int GetNumLabels(void) const {return m_LabelsColors.size();}
     bool FoundQueryNode(void) const {return m_FoundQueryNode;}
     bool FoundSeqFromType(void) const { return m_FoundSeqFromType;}
+    bool FoundSeqFromVerifiedMat(void) const { return m_FoundSeqFromVerifiedMat;}
     int GetLeafCount(void) const { return m_LeafCount;}
 
 protected:
     bool x_IsQuery(const CBioTreeDynamic::CBioNode& node) const;
     bool x_IsSeqFromType(const CBioTreeDynamic::CBioNode& node) const;
+    bool x_IsSeqFromVerifiedMat(const CBioTreeDynamic::CBioNode& node) const;    
 
 protected:
     string m_LabelFeatureTag;
@@ -135,6 +137,7 @@ protected:
     bool m_FoundQueryNode;
     bool m_FoundSeqFromType;
     int m_LeafCount;
+    bool m_FoundSeqFromVerifiedMat;
 };
 
 
