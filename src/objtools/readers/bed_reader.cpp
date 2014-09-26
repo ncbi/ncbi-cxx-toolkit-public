@@ -133,34 +133,18 @@ CBedReader::ReadSeqAnnot(
     annot->SetDesc(*desc);
     CSeq_annot::C_Data::TFtable& tbl = annot->SetData().SetFtable();
 
+    string line;
     int featureCount = 0;
-
-    while (!lr.AtEOF()) {
-
-        ++m_uLineNumber;
-
-        CTempString line = *++lr;
-
-        if (NStr::TruncateSpaces_Unsafe(line).empty()) {
-            continue;
-        }
-        if (xParseComment(line, annot)) {
-            continue;
+    while (xGetLine(lr, line)) {
+        if (xIsTrackLine(line)  &&  featureCount) {
+            xUngetLine(lr);
+            break;
         }
         if (xParseBrowserLine(line, annot, pEC)) {
             continue;
         }
-        if (NStr::StartsWith(line, "track ")) {
-            if (featureCount > 0) {
-                --m_uLineNumber;
-                lr.UngetLine();
-                break;
-            }
-            else {
-                if (xParseTrackLine(line, pEC)) {
-                    continue;
-                }
-            }
+        if (xParseTrackLine(line, pEC)) {
+            continue;
         }
 
 	    CTempString record_copy = NStr::TruncateSpaces_Unsafe(line);
@@ -1018,30 +1002,6 @@ void CBedReader::xSetTrackData(
         return;
     }
     CReaderBase::xSetTrackData(annot, trackdata, strKey, strValue);
-}
-
-//  ----------------------------------------------------------------------------
-bool CBedReader::xGetLine(
-    ILineReader& lr,
-    string& line)
-//  ----------------------------------------------------------------------------
-{
-    while (!lr.AtEOF()) {
-        line = *++lr;
-        if (!xCommentLine(line)) {
-            return true;
-        }
-    }
-	return false;
-}
-
-//  ----------------------------------------------------------------------------
-inline bool CBedReader::xCommentLine(
-    const string& line) const
-//  ----------------------------------------------------------------------------
-{
-    char c = line.data()[0];
-    return c == '#' || c == '\0';
 }
 
 //  ----------------------------------------------------------------------------

@@ -609,5 +609,50 @@ bool CReaderBase::xIsOperationCanceled() const
     return m_pCanceler->IsCanceled();
 }
 
+//  ----------------------------------------------------------------------------
+bool CReaderBase::xIsCommentLine(
+    const CTempString& strLine)
+//  ----------------------------------------------------------------------------
+{
+    if (strLine.empty()) {
+        return true;
+    }
+    return (strLine[0] == '#' && strLine[1] != '#');
+}
+
+//  ----------------------------------------------------------------------------
+bool CReaderBase::xIsTrackLine(
+    const CTempString& strLine)
+//  ----------------------------------------------------------------------------
+{
+    return NStr::StartsWith(strLine, "track ");
+}
+
+//  ----------------------------------------------------------------------------
+bool CReaderBase::xGetLine(
+    ILineReader& lr,
+    string& line)
+//  ----------------------------------------------------------------------------
+{
+    while (!lr.AtEOF()) {
+        line = *++lr;
+        ++m_uLineNumber;
+        NStr::TruncateSpacesInPlace(line);
+        if (!xIsCommentLine(line)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CReaderBase::xUngetLine(
+    ILineReader& lr)
+//  ----------------------------------------------------------------------------
+{
+    lr.UngetLine();
+    --m_uLineNumber;
+    return true;
+}
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -88,10 +88,6 @@ protected:
         CRef<CSeq_annot>&,
         IMessageListener*);
 
-    bool xParseComment(
-        const string&,
-        CRef<CSeq_annot>&);
-
     void xSetFeatureLocation(
         CRef<CSeq_feat>&,
         const vector<string>& );

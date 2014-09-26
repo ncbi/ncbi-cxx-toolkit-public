@@ -184,6 +184,10 @@ public:
     //
 protected:
     virtual bool 
+    xIsCommentLine(
+        const CTempString& );
+
+    virtual bool 
     xProcessTrackLine(
         const string&,
         CRef< CSeq_annot >&,

@@ -186,18 +186,10 @@ CGff2Reader::ReadSeqAnnotsNew(
 {
     string line;
     //int linecount = 0;
-    while ( ! lr.AtEOF() ) {
+    while (xGetLine(lr, line)) {
         xReportProgress(pEC);
-        ++m_uLineNumber;
-        line = NStr::TruncateSpaces_Unsafe( *++lr );
-        if ( line.empty() ) {
-            continue;
-        }
 
         try {
-            if ( x_IsCommentLine( line ) ) {
-                continue;
-            }
             if ( x_ParseStructuredCommentGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
@@ -269,35 +261,6 @@ CGff2Reader::ReadObject(
     return object;
 }
  
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_ReadLine(
-    ILineReader& lr,
-    string& strLine )
-//  ----------------------------------------------------------------------------
-{
-    strLine.clear();
-    while ( ! lr.AtEOF() ) {
-        CTempString temp = NStr::TruncateSpaces_Unsafe( *++lr );
-        ++m_uLineNumber;
-        if ( ! x_IsCommentLine( temp ) ) {
-            strLine = temp;
-            return true;
-        }
-    }
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_IsCommentLine(
-    const CTempString& strLine )
-//  ----------------------------------------------------------------------------
-{
-    if ( strLine.empty() ) {
-        return true;
-    }
-    return (strLine[0] == '#' && strLine[1] != '#');
-}
-
 //  ----------------------------------------------------------------------------
 void CGff2Reader::x_SetTrackDataToSeqEntry(
     CRef<CSeq_entry>& entry,

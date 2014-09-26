@@ -83,11 +83,6 @@ public:
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    
 
-    bool x_GetLine(
-        ILineReader&,
-        string&,
-        int& );
-
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,

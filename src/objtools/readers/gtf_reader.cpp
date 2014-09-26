@@ -207,22 +207,21 @@ CGtfReader::ReadSeqAnnots(
 //  ----------------------------------------------------------------------------
 {
     string line;
-    int linecount = 0;
 
-    while ( x_GetLine( lr, line, linecount ) ) {
+    while (xGetLine(lr, line)) {
         try {
-            if ( x_ParseBrowserLineGff( line, m_CurrentBrowserInfo ) ) {
+            if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
                 continue;
             }
-            if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
+            if (x_ParseTrackLineGff(line, m_CurrentTrackInfo)) {
                 continue;
             }
-            if ( ! x_ParseFeatureGff( line, annots, pEC) ) {
+            if (x_ParseFeatureGff(line, annots, pEC)) {
                 continue;
             }
         }
-        catch( CObjReaderLineException& err ) {
-            err.SetLineNumber( linecount );
+        catch(CObjReaderLineException& err) {
+            err.SetLineNumber(m_uLineNumber);
         }
     }
 }
@@ -239,36 +238,6 @@ CGtfReader::ReadSeqAnnots(
     ReadSeqAnnots( annots, lr, pMessageListener );
 }
 
-//  ---------------------------------------------------------------------------                       
-bool
-CGtfReader::x_GetLine(
-    ncbi::ILineReader& lr,
-    string& strLine,
-    int& iLineCount )
-//  ---------------------------------------------------------------------------
-{
-    while ( ! lr.AtEOF() ) {
-
-        string strBuffer = NStr::TruncateSpaces_Unsafe( *++lr );
-        ++iLineCount;
-
-        if ( strBuffer.empty() ) {
-            continue;
-        }
-        size_t uComment = strBuffer.find( '#' );
-        if ( uComment != NPOS ) {
-            strBuffer = strBuffer.substr( 0, uComment );
-            if ( strBuffer.empty() ) {
-                continue;
-            }
-        }  
-
-        strLine = strBuffer;
-        return true;    
-    }
-    return false;
-}
- 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotFeature(
     const CGff2Record& gff,

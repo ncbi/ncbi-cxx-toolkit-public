@@ -197,28 +197,18 @@ CVcfReader::ReadSeqAnnot(
         m_Meta->SetUser().SetType().SetStr( "vcf-meta-info" );
     }
 
+    string line;
     unsigned int dataCount = 0;
-    while ( ! lr.AtEOF() ) {
-        m_uLineNumber++;
-        string line = *(++lr);
-        NStr::TruncateSpacesInPlace(line);
-        if (line.empty()) {
-            continue;
+    while (xGetLine(lr, line)) {
+        if (xIsTrackLine(line)  &&  dataCount) {
+            xUngetLine(lr);
+            break;
         }
         if (xParseBrowserLine(line, annot, pEC)) {
             continue;
         }
-        if (NStr::StartsWith(line, "track ")) {
-            if (dataCount > 0) {
-                --m_uLineNumber;
-                lr.UngetLine();
-                break;
-            }
-            else {
-                if (xProcessTrackLine(line, annot, pEC)) {
-                    continue;
-                }
-            }
+        if (xProcessTrackLine(line, annot, pEC)) {
+            continue;
         }
         if (xProcessMetaLine(line, annot, pEC)) {
             continue;
@@ -1508,6 +1498,17 @@ CVcfReader::xAssignVariantProps(
         infos.erase(it);
     }
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CVcfReader::xIsCommentLine(
+    const CTempString& strLine)
+//  ----------------------------------------------------------------------------
+{
+    if (NStr::StartsWith(strLine, "#CHROM")) {
+        return false;
+    }
+    return CReaderBase::xIsCommentLine(strLine);
 }
 
 END_objects_SCOPE

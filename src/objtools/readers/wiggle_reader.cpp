@@ -173,19 +173,15 @@ CWiggleReader::xReadSeqAnnotGraph(
         return CRef<CSeq_annot>();
     }
     bool haveData = false;
-    while ( xGetLine(lr) ) {
-        if (NStr::StartsWith(m_CurLine, "track")) {
-            if (haveData) {
-                --m_uLineNumber;
-                lr.UngetLine();
-                break;
-            }
-            if (xProcessTrackLine(pMessageListener)) {
-                continue;
-            }
+    while (xGetLine(lr, m_CurLine)) {
+        if (xIsTrackLine(m_CurLine)  &&  haveData) {
+            xUngetLine(lr);
+            break;
         }
-            
         if (xProcessBrowserLine(pMessageListener)) {
+            continue;
+        }
+        if (xProcessTrackLine(pMessageListener)) {
             continue;
         }
 
@@ -224,24 +220,21 @@ CWiggleReader::xReadSeqAnnotTable(
         return CRef<CSeq_annot>();
     }
     xResetChromValues();
+
     bool haveData = false;
-    while ( xGetLine(lr) ) {
-        if (NStr::StartsWith(m_CurLine, "track")) {
-            if (haveData) {
-                --m_uLineNumber;
-                lr.UngetLine();
-                break;
-            }
-            if (xProcessTrackLine(pMessageListener)) {
-                continue;
-            }
+    while (xGetLine(lr, m_CurLine)) {
+        if (xIsTrackLine(m_CurLine)  &&  haveData) {
+            xUngetLine(lr);
+            break;
         }
-            
         if (xProcessBrowserLine(pMessageListener)) {
             continue;
         }
+        if (xProcessTrackLine(pMessageListener)) {
+            continue;
+        }
 
-        CTempString s = xGetWord(pMessageListener);
+        string s = xGetWord(pMessageListener);
         if ( s == "fixedStep" ) {
             SFixedStepInfo fixedStepInfo;
             xGetFixedStepInfo(fixedStepInfo, pMessageListener);
@@ -307,8 +300,8 @@ CWiggleReader::ReadTrackData(
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    while (xGetLine(lr)) {
-        CTempString word = xGetWord(pMessageListener);
+    while (xGetLine(lr, m_CurLine)) {
+        string word = xGetWord(pMessageListener);
         if (word == "browser") {
             continue;
         }
@@ -343,7 +336,7 @@ CWiggleReader::xReadFixedStepDataRaw(
         CReadUtil::AsSeqId(fixedStepInfo.mChrom, m_iFlags);
 
     unsigned int pos(fixedStepInfo.mStart);
-    while (xGetLine(lr)) {
+    while (xGetLine(lr, m_CurLine)) {
         double value(0);
         if (!xTryGetDouble(value, pMessageListener)) {
             lr.UngetLine();
@@ -370,7 +363,7 @@ CWiggleReader::xReadVariableStepDataRaw(
     xGetVarStepInfo(varStepInfo, pMessageListener);
     CRef<CSeq_id> id =
         CReadUtil::AsSeqId(varStepInfo.mChrom, m_iFlags);
-    while (xGetLine(lr)) {
+    while (xGetLine(lr, m_CurLine)) {
         unsigned int pos(0);
         if (!xTryGetPos(pos, pMessageListener)) {
             lr.UngetLine();
@@ -738,7 +731,7 @@ void CWiggleReader::xResetChromValues(void)
 bool CWiggleReader::xSkipWS(void)
 //  ----------------------------------------------------------------------------
 {
-    const char* ptr = m_CurLine.data();
+    const char* ptr = m_CurLine.c_str();
     size_t skip = 0;
     for ( size_t len = m_CurLine.size(); skip < len; ++skip ) {
         char c = ptr[skip];
@@ -754,16 +747,16 @@ bool CWiggleReader::xSkipWS(void)
 inline bool CWiggleReader::xCommentLine(void) const
 //  ----------------------------------------------------------------------------
 {
-    char c = m_CurLine.data()[0];
+    char c = m_CurLine.c_str()[0];
     return c == '#' || c == '\0';
 }
 
 //  ----------------------------------------------------------------------------
-CTempString CWiggleReader::xGetWord(
+string CWiggleReader::xGetWord(
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    const char* ptr = m_CurLine.data();
+    const char* ptr = m_CurLine.c_str();
     size_t skip = 0;
     for ( size_t len = m_CurLine.size(); skip < len; ++skip ) {
         char c = ptr[skip];
@@ -779,22 +772,24 @@ CTempString CWiggleReader::xGetWord(
             "Identifier expected") );
         ProcessError(*pErr, pMessageListener);
     }
+    string word(ptr, skip);
     m_CurLine = m_CurLine.substr(skip);
-    return CTempString(ptr, skip);
+    return word;
 }
 
 //  ----------------------------------------------------------------------------
-CTempString CWiggleReader::xGetParamName(
+string CWiggleReader::xGetParamName(
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    const char* ptr = m_CurLine.data();
+    const char* ptr = m_CurLine.c_str();
     size_t skip = 0;
     for ( size_t len = m_CurLine.size(); skip < len; ++skip ) {
         char c = ptr[skip];
         if ( c == '=' ) {
+            string name(ptr, skip);
             m_CurLine = m_CurLine.substr(skip+1);
-            return CTempString(ptr, skip);
+            return name;
         }
         if ( c == ' ' || c == '\t' ) {
             break;
@@ -806,23 +801,24 @@ CTempString CWiggleReader::xGetParamName(
         0,
         "\"=\" expected") );
     ProcessWarning(*pErr, pMessageListener);
-    return CTempString();
+    return string();
 }
 
 //  ----------------------------------------------------------------------------
-CTempString CWiggleReader::xGetParamValue(
+string CWiggleReader::xGetParamValue(
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    const char* ptr = m_CurLine.data();
+    const char* ptr = m_CurLine.c_str();
     size_t len = m_CurLine.size();
     if ( len && *ptr == '"' ) {
         size_t pos = 1;
         for ( ; pos < len; ++pos ) {
             char c = ptr[pos];
             if ( c == '"' ) {
+                string value(ptr, pos);
                 m_CurLine = m_CurLine.substr(pos+1);
-                return CTempString(ptr+1, pos-1);
+                return value;
             }
         }
         AutoPtr<CObjReaderLineException> pErr(
@@ -842,7 +838,7 @@ void CWiggleReader::xGetPos(
 //  ----------------------------------------------------------------------------
 {
     TSeqPos ret = 0;
-    const char* ptr = m_CurLine.data();
+    const char* ptr = m_CurLine.c_str();
     for ( size_t skip = 0; ; ++skip ) {
         char c = ptr[skip];
         if ( c >= '0' && c <= '9' ) {
@@ -869,7 +865,7 @@ bool CWiggleReader::xTryGetDoubleSimple(double& v)
 //  ----------------------------------------------------------------------------
 {
     double ret = 0;
-    const char* ptr = m_CurLine.data();
+    const char* ptr = m_CurLine.c_str();
     size_t skip = 0;
     bool negate = false, digits = false;
     for ( ; ; ++skip ) {
@@ -934,7 +930,7 @@ bool CWiggleReader::xTryGetDouble(
     if ( xTryGetDoubleSimple(v) ) {
         return true;
     }
-    const char* ptr = m_CurLine.data();
+    const char* ptr = m_CurLine.c_str();
     char* endptr = 0;
     v = strtod(ptr, &endptr);
     if ( endptr == ptr ) {
@@ -958,7 +954,7 @@ inline bool CWiggleReader::xTryGetPos(
     IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
-    char c = m_CurLine.data()[0];
+    char c = m_CurLine.c_str()[0];
     if ( c < '0' || c > '9' ) {
         return false;
     }
@@ -980,20 +976,6 @@ inline void CWiggleReader::xGetDouble(
             "Floating point value expected") );
         ProcessError(*pErr, pMessageListener);
     }
-}
-
-//  ----------------------------------------------------------------------------
-bool CWiggleReader::xGetLine(
-    ILineReader& lr)
-//  ----------------------------------------------------------------------------
-{
-    while (!lr.AtEOF()) {
-        m_CurLine = *++lr;
-        if (!xCommentLine()) {
-            return true;
-        }
-    }
-	return false;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1022,7 +1004,7 @@ void CWiggleReader::xDumpChromValues(void)
     if ( m_ChromId.empty() ) {
         return;
     }
-    LOG_POST("Chrom: "<<m_ChromId<<" "<<m_Values.size());
+    //LOG_POST("Chrom: "<<m_ChromId<<" "<<m_Values.size());
     if ( !m_Annot ) {
         m_Annot = xMakeAnnot();
     }
@@ -1039,7 +1021,8 @@ void CWiggleReader::xDumpChromValues(void)
 }
 
 //  ----------------------------------------------------------------------------
-void CWiggleReader::xSetChrom(CTempString chrom)
+void CWiggleReader::xSetChrom(
+    const string& chrom)
 //  ----------------------------------------------------------------------------
 {
     if ( chrom != m_ChromId ) {
@@ -1076,8 +1059,8 @@ bool CWiggleReader::xProcessTrackLine(
 
     m_TrackType = eTrackType_invalid;
     while ( xSkipWS() ) {
-        CTempString name = xGetParamName(pMessageListener);
-        CTempString value = xGetParamValue(pMessageListener);
+        string name = xGetParamName(pMessageListener);
+        string value = xGetParamValue(pMessageListener);
         if ( name == "type" ) {
              if ( value == "wiggle_0" ) {
                 m_TrackType = eTrackType_wiggle_0;
@@ -1128,8 +1111,8 @@ void CWiggleReader::xGetFixedStepInfo(
 
     fixedStepInfo.Reset();
     while ( xSkipWS() ) {
-        CTempString name = xGetParamName(pMessageListener);
-        CTempString value = xGetParamValue(pMessageListener);
+        string name = xGetParamName(pMessageListener);
+        string value = xGetParamValue(pMessageListener);
         if ( name == "chrom" ) {
             fixedStepInfo.mChrom = value;
         }
@@ -1189,7 +1172,7 @@ void CWiggleReader::xReadFixedStepData(
     value.m_Chrom = fixedStepInfo.mChrom;
     value.m_Pos = fixedStepInfo.mStart-1;
     value.m_Span = fixedStepInfo.mSpan;
-    while ( xGetLine(lr) ) {
+    while ( xGetLine(lr, m_CurLine) ) {
         if ( !xTryGetDouble(value.m_Value, pMessageListener) ) {
             lr.UngetLine();
             break;
@@ -1221,8 +1204,8 @@ void CWiggleReader::xGetVarStepInfo(
 
     varStepInfo.Reset();
     while ( xSkipWS() ) {
-        CTempString name = xGetParamName(pMessageListener);
-        CTempString value = xGetParamValue(pMessageListener);
+        string name = xGetParamName(pMessageListener);
+        string value = xGetParamValue(pMessageListener);
         if ( name == "chrom" ) {
             varStepInfo.mChrom = value;
         }
@@ -1259,7 +1242,7 @@ void CWiggleReader::xReadVariableStepData(
     SValueInfo value;
     value.m_Chrom = varStepInfo.mChrom;
     value.m_Span = varStepInfo.mSpan;
-    while ( xGetLine(lr) ) {
+    while ( xGetLine(lr, m_CurLine) ) {
         if ( !xTryGetPos(value.m_Pos, pMessageListener) ) {
             lr.UngetLine();
             break;
@@ -1273,7 +1256,7 @@ void CWiggleReader::xReadVariableStepData(
 
 //  =========================================================================
 void CWiggleReader::xReadBedLine(
-    CTempString chrom,
+    const string& chrom,
     IMessageListener* pMessageListener)
 //  =========================================================================
 {

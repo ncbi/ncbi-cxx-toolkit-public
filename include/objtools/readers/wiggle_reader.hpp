@@ -350,31 +350,27 @@ protected:
 
     void 
     xReadBedLine(
-        CTempString chrom,
+        const string& chrom,
         IMessageListener*);
 
     CRef<CSeq_annot>
     xGetAnnot();
 
     bool 
-    xGetLine(
-        ILineReader&);
-
-    bool 
     xCommentLine() const;
 
-    CTempString 
+    string 
     xGetWord(
         IMessageListener*);
 
     bool 
     xSkipWS();
 
-    CTempString 
+    string 
     xGetParamName(
         IMessageListener*);
 
-    CTempString 
+    string 
     xGetParamValue(
         IMessageListener*);
 
@@ -450,7 +446,7 @@ protected:
 
     void 
     xSetChrom(
-        CTempString chrom);
+        const string& chrom);
 
     CRef<CSeq_loc> 
     xGetContainingLoc();
@@ -462,7 +458,7 @@ protected:
     //  data:
     //
 protected:
-    CTempStringEx m_CurLine;
+    string m_CurLine;
     string m_ChromId;
     TValues m_Values;
     double m_GapValue;

@@ -143,30 +143,16 @@ CMicroArrayReader::ReadSeqAnnot(
 
     string line;
     int featureCount = 0;
-
-    while (!lr.AtEOF()) {
-        ++m_uLineNumber;
-        line = *++lr;
-        if (NStr::TruncateSpaces(line).empty()) {
-            continue;
-        }
-        if (xParseComment(line, annot)) {
-            continue;
+    while (xGetLine(lr, line)) {
+        if (xIsTrackLine(line)  &&  featureCount) {
+            xUngetLine(lr);
+            break;
         }
         if (xParseBrowserLine(line, annot, pEC)) {
             continue;
         }
-        if (NStr::StartsWith(line, "track ")) {
-            if (featureCount > 0) {
-                --m_uLineNumber;
-                lr.UngetLine();
-                break;
-            }
-            else {
-                if (xParseTrackLine(line, pEC)) {
-                    continue;
-                }
-            }
+        if (xParseTrackLine(line, pEC)) {
+            continue;
         }
 
 	    string record_copy = line;
@@ -217,18 +203,6 @@ CMicroArrayReader::ReadSeqAnnot(
     return annot;
 }
 
-//  ----------------------------------------------------------------------------
-bool CMicroArrayReader::xParseComment(
-    const string& record,
-    CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
-//  ----------------------------------------------------------------------------
-{
-    if (NStr::StartsWith(record, "#")) {
-        return true;
-    }
-    return false;
-}
- 
 //  ----------------------------------------------------------------------------
 bool CMicroArrayReader::xParseFeature(
     const vector<string>& fields,

@@ -285,13 +285,6 @@ protected:
         const string&,
         const string& );
                 
-    bool x_IsCommentLine(
-        const CTempString& );
-
-    bool x_ReadLine(
-        ILineReader&,
-        string& );
-
     void x_PlaceFeature(
         CSeq_feat& feat, 
         const SRecord& );

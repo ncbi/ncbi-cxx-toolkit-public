@@ -182,6 +182,19 @@ public:
         ICanceled* =0);
 
 protected:
+    virtual bool xGetLine(
+        ILineReader&,
+        string&);
+
+    virtual bool xUngetLine(
+        ILineReader&);
+
+    virtual bool xIsCommentLine(
+        const CTempString& );
+
+    virtual bool xIsTrackLine(
+        const CTempString& );
+
     virtual void xAssignTrackData(
         CRef<CSeq_annot>& );
                 

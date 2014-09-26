@@ -341,15 +341,6 @@ protected:
         CRawBedRecord&,
         IMessageListener*);
 
-    bool 
-    xGetLine(
-        ILineReader&,
-        string&);
-
-    bool 
-    xCommentLine(
-        const string&) const;
-
     static void xCleanColumnValues(
         vector<string>&);
 
