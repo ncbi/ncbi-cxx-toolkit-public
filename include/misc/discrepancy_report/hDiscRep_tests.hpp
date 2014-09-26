@@ -1969,7 +1969,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
        CFlatfileTextFind ( const string& setting_name) {
               m_seqdesc_sel.push_back(CSeqdesc::e_Source);
               m_seqdesc_sel.push_back(CSeqdesc::e_Molinfo);
-              m_seqdesc_sel.push_back(CSeqdesc::e_Title);
               m_seqdesc_sel.push_back(CSeqdesc::e_Genbank);
               m_seqdesc_sel.push_back(CSeqdesc::e_Pub);
               m_setting_name = setting_name;
@@ -2003,6 +2002,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
        CConstRef <CBioseq> m_bsq;
 
        CConstRef <CObject> x_GetObjRef(const string& desc, CSeqdesc_CI ci);
+       void x_GetDescAndObjRef4Seqdesc(CConstRef <CBioseq> bioseq, 
+                 CSeqdesc :: E_Choice seqdesc_type, CSeqdesc& seqdesc, string& desc, 
+                 CConstRef <CObject> obj_ref);
   };
 
   class CSeqEntry_TEST_ALIGNMENT_HAS_SCORE : public CSeqEntryTestAndRepData
