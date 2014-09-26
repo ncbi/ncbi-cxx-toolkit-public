@@ -88,19 +88,12 @@ class COpticalChrData
 {
 public:
     COpticalChrData(const string& nm, const char *enzyme, bool is_linear=true) :
-      m_name(nm), m_enzyme(enzyme), m_length(0), m_linear(is_linear) {};
+      m_name(nm), m_enzyme(enzyme), m_linear(is_linear) {};
 
       void sortFragments(){ m_fragments.sort(lt_fragment()); };
-      void SetLength(){
-          if (m_length == 0) {
-              ITERATE (list <TFragm>, it, m_fragments)
-                  m_length += it->second;
-          }
-      };
       string m_name;
       string m_enzyme;
       list <TFragm> m_fragments;
-      int m_length;
       bool m_linear;
 };
 
@@ -271,7 +264,6 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
     CSeq_inst& inst(bioseq.SetInst());
     inst.SetRepr(CSeq_inst::eRepr_map);
     inst.SetMol(CSeq_inst::eMol_dna);
-    inst.SetLength(it.m_length);
     inst.SetTopology(it.m_linear ? CSeq_inst::eTopology_linear : CSeq_inst::eTopology_circular);
     inst.SetStrand(CSeq_inst::eStrand_ds);
 
@@ -290,15 +282,26 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
 
     f->SetData(*fd);
 
-    CRef<CPacked_seqpnt> spnt(new CPacked_seqpnt());
-    int addr = -1;
+    f->SetLocation().SetPacked_pnt().SetId(*id);
+    CPacked_seqpnt::TPoints& points = f->SetLocation().SetPacked_pnt().SetPoints();
+    points.reserve(it.m_fragments.size());
+    
+    TSeqPos addr = 0;
     ITERATE (list <TFragm>, fit, it.m_fragments) {
+        TSeqPos prev = addr;
         addr += fit->second;
-        spnt->AddPoint(addr);
+        if (prev > addr)
+        {
+           m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+               string("Location reached numeric limit at row I=") + 
+               (fit->first.first == 0 ? NStr::IntToString(fit->first.second) :
+                                        NStr::IntToString(fit->first.first)  + "." + NStr::IntToString(fit->first.second))));
+           break;
+        }
+        points.push_back(addr - 1);
     }
 
-    CRef<CSeq_loc> l(new CSeq_loc(*id, spnt->GetPoints()));
-    f->SetLocation(*l);
+    inst.SetLength(addr);
 
     td.push_back(f);
 }
@@ -466,28 +469,27 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
                         attributes::const_iterator ait = at.find("I");
                         TFragm fragm;
                         CTempString s(ait->get_value());
-                        size_t n = s.find('.');
 
+                        size_t n = s.find('.');
                         if (n == CTempString::npos)
                         {
-                            n = s.length();
-                            fragm.first.second = 0;
+                            fragm.first.first = 0;
+                            fragm.first.second = NStr::StringToUInt(s);
                         }
                         else
                         {
-                            fragm.first.second = NStr::StringToInt(s.substr(n+1, s.length()-n-1));
+                            fragm.first.first  = NStr::StringToUInt(s.substr(0, n));
+                            fragm.first.second = NStr::StringToUInt(s.substr(n+1, s.length()-n-1));
                         }
 
-                        fragm.first.first = NStr::StringToUInt(s.substr(0, n));
 
                         ait = at.find("S");
-                        fragm.second = atoi(ait->get_value());
+                        fragm.second = NStr::StringToUInt(ait->get_value());
                         chr.m_fragments.push_back(fragm);
                     }
                 }
             }
             chr.sortFragments();
-            chr.SetLength();
             m_vchr.push_back(chr);
         }
     }
