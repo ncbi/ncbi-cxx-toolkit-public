@@ -256,7 +256,8 @@ CPhyTreeLabelTracker::CPhyTreeLabelTracker(const string& label_feature,
     : m_LabelFeatureTag(label_feature),
       m_ColorFeatureTag(color_feature),
       m_FoundQueryNode(false),
-      m_FoundSeqFromType(false)
+      m_FoundSeqFromType(false),
+      m_FoundSeqFromVerifiedMat(false)      
 {
     const CBioTreeFeatureDictionary& fdict = tree.GetFeatureDict();
     if (!fdict.HasFeature(label_feature) || !fdict.HasFeature(color_feature)) {
@@ -285,7 +286,9 @@ ETreeTraverseCode CPhyTreeLabelTracker::operator() (
         if (!m_FoundSeqFromType && x_IsSeqFromType(node)) {
             m_FoundSeqFromType = true;
         }
-
+        if (!m_FoundSeqFromVerifiedMat && x_IsSeqFromVerifiedMat(node)) {
+            m_FoundSeqFromVerifiedMat = true;
+        }        
         if (node.IsLeaf()) {
             const string& label = node.GetFeature(m_LabelFeatureTag);
             const string& color = node.GetFeature(m_ColorFeatureTag);
@@ -312,6 +315,14 @@ bool CPhyTreeLabelTracker::x_IsSeqFromType(
     return node.GetFeature(CPhyTreeFormatter::GetFeatureTag(
                                             CPhyTreeFormatter::eNodeInfoId))
         == CPhyTreeFormatter::kNodeInfoSeqFromType;
+}
+
+bool CPhyTreeLabelTracker::x_IsSeqFromVerifiedMat(
+                                  const CBioTreeDynamic::CBioNode& node) const
+{
+    return node.GetFeature(CPhyTreeFormatter::GetFeatureTag(
+                                            CPhyTreeFormatter::eNodeInfoId))
+        == CPhyTreeFormatter::kNodeInfoSeqFromVerifiedMat;
 }
 
 

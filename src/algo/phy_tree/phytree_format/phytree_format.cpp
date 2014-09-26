@@ -50,6 +50,8 @@ USING_SCOPE(objects);
 static const string s_kQueryNodeColor = "255 0 0";
 static const string s_kQueryNodeBgColor = "255 255 0";
 static const string s_kSeqOfTypeNodeBgColor = "204 255 204";
+static const string s_kSeqFromVerifiedMatNodeBgColor = "181 228 240";
+
 
 map<int,string> linkotTypeToBGColor;
 
@@ -64,6 +66,9 @@ const string CPhyTreeFormatter::kNodeInfoQuery = "query";
 
 // feature value for sequences from type
 const string CPhyTreeFormatter::kNodeInfoSeqFromType = "sequence_from_type";
+
+const string CPhyTreeFormatter::kNodeInfoSeqFromVerifiedMat = "sequence_from_verified_material";
+
 
 
 CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
@@ -317,6 +322,9 @@ bool CPhyTreeFormatter::ExpandCollapseSubtree(int node_id)
         else if (tracker.FoundSeqFromType()) {
             x_MarkNode(node, s_kSeqOfTypeNodeBgColor);
         }
+        else if (tracker.FoundSeqFromVerifiedMat()) {
+            x_MarkNode(node, s_kSeqFromVerifiedMatNodeBgColor);
+        }        
         int leafCount = tracker.GetLeafCount();
         if(leafCount != 0) {            
             node->SetFeature(GetFeatureTag(eLeafCountId),NStr::IntToString(leafCount));
@@ -446,7 +454,8 @@ bool CPhyTreeFormatter::IsSingleBlastName(void)
 
 void CPhyTreeFormatter::x_Init(void)
 {
-    linkotTypeToBGColor[eFromType] = s_kSeqOfTypeNodeBgColor;
+    linkotTypeToBGColor[eFromType] = s_kSeqOfTypeNodeBgColor;    
+    linkotTypeToBGColor[eFromVerifiedMaterial] = s_kSeqFromVerifiedMatNodeBgColor;    
 
     m_SimplifyMode = eNone;
     m_LinkoutDB = NULL;
@@ -512,6 +521,9 @@ void CPhyTreeFormatter::x_CollapseSubtrees(CPhyTreeNodeGroupper& groupper)
         else if (query_checker.HasSeqFromType()) {
             x_MarkNode(it->GetNode(), s_kSeqOfTypeNodeBgColor);
         }
+        else if (query_checker.HasSeqFromVerifiedMat()) {
+            x_MarkNode(it->GetNode(), s_kSeqFromVerifiedMatNodeBgColor);
+        }        
         int leafCount = query_checker.GetLeafCount();
         if(leafCount != 0) {            
             it->GetNode()->SetFeature(GetFeatureTag(eLeafCountId), NStr::IntToString(leafCount));
@@ -933,15 +945,21 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                     // mark sequence of type, unless the node represents query
                     else if(linkoutDB) {
                         int seqLinkout = linkoutDB->GetLinkout(*seqids[seq_number],"");
-                        if(seqLinkout & linkoutType) {
-                            // color for "linkout" node
-                            string bgColor = linkotTypeToBGColor[linkoutType];
-                            if(!bgColor.empty()) {
-                                x_AddFeature(eLabelBgColorId,bgColor, node); 
-                                x_AddFeature(eNodeInfoId, kNodeInfoSeqFromType,
-                                             node);
-                            }
+                        int linkoutType;
+                        string nodeInfo,bgColor;
+                        if(seqLinkout & eFromType) {
+                            bgColor = linkotTypeToBGColor[eFromType];
+                            nodeInfo = kNodeInfoSeqFromType;
                         }
+                        else if(seqLinkout & eFromVerifiedMaterial) {                            
+                            bgColor = linkotTypeToBGColor[eFromVerifiedMaterial];
+                            nodeInfo = kNodeInfoSeqFromVerifiedMat;
+                        }
+                        // color for "linkout" node                        
+                        if(!bgColor.empty()) {
+                            x_AddFeature(eLabelBgColorId,bgColor, node);                                 
+                            x_AddFeature(eNodeInfoId,nodeInfo,node);
+                        }                        
                     }
                     
                     // done with this node
