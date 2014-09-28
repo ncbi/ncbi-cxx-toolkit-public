@@ -54,13 +54,15 @@ USING_SCOPE(objects);
 class NCBI_XALGOSEQ_EXPORT CRSite
 {
 public:
-    CRSite(int start, int end);
+    CRSite(int start, int end, ENa_strand strand = eNa_strand_both);
 
     // location of recognition sequence
     void SetStart(const int pos);
     int GetStart(void) const;
     void SetEnd(const int pos);
     int GetEnd(void) const;
+    void SetStrand(ENa_strand strand);
+    ENa_strand GetStrand() const;
 
     // cleavage locations
     // 0 is the bond just before the recognition sequence
@@ -72,6 +74,7 @@ public:
 private:
     int m_Start;
     int m_End;
+    ENa_strand m_Strand;
     vector<int> m_PlusCuts;
     vector<int> m_MinusCuts;
 };
@@ -84,10 +87,11 @@ NCBI_XALGOSEQ_EXPORT ostream& operator<<(ostream& os, const CRSite& site);
 ///////////////////////////////////////////////////////////
 
 inline
-CRSite::CRSite(int start, int end)
+CRSite::CRSite(int start, int end, ENa_strand strand)
+    : m_Start(start)
+    , m_End(end)
+    , m_Strand(strand)
 {
-    m_Start = start;
-    m_End = end;
 }
 
 
@@ -144,6 +148,20 @@ inline
 int CRSite::GetEnd(void) const
 {
     return m_End;
+}
+
+
+inline
+void CRSite::SetStrand(ENa_strand strand)
+{
+    m_Strand = strand;
+}
+
+
+inline
+ENa_strand CRSite::GetStrand(void) const
+{
+    return m_Strand;
 }
 
 

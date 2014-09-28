@@ -337,24 +337,18 @@ struct SCompareLocation
 class CPatternRec
 {
 public:
-    enum EIsComplement {
-        eIsNotComplement,
-        eIsComplement
-    };
-
     CPatternRec(string pattern, int enzyme_index, int spec_index,
-                EIsComplement is_complement,
+                ENa_strand strand,
                 unsigned int fsm_pat_size) : m_Pattern(pattern),
                                              m_EnzymeIndex(enzyme_index),
                                              m_SpecIndex(spec_index),
-                                             m_IsComplement(is_complement),
+                                             m_Strand(strand),
                                              m_FsmPatSize(fsm_pat_size) {}
     // member access
     const string& GetPattern(void) const {return m_Pattern;}
     int GetEnzymeIndex(void) const {return m_EnzymeIndex;}
     int GetSpecIndex(void) const {return m_SpecIndex;}
-    EIsComplement GetIsComlement(void) const {return m_IsComplement;}
-    bool IsComplement(void) const {return m_IsComplement == eIsComplement;}
+    ENa_strand GetStrand(void) const {return m_Strand;}
     unsigned int GetFsmPatSize(void) const {return m_FsmPatSize;}
 private:
     // pattern in ncbi8na
@@ -363,7 +357,7 @@ private:
     int m_EnzymeIndex;
     int m_SpecIndex;
     // whether we represent the complement of the specificity
-    EIsComplement m_IsComplement;
+    ENa_strand m_Strand;
     unsigned int m_FsmPatSize;
 };
 
@@ -523,6 +517,7 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
         CRef<CSeq_loc> recog_site(new CSeq_loc);
         recog_site->SetInt().SetFrom(site->GetStart());
         recog_site->SetInt().SetTo  (site->GetEnd());
+        recog_site->SetInt().SetStrand(site->GetStrand());
         recog_site->SetId(id);
         locs.push_back(recog_site);
 
@@ -535,7 +530,7 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
                 // indicate that the cut is to the "left"
                 cut_site->SetPnt()
                     .SetFuzz().SetLim(CInt_fuzz::eLim_tl);
-                cut_site->SetPnt().SetStrand(eNa_strand_plus);
+                cut_site->SetPnt().SetStrand(site->GetStrand());
                 cut_site->SetId(id);
                 locs.push_back(cut_site);
             } else {
@@ -550,7 +545,7 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
                 // indicate that the cut is to the "left"
                 cut_site->SetPnt()
                     .SetFuzz().SetLim(CInt_fuzz::eLim_tl);
-                cut_site->SetPnt().SetStrand(eNa_strand_minus);
+                cut_site->SetPnt().SetStrand(Reverse(site->GetStrand()));
                 cut_site->SetId(id);
                 locs.push_back(cut_site);
             } else {
@@ -571,7 +566,6 @@ void s_AddSitesToAnnot(const vector<CRSite>& sites,
         copy(locs.begin(), locs.end(),
              back_inserter(feat->SetLocation().SetMix().Set()));
 
-        feat->SetProduct().Assign(feat->GetLocation());
         CRef<CSeq_loc> mapped =
             s_RemapChildToParent(parent_loc, feat->GetLocation(), &scope);
         feat->SetLocation(*mapped);
@@ -735,6 +729,12 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
             // if there are more than two Ns only use
             // part of pattern before first N
             CSeqMatch::IupacToNcbi8na(spec->GetSeq(), pat);
+            // Check if the pattern is pallindromic.
+            string comp = pat;
+            CSeqMatch::CompNcbi8na(comp);
+            ENa_strand strand =
+                (comp == pat) ? eNa_strand_both : eNa_strand_plus;
+
             SIZE_TYPE fsm_pat_size = pat.find_first_of(0x0f);
             {{
                 SIZE_TYPE pos = pat.find_first_of(0x0f, fsm_pat_size + 1);
@@ -743,20 +743,18 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                     fsm_pat_size = pat.size();
                 }
             }}
+                
             patterns.push_back(CPatternRec(pat, enzyme - enzymes.begin(),
                                            spec - specs.begin(), 
-                                           CPatternRec::eIsNotComplement,
+                                           strand,
                                            fsm_pat_size));
             // add pattern to fsm
             // (add only fsm_pat_size of it)
             CFindRSites::x_AddPattern(pat.substr(0, fsm_pat_size), fsm,
                                       patterns.size() - 1);
 
-            // if the pattern is not pallindromic,
-            // do a search for its complement too
-            string comp = pat;
-            CSeqMatch::CompNcbi8na(comp);
-            if (comp != pat) {
+            // If not palidromic do a search for its complement too
+            if (strand != eNa_strand_both) {
                 {{
                     fsm_pat_size = comp.find_first_of(0x0f);
                     SIZE_TYPE pos = comp.find_first_of(0x0f, fsm_pat_size + 1);
@@ -768,7 +766,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                 patterns.push_back(CPatternRec(comp, enzyme 
                                                - enzymes.begin(),
                                                spec - specs.begin(), 
-                                               CPatternRec::eIsComplement,
+                                               Reverse(strand),
                                                fsm_pat_size));
                 // add pattern to fsm
                 // (add only fsm_pat_size of it)
@@ -832,13 +830,16 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                         continue;  // not a real match
                     }
                 }
-                CRSite site(begin_pos, end_pos);
-                const CRSpec& spec = enzymes[pattern.GetEnzymeIndex()]
-                    .GetSpecs()[pattern.GetSpecIndex()];
+                const CREnzyme& enzyme =
+                    enzymes[pattern.GetEnzymeIndex()];
+                const CRSpec& spec =
+                    enzyme.GetSpecs()[pattern.GetSpecIndex()];
 
+                CRSite site(begin_pos, end_pos);
+                site.SetStrand(pattern.GetStrand());
                 const vector<int>& plus_cuts = spec.GetPlusCuts();
                 ITERATE (vector<int>, cut, plus_cuts) {
-                    if (pattern.IsComplement()) {
+                    if (IsReverse(pattern.GetStrand())) {
                         site.SetPlusCuts()
                             .push_back(begin_pos 
                                        + pattern.GetPattern().size()
@@ -849,7 +850,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                 }
                 const vector<int>& minus_cuts = spec.GetMinusCuts();
                 ITERATE (vector<int>, cut, minus_cuts) {
-                    if (pattern.IsComplement()) {
+                    if (IsReverse(pattern.GetStrand())) {
                         site.SetMinusCuts()
                             .push_back(begin_pos
                                        + pattern.GetPattern().size()
@@ -897,14 +898,16 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                         continue;  // no match of any sort
                     }
                     // otherwise, a definite or possible site
+
                     CRSite site(i, i + pat.size() -1);
+                    site.SetStrand(pattern->GetStrand());
 
                     // figure out cleavage locations
                     const vector<int>& plus_cuts 
                         = enzymes[pattern->GetEnzymeIndex()]
                         .GetSpecs()[pattern->GetSpecIndex()].GetPlusCuts();
                     ITERATE (vector<int>, cut, plus_cuts) {
-                        if (pattern->IsComplement()) {
+                        if (IsReverse(pattern->GetStrand())) {
                             site.SetPlusCuts()
                                 .push_back(i + pattern->GetPattern().size()
                                            - *cut);
@@ -918,7 +921,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                         .GetSpecs()[pattern->GetSpecIndex()]
                         .GetMinusCuts();
                     ITERATE (vector<int>, cut, minus_cuts) {
-                        if (pattern->IsComplement()) {
+                        if (IsReverse(pattern->GetStrand())) {
                             site.SetMinusCuts()
                                 .push_back(i + pattern->GetPattern().size()
                                            - *cut);
