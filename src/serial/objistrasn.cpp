@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbifloat.h>
 #include <serial/objistrasn.hpp>
 #include <serial/impl/member.hpp>
 #include <serial/enumvalues.hpp>
@@ -843,7 +844,7 @@ double CObjectIStreamAsn::ReadDouble(void)
 
     if (result >= 0 && result <= DBL_MIN) {
         result = DBL_MIN;
-    } else if (!isfinite(result)) {
+    } else if (!finite(result)) {
         result = DBL_MAX;
     }
     return is_negative ? -result : result;
