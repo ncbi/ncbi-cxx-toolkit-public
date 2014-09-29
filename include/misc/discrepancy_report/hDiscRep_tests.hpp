@@ -1967,12 +1967,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
        CFlatfileTextFind ( const string& setting_name) {
-              m_seqdesc_sel.push_back(CSeqdesc::e_Source);
-              m_seqdesc_sel.push_back(CSeqdesc::e_Molinfo);
-              m_seqdesc_sel.push_back(CSeqdesc::e_Genbank);
-              m_seqdesc_sel.push_back(CSeqdesc::e_Pub);
               m_setting_name = setting_name;
        }
+
        virtual ~CFlatfileTextFind () { };
     
        virtual EBioseqSkip notify_bioseq(CBioseqContext& ctx);
@@ -1985,8 +1982,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                       const CBioseqContext& ctx, 
                                       const IFlatItem & flat_item, 
                                  CFlatFileConfig::FGenbankBlocks which_block);
-       string m_block_text;
-
        virtual void TestOnObj(const CBioseq_set& bioseq_set) { };
        virtual void TestOnObj(const CSeq_entry& seq_entry) { };
        virtual void TestOnObj(const CBioseq& bioseq) { };
@@ -1998,10 +1993,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
     protected:
        string m_bioseq_desc, m_setting_name, m_taxname; 
-       vector <CSeqdesc::E_Choice> m_seqdesc_sel;
        CConstRef <CBioseq> m_bsq;
 
-       CConstRef <CObject> x_GetObjRef(const string& desc, CSeqdesc_CI ci);
        void x_GetDescAndObjRef4Seqdesc(CConstRef <CBioseq> bioseq, 
                  CSeqdesc :: E_Choice seqdesc_type, CSeqdesc& seqdesc, string& desc, 
                  CConstRef <CObject> obj_ref);
