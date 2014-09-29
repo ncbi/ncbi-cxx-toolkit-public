@@ -95,6 +95,8 @@ void CWGSTestApp::Init(void)
     arg_desc->AddFlag("verbose", "Print info about found data");
 
     arg_desc->AddFlag("withdrawn", "Include withdrawn sequences");
+    arg_desc->AddFlag("master", "Include master descriptors if any");
+    arg_desc->AddFlag("master-no-filter", " Do not filter master descriptors");
 
     arg_desc->AddFlag("print_seq", "Print loader Bioseq objects");
 
@@ -338,6 +340,15 @@ int CWGSTestApp::Run(void)
         out << "Opened WGS in "<<sw.Restart()
             << NcbiEndl;
     }
+    if ( args["master"] ) {
+        CWGSDb::EDescrFilter filter = CWGSDb::eDescrDefaultFilter;
+        if ( args["master-no-filter"] ) {
+            filter = CWGSDb::eDescrNoFilter;
+        }
+        if ( !wgs_db.LoadMasterDescr(filter) ) {
+            ERR_POST("No master descriptors found");
+        }
+    }
     
     bool is_scaffold;
     uint64_t row = wgs_db.ParseRow(path, &is_scaffold);
@@ -453,6 +464,16 @@ int CWGSTestApp::Run(void)
     }
     if ( args["gi"] ) {
         TGi gi = TIntId(args["gi"].AsInt8());
+        CWGSGiResolver gi_resolver;
+        CWGSGiResolver::TAccessionList accs = gi_resolver.FindAll(gi);
+        if ( accs.empty() ) {
+            out << "No WGS accessions with gi "<<gi<<NcbiEndl;
+        }
+        else {
+            ITERATE ( CWGSGiResolver::TAccessionList, it, accs ) {
+                out << "WGS accessions with gi: "<<*it<<NcbiEndl;
+            }
+        }
         CWGSGiIterator gi_it(wgs_db, gi);
         if ( !gi_it ) {
             out << "GI "<<gi<<" not found" << NcbiEndl;

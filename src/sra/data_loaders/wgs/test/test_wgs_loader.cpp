@@ -850,8 +850,8 @@ BOOST_AUTO_TEST_CASE(GITest)
 
     CBioseq_Handle bh;
 
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AABR01000100.1"));
-    BOOST_CHECK(bh);
+    //bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AABR01000100.1"));
+    //BOOST_CHECK(bh);
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25725721));
     BOOST_CHECK(bh);

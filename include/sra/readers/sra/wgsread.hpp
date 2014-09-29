@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <util/range.hpp>
+#include <util/rangemap.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -64,10 +65,44 @@ class CWGSSeqIterator;
 class CWGSScaffoldIterator;
 class CWGSGiIterator;
 
+
+class NCBI_SRAREAD_EXPORT CWGSGiResolver
+{
+public:
+    CWGSGiResolver(void);
+    ~CWGSGiResolver(void);
+
+    bool IsValid(void) const {
+        return !m_GiIndex.empty();
+    }
+
+    // return all WGS accessions that could contain gi
+    typedef vector<CTempString> TAccessionList;
+    TAccessionList FindAll(TGi gi) const;
+
+    // return single WGS accession that could contain gi
+    // return empty string if there are no accession candidates
+    // throw an exception if there are more than one candidate
+    CTempString Find(TGi gi) const;
+
+private:
+    void x_Load(const string& file_name);
+
+    enum {
+        kMinAccessionLength = 6,
+        kMaxAccessionLength = 6
+    };
+    struct SAccession {
+        char accession[kMaxAccessionLength+1];
+    };
+    typedef CRangeMultimap<SAccession, TIntId> TGiIndex;
+    TGiIndex m_GiIndex;
+};
+
+
 class NCBI_SRAREAD_EXPORT CWGSDb_Impl : public CObject
 {
 public:
-    CWGSDb_Impl(void) {}
     CWGSDb_Impl(CVDBMgr& mgr,
                 CTempString path_or_acc,
                 CTempString vol_path = CTempString());
@@ -109,12 +144,26 @@ public:
     CRef<CSeq_id> GetContigSeq_id(uint64_t row_id) const;
     CRef<CSeq_id> GetScaffoldSeq_id(uint64_t row_id) const;
 
-    typedef vector< CRef<CSeqdesc> > TMasterDescr;
-    void SetMasterDescr(const TMasterDescr& descr);
+    typedef list< CRef<CSeqdesc> > TMasterDescr;
+
+    bool IsSetMasterDescr(void) const {
+        return m_IsSetMasterDescr;
+    }
     const TMasterDescr& GetMasterDescr(void) const {
         return m_MasterDescr;
     }
 
+    enum EDescrFilter {
+        eDescrNoFilter,
+        eDescrDefaultFilter
+    };
+    static bool IsGoodMasterDesc(const CSeqdesc& descr,
+                                 EDescrFilter filter = eDescrDefaultFilter);
+    void ResetMasterDescr(void);
+    void SetMasterDescr(const TMasterDescr& descr,
+                        EDescrFilter filter = eDescrDefaultFilter);
+
+    bool LoadMasterDescr(EDescrFilter filter = eDescrDefaultFilter);
 
     // get GI range of nucleotide sequences
     pair<TGi, TGi> GetNucGiRange(void);
@@ -205,6 +254,7 @@ protected:
 
 protected:
     void x_InitIdParams(void);
+    void x_LoadMasterDescr(const CVDBTable& table, EDescrFilter filter);
 
 private:
     CVDBMgr m_Mgr;
@@ -219,6 +269,7 @@ private:
     CVDBObjectCache<SScfTableCursor> m_Scf;
     CVDBObjectCache<SIdxTableCursor> m_Idx;
 
+    bool m_IsSetMasterDescr;
     TMasterDescr m_MasterDescr;
 
 private:
@@ -282,6 +333,17 @@ public:
     // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
     uint64_t GetProtGiRowId(TGi gi) const {
         return GetNCObject().GetProtGiRowId(gi);
+    }
+
+    enum EDescrFilter {
+        eDescrNoFilter      = CWGSDb_Impl::eDescrNoFilter,
+        eDescrDefaultFilter = CWGSDb_Impl::eDescrDefaultFilter
+    };
+    // load master descriptors from VDB metadata (if any)
+    // doesn't try to load if master descriptors already set
+    // returns true if descriptors are set at the end, or false if not
+    bool LoadMasterDescr(EDescrFilter filter = eDescrDefaultFilter) {
+        return GetNCObject().LoadMasterDescr(CWGSDb_Impl::EDescrFilter(filter));
     }
 };
 

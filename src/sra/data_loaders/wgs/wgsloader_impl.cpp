@@ -309,23 +309,47 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     CWGSFileInfo::SAccFileInfo ret;
     if ( idh.IsGi() ) {
         TGi gi = idh.GetGi();
-        CMutexGuard guard(m_Mutex);
-        ITERATE ( TFixedFiles, it, m_FixedFiles ) {
-            CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
-            if ( gi_it ) {
-                ret.file = it->second;
-                ret.row_id = gi_it.GetRowId();
-                ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
-                ret.has_version = false;
+        if ( !m_FoundFiles.empty() ) {
+            ITERATE ( TFixedFiles, it, m_FixedFiles ) {
+                CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
+                if ( gi_it ) {
+                    ret.file = it->second;
+                    ret.row_id = gi_it.GetRowId();
+                    ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
+                    ret.has_version = false;
+                    return ret;
+                }
             }
         }
-        ITERATE ( TFoundFiles, it, m_FoundFiles ) {
-            CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
-            if ( gi_it ) {
-                ret.file = it->second;
-                ret.row_id = gi_it.GetRowId();
-                ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
-                ret.has_version = false;
+        else {
+            if ( m_GiResolver.IsValid() ) {
+                CWGSGiResolver::TAccessionList accs = m_GiResolver.FindAll(gi);
+                ITERATE ( CWGSGiResolver::TAccessionList, it, accs ) {
+                    CRef<CWGSFileInfo> file = GetWGSFile(*it);
+                    if ( !file ) {
+                        continue;
+                    }
+                    CWGSGiIterator gi_it(file->m_WGSDb, gi);
+                    if ( gi_it ) {
+                        ret.file = file;
+                        ret.row_id = gi_it.GetRowId();
+                        ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
+                        ret.has_version = false;
+                        return ret;
+                    }
+                }
+            }
+            else {
+                ITERATE ( TFixedFiles, it, m_FoundFiles ) {
+                    CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
+                    if ( gi_it ) {
+                        ret.file = it->second;
+                        ret.row_id = gi_it.GetRowId();
+                        ret.seq_type = gi_it.GetSeqType() == gi_it.eProt? 'P': '\0';
+                        ret.has_version = false;
+                        return ret;
+                    }
+                }
             }
         }
         return ret;
@@ -592,16 +616,23 @@ void CWGSFileInfo::x_Initialize(CWGSDataLoader_Impl& impl,
 void CWGSFileInfo::x_InitMasterDescr(void)
 {
     if ( !m_AddWGSMasterDescr ) {
+        // master descriptors are disabled
+        return;
+    }
+    if ( m_WGSDb->LoadMasterDescr() ) {
+        // loaded descriptors from metadata
         return;
     }
     CRef<CSeq_id> id = m_WGSDb->GetMasterSeq_id();
     if ( !id ) {
+        // no master sequence id
         return;
     }
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
     CDataLoader* gb_loader =
         CObjectManager::GetInstance()->FindDataLoader("GBLOADER");
     if ( !gb_loader ) {
+        // no GenBank loader found -> no way to load master record
         return;
     }
     CDataLoader::TTSE_LockSet locks =
@@ -612,28 +643,7 @@ void CWGSFileInfo::x_InitMasterDescr(void)
             continue;
         }
         if ( bs_info->IsSetDescr() ) {
-            CWGSDb_Impl::TMasterDescr master_descr;
-            const CSeq_descr::Tdata& descr = bs_info->GetDescr().Get();
-            ITERATE ( CSeq_descr::Tdata, it, descr ) {
-                const CSeqdesc& desc = **it;
-                if ( desc.Which() == CSeqdesc::e_Pub ||
-                     desc.Which() == CSeqdesc::e_Comment ) {
-                    master_descr.push_back(*it);
-                }
-                else if ( desc.Which() == CSeqdesc::e_User ) {
-                    const CObject_id& type = desc.GetUser().GetType();
-                    if ( type.Which() == CObject_id::e_Str ) {
-                        const string& name = type.GetStr();
-                        if ( name == "DBLink" ||
-                             name == "GenomeProjectsDB" ||
-                             name == "StructuredComment" ||
-                             name == "FeatureFetchPolicy" ) {
-                            master_descr.push_back(*it);
-                        }
-                    }
-                }
-            }
-            m_WGSDb->SetMasterDescr(master_descr);
+            m_WGSDb->SetMasterDescr(bs_info->GetDescr().Get());
         }
         break;
     }

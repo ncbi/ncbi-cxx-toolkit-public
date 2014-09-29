@@ -61,6 +61,113 @@ NCBI_DEFINE_ERR_SUBCODE_X(1);
 BEGIN_NAMESPACE(objects);
 
 
+NCBI_PARAM_DECL(bool, WGS, MASTER_DESCR);
+NCBI_PARAM_DEF(bool, WGS, MASTER_DESCR, true);
+
+NCBI_PARAM_DECL(string, WGS, GI_INDEX);
+NCBI_PARAM_DEF(string, WGS, GI_INDEX, "");
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CWGSGiResolver
+/////////////////////////////////////////////////////////////////////////////
+
+
+#if defined(NCBI_OS_DARWIN) || (defined(NCBI_OS_LINUX) && SIZEOF_VOIDP == 4)
+# define PAN1_PATH "/net/pan1"
+#else
+# define PAN1_PATH "//panfs/pan1"
+#endif
+#define DEGAULT_GI_INDEX_PATH PAN1_PATH "/id_dumps/WGS/tmp/list.wgs_gi_ranges.sorted"
+
+
+CWGSGiResolver::CWGSGiResolver(void)
+{
+    string path = NCBI_PARAM_TYPE(WGS, GI_INDEX)::GetDefault();
+    if ( path.empty() ) {
+        path = DEGAULT_GI_INDEX_PATH;
+    }
+    x_Load(path);
+}
+
+
+CWGSGiResolver::~CWGSGiResolver(void)
+{
+}
+
+
+void CWGSGiResolver::x_Load(const string& file_name)
+{
+    m_GiIndex.clear();
+    CNcbiIfstream in(file_name.c_str());
+    if ( !in ) {
+        // no index file
+        return;
+    }
+    int line = 0;
+    TIntId gi_from, gi_to;
+    SAccession acc;
+    char eol[128];
+    for ( ;; ) {
+        ++line;
+        if ( !in.get(acc.accession, sizeof(acc.accession)) ) {
+            if ( in.eof() ) {
+                // end of data
+                return;
+            }
+        }
+        acc.accession[kMaxAccessionLength] = '\0';
+        size_t length = strlen(acc.accession);
+        if ( length < kMinAccessionLength ) {
+            break;
+        }
+        in >> gi_from >> gi_to;
+        if ( !in ) {
+            break;
+        }
+        if ( gi_from <= 0 || gi_from > gi_to ) {
+            break;
+        }
+        if ( !in.getline(eol, sizeof(eol)) ) {
+            // incomplete line
+            break;
+        }
+        m_GiIndex.insert
+            (TGiIndex::value_type(CRange<TIntId>(gi_from, gi_to), acc));
+    }
+    ERR_POST("CWGSGiResolver: bad file format: "<<file_name<<" at line "<<line);
+    m_GiIndex.clear();
+}
+
+
+CWGSGiResolver::TAccessionList
+CWGSGiResolver::FindAll(TGi gi) const
+{
+    TAccessionList ret;
+    for ( TGiIndex::const_iterator it(m_GiIndex.begin(CRange<TIntId>(gi, gi)));
+          it; ++it ) {
+        ret.push_back(it->second.accession);
+    }
+    return ret;
+}
+
+
+CTempString CWGSGiResolver::Find(TGi gi) const
+{
+    CTempString ret;
+    for ( TGiIndex::const_iterator it(m_GiIndex.begin(CRange<TIntId>(gi, gi)));
+          it; ++it ) {
+        if ( !ret.empty() ) {
+            NCBI_THROW_FMT(CSraException, eOtherError,
+                           "more than one WGS accession can contain gi "<<gi);
+        }
+        ret = it->second.accession;
+    }
+    return ret;
+}
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSDb_Impl
 /////////////////////////////////////////////////////////////////////////////
@@ -121,7 +228,9 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
                          CTempString vol_path)
     : m_Mgr(mgr),
       m_WGSPath(NormalizePathOrAccession(path_or_acc, vol_path)),
-      m_Db(mgr, m_WGSPath)
+      m_Db(mgr, m_WGSPath),
+      m_IdVersion(0),
+      m_IsSetMasterDescr(false)
 {
     x_InitIdParams();
 }
@@ -313,12 +422,92 @@ CRef<CSeq_id> CWGSDb_Impl::GetScaffoldSeq_id(uint64_t row_id) const
 }
 
 
-void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr)
+void CWGSDb_Impl::ResetMasterDescr(void)
 {
     m_MasterDescr.clear();
-    ITERATE ( TMasterDescr, it, descr ) {
-        m_MasterDescr.push_back(Ref(SerialClone(**it)));
+    m_IsSetMasterDescr = false;
+}
+
+
+bool CWGSDb_Impl::LoadMasterDescr(EDescrFilter filter)
+{
+    if ( !IsSetMasterDescr() &&
+         NCBI_PARAM_TYPE(WGS, MASTER_DESCR)::GetDefault() ) {
+        CRef<SSeqTableCursor> seq = Seq();
+        x_LoadMasterDescr(seq->m_Table, filter);
+        Put(seq);
     }
+    return IsSetMasterDescr();
+}
+
+
+void CWGSDb_Impl::x_LoadMasterDescr(const CVDBTable& table,
+                                    EDescrFilter filter)
+{
+    CKMetadata meta(table);
+    CKMDataNode node(meta, "MASTER", CKMDataNode::eMissingIgnore);
+    if ( !node ) {
+        return;
+    }
+
+    size_t size = node.GetSize();
+    if ( !size ) {
+        return;
+    }
+    AutoArray<char> data(size);
+    node.GetData(data.get(), size);
+
+    CObjectIStreamAsnBinary str(data.get(), size);
+    CRef<CSeq_entry> master_entry(new CSeq_entry());
+    str >> *master_entry;
+
+    if ( master_entry->IsSetDescr() ) {
+        SetMasterDescr(master_entry->GetDescr().Get(), filter);
+    }
+}
+
+
+bool CWGSDb_Impl::IsGoodMasterDesc(const CSeqdesc& desc, EDescrFilter filter)
+{
+    if ( filter == eDescrNoFilter ) {
+        return true;
+    }
+    else if ( desc.Which() == CSeqdesc::e_Pub ||
+              desc.Which() == CSeqdesc::e_Comment ||
+              desc.Which() == CSeqdesc::e_Source ) {
+        return true;
+    }
+    else if ( desc.Which() == CSeqdesc::e_User ) {
+        const CObject_id& type = desc.GetUser().GetType();
+        if ( type.Which() == CObject_id::e_Str ) {
+            const string& name = type.GetStr();
+            if ( name == "DBLink" ||
+                 name == "GenomeProjectsDB" ||
+                 name == "StructuredComment" ||
+                 name == "FeatureFetchPolicy" ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr,
+                                 EDescrFilter filter)
+{
+    if ( filter != eDescrNoFilter ) {
+        TMasterDescr descr2;
+        ITERATE ( CSeq_descr::Tdata, it, descr ) {
+            if ( IsGoodMasterDesc(**it, filter) ) {
+                descr2.push_back(Ref(SerialClone(**it)));
+            }
+        }
+        SetMasterDescr(descr2, eDescrNoFilter);
+        return;
+    }
+    m_MasterDescr = descr;
+    m_IsSetMasterDescr = true;
 }
 
 
@@ -721,8 +910,22 @@ CRef<CSeq_descr> CWGSSeqIterator::GetSeq_descr(void) const
         in >> *desc;
         ret->Set().push_back(desc);
     }
-    ITERATE ( CWGSDb_Impl::TMasterDescr, it, GetDb().GetMasterDescr() ) {
-        ret->Set().push_back(*it);
+    bool has_source = false;
+    ITERATE ( CSeq_descr::Tdata, it, ret->Set() ) {
+        const CSeqdesc& desc = **it;
+        if ( desc.IsSource() ) {
+            has_source = true;
+            break;
+        }
+    }
+    if ( GetDb().IsSetMasterDescr() ) {
+        ITERATE ( CWGSDb_Impl::TMasterDescr, it, GetDb().GetMasterDescr() ) {
+            if ( has_source && (*it)->IsSource() ) {
+                // omit master 'source' if contig already has one
+                continue;
+            }
+            ret->Set().push_back(*it);
+        }
     }
     return ret;
 }
@@ -1913,17 +2116,31 @@ void CWGSGiIterator::x_Init(const CWGSDb& wgs_db, ESeqType seq_type)
 bool CWGSGiIterator::x_Excluded(void)
 {
     if ( m_FilterSeqType != eProt && m_Idx->m_NUC_ROW_ID ) {
-        m_CurrRowId = m_Idx->NUC_ROW_ID(m_CurrGi);
-        if ( m_CurrRowId ) {
-            m_CurrSeqType = eNuc;
-            return false;
+        try {
+            m_CurrRowId = m_Idx->NUC_ROW_ID(m_CurrGi);
+            if ( m_CurrRowId ) {
+                m_CurrSeqType = eNuc;
+                return false;
+            }
+        }
+        catch ( CSraException& exc ) {
+            if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
+                throw;
+            }
         }
     }
     if ( m_FilterSeqType != eNuc && m_Idx->m_PROT_ROW_ID ) {
-        m_CurrRowId = m_Idx->PROT_ROW_ID(m_CurrGi);
-        if ( m_CurrRowId ) {
-            m_CurrSeqType = eProt;
-            return false;
+        try {
+            m_CurrRowId = m_Idx->PROT_ROW_ID(m_CurrGi);
+            if ( m_CurrRowId ) {
+                m_CurrSeqType = eProt;
+                return false;
+            }
+        }
+        catch ( CSraException& exc ) {
+            if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
+                throw;
+            }
         }
     }
     m_CurrSeqType = eAll;

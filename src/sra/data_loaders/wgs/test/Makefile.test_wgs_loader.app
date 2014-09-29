@@ -1,5 +1,7 @@
 # $Id$
 
+PROJ_TAG = test
+
 APP = test_wgs_loader
 SRC = test_wgs_loader
 

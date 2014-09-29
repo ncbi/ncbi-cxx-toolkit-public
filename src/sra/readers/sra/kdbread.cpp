@@ -79,22 +79,44 @@ void CKMetadata::x_Init(const CKTable& table)
 }
 
 
-CKMDataNode::CKMDataNode(const CKMetadata& meta, const char* node_name)
+CKMDataNode::CKMDataNode(const CKMetadata& meta,
+                         const char* node_name,
+                         EMissingAction missing_action)
 {
     if ( rc_t rc = KMetadataOpenNodeRead(meta, x_InitPtr(), node_name) ) {
         *x_InitPtr() = 0;
-        NCBI_THROW3(CSraException, eInitFailed,
-                    "Cannot open KMDataNode", rc, node_name);
+        if ( GetRCObject(rc) == RCObject(rcPath) &&
+             GetRCState(rc) == rcNotFound ) {
+            if ( missing_action == eMissingThrow ) {
+                NCBI_THROW3(CSraException, eNotFound,
+                            "Cannot open KMDataNode", rc, node_name);
+            }
+        }
+        else {
+            NCBI_THROW3(CSraException, eInitFailed,
+                        "Cannot open KMDataNode", rc, node_name);
+        }
     }
 }
 
 
-CKMDataNode::CKMDataNode(const CKMDataNode& parent, const char* node_name)
+CKMDataNode::CKMDataNode(const CKMDataNode& parent,
+                         const char* node_name,
+                         EMissingAction missing_action)
 {
     if ( rc_t rc = KMDataNodeOpenNodeRead(parent, x_InitPtr(), node_name) ) {
         *x_InitPtr() = 0;
-        NCBI_THROW3(CSraException, eInitFailed,
-                    "Cannot open child KMDataNode", rc, node_name);
+        if ( GetRCObject(rc) == RCObject(rcPath) &&
+             GetRCState(rc) == rcNotFound ) {
+            if ( missing_action == eMissingThrow ) {
+                NCBI_THROW3(CSraException, eNotFound,
+                            "Cannot open child KMDataNode", rc, node_name);
+            }
+        }
+        else {
+            NCBI_THROW3(CSraException, eInitFailed,
+                        "Cannot open child KMDataNode", rc, node_name);
+        }
     }
 }
 
@@ -107,6 +129,30 @@ Uint8 CKMDataNode::GetUint8(void) const
                     "Cannot read metadata node value", rc);
     }
     return (Uint8)value;
+}
+
+
+pair<size_t, size_t>
+CKMDataNode::TryToGetData(char* buffer, size_t size, size_t offset) const
+{
+    pair<size_t, size_t> ret;
+    if ( rc_t rc = KMDataNodeRead(*this, offset, buffer, size,
+                                  &ret.first, &ret.second) ) {
+        NCBI_THROW2(CSraException, eInitFailed,
+                    "Cannot read metadata node data", rc);
+    }
+    return ret;
+}
+
+
+void CKMDataNode::GetData(char* buffer, size_t size, size_t offset) const
+{
+    pair<size_t, size_t> ret = TryToGetData(buffer, size, offset);
+    if ( ret.first != size ) {
+        NCBI_THROW2(CSraException, eDataError,
+                    "Cannot read all requested data from metadata node",
+                    RC(rcApp, rcData, rcRetrieving, rcSize, rcTooBig));
+    }
 }
 
 

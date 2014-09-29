@@ -79,8 +79,29 @@ class NCBI_SRAREAD_EXPORT CKMDataNode
     : public CSraRef<const KMDataNode>
 {
 public:
-    CKMDataNode(const CKMetadata& meta, const char* node_name);
-    CKMDataNode(const CKMDataNode& parent, const char* node_name);
+    enum EMissingAction {
+        eMissingThrow,
+        eMissingIgnore
+    };
+    CKMDataNode(const CKMetadata& meta,
+                const char* node_name,
+                EMissingAction missing_action = eMissingThrow);
+    CKMDataNode(const CKMDataNode& parent,
+                const char* node_name,
+                EMissingAction missing_action = eMissingThrow);
+
+    // 'buffer' must be at least 'size' big, may be null if 'size' is 0
+    // 'size' is the requested number of bytes
+    // 'offset' is offset of returned data in the node
+    // returns pair of (actually read bytes, remaining bytes)
+    pair<size_t, size_t>
+    TryToGetData(char* buffer, size_t size, size_t offset = 0) const;
+    // the same as TryToGetData, but verifies that all requested data is read
+    void GetData(char* buffer, size_t size, size_t offset = 0) const;
+
+    size_t GetSize(void) const {
+        return TryToGetData(0, 0, 0).second;
+    }
 
     Uint8 GetUint8(void) const;
 };
