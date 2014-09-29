@@ -11,6 +11,16 @@ Netschedule server tests pack
 import time
 from ncbi_grid_1_0.ncbi.grid import ns, ipc
 
+
+def execAny( ns, cmd, serverIndex = 0, isMultiline = False ):
+    " Execute any command on the given server "
+    servers = ns.get_servers()
+    if len( servers ) == 0:
+        raise Exception( "Cannot get any servers" )
+    server = servers[ serverIndex ]
+    return server.execute( cmd, isMultiline )
+
+
 class TestBase:
     " Base class for tests "
 
@@ -990,6 +1000,7 @@ class Scenario37( TestBase ):
 
     def __init__( self, netschedule ):
         TestBase.__init__( self, netschedule )
+        self.warning = ""
         return
 
     @staticmethod
@@ -997,17 +1008,27 @@ class Scenario37( TestBase ):
         " Should return a textual description of the test "
         return "Get status of non-existing affinity"
 
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        self.warning = msg
+        return
+
     def execute( self ):
         " Should return True if the execution completed successfully "
-        self.clear()
-        self.ns.start()
-        time.sleep( 1 )
-        if not self.ns.isRunning():
-            raise Exception( "Cannot start netschedule" )
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario37' )
+        ns_client.on_warning = self.report_warning
+
 
         try:
-            self.ns.getAffinityStatus( 'TEST', 'non_existing_affinity' )
+            execAny( ns_client, 'STAT JOBS aff=non_existing_affinity' )
+            # Newer NS versions generate warning
+            if "Unknown affinity token" in self.warning:
+                return True
+            raise Exception( "Expected unknown affinity warning" )
         except Exception, exc:
+            # Older NS versions generate ERR:
             if "Unknown affinity token" in str( exc ):
                 return True
             raise

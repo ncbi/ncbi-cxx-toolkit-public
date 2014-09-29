@@ -5859,6 +5859,7 @@ class Scenario266( TestBase ):
 
     def __init__( self, netschedule ):
         TestBase.__init__( self, netschedule )
+        self.warning = ""
         return
 
     @staticmethod
@@ -5866,11 +5867,17 @@ class Scenario266( TestBase ):
         " Provides the scenario "
         return "DUMP group=777"
 
+    def report_warning( self, msg, server ):
+        " Just ignore it "
+        self.warning = msg
+        return
+
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario266' )
+        ns_client.on_warning = self.report_warning
         output = execAny( ns_client, 'DUMP group=777', 0, True )
         if output:
             raise Exception( "Expected no output, received: " + str( output ) )
