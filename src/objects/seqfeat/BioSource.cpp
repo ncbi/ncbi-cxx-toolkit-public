@@ -1056,19 +1056,6 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
 }
 
 
-void AddFieldDiff (TFieldDiffList& list, 
-                   const string& label, 
-                   const string& src_val, 
-                   const string& sample_val)
-{
-    if (!s_ShouldIgnoreConflict(label, src_val, sample_val)) {
-        CRef<CFieldDiff> diff(new CFieldDiff(label, src_val, sample_val));
-        list.push_back(diff);
-    }
-}
-
-
-
 void GetFieldDiffsFromNameValLists(TFieldDiffList& list,
                                    CBioSource::TNameValList& list1, 
                                    CBioSource::TNameValList& list2)
@@ -1152,6 +1139,30 @@ void CBioSource::x_RemoveNameElementDiffs(const CBioSource& biosample, TFieldDif
 }
 
 
+void RemoveDiffByName(TFieldDiffList& diff_list, string pair_name)
+{
+    TFieldDiffList::iterator it = diff_list.begin();
+    while (it != diff_list.end()) {
+        if (NStr::EqualNocase((*it)->GetFieldName(), pair_name)) {
+            it = diff_list.erase(it);
+        } else {
+            it++;
+        }
+    }
+}
+
+
+bool CBioSource::x_ShouldIgnoreNoteForBiosample() const
+{
+    if (IsSetOrg() && GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetLineage()
+        && NStr::Find(GetOrg().GetOrgname().GetLineage(), "unclassified sequences; metagenomes") != string::npos) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
 {
     TFieldDiffList rval;
@@ -1164,6 +1175,12 @@ TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample) const
 
     GetFieldDiffsFromNameValLists(rval, src_list, sample_list);
     x_RemoveNameElementDiffs(biosample, rval);
+
+    if (x_ShouldIgnoreNoteForBiosample() && biosample.x_ShouldIgnoreNoteForBiosample()) {
+        RemoveDiffByName(rval, "orgmod_note");
+        RemoveDiffByName(rval, "subsrc_note");
+    }
+
     return rval;
 }
 

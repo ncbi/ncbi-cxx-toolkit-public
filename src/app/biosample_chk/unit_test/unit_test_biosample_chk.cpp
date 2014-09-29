@@ -419,5 +419,55 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1865)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_WGS_693)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("xyz metagenome");
+    CRef<COrgMod> src_om_note(new COrgMod(COrgMod::eSubtype_other, "source om"));
+    src->SetOrg().SetOrgname().SetMod().push_back(src_om_note);
+    CRef<CSubSource> src_ss_note(new CSubSource(CSubSource::eSubtype_other, "source ss"));
+    src->SetSubtype().push_back(src_ss_note);
+
+    CRef<CBioSource> smpl(new CBioSource());
+    smpl->SetOrg().SetTaxname(src->GetOrg().GetTaxname());
+    CRef<COrgMod> smpl_om_note(new COrgMod(COrgMod::eSubtype_other, "sample om"));
+    smpl->SetOrg().SetOrgname().SetMod().push_back(smpl_om_note);
+    CRef<CSubSource> smpl_ss_note(new CSubSource(CSubSource::eSubtype_other, "sample ss"));
+    smpl->SetSubtype().push_back(smpl_ss_note);
+
+    // because there is no lineage, should complain about notes differing
+    TFieldDiffList diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 2);
+
+    // should not complain if specified lineage is found
+    src->SetOrg().SetOrgname().SetLineage("unclassified sequences; metagenomes");
+    smpl->SetOrg().SetOrgname().SetLineage("unclassified sequences; metagenomes");
+    diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 0);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2021)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetOrg().SetTaxname("Sulfitobacter sp. NB-68");
+    CRef<COrgMod> cc1(new COrgMod(COrgMod::eSubtype_culture_collection, "JCM:18833"));
+    src->SetOrg().SetOrgname().SetMod().push_back(cc1);
+    CRef<COrgMod> cc2(new COrgMod(COrgMod::eSubtype_culture_collection, "KCTC:32122"));
+    src->SetOrg().SetOrgname().SetMod().push_back(cc2);
+
+    CRef<CBioSource> smpl(new CBioSource());
+    smpl->Assign(*src);
+
+    // no differences should be reported
+    TFieldDiffList diff_list = src->GetBiosampleDiffs(*smpl);
+    BOOST_CHECK_EQUAL(diff_list.size(), 0);
+
+    src->UpdateWithBioSample(*smpl, true);
+    BOOST_CHECK_EQUAL(src->GetOrg().GetOrgname().GetMod().size(), 2);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

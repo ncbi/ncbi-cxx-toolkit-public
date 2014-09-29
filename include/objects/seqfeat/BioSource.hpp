@@ -143,6 +143,7 @@ private:
     TNameValList x_GetOrgModNameValPairs() const;
     TNameValList x_GetSubtypeNameValPairs() const;
     void x_RemoveNameElementDiffs(const CBioSource& biosample, TFieldDiffList& diff_list) const;
+    bool x_ShouldIgnoreNoteForBiosample() const;
 
     // for handling StopWords from BioSample
     static void x_InitStopWords(void);
