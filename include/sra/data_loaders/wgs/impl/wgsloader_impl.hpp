@@ -176,6 +176,7 @@ private:
     CMutex  m_Mutex;
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
+    CWGSGiResolver m_GiResolver;
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     bool m_AddWGSMasterDescr;
