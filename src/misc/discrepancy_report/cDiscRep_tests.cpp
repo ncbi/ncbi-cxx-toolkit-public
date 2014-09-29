@@ -11326,6 +11326,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
                                  CFlatFileConfig::fGenbankBlocks_FeatAndGap);
 };
 
+#if 0
 CConstRef <CObject> CFlatfileTextFind:: x_GetObjRef(const string& desc, CSeqdesc_CI seq_desc)
 {
   string strtmp;
@@ -11362,6 +11363,7 @@ CConstRef <CObject> CFlatfileTextFind:: x_GetObjRef(const string& desc, CSeqdesc
   }
   return obj_ref;
 }
+#endif
 
 void CFlatfileTextFind :: x_GetDescAndObjRef4Seqdesc(CConstRef <CBioseq> bioseq, CSeqdesc :: E_Choice seqdesc_type, CSeqdesc& seqdesc, string& desc, CConstRef <CObject> obj_ref) 
 {
@@ -11439,8 +11441,6 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
 {
   block_text = CTestAndRepData::FindReplaceString(
                           block_text, m_taxname, "", false, true);
-  CSeqdesc_CI sci(thisInfo.scope->GetBioseqHandle(*m_bsq), m_seqdesc_sel);
-
   string desc, strtmp;
   CConstRef <CObject> obj_ref;
   ITERATE (Str2CombDt, it, thisInfo.fix_data) {
@@ -11545,7 +11545,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
                       CFlatFileConfig::eMode_GBench,
                       CFlatFileConfig::eStyle_Normal,
                       CFlatFileConfig::fShowContigFeatures,
-                      CFlatFileConfig::fViewAll | CFlatFileConfig::fViewFirst,
+                      CFlatFileConfig::fViewAll | CFlatFileConfig::fViewFirst, 
                       CFlatFileConfig::fGffGTFCompat,
                       (CFlatFileConfig::FGenbankBlocks)blocks,
                       &flatfile_find);
