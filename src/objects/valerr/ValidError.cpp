@@ -65,6 +65,9 @@ void CValidError::AddValidErrItem
  const int            ver,
  const int            seq_offset)
 {
+    if (ShouldSuppress(ec)) {
+        return;
+    }
     CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, ver, seq_offset));
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
@@ -82,6 +85,9 @@ void CValidError::AddValidErrItem
  const string&        feature_id,
  const int            seq_offset)
 {
+    if (ShouldSuppress(ec)) {
+        return;
+    }
     CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, obj, acc, ver, feature_id, seq_offset));
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
@@ -99,9 +105,37 @@ void CValidError::AddValidErrItem
  const int         ver,
  const int         seq_offset)
 {
+    if (ShouldSuppress(ec)) {
+        return;
+    }
     CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, seqdesc, ctx, acc, ver, seq_offset));
     SetErrs().push_back(item);
     m_Stats[item->GetSeverity()]++;
+}
+
+
+void CValidError::SuppressError(unsigned int ec)
+{
+    m_SuppressionList.push_back(ec);
+    sort(m_SuppressionList.begin(), m_SuppressionList.end());
+    unique(m_SuppressionList.begin(), m_SuppressionList.end());
+}
+
+
+bool CValidError::ShouldSuppress(unsigned int ec)
+{
+    vector<unsigned int>::iterator present = find (m_SuppressionList.begin(), m_SuppressionList.end(), ec);
+    if (present != m_SuppressionList.end() && *present == ec) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CValidError::ClearSuppressions()
+{
+    m_SuppressionList.clear();
 }
 
 

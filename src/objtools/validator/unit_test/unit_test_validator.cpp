@@ -18980,3 +18980,50 @@ BOOST_AUTO_TEST_CASE(Test_VR_28)
 
     CLEAR_ERRORS
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_GP_9919)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+
+    STANDARD_SETUP
+
+    entry->SetSet().SetSeq_set().back()->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MP*K*E*N");
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("GTGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetExcept(true);
+    cds->SetExcept_text("unclassified translation discrepancy");
+
+    // list of expected errors
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // now suppress an error
+    CRef<CSeqdesc> suppress(new CSeqdesc());
+    suppress->SetUser().SetObjectType(CUser_object::eObjectType_ValidationSuppression);
+    CValidErrorFormat::AddSuppression(suppress->SetUser(), eErr_SEQ_FEAT_InternalStop);
+    entry->SetSet().SetDescr().Set().push_back(suppress);
+    delete(expected_errors[2]);
+    expected_errors.pop_back();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // suppress two errors
+    CValidErrorFormat::AddSuppression(suppress->SetUser(), eErr_SEQ_FEAT_ExceptionProblem);
+    delete(expected_errors[1]);
+    expected_errors.pop_back();
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // suppress three errors
+    CValidErrorFormat::AddSuppression(suppress->SetUser(), eErr_SEQ_INST_StopInProtein);
+    CLEAR_ERRORS
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+}

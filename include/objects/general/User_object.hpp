@@ -154,7 +154,8 @@ public:
         eObjectType_DBLink,
         eObjectType_StructuredComment,
         eObjectType_OriginalId,
-        eObjectType_Unverified
+        eObjectType_Unverified,
+        eObjectType_ValidationSuppression
     };
 
     EObjectType GetObjectType() const;

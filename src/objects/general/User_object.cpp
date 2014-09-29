@@ -580,6 +580,7 @@ const string kDBLink = "DBLink";
 const string kStructuredComment = "StructuredComment";
 const string kOriginalId = "OrginalID";
 const string kUnverified = "Unverified";
+const string kValidationSuppression = "ValidationSuppression";
 
 CUser_object::EObjectType CUser_object::GetObjectType() const
 {
@@ -597,6 +598,8 @@ CUser_object::EObjectType CUser_object::GetObjectType() const
         rval = eObjectType_OriginalId;
     } else if (NStr::Equal(label, kUnverified)) {
         rval = eObjectType_Unverified;
+    } else if (NStr::Equal(label, kValidationSuppression)) {
+        rval = eObjectType_ValidationSuppression;
     }
     return rval;
 }
@@ -616,6 +619,9 @@ void CUser_object::SetObjectType(EObjectType obj_type)
             break;
         case eObjectType_Unverified:
             SetType().SetStr(kUnverified);
+            break;
+        case eObjectType_ValidationSuppression:
+            SetType().SetStr(kValidationSuppression);
             break;
         case eObjectType_Unknown:
             ResetType();

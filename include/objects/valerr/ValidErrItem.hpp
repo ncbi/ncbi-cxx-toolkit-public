@@ -609,6 +609,9 @@ public:
     static const string    ConvertErrCode(unsigned int);
     static const string    ConvertErrGroup(unsigned int);
 
+    // Convert error code from string to unsigned int
+    static unsigned int    ConvertToErrCode(const string& str);
+
     bool IsSetContext(void) const;
     const CSeq_entry& GetContext(void) const;
     

@@ -41,6 +41,7 @@
 #include <util/static_map.hpp>
 
 #include <objtools/validator/validatorp.hpp>
+#include <objtools/validator/validerror_format.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -71,6 +72,7 @@ CConstRef<CValidError> CValidator::Validate
  Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&se));
+    CValidErrorFormat::SetSuppressionRules(se, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.Validate(se, 0, scope) ) {
@@ -92,6 +94,7 @@ CConstRef<CValidError> CValidator::Validate
     }
 
     CRef<CValidError> errors(new CValidError(&*seh.GetCompleteSeq_entry()));
+    CValidErrorFormat::SetSuppressionRules(seh, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.Validate(seh, 0) ) {
@@ -104,6 +107,7 @@ CConstRef<CValidError> CValidator::Validate
 CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CSeq_entry_Handle& se)
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
+    CValidErrorFormat::SetSuppressionRules(se, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSANStretchErrors(se) ) {
@@ -116,6 +120,7 @@ CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CSeq_entry_Handle&
 CConstRef<CValidError> CValidator::GetTSACDSOnMinusStrandErrors (const CSeq_entry_Handle& se)
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
+    CValidErrorFormat::SetSuppressionRules(se, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSACDSOnMinusStrandErrors(se) ) {
@@ -128,6 +133,7 @@ CConstRef<CValidError> CValidator::GetTSACDSOnMinusStrandErrors (const CSeq_entr
 CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CSeq_entry_Handle& se)
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
+    CValidErrorFormat::SetSuppressionRules(se, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSAConflictingBiomolTechErrors(se) ) {
@@ -141,6 +147,7 @@ CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CBioseq& seq)
 {
 
     CRef<CValidError> errors(new CValidError(&seq));
+    CValidErrorFormat::SetSuppressionRules(seq, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSANStretchErrors(seq) ) {
@@ -153,6 +160,7 @@ CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CBioseq& seq)
 CConstRef<CValidError> CValidator::GetTSACDSOnMinusStrandErrors (const CSeq_feat& f, const CBioseq& seq)
 {
     CRef<CValidError> errors(new CValidError(&f));
+    CValidErrorFormat::SetSuppressionRules(seq, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSACDSOnMinusStrandErrors(f, seq) ) {
@@ -165,6 +173,7 @@ CConstRef<CValidError> CValidator::GetTSACDSOnMinusStrandErrors (const CSeq_feat
 CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CBioseq& seq)
 {
     CRef<CValidError> errors(new CValidError(&seq));
+    CValidErrorFormat::SetSuppressionRules(seq, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), 0);
     imp.SetProgressCallback(m_PrgCallback, m_UserData);
     if ( !imp.GetTSAConflictingBiomolTechErrors(seq) ) {
@@ -180,6 +189,7 @@ CConstRef<CValidError> CValidator::Validate
  Uint4 options)
 {
     CRef<CValidError> errors(new CValidError(&ss));
+    CValidErrorFormat::SetSuppressionRules(ss, *errors);
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
     imp.Validate(ss, scope);
     if (ss.IsSetSub() && ss.GetSub().IsSetContact() && ss.GetSub().GetContact().IsSetContact()

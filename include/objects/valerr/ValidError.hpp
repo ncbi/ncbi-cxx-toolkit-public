@@ -104,6 +104,12 @@ public:
     // Get the validated object (Seq-entry, Seq-submit or Seq-align)
     const CSerialObject* GetValidated(void) const;
 
+    // for suppressing errors by type. Suppression list
+    // will be checked at the time that a AddValidErrItem
+    // method is called
+    void SuppressError(unsigned int ec);
+    bool ShouldSuppress(unsigned int ec);
+    void ClearSuppressions();
 
 protected:
     friend class CValidError_CI;
@@ -115,6 +121,7 @@ protected:
     // data
     TSevStats   m_Stats;     // severity statistics
     TValidated  m_Validated; // the validated object
+    vector<unsigned int> m_SuppressionList;
 
 private:
     // Prohibit copy constructor & assignment operator

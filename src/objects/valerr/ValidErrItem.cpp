@@ -1973,6 +1973,25 @@ const string CValidErrItem::ConvertErrCode(unsigned int err_int)
 }
 
 
+unsigned int CValidErrItem::ConvertToErrCode(const string& str)
+{
+    TErrTypeStrsMap::const_iterator err_it = sc_ErrStrsMap.begin();
+
+    while (err_it != sc_ErrStrsMap.end()) {
+        if (NStr::Equal(err_it->second.first, str)) {
+            return err_it->first;
+        } else if (NStr::EndsWith(str, err_it->second.first)) {
+            string group = ConvertErrGroup(err_it->first);
+            if (NStr::Equal(group + "_" + err_it->second.first, str)) {
+                return err_it->first;
+            }
+        }
+        err_it++;
+    }
+    return eErr_MAX;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
