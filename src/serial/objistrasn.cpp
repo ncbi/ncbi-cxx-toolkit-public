@@ -793,6 +793,7 @@ Uint8 CObjectIStreamAsn::ReadUint8(void)
 
 double CObjectIStreamAsn::ReadDouble(void)
 {
+    double result = 0;
     if (PeekChar(true) != '{') {
         CTempString tmp( ScanEndOfId(true) );
         if (NStr::strncasecmp(tmp.data(), "PLUS-INFINITY", 13) == 0) {
@@ -802,9 +803,11 @@ double CObjectIStreamAsn::ReadDouble(void)
         } else if (NStr::strncasecmp(tmp.data(),"NOT-A-NUMBER", 12) == 0) {
 	    return HUGE_VAL/HUGE_VAL; /* NCBI_FAKE_WARNING */
         }
-        return NStr::StringToDouble( tmp, NStr::fDecimalPosix );
+        char* endptr;
+        return NStr::StringToDoublePosix( string(tmp).c_str(), &endptr, NStr::fDecimalPosixFinite );
     }
     Expect('{', true);
+    bool is_negative = PeekChar(true) == '-';
     CTempString mantissaStr = ReadNumber();
     size_t mantissaLength = mantissaStr.size();
     char buffer[128];
@@ -822,20 +825,28 @@ double CObjectIStreamAsn::ReadDouble(void)
     Expect(',', true);
     int exp = ReadInt4();
     Expect('}', true);
-    if ( base != 2 && base != 10 )
+    if ( base != 2 && base != 10 ) {
         ThrowError(fFormatError, "illegal REAL base (must be 2 or 10)");
-
+    }
     if (mantissa == 0.) {
         return mantissa;
     }
-    if ( base == 10 ) {     /* range checking only on base 10, for doubles */
-        if ( exp > DBL_MAX_10_EXP )   /* exponent too big */
-            ThrowError(fOverflow, "double overflow");
-        else if ( exp < DBL_MIN_10_EXP )  /* exponent too small */
-            return 0;
+    if (is_negative) {
+        mantissa = -mantissa;
     }
 
-    return mantissa * pow(double(base), exp);
+    if ( base == 10 ) {
+        result = mantissa * pow(10, exp);
+    } else {
+        result = ldexp( mantissa, exp);
+    }
+
+    if (result >= 0 && result <= DBL_MIN) {
+        result = DBL_MIN;
+    } else if (!isfinite(result)) {
+        result = DBL_MAX;
+    }
+    return is_negative ? -result : result;
 }
 
 void CObjectIStreamAsn::BadStringChar(size_t startLine, char c)
@@ -1043,6 +1054,10 @@ void CObjectIStreamAsn::SkipUNumber(void)
 
 void CObjectIStreamAsn::SkipFNumber(void)
 {
+    if (PeekChar(true) != '{') {
+        ScanEndOfId(true);
+        return;
+    }
     Expect('{', true);
     SkipSNumber();
     Expect(',', true);

@@ -450,7 +450,8 @@ void CObjectIStreamJson::SkipUNumber(void)
 
 double CObjectIStreamJson::ReadDouble(void)
 {
-    return NStr::StringToDouble( x_ReadDataAndCheck(), NStr::fDecimalPosix);
+    char* endptr;
+    return NStr::StringToDoublePosix( x_ReadDataAndCheck().c_str(), &endptr, NStr::fDecimalPosixFinite);
 }
 
 void CObjectIStreamJson::SkipFNumber(void)

@@ -985,13 +985,13 @@ double CObjectIStreamXml::ReadDouble(void)
     string s;
     ReadTagData(s);
     char* endptr;
-    double data = NStr::StringToDoublePosix(s.c_str(), &endptr);
+    double result = NStr::StringToDoublePosix(s.c_str(), &endptr, NStr::fDecimalPosixFinite);
     while (IsWhiteSpace(*endptr)) {
         ++endptr;
     }
     if ( *endptr != 0 )
         ThrowError(fFormatError, "invalid float number");
-    return data;
+    return result;
 }
 
 void CObjectIStreamXml::ReadNull(void)

@@ -649,11 +649,11 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     EndOfTag();
     buffer[length] = 0;
     char* endptr;
-    double data = NStr::StringToDoublePosix(buffer, &endptr);
+    double result = NStr::StringToDoublePosix(buffer, &endptr, NStr::fDecimalPosixFinite);
     if ( *endptr != 0 ) {
         ThrowError(fFormatError, "bad REAL data string");
     }
-    return data;
+    return result;
 }
 
 namespace {
@@ -2061,19 +2061,15 @@ void CObjectIStreamAsnBinary::SkipFNumber(void)
 {
     ExpectSysTag(eReal);
     size_t length = ReadLength();
-    if ( length < 2 )
-        ThrowError(fFormatError, "too short REAL data: length < 2");
-    if ( length > kMaxDoubleLength )
-        ThrowError(fFormatError, "too long REAL data: length > "
-            + NStr::SizetToString(kMaxDoubleLength));
+    if ( length != 0 ) {
+        if ( length > kMaxDoubleLength )
+            ThrowError(fFormatError, "too long REAL data: length > "
+                + NStr::SizetToString(kMaxDoubleLength));
 
-    Uint1 type = ReadByte();
-    if ((type & eDecimalEncoding) != eDecimal) {
-        ThrowError(fNotImplemented, "Unsupported encoding of REAL data: encoding = "
-            + NStr::NumericToString(type));
+        Uint1 type = ReadByte();
+        length--;
+        SkipBytes(length);
     }
-    length--;
-    SkipBytes(length);
     EndOfTag();
 }
 
