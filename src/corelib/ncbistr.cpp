@@ -829,7 +829,7 @@ Uint8 NStr::StringToUInt8(const CTempString& str,
 }
 
 
-double NStr::StringToDoublePosix(const char* ptr, char** endptr)
+double NStr::StringToDoublePosix(const char* ptr, char** endptr, TStringToNumFlags flags)
 {
     S2N_CONVERT_GUARD(NStr::fConvErr_NoThrow);
 
@@ -840,14 +840,6 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
     while ( isspace((unsigned char)c) ) {
         c = *ptr++;
     }
-    
-    // short-cut - single digit
-    if ( !*ptr && c >= '0' && c <= '9' ) {
-        if (endptr) {
-            *endptr = (char*)ptr;
-        }
-        return c-'0';
-    }
 
     int sign = 0;
     if ( c == '-' ) {
@@ -857,6 +849,15 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
     else if ( c == '+' ) {
         sign = +1;
         c = *ptr++;
+    }
+    
+    // short-cut - single digit
+    if ( !*ptr && c >= '0' && c <= '9' ) {
+        if (endptr) {
+            *endptr = (char*)ptr;
+        }
+        double result = c-'0';
+        return sign < 0 ? -result : result;
     }
 
     bool         dot = false, expn = false, anydigits = false;
@@ -1008,10 +1009,10 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
     if ( first && exponent ) {
         // multiply by power of 10 only non-zero mantissa
         if (exponent > 2*DBL_MAX_10_EXP) {
-            ret = HUGE_VAL;
+            ret = (flags & fDecimalPosixFinite) ? DBL_MAX :  HUGE_VAL;
             err_guard.Set(ERANGE);
         } else if (exponent < 2*DBL_MIN_10_EXP) {
-            ret = 0.;
+            ret = (flags & fDecimalPosixFinite) ? DBL_MIN : 0.;
             err_guard.Set(ERANGE);
         } else {
             if ( exponent > 0 ) {
@@ -1045,6 +1046,9 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                     }
                 }
                 if (!finite(double(ret))) {
+                    if (flags & fDecimalPosixFinite) {
+                        ret = DBL_MAX;
+                    }
                     err_guard.Set(ERANGE);
                 }
             }
@@ -1094,6 +1098,9 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr)
                     }
                 }
                 if ( ret < DBL_MIN ) {
+                    if (flags & fDecimalPosixFinite) {
+                        ret = DBL_MIN;
+                    }
                     err_guard.Set(ERANGE);
                 }
             }
@@ -1160,13 +1167,13 @@ static double s_StringToDouble(const char* str, size_t size,
 
     double n;
     if (flags & NStr::fDecimalPosix) {
-        n = NStr::StringToDoublePosix(begptr, &endptr);
+        n = NStr::StringToDoublePosix(begptr, &endptr, flags);
     } else {
         n = strtod(begptr, &endptr);
     }
     if (flags & NStr::fDecimalPosixOrLocal) {
         char* endptr2 = 0;
-        double n2 = NStr::StringToDoublePosix(begptr, &endptr2);
+        double n2 = NStr::StringToDoublePosix(begptr, &endptr2, flags);
         if (!endptr || (endptr2 && endptr2 > endptr)) {
             n = n2;
             endptr = endptr2;

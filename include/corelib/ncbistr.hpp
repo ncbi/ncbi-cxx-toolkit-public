@@ -291,10 +291,14 @@ public:
                                              ///< Can have trailing non-nums
         fDecimalPosix         = (1 << 23),   ///< For decimal point, use C locale
         fDecimalPosixOrLocal  = (1 << 24),   ///< For decimal point, try both C and current locale
+        fDecimalPosixFinite   = (1 << 25),   ///< keep result finite and normalized
+        /// if DBL_MAX < result < INF,     result becomes DBL_MAX
+        /// if       0 < result < DBL_MIN, result becomes DBL_MIN
 
         fDS_ForceBinary       = (1 << 26),
         fDS_ProhibitFractions = (1 << 27),
         fDS_ProhibitSpaceBeforeSuffix = (1 << 28)
+
     };
     typedef int TStringToNumFlags;   ///< Bitwise OR of "EStringToNumFlags"
 
@@ -446,7 +450,8 @@ public:
     ///     NaN, "-inf=input_file" being converted to -INF, or other unexpected
     ///     behavior. Therefore, please consider using StringToDouble unless
     ///     you specifically need this functionality.
-    static double StringToDoublePosix(const char* str, char** endptr=0);
+    static double StringToDoublePosix(const char* str, char** endptr=0,
+                                      TStringToNumFlags flags=0);
 
 
     /// Convert string to double.
