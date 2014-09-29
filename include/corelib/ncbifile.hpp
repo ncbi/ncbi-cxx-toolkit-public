@@ -1956,9 +1956,9 @@ class NCBI_XNCBI_EXPORT CFileUtil
 {
 public:
     ///   Unix:
-    ///       The path name to any file/dir withing filesystem.
+    ///       The path name to any file/dir withing file system.
     ///   MS Windows:
-    ///       The path name to any file/dir withing filesystem.
+    ///       The path name to any file/dir withing file system.
     ///       The root directory of the disk, or UNC name
     ///       (for example, \\MyServer\MyShare\, C:\).
     ///   The "." can be used to get disk space on current disk.
@@ -1971,7 +1971,7 @@ public:
         eAdvFS,         ///< Tru64 UNIX Advanced File System
         eAFFS,          ///< Amiga Fast File System
         eAFS,           ///< AFS File System
-        eAUTOFS,        ///< Automount File Sustem
+        eAUTOFS,        ///< Automount File System
         eBEFS,          ///< The Be (BeOS) File System (BeFS)
         eBFS,           ///< Boot File System
         eCacheFS,       ///< Cache File System
@@ -1981,8 +1981,8 @@ public:
         eCODA,          ///< Coda File System
         eCOH,           ///< Coherent (System V)
         eCRAMFS,        ///< Compressed ROMFS
-        eDebugFS,       ///< Debug File Sytem (Linux)
-        eDEVFS,         ///< Device File Sytem
+        eDebugFS,       ///< Debug File System (Linux)
+        eDEVFS,         ///< Device File System
         eDFS,           ///< DCE Distributed File System (DCE/DFS)
         eEFS,           ///< The Encrypting File System (EFS) (MSWin)
         eEXOFS,         ///< EXtended Object File System (EXOFS)

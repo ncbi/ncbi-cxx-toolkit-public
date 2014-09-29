@@ -63,7 +63,7 @@ static void s_CreateTestFile(const string& file)
 
 
 //----------------------------------------------------------------------------
-//  File name spliting tests
+//  File name splitting tests
 //----------------------------------------------------------------------------
 
 static void s_TEST_SplitPath(void)
@@ -94,6 +94,11 @@ static void s_TEST_SplitPath(void)
     path = CFile::MakePath("c:\\", "file", ".ext");
     assert( path == "c:\\file.ext" );
 
+	CFile::SplitPath("\\dir\\file", &dir, &title, &ext);
+	assert(dir   == "\\dir\\");
+	assert(title == "file");
+	assert(ext   == "");
+	
     {{
         CFile f("c:\\dir\\subdir\\file.ext");
         assert( f.GetDir()  == "c:\\dir\\subdir\\" );
@@ -263,31 +268,41 @@ static void s_TEST_CheckPath(void)
     assert( d.NormalizePath("")                 == "" );
     assert( d.NormalizePath("c:\\")             == "c:\\" );
     assert( d.NormalizePath("c:\\file")         == "c:\\file" );
+    assert( d.NormalizePath("c:/file")          == "c:\\file" );
     assert( d.NormalizePath("c:file")           == "c:file" );
     assert( d.NormalizePath("c:\\dir\\..\\file")== "c:\\file" );
+    assert( d.NormalizePath("c:/dir/../file")   == "c:\\file" );
     assert( d.NormalizePath("c:..\\file")       == "c:..\\file" );
     assert( d.NormalizePath("c\\")              == "c" );
     assert( d.NormalizePath("..\\file")         == "..\\file" );
+    assert( d.NormalizePath("../file")          == "..\\file" );
     assert( d.NormalizePath("\\..\\file")       == "\\file" );
+    assert( d.NormalizePath("/../file")         == "\\file" );
     assert( d.NormalizePath(".\\..\\dir\\..")   == ".." );
+    assert( d.NormalizePath("./../dir/..")      == ".." );
     assert( d.NormalizePath(".\\dir\\.")        == "dir" );
     assert( d.NormalizePath(".\\.\\.\\.")       == "." );
     assert( d.NormalizePath("..\\..\\..\\..")   == "..\\..\\..\\.." );
     assert( d.NormalizePath("dir\\\\dir\\\\")   == "dir\\dir" );
     assert( d.NormalizePath("\\\\machine\\dir") == "\\\\machine\\dir");
+    assert( d.NormalizePath("//machine/dir")    == "\\\\machine\\dir");
     assert( d.NormalizePath("\\\\?\\x")         == "x" );
     assert( d.NormalizePath("\\\\?\\UNC\\m\\d") == "\\\\m\\d" );
+    assert( d.NormalizePath("//?/UNC\\m\\d")    == "\\\\m\\d" );
     assert( d.NormalizePath("dir/file")         == "dir\\file" );
-    assert( d.NormalizePath("/")                == "\\" );
     assert( d.NormalizePath("\\")               == "\\" );
+    assert( d.NormalizePath("/")                == "\\" );
     assert( d.NormalizePath("\\.\\")            == "\\" );
+    assert( d.NormalizePath("/./")              == "\\" );
     assert( d.NormalizePath("\\..\\")           == "\\" );
+    assert( d.NormalizePath("/../")             == "\\" );
     assert( d.NormalizePath(".")                == "." );
     assert( d.NormalizePath(".\\")              == "." );
     assert( d.NormalizePath(".\\.")             == "." );
     assert( d.NormalizePath(".\\dir\\..")       == "." );
     assert( d.NormalizePath("dir\\..")          == "." );
     assert( d.NormalizePath("dir\\..\\")        == "." );
+    assert( d.NormalizePath("dir\\../")         == "." );
     
 #elif defined(NCBI_OS_UNIX )
     assert( d.NormalizePath("")                 == "" );
@@ -367,7 +382,7 @@ static void s_TEST_CheckPath(void)
 
 
 //----------------------------------------------------------------------------
-//  File name maching test
+//  File name matching test
 //----------------------------------------------------------------------------
 
 static void s_TEST_MatchesMask(void)
@@ -720,6 +735,12 @@ static void s_TEST_Dir(void)
     CDir("???").Copy("*");
     assert ( CNcbiError::GetLast() );
     cout << "Expected error " << CNcbiError::GetLast() << endl;
+    try {
+        // find in the inexistent directory 
+        CDir::TEntries contents = CDir("bad_dir").GetEntries("*", CDir::fThrowOnError);
+        _TROUBLE;
+    }
+    catch(CFileErrnoException&) { }
     
     // Create directory
     assert( CDir("dir1").Create() );

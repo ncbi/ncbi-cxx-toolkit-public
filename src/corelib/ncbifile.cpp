@@ -291,29 +291,21 @@ void CDirEntry::Reset(const string& path)
 CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][4] =
 {
     // eFile
-    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther, 0 },
+    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, CDirEntry::fDefaultOther, 0 },
     // eDir
-    { CDirEntry::fDefaultDirUser, CDirEntry::fDefaultDirGroup, 
-          CDirEntry::fDefaultDirOther, 0 },
+    { CDirEntry::fDefaultDirUser, CDirEntry::fDefaultDirGroup, CDirEntry::fDefaultDirOther, 0 },
     // ePipe
-    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther, 0 },
+    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, CDirEntry::fDefaultOther, 0 },
     // eLink
-    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther, 0 },
+    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, CDirEntry::fDefaultOther, 0 },
     // eSocket
-    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther, 0 },
+    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, CDirEntry::fDefaultOther, 0 },
     // eDoor
-    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther, 0 },
+    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, CDirEntry::fDefaultOther, 0 },
     // eBlockSpecial
-    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther, 0 },
+    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, CDirEntry::fDefaultOther, 0 },
     // eCharSpecial
-    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-          CDirEntry::fDefaultOther, 0 }
+    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, CDirEntry::fDefaultOther, 0 }
 };
 
 
@@ -464,22 +456,41 @@ string CDirEntry::GetDir(EIfEmptyPath mode) const
 }
 
 
-bool CDirEntry::IsAbsolutePath(const string& path)
+// Windows: 
+inline bool s_Win_IsDiskPath(const string& path)
 {
-    if ( path.empty() )
-        return false;
-
-#if defined(NCBI_OS_MSWIN)
-    // Absolute path is a path started with 'd:\', 'd:/', '\\' or '//' only.
-    if ( ( isalpha((unsigned char)path[0])  &&  path[1] == ':'  &&
-           (path[2] == '/'  || path[2] == '\\') )  ||
-           ((path[0] == '\\' || path[0] == '/') && 
-            (path[1] == '\\' || path[1] == '/')) ) {
+    if ((isalpha((unsigned char)path[0]) && path[1] == ':')  &&
+         (path[2] == '/' || path[2] == '\\')) {
         return true;
     }
-#elif defined(NCBI_OS_UNIX)
-    if ( path[0] == '/' )
+    return false;
+}
+
+// Windows: 
+inline bool s_Win_IsNetworkPath(const string& path)
+{
+    // Any combination of slashes in 2 first symbols
+    if ((path[0] == '\\' || path[0] == '/')  &&
+        (path[1] == '\\' || path[1] == '/')) {
         return true;
+    }
+    return false;
+}
+
+
+bool CDirEntry::IsAbsolutePath(const string& path)
+{
+	if (path.empty()) {
+		return false;
+	}
+#if defined(NCBI_OS_MSWIN)
+    if (s_Win_IsDiskPath(path) || s_Win_IsNetworkPath(path)) {
+        return true;
+	}
+#elif defined(NCBI_OS_UNIX)
+	if ( path[0] == '/' ) {
+		return true;
+	}
 #endif
     return false;
 }
@@ -491,34 +502,30 @@ bool CDirEntry::IsAbsolutePathEx(const string& path)
         return false;
 
     // Windows: 
-    // Absolute path is a path started with 'd:\', 'd:/', '\\' or '//' only.
-    if ( ( isalpha((unsigned char)path[0])  &&  path[1] == ':'  &&
-           (path[2] == '/'  || path[2] == '\\') )  ||
-           ((path[0] == '\\' || path[0] == '/') && 
-            (path[1] == '\\' || path[1] == '/')) ) {
+    if (s_Win_IsDiskPath(path) || s_Win_IsNetworkPath(path)) {
         return true;
     }
     // Unix
-    if ( path[0] == '/' )
+    if (path[0] == '/') {
         // FIXME:
         // This is an Unix absolute path or MS Windows relative.
         // But Unix have favor here, because '/' is native dir separator.
         return true;
-
+    }
     // Else - relative
     return false;
 }
 
 
-/// Helper : strips dir to parts:
+/// Helper -- strips dir to parts:
 ///     c:\a\b\     will be <c:><a><b>
 ///     /usr/bin/   will be </><usr><bin>
 static void s_StripDir(const string& dir, vector<string> * dir_parts)
 {
     dir_parts->clear();
-    if ( dir.empty() ) 
+    if (dir.empty()) {
         return;
-
+    }
     const char sep = CDirEntry::GetPathSeparator();
 
     size_t sep_pos = 0;
@@ -541,8 +548,9 @@ static void s_StripDir(const string& dir, vector<string> * dir_parts)
 
         sep_pos++;
         part_start = sep_pos;
-        if (sep_pos >= last_ind) 
+        if (sep_pos >= last_ind) {
             break;
+        }
     }
 
 }
@@ -634,10 +642,10 @@ string CDirEntry::CreateAbsolutePath(const string& path, ERelativeToWhat rtw)
         NCBI_THROW(CFileException, eRelativePath, 
                    "Path must not contain disk separator: " + path);
     }
+    // Path started form slash on MS Windows is a relative or network path
     if ( !path.empty()  &&  (path[0] == '/'  || path[0] == '\\') ) {
         NCBI_THROW(CFileException, eRelativePath, 
-                   "Path that starts with slash is not absolute"
-                   " on MS Windows: " + path);
+                   "Cannot use relative or network path:" + path);
     }
 #endif
 
@@ -660,7 +668,6 @@ string CDirEntry::CreateAbsolutePath(const string& path, ERelativeToWhat rtw)
         break;
       }
     }
-
     result = NormalizePath(result);
     return result;
 }
@@ -692,9 +699,7 @@ string CDirEntry::ConvertToOSPath(const string& path)
             xpath[i] = DIR_SEPARATOR;
         }
     }
-    // Replace something like "../aaa/../bbb/ccc" with "../bbb/ccc"
     xpath = NormalizePath(xpath);
-
     return xpath;
 }
 
@@ -748,11 +753,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
     if ( path.empty() ) {
         return path;
     }
-    static const char kSeps[] = { DIR_SEPARATOR,
-#ifdef DIR_SEPARATOR_ALT
-                                  DIR_SEPARATOR_ALT,
-#endif
-                                  '\0' };
+    static const char kSep[] = { DIR_SEPARATOR, '\0' };
 
     std::list<string> head;       // already resolved to our satisfaction
     std::list<string> tail;       // to resolve afterwards
@@ -769,15 +770,20 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 #  else
     current = DeleteTrailingPathSeparator(path);
 #  endif
+
     if ( current.empty() ) {
         // root dir
         return string(1, DIR_SEPARATOR);
     }
 
+#ifdef NCBI_OS_MSWIN
+    NStr::ReplaceInPlace(current, "/", "\\");
+#endif
+
     while ( !current.empty()  ||  !tail.empty() ) {
         std::list<string> pretail;
         if ( !current.empty() ) {
-            NStr::Split(current, kSeps, pretail, NStr::eNoMergeDelims);
+            NStr::Split(current, kSep, pretail, NStr::eNoMergeDelims);
             current.erase();
             if (pretail.front().empty()
 #ifdef DISK_SEPARATOR
@@ -2139,9 +2145,8 @@ CDirEntry::EType CDirEntry::GetType(EFollowLinks follow) const
     errcode = NcbiSys_stat(_T_XCSTRING(GetPath()), &st);
     if (errcode != 0) {
         // Make additional checks for UNC paths, because 
-        // stat() cannot handle path that looks as \\Server\Share.
-        if ((GetPath()[0] == '\\'  &&  GetPath()[1] == '\\') ||
-            (GetPath()[0] == '/'   &&  GetPath()[1] == '/')) {
+        // stat() cannot handle path that looks like \\Server\Share.
+        if (s_Win_IsNetworkPath(GetPath())) {
             DWORD attr = GetFileAttributes(_T_XCSTRING(GetPath()));
             if (attr == INVALID_FILE_ATTRIBUTES) {
                 CNcbiError::SetFromWindowsError(GetPath());
@@ -2266,7 +2271,7 @@ string CDirEntry::LookupLink(void) const
 void CDirEntry::DereferenceLink(ENormalizePath normalize)
 {
 #ifdef NCBI_OS_MSWIN
-    // Not impemented
+    // Not implemented
     return;
 #endif
     string prev;
@@ -2293,7 +2298,7 @@ void CDirEntry::DereferenceLink(ENormalizePath normalize)
 void s_DereferencePath(CDirEntry& entry)
 {
 #ifdef NCBI_OS_MSWIN
-    // Not impemented
+    // Not implemented
     return;
 #endif
     // Dereference each path components starting from last one
@@ -2321,7 +2326,7 @@ void s_DereferencePath(CDirEntry& entry)
 void CDirEntry::DereferencePath(void)
 {
 #ifdef NCBI_OS_MSWIN
-    // Not impemented
+    // Not implemented
     return;
 #endif
     // Use s_DereferencePath() recursively and normalize result only once
@@ -4501,9 +4506,9 @@ void s_GetFileSystemInfo(const string&               path,
     // Try to get a root disk directory from given path
     string xpath = path;
     // Not UNC path
-    if ( path[0] != '\\'  ||  path[1] != '\\' ) {
+    if (!s_Win_IsNetworkPath(path)) {
         if ( !isalpha((unsigned char)path[0]) || path[1] != DISK_SEPARATOR ) {
-            // absolute or relative path without disk name -- current disk
+            // absolute or relative path without disk name -- current disk,
             // dir entry should exists
             if ( CDirEntry(path).Exists() ) {
                 xpath = CDir::GetCwd();
@@ -4522,8 +4527,8 @@ void s_GetFileSystemInfo(const string&               path,
         DWORD fs_flags;
 
         if ( !::GetVolumeInformation(_T_XCSTRING(xpath),
-                                     NULL, 0, // Name of the specified volume
-                                     NULL,    // Volume serial number
+                                     NULL, 0, // Name of the volume
+                                     NULL,    // and its serial number
                                      &filename_max,
                                      &fs_flags,
                                      fs_name,
@@ -5150,7 +5155,7 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
 {
 #if defined(NCBI_OS_MSWIN)
     // Name of a file-mapping object cannot contain '\'
-    m_FileName = NStr::Replace(m_FileName, "\\", "/");
+    NStr::ReplaceInPlace(m_FileName, "\\", "/");
 #endif
 
     // Translate attributes 
@@ -5688,8 +5693,10 @@ void FindFiles(const string& pattern,
 #if defined(DISK_SEPARATOR)
     // Network paths on Windows start with double back-slash and
     // need special processing.
+    // Note: abs_path has normalized in CreateAbsolutePath().
+
     string kNetSep(2, CDirEntry::GetPathSeparator());
-    bool is_network = pattern.find(kNetSep) == 0;
+    bool is_network = abs_path.find(kNetSep) == 0;
     if ( is_network ) {
         search_path = kNetSep + parts.front() + kDirSep;
         parts.erase(parts.begin());
