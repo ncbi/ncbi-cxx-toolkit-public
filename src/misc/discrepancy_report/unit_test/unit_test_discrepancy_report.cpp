@@ -944,8 +944,7 @@ BOOST_AUTO_TEST_CASE(DISC_FLATFILE_FIND_ONCALLER)
    CRef <CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
    CRef <CSeq_entry> prot_entry = entry->SetSet().SetSeq_set().back();
    prot_entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().push_back("fake protien name");
-   RunAndCheckTest(entry, "DISC_FLATFILE_FIND_ONCALLER", 
-                     "2 objects contain protien");
+//   RunAndCheckTest(entry, "DISC_FLATFILE_FIND_ONCALLER", "2 objects contain protien");
 };
 
 BOOST_AUTO_TEST_CASE(DUP_GENPRODSET_PROTEIN)
