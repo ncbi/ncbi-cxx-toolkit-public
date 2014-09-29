@@ -340,7 +340,7 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
                 }
             }
             else {
-                ITERATE ( TFixedFiles, it, m_FoundFiles ) {
+                ITERATE ( TFoundFiles, it, m_FoundFiles ) {
                     CWGSGiIterator gi_it(it->second->m_WGSDb, gi);
                     if ( gi_it ) {
                         ret.file = it->second;
